@@ -1,0 +1,30 @@
+{
+  "name": "web-viewer-basic-example",
+  "private": true,
+  "type": "module",
+  "version": "1.0.202",
+  "description": "A basic html example for web-viewer",
+  "main": "main.js",
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c -w",
+    "start": "serve"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^19.0.0",
+    "@rollup/plugin-node-resolve": "^13.0.0",
+    "@types/three": "^0.134.0",
+    "rollup": "^2.47.0",
+    "serve": "^11.3.2"
+  },
+  "dependencies": {
+    "dxf-writer": "^1.15.1",
+    "jspdf": "^2.4.0",
+    "stats.js": "0.17.0",
+    "three": "0.142.0",
+    "three-mesh-bvh": "^0.5.11",
+    "viewer": "0.0.1"
+  }
+}

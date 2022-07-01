@@ -1,0 +1,12 @@
+{
+  "name": "web-viewer",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "harry collin",
+  "license": "MIT",
+  "private": true,
+  "packageManager": "yarn@3.2.1",
+  "workspaces": [
+    "packages/*"
+  ]
+}
