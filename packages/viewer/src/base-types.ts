@@ -7,7 +7,7 @@ export interface ComponentBase {
 }
 
 export interface ToolComponent extends ComponentBase {
-  enabled: boolean
+  name: string
 }
 
 export interface RendererComponent extends ComponentBase {
@@ -28,4 +28,28 @@ export interface SceneComponent extends ComponentBase {
 export interface CameraComponent extends ComponentBase {
   activeCamera: THREE.Camera;
   getCamera: () => THREE.Camera;
+}
+
+export interface IDeletable {
+  delete: () => void
+}
+
+export function isDeletable(obj: any): obj is IDeletable {
+  return "delete" in obj;
+}
+
+export interface IEnableable {
+  enabled: boolean
+}
+
+export function isEnableable(obj: any): obj is IEnableable {
+  return "enabled" in obj;
+}
+
+export interface IHideable {
+  visible: boolean
+}
+
+export function isHideable(obj: any): obj is IHideable {
+  return "visible" in obj;
 }

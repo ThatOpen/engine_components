@@ -1,10 +1,10 @@
 import Stats from 'stats.js/src/Stats';
+import * as THREE from 'three'
 import { Components } from 'viewer'
 import {SimpleGrid} from "viewer/dist/components/SimpleGrid.js";
 import {SimpleScene} from "viewer/dist/components/SimpleScene.js";
 import {SimpleRenderer} from "viewer/dist/components/SimpleRenderer.js";
 import {SimpleCamera} from "viewer/dist/components/SimpleCamera.js";
-import * as THREE from 'three'
 import {SimpleClipper} from "viewer/dist/components/SimpleClipper.js";
 import {SimpleDimensions} from "viewer/dist/components/SimpleDimensions.js";
 
@@ -40,13 +40,13 @@ scene.getScene().add(ambientLight)
 
 // Add some components
 const grid = new SimpleGrid(components);
-components.addComponent(grid);
+components.tools.add(grid);
 
 const clipper = new SimpleClipper(components);
-components.addComponent(clipper)
+components.tools.add(clipper)
 
 const dimensions = new SimpleDimensions(components);
-components.addComponent(dimensions)
+components.tools.add(dimensions)
 
 // Set up stats
 const stats = new Stats();
@@ -61,18 +61,18 @@ renderer.onFinishRender.on(() => stats.end())
 window.onkeydown = (event) => {
     switch (event.code){
         case "KeyC": {
-            clipper.enabled = !clipper.enabled;
-            console.log("Clipper active: " + clipper.enabled)
+            components.tools.toggle("clipper");
+            // components.tools.printToolsState()
             break;
         }
         case "KeyD": {
-            dimensions.enabled = !dimensions.enabled;
-            if(dimensions.enabled){
-                dimensions.previewActive = true;
-            }else {
-                dimensions.previewActive = false;
-            }
-            console.log("Dimensions active: " + dimensions.enabled)
+            components.tools.toggle("dimensions");
+            // components.tools.printToolsState()
+            break;
+        }
+        case "KeyH": {
+            components.tools.toggleAllVisibility()
+            // components.tools.printToolsState()
             break;
         }
         case "Escape" :{

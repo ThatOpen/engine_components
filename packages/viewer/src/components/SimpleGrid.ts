@@ -1,8 +1,8 @@
-import {ToolComponent} from "../base-types";
+import {ComponentBase, IHideable} from "../base-types";
 import {Components} from "../components";
 import * as THREE from "three";
 
-export class SimpleGrid implements ToolComponent {
+export class SimpleGrid implements ComponentBase, IHideable {
 
   private readonly grid: THREE.GridHelper;
 
@@ -11,15 +11,14 @@ export class SimpleGrid implements ToolComponent {
     components.scene?.getScene()?.add(this.grid)
   }
 
+  set visible(visible: boolean) {
+    this.grid.visible = visible;
+  }
+
+  get visible(){
+    return this.grid.visible;
+  }
+
   update(_delta: number): void {
-
-  }
-
-  set enabled(enabled: boolean){
-    this.grid.visible = enabled;
-  }
-
-  get enabled(){
-    return this.grid.visible
   }
 }

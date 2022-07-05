@@ -30050,28 +30050,28 @@
 
 	}
 
+	function isEnableable(obj) {
+	    return "enabled" in obj;
+	}
+	function isHideable(obj) {
+	    return "visible" in obj;
+	}
+
 	class Components {
 	    constructor() {
-	        this.components = [];
+	        // private readonly components: ComponentBase[] = [];
 	        this.meshes = [];
 	        this.updateRequestCallback = -1;
-	        this.updateComponents = () => {
+	        this.update = () => {
 	            const delta = this.clock.elapsedTime;
-	            if (this.scene) {
-	                this.scene.update(delta);
-	            }
-	            if (this.renderer) {
-	                this.renderer.update(delta);
-	            }
-	            if (this.camera) {
-	                this.camera.update(delta);
-	            }
-	            for (const component of this.components) {
-	                component.update(delta);
-	            }
-	            this.updateRequestCallback = requestAnimationFrame(this.updateComponents);
+	            this.scene.update(delta);
+	            this.renderer.update(delta);
+	            this.camera.update(delta);
+	            this.tools.update(delta);
+	            this.updateRequestCallback = requestAnimationFrame(this.update);
 	        };
 	        this.clock = new Clock();
+	        this.tools = new ToolComponents();
 	    }
 	    get renderer() {
 	        if (!this._renderer)
@@ -30099,19 +30099,112 @@
 	    }
 	    init() {
 	        this.clock.start();
-	        this.updateComponents();
+	        this.update();
 	    }
 	    dispose() {
 	        cancelAnimationFrame(this.updateRequestCallback);
 	    }
-	    addComponent(component) {
-	        this.components.push(component);
+	}
+	class ToolComponents {
+	    constructor() {
+	        this.tools = [];
 	    }
-	    removeComponent(component) {
-	        const index = this.components.findIndex((c) => c === component);
+	    add(tool) {
+	        this.tools.push(tool);
+	    }
+	    remove(tool) {
+	        const index = this.tools.findIndex((c) => c === tool);
 	        if (index > -1) {
-	            this.components.splice(index, 1);
+	            this.tools.splice(index, 1);
+	            return true;
 	        }
+	        return false;
+	    }
+	    removeByName(name) {
+	        const tool = this.get(name);
+	        if (tool) {
+	            this.remove(tool);
+	            return true;
+	        }
+	        return false;
+	    }
+	    update(delta) {
+	        for (const tool of this.tools) {
+	            tool.update(delta);
+	        }
+	    }
+	    hideAll() {
+	        for (const tool of this.tools) {
+	            if (tool && isHideable(tool)) {
+	                tool.visible = false;
+	            }
+	        }
+	    }
+	    showAll() {
+	        for (const tool of this.tools) {
+	            if (tool && isHideable(tool)) {
+	                tool.visible = true;
+	            }
+	        }
+	    }
+	    toggleAllVisibility() {
+	        for (const tool of this.tools) {
+	            if (tool && isHideable(tool)) {
+	                tool.visible = !tool.visible;
+	            }
+	        }
+	    }
+	    enable(name, isolate = true) {
+	        if (isolate === false) {
+	            this.disableAll();
+	        }
+	        const tool = this.get(name);
+	        if (tool && isEnableable(tool)) {
+	            tool.enabled = true;
+	            return true;
+	        }
+	        else {
+	            return false;
+	        }
+	    }
+	    disable(name) {
+	        const tool = this.get(name);
+	        if (tool && isEnableable(tool)) {
+	            tool.enabled = false;
+	            return true;
+	        }
+	        else {
+	            return false;
+	        }
+	    }
+	    disableAll() {
+	        for (const tool of this.tools) {
+	            if (tool && isEnableable(tool)) {
+	                console.log("Disabling tool: " + tool.name);
+	                tool.enabled = false;
+	            }
+	        }
+	    }
+	    toggle(name) {
+	        const tool = this.get(name);
+	        if (tool && isEnableable(tool)) {
+	            const enabled = tool.enabled;
+	            this.disableAll();
+	            tool.enabled = !enabled;
+	        }
+	    }
+	    get(name) {
+	        return this.tools.find((tool) => tool.name === name);
+	    }
+	    printToolsState() {
+	        const states = this.tools.map((tool) => ({
+	            name: tool.name,
+	            // @ts-ignore
+	            enabled: tool === null || tool === void 0 ? void 0 : tool.enabled,
+	            // @ts-ignore
+	            visible: tool === null || tool === void 0 ? void 0 : tool.enabled
+	        }));
+	        console.table(states);
 	    }
 	}
 
@@ -30121,13 +30214,13 @@
 	        this.grid = new GridHelper(50, 50);
 	        (_b = (_a = components.scene) === null || _a === void 0 ? void 0 : _a.getScene()) === null || _b === void 0 ? void 0 : _b.add(this.grid);
 	    }
-	    update(_delta) {
+	    set visible(visible) {
+	        this.grid.visible = visible;
 	    }
-	    set enabled(enabled) {
-	        this.grid.visible = enabled;
-	    }
-	    get enabled() {
+	    get visible() {
 	        return this.grid.visible;
+	    }
+	    update(_delta) {
 	    }
 	}
 
@@ -33255,6 +33348,7 @@
 
 	class SimpleClipper {
 	    constructor(context) {
+	        this.name = "clipper";
 	        this.orthogonalY = true;
 	        this.toleranceOrthogonalY = 0.7;
 	        this.planeSize = 5;
@@ -33277,6 +33371,9 @@
 	            (_a = this.context.renderer) === null || _a === void 0 ? void 0 : _a.addClippingPlane(plane.plane);
 	            this.updateMaterials();
 	            return plane;
+	        };
+	        this.delete = () => {
+	            this.deletePlane();
 	        };
 	        this.deletePlane = (plane) => {
 	            var _a;
@@ -33350,6 +33447,7 @@
 	        };
 	        this.context = context;
 	        this._enabled = false;
+	        this._visible = false;
 	        this.dragging = false;
 	        this.planes = [];
 	        this.raycaster = new Raycaster();
@@ -33362,14 +33460,31 @@
 	            this.position.y = -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1;
 	        };
 	    }
+	    get visible() {
+	        return this._visible;
+	    }
+	    set visible(visible) {
+	        this._visible = visible;
+	        if (!visible) {
+	            this.enabled = false;
+	        }
+	        this.planes.forEach((plane) => {
+	            if (!plane.isPlan) {
+	                plane.visible = visible;
+	            }
+	        });
+	        this.updateMaterials();
+	    }
 	    get enabled() {
 	        return this._enabled;
 	    }
 	    set enabled(state) {
 	        this._enabled = state;
+	        if (state && !this._visible) {
+	            this.visible = true;
+	        }
 	        this.planes.forEach((plane) => {
 	            if (!plane.isPlan) {
-	                plane.visible = state;
 	                plane.enabled = state;
 	            }
 	        });
@@ -33572,8 +33687,6 @@
 	        const planeGeom = new PlaneGeometry(this.planeSize, this.planeSize, 1);
 	        return new Mesh(planeGeom, SimplePlane.planeMaterial);
 	    }
-	    update(_delta) {
-	    }
 	}
 	SimplePlane.planeMaterial = SimplePlane.getPlaneMaterial();
 	SimplePlane.hiddenMaterial = SimplePlane.getHiddenMaterial();
@@ -33597,11 +33710,13 @@
 
 	class SimpleDimensions {
 	    constructor(context) {
+	        this.name = "dimensions";
 	        this.dimensions = [];
 	        this.labelClassName = 'ifcjs-dimension-label';
 	        this.previewClassName = 'ifcjs-dimension-preview';
 	        // State
 	        this._enabled = false;
+	        this._visible = false;
 	        this.preview = false;
 	        this.dragging = false;
 	        this.snapDistance = 0.25;
@@ -33675,11 +33790,30 @@
 	    get enabled() {
 	        return this._enabled;
 	    }
+	    set enabled(state) {
+	        this._enabled = state;
+	        this.previewActive = state;
+	        if (!this.visible && state) {
+	            this.visible = true;
+	        }
+	    }
 	    get previewActive() {
 	        return this.preview;
 	    }
 	    get previewObject() {
 	        return this.previewElement;
+	    }
+	    set visible(state) {
+	        this._visible = state;
+	        if (this.enabled && !state) {
+	            this.enabled = false;
+	        }
+	        this.dimensions.forEach((dim) => {
+	            dim.visibility = state;
+	        });
+	    }
+	    get visible() {
+	        return this._visible;
 	    }
 	    set previewActive(state) {
 	        var _a;
@@ -33693,12 +33827,6 @@
 	        else {
 	            scene.remove(this.previewElement);
 	        }
-	    }
-	    set enabled(state) {
-	        this._enabled = state;
-	        this.dimensions.forEach((dim) => {
-	            dim.visibility = state;
-	        });
 	    }
 	    set dimensionsColor(color) {
 	        this.endpointsMaterial.color = color;
@@ -34076,13 +34204,13 @@
 
 	// Add some components
 	const grid = new SimpleGrid(components);
-	components.addComponent(grid);
+	components.tools.add(grid);
 
 	const clipper = new SimpleClipper(components);
-	components.addComponent(clipper);
+	components.tools.add(clipper);
 
 	const dimensions = new SimpleDimensions(components);
-	components.addComponent(dimensions);
+	components.tools.add(dimensions);
 
 	// Set up stats
 	const stats = new Stats();
@@ -34097,18 +34225,18 @@
 	window.onkeydown = (event) => {
 	    switch (event.code){
 	        case "KeyC": {
-	            clipper.enabled = !clipper.enabled;
-	            console.log("Clipper active: " + clipper.enabled);
+	            components.tools.toggle("clipper");
+	            // components.tools.printToolsState()
 	            break;
 	        }
 	        case "KeyD": {
-	            dimensions.enabled = !dimensions.enabled;
-	            if(dimensions.enabled){
-	                dimensions.previewActive = true;
-	            }else {
-	                dimensions.previewActive = false;
-	            }
-	            console.log("Dimensions active: " + dimensions.enabled);
+	            components.tools.toggle("dimensions");
+	            // components.tools.printToolsState()
+	            break;
+	        }
+	        case "KeyH": {
+	            components.tools.toggleAllVisibility();
+	            // components.tools.printToolsState()
 	            break;
 	        }
 	        case "Escape" :{

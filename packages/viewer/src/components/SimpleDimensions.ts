@@ -10,7 +10,7 @@ import {
   Vector3
 } from 'three';
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer';
-import {ToolComponent} from "../base-types";
+import {IEnableable, IHideable, ToolComponent} from "../base-types";
 import {Components} from "../components";
 import {
   BoxGeometry,
@@ -21,7 +21,9 @@ import {
 } from 'three';
 import { disposeMeshRecursively } from '../utils/ThreeUtils';
 
-export class SimpleDimensions implements ToolComponent {
+export class SimpleDimensions implements ToolComponent, IEnableable, IHideable {
+
+  public readonly name = "dimensions";
   private readonly context: Components;
   private dimensions: IfcDimensionLine[] = [];
   private currentDimension?: IfcDimensionLine;
@@ -30,6 +32,7 @@ export class SimpleDimensions implements ToolComponent {
 
   // State
   public _enabled = false;
+  public _visible = false;
   private preview = false;
   private dragging = false;
   snapDistance = 0.25;
@@ -122,6 +125,14 @@ export class SimpleDimensions implements ToolComponent {
     return this._enabled;
   }
 
+  set enabled(state: boolean) {
+    this._enabled = state;
+    this.previewActive = state;
+    if(!this.visible && state){
+      this.visible = true;
+    }
+  }
+
   get previewActive() {
     return this.preview;
   }
@@ -130,7 +141,21 @@ export class SimpleDimensions implements ToolComponent {
     return this.previewElement;
   }
 
-  set previewActive(state: boolean) {
+  set visible(state: boolean){
+    this._visible = state;
+    if(this.enabled && !state){
+      this.enabled = false;
+    }
+    this.dimensions.forEach((dim) => {
+      dim.visibility = state;
+    });
+  }
+
+  get visible(){
+    return this._visible;
+  }
+
+  private set previewActive(state: boolean) {
     this.preview = state;
     const scene = this.context.scene?.getScene();
     if(!scene) throw new Error("Dimensions rely on scene to be present.")
@@ -139,13 +164,6 @@ export class SimpleDimensions implements ToolComponent {
     } else {
       scene.remove(this.previewElement);
     }
-  }
-
-  set enabled(state: boolean) {
-    this._enabled = state;
-    this.dimensions.forEach((dim) => {
-      dim.visibility = state;
-    });
   }
 
   set dimensionsColor(color: Color) {

@@ -8,10 +8,11 @@ import {
 } from 'three';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 import {Components} from "../components";
-import {ToolComponent} from "../base-types";
+import {IDeletable, IEnableable, IHideable, ToolComponent} from "../base-types";
 
-export class SimpleClipper implements ToolComponent {
+export class SimpleClipper implements ToolComponent, IHideable, IDeletable, IEnableable {
 
+  public readonly name = "clipper";
   dragging: boolean;
   planes: SimplePlane[];
   intersection: Intersection | undefined;
@@ -19,6 +20,7 @@ export class SimpleClipper implements ToolComponent {
   toleranceOrthogonalY = 0.7;
   planeSize = 5;
   private _enabled: boolean;
+  private _visible: boolean;
   private readonly context: Components;
   private readonly raycaster: Raycaster;
 
@@ -28,6 +30,7 @@ export class SimpleClipper implements ToolComponent {
   constructor(context: Components) {
     this.context = context;
     this._enabled = false;
+    this._visible = false;
     this.dragging = false;
     this.planes = [];
     this.raycaster = new Raycaster()
@@ -43,15 +46,36 @@ export class SimpleClipper implements ToolComponent {
     };
   }
 
+  get visible() {
+    return this._visible;
+  }
+
+  set visible(visible: boolean){
+    this._visible = visible;
+    if(!visible) {
+      this.enabled = false;
+    }
+    this.planes.forEach((plane) => {
+      if (!plane.isPlan) {
+        plane.visible = visible;
+      }
+    })
+    this.updateMaterials();
+  }
+
   get enabled() {
     return this._enabled;
   }
 
   set enabled(state) {
     this._enabled = state;
+
+    if(state && !this._visible){
+      this.visible = true;
+    }
+
     this.planes.forEach((plane) => {
       if (!plane.isPlan) {
-        plane.visible = state;
         plane.enabled = state;
       }
     });
@@ -90,6 +114,10 @@ export class SimpleClipper implements ToolComponent {
     this.updateMaterials();
     return plane;
   };
+
+  delete = () => {
+    this.deletePlane()
+  }
 
   deletePlane = (plane?: SimplePlane) => {
     let existingPlane: SimplePlane | undefined | null = plane;
@@ -217,7 +245,7 @@ export class SimpleClipper implements ToolComponent {
 
 
 
-export class SimplePlane implements ToolComponent {
+export class SimplePlane {
   static planeMaterial = SimplePlane.getPlaneMaterial();
   private static hiddenMaterial = SimplePlane.getHiddenMaterial();
   readonly arrowBoundingBox = new Mesh();
@@ -393,8 +421,5 @@ export class SimplePlane implements ToolComponent {
   private getPlaneMesh() {
     const planeGeom = new PlaneGeometry(this.planeSize, this.planeSize, 1);
     return new Mesh(planeGeom, SimplePlane.planeMaterial);
-  }
-
-  update(_delta: number): void {
   }
 }
