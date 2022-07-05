@@ -34226,17 +34226,14 @@
 	    switch (event.code){
 	        case "KeyC": {
 	            components.tools.toggle("clipper");
-	            // components.tools.printToolsState()
 	            break;
 	        }
 	        case "KeyD": {
 	            components.tools.toggle("dimensions");
-	            // components.tools.printToolsState()
 	            break;
 	        }
 	        case "KeyH": {
 	            components.tools.toggleAllVisibility();
-	            // components.tools.printToolsState()
 	            break;
 	        }
 	        case "Escape" :{
@@ -34244,6 +34241,9 @@
 	                dimensions.cancelDrawing();
 	            }
 	            break;
+	        }
+	        case "KeyP": {
+	            components.tools.printToolsState();
 	        }
 	        case "Delete": {
 	            if(clipper.enabled)
