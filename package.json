@@ -1,12 +1,17 @@
 {
   "name": "web-viewer",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "main": "index.js",
   "author": "harry collin",
   "license": "MIT",
   "private": true,
   "packageManager": "yarn@3.2.1",
+  "scripts": {
+    "build": "cd library && yarn build && cd ../examples && node example-builder.js",
+    "publish-repo": "cd library && npm run publish-repo"
+  },
   "workspaces": [
-    "packages/*"
+    "./library",
+    "./examples/hello-world"
   ]
 }

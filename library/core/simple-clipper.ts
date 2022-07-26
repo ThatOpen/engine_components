@@ -8,7 +8,7 @@ import {
 } from 'three';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 import {Components} from "../components";
-import {IDeletable, IEnableable, IHideable, ToolComponent} from "../base-types";
+import {IDeletable, IEnableable, IHideable, ToolComponent} from "./base-types";
 
 export class SimpleClipper implements ToolComponent, IHideable, IDeletable, IEnableable {
 

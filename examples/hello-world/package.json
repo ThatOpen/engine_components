@@ -1,9 +1,9 @@
 {
-  "name": "web-viewer-basic-example",
+  "name": "hello-world",
   "private": true,
   "type": "module",
-  "version": "1.0.202",
-  "description": "A basic html example for web-viewer",
+  "version": "0.0.1",
+  "description": "A basic html example for openbim-components.",
   "main": "main.js",
   "scripts": {
     "build": "rollup -c",
@@ -20,11 +20,9 @@
     "serve": "^11.3.2"
   },
   "dependencies": {
-    "dxf-writer": "^1.15.1",
-    "jspdf": "^2.4.0",
+    "openbim-components": "0.0.1",
     "stats.js": "0.17.0",
     "three": "0.142.0",
-    "three-mesh-bvh": "^0.5.11",
-    "viewer": "0.0.1"
+    "three-mesh-bvh": "^0.5.11"
   }
 }

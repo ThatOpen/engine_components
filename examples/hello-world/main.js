@@ -1,12 +1,6 @@
 import Stats from 'stats.js/src/Stats';
 import * as THREE from 'three'
-import { Components } from 'viewer'
-import {SimpleGrid} from "viewer/dist/components/SimpleGrid.js";
-import {SimpleScene} from "viewer/dist/components/SimpleScene.js";
-import {SimpleRenderer} from "viewer/dist/components/SimpleRenderer.js";
-import {SimpleCamera} from "viewer/dist/components/SimpleCamera.js";
-import {SimpleClipper} from "viewer/dist/components/SimpleClipper.js";
-import {SimpleDimensions} from "viewer/dist/components/SimpleDimensions.js";
+import { Components, SimpleGrid, SimpleScene, SimpleRenderer, SimpleCamera, SimpleClipper, SimpleDimensions } from 'openbim-components'
 
 const container = document.getElementById('viewer-container');
 

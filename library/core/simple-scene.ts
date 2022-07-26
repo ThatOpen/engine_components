@@ -1,4 +1,4 @@
-import {SceneComponent} from "../base-types";
+import {SceneComponent} from "./base-types";
 import * as THREE from 'three'
 import {Components} from "../components";
 

@@ -1,2 +1,2 @@
 export * from './components';
-export * from './base-types'
+export * from './core/index';

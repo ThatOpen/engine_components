@@ -10,7 +10,7 @@ import {
   Vector3
 } from 'three';
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer';
-import {IEnableable, IHideable, ToolComponent} from "../base-types";
+import {IEnableable, IHideable, ToolComponent} from "./base-types";
 import {Components} from "../components";
 import {
   BoxGeometry,
@@ -19,7 +19,7 @@ import {
   LineBasicMaterial,
   Camera
 } from 'three';
-import { disposeMeshRecursively } from '../utils/ThreeUtils';
+import { disposeMeshRecursively } from './three-utils';
 
 export class SimpleDimensions implements ToolComponent, IEnableable, IHideable {
 

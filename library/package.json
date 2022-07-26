@@ -1,11 +1,12 @@
 {
-  "name": "viewer",
+  "name": "openbim-components",
   "main": "dist/index.js",
   "version": "0.0.1",
   "packageManager": "yarn@3.2.1",
   "scripts": {
     "build": "tsc",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "publish-repo": "cpy package.json dist && cd dist && npm publish"
   },
   "devDependencies": {
     "@types/three": "^0.141.0",

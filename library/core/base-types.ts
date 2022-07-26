@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {CSS2DRenderer} from "three/examples/jsm/renderers/CSS2DRenderer";
-import {LiteEvent} from "./utils/LiteEvent";
+import {LiteEvent} from "./lite-event";
 
 export interface ComponentBase {
   update: (delta: number) => void

@@ -1,4 +1,4 @@
-import {ComponentBase, IHideable} from "../base-types";
+import {ComponentBase, IHideable} from "./base-types";
 import {Components} from "../components";
 import * as THREE from "three";
 

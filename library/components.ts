@@ -4,7 +4,7 @@ import {
   RendererComponent,
   SceneComponent,
   ToolComponent
-} from "./base-types";
+} from "./core/base-types";
 import * as THREE from "three";
 
 export class Components {

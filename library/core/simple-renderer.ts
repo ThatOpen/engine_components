@@ -1,8 +1,8 @@
-import {RendererComponent} from "../base-types";
+import {RendererComponent} from "./base-types";
 import * as THREE from 'three'
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
 import {Components} from "../components";
-import {LiteEvent} from "../utils/LiteEvent";
+import {LiteEvent} from "./lite-event";
 
 export class SimpleRenderer implements RendererComponent {
 

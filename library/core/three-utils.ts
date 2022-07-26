@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Mesh } from 'three';
 
-export function RightToLeftHand(vector: THREE.Vector3): THREE.Vector3 {
+export function rightToLeftHand(vector: THREE.Vector3): THREE.Vector3 {
   return new THREE.Vector3(vector.x, -vector.z, vector.y);
 }
 

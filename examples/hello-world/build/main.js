@@ -30208,237 +30208,6 @@
 	    }
 	}
 
-	class SimpleGrid {
-	    constructor(components) {
-	        var _a, _b;
-	        this.grid = new GridHelper(50, 50);
-	        (_b = (_a = components.scene) === null || _a === void 0 ? void 0 : _a.getScene()) === null || _b === void 0 ? void 0 : _b.add(this.grid);
-	    }
-	    set visible(visible) {
-	        this.grid.visible = visible;
-	    }
-	    get visible() {
-	        return this.grid.visible;
-	    }
-	    update(_delta) {
-	    }
-	}
-
-	class SimpleScene {
-	    constructor(_components) {
-	        this.scene = new Scene();
-	        this.scene.background = new Color(0xcccccc);
-	    }
-	    update(_delta) {
-	    }
-	    getScene() {
-	        return this.scene;
-	    }
-	}
-
-	class CSS2DObject extends Object3D {
-
-		constructor( element = document.createElement( 'div' ) ) {
-
-			super();
-
-			this.isCSS2DObject = true;
-
-			this.element = element;
-
-			this.element.style.position = 'absolute';
-			this.element.style.userSelect = 'none';
-
-			this.element.setAttribute( 'draggable', false );
-
-			this.addEventListener( 'removed', function () {
-
-				this.traverse( function ( object ) {
-
-					if ( object.element instanceof Element && object.element.parentNode !== null ) {
-
-						object.element.parentNode.removeChild( object.element );
-
-					}
-
-				} );
-
-			} );
-
-		}
-
-		copy( source, recursive ) {
-
-			super.copy( source, recursive );
-
-			this.element = source.element.cloneNode( true );
-
-			return this;
-
-		}
-
-	}
-
-	//
-
-	const _vector = new Vector3();
-	const _viewMatrix = new Matrix4();
-	const _viewProjectionMatrix = new Matrix4();
-	const _a = new Vector3();
-	const _b = new Vector3();
-
-	class CSS2DRenderer {
-
-		constructor( parameters = {} ) {
-
-			const _this = this;
-
-			let _width, _height;
-			let _widthHalf, _heightHalf;
-
-			const cache = {
-				objects: new WeakMap()
-			};
-
-			const domElement = parameters.element !== undefined ? parameters.element : document.createElement( 'div' );
-
-			domElement.style.overflow = 'hidden';
-
-			this.domElement = domElement;
-
-			this.getSize = function () {
-
-				return {
-					width: _width,
-					height: _height
-				};
-
-			};
-
-			this.render = function ( scene, camera ) {
-
-				if ( scene.autoUpdate === true ) scene.updateMatrixWorld();
-				if ( camera.parent === null ) camera.updateMatrixWorld();
-
-				_viewMatrix.copy( camera.matrixWorldInverse );
-				_viewProjectionMatrix.multiplyMatrices( camera.projectionMatrix, _viewMatrix );
-
-				renderObject( scene, scene, camera );
-				zOrder( scene );
-
-			};
-
-			this.setSize = function ( width, height ) {
-
-				_width = width;
-				_height = height;
-
-				_widthHalf = _width / 2;
-				_heightHalf = _height / 2;
-
-				domElement.style.width = width + 'px';
-				domElement.style.height = height + 'px';
-
-			};
-
-			function renderObject( object, scene, camera ) {
-
-				if ( object.isCSS2DObject ) {
-
-					_vector.setFromMatrixPosition( object.matrixWorld );
-					_vector.applyMatrix4( _viewProjectionMatrix );
-
-					const visible = ( object.visible === true ) && ( _vector.z >= - 1 && _vector.z <= 1 ) && ( object.layers.test( camera.layers ) === true );
-					object.element.style.display = ( visible === true ) ? '' : 'none';
-
-					if ( visible === true ) {
-
-						object.onBeforeRender( _this, scene, camera );
-
-						const element = object.element;
-
-						element.style.transform = 'translate(-50%,-50%) translate(' + ( _vector.x * _widthHalf + _widthHalf ) + 'px,' + ( - _vector.y * _heightHalf + _heightHalf ) + 'px)';
-
-						if ( element.parentNode !== domElement ) {
-
-							domElement.appendChild( element );
-
-						}
-
-						object.onAfterRender( _this, scene, camera );
-
-					}
-
-					const objectData = {
-						distanceToCameraSquared: getDistanceToSquared( camera, object )
-					};
-
-					cache.objects.set( object, objectData );
-
-				}
-
-				for ( let i = 0, l = object.children.length; i < l; i ++ ) {
-
-					renderObject( object.children[ i ], scene, camera );
-
-				}
-
-			}
-
-			function getDistanceToSquared( object1, object2 ) {
-
-				_a.setFromMatrixPosition( object1.matrixWorld );
-				_b.setFromMatrixPosition( object2.matrixWorld );
-
-				return _a.distanceToSquared( _b );
-
-			}
-
-			function filterAndFlatten( scene ) {
-
-				const result = [];
-
-				scene.traverse( function ( object ) {
-
-					if ( object.isCSS2DObject ) result.push( object );
-
-				} );
-
-				return result;
-
-			}
-
-			function zOrder( scene ) {
-
-				const sorted = filterAndFlatten( scene ).sort( function ( a, b ) {
-
-					if ( a.renderOrder !== b.renderOrder ) {
-
-						return b.renderOrder - a.renderOrder;
-
-					}
-
-					const distanceA = cache.objects.get( a ).distanceToCameraSquared;
-					const distanceB = cache.objects.get( b ).distanceToCameraSquared;
-
-					return distanceA - distanceB;
-
-				} );
-
-				const zMax = sorted.length;
-
-				for ( let i = 0, l = sorted.length; i < l; i ++ ) {
-
-					sorted[ i ].element.style.zIndex = zMax - i;
-
-				}
-
-			}
-
-		}
-
-	}
-
 	// -------------------------------------------------------------------------------------------
 	// Credit to Jason Kleban: https://gist.github.com/JasonKleban/50cee44960c225ac1993c922563aa540
 	// -------------------------------------------------------------------------------------------
@@ -30458,108 +30227,6 @@
 	    }
 	    expose() {
 	        return this;
-	    }
-	}
-
-	class SimpleRenderer {
-	    constructor(components, container) {
-	        this.renderer2D = new CSS2DRenderer();
-	        this.blocked = false;
-	        this.onStartRender = new LiteEvent();
-	        this.onFinishRender = new LiteEvent();
-	        this._enabled = true;
-	        this.components = components;
-	        this.container = container;
-	        this.renderer = new WebGLRenderer({
-	            antialias: true
-	        });
-	        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-	        this.setupRenderers();
-	        this.adjustRendererSize();
-	    }
-	    addClippingPlane(plane) {
-	        this.renderer.clippingPlanes.push(plane);
-	    }
-	    removeClippingPlane(plane) {
-	        const index = this.renderer.clippingPlanes.indexOf(plane);
-	        if (index > -1) {
-	            this.renderer.clippingPlanes.splice(index, 1);
-	        }
-	    }
-	    dispose() {
-	        var _a, _b;
-	        this.renderer.domElement.remove();
-	        this.renderer.dispose();
-	        this.renderer = null;
-	        this.renderer2D = null;
-	        this.container = null;
-	        (_a = this.tempRenderer) === null || _a === void 0 ? void 0 : _a.dispose();
-	        (_b = this.tempCanvas) === null || _b === void 0 ? void 0 : _b.remove();
-	    }
-	    update(_delta) {
-	        var _a, _b;
-	        if (this.blocked)
-	            return;
-	        const scene = (_a = this.components.scene) === null || _a === void 0 ? void 0 : _a.getScene();
-	        const camera = (_b = this.components.camera) === null || _b === void 0 ? void 0 : _b.getCamera();
-	        if (!scene || !camera)
-	            return;
-	        this.onStartRender.trigger();
-	        this.renderer.render(scene, camera);
-	        this.renderer2D.render(scene, camera);
-	        this.onFinishRender.trigger();
-	    }
-	    getSize() {
-	        return new Vector2(this.renderer.domElement.clientWidth, this.renderer.domElement.clientHeight);
-	    }
-	    adjustRendererSize() {
-	        const width = this.container.clientWidth;
-	        const height = this.container.clientHeight;
-	        this.renderer.setSize(width, height);
-	        this.renderer2D.setSize(width, height);
-	    }
-	    /*newScreenshot(camera?: THREE.Camera, dimensions?: THREE.Vector2) {
-	      const previousDimensions = this.getSize();
-	  
-	      const domElement = this.renderer.domElement;
-	      const tempCanvas = domElement.cloneNode(true) as HTMLCanvasElement;
-	  
-	      // Using a new renderer to make screenshots without updating what the user sees in the canvas
-	      if (!this.tempRenderer) {
-	        this.tempRenderer = new THREE.WebGLRenderer({ canvas: tempCanvas, antialias: true });
-	        this.tempRenderer.localClippingEnabled = true;
-	      }
-	  
-	      if (dimensions) {
-	        this.tempRenderer.setSize(dimensions.x, dimensions.y);
-	        this.context.ifcCamera.updateAspect(dimensions);
-	      }
-	  
-	      // todo add this later to have a centered screenshot
-	      // await this.context.getIfcCamera().currentNavMode.fitModelToFrame();
-	  
-	      const scene = this.context.getScene();
-	      const cameraToRender = camera || this.context.getCamera();
-	      this.tempRenderer.render(scene, cameraToRender);
-	      const result = this.tempRenderer.domElement.toDataURL();
-	  
-	      if (dimensions) this.context.ifcCamera.updateAspect(previousDimensions);
-	  
-	      return result;
-	    }*/
-	    setupRenderers() {
-	        this.renderer.localClippingEnabled = true;
-	        this.container.appendChild(this.renderer.domElement);
-	        this.renderer2D.domElement.style.position = 'absolute';
-	        this.renderer2D.domElement.style.top = '0px';
-	        this.renderer2D.domElement.style.pointerEvents = 'none';
-	        this.container.appendChild(this.renderer2D.domElement);
-	    }
-	    get enabled() {
-	        return this._enabled;
-	    }
-	    set enabled(enabled) {
-	        this._enabled = enabled;
 	    }
 	}
 
@@ -31802,6 +31469,820 @@
 	    }
 	    get enabled() {
 	        return this.orbitControls.enabled;
+	    }
+	}
+
+	class CSS2DObject extends Object3D {
+
+		constructor( element = document.createElement( 'div' ) ) {
+
+			super();
+
+			this.isCSS2DObject = true;
+
+			this.element = element;
+
+			this.element.style.position = 'absolute';
+			this.element.style.userSelect = 'none';
+
+			this.element.setAttribute( 'draggable', false );
+
+			this.addEventListener( 'removed', function () {
+
+				this.traverse( function ( object ) {
+
+					if ( object.element instanceof Element && object.element.parentNode !== null ) {
+
+						object.element.parentNode.removeChild( object.element );
+
+					}
+
+				} );
+
+			} );
+
+		}
+
+		copy( source, recursive ) {
+
+			super.copy( source, recursive );
+
+			this.element = source.element.cloneNode( true );
+
+			return this;
+
+		}
+
+	}
+
+	//
+
+	const _vector = new Vector3();
+	const _viewMatrix = new Matrix4();
+	const _viewProjectionMatrix = new Matrix4();
+	const _a = new Vector3();
+	const _b = new Vector3();
+
+	class CSS2DRenderer {
+
+		constructor( parameters = {} ) {
+
+			const _this = this;
+
+			let _width, _height;
+			let _widthHalf, _heightHalf;
+
+			const cache = {
+				objects: new WeakMap()
+			};
+
+			const domElement = parameters.element !== undefined ? parameters.element : document.createElement( 'div' );
+
+			domElement.style.overflow = 'hidden';
+
+			this.domElement = domElement;
+
+			this.getSize = function () {
+
+				return {
+					width: _width,
+					height: _height
+				};
+
+			};
+
+			this.render = function ( scene, camera ) {
+
+				if ( scene.autoUpdate === true ) scene.updateMatrixWorld();
+				if ( camera.parent === null ) camera.updateMatrixWorld();
+
+				_viewMatrix.copy( camera.matrixWorldInverse );
+				_viewProjectionMatrix.multiplyMatrices( camera.projectionMatrix, _viewMatrix );
+
+				renderObject( scene, scene, camera );
+				zOrder( scene );
+
+			};
+
+			this.setSize = function ( width, height ) {
+
+				_width = width;
+				_height = height;
+
+				_widthHalf = _width / 2;
+				_heightHalf = _height / 2;
+
+				domElement.style.width = width + 'px';
+				domElement.style.height = height + 'px';
+
+			};
+
+			function renderObject( object, scene, camera ) {
+
+				if ( object.isCSS2DObject ) {
+
+					_vector.setFromMatrixPosition( object.matrixWorld );
+					_vector.applyMatrix4( _viewProjectionMatrix );
+
+					const visible = ( object.visible === true ) && ( _vector.z >= - 1 && _vector.z <= 1 ) && ( object.layers.test( camera.layers ) === true );
+					object.element.style.display = ( visible === true ) ? '' : 'none';
+
+					if ( visible === true ) {
+
+						object.onBeforeRender( _this, scene, camera );
+
+						const element = object.element;
+
+						element.style.transform = 'translate(-50%,-50%) translate(' + ( _vector.x * _widthHalf + _widthHalf ) + 'px,' + ( - _vector.y * _heightHalf + _heightHalf ) + 'px)';
+
+						if ( element.parentNode !== domElement ) {
+
+							domElement.appendChild( element );
+
+						}
+
+						object.onAfterRender( _this, scene, camera );
+
+					}
+
+					const objectData = {
+						distanceToCameraSquared: getDistanceToSquared( camera, object )
+					};
+
+					cache.objects.set( object, objectData );
+
+				}
+
+				for ( let i = 0, l = object.children.length; i < l; i ++ ) {
+
+					renderObject( object.children[ i ], scene, camera );
+
+				}
+
+			}
+
+			function getDistanceToSquared( object1, object2 ) {
+
+				_a.setFromMatrixPosition( object1.matrixWorld );
+				_b.setFromMatrixPosition( object2.matrixWorld );
+
+				return _a.distanceToSquared( _b );
+
+			}
+
+			function filterAndFlatten( scene ) {
+
+				const result = [];
+
+				scene.traverse( function ( object ) {
+
+					if ( object.isCSS2DObject ) result.push( object );
+
+				} );
+
+				return result;
+
+			}
+
+			function zOrder( scene ) {
+
+				const sorted = filterAndFlatten( scene ).sort( function ( a, b ) {
+
+					if ( a.renderOrder !== b.renderOrder ) {
+
+						return b.renderOrder - a.renderOrder;
+
+					}
+
+					const distanceA = cache.objects.get( a ).distanceToCameraSquared;
+					const distanceB = cache.objects.get( b ).distanceToCameraSquared;
+
+					return distanceA - distanceB;
+
+				} );
+
+				const zMax = sorted.length;
+
+				for ( let i = 0, l = sorted.length; i < l; i ++ ) {
+
+					sorted[ i ].element.style.zIndex = zMax - i;
+
+				}
+
+			}
+
+		}
+
+	}
+
+	[new Vector3(), new Vector3(), new Vector3()];
+	function disposeMeshRecursively(mesh) {
+	    mesh.removeFromParent();
+	    if (mesh.geometry)
+	        mesh.geometry.dispose();
+	    if (mesh.material) {
+	        if (Array.isArray(mesh.material))
+	            mesh.material.forEach((mat) => mat.dispose());
+	        else
+	            mesh.material.dispose();
+	    }
+	    if (mesh.children && mesh.children.length) {
+	        mesh.children.forEach((child) => disposeMeshRecursively(child));
+	    }
+	    mesh.children.length = 0;
+	}
+
+	class SimpleDimensions {
+	    constructor(context) {
+	        this.name = "dimensions";
+	        this.dimensions = [];
+	        this.labelClassName = 'ifcjs-dimension-label';
+	        this.previewClassName = 'ifcjs-dimension-preview';
+	        // State
+	        this._enabled = false;
+	        this._visible = false;
+	        this.preview = false;
+	        this.dragging = false;
+	        this.snapDistance = 0.25;
+	        // Measures
+	        this.baseScale = new Vector3(1, 1, 1);
+	        // Materials
+	        this.lineMaterial = new LineDashedMaterial({
+	            color: 0x000000,
+	            linewidth: 2,
+	            depthTest: false,
+	            dashSize: 0.2,
+	            gapSize: 0.2
+	        });
+	        this.endpointsMaterial = new MeshBasicMaterial({ color: 0x000000, depthTest: false });
+	        // Temp variables
+	        this.startPoint = new Vector3();
+	        this.endPoint = new Vector3();
+	        this.position = new Vector2();
+	        this.rawPosition = new Vector2();
+	        this.raycaster = new Raycaster();
+	        this.context = context;
+	        this.endpoint = SimpleDimensions.getDefaultEndpointGeometry();
+	        const htmlPreview = document.createElement('div');
+	        htmlPreview.className = this.previewClassName;
+	        this.previewElement = new CSS2DObject(htmlPreview);
+	        this.previewElement.visible = false;
+	        // Mouse position
+	        const domElement = context.renderer.renderer.domElement;
+	        domElement.onmousemove = (event) => {
+	            this.rawPosition.x = event.clientX;
+	            this.rawPosition.y = event.clientY;
+	            const bounds = domElement.getBoundingClientRect();
+	            this.position.x = ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1;
+	            this.position.y = -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1;
+	        };
+	    }
+	    dispose() {
+	        this.context = null;
+	        this.dimensions.forEach((dim) => dim.dispose());
+	        this.dimensions = null;
+	        this.currentDimension = null;
+	        this.endpoint.dispose();
+	        this.endpoint = null;
+	        this.previewElement.removeFromParent();
+	        this.previewElement.element.remove();
+	        this.previewElement = null;
+	    }
+	    update(_delta) {
+	        if (this._enabled && this.preview) {
+	            const intersects = this.castRayIfc();
+	            this.previewElement.visible = !!intersects;
+	            if (!intersects)
+	                return;
+	            this.previewElement.visible = true;
+	            const closest = this.getClosestVertex(intersects);
+	            this.previewElement.visible = !!closest;
+	            if (!closest)
+	                return;
+	            this.previewElement.position.set(closest.x, closest.y, closest.z);
+	            if (this.dragging) {
+	                this.drawInProcess();
+	            }
+	        }
+	    }
+	    setArrow(height, radius) {
+	        this.endpoint = SimpleDimensions.getDefaultEndpointGeometry(height, radius);
+	    }
+	    setPreviewElement(element) {
+	        this.previewElement = new CSS2DObject(element);
+	    }
+	    get enabled() {
+	        return this._enabled;
+	    }
+	    set enabled(state) {
+	        this._enabled = state;
+	        this.previewActive = state;
+	        if (!this.visible && state) {
+	            this.visible = true;
+	        }
+	    }
+	    get previewActive() {
+	        return this.preview;
+	    }
+	    get previewObject() {
+	        return this.previewElement;
+	    }
+	    set visible(state) {
+	        this._visible = state;
+	        if (this.enabled && !state) {
+	            this.enabled = false;
+	        }
+	        this.dimensions.forEach((dim) => {
+	            dim.visibility = state;
+	        });
+	    }
+	    get visible() {
+	        return this._visible;
+	    }
+	    set previewActive(state) {
+	        var _a;
+	        this.preview = state;
+	        const scene = (_a = this.context.scene) === null || _a === void 0 ? void 0 : _a.getScene();
+	        if (!scene)
+	            throw new Error("Dimensions rely on scene to be present.");
+	        if (this.preview) {
+	            scene.add(this.previewElement);
+	        }
+	        else {
+	            scene.remove(this.previewElement);
+	        }
+	    }
+	    set dimensionsColor(color) {
+	        this.endpointsMaterial.color = color;
+	        this.lineMaterial.color = color;
+	    }
+	    set dimensionsWidth(width) {
+	        this.lineMaterial.linewidth = width;
+	    }
+	    set endpointGeometry(geometry) {
+	        this.dimensions.forEach((dim) => {
+	            dim.endpointGeometry = geometry;
+	        });
+	    }
+	    set endpointScaleFactor(factor) {
+	        IfcDimensionLine.scaleFactor = factor;
+	    }
+	    set endpointScale(scale) {
+	        this.baseScale = scale;
+	        this.dimensions.forEach((dim) => {
+	            dim.endpointScale = scale;
+	        });
+	    }
+	    create() {
+	        if (!this._enabled)
+	            return;
+	        if (!this.dragging) {
+	            this.drawStart();
+	            return;
+	        }
+	        this.drawEnd();
+	    }
+	    createInPlane(plane) {
+	        if (!this._enabled)
+	            return;
+	        if (!this.dragging) {
+	            this.drawStartInPlane(plane);
+	            return;
+	        }
+	        this.drawEnd();
+	    }
+	    delete() {
+	        if (!this._enabled || this.dimensions.length === 0)
+	            return;
+	        const boundingBoxes = this.getBoundingBoxes();
+	        const intersects = this.castRay(boundingBoxes);
+	        if (intersects.length === 0)
+	            return;
+	        const selected = this.dimensions.find((dim) => dim.boundingBox === intersects[0].object);
+	        if (!selected)
+	            return;
+	        const index = this.dimensions.indexOf(selected);
+	        this.dimensions.splice(index, 1);
+	        selected.removeFromScene();
+	    }
+	    castRay(items) {
+	        var _a;
+	        const camera = (_a = this.context.camera) === null || _a === void 0 ? void 0 : _a.getCamera();
+	        if (!camera)
+	            throw new Error("Camera required for clipper");
+	        this.raycaster.setFromCamera(this.position, camera);
+	        return this.raycaster.intersectObjects(items);
+	    }
+	    castRayIfc() {
+	        const items = this.castRay(this.context.meshes);
+	        const filtered = this.filterClippingPlanes(items);
+	        return filtered.length > 0 ? filtered[0] : null;
+	    }
+	    filterClippingPlanes(objs) {
+	        var _a;
+	        const planes = (_a = this.context.renderer) === null || _a === void 0 ? void 0 : _a.renderer.clippingPlanes;
+	        if (objs.length <= 0 || !planes || (planes === null || planes === void 0 ? void 0 : planes.length) <= 0)
+	            return objs;
+	        // const planes = this.clipper?.planes.map((p) => p.plane);
+	        return objs.filter((elem) => planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0));
+	    }
+	    deleteAll() {
+	        this.dimensions.forEach((dim) => {
+	            dim.removeFromScene();
+	        });
+	        this.dimensions = [];
+	    }
+	    cancelDrawing() {
+	        var _a;
+	        if (!this.currentDimension)
+	            return;
+	        this.dragging = false;
+	        (_a = this.currentDimension) === null || _a === void 0 ? void 0 : _a.removeFromScene();
+	        this.currentDimension = undefined;
+	    }
+	    drawStart() {
+	        this.dragging = true;
+	        const intersects = this.castRayIfc();
+	        if (!intersects)
+	            return;
+	        const found = this.getClosestVertex(intersects);
+	        if (!found)
+	            return;
+	        this.startPoint = found;
+	    }
+	    drawStartInPlane(plane) {
+	        this.dragging = true;
+	        const intersects = this.castRay([plane]);
+	        if (!intersects || intersects.length < 1)
+	            return;
+	        this.startPoint = intersects[0].point;
+	    }
+	    drawInProcess() {
+	        const intersects = this.castRayIfc();
+	        if (!intersects)
+	            return;
+	        const found = this.getClosestVertex(intersects);
+	        if (!found)
+	            return;
+	        this.endPoint = found;
+	        if (!this.currentDimension)
+	            this.currentDimension = this.drawDimension();
+	        this.currentDimension.endPoint = this.endPoint;
+	    }
+	    drawEnd() {
+	        if (!this.currentDimension)
+	            return;
+	        this.currentDimension.createBoundingBox();
+	        this.dimensions.push(this.currentDimension);
+	        this.currentDimension = undefined;
+	        this.dragging = false;
+	    }
+	    get getDimensionsLines() {
+	        return this.dimensions;
+	    }
+	    drawDimension() {
+	        return new IfcDimensionLine(this.context, this.startPoint, this.endPoint, this.lineMaterial, this.endpointsMaterial, this.endpoint, this.labelClassName, this.baseScale);
+	    }
+	    getBoundingBoxes() {
+	        return this.dimensions
+	            .map((dim) => dim.boundingBox)
+	            .filter((box) => box !== undefined);
+	    }
+	    static getDefaultEndpointGeometry(height = 0.02, radius = 0.05) {
+	        const coneGeometry = new ConeGeometry(radius, height);
+	        coneGeometry.translate(0, -height / 2, 0);
+	        coneGeometry.rotateX(-Math.PI / 2);
+	        return coneGeometry;
+	    }
+	    getClosestVertex(intersects) {
+	        let closestVertex = new Vector3();
+	        let vertexFound = false;
+	        let closestDistance = Number.MAX_SAFE_INTEGER;
+	        const vertices = this.getVertices(intersects);
+	        vertices === null || vertices === void 0 ? void 0 : vertices.forEach((vertex) => {
+	            if (!vertex)
+	                return;
+	            const distance = intersects.point.distanceTo(vertex);
+	            if (distance > closestDistance || distance > this.snapDistance)
+	                return;
+	            vertexFound = true;
+	            closestVertex = vertex;
+	            closestDistance = intersects.point.distanceTo(vertex);
+	        });
+	        return vertexFound ? closestVertex : intersects.point;
+	    }
+	    getVertices(intersects) {
+	        const mesh = intersects.object;
+	        if (!intersects.face || !mesh)
+	            return null;
+	        const geom = mesh.geometry;
+	        return [
+	            this.getVertex(intersects.face.a, geom),
+	            this.getVertex(intersects.face.b, geom),
+	            this.getVertex(intersects.face.c, geom)
+	        ];
+	    }
+	    getVertex(index, geom) {
+	        if (index === undefined)
+	            return null;
+	        const vertices = geom.attributes.position;
+	        return new Vector3(vertices.getX(index), vertices.getY(index), vertices.getZ(index));
+	    }
+	}
+	class IfcDimensionLine {
+	    constructor(context, start, end, lineMaterial, endpointMaterial, endpointGeometry, className, endpointScale) {
+	        // Elements
+	        this.root = new Group();
+	        this.endpointMeshes = [];
+	        this.scale = new Vector3(1, 1, 1);
+	        this.boundingSize = 0.05;
+	        this.context = context;
+	        this.labelClassName = className;
+	        this.start = start;
+	        this.end = end;
+	        this.scale = endpointScale;
+	        this.lineMaterial = lineMaterial;
+	        this.endpointMaterial = endpointMaterial;
+	        this.length = this.getLength();
+	        this.center = this.getCenter();
+	        this.axis = new BufferGeometry().setFromPoints([start, end]);
+	        this.line = new Line(this.axis, this.lineMaterial);
+	        this.root.add(this.line);
+	        this.endpoint = endpointGeometry;
+	        this.addEndpointMeshes();
+	        this.textLabel = this.newText();
+	        this.root.renderOrder = 2;
+	        this.context.scene.getScene().add(this.root);
+	        this.camera = this.context.camera.getCamera();
+	        // this.context.ifcCamera.onChange.on(() => this.rescaleObjectsToCameraPosition());
+	        this.rescaleObjectsToCameraPosition();
+	    }
+	    dispose() {
+	        this.removeFromScene();
+	        this.context = null;
+	        disposeMeshRecursively(this.root);
+	        this.root = null;
+	        disposeMeshRecursively(this.line);
+	        this.line = null;
+	        this.endpointMeshes.forEach((mesh) => disposeMeshRecursively(mesh));
+	        this.endpointMeshes.length = 0;
+	        this.axis.dispose();
+	        this.axis = null;
+	        this.endpoint.dispose();
+	        this.endpoint = null;
+	        this.textLabel.removeFromParent();
+	        this.textLabel.element.remove();
+	        this.textLabel = null;
+	        this.lineMaterial.dispose();
+	        this.lineMaterial = null;
+	        this.endpointMaterial.dispose();
+	        this.endpointMaterial = null;
+	        if (this.boundingMesh) {
+	            disposeMeshRecursively(this.boundingMesh);
+	            this.boundingMesh = null;
+	        }
+	    }
+	    get boundingBox() {
+	        return this.boundingMesh;
+	    }
+	    get text() {
+	        return this.textLabel;
+	    }
+	    set dimensionColor(dimensionColor) {
+	        this.endpointMaterial.color = dimensionColor;
+	        this.lineMaterial.color = dimensionColor;
+	    }
+	    set visibility(visible) {
+	        this.root.visible = visible;
+	        this.textLabel.visible = visible;
+	    }
+	    set endpointGeometry(geometry) {
+	        this.endpointMeshes.forEach((mesh) => this.root.remove(mesh));
+	        this.endpointMeshes = [];
+	        this.endpoint = geometry;
+	        this.addEndpointMeshes();
+	    }
+	    set endpointScale(scale) {
+	        this.scale = scale;
+	        this.endpointMeshes.forEach((mesh) => mesh.scale.set(scale.x, scale.y, scale.z));
+	    }
+	    set endPoint(point) {
+	        this.end = point;
+	        if (!this.axis)
+	            return;
+	        const position = this.axis.attributes.position;
+	        if (!position)
+	            return;
+	        position.setXYZ(1, point.x, point.y, point.z);
+	        position.needsUpdate = true;
+	        this.endpointMeshes[1].position.set(point.x, point.y, point.z);
+	        this.endpointMeshes[1].lookAt(this.start);
+	        this.endpointMeshes[0].lookAt(this.end);
+	        this.length = this.getLength();
+	        this.textLabel.element.textContent = this.getTextContent();
+	        this.center = this.getCenter();
+	        this.textLabel.position.set(this.center.x, this.center.y, this.center.z);
+	        this.line.computeLineDistances();
+	    }
+	    removeFromScene() {
+	        this.context.scene.getScene().remove(this.root);
+	        this.root.remove(this.textLabel);
+	    }
+	    createBoundingBox() {
+	        this.boundingMesh = this.newBoundingBox();
+	        this.setupBoundingBox(this.end);
+	    }
+	    rescaleObjectsToCameraPosition() {
+	        this.endpointMeshes.forEach((mesh) => this.rescaleMesh(mesh, IfcDimensionLine.scaleFactor));
+	        if (this.boundingMesh) {
+	            this.rescaleMesh(this.boundingMesh, this.boundingSize, true, true, false);
+	        }
+	    }
+	    rescaleMesh(mesh, scalefactor = 1, x = true, y = true, z = true) {
+	        let scale = new Vector3().subVectors(mesh.position, this.camera.position).length();
+	        scale *= scalefactor;
+	        const scaleX = x ? scale : 1;
+	        const scaleY = y ? scale : 1;
+	        const scaleZ = z ? scale : 1;
+	        mesh.scale.set(scaleX, scaleY, scaleZ);
+	    }
+	    addEndpointMeshes() {
+	        this.newEndpointMesh(this.start, this.end);
+	        this.newEndpointMesh(this.end, this.start);
+	    }
+	    newEndpointMesh(position, direction) {
+	        const mesh = new Mesh(this.endpoint, this.endpointMaterial);
+	        mesh.position.set(position.x, position.y, position.z);
+	        mesh.scale.set(this.scale.x, this.scale.y, this.scale.z);
+	        mesh.lookAt(direction);
+	        this.endpointMeshes.push(mesh);
+	        this.root.add(mesh);
+	    }
+	    newText() {
+	        const htmlText = document.createElement('div');
+	        htmlText.className = this.labelClassName;
+	        htmlText.textContent = this.getTextContent();
+	        const label = new CSS2DObject(htmlText);
+	        label.position.set(this.center.x, this.center.y, this.center.z);
+	        this.root.add(label);
+	        return label;
+	    }
+	    getTextContent() {
+	        return `${this.length / IfcDimensionLine.scale} ${IfcDimensionLine.units}`;
+	    }
+	    newBoundingBox() {
+	        const box = new BoxGeometry(1, 1, this.length);
+	        return new Mesh(box);
+	    }
+	    setupBoundingBox(end) {
+	        if (!this.boundingMesh)
+	            return;
+	        this.boundingMesh.position.set(this.center.x, this.center.y, this.center.z);
+	        this.boundingMesh.lookAt(end);
+	        this.boundingMesh.visible = false;
+	        this.root.add(this.boundingMesh);
+	    }
+	    getLength() {
+	        return parseFloat(this.start.distanceTo(this.end).toFixed(2));
+	    }
+	    getCenter() {
+	        let dir = this.end.clone().sub(this.start);
+	        const len = dir.length() * 0.5;
+	        dir = dir.normalize().multiplyScalar(len);
+	        return this.start.clone().add(dir);
+	    }
+	}
+	IfcDimensionLine.scaleFactor = 0.1;
+	IfcDimensionLine.scale = 1;
+	IfcDimensionLine.units = 'm';
+
+	class SimpleGrid {
+	    constructor(components) {
+	        var _a, _b;
+	        this.grid = new GridHelper(50, 50);
+	        (_b = (_a = components.scene) === null || _a === void 0 ? void 0 : _a.getScene()) === null || _b === void 0 ? void 0 : _b.add(this.grid);
+	    }
+	    set visible(visible) {
+	        this.grid.visible = visible;
+	    }
+	    get visible() {
+	        return this.grid.visible;
+	    }
+	    update(_delta) {
+	    }
+	}
+
+	class SimpleRenderer {
+	    constructor(components, container) {
+	        this.renderer2D = new CSS2DRenderer();
+	        this.blocked = false;
+	        this.onStartRender = new LiteEvent();
+	        this.onFinishRender = new LiteEvent();
+	        this._enabled = true;
+	        this.components = components;
+	        this.container = container;
+	        this.renderer = new WebGLRenderer({
+	            antialias: true
+	        });
+	        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+	        this.setupRenderers();
+	        this.adjustRendererSize();
+	    }
+	    addClippingPlane(plane) {
+	        this.renderer.clippingPlanes.push(plane);
+	    }
+	    removeClippingPlane(plane) {
+	        const index = this.renderer.clippingPlanes.indexOf(plane);
+	        if (index > -1) {
+	            this.renderer.clippingPlanes.splice(index, 1);
+	        }
+	    }
+	    dispose() {
+	        var _a, _b;
+	        this.renderer.domElement.remove();
+	        this.renderer.dispose();
+	        this.renderer = null;
+	        this.renderer2D = null;
+	        this.container = null;
+	        (_a = this.tempRenderer) === null || _a === void 0 ? void 0 : _a.dispose();
+	        (_b = this.tempCanvas) === null || _b === void 0 ? void 0 : _b.remove();
+	    }
+	    update(_delta) {
+	        var _a, _b;
+	        if (this.blocked)
+	            return;
+	        const scene = (_a = this.components.scene) === null || _a === void 0 ? void 0 : _a.getScene();
+	        const camera = (_b = this.components.camera) === null || _b === void 0 ? void 0 : _b.getCamera();
+	        if (!scene || !camera)
+	            return;
+	        this.onStartRender.trigger();
+	        this.renderer.render(scene, camera);
+	        this.renderer2D.render(scene, camera);
+	        this.onFinishRender.trigger();
+	    }
+	    getSize() {
+	        return new Vector2(this.renderer.domElement.clientWidth, this.renderer.domElement.clientHeight);
+	    }
+	    adjustRendererSize() {
+	        const width = this.container.clientWidth;
+	        const height = this.container.clientHeight;
+	        this.renderer.setSize(width, height);
+	        this.renderer2D.setSize(width, height);
+	    }
+	    /*newScreenshot(camera?: THREE.Camera, dimensions?: THREE.Vector2) {
+	      const previousDimensions = this.getSize();
+	  
+	      const domElement = this.renderer.domElement;
+	      const tempCanvas = domElement.cloneNode(true) as HTMLCanvasElement;
+	  
+	      // Using a new renderer to make screenshots without updating what the user sees in the canvas
+	      if (!this.tempRenderer) {
+	        this.tempRenderer = new THREE.WebGLRenderer({ canvas: tempCanvas, antialias: true });
+	        this.tempRenderer.localClippingEnabled = true;
+	      }
+	  
+	      if (dimensions) {
+	        this.tempRenderer.setSize(dimensions.x, dimensions.y);
+	        this.context.ifcCamera.updateAspect(dimensions);
+	      }
+	  
+	      // todo add this later to have a centered screenshot
+	      // await this.context.getIfcCamera().currentNavMode.fitModelToFrame();
+	  
+	      const scene = this.context.getScene();
+	      const cameraToRender = camera || this.context.getCamera();
+	      this.tempRenderer.render(scene, cameraToRender);
+	      const result = this.tempRenderer.domElement.toDataURL();
+	  
+	      if (dimensions) this.context.ifcCamera.updateAspect(previousDimensions);
+	  
+	      return result;
+	    }*/
+	    setupRenderers() {
+	        this.renderer.localClippingEnabled = true;
+	        this.container.appendChild(this.renderer.domElement);
+	        this.renderer2D.domElement.style.position = 'absolute';
+	        this.renderer2D.domElement.style.top = '0px';
+	        this.renderer2D.domElement.style.pointerEvents = 'none';
+	        this.container.appendChild(this.renderer2D.domElement);
+	    }
+	    get enabled() {
+	        return this._enabled;
+	    }
+	    set enabled(enabled) {
+	        this._enabled = enabled;
+	    }
+	}
+
+	class SimpleScene {
+	    constructor(_components) {
+	        this.scene = new Scene();
+	        this.scene.background = new Color(0xcccccc);
+	    }
+	    update(_delta) {
+	    }
+	    getScene() {
+	        return this.scene;
 	    }
 	}
 
@@ -33690,487 +34171,6 @@
 	}
 	SimplePlane.planeMaterial = SimplePlane.getPlaneMaterial();
 	SimplePlane.hiddenMaterial = SimplePlane.getHiddenMaterial();
-
-	[new Vector3(), new Vector3(), new Vector3()];
-	function disposeMeshRecursively(mesh) {
-	    mesh.removeFromParent();
-	    if (mesh.geometry)
-	        mesh.geometry.dispose();
-	    if (mesh.material) {
-	        if (Array.isArray(mesh.material))
-	            mesh.material.forEach((mat) => mat.dispose());
-	        else
-	            mesh.material.dispose();
-	    }
-	    if (mesh.children && mesh.children.length) {
-	        mesh.children.forEach((child) => disposeMeshRecursively(child));
-	    }
-	    mesh.children.length = 0;
-	}
-
-	class SimpleDimensions {
-	    constructor(context) {
-	        this.name = "dimensions";
-	        this.dimensions = [];
-	        this.labelClassName = 'ifcjs-dimension-label';
-	        this.previewClassName = 'ifcjs-dimension-preview';
-	        // State
-	        this._enabled = false;
-	        this._visible = false;
-	        this.preview = false;
-	        this.dragging = false;
-	        this.snapDistance = 0.25;
-	        // Measures
-	        this.baseScale = new Vector3(1, 1, 1);
-	        // Materials
-	        this.lineMaterial = new LineDashedMaterial({
-	            color: 0x000000,
-	            linewidth: 2,
-	            depthTest: false,
-	            dashSize: 0.2,
-	            gapSize: 0.2
-	        });
-	        this.endpointsMaterial = new MeshBasicMaterial({ color: 0x000000, depthTest: false });
-	        // Temp variables
-	        this.startPoint = new Vector3();
-	        this.endPoint = new Vector3();
-	        this.position = new Vector2();
-	        this.rawPosition = new Vector2();
-	        this.raycaster = new Raycaster();
-	        this.context = context;
-	        this.endpoint = SimpleDimensions.getDefaultEndpointGeometry();
-	        const htmlPreview = document.createElement('div');
-	        htmlPreview.className = this.previewClassName;
-	        this.previewElement = new CSS2DObject(htmlPreview);
-	        this.previewElement.visible = false;
-	        // Mouse position
-	        const domElement = context.renderer.renderer.domElement;
-	        domElement.onmousemove = (event) => {
-	            this.rawPosition.x = event.clientX;
-	            this.rawPosition.y = event.clientY;
-	            const bounds = domElement.getBoundingClientRect();
-	            this.position.x = ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1;
-	            this.position.y = -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1;
-	        };
-	    }
-	    dispose() {
-	        this.context = null;
-	        this.dimensions.forEach((dim) => dim.dispose());
-	        this.dimensions = null;
-	        this.currentDimension = null;
-	        this.endpoint.dispose();
-	        this.endpoint = null;
-	        this.previewElement.removeFromParent();
-	        this.previewElement.element.remove();
-	        this.previewElement = null;
-	    }
-	    update(_delta) {
-	        if (this._enabled && this.preview) {
-	            const intersects = this.castRayIfc();
-	            this.previewElement.visible = !!intersects;
-	            if (!intersects)
-	                return;
-	            this.previewElement.visible = true;
-	            const closest = this.getClosestVertex(intersects);
-	            this.previewElement.visible = !!closest;
-	            if (!closest)
-	                return;
-	            this.previewElement.position.set(closest.x, closest.y, closest.z);
-	            if (this.dragging) {
-	                this.drawInProcess();
-	            }
-	        }
-	    }
-	    setArrow(height, radius) {
-	        this.endpoint = SimpleDimensions.getDefaultEndpointGeometry(height, radius);
-	    }
-	    setPreviewElement(element) {
-	        this.previewElement = new CSS2DObject(element);
-	    }
-	    get enabled() {
-	        return this._enabled;
-	    }
-	    set enabled(state) {
-	        this._enabled = state;
-	        this.previewActive = state;
-	        if (!this.visible && state) {
-	            this.visible = true;
-	        }
-	    }
-	    get previewActive() {
-	        return this.preview;
-	    }
-	    get previewObject() {
-	        return this.previewElement;
-	    }
-	    set visible(state) {
-	        this._visible = state;
-	        if (this.enabled && !state) {
-	            this.enabled = false;
-	        }
-	        this.dimensions.forEach((dim) => {
-	            dim.visibility = state;
-	        });
-	    }
-	    get visible() {
-	        return this._visible;
-	    }
-	    set previewActive(state) {
-	        var _a;
-	        this.preview = state;
-	        const scene = (_a = this.context.scene) === null || _a === void 0 ? void 0 : _a.getScene();
-	        if (!scene)
-	            throw new Error("Dimensions rely on scene to be present.");
-	        if (this.preview) {
-	            scene.add(this.previewElement);
-	        }
-	        else {
-	            scene.remove(this.previewElement);
-	        }
-	    }
-	    set dimensionsColor(color) {
-	        this.endpointsMaterial.color = color;
-	        this.lineMaterial.color = color;
-	    }
-	    set dimensionsWidth(width) {
-	        this.lineMaterial.linewidth = width;
-	    }
-	    set endpointGeometry(geometry) {
-	        this.dimensions.forEach((dim) => {
-	            dim.endpointGeometry = geometry;
-	        });
-	    }
-	    set endpointScaleFactor(factor) {
-	        IfcDimensionLine.scaleFactor = factor;
-	    }
-	    set endpointScale(scale) {
-	        this.baseScale = scale;
-	        this.dimensions.forEach((dim) => {
-	            dim.endpointScale = scale;
-	        });
-	    }
-	    create() {
-	        if (!this._enabled)
-	            return;
-	        if (!this.dragging) {
-	            this.drawStart();
-	            return;
-	        }
-	        this.drawEnd();
-	    }
-	    createInPlane(plane) {
-	        if (!this._enabled)
-	            return;
-	        if (!this.dragging) {
-	            this.drawStartInPlane(plane);
-	            return;
-	        }
-	        this.drawEnd();
-	    }
-	    delete() {
-	        if (!this._enabled || this.dimensions.length === 0)
-	            return;
-	        const boundingBoxes = this.getBoundingBoxes();
-	        const intersects = this.castRay(boundingBoxes);
-	        if (intersects.length === 0)
-	            return;
-	        const selected = this.dimensions.find((dim) => dim.boundingBox === intersects[0].object);
-	        if (!selected)
-	            return;
-	        const index = this.dimensions.indexOf(selected);
-	        this.dimensions.splice(index, 1);
-	        selected.removeFromScene();
-	    }
-	    castRay(items) {
-	        var _a;
-	        const camera = (_a = this.context.camera) === null || _a === void 0 ? void 0 : _a.getCamera();
-	        if (!camera)
-	            throw new Error("Camera required for clipper");
-	        this.raycaster.setFromCamera(this.position, camera);
-	        return this.raycaster.intersectObjects(items);
-	    }
-	    castRayIfc() {
-	        const items = this.castRay(this.context.meshes);
-	        const filtered = this.filterClippingPlanes(items);
-	        return filtered.length > 0 ? filtered[0] : null;
-	    }
-	    filterClippingPlanes(objs) {
-	        var _a;
-	        const planes = (_a = this.context.renderer) === null || _a === void 0 ? void 0 : _a.renderer.clippingPlanes;
-	        if (objs.length <= 0 || !planes || (planes === null || planes === void 0 ? void 0 : planes.length) <= 0)
-	            return objs;
-	        // const planes = this.clipper?.planes.map((p) => p.plane);
-	        return objs.filter((elem) => planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0));
-	    }
-	    deleteAll() {
-	        this.dimensions.forEach((dim) => {
-	            dim.removeFromScene();
-	        });
-	        this.dimensions = [];
-	    }
-	    cancelDrawing() {
-	        var _a;
-	        if (!this.currentDimension)
-	            return;
-	        this.dragging = false;
-	        (_a = this.currentDimension) === null || _a === void 0 ? void 0 : _a.removeFromScene();
-	        this.currentDimension = undefined;
-	    }
-	    drawStart() {
-	        this.dragging = true;
-	        const intersects = this.castRayIfc();
-	        if (!intersects)
-	            return;
-	        const found = this.getClosestVertex(intersects);
-	        if (!found)
-	            return;
-	        this.startPoint = found;
-	    }
-	    drawStartInPlane(plane) {
-	        this.dragging = true;
-	        const intersects = this.castRay([plane]);
-	        if (!intersects || intersects.length < 1)
-	            return;
-	        this.startPoint = intersects[0].point;
-	    }
-	    drawInProcess() {
-	        const intersects = this.castRayIfc();
-	        if (!intersects)
-	            return;
-	        const found = this.getClosestVertex(intersects);
-	        if (!found)
-	            return;
-	        this.endPoint = found;
-	        if (!this.currentDimension)
-	            this.currentDimension = this.drawDimension();
-	        this.currentDimension.endPoint = this.endPoint;
-	    }
-	    drawEnd() {
-	        if (!this.currentDimension)
-	            return;
-	        this.currentDimension.createBoundingBox();
-	        this.dimensions.push(this.currentDimension);
-	        this.currentDimension = undefined;
-	        this.dragging = false;
-	    }
-	    get getDimensionsLines() {
-	        return this.dimensions;
-	    }
-	    drawDimension() {
-	        return new IfcDimensionLine(this.context, this.startPoint, this.endPoint, this.lineMaterial, this.endpointsMaterial, this.endpoint, this.labelClassName, this.baseScale);
-	    }
-	    getBoundingBoxes() {
-	        return this.dimensions
-	            .map((dim) => dim.boundingBox)
-	            .filter((box) => box !== undefined);
-	    }
-	    static getDefaultEndpointGeometry(height = 0.02, radius = 0.05) {
-	        const coneGeometry = new ConeGeometry(radius, height);
-	        coneGeometry.translate(0, -height / 2, 0);
-	        coneGeometry.rotateX(-Math.PI / 2);
-	        return coneGeometry;
-	    }
-	    getClosestVertex(intersects) {
-	        let closestVertex = new Vector3();
-	        let vertexFound = false;
-	        let closestDistance = Number.MAX_SAFE_INTEGER;
-	        const vertices = this.getVertices(intersects);
-	        vertices === null || vertices === void 0 ? void 0 : vertices.forEach((vertex) => {
-	            if (!vertex)
-	                return;
-	            const distance = intersects.point.distanceTo(vertex);
-	            if (distance > closestDistance || distance > this.snapDistance)
-	                return;
-	            vertexFound = true;
-	            closestVertex = vertex;
-	            closestDistance = intersects.point.distanceTo(vertex);
-	        });
-	        return vertexFound ? closestVertex : intersects.point;
-	    }
-	    getVertices(intersects) {
-	        const mesh = intersects.object;
-	        if (!intersects.face || !mesh)
-	            return null;
-	        const geom = mesh.geometry;
-	        return [
-	            this.getVertex(intersects.face.a, geom),
-	            this.getVertex(intersects.face.b, geom),
-	            this.getVertex(intersects.face.c, geom)
-	        ];
-	    }
-	    getVertex(index, geom) {
-	        if (index === undefined)
-	            return null;
-	        const vertices = geom.attributes.position;
-	        return new Vector3(vertices.getX(index), vertices.getY(index), vertices.getZ(index));
-	    }
-	}
-	class IfcDimensionLine {
-	    constructor(context, start, end, lineMaterial, endpointMaterial, endpointGeometry, className, endpointScale) {
-	        // Elements
-	        this.root = new Group();
-	        this.endpointMeshes = [];
-	        this.scale = new Vector3(1, 1, 1);
-	        this.boundingSize = 0.05;
-	        this.context = context;
-	        this.labelClassName = className;
-	        this.start = start;
-	        this.end = end;
-	        this.scale = endpointScale;
-	        this.lineMaterial = lineMaterial;
-	        this.endpointMaterial = endpointMaterial;
-	        this.length = this.getLength();
-	        this.center = this.getCenter();
-	        this.axis = new BufferGeometry().setFromPoints([start, end]);
-	        this.line = new Line(this.axis, this.lineMaterial);
-	        this.root.add(this.line);
-	        this.endpoint = endpointGeometry;
-	        this.addEndpointMeshes();
-	        this.textLabel = this.newText();
-	        this.root.renderOrder = 2;
-	        this.context.scene.getScene().add(this.root);
-	        this.camera = this.context.camera.getCamera();
-	        // this.context.ifcCamera.onChange.on(() => this.rescaleObjectsToCameraPosition());
-	        this.rescaleObjectsToCameraPosition();
-	    }
-	    dispose() {
-	        this.removeFromScene();
-	        this.context = null;
-	        disposeMeshRecursively(this.root);
-	        this.root = null;
-	        disposeMeshRecursively(this.line);
-	        this.line = null;
-	        this.endpointMeshes.forEach((mesh) => disposeMeshRecursively(mesh));
-	        this.endpointMeshes.length = 0;
-	        this.axis.dispose();
-	        this.axis = null;
-	        this.endpoint.dispose();
-	        this.endpoint = null;
-	        this.textLabel.removeFromParent();
-	        this.textLabel.element.remove();
-	        this.textLabel = null;
-	        this.lineMaterial.dispose();
-	        this.lineMaterial = null;
-	        this.endpointMaterial.dispose();
-	        this.endpointMaterial = null;
-	        if (this.boundingMesh) {
-	            disposeMeshRecursively(this.boundingMesh);
-	            this.boundingMesh = null;
-	        }
-	    }
-	    get boundingBox() {
-	        return this.boundingMesh;
-	    }
-	    get text() {
-	        return this.textLabel;
-	    }
-	    set dimensionColor(dimensionColor) {
-	        this.endpointMaterial.color = dimensionColor;
-	        this.lineMaterial.color = dimensionColor;
-	    }
-	    set visibility(visible) {
-	        this.root.visible = visible;
-	        this.textLabel.visible = visible;
-	    }
-	    set endpointGeometry(geometry) {
-	        this.endpointMeshes.forEach((mesh) => this.root.remove(mesh));
-	        this.endpointMeshes = [];
-	        this.endpoint = geometry;
-	        this.addEndpointMeshes();
-	    }
-	    set endpointScale(scale) {
-	        this.scale = scale;
-	        this.endpointMeshes.forEach((mesh) => mesh.scale.set(scale.x, scale.y, scale.z));
-	    }
-	    set endPoint(point) {
-	        this.end = point;
-	        if (!this.axis)
-	            return;
-	        const position = this.axis.attributes.position;
-	        if (!position)
-	            return;
-	        position.setXYZ(1, point.x, point.y, point.z);
-	        position.needsUpdate = true;
-	        this.endpointMeshes[1].position.set(point.x, point.y, point.z);
-	        this.endpointMeshes[1].lookAt(this.start);
-	        this.endpointMeshes[0].lookAt(this.end);
-	        this.length = this.getLength();
-	        this.textLabel.element.textContent = this.getTextContent();
-	        this.center = this.getCenter();
-	        this.textLabel.position.set(this.center.x, this.center.y, this.center.z);
-	        this.line.computeLineDistances();
-	    }
-	    removeFromScene() {
-	        this.context.scene.getScene().remove(this.root);
-	        this.root.remove(this.textLabel);
-	    }
-	    createBoundingBox() {
-	        this.boundingMesh = this.newBoundingBox();
-	        this.setupBoundingBox(this.end);
-	    }
-	    rescaleObjectsToCameraPosition() {
-	        this.endpointMeshes.forEach((mesh) => this.rescaleMesh(mesh, IfcDimensionLine.scaleFactor));
-	        if (this.boundingMesh) {
-	            this.rescaleMesh(this.boundingMesh, this.boundingSize, true, true, false);
-	        }
-	    }
-	    rescaleMesh(mesh, scalefactor = 1, x = true, y = true, z = true) {
-	        let scale = new Vector3().subVectors(mesh.position, this.camera.position).length();
-	        scale *= scalefactor;
-	        const scaleX = x ? scale : 1;
-	        const scaleY = y ? scale : 1;
-	        const scaleZ = z ? scale : 1;
-	        mesh.scale.set(scaleX, scaleY, scaleZ);
-	    }
-	    addEndpointMeshes() {
-	        this.newEndpointMesh(this.start, this.end);
-	        this.newEndpointMesh(this.end, this.start);
-	    }
-	    newEndpointMesh(position, direction) {
-	        const mesh = new Mesh(this.endpoint, this.endpointMaterial);
-	        mesh.position.set(position.x, position.y, position.z);
-	        mesh.scale.set(this.scale.x, this.scale.y, this.scale.z);
-	        mesh.lookAt(direction);
-	        this.endpointMeshes.push(mesh);
-	        this.root.add(mesh);
-	    }
-	    newText() {
-	        const htmlText = document.createElement('div');
-	        htmlText.className = this.labelClassName;
-	        htmlText.textContent = this.getTextContent();
-	        const label = new CSS2DObject(htmlText);
-	        label.position.set(this.center.x, this.center.y, this.center.z);
-	        this.root.add(label);
-	        return label;
-	    }
-	    getTextContent() {
-	        return `${this.length / IfcDimensionLine.scale} ${IfcDimensionLine.units}`;
-	    }
-	    newBoundingBox() {
-	        const box = new BoxGeometry(1, 1, this.length);
-	        return new Mesh(box);
-	    }
-	    setupBoundingBox(end) {
-	        if (!this.boundingMesh)
-	            return;
-	        this.boundingMesh.position.set(this.center.x, this.center.y, this.center.z);
-	        this.boundingMesh.lookAt(end);
-	        this.boundingMesh.visible = false;
-	        this.root.add(this.boundingMesh);
-	    }
-	    getLength() {
-	        return parseFloat(this.start.distanceTo(this.end).toFixed(2));
-	    }
-	    getCenter() {
-	        let dir = this.end.clone().sub(this.start);
-	        const len = dir.length() * 0.5;
-	        dir = dir.normalize().multiplyScalar(len);
-	        return this.start.clone().add(dir);
-	    }
-	}
-	IfcDimensionLine.scaleFactor = 0.1;
-	IfcDimensionLine.scale = 1;
-	IfcDimensionLine.units = 'm';
 
 	const container = document.getElementById('viewer-container');
 
