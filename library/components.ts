@@ -1,10 +1,11 @@
 import {
   CameraComponent,
-  isEnableable, isHideable,
+  isEnableable,
+  isHideable,
   RendererComponent,
   SceneComponent,
   ToolComponent
-} from "./core/base-types";
+} from "./core";
 import * as THREE from "three";
 
 export class Components {

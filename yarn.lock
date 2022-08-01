@@ -122,12 +122,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/three@npm:^0.141.0":
-  version: 0.141.0
-  resolution: "@types/three@npm:0.141.0"
+"@types/three@npm:^0.143.0":
+  version: 0.143.0
+  resolution: "@types/three@npm:0.143.0"
   dependencies:
     "@types/webxr": "*"
-  checksum: b4d1fd19eec01a15374a9e0a181207f0b2a27df881f3cfc63ce167b36b214c6926d80ac0eeb80c365832f69e7180db514a859808150ece1c1503a4eb58d4ac1e
+  checksum: 1e4557a844fac4efe6d8af90960322f50f1d26f6394c033bea8868519ce89f36e3b03ce85d2b7320868f11a46b3fe5bd6178e89e750ccd50e68fb5806af58588
   languageName: node
   linkType: hard
 
@@ -1265,9 +1265,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "openbim-components@workspace:library"
   dependencies:
-    "@types/three": ^0.141.0
-    three: ^0.142.0
+    "@types/three": ^0.143.0
     typescript: ^4.7.4
+  peerDependencies:
+    three: ^0.143.0
   languageName: unknown
   linkType: soft
 
@@ -1734,7 +1735,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"three@npm:0.142.0, three@npm:^0.142.0":
+"three@npm:0.142.0":
   version: 0.142.0
   resolution: "three@npm:0.142.0"
   checksum: b920987cab222bea5fd657a498f8203546c6b613cee01d2e1a355c7e044204bbff6ef051641b026743a6d3d5261a988c84285039a94e4c94a959f1b3789ac682

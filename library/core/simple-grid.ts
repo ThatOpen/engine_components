@@ -1,8 +1,10 @@
-import {ComponentBase, IHideable} from "./base-types";
+import { IHideable, ToolComponent} from "./base-types";
 import {Components} from "../components";
 import * as THREE from "three";
 
-export class SimpleGrid implements ComponentBase, IHideable {
+export class SimpleGrid implements ToolComponent, IHideable {
+
+  public readonly name = "grid";
 
   private readonly grid: THREE.GridHelper;
 
