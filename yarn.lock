@@ -1724,6 +1724,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"bim-fragment@npm:latest":
+  version: 0.0.6
+  resolution: "bim-fragment@npm:0.0.6"
+  dependencies:
+    three-mesh-bvh: ^0.5.14
+  peerDependencies:
+    three: ^0.135.0
+  checksum: 35baf4b3f16e7ff1edfeafece2e607b51555a9c2c5dee30c164e055fe617e862a15f40a5bfbc9e811f1987e904a3bd25bb51b8dcbc9792917d04b985831ff55b
+  languageName: node
+  linkType: hard
+
 "boxen@npm:1.3.0":
   version: 1.3.0
   resolution: "boxen@npm:1.3.0"
@@ -3248,6 +3259,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fragment@workspace:examples/fragment":
+  version: 0.0.0-use.local
+  resolution: "fragment@workspace:examples/fragment"
+  dependencies:
+    "@rollup/plugin-commonjs": ^19.0.0
+    "@rollup/plugin-node-resolve": ^13.0.0
+    "@types/three": ^0.134.0
+    openbim-components: 0.0.1
+    rollup: ^2.47.0
+    serve: ^11.3.2
+    stats.js: 0.17.0
+    three: 0.135
+    three-mesh-bvh: ^0.5.11
+    unzipit: ^1.4.0
+  languageName: unknown
+  linkType: soft
+
 "fs-minipass@npm:^2.0.0, fs-minipass@npm:^2.1.0":
   version: 2.1.0
   resolution: "fs-minipass@npm:2.1.0"
@@ -3629,8 +3657,9 @@ __metadata:
     rollup: ^2.47.0
     serve: ^11.3.2
     stats.js: 0.17.0
-    three: 0.142.0
+    three: 0.135
     three-mesh-bvh: ^0.5.11
+    unzipit: ^1.4.0
   languageName: unknown
   linkType: soft
 
@@ -5632,6 +5661,7 @@ __metadata:
     "@types/three": ^0.134.0
     "@typescript-eslint/eslint-plugin": ^4.27.0
     "@typescript-eslint/parser": ^4.27.0
+    bim-fragment: latest
     cpy-cli: ^3.1.1
     eslint: ^7.28.0
     eslint-config-airbnb-base: ^14.2.1
@@ -5640,11 +5670,11 @@ __metadata:
     eslint-plugin-prettier: ^3.4.0
     jest: ^27.0.4
     prettier: ^2.3.1
+    three: 0.135
     ts-jest: ^27.0.3
     ts-node: ^10.0.0
     typescript: ^4.3.2
-  peerDependencies:
-    three: ^0.143.0
+    unzipit: ^1.4.0
   languageName: unknown
   linkType: soft
 
@@ -7021,10 +7051,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"three@npm:0.142.0":
-  version: 0.142.0
-  resolution: "three@npm:0.142.0"
-  checksum: b920987cab222bea5fd657a498f8203546c6b613cee01d2e1a355c7e044204bbff6ef051641b026743a6d3d5261a988c84285039a94e4c94a959f1b3789ac682
+"three-mesh-bvh@npm:^0.5.14":
+  version: 0.5.15
+  resolution: "three-mesh-bvh@npm:0.5.15"
+  peerDependencies:
+    three: ">= 0.123.0"
+  checksum: 33e882af867dbfcc767c944be9633e182009ed6548e9d5f7c4f7a0a4e20aa8f427e05420e3ee9f8b446d9ae85acab830e7eaa43bbeecfe83fb00289a8fad4ab4
+  languageName: node
+  linkType: hard
+
+"three@npm:0.135":
+  version: 0.135.0
+  resolution: "three@npm:0.135.0"
+  checksum: bd7e195932587a5be0c887947adf2b3898c6fa71722800432562aed10beddb2f448d0f237d937824805eebf90e625fc22ed57054618121f47811a8e82b528507
   languageName: node
   linkType: hard
 
@@ -7365,6 +7404,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"unzipit@npm:^1.4.0":
+  version: 1.4.0
+  resolution: "unzipit@npm:1.4.0"
+  dependencies:
+    uzip-module: ^1.0.2
+  checksum: 7ffb5bbeaab6c97c5545a99b8de842231b7cd82f8cd193ee6f88a1956ccb317de77891097348a41cec1d94549d48858e903212519823a6372720caccc41f55ed
+  languageName: node
+  linkType: hard
+
 "update-browserslist-db@npm:^1.0.5":
   version: 1.0.5
   resolution: "update-browserslist-db@npm:1.0.5"
@@ -7416,6 +7464,13 @@ __metadata:
   version: 1.0.2
   resolution: "util-deprecate@npm:1.0.2"
   checksum: 474acf1146cb2701fe3b074892217553dfcf9a031280919ba1b8d651a068c9b15d863b7303cb15bd00a862b498e6cf4ad7b4a08fb134edd5a6f7641681cb54a2
+  languageName: node
+  linkType: hard
+
+"uzip-module@npm:^1.0.2":
+  version: 1.0.3
+  resolution: "uzip-module@npm:1.0.3"
+  checksum: fc286c44a04d75055577fae8293d3fee499d1e850f87e88c158b1e3657f4794a3a40ca2d34f73474ff82917176dd5ca9d1c0d1e375a083714e11afabd3afa423
   languageName: node
   linkType: hard
 

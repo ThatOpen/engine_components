@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
+import { Intersection, Mesh } from "three";
 import { LiteEvent } from "./lite-event";
 
 export interface ComponentBase {
@@ -32,6 +33,10 @@ export interface SceneComponent extends ComponentBase {
 export interface CameraComponent extends ComponentBase, IResizeable {
   activeCamera: THREE.Camera;
   getCamera: () => THREE.Camera;
+}
+
+export interface RaycasterComponent {
+  castRay: (items?: Mesh[]) => Intersection | null;
 }
 
 export interface IDeletable {

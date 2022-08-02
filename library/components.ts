@@ -1,6 +1,8 @@
 import * as THREE from "three";
+import { Plane } from "three";
 import {
   CameraComponent,
+  RaycasterComponent,
   RendererComponent,
   SceneComponent,
   ToolComponents,
@@ -10,10 +12,12 @@ export class Components {
   public readonly tools: ToolComponents;
   // private readonly components: ComponentBase[] = [];
   public readonly meshes: THREE.Mesh[] = [];
+  public readonly clipplingPlanes: Plane[] = [];
 
-  private _renderer: RendererComponent | undefined;
-  private _scene: SceneComponent | undefined;
-  private _camera: CameraComponent | undefined;
+  private _renderer?: RendererComponent;
+  private _scene?: SceneComponent;
+  private _camera?: CameraComponent;
+  private _raycaster?: RaycasterComponent;
 
   private clock: THREE.Clock;
   private updateRequestCallback: number = -1;
@@ -48,6 +52,15 @@ export class Components {
 
   set camera(camera: CameraComponent) {
     this._camera = camera;
+  }
+
+  get raycaster() {
+    if (!this._raycaster) throw new Error("Raycaster hasn't been initialised.");
+    return this._raycaster;
+  }
+
+  set raycaster(raycaster: RaycasterComponent) {
+    this._raycaster = raycaster;
   }
 
   public init() {

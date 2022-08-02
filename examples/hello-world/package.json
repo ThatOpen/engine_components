@@ -22,7 +22,8 @@
   "dependencies": {
     "openbim-components": "0.0.1",
     "stats.js": "0.17.0",
-    "three": "0.142.0",
-    "three-mesh-bvh": "^0.5.11"
+    "three": "0.135",
+    "three-mesh-bvh": "^0.5.11",
+    "unzipit": "^1.4.0"
   }
 }
