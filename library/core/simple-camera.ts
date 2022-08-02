@@ -7,7 +7,7 @@ export class SimpleCamera implements CameraComponent {
   activeCamera: THREE.PerspectiveCamera;
   orbitControls: OrbitControls;
 
-  constructor(components: Components) {
+  constructor(private components: Components) {
     this.activeCamera = new THREE.PerspectiveCamera(
       60,
       window.innerWidth / window.innerHeight,
@@ -28,6 +28,8 @@ export class SimpleCamera implements CameraComponent {
     this.orbitControls.maxPolarAngle = Math.PI / 2;
 
     components.scene?.getScene().add(this.activeCamera);
+
+    this.setupEvents();
   }
 
   getCamera(): THREE.PerspectiveCamera {
@@ -44,5 +46,17 @@ export class SimpleCamera implements CameraComponent {
 
   get enabled() {
     return this.orbitControls.enabled;
+  }
+
+  resize() {
+    const size = this.components.renderer.getSize();
+    this.activeCamera.aspect = size.width / size.height;
+    this.activeCamera.updateProjectionMatrix();
+  }
+
+  private setupEvents() {
+    window.addEventListener("resize", () => {
+      this.resize();
+    });
   }
 }

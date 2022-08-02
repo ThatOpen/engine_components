@@ -27,7 +27,8 @@ export class SimpleRenderer implements RendererComponent {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
     this.setupRenderers();
-    this.adjustRendererSize();
+    this.setupEvents();
+    this.resize();
   }
 
   addClippingPlane(plane: THREE.Plane) {
@@ -69,7 +70,7 @@ export class SimpleRenderer implements RendererComponent {
     );
   }
 
-  adjustRendererSize() {
+  resize() {
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
     this.renderer.setSize(width, height);
@@ -122,5 +123,11 @@ export class SimpleRenderer implements RendererComponent {
 
   set enabled(enabled: boolean) {
     this._enabled = enabled;
+  }
+
+  private setupEvents() {
+    window.addEventListener("resize", () => {
+      this.resize();
+    });
   }
 }

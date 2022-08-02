@@ -31296,6 +31296,7 @@
 	class SimpleCamera {
 	    constructor(components) {
 	        var _a, _b;
+	        this.components = components;
 	        this.activeCamera = new PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
 	        this.activeCamera.position.set(50, 50, 0);
 	        this.orbitControls = new OrbitControls(this.activeCamera, (_a = components.renderer) === null || _a === void 0 ? void 0 : _a.renderer.domElement);
@@ -31306,6 +31307,7 @@
 	        this.orbitControls.maxDistance = 500;
 	        this.orbitControls.maxPolarAngle = Math.PI / 2;
 	        (_b = components.scene) === null || _b === void 0 ? void 0 : _b.getScene().add(this.activeCamera);
+	        this.setupEvents();
 	    }
 	    getCamera() {
 	        return this.activeCamera;
@@ -31318,6 +31320,16 @@
 	    }
 	    get enabled() {
 	        return this.orbitControls.enabled;
+	    }
+	    resize() {
+	        const size = this.components.renderer.getSize();
+	        this.activeCamera.aspect = size.width / size.height;
+	        this.activeCamera.updateProjectionMatrix();
+	    }
+	    setupEvents() {
+	        window.addEventListener("resize", () => {
+	            this.resize();
+	        });
 	    }
 	}
 
@@ -32046,7 +32058,8 @@
 	        });
 	        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 	        this.setupRenderers();
-	        this.adjustRendererSize();
+	        this.setupEvents();
+	        this.resize();
 	    }
 	    addClippingPlane(plane) {
 	        this.renderer.clippingPlanes.push(plane);
@@ -32083,7 +32096,7 @@
 	    getSize() {
 	        return new Vector2(this.renderer.domElement.clientWidth, this.renderer.domElement.clientHeight);
 	    }
-	    adjustRendererSize() {
+	    resize() {
 	        const width = this.container.clientWidth;
 	        const height = this.container.clientHeight;
 	        this.renderer.setSize(width, height);
@@ -32131,6 +32144,11 @@
 	    }
 	    set enabled(enabled) {
 	        this._enabled = enabled;
+	    }
+	    setupEvents() {
+	        window.addEventListener("resize", () => {
+	            this.resize();
+	        });
 	    }
 	}
 
@@ -34033,54 +34051,6 @@
 	SimplePlane.planeMaterial = SimplePlane.getPlaneMaterial();
 	SimplePlane.hiddenMaterial = SimplePlane.getHiddenMaterial();
 
-	class Components {
-	    constructor() {
-	        // private readonly components: ComponentBase[] = [];
-	        this.meshes = [];
-	        this.updateRequestCallback = -1;
-	        this.update = () => {
-	            const delta = this.clock.elapsedTime;
-	            this.scene.update(delta);
-	            this.renderer.update(delta);
-	            this.camera.update(delta);
-	            this.tools.update(delta);
-	            this.updateRequestCallback = requestAnimationFrame(this.update);
-	        };
-	        this.clock = new Clock();
-	        this.tools = new ToolComponents();
-	    }
-	    get renderer() {
-	        if (!this._renderer)
-	            throw new Error("Renderer hasn't been initialised.");
-	        return this._renderer;
-	    }
-	    set renderer(renderer) {
-	        this._renderer = renderer;
-	    }
-	    get scene() {
-	        if (!this._scene)
-	            throw new Error("Scene hasn't been initialised.");
-	        return this._scene;
-	    }
-	    set scene(scene) {
-	        this._scene = scene;
-	    }
-	    get camera() {
-	        if (!this._camera)
-	            throw new Error("Camera hasn't been initialised.");
-	        return this._camera;
-	    }
-	    set camera(camera) {
-	        this._camera = camera;
-	    }
-	    init() {
-	        this.clock.start();
-	        this.update();
-	    }
-	    dispose() {
-	        cancelAnimationFrame(this.updateRequestCallback);
-	    }
-	}
 	class ToolComponents {
 	    constructor() {
 	        this.tools = [];
@@ -34139,9 +34109,7 @@
 	            tool.enabled = true;
 	            return true;
 	        }
-	        else {
-	            return false;
-	        }
+	        return false;
 	    }
 	    disable(name) {
 	        const tool = this.get(name);
@@ -34149,14 +34117,12 @@
 	            tool.enabled = false;
 	            return true;
 	        }
-	        else {
-	            return false;
-	        }
+	        return false;
 	    }
 	    disableAll() {
 	        for (const tool of this.tools) {
 	            if (tool && isEnableable(tool)) {
-	                console.log("Disabling tool: " + tool.name);
+	                console.log(`Disabling tool: ${tool.name}`);
 	                tool.enabled = false;
 	            }
 	        }
@@ -34178,9 +34144,58 @@
 	            // @ts-ignore
 	            enabled: tool === null || tool === void 0 ? void 0 : tool.enabled,
 	            // @ts-ignore
-	            visible: tool === null || tool === void 0 ? void 0 : tool.enabled
+	            visible: tool === null || tool === void 0 ? void 0 : tool.enabled,
 	        }));
 	        console.table(states);
+	    }
+	}
+
+	class Components {
+	    constructor() {
+	        // private readonly components: ComponentBase[] = [];
+	        this.meshes = [];
+	        this.updateRequestCallback = -1;
+	        this.update = () => {
+	            const delta = this.clock.elapsedTime;
+	            this.scene.update(delta);
+	            this.renderer.update(delta);
+	            this.camera.update(delta);
+	            this.tools.update(delta);
+	            this.updateRequestCallback = requestAnimationFrame(this.update);
+	        };
+	        this.clock = new Clock();
+	        this.tools = new ToolComponents();
+	    }
+	    get renderer() {
+	        if (!this._renderer)
+	            throw new Error("Renderer hasn't been initialised.");
+	        return this._renderer;
+	    }
+	    set renderer(renderer) {
+	        this._renderer = renderer;
+	    }
+	    get scene() {
+	        if (!this._scene)
+	            throw new Error("Scene hasn't been initialised.");
+	        return this._scene;
+	    }
+	    set scene(scene) {
+	        this._scene = scene;
+	    }
+	    get camera() {
+	        if (!this._camera)
+	            throw new Error("Camera hasn't been initialised.");
+	        return this._camera;
+	    }
+	    set camera(camera) {
+	        this._camera = camera;
+	    }
+	    init() {
+	        this.clock.start();
+	        this.update();
+	    }
+	    dispose() {
+	        cancelAnimationFrame(this.updateRequestCallback);
 	    }
 	}
 

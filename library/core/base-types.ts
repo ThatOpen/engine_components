@@ -10,7 +10,11 @@ export interface ToolComponent extends ComponentBase {
   name: string;
 }
 
-export interface RendererComponent extends ComponentBase {
+export interface IResizeable {
+  resize: () => void;
+}
+
+export interface RendererComponent extends ComponentBase, IResizeable {
   renderer: THREE.WebGLRenderer;
   renderer2D: CSS2DRenderer;
   getSize: () => THREE.Vector2;
@@ -25,7 +29,7 @@ export interface SceneComponent extends ComponentBase {
   getScene: () => THREE.Scene;
 }
 
-export interface CameraComponent extends ComponentBase {
+export interface CameraComponent extends ComponentBase, IResizeable {
   activeCamera: THREE.Camera;
   getCamera: () => THREE.Camera;
 }
