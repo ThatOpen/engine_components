@@ -11,7 +11,7 @@
     "publish-repo": "cd library && npm run publish-repo"
   },
   "workspaces": [
-    "./library",
-    "./examples/hello-world"
+    "library",
+    "examples/hello-world"
   ]
 }

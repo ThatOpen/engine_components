@@ -8,17 +8,24 @@ export interface ILiteEvent<T> {
 }
 
 export class LiteEvent<T> implements ILiteEvent<T> {
-  private handlers: (T extends void ? { (): void } : { (data: T): void })[] = [];
+  private handlers: (T extends void ? { (): void } : { (data: T): void })[] =
+    [];
 
-  public on(handler: T extends void ? { (): void } : { (data: T): void }): void {
+  public on(
+    handler: T extends void ? { (): void } : { (data: T): void }
+  ): void {
     this.handlers.push(handler);
   }
 
-  public off(handler: T extends void ? { (): void } : { (data: T): void }): void {
+  public off(
+    handler: T extends void ? { (): void } : { (data: T): void }
+  ): void {
     this.handlers = this.handlers.filter((h) => h !== handler);
   }
 
-  public trigger: T extends void ? { (): void } : { (data?: T): void } = ((data?: T) => {
+  public trigger: T extends void ? { (): void } : { (data?: T): void } = ((
+    data?: T
+  ) => {
     // @ts-ignore
     this.handlers.slice(0).forEach((h) => h(data));
   }) as any;

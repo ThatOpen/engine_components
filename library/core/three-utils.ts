@@ -1,5 +1,5 @@
-import * as THREE from 'three';
-import { Mesh } from 'three';
+import * as THREE from "three";
+import { Mesh } from "three";
 
 export function rightToLeftHand(vector: THREE.Vector3): THREE.Vector3 {
   return new THREE.Vector3(vector.x, -vector.z, vector.y);
@@ -7,7 +7,11 @@ export function rightToLeftHand(vector: THREE.Vector3): THREE.Vector3 {
 
 const basesRegex = /^([+-][xyz])([+-][xyz])([+-][xyz])$/i;
 const nameToIndex = { x: 0, y: 1, z: 2 };
-const orderedVectors = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+const orderedVectors = [
+  new THREE.Vector3(),
+  new THREE.Vector3(),
+  new THREE.Vector3(),
+];
 
 export function stringToAxes(axesString: string) {
   if (!basesRegex.test(axesString)) {
@@ -20,7 +24,7 @@ export function stringToAxes(axesString: string) {
     .match(basesRegex)
     .splice(1, 3)
     .map((str) => {
-      const negative = str[0] === '-';
+      const negative = str[0] === "-";
       const name = str[1];
       return { negative, name };
     });
@@ -30,7 +34,8 @@ export function disposeMeshRecursively(mesh: Mesh) {
   mesh.removeFromParent();
   if (mesh.geometry) mesh.geometry.dispose();
   if (mesh.material) {
-    if (Array.isArray(mesh.material)) mesh.material.forEach((mat) => mat.dispose());
+    if (Array.isArray(mesh.material))
+      mesh.material.forEach((mat) => mat.dispose());
     else mesh.material.dispose();
   }
   if (mesh.children && mesh.children.length) {
@@ -39,7 +44,11 @@ export function disposeMeshRecursively(mesh: Mesh) {
   mesh.children.length = 0;
 }
 
-export function getBasisTransform(from: string, to: string, targetMatrix: THREE.Matrix4) {
+export function getBasisTransform(
+  from: string,
+  to: string,
+  targetMatrix: THREE.Matrix4
+) {
   if (!basesRegex.test(from)) {
     return;
   }
@@ -67,5 +76,9 @@ export function getBasisTransform(from: string, to: string, targetMatrix: THREE.
     vector[toAxis.name] = equalNegative ? 1 : -1;
   }
 
-  targetMatrix.makeBasis(orderedVectors[0], orderedVectors[1], orderedVectors[2]);
+  targetMatrix.makeBasis(
+    orderedVectors[0],
+    orderedVectors[1],
+    orderedVectors[2]
+  );
 }

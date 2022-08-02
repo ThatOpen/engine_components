@@ -1,17 +1,30 @@
-import {Vector3, Matrix3, Intersection, Mesh, Plane, Vector2, Raycaster} from 'three';
 import {
+  Vector3,
+  Matrix3,
+  Intersection,
+  Mesh,
+  Plane,
+  Vector2,
+  Raycaster,
   CylinderGeometry,
   DoubleSide,
   MeshBasicMaterial,
   Object3D,
   PlaneGeometry,
-} from 'three';
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
-import {Components} from "../components";
-import {IDeletable, IEnableable, IHideable, ToolComponent} from "./base-types";
+} from "three";
 
-export class SimpleClipper implements ToolComponent, IHideable, IDeletable, IEnableable {
+import { TransformControls } from "three/examples/jsm/controls/TransformControls";
+import { Components } from "../components";
+import {
+  IDeletable,
+  IEnableable,
+  IHideable,
+  ToolComponent,
+} from "./base-types";
 
+export class SimpleClipper
+  implements ToolComponent, IHideable, IDeletable, IEnableable
+{
   public readonly name = "clipper";
   dragging: boolean;
   planes: SimplePlane[];
@@ -33,16 +46,18 @@ export class SimpleClipper implements ToolComponent, IHideable, IDeletable, IEna
     this._visible = false;
     this.dragging = false;
     this.planes = [];
-    this.raycaster = new Raycaster()
+    this.raycaster = new Raycaster();
 
-    const domElement = context.renderer!.renderer.domElement
+    const domElement = context.renderer!.renderer.domElement;
 
     domElement.onmousemove = (event: MouseEvent) => {
       this.rawPosition.x = event.clientX;
       this.rawPosition.y = event.clientY;
       const bounds = domElement.getBoundingClientRect();
-      this.position.x = ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1;
-      this.position.y = -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1;
+      this.position.x =
+        ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1;
+      this.position.y =
+        -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1;
     };
   }
 
@@ -50,16 +65,16 @@ export class SimpleClipper implements ToolComponent, IHideable, IDeletable, IEna
     return this._visible;
   }
 
-  set visible(visible: boolean){
+  set visible(visible: boolean) {
     this._visible = visible;
-    if(!visible) {
+    if (!visible) {
       this.enabled = false;
     }
     this.planes.forEach((plane) => {
       if (!plane.isPlan) {
         plane.visible = visible;
       }
-    })
+    });
     this.updateMaterials();
   }
 
@@ -70,7 +85,7 @@ export class SimpleClipper implements ToolComponent, IHideable, IDeletable, IEna
   set enabled(state) {
     this._enabled = state;
 
-    if(state && !this._visible){
+    if (state && !this._visible) {
       this.visible = true;
     }
 
@@ -99,14 +114,18 @@ export class SimpleClipper implements ToolComponent, IHideable, IDeletable, IEna
     this.intersection = undefined;
   };
 
-  createFromNormalAndCoplanarPoint = (normal: Vector3, point: Vector3, isPlan = false) => {
+  createFromNormalAndCoplanarPoint = (
+    normal: Vector3,
+    point: Vector3,
+    isPlan = false
+  ) => {
     const plane = new SimplePlane(
       this.context,
       point,
       normal,
       this.activateDragging,
       this.deactivateDragging,
-      this.planeSize,
+      this.planeSize
     );
     plane.isPlan = isPlan;
     this.planes.push(plane);
@@ -116,8 +135,8 @@ export class SimpleClipper implements ToolComponent, IHideable, IDeletable, IEna
   };
 
   delete = () => {
-    this.deletePlane()
-  }
+    this.deletePlane();
+  };
 
   deletePlane = (plane?: SimplePlane) => {
     let existingPlane: SimplePlane | undefined | null = plane;
@@ -146,7 +165,10 @@ export class SimpleClipper implements ToolComponent, IHideable, IDeletable, IEna
     const intersects = this.castRay([...planeMeshes, ...arrowMeshes]);
     if (intersects.length > 0) {
       return this.planes.find((p) => {
-        if (p.planeMesh === intersects[0].object || p.arrowBoundingBox === intersects[0].object) {
+        if (
+          p.planeMesh === intersects[0].object ||
+          p.arrowBoundingBox === intersects[0].object
+        ) {
           return p;
         }
         return null;
@@ -159,7 +181,9 @@ export class SimpleClipper implements ToolComponent, IHideable, IDeletable, IEna
     const constant = intersection.point.distanceTo(new Vector3(0, 0, 0));
     const normal = intersection.face?.normal;
     if (!constant || !normal) return;
-    const normalMatrix = new Matrix3().getNormalMatrix(intersection.object.matrixWorld);
+    const normalMatrix = new Matrix3().getNormalMatrix(
+      intersection.object.matrixWorld
+    );
     const worldNormal = normal.clone().applyMatrix3(normalMatrix).normalize();
     this.normalizePlaneDirectionY(worldNormal);
     const plane = this.newPlane(intersection, worldNormal.negate());
@@ -190,7 +214,7 @@ export class SimpleClipper implements ToolComponent, IHideable, IDeletable, IEna
       worldNormal,
       this.activateDragging,
       this.deactivateDragging,
-      this.planeSize,
+      this.planeSize
     );
   }
 
@@ -214,13 +238,11 @@ export class SimpleClipper implements ToolComponent, IHideable, IDeletable, IEna
     });
   };
 
-  update(_delta: number): void {
-
-  }
+  update(_delta: number): void {}
 
   castRay(items: Object3D[]) {
     const camera = this.context.camera?.getCamera();
-    if(!camera) throw new Error("Camera required for clipper")
+    if (!camera) throw new Error("Camera required for clipper");
     this.raycaster.setFromCamera(this.position, camera);
     return this.raycaster.intersectObjects(items);
   }
@@ -235,15 +257,13 @@ export class SimpleClipper implements ToolComponent, IHideable, IDeletable, IEna
     const planes = this.context.renderer?.renderer.clippingPlanes;
     if (objs.length <= 0 || !planes || planes?.length <= 0) return objs;
     // const planes = this.clipper?.planes.map((p) => p.plane);
-    return objs.filter((elem) => planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0));
+    return objs.filter((elem) =>
+      planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0)
+    );
   }
 }
 
-
-
 //
-
-
 
 export class SimplePlane {
   static planeMaterial = SimplePlane.getPlaneMaterial();
@@ -273,7 +293,7 @@ export class SimplePlane {
     normal: Vector3,
     onStartDragging: Function,
     onEndDragging: Function,
-    planeSize: number,
+    planeSize: number
   ) {
     this.planeSize = planeSize;
     this.context = context;
@@ -296,7 +316,7 @@ export class SimplePlane {
     const planes = this.context.renderer?.renderer.clippingPlanes;
     if (state && planes) {
       planes.push(this.plane);
-    } else if(planes) {
+    } else if (planes) {
       const index = planes.indexOf(this.plane);
       if (index >= 0) planes.splice(index);
     }
@@ -348,7 +368,7 @@ export class SimplePlane {
       color: 0xffff00,
       side: DoubleSide,
       transparent: true,
-      opacity: 0.2
+      opacity: 0.2,
     });
   }
 
@@ -360,12 +380,13 @@ export class SimplePlane {
     const camera = this.context.camera?.getCamera();
     const container = this.context.renderer?.renderer.domElement;
     console.log(camera);
-    console.log(container)
-    if(!camera || !container) throw new Error("Camera or container not initialised.")
+    console.log(container);
+    if (!camera || !container)
+      throw new Error("Camera or container not initialised.");
     const controls = new TransformControls(camera, container);
     this.initializeControls(controls);
     const scene = this.context?.scene?.getScene();
-    if(!scene) throw new Error("Scene not initialised.")
+    if (!scene) throw new Error("Scene not initialised.");
     scene.add(controls);
     return controls;
   }
@@ -374,7 +395,7 @@ export class SimplePlane {
     controls.attach(this.helper);
     controls.showX = false;
     controls.showY = false;
-    controls.setSpace('local');
+    controls.setSpace("local");
     this.createArrowBoundingBox();
     controls.children[0].children[0].add(this.arrowBoundingBox);
   }
@@ -388,12 +409,15 @@ export class SimplePlane {
   }
 
   private setupEvents(onStart: Function, onEnd: Function) {
-    this.controls.addEventListener('change', () => {
+    this.controls.addEventListener("change", () => {
       if (!this._enabled) return;
-      this.plane.setFromNormalAndCoplanarPoint(this.normal, this.helper.position);
+      this.plane.setFromNormalAndCoplanarPoint(
+        this.normal,
+        this.helper.position
+      );
     });
 
-    this.controls.addEventListener('dragging-changed', (event) => {
+    this.controls.addEventListener("dragging-changed", (event) => {
       if (!this._enabled) return;
       this.isVisible = !event.value;
       // @ts-ignore
@@ -402,9 +426,9 @@ export class SimplePlane {
       else onEnd();
     });
 
-    /*this.context.ifcCamera.currentNavMode.onChangeProjection.on((camera) => {
+    /* this.context.ifcCamera.currentNavMode.onChangeProjection.on((camera) => {
       this.controls.camera = camera;
-    });*/
+    }); */
   }
 
   private createHelper() {
@@ -412,7 +436,7 @@ export class SimplePlane {
     helper.lookAt(this.normal);
     helper.position.copy(this.origin);
     const scene = this.context?.scene?.getScene();
-    if(!scene) throw new Error('Scene not initialised');
+    if (!scene) throw new Error("Scene not initialised");
     scene.add(helper);
     helper.add(this.planeMesh);
     return helper;

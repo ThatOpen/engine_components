@@ -30057,157 +30057,6 @@
 	    return "visible" in obj;
 	}
 
-	class Components {
-	    constructor() {
-	        // private readonly components: ComponentBase[] = [];
-	        this.meshes = [];
-	        this.updateRequestCallback = -1;
-	        this.update = () => {
-	            const delta = this.clock.elapsedTime;
-	            this.scene.update(delta);
-	            this.renderer.update(delta);
-	            this.camera.update(delta);
-	            this.tools.update(delta);
-	            this.updateRequestCallback = requestAnimationFrame(this.update);
-	        };
-	        this.clock = new Clock();
-	        this.tools = new ToolComponents();
-	    }
-	    get renderer() {
-	        if (!this._renderer)
-	            throw new Error("Renderer hasn't been initialised.");
-	        return this._renderer;
-	    }
-	    set renderer(renderer) {
-	        this._renderer = renderer;
-	    }
-	    get scene() {
-	        if (!this._scene)
-	            throw new Error("Scene hasn't been initialised.");
-	        return this._scene;
-	    }
-	    set scene(scene) {
-	        this._scene = scene;
-	    }
-	    get camera() {
-	        if (!this._camera)
-	            throw new Error("Camera hasn't been initialised.");
-	        return this._camera;
-	    }
-	    set camera(camera) {
-	        this._camera = camera;
-	    }
-	    init() {
-	        this.clock.start();
-	        this.update();
-	    }
-	    dispose() {
-	        cancelAnimationFrame(this.updateRequestCallback);
-	    }
-	}
-	class ToolComponents {
-	    constructor() {
-	        this.tools = [];
-	    }
-	    add(tool) {
-	        this.tools.push(tool);
-	    }
-	    remove(tool) {
-	        const index = this.tools.findIndex((c) => c === tool);
-	        if (index > -1) {
-	            this.tools.splice(index, 1);
-	            return true;
-	        }
-	        return false;
-	    }
-	    removeByName(name) {
-	        const tool = this.get(name);
-	        if (tool) {
-	            this.remove(tool);
-	            return true;
-	        }
-	        return false;
-	    }
-	    update(delta) {
-	        for (const tool of this.tools) {
-	            tool.update(delta);
-	        }
-	    }
-	    hideAll() {
-	        for (const tool of this.tools) {
-	            if (tool && isHideable(tool)) {
-	                tool.visible = false;
-	            }
-	        }
-	    }
-	    showAll() {
-	        for (const tool of this.tools) {
-	            if (tool && isHideable(tool)) {
-	                tool.visible = true;
-	            }
-	        }
-	    }
-	    toggleAllVisibility() {
-	        for (const tool of this.tools) {
-	            if (tool && isHideable(tool)) {
-	                tool.visible = !tool.visible;
-	            }
-	        }
-	    }
-	    enable(name, isolate = true) {
-	        if (isolate === false) {
-	            this.disableAll();
-	        }
-	        const tool = this.get(name);
-	        if (tool && isEnableable(tool)) {
-	            tool.enabled = true;
-	            return true;
-	        }
-	        else {
-	            return false;
-	        }
-	    }
-	    disable(name) {
-	        const tool = this.get(name);
-	        if (tool && isEnableable(tool)) {
-	            tool.enabled = false;
-	            return true;
-	        }
-	        else {
-	            return false;
-	        }
-	    }
-	    disableAll() {
-	        for (const tool of this.tools) {
-	            if (tool && isEnableable(tool)) {
-	                console.log("Disabling tool: " + tool.name);
-	                tool.enabled = false;
-	            }
-	        }
-	    }
-	    toggle(name) {
-	        const tool = this.get(name);
-	        if (tool && isEnableable(tool)) {
-	            const enabled = tool.enabled;
-	            this.disableAll();
-	            tool.enabled = !enabled;
-	        }
-	    }
-	    get(name) {
-	        return this.tools.find((tool) => tool.name === name);
-	    }
-	    printToolsState() {
-	        const states = this.tools.map((tool) => ({
-	            name: tool.name,
-	            // @ts-ignore
-	            enabled: tool === null || tool === void 0 ? void 0 : tool.enabled,
-	            // @ts-ignore
-	            visible: tool === null || tool === void 0 ? void 0 : tool.enabled
-	        }));
-	        console.table(states);
-	    }
-	}
-
 	// -------------------------------------------------------------------------------------------
 	// Credit to Jason Kleban: https://gist.github.com/JasonKleban/50cee44960c225ac1993c922563aa540
 	// -------------------------------------------------------------------------------------------
@@ -31675,7 +31524,11 @@
 
 	}
 
-	[new Vector3(), new Vector3(), new Vector3()];
+	[
+	    new Vector3(),
+	    new Vector3(),
+	    new Vector3(),
+	];
 	function disposeMeshRecursively(mesh) {
 	    mesh.removeFromParent();
 	    if (mesh.geometry)
@@ -31696,8 +31549,8 @@
 	    constructor(context) {
 	        this.name = "dimensions";
 	        this.dimensions = [];
-	        this.labelClassName = 'ifcjs-dimension-label';
-	        this.previewClassName = 'ifcjs-dimension-preview';
+	        this.labelClassName = "ifcjs-dimension-label";
+	        this.previewClassName = "ifcjs-dimension-preview";
 	        // State
 	        this._enabled = false;
 	        this._visible = false;
@@ -31712,9 +31565,12 @@
 	            linewidth: 2,
 	            depthTest: false,
 	            dashSize: 0.2,
-	            gapSize: 0.2
+	            gapSize: 0.2,
 	        });
-	        this.endpointsMaterial = new MeshBasicMaterial({ color: 0x000000, depthTest: false });
+	        this.endpointsMaterial = new MeshBasicMaterial({
+	            color: 0x000000,
+	            depthTest: false,
+	        });
 	        // Temp variables
 	        this.startPoint = new Vector3();
 	        this.endPoint = new Vector3();
@@ -31723,7 +31579,7 @@
 	        this.raycaster = new Raycaster();
 	        this.context = context;
 	        this.endpoint = SimpleDimensions.getDefaultEndpointGeometry();
-	        const htmlPreview = document.createElement('div');
+	        const htmlPreview = document.createElement("div");
 	        htmlPreview.className = this.previewClassName;
 	        this.previewElement = new CSS2DObject(htmlPreview);
 	        this.previewElement.visible = false;
@@ -31733,8 +31589,10 @@
 	            this.rawPosition.x = event.clientX;
 	            this.rawPosition.y = event.clientY;
 	            const bounds = domElement.getBoundingClientRect();
-	            this.position.x = ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1;
-	            this.position.y = -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1;
+	            this.position.x =
+	                ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1;
+	            this.position.y =
+	                -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1;
 	        };
 	    }
 	    dispose() {
@@ -31979,7 +31837,7 @@
 	        return [
 	            this.getVertex(intersects.face.a, geom),
 	            this.getVertex(intersects.face.b, geom),
-	            this.getVertex(intersects.face.c, geom)
+	            this.getVertex(intersects.face.c, geom),
 	        ];
 	    }
 	    getVertex(index, geom) {
@@ -32099,7 +31957,9 @@
 	        }
 	    }
 	    rescaleMesh(mesh, scalefactor = 1, x = true, y = true, z = true) {
-	        let scale = new Vector3().subVectors(mesh.position, this.camera.position).length();
+	        let scale = new Vector3()
+	            .subVectors(mesh.position, this.camera.position)
+	            .length();
 	        scale *= scalefactor;
 	        const scaleX = x ? scale : 1;
 	        const scaleY = y ? scale : 1;
@@ -32119,7 +31979,7 @@
 	        this.root.add(mesh);
 	    }
 	    newText() {
-	        const htmlText = document.createElement('div');
+	        const htmlText = document.createElement("div");
 	        htmlText.className = this.labelClassName;
 	        htmlText.textContent = this.getTextContent();
 	        const label = new CSS2DObject(htmlText);
@@ -32154,11 +32014,12 @@
 	}
 	IfcDimensionLine.scaleFactor = 0.1;
 	IfcDimensionLine.scale = 1;
-	IfcDimensionLine.units = 'm';
+	IfcDimensionLine.units = "m";
 
 	class SimpleGrid {
 	    constructor(components) {
 	        var _a, _b;
+	        this.name = "grid";
 	        this.grid = new GridHelper(50, 50);
 	        (_b = (_a = components.scene) === null || _a === void 0 ? void 0 : _a.getScene()) === null || _b === void 0 ? void 0 : _b.add(this.grid);
 	    }
@@ -32168,8 +32029,7 @@
 	    get visible() {
 	        return this.grid.visible;
 	    }
-	    update(_delta) {
-	    }
+	    update(_delta) { }
 	}
 
 	class SimpleRenderer {
@@ -32182,7 +32042,7 @@
 	        this.components = components;
 	        this.container = container;
 	        this.renderer = new WebGLRenderer({
-	            antialias: true
+	            antialias: true,
 	        });
 	        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 	        this.setupRenderers();
@@ -32229,7 +32089,7 @@
 	        this.renderer.setSize(width, height);
 	        this.renderer2D.setSize(width, height);
 	    }
-	    /*newScreenshot(camera?: THREE.Camera, dimensions?: THREE.Vector2) {
+	    /* newScreenshot(camera?: THREE.Camera, dimensions?: THREE.Vector2) {
 	      const previousDimensions = this.getSize();
 	  
 	      const domElement = this.renderer.domElement;
@@ -32257,13 +32117,13 @@
 	      if (dimensions) this.context.ifcCamera.updateAspect(previousDimensions);
 	  
 	      return result;
-	    }*/
+	    } */
 	    setupRenderers() {
 	        this.renderer.localClippingEnabled = true;
 	        this.container.appendChild(this.renderer.domElement);
-	        this.renderer2D.domElement.style.position = 'absolute';
-	        this.renderer2D.domElement.style.top = '0px';
-	        this.renderer2D.domElement.style.pointerEvents = 'none';
+	        this.renderer2D.domElement.style.position = "absolute";
+	        this.renderer2D.domElement.style.top = "0px";
+	        this.renderer2D.domElement.style.pointerEvents = "none";
 	        this.container.appendChild(this.renderer2D.domElement);
 	    }
 	    get enabled() {
@@ -32279,8 +32139,7 @@
 	        this.scene = new Scene();
 	        this.scene.background = new Color(0xcccccc);
 	    }
-	    update(_delta) {
-	    }
+	    update(_delta) { }
 	    getScene() {
 	        return this.scene;
 	    }
@@ -33885,7 +33744,8 @@
 	            const intersects = this.castRay([...planeMeshes, ...arrowMeshes]);
 	            if (intersects.length > 0) {
 	                return this.planes.find((p) => {
-	                    if (p.planeMesh === intersects[0].object || p.arrowBoundingBox === intersects[0].object) {
+	                    if (p.planeMesh === intersects[0].object ||
+	                        p.arrowBoundingBox === intersects[0].object) {
 	                        return p;
 	                    }
 	                    return null;
@@ -33937,8 +33797,10 @@
 	            this.rawPosition.x = event.clientX;
 	            this.rawPosition.y = event.clientY;
 	            const bounds = domElement.getBoundingClientRect();
-	            this.position.x = ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1;
-	            this.position.y = -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1;
+	            this.position.x =
+	                ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1;
+	            this.position.y =
+	                -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1;
 	        };
 	    }
 	    get visible() {
@@ -33996,8 +33858,7 @@
 	    newPlane(intersection, worldNormal) {
 	        return new SimplePlane(this.context, intersection.point, worldNormal, this.activateDragging, this.deactivateDragging, this.planeSize);
 	    }
-	    update(_delta) {
-	    }
+	    update(_delta) { }
 	    castRay(items) {
 	        var _a;
 	        const camera = (_a = this.context.camera) === null || _a === void 0 ? void 0 : _a.getCamera();
@@ -34094,7 +33955,7 @@
 	            color: 0xffff00,
 	            side: DoubleSide,
 	            transparent: true,
-	            opacity: 0.2
+	            opacity: 0.2,
 	        });
 	    }
 	    static getHiddenMaterial() {
@@ -34120,7 +33981,7 @@
 	        controls.attach(this.helper);
 	        controls.showX = false;
 	        controls.showY = false;
-	        controls.setSpace('local');
+	        controls.setSpace("local");
 	        this.createArrowBoundingBox();
 	        controls.children[0].children[0].add(this.arrowBoundingBox);
 	    }
@@ -34132,12 +33993,12 @@
 	        this.arrowBoundingBox.geometry.applyMatrix4(this.arrowBoundingBox.matrix);
 	    }
 	    setupEvents(onStart, onEnd) {
-	        this.controls.addEventListener('change', () => {
+	        this.controls.addEventListener("change", () => {
 	            if (!this._enabled)
 	                return;
 	            this.plane.setFromNormalAndCoplanarPoint(this.normal, this.helper.position);
 	        });
-	        this.controls.addEventListener('dragging-changed', (event) => {
+	        this.controls.addEventListener("dragging-changed", (event) => {
 	            if (!this._enabled)
 	                return;
 	            this.isVisible = !event.value;
@@ -34148,9 +34009,9 @@
 	            else
 	                onEnd();
 	        });
-	        /*this.context.ifcCamera.currentNavMode.onChangeProjection.on((camera) => {
+	        /* this.context.ifcCamera.currentNavMode.onChangeProjection.on((camera) => {
 	          this.controls.camera = camera;
-	        });*/
+	        }); */
 	    }
 	    createHelper() {
 	        var _a, _b;
@@ -34159,7 +34020,7 @@
 	        helper.position.copy(this.origin);
 	        const scene = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.scene) === null || _b === void 0 ? void 0 : _b.getScene();
 	        if (!scene)
-	            throw new Error('Scene not initialised');
+	            throw new Error("Scene not initialised");
 	        scene.add(helper);
 	        helper.add(this.planeMesh);
 	        return helper;
@@ -34171,6 +34032,157 @@
 	}
 	SimplePlane.planeMaterial = SimplePlane.getPlaneMaterial();
 	SimplePlane.hiddenMaterial = SimplePlane.getHiddenMaterial();
+
+	class Components {
+	    constructor() {
+	        // private readonly components: ComponentBase[] = [];
+	        this.meshes = [];
+	        this.updateRequestCallback = -1;
+	        this.update = () => {
+	            const delta = this.clock.elapsedTime;
+	            this.scene.update(delta);
+	            this.renderer.update(delta);
+	            this.camera.update(delta);
+	            this.tools.update(delta);
+	            this.updateRequestCallback = requestAnimationFrame(this.update);
+	        };
+	        this.clock = new Clock();
+	        this.tools = new ToolComponents();
+	    }
+	    get renderer() {
+	        if (!this._renderer)
+	            throw new Error("Renderer hasn't been initialised.");
+	        return this._renderer;
+	    }
+	    set renderer(renderer) {
+	        this._renderer = renderer;
+	    }
+	    get scene() {
+	        if (!this._scene)
+	            throw new Error("Scene hasn't been initialised.");
+	        return this._scene;
+	    }
+	    set scene(scene) {
+	        this._scene = scene;
+	    }
+	    get camera() {
+	        if (!this._camera)
+	            throw new Error("Camera hasn't been initialised.");
+	        return this._camera;
+	    }
+	    set camera(camera) {
+	        this._camera = camera;
+	    }
+	    init() {
+	        this.clock.start();
+	        this.update();
+	    }
+	    dispose() {
+	        cancelAnimationFrame(this.updateRequestCallback);
+	    }
+	}
+	class ToolComponents {
+	    constructor() {
+	        this.tools = [];
+	    }
+	    add(tool) {
+	        this.tools.push(tool);
+	    }
+	    remove(tool) {
+	        const index = this.tools.findIndex((c) => c === tool);
+	        if (index > -1) {
+	            this.tools.splice(index, 1);
+	            return true;
+	        }
+	        return false;
+	    }
+	    removeByName(name) {
+	        const tool = this.get(name);
+	        if (tool) {
+	            this.remove(tool);
+	            return true;
+	        }
+	        return false;
+	    }
+	    update(delta) {
+	        for (const tool of this.tools) {
+	            tool.update(delta);
+	        }
+	    }
+	    hideAll() {
+	        for (const tool of this.tools) {
+	            if (tool && isHideable(tool)) {
+	                tool.visible = false;
+	            }
+	        }
+	    }
+	    showAll() {
+	        for (const tool of this.tools) {
+	            if (tool && isHideable(tool)) {
+	                tool.visible = true;
+	            }
+	        }
+	    }
+	    toggleAllVisibility() {
+	        for (const tool of this.tools) {
+	            if (tool && isHideable(tool)) {
+	                tool.visible = !tool.visible;
+	            }
+	        }
+	    }
+	    enable(name, isolate = true) {
+	        if (isolate === false) {
+	            this.disableAll();
+	        }
+	        const tool = this.get(name);
+	        if (tool && isEnableable(tool)) {
+	            tool.enabled = true;
+	            return true;
+	        }
+	        else {
+	            return false;
+	        }
+	    }
+	    disable(name) {
+	        const tool = this.get(name);
+	        if (tool && isEnableable(tool)) {
+	            tool.enabled = false;
+	            return true;
+	        }
+	        else {
+	            return false;
+	        }
+	    }
+	    disableAll() {
+	        for (const tool of this.tools) {
+	            if (tool && isEnableable(tool)) {
+	                console.log("Disabling tool: " + tool.name);
+	                tool.enabled = false;
+	            }
+	        }
+	    }
+	    toggle(name) {
+	        const tool = this.get(name);
+	        if (tool && isEnableable(tool)) {
+	            const enabled = tool.enabled;
+	            this.disableAll();
+	            tool.enabled = !enabled;
+	        }
+	    }
+	    get(name) {
+	        return this.tools.find((tool) => tool.name === name);
+	    }
+	    printToolsState() {
+	        const states = this.tools.map((tool) => ({
+	            name: tool.name,
+	            // @ts-ignore
+	            enabled: tool === null || tool === void 0 ? void 0 : tool.enabled,
+	            // @ts-ignore
+	            visible: tool === null || tool === void 0 ? void 0 : tool.enabled
+	        }));
+	        console.table(states);
+	    }
+	}
 
 	const container = document.getElementById('viewer-container');
 

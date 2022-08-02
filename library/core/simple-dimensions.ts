@@ -6,29 +6,29 @@ import {
   LineDashedMaterial,
   Mesh,
   MeshBasicMaterial,
-  Object3D, Raycaster, Vector2,
-  Vector3
-} from 'three';
-import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer';
-import {IEnableable, IHideable, ToolComponent} from "./base-types";
-import {Components} from "../components";
-import {
+  Object3D,
+  Raycaster,
+  Vector2,
+  Vector3,
   BoxGeometry,
   Group,
   Line,
   LineBasicMaterial,
-  Camera
-} from 'three';
-import { disposeMeshRecursively } from './three-utils';
+  Camera,
+} from "three";
+import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
+import { IEnableable, IHideable, ToolComponent } from "./base-types";
+import { Components } from "../components";
+
+import { disposeMeshRecursively } from "./three-utils";
 
 export class SimpleDimensions implements ToolComponent, IEnableable, IHideable {
-
   public readonly name = "dimensions";
   private readonly context: Components;
   private dimensions: IfcDimensionLine[] = [];
   private currentDimension?: IfcDimensionLine;
-  readonly labelClassName = 'ifcjs-dimension-label';
-  readonly previewClassName = 'ifcjs-dimension-preview';
+  readonly labelClassName = "ifcjs-dimension-label";
+  readonly previewClassName = "ifcjs-dimension-preview";
 
   // State
   public _enabled = false;
@@ -51,10 +51,13 @@ export class SimpleDimensions implements ToolComponent, IEnableable, IHideable {
     linewidth: 2,
     depthTest: false,
     dashSize: 0.2,
-    gapSize: 0.2
+    gapSize: 0.2,
   });
 
-  private endpointsMaterial = new MeshBasicMaterial({ color: 0x000000, depthTest: false });
+  private endpointsMaterial = new MeshBasicMaterial({
+    color: 0x000000,
+    depthTest: false,
+  });
 
   // Temp variables
   private startPoint = new Vector3();
@@ -62,25 +65,27 @@ export class SimpleDimensions implements ToolComponent, IEnableable, IHideable {
 
   position = new Vector2();
   rawPosition = new Vector2();
-  raycaster = new Raycaster()
+  raycaster = new Raycaster();
 
   constructor(context: Components) {
     this.context = context;
     this.endpoint = SimpleDimensions.getDefaultEndpointGeometry();
-    const htmlPreview = document.createElement('div');
+    const htmlPreview = document.createElement("div");
     htmlPreview.className = this.previewClassName;
     this.previewElement = new CSS2DObject(htmlPreview);
     this.previewElement.visible = false;
 
     // Mouse position
-    const domElement = context.renderer!.renderer.domElement
+    const domElement = context.renderer!.renderer.domElement;
 
     domElement.onmousemove = (event: MouseEvent) => {
       this.rawPosition.x = event.clientX;
       this.rawPosition.y = event.clientY;
       const bounds = domElement.getBoundingClientRect();
-      this.position.x = ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1;
-      this.position.y = -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1;
+      this.position.x =
+        ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1;
+      this.position.y =
+        -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1;
     };
   }
 
@@ -128,7 +133,7 @@ export class SimpleDimensions implements ToolComponent, IEnableable, IHideable {
   set enabled(state: boolean) {
     this._enabled = state;
     this.previewActive = state;
-    if(!this.visible && state){
+    if (!this.visible && state) {
       this.visible = true;
     }
   }
@@ -141,9 +146,9 @@ export class SimpleDimensions implements ToolComponent, IEnableable, IHideable {
     return this.previewElement;
   }
 
-  set visible(state: boolean){
+  set visible(state: boolean) {
     this._visible = state;
-    if(this.enabled && !state){
+    if (this.enabled && !state) {
       this.enabled = false;
     }
     this.dimensions.forEach((dim) => {
@@ -151,14 +156,14 @@ export class SimpleDimensions implements ToolComponent, IEnableable, IHideable {
     });
   }
 
-  get visible(){
+  get visible() {
     return this._visible;
   }
 
   private set previewActive(state: boolean) {
     this.preview = state;
     const scene = this.context.scene?.getScene();
-    if(!scene) throw new Error("Dimensions rely on scene to be present.")
+    if (!scene) throw new Error("Dimensions rely on scene to be present.");
     if (this.preview) {
       scene.add(this.previewElement);
     } else {
@@ -215,7 +220,9 @@ export class SimpleDimensions implements ToolComponent, IEnableable, IHideable {
     const boundingBoxes = this.getBoundingBoxes();
     const intersects = this.castRay(boundingBoxes);
     if (intersects.length === 0) return;
-    const selected = this.dimensions.find((dim) => dim.boundingBox === intersects[0].object);
+    const selected = this.dimensions.find(
+      (dim) => dim.boundingBox === intersects[0].object
+    );
     if (!selected) return;
     const index = this.dimensions.indexOf(selected);
     this.dimensions.splice(index, 1);
@@ -224,7 +231,7 @@ export class SimpleDimensions implements ToolComponent, IEnableable, IHideable {
 
   castRay(items: Object3D[]) {
     const camera = this.context.camera?.getCamera();
-    if(!camera) throw new Error("Camera required for clipper")
+    if (!camera) throw new Error("Camera required for clipper");
     this.raycaster.setFromCamera(this.position, camera);
     return this.raycaster.intersectObjects(items);
   }
@@ -239,7 +246,9 @@ export class SimpleDimensions implements ToolComponent, IEnableable, IHideable {
     const planes = this.context.renderer?.renderer.clippingPlanes;
     if (objs.length <= 0 || !planes || planes?.length <= 0) return objs;
     // const planes = this.clipper?.planes.map((p) => p.plane);
-    return objs.filter((elem) => planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0));
+    return objs.filter((elem) =>
+      planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0)
+    );
   }
 
   deleteAll() {
@@ -344,18 +353,20 @@ export class SimpleDimensions implements ToolComponent, IEnableable, IHideable {
     return [
       this.getVertex(intersects.face.a, geom),
       this.getVertex(intersects.face.b, geom),
-      this.getVertex(intersects.face.c, geom)
+      this.getVertex(intersects.face.c, geom),
     ];
   }
 
   private getVertex(index: number, geom: BufferGeometry) {
     if (index === undefined) return null;
     const vertices = geom.attributes.position;
-    return new Vector3(vertices.getX(index), vertices.getY(index), vertices.getZ(index));
+    return new Vector3(
+      vertices.getX(index),
+      vertices.getY(index),
+      vertices.getZ(index)
+    );
   }
 }
-
-
 
 export class IfcDimensionLine {
   private readonly context: Components;
@@ -364,7 +375,7 @@ export class IfcDimensionLine {
   static scaleFactor = 0.1;
 
   static scale = 1;
-  static units = 'm';
+  static units = "m";
 
   // Elements
   private root = new Group();
@@ -485,7 +496,9 @@ export class IfcDimensionLine {
 
   set endpointScale(scale: Vector3) {
     this.scale = scale;
-    this.endpointMeshes.forEach((mesh) => mesh.scale.set(scale.x, scale.y, scale.z));
+    this.endpointMeshes.forEach((mesh) =>
+      mesh.scale.set(scale.x, scale.y, scale.z)
+    );
   }
 
   set endPoint(point: Vector3) {
@@ -516,14 +529,24 @@ export class IfcDimensionLine {
   }
 
   private rescaleObjectsToCameraPosition() {
-    this.endpointMeshes.forEach((mesh) => this.rescaleMesh(mesh, IfcDimensionLine.scaleFactor));
+    this.endpointMeshes.forEach((mesh) =>
+      this.rescaleMesh(mesh, IfcDimensionLine.scaleFactor)
+    );
     if (this.boundingMesh) {
       this.rescaleMesh(this.boundingMesh, this.boundingSize, true, true, false);
     }
   }
 
-  private rescaleMesh(mesh: Mesh, scalefactor = 1, x = true, y = true, z = true) {
-    let scale = new Vector3().subVectors(mesh.position, this.camera.position).length();
+  private rescaleMesh(
+    mesh: Mesh,
+    scalefactor = 1,
+    x = true,
+    y = true,
+    z = true
+  ) {
+    let scale = new Vector3()
+      .subVectors(mesh.position, this.camera.position)
+      .length();
     scale *= scalefactor;
     const scaleX = x ? scale : 1;
     const scaleY = y ? scale : 1;
@@ -546,7 +569,7 @@ export class IfcDimensionLine {
   }
 
   private newText() {
-    const htmlText = document.createElement('div');
+    const htmlText = document.createElement("div");
     htmlText.className = this.labelClassName;
     htmlText.textContent = this.getTextContent();
     const label = new CSS2DObject(htmlText);
