@@ -5,14 +5,19 @@ import {Fragment} from "bim-fragment";
 
 export default class FragmentCulling {
 
-  renderTarget: THREE.WebGLRenderTarget;
+  readonly renderTarget: THREE.WebGLRenderTarget;
+  readonly bufferSize: number;
 
-  constructor(private components: Components, private fragment: Fragments) {
-
-    const rtWidth = 512;
-    const rtHeight = 512;
-    this.renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight);
-    window.setInterval(this.updateVisibility, 5000)
+  constructor(
+    private components: Components,
+    private fragment: Fragments,
+    readonly updateInterval = 1000,
+    readonly rtWidth = 512,
+    readonly rtHeight = 512)
+  {
+    this.renderTarget = new THREE.WebGLRenderTarget(this.rtWidth, this.rtHeight);
+    this.bufferSize = this.rtWidth * this.rtHeight * 4;
+    window.setInterval(this.updateVisibility, updateInterval)
   }
 
   updateVisibility = () => {
@@ -81,12 +86,10 @@ export default class FragmentCulling {
 
     this.components.renderer.renderer.render(this.components.scene.getScene(), this.components.camera.getCamera())
 
-    const size = 512 * 512 * 4;
-    const buffer = new Uint8Array(size)
-    this.components.renderer.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, 512, 512, buffer);
+    const buffer = new Uint8Array(this.bufferSize)
+    this.components.renderer.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, buffer);
 
-
-    for (let i = 0; i < size; i += 4) {
+    for (let i = 0; i < this.bufferSize; i += 4) {
       const r = buffer[i];
       const g = buffer[i + 1]
       const b = buffer[i + 2]
@@ -100,7 +103,6 @@ export default class FragmentCulling {
     for(const [_code, fragment] of fragmentColorMap.entries()){
       fragment.mesh.visible = false;
     }
-
 
     for(const fragment of this.fragment.fragments){
       // Restore material
