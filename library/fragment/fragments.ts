@@ -17,13 +17,17 @@ export class Fragments {
 
   async load(geometryURL: string, dataURL: string) {
     const fragment = await this.loader.load(geometryURL, dataURL);
-    this.fragments.push(fragment);
-    this.components.meshes.push(fragment.mesh);
-    const scene = this.components.scene.getScene();
-    scene.add(fragment.mesh);
+    this.add(fragment)
   }
 
   updateHighlight() {
     this.highlighter.fragments = this.fragments;
+  }
+
+  add(fragment: Fragment){
+    this.fragments.push(fragment);
+    this.components.meshes.push(fragment.mesh);
+    const scene = this.components.scene.getScene();
+    scene.add(fragment.mesh);
   }
 }
