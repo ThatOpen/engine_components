@@ -7,6 +7,7 @@ export default class FragmentCulling {
 
   readonly renderTarget: THREE.WebGLRenderTarget;
   readonly bufferSize: number;
+  readonly buffer: Uint8Array
 
   constructor(
     private components: Components,
@@ -17,6 +18,7 @@ export default class FragmentCulling {
   {
     this.renderTarget = new THREE.WebGLRenderTarget(this.rtWidth, this.rtHeight);
     this.bufferSize = this.rtWidth * this.rtHeight * 4;
+    this.buffer = new Uint8Array(this.bufferSize);
     window.setInterval(this.updateVisibility, updateInterval)
   }
 
@@ -59,6 +61,8 @@ export default class FragmentCulling {
 
     const fragmentColorMap = new Map<string, Fragment>();
 
+    const meshesToHideForRender: THREE.Mesh[] = []
+
     for (const fragment of this.fragment.fragments) {
       // Store original materials
       if (!fragment.mesh.userData.prevMat) {
@@ -69,31 +73,50 @@ export default class FragmentCulling {
       const mat = new THREE.MeshBasicMaterial({color})
       fragmentColorMap.set(code, fragment);
 
+      let shouldBeHidden = false;
+
       if (Array.isArray(fragment.mesh.material)) {
         const matArray: any[] = [];
-        for (const {} of fragment.mesh.material) {
+        for (const material of fragment.mesh.material) {
+          if(material.opacity !== 1) {
+            shouldBeHidden = true;
+          }
           matArray.push(mat)
         }
         fragment.mesh.material = matArray;
       } else {
         // @ts-ignore
         fragment.mesh.material = mat;
+
+        // @ts-ignore
+        if(fragment.mesh.material.opacity !== 1) {
+          shouldBeHidden = true;
+        }
       }
 
       // Set to visible
       fragment.mesh.visible = true;
+
+      if(shouldBeHidden){
+        meshesToHideForRender.push(fragment.mesh)
+      }
     }
+
+    console.log(meshesToHideForRender)
+
+    //for(const mesh of meshesToHideForRender) mesh.visible = false;
 
     this.components.renderer.renderer.render(this.components.scene.getScene(), this.components.camera.getCamera())
 
-    const buffer = new Uint8Array(this.bufferSize)
-    this.components.renderer.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, buffer);
+    //for(const mesh of meshesToHideForRender) mesh.visible = true;
+
+    this.components.renderer.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, this.buffer);
 
     for (let i = 0; i < this.bufferSize; i += 4) {
-      const r = buffer[i];
-      const g = buffer[i + 1]
-      const b = buffer[i + 2]
-      //const a = buffer[i + 3]
+      const r = this.buffer[i];
+      const g = this.buffer[i + 1]
+      const b = this.buffer[i + 2]
+      //const a = this.buffer[i + 3]
       const code = `${r}${g}${b}`
       fragmentColorMap.delete(code)
     }
