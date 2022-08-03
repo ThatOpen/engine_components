@@ -33,7 +33,10 @@ export class FragmentHighlighter {
   }
 
   highlightOnHover() {
+    const t0 = performance.now();
     const result = this.components.raycaster.castRay(this.fragmentMeshes);
+    const t1 = performance.now();
+    console.log(`Time ${t1 - t0}`)
     if (result) {
       const scene = this.components.scene.getScene();
       const fragment = this.fragmentsById[result.object.uuid];

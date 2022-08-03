@@ -2,14 +2,17 @@ import { FragmentLoader } from "bim-fragment/fragment-loader";
 import { Fragment } from "bim-fragment";
 import { Components } from "../components";
 import { FragmentHighlighter } from "./fragment-highlighter";
+import FragmentCulling from "./fragment-culling";
 
 export class Fragments {
   loader = new FragmentLoader();
   fragments: Fragment[] = [];
   highlighter: FragmentHighlighter;
+  culler: FragmentCulling;
 
   constructor(private components: Components) {
     this.highlighter = new FragmentHighlighter(components);
+    this.culler = new FragmentCulling(components, this);
   }
 
   async load(geometryURL: string, dataURL: string) {
