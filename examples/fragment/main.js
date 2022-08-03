@@ -11,6 +11,7 @@ import {
     Fragments,
     SimpleRaycaster
 } from 'openbim-components'
+import { unzip } from "unzipit";
 
 const container = document.getElementById('viewer-container');
 
@@ -55,7 +56,26 @@ components.renderer.onStartRender.on(() => stats.begin());
 components.renderer.onFinishRender.on(() => stats.end());
 
 const fragments = new Fragments(components);
-fragments.loadCompressed('../models/model.zip');
+loadFragments();
+
+async function loadFragments() {
+    const { entries } = await unzip('../models/model.zip');
+
+    const fileNames = Object.keys(entries);
+    for (let i = 0; i <= fileNames.length - 5; i += 2) {
+        const geometryName = fileNames[i];
+        const geometry = await entries[geometryName].blob();
+        const geometryURL = URL.createObjectURL(geometry);
+
+        const dataName = fileNames[i + 1];
+        const data = await entries[dataName].blob();
+        const dataURL = URL.createObjectURL(data);
+
+       await fragments.load(geometryURL, dataURL);
+    }
+
+    fragments.updateHighlight();
+}
 
 window.addEventListener("mousemove", () => fragments.highlighter.highlightOnHover());
 

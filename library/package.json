@@ -28,7 +28,6 @@
   },
   "dependencies": {
     "bim-fragment": "latest",
-    "three": "0.135",
-    "unzipit": "^1.4.0"
+    "three": "0.135"
   }
 }

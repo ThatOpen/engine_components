@@ -63761,6 +63761,76 @@
 	    }
 	}
 
+	class FragmentHighlighter {
+	    constructor(components) {
+	        this.components = components;
+	        this.highlightMaterial = new MeshBasicMaterial({
+	            color: 0xff0000,
+	            depthTest: false,
+	        });
+	        this.selectionId = "selection";
+	        this.fragmentsById = {};
+	        this.fragmentMeshes = [];
+	        this.tempMatrix = new Matrix4();
+	    }
+	    set fragments(fragments) {
+	        this.fragmentsById = {};
+	        this.fragmentMeshes.length = 0;
+	        for (const fragment of fragments) {
+	            this.fragmentsById[fragment.id] = fragment;
+	            this.fragmentMeshes.push(fragment.mesh);
+	            if (!fragment.fragments[this.selectionId]) {
+	                fragment.addFragment(this.selectionId, [this.highlightMaterial]);
+	                fragment.fragments[this.selectionId].mesh.renderOrder = 1;
+	            }
+	        }
+	    }
+	    highlightOnHover() {
+	        const result = this.components.raycaster.castRay(this.fragmentMeshes);
+	        if (result) {
+	            const scene = this.components.scene.getScene();
+	            const fragment = this.fragmentsById[result.object.uuid];
+	            if (fragment) {
+	                if (this.selection)
+	                    this.selection.mesh.removeFromParent();
+	                this.selection = fragment.fragments[this.selectionId];
+	                scene.add(this.selection.mesh);
+	                fragment.getInstance(result.instanceId, this.tempMatrix);
+	                this.selection.setInstance(0, { transform: this.tempMatrix });
+	                this.selection.mesh.instanceMatrix.needsUpdate = true;
+	                // Select block
+	                const blockID = this.selection.getBlockID(result);
+	                if (blockID !== null) {
+	                    this.selection.blocks.add([blockID], true);
+	                    const itemID = fragment.getItemID(result.instanceId, blockID);
+	                    console.log(itemID);
+	                }
+	            }
+	        }
+	        else if (this.selection)
+	            this.selection.mesh.removeFromParent();
+	    }
+	}
+
+	class Fragments {
+	    constructor(components) {
+	        this.components = components;
+	        this.loader = new FragmentLoader();
+	        this.fragments = [];
+	        this.highlighter = new FragmentHighlighter(components);
+	    }
+	    async load(geometryURL, dataURL) {
+	        const fragment = await this.loader.load(geometryURL, dataURL);
+	        this.fragments.push(fragment);
+	        this.components.meshes.push(fragment.mesh);
+	        const scene = this.components.scene.getScene();
+	        scene.add(fragment.mesh);
+	    }
+	    updateHighlight() {
+	        this.highlighter.fragments = this.fragments;
+	    }
+	}
+
 	/* unzipit@1.4.0, license MIT */
 	/* global SharedArrayBuffer, process */
 
@@ -64788,90 +64858,6 @@
 	  };
 	}
 
-	class FragmentHighlighter {
-	    constructor(components) {
-	        this.components = components;
-	        this.highlightMaterial = new MeshBasicMaterial({
-	            color: 0xff0000,
-	            depthTest: false,
-	        });
-	        this.selectionId = "selection";
-	        this.fragmentsById = {};
-	        this.fragmentMeshes = [];
-	        this.tempMatrix = new Matrix4();
-	    }
-	    set fragments(fragments) {
-	        this.fragmentsById = {};
-	        this.fragmentMeshes.length = 0;
-	        for (const fragment of fragments) {
-	            this.fragmentsById[fragment.id] = fragment;
-	            this.fragmentMeshes.push(fragment.mesh);
-	            if (!fragment.fragments[this.selectionId]) {
-	                fragment.addFragment(this.selectionId, [this.highlightMaterial]);
-	                fragment.fragments[this.selectionId].mesh.renderOrder = 1;
-	            }
-	        }
-	    }
-	    highlightOnHover() {
-	        const result = this.components.raycaster.castRay(this.fragmentMeshes);
-	        if (result) {
-	            const scene = this.components.scene.getScene();
-	            const fragment = this.fragmentsById[result.object.uuid];
-	            if (fragment) {
-	                if (this.selection)
-	                    this.selection.mesh.removeFromParent();
-	                this.selection = fragment.fragments[this.selectionId];
-	                scene.add(this.selection.mesh);
-	                fragment.getInstance(result.instanceId, this.tempMatrix);
-	                this.selection.setInstance(0, { transform: this.tempMatrix });
-	                this.selection.mesh.instanceMatrix.needsUpdate = true;
-	                // Select block
-	                const blockID = this.selection.getBlockID(result);
-	                if (blockID !== null) {
-	                    this.selection.blocks.add([blockID], true);
-	                    const itemID = fragment.getItemID(result.instanceId, blockID);
-	                    console.log(itemID);
-	                }
-	            }
-	        }
-	        else if (this.selection)
-	            this.selection.mesh.removeFromParent();
-	    }
-	}
-
-	class Fragments {
-	    constructor(components) {
-	        this.components = components;
-	        this.loader = new FragmentLoader();
-	        this.fragments = [];
-	        this.highlighter = new FragmentHighlighter(components);
-	    }
-	    async loadCompressed(fileURL) {
-	        const { entries } = await unzip(fileURL);
-	        const fileNames = Object.keys(entries);
-	        for (let i = 0; i <= fileNames.length - 5; i += 2) {
-	            const geometryName = fileNames[i];
-	            const geometry = await entries[geometryName].blob();
-	            const geometryURL = URL.createObjectURL(geometry);
-	            const dataName = fileNames[i + 1];
-	            const data = await entries[dataName].blob();
-	            const dataURL = URL.createObjectURL(data);
-	            const fragment = await this.loader.load(geometryURL, dataURL);
-	            this.fragments.push(fragment);
-	            const scene = this.components.scene.getScene();
-	            this.components.meshes.push(fragment.mesh);
-	            scene.add(fragment.mesh);
-	        }
-	        this.highlighter.fragments = this.fragments;
-	    }
-	    async load(geometryURL, dataURL) {
-	        const result = await this.loader.load(geometryURL, dataURL);
-	        this.fragments.push(result);
-	        const scene = this.components.scene.getScene();
-	        scene.add(result.mesh);
-	    }
-	}
-
 	const container = document.getElementById('viewer-container');
 
 	const components = new Components();
@@ -64915,7 +64901,26 @@
 	components.renderer.onFinishRender.on(() => stats.end());
 
 	const fragments = new Fragments(components);
-	fragments.loadCompressed('../models/model.zip');
+	loadFragments();
+
+	async function loadFragments() {
+	    const { entries } = await unzip('../models/model.zip');
+
+	    const fileNames = Object.keys(entries);
+	    for (let i = 0; i <= fileNames.length - 5; i += 2) {
+	        const geometryName = fileNames[i];
+	        const geometry = await entries[geometryName].blob();
+	        const geometryURL = URL.createObjectURL(geometry);
+
+	        const dataName = fileNames[i + 1];
+	        const data = await entries[dataName].blob();
+	        const dataURL = URL.createObjectURL(data);
+
+	       await fragments.load(geometryURL, dataURL);
+	    }
+
+	    fragments.updateHighlight();
+	}
 
 	window.addEventListener("mousemove", () => fragments.highlighter.highlightOnHover());
 
