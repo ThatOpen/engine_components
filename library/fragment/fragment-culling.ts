@@ -114,14 +114,22 @@ export default class FragmentCulling {
     this.components.renderer.renderer.render(this.components.scene.getScene(), this.components.camera.getCamera())
     this.components.renderer.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, this.buffer);
 
+    const visibleFragments: Fragment[] = []
+
     for (let i = 0; i < this.bufferSize; i += 4) {
       const r = this.buffer[i];
       const g = this.buffer[i + 1]
       const b = this.buffer[i + 2]
       //const a = this.buffer[i + 3]
       const code = `${r}${g}${b}`
-      fragmentColorMap.delete(code)
+      const fragment = fragmentColorMap.get(code)
+      if(fragment){
+        visibleFragments.push(fragment);
+        fragmentColorMap.delete(code);
+      }
     }
+
+    this.fragment.highlighter.fragments = visibleFragments;
 
     this.components.renderer.renderer.setRenderTarget(null)
 
@@ -129,9 +137,9 @@ export default class FragmentCulling {
       fragment.mesh.visible = false;
     }
 
-    // for(const fragment of this.fragment.fragments){
-    //   // Restore material
-    //   fragment.mesh.material = fragment.mesh.userData.prevMat;
-    // }
+    for(const fragment of this.fragment.fragments){
+      // Restore material
+      fragment.mesh.material = fragment.mesh.userData.prevMat;
+    }
   }
 }

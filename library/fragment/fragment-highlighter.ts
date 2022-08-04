@@ -23,7 +23,10 @@ export class FragmentHighlighter {
 
     for (const fragment of fragments) {
       this.fragmentsById[fragment.id] = fragment;
-      this.fragmentMeshes.push(fragment.mesh);
+
+      if(!this.fragmentMeshes.find((x) => x.id === fragment.mesh.id)){
+        this.fragmentMeshes.push(fragment.mesh);
+      }
 
       if (!fragment.fragments[this.selectionId]) {
         fragment.addFragment(this.selectionId, [this.highlightMaterial]);
