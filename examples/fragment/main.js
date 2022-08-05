@@ -59,19 +59,80 @@ const fragments = new Fragments(components);
 loadFragments();
 
 async function loadFragments() {
-    const { entries } = await unzip('../models/model.zip');
+    const { entries } = await unzip('../models/small.zip');
 
     const fileNames = Object.keys(entries);
-    for (let i = 0; i <= fileNames.length - 5; i += 2) {
+
+    const allTypes = await entries['all-types.json'].json();
+    const modelTypes = await entries['model-types.json'].json();
+    const levelsProperties = await entries['levels-properties.json'].json();
+    const levelsRelationship = await entries['levels-relationship.json'].json();
+
+    const floorNames = {};
+    for(const levelProps of levelsProperties) {
+        floorNames[levelProps.expressID] = levelProps.Name.value;
+    }
+
+    for (let i = 0; i < fileNames.length; i++) {
+
+        const name = fileNames[i];
+        if(!name.includes('.glb')) continue;
+
+        // Load data
         const geometryName = fileNames[i];
         const geometry = await entries[geometryName].blob();
         const geometryURL = URL.createObjectURL(geometry);
 
-        const dataName = fileNames[i + 1];
-        const data = await entries[dataName].blob();
-        const dataURL = URL.createObjectURL(data);
+        const dataName = geometryName.substring(0, geometryName.indexOf('.glb')) + '.json';
+        const dataBlob = await entries[dataName].blob();
+        const data = await entries[dataName].json();
+        const dataURL = URL.createObjectURL(dataBlob);
 
-       await fragments.load(geometryURL, dataURL);
+       const fragment = await fragments.load(geometryURL, dataURL);
+
+       // Categorize items
+
+        const groups = {category: {}, floor: {}}
+        const ids = data.ids;
+
+        for(const id of ids) {
+            const categoryID = modelTypes[id];
+            const category = allTypes[categoryID];
+            if(!groups.category[category]) {
+                groups.category[category] = [];
+            }
+            groups.category[category].push(id);
+
+            const floorID = levelsRelationship[id];
+            const floor = floorNames[floorID];
+            if(!groups.floor[floor]) {
+                groups.floor[floor] = [];
+            }
+            groups.floor[floor].push(floor);
+        }
+
+        fragments.groups.add(fragment.id, groups);
+    }
+
+    console.log(fragments.groups);
+
+    const buttonContainer = document.getElementById('button-container');
+    const categories = Object.keys(fragments.groups.groupSystems.category);
+    for(const category of categories) {
+        const button = document.createElement('button');
+        button.textContent = category;
+        buttonContainer.appendChild(button);
+
+        let visible = true;
+        button.onclick = () => {
+            visible = !visible;
+            const models = fragments.groups.get({ category });
+            for(const guid in models) {
+                const ids = models[guid];
+                const frag = fragments.fragments[guid];
+                frag.setVisibility(ids, visible);
+            }
+        }
     }
 
     fragments.updateHighlight();

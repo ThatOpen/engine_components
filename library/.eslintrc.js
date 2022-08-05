@@ -36,6 +36,7 @@ module.exports = {
     "no-empty-function": "off",
     "no-continue": "off",
     "no-underscore-dangle": "off",
+    "guard-for-in": "off",
     "import/extensions": [
       "error",
       "ignorePackages",

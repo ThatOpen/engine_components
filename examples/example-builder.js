@@ -28,12 +28,12 @@ function updateAllExamples() {
         const isExampleFolder = files.includes(rollupConfigFile);
         if (isExampleFolder) {
 
-            exec(`yarn workspace ${folder} add openbim-components@${version}`,
-                (error) => {
-                    if (error) {
-                        console.log(error.message)
-                    }
-                });
+            // exec(`yarn workspace ${folder} add openbim-components@${version}`,
+            //     (error) => {
+            //         if (error) {
+            //             console.log(error.message)
+            //         }
+            //     });
 
             exec(`yarn workspace ${folder} build`,
                 (error) => {

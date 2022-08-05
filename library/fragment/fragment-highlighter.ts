@@ -33,34 +33,34 @@ export class FragmentHighlighter {
   }
 
   highlightOnHover() {
-    const t0 = performance.now();
     const result = this.components.raycaster.castRay(this.fragmentMeshes);
-    const t1 = performance.now();
-    console.log(`Time ${t1 - t0}`)
-    if (result) {
-      const scene = this.components.scene.getScene();
-      const fragment = this.fragmentsById[result.object.uuid];
-      if (fragment) {
-        if (this.selection) this.selection.mesh.removeFromParent();
-        this.selection = fragment.fragments[this.selectionId];
-        scene.add(this.selection.mesh);
-        fragment.getInstance(result.instanceId as number, this.tempMatrix);
-        this.selection.setInstance(0, { transform: this.tempMatrix });
-        this.selection.mesh.instanceMatrix.needsUpdate = true;
 
-        // Select block
-        const blockID = this.selection.getBlockID(result);
-        if (blockID !== null) {
-          this.selection.blocks.add([blockID], true);
+    if (!result) {
+      this.selection?.mesh.removeFromParent();
+      return;
+    }
 
-          const itemID = fragment.getItemID(
-            result.instanceId as number,
-            blockID
-          );
+    const mesh = result.object as Mesh;
+    const geometry = mesh.geometry;
+    const index = result.face?.a;
+    if (!geometry || !index) return;
 
-          console.log(itemID);
-        }
+    const scene = this.components.scene.getScene();
+    const fragment = this.fragmentsById[result.object.uuid];
+
+    if (fragment) {
+      if (this.selection) this.selection.mesh.removeFromParent();
+      this.selection = fragment.fragments[this.selectionId];
+      scene.add(this.selection.mesh);
+      fragment.getInstance(result.instanceId as number, this.tempMatrix);
+      this.selection.setInstance(0, { transform: this.tempMatrix });
+      this.selection.mesh.instanceMatrix.needsUpdate = true;
+
+      // Select block
+      const blockID = this.selection.getVertexBlockID(geometry, index);
+      if (blockID !== null) {
+        this.selection.blocks.add([blockID], true);
       }
-    } else if (this.selection) this.selection.mesh.removeFromParent();
+    }
   }
 }
