@@ -27,7 +27,7 @@
     "typescript": "^4.3.2"
   },
   "dependencies": {
-    "bim-fragment": "latest",
+    "bim-fragment": "0.0.10",
     "three": "0.135"
   }
 }

@@ -63157,6 +63157,7 @@
 	    constructor(geometry, material, count) {
 	        this.fragments = {};
 	        this.items = [];
+	        this.hiddenInstances = {};
 	        this.mesh = new FragmentMesh(geometry, material, count);
 	        this.id = this.mesh.uuid;
 	        this.capacity = count;
@@ -63178,21 +63179,30 @@
 	        const index = this.getItemIndex(instanceID, blockID);
 	        return this.items[index];
 	    }
+	    getInstanceAndBlockID(itemID) {
+	        const index = this.items.indexOf(itemID);
+	        const instanceID = this.getInstanceIDFromIndex(index);
+	        const blockID = index % this.blocks.count;
+	        return { instanceID, blockID };
+	    }
+	    getVertexBlockID(geometry, index) {
+	        return geometry.attributes.blockID.array[index];
+	    }
 	    getItemData(itemID) {
 	        const index = this.items.indexOf(itemID);
 	        const instanceID = Math.ceil(index / this.blocks.count);
 	        const blockID = index % this.blocks.count;
 	        return { instanceID, blockID };
 	    }
-	    getInstance(instanceId, matrix) {
-	        return this.mesh.getMatrixAt(instanceId, matrix);
+	    getInstance(instanceID, matrix) {
+	        return this.mesh.getMatrixAt(instanceID, matrix);
 	    }
-	    setInstance(instanceId, items) {
-	        this.checkIfInstanceExist(instanceId);
-	        this.mesh.setMatrixAt(instanceId, items.transform);
+	    setInstance(instanceID, items) {
+	        this.checkIfInstanceExist(instanceID);
+	        this.mesh.setMatrixAt(instanceID, items.transform);
 	        this.mesh.instanceMatrix.needsUpdate = true;
 	        if (items.ids) {
-	            this.saveItemsInMap(items.ids, instanceId);
+	            this.saveItemsInMap(items.ids, instanceID);
 	        }
 	    }
 	    addInstances(items) {
@@ -63203,21 +63213,14 @@
 	            this.setInstance(start + i, items[i]);
 	        }
 	    }
-	    removeInstances(ids) {
+	    removeInstances(itemsIDs) {
 	        if (this.mesh.count <= 1) {
 	            this.clear();
 	            return;
 	        }
-	        this.deleteAndRearrangeInstances(ids);
-	        this.mesh.count -= ids.length;
+	        this.deleteAndRearrangeInstances(itemsIDs);
+	        this.mesh.count -= itemsIDs.length;
 	        this.mesh.instanceMatrix.needsUpdate = true;
-	    }
-	    getBlockID(intersection) {
-	        const mesh = intersection.object;
-	        if (!mesh.geometry || !intersection.face) {
-	            return null;
-	        }
-	        return mesh.geometry.attributes.blockID.array[intersection.face.a];
 	    }
 	    clear() {
 	        this.mesh.clear();
@@ -63229,7 +63232,10 @@
 	        if (material === this.mesh.material) {
 	            this.copyGroups(newGeometry);
 	        }
-	        this.fragments[id] = new Fragment(newGeometry, material, this.capacity);
+	        const newFragment = new Fragment(newGeometry, material, this.capacity);
+	        newFragment.mesh.applyMatrix4(this.mesh.matrix);
+	        newFragment.mesh.updateMatrix();
+	        this.fragments[id] = newFragment;
 	        return this.fragments[id];
 	    }
 	    removeFragment(id) {
@@ -63237,6 +63243,26 @@
 	        if (fragment) {
 	            fragment.dispose(false);
 	            delete this.fragments[id];
+	        }
+	    }
+	    resetVisibility() {
+	        if (this.blocks.count > 1) {
+	            this.blocks.reset();
+	        }
+	        else {
+	            const hiddenInstances = Object.keys(this.hiddenInstances).map((id) => parseInt(id, 10));
+	            this.makeInstancesVisible(hiddenInstances);
+	            this.hiddenInstances = {};
+	        }
+	    }
+	    setVisibility(itemIDs, visible) {
+	        if (this.blocks.count > 1) {
+	            this.toggleBlockVisibility(visible, itemIDs);
+	            this.mesh.geometry.disposeBoundsTree();
+	            BVH.apply(this.mesh.geometry);
+	        }
+	        else {
+	            this.toggleInstanceVisibility(visible, itemIDs);
 	        }
 	    }
 	    resize(size) {
@@ -63315,28 +63341,84 @@
 	    // F.e. let there be 6 instances: (A) (B) (C) (D) (E) (F)
 	    // If instance (C) is removed: -> (A) (B) (F) (D) (E)
 	    deleteAndRearrangeInstances(ids) {
+	        const deletedItems = [];
 	        for (const id of ids) {
-	            this.deleteAndRearrange(id);
+	            const deleted = this.deleteAndRearrange(id);
+	            if (deleted) {
+	                deletedItems.push(deleted);
+	            }
 	        }
+	        for (const id of ids) {
+	            delete this.hiddenInstances[id];
+	        }
+	        return deletedItems;
 	    }
 	    deleteAndRearrange(id) {
 	        const index = this.items.indexOf(id);
 	        if (index === -1)
-	            return;
+	            return null;
 	        this.mesh.count--;
+	        const isLastElement = index === this.mesh.count;
+	        const instanceId = this.getInstanceIDFromIndex(index);
+	        const tempMatrix = new Matrix4();
+	        const transform = new Matrix4();
+	        this.mesh.getMatrixAt(instanceId, transform);
+	        if (isLastElement) {
+	            this.items.pop();
+	            return { ids: [id], transform };
+	        }
 	        const lastElement = this.mesh.count;
 	        this.items[index] = this.items[lastElement];
 	        this.items.pop();
-	        const instanceId = this.getInstanceId(id);
-	        const tempMatrix = new Matrix4();
 	        this.mesh.getMatrixAt(lastElement, tempMatrix);
 	        this.mesh.setMatrixAt(instanceId, tempMatrix);
+	        this.mesh.instanceMatrix.needsUpdate = true;
+	        return { ids: [id], transform };
 	    }
 	    getItemIndex(instanceId, blockId) {
 	        return instanceId * this.blocks.count + blockId;
 	    }
-	    getInstanceId(itemIndex) {
+	    getInstanceIDFromIndex(itemIndex) {
 	        return Math.trunc(itemIndex / this.blocks.count);
+	    }
+	    toggleInstanceVisibility(visible, itemIDs) {
+	        if (visible) {
+	            this.makeInstancesVisible(itemIDs);
+	        }
+	        else {
+	            this.makeInstancesInvisible(itemIDs);
+	        }
+	    }
+	    makeInstancesInvisible(itemIDs) {
+	        itemIDs = this.filterHiddenItems(itemIDs, false);
+	        const deletedItems = this.deleteAndRearrangeInstances(itemIDs);
+	        for (const item of deletedItems) {
+	            if (item.ids) {
+	                this.hiddenInstances[item.ids[0]] = item;
+	            }
+	        }
+	    }
+	    makeInstancesVisible(itemIDs) {
+	        const items = [];
+	        itemIDs = this.filterHiddenItems(itemIDs, true);
+	        for (const id of itemIDs) {
+	            items.push(this.hiddenInstances[id]);
+	            delete this.hiddenInstances[id];
+	        }
+	        this.addInstances(items);
+	    }
+	    filterHiddenItems(itemIDs, hidden) {
+	        const hiddenItems = Object.keys(this.hiddenInstances).map((item) => parseInt(item, 10));
+	        return itemIDs.filter((item) => hidden ? hiddenItems.includes(item) : !hiddenItems.includes(item));
+	    }
+	    toggleBlockVisibility(visible, itemIDs) {
+	        const blockIDs = itemIDs.map((id) => this.getInstanceAndBlockID(id).blockID);
+	        if (visible) {
+	            this.blocks.add(blockIDs, false);
+	        }
+	        else {
+	            this.blocks.remove(blockIDs);
+	        }
 	    }
 	}
 
@@ -63732,21 +63814,21 @@
 	        return this.getInstances(data);
 	    }
 	    getInstances(data) {
-	        const idCounter = 0;
+	        let idCounter = 0;
 	        const items = [];
-	        for (let i = 0; i < data.matrices.length - 15; i += 16) {
-	            this.getInstance(data, i, idCounter, items);
+	        const blockCount = data.matrices.length === 16 ? data.ids.length : 1;
+	        for (let matrixIndex = 0; matrixIndex < data.matrices.length - 15; matrixIndex += 16) {
+	            const matrixArray = [];
+	            for (let j = 0; j < 16; j++) {
+	                matrixArray.push(data.matrices[j + matrixIndex]);
+	            }
+	            const transform = new Matrix4().fromArray(matrixArray);
+	            const start = idCounter * blockCount;
+	            const ids = data.ids.slice(start, start + blockCount);
+	            idCounter++;
+	            items.push({ ids, transform });
 	        }
 	        return items;
-	    }
-	    getInstance(data, i, idCounter, items) {
-	        const matrixArray = [];
-	        for (let j = 0; j < 16; j++) {
-	            matrixArray.push(data.matrices[j + i]);
-	        }
-	        const transform = new Matrix4().fromArray(matrixArray);
-	        const ids = [data.ids[idCounter++]];
-	        items.push({ ids, transform });
 	    }
 	    getMaterials(meshes) {
 	        return meshes.map((child) => {
@@ -63786,48 +63868,109 @@
 	        }
 	    }
 	    highlightOnHover() {
+	        var _a, _b;
 	        const result = this.components.raycaster.castRay(this.fragmentMeshes);
-	        if (result) {
-	            const scene = this.components.scene.getScene();
-	            const fragment = this.fragmentsById[result.object.uuid];
-	            if (fragment) {
-	                if (this.selection)
-	                    this.selection.mesh.removeFromParent();
-	                this.selection = fragment.fragments[this.selectionId];
-	                scene.add(this.selection.mesh);
-	                fragment.getInstance(result.instanceId, this.tempMatrix);
-	                this.selection.setInstance(0, { transform: this.tempMatrix });
-	                this.selection.mesh.instanceMatrix.needsUpdate = true;
-	                // Select block
-	                const blockID = this.selection.getBlockID(result);
-	                if (blockID !== null) {
-	                    this.selection.blocks.add([blockID], true);
-	                    const itemID = fragment.getItemID(result.instanceId, blockID);
-	                    console.log(itemID);
-	                }
+	        if (!result) {
+	            (_a = this.selection) === null || _a === void 0 ? void 0 : _a.mesh.removeFromParent();
+	            return;
+	        }
+	        const mesh = result.object;
+	        const geometry = mesh.geometry;
+	        const index = (_b = result.face) === null || _b === void 0 ? void 0 : _b.a;
+	        if (!geometry || !index)
+	            return;
+	        const scene = this.components.scene.getScene();
+	        const fragment = this.fragmentsById[result.object.uuid];
+	        if (fragment) {
+	            if (this.selection)
+	                this.selection.mesh.removeFromParent();
+	            this.selection = fragment.fragments[this.selectionId];
+	            scene.add(this.selection.mesh);
+	            fragment.getInstance(result.instanceId, this.tempMatrix);
+	            this.selection.setInstance(0, { transform: this.tempMatrix });
+	            this.selection.mesh.instanceMatrix.needsUpdate = true;
+	            // Select block
+	            const blockID = this.selection.getVertexBlockID(geometry, index);
+	            if (blockID !== null) {
+	                this.selection.blocks.add([blockID], true);
 	            }
 	        }
-	        else if (this.selection)
-	            this.selection.mesh.removeFromParent();
 	    }
 	}
 
+	class FragmentGrouper {
+	    constructor() {
+	        this.groupSystems = {
+	            category: {},
+	            floor: {},
+	        };
+	    }
+	    add(guid, groupsSystems) {
+	        for (const system in groupsSystems) {
+	            if (!this.groupSystems[system]) {
+	                this.groupSystems[system] = {};
+	            }
+	            const existingGroups = this.groupSystems[system];
+	            const currentGroups = groupsSystems[system];
+	            for (const groupName in currentGroups) {
+	                if (!existingGroups[groupName]) {
+	                    existingGroups[groupName] = {};
+	                }
+	                existingGroups[groupName][guid] = currentGroups[groupName];
+	            }
+	        }
+	    }
+	    remove(guid) {
+	        for (const systemName in this.groupSystems) {
+	            const system = this.groupSystems[systemName];
+	            for (const groupName in system) {
+	                const group = system[groupName];
+	                delete group[guid];
+	            }
+	        }
+	    }
+	    get(filter) {
+	        const models = {};
+	        for (const name in filter) {
+	            const value = filter[name];
+	            const found = this.groupSystems[name][value];
+	            if (found) {
+	                for (const guid in found) {
+	                    if (!models[guid]) {
+	                        models[guid] = [];
+	                    }
+	                    models[guid].push(...found[guid]);
+	                }
+	            }
+	        }
+	        return models;
+	    }
+	    update(_delta) { }
+	}
+
 	class Fragments {
+	    // culler: FragmentCulling;
 	    constructor(components) {
 	        this.components = components;
+	        this.fragments = {};
 	        this.loader = new FragmentLoader();
-	        this.fragments = [];
+	        this.groups = new FragmentGrouper();
 	        this.highlighter = new FragmentHighlighter(components);
+	        // this.culler = new FragmentCulling(components, this);
 	    }
 	    async load(geometryURL, dataURL) {
 	        const fragment = await this.loader.load(geometryURL, dataURL);
-	        this.fragments.push(fragment);
+	        this.add(fragment);
+	        return fragment;
+	    }
+	    updateHighlight() {
+	        this.highlighter.fragments = Object.values(this.fragments);
+	    }
+	    add(fragment) {
+	        this.fragments[fragment.id] = fragment;
 	        this.components.meshes.push(fragment.mesh);
 	        const scene = this.components.scene.getScene();
 	        scene.add(fragment.mesh);
-	    }
-	    updateHighlight() {
-	        this.highlighter.fragments = this.fragments;
 	    }
 	}
 
@@ -64904,19 +65047,103 @@
 	loadFragments();
 
 	async function loadFragments() {
-	    const { entries } = await unzip('../models/model.zip');
+	    const { entries } = await unzip('../models/medium.zip');
 
 	    const fileNames = Object.keys(entries);
-	    for (let i = 0; i <= fileNames.length - 5; i += 2) {
+
+	    const allTypes = await entries['all-types.json'].json();
+	    const modelTypes = await entries['model-types.json'].json();
+	    const levelsProperties = await entries['levels-properties.json'].json();
+	    const levelsRelationship = await entries['levels-relationship.json'].json();
+
+	    const floorNames = {};
+	    for(const levelProps of levelsProperties) {
+	        floorNames[levelProps.expressID] = levelProps.Name.value;
+	    }
+
+	    for (let i = 0; i < fileNames.length; i++) {
+
+	        const name = fileNames[i];
+	        if(!name.includes('.glb')) continue;
+
+	        // Load data
 	        const geometryName = fileNames[i];
 	        const geometry = await entries[geometryName].blob();
 	        const geometryURL = URL.createObjectURL(geometry);
 
-	        const dataName = fileNames[i + 1];
-	        const data = await entries[dataName].blob();
-	        const dataURL = URL.createObjectURL(data);
+	        const dataName = geometryName.substring(0, geometryName.indexOf('.glb')) + '.json';
+	        const dataBlob = await entries[dataName].blob();
+	        const data = await entries[dataName].json();
+	        const dataURL = URL.createObjectURL(dataBlob);
 
-	       await fragments.load(geometryURL, dataURL);
+	       const fragment = await fragments.load(geometryURL, dataURL);
+
+	       // Group items for visibility
+
+	        const groups = {category: {}, floor: {}};
+	        const ids = data.ids;
+
+	        for(const id of ids) {
+	            const categoryID = modelTypes[id];
+	            const category = allTypes[categoryID];
+	            if(!groups.category[category]) {
+	                groups.category[category] = [];
+	            }
+	            groups.category[category].push(id);
+
+	            const floorID = levelsRelationship[id];
+	            const floor = floorNames[floorID];
+	            if(!groups.floor[floor]) {
+	                groups.floor[floor] = [];
+	            }
+	            groups.floor[floor].push(id);
+	        }
+
+	        fragments.groups.add(fragment.id, groups);
+	    }
+
+	    // Group by category
+
+	    const categoryContainer = document.getElementById('category-container');
+
+	    const categories = Object.keys(fragments.groups.groupSystems.category);
+	    for(const category of categories) {
+	        const button = document.createElement('button');
+	        button.textContent = category;
+	        categoryContainer.appendChild(button);
+
+	        let visible = true;
+	        button.onclick = () => {
+	            visible = !visible;
+	            const models = fragments.groups.get({ category });
+	            for(const guid in models) {
+	                const ids = models[guid];
+	                const frag = fragments.fragments[guid];
+	                frag.setVisibility(ids, visible);
+	            }
+	        };
+	    }
+
+	    // Group by level
+
+	    const levelContainer = document.getElementById('level-container');
+
+	    const floors = Object.keys(fragments.groups.groupSystems.floor);
+	    for(const floor of floors) {
+	        const button = document.createElement('button');
+	        button.textContent = floor;
+	        levelContainer.appendChild(button);
+
+	        let visible = true;
+	        button.onclick = () => {
+	            visible = !visible;
+	            const models = fragments.groups.get({ floor });
+	            for(const guid in models) {
+	                const ids = models[guid];
+	                const frag = fragments.fragments[guid];
+	                frag.setVisibility(ids, visible);
+	            }
+	        };
 	    }
 
 	    fragments.updateHighlight();

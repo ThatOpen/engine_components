@@ -59,7 +59,7 @@ const fragments = new Fragments(components);
 loadFragments();
 
 async function loadFragments() {
-    const { entries } = await unzip('../models/small.zip');
+    const { entries } = await unzip('../models/medium.zip');
 
     const fileNames = Object.keys(entries);
 
@@ -90,7 +90,7 @@ async function loadFragments() {
 
        const fragment = await fragments.load(geometryURL, dataURL);
 
-       // Categorize items
+       // Group items for visibility
 
         const groups = {category: {}, floor: {}}
         const ids = data.ids;
@@ -108,25 +108,48 @@ async function loadFragments() {
             if(!groups.floor[floor]) {
                 groups.floor[floor] = [];
             }
-            groups.floor[floor].push(floor);
+            groups.floor[floor].push(id);
         }
 
         fragments.groups.add(fragment.id, groups);
     }
 
-    console.log(fragments.groups);
+    // Group by category
 
-    const buttonContainer = document.getElementById('button-container');
+    const categoryContainer = document.getElementById('category-container');
+
     const categories = Object.keys(fragments.groups.groupSystems.category);
     for(const category of categories) {
         const button = document.createElement('button');
         button.textContent = category;
-        buttonContainer.appendChild(button);
+        categoryContainer.appendChild(button);
 
         let visible = true;
         button.onclick = () => {
             visible = !visible;
             const models = fragments.groups.get({ category });
+            for(const guid in models) {
+                const ids = models[guid];
+                const frag = fragments.fragments[guid];
+                frag.setVisibility(ids, visible);
+            }
+        }
+    }
+
+    // Group by level
+
+    const levelContainer = document.getElementById('level-container');
+
+    const floors = Object.keys(fragments.groups.groupSystems.floor);
+    for(const floor of floors) {
+        const button = document.createElement('button');
+        button.textContent = floor;
+        levelContainer.appendChild(button);
+
+        let visible = true;
+        button.onclick = () => {
+            visible = !visible;
+            const models = fragments.groups.get({ floor });
             for(const guid in models) {
                 const ids = models[guid];
                 const frag = fragments.fragments[guid];

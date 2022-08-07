@@ -1724,14 +1724,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bim-fragment@npm:latest":
-  version: 0.0.6
-  resolution: "bim-fragment@npm:0.0.6"
+"bim-fragment@npm:0.0.10":
+  version: 0.0.10
+  resolution: "bim-fragment@npm:0.0.10"
   dependencies:
     three-mesh-bvh: ^0.5.14
   peerDependencies:
     three: ^0.135.0
-  checksum: 35baf4b3f16e7ff1edfeafece2e607b51555a9c2c5dee30c164e055fe617e862a15f40a5bfbc9e811f1987e904a3bd25bb51b8dcbc9792917d04b985831ff55b
+  checksum: e08dd845aeb95b235fb60628da250b300db2a902e7a77471000ac1f4e3ea2041cab80115320b489611ec6646211e23150b05b060056cc411aaa8b513cd4a3c80
   languageName: node
   linkType: hard
 
@@ -5661,7 +5661,7 @@ __metadata:
     "@types/three": ^0.134.0
     "@typescript-eslint/eslint-plugin": ^4.27.0
     "@typescript-eslint/parser": ^4.27.0
-    bim-fragment: latest
+    bim-fragment: 0.0.10
     cpy-cli: ^3.1.1
     eslint: ^7.28.0
     eslint-config-airbnb-base: ^14.2.1
