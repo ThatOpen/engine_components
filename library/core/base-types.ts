@@ -31,7 +31,7 @@ export interface SceneComponent extends ComponentBase {
 }
 
 export interface CameraComponent extends ComponentBase, IResizeable {
-  activeCamera: THREE.Camera;
+  perspectiveCamera: THREE.Camera;
   getCamera: () => THREE.Camera;
 }
 

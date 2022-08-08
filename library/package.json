@@ -1,7 +1,7 @@
 {
   "name": "openbim-components",
   "main": "dist/index.js",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "packageManager": "yarn@3.2.1",
   "scripts": {
     "build": "tsc",
@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "bim-fragment": "0.0.10",
+    "camera-controls": "^1.36.0",
     "three": "0.135"
   }
 }

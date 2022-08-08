@@ -1,6 +1,14 @@
 import Stats from 'stats.js/src/Stats';
 import * as THREE from 'three'
-import { Components, SimpleGrid, SimpleScene, SimpleRenderer, SimpleCamera, SimpleClipper, SimpleDimensions, SimpleRaycaster } from 'openbim-components'
+import {
+    Components,
+    SimpleGrid,
+    SimpleScene,
+    SimpleRenderer,
+    SimpleClipper,
+    SimpleDimensions,
+    SimpleRaycaster,
+} from 'openbim-components'
 
 const container = document.getElementById('viewer-container');
 
@@ -15,7 +23,7 @@ components.init();
 
 const scene = components.scene.getScene();
 
-const cube = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({ color: "red" }))
+const cube = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({color: "red"}))
 cube.position.set(0, 1.5, 0)
 scene.add(cube)
 
@@ -61,8 +69,8 @@ window.onkeydown = (event) => {
             components.tools.toggleAllVisibility()
             break;
         }
-        case "Escape" :{
-            if(dimensions.enabled){
+        case "Escape" : {
+            if (dimensions.enabled) {
                 dimensions.cancelDrawing()
             }
             break;
@@ -71,10 +79,10 @@ window.onkeydown = (event) => {
             components.tools.printToolsState();
         }
         case "Delete": {
-            if(clipper.enabled)
+            if (clipper.enabled)
                 clipper.deletePlane()
 
-            if(dimensions.enabled){
+            if (dimensions.enabled) {
                 dimensions.delete()
             }
         }
@@ -82,11 +90,9 @@ window.onkeydown = (event) => {
 }
 
 window.ondblclick = () => {
-    if(clipper.enabled){
+    if (clipper.enabled) {
         clipper.createPlane();
-    }
-
-    else if(dimensions.enabled){
+    } else if (dimensions.enabled) {
         dimensions.create()
     }
 }

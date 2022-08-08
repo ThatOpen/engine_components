@@ -1,57 +1,88 @@
-import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import {
+  Box3,
+  Camera,
+  MathUtils,
+  Matrix4,
+  MOUSE,
+  PerspectiveCamera,
+  Quaternion,
+  Raycaster,
+  Sphere,
+  Spherical,
+  Vector2,
+  Vector3,
+  Vector4,
+} from "three";
+import CameraControls from "camera-controls";
 import { CameraComponent } from "./base-types";
 import { Components } from "../components";
 
+const subsetOfTHREE = {
+  MOUSE,
+  Vector2,
+  Vector3,
+  Vector4,
+  Quaternion,
+  Matrix4,
+  Spherical,
+  Box3,
+  Sphere,
+  Raycaster,
+  MathUtils: {
+    DEG2RAD: MathUtils.DEG2RAD,
+    clamp: MathUtils.clamp,
+  },
+};
+
 export class SimpleCamera implements CameraComponent {
-  activeCamera: THREE.PerspectiveCamera;
-  orbitControls: OrbitControls;
+  perspectiveCamera: PerspectiveCamera;
+  activeCamera: Camera;
+  controls: CameraControls;
 
-  constructor(private components: Components) {
-    this.activeCamera = new THREE.PerspectiveCamera(
-      60,
-      window.innerWidth / window.innerHeight,
-      1,
-      1000
-    );
-    this.activeCamera.position.set(50, 50, 0);
+  constructor(protected components: Components) {
+    this.perspectiveCamera = this.setupCamera();
+    this.activeCamera = this.perspectiveCamera;
 
-    this.orbitControls = new OrbitControls(
-      this.activeCamera,
-      components.renderer?.renderer.domElement
-    );
-    this.orbitControls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
-    this.orbitControls.dampingFactor = 0.05;
-    this.orbitControls.screenSpacePanning = false;
-    this.orbitControls.minDistance = 1;
-    this.orbitControls.maxDistance = 500;
-    this.orbitControls.maxPolarAngle = Math.PI / 2;
+    this.controls = this.setupCameraControls();
 
-    components.scene?.getScene().add(this.activeCamera);
+    components.scene?.getScene().add(this.perspectiveCamera);
 
     this.setupEvents();
   }
 
-  getCamera(): THREE.PerspectiveCamera {
+  private setupCamera() {
+    const aspect = window.innerWidth / window.innerHeight;
+    const camera = new PerspectiveCamera(60, aspect, 1, 1000);
+    camera.position.set(50, 50, 50);
+    camera.lookAt(new Vector3(0, 0, 0));
+    return camera;
+  }
+
+  private setupCameraControls() {
+    CameraControls.install({ THREE: subsetOfTHREE });
+    const dom = this.components.renderer.renderer.domElement;
+    const controls = new CameraControls(this.perspectiveCamera, dom);
+    controls.dampingFactor = 0.2;
+    controls.dollyToCursor = true;
+    controls.infinityDolly = true;
+    controls.setTarget(0, 0, 0);
+    return controls;
+  }
+
+  getCamera() {
     return this.activeCamera;
   }
 
   update(_delta: number): void {
-    this.orbitControls.update();
-  }
-
-  set enabled(enabled: boolean) {
-    this.orbitControls.enabled = enabled;
-  }
-
-  get enabled() {
-    return this.orbitControls.enabled;
+    if (this.controls.enabled) {
+      this.controls.update(_delta);
+    }
   }
 
   resize() {
     const size = this.components.renderer.getSize();
-    this.activeCamera.aspect = size.width / size.height;
-    this.activeCamera.updateProjectionMatrix();
+    this.perspectiveCamera.aspect = size.width / size.height;
+    this.perspectiveCamera.updateProjectionMatrix();
   }
 
   private setupEvents() {
