@@ -46139,7 +46139,8 @@
 	    setupCamera() {
 	        const aspect = window.innerWidth / window.innerHeight;
 	        const camera = new PerspectiveCamera(60, aspect, 1, 1000);
-	        camera.position.set(50, 50, 0);
+	        camera.position.set(50, 50, 50);
+	        camera.lookAt(new Vector3$1(0, 0, 0));
 	        return camera;
 	    }
 	    setupCameraControls() {
@@ -46153,7 +46154,7 @@
 	        return controls;
 	    }
 	    getCamera() {
-	        return this.perspectiveCamera;
+	        return this.activeCamera;
 	    }
 	    update(_delta) {
 	        if (this.controls.enabled) {
@@ -64974,6 +64975,18 @@
 	        scene.add(fragment.mesh);
 	    }
 	}
+
+	var CameraProjections;
+	(function (CameraProjections) {
+	    CameraProjections[CameraProjections["Perspective"] = 0] = "Perspective";
+	    CameraProjections[CameraProjections["Orthographic"] = 1] = "Orthographic";
+	})(CameraProjections || (CameraProjections = {}));
+	var NavigationModes;
+	(function (NavigationModes) {
+	    NavigationModes[NavigationModes["Orbit"] = 0] = "Orbit";
+	    NavigationModes[NavigationModes["FirstPerson"] = 1] = "FirstPerson";
+	    NavigationModes[NavigationModes["Plan"] = 2] = "Plan";
+	})(NavigationModes || (NavigationModes = {}));
 
 	/* unzipit@1.4.0, license MIT */
 	/* global SharedArrayBuffer, process */

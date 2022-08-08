@@ -39,7 +39,7 @@ export class SimpleCamera implements CameraComponent {
   activeCamera: Camera;
   controls: CameraControls;
 
-  constructor(private components: Components) {
+  constructor(protected components: Components) {
     this.perspectiveCamera = this.setupCamera();
     this.activeCamera = this.perspectiveCamera;
 
@@ -53,7 +53,8 @@ export class SimpleCamera implements CameraComponent {
   private setupCamera() {
     const aspect = window.innerWidth / window.innerHeight;
     const camera = new PerspectiveCamera(60, aspect, 1, 1000);
-    camera.position.set(50, 50, 0);
+    camera.position.set(50, 50, 50);
+    camera.lookAt(new Vector3(0, 0, 0));
     return camera;
   }
 
@@ -68,8 +69,8 @@ export class SimpleCamera implements CameraComponent {
     return controls;
   }
 
-  getCamera(): PerspectiveCamera {
-    return this.perspectiveCamera;
+  getCamera() {
+    return this.activeCamera;
   }
 
   update(_delta: number): void {
