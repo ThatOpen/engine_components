@@ -1955,6 +1955,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"camera-controls@npm:^1.36.0":
+  version: 1.36.0
+  resolution: "camera-controls@npm:1.36.0"
+  peerDependencies:
+    three: ">=0.126.1"
+  checksum: 0dc70e07ff7e19aff5dfde96ccd56947965f16dc080ed63e3fe022e5704bedf84da5ca24a812c061570c27fe817f5bd40b75653cb78af8be7f6db28895051310
+  languageName: node
+  linkType: hard
+
 "caniuse-lite@npm:^1.0.30001370":
   version: 1.0.30001373
   resolution: "caniuse-lite@npm:1.0.30001373"
@@ -3266,7 +3275,7 @@ __metadata:
     "@rollup/plugin-commonjs": ^19.0.0
     "@rollup/plugin-node-resolve": ^13.0.0
     "@types/three": ^0.134.0
-    openbim-components: 0.0.1
+    openbim-components: 0.0.2
     rollup: ^2.47.0
     serve: ^11.3.2
     stats.js: 0.17.0
@@ -3653,7 +3662,7 @@ __metadata:
     "@rollup/plugin-commonjs": ^19.0.0
     "@rollup/plugin-node-resolve": ^13.0.0
     "@types/three": ^0.134.0
-    openbim-components: 0.0.1
+    openbim-components: 0.0.2
     rollup: ^2.47.0
     serve: ^11.3.2
     stats.js: 0.17.0
@@ -5652,7 +5661,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"openbim-components@0.0.1, openbim-components@workspace:library":
+"openbim-components@0.0.2, openbim-components@workspace:library":
   version: 0.0.0-use.local
   resolution: "openbim-components@workspace:library"
   dependencies:
@@ -5662,6 +5671,7 @@ __metadata:
     "@typescript-eslint/eslint-plugin": ^4.27.0
     "@typescript-eslint/parser": ^4.27.0
     bim-fragment: 0.0.10
+    camera-controls: ^1.36.0
     cpy-cli: ^3.1.1
     eslint: ^7.28.0
     eslint-config-airbnb-base: ^14.2.1

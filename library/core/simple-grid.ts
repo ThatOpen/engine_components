@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { IHideable, ToolComponent } from "./base-types";
 import { Components } from "../components";
 
+// TODO: Grid is not a tool, should live somewhere else
 export class SimpleGrid implements ToolComponent, IHideable {
   public readonly name = "grid";
 

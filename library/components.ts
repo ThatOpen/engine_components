@@ -69,7 +69,7 @@ export class Components {
   }
 
   private update = () => {
-    const delta = this.clock.elapsedTime;
+    const delta = this.clock.getDelta();
     this.scene.update(delta);
     this.renderer.update(delta);
     this.camera.update(delta);
