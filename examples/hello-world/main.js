@@ -8,6 +8,7 @@ import {
     SimpleClipper,
     SimpleDimensions,
     SimpleRaycaster,
+    SimpleCamera
 } from 'openbim-components'
 
 const container = document.getElementById('viewer-container');
