@@ -8,13 +8,17 @@ export default class FragmentCulling {
   readonly bufferSize: number;
   readonly buffer: Uint8Array;
   readonly materialCache: Map<string, THREE.MeshBasicMaterial>;
+  readonly worker: Worker;
+
+  fragmentColorMap = new Map<string, Fragment>();
 
   constructor(
     private components: Components,
     private fragment: Fragments,
     readonly updateInterval = 1000,
     readonly rtWidth = 512,
-    readonly rtHeight = 512
+    readonly rtHeight = 512,
+    readonly autoUpdate = true
   ) {
     this.renderTarget = new THREE.WebGLRenderTarget(
       this.rtWidth,
@@ -23,7 +27,27 @@ export default class FragmentCulling {
     this.bufferSize = this.rtWidth * this.rtHeight * 4;
     this.buffer = new Uint8Array(this.bufferSize);
     this.materialCache = new Map<string, THREE.MeshBasicMaterial>();
-    window.setInterval(this.updateVisibility, updateInterval);
+
+    const code = `
+      addEventListener("message", (event) => {
+        const { buffer } = event.data;
+        const colors = new Set();
+        for (let i = 0; i < buffer.length; i += 4) {
+            const r = buffer[i];
+            const g = buffer[i + 1];
+            const b = buffer[i + 2];
+            const code = "" + r + g + b;
+            colors.add(code);
+        }
+        postMessage({ colors });
+      });
+    `
+    const blob = new Blob([code], {type: 'application/javascript'})
+    this.worker = new Worker(URL.createObjectURL(blob));
+    this.worker.addEventListener("message", this.handleWorkerMessage)
+
+    if(autoUpdate)
+      window.setInterval(this.updateVisibility, updateInterval);
   }
 
   private getMaterial(r: number, g: number, b: number) {
@@ -36,9 +60,8 @@ export default class FragmentCulling {
     return material;
   }
 
-  private updateVisibility = () => {
+  private updateVisibility = async () => {
     const frags = Object.values(this.fragment.fragments);
-    this.components.renderer.renderer.setRenderTarget(this.renderTarget);
 
     let r = 0;
     let g = 0;
@@ -77,8 +100,6 @@ export default class FragmentCulling {
       };
     };
 
-    const fragmentColorMap = new Map<string, Fragment>();
-
     for (const fragment of frags) {
       // Store original materials
       if (!fragment.mesh.userData.prevMat) {
@@ -87,30 +108,36 @@ export default class FragmentCulling {
 
       const { r, g, b, code } = getNextColor();
       const mat = this.getMaterial(r, g, b);
-      fragmentColorMap.set(code, fragment);
+      this.fragmentColorMap.set(code, fragment);
 
-      if (Array.isArray(fragment.mesh.material)) {
+      if (Array.isArray(fragment.mesh.userData.prevMat)) {
         const matArray: any[] = [];
-        for (const _material of fragment.mesh.material) {
-          // if (material.opacity !== 1) {
-          // mat.transparent = true;
-          // mat.opacity = 0;
-          // }
-          matArray.push(mat);
+
+        for (const _material of fragment.mesh.userData.prevMat) {
+          /*if(material.transparent && material.opacity < 0.9) {
+            mat.opacity = 0;
+            mat.transparent = true;
+          }*/
+          matArray.push(mat)
         }
         fragment.mesh.material = matArray;
       } else {
         // @ts-ignore
-        fragment.mesh.material = mat;
-
+        /*if(fragment.mesh.userData.prevMat.transparent && fragment.mesh.userData.prevMat.opacity < 0.9) {
+          mat.opacity = 0;
+          mat.transparent = true;
+        }*/
         // @ts-ignore
-        // if (fragment.mesh.material.opacity !== 1) {
-        // }
+        fragment.mesh.material = mat;
       }
+
+      fragment.mesh.userData.prevVisible = fragment.mesh.visible;
 
       // Set to visible
       fragment.mesh.visible = true;
     }
+
+    this.components.renderer.renderer.setRenderTarget(this.renderTarget);
 
     this.components.renderer.renderer.render(
       this.components.scene.getScene(),
@@ -125,32 +152,39 @@ export default class FragmentCulling {
       this.buffer
     );
 
-    const visibleFragments: Fragment[] = [];
+    for (const fragment of frags) {
+      // Restore material
+      fragment.mesh.material = fragment.mesh.userData.prevMat;
+      fragment.mesh.visible = fragment.mesh.userData.prevVisible;
+    }
 
-    for (let i = 0; i < this.bufferSize; i += 4) {
-      const r = this.buffer[i];
-      const g = this.buffer[i + 1];
-      const b = this.buffer[i + 2];
-      // const a = this.buffer[i + 3]
-      const code = `${r}${g}${b}`;
-      const fragment = fragmentColorMap.get(code);
+    this.components.renderer.renderer.setRenderTarget(null);
+
+    this.worker.postMessage({
+      buffer: this.buffer
+    })
+  };
+
+  private handleWorkerMessage = (event: MessageEvent) => {
+    const colors = event.data.colors as Set<string>;
+
+    const visibleFragments: Fragment[] = [];
+    for (const code of colors.values()) {
+      const fragment = this.fragmentColorMap.get(code);
       if (fragment) {
+        fragment.mesh.visible = true;
         visibleFragments.push(fragment);
-        fragmentColorMap.delete(code);
+        this.fragmentColorMap.delete(code);
       }
     }
 
     this.fragment.highlighter.fragments = visibleFragments;
 
-    this.components.renderer.renderer.setRenderTarget(null);
-
-    for (const [_code, fragment] of fragmentColorMap.entries()) {
+    for (const [_code, fragment] of this.fragmentColorMap.entries()) {
       fragment.mesh.visible = false;
     }
 
-    for (const fragment of frags) {
-      // Restore material
-      fragment.mesh.material = fragment.mesh.userData.prevMat;
-    }
-  };
+    // Clear the color map for the next iteration
+    this.fragmentColorMap.clear();
+  }
 }
