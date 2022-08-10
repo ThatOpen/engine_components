@@ -60,7 +60,7 @@ export default class FragmentCulling {
     return material;
   }
 
-  private updateVisibility = async () => {
+  public updateVisibility = async () => {
     const frags = Object.values(this.fragment.fragments);
 
     let r = 0;
