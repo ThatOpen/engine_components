@@ -10,6 +10,7 @@ export default class FragmentCulling {
   readonly materialCache: Map<string, THREE.MeshBasicMaterial>;
   readonly worker: Worker;
 
+  exclusions = new Map<string, Fragment>();
   fragmentColorMap = new Map<string, Fragment>();
 
   constructor(
@@ -21,10 +22,10 @@ export default class FragmentCulling {
     readonly autoUpdate = true
   ) {
     this.renderTarget = new THREE.WebGLRenderTarget(
-      this.rtWidth,
-      this.rtHeight
+      rtWidth,
+      rtHeight
     );
-    this.bufferSize = this.rtWidth * this.rtHeight * 4;
+    this.bufferSize = rtWidth * rtHeight * 4;
     this.buffer = new Uint8Array(this.bufferSize);
     this.materialCache = new Map<string, THREE.MeshBasicMaterial>();
 
@@ -60,13 +61,12 @@ export default class FragmentCulling {
     return material;
   }
 
-  public updateVisibility = async () => {
-    const frags = Object.values(this.fragment.fragments);
+  public updateVisibility = () => {
 
-    let r = 0;
-    let g = 0;
-    let b = 0;
-    let i = 0;
+    const frags = Object.values(this.fragment.fragments);
+    const transparentMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })
+
+    let r = 0, g = 0, b = 0, i = 0;
 
     const getNextColor = () => {
       if (i === 0) {
@@ -99,6 +99,7 @@ export default class FragmentCulling {
         code: `${r}${g}${b}`,
       };
     };
+    const isTransparent = (material: THREE.Material) => material.transparent && material.opacity < 1
 
     for (const fragment of frags) {
       // Store original materials
@@ -106,34 +107,48 @@ export default class FragmentCulling {
         fragment.mesh.userData.prevMat = fragment.mesh.material;
       }
 
+      // Generate a color for this fragment and get the material
       const { r, g, b, code } = getNextColor();
-      const mat = this.getMaterial(r, g, b);
+      const colorMaterial = this.getMaterial(r, g, b);
+
+      // Index this fragment to the color map,
       this.fragmentColorMap.set(code, fragment);
 
+      // Check the materials for transparency and update them accordingly
       if (Array.isArray(fragment.mesh.userData.prevMat)) {
+
+        let transparentOnly = true;
         const matArray: any[] = [];
 
-        for (const _material of fragment.mesh.userData.prevMat) {
-          /*if(material.transparent && material.opacity < 0.9) {
-            mat.opacity = 0;
-            mat.transparent = true;
-          }*/
-          matArray.push(mat)
+        for (const prevMat of fragment.mesh.userData.prevMat) {
+          if(isTransparent(prevMat)) {
+            matArray.push(transparentMat);
+          }else {
+            transparentOnly = false;
+            matArray.push(colorMaterial);
+          }
         }
+
+        // If we find that all the materials are transparent then we must remove this from analysis
+        if(transparentOnly){
+          this.fragmentColorMap.delete(code);
+        }
+
         fragment.mesh.material = matArray;
       } else {
-        // @ts-ignore
-        /*if(fragment.mesh.userData.prevMat.transparent && fragment.mesh.userData.prevMat.opacity < 0.9) {
-          mat.opacity = 0;
-          mat.transparent = true;
-        }*/
-        // @ts-ignore
-        fragment.mesh.material = mat;
+        if(isTransparent(fragment.mesh.userData.prevMat)) {
+          // This material is transparent, so we must remove it from analysis
+          this.fragmentColorMap.delete(code);
+          // @ts-ignore
+          fragment.mesh.material = transparentMat;
+        }else {
+          // @ts-ignore
+          fragment.mesh.material = colorMaterial;
+        }
       }
 
-      fragment.mesh.userData.prevVisible = fragment.mesh.visible;
-
       // Set to visible
+      // fragment.mesh.userData.prevVisible = fragment.mesh.visible;
       fragment.mesh.visible = true;
     }
 
@@ -155,7 +170,7 @@ export default class FragmentCulling {
     for (const fragment of frags) {
       // Restore material
       fragment.mesh.material = fragment.mesh.userData.prevMat;
-      fragment.mesh.visible = fragment.mesh.userData.prevVisible;
+      // fragment.mesh.visible = fragment.mesh.userData.prevVisible;
     }
 
     this.components.renderer.renderer.setRenderTarget(null);

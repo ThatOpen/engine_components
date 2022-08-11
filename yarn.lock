@@ -1111,6 +1111,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/three@npm:^0.143.0":
+  version: 0.143.0
+  resolution: "@types/three@npm:0.143.0"
+  dependencies:
+    "@types/webxr": "*"
+  checksum: 1e4557a844fac4efe6d8af90960322f50f1d26f6394c033bea8868519ce89f36e3b03ce85d2b7320868f11a46b3fe5bd6178e89e750ccd50e68fb5806af58588
+  languageName: node
+  linkType: hard
+
+"@types/webxr@npm:*":
+  version: 0.5.0
+  resolution: "@types/webxr@npm:0.5.0"
+  checksum: 891af0e96a229f45584d89daa3101232862da2ded14076aa631b2e12deb4e4b91fa35ff8d8d5ab4613aa8adce0870bd32cd61f070c1bc70d37303c515e1ae6ac
+  languageName: node
+  linkType: hard
+
 "@types/yargs-parser@npm:*":
   version: 21.0.0
   resolution: "@types/yargs-parser@npm:21.0.0"
@@ -5661,13 +5677,24 @@ __metadata:
   languageName: node
   linkType: hard
 
-"openbim-components@0.0.2, openbim-components@workspace:library":
+"openbim-components@npm:0.0.2":
+  version: 0.0.2
+  resolution: "openbim-components@npm:0.0.2"
+  dependencies:
+    bim-fragment: 0.0.10
+    camera-controls: ^1.36.0
+    three: 0.135
+  checksum: 003cafdeacb694ea4b0246fde8504b35072439842a60a6731f5d5f7388b469eed1edf7c4e5420fc657dd49060e445abf2e4fdcf3321b14a0913d4c9c8d631ee5
+  languageName: node
+  linkType: hard
+
+"openbim-components@workspace:library":
   version: 0.0.0-use.local
   resolution: "openbim-components@workspace:library"
   dependencies:
     "@types/jest": ^26.0.23
     "@types/node": ^14.14.31
-    "@types/three": ^0.134.0
+    "@types/three": ^0.143.0
     "@typescript-eslint/eslint-plugin": ^4.27.0
     "@typescript-eslint/parser": ^4.27.0
     bim-fragment: 0.0.10
@@ -5680,7 +5707,7 @@ __metadata:
     eslint-plugin-prettier: ^3.4.0
     jest: ^27.0.4
     prettier: ^2.3.1
-    three: 0.135
+    three: 0.143.0
     ts-jest: ^27.0.3
     ts-node: ^10.0.0
     typescript: ^4.3.2
@@ -7073,6 +7100,13 @@ __metadata:
   version: 0.135.0
   resolution: "three@npm:0.135.0"
   checksum: bd7e195932587a5be0c887947adf2b3898c6fa71722800432562aed10beddb2f448d0f237d937824805eebf90e625fc22ed57054618121f47811a8e82b528507
+  languageName: node
+  linkType: hard
+
+"three@npm:0.143.0":
+  version: 0.143.0
+  resolution: "three@npm:0.143.0"
+  checksum: 6fe8793a04a931c8fb86bad566ac4310a6243c9e9139678b5084e0773457a63fe254109479c4d4a2b484812d0932940eabf9baa21749c8c8d8dceb2815ca747b
   languageName: node
   linkType: hard
 
