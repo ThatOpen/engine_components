@@ -1,6 +1,7 @@
 import { Matrix4, Mesh, MeshBasicMaterial } from "three";
 import { Fragment } from "bim-fragment";
 import { Components } from "../components";
+import { Fragments } from "./fragments";
 
 export class FragmentHighlighter {
   highlightMaterial = new MeshBasicMaterial({
@@ -8,26 +9,18 @@ export class FragmentHighlighter {
     depthTest: false,
   });
 
+  active = false;
+
   readonly selectionId = "selection";
 
-  private fragmentsById: { [id: string]: Fragment } = {};
-  private fragmentMeshes: Mesh[] = [];
   private tempMatrix = new Matrix4();
   private selection?: Fragment;
 
-  constructor(private components: Components) {}
+  constructor(private components: Components, private fragments: Fragments) {}
 
-  set fragments(fragments: Fragment[]) {
-    this.fragmentsById = {};
-    this.fragmentMeshes.length = 0;
-
-    for (const fragment of fragments) {
-      this.fragmentsById[fragment.id] = fragment;
-
-      if(!this.fragmentMeshes.find((x) => x.id === fragment.mesh.id)){
-        this.fragmentMeshes.push(fragment.mesh);
-      }
-
+  update() {
+    for (const fragmentID in this.fragments.fragments) {
+      const fragment = this.fragments.fragments[fragmentID];
       if (!fragment.fragments[this.selectionId]) {
         fragment.addFragment(this.selectionId, [this.highlightMaterial]);
         fragment.fragments[this.selectionId].mesh.renderOrder = 1;
@@ -36,7 +29,10 @@ export class FragmentHighlighter {
   }
 
   highlightOnHover() {
-    const result = this.components.raycaster.castRay(this.fragmentMeshes);
+    if (!this.active) return;
+
+    const meshes = this.components.meshes;
+    const result = this.components.raycaster.castRay(meshes);
 
     if (!result) {
       this.selection?.mesh.removeFromParent();
@@ -49,9 +45,9 @@ export class FragmentHighlighter {
     if (!geometry || !index) return;
 
     const scene = this.components.scene.getScene();
-    const fragment = this.fragmentsById[result.object.uuid];
+    const fragment = this.fragments.fragments[result.object.uuid];
 
-    if (fragment) {
+    if (fragment && fragment.fragments[this.selectionId]) {
       if (this.selection) this.selection.mesh.removeFromParent();
       this.selection = fragment.fragments[this.selectionId];
       scene.add(this.selection.mesh);

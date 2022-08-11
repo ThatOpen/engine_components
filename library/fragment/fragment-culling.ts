@@ -41,13 +41,13 @@ export default class FragmentCulling {
         }
         postMessage({ colors });
       });
-    `
-    const blob = new Blob([code], {type: 'application/javascript'})
-    this.worker = new Worker(URL.createObjectURL(blob));
-    this.worker.addEventListener("message", this.handleWorkerMessage)
+    `;
 
-    if(autoUpdate)
-      window.setInterval(this.updateVisibility, updateInterval);
+    const blob = new Blob([code], { type: "application/javascript" });
+    this.worker = new Worker(URL.createObjectURL(blob));
+    this.worker.addEventListener("message", this.handleWorkerMessage);
+
+    if (autoUpdate) window.setInterval(this.updateVisibility, updateInterval);
   }
 
   private getMaterial(r: number, g: number, b: number) {
@@ -114,19 +114,19 @@ export default class FragmentCulling {
         const matArray: any[] = [];
 
         for (const _material of fragment.mesh.userData.prevMat) {
-          /*if(material.transparent && material.opacity < 0.9) {
+          /* if(material.transparent && material.opacity < 0.9) {
             mat.opacity = 0;
             mat.transparent = true;
-          }*/
-          matArray.push(mat)
+          } */
+          matArray.push(mat);
         }
         fragment.mesh.material = matArray;
       } else {
         // @ts-ignore
-        /*if(fragment.mesh.userData.prevMat.transparent && fragment.mesh.userData.prevMat.opacity < 0.9) {
+        /* if(fragment.mesh.userData.prevMat.transparent && fragment.mesh.userData.prevMat.opacity < 0.9) {
           mat.opacity = 0;
           mat.transparent = true;
-        }*/
+        } */
         // @ts-ignore
         fragment.mesh.material = mat;
       }
@@ -161,8 +161,8 @@ export default class FragmentCulling {
     this.components.renderer.renderer.setRenderTarget(null);
 
     this.worker.postMessage({
-      buffer: this.buffer
-    })
+      buffer: this.buffer,
+    });
   };
 
   private handleWorkerMessage = (event: MessageEvent) => {
@@ -178,13 +178,11 @@ export default class FragmentCulling {
       }
     }
 
-    this.fragment.highlighter.fragments = visibleFragments;
-
     for (const [_code, fragment] of this.fragmentColorMap.entries()) {
       fragment.mesh.visible = false;
     }
 
     // Clear the color map for the next iteration
     this.fragmentColorMap.clear();
-  }
+  };
 }

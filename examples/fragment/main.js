@@ -158,7 +158,8 @@ async function loadFragments() {
         }
     }
 
-    fragments.updateHighlight();
+    fragments.highlighter.update();
+    fragments.highlighter.active = true;
 }
 
 window.addEventListener("mousemove", () => fragments.highlighter.highlightOnHover());

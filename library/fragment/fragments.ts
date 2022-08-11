@@ -13,7 +13,7 @@ export class Fragments {
   culler: FragmentCulling;
 
   constructor(private components: Components) {
-    this.highlighter = new FragmentHighlighter(components);
+    this.highlighter = new FragmentHighlighter(components, this);
     this.culler = new FragmentCulling(components, this);
   }
 
@@ -21,10 +21,6 @@ export class Fragments {
     const fragment = await this.loader.load(geometryURL, dataURL);
     this.add(fragment);
     return fragment;
-  }
-
-  updateHighlight() {
-    this.highlighter.fragments = Object.values(this.fragments);
   }
 
   add(fragment: Fragment) {

@@ -69107,25 +69107,20 @@
 	}
 
 	class FragmentHighlighter {
-	    constructor(components) {
+	    constructor(components, fragments) {
 	        this.components = components;
+	        this.fragments = fragments;
 	        this.highlightMaterial = new MeshBasicMaterial({
 	            color: 0xff0000,
 	            depthTest: false,
 	        });
+	        this.active = false;
 	        this.selectionId = "selection";
-	        this.fragmentsById = {};
-	        this.fragmentMeshes = [];
 	        this.tempMatrix = new Matrix4();
 	    }
-	    set fragments(fragments) {
-	        this.fragmentsById = {};
-	        this.fragmentMeshes.length = 0;
-	        for (const fragment of fragments) {
-	            this.fragmentsById[fragment.id] = fragment;
-	            if (!this.fragmentMeshes.find((x) => x.id === fragment.mesh.id)) {
-	                this.fragmentMeshes.push(fragment.mesh);
-	            }
+	    update() {
+	        for (const fragmentID in this.fragments.fragments) {
+	            const fragment = this.fragments.fragments[fragmentID];
 	            if (!fragment.fragments[this.selectionId]) {
 	                fragment.addFragment(this.selectionId, [this.highlightMaterial]);
 	                fragment.fragments[this.selectionId].mesh.renderOrder = 1;
@@ -69134,7 +69129,10 @@
 	    }
 	    highlightOnHover() {
 	        var _a, _b;
-	        const result = this.components.raycaster.castRay(this.fragmentMeshes);
+	        if (!this.active)
+	            return;
+	        const meshes = this.components.meshes;
+	        const result = this.components.raycaster.castRay(meshes);
 	        if (!result) {
 	            (_a = this.selection) === null || _a === void 0 ? void 0 : _a.mesh.removeFromParent();
 	            return;
@@ -69145,8 +69143,8 @@
 	        if (!geometry || !index)
 	            return;
 	        const scene = this.components.scene.getScene();
-	        const fragment = this.fragmentsById[result.object.uuid];
-	        if (fragment) {
+	        const fragment = this.fragments.fragments[result.object.uuid];
+	        if (fragment && fragment.fragments[this.selectionId]) {
 	            if (this.selection)
 	                this.selection.mesh.removeFromParent();
 	            this.selection = fragment.fragments[this.selectionId];
@@ -69164,15 +69162,16 @@
 	}
 
 	class FragmentCulling {
-	    constructor(components, fragment, updateInterval = 1000, rtWidth = 512, rtHeight = 512) {
+	    constructor(components, fragment, updateInterval = 1000, rtWidth = 512, rtHeight = 512, autoUpdate = true) {
 	        this.components = components;
 	        this.fragment = fragment;
 	        this.updateInterval = updateInterval;
 	        this.rtWidth = rtWidth;
 	        this.rtHeight = rtHeight;
-	        this.updateVisibility = () => {
+	        this.autoUpdate = autoUpdate;
+	        this.fragmentColorMap = new Map();
+	        this.updateVisibility = async () => {
 	            const frags = Object.values(this.fragment.fragments);
-	            this.components.renderer.renderer.setRenderTarget(this.renderTarget);
 	            let r = 0;
 	            let g = 0;
 	            let b = 0;
@@ -69208,7 +69207,6 @@
 	                    code: `${r}${g}${b}`,
 	                };
 	            };
-	            const fragmentColorMap = new Map();
 	            for (const fragment of frags) {
 	                // Store original materials
 	                if (!fragment.mesh.userData.prevMat) {
@@ -69216,58 +69214,82 @@
 	                }
 	                const { r, g, b, code } = getNextColor();
 	                const mat = this.getMaterial(r, g, b);
-	                fragmentColorMap.set(code, fragment);
-	                if (Array.isArray(fragment.mesh.material)) {
+	                this.fragmentColorMap.set(code, fragment);
+	                if (Array.isArray(fragment.mesh.userData.prevMat)) {
 	                    const matArray = [];
-	                    for (const _material of fragment.mesh.material) {
-	                        // if (material.opacity !== 1) {
-	                        // mat.transparent = true;
-	                        // mat.opacity = 0;
-	                        // }
+	                    for (const _material of fragment.mesh.userData.prevMat) {
+	                        /* if(material.transparent && material.opacity < 0.9) {
+	                          mat.opacity = 0;
+	                          mat.transparent = true;
+	                        } */
 	                        matArray.push(mat);
 	                    }
 	                    fragment.mesh.material = matArray;
 	                }
 	                else {
 	                    // @ts-ignore
-	                    fragment.mesh.material = mat;
+	                    /* if(fragment.mesh.userData.prevMat.transparent && fragment.mesh.userData.prevMat.opacity < 0.9) {
+	                      mat.opacity = 0;
+	                      mat.transparent = true;
+	                    } */
 	                    // @ts-ignore
-	                    // if (fragment.mesh.material.opacity !== 1) {
-	                    // }
+	                    fragment.mesh.material = mat;
 	                }
+	                fragment.mesh.userData.prevVisible = fragment.mesh.visible;
 	                // Set to visible
 	                fragment.mesh.visible = true;
 	            }
+	            this.components.renderer.renderer.setRenderTarget(this.renderTarget);
 	            this.components.renderer.renderer.render(this.components.scene.getScene(), this.components.camera.getCamera());
 	            this.components.renderer.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, this.buffer);
-	            const visibleFragments = [];
-	            for (let i = 0; i < this.bufferSize; i += 4) {
-	                const r = this.buffer[i];
-	                const g = this.buffer[i + 1];
-	                const b = this.buffer[i + 2];
-	                // const a = this.buffer[i + 3]
-	                const code = `${r}${g}${b}`;
-	                const fragment = fragmentColorMap.get(code);
-	                if (fragment) {
-	                    visibleFragments.push(fragment);
-	                    fragmentColorMap.delete(code);
-	                }
-	            }
-	            this.fragment.highlighter.fragments = visibleFragments;
-	            this.components.renderer.renderer.setRenderTarget(null);
-	            for (const [_code, fragment] of fragmentColorMap.entries()) {
-	                fragment.mesh.visible = false;
-	            }
 	            for (const fragment of frags) {
 	                // Restore material
 	                fragment.mesh.material = fragment.mesh.userData.prevMat;
+	                fragment.mesh.visible = fragment.mesh.userData.prevVisible;
 	            }
+	            this.components.renderer.renderer.setRenderTarget(null);
+	            this.worker.postMessage({
+	                buffer: this.buffer,
+	            });
+	        };
+	        this.handleWorkerMessage = (event) => {
+	            const colors = event.data.colors;
+	            for (const code of colors.values()) {
+	                const fragment = this.fragmentColorMap.get(code);
+	                if (fragment) {
+	                    fragment.mesh.visible = true;
+	                    this.fragmentColorMap.delete(code);
+	                }
+	            }
+	            for (const [_code, fragment] of this.fragmentColorMap.entries()) {
+	                fragment.mesh.visible = false;
+	            }
+	            // Clear the color map for the next iteration
+	            this.fragmentColorMap.clear();
 	        };
 	        this.renderTarget = new WebGLRenderTarget(this.rtWidth, this.rtHeight);
 	        this.bufferSize = this.rtWidth * this.rtHeight * 4;
 	        this.buffer = new Uint8Array(this.bufferSize);
 	        this.materialCache = new Map();
-	        window.setInterval(this.updateVisibility, updateInterval);
+	        const code = `
+      addEventListener("message", (event) => {
+        const { buffer } = event.data;
+        const colors = new Set();
+        for (let i = 0; i < buffer.length; i += 4) {
+            const r = buffer[i];
+            const g = buffer[i + 1];
+            const b = buffer[i + 2];
+            const code = "" + r + g + b;
+            colors.add(code);
+        }
+        postMessage({ colors });
+      });
+    `;
+	        const blob = new Blob([code], { type: "application/javascript" });
+	        this.worker = new Worker(URL.createObjectURL(blob));
+	        this.worker.addEventListener("message", this.handleWorkerMessage);
+	        if (autoUpdate)
+	            window.setInterval(this.updateVisibility, updateInterval);
 	    }
 	    getMaterial(r, g, b) {
 	        const code = `rgb(${r}, ${g}, ${b})`;
@@ -69336,16 +69358,13 @@
 	        this.fragments = {};
 	        this.loader = new FragmentLoader();
 	        this.groups = new FragmentGrouper();
-	        this.highlighter = new FragmentHighlighter(components);
+	        this.highlighter = new FragmentHighlighter(components, this);
 	        this.culler = new FragmentCulling(components, this);
 	    }
 	    async load(geometryURL, dataURL) {
 	        const fragment = await this.loader.load(geometryURL, dataURL);
 	        this.add(fragment);
 	        return fragment;
-	    }
-	    updateHighlight() {
-	        this.highlighter.fragments = Object.values(this.fragments);
 	    }
 	    add(fragment) {
 	        this.fragments[fragment.id] = fragment;
@@ -71750,7 +71769,8 @@
 	        };
 	    }
 
-	    fragments.updateHighlight();
+	    fragments.highlighter.update();
+	    fragments.highlighter.active = true;
 	}
 
 	window.addEventListener("mousemove", () => fragments.highlighter.highlightOnHover());
