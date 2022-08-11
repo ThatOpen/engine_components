@@ -30228,10 +30228,139 @@
 
 	}
 
-	new Vector3$1();
-	new Vector3$1();
-	new Vector3$1();
-	new Triangle();
+	const _v0 = new Vector3$1();
+	const _v1$1 = new Vector3$1();
+	const _normal = new Vector3$1();
+	const _triangle = new Triangle();
+
+	class EdgesGeometry extends BufferGeometry {
+
+		constructor( geometry = null, thresholdAngle = 1 ) {
+
+			super();
+			this.type = 'EdgesGeometry';
+
+			this.parameters = {
+				geometry: geometry,
+				thresholdAngle: thresholdAngle
+			};
+
+			if ( geometry !== null ) {
+
+				const precisionPoints = 4;
+				const precision = Math.pow( 10, precisionPoints );
+				const thresholdDot = Math.cos( DEG2RAD * thresholdAngle );
+
+				const indexAttr = geometry.getIndex();
+				const positionAttr = geometry.getAttribute( 'position' );
+				const indexCount = indexAttr ? indexAttr.count : positionAttr.count;
+
+				const indexArr = [ 0, 0, 0 ];
+				const vertKeys = [ 'a', 'b', 'c' ];
+				const hashes = new Array( 3 );
+
+				const edgeData = {};
+				const vertices = [];
+				for ( let i = 0; i < indexCount; i += 3 ) {
+
+					if ( indexAttr ) {
+
+						indexArr[ 0 ] = indexAttr.getX( i );
+						indexArr[ 1 ] = indexAttr.getX( i + 1 );
+						indexArr[ 2 ] = indexAttr.getX( i + 2 );
+
+					} else {
+
+						indexArr[ 0 ] = i;
+						indexArr[ 1 ] = i + 1;
+						indexArr[ 2 ] = i + 2;
+
+					}
+
+					const { a, b, c } = _triangle;
+					a.fromBufferAttribute( positionAttr, indexArr[ 0 ] );
+					b.fromBufferAttribute( positionAttr, indexArr[ 1 ] );
+					c.fromBufferAttribute( positionAttr, indexArr[ 2 ] );
+					_triangle.getNormal( _normal );
+
+					// create hashes for the edge from the vertices
+					hashes[ 0 ] = `${ Math.round( a.x * precision ) },${ Math.round( a.y * precision ) },${ Math.round( a.z * precision ) }`;
+					hashes[ 1 ] = `${ Math.round( b.x * precision ) },${ Math.round( b.y * precision ) },${ Math.round( b.z * precision ) }`;
+					hashes[ 2 ] = `${ Math.round( c.x * precision ) },${ Math.round( c.y * precision ) },${ Math.round( c.z * precision ) }`;
+
+					// skip degenerate triangles
+					if ( hashes[ 0 ] === hashes[ 1 ] || hashes[ 1 ] === hashes[ 2 ] || hashes[ 2 ] === hashes[ 0 ] ) {
+
+						continue;
+
+					}
+
+					// iterate over every edge
+					for ( let j = 0; j < 3; j ++ ) {
+
+						// get the first and next vertex making up the edge
+						const jNext = ( j + 1 ) % 3;
+						const vecHash0 = hashes[ j ];
+						const vecHash1 = hashes[ jNext ];
+						const v0 = _triangle[ vertKeys[ j ] ];
+						const v1 = _triangle[ vertKeys[ jNext ] ];
+
+						const hash = `${ vecHash0 }_${ vecHash1 }`;
+						const reverseHash = `${ vecHash1 }_${ vecHash0 }`;
+
+						if ( reverseHash in edgeData && edgeData[ reverseHash ] ) {
+
+							// if we found a sibling edge add it into the vertex array if
+							// it meets the angle threshold and delete the edge from the map.
+							if ( _normal.dot( edgeData[ reverseHash ].normal ) <= thresholdDot ) {
+
+								vertices.push( v0.x, v0.y, v0.z );
+								vertices.push( v1.x, v1.y, v1.z );
+
+							}
+
+							edgeData[ reverseHash ] = null;
+
+						} else if ( ! ( hash in edgeData ) ) {
+
+							// if we've already got an edge here then skip adding a new one
+							edgeData[ hash ] = {
+
+								index0: indexArr[ j ],
+								index1: indexArr[ jNext ],
+								normal: _normal.clone(),
+
+							};
+
+						}
+
+					}
+
+				}
+
+				// iterate over all remaining, unmatched edges and add them to the vertex array
+				for ( const key in edgeData ) {
+
+					if ( edgeData[ key ] ) {
+
+						const { index0, index1 } = edgeData[ key ];
+						_v0.fromBufferAttribute( positionAttr, index0 );
+						_v1$1.fromBufferAttribute( positionAttr, index1 );
+
+						vertices.push( _v0.x, _v0.y, _v0.z );
+						vertices.push( _v1$1.x, _v1$1.y, _v1$1.z );
+
+					}
+
+				}
+
+				this.setAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
+
+			}
+
+		}
+
+	}
 
 	/**
 	 * Extensible curve object.
@@ -69131,7 +69260,7 @@
 	        var _a, _b;
 	        if (!this.active)
 	            return;
-	        const meshes = this.components.meshes;
+	        const meshes = this.fragments.fragmentMeshes;
 	        const result = this.components.raycaster.castRay(meshes);
 	        if (!result) {
 	            (_a = this.selection) === null || _a === void 0 ? void 0 : _a.mesh.removeFromParent();
@@ -69258,11 +69387,13 @@
 	                const fragment = this.fragmentColorMap.get(code);
 	                if (fragment) {
 	                    fragment.mesh.visible = true;
+	                    this.cullEdges(fragment, true);
 	                    this.fragmentColorMap.delete(code);
 	                }
 	            }
 	            for (const [_code, fragment] of this.fragmentColorMap.entries()) {
 	                fragment.mesh.visible = false;
+	                this.cullEdges(fragment, false);
 	            }
 	            // Clear the color map for the next iteration
 	            this.fragmentColorMap.clear();
@@ -69299,6 +69430,18 @@
 	            this.materialCache.set(code, material);
 	        }
 	        return material;
+	    }
+	    cullEdges(fragment, visible) {
+	        if (visible && this.fragment.edges.edgesToUpdate.has(fragment.id)) {
+	            this.updateCulling(fragment);
+	        }
+	        if (this.fragment.edges.edgesList[fragment.id]) {
+	            this.fragment.edges.edgesList[fragment.id].visible = visible;
+	        }
+	    }
+	    async updateCulling(fragment) {
+	        this.fragment.edges.generate(fragment);
+	        this.fragment.edges.edgesToUpdate.delete(fragment.id);
 	    }
 	}
 
@@ -69352,14 +69495,105 @@
 	    update(_delta) { }
 	}
 
+	class FragmentEdges {
+	    constructor(components) {
+	        this.components = components;
+	        this.edgesList = {};
+	        this.edgesToUpdate = new Set();
+	        this.threshold = 80;
+	        this.mat4 = new Matrix4();
+	        this.dummy = new Object3D();
+	        this.pos = [];
+	        this.rot = [];
+	        this.scl = [];
+	        this.lineMat = new LineBasicMaterial({
+	            color: 0x555555,
+	            // @ts-ignore
+	            onBeforeCompile: (shader) => {
+	                shader.vertexShader = `
+    attribute vec3 instT;
+    attribute vec4 instR;
+    attribute vec3 instS;
+    
+    // http://barradeau.com/blog/?p=1109
+    vec3 trs( inout vec3 position, vec3 T, vec4 R, vec3 S ) {
+        position *= S;
+        position += 2.0 * cross( R.xyz, cross( R.xyz, position ) + R.w * position );
+        position += T;
+        return position;
+    }
+    ${shader.vertexShader}
+`.replace(`#include <begin_vertex>`, `#include <begin_vertex>
+      transformed = trs(transformed, instT, instR, instS);
+`);
+	                console.log(shader.vertexShader);
+	            },
+	        });
+	    }
+	    generate(fragment) {
+	        if (this.edgesList[fragment.id]) {
+	            const previous = this.edgesList[fragment.id];
+	            previous.removeFromParent();
+	            previous.geometry.dispose();
+	            previous.geometry = null;
+	            delete this.edgesList[fragment.id];
+	        }
+	        this.getInstanceTransforms(fragment);
+	        const edgesGeom = new EdgesGeometry(fragment.mesh.geometry, this.threshold);
+	        const lineGeom = new InstancedBufferGeometry().copy(edgesGeom);
+	        lineGeom.instanceCount = Infinity;
+	        this.setAttributes(lineGeom);
+	        const lines = new LineSegments(lineGeom, this.lineMat);
+	        lines.frustumCulled = false;
+	        const scene = this.components.scene.getScene();
+	        scene.add(lines);
+	        this.edgesList[fragment.id] = lines;
+	        this.updateInstancedEdges(fragment, lineGeom);
+	    }
+	    updateInstancedEdges(fragment, lineGeom) {
+	        for (let i = 0; i < fragment.mesh.count; i++) {
+	            fragment.mesh.getMatrixAt(i, this.mat4);
+	            this.mat4.decompose(this.dummy.position, this.dummy.quaternion, this.dummy.scale);
+	            this.linesTRS(i, this.dummy, lineGeom);
+	        }
+	    }
+	    setAttributes(lineGeom) {
+	        lineGeom.setAttribute("instT", new InstancedBufferAttribute(new Float32Array(this.pos), 3));
+	        lineGeom.setAttribute("instR", new InstancedBufferAttribute(new Float32Array(this.rot), 4));
+	        lineGeom.setAttribute("instS", new InstancedBufferAttribute(new Float32Array(this.scl), 3));
+	        this.pos.length = 0;
+	        this.rot.length = 0;
+	        this.scl.length = 0;
+	    }
+	    getInstanceTransforms(fragment) {
+	        for (let i = 0; i < fragment.mesh.count; i++) {
+	            fragment.getInstance(i, this.dummy.matrix);
+	            this.dummy.updateMatrix();
+	            this.pos.push(this.dummy.position.x, this.dummy.position.y, this.dummy.position.z);
+	            this.rot.push(this.dummy.quaternion.x, this.dummy.quaternion.y, this.dummy.quaternion.z, this.dummy.quaternion.w);
+	            this.scl.push(this.dummy.scale.x, this.dummy.scale.y, this.dummy.scale.z);
+	        }
+	    }
+	    linesTRS(index, o, lineGeom) {
+	        lineGeom.attributes.instT.setXYZ(index, o.position.x, o.position.y, o.position.z);
+	        lineGeom.attributes.instT.needsUpdate = true;
+	        lineGeom.attributes.instR.setXYZW(index, o.quaternion.x, o.quaternion.y, o.quaternion.z, o.quaternion.w);
+	        lineGeom.attributes.instR.needsUpdate = true;
+	        lineGeom.attributes.instS.setXYZ(index, o.scale.x, o.scale.y, o.scale.z);
+	        lineGeom.attributes.instS.needsUpdate = true;
+	    }
+	}
+
 	class Fragments {
 	    constructor(components) {
 	        this.components = components;
 	        this.fragments = {};
+	        this.fragmentMeshes = [];
 	        this.loader = new FragmentLoader();
 	        this.groups = new FragmentGrouper();
 	        this.highlighter = new FragmentHighlighter(components, this);
 	        this.culler = new FragmentCulling(components, this);
+	        this.edges = new FragmentEdges(components);
 	    }
 	    async load(geometryURL, dataURL) {
 	        const fragment = await this.loader.load(geometryURL, dataURL);
@@ -69369,6 +69603,7 @@
 	    add(fragment) {
 	        this.fragments[fragment.id] = fragment;
 	        this.components.meshes.push(fragment.mesh);
+	        this.fragmentMeshes.push(fragment.mesh);
 	        const scene = this.components.scene.getScene();
 	        scene.add(fragment.mesh);
 	    }
@@ -71723,6 +71958,8 @@
 	        }
 
 	        fragments.groups.add(fragment.id, groups);
+
+	        fragments.edges.generate(fragment);
 	    }
 
 	    // Group by category
@@ -71743,6 +71980,8 @@
 	                const ids = models[guid];
 	                const frag = fragments.fragments[guid];
 	                frag.setVisibility(ids, visible);
+	                frag.edgesNeedUpdate = true;
+	                fragments.edges.edgesToUpdate.add(frag.id);
 	            }
 	        };
 	    }
@@ -71765,6 +72004,8 @@
 	                const ids = models[guid];
 	                const frag = fragments.fragments[guid];
 	                frag.setVisibility(ids, visible);
+	                frag.edgesNeedUpdate = true;
+	                fragments.edges.edgesToUpdate.add(frag.id);
 	            }
 	        };
 	    }

@@ -31,7 +31,7 @@ export class FragmentHighlighter {
   highlightOnHover() {
     if (!this.active) return;
 
-    const meshes = this.components.meshes;
+    const meshes = this.fragments.fragmentMeshes;
     const result = this.components.raycaster.castRay(meshes);
 
     if (!result) {
