@@ -1,6 +1,13 @@
-import * as THREE from "three";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
-import { Intersection, Mesh } from "three";
+import {
+  Camera,
+  Intersection,
+  Mesh,
+  Plane,
+  Scene,
+  Vector2,
+  WebGLRenderer,
+} from "three";
 import { LiteEvent } from "./lite-event";
 
 export interface ComponentBase {
@@ -16,23 +23,24 @@ export interface IResizeable {
 }
 
 export interface RendererComponent extends ComponentBase, IResizeable {
-  renderer: THREE.WebGLRenderer;
+  renderer: WebGLRenderer;
   renderer2D: CSS2DRenderer;
-  getSize: () => THREE.Vector2;
+  getSize: () => Vector2;
   onStartRender: LiteEvent<void>;
   onFinishRender: LiteEvent<void>;
-  addClippingPlane: (plane: THREE.Plane) => void;
-  removeClippingPlane: (plane: THREE.Plane) => void;
+  addClippingPlane: (plane: Plane) => void;
+  removeClippingPlane: (plane: Plane) => void;
 }
 
 export interface SceneComponent extends ComponentBase {
-  readonly scene: THREE.Scene;
-  getScene: () => THREE.Scene;
+  readonly scene: Scene;
+  getScene: () => Scene;
 }
 
 export interface CameraComponent extends ComponentBase, IResizeable {
-  perspectiveCamera: THREE.Camera;
-  getCamera: () => THREE.Camera;
+  perspectiveCamera: Camera;
+  getCamera: () => Camera;
+  enabled: boolean;
 }
 
 export interface RaycasterComponent {

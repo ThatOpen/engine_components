@@ -29,6 +29,7 @@
   "dependencies": {
     "bim-fragment": "0.0.10",
     "camera-controls": "^1.36.0",
-    "three": "0.143.0"
+    "three": "0.135",
+    "three-mesh-bvh": "^0.5.15"
   }
 }

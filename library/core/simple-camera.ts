@@ -39,6 +39,14 @@ export class SimpleCamera implements CameraComponent {
   activeCamera: Camera;
   controls: CameraControls;
 
+  get enabled() {
+    return this.controls.enabled;
+  }
+
+  set enabled(enabled: boolean) {
+    this.controls.enabled = enabled;
+  }
+
   constructor(protected components: Components) {
     this.perspectiveCamera = this.setupCamera();
     this.activeCamera = this.perspectiveCamera;
