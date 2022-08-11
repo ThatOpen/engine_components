@@ -134,7 +134,6 @@ async function loadFragments() {
                 const ids = models[guid];
                 const frag = fragments.fragments[guid];
                 frag.setVisibility(ids, visible);
-                frag.edgesNeedUpdate = true;
                 fragments.edges.edgesToUpdate.add(frag.id);
             }
         }
@@ -158,7 +157,6 @@ async function loadFragments() {
                 const ids = models[guid];
                 const frag = fragments.fragments[guid];
                 frag.setVisibility(ids, visible);
-                frag.edgesNeedUpdate = true;
                 fragments.edges.edgesToUpdate.add(frag.id);
             }
         }

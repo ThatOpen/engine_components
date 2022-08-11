@@ -21,10 +21,7 @@ export default class FragmentCulling {
     readonly rtHeight = 512,
     readonly autoUpdate = true
   ) {
-    this.renderTarget = new THREE.WebGLRenderTarget(
-      rtWidth,
-      rtHeight
-    );
+    this.renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight);
     this.bufferSize = rtWidth * rtHeight * 4;
     this.buffer = new Uint8Array(this.bufferSize);
     this.materialCache = new Map<string, THREE.MeshBasicMaterial>();
@@ -62,11 +59,16 @@ export default class FragmentCulling {
   }
 
   public updateVisibility = () => {
-
     const frags = Object.values(this.fragment.fragments);
-    const transparentMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })
+    const transparentMat = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+    });
 
-    let r = 0, g = 0, b = 0, i = 0;
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    let i = 0;
 
     const getNextColor = () => {
       if (i === 0) {
@@ -99,7 +101,8 @@ export default class FragmentCulling {
         code: `${r}${g}${b}`,
       };
     };
-    const isTransparent = (material: THREE.Material) => material.transparent && material.opacity < 1
+    const isTransparent = (material: THREE.Material) =>
+      material.transparent && material.opacity < 1;
 
     for (const fragment of frags) {
       // Store original materials
@@ -116,35 +119,33 @@ export default class FragmentCulling {
 
       // Check the materials for transparency and update them accordingly
       if (Array.isArray(fragment.mesh.userData.prevMat)) {
-
         let transparentOnly = true;
         const matArray: any[] = [];
 
         for (const prevMat of fragment.mesh.userData.prevMat) {
-          if(isTransparent(prevMat)) {
+          if (isTransparent(prevMat)) {
             matArray.push(transparentMat);
-          }else {
+          } else {
             transparentOnly = false;
             matArray.push(colorMaterial);
           }
         }
 
         // If we find that all the materials are transparent then we must remove this from analysis
-        if(transparentOnly){
+        if (transparentOnly) {
           this.fragmentColorMap.delete(code);
+          this.updateEdges(fragment);
         }
 
         fragment.mesh.material = matArray;
+      } else if (isTransparent(fragment.mesh.userData.prevMat)) {
+        // This material is transparent, so we must remove it from analysis
+        this.fragmentColorMap.delete(code);
+        // @ts-ignore
+        fragment.mesh.material = transparentMat;
       } else {
-        if(isTransparent(fragment.mesh.userData.prevMat)) {
-          // This material is transparent, so we must remove it from analysis
-          this.fragmentColorMap.delete(code);
-          // @ts-ignore
-          fragment.mesh.material = transparentMat;
-        }else {
-          // @ts-ignore
-          fragment.mesh.material = colorMaterial;
-        }
+        // @ts-ignore
+        fragment.mesh.material = colorMaterial;
       }
 
       // Set to visible
@@ -204,16 +205,18 @@ export default class FragmentCulling {
   };
 
   private cullEdges(fragment: Fragment, visible: boolean) {
-    if (visible && this.fragment.edges.edgesToUpdate.has(fragment.id)) {
-      this.updateCulling(fragment);
+    if (visible) {
+      this.updateEdges(fragment);
     }
     if (this.fragment.edges.edgesList[fragment.id]) {
       this.fragment.edges.edgesList[fragment.id].visible = visible;
     }
   }
 
-  async updateCulling(fragment: Fragment) {
-    this.fragment.edges.generate(fragment);
-    this.fragment.edges.edgesToUpdate.delete(fragment.id);
+  private updateEdges(fragment: Fragment) {
+    if (this.fragment.edges.edgesToUpdate.has(fragment.id)) {
+      this.fragment.edges.generate(fragment);
+      this.fragment.edges.edgesToUpdate.delete(fragment.id);
+    }
   }
 }
