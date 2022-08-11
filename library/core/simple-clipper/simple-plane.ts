@@ -159,18 +159,11 @@ export class SimplePlane {
   }
 
   private setupEvents(onStart: Function, onEnd: Function) {
-    this.controls.addEventListener("change", () => {
-      if (!this._enabled) return;
-      this.plane.setFromNormalAndCoplanarPoint(
-        this.normal,
-        this.helper.position
-      );
-    });
+    this.controls.addEventListener("change", () => this.onPlaneChanged());
 
     this.controls.addEventListener("dragging-changed", (event) => {
       if (!this._enabled) return;
       this.isVisible = !event.value;
-      // @ts-ignore
       this.components.camera.enabled = this.isVisible;
       if (event.value) onStart();
       else onEnd();
@@ -179,6 +172,11 @@ export class SimplePlane {
     /* this.context.ifcCamera.currentNavMode.onChangeProjection.on((camera) => {
           this.controls.camera = camera;
         }); */
+  }
+
+  protected onPlaneChanged() {
+    if (!this._enabled) return;
+    this.plane.setFromNormalAndCoplanarPoint(this.normal, this.helper.position);
   }
 
   private createHelper() {

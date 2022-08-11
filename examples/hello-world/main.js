@@ -8,6 +8,7 @@ import {
     SimpleClipper,
     SimpleDimensions,
     SimpleRaycaster,
+    SimplePlane,
     SimpleCamera
 } from 'openbim-components'
 
@@ -43,7 +44,7 @@ scene.add(ambientLight)
 const grid = new SimpleGrid(components);
 components.tools.add(grid);
 
-const clipper = new SimpleClipper(components);
+const clipper = new SimpleClipper(components, SimplePlane);
 components.tools.add(clipper)
 
 const dimensions = new SimpleDimensions(components);

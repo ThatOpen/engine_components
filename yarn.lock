@@ -5681,6 +5681,7 @@ __metadata:
     jest: ^27.0.4
     prettier: ^2.3.1
     three: 0.135
+    three-mesh-bvh: ^0.5.15
     ts-jest: ^27.0.3
     ts-node: ^10.0.0
     typescript: ^4.3.2
@@ -7060,7 +7061,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"three-mesh-bvh@npm:^0.5.14":
+"three-mesh-bvh@npm:^0.5.14, three-mesh-bvh@npm:^0.5.15":
   version: 0.5.15
   resolution: "three-mesh-bvh@npm:0.5.15"
   peerDependencies:

@@ -8,12 +8,12 @@ import {
 } from "../base-types";
 import { SimplePlane } from "./simple-plane";
 
-export class SimpleClipper
+export class SimpleClipper<Plane extends SimplePlane>
   implements ToolComponent, IHideable, IDeletable, IEnableable
 {
   public readonly name = "clipper";
   dragging = false;
-  planes: SimplePlane[] = [];
+  planes: Plane[] = [];
   intersection: Intersection | undefined;
   orthogonalY = true;
   toleranceOrthogonalY = 0.7;
@@ -22,7 +22,10 @@ export class SimpleClipper
   private _enabled = false;
   private _visible = false;
 
-  constructor(private components: Components) {}
+  constructor(
+    private components: Components,
+    protected PlaneType: new (...args: any) => Plane
+  ) {}
 
   get visible() {
     return this._visible;
@@ -82,7 +85,7 @@ export class SimpleClipper
     point: Vector3,
     isPlan = false
   ) => {
-    const plane = new SimplePlane(
+    const plane = new this.PlaneType(
       this.components,
       point,
       normal,
@@ -101,8 +104,8 @@ export class SimpleClipper
     this.deletePlane();
   };
 
-  deletePlane = (plane?: SimplePlane) => {
-    let existingPlane: SimplePlane | undefined | null = plane;
+  deletePlane = (plane?: Plane) => {
+    let existingPlane: Plane | undefined | null = plane;
     if (!existingPlane) {
       if (!this.enabled) return;
       existingPlane = this.pickPlane();
@@ -176,7 +179,7 @@ export class SimpleClipper
   }
 
   private newPlane(intersection: Intersection, worldNormal: Vector3) {
-    return new SimplePlane(
+    return new this.PlaneType(
       this.components,
       intersection.point,
       worldNormal,

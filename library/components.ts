@@ -1,5 +1,10 @@
 import * as THREE from "three";
-import { Plane } from "three";
+import { BufferGeometry, Mesh, Plane } from "three";
+import {
+  acceleratedRaycast,
+  computeBoundsTree,
+  disposeBoundsTree,
+} from "three-mesh-bvh";
 import {
   CameraComponent,
   RaycasterComponent,
@@ -25,6 +30,7 @@ export class Components {
   constructor() {
     this.clock = new THREE.Clock();
     this.tools = new ToolComponents();
+    Components.setupBVH();
   }
 
   get renderer() {
@@ -79,5 +85,11 @@ export class Components {
 
   dispose() {
     cancelAnimationFrame(this.updateRequestCallback);
+  }
+
+  private static setupBVH() {
+    BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+    BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+    Mesh.prototype.raycast = acceleratedRaycast;
   }
 }
