@@ -12,7 +12,7 @@ export default class FragmentCulling {
 
   exclusions = new Map<string, Fragment>();
   fragmentColorMap = new Map<string, Fragment>();
-  cameraMoved = false;
+  needsUpdate = false;
 
   constructor(
     private components: Components,
@@ -47,14 +47,14 @@ export default class FragmentCulling {
     this.worker.addEventListener("message", this.handleWorkerMessage);
 
     const controls = this.components.camera.controls;
-    controls.addEventListener("control", () => (this.cameraMoved = true));
-    controls.addEventListener("controlstart", () => (this.cameraMoved = true));
-    controls.addEventListener("wake", () => (this.cameraMoved = true));
-    controls.addEventListener("controlend", () => (this.cameraMoved = true));
-    controls.addEventListener("sleep", () => (this.cameraMoved = true));
+    controls.addEventListener("control", () => (this.needsUpdate = true));
+    controls.addEventListener("controlstart", () => (this.needsUpdate = true));
+    controls.addEventListener("wake", () => (this.needsUpdate = true));
+    controls.addEventListener("controlend", () => (this.needsUpdate = true));
+    controls.addEventListener("sleep", () => (this.needsUpdate = true));
 
     const dom = this.components.renderer.renderer.domElement;
-    dom.addEventListener("wheel", () => (this.cameraMoved = true));
+    dom.addEventListener("wheel", () => (this.needsUpdate = true));
 
     if (autoUpdate) window.setInterval(this.updateVisibility, updateInterval);
   }
@@ -70,7 +70,7 @@ export default class FragmentCulling {
   }
 
   public updateVisibility = () => {
-    if (!this.cameraMoved) return;
+    if (!this.needsUpdate) return;
 
     const frags = Object.values(this.fragment.fragments);
     const transparentMat = new THREE.MeshBasicMaterial({
@@ -193,7 +193,7 @@ export default class FragmentCulling {
       buffer: this.buffer,
     });
 
-    this.cameraMoved = false;
+    this.needsUpdate = false;
   };
 
   private handleWorkerMessage = (event: MessageEvent) => {

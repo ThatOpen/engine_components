@@ -65063,9 +65063,9 @@
 	        this.autoUpdate = autoUpdate;
 	        this.exclusions = new Map();
 	        this.fragmentColorMap = new Map();
-	        this.cameraMoved = false;
+	        this.needsUpdate = false;
 	        this.updateVisibility = () => {
-	            if (!this.cameraMoved)
+	            if (!this.needsUpdate)
 	                return;
 	            const frags = Object.values(this.fragment.fragments);
 	            const transparentMat = new MeshBasicMaterial({
@@ -65164,7 +65164,7 @@
 	            this.worker.postMessage({
 	                buffer: this.buffer,
 	            });
-	            this.cameraMoved = false;
+	            this.needsUpdate = false;
 	        };
 	        this.handleWorkerMessage = (event) => {
 	            const colors = event.data.colors;
@@ -65205,13 +65205,13 @@
 	        this.worker = new Worker(URL.createObjectURL(blob));
 	        this.worker.addEventListener("message", this.handleWorkerMessage);
 	        const controls = this.components.camera.controls;
-	        controls.addEventListener("control", () => (this.cameraMoved = true));
-	        controls.addEventListener("controlstart", () => (this.cameraMoved = true));
-	        controls.addEventListener("wake", () => (this.cameraMoved = true));
-	        controls.addEventListener("controlend", () => (this.cameraMoved = true));
-	        controls.addEventListener("sleep", () => (this.cameraMoved = true));
+	        controls.addEventListener("control", () => (this.needsUpdate = true));
+	        controls.addEventListener("controlstart", () => (this.needsUpdate = true));
+	        controls.addEventListener("wake", () => (this.needsUpdate = true));
+	        controls.addEventListener("controlend", () => (this.needsUpdate = true));
+	        controls.addEventListener("sleep", () => (this.needsUpdate = true));
 	        const dom = this.components.renderer.renderer.domElement;
-	        dom.addEventListener("wheel", () => (this.cameraMoved = true));
+	        dom.addEventListener("wheel", () => (this.needsUpdate = true));
 	        if (autoUpdate)
 	            window.setInterval(this.updateVisibility, updateInterval);
 	    }
@@ -67754,7 +67754,7 @@
 
 	        fragments.groups.add(fragment.id, groups);
 
-	        fragments.edges.generate(fragment);
+	        // fragments.edges.generate(fragment);
 	    }
 
 	    // Group by category
@@ -67775,7 +67775,8 @@
 	                const ids = models[guid];
 	                const frag = fragments.fragments[guid];
 	                frag.setVisibility(ids, visible);
-	                fragments.edges.edgesToUpdate.add(frag.id);
+	                // fragments.edges.edgesToUpdate.add(frag.id);
+	                fragments.culler.needsUpdate = true;
 	            }
 	        };
 	    }
@@ -67798,7 +67799,8 @@
 	                const ids = models[guid];
 	                const frag = fragments.fragments[guid];
 	                frag.setVisibility(ids, visible);
-	                fragments.edges.edgesToUpdate.add(frag.id);
+	                // fragments.edges.edgesToUpdate.add(frag.id);
+	                fragments.culler.needsUpdate = true;
 	            }
 	        };
 	    }

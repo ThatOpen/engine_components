@@ -113,7 +113,7 @@ async function loadFragments() {
 
         fragments.groups.add(fragment.id, groups);
 
-        fragments.edges.generate(fragment);
+        // fragments.edges.generate(fragment);
     }
 
     // Group by category
@@ -134,7 +134,8 @@ async function loadFragments() {
                 const ids = models[guid];
                 const frag = fragments.fragments[guid];
                 frag.setVisibility(ids, visible);
-                fragments.edges.edgesToUpdate.add(frag.id);
+                // fragments.edges.edgesToUpdate.add(frag.id);
+                fragments.culler.needsUpdate = true;
             }
         }
     }
@@ -157,7 +158,8 @@ async function loadFragments() {
                 const ids = models[guid];
                 const frag = fragments.fragments[guid];
                 frag.setVisibility(ids, visible);
-                fragments.edges.edgesToUpdate.add(frag.id);
+                // fragments.edges.edgesToUpdate.add(frag.id);
+                fragments.culler.needsUpdate = true;
             }
         }
     }
