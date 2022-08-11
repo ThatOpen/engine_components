@@ -112,6 +112,8 @@ async function loadFragments() {
         }
 
         fragments.groups.add(fragment.id, groups);
+
+        fragments.edges.generate(fragment);
     }
 
     // Group by category
@@ -132,6 +134,8 @@ async function loadFragments() {
                 const ids = models[guid];
                 const frag = fragments.fragments[guid];
                 frag.setVisibility(ids, visible);
+                frag.edgesNeedUpdate = true;
+                fragments.edges.edgesToUpdate.add(frag.id);
             }
         }
     }
@@ -154,11 +158,14 @@ async function loadFragments() {
                 const ids = models[guid];
                 const frag = fragments.fragments[guid];
                 frag.setVisibility(ids, visible);
+                frag.edgesNeedUpdate = true;
+                fragments.edges.edgesToUpdate.add(frag.id);
             }
         }
     }
 
-    fragments.updateHighlight();
+    fragments.highlighter.update();
+    fragments.highlighter.active = true;
 }
 
 window.addEventListener("mousemove", () => fragments.highlighter.highlightOnHover());

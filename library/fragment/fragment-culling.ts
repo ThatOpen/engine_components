@@ -42,13 +42,13 @@ export default class FragmentCulling {
         }
         postMessage({ colors });
       });
-    `
-    const blob = new Blob([code], {type: 'application/javascript'})
-    this.worker = new Worker(URL.createObjectURL(blob));
-    this.worker.addEventListener("message", this.handleWorkerMessage)
+    `;
 
-    if(autoUpdate)
-      window.setInterval(this.updateVisibility, updateInterval);
+    const blob = new Blob([code], { type: "application/javascript" });
+    this.worker = new Worker(URL.createObjectURL(blob));
+    this.worker.addEventListener("message", this.handleWorkerMessage);
+
+    if (autoUpdate) window.setInterval(this.updateVisibility, updateInterval);
   }
 
   private getMaterial(r: number, g: number, b: number) {
@@ -176,8 +176,8 @@ export default class FragmentCulling {
     this.components.renderer.renderer.setRenderTarget(null);
 
     this.worker.postMessage({
-      buffer: this.buffer
-    })
+      buffer: this.buffer,
+    });
   };
 
   private handleWorkerMessage = (event: MessageEvent) => {
@@ -188,18 +188,32 @@ export default class FragmentCulling {
       const fragment = this.fragmentColorMap.get(code);
       if (fragment) {
         fragment.mesh.visible = true;
+        this.cullEdges(fragment, true);
         visibleFragments.push(fragment);
         this.fragmentColorMap.delete(code);
       }
     }
 
-    this.fragment.highlighter.fragments = visibleFragments;
-
     for (const [_code, fragment] of this.fragmentColorMap.entries()) {
       fragment.mesh.visible = false;
+      this.cullEdges(fragment, false);
     }
 
     // Clear the color map for the next iteration
     this.fragmentColorMap.clear();
+  };
+
+  private cullEdges(fragment: Fragment, visible: boolean) {
+    if (visible && this.fragment.edges.edgesToUpdate.has(fragment.id)) {
+      this.updateCulling(fragment);
+    }
+    if (this.fragment.edges.edgesList[fragment.id]) {
+      this.fragment.edges.edgesList[fragment.id].visible = visible;
+    }
+  }
+
+  async updateCulling(fragment: Fragment) {
+    this.fragment.edges.generate(fragment);
+    this.fragment.edges.edgesToUpdate.delete(fragment.id);
   }
 }
