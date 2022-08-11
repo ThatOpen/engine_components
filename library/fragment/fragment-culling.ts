@@ -12,6 +12,7 @@ export default class FragmentCulling {
 
   exclusions = new Map<string, Fragment>();
   fragmentColorMap = new Map<string, Fragment>();
+  cameraMoved = false;
 
   constructor(
     private components: Components,
@@ -45,6 +46,16 @@ export default class FragmentCulling {
     this.worker = new Worker(URL.createObjectURL(blob));
     this.worker.addEventListener("message", this.handleWorkerMessage);
 
+    const controls = this.components.camera.controls;
+    controls.addEventListener("control", () => (this.cameraMoved = true));
+    controls.addEventListener("controlstart", () => (this.cameraMoved = true));
+    controls.addEventListener("wake", () => (this.cameraMoved = true));
+    controls.addEventListener("controlend", () => (this.cameraMoved = true));
+    controls.addEventListener("sleep", () => (this.cameraMoved = true));
+
+    const dom = this.components.renderer.renderer.domElement;
+    dom.addEventListener("wheel", () => (this.cameraMoved = true));
+
     if (autoUpdate) window.setInterval(this.updateVisibility, updateInterval);
   }
 
@@ -59,6 +70,8 @@ export default class FragmentCulling {
   }
 
   public updateVisibility = () => {
+    if (!this.cameraMoved) return;
+
     const frags = Object.values(this.fragment.fragments);
     const transparentMat = new THREE.MeshBasicMaterial({
       transparent: true,
@@ -179,6 +192,8 @@ export default class FragmentCulling {
     this.worker.postMessage({
       buffer: this.buffer,
     });
+
+    this.cameraMoved = false;
   };
 
   private handleWorkerMessage = (event: MessageEvent) => {

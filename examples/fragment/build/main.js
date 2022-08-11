@@ -65063,7 +65063,10 @@
 	        this.autoUpdate = autoUpdate;
 	        this.exclusions = new Map();
 	        this.fragmentColorMap = new Map();
+	        this.cameraMoved = false;
 	        this.updateVisibility = () => {
+	            if (!this.cameraMoved)
+	                return;
 	            const frags = Object.values(this.fragment.fragments);
 	            const transparentMat = new MeshBasicMaterial({
 	                transparent: true,
@@ -65161,6 +65164,7 @@
 	            this.worker.postMessage({
 	                buffer: this.buffer,
 	            });
+	            this.cameraMoved = false;
 	        };
 	        this.handleWorkerMessage = (event) => {
 	            const colors = event.data.colors;
@@ -65200,6 +65204,14 @@
 	        const blob = new Blob([code], { type: "application/javascript" });
 	        this.worker = new Worker(URL.createObjectURL(blob));
 	        this.worker.addEventListener("message", this.handleWorkerMessage);
+	        const controls = this.components.camera.controls;
+	        controls.addEventListener("control", () => (this.cameraMoved = true));
+	        controls.addEventListener("controlstart", () => (this.cameraMoved = true));
+	        controls.addEventListener("wake", () => (this.cameraMoved = true));
+	        controls.addEventListener("controlend", () => (this.cameraMoved = true));
+	        controls.addEventListener("sleep", () => (this.cameraMoved = true));
+	        const dom = this.components.renderer.renderer.domElement;
+	        dom.addEventListener("wheel", () => (this.cameraMoved = true));
 	        if (autoUpdate)
 	            window.setInterval(this.updateVisibility, updateInterval);
 	    }

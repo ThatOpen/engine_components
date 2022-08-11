@@ -8,6 +8,7 @@ import {
   Vector2,
   WebGLRenderer,
 } from "three";
+import CameraControls from "camera-controls";
 import { LiteEvent } from "./lite-event";
 
 export interface ComponentBase {
@@ -41,6 +42,7 @@ export interface CameraComponent extends ComponentBase, IResizeable {
   perspectiveCamera: Camera;
   getCamera: () => Camera;
   enabled: boolean;
+  controls: CameraControls;
 }
 
 export interface RaycasterComponent {
