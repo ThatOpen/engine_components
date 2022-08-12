@@ -51544,172 +51544,6 @@
 	    }
 	}
 
-	class SimpleClipper {
-	    constructor(components, PlaneType) {
-	        this.components = components;
-	        this.PlaneType = PlaneType;
-	        this.name = "clipper";
-	        this.dragging = false;
-	        this.planes = [];
-	        this.orthogonalY = true;
-	        this.toleranceOrthogonalY = 0.7;
-	        this.planeSize = 5;
-	        this._enabled = false;
-	        this._visible = false;
-	        this.createPlane = () => {
-	            if (!this.enabled)
-	                return;
-	            const intersects = this.components.raycaster.castRay();
-	            if (!intersects)
-	                return;
-	            this.createPlaneFromIntersection(intersects);
-	            this.intersection = undefined;
-	        };
-	        this.createFromNormalAndCoplanarPoint = (normal, point, isPlan = false) => {
-	            var _a;
-	            const plane = new this.PlaneType(this.components, point, normal, this.activateDragging, this.deactivateDragging, this.planeSize);
-	            plane.isPlan = isPlan;
-	            this.planes.push(plane);
-	            (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.addClippingPlane(plane.plane);
-	            this.updateMaterials();
-	            return plane;
-	        };
-	        this.delete = () => {
-	            this.deletePlane();
-	        };
-	        this.deletePlane = (plane) => {
-	            var _a;
-	            let existingPlane = plane;
-	            if (!existingPlane) {
-	                if (!this.enabled)
-	                    return;
-	                existingPlane = this.pickPlane();
-	            }
-	            if (!existingPlane)
-	                return;
-	            const index = this.planes.indexOf(existingPlane);
-	            if (index === -1)
-	                return;
-	            existingPlane.removeFromScene();
-	            this.planes.splice(index, 1);
-	            (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.removeClippingPlane(existingPlane.plane);
-	            this.updateMaterials();
-	        };
-	        this.deleteAllPlanes = () => {
-	            while (this.planes.length > 0) {
-	                this.deletePlane(this.planes[0]);
-	            }
-	        };
-	        this.pickPlane = () => {
-	            const planeMeshes = this.planes.map((p) => p.planeMesh);
-	            const arrowMeshes = this.planes.map((p) => p.arrowBoundingBox);
-	            const intersects = this.components.raycaster.castRay([
-	                ...planeMeshes,
-	                ...arrowMeshes,
-	            ]);
-	            if (intersects) {
-	                return this.planes.find((p) => {
-	                    if (p.planeMesh === intersects.object ||
-	                        p.arrowBoundingBox === intersects.object) {
-	                        return p;
-	                    }
-	                    return null;
-	                });
-	            }
-	            return null;
-	        };
-	        this.createPlaneFromIntersection = (intersection) => {
-	            var _a, _b;
-	            const constant = intersection.point.distanceTo(new Vector3$1(0, 0, 0));
-	            const normal = (_a = intersection.face) === null || _a === void 0 ? void 0 : _a.normal;
-	            if (!constant || !normal)
-	                return;
-	            const normalMatrix = new Matrix3().getNormalMatrix(intersection.object.matrixWorld);
-	            const worldNormal = normal.clone().applyMatrix3(normalMatrix).normalize();
-	            this.normalizePlaneDirectionY(worldNormal);
-	            const plane = this.newPlane(intersection, worldNormal.negate());
-	            this.planes.push(plane);
-	            (_b = this.components.renderer) === null || _b === void 0 ? void 0 : _b.addClippingPlane(plane.plane);
-	            this.updateMaterials();
-	        };
-	        this.activateDragging = () => {
-	            this.dragging = true;
-	        };
-	        this.deactivateDragging = () => {
-	            this.dragging = false;
-	        };
-	        this.updateMaterials = () => {
-	            var _a;
-	            // Apply clipping to all models
-	            const planes = (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.renderer.clippingPlanes;
-	            this.components.meshes.forEach((model) => {
-	                if (Array.isArray(model.material)) {
-	                    model.material.forEach((mat) => (mat.clippingPlanes = planes));
-	                }
-	                else {
-	                    model.material.clippingPlanes = planes;
-	                }
-	            });
-	        };
-	    }
-	    get visible() {
-	        return this._visible;
-	    }
-	    set visible(visible) {
-	        this._visible = visible;
-	        if (!visible) {
-	            this.enabled = false;
-	        }
-	        this.planes.forEach((plane) => {
-	            if (!plane.isPlan) {
-	                plane.visible = visible;
-	            }
-	        });
-	        this.updateMaterials();
-	    }
-	    get enabled() {
-	        return this._enabled;
-	    }
-	    set enabled(state) {
-	        this._enabled = state;
-	        if (state && !this._visible) {
-	            this.visible = true;
-	        }
-	        this.planes.forEach((plane) => {
-	            if (!plane.isPlan) {
-	                plane.enabled = state;
-	            }
-	        });
-	        this.updateMaterials();
-	    }
-	    toggle() {
-	        this.enabled = !this.enabled;
-	    }
-	    dispose() {
-	        this.planes.forEach((plane) => plane.dispose());
-	        this.planes.length = 0;
-	        this.components = null;
-	    }
-	    normalizePlaneDirectionY(normal) {
-	        if (this.orthogonalY) {
-	            if (normal.y > this.toleranceOrthogonalY) {
-	                normal.x = 0;
-	                normal.y = 1;
-	                normal.z = 0;
-	            }
-	            if (normal.y < -this.toleranceOrthogonalY) {
-	                normal.x = 0;
-	                normal.y = -1;
-	                normal.z = 0;
-	            }
-	        }
-	    }
-	    newPlane(intersection, worldNormal) {
-	        return new this.PlaneType(this.components, intersection.point, worldNormal, this.activateDragging, this.deactivateDragging, this.planeSize);
-	    }
-	    update(_delta) { }
-	}
-
 	const _raycaster = new Raycaster();
 
 	const _tempVector = new Vector3$1();
@@ -53220,8 +53054,202 @@
 
 	TransformControlsPlane.prototype.isTransformControlsPlane = true;
 
+	class SimpleClipper {
+	    constructor(context) {
+	        this.name = "clipper";
+	        this.orthogonalY = true;
+	        this.toleranceOrthogonalY = 0.7;
+	        this.planeSize = 5;
+	        this.position = new Vector2$1();
+	        this.rawPosition = new Vector2$1();
+	        this.createPlane = () => {
+	            if (!this.enabled)
+	                return;
+	            const intersects = this.castRayIfc();
+	            if (!intersects)
+	                return;
+	            this.createPlaneFromIntersection(intersects);
+	            this.intersection = undefined;
+	        };
+	        this.createFromNormalAndCoplanarPoint = (normal, point, isPlan = false) => {
+	            var _a;
+	            const plane = new SimplePlane(this.context, point, normal, this.activateDragging, this.deactivateDragging, this.planeSize);
+	            plane.isPlan = isPlan;
+	            this.planes.push(plane);
+	            (_a = this.context.renderer) === null || _a === void 0 ? void 0 : _a.addClippingPlane(plane.plane);
+	            this.updateMaterials();
+	            return plane;
+	        };
+	        this.delete = () => {
+	            this.deletePlane();
+	        };
+	        this.deletePlane = (plane) => {
+	            var _a;
+	            let existingPlane = plane;
+	            if (!existingPlane) {
+	                if (!this.enabled)
+	                    return;
+	                existingPlane = this.pickPlane();
+	            }
+	            if (!existingPlane)
+	                return;
+	            const index = this.planes.indexOf(existingPlane);
+	            if (index === -1)
+	                return;
+	            existingPlane.removeFromScene();
+	            this.planes.splice(index, 1);
+	            (_a = this.context.renderer) === null || _a === void 0 ? void 0 : _a.removeClippingPlane(existingPlane.plane);
+	            this.updateMaterials();
+	        };
+	        this.deleteAllPlanes = () => {
+	            while (this.planes.length > 0) {
+	                this.deletePlane(this.planes[0]);
+	            }
+	        };
+	        this.pickPlane = () => {
+	            const planeMeshes = this.planes.map((p) => p.planeMesh);
+	            const arrowMeshes = this.planes.map((p) => p.arrowBoundingBox);
+	            const intersects = this.castRay([...planeMeshes, ...arrowMeshes]);
+	            if (intersects.length > 0) {
+	                return this.planes.find((p) => {
+	                    if (p.planeMesh === intersects[0].object || p.arrowBoundingBox === intersects[0].object) {
+	                        return p;
+	                    }
+	                    return null;
+	                });
+	            }
+	            return null;
+	        };
+	        this.createPlaneFromIntersection = (intersection) => {
+	            var _a, _b;
+	            const constant = intersection.point.distanceTo(new Vector3$1(0, 0, 0));
+	            const normal = (_a = intersection.face) === null || _a === void 0 ? void 0 : _a.normal;
+	            if (!constant || !normal)
+	                return;
+	            const normalMatrix = new Matrix3().getNormalMatrix(intersection.object.matrixWorld);
+	            const worldNormal = normal.clone().applyMatrix3(normalMatrix).normalize();
+	            this.normalizePlaneDirectionY(worldNormal);
+	            const plane = this.newPlane(intersection, worldNormal.negate());
+	            this.planes.push(plane);
+	            (_b = this.context.renderer) === null || _b === void 0 ? void 0 : _b.addClippingPlane(plane.plane);
+	            this.updateMaterials();
+	        };
+	        this.activateDragging = () => {
+	            this.dragging = true;
+	        };
+	        this.deactivateDragging = () => {
+	            this.dragging = false;
+	        };
+	        this.updateMaterials = () => {
+	            var _a;
+	            // Apply clipping to all models
+	            const planes = (_a = this.context.renderer) === null || _a === void 0 ? void 0 : _a.renderer.clippingPlanes;
+	            this.context.meshes.forEach((model) => {
+	                if (Array.isArray(model.material)) {
+	                    model.material.forEach((mat) => (mat.clippingPlanes = planes));
+	                }
+	                else {
+	                    model.material.clippingPlanes = planes;
+	                }
+	            });
+	        };
+	        this.context = context;
+	        this._enabled = false;
+	        this._visible = false;
+	        this.dragging = false;
+	        this.planes = [];
+	        this.raycaster = new Raycaster();
+	        const domElement = context.renderer.renderer.domElement;
+	        domElement.onmousemove = (event) => {
+	            this.rawPosition.x = event.clientX;
+	            this.rawPosition.y = event.clientY;
+	            const bounds = domElement.getBoundingClientRect();
+	            this.position.x = ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1;
+	            this.position.y = -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1;
+	        };
+	    }
+	    get visible() {
+	        return this._visible;
+	    }
+	    set visible(visible) {
+	        this._visible = visible;
+	        if (!visible) {
+	            this.enabled = false;
+	        }
+	        this.planes.forEach((plane) => {
+	            if (!plane.isPlan) {
+	                plane.visible = visible;
+	            }
+	        });
+	        this.updateMaterials();
+	    }
+	    get enabled() {
+	        return this._enabled;
+	    }
+	    set enabled(state) {
+	        this._enabled = state;
+	        if (state && !this._visible) {
+	            this.visible = true;
+	        }
+	        this.planes.forEach((plane) => {
+	            if (!plane.isPlan) {
+	                plane.enabled = state;
+	            }
+	        });
+	        this.updateMaterials();
+	    }
+	    toggle() {
+	        this.enabled = !this.enabled;
+	    }
+	    dispose() {
+	        this.planes.forEach((plane) => plane.dispose());
+	        this.planes.length = 0;
+	        this.context = null;
+	    }
+	    normalizePlaneDirectionY(normal) {
+	        if (this.orthogonalY) {
+	            if (normal.y > this.toleranceOrthogonalY) {
+	                normal.x = 0;
+	                normal.y = 1;
+	                normal.z = 0;
+	            }
+	            if (normal.y < -this.toleranceOrthogonalY) {
+	                normal.x = 0;
+	                normal.y = -1;
+	                normal.z = 0;
+	            }
+	        }
+	    }
+	    newPlane(intersection, worldNormal) {
+	        return new SimplePlane(this.context, intersection.point, worldNormal, this.activateDragging, this.deactivateDragging, this.planeSize);
+	    }
+	    update(_delta) {
+	    }
+	    castRay(items) {
+	        var _a;
+	        const camera = (_a = this.context.camera) === null || _a === void 0 ? void 0 : _a.getCamera();
+	        if (!camera)
+	            throw new Error("Camera required for clipper");
+	        this.raycaster.setFromCamera(this.position, camera);
+	        return this.raycaster.intersectObjects(items);
+	    }
+	    castRayIfc() {
+	        const items = this.castRay(this.context.meshes);
+	        const filtered = this.filterClippingPlanes(items);
+	        return filtered.length > 0 ? filtered[0] : null;
+	    }
+	    filterClippingPlanes(objs) {
+	        var _a;
+	        const planes = (_a = this.context.renderer) === null || _a === void 0 ? void 0 : _a.renderer.clippingPlanes;
+	        if (objs.length <= 0 || !planes || (planes === null || planes === void 0 ? void 0 : planes.length) <= 0)
+	            return objs;
+	        // const planes = this.clipper?.planes.map((p) => p.plane);
+	        return objs.filter((elem) => planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0));
+	    }
+	}
+	//
 	class SimplePlane {
-	    constructor(components, origin, normal, onStartDragging, onEndDragging, planeSize) {
+	    constructor(context, origin, normal, onStartDragging, onEndDragging, planeSize) {
 	        this.arrowBoundingBox = new Mesh();
 	        this.isVisible = true;
 	        this._enabled = true;
@@ -53230,9 +53258,6 @@
 	        this.isPlan = false;
 	        this.removeFromScene = () => {
 	            this.helper.removeFromParent();
-	            const index = this.components.clipplingPlanes.indexOf(this.plane);
-	            if (index >= 0)
-	                this.components.clipplingPlanes.splice(index, 1);
 	            this.arrowBoundingBox.removeFromParent();
 	            this.arrowBoundingBox.geometry.dispose();
 	            this.arrowBoundingBox = undefined;
@@ -53243,9 +53268,8 @@
 	            this.helper.removeFromParent();
 	        };
 	        this.planeSize = planeSize;
-	        this.components = components;
+	        this.context = context;
 	        this.plane = new Plane();
-	        this.components.clipplingPlanes.push(this.plane);
 	        this.planeMesh = this.getPlaneMesh();
 	        this.normal = normal;
 	        this.origin = origin;
@@ -53260,7 +53284,7 @@
 	    set enabled(state) {
 	        var _a;
 	        this._enabled = state;
-	        const planes = (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.renderer.clippingPlanes;
+	        const planes = (_a = this.context.renderer) === null || _a === void 0 ? void 0 : _a.renderer.clippingPlanes;
 	        if (state && planes) {
 	            planes.push(this.plane);
 	        }
@@ -53290,14 +53314,14 @@
 	            SimplePlane.hiddenMaterial = SimplePlane.getHiddenMaterial();
 	        }
 	        this.removeFromScene();
-	        this.components = null;
+	        this.context = null;
 	    }
 	    static getPlaneMaterial() {
 	        return new MeshBasicMaterial({
 	            color: 0xffff00,
 	            side: DoubleSide,
 	            transparent: true,
-	            opacity: 0.2,
+	            opacity: 0.2
 	        });
 	    }
 	    static getHiddenMaterial() {
@@ -53305,15 +53329,15 @@
 	    }
 	    newTransformControls() {
 	        var _a, _b, _c, _d;
-	        const camera = (_a = this.components.camera) === null || _a === void 0 ? void 0 : _a.getCamera();
-	        const container = (_b = this.components.renderer) === null || _b === void 0 ? void 0 : _b.renderer.domElement;
+	        const camera = (_a = this.context.camera) === null || _a === void 0 ? void 0 : _a.getCamera();
+	        const container = (_b = this.context.renderer) === null || _b === void 0 ? void 0 : _b.renderer.domElement;
 	        console.log(camera);
 	        console.log(container);
 	        if (!camera || !container)
 	            throw new Error("Camera or container not initialised.");
 	        const controls = new TransformControls(camera, container);
 	        this.initializeControls(controls);
-	        const scene = (_d = (_c = this.components) === null || _c === void 0 ? void 0 : _c.scene) === null || _d === void 0 ? void 0 : _d.getScene();
+	        const scene = (_d = (_c = this.context) === null || _c === void 0 ? void 0 : _c.scene) === null || _d === void 0 ? void 0 : _d.getScene();
 	        if (!scene)
 	            throw new Error("Scene not initialised.");
 	        scene.add(controls);
@@ -53323,7 +53347,7 @@
 	        controls.attach(this.helper);
 	        controls.showX = false;
 	        controls.showY = false;
-	        controls.setSpace("local");
+	        controls.setSpace('local');
 	        this.createArrowBoundingBox();
 	        controls.children[0].children[0].add(this.arrowBoundingBox);
 	    }
@@ -53335,34 +53359,34 @@
 	        this.arrowBoundingBox.geometry.applyMatrix4(this.arrowBoundingBox.matrix);
 	    }
 	    setupEvents(onStart, onEnd) {
-	        this.controls.addEventListener("change", () => this.onPlaneChanged());
-	        this.controls.addEventListener("dragging-changed", (event) => {
+	        this.controls.addEventListener('change', () => {
+	            if (!this._enabled)
+	                return;
+	            this.plane.setFromNormalAndCoplanarPoint(this.normal, this.helper.position);
+	        });
+	        this.controls.addEventListener('dragging-changed', (event) => {
 	            if (!this._enabled)
 	                return;
 	            this.isVisible = !event.value;
-	            this.components.camera.enabled = this.isVisible;
+	            // @ts-ignore
+	            this.context.camera.enabled = this.isVisible;
 	            if (event.value)
 	                onStart();
 	            else
 	                onEnd();
 	        });
-	        /* this.context.ifcCamera.currentNavMode.onChangeProjection.on((camera) => {
-	              this.controls.camera = camera;
-	            }); */
-	    }
-	    onPlaneChanged() {
-	        if (!this._enabled)
-	            return;
-	        this.plane.setFromNormalAndCoplanarPoint(this.normal, this.helper.position);
+	        /*this.context.ifcCamera.currentNavMode.onChangeProjection.on((camera) => {
+	          this.controls.camera = camera;
+	        });*/
 	    }
 	    createHelper() {
 	        var _a, _b;
 	        const helper = new Object3D();
 	        helper.lookAt(this.normal);
 	        helper.position.copy(this.origin);
-	        const scene = (_b = (_a = this.components) === null || _a === void 0 ? void 0 : _a.scene) === null || _b === void 0 ? void 0 : _b.getScene();
+	        const scene = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.scene) === null || _b === void 0 ? void 0 : _b.getScene();
 	        if (!scene)
-	            throw new Error("Scene not initialised");
+	            throw new Error('Scene not initialised');
 	        scene.add(helper);
 	        helper.add(this.planeMesh);
 	        return helper;
@@ -64405,7 +64429,7 @@
 	            this.blocks.reset();
 	        }
 	        else {
-	            const hiddenInstances = Object.keys(this.hiddenInstances).map((id) => parseInt(id, 10));
+	            const hiddenInstances = Object.keys(this.hiddenInstances);
 	            this.makeInstancesVisible(hiddenInstances);
 	            this.hiddenInstances = {};
 	        }
@@ -64563,7 +64587,7 @@
 	        this.addInstances(items);
 	    }
 	    filterHiddenItems(itemIDs, hidden) {
-	        const hiddenItems = Object.keys(this.hiddenInstances).map((item) => parseInt(item, 10));
+	        const hiddenItems = Object.keys(this.hiddenInstances);
 	        return itemIDs.filter((item) => hidden ? hiddenItems.includes(item) : !hiddenItems.includes(item));
 	    }
 	    toggleBlockVisibility(visible, itemIDs) {

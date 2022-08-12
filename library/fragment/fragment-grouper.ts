@@ -1,9 +1,9 @@
 export interface ItemGroupSystems {
-  [systemName: string]: { [groupName: string]: number[] };
+  [systemName: string]: { [groupName: string]: string[] };
 }
 
 export interface GroupSystems {
-  [systemName: string]: { [groupName: string]: { [guid: string]: number[] } };
+  [systemName: string]: { [groupName: string]: { [guid: string]: string[] } };
 }
 
 export class FragmentGrouper {
@@ -39,7 +39,7 @@ export class FragmentGrouper {
   }
 
   get(filter: { [name: string]: string }) {
-    const models: { [fragmentGuid: string]: number[] } = {};
+    const models: { [fragmentGuid: string]: string[] } = {};
     for (const name in filter) {
       const value = filter[name];
       const found = this.groupSystems[name][value];

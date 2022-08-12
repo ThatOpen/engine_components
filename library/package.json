@@ -27,7 +27,7 @@
     "typescript": "^4.3.2"
   },
   "dependencies": {
-    "bim-fragment": "0.0.10",
+    "bim-fragment": "0.0.11",
     "camera-controls": "^1.36.0",
     "three": "0.135",
     "three-mesh-bvh": "^0.5.15"
