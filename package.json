@@ -13,6 +13,7 @@
   "workspaces": [
     "library",
     "examples/hello-world",
-    "examples/fragment"
+    "examples/fragment",
+    "examples/fragment-plans"
   ]
 }

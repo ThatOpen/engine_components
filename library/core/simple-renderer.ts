@@ -11,8 +11,9 @@ export class SimpleRenderer implements RendererComponent {
   tempRenderer?: THREE.WebGLRenderer;
   blocked = false;
 
+  protected readonly container: HTMLElement;
+
   private readonly components: Components;
-  private readonly container: HTMLElement;
 
   public readonly onStartRender = new LiteEvent();
   public readonly onFinishRender = new LiteEvent();

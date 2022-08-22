@@ -16,6 +16,7 @@ import {
 import CameraControls from "camera-controls";
 import { CameraComponent } from "./base-types";
 import { Components } from "../components";
+import { LiteEvent } from "./lite-event";
 
 const subsetOfTHREE = {
   MOUSE,
@@ -39,6 +40,8 @@ export class SimpleCamera implements CameraComponent {
   activeCamera: Camera;
   controls: CameraControls;
 
+  readonly onChangeProjection = new LiteEvent<Camera>();
+
   get enabled() {
     return this.controls.enabled;
   }
@@ -58,6 +61,22 @@ export class SimpleCamera implements CameraComponent {
     this.setupEvents();
   }
 
+  getCamera() {
+    return this.activeCamera;
+  }
+
+  update(_delta: number): void {
+    if (this.controls.enabled) {
+      this.controls.update(_delta);
+    }
+  }
+
+  resize() {
+    const size = this.components.renderer.getSize();
+    this.perspectiveCamera.aspect = size.width / size.height;
+    this.perspectiveCamera.updateProjectionMatrix();
+  }
+
   private setupCamera() {
     const aspect = window.innerWidth / window.innerHeight;
     const camera = new PerspectiveCamera(60, aspect, 1, 1000);
@@ -75,22 +94,6 @@ export class SimpleCamera implements CameraComponent {
     controls.infinityDolly = true;
     controls.setTarget(0, 0, 0);
     return controls;
-  }
-
-  getCamera() {
-    return this.activeCamera;
-  }
-
-  update(_delta: number): void {
-    if (this.controls.enabled) {
-      this.controls.update(_delta);
-    }
-  }
-
-  resize() {
-    const size = this.components.renderer.getSize();
-    this.perspectiveCamera.aspect = size.width / size.height;
-    this.perspectiveCamera.updateProjectionMatrix();
   }
 
   private setupEvents() {

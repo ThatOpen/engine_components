@@ -2,6 +2,7 @@ import {
   BufferAttribute,
   BufferGeometry,
   DynamicDrawUsage,
+  InstancedMesh,
   Line3,
   LineSegments,
   Matrix4,
@@ -190,53 +191,28 @@ export class ClippingEdges {
         throw new Error("Boundstree not found for clipping edges subset.");
       }
 
-      this.inverseMatrix.copy(mesh.matrixWorld).invert();
-      this.localPlane.copy(this.plane).applyMatrix4(this.inverseMatrix);
+      const instanced = mesh as InstancedMesh;
+      if (instanced.count > 1) {
+        for (let i = 0; i < instanced.count; i++) {
+          const tempMesh = new Mesh(mesh.geometry);
+          tempMesh.matrix.copy(mesh.matrix);
 
-      mesh.geometry.boundsTree.shapecast({
-        intersectsBounds: (box: any) => {
-          return this.localPlane.intersectsBox(box) as any;
-        },
+          const tempMatrix = new Matrix4();
+          instanced.getMatrixAt(i, tempMatrix);
+          tempMesh.applyMatrix4(tempMatrix);
+          tempMesh.updateMatrix();
+          tempMesh.updateMatrixWorld();
 
-        // @ts-ignore
-        intersectsTriangle: (tri: any) => {
-          // check each triangle edge to see if it intersects with the plane. If so then
-          // add it to the list of segments.
-          let count = 0;
-          this.tempLine.start.copy(tri.a);
-          this.tempLine.end.copy(tri.b);
-          if (this.localPlane.intersectLine(this.tempLine, this.tempVector)) {
-            const result = this.tempVector.applyMatrix4(mesh.matrixWorld);
-            posAttr.setXYZ(index, result.x, result.y, result.z);
-            count++;
-            index++;
-          }
+          this.inverseMatrix.copy(tempMesh.matrixWorld).invert();
+          this.localPlane.copy(this.plane).applyMatrix4(this.inverseMatrix);
 
-          this.tempLine.start.copy(tri.b);
-          this.tempLine.end.copy(tri.c);
-          if (this.localPlane.intersectLine(this.tempLine, this.tempVector)) {
-            const result = this.tempVector.applyMatrix4(mesh.matrixWorld);
-            posAttr.setXYZ(index, result.x, result.y, result.z);
-            count++;
-            index++;
-          }
-
-          this.tempLine.start.copy(tri.c);
-          this.tempLine.end.copy(tri.a);
-          if (this.localPlane.intersectLine(this.tempLine, this.tempVector)) {
-            const result = this.tempVector.applyMatrix4(mesh.matrixWorld);
-            posAttr.setXYZ(index, result.x, result.y, result.z);
-            count++;
-            index++;
-          }
-
-          // If we only intersected with one or three sides then just remove it. This could be handled
-          // more gracefully.
-          if (count !== 2) {
-            index -= count;
-          }
-        },
-      });
+          index = this.shapecast(tempMesh, posAttr, index);
+        }
+      } else {
+        this.inverseMatrix.copy(mesh.matrixWorld).invert();
+        this.localPlane.copy(this.plane).applyMatrix4(this.inverseMatrix);
+        index = this.shapecast(mesh, posAttr, index);
+      }
     });
 
     // set the draw range to only the new segments and offset the lines so they don't intersect with the geometry
@@ -254,6 +230,55 @@ export class ClippingEdges {
       //   edges.mesh
       // );
     }
+  }
+
+  private shapecast(mesh: Mesh, posAttr: any, index: number) {
+    // @ts-ignore
+    mesh.geometry.boundsTree.shapecast({
+      intersectsBounds: (box: any) => {
+        return this.localPlane.intersectsBox(box) as any;
+      },
+
+      // @ts-ignore
+      intersectsTriangle: (tri: any) => {
+        // check each triangle edge to see if it intersects with the plane. If so then
+        // add it to the list of segments.
+        let count = 0;
+        this.tempLine.start.copy(tri.a);
+        this.tempLine.end.copy(tri.b);
+        if (this.localPlane.intersectLine(this.tempLine, this.tempVector)) {
+          const result = this.tempVector.applyMatrix4(mesh.matrixWorld);
+          posAttr.setXYZ(index, result.x, result.y, result.z);
+          count++;
+          index++;
+        }
+
+        this.tempLine.start.copy(tri.b);
+        this.tempLine.end.copy(tri.c);
+        if (this.localPlane.intersectLine(this.tempLine, this.tempVector)) {
+          const result = this.tempVector.applyMatrix4(mesh.matrixWorld);
+          posAttr.setXYZ(index, result.x, result.y, result.z);
+          count++;
+          index++;
+        }
+
+        this.tempLine.start.copy(tri.c);
+        this.tempLine.end.copy(tri.a);
+        if (this.localPlane.intersectLine(this.tempLine, this.tempVector)) {
+          const result = this.tempVector.applyMatrix4(mesh.matrixWorld);
+          posAttr.setXYZ(index, result.x, result.y, result.z);
+          count++;
+          index++;
+        }
+
+        // If we only intersected with one or three sides then just remove it. This could be handled
+        // more gracefully.
+        if (count !== 2) {
+          index -= count;
+        }
+      },
+    });
+    return index;
   }
 
   private updateEdgesVisibility(edgeName: string, visible: boolean) {

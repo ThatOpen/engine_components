@@ -3284,6 +3284,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fragment-plans@workspace:examples/fragment-plans":
+  version: 0.0.0-use.local
+  resolution: "fragment-plans@workspace:examples/fragment-plans"
+  dependencies:
+    "@rollup/plugin-commonjs": ^19.0.0
+    "@rollup/plugin-node-resolve": ^13.0.0
+    "@types/three": ^0.134.0
+    openbim-components: 0.0.2
+    rollup: ^2.47.0
+    serve: ^11.3.2
+    stats.js: 0.17.0
+    three: 0.135
+    three-mesh-bvh: ^0.5.11
+    unzipit: ^1.4.0
+  languageName: unknown
+  linkType: soft
+
 "fragment@workspace:examples/fragment":
   version: 0.0.0-use.local
   resolution: "fragment@workspace:examples/fragment"

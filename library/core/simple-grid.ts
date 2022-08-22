@@ -6,7 +6,7 @@ import { Components } from "../components";
 export class SimpleGrid implements ToolComponent, IHideable {
   public readonly name = "grid";
 
-  private readonly grid: THREE.GridHelper;
+  readonly grid: THREE.GridHelper;
 
   constructor(components: Components) {
     this.grid = new THREE.GridHelper(50, 50);

@@ -51368,23 +51368,6 @@
 	IfcDimensionLine.scale = 1;
 	IfcDimensionLine.units = "m";
 
-	// TODO: Grid is not a tool, should live somewhere else
-	class SimpleGrid {
-	    constructor(components) {
-	        var _a, _b;
-	        this.name = "grid";
-	        this.grid = new GridHelper(50, 50);
-	        (_b = (_a = components.scene) === null || _a === void 0 ? void 0 : _a.getScene()) === null || _b === void 0 ? void 0 : _b.add(this.grid);
-	    }
-	    set visible(visible) {
-	        this.grid.visible = visible;
-	    }
-	    get visible() {
-	        return this.grid.visible;
-	    }
-	    update(_delta) { }
-	}
-
 	class SimpleRenderer {
 	    constructor(components, container) {
 	        this.renderer2D = new CSS2DRenderer();
@@ -51543,6 +51526,172 @@
 	            return objs;
 	        return objs.filter((elem) => planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0));
 	    }
+	}
+
+	class SimpleClipper {
+	    constructor(components, PlaneType) {
+	        this.components = components;
+	        this.PlaneType = PlaneType;
+	        this.name = "clipper";
+	        this.dragging = false;
+	        this.planes = [];
+	        this.orthogonalY = true;
+	        this.toleranceOrthogonalY = 0.7;
+	        this.planeSize = 5;
+	        this._enabled = false;
+	        this._visible = false;
+	        this.createPlane = () => {
+	            if (!this.enabled)
+	                return;
+	            const intersects = this.components.raycaster.castRay();
+	            if (!intersects)
+	                return;
+	            this.createPlaneFromIntersection(intersects);
+	            this.intersection = undefined;
+	        };
+	        this.createFromNormalAndCoplanarPoint = (normal, point, isPlan = false) => {
+	            var _a;
+	            const plane = new this.PlaneType(this.components, point, normal, this.activateDragging, this.deactivateDragging, this.planeSize);
+	            plane.isPlan = isPlan;
+	            this.planes.push(plane);
+	            (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.addClippingPlane(plane.plane);
+	            this.updateMaterials();
+	            return plane;
+	        };
+	        this.delete = () => {
+	            this.deletePlane();
+	        };
+	        this.deletePlane = (plane) => {
+	            var _a;
+	            let existingPlane = plane;
+	            if (!existingPlane) {
+	                if (!this.enabled)
+	                    return;
+	                existingPlane = this.pickPlane();
+	            }
+	            if (!existingPlane)
+	                return;
+	            const index = this.planes.indexOf(existingPlane);
+	            if (index === -1)
+	                return;
+	            existingPlane.removeFromScene();
+	            this.planes.splice(index, 1);
+	            (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.removeClippingPlane(existingPlane.plane);
+	            this.updateMaterials();
+	        };
+	        this.deleteAllPlanes = () => {
+	            while (this.planes.length > 0) {
+	                this.deletePlane(this.planes[0]);
+	            }
+	        };
+	        this.pickPlane = () => {
+	            const planeMeshes = this.planes.map((p) => p.planeMesh);
+	            const arrowMeshes = this.planes.map((p) => p.arrowBoundingBox);
+	            const intersects = this.components.raycaster.castRay([
+	                ...planeMeshes,
+	                ...arrowMeshes,
+	            ]);
+	            if (intersects) {
+	                return this.planes.find((p) => {
+	                    if (p.planeMesh === intersects.object ||
+	                        p.arrowBoundingBox === intersects.object) {
+	                        return p;
+	                    }
+	                    return null;
+	                });
+	            }
+	            return null;
+	        };
+	        this.createPlaneFromIntersection = (intersection) => {
+	            var _a, _b;
+	            const constant = intersection.point.distanceTo(new Vector3$1(0, 0, 0));
+	            const normal = (_a = intersection.face) === null || _a === void 0 ? void 0 : _a.normal;
+	            if (!constant || !normal)
+	                return;
+	            const normalMatrix = new Matrix3().getNormalMatrix(intersection.object.matrixWorld);
+	            const worldNormal = normal.clone().applyMatrix3(normalMatrix).normalize();
+	            this.normalizePlaneDirectionY(worldNormal);
+	            const plane = this.newPlane(intersection, worldNormal.negate());
+	            this.planes.push(plane);
+	            (_b = this.components.renderer) === null || _b === void 0 ? void 0 : _b.addClippingPlane(plane.plane);
+	            this.updateMaterials();
+	        };
+	        this.activateDragging = () => {
+	            this.dragging = true;
+	        };
+	        this.deactivateDragging = () => {
+	            this.dragging = false;
+	        };
+	        this.updateMaterials = () => {
+	            var _a;
+	            // Apply clipping to all models
+	            const planes = (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.renderer.clippingPlanes;
+	            this.components.meshes.forEach((model) => {
+	                if (Array.isArray(model.material)) {
+	                    model.material.forEach((mat) => (mat.clippingPlanes = planes));
+	                }
+	                else {
+	                    model.material.clippingPlanes = planes;
+	                }
+	            });
+	        };
+	    }
+	    get visible() {
+	        return this._visible;
+	    }
+	    set visible(visible) {
+	        this._visible = visible;
+	        if (!visible) {
+	            this.enabled = false;
+	        }
+	        this.planes.forEach((plane) => {
+	            if (!plane.isPlan) {
+	                plane.visible = visible;
+	            }
+	        });
+	        this.updateMaterials();
+	    }
+	    get enabled() {
+	        return this._enabled;
+	    }
+	    set enabled(state) {
+	        this._enabled = state;
+	        if (state && !this._visible) {
+	            this.visible = true;
+	        }
+	        this.planes.forEach((plane) => {
+	            if (!plane.isPlan) {
+	                plane.enabled = state;
+	            }
+	        });
+	        this.updateMaterials();
+	    }
+	    toggle() {
+	        this.enabled = !this.enabled;
+	    }
+	    dispose() {
+	        this.planes.forEach((plane) => plane.dispose());
+	        this.planes.length = 0;
+	        this.components = null;
+	    }
+	    normalizePlaneDirectionY(normal) {
+	        if (this.orthogonalY) {
+	            if (normal.y > this.toleranceOrthogonalY) {
+	                normal.x = 0;
+	                normal.y = 1;
+	                normal.z = 0;
+	            }
+	            if (normal.y < -this.toleranceOrthogonalY) {
+	                normal.x = 0;
+	                normal.y = -1;
+	                normal.z = 0;
+	            }
+	        }
+	    }
+	    newPlane(intersection, worldNormal) {
+	        return new this.PlaneType(this.components, intersection.point, worldNormal, this.activateDragging, this.deactivateDragging, this.planeSize);
+	    }
+	    update(_delta) { }
 	}
 
 	const _raycaster = new Raycaster();
@@ -53055,202 +53204,8 @@
 
 	TransformControlsPlane.prototype.isTransformControlsPlane = true;
 
-	class SimpleClipper {
-	    constructor(context) {
-	        this.name = "clipper";
-	        this.orthogonalY = true;
-	        this.toleranceOrthogonalY = 0.7;
-	        this.planeSize = 5;
-	        this.position = new Vector2$1();
-	        this.rawPosition = new Vector2$1();
-	        this.createPlane = () => {
-	            if (!this.enabled)
-	                return;
-	            const intersects = this.castRayIfc();
-	            if (!intersects)
-	                return;
-	            this.createPlaneFromIntersection(intersects);
-	            this.intersection = undefined;
-	        };
-	        this.createFromNormalAndCoplanarPoint = (normal, point, isPlan = false) => {
-	            var _a;
-	            const plane = new SimplePlane(this.context, point, normal, this.activateDragging, this.deactivateDragging, this.planeSize);
-	            plane.isPlan = isPlan;
-	            this.planes.push(plane);
-	            (_a = this.context.renderer) === null || _a === void 0 ? void 0 : _a.addClippingPlane(plane.plane);
-	            this.updateMaterials();
-	            return plane;
-	        };
-	        this.delete = () => {
-	            this.deletePlane();
-	        };
-	        this.deletePlane = (plane) => {
-	            var _a;
-	            let existingPlane = plane;
-	            if (!existingPlane) {
-	                if (!this.enabled)
-	                    return;
-	                existingPlane = this.pickPlane();
-	            }
-	            if (!existingPlane)
-	                return;
-	            const index = this.planes.indexOf(existingPlane);
-	            if (index === -1)
-	                return;
-	            existingPlane.removeFromScene();
-	            this.planes.splice(index, 1);
-	            (_a = this.context.renderer) === null || _a === void 0 ? void 0 : _a.removeClippingPlane(existingPlane.plane);
-	            this.updateMaterials();
-	        };
-	        this.deleteAllPlanes = () => {
-	            while (this.planes.length > 0) {
-	                this.deletePlane(this.planes[0]);
-	            }
-	        };
-	        this.pickPlane = () => {
-	            const planeMeshes = this.planes.map((p) => p.planeMesh);
-	            const arrowMeshes = this.planes.map((p) => p.arrowBoundingBox);
-	            const intersects = this.castRay([...planeMeshes, ...arrowMeshes]);
-	            if (intersects.length > 0) {
-	                return this.planes.find((p) => {
-	                    if (p.planeMesh === intersects[0].object || p.arrowBoundingBox === intersects[0].object) {
-	                        return p;
-	                    }
-	                    return null;
-	                });
-	            }
-	            return null;
-	        };
-	        this.createPlaneFromIntersection = (intersection) => {
-	            var _a, _b;
-	            const constant = intersection.point.distanceTo(new Vector3$1(0, 0, 0));
-	            const normal = (_a = intersection.face) === null || _a === void 0 ? void 0 : _a.normal;
-	            if (!constant || !normal)
-	                return;
-	            const normalMatrix = new Matrix3().getNormalMatrix(intersection.object.matrixWorld);
-	            const worldNormal = normal.clone().applyMatrix3(normalMatrix).normalize();
-	            this.normalizePlaneDirectionY(worldNormal);
-	            const plane = this.newPlane(intersection, worldNormal.negate());
-	            this.planes.push(plane);
-	            (_b = this.context.renderer) === null || _b === void 0 ? void 0 : _b.addClippingPlane(plane.plane);
-	            this.updateMaterials();
-	        };
-	        this.activateDragging = () => {
-	            this.dragging = true;
-	        };
-	        this.deactivateDragging = () => {
-	            this.dragging = false;
-	        };
-	        this.updateMaterials = () => {
-	            var _a;
-	            // Apply clipping to all models
-	            const planes = (_a = this.context.renderer) === null || _a === void 0 ? void 0 : _a.renderer.clippingPlanes;
-	            this.context.meshes.forEach((model) => {
-	                if (Array.isArray(model.material)) {
-	                    model.material.forEach((mat) => (mat.clippingPlanes = planes));
-	                }
-	                else {
-	                    model.material.clippingPlanes = planes;
-	                }
-	            });
-	        };
-	        this.context = context;
-	        this._enabled = false;
-	        this._visible = false;
-	        this.dragging = false;
-	        this.planes = [];
-	        this.raycaster = new Raycaster();
-	        const domElement = context.renderer.renderer.domElement;
-	        domElement.onmousemove = (event) => {
-	            this.rawPosition.x = event.clientX;
-	            this.rawPosition.y = event.clientY;
-	            const bounds = domElement.getBoundingClientRect();
-	            this.position.x = ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1;
-	            this.position.y = -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1;
-	        };
-	    }
-	    get visible() {
-	        return this._visible;
-	    }
-	    set visible(visible) {
-	        this._visible = visible;
-	        if (!visible) {
-	            this.enabled = false;
-	        }
-	        this.planes.forEach((plane) => {
-	            if (!plane.isPlan) {
-	                plane.visible = visible;
-	            }
-	        });
-	        this.updateMaterials();
-	    }
-	    get enabled() {
-	        return this._enabled;
-	    }
-	    set enabled(state) {
-	        this._enabled = state;
-	        if (state && !this._visible) {
-	            this.visible = true;
-	        }
-	        this.planes.forEach((plane) => {
-	            if (!plane.isPlan) {
-	                plane.enabled = state;
-	            }
-	        });
-	        this.updateMaterials();
-	    }
-	    toggle() {
-	        this.enabled = !this.enabled;
-	    }
-	    dispose() {
-	        this.planes.forEach((plane) => plane.dispose());
-	        this.planes.length = 0;
-	        this.context = null;
-	    }
-	    normalizePlaneDirectionY(normal) {
-	        if (this.orthogonalY) {
-	            if (normal.y > this.toleranceOrthogonalY) {
-	                normal.x = 0;
-	                normal.y = 1;
-	                normal.z = 0;
-	            }
-	            if (normal.y < -this.toleranceOrthogonalY) {
-	                normal.x = 0;
-	                normal.y = -1;
-	                normal.z = 0;
-	            }
-	        }
-	    }
-	    newPlane(intersection, worldNormal) {
-	        return new SimplePlane(this.context, intersection.point, worldNormal, this.activateDragging, this.deactivateDragging, this.planeSize);
-	    }
-	    update(_delta) {
-	    }
-	    castRay(items) {
-	        var _a;
-	        const camera = (_a = this.context.camera) === null || _a === void 0 ? void 0 : _a.getCamera();
-	        if (!camera)
-	            throw new Error("Camera required for clipper");
-	        this.raycaster.setFromCamera(this.position, camera);
-	        return this.raycaster.intersectObjects(items);
-	    }
-	    castRayIfc() {
-	        const items = this.castRay(this.context.meshes);
-	        const filtered = this.filterClippingPlanes(items);
-	        return filtered.length > 0 ? filtered[0] : null;
-	    }
-	    filterClippingPlanes(objs) {
-	        var _a;
-	        const planes = (_a = this.context.renderer) === null || _a === void 0 ? void 0 : _a.renderer.clippingPlanes;
-	        if (objs.length <= 0 || !planes || (planes === null || planes === void 0 ? void 0 : planes.length) <= 0)
-	            return objs;
-	        // const planes = this.clipper?.planes.map((p) => p.plane);
-	        return objs.filter((elem) => planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0));
-	    }
-	}
-	//
 	class SimplePlane {
-	    constructor(context, origin, normal, onStartDragging, onEndDragging, planeSize) {
+	    constructor(components, origin, normal, onStartDragging, onEndDragging, planeSize) {
 	        this.arrowBoundingBox = new Mesh();
 	        this.isVisible = true;
 	        this._enabled = true;
@@ -53259,6 +53214,9 @@
 	        this.isPlan = false;
 	        this.removeFromScene = () => {
 	            this.helper.removeFromParent();
+	            const index = this.components.clipplingPlanes.indexOf(this.plane);
+	            if (index >= 0)
+	                this.components.clipplingPlanes.splice(index, 1);
 	            this.arrowBoundingBox.removeFromParent();
 	            this.arrowBoundingBox.geometry.dispose();
 	            this.arrowBoundingBox = undefined;
@@ -53269,8 +53227,9 @@
 	            this.helper.removeFromParent();
 	        };
 	        this.planeSize = planeSize;
-	        this.context = context;
+	        this.components = components;
 	        this.plane = new Plane();
+	        this.components.clipplingPlanes.push(this.plane);
 	        this.planeMesh = this.getPlaneMesh();
 	        this.normal = normal;
 	        this.origin = origin;
@@ -53285,7 +53244,7 @@
 	    set enabled(state) {
 	        var _a;
 	        this._enabled = state;
-	        const planes = (_a = this.context.renderer) === null || _a === void 0 ? void 0 : _a.renderer.clippingPlanes;
+	        const planes = (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.renderer.clippingPlanes;
 	        if (state && planes) {
 	            planes.push(this.plane);
 	        }
@@ -53315,14 +53274,14 @@
 	            SimplePlane.hiddenMaterial = SimplePlane.getHiddenMaterial();
 	        }
 	        this.removeFromScene();
-	        this.context = null;
+	        this.components = null;
 	    }
 	    static getPlaneMaterial() {
 	        return new MeshBasicMaterial({
 	            color: 0xffff00,
 	            side: DoubleSide,
 	            transparent: true,
-	            opacity: 0.2
+	            opacity: 0.2,
 	        });
 	    }
 	    static getHiddenMaterial() {
@@ -53330,15 +53289,15 @@
 	    }
 	    newTransformControls() {
 	        var _a, _b, _c, _d;
-	        const camera = (_a = this.context.camera) === null || _a === void 0 ? void 0 : _a.getCamera();
-	        const container = (_b = this.context.renderer) === null || _b === void 0 ? void 0 : _b.renderer.domElement;
+	        const camera = (_a = this.components.camera) === null || _a === void 0 ? void 0 : _a.getCamera();
+	        const container = (_b = this.components.renderer) === null || _b === void 0 ? void 0 : _b.renderer.domElement;
 	        console.log(camera);
 	        console.log(container);
 	        if (!camera || !container)
 	            throw new Error("Camera or container not initialised.");
 	        const controls = new TransformControls(camera, container);
 	        this.initializeControls(controls);
-	        const scene = (_d = (_c = this.context) === null || _c === void 0 ? void 0 : _c.scene) === null || _d === void 0 ? void 0 : _d.getScene();
+	        const scene = (_d = (_c = this.components) === null || _c === void 0 ? void 0 : _c.scene) === null || _d === void 0 ? void 0 : _d.getScene();
 	        if (!scene)
 	            throw new Error("Scene not initialised.");
 	        scene.add(controls);
@@ -53348,7 +53307,7 @@
 	        controls.attach(this.helper);
 	        controls.showX = false;
 	        controls.showY = false;
-	        controls.setSpace('local');
+	        controls.setSpace("local");
 	        this.createArrowBoundingBox();
 	        controls.children[0].children[0].add(this.arrowBoundingBox);
 	    }
@@ -53360,34 +53319,34 @@
 	        this.arrowBoundingBox.geometry.applyMatrix4(this.arrowBoundingBox.matrix);
 	    }
 	    setupEvents(onStart, onEnd) {
-	        this.controls.addEventListener('change', () => {
-	            if (!this._enabled)
-	                return;
-	            this.plane.setFromNormalAndCoplanarPoint(this.normal, this.helper.position);
-	        });
-	        this.controls.addEventListener('dragging-changed', (event) => {
+	        this.controls.addEventListener("change", () => this.onPlaneChanged());
+	        this.controls.addEventListener("dragging-changed", (event) => {
 	            if (!this._enabled)
 	                return;
 	            this.isVisible = !event.value;
-	            // @ts-ignore
-	            this.context.camera.enabled = this.isVisible;
+	            this.components.camera.enabled = this.isVisible;
 	            if (event.value)
 	                onStart();
 	            else
 	                onEnd();
 	        });
-	        /*this.context.ifcCamera.currentNavMode.onChangeProjection.on((camera) => {
-	          this.controls.camera = camera;
-	        });*/
+	        /* this.context.ifcCamera.currentNavMode.onChangeProjection.on((camera) => {
+	              this.controls.camera = camera;
+	            }); */
+	    }
+	    onPlaneChanged() {
+	        if (!this._enabled)
+	            return;
+	        this.plane.setFromNormalAndCoplanarPoint(this.normal, this.helper.position);
 	    }
 	    createHelper() {
 	        var _a, _b;
 	        const helper = new Object3D();
 	        helper.lookAt(this.normal);
 	        helper.position.copy(this.origin);
-	        const scene = (_b = (_a = this.context) === null || _a === void 0 ? void 0 : _a.scene) === null || _b === void 0 ? void 0 : _b.getScene();
+	        const scene = (_b = (_a = this.components) === null || _a === void 0 ? void 0 : _a.scene) === null || _b === void 0 ? void 0 : _b.getScene();
 	        if (!scene)
-	            throw new Error('Scene not initialised');
+	            throw new Error("Scene not initialised");
 	        scene.add(helper);
 	        helper.add(this.planeMesh);
 	        return helper;
@@ -64430,7 +64389,7 @@
 	            this.blocks.reset();
 	        }
 	        else {
-	            const hiddenInstances = Object.keys(this.hiddenInstances);
+	            const hiddenInstances = Object.keys(this.hiddenInstances).map((id) => parseInt(id, 10));
 	            this.makeInstancesVisible(hiddenInstances);
 	            this.hiddenInstances = {};
 	        }
@@ -64588,7 +64547,7 @@
 	        this.addInstances(items);
 	    }
 	    filterHiddenItems(itemIDs, hidden) {
-	        const hiddenItems = Object.keys(this.hiddenInstances);
+	        const hiddenItems = Object.keys(this.hiddenInstances).map((item) => parseInt(item, 10));
 	        return itemIDs.filter((item) => hidden ? hiddenItems.includes(item) : !hiddenItems.includes(item));
 	    }
 	    toggleBlockVisibility(visible, itemIDs) {
@@ -65440,6 +65399,281 @@
 	    NavigationModes[NavigationModes["FirstPerson"] = 1] = "FirstPerson";
 	    NavigationModes[NavigationModes["Plan"] = 2] = "Plan";
 	})(NavigationModes || (NavigationModes = {}));
+
+	class ProjectionManager {
+	    constructor(components, camera) {
+	        this.components = components;
+	        this.previousDistance = -1;
+	        this.camera = camera;
+	        this.currentCamera = camera.perspectiveCamera;
+	        this.currentProjection = CameraProjections.Perspective;
+	    }
+	    get projection() {
+	        return this.currentProjection;
+	    }
+	    async setProjection(projection) {
+	        if (this.projection === projection)
+	            return;
+	        if (projection === CameraProjections.Orthographic) {
+	            this.setOrthoCamera();
+	        }
+	        else {
+	            await this.setPerspectiveCamera();
+	        }
+	        await this.updateActiveCamera();
+	    }
+	    setOrthoCamera() {
+	        // Matching orthographic camera to perspective camera
+	        // Resource: https://stackoverflow.com/questions/48758959/what-is-required-to-convert-threejs-perspective-camera-to-orthographic
+	        if (this.camera.currentNavMode.mode === NavigationModes.FirstPerson) {
+	            return;
+	        }
+	        this.previousDistance = this.camera.controls.distance;
+	        this.camera.controls.distance = 200;
+	        const { width, height } = this.getDims();
+	        this.setupOrthoCamera(height, width);
+	        this.currentCamera = this.camera.orthoCamera;
+	        this.currentProjection = CameraProjections.Orthographic;
+	    }
+	    // This small delay is needed to hide weirdness during the transition
+	    async updateActiveCamera() {
+	        await new Promise((resolve) => {
+	            setTimeout(() => {
+	                this.camera.activeCamera = this.currentCamera;
+	                resolve();
+	            }, 50);
+	        });
+	    }
+	    getDims() {
+	        const lineOfSight = new Vector3$1();
+	        this.camera.perspectiveCamera.getWorldDirection(lineOfSight);
+	        const target = new Vector3$1();
+	        this.camera.controls.getTarget(target);
+	        const distance = target.clone().sub(this.camera.perspectiveCamera.position);
+	        const depth = distance.dot(lineOfSight);
+	        const dims = this.components.renderer.getSize();
+	        const aspect = dims.x / dims.y;
+	        const fov = this.camera.perspectiveCamera.fov;
+	        const height = depth * 2 * Math.atan((fov * (Math.PI / 180)) / 2);
+	        const width = height * aspect;
+	        return { width, height };
+	    }
+	    setupOrthoCamera(height, width) {
+	        this.camera.controls.mouseButtons.wheel = CameraControls.ACTION.ZOOM;
+	        this.camera.orthoCamera.zoom = 1;
+	        this.camera.orthoCamera.left = width / -2;
+	        this.camera.orthoCamera.right = width / 2;
+	        this.camera.orthoCamera.top = height / 2;
+	        this.camera.orthoCamera.bottom = height / -2;
+	        this.camera.orthoCamera.updateProjectionMatrix();
+	        this.camera.orthoCamera.position.copy(this.camera.perspectiveCamera.position);
+	        this.camera.orthoCamera.quaternion.copy(this.camera.perspectiveCamera.quaternion);
+	        this.camera.controls.camera = this.camera.orthoCamera;
+	    }
+	    async setPerspectiveCamera() {
+	        this.camera.controls.mouseButtons.wheel = CameraControls.ACTION.DOLLY;
+	        this.camera.perspectiveCamera.position.copy(this.camera.orthoCamera.position);
+	        this.camera.perspectiveCamera.quaternion.copy(this.camera.orthoCamera.quaternion);
+	        this.camera.controls.mouseButtons.wheel = CameraControls.ACTION.DOLLY;
+	        this.camera.controls.distance = this.previousDistance;
+	        await this.camera.controls.zoomTo(1);
+	        this.camera.perspectiveCamera.updateProjectionMatrix();
+	        this.camera.controls.camera = this.camera.perspectiveCamera;
+	        this.currentProjection = CameraProjections.Perspective;
+	        this.currentCamera = this.camera.perspectiveCamera;
+	    }
+	}
+
+	// import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+	class OrbitMode {
+	    constructor(components, camera) {
+	        this.components = components;
+	        this.camera = camera;
+	        this.enabled = true;
+	        this.mode = NavigationModes.Orbit;
+	        this.onChange = new LiteEvent();
+	        this.onUnlock = new LiteEvent();
+	        this.onChangeProjection = new LiteEvent();
+	        this.activateOrbitControls();
+	    }
+	    /**
+	     * @deprecated Use cameraControls.getTarget.
+	     */
+	    get target() {
+	        const target = new Vector3$1();
+	        this.camera.controls.getTarget(target);
+	        return target;
+	    }
+	    toggle(active) {
+	        this.enabled = active;
+	        if (active) {
+	            this.activateOrbitControls();
+	        }
+	    }
+	    async fitModelToFrame() {
+	        if (!this.enabled)
+	            return;
+	        const scene = this.components.scene.getScene();
+	        const box = new Box3().setFromObject(scene.children[scene.children.length - 1]);
+	        const sceneSize = new Vector3$1();
+	        box.getSize(sceneSize);
+	        const sceneCenter = new Vector3$1();
+	        box.getCenter(sceneCenter);
+	        const nearFactor = 0.5;
+	        const radius = Math.max(sceneSize.x, sceneSize.y, sceneSize.z) * nearFactor;
+	        const sphere = new Sphere(sceneCenter, radius);
+	        await this.camera.controls.fitToSphere(sphere, true);
+	    }
+	    activateOrbitControls() {
+	        const controls = this.camera.controls;
+	        controls.minDistance = 1;
+	        controls.maxDistance = 300;
+	        controls.truckSpeed = 2;
+	    }
+	}
+
+	class PlanMode {
+	    constructor(components, camera) {
+	        this.components = components;
+	        this.camera = camera;
+	        this.mode = NavigationModes.Plan;
+	        this.enabled = false;
+	        this.onChange = new LiteEvent();
+	        this.onChangeProjection = new LiteEvent();
+	        this.defaultAzimuthSpeed = camera.controls.azimuthRotateSpeed;
+	        this.defaultPolarSpeed = camera.controls.polarRotateSpeed;
+	    }
+	    toggle(active) {
+	        this.enabled = active;
+	        const controls = this.camera.controls;
+	        controls.azimuthRotateSpeed = active ? 0 : this.defaultAzimuthSpeed;
+	        controls.polarRotateSpeed = active ? 0 : this.defaultPolarSpeed;
+	        controls.mouseButtons.left = CameraControls.ACTION.ROTATE;
+	    }
+	    async fitModelToFrame() {
+	        if (!this.enabled)
+	            return;
+	        const scene = this.components.scene.getScene();
+	        console.log(scene);
+	        const box = new Box3().setFromObject(scene.children[0]);
+	        await this.camera.controls.fitToBox(box, false);
+	    }
+	}
+
+	class FirstPersonMode {
+	    constructor(camera) {
+	        this.camera = camera;
+	        this.mode = NavigationModes.FirstPerson;
+	        this.enabled = false;
+	        this.onChange = new LiteEvent();
+	        this.onChangeProjection = new LiteEvent();
+	    }
+	    toggle(active) {
+	        this.enabled = active;
+	        if (active) {
+	            if (this.camera.projection !== CameraProjections.Perspective) {
+	                this.camera.setNavigationMode(NavigationModes.Orbit);
+	                return;
+	            }
+	            this.setupFirstPersonCamera();
+	        }
+	    }
+	    setupFirstPersonCamera() {
+	        const controls = this.camera.controls;
+	        const cameraPosition = new Vector3$1();
+	        controls.camera.getWorldPosition(cameraPosition);
+	        const newTargetPosition = new Vector3$1();
+	        controls.distance--;
+	        controls.camera.getWorldPosition(newTargetPosition);
+	        controls.minDistance = 1;
+	        controls.maxDistance = 1;
+	        controls.distance = 1;
+	        controls.moveTo(newTargetPosition.x, newTargetPosition.y, newTargetPosition.z);
+	        controls.truckSpeed = 50;
+	        controls.mouseButtons.wheel = CameraControls.ACTION.DOLLY;
+	        controls.touches.two = CameraControls.ACTION.TOUCH_ZOOM_TRUCK;
+	    }
+	    fitModelToFrame() {
+	        throw new Error("Fit to frame is not implemented with first person yet!");
+	    }
+	}
+
+	class OrthoPerspectiveCamera extends SimpleCamera {
+	    constructor(components) {
+	        super(components);
+	        this.navMode = new Map();
+	        this.onChange = new LiteEvent();
+	        this.onChangeProjection = new LiteEvent();
+	        this.userInputButtons = {};
+	        this.frustumSize = 50;
+	        this.orthoCamera = this.newOrthoCamera();
+	        this.navMode.set(NavigationModes.Orbit, new OrbitMode(components, this));
+	        this.navMode.set(NavigationModes.FirstPerson, new FirstPersonMode(this));
+	        this.navMode.set(NavigationModes.Plan, new PlanMode(components, this));
+	        this.currentNavMode = this.navMode.get(NavigationModes.Orbit);
+	        this.currentNavMode.toggle(true, { preventTargetAdjustment: true });
+	        Object.values(this.navMode).forEach((mode) => {
+	            mode.onChange.on(this.onChange.trigger);
+	            mode.onChangeProjection.on(this.onChangeProjection.trigger);
+	        });
+	        this.projectionManager = new ProjectionManager(components, this);
+	    }
+	    get projection() {
+	        return this.projectionManager.projection;
+	    }
+	    async setProjection(projection) {
+	        await this.projectionManager.setProjection(projection);
+	        this.onChangeProjection.trigger(this.activeCamera);
+	    }
+	    toggleUserInput(active) {
+	        if (active) {
+	            if (Object.keys(this.userInputButtons).length === 0)
+	                return;
+	            this.controls.mouseButtons.left = this.userInputButtons.left;
+	            this.controls.mouseButtons.right = this.userInputButtons.right;
+	            this.controls.mouseButtons.middle = this.userInputButtons.middle;
+	            this.controls.mouseButtons.wheel = this.userInputButtons.wheel;
+	        }
+	        else {
+	            this.userInputButtons.left = this.controls.mouseButtons.left;
+	            this.userInputButtons.right = this.controls.mouseButtons.right;
+	            this.userInputButtons.middle = this.controls.mouseButtons.middle;
+	            this.userInputButtons.wheel = this.controls.mouseButtons.wheel;
+	            this.controls.mouseButtons.left = 0;
+	            this.controls.mouseButtons.right = 0;
+	            this.controls.mouseButtons.middle = 0;
+	            this.controls.mouseButtons.wheel = 0;
+	        }
+	    }
+	    setNavigationMode(mode) {
+	        if (this.currentNavMode.mode === mode)
+	            return;
+	        this.currentNavMode.toggle(false);
+	        if (!this.navMode.has(mode)) {
+	            throw new Error("The specified mode does not exist!");
+	        }
+	        this.currentNavMode = this.navMode.get(mode);
+	        this.currentNavMode.toggle(true);
+	    }
+	    resize() {
+	        super.resize();
+	        this.setOrthoCameraAspect();
+	    }
+	    newOrthoCamera() {
+	        const dims = this.components.renderer.getSize();
+	        const aspect = dims.x / dims.y;
+	        return new OrthographicCamera((this.frustumSize * aspect) / -2, (this.frustumSize * aspect) / 2, this.frustumSize / 2, this.frustumSize / -2, 0.1, 1000);
+	    }
+	    setOrthoCameraAspect() {
+	        const size = this.components.renderer.getSize();
+	        const aspect = size.x / size.y;
+	        this.orthoCamera.left = (-this.frustumSize * aspect) / 2;
+	        this.orthoCamera.right = (this.frustumSize * aspect) / 2;
+	        this.orthoCamera.top = this.frustumSize / 2;
+	        this.orthoCamera.bottom = -this.frustumSize / 2;
+	        this.orthoCamera.updateProjectionMatrix();
+	    }
+	}
 
 	/**
 	 * parameters = {
@@ -66646,11 +66880,275 @@
 
 	LineSegments2.prototype.isLineSegments2 = true;
 
-	new LineSegments();
-	new LineMaterial({
+	// Static elements are for defining the clipping edges styles without having to create a clipping plane first
+	class ClippingEdges {
+	    constructor(plane) {
+	        this.plane = plane;
+	        this.edges = {};
+	        this.isVisible = true;
+	        // Helpers
+	        this.inverseMatrix = new Matrix4();
+	        this.localPlane = new Plane();
+	        this.tempLine = new Line3();
+	        this.tempVector = new Vector3$1();
+	    }
+	    get visible() {
+	        return this.isVisible;
+	    }
+	    set visible(visible) {
+	        this.isVisible = visible;
+	        for (const edgeName in this.edges) {
+	            this.updateEdgesVisibility(edgeName, visible);
+	        }
+	        if (visible) {
+	            this.updateEdges();
+	        }
+	    }
+	    dispose() {
+	        Object.values(this.edges).forEach((edge) => {
+	            if (edge.generatorGeometry.boundsTree)
+	                edge.generatorGeometry.disposeBoundsTree();
+	            edge.generatorGeometry.dispose();
+	            if (edge.mesh.geometry.boundsTree)
+	                edge.mesh.geometry.disposeBoundsTree();
+	            edge.mesh.geometry.dispose();
+	            edge.mesh.removeFromParent();
+	            edge.mesh = null;
+	        });
+	        this.edges = null;
+	        this.plane = null;
+	    }
+	    disposeStylesAndHelpers() {
+	        if (ClippingEdges.basicEdges) {
+	            ClippingEdges.basicEdges.removeFromParent();
+	            ClippingEdges.basicEdges.geometry.dispose();
+	            ClippingEdges.basicEdges = null;
+	            ClippingEdges.basicEdges = new LineSegments();
+	        }
+	        ClippingEdges.components = null;
+	        if (!ClippingEdges.styles)
+	            return;
+	        const styles = Object.values(ClippingEdges.styles);
+	        styles.forEach((style) => {
+	            style.ids.length = 0;
+	            style.meshes.forEach((mesh) => {
+	                mesh.removeFromParent();
+	                mesh.geometry.dispose();
+	                if (mesh.geometry.boundsTree)
+	                    mesh.geometry.disposeBoundsTree();
+	                if (Array.isArray(mesh.material))
+	                    mesh.material.forEach((mat) => mat.dispose());
+	                else
+	                    mesh.material.dispose();
+	            });
+	            style.meshes.length = 0;
+	            style.categories.length = 0;
+	            style.material.dispose();
+	        });
+	        ClippingEdges.styles = null;
+	        ClippingEdges.styles = {};
+	    }
+	    async updateEdges() {
+	        for (const styleName in ClippingEdges.styles) {
+	            try {
+	                // this can trow error if there is an empty mesh, we still want to update other edges so we catch ere
+	                this.drawEdges(styleName);
+	            }
+	            catch (e) {
+	                console.error("error in drawing edges", e);
+	            }
+	        }
+	    }
+	    static initialize(components) {
+	        if (!ClippingEdges.components) {
+	            ClippingEdges.components = components;
+	        }
+	    }
+	    // Creates a new style that applies to all clipping edges for generic models
+	    static async newStyleFromMesh(styleName, meshes, material = ClippingEdges.defaultMaterial) {
+	        const ids = meshes.map((mesh) => mesh.uuid);
+	        meshes.forEach((mesh) => {
+	            if (!mesh.geometry.boundsTree)
+	                mesh.geometry.computeBoundsTree();
+	        });
+	        material.clippingPlanes = ClippingEdges.components.clipplingPlanes;
+	        ClippingEdges.styles[styleName] = {
+	            ids,
+	            categories: [],
+	            material,
+	            meshes,
+	        };
+	    }
+	    // Initializes the helper geometry used to compute the vertices
+	    static newGeneratorGeometry() {
+	        // create line geometry with enough data to hold 100000 segments
+	        const generatorGeometry = new BufferGeometry();
+	        const linePosAttr = new BufferAttribute$1(new Float32Array(300000), 3, false);
+	        linePosAttr.setUsage(DynamicDrawUsage);
+	        generatorGeometry.setAttribute("position", linePosAttr);
+	        return generatorGeometry;
+	    }
+	    // Creates the geometry of the clipping edges
+	    newThickEdges(styleName) {
+	        const material = ClippingEdges.styles[styleName].material;
+	        const thickLineGeometry = new LineSegmentsGeometry();
+	        const thickEdges = new LineSegments2(thickLineGeometry, material);
+	        thickEdges.material.polygonOffset = true;
+	        thickEdges.material.polygonOffsetFactor = -2;
+	        thickEdges.material.polygonOffsetUnits = 1;
+	        thickEdges.renderOrder = 3;
+	        return thickEdges;
+	    }
+	    // Source: https://gkjohnson.github.io/three-mesh-bvh/example/bundle/clippedEdges.html
+	    drawEdges(styleName) {
+	        const style = ClippingEdges.styles[styleName];
+	        // if (!style.subsets.geometry.boundsTree) return;
+	        if (!this.edges[styleName]) {
+	            this.edges[styleName] = {
+	                generatorGeometry: ClippingEdges.newGeneratorGeometry(),
+	                mesh: this.newThickEdges(styleName),
+	            };
+	        }
+	        const edges = this.edges[styleName];
+	        let index = 0;
+	        const posAttr = edges.generatorGeometry.attributes.position;
+	        // @ts-ignore
+	        posAttr.array.fill(0);
+	        const notEmptyMeshes = style.meshes.filter((subset) => subset.geometry);
+	        notEmptyMeshes.forEach((mesh) => {
+	            if (!mesh.geometry.boundsTree) {
+	                throw new Error("Boundstree not found for clipping edges subset.");
+	            }
+	            const instanced = mesh;
+	            if (instanced.count > 1) {
+	                for (let i = 0; i < instanced.count; i++) {
+	                    const tempMesh = new Mesh(mesh.geometry);
+	                    tempMesh.matrix.copy(mesh.matrix);
+	                    const tempMatrix = new Matrix4();
+	                    instanced.getMatrixAt(i, tempMatrix);
+	                    tempMesh.applyMatrix4(tempMatrix);
+	                    tempMesh.updateMatrix();
+	                    tempMesh.updateMatrixWorld();
+	                    this.inverseMatrix.copy(tempMesh.matrixWorld).invert();
+	                    this.localPlane.copy(this.plane).applyMatrix4(this.inverseMatrix);
+	                    index = this.shapecast(tempMesh, posAttr, index);
+	                }
+	            }
+	            else {
+	                this.inverseMatrix.copy(mesh.matrixWorld).invert();
+	                this.localPlane.copy(this.plane).applyMatrix4(this.inverseMatrix);
+	                index = this.shapecast(mesh, posAttr, index);
+	            }
+	        });
+	        // set the draw range to only the new segments and offset the lines so they don't intersect with the geometry
+	        edges.mesh.geometry.setDrawRange(0, index);
+	        edges.mesh.position.copy(this.plane.normal).multiplyScalar(0.0001);
+	        posAttr.needsUpdate = true;
+	        // Update the edges geometry only if there is no NaN in the output (which means there's been an error)
+	        if (!Number.isNaN(edges.generatorGeometry.attributes.position.array[0])) {
+	            ClippingEdges.basicEdges.geometry = edges.generatorGeometry;
+	            edges.mesh.geometry.fromLineSegments(ClippingEdges.basicEdges);
+	            const scene = ClippingEdges.components.scene.getScene();
+	            scene.add(edges.mesh);
+	            // ClippingEdges.context.renderer.postProduction.excludedItems.add(
+	            //   edges.mesh
+	            // );
+	        }
+	    }
+	    shapecast(mesh, posAttr, index) {
+	        // @ts-ignore
+	        mesh.geometry.boundsTree.shapecast({
+	            intersectsBounds: (box) => {
+	                return this.localPlane.intersectsBox(box);
+	            },
+	            // @ts-ignore
+	            intersectsTriangle: (tri) => {
+	                // check each triangle edge to see if it intersects with the plane. If so then
+	                // add it to the list of segments.
+	                let count = 0;
+	                this.tempLine.start.copy(tri.a);
+	                this.tempLine.end.copy(tri.b);
+	                if (this.localPlane.intersectLine(this.tempLine, this.tempVector)) {
+	                    const result = this.tempVector.applyMatrix4(mesh.matrixWorld);
+	                    posAttr.setXYZ(index, result.x, result.y, result.z);
+	                    count++;
+	                    index++;
+	                }
+	                this.tempLine.start.copy(tri.b);
+	                this.tempLine.end.copy(tri.c);
+	                if (this.localPlane.intersectLine(this.tempLine, this.tempVector)) {
+	                    const result = this.tempVector.applyMatrix4(mesh.matrixWorld);
+	                    posAttr.setXYZ(index, result.x, result.y, result.z);
+	                    count++;
+	                    index++;
+	                }
+	                this.tempLine.start.copy(tri.c);
+	                this.tempLine.end.copy(tri.a);
+	                if (this.localPlane.intersectLine(this.tempLine, this.tempVector)) {
+	                    const result = this.tempVector.applyMatrix4(mesh.matrixWorld);
+	                    posAttr.setXYZ(index, result.x, result.y, result.z);
+	                    count++;
+	                    index++;
+	                }
+	                // If we only intersected with one or three sides then just remove it. This could be handled
+	                // more gracefully.
+	                if (count !== 2) {
+	                    index -= count;
+	                }
+	            },
+	        });
+	        return index;
+	    }
+	    updateEdgesVisibility(edgeName, visible) {
+	        const edges = this.edges[edgeName];
+	        edges.mesh.visible = visible;
+	        if (visible) {
+	            const scene = ClippingEdges.components.scene.getScene();
+	            scene.add(edges.mesh);
+	        }
+	        else {
+	            edges.mesh.removeFromParent();
+	        }
+	    }
+	}
+	ClippingEdges.styles = {};
+	ClippingEdges.basicEdges = new LineSegments();
+	ClippingEdges.defaultMaterial = new LineMaterial({
 	    color: 0x000000,
 	    linewidth: 0.001,
 	});
+
+	class EdgesPlane extends SimplePlane {
+	    constructor(components, origin, normal, onStartDragging, onEndDragging, planeSize) {
+	        super(components, origin, normal, onStartDragging, onEndDragging, planeSize);
+	        this.edges = new ClippingEdges(this.plane);
+	    }
+	    onPlaneChanged() {
+	        super.onPlaneChanged();
+	        this.edges.updateEdges();
+	    }
+	    set visible(state) {
+	        super.visible = state;
+	        this.edges.visible = state;
+	    }
+	    set enabled(state) {
+	        super.enabled = state;
+	        this.edges.visible = state;
+	    }
+	    dispose() {
+	        super.dispose();
+	        this.edges.disposeStylesAndHelpers();
+	        this.edges = null;
+	    }
+	}
+
+	class EdgesClipper extends SimpleClipper {
+	    updateEdges() {
+	        for (const plane of this.planes) {
+	            plane.edges.updateEdges();
+	        }
+	    }
+	}
 
 	/**
 	 * Full-screen textured quad shader
@@ -69946,6 +70444,116 @@
 	    }
 	}
 
+	class PlanNavigator {
+	    constructor(clipper, camera) {
+	        this.clipper = clipper;
+	        this.camera = camera;
+	        this.plans = {};
+	        this.active = false;
+	        this.defaultSectionOffset = 1.5;
+	        this.defaultCameraOffset = 30;
+	        this.storeys = [];
+	        this.floorPlanViewCached = false;
+	        this.previousCamera = new Vector3$1();
+	        this.previousTarget = new Vector3$1();
+	        this.previousProjection = CameraProjections.Perspective;
+	    }
+	    dispose() {
+	        this.storeys = null;
+	        this.plans = null;
+	    }
+	    async create(config) {
+	        if (this.plans[config.id]) {
+	            throw new Error(`There's already a plan with the id: ${config.id}`);
+	        }
+	        this.plans[config.id] = config;
+	        await this.createClippingPlane(config);
+	    }
+	    async goTo(id, animate = false) {
+	        var _a;
+	        if (((_a = this.currentPlan) === null || _a === void 0 ? void 0 : _a.id) === id) {
+	            return;
+	        }
+	        this.storeCameraPosition();
+	        this.hidePreviousClippingPlane();
+	        this.updateCurrentPlan(id);
+	        this.activateCurrentPlan();
+	        if (!this.active) {
+	            await this.moveCameraTo2DPlanPosition(animate);
+	            this.active = true;
+	        }
+	    }
+	    async exitPlanView(animate = false) {
+	        if (!this.active)
+	            return;
+	        this.active = false;
+	        this.cacheFloorplanView();
+	        this.camera.setNavigationMode(NavigationModes.Orbit);
+	        await this.camera.setProjection(this.previousProjection);
+	        if (this.currentPlan && this.currentPlan.plane) {
+	            this.currentPlan.plane.enabled = false;
+	        }
+	        this.currentPlan = undefined;
+	        await this.camera.controls.setLookAt(this.previousCamera.x, this.previousCamera.y, this.previousCamera.z, this.previousTarget.x, this.previousTarget.y, this.previousTarget.z, animate);
+	    }
+	    storeCameraPosition() {
+	        if (this.active) {
+	            this.cacheFloorplanView();
+	        }
+	        else {
+	            this.store3dCameraPosition();
+	        }
+	    }
+	    async createClippingPlane(config) {
+	        const { normal, point } = config;
+	        const plane = this.clipper.createFromNormalAndCoplanarPoint(normal, point, true);
+	        plane.visible = false;
+	        plane.enabled = false;
+	        this.plans[config.id].plane = plane;
+	        await plane.edges.updateEdges();
+	        plane.edges.visible = false;
+	    }
+	    cacheFloorplanView() {
+	        this.floorPlanViewCached = true;
+	        this.camera.controls.saveState();
+	    }
+	    async moveCameraTo2DPlanPosition(animate) {
+	        if (this.floorPlanViewCached)
+	            await this.camera.controls.reset(animate);
+	        else
+	            await this.camera.controls.setLookAt(0, 100, 0, 0, 0, 0, animate);
+	    }
+	    activateCurrentPlan() {
+	        if (!this.currentPlan)
+	            throw new Error("Current plan is not defined.");
+	        if (this.currentPlan.plane)
+	            this.currentPlan.plane.enabled = true;
+	        this.camera.setNavigationMode(NavigationModes.Plan);
+	        const projection = this.currentPlan.ortho
+	            ? CameraProjections.Orthographic
+	            : CameraProjections.Perspective;
+	        this.camera.setProjection(projection);
+	    }
+	    store3dCameraPosition() {
+	        const camera = this.camera.getCamera();
+	        camera.getWorldPosition(this.previousCamera);
+	        this.camera.controls.getTarget(this.previousTarget);
+	        this.previousProjection = this.camera.projection;
+	    }
+	    updateCurrentPlan(id) {
+	        if (!this.plans[id]) {
+	            throw new Error("The specified plan is undefined!");
+	        }
+	        this.currentPlan = this.plans[id];
+	    }
+	    hidePreviousClippingPlane() {
+	        var _a;
+	        const plane = (_a = this.currentPlan) === null || _a === void 0 ? void 0 : _a.plane;
+	        if (plane)
+	            plane.enabled = false;
+	    }
+	}
+
 	/* unzipit@1.4.0, license MIT */
 	/* global SharedArrayBuffer, process */
 
@@ -70982,20 +71590,17 @@
 	components.renderer = renderer;
 	renderer.postproduction.outlineColor = 0x999999;
 
-	const camera = new SimpleCamera(components);
+	const camera = new OrthoPerspectiveCamera(components);
 	components.camera = camera;
 	renderer.postproduction.setup(camera.controls);
-	renderer.postproduction.active = true;
+	// renderer.postproduction.active = true;
 
 	components.raycaster = new SimpleRaycaster(components);
-
 	components.init();
 
 
 	const scene = components.scene.getScene();
-
-	const shadows = new ShadowDropper(components);
-
+	new ShadowDropper(components);
 
 	const directionalLight = new DirectionalLight();
 	directionalLight.position.set(5, 10, 3);
@@ -71007,11 +71612,11 @@
 	scene.add(ambientLight);
 
 	// Add some components
-	const grid = new SimpleGrid(components);
-	components.tools.add(grid);
-	renderer.postproduction.excludedItems.add(grid.grid);
+	// const grid = new SimpleGrid(components);
+	// components.tools.add(grid);
+	// renderer.postproduction.excludedItems.add(grid.grid);
 
-	const clipper = new SimpleClipper(components, SimplePlane);
+	const clipper = new EdgesClipper(components, EdgesPlane);
 	components.tools.add(clipper);
 
 	const dimensions = new SimpleDimensions(components);
@@ -71031,24 +71636,14 @@
 	loadFragments();
 
 	async function loadFragments() {
-	    const { entries } = await unzip('../models/small.zip');
+	    const {entries} = await unzip('../models/small.zip');
 
 	    const fileNames = Object.keys(entries);
-
-	    const allTypes = await entries['all-types.json'].json();
-	    const modelTypes = await entries['model-types.json'].json();
-	    const levelsProperties = await entries['levels-properties.json'].json();
-	    const levelsRelationship = await entries['levels-relationship.json'].json();
-
-	    const floorNames = {};
-	    for(const levelProps of levelsProperties) {
-	        floorNames[levelProps.expressID] = levelProps.Name.value;
-	    }
 
 	    for (let i = 0; i < fileNames.length; i++) {
 
 	        const name = fileNames[i];
-	        if(!name.includes('.glb')) continue;
+	        if (!name.includes('.glb')) continue;
 
 	        // Load data
 	        const geometryName = fileNames[i];
@@ -71057,139 +71652,49 @@
 
 	        const dataName = geometryName.substring(0, geometryName.indexOf('.glb')) + '.json';
 	        const dataBlob = await entries[dataName].blob();
-	        const data = await entries[dataName].json();
+	        await entries[dataName].json();
 	        const dataURL = URL.createObjectURL(dataBlob);
 
-	       const fragment = await fragments.load(geometryURL, dataURL);
-
-	       // Group items for visibility
-
-	        const groups = {category: {}, floor: {}};
-	        const ids = data.ids;
-
-	        for(const id of ids) {
-	            const categoryID = modelTypes[id];
-	            const category = allTypes[categoryID];
-	            if(!groups.category[category]) {
-	                groups.category[category] = [];
-	            }
-	            groups.category[category].push(id);
-
-	            const floorID = levelsRelationship[id];
-	            const floor = floorNames[floorID];
-	            if(!groups.floor[floor]) {
-	                groups.floor[floor] = [];
-	            }
-	            groups.floor[floor].push(id);
-	        }
-
-	        fragments.groups.add(fragment.id, groups);
+	        await fragments.load(geometryURL, dataURL);
 
 	    }
 
-	    // Group by category
+	    // Clipping edges
 
-	    const categoryContainer = document.getElementById('category-container');
+	    ClippingEdges.initialize(components);
+	    await ClippingEdges.newStyleFromMesh('default', fragments.fragmentMeshes);
 
-	    const categories = Object.keys(fragments.groups.groupSystems.category);
-	    for(const category of categories) {
+	    // Floor plans
+
+	    const levelsProperties = await entries['levels-properties.json'].json();
+	    const floorNav = new PlanNavigator(clipper, camera);
+	    const levelContainer = document.getElementById('plan-container');
+	    const levelOffset = 1.5;
+
+	    for (const levelProps of levelsProperties) {
+	        const elevation = levelProps.Elevation.value + levelOffset;
+
+	        // Create floorplan
+	        await floorNav.create({
+	            id: levelProps.expressID,
+	            ortho: true,
+	            normal: new Vector3$1(0, -1, 0),
+	            point: new Vector3$1(0, elevation, 0),
+	            data: {name: levelProps.Name.value},
+	            rotation: 0
+	        });
+
+	        // Create GUI for navigation
 	        const button = document.createElement('button');
-	        button.textContent = category;
-	        categoryContainer.appendChild(button);
-
-	        let visible = true;
-	        button.onclick = () => {
-	            visible = !visible;
-	            const models = fragments.groups.get({ category });
-	            for(const guid in models) {
-	                const ids = models[guid];
-	                const frag = fragments.fragments[guid];
-	                frag.setVisibility(ids, visible);
-	            }
-	            fragments.culler.needsUpdate = true;
-	            renderer.postproduction.update();
-	        };
-	    }
-
-	    // Group by level
-
-	    const levelContainer = document.getElementById('level-container');
-
-	    const floors = Object.keys(fragments.groups.groupSystems.floor);
-	    for(const floor of floors) {
-	        const button = document.createElement('button');
-	        button.textContent = floor;
+	        button.textContent = levelProps.Name.value;
 	        levelContainer.appendChild(button);
 
-	        let visible = true;
-	        button.onclick = () => {
-	            visible = !visible;
-	            const models = fragments.groups.get({ floor });
-	            for(const guid in models) {
-	                const ids = models[guid];
-	                const frag = fragments.fragments[guid];
-	                frag.setVisibility(ids, visible);
-	            }
+	        button.onclick = async () => {
+	            await floorNav.goTo(levelProps.expressID);
 	            fragments.culler.needsUpdate = true;
-	            renderer.postproduction.update();
+	            fragments.culler.updateVisibility();
 	        };
 	    }
-
-	    fragments.highlighter.update();
-	    fragments.highlighter.active = true;
-
-	    // Render shadows
-	    const guids = fragments.groups.get({category: 'IFCSLAB'});
-	    const slabs = Object.keys(guids).map(guid => fragments.fragments[guid]);
-	    const meshes = slabs.map(slab => slab.mesh);
-	    const shadow = shadows.renderShadow(meshes, 'example');
-	    renderer.postproduction.excludedItems.add(shadow);
 	}
-
-	window.addEventListener("mousemove", () => fragments.highlighter.highlightOnHover());
-
-	window.onkeydown = (event) => {
-	    switch (event.code){
-	        case "KeyC": {
-	            components.tools.toggle("clipper");
-	            break;
-	        }
-	        case "KeyD": {
-	            components.tools.toggle("dimensions");
-	            break;
-	        }
-	        case "KeyH": {
-	            components.tools.toggleAllVisibility();
-	            break;
-	        }
-	        case "Escape" :{
-	            if(dimensions.enabled){
-	                dimensions.cancelDrawing();
-	            }
-	            break;
-	        }
-	        case "KeyP": {
-	            components.tools.printToolsState();
-	        }
-	        case "Delete": {
-	            if(clipper.enabled)
-	                clipper.deletePlane();
-
-	            if(dimensions.enabled){
-	                dimensions.delete();
-	            }
-	        }
-	    }
-	};
-
-	window.ondblclick = () => {
-	    if(clipper.enabled){
-	        clipper.createPlane();
-	    }
-
-	    else if(dimensions.enabled){
-	        dimensions.create();
-	    }
-	};
 
 })();

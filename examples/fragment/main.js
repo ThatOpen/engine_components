@@ -4,12 +4,14 @@ import {
     Components,
     SimpleGrid,
     SimpleScene,
-    SimpleRenderer,
     SimpleCamera,
     SimpleClipper,
     SimpleDimensions,
     Fragments,
-    SimpleRaycaster
+    SimpleRaycaster,
+    PostproductionRenderer,
+    ShadowDropper,
+    SimplePlane
 } from 'openbim-components'
 import { unzip } from "unzipit";
 
@@ -18,13 +20,24 @@ const container = document.getElementById('viewer-container');
 const components = new Components();
 
 components.scene = new SimpleScene(components);
-components.renderer = new SimpleRenderer(components, container);
-components.camera = new SimpleCamera(components);
+const renderer = new PostproductionRenderer(components, container);
+components.renderer = renderer;
+renderer.postproduction.outlineColor = 0x999999;
+
+const camera = new SimpleCamera(components);
+components.camera = camera;
+renderer.postproduction.setup(camera.controls);
+renderer.postproduction.active = true;
+
 components.raycaster = new SimpleRaycaster(components);
 
 components.init();
 
+
 const scene = components.scene.getScene();
+
+const shadows = new ShadowDropper(components);
+
 
 const directionalLight = new THREE.DirectionalLight();
 directionalLight.position.set(5, 10, 3)
@@ -38,8 +51,9 @@ scene.add(ambientLight)
 // Add some components
 const grid = new SimpleGrid(components);
 components.tools.add(grid);
+renderer.postproduction.excludedItems.add(grid.grid);
 
-const clipper = new SimpleClipper(components);
+const clipper = new SimpleClipper(components, SimplePlane);
 components.tools.add(clipper)
 
 const dimensions = new SimpleDimensions(components);
@@ -59,7 +73,7 @@ const fragments = new Fragments(components);
 loadFragments();
 
 async function loadFragments() {
-    const { entries } = await unzip('../models/medium.zip');
+    const { entries } = await unzip('../models/small.zip');
 
     const fileNames = Object.keys(entries);
 
@@ -113,7 +127,6 @@ async function loadFragments() {
 
         fragments.groups.add(fragment.id, groups);
 
-        // fragments.edges.generate(fragment);
     }
 
     // Group by category
@@ -134,9 +147,9 @@ async function loadFragments() {
                 const ids = models[guid];
                 const frag = fragments.fragments[guid];
                 frag.setVisibility(ids, visible);
-                // fragments.edges.edgesToUpdate.add(frag.id);
-                fragments.culler.needsUpdate = true;
             }
+            fragments.culler.needsUpdate = true;
+            renderer.postproduction.update();
         }
     }
 
@@ -158,14 +171,21 @@ async function loadFragments() {
                 const ids = models[guid];
                 const frag = fragments.fragments[guid];
                 frag.setVisibility(ids, visible);
-                // fragments.edges.edgesToUpdate.add(frag.id);
-                fragments.culler.needsUpdate = true;
             }
+            fragments.culler.needsUpdate = true;
+            renderer.postproduction.update();
         }
     }
 
     fragments.highlighter.update();
     fragments.highlighter.active = true;
+
+    // Render shadows
+    const guids = fragments.groups.get({category: 'IFCSLAB'});
+    const slabs = Object.keys(guids).map(guid => fragments.fragments[guid]);
+    const meshes = slabs.map(slab => slab.mesh);
+    const shadow = shadows.renderShadow(meshes, 'example');
+    renderer.postproduction.excludedItems.add(shadow);
 }
 
 window.addEventListener("mousemove", () => fragments.highlighter.highlightOnHover());

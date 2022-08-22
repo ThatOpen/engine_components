@@ -43,6 +43,7 @@ export interface CameraComponent extends ComponentBase, IResizeable {
   getCamera: () => Camera;
   enabled: boolean;
   controls: CameraControls;
+  onChangeProjection: LiteEvent<Camera>;
 }
 
 export interface RaycasterComponent {

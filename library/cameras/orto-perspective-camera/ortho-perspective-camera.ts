@@ -34,6 +34,7 @@ export class OrthoPerspectiveCamera
 
   async setProjection(projection: CameraProjections) {
     await this.projectionManager.setProjection(projection);
+    this.onChangeProjection.trigger(this.activeCamera);
   }
 
   constructor(components: Components) {
@@ -85,6 +86,11 @@ export class OrthoPerspectiveCamera
     this.currentNavMode.toggle(true);
   }
 
+  resize() {
+    super.resize();
+    this.setOrthoCameraAspect();
+  }
+
   private newOrthoCamera() {
     const dims = this.components.renderer.getSize();
     const aspect = dims.x / dims.y;
@@ -96,5 +102,15 @@ export class OrthoPerspectiveCamera
       0.1,
       1000
     );
+  }
+
+  private setOrthoCameraAspect() {
+    const size = this.components.renderer.getSize();
+    const aspect = size.x / size.y;
+    this.orthoCamera.left = (-this.frustumSize * aspect) / 2;
+    this.orthoCamera.right = (this.frustumSize * aspect) / 2;
+    this.orthoCamera.top = this.frustumSize / 2;
+    this.orthoCamera.bottom = -this.frustumSize / 2;
+    this.orthoCamera.updateProjectionMatrix();
   }
 }
