@@ -76,6 +76,8 @@ export class FragmentEdges {
     this.edgesList[fragment.id] = lines;
 
     this.updateInstancedEdges(fragment, lineGeom);
+
+    return lines;
   }
 
   private updateInstancedEdges(

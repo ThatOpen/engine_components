@@ -65342,6 +65342,7 @@
 	        scene.add(lines);
 	        this.edgesList[fragment.id] = lines;
 	        this.updateInstancedEdges(fragment, lineGeom);
+	        return lines;
 	    }
 	    updateInstancedEdges(fragment, lineGeom) {
 	        for (let i = 0; i < fragment.mesh.count; i++) {
@@ -65377,6 +65378,34 @@
 	    }
 	}
 
+	class FragmentMaterials {
+	    constructor(fragments) {
+	        this.fragments = fragments;
+	        this.originals = {};
+	    }
+	    apply(material, fragmentIDs = Object.keys(this.fragments.fragments)) {
+	        for (const guid of fragmentIDs) {
+	            const fragment = this.fragments.fragments[guid];
+	            this.save(fragment);
+	            fragment.mesh.material = material;
+	        }
+	    }
+	    reset(fragmentIDs = Object.keys(this.fragments.fragments)) {
+	        for (const guid of fragmentIDs) {
+	            const fragment = this.fragments.fragments[guid];
+	            const originalMats = this.originals[guid];
+	            if (originalMats) {
+	                fragment.mesh.material = originalMats;
+	            }
+	        }
+	    }
+	    save(fragment) {
+	        if (!this.originals[fragment.id]) {
+	            this.originals[fragment.id] = fragment.mesh.material;
+	        }
+	    }
+	}
+
 	class Fragments {
 	    constructor(components) {
 	        this.components = components;
@@ -65387,6 +65416,7 @@
 	        this.highlighter = new FragmentHighlighter(components, this);
 	        this.culler = new FragmentCulling(components, this);
 	        this.edges = new FragmentEdges(components);
+	        this.materials = new FragmentMaterials(this);
 	    }
 	    async load(geometryURL, dataURL) {
 	        const fragment = await this.loader.load(geometryURL, dataURL);
@@ -71005,7 +71035,7 @@
 	loadFragments();
 
 	async function loadFragments() {
-	    const { entries } = await unzip('../models/small.zip');
+	    const { entries } = await unzip('../models/medium.zip');
 
 	    const fileNames = Object.keys(entries);
 

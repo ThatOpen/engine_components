@@ -6,6 +6,7 @@ import { FragmentHighlighter } from "./fragment-highlighter";
 import FragmentCulling from "./fragment-culling";
 import { FragmentGrouper } from "./fragment-grouper";
 import { FragmentEdges } from "./fragment-edges";
+import { FragmentMaterials } from "./fragment-materials";
 
 export class Fragments {
   fragments: { [guid: string]: Fragment } = {};
@@ -16,11 +17,13 @@ export class Fragments {
   highlighter: FragmentHighlighter;
   culler: FragmentCulling;
   edges: FragmentEdges;
+  materials: FragmentMaterials;
 
   constructor(private components: Components) {
     this.highlighter = new FragmentHighlighter(components, this);
     this.culler = new FragmentCulling(components, this);
     this.edges = new FragmentEdges(components);
+    this.materials = new FragmentMaterials(this);
   }
 
   async load(geometryURL: string, dataURL: string) {

@@ -65325,6 +65325,7 @@
 	        scene.add(lines);
 	        this.edgesList[fragment.id] = lines;
 	        this.updateInstancedEdges(fragment, lineGeom);
+	        return lines;
 	    }
 	    updateInstancedEdges(fragment, lineGeom) {
 	        for (let i = 0; i < fragment.mesh.count; i++) {
@@ -65360,6 +65361,34 @@
 	    }
 	}
 
+	class FragmentMaterials {
+	    constructor(fragments) {
+	        this.fragments = fragments;
+	        this.originals = {};
+	    }
+	    apply(material, fragmentIDs = Object.keys(this.fragments.fragments)) {
+	        for (const guid of fragmentIDs) {
+	            const fragment = this.fragments.fragments[guid];
+	            this.save(fragment);
+	            fragment.mesh.material = material;
+	        }
+	    }
+	    reset(fragmentIDs = Object.keys(this.fragments.fragments)) {
+	        for (const guid of fragmentIDs) {
+	            const fragment = this.fragments.fragments[guid];
+	            const originalMats = this.originals[guid];
+	            if (originalMats) {
+	                fragment.mesh.material = originalMats;
+	            }
+	        }
+	    }
+	    save(fragment) {
+	        if (!this.originals[fragment.id]) {
+	            this.originals[fragment.id] = fragment.mesh.material;
+	        }
+	    }
+	}
+
 	class Fragments {
 	    constructor(components) {
 	        this.components = components;
@@ -65370,6 +65399,7 @@
 	        this.highlighter = new FragmentHighlighter(components, this);
 	        this.culler = new FragmentCulling(components, this);
 	        this.edges = new FragmentEdges(components);
+	        this.materials = new FragmentMaterials(this);
 	    }
 	    async load(geometryURL, dataURL) {
 	        const fragment = await this.loader.load(geometryURL, dataURL);
@@ -71634,12 +71664,18 @@
 	loadFragments();
 
 	async function loadFragments() {
-	    const {entries} = await unzip('../models/small.zip');
+	    const {entries} = await unzip('../models/medium.zip');
 
 	    const fileNames = Object.keys(entries);
 
-	    await entries['model-types.json'].json();
-	    await entries['all-types.json'].json();
+	    const modelTypes = await entries['model-types.json'].json();
+	    const allTypes = await entries['all-types.json'].json();
+
+	    const thickTypes = ["IFCWALL", "IFCWALLSTANDARDCASE", "IFCSLAB", "IFCSTAIRFLIGHT", "IFCSTAIR", "IFCROOF", "IFCFOOTING",
+	    "IFCCOLUMN", "IFCBEAM"];
+
+	    const thickItems = [];
+	    const thinItems = [];
 
 	    for (let i = 0; i < fileNames.length; i++) {
 
@@ -71653,22 +71689,43 @@
 
 	        const dataName = geometryName.substring(0, geometryName.indexOf('.glb')) + '.json';
 	        const dataBlob = await entries[dataName].blob();
-	        // const data = await entries[dataName].json();
+	        const data = await entries[dataName].json();
+
 	        const dataURL = URL.createObjectURL(dataBlob);
 
-	        await fragments.load(geometryURL, dataURL);
+	        const fragment = await fragments.load(geometryURL, dataURL);
+
+	        const lines = fragments.edges.generate(fragment);
+	        lines.removeFromParent();
+
+	        const firstID = data.ids[0];
+	        const categoryID = modelTypes[firstID];
+	        const category = allTypes[categoryID];
+	        if(thickTypes.includes(category)) thickItems.push(fragment.mesh);
+	        else thinItems.push(fragment.mesh);
 
 	    }
 
 	    // Clipping edges
 
 	    ClippingEdges.initialize(components);
-	    await ClippingEdges.newStyleFromMesh('default', fragments.fragmentMeshes, new LineMaterial({
-	        color: 0xff0000,
-	        linewidth: 0.003,
+	    await ClippingEdges.newStyleFromMesh('thick', thickItems, new LineMaterial({
+	        color: 0x333333,
+	        linewidth: 0.002,
+	    }));
+
+	    await ClippingEdges.newStyleFromMesh('thin', thinItems, new LineMaterial({
+	        color: 0x333333,
+	        linewidth: 0.001,
 	    }));
 
 	    // Floor plans
+
+	    let wasFloorplanActive = false;
+
+	    const baseMaterial = new MeshBasicMaterial();
+	    const backgroundColor = scene.background;
+	    const whiteColor = new Color$1(0xffffff);
 
 	    const levelsProperties = await entries['levels-properties.json'].json();
 	    const floorNav = new PlanNavigator(clipper, camera);
@@ -71694,9 +71751,17 @@
 	        levelContainer.appendChild(button);
 
 	        button.onclick = async () => {
+	            if(!wasFloorplanActive) {
+	                toggleEdges(true);
+	                scene.background = whiteColor;
+	            }
+
+	            fragments.materials.apply(baseMaterial);
 	            await floorNav.goTo(levelProps.expressID);
 	            fragments.culler.needsUpdate = true;
 	            fragments.culler.updateVisibility();
+
+	            wasFloorplanActive = true;
 	        };
 	    }
 
@@ -71706,10 +71771,23 @@
 	    levelContainer.appendChild(exitButton);
 
 	    exitButton.onclick = async () => {
+	        fragments.materials.reset();
 	        await floorNav.exitPlanView();
 	        fragments.culler.needsUpdate = true;
 	        fragments.culler.updateVisibility();
+
+	        wasFloorplanActive = false;
+	        toggleEdges(false);
+	        scene.background = backgroundColor;
 	    };
+	}
+
+	function toggleEdges(visible) {
+	    const edges = Object.values(fragments.edges.edgesList);
+	    for(const edge of edges) {
+	        if(visible) scene.add(edge);
+	        else edge.removeFromParent();
+	    }
 	}
 
 })();
