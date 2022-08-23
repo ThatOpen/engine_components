@@ -21,7 +21,7 @@ export class SimpleRaycaster implements RaycasterComponent {
   }
 
   private filterClippingPlanes(objs: Intersection[]) {
-    const planes = this.components.clipplingPlanes;
+    const planes = this.components.clippingPlanes;
     if (objs.length <= 0 || !planes || planes?.length <= 0) return objs;
     return objs.filter((elem) =>
       planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0)

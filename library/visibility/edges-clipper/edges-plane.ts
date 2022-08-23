@@ -12,7 +12,8 @@ export class EdgesPlane extends SimplePlane {
     normal: Vector3,
     onStartDragging: Function,
     onEndDragging: Function,
-    planeSize: number
+    planeSize: number,
+    isDraggable: boolean
   ) {
     super(
       components,
@@ -20,7 +21,8 @@ export class EdgesPlane extends SimplePlane {
       normal,
       onStartDragging,
       onEndDragging,
-      planeSize
+      planeSize,
+      isDraggable
     );
 
     this.edges = new ClippingEdges(this.plane);

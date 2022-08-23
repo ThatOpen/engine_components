@@ -91,7 +91,8 @@ export class SimpleClipper<Plane extends SimplePlane>
       normal,
       this.activateDragging,
       this.deactivateDragging,
-      this.planeSize
+      this.planeSize,
+      !isPlan
     );
     plane.isPlan = isPlan;
     this.planes.push(plane);

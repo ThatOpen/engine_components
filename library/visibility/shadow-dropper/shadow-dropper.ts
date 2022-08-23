@@ -204,7 +204,7 @@ export class ShadowDropper {
       opacity: this.opacity,
       transparent: true,
       depthWrite: false,
-      clippingPlanes: this.components.clipplingPlanes,
+      clippingPlanes: this.components.clippingPlanes,
     });
   }
 

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { BufferGeometry, Mesh, Plane } from "three";
+import { BufferGeometry, Mesh } from "three";
 import {
   acceleratedRaycast,
   computeBoundsTree,
@@ -17,7 +17,6 @@ export class Components {
   public readonly tools: ToolComponents;
   // private readonly components: ComponentBase[] = [];
   public readonly meshes: THREE.Mesh[] = [];
-  public readonly clipplingPlanes: Plane[] = [];
 
   private _renderer?: RendererComponent;
   private _scene?: SceneComponent;
@@ -31,6 +30,10 @@ export class Components {
     this.clock = new THREE.Clock();
     this.tools = new ToolComponents();
     Components.setupBVH();
+  }
+
+  get clippingPlanes() {
+    return this.renderer.renderer.clippingPlanes;
   }
 
   get renderer() {

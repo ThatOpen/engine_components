@@ -51521,7 +51521,7 @@
 	        return filtered.length > 0 ? filtered[0] : null;
 	    }
 	    filterClippingPlanes(objs) {
-	        const planes = this.components.clipplingPlanes;
+	        const planes = this.components.clippingPlanes;
 	        if (objs.length <= 0 || !planes || (planes === null || planes === void 0 ? void 0 : planes.length) <= 0)
 	            return objs;
 	        return objs.filter((elem) => planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0));
@@ -51551,7 +51551,7 @@
 	        };
 	        this.createFromNormalAndCoplanarPoint = (normal, point, isPlan = false) => {
 	            var _a;
-	            const plane = new this.PlaneType(this.components, point, normal, this.activateDragging, this.deactivateDragging, this.planeSize);
+	            const plane = new this.PlaneType(this.components, point, normal, this.activateDragging, this.deactivateDragging, this.planeSize, !isPlan);
 	            plane.isPlan = isPlan;
 	            this.planes.push(plane);
 	            (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.addClippingPlane(plane.plane);
@@ -53205,7 +53205,7 @@
 	TransformControlsPlane.prototype.isTransformControlsPlane = true;
 
 	class SimplePlane {
-	    constructor(components, origin, normal, onStartDragging, onEndDragging, planeSize) {
+	    constructor(components, origin, normal, onStartDragging, onEndDragging, planeSize, isDraggable = true) {
 	        this.arrowBoundingBox = new Mesh();
 	        this.isVisible = true;
 	        this._enabled = true;
@@ -53214,9 +53214,9 @@
 	        this.isPlan = false;
 	        this.removeFromScene = () => {
 	            this.helper.removeFromParent();
-	            const index = this.components.clipplingPlanes.indexOf(this.plane);
+	            const index = this.components.clippingPlanes.indexOf(this.plane);
 	            if (index >= 0)
-	                this.components.clipplingPlanes.splice(index, 1);
+	                this.components.clippingPlanes.splice(index, 1);
 	            this.arrowBoundingBox.removeFromParent();
 	            this.arrowBoundingBox.geometry.dispose();
 	            this.arrowBoundingBox = undefined;
@@ -53229,22 +53229,23 @@
 	        this.planeSize = planeSize;
 	        this.components = components;
 	        this.plane = new Plane();
-	        this.components.clipplingPlanes.push(this.plane);
+	        this.components.clippingPlanes.push(this.plane);
 	        this.planeMesh = this.getPlaneMesh();
 	        this.normal = normal;
 	        this.origin = origin;
 	        this.helper = this.createHelper();
 	        this.controls = this.newTransformControls();
-	        this.setupEvents(onStartDragging, onEndDragging);
+	        if (isDraggable) {
+	            this.setupEvents(onStartDragging, onEndDragging);
+	        }
 	        this.plane.setFromNormalAndCoplanarPoint(normal, origin);
 	    }
 	    get enabled() {
 	        return this._enabled;
 	    }
 	    set enabled(state) {
-	        var _a;
 	        this._enabled = state;
-	        const planes = (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.renderer.clippingPlanes;
+	        const planes = this.components.clippingPlanes;
 	        if (state && planes) {
 	            planes.push(this.plane);
 	        }
@@ -53291,8 +53292,6 @@
 	        var _a, _b, _c, _d;
 	        const camera = (_a = this.components.camera) === null || _a === void 0 ? void 0 : _a.getCamera();
 	        const container = (_b = this.components.renderer) === null || _b === void 0 ? void 0 : _b.renderer.domElement;
-	        console.log(camera);
-	        console.log(container);
 	        if (!camera || !container)
 	            throw new Error("Camera or container not initialised.");
 	        const controls = new TransformControls(camera, container);
@@ -53462,7 +53461,6 @@
 	    constructor() {
 	        // private readonly components: ComponentBase[] = [];
 	        this.meshes = [];
-	        this.clipplingPlanes = [];
 	        this.updateRequestCallback = -1;
 	        this.update = () => {
 	            const delta = this.clock.getDelta();
@@ -53475,6 +53473,9 @@
 	        this.clock = new Clock();
 	        this.tools = new ToolComponents();
 	        Components.setupBVH();
+	    }
+	    get clippingPlanes() {
+	        return this.renderer.renderer.clippingPlanes;
 	    }
 	    get renderer() {
 	        if (!this._renderer)
@@ -64389,7 +64390,7 @@
 	            this.blocks.reset();
 	        }
 	        else {
-	            const hiddenInstances = Object.keys(this.hiddenInstances).map((id) => parseInt(id, 10));
+	            const hiddenInstances = Object.keys(this.hiddenInstances);
 	            this.makeInstancesVisible(hiddenInstances);
 	            this.hiddenInstances = {};
 	        }
@@ -64547,7 +64548,7 @@
 	        this.addInstances(items);
 	    }
 	    filterHiddenItems(itemIDs, hidden) {
-	        const hiddenItems = Object.keys(this.hiddenInstances).map((item) => parseInt(item, 10));
+	        const hiddenItems = Object.keys(this.hiddenInstances);
 	        return itemIDs.filter((item) => hidden ? hiddenItems.includes(item) : !hiddenItems.includes(item));
 	    }
 	    toggleBlockVisibility(visible, itemIDs) {
@@ -65038,6 +65039,9 @@
 	}
 
 	class FragmentCulling {
+	    // Alternative scene and meshes to make the visibility check
+	    // private readonly scene = new THREE.Scene();
+	    // private readonly meshes: InstancedMesh[] = [];
 	    constructor(components, fragment, updateInterval = 1000, rtWidth = 512, rtHeight = 512, autoUpdate = true) {
 	        this.components = components;
 	        this.fragment = fragment;
@@ -65048,57 +65052,23 @@
 	        this.exclusions = new Map();
 	        this.fragmentColorMap = new Map();
 	        this.needsUpdate = false;
+	        this.transparentMat = new MeshBasicMaterial({
+	            transparent: true,
+	            opacity: 0,
+	        });
+	        this.colors = { r: 0, g: 0, b: 0, i: 0 };
 	        this.updateVisibility = () => {
 	            if (!this.needsUpdate)
 	                return;
 	            const frags = Object.values(this.fragment.fragments);
-	            const transparentMat = new MeshBasicMaterial({
-	                transparent: true,
-	                opacity: 0,
-	            });
-	            let r = 0;
-	            let g = 0;
-	            let b = 0;
-	            let i = 0;
-	            const getNextColor = () => {
-	                if (i === 0) {
-	                    b++;
-	                    if (b === 256) {
-	                        b = 0;
-	                        i = 1;
-	                    }
-	                }
-	                if (i === 1) {
-	                    g++;
-	                    i = 0;
-	                    if (g === 256) {
-	                        g = 0;
-	                        i = 2;
-	                    }
-	                }
-	                if (i === 2) {
-	                    r++;
-	                    i = 1;
-	                    if (r === 256) {
-	                        r = 0;
-	                        i = 0;
-	                    }
-	                }
-	                return {
-	                    r,
-	                    g,
-	                    b,
-	                    code: `${r}${g}${b}`,
-	                };
-	            };
-	            const isTransparent = (material) => material.transparent && material.opacity < 1;
+	            this.colors = { r: 0, g: 0, b: 0, i: 0 };
 	            for (const fragment of frags) {
 	                // Store original materials
 	                if (!fragment.mesh.userData.prevMat) {
 	                    fragment.mesh.userData.prevMat = fragment.mesh.material;
 	                }
 	                // Generate a color for this fragment and get the material
-	                const { r, g, b, code } = getNextColor();
+	                const { r, g, b, code } = this.getNextColor();
 	                const colorMaterial = this.getMaterial(r, g, b);
 	                // Index this fragment to the color map,
 	                this.fragmentColorMap.set(code, fragment);
@@ -65107,8 +65077,8 @@
 	                    let transparentOnly = true;
 	                    const matArray = [];
 	                    for (const prevMat of fragment.mesh.userData.prevMat) {
-	                        if (isTransparent(prevMat)) {
-	                            matArray.push(transparentMat);
+	                        if (this.isTransparent(prevMat)) {
+	                            matArray.push(this.transparentMat);
 	                        }
 	                        else {
 	                            transparentOnly = false;
@@ -65122,11 +65092,11 @@
 	                    }
 	                    fragment.mesh.material = matArray;
 	                }
-	                else if (isTransparent(fragment.mesh.userData.prevMat)) {
+	                else if (this.isTransparent(fragment.mesh.userData.prevMat)) {
 	                    // This material is transparent, so we must remove it from analysis
 	                    this.fragmentColorMap.delete(code);
 	                    // @ts-ignore
-	                    fragment.mesh.material = transparentMat;
+	                    fragment.mesh.material = this.transparentMat;
 	                }
 	                else {
 	                    // @ts-ignore
@@ -65207,6 +65177,40 @@
 	            this.materialCache.set(code, material);
 	        }
 	        return material;
+	    }
+	    isTransparent(material) {
+	        return material.transparent && material.opacity < 1;
+	    }
+	    getNextColor() {
+	        if (this.colors.i === 0) {
+	            this.colors.b++;
+	            if (this.colors.b === 256) {
+	                this.colors.b = 0;
+	                this.colors.i = 1;
+	            }
+	        }
+	        if (this.colors.i === 1) {
+	            this.colors.g++;
+	            this.colors.i = 0;
+	            if (this.colors.g === 256) {
+	                this.colors.g = 0;
+	                this.colors.i = 2;
+	            }
+	        }
+	        if (this.colors.i === 2) {
+	            this.colors.r++;
+	            this.colors.i = 1;
+	            if (this.colors.r === 256) {
+	                this.colors.r = 0;
+	                this.colors.i = 0;
+	            }
+	        }
+	        return {
+	            r: this.colors.r,
+	            g: this.colors.g,
+	            b: this.colors.b,
+	            code: `${this.colors.r}${this.colors.g}${this.colors.b}`,
+	        };
 	    }
 	    cullEdges(fragment, visible) {
 	        if (visible) {
@@ -66971,7 +66975,7 @@
 	            if (!mesh.geometry.boundsTree)
 	                mesh.geometry.computeBoundsTree();
 	        });
-	        material.clippingPlanes = ClippingEdges.components.clipplingPlanes;
+	        material.clippingPlanes = ClippingEdges.components.clippingPlanes;
 	        ClippingEdges.styles[styleName] = {
 	            ids,
 	            categories: [],
@@ -67119,8 +67123,8 @@
 	});
 
 	class EdgesPlane extends SimplePlane {
-	    constructor(components, origin, normal, onStartDragging, onEndDragging, planeSize) {
-	        super(components, origin, normal, onStartDragging, onEndDragging, planeSize);
+	    constructor(components, origin, normal, onStartDragging, onEndDragging, planeSize, isDraggable) {
+	        super(components, origin, normal, onStartDragging, onEndDragging, planeSize, isDraggable);
 	        this.edges = new ClippingEdges(this.plane);
 	    }
 	    onPlaneChanged() {
@@ -70018,7 +70022,7 @@
 	        if (!scene || !camera)
 	            return;
 	        this.scene = scene;
-	        this.renderer.clippingPlanes = this.components.clipplingPlanes;
+	        this.renderer.clippingPlanes = this.components.clippingPlanes;
 	        this.addBasePass(scene, camera);
 	        this.addSaoPass(scene, camera);
 	        this.addOutlinePass(scene, camera);
@@ -70373,7 +70377,7 @@
 	            opacity: this.opacity,
 	            transparent: true,
 	            depthWrite: false,
-	            clippingPlanes: this.components.clipplingPlanes,
+	            clippingPlanes: this.components.clippingPlanes,
 	        });
 	    }
 	    // like MeshDepthMaterial, but goes from black to transparent
@@ -71636,9 +71640,12 @@
 	loadFragments();
 
 	async function loadFragments() {
-	    const {entries} = await unzip('../models/small.zip');
+	    const {entries} = await unzip('../models/medium.zip');
 
 	    const fileNames = Object.keys(entries);
+
+	    await entries['model-types.json'].json();
+	    await entries['all-types.json'].json();
 
 	    for (let i = 0; i < fileNames.length; i++) {
 
@@ -71652,7 +71659,7 @@
 
 	        const dataName = geometryName.substring(0, geometryName.indexOf('.glb')) + '.json';
 	        const dataBlob = await entries[dataName].blob();
-	        await entries[dataName].json();
+	        // const data = await entries[dataName].json();
 	        const dataURL = URL.createObjectURL(dataBlob);
 
 	        await fragments.load(geometryURL, dataURL);
@@ -71662,7 +71669,10 @@
 	    // Clipping edges
 
 	    ClippingEdges.initialize(components);
-	    await ClippingEdges.newStyleFromMesh('default', fragments.fragmentMeshes);
+	    await ClippingEdges.newStyleFromMesh('default', fragments.fragmentMeshes, new LineMaterial({
+	        color: 0xff0000,
+	        linewidth: 0.003,
+	    }));
 
 	    // Floor plans
 
@@ -71695,6 +71705,17 @@
 	            fragments.culler.updateVisibility();
 	        };
 	    }
+
+	    // Create GUI for exiting floor plan navigation
+	    const exitButton = document.createElement('button');
+	    exitButton.textContent = "Exit";
+	    levelContainer.appendChild(exitButton);
+
+	    exitButton.onclick = async () => {
+	        await floorNav.exitPlanView();
+	        fragments.culler.needsUpdate = true;
+	        fragments.culler.updateVisibility();
+	    };
 	}
 
 })();

@@ -16,6 +16,7 @@ import {
     ClippingEdges
 } from 'openbim-components'
 import {unzip} from "unzipit";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
 
 const container = document.getElementById('viewer-container');
 
@@ -72,9 +73,12 @@ const fragments = new Fragments(components);
 loadFragments();
 
 async function loadFragments() {
-    const {entries} = await unzip('../models/small.zip');
+    const {entries} = await unzip('../models/medium.zip');
 
     const fileNames = Object.keys(entries);
+
+    const modelTypes = await entries['model-types.json'].json();
+    const allTypes = await entries['all-types.json'].json();
 
     for (let i = 0; i < fileNames.length; i++) {
 
@@ -88,7 +92,7 @@ async function loadFragments() {
 
         const dataName = geometryName.substring(0, geometryName.indexOf('.glb')) + '.json';
         const dataBlob = await entries[dataName].blob();
-        const data = await entries[dataName].json();
+        // const data = await entries[dataName].json();
         const dataURL = URL.createObjectURL(dataBlob);
 
         const fragment = await fragments.load(geometryURL, dataURL);
@@ -98,7 +102,10 @@ async function loadFragments() {
     // Clipping edges
 
     ClippingEdges.initialize(components);
-    await ClippingEdges.newStyleFromMesh('default', fragments.fragmentMeshes);
+    await ClippingEdges.newStyleFromMesh('default', fragments.fragmentMeshes, new LineMaterial({
+        color: 0xff0000,
+        linewidth: 0.003,
+    }));
 
     // Floor plans
 
@@ -130,5 +137,16 @@ async function loadFragments() {
             fragments.culler.needsUpdate = true;
             fragments.culler.updateVisibility();
         }
+    }
+
+    // Create GUI for exiting floor plan navigation
+    const exitButton = document.createElement('button');
+    exitButton.textContent = "Exit";
+    levelContainer.appendChild(exitButton);
+
+    exitButton.onclick = async () => {
+        await floorNav.exitPlanView();
+        fragments.culler.needsUpdate = true;
+        fragments.culler.updateVisibility();
     }
 }

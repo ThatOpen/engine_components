@@ -39,18 +39,21 @@ export class SimplePlane {
     normal: Vector3,
     onStartDragging: Function,
     onEndDragging: Function,
-    planeSize: number
+    planeSize: number,
+    isDraggable = true
   ) {
     this.planeSize = planeSize;
     this.components = components;
     this.plane = new Plane();
-    this.components.clipplingPlanes.push(this.plane);
+    this.components.clippingPlanes.push(this.plane);
     this.planeMesh = this.getPlaneMesh();
     this.normal = normal;
     this.origin = origin;
     this.helper = this.createHelper();
     this.controls = this.newTransformControls();
-    this.setupEvents(onStartDragging, onEndDragging);
+    if (isDraggable) {
+      this.setupEvents(onStartDragging, onEndDragging);
+    }
     this.plane.setFromNormalAndCoplanarPoint(normal, origin);
   }
 
@@ -60,7 +63,7 @@ export class SimplePlane {
 
   set enabled(state: boolean) {
     this._enabled = state;
-    const planes = this.components.renderer?.renderer.clippingPlanes;
+    const planes = this.components.clippingPlanes;
     if (state && planes) {
       planes.push(this.plane);
     } else if (planes) {
@@ -97,8 +100,8 @@ export class SimplePlane {
   removeFromScene = () => {
     this.helper.removeFromParent();
 
-    const index = this.components.clipplingPlanes.indexOf(this.plane);
-    if (index >= 0) this.components.clipplingPlanes.splice(index, 1);
+    const index = this.components.clippingPlanes.indexOf(this.plane);
+    if (index >= 0) this.components.clippingPlanes.splice(index, 1);
 
     this.arrowBoundingBox.removeFromParent();
     this.arrowBoundingBox.geometry.dispose();
@@ -129,8 +132,6 @@ export class SimplePlane {
   private newTransformControls() {
     const camera = this.components.camera?.getCamera();
     const container = this.components.renderer?.renderer.domElement;
-    console.log(camera);
-    console.log(container);
     if (!camera || !container)
       throw new Error("Camera or container not initialised.");
     const controls = new TransformControls(camera, container);

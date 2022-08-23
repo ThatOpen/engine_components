@@ -134,7 +134,7 @@ export class ClippingEdges {
       if (!mesh.geometry.boundsTree) mesh.geometry.computeBoundsTree();
     });
 
-    material.clippingPlanes = ClippingEdges.components.clipplingPlanes;
+    material.clippingPlanes = ClippingEdges.components.clippingPlanes;
     ClippingEdges.styles[styleName] = {
       ids,
       categories: [],

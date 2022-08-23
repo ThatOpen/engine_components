@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { Fragment } from "bim-fragment";
+// import { InstancedMesh } from "three";
 import { Fragments } from "./fragments";
 import { Components } from "../components";
 
@@ -13,6 +14,17 @@ export default class FragmentCulling {
   exclusions = new Map<string, Fragment>();
   fragmentColorMap = new Map<string, Fragment>();
   needsUpdate = false;
+
+  private readonly transparentMat = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 0,
+  });
+
+  private colors = { r: 0, g: 0, b: 0, i: 0 };
+
+  // Alternative scene and meshes to make the visibility check
+  // private readonly scene = new THREE.Scene();
+  // private readonly meshes: InstancedMesh[] = [];
 
   constructor(
     private components: Components,
@@ -59,63 +71,12 @@ export default class FragmentCulling {
     if (autoUpdate) window.setInterval(this.updateVisibility, updateInterval);
   }
 
-  private getMaterial(r: number, g: number, b: number) {
-    const code = `rgb(${r}, ${g}, ${b})`;
-    let material = this.materialCache.get(code);
-    if (!material) {
-      material = new THREE.MeshBasicMaterial({ color: new THREE.Color(code) });
-      this.materialCache.set(code, material);
-    }
-    return material;
-  }
-
-  public updateVisibility = () => {
+  updateVisibility = () => {
     if (!this.needsUpdate) return;
 
     const frags = Object.values(this.fragment.fragments);
-    const transparentMat = new THREE.MeshBasicMaterial({
-      transparent: true,
-      opacity: 0,
-    });
 
-    let r = 0;
-    let g = 0;
-    let b = 0;
-    let i = 0;
-
-    const getNextColor = () => {
-      if (i === 0) {
-        b++;
-        if (b === 256) {
-          b = 0;
-          i = 1;
-        }
-      }
-      if (i === 1) {
-        g++;
-        i = 0;
-        if (g === 256) {
-          g = 0;
-          i = 2;
-        }
-      }
-      if (i === 2) {
-        r++;
-        i = 1;
-        if (r === 256) {
-          r = 0;
-          i = 0;
-        }
-      }
-      return {
-        r,
-        g,
-        b,
-        code: `${r}${g}${b}`,
-      };
-    };
-    const isTransparent = (material: THREE.Material) =>
-      material.transparent && material.opacity < 1;
+    this.colors = { r: 0, g: 0, b: 0, i: 0 };
 
     for (const fragment of frags) {
       // Store original materials
@@ -124,7 +85,7 @@ export default class FragmentCulling {
       }
 
       // Generate a color for this fragment and get the material
-      const { r, g, b, code } = getNextColor();
+      const { r, g, b, code } = this.getNextColor();
       const colorMaterial = this.getMaterial(r, g, b);
 
       // Index this fragment to the color map,
@@ -136,8 +97,8 @@ export default class FragmentCulling {
         const matArray: any[] = [];
 
         for (const prevMat of fragment.mesh.userData.prevMat) {
-          if (isTransparent(prevMat)) {
-            matArray.push(transparentMat);
+          if (this.isTransparent(prevMat)) {
+            matArray.push(this.transparentMat);
           } else {
             transparentOnly = false;
             matArray.push(colorMaterial);
@@ -151,11 +112,11 @@ export default class FragmentCulling {
         }
 
         fragment.mesh.material = matArray;
-      } else if (isTransparent(fragment.mesh.userData.prevMat)) {
+      } else if (this.isTransparent(fragment.mesh.userData.prevMat)) {
         // This material is transparent, so we must remove it from analysis
         this.fragmentColorMap.delete(code);
         // @ts-ignore
-        fragment.mesh.material = transparentMat;
+        fragment.mesh.material = this.transparentMat;
       } else {
         // @ts-ignore
         fragment.mesh.material = colorMaterial;
@@ -195,6 +156,55 @@ export default class FragmentCulling {
 
     this.needsUpdate = false;
   };
+
+  private getMaterial(r: number, g: number, b: number) {
+    const code = `rgb(${r}, ${g}, ${b})`;
+    let material = this.materialCache.get(code);
+    if (!material) {
+      material = new THREE.MeshBasicMaterial({ color: new THREE.Color(code) });
+      this.materialCache.set(code, material);
+    }
+    return material;
+  }
+
+  private isTransparent(material: THREE.Material) {
+    return material.transparent && material.opacity < 1;
+  }
+
+  private getNextColor() {
+    if (this.colors.i === 0) {
+      this.colors.b++;
+      if (this.colors.b === 256) {
+        this.colors.b = 0;
+        this.colors.i = 1;
+      }
+    }
+
+    if (this.colors.i === 1) {
+      this.colors.g++;
+      this.colors.i = 0;
+      if (this.colors.g === 256) {
+        this.colors.g = 0;
+        this.colors.i = 2;
+      }
+    }
+
+    if (this.colors.i === 2) {
+      this.colors.r++;
+      this.colors.i = 1;
+      if (this.colors.r === 256) {
+        this.colors.r = 0;
+        this.colors.i = 0;
+      }
+    }
+
+    return {
+      r: this.colors.r,
+      g: this.colors.g,
+      b: this.colors.b,
+      code: `${this.colors.r}${this.colors.g}${this.colors.b}`,
+    };
+  }
 
   private handleWorkerMessage = (event: MessageEvent) => {
     const colors = event.data.colors as Set<string>;
