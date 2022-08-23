@@ -33,6 +33,7 @@ export class Fragments {
     this.fragments[fragment.id] = fragment;
     this.components.meshes.push(fragment.mesh);
     this.fragmentMeshes.push(fragment.mesh);
+    this.culler.add(fragment);
     const scene = this.components.scene.getScene();
     scene.add(fragment.mesh);
   }

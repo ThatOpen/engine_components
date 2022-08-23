@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Fragment } from "bim-fragment";
-// import { InstancedMesh } from "three";
+import { Material } from "three";
 import { Fragments } from "./fragments";
 import { Components } from "../components";
 
@@ -15,6 +15,10 @@ export default class FragmentCulling {
   fragmentColorMap = new Map<string, Fragment>();
   needsUpdate = false;
 
+  readonly meshes = new Map<string, THREE.InstancedMesh>();
+
+  private readonly previouslyVisibleMeshes = new Set<string>();
+
   private readonly transparentMat = new THREE.MeshBasicMaterial({
     transparent: true,
     opacity: 0,
@@ -23,8 +27,7 @@ export default class FragmentCulling {
   private colors = { r: 0, g: 0, b: 0, i: 0 };
 
   // Alternative scene and meshes to make the visibility check
-  // private readonly scene = new THREE.Scene();
-  // private readonly meshes: InstancedMesh[] = [];
+  private readonly scene = new THREE.Scene();
 
   constructor(
     private components: Components,
@@ -71,68 +74,67 @@ export default class FragmentCulling {
     if (autoUpdate) window.setInterval(this.updateVisibility, updateInterval);
   }
 
+  add(fragment: Fragment) {
+    const { geometry, material } = fragment.mesh;
+
+    const { r, g, b, code } = this.getNextColor();
+    const colorMaterial = this.getMaterial(r, g, b);
+
+    let newMaterial: Material[] | Material;
+
+    if (Array.isArray(material)) {
+      let transparentOnly = true;
+      const matArray: any[] = [];
+
+      for (const mat of material) {
+        if (this.isTransparent(mat)) {
+          matArray.push(this.transparentMat);
+        } else {
+          transparentOnly = false;
+          matArray.push(colorMaterial);
+        }
+      }
+
+      // If we find that all the materials are transparent then we must remove this from analysis
+      if (transparentOnly) {
+        colorMaterial.dispose();
+        return;
+      }
+
+      newMaterial = matArray;
+    } else if (this.isTransparent(material)) {
+      // This material is transparent, so we must remove it from analysis
+      colorMaterial.dispose();
+      return;
+    } else {
+      newMaterial = colorMaterial;
+    }
+
+    this.fragmentColorMap.set(code, fragment);
+
+    const mesh = new THREE.InstancedMesh(
+      geometry,
+      newMaterial,
+      fragment.capacity
+    );
+
+    fragment.mesh.visible = false;
+
+    mesh.instanceMatrix = fragment.mesh.instanceMatrix;
+    this.scene.add(mesh);
+    this.meshes.set(fragment.id, mesh);
+  }
+
   updateVisibility = () => {
     if (!this.needsUpdate) return;
-
-    const frags = Object.values(this.fragment.fragments);
-
-    this.colors = { r: 0, g: 0, b: 0, i: 0 };
-
-    for (const fragment of frags) {
-      // Store original materials
-      if (!fragment.mesh.userData.prevMat) {
-        fragment.mesh.userData.prevMat = fragment.mesh.material;
-      }
-
-      // Generate a color for this fragment and get the material
-      const { r, g, b, code } = this.getNextColor();
-      const colorMaterial = this.getMaterial(r, g, b);
-
-      // Index this fragment to the color map,
-      this.fragmentColorMap.set(code, fragment);
-
-      // Check the materials for transparency and update them accordingly
-      if (Array.isArray(fragment.mesh.userData.prevMat)) {
-        let transparentOnly = true;
-        const matArray: any[] = [];
-
-        for (const prevMat of fragment.mesh.userData.prevMat) {
-          if (this.isTransparent(prevMat)) {
-            matArray.push(this.transparentMat);
-          } else {
-            transparentOnly = false;
-            matArray.push(colorMaterial);
-          }
-        }
-
-        // If we find that all the materials are transparent then we must remove this from analysis
-        if (transparentOnly) {
-          this.fragmentColorMap.delete(code);
-          this.updateEdges(fragment);
-        }
-
-        fragment.mesh.material = matArray;
-      } else if (this.isTransparent(fragment.mesh.userData.prevMat)) {
-        // This material is transparent, so we must remove it from analysis
-        this.fragmentColorMap.delete(code);
-        // @ts-ignore
-        fragment.mesh.material = this.transparentMat;
-      } else {
-        // @ts-ignore
-        fragment.mesh.material = colorMaterial;
-      }
-
-      // Set to visible
-      // fragment.mesh.userData.prevVisible = fragment.mesh.visible;
-      fragment.mesh.visible = true;
-    }
 
     this.components.renderer.renderer.setRenderTarget(this.renderTarget);
 
     this.components.renderer.renderer.render(
-      this.components.scene.getScene(),
+      this.scene,
       this.components.camera.getCamera()
     );
+
     this.components.renderer.renderer.readRenderTargetPixels(
       this.renderTarget,
       0,
@@ -142,12 +144,6 @@ export default class FragmentCulling {
       this.buffer
     );
 
-    for (const fragment of frags) {
-      // Restore material
-      fragment.mesh.material = fragment.mesh.userData.prevMat;
-      // fragment.mesh.visible = fragment.mesh.userData.prevVisible;
-    }
-
     this.components.renderer.renderer.setRenderTarget(null);
 
     this.worker.postMessage({
@@ -155,6 +151,29 @@ export default class FragmentCulling {
     });
 
     this.needsUpdate = false;
+  };
+
+  private handleWorkerMessage = (event: MessageEvent) => {
+    const colors = event.data.colors as Set<string>;
+
+    const meshesThatJustDissapeared = new Set(this.previouslyVisibleMeshes);
+    this.previouslyVisibleMeshes.clear();
+
+    // Make found meshes visible
+    for (const code of colors.values()) {
+      const fragment = this.fragmentColorMap.get(code);
+      if (fragment) {
+        fragment.mesh.visible = true;
+        this.previouslyVisibleMeshes.add(fragment.id);
+        meshesThatJustDissapeared.delete(fragment.id);
+        this.cullEdges(fragment, true);
+      }
+    }
+
+    // Hide meshes that were visible before but not anymore
+    for (const id of meshesThatJustDissapeared) {
+      this.fragment.fragments[id].mesh.visible = false;
+    }
   };
 
   private getMaterial(r: number, g: number, b: number) {
@@ -206,29 +225,8 @@ export default class FragmentCulling {
     };
   }
 
-  private handleWorkerMessage = (event: MessageEvent) => {
-    const colors = event.data.colors as Set<string>;
-
-    const visibleFragments: Fragment[] = [];
-    for (const code of colors.values()) {
-      const fragment = this.fragmentColorMap.get(code);
-      if (fragment) {
-        fragment.mesh.visible = true;
-        this.cullEdges(fragment, true);
-        visibleFragments.push(fragment);
-        this.fragmentColorMap.delete(code);
-      }
-    }
-
-    for (const [_code, fragment] of this.fragmentColorMap.entries()) {
-      fragment.mesh.visible = false;
-      this.cullEdges(fragment, false);
-    }
-
-    // Clear the color map for the next iteration
-    this.fragmentColorMap.clear();
-  };
-
+  // If the edges need to be updated (e.g. some walls have been hidden)
+  // this allows to compute them only when they are visibile
   private cullEdges(fragment: Fragment, visible: boolean) {
     if (visible) {
       this.updateEdges(fragment);

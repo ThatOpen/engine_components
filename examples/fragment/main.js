@@ -73,7 +73,7 @@ const fragments = new Fragments(components);
 loadFragments();
 
 async function loadFragments() {
-    const { entries } = await unzip('../models/small.zip');
+    const { entries } = await unzip('../models/medium.zip');
 
     const fileNames = Object.keys(entries);
 
@@ -104,10 +104,15 @@ async function loadFragments() {
 
        const fragment = await fragments.load(geometryURL, dataURL);
 
+        // TODO: string conversion temporary until we update the fragment files (ids are now strings)
+       fragment.items = fragment.items.map(item => item.toString());
+
        // Group items for visibility
 
         const groups = {category: {}, floor: {}}
-        const ids = data.ids;
+
+        // TODO: string conversion temporary until we update the fragment files (ids are now strings)
+        const ids = data.ids.map(id => id.toString());
 
         for(const id of ids) {
             const categoryID = modelTypes[id];
@@ -147,6 +152,10 @@ async function loadFragments() {
                 const ids = models[guid];
                 const frag = fragments.fragments[guid];
                 frag.setVisibility(ids, visible);
+
+                const culled = fragments.culler.meshes.get(frag.id);
+                if(culled) culled.count = frag.mesh.count;
+
             }
             fragments.culler.needsUpdate = true;
             renderer.postproduction.update();
@@ -171,6 +180,9 @@ async function loadFragments() {
                 const ids = models[guid];
                 const frag = fragments.fragments[guid];
                 frag.setVisibility(ids, visible);
+
+                const culled = fragments.culler.meshes.get(frag.id);
+                if(culled) culled.count = frag.mesh.count;
             }
             fragments.culler.needsUpdate = true;
             renderer.postproduction.update();

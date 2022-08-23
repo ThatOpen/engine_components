@@ -65056,9 +65056,6 @@
 	}
 
 	class FragmentCulling {
-	    // Alternative scene and meshes to make the visibility check
-	    // private readonly scene = new THREE.Scene();
-	    // private readonly meshes: InstancedMesh[] = [];
 	    constructor(components, fragment, updateInterval = 1000, rtWidth = 512, rtHeight = 512, autoUpdate = true) {
 	        this.components = components;
 	        this.fragment = fragment;
@@ -65069,68 +65066,21 @@
 	        this.exclusions = new Map();
 	        this.fragmentColorMap = new Map();
 	        this.needsUpdate = false;
+	        this.meshes = new Map();
+	        this.previouslyVisibleMeshes = new Set();
 	        this.transparentMat = new MeshBasicMaterial({
 	            transparent: true,
 	            opacity: 0,
 	        });
 	        this.colors = { r: 0, g: 0, b: 0, i: 0 };
+	        // Alternative scene and meshes to make the visibility check
+	        this.scene = new Scene();
 	        this.updateVisibility = () => {
 	            if (!this.needsUpdate)
 	                return;
-	            const frags = Object.values(this.fragment.fragments);
-	            this.colors = { r: 0, g: 0, b: 0, i: 0 };
-	            for (const fragment of frags) {
-	                // Store original materials
-	                if (!fragment.mesh.userData.prevMat) {
-	                    fragment.mesh.userData.prevMat = fragment.mesh.material;
-	                }
-	                // Generate a color for this fragment and get the material
-	                const { r, g, b, code } = this.getNextColor();
-	                const colorMaterial = this.getMaterial(r, g, b);
-	                // Index this fragment to the color map,
-	                this.fragmentColorMap.set(code, fragment);
-	                // Check the materials for transparency and update them accordingly
-	                if (Array.isArray(fragment.mesh.userData.prevMat)) {
-	                    let transparentOnly = true;
-	                    const matArray = [];
-	                    for (const prevMat of fragment.mesh.userData.prevMat) {
-	                        if (this.isTransparent(prevMat)) {
-	                            matArray.push(this.transparentMat);
-	                        }
-	                        else {
-	                            transparentOnly = false;
-	                            matArray.push(colorMaterial);
-	                        }
-	                    }
-	                    // If we find that all the materials are transparent then we must remove this from analysis
-	                    if (transparentOnly) {
-	                        this.fragmentColorMap.delete(code);
-	                        this.updateEdges(fragment);
-	                    }
-	                    fragment.mesh.material = matArray;
-	                }
-	                else if (this.isTransparent(fragment.mesh.userData.prevMat)) {
-	                    // This material is transparent, so we must remove it from analysis
-	                    this.fragmentColorMap.delete(code);
-	                    // @ts-ignore
-	                    fragment.mesh.material = this.transparentMat;
-	                }
-	                else {
-	                    // @ts-ignore
-	                    fragment.mesh.material = colorMaterial;
-	                }
-	                // Set to visible
-	                // fragment.mesh.userData.prevVisible = fragment.mesh.visible;
-	                fragment.mesh.visible = true;
-	            }
 	            this.components.renderer.renderer.setRenderTarget(this.renderTarget);
-	            this.components.renderer.renderer.render(this.components.scene.getScene(), this.components.camera.getCamera());
+	            this.components.renderer.renderer.render(this.scene, this.components.camera.getCamera());
 	            this.components.renderer.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, this.buffer);
-	            for (const fragment of frags) {
-	                // Restore material
-	                fragment.mesh.material = fragment.mesh.userData.prevMat;
-	                // fragment.mesh.visible = fragment.mesh.userData.prevVisible;
-	            }
 	            this.components.renderer.renderer.setRenderTarget(null);
 	            this.worker.postMessage({
 	                buffer: this.buffer,
@@ -65139,20 +65089,22 @@
 	        };
 	        this.handleWorkerMessage = (event) => {
 	            const colors = event.data.colors;
+	            const meshesThatJustDissapeared = new Set(this.previouslyVisibleMeshes);
+	            this.previouslyVisibleMeshes.clear();
+	            // Make found meshes visible
 	            for (const code of colors.values()) {
 	                const fragment = this.fragmentColorMap.get(code);
 	                if (fragment) {
 	                    fragment.mesh.visible = true;
+	                    this.previouslyVisibleMeshes.add(fragment.id);
+	                    meshesThatJustDissapeared.delete(fragment.id);
 	                    this.cullEdges(fragment, true);
-	                    this.fragmentColorMap.delete(code);
 	                }
 	            }
-	            for (const [_code, fragment] of this.fragmentColorMap.entries()) {
-	                fragment.mesh.visible = false;
-	                this.cullEdges(fragment, false);
+	            // Hide meshes that were visible before but not anymore
+	            for (const id of meshesThatJustDissapeared) {
+	                this.fragment.fragments[id].mesh.visible = false;
 	            }
-	            // Clear the color map for the next iteration
-	            this.fragmentColorMap.clear();
 	        };
 	        this.renderTarget = new WebGLRenderTarget(rtWidth, rtHeight);
 	        this.bufferSize = rtWidth * rtHeight * 4;
@@ -65185,6 +65137,45 @@
 	        dom.addEventListener("wheel", () => (this.needsUpdate = true));
 	        if (autoUpdate)
 	            window.setInterval(this.updateVisibility, updateInterval);
+	    }
+	    add(fragment) {
+	        const { geometry, material } = fragment.mesh;
+	        const { r, g, b, code } = this.getNextColor();
+	        const colorMaterial = this.getMaterial(r, g, b);
+	        let newMaterial;
+	        if (Array.isArray(material)) {
+	            let transparentOnly = true;
+	            const matArray = [];
+	            for (const mat of material) {
+	                if (this.isTransparent(mat)) {
+	                    matArray.push(this.transparentMat);
+	                }
+	                else {
+	                    transparentOnly = false;
+	                    matArray.push(colorMaterial);
+	                }
+	            }
+	            // If we find that all the materials are transparent then we must remove this from analysis
+	            if (transparentOnly) {
+	                colorMaterial.dispose();
+	                return;
+	            }
+	            newMaterial = matArray;
+	        }
+	        else if (this.isTransparent(material)) {
+	            // This material is transparent, so we must remove it from analysis
+	            colorMaterial.dispose();
+	            return;
+	        }
+	        else {
+	            newMaterial = colorMaterial;
+	        }
+	        this.fragmentColorMap.set(code, fragment);
+	        const mesh = new InstancedMesh(geometry, newMaterial, fragment.capacity);
+	        fragment.mesh.visible = false;
+	        mesh.instanceMatrix = fragment.mesh.instanceMatrix;
+	        this.scene.add(mesh);
+	        this.meshes.set(fragment.id, mesh);
 	    }
 	    getMaterial(r, g, b) {
 	        const code = `rgb(${r}, ${g}, ${b})`;
@@ -65229,6 +65220,8 @@
 	            code: `${this.colors.r}${this.colors.g}${this.colors.b}`,
 	        };
 	    }
+	    // If the edges need to be updated (e.g. some walls have been hidden)
+	    // this allows to compute them only when they are visibile
 	    cullEdges(fragment, visible) {
 	        if (visible) {
 	            this.updateEdges(fragment);
@@ -65404,6 +65397,7 @@
 	        this.fragments[fragment.id] = fragment;
 	        this.components.meshes.push(fragment.mesh);
 	        this.fragmentMeshes.push(fragment.mesh);
+	        this.culler.add(fragment);
 	        const scene = this.components.scene.getScene();
 	        scene.add(fragment.mesh);
 	    }
@@ -71042,10 +71036,15 @@
 
 	       const fragment = await fragments.load(geometryURL, dataURL);
 
+	        // TODO: string conversion temporary until we update the fragment files (ids are now strings)
+	       fragment.items = fragment.items.map(item => item.toString());
+
 	       // Group items for visibility
 
 	        const groups = {category: {}, floor: {}};
-	        const ids = data.ids;
+
+	        // TODO: string conversion temporary until we update the fragment files (ids are now strings)
+	        const ids = data.ids.map(id => id.toString());
 
 	        for(const id of ids) {
 	            const categoryID = modelTypes[id];
@@ -71085,6 +71084,10 @@
 	                const ids = models[guid];
 	                const frag = fragments.fragments[guid];
 	                frag.setVisibility(ids, visible);
+
+	                const culled = fragments.culler.meshes.get(frag.id);
+	                if(culled) culled.count = frag.mesh.count;
+
 	            }
 	            fragments.culler.needsUpdate = true;
 	            renderer.postproduction.update();
@@ -71109,6 +71112,9 @@
 	                const ids = models[guid];
 	                const frag = fragments.fragments[guid];
 	                frag.setVisibility(ids, visible);
+
+	                const culled = fragments.culler.meshes.get(frag.id);
+	                if(culled) culled.count = frag.mesh.count;
 	            }
 	            fragments.culler.needsUpdate = true;
 	            renderer.postproduction.update();

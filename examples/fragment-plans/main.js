@@ -73,7 +73,7 @@ const fragments = new Fragments(components);
 loadFragments();
 
 async function loadFragments() {
-    const {entries} = await unzip('../models/medium.zip');
+    const {entries} = await unzip('../models/small.zip');
 
     const fileNames = Object.keys(entries);
 
@@ -92,7 +92,8 @@ async function loadFragments() {
 
         const dataName = geometryName.substring(0, geometryName.indexOf('.glb')) + '.json';
         const dataBlob = await entries[dataName].blob();
-        // const data = await entries[dataName].json();
+        const data = await entries[dataName].json();
+
         const dataURL = URL.createObjectURL(dataBlob);
 
         const fragment = await fragments.load(geometryURL, dataURL);
