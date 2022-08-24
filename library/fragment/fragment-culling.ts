@@ -172,7 +172,9 @@ export default class FragmentCulling {
 
     // Hide meshes that were visible before but not anymore
     for (const id of meshesThatJustDissapeared) {
-      this.fragment.fragments[id].mesh.visible = false;
+      const fragment = this.fragment.fragments[id];
+      fragment.mesh.visible = false;
+      this.cullEdges(fragment, false);
     }
   };
 

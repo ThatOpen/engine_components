@@ -65086,7 +65086,9 @@
 	            }
 	            // Hide meshes that were visible before but not anymore
 	            for (const id of meshesThatJustDissapeared) {
-	                this.fragment.fragments[id].mesh.visible = false;
+	                const fragment = this.fragment.fragments[id];
+	                fragment.mesh.visible = false;
+	                this.cullEdges(fragment, false);
 	            }
 	        };
 	        this.renderTarget = new WebGLRenderTarget(rtWidth, rtHeight);
@@ -65325,6 +65327,7 @@
 	        scene.add(lines);
 	        this.edgesList[fragment.id] = lines;
 	        this.updateInstancedEdges(fragment, lineGeom);
+	        lines.visible = false;
 	        return lines;
 	    }
 	    updateInstancedEdges(fragment, lineGeom) {
@@ -71710,8 +71713,8 @@
 
 	        const fragment = await fragments.load(geometryURL, dataURL);
 
-	        // const lines = fragments.edges.generate(fragment);
-	        // lines.removeFromParent();
+	        const lines = fragments.edges.generate(fragment);
+	        lines.removeFromParent();
 
 	        const firstID = data.ids[0];
 	        const categoryID = modelTypes[firstID];
@@ -71738,7 +71741,7 @@
 
 	    let wasFloorplanActive = false;
 
-	    new MeshBasicMaterial();
+	    const baseMaterial = new MeshBasicMaterial();
 	    const backgroundColor = scene.background;
 	    const whiteColor = new Color$1(0xffffff);
 
@@ -71767,11 +71770,11 @@
 
 	        button.onclick = async () => {
 	            if(!wasFloorplanActive) {
-	                // toggleEdges(true);
+	                toggleEdges(true);
 	                scene.background = whiteColor;
 	            }
 
-	            // fragments.materials.apply(baseMaterial);
+	            fragments.materials.apply(baseMaterial);
 	            await floorNav.goTo(levelProps.expressID);
 	            fragments.culler.needsUpdate = true;
 	            fragments.culler.updateVisibility();
@@ -71786,15 +71789,23 @@
 	    levelContainer.appendChild(exitButton);
 
 	    exitButton.onclick = async () => {
-	        // fragments.materials.reset();
+	        fragments.materials.reset();
 	        await floorNav.exitPlanView();
 	        fragments.culler.needsUpdate = true;
 	        fragments.culler.updateVisibility();
 
 	        wasFloorplanActive = false;
-	        // toggleEdges(false);
+	        toggleEdges(false);
 	        scene.background = backgroundColor;
 	    };
+	}
+
+	function toggleEdges(visible) {
+	    const edges = Object.values(fragments.edges.edgesList);
+	    for(const edge of edges) {
+	        if(visible) scene.add(edge);
+	        else edge.removeFromParent();
+	    }
 	}
 
 })();

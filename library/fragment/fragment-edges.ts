@@ -77,6 +77,8 @@ export class FragmentEdges {
 
     this.updateInstancedEdges(fragment, lineGeom);
 
+    lines.visible = false;
+
     return lines;
   }
 
