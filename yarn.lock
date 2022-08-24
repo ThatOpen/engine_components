@@ -1740,6 +1740,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"bim-fragment@npm:0.0.10":
+  version: 0.0.10
+  resolution: "bim-fragment@npm:0.0.10"
+  dependencies:
+    three-mesh-bvh: ^0.5.14
+  peerDependencies:
+    three: ^0.135.0
+  checksum: e08dd845aeb95b235fb60628da250b300db2a902e7a77471000ac1f4e3ea2041cab80115320b489611ec6646211e23150b05b060056cc411aaa8b513cd4a3c80
+  languageName: node
+  linkType: hard
+
 "bim-fragment@npm:0.0.11":
   version: 0.0.11
   resolution: "bim-fragment@npm:0.0.11"
@@ -5694,7 +5705,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"openbim-components@0.0.2, openbim-components@workspace:library":
+"openbim-components@npm:0.0.2":
+  version: 0.0.2
+  resolution: "openbim-components@npm:0.0.2"
+  dependencies:
+    bim-fragment: 0.0.10
+    camera-controls: ^1.36.0
+    three: 0.135
+  checksum: 003cafdeacb694ea4b0246fde8504b35072439842a60a6731f5d5f7388b469eed1edf7c4e5420fc657dd49060e445abf2e4fdcf3321b14a0913d4c9c8d631ee5
+  languageName: node
+  linkType: hard
+
+"openbim-components@workspace:library":
   version: 0.0.0-use.local
   resolution: "openbim-components@workspace:library"
   dependencies:
