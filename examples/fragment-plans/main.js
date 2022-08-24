@@ -104,8 +104,8 @@ async function loadFragments() {
 
         const fragment = await fragments.load(geometryURL, dataURL);
 
-        const lines = fragments.edges.generate(fragment);
-        lines.removeFromParent();
+        // const lines = fragments.edges.generate(fragment);
+        // lines.removeFromParent();
 
         const firstID = data.ids[0];
         const categoryID = modelTypes[firstID];
@@ -161,11 +161,11 @@ async function loadFragments() {
 
         button.onclick = async () => {
             if(!wasFloorplanActive) {
-                toggleEdges(true);
+                // toggleEdges(true);
                 scene.background = whiteColor;
             }
 
-            fragments.materials.apply(baseMaterial);
+            // fragments.materials.apply(baseMaterial);
             await floorNav.goTo(levelProps.expressID);
             fragments.culler.needsUpdate = true;
             fragments.culler.updateVisibility();
@@ -180,13 +180,13 @@ async function loadFragments() {
     levelContainer.appendChild(exitButton);
 
     exitButton.onclick = async () => {
-        fragments.materials.reset();
+        // fragments.materials.reset();
         await floorNav.exitPlanView();
         fragments.culler.needsUpdate = true;
         fragments.culler.updateVisibility();
 
         wasFloorplanActive = false;
-        toggleEdges(false);
+        // toggleEdges(false);
         scene.background = backgroundColor;
     }
 }

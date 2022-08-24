@@ -13,6 +13,10 @@ export class PlanMode implements NavMode {
   private readonly defaultAzimuthSpeed: number;
   private readonly defaultPolarSpeed: number;
 
+  private mouseAction1?: any;
+  private mouseAction2?: any;
+  private mouseInitialized = false;
+
   constructor(private components: Components, private camera: AdvancedCamera) {
     this.defaultAzimuthSpeed = camera.controls.azimuthRotateSpeed;
     this.defaultPolarSpeed = camera.controls.polarRotateSpeed;
@@ -23,7 +27,22 @@ export class PlanMode implements NavMode {
     const controls = this.camera.controls;
     controls.azimuthRotateSpeed = active ? 0 : this.defaultAzimuthSpeed;
     controls.polarRotateSpeed = active ? 0 : this.defaultPolarSpeed;
-    controls.mouseButtons.left = CameraControls.ACTION.ROTATE;
+
+    if (!this.mouseInitialized) {
+      this.mouseAction1 = controls.touches.one;
+      this.mouseAction2 = controls.touches.two;
+      this.mouseInitialized = true;
+    }
+
+    if (active) {
+      controls.mouseButtons.left = CameraControls.ACTION.TRUCK;
+      controls.touches.one = CameraControls.ACTION.TOUCH_TRUCK;
+      controls.touches.two = CameraControls.ACTION.TOUCH_ZOOM;
+    } else {
+      controls.mouseButtons.left = CameraControls.ACTION.ROTATE;
+      controls.touches.one = this.mouseAction1!;
+      controls.touches.two = this.mouseAction2!;
+    }
   }
 
   async fitModelToFrame() {

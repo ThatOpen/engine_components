@@ -65568,6 +65568,7 @@
 	        this.enabled = false;
 	        this.onChange = new LiteEvent();
 	        this.onChangeProjection = new LiteEvent();
+	        this.mouseInitialized = false;
 	        this.defaultAzimuthSpeed = camera.controls.azimuthRotateSpeed;
 	        this.defaultPolarSpeed = camera.controls.polarRotateSpeed;
 	    }
@@ -65576,7 +65577,21 @@
 	        const controls = this.camera.controls;
 	        controls.azimuthRotateSpeed = active ? 0 : this.defaultAzimuthSpeed;
 	        controls.polarRotateSpeed = active ? 0 : this.defaultPolarSpeed;
-	        controls.mouseButtons.left = CameraControls.ACTION.ROTATE;
+	        if (!this.mouseInitialized) {
+	            this.mouseAction1 = controls.touches.one;
+	            this.mouseAction2 = controls.touches.two;
+	            this.mouseInitialized = true;
+	        }
+	        if (active) {
+	            controls.mouseButtons.left = CameraControls.ACTION.TRUCK;
+	            controls.touches.one = CameraControls.ACTION.TOUCH_TRUCK;
+	            controls.touches.two = CameraControls.ACTION.TOUCH_ZOOM;
+	        }
+	        else {
+	            controls.mouseButtons.left = CameraControls.ACTION.ROTATE;
+	            controls.touches.one = this.mouseAction1;
+	            controls.touches.two = this.mouseAction2;
+	        }
 	    }
 	    async fitModelToFrame() {
 	        if (!this.enabled)
@@ -71695,8 +71710,8 @@
 
 	        const fragment = await fragments.load(geometryURL, dataURL);
 
-	        const lines = fragments.edges.generate(fragment);
-	        lines.removeFromParent();
+	        // const lines = fragments.edges.generate(fragment);
+	        // lines.removeFromParent();
 
 	        const firstID = data.ids[0];
 	        const categoryID = modelTypes[firstID];
@@ -71723,7 +71738,7 @@
 
 	    let wasFloorplanActive = false;
 
-	    const baseMaterial = new MeshBasicMaterial();
+	    new MeshBasicMaterial();
 	    const backgroundColor = scene.background;
 	    const whiteColor = new Color$1(0xffffff);
 
@@ -71752,11 +71767,11 @@
 
 	        button.onclick = async () => {
 	            if(!wasFloorplanActive) {
-	                toggleEdges(true);
+	                // toggleEdges(true);
 	                scene.background = whiteColor;
 	            }
 
-	            fragments.materials.apply(baseMaterial);
+	            // fragments.materials.apply(baseMaterial);
 	            await floorNav.goTo(levelProps.expressID);
 	            fragments.culler.needsUpdate = true;
 	            fragments.culler.updateVisibility();
@@ -71771,23 +71786,15 @@
 	    levelContainer.appendChild(exitButton);
 
 	    exitButton.onclick = async () => {
-	        fragments.materials.reset();
+	        // fragments.materials.reset();
 	        await floorNav.exitPlanView();
 	        fragments.culler.needsUpdate = true;
 	        fragments.culler.updateVisibility();
 
 	        wasFloorplanActive = false;
-	        toggleEdges(false);
+	        // toggleEdges(false);
 	        scene.background = backgroundColor;
 	    };
-	}
-
-	function toggleEdges(visible) {
-	    const edges = Object.values(fragments.edges.edgesList);
-	    for(const edge of edges) {
-	        if(visible) scene.add(edge);
-	        else edge.removeFromParent();
-	    }
 	}
 
 })();
