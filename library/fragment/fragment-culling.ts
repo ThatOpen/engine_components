@@ -121,6 +121,9 @@ export default class FragmentCulling {
     fragment.mesh.visible = false;
 
     mesh.instanceMatrix = fragment.mesh.instanceMatrix;
+    mesh.applyMatrix4(fragment.mesh.matrix);
+    mesh.updateMatrix();
+
     this.scene.add(mesh);
     this.meshes.set(fragment.id, mesh);
   }
