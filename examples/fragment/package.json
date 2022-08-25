@@ -2,7 +2,7 @@
   "name": "fragment",
   "private": true,
   "type": "module",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "A basic html example for openbim-components.",
   "main": "main.js",
   "scripts": {
@@ -20,7 +20,7 @@
     "serve": "^11.3.2"
   },
   "dependencies": {
-    "openbim-components": "0.0.2",
+    "openbim-components": "0.0.4",
     "stats.js": "0.17.0",
     "three": "0.135",
     "three-mesh-bvh": "^0.5.11",
