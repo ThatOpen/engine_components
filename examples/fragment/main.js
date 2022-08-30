@@ -70,9 +70,25 @@ components.renderer.onStartRender.on(() => stats.begin());
 components.renderer.onFinishRender.on(() => stats.end());
 
 const fragments = new Fragments(components);
+
+// Highlight
+
+const highlightMat = new THREE.MeshBasicMaterial({color: 'red', depthTest: false});
+const highlight = 'example-highlight';
+fragments.highlighter.add(highlight, highlightMat);
+window.addEventListener('mousemove', () => fragments.highlighter.highlight(highlight));
+
 loadFragments();
 
 async function loadFragments() {
+
+    // Properties
+    const rawProperties = await fetch('../models/medium-properties.json');
+    const properties = await rawProperties.json();
+    const guid = fragments.properties.add(properties);
+
+    // Geometry
+
     const { entries } = await unzip('../models/medium.zip');
 
     const fileNames = Object.keys(entries);
@@ -104,17 +120,14 @@ async function loadFragments() {
 
        const fragment = await fragments.load(geometryURL, dataURL);
 
-        // TODO: string conversion temporary until we update the fragment files (ids are now strings)
-       fragment.items = fragment.items.map(item => item.toString());
+       // Assign properties to this fragment
+       fragments.properties.assign(guid, fragment.id);
 
        // Group items for visibility
 
         const groups = {category: {}, floor: {}}
 
-        // TODO: string conversion temporary until we update the fragment files (ids are now strings)
-        const ids = data.ids.map(id => id.toString());
-
-        for(const id of ids) {
+        for(const id of data.ids) {
             const categoryID = modelTypes[id];
             const category = allTypes[categoryID];
             if(!groups.category[category]) {
@@ -200,8 +213,6 @@ async function loadFragments() {
     renderer.postproduction.excludedItems.add(shadow);
 }
 
-window.addEventListener("mousemove", () => fragments.highlighter.highlightOnHover());
-
 window.onkeydown = (event) => {
     switch (event.code){
         case "KeyC": {
@@ -243,5 +254,15 @@ window.ondblclick = () => {
 
     else if(dimensions.enabled){
         dimensions.create()
+    }
+
+    else {
+        // Log properties
+       const {id, fragment} = fragments.highlighter.highlight('example-highlight');
+       const guid = fragments.properties.fragmentGuid.get(fragment.id);
+       const properties = fragments.properties.get(guid, id, true);
+       console.log(properties);
+       // const tree = fragments.tree.generate(guid);
+       // console.log(tree);
     }
 }

@@ -7,6 +7,8 @@ import FragmentCulling from "./fragment-culling";
 import { FragmentGrouper } from "./fragment-grouper";
 import { FragmentEdges } from "./fragment-edges";
 import { FragmentMaterials } from "./fragment-materials";
+import { FragmentProperties } from "./fragment-properties";
+import { FragmentSpatialTree } from "./fragment-spatial-tree";
 
 export class Fragments {
   fragments: { [guid: string]: Fragment } = {};
@@ -14,6 +16,9 @@ export class Fragments {
 
   loader = new FragmentLoader();
   groups = new FragmentGrouper();
+  properties = new FragmentProperties();
+  tree = new FragmentSpatialTree(this.properties);
+
   highlighter: FragmentHighlighter;
   culler: FragmentCulling;
   edges: FragmentEdges;

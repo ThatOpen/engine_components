@@ -64987,52 +64987,64 @@
 	    constructor(components, fragments) {
 	        this.components = components;
 	        this.fragments = fragments;
-	        this.highlightMaterial = new MeshBasicMaterial({
-	            color: 0xff0000,
-	            depthTest: false,
-	        });
 	        this.active = false;
-	        this.selectionId = "selection";
+	        this.highlights = {};
 	        this.tempMatrix = new Matrix4();
+	    }
+	    add(name, material) {
+	        if (this.highlights[name]) {
+	            throw new Error("A highlight with this name already exists");
+	        }
+	        this.highlights[name] = material;
+	        this.update();
 	    }
 	    update() {
 	        for (const fragmentID in this.fragments.fragments) {
 	            const fragment = this.fragments.fragments[fragmentID];
-	            if (!fragment.fragments[this.selectionId]) {
-	                fragment.addFragment(this.selectionId, [this.highlightMaterial]);
-	                fragment.fragments[this.selectionId].mesh.renderOrder = 1;
-	            }
+	            this.updateFragmentHighlight(fragment);
 	        }
 	    }
-	    highlightOnHover() {
+	    highlight(name, removePrevious = true) {
 	        var _a, _b;
 	        if (!this.active)
-	            return;
+	            return null;
 	        const meshes = this.fragments.fragmentMeshes;
 	        const result = this.components.raycaster.castRay(meshes);
 	        if (!result) {
 	            (_a = this.selection) === null || _a === void 0 ? void 0 : _a.mesh.removeFromParent();
-	            return;
+	            return null;
 	        }
 	        const mesh = result.object;
 	        const geometry = mesh.geometry;
 	        const index = (_b = result.face) === null || _b === void 0 ? void 0 : _b.a;
-	        if (!geometry || !index)
-	            return;
+	        const instanceID = result.instanceId;
+	        if (!geometry || !index || instanceID === undefined)
+	            return null;
 	        const scene = this.components.scene.getScene();
 	        const fragment = this.fragments.fragments[result.object.uuid];
-	        if (fragment && fragment.fragments[this.selectionId]) {
-	            if (this.selection)
-	                this.selection.mesh.removeFromParent();
-	            this.selection = fragment.fragments[this.selectionId];
-	            scene.add(this.selection.mesh);
-	            fragment.getInstance(result.instanceId, this.tempMatrix);
-	            this.selection.setInstance(0, { transform: this.tempMatrix });
-	            this.selection.mesh.instanceMatrix.needsUpdate = true;
-	            // Select block
-	            const blockID = this.selection.getVertexBlockID(geometry, index);
-	            if (blockID !== null) {
-	                this.selection.blocks.add([blockID], true);
+	        if (!fragment || !fragment.fragments[name])
+	            return null;
+	        if (this.selection)
+	            this.selection.mesh.removeFromParent();
+	        this.selection = fragment.fragments[name];
+	        scene.add(this.selection.mesh);
+	        fragment.getInstance(instanceID, this.tempMatrix);
+	        this.selection.setInstance(0, { transform: this.tempMatrix });
+	        this.selection.mesh.instanceMatrix.needsUpdate = true;
+	        // Select block
+	        const blockID = this.selection.getVertexBlockID(geometry, index);
+	        if (blockID !== null) {
+	            this.selection.blocks.add([blockID], removePrevious);
+	        }
+	        const id = fragment.getItemID(instanceID, blockID);
+	        return { id, fragment };
+	    }
+	    updateFragmentHighlight(fragment) {
+	        for (const name in this.highlights) {
+	            if (!fragment.fragments[name]) {
+	                const material = this.highlights[name];
+	                fragment.addFragment(name, [material]);
+	                fragment.fragments[name].mesh.renderOrder = 1;
 	            }
 	        }
 	    }
@@ -65394,6 +65406,101 @@
 	    }
 	}
 
+	class FragmentProperties {
+	    constructor() {
+	        this.properties = {};
+	        this.fragmentGuid = new Map();
+	    }
+	    add(properties) {
+	        const project = Object.values(properties).find((item) => item.type === "IFCPROJECT");
+	        const guid = project.GlobalId;
+	        this.properties[guid] = properties;
+	        return guid;
+	    }
+	    assign(guid, fragmentID) {
+	        this.fragmentGuid.set(fragmentID, guid);
+	    }
+	    getItemsOfType(guid, type) {
+	        const properties = this.properties[guid];
+	        return Object.values(properties).filter((item) => item.type === type);
+	    }
+	    get(guid, itemID, psets = false) {
+	        if (!guid)
+	            throw new Error("This fragment has no properties assigned.");
+	        const properties = this.properties[guid][itemID];
+	        const id = properties.expressID;
+	        if (psets) {
+	            this.getPropertySets(guid, id, properties);
+	        }
+	        return properties;
+	    }
+	    getPropertySets(guid, id, properties) {
+	        this.getItemsOfType(guid, "IFCRELDEFINESBYPROPERTIES");
+	        const psets = this.getPsetDefinition(guid, id);
+	        const currentProperties = this.properties[guid];
+	        for (const pset of psets) {
+	            if (pset.HasProperties) {
+	                pset.HasProperties = pset.HasProperties.map((id) => currentProperties[id]);
+	            }
+	            if (pset.Quantities) {
+	                pset.Quantities = pset.Quantities.map((id) => currentProperties[id]);
+	            }
+	        }
+	        properties.psets = psets;
+	    }
+	    getPsetDefinition(guid, id) {
+	        const allPsetsRels = this.getItemsOfType(guid, "IFCRELDEFINESBYPROPERTIES");
+	        const relatedPsetsRels = allPsetsRels.filter((item) => item.RelatedObjects.includes(id));
+	        const currentProperties = this.properties[guid];
+	        return relatedPsetsRels.map((item) => currentProperties[item.RelatingPropertyDefinition]);
+	    }
+	}
+
+	class FragmentSpatialTree {
+	    constructor(props) {
+	        this.props = props;
+	        this.relAggregates = "IFCRELAGGREGATES";
+	        this.relSpatial = "IFCRELCONTAINEDINSPATIALSTRUCTURE";
+	    }
+	    // Get spatial tree
+	    generate(guid) {
+	        const ifcProject = this.props.getItemsOfType(guid, "IFCPROJECT")[0];
+	        const expressID = ifcProject.expressID;
+	        const projectNode = { expressID, type: "IFCPROJECT", children: [] };
+	        const relContained = this.props.getItemsOfType(guid, this.relAggregates);
+	        const relSpatial = this.props.getItemsOfType(guid, this.relSpatial);
+	        this.constructSpatialNode(guid, projectNode, relContained, relSpatial);
+	        return projectNode;
+	    }
+	    // Recursively constructs the spatial tree
+	    constructSpatialNode(guid, item, contains, spatials) {
+	        const spatialRels = spatials.filter((rel) => rel.RelatingStructure === item.expressID);
+	        const containsRels = contains.filter((rel) => rel.RelatingObject === item.expressID);
+	        const spatialRelsIDs = [];
+	        for (const rel of spatialRels) {
+	            spatialRelsIDs.push(...rel.RelatedElements);
+	        }
+	        const containsRelsIDs = [];
+	        for (const rel of containsRels) {
+	            containsRelsIDs.push(...rel.RelatedObjects);
+	        }
+	        const childrenIDs = [...spatialRelsIDs, ...containsRelsIDs];
+	        const children = [];
+	        for (let i = 0; i < childrenIDs.length; i++) {
+	            const childID = childrenIDs[i];
+	            const props = this.props.get(guid, childID.toString());
+	            const child = {
+	                expressID: props.expressID,
+	                type: props.type,
+	                children: [],
+	            };
+	            this.constructSpatialNode(guid, child, contains, spatials);
+	            children.push(child);
+	        }
+	        item.children = children;
+	    }
+	}
+
 	class Fragments {
 	    constructor(components) {
 	        this.components = components;
@@ -65401,6 +65508,8 @@
 	        this.fragmentMeshes = [];
 	        this.loader = new FragmentLoader();
 	        this.groups = new FragmentGrouper();
+	        this.properties = new FragmentProperties();
+	        this.tree = new FragmentSpatialTree(this.properties);
 	        this.highlighter = new FragmentHighlighter(components, this);
 	        this.culler = new FragmentCulling(components, this);
 	        this.edges = new FragmentEdges(components);
