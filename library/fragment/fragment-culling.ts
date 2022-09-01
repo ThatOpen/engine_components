@@ -17,6 +17,7 @@ export default class FragmentCulling {
 
   readonly meshes = new Map<string, THREE.InstancedMesh>();
 
+  public visibleFragments: Fragment[] = []
   private readonly previouslyVisibleMeshes = new Set<string>();
 
   private readonly transparentMat = new THREE.MeshBasicMaterial({
@@ -159,22 +160,25 @@ export default class FragmentCulling {
   private handleWorkerMessage = (event: MessageEvent) => {
     const colors = event.data.colors as Set<string>;
 
-    const meshesThatJustDissapeared = new Set(this.previouslyVisibleMeshes);
+    const meshesThatJustDisappeared = new Set(this.previouslyVisibleMeshes);
     this.previouslyVisibleMeshes.clear();
+
+    this.visibleFragments = [];
 
     // Make found meshes visible
     for (const code of colors.values()) {
       const fragment = this.fragmentColorMap.get(code);
       if (fragment) {
+        this.visibleFragments.push(fragment);
         fragment.mesh.visible = true;
         this.previouslyVisibleMeshes.add(fragment.id);
-        meshesThatJustDissapeared.delete(fragment.id);
+        meshesThatJustDisappeared.delete(fragment.id);
         this.cullEdges(fragment, true);
       }
     }
 
     // Hide meshes that were visible before but not anymore
-    for (const id of meshesThatJustDissapeared) {
+    for (const id of meshesThatJustDisappeared) {
       const fragment = this.fragment.fragments[id];
       fragment.mesh.visible = false;
       this.cullEdges(fragment, false);

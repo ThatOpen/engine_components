@@ -10,6 +10,7 @@ export class FragmentHighlighter {
   });
 
   active = false;
+  culledPicking = false;
 
   readonly selectionId = "selection";
 
@@ -31,7 +32,14 @@ export class FragmentHighlighter {
   highlightOnHover() {
     if (!this.active) return;
 
-    const meshes = this.fragments.fragmentMeshes;
+    let meshes: Mesh[] = [];
+
+    if(this.culledPicking){
+      meshes = this.fragments.culler.visibleFragments.map((x) => x.mesh);
+    }else {
+      meshes = this.fragments.fragmentMeshes;
+    }
+
     const result = this.components.raycaster.castRay(meshes);
 
     if (!result) {
