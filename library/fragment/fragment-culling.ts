@@ -129,8 +129,8 @@ export default class FragmentCulling {
     this.meshes.set(fragment.id, mesh);
   }
 
-  updateVisibility = () => {
-    if (!this.needsUpdate) return;
+  updateVisibility = (force?: boolean) => {
+    if (!this.needsUpdate && !force) return;
 
     this.components.renderer.renderer.setRenderTarget(this.renderTarget);
 
