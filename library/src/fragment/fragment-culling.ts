@@ -1,10 +1,10 @@
 import * as THREE from "three";
 import { Fragment } from "bim-fragment";
 import { Material } from "three";
-import { Fragments } from "./fragments";
+import { Fragments } from ".";
 import { Components } from "../components";
 
-export default class FragmentCulling {
+export class FragmentCulling {
   readonly renderTarget: THREE.WebGLRenderTarget;
   readonly bufferSize: number;
   readonly buffer: Uint8Array;

@@ -30,6 +30,8 @@ export class Postproduction {
   private saoPass?: SAOPass;
   private fxaaPass?: ShaderPass;
   private basePass?: RenderPass;
+
+  /** @hidden */
   private customOutline?: CustomOutlinePass;
   private outlineUniforms: any;
   private depthTexture?: DepthTexture;

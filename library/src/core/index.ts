@@ -9,3 +9,4 @@ export * from "./three-utils";
 export * from "./simple-raycaster";
 export * from "./simple-clipper";
 export * from "./tools-components";
+export * from "./simple-mouse";

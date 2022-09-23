@@ -1,6 +1,6 @@
 import { Material } from "three";
 import { Fragment } from "bim-fragment";
-import { Fragments } from "./fragments";
+import { Fragments } from ".";
 
 export class FragmentMaterials {
   originals: {

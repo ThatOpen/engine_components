@@ -1,7 +1,7 @@
 import { Matrix4, Mesh, MeshBasicMaterial } from "three";
 import { Fragment } from "bim-fragment";
 import { Components } from "../components";
-import { Fragments } from "./fragments";
+import { Fragments } from ".";
 
 export class FragmentHighlighter {
   highlightMaterial = new MeshBasicMaterial({

@@ -4,10 +4,12 @@
   "version": "0.0.6",
   "packageManager": "yarn@3.2.1",
   "scripts": {
-    "build": "yarn build-library && yarn build-examples",
     "test": "jest",
+    "build": "yarn build-library && yarn build-examples && build-docs",
     "build-library": "tsc",
     "build-examples": "rollup -c",
+    "build-docs": "npx typedoc && yarn copy-cover",
+    "copy-cover": "cpy ../cover.png ../docs",
     "publish-repo": "cpy package.json dist && cd dist && npm publish"
   },
   "devDependencies": {
