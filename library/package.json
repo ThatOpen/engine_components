@@ -4,8 +4,8 @@
   "version": "0.0.6",
   "packageManager": "yarn@3.2.1",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
+    "build": "yarn build-library && yarn build-examples",
+    "build-library": "tsc",
     "build-examples": "rollup -c",
     "publish-repo": "cpy package.json dist && cd dist && npm publish"
   },

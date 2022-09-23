@@ -7,7 +7,7 @@
   "private": true,
   "packageManager": "yarn@3.2.1",
   "scripts": {
-    "build": "cd library && tsc",
+    "build": "yarn workspace openbim-components build",
     "publish-repo": "cd library && npm run publish-repo"
   },
   "workspaces": [
