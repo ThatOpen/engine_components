@@ -53348,7 +53348,7 @@ class ToolComponents {
     }
 }
 
-class OpenbimComponents {
+class Components {
     constructor() {
         // private readonly components: ComponentBase[] = [];
         this.meshes = [];
@@ -53363,7 +53363,7 @@ class OpenbimComponents {
         };
         this.clock = new Clock();
         this.tools = new ToolComponents();
-        OpenbimComponents.setupBVH();
+        Components.setupBVH();
     }
     get clippingPlanes() {
         return this.renderer.renderer.clippingPlanes;
@@ -70503,4 +70503,4 @@ class PlanNavigator {
     }
 }
 
-export { CameraProjections, ClippingEdges, OpenbimComponents, EdgesClipper, EdgesPlane, FirstPersonMode, Fragments, IfcDimensionLine, LiteEvent, NavigationModes, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensions, SimpleGrid, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, ToolComponents, disposeMeshRecursively, getBasisTransform, isDeletable, isEnableable, isHideable, rightToLeftHand, stringToAxes };
+export { CameraProjections, ClippingEdges, Components, EdgesClipper, EdgesPlane, FirstPersonMode, Fragments, IfcDimensionLine, LiteEvent, NavigationModes, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensions, SimpleGrid, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, ToolComponents, disposeMeshRecursively, getBasisTransform, isDeletable, isEnableable, isHideable, rightToLeftHand, stringToAxes };

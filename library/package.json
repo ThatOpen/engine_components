@@ -5,6 +5,7 @@
   "packageManager": "yarn@3.2.1",
   "scripts": {
     "build": "yarn build-library && yarn build-examples",
+    "test": "jest",
     "build-library": "tsc",
     "build-examples": "rollup -c",
     "publish-repo": "cpy package.json dist && cd dist && npm publish"
