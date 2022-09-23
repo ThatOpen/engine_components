@@ -834,6 +834,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@rollup/plugin-commonjs@npm:^22.0.2":
+  version: 22.0.2
+  resolution: "@rollup/plugin-commonjs@npm:22.0.2"
+  dependencies:
+    "@rollup/pluginutils": ^3.1.0
+    commondir: ^1.0.1
+    estree-walker: ^2.0.1
+    glob: ^7.1.6
+    is-reference: ^1.2.1
+    magic-string: ^0.25.7
+    resolve: ^1.17.0
+  peerDependencies:
+    rollup: ^2.68.0
+  checksum: 70098a4b91afe3f164f5d27cba65edf148c5ed146ee0e07a964b66940681553ac77391083114cdcf9427e7f2706bf0d61eab310b3a2caeab83b7452c0292fcae
+  languageName: node
+  linkType: hard
+
 "@rollup/plugin-node-resolve@npm:^13.0.0":
   version: 13.3.0
   resolution: "@rollup/plugin-node-resolve@npm:13.3.0"
@@ -847,6 +864,22 @@ __metadata:
   peerDependencies:
     rollup: ^2.42.0
   checksum: ec5418e6b3c23a9e30683056b3010e9d325316dcfae93fbc673ae64dad8e56a2ce761c15c48f5e2dcfe0c822fdc4a4905ee6346e3dcf90603ba2260afef5a5e6
+  languageName: node
+  linkType: hard
+
+"@rollup/plugin-node-resolve@npm:^14.1.0":
+  version: 14.1.0
+  resolution: "@rollup/plugin-node-resolve@npm:14.1.0"
+  dependencies:
+    "@rollup/pluginutils": ^3.1.0
+    "@types/resolve": 1.17.1
+    deepmerge: ^4.2.2
+    is-builtin-module: ^3.1.0
+    is-module: ^1.0.0
+    resolve: ^1.19.0
+  peerDependencies:
+    rollup: ^2.78.0
+  checksum: 7c5bed3e5a511ee47172acd91da1a828383f7ef72d54d27d8050598ef9038df0f86a8559db455611e138e07b99d787fd7445b11f81129970d07104644576d80a
   languageName: node
   linkType: hard
 
@@ -5694,10 +5727,24 @@ __metadata:
   languageName: node
   linkType: hard
 
-"openbim-components@0.0.4, openbim-components@workspace:library":
+"openbim-components@npm:0.0.4":
+  version: 0.0.4
+  resolution: "openbim-components@npm:0.0.4"
+  dependencies:
+    bim-fragment: 0.0.11
+    camera-controls: ^1.36.0
+    three: 0.135
+    three-mesh-bvh: ^0.5.15
+  checksum: df6dd98902631a4cae97dc63f52b313ffb69664a1a0337e2ebadd06571a48f5117350f89cd008ae1a78818f31044898a258c94ff86a0fc70d71344317db3fbbb
+  languageName: node
+  linkType: hard
+
+"openbim-components@workspace:library":
   version: 0.0.0-use.local
   resolution: "openbim-components@workspace:library"
   dependencies:
+    "@rollup/plugin-commonjs": ^22.0.2
+    "@rollup/plugin-node-resolve": ^14.1.0
     "@types/jest": ^26.0.23
     "@types/node": ^14.14.31
     "@types/three": ^0.143.0
@@ -5713,6 +5760,8 @@ __metadata:
     eslint-plugin-prettier: ^3.4.0
     jest: ^27.0.4
     prettier: ^2.3.1
+    rollup: ^2.79.1
+    stats.js: ^0.17.0
     three: 0.135
     three-mesh-bvh: ^0.5.15
     ts-jest: ^27.0.3
@@ -6419,6 +6468,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"rollup@npm:^2.79.1":
+  version: 2.79.1
+  resolution: "rollup@npm:2.79.1"
+  dependencies:
+    fsevents: ~2.3.2
+  dependenciesMeta:
+    fsevents:
+      optional: true
+  bin:
+    rollup: dist/bin/rollup
+  checksum: 6a2bf167b3587d4df709b37d149ad0300692cc5deb510f89ac7bdc77c8738c9546ae3de9322b0968e1ed2b0e984571f5f55aae28fa7de4cfcb1bc5402a4e2be6
+  languageName: node
+  linkType: hard
+
 "run-parallel@npm:^1.1.9":
   version: 1.2.0
   resolution: "run-parallel@npm:1.2.0"
@@ -6832,7 +6895,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"stats.js@npm:0.17.0":
+"stats.js@npm:0.17.0, stats.js@npm:^0.17.0":
   version: 0.17.0
   resolution: "stats.js@npm:0.17.0"
   checksum: 62d55d9e28e701f5638eac312ab45f66da8cc14b43d4eba4d3ab5a26f444a91d3e0dd1f52e8fc182b03cae955dae4af471d54f1975525cc1e47dfa89a54a47c6
