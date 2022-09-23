@@ -13,17 +13,17 @@
   <div class="full-screen" id="container"></div>
   <script type="module">
 		import Stats from './resources/Stats.js';
-		import * as COMPONENTS from './resources/openbim-components.js';
+		import * as OBC from './resources/openbim-components.js';
 		import * as THREE from './resources/three.module.js';
 
 		const container = document.getElementById('container');
 
-		const components = new COMPONENTS.Components();
+		const components = new OBC.Components();
 
-		components.scene = new COMPONENTS.SimpleScene(components);
-		components.renderer = new COMPONENTS.SimpleRenderer(components, container);
-		components.camera = new COMPONENTS.SimpleCamera(components);
-		components.raycaster = new COMPONENTS.SimpleRaycaster(components);
+		components.scene = new OBC.SimpleScene(components);
+		components.renderer = new OBC.SimpleRenderer(components, container);
+		components.camera = new OBC.SimpleCamera(components);
+		components.raycaster = new OBC.SimpleRaycaster(components);
 
 		components.init();
 
@@ -45,13 +45,13 @@
 		scene.add(ambientLight)
 
 		// Add some components
-		const grid = new COMPONENTS.SimpleGrid(components);
+		const grid = new OBC.SimpleGrid(components);
 		components.tools.add(grid);
 
-		const clipper = new COMPONENTS.SimpleClipper(components, COMPONENTS.SimplePlane);
+		const clipper = new OBC.SimpleClipper(components, OBC.SimplePlane);
 		components.tools.add(clipper)
 
-		const dimensions = new COMPONENTS.SimpleDimensions(components);
+		const dimensions = new OBC.SimpleDimensions(components);
 		components.tools.add(dimensions)
 
 		// Set up stats
