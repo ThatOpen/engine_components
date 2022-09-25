@@ -11,9 +11,6 @@
     "publish-repo": "cd library && npm run publish-repo"
   },
   "workspaces": [
-    "library",
-    "examples/hello-world",
-    "examples/fragment",
-    "examples/fragment-plans"
+    "library"
   ]
 }

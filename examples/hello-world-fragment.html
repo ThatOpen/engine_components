@@ -230,7 +230,8 @@
 		renderer.postproduction.excludedItems.add(shadow);
 	}
 
-	window.addEventListener('mousemove', () => fragments.highlighter.highlightOnHover());
+    fragments.highlighter.add('example', new THREE.MeshBasicMaterial({color: 'red'}));
+	window.addEventListener('mousemove', () => fragments.highlighter.highlight('example'));
 
 	window.onkeydown = (event) => {
 		switch (event.code) {
