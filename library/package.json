@@ -5,7 +5,7 @@
   "packageManager": "yarn@3.2.1",
   "scripts": {
     "test": "jest",
-    "build": "yarn build-library && yarn build-examples && build-docs",
+    "build": "yarn build-library && yarn build-examples && yarn build-docs",
     "build-library": "tsc",
     "build-examples": "rollup -c",
     "build-docs": "npx typedoc && yarn copy-cover",

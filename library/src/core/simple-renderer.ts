@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
+import { WebGLRendererParameters } from "three";
 import { RendererComponent } from "./base-types";
 import { Components } from "../components";
 import { LiteEvent } from "./lite-event";
@@ -19,14 +20,20 @@ export class SimpleRenderer implements RendererComponent {
   public readonly onFinishRender = new LiteEvent();
   private _enabled: boolean = true;
 
-  constructor(components: Components, container: HTMLElement) {
+  constructor(
+    components: Components,
+    container: HTMLElement,
+    params?: WebGLRendererParameters
+  ) {
     this.components = components;
     this.container = container;
+
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
+      ...params,
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.setupRenderers();
     this.setupEvents();
     this.resize();

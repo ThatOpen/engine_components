@@ -7170,7 +7170,7 @@ class SimpleGrid {
 }
 
 class SimpleRenderer {
-    constructor(components, container) {
+    constructor(components, container, params) {
         this.renderer2D = new CSS2DRenderer();
         this.blocked = false;
         this.onStartRender = new LiteEvent();
@@ -7180,6 +7180,7 @@ class SimpleRenderer {
         this.container = container;
         this.renderer = new THREE$1.WebGLRenderer({
             antialias: true,
+            ...params,
         });
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.setupRenderers();
@@ -9265,7 +9266,6 @@ class ToolComponents {
  * loop of everything. Each instance has to be initialized with {@link init}.
  */
 class Components {
-    /** @hidden */
     constructor() {
         /**
          * All the loaded [meshes](https://threejs.org/docs/#api/en/objects/Mesh).
@@ -26649,4 +26649,4 @@ class PlanNavigator {
     }
 }
 
-export { CameraProjections, ClippingEdges, Components, EdgesClipper, EdgesPlane, FirstPersonMode, FragmentCulling, FragmentEdges, FragmentGrouper, FragmentHighlighter, FragmentMaterials, Fragments, IfcDimensionLine, LiteEvent, NavigationModes, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensions, SimpleGrid, SimpleMouse, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, ToolComponents, disposeMeshRecursively, getBasisTransform, isDeletable, isEnableable, isHideable, rightToLeftHand, stringToAxes };
+export { CameraProjections, ClippingEdges, Components, EdgesClipper, EdgesPlane, FirstPersonMode, FragmentCulling, FragmentEdges, FragmentGrouper, FragmentHighlighter, FragmentMaterials, FragmentProperties, FragmentSpatialTree, Fragments, IfcDimensionLine, LiteEvent, NavigationModes, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensions, SimpleGrid, SimpleMouse, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, ToolComponents, disposeMeshRecursively, getBasisTransform, isDeletable, isEnableable, isHideable, rightToLeftHand, stringToAxes };

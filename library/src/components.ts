@@ -154,7 +154,6 @@ export class Components {
     return this.renderer.renderer.clippingPlanes;
   }
 
-  /** @hidden */
   constructor() {
     this.clock = new THREE.Clock();
     this.tools = new ToolComponents();
