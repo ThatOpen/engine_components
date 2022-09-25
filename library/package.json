@@ -1,14 +1,20 @@
 {
   "name": "openbim-components",
   "main": "dist/index.js",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "packageManager": "yarn@3.2.1",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
+    "test": "jest",
+    "build": "yarn build-library && yarn build-examples && build-docs",
+    "build-library": "tsc",
+    "build-examples": "rollup -c",
+    "build-docs": "npx typedoc && yarn copy-cover",
+    "copy-cover": "cpy ../cover.png ../docs",
     "publish-repo": "cpy package.json dist && cd dist && npm publish"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^22.0.2",
+    "@rollup/plugin-node-resolve": "^14.1.0",
     "@types/jest": "^26.0.23",
     "@types/node": "^14.14.31",
     "@types/three": "^0.143.0",
@@ -22,6 +28,7 @@
     "eslint-plugin-prettier": "^3.4.0",
     "jest": "^27.0.4",
     "prettier": "^2.3.1",
+    "rollup": "^2.79.1",
     "ts-jest": "^27.0.3",
     "ts-node": "^10.0.0",
     "typescript": "^4.3.2"
@@ -29,6 +36,7 @@
   "dependencies": {
     "bim-fragment": "0.0.11",
     "camera-controls": "^1.36.0",
+    "stats.js": "^0.17.0",
     "three": "0.135",
     "three-mesh-bvh": "^0.5.15"
   }

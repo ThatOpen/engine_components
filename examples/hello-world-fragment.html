@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="resources/styles.css">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Components | Hello world</title>
+
+  <style>
+      .main-container {
+          display: flex;
+          flex-direction: column;
+          position: absolute;
+          height: 100vh;
+      }
+
+      .main-container div {
+          left: 0;
+          z-index: 1;
+          display: flex;
+          flex-direction: column;
+          height: 50%;
+          overflow-y: scroll;
+          background-color: white;
+      }
+
+      .main-container div button {
+          margin: 8px;
+          padding: 8px;
+      }
+  </style>
+
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+
+<div class="main-container">
+  <div id="category-container"></div>
+  <div id="level-container"></div>
+</div>
+
+<script type="module">
+	import Stats from './resources/Stats.js';
+	import * as THREE from './resources/three.module.js';
+	import * as OBC from './resources/openbim-components.js';
+	import { unzip } from './resources/unzipit.module.js';
+
+	const container = document.getElementById('container');
+
+	const components = new OBC.Components();
+
+	components.scene = new OBC.SimpleScene(components);
+	const renderer = new OBC.PostproductionRenderer(components, container);
+	components.renderer = renderer;
+	renderer.postproduction.outlineColor = 0x999999;
+
+	const camera = new OBC.SimpleCamera(components);
+	components.camera = camera;
+	renderer.postproduction.setup(camera.controls);
+	renderer.postproduction.active = true;
+
+	components.raycaster = new OBC.SimpleRaycaster(components);
+
+	components.init();
+
+	const scene = components.scene.getScene();
+	const shadows = new OBC.ShadowDropper(components);
+
+	const directionalLight = new THREE.DirectionalLight();
+	directionalLight.position.set(5, 10, 3);
+	directionalLight.intensity = 0.5;
+	scene.add(directionalLight);
+
+	const ambientLight = new THREE.AmbientLight();
+	ambientLight.intensity = 0.5;
+	scene.add(ambientLight);
+
+	// Add some components
+	const grid = new OBC.SimpleGrid(components);
+	components.tools.add(grid);
+	renderer.postproduction.excludedItems.add(grid.grid);
+
+	const clipper = new OBC.SimpleClipper(components, OBC.SimplePlane);
+	components.tools.add(clipper);
+
+	const dimensions = new OBC.SimpleDimensions(components);
+	components.tools.add(dimensions);
+
+	// Set up stats
+	const stats = new Stats();
+	stats.showPanel(2);
+	document.body.append(stats.dom);
+	stats.dom.style.right = '0px';
+	stats.dom.style.left = 'auto';
+
+	components.renderer.onStartRender.on(() => stats.begin());
+	components.renderer.onFinishRender.on(() => stats.end());
+
+	const fragments = new OBC.Fragments(components);
+	loadFragments();
+
+	async function loadFragments() {
+		const { entries } = await unzip('./resources/medium.zip');
+
+		const fileNames = Object.keys(entries);
+
+		const allTypes = await entries['all-types.json'].json();
+		const modelTypes = await entries['model-types.json'].json();
+		const levelsProperties = await entries['levels-properties.json'].json();
+		const levelsRelationship = await entries['levels-relationship.json'].json();
+
+		const floorNames = {};
+		for (const levelProps of levelsProperties) {
+			floorNames[levelProps.expressID] = levelProps.Name.value;
+		}
+
+		for (let i = 0; i < fileNames.length; i++) {
+
+			const name = fileNames[i];
+			if (!name.includes('.glb')) continue;
+
+			// Load data
+			const geometryName = fileNames[i];
+			const geometry = await entries[geometryName].blob();
+			const geometryURL = URL.createObjectURL(geometry);
+
+			const dataName = geometryName.substring(0, geometryName.indexOf('.glb')) + '.json';
+			const dataBlob = await entries[dataName].blob();
+			const data = await entries[dataName].json();
+			const dataURL = URL.createObjectURL(dataBlob);
+
+			const fragment = await fragments.load(geometryURL, dataURL);
+
+			// TODO: string conversion temporary until we update the fragment files (ids are now strings)
+			fragment.items = fragment.items.map(item => item.toString());
+
+			// Group items for visibility
+
+			const groups = { category: {}, floor: {} };
+
+			// TODO: string conversion temporary until we update the fragment files (ids are now strings)
+			const ids = data.ids.map(id => id.toString());
+
+			for (const id of ids) {
+				const categoryID = modelTypes[id];
+				const category = allTypes[categoryID];
+				if (!groups.category[category]) {
+					groups.category[category] = [];
+				}
+				groups.category[category].push(id);
+
+				const floorID = levelsRelationship[id];
+				const floor = floorNames[floorID];
+				if (!groups.floor[floor]) {
+					groups.floor[floor] = [];
+				}
+				groups.floor[floor].push(id);
+			}
+
+			fragments.groups.add(fragment.id, groups);
+
+		}
+
+		// Group by category
+
+		const categoryContainer = document.getElementById('category-container');
+
+		const categories = Object.keys(fragments.groups.groupSystems.category);
+		for (const category of categories) {
+			const button = document.createElement('button');
+			button.textContent = category;
+			categoryContainer.appendChild(button);
+
+			let visible = true;
+			button.onclick = () => {
+				visible = !visible;
+				const models = fragments.groups.get({ category });
+				for (const guid in models) {
+					const ids = models[guid];
+					const frag = fragments.fragments[guid];
+					frag.setVisibility(ids, visible);
+
+					const culled = fragments.culler.meshes.get(frag.id);
+					if (culled) culled.count = frag.mesh.count;
+
+				}
+				fragments.culler.needsUpdate = true;
+				renderer.postproduction.update();
+			};
+		}
+
+		// Group by level
+
+		const levelContainer = document.getElementById('level-container');
+
+		const floors = Object.keys(fragments.groups.groupSystems.floor);
+		for (const floor of floors) {
+			const button = document.createElement('button');
+			button.textContent = floor;
+			levelContainer.appendChild(button);
+
+			let visible = true;
+			button.onclick = () => {
+				visible = !visible;
+				const models = fragments.groups.get({ floor });
+				for (const guid in models) {
+					const ids = models[guid];
+					const frag = fragments.fragments[guid];
+					frag.setVisibility(ids, visible);
+
+					const culled = fragments.culler.meshes.get(frag.id);
+					if (culled) culled.count = frag.mesh.count;
+				}
+				fragments.culler.needsUpdate = true;
+				renderer.postproduction.update();
+			};
+		}
+
+		fragments.highlighter.update();
+		fragments.highlighter.active = true;
+
+		// Render shadows
+		const guids = fragments.groups.get({ category: 'IFCSLAB' });
+		const slabs = Object.keys(guids).map(guid => fragments.fragments[guid]);
+		const meshes = slabs.map(slab => slab.mesh);
+		const shadow = shadows.renderShadow(meshes, 'example');
+		renderer.postproduction.excludedItems.add(shadow);
+	}
+
+	window.addEventListener('mousemove', () => fragments.highlighter.highlightOnHover());
+
+	window.onkeydown = (event) => {
+		switch (event.code) {
+			case 'KeyC': {
+				components.tools.toggle('clipper');
+				break;
+			}
+			case 'KeyD': {
+				components.tools.toggle('dimensions');
+				break;
+			}
+			case 'KeyH': {
+				components.tools.toggleAllVisibility();
+				break;
+			}
+			case 'Escape' : {
+				if (dimensions.enabled) {
+					dimensions.cancelDrawing();
+				}
+				break;
+			}
+			case 'KeyP': {
+				components.tools.printToolsState();
+			}
+			case 'Delete': {
+				if (clipper.enabled)
+					clipper.deletePlane();
+
+				if (dimensions.enabled) {
+					dimensions.delete();
+				}
+			}
+		}
+	};
+
+	window.ondblclick = () => {
+		if (clipper.enabled) {
+			clipper.createPlane();
+		} else if (dimensions.enabled) {
+			dimensions.create();
+		}
+	};
+
+</script>
+</body>
+</html>
