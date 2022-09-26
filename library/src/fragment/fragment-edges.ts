@@ -71,7 +71,7 @@ export class FragmentEdges {
     const lines = new LineSegments(lineGeom, this.lineMat);
     lines.frustumCulled = false;
 
-    const scene = this.components.scene.getScene();
+    const scene = this.components.scene.get();
     scene.add(lines);
     this.edgesList[fragment.id] = lines;
 

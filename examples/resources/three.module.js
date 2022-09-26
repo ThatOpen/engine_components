@@ -24434,7 +24434,7 @@ class WebXRManager extends EventDispatcher {
 
 		};
 
-		this.getCamera = function () {
+		this.get = function () {
 
 			return cameraVR;
 

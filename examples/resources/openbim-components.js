@@ -6369,7 +6369,7 @@ class SimpleCamera {
         this.perspectiveCamera = this.setupCamera();
         this.activeCamera = this.perspectiveCamera;
         this.controls = this.setupCameraControls();
-        (_a = components.scene) === null || _a === void 0 ? void 0 : _a.getScene().add(this.perspectiveCamera);
+        (_a = components.scene) === null || _a === void 0 ? void 0 : _a.get().add(this.perspectiveCamera);
         this.setupEvents();
     }
     get enabled() {
@@ -6378,7 +6378,7 @@ class SimpleCamera {
     set enabled(enabled) {
         this.controls.enabled = enabled;
     }
-    getCamera() {
+    get() {
         return this.activeCamera;
     }
     update(_delta) {
@@ -6400,7 +6400,7 @@ class SimpleCamera {
     }
     setupCameraControls() {
         CameraControls.install({ THREE: subsetOfTHREE });
-        const dom = this.components.renderer.renderer.domElement;
+        const dom = this.components.renderer.get().domElement;
         const controls = new CameraControls(this.perspectiveCamera, dom);
         controls.dampingFactor = 0.2;
         controls.dollyToCursor = true;
@@ -6861,7 +6861,7 @@ class SimpleDimensions {
     }
     castRay(items) {
         var _a;
-        const camera = (_a = this.context.camera) === null || _a === void 0 ? void 0 : _a.getCamera();
+        const camera = (_a = this.context.camera) === null || _a === void 0 ? void 0 : _a.get();
         if (!camera)
             throw new Error("Camera required for clipper");
         this.raycaster.setFromCamera(this.position, camera);
@@ -7007,7 +7007,7 @@ class IfcDimensionLine {
         this.textLabel = this.newText();
         this.root.renderOrder = 2;
         this.context.scene.getScene().add(this.root);
-        this.camera = this.context.camera.getCamera();
+        this.camera = this.context.camera.get();
         // this.context.ifcCamera.onChange.on(() => this.rescaleObjectsToCameraPosition());
         this.rescaleObjectsToCameraPosition();
     }
@@ -7158,7 +7158,7 @@ class SimpleGrid {
         var _a, _b;
         this.name = "grid";
         this.grid = new THREE$1.GridHelper(50, 50);
-        (_b = (_a = components.scene) === null || _a === void 0 ? void 0 : _a.getScene()) === null || _b === void 0 ? void 0 : _b.add(this.grid);
+        (_b = (_a = components.scene) === null || _a === void 0 ? void 0 : _a.get()) === null || _b === void 0 ? void 0 : _b.add(this.grid);
     }
     set visible(visible) {
         this.grid.visible = visible;
@@ -7187,6 +7187,9 @@ class SimpleRenderer {
         this.setupEvents();
         this.resize();
     }
+    get() {
+        return this.renderer;
+    }
     addClippingPlane(plane) {
         this.renderer.clippingPlanes.push(plane);
     }
@@ -7210,8 +7213,8 @@ class SimpleRenderer {
         var _a, _b;
         if (this.blocked)
             return;
-        const scene = (_a = this.components.scene) === null || _a === void 0 ? void 0 : _a.getScene();
-        const camera = (_b = this.components.camera) === null || _b === void 0 ? void 0 : _b.getCamera();
+        const scene = (_a = this.components.scene) === null || _a === void 0 ? void 0 : _a.get();
+        const camera = (_b = this.components.camera) === null || _b === void 0 ? void 0 : _b.get();
         if (!scene || !camera)
             return;
         this.onStartRender.trigger();
@@ -7284,7 +7287,7 @@ class SimpleScene {
         this.scene.background = new THREE$1.Color(0xcccccc);
     }
     update(_delta) { }
-    getScene() {
+    get() {
         return this.scene;
     }
 }
@@ -7312,11 +7315,11 @@ class SimpleRaycaster {
     constructor(components) {
         this.components = components;
         this.raycaster = new Raycaster();
-        const canvas = components.renderer.renderer.domElement;
+        const canvas = components.renderer.get().domElement;
         this.mouse = new SimpleMouse(canvas);
     }
     castRay(items = this.components.meshes) {
-        const camera = this.components.camera.getCamera();
+        const camera = this.components.camera.get();
         this.raycaster.setFromCamera(this.mouse.position, camera);
         const result = this.raycaster.intersectObjects(items);
         const filtered = this.filterClippingPlanes(result);
@@ -7427,7 +7430,7 @@ class SimpleClipper {
         this.updateMaterials = () => {
             var _a;
             // Apply clipping to all models
-            const planes = (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.renderer.clippingPlanes;
+            const planes = (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.get().clippingPlanes;
             this.components.meshes.forEach((model) => {
                 if (Array.isArray(model.material)) {
                     model.material.forEach((mat) => (mat.clippingPlanes = planes));
@@ -9092,13 +9095,13 @@ class SimplePlane {
     }
     newTransformControls() {
         var _a, _b, _c, _d;
-        const camera = (_a = this.components.camera) === null || _a === void 0 ? void 0 : _a.getCamera();
-        const container = (_b = this.components.renderer) === null || _b === void 0 ? void 0 : _b.renderer.domElement;
+        const camera = (_a = this.components.camera) === null || _a === void 0 ? void 0 : _a.get();
+        const container = (_b = this.components.renderer) === null || _b === void 0 ? void 0 : _b.get().domElement;
         if (!camera || !container)
             throw new Error("Camera or container not initialised.");
         const controls = new TransformControls(camera, container);
         this.initializeControls(controls);
-        const scene = (_d = (_c = this.components) === null || _c === void 0 ? void 0 : _c.scene) === null || _d === void 0 ? void 0 : _d.getScene();
+        const scene = (_d = (_c = this.components) === null || _c === void 0 ? void 0 : _c.scene) === null || _d === void 0 ? void 0 : _d.get();
         if (!scene)
             throw new Error("Scene not initialised.");
         scene.add(controls);
@@ -9145,7 +9148,7 @@ class SimplePlane {
         const helper = new Object3D();
         helper.lookAt(this.normal);
         helper.position.copy(this.origin);
-        const scene = (_b = (_a = this.components) === null || _a === void 0 ? void 0 : _a.scene) === null || _b === void 0 ? void 0 : _b.getScene();
+        const scene = (_b = (_a = this.components) === null || _a === void 0 ? void 0 : _a.scene) === null || _b === void 0 ? void 0 : _b.get();
         if (!scene)
             throw new Error("Scene not initialised");
         scene.add(helper);
@@ -9389,7 +9392,7 @@ class Components {
      * clipping planes easily.
      */
     get clippingPlanes() {
-        return this.renderer.renderer.clippingPlanes;
+        return this.renderer.get().clippingPlanes;
     }
     static setupBVH() {
         THREE$1.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -20955,7 +20958,7 @@ class FragmentHighlighter {
         const instanceID = result.instanceId;
         if (!geometry || !index || instanceID === undefined)
             return null;
-        const scene = this.components.scene.getScene();
+        const scene = this.components.scene.get();
         const fragment = this.fragments.fragments[result.object.uuid];
         if (!fragment || !fragment.fragments[name])
             return null;
@@ -21009,10 +21012,13 @@ class FragmentCulling {
         this.updateVisibility = (force) => {
             if (!this.needsUpdate && !force)
                 return;
-            this.components.renderer.renderer.setRenderTarget(this.renderTarget);
-            this.components.renderer.renderer.render(this.scene, this.components.camera.getCamera());
-            this.components.renderer.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, this.buffer);
-            this.components.renderer.renderer.setRenderTarget(null);
+            const camera = this.components.camera.get();
+            camera.updateMatrix();
+            const renderer = this.components.renderer.get();
+            renderer.setRenderTarget(this.renderTarget);
+            renderer.render(this.scene, camera);
+            renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, this.buffer);
+            renderer.setRenderTarget(null);
             this.worker.postMessage({
                 buffer: this.buffer,
             });
@@ -21063,12 +21069,14 @@ class FragmentCulling {
         this.worker = new Worker(URL.createObjectURL(blob));
         this.worker.addEventListener("message", this.handleWorkerMessage);
         const controls = this.components.camera.controls;
-        controls.addEventListener("control", () => (this.needsUpdate = true));
-        controls.addEventListener("controlstart", () => (this.needsUpdate = true));
-        controls.addEventListener("wake", () => (this.needsUpdate = true));
-        controls.addEventListener("controlend", () => (this.needsUpdate = true));
-        controls.addEventListener("sleep", () => (this.needsUpdate = true));
-        const dom = this.components.renderer.renderer.domElement;
+        if (controls) {
+            controls.addEventListener("control", () => (this.needsUpdate = true));
+            controls.addEventListener("controlstart", () => (this.needsUpdate = true));
+            controls.addEventListener("wake", () => (this.needsUpdate = true));
+            controls.addEventListener("controlend", () => (this.needsUpdate = true));
+            controls.addEventListener("sleep", () => (this.needsUpdate = true));
+        }
+        const dom = this.components.renderer.get().domElement;
         dom.addEventListener("wheel", () => (this.needsUpdate = true));
         if (autoUpdate)
             window.setInterval(this.updateVisibility, updateInterval);
@@ -21275,7 +21283,7 @@ class FragmentEdges {
         this.setAttributes(lineGeom);
         const lines = new LineSegments(lineGeom, this.lineMat);
         lines.frustumCulled = false;
-        const scene = this.components.scene.getScene();
+        const scene = this.components.scene.get();
         scene.add(lines);
         this.edgesList[fragment.id] = lines;
         this.updateInstancedEdges(fragment, lineGeom);
@@ -21440,7 +21448,7 @@ class FragmentSpatialTree {
 }
 
 class Fragments {
-    constructor(components) {
+    constructor(components, config) {
         this.components = components;
         this.fragments = {};
         this.fragmentMeshes = [];
@@ -21449,9 +21457,11 @@ class Fragments {
         this.properties = new FragmentProperties();
         this.tree = new FragmentSpatialTree(this.properties);
         this.highlighter = new FragmentHighlighter(components, this);
-        this.culler = new FragmentCulling(components, this);
         this.edges = new FragmentEdges(components);
         this.materials = new FragmentMaterials(this);
+        if (!config || config.culling) {
+            this.culler = new FragmentCulling(components, this);
+        }
     }
     async load(geometryURL, dataURL) {
         const fragment = await this.loader.load(geometryURL, dataURL);
@@ -21459,11 +21469,12 @@ class Fragments {
         return fragment;
     }
     add(fragment) {
+        var _a;
         this.fragments[fragment.id] = fragment;
         this.components.meshes.push(fragment.mesh);
         this.fragmentMeshes.push(fragment.mesh);
-        this.culler.add(fragment);
-        const scene = this.components.scene.getScene();
+        (_a = this.culler) === null || _a === void 0 ? void 0 : _a.add(fragment);
+        const scene = this.components.scene.get();
         scene.add(fragment.mesh);
     }
 }
@@ -21593,7 +21604,7 @@ class OrbitMode {
     async fitModelToFrame() {
         if (!this.enabled)
             return;
-        const scene = this.components.scene.getScene();
+        const scene = this.components.scene.get();
         const box = new Box3().setFromObject(scene.children[scene.children.length - 1]);
         const sceneSize = new Vector3$1();
         box.getSize(sceneSize);
@@ -21648,7 +21659,7 @@ class PlanMode {
     async fitModelToFrame() {
         if (!this.enabled)
             return;
-        const scene = this.components.scene.getScene();
+        const scene = this.components.scene.get();
         console.log(scene);
         const box = new Box3().setFromObject(scene.children[0]);
         await this.camera.controls.fitToBox(box, false);
@@ -23143,7 +23154,7 @@ class ClippingEdges {
         if (!Number.isNaN(edges.generatorGeometry.attributes.position.array[0])) {
             ClippingEdges.basicEdges.geometry = edges.generatorGeometry;
             edges.mesh.geometry.fromLineSegments(ClippingEdges.basicEdges);
-            const scene = ClippingEdges.components.scene.getScene();
+            const scene = ClippingEdges.components.scene.get();
             scene.add(edges.mesh);
             // ClippingEdges.context.renderer.postProduction.excludedItems.add(
             //   edges.mesh
@@ -23198,7 +23209,7 @@ class ClippingEdges {
         const edges = this.edges[edgeName];
         edges.mesh.visible = visible;
         if (visible) {
-            const scene = ClippingEdges.components.scene.getScene();
+            const scene = ClippingEdges.components.scene.get();
             scene.add(edges.mesh);
         }
         else {
@@ -26073,7 +26084,7 @@ class Postproduction {
         if (!this.initialized || !this.isActive)
             return;
         this.hideExcludedItems();
-        const scene = this.components.scene.getScene();
+        const scene = this.components.scene.get();
         scene.traverse((object) => {
             // @ts-ignore
             object.userData.prevMaterial = object.material;
@@ -26108,8 +26119,8 @@ class Postproduction {
         }
     }
     tryToInitialize() {
-        const scene = this.components.scene.getScene();
-        const camera = this.components.camera.getCamera();
+        const scene = this.components.scene.get();
+        const camera = this.components.camera.get();
         if (!scene || !camera)
             return;
         this.scene = scene;
@@ -26122,7 +26133,8 @@ class Postproduction {
         this.initialized = true;
     }
     setup(controls) {
-        const domElement = this.components.renderer.renderer.domElement;
+        var _a;
+        const domElement = this.components.renderer.get().domElement;
         controls.addEventListener("control", this.onControl);
         controls.addEventListener("controlstart", this.onControlStart);
         controls.addEventListener("wake", this.onWake);
@@ -26130,10 +26142,10 @@ class Postproduction {
         domElement.addEventListener("wheel", this.onWheel);
         controls.addEventListener("sleep", this.onSleep);
         window.addEventListener("resize", this.onResize);
-        this.components.camera.onChangeProjection.on(this.onChangeProjection);
+        (_a = this.components.camera.onChangeProjection) === null || _a === void 0 ? void 0 : _a.on(this.onChangeProjection);
     }
     setupHtmlOverlay() {
-        const dom = this.components.renderer.renderer.domElement;
+        const dom = this.components.renderer.get().domElement;
         if (!dom.parentElement) {
             throw new Error("The viewer container has no HTML parent");
         }
@@ -26383,7 +26395,7 @@ class ShadowDropper {
         ShadowDropper.initializeCamera(shadow);
     }
     bakeShadow(meshes, shadow) {
-        const scene = this.components.scene.getScene();
+        const scene = this.components.scene.get();
         const areModelsInScene = meshes.map((mesh) => !!mesh.parent);
         for (let i = 0; i < meshes.length; i++) {
             if (!areModelsInScene[i]) {
@@ -26400,7 +26412,7 @@ class ShadowDropper {
         // force the depthMaterial to everything
         scene.overrideMaterial = this.depthMaterial;
         // render to the render target to get the depths
-        const renderer = this.components.renderer.renderer;
+        const renderer = this.components.renderer.get();
         renderer.setRenderTarget(shadow.rt);
         renderer.render(scene, shadow.camera);
         // and reset the override material
@@ -26430,7 +26442,7 @@ class ShadowDropper {
         shadow.rtBlur.texture.generateMipmaps = false;
     }
     initializeRoot(shadow, center, min) {
-        const scene = this.components.scene.getScene();
+        const scene = this.components.scene.get();
         shadow.root.position.set(center.x, min.y - this.shadowOffset, center.z);
         scene.add(shadow.root);
     }
@@ -26525,7 +26537,7 @@ class ShadowDropper {
         // @ts-ignore
         shadow.blurPlane.material.uniforms.tDiffuse.value = shadow.rt.texture;
         horizontalBlurMaterial.uniforms.h.value = (amount * 1) / 256;
-        const renderer = this.components.renderer.renderer;
+        const renderer = this.components.renderer.get();
         renderer.setRenderTarget(shadow.rtBlur);
         renderer.render(shadow.blurPlane, shadow.camera);
         // blur vertically and draw in the main renderTarget
@@ -26630,7 +26642,7 @@ class PlanNavigator {
         this.camera.setProjection(projection);
     }
     store3dCameraPosition() {
-        const camera = this.camera.getCamera();
+        const camera = this.camera.get();
         camera.getWorldPosition(this.previousCamera);
         this.camera.controls.getTarget(this.previousTarget);
         this.previousProjection = this.camera.projection;
@@ -26649,4 +26661,46 @@ class PlanNavigator {
     }
 }
 
-export { CameraProjections, ClippingEdges, Components, EdgesClipper, EdgesPlane, FirstPersonMode, FragmentCulling, FragmentEdges, FragmentGrouper, FragmentHighlighter, FragmentMaterials, FragmentProperties, FragmentSpatialTree, Fragments, IfcDimensionLine, LiteEvent, NavigationModes, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensions, SimpleGrid, SimpleMouse, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, ToolComponents, disposeMeshRecursively, getBasisTransform, isDeletable, isEnableable, isHideable, rightToLeftHand, stringToAxes };
+class MapboxCamera {
+    constructor() {
+        this.enabled = true;
+        this.camera = new THREE$1.Camera();
+    }
+    get() {
+        return this.camera;
+    }
+    resize() { }
+    update(_delta) { }
+}
+
+class MapboxRenderer {
+    constructor(canvas, context) {
+        this.onStartRender = new LiteEvent();
+        this.onFinishRender = new LiteEvent();
+        this.renderer = new THREE$1.WebGLRenderer({
+            canvas,
+            context,
+            antialias: true,
+        });
+        this.renderer.autoClear = false;
+    }
+    get() {
+        return this.renderer;
+    }
+    getSize() {
+        return new THREE$1.Vector2(this.renderer.domElement.clientWidth, this.renderer.domElement.clientHeight);
+    }
+    addClippingPlane(plane) {
+        this.renderer.clippingPlanes.push(plane);
+    }
+    removeClippingPlane(plane) {
+        const index = this.renderer.clippingPlanes.indexOf(plane);
+        if (index > -1) {
+            this.renderer.clippingPlanes.splice(index, 1);
+        }
+    }
+    resize() { }
+    update(_delta) { }
+}
+
+export { CameraProjections, ClippingEdges, Components, EdgesClipper, EdgesPlane, FirstPersonMode, FragmentCulling, FragmentEdges, FragmentGrouper, FragmentHighlighter, FragmentMaterials, FragmentProperties, FragmentSpatialTree, Fragments, IfcDimensionLine, LiteEvent, MapboxCamera, MapboxRenderer, NavigationModes, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensions, SimpleGrid, SimpleMouse, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, ToolComponents, disposeMeshRecursively, getBasisTransform, isDeletable, isEnableable, isHideable, rightToLeftHand, stringToAxes };

@@ -56,12 +56,12 @@ export class SimpleCamera implements CameraComponent {
 
     this.controls = this.setupCameraControls();
 
-    components.scene?.getScene().add(this.perspectiveCamera);
+    components.scene?.get().add(this.perspectiveCamera);
 
     this.setupEvents();
   }
 
-  getCamera() {
+  get() {
     return this.activeCamera;
   }
 
@@ -87,7 +87,7 @@ export class SimpleCamera implements CameraComponent {
 
   private setupCameraControls() {
     CameraControls.install({ THREE: subsetOfTHREE });
-    const dom = this.components.renderer.renderer.domElement;
+    const dom = this.components.renderer.get().domElement;
     const controls = new CameraControls(this.perspectiveCamera, dom);
     controls.dampingFactor = 0.2;
     controls.dollyToCursor = true;

@@ -4,3 +4,4 @@ export * from "./fragment";
 export * from "./cameras";
 export * from "./visibility";
 export * from "./plans";
+export * from "./gis";

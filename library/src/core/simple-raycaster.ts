@@ -8,12 +8,12 @@ export class SimpleRaycaster implements RaycasterComponent {
   private readonly mouse: SimpleMouse;
 
   constructor(private components: Components) {
-    const canvas = components.renderer.renderer.domElement;
+    const canvas = components.renderer.get().domElement;
     this.mouse = new SimpleMouse(canvas);
   }
 
   castRay(items: Mesh[] = this.components.meshes): Intersection | null {
-    const camera = this.components.camera.getCamera();
+    const camera = this.components.camera.get();
     this.raycaster.setFromCamera(this.mouse.position, camera);
     const result = this.raycaster.intersectObjects(items);
     const filtered = this.filterClippingPlanes(result);

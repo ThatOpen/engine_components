@@ -45,7 +45,7 @@ export class FragmentHighlighter {
     const instanceID = result.instanceId;
     if (!geometry || !index || instanceID === undefined) return null;
 
-    const scene = this.components.scene.getScene();
+    const scene = this.components.scene.get();
     const fragment = this.fragments.fragments[result.object.uuid];
     if (!fragment || !fragment.fragments[name]) return null;
 

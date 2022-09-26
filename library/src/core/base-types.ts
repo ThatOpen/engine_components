@@ -1,4 +1,3 @@
-import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
 import {
   Camera,
   Intersection,
@@ -24,8 +23,7 @@ export interface IResizeable {
 }
 
 export interface RendererComponent extends ComponentBase, IResizeable {
-  renderer: WebGLRenderer;
-  renderer2D: CSS2DRenderer;
+  get: () => WebGLRenderer;
   getSize: () => Vector2;
   onStartRender: LiteEvent<void>;
   onFinishRender: LiteEvent<void>;
@@ -35,15 +33,14 @@ export interface RendererComponent extends ComponentBase, IResizeable {
 
 export interface SceneComponent extends ComponentBase {
   readonly scene: Scene;
-  getScene: () => Scene;
+  get: () => Scene;
 }
 
 export interface CameraComponent extends ComponentBase, IResizeable {
-  perspectiveCamera: Camera;
-  getCamera: () => Camera;
+  get: () => Camera;
   enabled: boolean;
-  controls: CameraControls;
-  onChangeProjection: LiteEvent<Camera>;
+  controls?: CameraControls;
+  onChangeProjection?: LiteEvent<Camera>;
 }
 
 export interface RaycasterComponent {

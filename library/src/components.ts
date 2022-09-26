@@ -151,7 +151,7 @@ export class Components {
    * clipping planes easily.
    */
   get clippingPlanes() {
-    return this.renderer.renderer.clippingPlanes;
+    return this.renderer.get().clippingPlanes;
   }
 
   constructor() {

@@ -17,7 +17,7 @@ export class FragmentCulling {
 
   readonly meshes = new Map<string, THREE.InstancedMesh>();
 
-  public visibleFragments: Fragment[] = []
+  public visibleFragments: Fragment[] = [];
   private readonly previouslyVisibleMeshes = new Set<string>();
 
   private readonly transparentMat = new THREE.MeshBasicMaterial({
@@ -63,13 +63,18 @@ export class FragmentCulling {
     this.worker.addEventListener("message", this.handleWorkerMessage);
 
     const controls = this.components.camera.controls;
-    controls.addEventListener("control", () => (this.needsUpdate = true));
-    controls.addEventListener("controlstart", () => (this.needsUpdate = true));
-    controls.addEventListener("wake", () => (this.needsUpdate = true));
-    controls.addEventListener("controlend", () => (this.needsUpdate = true));
-    controls.addEventListener("sleep", () => (this.needsUpdate = true));
+    if (controls) {
+      controls.addEventListener("control", () => (this.needsUpdate = true));
+      controls.addEventListener(
+        "controlstart",
+        () => (this.needsUpdate = true)
+      );
+      controls.addEventListener("wake", () => (this.needsUpdate = true));
+      controls.addEventListener("controlend", () => (this.needsUpdate = true));
+      controls.addEventListener("sleep", () => (this.needsUpdate = true));
+    }
 
-    const dom = this.components.renderer.renderer.domElement;
+    const dom = this.components.renderer.get().domElement;
     dom.addEventListener("wheel", () => (this.needsUpdate = true));
 
     if (autoUpdate) window.setInterval(this.updateVisibility, updateInterval);
@@ -132,14 +137,13 @@ export class FragmentCulling {
   updateVisibility = (force?: boolean) => {
     if (!this.needsUpdate && !force) return;
 
-    this.components.renderer.renderer.setRenderTarget(this.renderTarget);
+    const camera = this.components.camera.get();
+    camera.updateMatrix();
 
-    this.components.renderer.renderer.render(
-      this.scene,
-      this.components.camera.getCamera()
-    );
-
-    this.components.renderer.renderer.readRenderTargetPixels(
+    const renderer = this.components.renderer.get();
+    renderer.setRenderTarget(this.renderTarget);
+    renderer.render(this.scene, camera);
+    renderer.readRenderTargetPixels(
       this.renderTarget,
       0,
       0,
@@ -148,7 +152,7 @@ export class FragmentCulling {
       this.buffer
     );
 
-    this.components.renderer.renderer.setRenderTarget(null);
+    renderer.setRenderTarget(null);
 
     this.worker.postMessage({
       buffer: this.buffer,

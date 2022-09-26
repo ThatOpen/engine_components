@@ -34,7 +34,7 @@ export class OrbitMode implements NavMode {
 
   async fitModelToFrame() {
     if (!this.enabled) return;
-    const scene = this.components.scene.getScene();
+    const scene = this.components.scene.get();
     const box = new Box3().setFromObject(
       scene.children[scene.children.length - 1]
     );

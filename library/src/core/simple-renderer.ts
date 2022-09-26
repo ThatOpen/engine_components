@@ -39,6 +39,10 @@ export class SimpleRenderer implements RendererComponent {
     this.resize();
   }
 
+  get() {
+    return this.renderer;
+  }
+
   addClippingPlane(plane: THREE.Plane) {
     this.renderer.clippingPlanes.push(plane);
   }
@@ -62,8 +66,8 @@ export class SimpleRenderer implements RendererComponent {
 
   update(_delta: number) {
     if (this.blocked) return;
-    const scene = this.components.scene?.getScene();
-    const camera = this.components.camera?.getCamera();
+    const scene = this.components.scene?.get();
+    const camera = this.components.camera?.get();
     if (!scene || !camera) return;
     this.onStartRender.trigger();
     this.renderer.render(scene, camera);

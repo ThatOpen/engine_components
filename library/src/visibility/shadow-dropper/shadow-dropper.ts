@@ -96,7 +96,7 @@ export class ShadowDropper {
   }
 
   private bakeShadow(meshes: Mesh[], shadow: Shadow) {
-    const scene = this.components.scene.getScene();
+    const scene = this.components.scene.get();
 
     const areModelsInScene = meshes.map((mesh) => !!mesh.parent);
     for (let i = 0; i < meshes.length; i++) {
@@ -121,7 +121,7 @@ export class ShadowDropper {
     scene.overrideMaterial = this.depthMaterial;
 
     // render to the render target to get the depths
-    const renderer = this.components.renderer.renderer;
+    const renderer = this.components.renderer.get();
     renderer.setRenderTarget(shadow.rt);
     renderer.render(scene, shadow.camera);
 
@@ -159,7 +159,7 @@ export class ShadowDropper {
   }
 
   private initializeRoot(shadow: Shadow, center: Vector3, min: Vector3) {
-    const scene = this.components.scene.getScene();
+    const scene = this.components.scene.get();
     shadow.root.position.set(center.x, min.y - this.shadowOffset, center.z);
     scene.add(shadow.root);
   }
@@ -284,7 +284,7 @@ export class ShadowDropper {
     shadow.blurPlane.material.uniforms.tDiffuse.value = shadow.rt.texture;
     horizontalBlurMaterial.uniforms.h.value = (amount * 1) / 256;
 
-    const renderer = this.components.renderer.renderer;
+    const renderer = this.components.renderer.get();
     renderer.setRenderTarget(shadow.rtBlur);
     renderer.render(shadow.blurPlane, shadow.camera);
 

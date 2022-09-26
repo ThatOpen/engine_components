@@ -224,7 +224,7 @@ export class ClippingEdges {
     if (!Number.isNaN(edges.generatorGeometry.attributes.position.array[0])) {
       ClippingEdges.basicEdges.geometry = edges.generatorGeometry;
       edges.mesh.geometry.fromLineSegments(ClippingEdges.basicEdges);
-      const scene = ClippingEdges.components.scene.getScene();
+      const scene = ClippingEdges.components.scene.get();
       scene.add(edges.mesh);
       // ClippingEdges.context.renderer.postProduction.excludedItems.add(
       //   edges.mesh
@@ -285,7 +285,7 @@ export class ClippingEdges {
     const edges = this.edges[edgeName];
     edges.mesh.visible = visible;
     if (visible) {
-      const scene = ClippingEdges.components.scene.getScene();
+      const scene = ClippingEdges.components.scene.get();
       scene.add(edges.mesh);
     } else {
       edges.mesh.removeFromParent();

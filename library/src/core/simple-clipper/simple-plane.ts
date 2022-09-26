@@ -130,13 +130,13 @@ export class SimplePlane {
   }
 
   private newTransformControls() {
-    const camera = this.components.camera?.getCamera();
-    const container = this.components.renderer?.renderer.domElement;
+    const camera = this.components.camera?.get();
+    const container = this.components.renderer?.get().domElement;
     if (!camera || !container)
       throw new Error("Camera or container not initialised.");
     const controls = new TransformControls(camera, container);
     this.initializeControls(controls);
-    const scene = this.components?.scene?.getScene();
+    const scene = this.components?.scene?.get();
     if (!scene) throw new Error("Scene not initialised.");
     scene.add(controls);
     return controls;
@@ -184,7 +184,7 @@ export class SimplePlane {
     const helper = new Object3D();
     helper.lookAt(this.normal);
     helper.position.copy(this.origin);
-    const scene = this.components?.scene?.getScene();
+    const scene = this.components?.scene?.get();
     if (!scene) throw new Error("Scene not initialised");
     scene.add(helper);
     helper.add(this.planeMesh);

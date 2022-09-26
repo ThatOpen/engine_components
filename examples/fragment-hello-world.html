@@ -66,7 +66,7 @@
 
 	components.init();
 
-	const scene = components.scene.getScene();
+	const scene = components.scene.get();
 	const shadows = new OBC.ShadowDropper(components);
 
 	const directionalLight = new THREE.DirectionalLight();
@@ -230,7 +230,7 @@
 		renderer.postproduction.excludedItems.add(shadow);
 	}
 
-    fragments.highlighter.add('example', new THREE.MeshBasicMaterial({color: 'red'}));
+  fragments.highlighter.add('example', new THREE.MeshBasicMaterial({color: 'red'}));
 	window.addEventListener('mousemove', () => fragments.highlighter.highlight('example'));
 
 	window.onkeydown = (event) => {

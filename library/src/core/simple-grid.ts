@@ -10,7 +10,7 @@ export class SimpleGrid implements ToolComponent, IHideable {
 
   constructor(components: Components) {
     this.grid = new THREE.GridHelper(50, 50);
-    components.scene?.getScene()?.add(this.grid);
+    components.scene?.get()?.add(this.grid);
   }
 
   set visible(visible: boolean) {

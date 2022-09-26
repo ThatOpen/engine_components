@@ -65,7 +65,7 @@
 	components.init();
 
 
-	const scene = components.scene.getScene();
+	const scene = components.scene.get();
 	const shadows = new OBC.ShadowDropper(components);
 
 	const directionalLight = new THREE.DirectionalLight();

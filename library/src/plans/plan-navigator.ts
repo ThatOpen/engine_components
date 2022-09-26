@@ -134,7 +134,7 @@ export class PlanNavigator {
   }
 
   private store3dCameraPosition() {
-    const camera = this.camera.getCamera();
+    const camera = this.camera.get();
     camera.getWorldPosition(this.previousCamera);
     this.camera.controls.getTarget(this.previousTarget);
     this.previousProjection = this.camera.projection;

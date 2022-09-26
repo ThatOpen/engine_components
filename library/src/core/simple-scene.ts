@@ -12,7 +12,7 @@ export class SimpleScene implements SceneComponent {
 
   update(_delta: number): void {}
 
-  getScene(): THREE.Scene {
+  get() {
     return this.scene;
   }
 }

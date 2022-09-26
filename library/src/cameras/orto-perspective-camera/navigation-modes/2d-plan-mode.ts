@@ -47,7 +47,7 @@ export class PlanMode implements NavMode {
 
   async fitModelToFrame() {
     if (!this.enabled) return;
-    const scene = this.components.scene.getScene();
+    const scene = this.components.scene.get();
     console.log(scene);
     const box = new Box3().setFromObject(scene.children[0]);
     await this.camera.controls.fitToBox(box, false);

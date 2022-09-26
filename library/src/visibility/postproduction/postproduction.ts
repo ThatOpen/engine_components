@@ -155,7 +155,7 @@ export class Postproduction {
 
     this.hideExcludedItems();
 
-    const scene = this.components.scene.getScene();
+    const scene = this.components.scene.get();
 
     scene.traverse((object) => {
       // @ts-ignore
@@ -199,8 +199,8 @@ export class Postproduction {
   }
 
   private tryToInitialize() {
-    const scene = this.components.scene.getScene();
-    const camera = this.components.camera.getCamera() as PerspectiveCamera;
+    const scene = this.components.scene.get();
+    const camera = this.components.camera.get() as PerspectiveCamera;
     if (!scene || !camera) return;
 
     this.scene = scene;
@@ -216,7 +216,7 @@ export class Postproduction {
   }
 
   setup(controls: CameraControls) {
-    const domElement = this.components.renderer.renderer.domElement;
+    const domElement = this.components.renderer.get().domElement;
     controls.addEventListener("control", this.onControl);
     controls.addEventListener("controlstart", this.onControlStart);
     controls.addEventListener("wake", this.onWake);
@@ -224,7 +224,7 @@ export class Postproduction {
     domElement.addEventListener("wheel", this.onWheel);
     controls.addEventListener("sleep", this.onSleep);
     window.addEventListener("resize", this.onResize);
-    this.components.camera.onChangeProjection.on(this.onChangeProjection);
+    this.components.camera.onChangeProjection?.on(this.onChangeProjection);
   }
 
   private onControlStart = () => (this.isUserControllingCamera = true);
@@ -277,7 +277,7 @@ export class Postproduction {
   };
 
   private setupHtmlOverlay() {
-    const dom = this.components.renderer.renderer.domElement;
+    const dom = this.components.renderer.get().domElement;
     if (!dom.parentElement) {
       throw new Error("The viewer container has no HTML parent");
     }
