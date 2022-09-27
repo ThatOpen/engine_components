@@ -8,6 +8,7 @@
   "packageManager": "yarn@3.2.1",
   "scripts": {
     "build": "yarn workspace openbim-components build",
+    "test": "yarn workspace openbim-components test",
     "publish-repo": "cd library && npm run publish-repo"
   },
   "workspaces": [

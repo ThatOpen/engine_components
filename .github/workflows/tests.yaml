@@ -1,0 +1,12 @@
+name: Shell Commands
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+jobs:
+  run-shell-command:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run all tests
+      run: yarn test
