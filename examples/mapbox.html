@@ -86,7 +86,7 @@
 			directionalLight2.position.set(0, 70, 100).normalize();
 			this.scene.add(directionalLight2);
 
-			const fragments = new OBC.Fragments(components, {culling: false});
+			const fragments = new OBC.Fragments(components, { culling: false });
 			loadFragments();
 
 			async function loadFragments() {
@@ -188,6 +188,7 @@
 			this.camera.projectionMatrix = m.multiply(l);
 			this.renderer.resetState();
 			this.renderer.render(this.scene, this.camera);
+
 			this.map.triggerRepaint();
 		}
 	};
