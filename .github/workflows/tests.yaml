@@ -9,4 +9,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run all tests
-      run: yarn test
+        run: yarn test
