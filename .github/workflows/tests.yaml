@@ -1,9 +1,9 @@
 name: Shell Commands
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 jobs:
   run-shell-command:
     runs-on: ubuntu-latest
