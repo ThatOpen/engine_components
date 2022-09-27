@@ -20,7 +20,7 @@
 [![NPM Package][npm-downloads]][npm-url]
 [![NPM Package][oc-contributors]][oc]
 [![Discord][discord]][discord-url]
-![example workflow](https://github.com/github/docs/actions/workflows/main.yml/badge.svg)
+[![Tests](https://github.com/IFCjs/components/actions/workflows/tests.yaml/badge.svg)](https://github.com/IFCjs/components/actions/workflows/tests.yaml)
 
 This library is a collection of BIM tools based on [Three.js](https://github.com/mrdoob/three.js/) and other libraries. It includes pre-made features to easily build browser-based 3D BIM applications, such as postproduction, dimensions, floorplan navigation, DXF export and much more. 
 
