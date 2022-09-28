@@ -7,12 +7,12 @@ export class PostproductionRenderer extends SimpleRenderer {
 
   constructor(components: Components, container: HTMLElement) {
     super(components, container);
-    this.postproduction = new Postproduction(components, this.renderer);
-    this.resize();
+    this.postproduction = new Postproduction(components, this._renderer);
+    this.setSize();
   }
 
-  resize() {
-    super.resize();
+  setSize() {
+    super.setSize();
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
     this.postproduction?.setSize(width, height);

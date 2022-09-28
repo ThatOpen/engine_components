@@ -7,9 +7,9 @@
   |
   <a href="https://discord.gg/FXfyR4XrKT">discord</a>
   |
-  <a href="https://github.com/IFCjs/components/tree/main/examples">usage examples</a>
-  |
   <a href="https://www.npmjs.com/package/openbim-components">npm package</a>
+  |
+  <a href="https://airtable.com/shrP82Kgb9Q1LEgbU">roadmap</a>
 </p>
 
 ![cover](cover.png)
@@ -26,7 +26,7 @@ This library is a collection of BIM tools based on [Three.js](https://github.com
 
 ### Usage
 
-You need to be familiar with [Three.js API](https://github.com/mrdoob/three.js/) to be able to use this library effectively. In the following example, we will create a cube in a 3D scene that can be navigated with the mouse or touch events. You can see the full example [here](https://github.com/IFCjs/components/blob/main/examples/hello-world.html) and the deployed app [here](https://ifcjs.github.io/components/examples/hello-world.html). 
+You need to be familiar with [Three.js API](https://github.com/mrdoob/three.js/) to be able to use this library effectively. In the following example, we will create a cube in a 3D scene that can be navigated with the mouse or touch events. You can see the full example [here](https://github.com/IFCjs/components/blob/main/examples/hello-world.html) and the deployed app [here](https://ifcjs.github.io/components/examples/hello-world.html).
 
 ```js
 import * as THREE from "three";
@@ -41,7 +41,7 @@ const container = document.getElementById('container');
 const components = new OBC.Components();
 
 components.scene = new OBC.SimpleScene(components);
-components.renderer = new OBC.SimpleRenderer(components, container);
+components._renderer = new OBC.SimpleRenderer(components, container);
 components.camera = new OBC.SimpleCamera(components);
 components.raycaster = new OBC.SimpleRaycaster(components);
 
@@ -52,7 +52,7 @@ components.init();
 const scene = components.scene.get();
 
 const geometry = new new THREE.BoxGeometry(3, 3, 3);
-const material = new THREE.MeshStandardMaterial({color: "red"});
+const material = new THREE.MeshStandardMaterial({ color: "red" });
 const cube = THREE.Mesh(geometry, material);
 cube.position.set(0, 1.5, 0);
 scene.add(cube);

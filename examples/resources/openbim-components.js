@@ -7171,40 +7171,40 @@ class SimpleGrid {
 
 class SimpleRenderer {
     constructor(components, container, params) {
-        this.renderer2D = new CSS2DRenderer();
+        this._renderer2D = new CSS2DRenderer();
         this.blocked = false;
         this.onStartRender = new LiteEvent();
         this.onFinishRender = new LiteEvent();
         this._enabled = true;
         this.components = components;
         this.container = container;
-        this.renderer = new THREE$1.WebGLRenderer({
+        this._renderer = new THREE$1.WebGLRenderer({
             antialias: true,
             ...params,
         });
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this._renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.setupRenderers();
         this.setupEvents();
         this.resize();
     }
     get() {
-        return this.renderer;
+        return this._renderer;
     }
     addClippingPlane(plane) {
-        this.renderer.clippingPlanes.push(plane);
+        this._renderer.clippingPlanes.push(plane);
     }
     removeClippingPlane(plane) {
-        const index = this.renderer.clippingPlanes.indexOf(plane);
+        const index = this._renderer.clippingPlanes.indexOf(plane);
         if (index > -1) {
-            this.renderer.clippingPlanes.splice(index, 1);
+            this._renderer.clippingPlanes.splice(index, 1);
         }
     }
     dispose() {
         var _a, _b;
-        this.renderer.domElement.remove();
-        this.renderer.dispose();
-        this.renderer = null;
-        this.renderer2D = null;
+        this._renderer.domElement.remove();
+        this._renderer.dispose();
+        this._renderer = null;
+        this._renderer2D = null;
         this.container = null;
         (_a = this.tempRenderer) === null || _a === void 0 ? void 0 : _a.dispose();
         (_b = this.tempCanvas) === null || _b === void 0 ? void 0 : _b.remove();
@@ -7218,18 +7218,18 @@ class SimpleRenderer {
         if (!scene || !camera)
             return;
         this.onStartRender.trigger();
-        this.renderer.render(scene, camera);
-        this.renderer2D.render(scene, camera);
+        this._renderer.render(scene, camera);
+        this._renderer2D.render(scene, camera);
         this.onFinishRender.trigger();
     }
     getSize() {
-        return new THREE$1.Vector2(this.renderer.domElement.clientWidth, this.renderer.domElement.clientHeight);
+        return new THREE$1.Vector2(this._renderer.domElement.clientWidth, this._renderer.domElement.clientHeight);
     }
     resize() {
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
-        this.renderer.setSize(width, height);
-        this.renderer2D.setSize(width, height);
+        this._renderer.setSize(width, height);
+        this._renderer2D.setSize(width, height);
     }
     /* newScreenshot(camera?: THREE.Camera, dimensions?: THREE.Vector2) {
       const previousDimensions = this.getSize();
@@ -7261,12 +7261,12 @@ class SimpleRenderer {
       return result;
     } */
     setupRenderers() {
-        this.renderer.localClippingEnabled = true;
-        this.container.appendChild(this.renderer.domElement);
-        this.renderer2D.domElement.style.position = "absolute";
-        this.renderer2D.domElement.style.top = "0px";
-        this.renderer2D.domElement.style.pointerEvents = "none";
-        this.container.appendChild(this.renderer2D.domElement);
+        this._renderer.localClippingEnabled = true;
+        this.container.appendChild(this._renderer.domElement);
+        this._renderer2D.domElement.style.position = "absolute";
+        this._renderer2D.domElement.style.top = "0px";
+        this._renderer2D.domElement.style.pointerEvents = "none";
+        this.container.appendChild(this._renderer2D.domElement);
     }
     get enabled() {
         return this._enabled;

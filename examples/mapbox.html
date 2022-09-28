@@ -72,7 +72,7 @@
 			components.camera = new OBC.MapboxCamera();
 			components.renderer = new OBC.MapboxRenderer(canvas, gl);
 
-			this.renderer = components.renderer.get();
+			this._renderer = components.renderer.get();
 			this.camera = components.camera.get();
 			this.scene = components.scene.get();
 			this.scene.background = null;

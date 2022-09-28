@@ -6,13 +6,13 @@ import {
   NavigationModes,
   NavMode,
 } from "../base-types";
-import { LiteEvent } from "../../../core";
+import { Event } from "../../../core";
 
 export class FirstPersonMode implements NavMode {
   readonly mode = NavigationModes.FirstPerson;
   enabled = false;
-  onChange = new LiteEvent<any>();
-  onChangeProjection = new LiteEvent<Camera>();
+  onChange = new Event<any>();
+  onChangeProjection = new Event<Camera>();
 
   constructor(private camera: AdvancedCamera) {}
 

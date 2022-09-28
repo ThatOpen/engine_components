@@ -1,72 +1,73 @@
-import {
-  Camera,
-  Intersection,
-  Mesh,
-  Plane,
-  Scene,
-  Vector2,
-  WebGLRenderer,
-} from "three";
-import CameraControls from "camera-controls";
-import { LiteEvent } from "./lite-event";
+import * as THREE from "three";
+import { Event } from "./event";
 
-export interface ComponentBase {
-  update: (delta: number) => void;
+/**
+ * Whether this component has to be manually destroyed once you are done with
+ * it to prevent
+ * [memory leaks](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
+ * This also ensures that the DOM events created by that component will be
+ * cleaned up.
+ */
+export interface Disposeable {
+  /**
+   * Destroys the object from memory to prevent a
+   * [memory leak](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
+   */
+  dispose: () => void;
 }
 
-export interface ToolComponent extends ComponentBase {
-  name: string;
-}
-
-export interface IResizeable {
-  resize: () => void;
-}
-
-export interface RendererComponent extends ComponentBase, IResizeable {
-  get: () => WebGLRenderer;
-  getSize: () => Vector2;
-  onStartRender: LiteEvent<void>;
-  onFinishRender: LiteEvent<void>;
-  addClippingPlane: (plane: Plane) => void;
-  removeClippingPlane: (plane: Plane) => void;
-}
-
-export interface SceneComponent extends ComponentBase {
-  readonly scene: Scene;
-  get: () => Scene;
-}
-
-export interface CameraComponent extends ComponentBase, IResizeable {
-  get: () => Camera;
-  enabled: boolean;
-  controls?: CameraControls;
-  onChangeProjection?: LiteEvent<Camera>;
-}
-
-export interface RaycasterComponent {
-  castRay: (items?: Mesh[]) => Intersection | null;
-}
-
-export interface IDeletable {
-  delete: () => void;
-}
-
-export function isDeletable(obj: any): obj is IDeletable {
-  return "delete" in obj;
-}
-
-export interface IEnableable {
-  enabled: boolean;
-}
-
-export function isEnableable(obj: any): obj is IEnableable {
-  return "enabled" in obj;
-}
-
-export interface IHideable {
+/**
+ * Whether this component can be hidden or shown in the
+ * [Three.js scene](https://threejs.org/docs/#api/en/scenes/Scene).
+ */
+export interface Hideable {
+  /** Whether this component is currently visible or not. */
   visible: boolean;
 }
 
-export function isHideable(obj: any): obj is IHideable {
-  return "visible" in obj;
+/**
+ * Whether this component can be resized. The meaning of this can vary depending
+ * on the component: resizing a
+ * [Renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
+ * component could mean changing its resolution, whereas resizing a
+ * [Mesh](https://threejs.org/docs/#api/en/objects/Mesh) would change its scale.
+ */
+export interface Resizeable {
+  /** Sets size of this component (e.g. the resolution of a
+   * [Renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
+   * component. */
+  setSize: () => void;
+
+  /** Gets the current size of this component (e.g. the resolution of a
+   * [Renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
+   * component. */
+  getSize: () => THREE.Vector2;
+}
+
+/**
+ * Whether this component supports create and destroy operations. This generally
+ * applies for components that work with instances, such as clipping planes or
+ * dimensions.
+ */
+export interface Createable {
+  /** Creates a new instance of an element (e.g. a new Dimension). */
+  create: (data: any) => void;
+
+  /** Deletes an existing instance of an element (e.g. a Dimension). */
+  delete: (data: any) => void;
+}
+
+/** Whether this component should be updated each frame. */
+export interface Updateable {
+  /** Actions that should be executed after updating the component. */
+  afterUpdate: Event<any>;
+
+  /** Actions that should be executed before updating the component. */
+  beforeUpdate: Event<any>;
+
+  /**
+   * Function used to update the state of this component each frame. For
+   * instance, a renderer component will make a render each frame.
+   */
+  update(delta: number): void;
 }

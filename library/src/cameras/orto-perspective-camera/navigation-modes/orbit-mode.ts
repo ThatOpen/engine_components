@@ -1,16 +1,16 @@
 // import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { Box3, Camera, Sphere, Vector3 } from "three";
 import { AdvancedCamera, NavigationModes, NavMode } from "../base-types";
-import { LiteEvent } from "../../../core";
+import { Event } from "../../../core";
 import { Components } from "../../../components";
 
 export class OrbitMode implements NavMode {
   enabled = true;
 
   readonly mode = NavigationModes.Orbit;
-  readonly onChange = new LiteEvent();
-  readonly onUnlock = new LiteEvent();
-  readonly onChangeProjection = new LiteEvent<Camera>();
+  readonly onChange = new Event();
+  readonly onUnlock = new Event();
+  readonly onChangeProjection = new Event<Camera>();
 
   constructor(private components: Components, private camera: AdvancedCamera) {
     this.activateOrbitControls();

@@ -1,5 +1,5 @@
 export * from "./base-types";
-export * from "./lite-event";
+export * from "./event";
 export * from "./simple-camera";
 export * from "./simple-dimensions";
 export * from "./simple-grid";
@@ -10,3 +10,4 @@ export * from "./simple-raycaster";
 export * from "./simple-clipper";
 export * from "./tools-components";
 export * from "./simple-mouse";
+export * from "./component";

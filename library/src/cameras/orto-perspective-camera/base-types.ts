@@ -1,6 +1,6 @@
 import { Camera, OrthographicCamera, PerspectiveCamera } from "three";
 import CameraControls from "camera-controls";
-import { LiteEvent } from "../../core";
+import { Event } from "../../core";
 
 export enum CameraProjections {
   Perspective,
@@ -17,8 +17,8 @@ export interface NavMode {
   mode: NavigationModes;
   toggle: (active: boolean, options?: any) => void;
   enabled: boolean;
-  onChange: LiteEvent<any>;
-  onChangeProjection: LiteEvent<Camera>;
+  onChange: Event<any>;
+  onChangeProjection: Event<Camera>;
   fitModelToFrame: any;
 }
 

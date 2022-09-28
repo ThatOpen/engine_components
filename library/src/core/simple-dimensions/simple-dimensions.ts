@@ -12,11 +12,11 @@ import {
   Vector3,
 } from "three";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
-import { IEnableable, IHideable, ToolComponent } from "../base-types";
+import { Enableable, Hideable, ToolComponent } from "../base-types";
 import { Components } from "../../components";
 import { IfcDimensionLine } from "./simple-dimension-line";
 
-export class SimpleDimensions implements ToolComponent, IEnableable, IHideable {
+export class SimpleDimensions implements ToolComponent, Enableable, Hideable {
   public readonly name = "dimensions";
   private readonly context: Components;
   private dimensions: IfcDimensionLine[] = [];

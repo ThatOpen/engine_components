@@ -1,27 +1,60 @@
-import { Intersection, Mesh, Raycaster } from "three";
+import * as THREE from "three";
 import { Components } from "../components";
 import { SimpleMouse } from "./simple-mouse";
-import { RaycasterComponent } from "./base-types";
+import { Component } from "./component";
 
-export class SimpleRaycaster implements RaycasterComponent {
-  private readonly raycaster = new Raycaster();
-  private readonly mouse: SimpleMouse;
+/**
+ * A simple [raycaster](https://threejs.org/docs/#api/en/core/Raycaster)
+ * that allows to easily get items from the scene using the mouse and touch
+ * events.
+ */
+export class SimpleRaycaster extends Component<THREE.Raycaster> {
+  /** {@link Component.name} */
+  name = "SimpleRaycaster";
+
+  /** {@link Component.enabled} */
+  enabled = true;
+
+  private readonly _raycaster = new THREE.Raycaster();
+  private readonly _mouse: SimpleMouse;
 
   constructor(private components: Components) {
-    const canvas = components.renderer.get().domElement;
-    this.mouse = new SimpleMouse(canvas);
+    super();
+    const scene = components.renderer.get();
+    const dom = scene.domElement;
+    this._mouse = new SimpleMouse(dom);
   }
 
-  castRay(items: Mesh[] = this.components.meshes): Intersection | null {
+  /** {@link Component.get} */
+  get(): THREE.Raycaster {
+    return this._raycaster;
+  }
+
+  /**
+   * Throws a ray from the camera to the mouse or touch event point and returns
+   * the first item found. This also takes into account the clipping planes
+   * used by the renderer.
+   *
+   * @param items - the [meshes](https://threejs.org/docs/#api/en/objects/Mesh)
+   * to query. If not provided, it will query all the meshes stored in
+   * {@link Components.meshes}.
+   */
+  castRay(
+    items: THREE.Mesh[] = this.components.meshes
+  ): THREE.Intersection | null {
     const camera = this.components.camera.get();
-    this.raycaster.setFromCamera(this.mouse.position, camera);
-    const result = this.raycaster.intersectObjects(items);
+    this._raycaster.setFromCamera(this._mouse.position, camera);
+    const result = this._raycaster.intersectObjects(items);
     const filtered = this.filterClippingPlanes(result);
     return filtered.length > 0 ? filtered[0] : null;
   }
 
-  private filterClippingPlanes(objs: Intersection[]) {
-    const planes = this.components.clippingPlanes;
+  private filterClippingPlanes(objs: THREE.Intersection[]) {
+    const renderer = this.components.renderer.get() as THREE.WebGLRenderer;
+    if (!renderer.clippingPlanes) {
+      return objs;
+    }
+    const planes = renderer.clippingPlanes;
     if (objs.length <= 0 || !planes || planes?.length <= 0) return objs;
     return objs.filter((elem) =>
       planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0)

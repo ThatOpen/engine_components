@@ -1,14 +1,14 @@
 import { Box3, Camera } from "three";
 import CameraControls from "camera-controls";
 import { AdvancedCamera, NavigationModes, NavMode } from "../base-types";
-import { LiteEvent } from "../../../core";
+import { Event } from "../../../core";
 import { Components } from "../../../components";
 
 export class PlanMode implements NavMode {
   readonly mode = NavigationModes.Plan;
   enabled = false;
-  onChange = new LiteEvent<any>();
-  onChangeProjection = new LiteEvent<Camera>();
+  onChange = new Event<any>();
+  onChangeProjection = new Event<Camera>();
 
   private readonly defaultAzimuthSpeed: number;
   private readonly defaultPolarSpeed: number;

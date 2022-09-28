@@ -1,10 +1,10 @@
 import * as THREE from "three";
 import { Vector2, WebGLRenderer } from "three";
-import { LiteEvent, RendererComponent } from "../core";
+import { Event, RendererComponent } from "../core";
 
 export class MapboxRenderer implements RendererComponent {
-  readonly onStartRender = new LiteEvent();
-  readonly onFinishRender = new LiteEvent();
+  readonly onStartRender = new Event();
+  readonly onFinishRender = new Event();
 
   private readonly renderer: THREE.WebGLRenderer;
 

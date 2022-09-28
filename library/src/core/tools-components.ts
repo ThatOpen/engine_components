@@ -1,13 +1,26 @@
-import { isEnableable, isHideable, ToolComponent } from "./base-types";
+import { Component } from "./component";
 
+/**
+ * An object to easily handle all the tools used (e.g. updating them, retrieving
+ * them, performing batch operations, etc). A tool is a feature that achieves
+ * something through user interaction (e.g. clipping planes, dimensions, etc).
+ */
 export class ToolComponents {
-  readonly tools: ToolComponent[] = [];
+  readonly tools: Component<any>[] = [];
 
-  add(tool: ToolComponent) {
+  /**
+   * Registers a new tool component.
+   * @param tool - The tool to register in the application.
+   */
+  add(tool: Component<any>) {
     this.tools.push(tool);
   }
 
-  remove(tool: ToolComponent) {
+  /**
+   * Deletes a previously registered tool component.
+   * @param tool - The tool to delete.
+   */
+  remove(tool: Component<any>) {
     const index = this.tools.findIndex((c) => c === tool);
     if (index > -1) {
       this.tools.splice(index, 1);
@@ -16,98 +29,65 @@ export class ToolComponents {
     return false;
   }
 
-  removeByName(name: string) {
-    const tool = this.get(name);
-    if (tool) {
-      this.remove(tool);
-      return true;
-    }
-    return false;
-  }
-
-  update(delta: number) {
-    for (const tool of this.tools) {
-      tool.update(delta);
-    }
-  }
-
-  hideAll() {
-    for (const tool of this.tools) {
-      if (tool && isHideable(tool)) {
-        tool.visible = false;
-      }
-    }
-  }
-
-  showAll() {
-    for (const tool of this.tools) {
-      if (tool && isHideable(tool)) {
-        tool.visible = true;
-      }
-    }
-  }
-
-  toggleAllVisibility() {
-    for (const tool of this.tools) {
-      if (tool && isHideable(tool)) {
-        tool.visible = !tool.visible;
-      }
-    }
-  }
-
-  enable(name: string, isolate: boolean = true) {
-    if (isolate === false) {
-      this.disableAll();
-    }
-
-    const tool = this.get(name);
-    if (tool && isEnableable(tool)) {
-      tool.enabled = true;
-      return true;
-    }
-    return false;
-  }
-
-  disable(name: string) {
-    const tool = this.get(name);
-    if (tool && isEnableable(tool)) {
-      tool.enabled = false;
-      return true;
-    }
-    return false;
-  }
-
-  disableAll() {
-    for (const tool of this.tools) {
-      if (tool && isEnableable(tool)) {
-        console.log(`Disabling tool: ${tool.name}`);
-        tool.enabled = false;
-      }
-    }
-  }
-
-  toggle(name: string) {
-    const tool = this.get(name);
-    if (tool && isEnableable(tool)) {
-      const enabled = tool.enabled;
-      this.disableAll();
-      tool.enabled = !enabled;
-    }
-  }
-
+  /**
+   * Retrieves a tool component by its name.
+   * @param name - The {@link Component.name} of the component..
+   */
   get(name: string) {
     return this.tools.find((tool) => tool.name === name);
   }
 
-  printToolsState() {
-    const states = this.tools.map((tool) => ({
-      name: tool.name,
-      // @ts-ignore
-      enabled: tool?.enabled,
-      // @ts-ignore
-      visible: tool?.enabled,
-    }));
+  /**
+   * Updates all the registered tool components. Only the components where the
+   * property {@link Component.enabled} is true will be updated.
+   * @param delta - The
+   * [delta time](https://threejs.org/docs/#api/en/core/Clock) of the loop.
+   */
+  update(delta: number) {
+    for (const tool of this.tools) {
+      if (tool.enabled && tool.isUpdateable()) {
+        tool.update(delta);
+      }
+    }
+  }
 
-    console.table(states);
+  /**
+   * Sets the {@link Component.enabled} property of one or multiple components.
+   * @param enabled - Whether to enable or disable the components.
+   * @param name - The {@link Component.name} of the tool to enable or disable.
+   * If undefined, all components will be enabled or disabled.
+   */
+  setEnabled(enabled: boolean, name?: string) {
+    if (name) {
+      const tool = this.get(name);
+      if (tool) {
+        tool.enabled = enabled;
+      }
+      return;
+    }
+    for (const tool of this.tools) {
+      tool.enabled = enabled;
+    }
+  }
+
+  /**
+   * Shows or hides one or multiple components.
+   * @param visible - Whether to show or hide the tool components.
+   * @param name - The {@link Component.name} of the tool to show or hide.
+   * If undefined, all components will be enabled or disabled.
+   */
+  setVisible(visible: boolean, name?: string) {
+    if (name) {
+      const tool = this.get(name);
+      if (tool && tool.isHideable()) {
+        tool.visible = visible;
+      }
+      return;
+    }
+    for (const tool of this.tools) {
+      if (tool.isHideable()) {
+        tool.visible = visible;
+      }
+    }
   }
 }

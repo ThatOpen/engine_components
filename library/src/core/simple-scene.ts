@@ -1,18 +1,28 @@
 import * as THREE from "three";
-import { SceneComponent } from "./base-types";
 import { Components } from "../components";
+import { Component } from "./component";
 
-export class SimpleScene implements SceneComponent {
-  readonly scene: THREE.Scene;
+/**
+ * A basic 3D [scene](https://threejs.org/docs/#api/en/scenes/Scene) to add
+ * objects hierarchically.
+ */
+export class SimpleScene extends Component<THREE.Scene> {
+  /** {@link Component.enabled} */
+  enabled = true;
+
+  /** {@link Component.name} */
+  name = "SimpleScene";
+
+  private readonly _scene: THREE.Scene;
 
   constructor(_components: Components) {
-    this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0xcccccc);
+    super();
+    this._scene = new THREE.Scene();
+    this._scene.background = new THREE.Color(0xcccccc);
   }
 
-  update(_delta: number): void {}
-
+  /** {@link Component.get} */
   get() {
-    return this.scene;
+    return this._scene;
   }
 }

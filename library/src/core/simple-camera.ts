@@ -1,94 +1,96 @@
-import {
-  Box3,
-  Camera,
-  MathUtils,
-  Matrix4,
-  MOUSE,
-  PerspectiveCamera,
-  Quaternion,
-  Raycaster,
-  Sphere,
-  Spherical,
-  Vector2,
-  Vector3,
-  Vector4,
-} from "three";
+import * as THREE from "three";
 import CameraControls from "camera-controls";
-import { CameraComponent } from "./base-types";
 import { Components } from "../components";
-import { LiteEvent } from "./lite-event";
+import { Event } from "./event";
+import { Component } from "./component";
+import { Updateable } from "./base-types";
 
-const subsetOfTHREE = {
-  MOUSE,
-  Vector2,
-  Vector3,
-  Vector4,
-  Quaternion,
-  Matrix4,
-  Spherical,
-  Box3,
-  Sphere,
-  Raycaster,
-  MathUtils: {
-    DEG2RAD: MathUtils.DEG2RAD,
-    clamp: MathUtils.clamp,
-  },
-};
+/**
+ * A basic camera that uses
+ * [yomotsu's cameracontrols](https://github.com/yomotsu/camera-controls) to
+ * easily control the camera in 2D and 3D. Check out it's API to find out
+ * what features it offers.
+ */
+export class SimpleCamera
+  extends Component<THREE.Camera>
+  implements Updateable
+{
+  /** {@link Component.name} */
+  name = "SimpleCamera";
 
-export class SimpleCamera implements CameraComponent {
-  perspectiveCamera: PerspectiveCamera;
-  activeCamera: Camera;
-  controls: CameraControls;
+  /** {@link Component.beforeUpdate} */
+  readonly beforeUpdate = new Event<SimpleCamera>();
 
-  readonly onChangeProjection = new LiteEvent<Camera>();
+  /** {@link Component.afterUpdate} */
+  readonly afterUpdate = new Event<SimpleCamera>();
 
+  /**
+   * The object that controls the camera. An instance of
+   * [yomotsu's cameracontrols](https://github.com/yomotsu/camera-controls).
+   * Transforming the camera directly will have no effect: you need to use this
+   * object to move, rotate, look at objects, etc.
+   */
+  readonly controls: CameraControls;
+
+  protected readonly _perspectiveCamera: THREE.PerspectiveCamera;
+
+  /** {@link Component.enabled} */
   get enabled() {
     return this.controls.enabled;
   }
 
+  /** {@link Component.enabled} */
   set enabled(enabled: boolean) {
     this.controls.enabled = enabled;
   }
 
-  constructor(protected components: Components) {
-    this.perspectiveCamera = this.setupCamera();
-    this.activeCamera = this.perspectiveCamera;
-
+  constructor(public components: Components) {
+    super();
+    this._perspectiveCamera = this.setupCamera();
     this.controls = this.setupCameraControls();
-
-    components.scene?.get().add(this.perspectiveCamera);
-
+    const scene = components.scene.get();
+    scene.add(this._perspectiveCamera);
     this.setupEvents();
   }
 
+  /** {@link Component.get} */
   get() {
-    return this.activeCamera;
+    return this._perspectiveCamera;
   }
 
+  /** {@link Component.update} */
   update(_delta: number): void {
-    if (this.controls.enabled) {
+    if (this.enabled) {
+      this.beforeUpdate.trigger(this);
       this.controls.update(_delta);
+      this.afterUpdate.trigger(this);
     }
   }
 
-  resize() {
-    const size = this.components.renderer.getSize();
-    this.perspectiveCamera.aspect = size.width / size.height;
-    this.perspectiveCamera.updateProjectionMatrix();
+  /**
+   * Updates the aspect of the camera to match the size of the
+   * {@link Components.renderer}.
+   */
+  updateAspect() {
+    if (this.components.renderer.isResizeable()) {
+      const size = this.components.renderer.getSize();
+      this._perspectiveCamera.aspect = size.width / size.height;
+      this._perspectiveCamera.updateProjectionMatrix();
+    }
   }
 
   private setupCamera() {
     const aspect = window.innerWidth / window.innerHeight;
-    const camera = new PerspectiveCamera(60, aspect, 1, 1000);
+    const camera = new THREE.PerspectiveCamera(60, aspect, 1, 1000);
     camera.position.set(50, 50, 50);
-    camera.lookAt(new Vector3(0, 0, 0));
+    camera.lookAt(new THREE.Vector3(0, 0, 0));
     return camera;
   }
 
   private setupCameraControls() {
-    CameraControls.install({ THREE: subsetOfTHREE });
+    CameraControls.install({ THREE: SimpleCamera.getSubsetOfThree() });
     const dom = this.components.renderer.get().domElement;
-    const controls = new CameraControls(this.perspectiveCamera, dom);
+    const controls = new CameraControls(this._perspectiveCamera, dom);
     controls.dampingFactor = 0.2;
     controls.dollyToCursor = true;
     controls.infinityDolly = true;
@@ -98,7 +100,23 @@ export class SimpleCamera implements CameraComponent {
 
   private setupEvents() {
     window.addEventListener("resize", () => {
-      this.resize();
+      this.updateAspect();
     });
+  }
+
+  private static getSubsetOfThree() {
+    return {
+      MOUSE: THREE.MOUSE,
+      Vector2: THREE.Vector2,
+      Vector3: THREE.Vector3,
+      Vector4: THREE.Vector4,
+      Quaternion: THREE.Quaternion,
+      Matrix4: THREE.Matrix4,
+      Spherical: THREE.Spherical,
+      Box3: THREE.Box3,
+      Sphere: THREE.Sphere,
+      Raycaster: THREE.Raycaster,
+      MathUtils: THREE.MathUtils,
+    };
   }
 }

@@ -4,13 +4,8 @@ import {
   computeBoundsTree,
   disposeBoundsTree,
 } from "three-mesh-bvh";
-import {
-  CameraComponent,
-  RaycasterComponent,
-  RendererComponent,
-  SceneComponent,
-  ToolComponents,
-} from "./core";
+import { Raycaster } from "three";
+import { Component, ToolComponents } from "./core";
 
 /**
  * The entry point of Open BIM Components.
@@ -20,8 +15,7 @@ import {
  */
 export class Components {
   /**
-   * All the tools being used. This makes the management of tools very easy
-   * (e.g. turning them on/off, sharing data between them, updating them, etc).
+   * {@link ToolComponents}
    */
   readonly tools: ToolComponents;
 
@@ -31,13 +25,12 @@ export class Components {
    */
   readonly meshes: THREE.Mesh[] = [];
 
-  private clock: THREE.Clock;
-  private updateRequestCallback: number = -1;
-
-  private _renderer?: RendererComponent;
-  private _scene?: SceneComponent;
-  private _camera?: CameraComponent;
-  private _raycaster?: RaycasterComponent;
+  private _renderer?: Component<THREE.Renderer>;
+  private _scene?: Component<THREE.Scene>;
+  private _camera?: Component<THREE.Camera>;
+  private _raycaster?: Component<THREE.Raycaster>;
+  private _clock: THREE.Clock;
+  private _updateRequestCallback: number = -1;
 
   /**
    * The [Three.js renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
@@ -62,7 +55,7 @@ export class Components {
    * components.renderer = new OBC.SimpleRenderer(components, container);
    * ```
    */
-  set renderer(renderer: RendererComponent) {
+  set renderer(renderer: Component<THREE.Renderer>) {
     this._renderer = renderer;
   }
 
@@ -88,7 +81,7 @@ export class Components {
    * components.scene = new OBC.SimpleScene(components);
    * ```
    */
-  set scene(scene: SceneComponent) {
+  set scene(scene: Component<THREE.Scene>) {
     this._scene = scene;
   }
 
@@ -115,7 +108,7 @@ export class Components {
    * components.scene = new OBC.SimpleCamera(components);
    * ```
    */
-  set camera(camera: CameraComponent) {
+  set camera(camera: Component<THREE.Camera>) {
     this._camera = camera;
   }
 
@@ -140,22 +133,12 @@ export class Components {
    * components.raycaster = new COMPONENTS.SimpleRaycaster(components);
    * ```
    */
-  set raycaster(raycaster: RaycasterComponent) {
+  set raycaster(raycaster: Component<Raycaster>) {
     this._raycaster = raycaster;
   }
 
-  /**
-   * The array of [Three.js clipping planes](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.clippingPlanes)
-   * that are being currently used to clip the 3D view. **This shouldn't be
-   * edited directly**: instead, there are pre-build components to handle
-   * clipping planes easily.
-   */
-  get clippingPlanes() {
-    return this.renderer.get().clippingPlanes;
-  }
-
   constructor() {
-    this.clock = new THREE.Clock();
+    this._clock = new THREE.Clock();
     this.tools = new ToolComponents();
     Components.setupBVH();
   }
@@ -187,7 +170,7 @@ export class Components {
    * ```
    */
   init() {
-    this.clock.start();
+    this._clock.start();
     this.update();
   }
 
@@ -224,16 +207,22 @@ export class Components {
    * ```
    */
   dispose() {
-    cancelAnimationFrame(this.updateRequestCallback);
+    cancelAnimationFrame(this._updateRequestCallback);
     // TODO: Implement memory disposal for the whole library
   }
 
   private update = () => {
-    const delta = this.clock.getDelta();
-    this.scene.update(delta);
-    this.renderer.update(delta);
-    this.camera.update(delta);
+    const delta = this._clock.getDelta();
+    Components.update(this.scene, delta);
+    Components.update(this.renderer, delta);
+    Components.update(this.camera, delta);
     this.tools.update(delta);
-    this.updateRequestCallback = requestAnimationFrame(this.update);
+    this._updateRequestCallback = requestAnimationFrame(this.update);
   };
+
+  private static update(component: Component<any>, delta: number) {
+    if (component.isUpdateable() && component.enabled) {
+      component.update(delta);
+    }
+  }
 }

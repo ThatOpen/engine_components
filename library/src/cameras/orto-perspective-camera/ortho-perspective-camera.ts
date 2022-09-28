@@ -1,5 +1,5 @@
 import { Camera, OrthographicCamera } from "three";
-import { LiteEvent, SimpleCamera } from "../../core";
+import { Event, SimpleCamera } from "../../core";
 import {
   NavMode,
   NavigationModes,
@@ -21,8 +21,8 @@ export class OrthoPerspectiveCamera
   readonly navMode = new Map<NavigationModes, NavMode>();
   currentNavMode: NavMode;
 
-  readonly onChange = new LiteEvent<any>();
-  readonly onChangeProjection = new LiteEvent<Camera>();
+  readonly onChange = new Event<any>();
+  readonly onChangeProjection = new Event<Camera>();
 
   private readonly userInputButtons: any = {};
   private readonly projectionManager: ProjectionManager;
@@ -86,8 +86,8 @@ export class OrthoPerspectiveCamera
     this.currentNavMode.toggle(true);
   }
 
-  resize() {
-    super.resize();
+  updateAspect() {
+    super.updateAspect();
     this.setOrthoCameraAspect();
   }
 

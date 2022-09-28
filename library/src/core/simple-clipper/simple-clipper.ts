@@ -1,15 +1,10 @@
 import { Vector3, Matrix3, Intersection } from "three";
 import { Components } from "../../components";
-import {
-  IDeletable,
-  IEnableable,
-  IHideable,
-  ToolComponent,
-} from "../base-types";
+import { Createable, Enableable, Hideable, ToolComponent } from "../base-types";
 import { SimplePlane } from "./simple-plane";
 
 export class SimpleClipper<Plane extends SimplePlane>
-  implements ToolComponent, IHideable, IDeletable, IEnableable
+  implements ToolComponent, Hideable, Createable, Enableable
 {
   public readonly name = "clipper";
   dragging = false;
