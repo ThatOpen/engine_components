@@ -35,9 +35,9 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
 
     this._orthoCamera = this.newOrthoCamera();
 
-    this._navigationModes.set("Orbit", new OrbitMode(components, this));
+    this._navigationModes.set("Orbit", new OrbitMode(this));
     this._navigationModes.set("FirstPerson", new FirstPersonMode(this));
-    this._navigationModes.set("Plan", new PlanMode(components, this));
+    this._navigationModes.set("Plan", new PlanMode(this));
 
     this.currentMode = this._navigationModes.get("Orbit")!;
     this.currentMode.toggle(true, { preventTargetAdjustment: true });
@@ -104,6 +104,44 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
   updateAspect() {
     super.updateAspect();
     this.setOrthoCameraAspect();
+  }
+
+  /**
+   * Make the camera view fit all the specified meshes.
+   *
+   * @param meshes - the meshes to fit. If it is not defined, it will
+   * evaluate {@link Components.meshes}.
+   */
+  async fitModelToFrame(meshes: THREE.Mesh[] = this.components.meshes) {
+    if (!this.enabled) return;
+    const scene = this.components.scene.get();
+    console.log(scene);
+
+    const maxNum = Number.MAX_VALUE;
+    const minNum = Number.MIN_VALUE;
+    const min = new THREE.Vector3(maxNum, maxNum, maxNum);
+    const max = new THREE.Vector3(minNum, minNum, minNum);
+
+    for (const mesh of meshes) {
+      const box = new THREE.Box3().setFromObject(mesh);
+      if (box.min.x < min.x) min.x = box.min.x;
+      if (box.min.y < min.y) min.y = box.min.y;
+      if (box.min.z < min.z) min.z = box.min.z;
+      if (box.max.x > max.x) max.x = box.max.x;
+      if (box.max.y > max.y) max.y = box.max.y;
+      if (box.max.z > max.z) max.z = box.max.z;
+    }
+
+    const box = new THREE.Box3(min, max);
+
+    const sceneSize = new THREE.Vector3();
+    box.getSize(sceneSize);
+    const sceneCenter = new THREE.Vector3();
+    box.getCenter(sceneCenter);
+    const nearFactor = 0.5;
+    const radius = Math.max(sceneSize.x, sceneSize.y, sceneSize.z) * nearFactor;
+    const sphere = new THREE.Sphere(sceneCenter, radius);
+    await this.controls.fitToSphere(sphere, true);
   }
 
   private disableUserInput() {

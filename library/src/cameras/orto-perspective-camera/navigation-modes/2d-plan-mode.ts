@@ -2,7 +2,6 @@ import * as THREE from "three";
 import CameraControls from "camera-controls";
 import { NavigationMode } from "../base-types";
 import { Event } from "../../../core";
-import { Components } from "../../../components";
 import { OrthoPerspectiveCamera } from "../ortho-perspective-camera";
 
 /**
@@ -26,10 +25,7 @@ export class PlanMode implements NavigationMode {
   private readonly defaultAzimuthSpeed: number;
   private readonly defaultPolarSpeed: number;
 
-  constructor(
-    private components: Components,
-    private camera: OrthoPerspectiveCamera
-  ) {
+  constructor(private camera: OrthoPerspectiveCamera) {
     this.defaultAzimuthSpeed = camera.controls.azimuthRotateSpeed;
     this.defaultPolarSpeed = camera.controls.polarRotateSpeed;
   }
@@ -56,13 +52,5 @@ export class PlanMode implements NavigationMode {
       controls.touches.one = this.mouseAction1!;
       controls.touches.two = this.mouseAction2!;
     }
-  }
-
-  async fitModelToFrame() {
-    if (!this.enabled) return;
-    const scene = this.components.scene.get();
-    console.log(scene);
-    const box = new THREE.Box3().setFromObject(scene.children[0]);
-    await this.camera.controls.fitToBox(box, false);
   }
 }
