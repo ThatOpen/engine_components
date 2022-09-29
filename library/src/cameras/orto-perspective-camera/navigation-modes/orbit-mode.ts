@@ -1,30 +1,31 @@
-// import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { Box3, Camera, Sphere, Vector3 } from "three";
-import { AdvancedCamera, NavigationModes, NavMode } from "../base-types";
-import { Event } from "../../../core";
+import * as THREE from "three";
+import { NavigationMode } from "../base-types";
 import { Components } from "../../../components";
+import { OrthoPerspectiveCamera } from "../ortho-perspective-camera";
+import { Event } from "../../../core";
 
-export class OrbitMode implements NavMode {
+/**
+ * A {@link NavigationMode} that allows 3D navigation and panning
+ * like in many 3D and CAD softwares.
+ */
+export class OrbitMode implements NavigationMode {
+  /** {@link NavigationMode.enabled} */
   enabled = true;
 
-  readonly mode = NavigationModes.Orbit;
-  readonly onChange = new Event();
-  readonly onUnlock = new Event();
-  readonly onChangeProjection = new Event<Camera>();
+  /** {@link NavigationMode.id} */
+  readonly id = "Orbit";
 
-  constructor(private components: Components, private camera: AdvancedCamera) {
+  /** {@link NavigationMode.projectionChanged} */
+  readonly projectionChanged = new Event<THREE.Camera>();
+
+  constructor(
+    public components: Components,
+    public camera: OrthoPerspectiveCamera
+  ) {
     this.activateOrbitControls();
   }
 
-  /**
-   * @deprecated Use cameraControls.getTarget.
-   */
-  get target() {
-    const target = new Vector3();
-    this.camera.controls.getTarget(target);
-    return target;
-  }
-
+  /** {@link NavigationMode.toggle} */
   toggle(active: boolean) {
     this.enabled = active;
     if (active) {
@@ -35,16 +36,16 @@ export class OrbitMode implements NavMode {
   async fitModelToFrame() {
     if (!this.enabled) return;
     const scene = this.components.scene.get();
-    const box = new Box3().setFromObject(
+    const box = new THREE.Box3().setFromObject(
       scene.children[scene.children.length - 1]
     );
-    const sceneSize = new Vector3();
+    const sceneSize = new THREE.Vector3();
     box.getSize(sceneSize);
-    const sceneCenter = new Vector3();
+    const sceneCenter = new THREE.Vector3();
     box.getCenter(sceneCenter);
     const nearFactor = 0.5;
     const radius = Math.max(sceneSize.x, sceneSize.y, sceneSize.z) * nearFactor;
-    const sphere = new Sphere(sceneCenter, radius);
+    const sphere = new THREE.Sphere(sceneCenter, radius);
     await this.camera.controls.fitToSphere(sphere, true);
   }
 

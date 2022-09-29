@@ -2,8 +2,8 @@ import * as THREE from "three";
 import CameraControls from "camera-controls";
 import { Components } from "../components";
 import { Event } from "./event";
-import { Component } from "./component";
 import { Updateable } from "./base-types";
+import { Component } from "./base-components/component";
 
 /**
  * A basic camera that uses
@@ -12,7 +12,7 @@ import { Updateable } from "./base-types";
  * what features it offers.
  */
 export class SimpleCamera
-  extends Component<THREE.Camera>
+  extends Component<THREE.PerspectiveCamera | THREE.OrthographicCamera>
   implements Updateable
 {
   /** {@link Component.name} */
@@ -32,8 +32,6 @@ export class SimpleCamera
    */
   readonly controls: CameraControls;
 
-  protected readonly _perspectiveCamera: THREE.PerspectiveCamera;
-
   /** {@link Component.enabled} */
   get enabled() {
     return this.controls.enabled;
@@ -44,9 +42,17 @@ export class SimpleCamera
     this.controls.enabled = enabled;
   }
 
+  /**
+   *  The camera that is being used now according to the current {@link CameraProjection}.
+   */
+  activeCamera: THREE.PerspectiveCamera | THREE.OrthographicCamera;
+
+  protected readonly _perspectiveCamera: THREE.PerspectiveCamera;
+
   constructor(public components: Components) {
     super();
     this._perspectiveCamera = this.setupCamera();
+    this.activeCamera = this._perspectiveCamera;
     this.controls = this.setupCameraControls();
     const scene = components.scene.get();
     scene.add(this._perspectiveCamera);
@@ -55,7 +61,7 @@ export class SimpleCamera
 
   /** {@link Component.get} */
   get() {
-    return this._perspectiveCamera;
+    return this.activeCamera;
   }
 
   /** {@link Component.update} */

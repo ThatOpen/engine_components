@@ -1,8 +1,8 @@
 import { Vector3 } from "three";
 import { EdgesClipper, EdgesPlane } from "../visibility";
 import {
-  CameraProjections,
-  NavigationModes,
+  CameraProjection,
+  NavModeID,
   OrthoPerspectiveCamera,
 } from "../cameras";
 
@@ -32,7 +32,7 @@ export class PlanNavigator {
   private floorPlanViewCached = false;
   private previousCamera = new Vector3();
   private previousTarget = new Vector3();
-  private previousProjection = CameraProjections.Perspective;
+  private previousProjection = CameraProjection.Perspective;
 
   constructor(
     private clipper: EdgesClipper,
@@ -72,7 +72,7 @@ export class PlanNavigator {
 
     this.cacheFloorplanView();
 
-    this.camera.setNavigationMode(NavigationModes.Orbit);
+    this.camera.setNavigationMode(NavModeID.Orbit);
     await this.camera.setProjection(this.previousProjection);
     if (this.currentPlan && this.currentPlan.plane) {
       this.currentPlan.plane.enabled = false;
@@ -124,11 +124,11 @@ export class PlanNavigator {
   private activateCurrentPlan() {
     if (!this.currentPlan) throw new Error("Current plan is not defined.");
     if (this.currentPlan.plane) this.currentPlan.plane.enabled = true;
-    this.camera.setNavigationMode(NavigationModes.Plan);
+    this.camera.setNavigationMode(NavModeID.Plan);
 
     const projection = this.currentPlan.ortho
-      ? CameraProjections.Orthographic
-      : CameraProjections.Perspective;
+      ? CameraProjection.Orthographic
+      : CameraProjection.Perspective;
 
     this.camera.setProjection(projection);
   }

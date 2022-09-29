@@ -1,27 +1,40 @@
-import { Box3, Camera } from "three";
+import * as THREE from "three";
 import CameraControls from "camera-controls";
-import { AdvancedCamera, NavigationModes, NavMode } from "../base-types";
+import { NavigationMode } from "../base-types";
 import { Event } from "../../../core";
 import { Components } from "../../../components";
+import { OrthoPerspectiveCamera } from "../ortho-perspective-camera";
 
-export class PlanMode implements NavMode {
-  readonly mode = NavigationModes.Plan;
+/**
+ * A {@link NavigationMode} that allows to navigate floorplans in 2D,
+ * like many BIM tools.
+ */
+export class PlanMode implements NavigationMode {
+  /** {@link NavigationMode.enabled} */
   enabled = false;
-  onChange = new Event<any>();
-  onChangeProjection = new Event<Camera>();
 
-  private readonly defaultAzimuthSpeed: number;
-  private readonly defaultPolarSpeed: number;
+  /** {@link NavigationMode.id} */
+  readonly id = "Plan";
+
+  /** {@link NavigationMode.projectionChanged} */
+  readonly projectionChanged = new Event<THREE.Camera>();
 
   private mouseAction1?: any;
   private mouseAction2?: any;
   private mouseInitialized = false;
 
-  constructor(private components: Components, private camera: AdvancedCamera) {
+  private readonly defaultAzimuthSpeed: number;
+  private readonly defaultPolarSpeed: number;
+
+  constructor(
+    private components: Components,
+    private camera: OrthoPerspectiveCamera
+  ) {
     this.defaultAzimuthSpeed = camera.controls.azimuthRotateSpeed;
     this.defaultPolarSpeed = camera.controls.polarRotateSpeed;
   }
 
+  /** {@link NavigationMode.toggle} */
   toggle(active: boolean) {
     this.enabled = active;
     const controls = this.camera.controls;
@@ -49,7 +62,7 @@ export class PlanMode implements NavMode {
     if (!this.enabled) return;
     const scene = this.components.scene.get();
     console.log(scene);
-    const box = new Box3().setFromObject(scene.children[0]);
+    const box = new THREE.Box3().setFromObject(scene.children[0]);
     await this.camera.controls.fitToBox(box, false);
   }
 }

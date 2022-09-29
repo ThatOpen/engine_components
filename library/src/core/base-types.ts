@@ -36,7 +36,7 @@ export interface Resizeable {
   /** Sets size of this component (e.g. the resolution of a
    * [Renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
    * component. */
-  setSize: () => void;
+  resize: (size?: THREE.Vector2) => void;
 
   /** Gets the current size of this component (e.g. the resolution of a
    * [Renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)

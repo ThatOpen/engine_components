@@ -21581,7 +21581,7 @@ class OrbitMode {
         this.components = components;
         this.camera = camera;
         this.enabled = true;
-        this.mode = NavigationModes.Orbit;
+        this.id = NavigationModes.Orbit;
         this.onChange = new LiteEvent();
         this.onUnlock = new LiteEvent();
         this.onChangeProjection = new LiteEvent();
@@ -21627,7 +21627,7 @@ class PlanMode {
     constructor(components, camera) {
         this.components = components;
         this.camera = camera;
-        this.mode = NavigationModes.Plan;
+        this.id = NavigationModes.Plan;
         this.enabled = false;
         this.onChange = new LiteEvent();
         this.onChangeProjection = new LiteEvent();
@@ -21669,7 +21669,7 @@ class PlanMode {
 class FirstPersonMode {
     constructor(camera) {
         this.camera = camera;
-        this.mode = NavigationModes.FirstPerson;
+        this.id = NavigationModes.FirstPerson;
         this.enabled = false;
         this.onChange = new LiteEvent();
         this.onChangeProjection = new LiteEvent();
@@ -21707,44 +21707,44 @@ class FirstPersonMode {
 class OrthoPerspectiveCamera extends SimpleCamera {
     constructor(components) {
         super(components);
-        this.navMode = new Map();
+        this._navigationModes = new Map();
         this.onChange = new LiteEvent();
-        this.onChangeProjection = new LiteEvent();
-        this.userInputButtons = {};
-        this.frustumSize = 50;
-        this.orthoCamera = this.newOrthoCamera();
-        this.navMode.set(NavigationModes.Orbit, new OrbitMode(components, this));
-        this.navMode.set(NavigationModes.FirstPerson, new FirstPersonMode(this));
-        this.navMode.set(NavigationModes.Plan, new PlanMode(components, this));
-        this.currentNavMode = this.navMode.get(NavigationModes.Orbit);
-        this.currentNavMode.toggle(true, { preventTargetAdjustment: true });
-        Object.values(this.navMode).forEach((mode) => {
+        this.projectionChanged = new LiteEvent();
+        this._userInputButtons = {};
+        this._frustumSize = 50;
+        this._orthoCamera = this.newOrthoCamera();
+        this._navigationModes.set(NavigationModes.Orbit, new OrbitMode(components, this));
+        this._navigationModes.set(NavigationModes.FirstPerson, new FirstPersonMode(this));
+        this._navigationModes.set(NavigationModes.Plan, new PlanMode(components, this));
+        this.currentMode = this._navigationModes.get(NavigationModes.Orbit);
+        this.currentMode.toggle(true, { preventTargetAdjustment: true });
+        Object.values(this._navigationModes).forEach((mode) => {
             mode.onChange.on(this.onChange.trigger);
-            mode.onChangeProjection.on(this.onChangeProjection.trigger);
+            mode.onChangeProjection.on(this.projectionChanged.trigger);
         });
-        this.projectionManager = new ProjectionManager(components, this);
+        this._projectionManager = new ProjectionManager(components, this);
     }
     get projection() {
-        return this.projectionManager.projection;
+        return this._projectionManager.projection;
     }
     async setProjection(projection) {
-        await this.projectionManager.setProjection(projection);
-        this.onChangeProjection.trigger(this.activeCamera);
+        await this._projectionManager.setProjection(projection);
+        this.projectionChanged.trigger(this.activeCamera);
     }
     toggleUserInput(active) {
         if (active) {
-            if (Object.keys(this.userInputButtons).length === 0)
+            if (Object.keys(this._userInputButtons).length === 0)
                 return;
-            this.controls.mouseButtons.left = this.userInputButtons.left;
-            this.controls.mouseButtons.right = this.userInputButtons.right;
-            this.controls.mouseButtons.middle = this.userInputButtons.middle;
-            this.controls.mouseButtons.wheel = this.userInputButtons.wheel;
+            this.controls.mouseButtons.left = this._userInputButtons.left;
+            this.controls.mouseButtons.right = this._userInputButtons.right;
+            this.controls.mouseButtons.middle = this._userInputButtons.middle;
+            this.controls.mouseButtons.wheel = this._userInputButtons.wheel;
         }
         else {
-            this.userInputButtons.left = this.controls.mouseButtons.left;
-            this.userInputButtons.right = this.controls.mouseButtons.right;
-            this.userInputButtons.middle = this.controls.mouseButtons.middle;
-            this.userInputButtons.wheel = this.controls.mouseButtons.wheel;
+            this._userInputButtons.left = this.controls.mouseButtons.left;
+            this._userInputButtons.right = this.controls.mouseButtons.right;
+            this._userInputButtons.middle = this.controls.mouseButtons.middle;
+            this._userInputButtons.wheel = this.controls.mouseButtons.wheel;
             this.controls.mouseButtons.left = 0;
             this.controls.mouseButtons.right = 0;
             this.controls.mouseButtons.middle = 0;
@@ -21752,14 +21752,14 @@ class OrthoPerspectiveCamera extends SimpleCamera {
         }
     }
     setNavigationMode(mode) {
-        if (this.currentNavMode.mode === mode)
+        if (this.currentMode.id === mode)
             return;
-        this.currentNavMode.toggle(false);
-        if (!this.navMode.has(mode)) {
+        this.currentMode.toggle(false);
+        if (!this._navigationModes.has(mode)) {
             throw new Error("The specified mode does not exist!");
         }
-        this.currentNavMode = this.navMode.get(mode);
-        this.currentNavMode.toggle(true);
+        this.currentMode = this._navigationModes.get(mode);
+        this.currentMode.toggle(true);
     }
     resize() {
         super.resize();
@@ -21768,16 +21768,16 @@ class OrthoPerspectiveCamera extends SimpleCamera {
     newOrthoCamera() {
         const dims = this.components.renderer.getSize();
         const aspect = dims.x / dims.y;
-        return new OrthographicCamera((this.frustumSize * aspect) / -2, (this.frustumSize * aspect) / 2, this.frustumSize / 2, this.frustumSize / -2, 0.1, 1000);
+        return new OrthographicCamera((this._frustumSize * aspect) / -2, (this._frustumSize * aspect) / 2, this._frustumSize / 2, this._frustumSize / -2, 0.1, 1000);
     }
     setOrthoCameraAspect() {
         const size = this.components.renderer.getSize();
         const aspect = size.x / size.y;
-        this.orthoCamera.left = (-this.frustumSize * aspect) / 2;
-        this.orthoCamera.right = (this.frustumSize * aspect) / 2;
-        this.orthoCamera.top = this.frustumSize / 2;
-        this.orthoCamera.bottom = -this.frustumSize / 2;
-        this.orthoCamera.updateProjectionMatrix();
+        this._orthoCamera.left = (-this._frustumSize * aspect) / 2;
+        this._orthoCamera.right = (this._frustumSize * aspect) / 2;
+        this._orthoCamera.top = this._frustumSize / 2;
+        this._orthoCamera.bottom = -this._frustumSize / 2;
+        this._orthoCamera.updateProjectionMatrix();
     }
 }
 

@@ -1,37 +1,43 @@
+import * as THREE from "three";
 import CameraControls from "camera-controls";
-import { Camera, Vector3 } from "three";
-import {
-  AdvancedCamera,
-  CameraProjections,
-  NavigationModes,
-  NavMode,
-} from "../base-types";
+import { NavigationMode } from "../base-types";
 import { Event } from "../../../core";
+import { OrthoPerspectiveCamera } from "../ortho-perspective-camera";
 
-export class FirstPersonMode implements NavMode {
-  readonly mode = NavigationModes.FirstPerson;
+/**
+ * A {@link NavigationMode} that allows first person navigation,
+ * simulating FPS video games.
+ */
+export class FirstPersonMode implements NavigationMode {
+  /** {@link NavigationMode.enabled} */
   enabled = false;
-  onChange = new Event<any>();
-  onChangeProjection = new Event<Camera>();
 
-  constructor(private camera: AdvancedCamera) {}
+  /** {@link NavigationMode.id} */
+  readonly id = "FirstPerson";
 
+  /** {@link NavigationMode.projectionChanged} */
+  readonly projectionChanged = new Event<THREE.Camera>();
+
+  constructor(private camera: OrthoPerspectiveCamera) {}
+
+  /** {@link NavigationMode.toggle} */
   toggle(active: boolean) {
     this.enabled = active;
     if (active) {
-      if (this.camera.projection !== CameraProjections.Perspective) {
-        this.camera.setNavigationMode(NavigationModes.Orbit);
+      const projection = this.camera.getProjection();
+      if (projection !== "Perspective") {
+        this.camera.setNavigationMode("Orbit");
         return;
       }
       this.setupFirstPersonCamera();
     }
   }
 
-  setupFirstPersonCamera() {
+  private setupFirstPersonCamera() {
     const controls = this.camera.controls;
-    const cameraPosition = new Vector3();
+    const cameraPosition = new THREE.Vector3();
     controls.camera.getWorldPosition(cameraPosition);
-    const newTargetPosition = new Vector3();
+    const newTargetPosition = new THREE.Vector3();
     controls.distance--;
     controls.camera.getWorldPosition(newTargetPosition);
     controls.minDistance = 1;
@@ -47,9 +53,5 @@ export class FirstPersonMode implements NavMode {
     controls.truckSpeed = 50;
     controls.mouseButtons.wheel = CameraControls.ACTION.DOLLY;
     controls.touches.two = CameraControls.ACTION.TOUCH_ZOOM_TRUCK;
-  }
-
-  fitModelToFrame() {
-    throw new Error("Fit to frame is not implemented with first person yet!");
   }
 }

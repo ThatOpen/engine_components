@@ -39,7 +39,7 @@ export class SimpleRenderer
     this._renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.setupRenderers();
     this.setupEvents();
-    this.setSize();
+    this.resize();
   }
 
   /** {@link Component.get} */
@@ -75,8 +75,8 @@ export class SimpleRenderer
     );
   }
 
-  /** {@link Resizeable.getSize}. */
-  setSize() {
+  /** {@link Resizeable.resize}. */
+  resize() {
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
     this._renderer.setSize(width, height);
@@ -95,7 +95,7 @@ export class SimpleRenderer
 
   private setupEvents() {
     window.addEventListener("resize", () => {
-      this.setSize();
+      this.resize();
     });
   }
 }
