@@ -1,10 +1,9 @@
 import * as THREE from "three";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
-import { WebGLRenderer } from "three";
 import { Components } from "../components";
 import { Event } from "./event";
 import { Disposeable, Updateable } from "./base-types";
-import { Component } from "./component";
+import { RendererComponent } from "./base-components/renderer-component";
 
 /**
  * A basic renderer capable of rendering 3D and 2D objects
@@ -13,7 +12,7 @@ import { Component } from "./component";
  * respectively).
  */
 export class SimpleRenderer
-  extends Component<WebGLRenderer>
+  extends RendererComponent
   implements Disposeable, Updateable
 {
   /** {@link Component.name} */
@@ -82,21 +81,6 @@ export class SimpleRenderer
     const height = this.container.clientHeight;
     this._renderer.setSize(width, height);
     this._renderer2D.setSize(width, height);
-  }
-
-  /** Adds a new [clipping plane](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.clippingPlanes)
-   * to the renderer. */
-  addClippingPlane(plane: THREE.Plane) {
-    this._renderer.clippingPlanes.push(plane);
-  }
-
-  /** Removes an existing  [clipping plane](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.clippingPlanes)
-   * from the renderer. */
-  removeClippingPlane(plane: THREE.Plane) {
-    const index = this._renderer.clippingPlanes.indexOf(plane);
-    if (index > -1) {
-      this._renderer.clippingPlanes.splice(index, 1);
-    }
   }
 
   private setupRenderers() {

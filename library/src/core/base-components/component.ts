@@ -1,4 +1,4 @@
-import { Disposeable, Hideable, Resizeable, Updateable } from "./base-types";
+import { Disposeable, Hideable, Resizeable, Updateable } from "../base-types";
 
 /**
  * Components are the building blocks of this library. Everything is a

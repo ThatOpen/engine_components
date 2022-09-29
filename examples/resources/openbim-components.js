@@ -7339,7 +7339,7 @@ class SimpleClipper {
         this.PlaneType = PlaneType;
         this.name = "clipper";
         this.dragging = false;
-        this.planes = [];
+        this._planes = [];
         this.orthogonalY = true;
         this.toleranceOrthogonalY = 0.7;
         this.planeSize = 5;
@@ -7358,7 +7358,7 @@ class SimpleClipper {
             var _a;
             const plane = new this.PlaneType(this.components, point, normal, this.activateDragging, this.deactivateDragging, this.planeSize, !isPlan);
             plane.isPlan = isPlan;
-            this.planes.push(plane);
+            this._planes.push(plane);
             (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.addClippingPlane(plane.plane);
             this.updateMaterials();
             return plane;
@@ -7376,28 +7376,28 @@ class SimpleClipper {
             }
             if (!existingPlane)
                 return;
-            const index = this.planes.indexOf(existingPlane);
+            const index = this._planes.indexOf(existingPlane);
             if (index === -1)
                 return;
             existingPlane.removeFromScene();
-            this.planes.splice(index, 1);
+            this._planes.splice(index, 1);
             (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.removeClippingPlane(existingPlane.plane);
             this.updateMaterials();
         };
         this.deleteAllPlanes = () => {
-            while (this.planes.length > 0) {
-                this.deletePlane(this.planes[0]);
+            while (this._planes.length > 0) {
+                this.deletePlane(this._planes[0]);
             }
         };
         this.pickPlane = () => {
-            const planeMeshes = this.planes.map((p) => p.planeMesh);
-            const arrowMeshes = this.planes.map((p) => p.arrowBoundingBox);
+            const planeMeshes = this._planes.map((p) => p.planeMesh);
+            const arrowMeshes = this._planes.map((p) => p.arrowBoundingBox);
             const intersects = this.components.raycaster.castRay([
                 ...planeMeshes,
                 ...arrowMeshes,
             ]);
             if (intersects) {
-                return this.planes.find((p) => {
+                return this._planes.find((p) => {
                     if (p.planeMesh === intersects.object ||
                         p.arrowBoundingBox === intersects.object) {
                         return p;
@@ -7417,7 +7417,7 @@ class SimpleClipper {
             const worldNormal = normal.clone().applyMatrix3(normalMatrix).normalize();
             this.normalizePlaneDirectionY(worldNormal);
             const plane = this.newPlane(intersection, worldNormal.negate());
-            this.planes.push(plane);
+            this._planes.push(plane);
             (_b = this.components.renderer) === null || _b === void 0 ? void 0 : _b.addClippingPlane(plane.plane);
             this.updateMaterials();
         };
@@ -7449,7 +7449,7 @@ class SimpleClipper {
         if (!visible) {
             this.enabled = false;
         }
-        this.planes.forEach((plane) => {
+        this._planes.forEach((plane) => {
             if (!plane.isPlan) {
                 plane.visible = visible;
             }
@@ -7464,7 +7464,7 @@ class SimpleClipper {
         if (state && !this._visible) {
             this.visible = true;
         }
-        this.planes.forEach((plane) => {
+        this._planes.forEach((plane) => {
             if (!plane.isPlan) {
                 plane.enabled = state;
             }
@@ -7475,8 +7475,8 @@ class SimpleClipper {
         this.enabled = !this.enabled;
     }
     dispose() {
-        this.planes.forEach((plane) => plane.dispose());
-        this.planes.length = 0;
+        this._planes.forEach((plane) => plane.dispose());
+        this._planes.length = 0;
         this.components = null;
     }
     normalizePlaneDirectionY(normal) {

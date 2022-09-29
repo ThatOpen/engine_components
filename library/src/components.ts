@@ -4,8 +4,12 @@ import {
   computeBoundsTree,
   disposeBoundsTree,
 } from "three-mesh-bvh";
-import { Raycaster } from "three";
-import { Component, ToolComponents } from "./core";
+import {
+  ToolComponents,
+  Raycaster,
+  RendererComponent,
+  Component,
+} from "./core";
 
 /**
  * The entry point of Open BIM Components.
@@ -25,10 +29,10 @@ export class Components {
    */
   readonly meshes: THREE.Mesh[] = [];
 
-  private _renderer?: Component<THREE.Renderer>;
+  private _renderer?: RendererComponent;
   private _scene?: Component<THREE.Scene>;
   private _camera?: Component<THREE.Camera>;
-  private _raycaster?: Component<THREE.Raycaster>;
+  private _raycaster?: Raycaster;
   private _clock: THREE.Clock;
   private _updateRequestCallback: number = -1;
 
@@ -55,7 +59,7 @@ export class Components {
    * components.renderer = new OBC.SimpleRenderer(components, container);
    * ```
    */
-  set renderer(renderer: Component<THREE.Renderer>) {
+  set renderer(renderer: RendererComponent) {
     this._renderer = renderer;
   }
 
@@ -133,7 +137,7 @@ export class Components {
    * components.raycaster = new COMPONENTS.SimpleRaycaster(components);
    * ```
    */
-  set raycaster(raycaster: Component<Raycaster>) {
+  set raycaster(raycaster: Raycaster) {
     this._raycaster = raycaster;
   }
 

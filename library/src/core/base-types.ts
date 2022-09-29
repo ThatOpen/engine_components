@@ -71,3 +71,8 @@ export interface Updateable {
    */
   update(delta: number): void;
 }
+
+/** Whether this component is able to cast rays. */
+export interface Raycaster {
+  castRay: (items?: THREE.Mesh[]) => THREE.Intersection | null;
+}

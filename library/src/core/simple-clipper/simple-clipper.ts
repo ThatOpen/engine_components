@@ -1,26 +1,23 @@
 import { Vector3, Matrix3, Intersection } from "three";
 import { Components } from "../../components";
-import { Createable, Enableable, Hideable, ToolComponent } from "../base-types";
+import { Createable, Disposeable, Hideable } from "../base-types";
 import { SimplePlane } from "./simple-plane";
+import { Component } from "../base-components/component";
 
 export class SimpleClipper<Plane extends SimplePlane>
-  implements ToolComponent, Hideable, Createable, Enableable
+  extends Component<Plane[]>
+  implements Hideable, Createable, Disposeable
 {
   public readonly name = "clipper";
   dragging = false;
-  planes: Plane[] = [];
   intersection: Intersection | undefined;
   orthogonalY = true;
   toleranceOrthogonalY = 0.7;
   planeSize = 5;
 
-  private _enabled = false;
-  private _visible = false;
-
-  constructor(
-    private components: Components,
-    protected PlaneType: new (...args: any) => Plane
-  ) {}
+  protected _planes: Plane[] = [];
+  protected _enabled = false;
+  protected _visible = false;
 
   get visible() {
     return this._visible;
@@ -31,7 +28,7 @@ export class SimpleClipper<Plane extends SimplePlane>
     if (!visible) {
       this.enabled = false;
     }
-    this.planes.forEach((plane) => {
+    this._planes.forEach((plane) => {
       if (!plane.isPlan) {
         plane.visible = visible;
       }
@@ -50,7 +47,7 @@ export class SimpleClipper<Plane extends SimplePlane>
       this.visible = true;
     }
 
-    this.planes.forEach((plane) => {
+    this._planes.forEach((plane) => {
       if (!plane.isPlan) {
         plane.enabled = state;
       }
@@ -58,16 +55,24 @@ export class SimpleClipper<Plane extends SimplePlane>
     this.updateMaterials();
   }
 
-  toggle() {
-    this.enabled = !this.enabled;
+  constructor(
+    public components: Components,
+    public PlaneType: new (...args: any) => Plane
+  ) {
+    super();
+  }
+
+  get(): Plane[] {
+    return this._planes;
   }
 
   dispose() {
-    this.planes.forEach((plane) => plane.dispose());
-    this.planes.length = 0;
+    this._planes.forEach((plane) => plane.dispose());
+    this._planes.length = 0;
     (this.components as any) = null;
   }
-  createPlane = () => {
+
+  create = () => {
     if (!this.enabled) return;
     const intersects = this.components.raycaster.castRay();
     if (!intersects) return;
@@ -90,8 +95,8 @@ export class SimpleClipper<Plane extends SimplePlane>
       !isPlan
     );
     plane.isPlan = isPlan;
-    this.planes.push(plane);
-    this.components.renderer?.addClippingPlane(plane.plane);
+    this._planes.push(plane);
+    this.components.renderer.togglePlane(true, plane.plane);
     this.updateMaterials();
     return plane;
   };
@@ -107,23 +112,23 @@ export class SimpleClipper<Plane extends SimplePlane>
       existingPlane = this.pickPlane();
     }
     if (!existingPlane) return;
-    const index = this.planes.indexOf(existingPlane);
+    const index = this._planes.indexOf(existingPlane);
     if (index === -1) return;
     existingPlane.removeFromScene();
-    this.planes.splice(index, 1);
-    this.components.renderer?.removeClippingPlane(existingPlane.plane);
+    this._planes.splice(index, 1);
+    this.components.renderer.togglePlane(false, existingPlane.plane);
     this.updateMaterials();
   };
 
   deleteAllPlanes = () => {
-    while (this.planes.length > 0) {
-      this.deletePlane(this.planes[0]);
+    while (this._planes.length > 0) {
+      this.deletePlane(this._planes[0]);
     }
   };
 
   private pickPlane = () => {
-    const planeMeshes = this.planes.map((p) => p.planeMesh);
-    const arrowMeshes = this.planes.map((p) => p.arrowBoundingBox);
+    const planeMeshes = this._planes.map((p) => p.planeMesh);
+    const arrowMeshes = this._planes.map((p) => p.arrowBoundingBox);
 
     const intersects = this.components.raycaster.castRay([
       ...planeMeshes,
@@ -131,7 +136,7 @@ export class SimpleClipper<Plane extends SimplePlane>
     ]);
 
     if (intersects) {
-      return this.planes.find((p) => {
+      return this._planes.find((p) => {
         if (
           p.planeMesh === intersects.object ||
           p.arrowBoundingBox === intersects.object
@@ -154,8 +159,8 @@ export class SimpleClipper<Plane extends SimplePlane>
     const worldNormal = normal.clone().applyMatrix3(normalMatrix).normalize();
     this.normalizePlaneDirectionY(worldNormal);
     const plane = this.newPlane(intersection, worldNormal.negate());
-    this.planes.push(plane);
-    this.components.renderer?.addClippingPlane(plane.plane);
+    this._planes.push(plane);
+    this.components.renderer.togglePlane(true, plane.plane);
     this.updateMaterials();
   };
 

@@ -45,7 +45,7 @@ export class SimplePlane {
     this.planeSize = planeSize;
     this.components = components;
     this.plane = new Plane();
-    this.components.clippingPlanes.push(this.plane);
+    this.components.renderer.togglePlane(true, this.plane);
     this.planeMesh = this.getPlaneMesh();
     this.normal = normal;
     this.origin = origin;
@@ -61,15 +61,9 @@ export class SimplePlane {
     return this._enabled;
   }
 
-  set enabled(state: boolean) {
-    this._enabled = state;
-    const planes = this.components.clippingPlanes;
-    if (state && planes) {
-      planes.push(this.plane);
-    } else if (planes) {
-      const index = planes.indexOf(this.plane);
-      if (index >= 0) planes.splice(index);
-    }
+  set enabled(enabled: boolean) {
+    this._enabled = enabled;
+    this.components.renderer.togglePlane(enabled, this.plane);
   }
 
   get visible() {
@@ -100,8 +94,7 @@ export class SimplePlane {
   removeFromScene = () => {
     this.helper.removeFromParent();
 
-    const index = this.components.clippingPlanes.indexOf(this.plane);
-    if (index >= 0) this.components.clippingPlanes.splice(index, 1);
+    this.components.renderer.togglePlane(false, this.plane);
 
     this.arrowBoundingBox.removeFromParent();
     this.arrowBoundingBox.geometry.dispose();
