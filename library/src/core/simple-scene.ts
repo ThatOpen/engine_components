@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Components } from "../components";
-import { Component } from "./component";
+import { Component } from "./base-components";
 
 /**
  * A basic 3D [scene](https://threejs.org/docs/#api/en/scenes/Scene) to add

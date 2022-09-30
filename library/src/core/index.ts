@@ -10,5 +10,4 @@ export * from "./simple-raycaster";
 export * from "./simple-clipper";
 export * from "./tools-components";
 export * from "./simple-mouse";
-export * from "./base-components/component";
-export * from "./base-components/renderer-component";
+export * from "./base-components";

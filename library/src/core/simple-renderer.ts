@@ -3,7 +3,7 @@ import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
 import { Components } from "../components";
 import { Event } from "./event";
 import { Disposeable, Updateable } from "./base-types";
-import { RendererComponent } from "./base-components/renderer-component";
+import { RendererComponent } from "./base-components";
 
 /**
  * A basic renderer capable of rendering 3D and 2D objects

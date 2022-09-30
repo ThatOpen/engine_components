@@ -50,6 +50,14 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
     this._projectionManager = new ProjectionManager(components, this);
   }
 
+  /**
+   * Similar to {@link Component.get}, but with an optional argument
+   * to specify which camera to get.
+   *
+   * @param projection - The camera corresponding to the
+   * {@link CameraProjection} specified. If no projection is specified,
+   * the perspective camera will be returned.
+   */
   get(projection?: CameraProjection) {
     return projection === "Orthographic"
       ? this._orthoCamera

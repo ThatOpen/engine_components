@@ -2,7 +2,7 @@ import { Vector3, Matrix3, Intersection } from "three";
 import { Components } from "../../components";
 import { Createable, Disposeable, Hideable } from "../base-types";
 import { SimplePlane } from "./simple-plane";
-import { Component } from "../base-components/component";
+import { Component } from "../base-components";
 
 export class SimpleClipper<Plane extends SimplePlane>
   extends Component<Plane[]>

@@ -3,7 +3,7 @@ import CameraControls from "camera-controls";
 import { Components } from "../components";
 import { Event } from "./event";
 import { Updateable } from "./base-types";
-import { Component } from "./base-components/component";
+import { Component } from "./base-components";
 
 /**
  * A basic camera that uses

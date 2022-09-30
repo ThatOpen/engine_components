@@ -1,4 +1,4 @@
-import { Component } from "./component";
+import { Component } from "./base-components";
 
 /**
  * An object to easily handle all the tools used (e.g. updating them, retrieving
