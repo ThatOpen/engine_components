@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Hideable } from "./base-types";
 import { Components } from "../components";
-import { Component } from "./component";
+import { Component } from "./base-components";
 
 /**
  * A basic

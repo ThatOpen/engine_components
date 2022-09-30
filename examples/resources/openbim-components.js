@@ -6684,26 +6684,26 @@ function getBasisTransform(from, to, targetMatrix) {
 class SimpleDimensions {
     constructor(context) {
         this.name = "dimensions";
-        this.dimensions = [];
+        this._dimensions = [];
         this.labelClassName = "ifcjs-dimension-label";
         this.previewClassName = "ifcjs-dimension-preview";
         // State
         this._enabled = false;
         this._visible = false;
-        this.preview = false;
-        this.dragging = false;
+        this._preview = false;
+        this._dragging = false;
         this.snapDistance = 0.25;
         // Measures
-        this.baseScale = new Vector3$1(1, 1, 1);
+        this._baseScale = new Vector3$1(1, 1, 1);
         // Materials
-        this.lineMaterial = new LineDashedMaterial({
+        this._lineMaterial = new LineDashedMaterial({
             color: 0x000000,
             linewidth: 2,
             depthTest: false,
             dashSize: 0.2,
             gapSize: 0.2,
         });
-        this.endpointsMaterial = new MeshBasicMaterial({
+        this._endpointsMaterial = new MeshBasicMaterial({
             color: 0x000000,
             depthTest: false,
         });
@@ -6733,9 +6733,9 @@ class SimpleDimensions {
     }
     dispose() {
         this.context = null;
-        this.dimensions.forEach((dim) => dim.dispose());
-        this.dimensions = null;
-        this.currentDimension = null;
+        this._dimensions.forEach((dim) => dim.dispose());
+        this._dimensions = null;
+        this._currentDimension = null;
         this.endpoint.dispose();
         this.endpoint = null;
         this.previewElement.removeFromParent();
@@ -6743,7 +6743,7 @@ class SimpleDimensions {
         this.previewElement = null;
     }
     update(_delta) {
-        if (this._enabled && this.preview) {
+        if (this._enabled && this._preview) {
             const intersects = this.castRayIfc();
             this.previewElement.visible = !!intersects;
             if (!intersects)
@@ -6754,7 +6754,7 @@ class SimpleDimensions {
             if (!closest)
                 return;
             this.previewElement.position.set(closest.x, closest.y, closest.z);
-            if (this.dragging) {
+            if (this._dragging) {
                 this.drawInProcess();
             }
         }
@@ -6776,7 +6776,7 @@ class SimpleDimensions {
         }
     }
     get previewActive() {
-        return this.preview;
+        return this._preview;
     }
     get previewObject() {
         return this.previewElement;
@@ -6786,7 +6786,7 @@ class SimpleDimensions {
         if (this.enabled && !state) {
             this.enabled = false;
         }
-        this.dimensions.forEach((dim) => {
+        this._dimensions.forEach((dim) => {
             dim.visibility = state;
         });
     }
@@ -6795,11 +6795,11 @@ class SimpleDimensions {
     }
     set previewActive(state) {
         var _a;
-        this.preview = state;
+        this._preview = state;
         const scene = (_a = this.context.scene) === null || _a === void 0 ? void 0 : _a.getScene();
         if (!scene)
             throw new Error("Dimensions rely on scene to be present.");
-        if (this.preview) {
+        if (this._preview) {
             scene.add(this.previewElement);
         }
         else {
@@ -6807,14 +6807,14 @@ class SimpleDimensions {
         }
     }
     set dimensionsColor(color) {
-        this.endpointsMaterial.color = color;
-        this.lineMaterial.color = color;
+        this._endpointsMaterial.color = color;
+        this._lineMaterial.color = color;
     }
     set dimensionsWidth(width) {
-        this.lineMaterial.linewidth = width;
+        this._lineMaterial.linewidth = width;
     }
     set endpointGeometry(geometry) {
-        this.dimensions.forEach((dim) => {
+        this._dimensions.forEach((dim) => {
             dim.endpointGeometry = geometry;
         });
     }
@@ -6822,15 +6822,15 @@ class SimpleDimensions {
         IfcDimensionLine.scaleFactor = factor;
     }
     set endpointScale(scale) {
-        this.baseScale = scale;
-        this.dimensions.forEach((dim) => {
+        this._baseScale = scale;
+        this._dimensions.forEach((dim) => {
             dim.endpointScale = scale;
         });
     }
     create() {
         if (!this._enabled)
             return;
-        if (!this.dragging) {
+        if (!this._dragging) {
             this.drawStart();
             return;
         }
@@ -6839,24 +6839,24 @@ class SimpleDimensions {
     createInPlane(plane) {
         if (!this._enabled)
             return;
-        if (!this.dragging) {
+        if (!this._dragging) {
             this.drawStartInPlane(plane);
             return;
         }
         this.drawEnd();
     }
     delete() {
-        if (!this._enabled || this.dimensions.length === 0)
+        if (!this._enabled || this._dimensions.length === 0)
             return;
         const boundingBoxes = this.getBoundingBoxes();
         const intersects = this.castRay(boundingBoxes);
         if (intersects.length === 0)
             return;
-        const selected = this.dimensions.find((dim) => dim.boundingBox === intersects[0].object);
+        const selected = this._dimensions.find((dim) => dim.boundingBox === intersects[0].object);
         if (!selected)
             return;
-        const index = this.dimensions.indexOf(selected);
-        this.dimensions.splice(index, 1);
+        const index = this._dimensions.indexOf(selected);
+        this._dimensions.splice(index, 1);
         selected.removeFromScene();
     }
     castRay(items) {
@@ -6881,21 +6881,21 @@ class SimpleDimensions {
         return objs.filter((elem) => planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0));
     }
     deleteAll() {
-        this.dimensions.forEach((dim) => {
+        this._dimensions.forEach((dim) => {
             dim.removeFromScene();
         });
-        this.dimensions = [];
+        this._dimensions = [];
     }
     cancelDrawing() {
         var _a;
-        if (!this.currentDimension)
+        if (!this._currentDimension)
             return;
-        this.dragging = false;
-        (_a = this.currentDimension) === null || _a === void 0 ? void 0 : _a.removeFromScene();
-        this.currentDimension = undefined;
+        this._dragging = false;
+        (_a = this._currentDimension) === null || _a === void 0 ? void 0 : _a.removeFromScene();
+        this._currentDimension = undefined;
     }
     drawStart() {
-        this.dragging = true;
+        this._dragging = true;
         const intersects = this.castRayIfc();
         if (!intersects)
             return;
@@ -6905,7 +6905,7 @@ class SimpleDimensions {
         this.startPoint = found;
     }
     drawStartInPlane(plane) {
-        this.dragging = true;
+        this._dragging = true;
         const intersects = this.castRay([plane]);
         if (!intersects || intersects.length < 1)
             return;
@@ -6919,26 +6919,26 @@ class SimpleDimensions {
         if (!found)
             return;
         this.endPoint = found;
-        if (!this.currentDimension)
-            this.currentDimension = this.drawDimension();
-        this.currentDimension.endPoint = this.endPoint;
+        if (!this._currentDimension)
+            this._currentDimension = this.drawDimension();
+        this._currentDimension.endPoint = this.endPoint;
     }
     drawEnd() {
-        if (!this.currentDimension)
+        if (!this._currentDimension)
             return;
-        this.currentDimension.createBoundingBox();
-        this.dimensions.push(this.currentDimension);
-        this.currentDimension = undefined;
-        this.dragging = false;
+        this._currentDimension.createBoundingBox();
+        this._dimensions.push(this._currentDimension);
+        this._currentDimension = undefined;
+        this._dragging = false;
     }
     get getDimensionsLines() {
-        return this.dimensions;
+        return this._dimensions;
     }
     drawDimension() {
-        return new IfcDimensionLine(this.context, this.startPoint, this.endPoint, this.lineMaterial, this.endpointsMaterial, this.endpoint, this.labelClassName, this.baseScale);
+        return new IfcDimensionLine(this.context, this.startPoint, this.endPoint, this._lineMaterial, this._endpointsMaterial, this.endpoint, this.labelClassName, this._baseScale);
     }
     getBoundingBoxes() {
-        return this.dimensions
+        return this._dimensions
             .map((dim) => dim.boundingBox)
             .filter((box) => box !== undefined);
     }

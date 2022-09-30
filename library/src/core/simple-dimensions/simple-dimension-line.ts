@@ -14,7 +14,7 @@ import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
 import { Components } from "../../components";
 import { disposeMeshRecursively } from "../three-utils";
 
-export class IfcDimensionLine {
+export class SimpleDimensionLine {
   private readonly context: Components;
   private readonly camera: Camera;
   private readonly labelClassName: string;
@@ -176,7 +176,7 @@ export class IfcDimensionLine {
 
   private rescaleObjectsToCameraPosition() {
     this.endpointMeshes.forEach((mesh) =>
-      this.rescaleMesh(mesh, IfcDimensionLine.scaleFactor)
+      this.rescaleMesh(mesh, SimpleDimensionLine.scaleFactor)
     );
     if (this.boundingMesh) {
       this.rescaleMesh(this.boundingMesh, this.boundingSize, true, true, false);
@@ -225,7 +225,9 @@ export class IfcDimensionLine {
   }
 
   private getTextContent() {
-    return `${this.length / IfcDimensionLine.scale} ${IfcDimensionLine.units}`;
+    return `${this.length / SimpleDimensionLine.scale} ${
+      SimpleDimensionLine.units
+    }`;
   }
 
   private newBoundingBox() {

@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Components } from "../components";
 import { SimpleMouse } from "./simple-mouse";
-import { Component } from "./component";
+import { Component } from "./base-components";
 import { Raycaster } from "./base-types";
 
 /**

@@ -1,46 +1,32 @@
-import {
-  BufferGeometry,
-  Color,
-  ConeGeometry,
-  Intersection,
-  LineDashedMaterial,
-  Mesh,
-  MeshBasicMaterial,
-  Object3D,
-  Raycaster,
-  Vector2,
-  Vector3,
-} from "three";
+import * as THREE from "three";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
-import { Enableable, Hideable, ToolComponent } from "../base-types";
+import { Hideable } from "../base-types";
 import { Components } from "../../components";
-import { IfcDimensionLine } from "./simple-dimension-line";
+import { SimpleDimensionLine } from "./simple-dimension-line";
+import { Component } from "../base-components";
+import { SimpleRaycaster } from "../simple-raycaster";
 
-export class SimpleDimensions implements ToolComponent, Enableable, Hideable {
-  public readonly name = "dimensions";
-  private readonly context: Components;
-  private dimensions: IfcDimensionLine[] = [];
-  private currentDimension?: IfcDimensionLine;
-  readonly labelClassName = "ifcjs-dimension-label";
-  readonly previewClassName = "ifcjs-dimension-preview";
+/**
+ * A basic dimension tool to measure distances between 2 points in 3D and
+ * display a 3D symbol displaying the numeric value.
+ */
+export class SimpleDimensions
+  extends Component<SimpleDimensionLine[]>
+  implements Hideable
+{
+  /** {@link Component.name} */
+  readonly name = "SimpleDimensions";
 
-  // State
-  public _enabled = false;
-  public _visible = false;
-  private preview = false;
-  private dragging = false;
+  /** The minimum distance to force the dimension cursor to a vertex. */
   snapDistance = 0.25;
 
-  // Measures
+  /** The name of the CSS class that styles the dimension label. */
+  readonly labelClassName = "ifcjs-dimension-label";
 
-  private baseScale = new Vector3(1, 1, 1);
+  /** The name of the CSS class that styles the dimension label. */
+  readonly previewClassName = "ifcjs-dimension-preview";
 
-  // Geometries
-  private endpoint: BufferGeometry;
-  private previewElement: CSS2DObject;
-
-  // Materials
-  private lineMaterial = new LineDashedMaterial({
+  protected _lineMaterial = new THREE.LineDashedMaterial({
     color: 0x000000,
     linewidth: 2,
     depthTest: false,
@@ -48,46 +34,43 @@ export class SimpleDimensions implements ToolComponent, Enableable, Hideable {
     gapSize: 0.2,
   });
 
-  private endpointsMaterial = new MeshBasicMaterial({
+  protected _endpointsMaterial = new THREE.MeshBasicMaterial({
     color: 0x000000,
     depthTest: false,
   });
 
-  // Temp variables
-  private startPoint = new Vector3();
-  private endPoint = new Vector3();
+  protected _visible = false;
+  protected _enabled = false;
+  protected _preview = false;
+  protected _dragging = false;
+  protected _baseScale = new THREE.Vector3(1, 1, 1);
+  protected endpoint: THREE.BufferGeometry;
+  protected previewElement: CSS2DObject;
+  protected startPoint = new THREE.Vector3();
+  protected endPoint = new THREE.Vector3();
+  protected raycaster: SimpleRaycaster;
+  protected _dimensions: SimpleDimensionLine[] = [];
+  protected _currentDimension?: SimpleDimensionLine;
 
-  position = new Vector2();
-  rawPosition = new Vector2();
-  raycaster = new Raycaster();
-
-  constructor(context: Components) {
-    this.context = context;
+  constructor(public components: Components) {
+    super();
+    this.raycaster = new SimpleRaycaster(this.components);
     this.endpoint = SimpleDimensions.getDefaultEndpointGeometry();
     const htmlPreview = document.createElement("div");
     htmlPreview.className = this.previewClassName;
     this.previewElement = new CSS2DObject(htmlPreview);
     this.previewElement.visible = false;
+  }
 
-    // Mouse position
-    const domElement = context.renderer!.get().domElement;
-
-    domElement.onmousemove = (event: MouseEvent) => {
-      this.rawPosition.x = event.clientX;
-      this.rawPosition.y = event.clientY;
-      const bounds = domElement.getBoundingClientRect();
-      this.position.x =
-        ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1;
-      this.position.y =
-        -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1;
-    };
+  get(): SimpleDimensionLine[] {
+    return this._dimensions;
   }
 
   dispose() {
-    (this.context as any) = null;
-    this.dimensions.forEach((dim) => dim.dispose());
-    (this.dimensions as any) = null;
-    (this.currentDimension as any) = null;
+    (this.components as any) = null;
+    this._dimensions.forEach((dim) => dim.dispose());
+    (this._dimensions as any) = null;
+    (this._currentDimension as any) = null;
     this.endpoint.dispose();
     (this.endpoint as any) = null;
 
@@ -97,8 +80,8 @@ export class SimpleDimensions implements ToolComponent, Enableable, Hideable {
   }
 
   update(_delta: number) {
-    if (this._enabled && this.preview) {
-      const intersects = this.castRayIfc();
+    if (this._enabled && this._preview) {
+      const intersects = this.raycaster.castRay();
       this.previewElement.visible = !!intersects;
       if (!intersects) return;
       this.previewElement.visible = true;
@@ -106,7 +89,7 @@ export class SimpleDimensions implements ToolComponent, Enableable, Hideable {
       this.previewElement.visible = !!closest;
       if (!closest) return;
       this.previewElement.position.set(closest.x, closest.y, closest.z);
-      if (this.dragging) {
+      if (this._dragging) {
         this.drawInProcess();
       }
     }
@@ -133,11 +116,15 @@ export class SimpleDimensions implements ToolComponent, Enableable, Hideable {
   }
 
   get previewActive() {
-    return this.preview;
+    return this._preview;
   }
 
   get previewObject() {
     return this.previewElement;
+  }
+
+  get visible() {
+    return this._visible;
   }
 
   set visible(state: boolean) {
@@ -145,64 +132,53 @@ export class SimpleDimensions implements ToolComponent, Enableable, Hideable {
     if (this.enabled && !state) {
       this.enabled = false;
     }
-    this.dimensions.forEach((dim) => {
+    this._dimensions.forEach((dim) => {
       dim.visibility = state;
     });
   }
 
-  get visible() {
-    return this._visible;
-  }
-
-  private set previewActive(state: boolean) {
-    this.preview = state;
-    const scene = this.context.scene?.get();
-    if (!scene) throw new Error("Dimensions rely on scene to be present.");
-    if (this.preview) {
-      scene.add(this.previewElement);
-    } else {
-      scene.remove(this.previewElement);
-    }
-  }
-
-  set dimensionsColor(color: Color) {
-    this.endpointsMaterial.color = color;
-    this.lineMaterial.color = color;
+  set dimensionsColor(color: THREE.Color) {
+    this._endpointsMaterial.color = color;
+    this._lineMaterial.color = color;
   }
 
   set dimensionsWidth(width: number) {
-    this.lineMaterial.linewidth = width;
+    this._lineMaterial.linewidth = width;
   }
 
-  set endpointGeometry(geometry: BufferGeometry) {
-    this.dimensions.forEach((dim) => {
+  set endpointGeometry(geometry: THREE.BufferGeometry) {
+    this._dimensions.forEach((dim) => {
       dim.endpointGeometry = geometry;
     });
   }
 
   set endpointScaleFactor(factor: number) {
-    IfcDimensionLine.scaleFactor = factor;
+    SimpleDimensionLine.scaleFactor = factor;
   }
 
-  set endpointScale(scale: Vector3) {
-    this.baseScale = scale;
-    this.dimensions.forEach((dim) => {
+  set endpointScale(scale: THREE.Vector3) {
+    this._baseScale = scale;
+    this._dimensions.forEach((dim) => {
       dim.endpointScale = scale;
     });
   }
 
+  get getDimensionsLines() {
+    return this._dimensions;
+  }
+
   create() {
     if (!this._enabled) return;
-    if (!this.dragging) {
+    if (!this._dragging) {
       this.drawStart();
       return;
     }
     this.drawEnd();
   }
 
-  createInPlane(plane: Object3D) {
+  createInPlane(plane: THREE.Object3D) {
     if (!this._enabled) return;
-    if (!this.dragging) {
+    if (!this._dragging) {
       this.drawStartInPlane(plane);
       return;
     }
@@ -210,125 +186,110 @@ export class SimpleDimensions implements ToolComponent, Enableable, Hideable {
   }
 
   delete() {
-    if (!this._enabled || this.dimensions.length === 0) return;
+    if (!this._enabled || this._dimensions.length === 0) return;
     const boundingBoxes = this.getBoundingBoxes();
-    const intersects = this.castRay(boundingBoxes);
-    if (intersects.length === 0) return;
-    const selected = this.dimensions.find(
-      (dim) => dim.boundingBox === intersects[0].object
+    const intersect = this.raycaster.castRay(boundingBoxes);
+    if (!intersect) return;
+    const selected = this._dimensions.find(
+      (dim) => dim.boundingBox === intersect.object
     );
     if (!selected) return;
-    const index = this.dimensions.indexOf(selected);
-    this.dimensions.splice(index, 1);
+    const index = this._dimensions.indexOf(selected);
+    this._dimensions.splice(index, 1);
     selected.removeFromScene();
   }
 
-  castRay(items: Object3D[]) {
-    const camera = this.context.camera?.get();
-    if (!camera) throw new Error("Camera required for clipper");
-    this.raycaster.setFromCamera(this.position, camera);
-    return this.raycaster.intersectObjects(items);
-  }
-
-  castRayIfc() {
-    const items = this.castRay(this.context.meshes);
-    const filtered = this.filterClippingPlanes(items);
-    return filtered.length > 0 ? filtered[0] : null;
-  }
-
-  private filterClippingPlanes(objs: Intersection[]) {
-    const planes = this.context.renderer?.get().clippingPlanes;
-    if (objs.length <= 0 || !planes || planes?.length <= 0) return objs;
-    // const planes = this.clipper?.planes.map((p) => p.plane);
-    return objs.filter((elem) =>
-      planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0)
-    );
-  }
-
   deleteAll() {
-    this.dimensions.forEach((dim) => {
+    this._dimensions.forEach((dim) => {
       dim.removeFromScene();
     });
-    this.dimensions = [];
+    this._dimensions = [];
   }
 
   cancelDrawing() {
-    if (!this.currentDimension) return;
-    this.dragging = false;
-    this.currentDimension?.removeFromScene();
-    this.currentDimension = undefined;
+    if (!this._currentDimension) return;
+    this._dragging = false;
+    this._currentDimension?.removeFromScene();
+    this._currentDimension = undefined;
+  }
+
+  private set previewActive(state: boolean) {
+    this._preview = state;
+    const scene = this.components.scene?.get();
+    if (!scene) throw new Error("Dimensions rely on scene to be present.");
+    if (this._preview) {
+      scene.add(this.previewElement);
+    } else {
+      scene.remove(this.previewElement);
+    }
   }
 
   private drawStart() {
-    this.dragging = true;
-    const intersects = this.castRayIfc();
+    this._dragging = true;
+    const intersects = this.raycaster.castRay();
     if (!intersects) return;
     const found = this.getClosestVertex(intersects);
     if (!found) return;
     this.startPoint = found;
   }
 
-  private drawStartInPlane(plane: Object3D) {
-    this.dragging = true;
-
-    const intersects = this.castRay([plane]);
-    if (!intersects || intersects.length < 1) return;
-    this.startPoint = intersects[0].point;
+  private drawStartInPlane(plane: THREE.Object3D) {
+    this._dragging = true;
+    const intersects = this.raycaster.castRay([plane as THREE.Mesh]);
+    if (intersects) {
+      this.startPoint = intersects.point;
+    }
   }
 
   private drawInProcess() {
-    const intersects = this.castRayIfc();
+    const intersects = this.raycaster.castRay();
     if (!intersects) return;
     const found = this.getClosestVertex(intersects);
     if (!found) return;
     this.endPoint = found;
-    if (!this.currentDimension) this.currentDimension = this.drawDimension();
-    this.currentDimension.endPoint = this.endPoint;
+    if (!this._currentDimension) this._currentDimension = this.drawDimension();
+    this._currentDimension.endPoint = this.endPoint;
   }
 
   private drawEnd() {
-    if (!this.currentDimension) return;
-    this.currentDimension.createBoundingBox();
-    this.dimensions.push(this.currentDimension);
-    this.currentDimension = undefined;
-    this.dragging = false;
-  }
-
-  get getDimensionsLines() {
-    return this.dimensions;
+    if (!this._currentDimension) return;
+    this._currentDimension.createBoundingBox();
+    this._dimensions.push(this._currentDimension);
+    this._currentDimension = undefined;
+    this._dragging = false;
   }
 
   private drawDimension() {
-    return new IfcDimensionLine(
-      this.context,
+    return new SimpleDimensionLine(
+      this.components,
       this.startPoint,
       this.endPoint,
-      this.lineMaterial,
-      this.endpointsMaterial,
+      this._lineMaterial,
+      this._endpointsMaterial,
       this.endpoint,
       this.labelClassName,
-      this.baseScale
+      this._baseScale
     );
   }
 
   private getBoundingBoxes() {
-    return this.dimensions
+    return this._dimensions
       .map((dim) => dim.boundingBox)
-      .filter((box) => box !== undefined) as Mesh[];
+      .filter((box) => box !== undefined) as THREE.Mesh[];
   }
 
   private static getDefaultEndpointGeometry(height = 0.02, radius = 0.05) {
-    const coneGeometry = new ConeGeometry(radius, height);
+    const coneGeometry = new THREE.ConeGeometry(radius, height);
     coneGeometry.translate(0, -height / 2, 0);
     coneGeometry.rotateX(-Math.PI / 2);
     return coneGeometry;
   }
 
-  private getClosestVertex(intersects: Intersection) {
-    let closestVertex = new Vector3();
+  private getClosestVertex(intersects: THREE.Intersection) {
+    let closestVertex = new THREE.Vector3();
     let vertexFound = false;
     let closestDistance = Number.MAX_SAFE_INTEGER;
-    const vertices = this.getVertices(intersects);
+    const vertices = SimpleDimensions.getVertices(intersects);
     vertices?.forEach((vertex) => {
       if (!vertex) return;
       const distance = intersects.point.distanceTo(vertex);
@@ -340,21 +301,21 @@ export class SimpleDimensions implements ToolComponent, Enableable, Hideable {
     return vertexFound ? closestVertex : intersects.point;
   }
 
-  private getVertices(intersects: Intersection) {
-    const mesh = intersects.object as Mesh;
+  private static getVertices(intersects: THREE.Intersection) {
+    const mesh = intersects.object as THREE.Mesh;
     if (!intersects.face || !mesh) return null;
     const geom = mesh.geometry;
     return [
-      this.getVertex(intersects.face.a, geom),
-      this.getVertex(intersects.face.b, geom),
-      this.getVertex(intersects.face.c, geom),
+      SimpleDimensions.getVertex(intersects.face.a, geom),
+      SimpleDimensions.getVertex(intersects.face.b, geom),
+      SimpleDimensions.getVertex(intersects.face.c, geom),
     ];
   }
 
-  private getVertex(index: number, geom: BufferGeometry) {
+  private static getVertex(index: number, geom: THREE.BufferGeometry) {
     if (index === undefined) return null;
     const vertices = geom.attributes.position;
-    return new Vector3(
+    return new THREE.Vector3(
       vertices.getX(index),
       vertices.getY(index),
       vertices.getZ(index)

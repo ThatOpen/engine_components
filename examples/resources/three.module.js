@@ -42369,7 +42369,7 @@ class AudioListener extends Object3D {
 
 		this.type = 'AudioListener';
 
-		this.context = AudioContext.getContext();
+		this.components = AudioContext.getContext();
 
 		this.gain = this.context.createGain();
 		this.gain.connect( this.context.destination );
@@ -42495,7 +42495,7 @@ class Audio extends Object3D {
 		this.type = 'Audio';
 
 		this.listener = listener;
-		this.context = listener.context;
+		this.components = listener.context;
 
 		this.gain = this.context.createGain();
 		this.gain.connect( listener.getInput() );
