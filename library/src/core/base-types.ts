@@ -17,11 +17,14 @@ export interface Disposeable {
 }
 
 /**
- * Whether this component can be hidden or shown in the
+ * Whether the geometric representation of this component can be
+ * hidden or shown in the
  * [Three.js scene](https://threejs.org/docs/#api/en/scenes/Scene).
  */
 export interface Hideable {
-  /** Whether this component is currently visible or not. */
+  /** Whether the geometric representation of this component is
+   * currently visible or not in the
+   [Three.js scene](https://threejs.org/docs/#api/en/scenes/Scene). */
   visible: boolean;
 }
 

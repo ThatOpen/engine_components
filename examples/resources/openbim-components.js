@@ -6708,13 +6708,13 @@ class SimpleDimensions {
             depthTest: false,
         });
         // Temp variables
-        this.startPoint = new Vector3$1();
-        this.endPoint = new Vector3$1();
+        this._startPoint = new Vector3$1();
+        this._endPoint = new Vector3$1();
         this.position = new Vector2$1();
         this.rawPosition = new Vector2$1();
-        this.raycaster = new Raycaster();
+        this._raycaster = new Raycaster();
         this.context = context;
-        this.endpoint = SimpleDimensions.getDefaultEndpointGeometry();
+        this._endpointGeometry = SimpleDimensions.getDefaultEndpointGeometry();
         const htmlPreview = document.createElement("div");
         htmlPreview.className = this.previewClassName;
         this.previewElement = new CSS2DObject(htmlPreview);
@@ -6736,8 +6736,8 @@ class SimpleDimensions {
         this._dimensions.forEach((dim) => dim.dispose());
         this._dimensions = null;
         this._currentDimension = null;
-        this.endpoint.dispose();
-        this.endpoint = null;
+        this._endpointGeometry.dispose();
+        this._endpointGeometry = null;
         this.previewElement.removeFromParent();
         this.previewElement.element.remove();
         this.previewElement = null;
@@ -6760,7 +6760,7 @@ class SimpleDimensions {
         }
     }
     setArrow(height, radius) {
-        this.endpoint = SimpleDimensions.getDefaultEndpointGeometry(height, radius);
+        this._endpointGeometry = SimpleDimensions.getDefaultEndpointGeometry(height, radius);
     }
     setPreviewElement(element) {
         this.previewElement = new CSS2DObject(element);
@@ -6864,8 +6864,8 @@ class SimpleDimensions {
         const camera = (_a = this.context.camera) === null || _a === void 0 ? void 0 : _a.get();
         if (!camera)
             throw new Error("Camera required for clipper");
-        this.raycaster.setFromCamera(this.position, camera);
-        return this.raycaster.intersectObjects(items);
+        this._raycaster.setFromCamera(this.position, camera);
+        return this._raycaster.intersectObjects(items);
     }
     castRayIfc() {
         const items = this.castRay(this.context.meshes);
@@ -6902,14 +6902,14 @@ class SimpleDimensions {
         const found = this.getClosestVertex(intersects);
         if (!found)
             return;
-        this.startPoint = found;
+        this._startPoint = found;
     }
     drawStartInPlane(plane) {
         this._dragging = true;
         const intersects = this.castRay([plane]);
         if (!intersects || intersects.length < 1)
             return;
-        this.startPoint = intersects[0].point;
+        this._startPoint = intersects[0].point;
     }
     drawInProcess() {
         const intersects = this.castRayIfc();
@@ -6918,10 +6918,10 @@ class SimpleDimensions {
         const found = this.getClosestVertex(intersects);
         if (!found)
             return;
-        this.endPoint = found;
+        this._endPoint = found;
         if (!this._currentDimension)
             this._currentDimension = this.drawDimension();
-        this._currentDimension.endPoint = this.endPoint;
+        this._currentDimension.endPoint = this._endPoint;
     }
     drawEnd() {
         if (!this._currentDimension)
@@ -6935,7 +6935,7 @@ class SimpleDimensions {
         return this._dimensions;
     }
     drawDimension() {
-        return new IfcDimensionLine(this.context, this.startPoint, this.endPoint, this._lineMaterial, this._endpointsMaterial, this.endpoint, this.labelClassName, this._baseScale);
+        return new IfcDimensionLine(this.context, this._startPoint, this._endPoint, this._lineMaterial, this._endpointsMaterial, this._endpointGeometry, this.labelClassName, this._baseScale);
     }
     getBoundingBoxes() {
         return this._dimensions

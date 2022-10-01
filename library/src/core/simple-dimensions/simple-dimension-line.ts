@@ -14,6 +14,8 @@ import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
 import { Components } from "../../components";
 import { disposeMeshRecursively } from "../three-utils";
 
+// TODO: Document + clean up this: way less parameters, clearer logic
+
 export class SimpleDimensionLine {
   private readonly context: Components;
   private readonly camera: Camera;

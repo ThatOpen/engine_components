@@ -61,19 +61,6 @@ export class FragmentCulling {
     const blob = new Blob([code], { type: "application/javascript" });
     this.worker = new Worker(URL.createObjectURL(blob));
     this.worker.addEventListener("message", this.handleWorkerMessage);
-
-    const controls = this.components.camera.controls;
-    if (controls) {
-      controls.addEventListener("control", () => (this.needsUpdate = true));
-      controls.addEventListener(
-        "controlstart",
-        () => (this.needsUpdate = true)
-      );
-      controls.addEventListener("wake", () => (this.needsUpdate = true));
-      controls.addEventListener("controlend", () => (this.needsUpdate = true));
-      controls.addEventListener("sleep", () => (this.needsUpdate = true));
-    }
-
     const dom = this.components.renderer.get().domElement;
     dom.addEventListener("wheel", () => (this.needsUpdate = true));
 
