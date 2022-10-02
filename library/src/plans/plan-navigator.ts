@@ -1,21 +1,9 @@
 import * as THREE from "three";
-import { EdgesClipper, EdgesPlane } from "../visibility";
+import { EdgesClipper } from "../visibility";
 import { CameraProjection, OrthoPerspectiveCamera } from "../cameras";
+import { PlanView, PlanViewConfig } from "./base-types";
 
 // TODO: Clean up and document this
-export interface PlanViewConfig {
-  id: string;
-  ortho: boolean;
-  normal: THREE.Vector3;
-  point: THREE.Vector3;
-  rotation?: number;
-  data: any;
-}
-
-export interface PlanView extends PlanViewConfig {
-  plane?: EdgesPlane;
-}
-
 export class PlanNavigator {
   plans: { [id: string]: PlanView } = {};
 

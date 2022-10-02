@@ -3,9 +3,9 @@ import { Disposeable, Hideable, Resizeable, Updateable } from "../base-types";
 /**
  * Components are the building blocks of this library. Everything is a
  * component: tools, scenes, objects, cameras, etc.
- * All components must inherit it.
+ * All components must inherit from this class.
  */
-export abstract class Component<T> {
+export abstract class Component<Type> {
   /** The main identifier of this component. */
   abstract name: string;
 
@@ -21,7 +21,7 @@ export abstract class Component<T> {
    * The core of the component. For instance, if it's a camera component, it
    * could be a [THREE.Camera](https://threejs.org/docs/#api/en/cameras/Camera).
    */
-  abstract get(): T;
+  abstract get(): Type;
 
   /** Whether is component is {@link Disposeable}. */
   isDisposeable = (): this is Disposeable => {

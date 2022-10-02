@@ -16,6 +16,25 @@ import {
  * It contains the basic items to create a BIM 3D scene based on Three.js, as
  * well as all the tools provided by this library. It also manages the update
  * loop of everything. Each instance has to be initialized with {@link init}.
+ *
+ * @example
+ *
+ * ```ts
+ * import * as OBC from 'openbim-components';
+ *
+ * const components = new OBC.Components();
+ *
+ * // The container is an HTML `<div>` element
+ * const container = document.getElementById('container');
+ *
+ * // Initialize basic components necessary for initializing `Components`
+ * components.scene = new OBC.SimpleScene(components);
+ * components.renderer = new OBC.SimpleRenderer(components, container);
+ * components.camera = new OBC.SimpleCamera(components);
+ *
+ * // Initialize `Components`, which starts the update loop
+ * components.init();
+ * ```
  */
 export class Components {
   /**
@@ -117,7 +136,7 @@ export class Components {
   }
 
   /**
-   * The [Three.js raycaster](https://threejs.org/docs/#api/en/core/Raycaster)
+   * A component using the [Three.js raycaster](https://threejs.org/docs/#api/en/core/Raycaster)
    * used primarily to pick 3D items with the mouse or a touch screen.
    */
   get raycaster() {
@@ -158,20 +177,6 @@ export class Components {
    * initializing the {@link scene}, the {@link renderer} and the
    * {@link camera}. Additionally, if any component that need a raycaster is
    * used, the {@link raycaster} will need to be initialized.
-   *
-   * @example
-   *
-   * ```ts
-   * import * as OBC from 'openbim-components';
-   *
-   * const components = new OBC.Components();
-   * const container = document.getElementById('container');
-   * components.scene = new OBC.SimpleScene(components);
-   * components.renderer = new OBC.SimpleRenderer(components, container);
-   * components.camera = new OBC.SimpleCamera(components);
-   *
-   * components.init();
-   * ```
    */
   init() {
     this._clock.start();

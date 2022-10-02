@@ -4,7 +4,7 @@ import { NavigationMode, NavModeID, CameraProjection } from "./base-types";
 import { ProjectionManager } from "./projection-manager";
 import { Components } from "../../components";
 import { OrbitMode } from "./navigation-modes/orbit-mode";
-import { PlanMode } from "./navigation-modes/2d-plan-mode";
+import { PlanMode } from "./navigation-modes/plan-mode";
 import { FirstPersonMode } from "./navigation-modes/first-person-mode";
 
 /**
@@ -56,9 +56,12 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
    *
    * @param projection - The camera corresponding to the
    * {@link CameraProjection} specified. If no projection is specified,
-   * the perspective camera will be returned.
+   * the active camera will be returned.
    */
   get(projection?: CameraProjection) {
+    if (!projection) {
+      return this.activeCamera;
+    }
     return projection === "Orthographic"
       ? this._orthoCamera
       : this._perspectiveCamera;
@@ -67,6 +70,17 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
   /** Returns the current {@link CameraProjection}. */
   getProjection() {
     return this._projectionManager.projection;
+  }
+
+  /**
+   * Changes the current {@link CameraProjection} from Ortographic to Perspective
+   * and Viceversa.
+   */
+  async toggleProjection() {
+    const projection = this.getProjection();
+    const newProjection =
+      projection === "Perspective" ? "Orthographic" : "Perspective";
+    this.setProjection(newProjection);
   }
 
   /**

@@ -1,5 +1,5 @@
 import * as THREE$1 from './three.module.js';
-import { BufferAttribute as BufferAttribute$1, Vector3 as Vector3$1, Vector2 as Vector2$1, Plane, Line3, Triangle, Sphere, Box3, Matrix4, BackSide, DoubleSide, FrontSide, Mesh, Ray, Object3D, LineDashedMaterial, MeshBasicMaterial, Raycaster, ConeGeometry, Group, BufferGeometry, Line, BoxGeometry, Matrix3, Quaternion as Quaternion$1, Euler, LineBasicMaterial, CylinderGeometry, Float32BufferAttribute, OctahedronGeometry, SphereGeometry, TorusGeometry, PlaneGeometry, Interpolant, Loader, LoaderUtils, FileLoader, Color as Color$1, SpotLight, PointLight, DirectionalLight, MeshPhysicalMaterial, sRGBEncoding, TangentSpaceNormalMap, ImageBitmapLoader, TextureLoader, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material, MeshStandardMaterial, RGBFormat, PropertyBinding, SkinnedMesh, LineSegments, LineLoop, Points, PerspectiveCamera, MathUtils, OrthographicCamera, InterpolateLinear, AnimationClip, Bone, Skeleton, TriangleFanDrawMode, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, Texture, TriangleStripDrawMode, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, RGBAFormat, Scene, InstancedMesh, MeshLambertMaterial, EdgesGeometry, InstancedBufferGeometry, InstancedBufferAttribute, UniformsLib, ShaderLib, UniformsUtils, ShaderMaterial, InstancedInterleavedBuffer, WireframeGeometry, Vector4 as Vector4$1, DynamicDrawUsage, WebGLRenderTarget, Clock, DepthTexture, UnsignedShortType, MeshDepthMaterial, RGBADepthPacking, NoBlending, MeshNormalMaterial, CustomBlending, DstColorFactor, ZeroFactor, AddEquation, DstAlphaFactor } from './three.module.js';
+import { BufferAttribute as BufferAttribute$1, Vector3 as Vector3$1, Vector2 as Vector2$1, Plane, Line3, Triangle, Sphere, Box3, Matrix4, BackSide, DoubleSide, FrontSide, Mesh, Ray, Object3D, Group, BufferGeometry, Line, BoxGeometry, Matrix3, Raycaster, Quaternion as Quaternion$1, Euler, MeshBasicMaterial, LineBasicMaterial, CylinderGeometry, Float32BufferAttribute, OctahedronGeometry, SphereGeometry, TorusGeometry, PlaneGeometry, Interpolant, Loader, LoaderUtils, FileLoader, Color as Color$1, SpotLight, PointLight, DirectionalLight, MeshPhysicalMaterial, sRGBEncoding, TangentSpaceNormalMap, ImageBitmapLoader, TextureLoader, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material, MeshStandardMaterial, RGBFormat, PropertyBinding, SkinnedMesh, LineSegments, LineLoop, Points, PerspectiveCamera, MathUtils, OrthographicCamera, InterpolateLinear, AnimationClip, Bone, Skeleton, TriangleFanDrawMode, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, Texture, TriangleStripDrawMode, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, RGBAFormat, Scene, InstancedMesh, MeshLambertMaterial, EdgesGeometry, InstancedBufferGeometry, InstancedBufferAttribute, UniformsLib, ShaderLib, UniformsUtils, ShaderMaterial, InstancedInterleavedBuffer, WireframeGeometry, Vector4 as Vector4$1, DynamicDrawUsage, WebGLRenderTarget, Clock, DepthTexture, UnsignedShortType, MeshDepthMaterial, RGBADepthPacking, NoBlending, MeshNormalMaterial, CustomBlending, DstColorFactor, ZeroFactor, AddEquation, DstAlphaFactor } from './three.module.js';
 
 // Split strategy constants
 const CENTER = 0;
@@ -6352,7 +6352,7 @@ function createBoundingSphere(object3d, out) {
 /**
  * Components are the building blocks of this library. Everything is a
  * component: tools, scenes, objects, cameras, etc.
- * All components must inherit it.
+ * All components must inherit from this class.
  */
 class Component {
     constructor() {
@@ -6752,309 +6752,8 @@ function getBasisTransform(from, to, targetMatrix) {
     targetMatrix.makeBasis(orderedVectors[0], orderedVectors[1], orderedVectors[2]);
 }
 
-class SimpleDimensions {
-    constructor(context) {
-        this.name = "dimensions";
-        this.dimensions = [];
-        this.labelClassName = "ifcjs-dimension-label";
-        this.previewClassName = "ifcjs-dimension-preview";
-        // State
-        this._enabled = false;
-        this._visible = false;
-        this.preview = false;
-        this.dragging = false;
-        this.snapDistance = 0.25;
-        // Measures
-        this.baseScale = new Vector3$1(1, 1, 1);
-        // Materials
-        this.lineMaterial = new LineDashedMaterial({
-            color: 0x000000,
-            linewidth: 2,
-            depthTest: false,
-            dashSize: 0.2,
-            gapSize: 0.2,
-        });
-        this.endpointsMaterial = new MeshBasicMaterial({
-            color: 0x000000,
-            depthTest: false,
-        });
-        // Temp variables
-        this._startPoint = new Vector3$1();
-        this._endPoint = new Vector3$1();
-        this.position = new Vector2$1();
-        this.rawPosition = new Vector2$1();
-        this._raycaster = new Raycaster();
-        this.context = context;
-        this._endpointGeometry = SimpleDimensions.getDefaultEndpointGeometry();
-        const htmlPreview = document.createElement("div");
-        htmlPreview.className = this.previewClassName;
-        this.previewElement = new CSS2DObject(htmlPreview);
-        this.previewElement.visible = false;
-        // Mouse position
-        const domElement = context.renderer.renderer.domElement;
-        domElement.onmousemove = (event) => {
-            this.rawPosition.x = event.clientX;
-            this.rawPosition.y = event.clientY;
-            const bounds = domElement.getBoundingClientRect();
-            this.position.x =
-                ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1;
-            this.position.y =
-                -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1;
-        };
-    }
-    dispose() {
-        this.context = null;
-        this.dimensions.forEach((dim) => dim.dispose());
-        this.dimensions = null;
-        this.currentDimension = null;
-        this._endpointGeometry.dispose();
-        this._endpointGeometry = null;
-        this.previewElement.removeFromParent();
-        this.previewElement.element.remove();
-        this.previewElement = null;
-    }
-    update(_delta) {
-        if (this._enabled && this.preview) {
-            const intersects = this.castRayIfc();
-            this.previewElement.visible = !!intersects;
-            if (!intersects)
-                return;
-            this.previewElement.visible = true;
-            const closest = this.getClosestVertex(intersects);
-            this.previewElement.visible = !!closest;
-            if (!closest)
-                return;
-            this.previewElement.position.set(closest.x, closest.y, closest.z);
-            if (this.dragging) {
-                this.drawInProcess();
-            }
-        }
-    }
-    setArrow(height, radius) {
-        this._endpointGeometry = SimpleDimensions.getDefaultEndpointGeometry(height, radius);
-    }
-    setPreviewElement(element) {
-        this.previewElement = new CSS2DObject(element);
-    }
-    get enabled() {
-        return this._enabled;
-    }
-    set enabled(state) {
-        this._enabled = state;
-        this.previewActive = state;
-        if (!this.visible && state) {
-            this.visible = true;
-        }
-    }
-    get previewActive() {
-        return this.preview;
-    }
-    get previewObject() {
-        return this.previewElement;
-    }
-    set visible(state) {
-        this._visible = state;
-        if (this.enabled && !state) {
-            this.enabled = false;
-        }
-        this.dimensions.forEach((dim) => {
-            dim.visibility = state;
-        });
-    }
-    get visible() {
-        return this._visible;
-    }
-    set previewActive(state) {
-        var _a;
-        this.preview = state;
-        const scene = (_a = this.context.scene) === null || _a === void 0 ? void 0 : _a.getScene();
-        if (!scene)
-            throw new Error("Dimensions rely on scene to be present.");
-        if (this.preview) {
-            scene.add(this.previewElement);
-        }
-        else {
-            scene.remove(this.previewElement);
-        }
-    }
-    set dimensionsColor(color) {
-        this.endpointsMaterial.color = color;
-        this.lineMaterial.color = color;
-    }
-    set dimensionsWidth(width) {
-        this.lineMaterial.linewidth = width;
-    }
-    set endpointGeometry(geometry) {
-        this.dimensions.forEach((dim) => {
-            dim.endpointGeometry = geometry;
-        });
-    }
-    set endpointScaleFactor(factor) {
-        IfcDimensionLine.scaleFactor = factor;
-    }
-    set endpointScale(scale) {
-        this.baseScale = scale;
-        this.dimensions.forEach((dim) => {
-            dim.endpointScale = scale;
-        });
-    }
-    create() {
-        if (!this._enabled)
-            return;
-        if (!this.dragging) {
-            this.drawStart();
-            return;
-        }
-        this.drawEnd();
-    }
-    createInPlane(plane) {
-        if (!this._enabled)
-            return;
-        if (!this.dragging) {
-            this.drawStartInPlane(plane);
-            return;
-        }
-        this.drawEnd();
-    }
-    delete() {
-        if (!this._enabled || this.dimensions.length === 0)
-            return;
-        const boundingBoxes = this.getBoundingBoxes();
-        const intersects = this.castRay(boundingBoxes);
-        if (intersects.length === 0)
-            return;
-        const selected = this.dimensions.find((dim) => dim.boundingBox === intersects[0].object);
-        if (!selected)
-            return;
-        const index = this.dimensions.indexOf(selected);
-        this.dimensions.splice(index, 1);
-        selected.removeFromScene();
-    }
-    castRay(items) {
-        var _a;
-        const camera = (_a = this.context.camera) === null || _a === void 0 ? void 0 : _a.getCamera();
-        if (!camera)
-            throw new Error("Camera required for clipper");
-        this._raycaster.setFromCamera(this.position, camera);
-        return this._raycaster.intersectObjects(items);
-    }
-    castRayIfc() {
-        const items = this.castRay(this.context.meshes);
-        const filtered = this.filterClippingPlanes(items);
-        return filtered.length > 0 ? filtered[0] : null;
-    }
-    filterClippingPlanes(objs) {
-        var _a;
-        const planes = (_a = this.context.renderer) === null || _a === void 0 ? void 0 : _a.renderer.clippingPlanes;
-        if (objs.length <= 0 || !planes || (planes === null || planes === void 0 ? void 0 : planes.length) <= 0)
-            return objs;
-        // const planes = this.clipper?.planes.map((p) => p.plane);
-        return objs.filter((elem) => planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0));
-    }
-    deleteAll() {
-        this.dimensions.forEach((dim) => {
-            dim.removeFromScene();
-        });
-        this.dimensions = [];
-    }
-    cancelDrawing() {
-        var _a;
-        if (!this.currentDimension)
-            return;
-        this.dragging = false;
-        (_a = this.currentDimension) === null || _a === void 0 ? void 0 : _a.removeFromScene();
-        this.currentDimension = undefined;
-    }
-    drawStart() {
-        this.dragging = true;
-        const intersects = this.castRayIfc();
-        if (!intersects)
-            return;
-        const found = this.getClosestVertex(intersects);
-        if (!found)
-            return;
-        this._startPoint = found;
-    }
-    drawStartInPlane(plane) {
-        this.dragging = true;
-        const intersects = this.castRay([plane]);
-        if (!intersects || intersects.length < 1)
-            return;
-        this._startPoint = intersects[0].point;
-    }
-    drawInProcess() {
-        const intersects = this.castRayIfc();
-        if (!intersects)
-            return;
-        const found = this.getClosestVertex(intersects);
-        if (!found)
-            return;
-        this._endPoint = found;
-        if (!this.currentDimension)
-            this.currentDimension = this.drawDimension();
-        this.currentDimension._endPoint = this._endPoint;
-    }
-    drawEnd() {
-        if (!this.currentDimension)
-            return;
-        this.currentDimension.createBoundingBox();
-        this.dimensions.push(this.currentDimension);
-        this.currentDimension = undefined;
-        this.dragging = false;
-    }
-    get getDimensionsLines() {
-        return this.dimensions;
-    }
-    drawDimension() {
-        return new IfcDimensionLine(this.context, this._startPoint, this._endPoint, this.lineMaterial, this.endpointsMaterial, this._endpointGeometry, this.labelClassName, this.baseScale);
-    }
-    getBoundingBoxes() {
-        return this.dimensions
-            .map((dim) => dim.boundingBox)
-            .filter((box) => box !== undefined);
-    }
-    static getDefaultEndpointGeometry(height = 0.02, radius = 0.05) {
-        const coneGeometry = new ConeGeometry(radius, height);
-        coneGeometry.translate(0, -height / 2, 0);
-        coneGeometry.rotateX(-Math.PI / 2);
-        return coneGeometry;
-    }
-    getClosestVertex(intersects) {
-        let closestVertex = new Vector3$1();
-        let vertexFound = false;
-        let closestDistance = Number.MAX_SAFE_INTEGER;
-        const vertices = this.getVertices(intersects);
-        vertices === null || vertices === void 0 ? void 0 : vertices.forEach((vertex) => {
-            if (!vertex)
-                return;
-            const distance = intersects.point.distanceTo(vertex);
-            if (distance > closestDistance || distance > this.snapDistance)
-                return;
-            vertexFound = true;
-            closestVertex = vertex;
-            closestDistance = intersects.point.distanceTo(vertex);
-        });
-        return vertexFound ? closestVertex : intersects.point;
-    }
-    getVertices(intersects) {
-        const mesh = intersects.object;
-        if (!intersects.face || !mesh)
-            return null;
-        const geom = mesh.geometry;
-        return [
-            this.getVertex(intersects.face.a, geom),
-            this.getVertex(intersects.face.b, geom),
-            this.getVertex(intersects.face.c, geom),
-        ];
-    }
-    getVertex(index, geom) {
-        if (index === undefined)
-            return null;
-        const vertices = geom.attributes.position;
-        return new Vector3$1(vertices.getX(index), vertices.getY(index), vertices.getZ(index));
-    }
-}
-class IfcDimensionLine {
+// TODO: Document + clean up this: way less parameters, clearer logic
+class SimpleDimensionLine {
     constructor(context, start, end, lineMaterial, endpointMaterial, endpointGeometry, className, endpointScale) {
         // Elements
         this.root = new Group();
@@ -7077,8 +6776,8 @@ class IfcDimensionLine {
         this.addEndpointMeshes();
         this.textLabel = this.newText();
         this.root.renderOrder = 2;
-        this.context.scene.getScene().add(this.root);
-        this.camera = this.context.camera.getCamera();
+        this.context.scene.get().add(this.root);
+        this.camera = this.context.camera.get();
         // this.context.ifcCamera.onChange.on(() => this.rescaleObjectsToCameraPosition());
         this.rescaleObjectsToCameraPosition();
     }
@@ -7150,7 +6849,7 @@ class IfcDimensionLine {
         this.line.computeLineDistances();
     }
     removeFromScene() {
-        this.context.scene.getScene().remove(this.root);
+        this.context.scene.get().remove(this.root);
         this.root.remove(this.textLabel);
     }
     createBoundingBox() {
@@ -7158,7 +6857,7 @@ class IfcDimensionLine {
         this.setupBoundingBox(this.end);
     }
     rescaleObjectsToCameraPosition() {
-        this.endpointMeshes.forEach((mesh) => this.rescaleMesh(mesh, IfcDimensionLine.scaleFactor));
+        this.endpointMeshes.forEach((mesh) => this.rescaleMesh(mesh, SimpleDimensionLine.scaleFactor));
         if (this.boundingMesh) {
             this.rescaleMesh(this.boundingMesh, this.boundingSize, true, true, false);
         }
@@ -7195,7 +6894,7 @@ class IfcDimensionLine {
         return label;
     }
     getTextContent() {
-        return `${this.length / IfcDimensionLine.scale} ${IfcDimensionLine.units}`;
+        return `${this.length / SimpleDimensionLine.scale} ${SimpleDimensionLine.units}`;
     }
     newBoundingBox() {
         const box = new BoxGeometry(1, 1, this.length);
@@ -7219,9 +6918,372 @@ class IfcDimensionLine {
         return this.start.clone().add(dir);
     }
 }
-IfcDimensionLine.scaleFactor = 0.1;
-IfcDimensionLine.scale = 1;
-IfcDimensionLine.units = "m";
+SimpleDimensionLine.scaleFactor = 0.1;
+SimpleDimensionLine.scale = 1;
+SimpleDimensionLine.units = "m";
+
+/**
+ * A helper to easily get the real position of the mouse in the Three.js canvas
+ * to work with tools like the
+ * [raycaster](https://threejs.org/docs/#api/en/core/Raycaster), even if it has
+ * been transformed through CSS or doesn't occupy the whole screen.
+ */
+class SimpleMouse {
+    constructor(dom) {
+        this.dom = dom;
+        this._position = new THREE$1.Vector2();
+        this.updateMouseInfo = (event) => {
+            this._event = event;
+        };
+        this.setupMousePositionUpdate();
+    }
+    /**
+     * The real position of the mouse of the Three.js canvas.
+     */
+    get position() {
+        if (this._event) {
+            const bounds = this.dom.getBoundingClientRect();
+            this._position.x = this.getPositionX(bounds, this._event);
+            this._position.y = this.getPositionY(bounds, this._event);
+        }
+        return this._position;
+    }
+    /** {@link Disposeable.dispose} */
+    dispose() {
+        this.dom.removeEventListener("mousemove", this.updateMouseInfo);
+    }
+    getPositionY(bound, event) {
+        return -((event.clientY - bound.top) / (bound.bottom - bound.top)) * 2 + 1;
+    }
+    getPositionX(bound, event) {
+        return ((event.clientX - bound.left) / (bound.right - bound.left)) * 2 - 1;
+    }
+    setupMousePositionUpdate() {
+        this.dom.addEventListener("mousemove", this.updateMouseInfo);
+    }
+}
+
+/**
+ * A simple [raycaster](https://threejs.org/docs/#api/en/core/Raycaster)
+ * that allows to easily get items from the scene using the mouse and touch
+ * events.
+ */
+class SimpleRaycaster extends Component {
+    constructor(components) {
+        super();
+        this.components = components;
+        /** {@link Component.name} */
+        this.name = "SimpleRaycaster";
+        /** {@link Component.enabled} */
+        this.enabled = true;
+        this._raycaster = new THREE$1.Raycaster();
+        const scene = components.renderer.get();
+        const dom = scene.domElement;
+        this._mouse = new SimpleMouse(dom);
+    }
+    /** {@link Component.get} */
+    get() {
+        return this._raycaster;
+    }
+    /**
+     * Throws a ray from the camera to the mouse or touch event point and returns
+     * the first item found. This also takes into account the clipping planes
+     * used by the renderer.
+     *
+     * @param items - the [meshes](https://threejs.org/docs/#api/en/objects/Mesh)
+     * to query. If not provided, it will query all the meshes stored in
+     * {@link Components.meshes}.
+     */
+    castRay(items = this.components.meshes) {
+        const camera = this.components.camera.get();
+        this._raycaster.setFromCamera(this._mouse.position, camera);
+        const result = this._raycaster.intersectObjects(items);
+        const filtered = this.filterClippingPlanes(result);
+        return filtered.length > 0 ? filtered[0] : null;
+    }
+    filterClippingPlanes(objs) {
+        const renderer = this.components.renderer.get();
+        if (!renderer.clippingPlanes) {
+            return objs;
+        }
+        const planes = renderer.clippingPlanes;
+        if (objs.length <= 0 || !planes || (planes === null || planes === void 0 ? void 0 : planes.length) <= 0)
+            return objs;
+        return objs.filter((elem) => planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0));
+    }
+}
+
+/**
+ * A basic dimension tool to measure distances between 2 points in 3D and
+ * display a 3D symbol displaying the numeric value.
+ */
+class SimpleDimensions extends Component {
+    constructor(components) {
+        super();
+        this.components = components;
+        /** {@link Component.name} */
+        this.name = "SimpleDimensions";
+        /** {@link Updateable.beforeUpdate} */
+        this.beforeUpdate = new Event();
+        /** {@link Updateable.afterUpdate} */
+        this.afterUpdate = new Event();
+        /** The minimum distance to force the dimension cursor to a vertex. */
+        this.snapDistance = 0.25;
+        /** The name of the CSS class that styles the dimension label. */
+        this.labelClassName = "ifcjs-dimension-label";
+        /** The name of the CSS class that styles the dimension label. */
+        this.previewClassName = "ifcjs-dimension-preview";
+        this._lineMaterial = new THREE$1.LineDashedMaterial({
+            color: 0x000000,
+            linewidth: 2,
+            depthTest: false,
+            dashSize: 0.2,
+            gapSize: 0.2,
+        });
+        this._endpointsMaterial = new THREE$1.MeshBasicMaterial({
+            color: 0x000000,
+            depthTest: false,
+        });
+        // TODO: Clean this up, reduce number of parameters
+        this._visible = false;
+        this._enabled = false;
+        this._preview = false;
+        this._dragging = false;
+        this._baseScale = new THREE$1.Vector3(1, 1, 1);
+        this._startPoint = new THREE$1.Vector3();
+        this._endPoint = new THREE$1.Vector3();
+        this._dimensions = [];
+        this._raycaster = new SimpleRaycaster(this.components);
+        this._endpointGeometry = SimpleDimensions.getDefaultEndpointGeometry();
+        const htmlPreview = document.createElement("div");
+        htmlPreview.className = this.previewClassName;
+        this.previewElement = new CSS2DObject(htmlPreview);
+        this.previewElement.visible = false;
+    }
+    /** {@link Component.enabled} */
+    get enabled() {
+        return this._enabled;
+    }
+    /** {@link Component.enabled} */
+    set enabled(state) {
+        this._enabled = state;
+        this.previewActive = state;
+        if (!this.visible && state) {
+            this.visible = true;
+        }
+    }
+    /** {@link Hideable.visible} */
+    get visible() {
+        return this._visible;
+    }
+    /** {@link Hideable.visible} */
+    set visible(state) {
+        this._visible = state;
+        if (this.enabled && !state) {
+            this.enabled = false;
+        }
+        this._dimensions.forEach((dim) => {
+            dim.visibility = state;
+        });
+    }
+    /**
+     * The [Color](https://threejs.org/docs/#api/en/math/Color)
+     * of the geometry of the dimensions.
+     */
+    set dimensionsColor(color) {
+        this._endpointsMaterial.color = color;
+        this._lineMaterial.color = color;
+    }
+    /** The width of the line of the dimensions. */
+    set dimensionsWidth(width) {
+        this._lineMaterial.linewidth = width;
+    }
+    /** The geometry used in both endpoints of all the dimensions. */
+    get endpointGeometry() {
+        return this._endpointGeometry;
+    }
+    /** The geometry used in both endpoints of all the dimensions. */
+    set endpointGeometry(geometry) {
+        this._endpointGeometry = geometry;
+        for (const dim of this._dimensions) {
+            dim.endpointGeometry = geometry;
+        }
+    }
+    set previewActive(state) {
+        var _a;
+        this._preview = state;
+        const scene = (_a = this.components.scene) === null || _a === void 0 ? void 0 : _a.get();
+        if (!scene)
+            throw new Error("Dimensions rely on scene to be present.");
+        if (this._preview) {
+            scene.add(this.previewElement);
+        }
+        else {
+            scene.remove(this.previewElement);
+        }
+    }
+    /** {@link Component.get} */
+    get() {
+        return this._dimensions;
+    }
+    /** {@link Disposeable.dispose} */
+    dispose() {
+        this.components = null;
+        this._dimensions.forEach((dim) => dim.dispose());
+        this._dimensions = null;
+        this._currentDimension = null;
+        this._endpointGeometry.dispose();
+        this._endpointGeometry = null;
+        this.previewElement.removeFromParent();
+        this.previewElement.element.remove();
+        this.previewElement = null;
+    }
+    /** {@link Updateable.update} */
+    update(_delta) {
+        if (this._enabled && this._preview) {
+            this.beforeUpdate.trigger(this);
+            const intersects = this._raycaster.castRay();
+            this.previewElement.visible = !!intersects;
+            if (!intersects)
+                return;
+            this.previewElement.visible = true;
+            const closest = this.getClosestVertex(intersects);
+            this.previewElement.visible = !!closest;
+            if (!closest)
+                return;
+            this.previewElement.position.set(closest.x, closest.y, closest.z);
+            if (this._dragging) {
+                this.drawInProcess();
+            }
+            this.afterUpdate.trigger(this);
+        }
+    }
+    /**
+     * Starts or finishes drawing a new dimension line.
+     *
+     * @param plane - forces the dimension to be drawn on a plane. Use this if you are drawing
+     * dimensions in floor plan navigation.
+     */
+    create(plane) {
+        if (!this._enabled)
+            return;
+        if (!this._dragging) {
+            this.drawStart(plane);
+            return;
+        }
+        this.drawEnd();
+    }
+    /** Deletes the dimension that the user is hovering over with the mouse or touch event. */
+    delete() {
+        if (!this._enabled || this._dimensions.length === 0)
+            return;
+        const boundingBoxes = this.getBoundingBoxes();
+        const intersect = this._raycaster.castRay(boundingBoxes);
+        if (!intersect)
+            return;
+        const selected = this._dimensions.find((dim) => dim.boundingBox === intersect.object);
+        if (!selected)
+            return;
+        const index = this._dimensions.indexOf(selected);
+        this._dimensions.splice(index, 1);
+        selected.removeFromScene();
+    }
+    /** Deletes all the dimensions that have been previously created. */
+    deleteAll() {
+        this._dimensions.forEach((dim) => {
+            dim.removeFromScene();
+        });
+        this._dimensions = [];
+    }
+    /** Cancels the drawing of the current dimension. */
+    cancelDrawing() {
+        var _a;
+        if (!this._currentDimension)
+            return;
+        this._dragging = false;
+        (_a = this._currentDimension) === null || _a === void 0 ? void 0 : _a.removeFromScene();
+        this._currentDimension = undefined;
+    }
+    drawStart(plane) {
+        const items = plane ? [plane] : undefined;
+        const intersects = this._raycaster.castRay(items);
+        if (!intersects)
+            return;
+        this._dragging = true;
+        this._startPoint = plane
+            ? intersects.point
+            : this.getClosestVertex(intersects);
+    }
+    drawInProcess() {
+        const intersects = this._raycaster.castRay();
+        if (!intersects)
+            return;
+        const found = this.getClosestVertex(intersects);
+        if (!found)
+            return;
+        this._endPoint = found;
+        if (!this._currentDimension)
+            this._currentDimension = this.drawDimension();
+        this._currentDimension.endPoint = this._endPoint;
+    }
+    drawEnd() {
+        if (!this._currentDimension)
+            return;
+        this._currentDimension.createBoundingBox();
+        this._dimensions.push(this._currentDimension);
+        this._currentDimension = undefined;
+        this._dragging = false;
+    }
+    // TODO: Clean up this constructor by wrapping everything inside an object
+    drawDimension() {
+        return new SimpleDimensionLine(this.components, this._startPoint, this._endPoint, this._lineMaterial, this._endpointsMaterial, this._endpointGeometry, this.labelClassName, this._baseScale);
+    }
+    getBoundingBoxes() {
+        return this._dimensions
+            .map((dim) => dim.boundingBox)
+            .filter((box) => box !== undefined);
+    }
+    static getDefaultEndpointGeometry(height = 0.02, radius = 0.05) {
+        const coneGeometry = new THREE$1.ConeGeometry(radius, height);
+        coneGeometry.translate(0, -height / 2, 0);
+        coneGeometry.rotateX(-Math.PI / 2);
+        return coneGeometry;
+    }
+    getClosestVertex(intersects) {
+        let closestVertex = new THREE$1.Vector3();
+        let vertexFound = false;
+        let closestDistance = Number.MAX_SAFE_INTEGER;
+        const vertices = SimpleDimensions.getVertices(intersects);
+        vertices === null || vertices === void 0 ? void 0 : vertices.forEach((vertex) => {
+            if (!vertex)
+                return;
+            const distance = intersects.point.distanceTo(vertex);
+            if (distance > closestDistance || distance > this.snapDistance)
+                return;
+            vertexFound = true;
+            closestVertex = vertex;
+            closestDistance = intersects.point.distanceTo(vertex);
+        });
+        return vertexFound ? closestVertex : intersects.point;
+    }
+    static getVertices(intersects) {
+        const mesh = intersects.object;
+        if (!intersects.face || !mesh)
+            return null;
+        const geom = mesh.geometry;
+        return [
+            SimpleDimensions.getVertex(intersects.face.a, geom),
+            SimpleDimensions.getVertex(intersects.face.b, geom),
+            SimpleDimensions.getVertex(intersects.face.c, geom),
+        ];
+    }
+    static getVertex(index, geom) {
+        if (index === undefined)
+            return null;
+        const vertices = geom.attributes.position;
+        return new THREE$1.Vector3(vertices.getX(index), vertices.getY(index), vertices.getZ(index));
+    }
+}
 
 /**
  * A basic
@@ -7347,97 +7409,6 @@ class SimpleScene extends Component {
     /** {@link Component.get} */
     get() {
         return this._scene;
-    }
-}
-
-/**
- * A helper to easily get the real position of the mouse in the Three.js canvas
- * to work with tools like the
- * [raycaster](https://threejs.org/docs/#api/en/core/Raycaster), even if it has
- * been transformed through CSS or doesn't occupy the whole screen.
- */
-class SimpleMouse {
-    constructor(dom) {
-        this.dom = dom;
-        this._position = new THREE$1.Vector2();
-        this.updateMouseInfo = (event) => {
-            this._event = event;
-        };
-        this.setupMousePositionUpdate();
-    }
-    /**
-     * The real position of the mouse of the Three.js canvas.
-     */
-    get position() {
-        if (this._event) {
-            const bounds = this.dom.getBoundingClientRect();
-            this._position.x = this.getPositionX(bounds, this._event);
-            this._position.y = this.getPositionY(bounds, this._event);
-        }
-        return this._position;
-    }
-    /** {@link Disposeable.dispose} */
-    dispose() {
-        this.dom.removeEventListener("mousemove", this.updateMouseInfo);
-    }
-    getPositionY(bound, event) {
-        return -((event.clientY - bound.top) / (bound.bottom - bound.top)) * 2 + 1;
-    }
-    getPositionX(bound, event) {
-        return ((event.clientX - bound.left) / (bound.right - bound.left)) * 2 - 1;
-    }
-    setupMousePositionUpdate() {
-        this.dom.addEventListener("mousemove", this.updateMouseInfo);
-    }
-}
-
-/**
- * A simple [raycaster](https://threejs.org/docs/#api/en/core/Raycaster)
- * that allows to easily get items from the scene using the mouse and touch
- * events.
- */
-class SimpleRaycaster extends Component {
-    constructor(components) {
-        super();
-        this.components = components;
-        /** {@link Component.name} */
-        this.name = "SimpleRaycaster";
-        /** {@link Component.enabled} */
-        this.enabled = true;
-        this._raycaster = new THREE$1.Raycaster();
-        const scene = components.renderer.get();
-        const dom = scene.domElement;
-        this._mouse = new SimpleMouse(dom);
-    }
-    /** {@link Component.get} */
-    get() {
-        return this._raycaster;
-    }
-    /**
-     * Throws a ray from the camera to the mouse or touch event point and returns
-     * the first item found. This also takes into account the clipping planes
-     * used by the renderer.
-     *
-     * @param items - the [meshes](https://threejs.org/docs/#api/en/objects/Mesh)
-     * to query. If not provided, it will query all the meshes stored in
-     * {@link Components.meshes}.
-     */
-    castRay(items = this.components.meshes) {
-        const camera = this.components.camera.get();
-        this._raycaster.setFromCamera(this._mouse.position, camera);
-        const result = this._raycaster.intersectObjects(items);
-        const filtered = this.filterClippingPlanes(result);
-        return filtered.length > 0 ? filtered[0] : null;
-    }
-    filterClippingPlanes(objs) {
-        const renderer = this.components.renderer.get();
-        if (!renderer.clippingPlanes) {
-            return objs;
-        }
-        const planes = renderer.clippingPlanes;
-        if (objs.length <= 0 || !planes || (planes === null || planes === void 0 ? void 0 : planes.length) <= 0)
-            return objs;
-        return objs.filter((elem) => planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0));
     }
 }
 
@@ -9353,6 +9324,25 @@ class ToolComponents {
  * It contains the basic items to create a BIM 3D scene based on Three.js, as
  * well as all the tools provided by this library. It also manages the update
  * loop of everything. Each instance has to be initialized with {@link init}.
+ *
+ * @example
+ *
+ * ```ts
+ * import * as OBC from 'openbim-components';
+ *
+ * const components = new OBC.Components();
+ *
+ * // The container is an HTML `<div>` element
+ * const container = document.getElementById('container');
+ *
+ * // Initialize basic components necessary for initializing `Components`
+ * components.scene = new OBC.SimpleScene(components);
+ * components.renderer = new OBC.SimpleRenderer(components, container);
+ * components.camera = new OBC.SimpleCamera(components);
+ *
+ * // Initialize `Components`, which starts the update loop
+ * components.init();
+ * ```
  */
 class Components {
     constructor() {
@@ -9449,7 +9439,7 @@ class Components {
         this._camera = camera;
     }
     /**
-     * The [Three.js raycaster](https://threejs.org/docs/#api/en/core/Raycaster)
+     * A component using the [Three.js raycaster](https://threejs.org/docs/#api/en/core/Raycaster)
      * used primarily to pick 3D items with the mouse or a touch screen.
      */
     get raycaster() {
@@ -9481,20 +9471,6 @@ class Components {
      * initializing the {@link scene}, the {@link renderer} and the
      * {@link camera}. Additionally, if any component that need a raycaster is
      * used, the {@link raycaster} will need to be initialized.
-     *
-     * @example
-     *
-     * ```ts
-     * import * as OBC from 'openbim-components';
-     *
-     * const components = new OBC.Components();
-     * const container = document.getElementById('container');
-     * components.scene = new OBC.SimpleScene(components);
-     * components.renderer = new OBC.SimpleRenderer(components, container);
-     * components.camera = new OBC.SimpleCamera(components);
-     *
-     * components.init();
-     * ```
      */
     init() {
         this._clock.start();
@@ -21800,9 +21776,12 @@ class OrthoPerspectiveCamera extends SimpleCamera {
      *
      * @param projection - The camera corresponding to the
      * {@link CameraProjection} specified. If no projection is specified,
-     * the perspective camera will be returned.
+     * the active camera will be returned.
      */
     get(projection) {
+        if (!projection) {
+            return this.activeCamera;
+        }
         return projection === "Orthographic"
             ? this._orthoCamera
             : this._perspectiveCamera;
@@ -21810,6 +21789,15 @@ class OrthoPerspectiveCamera extends SimpleCamera {
     /** Returns the current {@link CameraProjection}. */
     getProjection() {
         return this._projectionManager.projection;
+    }
+    /**
+     * Changes the current {@link CameraProjection} from Ortographic to Perspective
+     * and Viceversa.
+     */
+    async toggleProjection() {
+        const projection = this.getProjection();
+        const newProjection = projection === "Perspective" ? "Orthographic" : "Perspective";
+        this.setProjection(newProjection);
     }
     /**
      * Sets the current {@link CameraProjection}. This triggers the event
@@ -26701,6 +26689,7 @@ class ShadowDropper {
     }
 }
 
+// TODO: Clean up and document this
 class PlanNavigator {
     constructor(clipper, camera) {
         this.clipper = clipper;
@@ -26858,4 +26847,4 @@ class MapboxRenderer extends RendererComponent {
     resize() { }
 }
 
-export { ClippingEdges, Component, Components, EdgesClipper, EdgesPlane, Event, FirstPersonMode, FragmentCulling, FragmentEdges, FragmentGrouper, FragmentHighlighter, FragmentMaterials, FragmentProperties, FragmentSpatialTree, Fragments, IfcDimensionLine, MapboxCamera, MapboxRenderer, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, RendererComponent, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensions, SimpleGrid, SimpleMouse, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, ToolComponents, disposeMeshRecursively, getBasisTransform, rightToLeftHand, stringToAxes };
+export { ClippingEdges, Component, Components, EdgesClipper, EdgesPlane, Event, FirstPersonMode, FragmentCulling, FragmentEdges, FragmentGrouper, FragmentHighlighter, FragmentMaterials, FragmentProperties, FragmentSpatialTree, Fragments, MapboxCamera, MapboxRenderer, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, RendererComponent, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensionLine, SimpleDimensions, SimpleGrid, SimpleMouse, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, ToolComponents, disposeMeshRecursively, getBasisTransform, rightToLeftHand, stringToAxes };
