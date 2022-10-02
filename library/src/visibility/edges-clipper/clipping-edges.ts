@@ -16,6 +16,8 @@ import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2";
 import { Components } from "../../components";
 import { EdgesItems, StyleList } from "./types";
 
+// TODO: Clean up and document this
+
 // Static elements are for defining the clipping edges styles without having to create a clipping plane first
 
 export class ClippingEdges {
@@ -134,7 +136,8 @@ export class ClippingEdges {
       if (!mesh.geometry.boundsTree) mesh.geometry.computeBoundsTree();
     });
 
-    material.clippingPlanes = ClippingEdges.components.clippingPlanes;
+    const renderer = ClippingEdges.components.renderer.get();
+    material.clippingPlanes = renderer.clippingPlanes;
     ClippingEdges.styles[styleName] = {
       ids,
       categories: [],

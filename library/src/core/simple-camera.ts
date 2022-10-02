@@ -18,10 +18,10 @@ export class SimpleCamera
   /** {@link Component.name} */
   name = "SimpleCamera";
 
-  /** {@link Component.beforeUpdate} */
+  /** {@link Updateable.beforeUpdate} */
   readonly beforeUpdate = new Event<SimpleCamera>();
 
-  /** {@link Component.afterUpdate} */
+  /** {@link Updateable.afterUpdate} */
   readonly afterUpdate = new Event<SimpleCamera>();
 
   /**
@@ -64,7 +64,7 @@ export class SimpleCamera
     return this.activeCamera;
   }
 
-  /** {@link Component.update} */
+  /** {@link Updateable.update} */
   update(_delta: number): void {
     if (this.enabled) {
       this.beforeUpdate.trigger(this);

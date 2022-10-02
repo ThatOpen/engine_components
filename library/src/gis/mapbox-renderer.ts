@@ -1,14 +1,22 @@
 import * as THREE from "three";
 import { Vector2, WebGLRenderer } from "three";
-import { Event, RendererComponent } from "../core";
+import { RendererComponent } from "../core";
 
-export class MapboxRenderer implements RendererComponent {
-  readonly onStartRender = new Event();
-  readonly onFinishRender = new Event();
+/**
+ * Minimal renderer that can be used to create a BIM + GIS scene
+ * with [Mapbox](https://www.mapbox.com/).
+ */
+export class MapboxRenderer extends RendererComponent {
+  /** {@link Component.name} */
+  name = "MapboxRenderer";
+
+  /** {@link Component.enabled} */
+  enabled = true;
 
   private readonly renderer: THREE.WebGLRenderer;
 
   constructor(canvas: HTMLCanvasElement, context: WebGLRenderingContext) {
+    super();
     this.renderer = new THREE.WebGLRenderer({
       canvas,
       context,
@@ -17,10 +25,12 @@ export class MapboxRenderer implements RendererComponent {
     this.renderer.autoClear = false;
   }
 
+  /** {@link Component.get} */
   get(): WebGLRenderer {
     return this.renderer;
   }
 
+  /** {@link Resizeable.getSize} */
   getSize(): Vector2 {
     return new THREE.Vector2(
       this.renderer.domElement.clientWidth,
@@ -28,18 +38,6 @@ export class MapboxRenderer implements RendererComponent {
     );
   }
 
-  addClippingPlane(plane: THREE.Plane) {
-    this.renderer.clippingPlanes.push(plane);
-  }
-
-  removeClippingPlane(plane: THREE.Plane) {
-    const index = this.renderer.clippingPlanes.indexOf(plane);
-    if (index > -1) {
-      this.renderer.clippingPlanes.splice(index, 1);
-    }
-  }
-
+  /** This renderer can't be manually resized because Mapbox handles that. */
   resize(): void {}
-
-  update(_delta: number): void {}
 }

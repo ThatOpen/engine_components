@@ -21,10 +21,10 @@ export class SimpleRenderer
   /** {@link Component.enabled} */
   enabled = true;
 
-  /** {@link Component.beforeUpdate} */
+  /** {@link Updateable.beforeUpdate} */
   beforeUpdate = new Event<SimpleRenderer>();
 
-  /** {@link Component.afterUpdate} */
+  /** {@link Updateable.afterUpdate} */
   afterUpdate = new Event<SimpleRenderer>();
 
   protected _renderer2D = new CSS2DRenderer();
@@ -47,7 +47,7 @@ export class SimpleRenderer
     return this._renderer;
   }
 
-  /** {@link Component.update} */
+  /** {@link Updateable.update} */
   update(_delta: number) {
     this.beforeUpdate.trigger(this);
     const scene = this.components.scene?.get();

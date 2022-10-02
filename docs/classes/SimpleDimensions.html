@@ -13,18 +13,24 @@
 <li><a href="../modules.html">Open BIM Components</a></li>
 <li><a href="SimpleDimensions.html">SimpleDimensions</a></li></ul>
 <h1>Class SimpleDimensions</h1></div>
+<section class="tsd-panel tsd-comment">
+<div class="tsd-comment tsd-typography"><p>A basic dimension tool to measure distances between 2 points in 3D and
+display a 3D symbol displaying the numeric value.</p>
+</div></section>
 <section class="tsd-panel tsd-hierarchy">
 <h4>Hierarchy</h4>
 <ul class="tsd-hierarchy">
-<li><span class="target">SimpleDimensions</span></li></ul></section>
+<li><a href="Component.html" class="tsd-signature-type" data-tsd-kind="Class">Component</a><span class="tsd-signature-symbol">&lt;</span><a href="SimpleDimensionLine.html" class="tsd-signature-type" data-tsd-kind="Class">SimpleDimensionLine</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span>
+<ul class="tsd-hierarchy">
+<li><span class="target">SimpleDimensions</span></li></ul></li></ul></section>
 <section class="tsd-panel">
 <h4>Implements</h4>
 <ul class="tsd-hierarchy">
-<li><a href="../interfaces/ToolComponent.html" class="tsd-signature-type" data-tsd-kind="Interface">ToolComponent</a></li>
-<li><a href="../interfaces/IEnableable.html" class="tsd-signature-type" data-tsd-kind="Interface">IEnableable</a></li>
-<li><a href="../interfaces/IHideable.html" class="tsd-signature-type" data-tsd-kind="Interface">IHideable</a></li></ul></section><aside class="tsd-sources">
+<li><a href="../interfaces/Hideable.html" class="tsd-signature-type" data-tsd-kind="Interface">Hideable</a></li>
+<li><a href="../interfaces/Disposeable.html" class="tsd-signature-type" data-tsd-kind="Interface">Disposeable</a></li>
+<li><a href="../interfaces/Updateable.html" class="tsd-signature-type" data-tsd-kind="Interface">Updateable</a></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L19">core/simple-dimensions/simple-dimensions.ts:19</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L14">core/simple-dimensions/simple-dimensions.ts:14</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-index-accordion" open><summary class="tsd-accordion-summary tsd-index-summary">
@@ -36,27 +42,27 @@
 </div></section>
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading">Properties</h3>
-<div class="tsd-index-list"><a href="SimpleDimensions.html#_enabled" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="#FF984D" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12" id="icon-1024-path"></rect><path d="M9.354 16V7.24H12.174C12.99 7.24 13.638 7.476 14.118 7.948C14.606 8.412 14.85 9.036 14.85 9.82C14.85 10.604 14.606 11.232 14.118 11.704C13.638 12.168 12.99 12.4 12.174 12.4H10.434V16H9.354ZM10.434 11.428H12.174C12.646 11.428 13.022 11.284 13.302 10.996C13.59 10.7 13.734 10.308 13.734 9.82C13.734 9.324 13.59 8.932 13.302 8.644C13.022 8.356 12.646 8.212 12.174 8.212H10.434V11.428Z" fill="var(--color-text)" id="icon-1024-text"></path></svg><span>_enabled</span></a>
-<a href="SimpleDimensions.html#_visible" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_visible</span></a>
-<a href="SimpleDimensions.html#baseScale" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>base<wbr/>Scale</span></a>
-<a href="SimpleDimensions.html#context" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>context</span></a>
-<a href="SimpleDimensions.html#currentDimension" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>current<wbr/>Dimension?</span></a>
-<a href="SimpleDimensions.html#dimensions" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>dimensions</span></a>
-<a href="SimpleDimensions.html#dragging" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>dragging</span></a>
-<a href="SimpleDimensions.html#endPoint" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>end<wbr/>Point</span></a>
-<a href="SimpleDimensions.html#endpoint-1" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>endpoint</span></a>
-<a href="SimpleDimensions.html#endpointsMaterial" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>endpoints<wbr/>Material</span></a>
+<div class="tsd-index-list"><a href="SimpleDimensions.html#_baseScale" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="#FF984D" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12" id="icon-1024-path"></rect><path d="M9.354 16V7.24H12.174C12.99 7.24 13.638 7.476 14.118 7.948C14.606 8.412 14.85 9.036 14.85 9.82C14.85 10.604 14.606 11.232 14.118 11.704C13.638 12.168 12.99 12.4 12.174 12.4H10.434V16H9.354ZM10.434 11.428H12.174C12.646 11.428 13.022 11.284 13.302 10.996C13.59 10.7 13.734 10.308 13.734 9.82C13.734 9.324 13.59 8.932 13.302 8.644C13.022 8.356 12.646 8.212 12.174 8.212H10.434V11.428Z" fill="var(--color-text)" id="icon-1024-text"></path></svg><span>_base<wbr/>Scale</span></a>
+<a href="SimpleDimensions.html#_currentDimension" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_current<wbr/>Dimension?</span></a>
+<a href="SimpleDimensions.html#_dimensions" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_dimensions</span></a>
+<a href="SimpleDimensions.html#_dragging" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_dragging</span></a>
+<a href="SimpleDimensions.html#_enabled" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_enabled</span></a>
+<a href="SimpleDimensions.html#_endPoint" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_end<wbr/>Point</span></a>
+<a href="SimpleDimensions.html#_endpointGeometry" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_endpoint<wbr/>Geometry</span></a>
+<a href="SimpleDimensions.html#_endpointsMaterial" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_endpoints<wbr/>Material</span></a>
+<a href="SimpleDimensions.html#_lineMaterial" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_line<wbr/>Material</span></a>
+<a href="SimpleDimensions.html#_preview" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_preview</span></a>
+<a href="SimpleDimensions.html#_raycaster" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_raycaster</span></a>
+<a href="SimpleDimensions.html#_startPoint" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_start<wbr/>Point</span></a>
+<a href="SimpleDimensions.html#_visible" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-protected"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>_visible</span></a>
+<a href="SimpleDimensions.html#afterUpdate" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>after<wbr/>Update</span></a>
+<a href="SimpleDimensions.html#beforeUpdate" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>before<wbr/>Update</span></a>
+<a href="SimpleDimensions.html#components" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>components</span></a>
 <a href="SimpleDimensions.html#labelClassName" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>label<wbr/>Class<wbr/>Name</span></a>
-<a href="SimpleDimensions.html#lineMaterial" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>line<wbr/>Material</span></a>
 <a href="SimpleDimensions.html#name" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>name</span></a>
-<a href="SimpleDimensions.html#position" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>position</span></a>
-<a href="SimpleDimensions.html#preview" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>preview</span></a>
 <a href="SimpleDimensions.html#previewClassName" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>preview<wbr/>Class<wbr/>Name</span></a>
-<a href="SimpleDimensions.html#previewElement" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>preview<wbr/>Element</span></a>
-<a href="SimpleDimensions.html#rawPosition" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>raw<wbr/>Position</span></a>
-<a href="SimpleDimensions.html#raycaster" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>raycaster</span></a>
+<a href="SimpleDimensions.html#previewElement" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>preview<wbr/>Element</span></a>
 <a href="SimpleDimensions.html#snapDistance" class="tsd-index-link tsd-kind-property tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>snap<wbr/>Distance</span></a>
-<a href="SimpleDimensions.html#startPoint" class="tsd-index-link tsd-kind-property tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg><span>start<wbr/>Point</span></a>
 </div></section>
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading">Accessors</h3>
@@ -64,20 +70,13 @@
 <a href="SimpleDimensions.html#dimensionsWidth" class="tsd-index-link tsd-kind-accessor tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg><span>dimensions<wbr/>Width</span></a>
 <a href="SimpleDimensions.html#enabled" class="tsd-index-link tsd-kind-accessor tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg><span>enabled</span></a>
 <a href="SimpleDimensions.html#endpointGeometry" class="tsd-index-link tsd-kind-accessor tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg><span>endpoint<wbr/>Geometry</span></a>
-<a href="SimpleDimensions.html#endpointScale" class="tsd-index-link tsd-kind-accessor tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg><span>endpoint<wbr/>Scale</span></a>
-<a href="SimpleDimensions.html#endpointScaleFactor" class="tsd-index-link tsd-kind-accessor tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg><span>endpoint<wbr/>Scale<wbr/>Factor</span></a>
-<a href="SimpleDimensions.html#getDimensionsLines" class="tsd-index-link tsd-kind-accessor tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg><span>get<wbr/>Dimensions<wbr/>Lines</span></a>
-<a href="SimpleDimensions.html#previewActive" class="tsd-index-link tsd-kind-accessor tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg><span>preview<wbr/>Active</span></a>
-<a href="SimpleDimensions.html#previewObject" class="tsd-index-link tsd-kind-accessor tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg><span>preview<wbr/>Object</span></a>
+<a href="SimpleDimensions.html#previewActive" class="tsd-index-link tsd-kind-accessor tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg><span>preview<wbr/>Active</span></a>
 <a href="SimpleDimensions.html#visible" class="tsd-index-link tsd-kind-accessor tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg><span>visible</span></a>
 </div></section>
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading">Methods</h3>
 <div class="tsd-index-list"><a href="SimpleDimensions.html#cancelDrawing" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="#FF4DB8" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12" id="icon-2048-path"></rect><path d="M9.162 16V7.24H10.578L11.514 10.072C11.602 10.328 11.674 10.584 11.73 10.84C11.794 11.088 11.842 11.28 11.874 11.416C11.906 11.28 11.954 11.088 12.018 10.84C12.082 10.584 12.154 10.324 12.234 10.06L13.122 7.24H14.538V16H13.482V12.82C13.482 12.468 13.49 12.068 13.506 11.62C13.53 11.172 13.558 10.716 13.59 10.252C13.622 9.78 13.654 9.332 13.686 8.908C13.726 8.476 13.762 8.1 13.794 7.78L12.366 12.16H11.334L9.894 7.78C9.934 8.092 9.97 8.456 10.002 8.872C10.042 9.28 10.078 9.716 10.11 10.18C10.142 10.636 10.166 11.092 10.182 11.548C10.206 12.004 10.218 12.428 10.218 12.82V16H9.162Z" fill="var(--color-text)" id="icon-2048-text"></path></svg><span>cancel<wbr/>Drawing</span></a>
-<a href="SimpleDimensions.html#castRay" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>cast<wbr/>Ray</span></a>
-<a href="SimpleDimensions.html#castRayIfc" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>cast<wbr/>Ray<wbr/>Ifc</span></a>
 <a href="SimpleDimensions.html#create" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>create</span></a>
-<a href="SimpleDimensions.html#createInPlane" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>create<wbr/>In<wbr/>Plane</span></a>
 <a href="SimpleDimensions.html#delete" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>delete</span></a>
 <a href="SimpleDimensions.html#deleteAll" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>delete<wbr/>All</span></a>
 <a href="SimpleDimensions.html#dispose" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>dispose</span></a>
@@ -85,140 +84,159 @@
 <a href="SimpleDimensions.html#drawEnd" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>draw<wbr/>End</span></a>
 <a href="SimpleDimensions.html#drawInProcess" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>draw<wbr/>In<wbr/>Process</span></a>
 <a href="SimpleDimensions.html#drawStart" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>draw<wbr/>Start</span></a>
-<a href="SimpleDimensions.html#drawStartInPlane" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>draw<wbr/>Start<wbr/>In<wbr/>Plane</span></a>
-<a href="SimpleDimensions.html#filterClippingPlanes" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>filter<wbr/>Clipping<wbr/>Planes</span></a>
+<a href="SimpleDimensions.html#get" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get</span></a>
 <a href="SimpleDimensions.html#getBoundingBoxes" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get<wbr/>Bounding<wbr/>Boxes</span></a>
 <a href="SimpleDimensions.html#getClosestVertex" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get<wbr/>Closest<wbr/>Vertex</span></a>
-<a href="SimpleDimensions.html#getVertex" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get<wbr/>Vertex</span></a>
-<a href="SimpleDimensions.html#getVertices" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get<wbr/>Vertices</span></a>
-<a href="SimpleDimensions.html#setArrow" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>set<wbr/>Arrow</span></a>
-<a href="SimpleDimensions.html#setPreviewElement" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>set<wbr/>Preview<wbr/>Element</span></a>
+<a href="SimpleDimensions.html#isDisposeable" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>is<wbr/>Disposeable</span></a>
+<a href="SimpleDimensions.html#isHideable" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>is<wbr/>Hideable</span></a>
+<a href="SimpleDimensions.html#isResizeable" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>is<wbr/>Resizeable</span></a>
+<a href="SimpleDimensions.html#isUpdateable" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>is<wbr/>Updateable</span></a>
 <a href="SimpleDimensions.html#update" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>update</span></a>
 <a href="SimpleDimensions.html#getDefaultEndpointGeometry" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get<wbr/>Default<wbr/>Endpoint<wbr/>Geometry</span></a>
+<a href="SimpleDimensions.html#getVertex" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get<wbr/>Vertex</span></a>
+<a href="SimpleDimensions.html#getVertices" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get<wbr/>Vertices</span></a>
 </div></section></div></details></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Constructors</h2>
 <section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class"><a id="constructor" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>constructor</span><a href="#constructor" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" id="icon-anchor-a"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5" id="icon-anchor-b"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5" id="icon-anchor-c"></path></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="constructor.new_SimpleDimensions">new <wbr/>Simple<wbr/>Dimensions<span class="tsd-signature-symbol">(</span>context<span class="tsd-signature-symbol">: </span><a href="Components.html" class="tsd-signature-type" data-tsd-kind="Class">Components</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="SimpleDimensions.html" class="tsd-signature-type" data-tsd-kind="Class">SimpleDimensions</a><a href="#constructor.new_SimpleDimensions" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="constructor.new_SimpleDimensions">new <wbr/>Simple<wbr/>Dimensions<span class="tsd-signature-symbol">(</span>components<span class="tsd-signature-symbol">: </span><a href="Components.html" class="tsd-signature-type" data-tsd-kind="Class">Components</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="SimpleDimensions.html" class="tsd-signature-type" data-tsd-kind="Class">SimpleDimensions</a><a href="#constructor.new_SimpleDimensions" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>context: <a href="Components.html" class="tsd-signature-type" data-tsd-kind="Class">Components</a></h5></li></ul></div>
+<h5>components: <a href="Components.html" class="tsd-signature-type" data-tsd-kind="Class">Components</a></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="SimpleDimensions.html" class="tsd-signature-type" data-tsd-kind="Class">SimpleDimensions</a></h4><aside class="tsd-sources">
+<p>Overrides <a href="Component.html">Component</a>.<a href="Component.html#constructor">constructor</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L64">core/simple-dimensions/simple-dimensions.ts:64</a></li></ul></aside></li></ul></section></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L134">core/simple-dimensions/simple-dimensions.ts:134</a></li></ul></aside></li></ul></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Properties</h2>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="_enabled" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>_enabled</span><a href="#_enabled" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_baseScale" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <span>_base<wbr/>Scale</span><a href="#_baseScale" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<div class="tsd-signature">_base<wbr/>Scale<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Vector3</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L58">core/simple-dimensions/simple-dimensions.ts:58</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_currentDimension" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <code class="tsd-tag ts-flagOptional">Optional</code> <span>_current<wbr/>Dimension</span><a href="#_currentDimension" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<div class="tsd-signature">_current<wbr/>Dimension<span class="tsd-signature-symbol">?:</span> <a href="SimpleDimensionLine.html" class="tsd-signature-type" data-tsd-kind="Class">SimpleDimensionLine</a></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L64">core/simple-dimensions/simple-dimensions.ts:64</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_dimensions" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <span>_dimensions</span><a href="#_dimensions" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<div class="tsd-signature">_dimensions<span class="tsd-signature-symbol">:</span> <a href="SimpleDimensionLine.html" class="tsd-signature-type" data-tsd-kind="Class">SimpleDimensionLine</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> = []</span></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L63">core/simple-dimensions/simple-dimensions.ts:63</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_dragging" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <span>_dragging</span><a href="#_dragging" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<div class="tsd-signature">_dragging<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L57">core/simple-dimensions/simple-dimensions.ts:57</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_enabled" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <span>_enabled</span><a href="#_enabled" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_enabled<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L28">core/simple-dimensions/simple-dimensions.ts:28</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="_visible" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>_visible</span><a href="#_visible" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L55">core/simple-dimensions/simple-dimensions.ts:55</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_endPoint" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <span>_end<wbr/>Point</span><a href="#_endPoint" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<div class="tsd-signature">_end<wbr/>Point<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Vector3</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L61">core/simple-dimensions/simple-dimensions.ts:61</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_endpointGeometry" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <span>_endpoint<wbr/>Geometry</span><a href="#_endpointGeometry" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<div class="tsd-signature">_endpoint<wbr/>Geometry<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">BufferGeometry</span></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L59">core/simple-dimensions/simple-dimensions.ts:59</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_endpointsMaterial" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <span>_endpoints<wbr/>Material</span><a href="#_endpointsMaterial" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<div class="tsd-signature">_endpoints<wbr/>Material<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">MeshBasicMaterial</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L48">core/simple-dimensions/simple-dimensions.ts:48</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_lineMaterial" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <span>_line<wbr/>Material</span><a href="#_lineMaterial" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<div class="tsd-signature">_line<wbr/>Material<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">LineDashedMaterial</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L40">core/simple-dimensions/simple-dimensions.ts:40</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_preview" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <span>_preview</span><a href="#_preview" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<div class="tsd-signature">_preview<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L56">core/simple-dimensions/simple-dimensions.ts:56</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_raycaster" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <span>_raycaster</span><a href="#_raycaster" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<div class="tsd-signature">_raycaster<span class="tsd-signature-symbol">:</span> <a href="SimpleRaycaster.html" class="tsd-signature-type" data-tsd-kind="Class">SimpleRaycaster</a></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L62">core/simple-dimensions/simple-dimensions.ts:62</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_startPoint" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <span>_start<wbr/>Point</span><a href="#_startPoint" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<div class="tsd-signature">_start<wbr/>Point<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Vector3</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L60">core/simple-dimensions/simple-dimensions.ts:60</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_visible" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <span>_visible</span><a href="#_visible" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_visible<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L29">core/simple-dimensions/simple-dimensions.ts:29</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="baseScale" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>base<wbr/>Scale</span><a href="#baseScale" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">base<wbr/>Scale<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Vector3</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L54">core/simple-dimensions/simple-dimensions.ts:54</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="afterUpdate" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagReadonly">Readonly</code> <span>after<wbr/>Update</span><a href="#afterUpdate" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<div class="tsd-signature">after<wbr/>Update<span class="tsd-signature-symbol">:</span> <a href="Event.html" class="tsd-signature-type" data-tsd-kind="Class">Event</a><span class="tsd-signature-symbol">&lt;</span><a href="SimpleDimensions.html" class="tsd-signature-type" data-tsd-kind="Class">SimpleDimensions</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = ...</span></div>
+<div class="tsd-comment tsd-typography"><p><a href="../interfaces/Updateable.html#afterUpdate">afterUpdate</a></p>
+</div><aside class="tsd-sources">
+<p>Implementation of <a href="../interfaces/Updateable.html">Updateable</a>.<a href="../interfaces/Updateable.html#afterUpdate">afterUpdate</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L36">core/simple-dimensions/simple-dimensions.ts:36</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="context" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>context</span><a href="#context" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">context<span class="tsd-signature-symbol">:</span> <a href="Components.html" class="tsd-signature-type" data-tsd-kind="Class">Components</a></div><aside class="tsd-sources">
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L25">core/simple-dimensions/simple-dimensions.ts:25</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="beforeUpdate" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagReadonly">Readonly</code> <span>before<wbr/>Update</span><a href="#beforeUpdate" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<div class="tsd-signature">before<wbr/>Update<span class="tsd-signature-symbol">:</span> <a href="Event.html" class="tsd-signature-type" data-tsd-kind="Class">Event</a><span class="tsd-signature-symbol">&lt;</span><a href="SimpleDimensions.html" class="tsd-signature-type" data-tsd-kind="Class">SimpleDimensions</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = ...</span></div>
+<div class="tsd-comment tsd-typography"><p><a href="../interfaces/Updateable.html#beforeUpdate">beforeUpdate</a></p>
+</div><aside class="tsd-sources">
+<p>Implementation of <a href="../interfaces/Updateable.html">Updateable</a>.<a href="../interfaces/Updateable.html#beforeUpdate">beforeUpdate</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L21">core/simple-dimensions/simple-dimensions.ts:21</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="currentDimension" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <code class="tsd-tag ts-flagOptional">Optional</code> <span>current<wbr/>Dimension</span><a href="#currentDimension" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">current<wbr/>Dimension<span class="tsd-signature-symbol">?:</span> <a href="IfcDimensionLine.html" class="tsd-signature-type" data-tsd-kind="Class">IfcDimensionLine</a></div><aside class="tsd-sources">
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L22">core/simple-dimensions/simple-dimensions.ts:22</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="components" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>components</span><a href="#components" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<div class="tsd-signature">components<span class="tsd-signature-symbol">:</span> <a href="Components.html" class="tsd-signature-type" data-tsd-kind="Class">Components</a></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L23">core/simple-dimensions/simple-dimensions.ts:23</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="dimensions" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>dimensions</span><a href="#dimensions" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">dimensions<span class="tsd-signature-symbol">:</span> <a href="IfcDimensionLine.html" class="tsd-signature-type" data-tsd-kind="Class">IfcDimensionLine</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> = []</span></div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L22">core/simple-dimensions/simple-dimensions.ts:22</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="dragging" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>dragging</span><a href="#dragging" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">dragging<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L31">core/simple-dimensions/simple-dimensions.ts:31</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="endPoint" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>end<wbr/>Point</span><a href="#endPoint" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">end<wbr/>Point<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Vector3</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L58">core/simple-dimensions/simple-dimensions.ts:58</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="endpoint-1" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>endpoint</span><a href="#endpoint-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">endpoint<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">BufferGeometry</span></div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L39">core/simple-dimensions/simple-dimensions.ts:39</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="endpointsMaterial" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>endpoints<wbr/>Material</span><a href="#endpointsMaterial" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">endpoints<wbr/>Material<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">MeshBasicMaterial</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L51">core/simple-dimensions/simple-dimensions.ts:51</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L134">core/simple-dimensions/simple-dimensions.ts:134</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="labelClassName" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagReadonly">Readonly</code> <span>label<wbr/>Class<wbr/>Name</span><a href="#labelClassName" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">label<wbr/>Class<wbr/>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;ifcjs-dimension-label&quot;</span><span class="tsd-signature-symbol"> = &quot;ifcjs-dimension-label&quot;</span></div><aside class="tsd-sources">
+<div class="tsd-signature">label<wbr/>Class<wbr/>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;ifcjs-dimension-label&quot;</span><span class="tsd-signature-symbol"> = &quot;ifcjs-dimension-label&quot;</span></div>
+<div class="tsd-comment tsd-typography"><p>The name of the CSS class that styles the dimension label.</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L24">core/simple-dimensions/simple-dimensions.ts:24</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="lineMaterial" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>line<wbr/>Material</span><a href="#lineMaterial" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">line<wbr/>Material<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">LineDashedMaterial</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L43">core/simple-dimensions/simple-dimensions.ts:43</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L35">core/simple-dimensions/simple-dimensions.ts:35</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="name" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagReadonly">Readonly</code> <span>name</span><a href="#name" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;dimensions&quot;</span><span class="tsd-signature-symbol"> = &quot;dimensions&quot;</span></div><aside class="tsd-sources">
-<p>Implementation of <a href="../interfaces/ToolComponent.html">ToolComponent</a>.<a href="../interfaces/ToolComponent.html#name">name</a></p>
+<div class="tsd-signature">name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;SimpleDimensions&quot;</span><span class="tsd-signature-symbol"> = &quot;SimpleDimensions&quot;</span></div>
+<div class="tsd-comment tsd-typography"><p><a href="Component.html#name">name</a></p>
+</div><aside class="tsd-sources">
+<p>Overrides <a href="Component.html">Component</a>.<a href="Component.html#name">name</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L20">core/simple-dimensions/simple-dimensions.ts:20</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="position" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>position</span><a href="#position" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">position<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Vector2</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L60">core/simple-dimensions/simple-dimensions.ts:60</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="preview" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>preview</span><a href="#preview" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">preview<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L30">core/simple-dimensions/simple-dimensions.ts:30</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L19">core/simple-dimensions/simple-dimensions.ts:19</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="previewClassName" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagReadonly">Readonly</code> <span>preview<wbr/>Class<wbr/>Name</span><a href="#previewClassName" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">preview<wbr/>Class<wbr/>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;ifcjs-dimension-preview&quot;</span><span class="tsd-signature-symbol"> = &quot;ifcjs-dimension-preview&quot;</span></div><aside class="tsd-sources">
+<div class="tsd-signature">preview<wbr/>Class<wbr/>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;ifcjs-dimension-preview&quot;</span><span class="tsd-signature-symbol"> = &quot;ifcjs-dimension-preview&quot;</span></div>
+<div class="tsd-comment tsd-typography"><p>The name of the CSS class that styles the dimension label.</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L25">core/simple-dimensions/simple-dimensions.ts:25</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="previewElement" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>preview<wbr/>Element</span><a href="#previewElement" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">preview<wbr/>Element<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">CSS2DObject</span></div><aside class="tsd-sources">
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L38">core/simple-dimensions/simple-dimensions.ts:38</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="previewElement" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>preview<wbr/>Element</span><a href="#previewElement" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<div class="tsd-signature">preview<wbr/>Element<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">CSS2DObject</span></div>
+<div class="tsd-comment tsd-typography"><p>The <a href="https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer">symbol</a>
+that is displayed where the dimension will be drawn.</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L40">core/simple-dimensions/simple-dimensions.ts:40</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="rawPosition" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>raw<wbr/>Position</span><a href="#rawPosition" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">raw<wbr/>Position<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Vector2</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L61">core/simple-dimensions/simple-dimensions.ts:61</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="raycaster" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>raycaster</span><a href="#raycaster" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">raycaster<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Raycaster</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L62">core/simple-dimensions/simple-dimensions.ts:62</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L32">core/simple-dimensions/simple-dimensions.ts:32</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="snapDistance" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>snap<wbr/>Distance</span><a href="#snapDistance" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">snap<wbr/>Distance<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0.25</span></div><aside class="tsd-sources">
+<div class="tsd-signature">snap<wbr/>Distance<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0.25</span></div>
+<div class="tsd-comment tsd-typography"><p>The minimum distance to force the dimension cursor to a vertex.</p>
+</div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L32">core/simple-dimensions/simple-dimensions.ts:32</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="startPoint" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>start<wbr/>Point</span><a href="#startPoint" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<div class="tsd-signature">start<wbr/>Point<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Vector3</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L57">core/simple-dimensions/simple-dimensions.ts:57</a></li></ul></aside></section></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L28">core/simple-dimensions/simple-dimensions.ts:28</a></li></ul></aside></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Accessors</h2>
 <section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="dimensionsColor" class="tsd-anchor"></a>
@@ -226,6 +244,9 @@
 <ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class">
 <li class="tsd-signature" id="dimensionsColor.dimensionsColor-1"><span class="tsd-signature-symbol">set</span> dimensionsColor<span class="tsd-signature-symbol">(</span>color<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Color</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>The <a href="https://threejs.org/docs/#api/en/math/Color">Color</a>
+of the geometry of the dimensions.</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
@@ -233,12 +254,14 @@
 <h5>color: <span class="tsd-signature-type">Color</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L168">core/simple-dimensions/simple-dimensions.ts:168</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L100">core/simple-dimensions/simple-dimensions.ts:100</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="dimensionsWidth" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>dimensions<wbr/>Width</span><a href="#dimensionsWidth" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class">
 <li class="tsd-signature" id="dimensionsWidth.dimensionsWidth-1"><span class="tsd-signature-symbol">set</span> dimensionsWidth<span class="tsd-signature-symbol">(</span>width<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>The width of the line of the dimensions.</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
@@ -246,32 +269,45 @@
 <h5>width: <span class="tsd-signature-type">number</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L173">core/simple-dimensions/simple-dimensions.ts:173</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L106">core/simple-dimensions/simple-dimensions.ts:106</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="enabled" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>enabled</span><a href="#enabled" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class">
 <li class="tsd-signature" id="enabled.enabled-1"><span class="tsd-signature-symbol">get</span> enabled<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p><a href="Component.html#enabled">enabled</a></p>
+</div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
-<p>Implementation of <a href="../interfaces/IEnableable.html">IEnableable</a>.<a href="../interfaces/IEnableable.html#enabled">enabled</a></p>
+<p>Overrides Component.enabled</p>
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L123">core/simple-dimensions/simple-dimensions.ts:123</a></li></ul></aside></li>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L67">core/simple-dimensions/simple-dimensions.ts:67</a></li></ul></aside></li>
 <li class="tsd-signature" id="enabled.enabled-2"><span class="tsd-signature-symbol">set</span> enabled<span class="tsd-signature-symbol">(</span>state<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p><a href="Component.html#enabled">enabled</a></p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
 <h5>state: <span class="tsd-signature-type">boolean</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
-<p>Implementation of <a href="../interfaces/IEnableable.html">IEnableable</a>.<a href="../interfaces/IEnableable.html#enabled">enabled</a></p>
+<p>Overrides Component.enabled</p>
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L127">core/simple-dimensions/simple-dimensions.ts:127</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L72">core/simple-dimensions/simple-dimensions.ts:72</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="endpointGeometry" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>endpoint<wbr/>Geometry</span><a href="#endpointGeometry" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class">
-<li class="tsd-signature" id="endpointGeometry.endpointGeometry-1"><span class="tsd-signature-symbol">set</span> endpointGeometry<span class="tsd-signature-symbol">(</span>geometry<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">BufferGeometry</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+<li class="tsd-signature" id="endpointGeometry.endpointGeometry-1"><span class="tsd-signature-symbol">get</span> endpointGeometry<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">BufferGeometry</span></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>The geometry used in both endpoints of all the dimensions.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">BufferGeometry</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L111">core/simple-dimensions/simple-dimensions.ts:111</a></li></ul></aside></li>
+<li class="tsd-signature" id="endpointGeometry.endpointGeometry-2"><span class="tsd-signature-symbol">set</span> endpointGeometry<span class="tsd-signature-symbol">(</span>geometry<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">BufferGeometry</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+<li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>The geometry used in both endpoints of all the dimensions.</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
@@ -279,50 +315,11 @@
 <h5>geometry: <span class="tsd-signature-type">BufferGeometry</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L177">core/simple-dimensions/simple-dimensions.ts:177</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="endpointScale" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>endpoint<wbr/>Scale</span><a href="#endpointScale" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class">
-<li class="tsd-signature" id="endpointScale.endpointScale-1"><span class="tsd-signature-symbol">set</span> endpointScale<span class="tsd-signature-symbol">(</span>scale<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Vector3</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-<li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5>scale: <span class="tsd-signature-type">Vector3</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L187">core/simple-dimensions/simple-dimensions.ts:187</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="endpointScaleFactor" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>endpoint<wbr/>Scale<wbr/>Factor</span><a href="#endpointScaleFactor" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class">
-<li class="tsd-signature" id="endpointScaleFactor.endpointScaleFactor-1"><span class="tsd-signature-symbol">set</span> endpointScaleFactor<span class="tsd-signature-symbol">(</span>factor<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
-<li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5>factor: <span class="tsd-signature-type">number</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L183">core/simple-dimensions/simple-dimensions.ts:183</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="getDimensionsLines" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>get<wbr/>Dimensions<wbr/>Lines</span><a href="#getDimensionsLines" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class">
-<li class="tsd-signature" id="getDimensionsLines.getDimensionsLines-1"><span class="tsd-signature-symbol">get</span> getDimensionsLines<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="IfcDimensionLine.html" class="tsd-signature-type" data-tsd-kind="Class">IfcDimensionLine</a><span class="tsd-signature-symbol">[]</span></li>
-<li class="tsd-description">
-<h4 class="tsd-returns-title">Returns <a href="IfcDimensionLine.html" class="tsd-signature-type" data-tsd-kind="Class">IfcDimensionLine</a><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L297">core/simple-dimensions/simple-dimensions.ts:297</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="previewActive" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>preview<wbr/>Active</span><a href="#previewActive" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class">
-<li class="tsd-signature" id="previewActive.previewActive-1"><span class="tsd-signature-symbol">get</span> previewActive<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
-<li class="tsd-description">
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L135">core/simple-dimensions/simple-dimensions.ts:135</a></li></ul></aside></li>
-<li class="tsd-signature" id="previewActive.previewActive-2"><span class="tsd-signature-symbol">set</span> previewActive<span class="tsd-signature-symbol">(</span>state<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L116">core/simple-dimensions/simple-dimensions.ts:116</a></li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class tsd-is-private"><a id="previewActive" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>preview<wbr/>Active</span><a href="#previewActive" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class tsd-is-private">
+<li class="tsd-signature" id="previewActive.previewActive-1"><span class="tsd-signature-symbol">set</span> previewActive<span class="tsd-signature-symbol">(</span>state<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 <li class="tsd-description">
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -331,35 +328,31 @@
 <h5>state: <span class="tsd-signature-type">boolean</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L157">core/simple-dimensions/simple-dimensions.ts:157</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="previewObject" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>preview<wbr/>Object</span><a href="#previewObject" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class">
-<li class="tsd-signature" id="previewObject.previewObject-1"><span class="tsd-signature-symbol">get</span> previewObject<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">CSS2DObject</span></li>
-<li class="tsd-description">
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">CSS2DObject</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L139">core/simple-dimensions/simple-dimensions.ts:139</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L123">core/simple-dimensions/simple-dimensions.ts:123</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="visible" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>visible</span><a href="#visible" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class">
 <li class="tsd-signature" id="visible.visible-1"><span class="tsd-signature-symbol">get</span> visible<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p><a href="../interfaces/Hideable.html#visible">visible</a></p>
+</div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
-<p>Implementation of <a href="../interfaces/IHideable.html">IHideable</a>.<a href="../interfaces/IHideable.html#visible">visible</a></p>
+<p>Implementation of <a href="../interfaces/Hideable.html">Hideable</a>.<a href="../interfaces/Hideable.html#visible">visible</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L153">core/simple-dimensions/simple-dimensions.ts:153</a></li></ul></aside></li>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L81">core/simple-dimensions/simple-dimensions.ts:81</a></li></ul></aside></li>
 <li class="tsd-signature" id="visible.visible-2"><span class="tsd-signature-symbol">set</span> visible<span class="tsd-signature-symbol">(</span>state<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p><a href="../interfaces/Hideable.html#visible">visible</a></p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
 <h5>state: <span class="tsd-signature-type">boolean</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
-<p>Implementation of <a href="../interfaces/IHideable.html">IHideable</a>.<a href="../interfaces/IHideable.html#visible">visible</a></p>
+<p>Implementation of <a href="../interfaces/Hideable.html">Hideable</a>.<a href="../interfaces/Hideable.html#visible">visible</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L143">core/simple-dimensions/simple-dimensions.ts:143</a></li></ul></aside></li></ul></section></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L86">core/simple-dimensions/simple-dimensions.ts:86</a></li></ul></aside></li></ul></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Methods</h2>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="cancelDrawing" class="tsd-anchor"></a>
@@ -367,83 +360,68 @@
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="cancelDrawing.cancelDrawing-1">cancel<wbr/>Drawing<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#cancelDrawing.cancelDrawing-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Cancels the drawing of the current dimension.</p>
+</div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L255">core/simple-dimensions/simple-dimensions.ts:255</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="castRay" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>cast<wbr/>Ray</span><a href="#castRay" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="castRay.castRay-1">cast<wbr/>Ray<span class="tsd-signature-symbol">(</span>items<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Intersection</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span><a href="#castRay.castRay-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
-<li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5>items: <span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Intersection</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L226">core/simple-dimensions/simple-dimensions.ts:226</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="castRayIfc" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>cast<wbr/>Ray<wbr/>Ifc</span><a href="#castRayIfc" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="castRayIfc.castRayIfc-1">cast<wbr/>Ray<wbr/>Ifc<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Intersection</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><a href="#castRayIfc.castRayIfc-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
-<li class="tsd-description">
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Intersection</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L233">core/simple-dimensions/simple-dimensions.ts:233</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L221">core/simple-dimensions/simple-dimensions.ts:221</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="create" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>create</span><a href="#create" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="create.create-1">create<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#create.create-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="create.create-1">create<span class="tsd-signature-symbol">(</span>plane<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#create.create-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L194">core/simple-dimensions/simple-dimensions.ts:194</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="createInPlane" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>create<wbr/>In<wbr/>Plane</span><a href="#createInPlane" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="createInPlane.createInPlane-1">create<wbr/>In<wbr/>Plane<span class="tsd-signature-symbol">(</span>plane<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#createInPlane.createInPlane-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
-<li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Starts or finishes drawing a new dimension line.</p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>plane: <span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span></h5></li></ul></div>
+<h5><code class="tsd-tag ts-flagOptional">Optional</code> plane: <span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span></h5>
+<div class="tsd-comment tsd-typography"><p>forces the dimension to be drawn on a plane. Use this if you are drawing
+dimensions in floor plan navigation.</p>
+</div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L203">core/simple-dimensions/simple-dimensions.ts:203</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L188">core/simple-dimensions/simple-dimensions.ts:188</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="delete" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>delete</span><a href="#delete" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="delete.delete-1">delete<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#delete.delete-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Deletes the dimension that the user is hovering over with the mouse or touch event.</p>
+</div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L212">core/simple-dimensions/simple-dimensions.ts:212</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L198">core/simple-dimensions/simple-dimensions.ts:198</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="deleteAll" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>delete<wbr/>All</span><a href="#deleteAll" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="deleteAll.deleteAll-1">delete<wbr/>All<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#deleteAll.deleteAll-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Deletes all the dimensions that have been previously created.</p>
+</div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L248">core/simple-dimensions/simple-dimensions.ts:248</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L213">core/simple-dimensions/simple-dimensions.ts:213</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="dispose" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>dispose</span><a href="#dispose" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="dispose.dispose-1">dispose<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#dispose.dispose-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p><a href="../interfaces/Disposeable.html#dispose">dispose</a></p>
+</div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<p>Implementation of Disposeable.dispose</p>
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L86">core/simple-dimensions/simple-dimensions.ts:86</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L150">core/simple-dimensions/simple-dimensions.ts:150</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="drawDimension" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>draw<wbr/>Dimension</span><a href="#drawDimension" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
-<li class="tsd-signature tsd-anchor-link" id="drawDimension.drawDimension-1">draw<wbr/>Dimension<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="IfcDimensionLine.html" class="tsd-signature-type" data-tsd-kind="Class">IfcDimensionLine</a><a href="#drawDimension.drawDimension-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="drawDimension.drawDimension-1">draw<wbr/>Dimension<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="SimpleDimensionLine.html" class="tsd-signature-type" data-tsd-kind="Class">SimpleDimensionLine</a><a href="#drawDimension.drawDimension-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
-<h4 class="tsd-returns-title">Returns <a href="IfcDimensionLine.html" class="tsd-signature-type" data-tsd-kind="Class">IfcDimensionLine</a></h4><aside class="tsd-sources">
+<h4 class="tsd-returns-title">Returns <a href="SimpleDimensionLine.html" class="tsd-signature-type" data-tsd-kind="Class">SimpleDimensionLine</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L301">core/simple-dimensions/simple-dimensions.ts:301</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L257">core/simple-dimensions/simple-dimensions.ts:257</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="drawEnd" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>draw<wbr/>End</span><a href="#drawEnd" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -451,7 +429,7 @@
 <li class="tsd-description">
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L289">core/simple-dimensions/simple-dimensions.ts:289</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L248">core/simple-dimensions/simple-dimensions.ts:248</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="drawInProcess" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>draw<wbr/>In<wbr/>Process</span><a href="#drawInProcess" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -459,41 +437,31 @@
 <li class="tsd-description">
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L279">core/simple-dimensions/simple-dimensions.ts:279</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L238">core/simple-dimensions/simple-dimensions.ts:238</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="drawStart" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>draw<wbr/>Start</span><a href="#drawStart" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
-<li class="tsd-signature tsd-anchor-link" id="drawStart.drawStart-1">draw<wbr/>Start<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#drawStart.drawStart-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
-<li class="tsd-description">
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L262">core/simple-dimensions/simple-dimensions.ts:262</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="drawStartInPlane" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>draw<wbr/>Start<wbr/>In<wbr/>Plane</span><a href="#drawStartInPlane" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
-<li class="tsd-signature tsd-anchor-link" id="drawStartInPlane.drawStartInPlane-1">draw<wbr/>Start<wbr/>In<wbr/>Plane<span class="tsd-signature-symbol">(</span>plane<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#drawStartInPlane.drawStartInPlane-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="drawStart.drawStart-1">draw<wbr/>Start<span class="tsd-signature-symbol">(</span>plane<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#drawStart.drawStart-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5>plane: <span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span></h5></li></ul></div>
+<h5><code class="tsd-tag ts-flagOptional">Optional</code> plane: <span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L271">core/simple-dimensions/simple-dimensions.ts:271</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="filterClippingPlanes" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>filter<wbr/>Clipping<wbr/>Planes</span><a href="#filterClippingPlanes" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
-<li class="tsd-signature tsd-anchor-link" id="filterClippingPlanes.filterClippingPlanes-1">filter<wbr/>Clipping<wbr/>Planes<span class="tsd-signature-symbol">(</span>objs<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Intersection</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Intersection</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span><a href="#filterClippingPlanes.filterClippingPlanes-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L228">core/simple-dimensions/simple-dimensions.ts:228</a></li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="get" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>get</span><a href="#get" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+<li class="tsd-signature tsd-anchor-link" id="get.get-1">get<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="SimpleDimensionLine.html" class="tsd-signature-type" data-tsd-kind="Class">SimpleDimensionLine</a><span class="tsd-signature-symbol">[]</span><a href="#get.get-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5>objs: <span class="tsd-signature-type">Intersection</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Intersection</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
+<div class="tsd-comment tsd-typography"><p><a href="Component.html#get">get</a></p>
+</div>
+<h4 class="tsd-returns-title">Returns <a href="SimpleDimensionLine.html" class="tsd-signature-type" data-tsd-kind="Class">SimpleDimensionLine</a><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
+<p>Overrides <a href="Component.html">Component</a>.<a href="Component.html#get">get</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L239">core/simple-dimensions/simple-dimensions.ts:239</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L145">core/simple-dimensions/simple-dimensions.ts:145</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="getBoundingBoxes" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>get<wbr/>Bounding<wbr/>Boxes</span><a href="#getBoundingBoxes" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -501,7 +469,7 @@
 <li class="tsd-description">
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Mesh</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">BufferGeometry</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Material</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Material</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L314">core/simple-dimensions/simple-dimensions.ts:314</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L270">core/simple-dimensions/simple-dimensions.ts:270</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="getClosestVertex" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>get<wbr/>Closest<wbr/>Vertex</span><a href="#getClosestVertex" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -514,77 +482,67 @@
 <h5>intersects: <span class="tsd-signature-type">Intersection</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Vector3</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L327">core/simple-dimensions/simple-dimensions.ts:327</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="getVertex" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>get<wbr/>Vertex</span><a href="#getVertex" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
-<li class="tsd-signature tsd-anchor-link" id="getVertex.getVertex-1">get<wbr/>Vertex<span class="tsd-signature-symbol">(</span>index<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, geom<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">BufferGeometry</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Vector3</span><a href="#getVertex.getVertex-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L283">core/simple-dimensions/simple-dimensions.ts:283</a></li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="isDisposeable" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>is<wbr/>Disposeable</span><a href="#isDisposeable" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+<li class="tsd-signature tsd-anchor-link" id="isDisposeable.isDisposeable-1">is<wbr/>Disposeable<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">this</span><span class="tsd-signature-symbol"> is </span><a href="../interfaces/Disposeable.html" class="tsd-signature-type" data-tsd-kind="Interface">Disposeable</a><a href="#isDisposeable.isDisposeable-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5>index: <span class="tsd-signature-type">number</span></h5></li>
-<li>
-<h5>geom: <span class="tsd-signature-type">BufferGeometry</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Vector3</span></h4><aside class="tsd-sources">
+<div class="tsd-comment tsd-typography"><p>Whether is component is <a href="../interfaces/Disposeable.html">Disposeable</a>.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">this</span><span class="tsd-signature-symbol"> is </span><a href="../interfaces/Disposeable.html" class="tsd-signature-type" data-tsd-kind="Interface">Disposeable</a></h4><aside class="tsd-sources">
+<p>Inherited from <a href="Component.html">Component</a>.<a href="Component.html#isDisposeable">isDisposeable</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L354">core/simple-dimensions/simple-dimensions.ts:354</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="getVertices" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>get<wbr/>Vertices</span><a href="#getVertices" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
-<li class="tsd-signature tsd-anchor-link" id="getVertices.getVertices-1">get<wbr/>Vertices<span class="tsd-signature-symbol">(</span>intersects<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Intersection</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Vector3</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">[]</span><a href="#getVertices.getVertices-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/base-components/component.ts#L27">core/base-components/component.ts:27</a></li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="isHideable" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>is<wbr/>Hideable</span><a href="#isHideable" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+<li class="tsd-signature tsd-anchor-link" id="isHideable.isHideable-1">is<wbr/>Hideable<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">this</span><span class="tsd-signature-symbol"> is </span><a href="../interfaces/Hideable.html" class="tsd-signature-type" data-tsd-kind="Interface">Hideable</a><a href="#isHideable.isHideable-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5>intersects: <span class="tsd-signature-type">Intersection</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Vector3</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
+<div class="tsd-comment tsd-typography"><p>Whether is component is <a href="../interfaces/Hideable.html">Hideable</a>.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">this</span><span class="tsd-signature-symbol"> is </span><a href="../interfaces/Hideable.html" class="tsd-signature-type" data-tsd-kind="Interface">Hideable</a></h4><aside class="tsd-sources">
+<p>Inherited from <a href="Component.html">Component</a>.<a href="Component.html#isHideable">isHideable</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L343">core/simple-dimensions/simple-dimensions.ts:343</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="setArrow" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>set<wbr/>Arrow</span><a href="#setArrow" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="setArrow.setArrow-1">set<wbr/>Arrow<span class="tsd-signature-symbol">(</span>height<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, radius<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#setArrow.setArrow-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/base-components/component.ts#L42">core/base-components/component.ts:42</a></li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="isResizeable" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>is<wbr/>Resizeable</span><a href="#isResizeable" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+<li class="tsd-signature tsd-anchor-link" id="isResizeable.isResizeable-1">is<wbr/>Resizeable<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">this</span><span class="tsd-signature-symbol"> is </span><a href="../interfaces/Resizeable.html" class="tsd-signature-type" data-tsd-kind="Interface">Resizeable</a><a href="#isResizeable.isResizeable-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5>height: <span class="tsd-signature-type">number</span></h5></li>
-<li>
-<h5>radius: <span class="tsd-signature-type">number</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<div class="tsd-comment tsd-typography"><p>Whether is component is <a href="../interfaces/Resizeable.html">Resizeable</a>.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">this</span><span class="tsd-signature-symbol"> is </span><a href="../interfaces/Resizeable.html" class="tsd-signature-type" data-tsd-kind="Interface">Resizeable</a></h4><aside class="tsd-sources">
+<p>Inherited from <a href="Component.html">Component</a>.<a href="Component.html#isResizeable">isResizeable</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L115">core/simple-dimensions/simple-dimensions.ts:115</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="setPreviewElement" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>set<wbr/>Preview<wbr/>Element</span><a href="#setPreviewElement" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-<li class="tsd-signature tsd-anchor-link" id="setPreviewElement.setPreviewElement-1">set<wbr/>Preview<wbr/>Element<span class="tsd-signature-symbol">(</span>element<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">HTMLElement</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#setPreviewElement.setPreviewElement-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/base-components/component.ts#L32">core/base-components/component.ts:32</a></li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="isUpdateable" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>is<wbr/>Updateable</span><a href="#isUpdateable" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+<li class="tsd-signature tsd-anchor-link" id="isUpdateable.isUpdateable-1">is<wbr/>Updateable<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">this</span><span class="tsd-signature-symbol"> is </span><a href="../interfaces/Updateable.html" class="tsd-signature-type" data-tsd-kind="Interface">Updateable</a><a href="#isUpdateable.isUpdateable-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5>element: <span class="tsd-signature-type">HTMLElement</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<div class="tsd-comment tsd-typography"><p>Whether is component is <a href="../interfaces/Updateable.html">Updateable</a>.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">this</span><span class="tsd-signature-symbol"> is </span><a href="../interfaces/Updateable.html" class="tsd-signature-type" data-tsd-kind="Interface">Updateable</a></h4><aside class="tsd-sources">
+<p>Inherited from <a href="Component.html">Component</a>.<a href="Component.html#isUpdateable">isUpdateable</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L119">core/simple-dimensions/simple-dimensions.ts:119</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/base-components/component.ts#L37">core/base-components/component.ts:37</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="update" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>update</span><a href="#update" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="update.update-1">update<span class="tsd-signature-symbol">(</span>_delta<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#update.update-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p><a href="../interfaces/Updateable.html#update">update</a></p>
+</div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
 <h5>_delta: <span class="tsd-signature-type">number</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
-<p>Implementation of ToolComponent.update</p>
+<p>Implementation of <a href="../interfaces/Updateable.html">Updateable</a>.<a href="../interfaces/Updateable.html#update">update</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L99">core/simple-dimensions/simple-dimensions.ts:99</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L164">core/simple-dimensions/simple-dimensions.ts:164</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="getDefaultEndpointGeometry" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagStatic">Static</code> <code class="tsd-tag ts-flagPrivate">Private</code> <span>get<wbr/>Default<wbr/>Endpoint<wbr/>Geometry</span><a href="#getDefaultEndpointGeometry" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -599,7 +557,35 @@
 <h5>radius: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0.05</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ConeGeometry</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/ifcjs/components/blob/59b77db/library/src/core/simple-dimensions/simple-dimensions.ts#L320">core/simple-dimensions/simple-dimensions.ts:320</a></li></ul></aside></li></ul></section></section></div>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L276">core/simple-dimensions/simple-dimensions.ts:276</a></li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="getVertex" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagStatic">Static</code> <code class="tsd-tag ts-flagPrivate">Private</code> <span>get<wbr/>Vertex</span><a href="#getVertex" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
+<li class="tsd-signature tsd-anchor-link" id="getVertex.getVertex-1">get<wbr/>Vertex<span class="tsd-signature-symbol">(</span>index<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, geom<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">BufferGeometry</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Vector3</span><a href="#getVertex.getVertex-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-description">
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li>
+<h5>index: <span class="tsd-signature-type">number</span></h5></li>
+<li>
+<h5>geom: <span class="tsd-signature-type">BufferGeometry</span></h5></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Vector3</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L310">core/simple-dimensions/simple-dimensions.ts:310</a></li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="getVertices" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagStatic">Static</code> <code class="tsd-tag ts-flagPrivate">Private</code> <span>get<wbr/>Vertices</span><a href="#getVertices" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
+<li class="tsd-signature tsd-anchor-link" id="getVertices.getVertices-1">get<wbr/>Vertices<span class="tsd-signature-symbol">(</span>intersects<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Intersection</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Vector3</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">[]</span><a href="#getVertices.getVertices-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-description">
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li>
+<h5>intersects: <span class="tsd-signature-type">Intersection</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></h5></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Vector3</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/IFCjs/components//blob/43fd770/library/src/core/simple-dimensions/simple-dimensions.ts#L299">core/simple-dimensions/simple-dimensions.ts:299</a></li></ul></aside></li></ul></section></section></div>
 <div class="col-4 col-menu menu-sticky-wrap menu-highlight">
 <div class="tsd-navigation settings">
 <details class="tsd-index-accordion"><summary class="tsd-accordion-summary">
@@ -625,42 +611,35 @@
 <li class="current tsd-kind-class"><a href="SimpleDimensions.html" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="var(--color-ts-class)" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="6" id="icon-128-path"></rect><path d="M11.898 16.1201C11.098 16.1201 10.466 15.8961 10.002 15.4481C9.53803 15.0001 9.30603 14.3841 9.30603 13.6001V9.64012C9.30603 8.85612 9.53803 8.24012 10.002 7.79212C10.466 7.34412 11.098 7.12012 11.898 7.12012C12.682 7.12012 13.306 7.34812 13.77 7.80412C14.234 8.25212 14.466 8.86412 14.466 9.64012H13.386C13.386 9.14412 13.254 8.76412 12.99 8.50012C12.734 8.22812 12.37 8.09212 11.898 8.09212C11.426 8.09212 11.054 8.22412 10.782 8.48812C10.518 8.75212 10.386 9.13212 10.386 9.62812V13.6001C10.386 14.0961 10.518 14.4801 10.782 14.7521C11.054 15.0161 11.426 15.1481 11.898 15.1481C12.37 15.1481 12.734 15.0161 12.99 14.7521C13.254 14.4801 13.386 14.0961 13.386 13.6001H14.466C14.466 14.3761 14.234 14.9921 13.77 15.4481C13.306 15.8961 12.682 16.1201 11.898 16.1201Z" fill="var(--color-text)" id="icon-128-text"></path></svg><span>Simple<wbr/>Dimensions</span></a>
 <ul>
 <li class="tsd-kind-constructor tsd-parent-kind-class"><a href="SimpleDimensions.html#constructor" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-512-path"></use><use href="#icon-512-text"></use></svg>constructor</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class"><a href="SimpleDimensions.html#_enabled" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_enabled</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class"><a href="SimpleDimensions.html#_visible" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_visible</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#baseScale" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>base<wbr/>Scale</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#context" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>context</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#currentDimension" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>current<wbr/>Dimension?</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#dimensions" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>dimensions</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#dragging" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>dragging</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#endPoint" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>end<wbr/>Point</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#endpoint-1" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>endpoint</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#endpointsMaterial" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>endpoints<wbr/>Material</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="SimpleDimensions.html#_baseScale" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_base<wbr/>Scale</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="SimpleDimensions.html#_currentDimension" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_current<wbr/>Dimension?</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="SimpleDimensions.html#_dimensions" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_dimensions</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="SimpleDimensions.html#_dragging" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_dragging</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="SimpleDimensions.html#_enabled" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_enabled</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="SimpleDimensions.html#_endPoint" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_end<wbr/>Point</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="SimpleDimensions.html#_endpointGeometry" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_endpoint<wbr/>Geometry</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="SimpleDimensions.html#_endpointsMaterial" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_endpoints<wbr/>Material</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="SimpleDimensions.html#_lineMaterial" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_line<wbr/>Material</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="SimpleDimensions.html#_preview" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_preview</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="SimpleDimensions.html#_raycaster" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_raycaster</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="SimpleDimensions.html#_startPoint" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_start<wbr/>Point</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="SimpleDimensions.html#_visible" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>_visible</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class"><a href="SimpleDimensions.html#afterUpdate" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>after<wbr/>Update</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class"><a href="SimpleDimensions.html#beforeUpdate" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>before<wbr/>Update</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class"><a href="SimpleDimensions.html#components" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>components</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SimpleDimensions.html#labelClassName" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>label<wbr/>Class<wbr/>Name</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#lineMaterial" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>line<wbr/>Material</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SimpleDimensions.html#name" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>name</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class"><a href="SimpleDimensions.html#position" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>position</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#preview" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>preview</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SimpleDimensions.html#previewClassName" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>preview<wbr/>Class<wbr/>Name</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#previewElement" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>preview<wbr/>Element</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class"><a href="SimpleDimensions.html#rawPosition" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>raw<wbr/>Position</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class"><a href="SimpleDimensions.html#raycaster" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>raycaster</a></li>
+<li class="tsd-kind-property tsd-parent-kind-class"><a href="SimpleDimensions.html#previewElement" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>preview<wbr/>Element</a></li>
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="SimpleDimensions.html#snapDistance" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>snap<wbr/>Distance</a></li>
-<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#startPoint" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>start<wbr/>Point</a></li>
 <li class="tsd-kind-accessor tsd-parent-kind-class"><a href="SimpleDimensions.html#dimensionsColor" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg>dimensions<wbr/>Color</a></li>
 <li class="tsd-kind-accessor tsd-parent-kind-class"><a href="SimpleDimensions.html#dimensionsWidth" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg>dimensions<wbr/>Width</a></li>
 <li class="tsd-kind-accessor tsd-parent-kind-class"><a href="SimpleDimensions.html#enabled" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg>enabled</a></li>
 <li class="tsd-kind-accessor tsd-parent-kind-class"><a href="SimpleDimensions.html#endpointGeometry" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg>endpoint<wbr/>Geometry</a></li>
-<li class="tsd-kind-accessor tsd-parent-kind-class"><a href="SimpleDimensions.html#endpointScale" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg>endpoint<wbr/>Scale</a></li>
-<li class="tsd-kind-accessor tsd-parent-kind-class"><a href="SimpleDimensions.html#endpointScaleFactor" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg>endpoint<wbr/>Scale<wbr/>Factor</a></li>
-<li class="tsd-kind-accessor tsd-parent-kind-class"><a href="SimpleDimensions.html#getDimensionsLines" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg>get<wbr/>Dimensions<wbr/>Lines</a></li>
-<li class="tsd-kind-accessor tsd-parent-kind-class"><a href="SimpleDimensions.html#previewActive" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg>preview<wbr/>Active</a></li>
-<li class="tsd-kind-accessor tsd-parent-kind-class"><a href="SimpleDimensions.html#previewObject" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg>preview<wbr/>Object</a></li>
+<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#previewActive" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg>preview<wbr/>Active</a></li>
 <li class="tsd-kind-accessor tsd-parent-kind-class"><a href="SimpleDimensions.html#visible" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg>visible</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="SimpleDimensions.html#cancelDrawing" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>cancel<wbr/>Drawing</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class"><a href="SimpleDimensions.html#castRay" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>cast<wbr/>Ray</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class"><a href="SimpleDimensions.html#castRayIfc" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>cast<wbr/>Ray<wbr/>Ifc</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="SimpleDimensions.html#create" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>create</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class"><a href="SimpleDimensions.html#createInPlane" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>create<wbr/>In<wbr/>Plane</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="SimpleDimensions.html#delete" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>delete</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="SimpleDimensions.html#deleteAll" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>delete<wbr/>All</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="SimpleDimensions.html#dispose" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>dispose</a></li>
@@ -668,16 +647,17 @@
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#drawEnd" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>draw<wbr/>End</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#drawInProcess" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>draw<wbr/>In<wbr/>Process</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#drawStart" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>draw<wbr/>Start</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#drawStartInPlane" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>draw<wbr/>Start<wbr/>In<wbr/>Plane</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#filterClippingPlanes" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>filter<wbr/>Clipping<wbr/>Planes</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class"><a href="SimpleDimensions.html#get" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#getBoundingBoxes" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Bounding<wbr/>Boxes</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#getClosestVertex" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Closest<wbr/>Vertex</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#getVertex" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Vertex</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#getVertices" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Vertices</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class"><a href="SimpleDimensions.html#setArrow" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>set<wbr/>Arrow</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class"><a href="SimpleDimensions.html#setPreviewElement" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>set<wbr/>Preview<wbr/>Element</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="SimpleDimensions.html#isDisposeable" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>is<wbr/>Disposeable</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="SimpleDimensions.html#isHideable" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>is<wbr/>Hideable</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="SimpleDimensions.html#isResizeable" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>is<wbr/>Resizeable</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="SimpleDimensions.html#isUpdateable" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>is<wbr/>Updateable</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="SimpleDimensions.html#update" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>update</a></li>
-<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#getDefaultEndpointGeometry" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Default<wbr/>Endpoint<wbr/>Geometry</a></li></ul></li></ul></nav></div></div>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#getDefaultEndpointGeometry" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Default<wbr/>Endpoint<wbr/>Geometry</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#getVertex" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Vertex</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SimpleDimensions.html#getVertices" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Vertices</a></li></ul></li></ul></nav></div></div>
 <div class="container tsd-generator">
 <p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></div>
 <div class="overlay"></div><script src="../assets/main.js"></script></body></html>

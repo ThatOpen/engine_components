@@ -1,5 +1,5 @@
 import * as THREE$1 from './three.module.js';
-import { BufferAttribute as BufferAttribute$1, Vector3 as Vector3$1, Vector2 as Vector2$1, Plane, Line3, Triangle, Sphere, Box3, Matrix4, BackSide, DoubleSide, FrontSide, Mesh, Ray, MOUSE, Vector4 as Vector4$1, Quaternion as Quaternion$1, Spherical, Raycaster, MathUtils, PerspectiveCamera, Object3D, LineDashedMaterial, MeshBasicMaterial, ConeGeometry, Group, BufferGeometry, Line, BoxGeometry, Matrix3, Euler, LineBasicMaterial, CylinderGeometry, Float32BufferAttribute, OctahedronGeometry, SphereGeometry, TorusGeometry, PlaneGeometry, Interpolant, Loader, LoaderUtils, FileLoader, Color as Color$1, SpotLight, PointLight, DirectionalLight, MeshPhysicalMaterial, sRGBEncoding, TangentSpaceNormalMap, ImageBitmapLoader, TextureLoader, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material, MeshStandardMaterial, RGBFormat, PropertyBinding, SkinnedMesh, LineSegments, LineLoop, Points, OrthographicCamera, InterpolateLinear, AnimationClip, Bone, Skeleton, TriangleFanDrawMode, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, Texture, TriangleStripDrawMode, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, RGBAFormat, Scene, InstancedMesh, MeshLambertMaterial, EdgesGeometry, InstancedBufferGeometry, InstancedBufferAttribute, UniformsLib, ShaderLib, UniformsUtils, ShaderMaterial, InstancedInterleavedBuffer, WireframeGeometry, DynamicDrawUsage, WebGLRenderTarget, Clock, DepthTexture, UnsignedShortType, MeshDepthMaterial, RGBADepthPacking, NoBlending, MeshNormalMaterial, CustomBlending, DstColorFactor, ZeroFactor, AddEquation, DstAlphaFactor } from './three.module.js';
+import { BufferAttribute as BufferAttribute$1, Vector3 as Vector3$1, Vector2 as Vector2$1, Plane, Line3, Triangle, Sphere, Box3, Matrix4, BackSide, DoubleSide, FrontSide, Mesh, Ray, Object3D, LineDashedMaterial, MeshBasicMaterial, Raycaster, ConeGeometry, Group, BufferGeometry, Line, BoxGeometry, Matrix3, Quaternion as Quaternion$1, Euler, LineBasicMaterial, CylinderGeometry, Float32BufferAttribute, OctahedronGeometry, SphereGeometry, TorusGeometry, PlaneGeometry, Interpolant, Loader, LoaderUtils, FileLoader, Color as Color$1, SpotLight, PointLight, DirectionalLight, MeshPhysicalMaterial, sRGBEncoding, TangentSpaceNormalMap, ImageBitmapLoader, TextureLoader, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material, MeshStandardMaterial, RGBFormat, PropertyBinding, SkinnedMesh, LineSegments, LineLoop, Points, PerspectiveCamera, MathUtils, OrthographicCamera, InterpolateLinear, AnimationClip, Bone, Skeleton, TriangleFanDrawMode, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, Texture, TriangleStripDrawMode, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, RGBAFormat, Scene, InstancedMesh, MeshLambertMaterial, EdgesGeometry, InstancedBufferGeometry, InstancedBufferAttribute, UniformsLib, ShaderLib, UniformsUtils, ShaderMaterial, InstancedInterleavedBuffer, WireframeGeometry, Vector4 as Vector4$1, DynamicDrawUsage, WebGLRenderTarget, Clock, DepthTexture, UnsignedShortType, MeshDepthMaterial, RGBADepthPacking, NoBlending, MeshNormalMaterial, CustomBlending, DstColorFactor, ZeroFactor, AddEquation, DstAlphaFactor } from './three.module.js';
 
 // Split strategy constants
 const CENTER = 0;
@@ -4238,35 +4238,39 @@ function disposeBoundsTree() {
 
 }
 
-function isDeletable(obj) {
-    return "delete" in obj;
-}
-function isEnableable(obj) {
-    return "enabled" in obj;
-}
-function isHideable(obj) {
-    return "visible" in obj;
-}
-
-// -------------------------------------------------------------------------------------------
-// Credit to Jason Kleban: https://gist.github.com/JasonKleban/50cee44960c225ac1993c922563aa540
-// -------------------------------------------------------------------------------------------
-class LiteEvent {
+/**
+ * Simple event handler by
+ * [Jason Kleban](https://gist.github.com/JasonKleban/50cee44960c225ac1993c922563aa540).
+ * Keep in mind that:
+ * - If you want to remove it later, you might want to declare the callback as
+ * an object.
+ * - If you want to maintain the reference to `this`, you will need to declare
+ * the callback as an arrow function.
+ */
+class Event {
     constructor() {
-        this.handlers = [];
+        /**
+         * Triggers all the callbacks assigned to this event.
+         */
         this.trigger = ((data) => {
             // @ts-ignore
             this.handlers.slice(0).forEach((h) => h(data));
         });
+        this.handlers = [];
     }
+    /**
+     * Add a callback to this event instance.
+     * @param handler - the callback to be added to this event.
+     */
     on(handler) {
         this.handlers.push(handler);
     }
+    /**
+     * Removes a callback from this event instance.
+     * @param handler - the callback to be removed from this event.
+     */
     off(handler) {
         this.handlers = this.handlers.filter((h) => h !== handler);
-    }
-    expose() {
-        return this;
     }
 }
 
@@ -6345,63 +6349,115 @@ function createBoundingSphere(object3d, out) {
     return boundingSphere;
 }
 
-const subsetOfTHREE = {
-    MOUSE,
-    Vector2: Vector2$1,
-    Vector3: Vector3$1,
-    Vector4: Vector4$1,
-    Quaternion: Quaternion$1,
-    Matrix4,
-    Spherical,
-    Box3,
-    Sphere,
-    Raycaster,
-    MathUtils: {
-        DEG2RAD: MathUtils.DEG2RAD,
-        clamp: MathUtils.clamp,
-    },
-};
-class SimpleCamera {
+/**
+ * Components are the building blocks of this library. Everything is a
+ * component: tools, scenes, objects, cameras, etc.
+ * All components must inherit it.
+ */
+class Component {
+    constructor() {
+        /** Whether is component is {@link Disposeable}. */
+        this.isDisposeable = () => {
+            return "dispose" in this;
+        };
+        /** Whether is component is {@link Resizeable}. */
+        this.isResizeable = () => {
+            return "setSize" in this && "getSize" in this;
+        };
+        /** Whether is component is {@link Updateable}. */
+        this.isUpdateable = () => {
+            return "afterUpdate" in this && "beforeUpdate" in this && "update" in this;
+        };
+        /** Whether is component is {@link Hideable}. */
+        this.isHideable = () => {
+            return "visible" in this;
+        };
+    }
+}
+
+class RendererComponent extends Component {
+    /** Adds or removes a
+     * [clipping plane](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.clippingPlanes)
+     * to the renderer. */
+    togglePlane(active, plane) {
+        const renderer = this.get();
+        if (active) {
+            renderer.clippingPlanes.push(plane);
+        }
+        else {
+            const index = renderer.clippingPlanes.indexOf(plane);
+            if (index > -1) {
+                renderer.clippingPlanes.splice(index, 1);
+            }
+        }
+    }
+}
+
+/**
+ * A basic camera that uses
+ * [yomotsu's cameracontrols](https://github.com/yomotsu/camera-controls) to
+ * easily control the camera in 2D and 3D. Check out it's API to find out
+ * what features it offers.
+ */
+class SimpleCamera extends Component {
     constructor(components) {
-        var _a;
+        super();
         this.components = components;
-        this.onChangeProjection = new LiteEvent();
-        this.perspectiveCamera = this.setupCamera();
-        this.activeCamera = this.perspectiveCamera;
+        /** {@link Component.name} */
+        this.name = "SimpleCamera";
+        /** {@link Updateable.beforeUpdate} */
+        this.beforeUpdate = new Event();
+        /** {@link Updateable.afterUpdate} */
+        this.afterUpdate = new Event();
+        this._perspectiveCamera = this.setupCamera();
+        this.activeCamera = this._perspectiveCamera;
         this.controls = this.setupCameraControls();
-        (_a = components.scene) === null || _a === void 0 ? void 0 : _a.get().add(this.perspectiveCamera);
+        const scene = components.scene.get();
+        scene.add(this._perspectiveCamera);
         this.setupEvents();
     }
+    /** {@link Component.enabled} */
     get enabled() {
         return this.controls.enabled;
     }
+    /** {@link Component.enabled} */
     set enabled(enabled) {
         this.controls.enabled = enabled;
     }
+    /** {@link Component.get} */
     get() {
         return this.activeCamera;
     }
+    /** {@link Updateable.update} */
     update(_delta) {
-        if (this.controls.enabled) {
+        if (this.enabled) {
+            this.beforeUpdate.trigger(this);
             this.controls.update(_delta);
+            this.afterUpdate.trigger(this);
         }
     }
-    resize() {
-        const size = this.components.renderer.getSize();
-        this.perspectiveCamera.aspect = size.width / size.height;
-        this.perspectiveCamera.updateProjectionMatrix();
+    /**
+     * Updates the aspect of the camera to match the size of the
+     * {@link Components.renderer}.
+     */
+    updateAspect() {
+        if (this.components.renderer.isResizeable()) {
+            const size = this.components.renderer.getSize();
+            this._perspectiveCamera.aspect = size.width / size.height;
+            this._perspectiveCamera.updateProjectionMatrix();
+        }
     }
     setupCamera() {
         const aspect = window.innerWidth / window.innerHeight;
-        const camera = new PerspectiveCamera(60, aspect, 1, 1000);
+        const camera = new THREE$1.PerspectiveCamera(60, aspect, 1, 1000);
         camera.position.set(50, 50, 50);
-        camera.lookAt(new Vector3$1(0, 0, 0));
+        camera.lookAt(new THREE$1.Vector3(0, 0, 0));
         return camera;
     }
     setupCameraControls() {
-        CameraControls.install({ THREE: subsetOfTHREE });
+        CameraControls.install({ THREE: SimpleCamera.getSubsetOfThree() });
         const dom = this.components.renderer.get().domElement;
-        const controls = new CameraControls(this.perspectiveCamera, dom);
+        const controls = new CameraControls(this._perspectiveCamera, dom);
         controls.dampingFactor = 0.2;
         controls.dollyToCursor = true;
         controls.infinityDolly = true;
@@ -6410,8 +6466,23 @@ class SimpleCamera {
     }
     setupEvents() {
         window.addEventListener("resize", () => {
-            this.resize();
+            this.updateAspect();
         });
+    }
+    static getSubsetOfThree() {
+        return {
+            MOUSE: THREE$1.MOUSE,
+            Vector2: THREE$1.Vector2,
+            Vector3: THREE$1.Vector3,
+            Vector4: THREE$1.Vector4,
+            Quaternion: THREE$1.Quaternion,
+            Matrix4: THREE$1.Matrix4,
+            Spherical: THREE$1.Spherical,
+            Box3: THREE$1.Box3,
+            Sphere: THREE$1.Sphere,
+            Raycaster: THREE$1.Raycaster,
+            MathUtils: THREE$1.MathUtils,
+        };
     }
 }
 
@@ -6684,26 +6755,26 @@ function getBasisTransform(from, to, targetMatrix) {
 class SimpleDimensions {
     constructor(context) {
         this.name = "dimensions";
-        this._dimensions = [];
+        this.dimensions = [];
         this.labelClassName = "ifcjs-dimension-label";
         this.previewClassName = "ifcjs-dimension-preview";
         // State
         this._enabled = false;
         this._visible = false;
-        this._preview = false;
-        this._dragging = false;
+        this.preview = false;
+        this.dragging = false;
         this.snapDistance = 0.25;
         // Measures
-        this._baseScale = new Vector3$1(1, 1, 1);
+        this.baseScale = new Vector3$1(1, 1, 1);
         // Materials
-        this._lineMaterial = new LineDashedMaterial({
+        this.lineMaterial = new LineDashedMaterial({
             color: 0x000000,
             linewidth: 2,
             depthTest: false,
             dashSize: 0.2,
             gapSize: 0.2,
         });
-        this._endpointsMaterial = new MeshBasicMaterial({
+        this.endpointsMaterial = new MeshBasicMaterial({
             color: 0x000000,
             depthTest: false,
         });
@@ -6733,9 +6804,9 @@ class SimpleDimensions {
     }
     dispose() {
         this.context = null;
-        this._dimensions.forEach((dim) => dim.dispose());
-        this._dimensions = null;
-        this._currentDimension = null;
+        this.dimensions.forEach((dim) => dim.dispose());
+        this.dimensions = null;
+        this.currentDimension = null;
         this._endpointGeometry.dispose();
         this._endpointGeometry = null;
         this.previewElement.removeFromParent();
@@ -6743,7 +6814,7 @@ class SimpleDimensions {
         this.previewElement = null;
     }
     update(_delta) {
-        if (this._enabled && this._preview) {
+        if (this._enabled && this.preview) {
             const intersects = this.castRayIfc();
             this.previewElement.visible = !!intersects;
             if (!intersects)
@@ -6754,7 +6825,7 @@ class SimpleDimensions {
             if (!closest)
                 return;
             this.previewElement.position.set(closest.x, closest.y, closest.z);
-            if (this._dragging) {
+            if (this.dragging) {
                 this.drawInProcess();
             }
         }
@@ -6776,7 +6847,7 @@ class SimpleDimensions {
         }
     }
     get previewActive() {
-        return this._preview;
+        return this.preview;
     }
     get previewObject() {
         return this.previewElement;
@@ -6786,7 +6857,7 @@ class SimpleDimensions {
         if (this.enabled && !state) {
             this.enabled = false;
         }
-        this._dimensions.forEach((dim) => {
+        this.dimensions.forEach((dim) => {
             dim.visibility = state;
         });
     }
@@ -6795,11 +6866,11 @@ class SimpleDimensions {
     }
     set previewActive(state) {
         var _a;
-        this._preview = state;
+        this.preview = state;
         const scene = (_a = this.context.scene) === null || _a === void 0 ? void 0 : _a.getScene();
         if (!scene)
             throw new Error("Dimensions rely on scene to be present.");
-        if (this._preview) {
+        if (this.preview) {
             scene.add(this.previewElement);
         }
         else {
@@ -6807,14 +6878,14 @@ class SimpleDimensions {
         }
     }
     set dimensionsColor(color) {
-        this._endpointsMaterial.color = color;
-        this._lineMaterial.color = color;
+        this.endpointsMaterial.color = color;
+        this.lineMaterial.color = color;
     }
     set dimensionsWidth(width) {
-        this._lineMaterial.linewidth = width;
+        this.lineMaterial.linewidth = width;
     }
     set endpointGeometry(geometry) {
-        this._dimensions.forEach((dim) => {
+        this.dimensions.forEach((dim) => {
             dim.endpointGeometry = geometry;
         });
     }
@@ -6822,15 +6893,15 @@ class SimpleDimensions {
         IfcDimensionLine.scaleFactor = factor;
     }
     set endpointScale(scale) {
-        this._baseScale = scale;
-        this._dimensions.forEach((dim) => {
+        this.baseScale = scale;
+        this.dimensions.forEach((dim) => {
             dim.endpointScale = scale;
         });
     }
     create() {
         if (!this._enabled)
             return;
-        if (!this._dragging) {
+        if (!this.dragging) {
             this.drawStart();
             return;
         }
@@ -6839,29 +6910,29 @@ class SimpleDimensions {
     createInPlane(plane) {
         if (!this._enabled)
             return;
-        if (!this._dragging) {
+        if (!this.dragging) {
             this.drawStartInPlane(plane);
             return;
         }
         this.drawEnd();
     }
     delete() {
-        if (!this._enabled || this._dimensions.length === 0)
+        if (!this._enabled || this.dimensions.length === 0)
             return;
         const boundingBoxes = this.getBoundingBoxes();
         const intersects = this.castRay(boundingBoxes);
         if (intersects.length === 0)
             return;
-        const selected = this._dimensions.find((dim) => dim.boundingBox === intersects[0].object);
+        const selected = this.dimensions.find((dim) => dim.boundingBox === intersects[0].object);
         if (!selected)
             return;
-        const index = this._dimensions.indexOf(selected);
-        this._dimensions.splice(index, 1);
+        const index = this.dimensions.indexOf(selected);
+        this.dimensions.splice(index, 1);
         selected.removeFromScene();
     }
     castRay(items) {
         var _a;
-        const camera = (_a = this.context.camera) === null || _a === void 0 ? void 0 : _a.get();
+        const camera = (_a = this.context.camera) === null || _a === void 0 ? void 0 : _a.getCamera();
         if (!camera)
             throw new Error("Camera required for clipper");
         this._raycaster.setFromCamera(this.position, camera);
@@ -6881,21 +6952,21 @@ class SimpleDimensions {
         return objs.filter((elem) => planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0));
     }
     deleteAll() {
-        this._dimensions.forEach((dim) => {
+        this.dimensions.forEach((dim) => {
             dim.removeFromScene();
         });
-        this._dimensions = [];
+        this.dimensions = [];
     }
     cancelDrawing() {
         var _a;
-        if (!this._currentDimension)
+        if (!this.currentDimension)
             return;
-        this._dragging = false;
-        (_a = this._currentDimension) === null || _a === void 0 ? void 0 : _a.removeFromScene();
-        this._currentDimension = undefined;
+        this.dragging = false;
+        (_a = this.currentDimension) === null || _a === void 0 ? void 0 : _a.removeFromScene();
+        this.currentDimension = undefined;
     }
     drawStart() {
-        this._dragging = true;
+        this.dragging = true;
         const intersects = this.castRayIfc();
         if (!intersects)
             return;
@@ -6905,7 +6976,7 @@ class SimpleDimensions {
         this._startPoint = found;
     }
     drawStartInPlane(plane) {
-        this._dragging = true;
+        this.dragging = true;
         const intersects = this.castRay([plane]);
         if (!intersects || intersects.length < 1)
             return;
@@ -6919,26 +6990,26 @@ class SimpleDimensions {
         if (!found)
             return;
         this._endPoint = found;
-        if (!this._currentDimension)
-            this._currentDimension = this.drawDimension();
-        this._currentDimension.endPoint = this._endPoint;
+        if (!this.currentDimension)
+            this.currentDimension = this.drawDimension();
+        this.currentDimension._endPoint = this._endPoint;
     }
     drawEnd() {
-        if (!this._currentDimension)
+        if (!this.currentDimension)
             return;
-        this._currentDimension.createBoundingBox();
-        this._dimensions.push(this._currentDimension);
-        this._currentDimension = undefined;
-        this._dragging = false;
+        this.currentDimension.createBoundingBox();
+        this.dimensions.push(this.currentDimension);
+        this.currentDimension = undefined;
+        this.dragging = false;
     }
     get getDimensionsLines() {
-        return this._dimensions;
+        return this.dimensions;
     }
     drawDimension() {
-        return new IfcDimensionLine(this.context, this._startPoint, this._endPoint, this._lineMaterial, this._endpointsMaterial, this._endpointGeometry, this.labelClassName, this._baseScale);
+        return new IfcDimensionLine(this.context, this._startPoint, this._endPoint, this.lineMaterial, this.endpointsMaterial, this._endpointGeometry, this.labelClassName, this.baseScale);
     }
     getBoundingBoxes() {
-        return this._dimensions
+        return this.dimensions
             .map((dim) => dim.boundingBox)
             .filter((box) => box !== undefined);
     }
@@ -7007,7 +7078,7 @@ class IfcDimensionLine {
         this.textLabel = this.newText();
         this.root.renderOrder = 2;
         this.context.scene.getScene().add(this.root);
-        this.camera = this.context.camera.get();
+        this.camera = this.context.camera.getCamera();
         // this.context.ifcCamera.onChange.on(() => this.rescaleObjectsToCameraPosition());
         this.rescaleObjectsToCameraPosition();
     }
@@ -7152,114 +7223,98 @@ IfcDimensionLine.scaleFactor = 0.1;
 IfcDimensionLine.scale = 1;
 IfcDimensionLine.units = "m";
 
-// TODO: Grid is not a tool, should live somewhere else
-class SimpleGrid {
+/**
+ * A basic
+ * [Three.js grid helper](https://threejs.org/docs/#api/en/helpers/GridHelper).
+ */
+class SimpleGrid extends Component {
     constructor(components) {
-        var _a, _b;
-        this.name = "grid";
-        this.grid = new THREE$1.GridHelper(50, 50);
-        (_b = (_a = components.scene) === null || _a === void 0 ? void 0 : _a.get()) === null || _b === void 0 ? void 0 : _b.add(this.grid);
+        super();
+        /** {@link Component.name} */
+        this.name = "SimpleGrid";
+        /** {@link Component.enabled} */
+        this.enabled = true;
+        this._grid = new THREE$1.GridHelper(50, 50);
+        const scene = components.scene.get();
+        scene.add(this._grid);
     }
-    set visible(visible) {
-        this.grid.visible = visible;
-    }
+    /** {@link Hideable.visible} */
     get visible() {
-        return this.grid.visible;
+        return this._grid.visible;
     }
-    update(_delta) { }
+    /** {@link Hideable.visible} */
+    set visible(visible) {
+        this._grid.visible = visible;
+    }
+    /** {@link Component.get} */
+    get() {
+        return this._grid;
+    }
 }
 
-class SimpleRenderer {
-    constructor(components, container, params) {
-        this._renderer2D = new CSS2DRenderer();
-        this.blocked = false;
-        this.onStartRender = new LiteEvent();
-        this.onFinishRender = new LiteEvent();
-        this._enabled = true;
+/**
+ * A basic renderer capable of rendering 3D and 2D objects
+ * ([Objec3Ds](https://threejs.org/docs/#api/en/core/Object3D) and
+ * [CSS2DObjects](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer)
+ * respectively).
+ */
+class SimpleRenderer extends RendererComponent {
+    constructor(components, container) {
+        super();
         this.components = components;
         this.container = container;
+        /** {@link Component.name} */
+        this.name = "SimpleRenderer";
+        /** {@link Component.enabled} */
+        this.enabled = true;
+        /** {@link Updateable.beforeUpdate} */
+        this.beforeUpdate = new Event();
+        /** {@link Updateable.afterUpdate} */
+        this.afterUpdate = new Event();
+        this._renderer2D = new CSS2DRenderer();
         this._renderer = new THREE$1.WebGLRenderer({
             antialias: true,
-            ...params,
         });
         this._renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.setupRenderers();
         this.setupEvents();
         this.resize();
     }
+    /** {@link Component.get} */
     get() {
         return this._renderer;
     }
-    addClippingPlane(plane) {
-        this._renderer.clippingPlanes.push(plane);
-    }
-    removeClippingPlane(plane) {
-        const index = this._renderer.clippingPlanes.indexOf(plane);
-        if (index > -1) {
-            this._renderer.clippingPlanes.splice(index, 1);
-        }
-    }
-    dispose() {
+    /** {@link Updateable.update} */
+    update(_delta) {
         var _a, _b;
+        this.beforeUpdate.trigger(this);
+        const scene = (_a = this.components.scene) === null || _a === void 0 ? void 0 : _a.get();
+        const camera = (_b = this.components.camera) === null || _b === void 0 ? void 0 : _b.get();
+        if (!scene || !camera)
+            return;
+        this._renderer.render(scene, camera);
+        this._renderer2D.render(scene, camera);
+        this.afterUpdate.trigger(this);
+    }
+    /** {@link Disposeable.dispose} */
+    dispose() {
         this._renderer.domElement.remove();
         this._renderer.dispose();
         this._renderer = null;
         this._renderer2D = null;
         this.container = null;
-        (_a = this.tempRenderer) === null || _a === void 0 ? void 0 : _a.dispose();
-        (_b = this.tempCanvas) === null || _b === void 0 ? void 0 : _b.remove();
     }
-    update(_delta) {
-        var _a, _b;
-        if (this.blocked)
-            return;
-        const scene = (_a = this.components.scene) === null || _a === void 0 ? void 0 : _a.get();
-        const camera = (_b = this.components.camera) === null || _b === void 0 ? void 0 : _b.get();
-        if (!scene || !camera)
-            return;
-        this.onStartRender.trigger();
-        this._renderer.render(scene, camera);
-        this._renderer2D.render(scene, camera);
-        this.onFinishRender.trigger();
-    }
+    /** {@link Resizeable.getSize}. */
     getSize() {
         return new THREE$1.Vector2(this._renderer.domElement.clientWidth, this._renderer.domElement.clientHeight);
     }
+    /** {@link Resizeable.resize}. */
     resize() {
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
         this._renderer.setSize(width, height);
         this._renderer2D.setSize(width, height);
     }
-    /* newScreenshot(camera?: THREE.Camera, dimensions?: THREE.Vector2) {
-      const previousDimensions = this.getSize();
-  
-      const domElement = this.renderer.domElement;
-      const tempCanvas = domElement.cloneNode(true) as HTMLCanvasElement;
-  
-      // Using a new renderer to make screenshots without updating what the user sees in the canvas
-      if (!this.tempRenderer) {
-        this.tempRenderer = new THREE.WebGLRenderer({ canvas: tempCanvas, antialias: true });
-        this.tempRenderer.localClippingEnabled = true;
-      }
-  
-      if (dimensions) {
-        this.tempRenderer.setSize(dimensions.x, dimensions.y);
-        this.context.ifcCamera.updateAspect(dimensions);
-      }
-  
-      // todo add this later to have a centered screenshot
-      // await this.context.getIfcCamera().currentNavMode.fitModelToFrame();
-  
-      const scene = this.context.getScene();
-      const cameraToRender = camera || this.context.getCamera();
-      this.tempRenderer.render(scene, cameraToRender);
-      const result = this.tempRenderer.domElement.toDataURL();
-  
-      if (dimensions) this.context.ifcCamera.updateAspect(previousDimensions);
-  
-      return result;
-    } */
     setupRenderers() {
         this._renderer.localClippingEnabled = true;
         this.container.appendChild(this._renderer.domElement);
@@ -7268,12 +7323,6 @@ class SimpleRenderer {
         this._renderer2D.domElement.style.pointerEvents = "none";
         this.container.appendChild(this._renderer2D.domElement);
     }
-    get enabled() {
-        return this._enabled;
-    }
-    set enabled(enabled) {
-        this._enabled = enabled;
-    }
     setupEvents() {
         window.addEventListener("resize", () => {
             this.resize();
@@ -7281,71 +7330,131 @@ class SimpleRenderer {
     }
 }
 
-class SimpleScene {
+/**
+ * A basic 3D [scene](https://threejs.org/docs/#api/en/scenes/Scene) to add
+ * objects hierarchically.
+ */
+class SimpleScene extends Component {
     constructor(_components) {
-        this.scene = new THREE$1.Scene();
-        this.scene.background = new THREE$1.Color(0xcccccc);
+        super();
+        /** {@link Component.enabled} */
+        this.enabled = true;
+        /** {@link Component.name} */
+        this.name = "SimpleScene";
+        this._scene = new THREE$1.Scene();
+        this._scene.background = new THREE$1.Color(0xcccccc);
     }
-    update(_delta) { }
+    /** {@link Component.get} */
     get() {
-        return this.scene;
+        return this._scene;
     }
 }
 
+/**
+ * A helper to easily get the real position of the mouse in the Three.js canvas
+ * to work with tools like the
+ * [raycaster](https://threejs.org/docs/#api/en/core/Raycaster), even if it has
+ * been transformed through CSS or doesn't occupy the whole screen.
+ */
 class SimpleMouse {
-    constructor(domElement) {
-        this.position = new Vector2$1();
-        this.rawPosition = new Vector2$1();
-        this.setupMousePositionUpdate(domElement);
+    constructor(dom) {
+        this.dom = dom;
+        this._position = new THREE$1.Vector2();
+        this.updateMouseInfo = (event) => {
+            this._event = event;
+        };
+        this.setupMousePositionUpdate();
     }
-    setupMousePositionUpdate(domElement) {
-        domElement.addEventListener("mousemove", (event) => {
-            this.rawPosition.x = event.clientX;
-            this.rawPosition.y = event.clientY;
-            const bounds = domElement.getBoundingClientRect();
-            this.position.x =
-                ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1;
-            this.position.y =
-                -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1;
-        });
+    /**
+     * The real position of the mouse of the Three.js canvas.
+     */
+    get position() {
+        if (this._event) {
+            const bounds = this.dom.getBoundingClientRect();
+            this._position.x = this.getPositionX(bounds, this._event);
+            this._position.y = this.getPositionY(bounds, this._event);
+        }
+        return this._position;
+    }
+    /** {@link Disposeable.dispose} */
+    dispose() {
+        this.dom.removeEventListener("mousemove", this.updateMouseInfo);
+    }
+    getPositionY(bound, event) {
+        return -((event.clientY - bound.top) / (bound.bottom - bound.top)) * 2 + 1;
+    }
+    getPositionX(bound, event) {
+        return ((event.clientX - bound.left) / (bound.right - bound.left)) * 2 - 1;
+    }
+    setupMousePositionUpdate() {
+        this.dom.addEventListener("mousemove", this.updateMouseInfo);
     }
 }
 
-class SimpleRaycaster {
+/**
+ * A simple [raycaster](https://threejs.org/docs/#api/en/core/Raycaster)
+ * that allows to easily get items from the scene using the mouse and touch
+ * events.
+ */
+class SimpleRaycaster extends Component {
     constructor(components) {
+        super();
         this.components = components;
-        this.raycaster = new Raycaster();
-        const canvas = components.renderer.get().domElement;
-        this.mouse = new SimpleMouse(canvas);
+        /** {@link Component.name} */
+        this.name = "SimpleRaycaster";
+        /** {@link Component.enabled} */
+        this.enabled = true;
+        this._raycaster = new THREE$1.Raycaster();
+        const scene = components.renderer.get();
+        const dom = scene.domElement;
+        this._mouse = new SimpleMouse(dom);
     }
+    /** {@link Component.get} */
+    get() {
+        return this._raycaster;
+    }
+    /**
+     * Throws a ray from the camera to the mouse or touch event point and returns
+     * the first item found. This also takes into account the clipping planes
+     * used by the renderer.
+     *
+     * @param items - the [meshes](https://threejs.org/docs/#api/en/objects/Mesh)
+     * to query. If not provided, it will query all the meshes stored in
+     * {@link Components.meshes}.
+     */
     castRay(items = this.components.meshes) {
         const camera = this.components.camera.get();
-        this.raycaster.setFromCamera(this.mouse.position, camera);
-        const result = this.raycaster.intersectObjects(items);
+        this._raycaster.setFromCamera(this._mouse.position, camera);
+        const result = this._raycaster.intersectObjects(items);
         const filtered = this.filterClippingPlanes(result);
         return filtered.length > 0 ? filtered[0] : null;
     }
     filterClippingPlanes(objs) {
-        const planes = this.components.clippingPlanes;
+        const renderer = this.components.renderer.get();
+        if (!renderer.clippingPlanes) {
+            return objs;
+        }
+        const planes = renderer.clippingPlanes;
         if (objs.length <= 0 || !planes || (planes === null || planes === void 0 ? void 0 : planes.length) <= 0)
             return objs;
         return objs.filter((elem) => planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0));
     }
 }
 
-class SimpleClipper {
+class SimpleClipper extends Component {
     constructor(components, PlaneType) {
+        super();
         this.components = components;
         this.PlaneType = PlaneType;
         this.name = "clipper";
         this.dragging = false;
-        this._planes = [];
         this.orthogonalY = true;
         this.toleranceOrthogonalY = 0.7;
         this.planeSize = 5;
+        this._planes = [];
         this._enabled = false;
         this._visible = false;
-        this.createPlane = () => {
+        this.create = () => {
             if (!this.enabled)
                 return;
             const intersects = this.components.raycaster.castRay();
@@ -7355,11 +7464,10 @@ class SimpleClipper {
             this.intersection = undefined;
         };
         this.createFromNormalAndCoplanarPoint = (normal, point, isPlan = false) => {
-            var _a;
             const plane = new this.PlaneType(this.components, point, normal, this.activateDragging, this.deactivateDragging, this.planeSize, !isPlan);
             plane.isPlan = isPlan;
             this._planes.push(plane);
-            (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.addClippingPlane(plane.plane);
+            this.components.renderer.togglePlane(true, plane.plane);
             this.updateMaterials();
             return plane;
         };
@@ -7367,7 +7475,6 @@ class SimpleClipper {
             this.deletePlane();
         };
         this.deletePlane = (plane) => {
-            var _a;
             let existingPlane = plane;
             if (!existingPlane) {
                 if (!this.enabled)
@@ -7381,7 +7488,7 @@ class SimpleClipper {
                 return;
             existingPlane.removeFromScene();
             this._planes.splice(index, 1);
-            (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.removeClippingPlane(existingPlane.plane);
+            this.components.renderer.togglePlane(false, existingPlane.plane);
             this.updateMaterials();
         };
         this.deleteAllPlanes = () => {
@@ -7408,7 +7515,7 @@ class SimpleClipper {
             return null;
         };
         this.createPlaneFromIntersection = (intersection) => {
-            var _a, _b;
+            var _a;
             const constant = intersection.point.distanceTo(new Vector3$1(0, 0, 0));
             const normal = (_a = intersection.face) === null || _a === void 0 ? void 0 : _a.normal;
             if (!constant || !normal)
@@ -7418,7 +7525,7 @@ class SimpleClipper {
             this.normalizePlaneDirectionY(worldNormal);
             const plane = this.newPlane(intersection, worldNormal.negate());
             this._planes.push(plane);
-            (_b = this.components.renderer) === null || _b === void 0 ? void 0 : _b.addClippingPlane(plane.plane);
+            this.components.renderer.togglePlane(true, plane.plane);
             this.updateMaterials();
         };
         this.activateDragging = () => {
@@ -7471,8 +7578,8 @@ class SimpleClipper {
         });
         this.updateMaterials();
     }
-    toggle() {
-        this.enabled = !this.enabled;
+    get() {
+        return this._planes;
     }
     dispose() {
         this._planes.forEach((plane) => plane.dispose());
@@ -9019,9 +9126,7 @@ class SimplePlane {
         this.isPlan = false;
         this.removeFromScene = () => {
             this.helper.removeFromParent();
-            const index = this.components.clippingPlanes.indexOf(this.plane);
-            if (index >= 0)
-                this.components.clippingPlanes.splice(index, 1);
+            this.components.renderer.togglePlane(false, this.plane);
             this.arrowBoundingBox.removeFromParent();
             this.arrowBoundingBox.geometry.dispose();
             this.arrowBoundingBox = undefined;
@@ -9034,7 +9139,7 @@ class SimplePlane {
         this.planeSize = planeSize;
         this.components = components;
         this.plane = new Plane();
-        this.components.clippingPlanes.push(this.plane);
+        this.components.renderer.togglePlane(true, this.plane);
         this.planeMesh = this.getPlaneMesh();
         this.normal = normal;
         this.origin = origin;
@@ -9048,17 +9153,9 @@ class SimplePlane {
     get enabled() {
         return this._enabled;
     }
-    set enabled(state) {
-        this._enabled = state;
-        const planes = this.components.clippingPlanes;
-        if (state && planes) {
-            planes.push(this.plane);
-        }
-        else if (planes) {
-            const index = planes.indexOf(this.plane);
-            if (index >= 0)
-                planes.splice(index);
-        }
+    set enabled(enabled) {
+        this._enabled = enabled;
+        this.components.renderer.togglePlane(enabled, this.plane);
     }
     get visible() {
         return this.isVisible;
@@ -9163,13 +9260,26 @@ class SimplePlane {
 SimplePlane.planeMaterial = SimplePlane.getPlaneMaterial();
 SimplePlane.hiddenMaterial = SimplePlane.getHiddenMaterial();
 
+/**
+ * An object to easily handle all the tools used (e.g. updating them, retrieving
+ * them, performing batch operations, etc). A tool is a feature that achieves
+ * something through user interaction (e.g. clipping planes, dimensions, etc).
+ */
 class ToolComponents {
     constructor() {
         this.tools = [];
     }
+    /**
+     * Registers a new tool component.
+     * @param tool - The tool to register in the application.
+     */
     add(tool) {
         this.tools.push(tool);
     }
+    /**
+     * Deletes a previously registered tool component.
+     * @param tool - The tool to delete.
+     */
     remove(tool) {
         const index = this.tools.findIndex((c) => c === tool);
         if (index > -1) {
@@ -9178,87 +9288,63 @@ class ToolComponents {
         }
         return false;
     }
-    removeByName(name) {
-        const tool = this.get(name);
-        if (tool) {
-            this.remove(tool);
-            return true;
-        }
-        return false;
-    }
-    update(delta) {
-        for (const tool of this.tools) {
-            tool.update(delta);
-        }
-    }
-    hideAll() {
-        for (const tool of this.tools) {
-            if (tool && isHideable(tool)) {
-                tool.visible = false;
-            }
-        }
-    }
-    showAll() {
-        for (const tool of this.tools) {
-            if (tool && isHideable(tool)) {
-                tool.visible = true;
-            }
-        }
-    }
-    toggleAllVisibility() {
-        for (const tool of this.tools) {
-            if (tool && isHideable(tool)) {
-                tool.visible = !tool.visible;
-            }
-        }
-    }
-    enable(name, isolate = true) {
-        if (isolate === false) {
-            this.disableAll();
-        }
-        const tool = this.get(name);
-        if (tool && isEnableable(tool)) {
-            tool.enabled = true;
-            return true;
-        }
-        return false;
-    }
-    disable(name) {
-        const tool = this.get(name);
-        if (tool && isEnableable(tool)) {
-            tool.enabled = false;
-            return true;
-        }
-        return false;
-    }
-    disableAll() {
-        for (const tool of this.tools) {
-            if (tool && isEnableable(tool)) {
-                console.log(`Disabling tool: ${tool.name}`);
-                tool.enabled = false;
-            }
-        }
-    }
-    toggle(name) {
-        const tool = this.get(name);
-        if (tool && isEnableable(tool)) {
-            const enabled = tool.enabled;
-            this.disableAll();
-            tool.enabled = !enabled;
-        }
-    }
+    /**
+     * Retrieves a tool component by its name.
+     * @param name - The {@link Component.name} of the component..
+     */
     get(name) {
         return this.tools.find((tool) => tool.name === name);
     }
-    printToolsState() {
-        const states = this.tools.map((tool) => ({
-            name: tool.name,
-            // @ts-ignore
-            enabled: tool === null || tool === void 0 ? void 0 : tool.enabled,
-            // @ts-ignore
-            visible: tool === null || tool === void 0 ? void 0 : tool.enabled,
-        }));
-        console.table(states);
+    /**
+     * Updates all the registered tool components. Only the components where the
+     * property {@link Component.enabled} is true will be updated.
+     * @param delta - The
+     * [delta time](https://threejs.org/docs/#api/en/core/Clock) of the loop.
+     */
+    update(delta) {
+        for (const tool of this.tools) {
+            if (tool.enabled && tool.isUpdateable()) {
+                tool.update(delta);
+            }
+        }
+    }
+    /**
+     * Sets the {@link Component.enabled} property of one or multiple components.
+     * @param enabled - Whether to enable or disable the components.
+     * @param name - The {@link Component.name} of the tool to enable or disable.
+     * If undefined, all components will be enabled or disabled.
+     */
+    setEnabled(enabled, name) {
+        if (name) {
+            const tool = this.get(name);
+            if (tool) {
+                tool.enabled = enabled;
+            }
+            return;
+        }
+        for (const tool of this.tools) {
+            tool.enabled = enabled;
+        }
+    }
+    /**
+     * Shows or hides one or multiple components.
+     * @param visible - Whether to show or hide the tool components.
+     * @param name - The {@link Component.name} of the tool to show or hide.
+     * If undefined, all components will be enabled or disabled.
+     */
+    setVisible(visible, name) {
+        if (name) {
+            const tool = this.get(name);
+            if (tool && tool.isHideable()) {
+                tool.visible = visible;
+            }
+            return;
+        }
+        for (const tool of this.tools) {
+            if (tool.isHideable()) {
+                tool.visible = visible;
+            }
+        }
     }
 }
 
@@ -9275,16 +9361,16 @@ class Components {
          * This includes IFC models, fragments, 3D scans, etc.
          */
         this.meshes = [];
-        this.updateRequestCallback = -1;
+        this._updateRequestCallback = -1;
         this.update = () => {
-            const delta = this.clock.getDelta();
-            this.scene.update(delta);
-            this.renderer.update(delta);
-            this.camera.update(delta);
+            const delta = this._clock.getDelta();
+            Components.update(this.scene, delta);
+            Components.update(this.renderer, delta);
+            Components.update(this.camera, delta);
             this.tools.update(delta);
-            this.updateRequestCallback = requestAnimationFrame(this.update);
+            this._updateRequestCallback = requestAnimationFrame(this.update);
         };
-        this.clock = new THREE$1.Clock();
+        this._clock = new THREE$1.Clock();
         this.tools = new ToolComponents();
         Components.setupBVH();
     }
@@ -9385,15 +9471,6 @@ class Components {
     set raycaster(raycaster) {
         this._raycaster = raycaster;
     }
-    /**
-     * The array of [Three.js clipping planes](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.clippingPlanes)
-     * that are being currently used to clip the 3D view. **This shouldn't be
-     * edited directly**: instead, there are pre-build components to handle
-     * clipping planes easily.
-     */
-    get clippingPlanes() {
-        return this.renderer.get().clippingPlanes;
-    }
     static setupBVH() {
         THREE$1.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
         THREE$1.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
@@ -9420,7 +9497,7 @@ class Components {
      * ```
      */
     init() {
-        this.clock.start();
+        this._clock.start();
         this.update();
     }
     /**
@@ -9456,8 +9533,13 @@ class Components {
      * ```
      */
     dispose() {
-        cancelAnimationFrame(this.updateRequestCallback);
+        cancelAnimationFrame(this._updateRequestCallback);
         // TODO: Implement memory disposal for the whole library
+    }
+    static update(component, delta) {
+        if (component.isUpdateable() && component.enabled) {
+            component.update(delta);
+        }
     }
 }
 
@@ -21068,14 +21150,6 @@ class FragmentCulling {
         const blob = new Blob([code], { type: "application/javascript" });
         this.worker = new Worker(URL.createObjectURL(blob));
         this.worker.addEventListener("message", this.handleWorkerMessage);
-        const controls = this.components.camera.controls;
-        if (controls) {
-            controls.addEventListener("control", () => (this.needsUpdate = true));
-            controls.addEventListener("controlstart", () => (this.needsUpdate = true));
-            controls.addEventListener("wake", () => (this.needsUpdate = true));
-            controls.addEventListener("controlend", () => (this.needsUpdate = true));
-            controls.addEventListener("sleep", () => (this.needsUpdate = true));
-        }
         const dom = this.components.renderer.get().domElement;
         dom.addEventListener("wheel", () => (this.needsUpdate = true));
         if (autoUpdate)
@@ -21479,33 +21553,30 @@ class Fragments {
     }
 }
 
-var CameraProjections;
-(function (CameraProjections) {
-    CameraProjections[CameraProjections["Perspective"] = 0] = "Perspective";
-    CameraProjections[CameraProjections["Orthographic"] = 1] = "Orthographic";
-})(CameraProjections || (CameraProjections = {}));
-var NavigationModes;
-(function (NavigationModes) {
-    NavigationModes[NavigationModes["Orbit"] = 0] = "Orbit";
-    NavigationModes[NavigationModes["FirstPerson"] = 1] = "FirstPerson";
-    NavigationModes[NavigationModes["Plan"] = 2] = "Plan";
-})(NavigationModes || (NavigationModes = {}));
-
+/**
+ * Object to control the {@link CameraProjection} of the {@link OrthoPerspectiveCamera}.
+ */
 class ProjectionManager {
     constructor(components, camera) {
         this.components = components;
-        this.previousDistance = -1;
-        this.camera = camera;
-        this.currentCamera = camera.perspectiveCamera;
-        this.currentProjection = CameraProjections.Perspective;
+        this._previousDistance = -1;
+        this._camera = camera;
+        this._currentCamera = camera.get("Perspective");
+        this._currentProjection = "Perspective";
     }
     get projection() {
-        return this.currentProjection;
+        return this._currentProjection;
     }
+    /**
+     * Sets the {@link CameraProjection} of the {@link OrthoPerspectiveCamera}.
+     *
+     * @param projection - the new projection to set. If it is the current projection,
+     * it will have no effect.
+     */
     async setProjection(projection) {
         if (this.projection === projection)
             return;
-        if (projection === CameraProjections.Orthographic) {
+        if (projection === "Orthographic") {
             this.setOrthoCamera();
         }
         else {
@@ -21516,104 +21587,92 @@ class ProjectionManager {
     setOrthoCamera() {
         // Matching orthographic camera to perspective camera
         // Resource: https://stackoverflow.com/questions/48758959/what-is-required-to-convert-threejs-perspective-camera-to-orthographic
-        if (this.camera.currentNavMode.mode === NavigationModes.FirstPerson) {
+        if (this._camera.currentMode.id === "FirstPerson") {
             return;
         }
-        this.previousDistance = this.camera.controls.distance;
-        this.camera.controls.distance = 200;
+        this._previousDistance = this._camera.controls.distance;
+        this._camera.controls.distance = 200;
         const { width, height } = this.getDims();
         this.setupOrthoCamera(height, width);
-        this.currentCamera = this.camera.orthoCamera;
-        this.currentProjection = CameraProjections.Orthographic;
+        this._currentCamera = this._camera.get("Orthographic");
+        this._currentProjection = "Orthographic";
     }
     // This small delay is needed to hide weirdness during the transition
     async updateActiveCamera() {
         await new Promise((resolve) => {
             setTimeout(() => {
-                this.camera.activeCamera = this.currentCamera;
+                this._camera.activeCamera = this._currentCamera;
                 resolve();
             }, 50);
         });
     }
     getDims() {
-        const lineOfSight = new Vector3$1();
-        this.camera.perspectiveCamera.getWorldDirection(lineOfSight);
-        const target = new Vector3$1();
-        this.camera.controls.getTarget(target);
-        const distance = target.clone().sub(this.camera.perspectiveCamera.position);
+        const lineOfSight = new THREE$1.Vector3();
+        this._camera.get("Perspective").getWorldDirection(lineOfSight);
+        const target = new THREE$1.Vector3();
+        this._camera.controls.getTarget(target);
+        const distance = target
+            .clone()
+            .sub(this._camera.get("Perspective").position);
         const depth = distance.dot(lineOfSight);
         const dims = this.components.renderer.getSize();
         const aspect = dims.x / dims.y;
-        const fov = this.camera.perspectiveCamera.fov;
-        const height = depth * 2 * Math.atan((fov * (Math.PI / 180)) / 2);
+        const camera = this._camera.get("Perspective");
+        const height = depth * 2 * Math.atan((camera.fov * (Math.PI / 180)) / 2);
         const width = height * aspect;
         return { width, height };
     }
     setupOrthoCamera(height, width) {
-        this.camera.controls.mouseButtons.wheel = CameraControls.ACTION.ZOOM;
-        this.camera.orthoCamera.zoom = 1;
-        this.camera.orthoCamera.left = width / -2;
-        this.camera.orthoCamera.right = width / 2;
-        this.camera.orthoCamera.top = height / 2;
-        this.camera.orthoCamera.bottom = height / -2;
-        this.camera.orthoCamera.updateProjectionMatrix();
-        this.camera.orthoCamera.position.copy(this.camera.perspectiveCamera.position);
-        this.camera.orthoCamera.quaternion.copy(this.camera.perspectiveCamera.quaternion);
-        this.camera.controls.camera = this.camera.orthoCamera;
+        this._camera.controls.mouseButtons.wheel = CameraControls.ACTION.ZOOM;
+        const pCamera = this._camera.get("Perspective");
+        const oCamera = this._camera.get("Orthographic");
+        oCamera.zoom = 1;
+        oCamera.left = width / -2;
+        oCamera.right = width / 2;
+        oCamera.top = height / 2;
+        oCamera.bottom = height / -2;
+        oCamera.updateProjectionMatrix();
+        oCamera.position.copy(pCamera.position);
+        oCamera.quaternion.copy(pCamera.quaternion);
+        this._camera.controls.camera = oCamera;
     }
     async setPerspectiveCamera() {
-        this.camera.controls.mouseButtons.wheel = CameraControls.ACTION.DOLLY;
-        this.camera.perspectiveCamera.position.copy(this.camera.orthoCamera.position);
-        this.camera.perspectiveCamera.quaternion.copy(this.camera.orthoCamera.quaternion);
-        this.camera.controls.mouseButtons.wheel = CameraControls.ACTION.DOLLY;
-        this.camera.controls.distance = this.previousDistance;
-        await this.camera.controls.zoomTo(1);
-        this.camera.perspectiveCamera.updateProjectionMatrix();
-        this.camera.controls.camera = this.camera.perspectiveCamera;
-        this.currentProjection = CameraProjections.Perspective;
-        this.currentCamera = this.camera.perspectiveCamera;
+        this._camera.controls.mouseButtons.wheel = CameraControls.ACTION.DOLLY;
+        const pCamera = this._camera.get("Perspective");
+        const oCamera = this._camera.get("Orthographic");
+        pCamera.position.copy(oCamera.position);
+        pCamera.quaternion.copy(oCamera.quaternion);
+        this._camera.controls.mouseButtons.wheel = CameraControls.ACTION.DOLLY;
+        this._camera.controls.distance = this._previousDistance;
+        await this._camera.controls.zoomTo(1);
+        pCamera.updateProjectionMatrix();
+        this._camera.controls.camera = pCamera;
+        this._currentCamera = pCamera;
+        this._currentProjection = "Perspective";
     }
 }
 
-// import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+/**
+ * A {@link NavigationMode} that allows 3D navigation and panning
+ * like in many 3D and CAD softwares.
+ */
 class OrbitMode {
-    constructor(components, camera) {
-        this.components = components;
+    constructor(camera) {
         this.camera = camera;
+        /** {@link NavigationMode.enabled} */
         this.enabled = true;
-        this.id = NavigationModes.Orbit;
-        this.onChange = new LiteEvent();
-        this.onUnlock = new LiteEvent();
-        this.onChangeProjection = new LiteEvent();
+        /** {@link NavigationMode.id} */
+        this.id = "Orbit";
+        /** {@link NavigationMode.projectionChanged} */
+        this.projectionChanged = new Event();
         this.activateOrbitControls();
     }
-    /**
-     * @deprecated Use cameraControls.getTarget.
-     */
-    get target() {
-        const target = new Vector3$1();
-        this.camera.controls.getTarget(target);
-        return target;
-    }
+    /** {@link NavigationMode.toggle} */
     toggle(active) {
         this.enabled = active;
         if (active) {
             this.activateOrbitControls();
         }
-    }
-    async fitModelToFrame() {
-        if (!this.enabled)
-            return;
-        const scene = this.components.scene.get();
-        const box = new Box3().setFromObject(scene.children[scene.children.length - 1]);
-        const sceneSize = new Vector3$1();
-        box.getSize(sceneSize);
-        const sceneCenter = new Vector3$1();
-        box.getCenter(sceneCenter);
-        const nearFactor = 0.5;
-        const radius = Math.max(sceneSize.x, sceneSize.y, sceneSize.z) * nearFactor;
-        const sphere = new Sphere(sceneCenter, radius);
-        await this.camera.controls.fitToSphere(sphere, true);
     }
     activateOrbitControls() {
         const controls = this.camera.controls;
@@ -21623,18 +21682,24 @@ class OrbitMode {
     }
 }
 
+/**
+ * A {@link NavigationMode} that allows to navigate floorplans in 2D,
+ * like many BIM tools.
+ */
 class PlanMode {
-    constructor(components, camera) {
-        this.components = components;
+    constructor(camera) {
         this.camera = camera;
-        this.id = NavigationModes.Plan;
+        /** {@link NavigationMode.enabled} */
         this.enabled = false;
-        this.onChange = new LiteEvent();
-        this.onChangeProjection = new LiteEvent();
+        /** {@link NavigationMode.id} */
+        this.id = "Plan";
+        /** {@link NavigationMode.projectionChanged} */
+        this.projectionChanged = new Event();
         this.mouseInitialized = false;
         this.defaultAzimuthSpeed = camera.controls.azimuthRotateSpeed;
         this.defaultPolarSpeed = camera.controls.polarRotateSpeed;
     }
+    /** {@link NavigationMode.toggle} */
     toggle(active) {
         this.enabled = active;
         const controls = this.camera.controls;
@@ -21656,29 +21721,29 @@ class PlanMode {
             controls.touches.two = this.mouseAction2;
         }
     }
-    async fitModelToFrame() {
-        if (!this.enabled)
-            return;
-        const scene = this.components.scene.get();
-        console.log(scene);
-        const box = new Box3().setFromObject(scene.children[0]);
-        await this.camera.controls.fitToBox(box, false);
-    }
 }
 
+/**
+ * A {@link NavigationMode} that allows first person navigation,
+ * simulating FPS video games.
+ */
 class FirstPersonMode {
     constructor(camera) {
         this.camera = camera;
-        this.id = NavigationModes.FirstPerson;
+        /** {@link NavigationMode.enabled} */
         this.enabled = false;
-        this.onChange = new LiteEvent();
-        this.onChangeProjection = new LiteEvent();
+        /** {@link NavigationMode.id} */
+        this.id = "FirstPerson";
+        /** {@link NavigationMode.projectionChanged} */
+        this.projectionChanged = new Event();
     }
+    /** {@link NavigationMode.toggle} */
     toggle(active) {
         this.enabled = active;
         if (active) {
-            if (this.camera.projection !== CameraProjections.Perspective) {
-                this.camera.setNavigationMode(NavigationModes.Orbit);
+            const projection = this.camera.getProjection();
+            if (projection !== "Perspective") {
+                this.camera.setNavigationMode("Orbit");
                 return;
             }
             this.setupFirstPersonCamera();
@@ -21686,9 +21751,9 @@ class FirstPersonMode {
     }
     setupFirstPersonCamera() {
         const controls = this.camera.controls;
-        const cameraPosition = new Vector3$1();
+        const cameraPosition = new THREE$1.Vector3();
         controls.camera.getWorldPosition(cameraPosition);
-        const newTargetPosition = new Vector3$1();
+        const newTargetPosition = new THREE$1.Vector3();
         controls.distance--;
         controls.camera.getWorldPosition(newTargetPosition);
         controls.minDistance = 1;
@@ -21699,58 +21764,81 @@ class FirstPersonMode {
         controls.mouseButtons.wheel = CameraControls.ACTION.DOLLY;
         controls.touches.two = CameraControls.ACTION.TOUCH_ZOOM_TRUCK;
     }
-    fitModelToFrame() {
-        throw new Error("Fit to frame is not implemented with first person yet!");
-    }
 }
 
+/**
+ * A flexible camera that uses
+ * [yomotsu's cameracontrols](https://github.com/yomotsu/camera-controls) to
+ * easily control the camera in 2D and 3D. It supports multiple navigation
+ * modes, such as 2D floor plan navigation, first person and 3D orbit.
+ */
 class OrthoPerspectiveCamera extends SimpleCamera {
     constructor(components) {
         super(components);
-        this._navigationModes = new Map();
-        this.onChange = new LiteEvent();
-        this.projectionChanged = new LiteEvent();
+        /**
+         * Event that fires when the {@link CameraProjection} changes.
+         */
+        this.projectionChanged = new Event();
         this._userInputButtons = {};
         this._frustumSize = 50;
+        this._navigationModes = new Map();
         this._orthoCamera = this.newOrthoCamera();
-        this._navigationModes.set(NavigationModes.Orbit, new OrbitMode(components, this));
-        this._navigationModes.set(NavigationModes.FirstPerson, new FirstPersonMode(this));
-        this._navigationModes.set(NavigationModes.Plan, new PlanMode(components, this));
-        this.currentMode = this._navigationModes.get(NavigationModes.Orbit);
+        this._navigationModes.set("Orbit", new OrbitMode(this));
+        this._navigationModes.set("FirstPerson", new FirstPersonMode(this));
+        this._navigationModes.set("Plan", new PlanMode(this));
+        this.currentMode = this._navigationModes.get("Orbit");
         this.currentMode.toggle(true, { preventTargetAdjustment: true });
-        Object.values(this._navigationModes).forEach((mode) => {
-            mode.onChange.on(this.onChange.trigger);
-            mode.onChangeProjection.on(this.projectionChanged.trigger);
-        });
+        const modes = Object.values(this._navigationModes);
+        for (const mode of modes) {
+            mode.projectionChanged.on(this.projectionChanged.trigger);
+        }
         this._projectionManager = new ProjectionManager(components, this);
     }
-    get projection() {
+    /**
+     * Similar to {@link Component.get}, but with an optional argument
+     * to specify which camera to get.
+     *
+     * @param projection - The camera corresponding to the
+     * {@link CameraProjection} specified. If no projection is specified,
+     * the perspective camera will be returned.
+     */
+    get(projection) {
+        return projection === "Orthographic"
+            ? this._orthoCamera
+            : this._perspectiveCamera;
+    }
+    /** Returns the current {@link CameraProjection}. */
+    getProjection() {
         return this._projectionManager.projection;
     }
+    /**
+     * Sets the current {@link CameraProjection}. This triggers the event
+     * {@link projectionChanged}.
+     *
+     * @param projection - The new {@link CameraProjection} to set.
+     */
     async setProjection(projection) {
         await this._projectionManager.setProjection(projection);
         this.projectionChanged.trigger(this.activeCamera);
     }
+    /**
+     * Allows or prevents all user input.
+     *
+     * @param active - whether to enable or disable user inputs.
+     */
     toggleUserInput(active) {
         if (active) {
-            if (Object.keys(this._userInputButtons).length === 0)
-                return;
-            this.controls.mouseButtons.left = this._userInputButtons.left;
-            this.controls.mouseButtons.right = this._userInputButtons.right;
-            this.controls.mouseButtons.middle = this._userInputButtons.middle;
-            this.controls.mouseButtons.wheel = this._userInputButtons.wheel;
+            this.enableUserInput();
         }
         else {
-            this._userInputButtons.left = this.controls.mouseButtons.left;
-            this._userInputButtons.right = this.controls.mouseButtons.right;
-            this._userInputButtons.middle = this.controls.mouseButtons.middle;
-            this._userInputButtons.wheel = this.controls.mouseButtons.wheel;
-            this.controls.mouseButtons.left = 0;
-            this.controls.mouseButtons.right = 0;
-            this.controls.mouseButtons.middle = 0;
-            this.controls.mouseButtons.wheel = 0;
+            this.disableUserInput();
         }
     }
+    /**
+     * Sets a new {@link NavigationMode} and disables the previous one.
+     *
+     * @param mode - The {@link NavigationMode} to set.
+     */
     setNavigationMode(mode) {
         if (this.currentMode.id === mode)
             return;
@@ -21761,14 +21849,73 @@ class OrthoPerspectiveCamera extends SimpleCamera {
         this.currentMode = this._navigationModes.get(mode);
         this.currentMode.toggle(true);
     }
-    resize() {
-        super.resize();
+    /** Updates the aspect ratio of the camera to match the Renderer's aspect ratio. */
+    updateAspect() {
+        super.updateAspect();
         this.setOrthoCameraAspect();
+    }
+    /**
+     * Make the camera view fit all the specified meshes.
+     *
+     * @param meshes - the meshes to fit. If it is not defined, it will
+     * evaluate {@link Components.meshes}.
+     */
+    async fitModelToFrame(meshes = this.components.meshes) {
+        if (!this.enabled)
+            return;
+        const scene = this.components.scene.get();
+        console.log(scene);
+        const maxNum = Number.MAX_VALUE;
+        const minNum = Number.MIN_VALUE;
+        const min = new THREE$1.Vector3(maxNum, maxNum, maxNum);
+        const max = new THREE$1.Vector3(minNum, minNum, minNum);
+        for (const mesh of meshes) {
+            const box = new THREE$1.Box3().setFromObject(mesh);
+            if (box.min.x < min.x)
+                min.x = box.min.x;
+            if (box.min.y < min.y)
+                min.y = box.min.y;
+            if (box.min.z < min.z)
+                min.z = box.min.z;
+            if (box.max.x > max.x)
+                max.x = box.max.x;
+            if (box.max.y > max.y)
+                max.y = box.max.y;
+            if (box.max.z > max.z)
+                max.z = box.max.z;
+        }
+        const box = new THREE$1.Box3(min, max);
+        const sceneSize = new THREE$1.Vector3();
+        box.getSize(sceneSize);
+        const sceneCenter = new THREE$1.Vector3();
+        box.getCenter(sceneCenter);
+        const nearFactor = 0.5;
+        const radius = Math.max(sceneSize.x, sceneSize.y, sceneSize.z) * nearFactor;
+        const sphere = new THREE$1.Sphere(sceneCenter, radius);
+        await this.controls.fitToSphere(sphere, true);
+    }
+    disableUserInput() {
+        this._userInputButtons.left = this.controls.mouseButtons.left;
+        this._userInputButtons.right = this.controls.mouseButtons.right;
+        this._userInputButtons.middle = this.controls.mouseButtons.middle;
+        this._userInputButtons.wheel = this.controls.mouseButtons.wheel;
+        this.controls.mouseButtons.left = 0;
+        this.controls.mouseButtons.right = 0;
+        this.controls.mouseButtons.middle = 0;
+        this.controls.mouseButtons.wheel = 0;
+    }
+    enableUserInput() {
+        if (Object.keys(this._userInputButtons).length === 0)
+            return;
+        this.controls.mouseButtons.left = this._userInputButtons.left;
+        this.controls.mouseButtons.right = this._userInputButtons.right;
+        this.controls.mouseButtons.middle = this._userInputButtons.middle;
+        this.controls.mouseButtons.wheel = this._userInputButtons.wheel;
     }
     newOrthoCamera() {
         const dims = this.components.renderer.getSize();
         const aspect = dims.x / dims.y;
-        return new OrthographicCamera((this._frustumSize * aspect) / -2, (this._frustumSize * aspect) / 2, this._frustumSize / 2, this._frustumSize / -2, 0.1, 1000);
+        return new THREE$1.OrthographicCamera((this._frustumSize * aspect) / -2, (this._frustumSize * aspect) / 2, this._frustumSize / 2, this._frustumSize / -2, 0.1, 1000);
     }
     setOrthoCameraAspect() {
         const size = this.components.renderer.getSize();
@@ -22986,6 +23133,7 @@ class LineSegments2 extends Mesh {
 
 LineSegments2.prototype.isLineSegments2 = true;
 
+// TODO: Clean up and document this
 // Static elements are for defining the clipping edges styles without having to create a clipping plane first
 class ClippingEdges {
     constructor(plane) {
@@ -23077,7 +23225,8 @@ class ClippingEdges {
             if (!mesh.geometry.boundsTree)
                 mesh.geometry.computeBoundsTree();
         });
-        material.clippingPlanes = ClippingEdges.components.clippingPlanes;
+        const renderer = ClippingEdges.components.renderer.get();
+        material.clippingPlanes = renderer.clippingPlanes;
         ClippingEdges.styles[styleName] = {
             ids,
             categories: [],
@@ -23250,7 +23399,7 @@ class EdgesPlane extends SimplePlane {
 
 class EdgesClipper extends SimpleClipper {
     updateEdges() {
-        for (const plane of this.planes) {
+        for (const plane of this._planes) {
             plane.edges.updateEdges();
         }
     }
@@ -25941,6 +26090,7 @@ class CustomOutlinePass extends Pass {
     }
 }
 
+// TODO: Clean up and document this
 // source: https://discourse.threejs.org/t/how-to-render-full-outlines-as-a-post-process-tutorial/22674
 class Postproduction {
     constructor(components, renderer) {
@@ -25957,8 +26107,8 @@ class Postproduction {
         this.resizeDelay = 500;
         this.isActive = false;
         this.isVisible = false;
-        this.white = new Color$1(255, 255, 255);
-        this.tempMaterial = new MeshLambertMaterial({
+        this.white = new THREE$1.Color(255, 255, 255);
+        this.tempMaterial = new THREE$1.MeshLambertMaterial({
             colorWrite: false,
             opacity: 0,
             transparent: true,
@@ -26006,13 +26156,6 @@ class Postproduction {
                     this.visible = true;
                 }
             }, 200);
-        };
-        this.onChangeProjection = (camera) => {
-            this.composer.passes.forEach((pass) => {
-                // @ts-ignore
-                pass.camera = camera;
-            });
-            this.update();
         };
         this.renderTarget = this.newRenderTarget();
         this.composer = new EffectComposer(this.renderer, this.renderTarget);
@@ -26124,7 +26267,8 @@ class Postproduction {
         if (!scene || !camera)
             return;
         this.scene = scene;
-        this.renderer.clippingPlanes = this.components.clippingPlanes;
+        const renderer = this.components.renderer.get();
+        this.renderer.clippingPlanes = renderer.clippingPlanes;
         this.addBasePass(scene, camera);
         this.addSaoPass(scene, camera);
         this.addOutlinePass(scene, camera);
@@ -26133,7 +26277,6 @@ class Postproduction {
         this.initialized = true;
     }
     setup(controls) {
-        var _a;
         const domElement = this.components.renderer.get().domElement;
         controls.addEventListener("control", this.onControl);
         controls.addEventListener("controlstart", this.onControlStart);
@@ -26142,7 +26285,13 @@ class Postproduction {
         domElement.addEventListener("wheel", this.onWheel);
         controls.addEventListener("sleep", this.onSleep);
         window.addEventListener("resize", this.onResize);
-        (_a = this.components.camera.onChangeProjection) === null || _a === void 0 ? void 0 : _a.on(this.onChangeProjection);
+    }
+    updateProjection(camera) {
+        this.composer.passes.forEach((pass) => {
+            // @ts-ignore
+            pass.camera = camera;
+        });
+        this.update();
     }
     setupHtmlOverlay() {
         const dom = this.components.renderer.get().domElement;
@@ -26167,7 +26316,7 @@ class Postproduction {
         this.composer.addPass(this.fxaaPass);
     }
     addOutlinePass(scene, camera) {
-        this.customOutline = new CustomOutlinePass(new Vector2$1(window.innerWidth, window.innerHeight), scene, camera);
+        this.customOutline = new CustomOutlinePass(new THREE$1.Vector2(window.innerWidth, window.innerHeight), scene, camera);
         // Initial values
         // @ts-ignore
         this.outlineUniforms = this.customOutline.fsQuad.material.uniforms;
@@ -26198,8 +26347,8 @@ class Postproduction {
         this.composer.addPass(this.basePass);
     }
     newRenderTarget() {
-        this.depthTexture = new DepthTexture(window.innerWidth, window.innerHeight);
-        return new WebGLRenderTarget(window.innerWidth, window.innerHeight, {
+        this.depthTexture = new THREE$1.DepthTexture(window.innerWidth, window.innerHeight);
+        return new THREE$1.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
             depthTexture: this.depthTexture,
             depthBuffer: true,
         });
@@ -26209,7 +26358,7 @@ class Postproduction {
 class PostproductionRenderer extends SimpleRenderer {
     constructor(components, container) {
         super(components, container);
-        this.postproduction = new Postproduction(components, this.renderer);
+        this.postproduction = new Postproduction(components, this._renderer);
         this.resize();
     }
     resize() {
@@ -26348,8 +26497,8 @@ class ShadowDropper {
         this.planeColor = 0xffffff;
         this.shadowOffset = 0;
         this.shadowExtraScaleFactor = 1.5;
-        this.tempMaterial = new MeshBasicMaterial({ visible: false });
-        this.depthMaterial = new MeshDepthMaterial();
+        this.tempMaterial = new THREE$1.MeshBasicMaterial({ visible: false });
+        this.depthMaterial = new THREE$1.MeshDepthMaterial();
         this.initializeDepthMaterial();
     }
     dispose() {
@@ -26384,7 +26533,7 @@ class ShadowDropper {
         shadow.rtBlur.dispose();
     }
     createPlanes(currentShadow, size) {
-        const planeGeometry = new PlaneGeometry(size.x, size.z).rotateX(Math.PI / 2);
+        const planeGeometry = new THREE$1.PlaneGeometry(size.x, size.z).rotateX(Math.PI / 2);
         this.createBasePlane(currentShadow, planeGeometry);
         ShadowDropper.createBlurPlane(currentShadow, planeGeometry);
         // this.createGroundColorPlane(currentShadow, planeGeometry);
@@ -26462,7 +26611,7 @@ class ShadowDropper {
     // }
     createBasePlane(shadow, planeGeometry) {
         const planeMaterial = this.createPlaneMaterial(shadow);
-        const plane = new Mesh(planeGeometry, planeMaterial);
+        const plane = new THREE$1.Mesh(planeGeometry, planeMaterial);
         // make sure it's rendered after the fillPlane
         plane.renderOrder = 2;
         shadow.root.add(plane);
@@ -26475,12 +26624,13 @@ class ShadowDropper {
         shadow.root.add(shadow.blurPlane);
     }
     createPlaneMaterial(shadow) {
-        return new MeshBasicMaterial({
+        const renderer = this.components.renderer.get();
+        return new THREE$1.MeshBasicMaterial({
             map: shadow.rt.texture,
             opacity: this.opacity,
             transparent: true,
             depthWrite: false,
-            clippingPlanes: this.components.clippingPlanes,
+            clippingPlanes: renderer.clippingPlanes,
         });
     }
     // like MeshDepthMaterial, but goes from black to transparent
@@ -26500,36 +26650,36 @@ class ShadowDropper {
     }
     createShadow(id, size) {
         this.shadows[id] = {
-            root: new Group(),
-            rt: new WebGLRenderTarget(this.resolution, this.resolution),
-            rtBlur: new WebGLRenderTarget(this.resolution, this.resolution),
-            blurPlane: new Mesh(),
+            root: new THREE$1.Group(),
+            rt: new THREE$1.WebGLRenderTarget(this.resolution, this.resolution),
+            rtBlur: new THREE$1.WebGLRenderTarget(this.resolution, this.resolution),
+            blurPlane: new THREE$1.Mesh(),
             camera: this.createCamera(size),
         };
         return this.shadows[id];
     }
     createCamera(size) {
-        return new OrthographicCamera(-size.x / 2, size.x / 2, size.z / 2, -size.z / 2, 0, this.cameraHeight);
+        return new THREE$1.OrthographicCamera(-size.x / 2, size.x / 2, size.z / 2, -size.z / 2, 0, this.cameraHeight);
     }
     getSizeCenterMin(meshes) {
         const parent = meshes[0].parent;
-        const group = new Group();
+        const group = new THREE$1.Group();
         group.children = meshes;
-        const boundingBox = new Box3().setFromObject(group);
+        const boundingBox = new THREE$1.Box3().setFromObject(group);
         parent === null || parent === void 0 ? void 0 : parent.add(...meshes);
-        const size = new Vector3$1();
+        const size = new THREE$1.Vector3();
         boundingBox.getSize(size);
         size.x *= this.shadowExtraScaleFactor;
         size.z *= this.shadowExtraScaleFactor;
-        const center = new Vector3$1();
+        const center = new THREE$1.Vector3();
         boundingBox.getCenter(center);
         const min = boundingBox.min;
         return { size, center, min };
     }
     blurShadow(shadow, amount) {
-        const horizontalBlurMaterial = new ShaderMaterial(HorizontalBlurShader);
+        const horizontalBlurMaterial = new THREE$1.ShaderMaterial(HorizontalBlurShader);
         horizontalBlurMaterial.depthTest = false;
-        const verticalBlurMaterial = new ShaderMaterial(VerticalBlurShader);
+        const verticalBlurMaterial = new THREE$1.ShaderMaterial(VerticalBlurShader);
         verticalBlurMaterial.depthTest = false;
         shadow.blurPlane.visible = true;
         // blur horizontally and draw in the renderTargetBlur
@@ -26561,9 +26711,9 @@ class PlanNavigator {
         this.defaultCameraOffset = 30;
         this.storeys = [];
         this.floorPlanViewCached = false;
-        this.previousCamera = new Vector3$1();
-        this.previousTarget = new Vector3$1();
-        this.previousProjection = CameraProjections.Perspective;
+        this.previousCamera = new THREE$1.Vector3();
+        this.previousTarget = new THREE$1.Vector3();
+        this.previousProjection = "Perspective";
     }
     dispose() {
         this.storeys = null;
@@ -26595,7 +26745,7 @@ class PlanNavigator {
             return;
         this.active = false;
         this.cacheFloorplanView();
-        this.camera.setNavigationMode(NavigationModes.Orbit);
+        this.camera.setNavigationMode("Orbit");
         await this.camera.setProjection(this.previousProjection);
         if (this.currentPlan && this.currentPlan.plane) {
             this.currentPlan.plane.enabled = false;
@@ -26635,17 +26785,15 @@ class PlanNavigator {
             throw new Error("Current plan is not defined.");
         if (this.currentPlan.plane)
             this.currentPlan.plane.enabled = true;
-        this.camera.setNavigationMode(NavigationModes.Plan);
-        const projection = this.currentPlan.ortho
-            ? CameraProjections.Orthographic
-            : CameraProjections.Perspective;
+        this.camera.setNavigationMode("Plan");
+        const projection = this.currentPlan.ortho ? "Orthographic" : "Perspective";
         this.camera.setProjection(projection);
     }
     store3dCameraPosition() {
         const camera = this.camera.get();
         camera.getWorldPosition(this.previousCamera);
         this.camera.controls.getTarget(this.previousTarget);
-        this.previousProjection = this.camera.projection;
+        this.previousProjection = this.camera.getProjection();
     }
     updateCurrentPlan(id) {
         if (!this.plans[id]) {
@@ -26661,22 +26809,36 @@ class PlanNavigator {
     }
 }
 
-class MapboxCamera {
+/**
+ * Minimal camera that can be used to create a BIM + GIS scene
+ * with [Mapbox](https://www.mapbox.com/).
+ */
+class MapboxCamera extends Component {
     constructor() {
+        super(...arguments);
+        /** {@link Component.name} */
+        this.name = "MapboxCamera";
+        /** {@link Component.enabled} */
         this.enabled = true;
-        this.camera = new THREE$1.Camera();
+        this._camera = new THREE$1.Camera();
     }
+    /** {@link Component.get} */
     get() {
-        return this.camera;
+        return this._camera;
     }
-    resize() { }
-    update(_delta) { }
 }
 
-class MapboxRenderer {
+/**
+ * Minimal renderer that can be used to create a BIM + GIS scene
+ * with [Mapbox](https://www.mapbox.com/).
+ */
+class MapboxRenderer extends RendererComponent {
     constructor(canvas, context) {
-        this.onStartRender = new LiteEvent();
-        this.onFinishRender = new LiteEvent();
+        super();
+        /** {@link Component.name} */
+        this.name = "MapboxRenderer";
+        /** {@link Component.enabled} */
+        this.enabled = true;
         this.renderer = new THREE$1.WebGLRenderer({
             canvas,
             context,
@@ -26684,23 +26846,16 @@ class MapboxRenderer {
         });
         this.renderer.autoClear = false;
     }
+    /** {@link Component.get} */
     get() {
         return this.renderer;
     }
+    /** {@link Resizeable.getSize} */
     getSize() {
         return new THREE$1.Vector2(this.renderer.domElement.clientWidth, this.renderer.domElement.clientHeight);
     }
-    addClippingPlane(plane) {
-        this.renderer.clippingPlanes.push(plane);
-    }
-    removeClippingPlane(plane) {
-        const index = this.renderer.clippingPlanes.indexOf(plane);
-        if (index > -1) {
-            this.renderer.clippingPlanes.splice(index, 1);
-        }
-    }
+    /** This renderer can't be manually resized because Mapbox handles that. */
     resize() { }
-    update(_delta) { }
 }
 
-export { CameraProjections, ClippingEdges, Components, EdgesClipper, EdgesPlane, FirstPersonMode, FragmentCulling, FragmentEdges, FragmentGrouper, FragmentHighlighter, FragmentMaterials, FragmentProperties, FragmentSpatialTree, Fragments, IfcDimensionLine, LiteEvent, MapboxCamera, MapboxRenderer, NavigationModes, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensions, SimpleGrid, SimpleMouse, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, ToolComponents, disposeMeshRecursively, getBasisTransform, isDeletable, isEnableable, isHideable, rightToLeftHand, stringToAxes };
+export { ClippingEdges, Component, Components, EdgesClipper, EdgesPlane, Event, FirstPersonMode, FragmentCulling, FragmentEdges, FragmentGrouper, FragmentHighlighter, FragmentMaterials, FragmentProperties, FragmentSpatialTree, Fragments, IfcDimensionLine, MapboxCamera, MapboxRenderer, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, RendererComponent, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensions, SimpleGrid, SimpleMouse, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, ToolComponents, disposeMeshRecursively, getBasisTransform, rightToLeftHand, stringToAxes };

@@ -1,16 +1,13 @@
-import { Vector3 } from "three";
+import * as THREE from "three";
 import { EdgesClipper, EdgesPlane } from "../visibility";
-import {
-  CameraProjection,
-  NavModeID,
-  OrthoPerspectiveCamera,
-} from "../cameras";
+import { CameraProjection, OrthoPerspectiveCamera } from "../cameras";
 
+// TODO: Clean up and document this
 export interface PlanViewConfig {
   id: string;
   ortho: boolean;
-  normal: Vector3;
-  point: Vector3;
+  normal: THREE.Vector3;
+  point: THREE.Vector3;
   rotation?: number;
   data: any;
 }
@@ -30,9 +27,9 @@ export class PlanNavigator {
   storeys: { [modelID: number]: any[] } = [];
 
   private floorPlanViewCached = false;
-  private previousCamera = new Vector3();
-  private previousTarget = new Vector3();
-  private previousProjection = CameraProjection.Perspective;
+  private previousCamera = new THREE.Vector3();
+  private previousTarget = new THREE.Vector3();
+  private previousProjection: CameraProjection = "Perspective";
 
   constructor(
     private clipper: EdgesClipper,
@@ -72,7 +69,7 @@ export class PlanNavigator {
 
     this.cacheFloorplanView();
 
-    this.camera.setNavigationMode(NavModeID.Orbit);
+    this.camera.setNavigationMode("Orbit");
     await this.camera.setProjection(this.previousProjection);
     if (this.currentPlan && this.currentPlan.plane) {
       this.currentPlan.plane.enabled = false;
@@ -124,12 +121,8 @@ export class PlanNavigator {
   private activateCurrentPlan() {
     if (!this.currentPlan) throw new Error("Current plan is not defined.");
     if (this.currentPlan.plane) this.currentPlan.plane.enabled = true;
-    this.camera.setNavigationMode(NavModeID.Plan);
-
-    const projection = this.currentPlan.ortho
-      ? CameraProjection.Orthographic
-      : CameraProjection.Perspective;
-
+    this.camera.setNavigationMode("Plan");
+    const projection = this.currentPlan.ortho ? "Orthographic" : "Perspective";
     this.camera.setProjection(projection);
   }
 
@@ -137,7 +130,7 @@ export class PlanNavigator {
     const camera = this.camera.get();
     camera.getWorldPosition(this.previousCamera);
     this.camera.controls.getTarget(this.previousTarget);
-    this.previousProjection = this.camera.projection;
+    this.previousProjection = this.camera.getProjection();
   }
 
   private updateCurrentPlan(id: string) {

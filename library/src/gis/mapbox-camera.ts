@@ -1,15 +1,22 @@
 import * as THREE from "three";
-import { CameraComponent } from "../core";
+import { Camera } from "three";
+import { Component } from "../core";
 
-export class MapboxCamera implements CameraComponent {
+/**
+ * Minimal camera that can be used to create a BIM + GIS scene
+ * with [Mapbox](https://www.mapbox.com/).
+ */
+export class MapboxCamera extends Component<Camera> {
+  /** {@link Component.name} */
+  name = "MapboxCamera";
+
+  /** {@link Component.enabled} */
   enabled = true;
-  camera = new THREE.Camera();
 
+  private _camera = new THREE.Camera();
+
+  /** {@link Component.get} */
   get() {
-    return this.camera;
+    return this._camera;
   }
-
-  resize(): void {}
-
-  update(_delta: number): void {}
 }

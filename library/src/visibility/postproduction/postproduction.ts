@@ -1,16 +1,5 @@
+import * as THREE from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
-import {
-  Camera,
-  Color,
-  DepthTexture,
-  MeshLambertMaterial,
-  Object3D,
-  PerspectiveCamera,
-  Scene,
-  Vector2,
-  WebGLRenderer,
-  WebGLRenderTarget,
-} from "three";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
 import { SAOPass } from "three/examples/jsm/postprocessing/SAOPass";
 import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader";
@@ -19,11 +8,13 @@ import CameraControls from "camera-controls";
 import { CustomOutlinePass } from "./custom-outline-pass";
 import { Components } from "../../components";
 
+// TODO: Clean up and document this
+
 // source: https://discourse.threejs.org/t/how-to-render-full-outlines-as-a-post-process-tutorial/22674
 
 export class Postproduction {
   htmlOverlay = document.createElement("img");
-  excludedItems = new Set<Object3D>();
+  excludedItems = new Set<THREE.Object3D>();
 
   private initialized = false;
 
@@ -34,9 +25,9 @@ export class Postproduction {
   /** @hidden */
   private customOutline?: CustomOutlinePass;
   private outlineUniforms: any;
-  private depthTexture?: DepthTexture;
+  private depthTexture?: THREE.DepthTexture;
   private readonly composer: EffectComposer;
-  private readonly renderTarget: WebGLRenderTarget;
+  private readonly renderTarget: THREE.WebGLRenderTarget;
   private readonly visibilityField = "ifcjsPostproductionVisible";
 
   private isUserControllingCamera = false;
@@ -48,10 +39,10 @@ export class Postproduction {
   private isActive = false;
   private isVisible = false;
 
-  private scene?: Scene;
-  private white = new Color(255, 255, 255);
+  private scene?: THREE.Scene;
+  private white = new THREE.Color(255, 255, 255);
 
-  private tempMaterial = new MeshLambertMaterial({
+  private tempMaterial = new THREE.MeshLambertMaterial({
     colorWrite: false,
     opacity: 0,
     transparent: true,
@@ -104,7 +95,10 @@ export class Postproduction {
     return this.saoPass?.params;
   }
 
-  constructor(private components: Components, private renderer: WebGLRenderer) {
+  constructor(
+    private components: Components,
+    private renderer: THREE.WebGLRenderer
+  ) {
     this.renderTarget = this.newRenderTarget();
 
     this.composer = new EffectComposer(this.renderer, this.renderTarget);
@@ -200,11 +194,12 @@ export class Postproduction {
 
   private tryToInitialize() {
     const scene = this.components.scene.get();
-    const camera = this.components.camera.get() as PerspectiveCamera;
+    const camera = this.components.camera.get() as THREE.PerspectiveCamera;
     if (!scene || !camera) return;
 
     this.scene = scene;
-    this.renderer.clippingPlanes = this.components.clippingPlanes;
+    const renderer = this.components.renderer.get();
+    this.renderer.clippingPlanes = renderer.clippingPlanes;
 
     this.addBasePass(scene, camera);
     this.addSaoPass(scene, camera);
@@ -224,7 +219,14 @@ export class Postproduction {
     domElement.addEventListener("wheel", this.onWheel);
     controls.addEventListener("sleep", this.onSleep);
     window.addEventListener("resize", this.onResize);
-    this.components.camera.onChangeProjection?.on(this.onChangeProjection);
+  }
+
+  updateProjection(camera: THREE.Camera) {
+    this.composer.passes.forEach((pass) => {
+      // @ts-ignore
+      pass.camera = camera;
+    });
+    this.update();
   }
 
   private onControlStart = () => (this.isUserControllingCamera = true);
@@ -268,14 +270,6 @@ export class Postproduction {
     }, 200);
   };
 
-  private onChangeProjection = (camera: Camera) => {
-    this.composer.passes.forEach((pass) => {
-      // @ts-ignore
-      pass.camera = camera;
-    });
-    this.update();
-  };
-
   private setupHtmlOverlay() {
     const dom = this.components.renderer.get().domElement;
     if (!dom.parentElement) {
@@ -303,9 +297,9 @@ export class Postproduction {
     this.composer.addPass(this.fxaaPass);
   }
 
-  private addOutlinePass(scene: Scene, camera: PerspectiveCamera) {
+  private addOutlinePass(scene: THREE.Scene, camera: THREE.PerspectiveCamera) {
     this.customOutline = new CustomOutlinePass(
-      new Vector2(window.innerWidth, window.innerHeight),
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
       scene,
       camera
     );
@@ -328,7 +322,7 @@ export class Postproduction {
     this.composer.addPass(this.customOutline);
   }
 
-  private addSaoPass(scene: Scene, camera: PerspectiveCamera) {
+  private addSaoPass(scene: THREE.Scene, camera: THREE.PerspectiveCamera) {
     this.saoPass = new SAOPass(scene, camera, false, true);
     this.composer.addPass(this.saoPass);
 
@@ -341,14 +335,17 @@ export class Postproduction {
     this.saoPass.params.saoKernelRadius = 30;
   }
 
-  private addBasePass(scene: Scene, camera: PerspectiveCamera) {
+  private addBasePass(scene: THREE.Scene, camera: THREE.PerspectiveCamera) {
     this.basePass = new RenderPass(scene, camera);
     this.composer.addPass(this.basePass);
   }
 
   private newRenderTarget() {
-    this.depthTexture = new DepthTexture(window.innerWidth, window.innerHeight);
-    return new WebGLRenderTarget(window.innerWidth, window.innerHeight, {
+    this.depthTexture = new THREE.DepthTexture(
+      window.innerWidth,
+      window.innerHeight
+    );
+    return new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
       depthTexture: this.depthTexture,
       depthBuffer: true,
     });

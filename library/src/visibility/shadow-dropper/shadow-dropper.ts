@@ -1,28 +1,17 @@
-import {
-  Box3,
-  BufferGeometry,
-  Camera,
-  Group,
-  Mesh,
-  MeshBasicMaterial,
-  MeshDepthMaterial,
-  OrthographicCamera,
-  PlaneGeometry,
-  ShaderMaterial,
-  Vector3,
-  WebGLRenderTarget,
-} from "three";
+import * as THREE from "three";
 import { HorizontalBlurShader } from "three/examples/jsm/shaders/HorizontalBlurShader";
 import { VerticalBlurShader } from "three/examples/jsm/shaders/VerticalBlurShader";
 import { disposeMeshRecursively } from "../../core";
 import { Components } from "../../components";
 
+// TODO: Clean up and document this
+
 export interface Shadow {
-  root: Group;
-  rt: WebGLRenderTarget;
-  rtBlur: WebGLRenderTarget;
-  blurPlane: Mesh;
-  camera: Camera;
+  root: THREE.Group;
+  rt: THREE.WebGLRenderTarget;
+  rtBlur: THREE.WebGLRenderTarget;
+  blurPlane: THREE.Mesh;
+  camera: THREE.Camera;
 }
 
 export class ShadowDropper {
@@ -40,8 +29,8 @@ export class ShadowDropper {
 
   shadowExtraScaleFactor = 1.5;
 
-  private tempMaterial = new MeshBasicMaterial({ visible: false });
-  private depthMaterial = new MeshDepthMaterial();
+  private tempMaterial = new THREE.MeshBasicMaterial({ visible: false });
+  private depthMaterial = new THREE.MeshDepthMaterial();
 
   constructor(private components: Components) {
     this.initializeDepthMaterial();
@@ -58,7 +47,7 @@ export class ShadowDropper {
     (this.components as any) = null;
   }
 
-  renderShadow(model: Mesh[], id: string) {
+  renderShadow(model: THREE.Mesh[], id: string) {
     if (this.shadows[id]) {
       throw new Error(`There is already a shadow with ID ${id}`);
     }
@@ -80,8 +69,8 @@ export class ShadowDropper {
     shadow.rtBlur.dispose();
   }
 
-  private createPlanes(currentShadow: Shadow, size: Vector3) {
-    const planeGeometry = new PlaneGeometry(size.x, size.z).rotateX(
+  private createPlanes(currentShadow: Shadow, size: THREE.Vector3) {
+    const planeGeometry = new THREE.PlaneGeometry(size.x, size.z).rotateX(
       Math.PI / 2
     );
     this.createBasePlane(currentShadow, planeGeometry);
@@ -89,13 +78,17 @@ export class ShadowDropper {
     // this.createGroundColorPlane(currentShadow, planeGeometry);
   }
 
-  private initializeShadow(shadow: Shadow, center: Vector3, min: Vector3) {
+  private initializeShadow(
+    shadow: Shadow,
+    center: THREE.Vector3,
+    min: THREE.Vector3
+  ) {
     this.initializeRoot(shadow, center, min);
     ShadowDropper.initializeRenderTargets(shadow);
     ShadowDropper.initializeCamera(shadow);
   }
 
-  private bakeShadow(meshes: Mesh[], shadow: Shadow) {
+  private bakeShadow(meshes: THREE.Mesh[], shadow: Shadow) {
     const scene = this.components.scene.get();
 
     const areModelsInScene = meshes.map((mesh) => !!mesh.parent);
@@ -158,7 +151,11 @@ export class ShadowDropper {
     shadow.rtBlur.texture.generateMipmaps = false;
   }
 
-  private initializeRoot(shadow: Shadow, center: Vector3, min: Vector3) {
+  private initializeRoot(
+    shadow: Shadow,
+    center: THREE.Vector3,
+    min: THREE.Vector3
+  ) {
     const scene = this.components.scene.get();
     shadow.root.position.set(center.x, min.y - this.shadowOffset, center.z);
     scene.add(shadow.root);
@@ -179,9 +176,9 @@ export class ShadowDropper {
   //   shadow.root.add(fillPlane);
   // }
 
-  private createBasePlane(shadow: Shadow, planeGeometry: BufferGeometry) {
+  private createBasePlane(shadow: Shadow, planeGeometry: THREE.BufferGeometry) {
     const planeMaterial = this.createPlaneMaterial(shadow);
-    const plane = new Mesh(planeGeometry, planeMaterial);
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
     // make sure it's rendered after the fillPlane
     plane.renderOrder = 2;
     shadow.root.add(plane);
@@ -191,7 +188,7 @@ export class ShadowDropper {
 
   private static createBlurPlane(
     shadow: Shadow,
-    planeGeometry: BufferGeometry
+    planeGeometry: THREE.BufferGeometry
   ) {
     shadow.blurPlane.geometry = planeGeometry;
     shadow.blurPlane.visible = false;
@@ -199,12 +196,13 @@ export class ShadowDropper {
   }
 
   private createPlaneMaterial(shadow: Shadow) {
-    return new MeshBasicMaterial({
+    const renderer = this.components.renderer.get();
+    return new THREE.MeshBasicMaterial({
       map: shadow.rt.texture,
       opacity: this.opacity,
       transparent: true,
       depthWrite: false,
-      clippingPlanes: this.components.clippingPlanes,
+      clippingPlanes: renderer.clippingPlanes,
     });
   }
 
@@ -230,19 +228,19 @@ export class ShadowDropper {
     };
   }
 
-  private createShadow(id: string, size: Vector3) {
+  private createShadow(id: string, size: THREE.Vector3) {
     this.shadows[id] = {
-      root: new Group(),
-      rt: new WebGLRenderTarget(this.resolution, this.resolution),
-      rtBlur: new WebGLRenderTarget(this.resolution, this.resolution),
-      blurPlane: new Mesh(),
+      root: new THREE.Group(),
+      rt: new THREE.WebGLRenderTarget(this.resolution, this.resolution),
+      rtBlur: new THREE.WebGLRenderTarget(this.resolution, this.resolution),
+      blurPlane: new THREE.Mesh(),
       camera: this.createCamera(size),
     };
     return this.shadows[id];
   }
 
-  private createCamera(size: Vector3) {
-    return new OrthographicCamera(
+  private createCamera(size: THREE.Vector3) {
+    return new THREE.OrthographicCamera(
       -size.x / 2,
       size.x / 2,
       size.z / 2,
@@ -252,28 +250,30 @@ export class ShadowDropper {
     );
   }
 
-  private getSizeCenterMin(meshes: Mesh[]) {
+  private getSizeCenterMin(meshes: THREE.Mesh[]) {
     const parent = meshes[0].parent;
-    const group = new Group();
+    const group = new THREE.Group();
     group.children = meshes;
-    const boundingBox = new Box3().setFromObject(group);
+    const boundingBox = new THREE.Box3().setFromObject(group);
     parent?.add(...meshes);
 
-    const size = new Vector3();
+    const size = new THREE.Vector3();
     boundingBox.getSize(size);
     size.x *= this.shadowExtraScaleFactor;
     size.z *= this.shadowExtraScaleFactor;
-    const center = new Vector3();
+    const center = new THREE.Vector3();
     boundingBox.getCenter(center);
     const min = boundingBox.min;
     return { size, center, min };
   }
 
   private blurShadow(shadow: Shadow, amount: number) {
-    const horizontalBlurMaterial = new ShaderMaterial(HorizontalBlurShader);
+    const horizontalBlurMaterial = new THREE.ShaderMaterial(
+      HorizontalBlurShader
+    );
     horizontalBlurMaterial.depthTest = false;
 
-    const verticalBlurMaterial = new ShaderMaterial(VerticalBlurShader);
+    const verticalBlurMaterial = new THREE.ShaderMaterial(VerticalBlurShader);
     verticalBlurMaterial.depthTest = false;
 
     shadow.blurPlane.visible = true;
