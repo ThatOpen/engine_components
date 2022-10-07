@@ -1,191 +1,222 @@
-import {
-  CylinderGeometry,
-  DoubleSide,
-  Mesh,
-  MeshBasicMaterial,
-  Object3D,
-  Plane,
-  PlaneGeometry,
-  Vector3,
-} from "three";
+import * as THREE from "three";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls";
 import { Components } from "../../components";
+import { Component } from "../base-components";
+import { Disposable, Updateable } from "../base-types";
+import { Event } from "../event";
 
-export class SimplePlane {
-  static planeMaterial = SimplePlane.getPlaneMaterial();
-  private static hiddenMaterial = SimplePlane.getHiddenMaterial();
-  readonly arrowBoundingBox = new Mesh();
-  readonly plane: Plane;
-  readonly planeMesh: Mesh;
+/**
+ * Each of the planes created by {@link SimpleClipper}.
+ */
+export class SimplePlane
+  extends Component<THREE.Plane>
+  implements Disposable, Updateable
+{
+  /** {@link Component.name} */
+  name = "SimplePlane";
 
-  isVisible = true;
-  _enabled = true;
-  edgesActive = true;
+  /** {@link Updateable.afterUpdate} */
+  afterUpdate = new Event<THREE.Plane>();
 
-  // Wether this plane is a section or floor plan
+  /** {@link Updateable.beforeUpdate} */
+  beforeUpdate = new Event<THREE.Plane>();
+
+  /** Event that fires when the user starts dragging a clipping plane. */
+  onStartDragging = new Event<void>();
+
+  /** Event that fires when the user stops dragging a clipping plane. */
+  onEndDragging = new Event<void>();
+
+  /** Whether this plane is used for floor plan navigation */
   isPlan = false;
 
-  readonly controls: TransformControls;
-  readonly normal: Vector3;
-  readonly origin: Vector3;
-  readonly helper: Object3D;
+  protected _visible = true;
+  protected _enabled = true;
 
-  private readonly planeSize: number;
-  private readonly components: Components;
+  protected readonly _plane = new THREE.Plane();
+  protected readonly _arrowBoundBox = new THREE.Mesh();
+  protected readonly _hiddenMaterial = new THREE.MeshBasicMaterial({
+    visible: false,
+  });
 
-  constructor(
-    components: Components,
-    origin: Vector3,
-    normal: Vector3,
-    onStartDragging: Function,
-    onEndDragging: Function,
-    planeSize: number,
-    isDraggable = true
-  ) {
-    this.planeSize = planeSize;
-    this.components = components;
-    this.plane = new Plane();
-    this.components.renderer.togglePlane(true, this.plane);
-    this.planeMesh = this.getPlaneMesh();
-    this.normal = normal;
-    this.origin = origin;
-    this.helper = this.createHelper();
-    this.controls = this.newTransformControls();
-    if (isDraggable) {
-      this.setupEvents(onStartDragging, onEndDragging);
-    }
-    this.plane.setFromNormalAndCoplanarPoint(normal, origin);
-  }
+  protected readonly _components: Components;
+  protected readonly _planeMesh: THREE.Mesh;
+  protected readonly _controls: TransformControls;
+  protected readonly _normal: THREE.Vector3;
+  protected readonly _origin: THREE.Vector3;
+  protected readonly _helper: THREE.Object3D;
 
+  /** {@link Component.enabled} */
   get enabled() {
     return this._enabled;
   }
 
+  /** {@link Component.enabled} */
   set enabled(enabled: boolean) {
     this._enabled = enabled;
-    this.components.renderer.togglePlane(enabled, this.plane);
+    this._components.renderer.togglePlane(enabled, this._plane);
+    this._visible = enabled;
+    this._controls.visible = enabled;
+    this._helper.visible = enabled;
   }
 
-  get visible() {
-    return this.isVisible;
+  /** The meshes used for raycasting */
+  get meshes(): THREE.Mesh[] {
+    return [this._planeMesh, this._arrowBoundBox];
   }
 
-  set visible(state: boolean) {
-    this.isVisible = state;
-    this.controls.visible = state;
-    this.helper.visible = state;
+  /** The material of the clipping plane representation. */
+  get planeMaterial() {
+    return this._planeMesh.material;
   }
 
+  /** The material of the clipping plane representation. */
+  set planeMaterial(material: THREE.Material | THREE.Material[]) {
+    this._planeMesh.material = material;
+  }
+
+  /** The size of the clipping plane representation. */
+  get planeSize() {
+    return this._planeMesh.scale.x;
+  }
+
+  /** Sets the size of the clipping plane representation. */
+  set planeSize(size: number) {
+    this._planeMesh.geometry.scale(size, 1, size);
+  }
+
+  constructor(
+    components: Components,
+    origin: THREE.Vector3,
+    normal: THREE.Vector3,
+    size: number,
+    material: THREE.Material,
+    isPlan: boolean
+  ) {
+    super();
+    this._components = components;
+    this._normal = normal;
+    this._origin = origin;
+    this.isPlan = isPlan;
+    this.isPlan = isPlan;
+
+    this._components.renderer.togglePlane(true, this._plane);
+    this._planeMesh = SimplePlane.newPlaneMesh(size, material);
+    this._helper = this.newHelper();
+    this._controls = this.newTransformControls();
+
+    this._plane.setFromNormalAndCoplanarPoint(normal, origin);
+    if (!isPlan) {
+      this.setupEvents();
+    }
+  }
+
+  update(): void {
+    if (this._enabled) {
+      this.beforeUpdate.trigger(this._plane);
+      this._plane.setFromNormalAndCoplanarPoint(
+        this._normal,
+        this._helper.position
+      );
+      this.afterUpdate.trigger(this._plane);
+    }
+  }
+
+  /** {@link Component.get} */
+  get() {
+    return this._plane;
+  }
+
+  /** {@link Disposable.dispose} */
   dispose() {
-    if (SimplePlane.planeMaterial) {
-      SimplePlane.planeMaterial.dispose();
-      (SimplePlane.planeMaterial as any) = null;
-      SimplePlane.planeMaterial = SimplePlane.getPlaneMaterial();
-    }
-    if (SimplePlane.hiddenMaterial) {
-      SimplePlane.hiddenMaterial.dispose();
-      (SimplePlane.hiddenMaterial as any) = null;
-      SimplePlane.hiddenMaterial = SimplePlane.getHiddenMaterial();
-    }
-    this.removeFromScene();
-    (this.components as any) = null;
-  }
+    (this.onStartDragging as any) = null;
+    (this.onEndDragging as any) = null;
 
-  removeFromScene = () => {
-    this.helper.removeFromParent();
+    this._helper.removeFromParent();
 
-    this.components.renderer.togglePlane(false, this.plane);
+    this._components.renderer.togglePlane(false, this._plane);
 
-    this.arrowBoundingBox.removeFromParent();
-    this.arrowBoundingBox.geometry.dispose();
-    (this.arrowBoundingBox as any) = undefined;
+    this._arrowBoundBox.removeFromParent();
+    this._arrowBoundBox.geometry.dispose();
+    (this._arrowBoundBox as any) = undefined;
 
-    this.planeMesh.geometry.dispose();
-    (this.planeMesh.geometry as any) = undefined;
+    this._planeMesh.geometry.dispose();
+    (this._planeMesh.geometry as any) = undefined;
 
-    this.controls.removeFromParent();
-    this.controls.dispose();
+    this._controls.removeFromParent();
+    this._controls.dispose();
 
-    this.helper.removeFromParent();
-  };
-
-  private static getPlaneMaterial() {
-    return new MeshBasicMaterial({
-      color: 0xffff00,
-      side: DoubleSide,
-      transparent: true,
-      opacity: 0.2,
-    });
-  }
-
-  private static getHiddenMaterial() {
-    return new MeshBasicMaterial({ visible: false });
+    this._helper.removeFromParent();
   }
 
   private newTransformControls() {
-    const camera = this.components.camera?.get();
-    const container = this.components.renderer?.get().domElement;
-    if (!camera || !container)
-      throw new Error("Camera or container not initialised.");
+    const camera = this._components.camera.get();
+    const container = this._components.renderer.get().domElement;
     const controls = new TransformControls(camera, container);
     this.initializeControls(controls);
-    const scene = this.components?.scene?.get();
-    if (!scene) throw new Error("Scene not initialised.");
-    scene.add(controls);
+    this._components.scene.get().add(controls);
     return controls;
   }
 
   private initializeControls(controls: TransformControls) {
-    controls.attach(this.helper);
+    controls.attach(this._helper);
     controls.showX = false;
     controls.showY = false;
     controls.setSpace("local");
     this.createArrowBoundingBox();
-    controls.children[0].children[0].add(this.arrowBoundingBox);
+    controls.children[0].children[0].add(this._arrowBoundBox);
   }
 
   private createArrowBoundingBox() {
-    this.arrowBoundingBox.geometry = new CylinderGeometry(0.18, 0.18, 1.2);
-    this.arrowBoundingBox.material = SimplePlane.hiddenMaterial;
-    this.arrowBoundingBox.rotateX(Math.PI / 2);
-    this.arrowBoundingBox.updateMatrix();
-    this.arrowBoundingBox.geometry.applyMatrix4(this.arrowBoundingBox.matrix);
+    this._arrowBoundBox.geometry = new THREE.CylinderGeometry(0.18, 0.18, 1.2);
+    this._arrowBoundBox.material = this._hiddenMaterial;
+    this._arrowBoundBox.rotateX(Math.PI / 2);
+    this._arrowBoundBox.updateMatrix();
+    this._arrowBoundBox.geometry.applyMatrix4(this._arrowBoundBox.matrix);
   }
 
-  private setupEvents(onStart: Function, onEnd: Function) {
-    this.controls.addEventListener("change", () => this.onPlaneChanged());
+  private setupEvents() {
+    this._controls.addEventListener("change", () => this.update());
 
-    this.controls.addEventListener("dragging-changed", (event) => {
-      if (!this._enabled) return;
-      this.isVisible = !event.value;
-      this.components.camera.enabled = this.isVisible;
-      if (event.value) onStart();
-      else onEnd();
-    });
-
-    /* this.context.ifcCamera.currentNavMode.onChangeProjection.on((camera) => {
-          this.controls.camera = camera;
-        }); */
+    this._controls.addEventListener("dragging-changed", (event) =>
+      this.onDraggingChanged(event)
+    );
   }
 
-  protected onPlaneChanged() {
-    if (!this._enabled) return;
-    this.plane.setFromNormalAndCoplanarPoint(this.normal, this.helper.position);
+  private onDraggingChanged(event: THREE.Event) {
+    if (this._enabled) {
+      this._visible = !event.value;
+      this.preventCameraMovement();
+      this.notifyDraggingChanged(event);
+    }
   }
 
-  private createHelper() {
-    const helper = new Object3D();
-    helper.lookAt(this.normal);
-    helper.position.copy(this.origin);
-    const scene = this.components?.scene?.get();
-    if (!scene) throw new Error("Scene not initialised");
-    scene.add(helper);
-    helper.add(this.planeMesh);
+  private notifyDraggingChanged(event: THREE.Event) {
+    if (event.value) {
+      this.onStartDragging.trigger();
+    } else {
+      this.onEndDragging.trigger();
+    }
+  }
+
+  private preventCameraMovement() {
+    this._components.camera.enabled = this._visible;
+  }
+
+  private newHelper() {
+    const helper = new THREE.Object3D();
+    helper.lookAt(this._normal);
+    helper.position.copy(this._origin);
+    this._components.scene.get().add(helper);
+    this._planeMesh.position.z += 0.01;
+    helper.add(this._planeMesh);
     return helper;
   }
 
-  private getPlaneMesh() {
-    const planeGeom = new PlaneGeometry(this.planeSize, this.planeSize, 1);
-    return new Mesh(planeGeom, SimplePlane.planeMaterial);
+  private static newPlaneMesh(size: number, material: THREE.Material) {
+    const planeGeom = new THREE.PlaneGeometry(1);
+    const mesh = new THREE.Mesh(planeGeom, material);
+    mesh.scale.set(size, size, size);
+    return mesh;
   }
 }

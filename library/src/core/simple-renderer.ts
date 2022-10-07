@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
 import { Components } from "../components";
 import { Event } from "./event";
-import { Disposeable, Updateable } from "./base-types";
+import { Disposable, Resizeable, Updateable } from "./base-types";
 import { RendererComponent } from "./base-components";
 
 /**
@@ -13,7 +13,7 @@ import { RendererComponent } from "./base-components";
  */
 export class SimpleRenderer
   extends RendererComponent
-  implements Disposeable, Updateable
+  implements Disposable, Updateable, Resizeable
 {
   /** {@link Component.name} */
   name = "SimpleRenderer";
@@ -58,7 +58,7 @@ export class SimpleRenderer
     this.afterUpdate.trigger(this);
   }
 
-  /** {@link Disposeable.dispose} */
+  /** {@link Disposable.dispose} */
   dispose() {
     this._renderer.domElement.remove();
     this._renderer.dispose();

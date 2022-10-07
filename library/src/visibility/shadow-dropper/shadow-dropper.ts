@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { HorizontalBlurShader } from "three/examples/jsm/shaders/HorizontalBlurShader";
 import { VerticalBlurShader } from "three/examples/jsm/shaders/VerticalBlurShader";
-import { disposeMeshRecursively } from "../../core";
+import { Disposer } from "../../core";
 import { Components } from "../../components";
 
 // TODO: Clean up and document this
@@ -15,6 +15,8 @@ export interface Shadow {
 }
 
 export class ShadowDropper {
+  private disposer = new Disposer();
+
   shadows: { [id: string]: Shadow } = {};
 
   // Controls how far away the shadow is computed
@@ -63,8 +65,8 @@ export class ShadowDropper {
     const shadow = this.shadows[id];
     delete this.shadows[id];
     if (!shadow) throw new Error(`No shadow with ID ${id} was found.`);
-    disposeMeshRecursively(shadow.root as any);
-    disposeMeshRecursively(shadow.blurPlane);
+    this.disposer.dispose(shadow.root as any);
+    this.disposer.dispose(shadow.blurPlane);
     shadow.rt.dispose();
     shadow.rtBlur.dispose();
   }

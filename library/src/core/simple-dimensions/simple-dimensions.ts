@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
-import { Disposeable, Hideable, Updateable } from "../base-types";
+import { Disposable, Hideable, Updateable } from "../base-types";
 import { Components } from "../../components";
 import { SimpleDimensionLine } from "./simple-dimension-line";
 import { Component } from "../base-components";
@@ -13,7 +13,7 @@ import { Event } from "../event";
  */
 export class SimpleDimensions
   extends Component<SimpleDimensionLine[]>
-  implements Hideable, Disposeable, Updateable
+  implements Hideable, Disposable, Updateable
 {
   /** {@link Component.name} */
   readonly name = "SimpleDimensions";
@@ -146,7 +146,7 @@ export class SimpleDimensions
     return this._dimensions;
   }
 
-  /** {@link Disposeable.dispose} */
+  /** {@link Disposable.dispose} */
   dispose() {
     (this.components as any) = null;
     this._dimensions.forEach((dim) => dim.dispose());

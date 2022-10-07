@@ -1,4 +1,4 @@
-import { Disposeable, Hideable, Resizeable, Updateable } from "../base-types";
+import { Disposable, Hideable, Resizeable, Updateable } from "../base-types";
 
 /**
  * Components are the building blocks of this library. Everything is a
@@ -23,14 +23,14 @@ export abstract class Component<Type> {
    */
   abstract get(): Type;
 
-  /** Whether is component is {@link Disposeable}. */
-  isDisposeable = (): this is Disposeable => {
+  /** Whether is component is {@link Disposable}. */
+  isDisposeable = (): this is Disposable => {
     return "dispose" in this;
   };
 
   /** Whether is component is {@link Resizeable}. */
   isResizeable = (): this is Resizeable => {
-    return "setSize" in this && "getSize" in this;
+    return "resize" in this && "getSize" in this;
   };
 
   /** Whether is component is {@link Updateable}. */

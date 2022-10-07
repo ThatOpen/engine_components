@@ -8,7 +8,7 @@ import { Event } from "./event";
  * This also ensures that the DOM events created by that component will be
  * cleaned up.
  */
-export interface Disposeable {
+export interface Disposable {
   /**
    * Destroys the object from memory to prevent a
    * [memory leak](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
@@ -72,7 +72,7 @@ export interface Updateable {
    * Function used to update the state of this component each frame. For
    * instance, a renderer component will make a render each frame.
    */
-  update(delta: number): void;
+  update(delta?: number): void;
 }
 
 /** Whether this component is able to cast rays. */

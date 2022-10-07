@@ -1,5 +1,5 @@
 import * as THREE$1 from './three.module.js';
-import { BufferAttribute as BufferAttribute$1, Vector3 as Vector3$1, Vector2 as Vector2$1, Plane, Line3, Triangle, Sphere, Box3, Matrix4, BackSide, DoubleSide, FrontSide, Mesh, Ray, Object3D, Group, BufferGeometry, Line, BoxGeometry, Matrix3, Raycaster, Quaternion as Quaternion$1, Euler, MeshBasicMaterial, LineBasicMaterial, CylinderGeometry, Float32BufferAttribute, OctahedronGeometry, SphereGeometry, TorusGeometry, PlaneGeometry, Interpolant, Loader, LoaderUtils, FileLoader, Color as Color$1, SpotLight, PointLight, DirectionalLight, MeshPhysicalMaterial, sRGBEncoding, TangentSpaceNormalMap, ImageBitmapLoader, TextureLoader, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material, MeshStandardMaterial, RGBFormat, PropertyBinding, SkinnedMesh, LineSegments, LineLoop, Points, PerspectiveCamera, MathUtils, OrthographicCamera, InterpolateLinear, AnimationClip, Bone, Skeleton, TriangleFanDrawMode, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, Texture, TriangleStripDrawMode, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, RGBAFormat, Scene, InstancedMesh, MeshLambertMaterial, EdgesGeometry, InstancedBufferGeometry, InstancedBufferAttribute, UniformsLib, ShaderLib, UniformsUtils, ShaderMaterial, InstancedInterleavedBuffer, WireframeGeometry, Vector4 as Vector4$1, DynamicDrawUsage, WebGLRenderTarget, Clock, DepthTexture, UnsignedShortType, MeshDepthMaterial, RGBADepthPacking, NoBlending, MeshNormalMaterial, CustomBlending, DstColorFactor, ZeroFactor, AddEquation, DstAlphaFactor } from './three.module.js';
+import { BufferAttribute as BufferAttribute$1, Vector3 as Vector3$1, Vector2 as Vector2$1, Plane, Line3, Triangle, Sphere, Box3, Matrix4, BackSide, DoubleSide, FrontSide, Mesh, Ray, Object3D, Group, BufferGeometry, Line, BoxGeometry, Raycaster, Quaternion as Quaternion$1, Euler, MeshBasicMaterial, LineBasicMaterial, CylinderGeometry, Float32BufferAttribute, OctahedronGeometry, SphereGeometry, TorusGeometry, PlaneGeometry, Interpolant, Loader, LoaderUtils, FileLoader, Color as Color$1, SpotLight, PointLight, DirectionalLight, MeshPhysicalMaterial, sRGBEncoding, TangentSpaceNormalMap, ImageBitmapLoader, TextureLoader, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material, MeshStandardMaterial, RGBFormat, PropertyBinding, SkinnedMesh, LineSegments, LineLoop, Points, PerspectiveCamera, MathUtils, OrthographicCamera, InterpolateLinear, AnimationClip, Bone, Skeleton, TriangleFanDrawMode, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, Texture, TriangleStripDrawMode, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, RGBAFormat, Scene, InstancedMesh, MeshLambertMaterial, EdgesGeometry, InstancedBufferGeometry, InstancedBufferAttribute, InstancedInterleavedBuffer, WireframeGeometry, UniformsLib, ShaderLib, UniformsUtils, ShaderMaterial, Vector4 as Vector4$1, WebGLRenderTarget, Clock, DepthTexture, UnsignedShortType, MeshDepthMaterial, RGBADepthPacking, NoBlending, MeshNormalMaterial, CustomBlending, DstColorFactor, ZeroFactor, AddEquation, DstAlphaFactor } from './three.module.js';
 
 // Split strategy constants
 const CENTER = 0;
@@ -6356,13 +6356,13 @@ function createBoundingSphere(object3d, out) {
  */
 class Component {
     constructor() {
-        /** Whether is component is {@link Disposeable}. */
+        /** Whether is component is {@link Disposable}. */
         this.isDisposeable = () => {
             return "dispose" in this;
         };
         /** Whether is component is {@link Resizeable}. */
         this.isResizeable = () => {
-            return "setSize" in this && "getSize" in this;
+            return "resize" in this && "getSize" in this;
         };
         /** Whether is component is {@link Updateable}. */
         this.isUpdateable = () => {
@@ -6375,20 +6375,23 @@ class Component {
     }
 }
 
+/**
+ * A base component for components whose main mission is to render a scene.
+ */
 class RendererComponent extends Component {
-    /** Adds or removes a
+    /**
+     * Adds or removes a
      * [clipping plane](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.clippingPlanes)
-     * to the renderer. */
+     * to the renderer.
+     */
     togglePlane(active, plane) {
         const renderer = this.get();
-        if (active) {
+        const index = renderer.clippingPlanes.indexOf(plane);
+        if (active && index === -1) {
             renderer.clippingPlanes.push(plane);
         }
-        else {
-            const index = renderer.clippingPlanes.indexOf(plane);
-            if (index > -1) {
-                renderer.clippingPlanes.splice(index, 1);
-            }
+        else if (!active && index > -1) {
+            renderer.clippingPlanes.splice(index, 1);
         }
     }
 }
@@ -6687,6 +6690,72 @@ class CSS2DRenderer {
 
 }
 
+/**
+ * A class to safely remove meshes and geometries from memory to
+ * [prevent memory leaks](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
+ */
+class Disposer {
+    /**
+     * Removes a mesh, its geometry and its materials from memory. If you are
+     * using any of these in other parts of the application, make sure that you
+     * remove them from the mesh before disposing it.
+     *
+     * @param mesh - the [mesh](https://threejs.org/docs/#api/en/objects/Mesh)
+     * to remove.
+     *
+     * @param materials - whether to dispose the materials of the mesh.
+     *
+     * @param recursive - whether to recursively dispose the children of the mesh.
+     */
+    dispose(mesh, materials = true, recursive = true) {
+        mesh.removeFromParent();
+        this.disposeGeometryAndMaterials(mesh, materials);
+        if (recursive && mesh.children.length) {
+            this.disposeChildren(mesh);
+        }
+        mesh.material = [];
+        mesh.children.length = 0;
+    }
+    /**
+     * Disposes a geometry from memory.
+     *
+     * @param geometry - the
+     * [geometry](https://threejs.org/docs/#api/en/core/BufferGeometry)
+     * to remove.
+     */
+    disposeGeometry(geometry) {
+        if (geometry.boundsTree) {
+            geometry.disposeBoundsTree();
+        }
+        geometry.dispose();
+    }
+    disposeGeometryAndMaterials(mesh, materials) {
+        if (mesh.geometry) {
+            this.disposeGeometry(mesh.geometry);
+        }
+        if (materials) {
+            Disposer.disposeMaterial(mesh);
+        }
+    }
+    disposeChildren(mesh) {
+        for (const child of mesh.children) {
+            this.dispose(child);
+        }
+    }
+    static disposeMaterial(mesh) {
+        if (mesh.material) {
+            if (Array.isArray(mesh.material)) {
+                for (const mat of mesh.material) {
+                    mat.dispose();
+                }
+            }
+            else {
+                mesh.material.dispose();
+            }
+        }
+    }
+}
+
 function rightToLeftHand(vector) {
     return new THREE$1.Vector3(vector.x, -vector.z, vector.y);
 }
@@ -6711,21 +6780,6 @@ function stringToAxes(axesString) {
         const name = str[1];
         return { negative, name };
     });
-}
-function disposeMeshRecursively(mesh) {
-    mesh.removeFromParent();
-    if (mesh.geometry)
-        mesh.geometry.dispose();
-    if (mesh.material) {
-        if (Array.isArray(mesh.material))
-            mesh.material.forEach((mat) => mat.dispose());
-        else
-            mesh.material.dispose();
-    }
-    if (mesh.children && mesh.children.length) {
-        mesh.children.forEach((child) => disposeMeshRecursively(child));
-    }
-    mesh.children.length = 0;
 }
 function getBasisTransform(from, to, targetMatrix) {
     if (!basesRegex.test(from)) {
@@ -6755,6 +6809,7 @@ function getBasisTransform(from, to, targetMatrix) {
 // TODO: Document + clean up this: way less parameters, clearer logic
 class SimpleDimensionLine {
     constructor(context, start, end, lineMaterial, endpointMaterial, endpointGeometry, className, endpointScale) {
+        this.disposer = new Disposer();
         // Elements
         this.root = new Group();
         this.endpointMeshes = [];
@@ -6784,11 +6839,11 @@ class SimpleDimensionLine {
     dispose() {
         this.removeFromScene();
         this.context = null;
-        disposeMeshRecursively(this.root);
+        this.disposer.dispose(this.root);
         this.root = null;
-        disposeMeshRecursively(this.line);
+        this.disposer.dispose(this.line);
         this.line = null;
-        this.endpointMeshes.forEach((mesh) => disposeMeshRecursively(mesh));
+        this.endpointMeshes.forEach((mesh) => this.disposer.dispose(mesh));
         this.endpointMeshes.length = 0;
         this.axis.dispose();
         this.axis = null;
@@ -6802,7 +6857,7 @@ class SimpleDimensionLine {
         this.endpointMaterial.dispose();
         this.endpointMaterial = null;
         if (this.boundingMesh) {
-            disposeMeshRecursively(this.boundingMesh);
+            this.disposer.dispose(this.boundingMesh);
             this.boundingMesh = null;
         }
     }
@@ -6948,7 +7003,7 @@ class SimpleMouse {
         }
         return this._position;
     }
-    /** {@link Disposeable.dispose} */
+    /** {@link Disposable.dispose} */
     dispose() {
         this.dom.removeEventListener("mousemove", this.updateMouseInfo);
     }
@@ -7126,7 +7181,7 @@ class SimpleDimensions extends Component {
     get() {
         return this._dimensions;
     }
-    /** {@link Disposeable.dispose} */
+    /** {@link Disposable.dispose} */
     dispose() {
         this.components = null;
         this._dimensions.forEach((dim) => dim.dispose());
@@ -7358,7 +7413,7 @@ class SimpleRenderer extends RendererComponent {
         this._renderer2D.render(scene, camera);
         this.afterUpdate.trigger(this);
     }
-    /** {@link Disposeable.dispose} */
+    /** {@link Disposable.dispose} */
     dispose() {
         this._renderer.domElement.remove();
         this._renderer.dispose();
@@ -7412,150 +7467,193 @@ class SimpleScene extends Component {
     }
 }
 
+/**
+ * An lightweight component to easily create and handle
+ * [clipping planes](https://threejs.org/docs/#api/en/materials/Material.clippingPlanes).
+ *
+ * @param components - the instance of {@link Components} used.
+ * @param planeType - the type of plane to be used by the clipper.
+ * E.g. {@link SimplePlane}.
+ */
 class SimpleClipper extends Component {
     constructor(components, PlaneType) {
         super();
         this.components = components;
         this.PlaneType = PlaneType;
-        this.name = "clipper";
-        this.dragging = false;
-        this.orthogonalY = true;
+        /** {@link Component.name} */
+        this.name = "SimpleClipper";
+        /** The material used in all the clipping planes. */
+        this._planeMaterial = new THREE$1.MeshBasicMaterial({
+            color: 0xffff00,
+            side: THREE$1.DoubleSide,
+            transparent: true,
+            opacity: 0.2,
+        });
+        /**
+         * Whether to force the clipping plane to be orthogonal in the Y direction
+         * (up). This is desirable when clipping a building horizontally and a
+         * clipping plane is created in it's roof, which might have a slight
+         * slope for draining purposes.
+         */
+        this.orthogonalY = false;
+        /**
+         * The tolerance that determines whether a horizontallish clipping plane
+         * will be forced to be orthogonal to the Y direction. {@link orthogonalY}
+         * has to be `true` for this to apply.
+         */
         this.toleranceOrthogonalY = 0.7;
-        this.planeSize = 5;
+        /** Event that fires when the user starts dragging a clipping plane. */
+        this.onStartDragging = new Event();
+        /** Event that fires when the user stops dragging a clipping plane. */
+        this.onEndDragging = new Event();
+        this._planeSize = 5;
         this._planes = [];
         this._enabled = false;
         this._visible = false;
-        this.create = () => {
-            if (!this.enabled)
-                return;
-            const intersects = this.components.raycaster.castRay();
-            if (!intersects)
-                return;
-            this.createPlaneFromIntersection(intersects);
-            this.intersection = undefined;
+        this._dragging = false;
+        this._onStartDragging = () => {
+            this.onStartDragging.trigger();
         };
-        this.createFromNormalAndCoplanarPoint = (normal, point, isPlan = false) => {
-            const plane = new this.PlaneType(this.components, point, normal, this.activateDragging, this.deactivateDragging, this.planeSize, !isPlan);
-            plane.isPlan = isPlan;
-            this._planes.push(plane);
-            this.components.renderer.togglePlane(true, plane.plane);
-            this.updateMaterials();
-            return plane;
-        };
-        this.delete = () => {
-            this.deletePlane();
-        };
-        this.deletePlane = (plane) => {
-            let existingPlane = plane;
-            if (!existingPlane) {
-                if (!this.enabled)
-                    return;
-                existingPlane = this.pickPlane();
-            }
-            if (!existingPlane)
-                return;
-            const index = this._planes.indexOf(existingPlane);
-            if (index === -1)
-                return;
-            existingPlane.removeFromScene();
-            this._planes.splice(index, 1);
-            this.components.renderer.togglePlane(false, existingPlane.plane);
-            this.updateMaterials();
-        };
-        this.deleteAllPlanes = () => {
-            while (this._planes.length > 0) {
-                this.deletePlane(this._planes[0]);
-            }
-        };
-        this.pickPlane = () => {
-            const planeMeshes = this._planes.map((p) => p.planeMesh);
-            const arrowMeshes = this._planes.map((p) => p.arrowBoundingBox);
-            const intersects = this.components.raycaster.castRay([
-                ...planeMeshes,
-                ...arrowMeshes,
-            ]);
-            if (intersects) {
-                return this._planes.find((p) => {
-                    if (p.planeMesh === intersects.object ||
-                        p.arrowBoundingBox === intersects.object) {
-                        return p;
-                    }
-                    return null;
-                });
-            }
-            return null;
-        };
-        this.createPlaneFromIntersection = (intersection) => {
-            var _a;
-            const constant = intersection.point.distanceTo(new Vector3$1(0, 0, 0));
-            const normal = (_a = intersection.face) === null || _a === void 0 ? void 0 : _a.normal;
-            if (!constant || !normal)
-                return;
-            const normalMatrix = new Matrix3().getNormalMatrix(intersection.object.matrixWorld);
-            const worldNormal = normal.clone().applyMatrix3(normalMatrix).normalize();
-            this.normalizePlaneDirectionY(worldNormal);
-            const plane = this.newPlane(intersection, worldNormal.negate());
-            this._planes.push(plane);
-            this.components.renderer.togglePlane(true, plane.plane);
-            this.updateMaterials();
-        };
-        this.activateDragging = () => {
-            this.dragging = true;
-        };
-        this.deactivateDragging = () => {
-            this.dragging = false;
-        };
-        this.updateMaterials = () => {
-            var _a;
-            // Apply clipping to all models
-            const planes = (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.get().clippingPlanes;
-            this.components.meshes.forEach((model) => {
-                if (Array.isArray(model.material)) {
-                    model.material.forEach((mat) => (mat.clippingPlanes = planes));
-                }
-                else {
-                    model.material.clippingPlanes = planes;
-                }
-            });
+        this._onEndDragging = () => {
+            this.onEndDragging.trigger();
         };
     }
-    get visible() {
-        return this._visible;
-    }
-    set visible(visible) {
-        this._visible = visible;
-        if (!visible) {
-            this.enabled = false;
-        }
-        this._planes.forEach((plane) => {
-            if (!plane.isPlan) {
-                plane.visible = visible;
-            }
-        });
-        this.updateMaterials();
-    }
+    /** {@link Component.enabled} */
     get enabled() {
         return this._enabled;
     }
+    /** {@link Component.enabled} */
     set enabled(state) {
         this._enabled = state;
-        if (state && !this._visible) {
-            this.visible = true;
+        for (const plane of this.planes3D) {
+            plane.enabled = state;
         }
-        this._planes.forEach((plane) => {
-            if (!plane.isPlan) {
-                plane.enabled = state;
-            }
-        });
         this.updateMaterials();
     }
+    /** The material of the clipping plane representation. */
+    get planeMaterial() {
+        return this._planeMaterial;
+    }
+    /** The material of the clipping plane representation. */
+    set planeMaterial(material) {
+        this._planeMaterial = material;
+        for (const plane of this._planes) {
+            plane.planeMaterial = material;
+        }
+    }
+    /** The size of the geometric representation of the clippings planes. */
+    get planeSize() {
+        return this._planeSize;
+    }
+    /** The size of the geometric representation of the clippings planes. */
+    set planeSize(size) {
+        this._planeSize = size;
+        for (const plane of this._planes) {
+            plane.planeSize = size;
+        }
+    }
+    /** The clipping planes that are not associated to floor plan navigation. */
+    get planes3D() {
+        return this._planes.filter((plane) => !plane.isPlan);
+    }
+    /** {@link Component.get} */
     get() {
         return this._planes;
     }
+    /** {@link Component.get} */
     dispose() {
-        this._planes.forEach((plane) => plane.dispose());
+        for (const plane of this._planes) {
+            plane.dispose();
+        }
         this._planes.length = 0;
         this.components = null;
+    }
+    /** {@link Createable.create} */
+    create() {
+        if (!this.enabled)
+            return;
+        const intersects = this.components.raycaster.castRay();
+        if (!intersects)
+            return;
+        this.createPlaneFromIntersection(intersects);
+        this._intersection = undefined;
+    }
+    /**
+     * Creates a plane in a certain place and with a certain orientation,
+     * without the need of the mouse.
+     *
+     * @param normal - the orientation of the clipping plane.
+     * @param point - the position of the clipping plane.
+     * @param isPlan - whether this is a clipping plane used for floor plan
+     * navigation.
+     */
+    createFromNormalAndCoplanarPoint(normal, point, isPlan = false) {
+        const plane = this.newPlane(point, normal, isPlan);
+        this.updateMaterials();
+        return plane;
+    }
+    /**
+     * {@link Createable.delete}
+     *
+     * @param plane - the plane to delete. If undefined, the the first plane
+     * found under the cursor will be deleted.
+     */
+    delete(plane) {
+        if (!this.enabled)
+            return;
+        if (!plane)
+            plane = this.pickPlane();
+        if (!plane)
+            return;
+        this.deletePlane(plane);
+    }
+    /** Deletes all the existing clipping planes. */
+    deleteAll() {
+        while (this._planes.length > 0) {
+            this.delete(this._planes[0]);
+        }
+    }
+    deletePlane(plane) {
+        const index = this._planes.indexOf(plane);
+        if (index !== -1) {
+            this._planes.splice(index, 1);
+            this.components.renderer.togglePlane(false, plane.get());
+            plane.dispose();
+            this.updateMaterials();
+        }
+    }
+    pickPlane() {
+        const meshes = this.getAllPlaneMeshes();
+        const intersects = this.components.raycaster.castRay(meshes);
+        if (intersects) {
+            const found = intersects.object;
+            return this._planes.find((p) => p.meshes.includes(found));
+        }
+        return undefined;
+    }
+    getAllPlaneMeshes() {
+        const meshes = [];
+        for (const plane of this.planes3D) {
+            meshes.push(...plane.meshes);
+        }
+        return meshes;
+    }
+    createPlaneFromIntersection(intersect) {
+        var _a;
+        const constant = intersect.point.distanceTo(new THREE$1.Vector3(0, 0, 0));
+        const normal = (_a = intersect.face) === null || _a === void 0 ? void 0 : _a.normal;
+        if (!constant || !normal)
+            return;
+        const worldNormal = this.getWorldNormal(intersect, normal);
+        const plane = this.newPlane(intersect.point, worldNormal.negate(), false);
+        this.components.renderer.togglePlane(true, plane.get());
+        this.updateMaterials();
+    }
+    getWorldNormal(intersect, normal) {
+        const normalMatrix = new THREE$1.Matrix3().getNormalMatrix(intersect.object.matrixWorld);
+        const worldNormal = normal.clone().applyMatrix3(normalMatrix).normalize();
+        this.normalizePlaneDirectionY(worldNormal);
+        return worldNormal;
     }
     normalizePlaneDirectionY(normal) {
         if (this.orthogonalY) {
@@ -7571,10 +7669,28 @@ class SimpleClipper extends Component {
             }
         }
     }
-    newPlane(intersection, worldNormal) {
-        return new this.PlaneType(this.components, intersection.point, worldNormal, this.activateDragging, this.deactivateDragging, this.planeSize);
+    newPlane(point, normal, isPlan) {
+        const plane = this.newPlaneInstance(point, normal, isPlan);
+        plane.onStartDragging.on(this._onStartDragging);
+        plane.onEndDragging.on(this._onEndDragging);
+        this._planes.push(plane);
+        return plane;
     }
-    update(_delta) { }
+    newPlaneInstance(point, normal, isPlan) {
+        return new this.PlaneType(this.components, point, normal, this.planeSize, this._planeMaterial, isPlan);
+    }
+    updateMaterials() {
+        var _a;
+        const planes = (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.get().clippingPlanes;
+        this.components.meshes.forEach((model) => {
+            if (Array.isArray(model.material)) {
+                model.material.forEach((mat) => (mat.clippingPlanes = planes));
+            }
+            else {
+                model.material.clippingPlanes = planes;
+            }
+        });
+    }
 }
 
 const _raycaster = new Raycaster();
@@ -9087,149 +9203,164 @@ class TransformControlsPlane extends Mesh {
 
 TransformControlsPlane.prototype.isTransformControlsPlane = true;
 
-class SimplePlane {
-    constructor(components, origin, normal, onStartDragging, onEndDragging, planeSize, isDraggable = true) {
-        this.arrowBoundingBox = new Mesh();
-        this.isVisible = true;
-        this._enabled = true;
-        this.edgesActive = true;
-        // Wether this plane is a section or floor plan
+/**
+ * Each of the planes created by {@link SimpleClipper}.
+ */
+class SimplePlane extends Component {
+    constructor(components, origin, normal, size, material, isPlan) {
+        super();
+        /** {@link Component.name} */
+        this.name = "SimplePlane";
+        /** {@link Updateable.afterUpdate} */
+        this.afterUpdate = new Event();
+        /** {@link Updateable.beforeUpdate} */
+        this.beforeUpdate = new Event();
+        /** Event that fires when the user starts dragging a clipping plane. */
+        this.onStartDragging = new Event();
+        /** Event that fires when the user stops dragging a clipping plane. */
+        this.onEndDragging = new Event();
+        /** Whether this plane is used for floor plan navigation */
         this.isPlan = false;
-        this.removeFromScene = () => {
-            this.helper.removeFromParent();
-            this.components.renderer.togglePlane(false, this.plane);
-            this.arrowBoundingBox.removeFromParent();
-            this.arrowBoundingBox.geometry.dispose();
-            this.arrowBoundingBox = undefined;
-            this.planeMesh.geometry.dispose();
-            this.planeMesh.geometry = undefined;
-            this.controls.removeFromParent();
-            this.controls.dispose();
-            this.helper.removeFromParent();
-        };
-        this.planeSize = planeSize;
-        this.components = components;
-        this.plane = new Plane();
-        this.components.renderer.togglePlane(true, this.plane);
-        this.planeMesh = this.getPlaneMesh();
-        this.normal = normal;
-        this.origin = origin;
-        this.helper = this.createHelper();
-        this.controls = this.newTransformControls();
-        if (isDraggable) {
-            this.setupEvents(onStartDragging, onEndDragging);
+        this._visible = true;
+        this._enabled = true;
+        this._plane = new THREE$1.Plane();
+        this._arrowBoundBox = new THREE$1.Mesh();
+        this._hiddenMaterial = new THREE$1.MeshBasicMaterial({
+            visible: false,
+        });
+        this._components = components;
+        this._normal = normal;
+        this._origin = origin;
+        this.isPlan = isPlan;
+        this.isPlan = isPlan;
+        this._components.renderer.togglePlane(true, this._plane);
+        this._planeMesh = SimplePlane.newPlaneMesh(size, material);
+        this._helper = this.newHelper();
+        this._controls = this.newTransformControls();
+        this._plane.setFromNormalAndCoplanarPoint(normal, origin);
+        if (!isPlan) {
+            this.setupEvents();
         }
-        this.plane.setFromNormalAndCoplanarPoint(normal, origin);
     }
+    /** {@link Component.enabled} */
     get enabled() {
         return this._enabled;
     }
+    /** {@link Component.enabled} */
     set enabled(enabled) {
         this._enabled = enabled;
-        this.components.renderer.togglePlane(enabled, this.plane);
+        this._components.renderer.togglePlane(enabled, this._plane);
+        this._visible = enabled;
+        this._controls.visible = enabled;
+        this._helper.visible = enabled;
     }
-    get visible() {
-        return this.isVisible;
+    /** The meshes used for raycasting */
+    get meshes() {
+        return [this._planeMesh, this._arrowBoundBox];
     }
-    set visible(state) {
-        this.isVisible = state;
-        this.controls.visible = state;
-        this.helper.visible = state;
+    /** The material of the clipping plane representation. */
+    get planeMaterial() {
+        return this._planeMesh.material;
     }
+    /** The material of the clipping plane representation. */
+    set planeMaterial(material) {
+        this._planeMesh.material = material;
+    }
+    /** The size of the clipping plane representation. */
+    get planeSize() {
+        return this._planeMesh.scale.x;
+    }
+    /** Sets the size of the clipping plane representation. */
+    set planeSize(size) {
+        this._planeMesh.geometry.scale(size, 1, size);
+    }
+    update() {
+        if (this._enabled) {
+            this.beforeUpdate.trigger(this._plane);
+            this._plane.setFromNormalAndCoplanarPoint(this._normal, this._helper.position);
+            this.afterUpdate.trigger(this._plane);
+        }
+    }
+    /** {@link Component.get} */
+    get() {
+        return this._plane;
+    }
+    /** {@link Disposable.dispose} */
     dispose() {
-        if (SimplePlane.planeMaterial) {
-            SimplePlane.planeMaterial.dispose();
-            SimplePlane.planeMaterial = null;
-            SimplePlane.planeMaterial = SimplePlane.getPlaneMaterial();
-        }
-        if (SimplePlane.hiddenMaterial) {
-            SimplePlane.hiddenMaterial.dispose();
-            SimplePlane.hiddenMaterial = null;
-            SimplePlane.hiddenMaterial = SimplePlane.getHiddenMaterial();
-        }
-        this.removeFromScene();
-        this.components = null;
-    }
-    static getPlaneMaterial() {
-        return new MeshBasicMaterial({
-            color: 0xffff00,
-            side: DoubleSide,
-            transparent: true,
-            opacity: 0.2,
-        });
-    }
-    static getHiddenMaterial() {
-        return new MeshBasicMaterial({ visible: false });
+        this.onStartDragging = null;
+        this.onEndDragging = null;
+        this._helper.removeFromParent();
+        this._components.renderer.togglePlane(false, this._plane);
+        this._arrowBoundBox.removeFromParent();
+        this._arrowBoundBox.geometry.dispose();
+        this._arrowBoundBox = undefined;
+        this._planeMesh.geometry.dispose();
+        this._planeMesh.geometry = undefined;
+        this._controls.removeFromParent();
+        this._controls.dispose();
+        this._helper.removeFromParent();
     }
     newTransformControls() {
-        var _a, _b, _c, _d;
-        const camera = (_a = this.components.camera) === null || _a === void 0 ? void 0 : _a.get();
-        const container = (_b = this.components.renderer) === null || _b === void 0 ? void 0 : _b.get().domElement;
-        if (!camera || !container)
-            throw new Error("Camera or container not initialised.");
+        const camera = this._components.camera.get();
+        const container = this._components.renderer.get().domElement;
         const controls = new TransformControls(camera, container);
         this.initializeControls(controls);
-        const scene = (_d = (_c = this.components) === null || _c === void 0 ? void 0 : _c.scene) === null || _d === void 0 ? void 0 : _d.get();
-        if (!scene)
-            throw new Error("Scene not initialised.");
-        scene.add(controls);
+        this._components.scene.get().add(controls);
         return controls;
     }
     initializeControls(controls) {
-        controls.attach(this.helper);
+        controls.attach(this._helper);
         controls.showX = false;
         controls.showY = false;
         controls.setSpace("local");
         this.createArrowBoundingBox();
-        controls.children[0].children[0].add(this.arrowBoundingBox);
+        controls.children[0].children[0].add(this._arrowBoundBox);
     }
     createArrowBoundingBox() {
-        this.arrowBoundingBox.geometry = new CylinderGeometry(0.18, 0.18, 1.2);
-        this.arrowBoundingBox.material = SimplePlane.hiddenMaterial;
-        this.arrowBoundingBox.rotateX(Math.PI / 2);
-        this.arrowBoundingBox.updateMatrix();
-        this.arrowBoundingBox.geometry.applyMatrix4(this.arrowBoundingBox.matrix);
+        this._arrowBoundBox.geometry = new THREE$1.CylinderGeometry(0.18, 0.18, 1.2);
+        this._arrowBoundBox.material = this._hiddenMaterial;
+        this._arrowBoundBox.rotateX(Math.PI / 2);
+        this._arrowBoundBox.updateMatrix();
+        this._arrowBoundBox.geometry.applyMatrix4(this._arrowBoundBox.matrix);
     }
-    setupEvents(onStart, onEnd) {
-        this.controls.addEventListener("change", () => this.onPlaneChanged());
-        this.controls.addEventListener("dragging-changed", (event) => {
-            if (!this._enabled)
-                return;
-            this.isVisible = !event.value;
-            this.components.camera.enabled = this.isVisible;
-            if (event.value)
-                onStart();
-            else
-                onEnd();
-        });
-        /* this.context.ifcCamera.currentNavMode.onChangeProjection.on((camera) => {
-              this.controls.camera = camera;
-            }); */
+    setupEvents() {
+        this._controls.addEventListener("change", () => this.update());
+        this._controls.addEventListener("dragging-changed", (event) => this.onDraggingChanged(event));
     }
-    onPlaneChanged() {
-        if (!this._enabled)
-            return;
-        this.plane.setFromNormalAndCoplanarPoint(this.normal, this.helper.position);
+    onDraggingChanged(event) {
+        if (this._enabled) {
+            this._visible = !event.value;
+            this.preventCameraMovement();
+            this.notifyDraggingChanged(event);
+        }
     }
-    createHelper() {
-        var _a, _b;
-        const helper = new Object3D();
-        helper.lookAt(this.normal);
-        helper.position.copy(this.origin);
-        const scene = (_b = (_a = this.components) === null || _a === void 0 ? void 0 : _a.scene) === null || _b === void 0 ? void 0 : _b.get();
-        if (!scene)
-            throw new Error("Scene not initialised");
-        scene.add(helper);
-        helper.add(this.planeMesh);
+    notifyDraggingChanged(event) {
+        if (event.value) {
+            this.onStartDragging.trigger();
+        }
+        else {
+            this.onEndDragging.trigger();
+        }
+    }
+    preventCameraMovement() {
+        this._components.camera.enabled = this._visible;
+    }
+    newHelper() {
+        const helper = new THREE$1.Object3D();
+        helper.lookAt(this._normal);
+        helper.position.copy(this._origin);
+        this._components.scene.get().add(helper);
+        this._planeMesh.position.z += 0.01;
+        helper.add(this._planeMesh);
         return helper;
     }
-    getPlaneMesh() {
-        const planeGeom = new PlaneGeometry(this.planeSize, this.planeSize, 1);
-        return new Mesh(planeGeom, SimplePlane.planeMaterial);
+    static newPlaneMesh(size, material) {
+        const planeGeom = new THREE$1.PlaneGeometry(1);
+        const mesh = new THREE$1.Mesh(planeGeom, material);
+        mesh.scale.set(size, size, size);
+        return mesh;
     }
 }
-SimplePlane.planeMaterial = SimplePlane.getPlaneMaterial();
-SimplePlane.hiddenMaterial = SimplePlane.getHiddenMaterial();
 
 /**
  * An object to easily handle all the tools used (e.g. updating them, retrieving
@@ -9285,7 +9416,7 @@ class ToolComponents {
      * @param name - The {@link Component.name} of the tool to enable or disable.
      * If undefined, all components will be enabled or disabled.
      */
-    setEnabled(enabled, name) {
+    enable(enabled, name) {
         if (name) {
             const tool = this.get(name);
             if (tool) {
@@ -9303,7 +9434,7 @@ class ToolComponents {
      * @param name - The {@link Component.name} of the tool to show or hide.
      * If undefined, all components will be enabled or disabled.
      */
-    setVisible(visible, name) {
+    toggle(visible, name) {
         if (name) {
             const tool = this.get(name);
             if (tool && tool.isHideable()) {
@@ -21916,6 +22047,244 @@ class OrthoPerspectiveCamera extends SimpleCamera {
     }
 }
 
+const _box$1 = new Box3();
+const _vector = new Vector3$1();
+
+class LineSegmentsGeometry extends InstancedBufferGeometry {
+
+	constructor() {
+
+		super();
+
+		this.type = 'LineSegmentsGeometry';
+
+		const positions = [ - 1, 2, 0, 1, 2, 0, - 1, 1, 0, 1, 1, 0, - 1, 0, 0, 1, 0, 0, - 1, - 1, 0, 1, - 1, 0 ];
+		const uvs = [ - 1, 2, 1, 2, - 1, 1, 1, 1, - 1, - 1, 1, - 1, - 1, - 2, 1, - 2 ];
+		const index = [ 0, 2, 1, 2, 3, 1, 2, 4, 3, 4, 5, 3, 4, 6, 5, 6, 7, 5 ];
+
+		this.setIndex( index );
+		this.setAttribute( 'position', new Float32BufferAttribute( positions, 3 ) );
+		this.setAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
+
+	}
+
+	applyMatrix4( matrix ) {
+
+		const start = this.attributes.instanceStart;
+		const end = this.attributes.instanceEnd;
+
+		if ( start !== undefined ) {
+
+			start.applyMatrix4( matrix );
+
+			end.applyMatrix4( matrix );
+
+			start.needsUpdate = true;
+
+		}
+
+		if ( this.boundingBox !== null ) {
+
+			this.computeBoundingBox();
+
+		}
+
+		if ( this.boundingSphere !== null ) {
+
+			this.computeBoundingSphere();
+
+		}
+
+		return this;
+
+	}
+
+	setPositions( array ) {
+
+		let lineSegments;
+
+		if ( array instanceof Float32Array ) {
+
+			lineSegments = array;
+
+		} else if ( Array.isArray( array ) ) {
+
+			lineSegments = new Float32Array( array );
+
+		}
+
+		const instanceBuffer = new InstancedInterleavedBuffer( lineSegments, 6, 1 ); // xyz, xyz
+
+		this.setAttribute( 'instanceStart', new InterleavedBufferAttribute( instanceBuffer, 3, 0 ) ); // xyz
+		this.setAttribute( 'instanceEnd', new InterleavedBufferAttribute( instanceBuffer, 3, 3 ) ); // xyz
+
+		//
+
+		this.computeBoundingBox();
+		this.computeBoundingSphere();
+
+		return this;
+
+	}
+
+	setColors( array ) {
+
+		let colors;
+
+		if ( array instanceof Float32Array ) {
+
+			colors = array;
+
+		} else if ( Array.isArray( array ) ) {
+
+			colors = new Float32Array( array );
+
+		}
+
+		const instanceColorBuffer = new InstancedInterleavedBuffer( colors, 6, 1 ); // rgb, rgb
+
+		this.setAttribute( 'instanceColorStart', new InterleavedBufferAttribute( instanceColorBuffer, 3, 0 ) ); // rgb
+		this.setAttribute( 'instanceColorEnd', new InterleavedBufferAttribute( instanceColorBuffer, 3, 3 ) ); // rgb
+
+		return this;
+
+	}
+
+	fromWireframeGeometry( geometry ) {
+
+		this.setPositions( geometry.attributes.position.array );
+
+		return this;
+
+	}
+
+	fromEdgesGeometry( geometry ) {
+
+		this.setPositions( geometry.attributes.position.array );
+
+		return this;
+
+	}
+
+	fromMesh( mesh ) {
+
+		this.fromWireframeGeometry( new WireframeGeometry( mesh.geometry ) );
+
+		// set colors, maybe
+
+		return this;
+
+	}
+
+	fromLineSegments( lineSegments ) {
+
+		const geometry = lineSegments.geometry;
+
+		if ( geometry.isGeometry ) {
+
+			console.error( 'THREE.LineSegmentsGeometry no longer supports Geometry. Use THREE.BufferGeometry instead.' );
+			return;
+
+		} else if ( geometry.isBufferGeometry ) {
+
+			this.setPositions( geometry.attributes.position.array ); // assumes non-indexed
+
+		}
+
+		// set colors, maybe
+
+		return this;
+
+	}
+
+	computeBoundingBox() {
+
+		if ( this.boundingBox === null ) {
+
+			this.boundingBox = new Box3();
+
+		}
+
+		const start = this.attributes.instanceStart;
+		const end = this.attributes.instanceEnd;
+
+		if ( start !== undefined && end !== undefined ) {
+
+			this.boundingBox.setFromBufferAttribute( start );
+
+			_box$1.setFromBufferAttribute( end );
+
+			this.boundingBox.union( _box$1 );
+
+		}
+
+	}
+
+	computeBoundingSphere() {
+
+		if ( this.boundingSphere === null ) {
+
+			this.boundingSphere = new Sphere();
+
+		}
+
+		if ( this.boundingBox === null ) {
+
+			this.computeBoundingBox();
+
+		}
+
+		const start = this.attributes.instanceStart;
+		const end = this.attributes.instanceEnd;
+
+		if ( start !== undefined && end !== undefined ) {
+
+			const center = this.boundingSphere.center;
+
+			this.boundingBox.getCenter( center );
+
+			let maxRadiusSq = 0;
+
+			for ( let i = 0, il = start.count; i < il; i ++ ) {
+
+				_vector.fromBufferAttribute( start, i );
+				maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( _vector ) );
+
+				_vector.fromBufferAttribute( end, i );
+				maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( _vector ) );
+
+			}
+
+			this.boundingSphere.radius = Math.sqrt( maxRadiusSq );
+
+			if ( isNaN( this.boundingSphere.radius ) ) {
+
+				console.error( 'THREE.LineSegmentsGeometry.computeBoundingSphere(): Computed radius is NaN. The instanced position data is likely to have NaN values.', this );
+
+			}
+
+		}
+
+	}
+
+	toJSON() {
+
+		// todo
+
+	}
+
+	applyMatrix( matrix ) {
+
+		console.warn( 'THREE.LineSegmentsGeometry: applyMatrix() has been renamed to applyMatrix4().' );
+
+		return this.applyMatrix4( matrix );
+
+	}
+
+}
+
+LineSegmentsGeometry.prototype.isLineSegmentsGeometry = true;
+
 /**
  * parameters = {
  *  color: <hex>,
@@ -22609,244 +22978,6 @@ class LineMaterial extends ShaderMaterial {
 
 LineMaterial.prototype.isLineMaterial = true;
 
-const _box$1 = new Box3();
-const _vector = new Vector3$1();
-
-class LineSegmentsGeometry extends InstancedBufferGeometry {
-
-	constructor() {
-
-		super();
-
-		this.type = 'LineSegmentsGeometry';
-
-		const positions = [ - 1, 2, 0, 1, 2, 0, - 1, 1, 0, 1, 1, 0, - 1, 0, 0, 1, 0, 0, - 1, - 1, 0, 1, - 1, 0 ];
-		const uvs = [ - 1, 2, 1, 2, - 1, 1, 1, 1, - 1, - 1, 1, - 1, - 1, - 2, 1, - 2 ];
-		const index = [ 0, 2, 1, 2, 3, 1, 2, 4, 3, 4, 5, 3, 4, 6, 5, 6, 7, 5 ];
-
-		this.setIndex( index );
-		this.setAttribute( 'position', new Float32BufferAttribute( positions, 3 ) );
-		this.setAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
-
-	}
-
-	applyMatrix4( matrix ) {
-
-		const start = this.attributes.instanceStart;
-		const end = this.attributes.instanceEnd;
-
-		if ( start !== undefined ) {
-
-			start.applyMatrix4( matrix );
-
-			end.applyMatrix4( matrix );
-
-			start.needsUpdate = true;
-
-		}
-
-		if ( this.boundingBox !== null ) {
-
-			this.computeBoundingBox();
-
-		}
-
-		if ( this.boundingSphere !== null ) {
-
-			this.computeBoundingSphere();
-
-		}
-
-		return this;
-
-	}
-
-	setPositions( array ) {
-
-		let lineSegments;
-
-		if ( array instanceof Float32Array ) {
-
-			lineSegments = array;
-
-		} else if ( Array.isArray( array ) ) {
-
-			lineSegments = new Float32Array( array );
-
-		}
-
-		const instanceBuffer = new InstancedInterleavedBuffer( lineSegments, 6, 1 ); // xyz, xyz
-
-		this.setAttribute( 'instanceStart', new InterleavedBufferAttribute( instanceBuffer, 3, 0 ) ); // xyz
-		this.setAttribute( 'instanceEnd', new InterleavedBufferAttribute( instanceBuffer, 3, 3 ) ); // xyz
-
-		//
-
-		this.computeBoundingBox();
-		this.computeBoundingSphere();
-
-		return this;
-
-	}
-
-	setColors( array ) {
-
-		let colors;
-
-		if ( array instanceof Float32Array ) {
-
-			colors = array;
-
-		} else if ( Array.isArray( array ) ) {
-
-			colors = new Float32Array( array );
-
-		}
-
-		const instanceColorBuffer = new InstancedInterleavedBuffer( colors, 6, 1 ); // rgb, rgb
-
-		this.setAttribute( 'instanceColorStart', new InterleavedBufferAttribute( instanceColorBuffer, 3, 0 ) ); // rgb
-		this.setAttribute( 'instanceColorEnd', new InterleavedBufferAttribute( instanceColorBuffer, 3, 3 ) ); // rgb
-
-		return this;
-
-	}
-
-	fromWireframeGeometry( geometry ) {
-
-		this.setPositions( geometry.attributes.position.array );
-
-		return this;
-
-	}
-
-	fromEdgesGeometry( geometry ) {
-
-		this.setPositions( geometry.attributes.position.array );
-
-		return this;
-
-	}
-
-	fromMesh( mesh ) {
-
-		this.fromWireframeGeometry( new WireframeGeometry( mesh.geometry ) );
-
-		// set colors, maybe
-
-		return this;
-
-	}
-
-	fromLineSegments( lineSegments ) {
-
-		const geometry = lineSegments.geometry;
-
-		if ( geometry.isGeometry ) {
-
-			console.error( 'THREE.LineSegmentsGeometry no longer supports Geometry. Use THREE.BufferGeometry instead.' );
-			return;
-
-		} else if ( geometry.isBufferGeometry ) {
-
-			this.setPositions( geometry.attributes.position.array ); // assumes non-indexed
-
-		}
-
-		// set colors, maybe
-
-		return this;
-
-	}
-
-	computeBoundingBox() {
-
-		if ( this.boundingBox === null ) {
-
-			this.boundingBox = new Box3();
-
-		}
-
-		const start = this.attributes.instanceStart;
-		const end = this.attributes.instanceEnd;
-
-		if ( start !== undefined && end !== undefined ) {
-
-			this.boundingBox.setFromBufferAttribute( start );
-
-			_box$1.setFromBufferAttribute( end );
-
-			this.boundingBox.union( _box$1 );
-
-		}
-
-	}
-
-	computeBoundingSphere() {
-
-		if ( this.boundingSphere === null ) {
-
-			this.boundingSphere = new Sphere();
-
-		}
-
-		if ( this.boundingBox === null ) {
-
-			this.computeBoundingBox();
-
-		}
-
-		const start = this.attributes.instanceStart;
-		const end = this.attributes.instanceEnd;
-
-		if ( start !== undefined && end !== undefined ) {
-
-			const center = this.boundingSphere.center;
-
-			this.boundingBox.getCenter( center );
-
-			let maxRadiusSq = 0;
-
-			for ( let i = 0, il = start.count; i < il; i ++ ) {
-
-				_vector.fromBufferAttribute( start, i );
-				maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( _vector ) );
-
-				_vector.fromBufferAttribute( end, i );
-				maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( _vector ) );
-
-			}
-
-			this.boundingSphere.radius = Math.sqrt( maxRadiusSq );
-
-			if ( isNaN( this.boundingSphere.radius ) ) {
-
-				console.error( 'THREE.LineSegmentsGeometry.computeBoundingSphere(): Computed radius is NaN. The instanced position data is likely to have NaN values.', this );
-
-			}
-
-		}
-
-	}
-
-	toJSON() {
-
-		// todo
-
-	}
-
-	applyMatrix( matrix ) {
-
-		console.warn( 'THREE.LineSegmentsGeometry: applyMatrix() has been renamed to applyMatrix4().' );
-
-		return this.applyMatrix4( matrix );
-
-	}
-
-}
-
-LineSegmentsGeometry.prototype.isLineSegmentsGeometry = true;
-
 const _start = new Vector3$1();
 const _end = new Vector3$1();
 
@@ -23121,119 +23252,81 @@ class LineSegments2 extends Mesh {
 
 LineSegments2.prototype.isLineSegments2 = true;
 
-// TODO: Clean up and document this
-// Static elements are for defining the clipping edges styles without having to create a clipping plane first
-class ClippingEdges {
-    constructor(plane) {
-        this.plane = plane;
-        this.edges = {};
-        this.isVisible = true;
-        // Helpers
-        this.inverseMatrix = new Matrix4();
-        this.localPlane = new Plane();
-        this.tempLine = new Line3();
-        this.tempVector = new Vector3$1();
+class ClippingEdges extends Component {
+    constructor(components, plane, styles) {
+        super();
+        /** {@link Component.name} */
+        this.name = "ClippingEdges";
+        /** {@link Component.enabled}. */
+        this.enabled = true;
+        this._edges = {};
+        this._disposer = new Disposer();
+        this._visible = true;
+        this._inverseMatrix = new THREE$1.Matrix4();
+        this._localPlane = new THREE$1.Plane();
+        this._tempLine = new THREE$1.Line3();
+        this._tempVector = new THREE$1.Vector3();
+        /** {@link Updateable.afterUpdate} */
+        this.afterUpdate = new Event();
+        /** {@link Updateable.beforeUpdate} */
+        this.beforeUpdate = new Event();
+        this._components = components;
+        this._plane = plane;
+        this._styles = styles;
     }
+    /** {@link Hideable.visible} */
     get visible() {
-        return this.isVisible;
+        return this._visible;
     }
+    /** {@link Hideable.visible} */
     set visible(visible) {
-        this.isVisible = visible;
-        for (const edgeName in this.edges) {
+        this._visible = visible;
+        const names = Object.keys(this._edges);
+        for (const edgeName of names) {
             this.updateEdgesVisibility(edgeName, visible);
         }
         if (visible) {
-            this.updateEdges();
+            this.update();
         }
     }
+    /** {@link Updateable.update} */
+    update() {
+        const styles = Object.values(this._styles.get());
+        for (const style of styles) {
+            this.drawEdges(style.name);
+        }
+    }
+    /** {@link Component.get} */
+    get() {
+        return this._edges;
+    }
+    /** {@link Disposable.dispose} */
     dispose() {
-        Object.values(this.edges).forEach((edge) => {
-            if (edge.generatorGeometry.boundsTree)
-                edge.generatorGeometry.disposeBoundsTree();
-            edge.generatorGeometry.dispose();
-            if (edge.mesh.geometry.boundsTree)
-                edge.mesh.geometry.disposeBoundsTree();
-            edge.mesh.geometry.dispose();
-            edge.mesh.removeFromParent();
-            edge.mesh = null;
-        });
-        this.edges = null;
-        this.plane = null;
-    }
-    disposeStylesAndHelpers() {
-        if (ClippingEdges.basicEdges) {
-            ClippingEdges.basicEdges.removeFromParent();
-            ClippingEdges.basicEdges.geometry.dispose();
-            ClippingEdges.basicEdges = null;
-            ClippingEdges.basicEdges = new LineSegments();
+        const edges = Object.values(this._edges);
+        for (const edge of edges) {
+            this._disposer.disposeGeometry(edge.generatorGeometry);
+            this._disposer.dispose(edge.mesh, false);
         }
-        ClippingEdges.components = null;
-        if (!ClippingEdges.styles)
-            return;
-        const styles = Object.values(ClippingEdges.styles);
-        styles.forEach((style) => {
-            style.ids.length = 0;
-            style.meshes.forEach((mesh) => {
-                mesh.removeFromParent();
-                mesh.geometry.dispose();
-                if (mesh.geometry.boundsTree)
-                    mesh.geometry.disposeBoundsTree();
-                if (Array.isArray(mesh.material))
-                    mesh.material.forEach((mat) => mat.dispose());
-                else
-                    mesh.material.dispose();
-            });
-            style.meshes.length = 0;
-            style.categories.length = 0;
-            style.material.dispose();
-        });
-        ClippingEdges.styles = null;
-        ClippingEdges.styles = {};
-    }
-    async updateEdges() {
-        for (const styleName in ClippingEdges.styles) {
-            try {
-                // this can trow error if there is an empty mesh, we still want to update other edges so we catch ere
-                this.drawEdges(styleName);
-            }
-            catch (e) {
-                console.error("error in drawing edges", e);
-            }
-        }
-    }
-    static initialize(components) {
-        if (!ClippingEdges.components) {
-            ClippingEdges.components = components;
-        }
-    }
-    // Creates a new style that applies to all clipping edges for generic models
-    static async newStyleFromMesh(styleName, meshes, material = ClippingEdges.defaultMaterial) {
-        const ids = meshes.map((mesh) => mesh.uuid);
-        meshes.forEach((mesh) => {
-            if (!mesh.geometry.boundsTree)
-                mesh.geometry.computeBoundsTree();
-        });
-        const renderer = ClippingEdges.components.renderer.get();
-        material.clippingPlanes = renderer.clippingPlanes;
-        ClippingEdges.styles[styleName] = {
-            ids,
-            categories: [],
-            material,
-            meshes,
-        };
+        ClippingEdges._basicEdges.removeFromParent();
+        ClippingEdges._basicEdges.geometry.dispose();
+        ClippingEdges._basicEdges = new THREE$1.LineSegments();
+        this._edges = null;
+        this._plane = null;
     }
     // Initializes the helper geometry used to compute the vertices
     static newGeneratorGeometry() {
         // create line geometry with enough data to hold 100000 segments
-        const generatorGeometry = new BufferGeometry();
-        const linePosAttr = new BufferAttribute$1(new Float32Array(300000), 3, false);
-        linePosAttr.setUsage(DynamicDrawUsage);
+        const generatorGeometry = new THREE$1.BufferGeometry();
+        const buffer = new Float32Array(300000);
+        const linePosAttr = new THREE$1.BufferAttribute(buffer, 3, false);
+        linePosAttr.setUsage(THREE$1.DynamicDrawUsage);
         generatorGeometry.setAttribute("position", linePosAttr);
         return generatorGeometry;
     }
     // Creates the geometry of the clipping edges
     newThickEdges(styleName) {
-        const material = ClippingEdges.styles[styleName].material;
+        const styles = this._styles.get();
+        const material = styles[styleName].material;
         const thickLineGeometry = new LineSegmentsGeometry();
         const thickEdges = new LineSegments2(thickLineGeometry, material);
         thickEdges.material.polygonOffset = true;
@@ -23244,20 +23337,16 @@ class ClippingEdges {
     }
     // Source: https://gkjohnson.github.io/three-mesh-bvh/example/bundle/clippedEdges.html
     drawEdges(styleName) {
-        const style = ClippingEdges.styles[styleName];
-        // if (!style.subsets.geometry.boundsTree) return;
-        if (!this.edges[styleName]) {
-            this.edges[styleName] = {
-                generatorGeometry: ClippingEdges.newGeneratorGeometry(),
-                mesh: this.newThickEdges(styleName),
-            };
+        const style = this._styles.get()[styleName];
+        if (!this._edges[styleName]) {
+            this.initializeStyle(styleName);
         }
-        const edges = this.edges[styleName];
+        const edges = this._edges[styleName];
         let index = 0;
         const posAttr = edges.generatorGeometry.attributes.position;
         // @ts-ignore
         posAttr.array.fill(0);
-        const notEmptyMeshes = style.meshes.filter((subset) => subset.geometry);
+        const notEmptyMeshes = style.meshes.filter((mesh) => mesh.geometry);
         notEmptyMeshes.forEach((mesh) => {
             if (!mesh.geometry.boundsTree) {
                 throw new Error("Boundstree not found for clipping edges subset.");
@@ -23265,70 +23354,74 @@ class ClippingEdges {
             const instanced = mesh;
             if (instanced.count > 1) {
                 for (let i = 0; i < instanced.count; i++) {
-                    const tempMesh = new Mesh(mesh.geometry);
+                    const tempMesh = new THREE$1.Mesh(mesh.geometry);
                     tempMesh.matrix.copy(mesh.matrix);
-                    const tempMatrix = new Matrix4();
+                    const tempMatrix = new THREE$1.Matrix4();
                     instanced.getMatrixAt(i, tempMatrix);
                     tempMesh.applyMatrix4(tempMatrix);
                     tempMesh.updateMatrix();
                     tempMesh.updateMatrixWorld();
-                    this.inverseMatrix.copy(tempMesh.matrixWorld).invert();
-                    this.localPlane.copy(this.plane).applyMatrix4(this.inverseMatrix);
+                    this._inverseMatrix.copy(tempMesh.matrixWorld).invert();
+                    this._localPlane.copy(this._plane).applyMatrix4(this._inverseMatrix);
                     index = this.shapecast(tempMesh, posAttr, index);
                 }
             }
             else {
-                this.inverseMatrix.copy(mesh.matrixWorld).invert();
-                this.localPlane.copy(this.plane).applyMatrix4(this.inverseMatrix);
+                this._inverseMatrix.copy(mesh.matrixWorld).invert();
+                this._localPlane.copy(this._plane).applyMatrix4(this._inverseMatrix);
                 index = this.shapecast(mesh, posAttr, index);
             }
         });
         // set the draw range to only the new segments and offset the lines so they don't intersect with the geometry
         edges.mesh.geometry.setDrawRange(0, index);
-        edges.mesh.position.copy(this.plane.normal).multiplyScalar(0.0001);
+        edges.mesh.position.copy(this._plane.normal).multiplyScalar(0.0001);
         posAttr.needsUpdate = true;
         // Update the edges geometry only if there is no NaN in the output (which means there's been an error)
         if (!Number.isNaN(edges.generatorGeometry.attributes.position.array[0])) {
-            ClippingEdges.basicEdges.geometry = edges.generatorGeometry;
-            edges.mesh.geometry.fromLineSegments(ClippingEdges.basicEdges);
-            const scene = ClippingEdges.components.scene.get();
+            ClippingEdges._basicEdges.geometry = edges.generatorGeometry;
+            edges.mesh.geometry.fromLineSegments(ClippingEdges._basicEdges);
+            const scene = this._components.scene.get();
             scene.add(edges.mesh);
-            // ClippingEdges.context.renderer.postProduction.excludedItems.add(
-            //   edges.mesh
-            // );
         }
+    }
+    initializeStyle(styleName) {
+        this._edges[styleName] = {
+            name: styleName,
+            generatorGeometry: ClippingEdges.newGeneratorGeometry(),
+            mesh: this.newThickEdges(styleName),
+        };
     }
     shapecast(mesh, posAttr, index) {
         // @ts-ignore
         mesh.geometry.boundsTree.shapecast({
             intersectsBounds: (box) => {
-                return this.localPlane.intersectsBox(box);
+                return this._localPlane.intersectsBox(box);
             },
             // @ts-ignore
             intersectsTriangle: (tri) => {
                 // check each triangle edge to see if it intersects with the plane. If so then
                 // add it to the list of segments.
                 let count = 0;
-                this.tempLine.start.copy(tri.a);
-                this.tempLine.end.copy(tri.b);
-                if (this.localPlane.intersectLine(this.tempLine, this.tempVector)) {
-                    const result = this.tempVector.applyMatrix4(mesh.matrixWorld);
+                this._tempLine.start.copy(tri.a);
+                this._tempLine.end.copy(tri.b);
+                if (this._localPlane.intersectLine(this._tempLine, this._tempVector)) {
+                    const result = this._tempVector.applyMatrix4(mesh.matrixWorld);
                     posAttr.setXYZ(index, result.x, result.y, result.z);
                     count++;
                     index++;
                 }
-                this.tempLine.start.copy(tri.b);
-                this.tempLine.end.copy(tri.c);
-                if (this.localPlane.intersectLine(this.tempLine, this.tempVector)) {
-                    const result = this.tempVector.applyMatrix4(mesh.matrixWorld);
+                this._tempLine.start.copy(tri.b);
+                this._tempLine.end.copy(tri.c);
+                if (this._localPlane.intersectLine(this._tempLine, this._tempVector)) {
+                    const result = this._tempVector.applyMatrix4(mesh.matrixWorld);
                     posAttr.setXYZ(index, result.x, result.y, result.z);
                     count++;
                     index++;
                 }
-                this.tempLine.start.copy(tri.c);
-                this.tempLine.end.copy(tri.a);
-                if (this.localPlane.intersectLine(this.tempLine, this.tempVector)) {
-                    const result = this.tempVector.applyMatrix4(mesh.matrixWorld);
+                this._tempLine.start.copy(tri.c);
+                this._tempLine.end.copy(tri.a);
+                if (this._localPlane.intersectLine(this._tempLine, this._tempVector)) {
+                    const result = this._tempVector.applyMatrix4(mesh.matrixWorld);
                     posAttr.setXYZ(index, result.x, result.y, result.z);
                     count++;
                     index++;
@@ -23343,10 +23436,10 @@ class ClippingEdges {
         return index;
     }
     updateEdgesVisibility(edgeName, visible) {
-        const edges = this.edges[edgeName];
+        const edges = this._edges[edgeName];
         edges.mesh.visible = visible;
         if (visible) {
-            const scene = ClippingEdges.components.scene.get();
+            const scene = this._components.scene.get();
             scene.add(edges.mesh);
         }
         else {
@@ -23354,25 +23447,16 @@ class ClippingEdges {
         }
     }
 }
-ClippingEdges.styles = {};
-ClippingEdges.basicEdges = new LineSegments();
-ClippingEdges.defaultMaterial = new LineMaterial({
-    color: 0x000000,
-    linewidth: 0.001,
-});
+ClippingEdges._basicEdges = new THREE$1.LineSegments();
 
+/**
+ * An more advanced version of {@link SimpleClipper} that also includes
+ * {@link ClippingEdges} with customizable lines.
+ */
 class EdgesPlane extends SimplePlane {
-    constructor(components, origin, normal, onStartDragging, onEndDragging, planeSize, isDraggable) {
-        super(components, origin, normal, onStartDragging, onEndDragging, planeSize, isDraggable);
-        this.edges = new ClippingEdges(this.plane);
-    }
-    onPlaneChanged() {
-        super.onPlaneChanged();
-        this.edges.updateEdges();
-    }
-    set visible(state) {
-        super.visible = state;
-        this.edges.visible = state;
+    constructor(components, origin, normal, size, material, isPlan, styles) {
+        super(components, origin, normal, size, material, isPlan);
+        this.edges = new ClippingEdges(components, this._plane, styles);
     }
     set enabled(state) {
         super.enabled = state;
@@ -23380,16 +23464,79 @@ class EdgesPlane extends SimplePlane {
     }
     dispose() {
         super.dispose();
-        this.edges.disposeStylesAndHelpers();
+        this.edges.dispose();
         this.edges = null;
+    }
+    update() {
+        super.update();
+        this.edges.update();
     }
 }
 
+class EdgesStyles extends Component {
+    constructor(components) {
+        super();
+        this.components = components;
+        this.name = "EdgesStyles";
+        this.enabled = true;
+        this._styles = {};
+        this._defaultMaterial = new LineMaterial({
+            color: 0x000000,
+            linewidth: 0.001,
+        });
+        this.afterUpdate = new Event();
+        this.beforeUpdate = new Event();
+    }
+    get() {
+        return this._styles;
+    }
+    update(_delta) {
+        this.beforeUpdate.trigger(this._styles);
+        this.afterUpdate.trigger(this._styles);
+    }
+    // Creates a new style that applies to all clipping edges for generic models
+    async create(name, meshes, material = this._defaultMaterial) {
+        for (const mesh of meshes) {
+            if (!mesh.geometry.boundsTree)
+                mesh.geometry.computeBoundsTree();
+        }
+        const renderer = this.components.renderer.get();
+        material.clippingPlanes = renderer.clippingPlanes;
+        this._styles[name] = {
+            name,
+            material,
+            meshes,
+        };
+    }
+    dispose() {
+        const styles = Object.values(this._styles);
+        for (const style of styles) {
+            style.meshes.length = 0;
+            style.material.dispose();
+        }
+        this._styles = {};
+    }
+}
+
+/**
+ * An more advanced version of {@link SimpleClipper} that also supports
+ * {@link ClippingEdges} with customizable lines.
+ */
 class EdgesClipper extends SimpleClipper {
+    constructor(components, PlaneType) {
+        super(components, PlaneType);
+        this.styles = new EdgesStyles(components);
+    }
+    /**
+     * Updates all the lines of the {@link ClippingEdges}.
+     */
     updateEdges() {
         for (const plane of this._planes) {
-            plane.edges.updateEdges();
+            plane.update();
         }
+    }
+    newPlaneInstance(point, normal, isPlan) {
+        return new this.PlaneType(this.components, point, normal, this.planeSize, this._planeMaterial, isPlan, this.styles);
     }
 }
 
@@ -26475,6 +26622,7 @@ const VerticalBlurShader = {
 class ShadowDropper {
     constructor(components) {
         this.components = components;
+        this.disposer = new Disposer();
         this.shadows = {};
         // Controls how far away the shadow is computed
         this.cameraHeight = 10;
@@ -26515,8 +26663,8 @@ class ShadowDropper {
         delete this.shadows[id];
         if (!shadow)
             throw new Error(`No shadow with ID ${id} was found.`);
-        disposeMeshRecursively(shadow.root);
-        disposeMeshRecursively(shadow.blurPlane);
+        this.disposer.dispose(shadow.root);
+        this.disposer.dispose(shadow.blurPlane);
         shadow.rt.dispose();
         shadow.rtBlur.dispose();
     }
@@ -26753,10 +26901,9 @@ class PlanNavigator {
     async createClippingPlane(config) {
         const { normal, point } = config;
         const plane = this.clipper.createFromNormalAndCoplanarPoint(normal, point, true);
-        plane.visible = false;
         plane.enabled = false;
         this.plans[config.id].plane = plane;
-        await plane.edges.updateEdges();
+        await plane.edges.update();
         plane.edges.visible = false;
     }
     cacheFloorplanView() {
@@ -26847,4 +26994,4 @@ class MapboxRenderer extends RendererComponent {
     resize() { }
 }
 
-export { ClippingEdges, Component, Components, EdgesClipper, EdgesPlane, Event, FirstPersonMode, FragmentCulling, FragmentEdges, FragmentGrouper, FragmentHighlighter, FragmentMaterials, FragmentProperties, FragmentSpatialTree, Fragments, MapboxCamera, MapboxRenderer, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, RendererComponent, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensionLine, SimpleDimensions, SimpleGrid, SimpleMouse, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, ToolComponents, disposeMeshRecursively, getBasisTransform, rightToLeftHand, stringToAxes };
+export { ClippingEdges, Component, Components, Disposer, EdgesClipper, EdgesPlane, EdgesStyles, Event, FirstPersonMode, FragmentCulling, FragmentEdges, FragmentGrouper, FragmentHighlighter, FragmentMaterials, FragmentProperties, FragmentSpatialTree, Fragments, MapboxCamera, MapboxRenderer, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, RendererComponent, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensionLine, SimpleDimensions, SimpleGrid, SimpleMouse, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, ToolComponents, getBasisTransform, rightToLeftHand, stringToAxes };

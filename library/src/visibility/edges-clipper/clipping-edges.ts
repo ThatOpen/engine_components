@@ -1,164 +1,113 @@
-import {
-  BufferAttribute,
-  BufferGeometry,
-  DynamicDrawUsage,
-  InstancedMesh,
-  Line3,
-  LineSegments,
-  Matrix4,
-  Mesh,
-  Plane,
-  Vector3,
-} from "three";
-import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
+import * as THREE from "three";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry";
 import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2";
 import { Components } from "../../components";
-import { EdgesItems, StyleList } from "./types";
+import { Edge } from "./types";
+import { Disposer } from "../../core/utils/disposer";
+import { Component, Disposable, Event, Hideable, Updateable } from "../../core";
+import { EdgesStyles } from "./edges-styles";
 
-// TODO: Clean up and document this
+export type Edges = {
+  [name: string]: Edge;
+};
 
-// Static elements are for defining the clipping edges styles without having to create a clipping plane first
+export class ClippingEdges
+  extends Component<Edges>
+  implements Hideable, Disposable, Updateable
+{
+  /** {@link Component.name} */
+  name = "ClippingEdges";
 
-export class ClippingEdges {
-  edges: EdgesItems = {};
+  /** {@link Component.enabled}. */
+  enabled = true;
 
-  static readonly styles: StyleList = {};
-  // static forceStyleUpdate = false;
+  protected _edges: Edges = {};
+  protected _styles: EdgesStyles;
+  protected _disposer = new Disposer();
+  protected _visible = true;
+  protected _inverseMatrix = new THREE.Matrix4();
+  protected _localPlane = new THREE.Plane();
+  protected _tempLine = new THREE.Line3();
+  protected _tempVector = new THREE.Vector3();
+  protected _components: Components;
+  protected _plane: THREE.Plane;
 
-  private static components: Components;
+  protected static _basicEdges = new THREE.LineSegments();
 
-  private static basicEdges = new LineSegments();
-  private static defaultMaterial = new LineMaterial({
-    color: 0x000000,
-    linewidth: 0.001,
-  });
-
-  private isVisible = true;
-
-  // Helpers
-  private inverseMatrix = new Matrix4();
-  private localPlane = new Plane();
-  private tempLine = new Line3();
-  private tempVector = new Vector3();
-
-  constructor(private plane: Plane) {}
-
+  /** {@link Hideable.visible} */
   get visible() {
-    return this.isVisible;
+    return this._visible;
   }
 
+  /** {@link Hideable.visible} */
   set visible(visible: boolean) {
-    this.isVisible = visible;
+    this._visible = visible;
 
-    for (const edgeName in this.edges) {
+    const names = Object.keys(this._edges);
+    for (const edgeName of names) {
       this.updateEdgesVisibility(edgeName, visible);
     }
 
     if (visible) {
-      this.updateEdges();
+      this.update();
     }
   }
 
+  constructor(components: Components, plane: THREE.Plane, styles: EdgesStyles) {
+    super();
+    this._components = components;
+    this._plane = plane;
+    this._styles = styles;
+  }
+
+  /** {@link Updateable.afterUpdate} */
+  afterUpdate = new Event<Edge[]>();
+
+  /** {@link Updateable.beforeUpdate} */
+  beforeUpdate = new Event<Edge[]>();
+
+  /** {@link Updateable.update} */
+  update() {
+    const styles = Object.values(this._styles.get());
+    for (const style of styles) {
+      this.drawEdges(style.name);
+    }
+  }
+
+  /** {@link Component.get} */
+  get(): Edges {
+    return this._edges;
+  }
+
+  /** {@link Disposable.dispose} */
   dispose() {
-    Object.values(this.edges).forEach((edge) => {
-      if (edge.generatorGeometry.boundsTree)
-        edge.generatorGeometry.disposeBoundsTree();
-      edge.generatorGeometry.dispose();
-      if (edge.mesh.geometry.boundsTree) edge.mesh.geometry.disposeBoundsTree();
-      edge.mesh.geometry.dispose();
-      edge.mesh.removeFromParent();
-      (edge.mesh as any) = null;
-    });
-
-    (this.edges as any) = null;
-    (this.plane as any) = null;
-  }
-
-  disposeStylesAndHelpers() {
-    if (ClippingEdges.basicEdges) {
-      ClippingEdges.basicEdges.removeFromParent();
-      ClippingEdges.basicEdges.geometry.dispose();
-      (ClippingEdges.basicEdges as any) = null;
-      ClippingEdges.basicEdges = new LineSegments();
+    const edges = Object.values(this._edges);
+    for (const edge of edges) {
+      this._disposer.disposeGeometry(edge.generatorGeometry);
+      this._disposer.dispose(edge.mesh, false);
     }
-
-    (ClippingEdges.components as any) = null;
-
-    if (!ClippingEdges.styles) return;
-    const styles = Object.values(ClippingEdges.styles);
-
-    styles.forEach((style) => {
-      style.ids.length = 0;
-      style.meshes.forEach((mesh) => {
-        mesh.removeFromParent();
-        mesh.geometry.dispose();
-        if (mesh.geometry.boundsTree) mesh.geometry.disposeBoundsTree();
-        if (Array.isArray(mesh.material))
-          mesh.material.forEach((mat) => mat.dispose());
-        else mesh.material.dispose();
-      });
-      style.meshes.length = 0;
-      style.categories.length = 0;
-      style.material.dispose();
-    });
-
-    (ClippingEdges.styles as any) = null;
-    (ClippingEdges.styles as any) = {};
-  }
-
-  async updateEdges() {
-    for (const styleName in ClippingEdges.styles) {
-      try {
-        // this can trow error if there is an empty mesh, we still want to update other edges so we catch ere
-        this.drawEdges(styleName);
-      } catch (e: unknown) {
-        console.error("error in drawing edges", e);
-      }
-    }
-  }
-
-  static initialize(components: Components) {
-    if (!ClippingEdges.components) {
-      ClippingEdges.components = components;
-    }
-  }
-
-  // Creates a new style that applies to all clipping edges for generic models
-  static async newStyleFromMesh(
-    styleName: string,
-    meshes: Mesh[],
-    material = ClippingEdges.defaultMaterial
-  ) {
-    const ids = meshes.map((mesh) => mesh.uuid);
-
-    meshes.forEach((mesh) => {
-      if (!mesh.geometry.boundsTree) mesh.geometry.computeBoundsTree();
-    });
-
-    const renderer = ClippingEdges.components.renderer.get();
-    material.clippingPlanes = renderer.clippingPlanes;
-    ClippingEdges.styles[styleName] = {
-      ids,
-      categories: [],
-      material,
-      meshes,
-    };
+    ClippingEdges._basicEdges.removeFromParent();
+    ClippingEdges._basicEdges.geometry.dispose();
+    ClippingEdges._basicEdges = new THREE.LineSegments();
+    (this._edges as any) = null;
+    (this._plane as any) = null;
   }
 
   // Initializes the helper geometry used to compute the vertices
   private static newGeneratorGeometry() {
     // create line geometry with enough data to hold 100000 segments
-    const generatorGeometry = new BufferGeometry();
-    const linePosAttr = new BufferAttribute(new Float32Array(300000), 3, false);
-    linePosAttr.setUsage(DynamicDrawUsage);
+    const generatorGeometry = new THREE.BufferGeometry();
+    const buffer = new Float32Array(300000);
+    const linePosAttr = new THREE.BufferAttribute(buffer, 3, false);
+    linePosAttr.setUsage(THREE.DynamicDrawUsage);
     generatorGeometry.setAttribute("position", linePosAttr);
     return generatorGeometry;
   }
 
   // Creates the geometry of the clipping edges
   private newThickEdges(styleName: string) {
-    const material = ClippingEdges.styles[styleName].material;
+    const styles = this._styles.get();
+    const material = styles[styleName].material;
     const thickLineGeometry = new LineSegmentsGeometry();
     const thickEdges = new LineSegments2(thickLineGeometry, material);
     thickEdges.material.polygonOffset = true;
@@ -170,76 +119,77 @@ export class ClippingEdges {
 
   // Source: https://gkjohnson.github.io/three-mesh-bvh/example/bundle/clippedEdges.html
   private drawEdges(styleName: string) {
-    const style = ClippingEdges.styles[styleName];
+    const style = this._styles.get()[styleName];
 
-    // if (!style.subsets.geometry.boundsTree) return;
-
-    if (!this.edges[styleName]) {
-      this.edges[styleName] = {
-        generatorGeometry: ClippingEdges.newGeneratorGeometry(),
-        mesh: this.newThickEdges(styleName),
-      };
+    if (!this._edges[styleName]) {
+      this.initializeStyle(styleName);
     }
 
-    const edges = this.edges[styleName];
+    const edges = this._edges[styleName];
 
     let index = 0;
     const posAttr = edges.generatorGeometry.attributes.position;
+
     // @ts-ignore
     posAttr.array.fill(0);
 
-    const notEmptyMeshes = style.meshes.filter((subset) => subset.geometry);
+    const notEmptyMeshes = style.meshes.filter((mesh) => mesh.geometry);
     notEmptyMeshes.forEach((mesh) => {
       if (!mesh.geometry.boundsTree) {
         throw new Error("Boundstree not found for clipping edges subset.");
       }
 
-      const instanced = mesh as InstancedMesh;
+      const instanced = mesh as THREE.InstancedMesh;
       if (instanced.count > 1) {
         for (let i = 0; i < instanced.count; i++) {
-          const tempMesh = new Mesh(mesh.geometry);
+          const tempMesh = new THREE.Mesh(mesh.geometry);
           tempMesh.matrix.copy(mesh.matrix);
 
-          const tempMatrix = new Matrix4();
+          const tempMatrix = new THREE.Matrix4();
           instanced.getMatrixAt(i, tempMatrix);
           tempMesh.applyMatrix4(tempMatrix);
           tempMesh.updateMatrix();
           tempMesh.updateMatrixWorld();
 
-          this.inverseMatrix.copy(tempMesh.matrixWorld).invert();
-          this.localPlane.copy(this.plane).applyMatrix4(this.inverseMatrix);
+          this._inverseMatrix.copy(tempMesh.matrixWorld).invert();
+          this._localPlane.copy(this._plane).applyMatrix4(this._inverseMatrix);
 
           index = this.shapecast(tempMesh, posAttr, index);
         }
       } else {
-        this.inverseMatrix.copy(mesh.matrixWorld).invert();
-        this.localPlane.copy(this.plane).applyMatrix4(this.inverseMatrix);
+        this._inverseMatrix.copy(mesh.matrixWorld).invert();
+        this._localPlane.copy(this._plane).applyMatrix4(this._inverseMatrix);
         index = this.shapecast(mesh, posAttr, index);
       }
     });
 
     // set the draw range to only the new segments and offset the lines so they don't intersect with the geometry
     edges.mesh.geometry.setDrawRange(0, index);
-    edges.mesh.position.copy(this.plane.normal).multiplyScalar(0.0001);
+    edges.mesh.position.copy(this._plane.normal).multiplyScalar(0.0001);
     posAttr.needsUpdate = true;
 
     // Update the edges geometry only if there is no NaN in the output (which means there's been an error)
     if (!Number.isNaN(edges.generatorGeometry.attributes.position.array[0])) {
-      ClippingEdges.basicEdges.geometry = edges.generatorGeometry;
-      edges.mesh.geometry.fromLineSegments(ClippingEdges.basicEdges);
-      const scene = ClippingEdges.components.scene.get();
+      ClippingEdges._basicEdges.geometry = edges.generatorGeometry;
+      edges.mesh.geometry.fromLineSegments(ClippingEdges._basicEdges);
+      const scene = this._components.scene.get();
       scene.add(edges.mesh);
-      // ClippingEdges.context.renderer.postProduction.excludedItems.add(
-      //   edges.mesh
-      // );
     }
   }
 
-  private shapecast(mesh: Mesh, posAttr: any, index: number) {
+  private initializeStyle(styleName: string) {
+    this._edges[styleName] = {
+      name: styleName,
+      generatorGeometry: ClippingEdges.newGeneratorGeometry(),
+      mesh: this.newThickEdges(styleName),
+    };
+  }
+
+  private shapecast(mesh: THREE.Mesh, posAttr: any, index: number) {
     // @ts-ignore
     mesh.geometry.boundsTree.shapecast({
       intersectsBounds: (box: any) => {
-        return this.localPlane.intersectsBox(box) as any;
+        return this._localPlane.intersectsBox(box) as any;
       },
 
       // @ts-ignore
@@ -247,28 +197,28 @@ export class ClippingEdges {
         // check each triangle edge to see if it intersects with the plane. If so then
         // add it to the list of segments.
         let count = 0;
-        this.tempLine.start.copy(tri.a);
-        this.tempLine.end.copy(tri.b);
-        if (this.localPlane.intersectLine(this.tempLine, this.tempVector)) {
-          const result = this.tempVector.applyMatrix4(mesh.matrixWorld);
+        this._tempLine.start.copy(tri.a);
+        this._tempLine.end.copy(tri.b);
+        if (this._localPlane.intersectLine(this._tempLine, this._tempVector)) {
+          const result = this._tempVector.applyMatrix4(mesh.matrixWorld);
           posAttr.setXYZ(index, result.x, result.y, result.z);
           count++;
           index++;
         }
 
-        this.tempLine.start.copy(tri.b);
-        this.tempLine.end.copy(tri.c);
-        if (this.localPlane.intersectLine(this.tempLine, this.tempVector)) {
-          const result = this.tempVector.applyMatrix4(mesh.matrixWorld);
+        this._tempLine.start.copy(tri.b);
+        this._tempLine.end.copy(tri.c);
+        if (this._localPlane.intersectLine(this._tempLine, this._tempVector)) {
+          const result = this._tempVector.applyMatrix4(mesh.matrixWorld);
           posAttr.setXYZ(index, result.x, result.y, result.z);
           count++;
           index++;
         }
 
-        this.tempLine.start.copy(tri.c);
-        this.tempLine.end.copy(tri.a);
-        if (this.localPlane.intersectLine(this.tempLine, this.tempVector)) {
-          const result = this.tempVector.applyMatrix4(mesh.matrixWorld);
+        this._tempLine.start.copy(tri.c);
+        this._tempLine.end.copy(tri.a);
+        if (this._localPlane.intersectLine(this._tempLine, this._tempVector)) {
+          const result = this._tempVector.applyMatrix4(mesh.matrixWorld);
           posAttr.setXYZ(index, result.x, result.y, result.z);
           count++;
           index++;
@@ -285,10 +235,10 @@ export class ClippingEdges {
   }
 
   private updateEdgesVisibility(edgeName: string, visible: boolean) {
-    const edges = this.edges[edgeName];
+    const edges = this._edges[edgeName];
     edges.mesh.visible = visible;
     if (visible) {
-      const scene = ClippingEdges.components.scene.get();
+      const scene = this._components.scene.get();
       scene.add(edges.mesh);
     } else {
       edges.mesh.removeFromParent();

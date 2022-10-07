@@ -5,7 +5,7 @@ export * from "./simple-dimensions";
 export * from "./simple-grid";
 export * from "./simple-renderer";
 export * from "./simple-scene";
-export * from "./three-utils";
+export * from "./utils";
 export * from "./simple-raycaster";
 export * from "./simple-clipper";
 export * from "./tools-components";

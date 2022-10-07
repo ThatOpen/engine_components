@@ -1,41 +1,27 @@
-import { Vector3 } from "three";
+import * as THREE from "three";
 import { SimplePlane } from "../../core";
 import { ClippingEdges } from "./clipping-edges";
 import { Components } from "../../components";
+import { EdgesStyles } from "./edges-styles";
 
+/**
+ * An more advanced version of {@link SimpleClipper} that also includes
+ * {@link ClippingEdges} with customizable lines.
+ */
 export class EdgesPlane extends SimplePlane {
   readonly edges: ClippingEdges;
 
   constructor(
     components: Components,
-    origin: Vector3,
-    normal: Vector3,
-    onStartDragging: Function,
-    onEndDragging: Function,
-    planeSize: number,
-    isDraggable: boolean
+    origin: THREE.Vector3,
+    normal: THREE.Vector3,
+    size: number,
+    material: THREE.Material,
+    isPlan: boolean,
+    styles: EdgesStyles
   ) {
-    super(
-      components,
-      origin,
-      normal,
-      onStartDragging,
-      onEndDragging,
-      planeSize,
-      isDraggable
-    );
-
-    this.edges = new ClippingEdges(this.plane);
-  }
-
-  onPlaneChanged() {
-    super.onPlaneChanged();
-    this.edges.updateEdges();
-  }
-
-  set visible(state: boolean) {
-    super.visible = state;
-    this.edges.visible = state;
+    super(components, origin, normal, size, material, isPlan);
+    this.edges = new ClippingEdges(components, this._plane, styles);
   }
 
   set enabled(state: boolean) {
@@ -45,7 +31,12 @@ export class EdgesPlane extends SimplePlane {
 
   dispose() {
     super.dispose();
-    this.edges.disposeStylesAndHelpers();
+    this.edges.dispose();
     (this.edges as any) = null;
+  }
+
+  update() {
+    super.update();
+    this.edges.update();
   }
 }

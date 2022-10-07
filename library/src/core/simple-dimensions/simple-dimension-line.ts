@@ -12,11 +12,12 @@ import {
 } from "three";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
 import { Components } from "../../components";
-import { disposeMeshRecursively } from "../three-utils";
+import { Disposer } from "../utils";
 
 // TODO: Document + clean up this: way less parameters, clearer logic
 
 export class SimpleDimensionLine {
+  protected disposer = new Disposer();
   private readonly context: Components;
   private readonly camera: Camera;
   private readonly labelClassName: string;
@@ -91,11 +92,11 @@ export class SimpleDimensionLine {
   dispose() {
     this.removeFromScene();
     (this.context as any) = null;
-    disposeMeshRecursively(this.root as any);
+    this.disposer.dispose(this.root as any);
     (this.root as any) = null;
-    disposeMeshRecursively(this.line as any);
+    this.disposer.dispose(this.line as any);
     (this.line as any) = null;
-    this.endpointMeshes.forEach((mesh) => disposeMeshRecursively(mesh));
+    this.endpointMeshes.forEach((mesh) => this.disposer.dispose(mesh));
     this.endpointMeshes.length = 0;
     this.axis.dispose();
     (this.axis as any) = null;
@@ -112,7 +113,7 @@ export class SimpleDimensionLine {
     (this.endpointMaterial as any) = null;
 
     if (this.boundingMesh) {
-      disposeMeshRecursively(this.boundingMesh);
+      this.disposer.dispose(this.boundingMesh);
       (this.boundingMesh as any) = null;
     }
   }

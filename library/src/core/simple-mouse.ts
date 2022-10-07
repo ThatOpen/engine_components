@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Disposeable } from "./base-types";
+import { Disposable } from "./base-types";
 
 /**
  * A helper to easily get the real position of the mouse in the Three.js canvas
@@ -7,7 +7,7 @@ import { Disposeable } from "./base-types";
  * [raycaster](https://threejs.org/docs/#api/en/core/Raycaster), even if it has
  * been transformed through CSS or doesn't occupy the whole screen.
  */
-export class SimpleMouse implements Disposeable {
+export class SimpleMouse implements Disposable {
   private _event?: MouseEvent;
   private _position = new THREE.Vector2();
 
@@ -27,7 +27,7 @@ export class SimpleMouse implements Disposeable {
     return this._position;
   }
 
-  /** {@link Disposeable.dispose} */
+  /** {@link Disposable.dispose} */
   dispose() {
     this.dom.removeEventListener("mousemove", this.updateMouseInfo);
   }

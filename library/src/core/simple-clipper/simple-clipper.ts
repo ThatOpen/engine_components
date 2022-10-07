@@ -1,58 +1,104 @@
-import { Vector3, Matrix3, Intersection } from "three";
+import * as THREE from "three";
 import { Components } from "../../components";
-import { Createable, Disposeable, Hideable } from "../base-types";
+import { Createable, Disposable } from "../base-types";
 import { SimplePlane } from "./simple-plane";
 import { Component } from "../base-components";
+import { Event } from "../event";
 
+/**
+ * An lightweight component to easily create and handle
+ * [clipping planes](https://threejs.org/docs/#api/en/materials/Material.clippingPlanes).
+ *
+ * @param components - the instance of {@link Components} used.
+ * @param planeType - the type of plane to be used by the clipper.
+ * E.g. {@link SimplePlane}.
+ */
 export class SimpleClipper<Plane extends SimplePlane>
   extends Component<Plane[]>
-  implements Hideable, Createable, Disposeable
+  implements Createable, Disposable
 {
-  public readonly name = "clipper";
-  dragging = false;
-  intersection: Intersection | undefined;
-  orthogonalY = true;
-  toleranceOrthogonalY = 0.7;
-  planeSize = 5;
+  /** {@link Component.name} */
+  name = "SimpleClipper";
 
+  /** The material used in all the clipping planes. */
+  protected _planeMaterial: THREE.Material = new THREE.MeshBasicMaterial({
+    color: 0xffff00,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.2,
+  });
+
+  /**
+   * Whether to force the clipping plane to be orthogonal in the Y direction
+   * (up). This is desirable when clipping a building horizontally and a
+   * clipping plane is created in it's roof, which might have a slight
+   * slope for draining purposes.
+   */
+  orthogonalY = false;
+
+  /**
+   * The tolerance that determines whether a horizontallish clipping plane
+   * will be forced to be orthogonal to the Y direction. {@link orthogonalY}
+   * has to be `true` for this to apply.
+   */
+  toleranceOrthogonalY = 0.7;
+
+  /** Event that fires when the user starts dragging a clipping plane. */
+  onStartDragging = new Event<void>();
+
+  /** Event that fires when the user stops dragging a clipping plane. */
+  onEndDragging = new Event<void>();
+
+  protected _planeSize = 5;
   protected _planes: Plane[] = [];
   protected _enabled = false;
   protected _visible = false;
+  protected _dragging = false;
+  protected _intersection?: THREE.Intersection;
 
-  get visible() {
-    return this._visible;
-  }
-
-  set visible(visible: boolean) {
-    this._visible = visible;
-    if (!visible) {
-      this.enabled = false;
-    }
-    this._planes.forEach((plane) => {
-      if (!plane.isPlan) {
-        plane.visible = visible;
-      }
-    });
-    this.updateMaterials();
-  }
-
+  /** {@link Component.enabled} */
   get enabled() {
     return this._enabled;
   }
 
-  set enabled(state) {
+  /** {@link Component.enabled} */
+  set enabled(state: boolean) {
     this._enabled = state;
-
-    if (state && !this._visible) {
-      this.visible = true;
+    for (const plane of this.planes3D) {
+      plane.enabled = state;
     }
-
-    this._planes.forEach((plane) => {
-      if (!plane.isPlan) {
-        plane.enabled = state;
-      }
-    });
     this.updateMaterials();
+  }
+
+  /** The material of the clipping plane representation. */
+  get planeMaterial() {
+    return this._planeMaterial;
+  }
+
+  /** The material of the clipping plane representation. */
+  set planeMaterial(material: THREE.Material) {
+    this._planeMaterial = material;
+    for (const plane of this._planes) {
+      plane.planeMaterial = material;
+    }
+  }
+
+  /** The size of the geometric representation of the clippings planes. */
+  get planeSize() {
+    return this._planeSize;
+  }
+
+  /** The size of the geometric representation of the clippings planes. */
+  set planeSize(size: number) {
+    this._planeSize = size;
+    for (const plane of this._planes) {
+      plane.planeSize = size;
+    }
+  }
+
+  /** The clipping planes that are not associated to floor plan navigation. */
+  get planes3D() {
+    return this._planes.filter((plane) => !plane.isPlan);
   }
 
   constructor(
@@ -62,109 +108,117 @@ export class SimpleClipper<Plane extends SimplePlane>
     super();
   }
 
+  /** {@link Component.get} */
   get(): Plane[] {
     return this._planes;
   }
 
+  /** {@link Component.get} */
   dispose() {
-    this._planes.forEach((plane) => plane.dispose());
+    for (const plane of this._planes) {
+      plane.dispose();
+    }
     this._planes.length = 0;
     (this.components as any) = null;
   }
 
-  create = () => {
+  /** {@link Createable.create} */
+  create() {
     if (!this.enabled) return;
     const intersects = this.components.raycaster.castRay();
     if (!intersects) return;
     this.createPlaneFromIntersection(intersects);
-    this.intersection = undefined;
-  };
+    this._intersection = undefined;
+  }
 
-  createFromNormalAndCoplanarPoint = (
-    normal: Vector3,
-    point: Vector3,
+  /**
+   * Creates a plane in a certain place and with a certain orientation,
+   * without the need of the mouse.
+   *
+   * @param normal - the orientation of the clipping plane.
+   * @param point - the position of the clipping plane.
+   * @param isPlan - whether this is a clipping plane used for floor plan
+   * navigation.
+   */
+  createFromNormalAndCoplanarPoint(
+    normal: THREE.Vector3,
+    point: THREE.Vector3,
     isPlan = false
-  ) => {
-    const plane = new this.PlaneType(
-      this.components,
-      point,
-      normal,
-      this.activateDragging,
-      this.deactivateDragging,
-      this.planeSize,
-      !isPlan
-    );
-    plane.isPlan = isPlan;
-    this._planes.push(plane);
-    this.components.renderer.togglePlane(true, plane.plane);
+  ) {
+    const plane = this.newPlane(point, normal, isPlan);
     this.updateMaterials();
     return plane;
-  };
+  }
 
-  delete = () => {
-    this.deletePlane();
-  };
+  /**
+   * {@link Createable.delete}
+   *
+   * @param plane - the plane to delete. If undefined, the the first plane
+   * found under the cursor will be deleted.
+   */
+  delete(plane?: Plane) {
+    if (!this.enabled) return;
+    if (!plane) plane = this.pickPlane();
+    if (!plane) return;
+    this.deletePlane(plane);
+  }
 
-  deletePlane = (plane?: Plane) => {
-    let existingPlane: Plane | undefined | null = plane;
-    if (!existingPlane) {
-      if (!this.enabled) return;
-      existingPlane = this.pickPlane();
-    }
-    if (!existingPlane) return;
-    const index = this._planes.indexOf(existingPlane);
-    if (index === -1) return;
-    existingPlane.removeFromScene();
-    this._planes.splice(index, 1);
-    this.components.renderer.togglePlane(false, existingPlane.plane);
-    this.updateMaterials();
-  };
-
-  deleteAllPlanes = () => {
+  /** Deletes all the existing clipping planes. */
+  deleteAll() {
     while (this._planes.length > 0) {
-      this.deletePlane(this._planes[0]);
+      this.delete(this._planes[0]);
     }
-  };
+  }
 
-  private pickPlane = () => {
-    const planeMeshes = this._planes.map((p) => p.planeMesh);
-    const arrowMeshes = this._planes.map((p) => p.arrowBoundingBox);
+  private deletePlane(plane: Plane) {
+    const index = this._planes.indexOf(plane);
+    if (index !== -1) {
+      this._planes.splice(index, 1);
+      this.components.renderer.togglePlane(false, plane.get());
+      plane.dispose();
+      this.updateMaterials();
+    }
+  }
 
-    const intersects = this.components.raycaster.castRay([
-      ...planeMeshes,
-      ...arrowMeshes,
-    ]);
-
+  private pickPlane(): Plane | undefined {
+    const meshes = this.getAllPlaneMeshes();
+    const intersects = this.components.raycaster.castRay(meshes);
     if (intersects) {
-      return this._planes.find((p) => {
-        if (
-          p.planeMesh === intersects.object ||
-          p.arrowBoundingBox === intersects.object
-        ) {
-          return p;
-        }
-        return null;
-      });
+      const found = intersects.object as THREE.Mesh;
+      return this._planes.find((p) => p.meshes.includes(found));
     }
-    return null;
-  };
+    return undefined;
+  }
 
-  private createPlaneFromIntersection = (intersection: Intersection) => {
-    const constant = intersection.point.distanceTo(new Vector3(0, 0, 0));
-    const normal = intersection.face?.normal;
+  private getAllPlaneMeshes() {
+    const meshes: THREE.Mesh[] = [];
+    for (const plane of this.planes3D) {
+      meshes.push(...plane.meshes);
+    }
+    return meshes;
+  }
+
+  private createPlaneFromIntersection(intersect: THREE.Intersection) {
+    const constant = intersect.point.distanceTo(new THREE.Vector3(0, 0, 0));
+    const normal = intersect.face?.normal;
     if (!constant || !normal) return;
-    const normalMatrix = new Matrix3().getNormalMatrix(
-      intersection.object.matrixWorld
+
+    const worldNormal = this.getWorldNormal(intersect, normal);
+    const plane = this.newPlane(intersect.point, worldNormal.negate(), false);
+    this.components.renderer.togglePlane(true, plane.get());
+    this.updateMaterials();
+  }
+
+  private getWorldNormal(intersect: THREE.Intersection, normal: THREE.Vector3) {
+    const normalMatrix = new THREE.Matrix3().getNormalMatrix(
+      intersect.object.matrixWorld
     );
     const worldNormal = normal.clone().applyMatrix3(normalMatrix).normalize();
     this.normalizePlaneDirectionY(worldNormal);
-    const plane = this.newPlane(intersection, worldNormal.negate());
-    this._planes.push(plane);
-    this.components.renderer.togglePlane(true, plane.plane);
-    this.updateMaterials();
-  };
+    return worldNormal;
+  }
 
-  private normalizePlaneDirectionY(normal: Vector3) {
+  private normalizePlaneDirectionY(normal: THREE.Vector3) {
     if (this.orthogonalY) {
       if (normal.y > this.toleranceOrthogonalY) {
         normal.x = 0;
@@ -179,27 +233,34 @@ export class SimpleClipper<Plane extends SimplePlane>
     }
   }
 
-  private newPlane(intersection: Intersection, worldNormal: Vector3) {
+  private newPlane(
+    point: THREE.Vector3,
+    normal: THREE.Vector3,
+    isPlan: boolean
+  ) {
+    const plane = this.newPlaneInstance(point, normal, isPlan);
+    plane.onStartDragging.on(this._onStartDragging);
+    plane.onEndDragging.on(this._onEndDragging);
+    this._planes.push(plane);
+    return plane;
+  }
+
+  protected newPlaneInstance(
+    point: THREE.Vector3,
+    normal: THREE.Vector3,
+    isPlan: boolean
+  ) {
     return new this.PlaneType(
       this.components,
-      intersection.point,
-      worldNormal,
-      this.activateDragging,
-      this.deactivateDragging,
-      this.planeSize
+      point,
+      normal,
+      this.planeSize,
+      this._planeMaterial,
+      isPlan
     );
   }
 
-  private activateDragging = () => {
-    this.dragging = true;
-  };
-
-  private deactivateDragging = () => {
-    this.dragging = false;
-  };
-
-  private updateMaterials = () => {
-    // Apply clipping to all models
+  private updateMaterials() {
     const planes = this.components.renderer?.get().clippingPlanes;
     this.components.meshes.forEach((model) => {
       if (Array.isArray(model.material)) {
@@ -208,7 +269,13 @@ export class SimpleClipper<Plane extends SimplePlane>
         model.material.clippingPlanes = planes;
       }
     });
+  }
+
+  private _onStartDragging = () => {
+    this.onStartDragging.trigger();
   };
 
-  update(_delta: number): void {}
+  private _onEndDragging = () => {
+    this.onEndDragging.trigger();
+  };
 }

@@ -2,6 +2,9 @@ import * as THREE from "three";
 import { Component } from "./component";
 import { Resizeable } from "../base-types";
 
+/**
+ * A base component for components whose main mission is to render a scene.
+ */
 export abstract class RendererComponent
   extends Component<THREE.WebGLRenderer>
   implements Resizeable
@@ -21,18 +24,18 @@ export abstract class RendererComponent
   /** {@link Resizeable.resize}. */
   abstract resize(): void;
 
-  /** Adds or removes a
+  /**
+   * Adds or removes a
    * [clipping plane](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.clippingPlanes)
-   * to the renderer. */
+   * to the renderer.
+   */
   togglePlane(active: boolean, plane: THREE.Plane) {
     const renderer = this.get();
-    if (active) {
+    const index = renderer.clippingPlanes.indexOf(plane);
+    if (active && index === -1) {
       renderer.clippingPlanes.push(plane);
-    } else {
-      const index = renderer.clippingPlanes.indexOf(plane);
-      if (index > -1) {
-        renderer.clippingPlanes.splice(index, 1);
-      }
+    } else if (!active && index > -1) {
+      renderer.clippingPlanes.splice(index, 1);
     }
   }
 }

@@ -89,10 +89,9 @@ export class PlanNavigator {
       point,
       true
     );
-    plane.visible = false;
     plane.enabled = false;
     this.plans[config.id].plane = plane;
-    await plane.edges.updateEdges();
+    await plane.edges.update();
     plane.edges.visible = false;
   }
 

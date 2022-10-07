@@ -48,7 +48,7 @@
 		const grid = new OBC.SimpleGrid(components);
 		components.tools.add(grid);
 
-		const clipper = new OBC.SimpleClipper(components, OBC.SimplePlane);
+		const clipper = new OBC.EdgesClipper(components, OBC.EdgesPlane);
 		components.tools.add(clipper)
 
 		const dimensions = new OBC.SimpleDimensions(components);
@@ -58,21 +58,19 @@
 		const stats = new Stats();
 		stats.showPanel(2);
 		document.body.append(stats.dom);
-		stats.dom.style.right = '0px';
-		stats.dom.style.left = 'auto';
+		stats.dom.style.left = '0px';
+		const renderer = components.renderer;
+		renderer.beforeUpdate.on(() => stats.begin());
+		renderer.afterUpdate.on(() => stats.end());
 
 		window.onkeydown = (event) => {
 			switch (event.code){
 				case "KeyC": {
-					components.tools.toggle("clipper");
+					components.tools.enable("clipper");
 					break;
 				}
 				case "KeyD": {
-					components.tools.toggle("dimensions");
-					break;
-				}
-				case "KeyH": {
-					components.tools.toggleAllVisibility()
+					components.tools.enable("dimensions");
 					break;
 				}
 				case "Escape" : {
@@ -81,12 +79,9 @@
 					}
 					break;
 				}
-				case "KeyP": {
-					components.tools.printToolsState();
-				}
 				case "Delete": {
 					if (clipper.enabled)
-						clipper.deletePlane()
+						clipper.delete()
 
 					if (dimensions.enabled) {
 						dimensions.delete()
@@ -97,7 +92,7 @@
 
 		window.ondblclick = () => {
 			if (clipper.enabled) {
-				clipper.createPlane();
+				clipper.create();
 			} else if (dimensions.enabled) {
 				dimensions.create()
 			}

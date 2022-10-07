@@ -57,7 +57,7 @@ export class ToolComponents {
    * @param name - The {@link Component.name} of the tool to enable or disable.
    * If undefined, all components will be enabled or disabled.
    */
-  setEnabled(enabled: boolean, name?: string) {
+  enable(enabled: boolean, name?: string) {
     if (name) {
       const tool = this.get(name);
       if (tool) {
@@ -76,7 +76,7 @@ export class ToolComponents {
    * @param name - The {@link Component.name} of the tool to show or hide.
    * If undefined, all components will be enabled or disabled.
    */
-  setVisible(visible: boolean, name?: string) {
+  toggle(visible: boolean, name?: string) {
     if (name) {
       const tool = this.get(name);
       if (tool && tool.isHideable()) {
