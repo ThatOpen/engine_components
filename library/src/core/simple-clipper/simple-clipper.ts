@@ -49,12 +49,10 @@ export class SimpleClipper<Plane extends SimplePlane>
   /** Event that fires when the user stops dragging a clipping plane. */
   onEndDragging = new Event<void>();
 
-  protected _planeSize = 5;
   protected _planes: Plane[] = [];
-  protected _enabled = false;
-  protected _visible = false;
-  protected _dragging = false;
-  protected _intersection?: THREE.Intersection;
+
+  private _planeSize = 5;
+  private _enabled = false;
 
   /** {@link Component.enabled} */
   get enabled() {
@@ -128,7 +126,6 @@ export class SimpleClipper<Plane extends SimplePlane>
     const intersects = this.components.raycaster.castRay();
     if (!intersects) return;
     this.createPlaneFromIntersection(intersects);
-    this._intersection = undefined;
   }
 
   /**

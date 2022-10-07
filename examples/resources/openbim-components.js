@@ -7506,11 +7506,9 @@ class SimpleClipper extends Component {
         this.onStartDragging = new Event();
         /** Event that fires when the user stops dragging a clipping plane. */
         this.onEndDragging = new Event();
-        this._planeSize = 5;
         this._planes = [];
+        this._planeSize = 5;
         this._enabled = false;
-        this._visible = false;
-        this._dragging = false;
         this._onStartDragging = () => {
             this.onStartDragging.trigger();
         };
@@ -7576,7 +7574,6 @@ class SimpleClipper extends Component {
         if (!intersects)
             return;
         this.createPlaneFromIntersection(intersects);
-        this._intersection = undefined;
     }
     /**
      * Creates a plane in a certain place and with a certain orientation,
