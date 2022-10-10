@@ -30,21 +30,20 @@ export class SimplePlane
   /** Whether this plane is used for floor plan navigation */
   isPlan = false;
 
-  protected _visible = true;
-  protected _enabled = true;
-
   protected readonly _plane = new THREE.Plane();
-  protected readonly _arrowBoundBox = new THREE.Mesh();
-  protected readonly _hiddenMaterial = new THREE.MeshBasicMaterial({
+
+  private _visible = true;
+  private _enabled = true;
+  private readonly _arrowBoundBox = new THREE.Mesh();
+  private readonly _components: Components;
+  private readonly _planeMesh: THREE.Mesh;
+  private readonly _controls: TransformControls;
+  private readonly _normal: THREE.Vector3;
+  private readonly _origin: THREE.Vector3;
+  private readonly _helper: THREE.Object3D;
+  private readonly _hiddenMaterial = new THREE.MeshBasicMaterial({
     visible: false,
   });
-
-  protected readonly _components: Components;
-  protected readonly _planeMesh: THREE.Mesh;
-  protected readonly _controls: TransformControls;
-  protected readonly _normal: THREE.Vector3;
-  protected readonly _origin: THREE.Vector3;
-  protected readonly _helper: THREE.Object3D;
 
   /** {@link Component.enabled} */
   get enabled() {

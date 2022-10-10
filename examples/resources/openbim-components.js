@@ -9218,9 +9218,9 @@ class SimplePlane extends Component {
         this.onEndDragging = new Event();
         /** Whether this plane is used for floor plan navigation */
         this.isPlan = false;
+        this._plane = new THREE$1.Plane();
         this._visible = true;
         this._enabled = true;
-        this._plane = new THREE$1.Plane();
         this._arrowBoundBox = new THREE$1.Mesh();
         this._hiddenMaterial = new THREE$1.MeshBasicMaterial({
             visible: false,
@@ -26943,52 +26943,158 @@ class PlanNavigator {
 }
 
 /**
+ * Minimal renderer that can be used to create a BIM + GIS scene
+ * with [Mapbox](https://www.mapbox.com/).
+ * [See example](https://ifcjs.github.io/components/examples/mapbox.html).
+ */
+class MapboxRenderer extends RendererComponent {
+    constructor(components, map, coords, rotation = new THREE$1.Vector3(Math.PI / 2, 0, 0)) {
+        super();
+        /** {@link Component.name} */
+        this.name = "MapboxRenderer";
+        /** {@link Component.enabled} */
+        this.enabled = true;
+        this.initError = "Mapbox scene isn't initialized yet!";
+        this._components = components;
+        this._map = map;
+        this._modelTransform = this.newModelTransform(coords, rotation);
+        this.setupMap(map);
+        this.setup3DBuildings();
+    }
+    /** {@link Component.get} */
+    get() {
+        if (!this._renderer) {
+            throw new Error(this.initError);
+        }
+        return this._renderer;
+    }
+    /** {@link Resizeable.getSize} */
+    getSize() {
+        if (!this._renderer) {
+            throw new Error(this.initError);
+        }
+        return new THREE$1.Vector2(this._renderer.domElement.clientWidth, this._renderer.domElement.clientHeight);
+    }
+    /** {@link Resizeable.resize} */
+    resize() { }
+    initialize(context) {
+        const canvas = this._map.getCanvas();
+        this._renderer = new THREE$1.WebGLRenderer({
+            canvas,
+            context,
+            antialias: true,
+        });
+        this._renderer.autoClear = false;
+    }
+    setupMap(map) {
+        const scene = this._components.scene.get();
+        const onAdd = (_map, gl) => this.initialize(gl);
+        const render = (_gl, matrix) => this.render(scene, matrix);
+        const customLayer = this.newMapboxLayer(onAdd, render);
+        map.on("style.load", () => {
+            map.addLayer(customLayer, "waterway-label");
+        });
+    }
+    newMapboxLayer(onAdd, render) {
+        return {
+            id: "3d-model",
+            type: "custom",
+            renderingMode: "3d",
+            onAdd,
+            render,
+        };
+    }
+    newModelTransform(coords, rotation) {
+        return {
+            translateX: coords.x,
+            translateY: coords.y,
+            translateZ: coords.z,
+            rotateX: rotation.x,
+            rotateY: rotation.y,
+            rotateZ: rotation.z,
+            scale: coords.meterInMercatorCoordinateUnits(),
+        };
+    }
+    // Source: https://docs.mapbox.com/mapbox-gl-js/example/add-3d-model/
+    render(scene, matrix) {
+        if (!this._renderer)
+            return;
+        const rotationX = new THREE$1.Matrix4().makeRotationAxis(new THREE$1.Vector3(1, 0, 0), this._modelTransform.rotateX);
+        const rotationY = new THREE$1.Matrix4().makeRotationAxis(new THREE$1.Vector3(0, 1, 0), this._modelTransform.rotateY);
+        const rotationZ = new THREE$1.Matrix4().makeRotationAxis(new THREE$1.Vector3(0, 0, 1), this._modelTransform.rotateZ);
+        const m = new THREE$1.Matrix4().fromArray(matrix);
+        const l = new THREE$1.Matrix4()
+            .makeTranslation(this._modelTransform.translateX, this._modelTransform.translateY, this._modelTransform.translateZ)
+            .scale(new THREE$1.Vector3(this._modelTransform.scale, -this._modelTransform.scale, this._modelTransform.scale))
+            .multiply(rotationX)
+            .multiply(rotationY)
+            .multiply(rotationZ);
+        const camera = this._components.camera.get();
+        camera.projectionMatrix = m.multiply(l);
+        this._renderer.resetState();
+        this._renderer.render(scene, camera);
+        this._map.triggerRepaint();
+    }
+    // Source: https://docs.mapbox.com/mapbox-gl-js/example/3d-buildings/
+    setup3DBuildings() {
+        this._map.on("load", () => {
+            const layers = this._map.getStyle().layers;
+            const labelLayerId = layers.find((layer) => layer.type === "symbol" && layer.layout["text-field"]).id;
+            this._map.addLayer({
+                id: "add-3d-buildings",
+                source: "composite",
+                "source-layer": "building",
+                filter: ["==", "extrude", "true"],
+                type: "fill-extrusion",
+                minzoom: 15,
+                paint: {
+                    "fill-extrusion-color": "#aaa",
+                    // Use an 'interpolate' expression to
+                    // add a smooth transition effect to
+                    // the buildings as the user zooms in.
+                    "fill-extrusion-height": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+                        15,
+                        0,
+                        15.05,
+                        ["get", "height"],
+                    ],
+                    "fill-extrusion-base": [
+                        "interpolate",
+                        ["linear"],
+                        ["zoom"],
+                        15,
+                        0,
+                        15.05,
+                        ["get", "min_height"],
+                    ],
+                    "fill-extrusion-opacity": 0.6,
+                },
+            }, labelLayerId);
+        });
+    }
+}
+
+/**
  * Minimal camera that can be used to create a BIM + GIS scene
  * with [Mapbox](https://www.mapbox.com/).
+ * [See example](https://ifcjs.github.io/components/examples/mapbox.html).
  */
 class MapboxCamera extends Component {
     constructor() {
         super(...arguments);
-        /** {@link Component.name} */
-        this.name = "MapboxCamera";
         /** {@link Component.enabled} */
         this.enabled = true;
+        /** {@link Component.name} */
+        this.name = "MapboxCamera";
         this._camera = new THREE$1.Camera();
     }
     /** {@link Component.get} */
     get() {
         return this._camera;
     }
-}
-
-/**
- * Minimal renderer that can be used to create a BIM + GIS scene
- * with [Mapbox](https://www.mapbox.com/).
- */
-class MapboxRenderer extends RendererComponent {
-    constructor(canvas, context) {
-        super();
-        /** {@link Component.name} */
-        this.name = "MapboxRenderer";
-        /** {@link Component.enabled} */
-        this.enabled = true;
-        this.renderer = new THREE$1.WebGLRenderer({
-            canvas,
-            context,
-            antialias: true,
-        });
-        this.renderer.autoClear = false;
-    }
-    /** {@link Component.get} */
-    get() {
-        return this.renderer;
-    }
-    /** {@link Resizeable.getSize} */
-    getSize() {
-        return new THREE$1.Vector2(this.renderer.domElement.clientWidth, this.renderer.domElement.clientHeight);
-    }
-    /** This renderer can't be manually resized because Mapbox handles that. */
-    resize() { }
 }
 
 export { ClippingEdges, Component, Components, Disposer, EdgesClipper, EdgesPlane, EdgesStyles, Event, FirstPersonMode, FragmentCulling, FragmentEdges, FragmentGrouper, FragmentHighlighter, FragmentMaterials, FragmentProperties, FragmentSpatialTree, Fragments, MapboxCamera, MapboxRenderer, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, RendererComponent, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensionLine, SimpleDimensions, SimpleGrid, SimpleMouse, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, ToolComponents, getBasisTransform, rightToLeftHand, stringToAxes };
