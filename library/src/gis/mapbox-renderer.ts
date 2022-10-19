@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { Vector2, WebGLRenderer } from "three";
-import { RendererComponent } from "../core";
+import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
+import { Disposable, Event, RendererComponent } from "../core";
 import { Components } from "../components";
 
 /**
@@ -8,13 +8,21 @@ import { Components } from "../components";
  * with [Mapbox](https://www.mapbox.com/).
  * [See example](https://ifcjs.github.io/components/examples/mapbox.html).
  */
-export class MapboxRenderer extends RendererComponent {
+export class MapboxRenderer extends RendererComponent implements Disposable {
   /** {@link Component.name} */
   name = "MapboxRenderer";
 
   /** {@link Component.enabled} */
   enabled = true;
 
+  /**
+   * The renderer can only be initialized once Mapbox' map has been loaded. This
+   * method triggers when that happens, so any initial logic that depends on the
+   * renderer has to subscribe to this.
+   */
+  initialized = new Event<THREE.Renderer>();
+
+  private _labelRenderer = new CSS2DRenderer();
   private _renderer?: THREE.WebGLRenderer;
   private _map: any;
   private _components: Components;
@@ -45,7 +53,7 @@ export class MapboxRenderer extends RendererComponent {
   }
 
   /** {@link Component.get} */
-  get(): WebGLRenderer {
+  get(): THREE.WebGLRenderer {
     if (!this._renderer) {
       throw new Error(this.initError);
     }
@@ -53,7 +61,7 @@ export class MapboxRenderer extends RendererComponent {
   }
 
   /** {@link Resizeable.getSize} */
-  getSize(): Vector2 {
+  getSize(): THREE.Vector2 {
     if (!this._renderer) {
       throw new Error(this.initError);
     }
@@ -63,17 +71,25 @@ export class MapboxRenderer extends RendererComponent {
     );
   }
 
-  /** {@link Resizeable.resize} */
+  /** {@link Resizeable.resize}. Mapbox automatically handles this. */
   resize(): void {}
+
+  /** {@link Disposable.dispose} */
+  dispose() {
+    window.removeEventListener("resize", this.updateLabelRendererSize);
+  }
 
   private initialize(context: WebGLRenderingContext) {
     const canvas = this._map.getCanvas();
-    this._renderer = new THREE.WebGLRenderer({
+    const renderer = new THREE.WebGLRenderer({
       canvas,
       context,
       antialias: true,
     });
+    this._renderer = renderer;
     this._renderer.autoClear = false;
+    this.initializeLabelRenderer();
+    this.initialized.trigger(renderer);
   }
 
   private setupMap(map: any) {
@@ -151,8 +167,28 @@ export class MapboxRenderer extends RendererComponent {
     this._renderer.resetState();
     this._renderer.render(scene, camera);
 
+    this._labelRenderer.render(scene, camera);
+
     this._map.triggerRepaint();
   }
+
+  private initializeLabelRenderer() {
+    this.updateLabelRendererSize();
+    window.addEventListener("resize", this.updateLabelRendererSize);
+    this._labelRenderer.domElement.style.position = "absolute";
+    this._labelRenderer.domElement.style.top = "0px";
+    const dom = this._labelRenderer.domElement;
+    this._renderer?.domElement.parentElement?.appendChild(dom);
+  }
+
+  private updateLabelRendererSize = () => {
+    if (this._renderer?.domElement) {
+      this._labelRenderer.setSize(
+        this._renderer.domElement.clientWidth,
+        this._renderer.domElement.clientHeight
+      );
+    }
+  };
 
   // Source: https://docs.mapbox.com/mapbox-gl-js/example/3d-buildings/
 

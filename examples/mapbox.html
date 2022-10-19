@@ -8,6 +8,24 @@
   <link rel="stylesheet" href="resources/styles.css">
   <link rel="icon" type="image/x-icon" href="../favicon.ico">
   <title>Components | Mapbox</title>
+  <style>
+      .example-label {
+          background-color: white;
+          padding: 8px;
+          width: 2.5rem;
+          height: 2.5rem;
+          border-radius: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          border: 2px solid black;
+          transition: opacity 0.2s ease-in;
+      }
+
+      .example-label:hover {
+          opacity: 0.5;
+      }
+  </style>
 </head>
 <body>
 <div class="full-screen" id="map"></div>
@@ -18,6 +36,7 @@
 <script type="module">
 	import * as THREE from './resources/three.module.js';
 	import * as OBC from './resources/openbim-components.js';
+	import { CSS2DObject } from './resources/CSS2DRenderer.js';
 
 	// Set up mapbox. You will need a [mapbox account](https://www.mapbox.com/) to get your own tokens.
 
@@ -66,6 +85,18 @@
 	const redCube = new THREE.Mesh(cubeGeometry, redMaterial);
 	redCube.position.set(0, 5, 0);
 	scene.add(redCube);
+
+	// Add a label
+
+	const htmlLabel = document.createElement('div');
+	const htmlIcon = document.createElement('p');
+	htmlIcon.textContent = '🚀';
+	htmlLabel.append(htmlIcon);
+	htmlLabel.classList.add('example-label');
+
+	const label = new CSS2DObject(htmlLabel);
+	label.position.y = 10;
+	scene.add(label);
 
 </script>
 </body>

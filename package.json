@@ -1,8 +1,8 @@
 {
   "name": "web-viewer",
-  "version": "0.0.4",
+  "version": "0.0.8",
   "main": "index.js",
-  "author": "harry collin",
+  "author": "harry collin, antonio gonzalez viegas",
   "license": "MIT",
   "private": true,
   "packageManager": "yarn@3.2.1",

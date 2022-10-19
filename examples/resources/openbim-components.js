@@ -26954,7 +26954,20 @@ class MapboxRenderer extends RendererComponent {
         this.name = "MapboxRenderer";
         /** {@link Component.enabled} */
         this.enabled = true;
+        /**
+         * The renderer can only be initialized once Mapbox' map has been loaded. This
+         * method triggers when that happens, so any initial logic that depends on the
+         * renderer has to subscribe to this.
+         */
+        this.initialized = new Event();
+        this._labelRenderer = new CSS2DRenderer();
         this.initError = "Mapbox scene isn't initialized yet!";
+        this.updateLabelRendererSize = () => {
+            var _a;
+            if ((_a = this._renderer) === null || _a === void 0 ? void 0 : _a.domElement) {
+                this._labelRenderer.setSize(this._renderer.domElement.clientWidth, this._renderer.domElement.clientHeight);
+            }
+        };
         this._components = components;
         this._map = map;
         this._modelTransform = this.newModelTransform(coords, rotation);
@@ -26977,14 +26990,21 @@ class MapboxRenderer extends RendererComponent {
     }
     /** {@link Resizeable.resize} */
     resize() { }
+    /** {@link Disposable.dispose} */
+    dispose() {
+        window.removeEventListener("resize", this.updateLabelRendererSize);
+    }
     initialize(context) {
         const canvas = this._map.getCanvas();
-        this._renderer = new THREE$1.WebGLRenderer({
+        const renderer = new THREE$1.WebGLRenderer({
             canvas,
             context,
             antialias: true,
         });
+        this._renderer = renderer;
         this._renderer.autoClear = false;
+        this.initializeLabelRenderer();
+        this.initialized.trigger(renderer);
     }
     setupMap(map) {
         const scene = this._components.scene.get();
@@ -27033,7 +27053,17 @@ class MapboxRenderer extends RendererComponent {
         camera.projectionMatrix = m.multiply(l);
         this._renderer.resetState();
         this._renderer.render(scene, camera);
+        this._labelRenderer.render(scene, camera);
         this._map.triggerRepaint();
+    }
+    initializeLabelRenderer() {
+        var _a, _b;
+        this.updateLabelRendererSize();
+        window.addEventListener("resize", this.updateLabelRendererSize);
+        this._labelRenderer.domElement.style.position = "absolute";
+        this._labelRenderer.domElement.style.top = "0px";
+        const dom = this._labelRenderer.domElement;
+        (_b = (_a = this._renderer) === null || _a === void 0 ? void 0 : _a.domElement.parentElement) === null || _b === void 0 ? void 0 : _b.appendChild(dom);
     }
     // Source: https://docs.mapbox.com/mapbox-gl-js/example/3d-buildings/
     setup3DBuildings() {
