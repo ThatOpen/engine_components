@@ -67,6 +67,13 @@ export class FragmentHighlighter {
     return { id, fragment };
   }
 
+  /**
+   * Clears any selection previously made by calling {@link highlight}.
+   */
+  clearSelection(){
+    this.selection?.mesh.removeFromParent();
+  }
+
   private updateFragmentHighlight(fragment: Fragment) {
     for (const name in this.highlights) {
       if (!fragment.fragments[name]) {
