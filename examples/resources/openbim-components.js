@@ -21178,7 +21178,7 @@ class FragmentHighlighter {
     /**
      * Clears any selection previously made by calling {@link highlight}.
      */
-    clearSelection() {
+    clear() {
         var _a;
         (_a = this.selection) === null || _a === void 0 ? void 0 : _a.mesh.removeFromParent();
     }

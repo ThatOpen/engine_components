@@ -70,7 +70,7 @@ export class FragmentHighlighter {
   /**
    * Clears any selection previously made by calling {@link highlight}.
    */
-  clearSelection(){
+  clear(){
     this.selection?.mesh.removeFromParent();
   }
 
