@@ -9,6 +9,7 @@ import { FragmentMaterials } from "./fragment-materials";
 import { FragmentProperties } from "./fragment-properties";
 import { FragmentSpatialTree } from "./fragment-spatial-tree";
 import { Components } from "../index";
+import { IfcFragmentLoader } from "./fragment-ifc-importer";
 
 export interface FragmentConfig {
   culling: boolean;
@@ -18,6 +19,7 @@ export class Fragments {
   fragments: { [guid: string]: Fragment } = {};
   fragmentMeshes: Mesh[] = [];
 
+  ifcLoader = new IfcFragmentLoader();
   loader = new FragmentLoader();
   groups = new FragmentGrouper();
   properties = new FragmentProperties();

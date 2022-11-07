@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="resources/styles.css">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Components | Hello world</title>
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+
+<div class="main-container">
+  <div id="category-container"></div>
+  <div id="level-container"></div>
+</div>
+
+<script type="module">
+	import Stats from './resources/Stats.js';
+	import * as THREE from './resources/three.module.js';
+	import * as OBC from './resources/openbim-components.js';
+
+	const container = document.getElementById('container');
+
+	const components = new OBC.Components();
+
+	components.scene = new OBC.SimpleScene(components);
+	const renderer = new OBC.PostproductionRenderer(components, container);
+	components.renderer = renderer;
+	renderer.postproduction.outlineColor = 0x999999;
+
+	const camera = new OBC.SimpleCamera(components);
+	components.camera = camera;
+	renderer.postproduction.setup(camera.controls);
+	renderer.postproduction.active = true;
+
+	components.raycaster = new OBC.SimpleRaycaster(components);
+
+	components.init();
+
+	const scene = components.scene.get();
+	const shadows = new OBC.ShadowDropper(components);
+
+	const directionalLight = new THREE.DirectionalLight();
+	directionalLight.position.set(5, 10, 3);
+	directionalLight.intensity = 0.5;
+	scene.add(directionalLight);
+
+	const ambientLight = new THREE.AmbientLight();
+	ambientLight.intensity = 0.5;
+	scene.add(ambientLight);
+
+	// Add some components
+	const grid = new OBC.SimpleGrid(components);
+	components.tools.add(grid);
+	renderer.postproduction.excludedItems.add(grid.get());
+
+	const clipper = new OBC.SimpleClipper(components, OBC.SimplePlane);
+	components.tools.add(clipper);
+
+	const dimensions = new OBC.SimpleDimensions(components);
+	components.tools.add(dimensions);
+
+	// Set up stats
+	const stats = new Stats();
+	stats.showPanel(2);
+	document.body.append(stats.dom);
+	stats.dom.style.right = '0px';
+	stats.dom.style.left = 'auto';
+
+	components.renderer.beforeUpdate.on(() => stats.begin());
+	components.renderer.afterUpdate.on(() => stats.end());
+
+	const fragments = new OBC.Fragments(components);
+	convertIfcToFragments();
+
+	async function convertIfcToFragments() {
+    fragments.ifcLoader.settings.setWasmPath("./resources/");
+    const model = await fragments.ifcLoader.load("./resources/01.ifc");
+
+    for(const fragment of model.fragments) {
+    	fragments.add(fragment);
+    }
+	}
+
+</script>
+</body>
+</html>
