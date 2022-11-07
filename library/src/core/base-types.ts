@@ -79,3 +79,12 @@ export interface Updateable {
 export interface Raycaster {
   castRay: (items?: THREE.Mesh[]) => THREE.Intersection | null;
 }
+
+/** Basic type to describe the progress of any kind of process. */
+export interface Progress {
+  /** The amount of things that have been done already. */
+  current: number;
+
+  /** The total amount of things to be done by the process. */
+  total: number;
+}

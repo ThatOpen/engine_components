@@ -6,3 +6,4 @@ export * from "./fragment-edges";
 export * from "./fragment-grouper";
 export * from "./fragment-highlighter";
 export * from "./fragment-materials";
+export * from "./fragment-ifc-importer";
