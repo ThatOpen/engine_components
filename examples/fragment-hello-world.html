@@ -81,7 +81,7 @@
 	// Add some components
 	const grid = new OBC.SimpleGrid(components);
 	components.tools.add(grid);
-	renderer.postproduction.excludedItems.add(grid.grid);
+	renderer.postproduction.excludedItems.add(grid.get());
 
 	const clipper = new OBC.SimpleClipper(components, OBC.SimplePlane);
 	components.tools.add(clipper);
@@ -96,8 +96,8 @@
 	stats.dom.style.right = '0px';
 	stats.dom.style.left = 'auto';
 
-	components.renderer.onStartRender.on(() => stats.begin());
-	components.renderer.onFinishRender.on(() => stats.end());
+	components.renderer.beforeUpdate.on(() => stats.begin());
+	components.renderer.afterUpdate.on(() => stats.end());
 
 	const fragments = new OBC.Fragments(components);
 	loadFragments();

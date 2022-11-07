@@ -95,8 +95,8 @@
 	stats.dom.style.right = '0px';
 	stats.dom.style.left = 'auto';
 
-	components.renderer.onStartRender.on(() => stats.begin());
-	components.renderer.onFinishRender.on(() => stats.end());
+	components.renderer.beforeUpdate.on(() => stats.begin());
+	components.renderer.afterUpdate.on(() => stats.end());
 
 	const fragments = new OBC.Fragments(components);
 	loadFragments();
@@ -146,13 +146,12 @@
 
 		// Clipping edges
 
-		OBC.ClippingEdges.initialize(components);
-		await OBC.ClippingEdges.newStyleFromMesh('thick', thickItems, new LineMaterial({
+		await clipper.styles.create('thick', thickItems, new LineMaterial({
 			color: 0x333333,
 			linewidth: 0.002,
 		}));
 
-		await OBC.ClippingEdges.newStyleFromMesh('thin', thinItems, new LineMaterial({
+		await clipper.styles.create('thin', thinItems, new LineMaterial({
 			color: 0x333333,
 			linewidth: 0.001,
 		}));

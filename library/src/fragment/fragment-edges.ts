@@ -45,7 +45,6 @@ export class FragmentEdges {
       transformed = trs(transformed, instT, instR, instS);
 `
       );
-      console.log(shader.vertexShader);
     },
   });
 

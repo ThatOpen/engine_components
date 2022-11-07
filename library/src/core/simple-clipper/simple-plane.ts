@@ -97,7 +97,6 @@ export class SimplePlane
     this._normal = normal;
     this._origin = origin;
     this.isPlan = isPlan;
-    this.isPlan = isPlan;
 
     this._components.renderer.togglePlane(true, this._plane);
     this._planeMesh = SimplePlane.newPlaneMesh(size, material);
@@ -153,7 +152,9 @@ export class SimplePlane
     const container = this._components.renderer.get().domElement;
     const controls = new TransformControls(camera, container);
     this.initializeControls(controls);
-    this._components.scene.get().add(controls);
+    if (!this.isPlan) {
+      this._components.scene.get().add(controls);
+    }
     return controls;
   }
 
@@ -206,9 +207,11 @@ export class SimplePlane
     const helper = new THREE.Object3D();
     helper.lookAt(this._normal);
     helper.position.copy(this._origin);
-    this._components.scene.get().add(helper);
     this._planeMesh.position.z += 0.01;
     helper.add(this._planeMesh);
+    if (!this.isPlan) {
+      this._components.scene.get().add(helper);
+    }
     return helper;
   }
 

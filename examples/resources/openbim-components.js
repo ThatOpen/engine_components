@@ -9229,7 +9229,6 @@ class SimplePlane extends Component {
         this._normal = normal;
         this._origin = origin;
         this.isPlan = isPlan;
-        this.isPlan = isPlan;
         this._components.renderer.togglePlane(true, this._plane);
         this._planeMesh = SimplePlane.newPlaneMesh(size, material);
         this._helper = this.newHelper();
@@ -9302,7 +9301,9 @@ class SimplePlane extends Component {
         const container = this._components.renderer.get().domElement;
         const controls = new TransformControls(camera, container);
         this.initializeControls(controls);
-        this._components.scene.get().add(controls);
+        if (!this.isPlan) {
+            this._components.scene.get().add(controls);
+        }
         return controls;
     }
     initializeControls(controls) {
@@ -9346,9 +9347,11 @@ class SimplePlane extends Component {
         const helper = new THREE$1.Object3D();
         helper.lookAt(this._normal);
         helper.position.copy(this._origin);
-        this._components.scene.get().add(helper);
         this._planeMesh.position.z += 0.01;
         helper.add(this._planeMesh);
+        if (!this.isPlan) {
+            this._components.scene.get().add(helper);
+        }
         return helper;
     }
     static newPlaneMesh(size, material) {
@@ -21449,7 +21452,6 @@ class FragmentEdges {
 `.replace(`#include <begin_vertex>`, `#include <begin_vertex>
       transformed = trs(transformed, instT, instR, instS);
 `);
-                console.log(shader.vertexShader);
             },
         });
     }
