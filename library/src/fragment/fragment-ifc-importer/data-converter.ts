@@ -42,6 +42,15 @@ export class DataConverter {
     this._uniqueItems = {};
   }
 
+  cleanUp() {
+    this._spatialStructure.cleanUp();
+    this._categories = {};
+    this._model = new FragmentGroup();
+    this._ifcCategories = new IfcCategories();
+    this._uniqueItems = {};
+    this._units = new Units();
+  }
+
   setupCategories(webIfc: WEBIFC.IfcAPI) {
     this._categories = this._ifcCategories.getAll(webIfc, 0);
   }

@@ -2,7 +2,7 @@ import * as WEBIFC from "web-ifc";
 import { Event, Progress } from "../../core";
 
 export class LoadProgress {
-  progress = new Event<Progress>();
+  event = new Event<Progress>();
 
   private load = {
     total: 0,
@@ -24,7 +24,7 @@ export class LoadProgress {
     if (isStepReached) {
       const total = this.load.total;
       const current = Math.ceil(total * this.load.step);
-      this.progress.trigger({ current, total });
+      this.event.trigger({ current, total });
       this.load.step += 0.1;
     }
   }

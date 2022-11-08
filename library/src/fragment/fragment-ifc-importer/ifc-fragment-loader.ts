@@ -10,14 +10,14 @@ import { DataConverter } from "./data-converter";
  */
 export class IfcFragmentLoader {
   settings = new Settings();
-  progress = new LoadProgress();
-  webIfc = new WEBIFC.IfcAPI();
 
+  private _webIfc = new WEBIFC.IfcAPI();
+  private _progress = new LoadProgress();
   private _items: IfcToFragmentItems = {};
   private _materials: MaterialList = {};
 
   private readonly _geometry = new Geometry(
-    this.webIfc,
+    this._webIfc,
     this._items,
     this._materials
   );
@@ -28,41 +28,43 @@ export class IfcFragmentLoader {
     this.settings
   );
 
+  get progress() {
+    return this._progress.event;
+  }
+
   async load(ifcURL: URL) {
+    await this.initializeWebIfc();
     const file = await fetch(ifcURL);
     const buffer = await file.arrayBuffer();
     const data = new Uint8Array(buffer);
-    await this.resetWebIfc();
-    await this.webIfc.OpenModel(data, this.settings.webIfc);
+    await this._webIfc.OpenModel(data, this.settings.webIfc);
     return this.loadAllGeometry();
   }
 
-  private async resetWebIfc() {
-    (this.webIfc as any) = null;
-    this.webIfc = new WEBIFC.IfcAPI();
-    this.webIfc.SetWasmPath(this.settings.wasmPath);
-    await this.webIfc.Init();
+  private async initializeWebIfc() {
+    this._webIfc.SetWasmPath(this.settings.wasmPath);
+    await this._webIfc.Init();
   }
 
   private async loadAllGeometry() {
-    await this.progress.setupLoadProgress(this.webIfc);
+    await this._progress.setupLoadProgress(this._webIfc);
     this.loadAllCategories();
-    const model = await this._converter.generateFragmentData(this.webIfc);
-    this.progress.updateLoadProgress();
-    this.reset();
+    const model = await this._converter.generateFragmentData(this._webIfc);
+    this._progress.updateLoadProgress();
+    this.cleanUp();
     return model;
   }
 
   private loadAllCategories() {
-    this._converter.setupCategories(this.webIfc);
+    this._converter.setupCategories(this._webIfc);
     this.loadOptionalCategories();
     this.loadMainCategories();
   }
 
   private loadMainCategories() {
-    this.webIfc.StreamAllMeshes(0, (mesh: WEBIFC.FlatMesh) => {
-      this.progress.updateLoadProgress();
-      this._geometry.streamMesh(this.webIfc, mesh);
+    this._webIfc.StreamAllMeshes(0, (mesh: WEBIFC.FlatMesh) => {
+      this._progress.updateLoadProgress();
+      this._geometry.streamMesh(this._webIfc, mesh);
     });
   }
 
@@ -70,16 +72,22 @@ export class IfcFragmentLoader {
   private loadOptionalCategories() {
     const optionals = this.settings.optionalCategories;
     const callback = (mesh: WEBIFC.FlatMesh) => {
-      this._geometry.streamMesh(this.webIfc, mesh);
+      this._geometry.streamMesh(this._webIfc, mesh);
     };
-    this.webIfc.StreamAllMeshesWithTypes(0, optionals, callback);
+    this._webIfc.StreamAllMeshesWithTypes(0, optionals, callback);
   }
 
-  private reset() {
-    (this.webIfc as any) = null;
-    this.webIfc = new WEBIFC.IfcAPI();
+  private cleanUp() {
+    this.resetWebIfc();
+    this._geometry.cleanUp();
+    this._converter.cleanUp();
     this.resetObject(this._items);
     this.resetObject(this._materials);
+  }
+
+  private resetWebIfc() {
+    (this._webIfc as any) = null;
+    this._webIfc = new WEBIFC.IfcAPI();
   }
 
   private resetObject(object: any) {

@@ -14,6 +14,11 @@ export class SpatialStructure {
     }
   }
 
+  cleanUp() {
+    this.floorProperties = [];
+    this.itemsByFloor = {};
+  }
+
   private reset() {
     this.floorProperties = [];
     this.itemsByFloor = {};

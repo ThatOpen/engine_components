@@ -77,6 +77,7 @@
 	convertIfcToFragments();
 
 	async function convertIfcToFragments() {
+
     fragments.ifcLoader.settings.setWasmPath("./resources/");
     const model = await fragments.ifcLoader.load("./resources/01.ifc");
 

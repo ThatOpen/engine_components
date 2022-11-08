@@ -7,7 +7,7 @@ export class Geometry {
   private referenceMatrix = new THREE.Matrix4();
   private isFirstMatrix = true;
   private _materials: MaterialList;
-  private geometriesByMaterial: {
+  private _geometriesByMaterial: {
     [color: string]: THREE.BufferGeometry[];
   } = {};
 
@@ -35,11 +35,11 @@ export class Geometry {
   }
 
   cleanUp() {
-    this._materials = {};
+    this._geometriesByMaterial = {};
   }
 
   private reset(webifc: WEBIFC.IfcAPI) {
-    this.geometriesByMaterial = {};
+    this._geometriesByMaterial = {};
     this.referenceMatrix = new THREE.Matrix4();
     this.isFirstMatrix = true;
     this.webIfc = webifc;
@@ -76,7 +76,7 @@ export class Geometry {
           matrix: new THREE.Matrix4(),
         },
       ],
-      geometriesByMaterial: this.geometriesByMaterial,
+      geometriesByMaterial: this._geometriesByMaterial,
       referenceMatrix: this.referenceMatrix,
     };
   }
@@ -86,10 +86,10 @@ export class Geometry {
     geometry: THREE.BufferGeometry
   ) {
     const materialID = this.saveMaterials(geometryData);
-    if (!this.geometriesByMaterial[materialID]) {
-      this.geometriesByMaterial[materialID] = [geometry];
+    if (!this._geometriesByMaterial[materialID]) {
+      this._geometriesByMaterial[materialID] = [geometry];
     } else {
-      this.geometriesByMaterial[materialID].push(geometry);
+      this._geometriesByMaterial[materialID].push(geometry);
     }
   }
 

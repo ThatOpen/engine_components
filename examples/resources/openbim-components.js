@@ -66521,7 +66521,7 @@ class Settings {
 
 class LoadProgress {
     constructor() {
-        this.progress = new Event();
+        this.event = new Event();
         this.load = {
             total: 0,
             current: 0,
@@ -66541,7 +66541,7 @@ class LoadProgress {
         if (isStepReached) {
             const total = this.load.total;
             const current = Math.ceil(total * this.load.step);
-            this.progress.trigger({ current, total });
+            this.event.trigger({ current, total });
             this.load.step += 0.1;
         }
     }
@@ -66551,7 +66551,7 @@ class Geometry {
     constructor(webIfc, items, materials) {
         this.referenceMatrix = new THREE$1.Matrix4();
         this.isFirstMatrix = true;
-        this.geometriesByMaterial = {};
+        this._geometriesByMaterial = {};
         this._items = {};
         this.webIfc = webIfc;
         this._items = items;
@@ -66569,10 +66569,10 @@ class Geometry {
         }
     }
     cleanUp() {
-        this._materials = {};
+        this._geometriesByMaterial = {};
     }
     reset(webifc) {
-        this.geometriesByMaterial = {};
+        this._geometriesByMaterial = {};
         this.referenceMatrix = new THREE$1.Matrix4();
         this.isFirstMatrix = true;
         this.webIfc = webifc;
@@ -66607,17 +66607,17 @@ class Geometry {
                     matrix: new THREE$1.Matrix4(),
                 },
             ],
-            geometriesByMaterial: this.geometriesByMaterial,
+            geometriesByMaterial: this._geometriesByMaterial,
             referenceMatrix: this.referenceMatrix,
         };
     }
     sortGeometriesByMaterials(geometryData, geometry) {
         const materialID = this.saveMaterials(geometryData);
-        if (!this.geometriesByMaterial[materialID]) {
-            this.geometriesByMaterial[materialID] = [geometry];
+        if (!this._geometriesByMaterial[materialID]) {
+            this._geometriesByMaterial[materialID] = [geometry];
         }
         else {
-            this.geometriesByMaterial[materialID].push(geometry);
+            this._geometriesByMaterial[materialID].push(geometry);
         }
     }
     saveMaterials(geometryData) {
@@ -66882,6 +66882,10 @@ class SpatialStructure {
             await this.getFloorProperties(webIfc, floor);
             this.saveFloorRelations(floor);
         }
+    }
+    cleanUp() {
+        this.floorProperties = [];
+        this.itemsByFloor = {};
     }
     reset() {
         this.floorProperties = [];
@@ -67795,6 +67799,14 @@ class DataConverter {
         this._model = new FragmentGroup();
         this._uniqueItems = {};
     }
+    cleanUp() {
+        this._spatialStructure.cleanUp();
+        this._categories = {};
+        this._model = new FragmentGroup();
+        this._ifcCategories = new IfcCategories();
+        this._uniqueItems = {};
+        this._units = new Units();
+    }
     setupCategories(webIfc) {
         this._categories = this._ifcCategories.getAll(webIfc, 0);
     }
@@ -67960,59 +67972,65 @@ class DataConverter {
 class IfcFragmentLoader {
     constructor() {
         this.settings = new Settings();
-        this.progress = new LoadProgress();
-        this.webIfc = new IfcAPI2();
+        this._webIfc = new IfcAPI2();
+        this._progress = new LoadProgress();
         this._items = {};
         this._materials = {};
-        this._geometry = new Geometry(this.webIfc, this._items, this._materials);
+        this._geometry = new Geometry(this._webIfc, this._items, this._materials);
         this._converter = new DataConverter(this._items, this._materials, this.settings);
     }
+    get progress() {
+        return this._progress.event;
+    }
     async load(ifcURL) {
+        await this.initializeWebIfc();
         const file = await fetch(ifcURL);
         const buffer = await file.arrayBuffer();
         const data = new Uint8Array(buffer);
-        await this.resetWebIfc();
-        await this.webIfc.OpenModel(data, this.settings.webIfc);
+        await this._webIfc.OpenModel(data, this.settings.webIfc);
         return this.loadAllGeometry();
     }
-    async resetWebIfc() {
-        this.webIfc = null;
-        this.webIfc = new IfcAPI2();
-        this.webIfc.SetWasmPath(this.settings.wasmPath);
-        await this.webIfc.Init();
+    async initializeWebIfc() {
+        this._webIfc.SetWasmPath(this.settings.wasmPath);
+        await this._webIfc.Init();
     }
     async loadAllGeometry() {
-        await this.progress.setupLoadProgress(this.webIfc);
+        await this._progress.setupLoadProgress(this._webIfc);
         this.loadAllCategories();
-        const model = await this._converter.generateFragmentData(this.webIfc);
-        this.progress.updateLoadProgress();
-        this.reset();
+        const model = await this._converter.generateFragmentData(this._webIfc);
+        this._progress.updateLoadProgress();
+        this.cleanUp();
         return model;
     }
     loadAllCategories() {
-        this._converter.setupCategories(this.webIfc);
+        this._converter.setupCategories(this._webIfc);
         this.loadOptionalCategories();
         this.loadMainCategories();
     }
     loadMainCategories() {
-        this.webIfc.StreamAllMeshes(0, (mesh) => {
-            this.progress.updateLoadProgress();
-            this._geometry.streamMesh(this.webIfc, mesh);
+        this._webIfc.StreamAllMeshes(0, (mesh) => {
+            this._progress.updateLoadProgress();
+            this._geometry.streamMesh(this._webIfc, mesh);
         });
     }
     // Some categories (like IfcSpace) need to be set explicitly
     loadOptionalCategories() {
         const optionals = this.settings.optionalCategories;
         const callback = (mesh) => {
-            this._geometry.streamMesh(this.webIfc, mesh);
+            this._geometry.streamMesh(this._webIfc, mesh);
         };
-        this.webIfc.StreamAllMeshesWithTypes(0, optionals, callback);
+        this._webIfc.StreamAllMeshesWithTypes(0, optionals, callback);
     }
-    reset() {
-        this.webIfc = null;
-        this.webIfc = new IfcAPI2();
+    cleanUp() {
+        this.resetWebIfc();
+        this._geometry.cleanUp();
+        this._converter.cleanUp();
         this.resetObject(this._items);
         this.resetObject(this._materials);
+    }
+    resetWebIfc() {
+        this._webIfc = null;
+        this._webIfc = new IfcAPI2();
     }
     resetObject(object) {
         const keys = Object.keys(object);
