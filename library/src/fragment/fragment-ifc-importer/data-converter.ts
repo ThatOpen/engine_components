@@ -13,12 +13,14 @@ import { IfcCategories, IfcItemsCategories } from "../../ifc/ifc-categories";
 import { SpatialStructure } from "./spatial-structure";
 import { Settings } from "./settings";
 import { IfcCategoryMap } from "../../ifc/ifc-category-map";
+import { Units } from "./units";
 
 export class DataConverter {
   private _categories: IfcItemsCategories = {};
   private _model = new FragmentGroup();
   private _ifcCategories = new IfcCategories();
   private _uniqueItems: IfcToFragmentUniqueItems = {};
+  private _units = new Units();
 
   private readonly _items: IfcToFragmentItems;
   private readonly _materials: MaterialList;
@@ -45,6 +47,7 @@ export class DataConverter {
   }
 
   async generateFragmentData(webIfc: WEBIFC.IfcAPI) {
+    await this._units.setUp(webIfc);
     await this._spatialStructure.setupFloors(webIfc);
     this.processAllFragmentsData();
     this.processAllUniqueItems();
@@ -80,15 +83,27 @@ export class DataConverter {
 
   private processMergedItems(data: FragmentData) {
     for (const matID in data.geometriesByMaterial) {
-      const id = data.instances[0].id;
-      const category = this._categories[id];
-      const level = this._spatialStructure.itemsByFloor[id];
+      const instance = data.instances[0];
+      const category = this._categories[instance.id];
+      const level = this._spatialStructure.itemsByFloor[instance.id];
       this.initializeUniqueItem(category, level, matID);
-      for (const geometry of data.geometriesByMaterial[matID]) {
-        geometry.userData.id = id;
-        this._uniqueItems[category][level][matID].push(geometry);
-        geometry.applyMatrix4(data.instances[0].matrix);
-      }
+      this.applyTransformToMergedGeometries(data, category, level, matID);
+    }
+  }
+
+  private applyTransformToMergedGeometries(
+    data: FragmentData,
+    category: number,
+    level: number,
+    matID: string
+  ) {
+    const geometries = data.geometriesByMaterial[matID];
+    const instance = data.instances[0];
+    this._units.apply(instance.matrix);
+    for (const geometry of geometries) {
+      geometry.userData.id = instance.id;
+      this._uniqueItems[category][level][matID].push(geometry);
+      geometry.applyMatrix4(instance.matrix);
     }
   }
 
@@ -114,6 +129,7 @@ export class DataConverter {
   private setFragmentInstances(data: FragmentData, fragment: Fragment) {
     for (let i = 0; i < data.instances.length; i++) {
       const instance = data.instances[i];
+      this._units.apply(instance.matrix);
       fragment.setInstance(i, {
         ids: [instance.id.toString()],
         transform: instance.matrix,
@@ -149,15 +165,13 @@ export class DataConverter {
   }
 
   private processUniqueItem(category: number, level: number) {
-    if (level !== undefined && category !== undefined) {
-      const geometries = Object.values(this._uniqueItems[category][level]);
-      const { buffer, ids } = this.processIDsAndBuffer(geometries);
-      const mats = this.getUniqueItemMaterial(category, level);
-      const merged = GeometryUtils.merge(geometries);
-      const mergedFragment = this.newMergedFragment(merged, buffer, mats, ids);
-      this._model.fragments.push(mergedFragment);
-      this._model.add(mergedFragment.mesh);
-    }
+    const geometries = Object.values(this._uniqueItems[category][level]);
+    const { buffer, ids } = this.processIDsAndBuffer(geometries);
+    const mats = this.getUniqueItemMaterial(category, level);
+    const merged = GeometryUtils.merge(geometries);
+    const mergedFragment = this.newMergedFragment(merged, buffer, mats, ids);
+    this._model.fragments.push(mergedFragment);
+    this._model.add(mergedFragment.mesh);
   }
 
   private newMergedFragment(

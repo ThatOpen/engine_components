@@ -10,7 +10,7 @@ export class Settings {
 
   webIfc: WEBIFC.LoaderSettings = {
     COORDINATE_TO_ORIGIN: true,
-    USE_FAST_BOOLS: false,
+    USE_FAST_BOOLS: true,
   };
 
   constructor() {

@@ -66508,7 +66508,7 @@ class Settings {
         this.wasmPath = "";
         this.webIfc = {
             COORDINATE_TO_ORIGIN: true,
-            USE_FAST_BOOLS: false,
+            USE_FAST_BOOLS: true,
         };
         this.instancedCategories.add(IFCFURNISHINGELEMENT);
         this.instancedCategories.add(IFCWINDOW);
@@ -67731,12 +67731,61 @@ const IfcCategoryMap = {
     1033361043: "IFCZONE",
 };
 
+class Units {
+    constructor() {
+        this.factor = 1;
+    }
+    apply(matrix) {
+        const scale = this.getScaleMatrix();
+        const result = scale.multiply(matrix);
+        matrix.copy(result);
+    }
+    setUp(webIfc) {
+        this.factor = 1;
+        const lengthUnits = this.getLengthUnits(webIfc);
+        if (lengthUnits.Name.value === "FOOT") {
+            this.factor = 0.3048;
+        }
+        else if (lengthUnits.Prefix === ".MILLI.") {
+            this.factor = 0.001;
+        }
+    }
+    getLengthUnits(webIfc) {
+        const allUnits = webIfc.GetLineIDsWithType(0, IFCUNITASSIGNMENT);
+        const units = allUnits.get(0);
+        const unitsProps = webIfc.GetLine(0, units);
+        const lengthUnitsID = unitsProps.Units[0].value;
+        return webIfc.GetLine(0, lengthUnitsID);
+    }
+    getScaleMatrix() {
+        return new THREE$1.Matrix4().fromArray([
+            this.factor,
+            0,
+            0,
+            0,
+            0,
+            this.factor,
+            0,
+            0,
+            0,
+            0,
+            this.factor,
+            0,
+            0,
+            0,
+            0,
+            1,
+        ]);
+    }
+}
+
 class DataConverter {
     constructor(items, materials, settings) {
         this._categories = {};
         this._model = new FragmentGroup();
         this._ifcCategories = new IfcCategories();
         this._uniqueItems = {};
+        this._units = new Units();
         this._spatialStructure = new SpatialStructure();
         this._items = items;
         this._materials = materials;
@@ -67750,6 +67799,7 @@ class DataConverter {
         this._categories = this._ifcCategories.getAll(webIfc, 0);
     }
     async generateFragmentData(webIfc) {
+        await this._units.setUp(webIfc);
         await this._spatialStructure.setupFloors(webIfc);
         this.processAllFragmentsData();
         this.processAllUniqueItems();
@@ -67782,15 +67832,21 @@ class DataConverter {
     }
     processMergedItems(data) {
         for (const matID in data.geometriesByMaterial) {
-            const id = data.instances[0].id;
-            const category = this._categories[id];
-            const level = this._spatialStructure.itemsByFloor[id];
+            const instance = data.instances[0];
+            const category = this._categories[instance.id];
+            const level = this._spatialStructure.itemsByFloor[instance.id];
             this.initializeUniqueItem(category, level, matID);
-            for (const geometry of data.geometriesByMaterial[matID]) {
-                geometry.userData.id = id;
-                this._uniqueItems[category][level][matID].push(geometry);
-                geometry.applyMatrix4(data.instances[0].matrix);
-            }
+            this.applyTransformToMergedGeometries(data, category, level, matID);
+        }
+    }
+    applyTransformToMergedGeometries(data, category, level, matID) {
+        const geometries = data.geometriesByMaterial[matID];
+        const instance = data.instances[0];
+        this._units.apply(instance.matrix);
+        for (const geometry of geometries) {
+            geometry.userData.id = instance.id;
+            this._uniqueItems[category][level][matID].push(geometry);
+            geometry.applyMatrix4(instance.matrix);
         }
     }
     initializeUniqueItem(category, level, matID) {
@@ -67813,6 +67869,7 @@ class DataConverter {
     setFragmentInstances(data, fragment) {
         for (let i = 0; i < data.instances.length; i++) {
             const instance = data.instances[i];
+            this._units.apply(instance.matrix);
             fragment.setInstance(i, {
                 ids: [instance.id.toString()],
                 transform: instance.matrix,
@@ -67842,15 +67899,13 @@ class DataConverter {
         }
     }
     processUniqueItem(category, level) {
-        if (level !== undefined && category !== undefined) {
-            const geometries = Object.values(this._uniqueItems[category][level]);
-            const { buffer, ids } = this.processIDsAndBuffer(geometries);
-            const mats = this.getUniqueItemMaterial(category, level);
-            const merged = GeometryUtils.merge(geometries);
-            const mergedFragment = this.newMergedFragment(merged, buffer, mats, ids);
-            this._model.fragments.push(mergedFragment);
-            this._model.add(mergedFragment.mesh);
-        }
+        const geometries = Object.values(this._uniqueItems[category][level]);
+        const { buffer, ids } = this.processIDsAndBuffer(geometries);
+        const mats = this.getUniqueItemMaterial(category, level);
+        const merged = GeometryUtils.merge(geometries);
+        const mergedFragment = this.newMergedFragment(merged, buffer, mats, ids);
+        this._model.fragments.push(mergedFragment);
+        this._model.add(mergedFragment.mesh);
     }
     newMergedFragment(merged, buffer, mats, itemsIDs) {
         merged.setAttribute("blockID", new THREE$1.BufferAttribute(buffer, 1));
