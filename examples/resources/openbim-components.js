@@ -21195,6 +21195,8 @@ class FragmentCulling {
         this.exclusions = new Map();
         this.fragmentColorMap = new Map();
         this.needsUpdate = false;
+        this.alwaysForceUpdate = false;
+        this.renderDebugFrame = false;
         this.meshes = new Map();
         this.visibleFragments = [];
         this.previouslyVisibleMeshes = new Set();
@@ -21206,15 +21208,18 @@ class FragmentCulling {
         // Alternative scene and meshes to make the visibility check
         this.scene = new THREE$1.Scene();
         this.updateVisibility = (force) => {
-            if (!this.needsUpdate && !force)
+            if (!this.alwaysForceUpdate && !this.needsUpdate && !force)
                 return;
             const camera = this.components.camera.get();
             camera.updateMatrix();
-            const renderer = this.components.renderer.get();
-            renderer.setRenderTarget(this.renderTarget);
-            renderer.render(this.scene, camera);
-            renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, this.buffer);
-            renderer.setRenderTarget(null);
+            this.renderer.setSize(this.rtWidth, this.rtHeight);
+            this.renderer.setRenderTarget(this.renderTarget);
+            this.renderer.render(this.scene, camera);
+            this.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, this.buffer);
+            this.renderer.setRenderTarget(null);
+            if (this.renderDebugFrame) {
+                this.renderer.render(this.scene, camera);
+            }
             this.worker.postMessage({
                 buffer: this.buffer,
             });
@@ -21243,6 +21248,7 @@ class FragmentCulling {
                 this.cullEdges(fragment, false);
             }
         };
+        this.renderer = new THREE$1.WebGLRenderer();
         this.renderTarget = new THREE$1.WebGLRenderTarget(rtWidth, rtHeight);
         this.bufferSize = rtWidth * rtHeight * 4;
         this.buffer = new Uint8Array(this.bufferSize);
