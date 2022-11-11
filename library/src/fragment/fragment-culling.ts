@@ -5,6 +5,7 @@ import { Fragments } from ".";
 import { Components } from "../components";
 
 export class FragmentCulling {
+  readonly renderer: THREE.WebGLRenderer;
   readonly renderTarget: THREE.WebGLRenderTarget;
   readonly bufferSize: number;
   readonly buffer: Uint8Array;
@@ -14,6 +15,8 @@ export class FragmentCulling {
   exclusions = new Map<string, Fragment>();
   fragmentColorMap = new Map<string, Fragment>();
   needsUpdate = false;
+  alwaysForceUpdate = false;
+  renderDebugFrame = false;
 
   readonly meshes = new Map<string, THREE.InstancedMesh>();
 
@@ -38,6 +41,7 @@ export class FragmentCulling {
     readonly rtHeight = 512,
     readonly autoUpdate = true
   ) {
+    this.renderer = new THREE.WebGLRenderer();
     this.renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight);
     this.bufferSize = rtWidth * rtHeight * 4;
     this.buffer = new Uint8Array(this.bufferSize);
@@ -122,15 +126,15 @@ export class FragmentCulling {
   }
 
   updateVisibility = (force?: boolean) => {
-    if (!this.needsUpdate && !force) return;
+    if (!this.alwaysForceUpdate && !this.needsUpdate && !force) return;
 
     const camera = this.components.camera.get();
     camera.updateMatrix();
 
-    const renderer = this.components.renderer.get();
-    renderer.setRenderTarget(this.renderTarget);
-    renderer.render(this.scene, camera);
-    renderer.readRenderTargetPixels(
+    this.renderer.setSize(this.rtWidth, this.rtHeight);
+    this.renderer.setRenderTarget(this.renderTarget);
+    this.renderer.render(this.scene, camera);
+    this.renderer.readRenderTargetPixels(
       this.renderTarget,
       0,
       0,
@@ -139,7 +143,11 @@ export class FragmentCulling {
       this.buffer
     );
 
-    renderer.setRenderTarget(null);
+    this.renderer.setRenderTarget(null);
+
+    if(this.renderDebugFrame){
+      this.renderer.render(this.scene, camera);
+    }
 
     this.worker.postMessage({
       buffer: this.buffer,

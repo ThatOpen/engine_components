@@ -1,12 +1,13 @@
 {
   "name": "openbim-components",
   "main": "dist/index.js",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "packageManager": "yarn@3.2.1",
   "scripts": {
     "test": "jest",
     "build": "yarn build-library && yarn build-examples && yarn build-docs",
     "build-library": "tsc",
+    "watch-library": "tsc -w",
     "build-examples": "rollup -c",
     "build-docs": "npx typedoc && yarn copy-cover",
     "copy-cover": "cpy ../cover.png ../docs",
