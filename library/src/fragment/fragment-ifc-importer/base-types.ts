@@ -7,6 +7,7 @@ export class FragmentGroup extends THREE.Group {
   allTypes: any;
   itemTypes: any;
   floorsProperties: any;
+  coordinationMatrix: any;
 }
 
 export interface GeometriesByMaterial {

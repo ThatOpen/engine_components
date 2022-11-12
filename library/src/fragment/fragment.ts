@@ -1,6 +1,6 @@
 import { FragmentLoader } from "bim-fragment/fragment-loader";
 import { Fragment } from "bim-fragment";
-import { Mesh } from "three";
+import * as THREE from "three";
 import { FragmentHighlighter } from "./fragment-highlighter";
 import { FragmentCulling } from "./fragment-culling";
 import { FragmentGrouper } from "./fragment-grouper";
@@ -17,7 +17,7 @@ export interface FragmentConfig {
 
 export class Fragments {
   fragments: { [guid: string]: Fragment } = {};
-  fragmentMeshes: Mesh[] = [];
+  fragmentMeshes: THREE.Mesh[] = [];
 
   ifcLoader = new IfcFragmentLoader();
   loader = new FragmentLoader();
@@ -39,8 +39,11 @@ export class Fragments {
     }
   }
 
-  async load(geometryURL: string, dataURL: string) {
+  async load(geometryURL: string, dataURL: string, matrix?: THREE.Matrix4) {
     const fragment = await this.loader.load(geometryURL, dataURL);
+    if (matrix) {
+      fragment.mesh.applyMatrix4(matrix);
+    }
     this.add(fragment);
     return fragment;
   }

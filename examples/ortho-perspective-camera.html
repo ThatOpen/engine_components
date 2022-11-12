@@ -8,56 +8,80 @@
   <link rel="stylesheet" href="resources/styles.css">
   <link rel="icon" type="image/x-icon" href="../favicon.ico">
   <title>Components | Hello world</title>
-  <style>
-    button {
-      position: absolute;
-      z-index: 1;
-      padding: 0.5rem;
-    }
-  </style>
 </head>
 <body>
+<div class="full-screen" id="container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.135.0/build/three.module.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.135.0/examples/jsm/libs/lil-gui.module.min.js",
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js"
+      }
+    }
+</script>
+<script type="module">
+	import * as THREE from 'three';
+	import Stats from 'stats.js/src/Stats.js';
+	import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
+	import * as OBC from './resources/openbim-components.js';
 
-  <button id="toggle-button">Toggle projection</button>
+	const container = document.getElementById('container');
+	const components = new OBC.Components();
 
-  <div class="full-screen" id="container"></div>
+	components.scene = new OBC.SimpleScene(components);
+	components.renderer = new OBC.SimpleRenderer(components, container);
+	const camera = new OBC.OrthoPerspectiveCamera(components);
+	components.camera = camera;
+	components.raycaster = new OBC.SimpleRaycaster(components);
 
-  <script type="module">
-		import * as OBC from './resources/openbim-components.js';
-		import * as THREE from './resources/three.module.js';
+	components.init();
 
-		const container = document.getElementById('container');
-		const components = new OBC.Components();
+	const scene = components.scene.get();
 
-		components.scene = new OBC.SimpleScene(components);
-		components.renderer = new OBC.SimpleRenderer(components, container);
-        const camera = new OBC.OrthoPerspectiveCamera(components);
-		components.camera = camera;
-		components.raycaster = new OBC.SimpleRaycaster(components);
+	const grid = new OBC.SimpleGrid(components);
+	components.tools.add(grid);
 
-		components.init();
+	const cube = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({color: "red"}));
+	cube.position.set(0, 1.5, 0);
+	scene.add(cube);
 
-		const scene = components.scene.get();
+	components.meshes.push(cube);
 
-		const cube = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({color: "red"}))
-		cube.position.set(0, 1.5, 0)
-		scene.add(cube)
+	const directionalLight = new THREE.DirectionalLight();
+	directionalLight.position.set(5, 10, 3)
+	directionalLight.intensity = 0.5;
+	scene.add(directionalLight)
 
-		components.meshes.push(cube);
+	const ambientLight = new THREE.AmbientLight();
+	ambientLight.intensity = 0.5;
+	scene.add(ambientLight);
 
-		const directionalLight = new THREE.DirectionalLight();
-		directionalLight.position.set(5, 10, 3)
-		directionalLight.intensity = 0.5;
-		scene.add(directionalLight)
+	// Set up stats
 
-		const ambientLight = new THREE.AmbientLight();
-		ambientLight.intensity = 0.5;
-		scene.add(ambientLight);
+	const stats = new Stats();
+	stats.showPanel(2);
+	document.body.append(stats.dom);
+	stats.dom.style.left = '0px';
+	const renderer = components.renderer;
+	renderer.beforeUpdate.on(() => stats.begin());
+	renderer.afterUpdate.on(() => stats.end());
 
-        const toggleButton = document.getElementById('toggle-button');
-        toggleButton.onclick = () => {
-          camera.toggleProjection();
-        }
-  </script>
+	// Set up dat.gui menu
+
+	const gui = new dat.GUI();
+
+	const actionsFolder = gui.addFolder('Actions');
+
+	const actions = {
+		'Toggle projection': () => {
+			camera.toggleProjection();
+		}
+	}
+
+	actionsFolder.add(actions, 'Toggle projection');
+
+</script>
 </body>
 </html>
+

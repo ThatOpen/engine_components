@@ -11,10 +11,18 @@
 </head>
 <body>
   <div class="full-screen" id="container"></div>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.135.0/build/three.module.js",
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js"
+      }
+    }
+</script>
   <script type="module">
-		import Stats from './resources/Stats.js';
+		import * as THREE from 'three';
+		import Stats from 'stats.js/src/Stats.js';
 		import * as OBC from './resources/openbim-components.js';
-		import * as THREE from './resources/three.module.js';
 
 		const container = document.getElementById('container');
 

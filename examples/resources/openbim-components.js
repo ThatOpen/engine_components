@@ -1,5 +1,5 @@
-import * as THREE$1 from './three.module.js';
-import { BufferAttribute as BufferAttribute$1, Vector3 as Vector3$1, Vector2 as Vector2$1, Plane, Line3, Triangle, Sphere, Box3, Matrix4, BackSide, DoubleSide, FrontSide, Mesh, Ray, Object3D, Group, BufferGeometry, Line, BoxGeometry, Raycaster, Quaternion as Quaternion$1, Euler, MeshBasicMaterial, LineBasicMaterial, CylinderGeometry, Float32BufferAttribute, OctahedronGeometry, SphereGeometry, TorusGeometry, PlaneGeometry, Interpolant, Loader, LoaderUtils, FileLoader, Color as Color$1, SpotLight, PointLight, DirectionalLight, MeshPhysicalMaterial, sRGBEncoding, TangentSpaceNormalMap, ImageBitmapLoader, TextureLoader, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material, MeshStandardMaterial, RGBFormat, PropertyBinding, SkinnedMesh, LineSegments, LineLoop, Points, PerspectiveCamera, MathUtils, OrthographicCamera, InterpolateLinear, AnimationClip, Bone, Skeleton, TriangleFanDrawMode, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, Texture, TriangleStripDrawMode, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, RGBAFormat, Scene, InstancedMesh, MeshLambertMaterial, EdgesGeometry, InstancedBufferGeometry, InstancedBufferAttribute, InstancedInterleavedBuffer, WireframeGeometry, UniformsLib, ShaderLib, UniformsUtils, ShaderMaterial, Vector4 as Vector4$1, WebGLRenderTarget, Clock, DepthTexture, UnsignedShortType, MeshDepthMaterial, RGBADepthPacking, NoBlending, MeshNormalMaterial, CustomBlending, DstColorFactor, ZeroFactor, AddEquation, DstAlphaFactor } from './three.module.js';
+import * as THREE$1 from 'https://unpkg.com/three@0.135.0/build/three.module.js';
+import { BufferAttribute as BufferAttribute$1, Vector3 as Vector3$1, Vector2 as Vector2$1, Plane, Line3, Triangle, Sphere, Box3, Matrix4, BackSide, DoubleSide, FrontSide, Mesh, Ray, Object3D, Group, BufferGeometry, Line, BoxGeometry, Raycaster, Quaternion as Quaternion$1, Euler, MeshBasicMaterial, LineBasicMaterial, CylinderGeometry, Float32BufferAttribute, OctahedronGeometry, SphereGeometry, TorusGeometry, PlaneGeometry, Interpolant, Loader, LoaderUtils, FileLoader, Color as Color$1, SpotLight, PointLight, DirectionalLight, MeshPhysicalMaterial, sRGBEncoding, TangentSpaceNormalMap, ImageBitmapLoader, TextureLoader, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material, MeshStandardMaterial, RGBFormat, PropertyBinding, SkinnedMesh, LineSegments, LineLoop, Points, PerspectiveCamera, MathUtils, OrthographicCamera, InterpolateLinear, AnimationClip, Bone, Skeleton, TriangleFanDrawMode, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, Texture, TriangleStripDrawMode, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, RGBAFormat, Scene, InstancedMesh, MeshLambertMaterial, EdgesGeometry, InstancedBufferGeometry, InstancedBufferAttribute, InstancedInterleavedBuffer, WireframeGeometry, UniformsLib, ShaderLib, UniformsUtils, ShaderMaterial, Vector4 as Vector4$1, WebGLRenderTarget, Clock, DepthTexture, UnsignedShortType, MeshDepthMaterial, RGBADepthPacking, NoBlending, MeshNormalMaterial, CustomBlending, DstColorFactor, ZeroFactor, AddEquation, DstAlphaFactor } from 'https://unpkg.com/three@0.135.0/build/three.module.js';
 
 // Split strategy constants
 const CENTER = 0;
@@ -67821,14 +67821,16 @@ class DataConverter {
         await this._spatialStructure.setupFloors(webIfc);
         this.processAllFragmentsData();
         this.processAllUniqueItems();
-        this.saveModelData();
+        this.saveModelData(webIfc);
         return this._model;
     }
-    saveModelData() {
+    saveModelData(webIfc) {
         this._model.levelRelationships = this._spatialStructure.itemsByFloor;
         this._model.floorsProperties = this._spatialStructure.floorProperties;
         this._model.allTypes = IfcCategoryMap;
         this._model.itemTypes = this._categories;
+        const coordArray = webIfc.GetCoordinationMatrix(0);
+        this._model.coordinationMatrix = new THREE$1.Matrix4().fromArray(coordArray);
     }
     processAllFragmentsData() {
         const fragmentsData = Object.values(this._items);
@@ -68063,8 +68065,11 @@ class Fragments {
             this.culler = new FragmentCulling(components, this);
         }
     }
-    async load(geometryURL, dataURL) {
+    async load(geometryURL, dataURL, matrix) {
         const fragment = await this.loader.load(geometryURL, dataURL);
+        if (matrix) {
+            fragment.mesh.applyMatrix4(matrix);
+        }
         this.add(fragment);
         return fragment;
     }

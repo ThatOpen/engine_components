@@ -11,15 +11,22 @@
 </head>
 <body>
 <div class="full-screen" id="container"></div>
-
-<div class="main-container">
-  <div id="category-container"></div>
-  <div id="level-container"></div>
-</div>
-
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.135.0/build/three.module.js",
+        "three/examples/jsm/lines/LineMaterial": "https://unpkg.com/three@0.135.0/examples/jsm/lines/LineMaterial.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.135.0/examples/jsm/libs/lil-gui.module.min.js",
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
+        "unzipit": "https://unpkg.com/unzipit@1.4.0/dist/unzipit.module.js",
+        "client-zip": "https://unpkg.com/client-zip@2.3.0/index.js"
+      }
+    }
+</script>
 <script type="module">
-	import Stats from './resources/Stats.js';
-	import * as THREE from './resources/three.module.js';
+	import Stats from 'stats.js/src/Stats.js';
+	import * as THREE from 'three';
+	import { downloadZip } from 'client-zip';
 	import * as OBC from './resources/openbim-components.js';
 
 	const container = document.getElementById('container');
@@ -52,16 +59,10 @@
 	ambientLight.intensity = 0.5;
 	scene.add(ambientLight);
 
-	// Add some components
+	// Add a grid in the origin
 	const grid = new OBC.SimpleGrid(components);
 	components.tools.add(grid);
 	renderer.postproduction.excludedItems.add(grid.get());
-
-	const clipper = new OBC.SimpleClipper(components, OBC.SimplePlane);
-	components.tools.add(clipper);
-
-	const dimensions = new OBC.SimpleDimensions(components);
-	components.tools.add(dimensions);
 
 	// Set up stats
 	const stats = new Stats();
@@ -79,11 +80,54 @@
 	async function convertIfcToFragments() {
 
     fragments.ifcLoader.settings.setWasmPath("./resources/");
-    const model = await fragments.ifcLoader.load("./resources/01.ifc");
+		fragments.ifcLoader.settings.optionalCategories.length = 0;
 
-    for(const fragment of model.fragments) {
-    	fragments.add(fragment);
-    }
+    fragments.ifcLoader.settings.webIfc = {
+    	COORDINATE_TO_ORIGIN: false,
+      USE_FAST_BOOLS: false
+    };
+
+		const model = await fragments.ifcLoader.load("./resources/01.ifc");
+		addFragments(model);
+		// downloadFragment(model);
+	}
+
+	function addFragments(model) {
+		for(const fragment of model.fragments) {
+			fragments.add(fragment);
+		}
+  }
+
+	async function downloadFragment(model) {
+
+		const files = [];
+		for (const frag of model.fragments) {
+			const file = await frag.export();
+			files.push(file.geometry, file.data);
+		}
+
+		// const serializer = this.ifcLoader.ifcManager.properties.serializer;
+		// const propertyBlob = await serializer.serializeAllProperties(model.modelID);
+		// const propertyFile = new File(propertyBlob, "properties.json");
+
+		files.push(new File([JSON.stringify(model.levelRelationships)], 'levels-relationship.json'));
+		files.push(new File([JSON.stringify(model.itemTypes)], 'model-types.json'));
+		files.push(new File([JSON.stringify(model.allTypes)], 'all-types.json'));
+		files.push(new File([JSON.stringify(model.floorsProperties)], 'levels-properties.json'));
+		files.push(new File([JSON.stringify(model.coordinationMatrix)], 'coordination-matrix.json'));
+
+		const blob = await downloadZip(files).blob();
+		const link = document.createElement("a");
+
+		link.href = URL.createObjectURL(blob);
+		link.download = "test.zip";
+		link.click();
+
+		// link.href = URL.createObjectURL(propertyFile);
+		// link.download = "properties.json";
+		// link.click();
+
+		link.remove();
 	}
 
 </script>

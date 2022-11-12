@@ -60,15 +60,17 @@ export class DataConverter {
     await this._spatialStructure.setupFloors(webIfc);
     this.processAllFragmentsData();
     this.processAllUniqueItems();
-    this.saveModelData();
+    this.saveModelData(webIfc);
     return this._model;
   }
 
-  private saveModelData() {
+  private saveModelData(webIfc: WEBIFC.IfcAPI) {
     this._model.levelRelationships = this._spatialStructure.itemsByFloor;
     this._model.floorsProperties = this._spatialStructure.floorProperties;
     this._model.allTypes = IfcCategoryMap;
     this._model.itemTypes = this._categories;
+    const coordArray = webIfc.GetCoordinationMatrix(0);
+    this._model.coordinationMatrix = new THREE.Matrix4().fromArray(coordArray);
   }
 
   private processAllFragmentsData() {
