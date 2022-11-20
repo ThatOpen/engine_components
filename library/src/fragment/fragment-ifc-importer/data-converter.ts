@@ -2,6 +2,11 @@ import * as THREE from "three";
 import * as WEBIFC from "web-ifc";
 import { GeometryUtils } from "bim-fragment/geometry-utils";
 import { Fragment } from "bim-fragment/fragment";
+import { BufferGeometry } from "three";
+import { IfcCategories, IfcItemsCategories, IfcCategoryMap } from "../../ifc";
+import { SpatialStructure } from "./spatial-structure";
+import { Settings } from "./settings";
+import { Units } from "./units";
 import {
   FragmentData,
   FragmentGroup,
@@ -9,11 +14,6 @@ import {
   IfcToFragmentUniqueItems,
   MaterialList,
 } from "./base-types";
-import { IfcCategories, IfcItemsCategories } from "../../ifc/ifc-categories";
-import { SpatialStructure } from "./spatial-structure";
-import { Settings } from "./settings";
-import { IfcCategoryMap } from "../../ifc/ifc-category-map";
-import { Units } from "./units";
 
 export class DataConverter {
   private _categories: IfcItemsCategories = {};
@@ -21,6 +21,8 @@ export class DataConverter {
   private _ifcCategories = new IfcCategories();
   private _uniqueItems: IfcToFragmentUniqueItems = {};
   private _units = new Units();
+  private _boundingBoxes: { [id: string]: number[] } = {};
+  private _minMax: { [id: string]: [THREE.Vector3, THREE.Vector3] } = {};
 
   private readonly _items: IfcToFragmentItems;
   private readonly _materials: MaterialList;
@@ -40,6 +42,8 @@ export class DataConverter {
   reset() {
     this._model = new FragmentGroup();
     this._uniqueItems = {};
+    this._boundingBoxes = {};
+    this._minMax = {};
   }
 
   cleanUp() {
@@ -65,6 +69,7 @@ export class DataConverter {
   }
 
   private saveModelData(webIfc: WEBIFC.IfcAPI) {
+    this._model.boundingBoxes = this._boundingBoxes;
     this._model.levelRelationships = this._spatialStructure.itemsByFloor;
     this._model.floorsProperties = this._spatialStructure.floorProperties;
     this._model.allTypes = IfcCategoryMap;
@@ -97,7 +102,7 @@ export class DataConverter {
       const instance = data.instances[0];
       const category = this._categories[instance.id];
       const level = this._spatialStructure.itemsByFloor[instance.id];
-      this.initializeUniqueItem(category, level, matID);
+      this.initializeItem(category, level, matID);
       this.applyTransformToMergedGeometries(data, category, level, matID);
     }
   }
@@ -118,7 +123,7 @@ export class DataConverter {
     }
   }
 
-  private initializeUniqueItem(category: number, level: number, matID: string) {
+  private initializeItem(category: number, level: number, matID: string) {
     if (!this._uniqueItems[category]) {
       this._uniqueItems[category] = {};
     }
@@ -133,8 +138,61 @@ export class DataConverter {
   private processInstancedItems(data: FragmentData) {
     const fragment = this.createInstancedFragment(data);
     this.setFragmentInstances(data, fragment);
+    fragment.mesh.updateMatrix();
     this._model.fragments.push(fragment);
     this._model.add(fragment.mesh);
+
+    // let isTransparent = false;
+    // const materialIDs = Object.keys(data.geometriesByMaterial);
+    // const mats = materialIDs.map((id) => this._materials[id]);
+    // for (const mat of mats) {
+    //   if (mat.transparent) {
+    //     isTransparent = true;
+    //   }
+    // }
+    const baseHelper = this.getTransformHelper([fragment.mesh.geometry]);
+
+    for (let i = 0; i < fragment.mesh.count; i++) {
+      const instanceTransform = new THREE.Matrix4();
+      const instanceHelper = new THREE.Object3D();
+      fragment.getInstance(i, instanceTransform);
+      instanceHelper.applyMatrix4(baseHelper.matrix);
+      instanceHelper.applyMatrix4(instanceTransform);
+      instanceHelper.updateMatrix();
+      const id = fragment.getItemID(i, 0);
+      this._boundingBoxes[id] = instanceHelper.matrix.elements;
+    }
+  }
+
+  private getTransformHelper(id: string, geometries: BufferGeometry[]) {
+    const baseHelper = new THREE.Object3D();
+
+    const points: THREE.Vector3[] = [];
+    for (const geom of geometries) {
+      geom.computeBoundingBox();
+      if (geom.boundingBox) {
+        points.push(geom.boundingBox.min);
+        points.push(geom.boundingBox.max);
+      }
+    }
+
+    const bbox = new THREE.Box3();
+    bbox.setFromPoints(points);
+
+    this._minMax[id] = [bbox.min, bbox.max];
+
+    const width = bbox.max.x - bbox.min.x;
+    const height = bbox.max.y - bbox.min.y;
+    const depth = bbox.max.z - bbox.min.z;
+
+    const positionX = bbox.min.x + width / 2;
+    const positionY = bbox.min.y + height / 2;
+    const positionZ = bbox.min.z + depth / 2;
+
+    baseHelper.scale.set(width, height, depth);
+    baseHelper.position.set(positionX, positionY, positionZ);
+    baseHelper.updateMatrix();
+    return baseHelper;
   }
 
   private setFragmentInstances(data: FragmentData, fragment: Fragment) {
@@ -179,6 +237,27 @@ export class DataConverter {
     const geometries = Object.values(this._uniqueItems[category][level]);
     const { buffer, ids } = this.processIDsAndBuffer(geometries);
     const mats = this.getUniqueItemMaterial(category, level);
+
+    console.log(geometries, ids.size);
+
+    const items: { [id: number]: BufferGeometry[] } = {};
+
+    for (const geometryGroup of geometries) {
+      for (const geom of geometryGroup) {
+        const id = geom.userData.id;
+        if (!items[id]) {
+          items[id] = [];
+        }
+        items[id].push(geom);
+      }
+    }
+
+    for (const id in items) {
+      const geoms = items[id];
+      const helper = this.getTransformHelper(geoms);
+      this._boundingBoxes[id] = helper.matrix.elements;
+    }
+
     const merged = GeometryUtils.merge(geometries);
     const mergedFragment = this.newMergedFragment(merged, buffer, mats, ids);
     this._model.fragments.push(mergedFragment);

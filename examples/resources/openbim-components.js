@@ -66709,13 +66709,6 @@ class Geometry {
     }
 }
 
-class FragmentGroup extends THREE$1.Group {
-    constructor() {
-        super(...arguments);
-        this.fragments = [];
-    }
-}
-
 const IfcElements = {
     103090709: "IFCPROJECT",
     4097777520: "IFCSITE",
@@ -66873,52 +66866,6 @@ class IfcCategories {
     getCategories() {
         const elements = Object.keys(IfcElements).map((e) => parseInt(e, 10));
         return elements;
-    }
-}
-
-class SpatialStructure {
-    constructor() {
-        this.floorProperties = [];
-        this.itemsByFloor = {};
-    }
-    async setupFloors(webIfc) {
-        this.reset();
-        const floors = await this.getFloors(webIfc);
-        for (const floor of floors) {
-            await this.getFloorProperties(webIfc, floor);
-            this.saveFloorRelations(floor);
-        }
-    }
-    cleanUp() {
-        this.floorProperties = [];
-        this.itemsByFloor = {};
-    }
-    reset() {
-        this.floorProperties = [];
-        this.itemsByFloor = {};
-    }
-    async getFloorProperties(webIfc, floor) {
-        const id = floor.expressID;
-        const props = await webIfc.properties.getItemProperties(0, id, false);
-        this.floorProperties.push(props);
-    }
-    saveFloorRelations(floor) {
-        for (const item of floor.children) {
-            this.itemsByFloor[item.expressID] = floor.expressID;
-            if (item.children.length) {
-                for (const child of item.children) {
-                    this.itemsByFloor[child.expressID] = floor.expressID;
-                }
-            }
-        }
-    }
-    async getFloors(webIfc) {
-        const project = await webIfc.properties.getSpatialStructure(0);
-        // TODO: This is fixed from web-ifc 0.0.37
-        // TODO: This fails with IFCs with uncommon spatial structure
-        // @ts-ignore
-        const floors = project.children[0].children[0].children;
-        return floors;
     }
 }
 
@@ -67741,6 +67688,52 @@ const IfcCategoryMap = {
     1033361043: "IFCZONE",
 };
 
+class SpatialStructure {
+    constructor() {
+        this.floorProperties = [];
+        this.itemsByFloor = {};
+    }
+    async setupFloors(webIfc) {
+        this.reset();
+        const floors = await this.getFloors(webIfc);
+        for (const floor of floors) {
+            await this.getFloorProperties(webIfc, floor);
+            this.saveFloorRelations(floor);
+        }
+    }
+    cleanUp() {
+        this.floorProperties = [];
+        this.itemsByFloor = {};
+    }
+    reset() {
+        this.floorProperties = [];
+        this.itemsByFloor = {};
+    }
+    async getFloorProperties(webIfc, floor) {
+        const id = floor.expressID;
+        const props = await webIfc.properties.getItemProperties(0, id, false);
+        this.floorProperties.push(props);
+    }
+    saveFloorRelations(floor) {
+        for (const item of floor.children) {
+            this.itemsByFloor[item.expressID] = floor.expressID;
+            if (item.children.length) {
+                for (const child of item.children) {
+                    this.itemsByFloor[child.expressID] = floor.expressID;
+                }
+            }
+        }
+    }
+    async getFloors(webIfc) {
+        const project = await webIfc.properties.getSpatialStructure(0);
+        // TODO: This is fixed from web-ifc 0.0.37
+        // TODO: This fails with IFCs with uncommon spatial structure
+        // @ts-ignore
+        const floors = project.children[0].children[0].children;
+        return floors;
+    }
+}
+
 class Units {
     constructor() {
         this.factor = 1;
@@ -67789,6 +67782,13 @@ class Units {
     }
 }
 
+class FragmentGroup extends THREE$1.Group {
+    constructor() {
+        super(...arguments);
+        this.fragments = [];
+    }
+}
+
 class DataConverter {
     constructor(items, materials, settings) {
         this._categories = {};
@@ -67796,6 +67796,7 @@ class DataConverter {
         this._ifcCategories = new IfcCategories();
         this._uniqueItems = {};
         this._units = new Units();
+        this._boundingBoxes = {};
         this._spatialStructure = new SpatialStructure();
         this._items = items;
         this._materials = materials;
@@ -67804,6 +67805,7 @@ class DataConverter {
     reset() {
         this._model = new FragmentGroup();
         this._uniqueItems = {};
+        this._boundingBoxes = {};
     }
     cleanUp() {
         this._spatialStructure.cleanUp();
@@ -67825,6 +67827,7 @@ class DataConverter {
         return this._model;
     }
     saveModelData(webIfc) {
+        this._model.boundingBoxes = this._boundingBoxes;
         this._model.levelRelationships = this._spatialStructure.itemsByFloor;
         this._model.floorsProperties = this._spatialStructure.floorProperties;
         this._model.allTypes = IfcCategoryMap;
@@ -67855,7 +67858,7 @@ class DataConverter {
             const instance = data.instances[0];
             const category = this._categories[instance.id];
             const level = this._spatialStructure.itemsByFloor[instance.id];
-            this.initializeUniqueItem(category, level, matID);
+            this.initializeItem(category, level, matID);
             this.applyTransformToMergedGeometries(data, category, level, matID);
         }
     }
@@ -67869,7 +67872,7 @@ class DataConverter {
             geometry.applyMatrix4(instance.matrix);
         }
     }
-    initializeUniqueItem(category, level, matID) {
+    initializeItem(category, level, matID) {
         if (!this._uniqueItems[category]) {
             this._uniqueItems[category] = {};
         }
@@ -67883,8 +67886,51 @@ class DataConverter {
     processInstancedItems(data) {
         const fragment = this.createInstancedFragment(data);
         this.setFragmentInstances(data, fragment);
+        fragment.mesh.updateMatrix();
         this._model.fragments.push(fragment);
         this._model.add(fragment.mesh);
+        // let isTransparent = false;
+        // const materialIDs = Object.keys(data.geometriesByMaterial);
+        // const mats = materialIDs.map((id) => this._materials[id]);
+        // for (const mat of mats) {
+        //   if (mat.transparent) {
+        //     isTransparent = true;
+        //   }
+        // }
+        const baseHelper = this.getTransformHelper([fragment.mesh.geometry]);
+        for (let i = 0; i < fragment.mesh.count; i++) {
+            const instanceTransform = new THREE$1.Matrix4();
+            const instanceHelper = new THREE$1.Object3D();
+            fragment.getInstance(i, instanceTransform);
+            instanceHelper.applyMatrix4(baseHelper.matrix);
+            instanceHelper.applyMatrix4(instanceTransform);
+            instanceHelper.updateMatrix();
+            const id = fragment.getItemID(i, 0);
+            this._boundingBoxes[id] = instanceHelper.matrix.elements;
+        }
+    }
+    getTransformHelper(geometry) {
+        const baseHelper = new THREE$1.Object3D();
+        const points = [];
+        for (const geom of geometry) {
+            geom.computeBoundingBox();
+            if (geom.boundingBox) {
+                points.push(geom.boundingBox.min);
+                points.push(geom.boundingBox.max);
+            }
+        }
+        const bbox = new THREE$1.Box3();
+        bbox.setFromPoints(points);
+        const width = bbox.max.x - bbox.min.x;
+        const height = bbox.max.y - bbox.min.y;
+        const depth = bbox.max.z - bbox.min.z;
+        const positionX = bbox.min.x + width / 2;
+        const positionY = bbox.min.y + height / 2;
+        const positionZ = bbox.min.z + depth / 2;
+        baseHelper.scale.set(width, height, depth);
+        baseHelper.position.set(positionX, positionY, positionZ);
+        baseHelper.updateMatrix();
+        return baseHelper;
     }
     setFragmentInstances(data, fragment) {
         for (let i = 0; i < data.instances.length; i++) {
@@ -67922,6 +67968,22 @@ class DataConverter {
         const geometries = Object.values(this._uniqueItems[category][level]);
         const { buffer, ids } = this.processIDsAndBuffer(geometries);
         const mats = this.getUniqueItemMaterial(category, level);
+        console.log(geometries, ids.size);
+        const items = {};
+        for (const geometryGroup of geometries) {
+            for (const geom of geometryGroup) {
+                const id = geom.userData.id;
+                if (!items[id]) {
+                    items[id] = [];
+                }
+                items[id].push(geom);
+            }
+        }
+        for (const id in items) {
+            const geoms = items[id];
+            const helper = this.getTransformHelper(geoms);
+            this._boundingBoxes[id] = helper.matrix.elements;
+        }
         const merged = GeometryUtils.merge(geometries);
         const mergedFragment = this.newMergedFragment(merged, buffer, mats, ids);
         this._model.fragments.push(mergedFragment);

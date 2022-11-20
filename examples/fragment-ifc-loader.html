@@ -90,6 +90,18 @@
 		const model = await fragments.ifcLoader.load("./resources/01.ifc");
 		addFragments(model);
 		// downloadFragment(model);
+		console.log(model.boundingBoxes);
+
+		const boxes = Object.values(model.boundingBoxes);
+		const geometry = new THREE.BoxGeometry();
+		const material = new THREE.MeshLambertMaterial({color: "red", transparent: true, opacity: 0.5, depthTest: false});
+		const mesh = new THREE.InstancedMesh(geometry, material, boxes.length);
+		const tempMatrix = new THREE.Matrix4();
+		for(let i = 0; i < boxes.length; i++) {
+			tempMatrix.fromArray(boxes[i]);
+			mesh.setMatrixAt(i, tempMatrix);
+    }
+		scene.add(mesh);
 	}
 
 	function addFragments(model) {

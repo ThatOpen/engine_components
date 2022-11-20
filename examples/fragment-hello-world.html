@@ -114,7 +114,7 @@
 	loadFragments();
 
 	async function loadFragments() {
-		const { entries } = await unzip('./resources/medium.zip');
+		const { entries } = await unzip('./resources/small.zip');
 
 		const fileNames = Object.keys(entries);
 
@@ -145,17 +145,11 @@
 
 			const fragment = await fragments.load(geometryURL, dataURL);
 
-			// TODO: string conversion temporary until we update the fragment files (ids are now strings)
-			fragment.items = fragment.items.map(item => item.toString());
-
 			// Group items for visibility
 
 			const groups = { category: {}, floor: {} };
 
-			// TODO: string conversion temporary until we update the fragment files (ids are now strings)
-			const ids = data.ids.map(id => id.toString());
-
-			for (const id of ids) {
+			for (const id of data.ids) {
 				const categoryID = modelTypes[id];
 				const category = allTypes[categoryID];
 				if (!groups.category[category]) {
