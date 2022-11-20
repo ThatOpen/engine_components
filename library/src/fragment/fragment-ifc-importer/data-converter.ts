@@ -22,7 +22,8 @@ export class DataConverter {
   private _uniqueItems: IfcToFragmentUniqueItems = {};
   private _units = new Units();
   private _boundingBoxes: { [id: string]: number[] } = {};
-  private _minMax: { [id: string]: [THREE.Vector3, THREE.Vector3] } = {};
+  private _bounds: { [id: string]: THREE.Box3[] } = {};
+  // private _voxels: [number, number, number, string[]][] = [];
 
   private readonly _items: IfcToFragmentItems;
   private readonly _materials: MaterialList;
@@ -43,7 +44,6 @@ export class DataConverter {
     this._model = new FragmentGroup();
     this._uniqueItems = {};
     this._boundingBoxes = {};
-    this._minMax = {};
   }
 
   cleanUp() {
@@ -65,6 +65,27 @@ export class DataConverter {
     this.processAllFragmentsData();
     this.processAllUniqueItems();
     this.saveModelData(webIfc);
+
+    console.log(this._bounds);
+    const points: THREE.Vector3[] = [];
+    for (const guid in this._bounds) {
+      const boundGroup = this._bounds[guid];
+      for (const bound of boundGroup) {
+        points.push(bound.min);
+        points.push(bound.max);
+      }
+    }
+
+    const globalBoundingBox = new THREE.Box3();
+    globalBoundingBox.setFromPoints(points);
+    const size = this._settings.voxelSize;
+
+    const xCount = (globalBoundingBox.max.x - globalBoundingBox.min.x) / size;
+    const yCount = (globalBoundingBox.max.y - globalBoundingBox.min.y) / size;
+    const zCount = (globalBoundingBox.max.z - globalBoundingBox.min.z) / size;
+
+    console.log(xCount, yCount, zCount);
+
     return this._model;
   }
 
@@ -161,10 +182,20 @@ export class DataConverter {
       instanceHelper.updateMatrix();
       const id = fragment.getItemID(i, 0);
       this._boundingBoxes[id] = instanceHelper.matrix.elements;
+
+      const guid = fragment.mesh.uuid;
+      const max = new THREE.Vector3(0.5, 0.5, 0.5);
+      const min = new THREE.Vector3(-0.5, -0.5, -0.5);
+      max.applyMatrix4(instanceHelper.matrix);
+      min.applyMatrix4(instanceHelper.matrix);
+      if (!this._bounds[guid]) {
+        this._bounds[guid] = [];
+      }
+      this._bounds[guid].push(new THREE.Box3(min, max));
     }
   }
 
-  private getTransformHelper(id: string, geometries: BufferGeometry[]) {
+  private getTransformHelper(geometries: BufferGeometry[]) {
     const baseHelper = new THREE.Object3D();
 
     const points: THREE.Vector3[] = [];
@@ -178,8 +209,6 @@ export class DataConverter {
 
     const bbox = new THREE.Box3();
     bbox.setFromPoints(points);
-
-    this._minMax[id] = [bbox.min, bbox.max];
 
     const width = bbox.max.x - bbox.min.x;
     const height = bbox.max.y - bbox.min.y;

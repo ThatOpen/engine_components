@@ -8,6 +8,8 @@ export class Settings {
 
   wasmPath = "";
 
+  voxelSize = 1;
+
   webIfc: WEBIFC.LoaderSettings = {
     COORDINATE_TO_ORIGIN: true,
     USE_FAST_BOOLS: true,
