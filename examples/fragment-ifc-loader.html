@@ -90,6 +90,7 @@
 		const model = await fragments.ifcLoader.load("./resources/01.ifc");
 		addFragments(model);
 		// downloadFragment(model);
+
 		console.log(model.boundingBoxes);
 
 		const boxes = Object.values(model.boundingBoxes);

@@ -67835,12 +67835,12 @@ class DataConverter {
                 points.push(bound.max);
             }
         }
-        const globalBoundingBox = new THREE$1.Box3();
-        globalBoundingBox.setFromPoints(points);
+        const globalBBox = new THREE$1.Box3();
+        globalBBox.setFromPoints(points);
         const size = this._settings.voxelSize;
-        const xCount = (globalBoundingBox.max.x - globalBoundingBox.min.x) / size;
-        const yCount = (globalBoundingBox.max.y - globalBoundingBox.min.y) / size;
-        const zCount = (globalBoundingBox.max.z - globalBoundingBox.min.z) / size;
+        const xCount = (globalBBox.max.x - globalBBox.min.x) / size;
+        const yCount = (globalBBox.max.y - globalBBox.min.y) / size;
+        const zCount = (globalBBox.max.z - globalBBox.min.z) / size;
         console.log(xCount, yCount, zCount);
         return this._model;
     }
@@ -67907,14 +67907,17 @@ class DataConverter {
         fragment.mesh.updateMatrix();
         this._model.fragments.push(fragment);
         this._model.add(fragment.mesh);
-        // let isTransparent = false;
-        // const materialIDs = Object.keys(data.geometriesByMaterial);
-        // const mats = materialIDs.map((id) => this._materials[id]);
-        // for (const mat of mats) {
-        //   if (mat.transparent) {
-        //     isTransparent = true;
-        //   }
-        // }
+        let isTransparent = false;
+        const materialIDs = Object.keys(data.geometriesByMaterial);
+        const mats = materialIDs.map((id) => this._materials[id]);
+        for (const mat of mats) {
+            if (mat.transparent) {
+                isTransparent = true;
+            }
+        }
+        if (isTransparent) {
+            return;
+        }
         const baseHelper = this.getTransformHelper([fragment.mesh.geometry]);
         for (let i = 0; i < fragment.mesh.count; i++) {
             const instanceTransform = new THREE$1.Matrix4();
