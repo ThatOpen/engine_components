@@ -233,6 +233,7 @@
 		const meshes = slabs.map(slab => slab.mesh);
 		const shadow = shadows.renderShadow(meshes, 'example');
 		renderer.postproduction.excludedItems.add(shadow);
+		components.scene.get().add(shadow);
 	}
 
   fragments.highlighter.add('example', new THREE.MeshBasicMaterial({color: 'red'}));

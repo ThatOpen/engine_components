@@ -115,6 +115,13 @@ export class ShadowDropper {
     // force the depthMaterial to everything
     scene.overrideMaterial = this.depthMaterial;
 
+    // Make meshes visible if they were invisible
+    const previousVisibleAttributes: boolean[] = [];
+    for (const mesh of meshes) {
+      previousVisibleAttributes.push(mesh.visible);
+      mesh.visible = true;
+    }
+
     // render to the render target to get the depths
     const renderer = this.components.renderer.get();
     renderer.setRenderTarget(shadow.rt);
@@ -131,6 +138,11 @@ export class ShadowDropper {
     // reset and render the normal scene
     renderer.setRenderTarget(null);
     scene.background = initialBackground;
+
+    // reset visibility
+    for (let i = 0; i < meshes.length; i++) {
+      meshes[i].visible = previousVisibleAttributes[i];
+    }
 
     for (let i = children.length - 1; i >= 0; i--) {
       scene.add(children[i]);
