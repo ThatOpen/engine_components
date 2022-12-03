@@ -21117,6 +21117,7 @@ class FragmentHighlighter {
         this.active = false;
         this.highlights = {};
         this.tempMatrix = new Matrix4();
+        this.selection = {};
     }
     add(name, material) {
         if (this.highlights[name]) {
@@ -21131,19 +21132,21 @@ class FragmentHighlighter {
             this.updateFragmentHighlight(fragment);
         }
     }
+    // TODO: Fix multi selection
     highlight(name, removePrevious = true) {
-        var _a, _b;
+        var _a;
         if (!this.active)
             return null;
         const meshes = this.fragments.fragmentMeshes;
         const result = this.components.raycaster.castRay(meshes);
+        let selection = this.selection[name];
         if (!result) {
-            (_a = this.selection) === null || _a === void 0 ? void 0 : _a.mesh.removeFromParent();
+            selection === null || selection === void 0 ? void 0 : selection.mesh.removeFromParent();
             return null;
         }
         const mesh = result.object;
         const geometry = mesh.geometry;
-        const index = (_b = result.face) === null || _b === void 0 ? void 0 : _b.a;
+        const index = (_a = result.face) === null || _a === void 0 ? void 0 : _a.a;
         const instanceID = result.instanceId;
         if (!geometry || !index || instanceID === undefined)
             return null;
@@ -21151,17 +21154,19 @@ class FragmentHighlighter {
         const fragment = this.fragments.fragments[result.object.uuid];
         if (!fragment || !fragment.fragments[name])
             return null;
-        if (this.selection)
-            this.selection.mesh.removeFromParent();
-        this.selection = fragment.fragments[name];
-        scene.add(this.selection.mesh);
+        if (selection) {
+            selection.mesh.removeFromParent();
+        }
+        this.selection[name] = fragment.fragments[name];
+        selection = this.selection[name];
+        scene.add(selection.mesh);
         fragment.getInstance(instanceID, this.tempMatrix);
-        this.selection.setInstance(0, { transform: this.tempMatrix });
-        this.selection.mesh.instanceMatrix.needsUpdate = true;
+        selection.setInstance(0, { transform: this.tempMatrix });
+        selection.mesh.instanceMatrix.needsUpdate = true;
         // Select block
-        const blockID = this.selection.getVertexBlockID(geometry, index);
-        if (blockID !== null) {
-            this.selection.blocks.add([blockID], removePrevious);
+        const blockID = selection.getVertexBlockID(geometry, index);
+        if (blockID !== null && selection.blocks.count > 1) {
+            selection.blocks.add([blockID], removePrevious);
         }
         const id = fragment.getItemID(instanceID, blockID);
         return { id, fragment };
@@ -21171,13 +21176,15 @@ class FragmentHighlighter {
      */
     clear() {
         var _a;
-        (_a = this.selection) === null || _a === void 0 ? void 0 : _a.mesh.removeFromParent();
+        for (const name in this.selection) {
+            (_a = this.selection[name]) === null || _a === void 0 ? void 0 : _a.mesh.removeFromParent();
+        }
     }
     updateFragmentHighlight(fragment) {
         for (const name in this.highlights) {
             if (!fragment.fragments[name]) {
                 const material = this.highlights[name];
-                fragment.addFragment(name, [material]);
+                fragment.addFragment(name, material);
                 fragment.fragments[name].mesh.renderOrder = 1;
             }
         }
@@ -21197,6 +21204,7 @@ class FragmentCulling {
         this.needsUpdate = false;
         this.alwaysForceUpdate = false;
         this.renderDebugFrame = false;
+        this.viewUpdated = new Event();
         this.meshes = new Map();
         this.visibleFragments = [];
         this.previouslyVisibleMeshes = new Set();
@@ -21224,6 +21232,7 @@ class FragmentCulling {
                 buffer: this.buffer,
             });
             this.needsUpdate = false;
+            this.viewUpdated.trigger();
         };
         this.handleWorkerMessage = (event) => {
             const colors = event.data.colors;
@@ -21249,6 +21258,8 @@ class FragmentCulling {
             }
         };
         this.renderer = new THREE$1.WebGLRenderer();
+        const planes = this.components.renderer.get().clippingPlanes;
+        this.renderer.clippingPlanes = planes;
         this.renderTarget = new THREE$1.WebGLRenderTarget(rtWidth, rtHeight);
         this.bufferSize = rtWidth * rtHeight * 4;
         this.buffer = new Uint8Array(this.bufferSize);
@@ -21270,8 +21281,6 @@ class FragmentCulling {
         const blob = new Blob([code], { type: "application/javascript" });
         this.worker = new Worker(URL.createObjectURL(blob));
         this.worker.addEventListener("message", this.handleWorkerMessage);
-        const dom = this.components.renderer.get().domElement;
-        dom.addEventListener("wheel", () => (this.needsUpdate = true));
         if (autoUpdate)
             window.setInterval(this.updateVisibility, updateInterval);
     }
@@ -21319,8 +21328,12 @@ class FragmentCulling {
     getMaterial(r, g, b) {
         const code = `rgb(${r}, ${g}, ${b})`;
         let material = this.materialCache.get(code);
+        const clippingPlanes = this.components.renderer.get().clippingPlanes;
         if (!material) {
-            material = new THREE$1.MeshBasicMaterial({ color: new THREE$1.Color(code) });
+            material = new THREE$1.MeshBasicMaterial({
+                color: new THREE$1.Color(code),
+                clippingPlanes,
+            });
             this.materialCache.set(code, material);
         }
         return material;
@@ -66513,6 +66526,7 @@ class Settings {
         this.optionalCategories = [IFCSPACE];
         this.wasmPath = "";
         this.voxelSize = 1;
+        this.instanceLimit = 5;
         this.webIfc = {
             COORDINATE_TO_ORIGIN: true,
             USE_FAST_BOOLS: true,
@@ -67862,6 +67876,8 @@ class DataConverter {
     processFragmentData(data) {
         const id = data.instances[0].id;
         const categoryID = this._categories[id];
+        // TODO: use settings.instanceLimit and implement merging many instances
+        //  (e.g. for a model with thousands of objects that repeat 2 times)
         const isUnique = data.instances.length === 1;
         const isInstanced = this._settings.instancedCategories.has(categoryID);
         if (!isUnique || isInstanced) {
@@ -70041,6 +70057,8 @@ class EdgesStyles extends Component {
 class EdgesClipper extends SimpleClipper {
     constructor(components, PlaneType) {
         super(components, PlaneType);
+        /** {@link Component.name} */
+        this.name = "EdgesClipper";
         this.styles = new EdgesStyles(components);
     }
     /**
@@ -73135,11 +73153,12 @@ const VerticalBlurShader = {
 
 };
 
-class ShadowDropper {
+class ShadowDropper extends Component {
     constructor(components) {
+        super();
         this.components = components;
-        this.disposer = new Disposer();
-        this.shadows = {};
+        this.name = "ShadowDropper";
+        this.enabled = true;
         // Controls how far away the shadow is computed
         this.cameraHeight = 10;
         this.darkness = 1.2;
@@ -73149,9 +73168,14 @@ class ShadowDropper {
         this.planeColor = 0xffffff;
         this.shadowOffset = 0;
         this.shadowExtraScaleFactor = 1.5;
+        this.shadows = {};
+        this.disposer = new Disposer();
         this.tempMaterial = new THREE$1.MeshBasicMaterial({ visible: false });
         this.depthMaterial = new THREE$1.MeshDepthMaterial();
         this.initializeDepthMaterial();
+    }
+    get() {
+        return this.shadows;
     }
     dispose() {
         const shadowIDs = Object.keys(this.shadows);
@@ -73364,19 +73388,24 @@ class ShadowDropper {
 }
 
 // TODO: Clean up and document this
-class PlanNavigator {
+class PlanNavigator extends Component {
     constructor(clipper, camera) {
+        super();
         this.clipper = clipper;
         this.camera = camera;
-        this.plans = {};
-        this.active = false;
+        this.name = "PlanNavigator";
+        this.enabled = false;
         this.defaultSectionOffset = 1.5;
         this.defaultCameraOffset = 30;
         this.storeys = [];
+        this.plans = {};
         this.floorPlanViewCached = false;
         this.previousCamera = new THREE$1.Vector3();
         this.previousTarget = new THREE$1.Vector3();
         this.previousProjection = "Perspective";
+    }
+    get() {
+        return this.plans;
     }
     dispose() {
         this.storeys = null;
@@ -73398,15 +73427,15 @@ class PlanNavigator {
         this.hidePreviousClippingPlane();
         this.updateCurrentPlan(id);
         this.activateCurrentPlan();
-        if (!this.active) {
+        if (!this.enabled) {
             await this.moveCameraTo2DPlanPosition(animate);
-            this.active = true;
+            this.enabled = true;
         }
     }
     async exitPlanView(animate = false) {
-        if (!this.active)
+        if (!this.enabled)
             return;
-        this.active = false;
+        this.enabled = false;
         this.cacheFloorplanView();
         this.camera.setNavigationMode("Orbit");
         await this.camera.setProjection(this.previousProjection);
@@ -73417,7 +73446,7 @@ class PlanNavigator {
         await this.camera.controls.setLookAt(this.previousCamera.x, this.previousCamera.y, this.previousCamera.z, this.previousTarget.x, this.previousTarget.y, this.previousTarget.z, animate);
     }
     storeCameraPosition() {
-        if (this.active) {
+        if (this.enabled) {
             this.cacheFloorplanView();
         }
         else {
