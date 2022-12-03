@@ -10,6 +10,8 @@ export class Settings {
 
   voxelSize = 1;
 
+  instanceLimit = 5;
+
   webIfc: WEBIFC.LoaderSettings = {
     COORDINATE_TO_ORIGIN: true,
     USE_FAST_BOOLS: true,

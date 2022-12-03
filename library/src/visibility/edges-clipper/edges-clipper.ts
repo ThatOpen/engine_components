@@ -12,6 +12,9 @@ export class EdgesClipper extends SimpleClipper<EdgesPlane> {
   /** The list of defined {@link LineStyle} instances. */
   styles: EdgesStyles;
 
+  /** {@link Component.name} */
+  name = "EdgesClipper";
+
   constructor(
     components: Components,
     PlaneType: new (...args: any) => EdgesPlane

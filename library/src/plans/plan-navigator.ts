@@ -2,27 +2,40 @@ import * as THREE from "three";
 import { EdgesClipper } from "../visibility";
 import { CameraProjection, OrthoPerspectiveCamera } from "../cameras";
 import { PlanView, PlanViewConfig } from "./base-types";
+import { Component } from "../core";
+
+export interface Plans {
+  [id: string]: PlanView;
+}
 
 // TODO: Clean up and document this
-export class PlanNavigator {
-  plans: { [id: string]: PlanView } = {};
+export class PlanNavigator extends Component<Plans> {
+  name = "PlanNavigator";
 
-  active = false;
+  enabled = false;
+
   currentPlan?: PlanView;
 
   defaultSectionOffset = 1.5;
   defaultCameraOffset = 30;
   storeys: { [modelID: number]: any[] } = [];
 
+  private plans: Plans = {};
   private floorPlanViewCached = false;
   private previousCamera = new THREE.Vector3();
   private previousTarget = new THREE.Vector3();
   private previousProjection: CameraProjection = "Perspective";
 
+  get(): Plans {
+    return this.plans;
+  }
+
   constructor(
     private clipper: EdgesClipper,
     private camera: OrthoPerspectiveCamera
-  ) {}
+  ) {
+    super();
+  }
 
   dispose() {
     (this.storeys as any) = null;
@@ -45,15 +58,15 @@ export class PlanNavigator {
     this.hidePreviousClippingPlane();
     this.updateCurrentPlan(id);
     this.activateCurrentPlan();
-    if (!this.active) {
+    if (!this.enabled) {
       await this.moveCameraTo2DPlanPosition(animate);
-      this.active = true;
+      this.enabled = true;
     }
   }
 
   async exitPlanView(animate = false) {
-    if (!this.active) return;
-    this.active = false;
+    if (!this.enabled) return;
+    this.enabled = false;
 
     this.cacheFloorplanView();
 
@@ -75,7 +88,7 @@ export class PlanNavigator {
   }
 
   private storeCameraPosition() {
-    if (this.active) {
+    if (this.enabled) {
       this.cacheFloorplanView();
     } else {
       this.store3dCameraPosition();

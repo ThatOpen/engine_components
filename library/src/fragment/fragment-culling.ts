@@ -3,6 +3,7 @@ import { Fragment } from "bim-fragment";
 import { Material } from "three";
 import { Fragments } from ".";
 import { Components } from "../components";
+import { Event } from "../core";
 
 export class FragmentCulling {
   readonly renderer: THREE.WebGLRenderer;
@@ -17,6 +18,7 @@ export class FragmentCulling {
   needsUpdate = false;
   alwaysForceUpdate = false;
   renderDebugFrame = false;
+  viewUpdated = new Event();
 
   readonly meshes = new Map<string, THREE.InstancedMesh>();
 
@@ -42,6 +44,8 @@ export class FragmentCulling {
     readonly autoUpdate = true
   ) {
     this.renderer = new THREE.WebGLRenderer();
+    const planes = this.components.renderer.get().clippingPlanes;
+    this.renderer.clippingPlanes = planes;
     this.renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight);
     this.bufferSize = rtWidth * rtHeight * 4;
     this.buffer = new Uint8Array(this.bufferSize);
@@ -65,9 +69,6 @@ export class FragmentCulling {
     const blob = new Blob([code], { type: "application/javascript" });
     this.worker = new Worker(URL.createObjectURL(blob));
     this.worker.addEventListener("message", this.handleWorkerMessage);
-    const dom = this.components.renderer.get().domElement;
-    dom.addEventListener("wheel", () => (this.needsUpdate = true));
-
     if (autoUpdate) window.setInterval(this.updateVisibility, updateInterval);
   }
 
@@ -145,7 +146,7 @@ export class FragmentCulling {
 
     this.renderer.setRenderTarget(null);
 
-    if(this.renderDebugFrame){
+    if (this.renderDebugFrame) {
       this.renderer.render(this.scene, camera);
     }
 
@@ -154,6 +155,7 @@ export class FragmentCulling {
     });
 
     this.needsUpdate = false;
+    this.viewUpdated.trigger();
   };
 
   private handleWorkerMessage = (event: MessageEvent) => {
@@ -187,8 +189,12 @@ export class FragmentCulling {
   private getMaterial(r: number, g: number, b: number) {
     const code = `rgb(${r}, ${g}, ${b})`;
     let material = this.materialCache.get(code);
+    const clippingPlanes = this.components.renderer.get().clippingPlanes;
     if (!material) {
-      material = new THREE.MeshBasicMaterial({ color: new THREE.Color(code) });
+      material = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(code),
+        clippingPlanes,
+      });
       this.materialCache.set(code, material);
     }
     return material;

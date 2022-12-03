@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { HorizontalBlurShader } from "three/examples/jsm/shaders/HorizontalBlurShader";
 import { VerticalBlurShader } from "three/examples/jsm/shaders/VerticalBlurShader";
-import { Disposer } from "../../core";
+import { Component, Disposer } from "../../core";
 import { Components } from "../../components";
 
 // TODO: Clean up and document this
@@ -14,10 +14,14 @@ export interface Shadow {
   camera: THREE.Camera;
 }
 
-export class ShadowDropper {
-  private disposer = new Disposer();
+export interface Shadows {
+  [id: string]: Shadow;
+}
 
-  shadows: { [id: string]: Shadow } = {};
+export class ShadowDropper extends Component<Shadows> {
+  name = "ShadowDropper";
+
+  enabled = true;
 
   // Controls how far away the shadow is computed
   cameraHeight = 10;
@@ -31,11 +35,18 @@ export class ShadowDropper {
 
   shadowExtraScaleFactor = 1.5;
 
+  private shadows: Shadows = {};
+  private disposer = new Disposer();
   private tempMaterial = new THREE.MeshBasicMaterial({ visible: false });
   private depthMaterial = new THREE.MeshDepthMaterial();
 
   constructor(private components: Components) {
+    super();
     this.initializeDepthMaterial();
+  }
+
+  get(): Shadows {
+    return this.shadows;
   }
 
   dispose() {

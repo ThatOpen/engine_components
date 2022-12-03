@@ -109,6 +109,8 @@ export class DataConverter {
   private processFragmentData(data: FragmentData) {
     const id = data.instances[0].id;
     const categoryID = this._categories[id];
+    // TODO: use settings.instanceLimit and implement merging many instances
+    //  (e.g. for a model with thousands of objects that repeat 2 times)
     const isUnique = data.instances.length === 1;
     const isInstanced = this._settings.instancedCategories.has(categoryID);
     if (!isUnique || isInstanced) {
