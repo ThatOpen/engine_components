@@ -1,249 +1,155 @@
-import {
-  BoxGeometry,
-  BufferGeometry,
-  Camera,
-  Color,
-  Group,
-  Line,
-  LineBasicMaterial,
-  Mesh,
-  MeshBasicMaterial,
-  Vector3,
-} from "three";
+import * as THREE from "three";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
 import { Components } from "../../components";
 import { Disposer } from "../utils";
+import { SimpleDimensions } from "./simple-dimensions";
+import { DimensionData } from "./types";
 
 // TODO: Document + clean up this: way less parameters, clearer logic
 
 export class SimpleDimensionLine {
-  protected disposer = new Disposer();
-  private readonly context: Components;
-  private readonly camera: Camera;
-  private readonly labelClassName: string;
-  static scaleFactor = 0.1;
+  start: THREE.Vector3;
+  end: THREE.Vector3;
+  center: THREE.Vector3;
+  label: CSS2DObject;
+  boundingBox = new THREE.Mesh();
 
   static scale = 1;
   static units = "m";
 
-  // Elements
-  private root = new Group();
-  private readonly line: Line;
-  private readonly textLabel: CSS2DObject;
-  private endpointMeshes: Mesh[] = [];
+  private _disposer = new Disposer();
+  private _length: number;
 
-  // Geometries
-  private readonly axis: BufferGeometry;
-  private endpoint: BufferGeometry;
+  private readonly _components: Components;
+  private readonly _root = new THREE.Group();
+  private readonly _endpoints: THREE.Mesh[] = [];
+  private readonly _line: THREE.Line;
 
-  // Dimensions
-  start: Vector3;
-  end: Vector3;
-  center: Vector3;
-  private length: number;
-  private scale = new Vector3(1, 1, 1);
+  set visible(visible: boolean) {
+    if (visible) {
+      this._components.scene.get().add(this._root);
+      this._root.add(this.label);
+    } else {
+      this._root.removeFromParent();
+      this.label.removeFromParent();
+    }
+  }
 
-  // Materials
-  private readonly lineMaterial: LineBasicMaterial;
-  private readonly endpointMaterial: MeshBasicMaterial;
+  set geometry(geometry: THREE.BufferGeometry) {
+    for (const point of this._endpoints) {
+      point.geometry = geometry;
+    }
+  }
 
-  // Bounding box
-  private boundingMesh?: Mesh;
-  private readonly boundingSize = 0.05;
+  set endPoint(point: THREE.Vector3) {
+    this.end = point;
+    this.updateEndpointPosition(point);
+    this.updateEndpointMeshes(point);
+    this.updateLabel();
+  }
 
-  constructor(
-    context: Components,
-    start: Vector3,
-    end: Vector3,
-    lineMaterial: LineBasicMaterial,
-    endpointMaterial: MeshBasicMaterial,
-    endpointGeometry: BufferGeometry,
-    className: string,
-    endpointScale: Vector3
-  ) {
-    this.context = context;
-    this.labelClassName = className;
+  constructor(components: Components, data: DimensionData) {
+    this._components = components;
 
-    this.start = start;
-    this.end = end;
-    this.scale = endpointScale;
-
-    this.lineMaterial = lineMaterial;
-    this.endpointMaterial = endpointMaterial;
-
-    this.length = this.getLength();
+    this.start = data.start;
+    this.end = data.end;
+    this._length = this.getLength();
     this.center = this.getCenter();
+    this._line = this.createLine(data);
 
-    this.axis = new BufferGeometry().setFromPoints([start, end]);
-    this.line = new Line(this.axis, this.lineMaterial);
-    this.root.add(this.line);
-    this.endpoint = endpointGeometry;
-    this.addEndpointMeshes();
-    this.textLabel = this.newText();
-
-    this.root.renderOrder = 2;
-    this.context.scene.get().add(this.root);
-
-    this.camera = this.context.camera.get();
-    // this.context.ifcCamera.onChange.on(() => this.rescaleObjectsToCameraPosition());
-    this.rescaleObjectsToCameraPosition();
+    this.newEndpointMesh(data);
+    this.newEndpointMesh(data);
+    this.label = this.newText();
+    this._root.renderOrder = 2;
+    this._components.scene.get().add(this._root);
   }
 
   dispose() {
-    this.removeFromScene();
-    (this.context as any) = null;
-    this.disposer.dispose(this.root as any);
-    (this.root as any) = null;
-    this.disposer.dispose(this.line as any);
-    (this.line as any) = null;
-    this.endpointMeshes.forEach((mesh) => this.disposer.dispose(mesh));
-    this.endpointMeshes.length = 0;
-    this.axis.dispose();
-    (this.axis as any) = null;
-    this.endpoint.dispose();
-    (this.endpoint as any) = null;
-
-    this.textLabel.removeFromParent();
-    this.textLabel.element.remove();
-    (this.textLabel as any) = null;
-
-    this.lineMaterial.dispose();
-    (this.lineMaterial as any) = null;
-    this.endpointMaterial.dispose();
-    (this.endpointMaterial as any) = null;
-
-    if (this.boundingMesh) {
-      this.disposer.dispose(this.boundingMesh);
-      (this.boundingMesh as any) = null;
+    this.visible = false;
+    (this._components as any) = null;
+    this._disposer.dispose(this._root as any);
+    (this._root as any) = null;
+    (this._line.material as any) = null;
+    this._disposer.dispose(this._line as any);
+    (this._line as any) = null;
+    for (const mesh of this._endpoints) {
+      mesh.removeFromParent();
+      (mesh as any).material = null;
+      (mesh as any).geometry = null;
     }
-  }
+    this._endpoints.length = 0;
 
-  get boundingBox() {
-    return this.boundingMesh;
-  }
+    this.label.removeFromParent();
+    this.label.element.remove();
+    (this.label as any) = null;
 
-  get text() {
-    return this.textLabel;
-  }
-
-  set dimensionColor(dimensionColor: Color) {
-    this.endpointMaterial.color = dimensionColor;
-    this.lineMaterial.color = dimensionColor;
-  }
-
-  set visibility(visible: boolean) {
-    this.root.visible = visible;
-    this.textLabel.visible = visible;
-  }
-
-  set endpointGeometry(geometry: BufferGeometry) {
-    this.endpointMeshes.forEach((mesh) => this.root.remove(mesh));
-    this.endpointMeshes = [];
-    this.endpoint = geometry;
-    this.addEndpointMeshes();
-  }
-
-  set endpointScale(scale: Vector3) {
-    this.scale = scale;
-    this.endpointMeshes.forEach((mesh) =>
-      mesh.scale.set(scale.x, scale.y, scale.z)
-    );
-  }
-
-  set endPoint(point: Vector3) {
-    this.end = point;
-    if (!this.axis) return;
-    const position = this.axis.attributes.position;
-    if (!position) return;
-    position.setXYZ(1, point.x, point.y, point.z);
-    position.needsUpdate = true;
-    this.endpointMeshes[1].position.set(point.x, point.y, point.z);
-    this.endpointMeshes[1].lookAt(this.start);
-    this.endpointMeshes[0].lookAt(this.end);
-    this.length = this.getLength();
-    this.textLabel.element.textContent = this.getTextContent();
-    this.center = this.getCenter();
-    this.textLabel.position.set(this.center.x, this.center.y, this.center.z);
-    this.line.computeLineDistances();
-  }
-
-  removeFromScene() {
-    this.context.scene.get().remove(this.root);
-    this.root.remove(this.textLabel);
+    if (this.boundingBox) {
+      this._disposer.dispose(this.boundingBox);
+      (this.boundingBox as any) = null;
+    }
   }
 
   createBoundingBox() {
-    this.boundingMesh = this.newBoundingBox();
-    this.setupBoundingBox(this.end);
+    this.boundingBox.geometry = new THREE.BoxGeometry(1, 1, this._length);
+    this.boundingBox.position.copy(this.center);
+    this.boundingBox.lookAt(this.end);
+    this.boundingBox.visible = false;
+    this._root.add(this.boundingBox);
   }
 
-  private rescaleObjectsToCameraPosition() {
-    this.endpointMeshes.forEach((mesh) =>
-      this.rescaleMesh(mesh, SimpleDimensionLine.scaleFactor)
-    );
-    if (this.boundingMesh) {
-      this.rescaleMesh(this.boundingMesh, this.boundingSize, true, true, false);
-    }
+  private updateLabel() {
+    this._length = this.getLength();
+    this.label.element.textContent = this.getTextContent();
+    this.center = this.getCenter();
+    this.label.position.set(this.center.x, this.center.y, this.center.z);
+    this._line.computeLineDistances();
   }
 
-  private rescaleMesh(
-    mesh: Mesh,
-    scalefactor = 1,
-    x = true,
-    y = true,
-    z = true
-  ) {
-    let scale = new Vector3()
-      .subVectors(mesh.position, this.camera.position)
-      .length();
-    scale *= scalefactor;
-    const scaleX = x ? scale : 1;
-    const scaleY = y ? scale : 1;
-    const scaleZ = z ? scale : 1;
-    mesh.scale.set(scaleX, scaleY, scaleZ);
+  private updateEndpointMeshes(point: THREE.Vector3) {
+    this._endpoints[1].position.copy(point);
+    this._endpoints[1].lookAt(this.start);
+    this._endpoints[0].lookAt(this.end);
   }
 
-  private addEndpointMeshes() {
-    this.newEndpointMesh(this.start, this.end);
-    this.newEndpointMesh(this.end, this.start);
+  private updateEndpointPosition(point: THREE.Vector3) {
+    const position = this._line.geometry.attributes.position;
+    position.setXYZ(1, point.x, point.y, point.z);
+    position.needsUpdate = true;
   }
 
-  private newEndpointMesh(position: Vector3, direction: Vector3) {
-    const mesh = new Mesh(this.endpoint, this.endpointMaterial);
-    mesh.position.set(position.x, position.y, position.z);
-    mesh.scale.set(this.scale.x, this.scale.y, this.scale.z);
+  private createLine(data: DimensionData) {
+    const axisGeom = new THREE.BufferGeometry();
+    axisGeom.setFromPoints([data.start, data.end]);
+    const line = new THREE.Line(axisGeom, data.lineMaterial);
+    this._root.add(line);
+    return line;
+  }
+
+  private newEndpointMesh(data: DimensionData) {
+    const isFirst = this._endpoints.length === 0;
+    const position = isFirst ? this.start : this.end;
+    const direction = isFirst ? this.end : this.start;
+    const mesh = data.endpoint.clone();
+    mesh.position.copy(position);
     mesh.lookAt(direction);
-    this.endpointMeshes.push(mesh);
-    this.root.add(mesh);
+    this._endpoints.push(mesh);
+    this._root.add(mesh);
   }
 
   private newText() {
     const htmlText = document.createElement("div");
-    htmlText.className = this.labelClassName;
+    htmlText.className = SimpleDimensions.labelClassName;
     htmlText.textContent = this.getTextContent();
     const label = new CSS2DObject(htmlText);
     label.position.set(this.center.x, this.center.y, this.center.z);
-    this.root.add(label);
+    this._root.add(label);
     return label;
   }
 
   private getTextContent() {
-    return `${this.length / SimpleDimensionLine.scale} ${
+    return `${this._length / SimpleDimensionLine.scale} ${
       SimpleDimensionLine.units
     }`;
-  }
-
-  private newBoundingBox() {
-    const box = new BoxGeometry(1, 1, this.length);
-    return new Mesh(box);
-  }
-
-  private setupBoundingBox(end: Vector3) {
-    if (!this.boundingMesh) return;
-    this.boundingMesh.position.set(this.center.x, this.center.y, this.center.z);
-    this.boundingMesh.lookAt(end);
-    this.boundingMesh.visible = false;
-    this.root.add(this.boundingMesh);
   }
 
   private getLength() {

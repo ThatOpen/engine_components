@@ -8,6 +8,31 @@
   <link rel="stylesheet" href="resources/styles.css">
   <link rel="icon" type="image/x-icon" href="../favicon.ico">
   <title>Components | Hello world</title>
+  <style>
+      .ifcjs-dimension-label {
+          background-color: black;
+          font-family: sans-serif;
+          color: white;
+          padding: 8px;
+          border-radius: 8px;
+          pointer-events: all;
+          transition: background-color 200ms ease-in-out;
+      }
+
+      .ifcjs-dimension-label:hover {
+          background-color: grey;
+      }
+
+      .ifcjs-dimension-preview {
+          background-color: #ffffff;
+          width: 2rem;
+          height: 2rem;
+          opacity: 0.3;
+          padding: 8px;
+          border-radius: 100%;
+      }
+
+  </style>
 </head>
 <body>
   <div class="full-screen" id="container"></div>
@@ -15,24 +40,20 @@
     {
       "imports": {
         "three": "https://unpkg.com/three@0.135.0/build/three.module.js",
-        "three/examples/jsm/lines/LineMaterial": "https://unpkg.com/three@0.135.0/examples/jsm/lines/LineMaterial.js",
         "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.135.0/examples/jsm/libs/lil-gui.module.min.js",
-        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
-        "unzipit": "https://unpkg.com/unzipit@1.4.0/dist/unzipit.module.js",
-        "client-zip": "https://unpkg.com/client-zip@2.3.0/index.js"
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js"
       }
     }
-  </script>
+</script>
   <script type="module">
-		import Stats from 'stats.js/src/Stats.js';
 		import * as THREE from 'three';
-		import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial';
+		import Stats from 'stats.js/src/Stats.js';
 		import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
 		import * as OBC from './resources/openbim-components.js';
 
-		// Set up basic components
-
 		const container = document.getElementById('container');
+
+		// Set up basic components
 
 		const components = new OBC.Components();
 		components.scene = new OBC.SimpleScene(components);
@@ -44,23 +65,16 @@
 		const grid = new OBC.SimpleGrid(components);
 		components.tools.add(grid);
 
-		// Add a blue and a red cube to the scene
+		// Add a cube to the scene
 
 		const scene = components.scene.get();
 
 		const cubeGeometry = new THREE.BoxGeometry(3, 3, 3);
-
 		const redMaterial = new THREE.MeshStandardMaterial({color: "red"});
 		const redCube = new THREE.Mesh(cubeGeometry, redMaterial);
-		redCube.position.set(-2, 1.5, 0);
+		redCube.position.set(0, 1.5, 0);
 		scene.add(redCube);
 		components.meshes.push(redCube);
-
-		const blueMaterial = new THREE.MeshStandardMaterial({color: "blue"});
-		const blueCube = new THREE.Mesh(cubeGeometry, blueMaterial);
-		blueCube.position.set(2, 1.5, 0);
-		scene.add(blueCube);
-		components.meshes.push(blueCube);
 
 		// Add some lights to the scene
 
@@ -73,25 +87,20 @@
 		ambientLight.intensity = 0.5;
 		scene.add(ambientLight);
 
-		// Set up clipping planes
+		// Set up dimensions
 
-		const clipper = new OBC.EdgesClipper(components, OBC.EdgesPlane);
-		components.tools.add(clipper);
-		clipper.enabled = true;
+		const dimensions = new OBC.SimpleDimensions(components);
+		components.tools.add(dimensions);
+		dimensions.enabled = true;
+		dimensions.snapDistance = 1;
 
-		container.ondblclick = () => clipper.create();
+		container.ondblclick = () => dimensions.create();
 
 		window.onkeydown = (event) => {
 			if(event.code === 'Delete') {
-				clipper.delete();
+				dimensions.delete();
       }
     }
-
-		const redLineMaterial = new LineMaterial({color: 'blue', linewidth: 0.002});
-		clipper.styles.create("Red lines", [redCube], redLineMaterial);
-
-		const blueLineMaterial = new LineMaterial({color: 'red', linewidth: 0.003});
-		clipper.styles.create("Blue lines", [blueCube], blueLineMaterial);
 
 		// Set up stats
 
@@ -110,42 +119,41 @@
     const shortcutsFolder = gui.addFolder('Shortcuts');
 
 		const shortcuts = {
-			'Create clipping plane': "Double click" ,
-			'Delete clipping plane': "Delete"
+			'Create dimension': "Double click" ,
+			'Delete dimension': "Delete"
 		}
 
-		shortcutsFolder.add(shortcuts, 'Create clipping plane');
-		shortcutsFolder.add(shortcuts, 'Delete clipping plane');
+		shortcutsFolder.add(shortcuts, 'Create dimension');
+		shortcutsFolder.add(shortcuts, 'Delete dimension');
 
 		const actionsFolder = gui.addFolder('Actions');
 
     const actions = {
     	'Toggle': () => {
-    		clipper.enabled = !clipper.enabled;
+    		dimensions.enabled = !dimensions.enabled;
       },
-    	'Delete all planes': () => {
-    		clipper.deleteAll();
-      },
-    	'Rotate cube': () => {
-    		redCube.rotation.x = 2 * Math.PI * Math.random();
-				redCube.rotation.y = 2 * Math.PI * Math.random();
-				redCube.rotation.z = 2 * Math.PI * Math.random();
-				redCube.updateMatrix();
-				redCube.updateMatrixWorld();
-
-				blueCube.rotation.x = 2 * Math.PI * Math.random();
-				blueCube.rotation.y = 2 * Math.PI * Math.random();
-				blueCube.rotation.z = 2 * Math.PI * Math.random();
-				blueCube.updateMatrix();
-				blueCube.updateMatrixWorld();
-
-				clipper.updateEdges();
+    	'Delete all dimensions': () => {
+    		dimensions.deleteAll();
       }
     }
 
-		actionsFolder.add(actions, 'Toggle');
-		actionsFolder.add(actions, 'Rotate cube');
-		actionsFolder.add(actions, 'Delete all planes');
+		actionsFolder.add(actions, 'Delete all dimensions');
+
+		const color = {
+			value: 0x000000
+    };
+
+		const helperColor = new THREE.Color();
+		actionsFolder.addColor(color, "value")
+      .name("Dimensions color")
+      .onChange((value) => {
+				helperColor.setHex(value);
+			  dimensions.color = helperColor;
+    });
+
+		actionsFolder.add(dimensions, "enabled").name("Dimensions enabled");
+		actionsFolder.add(dimensions, "visible").name("Dimensions visible");
+
 
   </script>
 </body>

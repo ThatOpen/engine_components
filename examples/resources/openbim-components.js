@@ -1,5 +1,5 @@
 import * as THREE$1 from 'https://unpkg.com/three@0.135.0/build/three.module.js';
-import { BufferAttribute as BufferAttribute$1, Vector3 as Vector3$1, Vector2 as Vector2$1, Plane, Line3, Triangle, Sphere, Box3, Matrix4, BackSide, DoubleSide, FrontSide, Mesh, Ray, Object3D, Group, BufferGeometry, Line, BoxGeometry, Raycaster, Quaternion as Quaternion$1, Euler, MeshBasicMaterial, LineBasicMaterial, CylinderGeometry, Float32BufferAttribute, OctahedronGeometry, SphereGeometry, TorusGeometry, PlaneGeometry, Interpolant, Loader, LoaderUtils, FileLoader, Color as Color$1, SpotLight, PointLight, DirectionalLight, MeshPhysicalMaterial, sRGBEncoding, TangentSpaceNormalMap, ImageBitmapLoader, TextureLoader, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material, MeshStandardMaterial, RGBFormat, PropertyBinding, SkinnedMesh, LineSegments, LineLoop, Points, PerspectiveCamera, MathUtils, OrthographicCamera, InterpolateLinear, AnimationClip, Bone, Skeleton, TriangleFanDrawMode, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, Texture, TriangleStripDrawMode, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, RGBAFormat, Scene, InstancedMesh, MeshLambertMaterial, EdgesGeometry, InstancedBufferGeometry, InstancedBufferAttribute, InstancedInterleavedBuffer, WireframeGeometry, UniformsLib, ShaderLib, UniformsUtils, ShaderMaterial, Vector4 as Vector4$1, WebGLRenderTarget, Clock, DepthTexture, UnsignedShortType, MeshDepthMaterial, RGBADepthPacking, NoBlending, MeshNormalMaterial, CustomBlending, DstColorFactor, ZeroFactor, AddEquation, DstAlphaFactor } from 'https://unpkg.com/three@0.135.0/build/three.module.js';
+import { BufferAttribute as BufferAttribute$1, Vector3 as Vector3$1, Vector2 as Vector2$1, Plane, Line3, Triangle, Sphere, Box3, Matrix4, BackSide, DoubleSide, FrontSide, Mesh, Ray, Object3D, Raycaster, Quaternion as Quaternion$1, Euler, MeshBasicMaterial, LineBasicMaterial, CylinderGeometry, BoxGeometry, BufferGeometry, Float32BufferAttribute, OctahedronGeometry, Line, SphereGeometry, TorusGeometry, PlaneGeometry, Interpolant, Loader, LoaderUtils, FileLoader, Color as Color$1, SpotLight, PointLight, DirectionalLight, MeshPhysicalMaterial, sRGBEncoding, TangentSpaceNormalMap, ImageBitmapLoader, TextureLoader, InterleavedBuffer, InterleavedBufferAttribute, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, PointsMaterial, Material, MeshStandardMaterial, RGBFormat, PropertyBinding, SkinnedMesh, LineSegments, LineLoop, Points, Group, PerspectiveCamera, MathUtils, OrthographicCamera, InterpolateLinear, AnimationClip, Bone, Skeleton, TriangleFanDrawMode, NearestFilter, NearestMipmapNearestFilter, LinearMipmapNearestFilter, NearestMipmapLinearFilter, ClampToEdgeWrapping, MirroredRepeatWrapping, InterpolateDiscrete, Texture, TriangleStripDrawMode, VectorKeyframeTrack, QuaternionKeyframeTrack, NumberKeyframeTrack, RGBAFormat, Scene, InstancedMesh, MeshLambertMaterial, EdgesGeometry, InstancedBufferGeometry, InstancedBufferAttribute, InstancedInterleavedBuffer, WireframeGeometry, UniformsLib, ShaderLib, UniformsUtils, ShaderMaterial, Vector4 as Vector4$1, WebGLRenderTarget, Clock, DepthTexture, UnsignedShortType, MeshDepthMaterial, RGBADepthPacking, NoBlending, MeshNormalMaterial, CustomBlending, DstColorFactor, ZeroFactor, AddEquation, DstAlphaFactor } from 'https://unpkg.com/three@0.135.0/build/three.module.js';
 
 // Split strategy constants
 const CENTER = 0;
@@ -6806,177 +6806,6 @@ function getBasisTransform(from, to, targetMatrix) {
     targetMatrix.makeBasis(orderedVectors[0], orderedVectors[1], orderedVectors[2]);
 }
 
-// TODO: Document + clean up this: way less parameters, clearer logic
-class SimpleDimensionLine {
-    constructor(context, start, end, lineMaterial, endpointMaterial, endpointGeometry, className, endpointScale) {
-        this.disposer = new Disposer();
-        // Elements
-        this.root = new Group();
-        this.endpointMeshes = [];
-        this.scale = new Vector3$1(1, 1, 1);
-        this.boundingSize = 0.05;
-        this.context = context;
-        this.labelClassName = className;
-        this.start = start;
-        this.end = end;
-        this.scale = endpointScale;
-        this.lineMaterial = lineMaterial;
-        this.endpointMaterial = endpointMaterial;
-        this.length = this.getLength();
-        this.center = this.getCenter();
-        this.axis = new BufferGeometry().setFromPoints([start, end]);
-        this.line = new Line(this.axis, this.lineMaterial);
-        this.root.add(this.line);
-        this.endpoint = endpointGeometry;
-        this.addEndpointMeshes();
-        this.textLabel = this.newText();
-        this.root.renderOrder = 2;
-        this.context.scene.get().add(this.root);
-        this.camera = this.context.camera.get();
-        // this.context.ifcCamera.onChange.on(() => this.rescaleObjectsToCameraPosition());
-        this.rescaleObjectsToCameraPosition();
-    }
-    dispose() {
-        this.removeFromScene();
-        this.context = null;
-        this.disposer.dispose(this.root);
-        this.root = null;
-        this.disposer.dispose(this.line);
-        this.line = null;
-        this.endpointMeshes.forEach((mesh) => this.disposer.dispose(mesh));
-        this.endpointMeshes.length = 0;
-        this.axis.dispose();
-        this.axis = null;
-        this.endpoint.dispose();
-        this.endpoint = null;
-        this.textLabel.removeFromParent();
-        this.textLabel.element.remove();
-        this.textLabel = null;
-        this.lineMaterial.dispose();
-        this.lineMaterial = null;
-        this.endpointMaterial.dispose();
-        this.endpointMaterial = null;
-        if (this.boundingMesh) {
-            this.disposer.dispose(this.boundingMesh);
-            this.boundingMesh = null;
-        }
-    }
-    get boundingBox() {
-        return this.boundingMesh;
-    }
-    get text() {
-        return this.textLabel;
-    }
-    set dimensionColor(dimensionColor) {
-        this.endpointMaterial.color = dimensionColor;
-        this.lineMaterial.color = dimensionColor;
-    }
-    set visibility(visible) {
-        this.root.visible = visible;
-        this.textLabel.visible = visible;
-    }
-    set endpointGeometry(geometry) {
-        this.endpointMeshes.forEach((mesh) => this.root.remove(mesh));
-        this.endpointMeshes = [];
-        this.endpoint = geometry;
-        this.addEndpointMeshes();
-    }
-    set endpointScale(scale) {
-        this.scale = scale;
-        this.endpointMeshes.forEach((mesh) => mesh.scale.set(scale.x, scale.y, scale.z));
-    }
-    set endPoint(point) {
-        this.end = point;
-        if (!this.axis)
-            return;
-        const position = this.axis.attributes.position;
-        if (!position)
-            return;
-        position.setXYZ(1, point.x, point.y, point.z);
-        position.needsUpdate = true;
-        this.endpointMeshes[1].position.set(point.x, point.y, point.z);
-        this.endpointMeshes[1].lookAt(this.start);
-        this.endpointMeshes[0].lookAt(this.end);
-        this.length = this.getLength();
-        this.textLabel.element.textContent = this.getTextContent();
-        this.center = this.getCenter();
-        this.textLabel.position.set(this.center.x, this.center.y, this.center.z);
-        this.line.computeLineDistances();
-    }
-    removeFromScene() {
-        this.context.scene.get().remove(this.root);
-        this.root.remove(this.textLabel);
-    }
-    createBoundingBox() {
-        this.boundingMesh = this.newBoundingBox();
-        this.setupBoundingBox(this.end);
-    }
-    rescaleObjectsToCameraPosition() {
-        this.endpointMeshes.forEach((mesh) => this.rescaleMesh(mesh, SimpleDimensionLine.scaleFactor));
-        if (this.boundingMesh) {
-            this.rescaleMesh(this.boundingMesh, this.boundingSize, true, true, false);
-        }
-    }
-    rescaleMesh(mesh, scalefactor = 1, x = true, y = true, z = true) {
-        let scale = new Vector3$1()
-            .subVectors(mesh.position, this.camera.position)
-            .length();
-        scale *= scalefactor;
-        const scaleX = x ? scale : 1;
-        const scaleY = y ? scale : 1;
-        const scaleZ = z ? scale : 1;
-        mesh.scale.set(scaleX, scaleY, scaleZ);
-    }
-    addEndpointMeshes() {
-        this.newEndpointMesh(this.start, this.end);
-        this.newEndpointMesh(this.end, this.start);
-    }
-    newEndpointMesh(position, direction) {
-        const mesh = new Mesh(this.endpoint, this.endpointMaterial);
-        mesh.position.set(position.x, position.y, position.z);
-        mesh.scale.set(this.scale.x, this.scale.y, this.scale.z);
-        mesh.lookAt(direction);
-        this.endpointMeshes.push(mesh);
-        this.root.add(mesh);
-    }
-    newText() {
-        const htmlText = document.createElement("div");
-        htmlText.className = this.labelClassName;
-        htmlText.textContent = this.getTextContent();
-        const label = new CSS2DObject(htmlText);
-        label.position.set(this.center.x, this.center.y, this.center.z);
-        this.root.add(label);
-        return label;
-    }
-    getTextContent() {
-        return `${this.length / SimpleDimensionLine.scale} ${SimpleDimensionLine.units}`;
-    }
-    newBoundingBox() {
-        const box = new BoxGeometry(1, 1, this.length);
-        return new Mesh(box);
-    }
-    setupBoundingBox(end) {
-        if (!this.boundingMesh)
-            return;
-        this.boundingMesh.position.set(this.center.x, this.center.y, this.center.z);
-        this.boundingMesh.lookAt(end);
-        this.boundingMesh.visible = false;
-        this.root.add(this.boundingMesh);
-    }
-    getLength() {
-        return parseFloat(this.start.distanceTo(this.end).toFixed(2));
-    }
-    getCenter() {
-        let dir = this.end.clone().sub(this.start);
-        const len = dir.length() * 0.5;
-        dir = dir.normalize().multiplyScalar(len);
-        return this.start.clone().add(dir);
-    }
-}
-SimpleDimensionLine.scaleFactor = 0.1;
-SimpleDimensionLine.scale = 1;
-SimpleDimensionLine.units = "m";
-
 /**
  * A helper to easily get the real position of the mouse in the Three.js canvas
  * to work with tools like the
@@ -7084,10 +6913,6 @@ class SimpleDimensions extends Component {
         this.afterUpdate = new Event();
         /** The minimum distance to force the dimension cursor to a vertex. */
         this.snapDistance = 0.25;
-        /** The name of the CSS class that styles the dimension label. */
-        this.labelClassName = "ifcjs-dimension-label";
-        /** The name of the CSS class that styles the dimension label. */
-        this.previewClassName = "ifcjs-dimension-preview";
         this._lineMaterial = new THREE$1.LineDashedMaterial({
             color: 0x000000,
             linewidth: 2,
@@ -7095,23 +6920,21 @@ class SimpleDimensions extends Component {
             dashSize: 0.2,
             gapSize: 0.2,
         });
-        this._endpointsMaterial = new THREE$1.MeshBasicMaterial({
-            color: 0x000000,
-            depthTest: false,
-        });
-        // TODO: Clean this up, reduce number of parameters
-        this._visible = false;
-        this._enabled = false;
-        this._preview = false;
-        this._dragging = false;
-        this._baseScale = new THREE$1.Vector3(1, 1, 1);
-        this._startPoint = new THREE$1.Vector3();
-        this._endPoint = new THREE$1.Vector3();
         this._dimensions = [];
+        this._visible = true;
+        this._enabled = false;
+        this._disposer = new Disposer();
+        /** Temporary variables for internal operations */
+        this._temp = {
+            isDragging: false,
+            start: new THREE$1.Vector3(),
+            end: new THREE$1.Vector3(),
+            dimension: undefined,
+        };
         this._raycaster = new SimpleRaycaster(this.components);
-        this._endpointGeometry = SimpleDimensions.getDefaultEndpointGeometry();
+        this._endpointMesh = this.newEndpointMesh();
         const htmlPreview = document.createElement("div");
-        htmlPreview.className = this.previewClassName;
+        htmlPreview.className = SimpleDimensions.previewClassName;
         this.previewElement = new CSS2DObject(htmlPreview);
         this.previewElement.visible = false;
     }
@@ -7122,10 +6945,7 @@ class SimpleDimensions extends Component {
     /** {@link Component.enabled} */
     set enabled(state) {
         this._enabled = state;
-        this.previewActive = state;
-        if (!this.visible && state) {
-            this.visible = true;
-        }
+        this.previewVisible = state;
     }
     /** {@link Hideable.visible} */
     get visible() {
@@ -7134,47 +6954,40 @@ class SimpleDimensions extends Component {
     /** {@link Hideable.visible} */
     set visible(state) {
         this._visible = state;
-        if (this.enabled && !state) {
+        if (!this._visible) {
             this.enabled = false;
         }
-        this._dimensions.forEach((dim) => {
-            dim.visibility = state;
-        });
+        for (const dimension of this._dimensions) {
+            dimension.visible = this._visible;
+        }
     }
     /**
      * The [Color](https://threejs.org/docs/#api/en/math/Color)
      * of the geometry of the dimensions.
      */
-    set dimensionsColor(color) {
-        this._endpointsMaterial.color = color;
+    set color(color) {
+        this._endpointMesh.material.color = color;
         this._lineMaterial.color = color;
     }
-    /** The width of the line of the dimensions. */
-    set dimensionsWidth(width) {
-        this._lineMaterial.linewidth = width;
+    /** The geometry used in both endpoints of all the dimensions. */
+    get geometry() {
+        return this._endpointMesh.geometry;
     }
     /** The geometry used in both endpoints of all the dimensions. */
-    get endpointGeometry() {
-        return this._endpointGeometry;
-    }
-    /** The geometry used in both endpoints of all the dimensions. */
-    set endpointGeometry(geometry) {
-        this._endpointGeometry = geometry;
+    set geometry(geometry) {
+        this._endpointMesh.geometry = geometry;
         for (const dim of this._dimensions) {
-            dim.endpointGeometry = geometry;
+            dim.geometry = geometry;
         }
     }
-    set previewActive(state) {
+    set previewVisible(state) {
         var _a;
-        this._preview = state;
         const scene = (_a = this.components.scene) === null || _a === void 0 ? void 0 : _a.get();
-        if (!scene)
-            throw new Error("Dimensions rely on scene to be present.");
-        if (this._preview) {
+        if (state) {
             scene.add(this.previewElement);
         }
         else {
-            scene.remove(this.previewElement);
+            this.previewElement.removeFromParent();
         }
     }
     /** {@link Component.get} */
@@ -7186,16 +6999,16 @@ class SimpleDimensions extends Component {
         this.components = null;
         this._dimensions.forEach((dim) => dim.dispose());
         this._dimensions = null;
-        this._currentDimension = null;
-        this._endpointGeometry.dispose();
-        this._endpointGeometry = null;
+        this._disposer.dispose(this._endpointMesh);
+        this._endpointMesh = null;
+        this._temp.dimension = null;
         this.previewElement.removeFromParent();
         this.previewElement.element.remove();
         this.previewElement = null;
     }
     /** {@link Updateable.update} */
     update(_delta) {
-        if (this._enabled && this._preview) {
+        if (this._enabled) {
             this.beforeUpdate.trigger(this);
             const intersects = this._raycaster.castRay();
             this.previewElement.visible = !!intersects;
@@ -7207,7 +7020,7 @@ class SimpleDimensions extends Component {
             if (!closest)
                 return;
             this.previewElement.position.set(closest.x, closest.y, closest.z);
-            if (this._dragging) {
+            if (this._temp.isDragging) {
                 this.drawInProcess();
             }
             this.afterUpdate.trigger(this);
@@ -7222,7 +7035,7 @@ class SimpleDimensions extends Component {
     create(plane) {
         if (!this._enabled)
             return;
-        if (!this._dragging) {
+        if (!this._temp.isDragging) {
             this.drawStart(plane);
             return;
         }
@@ -7236,36 +7049,36 @@ class SimpleDimensions extends Component {
         const intersect = this._raycaster.castRay(boundingBoxes);
         if (!intersect)
             return;
-        const selected = this._dimensions.find((dim) => dim.boundingBox === intersect.object);
-        if (!selected)
-            return;
-        const index = this._dimensions.indexOf(selected);
-        this._dimensions.splice(index, 1);
-        selected.removeFromScene();
+        const dimension = this._dimensions.find((dim) => dim.boundingBox === intersect.object);
+        if (dimension) {
+            const index = this._dimensions.indexOf(dimension);
+            this._dimensions.splice(index, 1);
+            dimension.dispose();
+        }
     }
     /** Deletes all the dimensions that have been previously created. */
     deleteAll() {
         this._dimensions.forEach((dim) => {
-            dim.removeFromScene();
+            dim.dispose();
         });
         this._dimensions = [];
     }
     /** Cancels the drawing of the current dimension. */
     cancelDrawing() {
         var _a;
-        if (!this._currentDimension)
+        if (!this._temp.dimension)
             return;
-        this._dragging = false;
-        (_a = this._currentDimension) === null || _a === void 0 ? void 0 : _a.removeFromScene();
-        this._currentDimension = undefined;
+        this._temp.isDragging = false;
+        (_a = this._temp.dimension) === null || _a === void 0 ? void 0 : _a.dispose();
+        this._temp.dimension = undefined;
     }
     drawStart(plane) {
         const items = plane ? [plane] : undefined;
         const intersects = this._raycaster.castRay(items);
         if (!intersects)
             return;
-        this._dragging = true;
-        this._startPoint = plane
+        this._temp.isDragging = true;
+        this._temp.start = plane
             ? intersects.point
             : this.getClosestVertex(intersects);
     }
@@ -7276,29 +7089,42 @@ class SimpleDimensions extends Component {
         const found = this.getClosestVertex(intersects);
         if (!found)
             return;
-        this._endPoint = found;
-        if (!this._currentDimension)
-            this._currentDimension = this.drawDimension();
-        this._currentDimension.endPoint = this._endPoint;
+        this._temp.end = found;
+        if (!this._temp.dimension) {
+            this._temp.dimension = this.drawDimension();
+        }
+        this._temp.dimension.endPoint = this._temp.end;
     }
     drawEnd() {
-        if (!this._currentDimension)
+        if (!this._temp.dimension)
             return;
-        this._currentDimension.createBoundingBox();
-        this._dimensions.push(this._currentDimension);
-        this._currentDimension = undefined;
-        this._dragging = false;
+        this._temp.dimension.createBoundingBox();
+        this._dimensions.push(this._temp.dimension);
+        this._temp.dimension = undefined;
+        this._temp.isDragging = false;
     }
-    // TODO: Clean up this constructor by wrapping everything inside an object
+    newEndpointMesh() {
+        const geometry = SimpleDimensions.getDefaultEndpointGeometry();
+        const material = new THREE$1.MeshBasicMaterial({
+            color: 0x000000,
+            depthTest: false,
+        });
+        return new THREE$1.Mesh(geometry, material);
+    }
     drawDimension() {
-        return new SimpleDimensionLine(this.components, this._startPoint, this._endPoint, this._lineMaterial, this._endpointsMaterial, this._endpointGeometry, this.labelClassName, this._baseScale);
+        return new SimpleDimensionLine(this.components, {
+            start: this._temp.start,
+            end: this._temp.end,
+            lineMaterial: this._lineMaterial,
+            endpoint: this._endpointMesh,
+        });
     }
     getBoundingBoxes() {
         return this._dimensions
             .map((dim) => dim.boundingBox)
             .filter((box) => box !== undefined);
     }
-    static getDefaultEndpointGeometry(height = 0.02, radius = 0.05) {
+    static getDefaultEndpointGeometry(height = 0.4, radius = 0.1) {
         const coneGeometry = new THREE$1.ConeGeometry(radius, height);
         coneGeometry.translate(0, -height / 2, 0);
         coneGeometry.rotateX(-Math.PI / 2);
@@ -7330,7 +7156,7 @@ class SimpleDimensions extends Component {
             SimpleDimensions.getVertex(intersects.face.a, geom),
             SimpleDimensions.getVertex(intersects.face.b, geom),
             SimpleDimensions.getVertex(intersects.face.c, geom),
-        ];
+        ].map((vertex) => vertex === null || vertex === void 0 ? void 0 : vertex.applyMatrix4(mesh.matrixWorld));
     }
     static getVertex(index, geom) {
         if (index === undefined)
@@ -7339,6 +7165,138 @@ class SimpleDimensions extends Component {
         return new THREE$1.Vector3(vertices.getX(index), vertices.getY(index), vertices.getZ(index));
     }
 }
+/** The name of the CSS class that styles the dimension label. */
+SimpleDimensions.labelClassName = "ifcjs-dimension-label";
+/** The name of the CSS class that styles the dimension label. */
+SimpleDimensions.previewClassName = "ifcjs-dimension-preview";
+
+// TODO: Document + clean up this: way less parameters, clearer logic
+class SimpleDimensionLine {
+    constructor(components, data) {
+        this.boundingBox = new THREE$1.Mesh();
+        this._disposer = new Disposer();
+        this._root = new THREE$1.Group();
+        this._endpoints = [];
+        this._components = components;
+        this.start = data.start;
+        this.end = data.end;
+        this._length = this.getLength();
+        this.center = this.getCenter();
+        this._line = this.createLine(data);
+        this.newEndpointMesh(data);
+        this.newEndpointMesh(data);
+        this.label = this.newText();
+        this._root.renderOrder = 2;
+        this._components.scene.get().add(this._root);
+    }
+    set visible(visible) {
+        if (visible) {
+            this._components.scene.get().add(this._root);
+            this._root.add(this.label);
+        }
+        else {
+            this._root.removeFromParent();
+            this.label.removeFromParent();
+        }
+    }
+    set geometry(geometry) {
+        for (const point of this._endpoints) {
+            point.geometry = geometry;
+        }
+    }
+    set endPoint(point) {
+        this.end = point;
+        this.updateEndpointPosition(point);
+        this.updateEndpointMeshes(point);
+        this.updateLabel();
+    }
+    dispose() {
+        this.visible = false;
+        this._components = null;
+        this._disposer.dispose(this._root);
+        this._root = null;
+        this._line.material = null;
+        this._disposer.dispose(this._line);
+        this._line = null;
+        for (const mesh of this._endpoints) {
+            mesh.removeFromParent();
+            mesh.material = null;
+            mesh.geometry = null;
+        }
+        this._endpoints.length = 0;
+        this.label.removeFromParent();
+        this.label.element.remove();
+        this.label = null;
+        if (this.boundingBox) {
+            this._disposer.dispose(this.boundingBox);
+            this.boundingBox = null;
+        }
+    }
+    createBoundingBox() {
+        this.boundingBox.geometry = new THREE$1.BoxGeometry(1, 1, this._length);
+        this.boundingBox.position.copy(this.center);
+        this.boundingBox.lookAt(this.end);
+        this.boundingBox.visible = false;
+        this._root.add(this.boundingBox);
+    }
+    updateLabel() {
+        this._length = this.getLength();
+        this.label.element.textContent = this.getTextContent();
+        this.center = this.getCenter();
+        this.label.position.set(this.center.x, this.center.y, this.center.z);
+        this._line.computeLineDistances();
+    }
+    updateEndpointMeshes(point) {
+        this._endpoints[1].position.copy(point);
+        this._endpoints[1].lookAt(this.start);
+        this._endpoints[0].lookAt(this.end);
+    }
+    updateEndpointPosition(point) {
+        const position = this._line.geometry.attributes.position;
+        position.setXYZ(1, point.x, point.y, point.z);
+        position.needsUpdate = true;
+    }
+    createLine(data) {
+        const axisGeom = new THREE$1.BufferGeometry();
+        axisGeom.setFromPoints([data.start, data.end]);
+        const line = new THREE$1.Line(axisGeom, data.lineMaterial);
+        this._root.add(line);
+        return line;
+    }
+    newEndpointMesh(data) {
+        const isFirst = this._endpoints.length === 0;
+        const position = isFirst ? this.start : this.end;
+        const direction = isFirst ? this.end : this.start;
+        const mesh = data.endpoint.clone();
+        mesh.position.copy(position);
+        mesh.lookAt(direction);
+        this._endpoints.push(mesh);
+        this._root.add(mesh);
+    }
+    newText() {
+        const htmlText = document.createElement("div");
+        htmlText.className = SimpleDimensions.labelClassName;
+        htmlText.textContent = this.getTextContent();
+        const label = new CSS2DObject(htmlText);
+        label.position.set(this.center.x, this.center.y, this.center.z);
+        this._root.add(label);
+        return label;
+    }
+    getTextContent() {
+        return `${this._length / SimpleDimensionLine.scale} ${SimpleDimensionLine.units}`;
+    }
+    getLength() {
+        return parseFloat(this.start.distanceTo(this.end).toFixed(2));
+    }
+    getCenter() {
+        let dir = this.end.clone().sub(this.start);
+        const len = dir.length() * 0.5;
+        dir = dir.normalize().multiplyScalar(len);
+        return this.start.clone().add(dir);
+    }
+}
+SimpleDimensionLine.scale = 1;
+SimpleDimensionLine.units = "m";
 
 /**
  * A basic
