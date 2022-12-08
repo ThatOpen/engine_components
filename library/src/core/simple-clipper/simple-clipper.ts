@@ -21,7 +21,7 @@ export class SimpleClipper<Plane extends SimplePlane>
   name = "SimpleClipper";
 
   /** The material used in all the clipping planes. */
-  protected _planeMaterial: THREE.Material = new THREE.MeshBasicMaterial({
+  protected _material: THREE.Material = new THREE.MeshBasicMaterial({
     color: 0xffff00,
     side: THREE.DoubleSide,
     transparent: true,
@@ -51,7 +51,7 @@ export class SimpleClipper<Plane extends SimplePlane>
 
   protected _planes: Plane[] = [];
 
-  private _planeSize = 5;
+  private _size = 5;
   private _enabled = false;
 
   /** {@link Component.enabled} */
@@ -69,28 +69,28 @@ export class SimpleClipper<Plane extends SimplePlane>
   }
 
   /** The material of the clipping plane representation. */
-  get planeMaterial() {
-    return this._planeMaterial;
+  get material() {
+    return this._material;
   }
 
   /** The material of the clipping plane representation. */
-  set planeMaterial(material: THREE.Material) {
-    this._planeMaterial = material;
+  set material(material: THREE.Material) {
+    this._material = material;
     for (const plane of this._planes) {
       plane.planeMaterial = material;
     }
   }
 
   /** The size of the geometric representation of the clippings planes. */
-  get planeSize() {
-    return this._planeSize;
+  get size() {
+    return this._size;
   }
 
   /** The size of the geometric representation of the clippings planes. */
-  set planeSize(size: number) {
-    this._planeSize = size;
+  set size(size: number) {
+    this._size = size;
     for (const plane of this._planes) {
-      plane.planeSize = size;
+      plane.size = size;
     }
   }
 
@@ -251,8 +251,8 @@ export class SimpleClipper<Plane extends SimplePlane>
       this.components,
       point,
       normal,
-      this.planeSize,
-      this._planeMaterial,
+      this.size,
+      this._material,
       isPlan
     );
   }

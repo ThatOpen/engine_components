@@ -32,6 +32,8 @@ export class SimplePlane
 
   protected readonly _plane = new THREE.Plane();
 
+  // TODO: Make all planes share the same geometry
+  // TODO: Clean up unnecessary attributes, clean up constructor
   private _visible = true;
   private _enabled = true;
   private readonly _arrowBoundBox = new THREE.Mesh();
@@ -75,13 +77,13 @@ export class SimplePlane
   }
 
   /** The size of the clipping plane representation. */
-  get planeSize() {
+  get size() {
     return this._planeMesh.scale.x;
   }
 
   /** Sets the size of the clipping plane representation. */
-  set planeSize(size: number) {
-    this._planeMesh.geometry.scale(size, 1, size);
+  set size(size: number) {
+    this._planeMesh.scale.set(size, size, size);
   }
 
   constructor(

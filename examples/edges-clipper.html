@@ -119,10 +119,26 @@
 
 		const actionsFolder = gui.addFolder('Actions');
 
+		actionsFolder.add(clipper, 'enabled').name("Toggle clipping planes");
+
+		actionsFolder.add(clipper, 'enabled').name("Toggle clipping planes");
+
+		const color = {
+			value: 0x000000
+		}
+
+		const helperColor = new THREE.Color();
+		actionsFolder.addColor(color, "value")
+			.name("Plane color")
+			.onChange((value) => {
+				helperColor.setHex(value);
+				clipper.material.color = helperColor;
+			});
+
+		actionsFolder.add(clipper, 'size').name("Plane Size").min(0).max(15);
+		actionsFolder.add(clipper.material, 'opacity').name("Plane Opacity").min(0).max(1);
+
     const actions = {
-    	'Toggle': () => {
-    		clipper.enabled = !clipper.enabled;
-      },
     	'Delete all planes': () => {
     		clipper.deleteAll();
       },
@@ -143,7 +159,6 @@
       }
     }
 
-		actionsFolder.add(actions, 'Toggle');
 		actionsFolder.add(actions, 'Rotate cube');
 		actionsFolder.add(actions, 'Delete all planes');
 

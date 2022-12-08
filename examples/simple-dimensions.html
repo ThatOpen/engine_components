@@ -128,16 +128,8 @@
 
 		const actionsFolder = gui.addFolder('Actions');
 
-    const actions = {
-    	'Toggle': () => {
-    		dimensions.enabled = !dimensions.enabled;
-      },
-    	'Delete all dimensions': () => {
-    		dimensions.deleteAll();
-      }
-    }
-
-		actionsFolder.add(actions, 'Delete all dimensions');
+		actionsFolder.add(dimensions, "enabled").name("Dimensions enabled");
+		actionsFolder.add(dimensions, "visible").name("Dimensions visible");
 
 		const color = {
 			value: 0x000000
@@ -151,8 +143,13 @@
 			  dimensions.color = helperColor;
     });
 
-		actionsFolder.add(dimensions, "enabled").name("Dimensions enabled");
-		actionsFolder.add(dimensions, "visible").name("Dimensions visible");
+		const actions = {
+			'Delete all dimensions': () => {
+				dimensions.deleteAll();
+			}
+		}
+
+		actionsFolder.add(actions, 'Delete all dimensions');
 
 
   </script>

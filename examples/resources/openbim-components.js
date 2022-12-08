@@ -7441,7 +7441,7 @@ class SimpleClipper extends Component {
         /** {@link Component.name} */
         this.name = "SimpleClipper";
         /** The material used in all the clipping planes. */
-        this._planeMaterial = new THREE$1.MeshBasicMaterial({
+        this._material = new THREE$1.MeshBasicMaterial({
             color: 0xffff00,
             side: THREE$1.DoubleSide,
             transparent: true,
@@ -7465,7 +7465,7 @@ class SimpleClipper extends Component {
         /** Event that fires when the user stops dragging a clipping plane. */
         this.onEndDragging = new Event();
         this._planes = [];
-        this._planeSize = 5;
+        this._size = 5;
         this._enabled = false;
         this._onStartDragging = () => {
             this.onStartDragging.trigger();
@@ -7487,25 +7487,25 @@ class SimpleClipper extends Component {
         this.updateMaterials();
     }
     /** The material of the clipping plane representation. */
-    get planeMaterial() {
-        return this._planeMaterial;
+    get material() {
+        return this._material;
     }
     /** The material of the clipping plane representation. */
-    set planeMaterial(material) {
-        this._planeMaterial = material;
+    set material(material) {
+        this._material = material;
         for (const plane of this._planes) {
             plane.planeMaterial = material;
         }
     }
     /** The size of the geometric representation of the clippings planes. */
-    get planeSize() {
-        return this._planeSize;
+    get size() {
+        return this._size;
     }
     /** The size of the geometric representation of the clippings planes. */
-    set planeSize(size) {
-        this._planeSize = size;
+    set size(size) {
+        this._size = size;
         for (const plane of this._planes) {
-            plane.planeSize = size;
+            plane.size = size;
         }
     }
     /** The clipping planes that are not associated to floor plan navigation. */
@@ -7632,7 +7632,7 @@ class SimpleClipper extends Component {
         return plane;
     }
     newPlaneInstance(point, normal, isPlan) {
-        return new this.PlaneType(this.components, point, normal, this.planeSize, this._planeMaterial, isPlan);
+        return new this.PlaneType(this.components, point, normal, this.size, this._material, isPlan);
     }
     updateMaterials() {
         var _a;
@@ -9177,6 +9177,8 @@ class SimplePlane extends Component {
         /** Whether this plane is used for floor plan navigation */
         this.isPlan = false;
         this._plane = new THREE$1.Plane();
+        // TODO: Make all planes share the same geometry
+        // TODO: Clean up unnecessary attributes, clean up constructor
         this._visible = true;
         this._enabled = true;
         this._arrowBoundBox = new THREE$1.Mesh();
@@ -9221,12 +9223,12 @@ class SimplePlane extends Component {
         this._planeMesh.material = material;
     }
     /** The size of the clipping plane representation. */
-    get planeSize() {
+    get size() {
         return this._planeMesh.scale.x;
     }
     /** Sets the size of the clipping plane representation. */
-    set planeSize(size) {
-        this._planeMesh.geometry.scale(size, 1, size);
+    set size(size) {
+        this._planeMesh.scale.set(size, size, size);
     }
     update() {
         if (this._enabled) {
@@ -70028,7 +70030,7 @@ class EdgesClipper extends SimpleClipper {
         }
     }
     newPlaneInstance(point, normal, isPlan) {
-        return new this.PlaneType(this.components, point, normal, this.planeSize, this._planeMaterial, isPlan, this.styles);
+        return new this.PlaneType(this.components, point, normal, this.size, this._material, isPlan, this.styles);
     }
 }
 

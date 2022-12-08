@@ -41,8 +41,8 @@ export class EdgesClipper extends SimpleClipper<EdgesPlane> {
       this.components,
       point,
       normal,
-      this.planeSize,
-      this._planeMaterial,
+      this.size,
+      this._material,
       isPlan,
       this.styles
     );
