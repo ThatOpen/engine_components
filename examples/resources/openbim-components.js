@@ -67772,7 +67772,6 @@ class DataConverter {
         this._uniqueItems = {};
         this._units = new Units();
         this._boundingBoxes = {};
-        this._bounds = {};
         this._spatialStructure = new SpatialStructure();
         this._items = items;
         this._materials = materials;
@@ -67800,22 +67799,6 @@ class DataConverter {
         this.processAllFragmentsData();
         this.processAllUniqueItems();
         this.saveModelData(webIfc);
-        console.log(this._bounds);
-        const points = [];
-        for (const guid in this._bounds) {
-            const boundGroup = this._bounds[guid];
-            for (const bound of boundGroup) {
-                points.push(bound.min);
-                points.push(bound.max);
-            }
-        }
-        const globalBBox = new THREE$1.Box3();
-        globalBBox.setFromPoints(points);
-        const size = this._settings.voxelSize;
-        const xCount = (globalBBox.max.x - globalBBox.min.x) / size;
-        const yCount = (globalBBox.max.y - globalBBox.min.y) / size;
-        const zCount = (globalBBox.max.z - globalBBox.min.z) / size;
-        console.log(xCount, yCount, zCount);
         return this._model;
     }
     saveModelData(webIfc) {
@@ -67904,15 +67887,6 @@ class DataConverter {
             instanceHelper.updateMatrix();
             const id = fragment.getItemID(i, 0);
             this._boundingBoxes[id] = instanceHelper.matrix.elements;
-            const guid = fragment.mesh.uuid;
-            const max = new THREE$1.Vector3(0.5, 0.5, 0.5);
-            const min = new THREE$1.Vector3(-0.5, -0.5, -0.5);
-            max.applyMatrix4(instanceHelper.matrix);
-            min.applyMatrix4(instanceHelper.matrix);
-            if (!this._bounds[guid]) {
-                this._bounds[guid] = [];
-            }
-            this._bounds[guid].push(new THREE$1.Box3(min, max));
         }
     }
     getTransformHelper(geometries) {
@@ -67974,7 +67948,6 @@ class DataConverter {
         const geometries = Object.values(this._uniqueItems[category][level]);
         const { buffer, ids } = this.processIDsAndBuffer(geometries);
         const mats = this.getUniqueItemMaterial(category, level);
-        console.log(geometries, ids.size);
         const items = {};
         for (const geometryGroup of geometries) {
             for (const geom of geometryGroup) {

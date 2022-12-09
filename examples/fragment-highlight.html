@@ -8,24 +8,25 @@
   <link rel="stylesheet" href="resources/styles.css">
   <link rel="icon" type="image/x-icon" href="../favicon.ico">
   <title>Components | Hello world</title>
-
-  <style>
-      .main-container {
-          display: flex;
-          flex-direction: column;
-          position: absolute;
-          height: 100vh;
-      }
-  </style>
-
 </head>
 <body>
 <div class="full-screen" id="container"></div>
-
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.135.0/build/three.module.js",
+        "three/examples/jsm/lines/LineMaterial": "https://unpkg.com/three@0.135.0/examples/jsm/lines/LineMaterial.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.135.0/examples/jsm/libs/lil-gui.module.min.js",
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
+        "unzipit": "https://unpkg.com/unzipit@1.4.0/dist/unzipit.module.js",
+        "client-zip": "https://unpkg.com/client-zip@2.3.0/index.js"
+      }
+    }
+</script>
 <script type="module">
-	import Stats from 'https://unpkg.com/stats-js@1.0.1/src/Stats.js';
-	import * as THREE from 'https://unpkg.com/three@0.135.0/build/three.module.js';
-	import { unzip } from 'https://unpkg.com/unzipit@1.4.0/dist/unzipit.module.js';
+	import * as THREE from 'three';
+	import Stats from 'stats.js/src/Stats.js';
+	import { unzip } from 'unzipit';
 	import * as OBC from './resources/openbim-components.js';
 
 	const container = document.getElementById('container');
@@ -40,6 +41,7 @@
 	const camera = new OBC.OrthoPerspectiveCamera(components);
 	components.camera = camera;
 	renderer.postproduction.setup(camera.controls);
+	renderer.postproduction.active = true;
 
 	components.raycaster = new OBC.SimpleRaycaster(components);
 	components.init();
@@ -73,7 +75,21 @@
 
 	const fragments = new OBC.Fragments(components);
 
+	// Set up fragment culler update
+
+	container.addEventListener("mouseup", () => fragments.culler.needsUpdate = true);
+	container.addEventListener("wheel", () => fragments.culler.needsUpdate = true);
+
+	// Bind postproduction update with fragment culler update
+
+	fragments.culler.viewUpdated.on(() => setTimeout(() => renderer.postproduction.update(), 300));
+
 	await loadFragment('./resources/small.zip');
+
+	// Set up highlighting
+
+	fragments.highlighter.add('example', new THREE.MeshBasicMaterial({color: 'red'}));
+	window.addEventListener('mousemove', () => fragments.highlighter.highlight('example'));
 
 	async function loadFragment(url) {
 		const {entries} = await unzip(url);
@@ -98,7 +114,11 @@
 			const dataURL = URL.createObjectURL(dataBlob);
 
 			await fragments.load(geometryURL, dataURL, coordMatrix);
+
+			fragments.culler.needsUpdate = true;
 		}
+		fragments.highlighter.update();
+		fragments.highlighter.active = true;
   }
 
 </script>

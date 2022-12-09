@@ -22,8 +22,6 @@ export class DataConverter {
   private _uniqueItems: IfcToFragmentUniqueItems = {};
   private _units = new Units();
   private _boundingBoxes: { [id: string]: number[] } = {};
-  private _bounds: { [id: string]: THREE.Box3[] } = {};
-  // private _voxels: [number, number, number, string[]][] = [];
 
   private readonly _items: IfcToFragmentItems;
   private readonly _materials: MaterialList;
@@ -65,27 +63,6 @@ export class DataConverter {
     this.processAllFragmentsData();
     this.processAllUniqueItems();
     this.saveModelData(webIfc);
-
-    console.log(this._bounds);
-    const points: THREE.Vector3[] = [];
-    for (const guid in this._bounds) {
-      const boundGroup = this._bounds[guid];
-      for (const bound of boundGroup) {
-        points.push(bound.min);
-        points.push(bound.max);
-      }
-    }
-
-    const globalBBox = new THREE.Box3();
-    globalBBox.setFromPoints(points);
-    const size = this._settings.voxelSize;
-
-    const xCount = (globalBBox.max.x - globalBBox.min.x) / size;
-    const yCount = (globalBBox.max.y - globalBBox.min.y) / size;
-    const zCount = (globalBBox.max.z - globalBBox.min.z) / size;
-
-    console.log(xCount, yCount, zCount);
-
     return this._model;
   }
 
@@ -189,16 +166,6 @@ export class DataConverter {
       instanceHelper.updateMatrix();
       const id = fragment.getItemID(i, 0);
       this._boundingBoxes[id] = instanceHelper.matrix.elements;
-
-      const guid = fragment.mesh.uuid;
-      const max = new THREE.Vector3(0.5, 0.5, 0.5);
-      const min = new THREE.Vector3(-0.5, -0.5, -0.5);
-      max.applyMatrix4(instanceHelper.matrix);
-      min.applyMatrix4(instanceHelper.matrix);
-      if (!this._bounds[guid]) {
-        this._bounds[guid] = [];
-      }
-      this._bounds[guid].push(new THREE.Box3(min, max));
     }
   }
 
@@ -273,8 +240,6 @@ export class DataConverter {
     const geometries = Object.values(this._uniqueItems[category][level]);
     const { buffer, ids } = this.processIDsAndBuffer(geometries);
     const mats = this.getUniqueItemMaterial(category, level);
-
-    console.log(geometries, ids.size);
 
     const items: { [id: number]: BufferGeometry[] } = {};
 

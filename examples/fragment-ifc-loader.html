@@ -28,6 +28,7 @@
 	import * as THREE from 'three';
 	import { downloadZip } from 'client-zip';
 	import * as OBC from './resources/openbim-components.js';
+	import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
 
 	const container = document.getElementById('container');
 
@@ -75,7 +76,19 @@
 	components.renderer.afterUpdate.on(() => stats.end());
 
 	const fragments = new OBC.Fragments(components);
+
+	// Set up fragment culler update
+
+	container.addEventListener("mouseup", () => fragments.culler.needsUpdate = true);
+	container.addEventListener("wheel", () => fragments.culler.needsUpdate = true);
+
+	// Bind postproduction update with fragment culler update
+
+	fragments.culler.viewUpdated.on(() => setTimeout(() => renderer.postproduction.update(), 300));
+
 	convertIfcToFragments();
+
+	let model = {};
 
 	async function convertIfcToFragments() {
 
@@ -87,22 +100,10 @@
       USE_FAST_BOOLS: false
     };
 
-		const model = await fragments.ifcLoader.load("./resources/01.ifc");
+		model = await fragments.ifcLoader.load("./resources/01.ifc");
 		addFragments(model);
-		// downloadFragment(model);
 
-		console.log(model.boundingBoxes);
-
-		const boxes = Object.values(model.boundingBoxes);
-		const geometry = new THREE.BoxGeometry();
-		const material = new THREE.MeshLambertMaterial({color: "red", transparent: true, opacity: 0.5, depthTest: false});
-		const mesh = new THREE.InstancedMesh(geometry, material, boxes.length);
-		const tempMatrix = new THREE.Matrix4();
-		for(let i = 0; i < boxes.length; i++) {
-			tempMatrix.fromArray(boxes[i]);
-			mesh.setMatrixAt(i, tempMatrix);
-    }
-		scene.add(mesh);
+		fragments.culler.needsUpdate = true;
 	}
 
 	function addFragments(model) {
@@ -111,17 +112,13 @@
 		}
   }
 
-	async function downloadFragment(model) {
+	async function downloadFragment() {
 
 		const files = [];
 		for (const frag of model.fragments) {
 			const file = await frag.export();
 			files.push(file.geometry, file.data);
 		}
-
-		// const serializer = this.ifcLoader.ifcManager.properties.serializer;
-		// const propertyBlob = await serializer.serializeAllProperties(model.modelID);
-		// const propertyFile = new File(propertyBlob, "properties.json");
 
 		files.push(new File([JSON.stringify(model.levelRelationships)], 'levels-relationship.json'));
 		files.push(new File([JSON.stringify(model.itemTypes)], 'model-types.json'));
@@ -136,12 +133,18 @@
 		link.download = "test.zip";
 		link.click();
 
-		// link.href = URL.createObjectURL(propertyFile);
-		// link.download = "properties.json";
-		// link.click();
-
 		link.remove();
 	}
+
+	// Set up GUI
+
+	const gui = new dat.GUI();
+
+	const actions = {
+		"Download fragment": downloadFragment
+  }
+
+	gui.add(actions, "Download fragment");
 
 </script>
 </body>

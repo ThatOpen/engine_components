@@ -9,38 +9,9 @@
   <link rel="icon" type="image/x-icon" href="../favicon.ico">
   <title>Components | Hello world</title>
 
-  <style>
-      .main-container {
-          display: flex;
-          flex-direction: column;
-          position: absolute;
-          height: 100vh;
-      }
-
-      .main-container div {
-          left: 0;
-          z-index: 1;
-          display: flex;
-          flex-direction: column;
-          height: 50%;
-          overflow-y: scroll;
-          background-color: white;
-      }
-
-      .main-container div button {
-          margin: 8px;
-          padding: 8px;
-      }
-  </style>
-
 </head>
 <body>
 <div class="full-screen" id="container"></div>
-
-<div class="main-container">
-  <div id="category-container"></div>
-  <div id="level-container"></div>
-</div>
 <script type="importmap">
     {
       "imports": {
@@ -58,6 +29,7 @@
 	import * as THREE from 'three';
 	import Stats from 'stats.js/src/Stats.js';
 	import * as OBC from './resources/openbim-components.js';
+	import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
 
 	const container = document.getElementById('container');
 
@@ -104,14 +76,28 @@
 	const stats = new Stats();
 	stats.showPanel(2);
 	document.body.append(stats.dom);
-	stats.dom.style.right = '0px';
-	stats.dom.style.left = 'auto';
+	stats.dom.style.left = '0px';
+	stats.dom.style.right = 'auto';
 
 	components.renderer.beforeUpdate.on(() => stats.begin());
 	components.renderer.afterUpdate.on(() => stats.end());
 
 	const fragments = new OBC.Fragments(components);
-	loadFragments();
+
+	const categoryID = "category";
+	const floorID = "floor";
+	await loadFragments();
+
+	// Set up fragment culler update
+
+	container.addEventListener("mouseup", () => fragments.culler.needsUpdate = true);
+	container.addEventListener("wheel", () => fragments.culler.needsUpdate = true);
+
+	// Bind postproduction update with fragment culler update
+
+	fragments.culler.viewUpdated.on(() => setTimeout(() => renderer.postproduction.update(), 300));
+
+	// Load the fragments
 
 	async function loadFragments() {
 		const { entries } = await unzip('./resources/small.zip');
@@ -134,6 +120,7 @@
 			if (!name.includes('.glb')) continue;
 
 			// Load data
+
 			const geometryName = fileNames[i];
 			const geometry = await entries[geometryName].blob();
 			const geometryURL = URL.createObjectURL(geometry);
@@ -145,89 +132,38 @@
 
 			const fragment = await fragments.load(geometryURL, dataURL);
 
-			// Group items for visibility
+			fragments.culler.needsUpdate = true;
 
-			const groups = { category: {}, floor: {} };
+			// Group items by category and by floor
+
+			const groups = { [categoryID]: {}, [floorID]: {} };
 
 			for (const id of data.ids) {
-				const categoryID = modelTypes[id];
-				const category = allTypes[categoryID];
-				if (!groups.category[category]) {
-					groups.category[category] = [];
-				}
-				groups.category[category].push(id);
 
-				const floorID = levelsRelationship[id];
-				const floor = floorNames[floorID];
-				if (!groups.floor[floor]) {
-					groups.floor[floor] = [];
+				// Get the category of the items
+
+				const categoryExpressID = modelTypes[id];
+				const category = allTypes[categoryExpressID];
+				if (!groups[categoryID][category]) {
+					groups[categoryID][category] = [];
 				}
-				groups.floor[floor].push(id);
+				groups[categoryID][category].push(id);
+
+				// Get the floors of the items
+
+				const floorExpressID = levelsRelationship[id];
+				const floor = floorNames[floorExpressID];
+				if (!groups[floorID][floor]) {
+					groups[floorID][floor] = [];
+				}
+				groups[floorID][floor].push(id);
 			}
 
 			fragments.groups.add(fragment.id, groups);
-
 		}
-
-		// Group by category
-
-		const categoryContainer = document.getElementById('category-container');
-
-		const categories = Object.keys(fragments.groups.groupSystems.category);
-		for (const category of categories) {
-			const button = document.createElement('button');
-			button.textContent = category;
-			categoryContainer.appendChild(button);
-
-			let visible = true;
-			button.onclick = () => {
-				visible = !visible;
-				const models = fragments.groups.get({ category });
-				for (const guid in models) {
-					const ids = models[guid];
-					const frag = fragments.fragments[guid];
-					frag.setVisibility(ids, visible);
-
-					const culled = fragments.culler.meshes.get(frag.id);
-					if (culled) culled.count = frag.mesh.count;
-
-				}
-				fragments.culler.needsUpdate = true;
-				renderer.postproduction.update();
-			};
-		}
-
-		// Group by level
-
-		const levelContainer = document.getElementById('level-container');
-
-		const floors = Object.keys(fragments.groups.groupSystems.floor);
-		for (const floor of floors) {
-			const button = document.createElement('button');
-			button.textContent = floor;
-			levelContainer.appendChild(button);
-
-			let visible = true;
-			button.onclick = () => {
-				visible = !visible;
-				const models = fragments.groups.get({ floor });
-				for (const guid in models) {
-					const ids = models[guid];
-					const frag = fragments.fragments[guid];
-					frag.setVisibility(ids, visible);
-
-					const culled = fragments.culler.meshes.get(frag.id);
-					if (culled) culled.count = frag.mesh.count;
-				}
-				fragments.culler.needsUpdate = true;
-				renderer.postproduction.update();
-			};
-		}
-
-		fragments.highlighter.update();
-		fragments.highlighter.active = true;
 
 		// Render shadows
+
 		const guids = fragments.groups.get({ category: 'IFCSLAB' });
 		const slabs = Object.keys(guids).map(guid => fragments.fragments[guid]);
 		const meshes = slabs.map(slab => slab.mesh);
@@ -236,50 +172,35 @@
 		components.scene.get().add(shadow);
 	}
 
-  fragments.highlighter.add('example', new THREE.MeshBasicMaterial({color: 'red'}));
-	window.addEventListener('mousemove', () => fragments.highlighter.highlight('example'));
+	// Set up GUI
 
-	window.onkeydown = (event) => {
-		switch (event.code) {
-			case 'KeyC': {
-				components.tools.toggle('clipper');
-				break;
-			}
-			case 'KeyD': {
-				components.tools.toggle('dimensions');
-				break;
-			}
-			case 'KeyH': {
-				components.tools.toggleAllVisibility();
-				break;
-			}
-			case 'Escape' : {
-				if (dimensions.enabled) {
-					dimensions.cancelDrawing();
+	const gui = new dat.GUI();
+	setupGUI(categoryID);
+	setupGUI(floorID);
+
+	function setupGUI(id) {
+		const folder = gui.addFolder(id);
+		const items = {};
+		const itemsNames = Object.keys(fragments.groups.groupSystems[id]);
+		for (const itemName of itemsNames) {
+			items[itemName] = true;
+
+			folder.add(items, itemName).onChange((visible) => {
+				const models = fragments.groups.get({ [id]: itemName });
+				for (const guid in models) {
+					const ids = models[guid];
+					const frag = fragments.fragments[guid];
+					frag.setVisibility(ids, visible);
+
+					const culled = fragments.culler.meshes.get(frag.id);
+					if (culled) culled.count = frag.mesh.count;
+
 				}
-				break;
-			}
-			case 'KeyP': {
-				components.tools.printToolsState();
-			}
-			case 'Delete': {
-				if (clipper.enabled)
-					clipper.deletePlane();
-
-				if (dimensions.enabled) {
-					dimensions.delete();
-				}
-			}
+				fragments.culler.needsUpdate = true;
+				renderer.postproduction.update();
+			})
 		}
-	};
-
-	window.ondblclick = () => {
-		if (clipper.enabled) {
-			clipper.createPlane();
-		} else if (dimensions.enabled) {
-			dimensions.create();
-		}
-	};
+	}
 
 </script>
 </body>
