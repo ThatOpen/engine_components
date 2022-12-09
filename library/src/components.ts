@@ -166,12 +166,6 @@ export class Components {
     Components.setupBVH();
   }
 
-  private static setupBVH() {
-    THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
-    THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
-    THREE.Mesh.prototype.raycast = acceleratedRaycast;
-  }
-
   /**
    * Initializes the library. It should be called at the start of the app after
    * initializing the {@link scene}, the {@link renderer} and the
@@ -233,5 +227,11 @@ export class Components {
     if (component.isUpdateable() && component.enabled) {
       component.update(delta);
     }
+  }
+
+  private static setupBVH() {
+    THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+    THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+    THREE.Mesh.prototype.raycast = acceleratedRaycast;
   }
 }

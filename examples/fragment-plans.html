@@ -8,38 +8,9 @@
   <link rel="stylesheet" href="resources/styles.css">
   <link rel="icon" type="image/x-icon" href="../favicon.ico">
   <title>Components | Hello world</title>
-
-  <style>
-      .main-container {
-          display: flex;
-          flex-direction: column;
-          position: absolute;
-          height: 100vh;
-      }
-
-      .main-container div {
-          left: 0;
-          z-index: 1;
-          display: flex;
-          flex-direction: column;
-          height: 100%;
-          overflow-y: scroll;
-          background-color: white;
-      }
-
-      .main-container div button {
-          margin: 8px;
-          padding: 8px;
-      }
-  </style>
-
 </head>
 <body>
 <div class="full-screen" id="container"></div>
-
-<div class="main-container">
-  <div id="plan-container"></div>
-</div>
 <script type="importmap">
     {
       "imports": {
@@ -58,6 +29,7 @@
 	import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial';
 	import Stats from 'stats.js/src/Stats.js';
 	import * as OBC from './resources/openbim-components.js';
+	import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
 
 	const container = document.getElementById('container');
 
@@ -89,8 +61,8 @@
 	scene.add(ambientLight)
 
 	// Add some components
-	// const grid = new SimpleGrid(components);
-	// components.tools.add(grid);
+	const grid = new OBC.SimpleGrid(components);
+	components.tools.add(grid);
 	// renderer.postproduction.excludedItems.add(grid.grid);
 
 	const clipper = new OBC.EdgesClipper(components, OBC.EdgesPlane);
@@ -100,6 +72,7 @@
 	components.tools.add(dimensions)
 
 	// Set up stats
+
 	const stats = new Stats();
 	stats.showPanel(2);
 	document.body.append(stats.dom);
@@ -110,10 +83,30 @@
 	components.renderer.afterUpdate.on(() => stats.end());
 
 	const fragments = new OBC.Fragments(components);
-	loadFragments();
+
+	// Set up fragment culler update
+
+	container.addEventListener("mouseup", () => fragments.culler.needsUpdate = true);
+	container.addEventListener("wheel", () => fragments.culler.needsUpdate = true);
+
+	// Bind postproduction update with fragment culler update
+
+	fragments.culler.viewUpdated.on(() => setTimeout(() => renderer.postproduction.update(), 300));
+
+  // Floor plan data
+
+	const floorNav = new OBC.PlanNavigator(clipper, camera);
+	let wasFloorplanActive = false;
+	const baseMaterial = new THREE.MeshBasicMaterial();
+	const backgroundColor = scene.background;
+	const whiteColor = new THREE.Color(0xffffff);
+
+	// Load fragments
+
+	await loadFragments();
 
 	async function loadFragments() {
-		const {entries} = await unzip('./resources/medium.zip');
+		const {entries} = await unzip('./resources/small.zip');
 
 		const fileNames = Object.keys(entries);
 
@@ -144,6 +137,8 @@
 
 			const fragment = await fragments.load(geometryURL, dataURL);
 
+			fragments.culler.needsUpdate = true;
+
 			const lines = fragments.edges.generate(fragment);
 			lines.removeFromParent();
 
@@ -152,7 +147,6 @@
 			const category = allTypes[categoryID];
 			if(thickTypes.includes(category)) thickItems.push(fragment.mesh);
 			else thinItems.push(fragment.mesh);
-
 		}
 
 		// Clipping edges
@@ -169,15 +163,7 @@
 
 		// Floor plans
 
-		let wasFloorplanActive = false;
-
-		const baseMaterial = new THREE.MeshBasicMaterial();
-		const backgroundColor = scene.background;
-		const whiteColor = new THREE.Color(0xffffff);
-
 		const levelsProperties = await entries['levels-properties.json'].json();
-		const floorNav = new OBC.PlanNavigator(clipper, camera);
-		const levelContainer = document.getElementById('plan-container');
 		const levelOffset = 1.5;
 
 		for (const levelProps of levelsProperties) {
@@ -192,42 +178,24 @@
 				data: {name: levelProps.Name.value},
 				rotation: 0
 			});
-
-			// Create GUI for navigation
-			const button = document.createElement('button');
-			button.textContent = levelProps.Name.value;
-			levelContainer.appendChild(button);
-
-			button.onclick = async () => {
-				if(!wasFloorplanActive) {
-					toggleEdges(true);
-					scene.background = whiteColor;
-				}
-
-				fragments.materials.apply(baseMaterial);
-				await floorNav.goTo(levelProps.expressID);
-				fragments.culler.needsUpdate = true;
-				fragments.culler.updateVisibility();
-
-				wasFloorplanActive = true;
-			}
 		}
 
 		// Create GUI for exiting floor plan navigation
-		const exitButton = document.createElement('button');
-		exitButton.textContent = "Exit";
-		levelContainer.appendChild(exitButton);
 
-		exitButton.onclick = async () => {
-			fragments.materials.reset();
-			await floorNav.exitPlanView();
-			fragments.culler.needsUpdate = true;
-			fragments.culler.updateVisibility();
-
-			wasFloorplanActive = false;
-			toggleEdges(false);
-			scene.background = backgroundColor;
-		}
+		// const exitButton = document.createElement('button');
+		// exitButton.textContent = "Exit";
+		// levelContainer.appendChild(exitButton);
+    //
+		// exitButton.onclick = async () => {
+		// 	fragments.materials.reset();
+		// 	await floorNav.exitPlanView();
+		// 	fragments.culler.needsUpdate = true;
+		// 	fragments.culler.updateVisibility();
+    //
+		// 	wasFloorplanActive = false;
+		// 	toggleEdges(false);
+		// 	scene.background = backgroundColor;
+		// }
 	}
 
 	function toggleEdges(visible) {
@@ -237,6 +205,44 @@
 			else edge.removeFromParent();
 		}
 	}
+
+	// Set up GUI
+
+	const gui = new dat.GUI();
+	const levelsFolder = gui.addFolder("Levels");
+	const helper = {};
+
+	// Go to floor plan mode
+
+	const floors = floorNav.get();
+	for(const id in floors) {
+		const name = floors[id].data.name;
+		helper[id] = async () => {
+			if(!wasFloorplanActive) {
+				toggleEdges(true);
+				scene.background = whiteColor;
+			}
+			fragments.materials.apply(baseMaterial);
+			fragments.culler.needsUpdate = true;
+			wasFloorplanActive = true;
+			grid.visible = false;
+			await floorNav.goTo(id);
+		}
+		levelsFolder.add(helper, id).name(name);
+  }
+
+	// Exit floor plan mode
+
+	helper["exit"] = async () => {
+		  grid.visible = true;
+			fragments.materials.reset();
+			await floorNav.exitPlanView();
+			fragments.culler.needsUpdate = true;
+			wasFloorplanActive = false;
+			toggleEdges(false);
+			scene.background = backgroundColor;
+  }
+	levelsFolder.add(helper, "exit").name("Exit floor plans");
 
 </script>
 </body>
