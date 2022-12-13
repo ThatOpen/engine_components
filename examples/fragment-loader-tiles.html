@@ -113,10 +113,8 @@
 	await loadModel('./resources/small.zip');
 
 	async function loadModel(url) {
-		const { entries } = await unzip(url);
-
 		// Load the bounding boxes for this model
-
+		const { entries } = await unzip(url);
 		const opaqueBoxes = await entries['bounding-boxes-opaque.json'].json();
 		const transparentBoxes = await entries['bounding-boxes-transparent.json'].json();
 		const fragmentMap = await entries['express-fragment-map.json'].json();
