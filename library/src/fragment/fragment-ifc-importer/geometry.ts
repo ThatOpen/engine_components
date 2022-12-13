@@ -7,6 +7,7 @@ export class Geometry {
   private referenceMatrix = new THREE.Matrix4();
   private isFirstMatrix = true;
   private _materials: MaterialList;
+  private _voids = new Set<number>();
   private _geometriesByMaterial: {
     [color: string]: THREE.BufferGeometry[];
   } = {};
@@ -36,6 +37,11 @@ export class Geometry {
 
   cleanUp() {
     this._geometriesByMaterial = {};
+    this._voids.clear();
+  }
+
+  addVoid(voidID: number) {
+    this._voids.add(voidID);
   }
 
   private reset(webifc: WEBIFC.IfcAPI) {
@@ -53,6 +59,7 @@ export class Geometry {
     this._items[geometryID].instances.push({
       id: mesh.expressID,
       matrix: transform,
+      hasVoids: this._voids.has(mesh.expressID),
     });
   }
 
@@ -74,6 +81,7 @@ export class Geometry {
         {
           id: mesh.expressID,
           matrix: new THREE.Matrix4(),
+          hasVoids: this._voids.has(mesh.expressID),
         },
       ],
       geometriesByMaterial: this._geometriesByMaterial,

@@ -6806,6 +6806,139 @@ function getBasisTransform(from, to, targetMatrix) {
     targetMatrix.makeBasis(orderedVectors[0], orderedVectors[1], orderedVectors[2]);
 }
 
+/** The name of the CSS class that styles the dimension label. */
+const DimensionLabelClassName = "ifcjs-dimension-label";
+/** The name of the CSS class that styles the dimension label. */
+const DimensionPreviewClassName = "ifcjs-dimension-preview";
+
+// TODO: Document + clean up this: way less parameters, clearer logic
+class SimpleDimensionLine {
+    constructor(components, data) {
+        this.boundingBox = new THREE$1.Mesh();
+        this._disposer = new Disposer();
+        this._root = new THREE$1.Group();
+        this._endpoints = [];
+        this._components = components;
+        this.start = data.start;
+        this.end = data.end;
+        this._length = this.getLength();
+        this.center = this.getCenter();
+        this._line = this.createLine(data);
+        this.newEndpointMesh(data);
+        this.newEndpointMesh(data);
+        this.label = this.newText();
+        this._root.renderOrder = 2;
+        this._components.scene.get().add(this._root);
+    }
+    set visible(visible) {
+        if (visible) {
+            this._components.scene.get().add(this._root);
+            this._root.add(this.label);
+        }
+        else {
+            this._root.removeFromParent();
+            this.label.removeFromParent();
+        }
+    }
+    set geometry(geometry) {
+        for (const point of this._endpoints) {
+            point.geometry = geometry;
+        }
+    }
+    set endPoint(point) {
+        this.end = point;
+        this.updateEndpointPosition(point);
+        this.updateEndpointMeshes(point);
+        this.updateLabel();
+    }
+    dispose() {
+        this.visible = false;
+        this._components = null;
+        this._disposer.dispose(this._root);
+        this._root = null;
+        this._line.material = null;
+        this._disposer.dispose(this._line);
+        this._line = null;
+        for (const mesh of this._endpoints) {
+            mesh.removeFromParent();
+            mesh.material = null;
+            mesh.geometry = null;
+        }
+        this._endpoints.length = 0;
+        this.label.removeFromParent();
+        this.label.element.remove();
+        this.label = null;
+        if (this.boundingBox) {
+            this._disposer.dispose(this.boundingBox);
+            this.boundingBox = null;
+        }
+    }
+    createBoundingBox() {
+        this.boundingBox.geometry = new THREE$1.BoxGeometry(1, 1, this._length);
+        this.boundingBox.position.copy(this.center);
+        this.boundingBox.lookAt(this.end);
+        this.boundingBox.visible = false;
+        this._root.add(this.boundingBox);
+    }
+    updateLabel() {
+        this._length = this.getLength();
+        this.label.element.textContent = this.getTextContent();
+        this.center = this.getCenter();
+        this.label.position.set(this.center.x, this.center.y, this.center.z);
+        this._line.computeLineDistances();
+    }
+    updateEndpointMeshes(point) {
+        this._endpoints[1].position.copy(point);
+        this._endpoints[1].lookAt(this.start);
+        this._endpoints[0].lookAt(this.end);
+    }
+    updateEndpointPosition(point) {
+        const position = this._line.geometry.attributes.position;
+        position.setXYZ(1, point.x, point.y, point.z);
+        position.needsUpdate = true;
+    }
+    createLine(data) {
+        const axisGeom = new THREE$1.BufferGeometry();
+        axisGeom.setFromPoints([data.start, data.end]);
+        const line = new THREE$1.Line(axisGeom, data.lineMaterial);
+        this._root.add(line);
+        return line;
+    }
+    newEndpointMesh(data) {
+        const isFirst = this._endpoints.length === 0;
+        const position = isFirst ? this.start : this.end;
+        const direction = isFirst ? this.end : this.start;
+        const mesh = data.endpoint.clone();
+        mesh.position.copy(position);
+        mesh.lookAt(direction);
+        this._endpoints.push(mesh);
+        this._root.add(mesh);
+    }
+    newText() {
+        const htmlText = document.createElement("div");
+        htmlText.className = DimensionLabelClassName;
+        htmlText.textContent = this.getTextContent();
+        const label = new CSS2DObject(htmlText);
+        label.position.set(this.center.x, this.center.y, this.center.z);
+        this._root.add(label);
+        return label;
+    }
+    getTextContent() {
+        return `${this._length / SimpleDimensionLine.scale} ${SimpleDimensionLine.units}`;
+    }
+    getLength() {
+        return parseFloat(this.start.distanceTo(this.end).toFixed(2));
+    }
+    getCenter() {
+        let dir = this.end.clone().sub(this.start);
+        const len = dir.length() * 0.5;
+        dir = dir.normalize().multiplyScalar(len);
+        return this.start.clone().add(dir);
+    }
+}
+SimpleDimensionLine.scale = 1;
+SimpleDimensionLine.units = "m";
+
 /**
  * A helper to easily get the real position of the mouse in the Three.js canvas
  * to work with tools like the
@@ -6934,7 +7067,7 @@ class SimpleDimensions extends Component {
         this._raycaster = new SimpleRaycaster(this.components);
         this._endpointMesh = this.newEndpointMesh();
         const htmlPreview = document.createElement("div");
-        htmlPreview.className = SimpleDimensions.previewClassName;
+        htmlPreview.className = DimensionPreviewClassName;
         this.previewElement = new CSS2DObject(htmlPreview);
         this.previewElement.visible = false;
     }
@@ -7165,138 +7298,6 @@ class SimpleDimensions extends Component {
         return new THREE$1.Vector3(vertices.getX(index), vertices.getY(index), vertices.getZ(index));
     }
 }
-/** The name of the CSS class that styles the dimension label. */
-SimpleDimensions.labelClassName = "ifcjs-dimension-label";
-/** The name of the CSS class that styles the dimension label. */
-SimpleDimensions.previewClassName = "ifcjs-dimension-preview";
-
-// TODO: Document + clean up this: way less parameters, clearer logic
-class SimpleDimensionLine {
-    constructor(components, data) {
-        this.boundingBox = new THREE$1.Mesh();
-        this._disposer = new Disposer();
-        this._root = new THREE$1.Group();
-        this._endpoints = [];
-        this._components = components;
-        this.start = data.start;
-        this.end = data.end;
-        this._length = this.getLength();
-        this.center = this.getCenter();
-        this._line = this.createLine(data);
-        this.newEndpointMesh(data);
-        this.newEndpointMesh(data);
-        this.label = this.newText();
-        this._root.renderOrder = 2;
-        this._components.scene.get().add(this._root);
-    }
-    set visible(visible) {
-        if (visible) {
-            this._components.scene.get().add(this._root);
-            this._root.add(this.label);
-        }
-        else {
-            this._root.removeFromParent();
-            this.label.removeFromParent();
-        }
-    }
-    set geometry(geometry) {
-        for (const point of this._endpoints) {
-            point.geometry = geometry;
-        }
-    }
-    set endPoint(point) {
-        this.end = point;
-        this.updateEndpointPosition(point);
-        this.updateEndpointMeshes(point);
-        this.updateLabel();
-    }
-    dispose() {
-        this.visible = false;
-        this._components = null;
-        this._disposer.dispose(this._root);
-        this._root = null;
-        this._line.material = null;
-        this._disposer.dispose(this._line);
-        this._line = null;
-        for (const mesh of this._endpoints) {
-            mesh.removeFromParent();
-            mesh.material = null;
-            mesh.geometry = null;
-        }
-        this._endpoints.length = 0;
-        this.label.removeFromParent();
-        this.label.element.remove();
-        this.label = null;
-        if (this.boundingBox) {
-            this._disposer.dispose(this.boundingBox);
-            this.boundingBox = null;
-        }
-    }
-    createBoundingBox() {
-        this.boundingBox.geometry = new THREE$1.BoxGeometry(1, 1, this._length);
-        this.boundingBox.position.copy(this.center);
-        this.boundingBox.lookAt(this.end);
-        this.boundingBox.visible = false;
-        this._root.add(this.boundingBox);
-    }
-    updateLabel() {
-        this._length = this.getLength();
-        this.label.element.textContent = this.getTextContent();
-        this.center = this.getCenter();
-        this.label.position.set(this.center.x, this.center.y, this.center.z);
-        this._line.computeLineDistances();
-    }
-    updateEndpointMeshes(point) {
-        this._endpoints[1].position.copy(point);
-        this._endpoints[1].lookAt(this.start);
-        this._endpoints[0].lookAt(this.end);
-    }
-    updateEndpointPosition(point) {
-        const position = this._line.geometry.attributes.position;
-        position.setXYZ(1, point.x, point.y, point.z);
-        position.needsUpdate = true;
-    }
-    createLine(data) {
-        const axisGeom = new THREE$1.BufferGeometry();
-        axisGeom.setFromPoints([data.start, data.end]);
-        const line = new THREE$1.Line(axisGeom, data.lineMaterial);
-        this._root.add(line);
-        return line;
-    }
-    newEndpointMesh(data) {
-        const isFirst = this._endpoints.length === 0;
-        const position = isFirst ? this.start : this.end;
-        const direction = isFirst ? this.end : this.start;
-        const mesh = data.endpoint.clone();
-        mesh.position.copy(position);
-        mesh.lookAt(direction);
-        this._endpoints.push(mesh);
-        this._root.add(mesh);
-    }
-    newText() {
-        const htmlText = document.createElement("div");
-        htmlText.className = SimpleDimensions.labelClassName;
-        htmlText.textContent = this.getTextContent();
-        const label = new CSS2DObject(htmlText);
-        label.position.set(this.center.x, this.center.y, this.center.z);
-        this._root.add(label);
-        return label;
-    }
-    getTextContent() {
-        return `${this._length / SimpleDimensionLine.scale} ${SimpleDimensionLine.units}`;
-    }
-    getLength() {
-        return parseFloat(this.start.distanceTo(this.end).toFixed(2));
-    }
-    getCenter() {
-        let dir = this.end.clone().sub(this.start);
-        const len = dir.length() * 0.5;
-        dir = dir.normalize().multiplyScalar(len);
-        return this.start.clone().add(dir);
-    }
-}
-SimpleDimensionLine.scale = 1;
-SimpleDimensionLine.units = "m";
 
 /**
  * A basic
@@ -9552,11 +9553,6 @@ class Components {
     set raycaster(raycaster) {
         this._raycaster = raycaster;
     }
-    static setupBVH() {
-        THREE$1.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
-        THREE$1.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
-        THREE$1.Mesh.prototype.raycast = acceleratedRaycast;
-    }
     /**
      * Initializes the library. It should be called at the start of the app after
      * initializing the {@link scene}, the {@link renderer} and the
@@ -9607,6 +9603,11 @@ class Components {
         if (component.isUpdateable() && component.enabled) {
             component.update(delta);
         }
+    }
+    static setupBVH() {
+        THREE$1.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+        THREE$1.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+        THREE$1.Mesh.prototype.raycast = acceleratedRaycast;
     }
 }
 
@@ -21159,12 +21160,12 @@ class FragmentCulling {
         this.rtWidth = rtWidth;
         this.rtHeight = rtHeight;
         this.autoUpdate = autoUpdate;
+        this.enabled = true;
+        this.viewUpdated = new Event();
+        this.needsUpdate = false;
         this.exclusions = new Map();
         this.fragmentColorMap = new Map();
-        this.needsUpdate = false;
-        this.alwaysForceUpdate = false;
         this.renderDebugFrame = false;
-        this.viewUpdated = new Event();
         this.meshes = new Map();
         this.visibleFragments = [];
         this.previouslyVisibleMeshes = new Set();
@@ -21176,7 +21177,9 @@ class FragmentCulling {
         // Alternative scene and meshes to make the visibility check
         this.scene = new THREE$1.Scene();
         this.updateVisibility = (force) => {
-            if (!this.alwaysForceUpdate && !this.needsUpdate && !force)
+            if (!this.enabled)
+                return;
+            if (!this.needsUpdate && !force)
                 return;
             const camera = this.components.camera.get();
             camera.updateMatrix();
@@ -66532,6 +66535,7 @@ class Geometry {
     constructor(webIfc, items, materials) {
         this.referenceMatrix = new THREE$1.Matrix4();
         this.isFirstMatrix = true;
+        this._voids = new Set();
         this._geometriesByMaterial = {};
         this._items = {};
         this.webIfc = webIfc;
@@ -66551,6 +66555,10 @@ class Geometry {
     }
     cleanUp() {
         this._geometriesByMaterial = {};
+        this._voids.clear();
+    }
+    addVoid(voidID) {
+        this._voids.add(voidID);
     }
     reset(webifc) {
         this._geometriesByMaterial = {};
@@ -66566,6 +66574,7 @@ class Geometry {
         this._items[geometryID].instances.push({
             id: mesh.expressID,
             matrix: transform,
+            hasVoids: this._voids.has(mesh.expressID),
         });
     }
     generateBufferGeometries(mesh, geometryID) {
@@ -66586,6 +66595,7 @@ class Geometry {
                 {
                     id: mesh.expressID,
                     matrix: new THREE$1.Matrix4(),
+                    hasVoids: this._voids.has(mesh.expressID),
                 },
             ],
             geometriesByMaterial: this._geometriesByMaterial,
@@ -67764,6 +67774,168 @@ class FragmentGroup extends THREE$1.Group {
     }
 }
 
+class TransformHelper {
+    getHelper(geometries) {
+        const baseHelper = new THREE$1.Object3D();
+        let cenx = 0;
+        let ceny = 0;
+        let cenz = 0;
+        let num = 0;
+        for (const geom of geometries) {
+            const positions = geom.attributes.position.array;
+            for (let i = 0; i < positions.length; i += 3) {
+                cenx += positions[i];
+                ceny += positions[i + 1];
+                cenz += positions[i + 2];
+                num++;
+            }
+        }
+        if (num > 0) {
+            cenx /= num;
+            ceny /= num;
+            cenz /= num;
+        }
+        const cen = new THREE$1.Vector3(cenx, ceny, cenz);
+        let vx = new THREE$1.Vector3();
+        let vy = new THREE$1.Vector3();
+        let vz = new THREE$1.Vector3();
+        let newDimx = 0;
+        let newDimy = 0;
+        let newDimz = 0;
+        let despx = 0;
+        let despy = 0;
+        let despz = 0;
+        let volumPrev = 10000000000000;
+        for (let r = 0; r < 15; r++) {
+            let vvx = new THREE$1.Vector3();
+            if (r === 0) {
+                vvx = new THREE$1.Vector3(1, 0, 0);
+            }
+            if (r === 1) {
+                vvx = new THREE$1.Vector3(1, 0, 1);
+            }
+            if (r === 2) {
+                vvx = new THREE$1.Vector3(1, 1, 0);
+            }
+            if (r === 3) {
+                vvx = new THREE$1.Vector3(1, 1, 1);
+            }
+            if (r === 4) {
+                vvx = new THREE$1.Vector3(0, 1, 1);
+            }
+            if (r === 5) {
+                vvx = new THREE$1.Vector3(1, 0, 0.5);
+            }
+            if (r === 6) {
+                vvx = new THREE$1.Vector3(1, 0.5, 0);
+            }
+            if (r === 7) {
+                vvx = new THREE$1.Vector3(1, 1, 0.5);
+            }
+            if (r === 8) {
+                vvx = new THREE$1.Vector3(0, 1, 0.5);
+            }
+            if (r === 9) {
+                vvx = new THREE$1.Vector3(0.5, 0, 1);
+            }
+            if (r === 10) {
+                vvx = new THREE$1.Vector3(0.5, 1, 0);
+            }
+            if (r === 11) {
+                vvx = new THREE$1.Vector3(0.5, 1, 1);
+            }
+            if (r === 12) {
+                vvx = new THREE$1.Vector3(0, 0.5, 1);
+            }
+            if (r === 13) {
+                vvx = new THREE$1.Vector3(0.5, 0.5, 1);
+            }
+            if (r === 14) {
+                vvx = new THREE$1.Vector3(1, 0.5, 0.5);
+            }
+            vvx.normalize();
+            const vvy = new THREE$1.Vector3(vvx.x, vvx.y, vvx.z);
+            vvy.cross(new THREE$1.Vector3(0, 0, 1));
+            const vvz = new THREE$1.Vector3(vvy.x, vvy.y, vvy.z);
+            vvz.cross(vvx);
+            vvx.normalize();
+            vvy.normalize();
+            vvz.normalize();
+            let mabX = -1e10;
+            let mabY = -1e10;
+            let mabZ = -1e10;
+            let mibX = 1e10;
+            let mibY = 1e10;
+            let mibZ = 1e10;
+            for (const geom of geometries) {
+                const positions = geom.attributes.position.array;
+                for (let i = 0; i < positions.length; i += 3) {
+                    const x = positions[i];
+                    const y = positions[i + 1];
+                    const z = positions[i + 2];
+                    const dx = x - cen.x;
+                    const dy = y - cen.y;
+                    const dz = z - cen.z;
+                    const vp = new THREE$1.Vector3(dx, dy, dz);
+                    const newX = vvx.dot(vp);
+                    const newY = vvy.dot(vp);
+                    const newZ = vvz.dot(vp);
+                    if (newX > mabX) {
+                        mabX = newX;
+                    }
+                    if (newY > mabY) {
+                        mabY = newY;
+                    }
+                    if (newZ > mabZ) {
+                        mabZ = newZ;
+                    }
+                    if (newX < mibX) {
+                        mibX = newX;
+                    }
+                    if (newY < mibY) {
+                        mibY = newY;
+                    }
+                    if (newZ < mibZ) {
+                        mibZ = newZ;
+                    }
+                }
+            }
+            const newDix = mabX - mibX;
+            const newDiy = mabY - mibY;
+            const newDiz = mabZ - mibZ;
+            const volume = newDix * newDiy * newDiz;
+            if (volume < volumPrev) {
+                volumPrev = volume;
+                vx = vvx;
+                vy = vvy;
+                vz = vvz;
+                newDimx = newDix;
+                newDimy = newDiy;
+                newDimz = newDiz;
+                despx = (mabX + mibX) / 2;
+                despy = (mabY + mibY) / 2;
+                despz = (mabZ + mibZ) / 2;
+            }
+        }
+        cen.x += despx * vx.x;
+        cen.y += despx * vx.y;
+        cen.z += despx * vx.z;
+        cen.x += despy * vy.x;
+        cen.y += despy * vy.y;
+        cen.z += despy * vy.z;
+        cen.x += despz * vz.x;
+        cen.y += despz * vz.y;
+        cen.z += despz * vz.z;
+        vx = vx.setLength(newDimx);
+        vy = vy.setLength(newDimy);
+        vz = vz.setLength(newDimz);
+        baseHelper.matrix = new THREE$1.Matrix4();
+        baseHelper.matrix.set(vx.x, vx.y, vx.z, 0, vy.x, vy.y, vy.z, 0, vz.x, vz.y, vz.z, 0, cen.x, cen.y, cen.z, 1);
+        baseHelper.matrix.transpose();
+        return baseHelper;
+    }
+}
+
 class DataConverter {
     constructor(items, materials, settings) {
         this._categories = {};
@@ -67772,6 +67944,9 @@ class DataConverter {
         this._uniqueItems = {};
         this._units = new Units();
         this._boundingBoxes = {};
+        this._transparentBoundingBoxes = {};
+        this._expressIDfragmentIDMap = {};
+        this._transform = new TransformHelper();
         this._spatialStructure = new SpatialStructure();
         this._items = items;
         this._materials = materials;
@@ -67781,6 +67956,7 @@ class DataConverter {
         this._model = new FragmentGroup();
         this._uniqueItems = {};
         this._boundingBoxes = {};
+        this._transparentBoundingBoxes = {};
     }
     cleanUp() {
         this._spatialStructure.cleanUp();
@@ -67803,6 +67979,8 @@ class DataConverter {
     }
     saveModelData(webIfc) {
         this._model.boundingBoxes = this._boundingBoxes;
+        this._model.transparentBoundingBoxes = this._transparentBoundingBoxes;
+        this._model.expressIDFragmentIDMap = this._expressIDfragmentIDMap;
         this._model.levelRelationships = this._spatialStructure.itemsByFloor;
         this._model.floorsProperties = this._spatialStructure.floorProperties;
         this._model.allTypes = IfcCategoryMap;
@@ -67835,7 +68013,7 @@ class DataConverter {
             const instance = data.instances[0];
             const category = this._categories[instance.id];
             const level = this._spatialStructure.itemsByFloor[instance.id];
-            this.initializeItem(category, level, matID);
+            this.initializeItem(data, category, level, matID);
             this.applyTransformToMergedGeometries(data, category, level, matID);
         }
     }
@@ -67845,11 +68023,11 @@ class DataConverter {
         this._units.apply(instance.matrix);
         for (const geometry of geometries) {
             geometry.userData.id = instance.id;
-            this._uniqueItems[category][level][matID].push(geometry);
+            this._uniqueItems[category][level][matID].geoms.push(geometry);
             geometry.applyMatrix4(instance.matrix);
         }
     }
-    initializeItem(category, level, matID) {
+    initializeItem(data, category, level, matID) {
         if (!this._uniqueItems[category]) {
             this._uniqueItems[category] = {};
         }
@@ -67857,7 +68035,10 @@ class DataConverter {
             this._uniqueItems[category][level] = {};
         }
         if (!this._uniqueItems[category][level][matID]) {
-            this._uniqueItems[category][level][matID] = [];
+            this._uniqueItems[category][level][matID] = {
+                geoms: [],
+                hasVoids: data.instances[0].hasVoids,
+            };
         }
     }
     processInstancedItems(data) {
@@ -67866,18 +68047,12 @@ class DataConverter {
         fragment.mesh.updateMatrix();
         this._model.fragments.push(fragment);
         this._model.add(fragment.mesh);
-        let isTransparent = false;
         const materialIDs = Object.keys(data.geometriesByMaterial);
         const mats = materialIDs.map((id) => this._materials[id]);
-        for (const mat of mats) {
-            if (mat.transparent) {
-                isTransparent = true;
-            }
-        }
-        if (isTransparent) {
-            return;
-        }
-        const baseHelper = this.getTransformHelper([fragment.mesh.geometry]);
+        const matsTransparent = this.areMatsTransparent(mats);
+        const isTransparent = matsTransparent || data.instances[0].hasVoids;
+        const boxes = this.getBoxes(isTransparent);
+        const baseHelper = this._transform.getHelper([fragment.mesh.geometry]);
         for (let i = 0; i < fragment.mesh.count; i++) {
             const instanceTransform = new THREE$1.Matrix4();
             const instanceHelper = new THREE$1.Object3D();
@@ -67886,31 +68061,23 @@ class DataConverter {
             instanceHelper.applyMatrix4(instanceTransform);
             instanceHelper.updateMatrix();
             const id = fragment.getItemID(i, 0);
-            this._boundingBoxes[id] = instanceHelper.matrix.elements;
+            boxes[id] = instanceHelper.matrix.elements;
+            this._expressIDfragmentIDMap[id] = fragment.id;
         }
     }
-    getTransformHelper(geometries) {
-        const baseHelper = new THREE$1.Object3D();
-        const points = [];
-        for (const geom of geometries) {
-            geom.computeBoundingBox();
-            if (geom.boundingBox) {
-                points.push(geom.boundingBox.min);
-                points.push(geom.boundingBox.max);
+    getBoxes(isTransparent) {
+        const boxes = isTransparent
+            ? this._transparentBoundingBoxes
+            : this._boundingBoxes;
+        return boxes;
+    }
+    areMatsTransparent(mats) {
+        for (const mat of mats) {
+            if (mat.transparent) {
+                return true;
             }
         }
-        const bbox = new THREE$1.Box3();
-        bbox.setFromPoints(points);
-        const width = bbox.max.x - bbox.min.x;
-        const height = bbox.max.y - bbox.min.y;
-        const depth = bbox.max.z - bbox.min.z;
-        const positionX = bbox.min.x + width / 2;
-        const positionY = bbox.min.y + height / 2;
-        const positionZ = bbox.min.z + depth / 2;
-        baseHelper.scale.set(width, height, depth);
-        baseHelper.position.set(positionX, positionY, positionZ);
-        baseHelper.updateMatrix();
-        return baseHelper;
+        return false;
     }
     setFragmentInstances(data, fragment) {
         for (let i = 0; i < data.instances.length; i++) {
@@ -67945,12 +68112,18 @@ class DataConverter {
         }
     }
     processUniqueItem(category, level) {
-        const geometries = Object.values(this._uniqueItems[category][level]);
+        const item = this._uniqueItems[category][level];
+        if (!item)
+            return;
+        const geometriesData = Object.values(item);
+        const geometries = geometriesData.map((geom) => geom.geoms);
         const { buffer, ids } = this.processIDsAndBuffer(geometries);
         const mats = this.getUniqueItemMaterial(category, level);
         const items = {};
-        for (const geometryGroup of geometries) {
-            for (const geom of geometryGroup) {
+        let hasVoids = false;
+        for (const geometryGroup of geometriesData) {
+            hasVoids = hasVoids || geometryGroup.hasVoids;
+            for (const geom of geometryGroup.geoms) {
                 const id = geom.userData.id;
                 if (!items[id]) {
                     items[id] = [];
@@ -67958,15 +68131,21 @@ class DataConverter {
                 items[id].push(geom);
             }
         }
+        const matsTransparent = this.areMatsTransparent(mats);
+        const isTransparent = matsTransparent || hasVoids;
+        const boxes = this.getBoxes(isTransparent);
         for (const id in items) {
             const geoms = items[id];
-            const helper = this.getTransformHelper(geoms);
-            this._boundingBoxes[id] = helper.matrix.elements;
+            const helper = this._transform.getHelper(geoms);
+            boxes[id] = helper.matrix.elements;
         }
         const merged = GeometryUtils.merge(geometries);
         const mergedFragment = this.newMergedFragment(merged, buffer, mats, ids);
         this._model.fragments.push(mergedFragment);
         this._model.add(mergedFragment.mesh);
+        for (const id in items) {
+            this._expressIDfragmentIDMap[id] = mergedFragment.id;
+        }
     }
     newMergedFragment(merged, buffer, mats, itemsIDs) {
         merged.setAttribute("blockID", new THREE$1.BufferAttribute(buffer, 1));
@@ -68045,22 +68224,33 @@ class IfcFragmentLoader {
     }
     async loadAllGeometry() {
         await this._progress.setupLoadProgress(this._webIfc);
-        this.loadAllCategories();
+        await this.loadAllCategories();
         const model = await this._converter.generateFragmentData(this._webIfc);
         this._progress.updateLoadProgress();
         this.cleanUp();
         return model;
     }
-    loadAllCategories() {
+    async loadAllCategories() {
         this._converter.setupCategories(this._webIfc);
         this.loadOptionalCategories();
-        this.loadMainCategories();
+        await this.setupVoids();
+        await this.loadMainCategories();
     }
-    loadMainCategories() {
+    async loadMainCategories() {
         this._webIfc.StreamAllMeshes(0, (mesh) => {
             this._progress.updateLoadProgress();
             this._geometry.streamMesh(this._webIfc, mesh);
         });
+    }
+    async setupVoids() {
+        const voids = this._webIfc.GetLineIDsWithType(0, IFCRELVOIDSELEMENT);
+        const props = this._webIfc.properties;
+        const size = voids.size();
+        for (let i = 0; i < size; i++) {
+            const voidsProperties = await props.getItemProperties(0, voids.get(i));
+            const voidID = voidsProperties.RelatingBuildingElement.value;
+            this._geometry.addVoid(voidID);
+        }
     }
     // Some categories (like IfcSpace) need to be set explicitly
     loadOptionalCategories() {
@@ -68089,8 +68279,219 @@ class IfcFragmentLoader {
     }
 }
 
+class MemoryCulling {
+    constructor(components, updateInterval = 1000, rtWidth = 512, rtHeight = 512, autoUpdate = true) {
+        this.components = components;
+        this.updateInterval = updateInterval;
+        this.rtWidth = rtWidth;
+        this.rtHeight = rtHeight;
+        this.autoUpdate = autoUpdate;
+        this.materialCache = new Map();
+        this.fragmentsDiscovered = new Event();
+        this.enabled = true;
+        this.fragmentColorMap = new Map();
+        this.exclusions = new Map();
+        this.needsUpdate = false;
+        this.renderDebugFrame = false;
+        this.isFirstRenderingPass = true;
+        this.discoveredFragments = new Set();
+        this.undiscoveredFragments = new Map();
+        this.previouslyDiscoveredFragments = new Set();
+        this.meshes = new Map();
+        this.visibleExpressId = [];
+        this.colors = { r: 0, g: 0, b: 0, i: 0 };
+        // Alternative scene and meshes to make the visibility check
+        this.scene = new THREE$1.Scene();
+        this.updateVisibility = (force) => {
+            if (!this.opaqueMesh)
+                return;
+            if (!this.enabled)
+                return;
+            if (!this.needsUpdate && !force)
+                return;
+            const camera = this.components.camera.get();
+            camera.updateMatrix();
+            this.renderer.setSize(this.rtWidth, this.rtHeight);
+            this.renderer.setRenderTarget(this.renderTarget);
+            this.renderer.render(this.scene, camera);
+            this.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, this.buffer);
+            this.worker.postMessage({
+                buffer: this.buffer,
+            });
+            this.scene.add(this.transparentMesh);
+            this.renderer.render(this.scene, camera);
+            this.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, this.buffer);
+            this.worker.postMessage({
+                buffer: this.buffer,
+            });
+            this.renderer.setRenderTarget(null);
+            if (this.renderDebugFrame && this.isFirstRenderingPass) {
+                this.renderer.render(this.scene, camera);
+            }
+            this.scene.remove(this.transparentMesh);
+            this.needsUpdate = false;
+        };
+        this.handleWorkerMessage = (event) => {
+            const colors = event.data.colors;
+            const foundFragmentsIDs = this.getFragmentsIDs(colors);
+            if (this.isFirstRenderingPass) {
+                this.renderFirstPass(foundFragmentsIDs);
+            }
+            else {
+                this.renderSecondPass(foundFragmentsIDs);
+            }
+        };
+        this.renderer = new THREE$1.WebGLRenderer();
+        this.renderTarget = new THREE$1.WebGLRenderTarget(rtWidth, rtHeight);
+        this.bufferSize = rtWidth * rtHeight * 4;
+        this.buffer = new Uint8Array(this.bufferSize);
+        const code = `
+      addEventListener("message", (event) => {
+        const { buffer } = event.data;
+        const colors = new Set();
+        for (let i = 0; i < buffer.length; i += 4) {
+            const r = buffer[i];
+            const g = buffer[i + 1];
+            const b = buffer[i + 2];
+            const code = "" + r + "-" + g + "-" + b;
+            colors.add(code);
+        }
+        postMessage({ colors });
+      });
+    `;
+        const blob = new Blob([code], { type: "application/javascript" });
+        this.worker = new Worker(URL.createObjectURL(blob));
+        this.worker.addEventListener("message", this.handleWorkerMessage);
+        if (autoUpdate)
+            window.setInterval(this.updateVisibility, updateInterval);
+    }
+    getNextColor() {
+        if (this.colors.i === 0) {
+            this.colors.b++;
+            if (this.colors.b === 256) {
+                this.colors.b = 0;
+                this.colors.i = 1;
+            }
+        }
+        if (this.colors.i === 1) {
+            this.colors.g++;
+            this.colors.i = 0;
+            if (this.colors.g === 256) {
+                this.colors.g = 0;
+                this.colors.i = 2;
+            }
+        }
+        if (this.colors.i === 2) {
+            this.colors.r++;
+            this.colors.i = 1;
+            if (this.colors.r === 256) {
+                this.colors.r = 0;
+                this.colors.i = 0;
+            }
+        }
+        return {
+            r: this.colors.r,
+            g: this.colors.g,
+            b: this.colors.b,
+            code: `${this.colors.r}-${this.colors.g}-${this.colors.b}`,
+        };
+    }
+    loadBoxes(boundingBoxes, transparentBoundingBoxes, expressIDTofragmentIDMap) {
+        const boxes = Object.values(boundingBoxes);
+        const geometry = new THREE$1.BoxGeometry();
+        const material = new THREE$1.MeshBasicMaterial();
+        const mesh = new THREE$1.InstancedMesh(geometry, material, boxes.length);
+        const tempMatrix = new THREE$1.Matrix4();
+        const expressIDs = Object.keys(boundingBoxes);
+        for (let i = 0; i < boxes.length; i++) {
+            const expressID = parseInt(expressIDs[i], 10);
+            const fragmentID = expressIDTofragmentIDMap[expressID];
+            const newCol = this.getNextColor();
+            tempMatrix.fromArray(boxes[i]);
+            mesh.setMatrixAt(i, tempMatrix);
+            mesh.setColorAt(i, new THREE$1.Color(`rgb(${newCol.r},${newCol.g}, ${newCol.b})`));
+            // mesh.setColorAt(
+            //   i,
+            //   new THREE.Color(Math.random(), Math.random(), Math.random())
+            // );
+            this.fragmentColorMap.set(newCol.code, fragmentID);
+        }
+        /// Aquí creamos las cajas transparentes y les damos color
+        const boxes2 = Object.values(transparentBoundingBoxes);
+        const geometry2 = new THREE$1.BoxGeometry();
+        const material2 = new THREE$1.MeshBasicMaterial();
+        const mesh2 = new THREE$1.InstancedMesh(geometry2, material2, boxes2.length);
+        const tempMatrix2 = new THREE$1.Matrix4();
+        const expressIDs2 = Object.keys(transparentBoundingBoxes);
+        for (let i = 0; i < boxes2.length; i++) {
+            const newCol = this.getNextColor();
+            tempMatrix2.fromArray(boxes2[i]);
+            mesh2.setMatrixAt(i, tempMatrix2);
+            mesh2.setColorAt(i, new THREE$1.Color(`rgb(${newCol.r},${newCol.g}, ${newCol.b})`));
+            // mesh2.setColorAt(
+            //   i,
+            //   new THREE.Color(Math.random(), Math.random(), Math.random())
+            // );
+            const expressID2 = parseInt(expressIDs2[i], 10);
+            const fragmentID2 = expressIDTofragmentIDMap[expressID2];
+            if (this.fragmentColorMap.get(newCol.code)) {
+                console.log("hooops!");
+            }
+            this.fragmentColorMap.set(newCol.code, fragmentID2);
+        }
+        this.scene.add(mesh);
+        this.opaqueMesh = mesh;
+        this.transparentMesh = mesh2;
+    }
+    getFragmentsIDs(colors) {
+        const foundFragmentsIDs = new Set();
+        for (const col of colors) {
+            if (col !== undefined) {
+                const fragmentID = this.fragmentColorMap.get(col);
+                if (col === "0226") {
+                    console.log(fragmentID);
+                }
+                foundFragmentsIDs.add(fragmentID);
+            }
+        }
+        return foundFragmentsIDs;
+    }
+    renderFirstPass(foundFragmentsIDs) {
+        this.discoveredFragments.clear();
+        this.saveFoundFragments(foundFragmentsIDs);
+        this.isFirstRenderingPass = false;
+    }
+    renderSecondPass(foundFragmentsIDs) {
+        this.saveFoundFragments(foundFragmentsIDs);
+        for (const item of this.previouslyDiscoveredFragments) {
+            if (!foundFragmentsIDs.has(item)) {
+                this.undiscoveredFragments.set(item, performance.now());
+            }
+        }
+        const newlyDiscoveredFrags = [];
+        for (const frag of this.discoveredFragments) {
+            if (!this.previouslyDiscoveredFragments.has(frag)) {
+                newlyDiscoveredFrags.push(frag);
+            }
+            this.previouslyDiscoveredFragments.add(frag);
+        }
+        for (const item of foundFragmentsIDs) {
+            this.undiscoveredFragments.delete(item);
+        }
+        this.fragmentsDiscovered.trigger(newlyDiscoveredFrags);
+        this.isFirstRenderingPass = true;
+    }
+    saveFoundFragments(foundFragmentsIDs) {
+        for (const item of foundFragmentsIDs) {
+            if (item !== undefined) {
+                this.discoveredFragments.add(item);
+            }
+        }
+    }
+}
+
 class Fragments {
-    constructor(components, config) {
+    constructor(components) {
         this.components = components;
         this.fragments = {};
         this.fragmentMeshes = [];
@@ -68102,11 +68503,10 @@ class Fragments {
         this.highlighter = new FragmentHighlighter(components, this);
         this.edges = new FragmentEdges(components);
         this.materials = new FragmentMaterials(this);
-        if (!config || config.culling) {
-            this.culler = new FragmentCulling(components, this);
-        }
+        this.culler = new FragmentCulling(components, this);
+        this.memoryCuller = new MemoryCulling(components);
     }
-    async load(geometryURL, dataURL, matrix) {
+    async load(geometryURL, dataURL, matrix = new THREE$1.Matrix4()) {
         const fragment = await this.loader.load(geometryURL, dataURL);
         if (matrix) {
             fragment.mesh.applyMatrix4(matrix);
@@ -73618,4 +74018,4 @@ class MapboxCamera extends Component {
     }
 }
 
-export { ClippingEdges, Component, Components, DataConverter, Disposer, EdgesClipper, EdgesPlane, EdgesStyles, Event, FirstPersonMode, FragmentCulling, FragmentEdges, FragmentGroup, FragmentGrouper, FragmentHighlighter, FragmentMaterials, FragmentProperties, FragmentSpatialTree, Fragments, Geometry, IfcCategories, IfcCategoryMap, IfcElements, IfcFragmentLoader, LoadProgress, MapboxCamera, MapboxRenderer, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, RendererComponent, Settings, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensionLine, SimpleDimensions, SimpleGrid, SimpleMouse, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, SpatialStructure, ToolComponents, getBasisTransform, rightToLeftHand, stringToAxes };
+export { ClippingEdges, Component, Components, DataConverter, DimensionLabelClassName, DimensionPreviewClassName, Disposer, EdgesClipper, EdgesPlane, EdgesStyles, Event, FirstPersonMode, FragmentCulling, FragmentEdges, FragmentGroup, FragmentGrouper, FragmentHighlighter, FragmentMaterials, FragmentProperties, FragmentSpatialTree, Fragments, Geometry, IfcCategories, IfcCategoryMap, IfcElements, IfcFragmentLoader, LoadProgress, MapboxCamera, MapboxRenderer, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, RendererComponent, Settings, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensionLine, SimpleDimensions, SimpleGrid, SimpleMouse, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, SpatialStructure, ToolComponents, getBasisTransform, rightToLeftHand, stringToAxes };

@@ -2,8 +2,7 @@ import * as THREE from "three";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
 import { Components } from "../../components";
 import { Disposer } from "../utils";
-import { SimpleDimensions } from "./simple-dimensions";
-import { DimensionData } from "./types";
+import { DimensionData, DimensionLabelClassName } from "./types";
 
 // TODO: Document + clean up this: way less parameters, clearer logic
 
@@ -138,7 +137,7 @@ export class SimpleDimensionLine {
 
   private newText() {
     const htmlText = document.createElement("div");
-    htmlText.className = SimpleDimensions.labelClassName;
+    htmlText.className = DimensionLabelClassName;
     htmlText.textContent = this.getTextContent();
     const label = new CSS2DObject(htmlText);
     label.position.set(this.center.x, this.center.y, this.center.z);

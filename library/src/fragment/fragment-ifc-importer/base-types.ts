@@ -9,6 +9,8 @@ export class FragmentGroup extends THREE.Group {
   floorsProperties: any;
   coordinationMatrix: any;
   boundingBoxes: any;
+  transparentBoundingBoxes: any;
+  expressIDFragmentIDMap: any;
 }
 
 export interface GeometriesByMaterial {
@@ -19,7 +21,7 @@ export interface GeometriesByMaterial {
 }
 
 export interface FragmentData {
-  instances: { id: number; matrix: THREE.Matrix4 }[];
+  instances: { id: number; matrix: THREE.Matrix4; hasVoids: boolean }[];
   geometriesByMaterial: { [materialID: string]: THREE.BufferGeometry[] };
   referenceMatrix: THREE.Matrix4;
 }
@@ -31,7 +33,10 @@ export interface IfcToFragmentItems {
 export interface IfcToFragmentUniqueItems {
   [category: string]: {
     [floor: string]: {
-      [materialID: string]: THREE.BufferGeometry[];
+      [materialID: string]: {
+        geoms: THREE.BufferGeometry[];
+        hasVoids: boolean;
+      };
     };
   };
 }

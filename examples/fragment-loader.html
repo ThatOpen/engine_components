@@ -8,16 +8,6 @@
   <link rel="stylesheet" href="resources/styles.css">
   <link rel="icon" type="image/x-icon" href="../favicon.ico">
   <title>Components | Hello world</title>
-
-  <style>
-      .main-container {
-          display: flex;
-          flex-direction: column;
-          position: absolute;
-          height: 100vh;
-      }
-  </style>
-
 </head>
 <body>
 <div class="full-screen" id="container"></div>
@@ -36,7 +26,6 @@
 <script type="module">
 	import * as THREE from 'three';
 	import Stats from 'stats.js/src/Stats.js';
-	import { downloadZip } from 'client-zip';
 	import { unzip } from 'unzipit';
 	import * as OBC from './resources/openbim-components.js';
 
@@ -70,11 +59,13 @@
 	scene.add(ambientLight);
 
 	// Add a grid in the origin
+
 	const grid = new OBC.SimpleGrid(components);
 	components.tools.add(grid);
 	renderer.postproduction.excludedItems.add(grid.get());
 
 	// Set up stats
+
 	const stats = new Stats();
 	stats.showPanel(2);
 	document.body.append(stats.dom);
@@ -104,12 +95,13 @@
 
 		const coordMatrix = await entries['coordination-matrix.json'].json();
 
+		// Load all the fragments within this zip file
+
 		for (let i = 0; i < fileNames.length; i++) {
 
 			const name = fileNames[i];
 			if (!name.includes('.glb')) continue;
 
-			// Load data
 			const geometryName = fileNames[i];
 			const geometry = await entries[geometryName].blob();
 			const geometryURL = URL.createObjectURL(geometry);

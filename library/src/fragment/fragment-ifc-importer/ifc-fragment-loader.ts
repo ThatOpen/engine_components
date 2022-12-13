@@ -48,24 +48,36 @@ export class IfcFragmentLoader {
 
   private async loadAllGeometry() {
     await this._progress.setupLoadProgress(this._webIfc);
-    this.loadAllCategories();
+    await this.loadAllCategories();
     const model = await this._converter.generateFragmentData(this._webIfc);
     this._progress.updateLoadProgress();
     this.cleanUp();
     return model;
   }
 
-  private loadAllCategories() {
+  private async loadAllCategories() {
     this._converter.setupCategories(this._webIfc);
     this.loadOptionalCategories();
-    this.loadMainCategories();
+    await this.setupVoids();
+    await this.loadMainCategories();
   }
 
-  private loadMainCategories() {
+  private async loadMainCategories() {
     this._webIfc.StreamAllMeshes(0, (mesh: WEBIFC.FlatMesh) => {
       this._progress.updateLoadProgress();
       this._geometry.streamMesh(this._webIfc, mesh);
     });
+  }
+
+  private async setupVoids() {
+    const voids = this._webIfc.GetLineIDsWithType(0, WEBIFC.IFCRELVOIDSELEMENT);
+    const props = this._webIfc.properties;
+    const size = voids.size();
+    for (let i = 0; i < size; i++) {
+      const voidsProperties = await props.getItemProperties(0, voids.get(i));
+      const voidID = voidsProperties.RelatingBuildingElement.value;
+      this._geometry.addVoid(voidID);
+    }
   }
 
   // Some categories (like IfcSpace) need to be set explicitly

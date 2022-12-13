@@ -7,6 +7,7 @@ import { Component } from "../base-components";
 import { SimpleRaycaster } from "../simple-raycaster";
 import { Event } from "../event";
 import { Disposer } from "../utils";
+import { DimensionPreviewClassName } from "./types";
 
 /**
  * A basic dimension tool to measure distances between 2 points in 3D and
@@ -31,12 +32,6 @@ export class SimpleDimensions
   /** The [symbol](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer)
    * that is displayed where the dimension will be drawn. */
   previewElement: CSS2DObject;
-
-  /** The name of the CSS class that styles the dimension label. */
-  static readonly labelClassName = "ifcjs-dimension-label";
-
-  /** The name of the CSS class that styles the dimension label. */
-  static readonly previewClassName = "ifcjs-dimension-preview";
 
   private _lineMaterial = new THREE.LineDashedMaterial({
     color: 0x000000,
@@ -128,7 +123,7 @@ export class SimpleDimensions
     this._raycaster = new SimpleRaycaster(this.components);
     this._endpointMesh = this.newEndpointMesh();
     const htmlPreview = document.createElement("div");
-    htmlPreview.className = SimpleDimensions.previewClassName;
+    htmlPreview.className = DimensionPreviewClassName;
     this.previewElement = new CSS2DObject(htmlPreview);
     this.previewElement.visible = false;
   }

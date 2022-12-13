@@ -10,10 +10,7 @@ import { FragmentProperties } from "./fragment-properties";
 import { FragmentSpatialTree } from "./fragment-spatial-tree";
 import { Components } from "../index";
 import { IfcFragmentLoader } from "./fragment-ifc-importer";
-
-export interface FragmentConfig {
-  culling: boolean;
-}
+import { MemoryCulling } from "./memory-culling";
 
 export class Fragments {
   fragments: { [guid: string]: Fragment } = {};
@@ -28,18 +25,22 @@ export class Fragments {
   highlighter: FragmentHighlighter;
   edges: FragmentEdges;
   materials: FragmentMaterials;
-  culler?: FragmentCulling;
+  culler: FragmentCulling;
+  memoryCuller: MemoryCulling;
 
-  constructor(private components: Components, config?: FragmentConfig) {
+  constructor(private components: Components) {
     this.highlighter = new FragmentHighlighter(components, this);
     this.edges = new FragmentEdges(components);
     this.materials = new FragmentMaterials(this);
-    if (!config || config.culling) {
-      this.culler = new FragmentCulling(components, this);
-    }
+    this.culler = new FragmentCulling(components, this);
+    this.memoryCuller = new MemoryCulling(components);
   }
 
-  async load(geometryURL: string, dataURL: string, matrix?: THREE.Matrix4) {
+  async load(
+    geometryURL: string,
+    dataURL: string,
+    matrix = new THREE.Matrix4()
+  ) {
     const fragment = await this.loader.load(geometryURL, dataURL);
     if (matrix) {
       fragment.mesh.applyMatrix4(matrix);

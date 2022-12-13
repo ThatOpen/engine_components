@@ -13,12 +13,12 @@ export class FragmentCulling {
   readonly materialCache: Map<string, THREE.MeshBasicMaterial>;
   readonly worker: Worker;
 
+  enabled = true;
+  viewUpdated = new Event();
+  needsUpdate = false;
   exclusions = new Map<string, Fragment>();
   fragmentColorMap = new Map<string, Fragment>();
-  needsUpdate = false;
-  alwaysForceUpdate = false;
   renderDebugFrame = false;
-  viewUpdated = new Event();
 
   readonly meshes = new Map<string, THREE.InstancedMesh>();
 
@@ -127,7 +127,8 @@ export class FragmentCulling {
   }
 
   updateVisibility = (force?: boolean) => {
-    if (!this.alwaysForceUpdate && !this.needsUpdate && !force) return;
+    if (!this.enabled) return;
+    if (!this.needsUpdate && !force) return;
 
     const camera = this.components.camera.get();
     camera.updateMatrix();

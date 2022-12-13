@@ -14,6 +14,7 @@ import {
   IfcToFragmentUniqueItems,
   MaterialList,
 } from "./base-types";
+import { TransformHelper } from "./transform-helper";
 
 export class DataConverter {
   private _categories: IfcItemsCategories = {};
@@ -22,6 +23,9 @@ export class DataConverter {
   private _uniqueItems: IfcToFragmentUniqueItems = {};
   private _units = new Units();
   private _boundingBoxes: { [id: string]: number[] } = {};
+  private _transparentBoundingBoxes: { [id: string]: number[] } = {};
+  private _expressIDfragmentIDMap: { [expressID: string]: string } = {};
+  private _transform = new TransformHelper();
 
   private readonly _items: IfcToFragmentItems;
   private readonly _materials: MaterialList;
@@ -42,6 +46,7 @@ export class DataConverter {
     this._model = new FragmentGroup();
     this._uniqueItems = {};
     this._boundingBoxes = {};
+    this._transparentBoundingBoxes = {};
   }
 
   cleanUp() {
@@ -68,6 +73,8 @@ export class DataConverter {
 
   private saveModelData(webIfc: WEBIFC.IfcAPI) {
     this._model.boundingBoxes = this._boundingBoxes;
+    this._model.transparentBoundingBoxes = this._transparentBoundingBoxes;
+    this._model.expressIDFragmentIDMap = this._expressIDfragmentIDMap;
     this._model.levelRelationships = this._spatialStructure.itemsByFloor;
     this._model.floorsProperties = this._spatialStructure.floorProperties;
     this._model.allTypes = IfcCategoryMap;
@@ -102,7 +109,7 @@ export class DataConverter {
       const instance = data.instances[0];
       const category = this._categories[instance.id];
       const level = this._spatialStructure.itemsByFloor[instance.id];
-      this.initializeItem(category, level, matID);
+      this.initializeItem(data, category, level, matID);
       this.applyTransformToMergedGeometries(data, category, level, matID);
     }
   }
@@ -118,12 +125,17 @@ export class DataConverter {
     this._units.apply(instance.matrix);
     for (const geometry of geometries) {
       geometry.userData.id = instance.id;
-      this._uniqueItems[category][level][matID].push(geometry);
+      this._uniqueItems[category][level][matID].geoms.push(geometry);
       geometry.applyMatrix4(instance.matrix);
     }
   }
 
-  private initializeItem(category: number, level: number, matID: string) {
+  private initializeItem(
+    data: FragmentData,
+    category: number,
+    level: number,
+    matID: string
+  ) {
     if (!this._uniqueItems[category]) {
       this._uniqueItems[category] = {};
     }
@@ -131,7 +143,10 @@ export class DataConverter {
       this._uniqueItems[category][level] = {};
     }
     if (!this._uniqueItems[category][level][matID]) {
-      this._uniqueItems[category][level][matID] = [];
+      this._uniqueItems[category][level][matID] = {
+        geoms: [],
+        hasVoids: data.instances[0].hasVoids,
+      };
     }
   }
 
@@ -142,20 +157,14 @@ export class DataConverter {
     this._model.fragments.push(fragment);
     this._model.add(fragment.mesh);
 
-    let isTransparent = false;
     const materialIDs = Object.keys(data.geometriesByMaterial);
     const mats = materialIDs.map((id) => this._materials[id]);
-    for (const mat of mats) {
-      if (mat.transparent) {
-        isTransparent = true;
-      }
-    }
 
-    if (isTransparent) {
-      return;
-    }
+    const matsTransparent = this.areMatsTransparent(mats);
+    const isTransparent = matsTransparent || data.instances[0].hasVoids;
+    const boxes = this.getBoxes(isTransparent);
 
-    const baseHelper = this.getTransformHelper([fragment.mesh.geometry]);
+    const baseHelper = this._transform.getHelper([fragment.mesh.geometry]);
 
     for (let i = 0; i < fragment.mesh.count; i++) {
       const instanceTransform = new THREE.Matrix4();
@@ -165,37 +174,25 @@ export class DataConverter {
       instanceHelper.applyMatrix4(instanceTransform);
       instanceHelper.updateMatrix();
       const id = fragment.getItemID(i, 0);
-      this._boundingBoxes[id] = instanceHelper.matrix.elements;
+      boxes[id] = instanceHelper.matrix.elements;
+      this._expressIDfragmentIDMap[id] = fragment.id;
     }
   }
 
-  private getTransformHelper(geometries: BufferGeometry[]) {
-    const baseHelper = new THREE.Object3D();
+  private getBoxes(isTransparent: boolean) {
+    const boxes = isTransparent
+      ? this._transparentBoundingBoxes
+      : this._boundingBoxes;
+    return boxes;
+  }
 
-    const points: THREE.Vector3[] = [];
-    for (const geom of geometries) {
-      geom.computeBoundingBox();
-      if (geom.boundingBox) {
-        points.push(geom.boundingBox.min);
-        points.push(geom.boundingBox.max);
+  private areMatsTransparent(mats: THREE.MeshLambertMaterial[]) {
+    for (const mat of mats) {
+      if (mat.transparent) {
+        return true;
       }
     }
-
-    const bbox = new THREE.Box3();
-    bbox.setFromPoints(points);
-
-    const width = bbox.max.x - bbox.min.x;
-    const height = bbox.max.y - bbox.min.y;
-    const depth = bbox.max.z - bbox.min.z;
-
-    const positionX = bbox.min.x + width / 2;
-    const positionY = bbox.min.y + height / 2;
-    const positionZ = bbox.min.z + depth / 2;
-
-    baseHelper.scale.set(width, height, depth);
-    baseHelper.position.set(positionX, positionY, positionZ);
-    baseHelper.updateMatrix();
-    return baseHelper;
+    return false;
   }
 
   private setFragmentInstances(data: FragmentData, fragment: Fragment) {
@@ -237,14 +234,19 @@ export class DataConverter {
   }
 
   private processUniqueItem(category: number, level: number) {
-    const geometries = Object.values(this._uniqueItems[category][level]);
+    const item = this._uniqueItems[category][level];
+    if (!item) return;
+    const geometriesData = Object.values(item);
+    const geometries = geometriesData.map((geom) => geom.geoms);
     const { buffer, ids } = this.processIDsAndBuffer(geometries);
     const mats = this.getUniqueItemMaterial(category, level);
 
     const items: { [id: number]: BufferGeometry[] } = {};
 
-    for (const geometryGroup of geometries) {
-      for (const geom of geometryGroup) {
+    let hasVoids = false;
+    for (const geometryGroup of geometriesData) {
+      hasVoids = hasVoids || geometryGroup.hasVoids;
+      for (const geom of geometryGroup.geoms) {
         const id = geom.userData.id;
         if (!items[id]) {
           items[id] = [];
@@ -253,16 +255,24 @@ export class DataConverter {
       }
     }
 
+    const matsTransparent = this.areMatsTransparent(mats);
+    const isTransparent = matsTransparent || hasVoids;
+    const boxes = this.getBoxes(isTransparent);
+
     for (const id in items) {
       const geoms = items[id];
-      const helper = this.getTransformHelper(geoms);
-      this._boundingBoxes[id] = helper.matrix.elements;
+      const helper = this._transform.getHelper(geoms);
+      boxes[id] = helper.matrix.elements;
     }
 
     const merged = GeometryUtils.merge(geometries);
     const mergedFragment = this.newMergedFragment(merged, buffer, mats, ids);
     this._model.fragments.push(mergedFragment);
     this._model.add(mergedFragment.mesh);
+
+    for (const id in items) {
+      this._expressIDfragmentIDMap[id] = mergedFragment.id;
+    }
   }
 
   private newMergedFragment(
