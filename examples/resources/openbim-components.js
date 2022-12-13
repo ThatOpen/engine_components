@@ -68286,10 +68286,16 @@ class MemoryCulling {
         this.rtWidth = rtWidth;
         this.rtHeight = rtHeight;
         this.autoUpdate = autoUpdate;
+        // Alternative scene and meshes to make the visibility check
+        this.scene = new THREE$1.Scene();
         this.materialCache = new Map();
         this.fragmentsDiscovered = new Event();
+        // TODO: Document and clean up data structures
         this.enabled = true;
+        this.opaqueMeshes = [];
+        this.transparentMeshes = [];
         this.fragmentColorMap = new Map();
+        this.fragmentModelMap = new Map();
         this.exclusions = new Map();
         this.needsUpdate = false;
         this.renderDebugFrame = false;
@@ -68297,13 +68303,10 @@ class MemoryCulling {
         this.discoveredFragments = new Set();
         this.undiscoveredFragments = new Map();
         this.previouslyDiscoveredFragments = new Set();
-        this.meshes = new Map();
         this.visibleExpressId = [];
         this.colors = { r: 0, g: 0, b: 0, i: 0 };
-        // Alternative scene and meshes to make the visibility check
-        this.scene = new THREE$1.Scene();
         this.updateVisibility = (force) => {
-            if (!this.opaqueMesh)
+            if (!this.opaqueMeshes)
                 return;
             if (!this.enabled)
                 return;
@@ -68318,7 +68321,9 @@ class MemoryCulling {
             this.worker.postMessage({
                 buffer: this.buffer,
             });
-            this.scene.add(this.transparentMesh);
+            for (const mesh of this.transparentMeshes) {
+                this.scene.add(mesh);
+            }
             this.renderer.render(this.scene, camera);
             this.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, this.buffer);
             this.worker.postMessage({
@@ -68328,7 +68333,9 @@ class MemoryCulling {
             if (this.renderDebugFrame && this.isFirstRenderingPass) {
                 this.renderer.render(this.scene, camera);
             }
-            this.scene.remove(this.transparentMesh);
+            for (const mesh of this.transparentMeshes) {
+                mesh.removeFromParent();
+            }
             this.needsUpdate = false;
         };
         this.handleWorkerMessage = (event) => {
@@ -68396,7 +68403,8 @@ class MemoryCulling {
             code: `${this.colors.r}-${this.colors.g}-${this.colors.b}`,
         };
     }
-    loadBoxes(boundingBoxes, transparentBoundingBoxes, expressIDTofragmentIDMap) {
+    // TODO: This needs cleanup
+    loadBoxes(modelID, boundingBoxes, transparentBoundingBoxes, expressIDTofragmentIDMap) {
         const boxes = Object.values(boundingBoxes);
         const geometry = new THREE$1.BoxGeometry();
         const material = new THREE$1.MeshBasicMaterial();
@@ -68406,17 +68414,13 @@ class MemoryCulling {
         for (let i = 0; i < boxes.length; i++) {
             const expressID = parseInt(expressIDs[i], 10);
             const fragmentID = expressIDTofragmentIDMap[expressID];
+            this.fragmentModelMap.set(fragmentID, modelID);
             const newCol = this.getNextColor();
             tempMatrix.fromArray(boxes[i]);
             mesh.setMatrixAt(i, tempMatrix);
             mesh.setColorAt(i, new THREE$1.Color(`rgb(${newCol.r},${newCol.g}, ${newCol.b})`));
-            // mesh.setColorAt(
-            //   i,
-            //   new THREE.Color(Math.random(), Math.random(), Math.random())
-            // );
             this.fragmentColorMap.set(newCol.code, fragmentID);
         }
-        /// Aquí creamos las cajas transparentes y les damos color
         const boxes2 = Object.values(transparentBoundingBoxes);
         const geometry2 = new THREE$1.BoxGeometry();
         const material2 = new THREE$1.MeshBasicMaterial();
@@ -68428,29 +68432,20 @@ class MemoryCulling {
             tempMatrix2.fromArray(boxes2[i]);
             mesh2.setMatrixAt(i, tempMatrix2);
             mesh2.setColorAt(i, new THREE$1.Color(`rgb(${newCol.r},${newCol.g}, ${newCol.b})`));
-            // mesh2.setColorAt(
-            //   i,
-            //   new THREE.Color(Math.random(), Math.random(), Math.random())
-            // );
             const expressID2 = parseInt(expressIDs2[i], 10);
             const fragmentID2 = expressIDTofragmentIDMap[expressID2];
-            if (this.fragmentColorMap.get(newCol.code)) {
-                console.log("hooops!");
-            }
+            this.fragmentModelMap.set(fragmentID2, modelID);
             this.fragmentColorMap.set(newCol.code, fragmentID2);
         }
         this.scene.add(mesh);
-        this.opaqueMesh = mesh;
-        this.transparentMesh = mesh2;
+        this.opaqueMeshes.push(mesh);
+        this.transparentMeshes.push(mesh2);
     }
     getFragmentsIDs(colors) {
         const foundFragmentsIDs = new Set();
         for (const col of colors) {
             if (col !== undefined) {
                 const fragmentID = this.fragmentColorMap.get(col);
-                if (col === "0226") {
-                    console.log(fragmentID);
-                }
                 foundFragmentsIDs.add(fragmentID);
             }
         }
@@ -68468,10 +68463,10 @@ class MemoryCulling {
                 this.undiscoveredFragments.set(item, performance.now());
             }
         }
-        const newlyDiscoveredFrags = [];
+        const newlyDiscoveredFrags = {};
         for (const frag of this.discoveredFragments) {
             if (!this.previouslyDiscoveredFragments.has(frag)) {
-                newlyDiscoveredFrags.push(frag);
+                this.saveDiscovered(frag, newlyDiscoveredFrags);
             }
             this.previouslyDiscoveredFragments.add(frag);
         }
@@ -68480,6 +68475,16 @@ class MemoryCulling {
         }
         this.fragmentsDiscovered.trigger(newlyDiscoveredFrags);
         this.isFirstRenderingPass = true;
+    }
+    saveDiscovered(frag, discovered) {
+        const model = this.fragmentModelMap.get(frag);
+        if (!model) {
+            throw new Error("Error when getting model of fragment");
+        }
+        if (!discovered[model]) {
+            discovered[model] = [];
+        }
+        discovered[model].push(frag);
     }
     saveFoundFragments(foundFragmentsIDs) {
         for (const item of foundFragmentsIDs) {

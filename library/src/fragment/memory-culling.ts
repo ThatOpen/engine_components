@@ -3,7 +3,14 @@ import { Fragment } from "bim-fragment";
 import { Components } from "../components";
 import { Event } from "../core";
 
+export interface FragmentsByModel {
+  [model: string]: string[];
+}
+
 export class MemoryCulling {
+  // Alternative scene and meshes to make the visibility check
+  private readonly scene = new THREE.Scene();
+
   readonly renderer: THREE.WebGLRenderer;
   readonly renderTarget: THREE.WebGLRenderTarget;
   readonly bufferSize: number;
@@ -11,12 +18,15 @@ export class MemoryCulling {
   readonly materialCache = new Map<string, THREE.MeshBasicMaterial>();
   readonly worker: Worker;
 
-  readonly fragmentsDiscovered = new Event<string[]>();
+  readonly fragmentsDiscovered = new Event<FragmentsByModel>();
 
+  // TODO: Document and clean up data structures
   enabled = true;
-  opaqueMesh: any;
-  transparentMesh: any;
+  opaqueMeshes: THREE.Mesh[] = [];
+  transparentMeshes: THREE.Mesh[] = [];
+
   fragmentColorMap = new Map<string, string>();
+  fragmentModelMap = new Map<string, string>();
   exclusions = new Map<string, Fragment>();
   needsUpdate = false;
   renderDebugFrame = false;
@@ -26,14 +36,9 @@ export class MemoryCulling {
   undiscoveredFragments = new Map<string, number>();
   previouslyDiscoveredFragments = new Set<string>();
 
-  readonly meshes = new Map<string, THREE.InstancedMesh>();
-
   public visibleExpressId: string[] = [];
 
   private colors = { r: 0, g: 0, b: 0, i: 0 };
-
-  // Alternative scene and meshes to make the visibility check
-  private readonly scene = new THREE.Scene();
 
   constructor(
     private components: Components,
@@ -69,7 +74,7 @@ export class MemoryCulling {
   }
 
   updateVisibility = (force?: boolean) => {
-    if (!this.opaqueMesh) return;
+    if (!this.opaqueMeshes) return;
     if (!this.enabled) return;
     if (!this.needsUpdate && !force) return;
 
@@ -94,7 +99,9 @@ export class MemoryCulling {
       buffer: this.buffer,
     });
 
-    this.scene.add(this.transparentMesh);
+    for (const mesh of this.transparentMeshes) {
+      this.scene.add(mesh);
+    }
 
     this.renderer.render(this.scene, camera);
 
@@ -117,7 +124,9 @@ export class MemoryCulling {
       this.renderer.render(this.scene, camera);
     }
 
-    this.scene.remove(this.transparentMesh);
+    for (const mesh of this.transparentMeshes) {
+      mesh.removeFromParent();
+    }
 
     this.needsUpdate = false;
   };
@@ -157,7 +166,9 @@ export class MemoryCulling {
     };
   }
 
+  // TODO: This needs cleanup
   loadBoxes(
+    modelID: string,
     boundingBoxes: any,
     transparentBoundingBoxes: any,
     expressIDTofragmentIDMap: any[]
@@ -172,6 +183,8 @@ export class MemoryCulling {
       const expressID = parseInt(expressIDs[i], 10);
       const fragmentID = expressIDTofragmentIDMap[expressID];
 
+      this.fragmentModelMap.set(fragmentID, modelID);
+
       const newCol = this.getNextColor();
       tempMatrix.fromArray(boxes[i]);
       mesh.setMatrixAt(i, tempMatrix);
@@ -180,15 +193,10 @@ export class MemoryCulling {
         i,
         new THREE.Color(`rgb(${newCol.r},${newCol.g}, ${newCol.b})`)
       );
-      // mesh.setColorAt(
-      //   i,
-      //   new THREE.Color(Math.random(), Math.random(), Math.random())
-      // );
 
       this.fragmentColorMap.set(newCol.code, fragmentID);
     }
 
-    /// Aquí creamos las cajas transparentes y les damos color
     const boxes2: any[] = Object.values(transparentBoundingBoxes);
     const geometry2 = new THREE.BoxGeometry();
     const material2 = new THREE.MeshBasicMaterial();
@@ -203,23 +211,18 @@ export class MemoryCulling {
         i,
         new THREE.Color(`rgb(${newCol.r},${newCol.g}, ${newCol.b})`)
       );
-      // mesh2.setColorAt(
-      //   i,
-      //   new THREE.Color(Math.random(), Math.random(), Math.random())
-      // );
+
       const expressID2 = parseInt(expressIDs2[i], 10);
       const fragmentID2 = expressIDTofragmentIDMap[expressID2];
 
-      if (this.fragmentColorMap.get(newCol.code)) {
-        console.log("hooops!");
-      }
+      this.fragmentModelMap.set(fragmentID2, modelID);
 
       this.fragmentColorMap.set(newCol.code, fragmentID2);
     }
 
     this.scene.add(mesh);
-    this.opaqueMesh = mesh;
-    this.transparentMesh = mesh2;
+    this.opaqueMeshes.push(mesh);
+    this.transparentMeshes.push(mesh2);
   }
 
   private handleWorkerMessage = (event: MessageEvent) => {
@@ -237,11 +240,6 @@ export class MemoryCulling {
     for (const col of colors) {
       if (col !== undefined) {
         const fragmentID = this.fragmentColorMap.get(col) as string;
-
-        if (col === "0226") {
-          console.log(fragmentID);
-        }
-
         foundFragmentsIDs.add(fragmentID);
       }
     }
@@ -263,10 +261,10 @@ export class MemoryCulling {
       }
     }
 
-    const newlyDiscoveredFrags: string[] = [];
+    const newlyDiscoveredFrags: FragmentsByModel = {};
     for (const frag of this.discoveredFragments) {
       if (!this.previouslyDiscoveredFragments.has(frag)) {
-        newlyDiscoveredFrags.push(frag);
+        this.saveDiscovered(frag, newlyDiscoveredFrags);
       }
       this.previouslyDiscoveredFragments.add(frag);
     }
@@ -278,6 +276,17 @@ export class MemoryCulling {
     this.fragmentsDiscovered.trigger(newlyDiscoveredFrags);
 
     this.isFirstRenderingPass = true;
+  }
+
+  private saveDiscovered(frag: string, discovered: FragmentsByModel) {
+    const model = this.fragmentModelMap.get(frag);
+    if (!model) {
+      throw new Error("Error when getting model of fragment");
+    }
+    if (!discovered[model]) {
+      discovered[model] = [];
+    }
+    discovered[model].push(frag);
   }
 
   private saveFoundFragments(foundFragmentsIDs: Set<string>) {

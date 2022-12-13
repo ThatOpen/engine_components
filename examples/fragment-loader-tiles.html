@@ -93,9 +93,26 @@
 		fragments.memoryCuller.needsUpdate = true;
 	});
 
-	await loadFragment('./resources/small.zip');
+	// Load fragments only when the tiles are found in the screen
 
-	async function loadFragment(url) {
+	fragments.memoryCuller.fragmentsDiscovered.on(async (discoveredFragments) => {
+		for(const url in discoveredFragments) {
+			const fragIDs = discoveredFragments[url];
+			const { entries } = await unzip(url);
+			for (const fragID of fragIDs) {
+				const geometry = await entries[fragID + '.glb'].blob();
+				const geometryURL = URL.createObjectURL(geometry);
+				const dataBlob = await entries[fragID + '.json'].blob();
+				const dataURL = URL.createObjectURL(dataBlob);
+				await fragments.load(geometryURL, dataURL);
+				fragments.culler.needsUpdate = true;
+			}
+    }
+	});
+
+	await loadModel('./resources/small.zip');
+
+	async function loadModel(url) {
 		const { entries } = await unzip(url);
 
 		// Load the bounding boxes for this model
@@ -103,33 +120,16 @@
 		const opaqueBoxes = await entries['bounding-boxes-opaque.json'].json();
 		const transparentBoxes = await entries['bounding-boxes-transparent.json'].json();
 		const fragmentMap = await entries['express-fragment-map.json'].json();
-		fragments.memoryCuller.loadBoxes(opaqueBoxes, transparentBoxes, fragmentMap);
-
-		// Load fragments only when the tiles are found in the screen
-
-		fragments.memoryCuller.fragmentsDiscovered.on(async (fragIDs) => {
-			for (const fragID of fragIDs) {
-				const geometryName = fragID + '.glb';
-				const geometry = await entries[geometryName].blob();
-				const geometryURL = URL.createObjectURL(geometry);
-
-				const dataName = fragID + '.json';
-				const dataBlob = await entries[dataName].blob();
-				const dataURL = URL.createObjectURL(dataBlob);
-
-				await fragments.load(geometryURL, dataURL);
-				fragments.culler.needsUpdate = true;
-			}
-		});
-
+		fragments.memoryCuller.loadBoxes(url, opaqueBoxes, transparentBoxes, fragmentMap);
 		fragments.memoryCuller.needsUpdate = true;
-
-		// // Create debug frame showing the bounding boxes
-		// fragments.memoryCuller.renderDebugFrame = true;
-		// const memoryCanvas = fragments.memoryCuller.renderer.domElement;
-		// memoryCanvas.style.position = 'absolute';
-		// document.body.append(memoryCanvas);
 	}
+
+	// // Create debug frame showing the bounding boxes
+	// fragments.memoryCuller.renderDebugFrame = true;
+	// const memoryCanvas = fragments.memoryCuller.renderer.domElement;
+	// memoryCanvas.style.position = 'absolute';
+	// document.body.append(memoryCanvas);
+
 
 </script>
 </body>
