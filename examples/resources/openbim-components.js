@@ -68296,6 +68296,7 @@ class MemoryCulling {
         this.transparentMeshes = [];
         this.fragmentColorMap = new Map();
         this.fragmentModelMap = new Map();
+        this.fragmentMeshMap = {};
         this.exclusions = new Map();
         this.needsUpdate = false;
         this.renderDebugFrame = false;
@@ -68405,7 +68406,7 @@ class MemoryCulling {
             code: `${this.colors.r}-${this.colors.g}-${this.colors.b}`,
         };
     }
-    // TODO: This needs cleanup
+    // TODO: This needs cleanup and get rid of repeated code
     loadBoxes(modelID, boundingBoxes, transparentBoundingBoxes, expressIDTofragmentIDMap) {
         const boxes = Object.values(boundingBoxes);
         const geometry = new THREE$1.BoxGeometry();
@@ -68422,6 +68423,7 @@ class MemoryCulling {
             tempMatrix.fromArray(boxes[i]);
             mesh.setMatrixAt(i, tempMatrix);
             mesh.setColorAt(i, new THREE$1.Color(`rgb(${newCol.r},${newCol.g}, ${newCol.b})`));
+            this.fragmentMeshMap[fragmentID] = { mesh, index: i };
             this.fragmentColorMap.set(newCol.code, fragmentID);
         }
         const boxes2 = Object.values(transparentBoundingBoxes);
@@ -68431,12 +68433,13 @@ class MemoryCulling {
         const tempMatrix2 = new THREE$1.Matrix4();
         const expressIDs2 = Object.keys(transparentBoundingBoxes);
         for (let i = 0; i < boxes2.length; i++) {
+            const expressID2 = parseInt(expressIDs2[i], 10);
+            const fragmentID2 = expressIDTofragmentIDMap[expressID2];
             const newCol = this.getNextColor();
             tempMatrix2.fromArray(boxes2[i]);
             mesh2.setMatrixAt(i, tempMatrix2);
             mesh2.setColorAt(i, new THREE$1.Color(`rgb(${newCol.r},${newCol.g}, ${newCol.b})`));
-            const expressID2 = parseInt(expressIDs2[i], 10);
-            const fragmentID2 = expressIDTofragmentIDMap[expressID2];
+            this.fragmentMeshMap[fragmentID2] = { mesh: mesh2, index: i };
             this.fragmentModelMap.set(fragmentID2, modelID);
             this.fragmentColorMap.set(newCol.code, fragmentID2);
         }

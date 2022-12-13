@@ -27,6 +27,10 @@ export class MemoryCulling {
 
   fragmentColorMap = new Map<string, string>();
   fragmentModelMap = new Map<string, string>();
+  fragmentMeshMap: {
+    [fragmentID: string]: { mesh: THREE.Mesh; index: number };
+  } = {};
+
   exclusions = new Map<string, Fragment>();
   needsUpdate = false;
   renderDebugFrame = false;
@@ -168,7 +172,7 @@ export class MemoryCulling {
     };
   }
 
-  // TODO: This needs cleanup
+  // TODO: This needs cleanup and get rid of repeated code
   loadBoxes(
     modelID: string,
     boundingBoxes: any,
@@ -197,6 +201,8 @@ export class MemoryCulling {
         new THREE.Color(`rgb(${newCol.r},${newCol.g}, ${newCol.b})`)
       );
 
+      this.fragmentMeshMap[fragmentID] = { mesh, index: i };
+
       this.fragmentColorMap.set(newCol.code, fragmentID);
     }
 
@@ -207,6 +213,9 @@ export class MemoryCulling {
     const tempMatrix2 = new THREE.Matrix4();
     const expressIDs2 = Object.keys(transparentBoundingBoxes);
     for (let i = 0; i < boxes2.length; i++) {
+      const expressID2 = parseInt(expressIDs2[i], 10);
+      const fragmentID2 = expressIDTofragmentIDMap[expressID2];
+
       const newCol = this.getNextColor();
       tempMatrix2.fromArray(boxes2[i]);
       mesh2.setMatrixAt(i, tempMatrix2);
@@ -215,8 +224,7 @@ export class MemoryCulling {
         new THREE.Color(`rgb(${newCol.r},${newCol.g}, ${newCol.b})`)
       );
 
-      const expressID2 = parseInt(expressIDs2[i], 10);
-      const fragmentID2 = expressIDTofragmentIDMap[expressID2];
+      this.fragmentMeshMap[fragmentID2] = { mesh: mesh2, index: i };
 
       this.fragmentModelMap.set(fragmentID2, modelID);
 
