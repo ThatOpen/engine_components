@@ -48,6 +48,8 @@ export class MemoryCulling {
     readonly autoUpdate = true
   ) {
     this.renderer = new THREE.WebGLRenderer();
+    const planes = this.components.renderer.get().clippingPlanes;
+    this.renderer.clippingPlanes = planes;
     this.renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight);
     this.bufferSize = rtWidth * rtHeight * 4;
     this.buffer = new Uint8Array(this.bufferSize);
@@ -175,7 +177,8 @@ export class MemoryCulling {
   ) {
     const boxes: any[] = Object.values(boundingBoxes);
     const geometry = new THREE.BoxGeometry();
-    const material = new THREE.MeshBasicMaterial();
+    const clippingPlanes = this.components.renderer.get().clippingPlanes;
+    const material = new THREE.MeshBasicMaterial({ clippingPlanes });
     const mesh = new THREE.InstancedMesh(geometry, material, boxes.length);
     const tempMatrix = new THREE.Matrix4();
     const expressIDs = Object.keys(boundingBoxes);

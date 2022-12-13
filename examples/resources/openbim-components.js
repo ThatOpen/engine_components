@@ -68349,6 +68349,8 @@ class MemoryCulling {
             }
         };
         this.renderer = new THREE$1.WebGLRenderer();
+        const planes = this.components.renderer.get().clippingPlanes;
+        this.renderer.clippingPlanes = planes;
         this.renderTarget = new THREE$1.WebGLRenderTarget(rtWidth, rtHeight);
         this.bufferSize = rtWidth * rtHeight * 4;
         this.buffer = new Uint8Array(this.bufferSize);
@@ -68407,7 +68409,8 @@ class MemoryCulling {
     loadBoxes(modelID, boundingBoxes, transparentBoundingBoxes, expressIDTofragmentIDMap) {
         const boxes = Object.values(boundingBoxes);
         const geometry = new THREE$1.BoxGeometry();
-        const material = new THREE$1.MeshBasicMaterial();
+        const clippingPlanes = this.components.renderer.get().clippingPlanes;
+        const material = new THREE$1.MeshBasicMaterial({ clippingPlanes });
         const mesh = new THREE$1.InstancedMesh(geometry, material, boxes.length);
         const tempMatrix = new THREE$1.Matrix4();
         const expressIDs = Object.keys(boundingBoxes);
