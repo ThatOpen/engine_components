@@ -64,7 +64,7 @@ export class DataConverter {
 
   async generateFragmentData(webIfc: WEBIFC.IfcAPI) {
     await this._units.setUp(webIfc);
-    await this._spatialStructure.setupFloors(webIfc);
+    await this._spatialStructure.setupFloors(webIfc, this._units);
     this.processAllFragmentsData();
     this.processAllUniqueItems();
     this.saveModelData(webIfc);

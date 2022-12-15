@@ -20094,7 +20094,7 @@ class FragmentMesh extends InstancedMesh {
             onlyVisible: false,
             truncateDrawRange: true,
             binary: true,
-            maxTextureSize: 0
+            maxTextureSize: 0,
         };
         this.exporter = new GLTFExporter();
         this.material = FragmentMesh.newMaterialArray(material);
@@ -20103,12 +20103,12 @@ class FragmentMesh extends InstancedMesh {
     export() {
         const mesh = this;
         return new Promise((resolve) => {
-            this.exporter.parse(mesh, (geometry) => resolve(geometry), this.exportOptions);
+            this.exporter.parse(mesh, (geometry) => resolve(geometry), (error) => console.log(error), this.exportOptions);
         });
     }
     newFragmentGeometry(geometry) {
         if (!geometry.index) {
-            throw new Error('The geometry must be indexed!');
+            throw new Error("The geometry must be indexed!");
         }
         if (!geometry.attributes.blockID) {
             const vertexSize = geometry.attributes.position.count;
@@ -20125,7 +20125,7 @@ class FragmentMesh extends InstancedMesh {
             geometry.groups.push({
                 start: 0,
                 count: size,
-                materialIndex: 0
+                materialIndex: 0,
             });
         }
     }
@@ -20147,9 +20147,9 @@ class BlocksMap {
             this.fillBlocksMapWithGroupInfo(group, geometry);
         }
     }
-    getSubsetID(modelID, material, customID = 'DEFAULT') {
+    getSubsetID(modelID, material, customID = "DEFAULT") {
         const baseID = modelID;
-        const materialID = material ? material.uuid : 'DEFAULT';
+        const materialID = material ? material.uuid : "DEFAULT";
         return `${baseID} - ${materialID} - ${customID}`;
     }
     // Use this only for destroying the current IFCLoader instance
@@ -20161,7 +20161,7 @@ class BlocksMap {
         const startIndices = geometry.index.array;
         return {
             indexCache: startIndices.slice(0, geometry.index.array.length),
-            map: new Map()
+            map: new Map(),
         };
     }
     fillBlocksMapWithGroupInfo(group, geometry) {
@@ -20206,7 +20206,7 @@ class BlocksMap {
         }
         const storedIfcItem = this.indices.map.get(id);
         if (storedIfcItem === undefined)
-            throw new Error('Geometry map generation error');
+            throw new Error("Geometry map generation error");
         // If this material wasn't stored for this object before, add it to the object
         if (storedIfcItem[matIndex] === undefined) {
             storedIfcItem[matIndex] = [];
@@ -20399,6 +20399,7 @@ class Fragment {
             BVH.dispose(this.mesh.geometry);
             this.mesh.geometry.dispose();
         }
+        this.mesh.removeFromParent();
         this.mesh.dispose();
         this.mesh = null;
         this.disposeNestedFragments();
@@ -20508,7 +20509,8 @@ class Fragment {
         const geometry = new File([new Blob([geometryBuffer])], `${this.id}.glb`);
         const fragmentData = {
             matrices: Array.from(this.mesh.instanceMatrix.array),
-            ids: this.items
+            ids: this.items,
+            id: this.id,
         };
         const dataString = JSON.stringify(fragmentData);
         const data = new File([new Blob([dataString])], `${this.id}.json`);
@@ -20522,9 +20524,9 @@ class Fragment {
     }
     initializeGeometry() {
         const newGeometry = new BufferGeometry();
-        newGeometry.setAttribute('position', this.mesh.geometry.attributes.position);
-        newGeometry.setAttribute('normal', this.mesh.geometry.attributes.normal);
-        newGeometry.setAttribute('blockID', this.mesh.geometry.attributes.blockID);
+        newGeometry.setAttribute("position", this.mesh.geometry.attributes.position);
+        newGeometry.setAttribute("normal", this.mesh.geometry.attributes.normal);
+        newGeometry.setAttribute("blockID", this.mesh.geometry.attributes.blockID);
         newGeometry.setIndex(Array.from(this.mesh.geometry.index.array));
         return newGeometry;
     }
@@ -20942,9 +20944,9 @@ class GeometryUtils {
     static getMeshesAttributes(geometry, attributes) {
         // Three.js GLTFExporter exports custom BufferAttributes as underscore lowercase
         // eslint-disable-next-line no-underscore-dangle
-        geometry.setAttribute('blockID', attributes._blockid);
-        geometry.setAttribute('position', attributes.position);
-        geometry.setAttribute('normal', attributes.normal);
+        geometry.setAttribute("blockID", attributes._blockid);
+        geometry.setAttribute("position", attributes.position);
+        geometry.setAttribute("normal", attributes.normal);
         geometry.groups = [];
     }
     static getMeshesIndices(geometry, meshes) {
@@ -20962,7 +20964,7 @@ class GeometryUtils {
         geometry.groups.push({
             start: counter.index,
             count: index.count,
-            materialIndex: counter.material++
+            materialIndex: counter.material++,
         });
         counter.index += index.count;
     }
@@ -20984,7 +20986,11 @@ class GeometryUtils {
         let vertexCounter = 0;
         let counter = 0;
         for (const size of sizes) {
-            const group = { start: vertexCounter, count: size, materialIndex: counter++ };
+            const group = {
+                start: vertexCounter,
+                count: size,
+                materialIndex: counter++,
+            };
             geometry.groups.push(group);
             vertexCounter += size;
         }
@@ -21003,13 +21009,13 @@ class GeometryUtils {
         for (const geometry of geometries) {
             const size = geometry.attributes.position.count;
             const array = new Uint8Array(size).fill(i++);
-            geometry.setAttribute('blockID', new BufferAttribute$1(array, 1));
+            geometry.setAttribute("blockID", new BufferAttribute$1(array, 1));
         }
     }
     static checkAllGeometriesAreIndexed(geometries) {
         for (const geometry of geometries) {
             if (!geometry.index) {
-                throw new Error('All geometries must be indexed!');
+                throw new Error("All geometries must be indexed!");
             }
         }
     }
@@ -21026,20 +21032,21 @@ class FragmentLoader {
         const meshes = (hasChildren ? sceneRoot.children : [loadedGeom.scene.children[0]]);
         const geometry = await GeometryUtils.mergeGltfMeshes(meshes);
         const materials = this.getMaterials(meshes);
-        const items = await this.getItems(dataURL);
-        return this.getFragment(geometry, materials, items);
+        const dataResponse = await fetch(dataURL);
+        const data = (await dataResponse.json());
+        return this.getFragment(geometry, materials, data);
     }
-    getFragment(geometry, materials, items) {
+    getFragment(geometry, materials, data) {
+        const items = this.getInstances(data);
         const fragment = new Fragment(geometry, materials, items.length);
+        if (data.id) {
+            fragment.id = data.id;
+            fragment.mesh.uuid = data.id;
+        }
         for (let i = 0; i < items.length; i++) {
             fragment.setInstance(i, items[i]);
         }
         return fragment;
-    }
-    async getItems(url) {
-        const dataResponse = await fetch(url);
-        const data = await dataResponse.json();
-        return this.getInstances(data);
     }
     getInstances(data) {
         let idCounter = 0;
@@ -21065,7 +21072,7 @@ class FragmentLoader {
             return new MeshLambertMaterial({
                 color: material.color,
                 opacity: material.opacity,
-                transparent: material.transparent
+                transparent: material.transparent,
             });
         });
     }
@@ -67678,11 +67685,11 @@ class SpatialStructure {
         this.floorProperties = [];
         this.itemsByFloor = {};
     }
-    async setupFloors(webIfc) {
+    async setupFloors(webIfc, units) {
         this.reset();
         const floors = await this.getFloors(webIfc);
         for (const floor of floors) {
-            await this.getFloorProperties(webIfc, floor);
+            await this.getFloorProperties(webIfc, floor, units);
             this.saveFloorRelations(floor);
         }
     }
@@ -67694,10 +67701,31 @@ class SpatialStructure {
         this.floorProperties = [];
         this.itemsByFloor = {};
     }
-    async getFloorProperties(webIfc, floor) {
+    async getFloorProperties(webIfc, floor, units) {
         const id = floor.expressID;
-        const props = await webIfc.properties.getItemProperties(0, id, false);
+        const properties = webIfc.properties;
+        const props = await properties.getItemProperties(0, id, false);
+        props.SceneHeight = await this.getHeight(props, webIfc, properties, units);
         this.floorProperties.push(props);
+    }
+    async getHeight(props, webIfc, properties, units) {
+        const placementID = props.ObjectPlacement.value;
+        const coordArray = webIfc.GetCoordinationMatrix(0);
+        const coordHeight = coordArray[13] * units.factor;
+        const placement = await properties.getItemProperties(0, placementID, true);
+        return this.getPlacementHeight(placement, units) + coordHeight;
+    }
+    getPlacementHeight(placement, units) {
+        var _a, _b;
+        let value = 0;
+        const heightCoords = (_b = (_a = placement.RelativePlacement) === null || _a === void 0 ? void 0 : _a.Location) === null || _b === void 0 ? void 0 : _b.Coordinates;
+        if (heightCoords) {
+            value += heightCoords[2].value * units.complement * units.factor;
+        }
+        if (placement.PlacementRelTo) {
+            value += this.getPlacementHeight(placement.PlacementRelTo, units);
+        }
+        return value;
     }
     saveFloorRelations(floor) {
         for (const item of floor.children) {
@@ -67722,6 +67750,7 @@ class SpatialStructure {
 class Units {
     constructor() {
         this.factor = 1;
+        this.complement = 1;
     }
     apply(matrix) {
         const scale = this.getScaleMatrix();
@@ -67729,13 +67758,14 @@ class Units {
         matrix.copy(result);
     }
     setUp(webIfc) {
+        var _a;
         this.factor = 1;
         const lengthUnits = this.getLengthUnits(webIfc);
         if (lengthUnits.Name.value === "FOOT") {
             this.factor = 0.3048;
         }
-        else if (lengthUnits.Prefix === ".MILLI.") {
-            this.factor = 0.001;
+        else if (((_a = lengthUnits.Prefix) === null || _a === void 0 ? void 0 : _a.value) === "MILLI") {
+            this.complement = 0.001;
         }
     }
     getLengthUnits(webIfc) {
@@ -67971,7 +68001,7 @@ class DataConverter {
     }
     async generateFragmentData(webIfc) {
         await this._units.setUp(webIfc);
-        await this._spatialStructure.setupFloors(webIfc);
+        await this._spatialStructure.setupFloors(webIfc, this._units);
         this.processAllFragmentsData();
         this.processAllUniqueItems();
         this.saveModelData(webIfc);

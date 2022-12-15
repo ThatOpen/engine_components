@@ -3,6 +3,7 @@ import * as THREE from "three";
 
 export class Units {
   factor = 1;
+  complement = 1;
 
   apply(matrix: THREE.Matrix4) {
     const scale = this.getScaleMatrix();
@@ -15,8 +16,8 @@ export class Units {
     const lengthUnits = this.getLengthUnits(webIfc);
     if (lengthUnits.Name.value === "FOOT") {
       this.factor = 0.3048;
-    } else if (lengthUnits.Prefix === ".MILLI.") {
-      this.factor = 0.001;
+    } else if (lengthUnits.Prefix?.value === "MILLI") {
+      this.complement = 0.001;
     }
   }
 

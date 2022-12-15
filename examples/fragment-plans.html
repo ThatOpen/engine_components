@@ -167,7 +167,7 @@
 		const levelOffset = 1.5;
 
 		for (const levelProps of levelsProperties) {
-			const elevation = levelProps.Elevation.value + levelOffset;
+			const elevation = levelProps.SceneHeight + levelOffset;
 
 			// Create floorplan
 			await floorNav.create({

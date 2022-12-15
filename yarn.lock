@@ -1674,14 +1674,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bim-fragment@npm:0.0.11":
-  version: 0.0.11
-  resolution: "bim-fragment@npm:0.0.11"
+"bim-fragment@npm:0.0.13":
+  version: 0.0.13
+  resolution: "bim-fragment@npm:0.0.13"
   dependencies:
+    three: 0.135
     three-mesh-bvh: ^0.5.14
-  peerDependencies:
-    three: ^0.135.0
-  checksum: f69f43a969924568e2f2979e8d65b28adf7c5e23efe18cf8c19de63afa71042617b281b5dcd8b517307b561d49610798b28017c9dab23be7bd9f2325e3d89f3e
+  checksum: 63ed0c6d072cb76e4e7d766ee4b7cf950dbd7756e2b226cc236d3d68006b38d4ab7adb6cba8879c96f8a4bdbea366864921f365996dd19841b5c47016d6775ca
   languageName: node
   linkType: hard
 
@@ -5346,6 +5345,12 @@ __metadata:
   languageName: node
   linkType: hard
 
+"openbim-components-root@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "openbim-components-root@workspace:."
+  languageName: unknown
+  linkType: soft
+
 "openbim-components@workspace:library":
   version: 0.0.0-use.local
   resolution: "openbim-components@workspace:library"
@@ -5357,7 +5362,7 @@ __metadata:
     "@types/three": ^0.143.0
     "@typescript-eslint/eslint-plugin": ^4.27.0
     "@typescript-eslint/parser": ^4.27.0
-    bim-fragment: 0.0.11
+    bim-fragment: 0.0.13
     camera-controls: ^1.36.0
     cpy-cli: ^3.1.1
     eslint: ^7.28.0
@@ -7039,12 +7044,6 @@ __metadata:
   checksum: 930ad124c22527454888644940ec97b5e5990690d1ba9d8c2eea08d1f8429fbf614a32c3881f38184ceb6f18d5be845420dd2f90d06603a1e556f10d2a825402
   languageName: node
   linkType: hard
-
-"web-viewer@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "web-viewer@workspace:."
-  languageName: unknown
-  linkType: soft
 
 "webidl-conversions@npm:^5.0.0":
   version: 5.0.0
