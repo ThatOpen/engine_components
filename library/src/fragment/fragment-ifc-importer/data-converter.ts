@@ -3,7 +3,12 @@ import * as WEBIFC from "web-ifc";
 import { GeometryUtils } from "bim-fragment/geometry-utils";
 import { Fragment } from "bim-fragment/fragment";
 import { BufferGeometry } from "three";
-import { IfcCategories, IfcItemsCategories, IfcCategoryMap } from "../../ifc";
+import {
+  IfcCategories,
+  IfcItemsCategories,
+  IfcCategoryMap,
+  IfcJsonExporter,
+} from "../../ifc";
 import { SpatialStructure } from "./spatial-structure";
 import { Settings } from "./settings";
 import { Units } from "./units";
@@ -26,6 +31,7 @@ export class DataConverter {
   private _transparentBoundingBoxes: { [id: string]: number[] } = {};
   private _expressIDfragmentIDMap: { [expressID: string]: string } = {};
   private _transform = new TransformHelper();
+  private _propertyExporter = new IfcJsonExporter();
 
   private readonly _items: IfcToFragmentItems;
   private readonly _materials: MaterialList;
@@ -56,6 +62,7 @@ export class DataConverter {
     this._ifcCategories = new IfcCategories();
     this._uniqueItems = {};
     this._units = new Units();
+    this._propertyExporter = new IfcJsonExporter();
   }
 
   setupCategories(webIfc: WEBIFC.IfcAPI) {
@@ -71,7 +78,7 @@ export class DataConverter {
     return this._model;
   }
 
-  private saveModelData(webIfc: WEBIFC.IfcAPI) {
+  private async saveModelData(webIfc: WEBIFC.IfcAPI) {
     this._model.boundingBoxes = this._boundingBoxes;
     this._model.transparentBoundingBoxes = this._transparentBoundingBoxes;
     this._model.expressIDFragmentIDMap = this._expressIDfragmentIDMap;
@@ -79,8 +86,25 @@ export class DataConverter {
     this._model.floorsProperties = this._spatialStructure.floorProperties;
     this._model.allTypes = IfcCategoryMap;
     this._model.itemTypes = this._categories;
+    this._model.coordinationMatrix = this.getCoordinationMatrix(webIfc);
+    this._model.properties = await this.getModelProperties(webIfc);
+  }
+
+  private getCoordinationMatrix(webIfc: WEBIFC.IfcAPI) {
     const coordArray = webIfc.GetCoordinationMatrix(0);
-    this._model.coordinationMatrix = new THREE.Matrix4().fromArray(coordArray);
+    return new THREE.Matrix4().fromArray(coordArray);
+  }
+
+  private async getModelProperties(webIfc: WEBIFC.IfcAPI) {
+    if (!this._settings.includeProperties) {
+      return {};
+    }
+    return new Promise<any>((resolve) => {
+      this._propertyExporter.propertiesSerialized.on((properties) => {
+        resolve(properties);
+      });
+      this._propertyExporter.export(webIfc, 0);
+    });
   }
 
   private processAllFragmentsData() {

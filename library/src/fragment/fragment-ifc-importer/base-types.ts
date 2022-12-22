@@ -9,6 +9,7 @@ export class FragmentGroup extends THREE.Group {
   floorsProperties: any;
   coordinationMatrix: any;
   boundingBoxes: any;
+  properties: any;
   transparentBoundingBoxes: any;
   expressIDFragmentIDMap: any;
 }

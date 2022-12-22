@@ -4,11 +4,14 @@ export class Settings {
   // Categories that always will be instanced
   instancedCategories = new Set<number>();
 
+  includeProperties = true;
+
   optionalCategories: number[] = [WEBIFC.IFCSPACE];
 
-  wasmPath = "";
-
-  voxelSize = 1;
+  wasm = {
+    path: "",
+    absolute: false,
+  };
 
   instanceLimit = 5;
 
@@ -21,9 +24,5 @@ export class Settings {
     this.instancedCategories.add(WEBIFC.IFCFURNISHINGELEMENT);
     this.instancedCategories.add(WEBIFC.IFCWINDOW);
     this.instancedCategories.add(WEBIFC.IFCDOOR);
-  }
-
-  setWasmPath(path: string) {
-    this.wasmPath = path;
   }
 }

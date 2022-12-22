@@ -37,12 +37,13 @@ export class IfcFragmentLoader {
     const file = await fetch(ifcURL);
     const buffer = await file.arrayBuffer();
     const data = new Uint8Array(buffer);
-    await this._webIfc.OpenModel(data, this.settings.webIfc);
+    this._webIfc.OpenModel(data, this.settings.webIfc);
     return this.loadAllGeometry();
   }
 
   private async initializeWebIfc() {
-    this._webIfc.SetWasmPath(this.settings.wasmPath);
+    const { path, absolute } = this.settings.wasm;
+    this._webIfc.SetWasmPath(path, absolute);
     await this._webIfc.Init();
   }
 
