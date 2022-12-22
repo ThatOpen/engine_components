@@ -89,7 +89,7 @@
 	// Set up highlighting
 
 	fragments.highlighter.add('example', new THREE.MeshBasicMaterial({color: 'red'}));
-	window.addEventListener('mousemove', () => fragments.highlighter.highlight('example'));
+	window.addEventListener('click', () => fragments.highlighter.highlight('example', false));
 
 	async function loadFragment(url) {
 		const {entries} = await unzip(url);

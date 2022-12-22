@@ -21083,21 +21083,22 @@ class FragmentHighlighter {
         this.components = components;
         this.fragments = fragments;
         this.active = false;
-        this.highlights = {};
-        this.tempMatrix = new Matrix4();
+        this.highlightMats = {};
+        this.tempMatrix = new THREE$1.Matrix4();
         this.selection = {};
     }
     add(name, material) {
-        if (this.highlights[name]) {
-            throw new Error("A highlight with this name already exists");
+        if (this.highlightMats[name]) {
+            throw new Error("A highlight with this name already exists.");
         }
-        this.highlights[name] = material;
+        this.highlightMats[name] = material;
+        this.selection[name] = {};
         this.update();
     }
     update() {
         for (const fragmentID in this.fragments.fragments) {
             const fragment = this.fragments.fragments[fragmentID];
-            this.updateFragmentHighlight(fragment);
+            this.addHighlightToFragment(fragment);
         }
     }
     // TODO: Fix multi selection
@@ -21105,53 +21106,81 @@ class FragmentHighlighter {
         var _a;
         if (!this.active)
             return null;
+        this.checkSelection(name);
         const meshes = this.fragments.fragmentMeshes;
         const result = this.components.raycaster.castRay(meshes);
-        let selection = this.selection[name];
         if (!result) {
-            selection === null || selection === void 0 ? void 0 : selection.mesh.removeFromParent();
+            this.unHighlight(name);
             return null;
         }
         const mesh = result.object;
         const geometry = mesh.geometry;
         const index = (_a = result.face) === null || _a === void 0 ? void 0 : _a.a;
         const instanceID = result.instanceId;
-        if (!geometry || !index || instanceID === undefined)
+        if (!geometry || !index || instanceID === undefined) {
             return null;
+        }
+        if (removePrevious || !this.selection[name][mesh.uuid]) {
+            this.selection[name][mesh.uuid] = [];
+        }
+        const fragment = this.fragments.fragments[mesh.uuid];
+        const blockID = fragment.getVertexBlockID(geometry, index);
+        const itemID = fragment.getItemID(instanceID, blockID);
+        this.selection[name][mesh.uuid].push(itemID);
+        this.updateFragmentHighlight(name, mesh.uuid);
+        return { id: mesh.uuid, fragment };
+    }
+    unHighlight(name) {
+        for (const fragID in this.selection[name]) {
+            const fragment = this.fragments.fragments[fragID];
+            const selection = fragment.fragments[name];
+            if (selection) {
+                selection.mesh.removeFromParent();
+            }
+        }
+        this.selection[name] = {};
+    }
+    updateFragmentHighlight(name, fragmentID) {
+        const ids = this.selection[name][fragmentID];
+        const fragment = this.fragments.fragments[fragmentID];
+        const selection = fragment.fragments[name];
         const scene = this.components.scene.get();
-        const fragment = this.fragments.fragments[result.object.uuid];
-        if (!fragment || !fragment.fragments[name])
-            return null;
-        if (selection) {
-            selection.mesh.removeFromParent();
-        }
-        this.selection[name] = fragment.fragments[name];
-        selection = this.selection[name];
+        const isBlockFragment = selection.blocks.count > 1;
         scene.add(selection.mesh);
-        fragment.getInstance(instanceID, this.tempMatrix);
-        selection.setInstance(0, { transform: this.tempMatrix });
-        selection.mesh.instanceMatrix.needsUpdate = true;
-        // Select block
-        const blockID = selection.getVertexBlockID(geometry, index);
-        if (blockID !== null && selection.blocks.count > 1) {
-            selection.blocks.add([blockID], removePrevious);
+        let i = 0;
+        const blockIDs = [];
+        for (const id of ids) {
+            const { instanceID, blockID } = fragment.getInstanceAndBlockID(id);
+            fragment.getInstance(instanceID, this.tempMatrix);
+            selection.setInstance(i, { ids: [id], transform: this.tempMatrix });
+            if (isBlockFragment) {
+                blockIDs.push(blockID);
+            }
+            i++;
         }
-        const id = fragment.getItemID(instanceID, blockID);
-        return { id, fragment };
+        if (isBlockFragment) {
+            selection.blocks.add(blockIDs, true);
+        }
+        selection.mesh.count = i;
+    }
+    checkSelection(name) {
+        if (!this.highlightMats[name]) {
+            throw new Error(`Selection ${name} does not exist.`);
+        }
     }
     /**
      * Clears any selection previously made by calling {@link highlight}.
      */
     clear() {
-        var _a;
-        for (const name in this.selection) {
-            (_a = this.selection[name]) === null || _a === void 0 ? void 0 : _a.mesh.removeFromParent();
+        const names = Object.keys(this.selection);
+        for (const name of names) {
+            this.unHighlight(name);
         }
     }
-    updateFragmentHighlight(fragment) {
-        for (const name in this.highlights) {
+    addHighlightToFragment(fragment) {
+        for (const name in this.highlightMats) {
             if (!fragment.fragments[name]) {
-                const material = this.highlights[name];
+                const material = this.highlightMats[name];
                 fragment.addFragment(name, material);
                 fragment.fragments[name].mesh.renderOrder = 1;
             }
