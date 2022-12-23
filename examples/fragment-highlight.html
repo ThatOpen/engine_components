@@ -198,6 +198,7 @@
     const actions = {
         clear: () => {
             fragments.highlighter.clear();
+            updateTranslucent();
         },
         selectAllFurniture: () => {
             const selectionName = settings.translucent ? "translucent" : "red";
@@ -207,10 +208,15 @@
         }
     }
 
-    actionsFolder.add(settings, "translucent").name("Translucent highlight");
     actionsFolder.add(settings, "singleSelect").name("Single select");
+    actionsFolder.add(settings, "translucent").name("Translucent highlight").onChange(() => {
+        fragments.highlighter.clear();
+        fragments.materials.reset();
+    });
+
     actionsFolder.add(actions, "clear").name("Clear selection");
     actionsFolder.add(actions, "selectAllFurniture").name("Highlight all furniture");
+
 
     window.addEventListener('click', () => {
         const selectionName = settings.translucent ? "translucent" : "red";
