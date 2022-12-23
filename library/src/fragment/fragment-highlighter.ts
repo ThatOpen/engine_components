@@ -8,7 +8,9 @@ export class FragmentHighlighter {
   highlightMats: { [name: string]: THREE.Material[] | undefined } = {};
 
   private tempMatrix = new THREE.Matrix4();
-  private selection: { [id: string]: { [fragmentID: string]: string[] } } = {};
+  private selection: {
+    [selectionID: string]: { [fragmentID: string]: Set<string> };
+  } = {};
 
   constructor(private components: Components, private fragments: Fragments) {}
 
@@ -38,7 +40,7 @@ export class FragmentHighlighter {
     const result = this.components.raycaster.castRay(meshes);
 
     if (!result) {
-      this.unHighlight(name);
+      this.clear(name);
       return null;
     }
 
@@ -50,21 +52,35 @@ export class FragmentHighlighter {
       return null;
     }
 
-    if (removePrevious || !this.selection[name][mesh.uuid]) {
-      this.selection[name][mesh.uuid] = [];
+    if (removePrevious) {
+      this.clear();
+    }
+
+    if (!this.selection[name][mesh.uuid]) {
+      this.selection[name][mesh.uuid] = new Set<string>();
     }
 
     const fragment = this.fragments.fragments[mesh.uuid];
     const blockID = fragment.getVertexBlockID(geometry, index);
     const itemID = fragment.getItemID(instanceID, blockID);
-    this.selection[name][mesh.uuid].push(itemID);
+    this.selection[name][mesh.uuid].add(itemID);
 
     this.updateFragmentHighlight(name, mesh.uuid);
 
     return { id: mesh.uuid, fragment };
   }
 
-  unHighlight(name: string) {
+  /**
+   * Clears any selection previously made by calling {@link highlight}.
+   */
+  clear(name?: string) {
+    const names = name ? [name] : Object.keys(this.selection);
+    for (const name of names) {
+      this.clearStyle(name);
+    }
+  }
+
+  private clearStyle(name: string) {
     for (const fragID in this.selection[name]) {
       const fragment = this.fragments.fragments[fragID];
       const selection = fragment.fragments[name];
@@ -103,18 +119,8 @@ export class FragmentHighlighter {
   }
 
   private checkSelection(name: string) {
-    if (!this.highlightMats[name]) {
+    if (!this.selection[name]) {
       throw new Error(`Selection ${name} does not exist.`);
-    }
-  }
-
-  /**
-   * Clears any selection previously made by calling {@link highlight}.
-   */
-  clear() {
-    const names = Object.keys(this.selection);
-    for (const name of names) {
-      this.unHighlight(name);
     }
   }
 
