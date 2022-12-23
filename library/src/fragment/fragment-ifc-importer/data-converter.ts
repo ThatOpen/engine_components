@@ -121,7 +121,8 @@ export class DataConverter {
     //  (e.g. for a model with thousands of objects that repeat 2 times)
     const isUnique = data.instances.length === 1;
     const isInstanced = this._settings.instancedCategories.has(categoryID);
-    if (!isUnique || isInstanced) {
+    const noFloors = Object.keys(this._spatialStructure.itemsByFloor).length === 0;
+    if (!isUnique || isInstanced || noFloors) {
       this.processInstancedItems(data);
     } else {
       this.processMergedItems(data);
