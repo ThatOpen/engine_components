@@ -24,6 +24,8 @@
     }
 
 
+
+
 </script>
 <script type="module">
     import * as THREE from 'three';
@@ -105,7 +107,16 @@
 
         const fileNames = Object.keys(entries);
 
+        const allTypes = await entries['all-types.json'].json();
+        const modelTypes = await entries['model-types.json'].json();
+        const levelsRelationship = await entries['levels-relationship.json'].json();
         const coordMatrix = await entries['coordination-matrix.json'].json();
+        const levelsProperties = await entries['levels-properties.json'].json();
+
+        const floorNames = {};
+        for (const levelProps of levelsProperties) {
+            floorNames[levelProps.expressID] = levelProps.Name.value;
+        }
 
         for (let i = 0; i < fileNames.length; i++) {
 
@@ -119,12 +130,43 @@
 
             const dataName = geometryName.substring(0, geometryName.indexOf('.glb')) + '.json';
             const dataBlob = await entries[dataName].blob();
+            const data = await entries[dataName].json();
 
             const dataURL = URL.createObjectURL(dataBlob);
 
-            await fragments.load(geometryURL, dataURL, coordMatrix);
+            const fragment = await fragments.load(geometryURL, dataURL, coordMatrix);
 
             fragments.culler.needsUpdate = true;
+
+            // Group items by category and by floor
+            const categoryID = "category";
+            const floorID = "floor";
+
+            const groups = {[categoryID]: {}, [floorID]: {}};
+
+            for (const id of data.ids) {
+
+                // Get the category of the items
+
+                const categoryExpressID = modelTypes[id];
+                const category = allTypes[categoryExpressID];
+                if (!groups[categoryID][category]) {
+                    groups[categoryID][category] = [];
+                }
+                groups[categoryID][category].push(id);
+
+                // Get the floors of the items
+
+                const floorExpressID = levelsRelationship[id];
+                const floor = floorNames[floorExpressID];
+                if (!groups[floorID][floor]) {
+                    groups[floorID][floor] = [];
+                }
+                groups[floorID][floor].push(id);
+            }
+
+            fragments.groups.add(fragment.id, groups);
+
         }
         fragments.highlighter.update();
         fragments.highlighter.active = true;
@@ -134,34 +176,59 @@
 
     const gui = new dat.GUI();
 
+    gui.domElement.addEventListener("click", (event) => {
+        event.stopPropagation();
+    });
+
     const shortcutsFolder = gui.addFolder('Shortcuts');
 
     const shortcuts = {
-        'Select single': "click",
-        'Select multiple': "Shift + click",
+        'Select': "click",
     }
 
-    shortcutsFolder.add(shortcuts, 'Select single');
-    shortcutsFolder.add(shortcuts, 'Select multiple');
+    shortcutsFolder.add(shortcuts, 'Select');
 
     const actionsFolder = gui.addFolder('Actions');
 
     const settings = {
-        translucent: false
+        translucent: false,
+        singleSelect: true
+    }
+
+    const actions = {
+        clear: () => {
+            fragments.highlighter.clear();
+        },
+        selectAllFurniture: () => {
+            const selectionName = settings.translucent ? "translucent" : "red";
+            const furniture = fragments.groups.groupSystems.category["IFCFURNISHINGELEMENT"];
+            fragments.highlighter.highlightByID(selectionName, furniture, settings.singleSelect);
+            updateTranslucent();
+        }
     }
 
     actionsFolder.add(settings, "translucent").name("Translucent highlight");
+    actionsFolder.add(settings, "singleSelect").name("Single select");
+    actionsFolder.add(actions, "clear").name("Clear selection");
+    actionsFolder.add(actions, "selectAllFurniture").name("Highlight all furniture");
 
-    window.addEventListener('click', (event) => {
+    window.addEventListener('click', () => {
         const selectionName = settings.translucent ? "translucent" : "red";
-        const selectOnlyOne = !event.shiftKey;
-        const result = fragments.highlighter.highlight(selectionName, selectOnlyOne);
-        if (settings.translucent && result) {
-            fragments.materials.apply(translucentMat);
+        const result = fragments.highlighter.highlight(selectionName, settings.singleSelect);
+        if (result) {
+            updateTranslucent();
         } else {
             fragments.materials.reset();
         }
     });
+
+    function updateTranslucent() {
+        if (settings.translucent) {
+            fragments.materials.apply(translucentMat);
+        } else {
+            fragments.materials.reset();
+        }
+    }
 
 </script>
 </body>

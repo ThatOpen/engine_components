@@ -70,6 +70,26 @@ export class FragmentHighlighter {
     return { id: mesh.uuid, fragment };
   }
 
+  highlightByID(
+    name: string,
+    ids: { [fragmentID: string]: string[] },
+    removePrevious = true
+  ) {
+    if (removePrevious) {
+      this.clear();
+    }
+    const styles = this.selection[name];
+    for (const fragID in ids) {
+      if (!styles[fragID]) {
+        styles[fragID] = new Set<string>();
+      }
+      for (const id of ids[fragID]) {
+        styles[fragID].add(id);
+      }
+      this.updateFragmentHighlight(name, fragID);
+    }
+  }
+
   /**
    * Clears any selection previously made by calling {@link highlight}.
    */
