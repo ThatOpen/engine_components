@@ -199,7 +199,7 @@
         },
         selectAllFurniture: () => {
             const selectionName = settings.translucent ? "translucent" : "red";
-            const furniture = fragments.groups.groupSystems.category["IFCFURNISHINGELEMENT"];
+            const furniture = fragments.groups.groupSystems.category["IFCWALLSTANDARDCASE"];
             fragments.highlighter.highlightByID(selectionName, furniture, settings.singleSelect);
             updateTranslucent();
         }

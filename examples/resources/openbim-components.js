@@ -21120,7 +21120,7 @@ class FragmentHighlighter {
             return null;
         }
         if (removePrevious) {
-            this.clear();
+            this.clear(name);
         }
         if (!this.selection[name][mesh.uuid]) {
             this.selection[name][mesh.uuid] = new Set();
@@ -21134,7 +21134,7 @@ class FragmentHighlighter {
     }
     highlightByID(name, ids, removePrevious = true) {
         if (removePrevious) {
-            this.clear();
+            this.clear(name);
         }
         const styles = this.selection[name];
         for (const fragID in ids) {
@@ -21173,21 +21173,28 @@ class FragmentHighlighter {
         const scene = this.components.scene.get();
         const isBlockFragment = selection.blocks.count > 1;
         scene.add(selection.mesh);
-        let i = 0;
-        const blockIDs = [];
-        for (const id of ids) {
-            const { instanceID, blockID } = fragment.getInstanceAndBlockID(id);
-            fragment.getInstance(instanceID, this.tempMatrix);
-            selection.setInstance(i, { ids: [id], transform: this.tempMatrix });
-            if (isBlockFragment) {
+        if (isBlockFragment) {
+            const blockIDs = [];
+            for (const id of ids) {
+                const { blockID } = fragment.getInstanceAndBlockID(id);
                 blockIDs.push(blockID);
             }
-            i++;
-        }
-        if (isBlockFragment) {
+            selection.setInstance(0, {
+                ids: Array.from(ids),
+                transform: new THREE$1.Matrix4(),
+            });
             selection.blocks.add(blockIDs, true);
         }
-        selection.mesh.count = i;
+        else {
+            let i = 0;
+            for (const id of ids) {
+                const { instanceID } = fragment.getInstanceAndBlockID(id);
+                fragment.getInstance(instanceID, this.tempMatrix);
+                selection.setInstance(i, { ids: [id], transform: this.tempMatrix });
+                i++;
+            }
+            selection.mesh.count = i;
+        }
     }
     checkSelection(name) {
         if (!this.selection[name]) {
