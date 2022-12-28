@@ -68700,14 +68700,24 @@ class FragmentExploder {
         this.fragments = fragments;
         this.height = 10;
         this.groupName = "";
+        this.enabled = false;
     }
     explode() {
-        this.transform(1);
+        if (this.enabled) {
+            return;
+        }
+        this.enabled = true;
+        this.transform();
     }
     reset() {
-        this.transform(-1);
+        if (!this.enabled) {
+            return;
+        }
+        this.enabled = false;
+        this.transform();
     }
-    transform(factor) {
+    transform() {
+        const factor = this.enabled ? 1 : -1;
         let i = 1;
         const groups = this.fragments.groups.groupSystems[this.groupName];
         for (const groupName in groups) {

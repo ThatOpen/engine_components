@@ -175,10 +175,16 @@
 
     const actions = {
       explode: () => {
+				renderer.postproduction.active = false;
         fragments.exploder.explode();
+				renderer.postproduction.active = true;
+				renderer.postproduction.visible = true;
       },
       reset: () => {
+				renderer.postproduction.active = false;
         fragments.exploder.reset();
+				renderer.postproduction.active = true;
+				renderer.postproduction.visible = true;
       }
     }
 

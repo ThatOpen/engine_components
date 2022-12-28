@@ -1,29 +1,33 @@
 import * as THREE from "three";
-import { Fragments } from "./fragment";
-
-// export class ExploderHelper {
-//   constructor() {}
-//   get y() {}
-//   set y() {}
-// }
+import { Fragments } from "../fragment";
 
 export class FragmentExploder {
   height = 10;
   groupName = "";
+  enabled = false;
 
   // private transformedFragments = new Set<string>();
 
   constructor(public fragments: Fragments) {}
 
   explode() {
-    this.transform(1);
+    if (this.enabled) {
+      return;
+    }
+    this.enabled = true;
+    this.transform();
   }
 
   reset() {
-    this.transform(-1);
+    if (!this.enabled) {
+      return;
+    }
+    this.enabled = false;
+    this.transform();
   }
 
-  private transform(factor: number) {
+  private transform() {
+    const factor = this.enabled ? 1 : -1;
     let i = 1;
     const groups = this.fragments.groups.groupSystems[this.groupName];
     for (const groupName in groups) {
@@ -59,24 +63,24 @@ export class FragmentExploder {
     }
   }
 
-  private getOffsetY(y: number) {
-    return new THREE.Matrix4().fromArray([
-      1,
-      0,
-      0,
-      0,
-      0,
-      1,
-      0,
-      0,
-      0,
-      0,
-      1,
-      0,
-      0,
-      y * this.height,
-      0,
-      1,
-    ]);
-  }
+  // private getOffsetY(y: number) {
+  //   return new THREE.Matrix4().fromArray([
+  //     1,
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     1,
+  //     0,
+  //     0,
+  //     0,
+  //     0,
+  //     1,
+  //     0,
+  //     0,
+  //     y * this.height,
+  //     0,
+  //     1,
+  //   ]);
+  // }
 }
