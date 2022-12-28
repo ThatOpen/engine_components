@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Fragments } from "../fragment";
+import { Fragments } from "./fragment";
 
 export class FragmentExploder {
   height = 10;
@@ -63,24 +63,24 @@ export class FragmentExploder {
     }
   }
 
-  // private getOffsetY(y: number) {
-  //   return new THREE.Matrix4().fromArray([
-  //     1,
-  //     0,
-  //     0,
-  //     0,
-  //     0,
-  //     1,
-  //     0,
-  //     0,
-  //     0,
-  //     0,
-  //     1,
-  //     0,
-  //     0,
-  //     y * this.height,
-  //     0,
-  //     1,
-  //   ]);
-  // }
+  private getOffsetY(y: number) {
+    return new THREE.Matrix4().fromArray([
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      y * this.height,
+      0,
+      1,
+    ]);
+  }
 }
