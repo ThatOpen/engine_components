@@ -11,6 +11,7 @@ import { FragmentSpatialTree } from "./fragment-spatial-tree";
 import { Components } from "../index";
 import { IfcFragmentLoader } from "./fragment-ifc-importer";
 import { MemoryCulling } from "./memory-culling";
+import { FragmentExploder } from "./fragment-exploder";
 
 export class Fragments {
   fragments: { [guid: string]: Fragment } = {};
@@ -23,6 +24,7 @@ export class Fragments {
   tree = new FragmentSpatialTree(this.properties);
 
   highlighter: FragmentHighlighter;
+  exploder: FragmentExploder;
   edges: FragmentEdges;
   materials: FragmentMaterials;
   culler: FragmentCulling;
@@ -30,6 +32,7 @@ export class Fragments {
 
   constructor(private components: Components) {
     this.highlighter = new FragmentHighlighter(components, this);
+    this.exploder = new FragmentExploder(this);
     this.edges = new FragmentEdges(components);
     this.materials = new FragmentMaterials(this);
     this.culler = new FragmentCulling(components, this);

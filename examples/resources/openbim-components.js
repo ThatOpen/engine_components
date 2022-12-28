@@ -68682,6 +68682,82 @@ class MemoryCulling {
     }
 }
 
+// export class ExploderHelper {
+//   constructor() {}
+//   get y() {}
+//   set y() {}
+// }
+class FragmentExploder {
+    // private transformedFragments = new Set<string>();
+    constructor(fragments) {
+        this.fragments = fragments;
+        this.height = 10;
+        this.groupName = "";
+    }
+    explode() {
+        this.transform(1);
+    }
+    reset() {
+        this.transform(-1);
+    }
+    transform(factor) {
+        let i = 1;
+        const groups = this.fragments.groups.groupSystems[this.groupName];
+        for (const groupName in groups) {
+            for (const fragID in groups[groupName]) {
+                const fragment = this.fragments.fragments[fragID];
+                const yTransform = this.getOffsetY(i * factor);
+                if (fragment.blocks.count === 1) {
+                    // For instanced fragments
+                    const ids = groups[groupName][fragID];
+                    for (const id of ids) {
+                        const tempMatrix = new THREE$1.Matrix4();
+                        const { instanceID } = fragment.getInstanceAndBlockID(id);
+                        fragment.getInstance(instanceID, tempMatrix);
+                        tempMatrix.premultiply(yTransform);
+                        fragment.setInstance(instanceID, {
+                            transform: tempMatrix,
+                            ids: [id],
+                        });
+                    }
+                }
+                else {
+                    // For merged fragments
+                    const tempMatrix = new THREE$1.Matrix4();
+                    fragment.getInstance(0, tempMatrix);
+                    tempMatrix.premultiply(yTransform);
+                    fragment.setInstance(0, {
+                        transform: tempMatrix,
+                        ids: fragment.items,
+                    });
+                }
+                fragment.mesh.instanceMatrix.needsUpdate = true;
+            }
+            i++;
+        }
+    }
+    getOffsetY(y) {
+        return new THREE$1.Matrix4().fromArray([
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            y * this.height,
+            0,
+            1,
+        ]);
+    }
+}
+
 class Fragments {
     constructor(components) {
         this.components = components;
@@ -68693,6 +68769,7 @@ class Fragments {
         this.properties = new FragmentProperties();
         this.tree = new FragmentSpatialTree(this.properties);
         this.highlighter = new FragmentHighlighter(components, this);
+        this.exploder = new FragmentExploder(this);
         this.edges = new FragmentEdges(components);
         this.materials = new FragmentMaterials(this);
         this.culler = new FragmentCulling(components, this);
@@ -74210,4 +74287,4 @@ class MapboxCamera extends Component {
     }
 }
 
-export { ClippingEdges, Component, Components, DataConverter, DimensionLabelClassName, DimensionPreviewClassName, Disposer, EdgesClipper, EdgesPlane, EdgesStyles, Event, FirstPersonMode, FragmentCulling, FragmentEdges, FragmentGroup, FragmentGrouper, FragmentHighlighter, FragmentMaterials, FragmentProperties, FragmentSpatialTree, Fragments, Geometry, GeometryTypes, IfcCategories, IfcCategoryMap, IfcElements, IfcFragmentLoader, IfcJsonExporter, LoadProgress, MapboxCamera, MapboxRenderer, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, RendererComponent, Settings, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensionLine, SimpleDimensions, SimpleGrid, SimpleMouse, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, SpatialStructure, ToolComponents, getBasisTransform, rightToLeftHand, stringToAxes };
+export { ClippingEdges, Component, Components, DataConverter, DimensionLabelClassName, DimensionPreviewClassName, Disposer, EdgesClipper, EdgesPlane, EdgesStyles, Event, FirstPersonMode, FragmentCulling, FragmentEdges, FragmentExploder, FragmentGroup, FragmentGrouper, FragmentHighlighter, FragmentMaterials, FragmentProperties, FragmentSpatialTree, Fragments, Geometry, GeometryTypes, IfcCategories, IfcCategoryMap, IfcElements, IfcFragmentLoader, IfcJsonExporter, LoadProgress, MapboxCamera, MapboxRenderer, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, RendererComponent, Settings, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensionLine, SimpleDimensions, SimpleGrid, SimpleMouse, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, SpatialStructure, ToolComponents, getBasisTransform, rightToLeftHand, stringToAxes };
