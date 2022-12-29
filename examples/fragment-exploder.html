@@ -80,7 +80,7 @@
 
 	const categoryID = "category";
 	const floorID = "floor";
-	await loadFragments();
+	// await loadFragments();
 
 	// Set up fragment culler update
 
@@ -93,51 +93,72 @@
 
 	// Load the fragments
 
-	async function loadFragments() {
-		const { entries } = await unzip('./resources/small.zip');
+	const mainCanvas = renderer.get().domElement;
+	mainCanvas.addEventListener('mousedown', () => {
+		fragments.memoryCuller.needsUpdate = true;
+	});
 
-		const fileNames = Object.keys(entries);
+	// Load fragments only when the tiles are found in the screen
 
-		const allTypes = await entries['all-types.json'].json();
-		const modelTypes = await entries['model-types.json'].json();
-		const levelsProperties = await entries['levels-properties.json'].json();
-		const levelsRelationship = await entries['levels-relationship.json'].json();
+  let temp;
 
-		const floorNames = {};
-		for (const levelProps of levelsProperties) {
-			floorNames[levelProps.expressID] = levelProps.Name.value;
+	fragments.memoryCuller.fragmentsDiscovered.on(async (discoveredFragments) => {
+		for(const url in discoveredFragments) {
+			const fragIDs = discoveredFragments[url];
+			const { entries } = await unzip(url);
+
+			for (const fragID of fragIDs) {
+				const geometry = await entries[fragID + '.glb'].blob();
+				const geometryURL = URL.createObjectURL(geometry);
+				const dataBlob = await entries[fragID + '.json'].blob();
+				const dataURL = URL.createObjectURL(dataBlob);
+				await fragments.load(geometryURL, dataURL);
+				fragments.culler.needsUpdate = true;
+			}
+		}
+		fragments.exploder.update();
+	});
+
+	await loadModel('./resources/model.zip');
+
+	async function loadModel(url) {
+		// Load the bounding boxes for this model
+		const { entries } = await unzip(url);
+		const opaqueBoxes = await entries['bounding-boxes-opaque.json'].json();
+		const transparentBoxes = await entries['bounding-boxes-transparent.json'].json();
+		const fragmentMap = await entries['express-fragment-map.json'].json();
+		fragments.memoryCuller.loadBoxes(url, opaqueBoxes, transparentBoxes, fragmentMap);
+		fragments.memoryCuller.needsUpdate = true;
+
+		// Set up all groups
+
+		temp = {};
+		temp.allTypes = await entries['all-types.json'].json();
+		temp.modelTypes = await entries['model-types.json'].json();
+		temp.levelsProperties = await entries['levels-properties.json'].json();
+		temp.levelsRelationship = await entries['levels-relationship.json'].json();
+		temp.floorNames = {};
+		for (const levelProps of temp.levelsProperties) {
+			temp.floorNames[levelProps.expressID] = levelProps.Name.value;
 		}
 
-		for (let i = 0; i < fileNames.length; i++) {
+    const frags = {};
+    for(const itemID in fragmentMap) {
+			const fragID = fragmentMap[itemID];
+      if(!frags[fragID]) frags[fragID] = [];
+			frags[fragID].push(itemID);
+    }
 
-			const name = fileNames[i];
-			if (!name.includes('.glb')) continue;
-
-			// Load data
-
-			const geometryName = fileNames[i];
-			const geometry = await entries[geometryName].blob();
-			const geometryURL = URL.createObjectURL(geometry);
-
-			const dataName = geometryName.substring(0, geometryName.indexOf('.glb')) + '.json';
-			const dataBlob = await entries[dataName].blob();
-			const data = await entries[dataName].json();
-			const dataURL = URL.createObjectURL(dataBlob);
-
-			const fragment = await fragments.load(geometryURL, dataURL);
-
-			fragments.culler.needsUpdate = true;
-
-			// Group items by category and by floor
+		for(const fragID in frags) {
 
 			const groups = { [categoryID]: {}, [floorID]: {} };
 
-			for (const id of data.ids) {
+			for (const id of frags[fragID]) {
 
 				// Get the category of the items
 
-				const categoryExpressID = modelTypes[id];
-				const category = allTypes[categoryExpressID];
+				const categoryExpressID = temp.modelTypes[id];
+				const category = temp.allTypes[categoryExpressID];
 				if (!groups[categoryID][category]) {
 					groups[categoryID][category] = [];
 				}
@@ -145,25 +166,16 @@
 
 				// Get the floors of the items
 
-				const floorExpressID = levelsRelationship[id];
-				const floor = floorNames[floorExpressID];
+				const floorExpressID = temp.levelsRelationship[id];
+				const floor = temp.floorNames[floorExpressID];
 				if (!groups[floorID][floor]) {
 					groups[floorID][floor] = [];
 				}
 				groups[floorID][floor].push(id);
 			}
 
-			fragments.groups.add(fragment.id, groups);
-		}
-
-		// Render shadows
-
-		const guids = fragments.groups.get({ category: 'IFCSLAB' });
-		const slabs = Object.keys(guids).map(guid => fragments.fragments[guid]);
-		const meshes = slabs.map(slab => slab.mesh);
-		const shadow = shadows.renderShadow(meshes, 'example');
-		renderer.postproduction.excludedItems.add(shadow);
-		components.scene.get().add(shadow);
+			fragments.groups.add(fragID, groups);
+    }
 	}
 
 	// Set up GUI
@@ -190,6 +202,12 @@
 
     actionsFolder.add(actions, "explode").name("Explode");
     actionsFolder.add(actions, "reset").name("Reset");
+
+	// Create debug frame showing the bounding boxes
+	fragments.memoryCuller.renderDebugFrame = true;
+	const memoryCanvas = fragments.memoryCuller.renderer.domElement;
+	memoryCanvas.style.position = 'absolute';
+	document.body.append(memoryCanvas);
 
 </script>
 </body>

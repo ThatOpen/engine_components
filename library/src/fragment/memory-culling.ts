@@ -28,7 +28,12 @@ export class MemoryCulling {
   fragmentColorMap = new Map<string, string>();
   fragmentModelMap = new Map<string, string>();
   fragmentMeshMap: {
-    [fragmentID: string]: { mesh: THREE.Mesh; index: number };
+    [fragmentID: string]: {
+      [itemID: string]: {
+        mesh: THREE.InstancedMesh;
+        index: number;
+      };
+    };
   } = {};
 
   exclusions = new Map<string, Fragment>();
@@ -172,6 +177,13 @@ export class MemoryCulling {
     };
   }
 
+  // TODO: Bring invisible instances at the end and use the count attribute
+  setVisibility(fragID: string, itemID: string, visible: boolean) {
+    const proxy = this.fragmentMeshMap[fragID][itemID];
+    if (!proxy) return;
+    console.log(proxy.mesh.count);
+  }
+
   // TODO: This needs cleanup and get rid of repeated code
   loadBoxes(
     modelID: string,
@@ -187,6 +199,7 @@ export class MemoryCulling {
     const tempMatrix = new THREE.Matrix4();
     const expressIDs = Object.keys(boundingBoxes);
     for (let i = 0; i < boxes.length; i++) {
+      const itemID = expressIDs[i];
       const expressID = parseInt(expressIDs[i], 10);
       const fragmentID = expressIDTofragmentIDMap[expressID];
 
@@ -201,7 +214,11 @@ export class MemoryCulling {
         new THREE.Color(`rgb(${newCol.r},${newCol.g}, ${newCol.b})`)
       );
 
-      this.fragmentMeshMap[fragmentID] = { mesh, index: i };
+      if (this.fragmentMeshMap[fragmentID] === undefined) {
+        this.fragmentMeshMap[fragmentID] = {};
+      }
+
+      this.fragmentMeshMap[fragmentID][itemID] = { mesh, index: i };
 
       this.fragmentColorMap.set(newCol.code, fragmentID);
     }
@@ -213,6 +230,7 @@ export class MemoryCulling {
     const tempMatrix2 = new THREE.Matrix4();
     const expressIDs2 = Object.keys(transparentBoundingBoxes);
     for (let i = 0; i < boxes2.length; i++) {
+      const itemID = expressIDs[i];
       const expressID2 = parseInt(expressIDs2[i], 10);
       const fragmentID2 = expressIDTofragmentIDMap[expressID2];
 
@@ -224,10 +242,12 @@ export class MemoryCulling {
         new THREE.Color(`rgb(${newCol.r},${newCol.g}, ${newCol.b})`)
       );
 
-      this.fragmentMeshMap[fragmentID2] = { mesh: mesh2, index: i };
+      if (this.fragmentMeshMap[fragmentID2] === undefined) {
+        this.fragmentMeshMap[fragmentID2] = {};
+      }
 
+      this.fragmentMeshMap[fragmentID2][itemID] = { mesh, index: i };
       this.fragmentModelMap.set(fragmentID2, modelID);
-
       this.fragmentColorMap.set(newCol.code, fragmentID2);
     }
 
