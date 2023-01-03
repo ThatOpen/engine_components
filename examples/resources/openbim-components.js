@@ -68625,7 +68625,7 @@ class MemoryCulling {
         const tempMatrix2 = new THREE$1.Matrix4();
         const expressIDs2 = Object.keys(transparentBoundingBoxes);
         for (let i = 0; i < boxes2.length; i++) {
-            const itemID = expressIDs[i];
+            const itemID = expressIDs2[i];
             const expressID2 = parseInt(expressIDs2[i], 10);
             const fragmentID2 = expressIDTofragmentIDMap[expressID2];
             const newCol = this.getNextColor();
@@ -68642,6 +68642,37 @@ class MemoryCulling {
         this.scene.add(mesh);
         this.opaqueMeshes.push(mesh);
         this.transparentMeshes.push(mesh2);
+    }
+    toggleVisibility(visible, items) {
+        // Visibility is controlled through the `count` property of the instancedMesh
+        const first = new THREE$1.Matrix4();
+        const second = new THREE$1.Matrix4();
+        for (const fragID in items) {
+            const itemsByID = Object.values(this.fragmentMeshMap[fragID]);
+            for (const itemID of items[fragID]) {
+                const proxy = this.fragmentMeshMap[fragID][itemID];
+                if (!proxy)
+                    continue;
+                const isVisible = proxy.index < proxy.mesh.count;
+                if (isVisible === visible)
+                    continue;
+                // Swap item with item at the limit of visibility
+                const index = visible ? proxy.mesh.count : proxy.mesh.count - 1;
+                proxy.mesh.getMatrixAt(index, first);
+                proxy.mesh.getMatrixAt(proxy.index, second);
+                proxy.mesh.setMatrixAt(index, second);
+                proxy.mesh.setMatrixAt(proxy.index, first);
+                proxy.mesh.instanceMatrix.needsUpdate = true;
+                // Update indices
+                const swapped = itemsByID.find((item) => item.index === index);
+                if (swapped)
+                    swapped.index = proxy.index;
+                proxy.index = index;
+                // Update count
+                const sum = visible ? +1 : -1;
+                proxy.mesh.count += sum;
+            }
+        }
     }
     getFragmentsIDs(colors) {
         const foundFragmentsIDs = new Set();

@@ -119,7 +119,7 @@
 		fragments.exploder.update();
 	});
 
-	await loadModel('./resources/model.zip');
+	await loadModel('./resources/small.zip');
 
 	async function loadModel(url) {
 		// Load the bounding boxes for this model
@@ -187,16 +187,18 @@
 
     const actions = {
       explode: () => {
-				renderer.postproduction.active = false;
-        fragments.exploder.explode();
-				renderer.postproduction.active = true;
-				renderer.postproduction.visible = true;
+		// 		renderer.postproduction.active = false;
+        // fragments.exploder.explode();
+		// 		renderer.postproduction.active = true;
+		// 		renderer.postproduction.visible = true;
+          const items = fragments.groups.groupSystems.category["IFCWALLSTANDARDCASE"];
+          fragments.memoryCuller.toggleVisibility(false, items);
       },
       reset: () => {
-				renderer.postproduction.active = false;
-        fragments.exploder.reset();
-				renderer.postproduction.active = true;
-				renderer.postproduction.visible = true;
+		// 		renderer.postproduction.active = false;
+        // fragments.exploder.reset();
+		// 		renderer.postproduction.active = true;
+		// 		renderer.postproduction.visible = true;
       }
     }
 
