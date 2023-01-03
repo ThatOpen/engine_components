@@ -90,7 +90,9 @@ export class FragmentExploder {
     yTransform: THREE.Matrix4
   ) {
     const tempMatrix = new THREE.Matrix4();
-    const proxy = this.fragments.memoryCuller.fragmentMeshMap[fragID][itemID];
+    const frags = this.fragments.memoryCuller.fragmentMeshMap[fragID];
+    if (!frags) return;
+    const proxy = frags[itemID];
     if (!proxy) return;
     proxy.mesh.getMatrixAt(proxy.index, tempMatrix);
     tempMatrix.premultiply(yTransform);

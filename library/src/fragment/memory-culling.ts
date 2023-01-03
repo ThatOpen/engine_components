@@ -110,9 +110,9 @@ export class MemoryCulling {
       buffer: this.buffer,
     });
 
-    for (const mesh of this.transparentMeshes) {
-      this.scene.add(mesh);
-    }
+    // for (const mesh of this.transparentMeshes) {
+    //   this.scene.add(mesh);
+    // }
 
     this.renderer.render(this.scene, camera);
 
@@ -135,9 +135,9 @@ export class MemoryCulling {
       this.renderer.render(this.scene, camera);
     }
 
-    for (const mesh of this.transparentMeshes) {
-      mesh.removeFromParent();
-    }
+    // for (const mesh of this.transparentMeshes) {
+    //   mesh.removeFromParent();
+    // }
 
     this.needsUpdate = false;
   };
@@ -239,7 +239,7 @@ export class MemoryCulling {
         this.fragmentMeshMap[fragmentID2] = {};
       }
 
-      this.fragmentMeshMap[fragmentID2][itemID] = { mesh, index: i };
+      this.fragmentMeshMap[fragmentID2][itemID] = { mesh: mesh2, index: i };
       this.fragmentModelMap.set(fragmentID2, modelID);
       this.fragmentColorMap.set(newCol.code, fragmentID2);
     }
@@ -247,6 +247,9 @@ export class MemoryCulling {
     this.scene.add(mesh);
     this.opaqueMeshes.push(mesh);
     this.transparentMeshes.push(mesh2);
+
+    this.components.scene.get().add(mesh);
+    this.components.scene.get().add(mesh2);
   }
 
   toggleVisibility(visible: boolean, items: { [fragID: string]: number[] }) {
@@ -254,7 +257,6 @@ export class MemoryCulling {
     const first = new THREE.Matrix4();
     const second = new THREE.Matrix4();
     for (const fragID in items) {
-      const itemsByID = Object.values(this.fragmentMeshMap[fragID]);
       for (const itemID of items[fragID]) {
         const proxy = this.fragmentMeshMap[fragID][itemID];
         if (!proxy) continue;
@@ -270,11 +272,33 @@ export class MemoryCulling {
         proxy.mesh.setMatrixAt(proxy.index, first);
         proxy.mesh.instanceMatrix.needsUpdate = true;
 
-        // Update indices
+        // Swap indices and colors
 
-        const swapped = itemsByID.find((item) => item.index === index);
-        if (swapped) swapped.index = proxy.index;
-        proxy.index = index;
+        for (const anyFragID in this.fragmentMeshMap) {
+          const itemsByID = Object.values(this.fragmentMeshMap[anyFragID]);
+          const swapped = itemsByID.find(
+            (item) => item.index === index && item.mesh === proxy.mesh
+          );
+          if (swapped) {
+            // Update indices
+
+            swapped.index = proxy.index;
+            proxy.index = index;
+
+            // Update colors
+
+            const color1 = this.getColor(fragID);
+            const color2 = this.getColor(anyFragID);
+            if (!color1 || !color2) {
+              throw new Error("Color not found!");
+            }
+
+            this.fragmentColorMap.set(color2, fragID);
+            this.fragmentColorMap.set(color1, anyFragID);
+
+            break;
+          }
+        }
 
         // Update count
 
@@ -354,5 +378,13 @@ export class MemoryCulling {
         this.discoveredFragments.add(item);
       }
     }
+  }
+
+  private getColor(fragID: string) {
+    const entries = this.fragmentColorMap.entries();
+    for (const [key, value] of entries) {
+      if (value === fragID) return key;
+    }
+    return null;
   }
 }
