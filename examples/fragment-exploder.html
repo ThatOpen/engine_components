@@ -170,26 +170,26 @@
 
 	const gui = new dat.GUI();
 
-    const actionsFolder = gui.addFolder("Actions");
-    fragments.exploder.groupName = floorID;
+	const actionsFolder = gui.addFolder("Actions");
+	fragments.exploder.groupName = floorID;
 
-    const actions = {
-      explode: () => {
-				renderer.postproduction.active = false;
-        fragments.exploder.explode();
-				renderer.postproduction.active = true;
-				renderer.postproduction.visible = true;
-      },
-      reset: () => {
-				renderer.postproduction.active = false;
-        fragments.exploder.reset();
-				renderer.postproduction.active = true;
-				renderer.postproduction.visible = true;
-      }
-    }
+	const actions = {
+		explode: () => {
+			renderer.postproduction.active = false;
+			fragments.exploder.explode();
+			renderer.postproduction.active = true;
+			renderer.postproduction.visible = true;
+		},
+		reset: () => {
+			renderer.postproduction.active = false;
+			fragments.exploder.reset();
+			renderer.postproduction.active = true;
+			renderer.postproduction.visible = true;
+		}
+	}
 
-    actionsFolder.add(actions, "explode").name("Explode");
-    actionsFolder.add(actions, "reset").name("Reset");
+	actionsFolder.add(actions, "explode").name("Explode");
+	actionsFolder.add(actions, "reset").name("Reset");
 
 </script>
 </body>

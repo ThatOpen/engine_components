@@ -28,7 +28,12 @@ export class MemoryCulling {
   fragmentColorMap = new Map<string, string>();
   fragmentModelMap = new Map<string, string>();
   fragmentMeshMap: {
-    [fragmentID: string]: { mesh: THREE.Mesh; index: number };
+    [fragmentID: string]: {
+      [itemID: string]: {
+        mesh: THREE.InstancedMesh;
+        index: number;
+      };
+    };
   } = {};
 
   exclusions = new Map<string, Fragment>();
@@ -105,9 +110,9 @@ export class MemoryCulling {
       buffer: this.buffer,
     });
 
-    for (const mesh of this.transparentMeshes) {
-      this.scene.add(mesh);
-    }
+    // for (const mesh of this.transparentMeshes) {
+    //   this.scene.add(mesh);
+    // }
 
     this.renderer.render(this.scene, camera);
 
@@ -130,9 +135,9 @@ export class MemoryCulling {
       this.renderer.render(this.scene, camera);
     }
 
-    for (const mesh of this.transparentMeshes) {
-      mesh.removeFromParent();
-    }
+    // for (const mesh of this.transparentMeshes) {
+    //   mesh.removeFromParent();
+    // }
 
     this.needsUpdate = false;
   };
@@ -187,6 +192,7 @@ export class MemoryCulling {
     const tempMatrix = new THREE.Matrix4();
     const expressIDs = Object.keys(boundingBoxes);
     for (let i = 0; i < boxes.length; i++) {
+      const itemID = expressIDs[i];
       const expressID = parseInt(expressIDs[i], 10);
       const fragmentID = expressIDTofragmentIDMap[expressID];
 
@@ -201,7 +207,11 @@ export class MemoryCulling {
         new THREE.Color(`rgb(${newCol.r},${newCol.g}, ${newCol.b})`)
       );
 
-      this.fragmentMeshMap[fragmentID] = { mesh, index: i };
+      if (this.fragmentMeshMap[fragmentID] === undefined) {
+        this.fragmentMeshMap[fragmentID] = {};
+      }
+
+      this.fragmentMeshMap[fragmentID][itemID] = { mesh, index: i };
 
       this.fragmentColorMap.set(newCol.code, fragmentID);
     }
@@ -213,6 +223,7 @@ export class MemoryCulling {
     const tempMatrix2 = new THREE.Matrix4();
     const expressIDs2 = Object.keys(transparentBoundingBoxes);
     for (let i = 0; i < boxes2.length; i++) {
+      const itemID = expressIDs2[i];
       const expressID2 = parseInt(expressIDs2[i], 10);
       const fragmentID2 = expressIDTofragmentIDMap[expressID2];
 
@@ -224,16 +235,77 @@ export class MemoryCulling {
         new THREE.Color(`rgb(${newCol.r},${newCol.g}, ${newCol.b})`)
       );
 
-      this.fragmentMeshMap[fragmentID2] = { mesh: mesh2, index: i };
+      if (this.fragmentMeshMap[fragmentID2] === undefined) {
+        this.fragmentMeshMap[fragmentID2] = {};
+      }
 
+      this.fragmentMeshMap[fragmentID2][itemID] = { mesh: mesh2, index: i };
       this.fragmentModelMap.set(fragmentID2, modelID);
-
       this.fragmentColorMap.set(newCol.code, fragmentID2);
     }
 
     this.scene.add(mesh);
     this.opaqueMeshes.push(mesh);
     this.transparentMeshes.push(mesh2);
+
+    this.components.scene.get().add(mesh);
+    this.components.scene.get().add(mesh2);
+  }
+
+  toggleVisibility(visible: boolean, items: { [fragID: string]: number[] }) {
+    // Visibility is controlled through the `count` property of the instancedMesh
+    const first = new THREE.Matrix4();
+    const second = new THREE.Matrix4();
+    for (const fragID in items) {
+      for (const itemID of items[fragID]) {
+        const proxy = this.fragmentMeshMap[fragID][itemID];
+        if (!proxy) continue;
+        const isVisible = proxy.index < proxy.mesh.count;
+        if (isVisible === visible) continue;
+
+        // Swap item with item at the limit of visibility
+
+        const index = visible ? proxy.mesh.count : proxy.mesh.count - 1;
+        proxy.mesh.getMatrixAt(index, first);
+        proxy.mesh.getMatrixAt(proxy.index, second);
+        proxy.mesh.setMatrixAt(index, second);
+        proxy.mesh.setMatrixAt(proxy.index, first);
+        proxy.mesh.instanceMatrix.needsUpdate = true;
+
+        // Swap indices and colors
+
+        for (const anyFragID in this.fragmentMeshMap) {
+          const itemsByID = Object.values(this.fragmentMeshMap[anyFragID]);
+          const swapped = itemsByID.find(
+            (item) => item.index === index && item.mesh === proxy.mesh
+          );
+          if (swapped) {
+            // Update indices
+
+            swapped.index = proxy.index;
+            proxy.index = index;
+
+            // Update colors
+
+            const color1 = this.getColor(fragID);
+            const color2 = this.getColor(anyFragID);
+            if (!color1 || !color2) {
+              throw new Error("Color not found!");
+            }
+
+            this.fragmentColorMap.set(color2, fragID);
+            this.fragmentColorMap.set(color1, anyFragID);
+
+            break;
+          }
+        }
+
+        // Update count
+
+        const sum = visible ? +1 : -1;
+        proxy.mesh.count += sum;
+      }
+    }
   }
 
   private handleWorkerMessage = (event: MessageEvent) => {
@@ -306,5 +378,13 @@ export class MemoryCulling {
         this.discoveredFragments.add(item);
       }
     }
+  }
+
+  private getColor(fragID: string) {
+    const entries = this.fragmentColorMap.entries();
+    for (const [key, value] of entries) {
+      if (value === fragID) return key;
+    }
+    return null;
   }
 }
