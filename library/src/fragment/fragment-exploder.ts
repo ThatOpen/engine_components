@@ -29,7 +29,7 @@ export class FragmentExploder {
       return;
     }
     const factor = this.enabled ? 1 : -1;
-    let i = 1;
+    let i = 0;
     const groups = this.fragments.groups.groupSystems[this.groupName];
     for (const groupName in groups) {
       for (const fragID in groups[groupName]) {

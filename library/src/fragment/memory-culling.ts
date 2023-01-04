@@ -47,6 +47,9 @@ export class MemoryCulling {
 
   public visibleExpressId: string[] = [];
 
+  private readonly scaleFactor = 0.00001;
+  private readonly invisibleBoxes = new Set<string>();
+
   private colors = { r: 0, g: 0, b: 0, i: 0 };
 
   constructor(
@@ -110,9 +113,9 @@ export class MemoryCulling {
       buffer: this.buffer,
     });
 
-    // for (const mesh of this.transparentMeshes) {
-    //   this.scene.add(mesh);
-    // }
+    for (const mesh of this.transparentMeshes) {
+      this.scene.add(mesh);
+    }
 
     this.renderer.render(this.scene, camera);
 
@@ -135,9 +138,9 @@ export class MemoryCulling {
       this.renderer.render(this.scene, camera);
     }
 
-    // for (const mesh of this.transparentMeshes) {
-    //   mesh.removeFromParent();
-    // }
+    for (const mesh of this.transparentMeshes) {
+      mesh.removeFromParent();
+    }
 
     this.needsUpdate = false;
   };
@@ -247,63 +250,30 @@ export class MemoryCulling {
     this.scene.add(mesh);
     this.opaqueMeshes.push(mesh);
     this.transparentMeshes.push(mesh2);
-
-    this.components.scene.get().add(mesh);
-    this.components.scene.get().add(mesh2);
   }
 
-  toggleVisibility(visible: boolean, items: { [fragID: string]: number[] }) {
-    // Visibility is controlled through the `count` property of the instancedMesh
-    const first = new THREE.Matrix4();
-    const second = new THREE.Matrix4();
+  toggleVisibility(visible: boolean, items: { [fragID: string]: string[] }) {
+    const tempMatrix = new THREE.Matrix4();
+    const scaleMatrix = this.getScaleMatrix(visible);
     for (const fragID in items) {
       for (const itemID of items[fragID]) {
         const proxy = this.fragmentMeshMap[fragID][itemID];
         if (!proxy) continue;
-        const isVisible = proxy.index < proxy.mesh.count;
+
+        const id = `${fragID}-${proxy.index}`;
+        const isVisible = !this.invisibleBoxes.has(id);
         if (isVisible === visible) continue;
 
-        // Swap item with item at the limit of visibility
-
-        const index = visible ? proxy.mesh.count : proxy.mesh.count - 1;
-        proxy.mesh.getMatrixAt(index, first);
-        proxy.mesh.getMatrixAt(proxy.index, second);
-        proxy.mesh.setMatrixAt(index, second);
-        proxy.mesh.setMatrixAt(proxy.index, first);
-        proxy.mesh.instanceMatrix.needsUpdate = true;
-
-        // Swap indices and colors
-
-        for (const anyFragID in this.fragmentMeshMap) {
-          const itemsByID = Object.values(this.fragmentMeshMap[anyFragID]);
-          const swapped = itemsByID.find(
-            (item) => item.index === index && item.mesh === proxy.mesh
-          );
-          if (swapped) {
-            // Update indices
-
-            swapped.index = proxy.index;
-            proxy.index = index;
-
-            // Update colors
-
-            const color1 = this.getColor(fragID);
-            const color2 = this.getColor(anyFragID);
-            if (!color1 || !color2) {
-              throw new Error("Color not found!");
-            }
-
-            this.fragmentColorMap.set(color2, fragID);
-            this.fragmentColorMap.set(color1, anyFragID);
-
-            break;
-          }
+        if (visible) {
+          this.invisibleBoxes.delete(id);
+        } else {
+          this.invisibleBoxes.add(id);
         }
 
-        // Update count
-
-        const sum = visible ? +1 : -1;
-        proxy.mesh.count += sum;
+        proxy.mesh.getMatrixAt(proxy.index, tempMatrix);
+        tempMatrix.premultiply(scaleMatrix);
+        proxy.mesh.setMatrixAt(proxy.index, tempMatrix);
+        proxy.mesh.instanceMatrix.needsUpdate = true;
       }
     }
   }
@@ -380,11 +350,28 @@ export class MemoryCulling {
     }
   }
 
-  private getColor(fragID: string) {
-    const entries = this.fragmentColorMap.entries();
-    for (const [key, value] of entries) {
-      if (value === fragID) return key;
+  private getScaleMatrix(visible: boolean) {
+    const scaleMatrix = new THREE.Matrix4().fromArray([
+      this.scaleFactor,
+      0,
+      0,
+      0,
+      0,
+      this.scaleFactor,
+      0,
+      0,
+      0,
+      0,
+      this.scaleFactor,
+      0,
+      0,
+      0,
+      0,
+      1,
+    ]);
+    if (!visible) {
+      scaleMatrix.invert();
     }
-    return null;
+    return scaleMatrix;
   }
 }

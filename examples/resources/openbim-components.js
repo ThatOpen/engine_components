@@ -21159,6 +21159,8 @@ class FragmentHighlighter {
     clearStyle(name) {
         for (const fragID in this.selection[name]) {
             const fragment = this.fragments.fragments[fragID];
+            if (!fragment)
+                continue;
             const selection = fragment.fragments[name];
             if (selection) {
                 selection.mesh.removeFromParent();
@@ -21169,7 +21171,11 @@ class FragmentHighlighter {
     updateFragmentHighlight(name, fragmentID) {
         const ids = this.selection[name][fragmentID];
         const fragment = this.fragments.fragments[fragmentID];
+        if (!fragment)
+            return;
         const selection = fragment.fragments[name];
+        if (!selection)
+            return;
         const scene = this.components.scene.get();
         const isBlockFragment = selection.blocks.count > 1;
         scene.add(selection.mesh);
@@ -21188,12 +21194,12 @@ class FragmentHighlighter {
         else {
             let i = 0;
             for (const id of ids) {
+                selection.mesh.count = i + 1;
                 const { instanceID } = fragment.getInstanceAndBlockID(id);
                 fragment.getInstance(instanceID, this.tempMatrix);
                 selection.setInstance(i, { ids: [id], transform: this.tempMatrix });
                 i++;
             }
-            selection.mesh.count = i;
         }
     }
     checkSelection(name) {
@@ -68493,6 +68499,8 @@ class MemoryCulling {
         this.undiscoveredFragments = new Map();
         this.previouslyDiscoveredFragments = new Set();
         this.visibleExpressId = [];
+        this.scaleFactor = 0.00001;
+        this.invisibleBoxes = new Set();
         this.colors = { r: 0, g: 0, b: 0, i: 0 };
         this.updateVisibility = (force) => {
             if (!this.opaqueMeshes)
@@ -68510,9 +68518,9 @@ class MemoryCulling {
             this.worker.postMessage({
                 buffer: this.buffer,
             });
-            // for (const mesh of this.transparentMeshes) {
-            //   this.scene.add(mesh);
-            // }
+            for (const mesh of this.transparentMeshes) {
+                this.scene.add(mesh);
+            }
             this.renderer.render(this.scene, camera);
             this.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, this.buffer);
             this.worker.postMessage({
@@ -68522,9 +68530,9 @@ class MemoryCulling {
             if (this.renderDebugFrame && this.isFirstRenderingPass) {
                 this.renderer.render(this.scene, camera);
             }
-            // for (const mesh of this.transparentMeshes) {
-            //   mesh.removeFromParent();
-            // }
+            for (const mesh of this.transparentMeshes) {
+                mesh.removeFromParent();
+            }
             this.needsUpdate = false;
         };
         this.handleWorkerMessage = (event) => {
@@ -68642,50 +68650,29 @@ class MemoryCulling {
         this.scene.add(mesh);
         this.opaqueMeshes.push(mesh);
         this.transparentMeshes.push(mesh2);
-        this.components.scene.get().add(mesh);
-        this.components.scene.get().add(mesh2);
     }
     toggleVisibility(visible, items) {
-        // Visibility is controlled through the `count` property of the instancedMesh
-        const first = new THREE$1.Matrix4();
-        const second = new THREE$1.Matrix4();
+        const tempMatrix = new THREE$1.Matrix4();
+        const scaleMatrix = this.getScaleMatrix(visible);
         for (const fragID in items) {
             for (const itemID of items[fragID]) {
                 const proxy = this.fragmentMeshMap[fragID][itemID];
                 if (!proxy)
                     continue;
-                const isVisible = proxy.index < proxy.mesh.count;
+                const id = `${fragID}-${proxy.index}`;
+                const isVisible = !this.invisibleBoxes.has(id);
                 if (isVisible === visible)
                     continue;
-                // Swap item with item at the limit of visibility
-                const index = visible ? proxy.mesh.count : proxy.mesh.count - 1;
-                proxy.mesh.getMatrixAt(index, first);
-                proxy.mesh.getMatrixAt(proxy.index, second);
-                proxy.mesh.setMatrixAt(index, second);
-                proxy.mesh.setMatrixAt(proxy.index, first);
-                proxy.mesh.instanceMatrix.needsUpdate = true;
-                // Swap indices and colors
-                for (const anyFragID in this.fragmentMeshMap) {
-                    const itemsByID = Object.values(this.fragmentMeshMap[anyFragID]);
-                    const swapped = itemsByID.find((item) => item.index === index && item.mesh === proxy.mesh);
-                    if (swapped) {
-                        // Update indices
-                        swapped.index = proxy.index;
-                        proxy.index = index;
-                        // Update colors
-                        const color1 = this.getColor(fragID);
-                        const color2 = this.getColor(anyFragID);
-                        if (!color1 || !color2) {
-                            throw new Error("Color not found!");
-                        }
-                        this.fragmentColorMap.set(color2, fragID);
-                        this.fragmentColorMap.set(color1, anyFragID);
-                        break;
-                    }
+                if (visible) {
+                    this.invisibleBoxes.delete(id);
                 }
-                // Update count
-                const sum = visible ? +1 : -1;
-                proxy.mesh.count += sum;
+                else {
+                    this.invisibleBoxes.add(id);
+                }
+                proxy.mesh.getMatrixAt(proxy.index, tempMatrix);
+                tempMatrix.premultiply(scaleMatrix);
+                proxy.mesh.setMatrixAt(proxy.index, tempMatrix);
+                proxy.mesh.instanceMatrix.needsUpdate = true;
             }
         }
     }
@@ -68741,13 +68728,29 @@ class MemoryCulling {
             }
         }
     }
-    getColor(fragID) {
-        const entries = this.fragmentColorMap.entries();
-        for (const [key, value] of entries) {
-            if (value === fragID)
-                return key;
+    getScaleMatrix(visible) {
+        const scaleMatrix = new THREE$1.Matrix4().fromArray([
+            this.scaleFactor,
+            0,
+            0,
+            0,
+            0,
+            this.scaleFactor,
+            0,
+            0,
+            0,
+            0,
+            this.scaleFactor,
+            0,
+            0,
+            0,
+            0,
+            1,
+        ]);
+        if (!visible) {
+            scaleMatrix.invert();
         }
-        return null;
+        return scaleMatrix;
     }
 }
 
@@ -68776,7 +68779,7 @@ class FragmentExploder {
             return;
         }
         const factor = this.enabled ? 1 : -1;
-        let i = 1;
+        let i = 0;
         const groups = this.fragments.groups.groupSystems[this.groupName];
         for (const groupName in groups) {
             for (const fragID in groups[groupName]) {

@@ -103,6 +103,7 @@ export class FragmentHighlighter {
   private clearStyle(name: string) {
     for (const fragID in this.selection[name]) {
       const fragment = this.fragments.fragments[fragID];
+      if (!fragment) continue;
       const selection = fragment.fragments[name];
       if (selection) {
         selection.mesh.removeFromParent();
@@ -114,7 +115,9 @@ export class FragmentHighlighter {
   private updateFragmentHighlight(name: string, fragmentID: string) {
     const ids = this.selection[name][fragmentID];
     const fragment = this.fragments.fragments[fragmentID];
+    if (!fragment) return;
     const selection = fragment.fragments[name];
+    if (!selection) return;
     const scene = this.components.scene.get();
     const isBlockFragment = selection.blocks.count > 1;
     scene.add(selection.mesh);
@@ -135,12 +138,12 @@ export class FragmentHighlighter {
     } else {
       let i = 0;
       for (const id of ids) {
+        selection.mesh.count = i + 1;
         const { instanceID } = fragment.getInstanceAndBlockID(id);
         fragment.getInstance(instanceID, this.tempMatrix);
         selection.setInstance(i, { ids: [id], transform: this.tempMatrix });
         i++;
       }
-      selection.mesh.count = i;
     }
   }
 
