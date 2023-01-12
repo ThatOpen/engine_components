@@ -126,7 +126,9 @@ export class FragmentHighlighter {
       const blockIDs: number[] = [];
       for (const id of ids) {
         const { blockID } = fragment.getInstanceAndBlockID(id);
-        blockIDs.push(blockID);
+        if (fragment.blocks.visibleIds.has(blockID)) {
+          blockIDs.push(blockID);
+        }
       }
 
       selection.setInstance(0, {

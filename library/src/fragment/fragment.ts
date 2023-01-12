@@ -8,12 +8,21 @@ import { FragmentEdges } from "./fragment-edges";
 import { FragmentMaterials } from "./fragment-materials";
 import { FragmentProperties } from "./fragment-properties";
 import { FragmentSpatialTree } from "./fragment-spatial-tree";
-import { Components } from "../index";
+import { Components } from "../components";
+import { Component } from "../core";
 import { IfcFragmentLoader } from "./fragment-ifc-importer";
 import { MemoryCulling } from "./memory-culling";
 import { FragmentExploder } from "./fragment-exploder";
 
-export class Fragments {
+// TODO: Clean up and document all this folder
+
+export class Fragments extends Component<Fragment[]> {
+  name = "Fragments";
+  enabled = true;
+  get(): Fragment[] {
+    return Object.values(this.fragments);
+  }
+
   fragments: { [guid: string]: Fragment } = {};
   fragmentMeshes: THREE.Mesh[] = [];
 
@@ -31,6 +40,7 @@ export class Fragments {
   memoryCuller: MemoryCulling;
 
   constructor(private components: Components) {
+    super();
     this.highlighter = new FragmentHighlighter(components, this);
     this.exploder = new FragmentExploder(this);
     this.edges = new FragmentEdges(components);

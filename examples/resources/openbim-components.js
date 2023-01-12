@@ -21183,7 +21183,9 @@ class FragmentHighlighter {
             const blockIDs = [];
             for (const id of ids) {
                 const { blockID } = fragment.getInstanceAndBlockID(id);
-                blockIDs.push(blockID);
+                if (fragment.blocks.visibleIds.has(blockID)) {
+                    blockIDs.push(blockID);
+                }
             }
             selection.setInstance(0, {
                 ids: Array.from(ids),
@@ -68869,9 +68871,13 @@ class FragmentExploder {
     }
 }
 
-class Fragments {
+// TODO: Clean up and document all this folder
+class Fragments extends Component {
     constructor(components) {
+        super();
         this.components = components;
+        this.name = "Fragments";
+        this.enabled = true;
         this.fragments = {};
         this.fragmentMeshes = [];
         this.ifcLoader = new IfcFragmentLoader();
@@ -68885,6 +68891,9 @@ class Fragments {
         this.materials = new FragmentMaterials(this);
         this.culler = new FragmentCulling(components, this);
         this.memoryCuller = new MemoryCulling(components);
+    }
+    get() {
+        return Object.values(this.fragments);
     }
     async load(geometryURL, dataURL, matrix = new THREE$1.Matrix4()) {
         const fragment = await this.loader.load(geometryURL, dataURL);
