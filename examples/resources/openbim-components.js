@@ -21187,9 +21187,10 @@ class FragmentHighlighter {
                     blockIDs.push(blockID);
                 }
             }
+            fragment.getInstance(0, this.tempMatrix);
             selection.setInstance(0, {
                 ids: Array.from(ids),
-                transform: new THREE$1.Matrix4(),
+                transform: this.tempMatrix,
             });
             selection.blocks.add(blockIDs, true);
         }

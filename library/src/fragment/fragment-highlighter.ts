@@ -131,9 +131,10 @@ export class FragmentHighlighter {
         }
       }
 
+      fragment.getInstance(0, this.tempMatrix);
       selection.setInstance(0, {
         ids: Array.from(ids),
-        transform: new THREE.Matrix4(),
+        transform: this.tempMatrix,
       });
 
       selection.blocks.add(blockIDs, true);
