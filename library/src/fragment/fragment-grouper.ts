@@ -36,15 +36,12 @@ export class FragmentGrouper {
     }
   }
 
-  setVisibility(systemName: string, visible: boolean) {
-    const groupSystem = this.groupSystems[systemName]
-    for (const groupName in groupSystem) {
-      const fragmentsMap = groupSystem[groupName]
-      for (const fragmentId in fragmentsMap) {
-        const fragment = this.fragments.fragments[fragmentId]
-        const ids = fragmentsMap[fragmentId]
-        fragment.setVisibility(ids, visible)
-      }
+  setVisibility(systemName: string, groupName: string, visible: boolean) {
+    const fragmentsMap = this.groupSystems[systemName][groupName]
+    for (const fragmentId in fragmentsMap) {
+      const fragment = this.fragments.fragments[fragmentId]
+      const ids = fragmentsMap[fragmentId]
+      fragment.setVisibility(ids, visible)
     }
   }
 
