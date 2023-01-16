@@ -28,7 +28,7 @@ export class Fragments extends Component<Fragment[]> {
 
   ifcLoader = new IfcFragmentLoader();
   loader = new FragmentLoader();
-  groups = new FragmentGrouper();
+  groups = new FragmentGrouper(this);
   properties = new FragmentProperties();
   tree = new FragmentSpatialTree(this.properties);
 
