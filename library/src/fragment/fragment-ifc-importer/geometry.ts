@@ -116,6 +116,7 @@ export class Geometry {
       color: new THREE.Color(color.x, color.y, color.z),
       transparent: color.w !== 1,
       opacity: color.w,
+      side: THREE.DoubleSide
     });
   }
 
