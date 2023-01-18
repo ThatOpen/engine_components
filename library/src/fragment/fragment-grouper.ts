@@ -1,3 +1,5 @@
+import { Fragments } from './fragment';
+
 export interface ItemGroupSystems {
   [systemName: string]: { [groupName: string]: string[] };
 }
@@ -12,6 +14,12 @@ export class FragmentGrouper {
     floor: {},
   };
 
+  fragments: Fragments
+
+  constructor(fragments: Fragments) {
+    this.fragments = fragments
+  }
+
   add(guid: string, groupsSystems: ItemGroupSystems) {
     for (const system in groupsSystems) {
       if (!this.groupSystems[system]) {
@@ -25,6 +33,15 @@ export class FragmentGrouper {
         }
         existingGroups[groupName][guid] = currentGroups[groupName];
       }
+    }
+  }
+
+  setVisibility(systemName: string, groupName: string, visible: boolean) {
+    const fragmentsMap = this.groupSystems[systemName][groupName]
+    for (const fragmentId in fragmentsMap) {
+      const fragment = this.fragments.fragments[fragmentId]
+      const ids = fragmentsMap[fragmentId]
+      fragment.setVisibility(ids, visible)
     }
   }
 

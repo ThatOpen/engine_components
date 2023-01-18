@@ -220,7 +220,8 @@ export class Components {
     Components.update(this.renderer, delta);
     Components.update(this.camera, delta);
     this.tools.update(delta);
-    this._updateRequestCallback = requestAnimationFrame(this.update);
+    const renderer = this.renderer.get();
+    this._updateRequestCallback = renderer.setAnimationLoop(this.update); //Works the same as requestAnimationFrame, but let us use WebXR.
   };
 
   private static update(component: Component<any>, delta: number) {

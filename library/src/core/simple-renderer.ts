@@ -34,6 +34,7 @@ export class SimpleRenderer
     super();
     this._renderer = new THREE.WebGLRenderer({
       antialias: true,
+      alpha: true
     });
 
     this._renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));

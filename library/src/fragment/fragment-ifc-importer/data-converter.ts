@@ -74,7 +74,7 @@ export class DataConverter {
     await this._spatialStructure.setupFloors(webIfc, this._units);
     this.processAllFragmentsData();
     this.processAllUniqueItems();
-    this.saveModelData(webIfc);
+    await this.saveModelData(webIfc);
     return this._model;
   }
 
