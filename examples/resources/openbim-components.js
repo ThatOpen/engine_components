@@ -7350,6 +7350,7 @@ class SimpleRenderer extends RendererComponent {
         this._renderer2D = new CSS2DRenderer();
         this._renderer = new THREE$1.WebGLRenderer({
             antialias: true,
+            alpha: true
         });
         this._renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.setupRenderers();
@@ -9443,14 +9444,15 @@ class Components {
          * This includes IFC models, fragments, 3D scans, etc.
          */
         this.meshes = [];
-        this._updateRequestCallback = -1;
         this.update = () => {
             const delta = this._clock.getDelta();
             Components.update(this.scene, delta);
             Components.update(this.renderer, delta);
             Components.update(this.camera, delta);
             this.tools.update(delta);
-            this._updateRequestCallback = requestAnimationFrame(this.update);
+            const renderer = this.renderer.get();
+            // Works the same as requestAnimationFrame, but let us use WebXR.
+            renderer.setAnimationLoop(this.update);
         };
         this._clock = new THREE$1.Clock();
         this.tools = new ToolComponents();
@@ -9596,7 +9598,6 @@ class Components {
      * ```
      */
     dispose() {
-        cancelAnimationFrame(this._updateRequestCallback);
         // TODO: Implement memory disposal for the whole library
     }
     static update(component, delta) {
@@ -21130,7 +21131,7 @@ class FragmentHighlighter {
         const itemID = fragment.getItemID(instanceID, blockID);
         this.selection[name][mesh.uuid].add(itemID);
         this.updateFragmentHighlight(name, mesh.uuid);
-        return { id: mesh.uuid, fragment };
+        return { id: itemID, fragment };
     }
     highlightByID(name, ids, removePrevious = true) {
         if (removePrevious) {
@@ -21423,11 +21424,12 @@ class FragmentCulling {
 }
 
 class FragmentGrouper {
-    constructor() {
+    constructor(fragments) {
         this.groupSystems = {
             category: {},
             floor: {},
         };
+        this.fragments = fragments;
     }
     add(guid, groupsSystems) {
         for (const system in groupsSystems) {
@@ -21442,6 +21444,14 @@ class FragmentGrouper {
                 }
                 existingGroups[groupName][guid] = currentGroups[groupName];
             }
+        }
+    }
+    setVisibility(systemName, groupName, visible) {
+        const fragmentsMap = this.groupSystems[systemName][groupName];
+        for (const fragmentId in fragmentsMap) {
+            const fragment = this.fragments.fragments[fragmentId];
+            const ids = fragmentsMap[fragmentId];
+            fragment.setVisibility(ids, visible);
         }
     }
     remove(guid) {
@@ -66694,6 +66704,7 @@ class Geometry {
             color: new THREE$1.Color(color.x, color.y, color.z),
             transparent: color.w !== 1,
             opacity: color.w,
+            side: THREE$1.DoubleSide
         });
     }
     applyTransform(geometryData, geometry) {
@@ -68155,7 +68166,7 @@ class DataConverter {
         await this._spatialStructure.setupFloors(webIfc, this._units);
         this.processAllFragmentsData();
         this.processAllUniqueItems();
-        this.saveModelData(webIfc);
+        await this.saveModelData(webIfc);
         return this._model;
     }
     async saveModelData(webIfc) {
@@ -68197,7 +68208,8 @@ class DataConverter {
         //  (e.g. for a model with thousands of objects that repeat 2 times)
         const isUnique = data.instances.length === 1;
         const isInstanced = this._settings.instancedCategories.has(categoryID);
-        if (!isUnique || isInstanced) {
+        const noFloors = Object.keys(this._spatialStructure.itemsByFloor).length === 0;
+        if (!isUnique || isInstanced || noFloors) {
             this.processInstancedItems(data);
         }
         else {
@@ -68883,7 +68895,7 @@ class Fragments extends Component {
         this.fragmentMeshes = [];
         this.ifcLoader = new IfcFragmentLoader();
         this.loader = new FragmentLoader();
-        this.groups = new FragmentGrouper();
+        this.groups = new FragmentGrouper(this);
         this.properties = new FragmentProperties();
         this.tree = new FragmentSpatialTree(this.properties);
         this.highlighter = new FragmentHighlighter(components, this);

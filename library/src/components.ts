@@ -53,7 +53,6 @@ export class Components {
   private _camera?: Component<THREE.Camera>;
   private _raycaster?: Raycaster;
   private _clock: THREE.Clock;
-  private _updateRequestCallback: number = -1;
 
   /**
    * The [Three.js renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
@@ -210,7 +209,6 @@ export class Components {
    * ```
    */
   dispose() {
-    cancelAnimationFrame(this._updateRequestCallback);
     // TODO: Implement memory disposal for the whole library
   }
 
@@ -221,7 +219,8 @@ export class Components {
     Components.update(this.camera, delta);
     this.tools.update(delta);
     const renderer = this.renderer.get();
-    this._updateRequestCallback = renderer.setAnimationLoop(this.update); //Works the same as requestAnimationFrame, but let us use WebXR.
+    // Works the same as requestAnimationFrame, but let us use WebXR.
+    renderer.setAnimationLoop(this.update);
   };
 
   private static update(component: Component<any>, delta: number) {

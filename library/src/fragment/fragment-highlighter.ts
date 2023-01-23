@@ -67,7 +67,7 @@ export class FragmentHighlighter {
 
     this.updateFragmentHighlight(name, mesh.uuid);
 
-    return { id: mesh.uuid, fragment };
+    return { id: itemID, fragment };
   }
 
   highlightByID(
