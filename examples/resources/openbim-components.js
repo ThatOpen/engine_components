@@ -74254,6 +74254,7 @@ class MapboxRenderer extends RendererComponent {
          */
         this.initialized = new Event();
         this._labelRenderer = new CSS2DRenderer();
+        this._renderer = new THREE$1.WebGLRenderer();
         this.initError = "Mapbox scene isn't initialized yet!";
         this.updateLabelRendererSize = () => {
             var _a;
@@ -74269,9 +74270,6 @@ class MapboxRenderer extends RendererComponent {
     }
     /** {@link Component.get} */
     get() {
-        if (!this._renderer) {
-            throw new Error(this.initError);
-        }
         return this._renderer;
     }
     /** {@link Resizeable.getSize} */

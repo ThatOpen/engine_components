@@ -23,7 +23,7 @@ export class MapboxRenderer extends RendererComponent implements Disposable {
   initialized = new Event<THREE.Renderer>();
 
   private _labelRenderer = new CSS2DRenderer();
-  private _renderer?: THREE.WebGLRenderer;
+  private _renderer = new THREE.WebGLRenderer();
   private _map: any;
   private _components: Components;
   private readonly initError = "Mapbox scene isn't initialized yet!";
@@ -54,9 +54,6 @@ export class MapboxRenderer extends RendererComponent implements Disposable {
 
   /** {@link Component.get} */
   get(): THREE.WebGLRenderer {
-    if (!this._renderer) {
-      throw new Error(this.initError);
-    }
     return this._renderer;
   }
 
