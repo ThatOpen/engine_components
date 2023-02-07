@@ -10,7 +10,7 @@ import { FragmentProperties } from "./fragment-properties";
 import { FragmentSpatialTree } from "./fragment-spatial-tree";
 import { Components } from "../components";
 import { Component } from "../core";
-import { IfcFragmentLoader } from "./fragment-ifc-importer";
+import { FragmentGroup, IfcFragmentLoader } from "./fragment-ifc-importer";
 import { MemoryCulling } from "./memory-culling";
 import { FragmentExploder } from "./fragment-exploder";
 
@@ -25,8 +25,9 @@ export class Fragments extends Component<Fragment[]> {
 
   fragments: { [guid: string]: Fragment } = {};
   fragmentMeshes: THREE.Mesh[] = [];
+  models: FragmentGroup[] = [];
 
-  ifcLoader = new IfcFragmentLoader();
+  ifcLoader = new IfcFragmentLoader(this);
   loader = new FragmentLoader();
   groups = new FragmentGrouper(this);
   properties = new FragmentProperties();
@@ -70,4 +71,17 @@ export class Fragments extends Component<Fragment[]> {
     const scene = this.components.scene.get();
     scene.add(fragment.mesh);
   }
+
+  fragmentMapByIds(ids: Array<string>, models: FragmentGroup[] = this.models) {
+    if (!ids || !models) { return }
+    const result: { [fragmentID: string]: string[] } = {}
+    models.forEach( model => {
+        model.fragments.forEach( fragment => {
+            const found = fragment.items.filter( (item: string) => ids.includes(item) )
+            if (found.length > 0) { result[fragment.id] = found }
+        } )
+    } )
+    return result
+  }
+
 }

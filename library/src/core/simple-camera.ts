@@ -1,3 +1,4 @@
+import { Fragments } from './../fragment/fragment';
 import * as THREE from "three";
 import CameraControls from "camera-controls";
 import { Components } from "../components";
@@ -101,6 +102,11 @@ export class SimpleCamera
     controls.dollyToCursor = true;
     controls.infinityDolly = true;
     controls.setTarget(0, 0, 0);
+    const fragments = this.components.tools.get("Fragments") as Fragments
+    if (fragments) { 
+      controls.addEventListener("wake", () => fragments.culler.needsUpdate = true) 
+      controls.addEventListener("rest", () => fragments.culler.needsUpdate = true) 
+    }
     return controls;
   }
 

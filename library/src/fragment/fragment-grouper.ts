@@ -72,5 +72,21 @@ export class FragmentGrouper {
     return models;
   }
 
+  /**
+   * @description Takes two filters to find the matching groups and return the common fragmentIds and items in them.
+   */
+  intersectGroups(filterA: {[systemName: string]: string}, filterB: {[systemName: string]: string}) {
+      const groupA = this.get(filterA)
+      const groupB = this.get(filterB)
+      const intersection: {[fragmentId: string]: string[]} = {}
+      for (const fragmentId in groupA) {
+          const itemsB = groupB[fragmentId]
+          if (!itemsB) {continue}
+          const itemsA = groupA[fragmentId]
+          intersection[fragmentId] = [...new Set([...itemsA, ...itemsB])]
+      }
+      return intersection
+  }
+
   update(_delta: number): void {}
 }

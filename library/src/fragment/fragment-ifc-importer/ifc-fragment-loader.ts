@@ -1,3 +1,4 @@
+import { Fragments } from '../fragment';
 import * as WEBIFC from "web-ifc";
 import { IfcToFragmentItems, MaterialList } from "./base-types";
 import { Settings } from "./settings";
@@ -10,6 +11,7 @@ import { DataConverter } from "./data-converter";
  */
 export class IfcFragmentLoader {
   settings = new Settings();
+  fragments: Fragments;
 
   private _webIfc = new WEBIFC.IfcAPI();
   private _progress = new LoadProgress();
@@ -27,6 +29,10 @@ export class IfcFragmentLoader {
     this._materials,
     this.settings
   );
+
+  constructor(fragments: Fragments) {
+    this.fragments = fragments;
+  }
 
   get progress() {
     return this._progress.event;
@@ -51,6 +57,7 @@ export class IfcFragmentLoader {
     await this._progress.setupLoadProgress(this._webIfc);
     await this.loadAllCategories();
     const model = await this._converter.generateFragmentData(this._webIfc);
+    this.fragments.models.push(model);
     this._progress.updateLoadProgress();
     this.cleanUp();
     return model;
