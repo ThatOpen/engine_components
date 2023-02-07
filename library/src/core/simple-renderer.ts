@@ -34,7 +34,7 @@ export class SimpleRenderer
     super();
     this._renderer = new THREE.WebGLRenderer({
       antialias: true,
-      alpha: true
+      alpha: true,
     });
 
     this._renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -61,11 +61,11 @@ export class SimpleRenderer
 
   /** {@link Disposable.dispose} */
   dispose() {
+    this.enabled = false;
     this._renderer.domElement.remove();
     this._renderer.dispose();
-    (this._renderer as any) = null;
-    (this._renderer2D as any) = null;
-    (this.container as any) = null;
+    this.afterUpdate.reset();
+    this.beforeUpdate.reset();
   }
 
   /** {@link Resizeable.getSize}. */

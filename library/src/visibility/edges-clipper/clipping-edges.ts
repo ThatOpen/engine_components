@@ -11,6 +11,9 @@ export type Edges = {
   [name: string]: Edge;
 };
 
+/**
+ * The edges that are drawn when the {@link EdgesPlane} sections a mesh.
+ */
 export class ClippingEdges
   extends Component<Edges>
   implements Hideable, Disposable, Updateable
@@ -89,8 +92,6 @@ export class ClippingEdges
     ClippingEdges._basicEdges.removeFromParent();
     ClippingEdges._basicEdges.geometry.dispose();
     ClippingEdges._basicEdges = new THREE.LineSegments();
-    (this._edges as any) = null;
-    (this._plane as any) = null;
   }
 
   // Initializes the helper geometry used to compute the vertices

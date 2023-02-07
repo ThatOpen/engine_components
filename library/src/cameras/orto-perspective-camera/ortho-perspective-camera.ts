@@ -42,12 +42,16 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
     this.currentMode = this._navigationModes.get("Orbit")!;
     this.currentMode.toggle(true, { preventTargetAdjustment: true });
 
-    const modes = Object.values(this._navigationModes);
-    for (const mode of modes) {
-      mode.projectionChanged.on(this.projectionChanged.trigger);
-    }
+    this.toggleEvents(true);
 
     this._projectionManager = new ProjectionManager(components, this);
+  }
+
+  /** {@link Disposable.dispose} */
+  dispose() {
+    super.dispose();
+    this.toggleEvents(false);
+    this._orthoCamera.removeFromParent();
   }
 
   /**
@@ -80,7 +84,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
     const projection = this.getProjection();
     const newProjection =
       projection === "Perspective" ? "Orthographic" : "Perspective";
-    this.setProjection(newProjection);
+    await this.setProjection(newProjection);
   }
 
   /**
@@ -206,5 +210,16 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
     this._orthoCamera.top = this._frustumSize / 2;
     this._orthoCamera.bottom = -this._frustumSize / 2;
     this._orthoCamera.updateProjectionMatrix();
+  }
+
+  private toggleEvents(active: boolean) {
+    const modes = Object.values(this._navigationModes);
+    for (const mode of modes) {
+      if (active) {
+        mode.projectionChanged.on(this.projectionChanged.trigger);
+      } else {
+        mode.projectionChanged.reset();
+      }
+    }
   }
 }

@@ -159,7 +159,7 @@
 		// Render shadows
 
 		const guids = fragments.groups.get({ category: 'IFCSLAB' });
-		const slabs = Object.keys(guids).map(guid => fragments.fragments[guid]);
+		const slabs = Object.keys(guids).map(guid => fragments.list[guid]);
 		const meshes = slabs.map(slab => slab.mesh);
 		const shadow = shadows.renderShadow(meshes, 'example');
 		renderer.postproduction.excludedItems.add(shadow);

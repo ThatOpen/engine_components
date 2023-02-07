@@ -76,8 +76,7 @@
 	const stats = new Stats();
 	stats.showPanel(2);
 	document.body.append(stats.dom);
-	stats.dom.style.right = '0px';
-	stats.dom.style.left = 'auto';
+	stats.dom.style.right = 'auto';
 
 	components.renderer.beforeUpdate.on(() => stats.begin());
 	components.renderer.afterUpdate.on(() => stats.end());
@@ -225,6 +224,7 @@
 			toggleEdges(false);
 			scene.background = backgroundColor;
   }
+
 	levelsFolder.add(helper, "exit").name("Exit floor plans");
 
 </script>

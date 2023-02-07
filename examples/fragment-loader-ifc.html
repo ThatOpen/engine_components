@@ -78,6 +78,7 @@
 	components.renderer.afterUpdate.on(() => stats.end());
 
 	const fragments = new OBC.Fragments(components);
+	components.tools.add(fragments);
 
 	// Set up fragment culler update
 
@@ -107,17 +108,10 @@
     };
 
 		model = await fragments.ifcLoader.load("./resources/01.ifc");
-		addFragments(model);
-		console.log(model);
+		scene.add(model);
 
 		fragments.culler.needsUpdate = true;
 	}
-
-	function addFragments(model) {
-		for(const fragment of model.fragments) {
-			fragments.add(fragment);
-		}
-  }
 
 	async function downloadFragment() {
 

@@ -35,7 +35,7 @@ export class DataConverter {
 
   private readonly _items: IfcToFragmentItems;
   private readonly _materials: MaterialList;
-  private readonly _spatialStructure = new SpatialStructure();
+  private readonly _spatialTree = new SpatialStructure();
   private readonly _settings: Settings;
 
   constructor(
@@ -56,7 +56,7 @@ export class DataConverter {
   }
 
   cleanUp() {
-    this._spatialStructure.cleanUp();
+    this._spatialTree.cleanUp();
     this._categories = {};
     this._model = new FragmentGroup();
     this._ifcCategories = new IfcCategories();
@@ -71,7 +71,7 @@ export class DataConverter {
 
   async generateFragmentData(webIfc: WEBIFC.IfcAPI) {
     await this._units.setUp(webIfc);
-    await this._spatialStructure.setupFloors(webIfc, this._units);
+    await this._spatialTree.setupFloors(webIfc, this._units);
     this.processAllFragmentsData();
     this.processAllUniqueItems();
     await this.saveModelData(webIfc);
@@ -82,8 +82,8 @@ export class DataConverter {
     this._model.boundingBoxes = this._boundingBoxes;
     this._model.transparentBoundingBoxes = this._transparentBoundingBoxes;
     this._model.expressIDFragmentIDMap = this._expressIDfragmentIDMap;
-    this._model.levelRelationships = this._spatialStructure.itemsByFloor;
-    this._model.floorsProperties = this._spatialStructure.floorProperties;
+    this._model.levelRelationships = this._spatialTree.itemsByFloor;
+    this._model.floorsProperties = this._spatialTree.floorProperties;
     this._model.allTypes = IfcCategoryMap;
     this._model.itemTypes = this._categories;
     this._model.coordinationMatrix = this.getCoordinationMatrix(webIfc);
@@ -121,7 +121,7 @@ export class DataConverter {
     //  (e.g. for a model with thousands of objects that repeat 2 times)
     const isUnique = data.instances.length === 1;
     const isInstanced = this._settings.instancedCategories.has(categoryID);
-    const noFloors = Object.keys(this._spatialStructure.itemsByFloor).length === 0;
+    const noFloors = Object.keys(this._spatialTree.itemsByFloor).length === 0;
     if (!isUnique || isInstanced || noFloors) {
       this.processInstancedItems(data);
     } else {
@@ -133,7 +133,7 @@ export class DataConverter {
     for (const matID in data.geometriesByMaterial) {
       const instance = data.instances[0];
       const category = this._categories[instance.id];
-      const level = this._spatialStructure.itemsByFloor[instance.id];
+      const level = this._spatialTree.itemsByFloor[instance.id];
       this.initializeItem(data, category, level, matID);
       this.applyTransformToMergedGeometries(data, category, level, matID);
     }

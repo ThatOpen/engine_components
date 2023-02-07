@@ -15,6 +15,12 @@ export class MapboxRenderer extends RendererComponent implements Disposable {
   /** {@link Component.enabled} */
   enabled = true;
 
+  /** {@link Updateable.beforeUpdate} */
+  beforeUpdate = new Event<MapboxRenderer>();
+
+  /** {@link Updateable.afterUpdate} */
+  afterUpdate = new Event<MapboxRenderer>();
+
   /**
    * The renderer can only be initialized once Mapbox' map has been loaded. This
    * method triggers when that happens, so any initial logic that depends on the
@@ -26,7 +32,7 @@ export class MapboxRenderer extends RendererComponent implements Disposable {
   private _renderer = new THREE.WebGLRenderer();
   private _map: any;
   private _components: Components;
-  private readonly initError = "Mapbox scene isn't initialized yet!";
+  private readonly _initError = "Mapbox scene isn't initialized yet!";
 
   private _modelTransform: {
     translateX: number;
@@ -60,7 +66,7 @@ export class MapboxRenderer extends RendererComponent implements Disposable {
   /** {@link Resizeable.getSize} */
   getSize(): THREE.Vector2 {
     if (!this._renderer) {
-      throw new Error(this.initError);
+      throw new Error(this._initError);
     }
     return new THREE.Vector2(
       this._renderer.domElement.clientWidth,
@@ -73,7 +79,11 @@ export class MapboxRenderer extends RendererComponent implements Disposable {
 
   /** {@link Disposable.dispose} */
   dispose() {
+    this.enabled = false;
     window.removeEventListener("resize", this.updateLabelRendererSize);
+    this._renderer.dispose();
+    this._map.remove();
+    this._map = null;
   }
 
   private initialize(context: WebGLRenderingContext) {
@@ -124,7 +134,8 @@ export class MapboxRenderer extends RendererComponent implements Disposable {
   // Source: https://docs.mapbox.com/mapbox-gl-js/example/add-3d-model/
 
   private render(scene: THREE.Scene, matrix: number[]) {
-    if (!this._renderer) return;
+    if (!this._renderer || !this.enabled) return;
+    this.beforeUpdate.trigger(this);
 
     const rotationX = new THREE.Matrix4().makeRotationAxis(
       new THREE.Vector3(1, 0, 0),
@@ -167,6 +178,8 @@ export class MapboxRenderer extends RendererComponent implements Disposable {
     this._labelRenderer.render(scene, camera);
 
     this._map.triggerRepaint();
+
+    this.afterUpdate.trigger(this);
   }
 
   private initializeLabelRenderer() {

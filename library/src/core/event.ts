@@ -34,6 +34,13 @@ export class Event<T> {
     this.handlers.slice(0).forEach((h) => h(data));
   }) as any;
 
+  /**
+   * Gets rid of all the suscribed events.
+   */
+  reset() {
+    this.handlers.length = 0;
+  }
+
   private handlers: (T extends void ? { (): void } : { (data: T): void })[] =
     [];
 }

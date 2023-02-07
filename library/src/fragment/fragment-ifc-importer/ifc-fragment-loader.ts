@@ -1,18 +1,21 @@
 import * as WEBIFC from "web-ifc";
 import { IfcToFragmentItems, MaterialList } from "./base-types";
 import { Settings } from "./settings";
-import { LoadProgress } from "./load-progress";
 import { Geometry } from "./geometry";
 import { DataConverter } from "./data-converter";
+import { Disposable } from "../../core";
+import { Fragments } from "../fragment";
 
 /**
- * Reads all the geometry of the IFC file and generates an optimized `THREE.Mesh`.
+ * Reads all the geometry of the IFC file and generates a set of
+ * [fragments](https://github.com/ifcjs/fragment).
  */
-export class IfcFragmentLoader {
+export class IfcFragmentLoader implements Disposable {
+  /** Configuration of the IFC-fragment conversion. */
   settings = new Settings();
 
+  private _fragments: Fragments;
   private _webIfc = new WEBIFC.IfcAPI();
-  private _progress = new LoadProgress();
   private _items: IfcToFragmentItems = {};
   private _materials: MaterialList = {};
 
@@ -28,10 +31,22 @@ export class IfcFragmentLoader {
     this.settings
   );
 
-  get progress() {
-    return this._progress.event;
+  constructor(fragments: Fragments) {
+    this._fragments = fragments;
   }
 
+  /** {@link Disposable.dispose} */
+  dispose() {
+    this.disposeWebIfc();
+    this.disposeMaterials();
+    this.disposeItems();
+    this._geometry.cleanUp();
+    (this._geometry as any) = null;
+    this._converter.cleanUp();
+    (this._converter as any) = null;
+  }
+
+  /** Loads the IFC file and converts it to a set of fragments. */
   async load(ifcURL: URL) {
     await this.initializeWebIfc();
     const file = await fetch(ifcURL);
@@ -48,11 +63,12 @@ export class IfcFragmentLoader {
   }
 
   private async loadAllGeometry() {
-    await this._progress.setupLoadProgress(this._webIfc);
     await this.loadAllCategories();
     const model = await this._converter.generateFragmentData(this._webIfc);
-    this._progress.updateLoadProgress();
     this.cleanUp();
+    for (const fragment of model.fragments) {
+      this._fragments.list[fragment.id] = fragment;
+    }
     return model;
   }
 
@@ -65,7 +81,6 @@ export class IfcFragmentLoader {
 
   private async loadMainCategories() {
     this._webIfc.StreamAllMeshes(0, (mesh: WEBIFC.FlatMesh) => {
-      this._progress.updateLoadProgress();
       this._geometry.streamMesh(this._webIfc, mesh);
     });
   }
@@ -81,8 +96,8 @@ export class IfcFragmentLoader {
     }
   }
 
-  // Some categories (like IfcSpace) need to be set explicitly
   private loadOptionalCategories() {
+    // Some categories (like IfcSpace) need to be set explicitly
     const optionals = this.settings.optionalCategories;
     const callback = (mesh: WEBIFC.FlatMesh) => {
       this._geometry.streamMesh(this._webIfc, mesh);
@@ -99,7 +114,7 @@ export class IfcFragmentLoader {
   }
 
   private resetWebIfc() {
-    (this._webIfc as any) = null;
+    this.disposeWebIfc();
     this._webIfc = new WEBIFC.IfcAPI();
   }
 
@@ -107,6 +122,27 @@ export class IfcFragmentLoader {
     const keys = Object.keys(object);
     for (const key of keys) {
       delete object[key];
+    }
+  }
+
+  private disposeWebIfc() {
+    (this._webIfc as any) = null;
+  }
+
+  private disposeMaterials() {
+    for (const materialID in this._materials) {
+      this._materials[materialID].dispose();
+    }
+  }
+
+  private disposeItems() {
+    for (const geometryID in this._items) {
+      const geometriesByMat = this._items[geometryID].geometriesByMaterial;
+      for (const matID in geometriesByMat) {
+        for (const geom of geometriesByMat[matID]) {
+          geom.dispose();
+        }
+      }
     }
   }
 }

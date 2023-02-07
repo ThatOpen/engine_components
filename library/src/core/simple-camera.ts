@@ -2,7 +2,7 @@ import * as THREE from "three";
 import CameraControls from "camera-controls";
 import { Components } from "../components";
 import { Event } from "./event";
-import { Updateable } from "./base-types";
+import { Disposable, Updateable } from "./base-types";
 import { Component } from "./base-components";
 
 /**
@@ -13,7 +13,7 @@ import { Component } from "./base-components";
  */
 export class SimpleCamera
   extends Component<THREE.PerspectiveCamera | THREE.OrthographicCamera>
-  implements Updateable
+  implements Updateable, Disposable
 {
   /** {@link Component.name} */
   name = "SimpleCamera";
@@ -62,6 +62,15 @@ export class SimpleCamera
   /** {@link Component.get} */
   get() {
     return this.activeCamera;
+  }
+
+  /** {@link Disposable.dispose} */
+  dispose() {
+    this.enabled = false;
+    this.beforeUpdate.reset();
+    this.afterUpdate.reset();
+    this._perspectiveCamera.removeFromParent();
+    this.controls.dispose();
   }
 
   /** {@link Updateable.update} */

@@ -4272,6 +4272,12 @@ class Event {
     off(handler) {
         this.handlers = this.handlers.filter((h) => h !== handler);
     }
+    /**
+     * Gets rid of all the suscribed events.
+     */
+    reset() {
+        this.handlers.length = 0;
+    }
 }
 
 /*!
@@ -6431,6 +6437,14 @@ class SimpleCamera extends Component {
     get() {
         return this.activeCamera;
     }
+    /** {@link Disposable.dispose} */
+    dispose() {
+        this.enabled = false;
+        this.beforeUpdate.reset();
+        this.afterUpdate.reset();
+        this._perspectiveCamera.removeFromParent();
+        this.controls.dispose();
+    }
     /** {@link Updateable.update} */
     update(_delta) {
         if (this.enabled) {
@@ -6853,24 +6867,16 @@ class SimpleDimensionLine {
     }
     dispose() {
         this.visible = false;
-        this._components = null;
         this._disposer.dispose(this._root);
-        this._root = null;
-        this._line.material = null;
         this._disposer.dispose(this._line);
-        this._line = null;
         for (const mesh of this._endpoints) {
             mesh.removeFromParent();
-            mesh.material = null;
-            mesh.geometry = null;
         }
         this._endpoints.length = 0;
         this.label.removeFromParent();
         this.label.element.remove();
-        this.label = null;
         if (this.boundingBox) {
             this._disposer.dispose(this.boundingBox);
-            this.boundingBox = null;
         }
     }
     createBoundingBox() {
@@ -7129,15 +7135,13 @@ class SimpleDimensions extends Component {
     }
     /** {@link Disposable.dispose} */
     dispose() {
-        this.components = null;
+        this.enabled = false;
         this._dimensions.forEach((dim) => dim.dispose());
-        this._dimensions = null;
+        this._dimensions = [];
         this._disposer.dispose(this._endpointMesh);
-        this._endpointMesh = null;
-        this._temp.dimension = null;
+        this._endpointMesh.removeFromParent();
         this.previewElement.removeFromParent();
         this.previewElement.element.remove();
-        this.previewElement = null;
     }
     /** {@link Updateable.update} */
     update(_delta) {
@@ -7310,6 +7314,7 @@ class SimpleGrid extends Component {
         this.name = "SimpleGrid";
         /** {@link Component.enabled} */
         this.enabled = true;
+        this._disposer = new Disposer();
         this._grid = new THREE$1.GridHelper(50, 50);
         const scene = components.scene.get();
         scene.add(this._grid);
@@ -7325,6 +7330,10 @@ class SimpleGrid extends Component {
     /** {@link Component.get} */
     get() {
         return this._grid;
+    }
+    /** {@link Disposable.dispose} */
+    dispose() {
+        this._disposer.dispose(this._grid);
     }
 }
 
@@ -7350,7 +7359,7 @@ class SimpleRenderer extends RendererComponent {
         this._renderer2D = new CSS2DRenderer();
         this._renderer = new THREE$1.WebGLRenderer({
             antialias: true,
-            alpha: true
+            alpha: true,
         });
         this._renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.setupRenderers();
@@ -7375,11 +7384,11 @@ class SimpleRenderer extends RendererComponent {
     }
     /** {@link Disposable.dispose} */
     dispose() {
+        this.enabled = false;
         this._renderer.domElement.remove();
         this._renderer.dispose();
-        this._renderer = null;
-        this._renderer2D = null;
-        this.container = null;
+        this.afterUpdate.reset();
+        this.beforeUpdate.reset();
     }
     /** {@link Resizeable.getSize}. */
     getSize() {
@@ -7418,6 +7427,7 @@ class SimpleScene extends Component {
         this.enabled = true;
         /** {@link Component.name} */
         this.name = "SimpleScene";
+        this._disposer = new Disposer();
         this._scene = new THREE$1.Scene();
         this._scene.background = new THREE$1.Color(0xcccccc);
     }
@@ -7425,10 +7435,20 @@ class SimpleScene extends Component {
     get() {
         return this._scene;
     }
+    /** {@link Disposable.dispose} */
+    dispose() {
+        for (const child of this._scene.children) {
+            const mesh = child;
+            if (mesh.geometry) {
+                this._disposer.dispose(mesh);
+            }
+        }
+        this._scene.children = [];
+    }
 }
 
 /**
- * An lightweight component to easily create and handle
+ * A lightweight component to easily create and handle
  * [clipping planes](https://threejs.org/docs/#api/en/materials/Material.clippingPlanes).
  *
  * @param components - the instance of {@link Components} used.
@@ -7520,11 +7540,14 @@ class SimpleClipper extends Component {
     }
     /** {@link Component.get} */
     dispose() {
+        this._enabled = false;
         for (const plane of this._planes) {
             plane.dispose();
         }
         this._planes.length = 0;
-        this.components = null;
+        this._material.dispose();
+        this.onStartDragging.reset();
+        this.onEndDragging.reset();
     }
     /** {@link Createable.create} */
     create() {
@@ -9232,12 +9255,13 @@ class SimplePlane extends Component {
     set size(size) {
         this._planeMesh.scale.set(size, size, size);
     }
+    /** {@link Updateable.update} */
     update() {
-        if (this._enabled) {
-            this.beforeUpdate.trigger(this._plane);
-            this._plane.setFromNormalAndCoplanarPoint(this._normal, this._helper.position);
-            this.afterUpdate.trigger(this._plane);
-        }
+        if (!this._enabled)
+            return;
+        this.beforeUpdate.trigger(this._plane);
+        this._plane.setFromNormalAndCoplanarPoint(this._normal, this._helper.position);
+        this.afterUpdate.trigger(this._plane);
     }
     /** {@link Component.get} */
     get() {
@@ -9245,18 +9269,18 @@ class SimplePlane extends Component {
     }
     /** {@link Disposable.dispose} */
     dispose() {
-        this.onStartDragging = null;
-        this.onEndDragging = null;
+        this._enabled = false;
+        this.beforeUpdate.reset();
+        this.afterUpdate.reset();
+        this.onStartDragging.reset();
+        this.onEndDragging.reset();
         this._helper.removeFromParent();
         this._components.renderer.togglePlane(false, this._plane);
         this._arrowBoundBox.removeFromParent();
         this._arrowBoundBox.geometry.dispose();
-        this._arrowBoundBox = undefined;
         this._planeMesh.geometry.dispose();
-        this._planeMesh.geometry = undefined;
         this._controls.removeFromParent();
         this._controls.dispose();
-        this._helper.removeFromParent();
     }
     newTransformControls() {
         const camera = this._components.camera.get();
@@ -9373,42 +9397,16 @@ class ToolComponents {
         }
     }
     /**
-     * Sets the {@link Component.enabled} property of one or multiple components.
-     * @param enabled - Whether to enable or disable the components.
-     * @param name - The {@link Component.name} of the tool to enable or disable.
-     * If undefined, all components will be enabled or disabled.
+     * Disposes all the memory used by all the tools.
      */
-    enable(enabled, name) {
-        if (name) {
-            const tool = this.get(name);
-            if (tool) {
-                tool.enabled = enabled;
-            }
-            return;
-        }
+    dispose() {
         for (const tool of this.tools) {
-            tool.enabled = enabled;
-        }
-    }
-    /**
-     * Shows or hides one or multiple components.
-     * @param visible - Whether to show or hide the tool components.
-     * @param name - The {@link Component.name} of the tool to show or hide.
-     * If undefined, all components will be enabled or disabled.
-     */
-    toggle(visible, name) {
-        if (name) {
-            const tool = this.get(name);
-            if (tool && tool.isHideable()) {
-                tool.visible = visible;
-            }
-            return;
-        }
-        for (const tool of this.tools) {
-            if (tool.isHideable()) {
-                tool.visible = visible;
+            tool.enabled = false;
+            if (tool.isDisposeable()) {
+                tool.dispose();
             }
         }
+        this.tools = [];
     }
 }
 
@@ -9444,7 +9442,10 @@ class Components {
          * This includes IFC models, fragments, 3D scans, etc.
          */
         this.meshes = [];
+        this._enabled = true;
         this.update = () => {
+            if (!this._enabled)
+                return;
             const delta = this._clock.getDelta();
             Components.update(this.scene, delta);
             Components.update(this.renderer, delta);
@@ -9598,7 +9599,14 @@ class Components {
      * ```
      */
     dispose() {
-        // TODO: Implement memory disposal for the whole library
+        this._enabled = false;
+        this.tools.dispose();
+        if (this.renderer.isDisposeable())
+            this.renderer.dispose();
+        if (this.scene.isDisposeable())
+            this.scene.dispose();
+        if (this.camera.isDisposeable())
+            this.camera.dispose();
     }
     static update(component, delta) {
         if (component.isUpdateable() && component.enabled) {
@@ -21079,6 +21087,7 @@ class FragmentLoader {
     }
 }
 
+// TODO: Clean up and document
 class FragmentHighlighter {
     constructor(components, fragments) {
         this.components = components;
@@ -21087,6 +21096,15 @@ class FragmentHighlighter {
         this.highlightMats = {};
         this.tempMatrix = new THREE$1.Matrix4();
         this.selection = {};
+    }
+    dispose() {
+        for (const matID in this.highlightMats) {
+            const mats = this.highlightMats[matID] || [];
+            for (const mat of mats) {
+                mat.dispose();
+            }
+        }
+        this.highlightMats = {};
     }
     add(name, material) {
         if (this.highlightMats[name]) {
@@ -21097,8 +21115,8 @@ class FragmentHighlighter {
         this.update();
     }
     update() {
-        for (const fragmentID in this.fragments.fragments) {
-            const fragment = this.fragments.fragments[fragmentID];
+        for (const fragmentID in this.fragments.list) {
+            const fragment = this.fragments.list[fragmentID];
             this.addHighlightToFragment(fragment);
         }
     }
@@ -21107,7 +21125,7 @@ class FragmentHighlighter {
         if (!this.active)
             return null;
         this.checkSelection(name);
-        const meshes = this.fragments.fragmentMeshes;
+        const meshes = this.fragments.meshes;
         const result = this.components.raycaster.castRay(meshes);
         if (!result) {
             this.clear(name);
@@ -21126,7 +21144,7 @@ class FragmentHighlighter {
         if (!this.selection[name][mesh.uuid]) {
             this.selection[name][mesh.uuid] = new Set();
         }
-        const fragment = this.fragments.fragments[mesh.uuid];
+        const fragment = this.fragments.list[mesh.uuid];
         const blockID = fragment.getVertexBlockID(geometry, index);
         const itemID = fragment.getItemID(instanceID, blockID);
         this.selection[name][mesh.uuid].add(itemID);
@@ -21159,7 +21177,7 @@ class FragmentHighlighter {
     }
     clearStyle(name) {
         for (const fragID in this.selection[name]) {
-            const fragment = this.fragments.fragments[fragID];
+            const fragment = this.fragments.list[fragID];
             if (!fragment)
                 continue;
             const selection = fragment.fragments[name];
@@ -21171,7 +21189,7 @@ class FragmentHighlighter {
     }
     updateFragmentHighlight(name, fragmentID) {
         const ids = this.selection[name][fragmentID];
-        const fragment = this.fragments.fragments[fragmentID];
+        const fragment = this.fragments.list[fragmentID];
         if (!fragment)
             return;
         const selection = fragment.fragments[name];
@@ -21222,6 +21240,7 @@ class FragmentHighlighter {
     }
 }
 
+// TODO: Clean up and document
 class FragmentCulling {
     constructor(components, fragment, updateInterval = 1000, rtWidth = 512, rtHeight = 512, autoUpdate = true) {
         this.components = components;
@@ -21233,19 +21252,19 @@ class FragmentCulling {
         this.enabled = true;
         this.viewUpdated = new Event();
         this.needsUpdate = false;
-        this.exclusions = new Map();
         this.fragmentColorMap = new Map();
         this.renderDebugFrame = false;
-        this.meshes = new Map();
         this.visibleFragments = [];
-        this.previouslyVisibleMeshes = new Set();
-        this.transparentMat = new THREE$1.MeshBasicMaterial({
+        this.meshes = new Map();
+        this._previouslyVisibleMeshes = new Set();
+        this._transparentMat = new THREE$1.MeshBasicMaterial({
             transparent: true,
             opacity: 0,
         });
-        this.colors = { r: 0, g: 0, b: 0, i: 0 };
+        this._disposer = new Disposer();
+        this._colors = { r: 0, g: 0, b: 0, i: 0 };
         // Alternative scene and meshes to make the visibility check
-        this.scene = new THREE$1.Scene();
+        this._scene = new THREE$1.Scene();
         this.updateVisibility = (force) => {
             if (!this.enabled)
                 return;
@@ -21255,22 +21274,22 @@ class FragmentCulling {
             camera.updateMatrix();
             this.renderer.setSize(this.rtWidth, this.rtHeight);
             this.renderer.setRenderTarget(this.renderTarget);
-            this.renderer.render(this.scene, camera);
-            this.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, this.buffer);
+            this.renderer.render(this._scene, camera);
+            this.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, this._buffer);
             this.renderer.setRenderTarget(null);
             if (this.renderDebugFrame) {
-                this.renderer.render(this.scene, camera);
+                this.renderer.render(this._scene, camera);
             }
             this.worker.postMessage({
-                buffer: this.buffer,
+                buffer: this._buffer,
             });
             this.needsUpdate = false;
             this.viewUpdated.trigger();
         };
         this.handleWorkerMessage = (event) => {
             const colors = event.data.colors;
-            const meshesThatJustDisappeared = new Set(this.previouslyVisibleMeshes);
-            this.previouslyVisibleMeshes.clear();
+            const meshesThatJustDisappeared = new Set(this._previouslyVisibleMeshes);
+            this._previouslyVisibleMeshes.clear();
             this.visibleFragments = [];
             // Make found meshes visible
             for (const code of colors.values()) {
@@ -21278,14 +21297,14 @@ class FragmentCulling {
                 if (fragment) {
                     this.visibleFragments.push(fragment);
                     fragment.mesh.visible = true;
-                    this.previouslyVisibleMeshes.add(fragment.id);
+                    this._previouslyVisibleMeshes.add(fragment.id);
                     meshesThatJustDisappeared.delete(fragment.id);
                     this.cullEdges(fragment, true);
                 }
             }
             // Hide meshes that were visible before but not anymore
             for (const id of meshesThatJustDisappeared) {
-                const fragment = this.fragment.fragments[id];
+                const fragment = this.fragment.list[id];
                 fragment.mesh.visible = false;
                 this.cullEdges(fragment, false);
             }
@@ -21295,7 +21314,7 @@ class FragmentCulling {
         this.renderer.clippingPlanes = planes;
         this.renderTarget = new THREE$1.WebGLRenderTarget(rtWidth, rtHeight);
         this.bufferSize = rtWidth * rtHeight * 4;
-        this.buffer = new Uint8Array(this.bufferSize);
+        this._buffer = new Uint8Array(this.bufferSize);
         this.materialCache = new Map();
         const code = `
       addEventListener("message", (event) => {
@@ -21317,6 +21336,32 @@ class FragmentCulling {
         if (autoUpdate)
             window.setInterval(this.updateVisibility, updateInterval);
     }
+    dispose() {
+        this.enabled = false;
+        this._scene.children.length = 0;
+        this.viewUpdated.reset();
+        this.worker.terminate();
+        this.renderer.dispose();
+        this.renderTarget.dispose();
+        this._buffer = null;
+        this._transparentMat.dispose();
+        this.viewUpdated.reset();
+        this.fragmentColorMap.clear();
+        this.visibleFragments = [];
+        for (const id in this.materialCache) {
+            const material = this.materialCache.get(id);
+            if (material) {
+                material.dispose();
+            }
+        }
+        for (const id in this.meshes) {
+            const mesh = this.meshes.get(id);
+            if (mesh) {
+                this._disposer.dispose(mesh);
+            }
+        }
+        this.meshes.clear();
+    }
     add(fragment) {
         const { geometry, material } = fragment.mesh;
         const { r, g, b, code } = this.getNextColor();
@@ -21327,7 +21372,7 @@ class FragmentCulling {
             const matArray = [];
             for (const mat of material) {
                 if (this.isTransparent(mat)) {
-                    matArray.push(this.transparentMat);
+                    matArray.push(this._transparentMat);
                 }
                 else {
                     transparentOnly = false;
@@ -21355,7 +21400,7 @@ class FragmentCulling {
         mesh.instanceMatrix = fragment.mesh.instanceMatrix;
         mesh.applyMatrix4(fragment.mesh.matrix);
         mesh.updateMatrix();
-        this.scene.add(mesh);
+        this._scene.add(mesh);
         this.meshes.set(fragment.id, mesh);
     }
     getMaterial(r, g, b) {
@@ -21375,34 +21420,34 @@ class FragmentCulling {
         return material.transparent && material.opacity < 1;
     }
     getNextColor() {
-        if (this.colors.i === 0) {
-            this.colors.b++;
-            if (this.colors.b === 256) {
-                this.colors.b = 0;
-                this.colors.i = 1;
+        if (this._colors.i === 0) {
+            this._colors.b++;
+            if (this._colors.b === 256) {
+                this._colors.b = 0;
+                this._colors.i = 1;
             }
         }
-        if (this.colors.i === 1) {
-            this.colors.g++;
-            this.colors.i = 0;
-            if (this.colors.g === 256) {
-                this.colors.g = 0;
-                this.colors.i = 2;
+        if (this._colors.i === 1) {
+            this._colors.g++;
+            this._colors.i = 0;
+            if (this._colors.g === 256) {
+                this._colors.g = 0;
+                this._colors.i = 2;
             }
         }
-        if (this.colors.i === 2) {
-            this.colors.r++;
-            this.colors.i = 1;
-            if (this.colors.r === 256) {
-                this.colors.r = 0;
-                this.colors.i = 0;
+        if (this._colors.i === 2) {
+            this._colors.r++;
+            this._colors.i = 1;
+            if (this._colors.r === 256) {
+                this._colors.r = 0;
+                this._colors.i = 0;
             }
         }
         return {
-            r: this.colors.r,
-            g: this.colors.g,
-            b: this.colors.b,
-            code: `${this.colors.r}${this.colors.g}${this.colors.b}`,
+            r: this._colors.r,
+            g: this._colors.g,
+            b: this._colors.b,
+            code: `${this._colors.r}${this._colors.g}${this._colors.b}`,
         };
     }
     // If the edges need to be updated (e.g. some walls have been hidden)
@@ -21429,7 +21474,10 @@ class FragmentGrouper {
             category: {},
             floor: {},
         };
-        this.fragments = fragments;
+        this._fragments = fragments;
+    }
+    dispose() {
+        this.groupSystems = {};
     }
     add(guid, groupsSystems) {
         for (const system in groupsSystems) {
@@ -21449,7 +21497,7 @@ class FragmentGrouper {
     setVisibility(systemName, groupName, visible) {
         const fragmentsMap = this.groupSystems[systemName][groupName];
         for (const fragmentId in fragmentsMap) {
-            const fragment = this.fragments.fragments[fragmentId];
+            const fragment = this._fragments.list[fragmentId];
             const ids = fragmentsMap[fragmentId];
             fragment.setVisibility(ids, visible);
         }
@@ -21479,20 +21527,19 @@ class FragmentGrouper {
         }
         return models;
     }
-    update(_delta) { }
 }
 
+// TODO: Clean up and document
 class FragmentEdges {
     constructor(components) {
-        this.components = components;
         this.edgesList = {};
         this.edgesToUpdate = new Set();
         this.threshold = 80;
-        this.mat4 = new Matrix4();
-        this.dummy = new Object3D();
-        this.pos = [];
-        this.rot = [];
-        this.scl = [];
+        this._mat4 = new Matrix4();
+        this._dummy = new Object3D();
+        this._pos = [];
+        this._rot = [];
+        this._scl = [];
         this.lineMat = new LineBasicMaterial({
             color: 0x555555,
             // @ts-ignore
@@ -21515,6 +21562,17 @@ class FragmentEdges {
 `);
             },
         });
+        this.disposer = new Disposer();
+        this._components = components;
+    }
+    dispose() {
+        for (const guid in this.edgesList) {
+            const edges = this.edgesList[guid];
+            this.disposer.dispose(edges, true);
+        }
+        this.lineMat.dispose();
+        this.edgesList = {};
+        this.edgesToUpdate.clear();
     }
     generate(fragment) {
         if (this.edgesList[fragment.id]) {
@@ -21531,7 +21589,7 @@ class FragmentEdges {
         this.setAttributes(lineGeom);
         const lines = new LineSegments(lineGeom, this.lineMat);
         lines.frustumCulled = false;
-        const scene = this.components.scene.get();
+        const scene = this._components.scene.get();
         scene.add(lines);
         this.edgesList[fragment.id] = lines;
         this.updateInstancedEdges(fragment, lineGeom);
@@ -21540,26 +21598,26 @@ class FragmentEdges {
     }
     updateInstancedEdges(fragment, lineGeom) {
         for (let i = 0; i < fragment.mesh.count; i++) {
-            fragment.mesh.getMatrixAt(i, this.mat4);
-            this.mat4.decompose(this.dummy.position, this.dummy.quaternion, this.dummy.scale);
-            this.linesTRS(i, this.dummy, lineGeom);
+            fragment.mesh.getMatrixAt(i, this._mat4);
+            this._mat4.decompose(this._dummy.position, this._dummy.quaternion, this._dummy.scale);
+            this.linesTRS(i, this._dummy, lineGeom);
         }
     }
     setAttributes(lineGeom) {
-        lineGeom.setAttribute("instT", new InstancedBufferAttribute(new Float32Array(this.pos), 3));
-        lineGeom.setAttribute("instR", new InstancedBufferAttribute(new Float32Array(this.rot), 4));
-        lineGeom.setAttribute("instS", new InstancedBufferAttribute(new Float32Array(this.scl), 3));
-        this.pos.length = 0;
-        this.rot.length = 0;
-        this.scl.length = 0;
+        lineGeom.setAttribute("instT", new InstancedBufferAttribute(new Float32Array(this._pos), 3));
+        lineGeom.setAttribute("instR", new InstancedBufferAttribute(new Float32Array(this._rot), 4));
+        lineGeom.setAttribute("instS", new InstancedBufferAttribute(new Float32Array(this._scl), 3));
+        this._pos.length = 0;
+        this._rot.length = 0;
+        this._scl.length = 0;
     }
     getInstanceTransforms(fragment) {
         for (let i = 0; i < fragment.mesh.count; i++) {
-            fragment.getInstance(i, this.dummy.matrix);
-            this.dummy.updateMatrix();
-            this.pos.push(this.dummy.position.x, this.dummy.position.y, this.dummy.position.z);
-            this.rot.push(this.dummy.quaternion.x, this.dummy.quaternion.y, this.dummy.quaternion.z, this.dummy.quaternion.w);
-            this.scl.push(this.dummy.scale.x, this.dummy.scale.y, this.dummy.scale.z);
+            fragment.getInstance(i, this._dummy.matrix);
+            this._dummy.updateMatrix();
+            this._pos.push(this._dummy.position.x, this._dummy.position.y, this._dummy.position.z);
+            this._rot.push(this._dummy.quaternion.x, this._dummy.quaternion.y, this._dummy.quaternion.z, this._dummy.quaternion.w);
+            this._scl.push(this._dummy.scale.x, this._dummy.scale.y, this._dummy.scale.z);
         }
     }
     linesTRS(index, o, lineGeom) {
@@ -21572,21 +21630,30 @@ class FragmentEdges {
     }
 }
 
+// TODO: Clean up and document
 class FragmentMaterials {
     constructor(fragments) {
         this.fragments = fragments;
         this.originals = {};
+        this.materials = new Set();
     }
-    apply(material, fragmentIDs = Object.keys(this.fragments.fragments)) {
+    dispose() {
+        for (const mat of this.materials) {
+            mat.dispose();
+        }
+        this.materials.clear();
+    }
+    apply(material, fragmentIDs = Object.keys(this.fragments.list)) {
+        this.materials.add(material);
         for (const guid of fragmentIDs) {
-            const fragment = this.fragments.fragments[guid];
+            const fragment = this.fragments.list[guid];
             this.save(fragment);
             fragment.mesh.material = material;
         }
     }
-    reset(fragmentIDs = Object.keys(this.fragments.fragments)) {
+    reset(fragmentIDs = Object.keys(this.fragments.list)) {
         for (const guid of fragmentIDs) {
-            const fragment = this.fragments.fragments[guid];
+            const fragment = this.fragments.list[guid];
             const originalMats = this.originals[guid];
             if (originalMats) {
                 fragment.mesh.material = originalMats;
@@ -21600,10 +21667,15 @@ class FragmentMaterials {
     }
 }
 
+// TODO: Clean up and document
 class FragmentProperties {
     constructor() {
         this.properties = {};
         this.fragmentGuid = new Map();
+    }
+    dispose() {
+        this.properties = {};
+        this.fragmentGuid.clear();
     }
     add(properties) {
         const project = Object.values(properties).find((item) => item.type === "IFCPROJECT");
@@ -66561,17 +66633,21 @@ var IfcAPI2 = class {
   }
 };
 
+/** Configuration of the IFC-fragment conversion. */
 class Settings {
     constructor() {
-        // Categories that always will be instanced
+        /** Categories that always will be instanced. */
         this.instancedCategories = new Set();
+        /** Whether to extract the IFC properties into a JSON. */
         this.includeProperties = true;
+        /** Generate the geometry for categories that are not included by default. */
         this.optionalCategories = [IFCSPACE];
+        /** Path of the WASM for [web-ifc](https://github.com/ifcjs/web-ifc). */
         this.wasm = {
             path: "",
             absolute: false,
         };
-        this.instanceLimit = 5;
+        /** Loader settings for [web-ifc](https://github.com/ifcjs/web-ifc). */
         this.webIfc = {
             COORDINATE_TO_ORIGIN: true,
             USE_FAST_BOOLS: true,
@@ -66582,42 +66658,14 @@ class Settings {
     }
 }
 
-class LoadProgress {
-    constructor() {
-        this.event = new Event();
-        this.load = {
-            total: 0,
-            current: 0,
-            step: 0,
-        };
-    }
-    setupLoadProgress(webIfc) {
-        const shapeType = IFCPRODUCTDEFINITIONSHAPE;
-        const shapes = webIfc.GetLineIDsWithType(0, shapeType);
-        this.load.total = shapes.size();
-        this.load.current = 0;
-        this.load.step = 0.1;
-    }
-    updateLoadProgress() {
-        const loadedItems = Math.min(this.load.current++, this.load.total);
-        const isStepReached = loadedItems / this.load.total >= this.load.step;
-        if (isStepReached) {
-            const total = this.load.total;
-            const current = Math.ceil(total * this.load.step);
-            this.event.trigger({ current, total });
-            this.load.step += 0.1;
-        }
-    }
-}
-
 class Geometry {
     constructor(webIfc, items, materials) {
-        this.referenceMatrix = new THREE$1.Matrix4();
-        this.isFirstMatrix = true;
+        this._referenceMatrix = new THREE$1.Matrix4();
+        this._isFirstMatrix = true;
         this._voids = new Set();
         this._geometriesByMaterial = {};
         this._items = {};
-        this.webIfc = webIfc;
+        this._webIfc = webIfc;
         this._items = items;
         this._materials = materials;
     }
@@ -66641,9 +66689,10 @@ class Geometry {
     }
     reset(webifc) {
         this._geometriesByMaterial = {};
-        this.referenceMatrix = new THREE$1.Matrix4();
-        this.isFirstMatrix = true;
-        this.webIfc = webifc;
+        this._referenceMatrix = new THREE$1.Matrix4();
+        this._isFirstMatrix = true;
+        this._webIfc = null;
+        this._webIfc = webifc;
     }
     getGeometryTransformation(mesh, geometryID) {
         const referenceMatrix = this._items[geometryID].referenceMatrix;
@@ -66678,7 +66727,7 @@ class Geometry {
                 },
             ],
             geometriesByMaterial: this._geometriesByMaterial,
-            referenceMatrix: this.referenceMatrix,
+            referenceMatrix: this._referenceMatrix,
         };
     }
     sortGeometriesByMaterials(geometryData, geometry) {
@@ -66704,7 +66753,7 @@ class Geometry {
             color: new THREE$1.Color(color.x, color.y, color.z),
             transparent: color.w !== 1,
             opacity: color.w,
-            side: THREE$1.DoubleSide
+            side: THREE$1.DoubleSide,
         });
     }
     applyTransform(geometryData, geometry) {
@@ -66714,13 +66763,13 @@ class Geometry {
         geometry.applyMatrix4(matrix);
         // We store this matrix to use it as a reference point. We'll apply this
         // later to the rest of the instances
-        if (this.isFirstMatrix) {
-            this.referenceMatrix = new THREE$1.Matrix4().copy(matrix).invert();
-            this.isFirstMatrix = false;
+        if (this._isFirstMatrix) {
+            this._referenceMatrix = new THREE$1.Matrix4().copy(matrix).invert();
+            this._isFirstMatrix = false;
         }
     }
     getBufferGeometry(expressID) {
-        const geometry = this.webIfc.GetGeometry(0, expressID);
+        const geometry = this._webIfc.GetGeometry(0, expressID);
         const verts = this.getVertices(geometry);
         if (!verts.length)
             return null;
@@ -66733,11 +66782,11 @@ class Geometry {
         return buffer;
     }
     getIndices(geometryData) {
-        const indices = this.webIfc.GetIndexArray(geometryData.GetIndexData(), geometryData.GetIndexDataSize());
+        const indices = this._webIfc.GetIndexArray(geometryData.GetIndexData(), geometryData.GetIndexDataSize());
         return indices;
     }
     getVertices(geometryData) {
-        const verts = this.webIfc.GetVertexArray(geometryData.GetVertexData(), geometryData.GetVertexDataSize());
+        const verts = this._webIfc.GetVertexArray(geometryData.GetVertexData(), geometryData.GetVertexDataSize());
         return verts;
     }
     constructGeometry(vertexData, indexData) {
@@ -68138,7 +68187,7 @@ class DataConverter {
         this._expressIDfragmentIDMap = {};
         this._transform = new TransformHelper();
         this._propertyExporter = new IfcJsonExporter();
-        this._spatialStructure = new SpatialStructure();
+        this._spatialTree = new SpatialStructure();
         this._items = items;
         this._materials = materials;
         this._settings = settings;
@@ -68150,7 +68199,7 @@ class DataConverter {
         this._transparentBoundingBoxes = {};
     }
     cleanUp() {
-        this._spatialStructure.cleanUp();
+        this._spatialTree.cleanUp();
         this._categories = {};
         this._model = new FragmentGroup();
         this._ifcCategories = new IfcCategories();
@@ -68163,7 +68212,7 @@ class DataConverter {
     }
     async generateFragmentData(webIfc) {
         await this._units.setUp(webIfc);
-        await this._spatialStructure.setupFloors(webIfc, this._units);
+        await this._spatialTree.setupFloors(webIfc, this._units);
         this.processAllFragmentsData();
         this.processAllUniqueItems();
         await this.saveModelData(webIfc);
@@ -68173,8 +68222,8 @@ class DataConverter {
         this._model.boundingBoxes = this._boundingBoxes;
         this._model.transparentBoundingBoxes = this._transparentBoundingBoxes;
         this._model.expressIDFragmentIDMap = this._expressIDfragmentIDMap;
-        this._model.levelRelationships = this._spatialStructure.itemsByFloor;
-        this._model.floorsProperties = this._spatialStructure.floorProperties;
+        this._model.levelRelationships = this._spatialTree.itemsByFloor;
+        this._model.floorsProperties = this._spatialTree.floorProperties;
         this._model.allTypes = IfcCategoryMap;
         this._model.itemTypes = this._categories;
         this._model.coordinationMatrix = this.getCoordinationMatrix(webIfc);
@@ -68208,7 +68257,7 @@ class DataConverter {
         //  (e.g. for a model with thousands of objects that repeat 2 times)
         const isUnique = data.instances.length === 1;
         const isInstanced = this._settings.instancedCategories.has(categoryID);
-        const noFloors = Object.keys(this._spatialStructure.itemsByFloor).length === 0;
+        const noFloors = Object.keys(this._spatialTree.itemsByFloor).length === 0;
         if (!isUnique || isInstanced || noFloors) {
             this.processInstancedItems(data);
         }
@@ -68220,7 +68269,7 @@ class DataConverter {
         for (const matID in data.geometriesByMaterial) {
             const instance = data.instances[0];
             const category = this._categories[instance.id];
-            const level = this._spatialStructure.itemsByFloor[instance.id];
+            const level = this._spatialTree.itemsByFloor[instance.id];
             this.initializeItem(data, category, level, matID);
             this.applyTransformToMergedGeometries(data, category, level, matID);
         }
@@ -68403,21 +68452,31 @@ class DataConverter {
 }
 
 /**
- * Reads all the geometry of the IFC file and generates an optimized `THREE.Mesh`.
+ * Reads all the geometry of the IFC file and generates a set of
+ * [fragments](https://github.com/ifcjs/fragment).
  */
 class IfcFragmentLoader {
-    constructor() {
+    constructor(fragments) {
+        /** Configuration of the IFC-fragment conversion. */
         this.settings = new Settings();
         this._webIfc = new IfcAPI2();
-        this._progress = new LoadProgress();
         this._items = {};
         this._materials = {};
         this._geometry = new Geometry(this._webIfc, this._items, this._materials);
         this._converter = new DataConverter(this._items, this._materials, this.settings);
+        this._fragments = fragments;
     }
-    get progress() {
-        return this._progress.event;
+    /** {@link Disposable.dispose} */
+    dispose() {
+        this.disposeWebIfc();
+        this.disposeMaterials();
+        this.disposeItems();
+        this._geometry.cleanUp();
+        this._geometry = null;
+        this._converter.cleanUp();
+        this._converter = null;
     }
+    /** Loads the IFC file and converts it to a set of fragments. */
     async load(ifcURL) {
         await this.initializeWebIfc();
         const file = await fetch(ifcURL);
@@ -68432,11 +68491,12 @@ class IfcFragmentLoader {
         await this._webIfc.Init();
     }
     async loadAllGeometry() {
-        await this._progress.setupLoadProgress(this._webIfc);
         await this.loadAllCategories();
         const model = await this._converter.generateFragmentData(this._webIfc);
-        this._progress.updateLoadProgress();
         this.cleanUp();
+        for (const fragment of model.fragments) {
+            this._fragments.list[fragment.id] = fragment;
+        }
         return model;
     }
     async loadAllCategories() {
@@ -68447,7 +68507,6 @@ class IfcFragmentLoader {
     }
     async loadMainCategories() {
         this._webIfc.StreamAllMeshes(0, (mesh) => {
-            this._progress.updateLoadProgress();
             this._geometry.streamMesh(this._webIfc, mesh);
         });
     }
@@ -68461,8 +68520,8 @@ class IfcFragmentLoader {
             this._geometry.addVoid(voidID);
         }
     }
-    // Some categories (like IfcSpace) need to be set explicitly
     loadOptionalCategories() {
+        // Some categories (like IfcSpace) need to be set explicitly
         const optionals = this.settings.optionalCategories;
         const callback = (mesh) => {
             this._geometry.streamMesh(this._webIfc, mesh);
@@ -68477,7 +68536,7 @@ class IfcFragmentLoader {
         this.resetObject(this._materials);
     }
     resetWebIfc() {
-        this._webIfc = null;
+        this.disposeWebIfc();
         this._webIfc = new IfcAPI2();
     }
     resetObject(object) {
@@ -68486,8 +68545,27 @@ class IfcFragmentLoader {
             delete object[key];
         }
     }
+    disposeWebIfc() {
+        this._webIfc = null;
+    }
+    disposeMaterials() {
+        for (const materialID in this._materials) {
+            this._materials[materialID].dispose();
+        }
+    }
+    disposeItems() {
+        for (const geometryID in this._items) {
+            const geometriesByMat = this._items[geometryID].geometriesByMaterial;
+            for (const matID in geometriesByMat) {
+                for (const geom of geometriesByMat[matID]) {
+                    geom.dispose();
+                }
+            }
+        }
+    }
 }
 
+// TODO: Clean up and document
 class MemoryCulling {
     constructor(components, updateInterval = 1000, rtWidth = 512, rtHeight = 512, autoUpdate = true) {
         this.components = components;
@@ -68497,9 +68575,7 @@ class MemoryCulling {
         this.autoUpdate = autoUpdate;
         // Alternative scene and meshes to make the visibility check
         this.scene = new THREE$1.Scene();
-        this.materialCache = new Map();
         this.fragmentsDiscovered = new Event();
-        // TODO: Document and clean up data structures
         this.enabled = true;
         this.opaqueMeshes = [];
         this.transparentMeshes = [];
@@ -68514,6 +68590,7 @@ class MemoryCulling {
         this.undiscoveredFragments = new Map();
         this.previouslyDiscoveredFragments = new Set();
         this.visibleExpressId = [];
+        this._disposer = new Disposer();
         this.scaleFactor = 0.00001;
         this.invisibleBoxes = new Set();
         this.colors = { r: 0, g: 0, b: 0, i: 0 };
@@ -68529,17 +68606,17 @@ class MemoryCulling {
             this.renderer.setSize(this.rtWidth, this.rtHeight);
             this.renderer.setRenderTarget(this.renderTarget);
             this.renderer.render(this.scene, camera);
-            this.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, this.buffer);
+            this.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, this._buffer);
             this.worker.postMessage({
-                buffer: this.buffer,
+                buffer: this._buffer,
             });
             for (const mesh of this.transparentMeshes) {
                 this.scene.add(mesh);
             }
             this.renderer.render(this.scene, camera);
-            this.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, this.buffer);
+            this.renderer.readRenderTargetPixels(this.renderTarget, 0, 0, this.rtWidth, this.rtHeight, this._buffer);
             this.worker.postMessage({
-                buffer: this.buffer,
+                buffer: this._buffer,
             });
             this.renderer.setRenderTarget(null);
             if (this.renderDebugFrame && this.isFirstRenderingPass) {
@@ -68565,7 +68642,7 @@ class MemoryCulling {
         this.renderer.clippingPlanes = planes;
         this.renderTarget = new THREE$1.WebGLRenderTarget(rtWidth, rtHeight);
         this.bufferSize = rtWidth * rtHeight * 4;
-        this.buffer = new Uint8Array(this.bufferSize);
+        this._buffer = new Uint8Array(this.bufferSize);
         const code = `
       addEventListener("message", (event) => {
         const { buffer } = event.data;
@@ -68585,6 +68662,36 @@ class MemoryCulling {
         this.worker.addEventListener("message", this.handleWorkerMessage);
         if (autoUpdate)
             window.setInterval(this.updateVisibility, updateInterval);
+    }
+    dispose() {
+        this.enabled = false;
+        this.worker.terminate();
+        this.fragmentsDiscovered.reset();
+        this.renderTarget.dispose();
+        this.renderer.dispose();
+        this.scene.children.length = 0;
+        for (const mesh of this.transparentMeshes) {
+            this._disposer.dispose(mesh);
+        }
+        for (const mesh of this.opaqueMeshes) {
+            this._disposer.dispose(mesh);
+        }
+        for (const fragID in this.fragmentMeshMap) {
+            for (const itemID in this.fragmentMeshMap[fragID]) {
+                const mesh = this.fragmentMeshMap[fragID][itemID].mesh;
+                this._disposer.dispose(mesh);
+            }
+        }
+        this.fragmentMeshMap = {};
+        this.transparentMeshes = [];
+        this.opaqueMeshes = [];
+        this._buffer = null;
+        this.exclusions.clear();
+        this.discoveredFragments.clear();
+        this.undiscoveredFragments.clear();
+        this.previouslyDiscoveredFragments.clear();
+        this.fragmentColorMap.clear();
+        this.invisibleBoxes.clear();
     }
     getNextColor() {
         if (this.colors.i === 0) {
@@ -68769,8 +68876,8 @@ class MemoryCulling {
     }
 }
 
+// TODO: Clean up and document
 class FragmentExploder {
-    // private transformedFragments = new Set<string>();
     constructor(fragments) {
         this.fragments = fragments;
         this.height = 10;
@@ -68778,6 +68885,9 @@ class FragmentExploder {
         this.enabled = false;
         this.initialized = false;
         this.explodedFragments = new Set();
+    }
+    dispose() {
+        this.explodedFragments.clear();
     }
     explode() {
         this.initialized = true;
@@ -68798,7 +68908,7 @@ class FragmentExploder {
         const groups = this.fragments.groups.groupSystems[this.groupName];
         for (const groupName in groups) {
             for (const fragID in groups[groupName]) {
-                const fragment = this.fragments.fragments[fragID];
+                const fragment = this.fragments.list[fragID];
                 const customID = groupName + fragID;
                 if (!fragment) {
                     continue;
@@ -68884,20 +68994,29 @@ class FragmentExploder {
     }
 }
 
-// TODO: Clean up and document all this folder
+/**
+ * Main object that manages all the components related to the
+ * [fragment geometric system](https://github.com/ifcjs/fragment).
+ */
 class Fragments extends Component {
     constructor(components) {
         super();
         this.components = components;
+        /** {@link Component.name} */
         this.name = "Fragments";
+        /** {@link Component.enabled} */
         this.enabled = true;
-        this.fragments = {};
-        this.fragmentMeshes = [];
-        this.ifcLoader = new IfcFragmentLoader();
-        this.loader = new FragmentLoader();
+        /** All the created [fragments](https://github.com/ifcjs/fragment). */
+        this.list = {};
+        /** Helper object to convert IFC files to fragment. */
+        this.ifcLoader = new IfcFragmentLoader(this);
+        /** Helper object to index and store fragments. */
         this.groups = new FragmentGrouper(this);
+        /** Helper object to index and store fragments. */
         this.properties = new FragmentProperties();
+        /** Helper object to easily work with fragment properties. */
         this.tree = new FragmentSpatialTree(this.properties);
+        this._loader = new FragmentLoader();
         this.highlighter = new FragmentHighlighter(components, this);
         this.exploder = new FragmentExploder(this);
         this.edges = new FragmentEdges(components);
@@ -68905,25 +69024,48 @@ class Fragments extends Component {
         this.culler = new FragmentCulling(components, this);
         this.memoryCuller = new MemoryCulling(components);
     }
+    /** {@link Component.get} */
     get() {
-        return Object.values(this.fragments);
+        return Object.values(this.list);
     }
-    async load(geometryURL, dataURL, matrix = new THREE$1.Matrix4()) {
-        const fragment = await this.loader.load(geometryURL, dataURL);
-        if (matrix) {
-            fragment.mesh.applyMatrix4(matrix);
+    /** The list of meshes of the created fragments. */
+    get meshes() {
+        const allMeshes = [];
+        for (const fragID in this.list) {
+            allMeshes.push(this.list[fragID].mesh);
         }
-        this.add(fragment);
-        return fragment;
+        return allMeshes;
     }
-    add(fragment) {
-        var _a;
-        this.fragments[fragment.id] = fragment;
-        this.components.meshes.push(fragment.mesh);
-        this.fragmentMeshes.push(fragment.mesh);
-        (_a = this.culler) === null || _a === void 0 ? void 0 : _a.add(fragment);
+    /** {@link Component.get} */
+    dispose() {
+        for (const fragID in this.list) {
+            const fragment = this.list[fragID];
+            fragment.dispose(true);
+        }
+        this.list = {};
+        this.ifcLoader.dispose();
+        this.groups.dispose();
+        this.properties.dispose();
+        this.highlighter.dispose();
+        this.edges.dispose();
+        this.exploder.dispose();
+        this.materials.dispose();
+        this.culler.dispose();
+        this.memoryCuller.dispose();
+    }
+    /**
+     * Adds a new fragment into the scene.
+     *
+     * @param geometryURL - the URL of the geometry of the fragment.
+     * @param dataURL - the URL of the json data of the fragment.
+     */
+    async load(geometryURL, dataURL) {
+        const fragment = await this._loader.load(geometryURL, dataURL);
+        this.list[fragment.id] = fragment;
+        this.culler.add(fragment);
         const scene = this.components.scene.get();
         scene.add(fragment.mesh);
+        return fragment;
     }
 }
 
@@ -68935,8 +69077,9 @@ class ProjectionManager {
         this.components = components;
         this._previousDistance = -1;
         this._camera = camera;
-        this._currentCamera = camera.get("Perspective");
-        this._currentProjection = "Perspective";
+        const perspective = "Perspective";
+        this._currentCamera = camera.get(perspective);
+        this._currentProjection = perspective;
     }
     get projection() {
         return this._currentProjection;
@@ -69162,11 +69305,14 @@ class OrthoPerspectiveCamera extends SimpleCamera {
         this._navigationModes.set("Plan", new PlanMode(this));
         this.currentMode = this._navigationModes.get("Orbit");
         this.currentMode.toggle(true, { preventTargetAdjustment: true });
-        const modes = Object.values(this._navigationModes);
-        for (const mode of modes) {
-            mode.projectionChanged.on(this.projectionChanged.trigger);
-        }
+        this.toggleEvents(true);
         this._projectionManager = new ProjectionManager(components, this);
+    }
+    /** {@link Disposable.dispose} */
+    dispose() {
+        super.dispose();
+        this.toggleEvents(false);
+        this._orthoCamera.removeFromParent();
     }
     /**
      * Similar to {@link Component.get}, but with an optional argument
@@ -69195,7 +69341,7 @@ class OrthoPerspectiveCamera extends SimpleCamera {
     async toggleProjection() {
         const projection = this.getProjection();
         const newProjection = projection === "Perspective" ? "Orthographic" : "Perspective";
-        this.setProjection(newProjection);
+        await this.setProjection(newProjection);
     }
     /**
      * Sets the current {@link CameraProjection}. This triggers the event
@@ -69311,6 +69457,17 @@ class OrthoPerspectiveCamera extends SimpleCamera {
         this._orthoCamera.top = this._frustumSize / 2;
         this._orthoCamera.bottom = -this._frustumSize / 2;
         this._orthoCamera.updateProjectionMatrix();
+    }
+    toggleEvents(active) {
+        const modes = Object.values(this._navigationModes);
+        for (const mode of modes) {
+            if (active) {
+                mode.projectionChanged.on(this.projectionChanged.trigger);
+            }
+            else {
+                mode.projectionChanged.reset();
+            }
+        }
     }
 }
 
@@ -70519,6 +70676,9 @@ class LineSegments2 extends Mesh {
 
 LineSegments2.prototype.isLineSegments2 = true;
 
+/**
+ * The edges that are drawn when the {@link EdgesPlane} sections a mesh.
+ */
 class ClippingEdges extends Component {
     constructor(components, plane, styles) {
         super();
@@ -70577,8 +70737,6 @@ class ClippingEdges extends Component {
         ClippingEdges._basicEdges.removeFromParent();
         ClippingEdges._basicEdges.geometry.dispose();
         ClippingEdges._basicEdges = new THREE$1.LineSegments();
-        this._edges = null;
-        this._plane = null;
     }
     // Initializes the helper geometry used to compute the vertices
     static newGeneratorGeometry() {
@@ -70725,15 +70883,17 @@ class EdgesPlane extends SimplePlane {
         super(components, origin, normal, size, material, isPlan);
         this.edges = new ClippingEdges(components, this._plane, styles);
     }
+    /** {@link Disposable.dispose} */
     set enabled(state) {
         super.enabled = state;
         this.edges.visible = state;
     }
+    /** {@link Disposable.dispose} */
     dispose() {
         super.dispose();
         this.edges.dispose();
-        this.edges = null;
     }
+    /** {@link Updateable.update} */
     update() {
         super.update();
         this.edges.update();
@@ -70796,10 +70956,17 @@ class EdgesClipper extends SimpleClipper {
         this.name = "EdgesClipper";
         this.styles = new EdgesStyles(components);
     }
+    /** {@link Component.get} */
+    dispose() {
+        super.dispose();
+        this.styles.dispose();
+    }
     /**
      * Updates all the lines of the {@link ClippingEdges}.
      */
     updateEdges() {
+        if (!this.enabled)
+            return;
         for (const plane of this._planes) {
             plane.update();
         }
@@ -73605,23 +73772,10 @@ class Postproduction {
         this.active = false;
         window.removeEventListener("resize", this.onResize);
         this.renderTarget.dispose();
-        this.renderTarget = null;
         (_a = this.depthTexture) === null || _a === void 0 ? void 0 : _a.dispose();
-        this.depthTexture = null;
         (_b = this.customOutline) === null || _b === void 0 ? void 0 : _b.dispose();
-        this.customOutline = null;
-        this.composer = null;
         this.excludedItems.clear();
-        this.excludedItems = null;
-        this.composer = null;
         this.htmlOverlay.remove();
-        this.htmlOverlay = null;
-        this.outlineParams = null;
-        this.components = null;
-        this.renderer = null;
-        this.saoPass = null;
-        this.outlineUniforms = null;
-        this.scene = null;
     }
     setSize(width, height) {
         this.composer.setSize(width, height);
@@ -73759,12 +73913,21 @@ class Postproduction {
     }
 }
 
+/**
+ * Renderer that uses efficient postproduction effects (e.g. Ambient Occlusion).
+ */
 class PostproductionRenderer extends SimpleRenderer {
     constructor(components, container) {
         super(components, container);
         this.postproduction = new Postproduction(components, this._renderer);
         this.resize();
     }
+    /** {@link Disposable.dispose}. */
+    dispose() {
+        super.dispose();
+        this.postproduction.dispose();
+    }
+    /** {@link Resizeable.resize}. */
     resize() {
         var _a;
         super.resize();
@@ -73909,19 +74072,23 @@ class ShadowDropper extends Component {
         this.depthMaterial = new THREE$1.MeshDepthMaterial();
         this.initializeDepthMaterial();
     }
+    /** {@link Component.get} */
     get() {
         return this.shadows;
     }
+    /** {@link Disposable.dispose} */
     dispose() {
         const shadowIDs = Object.keys(this.shadows);
         shadowIDs.forEach((shadowID) => this.deleteShadow(shadowID));
-        this.shadows = null;
         this.tempMaterial.dispose();
-        this.tempMaterial = null;
         this.depthMaterial.dispose();
-        this.depthMaterial = null;
-        this.components = null;
     }
+    /**
+     * Creates a blurred dropped shadow of the given mesh.
+     *
+     * @param model - the mesh whose shadow to generate.
+     * @param id - the name of this shadow.
+     */
     renderShadow(model, id) {
         if (this.shadows[id]) {
             throw new Error(`There is already a shadow with ID ${id}`);
@@ -73933,6 +74100,11 @@ class ShadowDropper extends Component {
         this.bakeShadow(model, shadow);
         return shadow.root;
     }
+    /**
+     * Deletes the specified shadow (if it exists).
+     *
+     * @param id - the name of this shadow.
+     */
     deleteShadow(id) {
         const shadow = this.shadows[id];
         delete this.shadows[id];
@@ -74122,16 +74294,22 @@ class ShadowDropper extends Component {
     }
 }
 
-// TODO: Clean up and document this
+/**
+ * Helper to control the camera and easily define and navigate 2D floor plans.
+ */
 class PlanNavigator extends Component {
     constructor(clipper, camera) {
         super();
         this.clipper = clipper;
         this.camera = camera;
         this.name = "PlanNavigator";
+        /** {@link Component.enabled} */
         this.enabled = false;
+        /** The offset from the clipping planes to their respective floor plan elevation. */
         this.defaultSectionOffset = 1.5;
+        /** The offset of the 2D camera to the floor plan elevation. */
         this.defaultCameraOffset = 30;
+        /** The created floor plans. */
         this.storeys = [];
         this.plans = {};
         this.floorPlanViewCached = false;
@@ -74139,13 +74317,21 @@ class PlanNavigator extends Component {
         this.previousTarget = new THREE$1.Vector3();
         this.previousProjection = "Perspective";
     }
+    /** {@link Component.get} */
     get() {
         return this.plans;
     }
+    /** {@link Disposable.dispose} */
     dispose() {
-        this.storeys = null;
-        this.plans = null;
+        this.storeys = [];
+        this.plans = {};
+        this.clipper.dispose();
     }
+    /**
+     * Creates a new floor plan in the navigator.
+     *
+     * @param config - Necessary data to initialize the floor plan.
+     */
     async create(config) {
         if (this.plans[config.id]) {
             throw new Error(`There's already a plan with the id: ${config.id}`);
@@ -74153,6 +74339,12 @@ class PlanNavigator extends Component {
         this.plans[config.id] = config;
         await this.createClippingPlane(config);
     }
+    /**
+     * Make the navigator go to the specified floor plan.
+     *
+     * @param id - Floor plan to go to.
+     * @param animate - Whether to animate the camera transition.
+     */
     async goTo(id, animate = false) {
         var _a;
         if (((_a = this.currentPlan) === null || _a === void 0 ? void 0 : _a.id) === id) {
@@ -74167,6 +74359,11 @@ class PlanNavigator extends Component {
             this.enabled = true;
         }
     }
+    /**
+     * Deactivate navigator and go back to the previous view.
+     *
+     * @param animate - Whether to animate the camera transition.
+     */
     async exitPlanView(animate = false) {
         if (!this.enabled)
             return;
@@ -74247,6 +74444,10 @@ class MapboxRenderer extends RendererComponent {
         this.name = "MapboxRenderer";
         /** {@link Component.enabled} */
         this.enabled = true;
+        /** {@link Updateable.beforeUpdate} */
+        this.beforeUpdate = new Event();
+        /** {@link Updateable.afterUpdate} */
+        this.afterUpdate = new Event();
         /**
          * The renderer can only be initialized once Mapbox' map has been loaded. This
          * method triggers when that happens, so any initial logic that depends on the
@@ -74255,7 +74456,7 @@ class MapboxRenderer extends RendererComponent {
         this.initialized = new Event();
         this._labelRenderer = new CSS2DRenderer();
         this._renderer = new THREE$1.WebGLRenderer();
-        this.initError = "Mapbox scene isn't initialized yet!";
+        this._initError = "Mapbox scene isn't initialized yet!";
         this.updateLabelRendererSize = () => {
             var _a;
             if ((_a = this._renderer) === null || _a === void 0 ? void 0 : _a.domElement) {
@@ -74275,7 +74476,7 @@ class MapboxRenderer extends RendererComponent {
     /** {@link Resizeable.getSize} */
     getSize() {
         if (!this._renderer) {
-            throw new Error(this.initError);
+            throw new Error(this._initError);
         }
         return new THREE$1.Vector2(this._renderer.domElement.clientWidth, this._renderer.domElement.clientHeight);
     }
@@ -74283,7 +74484,11 @@ class MapboxRenderer extends RendererComponent {
     resize() { }
     /** {@link Disposable.dispose} */
     dispose() {
+        this.enabled = false;
         window.removeEventListener("resize", this.updateLabelRendererSize);
+        this._renderer.dispose();
+        this._map.remove();
+        this._map = null;
     }
     initialize(context) {
         const canvas = this._map.getCanvas();
@@ -74328,8 +74533,9 @@ class MapboxRenderer extends RendererComponent {
     }
     // Source: https://docs.mapbox.com/mapbox-gl-js/example/add-3d-model/
     render(scene, matrix) {
-        if (!this._renderer)
+        if (!this._renderer || !this.enabled)
             return;
+        this.beforeUpdate.trigger(this);
         const rotationX = new THREE$1.Matrix4().makeRotationAxis(new THREE$1.Vector3(1, 0, 0), this._modelTransform.rotateX);
         const rotationY = new THREE$1.Matrix4().makeRotationAxis(new THREE$1.Vector3(0, 1, 0), this._modelTransform.rotateY);
         const rotationZ = new THREE$1.Matrix4().makeRotationAxis(new THREE$1.Vector3(0, 0, 1), this._modelTransform.rotateZ);
@@ -74346,6 +74552,7 @@ class MapboxRenderer extends RendererComponent {
         this._renderer.render(scene, camera);
         this._labelRenderer.render(scene, camera);
         this._map.triggerRepaint();
+        this.afterUpdate.trigger(this);
     }
     initializeLabelRenderer() {
         var _a, _b;
@@ -74418,4 +74625,4 @@ class MapboxCamera extends Component {
     }
 }
 
-export { ClippingEdges, Component, Components, DataConverter, DimensionLabelClassName, DimensionPreviewClassName, Disposer, EdgesClipper, EdgesPlane, EdgesStyles, Event, FirstPersonMode, FragmentCulling, FragmentEdges, FragmentExploder, FragmentGroup, FragmentGrouper, FragmentHighlighter, FragmentMaterials, FragmentProperties, FragmentSpatialTree, Fragments, Geometry, GeometryTypes, IfcCategories, IfcCategoryMap, IfcElements, IfcFragmentLoader, IfcJsonExporter, LoadProgress, MapboxCamera, MapboxRenderer, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, RendererComponent, Settings, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensionLine, SimpleDimensions, SimpleGrid, SimpleMouse, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, SpatialStructure, ToolComponents, getBasisTransform, rightToLeftHand, stringToAxes };
+export { ClippingEdges, Component, Components, DataConverter, DimensionLabelClassName, DimensionPreviewClassName, Disposer, EdgesClipper, EdgesPlane, EdgesStyles, Event, FirstPersonMode, FragmentCulling, FragmentEdges, FragmentExploder, FragmentGroup, FragmentGrouper, FragmentHighlighter, FragmentMaterials, FragmentProperties, FragmentSpatialTree, Fragments, Geometry, GeometryTypes, IfcCategories, IfcCategoryMap, IfcElements, IfcFragmentLoader, IfcJsonExporter, MapboxCamera, MapboxRenderer, OrbitMode, OrthoPerspectiveCamera, PlanMode, PlanNavigator, Postproduction, PostproductionRenderer, ProjectionManager, RendererComponent, Settings, ShadowDropper, SimpleCamera, SimpleClipper, SimpleDimensionLine, SimpleDimensions, SimpleGrid, SimpleMouse, SimplePlane, SimpleRaycaster, SimpleRenderer, SimpleScene, SpatialStructure, ToolComponents, getBasisTransform, rightToLeftHand, stringToAxes };

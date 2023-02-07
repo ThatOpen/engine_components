@@ -1,5 +1,7 @@
 import { FragmentProperties } from "./fragment-properties";
 
+// TODO: Clean up and document
+
 export interface Node {
   expressID: any;
   type: string;
@@ -24,7 +26,7 @@ export class FragmentSpatialTree {
   }
 
   // Recursively constructs the spatial tree
-  constructSpatialNode(
+  private constructSpatialNode(
     guid: string,
     item: Node,
     contains: any[],

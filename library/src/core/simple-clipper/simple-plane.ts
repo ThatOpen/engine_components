@@ -111,15 +111,15 @@ export class SimplePlane
     }
   }
 
+  /** {@link Updateable.update} */
   update(): void {
-    if (this._enabled) {
-      this.beforeUpdate.trigger(this._plane);
-      this._plane.setFromNormalAndCoplanarPoint(
-        this._normal,
-        this._helper.position
-      );
-      this.afterUpdate.trigger(this._plane);
-    }
+    if (!this._enabled) return;
+    this.beforeUpdate.trigger(this._plane);
+    this._plane.setFromNormalAndCoplanarPoint(
+      this._normal,
+      this._helper.position
+    );
+    this.afterUpdate.trigger(this._plane);
   }
 
   /** {@link Component.get} */
@@ -129,24 +129,18 @@ export class SimplePlane
 
   /** {@link Disposable.dispose} */
   dispose() {
-    (this.onStartDragging as any) = null;
-    (this.onEndDragging as any) = null;
-
+    this._enabled = false;
+    this.beforeUpdate.reset();
+    this.afterUpdate.reset();
+    this.onStartDragging.reset();
+    this.onEndDragging.reset();
     this._helper.removeFromParent();
-
     this._components.renderer.togglePlane(false, this._plane);
-
     this._arrowBoundBox.removeFromParent();
     this._arrowBoundBox.geometry.dispose();
-    (this._arrowBoundBox as any) = undefined;
-
     this._planeMesh.geometry.dispose();
-    (this._planeMesh.geometry as any) = undefined;
-
     this._controls.removeFromParent();
     this._controls.dispose();
-
-    this._helper.removeFromParent();
   }
 
   private newTransformControls() {

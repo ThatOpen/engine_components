@@ -165,7 +165,7 @@
 		// Render shadows
 
 		const guids = fragments.groups.get({ category: 'IFCSLAB' });
-		const slabs = Object.keys(guids).map(guid => fragments.fragments[guid]);
+		const slabs = Object.keys(guids).map(guid => fragments.list[guid]);
 		const meshes = slabs.map(slab => slab.mesh);
 		const shadow = shadows.renderShadow(meshes, 'example');
 		renderer.postproduction.excludedItems.add(shadow);
@@ -189,7 +189,7 @@
 				const models = fragments.groups.get({ [id]: itemName });
 				for (const guid in models) {
 					const ids = models[guid];
-					const frag = fragments.fragments[guid];
+					const frag = fragments.list[guid];
 					frag.setVisibility(ids, visible);
 
 					const culled = fragments.culler.meshes.get(frag.id);

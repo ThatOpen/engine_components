@@ -3,37 +3,37 @@ import { Fragment } from "bim-fragment";
 import { Material } from "three";
 import { Fragments } from ".";
 import { Components } from "../components";
-import { Event } from "../core";
+import { Disposable, Disposer, Event } from "../core";
 
-export class FragmentCulling {
+// TODO: Clean up and document
+
+export class FragmentCulling implements Disposable {
   readonly renderer: THREE.WebGLRenderer;
   readonly renderTarget: THREE.WebGLRenderTarget;
   readonly bufferSize: number;
-  readonly buffer: Uint8Array;
   readonly materialCache: Map<string, THREE.MeshBasicMaterial>;
   readonly worker: Worker;
 
   enabled = true;
   viewUpdated = new Event();
   needsUpdate = false;
-  exclusions = new Map<string, Fragment>();
   fragmentColorMap = new Map<string, Fragment>();
   renderDebugFrame = false;
+  visibleFragments: Fragment[] = [];
+  meshes = new Map<string, THREE.InstancedMesh>();
 
-  readonly meshes = new Map<string, THREE.InstancedMesh>();
-
-  public visibleFragments: Fragment[] = [];
-  private readonly previouslyVisibleMeshes = new Set<string>();
-
-  private readonly transparentMat = new THREE.MeshBasicMaterial({
+  private readonly _previouslyVisibleMeshes = new Set<string>();
+  private readonly _transparentMat = new THREE.MeshBasicMaterial({
     transparent: true,
     opacity: 0,
   });
 
-  private colors = { r: 0, g: 0, b: 0, i: 0 };
+  private _disposer = new Disposer();
+  private _buffer: Uint8Array;
+  private _colors = { r: 0, g: 0, b: 0, i: 0 };
 
   // Alternative scene and meshes to make the visibility check
-  private readonly scene = new THREE.Scene();
+  private readonly _scene = new THREE.Scene();
 
   constructor(
     private components: Components,
@@ -48,7 +48,7 @@ export class FragmentCulling {
     this.renderer.clippingPlanes = planes;
     this.renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight);
     this.bufferSize = rtWidth * rtHeight * 4;
-    this.buffer = new Uint8Array(this.bufferSize);
+    this._buffer = new Uint8Array(this.bufferSize);
     this.materialCache = new Map<string, THREE.MeshBasicMaterial>();
 
     const code = `
@@ -72,6 +72,33 @@ export class FragmentCulling {
     if (autoUpdate) window.setInterval(this.updateVisibility, updateInterval);
   }
 
+  dispose() {
+    this.enabled = false;
+    this._scene.children.length = 0;
+    this.viewUpdated.reset();
+    this.worker.terminate();
+    this.renderer.dispose();
+    this.renderTarget.dispose();
+    (this._buffer as any) = null;
+    this._transparentMat.dispose();
+    this.viewUpdated.reset();
+    this.fragmentColorMap.clear();
+    this.visibleFragments = [];
+    for (const id in this.materialCache) {
+      const material = this.materialCache.get(id);
+      if (material) {
+        material.dispose();
+      }
+    }
+    for (const id in this.meshes) {
+      const mesh = this.meshes.get(id);
+      if (mesh) {
+        this._disposer.dispose(mesh);
+      }
+    }
+    this.meshes.clear();
+  }
+
   add(fragment: Fragment) {
     const { geometry, material } = fragment.mesh;
 
@@ -86,7 +113,7 @@ export class FragmentCulling {
 
       for (const mat of material) {
         if (this.isTransparent(mat)) {
-          matArray.push(this.transparentMat);
+          matArray.push(this._transparentMat);
         } else {
           transparentOnly = false;
           matArray.push(colorMaterial);
@@ -122,7 +149,7 @@ export class FragmentCulling {
     mesh.applyMatrix4(fragment.mesh.matrix);
     mesh.updateMatrix();
 
-    this.scene.add(mesh);
+    this._scene.add(mesh);
     this.meshes.set(fragment.id, mesh);
   }
 
@@ -135,24 +162,24 @@ export class FragmentCulling {
 
     this.renderer.setSize(this.rtWidth, this.rtHeight);
     this.renderer.setRenderTarget(this.renderTarget);
-    this.renderer.render(this.scene, camera);
+    this.renderer.render(this._scene, camera);
     this.renderer.readRenderTargetPixels(
       this.renderTarget,
       0,
       0,
       this.rtWidth,
       this.rtHeight,
-      this.buffer
+      this._buffer
     );
 
     this.renderer.setRenderTarget(null);
 
     if (this.renderDebugFrame) {
-      this.renderer.render(this.scene, camera);
+      this.renderer.render(this._scene, camera);
     }
 
     this.worker.postMessage({
-      buffer: this.buffer,
+      buffer: this._buffer,
     });
 
     this.needsUpdate = false;
@@ -162,8 +189,8 @@ export class FragmentCulling {
   private handleWorkerMessage = (event: MessageEvent) => {
     const colors = event.data.colors as Set<string>;
 
-    const meshesThatJustDisappeared = new Set(this.previouslyVisibleMeshes);
-    this.previouslyVisibleMeshes.clear();
+    const meshesThatJustDisappeared = new Set(this._previouslyVisibleMeshes);
+    this._previouslyVisibleMeshes.clear();
 
     this.visibleFragments = [];
 
@@ -173,7 +200,7 @@ export class FragmentCulling {
       if (fragment) {
         this.visibleFragments.push(fragment);
         fragment.mesh.visible = true;
-        this.previouslyVisibleMeshes.add(fragment.id);
+        this._previouslyVisibleMeshes.add(fragment.id);
         meshesThatJustDisappeared.delete(fragment.id);
         this.cullEdges(fragment, true);
       }
@@ -181,7 +208,7 @@ export class FragmentCulling {
 
     // Hide meshes that were visible before but not anymore
     for (const id of meshesThatJustDisappeared) {
-      const fragment = this.fragment.fragments[id];
+      const fragment = this.fragment.list[id];
       fragment.mesh.visible = false;
       this.cullEdges(fragment, false);
     }
@@ -206,37 +233,37 @@ export class FragmentCulling {
   }
 
   private getNextColor() {
-    if (this.colors.i === 0) {
-      this.colors.b++;
-      if (this.colors.b === 256) {
-        this.colors.b = 0;
-        this.colors.i = 1;
+    if (this._colors.i === 0) {
+      this._colors.b++;
+      if (this._colors.b === 256) {
+        this._colors.b = 0;
+        this._colors.i = 1;
       }
     }
 
-    if (this.colors.i === 1) {
-      this.colors.g++;
-      this.colors.i = 0;
-      if (this.colors.g === 256) {
-        this.colors.g = 0;
-        this.colors.i = 2;
+    if (this._colors.i === 1) {
+      this._colors.g++;
+      this._colors.i = 0;
+      if (this._colors.g === 256) {
+        this._colors.g = 0;
+        this._colors.i = 2;
       }
     }
 
-    if (this.colors.i === 2) {
-      this.colors.r++;
-      this.colors.i = 1;
-      if (this.colors.r === 256) {
-        this.colors.r = 0;
-        this.colors.i = 0;
+    if (this._colors.i === 2) {
+      this._colors.r++;
+      this._colors.i = 1;
+      if (this._colors.r === 256) {
+        this._colors.r = 0;
+        this._colors.i = 0;
       }
     }
 
     return {
-      r: this.colors.r,
-      g: this.colors.g,
-      b: this.colors.b,
-      code: `${this.colors.r}${this.colors.g}${this.colors.b}`,
+      r: this._colors.r,
+      g: this._colors.g,
+      b: this._colors.b,
+      code: `${this._colors.r}${this._colors.g}${this._colors.b}`,
     };
   }
 

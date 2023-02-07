@@ -1,23 +1,32 @@
 import * as THREE from "three";
 import { EdgesClipper } from "../visibility";
 import { CameraProjection, OrthoPerspectiveCamera } from "../cameras";
-import { PlanView, PlanViewConfig } from "./base-types";
-import { Component } from "../core";
+import { PlanView } from "./base-types";
+import { Component, Disposable } from "../core";
 
 export interface Plans {
   [id: string]: PlanView;
 }
 
-// TODO: Clean up and document this
-export class PlanNavigator extends Component<Plans> {
+/**
+ * Helper to control the camera and easily define and navigate 2D floor plans.
+ */
+export class PlanNavigator extends Component<Plans> implements Disposable {
   name = "PlanNavigator";
 
+  /** {@link Component.enabled} */
   enabled = false;
 
+  /** The floorplan that is currently selected. */
   currentPlan?: PlanView;
 
+  /** The offset from the clipping planes to their respective floor plan elevation. */
   defaultSectionOffset = 1.5;
+
+  /** The offset of the 2D camera to the floor plan elevation. */
   defaultCameraOffset = 30;
+
+  /** The created floor plans. */
   storeys: { [modelID: number]: any[] } = [];
 
   private plans: Plans = {};
@@ -26,6 +35,7 @@ export class PlanNavigator extends Component<Plans> {
   private previousTarget = new THREE.Vector3();
   private previousProjection: CameraProjection = "Perspective";
 
+  /** {@link Component.get} */
   get(): Plans {
     return this.plans;
   }
@@ -37,12 +47,19 @@ export class PlanNavigator extends Component<Plans> {
     super();
   }
 
+  /** {@link Disposable.dispose} */
   dispose() {
-    (this.storeys as any) = null;
-    (this.plans as any) = null;
+    this.storeys = [];
+    this.plans = {};
+    this.clipper.dispose();
   }
 
-  async create(config: PlanViewConfig) {
+  /**
+   * Creates a new floor plan in the navigator.
+   *
+   * @param config - Necessary data to initialize the floor plan.
+   */
+  async create(config: PlanView) {
     if (this.plans[config.id]) {
       throw new Error(`There's already a plan with the id: ${config.id}`);
     }
@@ -50,6 +67,12 @@ export class PlanNavigator extends Component<Plans> {
     await this.createClippingPlane(config);
   }
 
+  /**
+   * Make the navigator go to the specified floor plan.
+   *
+   * @param id - Floor plan to go to.
+   * @param animate - Whether to animate the camera transition.
+   */
   async goTo(id: string, animate = false) {
     if (this.currentPlan?.id === id) {
       return;
@@ -63,6 +86,12 @@ export class PlanNavigator extends Component<Plans> {
       this.enabled = true;
     }
   }
+
+  /**
+   * Deactivate navigator and go back to the previous view.
+   *
+   * @param animate - Whether to animate the camera transition.
+   */
 
   async exitPlanView(animate = false) {
     if (!this.enabled) return;
@@ -95,7 +124,7 @@ export class PlanNavigator extends Component<Plans> {
     }
   }
 
-  private async createClippingPlane(config: PlanViewConfig) {
+  private async createClippingPlane(config: PlanView) {
     const { normal, point } = config;
     const plane = this.clipper.createFromNormalAndCoplanarPoint(
       normal,

@@ -135,15 +135,13 @@ export class SimpleDimensions
 
   /** {@link Disposable.dispose} */
   dispose() {
-    (this.components as any) = null;
+    this.enabled = false;
     this._dimensions.forEach((dim) => dim.dispose());
-    (this._dimensions as any) = null;
+    this._dimensions = [];
     this._disposer.dispose(this._endpointMesh);
-    (this._endpointMesh as any) = null;
-    (this._temp.dimension as any) = null;
+    this._endpointMesh.removeFromParent();
     this.previewElement.removeFromParent();
     this.previewElement.element.remove();
-    (this.previewElement as any) = null;
   }
 
   /** {@link Updateable.update} */

@@ -1,4 +1,7 @@
-import { Fragments } from './fragment';
+import { Fragments } from "./fragment";
+import { Disposable } from "../core";
+
+// TODO: Clean up and document
 
 export interface ItemGroupSystems {
   [systemName: string]: { [groupName: string]: string[] };
@@ -8,16 +11,20 @@ export interface GroupSystems {
   [systemName: string]: { [groupName: string]: { [guid: string]: string[] } };
 }
 
-export class FragmentGrouper {
+export class FragmentGrouper implements Disposable {
   groupSystems: GroupSystems = {
     category: {},
     floor: {},
   };
 
-  fragments: Fragments
+  private _fragments: Fragments;
 
   constructor(fragments: Fragments) {
-    this.fragments = fragments
+    this._fragments = fragments;
+  }
+
+  dispose() {
+    this.groupSystems = {};
   }
 
   add(guid: string, groupsSystems: ItemGroupSystems) {
@@ -37,11 +44,11 @@ export class FragmentGrouper {
   }
 
   setVisibility(systemName: string, groupName: string, visible: boolean) {
-    const fragmentsMap = this.groupSystems[systemName][groupName]
+    const fragmentsMap = this.groupSystems[systemName][groupName];
     for (const fragmentId in fragmentsMap) {
-      const fragment = this.fragments.fragments[fragmentId]
-      const ids = fragmentsMap[fragmentId]
-      fragment.setVisibility(ids, visible)
+      const fragment = this._fragments.list[fragmentId];
+      const ids = fragmentsMap[fragmentId];
+      fragment.setVisibility(ids, visible);
     }
   }
 
@@ -71,6 +78,4 @@ export class FragmentGrouper {
     }
     return models;
   }
-
-  update(_delta: number): void {}
 }

@@ -6,7 +6,7 @@ import { Component } from "../base-components";
 import { Event } from "../event";
 
 /**
- * An lightweight component to easily create and handle
+ * A lightweight component to easily create and handle
  * [clipping planes](https://threejs.org/docs/#api/en/materials/Material.clippingPlanes).
  *
  * @param components - the instance of {@link Components} used.
@@ -113,11 +113,14 @@ export class SimpleClipper<Plane extends SimplePlane>
 
   /** {@link Component.get} */
   dispose() {
+    this._enabled = false;
     for (const plane of this._planes) {
       plane.dispose();
     }
     this._planes.length = 0;
-    (this.components as any) = null;
+    this._material.dispose();
+    this.onStartDragging.reset();
+    this.onEndDragging.reset();
   }
 
   /** {@link Createable.create} */

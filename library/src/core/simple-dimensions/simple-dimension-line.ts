@@ -65,26 +65,18 @@ export class SimpleDimensionLine {
 
   dispose() {
     this.visible = false;
-    (this._components as any) = null;
     this._disposer.dispose(this._root as any);
-    (this._root as any) = null;
-    (this._line.material as any) = null;
     this._disposer.dispose(this._line as any);
-    (this._line as any) = null;
     for (const mesh of this._endpoints) {
       mesh.removeFromParent();
-      (mesh as any).material = null;
-      (mesh as any).geometry = null;
     }
     this._endpoints.length = 0;
 
     this.label.removeFromParent();
     this.label.element.remove();
-    (this.label as any) = null;
 
     if (this.boundingBox) {
       this._disposer.dispose(this.boundingBox);
-      (this.boundingBox as any) = null;
     }
   }
 

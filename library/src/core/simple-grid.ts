@@ -1,7 +1,8 @@
 import * as THREE from "three";
-import { Hideable } from "./base-types";
+import { Disposable, Hideable } from "./base-types";
 import { Components } from "../components";
 import { Component } from "./base-components";
+import { Disposer } from "./utils";
 
 /**
  * A basic
@@ -9,7 +10,7 @@ import { Component } from "./base-components";
  */
 export class SimpleGrid
   extends Component<THREE.GridHelper>
-  implements Hideable
+  implements Hideable, Disposable
 {
   /** {@link Component.name} */
   name = "SimpleGrid";
@@ -28,6 +29,7 @@ export class SimpleGrid
   }
 
   private readonly _grid: THREE.GridHelper;
+  private _disposer = new Disposer();
 
   constructor(components: Components) {
     super();
@@ -39,5 +41,10 @@ export class SimpleGrid
   /** {@link Component.get} */
   get() {
     return this._grid;
+  }
+
+  /** {@link Disposable.dispose} */
+  dispose() {
+    this._disposer.dispose(this._grid);
   }
 }

@@ -1,6 +1,15 @@
-export class FragmentProperties {
+import { Disposable } from "../core";
+
+// TODO: Clean up and document
+
+export class FragmentProperties implements Disposable {
   properties: { [guid: string]: any } = {};
   fragmentGuid = new Map<string, string>();
+
+  dispose() {
+    this.properties = {};
+    this.fragmentGuid.clear();
+  }
 
   add(properties: any) {
     const project = Object.values(properties).find(

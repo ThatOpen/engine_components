@@ -1,15 +1,22 @@
 import * as THREE from "three";
-import { EdgesPlane } from "../visibility";
+import { SimplePlane } from "../core";
 
-export interface PlanViewConfig {
+/**
+ * Necessary data to create a new floor plan in the navigator.
+ */
+export interface PlanView {
+  /** The identifier for this floor plan. */
   id: string;
-  ortho: boolean;
-  normal: THREE.Vector3;
-  point: THREE.Vector3;
-  rotation?: number;
-  data: any;
-}
 
-export interface PlanView extends PlanViewConfig {
-  plane?: EdgesPlane;
+  /** Whether the camera of the navigator should be orthogonal */
+  ortho: boolean;
+
+  /** The rotation of the clipping plane */
+  normal: THREE.Vector3;
+
+  /** The position of the clipping plane */
+  point: THREE.Vector3;
+
+  /** The clipping plane object that cuts the model. */
+  plane?: SimplePlane;
 }

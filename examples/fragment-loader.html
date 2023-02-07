@@ -76,6 +76,7 @@
 	components.renderer.afterUpdate.on(() => stats.end());
 
 	const fragments = new OBC.Fragments(components);
+	components.tools.add(fragments);
 
 	// Set up fragment culler update
 

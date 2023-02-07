@@ -1,26 +1,24 @@
 import * as THREE from "three";
 import { Fragment } from "bim-fragment";
 import { Components } from "../components";
-import { Event } from "../core";
+import { Disposable, Disposer, Event } from "../core";
 
 export interface FragmentsByModel {
   [model: string]: string[];
 }
 
-export class MemoryCulling {
+// TODO: Clean up and document
+
+export class MemoryCulling implements Disposable {
   // Alternative scene and meshes to make the visibility check
   private readonly scene = new THREE.Scene();
 
   readonly renderer: THREE.WebGLRenderer;
   readonly renderTarget: THREE.WebGLRenderTarget;
   readonly bufferSize: number;
-  readonly buffer: Uint8Array;
-  readonly materialCache = new Map<string, THREE.MeshBasicMaterial>();
   readonly worker: Worker;
-
   readonly fragmentsDiscovered = new Event<FragmentsByModel>();
 
-  // TODO: Document and clean up data structures
   enabled = true;
   opaqueMeshes: THREE.Mesh[] = [];
   transparentMeshes: THREE.Mesh[] = [];
@@ -40,13 +38,13 @@ export class MemoryCulling {
   needsUpdate = false;
   renderDebugFrame = false;
   isFirstRenderingPass = true;
-
   discoveredFragments = new Set<string>();
   undiscoveredFragments = new Map<string, number>();
   previouslyDiscoveredFragments = new Set<string>();
+  visibleExpressId: string[] = [];
 
-  public visibleExpressId: string[] = [];
-
+  private _buffer: Uint8Array;
+  private _disposer = new Disposer();
   private readonly scaleFactor = 0.00001;
   private readonly invisibleBoxes = new Set<string>();
 
@@ -64,7 +62,7 @@ export class MemoryCulling {
     this.renderer.clippingPlanes = planes;
     this.renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight);
     this.bufferSize = rtWidth * rtHeight * 4;
-    this.buffer = new Uint8Array(this.bufferSize);
+    this._buffer = new Uint8Array(this.bufferSize);
 
     const code = `
       addEventListener("message", (event) => {
@@ -87,6 +85,38 @@ export class MemoryCulling {
     if (autoUpdate) window.setInterval(this.updateVisibility, updateInterval);
   }
 
+  dispose() {
+    this.enabled = false;
+    this.worker.terminate();
+    this.fragmentsDiscovered.reset();
+    this.renderTarget.dispose();
+    this.renderer.dispose();
+    this.scene.children.length = 0;
+
+    for (const mesh of this.transparentMeshes) {
+      this._disposer.dispose(mesh);
+    }
+    for (const mesh of this.opaqueMeshes) {
+      this._disposer.dispose(mesh);
+    }
+    for (const fragID in this.fragmentMeshMap) {
+      for (const itemID in this.fragmentMeshMap[fragID]) {
+        const mesh = this.fragmentMeshMap[fragID][itemID].mesh;
+        this._disposer.dispose(mesh);
+      }
+    }
+    this.fragmentMeshMap = {};
+    this.transparentMeshes = [];
+    this.opaqueMeshes = [];
+    (this._buffer as any) = null;
+    this.exclusions.clear();
+    this.discoveredFragments.clear();
+    this.undiscoveredFragments.clear();
+    this.previouslyDiscoveredFragments.clear();
+    this.fragmentColorMap.clear();
+    this.invisibleBoxes.clear();
+  }
+
   updateVisibility = (force?: boolean) => {
     if (!this.opaqueMeshes) return;
     if (!this.enabled) return;
@@ -106,11 +136,11 @@ export class MemoryCulling {
       0,
       this.rtWidth,
       this.rtHeight,
-      this.buffer
+      this._buffer
     );
 
     this.worker.postMessage({
-      buffer: this.buffer,
+      buffer: this._buffer,
     });
 
     for (const mesh of this.transparentMeshes) {
@@ -125,11 +155,11 @@ export class MemoryCulling {
       0,
       this.rtWidth,
       this.rtHeight,
-      this.buffer
+      this._buffer
     );
 
     this.worker.postMessage({
-      buffer: this.buffer,
+      buffer: this._buffer,
     });
 
     this.renderer.setRenderTarget(null);

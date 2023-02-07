@@ -107,37 +107,12 @@ export class Postproduction {
 
   dispose() {
     this.active = false;
-
     window.removeEventListener("resize", this.onResize);
-
     this.renderTarget.dispose();
-    (this.renderTarget as any) = null;
-
     this.depthTexture?.dispose();
-    (this.depthTexture as any) = null;
-
     this.customOutline?.dispose();
-    (this.customOutline as any) = null;
-
-    (this.composer as any) = null;
-
     this.excludedItems.clear();
-    (this.excludedItems as any) = null;
-
-    (this.composer as any) = null;
-
     this.htmlOverlay.remove();
-    (this.htmlOverlay as any) = null;
-
-    (this.outlineParams as any) = null;
-
-    (this.components as any) = null;
-    (this.renderer as any) = null;
-
-    (this.saoPass as any) = null;
-    (this.outlineUniforms as any) = null;
-
-    (this.scene as any) = null;
   }
 
   setSize(width: number, height: number) {

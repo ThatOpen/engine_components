@@ -3,23 +3,23 @@ import * as THREE from "three";
 import { IfcToFragmentItems, MaterialList } from "./base-types";
 
 export class Geometry {
-  private webIfc: WEBIFC.IfcAPI;
-  private referenceMatrix = new THREE.Matrix4();
-  private isFirstMatrix = true;
-  private _materials: MaterialList;
+  private _referenceMatrix = new THREE.Matrix4();
+  private _isFirstMatrix = true;
   private _voids = new Set<number>();
   private _geometriesByMaterial: {
     [color: string]: THREE.BufferGeometry[];
   } = {};
 
+  private _webIfc: WEBIFC.IfcAPI;
   private readonly _items: IfcToFragmentItems = {};
+  private readonly _materials: MaterialList;
 
   constructor(
     webIfc: WEBIFC.IfcAPI,
     items: IfcToFragmentItems,
     materials: MaterialList
   ) {
-    this.webIfc = webIfc;
+    this._webIfc = webIfc;
     this._items = items;
     this._materials = materials;
   }
@@ -46,9 +46,10 @@ export class Geometry {
 
   private reset(webifc: WEBIFC.IfcAPI) {
     this._geometriesByMaterial = {};
-    this.referenceMatrix = new THREE.Matrix4();
-    this.isFirstMatrix = true;
-    this.webIfc = webifc;
+    this._referenceMatrix = new THREE.Matrix4();
+    this._isFirstMatrix = true;
+    (this._webIfc as any) = null;
+    this._webIfc = webifc;
   }
 
   private getGeometryTransformation(mesh: WEBIFC.FlatMesh, geometryID: string) {
@@ -85,7 +86,7 @@ export class Geometry {
         },
       ],
       geometriesByMaterial: this._geometriesByMaterial,
-      referenceMatrix: this.referenceMatrix,
+      referenceMatrix: this._referenceMatrix,
     };
   }
 
@@ -116,7 +117,7 @@ export class Geometry {
       color: new THREE.Color(color.x, color.y, color.z),
       transparent: color.w !== 1,
       opacity: color.w,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
     });
   }
 
@@ -132,14 +133,14 @@ export class Geometry {
 
     // We store this matrix to use it as a reference point. We'll apply this
     // later to the rest of the instances
-    if (this.isFirstMatrix) {
-      this.referenceMatrix = new THREE.Matrix4().copy(matrix).invert();
-      this.isFirstMatrix = false;
+    if (this._isFirstMatrix) {
+      this._referenceMatrix = new THREE.Matrix4().copy(matrix).invert();
+      this._isFirstMatrix = false;
     }
   }
 
   private getBufferGeometry(expressID: number) {
-    const geometry = this.webIfc.GetGeometry(0, expressID);
+    const geometry = this._webIfc.GetGeometry(0, expressID);
     const verts = this.getVertices(geometry);
     if (!verts.length) return null;
     const indices = this.getIndices(geometry);
@@ -151,7 +152,7 @@ export class Geometry {
   }
 
   private getIndices(geometryData: WEBIFC.IfcGeometry) {
-    const indices = this.webIfc.GetIndexArray(
+    const indices = this._webIfc.GetIndexArray(
       geometryData.GetIndexData(),
       geometryData.GetIndexDataSize()
     ) as Uint32Array;
@@ -159,7 +160,7 @@ export class Geometry {
   }
 
   private getVertices(geometryData: WEBIFC.IfcGeometry) {
-    const verts = this.webIfc.GetVertexArray(
+    const verts = this._webIfc.GetVertexArray(
       geometryData.GetVertexData(),
       geometryData.GetVertexDataSize()
     ) as Float32Array;

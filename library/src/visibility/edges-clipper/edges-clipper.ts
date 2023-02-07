@@ -23,10 +23,17 @@ export class EdgesClipper extends SimpleClipper<EdgesPlane> {
     this.styles = new EdgesStyles(components);
   }
 
+  /** {@link Component.get} */
+  dispose() {
+    super.dispose();
+    this.styles.dispose();
+  }
+
   /**
    * Updates all the lines of the {@link ClippingEdges}.
    */
   updateEdges() {
+    if (!this.enabled) return;
     for (const plane of this._planes) {
       plane.update();
     }

@@ -2,8 +2,11 @@ import * as THREE from "three";
 import { Fragment } from "bim-fragment";
 import { Components } from "../components";
 import { Fragments } from ".";
+import { Disposable } from "../core";
 
-export class FragmentHighlighter {
+// TODO: Clean up and document
+
+export class FragmentHighlighter implements Disposable {
   active = false;
   highlightMats: { [name: string]: THREE.Material[] | undefined } = {};
 
@@ -13,6 +16,16 @@ export class FragmentHighlighter {
   } = {};
 
   constructor(private components: Components, private fragments: Fragments) {}
+
+  dispose() {
+    for (const matID in this.highlightMats) {
+      const mats = this.highlightMats[matID] || [];
+      for (const mat of mats) {
+        mat.dispose();
+      }
+    }
+    this.highlightMats = {};
+  }
 
   add(name: string, material?: THREE.Material[]) {
     if (this.highlightMats[name]) {
@@ -26,8 +39,8 @@ export class FragmentHighlighter {
   }
 
   update() {
-    for (const fragmentID in this.fragments.fragments) {
-      const fragment = this.fragments.fragments[fragmentID];
+    for (const fragmentID in this.fragments.list) {
+      const fragment = this.fragments.list[fragmentID];
       this.addHighlightToFragment(fragment);
     }
   }
@@ -36,7 +49,7 @@ export class FragmentHighlighter {
     if (!this.active) return null;
     this.checkSelection(name);
 
-    const meshes = this.fragments.fragmentMeshes;
+    const meshes = this.fragments.meshes;
     const result = this.components.raycaster.castRay(meshes);
 
     if (!result) {
@@ -60,7 +73,7 @@ export class FragmentHighlighter {
       this.selection[name][mesh.uuid] = new Set<string>();
     }
 
-    const fragment = this.fragments.fragments[mesh.uuid];
+    const fragment = this.fragments.list[mesh.uuid];
     const blockID = fragment.getVertexBlockID(geometry, index);
     const itemID = fragment.getItemID(instanceID, blockID);
     this.selection[name][mesh.uuid].add(itemID);
@@ -102,7 +115,7 @@ export class FragmentHighlighter {
 
   private clearStyle(name: string) {
     for (const fragID in this.selection[name]) {
-      const fragment = this.fragments.fragments[fragID];
+      const fragment = this.fragments.list[fragID];
       if (!fragment) continue;
       const selection = fragment.fragments[name];
       if (selection) {
@@ -114,7 +127,7 @@ export class FragmentHighlighter {
 
   private updateFragmentHighlight(name: string, fragmentID: string) {
     const ids = this.selection[name][fragmentID];
-    const fragment = this.fragments.fragments[fragmentID];
+    const fragment = this.fragments.list[fragmentID];
     if (!fragment) return;
     const selection = fragment.fragments[name];
     if (!selection) return;

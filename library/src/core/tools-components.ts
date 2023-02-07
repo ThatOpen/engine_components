@@ -1,12 +1,13 @@
 import { Component } from "./base-components";
+import { Disposable } from "./base-types";
 
 /**
  * An object to easily handle all the tools used (e.g. updating them, retrieving
  * them, performing batch operations, etc). A tool is a feature that achieves
  * something through user interaction (e.g. clipping planes, dimensions, etc).
  */
-export class ToolComponents {
-  readonly tools: Component<any>[] = [];
+export class ToolComponents implements Disposable {
+  tools: Component<any>[] = [];
 
   /**
    * Registers a new tool component.
@@ -52,42 +53,15 @@ export class ToolComponents {
   }
 
   /**
-   * Sets the {@link Component.enabled} property of one or multiple components.
-   * @param enabled - Whether to enable or disable the components.
-   * @param name - The {@link Component.name} of the tool to enable or disable.
-   * If undefined, all components will be enabled or disabled.
+   * Disposes all the memory used by all the tools.
    */
-  enable(enabled: boolean, name?: string) {
-    if (name) {
-      const tool = this.get(name);
-      if (tool) {
-        tool.enabled = enabled;
-      }
-      return;
-    }
+  dispose() {
     for (const tool of this.tools) {
-      tool.enabled = enabled;
-    }
-  }
-
-  /**
-   * Shows or hides one or multiple components.
-   * @param visible - Whether to show or hide the tool components.
-   * @param name - The {@link Component.name} of the tool to show or hide.
-   * If undefined, all components will be enabled or disabled.
-   */
-  toggle(visible: boolean, name?: string) {
-    if (name) {
-      const tool = this.get(name);
-      if (tool && tool.isHideable()) {
-        tool.visible = visible;
-      }
-      return;
-    }
-    for (const tool of this.tools) {
-      if (tool.isHideable()) {
-        tool.visible = visible;
+      tool.enabled = false;
+      if (tool.isDisposeable()) {
+        tool.dispose();
       }
     }
+    this.tools = [];
   }
 }

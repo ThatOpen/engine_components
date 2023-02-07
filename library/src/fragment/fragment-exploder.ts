@@ -1,16 +1,21 @@
 import * as THREE from "three";
 import { Fragments } from "./fragment";
+import { Disposable } from "../core";
 
-export class FragmentExploder {
+// TODO: Clean up and document
+
+export class FragmentExploder implements Disposable {
   height = 10;
   groupName = "";
   enabled = false;
   initialized = false;
   explodedFragments = new Set<string>();
 
-  // private transformedFragments = new Set<string>();
-
   constructor(public fragments: Fragments) {}
+
+  dispose() {
+    this.explodedFragments.clear();
+  }
 
   explode() {
     this.initialized = true;
@@ -33,7 +38,7 @@ export class FragmentExploder {
     const groups = this.fragments.groups.groupSystems[this.groupName];
     for (const groupName in groups) {
       for (const fragID in groups[groupName]) {
-        const fragment = this.fragments.fragments[fragID];
+        const fragment = this.fragments.list[fragID];
         const customID = groupName + fragID;
         if (!fragment) {
           continue;

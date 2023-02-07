@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { HorizontalBlurShader } from "three/examples/jsm/shaders/HorizontalBlurShader";
 import { VerticalBlurShader } from "three/examples/jsm/shaders/VerticalBlurShader";
-import { Component, Disposer } from "../../core";
+import { Component, Disposable, Disposer } from "../../core";
 import { Components } from "../../components";
 
 // TODO: Clean up and document this
@@ -18,7 +18,7 @@ export interface Shadows {
   [id: string]: Shadow;
 }
 
-export class ShadowDropper extends Component<Shadows> {
+export class ShadowDropper extends Component<Shadows> implements Disposable {
   name = "ShadowDropper";
 
   enabled = true;
@@ -45,21 +45,25 @@ export class ShadowDropper extends Component<Shadows> {
     this.initializeDepthMaterial();
   }
 
+  /** {@link Component.get} */
   get(): Shadows {
     return this.shadows;
   }
 
+  /** {@link Disposable.dispose} */
   dispose() {
     const shadowIDs = Object.keys(this.shadows);
     shadowIDs.forEach((shadowID) => this.deleteShadow(shadowID));
-    (this.shadows as any) = null;
     this.tempMaterial.dispose();
-    (this.tempMaterial as any) = null;
     this.depthMaterial.dispose();
-    (this.depthMaterial as any) = null;
-    (this.components as any) = null;
   }
 
+  /**
+   * Creates a blurred dropped shadow of the given mesh.
+   *
+   * @param model - the mesh whose shadow to generate.
+   * @param id - the name of this shadow.
+   */
   renderShadow(model: THREE.Mesh[], id: string) {
     if (this.shadows[id]) {
       throw new Error(`There is already a shadow with ID ${id}`);
@@ -72,6 +76,11 @@ export class ShadowDropper extends Component<Shadows> {
     return shadow.root;
   }
 
+  /**
+   * Deletes the specified shadow (if it exists).
+   *
+   * @param id - the name of this shadow.
+   */
   deleteShadow(id: string) {
     const shadow = this.shadows[id];
     delete this.shadows[id];

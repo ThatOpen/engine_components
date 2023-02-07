@@ -53,6 +53,7 @@ export class Components {
   private _camera?: Component<THREE.Camera>;
   private _raycaster?: Raycaster;
   private _clock: THREE.Clock;
+  private _enabled = true;
 
   /**
    * The [Three.js renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
@@ -209,10 +210,15 @@ export class Components {
    * ```
    */
   dispose() {
-    // TODO: Implement memory disposal for the whole library
+    this._enabled = false;
+    this.tools.dispose();
+    if (this.renderer.isDisposeable()) this.renderer.dispose();
+    if (this.scene.isDisposeable()) this.scene.dispose();
+    if (this.camera.isDisposeable()) this.camera.dispose();
   }
 
   private update = () => {
+    if (!this._enabled) return;
     const delta = this._clock.getDelta();
     Components.update(this.scene, delta);
     Components.update(this.renderer, delta);

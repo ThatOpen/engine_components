@@ -1,2 +1,2 @@
 export * from "./postproduction";
-export * from "./PostproductionRenderer";
+export * from "./postproduction-renderer";

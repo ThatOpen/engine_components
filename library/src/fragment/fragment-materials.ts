@@ -1,28 +1,41 @@
-import { Material } from "three";
+import * as THREE from "three";
 import { Fragment } from "bim-fragment";
 import { Fragments } from ".";
+import { Disposable } from "../core";
 
-export class FragmentMaterials {
+// TODO: Clean up and document
+
+export class FragmentMaterials implements Disposable {
   originals: {
-    [guid: string]: Material[];
+    [guid: string]: THREE.Material[];
   } = {};
+
+  materials = new Set<THREE.Material>();
 
   constructor(private fragments: Fragments) {}
 
+  dispose() {
+    for (const mat of this.materials) {
+      mat.dispose();
+    }
+    this.materials.clear();
+  }
+
   apply(
-    material: Material,
-    fragmentIDs = Object.keys(this.fragments.fragments)
+    material: THREE.Material,
+    fragmentIDs = Object.keys(this.fragments.list)
   ) {
+    this.materials.add(material);
     for (const guid of fragmentIDs) {
-      const fragment = this.fragments.fragments[guid];
+      const fragment = this.fragments.list[guid];
       this.save(fragment);
       fragment.mesh.material = material as any;
     }
   }
 
-  reset(fragmentIDs = Object.keys(this.fragments.fragments)) {
+  reset(fragmentIDs = Object.keys(this.fragments.list)) {
     for (const guid of fragmentIDs) {
-      const fragment = this.fragments.fragments[guid];
+      const fragment = this.fragments.list[guid];
       const originalMats = this.originals[guid];
       if (originalMats) {
         fragment.mesh.material = originalMats;
@@ -32,7 +45,7 @@ export class FragmentMaterials {
 
   private save(fragment: Fragment) {
     if (!this.originals[fragment.id]) {
-      this.originals[fragment.id] = fragment.mesh.material as Material[];
+      this.originals[fragment.id] = fragment.mesh.material as THREE.Material[];
     }
   }
 }

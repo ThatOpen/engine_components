@@ -19,8 +19,9 @@ export class ProjectionManager {
 
   constructor(private components: Components, camera: OrthoPerspectiveCamera) {
     this._camera = camera;
-    this._currentCamera = camera.get("Perspective");
-    this._currentProjection = "Perspective";
+    const perspective = "Perspective";
+    this._currentCamera = camera.get(perspective);
+    this._currentProjection = perspective;
   }
 
   /**

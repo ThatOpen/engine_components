@@ -9,18 +9,20 @@ import {
 } from "three";
 import { Fragment } from "bim-fragment";
 import { Components } from "../components";
+import { Disposable, Disposer } from "../core";
 
-export class FragmentEdges {
+// TODO: Clean up and document
+
+export class FragmentEdges implements Disposable {
   edgesList: { [guid: string]: LineSegments } = {};
   edgesToUpdate = new Set<string>();
   threshold = 80;
 
-  private mat4 = new Matrix4();
-  private dummy = new Object3D();
-
-  private pos: number[] = [];
-  private rot: number[] = [];
-  private scl: number[] = [];
+  private _mat4 = new Matrix4();
+  private _dummy = new Object3D();
+  private _pos: number[] = [];
+  private _rot: number[] = [];
+  private _scl: number[] = [];
 
   private lineMat = new LineBasicMaterial({
     color: 0x555555,
@@ -48,7 +50,22 @@ export class FragmentEdges {
     },
   });
 
-  constructor(private components: Components) {}
+  private _components: Components;
+  private disposer = new Disposer();
+
+  constructor(components: Components) {
+    this._components = components;
+  }
+
+  dispose() {
+    for (const guid in this.edgesList) {
+      const edges = this.edgesList[guid];
+      this.disposer.dispose(edges, true);
+    }
+    this.lineMat.dispose();
+    this.edgesList = {};
+    this.edgesToUpdate.clear();
+  }
 
   generate(fragment: Fragment) {
     if (this.edgesList[fragment.id]) {
@@ -70,7 +87,7 @@ export class FragmentEdges {
     const lines = new LineSegments(lineGeom, this.lineMat);
     lines.frustumCulled = false;
 
-    const scene = this.components.scene.get();
+    const scene = this._components.scene.get();
     scene.add(lines);
     this.edgesList[fragment.id] = lines;
 
@@ -86,53 +103,57 @@ export class FragmentEdges {
     lineGeom: InstancedBufferGeometry
   ) {
     for (let i = 0; i < fragment.mesh.count; i++) {
-      fragment.mesh.getMatrixAt(i, this.mat4);
-      this.mat4.decompose(
-        this.dummy.position,
-        this.dummy.quaternion,
-        this.dummy.scale
+      fragment.mesh.getMatrixAt(i, this._mat4);
+      this._mat4.decompose(
+        this._dummy.position,
+        this._dummy.quaternion,
+        this._dummy.scale
       );
-      this.linesTRS(i, this.dummy, lineGeom);
+      this.linesTRS(i, this._dummy, lineGeom);
     }
   }
 
   private setAttributes(lineGeom: InstancedBufferGeometry) {
     lineGeom.setAttribute(
       "instT",
-      new InstancedBufferAttribute(new Float32Array(this.pos), 3)
+      new InstancedBufferAttribute(new Float32Array(this._pos), 3)
     );
 
     lineGeom.setAttribute(
       "instR",
-      new InstancedBufferAttribute(new Float32Array(this.rot), 4)
+      new InstancedBufferAttribute(new Float32Array(this._rot), 4)
     );
 
     lineGeom.setAttribute(
       "instS",
-      new InstancedBufferAttribute(new Float32Array(this.scl), 3)
+      new InstancedBufferAttribute(new Float32Array(this._scl), 3)
     );
 
-    this.pos.length = 0;
-    this.rot.length = 0;
-    this.scl.length = 0;
+    this._pos.length = 0;
+    this._rot.length = 0;
+    this._scl.length = 0;
   }
 
   private getInstanceTransforms(fragment: Fragment) {
     for (let i = 0; i < fragment.mesh.count; i++) {
-      fragment.getInstance(i, this.dummy.matrix);
-      this.dummy.updateMatrix();
-      this.pos.push(
-        this.dummy.position.x,
-        this.dummy.position.y,
-        this.dummy.position.z
+      fragment.getInstance(i, this._dummy.matrix);
+      this._dummy.updateMatrix();
+      this._pos.push(
+        this._dummy.position.x,
+        this._dummy.position.y,
+        this._dummy.position.z
       );
-      this.rot.push(
-        this.dummy.quaternion.x,
-        this.dummy.quaternion.y,
-        this.dummy.quaternion.z,
-        this.dummy.quaternion.w
+      this._rot.push(
+        this._dummy.quaternion.x,
+        this._dummy.quaternion.y,
+        this._dummy.quaternion.z,
+        this._dummy.quaternion.w
       );
-      this.scl.push(this.dummy.scale.x, this.dummy.scale.y, this.dummy.scale.z);
+      this._scl.push(
+        this._dummy.scale.x,
+        this._dummy.scale.y,
+        this._dummy.scale.z
+      );
     }
   }
 
