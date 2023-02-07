@@ -58,6 +58,8 @@ export class IfcFragmentLoader {
     await this.loadAllCategories();
     const model = await this._converter.generateFragmentData(this._webIfc);
     this.fragments.models.push(model);
+    const fragmentIds = model.fragments.map( fragment => {return fragment.id} );
+    fragmentIds.forEach( id => this.fragments.fragmentIDModelIDMap[id] = model.uuid );
     this._progress.updateLoadProgress();
     this.cleanUp();
     return model;

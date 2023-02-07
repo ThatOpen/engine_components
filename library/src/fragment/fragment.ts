@@ -40,6 +40,8 @@ export class Fragments extends Component<Fragment[]> {
   culler: FragmentCulling;
   memoryCuller: MemoryCulling;
 
+  fragmentIDModelIDMap: {[modelID: string]: string} = {};
+
   constructor(private components: Components) {
     super();
     this.highlighter = new FragmentHighlighter(components, this);
@@ -72,7 +74,7 @@ export class Fragments extends Component<Fragment[]> {
     scene.add(fragment.mesh);
   }
 
-  fragmentMapByIds(ids: Array<string>, models: FragmentGroup[] = this.models) {
+  groupIdsByFragment(ids: Array<string>, models = this.models) {
     if (!ids || !models) { return }
     const result: { [fragmentID: string]: string[] } = {}
     models.forEach( model => {
