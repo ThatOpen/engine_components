@@ -93,11 +93,7 @@ export class Fragments extends Component<Fragment[]> implements Disposable {
 
   /** {@link Component.get} */
   dispose() {
-    for (const fragID in this.list) {
-      const fragment = this.list[fragID];
-      fragment.dispose(true);
-    }
-    this.list = {};
+    this.disposeFragmentList();
     this.ifcLoader.dispose();
     this.groups.dispose();
     this.properties.dispose();
@@ -121,6 +117,24 @@ export class Fragments extends Component<Fragment[]> implements Disposable {
     this.culler.add(fragment);
     const scene = this.components.scene.get();
     scene.add(fragment.mesh);
+    this.components.meshes.push(fragment.mesh);
     return fragment;
+  }
+
+  private disposeFragmentList() {
+    for (const fragID in this.list) {
+      const fragment = this.list[fragID];
+      this.removeFragmentMesh(fragment);
+      fragment.dispose(true);
+    }
+    this.list = {};
+  }
+
+  private removeFragmentMesh(fragment: Fragment) {
+    const meshes = this.components.meshes;
+    const mesh = fragment.mesh;
+    if (meshes.includes(mesh)) {
+      meshes.splice(meshes.indexOf(mesh), 1);
+    }
   }
 }
