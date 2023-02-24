@@ -21363,6 +21363,8 @@ class FragmentCulling {
         this.meshes.clear();
     }
     add(fragment) {
+        if (!this.enabled)
+            return;
         const { geometry, material } = fragment.mesh;
         const { r, g, b, code } = this.getNextColor();
         const colorMaterial = this.getMaterial(r, g, b);
@@ -21512,6 +21514,7 @@ class FragmentGrouper {
         }
     }
     get(filter) {
+        const size = Object.keys(filter).length;
         const models = {};
         for (const name in filter) {
             const value = filter[name];
@@ -21519,13 +21522,33 @@ class FragmentGrouper {
             if (found) {
                 for (const guid in found) {
                     if (!models[guid]) {
-                        models[guid] = [];
+                        models[guid] = {};
                     }
-                    models[guid].push(...found[guid]);
+                    for (const id of found[guid]) {
+                        if (!models[guid][id]) {
+                            models[guid][id] = 1;
+                        }
+                        else {
+                            models[guid][id]++;
+                        }
+                    }
                 }
             }
         }
-        return models;
+        const result = {};
+        for (const guid in models) {
+            const model = models[guid];
+            for (const id in model) {
+                const numberOfMatches = model[id];
+                if (numberOfMatches === size) {
+                    if (!result[guid]) {
+                        result[guid] = [];
+                    }
+                    result[guid].push(id);
+                }
+            }
+        }
+        return result;
     }
 }
 
@@ -67853,7 +67876,12 @@ class IfcJsonExporter {
         for (let i = 0; i < linesCount; i++) {
             const id = allLinesIDs.get(i);
             if (!geometriesIDs.has(id)) {
-                properties[id] = await webIfc.GetLine(modelID, id);
+                try {
+                    properties[id] = await webIfc.GetLine(modelID, id);
+                }
+                catch (e) {
+                    console.log(`Properties of the element ${id} could not be processed`);
+                }
                 counter++;
             }
             if (this.size !== undefined && counter > this.size) {

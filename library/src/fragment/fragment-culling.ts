@@ -100,6 +100,7 @@ export class FragmentCulling implements Disposable {
   }
 
   add(fragment: Fragment) {
+    if (!this.enabled) return;
     const { geometry, material } = fragment.mesh;
 
     const { r, g, b, code } = this.getNextColor();

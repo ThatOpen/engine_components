@@ -30,7 +30,11 @@ export class IfcJsonExporter {
     for (let i = 0; i < linesCount; i++) {
       const id = allLinesIDs.get(i);
       if (!geometriesIDs.has(id)) {
-        properties[id] = await webIfc.GetLine(modelID, id);
+        try {
+          properties[id] = await webIfc.GetLine(modelID, id);
+        } catch (e) {
+          console.log(`Properties of the element ${id} could not be processed`);
+        }
         counter++;
       }
 

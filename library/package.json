@@ -1,7 +1,7 @@
 {
   "name": "openbim-components",
   "main": "dist/index.js",
-  "version": "0.0.39",
+  "version": "0.0.42",
   "packageManager": "yarn@3.2.1",
   "scripts": {
     "test": "jest",

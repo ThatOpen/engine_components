@@ -63,19 +63,39 @@ export class FragmentGrouper implements Disposable {
   }
 
   get(filter: { [name: string]: string }) {
-    const models: { [fragmentGuid: string]: string[] } = {};
+    const size = Object.keys(filter).length;
+    const models: { [fragmentGuid: string]: { [id: string]: number } } = {};
     for (const name in filter) {
       const value = filter[name];
       const found = this.groupSystems[name][value];
       if (found) {
         for (const guid in found) {
           if (!models[guid]) {
-            models[guid] = [];
+            models[guid] = {};
           }
-          models[guid].push(...found[guid]);
+          for (const id of found[guid]) {
+            if (!models[guid][id]) {
+              models[guid][id] = 1;
+            } else {
+              models[guid][id]++;
+            }
+          }
         }
       }
     }
-    return models;
+    const result: { [fragmentGuid: string]: string[] } = {};
+    for (const guid in models) {
+      const model = models[guid];
+      for (const id in model) {
+        const numberOfMatches = model[id];
+        if (numberOfMatches === size) {
+          if (!result[guid]) {
+            result[guid] = [];
+          }
+          result[guid].push(id);
+        }
+      }
+    }
+    return result;
   }
 }
