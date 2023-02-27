@@ -59,7 +59,7 @@ export class FragmentCulling implements Disposable {
             const r = buffer[i];
             const g = buffer[i + 1];
             const b = buffer[i + 2];
-            const code = "" + r + g + b;
+            const code = "" + r + "-" + g + "-" + b;
             colors.add(code);
         }
         postMessage({ colors });
@@ -264,7 +264,7 @@ export class FragmentCulling implements Disposable {
       r: this._colors.r,
       g: this._colors.g,
       b: this._colors.b,
-      code: `${this._colors.r}${this._colors.g}${this._colors.b}`,
+      code: `${this._colors.r}-${this._colors.g}-${this._colors.b}`,
     };
   }
 
