@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Components } from "../../components";
-import { Createable, Disposable } from "../base-types";
+import {Createable, Disposable, Hideable} from "../base-types";
 import { SimplePlane } from "./simple-plane";
 import { Component } from "../base-components";
 import { Event } from "../event";
@@ -15,10 +15,16 @@ import { Event } from "../event";
  */
 export class SimpleClipper<Plane extends SimplePlane>
   extends Component<Plane[]>
-  implements Createable, Disposable
+  implements Createable, Disposable, Hideable
 {
   /** {@link Component.name} */
   name = "SimpleClipper";
+
+  /** {@link Createable.onCreate} */
+  onCreate: Event<Plane> = new Event<Plane>();
+
+  /** {@link Createable.onDelete} */
+  onDelete: Event<Plane> = new Event<Plane>();
 
   /** The material used in all the clipping planes. */
   protected _material: THREE.Material = new THREE.MeshBasicMaterial({
@@ -54,6 +60,8 @@ export class SimpleClipper<Plane extends SimplePlane>
   private _size = 5;
   private _enabled = false;
 
+  private _visible = true;
+
   /** {@link Component.enabled} */
   get enabled() {
     return this._enabled;
@@ -64,6 +72,20 @@ export class SimpleClipper<Plane extends SimplePlane>
     this._enabled = state;
     for (const plane of this.planes3D) {
       plane.enabled = state;
+    }
+    this.updateMaterials();
+  }
+
+  /** {@link Hideable.visible} */
+  get visible() {
+    return this._visible;
+  }
+
+  /** {@link Hideable.visible} */
+  set visible(state: boolean) {
+    this._visible = state;
+    for (const plane of this.planes3D) {
+      plane.visible = state;
     }
     this.updateMaterials();
   }
@@ -177,6 +199,7 @@ export class SimpleClipper<Plane extends SimplePlane>
       this.components.renderer.togglePlane(false, plane.get());
       plane.dispose();
       this.updateMaterials();
+      this.onDelete.trigger(plane);
     }
   }
 
@@ -242,6 +265,7 @@ export class SimpleClipper<Plane extends SimplePlane>
     plane.onStartDragging.on(this._onStartDragging);
     plane.onEndDragging.on(this._onEndDragging);
     this._planes.push(plane);
+    this.onCreate.trigger(plane);
     return plane;
   }
 

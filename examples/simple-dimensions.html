@@ -97,7 +97,7 @@
 		container.ondblclick = () => dimensions.create();
 
 		window.onkeydown = (event) => {
-			if(event.code === 'Delete') {
+          if (event.code === 'Delete' || event.code === 'Backspace') {
 				dimensions.delete();
       }
     }

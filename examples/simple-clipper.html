@@ -71,7 +71,7 @@
 		container.ondblclick = () => clipper.create();
 
 		window.onkeydown = (event) => {
-			if(event.code === 'Delete') {
+          if (event.code === 'Delete' || event.code === 'Backspace') {
 				clipper.delete();
       }
     }
@@ -101,7 +101,8 @@
 
 		const actionsFolder = gui.addFolder('Actions');
 
-		actionsFolder.add(clipper, 'enabled').name("Toggle clipping planes");
+		actionsFolder.add(clipper, 'enabled').name("Toggle clipping planes enabled");
+        actionsFolder.add(clipper, 'visible').name("Toggle clipping planes visible");
 
 		const color = {
 			value: 0x000000

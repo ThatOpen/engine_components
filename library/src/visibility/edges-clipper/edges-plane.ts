@@ -32,9 +32,9 @@ export class EdgesPlane extends SimplePlane {
     this.edges = new ClippingEdges(components, this._plane, styles);
   }
 
-  /** {@link Disposable.dispose} */
-  set enabled(state: boolean) {
-    super.enabled = state;
+  /** {@link Hideable.visible} */
+  set visible(state: boolean) {
+    super.visible = state;
     this.edges.visible = state;
   }
 

@@ -56,8 +56,14 @@ export interface Createable {
   /** Creates a new instance of an element (e.g. a new Dimension). */
   create: (data: any) => void;
 
+  /** Fired after successfully calling {@link Createable.create()}  */
+  onCreate: Event<any>;
+
   /** Deletes an existing instance of an element (e.g. a Dimension). */
   delete: (data: any) => void;
+
+  /** Fired after successfully calling {@link Createable.delete()}  */
+  onDelete: Event<any>;
 }
 
 /** Whether this component should be updated each frame. */

@@ -15,12 +15,23 @@
 <li><a href="../modules.html">Open BIM Components</a></li>
 <li><a href="FragmentProperties.html">FragmentProperties</a></li></ul>
 <h1>Class FragmentProperties</h1></div>
+<section class="tsd-panel tsd-comment">
+<div class="tsd-comment tsd-typography"><p>Whether this component has to be manually destroyed once you are done with
+it to prevent
+<a href="https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects">memory leaks</a>.
+This also ensures that the DOM events created by that component will be
+cleaned up.</p>
+</div></section>
 <section class="tsd-panel tsd-hierarchy">
 <h4>Hierarchy</h4>
 <ul class="tsd-hierarchy">
-<li><span class="target">FragmentProperties</span></li></ul></section><aside class="tsd-sources">
+<li><span class="target">FragmentProperties</span></li></ul></section>
+<section class="tsd-panel">
+<h4>Implements</h4>
+<ul class="tsd-hierarchy">
+<li><a href="../interfaces/Disposable.html" class="tsd-signature-type" data-tsd-kind="Interface">Disposable</a></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/fragment/fragment-properties.ts#L1">library/src/fragment/fragment-properties.ts:1</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/fragment/fragment-properties.ts#L5">library/src/fragment/fragment-properties.ts:5</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-index-accordion" open><summary class="tsd-accordion-summary tsd-index-summary">
@@ -39,6 +50,7 @@
 <h3 class="tsd-index-heading">Methods</h3>
 <div class="tsd-index-list"><a href="FragmentProperties.html#add" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="#FF4DB8" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12" id="icon-2048-path"></rect><path d="M9.162 16V7.24H10.578L11.514 10.072C11.602 10.328 11.674 10.584 11.73 10.84C11.794 11.088 11.842 11.28 11.874 11.416C11.906 11.28 11.954 11.088 12.018 10.84C12.082 10.584 12.154 10.324 12.234 10.06L13.122 7.24H14.538V16H13.482V12.82C13.482 12.468 13.49 12.068 13.506 11.62C13.53 11.172 13.558 10.716 13.59 10.252C13.622 9.78 13.654 9.332 13.686 8.908C13.726 8.476 13.762 8.1 13.794 7.78L12.366 12.16H11.334L9.894 7.78C9.934 8.092 9.97 8.456 10.002 8.872C10.042 9.28 10.078 9.716 10.11 10.18C10.142 10.636 10.166 11.092 10.182 11.548C10.206 12.004 10.218 12.428 10.218 12.82V16H9.162Z" fill="var(--color-text)" id="icon-2048-text"></path></svg><span>add</span></a>
 <a href="FragmentProperties.html#assign" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>assign</span></a>
+<a href="FragmentProperties.html#dispose" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>dispose</span></a>
 <a href="FragmentProperties.html#get" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get</span></a>
 <a href="FragmentProperties.html#getItemsOfType" class="tsd-index-link tsd-kind-method tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get<wbr/>Items<wbr/>Of<wbr/>Type</span></a>
 <a href="FragmentProperties.html#getPropertySets" class="tsd-index-link tsd-kind-method tsd-parent-kind-class tsd-is-private"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg><span>get<wbr/>Property<wbr/>Sets</span></a>
@@ -58,7 +70,7 @@
 <h3 class="tsd-anchor-link"><span>fragment<wbr/>Guid</span><a href="#fragmentGuid" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">fragment<wbr/>Guid<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Map</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/fragment/fragment-properties.ts#L3">library/src/fragment/fragment-properties.ts:3</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/fragment/fragment-properties.ts#L7">library/src/fragment/fragment-properties.ts:7</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="properties" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>properties</span><a href="#properties" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">properties<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span><br/><span>    </span>[guid: <span class="tsd-signature-type">string</span>]<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol"> = {}</span></div>
@@ -68,7 +80,7 @@
 <li class="tsd-parameter-index-signature">
 <h5><span class="tsd-signature-symbol">[</span>guid: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-type">any</span></h5></li></ul></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/fragment/fragment-properties.ts#L2">library/src/fragment/fragment-properties.ts:2</a></li></ul></aside></section></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/fragment/fragment-properties.ts#L6">library/src/fragment/fragment-properties.ts:6</a></li></ul></aside></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Methods</h2>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="add" class="tsd-anchor"></a>
@@ -83,7 +95,7 @@
 <h5>properties: <span class="tsd-signature-type">any</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/fragment/fragment-properties.ts#L5">library/src/fragment/fragment-properties.ts:5</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/fragment/fragment-properties.ts#L14">library/src/fragment/fragment-properties.ts:14</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="assign" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>assign</span><a href="#assign" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -98,7 +110,19 @@
 <h5>fragmentID: <span class="tsd-signature-type">string</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/fragment/fragment-properties.ts#L14">library/src/fragment/fragment-properties.ts:14</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/fragment/fragment-properties.ts#L23">library/src/fragment/fragment-properties.ts:23</a></li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="dispose" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>dispose</span><a href="#dispose" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+<li class="tsd-signature tsd-anchor-link" id="dispose.dispose-1">dispose<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#dispose.dispose-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
+<li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Destroys the object from memory to prevent a
+<a href="https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects">memory leak</a>.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<p>Implementation of Disposable.dispose</p>
+<ul>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/fragment/fragment-properties.ts#L9">library/src/fragment/fragment-properties.ts:9</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="get" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>get</span><a href="#get" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -115,7 +139,7 @@
 <h5>psets: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/fragment/fragment-properties.ts#L25">library/src/fragment/fragment-properties.ts:25</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/fragment/fragment-properties.ts#L34">library/src/fragment/fragment-properties.ts:34</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="getItemsOfType" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>get<wbr/>Items<wbr/>Of<wbr/>Type</span><a href="#getItemsOfType" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -130,7 +154,7 @@
 <h5>type: <span class="tsd-signature-type">string</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/fragment/fragment-properties.ts#L18">library/src/fragment/fragment-properties.ts:18</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/fragment/fragment-properties.ts#L27">library/src/fragment/fragment-properties.ts:27</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="getPropertySets" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>get<wbr/>Property<wbr/>Sets</span><a href="#getPropertySets" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -147,7 +171,7 @@
 <h5>properties: <span class="tsd-signature-type">any</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/fragment/fragment-properties.ts#L35">library/src/fragment/fragment-properties.ts:35</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/fragment/fragment-properties.ts#L44">library/src/fragment/fragment-properties.ts:44</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="getPsetDefinition" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>get<wbr/>Pset<wbr/>Definition</span><a href="#getPsetDefinition" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -162,7 +186,7 @@
 <h5>id: <span class="tsd-signature-type">number</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/fragment/fragment-properties.ts#L56">library/src/fragment/fragment-properties.ts:56</a></li></ul></aside></li></ul></section></section></div>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/fragment/fragment-properties.ts#L65">library/src/fragment/fragment-properties.ts:65</a></li></ul></aside></li></ul></section></section></div>
 <div class="col-4 col-menu menu-sticky-wrap menu-highlight">
 <div class="tsd-navigation settings">
 <details class="tsd-index-accordion"><summary class="tsd-accordion-summary">
@@ -192,6 +216,7 @@
 <li class="tsd-kind-property tsd-parent-kind-class"><a href="FragmentProperties.html#properties" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-1024-path"></use><use href="#icon-1024-text"></use></svg>properties</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="FragmentProperties.html#add" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>add</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="FragmentProperties.html#assign" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>assign</a></li>
+<li class="tsd-kind-method tsd-parent-kind-class"><a href="FragmentProperties.html#dispose" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>dispose</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="FragmentProperties.html#get" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="FragmentProperties.html#getItemsOfType" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Items<wbr/>Of<wbr/>Type</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="FragmentProperties.html#getPropertySets" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get<wbr/>Property<wbr/>Sets</a></li>

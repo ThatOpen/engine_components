@@ -30,9 +30,10 @@
 <h4>Implements</h4>
 <ul class="tsd-hierarchy">
 <li><a href="../interfaces/Disposable.html" class="tsd-signature-type" data-tsd-kind="Interface">Disposable</a></li>
-<li><a href="../interfaces/Updateable.html" class="tsd-signature-type" data-tsd-kind="Interface">Updateable</a></li></ul></section><aside class="tsd-sources">
+<li><a href="../interfaces/Updateable.html" class="tsd-signature-type" data-tsd-kind="Interface">Updateable</a></li>
+<li><a href="../interfaces/Hideable.html" class="tsd-signature-type" data-tsd-kind="Interface">Hideable</a></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L11">library/src/core/simple-clipper/simple-plane.ts:11</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L11">library/src/core/simple-clipper/simple-plane.ts:11</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-index-accordion" open><summary class="tsd-accordion-summary tsd-index-summary">
@@ -67,7 +68,8 @@
 <div class="tsd-index-list"><a href="SimplePlane.html#enabled" class="tsd-index-link tsd-kind-accessor tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><rect fill="var(--color-icon-background)" stroke="#FF4D4D" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12" id="icon-262144-path"></rect><path d="M8.85 16L11.13 7.24H12.582L14.85 16H13.758L13.182 13.672H10.53L9.954 16H8.85ZM10.746 12.76H12.954L12.282 10.06C12.154 9.548 12.054 9.12 11.982 8.776C11.91 8.432 11.866 8.208 11.85 8.104C11.834 8.208 11.79 8.432 11.718 8.776C11.646 9.12 11.546 9.544 11.418 10.048L10.746 12.76Z" fill="var(--color-text)" id="icon-262144-text"></path></svg><span>enabled</span></a>
 <a href="SimplePlane.html#meshes" class="tsd-index-link tsd-kind-accessor tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg><span>meshes</span></a>
 <a href="SimplePlane.html#planeMaterial" class="tsd-index-link tsd-kind-accessor tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg><span>plane<wbr/>Material</span></a>
-<a href="SimplePlane.html#planeSize" class="tsd-index-link tsd-kind-accessor tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg><span>plane<wbr/>Size</span></a>
+<a href="SimplePlane.html#size" class="tsd-index-link tsd-kind-accessor tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg><span>size</span></a>
+<a href="SimplePlane.html#visible" class="tsd-index-link tsd-kind-accessor tsd-parent-kind-class"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg><span>visible</span></a>
 </div></section>
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading">Methods</h3>
@@ -113,64 +115,64 @@
 <h4 class="tsd-returns-title">Returns <a href="SimplePlane.html" class="tsd-signature-type" data-tsd-kind="Class">SimplePlane</a></h4><aside class="tsd-sources">
 <p>Overrides <a href="Component.html">Component</a>.<a href="Component.html#constructor">constructor</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L87">library/src/core/simple-clipper/simple-plane.ts:87</a></li></ul></aside></li></ul></section></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L97">library/src/core/simple-clipper/simple-plane.ts:97</a></li></ul></aside></li></ul></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Properties</h2>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="_arrowBoundBox" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>_arrow<wbr/>Bound<wbr/>Box</span><a href="#_arrowBoundBox" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_arrow<wbr/>Bound<wbr/>Box<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Mesh</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">BufferGeometry</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Material</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Material</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L37">library/src/core/simple-clipper/simple-plane.ts:37</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L39">library/src/core/simple-clipper/simple-plane.ts:39</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="_components" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>_components</span><a href="#_components" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_components<span class="tsd-signature-symbol">:</span> <a href="Components.html" class="tsd-signature-type" data-tsd-kind="Class">Components</a></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L38">library/src/core/simple-clipper/simple-plane.ts:38</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L40">library/src/core/simple-clipper/simple-plane.ts:40</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="_controls" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>_controls</span><a href="#_controls" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_controls<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">TransformControls</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L40">library/src/core/simple-clipper/simple-plane.ts:40</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L42">library/src/core/simple-clipper/simple-plane.ts:42</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="_enabled" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>_enabled</span><a href="#_enabled" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_enabled<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L36">library/src/core/simple-clipper/simple-plane.ts:36</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L38">library/src/core/simple-clipper/simple-plane.ts:38</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="_helper" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>_helper</span><a href="#_helper" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_helper<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L43">library/src/core/simple-clipper/simple-plane.ts:43</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L45">library/src/core/simple-clipper/simple-plane.ts:45</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="_hiddenMaterial" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>_hidden<wbr/>Material</span><a href="#_hiddenMaterial" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_hidden<wbr/>Material<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">MeshBasicMaterial</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L44">library/src/core/simple-clipper/simple-plane.ts:44</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L46">library/src/core/simple-clipper/simple-plane.ts:46</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="_normal" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>_normal</span><a href="#_normal" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_normal<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Vector3</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L41">library/src/core/simple-clipper/simple-plane.ts:41</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L43">library/src/core/simple-clipper/simple-plane.ts:43</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="_origin" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>_origin</span><a href="#_origin" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_origin<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Vector3</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L42">library/src/core/simple-clipper/simple-plane.ts:42</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L44">library/src/core/simple-clipper/simple-plane.ts:44</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a id="_plane" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagProtected">Protected</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>_plane</span><a href="#_plane" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_plane<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Plane</span><span class="tsd-signature-symbol"> = ...</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L33">library/src/core/simple-clipper/simple-plane.ts:33</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L33">library/src/core/simple-clipper/simple-plane.ts:33</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="_planeMesh" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <code class="tsd-tag ts-flagReadonly">Readonly</code> <span>_plane<wbr/>Mesh</span><a href="#_planeMesh" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_plane<wbr/>Mesh<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Mesh</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">BufferGeometry</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Material</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Material</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L39">library/src/core/simple-clipper/simple-plane.ts:39</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L41">library/src/core/simple-clipper/simple-plane.ts:41</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private"><a id="_visible" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>_visible</span><a href="#_visible" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">_visible<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L35">library/src/core/simple-clipper/simple-plane.ts:35</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L37">library/src/core/simple-clipper/simple-plane.ts:37</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="afterUpdate" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>after<wbr/>Update</span><a href="#afterUpdate" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">after<wbr/>Update<span class="tsd-signature-symbol">:</span> <a href="Event.html" class="tsd-signature-type" data-tsd-kind="Class">Event</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Plane</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = ...</span></div>
@@ -178,7 +180,7 @@
 </div><aside class="tsd-sources">
 <p>Implementation of <a href="../interfaces/Updateable.html">Updateable</a>.<a href="../interfaces/Updateable.html#afterUpdate">afterUpdate</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L19">library/src/core/simple-clipper/simple-plane.ts:19</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L19">library/src/core/simple-clipper/simple-plane.ts:19</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="beforeUpdate" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>before<wbr/>Update</span><a href="#beforeUpdate" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">before<wbr/>Update<span class="tsd-signature-symbol">:</span> <a href="Event.html" class="tsd-signature-type" data-tsd-kind="Class">Event</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Plane</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = ...</span></div>
@@ -186,14 +188,14 @@
 </div><aside class="tsd-sources">
 <p>Implementation of <a href="../interfaces/Updateable.html">Updateable</a>.<a href="../interfaces/Updateable.html#beforeUpdate">beforeUpdate</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L22">library/src/core/simple-clipper/simple-plane.ts:22</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L22">library/src/core/simple-clipper/simple-plane.ts:22</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="isPlan" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>is<wbr/>Plan</span><a href="#isPlan" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">is<wbr/>Plan<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div>
 <div class="tsd-comment tsd-typography"><p>Whether this plane is used for floor plan navigation</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L31">library/src/core/simple-clipper/simple-plane.ts:31</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L31">library/src/core/simple-clipper/simple-plane.ts:31</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="name" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>name</span><a href="#name" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> = &quot;SimplePlane&quot;</span></div>
@@ -201,21 +203,21 @@
 </div><aside class="tsd-sources">
 <p>Overrides <a href="Component.html">Component</a>.<a href="Component.html#name">name</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L16">library/src/core/simple-clipper/simple-plane.ts:16</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L16">library/src/core/simple-clipper/simple-plane.ts:16</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="onEndDragging" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>on<wbr/>End<wbr/>Dragging</span><a href="#onEndDragging" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">on<wbr/>End<wbr/>Dragging<span class="tsd-signature-symbol">:</span> <a href="Event.html" class="tsd-signature-type" data-tsd-kind="Class">Event</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = ...</span></div>
 <div class="tsd-comment tsd-typography"><p>Event that fires when the user stops dragging a clipping plane.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L28">library/src/core/simple-clipper/simple-plane.ts:28</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L28">library/src/core/simple-clipper/simple-plane.ts:28</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class"><a id="onStartDragging" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>on<wbr/>Start<wbr/>Dragging</span><a href="#onStartDragging" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <div class="tsd-signature">on<wbr/>Start<wbr/>Dragging<span class="tsd-signature-symbol">:</span> <a href="Event.html" class="tsd-signature-type" data-tsd-kind="Class">Event</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> = ...</span></div>
 <div class="tsd-comment tsd-typography"><p>Event that fires when the user starts dragging a clipping plane.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L25">library/src/core/simple-clipper/simple-plane.ts:25</a></li></ul></aside></section></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L25">library/src/core/simple-clipper/simple-plane.ts:25</a></li></ul></aside></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Accessors</h2>
 <section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="enabled" class="tsd-anchor"></a>
@@ -228,7 +230,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
 <p>Overrides Component.enabled</p>
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L49">library/src/core/simple-clipper/simple-plane.ts:49</a></li></ul></aside></li>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L51">library/src/core/simple-clipper/simple-plane.ts:51</a></li></ul></aside></li>
 <li class="tsd-signature" id="enabled.enabled-2"><span class="tsd-signature-symbol">set</span> enabled<span class="tsd-signature-symbol">(</span>enabled<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p><a href="Component.html#enabled">enabled</a></p>
@@ -241,7 +243,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <p>Overrides Component.enabled</p>
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L54">library/src/core/simple-clipper/simple-plane.ts:54</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L56">library/src/core/simple-clipper/simple-plane.ts:56</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="meshes" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>meshes</span><a href="#meshes" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class">
@@ -251,7 +253,7 @@
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Mesh</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">BufferGeometry</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Material</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Material</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L63">library/src/core/simple-clipper/simple-plane.ts:63</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L73">library/src/core/simple-clipper/simple-plane.ts:73</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="planeMaterial" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>plane<wbr/>Material</span><a href="#planeMaterial" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class">
@@ -261,7 +263,7 @@
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Material</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Material</span><span class="tsd-signature-symbol">[]</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L68">library/src/core/simple-clipper/simple-plane.ts:68</a></li></ul></aside></li>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L78">library/src/core/simple-clipper/simple-plane.ts:78</a></li></ul></aside></li>
 <li class="tsd-signature" id="planeMaterial.planeMaterial-2"><span class="tsd-signature-symbol">set</span> planeMaterial<span class="tsd-signature-symbol">(</span>material<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Material</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Material</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>The material of the clipping plane representation.</p>
@@ -273,18 +275,18 @@
 <h5>material: <span class="tsd-signature-type">Material</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">Material</span><span class="tsd-signature-symbol">[]</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L73">library/src/core/simple-clipper/simple-plane.ts:73</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="planeSize" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>plane<wbr/>Size</span><a href="#planeSize" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L83">library/src/core/simple-clipper/simple-plane.ts:83</a></li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="size" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>size</span><a href="#size" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class">
-<li class="tsd-signature" id="planeSize.planeSize-1"><span class="tsd-signature-symbol">get</span> planeSize<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+<li class="tsd-signature" id="size.size-1"><span class="tsd-signature-symbol">get</span> size<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>The size of the clipping plane representation.</p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L78">library/src/core/simple-clipper/simple-plane.ts:78</a></li></ul></aside></li>
-<li class="tsd-signature" id="planeSize.planeSize-2"><span class="tsd-signature-symbol">set</span> planeSize<span class="tsd-signature-symbol">(</span>size<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L88">library/src/core/simple-clipper/simple-plane.ts:88</a></li></ul></aside></li>
+<li class="tsd-signature" id="size.size-2"><span class="tsd-signature-symbol">set</span> size<span class="tsd-signature-symbol">(</span>size<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Sets the size of the clipping plane representation.</p>
 </div>
@@ -295,7 +297,35 @@
 <h5>size: <span class="tsd-signature-type">number</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L83">library/src/core/simple-clipper/simple-plane.ts:83</a></li></ul></aside></li></ul></section></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L93">library/src/core/simple-clipper/simple-plane.ts:93</a></li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-kind-accessor tsd-parent-kind-class"><a id="visible" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>visible</span><a href="#visible" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-kind-accessor tsd-parent-kind-class">
+<li class="tsd-signature" id="visible.visible-1"><span class="tsd-signature-symbol">get</span> visible<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+<li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Whether the geometric representation of this component is
+currently visible or not in the
+<a href="https://threejs.org/docs/#api/en/scenes/Scene">Three.js scene</a>.</p>
+</div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4><aside class="tsd-sources">
+<p>Implementation of <a href="../interfaces/Hideable.html">Hideable</a>.<a href="../interfaces/Hideable.html#visible">visible</a></p>
+<ul>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L61">library/src/core/simple-clipper/simple-plane.ts:61</a></li></ul></aside></li>
+<li class="tsd-signature" id="visible.visible-2"><span class="tsd-signature-symbol">set</span> visible<span class="tsd-signature-symbol">(</span>visible<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+<li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Whether the geometric representation of this component is
+currently visible or not in the
+<a href="https://threejs.org/docs/#api/en/scenes/Scene">Three.js scene</a>.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li>
+<h5>visible: <span class="tsd-signature-type">boolean</span></h5></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
+<p>Implementation of <a href="../interfaces/Hideable.html">Hideable</a>.<a href="../interfaces/Hideable.html#visible">visible</a></p>
+<ul>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L65">library/src/core/simple-clipper/simple-plane.ts:65</a></li></ul></aside></li></ul></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Methods</h2>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="createArrowBoundingBox" class="tsd-anchor"></a>
@@ -305,7 +335,7 @@
 <li class="tsd-description">
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L170">library/src/core/simple-clipper/simple-plane.ts:170</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L174">library/src/core/simple-clipper/simple-plane.ts:174</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="dispose" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>dispose</span><a href="#dispose" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -316,7 +346,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <p>Implementation of Disposable.dispose</p>
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L129">library/src/core/simple-clipper/simple-plane.ts:129</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L139">library/src/core/simple-clipper/simple-plane.ts:139</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="get" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>get</span><a href="#get" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -327,7 +357,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Plane</span></h4><aside class="tsd-sources">
 <p>Overrides <a href="Component.html">Component</a>.<a href="Component.html#get">get</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L124">library/src/core/simple-clipper/simple-plane.ts:124</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L134">library/src/core/simple-clipper/simple-plane.ts:134</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="initializeControls" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>initialize<wbr/>Controls</span><a href="#initializeControls" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -340,7 +370,7 @@
 <h5>controls: <span class="tsd-signature-type">TransformControls</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L161">library/src/core/simple-clipper/simple-plane.ts:161</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L165">library/src/core/simple-clipper/simple-plane.ts:165</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="isDisposeable" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>is<wbr/>Disposeable</span><a href="#isDisposeable" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
@@ -351,7 +381,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">this</span><span class="tsd-signature-symbol"> is </span><a href="../interfaces/Disposable.html" class="tsd-signature-type" data-tsd-kind="Interface">Disposable</a></h4><aside class="tsd-sources">
 <p>Inherited from <a href="Component.html">Component</a>.<a href="Component.html#isDisposeable">isDisposeable</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/base-components/component.ts#L27">library/src/core/base-components/component.ts:27</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/base-components/component.ts#L27">library/src/core/base-components/component.ts:27</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="isHideable" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>is<wbr/>Hideable</span><a href="#isHideable" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
@@ -362,7 +392,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">this</span><span class="tsd-signature-symbol"> is </span><a href="../interfaces/Hideable.html" class="tsd-signature-type" data-tsd-kind="Interface">Hideable</a></h4><aside class="tsd-sources">
 <p>Inherited from <a href="Component.html">Component</a>.<a href="Component.html#isHideable">isHideable</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/base-components/component.ts#L42">library/src/core/base-components/component.ts:42</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/base-components/component.ts#L42">library/src/core/base-components/component.ts:42</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="isResizeable" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>is<wbr/>Resizeable</span><a href="#isResizeable" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
@@ -373,7 +403,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">this</span><span class="tsd-signature-symbol"> is </span><a href="../interfaces/Resizeable.html" class="tsd-signature-type" data-tsd-kind="Interface">Resizeable</a></h4><aside class="tsd-sources">
 <p>Inherited from <a href="Component.html">Component</a>.<a href="Component.html#isResizeable">isResizeable</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/base-components/component.ts#L32">library/src/core/base-components/component.ts:32</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/base-components/component.ts#L32">library/src/core/base-components/component.ts:32</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a id="isUpdateable" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>is<wbr/>Updateable</span><a href="#isUpdateable" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
@@ -384,7 +414,7 @@
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">this</span><span class="tsd-signature-symbol"> is </span><a href="../interfaces/Updateable.html" class="tsd-signature-type" data-tsd-kind="Interface">Updateable</a></h4><aside class="tsd-sources">
 <p>Inherited from <a href="Component.html">Component</a>.<a href="Component.html#isUpdateable">isUpdateable</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/base-components/component.ts#L37">library/src/core/base-components/component.ts:37</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/base-components/component.ts#L37">library/src/core/base-components/component.ts:37</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="newHelper" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>new<wbr/>Helper</span><a href="#newHelper" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -392,7 +422,7 @@
 <li class="tsd-description">
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Object3D</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Event</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L206">library/src/core/simple-clipper/simple-plane.ts:206</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L210">library/src/core/simple-clipper/simple-plane.ts:210</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="newTransformControls" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>new<wbr/>Transform<wbr/>Controls</span><a href="#newTransformControls" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -400,7 +430,7 @@
 <li class="tsd-description">
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">TransformControls</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L150">library/src/core/simple-clipper/simple-plane.ts:150</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L154">library/src/core/simple-clipper/simple-plane.ts:154</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="notifyDraggingChanged" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>notify<wbr/>Dragging<wbr/>Changed</span><a href="#notifyDraggingChanged" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -413,7 +443,7 @@
 <h5>event: <span class="tsd-signature-type">Event</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L194">library/src/core/simple-clipper/simple-plane.ts:194</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L198">library/src/core/simple-clipper/simple-plane.ts:198</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="onDraggingChanged" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>on<wbr/>Dragging<wbr/>Changed</span><a href="#onDraggingChanged" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -426,7 +456,7 @@
 <h5>event: <span class="tsd-signature-type">Event</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L186">library/src/core/simple-clipper/simple-plane.ts:186</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L190">library/src/core/simple-clipper/simple-plane.ts:190</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="preventCameraMovement" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>prevent<wbr/>Camera<wbr/>Movement</span><a href="#preventCameraMovement" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -434,7 +464,7 @@
 <li class="tsd-description">
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L202">library/src/core/simple-clipper/simple-plane.ts:202</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L206">library/src/core/simple-clipper/simple-plane.ts:206</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="setupEvents" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagPrivate">Private</code> <span>setup<wbr/>Events</span><a href="#setupEvents" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -442,19 +472,18 @@
 <li class="tsd-description">
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L178">library/src/core/simple-clipper/simple-plane.ts:178</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L182">library/src/core/simple-clipper/simple-plane.ts:182</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class"><a id="update" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>update</span><a href="#update" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 <li class="tsd-signature tsd-anchor-link" id="update.update-1">update<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#update.update-1" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></li>
 <li class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Function used to update the state of this component each frame. For
-instance, a renderer component will make a render each frame.</p>
+<div class="tsd-comment tsd-typography"><p><a href="../interfaces/Updateable.html#update">update</a></p>
 </div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4><aside class="tsd-sources">
 <p>Implementation of <a href="../interfaces/Updateable.html">Updateable</a>.<a href="../interfaces/Updateable.html#update">update</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L112">library/src/core/simple-clipper/simple-plane.ts:112</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L123">library/src/core/simple-clipper/simple-plane.ts:123</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private"><a id="newPlaneMesh" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagStatic">Static</code> <code class="tsd-tag ts-flagPrivate">Private</code> <span>new<wbr/>Plane<wbr/>Mesh</span><a href="#newPlaneMesh" aria-label="Permalink" class="tsd-anchor-icon"><svg class="icon icon-tabler icon-tabler-link" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-anchor-a"></use><use href="#icon-anchor-b"></use><use href="#icon-anchor-c"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
@@ -469,7 +498,7 @@ instance, a renderer component will make a render each frame.</p>
 <h5>material: <span class="tsd-signature-type">Material</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Mesh</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">PlaneGeometry</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">Material</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/IFCjs/components/blob/f3d7a51/library/src/core/simple-clipper/simple-plane.ts#L218">library/src/core/simple-clipper/simple-plane.ts:218</a></li></ul></aside></li></ul></section></section></div>
+<li>Defined in <a href="https://github.com/IFCjs/components/blob/0e994f5/library/src/core/simple-clipper/simple-plane.ts#L222">library/src/core/simple-clipper/simple-plane.ts:222</a></li></ul></aside></li></ul></section></section></div>
 <div class="col-4 col-menu menu-sticky-wrap menu-highlight">
 <div class="tsd-navigation settings">
 <details class="tsd-index-accordion"><summary class="tsd-accordion-summary">
@@ -515,7 +544,8 @@ instance, a renderer component will make a render each frame.</p>
 <li class="tsd-kind-accessor tsd-parent-kind-class"><a href="SimplePlane.html#enabled" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg>enabled</a></li>
 <li class="tsd-kind-accessor tsd-parent-kind-class"><a href="SimplePlane.html#meshes" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg>meshes</a></li>
 <li class="tsd-kind-accessor tsd-parent-kind-class"><a href="SimplePlane.html#planeMaterial" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg>plane<wbr/>Material</a></li>
-<li class="tsd-kind-accessor tsd-parent-kind-class"><a href="SimplePlane.html#planeSize" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg>plane<wbr/>Size</a></li>
+<li class="tsd-kind-accessor tsd-parent-kind-class"><a href="SimplePlane.html#size" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg>size</a></li>
+<li class="tsd-kind-accessor tsd-parent-kind-class"><a href="SimplePlane.html#visible" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-262144-path"></use><use href="#icon-262144-text"></use></svg>visible</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="SimplePlane.html#createArrowBoundingBox" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>create<wbr/>Arrow<wbr/>Bounding<wbr/>Box</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="SimplePlane.html#dispose" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>dispose</a></li>
 <li class="tsd-kind-method tsd-parent-kind-class"><a href="SimplePlane.html#get" class="tsd-index-link"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-2048-path"></use><use href="#icon-2048-text"></use></svg>get</a></li>

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
-import { Disposable, Hideable, Updateable } from "../base-types";
+import {Createable, Disposable, Hideable, Updateable} from "../base-types";
 import { Components } from "../../components";
 import { SimpleDimensionLine } from "./simple-dimension-line";
 import { Component } from "../base-components";
@@ -15,7 +15,7 @@ import { DimensionPreviewClassName } from "./types";
  */
 export class SimpleDimensions
   extends Component<SimpleDimensionLine[]>
-  implements Hideable, Disposable, Updateable
+  implements Createable, Hideable, Disposable, Updateable
 {
   /** {@link Component.name} */
   readonly name = "SimpleDimensions";
@@ -25,6 +25,12 @@ export class SimpleDimensions
 
   /** {@link Updateable.afterUpdate} */
   readonly afterUpdate = new Event<SimpleDimensions>();
+
+  /** {@link Createable.onCreate} */
+  onCreate: Event<SimpleDimensionLine> = new Event<SimpleDimensionLine>();
+
+  /** {@link Createable.onDelete} */
+  onDelete: Event<SimpleDimensionLine> = new Event<SimpleDimensionLine>();
 
   /** The minimum distance to force the dimension cursor to a vertex. */
   snapDistance = 0.25;
@@ -191,6 +197,7 @@ export class SimpleDimensions
       const index = this._dimensions.indexOf(dimension);
       this._dimensions.splice(index, 1);
       dimension.dispose();
+      this.onDelete.trigger(dimension);
     }
   }
 
@@ -198,6 +205,7 @@ export class SimpleDimensions
   deleteAll() {
     this._dimensions.forEach((dim) => {
       dim.dispose();
+      this.onDelete.trigger(dim);
     });
     this._dimensions = [];
   }
@@ -238,6 +246,7 @@ export class SimpleDimensions
     this._dimensions.push(this._temp.dimension);
     this._temp.dimension = undefined;
     this._temp.isDragging = false;
+    this.onCreate.trigger(this._temp.dimension);
   }
 
   private newEndpointMesh() {

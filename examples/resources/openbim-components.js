@@ -7050,6 +7050,10 @@ class SimpleDimensions extends Component {
         this.beforeUpdate = new Event();
         /** {@link Updateable.afterUpdate} */
         this.afterUpdate = new Event();
+        /** {@link Createable.onCreate} */
+        this.onCreate = new Event();
+        /** {@link Createable.onDelete} */
+        this.onDelete = new Event();
         /** The minimum distance to force the dimension cursor to a vertex. */
         this.snapDistance = 0.25;
         this._lineMaterial = new THREE$1.LineDashedMaterial({
@@ -7191,12 +7195,14 @@ class SimpleDimensions extends Component {
             const index = this._dimensions.indexOf(dimension);
             this._dimensions.splice(index, 1);
             dimension.dispose();
+            this.onDelete.trigger(dimension);
         }
     }
     /** Deletes all the dimensions that have been previously created. */
     deleteAll() {
         this._dimensions.forEach((dim) => {
             dim.dispose();
+            this.onDelete.trigger(dim);
         });
         this._dimensions = [];
     }
@@ -7239,6 +7245,7 @@ class SimpleDimensions extends Component {
         this._dimensions.push(this._temp.dimension);
         this._temp.dimension = undefined;
         this._temp.isDragging = false;
+        this.onCreate.trigger(this._temp.dimension);
     }
     newEndpointMesh() {
         const geometry = SimpleDimensions.getDefaultEndpointGeometry();
@@ -7462,6 +7469,10 @@ class SimpleClipper extends Component {
         this.PlaneType = PlaneType;
         /** {@link Component.name} */
         this.name = "SimpleClipper";
+        /** {@link Createable.onCreate} */
+        this.onCreate = new Event();
+        /** {@link Createable.onDelete} */
+        this.onDelete = new Event();
         /** The material used in all the clipping planes. */
         this._material = new THREE$1.MeshBasicMaterial({
             color: 0xffff00,
@@ -7489,6 +7500,7 @@ class SimpleClipper extends Component {
         this._planes = [];
         this._size = 5;
         this._enabled = false;
+        this._visible = true;
         this._onStartDragging = () => {
             this.onStartDragging.trigger();
         };
@@ -7505,6 +7517,18 @@ class SimpleClipper extends Component {
         this._enabled = state;
         for (const plane of this.planes3D) {
             plane.enabled = state;
+        }
+        this.updateMaterials();
+    }
+    /** {@link Hideable.visible} */
+    get visible() {
+        return this._visible;
+    }
+    /** {@link Hideable.visible} */
+    set visible(state) {
+        this._visible = state;
+        for (const plane of this.planes3D) {
+            plane.visible = state;
         }
         this.updateMaterials();
     }
@@ -7600,6 +7624,7 @@ class SimpleClipper extends Component {
             this.components.renderer.togglePlane(false, plane.get());
             plane.dispose();
             this.updateMaterials();
+            this.onDelete.trigger(plane);
         }
     }
     pickPlane() {
@@ -7654,6 +7679,7 @@ class SimpleClipper extends Component {
         plane.onStartDragging.on(this._onStartDragging);
         plane.onEndDragging.on(this._onEndDragging);
         this._planes.push(plane);
+        this.onCreate.trigger(plane);
         return plane;
     }
     newPlaneInstance(point, normal, isPlan) {
@@ -9230,10 +9256,16 @@ class SimplePlane extends Component {
     /** {@link Component.enabled} */
     set enabled(enabled) {
         this._enabled = enabled;
-        this._components.renderer.togglePlane(enabled, this._plane);
-        this._visible = enabled;
-        this._controls.visible = enabled;
-        this._helper.visible = enabled;
+        this._controls.enabled = enabled;
+    }
+    get visible() {
+        return this._visible;
+    }
+    set visible(visible) {
+        this._visible = true;
+        this._components.renderer.togglePlane(visible, this._plane);
+        this._controls.visible = visible;
+        this._helper.visible = visible;
     }
     /** The meshes used for raycasting */
     get meshes() {
@@ -70931,9 +70963,9 @@ class EdgesPlane extends SimplePlane {
         this.updateTimeout = -1;
         this.edges = new ClippingEdges(components, this._plane, styles);
     }
-    /** {@link Disposable.dispose} */
-    set enabled(state) {
-        super.enabled = state;
+    /** {@link Hideable.visible} */
+    set visible(state) {
+        super.visible = state;
         this.edges.visible = state;
     }
     /** {@link Disposable.dispose} */
