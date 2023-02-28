@@ -21324,7 +21324,7 @@ class FragmentCulling {
             const r = buffer[i];
             const g = buffer[i + 1];
             const b = buffer[i + 2];
-            const code = "" + r + g + b;
+            const code = "" + r + "-" + g + "-" + b;
             colors.add(code);
         }
         postMessage({ colors });
@@ -21449,7 +21449,7 @@ class FragmentCulling {
             r: this._colors.r,
             g: this._colors.g,
             b: this._colors.b,
-            code: `${this._colors.r}${this._colors.g}${this._colors.b}`,
+            code: `${this._colors.r}-${this._colors.g}-${this._colors.b}`,
         };
     }
     // If the edges need to be updated (e.g. some walls have been hidden)
@@ -70824,6 +70824,7 @@ class ClippingEdges extends Component {
                     const tempMatrix = new THREE$1.Matrix4();
                     instanced.getMatrixAt(i, tempMatrix);
                     tempMesh.applyMatrix4(tempMatrix);
+                    tempMesh.applyMatrix4(mesh.matrix);
                     tempMesh.updateMatrix();
                     tempMesh.updateMatrixWorld();
                     this._inverseMatrix.copy(tempMesh.matrixWorld).invert();
@@ -70921,6 +70922,7 @@ ClippingEdges._basicEdges = new THREE$1.LineSegments();
 class EdgesPlane extends SimplePlane {
     constructor(components, origin, normal, size, material, isPlan, styles) {
         super(components, origin, normal, size, material, isPlan);
+        this.lastUpdate = -1;
         this.edges = new ClippingEdges(components, this._plane, styles);
     }
     /** {@link Disposable.dispose} */
@@ -70936,7 +70938,10 @@ class EdgesPlane extends SimplePlane {
     /** {@link Updateable.update} */
     update() {
         super.update();
-        this.edges.update();
+        if (this.lastUpdate + 50 < Date.now()) {
+            this.lastUpdate = Date.now();
+            this.edges.update();
+        }
     }
 }
 
