@@ -70922,7 +70922,13 @@ ClippingEdges._basicEdges = new THREE$1.LineSegments();
 class EdgesPlane extends SimplePlane {
     constructor(components, origin, normal, size, material, isPlan, styles) {
         super(components, origin, normal, size, material, isPlan);
+        /**
+         * The max rate in milliseconds at which edges can be regenerated.
+         * To disable this behaviour set this to 0.
+         */
+        this.edgesMaxUpdateRate = 50;
         this.lastUpdate = -1;
+        this.updateTimeout = -1;
         this.edges = new ClippingEdges(components, this._plane, styles);
     }
     /** {@link Disposable.dispose} */
@@ -70938,9 +70944,19 @@ class EdgesPlane extends SimplePlane {
     /** {@link Updateable.update} */
     update() {
         super.update();
-        if (this.lastUpdate + 50 < Date.now()) {
-            this.lastUpdate = Date.now();
+        // Rate limited edges update
+        const now = Date.now();
+        if (this.lastUpdate + this.edgesMaxUpdateRate < now) {
+            this.lastUpdate = now;
             this.edges.update();
+        }
+        else {
+            if (this.updateTimeout === -1) {
+                this.updateTimeout = window.setTimeout(() => {
+                    this.update();
+                    this.updateTimeout = -1;
+                }, this.edgesMaxUpdateRate);
+            }
         }
     }
 }
