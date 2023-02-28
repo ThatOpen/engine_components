@@ -11,6 +11,14 @@ import { EdgesStyles } from "./edges-styles";
 export class EdgesPlane extends SimplePlane {
   readonly edges: ClippingEdges;
 
+  /**
+   * The max rate in milliseconds at which edges can be regenerated.
+   * To disable this behaviour set this to 0.
+   */
+  edgesMaxUpdateRate: number = 50;
+  private lastUpdate: number = -1;
+  private updateTimeout: number = -1;
+
   constructor(
     components: Components,
     origin: THREE.Vector3,
@@ -39,6 +47,19 @@ export class EdgesPlane extends SimplePlane {
   /** {@link Updateable.update} */
   update() {
     super.update();
-    this.edges.update();
+
+    // Rate limited edges update
+    const now = Date.now();
+    if(this.lastUpdate + this.edgesMaxUpdateRate < now){
+      this.lastUpdate = now;
+      this.edges.update();
+    }else {
+      if(this.updateTimeout === -1){
+        this.updateTimeout = window.setTimeout(() => {
+          this.update();
+          this.updateTimeout = -1;
+        }, this.edgesMaxUpdateRate)
+      }
+    }
   }
 }
