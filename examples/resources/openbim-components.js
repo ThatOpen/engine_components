@@ -7500,7 +7500,6 @@ class SimpleClipper extends Component {
         this._planes = [];
         this._size = 5;
         this._enabled = false;
-        this._visible = true;
         this._onStartDragging = () => {
             this.onStartDragging.trigger();
         };
@@ -7517,18 +7516,6 @@ class SimpleClipper extends Component {
         this._enabled = state;
         for (const plane of this.planes3D) {
             plane.enabled = state;
-        }
-        this.updateMaterials();
-    }
-    /** {@link Hideable.visible} */
-    get visible() {
-        return this._visible;
-    }
-    /** {@link Hideable.visible} */
-    set visible(state) {
-        this._visible = state;
-        for (const plane of this.planes3D) {
-            plane.visible = state;
         }
         this.updateMaterials();
     }
@@ -9256,16 +9243,10 @@ class SimplePlane extends Component {
     /** {@link Component.enabled} */
     set enabled(enabled) {
         this._enabled = enabled;
-        this._controls.enabled = enabled;
-    }
-    get visible() {
-        return this._visible;
-    }
-    set visible(visible) {
-        this._visible = true;
-        this._components.renderer.togglePlane(visible, this._plane);
-        this._controls.visible = visible;
-        this._helper.visible = visible;
+        this._components.renderer.togglePlane(enabled, this._plane);
+        this._visible = enabled;
+        this._controls.visible = enabled;
+        this._helper.visible = enabled;
     }
     /** The meshes used for raycasting */
     get meshes() {
@@ -70964,8 +70945,8 @@ class EdgesPlane extends SimplePlane {
         this.edges = new ClippingEdges(components, this._plane, styles);
     }
     /** {@link Hideable.visible} */
-    set visible(state) {
-        super.visible = state;
+    set enabled(state) {
+        super.enabled = state;
         this.edges.visible = state;
     }
     /** {@link Disposable.dispose} */

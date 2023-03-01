@@ -33,8 +33,8 @@ export class EdgesPlane extends SimplePlane {
   }
 
   /** {@link Hideable.visible} */
-  set visible(state: boolean) {
-    super.visible = state;
+  set enabled(state: boolean) {
+    super.enabled = state;
     this.edges.visible = state;
   }
 

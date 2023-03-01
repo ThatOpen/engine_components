@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls";
 import { Components } from "../../components";
 import { Component } from "../base-components";
-import {Disposable, Hideable, Updateable} from "../base-types";
+import {Disposable, Updateable} from "../base-types";
 import { Event } from "../event";
 
 /**
@@ -10,7 +10,7 @@ import { Event } from "../event";
  */
 export class SimplePlane
   extends Component<THREE.Plane>
-  implements Disposable, Updateable, Hideable
+  implements Disposable, Updateable
 {
   /** {@link Component.name} */
   name = "SimplePlane";
@@ -55,18 +55,10 @@ export class SimplePlane
   /** {@link Component.enabled} */
   set enabled(enabled: boolean) {
     this._enabled = enabled;
-    this._controls.enabled = enabled;
-  }
-
-  get visible(){
-    return this._visible;
-  }
-
-  set visible(visible: boolean){
-    this._visible = true;
-    this._components.renderer.togglePlane(visible, this._plane);
-    this._controls.visible = visible;
-    this._helper.visible = visible;
+    this._components.renderer.togglePlane(enabled, this._plane);
+    this._visible = enabled;
+    this._controls.visible = enabled;
+    this._helper.visible = enabled;
   }
 
   /** The meshes used for raycasting */
