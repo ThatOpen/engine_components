@@ -230,7 +230,7 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
   }
 
   private createPlaneMaterial(shadow: Shadow) {
-    const renderer = this.components.renderer.get();
+    const renderer = this.components.renderer;
     return new THREE.MeshBasicMaterial({
       map: shadow.rt.texture,
       opacity: this.opacity,

@@ -54,7 +54,7 @@ export class SimpleRaycaster
   }
 
   private filterClippingPlanes(objs: THREE.Intersection[]) {
-    const renderer = this.components.renderer.get() as THREE.WebGLRenderer;
+    const renderer = this.components.renderer;
     if (!renderer.clippingPlanes) {
       return objs;
     }

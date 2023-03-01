@@ -44,7 +44,7 @@ export class FragmentCulling implements Disposable {
     readonly autoUpdate = true
   ) {
     this.renderer = new THREE.WebGLRenderer();
-    const planes = this.components.renderer.get().clippingPlanes;
+    const planes = this.components.renderer.clippingPlanes;
     this.renderer.clippingPlanes = planes;
     this.renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight);
     this.bufferSize = rtWidth * rtHeight * 4;
@@ -218,7 +218,7 @@ export class FragmentCulling implements Disposable {
   private getMaterial(r: number, g: number, b: number) {
     const code = `rgb(${r}, ${g}, ${b})`;
     let material = this.materialCache.get(code);
-    const clippingPlanes = this.components.renderer.get().clippingPlanes;
+    const clippingPlanes = this.components.renderer.clippingPlanes;
     if (!material) {
       material = new THREE.MeshBasicMaterial({
         color: new THREE.Color(code),

@@ -24,18 +24,25 @@ export abstract class RendererComponent
   /** {@link Resizeable.resize}. */
   abstract resize(): void;
 
+  public clippingPlanes: THREE.Plane[] = []
+
   /**
    * Adds or removes a
    * [clipping plane](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.clippingPlanes)
    * to the renderer.
    */
-  togglePlane(active: boolean, plane: THREE.Plane) {
-    const renderer = this.get();
-    const index = renderer.clippingPlanes.indexOf(plane);
+  togglePlane(active: boolean, plane: THREE.Plane, isLocal?: boolean) {
+
+    (plane as any).isLocal = isLocal;
+
+    const index = this.clippingPlanes.indexOf(plane);
     if (active && index === -1) {
-      renderer.clippingPlanes.push(plane);
+      this.clippingPlanes.push(plane);
     } else if (!active && index > -1) {
-      renderer.clippingPlanes.splice(index, 1);
+      this.clippingPlanes.splice(index, 1);
     }
+
+    const renderer = this.get();
+    renderer.clippingPlanes = this.clippingPlanes.filter((plane: any) => !plane.isLocal)
   }
 }
