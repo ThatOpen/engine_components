@@ -269,7 +269,7 @@ export class SimpleClipper<Plane extends SimplePlane>
   }
 
   private updateMaterials() {
-    const planes = this.components.renderer?.get().clippingPlanes;
+    const planes = this.components.renderer.clippingPlanes;
     this.components.meshes.forEach((model) => {
       if (Array.isArray(model.material)) {
         model.material.forEach((mat) => (mat.clippingPlanes = planes));

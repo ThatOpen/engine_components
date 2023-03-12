@@ -49,7 +49,7 @@ export class EdgesStyles
       if (!mesh.geometry.boundsTree) mesh.geometry.computeBoundsTree();
     }
 
-    const renderer = this.components.renderer.get();
+    const renderer = this.components.renderer;
     material.clippingPlanes = renderer.clippingPlanes;
     this._styles[name] = {
       name,

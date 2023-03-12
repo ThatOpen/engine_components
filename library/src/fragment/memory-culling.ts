@@ -58,7 +58,7 @@ export class MemoryCulling implements Disposable {
     readonly autoUpdate = true
   ) {
     this.renderer = new THREE.WebGLRenderer();
-    const planes = this.components.renderer.get().clippingPlanes;
+    const planes = this.components.renderer.clippingPlanes;
     this.renderer.clippingPlanes = planes;
     this.renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight);
     this.bufferSize = rtWidth * rtHeight * 4;
@@ -219,7 +219,7 @@ export class MemoryCulling implements Disposable {
   ) {
     const boxes: any[] = Object.values(boundingBoxes);
     const geometry = new THREE.BoxGeometry();
-    const clippingPlanes = this.components.renderer.get().clippingPlanes;
+    const clippingPlanes = this.components.renderer.clippingPlanes;
     const material = new THREE.MeshBasicMaterial({ clippingPlanes });
     const mesh = new THREE.InstancedMesh(geometry, material, boxes.length);
     const tempMatrix = new THREE.Matrix4();

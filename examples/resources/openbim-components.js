@@ -6385,20 +6385,26 @@ class Component {
  * A base component for components whose main mission is to render a scene.
  */
 class RendererComponent extends Component {
+    constructor() {
+        super(...arguments);
+        this.clippingPlanes = [];
+    }
     /**
      * Adds or removes a
      * [clipping plane](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.clippingPlanes)
      * to the renderer.
      */
-    togglePlane(active, plane) {
-        const renderer = this.get();
-        const index = renderer.clippingPlanes.indexOf(plane);
+    togglePlane(active, plane, isLocal) {
+        plane.isLocal = isLocal;
+        const index = this.clippingPlanes.indexOf(plane);
         if (active && index === -1) {
-            renderer.clippingPlanes.push(plane);
+            this.clippingPlanes.push(plane);
         }
         else if (!active && index > -1) {
-            renderer.clippingPlanes.splice(index, 1);
+            this.clippingPlanes.splice(index, 1);
         }
+        const renderer = this.get();
+        renderer.clippingPlanes = this.clippingPlanes.filter((plane) => !plane.isLocal);
     }
 }
 
@@ -7025,7 +7031,7 @@ class SimpleRaycaster extends Component {
         return filtered.length > 0 ? filtered[0] : null;
     }
     filterClippingPlanes(objs) {
-        const renderer = this.components.renderer.get();
+        const renderer = this.components.renderer;
         if (!renderer.clippingPlanes) {
             return objs;
         }
@@ -7673,8 +7679,7 @@ class SimpleClipper extends Component {
         return new this.PlaneType(this.components, point, normal, this.size, this._material, isPlan);
     }
     updateMaterials() {
-        var _a;
-        const planes = (_a = this.components.renderer) === null || _a === void 0 ? void 0 : _a.get().clippingPlanes;
+        const planes = this.components.renderer.clippingPlanes;
         this.components.meshes.forEach((model) => {
             if (Array.isArray(model.material)) {
                 model.material.forEach((mat) => (mat.clippingPlanes = planes));
@@ -21323,7 +21328,7 @@ class FragmentCulling {
             }
         };
         this.renderer = new THREE$1.WebGLRenderer();
-        const planes = this.components.renderer.get().clippingPlanes;
+        const planes = this.components.renderer.clippingPlanes;
         this.renderer.clippingPlanes = planes;
         this.renderTarget = new THREE$1.WebGLRenderTarget(rtWidth, rtHeight);
         this.bufferSize = rtWidth * rtHeight * 4;
@@ -21421,7 +21426,7 @@ class FragmentCulling {
     getMaterial(r, g, b) {
         const code = `rgb(${r}, ${g}, ${b})`;
         let material = this.materialCache.get(code);
-        const clippingPlanes = this.components.renderer.get().clippingPlanes;
+        const clippingPlanes = this.components.renderer.clippingPlanes;
         if (!material) {
             material = new THREE$1.MeshBasicMaterial({
                 color: new THREE$1.Color(code),
@@ -68679,7 +68684,7 @@ class MemoryCulling {
             }
         };
         this.renderer = new THREE$1.WebGLRenderer();
-        const planes = this.components.renderer.get().clippingPlanes;
+        const planes = this.components.renderer.clippingPlanes;
         this.renderer.clippingPlanes = planes;
         this.renderTarget = new THREE$1.WebGLRenderTarget(rtWidth, rtHeight);
         this.bufferSize = rtWidth * rtHeight * 4;
@@ -68769,7 +68774,7 @@ class MemoryCulling {
     loadBoxes(modelID, boundingBoxes, transparentBoundingBoxes, expressIDTofragmentIDMap) {
         const boxes = Object.values(boundingBoxes);
         const geometry = new THREE$1.BoxGeometry();
-        const clippingPlanes = this.components.renderer.get().clippingPlanes;
+        const clippingPlanes = this.components.renderer.clippingPlanes;
         const material = new THREE$1.MeshBasicMaterial({ clippingPlanes });
         const mesh = new THREE$1.InstancedMesh(geometry, material, boxes.length);
         const tempMatrix = new THREE$1.Matrix4();
@@ -71001,7 +71006,7 @@ class EdgesStyles extends Component {
             if (!mesh.geometry.boundsTree)
                 mesh.geometry.computeBoundsTree();
         }
-        const renderer = this.components.renderer.get();
+        const renderer = this.components.renderer;
         material.clippingPlanes = renderer.clippingPlanes;
         this._styles[name] = {
             name,
@@ -73899,7 +73904,7 @@ class Postproduction {
         if (!scene || !camera)
             return;
         this.scene = scene;
-        const renderer = this.components.renderer.get();
+        const renderer = this.components.renderer;
         this.renderer.clippingPlanes = renderer.clippingPlanes;
         this.addBasePass(scene, camera);
         this.addSaoPass(scene, camera);
@@ -74291,7 +74296,7 @@ class ShadowDropper extends Component {
         shadow.root.add(shadow.blurPlane);
     }
     createPlaneMaterial(shadow) {
-        const renderer = this.components.renderer.get();
+        const renderer = this.components.renderer;
         return new THREE$1.MeshBasicMaterial({
             map: shadow.rt.texture,
             opacity: this.opacity,

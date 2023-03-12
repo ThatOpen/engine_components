@@ -173,7 +173,7 @@ export class Postproduction {
     if (!scene || !camera) return;
 
     this.scene = scene;
-    const renderer = this.components.renderer.get();
+    const renderer = this.components.renderer;
     this.renderer.clippingPlanes = renderer.clippingPlanes;
 
     this.addBasePass(scene, camera);
