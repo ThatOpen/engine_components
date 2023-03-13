@@ -5345,15 +5345,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"openbim-components-root@workspace:.":
+"openbim-components@workspace:.":
   version: 0.0.0-use.local
-  resolution: "openbim-components-root@workspace:."
-  languageName: unknown
-  linkType: soft
-
-"openbim-components@workspace:library":
-  version: 0.0.0-use.local
-  resolution: "openbim-components@workspace:library"
+  resolution: "openbim-components@workspace:."
   dependencies:
     "@rollup/plugin-commonjs": ^22.0.2
     "@rollup/plugin-node-resolve": ^14.1.0
