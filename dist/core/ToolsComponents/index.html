@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="resources/styles.css">
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <title>Tools Component</title>
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.135.0/build/three.module.js",
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js"
+      }
+    }
+</script>
+<script type="module">
+	import * as THREE from 'three';
+	import Stats from 'stats.js/src/Stats.js';
+	import * as OBC from './resources/openbim-components.js';
+
+	const container = document.getElementById('container');
+
+	const components = new OBC.Components();
+
+	components.scene = new OBC.SimpleScene(components);
+	components.renderer = new OBC.SimpleRenderer(components, container);
+	components.camera = new OBC.SimpleCamera(components);
+	components.raycaster = new OBC.SimpleRaycaster(components);
+
+	components.init();
+
+	const scene = components.scene.get();
+
+	const cube = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({color: "red"}))
+	cube.position.set(0, 1.5, 0)
+	scene.add(cube)
+
+	components.meshes.push(cube);
+
+	const directionalLight = new THREE.DirectionalLight();
+	directionalLight.position.set(5, 10, 3)
+	directionalLight.intensity = 0.5;
+	scene.add(directionalLight)
+
+	const ambientLight = new THREE.AmbientLight();
+	ambientLight.intensity = 0.5;
+	scene.add(ambientLight)
+
+	// Add some components
+	const grid = new OBC.SimpleGrid(components);
+	components.tools.add(grid);
+
+	const clipper = new OBC.EdgesClipper(components, OBC.EdgesPlane);
+	components.tools.add(clipper)
+
+	const dimensions = new OBC.SimpleDimensions(components);
+	components.tools.add(dimensions)
+
+	// Set up stats
+	const stats = new Stats();
+	stats.showPanel(2);
+	document.body.append(stats.dom);
+	stats.dom.style.left = '0px';
+	const renderer = components.renderer;
+	renderer.beforeUpdate.on(() => stats.begin());
+	renderer.afterUpdate.on(() => stats.end());
+
+	window.onkeydown = (event) => {
+		switch (event.code){
+			case "KeyC": {
+				components.tools.enable("clipper");
+				break;
+			}
+			case "KeyD": {
+				components.tools.enable("dimensions");
+				break;
+			}
+			case "Escape" : {
+				if (dimensions.enabled) {
+					dimensions.cancelDrawing()
+				}
+				break;
+			}
+			case "Delete": {
+				if (clipper.enabled)
+					clipper.delete()
+
+				if (dimensions.enabled) {
+					dimensions.delete()
+				}
+			}
+		}
+	}
+
+	window.ondblclick = () => {
+		if (clipper.enabled) {
+			clipper.create();
+		} else if (dimensions.enabled) {
+			dimensions.create()
+		}
+	}
+
+</script>
+</body>
+</html>
