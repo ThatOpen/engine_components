@@ -37,7 +37,7 @@
 
 	const scene = components.scene.get();
 
-	const cube = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({color: "red"}))
+	const cube = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({ color: "red", side: THREE.DoubleSide }))
 	cube.position.set(0, 1.5, 0)
 	scene.add(cube)
 
@@ -75,12 +75,12 @@
 	window.onkeydown = (event) => {
 		switch (event.code){
 			case "KeyC": {
-				clipper.enabled = true
+        clipper.enabled = true
 				break;
 			}
 			case "KeyD": {
-				dimensions.enabled = true
-				break;
+        dimensions.enabled = true
+        break;
 			}
 			case "Escape" : {
 				if (dimensions.enabled) {
