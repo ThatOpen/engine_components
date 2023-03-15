@@ -67,14 +67,6 @@
     "skipLibCheck": true,                     /* Skip type checking of declaration files. */
     "forceConsistentCasingInFileNames": true  /* Disallow inconsistently-cased references to the same file. */
   },
-  "typedocOptions": {
-    "entryPoints": ["src/index.ts"],
-    "out": "../docs",
-    "readme": "../README.md",
-    "name": "Open BIM Components",
-    "customCss": "./docs-styles.css",
-    "excludeExternals": true
-  },
   "include": [
     "src/**/*"
   ],

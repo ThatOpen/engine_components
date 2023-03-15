@@ -24,24 +24,16 @@
 	/*MD
   # Let's create a 3D world! 🌍
   The `SimpleScene` component is the easiest way to create a 3D space to start working.
-  Let's start by importing Components and Three.js:
+  Let's start by importing
   */
 
 	import * as THREE from 'three';
 	import * as OBC from 'openbim-components';
 
-	/*MD
-  Now, the first step is getting a container for our viewer. 📦
-  This is just a place where the 3D scene will be rendered.
-  */
+	console.log(OBC);
 
-	const container = document.getElementById('container');
-
-	/*MD
-  Next, we will instantiate the main object of the library: `Components`. 🔥
-  */
-
-	const components = new OBC.Components();
+  const container = document.getElementById('container');
+  const components = new OBC.Components();
 
   components.scene = new OBC.SimpleScene(components);
   components.renderer = new OBC.SimpleRenderer(components, container);

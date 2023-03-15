@@ -1,8 +1,8 @@
-import { Component } from "../../types/component";
+import { Component } from "./component";
 /**
  * A base component for components whose main mission is to render a scene.
  */
-export class RendererComponent extends Component {
+export class BaseRenderer extends Component {
     constructor() {
         super(...arguments);
         this.clippingPlanes = [];
@@ -25,4 +25,4 @@ export class RendererComponent extends Component {
         renderer.clippingPlanes = this.clippingPlanes.filter((plane) => !plane.isLocal);
     }
 }
-//# sourceMappingURL=index.js.map
+//# sourceMappingURL=base-renderer.js.map

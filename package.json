@@ -7,7 +7,9 @@
   "packageManager": "yarn@3.2.1",
   "scripts": {
     "test": "jest",
-    "build": "node docs/cleaner.js && tsc && node docs/docs-builder.js",
+    "build": "node docs/cleaner.js && tsc && yarn build-docs && yarn build-examples",
+    "build-docs": "node docs/docs-builder.js ",
+    "build-examples": "rollup -c resources/rollup.config.js",
     "publish-repo": "cpy package.json dist && cd dist && npm publish"
   },
   "devDependencies": {

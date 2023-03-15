@@ -1,4 +1,4 @@
-import { Disposable, Hideable, Resizeable, Updateable } from "./";
+import { Disposable, Hideable, Resizeable, Updateable } from "./base-types";
 /**
  * Components are the building blocks of this library. Everything is a
  * component: tools, scenes, objects, cameras, etc.

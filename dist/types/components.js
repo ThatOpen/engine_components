@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree, } from "three-mesh-bvh";
-import { ToolComponents } from '../core/ToolsComponents';
+import { ToolComponents } from "../core/ToolsComponents";
 /**
  * The entry point of Open BIM Components.
  * It contains the basic items to create a BIM 3D scene based on Three.js, as

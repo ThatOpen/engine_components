@@ -1,11 +1,11 @@
 import * as THREE from "three";
-import { Component } from "../../types/component";
-import { Resizeable } from "../../types";
+import { Component } from "./component";
+import { Resizeable } from "./base-types";
 
 /**
  * A base component for components whose main mission is to render a scene.
  */
-export abstract class RendererComponent
+export abstract class BaseRenderer
   extends Component<THREE.WebGLRenderer>
   implements Resizeable
 {
@@ -24,7 +24,7 @@ export abstract class RendererComponent
   /** {@link Resizeable.resize}. */
   abstract resize(): void;
 
-  public clippingPlanes: THREE.Plane[] = []
+  public clippingPlanes: THREE.Plane[] = [];
 
   /**
    * Adds or removes a
@@ -32,7 +32,6 @@ export abstract class RendererComponent
    * to the renderer.
    */
   togglePlane(active: boolean, plane: THREE.Plane, isLocal?: boolean) {
-
     (plane as any).isLocal = isLocal;
 
     const index = this.clippingPlanes.indexOf(plane);
@@ -43,6 +42,8 @@ export abstract class RendererComponent
     }
 
     const renderer = this.get();
-    renderer.clippingPlanes = this.clippingPlanes.filter((plane: any) => !plane.isLocal)
+    renderer.clippingPlanes = this.clippingPlanes.filter(
+      (plane: any) => !plane.isLocal
+    );
   }
 }

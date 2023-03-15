@@ -1,10 +1,10 @@
 import * as THREE from "three";
-import { Component } from "../../types/component";
-import { Resizeable } from "../../types";
+import { Component } from "./component";
+import { Resizeable } from "./base-types";
 /**
  * A base component for components whose main mission is to render a scene.
  */
-export declare abstract class RendererComponent extends Component<THREE.WebGLRenderer> implements Resizeable {
+export declare abstract class BaseRenderer extends Component<THREE.WebGLRenderer> implements Resizeable {
     /** {@link Component.name} */
     abstract name: string;
     /** {@link Component.enabled} */

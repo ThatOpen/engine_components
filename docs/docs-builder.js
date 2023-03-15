@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const components = {};
+const folderNames = ["dist", "core"];
 const projectDir = __dirname.slice(0, __dirname.lastIndexOf("\\"));
 
 // source: https://stackoverflow.com/questions/5827612/node-js-fs-readdir-recursive-directory-search
@@ -47,12 +48,14 @@ const saveTutorialPaths = (error, result) => {
 
     let deployedPath = path.replace(projectDir, "https://ifcjs.github.io/components");
     deployedPath = deployedPath.replaceAll("\\", "/");
-    components[name] = {
-      tutorial: deployedPath
+    if(!folderNames.includes(name)) {
+      components[name] = {
+        tutorial: deployedPath
+      }
     }
   }
 
-  traverseDir("../dist", saveApiPaths);
+  traverseDir("./dist", saveApiPaths);
 }
 
 const saveApiPaths = (error, result) => {
@@ -61,10 +64,14 @@ const saveApiPaths = (error, result) => {
   for(const path of filteredAPIs) {
     const splitted = path.split("\\");
     const name = splitted[splitted.length - 2];
-    if(!components[name]) components[name] = {};
+    if(!components[name] && !folderNames.includes(name)) {
+      components[name] = {};
+    }
     let deployedPath = path.replace(projectDir, "https://raw.githubusercontent.com/IFCjs/components/main");
     deployedPath = deployedPath.replaceAll("\\", "/");
-    components[name].api = deployedPath;
+    if(!folderNames.includes(name)) {
+      components[name].api = deployedPath;
+    }
   }
 
   const componentList = [];
@@ -74,8 +81,8 @@ const saveApiPaths = (error, result) => {
   }
 
   const serialized = JSON.stringify(componentList);
-  fs.writeFileSync("./docs.json", serialized);
+  fs.writeFileSync("./docs/docs.json", serialized);
 }
 
 
-traverseDir("../src", saveTutorialPaths);
+traverseDir("./src", saveTutorialPaths);

@@ -1,8 +1,8 @@
 import * as THREE from "three";
-import { Raycaster } from './index';
-import { Component } from './component';
-import { ToolComponents } from '../core/ToolsComponents';
-import { RendererComponent } from '../core/RendererComponent';
+import { Raycaster } from "./index";
+import { Component } from "./component";
+import { ToolComponents } from "../core/ToolsComponents";
+import { BaseRenderer } from "./base-renderer";
 /**
  * The entry point of Open BIM Components.
  * It contains the basic items to create a BIM 3D scene based on Three.js, as
@@ -49,7 +49,7 @@ export declare class Components {
      * used to render the scene. This library provides multiple renderer
      * components with pre-made functionality (e.g. rendering of 2D CSS elements.
      */
-    get renderer(): RendererComponent;
+    get renderer(): BaseRenderer;
     /**
      * This needs to be initialize before calling {@link init}.
      *
@@ -61,7 +61,7 @@ export declare class Components {
      * components.renderer = new OBC.SimpleRenderer(components, container);
      * ```
      */
-    set renderer(renderer: RendererComponent);
+    set renderer(renderer: BaseRenderer);
     /**
      * The [Three.js scene](https://threejs.org/docs/#api/en/scenes/Scene)
      * where all the rendered items are placed.

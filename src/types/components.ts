@@ -6,12 +6,10 @@ import {
   disposeBoundsTree,
 } from "three-mesh-bvh";
 
-import { Raycaster } from './index'
-
-import { Component } from './component'
-
-import { ToolComponents } from '../core/ToolsComponents'
-import { RendererComponent } from '../core/RendererComponent'
+import { Raycaster } from "./index";
+import { Component } from "./component";
+import { ToolComponents } from "../core/ToolsComponents";
+import { BaseRenderer } from "./base-renderer";
 
 /**
  * The entry point of Open BIM Components.
@@ -50,7 +48,7 @@ export class Components {
    */
   readonly meshes: THREE.Mesh[] = [];
 
-  private _renderer?: RendererComponent;
+  private _renderer?: BaseRenderer;
   private _scene?: Component<THREE.Scene>;
   private _camera?: Component<THREE.Camera>;
   private _raycaster?: Raycaster;
@@ -80,7 +78,7 @@ export class Components {
    * components.renderer = new OBC.SimpleRenderer(components, container);
    * ```
    */
-  set renderer(renderer: RendererComponent) {
+  set renderer(renderer: BaseRenderer) {
     this._renderer = renderer;
   }
 
