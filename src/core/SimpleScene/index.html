@@ -36,10 +36,15 @@
 
   const scene = components.scene.get();
 
+  // Add some components: grid & cube
+  const grid = new OBC.SimpleGrid(components);
+  components.tools.add(grid);
+
   const cube = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({color: "red"}))
   cube.position.set(0, 1.5, 0)
   scene.add(cube)
 
+  // Lighting
   const directionalLight = new THREE.DirectionalLight();
   directionalLight.position.set(5, 10, 3)
   directionalLight.intensity = 0.5;
