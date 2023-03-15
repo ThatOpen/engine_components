@@ -75,13 +75,11 @@
 	window.onkeydown = (event) => {
 		switch (event.code){
 			case "KeyC": {
-        const tools = components.tools.tools.find(t => t.name === "EdgesClipper")
-        tools.enabled = true
+        clipper.enabled = true
 				break;
 			}
 			case "KeyD": {
-        const tools = components.tools.tools.find(t => t.name === "SimpleDimensions")
-        tools.enabled = true
+        dimensions.enabled = true
         break;
 			}
 			case "Escape" : {
