@@ -87,7 +87,7 @@
 
 	fragments.culler.viewUpdated.on(() => setTimeout(() => renderer.postproduction.update(), 300));
 
-	await loadFragment('./resources/small.zip');
+	await loadFragment('./resources/01.zip');
 
 	async function loadFragment(url) {
 		const {entries} = await unzip(url);

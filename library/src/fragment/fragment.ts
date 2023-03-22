@@ -1,5 +1,5 @@
 import { FragmentLoader } from "bim-fragment/fragment-loader";
-import { Fragment } from "bim-fragment";
+import { Fragment, Serializer } from "bim-fragment";
 import * as THREE from "three";
 import { FragmentHighlighter } from "./fragment-highlighter";
 import { FragmentCulling } from "./fragment-culling";
@@ -78,6 +78,11 @@ export class Fragments extends Component<Fragment[]> implements Disposable {
    * on whether they are visible.
    */
   memoryCuller: MemoryCulling;
+
+  /**
+   * Serializer to import and export binary fragments.
+   */
+  serializer = new Serializer();
 
   private _loader = new FragmentLoader();
 

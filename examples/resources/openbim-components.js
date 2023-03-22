@@ -13920,6 +13920,2580 @@ function toTrianglesDrawMode( geometry, drawMode ) {
 
 }
 
+class GLTFExporter {
+
+	constructor() {
+
+		this.pluginCallbacks = [];
+
+		this.register( function ( writer ) {
+
+			return new GLTFLightExtension( writer );
+
+		} );
+
+		this.register( function ( writer ) {
+
+			return new GLTFMaterialsUnlitExtension( writer );
+
+		} );
+
+		this.register( function ( writer ) {
+
+			return new GLTFMaterialsPBRSpecularGlossiness( writer );
+
+		} );
+
+		this.register( function ( writer ) {
+
+			return new GLTFMaterialsTransmissionExtension( writer );
+
+		} );
+
+		this.register( function ( writer ) {
+
+			return new GLTFMaterialsVolumeExtension( writer );
+
+		} );
+
+		this.register( function ( writer ) {
+
+			return new GLTFMaterialsClearcoatExtension( writer );
+
+		} );
+
+	}
+
+	register( callback ) {
+
+		if ( this.pluginCallbacks.indexOf( callback ) === - 1 ) {
+
+			this.pluginCallbacks.push( callback );
+
+		}
+
+		return this;
+
+	}
+
+	unregister( callback ) {
+
+		if ( this.pluginCallbacks.indexOf( callback ) !== - 1 ) {
+
+			this.pluginCallbacks.splice( this.pluginCallbacks.indexOf( callback ), 1 );
+
+		}
+
+		return this;
+
+	}
+
+	/**
+	 * Parse scenes and generate GLTF output
+	 * @param  {Scene or [THREE.Scenes]} input   Scene or Array of THREE.Scenes
+	 * @param  {Function} onDone  Callback on completed
+	 * @param  {Function} onError  Callback on errors
+	 * @param  {Object} options options
+	 */
+	parse( input, onDone, onError, options ) {
+
+		if ( typeof onError === 'object' ) {
+
+			console.warn( 'THREE.GLTFExporter: parse() expects options as the fourth argument now.' );
+
+			options = onError;
+
+		}
+
+		const writer = new GLTFWriter();
+		const plugins = [];
+
+		for ( let i = 0, il = this.pluginCallbacks.length; i < il; i ++ ) {
+
+			plugins.push( this.pluginCallbacks[ i ]( writer ) );
+
+		}
+
+		writer.setPlugins( plugins );
+		writer.write( input, onDone, options ).catch( onError );
+
+	}
+
+	parseAsync( input, options ) {
+
+		const scope = this;
+
+		return new Promise( function ( resolve, reject ) {
+
+			scope.parse( input, resolve, reject, options );
+
+		} );
+
+	}
+
+}
+
+//------------------------------------------------------------------------------
+// Constants
+//------------------------------------------------------------------------------
+
+const WEBGL_CONSTANTS = {
+	POINTS: 0x0000,
+	LINES: 0x0001,
+	LINE_LOOP: 0x0002,
+	LINE_STRIP: 0x0003,
+	TRIANGLES: 0x0004,
+	TRIANGLE_STRIP: 0x0005,
+	TRIANGLE_FAN: 0x0006,
+
+	UNSIGNED_BYTE: 0x1401,
+	UNSIGNED_SHORT: 0x1403,
+	FLOAT: 0x1406,
+	UNSIGNED_INT: 0x1405,
+	ARRAY_BUFFER: 0x8892,
+	ELEMENT_ARRAY_BUFFER: 0x8893,
+
+	NEAREST: 0x2600,
+	LINEAR: 0x2601,
+	NEAREST_MIPMAP_NEAREST: 0x2700,
+	LINEAR_MIPMAP_NEAREST: 0x2701,
+	NEAREST_MIPMAP_LINEAR: 0x2702,
+	LINEAR_MIPMAP_LINEAR: 0x2703,
+
+	CLAMP_TO_EDGE: 33071,
+	MIRRORED_REPEAT: 33648,
+	REPEAT: 10497
+};
+
+const THREE_TO_WEBGL = {};
+
+THREE_TO_WEBGL[ NearestFilter ] = WEBGL_CONSTANTS.NEAREST;
+THREE_TO_WEBGL[ NearestMipmapNearestFilter ] = WEBGL_CONSTANTS.NEAREST_MIPMAP_NEAREST;
+THREE_TO_WEBGL[ NearestMipmapLinearFilter ] = WEBGL_CONSTANTS.NEAREST_MIPMAP_LINEAR;
+THREE_TO_WEBGL[ LinearFilter ] = WEBGL_CONSTANTS.LINEAR;
+THREE_TO_WEBGL[ LinearMipmapNearestFilter ] = WEBGL_CONSTANTS.LINEAR_MIPMAP_NEAREST;
+THREE_TO_WEBGL[ LinearMipmapLinearFilter ] = WEBGL_CONSTANTS.LINEAR_MIPMAP_LINEAR;
+
+THREE_TO_WEBGL[ ClampToEdgeWrapping ] = WEBGL_CONSTANTS.CLAMP_TO_EDGE;
+THREE_TO_WEBGL[ RepeatWrapping ] = WEBGL_CONSTANTS.REPEAT;
+THREE_TO_WEBGL[ MirroredRepeatWrapping ] = WEBGL_CONSTANTS.MIRRORED_REPEAT;
+
+const PATH_PROPERTIES = {
+	scale: 'scale',
+	position: 'translation',
+	quaternion: 'rotation',
+	morphTargetInfluences: 'weights'
+};
+
+// GLB constants
+// https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#glb-file-format-specification
+
+const GLB_HEADER_BYTES = 12;
+const GLB_HEADER_MAGIC = 0x46546C67;
+const GLB_VERSION = 2;
+
+const GLB_CHUNK_PREFIX_BYTES = 8;
+const GLB_CHUNK_TYPE_JSON = 0x4E4F534A;
+const GLB_CHUNK_TYPE_BIN = 0x004E4942;
+
+//------------------------------------------------------------------------------
+// Utility functions
+//------------------------------------------------------------------------------
+
+/**
+ * Compare two arrays
+ * @param  {Array} array1 Array 1 to compare
+ * @param  {Array} array2 Array 2 to compare
+ * @return {Boolean}        Returns true if both arrays are equal
+ */
+function equalArray( array1, array2 ) {
+
+	return ( array1.length === array2.length ) && array1.every( function ( element, index ) {
+
+		return element === array2[ index ];
+
+	} );
+
+}
+
+/**
+ * Converts a string to an ArrayBuffer.
+ * @param  {string} text
+ * @return {ArrayBuffer}
+ */
+function stringToArrayBuffer( text ) {
+
+	if ( window.TextEncoder !== undefined ) {
+
+		return new TextEncoder().encode( text ).buffer;
+
+	}
+
+	const array = new Uint8Array( new ArrayBuffer( text.length ) );
+
+	for ( let i = 0, il = text.length; i < il; i ++ ) {
+
+		const value = text.charCodeAt( i );
+
+		// Replacing multi-byte character with space(0x20).
+		array[ i ] = value > 0xFF ? 0x20 : value;
+
+	}
+
+	return array.buffer;
+
+}
+
+/**
+ * Is identity matrix
+ *
+ * @param {Matrix4} matrix
+ * @returns {Boolean} Returns true, if parameter is identity matrix
+ */
+function isIdentityMatrix( matrix ) {
+
+	return equalArray( matrix.elements, [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ] );
+
+}
+
+/**
+ * Get the min and max vectors from the given attribute
+ * @param  {BufferAttribute} attribute Attribute to find the min/max in range from start to start + count
+ * @param  {Integer} start
+ * @param  {Integer} count
+ * @return {Object} Object containing the `min` and `max` values (As an array of attribute.itemSize components)
+ */
+function getMinMax( attribute, start, count ) {
+
+	const output = {
+
+		min: new Array( attribute.itemSize ).fill( Number.POSITIVE_INFINITY ),
+		max: new Array( attribute.itemSize ).fill( Number.NEGATIVE_INFINITY )
+
+	};
+
+	for ( let i = start; i < start + count; i ++ ) {
+
+		for ( let a = 0; a < attribute.itemSize; a ++ ) {
+
+			let value;
+
+			if ( attribute.itemSize > 4 ) {
+
+				 // no support for interleaved data for itemSize > 4
+
+				value = attribute.array[ i * attribute.itemSize + a ];
+
+			} else {
+
+				if ( a === 0 ) value = attribute.getX( i );
+				else if ( a === 1 ) value = attribute.getY( i );
+				else if ( a === 2 ) value = attribute.getZ( i );
+				else if ( a === 3 ) value = attribute.getW( i );
+
+			}
+
+			output.min[ a ] = Math.min( output.min[ a ], value );
+			output.max[ a ] = Math.max( output.max[ a ], value );
+
+		}
+
+	}
+
+	return output;
+
+}
+
+/**
+ * Get the required size + padding for a buffer, rounded to the next 4-byte boundary.
+ * https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#data-alignment
+ *
+ * @param {Integer} bufferSize The size the original buffer.
+ * @returns {Integer} new buffer size with required padding.
+ *
+ */
+function getPaddedBufferSize( bufferSize ) {
+
+	return Math.ceil( bufferSize / 4 ) * 4;
+
+}
+
+/**
+ * Returns a buffer aligned to 4-byte boundary.
+ *
+ * @param {ArrayBuffer} arrayBuffer Buffer to pad
+ * @param {Integer} paddingByte (Optional)
+ * @returns {ArrayBuffer} The same buffer if it's already aligned to 4-byte boundary or a new buffer
+ */
+function getPaddedArrayBuffer( arrayBuffer, paddingByte = 0 ) {
+
+	const paddedLength = getPaddedBufferSize( arrayBuffer.byteLength );
+
+	if ( paddedLength !== arrayBuffer.byteLength ) {
+
+		const array = new Uint8Array( paddedLength );
+		array.set( new Uint8Array( arrayBuffer ) );
+
+		if ( paddingByte !== 0 ) {
+
+			for ( let i = arrayBuffer.byteLength; i < paddedLength; i ++ ) {
+
+				array[ i ] = paddingByte;
+
+			}
+
+		}
+
+		return array.buffer;
+
+	}
+
+	return arrayBuffer;
+
+}
+
+let cachedCanvas = null;
+
+/**
+ * Writer
+ */
+class GLTFWriter {
+
+	constructor() {
+
+		this.plugins = [];
+
+		this.options = {};
+		this.pending = [];
+		this.buffers = [];
+
+		this.byteOffset = 0;
+		this.buffers = [];
+		this.nodeMap = new Map();
+		this.skins = [];
+		this.extensionsUsed = {};
+
+		this.uids = new Map();
+		this.uid = 0;
+
+		this.json = {
+			asset: {
+				version: '2.0',
+				generator: 'THREE.GLTFExporter'
+			}
+		};
+
+		this.cache = {
+			meshes: new Map(),
+			attributes: new Map(),
+			attributesNormalized: new Map(),
+			materials: new Map(),
+			textures: new Map(),
+			images: new Map()
+		};
+
+	}
+
+	setPlugins( plugins ) {
+
+		this.plugins = plugins;
+
+	}
+
+	/**
+	 * Parse scenes and generate GLTF output
+	 * @param  {Scene or [THREE.Scenes]} input   Scene or Array of THREE.Scenes
+	 * @param  {Function} onDone  Callback on completed
+	 * @param  {Object} options options
+	 */
+	async write( input, onDone, options ) {
+
+		this.options = Object.assign( {}, {
+			// default options
+			binary: false,
+			trs: false,
+			onlyVisible: true,
+			truncateDrawRange: true,
+			embedImages: true,
+			maxTextureSize: Infinity,
+			animations: [],
+			includeCustomExtensions: false
+		}, options );
+
+		if ( this.options.animations.length > 0 ) {
+
+			// Only TRS properties, and not matrices, may be targeted by animation.
+			this.options.trs = true;
+
+		}
+
+		this.processInput( input );
+
+		await Promise.all( this.pending );
+
+		const writer = this;
+		const buffers = writer.buffers;
+		const json = writer.json;
+		options = writer.options;
+		const extensionsUsed = writer.extensionsUsed;
+
+		// Merge buffers.
+		const blob = new Blob( buffers, { type: 'application/octet-stream' } );
+
+		// Declare extensions.
+		const extensionsUsedList = Object.keys( extensionsUsed );
+
+		if ( extensionsUsedList.length > 0 ) json.extensionsUsed = extensionsUsedList;
+
+		// Update bytelength of the single buffer.
+		if ( json.buffers && json.buffers.length > 0 ) json.buffers[ 0 ].byteLength = blob.size;
+
+		if ( options.binary === true ) {
+
+			// https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#glb-file-format-specification
+
+			const reader = new window.FileReader();
+			reader.readAsArrayBuffer( blob );
+			reader.onloadend = function () {
+
+				// Binary chunk.
+				const binaryChunk = getPaddedArrayBuffer( reader.result );
+				const binaryChunkPrefix = new DataView( new ArrayBuffer( GLB_CHUNK_PREFIX_BYTES ) );
+				binaryChunkPrefix.setUint32( 0, binaryChunk.byteLength, true );
+				binaryChunkPrefix.setUint32( 4, GLB_CHUNK_TYPE_BIN, true );
+
+				// JSON chunk.
+				const jsonChunk = getPaddedArrayBuffer( stringToArrayBuffer( JSON.stringify( json ) ), 0x20 );
+				const jsonChunkPrefix = new DataView( new ArrayBuffer( GLB_CHUNK_PREFIX_BYTES ) );
+				jsonChunkPrefix.setUint32( 0, jsonChunk.byteLength, true );
+				jsonChunkPrefix.setUint32( 4, GLB_CHUNK_TYPE_JSON, true );
+
+				// GLB header.
+				const header = new ArrayBuffer( GLB_HEADER_BYTES );
+				const headerView = new DataView( header );
+				headerView.setUint32( 0, GLB_HEADER_MAGIC, true );
+				headerView.setUint32( 4, GLB_VERSION, true );
+				const totalByteLength = GLB_HEADER_BYTES
+					+ jsonChunkPrefix.byteLength + jsonChunk.byteLength
+					+ binaryChunkPrefix.byteLength + binaryChunk.byteLength;
+				headerView.setUint32( 8, totalByteLength, true );
+
+				const glbBlob = new Blob( [
+					header,
+					jsonChunkPrefix,
+					jsonChunk,
+					binaryChunkPrefix,
+					binaryChunk
+				], { type: 'application/octet-stream' } );
+
+				const glbReader = new window.FileReader();
+				glbReader.readAsArrayBuffer( glbBlob );
+				glbReader.onloadend = function () {
+
+					onDone( glbReader.result );
+
+				};
+
+			};
+
+		} else {
+
+			if ( json.buffers && json.buffers.length > 0 ) {
+
+				const reader = new window.FileReader();
+				reader.readAsDataURL( blob );
+				reader.onloadend = function () {
+
+					const base64data = reader.result;
+					json.buffers[ 0 ].uri = base64data;
+					onDone( json );
+
+				};
+
+			} else {
+
+				onDone( json );
+
+			}
+
+		}
+
+
+	}
+
+	/**
+	 * Serializes a userData.
+	 *
+	 * @param {THREE.Object3D|THREE.Material} object
+	 * @param {Object} objectDef
+	 */
+	serializeUserData( object, objectDef ) {
+
+		if ( Object.keys( object.userData ).length === 0 ) return;
+
+		const options = this.options;
+		const extensionsUsed = this.extensionsUsed;
+
+		try {
+
+			const json = JSON.parse( JSON.stringify( object.userData ) );
+
+			if ( options.includeCustomExtensions && json.gltfExtensions ) {
+
+				if ( objectDef.extensions === undefined ) objectDef.extensions = {};
+
+				for ( const extensionName in json.gltfExtensions ) {
+
+					objectDef.extensions[ extensionName ] = json.gltfExtensions[ extensionName ];
+					extensionsUsed[ extensionName ] = true;
+
+				}
+
+				delete json.gltfExtensions;
+
+			}
+
+			if ( Object.keys( json ).length > 0 ) objectDef.extras = json;
+
+		} catch ( error ) {
+
+			console.warn( 'THREE.GLTFExporter: userData of \'' + object.name + '\' ' +
+				'won\'t be serialized because of JSON.stringify error - ' + error.message );
+
+		}
+
+	}
+
+	/**
+	 * Assign and return a temporal unique id for an object
+	 * especially which doesn't have .uuid
+	 * @param  {Object} object
+	 * @return {Integer}
+	 */
+	getUID( object ) {
+
+		if ( ! this.uids.has( object ) ) this.uids.set( object, this.uid ++ );
+
+		return this.uids.get( object );
+
+	}
+
+	/**
+	 * Checks if normal attribute values are normalized.
+	 *
+	 * @param {BufferAttribute} normal
+	 * @returns {Boolean}
+	 */
+	isNormalizedNormalAttribute( normal ) {
+
+		const cache = this.cache;
+
+		if ( cache.attributesNormalized.has( normal ) ) return false;
+
+		const v = new Vector3$1();
+
+		for ( let i = 0, il = normal.count; i < il; i ++ ) {
+
+			// 0.0005 is from glTF-validator
+			if ( Math.abs( v.fromBufferAttribute( normal, i ).length() - 1.0 ) > 0.0005 ) return false;
+
+		}
+
+		return true;
+
+	}
+
+	/**
+	 * Creates normalized normal buffer attribute.
+	 *
+	 * @param {BufferAttribute} normal
+	 * @returns {BufferAttribute}
+	 *
+	 */
+	createNormalizedNormalAttribute( normal ) {
+
+		const cache = this.cache;
+
+		if ( cache.attributesNormalized.has( normal ) )	return cache.attributesNormalized.get( normal );
+
+		const attribute = normal.clone();
+		const v = new Vector3$1();
+
+		for ( let i = 0, il = attribute.count; i < il; i ++ ) {
+
+			v.fromBufferAttribute( attribute, i );
+
+			if ( v.x === 0 && v.y === 0 && v.z === 0 ) {
+
+				// if values can't be normalized set (1, 0, 0)
+				v.setX( 1.0 );
+
+			} else {
+
+				v.normalize();
+
+			}
+
+			attribute.setXYZ( i, v.x, v.y, v.z );
+
+		}
+
+		cache.attributesNormalized.set( normal, attribute );
+
+		return attribute;
+
+	}
+
+	/**
+	 * Applies a texture transform, if present, to the map definition. Requires
+	 * the KHR_texture_transform extension.
+	 *
+	 * @param {Object} mapDef
+	 * @param {THREE.Texture} texture
+	 */
+	applyTextureTransform( mapDef, texture ) {
+
+		let didTransform = false;
+		const transformDef = {};
+
+		if ( texture.offset.x !== 0 || texture.offset.y !== 0 ) {
+
+			transformDef.offset = texture.offset.toArray();
+			didTransform = true;
+
+		}
+
+		if ( texture.rotation !== 0 ) {
+
+			transformDef.rotation = texture.rotation;
+			didTransform = true;
+
+		}
+
+		if ( texture.repeat.x !== 1 || texture.repeat.y !== 1 ) {
+
+			transformDef.scale = texture.repeat.toArray();
+			didTransform = true;
+
+		}
+
+		if ( didTransform ) {
+
+			mapDef.extensions = mapDef.extensions || {};
+			mapDef.extensions[ 'KHR_texture_transform' ] = transformDef;
+			this.extensionsUsed[ 'KHR_texture_transform' ] = true;
+
+		}
+
+	}
+
+	/**
+	 * Process a buffer to append to the default one.
+	 * @param  {ArrayBuffer} buffer
+	 * @return {Integer}
+	 */
+	processBuffer( buffer ) {
+
+		const json = this.json;
+		const buffers = this.buffers;
+
+		if ( ! json.buffers ) json.buffers = [ { byteLength: 0 } ];
+
+		// All buffers are merged before export.
+		buffers.push( buffer );
+
+		return 0;
+
+	}
+
+	/**
+	 * Process and generate a BufferView
+	 * @param  {BufferAttribute} attribute
+	 * @param  {number} componentType
+	 * @param  {number} start
+	 * @param  {number} count
+	 * @param  {number} target (Optional) Target usage of the BufferView
+	 * @return {Object}
+	 */
+	processBufferView( attribute, componentType, start, count, target ) {
+
+		const json = this.json;
+
+		if ( ! json.bufferViews ) json.bufferViews = [];
+
+		// Create a new dataview and dump the attribute's array into it
+
+		let componentSize;
+
+		if ( componentType === WEBGL_CONSTANTS.UNSIGNED_BYTE ) {
+
+			componentSize = 1;
+
+		} else if ( componentType === WEBGL_CONSTANTS.UNSIGNED_SHORT ) {
+
+			componentSize = 2;
+
+		} else {
+
+			componentSize = 4;
+
+		}
+
+		const byteLength = getPaddedBufferSize( count * attribute.itemSize * componentSize );
+		const dataView = new DataView( new ArrayBuffer( byteLength ) );
+		let offset = 0;
+
+		for ( let i = start; i < start + count; i ++ ) {
+
+			for ( let a = 0; a < attribute.itemSize; a ++ ) {
+
+				let value;
+
+				if ( attribute.itemSize > 4 ) {
+
+					 // no support for interleaved data for itemSize > 4
+
+					value = attribute.array[ i * attribute.itemSize + a ];
+
+				} else {
+
+					if ( a === 0 ) value = attribute.getX( i );
+					else if ( a === 1 ) value = attribute.getY( i );
+					else if ( a === 2 ) value = attribute.getZ( i );
+					else if ( a === 3 ) value = attribute.getW( i );
+
+				}
+
+				if ( componentType === WEBGL_CONSTANTS.FLOAT ) {
+
+					dataView.setFloat32( offset, value, true );
+
+				} else if ( componentType === WEBGL_CONSTANTS.UNSIGNED_INT ) {
+
+					dataView.setUint32( offset, value, true );
+
+				} else if ( componentType === WEBGL_CONSTANTS.UNSIGNED_SHORT ) {
+
+					dataView.setUint16( offset, value, true );
+
+				} else if ( componentType === WEBGL_CONSTANTS.UNSIGNED_BYTE ) {
+
+					dataView.setUint8( offset, value );
+
+				}
+
+				offset += componentSize;
+
+			}
+
+		}
+
+		const bufferViewDef = {
+
+			buffer: this.processBuffer( dataView.buffer ),
+			byteOffset: this.byteOffset,
+			byteLength: byteLength
+
+		};
+
+		if ( target !== undefined ) bufferViewDef.target = target;
+
+		if ( target === WEBGL_CONSTANTS.ARRAY_BUFFER ) {
+
+			// Only define byteStride for vertex attributes.
+			bufferViewDef.byteStride = attribute.itemSize * componentSize;
+
+		}
+
+		this.byteOffset += byteLength;
+
+		json.bufferViews.push( bufferViewDef );
+
+		// @TODO Merge bufferViews where possible.
+		const output = {
+
+			id: json.bufferViews.length - 1,
+			byteLength: 0
+
+		};
+
+		return output;
+
+	}
+
+	/**
+	 * Process and generate a BufferView from an image Blob.
+	 * @param {Blob} blob
+	 * @return {Promise<Integer>}
+	 */
+	processBufferViewImage( blob ) {
+
+		const writer = this;
+		const json = writer.json;
+
+		if ( ! json.bufferViews ) json.bufferViews = [];
+
+		return new Promise( function ( resolve ) {
+
+			const reader = new window.FileReader();
+			reader.readAsArrayBuffer( blob );
+			reader.onloadend = function () {
+
+				const buffer = getPaddedArrayBuffer( reader.result );
+
+				const bufferViewDef = {
+					buffer: writer.processBuffer( buffer ),
+					byteOffset: writer.byteOffset,
+					byteLength: buffer.byteLength
+				};
+
+				writer.byteOffset += buffer.byteLength;
+				resolve( json.bufferViews.push( bufferViewDef ) - 1 );
+
+			};
+
+		} );
+
+	}
+
+	/**
+	 * Process attribute to generate an accessor
+	 * @param  {BufferAttribute} attribute Attribute to process
+	 * @param  {THREE.BufferGeometry} geometry (Optional) Geometry used for truncated draw range
+	 * @param  {Integer} start (Optional)
+	 * @param  {Integer} count (Optional)
+	 * @return {Integer|null} Index of the processed accessor on the "accessors" array
+	 */
+	processAccessor( attribute, geometry, start, count ) {
+
+		const options = this.options;
+		const json = this.json;
+
+		const types = {
+
+			1: 'SCALAR',
+			2: 'VEC2',
+			3: 'VEC3',
+			4: 'VEC4',
+			16: 'MAT4'
+
+		};
+
+		let componentType;
+
+		// Detect the component type of the attribute array (float, uint or ushort)
+		if ( attribute.array.constructor === Float32Array ) {
+
+			componentType = WEBGL_CONSTANTS.FLOAT;
+
+		} else if ( attribute.array.constructor === Uint32Array ) {
+
+			componentType = WEBGL_CONSTANTS.UNSIGNED_INT;
+
+		} else if ( attribute.array.constructor === Uint16Array ) {
+
+			componentType = WEBGL_CONSTANTS.UNSIGNED_SHORT;
+
+		} else if ( attribute.array.constructor === Uint8Array ) {
+
+			componentType = WEBGL_CONSTANTS.UNSIGNED_BYTE;
+
+		} else {
+
+			throw new Error( 'THREE.GLTFExporter: Unsupported bufferAttribute component type.' );
+
+		}
+
+		if ( start === undefined ) start = 0;
+		if ( count === undefined ) count = attribute.count;
+
+		// @TODO Indexed buffer geometry with drawRange not supported yet
+		if ( options.truncateDrawRange && geometry !== undefined && geometry.index === null ) {
+
+			const end = start + count;
+			const end2 = geometry.drawRange.count === Infinity
+				? attribute.count
+				: geometry.drawRange.start + geometry.drawRange.count;
+
+			start = Math.max( start, geometry.drawRange.start );
+			count = Math.min( end, end2 ) - start;
+
+			if ( count < 0 ) count = 0;
+
+		}
+
+		// Skip creating an accessor if the attribute doesn't have data to export
+		if ( count === 0 ) return null;
+
+		const minMax = getMinMax( attribute, start, count );
+		let bufferViewTarget;
+
+		// If geometry isn't provided, don't infer the target usage of the bufferView. For
+		// animation samplers, target must not be set.
+		if ( geometry !== undefined ) {
+
+			bufferViewTarget = attribute === geometry.index ? WEBGL_CONSTANTS.ELEMENT_ARRAY_BUFFER : WEBGL_CONSTANTS.ARRAY_BUFFER;
+
+		}
+
+		const bufferView = this.processBufferView( attribute, componentType, start, count, bufferViewTarget );
+
+		const accessorDef = {
+
+			bufferView: bufferView.id,
+			byteOffset: bufferView.byteOffset,
+			componentType: componentType,
+			count: count,
+			max: minMax.max,
+			min: minMax.min,
+			type: types[ attribute.itemSize ]
+
+		};
+
+		if ( attribute.normalized === true ) accessorDef.normalized = true;
+		if ( ! json.accessors ) json.accessors = [];
+
+		return json.accessors.push( accessorDef ) - 1;
+
+	}
+
+	/**
+	 * Process image
+	 * @param  {Image} image to process
+	 * @param  {Integer} format of the image (e.g. RGBFormat, RGBAFormat etc)
+	 * @param  {Boolean} flipY before writing out the image
+	 * @return {Integer}     Index of the processed texture in the "images" array
+	 */
+	processImage( image, format, flipY ) {
+
+		const writer = this;
+		const cache = writer.cache;
+		const json = writer.json;
+		const options = writer.options;
+		const pending = writer.pending;
+
+		if ( ! cache.images.has( image ) ) cache.images.set( image, {} );
+
+		const cachedImages = cache.images.get( image );
+		const mimeType = format === RGBAFormat ? 'image/png' : 'image/jpeg';
+		const key = mimeType + ':flipY/' + flipY.toString();
+
+		if ( cachedImages[ key ] !== undefined ) return cachedImages[ key ];
+
+		if ( ! json.images ) json.images = [];
+
+		const imageDef = { mimeType: mimeType };
+
+		if ( options.embedImages ) {
+
+			const canvas = cachedCanvas = cachedCanvas || document.createElement( 'canvas' );
+
+			canvas.width = Math.min( image.width, options.maxTextureSize );
+			canvas.height = Math.min( image.height, options.maxTextureSize );
+
+			const ctx = canvas.getContext( '2d' );
+
+			if ( flipY === true ) {
+
+				ctx.translate( 0, canvas.height );
+				ctx.scale( 1, - 1 );
+
+			}
+
+			if ( ( typeof HTMLImageElement !== 'undefined' && image instanceof HTMLImageElement ) ||
+				( typeof HTMLCanvasElement !== 'undefined' && image instanceof HTMLCanvasElement ) ||
+				( typeof OffscreenCanvas !== 'undefined' && image instanceof OffscreenCanvas ) ||
+				( typeof ImageBitmap !== 'undefined' && image instanceof ImageBitmap ) ) {
+
+				ctx.drawImage( image, 0, 0, canvas.width, canvas.height );
+
+			} else {
+
+				if ( format !== RGBAFormat && format !== RGBFormat ) {
+
+					console.error( 'GLTFExporter: Only RGB and RGBA formats are supported.' );
+
+				}
+
+				if ( image.width > options.maxTextureSize || image.height > options.maxTextureSize ) {
+
+					console.warn( 'GLTFExporter: Image size is bigger than maxTextureSize', image );
+
+				}
+
+				const data = new Uint8ClampedArray( image.height * image.width * 4 );
+
+				if ( format === RGBAFormat ) {
+
+					for ( let i = 0; i < data.length; i += 4 ) {
+
+						data[ i + 0 ] = image.data[ i + 0 ];
+						data[ i + 1 ] = image.data[ i + 1 ];
+						data[ i + 2 ] = image.data[ i + 2 ];
+						data[ i + 3 ] = image.data[ i + 3 ];
+
+					}
+
+				} else {
+
+					for ( let i = 0, j = 0; i < data.length; i += 4, j += 3 ) {
+
+						data[ i + 0 ] = image.data[ j + 0 ];
+						data[ i + 1 ] = image.data[ j + 1 ];
+						data[ i + 2 ] = image.data[ j + 2 ];
+						data[ i + 3 ] = 255;
+
+					}
+
+				}
+
+				ctx.putImageData( new ImageData( data, image.width, image.height ), 0, 0 );
+
+			}
+
+			if ( options.binary === true ) {
+
+				pending.push( new Promise( function ( resolve ) {
+
+					canvas.toBlob( function ( blob ) {
+
+						writer.processBufferViewImage( blob ).then( function ( bufferViewIndex ) {
+
+							imageDef.bufferView = bufferViewIndex;
+							resolve();
+
+						} );
+
+					}, mimeType );
+
+				} ) );
+
+			} else {
+
+				imageDef.uri = canvas.toDataURL( mimeType );
+
+			}
+
+		} else {
+
+			imageDef.uri = image.src;
+
+		}
+
+		const index = json.images.push( imageDef ) - 1;
+		cachedImages[ key ] = index;
+		return index;
+
+	}
+
+	/**
+	 * Process sampler
+	 * @param  {Texture} map Texture to process
+	 * @return {Integer}     Index of the processed texture in the "samplers" array
+	 */
+	processSampler( map ) {
+
+		const json = this.json;
+
+		if ( ! json.samplers ) json.samplers = [];
+
+		const samplerDef = {
+			magFilter: THREE_TO_WEBGL[ map.magFilter ],
+			minFilter: THREE_TO_WEBGL[ map.minFilter ],
+			wrapS: THREE_TO_WEBGL[ map.wrapS ],
+			wrapT: THREE_TO_WEBGL[ map.wrapT ]
+		};
+
+		return json.samplers.push( samplerDef ) - 1;
+
+	}
+
+	/**
+	 * Process texture
+	 * @param  {Texture} map Map to process
+	 * @return {Integer} Index of the processed texture in the "textures" array
+	 */
+	processTexture( map ) {
+
+		const cache = this.cache;
+		const json = this.json;
+
+		if ( cache.textures.has( map ) ) return cache.textures.get( map );
+
+		if ( ! json.textures ) json.textures = [];
+
+		const textureDef = {
+			sampler: this.processSampler( map ),
+			source: this.processImage( map.image, map.format, map.flipY )
+		};
+
+		if ( map.name ) textureDef.name = map.name;
+
+		this._invokeAll( function ( ext ) {
+
+			ext.writeTexture && ext.writeTexture( map, textureDef );
+
+		} );
+
+		const index = json.textures.push( textureDef ) - 1;
+		cache.textures.set( map, index );
+		return index;
+
+	}
+
+	/**
+	 * Process material
+	 * @param  {THREE.Material} material Material to process
+	 * @return {Integer|null} Index of the processed material in the "materials" array
+	 */
+	processMaterial( material ) {
+
+		const cache = this.cache;
+		const json = this.json;
+
+		if ( cache.materials.has( material ) ) return cache.materials.get( material );
+
+		if ( material.isShaderMaterial ) {
+
+			console.warn( 'GLTFExporter: THREE.ShaderMaterial not supported.' );
+			return null;
+
+		}
+
+		if ( ! json.materials ) json.materials = [];
+
+		// @QUESTION Should we avoid including any attribute that has the default value?
+		const materialDef = {	pbrMetallicRoughness: {} };
+
+		if ( material.isMeshStandardMaterial !== true && material.isMeshBasicMaterial !== true ) {
+
+			console.warn( 'GLTFExporter: Use MeshStandardMaterial or MeshBasicMaterial for best results.' );
+
+		}
+
+		// pbrMetallicRoughness.baseColorFactor
+		const color = material.color.toArray().concat( [ material.opacity ] );
+
+		if ( ! equalArray( color, [ 1, 1, 1, 1 ] ) ) {
+
+			materialDef.pbrMetallicRoughness.baseColorFactor = color;
+
+		}
+
+		if ( material.isMeshStandardMaterial ) {
+
+			materialDef.pbrMetallicRoughness.metallicFactor = material.metalness;
+			materialDef.pbrMetallicRoughness.roughnessFactor = material.roughness;
+
+		} else {
+
+			materialDef.pbrMetallicRoughness.metallicFactor = 0.5;
+			materialDef.pbrMetallicRoughness.roughnessFactor = 0.5;
+
+		}
+
+		// pbrMetallicRoughness.metallicRoughnessTexture
+		if ( material.metalnessMap || material.roughnessMap ) {
+
+			if ( material.metalnessMap === material.roughnessMap ) {
+
+				const metalRoughMapDef = { index: this.processTexture( material.metalnessMap ) };
+				this.applyTextureTransform( metalRoughMapDef, material.metalnessMap );
+				materialDef.pbrMetallicRoughness.metallicRoughnessTexture = metalRoughMapDef;
+
+			} else {
+
+				console.warn( 'THREE.GLTFExporter: Ignoring metalnessMap and roughnessMap because they are not the same Texture.' );
+
+			}
+
+		}
+
+		// pbrMetallicRoughness.baseColorTexture or pbrSpecularGlossiness diffuseTexture
+		if ( material.map ) {
+
+			const baseColorMapDef = { index: this.processTexture( material.map ) };
+			this.applyTextureTransform( baseColorMapDef, material.map );
+			materialDef.pbrMetallicRoughness.baseColorTexture = baseColorMapDef;
+
+		}
+
+		if ( material.emissive ) {
+
+			// note: emissive components are limited to stay within the 0 - 1 range to accommodate glTF spec. see #21849 and #22000.
+			const emissive = material.emissive.clone().multiplyScalar( material.emissiveIntensity );
+			const maxEmissiveComponent = Math.max( emissive.r, emissive.g, emissive.b );
+
+			if ( maxEmissiveComponent > 1 ) {
+
+				emissive.multiplyScalar( 1 / maxEmissiveComponent );
+
+				console.warn( 'THREE.GLTFExporter: Some emissive components exceed 1; emissive has been limited' );
+
+			}
+
+			if ( maxEmissiveComponent > 0 ) {
+
+				materialDef.emissiveFactor = emissive.toArray();
+
+			}
+
+			// emissiveTexture
+			if ( material.emissiveMap ) {
+
+				const emissiveMapDef = { index: this.processTexture( material.emissiveMap ) };
+				this.applyTextureTransform( emissiveMapDef, material.emissiveMap );
+				materialDef.emissiveTexture = emissiveMapDef;
+
+			}
+
+		}
+
+		// normalTexture
+		if ( material.normalMap ) {
+
+			const normalMapDef = { index: this.processTexture( material.normalMap ) };
+
+			if ( material.normalScale && material.normalScale.x !== 1 ) {
+
+				// glTF normal scale is univariate. Ignore `y`, which may be flipped.
+				// Context: https://github.com/mrdoob/three.js/issues/11438#issuecomment-507003995
+				normalMapDef.scale = material.normalScale.x;
+
+			}
+
+			this.applyTextureTransform( normalMapDef, material.normalMap );
+			materialDef.normalTexture = normalMapDef;
+
+		}
+
+		// occlusionTexture
+		if ( material.aoMap ) {
+
+			const occlusionMapDef = {
+				index: this.processTexture( material.aoMap ),
+				texCoord: 1
+			};
+
+			if ( material.aoMapIntensity !== 1.0 ) {
+
+				occlusionMapDef.strength = material.aoMapIntensity;
+
+			}
+
+			this.applyTextureTransform( occlusionMapDef, material.aoMap );
+			materialDef.occlusionTexture = occlusionMapDef;
+
+		}
+
+		// alphaMode
+		if ( material.transparent ) {
+
+			materialDef.alphaMode = 'BLEND';
+
+		} else {
+
+			if ( material.alphaTest > 0.0 ) {
+
+				materialDef.alphaMode = 'MASK';
+				materialDef.alphaCutoff = material.alphaTest;
+
+			}
+
+		}
+
+		// doubleSided
+		if ( material.side === DoubleSide ) materialDef.doubleSided = true;
+		if ( material.name !== '' ) materialDef.name = material.name;
+
+		this.serializeUserData( material, materialDef );
+
+		this._invokeAll( function ( ext ) {
+
+			ext.writeMaterial && ext.writeMaterial( material, materialDef );
+
+		} );
+
+		const index = json.materials.push( materialDef ) - 1;
+		cache.materials.set( material, index );
+		return index;
+
+	}
+
+	/**
+	 * Process mesh
+	 * @param  {THREE.Mesh} mesh Mesh to process
+	 * @return {Integer|null} Index of the processed mesh in the "meshes" array
+	 */
+	processMesh( mesh ) {
+
+		const cache = this.cache;
+		const json = this.json;
+
+		const meshCacheKeyParts = [ mesh.geometry.uuid ];
+
+		if ( Array.isArray( mesh.material ) ) {
+
+			for ( let i = 0, l = mesh.material.length; i < l; i ++ ) {
+
+				meshCacheKeyParts.push( mesh.material[ i ].uuid	);
+
+			}
+
+		} else {
+
+			meshCacheKeyParts.push( mesh.material.uuid );
+
+		}
+
+		const meshCacheKey = meshCacheKeyParts.join( ':' );
+
+		if ( cache.meshes.has( meshCacheKey ) ) return cache.meshes.get( meshCacheKey );
+
+		const geometry = mesh.geometry;
+		let mode;
+
+		// Use the correct mode
+		if ( mesh.isLineSegments ) {
+
+			mode = WEBGL_CONSTANTS.LINES;
+
+		} else if ( mesh.isLineLoop ) {
+
+			mode = WEBGL_CONSTANTS.LINE_LOOP;
+
+		} else if ( mesh.isLine ) {
+
+			mode = WEBGL_CONSTANTS.LINE_STRIP;
+
+		} else if ( mesh.isPoints ) {
+
+			mode = WEBGL_CONSTANTS.POINTS;
+
+		} else {
+
+			mode = mesh.material.wireframe ? WEBGL_CONSTANTS.LINES : WEBGL_CONSTANTS.TRIANGLES;
+
+		}
+
+		if ( geometry.isBufferGeometry !== true ) {
+
+			throw new Error( 'THREE.GLTFExporter: Geometry is not of type THREE.BufferGeometry.' );
+
+		}
+
+		const meshDef = {};
+		const attributes = {};
+		const primitives = [];
+		const targets = [];
+
+		// Conversion between attributes names in threejs and gltf spec
+		const nameConversion = {
+			uv: 'TEXCOORD_0',
+			uv2: 'TEXCOORD_1',
+			color: 'COLOR_0',
+			skinWeight: 'WEIGHTS_0',
+			skinIndex: 'JOINTS_0'
+		};
+
+		const originalNormal = geometry.getAttribute( 'normal' );
+
+		if ( originalNormal !== undefined && ! this.isNormalizedNormalAttribute( originalNormal ) ) {
+
+			console.warn( 'THREE.GLTFExporter: Creating normalized normal attribute from the non-normalized one.' );
+
+			geometry.setAttribute( 'normal', this.createNormalizedNormalAttribute( originalNormal ) );
+
+		}
+
+		// @QUESTION Detect if .vertexColors = true?
+		// For every attribute create an accessor
+		let modifiedAttribute = null;
+
+		for ( let attributeName in geometry.attributes ) {
+
+			// Ignore morph target attributes, which are exported later.
+			if ( attributeName.substr( 0, 5 ) === 'morph' ) continue;
+
+			const attribute = geometry.attributes[ attributeName ];
+			attributeName = nameConversion[ attributeName ] || attributeName.toUpperCase();
+
+			// Prefix all geometry attributes except the ones specifically
+			// listed in the spec; non-spec attributes are considered custom.
+			const validVertexAttributes =
+					/^(POSITION|NORMAL|TANGENT|TEXCOORD_\d+|COLOR_\d+|JOINTS_\d+|WEIGHTS_\d+)$/;
+
+			if ( ! validVertexAttributes.test( attributeName ) ) attributeName = '_' + attributeName;
+
+			if ( cache.attributes.has( this.getUID( attribute ) ) ) {
+
+				attributes[ attributeName ] = cache.attributes.get( this.getUID( attribute ) );
+				continue;
+
+			}
+
+			// JOINTS_0 must be UNSIGNED_BYTE or UNSIGNED_SHORT.
+			modifiedAttribute = null;
+			const array = attribute.array;
+
+			if ( attributeName === 'JOINTS_0' &&
+				! ( array instanceof Uint16Array ) &&
+				! ( array instanceof Uint8Array ) ) {
+
+				console.warn( 'GLTFExporter: Attribute "skinIndex" converted to type UNSIGNED_SHORT.' );
+				modifiedAttribute = new BufferAttribute$1( new Uint16Array( array ), attribute.itemSize, attribute.normalized );
+
+			}
+
+			const accessor = this.processAccessor( modifiedAttribute || attribute, geometry );
+
+			if ( accessor !== null ) {
+
+				attributes[ attributeName ] = accessor;
+				cache.attributes.set( this.getUID( attribute ), accessor );
+
+			}
+
+		}
+
+		if ( originalNormal !== undefined ) geometry.setAttribute( 'normal', originalNormal );
+
+		// Skip if no exportable attributes found
+		if ( Object.keys( attributes ).length === 0 ) return null;
+
+		// Morph targets
+		if ( mesh.morphTargetInfluences !== undefined && mesh.morphTargetInfluences.length > 0 ) {
+
+			const weights = [];
+			const targetNames = [];
+			const reverseDictionary = {};
+
+			if ( mesh.morphTargetDictionary !== undefined ) {
+
+				for ( const key in mesh.morphTargetDictionary ) {
+
+					reverseDictionary[ mesh.morphTargetDictionary[ key ] ] = key;
+
+				}
+
+			}
+
+			for ( let i = 0; i < mesh.morphTargetInfluences.length; ++ i ) {
+
+				const target = {};
+				let warned = false;
+
+				for ( const attributeName in geometry.morphAttributes ) {
+
+					// glTF 2.0 morph supports only POSITION/NORMAL/TANGENT.
+					// Three.js doesn't support TANGENT yet.
+
+					if ( attributeName !== 'position' && attributeName !== 'normal' ) {
+
+						if ( ! warned ) {
+
+							console.warn( 'GLTFExporter: Only POSITION and NORMAL morph are supported.' );
+							warned = true;
+
+						}
+
+						continue;
+
+					}
+
+					const attribute = geometry.morphAttributes[ attributeName ][ i ];
+					const gltfAttributeName = attributeName.toUpperCase();
+
+					// Three.js morph attribute has absolute values while the one of glTF has relative values.
+					//
+					// glTF 2.0 Specification:
+					// https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#morph-targets
+
+					const baseAttribute = geometry.attributes[ attributeName ];
+
+					if ( cache.attributes.has( this.getUID( attribute ) ) ) {
+
+						target[ gltfAttributeName ] = cache.attributes.get( this.getUID( attribute ) );
+						continue;
+
+					}
+
+					// Clones attribute not to override
+					const relativeAttribute = attribute.clone();
+
+					if ( ! geometry.morphTargetsRelative ) {
+
+						for ( let j = 0, jl = attribute.count; j < jl; j ++ ) {
+
+							relativeAttribute.setXYZ(
+								j,
+								attribute.getX( j ) - baseAttribute.getX( j ),
+								attribute.getY( j ) - baseAttribute.getY( j ),
+								attribute.getZ( j ) - baseAttribute.getZ( j )
+							);
+
+						}
+
+					}
+
+					target[ gltfAttributeName ] = this.processAccessor( relativeAttribute, geometry );
+					cache.attributes.set( this.getUID( baseAttribute ), target[ gltfAttributeName ] );
+
+				}
+
+				targets.push( target );
+
+				weights.push( mesh.morphTargetInfluences[ i ] );
+
+				if ( mesh.morphTargetDictionary !== undefined ) targetNames.push( reverseDictionary[ i ] );
+
+			}
+
+			meshDef.weights = weights;
+
+			if ( targetNames.length > 0 ) {
+
+				meshDef.extras = {};
+				meshDef.extras.targetNames = targetNames;
+
+			}
+
+		}
+
+		const isMultiMaterial = Array.isArray( mesh.material );
+
+		if ( isMultiMaterial && geometry.groups.length === 0 ) return null;
+
+		const materials = isMultiMaterial ? mesh.material : [ mesh.material ];
+		const groups = isMultiMaterial ? geometry.groups : [ { materialIndex: 0, start: undefined, count: undefined } ];
+
+		for ( let i = 0, il = groups.length; i < il; i ++ ) {
+
+			const primitive = {
+				mode: mode,
+				attributes: attributes,
+			};
+
+			this.serializeUserData( geometry, primitive );
+
+			if ( targets.length > 0 ) primitive.targets = targets;
+
+			if ( geometry.index !== null ) {
+
+				let cacheKey = this.getUID( geometry.index );
+
+				if ( groups[ i ].start !== undefined || groups[ i ].count !== undefined ) {
+
+					cacheKey += ':' + groups[ i ].start + ':' + groups[ i ].count;
+
+				}
+
+				if ( cache.attributes.has( cacheKey ) ) {
+
+					primitive.indices = cache.attributes.get( cacheKey );
+
+				} else {
+
+					primitive.indices = this.processAccessor( geometry.index, geometry, groups[ i ].start, groups[ i ].count );
+					cache.attributes.set( cacheKey, primitive.indices );
+
+				}
+
+				if ( primitive.indices === null ) delete primitive.indices;
+
+			}
+
+			const material = this.processMaterial( materials[ groups[ i ].materialIndex ] );
+
+			if ( material !== null ) primitive.material = material;
+
+			primitives.push( primitive );
+
+		}
+
+		meshDef.primitives = primitives;
+
+		if ( ! json.meshes ) json.meshes = [];
+
+		this._invokeAll( function ( ext ) {
+
+			ext.writeMesh && ext.writeMesh( mesh, meshDef );
+
+		} );
+
+		const index = json.meshes.push( meshDef ) - 1;
+		cache.meshes.set( meshCacheKey, index );
+		return index;
+
+	}
+
+	/**
+	 * Process camera
+	 * @param  {THREE.Camera} camera Camera to process
+	 * @return {Integer}      Index of the processed mesh in the "camera" array
+	 */
+	processCamera( camera ) {
+
+		const json = this.json;
+
+		if ( ! json.cameras ) json.cameras = [];
+
+		const isOrtho = camera.isOrthographicCamera;
+
+		const cameraDef = {
+			type: isOrtho ? 'orthographic' : 'perspective'
+		};
+
+		if ( isOrtho ) {
+
+			cameraDef.orthographic = {
+				xmag: camera.right * 2,
+				ymag: camera.top * 2,
+				zfar: camera.far <= 0 ? 0.001 : camera.far,
+				znear: camera.near < 0 ? 0 : camera.near
+			};
+
+		} else {
+
+			cameraDef.perspective = {
+				aspectRatio: camera.aspect,
+				yfov: MathUtils.degToRad( camera.fov ),
+				zfar: camera.far <= 0 ? 0.001 : camera.far,
+				znear: camera.near < 0 ? 0 : camera.near
+			};
+
+		}
+
+		// Question: Is saving "type" as name intentional?
+		if ( camera.name !== '' ) cameraDef.name = camera.type;
+
+		return json.cameras.push( cameraDef ) - 1;
+
+	}
+
+	/**
+	 * Creates glTF animation entry from AnimationClip object.
+	 *
+	 * Status:
+	 * - Only properties listed in PATH_PROPERTIES may be animated.
+	 *
+	 * @param {THREE.AnimationClip} clip
+	 * @param {THREE.Object3D} root
+	 * @return {number|null}
+	 */
+	processAnimation( clip, root ) {
+
+		const json = this.json;
+		const nodeMap = this.nodeMap;
+
+		if ( ! json.animations ) json.animations = [];
+
+		clip = GLTFExporter.Utils.mergeMorphTargetTracks( clip.clone(), root );
+
+		const tracks = clip.tracks;
+		const channels = [];
+		const samplers = [];
+
+		for ( let i = 0; i < tracks.length; ++ i ) {
+
+			const track = tracks[ i ];
+			const trackBinding = PropertyBinding.parseTrackName( track.name );
+			let trackNode = PropertyBinding.findNode( root, trackBinding.nodeName );
+			const trackProperty = PATH_PROPERTIES[ trackBinding.propertyName ];
+
+			if ( trackBinding.objectName === 'bones' ) {
+
+				if ( trackNode.isSkinnedMesh === true ) {
+
+					trackNode = trackNode.skeleton.getBoneByName( trackBinding.objectIndex );
+
+				} else {
+
+					trackNode = undefined;
+
+				}
+
+			}
+
+			if ( ! trackNode || ! trackProperty ) {
+
+				console.warn( 'THREE.GLTFExporter: Could not export animation track "%s".', track.name );
+				return null;
+
+			}
+
+			const inputItemSize = 1;
+			let outputItemSize = track.values.length / track.times.length;
+
+			if ( trackProperty === PATH_PROPERTIES.morphTargetInfluences ) {
+
+				outputItemSize /= trackNode.morphTargetInfluences.length;
+
+			}
+
+			let interpolation;
+
+			// @TODO export CubicInterpolant(InterpolateSmooth) as CUBICSPLINE
+
+			// Detecting glTF cubic spline interpolant by checking factory method's special property
+			// GLTFCubicSplineInterpolant is a custom interpolant and track doesn't return
+			// valid value from .getInterpolation().
+			if ( track.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline === true ) {
+
+				interpolation = 'CUBICSPLINE';
+
+				// itemSize of CUBICSPLINE keyframe is 9
+				// (VEC3 * 3: inTangent, splineVertex, and outTangent)
+				// but needs to be stored as VEC3 so dividing by 3 here.
+				outputItemSize /= 3;
+
+			} else if ( track.getInterpolation() === InterpolateDiscrete ) {
+
+				interpolation = 'STEP';
+
+			} else {
+
+				interpolation = 'LINEAR';
+
+			}
+
+			samplers.push( {
+				input: this.processAccessor( new BufferAttribute$1( track.times, inputItemSize ) ),
+				output: this.processAccessor( new BufferAttribute$1( track.values, outputItemSize ) ),
+				interpolation: interpolation
+			} );
+
+			channels.push( {
+				sampler: samplers.length - 1,
+				target: {
+					node: nodeMap.get( trackNode ),
+					path: trackProperty
+				}
+			} );
+
+		}
+
+		json.animations.push( {
+			name: clip.name || 'clip_' + json.animations.length,
+			samplers: samplers,
+			channels: channels
+		} );
+
+		return json.animations.length - 1;
+
+	}
+
+	/**
+	 * @param {THREE.Object3D} object
+	 * @return {number|null}
+	 */
+	 processSkin( object ) {
+
+		const json = this.json;
+		const nodeMap = this.nodeMap;
+
+		const node = json.nodes[ nodeMap.get( object ) ];
+
+		const skeleton = object.skeleton;
+
+		if ( skeleton === undefined ) return null;
+
+		const rootJoint = object.skeleton.bones[ 0 ];
+
+		if ( rootJoint === undefined ) return null;
+
+		const joints = [];
+		const inverseBindMatrices = new Float32Array( skeleton.bones.length * 16 );
+		const temporaryBoneInverse = new Matrix4();
+
+		for ( let i = 0; i < skeleton.bones.length; ++ i ) {
+
+			joints.push( nodeMap.get( skeleton.bones[ i ] ) );
+			temporaryBoneInverse.copy( skeleton.boneInverses[ i ] );
+			temporaryBoneInverse.multiply( object.bindMatrix ).toArray( inverseBindMatrices, i * 16 );
+
+		}
+
+		if ( json.skins === undefined ) json.skins = [];
+
+		json.skins.push( {
+			inverseBindMatrices: this.processAccessor( new BufferAttribute$1( inverseBindMatrices, 16 ) ),
+			joints: joints,
+			skeleton: nodeMap.get( rootJoint )
+		} );
+
+		const skinIndex = node.skin = json.skins.length - 1;
+
+		return skinIndex;
+
+	}
+
+	/**
+	 * Process Object3D node
+	 * @param  {THREE.Object3D} node Object3D to processNode
+	 * @return {Integer} Index of the node in the nodes list
+	 */
+	processNode( object ) {
+
+		const json = this.json;
+		const options = this.options;
+		const nodeMap = this.nodeMap;
+
+		if ( ! json.nodes ) json.nodes = [];
+
+		const nodeDef = {};
+
+		if ( options.trs ) {
+
+			const rotation = object.quaternion.toArray();
+			const position = object.position.toArray();
+			const scale = object.scale.toArray();
+
+			if ( ! equalArray( rotation, [ 0, 0, 0, 1 ] ) ) {
+
+				nodeDef.rotation = rotation;
+
+			}
+
+			if ( ! equalArray( position, [ 0, 0, 0 ] ) ) {
+
+				nodeDef.translation = position;
+
+			}
+
+			if ( ! equalArray( scale, [ 1, 1, 1 ] ) ) {
+
+				nodeDef.scale = scale;
+
+			}
+
+		} else {
+
+			if ( object.matrixAutoUpdate ) {
+
+				object.updateMatrix();
+
+			}
+
+			if ( isIdentityMatrix( object.matrix ) === false ) {
+
+				nodeDef.matrix = object.matrix.elements;
+
+			}
+
+		}
+
+		// We don't export empty strings name because it represents no-name in Three.js.
+		if ( object.name !== '' ) nodeDef.name = String( object.name );
+
+		this.serializeUserData( object, nodeDef );
+
+		if ( object.isMesh || object.isLine || object.isPoints ) {
+
+			const meshIndex = this.processMesh( object );
+
+			if ( meshIndex !== null ) nodeDef.mesh = meshIndex;
+
+		} else if ( object.isCamera ) {
+
+			nodeDef.camera = this.processCamera( object );
+
+		}
+
+		if ( object.isSkinnedMesh ) this.skins.push( object );
+
+		if ( object.children.length > 0 ) {
+
+			const children = [];
+
+			for ( let i = 0, l = object.children.length; i < l; i ++ ) {
+
+				const child = object.children[ i ];
+
+				if ( child.visible || options.onlyVisible === false ) {
+
+					const nodeIndex = this.processNode( child );
+
+					if ( nodeIndex !== null ) children.push( nodeIndex );
+
+				}
+
+			}
+
+			if ( children.length > 0 ) nodeDef.children = children;
+
+		}
+
+		this._invokeAll( function ( ext ) {
+
+			ext.writeNode && ext.writeNode( object, nodeDef );
+
+		} );
+
+		const nodeIndex = json.nodes.push( nodeDef ) - 1;
+		nodeMap.set( object, nodeIndex );
+		return nodeIndex;
+
+	}
+
+	/**
+	 * Process Scene
+	 * @param  {Scene} node Scene to process
+	 */
+	processScene( scene ) {
+
+		const json = this.json;
+		const options = this.options;
+
+		if ( ! json.scenes ) {
+
+			json.scenes = [];
+			json.scene = 0;
+
+		}
+
+		const sceneDef = {};
+
+		if ( scene.name !== '' ) sceneDef.name = scene.name;
+
+		json.scenes.push( sceneDef );
+
+		const nodes = [];
+
+		for ( let i = 0, l = scene.children.length; i < l; i ++ ) {
+
+			const child = scene.children[ i ];
+
+			if ( child.visible || options.onlyVisible === false ) {
+
+				const nodeIndex = this.processNode( child );
+
+				if ( nodeIndex !== null ) nodes.push( nodeIndex );
+
+			}
+
+		}
+
+		if ( nodes.length > 0 ) sceneDef.nodes = nodes;
+
+		this.serializeUserData( scene, sceneDef );
+
+	}
+
+	/**
+	 * Creates a Scene to hold a list of objects and parse it
+	 * @param  {Array} objects List of objects to process
+	 */
+	processObjects( objects ) {
+
+		const scene = new Scene();
+		scene.name = 'AuxScene';
+
+		for ( let i = 0; i < objects.length; i ++ ) {
+
+			// We push directly to children instead of calling `add` to prevent
+			// modify the .parent and break its original scene and hierarchy
+			scene.children.push( objects[ i ] );
+
+		}
+
+		this.processScene( scene );
+
+	}
+
+	/**
+	 * @param {THREE.Object3D|Array<THREE.Object3D>} input
+	 */
+	processInput( input ) {
+
+		const options = this.options;
+
+		input = input instanceof Array ? input : [ input ];
+
+		this._invokeAll( function ( ext ) {
+
+			ext.beforeParse && ext.beforeParse( input );
+
+		} );
+
+		const objectsWithoutScene = [];
+
+		for ( let i = 0; i < input.length; i ++ ) {
+
+			if ( input[ i ] instanceof Scene ) {
+
+				this.processScene( input[ i ] );
+
+			} else {
+
+				objectsWithoutScene.push( input[ i ] );
+
+			}
+
+		}
+
+		if ( objectsWithoutScene.length > 0 ) this.processObjects( objectsWithoutScene );
+
+		for ( let i = 0; i < this.skins.length; ++ i ) {
+
+			this.processSkin( this.skins[ i ] );
+
+		}
+
+		for ( let i = 0; i < options.animations.length; ++ i ) {
+
+			this.processAnimation( options.animations[ i ], input[ 0 ] );
+
+		}
+
+		this._invokeAll( function ( ext ) {
+
+			ext.afterParse && ext.afterParse( input );
+
+		} );
+
+	}
+
+	_invokeAll( func ) {
+
+		for ( let i = 0, il = this.plugins.length; i < il; i ++ ) {
+
+			func( this.plugins[ i ] );
+
+		}
+
+	}
+
+}
+
+/**
+ * Punctual Lights Extension
+ *
+ * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_lights_punctual
+ */
+class GLTFLightExtension {
+
+	constructor( writer ) {
+
+		this.writer = writer;
+		this.name = 'KHR_lights_punctual';
+
+	}
+
+	writeNode( light, nodeDef ) {
+
+		if ( ! light.isLight ) return;
+
+		if ( ! light.isDirectionalLight && ! light.isPointLight && ! light.isSpotLight ) {
+
+			console.warn( 'THREE.GLTFExporter: Only directional, point, and spot lights are supported.', light );
+			return;
+
+		}
+
+		const writer = this.writer;
+		const json = writer.json;
+		const extensionsUsed = writer.extensionsUsed;
+
+		const lightDef = {};
+
+		if ( light.name ) lightDef.name = light.name;
+
+		lightDef.color = light.color.toArray();
+
+		lightDef.intensity = light.intensity;
+
+		if ( light.isDirectionalLight ) {
+
+			lightDef.type = 'directional';
+
+		} else if ( light.isPointLight ) {
+
+			lightDef.type = 'point';
+
+			if ( light.distance > 0 ) lightDef.range = light.distance;
+
+		} else if ( light.isSpotLight ) {
+
+			lightDef.type = 'spot';
+
+			if ( light.distance > 0 ) lightDef.range = light.distance;
+
+			lightDef.spot = {};
+			lightDef.spot.innerConeAngle = ( light.penumbra - 1.0 ) * light.angle * - 1.0;
+			lightDef.spot.outerConeAngle = light.angle;
+
+		}
+
+		if ( light.decay !== undefined && light.decay !== 2 ) {
+
+			console.warn( 'THREE.GLTFExporter: Light decay may be lost. glTF is physically-based, '
+				+ 'and expects light.decay=2.' );
+
+		}
+
+		if ( light.target
+				&& ( light.target.parent !== light
+				|| light.target.position.x !== 0
+				|| light.target.position.y !== 0
+				|| light.target.position.z !== - 1 ) ) {
+
+			console.warn( 'THREE.GLTFExporter: Light direction may be lost. For best results, '
+				+ 'make light.target a child of the light with position 0,0,-1.' );
+
+		}
+
+		if ( ! extensionsUsed[ this.name ] ) {
+
+			json.extensions = json.extensions || {};
+			json.extensions[ this.name ] = { lights: [] };
+			extensionsUsed[ this.name ] = true;
+
+		}
+
+		const lights = json.extensions[ this.name ].lights;
+		lights.push( lightDef );
+
+		nodeDef.extensions = nodeDef.extensions || {};
+		nodeDef.extensions[ this.name ] = { light: lights.length - 1 };
+
+	}
+
+}
+
+/**
+ * Unlit Materials Extension
+ *
+ * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_unlit
+ */
+class GLTFMaterialsUnlitExtension {
+
+	constructor( writer ) {
+
+		this.writer = writer;
+		this.name = 'KHR_materials_unlit';
+
+	}
+
+	writeMaterial( material, materialDef ) {
+
+		if ( ! material.isMeshBasicMaterial ) return;
+
+		const writer = this.writer;
+		const extensionsUsed = writer.extensionsUsed;
+
+		materialDef.extensions = materialDef.extensions || {};
+		materialDef.extensions[ this.name ] = {};
+
+		extensionsUsed[ this.name ] = true;
+
+		materialDef.pbrMetallicRoughness.metallicFactor = 0.0;
+		materialDef.pbrMetallicRoughness.roughnessFactor = 0.9;
+
+	}
+
+}
+
+/**
+ * Specular-Glossiness Extension
+ *
+ * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_pbrSpecularGlossiness
+ */
+class GLTFMaterialsPBRSpecularGlossiness {
+
+	constructor( writer ) {
+
+		this.writer = writer;
+		this.name = 'KHR_materials_pbrSpecularGlossiness';
+
+	}
+
+	writeMaterial( material, materialDef ) {
+
+		if ( ! material.isGLTFSpecularGlossinessMaterial ) return;
+
+		const writer = this.writer;
+		const extensionsUsed = writer.extensionsUsed;
+
+		const extensionDef = {};
+
+		if ( materialDef.pbrMetallicRoughness.baseColorFactor ) {
+
+			extensionDef.diffuseFactor = materialDef.pbrMetallicRoughness.baseColorFactor;
+
+		}
+
+		const specularFactor = [ 1, 1, 1 ];
+		material.specular.toArray( specularFactor, 0 );
+		extensionDef.specularFactor = specularFactor;
+		extensionDef.glossinessFactor = material.glossiness;
+
+		if ( materialDef.pbrMetallicRoughness.baseColorTexture ) {
+
+			extensionDef.diffuseTexture = materialDef.pbrMetallicRoughness.baseColorTexture;
+
+		}
+
+		if ( material.specularMap ) {
+
+			const specularMapDef = { index: writer.processTexture( material.specularMap ) };
+			writer.applyTextureTransform( specularMapDef, material.specularMap );
+			extensionDef.specularGlossinessTexture = specularMapDef;
+
+		}
+
+		materialDef.extensions = materialDef.extensions || {};
+		materialDef.extensions[ this.name ] = extensionDef;
+		extensionsUsed[ this.name ] = true;
+
+	}
+
+}
+
+/**
+ * Clearcoat Materials Extension
+ *
+ * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_clearcoat
+ */
+class GLTFMaterialsClearcoatExtension {
+
+	constructor( writer ) {
+
+		this.writer = writer;
+		this.name = 'KHR_materials_clearcoat';
+
+	}
+
+	writeMaterial( material, materialDef ) {
+
+		if ( ! material.isMeshPhysicalMaterial ) return;
+
+		const writer = this.writer;
+		const extensionsUsed = writer.extensionsUsed;
+
+		const extensionDef = {};
+
+		extensionDef.clearcoatFactor = material.clearcoat;
+
+		if ( material.clearcoatMap ) {
+
+			const clearcoatMapDef = { index: writer.processTexture( material.clearcoatMap ) };
+			writer.applyTextureTransform( clearcoatMapDef, material.clearcoatMap );
+			extensionDef.clearcoatTexture = clearcoatMapDef;
+
+		}
+
+		extensionDef.clearcoatRoughnessFactor = material.clearcoatRoughness;
+
+		if ( material.clearcoatRoughnessMap ) {
+
+			const clearcoatRoughnessMapDef = { index: writer.processTexture( material.clearcoatRoughnessMap ) };
+			writer.applyTextureTransform( clearcoatRoughnessMapDef, material.clearcoatRoughnessMap );
+			extensionDef.clearcoatRoughnessTexture = clearcoatRoughnessMapDef;
+
+		}
+
+		if ( material.clearcoatNormalMap ) {
+
+			const clearcoatNormalMapDef = { index: writer.processTexture( material.clearcoatNormalMap ) };
+			writer.applyTextureTransform( clearcoatNormalMapDef, material.clearcoatNormalMap );
+			extensionDef.clearcoatNormalTexture = clearcoatNormalMapDef;
+
+		}
+
+		materialDef.extensions = materialDef.extensions || {};
+		materialDef.extensions[ this.name ] = extensionDef;
+
+		extensionsUsed[ this.name ] = true;
+
+
+	}
+
+}
+
+/**
+ * Transmission Materials Extension
+ *
+ * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_transmission
+ */
+class GLTFMaterialsTransmissionExtension {
+
+	constructor( writer ) {
+
+		this.writer = writer;
+		this.name = 'KHR_materials_transmission';
+
+	}
+
+	writeMaterial( material, materialDef ) {
+
+		if ( ! material.isMeshPhysicalMaterial || material.transmission === 0 ) return;
+
+		const writer = this.writer;
+		const extensionsUsed = writer.extensionsUsed;
+
+		const extensionDef = {};
+
+		extensionDef.transmissionFactor = material.transmission;
+
+		if ( material.transmissionMap ) {
+
+			const transmissionMapDef = { index: writer.processTexture( material.transmissionMap ) };
+			writer.applyTextureTransform( transmissionMapDef, material.transmissionMap );
+			extensionDef.transmissionTexture = transmissionMapDef;
+
+		}
+
+		materialDef.extensions = materialDef.extensions || {};
+		materialDef.extensions[ this.name ] = extensionDef;
+
+		extensionsUsed[ this.name ] = true;
+
+	}
+
+}
+
+/**
+ * Materials Volume Extension
+ *
+ * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_volume
+ */
+class GLTFMaterialsVolumeExtension {
+
+	constructor( writer ) {
+
+		this.writer = writer;
+		this.name = 'KHR_materials_volume';
+
+	}
+
+	writeMaterial( material, materialDef ) {
+
+		if ( ! material.isMeshPhysicalMaterial || material.transmission === 0 ) return;
+
+		const writer = this.writer;
+		const extensionsUsed = writer.extensionsUsed;
+
+		const extensionDef = {};
+
+		extensionDef.thicknessFactor = material.thickness;
+
+		if ( material.thicknessMap ) {
+
+			const thicknessMapDef = { index: writer.processTexture( material.thicknessMap ) };
+			writer.applyTextureTransform( thicknessMapDef, material.thicknessMap );
+			extensionDef.thicknessTexture = thicknessMapDef;
+
+		}
+
+		extensionDef.attenuationDistance = material.attenuationDistance;
+		extensionDef.attenuationColor = material.attenuationColor.toArray();
+
+		materialDef.extensions = materialDef.extensions || {};
+		materialDef.extensions[ this.name ] = extensionDef;
+
+		extensionsUsed[ this.name ] = true;
+
+	}
+
+}
+
+/**
+ * Static utility functions
+ */
+GLTFExporter.Utils = {
+
+	insertKeyframe: function ( track, time ) {
+
+		const tolerance = 0.001; // 1ms
+		const valueSize = track.getValueSize();
+
+		const times = new track.TimeBufferType( track.times.length + 1 );
+		const values = new track.ValueBufferType( track.values.length + valueSize );
+		const interpolant = track.createInterpolant( new track.ValueBufferType( valueSize ) );
+
+		let index;
+
+		if ( track.times.length === 0 ) {
+
+			times[ 0 ] = time;
+
+			for ( let i = 0; i < valueSize; i ++ ) {
+
+				values[ i ] = 0;
+
+			}
+
+			index = 0;
+
+		} else if ( time < track.times[ 0 ] ) {
+
+			if ( Math.abs( track.times[ 0 ] - time ) < tolerance ) return 0;
+
+			times[ 0 ] = time;
+			times.set( track.times, 1 );
+
+			values.set( interpolant.evaluate( time ), 0 );
+			values.set( track.values, valueSize );
+
+			index = 0;
+
+		} else if ( time > track.times[ track.times.length - 1 ] ) {
+
+			if ( Math.abs( track.times[ track.times.length - 1 ] - time ) < tolerance ) {
+
+				return track.times.length - 1;
+
+			}
+
+			times[ times.length - 1 ] = time;
+			times.set( track.times, 0 );
+
+			values.set( track.values, 0 );
+			values.set( interpolant.evaluate( time ), track.values.length );
+
+			index = times.length - 1;
+
+		} else {
+
+			for ( let i = 0; i < track.times.length; i ++ ) {
+
+				if ( Math.abs( track.times[ i ] - time ) < tolerance ) return i;
+
+				if ( track.times[ i ] < time && track.times[ i + 1 ] > time ) {
+
+					times.set( track.times.slice( 0, i + 1 ), 0 );
+					times[ i + 1 ] = time;
+					times.set( track.times.slice( i + 1 ), i + 2 );
+
+					values.set( track.values.slice( 0, ( i + 1 ) * valueSize ), 0 );
+					values.set( interpolant.evaluate( time ), ( i + 1 ) * valueSize );
+					values.set( track.values.slice( ( i + 1 ) * valueSize ), ( i + 2 ) * valueSize );
+
+					index = i + 1;
+
+					break;
+
+				}
+
+			}
+
+		}
+
+		track.times = times;
+		track.values = values;
+
+		return index;
+
+	},
+
+	mergeMorphTargetTracks: function ( clip, root ) {
+
+		const tracks = [];
+		const mergedTracks = {};
+		const sourceTracks = clip.tracks;
+
+		for ( let i = 0; i < sourceTracks.length; ++ i ) {
+
+			let sourceTrack = sourceTracks[ i ];
+			const sourceTrackBinding = PropertyBinding.parseTrackName( sourceTrack.name );
+			const sourceTrackNode = PropertyBinding.findNode( root, sourceTrackBinding.nodeName );
+
+			if ( sourceTrackBinding.propertyName !== 'morphTargetInfluences' || sourceTrackBinding.propertyIndex === undefined ) {
+
+				// Tracks that don't affect morph targets, or that affect all morph targets together, can be left as-is.
+				tracks.push( sourceTrack );
+				continue;
+
+			}
+
+			if ( sourceTrack.createInterpolant !== sourceTrack.InterpolantFactoryMethodDiscrete
+				&& sourceTrack.createInterpolant !== sourceTrack.InterpolantFactoryMethodLinear ) {
+
+				if ( sourceTrack.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline ) {
+
+					// This should never happen, because glTF morph target animations
+					// affect all targets already.
+					throw new Error( 'THREE.GLTFExporter: Cannot merge tracks with glTF CUBICSPLINE interpolation.' );
+
+				}
+
+				console.warn( 'THREE.GLTFExporter: Morph target interpolation mode not yet supported. Using LINEAR instead.' );
+
+				sourceTrack = sourceTrack.clone();
+				sourceTrack.setInterpolation( InterpolateLinear );
+
+			}
+
+			const targetCount = sourceTrackNode.morphTargetInfluences.length;
+			const targetIndex = sourceTrackNode.morphTargetDictionary[ sourceTrackBinding.propertyIndex ];
+
+			if ( targetIndex === undefined ) {
+
+				throw new Error( 'THREE.GLTFExporter: Morph target name not found: ' + sourceTrackBinding.propertyIndex );
+
+			}
+
+			let mergedTrack;
+
+			// If this is the first time we've seen this object, create a new
+			// track to store merged keyframe data for each morph target.
+			if ( mergedTracks[ sourceTrackNode.uuid ] === undefined ) {
+
+				mergedTrack = sourceTrack.clone();
+
+				const values = new mergedTrack.ValueBufferType( targetCount * mergedTrack.times.length );
+
+				for ( let j = 0; j < mergedTrack.times.length; j ++ ) {
+
+					values[ j * targetCount + targetIndex ] = mergedTrack.values[ j ];
+
+				}
+
+				// We need to take into consideration the intended target node
+				// of our original un-merged morphTarget animation.
+				mergedTrack.name = ( sourceTrackBinding.nodeName || '' ) + '.morphTargetInfluences';
+				mergedTrack.values = values;
+
+				mergedTracks[ sourceTrackNode.uuid ] = mergedTrack;
+				tracks.push( mergedTrack );
+
+				continue;
+
+			}
+
+			const sourceInterpolant = sourceTrack.createInterpolant( new sourceTrack.ValueBufferType( 1 ) );
+
+			mergedTrack = mergedTracks[ sourceTrackNode.uuid ];
+
+			// For every existing keyframe of the merged track, write a (possibly
+			// interpolated) value from the source track.
+			for ( let j = 0; j < mergedTrack.times.length; j ++ ) {
+
+				mergedTrack.values[ j * targetCount + targetIndex ] = sourceInterpolant.evaluate( mergedTrack.times[ j ] );
+
+			}
+
+			// For every existing keyframe of the source track, write a (possibly
+			// new) keyframe to the merged track. Values from the previous loop may
+			// be written again, but keyframes are de-duplicated.
+			for ( let j = 0; j < sourceTrack.times.length; j ++ ) {
+
+				const keyframeIndex = this.insertKeyframe( mergedTrack, sourceTrack.times[ j ] );
+				mergedTrack.values[ keyframeIndex * targetCount + targetIndex ] = sourceTrack.values[ j ];
+
+			}
+
+		}
+
+		clip.tracks = tracks;
+
+		return clip;
+
+	}
+
+};
+
 class Vector4 {
 
 	constructor( x = 0, y = 0, z = 0, w = 1 ) {
@@ -17538,2580 +20112,6 @@ class Float16BufferAttribute extends BufferAttribute {
 
 Float16BufferAttribute.prototype.isFloat16BufferAttribute = true;
 
-class GLTFExporter {
-
-	constructor() {
-
-		this.pluginCallbacks = [];
-
-		this.register( function ( writer ) {
-
-			return new GLTFLightExtension( writer );
-
-		} );
-
-		this.register( function ( writer ) {
-
-			return new GLTFMaterialsUnlitExtension( writer );
-
-		} );
-
-		this.register( function ( writer ) {
-
-			return new GLTFMaterialsPBRSpecularGlossiness( writer );
-
-		} );
-
-		this.register( function ( writer ) {
-
-			return new GLTFMaterialsTransmissionExtension( writer );
-
-		} );
-
-		this.register( function ( writer ) {
-
-			return new GLTFMaterialsVolumeExtension( writer );
-
-		} );
-
-		this.register( function ( writer ) {
-
-			return new GLTFMaterialsClearcoatExtension( writer );
-
-		} );
-
-	}
-
-	register( callback ) {
-
-		if ( this.pluginCallbacks.indexOf( callback ) === - 1 ) {
-
-			this.pluginCallbacks.push( callback );
-
-		}
-
-		return this;
-
-	}
-
-	unregister( callback ) {
-
-		if ( this.pluginCallbacks.indexOf( callback ) !== - 1 ) {
-
-			this.pluginCallbacks.splice( this.pluginCallbacks.indexOf( callback ), 1 );
-
-		}
-
-		return this;
-
-	}
-
-	/**
-	 * Parse scenes and generate GLTF output
-	 * @param  {Scene or [THREE.Scenes]} input   Scene or Array of THREE.Scenes
-	 * @param  {Function} onDone  Callback on completed
-	 * @param  {Function} onError  Callback on errors
-	 * @param  {Object} options options
-	 */
-	parse( input, onDone, onError, options ) {
-
-		if ( typeof onError === 'object' ) {
-
-			console.warn( 'THREE.GLTFExporter: parse() expects options as the fourth argument now.' );
-
-			options = onError;
-
-		}
-
-		const writer = new GLTFWriter();
-		const plugins = [];
-
-		for ( let i = 0, il = this.pluginCallbacks.length; i < il; i ++ ) {
-
-			plugins.push( this.pluginCallbacks[ i ]( writer ) );
-
-		}
-
-		writer.setPlugins( plugins );
-		writer.write( input, onDone, options ).catch( onError );
-
-	}
-
-	parseAsync( input, options ) {
-
-		const scope = this;
-
-		return new Promise( function ( resolve, reject ) {
-
-			scope.parse( input, resolve, reject, options );
-
-		} );
-
-	}
-
-}
-
-//------------------------------------------------------------------------------
-// Constants
-//------------------------------------------------------------------------------
-
-const WEBGL_CONSTANTS = {
-	POINTS: 0x0000,
-	LINES: 0x0001,
-	LINE_LOOP: 0x0002,
-	LINE_STRIP: 0x0003,
-	TRIANGLES: 0x0004,
-	TRIANGLE_STRIP: 0x0005,
-	TRIANGLE_FAN: 0x0006,
-
-	UNSIGNED_BYTE: 0x1401,
-	UNSIGNED_SHORT: 0x1403,
-	FLOAT: 0x1406,
-	UNSIGNED_INT: 0x1405,
-	ARRAY_BUFFER: 0x8892,
-	ELEMENT_ARRAY_BUFFER: 0x8893,
-
-	NEAREST: 0x2600,
-	LINEAR: 0x2601,
-	NEAREST_MIPMAP_NEAREST: 0x2700,
-	LINEAR_MIPMAP_NEAREST: 0x2701,
-	NEAREST_MIPMAP_LINEAR: 0x2702,
-	LINEAR_MIPMAP_LINEAR: 0x2703,
-
-	CLAMP_TO_EDGE: 33071,
-	MIRRORED_REPEAT: 33648,
-	REPEAT: 10497
-};
-
-const THREE_TO_WEBGL = {};
-
-THREE_TO_WEBGL[ NearestFilter ] = WEBGL_CONSTANTS.NEAREST;
-THREE_TO_WEBGL[ NearestMipmapNearestFilter ] = WEBGL_CONSTANTS.NEAREST_MIPMAP_NEAREST;
-THREE_TO_WEBGL[ NearestMipmapLinearFilter ] = WEBGL_CONSTANTS.NEAREST_MIPMAP_LINEAR;
-THREE_TO_WEBGL[ LinearFilter ] = WEBGL_CONSTANTS.LINEAR;
-THREE_TO_WEBGL[ LinearMipmapNearestFilter ] = WEBGL_CONSTANTS.LINEAR_MIPMAP_NEAREST;
-THREE_TO_WEBGL[ LinearMipmapLinearFilter ] = WEBGL_CONSTANTS.LINEAR_MIPMAP_LINEAR;
-
-THREE_TO_WEBGL[ ClampToEdgeWrapping ] = WEBGL_CONSTANTS.CLAMP_TO_EDGE;
-THREE_TO_WEBGL[ RepeatWrapping ] = WEBGL_CONSTANTS.REPEAT;
-THREE_TO_WEBGL[ MirroredRepeatWrapping ] = WEBGL_CONSTANTS.MIRRORED_REPEAT;
-
-const PATH_PROPERTIES = {
-	scale: 'scale',
-	position: 'translation',
-	quaternion: 'rotation',
-	morphTargetInfluences: 'weights'
-};
-
-// GLB constants
-// https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#glb-file-format-specification
-
-const GLB_HEADER_BYTES = 12;
-const GLB_HEADER_MAGIC = 0x46546C67;
-const GLB_VERSION = 2;
-
-const GLB_CHUNK_PREFIX_BYTES = 8;
-const GLB_CHUNK_TYPE_JSON = 0x4E4F534A;
-const GLB_CHUNK_TYPE_BIN = 0x004E4942;
-
-//------------------------------------------------------------------------------
-// Utility functions
-//------------------------------------------------------------------------------
-
-/**
- * Compare two arrays
- * @param  {Array} array1 Array 1 to compare
- * @param  {Array} array2 Array 2 to compare
- * @return {Boolean}        Returns true if both arrays are equal
- */
-function equalArray( array1, array2 ) {
-
-	return ( array1.length === array2.length ) && array1.every( function ( element, index ) {
-
-		return element === array2[ index ];
-
-	} );
-
-}
-
-/**
- * Converts a string to an ArrayBuffer.
- * @param  {string} text
- * @return {ArrayBuffer}
- */
-function stringToArrayBuffer( text ) {
-
-	if ( window.TextEncoder !== undefined ) {
-
-		return new TextEncoder().encode( text ).buffer;
-
-	}
-
-	const array = new Uint8Array( new ArrayBuffer( text.length ) );
-
-	for ( let i = 0, il = text.length; i < il; i ++ ) {
-
-		const value = text.charCodeAt( i );
-
-		// Replacing multi-byte character with space(0x20).
-		array[ i ] = value > 0xFF ? 0x20 : value;
-
-	}
-
-	return array.buffer;
-
-}
-
-/**
- * Is identity matrix
- *
- * @param {Matrix4} matrix
- * @returns {Boolean} Returns true, if parameter is identity matrix
- */
-function isIdentityMatrix( matrix ) {
-
-	return equalArray( matrix.elements, [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ] );
-
-}
-
-/**
- * Get the min and max vectors from the given attribute
- * @param  {BufferAttribute} attribute Attribute to find the min/max in range from start to start + count
- * @param  {Integer} start
- * @param  {Integer} count
- * @return {Object} Object containing the `min` and `max` values (As an array of attribute.itemSize components)
- */
-function getMinMax( attribute, start, count ) {
-
-	const output = {
-
-		min: new Array( attribute.itemSize ).fill( Number.POSITIVE_INFINITY ),
-		max: new Array( attribute.itemSize ).fill( Number.NEGATIVE_INFINITY )
-
-	};
-
-	for ( let i = start; i < start + count; i ++ ) {
-
-		for ( let a = 0; a < attribute.itemSize; a ++ ) {
-
-			let value;
-
-			if ( attribute.itemSize > 4 ) {
-
-				 // no support for interleaved data for itemSize > 4
-
-				value = attribute.array[ i * attribute.itemSize + a ];
-
-			} else {
-
-				if ( a === 0 ) value = attribute.getX( i );
-				else if ( a === 1 ) value = attribute.getY( i );
-				else if ( a === 2 ) value = attribute.getZ( i );
-				else if ( a === 3 ) value = attribute.getW( i );
-
-			}
-
-			output.min[ a ] = Math.min( output.min[ a ], value );
-			output.max[ a ] = Math.max( output.max[ a ], value );
-
-		}
-
-	}
-
-	return output;
-
-}
-
-/**
- * Get the required size + padding for a buffer, rounded to the next 4-byte boundary.
- * https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#data-alignment
- *
- * @param {Integer} bufferSize The size the original buffer.
- * @returns {Integer} new buffer size with required padding.
- *
- */
-function getPaddedBufferSize( bufferSize ) {
-
-	return Math.ceil( bufferSize / 4 ) * 4;
-
-}
-
-/**
- * Returns a buffer aligned to 4-byte boundary.
- *
- * @param {ArrayBuffer} arrayBuffer Buffer to pad
- * @param {Integer} paddingByte (Optional)
- * @returns {ArrayBuffer} The same buffer if it's already aligned to 4-byte boundary or a new buffer
- */
-function getPaddedArrayBuffer( arrayBuffer, paddingByte = 0 ) {
-
-	const paddedLength = getPaddedBufferSize( arrayBuffer.byteLength );
-
-	if ( paddedLength !== arrayBuffer.byteLength ) {
-
-		const array = new Uint8Array( paddedLength );
-		array.set( new Uint8Array( arrayBuffer ) );
-
-		if ( paddingByte !== 0 ) {
-
-			for ( let i = arrayBuffer.byteLength; i < paddedLength; i ++ ) {
-
-				array[ i ] = paddingByte;
-
-			}
-
-		}
-
-		return array.buffer;
-
-	}
-
-	return arrayBuffer;
-
-}
-
-let cachedCanvas = null;
-
-/**
- * Writer
- */
-class GLTFWriter {
-
-	constructor() {
-
-		this.plugins = [];
-
-		this.options = {};
-		this.pending = [];
-		this.buffers = [];
-
-		this.byteOffset = 0;
-		this.buffers = [];
-		this.nodeMap = new Map();
-		this.skins = [];
-		this.extensionsUsed = {};
-
-		this.uids = new Map();
-		this.uid = 0;
-
-		this.json = {
-			asset: {
-				version: '2.0',
-				generator: 'THREE.GLTFExporter'
-			}
-		};
-
-		this.cache = {
-			meshes: new Map(),
-			attributes: new Map(),
-			attributesNormalized: new Map(),
-			materials: new Map(),
-			textures: new Map(),
-			images: new Map()
-		};
-
-	}
-
-	setPlugins( plugins ) {
-
-		this.plugins = plugins;
-
-	}
-
-	/**
-	 * Parse scenes and generate GLTF output
-	 * @param  {Scene or [THREE.Scenes]} input   Scene or Array of THREE.Scenes
-	 * @param  {Function} onDone  Callback on completed
-	 * @param  {Object} options options
-	 */
-	async write( input, onDone, options ) {
-
-		this.options = Object.assign( {}, {
-			// default options
-			binary: false,
-			trs: false,
-			onlyVisible: true,
-			truncateDrawRange: true,
-			embedImages: true,
-			maxTextureSize: Infinity,
-			animations: [],
-			includeCustomExtensions: false
-		}, options );
-
-		if ( this.options.animations.length > 0 ) {
-
-			// Only TRS properties, and not matrices, may be targeted by animation.
-			this.options.trs = true;
-
-		}
-
-		this.processInput( input );
-
-		await Promise.all( this.pending );
-
-		const writer = this;
-		const buffers = writer.buffers;
-		const json = writer.json;
-		options = writer.options;
-		const extensionsUsed = writer.extensionsUsed;
-
-		// Merge buffers.
-		const blob = new Blob( buffers, { type: 'application/octet-stream' } );
-
-		// Declare extensions.
-		const extensionsUsedList = Object.keys( extensionsUsed );
-
-		if ( extensionsUsedList.length > 0 ) json.extensionsUsed = extensionsUsedList;
-
-		// Update bytelength of the single buffer.
-		if ( json.buffers && json.buffers.length > 0 ) json.buffers[ 0 ].byteLength = blob.size;
-
-		if ( options.binary === true ) {
-
-			// https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#glb-file-format-specification
-
-			const reader = new window.FileReader();
-			reader.readAsArrayBuffer( blob );
-			reader.onloadend = function () {
-
-				// Binary chunk.
-				const binaryChunk = getPaddedArrayBuffer( reader.result );
-				const binaryChunkPrefix = new DataView( new ArrayBuffer( GLB_CHUNK_PREFIX_BYTES ) );
-				binaryChunkPrefix.setUint32( 0, binaryChunk.byteLength, true );
-				binaryChunkPrefix.setUint32( 4, GLB_CHUNK_TYPE_BIN, true );
-
-				// JSON chunk.
-				const jsonChunk = getPaddedArrayBuffer( stringToArrayBuffer( JSON.stringify( json ) ), 0x20 );
-				const jsonChunkPrefix = new DataView( new ArrayBuffer( GLB_CHUNK_PREFIX_BYTES ) );
-				jsonChunkPrefix.setUint32( 0, jsonChunk.byteLength, true );
-				jsonChunkPrefix.setUint32( 4, GLB_CHUNK_TYPE_JSON, true );
-
-				// GLB header.
-				const header = new ArrayBuffer( GLB_HEADER_BYTES );
-				const headerView = new DataView( header );
-				headerView.setUint32( 0, GLB_HEADER_MAGIC, true );
-				headerView.setUint32( 4, GLB_VERSION, true );
-				const totalByteLength = GLB_HEADER_BYTES
-					+ jsonChunkPrefix.byteLength + jsonChunk.byteLength
-					+ binaryChunkPrefix.byteLength + binaryChunk.byteLength;
-				headerView.setUint32( 8, totalByteLength, true );
-
-				const glbBlob = new Blob( [
-					header,
-					jsonChunkPrefix,
-					jsonChunk,
-					binaryChunkPrefix,
-					binaryChunk
-				], { type: 'application/octet-stream' } );
-
-				const glbReader = new window.FileReader();
-				glbReader.readAsArrayBuffer( glbBlob );
-				glbReader.onloadend = function () {
-
-					onDone( glbReader.result );
-
-				};
-
-			};
-
-		} else {
-
-			if ( json.buffers && json.buffers.length > 0 ) {
-
-				const reader = new window.FileReader();
-				reader.readAsDataURL( blob );
-				reader.onloadend = function () {
-
-					const base64data = reader.result;
-					json.buffers[ 0 ].uri = base64data;
-					onDone( json );
-
-				};
-
-			} else {
-
-				onDone( json );
-
-			}
-
-		}
-
-
-	}
-
-	/**
-	 * Serializes a userData.
-	 *
-	 * @param {THREE.Object3D|THREE.Material} object
-	 * @param {Object} objectDef
-	 */
-	serializeUserData( object, objectDef ) {
-
-		if ( Object.keys( object.userData ).length === 0 ) return;
-
-		const options = this.options;
-		const extensionsUsed = this.extensionsUsed;
-
-		try {
-
-			const json = JSON.parse( JSON.stringify( object.userData ) );
-
-			if ( options.includeCustomExtensions && json.gltfExtensions ) {
-
-				if ( objectDef.extensions === undefined ) objectDef.extensions = {};
-
-				for ( const extensionName in json.gltfExtensions ) {
-
-					objectDef.extensions[ extensionName ] = json.gltfExtensions[ extensionName ];
-					extensionsUsed[ extensionName ] = true;
-
-				}
-
-				delete json.gltfExtensions;
-
-			}
-
-			if ( Object.keys( json ).length > 0 ) objectDef.extras = json;
-
-		} catch ( error ) {
-
-			console.warn( 'THREE.GLTFExporter: userData of \'' + object.name + '\' ' +
-				'won\'t be serialized because of JSON.stringify error - ' + error.message );
-
-		}
-
-	}
-
-	/**
-	 * Assign and return a temporal unique id for an object
-	 * especially which doesn't have .uuid
-	 * @param  {Object} object
-	 * @return {Integer}
-	 */
-	getUID( object ) {
-
-		if ( ! this.uids.has( object ) ) this.uids.set( object, this.uid ++ );
-
-		return this.uids.get( object );
-
-	}
-
-	/**
-	 * Checks if normal attribute values are normalized.
-	 *
-	 * @param {BufferAttribute} normal
-	 * @returns {Boolean}
-	 */
-	isNormalizedNormalAttribute( normal ) {
-
-		const cache = this.cache;
-
-		if ( cache.attributesNormalized.has( normal ) ) return false;
-
-		const v = new Vector3$1();
-
-		for ( let i = 0, il = normal.count; i < il; i ++ ) {
-
-			// 0.0005 is from glTF-validator
-			if ( Math.abs( v.fromBufferAttribute( normal, i ).length() - 1.0 ) > 0.0005 ) return false;
-
-		}
-
-		return true;
-
-	}
-
-	/**
-	 * Creates normalized normal buffer attribute.
-	 *
-	 * @param {BufferAttribute} normal
-	 * @returns {BufferAttribute}
-	 *
-	 */
-	createNormalizedNormalAttribute( normal ) {
-
-		const cache = this.cache;
-
-		if ( cache.attributesNormalized.has( normal ) )	return cache.attributesNormalized.get( normal );
-
-		const attribute = normal.clone();
-		const v = new Vector3$1();
-
-		for ( let i = 0, il = attribute.count; i < il; i ++ ) {
-
-			v.fromBufferAttribute( attribute, i );
-
-			if ( v.x === 0 && v.y === 0 && v.z === 0 ) {
-
-				// if values can't be normalized set (1, 0, 0)
-				v.setX( 1.0 );
-
-			} else {
-
-				v.normalize();
-
-			}
-
-			attribute.setXYZ( i, v.x, v.y, v.z );
-
-		}
-
-		cache.attributesNormalized.set( normal, attribute );
-
-		return attribute;
-
-	}
-
-	/**
-	 * Applies a texture transform, if present, to the map definition. Requires
-	 * the KHR_texture_transform extension.
-	 *
-	 * @param {Object} mapDef
-	 * @param {THREE.Texture} texture
-	 */
-	applyTextureTransform( mapDef, texture ) {
-
-		let didTransform = false;
-		const transformDef = {};
-
-		if ( texture.offset.x !== 0 || texture.offset.y !== 0 ) {
-
-			transformDef.offset = texture.offset.toArray();
-			didTransform = true;
-
-		}
-
-		if ( texture.rotation !== 0 ) {
-
-			transformDef.rotation = texture.rotation;
-			didTransform = true;
-
-		}
-
-		if ( texture.repeat.x !== 1 || texture.repeat.y !== 1 ) {
-
-			transformDef.scale = texture.repeat.toArray();
-			didTransform = true;
-
-		}
-
-		if ( didTransform ) {
-
-			mapDef.extensions = mapDef.extensions || {};
-			mapDef.extensions[ 'KHR_texture_transform' ] = transformDef;
-			this.extensionsUsed[ 'KHR_texture_transform' ] = true;
-
-		}
-
-	}
-
-	/**
-	 * Process a buffer to append to the default one.
-	 * @param  {ArrayBuffer} buffer
-	 * @return {Integer}
-	 */
-	processBuffer( buffer ) {
-
-		const json = this.json;
-		const buffers = this.buffers;
-
-		if ( ! json.buffers ) json.buffers = [ { byteLength: 0 } ];
-
-		// All buffers are merged before export.
-		buffers.push( buffer );
-
-		return 0;
-
-	}
-
-	/**
-	 * Process and generate a BufferView
-	 * @param  {BufferAttribute} attribute
-	 * @param  {number} componentType
-	 * @param  {number} start
-	 * @param  {number} count
-	 * @param  {number} target (Optional) Target usage of the BufferView
-	 * @return {Object}
-	 */
-	processBufferView( attribute, componentType, start, count, target ) {
-
-		const json = this.json;
-
-		if ( ! json.bufferViews ) json.bufferViews = [];
-
-		// Create a new dataview and dump the attribute's array into it
-
-		let componentSize;
-
-		if ( componentType === WEBGL_CONSTANTS.UNSIGNED_BYTE ) {
-
-			componentSize = 1;
-
-		} else if ( componentType === WEBGL_CONSTANTS.UNSIGNED_SHORT ) {
-
-			componentSize = 2;
-
-		} else {
-
-			componentSize = 4;
-
-		}
-
-		const byteLength = getPaddedBufferSize( count * attribute.itemSize * componentSize );
-		const dataView = new DataView( new ArrayBuffer( byteLength ) );
-		let offset = 0;
-
-		for ( let i = start; i < start + count; i ++ ) {
-
-			for ( let a = 0; a < attribute.itemSize; a ++ ) {
-
-				let value;
-
-				if ( attribute.itemSize > 4 ) {
-
-					 // no support for interleaved data for itemSize > 4
-
-					value = attribute.array[ i * attribute.itemSize + a ];
-
-				} else {
-
-					if ( a === 0 ) value = attribute.getX( i );
-					else if ( a === 1 ) value = attribute.getY( i );
-					else if ( a === 2 ) value = attribute.getZ( i );
-					else if ( a === 3 ) value = attribute.getW( i );
-
-				}
-
-				if ( componentType === WEBGL_CONSTANTS.FLOAT ) {
-
-					dataView.setFloat32( offset, value, true );
-
-				} else if ( componentType === WEBGL_CONSTANTS.UNSIGNED_INT ) {
-
-					dataView.setUint32( offset, value, true );
-
-				} else if ( componentType === WEBGL_CONSTANTS.UNSIGNED_SHORT ) {
-
-					dataView.setUint16( offset, value, true );
-
-				} else if ( componentType === WEBGL_CONSTANTS.UNSIGNED_BYTE ) {
-
-					dataView.setUint8( offset, value );
-
-				}
-
-				offset += componentSize;
-
-			}
-
-		}
-
-		const bufferViewDef = {
-
-			buffer: this.processBuffer( dataView.buffer ),
-			byteOffset: this.byteOffset,
-			byteLength: byteLength
-
-		};
-
-		if ( target !== undefined ) bufferViewDef.target = target;
-
-		if ( target === WEBGL_CONSTANTS.ARRAY_BUFFER ) {
-
-			// Only define byteStride for vertex attributes.
-			bufferViewDef.byteStride = attribute.itemSize * componentSize;
-
-		}
-
-		this.byteOffset += byteLength;
-
-		json.bufferViews.push( bufferViewDef );
-
-		// @TODO Merge bufferViews where possible.
-		const output = {
-
-			id: json.bufferViews.length - 1,
-			byteLength: 0
-
-		};
-
-		return output;
-
-	}
-
-	/**
-	 * Process and generate a BufferView from an image Blob.
-	 * @param {Blob} blob
-	 * @return {Promise<Integer>}
-	 */
-	processBufferViewImage( blob ) {
-
-		const writer = this;
-		const json = writer.json;
-
-		if ( ! json.bufferViews ) json.bufferViews = [];
-
-		return new Promise( function ( resolve ) {
-
-			const reader = new window.FileReader();
-			reader.readAsArrayBuffer( blob );
-			reader.onloadend = function () {
-
-				const buffer = getPaddedArrayBuffer( reader.result );
-
-				const bufferViewDef = {
-					buffer: writer.processBuffer( buffer ),
-					byteOffset: writer.byteOffset,
-					byteLength: buffer.byteLength
-				};
-
-				writer.byteOffset += buffer.byteLength;
-				resolve( json.bufferViews.push( bufferViewDef ) - 1 );
-
-			};
-
-		} );
-
-	}
-
-	/**
-	 * Process attribute to generate an accessor
-	 * @param  {BufferAttribute} attribute Attribute to process
-	 * @param  {THREE.BufferGeometry} geometry (Optional) Geometry used for truncated draw range
-	 * @param  {Integer} start (Optional)
-	 * @param  {Integer} count (Optional)
-	 * @return {Integer|null} Index of the processed accessor on the "accessors" array
-	 */
-	processAccessor( attribute, geometry, start, count ) {
-
-		const options = this.options;
-		const json = this.json;
-
-		const types = {
-
-			1: 'SCALAR',
-			2: 'VEC2',
-			3: 'VEC3',
-			4: 'VEC4',
-			16: 'MAT4'
-
-		};
-
-		let componentType;
-
-		// Detect the component type of the attribute array (float, uint or ushort)
-		if ( attribute.array.constructor === Float32Array ) {
-
-			componentType = WEBGL_CONSTANTS.FLOAT;
-
-		} else if ( attribute.array.constructor === Uint32Array ) {
-
-			componentType = WEBGL_CONSTANTS.UNSIGNED_INT;
-
-		} else if ( attribute.array.constructor === Uint16Array ) {
-
-			componentType = WEBGL_CONSTANTS.UNSIGNED_SHORT;
-
-		} else if ( attribute.array.constructor === Uint8Array ) {
-
-			componentType = WEBGL_CONSTANTS.UNSIGNED_BYTE;
-
-		} else {
-
-			throw new Error( 'THREE.GLTFExporter: Unsupported bufferAttribute component type.' );
-
-		}
-
-		if ( start === undefined ) start = 0;
-		if ( count === undefined ) count = attribute.count;
-
-		// @TODO Indexed buffer geometry with drawRange not supported yet
-		if ( options.truncateDrawRange && geometry !== undefined && geometry.index === null ) {
-
-			const end = start + count;
-			const end2 = geometry.drawRange.count === Infinity
-				? attribute.count
-				: geometry.drawRange.start + geometry.drawRange.count;
-
-			start = Math.max( start, geometry.drawRange.start );
-			count = Math.min( end, end2 ) - start;
-
-			if ( count < 0 ) count = 0;
-
-		}
-
-		// Skip creating an accessor if the attribute doesn't have data to export
-		if ( count === 0 ) return null;
-
-		const minMax = getMinMax( attribute, start, count );
-		let bufferViewTarget;
-
-		// If geometry isn't provided, don't infer the target usage of the bufferView. For
-		// animation samplers, target must not be set.
-		if ( geometry !== undefined ) {
-
-			bufferViewTarget = attribute === geometry.index ? WEBGL_CONSTANTS.ELEMENT_ARRAY_BUFFER : WEBGL_CONSTANTS.ARRAY_BUFFER;
-
-		}
-
-		const bufferView = this.processBufferView( attribute, componentType, start, count, bufferViewTarget );
-
-		const accessorDef = {
-
-			bufferView: bufferView.id,
-			byteOffset: bufferView.byteOffset,
-			componentType: componentType,
-			count: count,
-			max: minMax.max,
-			min: minMax.min,
-			type: types[ attribute.itemSize ]
-
-		};
-
-		if ( attribute.normalized === true ) accessorDef.normalized = true;
-		if ( ! json.accessors ) json.accessors = [];
-
-		return json.accessors.push( accessorDef ) - 1;
-
-	}
-
-	/**
-	 * Process image
-	 * @param  {Image} image to process
-	 * @param  {Integer} format of the image (e.g. RGBFormat, RGBAFormat etc)
-	 * @param  {Boolean} flipY before writing out the image
-	 * @return {Integer}     Index of the processed texture in the "images" array
-	 */
-	processImage( image, format, flipY ) {
-
-		const writer = this;
-		const cache = writer.cache;
-		const json = writer.json;
-		const options = writer.options;
-		const pending = writer.pending;
-
-		if ( ! cache.images.has( image ) ) cache.images.set( image, {} );
-
-		const cachedImages = cache.images.get( image );
-		const mimeType = format === RGBAFormat ? 'image/png' : 'image/jpeg';
-		const key = mimeType + ':flipY/' + flipY.toString();
-
-		if ( cachedImages[ key ] !== undefined ) return cachedImages[ key ];
-
-		if ( ! json.images ) json.images = [];
-
-		const imageDef = { mimeType: mimeType };
-
-		if ( options.embedImages ) {
-
-			const canvas = cachedCanvas = cachedCanvas || document.createElement( 'canvas' );
-
-			canvas.width = Math.min( image.width, options.maxTextureSize );
-			canvas.height = Math.min( image.height, options.maxTextureSize );
-
-			const ctx = canvas.getContext( '2d' );
-
-			if ( flipY === true ) {
-
-				ctx.translate( 0, canvas.height );
-				ctx.scale( 1, - 1 );
-
-			}
-
-			if ( ( typeof HTMLImageElement !== 'undefined' && image instanceof HTMLImageElement ) ||
-				( typeof HTMLCanvasElement !== 'undefined' && image instanceof HTMLCanvasElement ) ||
-				( typeof OffscreenCanvas !== 'undefined' && image instanceof OffscreenCanvas ) ||
-				( typeof ImageBitmap !== 'undefined' && image instanceof ImageBitmap ) ) {
-
-				ctx.drawImage( image, 0, 0, canvas.width, canvas.height );
-
-			} else {
-
-				if ( format !== RGBAFormat && format !== RGBFormat ) {
-
-					console.error( 'GLTFExporter: Only RGB and RGBA formats are supported.' );
-
-				}
-
-				if ( image.width > options.maxTextureSize || image.height > options.maxTextureSize ) {
-
-					console.warn( 'GLTFExporter: Image size is bigger than maxTextureSize', image );
-
-				}
-
-				const data = new Uint8ClampedArray( image.height * image.width * 4 );
-
-				if ( format === RGBAFormat ) {
-
-					for ( let i = 0; i < data.length; i += 4 ) {
-
-						data[ i + 0 ] = image.data[ i + 0 ];
-						data[ i + 1 ] = image.data[ i + 1 ];
-						data[ i + 2 ] = image.data[ i + 2 ];
-						data[ i + 3 ] = image.data[ i + 3 ];
-
-					}
-
-				} else {
-
-					for ( let i = 0, j = 0; i < data.length; i += 4, j += 3 ) {
-
-						data[ i + 0 ] = image.data[ j + 0 ];
-						data[ i + 1 ] = image.data[ j + 1 ];
-						data[ i + 2 ] = image.data[ j + 2 ];
-						data[ i + 3 ] = 255;
-
-					}
-
-				}
-
-				ctx.putImageData( new ImageData( data, image.width, image.height ), 0, 0 );
-
-			}
-
-			if ( options.binary === true ) {
-
-				pending.push( new Promise( function ( resolve ) {
-
-					canvas.toBlob( function ( blob ) {
-
-						writer.processBufferViewImage( blob ).then( function ( bufferViewIndex ) {
-
-							imageDef.bufferView = bufferViewIndex;
-							resolve();
-
-						} );
-
-					}, mimeType );
-
-				} ) );
-
-			} else {
-
-				imageDef.uri = canvas.toDataURL( mimeType );
-
-			}
-
-		} else {
-
-			imageDef.uri = image.src;
-
-		}
-
-		const index = json.images.push( imageDef ) - 1;
-		cachedImages[ key ] = index;
-		return index;
-
-	}
-
-	/**
-	 * Process sampler
-	 * @param  {Texture} map Texture to process
-	 * @return {Integer}     Index of the processed texture in the "samplers" array
-	 */
-	processSampler( map ) {
-
-		const json = this.json;
-
-		if ( ! json.samplers ) json.samplers = [];
-
-		const samplerDef = {
-			magFilter: THREE_TO_WEBGL[ map.magFilter ],
-			minFilter: THREE_TO_WEBGL[ map.minFilter ],
-			wrapS: THREE_TO_WEBGL[ map.wrapS ],
-			wrapT: THREE_TO_WEBGL[ map.wrapT ]
-		};
-
-		return json.samplers.push( samplerDef ) - 1;
-
-	}
-
-	/**
-	 * Process texture
-	 * @param  {Texture} map Map to process
-	 * @return {Integer} Index of the processed texture in the "textures" array
-	 */
-	processTexture( map ) {
-
-		const cache = this.cache;
-		const json = this.json;
-
-		if ( cache.textures.has( map ) ) return cache.textures.get( map );
-
-		if ( ! json.textures ) json.textures = [];
-
-		const textureDef = {
-			sampler: this.processSampler( map ),
-			source: this.processImage( map.image, map.format, map.flipY )
-		};
-
-		if ( map.name ) textureDef.name = map.name;
-
-		this._invokeAll( function ( ext ) {
-
-			ext.writeTexture && ext.writeTexture( map, textureDef );
-
-		} );
-
-		const index = json.textures.push( textureDef ) - 1;
-		cache.textures.set( map, index );
-		return index;
-
-	}
-
-	/**
-	 * Process material
-	 * @param  {THREE.Material} material Material to process
-	 * @return {Integer|null} Index of the processed material in the "materials" array
-	 */
-	processMaterial( material ) {
-
-		const cache = this.cache;
-		const json = this.json;
-
-		if ( cache.materials.has( material ) ) return cache.materials.get( material );
-
-		if ( material.isShaderMaterial ) {
-
-			console.warn( 'GLTFExporter: THREE.ShaderMaterial not supported.' );
-			return null;
-
-		}
-
-		if ( ! json.materials ) json.materials = [];
-
-		// @QUESTION Should we avoid including any attribute that has the default value?
-		const materialDef = {	pbrMetallicRoughness: {} };
-
-		if ( material.isMeshStandardMaterial !== true && material.isMeshBasicMaterial !== true ) {
-
-			console.warn( 'GLTFExporter: Use MeshStandardMaterial or MeshBasicMaterial for best results.' );
-
-		}
-
-		// pbrMetallicRoughness.baseColorFactor
-		const color = material.color.toArray().concat( [ material.opacity ] );
-
-		if ( ! equalArray( color, [ 1, 1, 1, 1 ] ) ) {
-
-			materialDef.pbrMetallicRoughness.baseColorFactor = color;
-
-		}
-
-		if ( material.isMeshStandardMaterial ) {
-
-			materialDef.pbrMetallicRoughness.metallicFactor = material.metalness;
-			materialDef.pbrMetallicRoughness.roughnessFactor = material.roughness;
-
-		} else {
-
-			materialDef.pbrMetallicRoughness.metallicFactor = 0.5;
-			materialDef.pbrMetallicRoughness.roughnessFactor = 0.5;
-
-		}
-
-		// pbrMetallicRoughness.metallicRoughnessTexture
-		if ( material.metalnessMap || material.roughnessMap ) {
-
-			if ( material.metalnessMap === material.roughnessMap ) {
-
-				const metalRoughMapDef = { index: this.processTexture( material.metalnessMap ) };
-				this.applyTextureTransform( metalRoughMapDef, material.metalnessMap );
-				materialDef.pbrMetallicRoughness.metallicRoughnessTexture = metalRoughMapDef;
-
-			} else {
-
-				console.warn( 'THREE.GLTFExporter: Ignoring metalnessMap and roughnessMap because they are not the same Texture.' );
-
-			}
-
-		}
-
-		// pbrMetallicRoughness.baseColorTexture or pbrSpecularGlossiness diffuseTexture
-		if ( material.map ) {
-
-			const baseColorMapDef = { index: this.processTexture( material.map ) };
-			this.applyTextureTransform( baseColorMapDef, material.map );
-			materialDef.pbrMetallicRoughness.baseColorTexture = baseColorMapDef;
-
-		}
-
-		if ( material.emissive ) {
-
-			// note: emissive components are limited to stay within the 0 - 1 range to accommodate glTF spec. see #21849 and #22000.
-			const emissive = material.emissive.clone().multiplyScalar( material.emissiveIntensity );
-			const maxEmissiveComponent = Math.max( emissive.r, emissive.g, emissive.b );
-
-			if ( maxEmissiveComponent > 1 ) {
-
-				emissive.multiplyScalar( 1 / maxEmissiveComponent );
-
-				console.warn( 'THREE.GLTFExporter: Some emissive components exceed 1; emissive has been limited' );
-
-			}
-
-			if ( maxEmissiveComponent > 0 ) {
-
-				materialDef.emissiveFactor = emissive.toArray();
-
-			}
-
-			// emissiveTexture
-			if ( material.emissiveMap ) {
-
-				const emissiveMapDef = { index: this.processTexture( material.emissiveMap ) };
-				this.applyTextureTransform( emissiveMapDef, material.emissiveMap );
-				materialDef.emissiveTexture = emissiveMapDef;
-
-			}
-
-		}
-
-		// normalTexture
-		if ( material.normalMap ) {
-
-			const normalMapDef = { index: this.processTexture( material.normalMap ) };
-
-			if ( material.normalScale && material.normalScale.x !== 1 ) {
-
-				// glTF normal scale is univariate. Ignore `y`, which may be flipped.
-				// Context: https://github.com/mrdoob/three.js/issues/11438#issuecomment-507003995
-				normalMapDef.scale = material.normalScale.x;
-
-			}
-
-			this.applyTextureTransform( normalMapDef, material.normalMap );
-			materialDef.normalTexture = normalMapDef;
-
-		}
-
-		// occlusionTexture
-		if ( material.aoMap ) {
-
-			const occlusionMapDef = {
-				index: this.processTexture( material.aoMap ),
-				texCoord: 1
-			};
-
-			if ( material.aoMapIntensity !== 1.0 ) {
-
-				occlusionMapDef.strength = material.aoMapIntensity;
-
-			}
-
-			this.applyTextureTransform( occlusionMapDef, material.aoMap );
-			materialDef.occlusionTexture = occlusionMapDef;
-
-		}
-
-		// alphaMode
-		if ( material.transparent ) {
-
-			materialDef.alphaMode = 'BLEND';
-
-		} else {
-
-			if ( material.alphaTest > 0.0 ) {
-
-				materialDef.alphaMode = 'MASK';
-				materialDef.alphaCutoff = material.alphaTest;
-
-			}
-
-		}
-
-		// doubleSided
-		if ( material.side === DoubleSide ) materialDef.doubleSided = true;
-		if ( material.name !== '' ) materialDef.name = material.name;
-
-		this.serializeUserData( material, materialDef );
-
-		this._invokeAll( function ( ext ) {
-
-			ext.writeMaterial && ext.writeMaterial( material, materialDef );
-
-		} );
-
-		const index = json.materials.push( materialDef ) - 1;
-		cache.materials.set( material, index );
-		return index;
-
-	}
-
-	/**
-	 * Process mesh
-	 * @param  {THREE.Mesh} mesh Mesh to process
-	 * @return {Integer|null} Index of the processed mesh in the "meshes" array
-	 */
-	processMesh( mesh ) {
-
-		const cache = this.cache;
-		const json = this.json;
-
-		const meshCacheKeyParts = [ mesh.geometry.uuid ];
-
-		if ( Array.isArray( mesh.material ) ) {
-
-			for ( let i = 0, l = mesh.material.length; i < l; i ++ ) {
-
-				meshCacheKeyParts.push( mesh.material[ i ].uuid	);
-
-			}
-
-		} else {
-
-			meshCacheKeyParts.push( mesh.material.uuid );
-
-		}
-
-		const meshCacheKey = meshCacheKeyParts.join( ':' );
-
-		if ( cache.meshes.has( meshCacheKey ) ) return cache.meshes.get( meshCacheKey );
-
-		const geometry = mesh.geometry;
-		let mode;
-
-		// Use the correct mode
-		if ( mesh.isLineSegments ) {
-
-			mode = WEBGL_CONSTANTS.LINES;
-
-		} else if ( mesh.isLineLoop ) {
-
-			mode = WEBGL_CONSTANTS.LINE_LOOP;
-
-		} else if ( mesh.isLine ) {
-
-			mode = WEBGL_CONSTANTS.LINE_STRIP;
-
-		} else if ( mesh.isPoints ) {
-
-			mode = WEBGL_CONSTANTS.POINTS;
-
-		} else {
-
-			mode = mesh.material.wireframe ? WEBGL_CONSTANTS.LINES : WEBGL_CONSTANTS.TRIANGLES;
-
-		}
-
-		if ( geometry.isBufferGeometry !== true ) {
-
-			throw new Error( 'THREE.GLTFExporter: Geometry is not of type THREE.BufferGeometry.' );
-
-		}
-
-		const meshDef = {};
-		const attributes = {};
-		const primitives = [];
-		const targets = [];
-
-		// Conversion between attributes names in threejs and gltf spec
-		const nameConversion = {
-			uv: 'TEXCOORD_0',
-			uv2: 'TEXCOORD_1',
-			color: 'COLOR_0',
-			skinWeight: 'WEIGHTS_0',
-			skinIndex: 'JOINTS_0'
-		};
-
-		const originalNormal = geometry.getAttribute( 'normal' );
-
-		if ( originalNormal !== undefined && ! this.isNormalizedNormalAttribute( originalNormal ) ) {
-
-			console.warn( 'THREE.GLTFExporter: Creating normalized normal attribute from the non-normalized one.' );
-
-			geometry.setAttribute( 'normal', this.createNormalizedNormalAttribute( originalNormal ) );
-
-		}
-
-		// @QUESTION Detect if .vertexColors = true?
-		// For every attribute create an accessor
-		let modifiedAttribute = null;
-
-		for ( let attributeName in geometry.attributes ) {
-
-			// Ignore morph target attributes, which are exported later.
-			if ( attributeName.substr( 0, 5 ) === 'morph' ) continue;
-
-			const attribute = geometry.attributes[ attributeName ];
-			attributeName = nameConversion[ attributeName ] || attributeName.toUpperCase();
-
-			// Prefix all geometry attributes except the ones specifically
-			// listed in the spec; non-spec attributes are considered custom.
-			const validVertexAttributes =
-					/^(POSITION|NORMAL|TANGENT|TEXCOORD_\d+|COLOR_\d+|JOINTS_\d+|WEIGHTS_\d+)$/;
-
-			if ( ! validVertexAttributes.test( attributeName ) ) attributeName = '_' + attributeName;
-
-			if ( cache.attributes.has( this.getUID( attribute ) ) ) {
-
-				attributes[ attributeName ] = cache.attributes.get( this.getUID( attribute ) );
-				continue;
-
-			}
-
-			// JOINTS_0 must be UNSIGNED_BYTE or UNSIGNED_SHORT.
-			modifiedAttribute = null;
-			const array = attribute.array;
-
-			if ( attributeName === 'JOINTS_0' &&
-				! ( array instanceof Uint16Array ) &&
-				! ( array instanceof Uint8Array ) ) {
-
-				console.warn( 'GLTFExporter: Attribute "skinIndex" converted to type UNSIGNED_SHORT.' );
-				modifiedAttribute = new BufferAttribute$1( new Uint16Array( array ), attribute.itemSize, attribute.normalized );
-
-			}
-
-			const accessor = this.processAccessor( modifiedAttribute || attribute, geometry );
-
-			if ( accessor !== null ) {
-
-				attributes[ attributeName ] = accessor;
-				cache.attributes.set( this.getUID( attribute ), accessor );
-
-			}
-
-		}
-
-		if ( originalNormal !== undefined ) geometry.setAttribute( 'normal', originalNormal );
-
-		// Skip if no exportable attributes found
-		if ( Object.keys( attributes ).length === 0 ) return null;
-
-		// Morph targets
-		if ( mesh.morphTargetInfluences !== undefined && mesh.morphTargetInfluences.length > 0 ) {
-
-			const weights = [];
-			const targetNames = [];
-			const reverseDictionary = {};
-
-			if ( mesh.morphTargetDictionary !== undefined ) {
-
-				for ( const key in mesh.morphTargetDictionary ) {
-
-					reverseDictionary[ mesh.morphTargetDictionary[ key ] ] = key;
-
-				}
-
-			}
-
-			for ( let i = 0; i < mesh.morphTargetInfluences.length; ++ i ) {
-
-				const target = {};
-				let warned = false;
-
-				for ( const attributeName in geometry.morphAttributes ) {
-
-					// glTF 2.0 morph supports only POSITION/NORMAL/TANGENT.
-					// Three.js doesn't support TANGENT yet.
-
-					if ( attributeName !== 'position' && attributeName !== 'normal' ) {
-
-						if ( ! warned ) {
-
-							console.warn( 'GLTFExporter: Only POSITION and NORMAL morph are supported.' );
-							warned = true;
-
-						}
-
-						continue;
-
-					}
-
-					const attribute = geometry.morphAttributes[ attributeName ][ i ];
-					const gltfAttributeName = attributeName.toUpperCase();
-
-					// Three.js morph attribute has absolute values while the one of glTF has relative values.
-					//
-					// glTF 2.0 Specification:
-					// https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#morph-targets
-
-					const baseAttribute = geometry.attributes[ attributeName ];
-
-					if ( cache.attributes.has( this.getUID( attribute ) ) ) {
-
-						target[ gltfAttributeName ] = cache.attributes.get( this.getUID( attribute ) );
-						continue;
-
-					}
-
-					// Clones attribute not to override
-					const relativeAttribute = attribute.clone();
-
-					if ( ! geometry.morphTargetsRelative ) {
-
-						for ( let j = 0, jl = attribute.count; j < jl; j ++ ) {
-
-							relativeAttribute.setXYZ(
-								j,
-								attribute.getX( j ) - baseAttribute.getX( j ),
-								attribute.getY( j ) - baseAttribute.getY( j ),
-								attribute.getZ( j ) - baseAttribute.getZ( j )
-							);
-
-						}
-
-					}
-
-					target[ gltfAttributeName ] = this.processAccessor( relativeAttribute, geometry );
-					cache.attributes.set( this.getUID( baseAttribute ), target[ gltfAttributeName ] );
-
-				}
-
-				targets.push( target );
-
-				weights.push( mesh.morphTargetInfluences[ i ] );
-
-				if ( mesh.morphTargetDictionary !== undefined ) targetNames.push( reverseDictionary[ i ] );
-
-			}
-
-			meshDef.weights = weights;
-
-			if ( targetNames.length > 0 ) {
-
-				meshDef.extras = {};
-				meshDef.extras.targetNames = targetNames;
-
-			}
-
-		}
-
-		const isMultiMaterial = Array.isArray( mesh.material );
-
-		if ( isMultiMaterial && geometry.groups.length === 0 ) return null;
-
-		const materials = isMultiMaterial ? mesh.material : [ mesh.material ];
-		const groups = isMultiMaterial ? geometry.groups : [ { materialIndex: 0, start: undefined, count: undefined } ];
-
-		for ( let i = 0, il = groups.length; i < il; i ++ ) {
-
-			const primitive = {
-				mode: mode,
-				attributes: attributes,
-			};
-
-			this.serializeUserData( geometry, primitive );
-
-			if ( targets.length > 0 ) primitive.targets = targets;
-
-			if ( geometry.index !== null ) {
-
-				let cacheKey = this.getUID( geometry.index );
-
-				if ( groups[ i ].start !== undefined || groups[ i ].count !== undefined ) {
-
-					cacheKey += ':' + groups[ i ].start + ':' + groups[ i ].count;
-
-				}
-
-				if ( cache.attributes.has( cacheKey ) ) {
-
-					primitive.indices = cache.attributes.get( cacheKey );
-
-				} else {
-
-					primitive.indices = this.processAccessor( geometry.index, geometry, groups[ i ].start, groups[ i ].count );
-					cache.attributes.set( cacheKey, primitive.indices );
-
-				}
-
-				if ( primitive.indices === null ) delete primitive.indices;
-
-			}
-
-			const material = this.processMaterial( materials[ groups[ i ].materialIndex ] );
-
-			if ( material !== null ) primitive.material = material;
-
-			primitives.push( primitive );
-
-		}
-
-		meshDef.primitives = primitives;
-
-		if ( ! json.meshes ) json.meshes = [];
-
-		this._invokeAll( function ( ext ) {
-
-			ext.writeMesh && ext.writeMesh( mesh, meshDef );
-
-		} );
-
-		const index = json.meshes.push( meshDef ) - 1;
-		cache.meshes.set( meshCacheKey, index );
-		return index;
-
-	}
-
-	/**
-	 * Process camera
-	 * @param  {THREE.Camera} camera Camera to process
-	 * @return {Integer}      Index of the processed mesh in the "camera" array
-	 */
-	processCamera( camera ) {
-
-		const json = this.json;
-
-		if ( ! json.cameras ) json.cameras = [];
-
-		const isOrtho = camera.isOrthographicCamera;
-
-		const cameraDef = {
-			type: isOrtho ? 'orthographic' : 'perspective'
-		};
-
-		if ( isOrtho ) {
-
-			cameraDef.orthographic = {
-				xmag: camera.right * 2,
-				ymag: camera.top * 2,
-				zfar: camera.far <= 0 ? 0.001 : camera.far,
-				znear: camera.near < 0 ? 0 : camera.near
-			};
-
-		} else {
-
-			cameraDef.perspective = {
-				aspectRatio: camera.aspect,
-				yfov: MathUtils.degToRad( camera.fov ),
-				zfar: camera.far <= 0 ? 0.001 : camera.far,
-				znear: camera.near < 0 ? 0 : camera.near
-			};
-
-		}
-
-		// Question: Is saving "type" as name intentional?
-		if ( camera.name !== '' ) cameraDef.name = camera.type;
-
-		return json.cameras.push( cameraDef ) - 1;
-
-	}
-
-	/**
-	 * Creates glTF animation entry from AnimationClip object.
-	 *
-	 * Status:
-	 * - Only properties listed in PATH_PROPERTIES may be animated.
-	 *
-	 * @param {THREE.AnimationClip} clip
-	 * @param {THREE.Object3D} root
-	 * @return {number|null}
-	 */
-	processAnimation( clip, root ) {
-
-		const json = this.json;
-		const nodeMap = this.nodeMap;
-
-		if ( ! json.animations ) json.animations = [];
-
-		clip = GLTFExporter.Utils.mergeMorphTargetTracks( clip.clone(), root );
-
-		const tracks = clip.tracks;
-		const channels = [];
-		const samplers = [];
-
-		for ( let i = 0; i < tracks.length; ++ i ) {
-
-			const track = tracks[ i ];
-			const trackBinding = PropertyBinding.parseTrackName( track.name );
-			let trackNode = PropertyBinding.findNode( root, trackBinding.nodeName );
-			const trackProperty = PATH_PROPERTIES[ trackBinding.propertyName ];
-
-			if ( trackBinding.objectName === 'bones' ) {
-
-				if ( trackNode.isSkinnedMesh === true ) {
-
-					trackNode = trackNode.skeleton.getBoneByName( trackBinding.objectIndex );
-
-				} else {
-
-					trackNode = undefined;
-
-				}
-
-			}
-
-			if ( ! trackNode || ! trackProperty ) {
-
-				console.warn( 'THREE.GLTFExporter: Could not export animation track "%s".', track.name );
-				return null;
-
-			}
-
-			const inputItemSize = 1;
-			let outputItemSize = track.values.length / track.times.length;
-
-			if ( trackProperty === PATH_PROPERTIES.morphTargetInfluences ) {
-
-				outputItemSize /= trackNode.morphTargetInfluences.length;
-
-			}
-
-			let interpolation;
-
-			// @TODO export CubicInterpolant(InterpolateSmooth) as CUBICSPLINE
-
-			// Detecting glTF cubic spline interpolant by checking factory method's special property
-			// GLTFCubicSplineInterpolant is a custom interpolant and track doesn't return
-			// valid value from .getInterpolation().
-			if ( track.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline === true ) {
-
-				interpolation = 'CUBICSPLINE';
-
-				// itemSize of CUBICSPLINE keyframe is 9
-				// (VEC3 * 3: inTangent, splineVertex, and outTangent)
-				// but needs to be stored as VEC3 so dividing by 3 here.
-				outputItemSize /= 3;
-
-			} else if ( track.getInterpolation() === InterpolateDiscrete ) {
-
-				interpolation = 'STEP';
-
-			} else {
-
-				interpolation = 'LINEAR';
-
-			}
-
-			samplers.push( {
-				input: this.processAccessor( new BufferAttribute$1( track.times, inputItemSize ) ),
-				output: this.processAccessor( new BufferAttribute$1( track.values, outputItemSize ) ),
-				interpolation: interpolation
-			} );
-
-			channels.push( {
-				sampler: samplers.length - 1,
-				target: {
-					node: nodeMap.get( trackNode ),
-					path: trackProperty
-				}
-			} );
-
-		}
-
-		json.animations.push( {
-			name: clip.name || 'clip_' + json.animations.length,
-			samplers: samplers,
-			channels: channels
-		} );
-
-		return json.animations.length - 1;
-
-	}
-
-	/**
-	 * @param {THREE.Object3D} object
-	 * @return {number|null}
-	 */
-	 processSkin( object ) {
-
-		const json = this.json;
-		const nodeMap = this.nodeMap;
-
-		const node = json.nodes[ nodeMap.get( object ) ];
-
-		const skeleton = object.skeleton;
-
-		if ( skeleton === undefined ) return null;
-
-		const rootJoint = object.skeleton.bones[ 0 ];
-
-		if ( rootJoint === undefined ) return null;
-
-		const joints = [];
-		const inverseBindMatrices = new Float32Array( skeleton.bones.length * 16 );
-		const temporaryBoneInverse = new Matrix4();
-
-		for ( let i = 0; i < skeleton.bones.length; ++ i ) {
-
-			joints.push( nodeMap.get( skeleton.bones[ i ] ) );
-			temporaryBoneInverse.copy( skeleton.boneInverses[ i ] );
-			temporaryBoneInverse.multiply( object.bindMatrix ).toArray( inverseBindMatrices, i * 16 );
-
-		}
-
-		if ( json.skins === undefined ) json.skins = [];
-
-		json.skins.push( {
-			inverseBindMatrices: this.processAccessor( new BufferAttribute$1( inverseBindMatrices, 16 ) ),
-			joints: joints,
-			skeleton: nodeMap.get( rootJoint )
-		} );
-
-		const skinIndex = node.skin = json.skins.length - 1;
-
-		return skinIndex;
-
-	}
-
-	/**
-	 * Process Object3D node
-	 * @param  {THREE.Object3D} node Object3D to processNode
-	 * @return {Integer} Index of the node in the nodes list
-	 */
-	processNode( object ) {
-
-		const json = this.json;
-		const options = this.options;
-		const nodeMap = this.nodeMap;
-
-		if ( ! json.nodes ) json.nodes = [];
-
-		const nodeDef = {};
-
-		if ( options.trs ) {
-
-			const rotation = object.quaternion.toArray();
-			const position = object.position.toArray();
-			const scale = object.scale.toArray();
-
-			if ( ! equalArray( rotation, [ 0, 0, 0, 1 ] ) ) {
-
-				nodeDef.rotation = rotation;
-
-			}
-
-			if ( ! equalArray( position, [ 0, 0, 0 ] ) ) {
-
-				nodeDef.translation = position;
-
-			}
-
-			if ( ! equalArray( scale, [ 1, 1, 1 ] ) ) {
-
-				nodeDef.scale = scale;
-
-			}
-
-		} else {
-
-			if ( object.matrixAutoUpdate ) {
-
-				object.updateMatrix();
-
-			}
-
-			if ( isIdentityMatrix( object.matrix ) === false ) {
-
-				nodeDef.matrix = object.matrix.elements;
-
-			}
-
-		}
-
-		// We don't export empty strings name because it represents no-name in Three.js.
-		if ( object.name !== '' ) nodeDef.name = String( object.name );
-
-		this.serializeUserData( object, nodeDef );
-
-		if ( object.isMesh || object.isLine || object.isPoints ) {
-
-			const meshIndex = this.processMesh( object );
-
-			if ( meshIndex !== null ) nodeDef.mesh = meshIndex;
-
-		} else if ( object.isCamera ) {
-
-			nodeDef.camera = this.processCamera( object );
-
-		}
-
-		if ( object.isSkinnedMesh ) this.skins.push( object );
-
-		if ( object.children.length > 0 ) {
-
-			const children = [];
-
-			for ( let i = 0, l = object.children.length; i < l; i ++ ) {
-
-				const child = object.children[ i ];
-
-				if ( child.visible || options.onlyVisible === false ) {
-
-					const nodeIndex = this.processNode( child );
-
-					if ( nodeIndex !== null ) children.push( nodeIndex );
-
-				}
-
-			}
-
-			if ( children.length > 0 ) nodeDef.children = children;
-
-		}
-
-		this._invokeAll( function ( ext ) {
-
-			ext.writeNode && ext.writeNode( object, nodeDef );
-
-		} );
-
-		const nodeIndex = json.nodes.push( nodeDef ) - 1;
-		nodeMap.set( object, nodeIndex );
-		return nodeIndex;
-
-	}
-
-	/**
-	 * Process Scene
-	 * @param  {Scene} node Scene to process
-	 */
-	processScene( scene ) {
-
-		const json = this.json;
-		const options = this.options;
-
-		if ( ! json.scenes ) {
-
-			json.scenes = [];
-			json.scene = 0;
-
-		}
-
-		const sceneDef = {};
-
-		if ( scene.name !== '' ) sceneDef.name = scene.name;
-
-		json.scenes.push( sceneDef );
-
-		const nodes = [];
-
-		for ( let i = 0, l = scene.children.length; i < l; i ++ ) {
-
-			const child = scene.children[ i ];
-
-			if ( child.visible || options.onlyVisible === false ) {
-
-				const nodeIndex = this.processNode( child );
-
-				if ( nodeIndex !== null ) nodes.push( nodeIndex );
-
-			}
-
-		}
-
-		if ( nodes.length > 0 ) sceneDef.nodes = nodes;
-
-		this.serializeUserData( scene, sceneDef );
-
-	}
-
-	/**
-	 * Creates a Scene to hold a list of objects and parse it
-	 * @param  {Array} objects List of objects to process
-	 */
-	processObjects( objects ) {
-
-		const scene = new Scene();
-		scene.name = 'AuxScene';
-
-		for ( let i = 0; i < objects.length; i ++ ) {
-
-			// We push directly to children instead of calling `add` to prevent
-			// modify the .parent and break its original scene and hierarchy
-			scene.children.push( objects[ i ] );
-
-		}
-
-		this.processScene( scene );
-
-	}
-
-	/**
-	 * @param {THREE.Object3D|Array<THREE.Object3D>} input
-	 */
-	processInput( input ) {
-
-		const options = this.options;
-
-		input = input instanceof Array ? input : [ input ];
-
-		this._invokeAll( function ( ext ) {
-
-			ext.beforeParse && ext.beforeParse( input );
-
-		} );
-
-		const objectsWithoutScene = [];
-
-		for ( let i = 0; i < input.length; i ++ ) {
-
-			if ( input[ i ] instanceof Scene ) {
-
-				this.processScene( input[ i ] );
-
-			} else {
-
-				objectsWithoutScene.push( input[ i ] );
-
-			}
-
-		}
-
-		if ( objectsWithoutScene.length > 0 ) this.processObjects( objectsWithoutScene );
-
-		for ( let i = 0; i < this.skins.length; ++ i ) {
-
-			this.processSkin( this.skins[ i ] );
-
-		}
-
-		for ( let i = 0; i < options.animations.length; ++ i ) {
-
-			this.processAnimation( options.animations[ i ], input[ 0 ] );
-
-		}
-
-		this._invokeAll( function ( ext ) {
-
-			ext.afterParse && ext.afterParse( input );
-
-		} );
-
-	}
-
-	_invokeAll( func ) {
-
-		for ( let i = 0, il = this.plugins.length; i < il; i ++ ) {
-
-			func( this.plugins[ i ] );
-
-		}
-
-	}
-
-}
-
-/**
- * Punctual Lights Extension
- *
- * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_lights_punctual
- */
-class GLTFLightExtension {
-
-	constructor( writer ) {
-
-		this.writer = writer;
-		this.name = 'KHR_lights_punctual';
-
-	}
-
-	writeNode( light, nodeDef ) {
-
-		if ( ! light.isLight ) return;
-
-		if ( ! light.isDirectionalLight && ! light.isPointLight && ! light.isSpotLight ) {
-
-			console.warn( 'THREE.GLTFExporter: Only directional, point, and spot lights are supported.', light );
-			return;
-
-		}
-
-		const writer = this.writer;
-		const json = writer.json;
-		const extensionsUsed = writer.extensionsUsed;
-
-		const lightDef = {};
-
-		if ( light.name ) lightDef.name = light.name;
-
-		lightDef.color = light.color.toArray();
-
-		lightDef.intensity = light.intensity;
-
-		if ( light.isDirectionalLight ) {
-
-			lightDef.type = 'directional';
-
-		} else if ( light.isPointLight ) {
-
-			lightDef.type = 'point';
-
-			if ( light.distance > 0 ) lightDef.range = light.distance;
-
-		} else if ( light.isSpotLight ) {
-
-			lightDef.type = 'spot';
-
-			if ( light.distance > 0 ) lightDef.range = light.distance;
-
-			lightDef.spot = {};
-			lightDef.spot.innerConeAngle = ( light.penumbra - 1.0 ) * light.angle * - 1.0;
-			lightDef.spot.outerConeAngle = light.angle;
-
-		}
-
-		if ( light.decay !== undefined && light.decay !== 2 ) {
-
-			console.warn( 'THREE.GLTFExporter: Light decay may be lost. glTF is physically-based, '
-				+ 'and expects light.decay=2.' );
-
-		}
-
-		if ( light.target
-				&& ( light.target.parent !== light
-				|| light.target.position.x !== 0
-				|| light.target.position.y !== 0
-				|| light.target.position.z !== - 1 ) ) {
-
-			console.warn( 'THREE.GLTFExporter: Light direction may be lost. For best results, '
-				+ 'make light.target a child of the light with position 0,0,-1.' );
-
-		}
-
-		if ( ! extensionsUsed[ this.name ] ) {
-
-			json.extensions = json.extensions || {};
-			json.extensions[ this.name ] = { lights: [] };
-			extensionsUsed[ this.name ] = true;
-
-		}
-
-		const lights = json.extensions[ this.name ].lights;
-		lights.push( lightDef );
-
-		nodeDef.extensions = nodeDef.extensions || {};
-		nodeDef.extensions[ this.name ] = { light: lights.length - 1 };
-
-	}
-
-}
-
-/**
- * Unlit Materials Extension
- *
- * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_unlit
- */
-class GLTFMaterialsUnlitExtension {
-
-	constructor( writer ) {
-
-		this.writer = writer;
-		this.name = 'KHR_materials_unlit';
-
-	}
-
-	writeMaterial( material, materialDef ) {
-
-		if ( ! material.isMeshBasicMaterial ) return;
-
-		const writer = this.writer;
-		const extensionsUsed = writer.extensionsUsed;
-
-		materialDef.extensions = materialDef.extensions || {};
-		materialDef.extensions[ this.name ] = {};
-
-		extensionsUsed[ this.name ] = true;
-
-		materialDef.pbrMetallicRoughness.metallicFactor = 0.0;
-		materialDef.pbrMetallicRoughness.roughnessFactor = 0.9;
-
-	}
-
-}
-
-/**
- * Specular-Glossiness Extension
- *
- * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_pbrSpecularGlossiness
- */
-class GLTFMaterialsPBRSpecularGlossiness {
-
-	constructor( writer ) {
-
-		this.writer = writer;
-		this.name = 'KHR_materials_pbrSpecularGlossiness';
-
-	}
-
-	writeMaterial( material, materialDef ) {
-
-		if ( ! material.isGLTFSpecularGlossinessMaterial ) return;
-
-		const writer = this.writer;
-		const extensionsUsed = writer.extensionsUsed;
-
-		const extensionDef = {};
-
-		if ( materialDef.pbrMetallicRoughness.baseColorFactor ) {
-
-			extensionDef.diffuseFactor = materialDef.pbrMetallicRoughness.baseColorFactor;
-
-		}
-
-		const specularFactor = [ 1, 1, 1 ];
-		material.specular.toArray( specularFactor, 0 );
-		extensionDef.specularFactor = specularFactor;
-		extensionDef.glossinessFactor = material.glossiness;
-
-		if ( materialDef.pbrMetallicRoughness.baseColorTexture ) {
-
-			extensionDef.diffuseTexture = materialDef.pbrMetallicRoughness.baseColorTexture;
-
-		}
-
-		if ( material.specularMap ) {
-
-			const specularMapDef = { index: writer.processTexture( material.specularMap ) };
-			writer.applyTextureTransform( specularMapDef, material.specularMap );
-			extensionDef.specularGlossinessTexture = specularMapDef;
-
-		}
-
-		materialDef.extensions = materialDef.extensions || {};
-		materialDef.extensions[ this.name ] = extensionDef;
-		extensionsUsed[ this.name ] = true;
-
-	}
-
-}
-
-/**
- * Clearcoat Materials Extension
- *
- * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_clearcoat
- */
-class GLTFMaterialsClearcoatExtension {
-
-	constructor( writer ) {
-
-		this.writer = writer;
-		this.name = 'KHR_materials_clearcoat';
-
-	}
-
-	writeMaterial( material, materialDef ) {
-
-		if ( ! material.isMeshPhysicalMaterial ) return;
-
-		const writer = this.writer;
-		const extensionsUsed = writer.extensionsUsed;
-
-		const extensionDef = {};
-
-		extensionDef.clearcoatFactor = material.clearcoat;
-
-		if ( material.clearcoatMap ) {
-
-			const clearcoatMapDef = { index: writer.processTexture( material.clearcoatMap ) };
-			writer.applyTextureTransform( clearcoatMapDef, material.clearcoatMap );
-			extensionDef.clearcoatTexture = clearcoatMapDef;
-
-		}
-
-		extensionDef.clearcoatRoughnessFactor = material.clearcoatRoughness;
-
-		if ( material.clearcoatRoughnessMap ) {
-
-			const clearcoatRoughnessMapDef = { index: writer.processTexture( material.clearcoatRoughnessMap ) };
-			writer.applyTextureTransform( clearcoatRoughnessMapDef, material.clearcoatRoughnessMap );
-			extensionDef.clearcoatRoughnessTexture = clearcoatRoughnessMapDef;
-
-		}
-
-		if ( material.clearcoatNormalMap ) {
-
-			const clearcoatNormalMapDef = { index: writer.processTexture( material.clearcoatNormalMap ) };
-			writer.applyTextureTransform( clearcoatNormalMapDef, material.clearcoatNormalMap );
-			extensionDef.clearcoatNormalTexture = clearcoatNormalMapDef;
-
-		}
-
-		materialDef.extensions = materialDef.extensions || {};
-		materialDef.extensions[ this.name ] = extensionDef;
-
-		extensionsUsed[ this.name ] = true;
-
-
-	}
-
-}
-
-/**
- * Transmission Materials Extension
- *
- * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_transmission
- */
-class GLTFMaterialsTransmissionExtension {
-
-	constructor( writer ) {
-
-		this.writer = writer;
-		this.name = 'KHR_materials_transmission';
-
-	}
-
-	writeMaterial( material, materialDef ) {
-
-		if ( ! material.isMeshPhysicalMaterial || material.transmission === 0 ) return;
-
-		const writer = this.writer;
-		const extensionsUsed = writer.extensionsUsed;
-
-		const extensionDef = {};
-
-		extensionDef.transmissionFactor = material.transmission;
-
-		if ( material.transmissionMap ) {
-
-			const transmissionMapDef = { index: writer.processTexture( material.transmissionMap ) };
-			writer.applyTextureTransform( transmissionMapDef, material.transmissionMap );
-			extensionDef.transmissionTexture = transmissionMapDef;
-
-		}
-
-		materialDef.extensions = materialDef.extensions || {};
-		materialDef.extensions[ this.name ] = extensionDef;
-
-		extensionsUsed[ this.name ] = true;
-
-	}
-
-}
-
-/**
- * Materials Volume Extension
- *
- * Specification: https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_volume
- */
-class GLTFMaterialsVolumeExtension {
-
-	constructor( writer ) {
-
-		this.writer = writer;
-		this.name = 'KHR_materials_volume';
-
-	}
-
-	writeMaterial( material, materialDef ) {
-
-		if ( ! material.isMeshPhysicalMaterial || material.transmission === 0 ) return;
-
-		const writer = this.writer;
-		const extensionsUsed = writer.extensionsUsed;
-
-		const extensionDef = {};
-
-		extensionDef.thicknessFactor = material.thickness;
-
-		if ( material.thicknessMap ) {
-
-			const thicknessMapDef = { index: writer.processTexture( material.thicknessMap ) };
-			writer.applyTextureTransform( thicknessMapDef, material.thicknessMap );
-			extensionDef.thicknessTexture = thicknessMapDef;
-
-		}
-
-		extensionDef.attenuationDistance = material.attenuationDistance;
-		extensionDef.attenuationColor = material.attenuationColor.toArray();
-
-		materialDef.extensions = materialDef.extensions || {};
-		materialDef.extensions[ this.name ] = extensionDef;
-
-		extensionsUsed[ this.name ] = true;
-
-	}
-
-}
-
-/**
- * Static utility functions
- */
-GLTFExporter.Utils = {
-
-	insertKeyframe: function ( track, time ) {
-
-		const tolerance = 0.001; // 1ms
-		const valueSize = track.getValueSize();
-
-		const times = new track.TimeBufferType( track.times.length + 1 );
-		const values = new track.ValueBufferType( track.values.length + valueSize );
-		const interpolant = track.createInterpolant( new track.ValueBufferType( valueSize ) );
-
-		let index;
-
-		if ( track.times.length === 0 ) {
-
-			times[ 0 ] = time;
-
-			for ( let i = 0; i < valueSize; i ++ ) {
-
-				values[ i ] = 0;
-
-			}
-
-			index = 0;
-
-		} else if ( time < track.times[ 0 ] ) {
-
-			if ( Math.abs( track.times[ 0 ] - time ) < tolerance ) return 0;
-
-			times[ 0 ] = time;
-			times.set( track.times, 1 );
-
-			values.set( interpolant.evaluate( time ), 0 );
-			values.set( track.values, valueSize );
-
-			index = 0;
-
-		} else if ( time > track.times[ track.times.length - 1 ] ) {
-
-			if ( Math.abs( track.times[ track.times.length - 1 ] - time ) < tolerance ) {
-
-				return track.times.length - 1;
-
-			}
-
-			times[ times.length - 1 ] = time;
-			times.set( track.times, 0 );
-
-			values.set( track.values, 0 );
-			values.set( interpolant.evaluate( time ), track.values.length );
-
-			index = times.length - 1;
-
-		} else {
-
-			for ( let i = 0; i < track.times.length; i ++ ) {
-
-				if ( Math.abs( track.times[ i ] - time ) < tolerance ) return i;
-
-				if ( track.times[ i ] < time && track.times[ i + 1 ] > time ) {
-
-					times.set( track.times.slice( 0, i + 1 ), 0 );
-					times[ i + 1 ] = time;
-					times.set( track.times.slice( i + 1 ), i + 2 );
-
-					values.set( track.values.slice( 0, ( i + 1 ) * valueSize ), 0 );
-					values.set( interpolant.evaluate( time ), ( i + 1 ) * valueSize );
-					values.set( track.values.slice( ( i + 1 ) * valueSize ), ( i + 2 ) * valueSize );
-
-					index = i + 1;
-
-					break;
-
-				}
-
-			}
-
-		}
-
-		track.times = times;
-		track.values = values;
-
-		return index;
-
-	},
-
-	mergeMorphTargetTracks: function ( clip, root ) {
-
-		const tracks = [];
-		const mergedTracks = {};
-		const sourceTracks = clip.tracks;
-
-		for ( let i = 0; i < sourceTracks.length; ++ i ) {
-
-			let sourceTrack = sourceTracks[ i ];
-			const sourceTrackBinding = PropertyBinding.parseTrackName( sourceTrack.name );
-			const sourceTrackNode = PropertyBinding.findNode( root, sourceTrackBinding.nodeName );
-
-			if ( sourceTrackBinding.propertyName !== 'morphTargetInfluences' || sourceTrackBinding.propertyIndex === undefined ) {
-
-				// Tracks that don't affect morph targets, or that affect all morph targets together, can be left as-is.
-				tracks.push( sourceTrack );
-				continue;
-
-			}
-
-			if ( sourceTrack.createInterpolant !== sourceTrack.InterpolantFactoryMethodDiscrete
-				&& sourceTrack.createInterpolant !== sourceTrack.InterpolantFactoryMethodLinear ) {
-
-				if ( sourceTrack.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline ) {
-
-					// This should never happen, because glTF morph target animations
-					// affect all targets already.
-					throw new Error( 'THREE.GLTFExporter: Cannot merge tracks with glTF CUBICSPLINE interpolation.' );
-
-				}
-
-				console.warn( 'THREE.GLTFExporter: Morph target interpolation mode not yet supported. Using LINEAR instead.' );
-
-				sourceTrack = sourceTrack.clone();
-				sourceTrack.setInterpolation( InterpolateLinear );
-
-			}
-
-			const targetCount = sourceTrackNode.morphTargetInfluences.length;
-			const targetIndex = sourceTrackNode.morphTargetDictionary[ sourceTrackBinding.propertyIndex ];
-
-			if ( targetIndex === undefined ) {
-
-				throw new Error( 'THREE.GLTFExporter: Morph target name not found: ' + sourceTrackBinding.propertyIndex );
-
-			}
-
-			let mergedTrack;
-
-			// If this is the first time we've seen this object, create a new
-			// track to store merged keyframe data for each morph target.
-			if ( mergedTracks[ sourceTrackNode.uuid ] === undefined ) {
-
-				mergedTrack = sourceTrack.clone();
-
-				const values = new mergedTrack.ValueBufferType( targetCount * mergedTrack.times.length );
-
-				for ( let j = 0; j < mergedTrack.times.length; j ++ ) {
-
-					values[ j * targetCount + targetIndex ] = mergedTrack.values[ j ];
-
-				}
-
-				// We need to take into consideration the intended target node
-				// of our original un-merged morphTarget animation.
-				mergedTrack.name = ( sourceTrackBinding.nodeName || '' ) + '.morphTargetInfluences';
-				mergedTrack.values = values;
-
-				mergedTracks[ sourceTrackNode.uuid ] = mergedTrack;
-				tracks.push( mergedTrack );
-
-				continue;
-
-			}
-
-			const sourceInterpolant = sourceTrack.createInterpolant( new sourceTrack.ValueBufferType( 1 ) );
-
-			mergedTrack = mergedTracks[ sourceTrackNode.uuid ];
-
-			// For every existing keyframe of the merged track, write a (possibly
-			// interpolated) value from the source track.
-			for ( let j = 0; j < mergedTrack.times.length; j ++ ) {
-
-				mergedTrack.values[ j * targetCount + targetIndex ] = sourceInterpolant.evaluate( mergedTrack.times[ j ] );
-
-			}
-
-			// For every existing keyframe of the source track, write a (possibly
-			// new) keyframe to the merged track. Values from the previous loop may
-			// be written again, but keyframes are de-duplicated.
-			for ( let j = 0; j < sourceTrack.times.length; j ++ ) {
-
-				const keyframeIndex = this.insertKeyframe( mergedTrack, sourceTrack.times[ j ] );
-				mergedTrack.values[ keyframeIndex * targetCount + targetIndex ] = sourceTrack.values[ j ];
-
-			}
-
-		}
-
-		clip.tracks = tracks;
-
-		return clip;
-
-	}
-
-};
-
 class FragmentMesh extends InstancedMesh {
     constructor(geometry, material, count) {
         super(geometry, material, count);
@@ -20126,6 +20126,29 @@ class FragmentMesh extends InstancedMesh {
         this.exporter = new GLTFExporter();
         this.material = FragmentMesh.newMaterialArray(material);
         this.geometry = this.newFragmentGeometry(geometry);
+    }
+    exportData() {
+        const position = this.geometry.attributes.position.array;
+        const normal = this.geometry.attributes.normal.array;
+        const blockID = Array.from(this.geometry.attributes.blockID.array);
+        const index = Array.from(this.geometry.index.array);
+        const groups = [];
+        for (const group of this.geometry.groups) {
+            const index = group.materialIndex || 0;
+            const { start, count } = group;
+            groups.push(start, count, index);
+        }
+        const materials = [];
+        if (Array.isArray(this.material)) {
+            for (const material of this.material) {
+                const opacity = material.opacity;
+                const transparent = material.transparent ? 1 : 0;
+                const color = new Color$1(material.color).toArray();
+                materials.push(opacity, transparent, ...color);
+            }
+        }
+        const matrices = Array.from(this.instanceMatrix.array);
+        return { position, normal, index, blockID, groups, materials, matrices };
     }
     export() {
         const mesh = this;
@@ -20408,7 +20431,7 @@ BVH.initialized = false;
  *        A  C  E  G  I  K  M  O
  *        B  D  F  H  J  L  N  P
  * */
-class Fragment {
+class Fragment$1 {
     constructor(geometry, material, count) {
         this.fragments = {};
         this.items = [];
@@ -20488,7 +20511,7 @@ class Fragment {
         if (material === this.mesh.material) {
             this.copyGroups(newGeometry);
         }
-        const newFragment = new Fragment(newGeometry, material, this.capacity);
+        const newFragment = new Fragment$1(newGeometry, material, this.capacity);
         newFragment.mesh.applyMatrix4(this.mesh.matrix);
         newFragment.mesh.updateMatrix();
         this.fragments[id] = newFragment;
@@ -20531,6 +20554,12 @@ class Fragment {
         this.mesh = newMesh;
         oldMesh.dispose();
     }
+    exportData() {
+        const geometry = this.mesh.exportData();
+        const ids = this.items.join("|");
+        const id = this.id;
+        return { ...geometry, ids, id };
+    }
     async export() {
         const geometryBuffer = await this.mesh.export();
         const geometry = new File([new Blob([geometryBuffer])], `${this.id}.glb`);
@@ -20542,6 +20571,16 @@ class Fragment {
         const dataString = JSON.stringify(fragmentData);
         const data = new File([new Blob([dataString])], `${this.id}.json`);
         return { geometry, data };
+    }
+    async exportRaw() {
+        const geometryBuffer = await this.mesh.export();
+        const fragmentData = {
+            matrices: Array.from(this.mesh.instanceMatrix.array),
+            ids: this.items,
+            id: this.id,
+        };
+        const dataString = JSON.stringify(fragmentData);
+        return { geometry: geometryBuffer, data: dataString };
     }
     copyGroups(newGeometry) {
         newGeometry.groups = [];
@@ -21065,7 +21104,7 @@ class FragmentLoader {
     }
     getFragment(geometry, materials, data) {
         const items = this.getInstances(data);
-        const fragment = new Fragment(geometry, materials, items.length);
+        const fragment = new Fragment$1(geometry, materials, items.length);
         if (data.id) {
             fragment.id = data.id;
             fragment.mesh.uuid = data.id;
@@ -21102,6 +21141,1212 @@ class FragmentLoader {
                 transparent: material.transparent,
             });
         });
+    }
+}
+
+const SIZEOF_SHORT = 2;
+const SIZEOF_INT = 4;
+const FILE_IDENTIFIER_LENGTH = 4;
+const SIZE_PREFIX_LENGTH = 4;
+
+const int32 = new Int32Array(2);
+const float32 = new Float32Array(int32.buffer);
+const float64 = new Float64Array(int32.buffer);
+const isLittleEndian = new Uint16Array(new Uint8Array([1, 0]).buffer)[0] === 1;
+
+var Encoding;
+(function (Encoding) {
+    Encoding[Encoding["UTF8_BYTES"] = 1] = "UTF8_BYTES";
+    Encoding[Encoding["UTF16_STRING"] = 2] = "UTF16_STRING";
+})(Encoding || (Encoding = {}));
+
+class ByteBuffer {
+    /**
+     * Create a new ByteBuffer with a given array of bytes (`Uint8Array`)
+     */
+    constructor(bytes_) {
+        this.bytes_ = bytes_;
+        this.position_ = 0;
+        this.text_decoder_ = new TextDecoder();
+    }
+    /**
+     * Create and allocate a new ByteBuffer with a given size.
+     */
+    static allocate(byte_size) {
+        return new ByteBuffer(new Uint8Array(byte_size));
+    }
+    clear() {
+        this.position_ = 0;
+    }
+    /**
+     * Get the underlying `Uint8Array`.
+     */
+    bytes() {
+        return this.bytes_;
+    }
+    /**
+     * Get the buffer's position.
+     */
+    position() {
+        return this.position_;
+    }
+    /**
+     * Set the buffer's position.
+     */
+    setPosition(position) {
+        this.position_ = position;
+    }
+    /**
+     * Get the buffer's capacity.
+     */
+    capacity() {
+        return this.bytes_.length;
+    }
+    readInt8(offset) {
+        return this.readUint8(offset) << 24 >> 24;
+    }
+    readUint8(offset) {
+        return this.bytes_[offset];
+    }
+    readInt16(offset) {
+        return this.readUint16(offset) << 16 >> 16;
+    }
+    readUint16(offset) {
+        return this.bytes_[offset] | this.bytes_[offset + 1] << 8;
+    }
+    readInt32(offset) {
+        return this.bytes_[offset] | this.bytes_[offset + 1] << 8 | this.bytes_[offset + 2] << 16 | this.bytes_[offset + 3] << 24;
+    }
+    readUint32(offset) {
+        return this.readInt32(offset) >>> 0;
+    }
+    readInt64(offset) {
+        return BigInt.asIntN(64, BigInt(this.readUint32(offset)) + (BigInt(this.readUint32(offset + 4)) << BigInt(32)));
+    }
+    readUint64(offset) {
+        return BigInt.asUintN(64, BigInt(this.readUint32(offset)) + (BigInt(this.readUint32(offset + 4)) << BigInt(32)));
+    }
+    readFloat32(offset) {
+        int32[0] = this.readInt32(offset);
+        return float32[0];
+    }
+    readFloat64(offset) {
+        int32[isLittleEndian ? 0 : 1] = this.readInt32(offset);
+        int32[isLittleEndian ? 1 : 0] = this.readInt32(offset + 4);
+        return float64[0];
+    }
+    writeInt8(offset, value) {
+        this.bytes_[offset] = value;
+    }
+    writeUint8(offset, value) {
+        this.bytes_[offset] = value;
+    }
+    writeInt16(offset, value) {
+        this.bytes_[offset] = value;
+        this.bytes_[offset + 1] = value >> 8;
+    }
+    writeUint16(offset, value) {
+        this.bytes_[offset] = value;
+        this.bytes_[offset + 1] = value >> 8;
+    }
+    writeInt32(offset, value) {
+        this.bytes_[offset] = value;
+        this.bytes_[offset + 1] = value >> 8;
+        this.bytes_[offset + 2] = value >> 16;
+        this.bytes_[offset + 3] = value >> 24;
+    }
+    writeUint32(offset, value) {
+        this.bytes_[offset] = value;
+        this.bytes_[offset + 1] = value >> 8;
+        this.bytes_[offset + 2] = value >> 16;
+        this.bytes_[offset + 3] = value >> 24;
+    }
+    writeInt64(offset, value) {
+        this.writeInt32(offset, Number(BigInt.asIntN(32, value)));
+        this.writeInt32(offset + 4, Number(BigInt.asIntN(32, value >> BigInt(32))));
+    }
+    writeUint64(offset, value) {
+        this.writeUint32(offset, Number(BigInt.asUintN(32, value)));
+        this.writeUint32(offset + 4, Number(BigInt.asUintN(32, value >> BigInt(32))));
+    }
+    writeFloat32(offset, value) {
+        float32[0] = value;
+        this.writeInt32(offset, int32[0]);
+    }
+    writeFloat64(offset, value) {
+        float64[0] = value;
+        this.writeInt32(offset, int32[isLittleEndian ? 0 : 1]);
+        this.writeInt32(offset + 4, int32[isLittleEndian ? 1 : 0]);
+    }
+    /**
+     * Return the file identifier.   Behavior is undefined for FlatBuffers whose
+     * schema does not include a file_identifier (likely points at padding or the
+     * start of a the root vtable).
+     */
+    getBufferIdentifier() {
+        if (this.bytes_.length < this.position_ + SIZEOF_INT +
+            FILE_IDENTIFIER_LENGTH) {
+            throw new Error('FlatBuffers: ByteBuffer is too short to contain an identifier.');
+        }
+        let result = "";
+        for (let i = 0; i < FILE_IDENTIFIER_LENGTH; i++) {
+            result += String.fromCharCode(this.readInt8(this.position_ + SIZEOF_INT + i));
+        }
+        return result;
+    }
+    /**
+     * Look up a field in the vtable, return an offset into the object, or 0 if the
+     * field is not present.
+     */
+    __offset(bb_pos, vtable_offset) {
+        const vtable = bb_pos - this.readInt32(bb_pos);
+        return vtable_offset < this.readInt16(vtable) ? this.readInt16(vtable + vtable_offset) : 0;
+    }
+    /**
+     * Initialize any Table-derived type to point to the union at the given offset.
+     */
+    __union(t, offset) {
+        t.bb_pos = offset + this.readInt32(offset);
+        t.bb = this;
+        return t;
+    }
+    /**
+     * Create a JavaScript string from UTF-8 data stored inside the FlatBuffer.
+     * This allocates a new string and converts to wide chars upon each access.
+     *
+     * To avoid the conversion to string, pass Encoding.UTF8_BYTES as the
+     * "optionalEncoding" argument. This is useful for avoiding conversion when
+     * the data will just be packaged back up in another FlatBuffer later on.
+     *
+     * @param offset
+     * @param opt_encoding Defaults to UTF16_STRING
+     */
+    __string(offset, opt_encoding) {
+        offset += this.readInt32(offset);
+        const length = this.readInt32(offset);
+        offset += SIZEOF_INT;
+        const utf8bytes = this.bytes_.subarray(offset, offset + length);
+        if (opt_encoding === Encoding.UTF8_BYTES)
+            return utf8bytes;
+        else
+            return this.text_decoder_.decode(utf8bytes);
+    }
+    /**
+     * Handle unions that can contain string as its member, if a Table-derived type then initialize it,
+     * if a string then return a new one
+     *
+     * WARNING: strings are immutable in JS so we can't change the string that the user gave us, this
+     * makes the behaviour of __union_with_string different compared to __union
+     */
+    __union_with_string(o, offset) {
+        if (typeof o === 'string') {
+            return this.__string(offset);
+        }
+        return this.__union(o, offset);
+    }
+    /**
+     * Retrieve the relative offset stored at "offset"
+     */
+    __indirect(offset) {
+        return offset + this.readInt32(offset);
+    }
+    /**
+     * Get the start of data of a vector whose offset is stored at "offset" in this object.
+     */
+    __vector(offset) {
+        return offset + this.readInt32(offset) + SIZEOF_INT; // data starts after the length
+    }
+    /**
+     * Get the length of a vector whose offset is stored at "offset" in this object.
+     */
+    __vector_len(offset) {
+        return this.readInt32(offset + this.readInt32(offset));
+    }
+    __has_identifier(ident) {
+        if (ident.length != FILE_IDENTIFIER_LENGTH) {
+            throw new Error('FlatBuffers: file identifier must be length ' +
+                FILE_IDENTIFIER_LENGTH);
+        }
+        for (let i = 0; i < FILE_IDENTIFIER_LENGTH; i++) {
+            if (ident.charCodeAt(i) != this.readInt8(this.position() + SIZEOF_INT + i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    /**
+     * A helper function for generating list for obj api
+     */
+    createScalarList(listAccessor, listLength) {
+        const ret = [];
+        for (let i = 0; i < listLength; ++i) {
+            const val = listAccessor(i);
+            if (val !== null) {
+                ret.push(val);
+            }
+        }
+        return ret;
+    }
+    /**
+     * A helper function for generating list for obj api
+     * @param listAccessor function that accepts an index and return data at that index
+     * @param listLength listLength
+     * @param res result list
+     */
+    createObjList(listAccessor, listLength) {
+        const ret = [];
+        for (let i = 0; i < listLength; ++i) {
+            const val = listAccessor(i);
+            if (val !== null) {
+                ret.push(val.unpack());
+            }
+        }
+        return ret;
+    }
+}
+
+class Builder {
+    /**
+     * Create a FlatBufferBuilder.
+     */
+    constructor(opt_initial_size) {
+        /** Minimum alignment encountered so far. */
+        this.minalign = 1;
+        /** The vtable for the current table. */
+        this.vtable = null;
+        /** The amount of fields we're actually using. */
+        this.vtable_in_use = 0;
+        /** Whether we are currently serializing a table. */
+        this.isNested = false;
+        /** Starting offset of the current struct/table. */
+        this.object_start = 0;
+        /** List of offsets of all vtables. */
+        this.vtables = [];
+        /** For the current vector being built. */
+        this.vector_num_elems = 0;
+        /** False omits default values from the serialized data */
+        this.force_defaults = false;
+        this.string_maps = null;
+        this.text_encoder = new TextEncoder();
+        let initial_size;
+        if (!opt_initial_size) {
+            initial_size = 1024;
+        }
+        else {
+            initial_size = opt_initial_size;
+        }
+        /**
+         * @type {ByteBuffer}
+         * @private
+         */
+        this.bb = ByteBuffer.allocate(initial_size);
+        this.space = initial_size;
+    }
+    clear() {
+        this.bb.clear();
+        this.space = this.bb.capacity();
+        this.minalign = 1;
+        this.vtable = null;
+        this.vtable_in_use = 0;
+        this.isNested = false;
+        this.object_start = 0;
+        this.vtables = [];
+        this.vector_num_elems = 0;
+        this.force_defaults = false;
+        this.string_maps = null;
+    }
+    /**
+     * In order to save space, fields that are set to their default value
+     * don't get serialized into the buffer. Forcing defaults provides a
+     * way to manually disable this optimization.
+     *
+     * @param forceDefaults true always serializes default values
+     */
+    forceDefaults(forceDefaults) {
+        this.force_defaults = forceDefaults;
+    }
+    /**
+     * Get the ByteBuffer representing the FlatBuffer. Only call this after you've
+     * called finish(). The actual data starts at the ByteBuffer's current position,
+     * not necessarily at 0.
+     */
+    dataBuffer() {
+        return this.bb;
+    }
+    /**
+     * Get the bytes representing the FlatBuffer. Only call this after you've
+     * called finish().
+     */
+    asUint8Array() {
+        return this.bb.bytes().subarray(this.bb.position(), this.bb.position() + this.offset());
+    }
+    /**
+     * Prepare to write an element of `size` after `additional_bytes` have been
+     * written, e.g. if you write a string, you need to align such the int length
+     * field is aligned to 4 bytes, and the string data follows it directly. If all
+     * you need to do is alignment, `additional_bytes` will be 0.
+     *
+     * @param size This is the of the new element to write
+     * @param additional_bytes The padding size
+     */
+    prep(size, additional_bytes) {
+        // Track the biggest thing we've ever aligned to.
+        if (size > this.minalign) {
+            this.minalign = size;
+        }
+        // Find the amount of alignment needed such that `size` is properly
+        // aligned after `additional_bytes`
+        const align_size = ((~(this.bb.capacity() - this.space + additional_bytes)) + 1) & (size - 1);
+        // Reallocate the buffer if needed.
+        while (this.space < align_size + size + additional_bytes) {
+            const old_buf_size = this.bb.capacity();
+            this.bb = Builder.growByteBuffer(this.bb);
+            this.space += this.bb.capacity() - old_buf_size;
+        }
+        this.pad(align_size);
+    }
+    pad(byte_size) {
+        for (let i = 0; i < byte_size; i++) {
+            this.bb.writeInt8(--this.space, 0);
+        }
+    }
+    writeInt8(value) {
+        this.bb.writeInt8(this.space -= 1, value);
+    }
+    writeInt16(value) {
+        this.bb.writeInt16(this.space -= 2, value);
+    }
+    writeInt32(value) {
+        this.bb.writeInt32(this.space -= 4, value);
+    }
+    writeInt64(value) {
+        this.bb.writeInt64(this.space -= 8, value);
+    }
+    writeFloat32(value) {
+        this.bb.writeFloat32(this.space -= 4, value);
+    }
+    writeFloat64(value) {
+        this.bb.writeFloat64(this.space -= 8, value);
+    }
+    /**
+     * Add an `int8` to the buffer, properly aligned, and grows the buffer (if necessary).
+     * @param value The `int8` to add the buffer.
+     */
+    addInt8(value) {
+        this.prep(1, 0);
+        this.writeInt8(value);
+    }
+    /**
+     * Add an `int16` to the buffer, properly aligned, and grows the buffer (if necessary).
+     * @param value The `int16` to add the buffer.
+     */
+    addInt16(value) {
+        this.prep(2, 0);
+        this.writeInt16(value);
+    }
+    /**
+     * Add an `int32` to the buffer, properly aligned, and grows the buffer (if necessary).
+     * @param value The `int32` to add the buffer.
+     */
+    addInt32(value) {
+        this.prep(4, 0);
+        this.writeInt32(value);
+    }
+    /**
+     * Add an `int64` to the buffer, properly aligned, and grows the buffer (if necessary).
+     * @param value The `int64` to add the buffer.
+     */
+    addInt64(value) {
+        this.prep(8, 0);
+        this.writeInt64(value);
+    }
+    /**
+     * Add a `float32` to the buffer, properly aligned, and grows the buffer (if necessary).
+     * @param value The `float32` to add the buffer.
+     */
+    addFloat32(value) {
+        this.prep(4, 0);
+        this.writeFloat32(value);
+    }
+    /**
+     * Add a `float64` to the buffer, properly aligned, and grows the buffer (if necessary).
+     * @param value The `float64` to add the buffer.
+     */
+    addFloat64(value) {
+        this.prep(8, 0);
+        this.writeFloat64(value);
+    }
+    addFieldInt8(voffset, value, defaultValue) {
+        if (this.force_defaults || value != defaultValue) {
+            this.addInt8(value);
+            this.slot(voffset);
+        }
+    }
+    addFieldInt16(voffset, value, defaultValue) {
+        if (this.force_defaults || value != defaultValue) {
+            this.addInt16(value);
+            this.slot(voffset);
+        }
+    }
+    addFieldInt32(voffset, value, defaultValue) {
+        if (this.force_defaults || value != defaultValue) {
+            this.addInt32(value);
+            this.slot(voffset);
+        }
+    }
+    addFieldInt64(voffset, value, defaultValue) {
+        if (this.force_defaults || value !== defaultValue) {
+            this.addInt64(value);
+            this.slot(voffset);
+        }
+    }
+    addFieldFloat32(voffset, value, defaultValue) {
+        if (this.force_defaults || value != defaultValue) {
+            this.addFloat32(value);
+            this.slot(voffset);
+        }
+    }
+    addFieldFloat64(voffset, value, defaultValue) {
+        if (this.force_defaults || value != defaultValue) {
+            this.addFloat64(value);
+            this.slot(voffset);
+        }
+    }
+    addFieldOffset(voffset, value, defaultValue) {
+        if (this.force_defaults || value != defaultValue) {
+            this.addOffset(value);
+            this.slot(voffset);
+        }
+    }
+    /**
+     * Structs are stored inline, so nothing additional is being added. `d` is always 0.
+     */
+    addFieldStruct(voffset, value, defaultValue) {
+        if (value != defaultValue) {
+            this.nested(value);
+            this.slot(voffset);
+        }
+    }
+    /**
+     * Structures are always stored inline, they need to be created right
+     * where they're used.  You'll get this assertion failure if you
+     * created it elsewhere.
+     */
+    nested(obj) {
+        if (obj != this.offset()) {
+            throw new Error('FlatBuffers: struct must be serialized inline.');
+        }
+    }
+    /**
+     * Should not be creating any other object, string or vector
+     * while an object is being constructed
+     */
+    notNested() {
+        if (this.isNested) {
+            throw new Error('FlatBuffers: object serialization must not be nested.');
+        }
+    }
+    /**
+     * Set the current vtable at `voffset` to the current location in the buffer.
+     */
+    slot(voffset) {
+        if (this.vtable !== null)
+            this.vtable[voffset] = this.offset();
+    }
+    /**
+     * @returns Offset relative to the end of the buffer.
+     */
+    offset() {
+        return this.bb.capacity() - this.space;
+    }
+    /**
+     * Doubles the size of the backing ByteBuffer and copies the old data towards
+     * the end of the new buffer (since we build the buffer backwards).
+     *
+     * @param bb The current buffer with the existing data
+     * @returns A new byte buffer with the old data copied
+     * to it. The data is located at the end of the buffer.
+     *
+     * uint8Array.set() formally takes {Array<number>|ArrayBufferView}, so to pass
+     * it a uint8Array we need to suppress the type check:
+     * @suppress {checkTypes}
+     */
+    static growByteBuffer(bb) {
+        const old_buf_size = bb.capacity();
+        // Ensure we don't grow beyond what fits in an int.
+        if (old_buf_size & 0xC0000000) {
+            throw new Error('FlatBuffers: cannot grow buffer beyond 2 gigabytes.');
+        }
+        const new_buf_size = old_buf_size << 1;
+        const nbb = ByteBuffer.allocate(new_buf_size);
+        nbb.setPosition(new_buf_size - old_buf_size);
+        nbb.bytes().set(bb.bytes(), new_buf_size - old_buf_size);
+        return nbb;
+    }
+    /**
+     * Adds on offset, relative to where it will be written.
+     *
+     * @param offset The offset to add.
+     */
+    addOffset(offset) {
+        this.prep(SIZEOF_INT, 0); // Ensure alignment is already done.
+        this.writeInt32(this.offset() - offset + SIZEOF_INT);
+    }
+    /**
+     * Start encoding a new object in the buffer.  Users will not usually need to
+     * call this directly. The FlatBuffers compiler will generate helper methods
+     * that call this method internally.
+     */
+    startObject(numfields) {
+        this.notNested();
+        if (this.vtable == null) {
+            this.vtable = [];
+        }
+        this.vtable_in_use = numfields;
+        for (let i = 0; i < numfields; i++) {
+            this.vtable[i] = 0; // This will push additional elements as needed
+        }
+        this.isNested = true;
+        this.object_start = this.offset();
+    }
+    /**
+     * Finish off writing the object that is under construction.
+     *
+     * @returns The offset to the object inside `dataBuffer`
+     */
+    endObject() {
+        if (this.vtable == null || !this.isNested) {
+            throw new Error('FlatBuffers: endObject called without startObject');
+        }
+        this.addInt32(0);
+        const vtableloc = this.offset();
+        // Trim trailing zeroes.
+        let i = this.vtable_in_use - 1;
+        // eslint-disable-next-line no-empty
+        for (; i >= 0 && this.vtable[i] == 0; i--) { }
+        const trimmed_size = i + 1;
+        // Write out the current vtable.
+        for (; i >= 0; i--) {
+            // Offset relative to the start of the table.
+            this.addInt16(this.vtable[i] != 0 ? vtableloc - this.vtable[i] : 0);
+        }
+        const standard_fields = 2; // The fields below:
+        this.addInt16(vtableloc - this.object_start);
+        const len = (trimmed_size + standard_fields) * SIZEOF_SHORT;
+        this.addInt16(len);
+        // Search for an existing vtable that matches the current one.
+        let existing_vtable = 0;
+        const vt1 = this.space;
+        outer_loop: for (i = 0; i < this.vtables.length; i++) {
+            const vt2 = this.bb.capacity() - this.vtables[i];
+            if (len == this.bb.readInt16(vt2)) {
+                for (let j = SIZEOF_SHORT; j < len; j += SIZEOF_SHORT) {
+                    if (this.bb.readInt16(vt1 + j) != this.bb.readInt16(vt2 + j)) {
+                        continue outer_loop;
+                    }
+                }
+                existing_vtable = this.vtables[i];
+                break;
+            }
+        }
+        if (existing_vtable) {
+            // Found a match:
+            // Remove the current vtable.
+            this.space = this.bb.capacity() - vtableloc;
+            // Point table to existing vtable.
+            this.bb.writeInt32(this.space, existing_vtable - vtableloc);
+        }
+        else {
+            // No match:
+            // Add the location of the current vtable to the list of vtables.
+            this.vtables.push(this.offset());
+            // Point table to current vtable.
+            this.bb.writeInt32(this.bb.capacity() - vtableloc, this.offset() - vtableloc);
+        }
+        this.isNested = false;
+        return vtableloc;
+    }
+    /**
+     * Finalize a buffer, poiting to the given `root_table`.
+     */
+    finish(root_table, opt_file_identifier, opt_size_prefix) {
+        const size_prefix = opt_size_prefix ? SIZE_PREFIX_LENGTH : 0;
+        if (opt_file_identifier) {
+            const file_identifier = opt_file_identifier;
+            this.prep(this.minalign, SIZEOF_INT +
+                FILE_IDENTIFIER_LENGTH + size_prefix);
+            if (file_identifier.length != FILE_IDENTIFIER_LENGTH) {
+                throw new Error('FlatBuffers: file identifier must be length ' +
+                    FILE_IDENTIFIER_LENGTH);
+            }
+            for (let i = FILE_IDENTIFIER_LENGTH - 1; i >= 0; i--) {
+                this.writeInt8(file_identifier.charCodeAt(i));
+            }
+        }
+        this.prep(this.minalign, SIZEOF_INT + size_prefix);
+        this.addOffset(root_table);
+        if (size_prefix) {
+            this.addInt32(this.bb.capacity() - this.space);
+        }
+        this.bb.setPosition(this.space);
+    }
+    /**
+     * Finalize a size prefixed buffer, pointing to the given `root_table`.
+     */
+    finishSizePrefixed(root_table, opt_file_identifier) {
+        this.finish(root_table, opt_file_identifier, true);
+    }
+    /**
+     * This checks a required field has been set in a given table that has
+     * just been constructed.
+     */
+    requiredField(table, field) {
+        const table_start = this.bb.capacity() - table;
+        const vtable_start = table_start - this.bb.readInt32(table_start);
+        const ok = field < this.bb.readInt16(vtable_start) &&
+            this.bb.readInt16(vtable_start + field) != 0;
+        // If this fails, the caller will show what field needs to be set.
+        if (!ok) {
+            throw new Error('FlatBuffers: field ' + field + ' must be set');
+        }
+    }
+    /**
+     * Start a new array/vector of objects.  Users usually will not call
+     * this directly. The FlatBuffers compiler will create a start/end
+     * method for vector types in generated code.
+     *
+     * @param elem_size The size of each element in the array
+     * @param num_elems The number of elements in the array
+     * @param alignment The alignment of the array
+     */
+    startVector(elem_size, num_elems, alignment) {
+        this.notNested();
+        this.vector_num_elems = num_elems;
+        this.prep(SIZEOF_INT, elem_size * num_elems);
+        this.prep(alignment, elem_size * num_elems); // Just in case alignment > int.
+    }
+    /**
+     * Finish off the creation of an array and all its elements. The array must be
+     * created with `startVector`.
+     *
+     * @returns The offset at which the newly created array
+     * starts.
+     */
+    endVector() {
+        this.writeInt32(this.vector_num_elems);
+        return this.offset();
+    }
+    /**
+     * Encode the string `s` in the buffer using UTF-8. If the string passed has
+     * already been seen, we return the offset of the already written string
+     *
+     * @param s The string to encode
+     * @return The offset in the buffer where the encoded string starts
+     */
+    createSharedString(s) {
+        if (!s) {
+            return 0;
+        }
+        if (!this.string_maps) {
+            this.string_maps = new Map();
+        }
+        if (this.string_maps.has(s)) {
+            return this.string_maps.get(s);
+        }
+        const offset = this.createString(s);
+        this.string_maps.set(s, offset);
+        return offset;
+    }
+    /**
+     * Encode the string `s` in the buffer using UTF-8. If a Uint8Array is passed
+     * instead of a string, it is assumed to contain valid UTF-8 encoded data.
+     *
+     * @param s The string to encode
+     * @return The offset in the buffer where the encoded string starts
+     */
+    createString(s) {
+        if (s === null || s === undefined) {
+            return 0;
+        }
+        let utf8;
+        if (s instanceof Uint8Array) {
+            utf8 = s;
+        }
+        else {
+            utf8 = this.text_encoder.encode(s);
+        }
+        this.addInt8(0);
+        this.startVector(1, utf8.length, 1);
+        this.bb.setPosition(this.space -= utf8.length);
+        for (let i = 0, offset = this.space, bytes = this.bb.bytes(); i < utf8.length; i++) {
+            bytes[offset++] = utf8[i];
+        }
+        return this.endVector();
+    }
+    /**
+     * A helper function to pack an object
+     *
+     * @returns offset of obj
+     */
+    createObjectOffset(obj) {
+        if (obj === null) {
+            return 0;
+        }
+        if (typeof obj === 'string') {
+            return this.createString(obj);
+        }
+        else {
+            return obj.pack(this);
+        }
+    }
+    /**
+     * A helper function to pack a list of object
+     *
+     * @returns list of offsets of each non null object
+     */
+    createObjectOffsetList(list) {
+        const ret = [];
+        for (let i = 0; i < list.length; ++i) {
+            const val = list[i];
+            if (val !== null) {
+                ret.push(this.createObjectOffset(val));
+            }
+            else {
+                throw new Error('FlatBuffers: Argument for createObjectOffsetList cannot contain null.');
+            }
+        }
+        return ret;
+    }
+    createStructOffsetList(list, startFunc) {
+        startFunc(this, list.length);
+        this.createObjectOffsetList(list.slice().reverse());
+        return this.endVector();
+    }
+}
+
+// automatically generated by the FlatBuffers compiler, do not modify
+class Fragment {
+    constructor() {
+        this.bb = null;
+        this.bb_pos = 0;
+    }
+    __init(i, bb) {
+        this.bb_pos = i;
+        this.bb = bb;
+        return this;
+    }
+    static getRootAsFragment(bb, obj) {
+        return (obj || new Fragment()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
+    }
+    static getSizePrefixedRootAsFragment(bb, obj) {
+        bb.setPosition(bb.position() + SIZE_PREFIX_LENGTH);
+        return (obj || new Fragment()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
+    }
+    position(index) {
+        const offset = this.bb.__offset(this.bb_pos, 4);
+        return offset ? this.bb.readFloat32(this.bb.__vector(this.bb_pos + offset) + index * 4) : 0;
+    }
+    positionLength() {
+        const offset = this.bb.__offset(this.bb_pos, 4);
+        return offset ? this.bb.__vector_len(this.bb_pos + offset) : 0;
+    }
+    positionArray() {
+        const offset = this.bb.__offset(this.bb_pos, 4);
+        return offset ? new Float32Array(this.bb.bytes().buffer, this.bb.bytes().byteOffset + this.bb.__vector(this.bb_pos + offset), this.bb.__vector_len(this.bb_pos + offset)) : null;
+    }
+    normal(index) {
+        const offset = this.bb.__offset(this.bb_pos, 6);
+        return offset ? this.bb.readFloat32(this.bb.__vector(this.bb_pos + offset) + index * 4) : 0;
+    }
+    normalLength() {
+        const offset = this.bb.__offset(this.bb_pos, 6);
+        return offset ? this.bb.__vector_len(this.bb_pos + offset) : 0;
+    }
+    normalArray() {
+        const offset = this.bb.__offset(this.bb_pos, 6);
+        return offset ? new Float32Array(this.bb.bytes().buffer, this.bb.bytes().byteOffset + this.bb.__vector(this.bb_pos + offset), this.bb.__vector_len(this.bb_pos + offset)) : null;
+    }
+    index(index) {
+        const offset = this.bb.__offset(this.bb_pos, 8);
+        return offset ? this.bb.readInt32(this.bb.__vector(this.bb_pos + offset) + index * 4) : 0;
+    }
+    indexLength() {
+        const offset = this.bb.__offset(this.bb_pos, 8);
+        return offset ? this.bb.__vector_len(this.bb_pos + offset) : 0;
+    }
+    indexArray() {
+        const offset = this.bb.__offset(this.bb_pos, 8);
+        return offset ? new Int32Array(this.bb.bytes().buffer, this.bb.bytes().byteOffset + this.bb.__vector(this.bb_pos + offset), this.bb.__vector_len(this.bb_pos + offset)) : null;
+    }
+    blockId(index) {
+        const offset = this.bb.__offset(this.bb_pos, 10);
+        return offset ? this.bb.readInt32(this.bb.__vector(this.bb_pos + offset) + index * 4) : 0;
+    }
+    blockIdLength() {
+        const offset = this.bb.__offset(this.bb_pos, 10);
+        return offset ? this.bb.__vector_len(this.bb_pos + offset) : 0;
+    }
+    blockIdArray() {
+        const offset = this.bb.__offset(this.bb_pos, 10);
+        return offset ? new Int32Array(this.bb.bytes().buffer, this.bb.bytes().byteOffset + this.bb.__vector(this.bb_pos + offset), this.bb.__vector_len(this.bb_pos + offset)) : null;
+    }
+    groups(index) {
+        const offset = this.bb.__offset(this.bb_pos, 12);
+        return offset ? this.bb.readFloat32(this.bb.__vector(this.bb_pos + offset) + index * 4) : 0;
+    }
+    groupsLength() {
+        const offset = this.bb.__offset(this.bb_pos, 12);
+        return offset ? this.bb.__vector_len(this.bb_pos + offset) : 0;
+    }
+    groupsArray() {
+        const offset = this.bb.__offset(this.bb_pos, 12);
+        return offset ? new Float32Array(this.bb.bytes().buffer, this.bb.bytes().byteOffset + this.bb.__vector(this.bb_pos + offset), this.bb.__vector_len(this.bb_pos + offset)) : null;
+    }
+    materials(index) {
+        const offset = this.bb.__offset(this.bb_pos, 14);
+        return offset ? this.bb.readFloat32(this.bb.__vector(this.bb_pos + offset) + index * 4) : 0;
+    }
+    materialsLength() {
+        const offset = this.bb.__offset(this.bb_pos, 14);
+        return offset ? this.bb.__vector_len(this.bb_pos + offset) : 0;
+    }
+    materialsArray() {
+        const offset = this.bb.__offset(this.bb_pos, 14);
+        return offset ? new Float32Array(this.bb.bytes().buffer, this.bb.bytes().byteOffset + this.bb.__vector(this.bb_pos + offset), this.bb.__vector_len(this.bb_pos + offset)) : null;
+    }
+    matrices(index) {
+        const offset = this.bb.__offset(this.bb_pos, 16);
+        return offset ? this.bb.readFloat32(this.bb.__vector(this.bb_pos + offset) + index * 4) : 0;
+    }
+    matricesLength() {
+        const offset = this.bb.__offset(this.bb_pos, 16);
+        return offset ? this.bb.__vector_len(this.bb_pos + offset) : 0;
+    }
+    matricesArray() {
+        const offset = this.bb.__offset(this.bb_pos, 16);
+        return offset ? new Float32Array(this.bb.bytes().buffer, this.bb.bytes().byteOffset + this.bb.__vector(this.bb_pos + offset), this.bb.__vector_len(this.bb_pos + offset)) : null;
+    }
+    ids(optionalEncoding) {
+        const offset = this.bb.__offset(this.bb_pos, 18);
+        return offset ? this.bb.__string(this.bb_pos + offset, optionalEncoding) : null;
+    }
+    id(optionalEncoding) {
+        const offset = this.bb.__offset(this.bb_pos, 20);
+        return offset ? this.bb.__string(this.bb_pos + offset, optionalEncoding) : null;
+    }
+    static startFragment(builder) {
+        builder.startObject(9);
+    }
+    static addPosition(builder, positionOffset) {
+        builder.addFieldOffset(0, positionOffset, 0);
+    }
+    static createPositionVector(builder, data) {
+        builder.startVector(4, data.length, 4);
+        for (let i = data.length - 1; i >= 0; i--) {
+            builder.addFloat32(data[i]);
+        }
+        return builder.endVector();
+    }
+    static startPositionVector(builder, numElems) {
+        builder.startVector(4, numElems, 4);
+    }
+    static addNormal(builder, normalOffset) {
+        builder.addFieldOffset(1, normalOffset, 0);
+    }
+    static createNormalVector(builder, data) {
+        builder.startVector(4, data.length, 4);
+        for (let i = data.length - 1; i >= 0; i--) {
+            builder.addFloat32(data[i]);
+        }
+        return builder.endVector();
+    }
+    static startNormalVector(builder, numElems) {
+        builder.startVector(4, numElems, 4);
+    }
+    static addIndex(builder, indexOffset) {
+        builder.addFieldOffset(2, indexOffset, 0);
+    }
+    static createIndexVector(builder, data) {
+        builder.startVector(4, data.length, 4);
+        for (let i = data.length - 1; i >= 0; i--) {
+            builder.addInt32(data[i]);
+        }
+        return builder.endVector();
+    }
+    static startIndexVector(builder, numElems) {
+        builder.startVector(4, numElems, 4);
+    }
+    static addBlockId(builder, blockIdOffset) {
+        builder.addFieldOffset(3, blockIdOffset, 0);
+    }
+    static createBlockIdVector(builder, data) {
+        builder.startVector(4, data.length, 4);
+        for (let i = data.length - 1; i >= 0; i--) {
+            builder.addInt32(data[i]);
+        }
+        return builder.endVector();
+    }
+    static startBlockIdVector(builder, numElems) {
+        builder.startVector(4, numElems, 4);
+    }
+    static addGroups(builder, groupsOffset) {
+        builder.addFieldOffset(4, groupsOffset, 0);
+    }
+    static createGroupsVector(builder, data) {
+        builder.startVector(4, data.length, 4);
+        for (let i = data.length - 1; i >= 0; i--) {
+            builder.addFloat32(data[i]);
+        }
+        return builder.endVector();
+    }
+    static startGroupsVector(builder, numElems) {
+        builder.startVector(4, numElems, 4);
+    }
+    static addMaterials(builder, materialsOffset) {
+        builder.addFieldOffset(5, materialsOffset, 0);
+    }
+    static createMaterialsVector(builder, data) {
+        builder.startVector(4, data.length, 4);
+        for (let i = data.length - 1; i >= 0; i--) {
+            builder.addFloat32(data[i]);
+        }
+        return builder.endVector();
+    }
+    static startMaterialsVector(builder, numElems) {
+        builder.startVector(4, numElems, 4);
+    }
+    static addMatrices(builder, matricesOffset) {
+        builder.addFieldOffset(6, matricesOffset, 0);
+    }
+    static createMatricesVector(builder, data) {
+        builder.startVector(4, data.length, 4);
+        for (let i = data.length - 1; i >= 0; i--) {
+            builder.addFloat32(data[i]);
+        }
+        return builder.endVector();
+    }
+    static startMatricesVector(builder, numElems) {
+        builder.startVector(4, numElems, 4);
+    }
+    static addIds(builder, idsOffset) {
+        builder.addFieldOffset(7, idsOffset, 0);
+    }
+    static addId(builder, idOffset) {
+        builder.addFieldOffset(8, idOffset, 0);
+    }
+    static endFragment(builder) {
+        const offset = builder.endObject();
+        return offset;
+    }
+    static createFragment(builder, positionOffset, normalOffset, indexOffset, blockIdOffset, groupsOffset, materialsOffset, matricesOffset, idsOffset, idOffset) {
+        Fragment.startFragment(builder);
+        Fragment.addPosition(builder, positionOffset);
+        Fragment.addNormal(builder, normalOffset);
+        Fragment.addIndex(builder, indexOffset);
+        Fragment.addBlockId(builder, blockIdOffset);
+        Fragment.addGroups(builder, groupsOffset);
+        Fragment.addMaterials(builder, materialsOffset);
+        Fragment.addMatrices(builder, matricesOffset);
+        Fragment.addIds(builder, idsOffset);
+        Fragment.addId(builder, idOffset);
+        return Fragment.endFragment(builder);
+    }
+}
+
+// automatically generated by the FlatBuffers compiler, do not modify
+class Fragments$1 {
+    constructor() {
+        this.bb = null;
+        this.bb_pos = 0;
+    }
+    __init(i, bb) {
+        this.bb_pos = i;
+        this.bb = bb;
+        return this;
+    }
+    static getRootAsFragments(bb, obj) {
+        return (obj || new Fragments$1()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
+    }
+    static getSizePrefixedRootAsFragments(bb, obj) {
+        bb.setPosition(bb.position() + SIZE_PREFIX_LENGTH);
+        return (obj || new Fragments$1()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
+    }
+    items(index, obj) {
+        const offset = this.bb.__offset(this.bb_pos, 4);
+        return offset ? (obj || new Fragment()).__init(this.bb.__indirect(this.bb.__vector(this.bb_pos + offset) + index * 4), this.bb) : null;
+    }
+    itemsLength() {
+        const offset = this.bb.__offset(this.bb_pos, 4);
+        return offset ? this.bb.__vector_len(this.bb_pos + offset) : 0;
+    }
+    static startFragments(builder) {
+        builder.startObject(1);
+    }
+    static addItems(builder, itemsOffset) {
+        builder.addFieldOffset(0, itemsOffset, 0);
+    }
+    static createItemsVector(builder, data) {
+        builder.startVector(4, data.length, 4);
+        for (let i = data.length - 1; i >= 0; i--) {
+            builder.addOffset(data[i]);
+        }
+        return builder.endVector();
+    }
+    static startItemsVector(builder, numElems) {
+        builder.startVector(4, numElems, 4);
+    }
+    static endFragments(builder) {
+        const offset = builder.endObject();
+        return offset;
+    }
+    static finishFragmentsBuffer(builder, offset) {
+        builder.finish(offset);
+    }
+    static finishSizePrefixedFragmentsBuffer(builder, offset) {
+        builder.finish(offset, undefined, true);
+    }
+    static createFragments(builder, itemsOffset) {
+        Fragments$1.startFragments(builder);
+        Fragments$1.addItems(builder, itemsOffset);
+        return Fragments$1.endFragments(builder);
+    }
+}
+
+class Serializer {
+    import(bytes) {
+        const buffer = new ByteBuffer(bytes);
+        const fragments = [];
+        const fbFragments = Fragments$1.getRootAsFragments(buffer);
+        const length = fbFragments.itemsLength();
+        for (let i = 0; i < length; i++) {
+            const fbFragment = fbFragments.items(i);
+            if (!fbFragment)
+                continue;
+            const geometry = this.constructGeometry(fbFragment);
+            const materials = this.constructMaterials(fbFragment);
+            const instances = this.constructInstances(fbFragment);
+            const fragment = new Fragment$1(geometry, materials, instances.length);
+            this.setInstances(instances, fragment);
+            fragments.push(fragment);
+        }
+        return fragments;
+    }
+    export(fragments) {
+        const builder = new Builder(1024);
+        const items = [];
+        for (const fragment of fragments) {
+            const result = fragment.exportData();
+            const posVector = Fragment.createPositionVector(builder, result.position);
+            const normalVector = Fragment.createNormalVector(builder, result.normal);
+            const blockVector = Fragment.createBlockIdVector(builder, result.blockID);
+            const indexVector = Fragment.createIndexVector(builder, result.index);
+            const groupsVector = Fragment.createGroupsVector(builder, result.groups);
+            const matsVector = Fragment.createMaterialsVector(builder, result.materials);
+            const matricesVector = Fragment.createMatricesVector(builder, result.matrices);
+            const idsStr = builder.createString(result.ids);
+            const idStr = builder.createString(result.id);
+            Fragment.startFragment(builder);
+            Fragment.addPosition(builder, posVector);
+            Fragment.addNormal(builder, normalVector);
+            Fragment.addBlockId(builder, blockVector);
+            Fragment.addIndex(builder, indexVector);
+            Fragment.addGroups(builder, groupsVector);
+            Fragment.addMaterials(builder, matsVector);
+            Fragment.addMatrices(builder, matricesVector);
+            Fragment.addIds(builder, idsStr);
+            Fragment.addId(builder, idStr);
+            const exported = Fragment.endFragment(builder);
+            items.push(exported);
+        }
+        const itemsVector = Fragments$1.createItemsVector(builder, items);
+        Fragments$1.startFragments(builder);
+        Fragments$1.addItems(builder, itemsVector);
+        const result = Fragments$1.endFragments(builder);
+        builder.finish(result);
+        return builder.asUint8Array();
+    }
+    setInstances(instances, fragment) {
+        let counter = 0;
+        for (const instance of instances) {
+            fragment.setInstance(counter++, instance);
+        }
+    }
+    constructInstances(fragment) {
+        const matrices = fragment.matricesArray();
+        const idsString = fragment.ids();
+        const id = fragment.id();
+        if (!matrices || !idsString) {
+            throw new Error(`Error: Can't load empty fragment: ${id}`);
+        }
+        const ids = idsString.split("|");
+        const singleInstance = matrices.length === 16;
+        const manyItems = ids.length > 1;
+        const isMergedFragment = singleInstance && manyItems;
+        if (isMergedFragment) {
+            const transform = new THREE$1.Matrix4().fromArray(matrices);
+            return [{ ids, transform }];
+        }
+        // Instanced fragment
+        const groups = [];
+        for (let i = 0; i < matrices.length; i += 16) {
+            const currentArray = matrices.subarray(i, i + 17);
+            const transform = new THREE$1.Matrix4().fromArray(currentArray);
+            const id = ids[i / 16];
+            groups.push({ ids: [id], transform });
+        }
+        return groups;
+    }
+    constructMaterials(fragment) {
+        const materials = fragment.materialsArray();
+        const matArray = [];
+        if (!materials)
+            return matArray;
+        for (let i = 0; i < materials.length; i += 5) {
+            const opacity = materials[i];
+            const transparent = Boolean(materials[i + 1]);
+            const red = materials[i + 2];
+            const green = materials[i + 3];
+            const blue = materials[i + 4];
+            const color = new THREE$1.Color(red, green, blue);
+            const material = new THREE$1.MeshLambertMaterial({
+                color,
+                opacity,
+                transparent,
+            });
+            matArray.push(material);
+        }
+        return matArray;
+    }
+    constructGeometry(fragment) {
+        const position = fragment.positionArray();
+        const normal = fragment.normalArray();
+        const blockID = fragment.blockIdArray();
+        const index = fragment.indexArray();
+        const groups = fragment.groupsArray();
+        if (!index)
+            throw new Error("Index not found!");
+        const geometry = new THREE$1.BufferGeometry();
+        geometry.setIndex(Array.from(index));
+        this.loadAttribute(geometry, "position", position, 3);
+        this.loadAttribute(geometry, "normal", normal, 3);
+        this.loadAttribute(geometry, "blockID", blockID, 1);
+        this.loadGroups(groups, geometry);
+        return geometry;
+    }
+    loadGroups(groups, geometry) {
+        if (!groups)
+            return;
+        for (let i = 0; i < groups.length; i += 3) {
+            const start = groups[i];
+            const count = groups[i + 1];
+            const materialIndex = groups[i + 2];
+            geometry.addGroup(start, count, materialIndex);
+        }
+    }
+    loadAttribute(geometry, name, data, size) {
+        if (!data)
+            return;
+        geometry.setAttribute(name, new THREE$1.BufferAttribute(data, size));
     }
 }
 
@@ -68396,7 +69641,7 @@ class DataConverter {
         const mats = this.getMaterials(data);
         const geoms = Object.values(data.geometriesByMaterial);
         const merged = GeometryUtils.merge(geoms);
-        return new Fragment(merged, mats, data.instances.length);
+        return new Fragment$1(merged, mats, data.instances.length);
     }
     getMaterials(data) {
         const mats = Object.keys(data.geometriesByMaterial).map((id) => this._materials[id]);
@@ -68452,7 +69697,7 @@ class DataConverter {
     }
     newMergedFragment(merged, buffer, mats, itemsIDs) {
         merged.setAttribute("blockID", new THREE$1.BufferAttribute(buffer, 1));
-        const mergedFragment = new Fragment(merged, mats, 1);
+        const mergedFragment = new Fragment$1(merged, mats, 1);
         const ids = Array.from(itemsIDs).map((id) => id.toString());
         mergedFragment.setInstance(0, { ids, transform: new THREE$1.Matrix4() });
         return mergedFragment;
@@ -69062,6 +70307,10 @@ class Fragments extends Component {
         this.properties = new FragmentProperties();
         /** Helper object to easily work with fragment properties. */
         this.tree = new FragmentSpatialTree(this.properties);
+        /**
+         * Serializer to import and export binary fragments.
+         */
+        this.serializer = new Serializer();
         this._loader = new FragmentLoader();
         this.highlighter = new FragmentHighlighter(components, this);
         this.exploder = new FragmentExploder(this);
