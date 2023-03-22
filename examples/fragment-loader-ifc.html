@@ -23,6 +23,7 @@
       }
     }
 
+
 </script>
 <script type="module">
     import Stats from 'stats.js/src/Stats.js';
@@ -115,15 +116,22 @@
     }
 
     async function downloadBinaryFragment() {
+
+        const files = [];
+
         const result = fragments.serializer.export(model.fragments);
-        const file = new File([new Blob([result])], "exported.frag");
+        const file = new File([new Blob([result])], "model.frag");
+        files.push(file);
+
+        saveModelData(files);
+        const blob = await downloadZip(files).blob();
+
         const link = document.createElement('a');
         document.body.appendChild(link);
 
-        link.download = 'exported.frag';
-        link.href = URL.createObjectURL(file);
+        link.download = 'test.zip';
+        link.href = URL.createObjectURL(blob);
         link.click();
-
         link.remove();
     }
 
@@ -135,24 +143,26 @@
             files.push(file.geometry, file.data);
         }
 
+        saveModelData(files);
+
+        const blob = await downloadZip(files).blob();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "test.zip";
+        link.click();
+        link.remove();
+    }
+
+    function saveModelData(files) {
         files.push(new File([JSON.stringify(model.properties)], 'properties.json'));
         files.push(new File([JSON.stringify(model.levelRelationships)], 'levels-relationship.json'));
         files.push(new File([JSON.stringify(model.itemTypes)], 'model-types.json'));
         files.push(new File([JSON.stringify(model.allTypes)], 'all-types.json'));
         files.push(new File([JSON.stringify(model.floorsProperties)], 'levels-properties.json'));
         files.push(new File([JSON.stringify(model.coordinationMatrix)], 'coordination-matrix.json'));
-        files.push(new File([JSON.stringify(model.boundingBoxes)], 'bounding-boxes-opaque.json'));
-        files.push(new File([JSON.stringify(model.transparentBoundingBoxes)], 'bounding-boxes-transparent.json'));
+        // files.push(new File([JSON.stringify(model.boundingBoxes)], 'bounding-boxes-opaque.json'));
+        // files.push(new File([JSON.stringify(model.transparentBoundingBoxes)], 'bounding-boxes-transparent.json'));
         files.push(new File([JSON.stringify(model.expressIDFragmentIDMap)], 'express-fragment-map.json'));
-
-        const blob = await downloadZip(files).blob();
-        const link = document.createElement("a");
-
-        link.href = URL.createObjectURL(blob);
-        link.download = "test.zip";
-        link.click();
-
-        link.remove();
     }
 
     // Set up GUI

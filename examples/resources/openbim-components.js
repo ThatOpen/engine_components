@@ -22227,6 +22227,7 @@ class Serializer {
             const instances = this.constructInstances(fbFragment);
             const fragment = new Fragment$1(geometry, materials, instances.length);
             this.setInstances(instances, fragment);
+            this.setID(fbFragment, fragment);
             fragments.push(fragment);
         }
         return fragments;
@@ -22264,6 +22265,12 @@ class Serializer {
         const result = Fragments$1.endFragments(builder);
         builder.finish(result);
         return builder.asUint8Array();
+    }
+    setID(fbFragment, fragment) {
+        const id = fbFragment.id();
+        if (id) {
+            fragment.id = id;
+        }
     }
     setInstances(instances, fragment) {
         let counter = 0;
@@ -70344,6 +70351,8 @@ class Fragments extends Component {
         this.culler.dispose();
         this.memoryCuller.dispose();
     }
+    // TODO: decouple the add() function from loading a fragment
+    // As loading now is done with flatbuffers
     /**
      * Adds a new fragment into the scene.
      *

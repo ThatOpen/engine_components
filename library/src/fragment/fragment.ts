@@ -110,6 +110,8 @@ export class Fragments extends Component<Fragment[]> implements Disposable {
     this.memoryCuller.dispose();
   }
 
+  // TODO: decouple the add() function from loading a fragment
+  // As loading now is done with flatbuffers
   /**
    * Adds a new fragment into the scene.
    *
