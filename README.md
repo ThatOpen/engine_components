@@ -3,7 +3,7 @@
   |
   <a href="https://ifcjs.github.io/components/docs/index.html">documentation</a>
   |
-  <a href=https://ifcjs.github.io/components/examples/fragment-hello-world.html>demo</a>
+  <a href="https://ifcjs.github.io/components/examples/fragment-hello-world.html">demo</a>
   |
   <a href="https://discord.gg/FXfyR4XrKT">discord</a>
   |

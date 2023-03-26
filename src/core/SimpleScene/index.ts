@@ -7,12 +7,10 @@ import { Disposer } from "../MemoryComponent";
 /**
  * A basic 3D [scene](https://threejs.org/docs/#api/en/scenes/Scene) to add
  * objects hierarchically.
+ * @noInheritDoc
  */
 export class SimpleScene extends Component<THREE.Scene> implements Disposable {
-  /** {@link Component.enabled} */
   enabled = true;
-
-  /** {@link Component.name} */
   name = "SimpleScene";
 
   private readonly _scene: THREE.Scene;
@@ -24,12 +22,10 @@ export class SimpleScene extends Component<THREE.Scene> implements Disposable {
     this._scene.background = new THREE.Color(0xcccccc);
   }
 
-  /** {@link Component.get} */
   get() {
     return this._scene;
   }
 
-  /** {@link Disposable.dispose} */
   dispose() {
     for (const child of this._scene.children) {
       const mesh = child as THREE.Mesh;
