@@ -22683,6 +22683,7 @@ class FragmentCulling {
             material = new THREE$1.MeshBasicMaterial({
                 color: new THREE$1.Color(code),
                 clippingPlanes,
+                side: THREE$1.DoubleSide
             });
             this.materialCache.set(code, material);
         }

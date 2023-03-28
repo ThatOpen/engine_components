@@ -1,6 +1,6 @@
 {
   "name": "openbim-components-root",
-  "version": "0.0.49",
+  "version": "0.0.51",
   "main": "index.js",
   "author": "harry collin, antonio gonzalez viegas",
   "license": "MIT",

@@ -223,6 +223,7 @@ export class FragmentCulling implements Disposable {
       material = new THREE.MeshBasicMaterial({
         color: new THREE.Color(code),
         clippingPlanes,
+        side: THREE.DoubleSide
       });
       this.materialCache.set(code, material);
     }
