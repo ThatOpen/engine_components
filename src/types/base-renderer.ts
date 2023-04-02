@@ -3,7 +3,9 @@ import { Component } from "./component";
 import { Resizeable } from "./base-types";
 
 /**
- * A base component for components whose main mission is to render a scene.
+ * A base component for other components whose main mission is to render a
+ * [scene](https://threejs.org/docs/#api/en/scenes/Scene).
+ * @noInheritDoc
  */
 export abstract class BaseRenderer
   extends Component<THREE.WebGLRenderer>
@@ -24,7 +26,11 @@ export abstract class BaseRenderer
   /** {@link Resizeable.resize}. */
   abstract resize(): void;
 
-  public clippingPlanes: THREE.Plane[] = [];
+  /**
+   * The list of [clipping planes](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.clippingPlanes) used by this
+   * instance of the renderer.
+   */
+  clippingPlanes: THREE.Plane[] = [];
 
   /**
    * Adds or removes a

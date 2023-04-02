@@ -77,7 +77,6 @@ export class Components {
   /**
    * The [Three.js camera](https://threejs.org/docs/#api/en/cameras/Camera)
    * that determines the point of view of the renderer.
-   * ```
    */
   get camera() {
     if (!this._camera) {
