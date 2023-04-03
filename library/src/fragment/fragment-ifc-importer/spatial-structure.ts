@@ -8,10 +8,14 @@ export class SpatialStructure {
 
   async setupFloors(webIfc: WEBIFC.IfcAPI, units: Units) {
     this.reset();
-    const floors = await this.getFloors(webIfc);
-    for (const floor of floors) {
-      await this.getFloorProperties(webIfc, floor, units);
-      this.saveFloorRelations(floor);
+    try {
+      const floors = await this.getFloors(webIfc);
+      for (const floor of floors) {
+        await this.getFloorProperties(webIfc, floor, units);
+        this.saveFloorRelations(floor);
+      }
+    } catch (e) {
+      console.log("Could not get floors.");
     }
   }
 

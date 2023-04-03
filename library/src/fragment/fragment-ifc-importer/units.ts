@@ -14,6 +14,7 @@ export class Units {
   setUp(webIfc: WEBIFC.IfcAPI) {
     this.factor = 1;
     const lengthUnits = this.getLengthUnits(webIfc);
+    if (lengthUnits === null) return;
     if (lengthUnits.Name.value === "FOOT") {
       this.factor = 0.3048;
     } else if (lengthUnits.Prefix?.value === "MILLI") {
@@ -22,11 +23,16 @@ export class Units {
   }
 
   private getLengthUnits(webIfc: WEBIFC.IfcAPI) {
-    const allUnits = webIfc.GetLineIDsWithType(0, WEBIFC.IFCUNITASSIGNMENT);
-    const units = allUnits.get(0);
-    const unitsProps = webIfc.GetLine(0, units);
-    const lengthUnitsID = unitsProps.Units[0].value;
-    return webIfc.GetLine(0, lengthUnitsID);
+    try {
+      const allUnits = webIfc.GetLineIDsWithType(0, WEBIFC.IFCUNITASSIGNMENT);
+      const units = allUnits.get(0);
+      const unitsProps = webIfc.GetLine(0, units);
+      const lengthUnitsID = unitsProps.Units[0].value;
+      return webIfc.GetLine(0, lengthUnitsID);
+    } catch (e) {
+      console.log("Could not get units");
+      return null;
+    }
   }
 
   private getScaleMatrix() {
