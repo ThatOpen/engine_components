@@ -45,12 +45,17 @@
 
   components.scene = new OBC.SimpleScene(components);
   components.renderer = new OBC.SimpleRenderer(components, container);
-  components.camera = new OBC.SimpleCamera(components);
+	const camera = new OBC.SimpleCamera(components);
+  components.camera = camera
   components.raycaster = new OBC.SimpleRaycaster(components);
 
   components.init();
 
   const scene = components.scene.get();
+
+	scene.background = null;
+
+	camera.controls.setLookAt(20, 20, 20, 0, 0, 0);
 
   // Add some components: grid & cube
   const grid = new OBC.SimpleGrid(components);
