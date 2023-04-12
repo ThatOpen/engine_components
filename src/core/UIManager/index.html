@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="../../../resources/styles.css">
+  <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+  <title>UI Manager Component</title>
+</head>
+<body>
+<div class="full-screen" id="viewer-container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.135.0/build/three.module.js",
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
+        "openbim-components": "../../../resources/openbim-components.js"
+      }
+    }
+</script>
+<script type="module">
+
+  /*MD
+  ## Give interaction to your viewer! 🎛️
+  One of the most important things about making a BIM app is to give the user the ability to interact with the functionalities you are creating 🚀. The catch is you need to create a decent user interface so your end-user is able to interact in a easy and intuitive way. While creating a simple set of buttons is not particularly difficult, we all agree is time consuming ⏱️. 
+  
+  #### But I don't have time!
+  We all know the less we have is time, and hopefully we´re giving you a set of premade and cool looking elements so you can add them right away to your viewer and create interactions with no effort. Let's call those UI Components 😊.
+
+  ### Importing the library
+  ---
+  First of all, install the library by running `npm i openbim-components` in your projects terminal if you haven't already. Then, just import it like so:
+  */
+
+  import * as OBC from "openbim-components"
+
+  /*MD
+  Then, just start by creating an instance to the root components class:
+  */
+
+  const viewerContainer = document.getElementById("viewer-container")
+  const viewer = new OBC.Components()
+  viewer.scene = new OBC.SimpleScene(viewer)
+  viewer.renderer = new OBC.SimpleRenderer(viewer, viewerContainer)
+  viewer.camera = new OBC.SimpleCamera(viewer)
+  viewer.raycaster = new OBC.SimpleRaycaster(viewer)
+  viewer.init()
+
+  /*MD
+  Remember that you can call your `OBC.Components()` instance whatever you want, we are just calling it "viewer" here for simplicity.
+
+  ### Creating a toolbar
+  ---
+  A toolbar is just a container for one or multiple buttons, each of those buttons is what gives the end-user the ability to interact with the application. Creating and adding a toolbar to the viewer is as simple as this:
+  */
+
+  const mainToolbar = new OBC.Toolbar(viewer, {name: "Main Toolbar", position: "bottom"})
+  viewer.ui.addToolbar(mainToolbar)
+
+  /*MD
+  By default, the toolbar is added to the bottom 👇 of the viewer container, so you technically don't need to type `position: "bootom"` in the options argument of your toolbar, but we just did it so you know you can change the toolbar position to either top, right, bottom or left. You can create multiple toolbars in the same position, and the component just takes care about stacking all toolbars nice and neat 🤯.
+
+  ### Adding a button
+  ---
+  Button components can only be added right into a toolbar. To do so, we can add the following code:
+  */
+
+  const btn = new OBC.Button(viewer, {materialIconName: "info"})
+  btn.onclick = () => console.log("I've been clicked!")
+  mainToolbar.addButton(btn)
+  
+</script>
+</body>
+</html>

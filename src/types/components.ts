@@ -10,6 +10,7 @@ import { Raycaster } from "./index";
 import { Component } from "./component";
 import { ToolComponents } from "../core";
 import { BaseRenderer } from "./base-renderer";
+import { UIManager } from "../core/UIManager";
 
 /**
  * The entry point of Open BIM Components.
@@ -23,6 +24,11 @@ export class Components {
    * {@link ToolComponents}
    */
   readonly tools: ToolComponents;
+
+  /**
+   * {@link UIManager}
+   */
+  readonly ui: UIManager;
 
   /**
    * All the loaded [meshes](https://threejs.org/docs/#api/en/objects/Mesh).
@@ -113,7 +119,8 @@ export class Components {
 
   constructor() {
     this._clock = new THREE.Clock();
-    this.tools = new ToolComponents();
+    this.tools = new ToolComponents(this);
+    this.ui = new UIManager(this)
     Components.setupBVH();
   }
 
@@ -125,6 +132,7 @@ export class Components {
    */
   init() {
     this._clock.start();
+    this.ui.setup()
     this.update();
   }
 

@@ -1,4 +1,4 @@
-import { Disposable, Hideable, Resizeable, Updateable } from "./base-types";
+import { Disposable, Hideable, Resizeable, Updateable, UI } from "./base-types";
 
 /**
  * Components are the building blocks of this library. Everything is a
@@ -43,4 +43,10 @@ export abstract class Component<Type> {
   isHideable = (): this is Hideable => {
     return "visible" in this;
   };
+
+  /** Whether is component implements any kind of {@link UI}. */
+  hasUI = (): this is UI => {
+    return "uiElement" in this;
+  };
+
 }

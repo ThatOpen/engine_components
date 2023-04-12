@@ -121,3 +121,20 @@ export interface Progress {
   /** The total amount of things to be done by the process. */
   total: number;
 }
+
+
+/** Base interface to be implemented by any kind of component 
+ * aimed to render user interface (DOM elements) in the viewer.
+ */
+export interface UIComponent {
+  domElement: HTMLElement
+  visible: boolean
+  enabled: boolean
+}
+
+/** Whether this component has a representation in the user 
+ * interface, like a button or a window.
+ */
+export interface UI {
+  uiElement: UIComponent
+}
