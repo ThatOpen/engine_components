@@ -20,6 +20,7 @@
       }
     }
 
+
 </script>
 <script type="module">
 	/*MD
@@ -57,45 +58,87 @@
   This object will keep track of all the components that you create, making them
   easily accessible in all your application and making sure to update them
   in each frame, so you don't have to worry about that. 💪
-*/
+  */
 
 	const components = new OBC.Components();
 
 	/*MD
- Great! But this object needs 4 things to work:
- - 🌍 A **[scene component](../api/classes/components.SimpleScene)** where our objects will live in 3D.
- - ⌚ A **[renderer component](../api/classes/components.SimpleRenderer)** that will allow us to see things moving around.
- - 🎥 A **[camera component](../api/classes/components.SimpleCamera)** that defines where we are and what are in that 3D world.
- - ⚡ A **[raycaster component](../api/classes/components.SimpleRaycaster)** that makes it possible to interact with that 3D scene with our mouse / finger.
-*/
+  Great! But this object needs 4 things to work:
+  - 🌍 A **[scene component](../api/classes/components.SimpleScene)** where our objects will live in 3D.
+  - ⌚ A **[renderer component](../api/classes/components.SimpleRenderer)** that allows us to see things moving around.
+  - 🎥 A **[camera component](../api/classes/components.SimpleCamera)** that defines where we are and in that 3D world.
+  - ⚡ A **[raycaster component](../api/classes/components.SimpleRaycaster)** that makes it possible to interact with
+  that 3D scene with our mouse / touch.
+  */
 
 	components.scene = new OBC.SimpleScene(components);
 	components.renderer = new OBC.SimpleRenderer(components, container);
-	const camera = new OBC.SimpleCamera(components);
-	components.camera = camera;
+	components.camera = new OBC.SimpleCamera(components);
 	components.raycaster = new OBC.SimpleRaycaster(components);
 
 	/*MD
-Now that everything is set up, let's start the app! You can do that with the `init` method: 🚗💨💨💨
-*/
+  Now that everything is set up, let's start the app! You can do that with the `init` method.
+  It will start updating all the components at 60 fps, so that you don't have to worry about the
+  animation loop: 🚗💨💨💨
+  */
 
 	components.init();
 
+	/*MD
+  And that's it! You already have set up 3D scene that can run on any device. Easy, right? 🥳 But right now or scene
+  is not very interesting, as it's only a infinite white void. Let's add some things to it! First, we need a reference
+  to the scene, which you can get with the `get()` method. This method is present in all the components and is used to
+  get the core of the component. We can do it like this:
+  */
+
 	const scene = components.scene.get();
+
+	/*MD
+  Great! Now we will make the background of our scene transparent. You don't have to do it; we are doing it because
+  that way this app will be more integrated with the documentation page when setting it to light/dark mode.
+  */
 
 	scene.background = null;
 
-	camera.controls.setLookAt(20, 20, 20, 0, 0, 0);
+	/*MD
+  Now we will locate the camera in a nice starting position. We can control the `SimpleCamera` component through its
+  `controls` attribute. This object is an instance of the [camera-controls](https://github.com/yomotsu/camera-controls)
+  library, which makes it super easy to control the camera in our 3D scene. We will set the position of the camera
+  to `[20, 20, 20]` and make it look at the origin (`[0, 0, 0]`).
+  */
 
-	// Add some components: grid & cube
+	components.camera.controls.setLookAt(20, 20, 20, 0, 0, 0);
+
+	/*MD
+  Awesome! We are now ready to start adding some objects. First, we will add a
+  **[simple grid component](../api/classes/components.SimpleGrid)**. As the name implies, this component adds a simple
+  2D grid to the scene that we can use as a reference. Don't forget to add it to the
+  **[tools components](../api/classes/components.ToolComponents)** so that you can access it from anywhere in your
+  application!
+
+  For more information about the Tools component, check out [its own tutorial](./ToolsComponents.mdx)!
+  */
 	const grid = new OBC.SimpleGrid(components);
 	components.tools.add(grid);
 
-	const cube = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({ color: 'red' }));
+  /*MD
+  Fantastic 🚀 Now we finally can see how we move around! Now, let's add some real geometry to our small 3D app. All
+  the components are built on top of [Three.js](https://threejs.org/), which means that Three.js code will work natively
+  with them. This is great, because you can easily integrate components with any 3D app that you create.
+
+  Let's try it by adding a simple red cube:
+  */
+
+  const boxMaterial = new THREE.MeshStandardMaterial({ color: 'red' });
+  const boxGeometry = new THREE.BoxGeometry(3, 3, 3);
+	const cube = new THREE.Mesh(boxGeometry, boxMaterial);
 	cube.position.set(0, 1.5, 0);
 	scene.add(cube);
 
-	// Lighting
+	/*MD
+  Of course, everything is black because we have no lights! Let's fix it by adding some basic illumination:
+  */
+
 	const directionalLight = new THREE.DirectionalLight();
 	directionalLight.position.set(5, 10, 3);
 	directionalLight.intensity = 0.5;
@@ -104,6 +147,12 @@ Now that everything is set up, let's start the app! You can do that with the `in
 	const ambientLight = new THREE.AmbientLight();
 	ambientLight.intensity = 0.5;
 	scene.add(ambientLight);
+
+	/*MD
+And voilà! You have made your first 3D application using components. Easy, right? Of course, this is still far from a
+full-fledged BIM app, but don't worry! Keep following our tutorials and your app will go from zero to hero in no time! 🚀
+*/
+
 </script>
 </body>
 </html>
