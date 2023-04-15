@@ -119,8 +119,8 @@ export class Components {
 
   constructor() {
     this._clock = new THREE.Clock();
-    this.tools = new ToolComponents(this);
-    this.ui = new UIManager(this)
+    this.tools = new ToolComponents();
+    this.ui = new UIManager(this);
     Components.setupBVH();
   }
 
@@ -132,7 +132,7 @@ export class Components {
    */
   init() {
     this._clock.start();
-    this.ui.setup()
+    this.ui.setup();
     this.update();
   }
 

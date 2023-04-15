@@ -41,7 +41,7 @@
 	const scene = components.scene.get();
 
 	scene.background = null;
-	components.camera.controls.setLookAt(20, 20, 20, 0, 0, 0);
+	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
 	const directionalLight = new THREE.DirectionalLight();
 	directionalLight.position.set(5, 10, 3);
@@ -57,8 +57,8 @@
 
 	/*MD
   ## Touch your geometry! 👉🏢
-  In this tutorial, we'll learn to interact with our scene, both with the mouse and the touch screen of a phone or
-  tablet. This might sound daunting, but it's actually very easy! Let's see how to do that in 5 minutes 🚀
+  In this tutorial, we'll learn to **interact with our scene**, both with the mouse 🐀 and the touch screen of a phone
+  📱 or tablet 🍎. This might sound daunting, but it's actually very easy! Let's see **how to do that in 5 minutes**.
 
   :::tip First, let's set up a simple scene!
 
@@ -97,6 +97,7 @@
 	blueCube.position.x = -5;
 
 	/*MD
+	 ## Spinning up the cubes 😵
   To spice things up a little, let's create an animation loop that rotates the cubes each frame. You can do this super
   easily by creating a function and adding it to the `beforeUpdate` event of the **RendererComponent** inside
   **Components** using the `on()` method:
@@ -115,6 +116,7 @@
   components.renderer.beforeUpdate.on(rotateCubes);
 
 	/*MD
+	## Setting up the raycaster ⚡👌
   Awesome! Now, when we pick a cube, we will substitute the original material by the yellow material. Afterwards, we
   will need a way to get back the original material. We can easily achieve this by adding a reference to the material
   in the `userData` property, which is an object where you can add any data you need:
@@ -127,9 +129,15 @@
 	/*MD
   Finally, we will use the raycaster. This is very easy using the
   **[raycaster component](../api/classes/components.SimpleRaycaster)**, which solves this for all screen sizes.
-  We will create an event that fires every time that the user moves the mouse. We will simply reset the material
-  of the previous selection (if it exists), and then apply the yellow material to the found object (if any). This
-  might sound like a lot, but it's actually very little code: 👇
+  We will create an event that fires every time that the user moves the mouse. 👇
+
+  :::warning How does it really work?
+
+  We will simply reset the material of the previous selection (if it exists), and then apply the yellow material to the
+  found object (if any). This might sound like a lot, but it's actually very little code. 😉
+
+  :::
+
   */
 
   let previousSelection;
