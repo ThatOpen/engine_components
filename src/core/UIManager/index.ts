@@ -1,4 +1,5 @@
-import { createPopper } from "@popperjs/core";
+// @ts-ignore
+import { createPopper } from "@popperjs/core/dist/esm";
 import { Component, Components } from "../../types";
 import { Toolbar } from "../ToolbarComponent";
 
@@ -57,10 +58,6 @@ export class UIManager extends Component<Toolbar[]> {
     const contextParent = document.createElement("div");
     contextParent.style.position = "absolute";
     contextParent.append(this.contextMenu.domElement);
-
-    // TODO: Find out why popper needs this to work
-    // @ts-ignore
-    window.process = { env: {} };
 
     const popperInstance = createPopper(
       contextParent,

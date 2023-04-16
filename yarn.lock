@@ -817,7 +817,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@popperjs/core@npm:^2.11.7":
+"@popperjs/core@npm:latest":
   version: 2.11.7
   resolution: "@popperjs/core@npm:2.11.7"
   checksum: 5b6553747899683452a1d28898c1b39173a4efd780e74360bfcda8eb42f1c5e819602769c81a10920fc68c881d07fb40429604517d499567eac079cfa6470f19
@@ -5356,7 +5356,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "openbim-components@workspace:."
   dependencies:
-    "@popperjs/core": ^2.11.7
+    "@popperjs/core": latest
     "@rollup/plugin-commonjs": ^22.0.2
     "@rollup/plugin-node-resolve": ^14.1.0
     "@types/jest": ^26.0.23

@@ -5098,16 +5098,7 @@ function effect$1(_ref2) {
     }
   }
 
-  if (process.env.NODE_ENV !== "production") {
-    if (!isHTMLElement(arrowElement)) {
-      console.error(['Popper: "arrow" element must be an HTMLElement (not an SVGElement).', 'To use an SVG arrow, wrap it in an HTMLElement that will be used as', 'the arrow.'].join(' '));
-    }
-  }
-
   if (!contains(state.elements.popper, arrowElement)) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error(['Popper: "arrow" modifier\'s `element` must be a child of the popper', 'element.'].join(' '));
-    }
 
     return;
   }
@@ -5250,16 +5241,6 @@ function computeStyles(_ref5) {
       adaptive = _options$adaptive === void 0 ? true : _options$adaptive,
       _options$roundOffsets = options.roundOffsets,
       roundOffsets = _options$roundOffsets === void 0 ? true : _options$roundOffsets;
-
-  if (process.env.NODE_ENV !== "production") {
-    var transitionProperty = getComputedStyle(state.elements.popper).transitionProperty || '';
-
-    if (adaptive && ['transform', 'top', 'right', 'bottom', 'left'].some(function (property) {
-      return transitionProperty.indexOf(property) >= 0;
-    })) {
-      console.warn(['Popper: Detected CSS transitions on at least one of the following', 'CSS properties: "transform", "top", "right", "bottom", "left".', '\n\n', 'Disable the "computeStyles" modifier\'s `adaptive` option to allow', 'for smooth transitions, or remove these properties from the CSS', 'transition declaration on the popper element if only transitioning', 'opacity or background-color for example.', '\n\n', 'We recommend using the popper element as a wrapper around an inner', 'element that can have any CSS property transitioned for animations.'].join(' '));
-    }
-  }
 
   var commonStyles = {
     placement: getBasePlacement(state.placement),
@@ -5701,10 +5682,6 @@ function computeAutoPlacement(state, options) {
 
   if (allowedPlacements.length === 0) {
     allowedPlacements = placements$1;
-
-    if (process.env.NODE_ENV !== "production") {
-      console.error(['Popper: The `allowedAutoPlacements` option did not allow any', 'placements. Ensure the `placement` option matches the variation', 'of the allowed placements.', 'For example, "auto" cannot be used to allow "bottom-start".', 'Use "auto-start" instead.'].join(' '));
-    }
   } // $FlowFixMe[incompatible-type]: Flow seems to have problems with two array unions...
 
 
@@ -6256,108 +6233,6 @@ function debounce(fn) {
   };
 }
 
-function format(str) {
-  for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-    args[_key - 1] = arguments[_key];
-  }
-
-  return [].concat(args).reduce(function (p, c) {
-    return p.replace(/%s/, c);
-  }, str);
-}
-
-var INVALID_MODIFIER_ERROR = 'Popper: modifier "%s" provided an invalid %s property, expected %s but got %s';
-var MISSING_DEPENDENCY_ERROR = 'Popper: modifier "%s" requires "%s", but "%s" modifier is not available';
-var VALID_PROPERTIES = ['name', 'enabled', 'phase', 'fn', 'effect', 'requires', 'options'];
-function validateModifiers(modifiers) {
-  modifiers.forEach(function (modifier) {
-    [].concat(Object.keys(modifier), VALID_PROPERTIES) // IE11-compatible replacement for `new Set(iterable)`
-    .filter(function (value, index, self) {
-      return self.indexOf(value) === index;
-    }).forEach(function (key) {
-      switch (key) {
-        case 'name':
-          if (typeof modifier.name !== 'string') {
-            console.error(format(INVALID_MODIFIER_ERROR, String(modifier.name), '"name"', '"string"', "\"" + String(modifier.name) + "\""));
-          }
-
-          break;
-
-        case 'enabled':
-          if (typeof modifier.enabled !== 'boolean') {
-            console.error(format(INVALID_MODIFIER_ERROR, modifier.name, '"enabled"', '"boolean"', "\"" + String(modifier.enabled) + "\""));
-          }
-
-          break;
-
-        case 'phase':
-          if (modifierPhases.indexOf(modifier.phase) < 0) {
-            console.error(format(INVALID_MODIFIER_ERROR, modifier.name, '"phase"', "either " + modifierPhases.join(', '), "\"" + String(modifier.phase) + "\""));
-          }
-
-          break;
-
-        case 'fn':
-          if (typeof modifier.fn !== 'function') {
-            console.error(format(INVALID_MODIFIER_ERROR, modifier.name, '"fn"', '"function"', "\"" + String(modifier.fn) + "\""));
-          }
-
-          break;
-
-        case 'effect':
-          if (modifier.effect != null && typeof modifier.effect !== 'function') {
-            console.error(format(INVALID_MODIFIER_ERROR, modifier.name, '"effect"', '"function"', "\"" + String(modifier.fn) + "\""));
-          }
-
-          break;
-
-        case 'requires':
-          if (modifier.requires != null && !Array.isArray(modifier.requires)) {
-            console.error(format(INVALID_MODIFIER_ERROR, modifier.name, '"requires"', '"array"', "\"" + String(modifier.requires) + "\""));
-          }
-
-          break;
-
-        case 'requiresIfExists':
-          if (!Array.isArray(modifier.requiresIfExists)) {
-            console.error(format(INVALID_MODIFIER_ERROR, modifier.name, '"requiresIfExists"', '"array"', "\"" + String(modifier.requiresIfExists) + "\""));
-          }
-
-          break;
-
-        case 'options':
-        case 'data':
-          break;
-
-        default:
-          console.error("PopperJS: an invalid property has been provided to the \"" + modifier.name + "\" modifier, valid properties are " + VALID_PROPERTIES.map(function (s) {
-            return "\"" + s + "\"";
-          }).join(', ') + "; but \"" + key + "\" was provided.");
-      }
-
-      modifier.requires && modifier.requires.forEach(function (requirement) {
-        if (modifiers.find(function (mod) {
-          return mod.name === requirement;
-        }) == null) {
-          console.error(format(MISSING_DEPENDENCY_ERROR, String(modifier.name), requirement, requirement));
-        }
-      });
-    });
-  });
-}
-
-function uniqueBy(arr, fn) {
-  var identifiers = new Set();
-  return arr.filter(function (item) {
-    var identifier = fn(item);
-
-    if (!identifiers.has(identifier)) {
-      identifiers.add(identifier);
-      return true;
-    }
-  });
-}
-
 function mergeByName(modifiers) {
   var merged = modifiers.reduce(function (merged, current) {
     var existing = merged[current.name];
@@ -6373,8 +6248,6 @@ function mergeByName(modifiers) {
   });
 }
 
-var INVALID_ELEMENT_ERROR = 'Popper: Invalid reference or popper argument provided. They must be either a DOM element or virtual element.';
-var INFINITE_LOOP_ERROR = 'Popper: An infinite loop in the modifiers cycle has been detected! The cycle has been interrupted to prevent a browser crash.';
 var DEFAULT_OPTIONS = {
   placement: 'bottom',
   modifiers: [],
@@ -6437,40 +6310,6 @@ function popperGenerator(generatorOptions) {
         state.orderedModifiers = orderedModifiers.filter(function (m) {
           return m.enabled;
         }); // Validate the provided modifiers so that the consumer will get warned
-        // if one of the modifiers is invalid for any reason
-
-        if (process.env.NODE_ENV !== "production") {
-          var modifiers = uniqueBy([].concat(orderedModifiers, state.options.modifiers), function (_ref) {
-            var name = _ref.name;
-            return name;
-          });
-          validateModifiers(modifiers);
-
-          if (getBasePlacement(state.options.placement) === auto) {
-            var flipModifier = state.orderedModifiers.find(function (_ref2) {
-              var name = _ref2.name;
-              return name === 'flip';
-            });
-
-            if (!flipModifier) {
-              console.error(['Popper: "auto" placements require the "flip" modifier be', 'present and enabled to work.'].join(' '));
-            }
-          }
-
-          var _getComputedStyle = getComputedStyle(popper),
-              marginTop = _getComputedStyle.marginTop,
-              marginRight = _getComputedStyle.marginRight,
-              marginBottom = _getComputedStyle.marginBottom,
-              marginLeft = _getComputedStyle.marginLeft; // We no longer take into account `margins` on the popper, and it can
-          // cause bugs with positioning, so we'll warn the consumer
-
-
-          if ([marginTop, marginRight, marginBottom, marginLeft].some(function (margin) {
-            return parseFloat(margin);
-          })) {
-            console.warn(['Popper: CSS "margin" styles cannot be used to apply padding', 'between the popper and its reference element or boundary.', 'To replicate margin, use the `offset` modifier, as well as', 'the `padding` option in the `preventOverflow` and `flip`', 'modifiers.'].join(' '));
-          }
-        }
 
         runModifierEffects();
         return instance.update();
@@ -6491,9 +6330,6 @@ function popperGenerator(generatorOptions) {
         // anymore
 
         if (!areValidElements(reference, popper)) {
-          if (process.env.NODE_ENV !== "production") {
-            console.error(INVALID_ELEMENT_ERROR);
-          }
 
           return;
         } // Store the reference and popper rects to be read by modifiers
@@ -6517,17 +6353,8 @@ function popperGenerator(generatorOptions) {
         state.orderedModifiers.forEach(function (modifier) {
           return state.modifiersData[modifier.name] = Object.assign({}, modifier.data);
         });
-        var __debug_loops__ = 0;
 
         for (var index = 0; index < state.orderedModifiers.length; index++) {
-          if (process.env.NODE_ENV !== "production") {
-            __debug_loops__ += 1;
-
-            if (__debug_loops__ > 100) {
-              console.error(INFINITE_LOOP_ERROR);
-              break;
-            }
-          }
 
           if (state.reset === true) {
             state.reset = false;
@@ -6566,9 +6393,6 @@ function popperGenerator(generatorOptions) {
     };
 
     if (!areValidElements(reference, popper)) {
-      if (process.env.NODE_ENV !== "production") {
-        console.error(INVALID_ELEMENT_ERROR);
-      }
 
       return instance;
     }
@@ -6698,6 +6522,7 @@ class Toolbar extends Component {
 }
 _Toolbar_position = new WeakMap(), _Toolbar_enabled = new WeakMap(), _Toolbar_visible = new WeakMap();
 
+// @ts-ignore
 class UIManager extends Component {
     constructor(components) {
         super();
@@ -6736,9 +6561,6 @@ class UIManager extends Component {
         const contextParent = document.createElement("div");
         contextParent.style.position = "absolute";
         contextParent.append(this.contextMenu.domElement);
-        // TODO: Find out why popper needs this to work
-        // @ts-ignore
-        window.process = { env: {} };
         const popperInstance = createPopper(contextParent, this.contextMenu.domElement, {
             placement: "bottom-start",
             modifiers: [
@@ -9462,17 +9284,17 @@ class Button extends Component {
                 this.domElement.append(name);
             }
         }
-        this.domElement.onclick = e => {
+        this.domElement.onclick = (e) => {
             var _a;
             e.stopImmediatePropagation();
-            //@ts-ignore
+            // @ts-ignore
             if (!((_a = this.parent) === null || _a === void 0 ? void 0 : _a.parent) && this.components.ui) {
                 this.components.ui.closeMenus();
             }
             this.menu.visible = true;
             __classPrivateFieldGet(this, _Button_popper, "f").update();
         };
-        //#region Extensible menu
+        // #region Extensible menu
         this.menu = new Toolbar(components);
         this.menu.visible = false;
         this.menu.parent = this;
@@ -9481,38 +9303,45 @@ class Button extends Component {
         __classPrivateFieldSet(this, _Button_popper, createPopper(this.domElement, this.menu.domElement, {
             modifiers: [
                 {
-                    name: 'offset',
-                    options: { offset: [0, 15] }
+                    name: "offset",
+                    options: { offset: [0, 15] },
                 },
                 {
                     name: "preventOverflow",
-                    //@ts-ignore
-                    options: { boundary: this.components.ui.viewerContainer }
-                }
-            ]
+                    // @ts-ignore
+                    options: { boundary: this.components.ui.viewerContainer },
+                },
+            ],
         }), "f");
-        this.parent;
-        //#endregion
+        // #endregion
     }
-    get active() { return __classPrivateFieldGet(this, _Button_active, "f"); }
+    get active() {
+        return __classPrivateFieldGet(this, _Button_active, "f");
+    }
     set active(active) {
         this.domElement.setAttribute("data-active", String(active));
         __classPrivateFieldSet(this, _Button_active, active, "f");
     }
-    set visible(visible) { __classPrivateFieldSet(this, _Button_visible, visible, "f"); } // Not implemented yet.
-    get visible() { return __classPrivateFieldGet(this, _Button_visible, "f"); }
+    set visible(visible) {
+        __classPrivateFieldSet(this, _Button_visible, visible, "f");
+    } // Not implemented yet.
+    get visible() {
+        return __classPrivateFieldGet(this, _Button_visible, "f");
+    }
     set enabled(enabled) {
         this.domElement.disabled = !enabled;
         __classPrivateFieldSet(this, _Button_enabled, enabled, "f");
     }
-    get enabled() { return __classPrivateFieldGet(this, _Button_enabled, "f"); }
+    get enabled() {
+        return __classPrivateFieldGet(this, _Button_enabled, "f");
+    }
     set onclick(listener) {
-        this.domElement.onclick = e => {
+        this.domElement.onclick = (e) => {
             e.stopImmediatePropagation();
             listener(e);
-            //@ts-ignore
+            // @ts-ignore
             this.components.ui.closeMenus();
-            //@ts-ignore
+            // @ts-ignore
             this.components.ui.contextMenu.visible = false;
         };
     }
@@ -9521,8 +9350,12 @@ class Button extends Component {
         this.menu.position = toolbar.position;
         __classPrivateFieldGet(this, _Button_instances, "m", _Button_updateMenuPlacement).call(this);
     }
-    get parent() { return __classPrivateFieldGet(this, _Button_parent, "f"); }
-    get() { return this.domElement; }
+    get parent() {
+        return __classPrivateFieldGet(this, _Button_parent, "f");
+    }
+    get() {
+        return this.domElement;
+    }
     addButton(...button) {
         this.menu.addButton(...button);
     }
