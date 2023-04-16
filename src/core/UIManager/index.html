@@ -40,6 +40,8 @@
 	components.raycaster = new OBC.SimpleRaycaster(components);
 	components.init();
 
+	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+
 	const scene = components.scene.get();
 
 	const directionalLight = new THREE.DirectionalLight();
