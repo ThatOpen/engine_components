@@ -56,9 +56,11 @@
 	components.tools.add(grid);
 
 	/*MD
-  ## Touch your geometry! 👉🏢
-  In this tutorial, we'll learn to **interact with our scene**, both with the mouse 🐀 and the touch screen of a phone
-  📱 or tablet 🍎. This might sound daunting, but it's actually very easy! Let's see **how to do that in 5 minutes**.
+  ### 🤏 Touching things
+  ___
+  In this tutorial, we'll learn to **interact with our scene**. This will work both for a mouse 🐀 and for the touch
+  screen of a phone 📱 or tablet 🍎. This might sound daunting, but it's actually very easy! Let's see **how to do that
+  in 5 minutes**.
 
   :::tip First, let's set up a simple scene!
 
@@ -97,7 +99,8 @@
 	blueCube.position.x = -5;
 
 	/*MD
-	 ## Spinning up the cubes 😵
+	 ### 🔄 Spinning up the cubes
+	 ___
   To spice things up a little, let's create an animation loop that rotates the cubes each frame. You can do this super
   easily by creating a function and adding it to the `beforeUpdate` event of the **RendererComponent** inside
   **Components** using the `on()` method:
@@ -116,7 +119,17 @@
   components.renderer.beforeUpdate.on(rotateCubes);
 
 	/*MD
-	## Setting up the raycaster ⚡👌
+
+	:::info Turning off animations
+
+  You can turn off animations simply by using the `off()` method.
+  [This works for any event](../api/classes/components.Event)
+  in the library! ⌚
+
+  :::
+
+	### ⚡ Casting rays around
+	___
   Awesome! Now, when we pick a cube, we will substitute the original material by the yellow material. Afterwards, we
   will need a way to get back the original material. We can easily achieve this by adding a reference to the material
   in the `userData` property, which is an object where you can add any data you need:

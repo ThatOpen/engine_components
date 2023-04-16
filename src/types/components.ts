@@ -8,7 +8,7 @@ import {
 
 import { Raycaster } from "./index";
 import { Component } from "./component";
-import { ToolComponents } from "../core";
+import { ToolComponent } from "../core";
 import { BaseRenderer } from "./base-renderer";
 import { UIManager } from "../core/UIManager";
 
@@ -21,9 +21,9 @@ import { UIManager } from "../core/UIManager";
  */
 export class Components {
   /**
-   * {@link ToolComponents}
+   * {@link ToolComponent}
    */
-  readonly tools: ToolComponents;
+  readonly tools: ToolComponent;
 
   /**
    * {@link UIManager}
@@ -119,7 +119,7 @@ export class Components {
 
   constructor() {
     this._clock = new THREE.Clock();
-    this.tools = new ToolComponents();
+    this.tools = new ToolComponent();
     this.ui = new UIManager(this);
     Components.setupBVH();
   }

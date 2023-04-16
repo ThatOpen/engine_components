@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="../../../resources/styles.css">
+  <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+  <title>Tools Component</title>
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.135.0/build/three.module.js",
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
+        "openbim-components": "../../../resources/openbim-components.js"
+      }
+    }
+</script>
+<script type="module">
+
+	// Set up scene (see SimpleScene tutorial)
+
+	import * as THREE from 'three';
+	import * as OBC from 'openbim-components';
+
+	const container = document.getElementById('container');
+
+	const components = new OBC.Components();
+
+	components.scene = new OBC.SimpleScene(components);
+	components.renderer = new OBC.SimpleRenderer(components, container);
+	components.camera = new OBC.SimpleCamera(components);
+	components.raycaster = new OBC.SimpleRaycaster(components);
+
+	components.init();
+
+	const scene = components.scene.get();
+
+	scene.background = null;
+	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+
+	const directionalLight = new THREE.DirectionalLight();
+	directionalLight.position.set(5, 10, 3);
+	directionalLight.intensity = 0.5;
+	scene.add(directionalLight);
+
+	const ambientLight = new THREE.AmbientLight();
+	ambientLight.intensity = 0.5;
+	scene.add(ambientLight);
+
+	/*MD
+  ### 🍱 Keeping things tidy
+  ___
+  BIM applications are complex and can have a lot of different functionalities. Of course, this means that they can
+  have a lot of components. Keeping your project tidy and clean can be a challenge if you need certain components
+  in different places of your app.
+
+  Luckily, there's an easier way of handling this: the [Tools Component](../api/classes/components.ToolsComponent)!
+  This component has two purposes:
+
+  - Making your components available anywhere in your application.
+  - Getting your tools from [That Open Platform](../that-open-platform/getting-started.mdx).
+
+  ### ✨ Components anywhere
+  ___
+  First, we will create a very simple tool: a [simple grid component](../api/classes/components.SimpleGrid). It's not
+  very exciting, but we don't want to distract you with the fanciness of the component! This same workflow will work for
+  any other component that you use.
+
+  First, let's instantiate it:
+  */
+
+	const grid = new OBC.SimpleGrid(components);
+
+	/*MD
+  Now, it is likely that your application will have many menus. What if you need access to this component In many
+  places? For example, you may have a menu that controls the color and size of the grid, and other menus that goes
+  into floor plan navigation mode and need to hide the grid.
+
+  To solve this situation, you just need to add the SimpleGrid component to the ToolsComponent. That's it!
+  */
+
+	components.tools.add(grid);
+
+	/*MD
+  Now, getting the SimpleGrid component back is as easy as using the `get()` method and passing the name of the
+  component as an argument. That's it! 👇
+  */
+
+	const grid = components.tools.get("SimpleGrid");
+
+	/*MD
+	:::info Clean code, clean memory 🧹
+
+  The tools component also keeps track of the memory usage of the components and automatically cleans it for you when
+  you call `components.dispose()`,
+  [so that you don't have to](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
+
+  :::
+
+	### ⛅ Components from the cloud
+  ___
+  Maybe you have uploaded some components to That Open Platform and want to easily share them with someone. Or maybe you
+  have got some nice components in the Marketplace and want to use them in your app. Either way, using these components
+  is a piece of cake with ToolsComponent!
+
+   :::tip What's That Open Platform?
+
+  That Open Platform is a place where people can share, buy and sell their components for free. You can learn more about
+  how to get started [right here](../that-open-platform/getting-started.mdx).
+
+  :::
+
+  First, you will need a token to communicate with That Open Platform and the ID of the tool you want to 👇
+  */
+
+	const token =
+		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1IjoiYXV0aDB8NjNlNjU5MjY0OGM3M2ZlZjE2M2FkZDZhIiwiYSI6IjY0Mzk2ZDhkZTk4ZDcxY2NlZDFkYzQ3ZiJ9.RCAvy-YU8nRqd0pw-MYRA84GwxV3-4M62wf_37zpsbE";
+
+	const id = "643981b1d88f1db593855c8a";
+
+	/*MD
+  Next, you can get the component with the `use` command. That will give you the class of the component, which you can
+  easily instantiate like a normal class. That's all it takes!
+
+   :::danger What about types?
+
+  If you want to get all the types and intellisense docs for the component,
+  [check this out](../that-open-platform/getting-started.mdx)!
+
+  :::
+  */
+
+	const CustomComponent = await components.tools.use(token, id);
+	const component = new CustomComponent();
+	component.greet();
+
+	/*MD
+  Fantastic work! 🎉🎉🎉 Now you know how to keep your components tidy and how to get them from the cloud. Another
+  step forward in your journey to build your own BIM software. 🥳 Don't forget to check out That Open Platform if
+  you haven't already!
+  */
+
+</script>
+</body>
+</html>

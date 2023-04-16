@@ -24,7 +24,8 @@
 </script>
 <script type="module">
 	/*MD
-  ### Let's create a 3D world! 🌍
+  ### 🌍 Let's create a 3D world!
+  ___
   The `SimpleScene` component is the easiest way to create a 3D space to start working.
   Let's start by importing Components and Three.js:
   */
@@ -52,25 +53,26 @@
 
   :::
 
-  ### Setting up a components project 🧰
-
+  ### 🧰 Setting up a components project
+  ___
   Next, we will instantiate the main object of the library: **[Components](../api/classes/components.Components)**. 🤖
   This object will keep track of all the components that you create, making them
   easily accessible in all your application and making sure to update them
   in each frame, so you don't have to worry about that. 💪
-  */
 
-	const components = new OBC.Components();
+  :::danger The minimum components application
 
-	/*MD
-  Great! But this object needs 4 things to work:
+  Any components app needs 4 things to work:
   - 🌍 A **[scene component](../api/classes/components.SimpleScene)** where our objects will live in 3D.
   - ⌚ A **[renderer component](../api/classes/components.SimpleRenderer)** that allows us to see things moving around.
   - 🎥 A **[camera component](../api/classes/components.SimpleCamera)** that defines where we are and in that 3D world.
   - ⚡ A **[raycaster component](../api/classes/components.SimpleRaycaster)** that makes it possible to interact with
   that 3D scene with our mouse / touch.
+
+  :::
   */
 
+	const components = new OBC.Components();
 	components.scene = new OBC.SimpleScene(components);
 	components.renderer = new OBC.SimpleRenderer(components, container);
 	components.camera = new OBC.SimpleCamera(components);
@@ -94,6 +96,8 @@
 	const scene = components.scene.get();
 
 	/*MD
+	### 🎥 Adjusting scene and camera
+  ___
   Great! Now we will make the background of our scene transparent. You don't have to do it; we are doing it because
   that way this app will be more integrated with the documentation page when setting it to light/dark mode.
   */
@@ -104,27 +108,33 @@
   Now we will locate the camera in a nice starting position. We can control the `SimpleCamera` component through its
   `controls` attribute. This object is an instance of the [camera-controls](https://github.com/yomotsu/camera-controls)
   library, which makes it super easy to control the camera in our 3D scene. We will set the position of the camera
-  to `[20, 20, 20]` and make it look at the origin (`[0, 0, 0]`).
+  to `[10, 10, 10]` and make it look at the origin (`[0, 0, 0]`).
   */
 
-	components.camera.controls.setLookAt(20, 20, 20, 0, 0, 0);
+	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
 	/*MD
+	### 🏀 Adding some 3D objects
+  ___
   Awesome! We are now ready to start adding some objects. First, we will add a
   **[simple grid component](../api/classes/components.SimpleGrid)**. As the name implies, this component adds a simple
-  2D grid to the scene that we can use as a reference. Don't forget to add it to the
-  **[tools components](../api/classes/components.ToolComponents)** so that you can access it from anywhere in your
-  application!
+  2D grid to the scene that we can use as a reference.
 
-  For more information about the Tools component, check out [its own tutorial](./ToolsComponents.mdx)!
   */
 	const grid = new OBC.SimpleGrid(components);
 	components.tools.add(grid);
 
   /*MD
-  Fantastic 🚀 Now we finally can see how we move around! Now, let's add some real geometry to our small 3D app. All
-  the components are built on top of [Three.js](https://threejs.org/), which means that Three.js code will work natively
-  with them. This is great, because you can easily integrate components with any 3D app that you create.
+  :::tip Adding it to the tools component
+
+  The Tools Component will help you keep your code tidy. For more information about the Tools component, check out
+  [its own tutorial](./ToolsComponent.mdx). 🔍
+
+  :::
+
+  🚀 Also, let's add some real geometry to our small 3D app. All the components are built on top of
+  [Three.js](https://threejs.org/), which means that Three.js code will work natively with them.
+  This is great, because you can easily integrate components with any 3D app that you create.
 
   Let's try it by adding a simple red cube:
   */
@@ -136,6 +146,8 @@
 	scene.add(cube);
 
 	/*MD
+	### 🔦 Lighting things up
+  ___
   Of course, everything is black because we have no lights! Let's fix it by adding some basic illumination:
   */
 
@@ -149,9 +161,32 @@
 	scene.add(ambientLight);
 
 	/*MD
-And voilà! You have made your first 3D application using components. Easy, right? Of course, this is still far from a
-full-fledged BIM app, but don't worry! Keep following our tutorials and your app will go from zero to hero in no time! 🚀
-*/
+  ### 🧹 Cleaning up
+  ___
+  As you might now, JavaScript has an automatic garbage collector that gets rid of the variables that you are no longer
+  using. Unfortunately, that's not the case for
+  [Three.js](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects). But don't worry: components
+  takes care of this for you. When you are finished working with a `Components` instance, simply call
+  `components.dispose()` and we will clean everything up for you!
+
+  :::caution Watch your variables!
+
+  When you dispose the memory, make sure that you don't have any object or array referencing anything inside the
+  `Components` instance or this won't work, because JavaScript will detect that you are still using it!
+
+  :::
+
+  :::tip Using React, Angular, Vue...?
+
+  This topic is especially relevant in Single Page Application technologies because they never reload the page (which
+  would release all the memory automatically). If you are using some of these, make sure that you set up the disposing
+  logic to fire when you re-render the component that has the 3D app.
+
+  :::
+
+  And voilà! You have made your first 3D application using components. Easy, right? Of course, this is still far from a
+  full-fledged BIM app, but don't worry! Keep following our tutorials and your app will go from zero to hero in no time! 🚀
+  */
 
 </script>
 </body>

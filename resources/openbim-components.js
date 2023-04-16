@@ -130,12 +130,17 @@ class SimpleScene extends Component {
     }
 }
 
+const urls = {
+    base: "https://2fomw59q4h.execute-api.eu-central-1.amazonaws.com/v1/tools/",
+    path: "/contents/index.js?accessToken=",
+};
+
 /**
  * An object to easily handle all the tools used (e.g. updating them, retrieving
  * them, performing batch operations, etc). A tool is a feature that achieves
  * something through user interaction (e.g. clipping planes, dimensions, etc).
  */
-class ToolComponents {
+class ToolComponent {
     constructor() {
         this.tools = [];
     }
@@ -164,6 +169,19 @@ class ToolComponents {
      */
     get(name) {
         return this.tools.find((tool) => tool.name === name);
+    }
+    /**
+     * Gets one of your tools of That Open Platform. You can pass the type of
+     * component as the generic parameter T to get the types and intellisense
+     * for the component.
+     * @param token The authentication token to authorise this request.
+     * @param id The ID of the tool you want to get
+     */
+    async use(token, id) {
+        const { base, path } = urls;
+        const url = base + id + path + token;
+        const imported = await import(url);
+        return imported.get();
     }
     /**
      * Updates all the registered tool components. Only the components where the
@@ -6826,7 +6844,7 @@ class Components {
             renderer.setAnimationLoop(this.update);
         };
         this._clock = new THREE$1.Clock();
-        this.tools = new ToolComponents();
+        this.tools = new ToolComponent();
         this.ui = new UIManager(this);
         Components.setupBVH();
     }
@@ -9531,4 +9549,4 @@ _Button_enabled = new WeakMap(), _Button_visible = new WeakMap(), _Button_parent
     __classPrivateFieldGet(this, _Button_popper, "f").setOptions({ placement });
 };
 
-export { BaseRenderer, Button, Component, Components, Disposer, Event, Mouse, SimpleCamera, SimpleGrid, SimpleRaycaster, SimpleRenderer, SimpleScene, ToolComponents, Toolbar, UIManager };
+export { BaseRenderer, Button, Component, Components, Disposer, Event, Mouse, SimpleCamera, SimpleGrid, SimpleRaycaster, SimpleRenderer, SimpleScene, ToolComponent, Toolbar, UIManager };
