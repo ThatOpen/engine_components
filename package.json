@@ -34,11 +34,11 @@
   },
   "dependencies": {
     "@popperjs/core": "latest",
-    "bim-fragment": "0.0.13",
+    "bim-fragment": "0.0.17",
     "camera-controls": "^1.36.0",
     "stats.js": "^0.17.0",
     "three": "0.135",
     "three-mesh-bvh": "^0.5.15",
-    "web-ifc": "^0.0.36"
+    "web-ifc": "^0.0.39"
   }
 }
