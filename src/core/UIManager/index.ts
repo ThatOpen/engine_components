@@ -11,6 +11,9 @@ interface IContainers {
   [key: string]: HTMLDivElement;
 }
 
+/**
+ * A component that handles all UI components.
+ */
 export class UIManager extends Component<Toolbar[]> {
   name: string = "UIManager";
   enabled: boolean = true;

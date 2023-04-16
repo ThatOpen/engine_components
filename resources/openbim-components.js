@@ -9256,6 +9256,7 @@ class Button extends Component {
         var _a, _b;
         super();
         _Button_instances.add(this);
+        this._closeOnClick = true;
         _Button_enabled.set(this, true);
         _Button_visible.set(this, true);
         _Button_parent.set(this, void 0);
@@ -9282,6 +9283,9 @@ class Button extends Component {
                 name.style.whiteSpace = "nowrap";
                 name.innerText = options.name;
                 this.domElement.append(name);
+            }
+            if ((options === null || options === void 0 ? void 0 : options.closeOnClick) !== undefined) {
+                this._closeOnClick = options.closeOnClick;
             }
         }
         this.domElement.onclick = (e) => {
@@ -9339,10 +9343,10 @@ class Button extends Component {
         this.domElement.onclick = (e) => {
             e.stopImmediatePropagation();
             listener(e);
-            // @ts-ignore
-            this.components.ui.closeMenus();
-            // @ts-ignore
-            this.components.ui.contextMenu.visible = false;
+            if (this._closeOnClick) {
+                this.components.ui.closeMenus();
+                this.components.ui.contextMenu.visible = false;
+            }
         };
     }
     set parent(toolbar) {

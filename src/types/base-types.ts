@@ -122,8 +122,7 @@ export interface Progress {
   total: number;
 }
 
-
-/** Base interface to be implemented by any kind of component 
+/** Base interface to be implemented by any kind of component
  * aimed to render user interface (DOM elements) in the viewer.
  */
 export interface UIComponent extends Disposable, Hideable {
@@ -132,9 +131,28 @@ export interface UIComponent extends Disposable, Hideable {
   enabled: boolean
 }
 
-/** Whether this component has a representation in the user 
+/**
+ * Whether this component supports create and destroy operations. This generally
+ * applies for components that work with instances, such as clipping planes or
+ * dimensions.
+ */
+export interface Createable {
+  /** Creates a new instance of an element (e.g. a new Dimension). */
+  create: (data: any) => void;
+
+  /** Fired after successfully calling {@link Createable.create()}  */
+  afterCreate: Event<any>;
+
+  /** Deletes an existing instance of an element (e.g. a Dimension). */
+  delete: (data: any) => void;
+
+  /** Fired after successfully calling {@link Createable.delete()}  */
+  afterDelete: Event<any>;
+}
+
+/** Whether this component has a representation in the user
  * interface, like a button or a window.
  */
 export interface UI {
-  uiElement: UIComponent
+  uiElement: UIComponent;
 }
