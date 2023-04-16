@@ -126,7 +126,7 @@ export interface Progress {
 /** Base interface to be implemented by any kind of component 
  * aimed to render user interface (DOM elements) in the viewer.
  */
-export interface UIComponent {
+export interface UIComponent extends Disposable, Hideable {
   domElement: HTMLElement
   visible: boolean
   enabled: boolean
