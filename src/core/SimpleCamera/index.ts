@@ -1,12 +1,7 @@
 import * as THREE from "three";
 import CameraControls from "camera-controls";
-import {
-  Component,
-  Components,
-  Disposable,
-  Updateable,
-  Event,
-} from "../../types";
+import { Component, Disposable, Updateable, Event } from "../../base-types";
+import { Components } from "../Components";
 
 /**
  * A basic camera that uses

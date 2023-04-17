@@ -1,6 +1,6 @@
-import { Disposable } from "../../../";
-
 // TODO: Clean up and document
+
+import { Disposable } from "../base-types";
 
 export class FragmentProperties implements Disposable {
   properties: { [guid: string]: any } = {};

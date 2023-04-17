@@ -8,7 +8,8 @@ import {
   Object3D,
 } from "three";
 import { Fragment } from "bim-fragment";
-import { Disposable, Disposer, Components } from "../../../";
+import { Disposable } from "../base-types";
+import { Components, Disposer } from "../core";
 
 // TODO: Clean up and document
 

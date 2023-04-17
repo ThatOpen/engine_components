@@ -1,7 +1,8 @@
 // @ts-ignore
 import { createPopper } from "@popperjs/core/dist/esm";
-import { Component, Components } from "../../types";
+import { Component } from "../../base-types";
 import { Toolbar } from "../ToolbarComponent";
+import { Components } from "../../core";
 
 export type IContainerPosition = "top" | "right" | "bottom" | "left";
 

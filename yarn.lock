@@ -1681,13 +1681,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bim-fragment@npm:0.0.13":
-  version: 0.0.13
-  resolution: "bim-fragment@npm:0.0.13"
+"bim-fragment@npm:latest":
+  version: 0.0.17
+  resolution: "bim-fragment@npm:0.0.17"
   dependencies:
+    flatbuffers: ^23.3.3
     three: 0.135
     three-mesh-bvh: ^0.5.14
-  checksum: 63ed0c6d072cb76e4e7d766ee4b7cf950dbd7756e2b226cc236d3d68006b38d4ab7adb6cba8879c96f8a4bdbea366864921f365996dd19841b5c47016d6775ca
+  checksum: 3ba58c362a13b913233d1ed64d76dc34ce7dd943796f6cf4916e8ccfa36d927d4ab7e71fe067933fda4979b93232e7a5ecb0c1d43fa11053f6da266a44defa51
   languageName: node
   linkType: hard
 
@@ -3035,6 +3036,13 @@ __metadata:
     flatted: ^3.1.0
     rimraf: ^3.0.2
   checksum: 4fdd10ecbcbf7d520f9040dd1340eb5dfe951e6f0ecf2252edeec03ee68d989ec8b9a20f4434270e71bcfd57800dc09b3344fca3966b2eb8f613072c7d9a2365
+  languageName: node
+  linkType: hard
+
+"flatbuffers@npm:^23.3.3":
+  version: 23.3.3
+  resolution: "flatbuffers@npm:23.3.3"
+  checksum: 7d8352e233cc81942e36b2ccfd7f3baf5d9a5e9614ebd83e9f4bc4accaebd43cb824788bd76334f5a61a8c2a74ddfd8f87ca7ac01cc522ad2774ae66c276dff1
   languageName: node
   linkType: hard
 
@@ -5364,7 +5372,7 @@ __metadata:
     "@types/three": ^0.143.0
     "@typescript-eslint/eslint-plugin": ^4.27.0
     "@typescript-eslint/parser": ^4.27.0
-    bim-fragment: 0.0.13
+    bim-fragment: latest
     camera-controls: ^1.36.0
     cpy-cli: ^3.1.1
     eslint: ^7.28.0
@@ -5381,7 +5389,7 @@ __metadata:
     ts-jest: ^27.0.3
     ts-node: ^10.0.0
     typescript: ^4.3.2
-    web-ifc: ^0.0.36
+    web-ifc: ^0.0.39
   languageName: unknown
   linkType: soft
 
@@ -7040,10 +7048,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"web-ifc@npm:^0.0.36":
-  version: 0.0.36
-  resolution: "web-ifc@npm:0.0.36"
-  checksum: 930ad124c22527454888644940ec97b5e5990690d1ba9d8c2eea08d1f8429fbf614a32c3881f38184ceb6f18d5be845420dd2f90d06603a1e556f10d2a825402
+"web-ifc@npm:^0.0.39":
+  version: 0.0.39
+  resolution: "web-ifc@npm:0.0.39"
+  checksum: 2feab5746ef61fc1106dfaaca3e59475f5015375774e091dd14092ef91aadf909e9e7d4a434c85d532f9e7d523c80eef53f9ddfc4ec02781f73d768c8e742910
   languageName: node
   linkType: hard
 

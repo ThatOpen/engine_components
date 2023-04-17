@@ -1,6 +1,6 @@
 import * as WEBIFC from "web-ifc";
-import { IfcItemsCategories } from "../ifc";
 import { Units } from "./units";
+import { IfcItemsCategories } from "../../ifc";
 
 export class SpatialStructure {
   floorProperties: any[] = [];

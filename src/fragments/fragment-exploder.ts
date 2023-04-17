@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { Fragments } from "../";
-import { Disposable } from "../../../";
+import { Disposable } from "../base-types";
+import { Fragments } from "./index";
 
 // TODO: Clean up and document
 
@@ -68,7 +68,6 @@ export class FragmentExploder implements Disposable {
               transform: tempMatrix,
               ids: [id],
             });
-            this.updateMemoryCulling(fragID, id, yTransform);
           }
         } else {
           // For merged fragments
@@ -79,30 +78,11 @@ export class FragmentExploder implements Disposable {
             transform: tempMatrix,
             ids: fragment.items,
           });
-          for (const id of fragment.items) {
-            this.updateMemoryCulling(fragID, id, yTransform);
-          }
         }
         fragment.mesh.instanceMatrix.needsUpdate = true;
       }
       i++;
     }
-  }
-
-  private updateMemoryCulling(
-    fragID: string,
-    itemID: string,
-    yTransform: THREE.Matrix4
-  ) {
-    const tempMatrix = new THREE.Matrix4();
-    const frags = this.fragments.memoryCuller.fragmentMeshMap[fragID];
-    if (!frags) return;
-    const proxy = frags[itemID];
-    if (!proxy) return;
-    proxy.mesh.getMatrixAt(proxy.index, tempMatrix);
-    tempMatrix.premultiply(yTransform);
-    proxy.mesh.setMatrixAt(proxy.index, tempMatrix);
-    proxy.mesh.instanceMatrix.needsUpdate = true;
   }
 
   private getOffsetY(y: number) {

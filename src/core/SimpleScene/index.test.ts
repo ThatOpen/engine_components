@@ -27,14 +27,12 @@ Test Plan:
 - test_name_empty: sets the name field to an empty string. Tags: [edge case]
 */
 
-
-
+import THREE from "three";
 import { Disposer } from "../MemoryComponent";
 import { SimpleScene } from "./index";
-import { Components } from "../../types";
-import THREE from 'three'
+import { Components } from "../../base-types";
 
-describe('SimpleScene_class', () => {
+describe("SimpleScene_class", () => {
   test("constructor", () => {
     const components = new Components();
     const scene = new SimpleScene(components);
@@ -75,9 +73,12 @@ describe('SimpleScene_class', () => {
     const components = new Components();
     const scene = new SimpleScene(components);
     const disposerSpy = jest.spyOn(Disposer.prototype, "dispose");
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(),
+      new THREE.MeshBasicMaterial()
+    );
     scene.get().add(mesh);
     scene.dispose();
     expect(disposerSpy).toHaveBeenCalled();
   });
-})
+});

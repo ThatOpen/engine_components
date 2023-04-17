@@ -1,8 +1,7 @@
 import * as THREE from "three";
-import { Components } from "../../types/components";
-import { Component } from "../../types/component";
-import { Disposable } from "../../types";
+import { Component, Disposable } from "../../base-types";
 import { Disposer } from "../MemoryComponent";
+import { Components } from "../Components";
 
 /**
  * A basic 3D [scene](https://threejs.org/docs/#api/en/scenes/Scene) to add

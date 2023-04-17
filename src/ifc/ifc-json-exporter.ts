@@ -1,6 +1,6 @@
 import * as WEBIFC from "web-ifc";
 import { GeometryTypes } from "./ifc-geometry-types";
-import { Event } from "../../../../";
+import { Event } from "../base-types";
 
 /**
  * Object to export all the properties from an IFC to a JS object.

@@ -1,4 +1,4 @@
-import { Component, Disposable } from "../../types";
+import { Component, Disposable } from "../../base-types";
 
 import { urls } from "./platform";
 

@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import { Component, Components, Raycaster, Mouse } from "../../types";
+import { Component, Raycaster, Mouse } from "../../base-types";
+import { Components } from "../Components";
 
 /**
  * A simple [raycaster](https://threejs.org/docs/#api/en/core/Raycaster)

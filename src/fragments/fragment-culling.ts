@@ -1,8 +1,9 @@
 import * as THREE from "three";
 import { Fragment } from "bim-fragment";
 import { Material } from "three";
-import { Fragments } from "../";
-import { Components, Disposable, Disposer, Event } from "../../../";
+import { Disposable, Event } from "../base-types";
+import { Components, Disposer } from "../core";
+import { Fragments } from "./index";
 
 // TODO: Clean up and document
 
@@ -222,7 +223,7 @@ export class FragmentCulling implements Disposable {
       material = new THREE.MeshBasicMaterial({
         color: new THREE.Color(code),
         clippingPlanes,
-        side: THREE.DoubleSide
+        side: THREE.DoubleSide,
       });
       this.materialCache.set(code, material);
     }

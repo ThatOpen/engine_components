@@ -1,7 +1,7 @@
-import { Fragments } from "../";
-import { Disposable } from "../../../";
-
 // TODO: Clean up and document
+
+import { Disposable } from "../base-types";
+import { Fragments } from "./index";
 
 export interface ItemGroupSystems {
   [systemName: string]: { [groupName: string]: string[] };

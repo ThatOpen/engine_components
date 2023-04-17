@@ -1,17 +1,17 @@
 import { FragmentLoader } from "bim-fragment/fragment-loader";
 import { Fragment, Serializer } from "bim-fragment";
 import * as THREE from "three";
-import { FragmentHighlighter } from "./temp";
-import { FragmentCulling } from "./temp";
-import { FragmentGrouper } from "./temp";
-import { FragmentEdges } from "./temp";
-import { FragmentMaterials } from "./temp";
-import { FragmentProperties } from "./temp";
-import { FragmentSpatialTree } from "./temp";
-import { Components, Component, Disposable } from "../../";
-import { IfcFragmentLoader } from "./temp/fragment-ifc-importer";
-import { MemoryCulling } from "./temp";
-import { FragmentExploder } from "./temp";
+import { Component, Disposable } from "../base-types";
+import { FragmentMaterials } from "./fragment-materials";
+import { FragmentHighlighter } from "./fragment-highlighter";
+import { IfcFragmentLoader } from "./fragment-ifc-importer";
+import { FragmentProperties } from "./fragment-properties";
+import { FragmentExploder } from "./fragment-exploder";
+import { FragmentSpatialTree } from "./fragment-spatial-tree";
+import { FragmentCulling } from "./fragment-culling";
+import { FragmentGrouper } from "./fragment-grouper";
+import { FragmentEdges } from "./fragment-edges";
+import { Components } from "../core";
 
 /**
  * Main object that manages all the components related to the
@@ -73,12 +73,6 @@ export class Fragments extends Component<Fragment[]> implements Disposable {
   culler: FragmentCulling;
 
   /**
-   * Fragment manager to add/remove fragments from memory depending
-   * on whether they are visible.
-   */
-  memoryCuller: MemoryCulling;
-
-  /**
    * Serializer to import and export binary fragments.
    */
   serializer = new Serializer();
@@ -92,7 +86,6 @@ export class Fragments extends Component<Fragment[]> implements Disposable {
     this.edges = new FragmentEdges(components);
     this.materials = new FragmentMaterials(this);
     this.culler = new FragmentCulling(components, this);
-    this.memoryCuller = new MemoryCulling(components);
   }
 
   /** {@link Component.get} */
@@ -106,7 +99,6 @@ export class Fragments extends Component<Fragment[]> implements Disposable {
     this.exploder.dispose();
     this.materials.dispose();
     this.culler.dispose();
-    this.memoryCuller.dispose();
   }
 
   // TODO: decouple the add() function from loading a fragment

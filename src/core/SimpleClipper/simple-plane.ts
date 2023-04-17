@@ -2,18 +2,19 @@ import * as THREE from "three";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls";
 import {
   Component,
-  Components,
   Disposable,
   Updateable,
   Event,
-} from "../../types";
+  Hideable,
+} from "../../base-types";
+import { Components } from "../Components";
 
 /**
  * Each of the planes created by {@link SimpleClipper}.
  */
 export class SimplePlane
   extends Component<THREE.Plane>
-  implements Disposable, Updateable
+  implements Disposable, Updateable, Hideable
 {
   /** {@link Component.name} */
   name = "SimplePlane";
@@ -25,13 +26,10 @@ export class SimplePlane
   beforeUpdate = new Event<THREE.Plane>();
 
   /** Event that fires when the user starts dragging a clipping plane. */
-  onStartDragging = new Event<void>();
+  draggingStarted = new Event<void>();
 
   /** Event that fires when the user stops dragging a clipping plane. */
-  onEndDragging = new Event<void>();
-
-  /** Whether this plane is used for floor plan navigation */
-  isPlan = false;
+  draggingEnded = new Event<void>();
 
   protected readonly _plane = new THREE.Plane();
 
@@ -56,12 +54,22 @@ export class SimplePlane
   }
 
   /** {@link Component.enabled} */
-  set enabled(enabled: boolean) {
-    this._enabled = enabled;
-    this._components.renderer.togglePlane(enabled, this._plane);
-    this._visible = enabled;
-    this._controls.visible = enabled;
-    this._helper.visible = enabled;
+  set enabled(state: boolean) {
+    this._enabled = state;
+    this._components.renderer.togglePlane(state, this._plane);
+  }
+
+  /** {@link Hideable.visible } */
+  get visible() {
+    return this._visible;
+  }
+
+  /** {@link Hideable.visible } */
+  set visible(state: boolean) {
+    this._visible = state;
+    this._controls.visible = state;
+    this._helper.visible = state;
+    this.toggleControls(state);
   }
 
   /** The meshes used for raycasting */
@@ -93,15 +101,13 @@ export class SimplePlane
     components: Components,
     origin: THREE.Vector3,
     normal: THREE.Vector3,
-    size: number,
     material: THREE.Material,
-    isPlan: boolean
+    size = 5
   ) {
     super();
     this._components = components;
     this._normal = normal;
     this._origin = origin;
-    this.isPlan = isPlan;
 
     this._components.renderer.togglePlane(true, this._plane);
     this._planeMesh = SimplePlane.newPlaneMesh(size, material);
@@ -109,13 +115,11 @@ export class SimplePlane
     this._controls = this.newTransformControls();
 
     this._plane.setFromNormalAndCoplanarPoint(normal, origin);
-    if (!isPlan) {
-      this.setupEvents();
-    }
+    this.toggleControls(true);
   }
 
   /** {@link Updateable.update} */
-  update(): void {
+  update = () => {
     if (!this._enabled) return;
     this.beforeUpdate.trigger(this._plane);
     this._plane.setFromNormalAndCoplanarPoint(
@@ -123,7 +127,7 @@ export class SimplePlane
       this._helper.position
     );
     this.afterUpdate.trigger(this._plane);
-  }
+  };
 
   /** {@link Component.get} */
   get() {
@@ -135,8 +139,8 @@ export class SimplePlane
     this._enabled = false;
     this.beforeUpdate.reset();
     this.afterUpdate.reset();
-    this.onStartDragging.reset();
-    this.onEndDragging.reset();
+    this.draggingStarted.reset();
+    this.draggingEnded.reset();
     this._helper.removeFromParent();
     this._components.renderer.togglePlane(false, this._plane);
     this._arrowBoundBox.removeFromParent();
@@ -151,9 +155,7 @@ export class SimplePlane
     const container = this._components.renderer.get().domElement;
     const controls = new TransformControls(camera, container);
     this.initializeControls(controls);
-    if (!this.isPlan) {
-      this._components.scene.get().add(controls);
-    }
+    this._components.scene.get().add(controls);
     return controls;
   }
 
@@ -174,27 +176,27 @@ export class SimplePlane
     this._arrowBoundBox.geometry.applyMatrix4(this._arrowBoundBox.matrix);
   }
 
-  private setupEvents() {
-    this._controls.addEventListener("change", () => this.update());
-
-    this._controls.addEventListener("dragging-changed", (event) =>
-      this.onDraggingChanged(event)
-    );
-  }
-
-  private onDraggingChanged(event: THREE.Event) {
-    if (this._enabled) {
-      this._visible = !event.value;
-      this.preventCameraMovement();
-      this.notifyDraggingChanged(event);
+  private toggleControls(state: boolean) {
+    if (state) {
+      this._controls.addEventListener("change", this.update);
+      this._controls.addEventListener("dragging-changed", this.changeDrag);
+    } else {
+      this._controls.removeEventListener("change", this.update);
+      this._controls.removeEventListener("dragging-changed", this.changeDrag);
     }
   }
 
+  private changeDrag = (event: THREE.Event) => {
+    this._visible = !event.value;
+    this.preventCameraMovement();
+    this.notifyDraggingChanged(event);
+  };
+
   private notifyDraggingChanged(event: THREE.Event) {
     if (event.value) {
-      this.onStartDragging.trigger();
+      this.draggingStarted.trigger();
     } else {
-      this.onEndDragging.trigger();
+      this.draggingEnded.trigger();
     }
   }
 
@@ -208,9 +210,7 @@ export class SimplePlane
     helper.position.copy(this._origin);
     this._planeMesh.position.z += 0.01;
     helper.add(this._planeMesh);
-    if (!this.isPlan) {
-      this._components.scene.get().add(helper);
-    }
+    this._components.scene.get().add(helper);
     return helper;
   }
 

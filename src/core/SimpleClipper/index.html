@@ -15,16 +15,18 @@
     {
       "imports": {
         "three": "https://unpkg.com/three@0.135.0/build/three.module.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.135.0/examples/jsm/libs/lil-gui.module.min.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
         "openbim-components": "../../../resources/openbim-components.js"
       }
     }
 </script>
 <script type="module">
-
 	// Set up scene (see SimpleScene tutorial)
 
 	import * as THREE from 'three';
+	import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
+	import Stats from 'stats.js/src/Stats.js';
 	import * as OBC from 'openbim-components';
 
 	const container = document.getElementById('container');
@@ -55,6 +57,8 @@
 	const grid = new OBC.SimpleGrid(components);
 	components.tools.add(grid);
 
+	// Add a cube to the scene
+
 	const cubeGeometry = new THREE.BoxGeometry(3, 3, 3);
 	const redMaterial = new THREE.MeshStandardMaterial({color: "red"});
 	const redCube = new THREE.Mesh(cubeGeometry, redMaterial);
@@ -62,7 +66,76 @@
 	scene.add(redCube);
 	components.meshes.push(redCube);
 
+	// Set up clipping planes
 
+	const clipper = new OBC.SimpleClipper(components, OBC.SimplePlane);
+	components.tools.add(clipper);
+	clipper.enabled = true;
+
+	container.ondblclick = () => clipper.create();
+
+	window.onkeydown = (event) => {
+		if (event.code === 'Delete' || event.code === 'Backspace') {
+			clipper.delete();
+		}
+	}
+
+	// Set up stats
+
+	const stats = new Stats();
+	stats.showPanel(2);
+	document.body.append(stats.dom);
+	stats.dom.style.left = '0px';
+	const renderer = components.renderer;
+	renderer.beforeUpdate.on(() => stats.begin());
+	renderer.afterUpdate.on(() => stats.end());
+
+	// Set up dat.gui menu
+
+	const gui = new dat.GUI();
+
+	const shortcutsFolder = gui.addFolder('Shortcuts');
+
+	const shortcuts = {
+		'Create clipping plane': "Double click" ,
+		'Delete clipping plane': "Delete"
+	}
+	shortcutsFolder.add(shortcuts, 'Create clipping plane');
+	shortcutsFolder.add(shortcuts, 'Delete clipping plane');
+
+	const actionsFolder = gui.addFolder('Actions');
+
+	actionsFolder.add(clipper, 'enabled').name("Toggle clipping planes enabled");
+	actionsFolder.add(clipper, 'visible').name("Toggle clipping planes visible");
+
+	const color = {
+		value: 0x000000
+	}
+
+	const helperColor = new THREE.Color();
+	actionsFolder.addColor(color, "value")
+		.name("Plane color")
+		.onChange((value) => {
+			helperColor.setHex(value);
+			clipper.material.color = helperColor;
+		});
+
+	actionsFolder.add(clipper, 'size').name("Plane Size").min(0).max(15);
+	actionsFolder.add(clipper.material, 'opacity').name("Plane Opacity").min(0).max(1);
+
+	const actions = {
+		'Delete all planes': () => {
+			clipper.deleteAll();
+		},
+		'Rotate cube': () => {
+			redCube.rotation.x = 2 * Math.PI * Math.random();
+			redCube.rotation.y = 2 * Math.PI * Math.random();
+			redCube.rotation.z = 2 * Math.PI * Math.random();
+		}
+	}
+
+	actionsFolder.add(actions, 'Rotate cube');
+	actionsFolder.add(actions, 'Delete all planes');
 
 </script>
 </body>

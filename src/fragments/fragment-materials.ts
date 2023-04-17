@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Fragment } from "bim-fragment";
-import { Fragments } from "../";
-import { Disposable } from "../../../";
+import { Disposable } from "../base-types";
+import { Fragments } from "./index";
 
 // TODO: Clean up and document
 

@@ -1,12 +1,15 @@
 import * as THREE from "three";
 import {
-  Components,
   Component,
   Createable,
   Disposable,
   Event,
-} from "../../types";
+  Hideable,
+} from "../../base-types";
 import { SimplePlane } from "./simple-plane";
+import { Components } from "../Components";
+
+export * from "./simple-plane";
 
 /**
  * A lightweight component to easily create and handle
@@ -18,7 +21,7 @@ import { SimplePlane } from "./simple-plane";
  */
 export class SimpleClipper<Plane extends SimplePlane>
   extends Component<Plane[]>
-  implements Createable, Disposable
+  implements Createable, Disposable, Hideable
 {
   /** {@link Component.name} */
   name = "SimpleClipper";
@@ -62,6 +65,7 @@ export class SimpleClipper<Plane extends SimplePlane>
 
   private _size = 5;
   private _enabled = false;
+  private _visible = true;
 
   /** {@link Component.enabled} */
   get enabled() {
@@ -71,10 +75,23 @@ export class SimpleClipper<Plane extends SimplePlane>
   /** {@link Component.enabled} */
   set enabled(state: boolean) {
     this._enabled = state;
-    for (const plane of this.planes3D) {
+    for (const plane of this._planes) {
       plane.enabled = state;
     }
     this.updateMaterials();
+  }
+
+  /** {@link Hideable.visible } */
+  get visible() {
+    return this._visible;
+  }
+
+  /** {@link Hideable.visible } */
+  set visible(state: boolean) {
+    this._visible = state;
+    for (const plane of this._planes) {
+      plane.visible = state;
+    }
   }
 
   /** The material of the clipping plane representation. */
@@ -101,11 +118,6 @@ export class SimpleClipper<Plane extends SimplePlane>
     for (const plane of this._planes) {
       plane.size = size;
     }
-  }
-
-  /** The clipping planes that are not associated to floor plan navigation. */
-  get planes3D() {
-    return this._planes.filter((plane) => !plane.isPlan);
   }
 
   constructor(
@@ -151,10 +163,9 @@ export class SimpleClipper<Plane extends SimplePlane>
    */
   createFromNormalAndCoplanarPoint(
     normal: THREE.Vector3,
-    point: THREE.Vector3,
-    isPlan = false
+    point: THREE.Vector3
   ) {
-    const plane = this.newPlane(point, normal, isPlan);
+    const plane = this.newPlane(point, normal);
     this.updateMaterials();
     return plane;
   }
@@ -202,7 +213,7 @@ export class SimpleClipper<Plane extends SimplePlane>
 
   private getAllPlaneMeshes() {
     const meshes: THREE.Mesh[] = [];
-    for (const plane of this.planes3D) {
+    for (const plane of this._planes) {
       meshes.push(...plane.meshes);
     }
     return meshes;
@@ -214,7 +225,7 @@ export class SimpleClipper<Plane extends SimplePlane>
     if (!constant || !normal) return;
 
     const worldNormal = this.getWorldNormal(intersect, normal);
-    const plane = this.newPlane(intersect.point, worldNormal.negate(), false);
+    const plane = this.newPlane(intersect.point, worldNormal.negate());
     this.components.renderer.togglePlane(true, plane.get());
     this.updateMaterials();
   }
@@ -243,32 +254,17 @@ export class SimpleClipper<Plane extends SimplePlane>
     }
   }
 
-  private newPlane(
-    point: THREE.Vector3,
-    normal: THREE.Vector3,
-    isPlan: boolean
-  ) {
-    const plane = this.newPlaneInstance(point, normal, isPlan);
-    plane.onStartDragging.on(this._onStartDragging);
-    plane.onEndDragging.on(this._onEndDragging);
+  private newPlane(point: THREE.Vector3, normal: THREE.Vector3) {
+    const plane = this.newPlaneInstance(point, normal);
+    plane.draggingStarted.on(this._onStartDragging);
+    plane.draggingEnded.on(this._onEndDragging);
     this._planes.push(plane);
     this.afterCreate.trigger(plane);
     return plane;
   }
 
-  protected newPlaneInstance(
-    point: THREE.Vector3,
-    normal: THREE.Vector3,
-    isPlan: boolean
-  ) {
-    return new this.PlaneType(
-      this.components,
-      point,
-      normal,
-      this.size,
-      this._material,
-      isPlan
-    );
+  protected newPlaneInstance(point: THREE.Vector3, normal: THREE.Vector3) {
+    return new this.PlaneType(this.components, point, normal, this._material);
   }
 
   private updateMaterials() {

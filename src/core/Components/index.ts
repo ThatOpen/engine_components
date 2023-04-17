@@ -5,12 +5,9 @@ import {
   computeBoundsTree,
   disposeBoundsTree,
 } from "three-mesh-bvh";
-
-import { Raycaster } from "./index";
-import { Component } from "./component";
-import { ToolComponent } from "../core";
-import { BaseRenderer } from "./base-renderer";
-import { UIManager } from "../core/UIManager";
+import { UIManager } from "../../ui";
+import { BaseRenderer, Component, Raycaster } from "../../base-types";
+import { ToolComponent } from "../ToolsComponent";
 
 /**
  * The entry point of Open BIM Components.

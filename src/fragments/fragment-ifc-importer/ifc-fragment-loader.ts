@@ -3,8 +3,8 @@ import { IfcToFragmentItems, MaterialList } from "./base-types";
 import { Settings } from "./settings";
 import { Geometry } from "./geometry";
 import { DataConverter } from "./data-converter";
-import { Disposable } from "../../../../";
-import { Fragments } from "../../";
+import { Disposable } from "../../base-types";
+import { Fragments } from "../index";
 
 /**
  * Reads all the geometry of the IFC file and generates a set of

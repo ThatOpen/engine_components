@@ -4,8 +4,9 @@ import {
   Instance as PopperInstance,
   // @ts-ignore
 } from "@popperjs/core/dist/esm";
-import { Component, Components, Hideable, UIComponent } from "../../types";
+import { Component, Hideable, UIComponent } from "../../base-types";
 import { Toolbar } from "../ToolbarComponent";
+import { Components } from "../../core";
 
 interface IButtonOptions {
   element?: HTMLButtonElement;
@@ -26,35 +27,34 @@ export class Button
   components: Components;
 
   private _closeOnClick = true;
-
-  #enabled: boolean = true;
-  #visible: boolean = true;
-  #parent!: Toolbar;
-  #popper: PopperInstance;
-  #active: boolean = false;
+  private _enabled: boolean = true;
+  private _visible: boolean = true;
+  private _parent!: Toolbar;
+  private _popper: PopperInstance;
+  private _active: boolean = false;
 
   get active() {
-    return this.#active;
+    return this._active;
   }
   set active(active: boolean) {
     this.domElement.setAttribute("data-active", String(active));
-    this.#active = active;
+    this._active = active;
   }
 
   set visible(visible: boolean) {
-    this.#visible = visible;
+    this._visible = visible;
   } // Not implemented yet.
   get visible() {
-    return this.#visible;
+    return this._visible;
   }
 
   set enabled(enabled: boolean) {
     this.domElement.disabled = !enabled;
-    this.#enabled = enabled;
+    this._enabled = enabled;
   }
 
   get enabled() {
-    return this.#enabled;
+    return this._enabled;
   }
 
   set onclick(listener: (e?: MouseEvent) => void) {
@@ -69,13 +69,13 @@ export class Button
   }
 
   set parent(toolbar: Toolbar) {
-    this.#parent = toolbar;
+    this._parent = toolbar;
     this.menu.position = toolbar.position;
-    this.#updateMenuPlacement();
+    this.updateMenuPlacement();
   }
 
   get parent() {
-    return this.#parent;
+    return this._parent;
   }
 
   constructor(components: Components, options?: IButtonOptions) {
@@ -113,7 +113,7 @@ export class Button
         this.components.ui.closeMenus();
       }
       this.menu.visible = true;
-      this.#popper.update();
+      this._popper.update();
     };
 
     // #region Extensible menu
@@ -122,7 +122,7 @@ export class Button
     this.menu.parent = this;
     this.menu.domElement.classList.add("vtoolbar");
     this.domElement.append(this.menu.domElement);
-    this.#popper = createPopper(this.domElement, this.menu.domElement, {
+    this._popper = createPopper(this.domElement, this.menu.domElement, {
       modifiers: [
         {
           name: "offset",
@@ -138,6 +138,11 @@ export class Button
     // #endregion
   }
 
+  // TODO: Implement this
+  dispose() {
+    throw new Error("To be implemented");
+  }
+
   get(): HTMLButtonElement {
     return this.domElement;
   }
@@ -151,7 +156,7 @@ export class Button
     this.menu.visible = false;
   }
 
-  #updateMenuPlacement() {
+  private updateMenuPlacement() {
     let placement: Placement = "bottom";
     if (this.parent?.position === "bottom") {
       placement = this.parent?.parent ? "right" : "top";
@@ -165,6 +170,6 @@ export class Button
     if (this.parent?.position === "right") {
       placement = "left";
     }
-    this.#popper.setOptions({ placement });
+    this._popper.setOptions({ placement });
   }
 }

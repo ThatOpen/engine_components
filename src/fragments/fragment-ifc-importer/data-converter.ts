@@ -8,7 +8,7 @@ import {
   IfcItemsCategories,
   IfcCategoryMap,
   IfcJsonExporter,
-} from "../ifc";
+} from "../../ifc";
 import { SpatialStructure } from "./spatial-structure";
 import { Settings } from "./settings";
 import { Units } from "./units";
@@ -100,7 +100,7 @@ export class DataConverter {
       return {};
     }
     return new Promise<any>((resolve) => {
-      this._propertyExporter.propertiesSerialized.on((properties) => {
+      this._propertyExporter.propertiesSerialized.on((properties: any) => {
         resolve(properties);
       });
       this._propertyExporter.export(webIfc, 0);
