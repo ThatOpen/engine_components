@@ -16,16 +16,16 @@ export class Toolbar extends Component<HTMLDivElement> implements Hideable, UICo
     children: Button[] = []
     parent?: Button
     components: Components
-    #position!: IContainerPosition
-    #enabled: boolean = true
-    #visible: boolean = true
+    private _position!: IContainerPosition
+    private _enabled: boolean = true
+    private _visible: boolean = true
 
     set visible(visible: boolean) {
         this.domElement.style.display = visible && this.hasElements? "flex" : "none"
-        this.#visible = visible && this.hasElements
+        this._visible = visible && this.hasElements
     }
 
-    get visible() { return this.#visible }
+    get visible() { return this._visible }
 
     set enabled(enabled: boolean) {
         this.closeMenus()
@@ -33,17 +33,17 @@ export class Toolbar extends Component<HTMLDivElement> implements Hideable, UICo
             button.enabled = enabled
             button.menu.enabled = enabled
         } )
-        this.#enabled = enabled
+        this._enabled = enabled
     }
 
-    get enabled() { return this.#enabled }
+    get enabled() { return this._enabled }
 
     set position(position: IContainerPosition) {
-        this.#position = position
+        this._position = position
         this.updateElements()
     }
 
-    get position() { return this.#position }
+    get position() { return this._position }
 
     constructor(components: Components, options?: IToolbarOptions) {
         super()
@@ -65,6 +65,11 @@ export class Toolbar extends Component<HTMLDivElement> implements Hideable, UICo
     }
 
     get(): HTMLDivElement { return this.domElement }
+
+    dispose(onlyChildren = false) {
+        this.children.forEach( button => button.dispose() )
+        if (!onlyChildren) { this.domElement.remove() }
+    }
 
     addButton(...button: Button[]) {
         button.forEach( btn => {

@@ -11,3 +11,6 @@ export * from "./ToolbarComponent";
 export * from "./ButtonComponent";
 export * from "./Fragments";
 export * from "./TreeView";
+export * from "./ModelTree";
+export * from "./SimpleUIComponent";
+export * from "./PropertiesProcessor";

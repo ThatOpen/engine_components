@@ -16,14 +16,14 @@ class ElementTreeItem extends Component<IElementTreeItem> implements IElementTre
     name: string
     enabled: boolean = true
     filter: { [groupSystemName: string]: string } = {}
-    #children: ElementTreeItem[] = []
     components: Components
     uiElement: TreeView
     fragments?: Fragments
+    private _children: ElementTreeItem[] = []
 
-    get children() { return this.#children }
+    get children() { return this._children }
     set children(children: ElementTreeItem[]) {
-        this.#children = children
+        this._children = children
         children.forEach( child => this.uiElement.addChild(child.uiElement) )
     }
     
@@ -65,8 +65,8 @@ export class ModelTree extends Component<ElementTreeItem> implements UI {
     components: Components
     groupSystemNames: string[]
     functionsMap: {[groupSystemName: string]: () => void} = {}
-    #tree: ElementTreeItem
     fragments?: Fragments
+    private _tree: ElementTreeItem
 
     constructor(components: Components, name: string, groupSystemNames: string[]) {
         super()
@@ -76,8 +76,8 @@ export class ModelTree extends Component<ElementTreeItem> implements UI {
         this.fragments = fragments
         this.name = name
         this.groupSystemNames = groupSystemNames
-        this.#tree = new ElementTreeItem(this.components, this.name)
-        this.uiElement = this.#tree.uiElement
+        this._tree = new ElementTreeItem(this.components, this.name)
+        this.uiElement = this._tree.uiElement
     }
 
     /**
@@ -91,22 +91,22 @@ export class ModelTree extends Component<ElementTreeItem> implements UI {
     //     this.functionsMap[groupSystemName] = getter
     // }
     
-    get(): ElementTreeItem { return this.#tree }
+    get(): ElementTreeItem { return this._tree }
 
     build() {
-        this.#tree.children = this.#process(this.groupSystemNames)
+        this._tree.children = this.process(this.groupSystemNames)
         return this.get()
     }
 
     // TODO: Check more in detail this update method.
     update() {
         this.uiElement.dispose()
-        this.#tree.uiElement.dispose()
+        this._tree.uiElement.dispose()
         this.build() 
         return this.get() 
     }
 
-    #process(groupSystemNames: string[], result = {}) {
+    private process(groupSystemNames: string[], result = {}) {
         const groups: ElementTreeItem[] = []
         if (!this.fragments) { return groups }
         const currentSystemName = groupSystemNames[0] //storeys
@@ -120,7 +120,7 @@ export class ModelTree extends Component<ElementTreeItem> implements UI {
                 const treeItem = new ElementTreeItem(this.components, `${treeItemName}: ${name}`) // Storeys: N01
                 treeItem.filter = filter
                 groups.push(treeItem)
-                treeItem.children = this.#process(groupSystemNames.slice(1), filter)
+                treeItem.children = this.process(groupSystemNames.slice(1), filter)
             }
         }
         return groups

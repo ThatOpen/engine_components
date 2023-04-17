@@ -8,3 +8,5 @@ export * from "./fragment-exploder";
 export * from "./fragment-materials";
 export * from "./fragment-ifc-importer";
 export * from "./memory-culling";
+export * from "./ifc";
+export * from "./fragment-ifc-importer";

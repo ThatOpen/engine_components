@@ -1,4 +1,4 @@
-import { Component, Disposable } from "../../types";
+import { Component, Disposable, Event } from "../../types";
 
 import { urls } from "./platform";
 
@@ -9,6 +9,8 @@ import { urls } from "./platform";
  */
 export class ToolComponent implements Disposable {
   tools: Component<any>[] = [];
+  onToolAdded: Event<Component<any>> = new Event()
+  onToolRemoved: Event<Component<any>> = new Event()
 
   /**
    * Registers a new tool component.
@@ -16,6 +18,7 @@ export class ToolComponent implements Disposable {
    */
   add(tool: Component<any>) {
     this.tools.push(tool);
+    this.onToolAdded.trigger(tool)
   }
 
   /**
@@ -26,6 +29,7 @@ export class ToolComponent implements Disposable {
     const index = this.tools.findIndex((c) => c === tool);
     if (index > -1) {
       this.tools.splice(index, 1);
+      this.onToolRemoved.trigger(tool)
       return true;
     }
     return false;

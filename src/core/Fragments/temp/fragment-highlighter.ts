@@ -1,17 +1,29 @@
 import * as THREE from "three";
 import { Fragment } from "bim-fragment";
-import { Components, Disposable } from "../../../";
+import { Components, Disposable, Event } from "../../../";
 import { Fragments } from "../";
 
 // TODO: Clean up and document
 
+interface SelectionMap {
+  [fragmentID: string]: Set<string>
+}
+
+interface HighlightEvents {
+  [name: string]: {
+    onHighlight: Event<SelectionMap>
+    onClear: Event<null>
+  }
+}
+
 export class FragmentHighlighter implements Disposable {
   active = false;
   highlightMats: { [name: string]: THREE.Material[] | undefined } = {};
-
+  
+  highlightEvents: HighlightEvents = {}
   private tempMatrix = new THREE.Matrix4();
   private selection: {
-    [selectionID: string]: { [fragmentID: string]: Set<string> };
+    [selectionID: string]: SelectionMap;
   } = {};
 
   constructor(private components: Components, private fragments: Fragments) {}
@@ -33,6 +45,10 @@ export class FragmentHighlighter implements Disposable {
 
     this.highlightMats[name] = material;
     this.selection[name] = {};
+    this.highlightEvents[name] = {
+      onHighlight: new Event(),
+      onClear: new Event()
+    }
 
     this.update();
   }
@@ -79,7 +95,7 @@ export class FragmentHighlighter implements Disposable {
 
     this.updateFragmentHighlight(name, mesh.uuid);
 
-    return { id: itemID, fragment };
+    return { id: itemID, fragment, modelId: fragment.mesh.parent?.uuid };
   }
 
   highlightByID(
@@ -111,7 +127,7 @@ export class FragmentHighlighter implements Disposable {
       this.clearStyle(name);
     }
   }
-
+  
   private clearStyle(name: string) {
     for (const fragID in this.selection[name]) {
       const fragment = this.fragments.list[fragID];
@@ -121,6 +137,7 @@ export class FragmentHighlighter implements Disposable {
         selection.mesh.removeFromParent();
       }
     }
+    this.highlightEvents[name].onClear.trigger(null)
     this.selection[name] = {};
   }
 
@@ -130,9 +147,19 @@ export class FragmentHighlighter implements Disposable {
     if (!fragment) return;
     const selection = fragment.fragments[name];
     if (!selection) return;
+
+    //#region Old child/parent code
     const scene = this.components.scene.get();
+    scene.add(selection.mesh); //If we add selection.mesh directly to the scene, it won't be coordinated unless we do so manually.
+    //#endregion
+
+    //#region New child/parent code
+    const fragmentParent = fragment.mesh.parent
+    if (!fragmentParent) return;
+    fragmentParent.add(selection.mesh);
+    //#endregion
+
     const isBlockFragment = selection.blocks.count > 1;
-    scene.add(selection.mesh);
 
     if (isBlockFragment) {
       const blockIDs: number[] = [];
@@ -160,6 +187,9 @@ export class FragmentHighlighter implements Disposable {
         i++;
       }
     }
+
+    this.highlightEvents[name].onHighlight.trigger(this.selection[name])
+
   }
 
   private checkSelection(name: string) {

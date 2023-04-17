@@ -2,22 +2,22 @@ import { UIComponent, Components, Component } from "../../"
 
 export class TreeView extends Component<HTMLElement> implements UIComponent {
 
-    #childrenContainer: HTMLDivElement = document.createElement("div")
     name: string
     enabled: boolean = true
     visible: boolean = true
     components: Components
-    #expanded: boolean = false
     domElement: HTMLElement = document.createElement("div")
+    private _childrenContainer: HTMLDivElement = document.createElement("div")
+    private _expanded: boolean = false
     children: UIComponent[] = []
 
-    get expanded() { return this.#expanded }
+    get expanded() { return this._expanded }
     set expanded(expanded: boolean) {
-        this.#expanded = expanded
+        this._expanded = expanded
         if (expanded) {
-            this.#childrenContainer.style.display = "block"
+            this._childrenContainer.style.display = "block"
         } else {
-            this.#childrenContainer.style.display = "none"
+            this._childrenContainer.style.display = "none"
         }
     }
 
@@ -53,9 +53,9 @@ export class TreeView extends Component<HTMLElement> implements UIComponent {
         div.append(arrow, p)
         this.domElement.append(div)
 
-        this.#childrenContainer.className = "tooeen-tree-item-container"
-        this.#childrenContainer.style.display = "none"
-        this.domElement.append(this.#childrenContainer)
+        this._childrenContainer.className = "tooeen-tree-item-container"
+        this._childrenContainer.style.display = "none"
+        this.domElement.append(this._childrenContainer)
     }
 
     get(): HTMLElement {
@@ -66,7 +66,7 @@ export class TreeView extends Component<HTMLElement> implements UIComponent {
         this.children.forEach( child => child.dispose() )
         if (!onlyChildren) { 
             this.domElement.remove()
-            this.#childrenContainer.remove()
+            this._childrenContainer.remove()
         }
     }
 
@@ -81,7 +81,7 @@ export class TreeView extends Component<HTMLElement> implements UIComponent {
     addChild(...items: UIComponent[]) {
         items.forEach( item => {
             this.children.push(item)
-            this.#childrenContainer.append(item.domElement)
+            this._childrenContainer.append(item.domElement)
         } )
     }
 
