@@ -1,7 +1,7 @@
 import { Component, UI } from "../../base-types";
 import { TreeView } from "../../ui";
 import { FragmentTreeItem } from "./tree-item";
-import { Fragments } from "../index";
+import { FragmentManager } from "../index";
 import { Components } from "../../core";
 
 export class ModelTree extends Component<FragmentTreeItem> implements UI {
@@ -11,7 +11,7 @@ export class ModelTree extends Component<FragmentTreeItem> implements UI {
   components: Components;
   groupSystemNames: string[];
   functionsMap: { [groupSystemName: string]: () => void } = {};
-  fragments: Fragments;
+  fragments: FragmentManager;
 
   private readonly _tree: FragmentTreeItem;
 
@@ -23,7 +23,7 @@ export class ModelTree extends Component<FragmentTreeItem> implements UI {
     super();
     this.components = components;
     const fragments = components.tools.get("Fragments") as
-      | Fragments
+      | FragmentManager
       | undefined;
     if (!fragments) {
       throw new Error(
@@ -60,6 +60,8 @@ export class ModelTree extends Component<FragmentTreeItem> implements UI {
       return groups;
     }
     const currentSystemName = groupSystemNames[0]; // storeys
+    // TODO: Decouple groups from fragments
+    // @ts-ignore
     const systemGroups = this.fragments.groups.groupSystems[currentSystemName];
     if (!currentSystemName || !systemGroups) {
       return groups;
@@ -68,6 +70,8 @@ export class ModelTree extends Component<FragmentTreeItem> implements UI {
       // name is N00, N01, N02...
       const filter = { ...result, [currentSystemName]: name }; // { storeys: "N00" }, { storeys: "N01" }...
       const hasElements =
+        // TODO: Decouple groups from fragments
+        // @ts-ignore
         Object.keys(this.fragments.groups.get(filter)).length > 0;
       if (hasElements) {
         const treeItemName =

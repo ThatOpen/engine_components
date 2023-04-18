@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Disposable } from "../base-types";
-import { Fragments } from "./index";
+import { FragmentManager } from "./index";
 
 // TODO: Clean up and document
 
@@ -11,7 +11,7 @@ export class FragmentExploder implements Disposable {
   initialized = false;
   explodedFragments = new Set<string>();
 
-  constructor(public fragments: Fragments) {}
+  constructor(public fragments: FragmentManager) {}
 
   dispose() {
     this.explodedFragments.clear();
@@ -35,6 +35,8 @@ export class FragmentExploder implements Disposable {
     }
     const factor = this.enabled ? 1 : -1;
     let i = 0;
+    // TODO: Decouple groups from fragments
+    // @ts-ignore
     const groups = this.fragments.groups.groupSystems[this.groupName];
     for (const groupName in groups) {
       for (const fragID in groups[groupName]) {

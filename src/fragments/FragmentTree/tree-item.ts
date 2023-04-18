@@ -1,6 +1,6 @@
 import { Component, UI } from "../../base-types";
 import { TreeView } from "../../ui";
-import { Fragments } from "../index";
+import { FragmentManager } from "../index";
 import { Components } from "../../core";
 
 interface TreeItem {
@@ -16,7 +16,7 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
   #children: FragmentTreeItem[] = [];
   components: Components;
   uiElement: TreeView;
-  fragments: Fragments;
+  fragments: FragmentManager;
 
   get children() {
     return this.#children;
@@ -31,7 +31,7 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
     super();
     this.components = components;
     const fragments = components.tools.get("Fragments") as
-      | Fragments
+      | FragmentManager
       | undefined;
     if (!fragments) {
       throw new Error();
@@ -51,7 +51,13 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
     if (!this.fragments) {
       return;
     }
+
+    // TODO: Decouple highlighter from this
+    // @ts-ignore
     const highlighter = this.fragments.highlighter;
+
+    // TODO: Decouple groups from fragments
+    // @ts-ignore
     const groups = this.fragments.groups;
     highlighter.highlightByID("select", groups.get(this.filter));
   }
@@ -60,7 +66,12 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
     if (!this.fragments) {
       return;
     }
+    // TODO: Decouple highlighter from this
+    // @ts-ignore
     const highlighter = this.fragments.highlighter;
+
+    // TODO: Decouple groups from fragments
+    // @ts-ignore
     const groups = this.fragments.groups;
     highlighter.highlightByID("highlight", groups.get(this.filter));
   }

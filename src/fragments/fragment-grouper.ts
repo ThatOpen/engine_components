@@ -1,7 +1,7 @@
 // TODO: Clean up and document
 
 import { Disposable } from "../base-types";
-import { Fragments } from "./index";
+import { FragmentManager } from "./index";
 
 export interface ItemGroupSystems {
   [systemName: string]: { [groupName: string]: string[] };
@@ -17,9 +17,9 @@ export class FragmentGrouper implements Disposable {
     floor: {},
   };
 
-  private _fragments: Fragments;
+  private _fragments: FragmentManager;
 
-  constructor(fragments: Fragments) {
+  constructor(fragments: FragmentManager) {
     this._fragments = fragments;
   }
 

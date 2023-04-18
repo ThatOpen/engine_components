@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Fragment } from "bim-fragment";
 import { Disposable } from "../base-types";
-import { Fragments } from "./index";
+import { FragmentManager } from "./index";
 
 // TODO: Clean up and document
 
@@ -12,7 +12,7 @@ export class FragmentMaterials implements Disposable {
 
   materials = new Set<THREE.Material>();
 
-  constructor(private fragments: Fragments) {}
+  constructor(private fragments: FragmentManager) {}
 
   dispose() {
     for (const mat of this.materials) {

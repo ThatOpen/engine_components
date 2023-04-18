@@ -3,7 +3,7 @@ import { Fragment } from "bim-fragment";
 import { Material } from "three";
 import { Disposable, Event } from "../base-types";
 import { Components, Disposer } from "../core";
-import { Fragments } from "./index";
+import { FragmentManager } from "./index";
 
 // TODO: Clean up and document
 
@@ -37,7 +37,7 @@ export class FragmentCulling implements Disposable {
 
   constructor(
     private components: Components,
-    private fragment: Fragments,
+    private fragment: FragmentManager,
     readonly updateInterval = 1000,
     readonly rtWidth = 512,
     readonly rtHeight = 512,
@@ -269,21 +269,22 @@ export class FragmentCulling implements Disposable {
     };
   }
 
+  // TODO: Decouple culling from fragments
   // If the edges need to be updated (e.g. some walls have been hidden)
   // this allows to compute them only when they are visibile
   private cullEdges(fragment: Fragment, visible: boolean) {
     if (visible) {
       this.updateEdges(fragment);
     }
-    if (this.fragment.edges.edgesList[fragment.id]) {
-      this.fragment.edges.edgesList[fragment.id].visible = visible;
-    }
+    // if (this.fragment.edges.edgesList[fragment.id]) {
+    //   this.fragment.edges.edgesList[fragment.id].visible = visible;
+    // }
   }
 
-  private updateEdges(fragment: Fragment) {
-    if (this.fragment.edges.edgesToUpdate.has(fragment.id)) {
-      this.fragment.edges.generate(fragment);
-      this.fragment.edges.edgesToUpdate.delete(fragment.id);
-    }
+  private updateEdges(_fragment: Fragment) {
+    // if (this.fragment.edges.edgesToUpdate.has(fragment.id)) {
+    //   this.fragment.edges.generate(fragment);
+    //   this.fragment.edges.edgesToUpdate.delete(fragment.id);
+    // }
   }
 }

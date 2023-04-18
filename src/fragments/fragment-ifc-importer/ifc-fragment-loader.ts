@@ -4,7 +4,7 @@ import { Settings } from "./settings";
 import { Geometry } from "./geometry";
 import { DataConverter } from "./data-converter";
 import { Disposable } from "../../base-types";
-import { Fragments } from "../index";
+import { FragmentManager } from "../index";
 
 /**
  * Reads all the geometry of the IFC file and generates a set of
@@ -14,7 +14,7 @@ export class IfcFragmentLoader implements Disposable {
   /** Configuration of the IFC-fragment conversion. */
   settings = new Settings();
 
-  private _fragments: Fragments;
+  private _fragments: FragmentManager;
   private _webIfc = new WEBIFC.IfcAPI();
   private _items: IfcToFragmentItems = {};
   private _materials: MaterialList = {};
@@ -31,7 +31,7 @@ export class IfcFragmentLoader implements Disposable {
     this.settings
   );
 
-  constructor(fragments: Fragments) {
+  constructor(fragments: FragmentManager) {
     this._fragments = fragments;
   }
 

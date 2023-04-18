@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Fragment } from "bim-fragment";
 import { Disposable } from "../base-types";
-import { Fragments } from "./index";
+import { FragmentManager } from "./index";
 import { Components } from "../core";
 
 // TODO: Clean up and document
@@ -15,7 +15,10 @@ export class FragmentHighlighter implements Disposable {
     [selectionID: string]: { [fragmentID: string]: Set<string> };
   } = {};
 
-  constructor(private components: Components, private fragments: Fragments) {}
+  constructor(
+    private components: Components,
+    private fragments: FragmentManager
+  ) {}
 
   dispose() {
     for (const matID in this.highlightMats) {
