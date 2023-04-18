@@ -24,9 +24,7 @@ export class Button
   domElement: HTMLButtonElement;
   menu: Toolbar;
   components: Components;
-
   private _closeOnClick = true;
-
   private _enabled: boolean = true;
   private _visible: boolean = true;
   private _parent!: Toolbar;

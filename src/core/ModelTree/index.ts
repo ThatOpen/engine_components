@@ -18,36 +18,34 @@ class ElementTreeItem
   name: string;
   enabled: boolean = true;
   filter: { [groupSystemName: string]: string } = {};
-  #children: ElementTreeItem[] = [];
+  private _children: ElementTreeItem[] = [];
   components: Components;
   uiElement: TreeView;
   fragments?: Fragments;
 
-    name: string
-    enabled: boolean = true
-    filter: { [groupSystemName: string]: string } = {}
-    components: Components
-    uiElement: TreeView
-    fragments?: Fragments
-    private _children: ElementTreeItem[] = []
+  get children() {
+    return this._children;
+  }
+  set children(children: ElementTreeItem[]) {
+    this._children = children;
+    children.forEach((child) => this.uiElement.addChild(child.uiElement));
+  }
 
-    get children() { return this._children }
-    set children(children: ElementTreeItem[]) {
-        this._children = children
-        children.forEach( child => this.uiElement.addChild(child.uiElement) )
+  constructor(components: Components, name: string) {
+    super();
+    this.components = components;
+    const fragments = components.tools.get("Fragments") as
+      | Fragments
+      | undefined;
+    if (!fragments) {
+      throw new Error();
     }
-    
-    constructor(components: Components, name: string) {
-        super()
-        this.components = components
-        const fragments = components.tools.get("Fragments") as Fragments | undefined
-        if (!fragments) { throw new Error() }
-        this.fragments = fragments
-        this.name = name
-        this.uiElement = new TreeView(this.components, name)
-        this.uiElement.onclick = () => this.select()
-        this.uiElement.onmouseover = () => this.highlight()
-    }
+    this.fragments = fragments;
+    this.name = name;
+    this.uiElement = new TreeView(this.components, name);
+    this.uiElement.onclick = () => this.select();
+    this.uiElement.onmouseover = () => this.highlight();
+  }
 
   get(): IElementTreeItem {
     return { name: this.name, filter: this.filter, children: this.children };
@@ -79,56 +77,60 @@ export class ModelTree extends Component<ElementTreeItem> implements UI {
   components: Components;
   groupSystemNames: string[];
   functionsMap: { [groupSystemName: string]: () => void } = {};
-  #tree: ElementTreeItem;
+  private _tree: ElementTreeItem;
   fragments?: Fragments;
 
   constructor(
     components: Components,
     name: string,
     groupSystemNames: string[]
-    functionsMap: {[groupSystemName: string]: () => void} = {}
-    fragments?: Fragments
-    private _tree: ElementTreeItem
-
-    constructor(components: Components, name: string, groupSystemNames: string[]) {
-        super()
-        this.components = components
-        const fragments = components.tools.get("Fragments") as Fragments | undefined
-        if (!fragments) { throw new Error("ModelTree needs Fragments in order to work properly. Try const fragments = new Fragments(components) and then components.tools.add(fragments).") }
-        this.fragments = fragments
-        this.name = name
-        this.groupSystemNames = groupSystemNames
-        this._tree = new ElementTreeItem(this.components, this.name)
-        this.uiElement = this._tree.uiElement
+  ) {
+    super();
+    this.components = components;
+    const fragments = components.tools.get("Fragments") as
+      | Fragments
+      | undefined;
+    if (!fragments) {
+      throw new Error(
+        "ModelTree needs Fragments in order to work properly. Try const fragments = new Fragments(components) and then components.tools.add(fragments)."
+      );
     }
+    this.fragments = fragments;
+    this.name = name;
+    this.groupSystemNames = groupSystemNames;
+    this._tree = new ElementTreeItem(this.components, this.name);
+    this.uiElement = this._tree.uiElement;
+  }
 
-    /**
-     * @description In case ModelTree.build() is called and the current groupSystemName in the iteration doesn't exists, the builder calls the getter function to create the groupSystem.
-     * @param groupSystemName 
-     * @param getter 
-     */
-    // setGroupSystemGetter(groupSystemName: string, getter: () => void) {
-    //     const nameExists = this.groupSystemNames.includes(groupSystemName)
-    //     if (!nameExists) { return }
-    //     this.functionsMap[groupSystemName] = getter
-    // }
-    
-    get(): ElementTreeItem { return this._tree }
+  /**
+   * @description In case ModelTree.build() is called and the current groupSystemName in the iteration doesn't exists, the builder calls the getter function to create the groupSystem.
+   * @param groupSystemName
+   * @param getter
+   */
+  // setGroupSystemGetter(groupSystemName: string, getter: () => void) {
+  //     const nameExists = this.groupSystemNames.includes(groupSystemName)
+  //     if (!nameExists) { return }
+  //     this.functionsMap[groupSystemName] = getter
+  // }
 
-    build() {
-        this._tree.children = this.process(this.groupSystemNames)
-        return this.get()
-    }
+  get(): ElementTreeItem {
+    return this._tree;
+  }
 
-    // TODO: Check more in detail this update method.
-    update() {
-        this.uiElement.dispose()
-        this._tree.uiElement.dispose()
-        this.build() 
-        return this.get() 
-    }
+  build() {
+    this._tree.children = this.#process(this.groupSystemNames);
+    return this.get();
+  }
 
-  private process(groupSystemNames: string[], result = {}) {
+  // TODO: Check more in detail this update method.
+  update() {
+    this.uiElement.dispose();
+    this._tree.uiElement.dispose();
+    this.build();
+    return this.get();
+  }
+
+  #process(groupSystemNames: string[], result = {}) {
     const groups: ElementTreeItem[] = [];
     if (!this.fragments) {
       return groups;
@@ -152,7 +154,7 @@ export class ModelTree extends Component<ElementTreeItem> implements UI {
         ); // Storeys: N01
         treeItem.filter = filter;
         groups.push(treeItem);
-        treeItem.children = this.process(groupSystemNames.slice(1), filter);
+        treeItem.children = this.#process(groupSystemNames.slice(1), filter);
       }
     }
     return groups;
