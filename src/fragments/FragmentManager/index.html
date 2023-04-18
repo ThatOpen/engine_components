@@ -60,14 +60,19 @@
 
 	let fragments = new OBC.FragmentManager(components);
 
-	async function importFragments(url) {
+	async function loadFragments(url) {
 		const file = await fetch(url);
 		const data = await file.arrayBuffer();
 		const buffer = new Uint8Array(data);
-		fragments.import(buffer);
+		fragments.load(buffer);
   }
 
 	function exportFragments(name) {
+		const fragmentCount = Object.keys(fragments.list).length;
+		if(fragmentCount === 0) {
+			alert("No fragments loaded!");
+			return;
+    }
 		const data = fragments.export();
 		const blob = new Blob([data]);
 		const file = new File([blob], name);
@@ -102,14 +107,14 @@
 	// Set up dat.gui menu
 
   const settings = {
-		importFragments: () => importFragments("../../../resources/small.frag"),
+		loadFragments: () => loadFragments("../../../resources/small.frag"),
     exportFragments: () => exportFragments("example.frag"),
     disposeFragments: () => disposeFragments()
   }
 
 	const gui = new dat.GUI();
 
-	gui.add(settings, "importFragments").name("Import fragments");
+	gui.add(settings, "loadFragments").name("Import fragments");
 	gui.add(settings, "exportFragments").name("Export fragments");
 	gui.add(settings, "disposeFragments").name("Dispose fragments");
 

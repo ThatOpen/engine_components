@@ -3,6 +3,7 @@ import { TreeView } from "../../ui";
 import { FragmentTreeItem } from "./tree-item";
 import { FragmentManager } from "../index";
 import { Components } from "../../core";
+import { FragmentGrouper } from "../fragment-grouper";
 
 export class ModelTree extends Component<FragmentTreeItem> implements UI {
   uiElement: TreeView;
@@ -18,7 +19,8 @@ export class ModelTree extends Component<FragmentTreeItem> implements UI {
   constructor(
     components: Components,
     name: string,
-    groupSystemNames: string[]
+    groupSystemNames: string[],
+    private groups: FragmentGrouper
   ) {
     super();
     this.components = components;
@@ -60,19 +62,14 @@ export class ModelTree extends Component<FragmentTreeItem> implements UI {
       return groups;
     }
     const currentSystemName = groupSystemNames[0]; // storeys
-    // TODO: Decouple groups from fragments
-    // @ts-ignore
-    const systemGroups = this.fragments.groups.groupSystems[currentSystemName];
+    const systemGroups = this.groups.groupSystems[currentSystemName];
     if (!currentSystemName || !systemGroups) {
       return groups;
     }
     for (const name in systemGroups) {
       // name is N00, N01, N02...
       const filter = { ...result, [currentSystemName]: name }; // { storeys: "N00" }, { storeys: "N01" }...
-      const hasElements =
-        // TODO: Decouple groups from fragments
-        // @ts-ignore
-        Object.keys(this.fragments.groups.get(filter)).length > 0;
+      const hasElements = Object.keys(this.groups.get(filter)).length > 0;
       if (hasElements) {
         const treeItemName =
           currentSystemName[0].toUpperCase() + currentSystemName.slice(1); // Storeys
