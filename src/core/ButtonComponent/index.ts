@@ -13,6 +13,7 @@ interface IButtonOptions {
   id?: string;
   name?: string;
   tooltip?: string;
+  closeOnClick?: boolean;
 }
 
 export class Button
@@ -23,6 +24,9 @@ export class Button
   domElement: HTMLButtonElement;
   menu: Toolbar;
   components: Components;
+
+  private _closeOnClick = true;
+
   private _enabled: boolean = true;
   private _visible: boolean = true;
   private _parent!: Toolbar;
@@ -57,10 +61,10 @@ export class Button
     this.domElement.onclick = (e) => {
       e.stopImmediatePropagation();
       listener(e);
-      // @ts-ignore
-      this.components.ui.closeMenus();
-      // @ts-ignore
-      this.components.ui.contextMenu.visible = false;
+      if (this._closeOnClick) {
+        this.components.ui.closeMenus();
+        this.components.ui.contextMenu.visible = false;
+      }
     };
   }
 
@@ -96,6 +100,9 @@ export class Button
         name.style.whiteSpace = "nowrap";
         name.innerText = options.name;
         this.domElement.append(name);
+      }
+      if (options?.closeOnClick !== undefined) {
+        this._closeOnClick = options.closeOnClick;
       }
     }
 

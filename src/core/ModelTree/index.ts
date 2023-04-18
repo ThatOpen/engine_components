@@ -1,17 +1,27 @@
-import { TreeView, UI, Component, Components, Fragments } from "../../"
+import { TreeView, UI, Component, Components, Fragments } from "../..";
 
 export interface ITreeStructure {
-    name: string
-    children: ElementTreeItem[]
+  name: string;
+  children: ElementTreeItem[];
 }
 
 interface IElementTreeItem {
-    name: string
-    filter: { [groupSystemName: string]: string }
-    children: ElementTreeItem[]
+  name: string;
+  filter: { [groupSystemName: string]: string };
+  children: ElementTreeItem[];
 }
 
-class ElementTreeItem extends Component<IElementTreeItem> implements IElementTreeItem, UI {
+class ElementTreeItem
+  extends Component<IElementTreeItem>
+  implements IElementTreeItem, UI
+{
+  name: string;
+  enabled: boolean = true;
+  filter: { [groupSystemName: string]: string } = {};
+  #children: ElementTreeItem[] = [];
+  components: Components;
+  uiElement: TreeView;
+  fragments?: Fragments;
 
     name: string
     enabled: boolean = true
@@ -39,30 +49,42 @@ class ElementTreeItem extends Component<IElementTreeItem> implements IElementTre
         this.uiElement.onmouseover = () => this.highlight()
     }
 
-    get(): IElementTreeItem { return { name: this.name, filter: this.filter, children: this.children } }
+  get(): IElementTreeItem {
+    return { name: this.name, filter: this.filter, children: this.children };
+  }
 
-    select() {
-        if (!this.fragments) { return }
-        const highlighter = this.fragments.highlighter
-        const groups = this.fragments.groups
-        highlighter.highlightByID("select", groups.get(this.filter))
+  select() {
+    if (!this.fragments) {
+      return;
     }
+    const highlighter = this.fragments.highlighter;
+    const groups = this.fragments.groups;
+    highlighter.highlightByID("select", groups.get(this.filter));
+  }
 
-    highlight() {
-        if (!this.fragments) { return }
-        const highlighter = this.fragments.highlighter
-        const groups = this.fragments.groups
-        highlighter.highlightByID("highlight", groups.get(this.filter))
+  highlight() {
+    if (!this.fragments) {
+      return;
     }
-
+    const highlighter = this.fragments.highlighter;
+    const groups = this.fragments.groups;
+    highlighter.highlightByID("highlight", groups.get(this.filter));
+  }
 }
 
 export class ModelTree extends Component<ElementTreeItem> implements UI {
+  uiElement: TreeView;
+  name: string;
+  enabled: boolean = true;
+  components: Components;
+  groupSystemNames: string[];
+  functionsMap: { [groupSystemName: string]: () => void } = {};
+  #tree: ElementTreeItem;
+  fragments?: Fragments;
 
-    uiElement: TreeView
-    name: string
-    enabled: boolean = true
-    components: Components
+  constructor(
+    components: Components,
+    name: string,
     groupSystemNames: string[]
     functionsMap: {[groupSystemName: string]: () => void} = {}
     fragments?: Fragments
@@ -106,25 +128,33 @@ export class ModelTree extends Component<ElementTreeItem> implements UI {
         return this.get() 
     }
 
-    private process(groupSystemNames: string[], result = {}) {
-        const groups: ElementTreeItem[] = []
-        if (!this.fragments) { return groups }
-        const currentSystemName = groupSystemNames[0] //storeys
-        const systemGroups = this.fragments.groups.groupSystems[currentSystemName]
-        if (!currentSystemName || !systemGroups) { return groups }
-        for (const name in systemGroups) { //name is N00, N01, N02...
-            const filter = { ...result, [currentSystemName]: name } // { storeys: "N00" }, { storeys: "N01" }...
-            const hasElements = Object.keys(this.fragments.groups.get(filter)).length > 0
-            if (hasElements) {
-                const treeItemName = currentSystemName[0].toUpperCase() + currentSystemName.slice(1) // Storeys
-                const treeItem = new ElementTreeItem(this.components, `${treeItemName}: ${name}`) // Storeys: N01
-                treeItem.filter = filter
-                groups.push(treeItem)
-                treeItem.children = this.process(groupSystemNames.slice(1), filter)
-            }
-        }
-        return groups
+  private process(groupSystemNames: string[], result = {}) {
+    const groups: ElementTreeItem[] = [];
+    if (!this.fragments) {
+      return groups;
     }
-      
-
+    const currentSystemName = groupSystemNames[0]; // storeys
+    const systemGroups = this.fragments.groups.groupSystems[currentSystemName];
+    if (!currentSystemName || !systemGroups) {
+      return groups;
+    }
+    for (const name in systemGroups) {
+      // name is N00, N01, N02...
+      const filter = { ...result, [currentSystemName]: name }; // { storeys: "N00" }, { storeys: "N01" }...
+      const hasElements =
+        Object.keys(this.fragments.groups.get(filter)).length > 0;
+      if (hasElements) {
+        const treeItemName =
+          currentSystemName[0].toUpperCase() + currentSystemName.slice(1); // Storeys
+        const treeItem = new ElementTreeItem(
+          this.components,
+          `${treeItemName}: ${name}`
+        ); // Storeys: N01
+        treeItem.filter = filter;
+        groups.push(treeItem);
+        treeItem.children = this.process(groupSystemNames.slice(1), filter);
+      }
+    }
+    return groups;
+  }
 }
