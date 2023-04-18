@@ -57,7 +57,7 @@ export class FragmentManager
    * @param data - the bytes containing the data for the fragments to load.
    * @returns the list of IDs of the loaded fragments.
    */
-  import(data: Uint8Array) {
+  load(data: Uint8Array) {
     const fragments = this._loader.import(data);
     const scene = this._components.scene.get();
     const ids: string[] = [];
