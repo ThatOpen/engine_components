@@ -22,7 +22,7 @@ export abstract class Component<Type> {
    * The core of the component. For instance, if it's a camera component, it
    * could be a [THREE.Camera](https://threejs.org/docs/#api/en/cameras/Camera).
    */
-  abstract get(): Type;
+  abstract get(...args: any): Type;
 
   /** Whether is component is {@link Disposable}. */
   isDisposeable = (): this is Disposable => {
@@ -48,5 +48,4 @@ export abstract class Component<Type> {
   hasUI = (): this is UI => {
     return "uiElement" in this;
   };
-
 }

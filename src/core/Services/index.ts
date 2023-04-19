@@ -5,17 +5,8 @@ import { Component, Disposable } from "../../base-types";
  * them, performing batch operations, etc). A tool is a feature that achieves
  * something through user interaction (e.g. clipping planes, dimensions, etc).
  */
-export class ToolComponent
-  extends Component<Component<any> | undefined>
-  implements Disposable
-{
+export class ServicesComponent implements Disposable {
   tools: Component<any>[] = [];
-
-  /** {@link Component.name} */
-  name = "ToolComponent";
-
-  /** {@link Component.enabled} */
-  enabled = true;
 
   private _urls = {
     base: "https://2fomw59q4h.execute-api.eu-central-1.amazonaws.com/v1/tools/",
