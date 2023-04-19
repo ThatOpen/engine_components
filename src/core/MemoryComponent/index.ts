@@ -1,4 +1,5 @@
-import { Item3D } from "../GeometricComponent";
+import * as THREE from "three";
+import { Item3D } from "../../base-types";
 
 /**
  * A class to safely remove meshes and geometries from memory to

@@ -1,4 +1,3 @@
-export * from "./GeometricComponent";
 export * from "./MemoryComponent";
 export * from "./SimpleScene";
 export * from "./ToolsComponent";

@@ -126,9 +126,9 @@ export interface Progress {
  * aimed to render user interface (DOM elements) in the viewer.
  */
 export interface UIComponent extends Disposable, Hideable {
-  domElement: HTMLElement
-  visible: boolean
-  enabled: boolean
+  domElement: HTMLElement;
+  visible: boolean;
+  enabled: boolean;
 }
 
 /**
@@ -155,4 +155,9 @@ export interface Createable {
  */
 export interface UI {
   uiElement: UIComponent;
+}
+
+export interface Item3D extends THREE.Object3D {
+  geometry: THREE.BufferGeometry;
+  material: THREE.Material | THREE.Material[];
 }
