@@ -21,6 +21,7 @@
       }
     }
 
+
 </script>
 <script type="module">
 
@@ -45,7 +46,7 @@
 	const scene = components.scene.get();
 
 	scene.background = null;
-	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+	components.camera.controls.setLookAt(13, 13, 13, 0, 0, 0);
 
 	const directionalLight = new THREE.DirectionalLight();
 	directionalLight.position.set(5, 10, 3);
@@ -59,7 +60,14 @@
 	const grid = new OBC.SimpleGrid(components);
 	components.tools.add(grid);
 
+	// Set up screen culler
+
 	const culler = new OBC.ScreenCuller(components);
+
+	culler.renderDebugFrame = true;
+	const debugFrame = culler.renderer.domElement;
+	document.body.appendChild(debugFrame);
+	debugFrame.style.position = 'absolute';
 
 	const cubes = [];
 
@@ -67,16 +75,17 @@
 		return Math.random() * limit;
 	}
 
-	const geometry = new THREE.BoxGeometry();
+	const geometry = new THREE.BoxGeometry(2, 2, 2);
 	const material = new THREE.MeshLambertMaterial({ color: 'red' });
 
 	function regenerateCubes() {
 		resetCubes();
-		for (let i = 0; i < settings.count; i++) {
+		for (let i = 0; i < 300; i++) {
 			const cube = new THREE.Mesh(geometry, material);
 			cube.position.x = getRandomNumber(10);
 			cube.position.y = getRandomNumber(10);
 			cube.position.z = getRandomNumber(10);
+			cube.updateMatrix();
 			scene.add(cube);
 			culler.add(cube);
 			cubes.push(cube);
@@ -90,6 +99,8 @@
 		}
 		cubes.length = 0;
 	}
+
+	culler.needsUpdate = true;
 
 	// Set up stats
 
@@ -106,7 +117,7 @@
 	const gui = new dat.GUI();
 
 	const settings = {
-		count: 10,
+		renderDebugFrame: true,
 		update: () => {
 			culler.needsUpdate = true;
 		},
@@ -115,7 +126,9 @@
 	regenerateCubes();
 
 	gui.add(settings, 'update').name('Update visibility');
-	gui.add(settings, 'count').name('Update cube count').onChange(() => regenerateCubes());
+	gui.add(settings, 'renderDebugFrame').name('Render debug frame').onChange(() => {
+		debugFrame.style.visibility = settings.renderDebugFrame ? 'visible' : 'collapse';
+	});
 
 
 </script>

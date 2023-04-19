@@ -5,6 +5,7 @@ import { Components } from "../Components";
 import { Disposer } from "../MemoryComponent";
 
 // TODO: Clean up and document
+// TODO: Work at the instance level instead of the mesh level
 
 export class ScreenCuller implements Disposable {
   readonly renderer: THREE.WebGLRenderer;
