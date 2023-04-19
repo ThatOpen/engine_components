@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
 import { DimensionData, DimensionLabelClassName } from "./types";
 import { Components } from "../Components";
-import { Disposer } from "../MemoryComponent";
+import { Disposer } from "../Disposer";
 
 // TODO: Document + clean up this: way less parameters, clearer logic
 

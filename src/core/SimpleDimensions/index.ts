@@ -11,7 +11,7 @@ import {
   Event,
 } from "../../base-types";
 import { Components } from "../Components";
-import { Disposer } from "../MemoryComponent";
+import { Disposer } from "../Disposer";
 import { SimpleRaycaster } from "../SimpleRaycaster";
 
 /**

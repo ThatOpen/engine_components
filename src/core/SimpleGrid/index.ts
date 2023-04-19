@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Component, Disposable, Hideable } from "../../base-types";
-import { Disposer } from "../MemoryComponent";
+import { Disposer } from "../Disposer";
 import { Components } from "../Components";
 
 /**

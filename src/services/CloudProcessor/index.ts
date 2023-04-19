@@ -7,7 +7,7 @@ export class CloudProcessor extends Component<any[]> {
   tools: Component<any>[] = [];
 
   /** {@link Component.name} */
-  name = "Services";
+  name = "CloudProcessor";
 
   /** {@link Component.enabled} */
   enabled = true;

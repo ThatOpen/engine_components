@@ -28,7 +28,7 @@ Test Plan:
 */
 
 import THREE from "three";
-import { Disposer } from "../MemoryComponent";
+import { Disposer } from "../Disposer";
 import { SimpleScene } from "./index";
 import { Components } from "../../base-types";
 

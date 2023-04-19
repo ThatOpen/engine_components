@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { Material } from "three";
 import { Disposable, Event } from "../../base-types";
 import { Components } from "../Components";
-import { Disposer } from "../MemoryComponent";
+import { Disposer } from "../Disposer";
 
 // TODO: Clean up and document
 // TODO: Work at the instance level instead of the mesh level

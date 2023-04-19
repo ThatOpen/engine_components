@@ -1,4 +1,4 @@
-export * from "./MemoryComponent";
+export * from "./Disposer";
 export * from "./SimpleScene";
 export * from "./ToolsComponent";
 export * from "./SimpleRenderer";
@@ -9,3 +9,4 @@ export * from "./Components";
 export * from "./SimpleClipper";
 export * from "./ScreenCuller";
 export * from "./SimpleDimensions";
+export * from "./LocalCacher";
