@@ -1,24 +1,47 @@
 import * as THREE from "three";
 import { Fragment } from "bim-fragment";
-import { Disposable } from "../../base-types";
+import { Component, Disposable, Event } from "../../base-types";
 import { FragmentManager } from "../index";
 import { Components } from "../../core";
 
 // TODO: Clean up and document
 
-export class FragmentHighlighter implements Disposable {
-  active = true;
-  highlightMats: { [name: string]: THREE.Material[] | undefined } = {};
+interface HighlightMap {
+  [fragmentID: string]: Set<string>
+}
+
+interface HighlightEvents {
+  [highlighterName: string]: {
+    onHighlight: Event<HighlightMap>
+    onClear: Event<null>
+  }
+}
+
+interface HighlightMaterials {
+  [name: string]: THREE.Material[] | undefined
+}
+
+export class FragmentHighlighter extends Component<HighlightMaterials> implements Disposable {
+  name: string = "FragmentHighlighter";
+  enabled = true;
+  highlightMats: HighlightMaterials = {};
+  events: HighlightEvents = {};
 
   private tempMatrix = new THREE.Matrix4();
-  private selection: {
-    [selectionID: string]: { [fragmentID: string]: Set<string> };
+  selection: {
+    [selectionID: string]: HighlightMap;
   } = {};
 
   constructor(
-    private components: Components,
-    private fragments: FragmentManager
-  ) {}
+    private _components: Components,
+    private _fragments: FragmentManager
+  ) {
+    super()
+  }
+
+  get(): HighlightMaterials {
+    return this.highlightMats
+  }
 
   dispose() {
     for (const matID in this.highlightMats) {
@@ -37,23 +60,27 @@ export class FragmentHighlighter implements Disposable {
 
     this.highlightMats[name] = material;
     this.selection[name] = {};
+    this.events[name] = {
+      onHighlight: new Event(),
+      onClear: new Event()
+    };
 
     this.update();
   }
 
   update() {
-    for (const fragmentID in this.fragments.list) {
-      const fragment = this.fragments.list[fragmentID];
+    for (const fragmentID in this._fragments.list) {
+      const fragment = this._fragments.list[fragmentID];
       this.addHighlightToFragment(fragment);
     }
   }
 
   highlight(name: string, removePrevious = true) {
-    if (!this.active) return null;
+    if (!this.enabled) return null;
     this.checkSelection(name);
 
-    const meshes = this.fragments.meshes;
-    const result = this.components.raycaster.castRay(meshes);
+    const meshes = this._fragments.meshes;
+    const result = this._components.raycaster.castRay(meshes);
 
     if (!result) {
       this.clear(name);
@@ -76,7 +103,7 @@ export class FragmentHighlighter implements Disposable {
       this.selection[name][mesh.uuid] = new Set<string>();
     }
 
-    const fragment = this.fragments.list[mesh.uuid];
+    const fragment = this._fragments.list[mesh.uuid];
     const blockID = fragment.getVertexBlockID(geometry, index);
     const itemID = fragment.getItemID(instanceID, blockID);
     this.selection[name][mesh.uuid].add(itemID);
@@ -118,26 +145,36 @@ export class FragmentHighlighter implements Disposable {
 
   private clearStyle(name: string) {
     for (const fragID in this.selection[name]) {
-      const fragment = this.fragments.list[fragID];
+      const fragment = this._fragments.list[fragID];
       if (!fragment) continue;
       const selection = fragment.fragments[name];
       if (selection) {
         selection.mesh.removeFromParent();
       }
     }
+    this.events[name].onClear.trigger(null);
     this.selection[name] = {};
   }
 
   private updateFragmentHighlight(name: string, fragmentID: string) {
     const ids = this.selection[name][fragmentID];
-    const fragment = this.fragments.list[fragmentID];
+    const fragment = this._fragments.list[fragmentID];
     if (!fragment) return;
     const selection = fragment.fragments[name];
     if (!selection) return;
-    const scene = this.components.scene.get();
-    const isBlockFragment = selection.blocks.count > 1;
-    scene.add(selection.mesh);
+    
+    //#region Old child/parent code
+    // const scene = this._components.scene.get();
+    // scene.add(selection.mesh); //If we add selection.mesh directly to the scene, it won't be coordinated unless we do so manually.
+    //#endregion
 
+    //#region New child/parent code
+    const fragmentParent = fragment.mesh.parent
+    if (!fragmentParent) return;
+    fragmentParent.add(selection.mesh);
+    //#endregion
+    
+    const isBlockFragment = selection.blocks.count > 1;
     if (isBlockFragment) {
       const blockIDs: number[] = [];
       for (const id of ids) {
@@ -164,6 +201,7 @@ export class FragmentHighlighter implements Disposable {
         i++;
       }
     }
+    this.events[name].onHighlight.trigger(this.selection[name])
   }
 
   private checkSelection(name: string) {
