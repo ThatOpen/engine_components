@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="../../../resources/styles.css">
+  <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+  <title>Tools Component</title>
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.135.0/build/three.module.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.135.0/examples/jsm/libs/lil-gui.module.min.js",
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
+        "openbim-components": "../../../resources/openbim-components.js"
+      }
+    }
+</script>
+<script type="module">
+
+	// Set up scene (see SimpleScene tutorial)
+
+	import Stats from 'stats.js/src/Stats.js';
+	import * as THREE from 'three';
+	import * as OBC from 'openbim-components';
+
+	// Set up basic components
+
+	const container = document.getElementById('container');
+
+	const components = new OBC.Components();
+	const sceneComponent = new OBC.SimpleScene(components);
+	components.scene = sceneComponent
+
+
+	const grid = new OBC.SimpleGrid(components);
+	components.tools.add(grid);
+
+	const scene = sceneComponent.get();
+	// scene.background = null;
+
+	// Add a simple model
+  const fragments = new OBC.FragmentManager(components);
+	const file = await fetch("../../../resources/small.frag");
+	const data = await file.arrayBuffer();
+	const buffer = new Uint8Array(data);
+	fragments.load(buffer);
+
+	// Add some lights to the scene
+
+	const directionalLight = new THREE.DirectionalLight();
+	directionalLight.position.set(5, 10, 3)
+	directionalLight.intensity = 0.5;
+	scene.add(directionalLight);
+
+	const ambientLight = new THREE.AmbientLight();
+	ambientLight.intensity = 0.5;
+	scene.add(ambientLight);
+
+	// Set up postproduction renderer
+	components.renderer = new OBC.PostproductionRenderer(components, container);
+	components.camera = new OBC.OrthoPerspectiveCamera(components);
+	components.raycaster = new OBC.SimpleRaycaster(components);
+	components.init();
+
+  // exclude objects from postproduction
+
+  const gridMesh = grid.get();
+	components.renderer.postproduction.excludedItems.add(gridMesh);
+
+	// set up postproduction
+
+	components.renderer.postproduction.outlineColor = 0x999999;
+	components.renderer.postproduction.setup(components.camera.controls);
+
+	components.renderer.postproduction.active = true;
+	components.renderer.postproduction.visible = true;
+
+	let timeout;
+	function updatePostproduction() {
+		clearTimeout(timeout);
+		components.renderer.postproduction.visible = false;
+		timeout = setTimeout(() => {
+			components.renderer.postproduction.active = true;
+			components.renderer.postproduction.visible = true;
+			components.renderer.postproduction.update();
+		}, 1000);
+  }
+
+	window.onwheel = () => updatePostproduction();
+	window.onmousedown = () => updatePostproduction();
+	window.onmouseup = () => updatePostproduction();
+
+
+</script>
+</body>
+</html>
