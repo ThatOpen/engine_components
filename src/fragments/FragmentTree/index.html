@@ -13,7 +13,7 @@
 </head>
 <body>
 <div class="full-screen" id="container">
-    <div id="tree-container" class="simple-container"></div>
+  <div id="tree-container" class="simple-container"></div>
 </div>
 <script type="importmap">
     {
@@ -25,6 +25,7 @@
         "web-ifc": "https://unpkg.com/web-ifc@0.0.34/web-ifc-api.js"
       }
     }
+
 </script>
 <script type="module">
 
@@ -34,7 +35,7 @@
 	import * as OBC from 'openbim-components';
 	import Stats from 'stats.js/src/Stats.js';
 	import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
-    import * as webIfc from "web-ifc"
+	import * as webIfc from 'web-ifc';
 
 	const container = document.getElementById('container');
 
@@ -66,121 +67,73 @@
 
 	const fragments = new OBC.FragmentManager(components);
 	const fragmentIfcLoader = new OBC.FragmentIfcLoader(fragments);
-    const grouper = new OBC.FragmentGrouper(fragments);
+	const grouper = new OBC.FragmentGrouper(fragments);
 
-    //#region Setup elements highlight
-    const highlighter = new OBC.FragmentHighlighter(components, fragments);
-    highlighter.enabled = true
-    highlighter.add("select", [new THREE.MeshLambertMaterial({color: "gold"})])
-    highlighter.add("highlight", [new THREE.MeshLambertMaterial({color: "gold", transparent: true, opacity: 0.3})])
-    container.addEventListener("click", e => {
-        if (e.target !== components.renderer.get().domElement) { return }
-        highlighter.highlight("select")
-    })
-    container.addEventListener("mousemove", e => {
-        if (e.target !== components.renderer.get().domElement) { return }
-        const highlight = highlighter.highlight("highlight")
-    })
-    //#endregion
+	//#region Setup elements highlight
+	const highlighter = new OBC.FragmentHighlighter(components, fragments);
+	highlighter.enabled = true;
+	highlighter.add('select', [new THREE.MeshLambertMaterial({ color: 'gold' })]);
+	highlighter.add('highlight', [new THREE.MeshLambertMaterial({ color: 'gold', transparent: true, opacity: 0.3 })]);
+
+	container.addEventListener('click', e => {
+		if (e.target !== components.renderer.get().domElement) {
+			return;
+		}
+		highlighter.highlight('select');
+	});
+
+	container.addEventListener('mousemove', e => {
+		if (e.target !== components.renderer.get().domElement) {
+			return;
+		}
+		const highlight = highlighter.highlight('highlight');
+	});
+	//#endregion
 
 	fragmentIfcLoader.settings.wasm = {
-        path: "https://unpkg.com/web-ifc@0.0.39/",
-        absolute: true
-    }
+		path: 'https://unpkg.com/web-ifc@0.0.39/',
+		absolute: true,
+	};
 
 	fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
 
-    //#region Grouping functions
-    function groupByPredefinedType(model) {
-        const group = {}
-        const arrayProperties = Object.values(model.properties) 
-        const levelRelations = arrayProperties.filter( prop => prop.type === webIfc.IFCRELCONTAINEDINSPATIALSTRUCTURE )
-        const elements = []
-        levelRelations.forEach( rel => {
-            const expressIDs = rel.RelatedElements.map( element => element.value )
-            elements.push(...expressIDs)
-        } )
-        elements.forEach( element => {
-            const entity = model.properties[element]
-            const fragmentID = model.expressIDFragmentIDMap[entity.expressID]
-            const predefinedType = String(entity.PredefinedType?.value).toUpperCase()
-            if (!group[predefinedType]) { group[predefinedType] = {} }
-            if (!group[predefinedType][fragmentID]) { group[predefinedType][fragmentID] = [] }
-            group[predefinedType][fragmentID].push(entity.expressID)
-        } )
-        return group
-    }
+	let model;
 
-    function groupByEntity(model) {
-        const group = {}
-        for (const expressID in model.itemTypes) {
-            const entity = model.allTypes[model.itemTypes[expressID]]
-            const fragment = model.expressIDFragmentIDMap[expressID]
-            if (!fragment) {continue}
-            if (!group[entity]) { group[entity] = {} }
-            if (!group[entity][fragment]) { group[entity][fragment] = [] }
-            group[entity][fragment].push(expressID)
-        }
-        return group
-    }
-
-    function groupByStorey(model) {
-        const group = {}
-        const properties = Object.values(model.properties)
-        const spatialRels = properties.filter( entity => entity.type === webIfc.IFCRELCONTAINEDINSPATIALSTRUCTURE )
-        spatialRels.forEach( rel => {
-            if (!rel.RelatingStructure || !rel.RelatingStructure.value) {return}
-            const storeyElements = rel.RelatedElements.map( element => {return element.value.toString()} )
-            const fragmentMap = {}
-            storeyElements.forEach( expressID => {
-                const fragment = model.expressIDFragmentIDMap[expressID]
-                if (!fragment) {return}
-                if (!fragmentMap[fragment]) { fragmentMap[fragment] = [] }
-                fragmentMap[fragment].push(expressID)
-            } )
-            const storey = properties.find( prop => prop.expressID === rel.RelatingStructure.value )
-            const storeyName = storey.Name.value
-            group[storeyName] = fragmentMap
-        } )
-        return group
-    }
-
-    //#endregion
-
-	let model
-    async function loadIfcAsFragments(url) {
-        if (model) return;
+	async function loadIfcAsFragments(url) {
+		if (model) return;
 		const file = await fetch(url);
 		const data = await file.arrayBuffer();
 		const buffer = new Uint8Array(data);
 		model = await fragmentIfcLoader.load(buffer);
 
-        grouper.groupSystems.predefinedType = groupByPredefinedType(model)
-        grouper.groupSystems.entity = groupByEntity(model)
-        grouper.groupSystems.storey = groupByStorey(model)
+		const fragmentGroups = new OBC.FragmentGroups();
 
-        const modelTree = new OBC.FragmentTree(
-            components, 
-            highlighter, 
-            grouper, 
-            "Model Tree", 
-            ["storey", "entity", "predefinedType"]
-        )
+		grouper.groupSystems.predefinedType = fragmentGroups.groupByPredefinedType(model);
+		grouper.groupSystems.entity = fragmentGroups.groupByEntity(model);
+		grouper.groupSystems.storey = fragmentGroups.groupByStorey(model);
 
-        modelTree.build()
-        const treeContainer = document.getElementById("tree-container")
-        treeContainer.append(modelTree.uiElement.get())
-        console.log(modelTree)
+		const modelTree = new OBC.FragmentTree(
+			components,
+			highlighter,
+			grouper,
+			'Model Tree',
+			['storey', 'entity', 'predefinedType'],
+		);
+
+		modelTree.build();
+		const treeContainer = document.getElementById('tree-container');
+		treeContainer.append(modelTree.uiElement.get());
+		console.log(modelTree);
 
 		scene.add(model);
-		for(const fragment of model.fragments) {
+		for (const fragment of model.fragments) {
 			fragments.list[fragment.id] = fragment;
-        }
+		}
 
-        highlighter.update()
-        grid.visible = false
+		highlighter.update();
+		grid.visible = false;
 
-    }
+	}
 
 	// Set up stats
 
@@ -194,11 +147,11 @@
 
 	// Set up action buttons
 
-    const toolbar = new OBC.Toolbar(components)
-    const button = new OBC.Button(components, {name: "Load IFC", materialIconName: "upload_file"})
-    button.onclick = () => loadIfcAsFragments("../../../resources/small.ifc")
-    toolbar.addButton(button)
-    components.ui.addToolbar(toolbar)
+	const toolbar = new OBC.Toolbar(components);
+	const button = new OBC.Button(components, { name: 'Load IFC', materialIconName: 'upload_file' });
+	button.onclick = () => loadIfcAsFragments('../../../resources/small.ifc');
+	toolbar.addButton(button);
+	components.ui.addToolbar(toolbar);
 
 </script>
 </body>

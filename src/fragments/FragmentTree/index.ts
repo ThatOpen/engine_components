@@ -20,13 +20,19 @@ export class FragmentTree extends Component<FragmentTreeItem> implements UI {
     private _fragmentHighlighter: FragmentHighlighter,
     private _fragmentGrouper: FragmentGrouper,
     name: string,
-    groupSystemNames: string[],
+    groupSystemNames: string[]
   ) {
     super();
     this._components = components;
     this.name = name;
     this.groupSystemNames = groupSystemNames;
-    this._tree = new FragmentTreeItem(this._components, this._fragmentHighlighter, this._fragmentGrouper, this.name);
+
+    this._tree = new FragmentTreeItem(
+      this._components,
+      this._fragmentHighlighter,
+      this._fragmentGrouper,
+      this.name
+    );
     this.uiElement = this._tree.uiElement;
   }
 
@@ -35,7 +41,7 @@ export class FragmentTree extends Component<FragmentTreeItem> implements UI {
   }
 
   build() {
-    this._tree.children = this.#process(this.groupSystemNames);
+    this._tree.children = this.process(this.groupSystemNames);
     return this.get();
   }
 
@@ -47,7 +53,7 @@ export class FragmentTree extends Component<FragmentTreeItem> implements UI {
     return this.get();
   }
 
-  #process(groupSystemNames: string[], result = {}) {
+  private process(groupSystemNames: string[], result = {}) {
     const groups: FragmentTreeItem[] = [];
     const currentSystemName = groupSystemNames[0]; // storeys
     const systemGroups = this._fragmentGrouper.groupSystems[currentSystemName];
@@ -57,7 +63,8 @@ export class FragmentTree extends Component<FragmentTreeItem> implements UI {
     for (const name in systemGroups) {
       // name is N00, N01, N02...
       const filter = { ...result, [currentSystemName]: name }; // { storeys: "N00" }, { storeys: "N01" }...
-      const hasElements = Object.keys(this._fragmentGrouper.get(filter)).length > 0;
+      const hasElements =
+        Object.keys(this._fragmentGrouper.get(filter)).length > 0;
       if (hasElements) {
         const treeItemName =
           currentSystemName[0].toUpperCase() + currentSystemName.slice(1); // Storeys
@@ -69,7 +76,7 @@ export class FragmentTree extends Component<FragmentTreeItem> implements UI {
         ); // Storeys: N01
         treeItem.filter = filter;
         groups.push(treeItem);
-        treeItem.children = this.#process(groupSystemNames.slice(1), filter);
+        treeItem.children = this.process(groupSystemNames.slice(1), filter);
       }
     }
     return groups;

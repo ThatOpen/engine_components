@@ -13,7 +13,7 @@
 </head>
 <body>
 <div class="full-screen" id="container">
-    <div id="properties-container" class="simple-container"></div>
+  <div id="properties-container" class="simple-container"></div>
 </div>
 <script type="importmap">
     {
@@ -24,6 +24,7 @@
         "openbim-components": "../../../resources/openbim-components.js"
       }
     }
+
 </script>
 <script type="module">
 
@@ -65,31 +66,36 @@
 	const fragments = new OBC.FragmentManager(components);
 	const fragmentIfcLoader = new OBC.FragmentIfcLoader(fragments);
 
-    //#region Setup elements highlight
-    const highlighter = new OBC.FragmentHighlighter(components, fragments);
-    highlighter.enabled = true
-    highlighter.add("select", [new THREE.MeshLambertMaterial({color: "gold"})])
-    highlighter.add("highlight", [new THREE.MeshLambertMaterial({color: "gold", transparent: true, opacity: 0.3})])
-    container.addEventListener("click", e => {
-        if (e.target !== components.renderer.get().domElement) { return }
-        highlighter.highlight("select")
-    })
-    container.addEventListener("mousemove", e => {
-        if (e.target !== components.renderer.get().domElement) { return }
-        const highlight = highlighter.highlight("highlight")
-    })
-    //#endregion
+	//#region Setup elements highlight
+	const highlighter = new OBC.FragmentHighlighter(components, fragments);
+	highlighter.enabled = true;
+	highlighter.add('select', [new THREE.MeshLambertMaterial({ color: 'gold' })]);
+	highlighter.add('highlight', [new THREE.MeshLambertMaterial({ color: 'gold', transparent: true, opacity: 0.3 })]);
+	container.addEventListener('click', e => {
+		if (e.target !== components.renderer.get().domElement) {
+			return;
+		}
+		highlighter.highlight('select');
+	});
+	container.addEventListener('mousemove', e => {
+		if (e.target !== components.renderer.get().domElement) {
+			return;
+		}
+		const highlight = highlighter.highlight('highlight');
+	});
+	//#endregion
 
-    const propertiesProcessor = new OBC.PropertiesProcessor(components, fragments, highlighter)
-    const propertiesContainer = document.getElementById("properties-container")
-    propertiesContainer.append(propertiesProcessor.uiElement.get())
+	const propertiesProcessor = new OBC.PropertiesProcessor(components, fragments, highlighter);
+	const propertiesContainer = document.getElementById('properties-container');
+	propertiesContainer.append(propertiesProcessor.uiElement.get());
 
 	fragmentIfcLoader.settings.wasm = {
-        path: "https://unpkg.com/web-ifc@0.0.39/",
-        absolute: true
-    }
+		path: 'https://unpkg.com/web-ifc@0.0.39/',
+		absolute: true,
+	};
 
 	fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
+	fragmentIfcLoader.settings.webIfc.USE_FAST_BOOLS = false;
 
 	async function loadIfcAsFragments(url) {
 		const file = await fetch(url);
@@ -97,17 +103,17 @@
 		const buffer = new Uint8Array(data);
 		const model = await fragmentIfcLoader.load(buffer);
 
-        propertiesProcessor.process(model)
+		propertiesProcessor.process(model);
 
 		scene.add(model);
-		for(const fragment of model.fragments) {
+		for (const fragment of model.fragments) {
 			fragments.list[fragment.id] = fragment;
-        }
+		}
 
-        highlighter.update()
-        grid.visible = false
+		highlighter.update();
+		grid.visible = false;
 
-    }
+	}
 
 	// Set up stats
 
@@ -121,11 +127,11 @@
 
 	// Set up action buttons
 
-    const toolbar = new OBC.Toolbar(components)
-    const button = new OBC.Button(components, {name: "Load IFC", materialIconName: "upload_file"})
-    button.onclick = () => loadIfcAsFragments("../../../resources/small.ifc")
-    toolbar.addButton(button)
-    components.ui.addToolbar(toolbar)
+	const toolbar = new OBC.Toolbar(components);
+	const button = new OBC.Button(components, { name: 'Load IFC', materialIconName: 'upload_file' });
+	button.onclick = () => loadIfcAsFragments('../../../resources/small.ifc');
+	toolbar.addButton(button);
+	components.ui.addToolbar(toolbar);
 
 </script>
 </body>
