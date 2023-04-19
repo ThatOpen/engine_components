@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="../../../resources/styles.css">
+  <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+  <title>Tools Component</title>
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.135.0/build/three.module.js",
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
+        "openbim-components": "../../../resources/openbim-components.js"
+      }
+    }
+</script>
+<script type="module">
+
+	// Set up scene (see SimpleScene tutorial)
+
+	import * as THREE from 'three';
+	import * as OBC from 'openbim-components';
+
+	const container = document.getElementById('container');
+
+	const components = new OBC.Components();
+
+	components.scene = new OBC.SimpleScene(components);
+	components.renderer = new OBC.SimpleRenderer(components, container);
+	components.camera = new OBC.SimpleCamera(components);
+	components.raycaster = new OBC.SimpleRaycaster(components);
+
+	components.init();
+
+	const scene = components.scene.get();
+
+	scene.background = null;
+	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+
+	const directionalLight = new THREE.DirectionalLight();
+	directionalLight.position.set(5, 10, 3);
+	directionalLight.intensity = 0.5;
+	scene.add(directionalLight);
+
+	const ambientLight = new THREE.AmbientLight();
+	ambientLight.intensity = 0.5;
+	scene.add(ambientLight);
+
+	const grid = new OBC.SimpleGrid(components);
+	components.tools.add(grid);
+
+  // Set up cloud processor
+
+	const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1IjoiNjQzZmFiN2NkM2QwMmJhOWY1NjA5ZTVlIiwiYSI6IjY0M2ZiMGQ4Yzc1MjVjZWY0MDA3MWQ3MyJ9.AbcRDZWvKuOmtfxjh0O1NA7Yqa5NFHqAyckoQHJjfLs";
+	const cloudProcessor = new OBC.CloudProcessor(token);
+
+	// Get all the models
+
+	await cloudProcessor.update();
+	const models = cloudProcessor.get();
+	console.log(models);
+
+	// Delete models
+
+  for(const model of models) {
+		cloudProcessor.delete(model._id);
+  }
+
+  // Upload model
+
+	window.ondblclick = async () => {
+		await cloudProcessor.upload("../../../resources/small.ifc");
+		console.log("Model uploaded! Starting processing...");
+  }
+
+	// Download model (after processing)
+
+  const fragments = new OBC.FragmentManager(components);
+
+  async function loadModel(response) {
+		console.log("Model process successful!");
+		console.log(response);
+		const downloaded = await fetch(response.downloadUrl);
+		const model = await downloaded.arrayBuffer();
+		const data = new Uint8Array(model);
+		fragments.load(data);
+  }
+
+	cloudProcessor.modelProcessed.on(loadModel)
+
+
+</script>
+</body>
+</html>
