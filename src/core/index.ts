@@ -10,3 +10,4 @@ export * from "./SimpleClipper";
 export * from "./ScreenCuller";
 export * from "./SimpleDimensions";
 export * from "./LocalCacher";
+export * from "./PropertiesProcessor";

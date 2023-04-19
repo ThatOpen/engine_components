@@ -138,9 +138,9 @@ export class Button
     // #endregion
   }
 
-  // TODO: Implement this
-  dispose() {
-    throw new Error("To be implemented");
+  dispose(onlyChildren = false) {
+    this.menu.dispose()
+    if (!onlyChildren) { this.domElement.remove() }
   }
 
   get(): HTMLButtonElement {

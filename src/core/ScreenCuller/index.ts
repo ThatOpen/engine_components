@@ -1,19 +1,20 @@
 import * as THREE from "three";
 import { Material } from "three";
-import { Disposable, Event } from "../../base-types";
+import { Component, Disposable, Event } from "../../base-types";
 import { Components } from "../Components";
 import { Disposer } from "../Disposer";
 
 // TODO: Clean up and document
 // TODO: Work at the instance level instead of the mesh level
 
-export class ScreenCuller implements Disposable {
+export class ScreenCuller extends Component<null> implements Disposable {
   readonly renderer: THREE.WebGLRenderer;
   readonly renderTarget: THREE.WebGLRenderTarget;
   readonly bufferSize: number;
   readonly materialCache: Map<string, THREE.MeshBasicMaterial>;
   readonly worker: Worker;
 
+  name: string = "ScreenCuller";
   enabled = true;
   viewUpdated = new Event();
   needsUpdate = false;
@@ -42,6 +43,7 @@ export class ScreenCuller implements Disposable {
     readonly rtHeight = 512,
     readonly autoUpdate = true
   ) {
+    super()
     this.renderer = new THREE.WebGLRenderer();
     const planes = this.components.renderer.clippingPlanes;
     this.renderer.clippingPlanes = planes;
@@ -69,6 +71,10 @@ export class ScreenCuller implements Disposable {
     this.worker = new Worker(URL.createObjectURL(blob));
     this.worker.addEventListener("message", this.handleWorkerMessage);
     if (autoUpdate) window.setInterval(this.updateVisibility, updateInterval);
+  }
+
+  get(): null {
+    return null
   }
 
   dispose() {

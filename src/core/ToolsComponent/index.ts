@@ -1,4 +1,4 @@
-import { Component, Disposable } from "../../base-types";
+import { Component, Disposable, Event } from "../../base-types";
 
 /**
  * An object to easily handle all the tools used (e.g. updating them, retrieving
@@ -10,6 +10,8 @@ export class ToolComponent
   implements Disposable
 {
   tools: Component<any>[] = [];
+  onToolAdded: Event<Component<any>> = new Event()
+  onToolRemoved: Event<Component<any>> = new Event()
 
   /** {@link Component.name} */
   name = "ToolComponent";
@@ -26,8 +28,11 @@ export class ToolComponent
    * Registers a new tool component.
    * @param tool - The tool to register in the application.
    */
-  add(tool: Component<any>) {
-    this.tools.push(tool);
+  add(...tool: Component<any>[]) {
+    tool.forEach( t => {
+      this.tools.push(t);
+      this.onToolAdded.trigger(t);
+    } );
   }
 
   /**
@@ -38,6 +43,7 @@ export class ToolComponent
     const index = this.tools.findIndex((c) => c === tool);
     if (index > -1) {
       this.tools.splice(index, 1);
+      this.onToolRemoved.trigger(tool);
       return true;
     }
     return false;

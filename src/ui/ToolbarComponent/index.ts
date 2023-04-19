@@ -71,10 +71,10 @@ export class Toolbar
     this.visible = true;
   }
 
-  // TODO: Implement this
-  dispose() {
-    throw new Error("To be implemented");
-  }
+  dispose(onlyChildren = false) {
+    this.children.forEach( button => button.dispose() )
+    if (!onlyChildren) { this.domElement.remove() }
+}
 
   get hasElements() {
     return this.children.length > 0;
