@@ -8,3 +8,4 @@ export * from "./SimpleGrid";
 export * from "./Components";
 export * from "./SimpleClipper";
 export * from "./ScreenCuller";
+export * from "./SimpleDimensions";
