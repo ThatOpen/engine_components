@@ -1,6 +1,6 @@
 {
   "name": "openbim-components",
-  "version": "0.0.47-beta1",
+  "version": "1.0.0-alpha.0",
   "main": "index.js",
   "author": "harry collin, antonio gonzalez viegas",
   "license": "MIT",
@@ -9,7 +9,8 @@
     "test": "jest",
     "build": "node resources/cleaner.js && tsc && yarn build-examples",
     "build-examples": "rollup -c resources/rollup.config.js",
-    "publish-repo": "cpy package.json dist && cd dist && npm publish"
+    "publish-repo": "cpy package.json dist && cd dist && npm publish",
+    "publish-repo-alpha": "cpy package.json dist && cd dist && npm publish --tag alpha"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^22.0.2",
