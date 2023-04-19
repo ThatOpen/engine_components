@@ -1,6 +1,6 @@
 import { Component, UI } from "../../base-types";
 import { TreeView } from "../../ui";
-import { FragmentManager } from "../index";
+import { FragmentGrouper, FragmentHighlighter } from "../index";
 import { Components } from "../../core";
 
 interface TreeItem {
@@ -9,35 +9,44 @@ interface TreeItem {
   children: TreeItem[];
 }
 
+interface FragmentTreeItemOptions {
+  selectionHighlighterName: string
+  highlightHighlighterName: string
+}
+
 export class FragmentTreeItem extends Component<TreeItem> implements UI {
   name: string;
   enabled: boolean = true;
   filter: { [groupSystemName: string]: string } = {};
-  #children: FragmentTreeItem[] = [];
   components: Components;
   uiElement: TreeView;
-  fragments: FragmentManager;
+  private _children: FragmentTreeItem[] = [];
+  private readonly _options: FragmentTreeItemOptions
 
   get children() {
-    return this.#children;
+    return this._children;
   }
 
   set children(children: FragmentTreeItem[]) {
-    this.#children = children;
+    this._children = children;
     children.forEach((child) => this.uiElement.addChild(child.uiElement));
   }
 
-  constructor(components: Components, name: string) {
+  constructor(
+    components: Components, 
+    private _fragmentHighlighter: FragmentHighlighter, 
+    private _fragmentGrouper: FragmentGrouper, 
+    name: string,
+    config?: FragmentTreeItemOptions 
+  ) {
     super();
     this.components = components;
-    const fragments = components.tools.get("Fragments") as
-      | FragmentManager
-      | undefined;
-    if (!fragments) {
-      throw new Error();
-    }
-    this.fragments = fragments;
     this.name = name;
+    const defaultConfig: FragmentTreeItemOptions = {
+      selectionHighlighterName: "select",
+      highlightHighlighterName: "highlight",
+    } 
+    this._options = { ...defaultConfig, ...config }
     this.uiElement = new TreeView(this.components, name);
     this.uiElement.onclick = () => this.select();
     this.uiElement.onmouseover = () => this.highlight();
@@ -48,31 +57,12 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
   }
 
   select() {
-    if (!this.fragments) {
-      return;
-    }
-
-    // TODO: Decouple highlighter from this
-    // @ts-ignore
-    const highlighter = this.fragments.highlighter;
-
-    // TODO: Decouple groups from fragments
-    // @ts-ignore
-    const groups = this.fragments.groups;
-    highlighter.highlightByID("select", groups.get(this.filter));
+    const selectorName = this._options.selectionHighlighterName
+    this._fragmentHighlighter.highlightByID(selectorName, this._fragmentGrouper.get(this.filter));
   }
-
+  
   highlight() {
-    if (!this.fragments) {
-      return;
-    }
-    // TODO: Decouple highlighter from this
-    // @ts-ignore
-    const highlighter = this.fragments.highlighter;
-
-    // TODO: Decouple groups from fragments
-    // @ts-ignore
-    const groups = this.fragments.groups;
-    highlighter.highlightByID("highlight", groups.get(this.filter));
+    const highlighterName = this._options.highlightHighlighterName
+    this._fragmentHighlighter.highlightByID(highlighterName, this._fragmentGrouper.get(this.filter));
   }
 }

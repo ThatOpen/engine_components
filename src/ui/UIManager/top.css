@@ -23,7 +23,7 @@
     cursor: pointer;
     background-color: rgba(255, 255, 255, 0.05);
     background-color: var(--secondary-color);
-    color: black
+    color: var(--primary-color);
 }
 
 .tooeen-button:disabled {
@@ -109,12 +109,14 @@
     min-height: 30px;
     width: 100%;
     box-sizing: border-box;
+    padding-right: 10px;
     /* border: 1px solid transparent; */
     cursor: pointer;
 }
 
 .tooeen-tree-item-title:hover {
-    background-color: var(--primary-color);
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
     /* border: 1px solid var(--primary-color); */
     border-radius: 5px;
 }

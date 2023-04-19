@@ -1,41 +1,32 @@
 import { Component, UI } from "../../base-types";
 import { TreeView } from "../../ui";
 import { FragmentTreeItem } from "./tree-item";
-import { FragmentManager } from "../index";
 import { Components } from "../../core";
 import { FragmentGrouper } from "../fragment-grouper";
+import { FragmentHighlighter } from "../FragmentHighlighter";
 
-export class ModelTree extends Component<FragmentTreeItem> implements UI {
+export class FragmentTree extends Component<FragmentTreeItem> implements UI {
   uiElement: TreeView;
   name: string;
   enabled: boolean = true;
-  components: Components;
+  private _components: Components;
   groupSystemNames: string[];
   functionsMap: { [groupSystemName: string]: () => void } = {};
-  fragments: FragmentManager;
 
   private readonly _tree: FragmentTreeItem;
 
   constructor(
     components: Components,
+    private _fragmentHighlighter: FragmentHighlighter,
+    private _fragmentGrouper: FragmentGrouper,
     name: string,
     groupSystemNames: string[],
-    private groups: FragmentGrouper
   ) {
     super();
-    this.components = components;
-    const fragments = components.tools.get("Fragments") as
-      | FragmentManager
-      | undefined;
-    if (!fragments) {
-      throw new Error(
-        "ModelTree needs Fragments in order to work properly. Try const fragments = new Fragments(components) and then components.tools.add(fragments)."
-      );
-    }
-    this.fragments = fragments;
+    this._components = components;
     this.name = name;
     this.groupSystemNames = groupSystemNames;
-    this._tree = new FragmentTreeItem(this.components, this.name);
+    this._tree = new FragmentTreeItem(this._components, this._fragmentHighlighter, this._fragmentGrouper, this.name);
     this.uiElement = this._tree.uiElement;
   }
 
@@ -58,23 +49,22 @@ export class ModelTree extends Component<FragmentTreeItem> implements UI {
 
   #process(groupSystemNames: string[], result = {}) {
     const groups: FragmentTreeItem[] = [];
-    if (!this.fragments) {
-      return groups;
-    }
     const currentSystemName = groupSystemNames[0]; // storeys
-    const systemGroups = this.groups.groupSystems[currentSystemName];
+    const systemGroups = this._fragmentGrouper.groupSystems[currentSystemName];
     if (!currentSystemName || !systemGroups) {
       return groups;
     }
     for (const name in systemGroups) {
       // name is N00, N01, N02...
       const filter = { ...result, [currentSystemName]: name }; // { storeys: "N00" }, { storeys: "N01" }...
-      const hasElements = Object.keys(this.groups.get(filter)).length > 0;
+      const hasElements = Object.keys(this._fragmentGrouper.get(filter)).length > 0;
       if (hasElements) {
         const treeItemName =
           currentSystemName[0].toUpperCase() + currentSystemName.slice(1); // Storeys
         const treeItem = new FragmentTreeItem(
-          this.components,
+          this._components,
+          this._fragmentHighlighter,
+          this._fragmentGrouper,
           `${treeItemName}: ${name}`
         ); // Storeys: N01
         treeItem.filter = filter;

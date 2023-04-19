@@ -1,5 +1,5 @@
 import * as WEBIFC from "web-ifc";
-import { Disposable } from "../../base-types";
+import { Component, Disposable } from "../../base-types";
 import { FragmentManager } from "../index";
 import {
   DataConverter,
@@ -15,7 +15,10 @@ import {
  * properties as a JSON file, as well as other sets of information within
  * the IFC file.
  */
-export class FragmentIfcLoader implements Disposable {
+export class FragmentIfcLoader extends Component<null> implements Disposable {
+  name: string = "FragmentIfcLoader";
+  enabled: boolean = true;
+
   /** Configuration of the IFC-fragment conversion. */
   settings = new IfcFragmentSettings();
 
@@ -37,7 +40,12 @@ export class FragmentIfcLoader implements Disposable {
   );
 
   constructor(fragments: FragmentManager) {
+    super();
     this._fragments = fragments;
+  }
+
+  get(): null {
+    return null
   }
 
   /** {@link Disposable.dispose} */
@@ -148,3 +156,5 @@ export class FragmentIfcLoader implements Disposable {
     }
   }
 }
+
+export * from "./src"
