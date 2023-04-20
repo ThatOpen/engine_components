@@ -18,7 +18,7 @@ export class LocalCacher extends Component<any> implements UI {
   loadButton: Button;
   wipeButton: Button;
 
-  constructor(components: Components) {
+  constructor(public components: Components) {
     super();
     this._db = new ModelDatabase();
 

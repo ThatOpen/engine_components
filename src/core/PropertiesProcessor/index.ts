@@ -222,7 +222,9 @@ export class PropertiesProcessor
     options?: { group?: string; prefix?: string }
   ) {
     const props = model.properties[expressID];
-    if (!props) {return null}
+    if (!props) {
+      return null;
+    }
     const _options = { group: "Attributes", prefix: "", ...options };
     const { group, prefix } = _options;
     const attributes: IEntityAttributes = {
@@ -286,8 +288,8 @@ export class PropertiesProcessor
     const properties = model.properties;
     const arrayProperties = Object.values(properties);
 
-    //#region Building properties
-    let buildingAttributes: IEntityAttributes | null
+    // #region Building properties
+    let buildingAttributes: IEntityAttributes | null;
     const building: any = arrayProperties.find(
       (prop: any) => prop.type === WEBIFC.IFCBUILDING
     );
@@ -297,10 +299,10 @@ export class PropertiesProcessor
         prefix: "Building",
       });
     }
-    //#endregion
+    // #endregion
 
-    //#region Site properties
-    let siteAttributes: IEntityAttributes | null
+    // #region Site properties
+    let siteAttributes: IEntityAttributes | null;
     const site: any = arrayProperties.find(
       (prop: any) => prop.type === WEBIFC.IFCSITE
     );
@@ -310,7 +312,7 @@ export class PropertiesProcessor
         prefix: "Site",
       });
     }
-    //#endregion
+    // #endregion
 
     model.fragments.forEach((fragment) => {
       fragment.items.forEach((expressID) => {
@@ -326,7 +328,8 @@ export class PropertiesProcessor
           }
         }
         if (buildingAttributes) {
-          const { globalId, type, tag, ifcEntity, ...attrs } = buildingAttributes
+          const { globalId, type, tag, ifcEntity, ...attrs } =
+            buildingAttributes;
           for (const name in attrs) {
             // @ts-ignore
             const attribute = attrs[name];
@@ -334,7 +337,7 @@ export class PropertiesProcessor
           }
         }
         if (siteAttributes) {
-          const { globalId, type, tag, ifcEntity, ...attrs } = siteAttributes
+          const { globalId, type, tag, ifcEntity, ...attrs } = siteAttributes;
           for (const name in attrs) {
             // @ts-ignore
             const attribute = attrs[name];
@@ -430,16 +433,23 @@ export class PropertiesProcessor
     });
     spatialRelations.forEach((rel: any) => {
       const structure = properties[rel.RelatingStructure.value];
-      if (structure.type !== WEBIFC.IFCBUILDINGSTOREY) { return }
+      if (structure.type !== WEBIFC.IFCBUILDINGSTOREY) {
+        return;
+      }
       const elements = rel.RelatedElements.map((el: any) => {
         return el.value;
       });
-      const storeyAttributes = this.processAttributes(model, structure.expressID, {
+      const storeyAttributes = this.processAttributes(
+        model,
+        structure.expressID,
+        {
           group: "Storey",
           prefix: "Storey",
-        });
-        elements.forEach((expressID: number) => {
-          if (structure.Elevation) {
+        }
+      );
+
+      elements.forEach((expressID: number) => {
+        if (structure.Elevation) {
           const elevation: IPropData = {
             name: "StoreyElevation",
             group: "Storey",
@@ -449,7 +459,7 @@ export class PropertiesProcessor
           this.storeProperty(props, expressID, elevation);
         }
         if (storeyAttributes) {
-          const { globalId, type, tag, ifcEntity, ...attrs } = storeyAttributes
+          const { globalId, type, tag, ifcEntity, ...attrs } = storeyAttributes;
           for (const name in attrs) {
             // @ts-ignore
             const attribute = attrs[name];

@@ -20,7 +20,7 @@ export class FragmentManager
   /** All the created [fragments](https://github.com/ifcjs/fragment). */
   list: { [guid: string]: Fragment } = {};
 
-  onFragmentsLoaded: Event<string[]> = new Event()
+  onFragmentsLoaded: Event<string[]> = new Event();
 
   private _loader = new Serializer();
   private _components: Components;
@@ -54,6 +54,15 @@ export class FragmentManager
     this.list = {};
   }
 
+  /** Disposes all existing fragments */
+  reset() {
+    for (const id in this.list) {
+      const fragment = this.list[id];
+      fragment.dispose();
+    }
+    this.list = {};
+  }
+
   /**
    * Loads one or many fragments into the scene.
    * @param data - the bytes containing the data for the fragments to load.
@@ -69,7 +78,7 @@ export class FragmentManager
       ids.push(fragment.id);
       this._components.meshes.push(fragment.mesh);
     }
-    this.onFragmentsLoaded.trigger(ids)
+    this.onFragmentsLoaded.trigger(ids);
     return ids;
   }
 
