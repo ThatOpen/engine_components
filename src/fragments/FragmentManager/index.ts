@@ -1,6 +1,6 @@
 import { Fragment, Serializer } from "bim-fragment";
 import * as THREE from "three";
-import { Component, Disposable } from "../../base-types";
+import { Component, Disposable, Event } from "../../base-types";
 import { Components } from "../../core";
 
 /**
@@ -19,6 +19,8 @@ export class FragmentManager
 
   /** All the created [fragments](https://github.com/ifcjs/fragment). */
   list: { [guid: string]: Fragment } = {};
+
+  onFragmentsLoaded: Event<string[]> = new Event()
 
   private _loader = new Serializer();
   private _components: Components;
@@ -67,6 +69,7 @@ export class FragmentManager
       ids.push(fragment.id);
       this._components.meshes.push(fragment.mesh);
     }
+    this.onFragmentsLoaded.trigger(ids)
     return ids;
   }
 

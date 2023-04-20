@@ -221,9 +221,10 @@ export class PropertiesProcessor
     expressID: number,
     options?: { group?: string; prefix?: string }
   ) {
+    const props = model.properties[expressID];
+    if (!props) {return null}
     const _options = { group: "Attributes", prefix: "", ...options };
     const { group, prefix } = _options;
-    const props = model.properties[expressID];
     const attributes: IEntityAttributes = {
       globalId: {
         name: `${prefix}GlobalId`,
@@ -284,29 +285,61 @@ export class PropertiesProcessor
   private processElements(model: FragmentGroup, props: IModelProperties) {
     const properties = model.properties;
     const arrayProperties = Object.values(properties);
+
+    //#region Building properties
+    let buildingAttributes: IEntityAttributes | null
     const building: any = arrayProperties.find(
       (prop: any) => prop.type === WEBIFC.IFCBUILDING
     );
-    const { globalId, type, tag, ifcEntity, ...buildingAttributes } =
-      this.processAttributes(model, building.expressID, {
+    if (building) {
+      buildingAttributes = this.processAttributes(model, building.expressID, {
         group: "Building",
         prefix: "Building",
       });
+    }
+    //#endregion
+
+    //#region Site properties
+    let siteAttributes: IEntityAttributes | null
+    const site: any = arrayProperties.find(
+      (prop: any) => prop.type === WEBIFC.IFCSITE
+    );
+    if (site) {
+      siteAttributes = this.processAttributes(model, site.expressID, {
+        group: "Site",
+        prefix: "Site",
+      });
+    }
+    //#endregion
+
     model.fragments.forEach((fragment) => {
       fragment.items.forEach((expressID) => {
         const elementAttributes = this.processAttributes(
           model,
           Number(expressID)
         );
-        for (const name in elementAttributes) {
-          // @ts-ignore
-          const attribute = elementAttributes[name];
-          this.storeProperty(props, Number(expressID), attribute);
+        if (elementAttributes) {
+          for (const name in elementAttributes) {
+            // @ts-ignore
+            const attribute = elementAttributes[name];
+            this.storeProperty(props, Number(expressID), attribute);
+          }
         }
-        for (const name in buildingAttributes) {
-          // @ts-ignore
-          const attribute = buildingAttributes[name];
-          this.storeProperty(props, Number(expressID), attribute);
+        if (buildingAttributes) {
+          const { globalId, type, tag, ifcEntity, ...attrs } = buildingAttributes
+          for (const name in attrs) {
+            // @ts-ignore
+            const attribute = attrs[name];
+            this.storeProperty(props, Number(expressID), attribute);
+          }
+        }
+        if (siteAttributes) {
+          const { globalId, type, tag, ifcEntity, ...attrs } = siteAttributes
+          for (const name in attrs) {
+            // @ts-ignore
+            const attribute = attrs[name];
+            this.storeProperty(props, Number(expressID), attribute);
+          }
         }
       });
     });
@@ -396,31 +429,34 @@ export class PropertiesProcessor
       return prop.type === WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE;
     });
     spatialRelations.forEach((rel: any) => {
+      const structure = properties[rel.RelatingStructure.value];
+      if (structure.type !== WEBIFC.IFCBUILDINGSTOREY) { return }
       const elements = rel.RelatedElements.map((el: any) => {
         return el.value;
       });
-      const structure = properties[rel.RelatingStructure.value];
-      if (structure.type === WEBIFC.IFCBUILDINGSTOREY) {
-        const { globalId, type, tag, ifcEntity, ...storeyAttributes } =
-          this.processAttributes(model, structure.expressID, {
-            group: "Storey",
-            prefix: "Storey",
-          });
-        const elevation: IPropData = {
-          name: "StoreyElevation",
+      const storeyAttributes = this.processAttributes(model, structure.expressID, {
           group: "Storey",
-          value: structure.Elevation.value,
-          type: structure.Elevation.type,
-        };
+          prefix: "Storey",
+        });
         elements.forEach((expressID: number) => {
+          if (structure.Elevation) {
+          const elevation: IPropData = {
+            name: "StoreyElevation",
+            group: "Storey",
+            value: structure.Elevation.value,
+            type: structure.Elevation.type,
+          };
           this.storeProperty(props, expressID, elevation);
-          for (const name in storeyAttributes) {
+        }
+        if (storeyAttributes) {
+          const { globalId, type, tag, ifcEntity, ...attrs } = storeyAttributes
+          for (const name in attrs) {
             // @ts-ignore
-            const attribute = storeyAttributes[name];
+            const attribute = attrs[name];
             this.storeProperty(props, expressID, attribute);
           }
-        });
-      }
+        }
+      });
     });
   }
 
