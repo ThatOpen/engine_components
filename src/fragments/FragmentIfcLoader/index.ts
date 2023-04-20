@@ -1,5 +1,5 @@
 import * as WEBIFC from "web-ifc";
-import { Component, Disposable } from "../../base-types";
+import { Component, Disposable, UI } from "../../base-types";
 import { FragmentManager } from "../index";
 import {
   DataConverter,
@@ -8,6 +8,10 @@ import {
   IfcFragmentSettings,
   Geometry,
 } from "./src";
+import { Button } from "../../ui";
+import { Components } from "../../core";
+
+// TODO: Clean up UI logic and component type
 
 /**
  * Reads all the geometry of the IFC file and generates a set of
@@ -15,17 +19,23 @@ import {
  * properties as a JSON file, as well as other sets of information within
  * the IFC file.
  */
-export class FragmentIfcLoader extends Component<null> implements Disposable {
+export class FragmentIfcLoader
+  extends Component<null>
+  implements Disposable, UI
+{
   name: string = "FragmentIfcLoader";
   enabled: boolean = true;
 
   /** Configuration of the IFC-fragment conversion. */
   settings = new IfcFragmentSettings();
 
+  uiElement: Button;
+
   private _fragments: FragmentManager;
   private _webIfc = new WEBIFC.IfcAPI();
   private _items: IfcToFragmentItems = {};
   private _materials: MaterialList = {};
+  private _components: Components;
 
   private readonly _geometry = new Geometry(
     this._webIfc,
@@ -39,13 +49,18 @@ export class FragmentIfcLoader extends Component<null> implements Disposable {
     this.settings
   );
 
-  constructor(fragments: FragmentManager) {
+  constructor(components: Components, fragments: FragmentManager) {
     super();
+    this._components = components;
     this._fragments = fragments;
+    this.uiElement = new Button(components, {
+      materialIconName: "upload_file",
+    });
+    this.setupOpenButton();
   }
 
   get(): null {
-    return null
+    return null;
   }
 
   /** {@link Disposable.dispose} */
@@ -64,6 +79,28 @@ export class FragmentIfcLoader extends Component<null> implements Disposable {
     await this.initializeWebIfc();
     this._webIfc.OpenModel(data, this.settings.webIfc);
     return this.loadAllGeometry();
+  }
+
+  private setupOpenButton() {
+    this.uiElement.onclick = () => {
+      const fileOpener = document.createElement("input");
+      fileOpener.type = "file";
+      fileOpener.style.visibility = "collapse";
+      document.body.appendChild(fileOpener);
+      fileOpener.onchange = async () => {
+        if (fileOpener.files === null) return;
+        const file = fileOpener.files[0];
+        const buffer = await file.arrayBuffer();
+        const data = new Uint8Array(buffer);
+        const result = await this.load(data);
+        const scene = this._components.scene.get();
+        scene.add(result);
+        this.uiElement.clicked.trigger(result);
+        fileOpener.remove();
+      };
+      fileOpener.onclose = () => fileOpener.remove();
+      fileOpener.click();
+    };
   }
 
   private async initializeWebIfc() {
@@ -157,4 +194,4 @@ export class FragmentIfcLoader extends Component<null> implements Disposable {
   }
 }
 
-export * from "./src"
+export * from "./src";

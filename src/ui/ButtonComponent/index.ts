@@ -4,7 +4,7 @@ import {
   Instance as PopperInstance,
   // @ts-ignore
 } from "@popperjs/core/dist/esm";
-import { Component, Hideable, UIComponent } from "../../base-types";
+import { Component, Hideable, UIComponent, Event } from "../../base-types";
 import { Toolbar } from "../ToolbarComponent";
 import { Components } from "../../core";
 
@@ -25,6 +25,8 @@ export class Button
   domElement: HTMLButtonElement;
   menu: Toolbar;
   components: Components;
+
+  clicked = new Event();
 
   private _closeOnClick = true;
   private _enabled: boolean = true;
@@ -139,8 +141,10 @@ export class Button
   }
 
   dispose(onlyChildren = false) {
-    this.menu.dispose()
-    if (!onlyChildren) { this.domElement.remove() }
+    this.menu.dispose();
+    if (!onlyChildren) {
+      this.domElement.remove();
+    }
   }
 
   get(): HTMLButtonElement {

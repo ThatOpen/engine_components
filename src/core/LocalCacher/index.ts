@@ -1,11 +1,40 @@
 import { ModelDatabase } from "./db";
+import { Component, UI } from "../../base-types";
+import { Button, Toolbar } from "../../ui";
+import { Components } from "../Components";
 
-export class LocalCacher {
+// TODO: Clean up UI logic and component type
+
+export class LocalCacher extends Component<any> implements UI {
+  name = "LocalCacher";
+
+  enabled = true;
+
   private _db: ModelDatabase;
   private readonly _storedModels = "open-bim-components-stored-files";
 
-  constructor() {
+  uiElement: Toolbar;
+  saveButton: Button;
+  loadButton: Button;
+  wipeButton: Button;
+
+  constructor(components: Components) {
+    super();
     this._db = new ModelDatabase();
+
+    this.uiElement = new Toolbar(components, {
+      name: "Local cacher toolbar",
+      position: "bottom",
+    });
+
+    this.saveButton = new Button(components, { materialIconName: "save" });
+    this.uiElement.addButton(this.saveButton);
+
+    this.loadButton = new Button(components, { materialIconName: "download" });
+    this.uiElement.addButton(this.loadButton);
+
+    this.wipeButton = new Button(components, { materialIconName: "delete" });
+    this.uiElement.addButton(this.wipeButton);
   }
 
   async get(id: string) {

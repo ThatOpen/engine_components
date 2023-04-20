@@ -6,6 +6,8 @@
         content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <link rel="stylesheet" href="../../../resources/styles.css">
+  <link rel="stylesheet" href="../../../resources/top.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
   <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
   <title>Tools Component</title>
 </head>
@@ -60,7 +62,12 @@
 
 	let fragments = new OBC.FragmentManager(components);
 
-	let fragmentIfcLoader = new OBC.FragmentIfcLoader(fragments);
+	let fragmentIfcLoader = new OBC.FragmentIfcLoader(components, fragments);
+
+	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
+	components.ui.addToolbar(mainToolbar);
+
+	mainToolbar.addButton(fragmentIfcLoader.uiElement);
 
 	fragmentIfcLoader.settings.wasm = {
 		path: "https://unpkg.com/web-ifc@0.0.39/",

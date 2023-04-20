@@ -5,11 +5,15 @@ import {
   Disposable,
   Event,
   Hideable,
+  UI,
 } from "../../base-types";
 import { SimplePlane } from "./simple-plane";
 import { Components } from "../Components";
+import { Button } from "../../ui";
 
 export * from "./simple-plane";
+
+// TODO: Clean up UI element
 
 /**
  * A lightweight component to easily create and handle
@@ -21,7 +25,7 @@ export * from "./simple-plane";
  */
 export class SimpleClipper<Plane extends SimplePlane>
   extends Component<Plane[]>
-  implements Createable, Disposable, Hideable
+  implements Createable, Disposable, Hideable, UI
 {
   /** {@link Component.name} */
   name = "SimpleClipper";
@@ -75,6 +79,7 @@ export class SimpleClipper<Plane extends SimplePlane>
   /** {@link Component.enabled} */
   set enabled(state: boolean) {
     this._enabled = state;
+    this.uiElement.active = state;
     for (const plane of this._planes) {
       plane.enabled = state;
     }
@@ -120,11 +125,21 @@ export class SimpleClipper<Plane extends SimplePlane>
     }
   }
 
+  uiElement: Button;
+
   constructor(
     public components: Components,
     public PlaneType: new (...args: any) => Plane
   ) {
     super();
+    this.uiElement = new Button(components, {
+      materialIconName: "content_cut",
+    });
+    this.uiElement.onclick = () => {
+      this.enabled = !this.enabled;
+      this.visible = !this.visible;
+    };
+    this.uiElement.active = this.enabled;
   }
 
   /** {@link Component.get} */

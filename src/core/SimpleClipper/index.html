@@ -6,6 +6,8 @@
         content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <link rel="stylesheet" href="../../../resources/styles.css">
+  <link rel="stylesheet" href="../../../resources/top.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
   <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
   <title>Tools Component</title>
 </head>
@@ -71,6 +73,10 @@
 	const clipper = new OBC.SimpleClipper(components, OBC.SimplePlane);
 	components.tools.add(clipper);
 	clipper.enabled = true;
+
+	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
+	mainToolbar.addButton(clipper.uiElement);
+	components.ui.addToolbar(mainToolbar);
 
 	container.ondblclick = () => clipper.create();
 
