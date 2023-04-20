@@ -21,7 +21,8 @@ export class ScreenCuller extends Component<null> implements Disposable {
   meshColorMap = new Map<string, THREE.Mesh>();
   renderDebugFrame = false;
   visibleMeshes: THREE.Mesh[] = [];
-  meshes = new Map<string, THREE.InstancedMesh>();
+  colorMeshes = new Map<string, THREE.InstancedMesh>();
+  meshes = new Map<string, THREE.Mesh>();
 
   private readonly _previouslyVisibleMeshes = new Set<string>();
   private readonly _transparentMat = new THREE.MeshBasicMaterial({
@@ -43,7 +44,7 @@ export class ScreenCuller extends Component<null> implements Disposable {
     readonly rtHeight = 512,
     readonly autoUpdate = true
   ) {
-    super()
+    super();
     this.renderer = new THREE.WebGLRenderer();
     const planes = this.components.renderer.clippingPlanes;
     this.renderer.clippingPlanes = planes;
@@ -74,7 +75,7 @@ export class ScreenCuller extends Component<null> implements Disposable {
   }
 
   get(): null {
-    return null
+    return null;
   }
 
   dispose() {
@@ -95,19 +96,19 @@ export class ScreenCuller extends Component<null> implements Disposable {
         material.dispose();
       }
     }
-    for (const id in this.meshes) {
-      const mesh = this.meshes.get(id);
+    for (const id in this.colorMeshes) {
+      const mesh = this.colorMeshes.get(id);
       if (mesh) {
         this._disposer.dispose(mesh);
       }
     }
+    this.colorMeshes.clear();
     this.meshes.clear();
   }
 
   add(mesh: THREE.Mesh | THREE.InstancedMesh) {
     if (!this.enabled) return;
 
-    mesh.visible = false;
     const isInstanced = mesh instanceof THREE.InstancedMesh;
 
     const { geometry, material } = mesh;
@@ -156,11 +157,14 @@ export class ScreenCuller extends Component<null> implements Disposable {
       colorMesh.setMatrixAt(0, new THREE.Matrix4());
     }
 
+    mesh.visible = false;
+
     colorMesh.applyMatrix4(mesh.matrix);
     colorMesh.updateMatrix();
 
     this._scene.add(colorMesh);
-    this.meshes.set(mesh.uuid, colorMesh);
+    this.colorMeshes.set(mesh.uuid, colorMesh);
+    this.meshes.set(mesh.uuid, mesh);
   }
 
   updateVisibility = (force?: boolean) => {
