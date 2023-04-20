@@ -18,6 +18,7 @@ export class FragmentGroups {
     });
     elements.forEach((element) => {
       const entity = model.properties[element];
+      if (!entity) { return }
       const fragmentID = model.expressIDFragmentIDMap[entity.expressID];
       const predefinedType = String(entity.PredefinedType?.value).toUpperCase();
       if (!group[predefinedType]) {
