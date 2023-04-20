@@ -77,7 +77,9 @@ export class FragmentIfcLoader
   /** Loads the IFC file and converts it to a set of fragments. */
   async load(data: Uint8Array) {
     await this.initializeWebIfc();
-    this._webIfc.OpenModel(data, this.settings.webIfc);
+    const id = this._webIfc.OpenModel(data, this.settings.webIfc);
+    const result = this._webIfc.GetLine(id, 2);
+    console.log(result);
     return this.loadAllGeometry();
   }
 

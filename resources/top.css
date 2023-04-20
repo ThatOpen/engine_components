@@ -4,7 +4,10 @@
     --secondary-color: #BCF124
 }
 
-.material-icons.md-18 { font-size: 23px; }
+.material-icons.md-18 {
+    font-size: 23px;
+    max-width: 23px;
+}
 
 .tooeen-button {
     /* border: solid 1px white; */

@@ -9,10 +9,12 @@ import {
   Hideable,
   Updateable,
   Event,
+  UI,
 } from "../../base-types";
 import { Components } from "../Components";
 import { Disposer } from "../Disposer";
 import { SimpleRaycaster } from "../SimpleRaycaster";
+import { Button } from "../../ui";
 
 /**
  * A basic dimension tool to measure distances between 2 points in 3D and
@@ -20,7 +22,7 @@ import { SimpleRaycaster } from "../SimpleRaycaster";
  */
 export class SimpleDimensions
   extends Component<SimpleDimensionLine[]>
-  implements Createable, Hideable, Disposable, Updateable
+  implements Createable, Hideable, Disposable, Updateable, UI
 {
   /** {@link Component.name} */
   readonly name = "SimpleDimensions";
@@ -48,6 +50,8 @@ export class SimpleDimensions
 
   /** {@link Createable.onDelete} */
   onDelete: Event<SimpleDimensionLine> = new Event<SimpleDimensionLine>();
+
+  uiElement: Button;
 
   /** The minimum distance to force the dimension cursor to a vertex. */
   snapDistance = 0.25;
@@ -91,6 +95,7 @@ export class SimpleDimensions
   /** {@link Component.enabled} */
   set enabled(state: boolean) {
     this._enabled = state;
+    this.uiElement.active = state;
     this.previewVisible = state;
   }
 
@@ -149,6 +154,15 @@ export class SimpleDimensions
     htmlPreview.className = DimensionPreviewClassName;
     this.previewElement = new CSS2DObject(htmlPreview);
     this.previewElement.visible = false;
+
+    this.uiElement = new Button(components, {
+      materialIconName: "straighten",
+    });
+    this.uiElement.onclick = () => {
+      this.enabled = !this.enabled;
+      this.visible = !this.visible;
+    };
+    this.uiElement.active = this.enabled;
   }
 
   /** {@link Component.get} */

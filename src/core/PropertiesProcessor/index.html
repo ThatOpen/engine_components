@@ -64,7 +64,7 @@
 	components.tools.add(grid);
 
 	const fragments = new OBC.FragmentManager(components);
-	const fragmentIfcLoader = new OBC.FragmentIfcLoader(fragments);
+	const fragmentIfcLoader = new OBC.FragmentIfcLoader(components, fragments);
 
 	//#region Setup elements highlight
 	const highlighter = new OBC.FragmentHighlighter(components, fragments);
@@ -90,8 +90,8 @@
 	propertiesContainer.append(propertiesProcessor.uiElement.get());
 
 	fragmentIfcLoader.settings.wasm = {
-		path: 'https://unpkg.com/web-ifc@0.0.39/',
-		absolute: true,
+		path: '../../../resources/',
+		absolute: false,
 	};
 
 	fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
@@ -129,7 +129,7 @@
 
 	const toolbar = new OBC.Toolbar(components);
 	const button = new OBC.Button(components, { name: 'Load IFC', materialIconName: 'upload_file' });
-	button.onclick = () => loadIfcAsFragments('../../../resources/small.ifc');
+	button.onclick = () => loadIfcAsFragments('../../../resources/asdf2.ifc');
 	toolbar.addButton(button);
 	components.ui.addToolbar(toolbar);
 
