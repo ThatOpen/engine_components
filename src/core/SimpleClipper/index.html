@@ -59,32 +59,135 @@
 	const grid = new OBC.SimpleGrid(components);
 	components.tools.add(grid);
 
-	// Add a cube to the scene
+    /*MD
+    ### ✂️ Clipping Tool
+    ---
+    The Clipping Tool is a powerful feature in 3D modelling that helps you dissect 3D objects.
+    Clipping Tool is useful for inspecting and analyzing objects in detail.💪
+
+    In this tutorial, we will use the Clipping Tool to dissect a Cube using planes and transformation controls.
+    This tutorial will help you add Clipping functionality to your project easily.🚀
+
+    :::tip First, let's set up a simple scene!
+
+    👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
+
+    :::
+
+    ### 🎲 Creating a Cube Mesh
+    ---
+    Let's start by adding a Cube, which we can dissect.
+    We will create a [Cube](https://threejs.org/docs/index.html?q=box#api/en/geometries/BoxGeometry)
+    with `3x3x3` dimensions and use red color for the material.
+    */
 
 	const cubeGeometry = new THREE.BoxGeometry(3, 3, 3);
 	const redMaterial = new THREE.MeshStandardMaterial({color: "red"});
 	const redCube = new THREE.Mesh(cubeGeometry, redMaterial);
 	redCube.position.set(0, 1.5, 0);
+
+    /*MD
+    Now, we will add the Cube to the `Scene`. We must also add the **cube** to `components.meshes`,
+    which is simply an array of all the meshes in the Scene 🗄️.
+     */
 	scene.add(redCube);
 	components.meshes.push(redCube);
 
-	// Set up clipping planes
+    /*MD
+	### ⚙️ Adding Simple Clipper
+	---
+	Here comes the interesting part, we will add a Simple Clipper to our scene 🥁
+	A **[Simple Clipper](../api/classes/components.SimpleClipper)** requires two things: `components` and `Simple Plane`
+	 */
 
 	const clipper = new OBC.SimpleClipper(components, OBC.SimplePlane);
+
+    /*MD
+
+    :::info PLANE WITH TRANSFORMATION CONTROLS AND MORE
+
+    **[Simple Plane](../api/classes/components.SimplePlane)** is useful in generating planes along with
+    customizations.
+
+    :::
+
+    **SimpleClipper** includes everything needed to provide clipping capabilities,
+    including the ability to build numerous clipping planes.
+
+    SimpleClipper also controls the SimplePlane internally,
+    allowing you to execute clipping on any 3D object by just dragging the planes.
+
+     */
+
 	components.tools.add(clipper);
 	clipper.enabled = true;
 
+    /*MD
+    :::tip Adding it to the tools component
+    The Tools Component will help you keep your code tidy. For more information about the Tools component, check out
+    [its own tutorial](./ToolsComponent.mdx). 🔍
+
+    :::
+
+    ### ⏏️ Creating a Toolbar for the Clipper
+    ---
+    We'll make a **Toolbar Component** and set it at the bottom.
+    In addition, we will add a clipper button to this toolbar that will be used to toggle the clipping state.
+    */
 	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
 	mainToolbar.addButton(clipper.uiElement);
 	components.ui.addToolbar(mainToolbar);
 
+    /*MD
+    🎛️ Check **[Toolbar and UIManager](./UIManager.mdx)** tutorial if you have any doubts!
+
+    ### 🤝 Performing Clipping Events
+    ---
+    Now, we need a way to create a Clipping Plane on demand, you can do it with a `Single Click` or
+    `Double Click` of a mouse.
+
+    For this tutorial, we will use **Double Click**, to create a Clipper that will generate a
+    plane on the 3D object's face.
+
+     */
 	container.ondblclick = () => clipper.create();
+
+    /*MD
+
+    :::info Raycaster below the hood 🎩
+
+    We use the **[Simple Raycaster](SimpleRaycaster.mdx)** to determine if the intersection has occurred.
+    The clipper places a plane after detecting the face on which the mouse was clicked.
+    Here, the SimpleClipper handles everything for you 😎
+
+    :::
+
+    ### 🧹 Deleting the Clipping Planes
+    ---
+    Now that we know how to make multiple clippers, we must also know how to delete them when necessary.
+    Clipping planes can be removed using `clipper.delete()` or `clipper.delete(plane)`, which deletes a single plane.
+
+    **clipper.delete()** deletes the plane on which your mouse pointer is now located.
+
+     */
 
 	window.onkeydown = (event) => {
 		if (event.code === 'Delete' || event.code === 'Backspace') {
 			clipper.delete();
 		}
 	}
+
+    /*MD
+
+    :::tip Delete all the Clipping Planes
+    ❎ If you want to safely delete all the clipping planes that were created you can simply call
+    **`clipper.deleteAll()`**
+    :::
+
+    **Congratulations** 🎉 on completing this tutorial! Now you can inspect BIM Models or any 3D Object easily using
+    **[Clipper Component](../api/classes/components.SimpleClipper)** 🧐
+    Let's keep it up and check out another tutorial! 🎓
+     */
 
 	// Set up stats
 
