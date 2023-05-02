@@ -176,7 +176,9 @@ export class ClippingEdges
     posAttr.needsUpdate = true;
 
     // Update the edges geometry only if there is no NaN in the output (which means there's been an error)
-    if (!Number.isNaN(edges.generatorGeometry.attributes.position.array[0])) {
+    const attributes = edges.generatorGeometry.attributes;
+    const position = attributes.position as THREE.BufferAttribute;
+    if (!Number.isNaN(position.array[0])) {
       ClippingEdges._basicEdges.geometry = edges.generatorGeometry;
       edges.mesh.geometry.fromLineSegments(ClippingEdges._basicEdges);
       const scene = this._components.scene.get();

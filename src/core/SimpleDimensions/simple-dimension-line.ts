@@ -103,7 +103,8 @@ export class SimpleDimensionLine {
   }
 
   private updateEndpointPosition(point: THREE.Vector3) {
-    const position = this._line.geometry.attributes.position;
+    const position = this._line.geometry.attributes
+      .position as THREE.BufferAttribute;
     position.setXYZ(1, point.x, point.y, point.z);
     position.needsUpdate = true;
   }

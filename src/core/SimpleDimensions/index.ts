@@ -340,7 +340,7 @@ export class SimpleDimensions
 
   private static getVertex(index: number, geom: THREE.BufferGeometry) {
     if (index === undefined) return null;
-    const vertices = geom.attributes.position;
+    const vertices = geom.attributes.position as THREE.BufferAttribute;
     return new THREE.Vector3(
       vertices.getX(index),
       vertices.getY(index),

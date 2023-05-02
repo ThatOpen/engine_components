@@ -4,7 +4,7 @@ import {
   MeshNormalMaterial,
   NearestFilter,
   PerspectiveCamera,
-  RGBFormat,
+  RGBAFormat,
   Scene,
   ShaderMaterial,
   Vector2,
@@ -41,7 +41,7 @@ class CustomOutlinePass extends Pass {
       this.resolution.x,
       this.resolution.y
     );
-    normalTarget.texture.format = RGBFormat;
+    normalTarget.texture.format = RGBAFormat;
     normalTarget.texture.minFilter = NearestFilter;
     normalTarget.texture.magFilter = NearestFilter;
     normalTarget.texture.generateMipmaps = false;
