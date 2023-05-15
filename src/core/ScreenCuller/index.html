@@ -129,7 +129,7 @@
 
     /*MD
 
-    #### 🌌 Rendering Multiple Cubes
+    #### 🧪 Generate Multiple Cubes
     Now, using the `getRandomNumber()` method we previously created, we will add the 300 **`cube`** meshes to our scene
     and randomly position them. We'll add the cube to the scene and adjust its position between 0 and 10.
 
@@ -151,7 +151,13 @@
 		}
 	}
 
+    /*MD
 
+    #### 🧹 Cleaning the Scene
+    Now that we know how to create multiple cubes, we will write a function to remove the cubes from scene on demand.
+    `resetCubes()` iteratively removes the **cubes** using [**`cube.removeFromParent`**](https://threejs.org/docs/index.html?q=obje#api/en/core/Object3D.removeFromParent).
+
+     */
 	function resetCubes() {
 		for (const cube of cubes) {
 			cube.removeFromParent();
@@ -159,12 +165,37 @@
 		cubes.length = 0;
 	}
 
+    /*MD
+
+    #### 📢 Rendering Cubes
+    With everything ready, we will call `regenerateCubes()` which will generate cubes and add them to scene.
+
+     */
     regenerateCubes();
 
-	culler.needsUpdate = true;
+    /*MD
+
+    Here comes the most crucial part! The core aim of **ScreenCuller** is to output just those components that are
+    visible to the camera.
+
+    `culler.needsUpdate = true` instructs the ScreenCuller to render the updated view.
+
+    ** Remember to update culler every time the camera is updated ❕ **
+
+    For this tutorial, we are updating the culler on the click of button. 🖱
+     */
+
+    culler.needsUpdate = true;
+
+    /*MD
+
+    Great job! 🎉 Now you know how to optimise your 3D scene using a
+    **[Screen Culler](../api/classes/components.ScreenCuller)** component! 💪
+    Your BIM app will now have unmatched performance and can render huge scenes easily. 🚀
+    Let's keep it up and check out another tutorials!
+     */
 
 	// Set up stats
-
 	const stats = new Stats();
 	stats.showPanel(2);
 	document.body.append(stats.dom);
