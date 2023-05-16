@@ -8,6 +8,7 @@
   "scripts": {
     "test": "jest",
     "build": "node resources/cleaner.js && tsc && yarn build-examples",
+    "build:css": "tailwindcss build -i src/ui/UIManager/top.css -o src/index.css",
     "build-examples": "rollup -c resources/rollup.config.js",
     "publish-repo": "cpy package.json dist && cd dist && npm publish",
     "publish-repo-alpha": "cpy package.json dist && cd dist && npm publish --tag alpha"
@@ -15,6 +16,7 @@
   "devDependencies": {
     "@rollup/plugin-commonjs": "^22.0.2",
     "@rollup/plugin-node-resolve": "^14.1.0",
+    "@tailwindcss/forms": "^0.5.3",
     "@types/jest": "^26.0.23",
     "@types/node": "^14.14.31",
     "@types/three": "^0.143.0",
@@ -39,6 +41,7 @@
     "camera-controls": "^1.36.0",
     "dexie": "^3.2.3",
     "stats.js": "^0.17.0",
+    "tailwindcss": "^3.3.2",
     "three": "0.135",
     "three-mesh-bvh": "^0.5.15",
     "web-ifc": "^0.0.39"

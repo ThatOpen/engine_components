@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
     --container-border-distance: 15px;
     --primary-color: #202932;
@@ -5,95 +9,7 @@
 }
 
 .material-icons.md-18 { font-size: 18px; }
-
-.tooeen-button {
-    /* border: solid 1px white; */
-    position: relative;
-    display: flex;
-    column-gap: 10px;
-    align-items: center;
-    background-color: transparent;
-    color: white;
-    border-radius: 5px;
-    height: fit-content;
-    padding: 7px
-}
-
-.tooeen-button:hover, .tooeen-button[data-active = "true"] {
-    cursor: pointer;
-    background-color: rgba(255, 255, 255, 0.05);
-    background-color: var(--secondary-color);
-    color: var(--primary-color);
-}
-
-.tooeen-button:disabled {
-    cursor: default;
-    background-color: transparent;
-    color: rgb(130, 130, 130);
-}
-
-.tooeen-toolbar-container {
-    position: absolute;
-    display: flex;
-    row-gap: 10px;
-    column-gap: 10px;
-    pointer-events: none;
-    /* border: solid black 2px; */
-}
-
-.tooeen-toolbar {
-    display: flex;
-    row-gap: 7px;
-    column-gap: 7px;
-    padding: 7px;
-    color: white;
-    border-radius: 5px;
-    pointer-events: auto;
-    background-color: var(--primary-color);
-    box-shadow: 0px 0px 15px 2px rgba(0, 0, 0, 0.25);
-}
-
-.hcontainer {
-    flex-direction: row;
-    width: 100%;
-    padding: var(--container-border-distance);
-}
-
-.vcontainer {
-    flex-direction: column;
-    height: 100%;
-    padding: var(--container-border-distance);
-}
-
-.htoolbar {
-    flex-direction: row;
-}
-
-.vtoolbar {
-    flex-direction: column;
-}
-
-#bottom-toolbar-container {
-    bottom: 0px;
-    padding-bottom: var(--container-border-distance);
-}
-
-#top-toolbar-container {
-    top: 0px;
-    padding-top: var(--container-border-distance);
-}
-
-#left-toolbar-container {
-    top: 0px;
-    left: 0;
-    padding-left: var(--container-border-distance);
-}
-
-#right-toolbar-container {
-    top: 0px;
-    right: 0px;
-    padding-right: var(--container-border-distance);
-}
+.material-icons.md-16 { font-size: 16px; }
 
 .tooeen-tree-item {
     /* background-color: black;
