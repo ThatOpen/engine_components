@@ -18,7 +18,6 @@ export class SVGRectangle extends Component<SVGRectElement> {
         this.startPoint = startPoint?? this.startPoint
         this.endPoint = endPoint?? this.endPoint
         this._rect.setAttribute("rx", "5")
-        this._rect.setAttribute('stroke-dasharray', '4 2')
         this.setStyle()
     }
     
