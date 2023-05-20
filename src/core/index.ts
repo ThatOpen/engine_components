@@ -14,3 +14,5 @@ export * from "./PropertiesProcessor";
 export * from "./SimpleAngle";
 export * from "./SimpleArea";
 export * from "./SimpleSVGViewport";
+export * from "./VertexPicker";
+export * from "./LineIntersectionPicker";
