@@ -43,20 +43,30 @@
 	components.raycaster = new OBC.SimpleRaycaster(components);
 	components.init();
 
+    const scene = components.scene.get();
+    scene.background = null;
+
+    // Add some lights to the scene
+
+    const directionalLight = new THREE.DirectionalLight();
+    directionalLight.position.set(5, 10, 3)
+    directionalLight.intensity = 0.5;
+    scene.add(directionalLight);
+
+    const ambientLight = new THREE.AmbientLight();
+    ambientLight.intensity = 0.5;
+    scene.add(ambientLight);
+
 	const grid = new OBC.SimpleGrid(components);
 	components.tools.add(grid);
-
-	const scene = components.scene.get();
-	scene.background = null;
-
-	// Add a blue and a red cube to the scene
 
     /*MD
     ### ⭕️ Aesthetic Clipping Edges
     ---
 
-    Components have the ability to build whole BIM applications.💪
-    You can design clipping planes, but there is also an option to do it with lovely yet effective edges.🖍️
+    You can build whole BIM application using Components.💪
+    One such essential component is **Edges Clipper** which helps you to add Clipping Planes along
+    with beautiful yet functional edges.🖍️
 
     :::info Advanced but Simple to use
 
@@ -74,6 +84,13 @@
 
     :::
 
+    ### 🧩 Adding Objects to Scene
+    ---
+
+    Let's start by adding two Cubes, we will create a [Box Geometry](https://threejs.org/docs/index.html?q=box#api/en/geometries/BoxGeometry) and use it for both Meshes.
+
+    We'll use `Red` and `Blue` colored material for the cubes🎨, and place them at a particular distance apart.📏
+
      */
 
 	const cubeGeometry = new THREE.BoxGeometry(3, 3, 3);
@@ -90,106 +107,192 @@
 	scene.add(blueCube);
 	components.meshes.push(blueCube);
 
-	// Add some lights to the scene
+    /*MD
 
-	const directionalLight = new THREE.DirectionalLight();
-	directionalLight.position.set(5, 10, 3)
-	directionalLight.intensity = 0.5;
-	scene.add(directionalLight);
+    :::info Storing Components
 
-	const ambientLight = new THREE.AmbientLight();
-	ambientLight.intensity = 0.5;
-	scene.add(ambientLight);
+    🧰 After adding cubes to the scene, we must also add them to `components.meshes`,
+    which is just an array of all the meshes in the scene.🗄️
 
-	// Set up clipping planes
+    :::
+
+    ### ⚔️ Slicing Some Cubes
+    ---
+
+    Now that the setup is complete. Let's get started with the interesting part!
+    We will create **[Edges Clipper](../api/classes/components.EdgesClipper)** and pass the **components** and
+    **[Edges Plane](../api/classes/components.EdgesPlane)** to the constructor.
+
+     */
 
 	const clipper = new OBC.EdgesClipper(components, OBC.EdgesPlane);
+
+    /*MD
+
+    :::info PLANE WITH EDGES and TRANSFORMATION CONTROLS
+
+    🟦 **[Edges Plane](../api/classes/components.EdgesPlane)** helps us in adding Clipping Planes to the Clipper Component.
+
+    :::
+
+     */
 	components.tools.add(clipper);
 	clipper.enabled = true;
 	clipper.visible = true;
 
-	container.ondblclick = () => clipper.create();
+    /*MD
 
-	window.onkeydown = (event) => {
-		if (event.code === 'Delete' || event.code === 'Backspace') {
-			clipper.delete();
-		}
-	}
+    When we set `clipper.enabled = true`, we will make the clipper functional; otherwise, clipping planes won't be formed.
 
-	const redLineMaterial = new LineMaterial({color: 'blue', linewidth: 0.002});
-	clipper.styles.create("Red lines", [redCube], redLineMaterial);
+    :::tip Adding it to the tools component
 
-	const blueLineMaterial = new LineMaterial({color: 'red', linewidth: 0.003});
-	clipper.styles.create("Blue lines", [blueCube], blueLineMaterial);
+    The Tools Component will help you keep your code tidy. For more information about the Tools component, check out
+    [its own tutorial](./ToolsComponent.mdx). 🔍
 
-	// Set up stats
+    :::
 
-	const stats = new Stats();
-	stats.showPanel(2);
-	document.body.append(stats.dom);
-	stats.dom.style.left = '0px';
-	const renderer = components.renderer;
-	renderer.beforeUpdate.on(() => stats.begin());
-	renderer.afterUpdate.on(() => stats.end());
+    ### 🖌️ Creating Fine Edges
+    ---
 
-	// Set up dat.gui menu
+    Let's now prepare the materials that will be visible on the cube edges.
 
-	const gui = new dat.GUI();
+    We will use **[LineMaterial](https://threejs.org/examples/?q=line#webgl_lines_fat)** for creating edges.
 
-	const shortcutsFolder = gui.addFolder('Shortcuts');
+    #### 💫 Using Line Material
 
-	const shortcuts = {
-		'Create clipping plane': "Double click",
-		'Delete clipping plane': "Delete"
-	}
+    After creating the Line Material we will add it to the **clipper**
+    using `clipper.styles.create(styleName: string, mesh: Mesh[], material: LineMaterial)`
 
-	shortcutsFolder.add(shortcuts, 'Create clipping plane');
-	shortcutsFolder.add(shortcuts, 'Delete clipping plane');
+     */
 
-	const actionsFolder = gui.addFolder('Actions');
 
-	actionsFolder.add(clipper, 'visible').name("Toggle clipping planes visible");
+    const redLineMaterial = new LineMaterial({color: 'blue', linewidth: 0.002});
+    clipper.styles.create("Red lines", [redCube], redLineMaterial);
 
-	actionsFolder.add(clipper, 'enabled').name("Toggle clipping planes enabled");
+    const blueLineMaterial = new LineMaterial({color: 'red', linewidth: 0.003});
+    clipper.styles.create("Blue lines", [blueCube], blueLineMaterial);
 
-	const color = {
-		value: 0x000000
-	}
+    /*MD
 
-	const helperColor = new THREE.Color();
-	actionsFolder.addColor(color, "value")
-		.name("Plane color")
-		.onChange((value) => {
-			helperColor.setHex(value);
-			clipper.material.color = helperColor;
-		});
+    ### 🤝 Performing Clipping Events
+    ---
+    We need a method for instantly producing a clipping plane;
+    this can be accomplished with either a `single click` or a `double click` of the mouse.
 
-	actionsFolder.add(clipper, 'size').name("Plane Size").min(0).max(15);
-	actionsFolder.add(clipper.material, 'opacity').name("Plane Opacity").min(0).max(1);
+    For this tutorial, we will use **Double Click**, to create a Clipper that will generate a
+    plane on the 3D object's face.
 
-	const actions = {
-		'Delete all planes': () => {
-			clipper.deleteAll();
-		},
-		'Rotate cube': () => {
-			redCube.rotation.x = 2 * Math.PI * Math.random();
-			redCube.rotation.y = 2 * Math.PI * Math.random();
-			redCube.rotation.z = 2 * Math.PI * Math.random();
-			redCube.updateMatrix();
-			redCube.updateMatrixWorld();
+     */
+    container.ondblclick = () => clipper.create();
 
-			blueCube.rotation.x = 2 * Math.PI * Math.random();
-			blueCube.rotation.y = 2 * Math.PI * Math.random();
-			blueCube.rotation.z = 2 * Math.PI * Math.random();
-			blueCube.updateMatrix();
-			blueCube.updateMatrixWorld();
+    /*MD
 
-			clipper.updateEdges();
-		}
-	}
+    :::info Raycaster below the hood 🎩
 
-	actionsFolder.add(actions, 'Rotate cube');
-	actionsFolder.add(actions, 'Delete all planes');
+    We use the **[Simple Raycaster](SimpleRaycaster.mdx)** to determine if the intersection has occurred.
+    The clipper places a plane after detecting the face on which the mouse was clicked.
+    Here, the **EdgesClipper** handles everything for you 😎
+
+    :::
+
+    ### 🧹 Deleting the Clipping Planes
+    ---
+    Now that we know how to make multiple clippers, we must also know how to delete them when necessary.
+    Clipping Edges can be removed using `clipper.delete()` or `clipper.delete(plane)`, which deletes a single plane.
+
+    **clipper.delete()** deletes the plane on which your mouse pointer is now located.
+
+    */
+
+    window.onkeydown = (event) => {
+      if (event.code === 'Delete' || event.code === 'Backspace') {
+        clipper.delete();
+      }
+    }
+
+    /*MD
+
+    :::tip Delete all Clipping Planes
+
+    ❎ If you want to safely delete all the clipping edges that were created you can simply call
+    **`clipper.deleteAll()`**
+
+    :::
+
+    Great job! 🎉 Using the **[Clipper Component](../api/classes/components.SimpleClipper)**,
+    you can now effortlessly check BIM models or any other 3D objects with stunning edges.🧐
+
+    Let's keep it up and check out another tutorial! 🎓
+
+    */
+
+
+    const stats = new Stats();
+    stats.showPanel(2);
+    document.body.append(stats.dom);
+    stats.dom.style.left = '0px';
+    const renderer = components.renderer;
+    renderer.beforeUpdate.on(() => stats.begin());
+    renderer.afterUpdate.on(() => stats.end());
+
+    // Set up dat.gui menu
+
+    const gui = new dat.GUI();
+
+    const shortcutsFolder = gui.addFolder('Shortcuts');
+
+    const shortcuts = {
+        'Create clipping plane': "Double click",
+        'Delete clipping plane': "Delete"
+    }
+
+    shortcutsFolder.add(shortcuts, 'Create clipping plane');
+    shortcutsFolder.add(shortcuts, 'Delete clipping plane');
+
+    const actionsFolder = gui.addFolder('Actions');
+
+    actionsFolder.add(clipper, 'visible').name("Toggle clipping planes visible");
+
+    actionsFolder.add(clipper, 'enabled').name("Toggle clipping planes enabled");
+
+    const color = {
+        value: 0x000000
+    }
+
+    const helperColor = new THREE.Color();
+    actionsFolder.addColor(color, "value")
+        .name("Plane color")
+        .onChange((value) => {
+            helperColor.setHex(value);
+            clipper.material.color = helperColor;
+        });
+
+    actionsFolder.add(clipper, 'size').name("Plane Size").min(0).max(15);
+    actionsFolder.add(clipper.material, 'opacity').name("Plane Opacity").min(0).max(1);
+
+    const actions = {
+        'Delete all planes': () => {
+            clipper.deleteAll();
+    },
+    'Rotate cube': () => {
+        redCube.rotation.x = 2 * Math.PI * Math.random();
+        redCube.rotation.y = 2 * Math.PI * Math.random();
+        redCube.rotation.z = 2 * Math.PI * Math.random();
+        redCube.updateMatrix();
+        redCube.updateMatrixWorld();
+
+        blueCube.rotation.x = 2 * Math.PI * Math.random();
+        blueCube.rotation.y = 2 * Math.PI * Math.random();
+        blueCube.rotation.z = 2 * Math.PI * Math.random();
+        blueCube.updateMatrix();
+        blueCube.updateMatrixWorld();
+
+        clipper.updateEdges();
+    }
+}
+
+actionsFolder.add(actions, 'Rotate cube');
+actionsFolder.add(actions, 'Delete all planes');
 
 </script>
 </body>
