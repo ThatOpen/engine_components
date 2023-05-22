@@ -3,7 +3,6 @@ import { Component, SVGAnnotationStyle } from "../../base-types";
 import { Button, FloatingWindow, Toolbar } from "../../ui";
 import { Components } from "../Components";
 import { generateUUID } from "three/src/math/MathUtils";
-import { SimpleTextInput } from "../../ui/SimpleTextInput";
 import { SimpleColorInput } from "../../ui/SimpleColorInput";
 import { SimpleRangeInput } from "../../ui/SimpleRangeInput";
 

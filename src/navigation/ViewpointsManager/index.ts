@@ -6,8 +6,9 @@ import { Button, SimpleUICard, FloatingWindow } from "../../ui";
 import { Components } from "../../core";
 import { FragmentManager, FragmentGrouper, FragmentHighlighter, HighlightMap } from "../../fragments";
 import { generateUUID } from "three/src/math/MathUtils";
-import { SimpleCamera } from "../../core";
 import { DrawManager } from "../../annotation";
+import { OrthoPerspectiveCamera } from "../OrthoPerspectiveCamera";
+import { CameraProjection } from "../OrthoPerspectiveCamera/src/types";
 
 export interface IViewpointsManagerConfig {
     selectionHighlighter: string
@@ -24,6 +25,7 @@ export interface IViewpoint {
     position: Vector3 
     target: Vector3
     selection: HighlightMap
+    projection: CameraProjection
     dimensions: {start: Vector3, end: Vector3}[]
     filter?: { [groupSystem: string]: string }
     annotations?: SVGGElement
@@ -101,12 +103,13 @@ export class ViewpointsManager extends Component<string> implements UI {
         //#endregion
 
         //#region Store camera position and target
-        const camera = this._components.camera as SimpleCamera
+        const camera = this._components.camera as OrthoPerspectiveCamera
         const controls = camera.controls
         const target = new Vector3()
         const position = new Vector3()
         controls.getTarget(target)
         controls.getPosition(position)
+        const projection = camera.getProjection()
         //#endregion
 
         //#region Store annotations
@@ -122,7 +125,8 @@ export class ViewpointsManager extends Component<string> implements UI {
             // filter, 
             description,
             dimensions,
-            annotations
+            annotations,
+            projection
         }
 
         //#region UI representation
@@ -194,7 +198,7 @@ export class ViewpointsManager extends Component<string> implements UI {
         this._fragmentHighlighter.highlightByID(this.selectionHighlighter, selection, true)
 
         //#region Recover camera position & target
-        const camera = this._components.camera as SimpleCamera
+        const camera = this._components.camera as OrthoPerspectiveCamera
         const controls = camera.controls
         controls.setLookAt(
             viewpoint.position.x,

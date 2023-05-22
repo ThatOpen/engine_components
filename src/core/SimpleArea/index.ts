@@ -1,7 +1,7 @@
 import { SimpleRaycaster } from '../SimpleRaycaster'
 import { SimpleDimensionLine } from '../SimpleDimensions/simple-dimension-line'
 import { EdgesPlane, PostproductionRenderer } from '../../navigation'
-import { EdgesStyles } from '../../navigation/EdgesClipper/src/edges-styles'
+// import { EdgesStyles } from '../../navigation/EdgesClipper/src/edges-styles'
 import { Event, Component, Disposable, Hideable, Updateable, UI } from '../../base-types'
 import { SimpleDimensions } from '../SimpleDimensions'
 import { DimensionPreviewClassName } from '../SimpleDimensions/types'
@@ -208,7 +208,7 @@ export class SimpleArea extends Component<Areas[]> implements Disposable, Hideab
   }
 
   private addHorizontalPlanes(point: Vector3) {
-    const uppedPoint = new Vector3(point.x, point.y + 0.1, point.z)
+    // const uppedPoint = new Vector3(point.x, point.y + 0.1, point.z)
 
     // this._areaCutPlane = new EdgesPlane(
     //   this._components,
@@ -245,7 +245,6 @@ export class SimpleArea extends Component<Areas[]> implements Disposable, Hideab
       this._areaPoints.push(point)
 
       const checkCreateCoplanarPlane =
-        point &&
         !this._forceHorizontal &&
         this._areaPoints.length === 3 &&
         !this._outterCastPlane
