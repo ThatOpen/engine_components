@@ -1,6 +1,6 @@
-import { Vector2 } from "three";
-import { Component, SVGAnnotationStyle } from "../../base-types";
-import { Components } from "../../core";
+import { Vector2 } from "three"
+import { Component, SVGAnnotationStyle } from "../../base-types"
+import { Components } from "../../core"
 
 export class SVGRectangle extends Component<SVGRectElement> {
 
