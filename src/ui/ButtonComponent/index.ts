@@ -89,7 +89,12 @@ export class Button
     } else {
       const btn = document.createElement("button");
       btn.id = options?.materialIconName ?? "";
-      btn.classList.add("tooeen-button");
+      btn.className = `
+      relative flex gap-x-2 items-center bg-transparent text-white rounded-md h-fit p-2 
+      hover:cursor-pointer hover:bg-ifcjs-200 hover:text-ifcjs-100
+      data-[active=true]:cursor-pointer data-[active=true]:bg-ifcjs-200 data-[active=true]:text-ifcjs-100
+      disabled:cursor-default disabled:bg-transparent disabled:text-gray-500
+      `;
       this.domElement = btn;
       if (options?.materialIconName) {
         const icon = document.createElement("span");
@@ -122,7 +127,7 @@ export class Button
     this.menu = new Toolbar(components);
     this.menu.visible = false;
     this.menu.parent = this;
-    this.menu.domElement.classList.add("vtoolbar");
+    this.menu.setDirection("vertical");
     this.domElement.append(this.menu.domElement);
     this._popper = createPopper(this.domElement, this.menu.domElement, {
       modifiers: [

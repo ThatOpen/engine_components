@@ -129,6 +129,7 @@ export interface UIComponent extends Disposable, Hideable {
   domElement: HTMLElement;
   visible: boolean;
   enabled: boolean;
+  active?: boolean;
 }
 
 /**
@@ -154,7 +155,7 @@ export interface Createable {
  * interface, like a button or a window.
  */
 export interface UI {
-  uiElement: UIComponent;
+  uiElement: UIComponent | {[name: string]: UIComponent};
 }
 
 export interface Item3D extends THREE.Object3D {

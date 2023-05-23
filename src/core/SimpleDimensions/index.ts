@@ -51,7 +51,7 @@ export class SimpleDimensions
   /** {@link Createable.onDelete} */
   onDelete: Event<SimpleDimensionLine> = new Event<SimpleDimensionLine>();
 
-  uiElement: Button;
+  uiElement!: Button;
 
   /** The minimum distance to force the dimension cursor to a vertex. */
   snapDistance = 0.25;
@@ -94,6 +94,7 @@ export class SimpleDimensions
 
   /** {@link Component.enabled} */
   set enabled(state: boolean) {
+    if (!state) { this.cancelDrawing() }
     this._enabled = state;
     this.uiElement.active = state;
     this.previewVisible = state;
@@ -138,7 +139,7 @@ export class SimpleDimensions
   }
 
   private set previewVisible(state: boolean) {
-    const scene = this.components.scene?.get();
+    const scene = this._components.scene?.get();
     if (state) {
       scene.add(this.previewElement);
     } else {
@@ -146,23 +147,39 @@ export class SimpleDimensions
     }
   }
 
-  constructor(public components: Components) {
+  constructor(private _components: Components) {
     super();
-    this._raycaster = new SimpleRaycaster(this.components);
+    this._raycaster = new SimpleRaycaster(this._components);
     this._endpointMesh = this.newEndpointMesh();
     const htmlPreview = document.createElement("div");
     htmlPreview.className = DimensionPreviewClassName;
     this.previewElement = new CSS2DObject(htmlPreview);
     this.previewElement.visible = false;
+    this.setUI()
+  }
 
-    this.uiElement = new Button(components, {
-      materialIconName: "straighten",
-    });
-    this.uiElement.onclick = () => {
-      this.enabled = !this.enabled;
-      this.visible = !this.visible;
+  private setUI() {
+    const button = new Button(this._components, { materialIconName: "straighten" })
+    const viewerContainer = this._components.renderer.get().domElement.parentElement as HTMLElement
+    const createDimension = () => this.create()
+    button.onclick = () => {
+      if (!this.enabled) {
+        viewerContainer.addEventListener("click", createDimension)
+        button.active = true
+        this.enabled = true
+      } else {
+        this.enabled = false
+        button.active = false
+        viewerContainer.removeEventListener("click", createDimension)
+      }
     };
-    this.uiElement.active = this.enabled;
+    button.active = this.enabled
+    this.uiElement = button
+    window.addEventListener("keydown", e => {
+      if (e.key === "Escape" && this.enabled) {
+        if (this._temp.isDragging) { this.cancelDrawing() } else { this.enabled = false }
+      }
+    })
   }
 
   /** {@link Component.get} */
@@ -290,7 +307,7 @@ export class SimpleDimensions
   }
 
   private drawDimension() {
-    return new SimpleDimensionLine(this.components, {
+    return new SimpleDimensionLine(this._components, {
       start: this._temp.start,
       end: this._temp.end,
       lineMaterial: this._lineMaterial,
