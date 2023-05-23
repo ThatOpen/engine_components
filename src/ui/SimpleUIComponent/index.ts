@@ -1,14 +1,16 @@
+import { generateUUID } from 'three/src/math/MathUtils'
 import { Component, UIComponent } from '../../base-types'
 import { Components } from '../../core'
 
-export class SimpleUIComponent extends Component<HTMLElement> implements UIComponent {
+export class SimpleUIComponent<T extends HTMLElement = HTMLElement> extends Component<T> implements UIComponent {
 
     name: string = "SimpleUIComponent"
-    domElement: HTMLElement
+    domElement: T
     children: UIComponent[] = []
     components: Components
-    private _enabled: boolean = true
-    private _visible: boolean = true
+    id: string
+    protected _enabled: boolean = true
+    protected _visible: boolean = true
 
     get visible() { return this._visible }
     set visible(visible: boolean) { this._visible = visible }
@@ -16,13 +18,14 @@ export class SimpleUIComponent extends Component<HTMLElement> implements UICompo
     get enabled() { return this._enabled }
     set enabled(enabled: boolean) { this._enabled = enabled }
     
-    constructor(components: Components, domElement: HTMLElement) {
+    constructor(components: Components, domElement: T, id?: string) {
         super()
         this.components = components
         this.domElement = domElement
+        this.id = id?? generateUUID().toLowerCase()
     }
 
-    get(): HTMLElement {
+    get(): T {
         return this.domElement
     }
 
@@ -36,6 +39,13 @@ export class SimpleUIComponent extends Component<HTMLElement> implements UICompo
             this.children.push(item)
             this.domElement.append(item.domElement)
         } )
+    }
+
+    htmlToElement(htmlString: string) {
+        var template = document.createElement('template')
+        htmlString = htmlString.trim() // Never return a text node of whitespace as the result
+        template.innerHTML = htmlString
+        return template.content.firstChild
     }
 
 }
