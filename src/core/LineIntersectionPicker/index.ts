@@ -2,7 +2,6 @@ import { Line, Raycaster, Vector3 } from "three";
 import { Component, Event, Mouse, Updateable } from "../../base-types";
 import { Components } from "../Components";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
-import * as math from "mathjs"
 
 interface LineIntersectionPickerConfig {
     snapDistance: number
@@ -62,10 +61,12 @@ export class LineIntersectionPicker extends Component<Vector3|null> implements U
         this.beforeUpdate.trigger(this)
         
         this._raycaster.setFromCamera(this._mouse.position, this._components.camera.get())
-        const lines = this._components.meshes.filter( mesh => mesh instanceof Line )
+        //@ts-ignore
+        const lines = this._components.meshes.filter( mesh => mesh.isLine )
         const intersects = this._raycaster.intersectObjects(lines)
-
-        if (intersects.length < 2) {
+        
+        // console.log(intersects)
+        if (intersects.length !== 2) {
             this._pickedPoint = null
             this.updateMarker()
             return
@@ -84,14 +85,9 @@ export class LineIntersectionPicker extends Component<Vector3|null> implements U
             const vectorB = new Vector3().fromBufferAttribute(pos, indices[0] + 1)
             const vectorC = new Vector3().fromBufferAttribute(pos, indices[1])
             const vectorD = new Vector3().fromBufferAttribute(pos, indices[1] + 1)
-            const point = math.intersect(
-                [vectorA.x, vectorA.y, vectorA.z],
-                [vectorB.x, vectorB.y, vectorB.z],
-                [vectorC.x, vectorC.y, vectorC.z],
-                [vectorD.x, vectorD.y, vectorD.z],
-            ) as number[] | null
+            const point = this.findIntersection(vectorA, vectorB, vectorC, vectorD)
             if (!point) {return}
-            this._pickedPoint = new Vector3(point[0], point[1], point[2])
+            this._pickedPoint = point
             if (this._pickedPoint.distanceTo(hitPoint) > 0.25) {return}
             this.updateMarker()
         } else {
@@ -101,20 +97,28 @@ export class LineIntersectionPicker extends Component<Vector3|null> implements U
             const vectorB =  new Vector3().fromBufferAttribute(pos1, indices[0] + 1)
             const vectorC =  new Vector3().fromBufferAttribute(pos2, indices[1])
             const vectorD =  new Vector3().fromBufferAttribute(pos2, indices[1] + 1)
-            const point = math.intersect(
-                [vectorA.x, vectorA.y, vectorA.z],
-                [vectorB.x, vectorB.y, vectorB.z],
-                [vectorC.x, vectorC.y, vectorC.z],
-                [vectorD.x, vectorD.y, vectorD.z],
-            ) as number[] | null
+            const point = this.findIntersection(vectorA, vectorB, vectorC, vectorD)
             if (!point) {return}
-            this._pickedPoint = new Vector3(point[0], point[1], point[2])
+            this._pickedPoint = point
             if (this._pickedPoint.distanceTo(hitPoint) > 0.25) {return}
             this.updateMarker()
         }
 
         this.afterUpdate.trigger(this)
     }
+
+    private findIntersection(p1: Vector3, p2: Vector3, p3: Vector3, p4: Vector3) {
+        const line1Dir = p2.sub(p1)
+        const line2Dir = p4.sub(p3)
+        const lineDirCross = new Vector3().crossVectors(line1Dir, line2Dir)
+        const denominator = lineDirCross.lengthSq()
+        if (denominator === 0) {return null}
+        const lineToPoint = p3.sub(p1)
+        const lineToPointCross = new Vector3().crossVectors(lineDirCross, lineToPoint)
+        const t1 = lineToPointCross.dot(line2Dir) / denominator
+        const intersectionPoint = new Vector3().addVectors(p1, line1Dir.multiplyScalar(t1))
+        return intersectionPoint
+    }  
 
     private updateMarker() {
         this._marker.visible = this._pickedPoint? true : false

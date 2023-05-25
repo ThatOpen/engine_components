@@ -1,5 +1,5 @@
 import { nodeResolve } from "@rollup/plugin-node-resolve";
-// import commonjs from "@rollup/plugin-commonjs";
+import commonjs from "@rollup/plugin-commonjs";
 
 // This creates the bundle used by the examples
 export default {
@@ -13,5 +13,5 @@ export default {
 			three: "https://unpkg.com/three@0.135.0/build/three.module.js",
 		},
 	},
-	plugins: [nodeResolve()],
+	plugins: [nodeResolve(), commonjs()],
 };

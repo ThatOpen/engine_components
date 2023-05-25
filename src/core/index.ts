@@ -16,3 +16,5 @@ export * from "./SimpleArea";
 export * from "./SimpleSVGViewport";
 export * from "./VertexPicker";
 export * from "./LineIntersectionPicker";
+export * from "./Simple2DMarker";
+export * from "./DXFManager";

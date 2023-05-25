@@ -1,7 +1,8 @@
-import { Component, Hideable, UIComponent } from "../../base-types";
+import { Hideable, UIComponent } from "../../base-types/base-types";
+import { Component } from "../../base-types/component";
 import { Button } from "../ButtonComponent";
 import { IContainerPosition } from "../UIManager";
-import { Components } from "../../core";
+import { Components } from "../../core/Components";
 
 interface IToolbarOptions {
   name?: string;
@@ -28,9 +29,7 @@ export class Toolbar
     this._visible = visible && this.hasElements;
     if (visible && this.hasElements) {
       this.domElement.classList.remove("hidden")
-      this.domElement.classList.add("flex")
     } else {
-      this.domElement.classList.remove("flex")
       this.domElement.classList.add("hidden")
     }
   }
