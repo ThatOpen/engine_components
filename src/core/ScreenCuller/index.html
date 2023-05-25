@@ -60,24 +60,83 @@
 	const grid = new OBC.SimpleGrid(components);
 	components.tools.add(grid);
 
-	// Set up screen culler
+	/*MD
+
+	### 🚅 Managing Performance
+	---
+    There are occasions when your scene has too many components.
+    Multiple components being rendered simultaneously **lengthens computation time**⌛️ and **degrades performance**.🌡️
+
+	:::tip First, let's set up a simple scene!
+
+    👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
+
+    :::
+
+    In this tutorial, we will use **ScreenCuller** to improve performance by reducing unnecessary computations.🚀
+    This tutorial will show you how to manage a complex scenario with a lot of elements in an effective way.🦾
+
+    ### 🧰 Creating Screen Culler
+    ---
+    Although adding Screen Culler to your project can appear difficult, it is actually rather easy.
+    Now, we will add **Screen Culler Component**.
+    This will create a Screen Culler which is now ready to be used.
+
+	 */
 
 	const culler = new OBC.ScreenCuller(components);
 
+    /*MD
+
+    Additionally, we will activate the `culler.renderDebugFrame`
+    so that we can see the 2D screen of the elements that are not occluded.💻
+    Also, we will get the **domElement** and attach it to the body so that we can see this frame in real-time.📊
+
+     */
 	culler.renderDebugFrame = true;
 	const debugFrame = culler.renderer.domElement;
 	document.body.appendChild(debugFrame);
 	debugFrame.style.position = 'absolute';
 
-	const cubes = [];
+    /*MD
 
-	function getRandomNumber(limit) {
+    :::info Randomising the Cube Placement
+
+    We'll write a quick **utility** function that returns a random number between 0 and the specified upper limit.
+    You can use this for a variety of purposes, but for this tutorial
+    it will be used to generate random positions for cube placement.📌
+
+    :::
+
+     */
+
+    function getRandomNumber(limit) {
 		return Math.random() * limit;
 	}
 
+    /*MD
+
+    ### 🧱 Adding a lot of 3D Objects
+
+    We'll add the Simple 3D Cube and do it **300 times**!🤯
+    Components are built using [Three.js](https://threejs.org/), making it simple to use any three.js code.
+    For our cube, we'll generate box geometry and use basic material.
+    */
+
+    const cubes = [];
 	const geometry = new THREE.BoxGeometry(2, 2, 2);
 	const material = new THREE.MeshLambertMaterial({ color: 'red' });
 
+    /*MD
+
+    #### 🧪 Generate Multiple Cubes
+    Now, using the `getRandomNumber()` method we previously created, we will add the 300 **`cube`** meshes to our scene
+    and randomly position them. We'll add the cube to the scene and adjust its position between 0 and 10.
+
+    Additionally, we will add meshes to the `culler` object, which will help **SimpleCuller** to recognize and
+    draw the elements that are visible to the camera. To do this, **`culler.add(cube)`** will be used.
+
+     */
 	function regenerateCubes() {
 		resetCubes();
 		for (let i = 0; i < 300; i++) {
@@ -92,7 +151,13 @@
 		}
 	}
 
+    /*MD
 
+    #### 🧹 Cleaning the Scene
+    Now that we know how to create multiple cubes, we will write a function to remove the cubes from scene on demand.
+    `resetCubes()` iteratively removes the **cubes** using [**`cube.removeFromParent`**](https://threejs.org/docs/index.html?q=obje#api/en/core/Object3D.removeFromParent).
+
+     */
 	function resetCubes() {
 		for (const cube of cubes) {
 			cube.removeFromParent();
@@ -100,10 +165,37 @@
 		cubes.length = 0;
 	}
 
-	culler.needsUpdate = true;
+    /*MD
+
+    #### 📢 Rendering Cubes
+    With everything ready, we will call `regenerateCubes()` which will generate cubes and add them to scene.
+
+     */
+    regenerateCubes();
+
+    /*MD
+
+    Here comes the most crucial part! The core aim of **ScreenCuller** is to output just those components that are
+    visible to the camera.
+
+    `culler.needsUpdate = true` instructs the ScreenCuller to render the updated view.
+
+    ** Remember to update culler every time the camera is updated ❕ **
+
+    For this tutorial, we are updating the culler on the click of button. 🖱
+     */
+
+    culler.needsUpdate = true;
+
+    /*MD
+
+    Great job! 🎉 Now you know how to optimise your 3D scene using a
+    **Screen Culler** component! 💪
+    Your BIM app will now have unmatched performance and can render huge scenes easily. 🚀
+    Let's keep it up and check out another tutorials!
+     */
 
 	// Set up stats
-
 	const stats = new Stats();
 	stats.showPanel(2);
 	document.body.append(stats.dom);
@@ -122,8 +214,6 @@
 			culler.needsUpdate = true;
 		},
 	};
-
-	regenerateCubes();
 
 	gui.add(settings, 'update').name('Update visibility');
 	gui.add(settings, 'renderDebugFrame').name('Render debug frame').onChange(() => {
