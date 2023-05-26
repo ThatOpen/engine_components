@@ -58,10 +58,12 @@ export class ViewpointsManager extends Component<string> implements UI {
         this._fragmentHighlighter = config.fragmentHighlighter
         this._fragmentManager = config.fragmentManager
         this._drawManager = config.drawManager
-        this._setUI()
+        this._fragmentManager
+        this._fragmentGrouper
+        this.setUI()
     }
 
-    private _setUI() {
+    private setUI() {
         const viewerContainer = this._components.renderer.get().domElement.parentElement as HTMLElement
         const window = new FloatingWindow(this._components, {title: "Viewpoints"})
         viewerContainer.append(window.get())

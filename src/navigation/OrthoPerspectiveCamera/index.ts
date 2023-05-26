@@ -176,8 +176,6 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
    */
   async fitModelToFrame(meshes: THREE.Mesh[] = this.components.meshes) {
     if (!this.enabled) return;
-    const scene = this.components.scene.get();
-    console.log(scene);
 
     const maxNum = Number.MAX_VALUE;
     const minNum = Number.MIN_VALUE;

@@ -11,7 +11,6 @@ interface ICardInfo {
 export class SimpleUICard extends SimpleUIComponent<HTMLDivElement> {
 
     name: string = "UICard"
-    private _components: Components
 
     constructor(components: Components, info: ICardInfo) {
         const card = document.createElement("div")
@@ -26,7 +25,6 @@ export class SimpleUICard extends SimpleUIComponent<HTMLDivElement> {
         `
         card.innerHTML = template
         super(components, card, id)
-        this._components = components
     }
 
 }

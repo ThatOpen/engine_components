@@ -31,7 +31,7 @@ export class Components {
    * All the loaded [meshes](https://threejs.org/docs/#api/en/objects/Mesh).
    * This includes IFC models, fragments, 3D scans, etc.
    */
-  readonly meshes: THREE.Mesh[] = [];
+  meshes: THREE.Mesh[] = [];
 
   private _renderer?: BaseRenderer;
   private _scene?: Component<THREE.Scene>;

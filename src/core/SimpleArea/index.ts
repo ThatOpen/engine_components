@@ -1,8 +1,10 @@
 import { SimpleRaycaster } from '../SimpleRaycaster'
 import { SimpleDimensionLine } from '../SimpleDimensions/simple-dimension-line'
-import { EdgesPlane, PostproductionRenderer } from '../../navigation'
+import { PostproductionRenderer } from '../../navigation/PostproductionRenderer'
+import { EdgesPlane } from '../../navigation/EdgesClipper/src/edges-plane'
 // import { EdgesStyles } from '../../navigation/EdgesClipper/src/edges-styles'
-import { Event, Component, Disposable, Hideable, Updateable, UI } from '../../base-types'
+import { Event, Disposable, Hideable, Updateable, UI } from '../../base-types/base-types'
+import { Component } from '../../base-types/component'
 import { SimpleDimensions } from '../SimpleDimensions'
 import { DimensionPreviewClassName } from '../SimpleDimensions/types'
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer'
@@ -10,7 +12,7 @@ import { Color, SphereGeometry, Vector3, MeshBasicMaterial, Mesh, Group, BoxGeom
 import { mergeBufferGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
 import { SimpleTag } from '../SimpleTag'
 import { Components } from '../Components'
-import { Button } from '../../ui'
+import { Button } from '../../ui/ButtonComponent'
 
 export interface SimpleAreaSettings {
   color: string | Color

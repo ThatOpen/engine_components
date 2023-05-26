@@ -1,4 +1,5 @@
-import { Component, Disposable, Event, Hideable, UI, Updateable } from '../../base-types'
+import { Disposable, Event, Hideable, UI, Updateable } from '../../base-types/base-types'
+import { Component } from '../../base-types/component'
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer'
 import { SimpleTag } from '../SimpleTag'
 import { SimpleDimensionLine } from '../SimpleDimensions/simple-dimension-line'
@@ -7,8 +8,8 @@ import { DimensionPreviewClassName } from '../SimpleDimensions/types'
 import { BufferGeometry, CatmullRomCurve3, Color, Group, Line, LineBasicMaterial, LineDashedMaterial, Mesh, MeshBasicMaterial, Object3D, SphereGeometry, Vector3 } from 'three'
 import { Components } from '../Components'
 import { SimpleDimensions } from '../SimpleDimensions'
-import { PostproductionRenderer } from '../../navigation'
-import { Button } from '../../ui'
+import { PostproductionRenderer } from '../../navigation/PostproductionRenderer'
+import { Button } from '../../ui/ButtonComponent'
 import { SimpleAreaSettings } from '../SimpleArea'
 
 interface Angle {

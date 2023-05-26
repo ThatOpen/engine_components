@@ -1,4 +1,5 @@
-import { SimpleRenderer, Components } from "../../core";
+import { SimpleRenderer } from "../../core/SimpleRenderer";
+import { Components } from "../../core/Components";
 import { Postproduction } from "./src/postproduction";
 
 /**

@@ -93,6 +93,7 @@ export class Button
       hover:cursor-pointer hover:bg-ifcjs-200 hover:text-ifcjs-100
       data-[active=true]:cursor-pointer data-[active=true]:bg-ifcjs-200 data-[active=true]:text-ifcjs-100
       disabled:cursor-default disabled:bg-transparent disabled:text-gray-500
+      transition-all
       `;
       this.domElement = btn;
       if (options?.materialIconName) {
