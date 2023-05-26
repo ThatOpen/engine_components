@@ -2,8 +2,7 @@ import {
   createPopper,
   Placement,
   Instance as PopperInstance,
-  // @ts-ignore
-} from "@popperjs/core/dist/esm";
+} from "@popperjs/core";
 import { Component, Hideable, UIComponent, Event } from "../../base-types";
 import { Toolbar } from "../ToolbarComponent";
 import { Components } from "../../core";
@@ -90,7 +89,7 @@ export class Button
       const btn = document.createElement("button");
       btn.id = options?.materialIconName ?? "";
       btn.className = `
-      relative flex gap-x-2 items-center bg-transparent text-white rounded-md h-fit p-2 
+      relative flex gap-x-2 items-center bg-transparent text-white rounded-md h-fit p-2
       hover:cursor-pointer hover:bg-ifcjs-200 hover:text-ifcjs-100
       data-[active=true]:cursor-pointer data-[active=true]:bg-ifcjs-200 data-[active=true]:text-ifcjs-100
       disabled:cursor-default disabled:bg-transparent disabled:text-gray-500
