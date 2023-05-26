@@ -17,14 +17,16 @@ export class SimpleRaycaster
   /** {@link Component.enabled} */
   enabled = true;
 
+  /** The position of the mouse in the screen. */
+  readonly mouse: Mouse;
+
   private readonly _raycaster = new THREE.Raycaster();
-  private readonly _mouse: Mouse;
 
   constructor(private components: Components) {
     super();
     const scene = components.renderer.get();
     const dom = scene.domElement;
-    this._mouse = new Mouse(dom);
+    this.mouse = new Mouse(dom);
   }
 
   /** {@link Component.get} */
@@ -45,7 +47,7 @@ export class SimpleRaycaster
     items: THREE.Mesh[] = this.components.meshes
   ): THREE.Intersection | null {
     const camera = this.components.camera.get();
-    this._raycaster.setFromCamera(this._mouse.position, camera);
+    this._raycaster.setFromCamera(this.mouse.position, camera);
     const result = this._raycaster.intersectObjects(items);
     const filtered = this.filterClippingPlanes(result);
     return filtered.length > 0 ? filtered[0] : null;
