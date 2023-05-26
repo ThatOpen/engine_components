@@ -924,10 +924,6 @@ select {
   min-width: 150px;
 }
 
-.min-w-\[80px\] {
-  min-width: 80px;
-}
-
 .max-w-sm {
   max-width: 24rem;
 }
@@ -1226,11 +1222,46 @@ select {
   transition-duration: 150ms;
 }
 
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
 :root {
   --container-border-distance: 15px;
   --primary-color: #202932;
-  --secondary-color: #BCF124
+  --secondary-color: #BCF124;
+}
 
+* {
+  margin: 0;
+  border: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: small;
+}
+
+.full-screen {
+  width: 100vw;
+  height: 100vh;
+  position: absolute;
+  overflow: hidden;
+}
+
+.simple-container {
+  position: absolute;
+  max-height: 600px;
+  max-width: 400px;
+  box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.25);
+  overflow: auto;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 10px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 5px;
 }
 
 .material-icons.md-18 {

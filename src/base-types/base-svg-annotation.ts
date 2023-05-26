@@ -1,6 +1,7 @@
-import { Component, UI, UIComponent } from ".";
-import { DrawManager } from "../annotation";
-import { Button } from "../ui";
+import { UIComponent, UI } from "./base-types";
+import { Component } from "./component";
+import { DrawManager } from "../annotation/DrawManager";
+import { Button } from "../ui/ButtonComponent";
 
 export interface SVGAnnotationStyle {
     fillColor: string
@@ -77,10 +78,22 @@ export abstract class BaseSVGAnnotation extends Component<null> implements UI {
         return this._drawManager
     }
 
-    start(e?: MouseEvent) {}
-    draw(e?: MouseEvent) {}
-    end(e?: MouseEvent) {}
-    cancel(e?: KeyboardEvent) {}
+    start(e?: MouseEvent) {
+        console.log(e)
+    }
+
+    draw(e?: MouseEvent) {
+        console.log(e)
+    }
+
+    end(e?: MouseEvent) {
+        console.log(e)
+    }
+    
+    cancel(e?: KeyboardEvent) {
+        console.log(e)
+    }
+
     get() {
         return null
     }

@@ -56,13 +56,13 @@ export class InfoCard extends Component<string> implements Updateable, UI {
         this.uiElement = window
     }
     
-    private worldToScreen(vector3: Vector3, vector2: Vector2) {
-        const camera = this._components.camera.get()
-        const screenVector = vector3.clone().project(camera)
-        vector2.x = Math.round((screenVector.x + 1) * this._viewerContainer.clientWidth / 2)
-        vector2.y = Math.round((-screenVector.y + 1) * this._viewerContainer.clientHeight / 2)
-        return vector2
-    }
+    // private worldToScreen(vector3: Vector3, vector2: Vector2) {
+    //     const camera = this._components.camera.get()
+    //     const screenVector = vector3.clone().project(camera)
+    //     vector2.x = Math.round((screenVector.x + 1) * this._viewerContainer.clientWidth / 2)
+    //     vector2.y = Math.round((-screenVector.y + 1) * this._viewerContainer.clientHeight / 2)
+    //     return vector2
+    // }
     
     update(): void {
         if (!this.uiElement) {return}

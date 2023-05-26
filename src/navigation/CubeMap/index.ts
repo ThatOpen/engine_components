@@ -38,7 +38,7 @@ export class CubeMap extends Component<HTMLDivElement> implements Updateable, Hi
 
     set visible(value: boolean) {
         this._visible = value
-        if (value) {
+        if (this._visible) {
             this._cubeWrapper.classList.remove("hidden")
         } else {
             this._cubeWrapper.classList.add("hidden")
