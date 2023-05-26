@@ -35,7 +35,6 @@ Fields:
 import * as THREE from "three";
 import { Components } from "../Components";
 import { SimpleRenderer } from "./index";
-import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
 
 describe("SimpleRenderer", () => {
   // Tests that the renderer is properly initialized with Components and a container element.
