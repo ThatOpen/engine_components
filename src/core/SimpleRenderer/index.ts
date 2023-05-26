@@ -32,10 +32,11 @@ export class SimpleRenderer
   afterUpdate = new Event<SimpleRenderer>();
 
   protected _renderer2D = new CSS2DRenderer();
-  protected _renderer: THREE.WebGLRenderer;
+  protected _renderer!: THREE.WebGLRenderer;
 
   constructor(public components: Components, public container: HTMLElement) {
     super();
+
     this._renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
