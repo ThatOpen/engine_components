@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
 import {
   Event,
   Disposable,
@@ -8,6 +7,7 @@ import {
   BaseRenderer,
 } from "../../base-types";
 import { Components } from "../Components";
+import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
 
 /**
  * A basic renderer capable of rendering 3D and 2D objects
