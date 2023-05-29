@@ -54,19 +54,116 @@
 	const grid = new OBC.SimpleGrid(components);
 	components.tools.add(grid);
 
-	// Use orthoperspective camera
+    /*MD
+    ### 📽️ Managing Multiple Views
+    ---
+    Perspective view adds depth and realism, which helps in creating visually compelling representations in 3D scenes.🛤️
+    While, Orthographic view is important for precise measurements and proportions.📐
+
+    :::tip First, let's set up a simple scene!
+
+    👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
+
+    :::
+
+    We'll be using an advanced camera component for this tutorial.
+    [**OrthoPerspectiveCamera**](../api/classes/components.OrthoPerspective) makes it simple to use Orthographic and Perspective projections.
+
+    ### 🎲 Creating a Cube Mesh
+    ---
+    First, let's create a simple Cube, which will render differently depending on the projection you choose.🧊
+    We will create a [Cube](https://threejs.org/docs/index.html?q=box#api/en/geometries/BoxGeometry)
+    with `3x3x3` dimensions and use red color for the material.🖍️
+
+    */
+
+    const cubeGeometry = new THREE.BoxGeometry(3, 3, 3);
+    const redMaterial = new THREE.MeshStandardMaterial({color: "red"});
+    const redCube = new THREE.Mesh(cubeGeometry, redMaterial);
+    redCube.position.set(0, 1.5, 0);
+
+    /*MD
+
+    Now, we will add the Cube to the `Scene`. We must also add the **cube** to `components.meshes`,
+    which is simply an array of all the meshes in the Scene 🗄️.
+
+    **`components.meshes`** acts as a store to help you manage your elements centrally.
+
+     */
+    scene.add(redCube);
+    components.meshes.push(redCube);
+
+    /*MD
+    ### 🎞️ Developing an OrthoPerspective Camera
+    ---
+
+    We will create OrthoPerspectiveCamera by passing `components` as an argument to it.🗃️
+    The OrthoPerspective Camera extends the [**SimpleCamera**](../api/classes/components.SimpleCamera) by providing you with extra controls.
+
+    We will then configure the camera location and update the look at target using `setLookAt()` API.👀
+
+     */
 
 	const camera = new OBC.OrthoPerspectiveCamera(components);
 	components.camera = camera;
 	camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 	components.init();
 
+    /*MD
+
+    :::info Igniting Components!
+
+    🔥 Whenever the components like scene, camera are created, you need to initialize the component library.
+    Check out [components.init()](../api/classes/components.init) for more info!🔖
+
+    :::
+
+    ### 🕹️ Changing Views and Navigation
+    ---
+    Now, that our camera setup is done, we need to manage the camera projection on demand.
+
+    #### Toggling Orthographic View and Perspective View
+
+    Let's create a simple method **`toggleProjection()`** which toggles the Camera View using `camera.toggleProjection`.
+    Alternatively, you can also use `camera.setProjection()` and pass `'Orthographic'` or `'Perspective'` to manage the views.💡
+
+    */
 	function toggleProjection() {
-		camera.toggleProjection();
-  }
+      camera.toggleProjection();
+    }
+
+    /*MD
+    #### Managing Navigation Modes
+    Along with projection, we can also manage Navigation modes using **OrthoPerspective** camera.
+    To update navigation modes, we will use `camera.setNavigationMode('Orbit' | 'FirstPerson' | 'Plan')`
+
+    - **Orbit** - Orbit Mode helps us to easily navigate around the 3D Elements.
+    - **FirstPerson** - It helps you to visualize scene from your own perspective.
+    First Person mode is only available for Perspective Projection.
+    - **Plan** - This mode helps you to easily navigate in 2D Projections.
+
+    */
+    function setNavigationMode(navMode){
+      camera.setNavigationMode(navMode);
+    }
+
+    /*MD
+    :::info MORE CONTROLS, MORE POWER
+
+    🧮 OrthoPerspective Camera also provides you an option to adjust your camera to fit the 3D elements.
+    You can simply use [**fitModelToFrame(mesh)**](../api/classes/components.OrthoPerspectiveCamera.fitModelToFrame)
+    and provide the mesh which you want to fit to your window frame
+
+    :::
+
+    **Congratulations** 🎉 on completing this tutorial!
+    Now you can add Advance Camera System to your web-app in minutes using
+    **OrthoPerspectiveCamera** ⌚📽️
+    Let's keep it up and check out another tutorial! 🎓
+
+    */
 
 	// Set up stats
-
 	const stats = new Stats();
 	stats.showPanel(2);
 	document.body.append(stats.dom);
@@ -79,13 +176,32 @@
 
 	const gui = new dat.GUI();
 
-	const actionsFolder = gui.addFolder('Actions');
+    const navModeFolder = gui.addFolder('Navigation Modes');
+    const navMode = {
+      'Orbit': () => setNavigationMode('Orbit'),
+      'First Person': () => setNavigationMode('FirstPerson'),
+      'Plan': () => setNavigationMode('Plan')
+    }
 
+    navModeFolder.add(navMode, 'Orbit');
+    navModeFolder.add(navMode, 'First Person');
+    navModeFolder.add(navMode, 'Plan');
+
+	const actionsFolder = gui.addFolder('Camera Projection');
 	const actions = {
-		'Toggle projection': () => toggleProjection()
+		'Toggle Projection': () => {
+          if(camera.activeCamera.type === "PerspectiveCamera"){
+            navModeFolder.children[1].domElement.style.display = 'none'
+          }
+          else{
+            navModeFolder.children[1].domElement.style.display = 'block'
+          }
+
+          toggleProjection()
+        }
 	}
 
-	actionsFolder.add(actions, 'Toggle projection');
+	actionsFolder.add(actions, 'Toggle Projection');
 
 </script>
 </body>
