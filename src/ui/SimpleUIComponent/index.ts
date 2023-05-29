@@ -1,51 +1,79 @@
-import { generateUUID } from 'three/src/math/MathUtils'
-import { Component, UIComponent } from '../../base-types'
-import { Components } from '../../core'
+import { Component, Hideable, UIComponent, Event } from "../../base-types";
+import { Components } from "../../core";
+import { tooeenRandomId } from "../../utils";
 
-export class SimpleUIComponent<T extends HTMLElement = HTMLElement> extends Component<T> implements UIComponent {
+export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
+  extends Component<T>
+  implements UIComponent, Hideable
+{
+  name: string = "SimpleUIComponent";
+  domElement: T;
+  children: UIComponent[] = [];
+  components: Components;
+  id: string;
+  onVisible: Event<T> = new Event();
+  onHidden: Event<T> = new Event();
+  onEnabled: Event<T> = new Event();
+  onDisabled: Event<T> = new Event();
+  protected _enabled: boolean = true;
+  protected _visible: boolean = true;
 
-    name: string = "SimpleUIComponent"
-    domElement: T
-    children: UIComponent[] = []
-    components: Components
-    id: string
-    protected _enabled: boolean = true
-    protected _visible: boolean = true
+  get visible() {
+    return this._visible;
+  }
 
-    get visible() { return this._visible }
-    set visible(visible: boolean) { this._visible = visible }
-
-    get enabled() { return this._enabled }
-    set enabled(enabled: boolean) { this._enabled = enabled }
-    
-    constructor(components: Components, domElement: T, id?: string) {
-        super()
-        this.components = components
-        this.domElement = domElement
-        this.id = id?? generateUUID().toLowerCase()
+  set visible(visible: boolean) {
+    this._visible = visible;
+    if (visible) {
+      this.domElement.classList.remove("hidden");
+      this.onVisible.trigger(this.get());
+    } else {
+      this.domElement.classList.add("hidden");
+      this.onHidden.trigger(this.get());
     }
+  }
 
-    get(): T {
-        return this.domElement
+  get enabled() {
+    return this._enabled;
+  }
+  set enabled(value: boolean) {
+    this._enabled = value;
+    if (value) {
+      this.onEnabled.trigger(this.get());
+    } else {
+      this.onDisabled.trigger(this.get());
     }
+  }
 
-    dispose(onlyChildren = false) {
-        this.children.forEach( child => child.dispose() )
-        if (!onlyChildren) {this.domElement.remove()}
+  constructor(components: Components, domElement: T, id?: string) {
+    super();
+    this.components = components;
+    this.domElement = domElement;
+    this.id = id ?? tooeenRandomId();
+  }
+
+  get(): T {
+    return this.domElement;
+  }
+
+  dispose(onlyChildren = false) {
+    this.children.forEach((child) => child.dispose());
+    if (!onlyChildren) {
+      this.domElement.remove();
     }
+  }
 
-    addChild(...items: UIComponent[]) {
-        items.forEach( item => {
-            this.children.push(item)
-            this.domElement.append(item.domElement)
-        } )
-    }
+  addChild(...items: UIComponent[]) {
+    items.forEach((item) => {
+      this.children.push(item);
+      this.domElement.append(item.domElement);
+    });
+  }
 
-    htmlToElement(htmlString: string) {
-        var template = document.createElement('template')
-        htmlString = htmlString.trim() // Never return a text node of whitespace as the result
-        template.innerHTML = htmlString
-        return template.content.firstChild
-    }
-
+  // htmlToElement(htmlString: string) {
+  //   const template = document.createElement("template");
+  //   htmlString = htmlString.trim(); // Never return a text node of whitespace as the result
+  //   template.innerHTML = htmlString;
+  //   return template.content.firstChild;
+  // }
 }

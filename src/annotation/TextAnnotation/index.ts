@@ -5,64 +5,74 @@ import { DrawManager } from "../DrawManager";
 import { SVGText } from "../SVGText";
 
 export class TextAnnotation extends BaseSVGAnnotation implements UI {
+  name: string = "TextAnnotation";
+  uiElement!: Button;
+  canvas: HTMLCanvasElement | null = null;
+  private _components: Components;
+  private _previewElement: SVGText;
 
-    name: string = "TextAnnotation"
-    uiElement!: Button
-    canvas: HTMLCanvasElement | null = null
-    private _components: Components
-    private _previewElement: SVGText
+  constructor(components: Components, drawManager?: DrawManager) {
+    super();
+    this._components = components;
+    this._previewElement = new SVGText(components);
+    this.setUI();
+    this.drawManager = drawManager;
+  }
 
-    constructor(components: Components, drawManager?: DrawManager) {
-        super()
-        this._components = components
-        this._previewElement = new SVGText(components)
-        this.setUI()
-        this.drawManager = drawManager
+  private setUI() {
+    const button = new Button(this._components, {
+      name: "Text",
+      materialIconName: "title",
+    });
+    button.onclick = () => {
+      if (this.drawManager) {
+        this.drawManager.activateTool(this);
+      } else {
+        this.enabled = !this.enabled;
+      }
+    };
+    this.uiElement = button;
+  }
+
+  cancel() {
+    if (!this._isDrawing) {
+      return;
     }
+    this._isDrawing = false;
+    this._previewElement.reset();
+    this._previewElement.get().remove();
+  }
 
-    private setUI() {
-        const button = new Button(this._components, {name: "Text", materialIconName: "title"})
-        button.onclick = () => {
-            if (this.drawManager) {
-                this.drawManager.activateTool(this)
-            } else {
-                this.enabled = !this.enabled
-            }
-        }
-        this.uiElement = button
+  start(e: MouseEvent) {
+    if (!this.canDraw) {
+      return;
     }
-
-    cancel() {
-        if (!this._isDrawing) {return}
-        this._isDrawing = false
-        this._previewElement.reset()
-        this._previewElement.get().remove()
+    if (!this._isDrawing) {
+      this._isDrawing = true;
+      const text = prompt("Enter your text", this._previewElement.text);
+      if (!text) {
+        this.cancel();
+        return;
+      }
+      this._previewElement.setStyle(this.drawManager?.viewport.config);
+      this._previewElement.text = text;
+      this._previewElement.x = e.clientX;
+      this._previewElement.y = e.clientY;
+      this.svgViewport?.append(this._previewElement.get());
+    } else {
+      const text = this._previewElement.clone();
+      text.setStyle(this.drawManager?.viewport.config);
+      this.svgViewport?.append(text.get());
+      this.cancel();
+      return text;
     }
+  }
 
-    start(e: MouseEvent) {
-        if (!this.canDraw) {return}
-        if (!this._isDrawing) {
-            this._isDrawing = true
-            const text = prompt("Enter your text", this._previewElement.text)
-            if (!text) {this.cancel(); return}
-            this._previewElement.setStyle(this.drawManager?.viewport.config)
-            this._previewElement.text = text
-            this._previewElement.x = e.clientX
-            this._previewElement.y = e.clientY
-            this.svgViewport?.append(this._previewElement.get())
-        } else {
-            const text = this._previewElement.clone()
-            text.setStyle(this.drawManager?.viewport.config)
-            this.svgViewport?.append(text.get())
-            this.cancel()
-            return text
-        }
+  draw(e: MouseEvent) {
+    if (!this.canDraw || !this._isDrawing) {
+      return;
     }
-
-    draw(e: MouseEvent) {
-        if (!this.canDraw || !this._isDrawing) {return}
-        this._previewElement.x = e.clientX
-        this._previewElement.y = e.clientY
-    }
-
+    this._previewElement.x = e.clientX;
+    this._previewElement.y = e.clientY;
+  }
 }

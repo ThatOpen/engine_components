@@ -20,7 +20,7 @@ import { Components } from "../../core";
  * the IFC file.
  */
 export class FragmentIfcLoader
-  extends Component<null>
+  extends Component<WEBIFC.IfcAPI>
   implements Disposable, UI
 {
   name: string = "FragmentIfcLoader";
@@ -59,8 +59,8 @@ export class FragmentIfcLoader
     this.setupOpenButton();
   }
 
-  get(): null {
-    return null;
+  get(): WEBIFC.IfcAPI {
+    return this._webIfc;
   }
 
   /** {@link Disposable.dispose} */

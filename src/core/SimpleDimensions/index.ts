@@ -94,7 +94,9 @@ export class SimpleDimensions
 
   /** {@link Component.enabled} */
   set enabled(state: boolean) {
-    if (!state) { this.cancelDrawing() }
+    if (!state) {
+      this.cancelDrawing();
+    }
     this._enabled = state;
     this.uiElement.active = state;
     this.previewVisible = state;
@@ -155,31 +157,38 @@ export class SimpleDimensions
     htmlPreview.className = DimensionPreviewClassName;
     this.previewElement = new CSS2DObject(htmlPreview);
     this.previewElement.visible = false;
-    this.setUI()
+    this.setUI();
   }
 
   private setUI() {
-    const button = new Button(this._components, { materialIconName: "straighten" })
-    const viewerContainer = this._components.renderer.get().domElement.parentElement as HTMLElement
-    const createDimension = () => this.create()
+    const button = new Button(this._components, {
+      materialIconName: "straighten",
+    });
+    const viewerContainer = this._components.renderer.get().domElement
+      .parentElement as HTMLElement;
+    const createDimension = () => this.create();
     button.onclick = () => {
       if (!this.enabled) {
-        viewerContainer.addEventListener("click", createDimension)
-        button.active = true
-        this.enabled = true
+        viewerContainer.addEventListener("click", createDimension);
+        button.active = true;
+        this.enabled = true;
       } else {
-        this.enabled = false
-        button.active = false
-        viewerContainer.removeEventListener("click", createDimension)
+        this.enabled = false;
+        button.active = false;
+        viewerContainer.removeEventListener("click", createDimension);
       }
     };
-    button.active = this.enabled
-    this.uiElement = button
-    window.addEventListener("keydown", e => {
+    button.active = this.enabled;
+    this.uiElement = button;
+    window.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && this.enabled) {
-        if (this._temp.isDragging) { this.cancelDrawing() } else { this.enabled = false }
+        if (this._temp.isDragging) {
+          this.cancelDrawing();
+        } else {
+          this.enabled = false;
+        }
       }
-    })
+    });
   }
 
   /** {@link Component.get} */
