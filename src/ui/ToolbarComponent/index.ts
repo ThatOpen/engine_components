@@ -28,9 +28,9 @@ export class Toolbar
   set visible(visible: boolean) {
     this._visible = visible && this.hasElements;
     if (visible && this.hasElements) {
-      this.domElement.classList.remove("hidden")
+      this.domElement.classList.remove("hidden");
     } else {
-      this.domElement.classList.add("hidden")
+      this.domElement.classList.add("hidden");
     }
   }
 
@@ -70,15 +70,18 @@ export class Toolbar
     };
     this.name = _options.name;
     this.domElement.id = _options.name;
-    this.domElement.className = "flex shadow-md w-fit h-fit gap-x-2 gap-y-2 p-2 text-white rounded pointer-events-auto bg-ifcjs-100 z-50";
+    this.domElement.className =
+      "flex shadow-md w-fit h-fit gap-x-2 gap-y-2 p-2 text-white rounded pointer-events-auto bg-ifcjs-100 z-50";
     this.position = _options.position;
     this.visible = true;
   }
 
   dispose(onlyChildren = false) {
-    this.children.forEach( button => button.dispose() )
-    if (!onlyChildren) { this.domElement.remove() }
-}
+    this.children.forEach((button) => button.dispose());
+    if (!onlyChildren) {
+      this.domElement.remove();
+    }
+  }
 
   get hasElements() {
     return this.children.length > 0;
@@ -108,7 +111,7 @@ export class Toolbar
 
   setDirection(direction: IToolbarDirection = "horizontal") {
     this.domElement.classList.remove("flex-col");
-    const directionClass = direction === "horizontal"? ["flex"] : ["flex-col"]
+    const directionClass = direction === "horizontal" ? ["flex"] : ["flex-col"];
     this.domElement.classList.add(...directionClass);
   }
 }

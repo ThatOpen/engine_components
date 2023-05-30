@@ -79,6 +79,7 @@ export class FragmentEdges implements Disposable {
     this.getInstanceTransforms(fragment);
 
     const edgesGeom = new EdgesGeometry(fragment.mesh.geometry, this.threshold);
+    // @ts-ignore
     const lineGeom = new InstancedBufferGeometry().copy(edgesGeom);
     lineGeom.instanceCount = Infinity;
 

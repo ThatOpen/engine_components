@@ -44,19 +44,20 @@ export class UIManager extends Component<Toolbar[]> {
       top: ["top-0", "pt-4"],
       right: ["top-0", "right-0", "pr-4"],
       bottom: ["bottom-0", "pb-4"],
-      left: ["top-0", "left-0", "pl-4"]
-    }
+      left: ["top-0", "left-0", "pl-4"],
+    };
 
     for (const id in this.containers) {
       const container = this.containers[id];
-      container.className = "absolute flex gap-y-3 gap-x-3 pointer-events-none p-4"
-      container.classList.add(...containerClasses[id])
+      container.className =
+        "absolute flex gap-y-3 gap-x-3 pointer-events-none p-4";
+      container.classList.add(...containerClasses[id]);
       container.id = `${id}-toolbar-container`;
       this.setContainerAlignment(id as IContainerPosition, "center");
     }
 
-    const hContainerClass = ["flex-row", "w-full"]
-    const vContainerClass = ["flex-column", "h-full"]
+    const hContainerClass = ["flex-row", "w-full"];
+    const vContainerClass = ["flex-column", "h-full"];
     this.containers.top.classList.add(...hContainerClass);
     this.containers.right.classList.add(...vContainerClass);
     this.containers.bottom.classList.add(...hContainerClass);
