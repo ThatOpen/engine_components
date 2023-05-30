@@ -27,27 +27,27 @@ Test Plan:
 - test_name_empty: sets the name field to an empty string. Tags: [edge case]
 */
 
-import THREE from "three";
+import * as THREE from "three";
 import { Disposer } from "../Disposer";
 import { SimpleScene } from "./index";
-import { Components } from "../../base-types";
+import { Components } from "../Components";
+import testComponents from "../../test/mock/testComponents";
 
 describe("SimpleScene_class", () => {
   test("constructor", () => {
-    const components = new Components();
-    const scene = new SimpleScene(components);
-    expect(scene).toBeInstanceOf(SimpleScene);
+    const components = testComponents();
+    expect(components.scene.get()).toBeInstanceOf(THREE.Scene);
   });
 
   test("get", () => {
-    const components = new Components();
-    const scene = new SimpleScene(components);
-    expect(scene.get()).toBeInstanceOf(THREE.Scene);
+    const components = testComponents();
+    expect(components.scene.get()).toBeInstanceOf(THREE.Scene);
   });
 
   test("dispose_empty", () => {
     const components = new Components();
     const scene = new SimpleScene(components);
+
     expect(() => {
       scene.dispose();
     }).not.toThrow();
@@ -64,9 +64,11 @@ describe("SimpleScene_class", () => {
   });
 
   test("background_color", () => {
-    const components = new Components();
-    const scene = new SimpleScene(components);
-    expect(scene.get().background).toEqual(new THREE.Color(0xcccccc));
+    const components = testComponents();
+
+    expect(components.scene.get().background).toEqual(
+      new THREE.Color(0xcccccc)
+    );
   });
 
   test("disposer_called", () => {
