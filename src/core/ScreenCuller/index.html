@@ -20,8 +20,6 @@
         "openbim-components": "../../../resources/openbim-components.js"
       }
     }
-
-
 </script>
 <script type="module">
 
@@ -196,6 +194,7 @@
      */
 
 	// Set up stats
+  
 	const stats = new Stats();
 	stats.showPanel(2);
 	document.body.append(stats.dom);
@@ -209,11 +208,13 @@
 	const gui = new dat.GUI();
 
 	const settings = {
-		renderDebugFrame: true,
+		renderDebugFrame: false,
 		update: () => {
 			culler.needsUpdate = true;
 		},
 	};
+
+	debugFrame.style.visibility = 'collapse';
 
 	gui.add(settings, 'update').name('Update visibility');
 	gui.add(settings, 'renderDebugFrame').name('Render debug frame').onChange(() => {

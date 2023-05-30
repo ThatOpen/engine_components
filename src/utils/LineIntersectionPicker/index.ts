@@ -1,4 +1,4 @@
-import { Line, Raycaster, Vector3 } from "three";
+import { BufferAttribute, Line, Raycaster, Vector3 } from "three";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
 import { Event, Updateable } from "../../base-types/base-types";
 import { Mouse } from "../../base-types/mouse";
@@ -99,7 +99,7 @@ export class LineIntersectionPicker
     const isSameElement = lineA.uuid === lineB.uuid;
     if (isSameElement) {
       const line = lineA;
-      const pos = line.geometry.getAttribute("position");
+      const pos = line.geometry.getAttribute("position") as BufferAttribute;
       const vectorA = new Vector3().fromBufferAttribute(pos, indices[0]);
       const vectorB = new Vector3().fromBufferAttribute(pos, indices[0] + 1);
       const vectorC = new Vector3().fromBufferAttribute(pos, indices[1]);
@@ -114,8 +114,8 @@ export class LineIntersectionPicker
       }
       this.updateMarker();
     } else {
-      const pos1 = lineA.geometry.getAttribute("position");
-      const pos2 = lineB.geometry.getAttribute("position");
+      const pos1 = lineA.geometry.getAttribute("position") as BufferAttribute;
+      const pos2 = lineB.geometry.getAttribute("position") as BufferAttribute;
       const vectorA = new Vector3().fromBufferAttribute(pos1, indices[0]);
       const vectorB = new Vector3().fromBufferAttribute(pos1, indices[0] + 1);
       const vectorC = new Vector3().fromBufferAttribute(pos2, indices[1]);

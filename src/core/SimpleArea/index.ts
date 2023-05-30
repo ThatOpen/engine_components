@@ -21,6 +21,7 @@ import {
   BufferGeometry,
   Object3D,
   Vector2,
+  BufferAttribute,
 } from "three";
 import { mergeBufferGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
 import { SimpleRaycaster } from "../SimpleRaycaster";
@@ -805,7 +806,7 @@ export class SimpleArea
       return p1.dot(p2.cross(p3)) / 6.0;
     };
 
-    const position = geometry.attributes.position;
+    const position = geometry.attributes.position as BufferAttribute;
 
     let volume = 0;
 
