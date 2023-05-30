@@ -1,0 +1,48 @@
+name: "New feature proposal 🚀"
+description: Propose a new feature to be added to IFC.js components
+labels: [pending triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your interest in the project and taking the time to fill out this feature report! <img src="https://ifcjs.github.io/info/img/logo.svg" width="16">
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Description 📝
+      description: "Clear and concise description of the problem. Please make the reason and usecases as detailed as possible. If you intend to submit a PR for this issue, tell us in the description. Thanks!"
+      placeholder: "Example: As a BIM developer/engineer using IFC.js I want [goal / wish] so that [benefit]."
+    validations:
+      required: true
+  - type: textarea
+    id: suggested-solution
+    attributes:
+      label: Suggested solution 💡 
+      description: If possible, include in this field a solution or approach that would solve or implement the described feature.
+      placeholder: "In module/component [xy] we could provide the following implementation..."
+    validations:
+      required: false
+  - type: textarea
+    id: alternative
+    attributes:
+      label: Alternative ⛕
+      description: Clear and concise description of any alternative solutions or features you've considered.
+    validations:
+      required: false
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context ☝️
+      description: Any other context or screenshots about the feature request here.
+    validations:
+      required: false
+  - type: checkboxes
+    id: checkboxes
+    attributes:
+      label: Validations ✅
+      description: "Before submitting the issue, please make sure that you have:"
+      options:
+        - label: Read the [docs](https://ifcjs.github.io/info/docs/Introduction).
+          required: true
+        - label: Check that there isn't [already an issue](https://github.com/IFCjs/components/issues) that requests the same feature to avoid creating a duplicate.
+          required: true
