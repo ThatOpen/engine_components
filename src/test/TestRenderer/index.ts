@@ -21,6 +21,9 @@ export class TestRenderer extends BaseRenderer implements Disposable {
 
     const { canvas, context } = this.getCanvasContext(container);
 
+    // @ts-ignore
+    canvas.parentElement = document.createElement("div");
+
     this._renderer = new THREE.WebGLRenderer({ canvas, context, ...options });
   }
 

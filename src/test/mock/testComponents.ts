@@ -1,4 +1,4 @@
-import { Components, SimpleScene } from "../../core";
+import { Components, SimpleRaycaster, SimpleScene } from "../../core";
 import { TestRenderer } from "../TestRenderer";
 import { TestCamera } from "../TestCamera";
 
@@ -7,11 +7,21 @@ export default () => {
 
   components.scene = new SimpleScene(components);
 
-  const div = document.createElement("div");
+  const parent = document.createElement("div");
+  const container = document.createElement("div");
 
-  components.renderer = new TestRenderer(div, { antialias: true, alpha: true });
+  parent.appendChild(container);
+
+  components.renderer = new TestRenderer(container, {
+    antialias: true,
+    alpha: true,
+  });
+
+  components.raycaster = new SimpleRaycaster(components);
 
   components.camera = new TestCamera(components);
+
+  components.init();
 
   return components;
 };
