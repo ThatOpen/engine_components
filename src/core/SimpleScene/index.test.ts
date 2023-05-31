@@ -27,27 +27,27 @@ Test Plan:
 - test_name_empty: sets the name field to an empty string. Tags: [edge case]
 */
 
-import THREE from "three";
 import { Disposer } from "../Disposer";
 import { SimpleScene } from "./index";
-import { Components } from "../../base-types";
+import { Components } from "../Components";
+import testComponents from "../../test/mock/testComponents";
+import { BoxGeometry, Color, Mesh, MeshBasicMaterial, Scene } from "three";
 
-describe("SimpleScene_class", () => {
+describe("SimpleScene", () => {
   test("constructor", () => {
-    const components = new Components();
-    const scene = new SimpleScene(components);
-    expect(scene).toBeInstanceOf(SimpleScene);
+    const components = testComponents();
+    expect(components.scene.get()).toBeInstanceOf(Scene);
   });
 
   test("get", () => {
-    const components = new Components();
-    const scene = new SimpleScene(components);
-    expect(scene.get()).toBeInstanceOf(THREE.Scene);
+    const components = testComponents();
+    expect(components.scene.get()).toBeInstanceOf(Scene);
   });
 
   test("dispose_empty", () => {
     const components = new Components();
     const scene = new SimpleScene(components);
+
     expect(() => {
       scene.dispose();
     }).not.toThrow();
@@ -56,7 +56,7 @@ describe("SimpleScene_class", () => {
   test("dispose_no_materials", () => {
     const components = new Components();
     const scene = new SimpleScene(components);
-    const mesh = new THREE.Mesh();
+    const mesh = new Mesh();
     scene.get().add(mesh);
     expect(() => {
       scene.dispose();
@@ -64,19 +64,16 @@ describe("SimpleScene_class", () => {
   });
 
   test("background_color", () => {
-    const components = new Components();
-    const scene = new SimpleScene(components);
-    expect(scene.get().background).toEqual(new THREE.Color(0xcccccc));
+    const components = testComponents();
+
+    expect(components.scene.get().background).toEqual(new Color(0xcccccc));
   });
 
   test("disposer_called", () => {
     const components = new Components();
     const scene = new SimpleScene(components);
     const disposerSpy = jest.spyOn(Disposer.prototype, "dispose");
-    const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(),
-      new THREE.MeshBasicMaterial()
-    );
+    const mesh = new Mesh(new BoxGeometry(), new MeshBasicMaterial());
     scene.get().add(mesh);
     scene.dispose();
     expect(disposerSpy).toHaveBeenCalled();
