@@ -24,7 +24,7 @@ Fields:
 import * as THREE from "three";
 import { Disposer } from "./index";
 
-describe("Disposer_class", () => {
+describe("Disposer", () => {
   // Tests that dispose method removes a mesh with geometry and materials.
   it("test_dispose_removes_mesh_with_geometry_and_materials", () => {
     const disposer = new Disposer();

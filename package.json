@@ -35,10 +35,12 @@
   },
   "dependencies": {
     "@popperjs/core": "latest",
+    "@types/node-fetch": "^2.6.4",
     "bim-fragment": "latest",
     "camera-controls": "^1.36.0",
     "canvas": "^2.11.2",
     "dexie": "^3.2.3",
+    "fake-indexeddb": "^4.0.1",
     "gl": "^6.0.2",
     "stats.js": "^0.17.0",
     "three": "0.135",
