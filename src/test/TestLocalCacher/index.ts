@@ -2,7 +2,6 @@ import { Component, UI } from "../../base-types";
 import { Button, Toolbar } from "../../ui";
 import { Components } from "../../core";
 import fetch from "node-fetch";
-import { IDBDatabase } from "fake-indexeddb";
 import { ModelDatabase } from "../../core/LocalCacher/db";
 
 // TODO: Clean up UI logic and component type

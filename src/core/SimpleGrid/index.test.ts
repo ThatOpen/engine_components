@@ -30,7 +30,7 @@ const components = new Components();
 
 components.scene = new SimpleScene(components);
 
-describe("SimpleGrid_class", () => {
+describe("SimpleGrid", () => {
   // Tests creating an instance of SimpleGrid with a Components instance as parameter.
   it("test_create_simple_grid_instance", () => {
     const simpleGrid = new SimpleGrid(components);

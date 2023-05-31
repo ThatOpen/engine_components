@@ -37,7 +37,6 @@
   },
   "dependencies": {
     "@popperjs/core": "latest",
-    "bim-fragment": "0.0.18",
     "@types/node-fetch": "^2.6.4",
     "bim-fragment": "latest",
     "camera-controls": "^1.36.0",

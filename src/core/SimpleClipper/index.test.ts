@@ -44,7 +44,7 @@ import { SimpleClipper } from "./index";
 
 const components = testComponents();
 
-describe("SimpleClipper_class", () => {
+describe("SimpleClipper", () => {
   // Tests that a new instance of SimpleClipper can be created with valid arguments.
   it("test_creating_new_simple_clipper_instance_with_valid_arguments", () => {
     const PlaneType = SimplePlane;
@@ -89,6 +89,7 @@ describe("SimpleClipper_class", () => {
       point: new THREE.Vector3(1, 2, 3),
       face: { normal: new THREE.Vector3(0, 1, 0) },
     };
+    // @ts-ignore
     clipper.createPlaneFromIntersection(mockIntersection);
     const planeToDelete = clipper.get()[0];
     clipper.delete(planeToDelete);
@@ -104,7 +105,9 @@ describe("SimpleClipper_class", () => {
       point: new THREE.Vector3(1, 2, 3),
       face: { normal: new THREE.Vector3(0, 1, 0) },
     };
+    // @ts-ignore
     clipper.createPlaneFromIntersection(mockIntersection);
+    // @ts-ignore
     clipper.createPlaneFromIntersection(mockIntersection);
     clipper.deleteAll();
     expect(clipper.get().length).toBe(0);
