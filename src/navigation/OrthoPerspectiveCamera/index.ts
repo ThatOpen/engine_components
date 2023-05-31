@@ -1,11 +1,12 @@
 import * as THREE from "three";
 import { Components, SimpleCamera } from "../../core";
-import { Event } from "../../base-types";
+import { Event, UI } from "../../base-types";
 import { CameraProjection, NavigationMode, NavModeID } from "./src/types";
 import { ProjectionManager } from "./src/projections";
 import { OrbitMode } from "./src/orbit-mode";
 import { FirstPersonMode } from "./src/first-person-mode";
 import { PlanMode } from "./src/plan-mode";
+import { Button } from "../../ui";
 
 /**
  * A flexible camera that uses
@@ -13,7 +14,7 @@ import { PlanMode } from "./src/plan-mode";
  * easily control the camera in 2D and 3D. It supports multiple navigation
  * modes, such as 2D floor plan navigation, first person and 3D orbit.
  */
-export class OrthoPerspectiveCamera extends SimpleCamera {
+export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
   /**
    * The current {@link NavigationMode}.
    */
@@ -29,6 +30,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
   protected readonly _userInputButtons: any = {};
   protected readonly _frustumSize = 50;
   protected readonly _navigationModes = new Map<NavModeID, NavigationMode>();
+  uiElement!: Button
 
   constructor(components: Components) {
     super(components);
@@ -45,6 +47,40 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
     this.toggleEvents(true);
 
     this._projectionManager = new ProjectionManager(components, this);
+    this.setUI()
+  }
+
+  private setUI() {
+    const mainButton = new Button(this.components, {materialIconName: "video_camera_back"})
+
+    const projection = new Button(this.components, {materialIconName: "camera", name: "Projection"})
+    const perspective = new Button(this.components, {name: "Perspective"})
+    perspective.active = true
+    perspective.onclick = () => this.setProjection("Perspective")
+    const orthographic = new Button(this.components, {name: "Orthographic"})
+    orthographic.onclick = () => this.setProjection("Orthographic")
+    projection.addButton(perspective, orthographic)
+
+    const navigation = new Button(this.components, {materialIconName: "open_with", name: "Navigation"})
+    const orbit = new Button(this.components, {name: "Orbit Around"})
+    orbit.onclick = () => this.setNavigationMode("Orbit")
+    const plan = new Button(this.components, {name: "Plan View"})
+    plan.onclick = () => this.setNavigationMode("Plan")
+    navigation.addButton(orbit, plan)
+
+    mainButton.addButton(navigation, projection)
+
+    this.projectionChanged.on( camera => {
+      if (camera instanceof THREE.PerspectiveCamera) {
+        perspective.active = true
+        orthographic.active = false
+      } else {
+        perspective.active = false
+        orthographic.active = true
+      }
+    } )
+
+    this.uiElement = mainButton
   }
 
   /** {@link Disposable.dispose} */
@@ -140,8 +176,6 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
    */
   async fitModelToFrame(meshes: THREE.Mesh[] = this.components.meshes) {
     if (!this.enabled) return;
-    const scene = this.components.scene.get();
-    console.log(scene);
 
     const maxNum = Number.MAX_VALUE;
     const minNum = Number.MIN_VALUE;

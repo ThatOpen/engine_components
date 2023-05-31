@@ -7,17 +7,19 @@
   "packageManager": "yarn@3.2.1",
   "scripts": {
     "test": "jest",
-    "build": "node resources/cleaner.js && tsc && yarn build-examples",
-    "build-examples": "rollup -c resources/rollup.config.js",
+    "build": "node resources/cleaner.js && tsc && yarn build-examples && tailwindcss build -i src/ui/UIManager/top.css -o resources/styles.css",
+    "build-css": "tailwindcss build -i src/ui/UIManager/top.css -o src/index.css",
+    "build-examples": "rollup -c resources/rollup.config.mjs",
     "publish-repo": "cpy package.json dist && cd dist && npm publish",
     "publish-repo-alpha": "cpy package.json dist && cd dist && npm publish --tag alpha"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^22.0.2",
-    "@rollup/plugin-node-resolve": "^14.1.0",
-    "@types/jest": "^26.0.23",
+    "@rollup/plugin-commonjs": "25.0.0",
+    "@rollup/plugin-node-resolve": "15.1.0",
+    "@tailwindcss/forms": "^0.5.3",
+    "@types/jest": "27.0.0",
     "@types/node": "^14.14.31",
-    "@types/three": "^0.143.0",
+    "@types/three": "0.152.1",
     "@typescript-eslint/eslint-plugin": "^4.27.0",
     "@typescript-eslint/parser": "^4.27.0",
     "cpy-cli": "^3.1.1",
@@ -28,13 +30,14 @@
     "eslint-plugin-prettier": "^3.4.0",
     "jest": "^27.0.4",
     "prettier": "^2.3.1",
-    "rollup": "^2.79.1",
+    "rollup": "^3.2.3",
     "ts-jest": "^27.0.3",
     "ts-node": "^10.0.0",
     "typescript": "^4.3.2"
   },
   "dependencies": {
     "@popperjs/core": "latest",
+    "bim-fragment": "0.0.18",
     "@types/node-fetch": "^2.6.4",
     "bim-fragment": "latest",
     "camera-controls": "^1.36.0",
@@ -43,8 +46,9 @@
     "fake-indexeddb": "^4.0.1",
     "gl": "^6.0.2",
     "stats.js": "^0.17.0",
-    "three": "0.135",
-    "three-mesh-bvh": "^0.5.15",
+    "tailwindcss": "^3.3.2",
+    "three": "0.152.2",
+    "three-mesh-bvh": "0.6.0",
     "web-ifc": "^0.0.39"
   }
 }

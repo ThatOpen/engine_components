@@ -6,7 +6,7 @@ import { Components } from "../../core";
 
 // TODO: Clean up and document
 
-interface HighlightMap {
+export interface HighlightMap {
   [fragmentID: string]: Set<string>
 }
 

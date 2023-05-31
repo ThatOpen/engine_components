@@ -11,3 +11,8 @@ export * from "./ScreenCuller";
 export * from "./SimpleDimensions";
 export * from "./LocalCacher";
 export * from "./PropertiesProcessor";
+export * from "./SimpleAngle";
+export * from "./SimpleArea";
+export * from "./SimpleSVGViewport";
+export * from "./Simple2DMarker";
+// export * from "./DXFManager";

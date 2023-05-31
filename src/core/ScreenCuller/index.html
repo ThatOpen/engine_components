@@ -14,14 +14,12 @@
 <script type="importmap">
     {
       "imports": {
-        "three": "https://unpkg.com/three@0.135.0/build/three.module.js",
+        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
-        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.135.0/examples/jsm/libs/lil-gui.module.min.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
         "openbim-components": "../../../resources/openbim-components.js"
       }
     }
-
-
 </script>
 <script type="module">
 
@@ -196,6 +194,7 @@
      */
 
 	// Set up stats
+
 	const stats = new Stats();
 	stats.showPanel(2);
 	document.body.append(stats.dom);
@@ -209,11 +208,13 @@
 	const gui = new dat.GUI();
 
 	const settings = {
-		renderDebugFrame: true,
+		renderDebugFrame: false,
 		update: () => {
 			culler.needsUpdate = true;
 		},
 	};
+
+	debugFrame.style.visibility = 'collapse';
 
 	gui.add(settings, 'update').name('Update visibility');
 	gui.add(settings, 'renderDebugFrame').name('Render debug frame').onChange(() => {

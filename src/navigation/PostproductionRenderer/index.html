@@ -14,8 +14,8 @@
 <script type="importmap">
     {
       "imports": {
-        "three": "https://unpkg.com/three@0.135.0/build/three.module.js",
-        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.135.0/examples/jsm/libs/lil-gui.module.min.js",
+        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
         "openbim-components": "../../../resources/openbim-components.js"
       }
@@ -44,13 +44,6 @@
 	const scene = sceneComponent.get();
 	// scene.background = null;
 
-	// Add a simple model
-  const fragments = new OBC.FragmentManager(components);
-	const file = await fetch("../../../resources/small.frag");
-	const data = await file.arrayBuffer();
-	const buffer = new Uint8Array(data);
-	fragments.load(buffer);
-
 	// Add some lights to the scene
 
 	const directionalLight = new THREE.DirectionalLight();
@@ -68,19 +61,88 @@
 	components.raycaster = new OBC.SimpleRaycaster(components);
 	components.init();
 
-  // exclude objects from postproduction
+    /*MD
+    ### 🧪 Cool Post-Production Effects
+    ---
+    Post-production effects enrich your 3D scenes. There are several post-production effects, such as
+    adding shadows, rendering outlines, adding ambient occlusion and applying bloom, that can enhance
+    and make your scene look cool.🍹
 
-  const gridMesh = grid.get();
-	components.renderer.postproduction.excludedItems.add(gridMesh);
+    :::tip First, let's set up a simple scene!
 
-	// set up postproduction
+    👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
+
+    :::
+
+    In this tutorial we will use **Post-Production Renderer** to add neat **Outlines** and **Ambient Occlusion** to the 3D Model.🦾
+
+    ### 🏢 Adding Fragments
+    ---
+    We'll start by adding a **Fragment** to our scene using Fragment Manager.
+
+    We'll use a simple fragment for the purposes of this tutorial, but the code is capable of handling big files as well.🏗️
+
+    :::info Using Fragment Manager!
+
+    🏋️ There is a dedicated tutorial on how to use Fragment Manager to load **IFC** files!
+
+    :::
+
+    */
+
+    const fragments = new OBC.FragmentManager(components);
+    const file = await fetch("../../../resources/small.frag");
+    const data = await file.arrayBuffer();
+    const buffer = new Uint8Array(data);
+    fragments.load(buffer);
+
+	/*MD
+	### 🎛️ Setting Up Post-Production
+	---
+	We'll now set up the post-production, which requires modifying the renderer to use the preferences we've specified.
+
+    Let's start by specifying the outline color, we'll set it to `0x999999`. Also, we will pass the
+    camera controls to the post-production object.
+
+	 */
 
 	components.renderer.postproduction.outlineColor = 0x999999;
 	components.renderer.postproduction.setup(components.camera.controls);
 
+    /*MD
+    ### ❎ Excluding Unwanted Elements
+    ---
+    At times, we might have to turn off post-production effects for some elements.
+    By doing this, the scene is kept clean and unnecessary computation is avoided.🐢
+
+     */
+
+    const gridMesh = grid.get();
+    components.renderer.postproduction.excludedItems.add(gridMesh);
+
+    /*MD
+    ### 🎬 Activating the Post-Production
+    ---
+
+    Now that set up is complete, we wil activate the post-production effect.
+    Also, we will enable the visibility for post-production layer.
+
+    - `postproduction.active` - Enable or Disable the active status of the post-processing effect
+    - `postproduction.visible` - Toggle the visibility of post-processing layer that is created to display the effect.
+
+     */
+
 	components.renderer.postproduction.active = true;
 	components.renderer.postproduction.visible = true;
 
+    /*MD
+    ### 🔄 Updating Post-Product Effect
+    ---
+
+    Every time the **camera** is changed, we also need to update the post-production effect.🎥
+    In order to achieve this, we will write an easy timeout function that will be called after **1000** milliseconds.
+
+    */
 	let timeout;
 	function updatePostproduction() {
 		clearTimeout(timeout);
@@ -90,13 +152,30 @@
 			components.renderer.postproduction.visible = true;
 			components.renderer.postproduction.update();
 		}, 1000);
-  }
+    }
 
+    /*MD
+
+    :::tip Timing the Function Execution
+
+    ⏱️ Check out [setTimout](https://developer.mozilla.org/en-US/docs/Web/API/setTimeout) for more information on
+    how **setTimeout** can be useful when you want to run a function after a certain amount of time!
+
+    :::
+
+    Now, we will invoke the `updatePostproduction` method on mouse events.📢
+    The **updatePostproduction** function will be invoked each time a user scrolls to zoom-in or zoom-out and whenever any mouse buttons are pressed.
+
+     */
 	window.onwheel = () => updatePostproduction();
 	window.onmousedown = () => updatePostproduction();
 	window.onmouseup = () => updatePostproduction();
 
-
+    /*MD
+    **Congratulations** 🎉 on completing this tutorial! Now you know how to add cool effects easily using
+    Post Production 🖼️
+    Let's keep it up and check out another tutorial! 🎓
+     */
 </script>
 </body>
 </html>
