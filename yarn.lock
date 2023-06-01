@@ -1807,7 +1807,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bim-fragment@npm:latest":
+"bim-fragment@npm:0.0.18":
   version: 0.0.18
   resolution: "bim-fragment@npm:0.0.18"
   dependencies:
@@ -5745,11 +5745,11 @@ __metadata:
   linkType: hard
 
 "node-abi@npm:^3.26.0, node-abi@npm:^3.3.0":
-  version: 3.40.0
-  resolution: "node-abi@npm:3.40.0"
+  version: 3.43.0
+  resolution: "node-abi@npm:3.43.0"
   dependencies:
     semver: ^7.3.5
-  checksum: 8f4ef0d9ac82352465e7e7a8ce3915dae49c0fd19d6cb49a93140ff587b612166443531111a60d25e479a18e6e6b9af09698c7870babe0f44aa54287aeaf5eef
+  checksum: 6765bf1f362fb1fbf4a4462f4e5c634fd1566d73b3c49704b949be370275a5d72d41cd89de72338ca91df07a1c6418bed16b652dd45cc3c62e2862ee99a80f5d
   languageName: node
   linkType: hard
 
@@ -6025,7 +6025,7 @@ __metadata:
     "@types/three": 0.152.1
     "@typescript-eslint/eslint-plugin": ^4.27.0
     "@typescript-eslint/parser": ^4.27.0
-    bim-fragment: latest
+    bim-fragment: 0.0.18
     camera-controls: ^1.36.0
     canvas: ^2.11.2
     cpy-cli: ^3.1.1

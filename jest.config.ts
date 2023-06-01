@@ -13,6 +13,8 @@ const config: InitialOptionsTsJest = {
   },
   // These node_modules need to be transpiled
   // https://stackoverflow.com/a/63390125/3466729
-  transformIgnorePatterns: ["node_modules/(?!(web-ifc-three|web-ifc|three))"],
+  transformIgnorePatterns: [
+    "node_modules/(?!(web-ifc-three|web-ifc|three|@popperjs/core/dist/esm))",
+  ],
 };
 export default config;

@@ -2,7 +2,8 @@ import {
   createPopper,
   Placement,
   Instance as PopperInstance,
-} from "@popperjs/core";
+  // @ts-ignore
+} from "@popperjs/core/dist/esm";
 import { Hideable, UIComponent, Event } from "../../base-types/base-types";
 import { Component } from "../../base-types/component";
 import { Toolbar } from "../ToolbarComponent";

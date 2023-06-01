@@ -71,5 +71,5 @@
     "src/**/*",
     "src/core/decs.d.ts"
   ],
-  "exclude": ["src/**/*.test.ts"]
+  "exclude": ["src/**/*.test.ts", "src/test"]
 }
