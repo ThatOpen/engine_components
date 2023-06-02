@@ -1,7 +1,13 @@
-import { Matrix4, Raycaster, Vector2, Vector3 } from "three";
+import { Matrix4, Vector3 } from "three";
 import { Component, Event, Hideable, Updateable } from "../../base-types";
 import { Components } from "../../core";
 import { OrthoPerspectiveCamera } from "../OrthoPerspectiveCamera";
+
+type CubeMapPositions =
+  | "top-left"
+  | "top-right"
+  | "bottom-right"
+  | "bottom-left";
 
 export type CubeMapFace =
   | "front"
@@ -26,15 +32,6 @@ export class CubeMap
   private _cubeWrapper = document.createElement("div");
   private _matrix = new Matrix4();
   private _visible!: boolean;
-  private _raycaster = new Raycaster();
-  private _lastHitpoints: {
-    front: Vector3 | null;
-    top: Vector3 | null;
-    bottom: Vector3 | null;
-    right: Vector3 | null;
-    left: Vector3 | null;
-    back: Vector3 | null;
-  };
 
   private _faceOrientations = {
     front: new Vector3(0, 0, 1),
@@ -58,9 +55,10 @@ export class CubeMap
     super();
     this._components = components;
     this._cubeWrapper.id = "tooeen-cube-map";
-    this._cubeWrapper.className = "absolute right-4 bottom-4 z-10";
-    this._cubeWrapper.style.perspective = "350px";
+    this._cubeWrapper.className = "absolute z-10";
+    this.setPosition("bottom-right");
     this._cube.className = "w-[120px] h-[120px] relative";
+    this.setSize("400");
     this._cube.style.transformStyle = "preserve-3d";
     this._cube.style.transform = "translateZ(-300px)";
     this._cube.style.textTransform = "uppercase";
@@ -123,25 +121,32 @@ export class CubeMap
     );
     this._viewerContainer?.append(this._cubeWrapper);
 
-    this._lastHitpoints = {
-      front: null,
-      top: null,
-      bottom: null,
-      right: null,
-      left: null,
-      back: null,
-    };
-
     this.visible = true;
+  }
+
+  setSize(value: string = "350") {
+    this._cubeWrapper.style.perspective = `${value}px`;
+  }
+
+  setPosition(corner: CubeMapPositions) {
+    this._cubeWrapper.classList.remove(
+      "top-4",
+      "bottom-4",
+      "left-4",
+      "right-4"
+    );
+    const wrapperPositions: Record<CubeMapPositions, string[]> = {
+      "top-left": ["top-4", "left-4"],
+      "top-right": ["top-4", "right-4"],
+      "bottom-right": ["bottom-4", "right-4"],
+      "bottom-left": ["bottom-4", "left-4"],
+    };
+    this._cubeWrapper.classList.add(...wrapperPositions[corner]);
   }
 
   orientToFace(orientation: CubeMapFace) {
     const camera = this._camera.get();
-    this._raycaster.setFromCamera(new Vector2(0, 0), camera);
-    const intersection = this._raycaster.intersectObjects(
-      this._components.meshes
-    )[0];
-    if (!intersection && this._camera instanceof OrthoPerspectiveCamera) {
+    if (this._camera instanceof OrthoPerspectiveCamera) {
       const controls = this._camera.controls;
       const target = camera.position
         .clone()
@@ -156,30 +161,6 @@ export class CubeMap
         true
       );
       this._camera.fitModelToFrame();
-      return;
-    }
-    const target = intersection.point;
-    this._lastHitpoints[orientation] = target;
-    const endPoint = target
-      .clone()
-      .add(
-        this._faceOrientations[orientation]
-          .clone()
-          .multiplyScalar(intersection.distance)
-      );
-    if (this._camera instanceof OrthoPerspectiveCamera) {
-      const controls = this._camera.controls;
-      controls.setLookAt(
-        endPoint.x,
-        endPoint.y,
-        endPoint.z,
-        target.x,
-        target.y,
-        target.z,
-        true
-      );
-      this._camera.fitModelToFrame();
-      // this._camera.setProjection("Orthographic")
     }
   }
 
