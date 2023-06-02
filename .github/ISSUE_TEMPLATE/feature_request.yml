@@ -1,6 +1,5 @@
 name: "New feature proposal 🚀"
 description: Propose a new feature to be added to IFC.js components
-labels: [pending triage]
 body:
   - type: markdown
     attributes:
