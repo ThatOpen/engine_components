@@ -7,21 +7,24 @@ import { Components } from "../../core";
 // TODO: Clean up and document
 
 export interface HighlightMap {
-  [fragmentID: string]: Set<string>
+  [fragmentID: string]: Set<string>;
 }
 
 interface HighlightEvents {
   [highlighterName: string]: {
-    onHighlight: Event<HighlightMap>
-    onClear: Event<null>
-  }
+    onHighlight: Event<HighlightMap>;
+    onClear: Event<null>;
+  };
 }
 
 interface HighlightMaterials {
-  [name: string]: THREE.Material[] | undefined
+  [name: string]: THREE.Material[] | undefined;
 }
 
-export class FragmentHighlighter extends Component<HighlightMaterials> implements Disposable {
+export class FragmentHighlighter
+  extends Component<HighlightMaterials>
+  implements Disposable
+{
   name: string = "FragmentHighlighter";
   enabled = true;
   highlightMats: HighlightMaterials = {};
@@ -36,11 +39,11 @@ export class FragmentHighlighter extends Component<HighlightMaterials> implement
     private _components: Components,
     private _fragments: FragmentManager
   ) {
-    super()
+    super();
   }
 
   get(): HighlightMaterials {
-    return this.highlightMats
+    return this.highlightMats;
   }
 
   dispose() {
@@ -62,7 +65,7 @@ export class FragmentHighlighter extends Component<HighlightMaterials> implement
     this.selection[name] = {};
     this.events[name] = {
       onHighlight: new Event(),
-      onClear: new Event()
+      onClear: new Event(),
     };
 
     this.update();
@@ -162,18 +165,18 @@ export class FragmentHighlighter extends Component<HighlightMaterials> implement
     if (!fragment) return;
     const selection = fragment.fragments[name];
     if (!selection) return;
-    
-    //#region Old child/parent code
+
+    // #region Old child/parent code
     // const scene = this._components.scene.get();
     // scene.add(selection.mesh); //If we add selection.mesh directly to the scene, it won't be coordinated unless we do so manually.
-    //#endregion
+    // #endregion
 
-    //#region New child/parent code
-    const fragmentParent = fragment.mesh.parent
+    // #region New child/parent code
+    const fragmentParent = fragment.mesh.parent;
     if (!fragmentParent) return;
     fragmentParent.add(selection.mesh);
-    //#endregion
-    
+    // #endregion
+
     const isBlockFragment = selection.blocks.count > 1;
     if (isBlockFragment) {
       const blockIDs: number[] = [];
@@ -201,7 +204,7 @@ export class FragmentHighlighter extends Component<HighlightMaterials> implement
         i++;
       }
     }
-    this.events[name].onHighlight.trigger(this.selection[name])
+    this.events[name].onHighlight.trigger(this.selection[name]);
   }
 
   private checkSelection(name: string) {

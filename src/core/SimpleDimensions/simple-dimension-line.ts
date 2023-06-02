@@ -47,6 +47,13 @@ export class SimpleDimensionLine {
     this.updateLabel();
   }
 
+  set startPoint(point: THREE.Vector3) {
+    this.start = point;
+    this.updateStartpointPosition(point);
+    // this.updateEndpointMeshes(point);
+    this.updateLabel();
+  }
+
   constructor(components: Components, data: DimensionData) {
     this._components = components;
 
@@ -100,6 +107,13 @@ export class SimpleDimensionLine {
     this._endpoints[1].position.copy(point);
     this._endpoints[1].lookAt(this.start);
     this._endpoints[0].lookAt(this.end);
+  }
+
+  private updateStartpointPosition(point: THREE.Vector3) {
+    const position = this._line.geometry.attributes
+      .position as THREE.BufferAttribute;
+    position.setXYZ(0, point.x, point.y, point.z);
+    position.needsUpdate = true;
   }
 
   private updateEndpointPosition(point: THREE.Vector3) {

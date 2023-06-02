@@ -1,21 +1,56 @@
 // eslint-disable-next-line max-classes-per-file
 import * as WEBIFC from "web-ifc";
-import { UI, UIComponent, Component } from "../../base-types";
-import { TreeView, SimpleUIComponent } from "../../ui";
-import { Components } from "..";
+import {
+  createPopper,
+  Instance as PopperInstance,
+  // @ts-ignore
+} from "@popperjs/core/dist/esm";
+import { EditProp } from "./src/edit-prop";
+import { Button } from "../../ui/ButtonComponent";
+import { UI, Component } from "../../base-types";
+import { TreeView, FloatingWindow, VerticalStack } from "../../ui";
+import { Components } from "../Components";
+import { PropertyTag } from "./src/property-tag";
 import {
   FragmentGroup,
   FragmentManager,
   FragmentHighlighter,
 } from "../../fragments";
 
-// TODO: Clean up, make 1 file per class, decouple from fragments and
+// TODO: Clean up, making more modular, decouple from fragments and
 //  move to IFC folder
 
-interface IPropData {
-  name: string;
-  value: number | boolean | string;
+// @ts-ignore
+enum IfcTokenType {
+  UNKNOWN = 0,
+  STRING = 1,
+  LABEL = 2,
+  ENUM = 3,
+  REAL = 4,
+  REF = 5,
+  EMPTY = 6,
+  SET_BEGIN,
+  SET_END,
+  LINE_END,
+}
+
+interface PropName {
+  prefix: string;
+  typeConstructor: string | null;
+  value: string;
   type: number;
+}
+
+interface PropValue {
+  typeConstructor: string | null;
+  value: string | number | boolean;
+  type: number;
+}
+
+interface IPropData {
+  expressID: number;
+  name: PropName;
+  value: PropValue;
   group: string;
 }
 
@@ -42,26 +77,8 @@ interface IPropertiesList {
   [modelID: string]: IModelProperties;
 }
 
-interface IComponentConfig {
+interface PropertiesProcessorConfig {
   selectionHighlighter: string;
-}
-
-class PropertiesContainer extends SimpleUIComponent {
-  name: string = "PropertiesContainer";
-
-  constructor(components: Components) {
-    const container = document.createElement("div");
-    super(components, container);
-  }
-}
-
-class PropertiesTable extends SimpleUIComponent {
-  name: string = "PropertiesTable";
-  constructor(components: Components) {
-    const table = document.createElement("table");
-    table.className = "ifcjs-table";
-    super(components, table);
-  }
 }
 
 export class PropertiesProcessor
@@ -71,11 +88,14 @@ export class PropertiesProcessor
   name: string = "PropertiesParser";
   enabled: boolean = true;
   components: Components;
-  uiElement!: PropertiesContainer;
+  uiElement!: { container: FloatingWindow; showButton: Button };
+  private _propsList: VerticalStack;
+  private _editInput: EditProp;
+  private _editInputPopper: PopperInstance;
   private _fragmentsHighlighter: FragmentHighlighter;
   private _fragmentsManager: FragmentManager;
   private _map: IPropertiesList = {};
-  private _config: IComponentConfig = {
+  private _config: PropertiesProcessorConfig = {
     selectionHighlighter: "select",
   };
 
@@ -83,37 +103,100 @@ export class PropertiesProcessor
     components: Components,
     fragmentManager: FragmentManager,
     fragmentHighlighter: FragmentHighlighter,
-    config?: IComponentConfig
+    config?: PropertiesProcessorConfig
   ) {
     super();
     this.components = components;
     this._config = { ...this._config, ...config };
     this._fragmentsManager = fragmentManager;
     this._fragmentsHighlighter = fragmentHighlighter;
+
+    this._propsList = new VerticalStack(this.components);
+
+    this._editInput = new EditProp(this.components);
+    this._editInput.visible = false;
+    this._editInput.nameInput.visible = false;
+    this.components.ui.add(this._editInput);
+
     this.setEventListeners();
     this.setUI();
   }
 
   private setUI() {
-    this.uiElement = new PropertiesContainer(this.components);
+    const container = new FloatingWindow(this.components, {
+      title: "Properties List",
+    });
+
+    this.components.ui.add(container);
+    container.visible = false;
+    container.addChild(this._propsList);
+
+    const showButton = new Button(this.components, {
+      materialIconName: "list",
+    });
+
+    container.onVisible.on(() => (showButton.active = true));
+    container.onHidden.on(() => (showButton.active = false));
+
+    showButton.onclick = () => {
+      container.visible = !container.visible;
+    };
+
+    this._editInputPopper = createPopper(
+      container.get(),
+      this._editInput.get(),
+      {
+        modifiers: [
+          {
+            name: "offset",
+            options: { offset: [15, 15] },
+          },
+          {
+            name: "preventOverflow",
+            // @ts-ignore
+            options: { boundary: this.components.ui.viewerContainer },
+          },
+        ],
+      }
+    );
+
+    this._editInputPopper.setOptions({ placement: "right" });
+    container.onMoved.on(() => {
+      this._editInputPopper.update();
+    });
+
+    container.onResized.on(() => {
+      this._editInputPopper.update();
+    });
+
+    container.onHidden.on(() => {
+      this._editInput.visible = false;
+    });
+
+    this.uiElement = {
+      container,
+      showButton,
+    };
   }
 
   private setEventListeners() {
     const highlighterEvents = this._fragmentsHighlighter.events;
-    highlighterEvents[this._config.selectionHighlighter]?.onClear.on(() =>
-      this.uiElement.dispose(true)
-    );
+    highlighterEvents[this._config.selectionHighlighter]?.onClear.on(() => {
+      this.uiElement.container.description = null;
+      this._editInput.visible = false;
+      this._propsList.dispose(true);
+    });
     highlighterEvents[this._config.selectionHighlighter]?.onHighlight.on(
       (selection) => {
         const fragmentIDs = Object.keys(selection);
         if (fragmentIDs.length !== 1) {
-          this.uiElement.dispose(true);
+          this._propsList.dispose(true);
           return;
         }
         const fragmentID = fragmentIDs[0];
         const expressIDs = [...selection[fragmentID]];
         if (expressIDs.length !== 1) {
-          this.uiElement.dispose(true);
+          this._propsList.dispose(true);
           return;
         }
         const expressID = expressIDs[0];
@@ -154,7 +237,7 @@ export class PropertiesProcessor
   }
 
   renderProperties(modelID: string, expressID: string) {
-    this.uiElement.dispose(true);
+    this._propsList.dispose(true);
     const modelProperties = this.get()[modelID];
     if (!modelProperties) {
       return;
@@ -164,38 +247,61 @@ export class PropertiesProcessor
       return;
     }
     const groupedProperties = this.groupProperties(elementProperties);
+    const name = groupedProperties.Attributes?.find(
+      (v) => v.name.value === "Name"
+    );
+    if (name) {
+      this.uiElement.container.description = name.value.value.toString();
+    }
     for (const groupName in groupedProperties) {
       const groupTree = new TreeView(this.components, groupName);
-      this.uiElement.addChild(groupTree);
+      this._propsList.addChild(groupTree);
       const props = groupedProperties[groupName];
 
-      // #region Group properties
-      const propsTable: UIComponent = new PropertiesTable(this.components);
-      const tableStructure = `
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Value</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-            `;
-      propsTable.domElement.innerHTML = tableStructure;
-      const tableBody = propsTable.domElement.querySelector(
-        "tbody"
-      ) as HTMLElement;
-      // #endregion
-
-      groupTree.addChild(propsTable);
       props.forEach((prop) => {
         const value =
-          typeof prop.value === "number"
-            ? prop.value.toPrecision(4)
-            : prop.value;
-        const propRow = `<tr><td>${prop.name}</td><td>${value}</td></tr>`;
-        tableBody.innerHTML += propRow;
+          typeof prop.value.value === "number"
+            ? prop.value.value.toPrecision(4)
+            : prop.value.value;
+
+        const propTag = new PropertyTag(
+          this.components,
+          prop.name.value,
+          value
+        );
+        groupTree.addChild(propTag);
+
+        const editButton = new Button(this.components, {
+          materialIconName: "edit",
+        });
+        editButton.visible = false;
+        editButton.onclick = () => {
+          this._editInput.nameInput.inputValue = prop.name.value;
+          this._editInput.valueInput.labelElement.textContent = `${prop.name.prefix}: ${prop.name.value}`;
+          this._editInput.valueInput.inputValue = value.toString();
+          this._editInput.valueInput.get().focus();
+          this._editInput.visible = true;
+          this._editInputPopper.update();
+
+          this._editInput.acceptButton.onclick = () => {
+            this._editInput.visible = false;
+            const inputValue = this._editInput.valueInput.inputValue;
+            prop.value.value = inputValue;
+            propTag.value = inputValue;
+          };
+
+          console.log(prop);
+        };
+        propTag.addChild(editButton);
+
+        propTag.get().onmouseover = () => {
+          editButton.visible = true;
+        };
+        propTag.get().onmouseout = () => {
+          editButton.visible = false;
+        };
       });
-      groupTree.expand(true);
+      groupTree.collapse(true);
     }
   }
 
@@ -207,14 +313,13 @@ export class PropertiesProcessor
     if (!props[expressID]) {
       props[expressID] = {};
     }
-    props[expressID][data.name] = data;
+    props[expressID][`${data.name.prefix}${data.name.value}`] = data;
   }
 
   /**
    * @description Foundation function that returns basic entity information such as name, description, type, globalID and tag. That information is called attributes in the IFC Schema.
    * @param model
    * @param expressID
-   * @param prefix
    */
   private processAttributes(
     model: FragmentGroup,
@@ -229,56 +334,113 @@ export class PropertiesProcessor
     const { group, prefix } = _options;
     const attributes: IEntityAttributes = {
       globalId: {
-        name: `${prefix}GlobalId`,
-        value: props.GlobalId.value,
-        type: props.GlobalId.type,
+        name: {
+          prefix,
+          value: "GlobalId",
+          type: 1,
+          typeConstructor: null,
+        },
+        value: {
+          ...props.GlobalId,
+          typeConstructor: props.GlobalId?.constructor.name ?? null,
+        },
         group,
+        expressID: props.expressID,
       },
       ifcEntity: {
-        name: `${prefix}IfcEntity`,
-        value: model.allTypes[props.type],
-        type: 1,
+        name: {
+          prefix,
+          value: "IfcEntity",
+          type: 1,
+          typeConstructor: null,
+        },
+        value: {
+          value: model.allTypes[props.type],
+          type: 1,
+          typeConstructor: null,
+        },
         group,
+        expressID: props.expressID,
       },
     };
     if (props.Name) {
       attributes.name = {
-        name: `${prefix}Name`,
-        value: props.Name.value,
-        type: props.Name.type,
+        name: {
+          prefix,
+          value: "Name",
+          type: 1,
+          typeConstructor: null,
+        },
+        value: {
+          ...props.Name,
+          typeConstructor: props.Name?.constructor.name ?? null,
+        },
         group,
+        expressID: props.expressID,
       };
     }
     if (props.Description) {
       attributes.description = {
-        name: `${prefix}Description`,
-        value: props.Description.value,
-        type: props.Description.type,
+        name: {
+          prefix,
+          value: "Description",
+          type: 1,
+          typeConstructor: null,
+        },
+        value: {
+          ...props.Description,
+          typeConstructor: props.Description?.constructor.name ?? null,
+        },
         group,
+        expressID: props.expressID,
       };
     }
     if (props.Tag) {
       attributes.tag = {
-        name: `${prefix}Tag`,
-        value: props.Tag.value,
-        type: props.Tag.type,
+        name: {
+          prefix,
+          value: "Tag",
+          type: 1,
+          typeConstructor: null,
+        },
+        value: {
+          ...props.Tag,
+          typeConstructor: props.Tag?.constructor.name ?? null,
+        },
         group,
+        expressID: props.expressID,
       };
     }
     if (props.ObjectType) {
       attributes.type = {
-        name: `${prefix}Type`,
-        value: props.ObjectType.value,
-        type: props.ObjectType.type,
+        name: {
+          prefix,
+          value: "Type",
+          type: 1,
+          typeConstructor: null,
+        },
+        value: {
+          ...props.ObjectType,
+          typeConstructor: props.ObjectType?.constructor.name ?? null,
+        },
         group,
+        expressID: props.expressID,
       };
     }
     if (props.LongName) {
       attributes.longName = {
-        name: `${prefix}LongName`,
-        value: props.LongName.value,
-        type: props.LongName.type,
+        name: {
+          prefix,
+          value: "LongName",
+          type: 1,
+          typeConstructor: null,
+        },
+        value: {
+          ...props.LongName,
+          typeConstructor: props.LongName?.constructor.name ?? null,
+        },
         group,
+        expressID: props.expressID,
       };
     }
     return attributes;
@@ -371,14 +533,23 @@ export class PropertiesProcessor
         );
         definitionProperties.forEach((prop: any) => {
           const value =
-            prop.NominalValue?.label === "IFCBOOLEAN"
+            prop.NominalValue?.constructor.name === "IfcBoolean"
               ? prop.NominalValue.value === "T"
               : prop.NominalValue?.value;
+
           const data: IPropData = {
-            name: prop.Name.value,
-            value,
-            type: prop.NominalValue?.type,
+            name: {
+              prefix: "",
+              ...prop.Name,
+              typeConstructor: prop.Name?.constructor.name ?? null,
+            },
+            value: {
+              value,
+              type: prop.NominalValue?.type,
+              typeConstructor: prop.NominalValue?.constructor.name ?? null,
+            },
             group: definition.Name.value,
+            expressID: prop.expressID,
           };
           this.storeProperty(props, expressID, data);
         });
@@ -414,10 +585,17 @@ export class PropertiesProcessor
             valuePropName[0].toUpperCase() + valuePropName.slice(1)
           }Value`;
           const data: IPropData = {
-            name: qto.Name.value,
-            value: qto[valuePropName].value,
-            type: qto[valuePropName].type,
+            name: {
+              prefix: "",
+              ...qto.Name,
+              typeConstructor: qto.Name?.constructor.name ?? null,
+            },
+            value: {
+              ...qto[valuePropName],
+              typeConstructor: qto[valuePropName]?.constructor.name ?? null,
+            },
             group: definition.Name.value,
+            expressID: qto.expressID,
           };
           this.storeProperty(props, expressID, data);
         });
@@ -451,10 +629,18 @@ export class PropertiesProcessor
       elements.forEach((expressID: number) => {
         if (structure.Elevation) {
           const elevation: IPropData = {
-            name: "StoreyElevation",
+            name: {
+              prefix: "",
+              value: "StoreyElevation",
+              type: 1,
+              typeConstructor: null,
+            },
+            value: {
+              ...structure.Elevation,
+              typeConstructor: structure.Elevation?.constructor.name ?? null,
+            },
             group: "Storey",
-            value: structure.Elevation.value,
-            type: structure.Elevation.type,
+            expressID: structure.expressID,
           };
           this.storeProperty(props, expressID, elevation);
         }

@@ -1,5 +1,7 @@
-import { Component, UIComponent } from "../../base-types";
+import { UIComponent } from "../../base-types/base-types";
+import { Component } from "../../base-types/component";
 import { Components } from "../../core";
+import { VerticalStack } from "../VerticalStack";
 
 export class TreeView extends Component<HTMLElement> implements UIComponent {
   name: string;
@@ -8,8 +10,7 @@ export class TreeView extends Component<HTMLElement> implements UIComponent {
   components: Components;
   domElement: HTMLElement = document.createElement("div");
   children: UIComponent[] = [];
-
-  private _childrenContainer: HTMLDivElement = document.createElement("div");
+  private _childrenContainer: VerticalStack;
   private _expanded: boolean = false;
 
   get expanded() {
@@ -18,11 +19,7 @@ export class TreeView extends Component<HTMLElement> implements UIComponent {
 
   set expanded(expanded: boolean) {
     this._expanded = expanded;
-    if (expanded) {
-      this._childrenContainer.style.display = "block";
-    } else {
-      this._childrenContainer.style.display = "none";
-    }
+    this._childrenContainer.visible = expanded;
   }
 
   set onclick(listener: (e?: MouseEvent) => void) {
@@ -57,9 +54,9 @@ export class TreeView extends Component<HTMLElement> implements UIComponent {
     div.append(arrow, p);
     this.domElement.append(div);
 
-    this._childrenContainer.className = "tooeen-tree-item-container";
-    this._childrenContainer.style.display = "none";
-    this.domElement.append(this._childrenContainer);
+    this._childrenContainer = new VerticalStack(components);
+    this._childrenContainer.get().classList.add("ml-[14px]");
+    this.domElement.append(this._childrenContainer.get());
   }
 
   get(): HTMLElement {
@@ -70,7 +67,7 @@ export class TreeView extends Component<HTMLElement> implements UIComponent {
     this.children.forEach((child) => child.dispose());
     if (!onlyChildren) {
       this.domElement.remove();
-      this._childrenContainer.remove();
+      this._childrenContainer.dispose();
     }
   }
 
@@ -89,7 +86,7 @@ export class TreeView extends Component<HTMLElement> implements UIComponent {
   addChild(...items: UIComponent[]) {
     items.forEach((item) => {
       this.children.push(item);
-      this._childrenContainer.append(item.domElement);
+      this._childrenContainer.addChild(item);
     });
   }
 

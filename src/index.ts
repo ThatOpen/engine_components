@@ -6,3 +6,4 @@ export * from "./services";
 export * from "./navigation";
 export * from "./annotation";
 export * from "./utils";
+export * from "./ifc";

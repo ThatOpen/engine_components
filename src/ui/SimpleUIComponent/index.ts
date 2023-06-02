@@ -22,20 +22,22 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
     return this._visible;
   }
 
-  set visible(visible: boolean) {
-    this._visible = visible;
-    if (visible) {
+  set visible(value: boolean) {
+    this._visible = value;
+    if (value) {
       this.domElement.classList.remove("hidden");
       this.onVisible.trigger(this.get());
     } else {
       this.domElement.classList.add("hidden");
       this.onHidden.trigger(this.get());
     }
+    // this.onVisibilityChanged.trigger(value);
   }
 
   get enabled() {
     return this._enabled;
   }
+
   set enabled(value: boolean) {
     this._enabled = value;
     if (value) {
@@ -43,6 +45,7 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
     } else {
       this.onDisabled.trigger(this.get());
     }
+    // this.onVisibilityChanged.trigger(value);
   }
 
   constructor(components: Components, domElement: T, id?: string) {
@@ -72,7 +75,7 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
 
   // htmlToElement(htmlString: string) {
   //   const template = document.createElement("template");
-  //   htmlString = htmlString.trim(); // Never return a text node of whitespace as the result
+  //   htmlString = htmlString.trim();
   //   template.innerHTML = htmlString;
   //   return template.content.firstChild;
   // }
