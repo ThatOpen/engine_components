@@ -1,6 +1,6 @@
 // @ts-ignore
 import { createPopper } from "@popperjs/core/dist/esm";
-import { Component } from "../../base-types";
+import { Component, UIComponent } from "../../base-types";
 import { Toolbar } from "../ToolbarComponent";
 import { Components } from "../../core";
 
@@ -133,6 +133,15 @@ export class UIManager extends Component<Toolbar[]> {
       this.containers.left,
       contextParent
     );
+  }
+
+  add(...uiComponents: UIComponent[]) {
+    uiComponents.forEach((component) => {
+      if (!this.viewerContainer) {
+        return;
+      }
+      this.viewerContainer.append(component.domElement);
+    });
   }
 
   closeMenus() {

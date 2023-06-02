@@ -73,21 +73,21 @@ export class CubeMap
     frontFace.textContent = "Front";
     frontFace.style.transform = "rotateX(180deg) translateZ(-60px)";
     frontFace.style.transition = "all 0.2s";
-    frontFace.onclick = () => this._onFaceClick("front");
+    frontFace.onclick = () => this.orientToFace("front");
 
     const topFace = document.createElement("div");
     topFace.className = this._cubeFaceClass;
     topFace.textContent = "Top";
     topFace.style.transform = "rotateX(90deg) translateZ(-60px)";
     topFace.style.transition = "all 0.2s";
-    topFace.onclick = () => this._onFaceClick("top");
+    topFace.onclick = () => this.orientToFace("top");
 
     const bottomFace = document.createElement("div");
     bottomFace.className = this._cubeFaceClass;
     bottomFace.textContent = "Bottom";
     bottomFace.style.transform = "rotateX(270deg) translateZ(-60px)";
     bottomFace.style.transition = "all 0.2s";
-    bottomFace.onclick = () => this._onFaceClick("bottom");
+    bottomFace.onclick = () => this.orientToFace("bottom");
 
     const rightFace = document.createElement("div");
     rightFace.className = this._cubeFaceClass;
@@ -95,7 +95,7 @@ export class CubeMap
     rightFace.style.transform =
       "rotateY(-270deg) rotateX(180deg) translateZ(-60px)";
     rightFace.style.transition = "all 0.2s";
-    rightFace.onclick = () => this._onFaceClick("right");
+    rightFace.onclick = () => this.orientToFace("right");
 
     const leftFace = document.createElement("div");
     leftFace.className = this._cubeFaceClass;
@@ -103,14 +103,14 @@ export class CubeMap
     leftFace.style.transform =
       "rotateY(-90deg) rotateX(180deg) translateZ(-60px)";
     leftFace.style.transition = "all 0.2s";
-    leftFace.onclick = () => this._onFaceClick("left");
+    leftFace.onclick = () => this.orientToFace("left");
 
     const backFace = document.createElement("div");
     backFace.className = this._cubeFaceClass;
     backFace.textContent = "Back";
     backFace.style.transform = "translateZ(-60px) rotateZ(180deg)";
     backFace.style.transition = "all 0.2s";
-    backFace.onclick = () => this._onFaceClick("back");
+    backFace.onclick = () => this.orientToFace("back");
     // #endregion
 
     this._cube.append(
@@ -135,7 +135,7 @@ export class CubeMap
     this.visible = true;
   }
 
-  private async _onFaceClick(orientation: CubeMapFace) {
+  orientToFace(orientation: CubeMapFace) {
     const camera = this._camera.get();
     this._raycaster.setFromCamera(new Vector2(0, 0), camera);
     const intersection = this._raycaster.intersectObjects(

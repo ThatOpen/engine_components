@@ -374,3 +374,6 @@ export class SimpleDimensions
     );
   }
 }
+
+export * from "./simple-dimension-line";
+export * from "./types";

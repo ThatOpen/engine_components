@@ -5,7 +5,7 @@ import { Event, UIComponent } from "../../base-types";
 import { Components } from "../../core";
 
 interface FloatingWindowConfig {
-  title?: string;
+  title: string;
   description?: string;
   id?: string;
   initialWidth?: number;
@@ -13,8 +13,8 @@ interface FloatingWindowConfig {
 
 export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
   private _components: Components;
-  onHidden: Event<HTMLDivElement> = new Event();
-  onVisible: Event<HTMLDivElement> = new Event();
+  onMoved: Event<FloatingWindow> = new Event();
+  onResized: Event<FloatingWindow> = new Event();
   referencePoints!: {
     topLeft: Vector2;
     top: Vector2;
@@ -27,7 +27,29 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
     bottomRight: Vector2;
   };
 
-  constructor(components: Components, config: FloatingWindowConfig = {}) {
+  set description(value: string | null) {
+    const descriptionElement = document.getElementById(
+      `${this.id}-description`
+    );
+    if (descriptionElement && value) {
+      descriptionElement.textContent = value;
+      descriptionElement.classList.remove("hidden");
+    } else {
+      descriptionElement?.classList.add("hidden");
+    }
+  }
+
+  get description() {
+    const descriptionElement = document.getElementById(
+      `${this.id}-description`
+    ) as HTMLElement;
+    return descriptionElement.textContent;
+  }
+
+  constructor(
+    components: Components,
+    config: FloatingWindowConfig = { title: "Tooeen Floting Window" }
+  ) {
     const { title, description, initialWidth } = config;
     const window = document.createElement("div");
     window.className = `absolute overflow-auto top-5 resize z-50 left-5 min-h-[80px] max-h-[750px] min-w-[150px] max-w-sm text-white bg-ifcjs-100 rounded-md`;
@@ -35,7 +57,7 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
     const id = config.id ?? generateUUID().toLowerCase();
     window.id = id;
     window.innerHTML = `
-        <div id="${id}-title-container" class="bg-ifcjs-120 relative select-none cursor-move px-5 py-3 text-center ${
+        <div id="${id}-title-container" class="bg-ifcjs-120 sticky top-0 select-none cursor-move px-5 py-3 text-center ${
       !title && !description ? "hidden" : ""
     }">
             <h3 id="${id}-title" class="${
@@ -72,6 +94,7 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
         }
         this.domElement.style.left = `${e.clientX - offsetX}px`;
         this.domElement.style.top = `${e.clientY - offsetY}px`;
+        this.onMoved.trigger(this);
       });
 
       viewerContainer.addEventListener("mouseup", () => (isMouseDown = false));
@@ -83,7 +106,14 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
         this.visible = false;
       };
     });
+
     super(components, window, id);
+
+    const observer = new ResizeObserver(() => {
+      this.onResized.trigger(this);
+    });
+    observer.observe(window);
+
     this.referencePoints = {
       topLeft: new Vector2(),
       top: new Vector2(),

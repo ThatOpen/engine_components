@@ -1,5 +1,6 @@
 import * as WEBIFC from "web-ifc";
-import { Component, Disposable, UI } from "../../base-types";
+import { Disposable, Event, UI } from "../../base-types/base-types";
+import { Component } from "../../base-types/component";
 import { FragmentManager } from "../index";
 import {
   DataConverter,
@@ -7,6 +8,7 @@ import {
   MaterialList,
   IfcFragmentSettings,
   Geometry,
+  FragmentGroup,
 } from "./src";
 import { Button } from "../../ui";
 import { Components } from "../../core";
@@ -36,6 +38,8 @@ export class FragmentIfcLoader
   private _items: IfcToFragmentItems = {};
   private _materials: MaterialList = {};
   private _components: Components;
+
+  onIfcLoaded: Event<FragmentGroup> = new Event();
 
   private readonly _geometry = new Geometry(
     this._webIfc,
@@ -78,27 +82,28 @@ export class FragmentIfcLoader
   async load(data: Uint8Array) {
     await this.initializeWebIfc();
     this._webIfc.OpenModel(data, this.settings.webIfc);
-    return this.loadAllGeometry();
+    const model = await this.loadAllGeometry();
+    this.onIfcLoaded.trigger(model);
+    return model;
   }
 
   private setupOpenButton() {
+    const fileOpener = document.createElement("input");
+    fileOpener.type = "file";
+    fileOpener.accept = ".ifc";
+    fileOpener.style.visibility = "collapse";
+    document.body.appendChild(fileOpener);
+    fileOpener.onchange = async () => {
+      if (fileOpener.files === null || fileOpener.files.length === 0) return;
+      const file = fileOpener.files[0];
+      const buffer = await file.arrayBuffer();
+      const data = new Uint8Array(buffer);
+      const result = await this.load(data);
+      const scene = this._components.scene.get();
+      scene.add(result);
+      this.uiElement.clicked.trigger(result);
+    };
     this.uiElement.onclick = () => {
-      const fileOpener = document.createElement("input");
-      fileOpener.type = "file";
-      fileOpener.style.visibility = "collapse";
-      document.body.appendChild(fileOpener);
-      fileOpener.onchange = async () => {
-        if (fileOpener.files === null) return;
-        const file = fileOpener.files[0];
-        const buffer = await file.arrayBuffer();
-        const data = new Uint8Array(buffer);
-        const result = await this.load(data);
-        const scene = this._components.scene.get();
-        scene.add(result);
-        this.uiElement.clicked.trigger(result);
-        fileOpener.remove();
-      };
-      fileOpener.onclose = () => fileOpener.remove();
       fileOpener.click();
     };
   }
@@ -115,6 +120,7 @@ export class FragmentIfcLoader
     this.cleanUp();
     for (const fragment of model.fragments) {
       this._fragments.list[fragment.id] = fragment;
+      this._components.meshes.push(fragment.mesh);
     }
     return model;
   }

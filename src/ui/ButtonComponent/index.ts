@@ -44,9 +44,18 @@ export class Button
     this._active = active;
   }
 
-  set visible(visible: boolean) {
-    this._visible = visible;
-  } // Not implemented yet.
+  set visible(value: boolean) {
+    this._visible = value;
+    if (value) {
+      this.domElement.classList.remove("hidden");
+      // this.onVisible.trigger(this.get());
+    } else {
+      this.domElement.classList.add("hidden");
+      // this.onHidden.trigger(this.get());
+    }
+    // this.onVisibilityChanged.trigger(value);
+  }
+
   get visible() {
     return this._visible;
   }

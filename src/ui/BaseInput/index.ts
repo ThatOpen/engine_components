@@ -28,7 +28,7 @@ export abstract class BaseInput<
     config?: Partial<InputConfig>
   ) {
     const div = document.createElement("div");
-    div.className = "flex flex-col gap-y-1 gap-x-2";
+    div.className = "flex flex-col";
     const _config: InputConfig = {
       name: "Tooeen Input",
       ...config,
@@ -49,6 +49,10 @@ export abstract class BaseInput<
 
   get inputValue() {
     return this.inputElement.value;
+  }
+
+  set inputValue(value: string) {
+    this.inputElement.value = value;
   }
 
   addChild() {

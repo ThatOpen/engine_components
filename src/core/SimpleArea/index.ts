@@ -1,34 +1,10 @@
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
-import {
-  Color,
-  SphereGeometry,
-  Vector3,
-  MeshBasicMaterial,
-  Mesh,
-  Group,
-  BoxGeometry,
-  Quaternion,
-  Euler,
-  ShapeUtils,
-  Shape,
-  ExtrudeGeometry,
-  DoubleSide,
-  EdgesGeometry,
-  LineSegments,
-  Box3,
-  LineDashedMaterial,
-  PlaneGeometry,
-  BufferGeometry,
-  Object3D,
-  Vector2,
-  BufferAttribute,
-} from "three";
+import * as THREE from "three";
 import { mergeBufferGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
 import { SimpleRaycaster } from "../SimpleRaycaster";
 import { SimpleDimensionLine } from "../SimpleDimensions/simple-dimension-line";
 import { PostproductionRenderer } from "../../navigation/PostproductionRenderer";
 import { EdgesPlane } from "../../navigation/EdgesClipper/src/edges-plane";
-// import { EdgesStyles } from '../../navigation/EdgesClipper/src/edges-styles'
 import {
   Event,
   Disposable,
@@ -44,7 +20,7 @@ import { Components } from "../Components";
 import { Button } from "../../ui/ButtonComponent";
 
 export interface SimpleAreaSettings {
-  color: string | Color;
+  color: string | THREE.Color;
   dashSize: number;
   endPointSize: number;
   forceHorizontal: boolean;
@@ -55,11 +31,11 @@ export interface SimpleAreaSettings {
 }
 
 interface Areas {
-  points: Vector3[];
+  points: THREE.Vector3[];
   perimeter: number;
   area: number;
   volume?: number;
-  color: Color | string;
+  color: THREE.Color | string;
 }
 
 export class SimpleArea
@@ -70,33 +46,33 @@ export class SimpleArea
   uiElement!: Button;
   private _components: Components;
   private _areaLines!: SimpleDimensionLine[];
-  private _areaPoints!: Vector3[];
+  private _areaPoints!: THREE.Vector3[];
   private _areas!: Areas[];
   private _enabled!: boolean;
   private _endPointSize!: number;
-  // private _endpointMesh!: Mesh
+  // private _endpointMesh!: THREE.Mesh
   private _forceHorizontal!: boolean;
   private _isHovering!: boolean;
-  private _lineMaterial!: LineDashedMaterial;
-  // private _outterCastingPlane!: Mesh
+  private _lineMaterial!: THREE.LineDashedMaterial;
+  // private _outterCastingPlane!: THREE.Mesh
   private _htmlPreview!: HTMLElement;
   private _previewElement!: CSS2DObject;
   private _raycaster!: SimpleRaycaster;
   private _snapPointFixed!: boolean;
   private _visible!: boolean;
-  private _volumeMesh!: Mesh;
+  private _volumeMesh!: THREE.Mesh;
   private _snapDistance: number;
   private _perimeter: number;
   // private _volumeHeight: number = 0
   private _areaCutPlane: EdgesPlane | null = null;
-  private _volumeEdges: LineSegments | null = null;
-  private _root: Group | null = null;
+  private _volumeEdges: THREE.LineSegments | null = null;
+  private _root: THREE.Group | null = null;
   private _tempLine: SimpleDimensionLine | null = null;
   private _hasVolumeCalculation: boolean = false;
-  private _outterCastPlane: Mesh | null = null;
+  private _outterCastPlane: THREE.Mesh | null = null;
   private _heightTag: SimpleTag | null = null;
-  private _areaCenter: Vector3 | null = null;
-  private _outterCastNormal: Vector3 | null = null;
+  private _areaCenter: THREE.Vector3 | null = null;
+  private _outterCastNormal: THREE.Vector3 | null = null;
 
   /** {@link Updateable.beforeUpdate} */
   readonly beforeUpdate: Event<SimpleDimensions> = new Event();
@@ -107,7 +83,6 @@ export class SimpleArea
   constructor(components: Components, settings: SimpleAreaSettings) {
     super();
 
-    /** @satisfies SimpleAreaSettings */
     const {
       color,
       dashSize,
@@ -126,7 +101,7 @@ export class SimpleArea
 
     this._snapPointFixed = snapPointFixed || false;
 
-    this._lineMaterial = new LineDashedMaterial({
+    this._lineMaterial = new THREE.LineDashedMaterial({
       dashSize: dashSize || 1,
       depthTest: false,
       gapSize: gapSize || 0,
@@ -135,7 +110,7 @@ export class SimpleArea
 
     this._enabled = false;
     this._visible = true;
-    this._root = new Group();
+    this._root = new THREE.Group();
     this._isHovering = false;
     this._endPointSize = endPointSize || 0.2;
     this._perimeter = 0;
@@ -147,12 +122,12 @@ export class SimpleArea
 
     this._raycaster = new SimpleRaycaster(components);
 
-    this.color = new Color(color || "#222");
+    this.color = new THREE.Color(color || "#222");
 
     this._htmlPreview = document.createElement("div");
     this._htmlPreview.className = DimensionPreviewClassName;
     this._htmlPreview.style.backgroundColor = color
-      ? color instanceof Color
+      ? color instanceof THREE.Color
         ? color.getHexString()
         : color
       : "#0f0";
@@ -252,33 +227,19 @@ export class SimpleArea
     this._isHovering = true;
   }
 
-  private addHorizontalPlanes(point: Vector3) {
-    // const uppedPoint = new Vector3(point.x, point.y + 0.1, point.z)
-
-    // this._areaCutPlane = new EdgesPlane(
-    //   this._components,
-    //   uppedPoint,
-    //   new Vector3(0, -1, 0),
-    //   new MeshBasicMaterial({
-    //     color: this.color,
-    //     transparent: true,
-    //     opacity: this._lineMaterial.opacity / 2
-    //   }),
-    //   new EdgesStyles(this._components)
-    // )
-
-    const plane = new PlaneGeometry(1000, 1000);
+  private addHorizontalPlanes(point: THREE.Vector3) {
+    const plane = new THREE.PlaneGeometry(1000, 1000);
 
     plane.rotateX(Math.PI / 2);
 
-    const material = new MeshBasicMaterial({
+    const material = new THREE.MeshBasicMaterial({
       color: this.color,
       transparent: true,
       opacity: 0.1,
-      side: DoubleSide,
+      side: THREE.DoubleSide,
     });
 
-    this._outterCastPlane = new Mesh(plane, material);
+    this._outterCastPlane = new THREE.Mesh(plane, material);
     this._outterCastPlane.position.set(point.x, point.y, point.z);
   }
 
@@ -355,7 +316,7 @@ export class SimpleArea
 
     if (this._outterCastPlane) this.removeFromScene(this._outterCastPlane);
 
-    const tagPointPerimeter = new Vector3(
+    const tagPointPerimeter = new THREE.Vector3(
       this._areaPoints[0].x,
       this._areaPoints[0].y - 0.1,
       this._areaPoints[0].z
@@ -384,7 +345,7 @@ export class SimpleArea
     if (!origin) {
       return;
     }
-    const normal = new Vector3()
+    const normal = new THREE.Vector3()
       .crossVectors(
         this._areaPoints[1].clone().sub(this._areaPoints[0]),
         this._areaPoints[2].clone().sub(this._areaPoints[0])
@@ -400,29 +361,17 @@ export class SimpleArea
 
     this._outterCastNormal = normal;
 
-    // this._areaCutPlane = new EdgesPlane(
-    //   this._components,
-    //   origin,
-    //   normal,
-    //   new MeshBasicMaterial({
-    //     color: this.color,
-    //     transparent: true,
-    //     opacity: this._lineMaterial.opacity / 2
-    //   }),
-    //   new EdgesStyles(this._components)
-    // )
-
-    const plane = new PlaneGeometry(100, 100);
+    const plane = new THREE.PlaneGeometry(100, 100);
     plane.lookAt(normal);
 
-    const material = new MeshBasicMaterial({
+    const material = new THREE.MeshBasicMaterial({
       color: this.color,
       transparent: true,
       opacity: 0.0001,
-      side: DoubleSide,
+      side: THREE.DoubleSide,
     });
 
-    const meshPlane = new Mesh(plane, material);
+    const meshPlane = new THREE.Mesh(plane, material);
 
     meshPlane.position.set(
       this._areaPoints[0].x,
@@ -512,7 +461,7 @@ export class SimpleArea
 
     if (this._snapPointFixed && this.closestVertex) {
       return this._forceHorizontal
-        ? new Vector3(
+        ? new THREE.Vector3(
             this.closestVertex.x,
             this._outterCastPlane.position.y,
             this.closestVertex.z
@@ -521,7 +470,7 @@ export class SimpleArea
     }
     if (this.cast) {
       return this._forceHorizontal
-        ? new Vector3(
+        ? new THREE.Vector3(
             this.cast.point.x,
             this._outterCastPlane.position.y,
             this.cast.point.z
@@ -577,7 +526,7 @@ export class SimpleArea
    * The [Color](https://threejs.org/docs/#api/en/math/Color)
    * of the geometry of the dimensions.
    */
-  private set color(color: Color) {
+  private set color(color: THREE.Color) {
     this.newEndpointMesh.material.color = color;
     this._lineMaterial.color = color;
   }
@@ -599,22 +548,22 @@ export class SimpleArea
   }
 
   private get newEndpointMesh() {
-    const geometry = new SphereGeometry(this._endPointSize);
+    const geometry = new THREE.SphereGeometry(this._endPointSize);
 
-    const material = new MeshBasicMaterial({
+    const material = new THREE.MeshBasicMaterial({
       color: this.color,
       depthTest: false,
       transparent: true,
       opacity: 0.5,
     });
 
-    return new Mesh(geometry, material);
+    return new THREE.Mesh(geometry, material);
   }
 
   private get closestVertex() {
     if (!this.cast) return;
 
-    let closestVertex = new Vector3();
+    let closestVertex = new THREE.Vector3();
     let vertexFound = false;
     let closestDistance = Number.MAX_SAFE_INTEGER;
 
@@ -665,18 +614,18 @@ export class SimpleArea
     if (!this._outterCastNormal || !this._outterCastPlane) {
       return;
     }
-    const group = new Group();
+    const group = new THREE.Group();
 
     group.add(this._outterCastPlane);
 
     for (const point of this._areaPoints) {
-      const mesh = new Mesh(
-        new BoxGeometry(
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(
           this._endPointSize,
           this._endPointSize,
           this._endPointSize
         ),
-        new MeshBasicMaterial({
+        new THREE.MeshBasicMaterial({
           color: "#f00",
         })
       );
@@ -686,14 +635,14 @@ export class SimpleArea
       group.add(mesh);
     }
 
-    const quaternion = new Quaternion();
+    const quaternion = new THREE.Quaternion();
 
     quaternion.setFromUnitVectors(
       this._outterCastNormal.clone(),
-      new Vector3(0, 1, 0)
+      new THREE.Vector3(0, 1, 0)
     );
 
-    const euler = new Euler();
+    const euler = new THREE.Euler();
     euler.setFromQuaternion(quaternion);
 
     group.rotation.copy(euler);
@@ -701,16 +650,16 @@ export class SimpleArea
     const points = [];
 
     for (const child of group.children) {
-      points.push(child.getWorldPosition(new Vector3()));
+      points.push(child.getWorldPosition(new THREE.Vector3()));
     }
 
     return this.areaShape(points);
   }
 
-  private areaShape(points: Vector3[]) {
+  private areaShape(points: THREE.Vector3[]) {
     this._areaCenter = this.getAreaCenter(points);
 
-    const area = ShapeUtils.area(
+    const area = THREE.ShapeUtils.area(
       points.map((p) => {
         return {
           x: p.x,
@@ -724,8 +673,8 @@ export class SimpleArea
       : parseFloat(`-${area.toFixed(2)}`);
   }
 
-  private getAreaCenter(points: Vector3[]) {
-    const centerPoint = new Vector3();
+  private getAreaCenter(points: THREE.Vector3[]) {
+    const centerPoint = new THREE.Vector3();
 
     for (const point of this._areaPoints) {
       centerPoint.add(point);
@@ -735,24 +684,24 @@ export class SimpleArea
   }
 
   private addVolumeMesh(depth: number) {
-    const shape = new Shape().setFromPoints(
+    const shape = new THREE.Shape().setFromPoints(
       this._areaPoints.map((p) => {
-        return new Vector2(p.x, p.z);
+        return new THREE.Vector2(p.x, p.z);
       })
     );
 
-    const extruded = new ExtrudeGeometry(shape, {
+    const extruded = new THREE.ExtrudeGeometry(shape, {
       depth,
       bevelEnabled: false,
     });
 
-    this._volumeMesh = new Mesh(
+    this._volumeMesh = new THREE.Mesh(
       extruded,
-      new MeshBasicMaterial({
+      new THREE.MeshBasicMaterial({
         color: this.color,
         transparent: true,
         opacity: 0.1,
-        side: DoubleSide,
+        side: THREE.DoubleSide,
       })
     );
 
@@ -766,8 +715,8 @@ export class SimpleArea
     this._volumeMesh.renderOrder = Number.MAX_SAFE_INTEGER;
     this._components.scene.get().add(this._volumeMesh);
 
-    const lines = new EdgesGeometry(this._volumeMesh.geometry);
-    this._volumeEdges = new LineSegments(lines, this._lineMaterial);
+    const lines = new THREE.EdgesGeometry(this._volumeMesh.geometry);
+    this._volumeEdges = new THREE.LineSegments(lines, this._lineMaterial);
 
     this._volumeEdges.rotation.set(Math.PI / 2, 0, 0);
     this._volumeEdges.position.y = this._areaPoints[0].y + depth;
@@ -801,18 +750,22 @@ export class SimpleArea
     return volume;
   }
 
-  private volumeCalculation(geometry: BufferGeometry) {
-    const triangleVolume = (p1: Vector3, p2: Vector3, p3: Vector3) => {
+  private volumeCalculation(geometry: THREE.BufferGeometry) {
+    const triangleVolume = (
+      p1: THREE.Vector3,
+      p2: THREE.Vector3,
+      p3: THREE.Vector3
+    ) => {
       return p1.dot(p2.cross(p3)) / 6.0;
     };
 
-    const position = geometry.attributes.position as BufferAttribute;
+    const position = geometry.attributes.position as THREE.BufferAttribute;
 
     let volume = 0;
 
-    const p1 = new Vector3();
-    const p2 = new Vector3();
-    const p3 = new Vector3();
+    const p1 = new THREE.Vector3();
+    const p2 = new THREE.Vector3();
+    const p3 = new THREE.Vector3();
 
     const faces = position.count / 3;
 
@@ -832,7 +785,7 @@ export class SimpleArea
       this._heightTag.get().position.y = this._areaPoints[0].y + depth / 2;
       this._heightTag.tagContent = parseFloat(depth.toFixed(2));
     } else {
-      const heightCenter = new Vector3(
+      const heightCenter = new THREE.Vector3(
         this._areaPoints[0].x,
         this._areaPoints[0].y + depth / 2,
         this._areaPoints[0].z
@@ -849,15 +802,15 @@ export class SimpleArea
   }
 
   private get volumeMeshCenter() {
-    const box = new Box3().setFromObject(this._volumeMesh);
-    return box.getCenter(new Vector3());
+    const box = new THREE.Box3().setFromObject(this._volumeMesh);
+    return box.getCenter(new THREE.Vector3());
   }
 
-  private addToScene(item: Object3D) {
+  private addToScene(item: THREE.Object3D) {
     this._components.scene.get().add(item);
   }
 
-  private removeFromScene(item: Object3D) {
+  private removeFromScene(item: THREE.Object3D) {
     this._components.scene.get().remove(item);
   }
 
