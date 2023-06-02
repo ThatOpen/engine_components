@@ -26,7 +26,10 @@ export class CubeMap
   afterUpdate: Event<CubeMap> = new Event();
   beforeUpdate: Event<CubeMap> = new Event();
   private _cubeFaceClass =
-    "flex justify-center font-bold hover:bg-ifcjs-200 hover:text-ifcjs-100 text-white select-none text-xl items-center cursor-pointer text-center bg-ifcjs-100 text-ifcjs-100 absolute w-[120px] h-[120px] border-2 border-solid border-ifcjs-120";
+    "flex justify-center font-bold hover:bg-ifcjs-200 hover:text-ifcjs-100 text-white select-none text-xl items-center cursor-pointer text-center text-ifcjs-100 absolute w-[60px] h-[60px] border-solid border-ifcjs-120";
+  private _cyan = "bg-[#3CE6FEDD]";
+  private _pink = "bg-[#BD4BF3DD]";
+  private _blue = "bg-[#201491DD]";
   private _components: Components;
   private _cube = document.createElement("div");
   private _cubeWrapper = document.createElement("div");
@@ -57,7 +60,7 @@ export class CubeMap
     this._cubeWrapper.id = "tooeen-cube-map";
     this._cubeWrapper.className = "absolute z-10";
     this.setPosition("bottom-right");
-    this._cube.className = "w-[120px] h-[120px] relative";
+    this._cube.className = "w-[60px] h-[60px] relative";
     this.setSize("400");
     this._cube.style.transformStyle = "preserve-3d";
     this._cube.style.transform = "translateZ(-300px)";
@@ -67,46 +70,40 @@ export class CubeMap
     // #region Cube faces
     const frontFace = document.createElement("div");
     frontFace.id = "cube-map-front";
-    frontFace.className = this._cubeFaceClass;
-    frontFace.textContent = "Front";
-    frontFace.style.transform = "rotateX(180deg) translateZ(-60px)";
+    frontFace.className = `${this._cubeFaceClass} ${this._cyan}`;
+    frontFace.style.transform = "rotateX(180deg) translateZ(-30px)";
     frontFace.style.transition = "all 0.2s";
     frontFace.onclick = () => this.orientToFace("front");
 
     const topFace = document.createElement("div");
-    topFace.className = this._cubeFaceClass;
-    topFace.textContent = "Top";
-    topFace.style.transform = "rotateX(90deg) translateZ(-60px)";
+    topFace.className = `${this._cubeFaceClass} ${this._pink}`;
+    topFace.style.transform = "rotateX(90deg) translateZ(-30px)";
     topFace.style.transition = "all 0.2s";
     topFace.onclick = () => this.orientToFace("top");
 
     const bottomFace = document.createElement("div");
-    bottomFace.className = this._cubeFaceClass;
-    bottomFace.textContent = "Bottom";
-    bottomFace.style.transform = "rotateX(270deg) translateZ(-60px)";
+    bottomFace.className = `${this._cubeFaceClass} ${this._pink}`;
+    bottomFace.style.transform = "rotateX(270deg) translateZ(-30px)";
     bottomFace.style.transition = "all 0.2s";
     bottomFace.onclick = () => this.orientToFace("bottom");
 
     const rightFace = document.createElement("div");
-    rightFace.className = this._cubeFaceClass;
-    rightFace.textContent = "Right";
+    rightFace.className = `${this._cubeFaceClass} ${this._blue}`;
     rightFace.style.transform =
-      "rotateY(-270deg) rotateX(180deg) translateZ(-60px)";
+      "rotateY(-270deg) rotateX(180deg) translateZ(-30px)";
     rightFace.style.transition = "all 0.2s";
     rightFace.onclick = () => this.orientToFace("right");
 
     const leftFace = document.createElement("div");
-    leftFace.className = this._cubeFaceClass;
-    leftFace.textContent = "Left";
+    leftFace.className = `${this._cubeFaceClass} ${this._blue}`;
     leftFace.style.transform =
-      "rotateY(-90deg) rotateX(180deg) translateZ(-60px)";
+      "rotateY(-90deg) rotateX(180deg) translateZ(-30px)";
     leftFace.style.transition = "all 0.2s";
     leftFace.onclick = () => this.orientToFace("left");
 
     const backFace = document.createElement("div");
-    backFace.className = this._cubeFaceClass;
-    backFace.textContent = "Back";
-    backFace.style.transform = "translateZ(-60px) rotateZ(180deg)";
+    backFace.className = `${this._cubeFaceClass} ${this._cyan}`;
+    backFace.style.transform = "translateZ(-30px) rotateZ(180deg)";
     backFace.style.transition = "all 0.2s";
     backFace.onclick = () => this.orientToFace("back");
     // #endregion
@@ -160,7 +157,7 @@ export class CubeMap
         target.z,
         true
       );
-      this._camera.fitModelToFrame();
+      this._camera.fit();
     }
   }
 

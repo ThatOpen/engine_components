@@ -30,7 +30,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
   protected readonly _userInputButtons: any = {};
   protected readonly _frustumSize = 50;
   protected readonly _navigationModes = new Map<NavModeID, NavigationMode>();
-  uiElement!: Button
+  uiElement!: Button;
 
   constructor(components: Components) {
     super(components);
@@ -47,40 +47,48 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
     this.toggleEvents(true);
 
     this._projectionManager = new ProjectionManager(components, this);
-    this.setUI()
+    this.setUI();
   }
 
   private setUI() {
-    const mainButton = new Button(this.components, {materialIconName: "video_camera_back"})
+    const mainButton = new Button(this.components, {
+      materialIconName: "video_camera_back",
+    });
 
-    const projection = new Button(this.components, {materialIconName: "camera", name: "Projection"})
-    const perspective = new Button(this.components, {name: "Perspective"})
-    perspective.active = true
-    perspective.onclick = () => this.setProjection("Perspective")
-    const orthographic = new Button(this.components, {name: "Orthographic"})
-    orthographic.onclick = () => this.setProjection("Orthographic")
-    projection.addButton(perspective, orthographic)
+    const projection = new Button(this.components, {
+      materialIconName: "camera",
+      name: "Projection",
+    });
+    const perspective = new Button(this.components, { name: "Perspective" });
+    perspective.active = true;
+    perspective.onclick = () => this.setProjection("Perspective");
+    const orthographic = new Button(this.components, { name: "Orthographic" });
+    orthographic.onclick = () => this.setProjection("Orthographic");
+    projection.addButton(perspective, orthographic);
 
-    const navigation = new Button(this.components, {materialIconName: "open_with", name: "Navigation"})
-    const orbit = new Button(this.components, {name: "Orbit Around"})
-    orbit.onclick = () => this.setNavigationMode("Orbit")
-    const plan = new Button(this.components, {name: "Plan View"})
-    plan.onclick = () => this.setNavigationMode("Plan")
-    navigation.addButton(orbit, plan)
+    const navigation = new Button(this.components, {
+      materialIconName: "open_with",
+      name: "Navigation",
+    });
+    const orbit = new Button(this.components, { name: "Orbit Around" });
+    orbit.onclick = () => this.setNavigationMode("Orbit");
+    const plan = new Button(this.components, { name: "Plan View" });
+    plan.onclick = () => this.setNavigationMode("Plan");
+    navigation.addButton(orbit, plan);
 
-    mainButton.addButton(navigation, projection)
+    mainButton.addButton(navigation, projection);
 
-    this.projectionChanged.on( camera => {
+    this.projectionChanged.on((camera) => {
       if (camera instanceof THREE.PerspectiveCamera) {
-        perspective.active = true
-        orthographic.active = false
+        perspective.active = true;
+        orthographic.active = false;
       } else {
-        perspective.active = false
-        orthographic.active = true
+        perspective.active = false;
+        orthographic.active = true;
       }
-    } )
+    });
 
-    this.uiElement = mainButton
+    this.uiElement = mainButton;
   }
 
   /** {@link Disposable.dispose} */
@@ -171,10 +179,11 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
   /**
    * Make the camera view fit all the specified meshes.
    *
-   * @param meshes - the meshes to fit. If it is not defined, it will
+   * @param meshes the meshes to fit. If it is not defined, it will
    * evaluate {@link Components.meshes}.
+   * @param offset the distance to the fit object
    */
-  async fitModelToFrame(meshes: THREE.Mesh[] = this.components.meshes) {
+  async fit(meshes: THREE.Mesh[] = this.components.meshes, offset = 1.5) {
     if (!this.enabled) return;
 
     const maxNum = Number.MAX_VALUE;
@@ -198,8 +207,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
     box.getSize(sceneSize);
     const sceneCenter = new THREE.Vector3();
     box.getCenter(sceneCenter);
-    const nearFactor = 0.5;
-    const radius = Math.max(sceneSize.x, sceneSize.y, sceneSize.z) * nearFactor;
+    const radius = Math.max(sceneSize.x, sceneSize.y, sceneSize.z) * offset;
     const sphere = new THREE.Sphere(sceneCenter, radius);
     await this.controls.fitToSphere(sphere, true);
   }

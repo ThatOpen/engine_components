@@ -21,7 +21,7 @@ export class SimpleScene extends Component<THREE.Scene> implements Disposable {
   constructor(_components: Components) {
     super();
     this._scene = new THREE.Scene();
-    this._scene.background = new THREE.Color(0xcccccc);
+    this._scene.background = new THREE.Color(0x202932);
   }
 
   /** {@link Component.get} */
