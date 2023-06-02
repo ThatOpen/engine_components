@@ -3,6 +3,7 @@
 ### Description
 
 <!-- Please insert your description here. Make sure to provide info about the "what" this PR is solving -->
+<!-- Remember to include which issues should be closed when your PR is merged, e.g. fixes #123.
 
 ### Additional context
 

@@ -1,13 +1,4 @@
 contact_links:
-  - name: IFC.js web-ifc Issues
-    url: https://github.com/IFCjs/web-ifc
-    about: Issues related with web-ifc, the javascript library to read and write ifc files.
-  - name: IFC.js web-ifc-three Issues
-    url: https://github.com/IFCjs/web-ifc-three
-    about: Issues related with web-ifc-three, the implementation of web-ifc for THREE.js.
-  - name: IFC.js web-ifc-viewer Issues
-    url: https://github.com/IFCjs/web-ifc-viewer
-    about: Issues related with web-ifc-viewer, the official IFC.js viewer and toolkit.
   - name: Discord Chat
     url: https://discord.gg/FXfyR4XrKT
     about: Join the official Discord server and discuss with other IFC.js members in real time.

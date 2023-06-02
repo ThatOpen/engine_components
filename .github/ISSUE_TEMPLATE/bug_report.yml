@@ -1,5 +1,6 @@
 name: "Bug report 🐛"
 description: Report an issue with IFC.js components
+labels: [bug]
 body:
   - type: markdown
     attributes:
