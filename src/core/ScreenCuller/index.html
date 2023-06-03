@@ -138,11 +138,11 @@
    */
 	function regenerateCubes() {
 		resetCubes();
-		for (let i = 0; i < 1; i++) {
+		for (let i = 0; i < 300; i++) {
 			const cube = new THREE.Mesh(geometry, material);
-			cube.position.x = getRandomNumber(1);
-			cube.position.y = getRandomNumber(1);
-			cube.position.z = getRandomNumber(1);
+			cube.position.x = getRandomNumber(10);
+			cube.position.y = getRandomNumber(10);
+			cube.position.z = getRandomNumber(10);
 			cube.updateMatrix();
 			scene.add(cube);
 			culler.add(cube);
