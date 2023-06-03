@@ -127,16 +127,16 @@ export class CubeMap
 
   setPosition(corner: CubeMapPositions) {
     this._cubeWrapper.classList.remove(
-      "top-4",
-      "bottom-4",
-      "left-4",
-      "right-4"
+      "top-8",
+      "bottom-8",
+      "left-8",
+      "right-8"
     );
     const wrapperPositions: Record<CubeMapPositions, string[]> = {
-      "top-left": ["top-4", "left-4"],
-      "top-right": ["top-4", "right-4"],
-      "bottom-right": ["bottom-4", "right-4"],
-      "bottom-left": ["bottom-4", "left-4"],
+      "top-left": ["top-8", "left-8"],
+      "top-right": ["top-8", "right-8"],
+      "bottom-right": ["bottom-8", "right-8"],
+      "bottom-left": ["bottom-8", "left-8"],
     };
     this._cubeWrapper.classList.add(...wrapperPositions[corner]);
   }

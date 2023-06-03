@@ -809,20 +809,20 @@ select {
   bottom: 0px;
 }
 
-.bottom-4 {
-  bottom: 1rem;
+.bottom-8 {
+  bottom: 2rem;
 }
 
 .left-0 {
   left: 0px;
 }
 
-.left-4 {
-  left: 1rem;
-}
-
 .left-5 {
   left: 1.25rem;
+}
+
+.left-8 {
+  left: 2rem;
 }
 
 .right-0 {
@@ -833,8 +833,8 @@ select {
   right: 0.5rem;
 }
 
-.right-4 {
-  right: 1rem;
+.right-8 {
+  right: 2rem;
 }
 
 .top-0 {
@@ -845,12 +845,12 @@ select {
   top: 0.5rem;
 }
 
-.top-4 {
-  top: 1rem;
-}
-
 .top-5 {
   top: 1.25rem;
+}
+
+.top-8 {
+  top: 2rem;
 }
 
 .z-10 {

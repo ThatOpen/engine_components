@@ -20,6 +20,7 @@
         "openbim-components": "../../../resources/openbim-components.js"
       }
     }
+
 </script>
 <script type="module">
 
@@ -43,7 +44,6 @@
 
 	const scene = components.scene.get();
 
-	scene.background = null;
 	components.camera.controls.setLookAt(13, 13, 13, 0, 0, 0);
 
 	const directionalLight = new THREE.DirectionalLight();
@@ -55,7 +55,8 @@
 	ambientLight.intensity = 0.5;
 	scene.add(ambientLight);
 
-	const grid = new OBC.SimpleGrid(components);
+	const grey = new THREE.Color(0xcccccc);
+	const grid = new OBC.SimpleGrid(components, 1, 10, grey, 100);
 	components.tools.add(grid);
 
 	/*MD
@@ -84,64 +85,64 @@
 
 	const culler = new OBC.ScreenCuller(components);
 
-    /*MD
+	/*MD
 
-    Additionally, we will activate the `culler.renderDebugFrame`
-    so that we can see the 2D screen of the elements that are not occluded.💻
-    Also, we will get the **domElement** and attach it to the body so that we can see this frame in real-time.📊
+  Additionally, we will activate the `culler.renderDebugFrame`
+  so that we can see the 2D screen of the elements that are not occluded.💻
+  Also, we will get the **domElement** and attach it to the body so that we can see this frame in real-time.📊
 
-     */
+   */
 	culler.renderDebugFrame = true;
 	const debugFrame = culler.renderer.domElement;
 	document.body.appendChild(debugFrame);
 	debugFrame.style.position = 'absolute';
 
-    /*MD
+	/*MD
 
-    :::info Randomising the Cube Placement
+  :::info Randomising the Cube Placement
 
-    We'll write a quick **utility** function that returns a random number between 0 and the specified upper limit.
-    You can use this for a variety of purposes, but for this tutorial
-    it will be used to generate random positions for cube placement.📌
+  We'll write a quick **utility** function that returns a random number between 0 and the specified upper limit.
+  You can use this for a variety of purposes, but for this tutorial
+  it will be used to generate random positions for cube placement.📌
 
-    :::
+  :::
 
-     */
+   */
 
-    function getRandomNumber(limit) {
+	function getRandomNumber(limit) {
 		return Math.random() * limit;
 	}
 
-    /*MD
+	/*MD
 
-    ### 🧱 Adding a lot of 3D Objects
+  ### 🧱 Adding a lot of 3D Objects
 
-    We'll add the Simple 3D Cube and do it **300 times**!🤯
-    Components are built using [Three.js](https://threejs.org/), making it simple to use any three.js code.
-    For our cube, we'll generate box geometry and use basic material.
-    */
+  We'll add the Simple 3D Cube and do it **300 times**!🤯
+  Components are built using [Three.js](https://threejs.org/), making it simple to use any three.js code.
+  For our cube, we'll generate box geometry and use basic material.
+  */
 
-    const cubes = [];
+	const cubes = [];
 	const geometry = new THREE.BoxGeometry(2, 2, 2);
-	const material = new THREE.MeshLambertMaterial({ color: 'red' });
+	const material = new THREE.MeshLambertMaterial({ color: '#6528D7' });
 
-    /*MD
+	/*MD
 
-    #### 🧪 Generate Multiple Cubes
-    Now, using the `getRandomNumber()` method we previously created, we will add the 300 **`cube`** meshes to our scene
-    and randomly position them. We'll add the cube to the scene and adjust its position between 0 and 10.
+  #### 🧪 Generate Multiple Cubes
+  Now, using the `getRandomNumber()` method we previously created, we will add the 300 **`cube`** meshes to our scene
+  and randomly position them. We'll add the cube to the scene and adjust its position between 0 and 10.
 
-    Additionally, we will add meshes to the `culler` object, which will help **SimpleCuller** to recognize and
-    draw the elements that are visible to the camera. To do this, **`culler.add(cube)`** will be used.
+  Additionally, we will add meshes to the `culler` object, which will help **SimpleCuller** to recognize and
+  draw the elements that are visible to the camera. To do this, **`culler.add(cube)`** will be used.
 
-     */
+   */
 	function regenerateCubes() {
 		resetCubes();
-		for (let i = 0; i < 300; i++) {
+		for (let i = 0; i < 1; i++) {
 			const cube = new THREE.Mesh(geometry, material);
-			cube.position.x = getRandomNumber(10);
-			cube.position.y = getRandomNumber(10);
-			cube.position.z = getRandomNumber(10);
+			cube.position.x = getRandomNumber(1);
+			cube.position.y = getRandomNumber(1);
+			cube.position.z = getRandomNumber(1);
 			cube.updateMatrix();
 			scene.add(cube);
 			culler.add(cube);
@@ -149,13 +150,13 @@
 		}
 	}
 
-    /*MD
+	/*MD
 
-    #### 🧹 Cleaning the Scene
-    Now that we know how to create multiple cubes, we will write a function to remove the cubes from scene on demand.
-    `resetCubes()` iteratively removes the **cubes** using [**`cube.removeFromParent`**](https://threejs.org/docs/index.html?q=obje#api/en/core/Object3D.removeFromParent).
+  #### 🧹 Cleaning the Scene
+  Now that we know how to create multiple cubes, we will write a function to remove the cubes from scene on demand.
+  `resetCubes()` iteratively removes the **cubes** using [**`cube.removeFromParent`**](https://threejs.org/docs/index.html?q=obje#api/en/core/Object3D.removeFromParent).
 
-     */
+   */
 	function resetCubes() {
 		for (const cube of cubes) {
 			cube.removeFromParent();
@@ -163,35 +164,35 @@
 		cubes.length = 0;
 	}
 
-    /*MD
+	/*MD
 
-    #### 📢 Rendering Cubes
-    With everything ready, we will call `regenerateCubes()` which will generate cubes and add them to scene.
+  #### 📢 Rendering Cubes
+  With everything ready, we will call `regenerateCubes()` which will generate cubes and add them to scene.
 
-     */
-    regenerateCubes();
+   */
+	regenerateCubes();
 
-    /*MD
+	/*MD
 
-    Here comes the most crucial part! The core aim of **ScreenCuller** is to output just those components that are
-    visible to the camera.
+  Here comes the most crucial part! The core aim of **ScreenCuller** is to output just those components that are
+  visible to the camera.
 
-    `culler.needsUpdate = true` instructs the ScreenCuller to render the updated view.
+  `culler.needsUpdate = true` instructs the ScreenCuller to render the updated view.
 
-    ** Remember to update culler every time the camera is updated ❕ **
+  ** Remember to update culler every time the camera is updated ❕ **
 
-    For this tutorial, we are updating the culler on the click of button. 🖱
-     */
+  For this tutorial, we are updating the culler on the click of button. 🖱
+   */
 
-    culler.needsUpdate = true;
+	culler.needsUpdate = true;
 
-    /*MD
+	/*MD
 
-    Great job! 🎉 Now you know how to optimise your 3D scene using a
-    **Screen Culler** component! 💪
-    Your BIM app will now have unmatched performance and can render huge scenes easily. 🚀
-    Let's keep it up and check out another tutorials!
-     */
+  Great job! 🎉 Now you know how to optimise your 3D scene using a
+  **Screen Culler** component! 💪
+  Your BIM app will now have unmatched performance and can render huge scenes easily. 🚀
+  Let's keep it up and check out another tutorials!
+   */
 
 	// Set up stats
 

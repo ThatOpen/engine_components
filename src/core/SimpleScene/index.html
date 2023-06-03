@@ -96,14 +96,7 @@
 	/*MD
 	### 🎥 Adjusting scene and camera
   ___
-  Great! Now we will make the background of our scene transparent. You don't have to do it; we are doing it because
-  that way this app will be more integrated with the documentation page when setting it to light/dark mode.
-  */
-
-	scene.background = null;
-
-	/*MD
-  Now we will locate the camera in a nice starting position. We can control the `SimpleCamera` component through its
+  Great! Now we will locate the camera in a nice starting position. We can control the `SimpleCamera` component through its
   `controls` attribute. This object is an instance of the [camera-controls](https://github.com/yomotsu/camera-controls)
   library, which makes it super easy to control the camera in our 3D scene. We will set the position of the camera
   to `[10, 10, 10]` and make it look at the origin (`[0, 0, 0]`).
@@ -119,7 +112,9 @@
   2D grid to the scene that we can use as a reference.
 
   */
-	const grid = new OBC.SimpleGrid(components);
+
+	const grey = new THREE.Color(0xcccccc);
+	const grid = new OBC.SimpleGrid(components, 1, 10, grey, 100);
 	components.tools.add(grid);
 
   /*MD
@@ -137,7 +132,7 @@
   Let's try it by adding a simple red cube:
   */
 
-  const boxMaterial = new THREE.MeshStandardMaterial({ color: 'red' });
+  const boxMaterial = new THREE.MeshStandardMaterial({ color: '#6528D7' });
   const boxGeometry = new THREE.BoxGeometry(3, 3, 3);
 	const cube = new THREE.Mesh(boxGeometry, boxMaterial);
 	cube.position.set(0, 1.5, 0);

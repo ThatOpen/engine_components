@@ -235,7 +235,7 @@ export class ScreenCuller extends Component<null> implements Disposable {
     const clippingPlanes = this.components.renderer.clippingPlanes;
     if (!material) {
       material = new THREE.MeshBasicMaterial({
-        color: new THREE.Color(code),
+        color: new THREE.Color(r, g, b).convertSRGBToLinear(),
         clippingPlanes,
         side: THREE.DoubleSide,
       });

@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@popperjs/core": "latest",
-    "bim-fragment": "0.0.18",
+    "bim-fragment": "0.0.19",
     "camera-controls": "^1.36.0",
     "dexie": "^3.2.3",
     "stats.js": "^0.17.0",
