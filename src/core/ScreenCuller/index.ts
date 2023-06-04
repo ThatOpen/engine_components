@@ -230,17 +230,20 @@ export class ScreenCuller extends Component<null> implements Disposable {
   };
 
   private getMaterial(r: number, g: number, b: number) {
+    THREE.ColorManagement.enabled = false;
     const code = `rgb(${r}, ${g}, ${b})`;
+    const color = new THREE.Color(code);
     let material = this.materialCache.get(code);
     const clippingPlanes = this.components.renderer.clippingPlanes;
     if (!material) {
       material = new THREE.MeshBasicMaterial({
-        color: new THREE.Color().setRGB(r / 256, g / 256, b / 256),
+        color,
         clippingPlanes,
         side: THREE.DoubleSide,
       });
       this.materialCache.set(code, material);
     }
+    THREE.ColorManagement.enabled = true;
     return material;
   }
 
