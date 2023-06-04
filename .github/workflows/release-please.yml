@@ -13,6 +13,8 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
     steps:
       - uses: google-github-actions/release-please-action@v3 # Handle local releases
         id: release
@@ -20,9 +22,9 @@ jobs:
           release-type: node
           package-name: openbim-components
   publish-npm:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
     uses: ./.github/workflows/publish-npm.yml # Publish to npmjs
-    with:
-      secrets:
-        NPM_TOKEN: ${{ secrets.NPM_TOKEN }} 
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }} 
     # Publish only if release-please creates a published release
-    if: ${{ steps.release.outputs.release_created }}
