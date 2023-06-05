@@ -9,7 +9,6 @@ on:
     secrets:
       NPM_TOKEN:
         required: true
-        type: string
 jobs:
   build:
     runs-on: ubuntu-latest
