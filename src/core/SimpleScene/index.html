@@ -113,8 +113,7 @@
 
   */
 
-	const grey = new THREE.Color(0xcccccc);
-	const grid = new OBC.SimpleGrid(components, 1, 10, grey, 100);
+	const grid = new OBC.SimpleGrid(components);
 	components.tools.add(grid);
 
   /*MD
@@ -129,7 +128,7 @@
   [Three.js](https://threejs.org/), which means that Three.js code will work natively with them.
   This is great, because you can easily integrate components with any 3D app that you create.
 
-  Let's try it by adding a simple red cube:
+  Let's try it by adding a simple cube:
   */
 
   const boxMaterial = new THREE.MeshStandardMaterial({ color: '#6528D7' });

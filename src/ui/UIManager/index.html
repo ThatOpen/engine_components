@@ -53,8 +53,6 @@
 	ambientLight.intensity = 0.5;
 	scene.add(ambientLight);
 
-	components.scene.get().background = null;
-
 	const grid = new OBC.SimpleGrid(components);
 	components.tools.add(grid);
 
@@ -145,7 +143,7 @@
 
 	const boxes = [];
 	const boxGeometry = new THREE.BoxGeometry();
-	const boxMaterial = new THREE.MeshLambertMaterial({ color: 'red' });
+	const boxMaterial = new THREE.MeshLambertMaterial({ color: '#6528D7' });
 
 	/*MD
 

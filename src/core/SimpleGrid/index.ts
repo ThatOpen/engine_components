@@ -36,8 +36,8 @@ export class SimpleGrid
     components: Components,
     size1: number = 1,
     size2: number = 10,
-    color = new THREE.Color("white"),
-    distance: number = 8000
+    color = new THREE.Color(0xcccccc),
+    distance: number = 100
   ) {
     super();
     // Source: https://github.com/dkaraush/THREE.InfiniteGridHelper/blob/master/InfiniteGridHelper.ts

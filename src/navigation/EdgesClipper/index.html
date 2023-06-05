@@ -59,8 +59,7 @@
 	ambientLight.intensity = 0.5;
 	scene.add(ambientLight);
 
-	const grey = new THREE.Color(0xcccccc);
-	const grid = new OBC.SimpleGrid(components, 1, 10, grey, 100);
+	const grid = new OBC.SimpleGrid(components);
 	components.tools.add(grid);
 
 	/*MD
@@ -98,11 +97,11 @@
 
 	const cubeGeometry = new THREE.BoxGeometry(3, 3, 3);
 
-	const redMaterial = new THREE.MeshStandardMaterial({ color: 'red' });
-	const redCube = new THREE.Mesh(cubeGeometry, redMaterial);
-	redCube.position.set(-2, 1.5, 0);
-	scene.add(redCube);
-	components.meshes.push(redCube);
+	const cubeMaterial = new THREE.MeshStandardMaterial({ color: 'red' });
+	const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+	cube.position.set(-2, 1.5, 0);
+	scene.add(cube);
+	components.meshes.push(cube);
 
 	const blueMaterial = new THREE.MeshStandardMaterial({ color: 'blue' });
 	const blueCube = new THREE.Mesh(cubeGeometry, blueMaterial);
@@ -170,7 +169,7 @@
 
 
 	const redLineMaterial = new LineMaterial({ color: 'blue', linewidth: 0.002 });
-	clipper.styles.create('Red lines', [redCube], redLineMaterial);
+	clipper.styles.create('Red lines', [cube], redLineMaterial);
 
 	const blueLineMaterial = new LineMaterial({ color: 'red', linewidth: 0.003 });
 	clipper.styles.create('Blue lines', [blueCube], blueLineMaterial);
@@ -278,11 +277,11 @@
 			clipper.deleteAll();
 		},
 		'Rotate cube': () => {
-			redCube.rotation.x = 2 * Math.PI * Math.random();
-			redCube.rotation.y = 2 * Math.PI * Math.random();
-			redCube.rotation.z = 2 * Math.PI * Math.random();
-			redCube.updateMatrix();
-			redCube.updateMatrixWorld();
+			cube.rotation.x = 2 * Math.PI * Math.random();
+			cube.rotation.y = 2 * Math.PI * Math.random();
+			cube.rotation.z = 2 * Math.PI * Math.random();
+			cube.updateMatrix();
+			cube.updateMatrixWorld();
 
 			blueCube.rotation.x = 2 * Math.PI * Math.random();
 			blueCube.rotation.y = 2 * Math.PI * Math.random();

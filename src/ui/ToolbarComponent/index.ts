@@ -71,7 +71,7 @@ export class Toolbar
     this.name = _options.name;
     this.domElement.id = _options.name;
     this.domElement.className =
-      "flex shadow-md w-fit h-fit gap-x-2 gap-y-2 p-2 text-white rounded pointer-events-auto bg-ifcjs-100 z-50";
+      "flex shadow-md w-fit h-fit gap-x-2 gap-y-2 p-2 text-white rounded pointer-events-auto bg-ifcjs-100 z-50 backdrop-blur-md";
     this.position = _options.position;
     this.visible = true;
   }

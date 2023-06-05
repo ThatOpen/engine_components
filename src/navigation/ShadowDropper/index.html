@@ -42,7 +42,6 @@
 
 	const scene = components.scene.get();
 
-	scene.background = null;
 	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
 	const directionalLight = new THREE.DirectionalLight();
@@ -54,8 +53,8 @@
 	ambientLight.intensity = 0.5;
 	scene.add(ambientLight);
 
-	const grid = new OBC.SimpleGrid(components);
-	components.tools.add(grid);
+    const grid = new OBC.SimpleGrid(components);
+    components.tools.add(grid);
 
 	/*MD
 	### 🌒 Adding Realism
@@ -81,9 +80,9 @@
     */
 
     const cubeGeometry = new THREE.BoxGeometry(3, 3, 3);
-	const redMaterial = new THREE.MeshStandardMaterial({color: "red"});
-	const redCube = new THREE.Mesh(cubeGeometry, redMaterial);
-	redCube.position.set(0, 1.5, 0);
+	const cubeMaterial = new THREE.MeshStandardMaterial({color: '#6528D7'});
+	const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+	cube.position.set(0, 1.5, 0);
 
     /*MD
 
@@ -93,8 +92,8 @@
     **`components.meshes`** acts as a store to help you manage your elements centrally.
 
      */
-	scene.add(redCube);
-	components.meshes.push(redCube);
+	scene.add(cube);
+	components.meshes.push(cube);
 
     /*MD
     ### 🌚 Adding Beautiful Shadow
@@ -113,8 +112,9 @@
 
      */
 
-	shadows.shadowExtraScaleFactor = 10;
+	shadows.shadowExtraScaleFactor = 15;
 	shadows.darkness = 2;
+    shadows.shadowOffset = 0.1;
 
     /*MD
     - `shadowExtraScalarFactor` - With this, the shadow's area of impact can be adjusted.
@@ -134,7 +134,7 @@
 
      */
 
-    shadows.renderShadow([redCube], "example");
+    shadows.renderShadow([cube], "example");
 
     /*MD
 

@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <link rel="stylesheet" href="../../../resources/styles.css">
-  <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
-  <title>Tools Component</title>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="../../../resources/styles.css">
+    <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+    <title>Tools Component</title>
 </head>
 <body>
 <div class="full-screen" id="container"></div>
@@ -19,43 +19,43 @@
         "openbim-components": "../../../resources/openbim-components.js"
       }
     }
+
 </script>
 <script type="module">
 
-  // Set up scene (see SimpleScene tutorial)
+    // Set up scene (see SimpleScene tutorial)
 
-	import * as THREE from 'three';
-	import * as OBC from 'openbim-components';
+    import * as THREE from 'three';
+    import * as OBC from 'openbim-components';
 
-	const container = document.getElementById('container');
+    const container = document.getElementById('container');
 
-	const components = new OBC.Components();
+    const components = new OBC.Components();
 
-	components.scene = new OBC.SimpleScene(components);
-	components.renderer = new OBC.SimpleRenderer(components, container);
-	components.camera = new OBC.SimpleCamera(components);
-	components.raycaster = new OBC.SimpleRaycaster(components);
+    components.scene = new OBC.SimpleScene(components);
+    components.renderer = new OBC.SimpleRenderer(components, container);
+    components.camera = new OBC.SimpleCamera(components);
+    components.raycaster = new OBC.SimpleRaycaster(components);
 
-	components.init();
+    components.init();
 
-	const scene = components.scene.get();
+    const scene = components.scene.get();
 
-	scene.background = null;
-	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+    components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
-	const directionalLight = new THREE.DirectionalLight();
-	directionalLight.position.set(5, 10, 3);
-	directionalLight.intensity = 0.5;
-	scene.add(directionalLight);
+    const directionalLight = new THREE.DirectionalLight();
+    directionalLight.position.set(5, 10, 3);
+    directionalLight.intensity = 0.5;
+    scene.add(directionalLight);
 
-	const ambientLight = new THREE.AmbientLight();
-	ambientLight.intensity = 0.5;
-	scene.add(ambientLight);
+    const ambientLight = new THREE.AmbientLight();
+    ambientLight.intensity = 0.5;
+    scene.add(ambientLight);
 
-	const grid = new OBC.SimpleGrid(components);
-	components.tools.add(grid);
+    const grid = new OBC.SimpleGrid(components);
+    components.tools.add(grid);
 
-	/*MD
+    /*MD
   ### 🤏 Touching things
   ___
   In this tutorial, we'll learn to **interact with our scene**. This will work both for a mouse 🐀 and for the touch
@@ -68,59 +68,52 @@
 
   :::
 
-  Next, we will add some objects to pick. Specifically, we will add 3 boxes of different colors using Three.js API.
-  To do that, first we need to create 4 materials: one material per box, and a fourth material to highlight boxes that
-  we pick:
-  */
-
-	const redMaterial = new THREE.MeshStandardMaterial({ color: 'red' });
-	const greenMaterial = new THREE.MeshStandardMaterial({ color: 'green' });
-	const blueMaterial = new THREE.MeshStandardMaterial({ color: 'blue' });
-	const yellowMaterial = new THREE.MeshBasicMaterial({ color: 'yellow' });
-
-	/*MD
-  Great! Now, we will add the geometry itself. For that we need 5 meshes that can share the same cube geometry
+  Next, we will add some objects to pick. We need 5 meshes that can share the same cube geometry
   (as all the geometry of the cubes is the same).
   */
 
-	const boxGeometry = new THREE.BoxGeometry(3, 3, 3);
+    const cubeMaterial = new THREE.MeshStandardMaterial({color: '#6528D7'});
+    const greenMaterial = new THREE.MeshStandardMaterial({color: '#BCF124'});
 
-	const redCube = new THREE.Mesh(boxGeometry, redMaterial);
-	const greenCube = new THREE.Mesh(boxGeometry, greenMaterial);
-	const blueCube = new THREE.Mesh(boxGeometry, blueMaterial);
-	scene.add(redCube, greenCube, blueCube);
-	const cubes = [redCube, greenCube, blueCube];
+    const boxGeometry = new THREE.BoxGeometry(3, 3, 3);
 
-	/*MD
+    const cube1 = new THREE.Mesh(boxGeometry, cubeMaterial);
+    const cube2 = new THREE.Mesh(boxGeometry, cubeMaterial);
+    const cube3 = new THREE.Mesh(boxGeometry, cubeMaterial);
+    scene.add(cube1, cube2, cube3);
+    const cubes = [cube1, cube2, cube3];
+
+    /*MD
   Let's give the cubes a different position so that we can see all of them in the scene:
   */
 
-	greenCube.position.x = 5;
-	blueCube.position.x = -5;
+    cube2.position.x = 5;
+    cube3.position.x = -5;
 
-	/*MD
-	 ### 🔄 Spinning up the cubes
-	 ___
+    /*MD
+     ### 🔄 Spinning up the cubes
+     ___
   To spice things up a little, let's create an animation loop that rotates the cubes each frame. You can do this super
   easily by creating a function and adding it to the `beforeUpdate` event of the **RendererComponent** inside
   **Components** using the `on()` method:
   */
 
-	const oneDegree = Math.PI / 180;
-  function rotateCubes() {
-		redCube.rotation.x += oneDegree;
-		redCube.rotation.y += oneDegree;
-		greenCube.rotation.x += oneDegree;
-		greenCube.rotation.z += oneDegree;
-		blueCube.rotation.y += oneDegree;
-		blueCube.rotation.z += oneDegree;
-  }
+    const oneDegree = Math.PI / 180;
 
-  components.renderer.beforeUpdate.on(rotateCubes);
+    function rotateCubes() {
+        cube1.rotation.x += oneDegree;
+        cube1.rotation.y += oneDegree;
+        cube2.rotation.x += oneDegree;
+        cube2.rotation.z += oneDegree;
+        cube3.rotation.y += oneDegree;
+        cube3.rotation.z += oneDegree;
+    }
 
-	/*MD
+    components.renderer.beforeUpdate.on(rotateCubes);
 
-	:::info Turning off animations
+    /*MD
+
+    :::info Turning off animations
 
   You can turn off animations simply by using the `off()` method.
   [This works for any event](../api/classes/components.Event)
@@ -128,46 +121,36 @@
 
   :::
 
-	### ⚡ Casting rays around
-	___
-  Awesome! Now, when we pick a cube, we will substitute the original material by the yellow material. Afterwards, we
-  will need a way to get back the original material. We can easily achieve this by adding a reference to the material
-  in the `userData` property, which is an object where you can add any data you need:
-  */
+    ### ⚡ Casting rays around
+    ___
 
-	redCube.userData.originalMaterial = redMaterial;
-	greenCube.userData.originalMaterial = greenMaterial;
-	blueCube.userData.originalMaterial = blueMaterial;
-
-	/*MD
   Finally, we will use the raycaster. This is very easy using the
   **[raycaster component](../api/classes/components.SimpleRaycaster)**, which solves this for all screen sizes.
   We will create an event that fires every time that the user moves the mouse. 👇
 
   :::warning How does it really work?
 
-  We will simply reset the material of the previous selection (if it exists), and then apply the yellow material to the
+  We will simply reset the material of the previous selection (if it exists), and then apply the green material to the
   found object (if any). This might sound like a lot, but it's actually very little code. 😉
 
   :::
-
   */
 
-  let previousSelection;
+    let previousSelection;
 
-  window.onmousemove = () => {
-		const result = components.raycaster.castRay(cubes);
-		if(previousSelection) {
-			previousSelection.material = previousSelection.userData.originalMaterial;
-		}
-		if(!result) {
-			return;
-		}
-    result.object.material = yellowMaterial;
-		previousSelection = result.object;
-  }
+    window.onmousemove = () => {
+        const result = components.raycaster.castRay(cubes);
+        if (previousSelection) {
+            previousSelection.material = cubeMaterial;
+        }
+        if (!result) {
+            return;
+        }
+        result.object.material = greenMaterial;
+        previousSelection = result.object;
+    }
 
-	/*MD
+    /*MD
   Great job! 🎉 Now you know how to pick geometry in your 3D scene using a
   **[raycaster component](../api/classes/components.SimpleRaycaster)** component! 💪 You are now one step closer
   to build your own BIM software. Let's keep it up and check out another tutorials!

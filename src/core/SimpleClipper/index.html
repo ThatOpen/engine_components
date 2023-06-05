@@ -6,7 +6,6 @@
         content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <link rel="stylesheet" href="../../../resources/styles.css">
-  <link rel="stylesheet" href="../../../resources/top.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
   <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
   <title>Tools Component</title>
@@ -44,7 +43,6 @@
 
 	const scene = components.scene.get();
 
-	scene.background = null;
 	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
 	const directionalLight = new THREE.DirectionalLight();
@@ -56,8 +54,9 @@
 	ambientLight.intensity = 0.5;
 	scene.add(ambientLight);
 
-	const grid = new OBC.SimpleGrid(components);
-	components.tools.add(grid);
+
+    const grid = new OBC.SimpleGrid(components);
+    components.tools.add(grid);
 
     /*MD
     ### ✂️ Clipping Tool
@@ -82,16 +81,16 @@
     */
 
 	const cubeGeometry = new THREE.BoxGeometry(3, 3, 3);
-	const redMaterial = new THREE.MeshStandardMaterial({color: "red"});
-	const redCube = new THREE.Mesh(cubeGeometry, redMaterial);
-	redCube.position.set(0, 1.5, 0);
+	const cubeMaterial = new THREE.MeshStandardMaterial({color: '#6528D7'});
+	const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+	cube.position.set(0, 1.5, 0);
 
     /*MD
     Now, we will add the Cube to the `Scene`. We must also add the **cube** to `components.meshes`,
     which is simply an array of all the meshes in the Scene 🗄️.
      */
-	scene.add(redCube);
-	components.meshes.push(redCube);
+	scene.add(cube);
+	components.meshes.push(cube);
 
     /*MD
 	### ⚙️ Adding Simple Clipper
@@ -237,9 +236,9 @@
 			clipper.deleteAll();
 		},
 		'Rotate cube': () => {
-			redCube.rotation.x = 2 * Math.PI * Math.random();
-			redCube.rotation.y = 2 * Math.PI * Math.random();
-			redCube.rotation.z = 2 * Math.PI * Math.random();
+			cube.rotation.x = 2 * Math.PI * Math.random();
+			cube.rotation.y = 2 * Math.PI * Math.random();
+			cube.rotation.z = 2 * Math.PI * Math.random();
 		}
 	}
 

@@ -40,7 +40,6 @@
 
 	const scene = components.scene.get();
 
-	scene.background = null;
 	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
 	const directionalLight = new THREE.DirectionalLight();
@@ -74,7 +73,8 @@
   First, let's instantiate it:
   */
 
-	const grid = new OBC.SimpleGrid(components);
+    const grid = new OBC.SimpleGrid(components);
+    components.tools.add(grid);
 
 	/*MD
   Now, it is likely that your application will have many menus. What if you need access to this component In many
@@ -121,7 +121,7 @@
 	const token =
 		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1IjoiNjQzZmFiN2NkM2QwMmJhOWY1NjA5ZTVlIiwiYSI6IjY0M2ZhYzMwZDcyMDZiNTU2ZGU4YTA4OCJ9.TAyzrhqOfJ-UCy35T3w5-wInF4NQ9grOlSD1VKlg0tM";
 
-	const id = "643fe71a18ab56057501e8be";
+	const id = "6441c4ca52e8be9f7711accb";
 
 	/*MD
   Next, you can get the component with the `use` command. That will give you the class of the component, which you can
@@ -144,6 +144,8 @@
   step forward in your journey to build your own BIM software. 🥳 Don't forget to check out That Open Platform if
   you haven't already!
   */
+
+    // TODO: Use tool that has some geometry / ui elements to show it in the scene
 
 </script>
 </body>

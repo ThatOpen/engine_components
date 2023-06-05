@@ -39,8 +39,7 @@
 
 	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
-	const grey = new THREE.Color(0xcccccc);
-	const grid = new OBC.SimpleGrid(components, 1, 10, grey, 100);
+	const grid = new OBC.SimpleGrid(components);
 	components.tools.add(grid);
 
   const boxMaterial = new THREE.MeshStandardMaterial({ color: '#6528D7' });
