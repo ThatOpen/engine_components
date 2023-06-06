@@ -44,6 +44,8 @@
     "bim-fragment": "0.0.19",
     "camera-controls": "^1.36.0",
     "dexie": "^3.2.3",
+    "n8ao": "^1.5.1",
+    "postprocessing": "^6.31.0",
     "stats.js": "^0.17.0",
     "tailwindcss": "^3.3.2",
     "three": "0.152.2",

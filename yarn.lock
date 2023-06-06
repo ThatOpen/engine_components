@@ -5679,6 +5679,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"n8ao@npm:^1.5.1":
+  version: 1.5.1
+  resolution: "n8ao@npm:1.5.1"
+  peerDependencies:
+    postprocessing: ">=6.30.0"
+    three: ">=0.137"
+  checksum: 228ad7eba3833bda9941065c37ee83e9f273160e359a6978a8ff42059b8922ad823f8907424985a2cc970e2aa3413bda6b0f0a475c48d9b9cf697c04abdb25e1
+  languageName: node
+  linkType: hard
+
 "nan@npm:^2.17.0":
   version: 2.17.0
   resolution: "nan@npm:2.17.0"
@@ -6038,6 +6048,8 @@ __metadata:
     fake-indexeddb: ^4.0.1
     gl: ^6.0.2
     jest: ^27.0.4
+    n8ao: ^1.5.1
+    postprocessing: ^6.31.0
     prettier: ^2.3.1
     rollup: ^3.2.3
     stats.js: ^0.17.0
@@ -6426,6 +6438,15 @@ __metadata:
     picocolors: ^1.0.0
     source-map-js: ^1.0.2
   checksum: 8bb9d1b2ea6e694f8987d4f18c94617971b2b8d141602725fedcc2222fdc413b776a6e1b969a25d627d7b2681ca5aabb56f59e727ef94072e1b6ac8412105a2f
+  languageName: node
+  linkType: hard
+
+"postprocessing@npm:^6.31.0":
+  version: 6.31.0
+  resolution: "postprocessing@npm:6.31.0"
+  peerDependencies:
+    three: ">= 0.138.0 < 0.153.0"
+  checksum: e663c8f2456fa8a6ed1b8094d14459923d4a0ac458b1b095738271671c74fb5905f3affdc931e30528070818915b88b513b54b865dd2c1a5a3fa9c837cb5ef92
   languageName: node
   linkType: hard
 

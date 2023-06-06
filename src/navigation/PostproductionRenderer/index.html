@@ -28,6 +28,7 @@
 	import Stats from 'stats.js/src/Stats.js';
 	import * as THREE from 'three';
 	import * as OBC from 'openbim-components';
+    import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
 
 	// Set up basic components
 
@@ -63,6 +64,16 @@
 
    components.camera.controls.setLookAt(10, 8, 20, 0, 0, 10);
 
+    // Set up stats
+
+    const stats = new Stats();
+    stats.showPanel(2);
+    document.body.append(stats.dom);
+    stats.dom.style.left = '0px';
+    const renderer = components.renderer;
+    renderer.beforeUpdate.on(() => stats.begin());
+    renderer.afterUpdate.on(() => stats.end());
+
     /*MD
     ### 🧪 Cool Post-Production Effects
     ---
@@ -96,12 +107,23 @@
     const file = await fetch("../../../resources/small.frag");
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
-    fragments.load(buffer);
+    const ids = fragments.load(buffer);
+
+    const culler = new OBC.ScreenCuller(components);
+    for(const id of ids) {
+      const fragment = fragments.list[id];
+      culler.add(fragment.mesh);
+    }
+    culler.needsUpdate = true;
+
+    const controls = components.camera.controls;
+    controls.addEventListener("controlend", () => {
+      culler.needsUpdate = true;
+    })
 
 	/*MD
 	### 🎛️ Setting Up Post-Production
 	---
-	We'll now set up the post-production, which requires modifying the renderer to use the preferences we've specified.
 
     Let's start by specifying the outline color, we'll set it to `0x999999`. Also, we will pass the
     camera controls to the post-production object.
@@ -109,18 +131,7 @@
 	 */
 
 	components.renderer.postproduction.outlineColor = 0x999999;
-	components.renderer.postproduction.setup(components.camera.controls);
 
-    /*MD
-    ### ❎ Excluding Unwanted Elements
-    ---
-    At times, we might have to turn off post-production effects for some elements.
-    By doing this, the scene is kept clean and unnecessary computation is avoided.🐢
-
-     */
-
-    const gridMesh = grid.get();
-    components.renderer.postproduction.excludedItems.add(gridMesh);
 
     /*MD
     ### 🎬 Activating the Post-Production
@@ -134,44 +145,39 @@
 
      */
 
-	components.renderer.postproduction.active = true;
-	components.renderer.postproduction.visible = true;
+	components.renderer.postproduction.enabled = true;
+    const postproduction = components.renderer.postproduction;
 
-    /*MD
-    ### 🔄 Updating Post-Product Effect
-    ---
+    postproduction.outlineColor = 0x202932;
 
-    Every time the **camera** is changed, we also need to update the post-production effect.🎥
-    In order to achieve this, we will write an easy timeout function that will be called after **1000** milliseconds.
+    const configuration = postproduction.n8ao.configuration;
 
-    */
-	let timeout;
-	function updatePostproduction() {
-		clearTimeout(timeout);
-		components.renderer.postproduction.visible = false;
-		timeout = setTimeout(() => {
-			components.renderer.postproduction.active = true;
-			components.renderer.postproduction.visible = true;
-			components.renderer.postproduction.update();
-		}, 1000);
-    }
+    postproduction.n8ao.setQualityMode("Low");
 
-    /*MD
+    configuration.aoSamples = 10;
+    configuration.denoiseSamples = 1;
+    configuration.denoiseRadius = 1;
+    configuration.aoRadius = 1;
+    configuration.distanceFalloff = 4;
+    configuration.aoRadius = 1;
+    configuration.intensity = 4;
 
-    :::tip Timing the Function Execution
+    configuration.halfRes = true;
+    configuration.color = new THREE.Color().setHex(0xcccccc, "srgb-linear");
 
-    ⏱️ Check out [setTimout](https://developer.mozilla.org/en-US/docs/Web/API/setTimeout) for more information on
-    how **setTimeout** can be useful when you want to run a function after a certain amount of time!
+    const gui = new dat.GUI();
+    gui.add(postproduction, "enabled");
+    gui.add(configuration, "aoSamples").step(1).min(1).max(16);
+    gui.add(configuration, "denoiseSamples").step(1).min(0).max(16);
+    gui.add(configuration, "denoiseRadius").step(1).min(0).max(100);
+    gui.add(configuration, "aoRadius").step(1).min(0).max(16);
+    gui.add(configuration, "distanceFalloff").step(1).min(0).max(16);
+    gui.add(configuration, "intensity").step(1).min(0).max(16);
+    gui.add(configuration, "halfRes");
+    gui.add(configuration, "screenSpaceRadius");
+    gui.addColor(configuration, "color");
+    gui.addColor(postproduction, "outlineColor");
 
-    :::
-
-    Now, we will invoke the `updatePostproduction` method on mouse events.📢
-    The **updatePostproduction** function will be invoked each time a user scrolls to zoom-in or zoom-out and whenever any mouse buttons are pressed.
-
-     */
-	window.onwheel = () => updatePostproduction();
-	window.onmousedown = () => updatePostproduction();
-	window.onmouseup = () => updatePostproduction();
 
     /*MD
     **Congratulations** 🎉 on completing this tutorial! Now you know how to add cool effects easily using
