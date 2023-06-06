@@ -71,6 +71,7 @@ export class Postproduction {
     this._renderTarget.dispose();
     this._depthTexture?.dispose();
     this._customOutline?.dispose();
+    this.n8ao?.dispose();
     this.excludedItems.clear();
   }
 

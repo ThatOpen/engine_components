@@ -121,23 +121,12 @@
       culler.needsUpdate = true;
     })
 
-	/*MD
-	### 🎛️ Setting Up Post-Production
-	---
-
-    Let's start by specifying the outline color, we'll set it to `0x999999`. Also, we will pass the
-    camera controls to the post-production object.
-
-	 */
-
-	components.renderer.postproduction.outlineColor = 0x999999;
-
 
     /*MD
     ### 🎬 Activating the Post-Production
     ---
 
-    Now that set up is complete, we wil activate the post-production effect.
+    We will activate the post-production effect.
     Also, we will enable the visibility for post-production layer.
 
     - `postproduction.active` - Enable or Disable the active status of the post-processing effect
@@ -147,8 +136,6 @@
 
 	components.renderer.postproduction.enabled = true;
     const postproduction = components.renderer.postproduction;
-
-    postproduction.outlineColor = 0x202932;
 
     const configuration = postproduction.n8ao.configuration;
 
@@ -176,8 +163,6 @@
     gui.add(configuration, "halfRes");
     gui.add(configuration, "screenSpaceRadius");
     gui.addColor(configuration, "color");
-    gui.addColor(postproduction, "outlineColor");
-
 
     /*MD
     **Congratulations** 🎉 on completing this tutorial! Now you know how to add cool effects easily using
