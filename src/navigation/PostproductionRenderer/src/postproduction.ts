@@ -77,7 +77,7 @@ export class Postproduction {
 
   setSize(width: number, height: number) {
     this.composer.setSize(width, height);
-    console.log(this.n8ao);
+    this.n8ao?.setSize(width, height);
   }
 
   update() {
@@ -154,6 +154,16 @@ export class Postproduction {
     const { width, height } = this.components.renderer.getSize();
     this.n8ao = new N8AOPass(scene, camera, width, height);
     this.composer.addPass(this.n8ao);
+    const { configuration } = this.n8ao;
+    configuration.aoSamples = 16;
+    configuration.denoiseSamples = 1;
+    configuration.denoiseRadius = 3;
+    configuration.aoRadius = 1;
+    configuration.distanceFalloff = 4;
+    configuration.aoRadius = 1;
+    configuration.intensity = 4;
+    configuration.halfRes = true;
+    configuration.color = new THREE.Color().setHex(0xcccccc, "srgb-linear");
   }
 
   private addBasePass(scene: THREE.Scene, camera: THREE.PerspectiveCamera) {

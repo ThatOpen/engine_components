@@ -104,7 +104,7 @@
     */
 
     const fragments = new OBC.FragmentManager(components);
-    const file = await fetch("../../../resources/small.frag");
+    const file = await fetch("../../../resources/model.frag");
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
     const ids = fragments.load(buffer);
@@ -120,6 +120,11 @@
     controls.addEventListener("controlend", () => {
       culler.needsUpdate = true;
     })
+
+    const clipper = new OBC.SimpleClipper(components, OBC.SimplePlane);
+    clipper.enabled = true;
+
+    window.ondblclick = () => clipper.create();
 
 
     /*MD
@@ -138,19 +143,6 @@
     const postproduction = components.renderer.postproduction;
 
     const configuration = postproduction.n8ao.configuration;
-
-    postproduction.n8ao.setQualityMode("Low");
-
-    configuration.aoSamples = 10;
-    configuration.denoiseSamples = 1;
-    configuration.denoiseRadius = 1;
-    configuration.aoRadius = 1;
-    configuration.distanceFalloff = 4;
-    configuration.aoRadius = 1;
-    configuration.intensity = 4;
-
-    configuration.halfRes = true;
-    configuration.color = new THREE.Color().setHex(0xcccccc, "srgb-linear");
 
     const gui = new dat.GUI();
     gui.add(postproduction, "enabled");
