@@ -9,12 +9,6 @@ type CubeMapPositions =
   | "bottom-right"
   | "bottom-left";
 
-type CubeMapPositions =
-  | "top-left"
-  | "top-right"
-  | "bottom-right"
-  | "bottom-left";
-
 export type CubeMapFace =
   | "front"
   | "top"
