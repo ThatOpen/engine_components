@@ -1,15 +1,9 @@
 <p align="center">
-  <a href="https://ifcjs.io/">ifc.js</a>
-  |
-  <a href="https://ifcjs.github.io/components/docs/index.html">documentation</a>
-  |
-  <a href=https://ifcjs.github.io/components/examples/fragment-hello-world.html>demo</a>
+  <a href=https://ifcjs.github.io/components/src/core/SimpleScene/index.html>demo</a>
   |
   <a href="https://discord.gg/FXfyR4XrKT">discord</a>
   |
   <a href="https://www.npmjs.com/package/openbim-components">npm package</a>
-  |
-  <a href="https://airtable.com/shrP82Kgb9Q1LEgbU">roadmap</a>
 </p>
 
 ![cover](cover.png)
