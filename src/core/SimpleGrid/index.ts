@@ -29,15 +29,38 @@ export class SimpleGrid
     this._grid.visible = visible;
   }
 
+  /** The material of the grid. */
+  get material() {
+    return this._grid.material as THREE.ShaderMaterial;
+  }
+
+  /**
+   * Whether the grid should fade away with distance. Recommended to be true for
+   * perspective cameras and false for orthographic cameras.
+   */
+  get fade() {
+    return this._fade === 3;
+  }
+
+  /**
+   * Whether the grid should fade away with distance. Recommended to be true for
+   * perspective cameras and false for orthographic cameras.
+   */
+  set fade(active: boolean) {
+    this._fade = active ? 3 : 0;
+    this.material.uniforms.uFade.value = this._fade;
+  }
+
   private readonly _grid: THREE.Mesh;
   private _disposer = new Disposer();
+  private _fade = 3;
 
   constructor(
     components: Components,
     size1: number = 1,
     size2: number = 10,
     color = new THREE.Color(0xcccccc),
-    distance: number = 100
+    distance: number = 500
   ) {
     super();
     // Source: https://github.com/dkaraush/THREE.InfiniteGridHelper/blob/master/InfiniteGridHelper.ts
@@ -60,6 +83,9 @@ export class SimpleGrid
         },
         uDistance: {
           value: distance,
+        },
+        uFade: {
+          value: this._fade,
         },
       },
       transparent: true,
@@ -85,6 +111,7 @@ export class SimpleGrid
             
             varying vec3 worldPosition;
             
+            uniform float uFade;
             uniform float uSize1;
             uniform float uSize2;
             uniform vec3 uColor;
@@ -113,7 +140,7 @@ export class SimpleGrid
                     float g2 = getGrid(uSize2);
                     
                     
-                    gl_FragColor = vec4(uColor.rgb, mix(g2, g1, g1) * pow(d, 3.0));
+                    gl_FragColor = vec4(uColor.rgb, mix(g2, g1, g1) * pow(d, uFade));
                     gl_FragColor.a = mix(0.5 * gl_FragColor.a, gl_FragColor.a, g2);
                     
                     if ( gl_FragColor.a <= 0.0 ) discard;

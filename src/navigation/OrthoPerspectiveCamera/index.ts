@@ -32,7 +32,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
   protected readonly _userInputButtons: any = {};
   protected readonly _frustumSize = 50;
   protected readonly _navigationModes = new Map<NavModeID, NavigationMode>();
-  uiElement!: Button;
+  uiElement: Button;
 
   constructor(components: Components) {
     super(components);
@@ -49,7 +49,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
     this.toggleEvents(true);
 
     this._projectionManager = new ProjectionManager(components, this);
-    this.setUI();
+    this.uiElement = this.setUI();
   }
 
   private setUI() {
@@ -61,6 +61,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
       materialIconName: "camera",
       name: "Projection",
     });
+
     const perspective = new Button(this.components, { name: "Perspective" });
     perspective.active = true;
     perspective.onclick = () => this.setProjection("Perspective");
@@ -72,11 +73,14 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
       materialIconName: "open_with",
       name: "Navigation",
     });
+
     const orbit = new Button(this.components, { name: "Orbit Around" });
     orbit.onclick = () => this.setNavigationMode("Orbit");
     const plan = new Button(this.components, { name: "Plan View" });
     plan.onclick = () => this.setNavigationMode("Plan");
-    navigation.addButton(orbit, plan);
+    const firstPerson = new Button(this.components, { name: "First person" });
+    firstPerson.onclick = () => this.setNavigationMode("FirstPerson");
+    navigation.addButton(orbit, plan, firstPerson);
 
     mainButton.addButton(navigation, projection);
 
@@ -90,7 +94,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
       }
     });
 
-    this.uiElement = mainButton;
+    return mainButton;
   }
 
   /** {@link Disposable.dispose} */
