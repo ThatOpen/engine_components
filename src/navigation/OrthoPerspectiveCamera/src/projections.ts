@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import CameraControls from "camera-controls";
 import { Components } from "../../../core";
-import { OrthoPerspectiveCamera } from "../index";
 import { CameraProjection } from "./types";
 
 /**
@@ -14,10 +13,10 @@ export class ProjectionManager {
 
   private _currentProjection: CameraProjection;
   private _currentCamera: THREE.PerspectiveCamera | THREE.OrthographicCamera;
-  private _camera: OrthoPerspectiveCamera;
+  private _camera: any;
   private _previousDistance = -1;
 
-  constructor(private components: Components, camera: OrthoPerspectiveCamera) {
+  constructor(private components: Components, camera: any) {
     this._camera = camera;
     const perspective = "Perspective";
     this._currentCamera = camera.get(perspective);
