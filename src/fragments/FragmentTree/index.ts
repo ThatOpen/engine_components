@@ -1,6 +1,6 @@
 import { Component, UI } from "../../base-types";
 import { TreeView } from "../../ui";
-import { FragmentTreeItem } from "./tree-item";
+import { FragmentTreeItem } from "./src/tree-item";
 import { Components } from "../../core";
 import { FragmentGrouper } from "../FragmentGrouper";
 import { FragmentHighlighter } from "../FragmentHighlighter";
@@ -9,21 +9,25 @@ export class FragmentTree extends Component<FragmentTreeItem> implements UI {
   uiElement: TreeView;
   name: string;
   enabled: boolean = true;
-  private _components: Components;
   groupSystemNames: string[];
   functionsMap: { [groupSystemName: string]: () => void } = {};
+  private _components: Components;
+  private _fragmentHighlighter: FragmentHighlighter;
+  private _fragmentGrouper: FragmentGrouper;
 
   private readonly _tree: FragmentTreeItem;
 
   constructor(
     components: Components,
-    private _fragmentHighlighter: FragmentHighlighter,
-    private _fragmentGrouper: FragmentGrouper,
+    fragmentHighlighter: FragmentHighlighter,
+    fragmentGrouper: FragmentGrouper,
     name: string,
     groupSystemNames: string[]
   ) {
     super();
     this._components = components;
+    this._fragmentGrouper = fragmentGrouper;
+    this._fragmentHighlighter = fragmentHighlighter;
     this.name = name;
     this.groupSystemNames = groupSystemNames;
 

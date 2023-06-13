@@ -1,5 +1,7 @@
+import { Disposable } from "../../base-types";
+import { Component } from "../../base-types/component";
+import { Components } from "../../core/Components";
 import { FragmentManager } from "../FragmentManager";
-import { Component, Disposable } from "../../base-types";
 
 // TODO: Clean up and document
 
@@ -15,26 +17,26 @@ export class FragmentGrouper
   extends Component<GroupSystems>
   implements Disposable
 {
+  private _groupSystems: GroupSystems = { models: {} };
   /** {@link Component.name} */
   name = "FragmentGrouper";
 
   /** {@link Component.enabled} */
   enabled = true;
 
-  private _groupSystems: GroupSystems = {
-    category: {},
-    floor: {},
-  };
+  private _fragmentManager: FragmentManager;
 
-  private _fragments: FragmentManager;
+  // @ts-ignore
+  private _components: Components;
 
-  constructor(fragments: FragmentManager) {
+  constructor(components: Components, fragmentManager: FragmentManager) {
     super();
-    this._fragments = fragments;
+    this._components = components;
+    this._fragmentManager = fragmentManager;
   }
 
   /** {@link Component.get} */
-  get() {
+  get(): GroupSystems {
     return this._groupSystems;
   }
 
@@ -61,7 +63,7 @@ export class FragmentGrouper
   setVisibility(systemName: string, groupName: string, visible: boolean) {
     const fragmentsMap = this._groupSystems[systemName][groupName];
     for (const fragmentId in fragmentsMap) {
-      const fragment = this._fragments.list[fragmentId];
+      const fragment = this._fragmentManager.list[fragmentId];
       const ids = fragmentsMap[fragmentId];
       fragment.setVisibility(ids, visible);
     }

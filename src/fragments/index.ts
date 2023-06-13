@@ -6,3 +6,4 @@ export * from "./FragmentGrouper";
 export * from "./fragment-edges";
 export * from "./FragmentGroups";
 export * from "./FragmentCacher";
+export * from "./FragmentCoordinator";
