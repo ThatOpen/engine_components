@@ -60,8 +60,8 @@ export class Toolbar extends SimpleUIComponent<HTMLDivElement> {
     toolbar.className =
       "flex shadow-md w-fit h-fit gap-x-2 gap-y-2 p-2 text-white rounded pointer-events-auto bg-ifcjs-100 z-50 backdrop-blur-md";
     super(components, toolbar, options?.id);
-    this.name = _options?.name ?? "Toolbar";
-    this.position = _options?.position ?? "bottom";
+    this.name = _options.name ?? "Toolbar";
+    this.position = _options.position ?? "bottom";
     this.visible = true;
   }
 
