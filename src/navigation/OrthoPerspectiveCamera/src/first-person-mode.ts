@@ -2,7 +2,6 @@ import * as THREE from "three";
 import CameraControls from "camera-controls";
 import { NavigationMode } from "./types";
 import { Event } from "../../../base-types";
-import { OrthoPerspectiveCamera } from "../index";
 
 /**
  * A {@link NavigationMode} that allows first person navigation,
@@ -18,7 +17,7 @@ export class FirstPersonMode implements NavigationMode {
   /** {@link NavigationMode.projectionChanged} */
   readonly projectionChanged = new Event<THREE.Camera>();
 
-  constructor(private camera: OrthoPerspectiveCamera) {}
+  constructor(private camera: any) {}
 
   /** {@link NavigationMode.toggle} */
   toggle(active: boolean) {

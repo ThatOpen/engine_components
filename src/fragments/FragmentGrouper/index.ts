@@ -18,7 +18,6 @@ export class FragmentGrouper
   implements Disposable
 {
   private _groupSystems: GroupSystems = { models: {} };
-
   /** {@link Component.name} */
   name = "FragmentGrouper";
 

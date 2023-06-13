@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { NavigationMode } from "./types";
-import { OrthoPerspectiveCamera } from "../index";
 import { Event } from "../../../base-types";
 
 /**
@@ -17,7 +16,7 @@ export class OrbitMode implements NavigationMode {
   /** {@link NavigationMode.projectionChanged} */
   readonly projectionChanged = new Event<THREE.Camera>();
 
-  constructor(public camera: OrthoPerspectiveCamera) {
+  constructor(public camera: any) {
     this.activateOrbitControls();
   }
 
