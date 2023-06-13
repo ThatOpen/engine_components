@@ -45,14 +45,14 @@ export class TextAnnotation extends BaseSVGAnnotation implements UI {
 
   start(e: MouseEvent) {
     if (!this.canDraw) {
-      return;
+      return undefined;
     }
     if (!this._isDrawing) {
       this._isDrawing = true;
       const text = prompt("Enter your text", this._previewElement.text);
       if (!text) {
         this.cancel();
-        return;
+        return undefined;
       }
       this._previewElement.setStyle(this.drawManager?.viewport.config);
       this._previewElement.text = text;
@@ -66,6 +66,7 @@ export class TextAnnotation extends BaseSVGAnnotation implements UI {
       this.cancel();
       return text;
     }
+    return undefined;
   }
 
   draw(e: MouseEvent) {

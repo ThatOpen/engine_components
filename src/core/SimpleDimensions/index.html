@@ -81,7 +81,7 @@
 	scene.add(ambientLight);
 
     const grid = new OBC.SimpleGrid(components);
-    components.tools.add(grid);
+    components.tools.add("grid", grid);
 
 	/*MD
 	### 📏 Dimensions Tool
@@ -152,7 +152,7 @@
 
      */
 
-    components.tools.add(dimensions);
+    components.tools.add("dimensions", dimensions);
 
     /*MD
     :::tip Adding it to the tools component
@@ -217,7 +217,7 @@
 
      */
 	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
-	mainToolbar.addButton(dimensions.uiElement);
+	mainToolbar.addChild(dimensions.uiElement);
 	components.ui.addToolbar(mainToolbar);
 
     /*MD

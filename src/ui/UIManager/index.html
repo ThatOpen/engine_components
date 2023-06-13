@@ -54,7 +54,7 @@
 	scene.add(ambientLight);
 
 	const grid = new OBC.SimpleGrid(components);
-	components.tools.add(grid);
+	components.tools.add("grid", grid);
 
 	/*MD
   ### 🎛️ Making your user interactive
@@ -111,13 +111,13 @@
   ### 👨‍🎨 Creating your own UIs
   ___
   Of course, UI Components can also be used stand-alone, either to build your own components or to add menus to your
-  app very fast! Let's start with a simple one: a Button Component that sends an alert message. 🍼  Button components
-  can only be added inside a toolbar. To do so, we can simply add the following code:
+  app very fast! Let's start with a simple one: a Button Component that sends an alert message. 🍼 To do so, we can simply add 
+  the following code:
 
   */
 
 	const alertButton = new OBC.Button(components, { materialIconName: 'info' });
-	mainToolbar.addButton(alertButton);
+	mainToolbar.addChild(alertButton);
 	alertButton.onclick = () => {
 		alert('I\'ve been clicked!');
 	}
@@ -227,7 +227,7 @@
 		materialIconName: 'widgets'
 	});
 
-	mainToolbar.addButton(cubeTools);
+	mainToolbar.addChild(cubeTools);
 
 	/*MD
 
@@ -245,7 +245,7 @@
 	});
 
 	createCubeButton.onclick = () => createBox();
-	cubeTools.addButton(createCubeButton);
+	cubeTools.addChild(createCubeButton);
 
 	/*MD
 
@@ -259,7 +259,7 @@
 		name: 'Delete box'
 	});
 
-	cubeTools.addButton(deleteCubeButtons);
+	cubeTools.addChild(deleteCubeButtons);
 
 	/*MD
 
@@ -275,7 +275,7 @@
 
 	deleteSingleCubeButton.onclick = () => deleteBox();
 
-	deleteCubeButtons.addButton(deleteSingleCubeButton);
+	deleteCubeButtons.addChild(deleteSingleCubeButton);
 
 	/*MD
 
@@ -289,7 +289,7 @@
 	});
 
 	deleteAllCubesButton.onclick = () => deleteAllBoxes();
-	deleteCubeButtons.addButton(deleteAllCubesButton);
+	deleteCubeButtons.addChild(deleteAllCubesButton);
 
 	/*MD
 
@@ -318,9 +318,9 @@
 
 	deleteAllCubesContextButton.onclick = () => deleteAllBoxes();
 
-	contextDeleteButtons.addButton(deleteAllCubesContextButton);
+	contextDeleteButtons.addChild(deleteAllCubesContextButton);
 
-	components.ui.contextMenu.addButton(contextDeleteButtons);
+	components.ui.contextMenu.addChild(contextDeleteButtons);
 
 	/*MD
 

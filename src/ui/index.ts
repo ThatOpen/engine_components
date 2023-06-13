@@ -11,5 +11,4 @@ export * from "./TextInput";
 export * from "./CheckboxInput";
 export * from "./ColorInput";
 export * from "./RangeInput";
-export * from "./VerticalStack";
 export * from "./UIComponentsStack";

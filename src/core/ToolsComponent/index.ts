@@ -1,17 +1,19 @@
 import { Component, Disposable, Event } from "../../base-types";
 
+type ToolsList = { [id: symbol | string]: Component<any> };
+
 /**
  * An object to easily handle all the tools used (e.g. updating them, retrieving
  * them, performing batch operations, etc). A tool is a feature that achieves
  * something through user interaction (e.g. clipping planes, dimensions, etc).
  */
 export class ToolComponent
-  extends Component<Component<any> | undefined>
+  extends Component<ToolsList | Component<any> | null>
   implements Disposable
 {
-  tools: Component<any>[] = [];
-  onToolAdded: Event<Component<any>> = new Event()
-  onToolRemoved: Event<Component<any>> = new Event()
+  private _list: ToolsList = {};
+  onToolAdded: Event<Component<any>> = new Event();
+  onToolRemoved: Event<null> = new Event();
 
   /** {@link Component.name} */
   name = "ToolComponent";
@@ -25,36 +27,39 @@ export class ToolComponent
   };
 
   /**
-   * Registers a new tool component.
-   * @param tool - The tool to register in the application.
+   * Registers a new tool component in the application instance.
+   * @param id - Unique ID to register the tool in the application.
+   * @param tool - The tool to register.
    */
-  add(...tool: Component<any>[]) {
-    tool.forEach( t => {
-      this.tools.push(t);
-      this.onToolAdded.trigger(t);
-    } );
+  add(id: symbol | string, tool: Component<any>) {
+    const existingTool = this._list[id];
+    if (existingTool) {
+      console.warn(`A tool with the id: ${String(id)} already exists`);
+      return;
+    }
+    this._list[id] = tool;
   }
 
   /**
    * Deletes a previously registered tool component.
-   * @param tool - The tool to delete.
+   * @param id - The registered ID of the tool to be delete.
    */
-  remove(tool: Component<any>) {
-    const index = this.tools.findIndex((c) => c === tool);
-    if (index > -1) {
-      this.tools.splice(index, 1);
-      this.onToolRemoved.trigger(tool);
-      return true;
-    }
-    return false;
+  remove(id: symbol | string) {
+    delete this._list[id];
+    this.onToolRemoved.trigger();
   }
 
   /**
-   * Retrieves a tool component by its name.
-   * @param name - The {@link Component.name} of the component..
+   * Retrieves a tool component by its registered id.
+   * @param id - The id of the registered tool.
    */
-  get(name: string) {
-    return this.tools.find((tool) => tool.name === name);
+  get<T extends Component<any> | null = null>(
+    id?: symbol | string
+  ): T extends null ? ToolsList : T | null {
+    if (!id) {
+      return this._list as T extends null ? ToolsList : T | null;
+    }
+    return this._list[id] as T extends null ? ToolsList : T | null;
   }
 
   /**
@@ -78,7 +83,8 @@ export class ToolComponent
    * [delta time](https://threejs.org/docs/#api/en/core/Clock) of the loop.
    */
   update(delta: number) {
-    for (const tool of this.tools) {
+    const tools = Object.values(this._list);
+    for (const tool of tools) {
       if (tool.enabled && tool.isUpdateable()) {
         tool.update(delta);
       }
@@ -89,12 +95,12 @@ export class ToolComponent
    * Disposes all the memory used by all the tools.
    */
   dispose() {
-    for (const tool of this.tools) {
+    const tools = Object.values(this._list);
+    for (const tool of tools) {
       tool.enabled = false;
       if (tool.isDisposeable()) {
         tool.dispose();
       }
     }
-    this.tools = [];
   }
 }

@@ -165,7 +165,7 @@ export class SimpleSVGViewport extends Component<SVGElement> {
     settingsWindow.onHidden.on(() => (settingsBtn.active = false));
 
     const toolbar = new Toolbar(this._components, { position: "right" });
-    toolbar.addButton(
+    toolbar.addChild(
       settingsBtn,
       undoDrawingBtn,
       redoDrawingBtn,

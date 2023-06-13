@@ -57,7 +57,7 @@
 	scene.add(ambientLight);
 
 	const grid = new OBC.SimpleGrid(components);
-	components.tools.add(grid);
+	components.tools.add("grid", grid);
 
 	let fragments = new OBC.FragmentManager(components);
 
@@ -65,7 +65,7 @@
 
 	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
 	components.ui.addToolbar(mainToolbar);
-	mainToolbar.addButton(fragmentIfcLoader.uiElement);
+	mainToolbar.addChild(fragmentIfcLoader.uiElement);
 
 	fragmentIfcLoader.settings.wasm = {
 		path: "https://unpkg.com/web-ifc@0.0.39/",

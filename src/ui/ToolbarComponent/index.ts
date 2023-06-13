@@ -1,36 +1,31 @@
-import { Hideable, UIComponent } from "../../base-types/base-types";
-import { Component } from "../../base-types/component";
 import { Button } from "../ButtonComponent";
 import { IContainerPosition } from "../UIManager";
 import { Components } from "../../core/Components";
+import { SimpleUIComponent } from "../SimpleUIComponent";
 
 interface IToolbarOptions {
   name?: string;
   position?: IContainerPosition;
+  id?: string;
 }
 
 type IToolbarDirection = "horizontal" | "vertical";
 
-export class Toolbar
-  extends Component<HTMLDivElement>
-  implements Hideable, UIComponent
-{
+export class Toolbar extends SimpleUIComponent<HTMLDivElement> {
   name: string;
-  domElement: HTMLDivElement = document.createElement("div");
   children: Button[] = [];
   parent?: Button;
-  components: Components;
 
   private _position!: IContainerPosition;
-  private _enabled: boolean = true;
-  private _visible: boolean = true;
 
   set visible(visible: boolean) {
     this._visible = visible && this.hasElements;
     if (visible && this.hasElements) {
       this.domElement.classList.remove("hidden");
+      this.onVisible.trigger(this.get());
     } else {
       this.domElement.classList.add("hidden");
+      this.onHidden.trigger(this.get());
     }
   }
 
@@ -47,10 +42,6 @@ export class Toolbar
     this._enabled = enabled;
   }
 
-  get enabled() {
-    return this._enabled;
-  }
-
   set position(position: IContainerPosition) {
     this._position = position;
     this.updateElements();
@@ -61,18 +52,16 @@ export class Toolbar
   }
 
   constructor(components: Components, options?: IToolbarOptions) {
-    super();
-    this.components = components;
-    const _options: Required<IToolbarOptions> = {
-      name: "Toolbar",
+    const _options: IToolbarOptions = {
       position: "bottom",
       ...options,
     };
-    this.name = _options.name;
-    this.domElement.id = _options.name;
-    this.domElement.className =
+    const toolbar = document.createElement("div");
+    toolbar.className =
       "flex shadow-md w-fit h-fit gap-x-2 gap-y-2 p-2 text-white rounded pointer-events-auto bg-ifcjs-100 z-50 backdrop-blur-md";
-    this.position = _options.position;
+    super(components, toolbar, options?.id);
+    this.name = _options?.name ?? "Toolbar";
+    this.position = _options?.position ?? "bottom";
     this.visible = true;
   }
 
@@ -91,13 +80,12 @@ export class Toolbar
     return this.domElement;
   }
 
-  addButton(...button: Button[]) {
+  addChild(...button: Button[]) {
     button.forEach((btn) => {
       btn.parent = this;
       this.children.push(btn);
       this.domElement.append(btn.domElement);
     });
-    // @ts-ignore
     this.components.ui.updateToolbars();
   }
 

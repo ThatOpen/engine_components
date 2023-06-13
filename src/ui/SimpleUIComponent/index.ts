@@ -1,5 +1,6 @@
-import { Component, Hideable, UIComponent, Event } from "../../base-types";
-import { Components } from "../../core";
+import { Hideable, UIComponent, Event } from "../../base-types/base-types";
+import { Component } from "../../base-types/component";
+import { Components } from "../../core/Components";
 import { tooeenRandomId } from "../../utils";
 
 export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
@@ -15,8 +16,18 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   onHidden: Event<T> = new Event();
   onEnabled: Event<T> = new Event();
   onDisabled: Event<T> = new Event();
+
   protected _enabled: boolean = true;
   protected _visible: boolean = true;
+  protected _active: boolean = false;
+
+  get active() {
+    return this._active;
+  }
+  set active(active: boolean) {
+    this.domElement.setAttribute("data-active", String(active));
+    this._active = active;
+  }
 
   get visible() {
     return this._visible;
@@ -48,11 +59,16 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
     // this.onVisibilityChanged.trigger(value);
   }
 
+  get hasElements() {
+    return this.children.length > 0;
+  }
+
   constructor(components: Components, domElement: T, id?: string) {
     super();
     this.components = components;
-    this.domElement = domElement;
     this.id = id ?? tooeenRandomId();
+    domElement.id = this.id;
+    this.domElement = domElement;
   }
 
   get(): T {

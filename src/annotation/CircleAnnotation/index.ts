@@ -38,7 +38,7 @@ export class CircleAnnotation extends BaseSVGAnnotation {
 
   start(e: MouseEvent) {
     if (!this.canDraw) {
-      return;
+      return undefined;
     }
     if (!this._isDrawing) {
       this._isDrawing = true;
@@ -53,6 +53,7 @@ export class CircleAnnotation extends BaseSVGAnnotation {
       this.cancel();
       return circle;
     }
+    return undefined;
   }
 
   cancel() {

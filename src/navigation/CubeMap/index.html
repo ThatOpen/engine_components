@@ -40,7 +40,7 @@
 	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
 	const grid = new OBC.SimpleGrid(components);
-	components.tools.add(grid);
+	components.tools.add("grid", grid);
 
   const boxMaterial = new THREE.MeshStandardMaterial({ color: '#6528D7' });
   const boxGeometry = new THREE.BoxGeometry(3, 3, 3);
@@ -61,7 +61,7 @@
 
 	const navCube = new OBC.CubeMap(components);
 	navCube.setPosition("bottom-left");
-	components.tools.add(navCube);
+	components.tools.add("navCube", navCube);
 
 </script>
 </body>

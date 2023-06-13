@@ -4,13 +4,12 @@ import {
   Instance as PopperInstance,
   // @ts-ignore
 } from "@popperjs/core/dist/esm";
-import { Hideable, UIComponent, Event } from "../../base-types/base-types";
-import { Component } from "../../base-types/component";
+import { Event } from "../../base-types/base-types";
 import { Toolbar } from "../ToolbarComponent";
-import { Components } from "../../core";
+import { Components } from "../../core/Components";
+import { SimpleUIComponent } from "../SimpleUIComponent";
 
 interface IButtonOptions {
-  element?: HTMLButtonElement;
   materialIconName?: string;
   id?: string;
   name?: string;
@@ -18,56 +17,15 @@ interface IButtonOptions {
   closeOnClick?: boolean;
 }
 
-export class Button
-  extends Component<HTMLButtonElement>
-  implements Hideable, UIComponent
-{
+export class Button extends SimpleUIComponent<HTMLButtonElement> {
   name: string;
-  domElement: HTMLButtonElement;
   menu: Toolbar;
-  components: Components;
 
   clicked = new Event();
 
   private _closeOnClick = true;
-  private _enabled: boolean = true;
-  private _visible: boolean = true;
   private _parent!: Toolbar;
   private _popper: PopperInstance;
-  private _active: boolean = false;
-
-  get active() {
-    return this._active;
-  }
-  set active(active: boolean) {
-    this.domElement.setAttribute("data-active", String(active));
-    this._active = active;
-  }
-
-  set visible(value: boolean) {
-    this._visible = value;
-    if (value) {
-      this.domElement.classList.remove("hidden");
-      // this.onVisible.trigger(this.get());
-    } else {
-      this.domElement.classList.add("hidden");
-      // this.onHidden.trigger(this.get());
-    }
-    // this.onVisibilityChanged.trigger(value);
-  }
-
-  get visible() {
-    return this._visible;
-  }
-
-  set enabled(enabled: boolean) {
-    this.domElement.disabled = !enabled;
-    this._enabled = enabled;
-  }
-
-  get enabled() {
-    return this._enabled;
-  }
 
   set onclick(listener: (e?: MouseEvent) => void) {
     this.domElement.onclick = (e) => {
@@ -91,45 +49,38 @@ export class Button
   }
 
   constructor(components: Components, options?: IButtonOptions) {
-    super();
-    this.components = components;
+    const btn = document.createElement("button");
+    btn.className = `
+    relative flex gap-x-2 items-center bg-transparent text-white rounded-md h-fit p-2
+    hover:cursor-pointer hover:bg-ifcjs-200 hover:text-ifcjs-100
+    data-[active=true]:cursor-pointer data-[active=true]:bg-ifcjs-200 data-[active=true]:text-ifcjs-100
+    disabled:cursor-default disabled:bg-transparent disabled:text-gray-500
+    transition-all
+    `;
+    super(components, btn, options?.id);
     this.name = options?.name ?? "Custom Button";
-    if (options?.element) {
-      this.domElement = options.element;
-    } else {
-      const btn = document.createElement("button");
-      btn.id = options?.materialIconName ?? "";
-      btn.className = `
-      relative flex gap-x-2 items-center bg-transparent text-white rounded-md h-fit p-2
-      hover:cursor-pointer hover:bg-ifcjs-200 hover:text-ifcjs-100
-      data-[active=true]:cursor-pointer data-[active=true]:bg-ifcjs-200 data-[active=true]:text-ifcjs-100
-      disabled:cursor-default disabled:bg-transparent disabled:text-gray-500
-      transition-all
-      `;
-      this.domElement = btn;
-      if (options?.materialIconName) {
-        const icon = document.createElement("span");
-        icon.className = "material-icons md-18";
-        icon.innerText = options?.materialIconName;
-        btn.append(icon);
-      }
-      if (options?.name) {
-        const name = document.createElement("p");
-        name.style.whiteSpace = "nowrap";
-        name.innerText = options.name;
-        this.domElement.append(name);
-      }
-      if (options?.closeOnClick !== undefined) {
-        this._closeOnClick = options.closeOnClick;
-      }
+    if (options?.materialIconName) {
+      const icon = document.createElement("span");
+      icon.className = "material-icons md-18";
+      icon.textContent = options?.materialIconName;
+      btn.append(icon);
+    }
+    if (options?.name) {
+      const name = document.createElement("p");
+      name.style.whiteSpace = "nowrap";
+      name.textContent = options.name;
+      this.domElement.append(name);
+    }
+    if (options?.closeOnClick !== undefined) {
+      this._closeOnClick = options.closeOnClick;
     }
 
     this.domElement.onclick = (e) => {
       e.stopImmediatePropagation();
-      // @ts-ignore
-      if (!this.parent?.parent && this.components.ui) {
+      if (!this.parent?.parent) {
         this.components.ui.closeMenus();
       }
+      this.parent.closeMenus();
       this.menu.visible = true;
       this._popper.update();
     };
@@ -148,12 +99,14 @@ export class Button
         },
         {
           name: "preventOverflow",
-          // @ts-ignore
           options: { boundary: this.components.ui.viewerContainer },
         },
       ],
     });
     // #endregion
+
+    this.onEnabled.on(() => (this.domElement.disabled = false));
+    this.onDisabled.on(() => (this.domElement.disabled = true));
   }
 
   dispose(onlyChildren = false) {
@@ -167,8 +120,8 @@ export class Button
     return this.domElement;
   }
 
-  addButton(...button: Button[]) {
-    this.menu.addButton(...button);
+  addChild(...button: Button[]) {
+    this.menu.addChild(...button);
   }
 
   closeMenus() {

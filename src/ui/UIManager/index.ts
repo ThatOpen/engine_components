@@ -1,5 +1,4 @@
-// @ts-ignore
-import { createPopper } from "@popperjs/core/dist/esm";
+import { createPopper } from "@popperjs/core";
 import { Component, UIComponent } from "../../base-types";
 import { Toolbar } from "../ToolbarComponent";
 import { Components } from "../../core";
@@ -82,12 +81,18 @@ export class UIManager extends Component<Toolbar[]> {
           {
             name: "preventOverflow",
             options: {
-              boundary: this.viewerContainer,
+              boundary: Object.values(this.containers),
             },
           },
         ],
       }
     );
+
+    console.log(popperInstance.state);
+
+    /* detectOverflow(popperInstance.state, {
+      boundary: Object.values(this.containers),
+    }); */
 
     let mouseMoved = false;
     let mouseDown = false;
