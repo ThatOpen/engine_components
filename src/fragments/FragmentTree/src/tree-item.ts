@@ -61,7 +61,7 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
     const selectorName = this._options.selectionHighlighterName;
     this._fragmentHighlighter.highlightByID(
       selectorName,
-      this._fragmentGrouper.getByFilter(this.filter)
+      this._fragmentGrouper.find(this.filter)
     );
   }
 
@@ -69,7 +69,7 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
     const highlighterName = this._options.highlightHighlighterName;
     this._fragmentHighlighter.highlightByID(
       highlighterName,
-      this._fragmentGrouper.getByFilter(this.filter)
+      this._fragmentGrouper.find(this.filter)
     );
   }
 }

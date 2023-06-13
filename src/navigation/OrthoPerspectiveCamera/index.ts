@@ -8,6 +8,8 @@ import { FirstPersonMode } from "./src/first-person-mode";
 import { PlanMode } from "./src/plan-mode";
 import { Button } from "../../ui";
 
+export * from "./src/types";
+
 /**
  * A flexible camera that uses
  * [yomotsu's cameracontrols](https://github.com/yomotsu/camera-controls) to

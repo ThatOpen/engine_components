@@ -91,20 +91,17 @@
 
   Let's start by adding two Cubes, we will create a [Box Geometry](https://threejs.org/docs/index.html?q=box#api/en/geometries/BoxGeometry) and use it for both Meshes.
 
-  We'll use `Red` and `Blue` colored material for the cubes🎨, and place them at a particular distance apart.📏
-
    */
 
 	const cubeGeometry = new THREE.BoxGeometry(3, 3, 3);
 
-	const cubeMaterial = new THREE.MeshStandardMaterial({ color: 'red' });
+	const cubeMaterial = new THREE.MeshStandardMaterial({ color: '#6528D7' });
 	const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
 	cube.position.set(-2, 1.5, 0);
 	scene.add(cube);
 	components.meshes.push(cube);
 
-	const blueMaterial = new THREE.MeshStandardMaterial({ color: 'blue' });
-	const blueCube = new THREE.Mesh(cubeGeometry, blueMaterial);
+	const blueCube = new THREE.Mesh(cubeGeometry, cubeMaterial);
 	blueCube.position.set(2, 1.5, 0);
 	scene.add(blueCube);
 	components.meshes.push(blueCube);
@@ -138,9 +135,9 @@
   :::
 
    */
+
 	components.tools.add(clipper);
 	clipper.enabled = true;
-	clipper.visible = true;
 
 	/*MD
 

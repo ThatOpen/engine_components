@@ -12,7 +12,7 @@ export class FragmentManager
   implements Disposable
 {
   /** {@link Component.name} */
-  name = "FragmentsComponent";
+  name = "FragmentManager";
 
   /** {@link Component.enabled} */
   enabled = true;

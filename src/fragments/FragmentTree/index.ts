@@ -60,7 +60,8 @@ export class FragmentTree extends Component<FragmentTreeItem> implements UI {
   private process(groupSystemNames: string[], result = {}) {
     const groups: FragmentTreeItem[] = [];
     const currentSystemName = groupSystemNames[0]; // storeys
-    const systemGroups = this._fragmentGrouper.groupSystems[currentSystemName];
+    const systems = this._fragmentGrouper.get();
+    const systemGroups = systems[currentSystemName];
     if (!currentSystemName || !systemGroups) {
       return groups;
     }
@@ -68,7 +69,7 @@ export class FragmentTree extends Component<FragmentTreeItem> implements UI {
       // name is N00, N01, N02...
       const filter = { ...result, [currentSystemName]: name }; // { storeys: "N00" }, { storeys: "N01" }...
       const hasElements =
-        Object.keys(this._fragmentGrouper.getByFilter(filter)).length > 0;
+        Object.keys(this._fragmentGrouper.find(filter)).length > 0;
       if (hasElements) {
         const treeItemName =
           currentSystemName[0].toUpperCase() + currentSystemName.slice(1); // Storeys

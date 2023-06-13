@@ -12,7 +12,22 @@ export class PostproductionRenderer extends SimpleRenderer {
   constructor(components: Components, container: HTMLElement) {
     super(components, container);
     this.postproduction = new Postproduction(components, this._renderer);
-    this.resize();
+    this.setPostproductionSize();
+  }
+
+  /** {@link Updateable.update} */
+  update(_delta: number) {
+    this.beforeUpdate.trigger(this);
+    const scene = this.components.scene?.get();
+    const camera = this.components.camera?.get();
+    if (!scene || !camera) return;
+    if (this.postproduction.enabled) {
+      this.postproduction.composer.render();
+    } else {
+      this._renderer.render(scene, camera);
+    }
+    this._renderer2D.render(scene, camera);
+    this.afterUpdate.trigger(this);
   }
 
   /** {@link Disposable.dispose}. */
@@ -24,8 +39,13 @@ export class PostproductionRenderer extends SimpleRenderer {
   /** {@link Resizeable.resize}. */
   resize() {
     super.resize();
-    const width = this.container.clientWidth;
-    const height = this.container.clientHeight;
-    this.postproduction?.setSize(width, height);
+    if (this.postproduction) {
+      this.setPostproductionSize();
+    }
+  }
+
+  private setPostproductionSize() {
+    const { clientWidth, clientHeight } = this.container;
+    this.postproduction.setSize(clientWidth, clientHeight);
   }
 }

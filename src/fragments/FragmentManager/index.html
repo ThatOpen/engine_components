@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <link rel="stylesheet" href="../../../resources/styles.css">
-  <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
-  <title>Tools Component</title>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="../../../resources/styles.css">
+    <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+    <title>Tools Component</title>
 </head>
 <body>
 <div class="full-screen" id="container"></div>
@@ -20,103 +20,105 @@
         "openbim-components": "../../../resources/openbim-components.js"
       }
     }
+
+
 </script>
 <script type="module">
 
-	// Set up scene (see SimpleScene tutorial)
+    // Set up scene (see SimpleScene tutorial)
 
-	import * as THREE from 'three';
-	import * as OBC from 'openbim-components';
-	import Stats from 'stats.js/src/Stats.js';
-	import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
+    import * as THREE from 'three';
+    import * as OBC from 'openbim-components';
+    import Stats from 'stats.js/src/Stats.js';
+    import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
 
-	const container = document.getElementById('container');
+    const container = document.getElementById('container');
 
-	const components = new OBC.Components();
+    const components = new OBC.Components();
 
-	components.scene = new OBC.SimpleScene(components);
-	components.renderer = new OBC.SimpleRenderer(components, container);
-	components.camera = new OBC.SimpleCamera(components);
-	components.raycaster = new OBC.SimpleRaycaster(components);
+    components.scene = new OBC.SimpleScene(components);
+    components.renderer = new OBC.SimpleRenderer(components, container);
+    components.camera = new OBC.SimpleCamera(components);
+    components.raycaster = new OBC.SimpleRaycaster(components);
 
-	components.init();
+    components.init();
 
-	const scene = components.scene.get();
+    const scene = components.scene.get();
 
-	scene.background = null;
-	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+    scene.background = null;
+    components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
-	const directionalLight = new THREE.DirectionalLight();
-	directionalLight.position.set(5, 10, 3);
-	directionalLight.intensity = 0.5;
-	scene.add(directionalLight);
+    const directionalLight = new THREE.DirectionalLight();
+    directionalLight.position.set(5, 10, 3);
+    directionalLight.intensity = 0.5;
+    scene.add(directionalLight);
 
-	const ambientLight = new THREE.AmbientLight();
-	ambientLight.intensity = 0.5;
-	scene.add(ambientLight);
+    const ambientLight = new THREE.AmbientLight();
+    ambientLight.intensity = 0.5;
+    scene.add(ambientLight);
 
-	const grid = new OBC.SimpleGrid(components);
-	components.tools.add(grid);
+    const grid = new OBC.SimpleGrid(components);
+    components.tools.add(grid);
 
-	let fragments = new OBC.FragmentManager(components);
+    let fragments = new OBC.FragmentManager(components);
 
-	async function loadFragments(url) {
-		const file = await fetch(url);
-		const data = await file.arrayBuffer();
-		const buffer = new Uint8Array(data);
-		fragments.load(buffer);
-  }
-
-	function exportFragments(name) {
-		const fragmentCount = Object.keys(fragments.list).length;
-		if(fragmentCount === 0) {
-			alert("No fragments loaded!");
-			return;
+    async function loadFragments(url) {
+        const file = await fetch(url);
+        const data = await file.arrayBuffer();
+        const buffer = new Uint8Array(data);
+        fragments.load(buffer);
     }
-		const data = fragments.export();
-		const blob = new Blob([data]);
-		const file = new File([blob], name);
-		download(file);
-  }
 
-	function download(file) {
-		const link = document.createElement("a");
-		link.href = URL.createObjectURL(file);
-		link.download = file.name;
-		document.body.appendChild(link);
-		link.click();
-		link.remove();
-  }
+    function exportFragments(name) {
+        const fragmentCount = Object.keys(fragments.list).length;
+        if (fragmentCount === 0) {
+            alert("No fragments loaded!");
+            return;
+        }
+        const data = fragments.export();
+        const blob = new Blob([data]);
+        const file = new File([blob], name);
+        download(file);
+    }
 
-	function disposeFragments() {
-		fragments.dispose();
-		fragments = new OBC.FragmentManager(components);
-  }
+    function download(file) {
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(file);
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    }
 
-	// Set up stats
+    function disposeFragments() {
+        fragments.dispose();
+        fragments = new OBC.FragmentManager(components);
+    }
 
-	const stats = new Stats();
-	stats.showPanel(2);
-	document.body.append(stats.dom);
-	stats.dom.style.left = '0px';
-	const renderer = components.renderer;
-	renderer.beforeUpdate.on(() => stats.begin());
-	renderer.afterUpdate.on(() => stats.end());
+    // Set up stats
+
+    const stats = new Stats();
+    stats.showPanel(2);
+    document.body.append(stats.dom);
+    stats.dom.style.left = '0px';
+    const renderer = components.renderer;
+    renderer.beforeUpdate.on(() => stats.begin());
+    renderer.afterUpdate.on(() => stats.end());
 
 
-	// Set up dat.gui menu
+    // Set up dat.gui menu
 
-  const settings = {
-		loadFragments: () => loadFragments("../../../resources/small.frag"),
-    exportFragments: () => exportFragments("example.frag"),
-    disposeFragments: () => disposeFragments()
-  }
+    const settings = {
+        loadFragments: () => loadFragments("../../../resources/small.frag"),
+        exportFragments: () => exportFragments("example.frag"),
+        disposeFragments: () => disposeFragments()
+    }
 
-	const gui = new dat.GUI();
+    const gui = new dat.GUI();
 
-	gui.add(settings, "loadFragments").name("Import fragments");
-	gui.add(settings, "exportFragments").name("Export fragments");
-	gui.add(settings, "disposeFragments").name("Dispose fragments");
+    gui.add(settings, "loadFragments").name("Import fragments");
+    gui.add(settings, "exportFragments").name("Export fragments");
+    gui.add(settings, "disposeFragments").name("Dispose fragments");
 
 
 </script>

@@ -1,9 +1,9 @@
-// TODO: Clean up and document
-
 import { Disposable } from "../../base-types";
 import { Component } from "../../base-types/component";
 import { Components } from "../../core/Components";
 import { FragmentManager } from "../FragmentManager";
+
+// TODO: Clean up and document
 
 export interface ItemGroupSystems {
   [systemName: string]: { [groupName: string]: string[] };
@@ -17,9 +17,13 @@ export class FragmentGrouper
   extends Component<GroupSystems>
   implements Disposable
 {
-  name: string = "FragmentGrouper";
-  enabled: boolean = true;
-  groupSystems: GroupSystems = { models: {} };
+  private _groupSystems: GroupSystems = { models: {} };
+
+  /** {@link Component.name} */
+  name = "FragmentGrouper";
+
+  /** {@link Component.enabled} */
+  enabled = true;
 
   private _fragmentManager: FragmentManager;
 
@@ -32,16 +36,21 @@ export class FragmentGrouper
     this._fragmentManager = fragmentManager;
   }
 
+  /** {@link Component.get} */
+  get(): GroupSystems {
+    return this._groupSystems;
+  }
+
   dispose() {
-    this.groupSystems = {};
+    this._groupSystems = {};
   }
 
   add(guid: string, groupsSystems: ItemGroupSystems) {
     for (const system in groupsSystems) {
-      if (!this.groupSystems[system]) {
-        this.groupSystems[system] = {};
+      if (!this._groupSystems[system]) {
+        this._groupSystems[system] = {};
       }
-      const existingGroups = this.groupSystems[system];
+      const existingGroups = this._groupSystems[system];
       const currentGroups = groupsSystems[system];
       for (const groupName in currentGroups) {
         if (!existingGroups[groupName]) {
@@ -53,7 +62,7 @@ export class FragmentGrouper
   }
 
   setVisibility(systemName: string, groupName: string, visible: boolean) {
-    const fragmentsMap = this.groupSystems[systemName][groupName];
+    const fragmentsMap = this._groupSystems[systemName][groupName];
     for (const fragmentId in fragmentsMap) {
       const fragment = this._fragmentManager.list[fragmentId];
       const ids = fragmentsMap[fragmentId];
@@ -62,8 +71,8 @@ export class FragmentGrouper
   }
 
   remove(guid: string) {
-    for (const systemName in this.groupSystems) {
-      const system = this.groupSystems[systemName];
+    for (const systemName in this._groupSystems) {
+      const system = this._groupSystems[systemName];
       for (const groupName in system) {
         const group = system[groupName];
         delete group[guid];
@@ -71,12 +80,12 @@ export class FragmentGrouper
     }
   }
 
-  getByFilter(filter: { [name: string]: string }) {
+  find(filter: { [name: string]: string }) {
     const size = Object.keys(filter).length;
     const models: { [fragmentGuid: string]: { [id: string]: number } } = {};
     for (const name in filter) {
       const value = filter[name];
-      const found = this.groupSystems[name][value];
+      const found = this._groupSystems[name][value];
       if (found) {
         for (const guid in found) {
           if (!models[guid]) {
@@ -106,9 +115,5 @@ export class FragmentGrouper
       }
     }
     return result;
-  }
-
-  get(): GroupSystems {
-    return this.groupSystems;
   }
 }

@@ -5,3 +5,4 @@ export * from "./ShadowDropper";
 export * from "./ViewpointsManager";
 export * from "./CubeMap";
 export * from "./SelectionHandler";
+export * from "./PlanNavigator";
