@@ -1,6 +1,7 @@
 import * as WEBIFC from "web-ifc";
 
 // TODO: Clean up, add proper types and make this independent from fragments
+// TODO: Combine with fragment grouper?
 
 export class FragmentGroups {
   groupByPredefinedType(model: any) {
@@ -18,7 +19,9 @@ export class FragmentGroups {
     });
     elements.forEach((element) => {
       const entity = model.properties[element];
-      if (!entity) { return }
+      if (!entity) {
+        return;
+      }
       const fragmentID = model.expressIDFragmentIDMap[entity.expressID];
       const predefinedType = String(entity.PredefinedType?.value).toUpperCase();
       if (!group[predefinedType]) {

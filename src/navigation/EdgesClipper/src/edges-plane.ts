@@ -44,6 +44,14 @@ export class EdgesPlane extends SimplePlane {
 
   /** {@link Updateable.update} */
   update = () => {
+    if (!this.enabled) return;
+    this.beforeUpdate.trigger(this._plane);
+
+    this._plane.setFromNormalAndCoplanarPoint(
+      this._normal,
+      this._helper.position
+    );
+
     // Rate limited edges update
     const now = Date.now();
     if (this.lastUpdate + this.edgesMaxUpdateRate < now) {
@@ -55,5 +63,7 @@ export class EdgesPlane extends SimplePlane {
         this.updateTimeout = -1;
       }, this.edgesMaxUpdateRate);
     }
+
+    this.afterUpdate.trigger(this._plane);
   };
 }

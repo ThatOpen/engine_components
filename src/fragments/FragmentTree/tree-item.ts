@@ -10,8 +10,8 @@ interface TreeItem {
 }
 
 interface FragmentTreeItemOptions {
-  selectionHighlighterName: string
-  highlightHighlighterName: string
+  selectionHighlighterName: string;
+  highlightHighlighterName: string;
 }
 
 export class FragmentTreeItem extends Component<TreeItem> implements UI {
@@ -21,7 +21,7 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
   components: Components;
   uiElement: TreeView;
   private _children: FragmentTreeItem[] = [];
-  private readonly _options: FragmentTreeItemOptions
+  private readonly _options: FragmentTreeItemOptions;
 
   get children() {
     return this._children;
@@ -33,11 +33,11 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
   }
 
   constructor(
-    components: Components, 
-    private _fragmentHighlighter: FragmentHighlighter, 
-    private _fragmentGrouper: FragmentGrouper, 
+    components: Components,
+    private _fragmentHighlighter: FragmentHighlighter,
+    private _fragmentGrouper: FragmentGrouper,
     name: string,
-    config?: FragmentTreeItemOptions 
+    config?: FragmentTreeItemOptions
   ) {
     super();
     this.components = components;
@@ -45,8 +45,8 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
     const defaultConfig: FragmentTreeItemOptions = {
       selectionHighlighterName: "select",
       highlightHighlighterName: "highlight",
-    } 
-    this._options = { ...defaultConfig, ...config }
+    };
+    this._options = { ...defaultConfig, ...config };
     this.uiElement = new TreeView(this.components, name);
     this.uiElement.onclick = () => this.select();
     this.uiElement.onmouseover = () => this.highlight();
@@ -57,12 +57,18 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
   }
 
   select() {
-    const selectorName = this._options.selectionHighlighterName
-    this._fragmentHighlighter.highlightByID(selectorName, this._fragmentGrouper.get(this.filter));
+    const selectorName = this._options.selectionHighlighterName;
+    this._fragmentHighlighter.highlightByID(
+      selectorName,
+      this._fragmentGrouper.find(this.filter)
+    );
   }
-  
+
   highlight() {
-    const highlighterName = this._options.highlightHighlighterName
-    this._fragmentHighlighter.highlightByID(highlighterName, this._fragmentGrouper.get(this.filter));
+    const highlighterName = this._options.highlightHighlighterName;
+    this._fragmentHighlighter.highlightByID(
+      highlighterName,
+      this._fragmentGrouper.find(this.filter)
+    );
   }
 }

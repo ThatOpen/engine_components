@@ -31,6 +31,8 @@ export class SimplePlane
   /** Event that fires when the user stops dragging a clipping plane. */
   draggingEnded = new Event<void>();
 
+  protected readonly _normal: THREE.Vector3;
+  protected readonly _helper: THREE.Object3D;
   protected readonly _plane = new THREE.Plane();
 
   // TODO: Make all planes share the same geometry
@@ -41,9 +43,7 @@ export class SimplePlane
   private readonly _components: Components;
   private readonly _planeMesh: THREE.Mesh;
   private readonly _controls: TransformControls;
-  private readonly _normal: THREE.Vector3;
   private readonly _origin: THREE.Vector3;
-  private readonly _helper: THREE.Object3D;
   private readonly _hiddenMaterial = new THREE.MeshBasicMaterial({
     visible: false,
   });
