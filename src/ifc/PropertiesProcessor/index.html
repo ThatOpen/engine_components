@@ -61,7 +61,7 @@
 	scene.add(ambientLight);
 
 	const grid = new OBC.SimpleGrid(components);
-	components.tools.add(grid);
+	components.tools.add("grid", grid);
 
 	const fragments = new OBC.FragmentManager(components);
 	const fragmentIfcLoader = new OBC.FragmentIfcLoader(components, fragments);
@@ -130,7 +130,7 @@
 	const toolbar = new OBC.Toolbar(components);
 	const button = new OBC.Button(components, { name: 'Load IFC', materialIconName: 'upload_file' });
 	button.onclick = () => loadIfcAsFragments('../../../resources/asdf2.ifc');
-	toolbar.addButton(button);
+	toolbar.addChild(button);
 	components.ui.addToolbar(toolbar);
 
 </script>

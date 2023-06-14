@@ -56,7 +56,7 @@
 
 
     const grid = new OBC.SimpleGrid(components);
-    components.tools.add(grid);
+    components.tools.add("grid", grid);
 
     /*MD
     ### ✂️ Clipping Tool
@@ -118,7 +118,7 @@
 
      */
 
-	components.tools.add(clipper);
+	components.tools.add("clipper", clipper);
 	clipper.enabled = true;
 
     /*MD
@@ -134,7 +134,7 @@
     In addition, we will add a clipper button to this toolbar that will be used to toggle the clipping state.
     */
 	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
-	mainToolbar.addButton(clipper.uiElement);
+	mainToolbar.addChild(clipper.uiElement);
 	components.ui.addToolbar(mainToolbar);
 
     /*MD

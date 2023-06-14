@@ -72,7 +72,7 @@ export abstract class BaseSVGAnnotation extends Component<null> implements UI {
     if (manager) {
       manager.addDrawingTool(this.name, this);
       if (this.uiElement instanceof Button) {
-        manager.uiElement.drawingTools.addButton(this.uiElement);
+        manager.uiElement.drawingTools.addChild(this.uiElement);
       }
       this.svgViewport = manager.viewport.get();
     } else {

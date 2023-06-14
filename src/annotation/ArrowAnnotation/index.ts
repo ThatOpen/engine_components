@@ -45,7 +45,7 @@ export class ArrowAnnotation extends BaseSVGAnnotation {
 
   start(e: MouseEvent) {
     if (!this.canDraw) {
-      return;
+      return undefined;
     }
     if (!this._isDrawing) {
       this._isDrawing = true;
@@ -62,6 +62,7 @@ export class ArrowAnnotation extends BaseSVGAnnotation {
       this.cancel();
       return arrow;
     }
+    return undefined;
   }
 
   draw(e: MouseEvent) {

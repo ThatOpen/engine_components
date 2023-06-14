@@ -74,20 +74,20 @@
   */
 
     const grid = new OBC.SimpleGrid(components);
-    components.tools.add(grid);
 
 	/*MD
   Now, it is likely that your application will have many menus. What if you need access to this component In many
   places? For example, you may have a menu that controls the color and size of the grid, and other menus that goes
   into floor plan navigation mode and need to hide the grid.
 
-  To solve this situation, you just need to add the SimpleGrid component to the ToolComponent. That's it!
+  To solve this situation, you just need to add the SimpleGrid component to the ToolComponent with some ID in 
+  the first argument. That's it!
   */
 
-	components.tools.add(grid);
+	components.tools.add("SimpleGrid", grid);
 
 	/*MD
-  Now, getting the SimpleGrid component back is as easy as using the `get()` method and passing the name of the
+  Now, getting the SimpleGrid component back is as easy as using the `get()` method and passing the id of the
   component as an argument. That's it! 👇
   */
 

@@ -6,7 +6,7 @@ import {
   disposeBoundsTree,
 } from "three-mesh-bvh";
 import { UIManager } from "../../ui";
-import { BaseRenderer, Component, Raycaster } from "../../base-types";
+import { BaseRenderer, Component, Raycaster, Event } from "../../base-types";
 import { ToolComponent } from "../ToolsComponent";
 
 /**
@@ -33,12 +33,13 @@ export class Components {
    */
   meshes: THREE.Mesh[] = [];
 
+  onInitialized: Event<Components> = new Event();
   private _renderer?: BaseRenderer;
   private _scene?: Component<THREE.Scene>;
   private _camera?: Component<THREE.Camera>;
   private _raycaster?: Raycaster;
   private _clock: THREE.Clock;
-  private _enabled = true;
+  private _enabled = false;
 
   /**
    * The [Three.js renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
@@ -128,9 +129,11 @@ export class Components {
    * used, the {@link raycaster} will need to be initialized.
    */
   init() {
+    this._enabled = true;
     this._clock.start();
     this.ui.setup();
     this.update();
+    this.onInitialized.trigger(this);
   }
 
   /**

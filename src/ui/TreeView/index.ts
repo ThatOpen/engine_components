@@ -1,7 +1,7 @@
 import { UIComponent } from "../../base-types/base-types";
 import { Component } from "../../base-types/component";
 import { Components } from "../../core";
-import { VerticalStack } from "../VerticalStack";
+import { UIComponentsStack } from "../UIComponentsStack";
 
 export class TreeView extends Component<HTMLElement> implements UIComponent {
   name: string;
@@ -10,7 +10,7 @@ export class TreeView extends Component<HTMLElement> implements UIComponent {
   components: Components;
   domElement: HTMLElement = document.createElement("div");
   children: UIComponent[] = [];
-  private _childrenContainer: VerticalStack;
+  private _childrenContainer: UIComponentsStack;
   private _expanded: boolean = false;
 
   get expanded() {
@@ -54,7 +54,7 @@ export class TreeView extends Component<HTMLElement> implements UIComponent {
     div.append(arrow, p);
     this.domElement.append(div);
 
-    this._childrenContainer = new VerticalStack(components);
+    this._childrenContainer = new UIComponentsStack(components, "Vertical");
     this._childrenContainer.get().classList.add("ml-[14px]");
     this.domElement.append(this._childrenContainer.get());
   }

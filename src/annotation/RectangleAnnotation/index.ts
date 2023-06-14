@@ -38,7 +38,7 @@ export class RectangleAnnotation extends BaseSVGAnnotation {
 
   start(e: MouseEvent) {
     if (!this.canDraw) {
-      return;
+      return undefined;
     }
     if (!this._isDrawing) {
       this._isDrawing = true;
@@ -52,6 +52,7 @@ export class RectangleAnnotation extends BaseSVGAnnotation {
       this.cancel();
       return rectangle;
     }
+    return undefined;
   }
 
   cancel() {

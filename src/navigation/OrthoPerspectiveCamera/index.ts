@@ -67,7 +67,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
     perspective.onclick = () => this.setProjection("Perspective");
     const orthographic = new Button(this.components, { name: "Orthographic" });
     orthographic.onclick = () => this.setProjection("Orthographic");
-    projection.addButton(perspective, orthographic);
+    projection.addChild(perspective, orthographic);
 
     const navigation = new Button(this.components, {
       materialIconName: "open_with",
@@ -80,9 +80,9 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
     plan.onclick = () => this.setNavigationMode("Plan");
     const firstPerson = new Button(this.components, { name: "First person" });
     firstPerson.onclick = () => this.setNavigationMode("FirstPerson");
-    navigation.addButton(orbit, plan, firstPerson);
+    navigation.addChild(orbit, plan, firstPerson);
 
-    mainButton.addButton(navigation, projection);
+    mainButton.addChild(navigation, projection);
 
     this.projectionChanged.on((camera) => {
       if (camera instanceof THREE.PerspectiveCamera) {

@@ -137,20 +137,16 @@ export function generateIfcGUID() {
   };
 
   const toUInt16 = (bytes: string[], index: number) =>
-    Math.floor(
-      parseInt(
-        bytes.slice(index, index + 2).reduce((str, v) => str + v, ""),
-        16
-      )
-    ) && 0xffffffff;
+    parseInt(
+      bytes.slice(index, index + 2).reduce((str, v) => str + v, ""),
+      16
+    ) >>> 0;
 
   const toUInt32 = (bytes: string[], index: number) =>
-    Math.floor(
-      parseInt(
-        bytes.slice(index, index + 4).reduce((str, v) => str + v, ""),
-        16
-      )
-    ) && 0xffffffff;
+    parseInt(
+      bytes.slice(index, index + 4).reduce((str, v) => str + v, ""),
+      16
+    ) >>> 0;
 
   const num = [];
   let str: string[] = [];
@@ -158,21 +154,16 @@ export function generateIfcGUID() {
   let n = 2;
   let pos = 0;
 
-  num[0] = Math.floor(toUInt32(headBytes, 0) / 16777216) && 0xffffffff;
-  num[1] = Math.floor(toUInt32(headBytes, 0) % 16777216) && 0xffffffff;
-  num[2] =
-    Math.floor(toUInt16(headBytes, 4) * 256 + toUInt16(headBytes, 6) / 256) &&
-    0xffffffff;
+  num[0] = toUInt32(headBytes, 0) / 16777216;
+  num[1] = toUInt32(headBytes, 0) % 16777216;
+  num[2] = (toUInt16(headBytes, 4) * 256 + toUInt16(headBytes, 6) / 256) >>> 0;
   num[3] =
-    Math.floor(
-      (toUInt16(headBytes, 6) % 256) * 65536 + tailBytes[8] * 256 + tailBytes[9]
-    ) && 0xffffffff;
-  num[4] =
-    Math.floor(tailBytes[10] * 65536 + tailBytes[11] * 256 + tailBytes[12]) &&
-    0xffffffff;
-  num[5] =
-    Math.floor(tailBytes[13] * 65536 + tailBytes[14] * 256 + tailBytes[15]) &&
-    0xffffffff;
+    ((toUInt16(headBytes, 6) % 256) * 65536 +
+      tailBytes[8] * 256 +
+      tailBytes[9]) >>>
+    0;
+  num[4] = (tailBytes[10] * 65536 + tailBytes[11] * 256 + tailBytes[12]) >>> 0;
+  num[5] = (tailBytes[13] * 65536 + tailBytes[14] * 256 + tailBytes[15]) >>> 0;
 
   for (i = 0; i < 6; i++) {
     str = cvTo64(num[i], str, pos, n);

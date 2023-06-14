@@ -8,7 +8,7 @@ import {
 import { EditProp } from "./src/edit-prop";
 import { Button } from "../../ui/ButtonComponent";
 import { UI, Component } from "../../base-types";
-import { TreeView, FloatingWindow, VerticalStack } from "../../ui";
+import { TreeView, FloatingWindow, UIComponentsStack } from "../../ui";
 import { Components } from "../../core/Components";
 import { PropertyTag } from "./src/property-tag";
 import { FragmentHighlighter } from "../../fragments";
@@ -95,7 +95,7 @@ export class PropertiesProcessor
   components: Components;
   uiElement!: { container: FloatingWindow; showButton: Button };
   propsManager: IfcPropertiesManager;
-  private _propsList: VerticalStack;
+  private _propsList: UIComponentsStack;
   private _editInput: EditProp;
   private _editInputPopper: PopperInstance;
   private _fragmentsHighlighter: FragmentHighlighter;
@@ -114,7 +114,7 @@ export class PropertiesProcessor
     this._config = { ...this._config, ...config };
     this._fragmentsHighlighter = fragmentHighlighter;
 
-    this._propsList = new VerticalStack(this.components);
+    this._propsList = new UIComponentsStack(this.components, "Vertical");
 
     this._editInput = new EditProp(this.components);
     this._editInput.visible = false;

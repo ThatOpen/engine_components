@@ -28,13 +28,13 @@ export class LocalCacher extends Component<any> implements UI {
     });
 
     this.saveButton = new Button(components, { materialIconName: "save" });
-    this.uiElement.addButton(this.saveButton);
+    this.uiElement.addChild(this.saveButton);
 
     this.loadButton = new Button(components, { materialIconName: "download" });
-    this.uiElement.addButton(this.loadButton);
+    this.uiElement.addChild(this.loadButton);
 
     this.wipeButton = new Button(components, { materialIconName: "delete" });
-    this.uiElement.addButton(this.wipeButton);
+    this.uiElement.addChild(this.wipeButton);
   }
 
   async get(id: string) {

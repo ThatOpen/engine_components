@@ -53,6 +53,17 @@ export class SimpleRaycaster
     return filtered.length > 0 ? filtered[0] : null;
   }
 
+  castRayFromVector(
+    origin: THREE.Vector3,
+    direction: THREE.Vector3,
+    items = this.components.meshes
+  ) {
+    this._raycaster.set(origin, direction);
+    const result = this._raycaster.intersectObjects(items);
+    const filtered = this.filterClippingPlanes(result);
+    return filtered.length > 0 ? filtered[0] : null;
+  }
+
   private filterClippingPlanes(objs: THREE.Intersection[]) {
     const renderer = this.components.renderer;
     if (!renderer.clippingPlanes) {

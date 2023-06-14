@@ -87,7 +87,7 @@ export class ViewpointsManager extends Component<string> implements UI {
     listButton.onclick = () => {
       window.visible = !window.visible;
     };
-    mainButton.addButton(listButton, newButton);
+    mainButton.addChild(listButton, newButton);
     this.uiElement = { mainButton, newButton, window };
   }
 
@@ -98,7 +98,7 @@ export class ViewpointsManager extends Component<string> implements UI {
   add(data: { title: string; description: string | null }) {
     const { title, description } = data;
     if (!title) {
-      return;
+      return undefined;
     }
 
     const guid = generateUUID().toLowerCase();

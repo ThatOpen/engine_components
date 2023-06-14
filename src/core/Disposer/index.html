@@ -38,7 +38,7 @@
 
 	// Add some components: grid & cube
 	const grid = new OBC.SimpleGrid(components);
-	components.tools.add(grid);
+	components.tools.add("grid", grid);
 
 	const cube = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({color: "red"}))
 	cube.position.set(0, 1.5, 0)
