@@ -52,7 +52,7 @@
 	scene.add(ambientLight);
 
 	const grid = new OBC.SimpleGrid(components);
-	components.tools.add(grid);
+	components.tools.add("grid", grid);
 
 	/*MD
   ### 📽️ Managing Multiple Views
@@ -175,7 +175,7 @@
 
 	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
 	components.ui.addToolbar(mainToolbar);
-	mainToolbar.addButton(camera.uiElement);
+	mainToolbar.addChild(camera.uiElement);
 
 	// Set up stats
 	const stats = new Stats();
