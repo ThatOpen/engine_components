@@ -57,9 +57,9 @@ export class SimpleGrid
 
   constructor(
     components: Components,
+    color = new THREE.Color(0xbbbbbb),
     size1: number = 1,
     size2: number = 10,
-    color = new THREE.Color(0xcccccc),
     distance: number = 500
   ) {
     super();

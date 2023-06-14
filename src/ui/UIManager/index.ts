@@ -89,8 +89,6 @@ export class UIManager extends Component<Toolbar[]> {
       }
     );
 
-    console.log(popperInstance.state);
-
     /* detectOverflow(popperInstance.state, {
       boundary: Object.values(this.containers),
     }); */

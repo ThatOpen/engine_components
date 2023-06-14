@@ -39,7 +39,7 @@
 	components.scene = sceneComponent
 
 
-	const grid = new OBC.SimpleGrid(components);
+	const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
 	components.tools.add("grid", grid);
 
 	const scene = sceneComponent.get();
