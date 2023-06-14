@@ -4,6 +4,6 @@ export * from "./FragmentHighlighter";
 export * from "./FragmentTree";
 export * from "./FragmentGrouper";
 export * from "./fragment-edges";
-export * from "./FragmentGroups";
 export * from "./FragmentCacher";
 export * from "./FragmentCoordinator";
+export * from "./FragmentExploder";

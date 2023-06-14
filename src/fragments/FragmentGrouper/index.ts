@@ -1,13 +1,10 @@
+import * as WEBIFC from "web-ifc";
 import { Disposable } from "../../base-types";
 import { Component } from "../../base-types/component";
 import { Components } from "../../core/Components";
 import { FragmentManager } from "../FragmentManager";
 
 // TODO: Clean up and document
-
-export interface ItemGroupSystems {
-  [systemName: string]: { [groupName: string]: string[] };
-}
 
 export interface GroupSystems {
   [systemName: string]: { [groupName: string]: { [guid: string]: string[] } };
@@ -42,22 +39,6 @@ export class FragmentGrouper
 
   dispose() {
     this._groupSystems = {};
-  }
-
-  add(guid: string, groupsSystems: ItemGroupSystems) {
-    for (const system in groupsSystems) {
-      if (!this._groupSystems[system]) {
-        this._groupSystems[system] = {};
-      }
-      const existingGroups = this._groupSystems[system];
-      const currentGroups = groupsSystems[system];
-      for (const groupName in currentGroups) {
-        if (!existingGroups[groupName]) {
-          existingGroups[groupName] = {};
-        }
-        existingGroups[groupName][guid] = currentGroups[groupName];
-      }
-    }
   }
 
   setVisibility(systemName: string, groupName: string, visible: boolean) {
@@ -114,5 +95,99 @@ export class FragmentGrouper
       }
     }
     return result;
+  }
+
+  groupByPredefinedType(model: any) {
+    const group: any = {};
+    const arrayProperties = Object.values(model.properties) as any[];
+    const levelRelations = arrayProperties.filter(
+      (prop) => prop.type === WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE
+    );
+    const elements: any[] = [];
+    levelRelations.forEach((rel) => {
+      const expressIDs = rel.RelatedElements.map(
+        (element: any) => element.value
+      );
+      elements.push(...expressIDs);
+    });
+    elements.forEach((element) => {
+      const entity = model.properties[element];
+      if (!entity) {
+        return;
+      }
+      const fragmentID = model.expressIDFragmentIDMap[entity.expressID];
+      const predefinedType = String(entity.PredefinedType?.value).toUpperCase();
+      if (!group[predefinedType]) {
+        group[predefinedType] = {};
+      }
+      if (!group[predefinedType][fragmentID]) {
+        group[predefinedType][fragmentID] = [];
+      }
+      group[predefinedType][fragmentID].push(entity.expressID);
+    });
+    return group;
+  }
+
+  groupByEntity(model: any) {
+    const group: any = {};
+    for (const expressID in model.itemTypes) {
+      const entity = model.allTypes[model.itemTypes[expressID]];
+      const fragment = model.expressIDFragmentIDMap[expressID];
+      if (!fragment) {
+        continue;
+      }
+      if (!group[entity]) {
+        group[entity] = {};
+      }
+      if (!group[entity][fragment]) {
+        group[entity][fragment] = [];
+      }
+      group[entity][fragment].push(expressID);
+    }
+    return group;
+  }
+
+  groupByStorey(props: any, expressIDFragmentIDMap: any) {
+    const properties = Object.values(props) as any[];
+    if (!this._groupSystems.storeys) {
+      this._groupSystems.storeys = {};
+    }
+
+    const storeys = this._groupSystems.storeys;
+
+    const spatialRels = properties.filter(
+      (entity) => entity.type === WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE
+    );
+
+    spatialRels.forEach((rel) => {
+      if (!rel.RelatingStructure || !rel.RelatingStructure.value) {
+        return;
+      }
+
+      const storeyProps = properties.find(
+        (prop) => prop.expressID === rel.RelatingStructure.value
+      );
+      const storeyName = storeyProps.Name.value;
+
+      if (!storeys[storeyName]) {
+        storeys[storeyName] = {};
+      }
+      const storey = storeys[storeyName];
+
+      const storeyElements = rel.RelatedElements.map((element: any) => {
+        return element.value.toString();
+      });
+
+      storeyElements.forEach((expressID: any) => {
+        const fragment = expressIDFragmentIDMap[expressID];
+        if (!fragment) {
+          return;
+        }
+        if (!storey[fragment]) {
+          storey[fragment] = [];
+        }
+        storey[fragment].push(expressID);
+      });
+    });
   }
 }
