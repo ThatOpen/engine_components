@@ -8,7 +8,6 @@ export class FragmentExploder implements Disposable {
   height = 10;
   groupName = "storeys";
   enabled = false;
-  initialized = false;
   explodedFragments = new Set<string>();
 
   constructor(
@@ -21,25 +20,19 @@ export class FragmentExploder implements Disposable {
   }
 
   explode() {
-    this.initialized = true;
     this.enabled = true;
     this.update();
   }
 
   reset() {
-    this.initialized = true;
     this.enabled = false;
     this.update();
   }
 
   update() {
-    if (!this.initialized) {
-      return;
-    }
     const factor = this.enabled ? 1 : -1;
     let i = 0;
 
-    // TODO: Decouple groups from fragments
     const systems = this.groups.get();
     const groups = systems[this.groupName];
 
@@ -93,23 +86,13 @@ export class FragmentExploder implements Disposable {
   }
 
   private getOffsetY(y: number) {
+    const w = y * this.height;
+    // prettier-ignore
     return new THREE.Matrix4().fromArray([
-      1,
-      0,
-      0,
-      0,
-      0,
-      1,
-      0,
-      0,
-      0,
-      0,
-      1,
-      0,
-      0,
-      y * this.height,
-      0,
-      1,
+      1, 0, 0, 0,
+      0, 1, 0, 0,
+      0, 0, 1, 0,
+      0, w, 0, 1,
     ]);
   }
 }

@@ -7,14 +7,14 @@ import { FragmentManager } from "../FragmentManager";
 // TODO: Clean up and document
 
 export interface GroupSystems {
-  [systemName: string]: { [groupName: string]: { [guid: string]: string[] } };
+  [system: string]: { [group: string]: { [fragment: string]: Set<string> } };
 }
 
 export class FragmentGrouper
   extends Component<GroupSystems>
   implements Disposable
 {
-  private _groupSystems: GroupSystems = { models: {} };
+  private _groupSystems: GroupSystems = {};
   /** {@link Component.name} */
   name = "FragmentGrouper";
 
@@ -46,7 +46,8 @@ export class FragmentGrouper
     for (const fragmentId in fragmentsMap) {
       const fragment = this._fragmentManager.list[fragmentId];
       const ids = fragmentsMap[fragmentId];
-      fragment.setVisibility(ids, visible);
+      const idsArray = Array.from(ids);
+      fragment.setVisibility(idsArray, visible);
     }
   }
 
@@ -97,54 +98,91 @@ export class FragmentGrouper
     return result;
   }
 
-  groupByPredefinedType(model: any) {
-    const group: any = {};
-    const arrayProperties = Object.values(model.properties) as any[];
+  groupByModel(modelID: string, expressIDFragmentIDMap: any) {
+    if (!this._groupSystems.model) {
+      this._groupSystems.model = {};
+    }
+    const currentModels = this._groupSystems.model;
+    if (!currentModels[modelID]) {
+      currentModels[modelID] = {};
+    }
+    const currentModel = currentModels[modelID];
+    for (const expressID in expressIDFragmentIDMap) {
+      const fragID = expressIDFragmentIDMap[expressID];
+      if (!currentModel[fragID]) {
+        currentModel[fragID] = new Set<string>();
+      }
+      currentModel[fragID].add(expressID);
+    }
+  }
+
+  groupByPredefinedType(props: any, expressIDFragmentIDMap: any) {
+    const arrayProperties = Object.values(props) as any[];
+    if (!this._groupSystems.predefinedType) {
+      this._groupSystems.predefinedType = {};
+    }
+
+    const currentTypes = this._groupSystems.predefinedType;
+
     const levelRelations = arrayProperties.filter(
       (prop) => prop.type === WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE
     );
+
     const elements: any[] = [];
+
     levelRelations.forEach((rel) => {
       const expressIDs = rel.RelatedElements.map(
         (element: any) => element.value
       );
       elements.push(...expressIDs);
     });
+
     elements.forEach((element) => {
-      const entity = model.properties[element];
+      const entity = props[element];
       if (!entity) {
         return;
       }
-      const fragmentID = model.expressIDFragmentIDMap[entity.expressID];
+
+      const fragmentID = expressIDFragmentIDMap[entity.expressID];
+
       const predefinedType = String(entity.PredefinedType?.value).toUpperCase();
-      if (!group[predefinedType]) {
-        group[predefinedType] = {};
+
+      if (!currentTypes[predefinedType]) {
+        currentTypes[predefinedType] = {};
       }
-      if (!group[predefinedType][fragmentID]) {
-        group[predefinedType][fragmentID] = [];
+
+      const currentType = currentTypes[predefinedType];
+
+      if (!currentType[fragmentID]) {
+        currentType[fragmentID] = new Set<string>();
       }
-      group[predefinedType][fragmentID].push(entity.expressID);
+
+      const currentFragment = currentType[fragmentID];
+      currentFragment.add(entity.expressID);
     });
-    return group;
   }
 
-  groupByEntity(model: any) {
-    const group: any = {};
-    for (const expressID in model.itemTypes) {
-      const entity = model.allTypes[model.itemTypes[expressID]];
-      const fragment = model.expressIDFragmentIDMap[expressID];
+  groupByEntity(itemTypes: any, allTypes: any, expressIDFragmentIDMap: any) {
+    if (!this._groupSystems.entity) {
+      this._groupSystems.entity = {};
+    }
+    const currentEntities = this._groupSystems.entity;
+
+    for (const expressID in itemTypes) {
+      const entity = allTypes[itemTypes[expressID]];
+      const fragment = expressIDFragmentIDMap[expressID];
       if (!fragment) {
         continue;
       }
-      if (!group[entity]) {
-        group[entity] = {};
+      if (!currentEntities[entity]) {
+        currentEntities[entity] = {};
       }
-      if (!group[entity][fragment]) {
-        group[entity][fragment] = [];
+      if (!currentEntities[entity][fragment]) {
+        currentEntities[entity][fragment] = new Set<string>();
       }
-      group[entity][fragment].push(expressID);
+
+      currentEntities[entity][fragment].add(expressID);
     }
-    return group;
   }
 
   groupByStorey(props: any, expressIDFragmentIDMap: any) {
@@ -184,9 +222,9 @@ export class FragmentGrouper
           return;
         }
         if (!storey[fragment]) {
-          storey[fragment] = [];
+          storey[fragment] = new Set<string>();
         }
-        storey[fragment].push(expressID);
+        storey[fragment].add(expressID);
       });
     });
   }
