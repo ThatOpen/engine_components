@@ -33,11 +33,14 @@
 	components.camera = new OBC.OrthoPerspectiveCamera(components);
 	components.raycaster = new OBC.SimpleRaycaster(components);
 
+
 	components.init();
 
 	const scene = components.scene.get();
 
 	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+
+	components.camera.toggleProjection();
 
 	const grid = new OBC.SimpleGrid(components);
 	components.tools.add("grid", grid);
