@@ -285,23 +285,4 @@ export class ScreenCuller extends Component<null> implements Disposable {
       code: `${this._colors.r}-${this._colors.g}-${this._colors.b}`,
     };
   }
-
-  // TODO: Decouple culling from fragments
-  // If the edges need to be updated (e.g. some walls have been hidden)
-  // this allows to compute them only when they are visibile
-  // private cullEdges(fragment: Fragment, visible: boolean) {
-  //   if (visible) {
-  //     this.updateEdges(fragment);
-  //   }
-  // if (this.fragment.edges.edgesList[fragment.id]) {
-  //   this.fragment.edges.edgesList[fragment.id].visible = visible;
-  // }
-  // }
-
-  // private updateEdges(_fragment: Fragment) {
-  // if (this.fragment.edges.edgesToUpdate.has(fragment.id)) {
-  //   this.fragment.edges.generate(fragment);
-  //   this.fragment.edges.edgesToUpdate.delete(fragment.id);
-  // }
-  // }
 }
