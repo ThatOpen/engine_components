@@ -70,7 +70,7 @@ export class IfcPropertiesManager extends Component<null> {
     const schema = this._ifcApi.GetModelSchema(modelID) as
       | "IFC2X3"
       | "IFC4"
-      | "IFC4_3";
+      | "IFC4X3";
     if (!this._allowedSchemas.includes(schema)) {
       return null;
     }
