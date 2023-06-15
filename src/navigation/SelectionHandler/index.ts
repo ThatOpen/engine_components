@@ -27,7 +27,7 @@ export class SelectionHandler extends Component<HighlightMap> {
   ) {
     super();
     this._config = {
-      selectionName: "select",
+      selectionName: config?.selectionName ?? "select",
       selectionMaterial:
         config?.selectionMaterial ??
         new THREE.MeshBasicMaterial({
@@ -36,9 +36,9 @@ export class SelectionHandler extends Component<HighlightMap> {
           opacity: 0.6,
           depthTest: true,
         }),
-      highlightName: "highlight",
+      highlightName: config?.highlightName ?? "highlight",
       highlightMaterial:
-        config?.selectionMaterial ??
+        config?.highlightMaterial ??
         new THREE.MeshBasicMaterial({
           color: "#6528D7",
           transparent: true,

@@ -83,12 +83,13 @@ export class ToolComponent
    * [delta time](https://threejs.org/docs/#api/en/core/Clock) of the loop.
    */
   update(delta: number) {
-    const tools = Object.values(this._list);
-    for (const tool of tools) {
+    const keys = Reflect.ownKeys(this._list);
+    keys.forEach((key) => {
+      const tool = this._list[key];
       if (tool.enabled && tool.isUpdateable()) {
         tool.update(delta);
       }
-    }
+    });
   }
 
   /**
