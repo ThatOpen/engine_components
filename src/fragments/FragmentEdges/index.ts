@@ -12,6 +12,7 @@ import { Disposable, Component, Hideable } from "../../base-types";
 import { Components, Disposer } from "../../core";
 
 // TODO: Clean up and document
+// TODO: Decouple from fragments?
 
 export class FragmentEdges
   extends Component<{ [guid: string]: LineSegments }>
@@ -97,12 +98,12 @@ export class FragmentEdges
   }
 
   add(fragment: Fragment) {
-    if (this._list[fragment.id]) {
-      const previous = this._list[fragment.id];
+    if (this._list[fragment.mesh.uuid]) {
+      const previous = this._list[fragment.mesh.uuid];
       previous.removeFromParent();
       previous.geometry.dispose();
       (previous.geometry as any) = null;
-      delete this._list[fragment.id];
+      delete this._list[fragment.mesh.uuid];
     }
 
     this.getInstanceTransforms(fragment);
@@ -119,7 +120,7 @@ export class FragmentEdges
 
     const scene = this._components.scene.get();
     scene.add(lines);
-    this._list[fragment.id] = lines;
+    this._list[fragment.mesh.uuid] = lines;
 
     this.updateInstancedEdges(fragment, lineGeom);
 

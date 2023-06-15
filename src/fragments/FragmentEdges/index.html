@@ -67,12 +67,36 @@
     const buffer = new Uint8Array(data);
     const ids = fragments.load(buffer);
 
-    const fragmentEdges = new OBC.FragmentEdges(components);
+    const edges = new OBC.FragmentEdges(components);
+
+    const culler = new OBC.ScreenCuller(components);
 
     for(const id of ids) {
         const fragment = fragments.list[id];
-        fragmentEdges.add(fragment);
+        edges.add(fragment);
+        culler.add(fragment.mesh);
     }
+
+    culler.needsUpdate = true;
+    window.onmouseup = () => culler.needsUpdate = true;
+    window.onwheel = () => culler.needsUpdate = true;
+
+    // Bind edges visibility to fragments visibility
+
+    const edgesList = edges.get();
+    culler.viewUpdated.on(() => {
+        for(const id of culler.currentVisibleMeshes) {
+            if(edgesList[id]) {
+                scene.add(edgesList[id]);
+            }
+        }
+        for(const id of culler.recentlyHiddenMeshes) {
+            if(edgesList[id]) {
+                scene.remove(edgesList[id]);
+            }
+        }
+    })
+
 
 
     // Set up stats
