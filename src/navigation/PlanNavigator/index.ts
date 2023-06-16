@@ -64,6 +64,7 @@ export class PlanNavigator extends Component<PlanView[]> implements Disposable {
       throw new Error(`There's already a plan with the id: ${config.id}`);
     }
     const plane = await this.createClippingPlane(config);
+    plane.visible = false;
     const plan = { ...config, plane };
     this.plans.push(plan);
   }

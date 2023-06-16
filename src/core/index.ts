@@ -14,4 +14,5 @@ export * from "./SimpleAngle";
 export * from "./SimpleArea";
 export * from "./SimpleSVGViewport";
 export * from "./Simple2DMarker";
+export * from "./MaterialManager";
 // export * from "./DXFManager";
