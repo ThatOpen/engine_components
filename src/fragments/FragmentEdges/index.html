@@ -85,6 +85,7 @@
 
     const edgesList = edges.get();
     culler.viewUpdated.on(() => {
+        if(!culler.visible) return;
         for(const id of culler.currentVisibleMeshes) {
             if(edgesList[id]) {
                 scene.add(edgesList[id]);

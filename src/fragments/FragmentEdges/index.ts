@@ -118,8 +118,11 @@ export class FragmentEdges
     const lines = new LineSegments(lineGeom, this.lineMat);
     lines.frustumCulled = false;
 
-    const scene = this._components.scene.get();
-    scene.add(lines);
+    if (this._visible) {
+      const scene = this._components.scene.get();
+      scene.add(lines);
+    }
+
     this._list[fragment.mesh.uuid] = lines;
 
     this.updateInstancedEdges(fragment, lineGeom);

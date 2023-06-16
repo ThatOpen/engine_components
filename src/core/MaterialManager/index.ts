@@ -39,7 +39,7 @@ export class MaterialManager extends Component<string[]> implements Disposable {
           this._originals[mesh.uuid] = mesh.material;
           mesh.material = material;
         } else {
-          mesh.material = this._originals[mesh.id];
+          mesh.material = this._originals[mesh.uuid];
         }
       }
     }
