@@ -1,22 +1,35 @@
 import * as THREE from "three";
-import { Disposable } from "../../base-types";
+import { Component, Disposable } from "../../base-types";
 import { FragmentGrouper, FragmentManager } from "../index";
 
 // TODO: Clean up and document
 
-export class FragmentExploder implements Disposable {
+export class FragmentExploder
+  extends Component<Set<string>>
+  implements Disposable
+{
+  name = "FragmentExploder";
   height = 10;
   groupName = "storeys";
   enabled = false;
-  explodedFragments = new Set<string>();
+
+  private _explodedFragments = new Set<string>();
+
+  get(): Set<string> {
+    return this._explodedFragments;
+  }
 
   constructor(
     public fragments: FragmentManager,
     public groups: FragmentGrouper
-  ) {}
+  ) {
+    super();
+  }
 
   dispose() {
-    this.explodedFragments.clear();
+    this._explodedFragments.clear();
+    (this.fragments as any) = null;
+    (this.groups as any) = null;
   }
 
   explode() {
@@ -43,16 +56,16 @@ export class FragmentExploder implements Disposable {
         if (!fragment) {
           continue;
         }
-        if (this.enabled && this.explodedFragments.has(customID)) {
+        if (this.enabled && this._explodedFragments.has(customID)) {
           continue;
         }
-        if (!this.enabled && !this.explodedFragments.has(customID)) {
+        if (!this.enabled && !this._explodedFragments.has(customID)) {
           continue;
         }
         if (this.enabled) {
-          this.explodedFragments.add(customID);
+          this._explodedFragments.add(customID);
         } else {
-          this.explodedFragments.delete(customID);
+          this._explodedFragments.delete(customID);
         }
 
         const yTransform = this.getOffsetY(i * factor);

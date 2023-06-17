@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { EdgesClipper } from "../EdgesClipper";
+import { EdgesClipper, EdgesPlane } from "../EdgesClipper";
 import {
   CameraProjection,
   OrthoPerspectiveCamera,
@@ -64,6 +64,7 @@ export class PlanNavigator extends Component<PlanView[]> implements Disposable {
       throw new Error(`There's already a plan with the id: ${config.id}`);
     }
     const plane = await this.createClippingPlane(config);
+    plane.visible = false;
     const plan = { ...config, plane };
     this.plans.push(plan);
   }
@@ -103,6 +104,9 @@ export class PlanNavigator extends Component<PlanView[]> implements Disposable {
     await this.camera.setProjection(this.previousProjection);
     if (this.currentPlan && this.currentPlan.plane) {
       this.currentPlan.plane.enabled = false;
+      if (this.currentPlan.plane instanceof EdgesPlane) {
+        this.currentPlan.plane.edges.visible = false;
+      }
     }
     this.currentPlan = null;
     await this.camera.controls.setLookAt(
@@ -145,7 +149,12 @@ export class PlanNavigator extends Component<PlanView[]> implements Disposable {
 
   private activateCurrentPlan() {
     if (!this.currentPlan) throw new Error("Current plan is not defined.");
-    if (this.currentPlan.plane) this.currentPlan.plane.enabled = true;
+    if (this.currentPlan.plane) {
+      this.currentPlan.plane.enabled = true;
+      if (this.currentPlan.plane instanceof EdgesPlane) {
+        this.currentPlan.plane.edges.visible = true;
+      }
+    }
     this.camera.setNavigationMode("Plan");
     const projection = this.currentPlan.ortho ? "Orthographic" : "Perspective";
     this.camera.setProjection(projection);

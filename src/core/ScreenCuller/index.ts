@@ -16,7 +16,9 @@ export class ScreenCuller extends Component<null> implements Disposable {
 
   name: string = "ScreenCuller";
   enabled = true;
+
   viewUpdated = new Event();
+
   needsUpdate = false;
   meshColorMap = new Map<string, THREE.Mesh>();
   renderDebugFrame = false;
@@ -24,7 +26,9 @@ export class ScreenCuller extends Component<null> implements Disposable {
   colorMeshes = new Map<string, THREE.InstancedMesh>();
   meshes = new Map<string, THREE.Mesh>();
 
-  private readonly _previouslyVisibleMeshes = new Set<string>();
+  currentVisibleMeshes = new Set<string>();
+  recentlyHiddenMeshes = new Set<string>();
+
   private readonly _transparentMat = new THREE.MeshBasicMaterial({
     transparent: true,
     opacity: 0,
@@ -80,6 +84,8 @@ export class ScreenCuller extends Component<null> implements Disposable {
 
   dispose() {
     this.enabled = false;
+    this.currentVisibleMeshes.clear();
+    this.recentlyHiddenMeshes.clear();
     this._scene.children.length = 0;
     this.viewUpdated.reset();
     this.worker.terminate();
@@ -87,7 +93,6 @@ export class ScreenCuller extends Component<null> implements Disposable {
     this.renderTarget.dispose();
     (this._buffer as any) = null;
     this._transparentMat.dispose();
-    this.viewUpdated.reset();
     this.meshColorMap.clear();
     this.visibleMeshes = [];
     for (const id in this.materialCache) {
@@ -197,14 +202,13 @@ export class ScreenCuller extends Component<null> implements Disposable {
     });
 
     this.needsUpdate = false;
-    this.viewUpdated.trigger();
   };
 
   private handleWorkerMessage = (event: MessageEvent) => {
     const colors = event.data.colors as Set<string>;
 
-    const meshesThatJustDisappeared = new Set(this._previouslyVisibleMeshes);
-    this._previouslyVisibleMeshes.clear();
+    this.recentlyHiddenMeshes = new Set(this.currentVisibleMeshes);
+    this.currentVisibleMeshes.clear();
 
     this.visibleMeshes = [];
 
@@ -214,19 +218,19 @@ export class ScreenCuller extends Component<null> implements Disposable {
       if (mesh) {
         this.visibleMeshes.push(mesh);
         mesh.visible = true;
-        this._previouslyVisibleMeshes.add(mesh.uuid);
-        meshesThatJustDisappeared.delete(mesh.uuid);
-        // this.cullEdges(mesh, true);
+        this.currentVisibleMeshes.add(mesh.uuid);
+        this.recentlyHiddenMeshes.delete(mesh.uuid);
       }
     }
 
     // Hide meshes that were visible before but not anymore
-    for (const uuid of meshesThatJustDisappeared) {
+    for (const uuid of this.recentlyHiddenMeshes) {
       const mesh = this.meshes.get(uuid);
       if (mesh === undefined) continue;
       mesh.visible = false;
-      // this.cullEdges(mesh, false);
     }
+
+    this.viewUpdated.trigger();
   };
 
   private getMaterial(r: number, g: number, b: number) {
@@ -285,23 +289,4 @@ export class ScreenCuller extends Component<null> implements Disposable {
       code: `${this._colors.r}-${this._colors.g}-${this._colors.b}`,
     };
   }
-
-  // TODO: Decouple culling from fragments
-  // If the edges need to be updated (e.g. some walls have been hidden)
-  // this allows to compute them only when they are visibile
-  // private cullEdges(fragment: Fragment, visible: boolean) {
-  //   if (visible) {
-  //     this.updateEdges(fragment);
-  //   }
-  // if (this.fragment.edges.edgesList[fragment.id]) {
-  //   this.fragment.edges.edgesList[fragment.id].visible = visible;
-  // }
-  // }
-
-  // private updateEdges(_fragment: Fragment) {
-  // if (this.fragment.edges.edgesToUpdate.has(fragment.id)) {
-  //   this.fragment.edges.generate(fragment);
-  //   this.fragment.edges.edgesToUpdate.delete(fragment.id);
-  // }
-  // }
 }

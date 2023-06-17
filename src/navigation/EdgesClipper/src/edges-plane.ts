@@ -36,6 +36,14 @@ export class EdgesPlane extends SimplePlane {
     this.edges.visible = state;
   }
 
+  /** {@link Component.enabled} */
+  set enabled(state: boolean) {
+    super.enabled = state;
+    if (state) {
+      this.update();
+    }
+  }
+
   /** {@link Disposable.dispose} */
   dispose() {
     super.dispose();
