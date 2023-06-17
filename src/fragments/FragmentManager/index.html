@@ -60,8 +60,42 @@
     const grid = new OBC.SimpleGrid(components);
     components.tools.add("grid", grid);
 
+    /*MD
+    ### 🧶 Managing Fragment Efficiently
+    ---
+
+    Until recently, we had been adding 3D objects to the **Scene** with the traditional `scene.add` API.
+    We will now use **[Fragment](https://github.com/IFCjs/fragment)** to work with large BIM models.🏗️
+
+    Fragment are faster and easier to use Geometric API, which reduces draw calls and speeds up the processing of 3D objects.
+    In this tutorial, we will load and render `.frag` files using **Fragment Manager**.
+
+    :::tip First, let's set up a simple scene!
+
+    👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
+
+    :::
+
+    ### 🧭 Fragment Powerhouse
+    ---
+
+    Let's begin by including [Fragment Manager](../api/classes/components.FragmentManager),
+    which requires the parameter `component` to be provided to it.
+    In terms of capabilities, Fragment Manager is a true powerhouse.🏭
+
+    */
+
     let fragments = new OBC.FragmentManager(components);
 
+    /*MD
+
+    ### 🧩 Add Fragment To Scene
+    ---
+
+    Using a single API, a Fragment can be quickly added to the scene.
+    Everything else is taken care of by `fragment.load`, which makes it easier to render a **Fragment** file.💪💪
+
+     */
     async function loadFragments(url) {
         const file = await fetch(url);
         const data = await file.arrayBuffer();
@@ -69,6 +103,26 @@
         fragments.load(buffer);
     }
 
+    /*MD
+
+    :::tip Loading IFC files as Fragment
+
+    You're probably wondering how IFC files can be loaded as Fragment.
+    The same approach can be used to load an IFC file with a fragment;
+    [view its own tutorial](./FragmentIfcLoader.mdx) for further information.
+
+    :::
+
+    ### 📤 Storing Fragment
+    ---
+
+    **Fragment Manager** provides us with option to export the Fragment we have used in our Scene.
+    Fragment are exported to **[Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob/Blob)**,
+    which can be used to generate a File and then download it.↗️
+
+    Let's see how you can use `fragment.export` in your code.
+
+     */
     function exportFragments(name) {
         const fragmentCount = Object.keys(fragments.list).length;
         if (fragmentCount === 0) {
@@ -81,6 +135,12 @@
         download(file);
     }
 
+    /*MD
+    #### 🗃️ Downloading Files
+
+    Now, we will create a small utility function which we will use to download the exported Fragment by passing the relevant file to it.
+
+    */
     function download(file) {
         const link = document.createElement("a");
         link.href = URL.createObjectURL(file);
@@ -90,10 +150,37 @@
         link.remove();
     }
 
+    /*MD
+
+    :::info Creating Dynamic URLs
+
+    `URL.createObjectURL()` comes handy when you want to generate a URL for files that were generated programmatically.
+    You can read more about it [here](https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static).
+
+    :::
+
+    ### 🧹 Discard Fragment and Clean the Scene
+    ---
+
+    At some point, you will require to render numerous Fragment and discard them when not needed.
+    You can use `dispose()` method which will remove the Fragment Meshes from the Scene.✂️
+
+    After using `fragments.dispose()`, you should reinitialize **Fragment Manager** to maintain it's original state for further uses.
+
+    */
+
     function disposeFragments() {
         fragments.dispose();
         fragments = new OBC.FragmentManager(components);
     }
+
+    /*MD
+
+    **Congratulations** 🎉 on completing this short yet powerful tutorial!
+    Now you can render or export Fragment files in your BIM Apps using **[Fragment Manager](../api/classes/components.FragmentManager)** 🎯
+    Let's keep it up and check out another tutorial! 🎓
+
+    */
 
     // Set up stats
 
