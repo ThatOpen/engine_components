@@ -66,7 +66,10 @@ export class FragmentGrouper
       const result: { [p: string]: string[] } = {};
       const fragments = this._fragmentManager.list;
       for (const id in fragments) {
-        result[id] = fragments[id].items;
+        const fragment = fragments[id];
+        const items = fragment.items;
+        const hidden = Object.keys(fragment.hiddenInstances);
+        result[id] = [...items, ...hidden];
       }
       return result;
     }
