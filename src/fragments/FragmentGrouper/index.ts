@@ -61,7 +61,15 @@ export class FragmentGrouper
     }
   }
 
-  find(filter: { [name: string]: string }) {
+  find(filter?: { [name: string]: string }) {
+    if (!filter) {
+      const result: { [p: string]: string[] } = {};
+      const fragments = this._fragmentManager.list;
+      for (const id in fragments) {
+        result[id] = fragments[id].items;
+      }
+      return result;
+    }
     const size = Object.keys(filter).length;
     const models: { [fragmentGuid: string]: { [id: string]: number } } = {};
     for (const name in filter) {
