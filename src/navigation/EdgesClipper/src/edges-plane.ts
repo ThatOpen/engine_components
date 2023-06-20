@@ -52,7 +52,7 @@ export class EdgesPlane extends SimplePlane {
 
   /** {@link Updateable.update} */
   update = () => {
-    if (!this.enabled) return;
+    if (!super.enabled) return;
     this.beforeUpdate.trigger(this._plane);
 
     this._plane.setFromNormalAndCoplanarPoint(
