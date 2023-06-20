@@ -1,6 +1,6 @@
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
 import * as THREE from "three";
-import { mergeBufferGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
 import { SimpleRaycaster } from "../SimpleRaycaster";
 import { SimpleDimensionLine } from "../SimpleDimensions/simple-dimension-line";
 import { PostproductionRenderer } from "../../navigation/PostproductionRenderer";
@@ -733,7 +733,7 @@ export class SimpleArea
   }
 
   getVolume() {
-    const merged = mergeBufferGeometries([this._volumeMesh.geometry]);
+    const merged = mergeGeometries([this._volumeMesh.geometry]);
 
     const volume = parseFloat(this.volumeCalculation(merged).toFixed(2));
 

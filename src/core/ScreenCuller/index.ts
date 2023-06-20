@@ -234,6 +234,7 @@ export class ScreenCuller extends Component<null> implements Disposable {
   };
 
   private getMaterial(r: number, g: number, b: number) {
+    const colorEnabled = THREE.ColorManagement.enabled;
     THREE.ColorManagement.enabled = false;
     const code = `rgb(${r}, ${g}, ${b})`;
     const color = new THREE.Color(code);
@@ -247,7 +248,7 @@ export class ScreenCuller extends Component<null> implements Disposable {
       });
       this.materialCache.set(code, material);
     }
-    THREE.ColorManagement.enabled = true;
+    THREE.ColorManagement.enabled = colorEnabled;
     return material;
   }
 
