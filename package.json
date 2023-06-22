@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "@popperjs/core": "latest",
-    "bim-fragment": "0.0.21",
+    "bim-fragment": "1.0.2",
     "camera-controls": "^1.36.0",
     "dexie": "^3.2.3",
     "mapbox-gl": "^2.15.0",

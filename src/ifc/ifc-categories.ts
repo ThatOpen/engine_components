@@ -10,7 +10,7 @@ export interface IfcItemsCategories {
 export class IfcCategories {
   getAll(webIfc: WEBIFC.IfcAPI, modelID: number) {
     const elementsCategories: IfcItemsCategories = {};
-    const categoriesIDs = this.getCategories();
+    const categoriesIDs = Object.keys(IfcElements).map((e) => parseInt(e, 10));
 
     for (let i = 0; i < categoriesIDs.length; i++) {
       const element = categoriesIDs[i];
@@ -22,10 +22,5 @@ export class IfcCategories {
     }
 
     return elementsCategories;
-  }
-
-  private getCategories() {
-    const elements = Object.keys(IfcElements).map((e) => parseInt(e, 10));
-    return elements;
   }
 }
