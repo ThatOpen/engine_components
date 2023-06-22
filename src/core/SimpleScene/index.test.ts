@@ -27,11 +27,11 @@ Test Plan:
 - test_name_empty: sets the name field to an empty string. Tags: [edge case]
 */
 
+import { BoxGeometry, Color, Mesh, MeshBasicMaterial, Scene } from "three";
 import { Disposer } from "../Disposer";
 import { SimpleScene } from "./index";
 import { Components } from "../Components";
 import testComponents from "../../test/mock/testComponents";
-import { BoxGeometry, Color, Mesh, MeshBasicMaterial, Scene } from "three";
 
 describe("SimpleScene", () => {
   test("constructor", () => {

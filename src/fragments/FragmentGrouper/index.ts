@@ -61,7 +61,18 @@ export class FragmentGrouper
     }
   }
 
-  find(filter: { [name: string]: string }) {
+  find(filter?: { [name: string]: string }) {
+    if (!filter) {
+      const result: { [p: string]: string[] } = {};
+      const fragments = this._fragmentManager.list;
+      for (const id in fragments) {
+        const fragment = fragments[id];
+        const items = fragment.items;
+        const hidden = Object.keys(fragment.hiddenInstances);
+        result[id] = [...items, ...hidden];
+      }
+      return result;
+    }
     const size = Object.keys(filter).length;
     const models: { [fragmentGuid: string]: { [id: string]: number } } = {};
     for (const name in filter) {
@@ -197,6 +208,19 @@ export class FragmentGrouper
       (entity) => entity.type === WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE
     );
 
+    const aggregates = properties.filter(
+      (entity) => entity.type === WEBIFC.IFCRELAGGREGATES
+    );
+
+    const nestedItems: { [id: number]: number[] } = {};
+    for (const item of aggregates) {
+      if (!item.RelatingObject.value) continue;
+      const id = item.RelatingObject.value;
+      nestedItems[id] = item.RelatedObjects.map((item: any) =>
+        item.value.toString()
+      );
+    }
+
     spatialRels.forEach((rel) => {
       if (!rel.RelatingStructure || !rel.RelatingStructure.value) {
         return;
@@ -217,15 +241,24 @@ export class FragmentGrouper
       });
 
       storeyElements.forEach((expressID: any) => {
-        const fragment = expressIDFragmentIDMap[expressID];
-        if (!fragment) {
-          return;
+        this.savePerStorey(expressIDFragmentIDMap, expressID, storey);
+        if (nestedItems[expressID]) {
+          for (const item of nestedItems[expressID]) {
+            this.savePerStorey(expressIDFragmentIDMap, item, storey);
+          }
         }
-        if (!storey[fragment]) {
-          storey[fragment] = new Set<string>();
-        }
-        storey[fragment].add(expressID);
       });
     });
+  }
+
+  private savePerStorey(idFragmentMap: any, expressID: any, storey: any) {
+    const fragment = idFragmentMap[expressID];
+    if (!fragment) {
+      return;
+    }
+    if (!storey[fragment]) {
+      storey[fragment] = new Set<string>();
+    }
+    storey[fragment].add(expressID);
   }
 }

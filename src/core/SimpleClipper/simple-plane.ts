@@ -39,6 +39,9 @@ export class SimplePlane
   // TODO: Clean up unnecessary attributes, clean up constructor
   private _visible = true;
   private _enabled = true;
+
+  private _controlsActive = false;
+
   private readonly _arrowBoundBox = new THREE.Mesh();
   private readonly _components: Components;
   private readonly _planeMesh: THREE.Mesh;
@@ -177,12 +180,14 @@ export class SimplePlane
   }
 
   private toggleControls(state: boolean) {
-    if (state) {
+    if (state && !this._controlsActive) {
       this._controls.addEventListener("change", this.update);
       this._controls.addEventListener("dragging-changed", this.changeDrag);
+      this._controlsActive = true;
     } else {
       this._controls.removeEventListener("change", this.update);
       this._controls.removeEventListener("dragging-changed", this.changeDrag);
+      this._controlsActive = false;
     }
   }
 
