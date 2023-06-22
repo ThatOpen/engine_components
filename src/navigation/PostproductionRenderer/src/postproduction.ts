@@ -4,6 +4,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
 import { N8AOPass } from "n8ao";
 import { CustomOutlinePass } from "./custom-outline-pass";
 import { Components } from "../../../core";
+import { OrthoPerspectiveCamera } from "../../OrthoPerspectiveCamera";
 
 // TODO: Clean up and document this
 
@@ -23,7 +24,6 @@ export class Postproduction {
   private _outlineUniforms: any;
   private _depthTexture?: THREE.DepthTexture;
   private readonly _renderTarget: THREE.WebGLRenderTarget;
-  private readonly _visibilityField = "ifcjsPostproductionVisible";
 
   private _outlineParams = {
     mode: { Mode: 0 },
@@ -82,30 +82,29 @@ export class Postproduction {
 
   update() {
     if (!this._enabled) return;
-    this.hideExcludedItems();
     this.composer.render();
-    this.showExcludedItems();
   }
 
-  private hideExcludedItems() {
-    for (const object of this.excludedItems) {
-      object.userData[this._visibilityField] = object.visible;
-      object.visible = false;
+  updateCamera() {
+    const camera = this.components.camera.get();
+    if (this.n8ao) {
+      this.n8ao.camera = camera;
     }
-  }
-
-  private showExcludedItems() {
-    for (const object of this.excludedItems) {
-      if (object.userData[this._visibilityField] !== undefined) {
-        object.visible = object.userData[this._visibilityField];
-      }
+    if (this._basePass) {
+      this._basePass.camera = camera;
     }
   }
 
   private initialize() {
     const scene = this.components.scene.get();
-    const camera = this.components.camera.get() as THREE.PerspectiveCamera;
+    const camera = this.components.camera.get();
     if (!scene || !camera) return;
+
+    if (this.components.camera instanceof OrthoPerspectiveCamera) {
+      this.components.camera.projectionChanged.on(() => {
+        this.updateCamera();
+      });
+    }
 
     const renderer = this.components.renderer;
     this.renderer.clippingPlanes = renderer.clippingPlanes;
@@ -150,7 +149,7 @@ export class Postproduction {
   //   this.composer.addPass(this._customOutline);
   // }
 
-  private addSaoPass(scene: THREE.Scene, camera: THREE.PerspectiveCamera) {
+  private addSaoPass(scene: THREE.Scene, camera: THREE.Camera) {
     const { width, height } = this.components.renderer.getSize();
     this.n8ao = new N8AOPass(scene, camera, width, height);
     this.composer.addPass(this.n8ao);
@@ -166,7 +165,7 @@ export class Postproduction {
     configuration.color = new THREE.Color().setHex(0xcccccc, "srgb-linear");
   }
 
-  private addBasePass(scene: THREE.Scene, camera: THREE.PerspectiveCamera) {
+  private addBasePass(scene: THREE.Scene, camera: THREE.Camera) {
     this._basePass = new RenderPass(scene, camera);
     this.composer.addPass(this._basePass);
   }

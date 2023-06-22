@@ -145,18 +145,29 @@ export class CubeMap
     const camera = this._camera.get();
     if (this._camera instanceof OrthoPerspectiveCamera) {
       const controls = this._camera.controls;
+
+      const projection = this._camera.getProjection();
+
       const target = camera.position
         .clone()
         .add(this._faceOrientations[orientation].clone().multiplyScalar(-1));
-      controls.setLookAt(
-        camera.position.x,
-        camera.position.y,
-        camera.position.z,
-        target.x,
-        target.y,
-        target.z,
-        true
-      );
+
+      const { x, y, z } = camera.position;
+
+      if (projection === "Perspective") {
+        controls.setLookAt(x, y, z, target.x, target.y, target.z, true);
+      } else {
+        const pos = new Vector3();
+        if (orientation === "top") pos.set(0, 200, 0);
+        if (orientation === "bottom") pos.set(0, -200, 0);
+        if (orientation === "left") pos.set(-200, 0, 0);
+        if (orientation === "right") pos.set(200, 0, 0);
+        if (orientation === "front") pos.set(0, 0, 200);
+        if (orientation === "back") pos.set(0, 0, -200);
+        controls.setPosition(pos.x, pos.y, pos.z, true);
+        controls.setTarget(0, 0, 0, true);
+      }
+
       this._camera.fit();
     }
   }

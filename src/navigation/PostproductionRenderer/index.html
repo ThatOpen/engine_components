@@ -39,7 +39,7 @@
 	components.scene = sceneComponent
 
 
-	const grid = new OBC.SimpleGrid(components);
+	const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
 	components.tools.add("grid", grid);
 
 	const scene = sceneComponent.get();
@@ -104,7 +104,7 @@
     */
 
     const fragments = new OBC.FragmentManager(components);
-    const file = await fetch("../../../resources/model.frag");
+    const file = await fetch("../../../resources/small.frag");
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
     const ids = fragments.load(buffer);

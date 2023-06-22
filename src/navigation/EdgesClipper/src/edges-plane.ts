@@ -36,6 +36,14 @@ export class EdgesPlane extends SimplePlane {
     this.edges.visible = state;
   }
 
+  /** {@link Component.enabled} */
+  set enabled(state: boolean) {
+    super.enabled = state;
+    if (state) {
+      this.update();
+    }
+  }
+
   /** {@link Disposable.dispose} */
   dispose() {
     super.dispose();
@@ -44,7 +52,7 @@ export class EdgesPlane extends SimplePlane {
 
   /** {@link Updateable.update} */
   update = () => {
-    if (!this.enabled) return;
+    if (!super.enabled) return;
     this.beforeUpdate.trigger(this._plane);
 
     this._plane.setFromNormalAndCoplanarPoint(

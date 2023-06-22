@@ -113,8 +113,9 @@ export class Geometry {
   }
 
   private saveNewMaterial(colorID: string, color: WEBIFC.Color) {
+    const { x, y, z } = color;
     this._materials[colorID] = new THREE.MeshLambertMaterial({
-      color: new THREE.Color(color.x, color.y, color.z),
+      color: new THREE.Color().setRGB(x, y, z, "srgb"),
       transparent: color.w !== 1,
       opacity: color.w,
       side: THREE.DoubleSide,

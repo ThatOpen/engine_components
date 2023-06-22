@@ -17,7 +17,8 @@ export class MapboxWindow {
   private readonly _center: [number, number];
   private readonly _style = "mapbox://styles/mapbox/light-v10";
 
-  private labels: { [id: string]: CSS2DObject } = {};
+  private _labels: { [id: string]: CSS2DObject } = {};
+  private _buildings: MapboxBuilding[] = [];
 
   /**
    * @param config: information needed to initialize the scene, including
@@ -63,11 +64,12 @@ export class MapboxWindow {
       label.position.set(model.x - center.x, 0, model.y - center.y);
 
       this._components.scene.get().add(label);
-      this.labels[id] = label;
+      this._labels[id] = label;
+      this._buildings.push(building);
     }
 
-    if (buildings.length && fitToScreen) {
-      this.centerMapToBuildings(buildings);
+    if (this._buildings.length && fitToScreen) {
+      this.centerMapToBuildings();
     }
   }
 
@@ -77,16 +79,21 @@ export class MapboxWindow {
    * @param id The {@link MapboxBuilding} to remove.
    */
   remove(id: string) {
-    const label = this.labels[id];
-    delete this.labels[id];
+    const label = this._labels[id];
+    delete this._labels[id];
     label.removeFromParent();
+    const found = this._buildings.find((building) => building.id === id);
+    if (found) {
+      const index = this._buildings.indexOf(found);
+      this._buildings.splice(index, 1);
+    }
   }
 
   /**
    * Removes all buildings from the map.
    */
   removeAll() {
-    for (const id in this.labels) {
+    for (const id in this._labels) {
       this.remove(id);
     }
   }
@@ -100,12 +107,50 @@ export class MapboxWindow {
     this._components.dispose();
     (this._components as any) = null;
     (this._map as any) = null;
-    for (const id in this.labels) {
-      const label = this.labels[id];
+    for (const id in this._labels) {
+      const label = this._labels[id];
       label.removeFromParent();
       label.element.remove();
     }
-    this.labels = {};
+    this._buildings = [];
+    this._labels = {};
+  }
+
+  centerMapToBuildings() {
+    let maxLng = -Number.MAX_VALUE;
+    let maxLat = -Number.MAX_VALUE;
+    let minLng = Number.MAX_VALUE;
+    let minLat = Number.MAX_VALUE;
+
+    for (const building of this._buildings) {
+      if (building.lng > maxLng) {
+        maxLng = building.lng;
+      }
+      if (building.lng < minLng) {
+        minLng = building.lng;
+      }
+      if (building.lat > maxLat) {
+        maxLat = building.lat;
+      }
+      if (building.lat < minLat) {
+        minLat = building.lat;
+      }
+    }
+
+    const factor = 0.4;
+    const width = maxLng - minLng;
+    const height = maxLat - minLat;
+
+    maxLng += factor * width;
+    maxLat += factor * height;
+    minLng -= factor * width;
+    minLat -= factor * height;
+    if (maxLng > 180) maxLng = 180;
+    if (minLng < -180) minLng = -180;
+    if (maxLat > 90) maxLat = 90;
+    if (minLat < -90) minLat = -90;
+
+    this._map.fitBounds([minLng, minLat, maxLng, maxLat]);
   }
 
   private newMap(config: MapboxParameters) {
@@ -136,42 +181,5 @@ export class MapboxWindow {
     const directionalLight2 = new THREE.DirectionalLight(0xffffff);
     directionalLight2.position.set(0, 70, 100).normalize();
     scene.add(directionalLight2);
-  }
-
-  private centerMapToBuildings(buildings: MapboxBuilding[]) {
-    let maxLng = -Number.MAX_VALUE;
-    let maxLat = -Number.MAX_VALUE;
-    let minLng = Number.MAX_VALUE;
-    let minLat = Number.MAX_VALUE;
-
-    for (const building of buildings) {
-      if (building.lng > maxLng) {
-        maxLng = building.lng;
-      }
-      if (building.lng < minLng) {
-        minLng = building.lng;
-      }
-      if (building.lat > maxLat) {
-        maxLat = building.lat;
-      }
-      if (building.lat < minLat) {
-        minLat = building.lat;
-      }
-    }
-
-    const factor = 0.4;
-    const width = maxLng - minLng;
-    const height = maxLat - minLat;
-
-    maxLng += factor * width;
-    maxLat += factor * height;
-    minLng -= factor * width;
-    minLat -= factor * height;
-    if (maxLng > 180) maxLng = 180;
-    if (minLng < -180) minLng = -180;
-    if (maxLat > 90) maxLat = 90;
-    if (minLat < -90) minLat = -90;
-
-    this._map.fitBounds([minLng, minLat, maxLng, maxLat]);
   }
 }
