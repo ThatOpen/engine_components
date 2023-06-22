@@ -28,7 +28,7 @@ export abstract class BaseInput<
     config?: Partial<InputConfig>
   ) {
     const div = document.createElement("div");
-    div.className = "flex flex-col";
+    div.className = "flex flex-col w-full";
     const _config: InputConfig = {
       name: "Tooeen Input",
       ...config,

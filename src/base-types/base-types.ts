@@ -155,7 +155,7 @@ export interface Createable {
  * interface, like a button or a window.
  */
 export interface UI {
-  uiElement: UIComponent | {[name: string]: UIComponent};
+  uiElement: UIComponent | { [name: string]: UIComponent };
 }
 
 export interface Item3D extends THREE.Object3D {

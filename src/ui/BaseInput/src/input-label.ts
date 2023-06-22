@@ -5,7 +5,7 @@ export class InputLabel extends SimpleUIComponent<HTMLLabelElement> {
   name: string = "InputLabel";
   constructor(components: Components, value: string) {
     const label = document.createElement("label");
-    label.className = `block leading-6 text-gray-300 text-sm`;
+    label.className = `block leading-6 text-gray-400 text-sm`;
     label.textContent = value;
     super(components, label);
   }

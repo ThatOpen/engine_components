@@ -1,7 +1,7 @@
 export function getRelationMap(
   properties: Record<string, Record<string, any>>,
   relationType: number,
-  onElementsFound?: (groupID: number, elementIDs: number[]) => void
+  onElementsFound?: (relatingID: number, relatedIDs: number[]) => void
 ) {
   const defaultCallback = () => {};
   const _onElementsFound = onElementsFound ?? defaultCallback;

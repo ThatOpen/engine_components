@@ -118,7 +118,7 @@ export class FragmentHighlighter
 
   highlightByID(
     name: string,
-    ids: { [fragmentID: string]: string[] },
+    ids: { [fragmentID: string]: Set<string> | string[] },
     removePrevious = true
   ) {
     if (removePrevious) {

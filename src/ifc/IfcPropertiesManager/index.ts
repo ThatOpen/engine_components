@@ -30,12 +30,13 @@ export class IfcPropertiesManager extends Component<null> {
   private _ifcApi: WEBIFC.IfcAPI;
   private _changesList: (PropertyChange & { id: string })[] = [];
   private _psetsList: (Pset & { id: string })[] = [];
-  private _allowedSchemas = ["IFC2X3", "IFC4", "IFC4_3"];
+  private _allowedSchemas = ["IFC2X3", "IFC4", "IFC4X3"];
 
   constructor(components: Components, ifcApi?: WEBIFC.IfcAPI) {
     super();
     this._components = components;
     this._ifcApi = ifcApi ?? new WEBIFC.IfcAPI();
+    this._ifcApi.SetWasmPath("/", true);
     this._ifcApi.Init();
   }
 

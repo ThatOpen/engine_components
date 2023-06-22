@@ -1,28 +1,23 @@
 // eslint-disable-next-line max-classes-per-file
 import * as WEBIFC from "web-ifc";
-import {
-  createPopper,
-  Instance as PopperInstance,
-  // @ts-ignore
-} from "@popperjs/core/dist/esm";
+import { createPopper, Instance as PopperInstance } from "@popperjs/core";
 import { EditProp } from "./src/edit-prop";
 import { Button } from "../../ui/ButtonComponent";
 import { UI, Component } from "../../base-types";
-import { TreeView, FloatingWindow, UIComponentsStack } from "../../ui";
+import { FloatingWindow, UIComponentsStack } from "../../ui";
 import { Components } from "../../core/Components";
-import { PropertyTag } from "./src/property-tag";
 import { FragmentHighlighter } from "../../fragments";
 import { IfcPropertiesManager } from "../IfcPropertiesManager";
 import { IfcCategoryMap } from "../ifc-category-map";
-import {
-  getElementPsets,
-  getElementQsets,
-  getPsetProps,
-  getQsetQuantities,
-} from "./src";
+import { getElementQsets, getPsetProps, getQsetQuantities } from "./src";
 import { getRelationMap } from "./src/relation-map";
+import { NewProp } from "./src/new-prop";
+import { NewPset } from "./src/new-pset";
+import { PropertyGroup } from "./src/testing/PropertyGroup";
+import { Property } from "./src/testing/Property";
+import { ElementPropertiesManager } from "./src/testing/ElementPropertiesManager";
 
-// TODO: Clean up, make more modular and decouple from fragments.
+// TODO: Clean up, make more modular.
 
 // @ts-ignore
 enum IfcTokenType {
@@ -39,7 +34,6 @@ enum IfcTokenType {
 }
 
 interface PropName {
-  prefix: string;
   Constructor: (new (value: any) => any) | null;
   value: string;
   type: number;
@@ -59,17 +53,6 @@ interface IPropData {
   group: string;
 }
 
-interface IEntityAttributes {
-  globalId: IPropData;
-  ifcEntity: IPropData;
-  name?: IPropData;
-  predefinedType?: IPropData;
-  description?: IPropData;
-  longName?: IPropData;
-  tag?: IPropData;
-  type?: IPropData;
-}
-
 interface IModelProp {
   [propertyName: string]: IPropData;
 }
@@ -78,8 +61,12 @@ interface IModelProperties {
   [expressID: string]: IModelProp;
 }
 
+interface NewDataStructure {
+  [fragmentID: string]: { [expressID: string]: ElementPropertiesManager };
+}
+
 interface IPropertiesList {
-  [modelID: string]: IModelProperties;
+  [fragmentID: string]: IModelProperties;
 }
 
 interface PropertiesProcessorConfig {
@@ -92,14 +79,21 @@ export class PropertiesProcessor
 {
   name: string = "PropertiesParser";
   enabled: boolean = true;
-  components: Components;
   uiElement!: { container: FloatingWindow; showButton: Button };
   propsManager: IfcPropertiesManager;
+  groupButtons: UIComponentsStack;
+  private _components: Components;
   private _propsList: UIComponentsStack;
+  private _editContainer: UIComponentsStack;
+  private _newInput: NewProp;
+  private _newPsetInput: NewPset;
   private _editInput: EditProp;
-  private _editInputPopper: PopperInstance;
+  private _editBtn: Button;
+  private _newPsetBtn: Button;
+  private _editContainerPopper!: PopperInstance;
   private _fragmentsHighlighter: FragmentHighlighter;
   private _map: IPropertiesList = {};
+  private _map2: NewDataStructure = {};
   private _config: PropertiesProcessorConfig = {
     selectionHighlighter: "select",
   };
@@ -110,33 +104,104 @@ export class PropertiesProcessor
     config?: PropertiesProcessorConfig
   ) {
     super();
-    this.components = components;
+    this._components = components;
     this._config = { ...this._config, ...config };
     this._fragmentsHighlighter = fragmentHighlighter;
 
-    this._propsList = new UIComponentsStack(this.components, "Vertical");
+    this._propsList = new UIComponentsStack(this._components, "Vertical");
+    this._propsList.get().classList.add("gap-y-1");
 
-    this._editInput = new EditProp(this.components);
+    this._editInput = new EditProp(this._components);
     this._editInput.visible = false;
     this._editInput.nameInput.visible = false;
-    this.components.ui.add(this._editInput);
+
+    this._newInput = new NewProp(this._components);
+    this._newInput.visible = false;
+
+    this._newPsetInput = new NewPset(this._components);
+    this._newPsetInput.visible = false;
+
+    this._editContainer = new UIComponentsStack(this._components);
+    this._editContainer.onHidden.on(() => {
+      this._editInput.visible = false;
+      this._newInput.visible = false;
+      this._newPsetInput.visible = false;
+    });
+
+    this._components.ui.add(this._editContainer);
+    this._editContainer.get().classList.add("absolute", "top-5", "left-5");
+    this._editContainer.addChild(
+      this._editInput,
+      this._newInput,
+      this._newPsetInput
+    );
+
+    this._editBtn = new Button(this._components, {
+      materialIconName: "edit",
+    });
+
+    this._newPsetBtn = new Button(this._components, {
+      materialIconName: "add",
+      name: "Add property set",
+    });
+    this._newPsetBtn.visible = false;
+    this._newPsetBtn.onclick = () => {
+      this._editContainer.visible = true;
+      this._editInput.visible = false;
+      this._newInput.visible = false;
+      this._newPsetInput.visible = true;
+      this._editContainerPopper.update();
+    };
 
     this.propsManager = new IfcPropertiesManager(components);
+
+    this.groupButtons = new UIComponentsStack(this._components, "Horizontal");
+    this.groupButtons.get().classList.add("my-[8px]");
+    const addBtn = new Button(this._components, { materialIconName: "add" });
+    const removeBtn = new Button(this._components, {
+      materialIconName: "delete",
+    });
+    const editBtn = new Button(this._components, {
+      materialIconName: "edit",
+    });
+    this.groupButtons.addChild(addBtn, editBtn, removeBtn);
 
     this.setEventListeners();
     this.setUI();
   }
 
   private setUI() {
-    const container = new FloatingWindow(this.components, {
-      title: "Properties List",
-    });
+    const container = new FloatingWindow(this._components);
 
-    this.components.ui.add(container);
+    this._components.ui.add(container);
+    container.title = "Properties List";
     container.visible = false;
-    container.addChild(this._propsList);
 
-    const showButton = new Button(this.components, {
+    const topMenu = new UIComponentsStack(this._components, "Horizontal");
+    topMenu.addChild(this._newPsetBtn);
+
+    this._newPsetInput.acceptButton.onclick = () => {
+      const pset = new PropertyGroup(
+        this._components,
+        this._newPsetInput.nameInput.inputValue
+      );
+      pset.buttons = this.groupButtons;
+      pset.description = this._newPsetInput.descriptionInput.inputValue;
+      const selection = this._fragmentsHighlighter.selection.select;
+      for (const fragmentID in selection) {
+        const elements = selection[fragmentID];
+        for (const expressID of elements) {
+          const elementPropertiesManager = this._map2[fragmentID][expressID];
+          elementPropertiesManager.addGroup(pset);
+          this.renderProperties(fragmentID, expressID);
+        }
+      }
+      this._editContainer.visible = false;
+    };
+
+    container.addChild(topMenu, this._propsList);
+
+    const showButton = new Button(this._components, {
       materialIconName: "list",
     });
 
@@ -147,9 +212,9 @@ export class PropertiesProcessor
       container.visible = !container.visible;
     };
 
-    this._editInputPopper = createPopper(
+    this._editContainerPopper = createPopper(
       container.get(),
-      this._editInput.get(),
+      this._editContainer.get(),
       {
         modifiers: [
           {
@@ -158,20 +223,19 @@ export class PropertiesProcessor
           },
           {
             name: "preventOverflow",
-            // @ts-ignore
-            options: { boundary: this.components.ui.viewerContainer },
+            options: { boundary: this._components.ui.viewerContainer },
           },
         ],
       }
     );
 
-    this._editInputPopper.setOptions({ placement: "right" });
+    this._editContainerPopper.setOptions({ placement: "right" });
     container.onMoved.on(() => {
-      this._editInputPopper.update();
+      this._editContainerPopper.update();
     });
 
     container.onResized.on(() => {
-      this._editInputPopper.update();
+      this._editContainerPopper.update();
     });
 
     container.onHidden.on(() => {
@@ -184,24 +248,33 @@ export class PropertiesProcessor
     };
   }
 
+  private cleanPropertiesList() {
+    for (const child of this._propsList.children) {
+      child.domElement.remove();
+    }
+    this._propsList.children = [];
+  }
+
   private setEventListeners() {
     const highlighterEvents = this._fragmentsHighlighter.events;
     highlighterEvents[this._config.selectionHighlighter]?.onClear.on(() => {
       this.uiElement.container.description = null;
-      this._editInput.visible = false;
-      this._propsList.dispose(true);
+      this._editContainer.visible = false;
+      this._newPsetBtn.visible = false;
+      this.cleanPropertiesList();
     });
     highlighterEvents[this._config.selectionHighlighter]?.onHighlight.on(
       (selection) => {
+        this._newPsetBtn.visible = true;
         const fragmentIDs = Object.keys(selection);
         if (fragmentIDs.length !== 1) {
-          this._propsList.dispose(true);
+          this.cleanPropertiesList();
           return;
         }
         const fragmentID = fragmentIDs[0];
         const expressIDs = [...selection[fragmentID]];
         if (expressIDs.length !== 1) {
-          this._propsList.dispose(true);
+          this.cleanPropertiesList();
           return;
         }
         const expressID = expressIDs[0];
@@ -216,41 +289,29 @@ export class PropertiesProcessor
 
   process(
     properties: Record<string, any>,
-    expressIDFragmentIDMap: { [fragmentID: string]: string[] }
+    fragmentIDExpressIDMap: { [fragmentID: string]: string[] }
   ) {
-    const processResult: IModelProperties = {};
-    // @ts-ignore
-    const expressIDs = Object.values(expressIDFragmentIDMap).flat();
-    this.processElements(properties, expressIDs, processResult);
-    this.processStoreys(properties, processResult);
-    this.processGroups(properties, processResult);
-    this.processQsets(properties, processResult, expressIDs);
-    this.processPsets(properties, processResult, expressIDs);
-    for (const fragmentID in expressIDFragmentIDMap) {
-      const expressIDs = expressIDFragmentIDMap[fragmentID];
-      this._map[fragmentID] = {};
-      expressIDs.forEach((expressID) => {
-        this._map[fragmentID][expressID] = processResult[expressID];
-      });
-    }
-    return processResult;
-  }
-
-  groupProperties(props: IModelProp) {
-    const groups: Record<string, IPropData[]> = {};
-    for (const name in props) {
-      const prop = props[name];
-      if (!groups[prop.group]) {
-        groups[prop.group] = [];
+    const expressIDFragmentIDMap: Record<string, string> = {};
+    for (const fragmentID in fragmentIDExpressIDMap) {
+      this._map2[fragmentID] = {};
+      const expressIDs = fragmentIDExpressIDMap[fragmentID];
+      for (const expressID of expressIDs) {
+        this._map2[fragmentID][expressID] = new ElementPropertiesManager(
+          this._components,
+          Number(expressID)
+        );
+        expressIDFragmentIDMap[expressID] = fragmentID;
       }
-      groups[prop.group].push(prop);
     }
-    return groups;
+    this.processElements(properties, expressIDFragmentIDMap);
+    this.processStoreys(properties, expressIDFragmentIDMap);
+    this.processSets(properties, expressIDFragmentIDMap);
+    // this.processGroups(properties, processResult);
   }
 
-  private renderProperties(fragmentID: string, expressID: string) {
-    this._propsList.dispose(true);
-    const fragmentProperties = this.get()[fragmentID];
+  renderProperties(fragmentID: string, expressID: string) {
+    this.cleanPropertiesList();
+    const fragmentProperties = this._map2[fragmentID];
     if (!fragmentProperties) {
       return;
     }
@@ -258,81 +319,103 @@ export class PropertiesProcessor
     if (!elementProperties) {
       return;
     }
-    const groupedProperties = this.groupProperties(elementProperties);
-    const name = groupedProperties.Attributes?.find(
-      (v) => v.name.value === "Name"
-    );
+    const name = elementProperties
+      .getGroupByName("Attributes")
+      ?.getPropertyByName("Name");
     if (name) {
-      this.uiElement.container.description = name.value.value.toString();
+      this.uiElement.container.description = name.value?.toString() ?? null;
     }
-    for (const groupName in groupedProperties) {
-      const groupTree = new TreeView(this.components, groupName);
-      this._propsList.addChild(groupTree);
-      const props = groupedProperties[groupName];
-
-      props.forEach((prop) => {
-        const value =
-          typeof prop.value.value === "number"
-            ? prop.value.value.toPrecision(4)
-            : prop.value.value;
-
-        const propTag = new PropertyTag(
-          this.components,
-          prop.name.value,
-          value
-        );
-        groupTree.addChild(propTag);
-
-        const editButton = new Button(this.components, {
-          materialIconName: "edit",
-        });
-        editButton.visible = false;
-        editButton.onclick = () => {
-          this._editInput.nameInput.inputValue = prop.name.value;
-          this._editInput.valueInput.labelElement.textContent = `${prop.group}: ${prop.name.value}`;
-          this._editInput.valueInput.inputValue = value.toString();
-          this._editInput.visible = true;
-          this._editInputPopper.update();
-
-          this._editInput.acceptButton.onclick = () => {
-            this._editInput.visible = false;
-            const inputValue = this._editInput.valueInput.inputValue;
-            prop.value.value = inputValue;
-            propTag.value = inputValue;
-            if (prop.value.Constructor && prop.value.key) {
-              this.propsManager.addChange(
-                {
-                  expressID: prop.expressID,
-                  propName: prop.value.key,
-                  newValue: new prop.value.Constructor(inputValue),
-                },
-                fragmentID
-              );
-            }
-          };
-        };
-        propTag.addChild(editButton);
-
-        propTag.get().onmouseover = () => {
-          editButton.visible = true;
-        };
-        propTag.get().onmouseout = () => {
-          editButton.visible = false;
-        };
-      });
-      groupTree.collapse(true);
+    for (const group of elementProperties.propertyGroups) {
+      this._propsList.addChild(group.uiElement);
     }
-  }
+    // for (const groupName in groupedProperties) {
 
-  private storeProperty(
-    props: IModelProperties,
-    expressID: number,
-    data: IPropData
-  ) {
-    if (!props[expressID]) {
-      props[expressID] = {};
-    }
-    props[expressID][`${data.name.prefix}${data.name.value}`] = data;
+    //   add.onclick = () => {
+    //     this._newPsetInput.visible = false;
+    //     this._editInput.visible = false;
+    //     this._newInput.visible = true;
+    //     this._editContainer.visible = true;
+    //     this._editContainerPopper.update();
+
+    //     this._newInput.acceptButton.onclick = () => {
+    //       const prop: IPropData = {
+    //         group: groupName,
+    //         expressID: -1,
+    //         name: {
+    //           Constructor: null,
+    //           value: this._newInput.nameInput.inputValue,
+    //           type: 1,
+    //         },
+    //         value: {
+    //           Constructor: null,
+    //           value: this._newInput.valueInput.inputValue,
+    //           type: 1,
+    //           key: "NominalValue",
+    //         },
+    //       };
+    //       const selection = this._fragmentsHighlighter.selection.select;
+    //       for (const fragmentID in selection) {
+    //         const ids = selection[fragmentID];
+    //         for (const expressID of ids) {
+    //           const elementProps = this.get()[fragmentID][expressID];
+    //           elementProps[this._newInput.nameInput.inputValue] = prop;
+    //           this.renderProperties(fragmentID, expressID);
+    //         }
+    //       }
+    //       this._editContainer.visible = false;
+    //     };
+    //   };
+
+    //   const props = groupedProperties[groupName];
+
+    //   props.forEach((prop) => {
+    //     const value =
+    //       typeof prop.value.value === "number"
+    //         ? prop.value.value.toPrecision(4)
+    //         : prop.value.value;
+
+    //     const editButton = new Button(this._components, {
+    //       materialIconName: "edit",
+    //     });
+    //     editButton.visible = false;
+    //     editButton.onclick = () => {
+    //       this._newPsetInput.visible = false;
+    //       this._newInput.visible = false;
+    //       this._editInput.visible = true;
+    //       this._editInput.nameInput.inputValue = prop.name.value;
+    //       this._editInput.valueInput.labelElement.textContent = `${prop.group}: ${prop.name.value}`;
+    //       this._editInput.valueInput.inputValue = value.toString();
+
+    //       this._editContainer.visible = true;
+    //       this._editContainerPopper.update();
+
+    //       this._editInput.acceptButton.onclick = () => {
+    //         this._editInput.visible = false;
+    //         const inputValue = this._editInput.valueInput.inputValue;
+    //         prop.value.value = inputValue;
+    //         propTag.value = inputValue;
+    //         if (prop.value.Constructor && prop.value.key) {
+    //           this.propsManager.addChange(
+    //             {
+    //               expressID: prop.expressID,
+    //               propName: prop.value.key,
+    //               newValue: new prop.value.Constructor(inputValue),
+    //             },
+    //             fragmentID
+    //           );
+    //         }
+    //       };
+    //     };
+    //     propTag.addChild(editButton);
+
+    //     propTag.get().onmouseenter = () => {
+    //       editButton.visible = true;
+    //     };
+    //     propTag.get().onmouseleave = () => {
+    //       editButton.visible = false;
+    //     };
+    //   });
+    // }
   }
 
   /**
@@ -343,60 +426,87 @@ export class PropertiesProcessor
   private processAttributes(
     properties: Record<string, any>,
     expressID: number,
-    options?: { group?: string; prefix?: string }
+    options?: { group?: string }
   ) {
     const props = properties[expressID];
     if (!props) {
       return null;
     }
-    const _options = { group: "Attributes", prefix: "", ...options };
-    const { group, prefix } = _options;
+    const _options = { group: "Attributes", ...options };
+    const { group: groupName } = _options;
 
-    const attrs = [
-      "GlobalId",
+    const group = new PropertyGroup(this._components, groupName);
+    group.editable = false;
+    group.buttons = this.groupButtons;
+
+    const ifcEntity = new Property(
+      this._components,
       "IfcEntity",
-      "Name",
-      "Description",
-      "Tag",
-      "Type",
-      "LongName",
+      IfcCategoryMap[props.type]
+    );
+
+    group.addProperty(ifcEntity);
+
+    const attributes = [
+      {
+        name: "PredefinedType",
+        editable: true,
+        applicableEntities: [WEBIFC.IFCWALL, WEBIFC.IFCWALLSTANDARDCASE],
+      },
+      {
+        name: "Name",
+        editable: true,
+      },
+      {
+        name: "LongName",
+        editable: true,
+      },
+      {
+        name: "Description",
+        editable: true,
+      },
+      {
+        name: "ObjectType",
+        editable: true,
+      },
+      {
+        name: "Tag",
+        editable: true,
+      },
+      {
+        name: "GlobalId",
+        editable: true,
+      },
+      {
+        name: "Elevation",
+        editable: true,
+      },
     ];
 
-    const attributes: Record<string, any> = {};
-
-    attrs.forEach((attribute) => {
-      if (props[attribute]) {
-        const key = attribute[0].toLocaleLowerCase() + attribute.slice(1);
-        const value: IPropData = {
-          name: {
-            prefix,
-            value: attribute,
-            type: 1,
-            Constructor: null,
-          },
-          value: {
-            ...props[attribute],
-            Constructor: props[attribute].constructor ?? null,
-            key: attribute,
-          },
-          group,
-          expressID: props.expressID,
-        };
-        attributes[key] = value;
+    for (const attribute of attributes) {
+      if (!props[attribute.name]) {
+        continue;
       }
-    });
-    return attributes as IEntityAttributes;
+      const attributeProperty = new Property(
+        this._components,
+        attribute.name,
+        props[attribute.name].value
+      );
+      attributeProperty.editable = attribute.editable;
+      group.addProperty(attributeProperty);
+    }
+
+    return group;
   }
 
   private processElements(
     properties: Record<string, any>,
-    expressIDs: string[],
-    props: IModelProperties
+    expressIDFragmentIDMap: Record<string, string>
   ) {
     const arrayProperties = Object.values(properties);
 
     // #region Building properties
-    let buildingAttributes: IEntityAttributes | null;
+    let buildingAttributes: PropertyGroup | null = null;
     const building: any = arrayProperties.find(
       (prop: any) => prop.type === WEBIFC.IFCBUILDING
     );
@@ -406,174 +516,152 @@ export class PropertiesProcessor
         building.expressID,
         {
           group: "Building",
-          prefix: "Building",
         }
       );
     }
     // #endregion
 
     // #region Site properties
-    let siteAttributes: IEntityAttributes | null;
+    let siteAttributes: PropertyGroup | null = null;
     const site: any = arrayProperties.find(
       (prop: any) => prop.type === WEBIFC.IFCSITE
     );
     if (site) {
       siteAttributes = this.processAttributes(properties, site.expressID, {
         group: "Site",
-        prefix: "Site",
       });
     }
     // #endregion
 
-    expressIDs.forEach((expressID) => {
+    const expressIDs = Object.keys(expressIDFragmentIDMap);
+
+    for (const expressID of expressIDs) {
+      const fragmentID = expressIDFragmentIDMap[expressID];
+      const elementPropsManager = this._map2[fragmentID][expressID];
       const elementAttributes = this.processAttributes(
         properties,
         Number(expressID)
       );
       if (elementAttributes) {
-        for (const name in elementAttributes) {
-          // @ts-ignore
-          const attribute = elementAttributes[name];
-          this.storeProperty(props, Number(expressID), attribute);
-        }
+        elementPropsManager.addGroup(elementAttributes);
       }
       if (buildingAttributes) {
-        const { globalId, type, tag, ifcEntity, ...attrs } = buildingAttributes;
-        for (const name in attrs) {
-          // @ts-ignore
-          const attribute = attrs[name];
-          this.storeProperty(props, Number(expressID), attribute);
-        }
+        elementPropsManager.addGroup(buildingAttributes);
       }
       if (siteAttributes) {
-        const { globalId, type, tag, ifcEntity, ...attrs } = siteAttributes;
-        for (const name in attrs) {
-          // @ts-ignore
-          const attribute = attrs[name];
-          this.storeProperty(props, Number(expressID), attribute);
+        elementPropsManager.addGroup(siteAttributes);
+      }
+    }
+  }
+
+  private processSets(
+    properties: Record<string, any>,
+    expressIDFragmentIDMap: Record<string, string>
+  ) {
+    const idsToProcess = Object.keys(expressIDFragmentIDMap);
+    getRelationMap(
+      properties,
+      WEBIFC.IFCRELDEFINESBYPROPERTIES,
+      (relatingID, expressIDs) => {
+        const relating = properties[relatingID];
+        if (relating.type === WEBIFC.IFCPROPERTYSET) {
+          const psetGroup = new PropertyGroup(
+            this._components,
+            relating.Name.value
+          );
+          psetGroup.buttons = this.groupButtons;
+          getPsetProps(properties, relatingID, (propID) => {
+            const prop = properties[propID];
+            const value =
+              prop.NominalValue?.constructor.name === "IfcBoolean"
+                ? prop.NominalValue.value === "T"
+                : prop.NominalValue?.value;
+
+            const property = new Property(
+              this._components,
+              prop.Name.value,
+              value
+            );
+            psetGroup.addProperty(property);
+
+            for (const expressID of expressIDs) {
+              if (!idsToProcess.includes(String(expressID))) {
+                continue;
+              }
+              const fragmentID = expressIDFragmentIDMap[expressID];
+              this._map2[fragmentID][expressID].addGroup(psetGroup);
+            }
+          });
+        } else if (relating.type === WEBIFC.IFCELEMENTQUANTITY) {
+          const qsetGroup = new PropertyGroup(
+            this._components,
+            relating.Name.value
+          );
+          qsetGroup.buttons = this.groupButtons;
+          getQsetQuantities(properties, relatingID, (qtoID) => {
+            const qto = properties[qtoID];
+            const entityName = IfcCategoryMap[qto.type];
+            let valuePropName = entityName
+              .replace(/IFCQUANTITY/, "")
+              .toLowerCase();
+            valuePropName = `${
+              valuePropName[0].toUpperCase() + valuePropName.slice(1)
+            }Value`;
+            const property = new Property(
+              this._components,
+              qto.Name.value,
+              qto[valuePropName].value
+            );
+            qsetGroup.addProperty(property);
+
+            for (const expressID of expressIDs) {
+              if (!idsToProcess.includes(String(expressID))) {
+                continue;
+              }
+              const fragmentID = expressIDFragmentIDMap[expressID];
+              this._map2[fragmentID][expressID].addGroup(qsetGroup);
+            }
+            // const data: IPropData = {
+            //   name: {
+            //     ...qto.Name,
+            //     Constructor: qto.Name?.constructor ?? null,
+            //   },
+            //   value: {
+            //     ...qto[valuePropName],
+            //     Constructor: qto[valuePropName]?.constructor ?? null,
+            //     key: valuePropName,
+            //   },
+            //   group: qto.Name.value,
+            //   expressID: qto.expressID,
+            // };
+          });
         }
       }
-    });
-  }
-
-  private processPsets(
-    properties: Record<string, any>,
-    props: IModelProperties,
-    expressIDs: number[]
-  ) {
-    expressIDs.forEach((elementID) => {
-      getElementPsets(properties, Number(elementID), (psetID) => {
-        const pset = properties[psetID];
-        getPsetProps(properties, psetID, (propertyID) => {
-          const prop = properties[propertyID];
-          const value =
-            prop.NominalValue?.constructor.name === "IfcBoolean"
-              ? prop.NominalValue.value === "T"
-              : prop.NominalValue?.value;
-
-          const data: IPropData = {
-            name: {
-              prefix: "",
-              ...prop.Name,
-              Constructor: prop.Name?.constructor ?? null,
-            },
-            value: {
-              value,
-              type: prop.NominalValue?.type,
-              Constructor: prop.NominalValue?.constructor ?? null,
-              key: "NominalValue",
-            },
-            group: pset.Name.value,
-            expressID: prop.expressID,
-          };
-          this.storeProperty(props, elementID, data);
-        });
-      });
-    });
-  }
-
-  private processQsets(
-    properties: Record<string, any>,
-    props: IModelProperties,
-    expressIDs: number[]
-  ) {
-    expressIDs.forEach((elementID) => {
-      getElementQsets(properties, Number(elementID), (qsetID) => {
-        const qset = properties[qsetID];
-        getQsetQuantities(properties, qsetID, (quantityID) => {
-          const qto = properties[quantityID];
-          const entityName = IfcCategoryMap[qto.type];
-          let valuePropName = entityName
-            .replace(/IFCQUANTITY/, "")
-            .toLowerCase();
-          valuePropName = `${
-            valuePropName[0].toUpperCase() + valuePropName.slice(1)
-          }Value`;
-          const data: IPropData = {
-            name: {
-              prefix: "",
-              ...qto.Name,
-              typeConstructor: qto.Name?.constructor.name ?? null,
-              Constructor: qto.Name?.constructor ?? null,
-            },
-            value: {
-              ...qto[valuePropName],
-              typeConstructor: qto[valuePropName]?.constructor.name ?? null,
-              Constructor: qto[valuePropName]?.constructor ?? null,
-              key: valuePropName,
-            },
-            group: qset.Name.value,
-            expressID: qto.expressID,
-          };
-          this.storeProperty(props, Number(elementID), data);
-        });
-      });
-    });
+    );
   }
 
   private processStoreys(
     properties: Record<string, any>,
-    props: IModelProperties
+    expressIDFragmentIDMap: Record<string, string>
   ) {
+    const idsToProcess = Object.keys(expressIDFragmentIDMap);
     getRelationMap(
       properties,
       WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE,
       (storeyID, expressIDs) => {
-        const storey = properties[storeyID];
         const storeyAttributes = this.processAttributes(properties, storeyID, {
           group: "Storey",
-          prefix: "Storey",
         });
-        expressIDs.forEach((expressID: number) => {
-          if (storey.Elevation) {
-            const elevation: IPropData = {
-              name: {
-                prefix: "",
-                value: "StoreyElevation",
-                type: 1,
-                Constructor: null,
-              },
-              value: {
-                ...storey.Elevation,
-                typeConstructor: storey.Elevation?.constructor.name ?? null,
-                Constructor: storey.Elevation?.constructor ?? null,
-                key: "Elevation",
-              },
-              group: "Storey",
-              expressID: storey.expressID,
-            };
-            this.storeProperty(props, expressID, elevation);
+        for (const expressID of expressIDs) {
+          if (!idsToProcess.includes(String(expressID))) {
+            continue;
           }
+          const fragmentID = expressIDFragmentIDMap[expressID];
+          const elementPropsManager = this._map2[fragmentID][expressID];
           if (storeyAttributes) {
-            const { globalId, type, tag, ifcEntity, ...attrs } =
-              storeyAttributes;
-            for (const name in attrs) {
-              // @ts-ignore
-              const attribute = attrs[name];
-              this.storeProperty(props, expressID, attribute);
-            }
+            elementPropsManager.addGroup(storeyAttributes);
           }
-        });
+        }
       }
     );
   }
@@ -589,21 +677,20 @@ export class PropertiesProcessor
         const group = properties[groupID];
         const groupAttributes = this.processAttributes(properties, groupID, {
           group: `Group: ${group.Name?.value}`,
-          prefix: `Group: ${group.Name?.value}`,
         });
         expressIDs.forEach((expressID: number) => {
           if (groupAttributes?.name) {
-            this.storeProperty(props, expressID, groupAttributes.name);
+            // this.storeProperty(props, expressID, groupAttributes.name);
           }
           if (groupAttributes?.description) {
-            this.storeProperty(props, expressID, groupAttributes.description);
+            // this.storeProperty(props, expressID, groupAttributes.description);
           }
         });
       }
     );
   }
 
-  // createGroupSystem(propName: string, autoAdd: boolean) {
+  // createGroupSystem(propName: string) {
 
   // }
 }

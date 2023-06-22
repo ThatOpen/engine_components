@@ -106,7 +106,6 @@ export class SimpleSVGViewport extends Component<SVGElement> {
     // #region Settings window
     const settingsWindow = new FloatingWindow(this._components, {
       title: "Drawing settings",
-      initialWidth: 230,
       id: this.id,
     });
     settingsWindow.visible = false;

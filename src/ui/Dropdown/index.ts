@@ -8,13 +8,15 @@ export class Dropdown extends BaseInput<HTMLSelectElement> {
   constructor(components: Components, name: string = "Tooeen Dropdown") {
     const input = document.createElement("select");
     input.className =
-      "block w-full rounded-md border-0 h-[40px] text-white bg-ifcjs-100 ring-1 ring-inset ring-ifcjs-120 focus:ring-2 focus:ring-ifcjs-200";
+      "block w-full text-base px-3 rounded-md border-0 h-[40px] text-white bg-ifcjs-100 ring-1 ring-inset ring-ifcjs-120 focus:ring-2 focus:ring-ifcjs-200";
     super(components, input);
     this.labelElement.textContent = name;
   }
 
-  addOption(value: string) {
-    this.options.push(value);
+  addOption(...value: string[]) {
+    for (const v of value) {
+      this.options.push(v);
+    }
     this.updateOptions();
     return this;
   }

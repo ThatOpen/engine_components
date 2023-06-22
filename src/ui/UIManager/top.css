@@ -33,24 +33,3 @@
     color: white;
     border-radius: 5px;
 }
-
-.tooeen-tree-item {
-    display: flex;
-    flex-direction: column;
-}
-
-.tooeen-tree-item-title {
-    display: flex;
-    align-items: center;
-    min-height: 30px;
-    width: 100%;
-    box-sizing: border-box;
-    padding-right: 10px;
-    cursor: pointer;
-}
-
-.tooeen-tree-item-title:hover {
-    background-color: var(--primary-color);
-    color: var(--secondary-color-100);
-    border-radius: 5px;
-}

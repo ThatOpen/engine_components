@@ -1,11 +1,12 @@
 import { UIComponentsStack } from "../../../ui/UIComponentsStack";
-import { Button, TextInput } from "../../../ui";
+import { Button, Dropdown, TextInput } from "../../../ui";
 import { SimpleUIComponent } from "../../../ui/SimpleUIComponent";
 import { Components } from "../../../core/Components";
 
-export class EditProp extends SimpleUIComponent<HTMLDivElement> {
-  name = "EditProp";
+export class NewProp extends SimpleUIComponent<HTMLDivElement> {
+  name = "NewProp";
   nameInput: TextInput;
+  typeInput: Dropdown;
   valueInput: TextInput;
   acceptButton: Button;
   cancelButton: Button;
@@ -16,14 +17,18 @@ export class EditProp extends SimpleUIComponent<HTMLDivElement> {
       "flex flex-col rounded-md p-4 bg-ifcjs-100 gap-y-2 items-center shadow-md";
     const title = document.createElement("h3");
     title.className = "text-white";
-    title.textContent = "Edit property";
+    title.textContent = "New property";
     div.append(title);
     super(components, div);
 
     this.nameInput = new TextInput(components);
     this.nameInput.labelElement.textContent = "Name";
+
     this.valueInput = new TextInput(components);
     this.valueInput.labelElement.textContent = "Value";
+
+    this.typeInput = new Dropdown(components, "Type");
+    this.typeInput.addOption("IfcText", "IfcReal", "IfcBoolean");
 
     this.acceptButton = new Button(components, {
       materialIconName: "check",
@@ -52,6 +57,11 @@ export class EditProp extends SimpleUIComponent<HTMLDivElement> {
     buttonsStack.get().classList.add("gap-x-2", "mt-2", "w-full");
     buttonsStack.addChild(this.acceptButton, this.cancelButton);
 
-    this.addChild(this.nameInput, this.valueInput, buttonsStack);
+    this.addChild(
+      this.nameInput,
+      this.typeInput,
+      this.valueInput,
+      buttonsStack
+    );
   }
 }

@@ -7,13 +7,13 @@ export class PropertyTag extends SimpleUIComponent {
   private _rightContainer = document.createElement("div");
   private _labelElement = document.createElement("p");
   private _valueElement = document.createElement("p");
-  private _label: string = "Property";
-  private _value: string | number | boolean = "Value";
+  private _label: string | null = null;
+  private _value: string | number | boolean | null = null;
 
   get label() {
     return this._label;
   }
-  set label(value: string) {
+  set label(value: string | null) {
     this._label = value;
     this._labelElement.textContent = value;
   }
@@ -21,28 +21,22 @@ export class PropertyTag extends SimpleUIComponent {
   get value() {
     return this._value;
   }
-  set value(value: string | number | boolean) {
+  set value(value: string | number | boolean | null) {
     this._value = value;
-    this._valueElement.textContent = value.toString();
+    this._valueElement.textContent = value?.toString() ?? null;
   }
 
-  constructor(
-    components: Components,
-    propLabel: string,
-    propValue: string | number | boolean
-  ) {
+  constructor(components: Components) {
     const wrapper = document.createElement("div");
     wrapper.className =
       "flex gap-x-2 hover:bg-ifcjs-120 py-1 px-3 rounded-md items-center min-h-[40px]";
-
     const tagInfo = document.createElement("div");
     tagInfo.className = "flex flex-col grow";
 
     super(components, wrapper);
 
     this._labelElement.className = "text-sm text-gray-400 font-medium";
-    this.label = propLabel;
-    this.value = propValue;
+    this._valueElement.className = "text-base";
     tagInfo.append(this._labelElement, this._valueElement);
 
     wrapper.append(tagInfo, this._rightContainer);

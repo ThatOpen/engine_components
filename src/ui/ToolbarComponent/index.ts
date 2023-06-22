@@ -86,7 +86,7 @@ export class Toolbar extends SimpleUIComponent<HTMLDivElement> {
       this.children.push(btn);
       this.domElement.append(btn.domElement);
     });
-    this.components.ui.updateToolbars();
+    this._components.ui.updateToolbars();
   }
 
   updateElements() {
