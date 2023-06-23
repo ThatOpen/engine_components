@@ -19,9 +19,12 @@ export class DataConverter {
   private _model = new FragmentGroup();
   private _ifcCategories = new IfcCategories();
   private _units = new Units();
-  private _boundingBoxes: { [id: string]: number[] } = {};
-  private _transparentBoundingBoxes: { [id: string]: number[] } = {};
-  private _expressIDfragmentIDMap: { [expressID: string]: string } = {};
+
+  private _fragmentKey = 0;
+
+  private _keyFragmentMap = new Map<number, string>();
+  private _expressIDKeyMap: { [expressID: string]: Set<number> } = {};
+
   private _propertyExporter = new IfcJsonExporter();
 
   private readonly _spatialTree = new SpatialStructure();
@@ -30,9 +33,6 @@ export class DataConverter {
 
   reset() {
     this._model = new FragmentGroup();
-    // this._uniqueItems = {};
-    this._boundingBoxes = {};
-    this._transparentBoundingBoxes = {};
   }
 
   cleanUp() {
@@ -40,9 +40,10 @@ export class DataConverter {
     this._categories = {};
     this._model = new FragmentGroup();
     this._ifcCategories = new IfcCategories();
-    // this._uniqueItems = {};
     this._units = new Units();
     this._propertyExporter = new IfcJsonExporter();
+    this._expressIDKeyMap = {};
+    this._keyFragmentMap.clear();
   }
 
   saveIfcCategories(webIfc: WEBIFC.IfcAPI) {
@@ -59,9 +60,7 @@ export class DataConverter {
   }
 
   private async saveModelData(webIfc: WEBIFC.IfcAPI) {
-    this._model.boundingBoxes = this._boundingBoxes;
-    this._model.transparentBoundingBoxes = this._transparentBoundingBoxes;
-    this._model.expressIDFragmentIDMap = this._expressIDfragmentIDMap;
+    this._model.expressIDFragmentIDMap = this._expressIDKeyMap;
     this._model.levelRelationships = this._spatialTree.itemsByFloor;
     this._model.floorsProperties = this._spatialTree.floorProperties;
     this._model.allTypes = IfcCategoryMap;
@@ -123,24 +122,29 @@ export class DataConverter {
       }
 
       const fragment = new FRAGS.Fragment(buffer, material, instances.length);
+      fragment.mesh.userData.key = this._fragmentKey;
+      this._keyFragmentMap.set(this._fragmentKey, fragment.id);
 
       for (let i = 0; i < instances.length; i++) {
         const instance = instances[i];
         matrix.fromArray(instance.matrix);
+        const { expressID } = instance;
         this._units.apply(matrix);
         fragment.setInstance(i, {
-          ids: [instance.expressID.toString()],
+          ids: [expressID.toString()],
           transform: matrix,
         });
 
         const { x, y, z } = instance.color;
         color.setRGB(x, y, z, "srgb");
         fragment.mesh.setColorAt(i, color);
+        this.saveExpressID(expressID.toString());
       }
 
       fragment.mesh.updateMatrix();
       this._model.fragments.push(fragment);
       this._model.add(fragment.mesh);
+      this._fragmentKey++;
     }
 
     const transform = new THREE.Matrix4();
@@ -148,9 +152,24 @@ export class DataConverter {
       const { material, geometries, expressIDs } = uniqueItems[matID];
       const geometry = FRAGS.GeometryUtils.merge([geometries], true);
       const fragment = new FRAGS.Fragment(geometry, material, 1);
+      fragment.mesh.userData.key = this._fragmentKey;
+      this._keyFragmentMap.set(this._fragmentKey, fragment.id);
+
+      for (const id of expressIDs) {
+        this.saveExpressID(id);
+      }
+      this._fragmentKey++;
+
       fragment.setInstance(0, { ids: expressIDs, transform });
       this._model.fragments.push(fragment);
       this._model.add(fragment.mesh);
     }
+  }
+
+  private saveExpressID(expressID: string) {
+    if (!this._expressIDKeyMap[expressID]) {
+      this._expressIDKeyMap[expressID] = new Set<number>();
+    }
+    this._expressIDKeyMap[expressID].add(this._fragmentKey);
   }
 }

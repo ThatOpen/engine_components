@@ -22,7 +22,7 @@ export class FragmentIfcLoader
 
   uiElement: Button;
 
-  onIfcLoaded: Event<FragmentGroup> = new Event();
+  ifcLoaded: Event<FragmentGroup> = new Event();
 
   private _webIfc = new WEBIFC.IfcAPI();
 
@@ -76,7 +76,7 @@ export class FragmentIfcLoader
       this._components.meshes.push(fragment.mesh);
     }
 
-    this.onIfcLoaded.trigger(model);
+    this.ifcLoaded.trigger(model);
     return model;
   }
 

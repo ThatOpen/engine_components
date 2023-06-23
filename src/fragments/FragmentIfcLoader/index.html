@@ -72,6 +72,7 @@
   // }
 
 	fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = false;
+	fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
 
 	async function loadIfcAsFragments(url) {
 		const file = await fetch(url);
@@ -137,6 +138,30 @@
 	gui.add(settings, "loadFragments").name("Import fragments");
 	gui.add(settings, "exportFragments").name("Export fragments");
 	gui.add(settings, "disposeFragments").name("Dispose fragments");
+
+	// For debugging
+
+	// fragmentIfcLoader.ifcLoaded.on((model) => {
+	//   let sorted = [];
+	//   for(const frag of model.fragments) {
+	// 		const size = frag.mesh.count;
+	// 		sorted.push({size, frag});
+	//   }
+	//
+	// 	sorted.sort((a, b) => {
+	// 		return a.size > b.size ? 1 : -1;
+	// 	});
+	// 	let value = 0;
+	// 	let step = 1 / sorted.length;
+	//
+	// 	for(const { frag } of sorted) {
+	// 		console.log(frag.mesh.material);
+	// 		const mat = frag.mesh.material[0];
+	// 		frag.mesh.instanceColor = null;
+	// 		mat.color.setRGB(value, value, value, "srgb");
+	// 		value += step;
+	//   }
+	// });
 
 
 </script>
