@@ -289,7 +289,7 @@ export class PropertiesProcessor
 
   process(
     properties: Record<string, any>,
-    fragmentIDExpressIDMap: { [fragmentID: string]: string[] }
+    fragmentIDExpressIDMap: { [fragmentID: string]: Set<string> }
   ) {
     const expressIDFragmentIDMap: Record<string, string> = {};
     for (const fragmentID in fragmentIDExpressIDMap) {

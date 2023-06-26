@@ -286,7 +286,7 @@ export class SimpleArea
     const line = this.createDimension(true);
     const area = this.getArea();
     if (!line || !this._root || !this._areaCenter || !area) {
-      return;
+      return null;
     }
     this._areaLines.push(line);
 
@@ -453,10 +453,10 @@ export class SimpleArea
       return this._areaPoints[0];
     }
     if (!this.cast && !this.closestVertex) {
-      return;
+      return null;
     }
     if (!this._outterCastPlane) {
-      return;
+      return null;
     }
 
     if (this._snapPointFixed && this.closestVertex) {
@@ -477,6 +477,7 @@ export class SimpleArea
           )
         : this.cast.point;
     }
+    return null;
   }
 
   /** {@link Component.enabled} */
@@ -612,7 +613,7 @@ export class SimpleArea
       return this.areaShape(this._areaPoints);
     }
     if (!this._outterCastNormal || !this._outterCastPlane) {
-      return;
+      return null;
     }
     const group = new THREE.Group();
 

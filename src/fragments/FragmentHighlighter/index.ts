@@ -121,6 +121,7 @@ export class FragmentHighlighter
     ids: { [fragmentID: string]: Set<string> | string[] },
     removePrevious = true
   ) {
+    if (!this.enabled) return;
     if (removePrevious) {
       this.clear(name);
     }

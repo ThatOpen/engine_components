@@ -8,7 +8,7 @@
   "scripts": {
     "test": "jest",
     "build": "node resources/cleaner.js && tsc && yarn build-examples && tailwindcss build -i src/ui/UIManager/top.css -o resources/styles.css",
-    "build-css": "tailwindcss build -i src/ui/UIManager/top.css -o src/index.css",
+    "build-css": "tailwindcss build -i src/ui/UIManager/top.css -o src/index.css && tailwindcss build -i src/ui/UIManager/top.css -o ../bimply-apps/src/tooeen.css",
     "build-examples": "rollup -c resources/rollup.config.mjs",
     "publish-repo": "cpy package.json dist && cd dist && npm publish",
     "publish-repo-alpha": "cpy package.json dist && cd dist && npm publish --tag alpha"

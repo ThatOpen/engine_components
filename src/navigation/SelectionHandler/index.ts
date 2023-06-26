@@ -76,9 +76,7 @@ export class SelectionHandler extends Component<HighlightMap> {
     });
 
     this._viewerContainer.addEventListener("mouseup", (e) => {
-      if (e.target !== this.components.renderer.get().domElement) {
-        return;
-      }
+      if (e.target !== this.components.renderer.get().domElement) return;
       mouseDown = false;
       if (mouseMoved || e.button !== 0) {
         mouseMoved = false;

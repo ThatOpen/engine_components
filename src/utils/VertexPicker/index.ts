@@ -1,30 +1,32 @@
 import * as THREE from "three";
-import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
-import { Event, Updateable } from "../../base-types/base-types";
+import { Disposable, Event } from "../../base-types/base-types";
 import { Component } from "../../base-types/component";
 import { Components } from "../../core/Components";
+import { Simple2DMarker } from "../../core/Simple2DMarker";
 
 export interface VertexPickerConfig {
   showOnlyVertex: boolean;
   snapDistance: number;
+  previewElement: HTMLElement;
 }
 
 export class VertexPicker
   extends Component<THREE.Vector3 | null>
-  implements Updateable
+  implements Disposable
 {
   name: string = "VertexPicker";
   afterUpdate: Event<VertexPicker> = new Event();
   beforeUpdate: Event<VertexPicker> = new Event();
   private _pickedPoint: THREE.Vector3 | null = null;
   private _config!: VertexPickerConfig;
-  private _enabled!: boolean;
   private _components: Components;
-  private _marker: CSS2DObject;
+  private _marker: Simple2DMarker;
+  private _enabled: boolean = false;
 
   set enabled(value: boolean) {
     this._enabled = value;
     if (!value) {
+      this._marker.visible = false;
       this._pickedPoint = null;
     }
   }
@@ -38,15 +40,14 @@ export class VertexPicker
     this._components = components;
     this.config = {
       snapDistance: 0.25,
-      showOnlyVertex: true,
+      showOnlyVertex: false,
       ...config,
     };
-    const marker = document.createElement("div");
-    marker.className =
-      "rounded-full w-[15px] h-[15px] border-3 border-solid border-red-500";
-    this._marker = new CSS2DObject(marker);
+    this._marker = new Simple2DMarker(components, this.config.previewElement);
     this._marker.visible = false;
-    this._components.scene.get().add(this._marker);
+    components.ui.viewerContainer?.addEventListener("mousemove", () =>
+      this.update()
+    );
     this.enabled = false;
   }
 
@@ -62,11 +63,8 @@ export class VertexPicker
     return this._components.raycaster;
   }
 
-  /** {@link Updateable.update} */
-  update() {
-    if (!this.enabled) {
-      return;
-    }
+  private update() {
+    if (!this.enabled) return;
     this.beforeUpdate.trigger(this);
     const intersects = this._raycaster.castRay();
     if (!intersects) {
@@ -80,11 +78,13 @@ export class VertexPicker
       return;
     }
     this._marker.visible = true;
-    this._marker.position.set(
-      this._pickedPoint.x,
-      this._pickedPoint.y,
-      this._pickedPoint.z
-    );
+    this._marker
+      .get()
+      .position.set(
+        this._pickedPoint.x,
+        this._pickedPoint.y,
+        this._pickedPoint.z
+      );
     this.afterUpdate.trigger(this);
   }
 
@@ -127,6 +127,10 @@ export class VertexPicker
       vertices.getY(index),
       vertices.getZ(index)
     );
+  }
+
+  dispose() {
+    this._marker.dispose();
   }
 
   get(): THREE.Vector3 | null {
