@@ -45,7 +45,6 @@
 
     const scene = components.scene.get();
 
-    scene.background = null;
     components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
     const directionalLight = new THREE.DirectionalLight();
@@ -124,12 +123,9 @@
 
      */
     function exportFragments(name) {
-        const fragmentCount = Object.keys(fragments.list).length;
-        if (fragmentCount === 0) {
-            alert("No fragments loaded!");
-            return;
-        }
-        const data = fragments.export();
+        if(!fragments.groups.length) return;
+        const group = fragments.groups[0];
+        const data = fragments.export(group);
         const blob = new Blob([data]);
         const file = new File([blob], name);
         download(file);
@@ -197,7 +193,7 @@
 
     const settings = {
         loadFragments: () => loadFragments("../../../resources/small.frag"),
-        exportFragments: () => exportFragments("example.frag"),
+        exportFragments: () => exportFragments("small.frag"),
         disposeFragments: () => disposeFragments()
     }
 

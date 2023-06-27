@@ -1,7 +1,8 @@
 import * as WEBIFC from "web-ifc";
+import { FragmentsGroup } from "bim-fragment";
 import { Disposable, Event, UI, Component } from "../../base-types";
 import { FragmentManager } from "../index";
-import { DataConverter, GeometryReader, FragmentGroup } from "./src";
+import { DataConverter, GeometryReader } from "./src";
 import { Button } from "../../ui";
 import { Components } from "../../core";
 
@@ -22,7 +23,7 @@ export class FragmentIfcLoader
 
   uiElement: Button;
 
-  ifcLoaded: Event<FragmentGroup> = new Event();
+  ifcLoaded: Event<FragmentsGroup> = new Event();
 
   private _webIfc = new WEBIFC.IfcAPI();
 
@@ -57,26 +58,24 @@ export class FragmentIfcLoader
 
   /** Loads the IFC file and converts it to a set of fragments. */
   async load(data: Uint8Array) {
-    let before = performance.now();
+    const before = performance.now();
     await this.readIfcFile(data);
-    console.log(`Reading the IFC: ${performance.now() - before} ms.`);
 
-    before = performance.now();
     await this.readAllGeometries();
-    console.log(`Reading all geometries: ${performance.now() - before} ms.`);
 
-    before = performance.now();
     const items = this._geometry.items;
     const model = await this._converter.generate(this._webIfc, items);
-    console.log(`Creating fragments: ${performance.now() - before} ms.`);
 
     this.cleanUp();
-    for (const fragment of model.fragments) {
+
+    this._fragments.groups.push(model);
+    for (const fragment of model.items) {
       this._fragments.list[fragment.id] = fragment;
       this._components.meshes.push(fragment.mesh);
     }
 
     this.ifcLoaded.trigger(model);
+    console.log(`This took ${performance.now() - before} ms!`);
     return model;
   }
 

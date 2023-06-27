@@ -1,29 +1,30 @@
 import * as THREE from "three";
 import * as WEBIFC from "web-ifc";
 import * as FRAGS from "bim-fragment";
+import { BufferGeometry } from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
 import {
   IfcCategories,
   IfcItemsCategories,
-  IfcCategoryMap,
   IfcJsonExporter,
 } from "../../../ifc";
 import { SpatialStructure } from "./spatial-structure";
 import { IfcFragmentSettings } from "./ifc-fragment-settings";
 import { Units } from "./units";
-import { FragmentGroup, IfcGeometries } from "./types";
+import { IfcGeometries } from "./types";
 
 export class DataConverter {
   settings = new IfcFragmentSettings();
 
   private _categories: IfcItemsCategories = {};
-  private _model = new FragmentGroup();
+  private _model = new FRAGS.FragmentsGroup();
   private _ifcCategories = new IfcCategories();
   private _units = new Units();
 
   private _fragmentKey = 0;
 
-  private _keyFragmentMap = new Map<number, string>();
-  private _expressIDKeyMap: { [expressID: string]: Set<number> } = {};
+  private _keyFragmentMap: { [key: number]: string } = {};
+  private _itemKeyMap: { [expressID: string]: number[] } = {};
 
   private _propertyExporter = new IfcJsonExporter();
 
@@ -31,19 +32,15 @@ export class DataConverter {
 
   constructor() {}
 
-  reset() {
-    this._model = new FragmentGroup();
-  }
-
   cleanUp() {
     this._spatialTree.cleanUp();
     this._categories = {};
-    this._model = new FragmentGroup();
+    this._model = new FRAGS.FragmentsGroup();
     this._ifcCategories = new IfcCategories();
     this._units = new Units();
     this._propertyExporter = new IfcJsonExporter();
-    this._expressIDKeyMap = {};
-    this._keyFragmentMap.clear();
+    this._keyFragmentMap = {};
+    this._itemKeyMap = {};
   }
 
   saveIfcCategories(webIfc: WEBIFC.IfcAPI) {
@@ -55,17 +52,14 @@ export class DataConverter {
     await this._spatialTree.setUp(webIfc, this._units);
     this.createAllFragments(geometries);
     await this.saveModelData(webIfc);
-    console.log(this._model);
     return this._model;
   }
 
   private async saveModelData(webIfc: WEBIFC.IfcAPI) {
-    this._model.expressIDFragmentIDMap = this._expressIDKeyMap;
-    this._model.levelRelationships = this._spatialTree.itemsByFloor;
-    this._model.floorsProperties = this._spatialTree.floorProperties;
-    this._model.allTypes = IfcCategoryMap;
-    this._model.itemTypes = this._categories;
-    this._model.coordinationMatrix = this.getCoordinationMatrix(webIfc);
+    const itemsData = this.getFragmentsGroupData();
+    this._model.keys = this._keyFragmentMap;
+    this._model.data = itemsData;
+    this._model.matrix = this.getCoordinationMatrix(webIfc);
     this._model.properties = await this.getModelProperties(webIfc);
   }
 
@@ -122,8 +116,7 @@ export class DataConverter {
       }
 
       const fragment = new FRAGS.Fragment(buffer, material, instances.length);
-      fragment.mesh.userData.key = this._fragmentKey;
-      this._keyFragmentMap.set(this._fragmentKey, fragment.id);
+      this._keyFragmentMap[this._fragmentKey] = fragment.id;
 
       for (let i = 0; i < instances.length; i++) {
         const instance = instances[i];
@@ -142,7 +135,7 @@ export class DataConverter {
       }
 
       fragment.mesh.updateMatrix();
-      this._model.fragments.push(fragment);
+      this._model.items.push(fragment);
       this._model.add(fragment.mesh);
       this._fragmentKey++;
     }
@@ -150,26 +143,67 @@ export class DataConverter {
     const transform = new THREE.Matrix4();
     for (const matID in uniqueItems) {
       const { material, geometries, expressIDs } = uniqueItems[matID];
-      const geometry = FRAGS.GeometryUtils.merge([geometries], true);
-      const fragment = new FRAGS.Fragment(geometry, material, 1);
-      fragment.mesh.userData.key = this._fragmentKey;
-      this._keyFragmentMap.set(this._fragmentKey, fragment.id);
 
-      for (const id of expressIDs) {
+      const geometriesByItem: { [expressID: string]: BufferGeometry[] } = {};
+      for (let i = 0; i < expressIDs.length; i++) {
+        const id = expressIDs[i];
+        if (!geometriesByItem[id]) {
+          geometriesByItem[id] = [];
+        }
+        geometriesByItem[id].push(geometries[i]);
+      }
+
+      const sortedGeometries: BufferGeometry[] = [];
+      const sortedIDs: string[] = [];
+      for (const id in geometriesByItem) {
+        sortedIDs.push(id);
+        const geometries = geometriesByItem[id];
+        if (geometries.length) {
+          const merged = mergeGeometries(geometries);
+          sortedGeometries.push(merged);
+        } else {
+          sortedGeometries.push(geometries[0]);
+        }
+        for (const geometry of geometries) {
+          geometry.dispose();
+        }
+      }
+
+      const geometry = FRAGS.GeometryUtils.merge([sortedGeometries], true);
+      const fragment = new FRAGS.Fragment(geometry, material, 1);
+      this._keyFragmentMap[this._fragmentKey] = fragment.id;
+
+      for (const id of sortedIDs) {
         this.saveExpressID(id);
       }
       this._fragmentKey++;
 
-      fragment.setInstance(0, { ids: expressIDs, transform });
-      this._model.fragments.push(fragment);
+      fragment.setInstance(0, { ids: sortedIDs, transform });
+      this._model.items.push(fragment);
       this._model.add(fragment.mesh);
     }
   }
 
   private saveExpressID(expressID: string) {
-    if (!this._expressIDKeyMap[expressID]) {
-      this._expressIDKeyMap[expressID] = new Set<number>();
+    if (!this._itemKeyMap[expressID]) {
+      this._itemKeyMap[expressID] = [];
     }
-    this._expressIDKeyMap[expressID].add(this._fragmentKey);
+    this._itemKeyMap[expressID].push(this._fragmentKey);
+  }
+
+  private getFragmentsGroupData() {
+    const itemsData: { [expressID: number]: number[] } = {};
+    for (const id in this._itemKeyMap) {
+      const data: number[] = [];
+      const idNum = parseInt(id, 10);
+      const level = this._spatialTree.itemsByFloor[idNum] || -1;
+      const category = this._categories[idNum] || -1;
+      data.push(level, category);
+      for (const key of this._itemKeyMap[id]) {
+        data.push(key);
+      }
+      itemsData[idNum] = data;
+    }
+    return itemsData;
   }
 }
