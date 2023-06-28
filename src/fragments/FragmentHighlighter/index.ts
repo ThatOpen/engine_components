@@ -116,10 +116,11 @@ export class FragmentHighlighter
 
     const group = mesh.fragment.group;
     if (group) {
-      const itemData = group.data[parseInt(itemID, 10)];
-      for (let i = 2; i < itemData.length; i++) {
-        const fragKey = itemData[i];
-        const fragID = group.keys[fragKey];
+      const idNum = parseInt(itemID, 10);
+      const keys = group.data[idNum][0];
+      for (let i = 0; i < keys.length; i++) {
+        const fragKey = keys[i];
+        const fragID = group.keyFragments[fragKey];
         fragments.push(this._fragments.list[fragID]);
         if (!this.selection[name][fragID]) {
           this.selection[name][fragID] = new Set<string>();

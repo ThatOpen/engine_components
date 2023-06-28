@@ -95,8 +95,8 @@
     Everything else is taken care of by `fragment.load`, which makes it easier to render a **Fragment** file.💪💪
 
      */
-    async function loadFragments(url) {
-        const file = await fetch(url);
+    async function loadFragments() {
+        const file = await fetch("../../../resources/small.frag");
         const data = await file.arrayBuffer();
         const buffer = new Uint8Array(data);
         fragments.load(buffer);
@@ -122,12 +122,12 @@
     Let's see how you can use `fragment.export` in your code.
 
      */
-    function exportFragments(name) {
+    function exportFragments() {
         if(!fragments.groups.length) return;
         const group = fragments.groups[0];
         const data = fragments.export(group);
         const blob = new Blob([data]);
-        const file = new File([blob], name);
+        const file = new File([blob], "small.frag");
         download(file);
     }
 
@@ -192,8 +192,8 @@
     // Set up dat.gui menu
 
     const settings = {
-        loadFragments: () => loadFragments("../../../resources/small.frag"),
-        exportFragments: () => exportFragments("small.frag"),
+        loadFragments: () => loadFragments(),
+        exportFragments: () => exportFragments(),
         disposeFragments: () => disposeFragments()
     }
 

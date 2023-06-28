@@ -57,7 +57,7 @@ export class DataConverter {
 
   private async saveModelData(webIfc: WEBIFC.IfcAPI) {
     const itemsData = this.getFragmentsGroupData();
-    this._model.keys = this._keyFragmentMap;
+    this._model.keyFragments = this._keyFragmentMap;
     this._model.data = itemsData;
     this._model.matrix = this.getCoordinationMatrix(webIfc);
     this._model.properties = await this.getModelProperties(webIfc);
@@ -192,17 +192,18 @@ export class DataConverter {
   }
 
   private getFragmentsGroupData() {
-    const itemsData: { [expressID: number]: number[] } = {};
+    const itemsData: { [expressID: number]: [number[], number[]] } = {};
     for (const id in this._itemKeyMap) {
-      const data: number[] = [];
+      const keys: number[] = [];
+      const rels: number[] = [];
       const idNum = parseInt(id, 10);
       const level = this._spatialTree.itemsByFloor[idNum] || -1;
       const category = this._categories[idNum] || -1;
-      data.push(level, category);
+      rels.push(level, category);
       for (const key of this._itemKeyMap[id]) {
-        data.push(key);
+        keys.push(key);
       }
-      itemsData[idNum] = data;
+      itemsData[idNum] = [keys, rels];
     }
     return itemsData;
   }
