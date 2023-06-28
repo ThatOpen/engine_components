@@ -2,7 +2,7 @@ import { Component, UI } from "../../base-types";
 import { TreeView } from "../../ui";
 import { FragmentTreeItem } from "./src/tree-item";
 import { Components } from "../../core";
-import { FragmentGrouper } from "../FragmentGrouper";
+import { FragmentClassifier } from "../FragmentClassifier";
 import { FragmentHighlighter } from "../FragmentHighlighter";
 
 export class FragmentTree extends Component<FragmentTreeItem> implements UI {
@@ -13,20 +13,20 @@ export class FragmentTree extends Component<FragmentTreeItem> implements UI {
   functionsMap: { [groupSystemName: string]: () => void } = {};
   private _components: Components;
   private _fragmentHighlighter: FragmentHighlighter;
-  private _fragmentGrouper: FragmentGrouper;
+  private _fragmentClassifier: FragmentClassifier;
 
   private readonly _tree: FragmentTreeItem;
 
   constructor(
     components: Components,
     fragmentHighlighter: FragmentHighlighter,
-    fragmentGrouper: FragmentGrouper,
+    fragmentClassifier: FragmentClassifier,
     name: string,
     groupSystemNames: string[]
   ) {
     super();
     this._components = components;
-    this._fragmentGrouper = fragmentGrouper;
+    this._fragmentClassifier = fragmentClassifier;
     this._fragmentHighlighter = fragmentHighlighter;
     this.name = name;
     this.groupSystemNames = groupSystemNames;
@@ -34,7 +34,7 @@ export class FragmentTree extends Component<FragmentTreeItem> implements UI {
     this._tree = new FragmentTreeItem(
       this._components,
       this._fragmentHighlighter,
-      this._fragmentGrouper,
+      this._fragmentClassifier,
       this.name
     );
     this.uiElement = this._tree.uiElement;
@@ -60,7 +60,7 @@ export class FragmentTree extends Component<FragmentTreeItem> implements UI {
   private process(groupSystemNames: string[], result = {}) {
     const groups: FragmentTreeItem[] = [];
     const currentSystemName = groupSystemNames[0]; // storeys
-    const systems = this._fragmentGrouper.get();
+    const systems = this._fragmentClassifier.get();
     const systemGroups = systems[currentSystemName];
     if (!currentSystemName || !systemGroups) {
       return groups;
@@ -69,14 +69,14 @@ export class FragmentTree extends Component<FragmentTreeItem> implements UI {
       // name is N00, N01, N02...
       const filter = { ...result, [currentSystemName]: name }; // { storeys: "N00" }, { storeys: "N01" }...
       const hasElements =
-        Object.keys(this._fragmentGrouper.find(filter)).length > 0;
+        Object.keys(this._fragmentClassifier.find(filter)).length > 0;
       if (hasElements) {
         const treeItemName =
           currentSystemName[0].toUpperCase() + currentSystemName.slice(1); // Storeys
         const treeItem = new FragmentTreeItem(
           this._components,
           this._fragmentHighlighter,
-          this._fragmentGrouper,
+          this._fragmentClassifier,
           `${treeItemName}: ${name}`
         ); // Storeys: N01
         treeItem.filter = filter;

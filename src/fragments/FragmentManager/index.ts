@@ -88,7 +88,7 @@ export class FragmentManager
     }
     this.groups.push(group);
     this.onFragmentsLoaded.trigger(group);
-    return ids;
+    return group;
   }
 
   /**

@@ -1,7 +1,7 @@
 import { Component, UI } from "../../../base-types";
 import { TreeView } from "../../../ui";
 import { FragmentHighlighter } from "../../FragmentHighlighter";
-import { FragmentGrouper } from "../../FragmentGrouper";
+import { FragmentClassifier } from "../../FragmentClassifier";
 import { Components } from "../../../core/Components";
 
 interface TreeItem {
@@ -36,7 +36,7 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
   constructor(
     components: Components,
     private _fragmentHighlighter: FragmentHighlighter,
-    private _fragmentGrouper: FragmentGrouper,
+    private _fragmentClassifier: FragmentClassifier,
     name: string,
     config?: FragmentTreeItemOptions
   ) {
@@ -61,7 +61,7 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
     const selectorName = this._options.selectionHighlighterName;
     this._fragmentHighlighter.highlightByID(
       selectorName,
-      this._fragmentGrouper.find(this.filter)
+      this._fragmentClassifier.find(this.filter)
     );
   }
 
@@ -69,7 +69,7 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
     const highlighterName = this._options.highlightHighlighterName;
     this._fragmentHighlighter.highlightByID(
       highlighterName,
-      this._fragmentGrouper.find(this.filter)
+      this._fragmentClassifier.find(this.filter)
     );
   }
 }
