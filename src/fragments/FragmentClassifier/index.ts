@@ -17,7 +17,7 @@ export class FragmentClassifier
   implements Disposable
 {
   /** {@link Component.name} */
-  name = "FragmentGrouper";
+  name = "FragmentClassifier";
 
   /** {@link Component.enabled} */
   enabled = true;
