@@ -127,11 +127,11 @@ export class FragmentClassifier
       throw new Error("To group by predefined type, properties are needed");
     }
 
-    if (!this._groupSystems.predefinedType) {
-      this._groupSystems.predefinedType = {};
+    if (!this._groupSystems.predefinedTypes) {
+      this._groupSystems.predefinedTypes = {};
     }
 
-    const currentTypes = this._groupSystems.predefinedType;
+    const currentTypes = this._groupSystems.predefinedTypes;
 
     for (const expressID in group.data) {
       const entity = group.properties[expressID];
