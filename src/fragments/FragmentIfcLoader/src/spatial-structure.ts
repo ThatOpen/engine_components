@@ -6,7 +6,7 @@ export class SpatialStructure {
   floorProperties: any[] = [];
   itemsByFloor: IfcItemsCategories = {};
 
-  async setupFloors(webIfc: WEBIFC.IfcAPI, units: Units) {
+  async setUp(webIfc: WEBIFC.IfcAPI, units: Units) {
     this.reset();
     try {
       const floors = await this.getFloors(webIfc);

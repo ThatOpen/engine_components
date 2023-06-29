@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { Fragment } from "bim-fragment";
+import { FragmentMesh } from "bim-fragment/fragment-mesh";
 import { Component, Disposable, Event } from "../../base-types";
 import { FragmentManager } from "../index";
 import { Components } from "../../core";
@@ -82,6 +83,7 @@ export class FragmentHighlighter
     if (!this.enabled) return null;
     this.checkSelection(name);
 
+    const fragments: Fragment[] = [];
     const meshes = this._fragments.meshes;
     const result = this._components.raycaster.castRay(meshes);
 
@@ -90,11 +92,11 @@ export class FragmentHighlighter
       return null;
     }
 
-    const mesh = result.object as THREE.Mesh;
+    const mesh = result.object as FragmentMesh;
     const geometry = mesh.geometry;
     const index = result.face?.a;
     const instanceID = result.instanceId;
-    if (!geometry || !index || instanceID === undefined) {
+    if (!geometry || index === undefined || instanceID === undefined) {
       return null;
     }
 
@@ -106,14 +108,29 @@ export class FragmentHighlighter
       this.selection[name][mesh.uuid] = new Set<string>();
     }
 
-    const fragment = this._fragments.list[mesh.uuid];
-    const blockID = fragment.getVertexBlockID(geometry, index);
-    const itemID = fragment.getItemID(instanceID, blockID);
+    fragments.push(mesh.fragment);
+    const blockID = mesh.fragment.getVertexBlockID(geometry, index);
+    const itemID = mesh.fragment.getItemID(instanceID, blockID);
     this.selection[name][mesh.uuid].add(itemID);
-
     this.updateFragmentHighlight(name, mesh.uuid);
 
-    return { id: itemID, fragment };
+    const group = mesh.fragment.group;
+    if (group) {
+      const idNum = parseInt(itemID, 10);
+      const keys = group.data[idNum][0];
+      for (let i = 0; i < keys.length; i++) {
+        const fragKey = keys[i];
+        const fragID = group.keyFragments[fragKey];
+        fragments.push(this._fragments.list[fragID]);
+        if (!this.selection[name][fragID]) {
+          this.selection[name][fragID] = new Set<string>();
+        }
+        this.selection[name][fragID].add(itemID);
+        this.updateFragmentHighlight(name, fragID);
+      }
+    }
+
+    return { id: itemID, fragments };
   }
 
   highlightByID(
