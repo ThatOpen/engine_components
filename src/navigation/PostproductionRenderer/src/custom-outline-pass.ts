@@ -1,69 +1,83 @@
+import * as THREE from "three";
 import { Pass, FullScreenQuad } from "three/examples/jsm/postprocessing/Pass";
-import {
-  Color,
-  MeshNormalMaterial,
-  NearestFilter,
-  PerspectiveCamera,
-  RGBAFormat,
-  Scene,
-  ShaderMaterial,
-  Vector2,
-  Vector4,
-  WebGLRenderer,
-  WebGLRenderTarget,
-} from "three";
-
-// source: https://discourse.threejs.org/t/how-to-render-full-outlines-as-a-post-process-tutorial/22674
+import { getPlaneDistanceMaterial } from "./plane-distance-shader";
+import { Components } from "../../../core";
 
 // Follows the structure of
 // 		https://github.com/mrdoob/three.js/blob/master/examples/jsm/postprocessing/OutlinePass.js
-class CustomOutlinePass extends Pass {
-  renderScene: Scene;
-  camera: PerspectiveCamera;
-  resolution: Vector2;
+export class CustomOutlinePass extends Pass {
+  resolution: THREE.Vector2;
+  renderScene: THREE.Scene;
+  renderCamera: THREE.Camera;
   fsQuad: FullScreenQuad;
-  normalTarget: WebGLRenderTarget;
-  normalOverrideMaterial: MeshNormalMaterial;
+  planeBuffer: THREE.WebGLRenderTarget;
+  normalOverrideMaterial: THREE.ShaderMaterial;
+  meshes: THREE.Mesh[] = [];
 
-  constructor(resolution: Vector2, scene: Scene, camera: PerspectiveCamera) {
+  private _color = 0x999999;
+  private _correctColor = false;
+
+  get color() {
+    return this._color;
+  }
+
+  set color(color: number) {
+    this._color = color;
+    const material = this.fsQuad.material as THREE.ShaderMaterial;
+    material.uniforms.outlineColor.value.set(color);
+  }
+
+  get correctColor() {
+    return this._correctColor;
+  }
+
+  set correctColor(active: boolean) {
+    this._correctColor = active;
+    const value = active ? 1 : 0;
+    const material = this.fsQuad.material as THREE.ShaderMaterial;
+    material.uniforms.correctColor.value = value;
+  }
+
+  constructor(resolution: THREE.Vector2, components: Components) {
     super();
 
-    this.renderScene = scene;
-    this.camera = camera;
-    this.resolution = new Vector2(resolution.x, resolution.y);
+    this.renderScene = components.scene.get();
+    this.renderCamera = components.camera.get();
+    this.resolution = new THREE.Vector2(resolution.x, resolution.y);
 
-    // @ts-ignore
-    this.fsQuad = new FullScreenQuad(null);
+    this.fsQuad = new FullScreenQuad();
     this.fsQuad.material = this.createOutlinePostProcessMaterial();
 
-    // Create a buffer to store the normals of the scene onto
-    const normalTarget = new WebGLRenderTarget(
+    // Create a buffer to store the plane of each face the scene onto
+    const planeBuffer = new THREE.WebGLRenderTarget(
       this.resolution.x,
       this.resolution.y
     );
-    normalTarget.texture.format = RGBAFormat;
-    normalTarget.texture.minFilter = NearestFilter;
-    normalTarget.texture.magFilter = NearestFilter;
-    normalTarget.texture.generateMipmaps = false;
-    normalTarget.stencilBuffer = false;
-    this.normalTarget = normalTarget;
+    planeBuffer.texture.colorSpace = "srgb-linear";
+    planeBuffer.texture.format = THREE.RGBAFormat;
+    planeBuffer.texture.type = THREE.HalfFloatType;
+    planeBuffer.texture.minFilter = THREE.NearestFilter;
+    planeBuffer.texture.magFilter = THREE.NearestFilter;
+    planeBuffer.texture.generateMipmaps = false;
+    planeBuffer.stencilBuffer = false;
+    this.planeBuffer = planeBuffer;
 
-    this.normalOverrideMaterial = new MeshNormalMaterial();
+    const material = getPlaneDistanceMaterial();
+    material.clippingPlanes = components.renderer.clippingPlanes;
+    this.normalOverrideMaterial = material;
   }
 
   dispose() {
-    this.normalTarget.dispose();
-    (this.normalTarget as any) = null;
+    this.planeBuffer.dispose();
     this.fsQuad.dispose();
-    (this.fsQuad as any) = null;
   }
 
   setSize(width: number, height: number) {
-    this.normalTarget.setSize(width, height);
-    this.resolution.set(width * 2, height * 2);
+    this.planeBuffer.setSize(width, height);
+    this.resolution.set(width, height);
 
-    // @ts-ignore
-    this.fsQuad.material.uniforms.screenSize.value.set(
+    const material = this.fsQuad.material as THREE.ShaderMaterial;
+    material.uniforms.screenSize.value.set(
       this.resolution.x,
       this.resolution.y,
       1 / this.resolution.x,
@@ -71,32 +85,41 @@ class CustomOutlinePass extends Pass {
     );
   }
 
-  render(renderer: WebGLRenderer, writeBuffer: any, readBuffer: any) {
+  render(renderer: THREE.WebGLRenderer, writeBuffer: any, readBuffer: any) {
     // Turn off writing to the depth buffer
     // because we need to read from it in the subsequent passes.
     const depthBufferValue = writeBuffer.depthBuffer;
     writeBuffer.depthBuffer = false;
 
-    // 1. Re-render the scene to capture all normals in texture.
-    // Ideally we could capture this in the first render pass along with
-    // the depth texture.
-    renderer.setRenderTarget(this.normalTarget);
+    // 1. Re-render the scene to capture all normals in a texture.
 
     const overrideMaterialValue = this.renderScene.overrideMaterial;
+    const previousBackground = this.renderScene.background;
+    this.renderScene.background = null;
+
+    for (const mesh of this.meshes) {
+      mesh.visible = false;
+    }
+
+    renderer.setRenderTarget(this.planeBuffer);
     this.renderScene.overrideMaterial = this.normalOverrideMaterial;
-    renderer.render(this.renderScene, this.camera);
+    renderer.render(this.renderScene, this.renderCamera);
+
+    for (const mesh of this.meshes) {
+      mesh.visible = true;
+    }
+
     this.renderScene.overrideMaterial = overrideMaterialValue;
 
-    // @ts-ignore
-    this.fsQuad.material.uniforms.depthBuffer.value = readBuffer.depthTexture;
-    // @ts-ignore
-    this.fsQuad.material.uniforms.normalBuffer.value =
-      this.normalTarget.texture;
-    // @ts-ignore
-    this.fsQuad.material.uniforms.sceneColorBuffer.value = readBuffer.texture;
+    this.renderScene.background = previousBackground;
 
-    // 2. Draw the outlines using the depth texture and normal texture
+    const material = this.fsQuad.material as THREE.ShaderMaterial;
+    material.uniforms.planeBuffer.value = this.planeBuffer.texture;
+    material.uniforms.sceneColorBuffer.value = readBuffer.texture;
+
+    // 2. Draw the outlines using the normal texture
     // and combine it with the scene color
+
     if (this.renderToScreen) {
       // If this is the last effect, then renderToScreen is true.
       // So we should render to the screen by setting target null
@@ -116,135 +139,147 @@ class CustomOutlinePass extends Pass {
     return `
 			varying vec2 vUv;
 			void main() {
-			  vUv = uv;
-			  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+				vUv = uv;
+				gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 			}
 			`;
   }
   get fragmentShader() {
     return `
-			#include <packing>
-			// The above include imports "perspectiveDepthToViewZ"
-			// and other GLSL functions from ThreeJS we need for reading depth.
-			uniform sampler2D sceneColorBuffer;
-			uniform sampler2D depthBuffer;
-			uniform sampler2D normalBuffer;
-			uniform float cameraNear;
-  		uniform float cameraFar;
-  		uniform vec4 screenSize;
-      uniform vec3 outlineColor;
-      uniform vec4 multiplierParameters;
-      uniform int debugVisualize;
+	  uniform sampler2D sceneColorBuffer;
+	  uniform sampler2D planeBuffer;
+	  uniform vec4 screenSize;
+	  uniform vec3 outlineColor;
+      uniform int width;
+      uniform float tolerance;
+      uniform float correctColor;
 
 			varying vec2 vUv;
 
-			// Helper functions for reading from depth buffer.
-			float readDepth (sampler2D depthSampler, vec2 coord) {
-				float fragCoordZ = texture2D(depthSampler, coord).x;
-				float viewZ = perspectiveDepthToViewZ( fragCoordZ, cameraNear, cameraFar );
-				return viewZToOrthographicDepth( viewZ, cameraNear, cameraFar );
-			}
-			float getLinearDepth(vec3 pos) {
-				return -(viewMatrix * vec4(pos, 1.0)).z;
+			vec4 getValue(sampler2D buffer, int x, int y) {
+				return texture2D(buffer, vUv + screenSize.zw * vec2(x, y));
 			}
 
-			float getLinearScreenDepth(sampler2D map) {
-		    	vec2 uv = gl_FragCoord.xy * screenSize.zw;
-		    	return readDepth(map,uv);
-			}
-			// Helper functions for reading normals and depth of neighboring pixels.
-			float getPixelDepth(int x, int y) {
-				// screenSize.zw is pixel size 
-				// vUv is current position
-				return readDepth(depthBuffer, vUv + screenSize.zw * vec2(x, y));
-			}
-			vec3 getPixelNormal(int x, int y) {
-				return texture2D(normalBuffer, vUv + screenSize.zw * vec2(x, y)).rgb;
-			}
+      float normalDiff(vec3 normal1, vec3 normal2) {
+        return ((dot(normal1, normal2) - 1.) * -1.) / 2.;
+      }
 
-      float saturate(float num) {
-        return clamp(num, 0.0, 1.0);
+      // Returns 0 if it's background, 1 if it's not
+      float getIsBackground(vec3 normal) {
+        float background = 1.0;
+        background *= step(normal.x, 0.);
+        background *= step(normal.y, 0.);
+        background *= step(normal.z, 0.);
+        background = (background - 1.) * -1.;
+        return background;
       }
 
 			void main() {
 				vec4 sceneColor = texture2D(sceneColorBuffer, vUv);
-				float depth = getPixelDepth(0, 0);
-				vec3 normal = getPixelNormal(0, 0);
 
-				// Get the difference between depth of neighboring pixels and current.
-				float depthDiff = 0.0;
-		  	depthDiff += abs(depth - getPixelDepth(1, 0));
-		  	depthDiff += abs(depth - getPixelDepth(-1, 0));
-		  	depthDiff += abs(depth - getPixelDepth(0, 1));
-		  	depthDiff += abs(depth - getPixelDepth(0, -1));
+        vec4 plane = getValue(planeBuffer, 0, 0);
+				vec3 normal = plane.xyz;
+        float distance = plane.w;
 
-		  	// Get the difference between normals of neighboring pixels and current
-		  	float normalDiff = 0.0;
-		  	normalDiff += distance(normal, getPixelNormal(1, 0));
-		  	normalDiff += distance(normal, getPixelNormal(0, 1));
-		  	normalDiff += distance(normal, getPixelNormal(0, 1));
-		  	normalDiff += distance(normal, getPixelNormal(0, -1));
+        vec3 normalTop = getValue(planeBuffer, 0, width).rgb;
+        vec3 normalBottom = getValue(planeBuffer, 0, -width).rgb;
+        vec3 normalRight = getValue(planeBuffer, width, 0).rgb;
+        vec3 normalLeft = getValue(planeBuffer, -width, 0).rgb;
+        vec3 normalTopRight = getValue(planeBuffer, width, width).rgb;
+        vec3 normalTopLeft = getValue(planeBuffer, -width, width).rgb;
+        vec3 normalBottomRight = getValue(planeBuffer, width, -width).rgb;
+        vec3 normalBottomLeft = getValue(planeBuffer, -width, -width).rgb;
 
-        normalDiff += distance(normal, getPixelNormal(1, 1));
-        normalDiff += distance(normal, getPixelNormal(1, -1));
-        normalDiff += distance(normal, getPixelNormal(-1, 1));
-        normalDiff += distance(normal, getPixelNormal(-1, -1));
+        float distanceTop = getValue(planeBuffer, 0, width).a;
+        float distanceBottom = getValue(planeBuffer, 0, -width).a;
+        float distanceRight = getValue(planeBuffer, width, 0).a;
+        float distanceLeft = getValue(planeBuffer, -width, 0).a;
+        float distanceTopRight = getValue(planeBuffer, width, width).a;
+        float distanceTopLeft = getValue(planeBuffer, -width, width).a;
+        float distanceBottomRight = getValue(planeBuffer, width, -width).a;
+        float distanceBottomLeft = getValue(planeBuffer, -width, -width).a;
 
-        // Apply multiplier & bias to each 
-        float depthBias = multiplierParameters.x;
-        float depthMultiplier = multiplierParameters.y;
-        float normalBias = multiplierParameters.z;
-        float normalMultiplier = multiplierParameters.w;
+        // Checks if the planes of this texel and the neighbour texels are different
 
-        depthDiff = depthDiff * depthMultiplier;
-        depthDiff = saturate(depthDiff);
-        depthDiff = pow(depthDiff, depthBias);
+        float planeDiff = 0.0;
 
-        normalDiff = normalDiff * normalMultiplier;
-        normalDiff = saturate(normalDiff);
-        normalDiff = pow(normalDiff, normalBias);
+        planeDiff += step(0.001, normalDiff(normal, normalTop));
+        planeDiff += step(0.001, normalDiff(normal, normalBottom));
+        planeDiff += step(0.001, normalDiff(normal, normalLeft));
+        planeDiff += step(0.001, normalDiff(normal, normalRight));
+        planeDiff += step(0.001, normalDiff(normal, normalTopRight));
+        planeDiff += step(0.001, normalDiff(normal, normalTopLeft));
+        planeDiff += step(0.001, normalDiff(normal, normalBottomRight));
+        planeDiff += step(0.001, normalDiff(normal, normalBottomLeft));
 
+        planeDiff += step(0.001, abs(distance - distanceTop));
+        planeDiff += step(0.001, abs(distance - distanceBottom));
+        planeDiff += step(0.001, abs(distance - distanceLeft));
+        planeDiff += step(0.001, abs(distance - distanceRight));
+        planeDiff += step(0.001, abs(distance - distanceTopRight));
+        planeDiff += step(0.001, abs(distance - distanceTopLeft));
+        planeDiff += step(0.001, abs(distance - distanceBottomRight));
+        planeDiff += step(0.001, abs(distance - distanceBottomLeft));
 
-		  	float outline = normalDiff + depthDiff;
-			
-		  	// Combine outline with scene color.
-		  	vec4 outlineColor = vec4(outlineColor, 1.0);
-		  	gl_FragColor = vec4(mix(sceneColor, outlineColor, outline));
+        // Add extra background outline
 
-        // For debug visualization of the different inputs to this shader.
-        if (debugVisualize == 1) {
-          gl_FragColor = sceneColor;
-        }
-        if (debugVisualize == 2) {
-          gl_FragColor = vec4(vec3(depth), 1.0);
-        }
-        if (debugVisualize == 3) {
-          gl_FragColor = vec4(normal, 1.0);
-        }
-        if (debugVisualize == 4) {
-          gl_FragColor = vec4(vec3(outline * outlineColor), 1.0);
-        }
-			}
+        int width2 = width + 1;
+        vec3 normalTop2 = getValue(planeBuffer, 0, width2).rgb;
+        vec3 normalBottom2 = getValue(planeBuffer, 0, -width2).rgb;
+        vec3 normalRight2 = getValue(planeBuffer, width2, 0).rgb;
+        vec3 normalLeft2 = getValue(planeBuffer, -width2, 0).rgb;
+        vec3 normalTopRight2 = getValue(planeBuffer, width2, width2).rgb;
+        vec3 normalTopLeft2 = getValue(planeBuffer, -width2, width2).rgb;
+        vec3 normalBottomRight2 = getValue(planeBuffer, width2, -width2).rgb;
+        vec3 normalBottomLeft2 = getValue(planeBuffer, -width2, -width2).rgb;
+
+        planeDiff += -(getIsBackground(normalTop2) - 1.);
+        planeDiff += -(getIsBackground(normalBottom2) - 1.);
+        planeDiff += -(getIsBackground(normalRight2) - 1.);
+        planeDiff += -(getIsBackground(normalLeft2) - 1.);
+        planeDiff += -(getIsBackground(normalTopRight2) - 1.);
+        planeDiff += -(getIsBackground(normalBottomRight2) - 1.);
+        planeDiff += -(getIsBackground(normalBottomRight2) - 1.);
+        planeDiff += -(getIsBackground(normalBottomLeft2) - 1.);
+
+        // Tolerance sets the minimum amount of differences to consider
+        // this texel an edge
+
+        float outline = step(tolerance, planeDiff);
+
+        // Exclude background
+
+        float background = getIsBackground(normal);
+        outline *= background;
+
+        vec4 color = vec4(outlineColor,1.);
+        
+        // Correct color to make it look similar to sao postprocessing colors
+        
+        float factor = clamp(correctColor * 1.5, 1., 4.);
+        float sum = 0.05 * step(1.5, factor);
+        float r = pow(sceneColor.r + sum, 1. / factor);
+        float g = pow(sceneColor.g + sum, 1. / factor);
+        float b = pow(sceneColor.b + sum, 1. / factor);
+        vec4 corrected = vec4(r, g, b, 1.);
+        
+        gl_FragColor = mix(corrected, color, outline);
+	}
 			`;
   }
 
   createOutlinePostProcessMaterial() {
-    return new ShaderMaterial({
+    return new THREE.ShaderMaterial({
       uniforms: {
+        correctColor: { value: 0 },
         debugVisualize: { value: 0 },
-        // @ts-ignore
-        sceneColorBuffer: {},
-        // @ts-ignore
-        depthBuffer: {},
-        // @ts-ignore
-        normalBuffer: {},
-        outlineColor: { value: new Color(0xffffff) },
-        // 4 scalar values packed in one uniform: depth multiplier, depth bias, and same for normals.
-        multiplierParameters: { value: new Vector4(1, 1, 1, 1) },
-        cameraNear: { value: this.camera.near },
-        cameraFar: { value: this.camera.far },
+        sceneColorBuffer: { value: null },
+        tolerance: { value: 2 },
+        planeBuffer: { value: null },
+        width: { value: 1 },
+        outlineColor: { value: new THREE.Color(this._color) },
         screenSize: {
-          value: new Vector4(
+          value: new THREE.Vector4(
             this.resolution.x,
             this.resolution.y,
             1 / this.resolution.x,
@@ -257,5 +292,3 @@ class CustomOutlinePass extends Pass {
     });
   }
 }
-
-export { CustomOutlinePass };

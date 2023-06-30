@@ -107,11 +107,10 @@
     const file = await fetch("../../../resources/small.frag");
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
-    const ids = fragments.load(buffer);
+    const model = fragments.load(buffer);
 
     const culler = new OBC.ScreenCuller(components);
-    for(const id of ids) {
-      const fragment = fragments.list[id];
+    for(const fragment of model.items) {
       culler.add(fragment.mesh);
     }
     culler.needsUpdate = true;
@@ -142,19 +141,28 @@
 	components.renderer.postproduction.enabled = true;
     const postproduction = components.renderer.postproduction;
 
-    const configuration = postproduction.n8ao.configuration;
+    postproduction.outlines.meshes.push(grid.get());
 
     const gui = new dat.GUI();
+
     gui.add(postproduction, "enabled");
-    gui.add(configuration, "aoSamples").step(1).min(1).max(16);
-    gui.add(configuration, "denoiseSamples").step(1).min(0).max(16);
-    gui.add(configuration, "denoiseRadius").step(1).min(0).max(100);
-    gui.add(configuration, "aoRadius").step(1).min(0).max(16);
-    gui.add(configuration, "distanceFalloff").step(1).min(0).max(16);
-    gui.add(configuration, "intensity").step(1).min(0).max(16);
-    gui.add(configuration, "halfRes");
-    gui.add(configuration, "screenSpaceRadius");
-    gui.addColor(configuration, "color");
+
+    const guiOutline = gui.addFolder("Outline");
+    guiOutline.add(postproduction, "outlinesEnabled");
+    guiOutline.addColor(postproduction.outlines, "color").name("Outline color");
+
+    const guiSAO = gui.addFolder("SAO");
+    const configuration = postproduction.n8ao.configuration;
+    guiSAO.add(postproduction, "saoEnabled");
+    guiSAO.add(configuration, "aoSamples").step(1).min(1).max(16);
+    guiSAO.add(configuration, "denoiseSamples").step(1).min(0).max(16);
+    guiSAO.add(configuration, "denoiseRadius").step(1).min(0).max(100);
+    guiSAO.add(configuration, "aoRadius").step(1).min(0).max(16);
+    guiSAO.add(configuration, "distanceFalloff").step(1).min(0).max(16);
+    guiSAO.add(configuration, "intensity").step(1).min(0).max(16);
+    guiSAO.add(configuration, "halfRes");
+    guiSAO.add(configuration, "screenSpaceRadius");
+    guiSAO.addColor(configuration, "color");
 
     /*MD
     **Congratulations** 🎉 on completing this tutorial! Now you know how to add cool effects easily using
