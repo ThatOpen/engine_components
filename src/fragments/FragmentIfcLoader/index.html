@@ -18,9 +18,11 @@
         "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
         "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
-        "openbim-components": "../../../resources/openbim-components.js"
+        "openbim-components": "../../../resources/openbim-components.js",
+         "client-zip": "https://unpkg.com/client-zip@2.3.0/index.js"
       }
     }
+
 </script>
 <script type="module">
 
@@ -30,6 +32,7 @@
 	import * as OBC from 'openbim-components';
 	import Stats from 'stats.js/src/Stats.js';
 	import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
+	import { downloadZip } from 'client-zip';
 
 	const container = document.getElementById('container');
 
@@ -44,7 +47,6 @@
 
 	const scene = components.scene.get();
 
-	scene.background = null;
 	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
 	const directionalLight = new THREE.DirectionalLight();
@@ -57,62 +59,62 @@
 	scene.add(ambientLight);
 
 	const grid = new OBC.SimpleGrid(components);
-	components.tools.add("grid", grid);
+	components.tools.add('grid', grid);
 
 	let fragments = new OBC.FragmentManager(components);
-
 	let fragmentIfcLoader = new OBC.FragmentIfcLoader(components, fragments);
 
 	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
 	components.ui.addToolbar(mainToolbar);
 	mainToolbar.addChild(fragmentIfcLoader.uiElement);
 
-	fragmentIfcLoader.settings.wasm = {
-		path: "https://unpkg.com/web-ifc@0.0.41/",
-    absolute: true
-  }
+	// fragmentIfcLoader.settings.wasm = {
+	// 	path: "https://unpkg.com/web-ifc@0.0.41/",
+	//   absolute: true
+	// }
 
 	fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = false;
+	fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
 
-	async function loadIfcAsFragments(url) {
-		const file = await fetch(url);
+	async function loadIfcAsFragments() {
+		const file = await fetch('../../../resources/small.ifc');
 		const data = await file.arrayBuffer();
 		const buffer = new Uint8Array(data);
-		const result = await fragmentIfcLoader.load(buffer);
+		const model = await fragmentIfcLoader.load(buffer);
+		scene.add(model);
+	}
 
-		scene.add(result);
-		for(const fragment of result.fragments) {
-			fragments.list[fragment.id] = fragment;
-    }
-  }
-
-	function exportFragments(name) {
-		const fragmentCount = Object.keys(fragments.list).length;
-		if(fragmentCount === 0) {
-			alert("No fragments loaded!");
-			return;
-    }
-		const data = fragments.export();
+	async function exportFragments() {
+		if(!fragments.groups.length) return;
+		const group = fragments.groups[0];
+		const data = fragments.export(group);
 		const blob = new Blob([data]);
-		const file = new File([blob], name);
-		download(file);
-  }
+		const fragmentFile = new File([blob], 'small.frag');
+
+		const files = [];
+		files.push(fragmentFile);
+		files.push(new File([JSON.stringify(group.properties)], 'small.json'));
+		const result = await downloadZip(files).blob();
+		result.name = 'example';
+		download(result);
+	}
+
 
 	function download(file) {
-		const link = document.createElement("a");
+		const link = document.createElement('a');
 		link.href = URL.createObjectURL(file);
 		link.download = file.name;
 		document.body.appendChild(link);
 		link.click();
 		link.remove();
-  }
+	}
 
 	function disposeFragments() {
 		fragments.dispose();
 		fragmentIfcLoader.dispose();
 		fragments = new OBC.FragmentManager(components);
 		fragmentIfcLoader = new OBC.FragmentIfcLoader(fragments);
-  }
+	}
 
 	// Set up stats
 
@@ -127,17 +129,41 @@
 
 	// Set up dat.gui menu
 
-  const settings = {
-		loadFragments: () => loadIfcAsFragments("../../../resources/small.ifc"),
-    exportFragments: () => exportFragments("example.frag"),
-    disposeFragments: () => disposeFragments()
-  }
+	const settings = {
+		loadFragments: () => loadIfcAsFragments(),
+		exportFragments: () => exportFragments(),
+		disposeFragments: () => disposeFragments(),
+	};
 
 	const gui = new dat.GUI();
 
-	gui.add(settings, "loadFragments").name("Import fragments");
-	gui.add(settings, "exportFragments").name("Export fragments");
-	gui.add(settings, "disposeFragments").name("Dispose fragments");
+	gui.add(settings, 'loadFragments').name('Import fragments');
+	gui.add(settings, 'exportFragments').name('Export fragments');
+	gui.add(settings, 'disposeFragments').name('Dispose fragments');
+
+	// For debugging
+
+	// fragmentIfcLoader.ifcLoaded.on((model) => {
+	//   let sorted = [];
+	//   for(const frag of model.fragments) {
+	// 		const size = frag.mesh.count;
+	// 		sorted.push({size, frag});
+	//   }
+	//
+	// 	sorted.sort((a, b) => {
+	// 		return a.size > b.size ? 1 : -1;
+	// 	});
+	// 	let value = 0;
+	// 	let step = 1 / sorted.length;
+	//
+	// 	for(const { frag } of sorted) {
+	// 		console.log(frag.mesh.material);
+	// 		const mat = frag.mesh.material[0];
+	// 		frag.mesh.instanceColor = null;
+	// 		mat.color.setRGB(value, value, value, "srgb");
+	// 		value += step;
+	//   }
+	// });
 
 
 </script>

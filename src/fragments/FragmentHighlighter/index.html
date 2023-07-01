@@ -44,7 +44,6 @@
 
     const scene = components.scene.get();
 
-    scene.background = null;
     components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
     const directionalLight = new THREE.DirectionalLight();
@@ -57,21 +56,21 @@
     scene.add(ambientLight);
 
     const grid = new OBC.SimpleGrid(components);
-    components.tools.add("grid", grid);
+    components.tools.add('grid', grid);
 
     // Set up highlighting
 
-    let fragments = new OBC.FragmentManager(components);
-
-    const file = await fetch("../../../resources/small.frag");
-    const data = await file.arrayBuffer();
-    const buffer = new Uint8Array(data);
-    fragments.load(buffer);
-
+    const fragments = new OBC.FragmentManager(components);
     const highlighter = new OBC.FragmentHighlighter(components, fragments);
 
-    const cubeMaterial = new THREE.MeshBasicMaterial({color: 'red'});
-    highlighter.add("default", cubeMaterial);
+    const file = await fetch("../../../resources/small.frag");
+    const dataBlob = await file.arrayBuffer();
+    const buffer = new Uint8Array(dataBlob);
+    fragments.load(buffer);
+    highlighter.update();
+
+    const highlightMaterial = new THREE.MeshBasicMaterial({color: 'red'});
+    highlighter.add('default', highlightMaterial);
 
     // If more fragments are loaded after creating the highlighting style
     // you have to call highlighter.update()
@@ -79,24 +78,25 @@
     let lastSelection;
 
     let singleSelection = {
-        value: true
+        value: true,
     };
 
     function highlightOnClick() {
-        const result = highlighter.highlight("default", singleSelection.value);
+        const result = highlighter.highlight('default', singleSelection.value);
         if (result) {
-            const fragmentID = result.fragment.id;
-            lastSelection = {[fragmentID]: [result.id]};
+            lastSelection = {};
+            for (const fragment of result.fragments) {
+                const fragmentID = fragment.id;
+                lastSelection[fragmentID] = [result.id];
+            }
         }
     }
 
-    container.addEventListener('click', () => {
-        highlightOnClick();
-    });
+    container.addEventListener('click', () => highlightOnClick());
 
     function highlightOnID() {
         if (lastSelection !== undefined) {
-            highlighter.highlightByID("default", lastSelection);
+            highlighter.highlightByID('default', lastSelection);
         }
     }
 
@@ -114,15 +114,15 @@
     // Set up dat.gui menu
 
     const commands = {
-        highlight: "Click",
-        highlightOnID: () => highlightOnID()
-    }
+        highlight: 'Click',
+        highlightOnID: () => highlightOnID(),
+    };
 
     const gui = new dat.GUI();
 
-    gui.add(commands, "highlight");
-    gui.add(commands, "highlightOnID").name("Select last selection");
-    gui.add(singleSelection, "value").name("Single selection");
+    gui.add(commands, 'highlight');
+    gui.add(commands, 'highlightOnID').name('Select last selection');
+    gui.add(singleSelection, 'value').name('Single selection');
 
 </script>
 </body>

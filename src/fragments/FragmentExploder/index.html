@@ -18,14 +18,11 @@
         "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
         "three/examples/jsm/lines/LineMaterial": "https://unpkg.com/three@0.152.2/examples/jsm/lines/LineMaterial.js",
         "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
-        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
-        "unzipit": "https://unpkg.com/unzipit@1.4.0/dist/unzipit.module.js",
-        "client-zip": "https://unpkg.com/client-zip@2.3.0/index.js"
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js"
       }
     }
 </script>
 <script type="module">
-	import { unzip } from 'unzipit';
 	import * as THREE from 'three';
 	import Stats from 'stats.js/src/Stats.js';
 	import * as OBC from '../../../resources/openbim-components.js';
@@ -38,12 +35,12 @@
 	components.scene = new OBC.SimpleScene(components);
 	const renderer = new OBC.PostproductionRenderer(components, container);
 	components.renderer = renderer;
-	renderer.postproduction.outlineColor = 0x999999;
+	renderer.postproduction.color = 0x999999;
 
 	const camera = new OBC.SimpleCamera(components);
 	components.camera = camera;
 	renderer.postproduction.enabled = true;
-	camera.controls.setLookAt(10, 5, 20, -5, 0, 5);
+	camera.controls.setLookAt(10, 5, 10, -5, 0, -3);
 
 	components.raycaster = new OBC.SimpleRaycaster(components);
 
@@ -60,16 +57,13 @@
 	ambientLight.intensity = 0.5;
 	scene.add(ambientLight);
 
-	// Add some components
 	const grid = new OBC.SimpleGrid(components, new THREE.Color(0x555555));
 	components.tools.add("grid", grid);
 
 	const culler = new OBC.ScreenCuller(components);
 
 	const fragments = new OBC.FragmentManager(components);
-	const grouper = new OBC.FragmentGrouper(components, fragments);
-
-	await loadFragments();
+	const classifier = new OBC.FragmentClassifier(components, fragments);
 
 	// Set up fragment culler update
 
@@ -78,27 +72,18 @@
 
 	// Load the fragments
 
-	async function loadFragments() {
-		const { entries } = await unzip('../../../resources/small.zip');
+    const file = await fetch("../../../resources/small.frag");
+    const data = await file.arrayBuffer();
+    const buffer = new Uint8Array(data);
+    const model = fragments.load(buffer);
 
-		const expressFragmentMap = await entries['express-fragment-map.json'].json();
-		const properties = await entries['properties.json'].json();
+    const properties = await fetch("../../../resources/small.json");
+    model.properties = await properties.json();
 
-		const dataBlob = await entries["model.frag"].arrayBuffer();
-		const buffer = new Uint8Array(dataBlob);
-		const ids = fragments.load(buffer);
+    culler.needsUpdate = true;
+    classifier.byStorey(model);
 
-		for(const id of ids) {
-			const frag = fragments.list[id];
-		  culler.add(frag.mesh);
-    }
-
-		culler.needsUpdate = true;
-
-		grouper.groupByStorey(properties, expressFragmentMap);
-	}
-
-	const exploder = new OBC.FragmentExploder(fragments, grouper);
+	const exploder = new OBC.FragmentExploder(fragments, classifier);
 
 	// Set up GUI
 

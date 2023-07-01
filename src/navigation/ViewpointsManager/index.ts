@@ -7,7 +7,7 @@ import { Button, SimpleUICard, FloatingWindow } from "../../ui";
 
 import {
   FragmentManager,
-  FragmentGrouper,
+  FragmentClassifier,
   FragmentHighlighter,
   HighlightMap,
 } from "../../fragments";
@@ -18,7 +18,7 @@ import { CameraProjection } from "../OrthoPerspectiveCamera/src/types";
 export interface IViewpointsManagerConfig {
   selectionHighlighter: string;
   fragmentManager: FragmentManager;
-  fragmentGrouper: FragmentGrouper;
+  fragmentGrouper: FragmentClassifier;
   fragmentHighlighter: FragmentHighlighter;
   drawManager?: DrawManager;
 }

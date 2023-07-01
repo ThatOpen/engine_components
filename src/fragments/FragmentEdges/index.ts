@@ -9,7 +9,7 @@ import {
 } from "three";
 import { Fragment } from "bim-fragment";
 import { Disposable, Component, Hideable } from "../../base-types";
-import { Components, Disposer } from "../../core";
+import { Components, Disposer, ScreenCuller } from "../../core";
 
 // TODO: Clean up and document
 // TODO: Decouple from fragments?
@@ -78,9 +78,25 @@ export class FragmentEdges
     }
   }
 
-  constructor(components: Components) {
+  constructor(components: Components, culler?: ScreenCuller) {
     super();
     this._components = components;
+    if (culler) {
+      culler.viewUpdated.on(() => {
+        const scene = this._components.scene.get();
+        if (!this.visible) return;
+        for (const id of culler.currentVisibleMeshes) {
+          if (this._list[id]) {
+            scene.add(this._list[id]);
+          }
+        }
+        for (const id of culler.recentlyHiddenMeshes) {
+          if (this._list[id]) {
+            scene.remove(this._list[id]);
+          }
+        }
+      });
+    }
   }
 
   get() {
