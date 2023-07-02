@@ -25,15 +25,22 @@ export class EdgesPlane extends SimplePlane {
     material: THREE.Material,
     styles: EdgesStyles
   ) {
-    super(components, origin, normal, material);
+    super(components, origin, normal, material, 5, false);
     this.edges = new ClippingEdges(components, this._plane, styles);
-    this.visible = true;
+    this.toggleControls(true);
+    this.edges.visible = true;
   }
 
   /** {@link Hideable.visible} */
   set visible(state: boolean) {
     super.visible = state;
+    this.toggleControls(state);
     this.edges.visible = state;
+  }
+
+  /** {@link Component.enabled} */
+  get enabled() {
+    return super.enabled;
   }
 
   /** {@link Component.enabled} */
@@ -52,8 +59,7 @@ export class EdgesPlane extends SimplePlane {
 
   /** {@link Updateable.update} */
   update = () => {
-    if (!super.enabled) return;
-    this.beforeUpdate.trigger(this._plane);
+    if (!this.enabled) return;
 
     this._plane.setFromNormalAndCoplanarPoint(
       this._normal,
@@ -71,7 +77,5 @@ export class EdgesPlane extends SimplePlane {
         this.updateTimeout = -1;
       }, this.edgesMaxUpdateRate);
     }
-
-    this.afterUpdate.trigger(this._plane);
   };
 }
