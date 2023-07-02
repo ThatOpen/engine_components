@@ -102,11 +102,6 @@
         fragments.load(buffer);
     }
 
-    const clipper = new OBC.SimpleClipper(components, OBC.SimplePlane);
-    clipper.enabled = true;
-
-    window.ondblclick = () => clipper.create();
-
     /*MD
 
     :::tip Loading IFC files as Fragment

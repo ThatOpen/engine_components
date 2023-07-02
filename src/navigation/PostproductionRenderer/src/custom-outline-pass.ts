@@ -12,7 +12,7 @@ export class CustomOutlinePass extends Pass {
   fsQuad: FullScreenQuad;
   planeBuffer: THREE.WebGLRenderTarget;
   normalOverrideMaterial: THREE.ShaderMaterial;
-  meshes: THREE.Mesh[] = [];
+  excludedMeshes: THREE.Mesh[] = [];
 
   private _color = 0x999999;
   private _correctColor = false;
@@ -97,7 +97,7 @@ export class CustomOutlinePass extends Pass {
     const previousBackground = this.renderScene.background;
     this.renderScene.background = null;
 
-    for (const mesh of this.meshes) {
+    for (const mesh of this.excludedMeshes) {
       mesh.visible = false;
     }
 
@@ -105,7 +105,7 @@ export class CustomOutlinePass extends Pass {
     this.renderScene.overrideMaterial = this.normalOverrideMaterial;
     renderer.render(this.renderScene, this.renderCamera);
 
-    for (const mesh of this.meshes) {
+    for (const mesh of this.excludedMeshes) {
       mesh.visible = true;
     }
 

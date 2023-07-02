@@ -141,7 +141,7 @@
 	components.renderer.postproduction.enabled = true;
     const postproduction = components.renderer.postproduction;
 
-    postproduction.outlines.meshes.push(grid.get());
+    postproduction.outlines.excludedMeshes.push(grid.get());
 
     const gui = new dat.GUI();
 
