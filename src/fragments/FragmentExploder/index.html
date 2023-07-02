@@ -33,13 +33,11 @@
 	const components = new OBC.Components();
 
 	components.scene = new OBC.SimpleScene(components);
-	const renderer = new OBC.PostproductionRenderer(components, container);
+	const renderer = new OBC.SimpleRenderer(components, container);
 	components.renderer = renderer;
-	renderer.postproduction.color = 0x999999;
 
 	const camera = new OBC.SimpleCamera(components);
 	components.camera = camera;
-	renderer.postproduction.enabled = true;
 	camera.controls.setLookAt(10, 5, 10, -5, 0, -3);
 
 	components.raycaster = new OBC.SimpleRaycaster(components);
@@ -57,7 +55,7 @@
 	ambientLight.intensity = 0.5;
 	scene.add(ambientLight);
 
-	const grid = new OBC.SimpleGrid(components, new THREE.Color(0x555555));
+	const grid = new OBC.SimpleGrid(components);
 	components.tools.add("grid", grid);
 
 	const culler = new OBC.ScreenCuller(components);
