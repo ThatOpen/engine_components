@@ -3,6 +3,7 @@ import { Component, Disposable } from "../../base-types";
 import { Components } from "../Components";
 
 // TODO: Clean up and document
+// TODO: Disable / enable instance color for instance meshes
 
 export class MaterialManager extends Component<string[]> implements Disposable {
   private _components: Components;
