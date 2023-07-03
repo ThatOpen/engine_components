@@ -22,6 +22,7 @@ export class VertexPicker
   private _components: Components;
   private _marker: Simple2DMarker;
   private _enabled: boolean = false;
+  private _workingPlane: THREE.Plane | null = null;
 
   set enabled(value: boolean) {
     this._enabled = value;
@@ -51,6 +52,14 @@ export class VertexPicker
     this.enabled = false;
   }
 
+  set workingPlane(plane: THREE.Plane | null) {
+    this._workingPlane = plane;
+  }
+
+  get workingPlane() {
+    return this._workingPlane;
+  }
+
   set config(value: Partial<VertexPickerConfig>) {
     this._config = { ...this._config, ...value };
   }
@@ -66,17 +75,31 @@ export class VertexPicker
   private update() {
     if (!this.enabled) return;
     this.beforeUpdate.trigger(this);
+
     const intersects = this._raycaster.castRay();
     if (!intersects) {
       this._marker.visible = false;
       this._pickedPoint = null;
       return;
     }
-    this._pickedPoint = this.getClosestVertex(intersects);
-    if (!this._pickedPoint) {
+
+    const point = this.getClosestVertex(intersects);
+    if (!point) {
       this._marker.visible = false;
+      this._pickedPoint = null;
       return;
     }
+
+    const isOnPlane = !this.workingPlane
+      ? true
+      : Math.abs(this.workingPlane.distanceToPoint(point)) < 0.001;
+    if (!isOnPlane) {
+      this._marker.visible = false;
+      this._pickedPoint = null;
+      return;
+    }
+
+    this._pickedPoint = point;
     this._marker.visible = true;
     this._marker
       .get()

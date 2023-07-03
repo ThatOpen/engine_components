@@ -91,7 +91,7 @@ export class FragmentIfcLoader
     const fileOpener = document.createElement("input");
     fileOpener.type = "file";
     fileOpener.accept = ".ifc";
-    fileOpener.style.visibility = "collapse";
+    fileOpener.style.display = "none";
     document.body.appendChild(fileOpener);
     fileOpener.onchange = async () => {
       if (fileOpener.files === null || fileOpener.files.length === 0) return;

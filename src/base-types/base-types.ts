@@ -138,17 +138,29 @@ export interface UIComponent extends Disposable, Hideable {
  * dimensions.
  */
 export interface Createable {
+  readonly beforeCreate: Event<any>;
+
   /** Creates a new instance of an element (e.g. a new Dimension). */
   create: (data: any) => void;
 
   /** Fired after successfully calling {@link Createable.create()}  */
-  afterCreate: Event<any>;
+  readonly afterCreate: Event<any>;
+
+  endCreation: (data: any) => void;
+
+  readonly beforeCancel: Event<any>;
+
+  cancelCreation: (data: any) => void;
+
+  readonly afterCancel: Event<any>;
+
+  readonly beforeDelete: Event<any>;
 
   /** Deletes an existing instance of an element (e.g. a Dimension). */
   delete: (data: any) => void;
 
   /** Fired after successfully calling {@link Createable.delete()}  */
-  afterDelete: Event<any>;
+  readonly afterDelete: Event<any>;
 }
 
 /** Whether this component has a representation in the user

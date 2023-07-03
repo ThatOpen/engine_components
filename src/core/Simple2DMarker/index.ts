@@ -37,6 +37,10 @@ export class Simple2DMarker
     this.visible = true;
   }
 
+  toggleVisibility() {
+    this.visible = !this.visible;
+  }
+
   dispose() {
     this._marker.removeFromParent();
     this._marker.element.remove();

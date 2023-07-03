@@ -43,6 +43,12 @@ export class SimpleDimensions
   /** {@link Createable.beforeDelete} */
   readonly beforeDelete = new Event<SimpleDimensionLine>();
 
+  /** {@link Createable.beforeCancel} */
+  readonly beforeCancel = new Event<SimpleDimensions>();
+
+  /** {@link Createable.afterCancel} */
+  readonly afterCancel = new Event<SimpleDimensionLine>();
+
   uiElement: Button;
 
   /** The minimum distance to force the dimension cursor to a vertex. */
@@ -60,7 +66,7 @@ export class SimpleDimensions
     depthTest: false,
   });
 
-  private _dimensions: SimpleDimensionLine[] = [];
+  private _measurements: SimpleDimensionLine[] = [];
   private _visible = true;
   private _enabled = false;
   private _raycaster: SimpleRaycaster;
@@ -80,9 +86,7 @@ export class SimpleDimensions
 
   /** {@link Component.enabled} */
   set enabled(value: boolean) {
-    if (!value) {
-      this.cancelDrawing();
-    }
+    if (!value) this.cancelCreation();
     this._enabled = value;
     this._vertexPicker.enabled = value;
     this.uiElement.active = value;
@@ -99,7 +103,7 @@ export class SimpleDimensions
     if (!this._visible) {
       this.enabled = false;
     }
-    for (const dimension of this._dimensions) {
+    for (const dimension of this._measurements) {
       dimension.visible = this._visible;
     }
   }
@@ -123,45 +127,48 @@ export class SimpleDimensions
       materialIconName: "straighten",
     });
     this.setUI();
+    this.enabled = false;
   }
 
   private setUI() {
     const viewerContainer = this._components.renderer.get().domElement
       .parentElement as HTMLElement;
     const createDimension = () => this.create();
+    const keydown = (e: KeyboardEvent) => {
+      if (!this.enabled) return;
+      if (e.key === "Escape") {
+        if (this._temp.isDragging) {
+          this.cancelCreation();
+        } else {
+          this.enabled = false;
+        }
+      }
+    };
     this.uiElement.onclick = () => {
       if (!this.enabled) {
         viewerContainer.addEventListener("click", createDimension);
+        window.addEventListener("keydown", keydown);
         this.uiElement.active = true;
         this.enabled = true;
       } else {
         this.enabled = false;
         this.uiElement.active = false;
         viewerContainer.removeEventListener("click", createDimension);
+        window.removeEventListener("keydown", keydown);
       }
     };
-    this.uiElement.active = this.enabled;
-    window.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && this.enabled) {
-        if (this._temp.isDragging) {
-          this.cancelDrawing();
-        } else {
-          this.enabled = false;
-        }
-      }
-    });
   }
 
   /** {@link Component.get} */
   get(): SimpleDimensionLine[] {
-    return this._dimensions;
+    return this._measurements;
   }
 
   /** {@link Disposable.dispose} */
   dispose() {
     this.enabled = false;
-    this._dimensions.forEach((dim) => dim.dispose());
-    this._dimensions = [];
+    this._measurements.forEach((dim) => dim.dispose());
+    this._measurements = [];
     this._vertexPicker.dispose();
   }
 
@@ -189,21 +196,21 @@ export class SimpleDimensions
       this.drawStart(plane);
       return;
     }
-    this.drawEnd();
+    this.endCreation();
   }
 
   /** Deletes the dimension that the user is hovering over with the mouse or touch event. */
   delete() {
-    if (!this._enabled || this._dimensions.length === 0) return;
+    if (!this._enabled || this._measurements.length === 0) return;
     const boundingBoxes = this.getBoundingBoxes();
     const intersect = this._raycaster.castRay(boundingBoxes);
     if (!intersect) return;
-    const dimension = this._dimensions.find(
+    const dimension = this._measurements.find(
       (dim) => dim.boundingBox === intersect.object
     );
     if (dimension) {
-      const index = this._dimensions.indexOf(dimension);
-      this._dimensions.splice(index, 1);
+      const index = this._measurements.indexOf(dimension);
+      this._measurements.splice(index, 1);
       dimension.dispose();
       this.afterDelete.trigger(this);
     }
@@ -211,15 +218,15 @@ export class SimpleDimensions
 
   /** Deletes all the dimensions that have been previously created. */
   deleteAll() {
-    this._dimensions.forEach((dim) => {
+    this._measurements.forEach((dim) => {
       dim.dispose();
       this.afterDelete.trigger(this);
     });
-    this._dimensions = [];
+    this._measurements = [];
   }
 
   /** Cancels the drawing of the current dimension. */
-  cancelDrawing() {
+  cancelCreation() {
     if (!this._temp.dimension) return;
     this._temp.isDragging = false;
     this._temp.dimension?.dispose();
@@ -247,10 +254,10 @@ export class SimpleDimensions
     this._temp.dimension.endPoint = this._temp.end;
   }
 
-  private drawEnd() {
+  endCreation() {
     if (!this._temp.dimension) return;
     this._temp.dimension.createBoundingBox();
-    this._dimensions.push(this._temp.dimension);
+    this._measurements.push(this._temp.dimension);
     this.afterCreate.trigger(this._temp.dimension);
     this._temp.dimension = undefined;
     this._temp.isDragging = false;
@@ -272,7 +279,7 @@ export class SimpleDimensions
   }
 
   private getBoundingBoxes() {
-    return this._dimensions
+    return this._measurements
       .map((dim) => dim.boundingBox)
       .filter((box) => box !== undefined) as THREE.Mesh[];
   }

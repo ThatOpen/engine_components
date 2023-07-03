@@ -17,7 +17,7 @@ interface IButtonOptions {
 }
 
 export class Button extends SimpleUIComponent<HTMLButtonElement> {
-  name: string;
+  name: string = "TooeenButton";
   menu: Toolbar;
 
   clicked = new Event();
@@ -25,6 +25,22 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
   private _closeOnClick = true;
   private _parent!: Toolbar;
   private _popper: PopperInstance;
+  private _label: string | null = null;
+  private _labelElement = document.createElement("p");
+
+  set label(value: string | null) {
+    this._label = null;
+    this._labelElement.textContent = value;
+    if (value) {
+      this._labelElement.classList.remove("hidden");
+    } else {
+      this._labelElement.classList.add("hidden");
+    }
+  }
+
+  get label() {
+    return this._label;
+  }
 
   set onclick(listener: (e?: MouseEvent) => void) {
     this.domElement.onclick = (e) => {
@@ -49,27 +65,24 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
 
   constructor(components: Components, options?: IButtonOptions) {
     const btn = document.createElement("button");
+    btn.type = "button";
     btn.className = `
-    relative flex gap-x-2 items-center justify-center bg-transparent text-white text-base rounded-md h-fit p-2
+    relative flex gap-x-2 items-center justify-start bg-transparent text-white text-base rounded-md h-fit p-2
     hover:cursor-pointer hover:bg-ifcjs-200 hover:text-ifcjs-100
     data-[active=true]:cursor-pointer data-[active=true]:bg-ifcjs-200 data-[active=true]:text-ifcjs-100
     disabled:cursor-default disabled:bg-transparent disabled:text-gray-500
     transition-all
     `;
     super(components, btn, options?.id);
-    this.name = options?.name ?? "Custom Button";
+    this._labelElement.className = "text-base whitespace-nowrap";
+    this.label = options?.name ? options.name : null;
     if (options?.materialIconName) {
       const icon = document.createElement("span");
       icon.className = "material-icons md-18";
       icon.textContent = options?.materialIconName;
       btn.append(icon);
     }
-    if (options?.name) {
-      const name = document.createElement("p");
-      name.style.whiteSpace = "nowrap";
-      name.textContent = options.name;
-      this.domElement.append(name);
-    }
+    this.domElement.append(this._labelElement);
     if (options?.closeOnClick !== undefined) {
       this._closeOnClick = options.closeOnClick;
     }

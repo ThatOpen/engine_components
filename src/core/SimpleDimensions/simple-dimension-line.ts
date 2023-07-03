@@ -23,8 +23,11 @@ export class SimpleDimensionLine {
   private readonly _endpoints: Simple2DMarker[] = [];
   private readonly _line: THREE.Line;
 
-  set visible(visible: boolean) {
-    if (visible) {
+  set visible(value: boolean) {
+    this.label.visible = value;
+    this._endpoints[0].visible = value;
+    this._endpoints[1].visible = value;
+    if (value) {
       this._components.scene.get().add(this._root);
     } else {
       this._root.removeFromParent();
@@ -47,6 +50,7 @@ export class SimpleDimensionLine {
       .position as THREE.BufferAttribute;
     position.setXYZ(0, point.x, point.y, point.z);
     position.needsUpdate = true;
+    this._endpoints[0].get().position.copy(point);
     this.updateLabel();
   }
 
@@ -91,6 +95,10 @@ export class SimpleDimensionLine {
     this.boundingBox.lookAt(this.end);
     this.boundingBox.visible = false;
     this._root.add(this.boundingBox);
+  }
+
+  toggleLabel() {
+    this.label.toggleVisibility();
   }
 
   private newEndpointElement(element: HTMLElement) {
