@@ -214,14 +214,17 @@ export class PropertiesProcessor
     return this._map;
   }
 
+  // TODO: Some of these take an array of strings and another an array of functions. Is it correct?
+
   process(
     properties: Record<string, any>,
     expressIDFragmentIDMap: { [fragmentID: string]: string[] }
   ) {
     const processResult: IModelProperties = {};
     // @ts-ignore
-    const expressIDs = Object.values(expressIDFragmentIDMap).flat();
-    this.processElements(properties, expressIDs, processResult);
+    const idsStrings = Object.values(expressIDFragmentIDMap).flat() as string[];
+    const expressIDs = idsStrings.map((id) => parseInt(id, 10));
+    this.processElements(properties, idsStrings, processResult);
     this.processStoreys(properties, processResult);
     this.processGroups(properties, processResult);
     this.processQsets(properties, processResult, expressIDs);
