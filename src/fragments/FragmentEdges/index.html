@@ -64,14 +64,12 @@
     const file = await fetch("../../../resources/small.frag");
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
-    const ids = fragments.load(buffer);
-
-    const edges = new OBC.FragmentEdges(components);
+    const model = fragments.load(buffer);
 
     const culler = new OBC.ScreenCuller(components);
+    const edges = new OBC.FragmentEdges(components, culler);
 
-    for(const id of ids) {
-        const fragment = fragments.list[id];
+    for(const fragment of model.items) {
         edges.add(fragment);
         culler.add(fragment.mesh);
     }

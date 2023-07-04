@@ -12,6 +12,8 @@ import { MapboxCamera } from "./src/mapbox-camera";
  * [mapbox](https://www.mapbox.com/).
  */
 export class MapboxWindow {
+  minTargetZoom = 0.0015;
+
   private readonly _components: Components;
   private readonly _map: MAPBOX.Map;
   private readonly _center: [number, number];
@@ -138,8 +140,8 @@ export class MapboxWindow {
     }
 
     const factor = 0.4;
-    const width = maxLng - minLng;
-    const height = maxLat - minLat;
+    const width = Math.max(this.minTargetZoom, maxLng - minLng);
+    const height = Math.max(this.minTargetZoom, maxLat - minLat);
 
     maxLng += factor * width;
     maxLat += factor * height;

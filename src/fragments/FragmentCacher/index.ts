@@ -1,6 +1,6 @@
 import * as THREE from "three";
+import { FragmentsGroup } from "bim-fragment";
 import { LocalCacher } from "../../core";
-import { FragmentGroup } from "../FragmentIfcLoader";
 import { FragmentManager } from "../FragmentManager";
 
 export class FragmentCacher extends LocalCacher {
@@ -42,33 +42,19 @@ export class FragmentCacher extends LocalCacher {
     return loadedModel;
   }
 
-  async saveFragmentGroup(group: FragmentGroup, id: string) {
+  async saveFragmentGroup(group: FragmentsGroup, id: string) {
     const fragments = new FragmentManager(this.components);
-    for (const fragment of group.fragments) {
-      fragments.list[fragment.id] = fragment;
-    }
 
     const { fragmentsCacheID, propertiesCacheID } = this.getIDs(id);
-
-    const exported = fragments.export();
+    const exported = fragments.export(group);
     const fragmentsFile = this.newFile(exported, fragmentsCacheID);
     const fragmentsUrl = URL.createObjectURL(fragmentsFile);
     await this.save(fragmentsCacheID, fragmentsUrl);
 
-    const { properties, itemTypes, allTypes, expressIDFragmentIDMap } = group;
-
-    const data = {
-      properties,
-      itemTypes,
-      allTypes,
-      expressIDFragmentIDMap,
-    };
-
-    const json = JSON.stringify(data);
+    const json = JSON.stringify(group.properties);
     const jsonFile = this.newFile(json, propertiesCacheID);
     const propertiesUrl = URL.createObjectURL(jsonFile);
     await this.save(propertiesCacheID, propertiesUrl);
-    fragments.list = {};
   }
 
   private getIDs(id: string) {

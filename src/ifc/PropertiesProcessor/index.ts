@@ -287,6 +287,8 @@ export class PropertiesProcessor
     return this._map;
   }
 
+  // TODO: Some of these take an array of strings and another an array of functions. Is it correct?
+
   process(
     properties: Record<string, any>,
     fragmentIDExpressIDMap: { [fragmentID: string]: Set<string> }

@@ -20,6 +20,7 @@
         "openbim-components": "../../../resources/openbim-components.js"
       }
     }
+
 </script>
 <script type="module">
 
@@ -28,7 +29,7 @@
 	import Stats from 'stats.js/src/Stats.js';
 	import * as THREE from 'three';
 	import * as OBC from 'openbim-components';
-    import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
+	import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
 
 	// Set up basic components
 
@@ -36,11 +37,11 @@
 
 	const components = new OBC.Components();
 	const sceneComponent = new OBC.SimpleScene(components);
-	components.scene = sceneComponent
+	components.scene = sceneComponent;
 
 
 	const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
-	components.tools.add("grid", grid);
+	components.tools.add('grid', grid);
 
 	const scene = sceneComponent.get();
 	// scene.background = null;
@@ -48,7 +49,7 @@
 	// Add some lights to the scene
 
 	const directionalLight = new THREE.DirectionalLight();
-	directionalLight.position.set(5, 10, 3)
+	directionalLight.position.set(5, 10, 3);
 	directionalLight.intensity = 0.5;
 	scene.add(directionalLight);
 
@@ -62,105 +63,107 @@
 	components.raycaster = new OBC.SimpleRaycaster(components);
 	components.init();
 
-   components.camera.controls.setLookAt(10, 8, 20, 0, 0, 10);
+	components.camera.controls.setLookAt(10, 8, 20, 0, 0, 10);
 
-    // Set up stats
+	// Set up stats
 
-    const stats = new Stats();
-    stats.showPanel(2);
-    document.body.append(stats.dom);
-    stats.dom.style.left = '0px';
-    const renderer = components.renderer;
-    renderer.beforeUpdate.on(() => stats.begin());
-    renderer.afterUpdate.on(() => stats.end());
+	const stats = new Stats();
+	stats.showPanel(2);
+	document.body.append(stats.dom);
+	stats.dom.style.left = '0px';
+	const renderer = components.renderer;
+	renderer.beforeUpdate.on(() => stats.begin());
+	renderer.afterUpdate.on(() => stats.end());
 
-    /*MD
-    ### 🧪 Cool Post-Production Effects
-    ---
-    Post-production effects enrich your 3D scenes. There are several post-production effects, such as
-    adding shadows, rendering outlines, adding ambient occlusion and applying bloom, that can enhance
-    and make your scene look cool.🍹
+	/*MD
+  ### 🧪 Cool Post-Production Effects
+  ---
+  Post-production effects enrich your 3D scenes. There are several post-production effects, such as
+  adding shadows, rendering outlines, adding ambient occlusion and applying bloom, that can enhance
+  and make your scene look cool.🍹
 
-    :::tip First, let's set up a simple scene!
+  :::tip First, let's set up a simple scene!
 
-    👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
+  👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
 
-    :::
+  :::
 
-    In this tutorial we will use **Post-Production Renderer** to add neat **Outlines** and **Ambient Occlusion** to the 3D Model.🦾
+  In this tutorial we will use **Post-Production Renderer** to add neat **Outlines** and **Ambient Occlusion** to the 3D Model.🦾
 
-    ### 🏢 Adding Fragments
-    ---
-    We'll start by adding a **Fragment** to our scene using Fragment Manager.
+  ### 🏢 Adding Fragments
+  ---
+  We'll start by adding a **Fragment** to our scene using Fragment Manager.
 
-    We'll use a simple fragment for the purposes of this tutorial, but the code is capable of handling big files as well.🏗️
+  We'll use a simple fragment for the purposes of this tutorial, but the code is capable of handling big files as well.🏗️
 
-    :::info Using Fragment Manager!
+  :::info Using Fragment Manager!
 
-    🏋️ There is a dedicated tutorial on how to use Fragment Manager to load **IFC** files!
+  🏋️ There is a dedicated tutorial on how to use Fragment Manager to load **IFC** files!
 
-    :::
+  :::
 
-    */
+  */
 
-    const fragments = new OBC.FragmentManager(components);
-    const file = await fetch("../../../resources/small.frag");
-    const data = await file.arrayBuffer();
-    const buffer = new Uint8Array(data);
-    const ids = fragments.load(buffer);
+	const fragments = new OBC.FragmentManager(components);
+	const file = await fetch('../../../resources/small.frag');
+	const data = await file.arrayBuffer();
+	const buffer = new Uint8Array(data);
+	const model = fragments.load(buffer);
 
-    const culler = new OBC.ScreenCuller(components);
-    for(const id of ids) {
-      const fragment = fragments.list[id];
-      culler.add(fragment.mesh);
-    }
-    culler.needsUpdate = true;
+	const culler = new OBC.ScreenCuller(components);
+	for (const fragment of model.items) {
+		culler.add(fragment.mesh);
+	}
+	culler.needsUpdate = true;
 
-    const controls = components.camera.controls;
-    controls.addEventListener("controlend", () => {
-      culler.needsUpdate = true;
-    })
+	const controls = components.camera.controls;
+	controls.addEventListener('controlend', () => {
+		culler.needsUpdate = true;
+	});
 
-    const clipper = new OBC.SimpleClipper(components, OBC.SimplePlane);
-    clipper.enabled = true;
+	/*MD
+  ### 🎬 Activating the Post-Production
+  ---
 
-    window.ondblclick = () => clipper.create();
+  We will activate the post-production effect.
+  Also, we will enable the visibility for post-production layer.
 
+  - `postproduction.active` - Enable or Disable the active status of the post-processing effect
+  - `postproduction.visible` - Toggle the visibility of post-processing layer that is created to display the effect.
 
-    /*MD
-    ### 🎬 Activating the Post-Production
-    ---
-
-    We will activate the post-production effect.
-    Also, we will enable the visibility for post-production layer.
-
-    - `postproduction.active` - Enable or Disable the active status of the post-processing effect
-    - `postproduction.visible` - Toggle the visibility of post-processing layer that is created to display the effect.
-
-     */
+   */
 
 	components.renderer.postproduction.enabled = true;
-    const postproduction = components.renderer.postproduction;
+	const postproduction = components.renderer.postproduction;
 
-    const configuration = postproduction.n8ao.configuration;
+	postproduction.outlines.excludedMeshes.push(grid.get());
 
-    const gui = new dat.GUI();
-    gui.add(postproduction, "enabled");
-    gui.add(configuration, "aoSamples").step(1).min(1).max(16);
-    gui.add(configuration, "denoiseSamples").step(1).min(0).max(16);
-    gui.add(configuration, "denoiseRadius").step(1).min(0).max(100);
-    gui.add(configuration, "aoRadius").step(1).min(0).max(16);
-    gui.add(configuration, "distanceFalloff").step(1).min(0).max(16);
-    gui.add(configuration, "intensity").step(1).min(0).max(16);
-    gui.add(configuration, "halfRes");
-    gui.add(configuration, "screenSpaceRadius");
-    gui.addColor(configuration, "color");
+	const gui = new dat.GUI();
 
-    /*MD
-    **Congratulations** 🎉 on completing this tutorial! Now you know how to add cool effects easily using
-    Post Production 🖼️
-    Let's keep it up and check out another tutorial! 🎓
-     */
+	gui.add(postproduction, 'enabled');
+
+	const guiOutline = gui.addFolder('Outline');
+	guiOutline.add(postproduction, 'outlinesEnabled');
+	guiOutline.addColor(postproduction.outlines, 'color').name('Outline color');
+
+	const guiSAO = gui.addFolder('SAO');
+	const configuration = postproduction.n8ao.configuration;
+	guiSAO.add(postproduction, 'saoEnabled');
+	guiSAO.add(configuration, 'aoSamples').step(1).min(1).max(16);
+	guiSAO.add(configuration, 'denoiseSamples').step(1).min(0).max(16);
+	guiSAO.add(configuration, 'denoiseRadius').step(1).min(0).max(100);
+	guiSAO.add(configuration, 'aoRadius').step(1).min(0).max(16);
+	guiSAO.add(configuration, 'distanceFalloff').step(1).min(0).max(16);
+	guiSAO.add(configuration, 'intensity').step(1).min(0).max(16);
+	guiSAO.add(configuration, 'halfRes');
+	guiSAO.add(configuration, 'screenSpaceRadius');
+	guiSAO.addColor(configuration, 'color');
+
+	/*MD
+  **Congratulations** 🎉 on completing this tutorial! Now you know how to add cool effects easily using
+  Post Production 🖼️
+  Let's keep it up and check out another tutorial! 🎓
+   */
 </script>
 </body>
 </html>

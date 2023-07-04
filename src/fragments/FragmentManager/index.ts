@@ -1,4 +1,4 @@
-import { Fragment, Serializer } from "bim-fragment";
+import { Fragment, FragmentsGroup, Serializer } from "bim-fragment";
 import * as THREE from "three";
 import { Component, Disposable, Event } from "../../base-types";
 import { Components } from "../../core";
@@ -20,7 +20,9 @@ export class FragmentManager
   /** All the created [fragments](https://github.com/ifcjs/fragment). */
   list: { [guid: string]: Fragment } = {};
 
-  onFragmentsLoaded: Event<string[]> = new Event();
+  groups: FragmentsGroup[] = [];
+
+  onFragmentsLoaded: Event<FragmentsGroup> = new Event();
 
   private _loader = new Serializer();
   private _components: Components;
@@ -46,6 +48,11 @@ export class FragmentManager
 
   /** {@link Component.get} */
   dispose() {
+    for (const group of this.groups) {
+      group.dispose(true);
+    }
+    this.groups = [];
+
     for (const fragID in this.list) {
       const fragment = this.list[fragID];
       this.removeFragmentMesh(fragment);
@@ -69,34 +76,28 @@ export class FragmentManager
    * @returns the list of IDs of the loaded fragments.
    */
   load(data: Uint8Array) {
-    const fragments = this._loader.import(data);
+    const group = this._loader.import(data);
     const scene = this._components.scene.get();
     const ids: string[] = [];
-    for (const fragment of fragments) {
+    scene.add(group);
+    for (const fragment of group.items) {
+      fragment.group = group;
       this.list[fragment.id] = fragment;
-      scene.add(fragment.mesh);
       ids.push(fragment.id);
       this._components.meshes.push(fragment.mesh);
     }
-    this.onFragmentsLoaded.trigger(ids);
-    return ids;
+    this.groups.push(group);
+    this.onFragmentsLoaded.trigger(group);
+    return group;
   }
 
   /**
    * Export the specified fragments.
-   * @param ids - the IDs of the fragments to export. By default, it's all the
-   * IDs of the existing fragments of {@link list}.
+   * @param group - the fragments group to be exported.
    * @returns the exported data as binary buffer.
    */
-  export(ids = Object.keys(this.list)) {
-    const fragments: Fragment[] = [];
-    for (const id of ids) {
-      const fragment = this.list[id];
-      if (fragment) {
-        fragments.push(fragment);
-      }
-    }
-    return this._loader.export(fragments);
+  export(group: FragmentsGroup) {
+    return this._loader.export(group);
   }
 
   private removeFragmentMesh(fragment: Fragment) {

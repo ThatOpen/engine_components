@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Component, Disposable } from "../../base-types";
-import { FragmentGrouper, FragmentManager } from "../index";
+import { FragmentClassifier, FragmentManager } from "../index";
 
 // TODO: Clean up and document
 
@@ -21,7 +21,7 @@ export class FragmentExploder
 
   constructor(
     public fragments: FragmentManager,
-    public groups: FragmentGrouper
+    public groups: FragmentClassifier
   ) {
     super();
   }

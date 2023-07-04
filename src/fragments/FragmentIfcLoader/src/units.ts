@@ -36,23 +36,13 @@ export class Units {
   }
 
   private getScaleMatrix() {
+    const f = this.factor;
+    // prettier-ignore
     return new THREE.Matrix4().fromArray([
-      this.factor,
-      0,
-      0,
-      0,
-      0,
-      this.factor,
-      0,
-      0,
-      0,
-      0,
-      this.factor,
-      0,
-      0,
-      0,
-      0,
-      1,
+      f, 0, 0, 0,
+      0, f, 0, 0,
+      0, 0, f, 0,
+      0, 0, 0, 1,
     ]);
   }
 }

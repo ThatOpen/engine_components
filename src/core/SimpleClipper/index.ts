@@ -246,9 +246,15 @@ export class SimpleClipper<Plane extends SimplePlane>
   }
 
   private getWorldNormal(intersect: THREE.Intersection, normal: THREE.Vector3) {
-    const normalMatrix = new THREE.Matrix3().getNormalMatrix(
-      intersect.object.matrixWorld
-    );
+    const object = intersect.object;
+    let transform = intersect.object.matrixWorld.clone();
+    const isInstance = object instanceof THREE.InstancedMesh;
+    if (isInstance && intersect.instanceId !== undefined) {
+      const temp = new THREE.Matrix4();
+      object.getMatrixAt(intersect.instanceId, temp);
+      transform = temp.multiply(transform);
+    }
+    const normalMatrix = new THREE.Matrix3().getNormalMatrix(transform);
     const worldNormal = normal.clone().applyMatrix3(normalMatrix).normalize();
     this.normalizePlaneDirectionY(worldNormal);
     return worldNormal;
