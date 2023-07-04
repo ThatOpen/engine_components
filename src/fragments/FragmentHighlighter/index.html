@@ -58,7 +58,23 @@
     const grid = new OBC.SimpleGrid(components);
     components.tools.add('grid', grid);
 
-    // Set up highlighting
+    /*MD
+    ### 🤏 Nudging Fragments
+    ---
+
+    Until now, you could add IFC files to your BIM App and render Fragments in your scene.
+
+    In this lesson, we will show you how to select Fragment elements.
+
+    This may appear to be an immense task but believe us when we say it will take less than 5 minutes to complete.
+
+    :::tip First, let's set up a simple scene!
+
+    👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
+
+    :::
+
+    */
 
     const fragments = new OBC.FragmentManager(components);
     const highlighter = new OBC.FragmentHighlighter(components, fragments);
