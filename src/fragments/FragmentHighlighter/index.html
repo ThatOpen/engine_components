@@ -74,9 +74,17 @@
 
     :::
 
+    #### Managing Fragments
+    ---
+
+    To deal with Fragments we will always use `FragmentManager`, it will help us to render **Fragments** easily.
+
     */
 
     const fragments = new OBC.FragmentManager(components);
+
+
+
     const highlighter = new OBC.FragmentHighlighter(components, fragments);
 
     const file = await fetch("../../../resources/small.frag");
