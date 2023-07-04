@@ -6219,7 +6219,7 @@ __metadata:
     ts-jest: ^27.0.3
     ts-node: ^10.0.0
     typescript: ^4.3.2
-    web-ifc: 0.0.41
+    web-ifc: 0.0.42
   languageName: unknown
   linkType: soft
 
@@ -8364,10 +8364,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"web-ifc@npm:0.0.41":
-  version: 0.0.41
-  resolution: "web-ifc@npm:0.0.41"
-  checksum: 7ece5da11ab3ece7514f24ed075954d98458fc3b7c3de309e0f3098b7f5994fa80246d45f8f2a80a0d26ab9b55746765e8060b8ee46320983ed7011ce2478abf
+"web-ifc@npm:0.0.42":
+  version: 0.0.42
+  resolution: "web-ifc@npm:0.0.42"
+  checksum: e9cab52eeee358e28e836e75201acdf6db0e78b9225640a36694ddc8be0a89e89a21162053ae1afacde4cd4ea98c3fd1e6b900e38b1e4e7ebe62adb6cbbe39af
   languageName: node
   linkType: hard
 
