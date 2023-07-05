@@ -144,7 +144,9 @@
 
 	const guiOutline = gui.addFolder('Outline');
 	guiOutline.add(postproduction, 'outlinesEnabled');
-	guiOutline.addColor(postproduction.outlines, 'color').name('Outline color');
+	guiOutline.add(postproduction.outlines, 'opacity').name('Opacity').min(0).max(1).step(0.1);
+	guiOutline.add(postproduction.outlines, 'tolerance').name('Tolerance').min(0).max(6).step(1);
+	guiOutline.addColor(postproduction.outlines, 'color').name('Color');
 
 	const guiSAO = gui.addFolder('SAO');
 	const configuration = postproduction.n8ao.configuration;

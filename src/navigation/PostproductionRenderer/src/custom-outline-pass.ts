@@ -15,6 +15,8 @@ export class CustomOutlinePass extends Pass {
   excludedMeshes: THREE.Mesh[] = [];
 
   private _color = 0x999999;
+  private _opacity = 0.3;
+  private _tolerance = 3;
   private _correctColor = false;
 
   get color() {
@@ -25,6 +27,26 @@ export class CustomOutlinePass extends Pass {
     this._color = color;
     const material = this.fsQuad.material as THREE.ShaderMaterial;
     material.uniforms.outlineColor.value.set(color);
+  }
+
+  get tolerance() {
+    return this._tolerance;
+  }
+
+  set tolerance(value: number) {
+    this._tolerance = value;
+    const material = this.fsQuad.material as THREE.ShaderMaterial;
+    material.uniforms.tolerance.value = value;
+  }
+
+  get opacity() {
+    return this._opacity;
+  }
+
+  set opacity(value: number) {
+    this._opacity = value;
+    const material = this.fsQuad.material as THREE.ShaderMaterial;
+    material.uniforms.opacity.value = value;
   }
 
   get correctColor() {
@@ -150,9 +172,10 @@ export class CustomOutlinePass extends Pass {
 	  uniform sampler2D planeBuffer;
 	  uniform vec4 screenSize;
 	  uniform vec3 outlineColor;
-      uniform int width;
-      uniform float tolerance;
-      uniform float correctColor;
+    uniform int width;
+	  uniform float opacity;
+    uniform float tolerance;
+    uniform float correctColor;
 
 			varying vec2 vUv;
 
@@ -176,6 +199,7 @@ export class CustomOutlinePass extends Pass {
 
 			void main() {
 				vec4 sceneColor = texture2D(sceneColorBuffer, vUv);
+        vec4 color = vec4(outlineColor,1.);
 
         vec4 plane = getValue(planeBuffer, 0, 0);
 				vec3 normal = plane.xyz;
@@ -247,12 +271,11 @@ export class CustomOutlinePass extends Pass {
 
         float outline = step(tolerance, planeDiff);
 
-        // Exclude background
+        // Exclude background and apply opacity
 
         float background = getIsBackground(normal);
         outline *= background;
-
-        vec4 color = vec4(outlineColor,1.);
+        outline *= opacity;
         
         // Correct color to make it look similar to sao postprocessing colors
         
@@ -271,10 +294,11 @@ export class CustomOutlinePass extends Pass {
   createOutlinePostProcessMaterial() {
     return new THREE.ShaderMaterial({
       uniforms: {
+        opacity: { value: this._opacity },
         correctColor: { value: 0 },
         debugVisualize: { value: 0 },
         sceneColorBuffer: { value: null },
-        tolerance: { value: 2 },
+        tolerance: { value: this._tolerance },
         planeBuffer: { value: null },
         width: { value: 1 },
         outlineColor: { value: new THREE.Color(this._color) },
