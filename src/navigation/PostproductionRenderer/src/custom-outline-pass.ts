@@ -176,6 +176,7 @@ export class CustomOutlinePass extends Pass {
 	  uniform float opacity;
     uniform float tolerance;
     uniform float correctColor;
+    uniform float overrideWhite;
 
 			varying vec2 vUv;
 
@@ -198,7 +199,8 @@ export class CustomOutlinePass extends Pass {
       }
 
 			void main() {
-				vec4 sceneColor = texture2D(sceneColorBuffer, vUv);
+				vec3 sceneColor = getValue(sceneColorBuffer, 0, 0).rgb;
+				vec3 normSceneColor = normalize(sceneColor);
         vec4 color = vec4(outlineColor,1.);
 
         vec4 plane = getValue(planeBuffer, 0, 0);
@@ -222,6 +224,15 @@ export class CustomOutlinePass extends Pass {
         float distanceTopLeft = getValue(planeBuffer, -width, width).a;
         float distanceBottomRight = getValue(planeBuffer, width, -width).a;
         float distanceBottomLeft = getValue(planeBuffer, -width, -width).a;
+        
+        vec3 sceneColorTop = normalize(getValue(sceneColorBuffer, 1, 0).rgb);
+        vec3 sceneColorBottom = normalize(getValue(sceneColorBuffer, -1, 0).rgb);
+        vec3 sceneColorLeft = normalize(getValue(sceneColorBuffer, 0, -1).rgb);
+        vec3 sceneColorRight = normalize(getValue(sceneColorBuffer, 0, 1).rgb);
+        vec3 sceneColorTopRight = normalize(getValue(sceneColorBuffer, 1, 1).rgb);
+        vec3 sceneColorBottomRight = normalize(getValue(sceneColorBuffer, -1, 1).rgb);
+        vec3 sceneColorTopLeft = normalize(getValue(sceneColorBuffer, 1, 1).rgb);
+        vec3 sceneColorBottomLeft = normalize(getValue(sceneColorBuffer, -1, 1).rgb);
 
         // Checks if the planes of this texel and the neighbour texels are different
 
@@ -235,6 +246,15 @@ export class CustomOutlinePass extends Pass {
         planeDiff += step(0.001, normalDiff(normal, normalTopLeft));
         planeDiff += step(0.001, normalDiff(normal, normalBottomRight));
         planeDiff += step(0.001, normalDiff(normal, normalBottomLeft));
+        
+        planeDiff += step(0.001, normalDiff(normSceneColor, sceneColorTop));
+        planeDiff += step(0.001, normalDiff(normSceneColor, sceneColorBottom));
+        planeDiff += step(0.001, normalDiff(normSceneColor, sceneColorLeft));
+        planeDiff += step(0.001, normalDiff(normSceneColor, sceneColorRight));
+       	planeDiff += step(0.001, normalDiff(normSceneColor, sceneColorTopRight));
+        planeDiff += step(0.001, normalDiff(normSceneColor, sceneColorTopLeft));
+        planeDiff += step(0.001, normalDiff(normSceneColor, sceneColorBottomRight));
+        planeDiff += step(0.001, normalDiff(normSceneColor, sceneColorBottomLeft));
 
         planeDiff += step(0.001, abs(distance - distanceTop));
         planeDiff += step(0.001, abs(distance - distanceBottom));

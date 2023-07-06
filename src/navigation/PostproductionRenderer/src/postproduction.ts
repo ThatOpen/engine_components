@@ -46,6 +46,7 @@ export class Postproduction {
   }
 
   set saoEnabled(active: boolean) {
+    if (this._saoEnabled === active) return;
     this._saoEnabled = active;
     if (!this.n8ao) return;
     if (active) {
@@ -68,6 +69,7 @@ export class Postproduction {
   }
 
   set outlinesEnabled(active: boolean) {
+    if (this._outlinesEnabled === active) return;
     this._outlinesEnabled = active;
     if (!this.outlines) return;
     if (active) {
