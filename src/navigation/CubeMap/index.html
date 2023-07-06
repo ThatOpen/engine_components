@@ -61,6 +61,7 @@
 	scene.add(ambientLight);
 
 	const navCube = new OBC.CubeMap(components);
+	navCube.offset = 1;
 	navCube.setPosition("bottom-left");
 	components.tools.add("navCube", navCube);
 
