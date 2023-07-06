@@ -10,7 +10,6 @@ import {
 } from "../../../ifc";
 import { SpatialStructure } from "./spatial-structure";
 import { IfcFragmentSettings } from "./ifc-fragment-settings";
-import { Units } from "./units";
 import { IfcGeometries } from "./types";
 
 export class DataConverter {
@@ -19,7 +18,6 @@ export class DataConverter {
   private _categories: IfcItemsCategories = {};
   private _model = new FRAGS.FragmentsGroup();
   private _ifcCategories = new IfcCategories();
-  private _units = new Units();
 
   private _fragmentKey = 0;
 
@@ -37,7 +35,6 @@ export class DataConverter {
     this._categories = {};
     this._model = new FRAGS.FragmentsGroup();
     this._ifcCategories = new IfcCategories();
-    this._units = new Units();
     this._propertyExporter = new IfcJsonExporter();
     this._keyFragmentMap = {};
     this._itemKeyMap = {};
@@ -48,8 +45,7 @@ export class DataConverter {
   }
 
   async generate(webIfc: WEBIFC.IfcAPI, geometries: IfcGeometries) {
-    await this._units.setUp(webIfc);
-    await this._spatialTree.setUp(webIfc, this._units);
+    await this._spatialTree.setUp(webIfc);
     this.createAllFragments(geometries);
     await this.saveModelData(webIfc);
     return this._model;
@@ -108,7 +104,6 @@ export class DataConverter {
           uniqueItems[matID] = { material, geometries: [], expressIDs: [] };
         }
         matrix.fromArray(instance.matrix);
-        this._units.apply(matrix);
         buffer.applyMatrix4(matrix);
         uniqueItems[matID].geometries.push(buffer);
         uniqueItems[matID].expressIDs.push(instance.expressID.toString());
@@ -122,7 +117,6 @@ export class DataConverter {
         const instance = instances[i];
         matrix.fromArray(instance.matrix);
         const { expressID } = instance;
-        this._units.apply(matrix);
         fragment.setInstance(i, {
           ids: [expressID.toString()],
           transform: matrix,

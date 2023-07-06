@@ -6,12 +6,15 @@ export class SpatialStructure {
   floorProperties: any[] = [];
   itemsByFloor: IfcItemsCategories = {};
 
-  async setUp(webIfc: WEBIFC.IfcAPI, units: Units) {
+  private _units = new Units();
+
+  async setUp(webIfc: WEBIFC.IfcAPI) {
+    this._units.setUp(webIfc);
     this.reset();
     try {
       const floors = await this.getFloors(webIfc);
       for (const floor of floors) {
-        await this.getFloorProperties(webIfc, floor, units);
+        await this.getFloorProperties(webIfc, floor);
         this.saveFloorRelations(floor);
       }
     } catch (e) {
@@ -29,29 +32,20 @@ export class SpatialStructure {
     this.itemsByFloor = {};
   }
 
-  private async getFloorProperties(
-    webIfc: WEBIFC.IfcAPI,
-    floor: any,
-    units: Units
-  ) {
+  private async getFloorProperties(webIfc: WEBIFC.IfcAPI, floor: any) {
     const id = floor.expressID;
     const properties = webIfc.properties;
     const props = await properties.getItemProperties(0, id, false);
-    props.SceneHeight = await this.getHeight(props, webIfc, properties, units);
+    props.SceneHeight = await this.getHeight(props, webIfc, properties);
     this.floorProperties.push(props);
   }
 
-  private async getHeight(
-    props: any,
-    webIfc: WEBIFC.IfcAPI,
-    properties: any,
-    units: Units
-  ) {
+  private async getHeight(props: any, webIfc: WEBIFC.IfcAPI, properties: any) {
     const placementID = props.ObjectPlacement.value;
     const coordArray = webIfc.GetCoordinationMatrix(0);
-    const coordHeight = coordArray[13] * units.factor;
+    const coordHeight = coordArray[13] * this._units.factor;
     const placement = await properties.getItemProperties(0, placementID, true);
-    return this.getPlacementHeight(placement, units) + coordHeight;
+    return this.getPlacementHeight(placement, this._units) + coordHeight;
   }
 
   private getPlacementHeight(placement: any, units: Units) {
