@@ -7,6 +7,7 @@ import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader";
 import { Components } from "../../../core";
 import { OrthoPerspectiveCamera } from "../../OrthoPerspectiveCamera";
 import { CustomOutlinePass } from "./custom-outline-pass";
+import { CustomGlossPass } from "./custom-gloss-pass";
 
 // TODO: Clean up and document this
 
@@ -16,6 +17,7 @@ export class Postproduction {
   excludedItems = new Set<THREE.Object3D>();
   n8ao?: any;
   outlines?: CustomOutlinePass;
+  gloss?: CustomGlossPass;
 
   readonly composer: EffectComposer;
 
@@ -97,6 +99,7 @@ export class Postproduction {
     this._renderTarget.dispose();
     this._depthTexture?.dispose();
     this.outlines?.dispose();
+    this.gloss?.dispose();
     this._fxaaPass?.dispose();
     this.n8ao?.dispose();
     this.excludedItems.clear();
@@ -106,6 +109,7 @@ export class Postproduction {
     this.composer.setSize(width, height);
     this.n8ao?.setSize(width, height);
     this.outlines?.setSize(width, height);
+    this.gloss?.setSize(width, height);
     this._fxaaPass?.setSize(width, height);
   }
 
@@ -121,6 +125,9 @@ export class Postproduction {
     }
     if (this.outlines) {
       this.outlines.renderCamera = camera;
+    }
+    if (this.gloss) {
+      this.gloss.renderCamera = camera;
     }
     if (this._basePass) {
       this._basePass.camera = camera;
@@ -144,6 +151,7 @@ export class Postproduction {
     this.addBasePass(scene, camera);
     this.addSaoPass(scene, camera);
     this.addOutlinePass();
+    // this.addGlossPass();
     this.addFXAAPass();
 
     this._initialized = true;
@@ -167,6 +175,17 @@ export class Postproduction {
     this.composer.addPass(customOutline);
   }
 
+  // TODO: Work in progress, this needs adjustment
+  // private addGlossPass() {
+  //   const customGloss = new CustomGlossPass(
+  //     new THREE.Vector2(window.innerWidth, window.innerHeight),
+  //     this.components
+  //   );
+  //
+  //   this.gloss = customGloss;
+  //   this.composer.addPass(customGloss);
+  // }
+
   addSaoPass(scene: THREE.Scene, camera: THREE.Camera) {
     const { width, height } = this.components.renderer.getSize();
     this.n8ao = new N8AOPass(scene, camera, width, height);
@@ -174,7 +193,7 @@ export class Postproduction {
     const { configuration } = this.n8ao;
     configuration.aoSamples = 16;
     configuration.denoiseSamples = 1;
-    configuration.denoiseRadius = 3;
+    configuration.denoiseRadius = 13;
     configuration.aoRadius = 1;
     configuration.distanceFalloff = 4;
     configuration.aoRadius = 1;
