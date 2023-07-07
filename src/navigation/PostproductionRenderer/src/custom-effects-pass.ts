@@ -2,22 +2,29 @@ import * as THREE from "three";
 import { Pass, FullScreenQuad } from "three/examples/jsm/postprocessing/Pass";
 import { getPlaneDistanceMaterial } from "./plane-distance-shader";
 import { Components } from "../../../core";
+import { getProjectedNormalMaterial } from "./projected-normal-shader";
 
 // Follows the structure of
 // 		https://github.com/mrdoob/three.js/blob/master/examples/jsm/postprocessing/OutlinePass.js
-export class CustomOutlinePass extends Pass {
+export class CustomEffectsPass extends Pass {
   resolution: THREE.Vector2;
   renderScene: THREE.Scene;
   renderCamera: THREE.Camera;
   fsQuad: FullScreenQuad;
   planeBuffer: THREE.WebGLRenderTarget;
+  glossBuffer: THREE.WebGLRenderTarget;
   normalOverrideMaterial: THREE.ShaderMaterial;
+  glossOverrideMaterial: THREE.ShaderMaterial;
   excludedMeshes: THREE.Mesh[] = [];
 
   private _color = 0x999999;
-  private _opacity = 0.3;
+  private _opacity = 0.4;
   private _tolerance = 3;
   private _correctColor = false;
+  private _glossEnabled = true;
+  private _glossExponent = 0.7;
+  private _minGloss = -0.3;
+  private _maxGloss = 0.15;
 
   get color() {
     return this._color;
@@ -60,6 +67,46 @@ export class CustomOutlinePass extends Pass {
     material.uniforms.correctColor.value = value;
   }
 
+  get glossEnabled() {
+    return this._glossEnabled;
+  }
+
+  set glossEnabled(active: boolean) {
+    this._glossEnabled = active;
+    const material = this.fsQuad.material as THREE.ShaderMaterial;
+    material.uniforms.glossEnabled.value = active ? 1 : 0;
+  }
+
+  get glossExponent() {
+    return this._glossExponent;
+  }
+
+  set glossExponent(value: number) {
+    this._glossExponent = value;
+    const material = this.fsQuad.material as THREE.ShaderMaterial;
+    material.uniforms.glossExponent.value = value;
+  }
+
+  get minGloss() {
+    return this._minGloss;
+  }
+
+  set minGloss(value: number) {
+    this._minGloss = value;
+    const material = this.fsQuad.material as THREE.ShaderMaterial;
+    material.uniforms.minGloss.value = value;
+  }
+
+  get maxGloss() {
+    return this._maxGloss;
+  }
+
+  set maxGloss(value: number) {
+    this._maxGloss = value;
+    const material = this.fsQuad.material as THREE.ShaderMaterial;
+    material.uniforms.maxGloss.value = value;
+  }
+
   constructor(resolution: THREE.Vector2, components: Components) {
     super();
 
@@ -70,32 +117,29 @@ export class CustomOutlinePass extends Pass {
     this.fsQuad = new FullScreenQuad();
     this.fsQuad.material = this.createOutlinePostProcessMaterial();
 
-    // Create a buffer to store the plane of each face the scene onto
-    const planeBuffer = new THREE.WebGLRenderTarget(
-      this.resolution.x,
-      this.resolution.y
-    );
-    planeBuffer.texture.colorSpace = "srgb-linear";
-    planeBuffer.texture.format = THREE.RGBAFormat;
-    planeBuffer.texture.type = THREE.HalfFloatType;
-    planeBuffer.texture.minFilter = THREE.NearestFilter;
-    planeBuffer.texture.magFilter = THREE.NearestFilter;
-    planeBuffer.texture.generateMipmaps = false;
-    planeBuffer.stencilBuffer = false;
-    this.planeBuffer = planeBuffer;
+    this.planeBuffer = this.newRenderTarget();
+    this.glossBuffer = this.newRenderTarget();
 
-    const material = getPlaneDistanceMaterial();
-    material.clippingPlanes = components.renderer.clippingPlanes;
-    this.normalOverrideMaterial = material;
+    const normalMaterial = getPlaneDistanceMaterial();
+    normalMaterial.clippingPlanes = components.renderer.clippingPlanes;
+    this.normalOverrideMaterial = normalMaterial;
+
+    const glossMaterial = getProjectedNormalMaterial();
+    glossMaterial.clippingPlanes = components.renderer.clippingPlanes;
+    this.glossOverrideMaterial = glossMaterial;
   }
 
   dispose() {
     this.planeBuffer.dispose();
+    this.glossBuffer.dispose();
+    this.normalOverrideMaterial.dispose();
+    this.glossOverrideMaterial.dispose();
     this.fsQuad.dispose();
   }
 
   setSize(width: number, height: number) {
     this.planeBuffer.setSize(width, height);
+    this.glossBuffer.setSize(width, height);
     this.resolution.set(width, height);
 
     const material = this.fsQuad.material as THREE.ShaderMaterial;
@@ -115,7 +159,7 @@ export class CustomOutlinePass extends Pass {
 
     // 1. Re-render the scene to capture all normals in a texture.
 
-    const overrideMaterialValue = this.renderScene.overrideMaterial;
+    const previousOverrideMaterial = this.renderScene.overrideMaterial;
     const previousBackground = this.renderScene.background;
     this.renderScene.background = null;
 
@@ -123,20 +167,30 @@ export class CustomOutlinePass extends Pass {
       mesh.visible = false;
     }
 
+    // Render normal pass
+
     renderer.setRenderTarget(this.planeBuffer);
     this.renderScene.overrideMaterial = this.normalOverrideMaterial;
     renderer.render(this.renderScene, this.renderCamera);
+
+    // Render gloss pass
+
+    if (this._glossEnabled) {
+      renderer.setRenderTarget(this.glossBuffer);
+      this.renderScene.overrideMaterial = this.glossOverrideMaterial;
+      renderer.render(this.renderScene, this.renderCamera);
+    }
 
     for (const mesh of this.excludedMeshes) {
       mesh.visible = true;
     }
 
-    this.renderScene.overrideMaterial = overrideMaterialValue;
-
+    this.renderScene.overrideMaterial = previousOverrideMaterial;
     this.renderScene.background = previousBackground;
 
     const material = this.fsQuad.material as THREE.ShaderMaterial;
     material.uniforms.planeBuffer.value = this.planeBuffer.texture;
+    material.uniforms.glossBuffer.value = this.glossBuffer.texture;
     material.uniforms.sceneColorBuffer.value = readBuffer.texture;
 
     // 2. Draw the outlines using the normal texture
@@ -166,17 +220,22 @@ export class CustomOutlinePass extends Pass {
 			}
 			`;
   }
+
   get fragmentShader() {
     return `
 	  uniform sampler2D sceneColorBuffer;
 	  uniform sampler2D planeBuffer;
+	  uniform sampler2D glossBuffer;
 	  uniform vec4 screenSize;
 	  uniform vec3 outlineColor;
-    uniform int width;
+      uniform int width;
 	  uniform float opacity;
-    uniform float tolerance;
-    uniform float correctColor;
-    uniform float overrideWhite;
+      uniform float tolerance;
+      uniform float correctColor;
+      uniform float glossExponent;
+      uniform float minGloss;
+      uniform float maxGloss;
+      uniform float glossEnabled;
 
 			varying vec2 vUv;
 
@@ -306,6 +365,18 @@ export class CustomOutlinePass extends Pass {
         float b = pow(sceneColor.b + sum, 1. / factor);
         vec4 corrected = vec4(r, g, b, 1.);
         
+        // Add gloss
+        
+        vec3 gloss = getValue(glossBuffer, 0, 0).xyz;
+        float diffGloss = abs(maxGloss - minGloss);
+        vec3 glossExpVector = vec3(glossExponent,glossExponent,glossExponent);
+        gloss = min(pow(gloss, glossExpVector), vec3(1.,1.,1.));
+        gloss *= diffGloss;
+        gloss += minGloss;
+        vec4 glossedColor = corrected + vec4(gloss, 1.) * glossEnabled;
+        
+        corrected = mix(corrected, glossedColor, background);
+        
         gl_FragColor = mix(corrected, color, outline);
 	}
 			`;
@@ -320,6 +391,11 @@ export class CustomOutlinePass extends Pass {
         sceneColorBuffer: { value: null },
         tolerance: { value: this._tolerance },
         planeBuffer: { value: null },
+        glossBuffer: { value: null },
+        glossEnabled: { value: 1 },
+        minGloss: { value: -0.4 },
+        maxGloss: { value: 0 },
+        glossExponent: { value: this._glossExponent },
         width: { value: 1 },
         outlineColor: { value: new THREE.Color(this._color) },
         screenSize: {
@@ -334,5 +410,20 @@ export class CustomOutlinePass extends Pass {
       vertexShader: this.vertexShader,
       fragmentShader: this.fragmentShader,
     });
+  }
+
+  private newRenderTarget() {
+    const planeBuffer = new THREE.WebGLRenderTarget(
+      this.resolution.x,
+      this.resolution.y
+    );
+    planeBuffer.texture.colorSpace = "srgb-linear";
+    planeBuffer.texture.format = THREE.RGBAFormat;
+    planeBuffer.texture.type = THREE.HalfFloatType;
+    planeBuffer.texture.minFilter = THREE.NearestFilter;
+    planeBuffer.texture.magFilter = THREE.NearestFilter;
+    planeBuffer.texture.generateMipmaps = false;
+    planeBuffer.stencilBuffer = false;
+    return planeBuffer;
   }
 }
