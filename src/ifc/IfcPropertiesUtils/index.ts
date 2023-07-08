@@ -1,29 +1,33 @@
 import * as WEBIFC from "web-ifc";
 
 export class IfcPropertiesUtils {
-  static getLevels(properties: any) {
-    const floors: { data: any; height: number }[] = [];
-
-    const floorsProps = IfcPropertiesUtils.getAllItemsOfType(
-      properties,
-      WEBIFC.IFCBUILDINGSTOREY
-    );
-
-    for (const data of floorsProps) {
-      const height = data.Elevation.value;
-      floors.push({ data, height });
+  static getUnits(properties: any) {
+    const { IFCUNITASSIGNMENT } = WEBIFC;
+    const allUnits = this.findItemOfType(properties, IFCUNITASSIGNMENT);
+    for (const unitRef of allUnits.Units) {
+      if (unitRef.value === undefined || unitRef.value === null) continue;
+      const unit = properties[unitRef.value];
+      if (!unit.UnitType || !unit.UnitType.value) continue;
+      const value = unit.UnitType.value;
+      if (value !== "LENGTHUNIT") continue;
+      let factor = 1;
+      let unitValue = 1;
+      if (unit.Name.value === "METRE") unitValue = 1;
+      if (unit.Name.value === "FOOT") unitValue = 0.3048;
+      if (unit.Prefix?.value === "MILLI") factor = 0.001;
+      return unitValue * factor;
     }
+    return 1;
+  }
 
-    console.log(floors);
-
-    // properties[floor.expressID];
-    // const props = await properties.getItemProperties(0, floor.expressID, false);
-    // props.SceneHeight = await this.getHeight(props, webIfc, properties, units);
-    // const placementID = props.ObjectPlacement.value;
-    // const coordArray = webIfc.GetCoordinationMatrix(0);
-    // const coordHeight = coordArray[13] * units.factor;
-    // const placement = await properties.getItemProperties(0, placementID, true);
-    // return this.getPlacementHeight(placement, units) + coordHeight;
+  static findItemOfType(properties: any, type: number) {
+    for (const id in properties) {
+      const property = properties[id];
+      if (property.type === type) {
+        return property;
+      }
+    }
+    return null;
   }
 
   static getAllItemsOfType(properties: any, type: number) {

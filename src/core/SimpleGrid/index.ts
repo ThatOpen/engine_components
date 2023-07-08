@@ -26,7 +26,12 @@ export class SimpleGrid
 
   /** {@link Hideable.visible} */
   set visible(visible: boolean) {
-    this._grid.visible = visible;
+    if (visible) {
+      const scene = this._components.scene.get();
+      scene.add(this._grid);
+    } else {
+      this._grid.removeFromParent();
+    }
   }
 
   /** The material of the grid. */
@@ -54,6 +59,7 @@ export class SimpleGrid
   private readonly _grid: THREE.Mesh;
   private _disposer = new Disposer();
   private _fade = 3;
+  private _components: Components;
 
   constructor(
     components: Components,
@@ -63,6 +69,8 @@ export class SimpleGrid
     distance: number = 500
   ) {
     super();
+    this._components = components;
+
     // Source: https://github.com/dkaraush/THREE.InfiniteGridHelper/blob/master/InfiniteGridHelper.ts
     // Author: Fyrestar https://mevedia.com (https://github.com/Fyrestar/THREE.InfiniteGridHelper)
 
@@ -169,5 +177,6 @@ export class SimpleGrid
   /** {@link Disposable.dispose} */
   dispose() {
     this._disposer.dispose(this._grid);
+    (this._components as any) = null;
   }
 }

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { FragmentsGroup } from "bim-fragment";
+import * as WEBIFC from "web-ifc";
 import { Component, Disposable } from "../../base-types";
 import {
   EdgesClipper,
@@ -56,11 +57,31 @@ export class PlanNavigator extends Component<PlanView[]> implements Disposable {
     this.clipper.dispose();
   }
 
+  // TODO: Compute georreference matrix when generating fragmentsgroup
+  // so that we can correctly add floors in georreferenced models
+  // where the IfcSite / IfcBuilding have location information
   async computeAllPlanViews(model: FragmentsGroup) {
     if (!model.properties) {
       throw new Error("Properties are needed to compute plan views!");
     }
-    IfcPropertiesUtils.getLevels(model.properties);
+    const { properties } = model;
+
+    const floorsProps = IfcPropertiesUtils.getAllItemsOfType(
+      properties,
+      WEBIFC.IFCBUILDINGSTOREY
+    );
+
+    const units = IfcPropertiesUtils.getUnits(properties);
+
+    for (const floor of floorsProps) {
+      const height = floor.Elevation.value * units + this.defaultSectionOffset;
+      await this.create({
+        normal: new THREE.Vector3(0, -1, 0),
+        point: new THREE.Vector3(0, height, 0),
+        id: floor.Name.value,
+        ortho: true,
+      });
+    }
   }
 
   /**
@@ -186,7 +207,12 @@ export class PlanNavigator extends Component<PlanView[]> implements Disposable {
   }
 
   private hidePreviousClippingPlane() {
-    const plane = this.currentPlan?.plane;
-    if (plane) plane.enabled = false;
+    if (this.currentPlan) {
+      const plane = this.currentPlan.plane;
+      if (plane) plane.enabled = false;
+      if (this.currentPlan.plane instanceof EdgesPlane) {
+        this.currentPlan.plane.edges.visible = false;
+      }
+    }
   }
 }
