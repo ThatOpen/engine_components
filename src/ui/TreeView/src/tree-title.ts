@@ -54,7 +54,7 @@ export class TreeTitle extends UIComponentsStack {
     leftContainer.addChild(this.arrow);
 
     const titleContainer = document.createElement("div");
-    titleContainer.className = "flex flex-col items-start";
+    titleContainer.className = "flex flex-col items-start py-[5px]";
 
     this._titleElement = document.createElement("p");
     this._titleElement.className = "text-base";

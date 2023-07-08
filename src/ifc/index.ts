@@ -4,4 +4,4 @@ export * from "./ifc-elements-map";
 export * from "./ifc-json-exporter";
 export * from "./ifc-geometry-types";
 export * from "./IfcPropertiesManager";
-export * from "./PropertiesProcessor";
+export * from "./IfcPropertiesProcessor";

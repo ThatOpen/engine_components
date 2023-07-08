@@ -39,6 +39,8 @@ export class NewProp extends SimpleUIComponent<HTMLDivElement> {
       .classList.remove("hover:bg-ifcjs-200", "hover:text-ifcjs-100");
     this.acceptButton.get().classList.add("hover:bg-[#55A014]", "grow");
 
+    this.acceptButton.onclick = () => {};
+
     this.cancelButton = new Button(components, {
       materialIconName: "clear",
       name: "Cancel",
@@ -50,6 +52,9 @@ export class NewProp extends SimpleUIComponent<HTMLDivElement> {
     this.cancelButton.get().classList.add("hover:bg-red-500", "grow");
 
     this.cancelButton.onclick = () => {
+      this.nameInput.clear();
+      this.valueInput.clear();
+      this.typeInput.clear();
       this.visible = false;
     };
 

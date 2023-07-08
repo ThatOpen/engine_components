@@ -98,7 +98,7 @@ export class FragmentIfcLoader
       const result = await this.load(data);
       const scene = this._components.scene.get();
       scene.add(result);
-      button.clicked.trigger(result);
+      button.onClicked.trigger(result);
     };
 
     button.onclick = () => {

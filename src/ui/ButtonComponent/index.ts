@@ -20,7 +20,7 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
   name: string = "TooeenButton";
   menu: Toolbar;
 
-  clicked = new Event();
+  onClicked = new Event<any>();
 
   private _closeOnClick = true;
   private _parent!: Toolbar;

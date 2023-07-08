@@ -10,22 +10,16 @@ export function getElementQsets(
   const arrayProperties = Object.values(properties);
   const psets = arrayProperties.map((entity) => {
     const isRel = entity?.type === WEBIFC.IFCRELDEFINESBYPROPERTIES;
-    if (!isRel) {
-      return null;
-    }
+    if (!isRel) return null;
     const qsetExpressID = entity.RelatingPropertyDefinition?.value;
     const isQset =
       properties[qsetExpressID]?.type === WEBIFC.IFCELEMENTQUANTITY;
-    if (!isQset) {
-      return null;
-    }
+    if (!isQset) return null;
     const relatedObjects = entity.RelatedObjects ?? [{}];
     const elements = relatedObjects.map((obj: any) => {
       return obj.value;
     });
-    if (!elements.includes(expressID)) {
-      return null;
-    }
+    if (!elements.includes(expressID)) return null;
     _onQsetFound(qsetExpressID);
     return qsetExpressID;
   });

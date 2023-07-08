@@ -18,6 +18,11 @@ export class TreeView extends SimpleUIComponent<HTMLDivElement> {
   set expanded(expanded: boolean) {
     this._expanded = expanded;
     this._childrenContainer.visible = expanded;
+    if (expanded) {
+      this.titleElement.get().classList.add("bg-ifcjs-120");
+    } else {
+      this.titleElement.get().classList.remove("bg-ifcjs-120");
+    }
   }
 
   set onclick(listener: (e?: MouseEvent) => void) {
@@ -47,7 +52,7 @@ export class TreeView extends SimpleUIComponent<HTMLDivElement> {
     };
 
     this._childrenContainer = new UIComponentsStack(components, "Vertical");
-    this._childrenContainer.get().classList.add("pl-[22px]", "w-full", "py-2");
+    this._childrenContainer.get().classList.add("pl-[22px]", "w-full");
     this.collapse();
 
     div.append(this.titleElement.get(), this._childrenContainer.get());

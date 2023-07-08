@@ -10,21 +10,15 @@ export function getElementPsets(
   const arrayProperties = Object.values(properties);
   const psets = arrayProperties.map((entity) => {
     const isRel = entity?.type === WEBIFC.IFCRELDEFINESBYPROPERTIES;
-    if (!isRel) {
-      return null;
-    }
+    if (!isRel) return null;
     const psetExpressID = entity.RelatingPropertyDefinition?.value;
     const isPset = properties[psetExpressID]?.type === WEBIFC.IFCPROPERTYSET;
-    if (!isPset) {
-      return null;
-    }
+    if (!isPset) return null;
     const relatedObjects = entity.RelatedObjects ?? [{}];
     const elements = relatedObjects.map((obj: any) => {
       return obj.value;
     });
-    if (!elements.includes(expressID)) {
-      return null;
-    }
+    if (!elements.includes(expressID)) return null;
     _onPsetFound(psetExpressID);
     return psetExpressID;
   });

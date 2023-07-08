@@ -15,14 +15,10 @@ export function getRelationMap(
     const relatedKey = Object.keys(prop).find((key) =>
       key.startsWith("Related")
     );
-    if (!(isRelation && relatingKey && relatedKey)) {
-      return;
-    }
+    if (!(isRelation && relatingKey && relatedKey)) return;
     const relating = properties[prop[relatingKey]?.value];
     const related = prop[relatedKey];
-    if (!related) {
-      return;
-    }
+    if (!related) return;
     const elements = related.map((el: any) => {
       return el.value;
     });

@@ -55,6 +55,10 @@ export abstract class BaseInput<
     this.inputElement.value = value;
   }
 
+  clear() {
+    this.inputValue = "";
+  }
+
   addChild() {
     console.warn("Input components doesn't allow children.");
   }

@@ -8,14 +8,10 @@ export function getPsetProps(
   const defaultCallback = () => {};
   const _onPropFound = onPropFound ?? defaultCallback;
   const pset = properties[expressID];
-  if (pset?.type !== WEBIFC.IFCPROPERTYSET) {
-    return null;
-  }
+  if (pset?.type !== WEBIFC.IFCPROPERTYSET) return null;
   const hasProperties = pset.HasProperties ?? [{}];
   const props = hasProperties.map((prop: any) => {
-    if (prop.value) {
-      _onPropFound(prop.value);
-    }
+    if (prop.value) _onPropFound(prop.value);
     return prop.value;
   });
   return props.filter((prop: any) => prop !== null);
