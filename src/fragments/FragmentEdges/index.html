@@ -158,22 +158,6 @@
 
      */
 
-    // Bind edges visibility to fragments visibility
-    const edgesList = edges.get();
-    culler.viewUpdated.on(() => {
-        if(!edges.visible) return;
-        for(const id of culler.currentVisibleMeshes) {
-            if(edgesList[id]) {
-                scene.add(edgesList[id]);
-            }
-        }
-        for(const id of culler.recentlyHiddenMeshes) {
-            if(edgesList[id]) {
-                scene.remove(edgesList[id]);
-            }
-        }
-    })
-
     // Set up stats
 
     const stats = new Stats();
