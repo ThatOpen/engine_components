@@ -11,7 +11,7 @@ export class ToolComponent
   extends Component<ToolsList | Component<any> | null>
   implements Disposable
 {
-  private _list: ToolsList = {};
+  list: ToolsList = {};
   onToolAdded: Event<Component<any>> = new Event();
   onToolRemoved: Event<null> = new Event();
 
@@ -35,12 +35,12 @@ export class ToolComponent
    * @param tool - The tool to register.
    */
   add(id: symbol | string, tool: Component<any>) {
-    const existingTool = this._list[id];
+    const existingTool = this.list[id];
     if (existingTool) {
       console.warn(`A tool with the id: ${String(id)} already exists`);
       return;
     }
-    this._list[id] = tool;
+    this.list[id] = tool;
   }
 
   /**
@@ -49,7 +49,7 @@ export class ToolComponent
    * @param id - The registered ID of the tool to be delete.
    */
   remove(id: symbol | string) {
-    delete this._list[id];
+    delete this.list[id];
     this.onToolRemoved.trigger();
   }
 
@@ -59,13 +59,11 @@ export class ToolComponent
    * Retrieves a tool component by its registered id.
    * @param id - The id of the registered tool.
    */
-  get<T extends Component<any> | null = null>(
-    id?: symbol | string
-  ): T extends null ? ToolsList : T | null {
-    if (!id) {
-      return this._list as T extends null ? ToolsList : T | null;
+  get<T extends Component<any>>(id: symbol | string): T {
+    if (!this.list[id]) {
+      throw new Error("The requested component does not exist!");
     }
-    return this._list[id] as T extends null ? ToolsList : T | null;
+    return this.list[id] as T;
   }
 
   /**
@@ -89,9 +87,8 @@ export class ToolComponent
    * [delta time](https://threejs.org/docs/#api/en/core/Clock) of the loop.
    */
   update(delta: number) {
-    const keys = Reflect.ownKeys(this._list);
-    keys.forEach((key) => {
-      const tool = this._list[key];
+    const tools = Object.values(this.list);
+    for (const tool of tools) {
       if (tool.enabled && tool.isUpdateable()) {
         tool.update(delta);
       }
@@ -102,7 +99,7 @@ export class ToolComponent
    * Disposes all the memory used by all the tools.
    */
   dispose() {
-    const tools = Object.values(this._list);
+    const tools = Object.values(this.list);
     for (const tool of tools) {
       tool.enabled = false;
       if (tool.isDisposeable()) {

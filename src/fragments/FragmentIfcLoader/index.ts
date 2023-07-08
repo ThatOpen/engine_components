@@ -75,7 +75,7 @@ export class FragmentIfcLoader
     }
 
     this.ifcLoaded.trigger(model);
-    console.log(`This took ${performance.now() - before} ms!`);
+    console.log(`Loading the IFC took ${performance.now() - before} ms!`);
     return model;
   }
 

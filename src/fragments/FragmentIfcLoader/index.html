@@ -68,10 +68,10 @@
 	components.ui.addToolbar(mainToolbar);
 	mainToolbar.addChild(fragmentIfcLoader.uiElement);
 
-	// fragmentIfcLoader.settings.wasm = {
-	// 	path: "https://unpkg.com/web-ifc@0.0.41/",
-	//   absolute: true
-	// }
+	fragmentIfcLoader.settings.wasm = {
+		path: "https://unpkg.com/web-ifc@0.0.42/",
+	  absolute: true
+	}
 
 	fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = false;
 	fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;

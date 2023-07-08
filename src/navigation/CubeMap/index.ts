@@ -1,4 +1,4 @@
-import { Matrix4, Vector3 } from "three";
+import * as THREE from "three";
 import { Component, Event, Hideable, Updateable } from "../../base-types";
 import { Components } from "../../core";
 import { OrthoPerspectiveCamera } from "../OrthoPerspectiveCamera";
@@ -25,6 +25,9 @@ export class CubeMap
   enabled: boolean = true;
   afterUpdate: Event<CubeMap> = new Event();
   beforeUpdate: Event<CubeMap> = new Event();
+
+  offset = 1;
+
   private _cubeFaceClass =
     "flex justify-center font-bold hover:bg-ifcjs-200 hover:text-ifcjs-100 text-white select-none text-xl items-center cursor-pointer text-center text-ifcjs-100 absolute w-[60px] h-[60px] border-solid border-ifcjs-120";
   private _cyan = "bg-[#3CE6FEDD]";
@@ -33,16 +36,16 @@ export class CubeMap
   private _components: Components;
   private _cube = document.createElement("div");
   private _cubeWrapper = document.createElement("div");
-  private _matrix = new Matrix4();
+  private _matrix = new THREE.Matrix4();
   private _visible!: boolean;
 
   private _faceOrientations = {
-    front: new Vector3(0, 0, 1),
-    top: new Vector3(0, 1, 0),
-    bottom: new Vector3(0, -1, 0),
-    right: new Vector3(1, 0, 0),
-    left: new Vector3(-1, 0, 0),
-    back: new Vector3(0, 0, -1),
+    front: new THREE.Vector3(0, 0, 1),
+    top: new THREE.Vector3(0, 1, 0),
+    bottom: new THREE.Vector3(0, -1, 0),
+    right: new THREE.Vector3(1, 0, 0),
+    left: new THREE.Vector3(-1, 0, 0),
+    back: new THREE.Vector3(0, 0, -1),
   };
 
   set visible(value: boolean) {
@@ -157,7 +160,7 @@ export class CubeMap
       if (projection === "Perspective") {
         controls.setLookAt(x, y, z, target.x, target.y, target.z, true);
       } else {
-        const pos = new Vector3();
+        const pos = new THREE.Vector3();
         if (orientation === "top") pos.set(0, 200, 0);
         if (orientation === "bottom") pos.set(0, -200, 0);
         if (orientation === "left") pos.set(-200, 0, 0);
@@ -168,7 +171,7 @@ export class CubeMap
         controls.setTarget(0, 0, 0, true);
       }
 
-      this._camera.fit();
+      this._camera.fit(undefined, this.offset);
     }
   }
 

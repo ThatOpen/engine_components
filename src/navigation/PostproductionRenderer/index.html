@@ -136,15 +136,21 @@
 	components.renderer.postproduction.enabled = true;
 	const postproduction = components.renderer.postproduction;
 
-	postproduction.outlines.excludedMeshes.push(grid.get());
+	postproduction.customEffects.excludedMeshes.push(grid.get());
 
 	const gui = new dat.GUI();
 
 	gui.add(postproduction, 'enabled');
 
-	const guiOutline = gui.addFolder('Outline');
-	guiOutline.add(postproduction, 'outlinesEnabled');
-	guiOutline.addColor(postproduction.outlines, 'color').name('Outline color');
+	const guiCustomEffects = gui.addFolder('Custom effects');
+	guiCustomEffects.add(postproduction, 'customEffectsEnabled');
+	guiCustomEffects.add(postproduction.customEffects, 'opacity').name('Line opacity').min(0).max(1).step(0.1);
+	guiCustomEffects.add(postproduction.customEffects, 'tolerance').name('Line tolerance').min(0).max(6).step(1);
+	guiCustomEffects.addColor(postproduction.customEffects, 'color').name('Line color');
+	guiCustomEffects.add(postproduction.customEffects, 'glossEnabled').name('Gloss enabled').min(0).max(2).step(0.1);
+	guiCustomEffects.add(postproduction.customEffects, 'glossExponent').name('Gloss exponent').min(0).max(3).step(0.1);
+	guiCustomEffects.add(postproduction.customEffects, 'maxGloss').name('Max gloss').min(-2).max(2).step(0.1);
+	guiCustomEffects.add(postproduction.customEffects, 'minGloss').name('Min gloss').min(-2).max(2).step(0.1);
 
 	const guiSAO = gui.addFolder('SAO');
 	const configuration = postproduction.n8ao.configuration;

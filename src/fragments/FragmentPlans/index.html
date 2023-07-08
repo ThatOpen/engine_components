@@ -28,22 +28,26 @@
 	import Stats from 'stats.js/src/Stats.js';
 	import * as OBC from '../../../resources/openbim-components.js';
 	import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
+	import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial';
 
 	const container = document.getElementById('container');
 
 	const components = new OBC.Components();
 
 	components.scene = new OBC.SimpleScene(components);
-	const renderer = new OBC.SimpleRenderer(components, container);
+	const renderer = new OBC.PostproductionRenderer(components, container);
 	components.renderer = renderer;
 
-	const camera = new OBC.SimpleCamera(components);
+	const camera = new OBC.OrthoPerspectiveCamera(components);
 	components.camera = camera;
 	camera.controls.setLookAt(10, 5, 10, -5, 0, -3);
 
 	components.raycaster = new OBC.SimpleRaycaster(components);
 
 	components.init();
+
+	const {postproduction} = renderer;
+	postproduction.enabled = true;
 
 	const scene = components.scene.get();
 
@@ -56,8 +60,10 @@
 	ambientLight.intensity = 0.5;
 	scene.add(ambientLight);
 
-	const grid = new OBC.SimpleGrid(components);
+	const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
 	components.tools.add('grid', grid);
+	const gridMesh = grid.get();
+	postproduction.outlines.excludedMeshes.push(gridMesh);
 
 	const culler = new OBC.ScreenCuller(components);
 
@@ -81,13 +87,49 @@
 	culler.needsUpdate = true;
 
 	const clipper = new OBC.EdgesClipper(components, OBC.EdgesPlane);
+	const sectionMaterial = new LineMaterial({ color: 'black', linewidth: 0.002 });
+	const meshes = model.items.map(fragment => fragment.mesh);
+	clipper.styles.create("SectionEdges", meshes, sectionMaterial);
+
+	const whiteColor = new THREE.Color("white");
+	const whiteMaterial = new THREE.MeshBasicMaterial({color: whiteColor});
+	const materialManager = new OBC.MaterialManager(components);
+	materialManager.addMaterial("white", whiteMaterial);
+	materialManager.addMeshes("white", meshes);
+
 	const plans = new OBC.PlanNavigator(clipper, components.camera);
-	plans.computeAllPlanViews(model);
+	await plans.computeAllPlanViews(model);
+	const planList = plans.get();
 
 	// Set up GUI
 
 	const gui = new dat.GUI();
 
+
+	const actions = {
+		exit: () => {
+			plans.exitPlanView();
+			postproduction.outlines.opacity = 0.3;
+			postproduction.saoEnabled = true;
+			materialManager.resetBackgroundColor();
+			materialManager.set(false, ["white"]);
+			grid.visible = true;
+		}
+  };
+
+	gui.add(actions, "exit");
+
+	for(const plan of planList) {
+		actions[plan.id] = () => {
+			plans.goTo(plan.id);
+			postproduction.outlines.opacity = 0.5;
+			postproduction.saoEnabled = false;
+			materialManager.setBackgroundColor(whiteColor);
+			materialManager.set(true, ["white"]);
+			grid.visible = false;
+		}
+		gui.add(actions, plan.id);
+	}
 
 	// Set up stats
 	const stats = new Stats();

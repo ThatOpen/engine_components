@@ -13,13 +13,16 @@ export class MaterialManager extends Component<string[]> implements Disposable {
   name = "MaterialManager";
 
   private _originals: {
-    [guid: string]: THREE.Material[] | THREE.Material;
+    [guid: string]: {
+      material: THREE.Material[] | THREE.Material;
+      instances?: any;
+    };
   } = {};
 
   private _list: {
     [id: string]: {
       material: THREE.Material;
-      meshes: Set<THREE.Mesh>;
+      meshes: Set<THREE.Mesh | THREE.InstancedMesh>;
     };
   } = {};
 
@@ -37,10 +40,21 @@ export class MaterialManager extends Component<string[]> implements Disposable {
       const { material, meshes } = this._list[id];
       for (const mesh of meshes) {
         if (active) {
-          this._originals[mesh.uuid] = mesh.material;
+          if (!this._originals[mesh.uuid]) {
+            this._originals[mesh.uuid] = { material: mesh.material };
+          }
+          if (mesh instanceof THREE.InstancedMesh && mesh.instanceColor) {
+            this._originals[mesh.uuid].instances = mesh.instanceColor;
+            mesh.instanceColor = null;
+          }
           mesh.material = material;
         } else {
-          mesh.material = this._originals[mesh.uuid];
+          if (!this._originals[mesh.uuid]) continue;
+          mesh.material = this._originals[mesh.uuid].material;
+          const instances = this._originals[mesh.uuid].instances;
+          if (mesh instanceof THREE.InstancedMesh && instances) {
+            mesh.instanceColor = instances;
+          }
         }
       }
     }
@@ -58,7 +72,9 @@ export class MaterialManager extends Component<string[]> implements Disposable {
 
   setBackgroundColor(color: THREE.Color) {
     const scene = this._components.scene.get();
-    this._originalBackground = scene.background as THREE.Color;
+    if (!this._originalBackground) {
+      this._originalBackground = scene.background as THREE.Color;
+    }
     if (this._originalBackground) {
       scene.background = color;
     }
