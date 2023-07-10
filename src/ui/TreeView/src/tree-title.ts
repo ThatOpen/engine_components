@@ -15,7 +15,7 @@ export class TreeTitle extends UIComponentsStack {
       this._descriptionElement.classList.remove("hidden");
     } else {
       this._descriptionElement.textContent = null;
-      this._descriptionElement?.classList.add("hidden");
+      this._descriptionElement.classList.add("hidden");
     }
   }
 
