@@ -23,7 +23,7 @@ export class CustomEffectsPass extends Pass {
   private _correctColor = false;
   private _glossEnabled = true;
   private _glossExponent = 0.7;
-  private _minGloss = -0.3;
+  private _minGloss = -0.15;
   private _maxGloss = 0.15;
 
   get color() {
@@ -386,7 +386,7 @@ export class CustomEffectsPass extends Pass {
     return new THREE.ShaderMaterial({
       uniforms: {
         opacity: { value: this._opacity },
-        correctColor: { value: 0 },
+        correctColor: { value: 1 },
         debugVisualize: { value: 0 },
         sceneColorBuffer: { value: null },
         tolerance: { value: this._tolerance },

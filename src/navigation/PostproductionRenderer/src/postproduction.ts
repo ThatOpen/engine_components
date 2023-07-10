@@ -25,7 +25,7 @@ export class Postproduction {
   private _basePass?: RenderPass;
   private _fxaaPass?: ShaderPass;
   private _depthTexture?: THREE.DepthTexture;
-  private _saoEnabled = true;
+  private _saoEnabled = false;
   private _customEffectsEnabled = true;
 
   private readonly _renderTarget: THREE.WebGLRenderTarget;
@@ -144,8 +144,7 @@ export class Postproduction {
     this.addBasePass(scene, camera);
     this.addSaoPass(scene, camera);
     this.addOutlinePass();
-    // this.addGlossPass();
-    this.addFXAAPass();
+    // this.addFXAAPass();
 
     this._initialized = true;
   }
@@ -182,7 +181,7 @@ export class Postproduction {
   addSaoPass(scene: THREE.Scene, camera: THREE.Camera) {
     const { width, height } = this.components.renderer.getSize();
     this.n8ao = new N8AOPass(scene, camera, width, height);
-    this.composer.addPass(this.n8ao);
+    // this.composer.addPass(this.n8ao);
     const { configuration } = this.n8ao;
     configuration.aoSamples = 16;
     configuration.denoiseSamples = 1;
@@ -195,7 +194,7 @@ export class Postproduction {
     configuration.color = new THREE.Color().setHex(0xcccccc, "srgb-linear");
   }
 
-  private addFXAAPass() {
+  addFXAAPass() {
     const effectFXAA = new ShaderPass(FXAAShader);
     effectFXAA.uniforms.resolution.value.set(
       1 / window.innerWidth,
