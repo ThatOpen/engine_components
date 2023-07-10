@@ -99,6 +99,7 @@ export class FragmentIfcLoader
       const scene = this._components.scene.get();
       scene.add(result);
       button.clicked.trigger(result);
+      fileOpener.remove();
     };
 
     button.onclick = () => {
