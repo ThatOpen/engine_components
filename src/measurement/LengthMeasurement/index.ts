@@ -9,8 +9,8 @@ import {
   Event,
   UI,
 } from "../../base-types";
-import { Components } from "../Components";
-import { SimpleRaycaster } from "../SimpleRaycaster";
+import { Components } from "../../core/Components";
+import { SimpleRaycaster } from "../../core/SimpleRaycaster";
 import { Button } from "../../ui/ButtonComponent";
 import { VertexPicker } from "../../utils/VertexPicker";
 
@@ -18,33 +18,33 @@ import { VertexPicker } from "../../utils/VertexPicker";
  * A basic dimension tool to measure distances between 2 points in 3D and
  * display a 3D symbol displaying the numeric value.
  */
-export class SimpleDimensions
+export class LengthMeasurement
   extends Component<SimpleDimensionLine[]>
   implements Createable, Hideable, Disposable, Updateable, UI
 {
   /** {@link Component.name} */
-  readonly name = "SimpleDimensions";
+  readonly name = "LengthMeasurement";
 
   /** {@link Updateable.beforeUpdate} */
-  readonly beforeUpdate = new Event<SimpleDimensions>();
+  readonly beforeUpdate = new Event<LengthMeasurement>();
 
   /** {@link Updateable.afterUpdate} */
-  readonly afterUpdate = new Event<SimpleDimensions>();
+  readonly afterUpdate = new Event<LengthMeasurement>();
 
   /** {@link Createable.afterCreate} */
   readonly afterCreate = new Event<SimpleDimensionLine>();
 
   /** {@link Createable.beforeCreate} */
-  readonly beforeCreate = new Event<SimpleDimensions>();
+  readonly beforeCreate = new Event<LengthMeasurement>();
 
   /** {@link Createable.afterDelete} */
-  readonly afterDelete = new Event<SimpleDimensions>();
+  readonly afterDelete = new Event<LengthMeasurement>();
 
   /** {@link Createable.beforeDelete} */
   readonly beforeDelete = new Event<SimpleDimensionLine>();
 
   /** {@link Createable.beforeCancel} */
-  readonly beforeCancel = new Event<SimpleDimensions>();
+  readonly beforeCancel = new Event<LengthMeasurement>();
 
   /** {@link Createable.afterCancel} */
   readonly afterCancel = new Event<SimpleDimensionLine>();

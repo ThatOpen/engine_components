@@ -1,7 +1,7 @@
 import { Hideable, UIComponent, Event } from "../../base-types/base-types";
 import { Component } from "../../base-types/component";
 import { Components } from "../../core/Components";
-import { tooeenRandomId } from "../../utils";
+import { tooeenRandomId } from "../../utils/utils";
 
 export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   extends Component<T>

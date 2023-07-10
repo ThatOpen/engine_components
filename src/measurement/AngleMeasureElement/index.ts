@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { Simple2DMarker } from "../../core/Simple2DMarker/index";
 import { Hideable, Event, Disposable } from "../../base-types";
 import { Component } from "../../base-types/component";
-import { DimensionLabelClassName } from "../../core";
+import { DimensionLabelClassName } from "../LengthMeasurement";
 import { Components } from "../../core/Components";
 
 interface Angle {

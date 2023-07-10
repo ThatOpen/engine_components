@@ -1,19 +1,14 @@
 import * as WEBIFC from "web-ifc";
 import { createPopper, Instance as PopperInstance } from "@popperjs/core";
 import { FragmentsGroup } from "bim-fragment";
-import { EditProp } from "./src/edit-prop";
+import { IfcPropertiesUtils } from "../IfcPropertiesUtils";
 import { Button } from "../../ui/ButtonComponent";
 import { UI, Component, UIComponent } from "../../base-types";
 import { FloatingWindow, TreeView, UIComponentsStack } from "../../ui";
 import { Components } from "../../core/Components";
 import { IfcPropertiesManager } from "../IfcPropertiesManager";
 import { IfcCategoryMap } from "../ifc-category-map";
-import { getPsetProps, getQsetQuantities, getRelationMap } from "./src";
-import { NewProp } from "./src/new-prop";
-import { NewPset } from "./src/new-pset";
-import { PropertyTag } from "./src/property-tag";
-
-// TODO: Clean up, make more modular.
+import { PropertyTag, NewPset, NewProp, EditProp } from "./src";
 
 interface NewDataStructure {
   [modelID: string]: { [expressID: string]: Set<number> };
@@ -57,6 +52,7 @@ export class IfcPropertiesProcessor
   private _map: NewDataStructure = {};
   private _processedModels: FragmentsGroup[] = [];
   private _renderFunctions: { [entityType: number]: RenderFunction } = {};
+  // @ts-ignore
   private _uiList: { [expressID: number]: UIComponent } = {};
   private _config: PropertiesProcessorConfig = {
     selectionHighlighter: "select",
@@ -127,21 +123,21 @@ export class IfcPropertiesProcessor
   }
 
   private setGroupButtons() {
-    const addBtn = new Button(this._components, { materialIconName: "add" });
-    addBtn.onclick = () => {
-      this._editContainer.visible = true;
-      this._editInput.visible = false;
-      this._newInput.visible = true;
-      this._newPsetInput.visible = false;
-      this._editContainerPopper.update();
-    };
-    const removeBtn = new Button(this._components, {
-      materialIconName: "delete",
-    });
-    const editBtn = new Button(this._components, {
-      materialIconName: "edit",
-    });
-    this.groupButtons.addChild(addBtn);
+    // const addBtn = new Button(this._components, { materialIconName: "add" });
+    // addBtn.onclick = () => {
+    //   this._editContainer.visible = true;
+    //   this._editInput.visible = false;
+    //   this._newInput.visible = true;
+    //   this._newPsetInput.visible = false;
+    //   this._editContainerPopper.update();
+    // };
+    // const removeBtn = new Button(this._components, {
+    //   materialIconName: "delete",
+    // });
+    // const editBtn = new Button(this._components, {
+    //   materialIconName: "edit",
+    // });
+    // this.groupButtons.addChild(addBtn);
   }
 
   private setNewPsetLogic() {
@@ -235,10 +231,25 @@ export class IfcPropertiesProcessor
     this.indexProperties(model);
     this.indexMaterials(model);
     this.indexClassifications(model);
+    this.indexGroups(model);
+  }
+
+  private indexGroups(model: FragmentsGroup) {
+    IfcPropertiesUtils.getRelationMap(
+      model.properties,
+      WEBIFC.IFCRELASSIGNSTOGROUP,
+      (groupID, relatedIDs) => {
+        this.setEntityIndex(model, groupID);
+        for (const expressID of relatedIDs) {
+          const entityIndex = this.setEntityIndex(model, expressID);
+          entityIndex.add(groupID);
+        }
+      }
+    );
   }
 
   private indexClassifications(model: FragmentsGroup) {
-    getRelationMap(
+    IfcPropertiesUtils.getRelationMap(
       model.properties,
       WEBIFC.IFCRELASSOCIATESCLASSIFICATION,
       (classificationID, relatedIDs) => {
@@ -258,7 +269,7 @@ export class IfcPropertiesProcessor
   }
 
   private indexTypes(model: FragmentsGroup) {
-    getRelationMap(
+    IfcPropertiesUtils.getRelationMap(
       model.properties,
       WEBIFC.IFCRELDEFINESBYTYPE,
       (typeID, relatedIDs) => {
@@ -272,7 +283,7 @@ export class IfcPropertiesProcessor
   }
 
   private indexStructure(model: FragmentsGroup) {
-    getRelationMap(
+    IfcPropertiesUtils.getRelationMap(
       model.properties,
       WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE,
       (structureID, relatedIDs) => {
@@ -286,7 +297,7 @@ export class IfcPropertiesProcessor
   }
 
   private indexProperties(model: FragmentsGroup) {
-    getRelationMap(
+    IfcPropertiesUtils.getRelationMap(
       model.properties,
       WEBIFC.IFCRELDEFINESBYPROPERTIES,
       (relatingID, relatedIDs) => {
@@ -299,7 +310,7 @@ export class IfcPropertiesProcessor
   }
 
   private indexMaterials(model: FragmentsGroup) {
-    getRelationMap(
+    IfcPropertiesUtils.getRelationMap(
       model.properties,
       WEBIFC.IFCRELASSOCIATESMATERIAL,
       (relatingID, relatedIDs) => {
@@ -398,7 +409,7 @@ export class IfcPropertiesProcessor
       this._components,
       pset.Name?.value ?? "Unnamed Pset"
     );
-    getPsetProps(properties, psetID, (propID) => {
+    IfcPropertiesUtils.getPsetProps(properties, psetID, (propID) => {
       const prop = properties[propID];
       const tag = new PropertyTag(this._components);
       tag.label = prop.Name?.value ?? "Unnamed Property";
@@ -417,7 +428,7 @@ export class IfcPropertiesProcessor
       this._components,
       qset.Name?.value ?? "Unnamed Qset"
     );
-    getQsetQuantities(properties, qsetID, (quantityID) => {
+    IfcPropertiesUtils.getQsetQuantities(properties, qsetID, (quantityID) => {
       const quantity = properties[quantityID];
       const valueKey = Object.keys(quantity).find((key) =>
         key.endsWith("Value")
@@ -430,10 +441,6 @@ export class IfcPropertiesProcessor
     });
     uiGroups.push(uiGroup);
     return uiGroups;
-  }
-
-  private storeUI(expressID: number, uiComponent: UIComponent) {
-    this._uiList[expressID] = uiComponent;
   }
 }
 

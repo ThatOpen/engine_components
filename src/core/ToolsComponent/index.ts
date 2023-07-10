@@ -30,9 +30,6 @@ export class ToolComponent
    * Registers a new tool component in the application instance.
    * @param id - Unique ID to register the tool in the application.
    * @param tool - The tool to register.
-   * Registers a new tool component in the application instance.
-   * @param id - Unique ID to register the tool in the application.
-   * @param tool - The tool to register.
    */
   add(id: symbol | string, tool: Component<any>) {
     const existingTool = this.list[id];
@@ -46,7 +43,6 @@ export class ToolComponent
   /**
    * Deletes a previously registered tool component.
    * @param id - The registered ID of the tool to be delete.
-   * @param id - The registered ID of the tool to be delete.
    */
   remove(id: symbol | string) {
     delete this.list[id];
@@ -54,8 +50,6 @@ export class ToolComponent
   }
 
   /**
-   * Retrieves a tool component by its registered id.
-   * @param id - The id of the registered tool.
    * Retrieves a tool component by its registered id.
    * @param id - The id of the registered tool.
    */
@@ -92,7 +86,7 @@ export class ToolComponent
       if (tool.enabled && tool.isUpdateable()) {
         tool.update(delta);
       }
-    });
+    }
   }
 
   /**

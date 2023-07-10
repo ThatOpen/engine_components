@@ -125,9 +125,7 @@ export class VertexPicker
       closestVertex = vertex;
       closestDistance = intersects.point.distanceTo(vertex);
     });
-    if (vertexFound) {
-      return closestVertex;
-    }
+    if (vertexFound) return closestVertex;
     return this.config.showOnlyVertex ? null : intersects.point;
   }
 

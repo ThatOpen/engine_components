@@ -1,7 +1,10 @@
 import { Vector3 } from "three";
 import { generateUUID } from "three/src/math/MathUtils";
-import { SimpleDimensionLine } from "../../core/SimpleDimensions/simple-dimension-line";
-import { SimpleDimensions, Components } from "../../core";
+import {
+  SimpleDimensionLine,
+  LengthMeasurement,
+} from "../../measurement/LengthMeasurement";
+import { Components } from "../../core/Components";
 import { UI, Component, Event } from "../../base-types";
 import { Button, SimpleUICard, FloatingWindow } from "../../ui";
 
@@ -106,8 +109,8 @@ export class ViewpointsManager extends Component<string> implements UI {
     // #region Store dimensions
     const dimensions: { start: Vector3; end: Vector3 }[] = [];
     const dimensionsComponent = this._components.tools.get(
-      "SimpleDimensions"
-    ) as SimpleDimensions | undefined;
+      "LengthMeasurement"
+    ) as LengthMeasurement | undefined;
     if (dimensionsComponent) {
       dimensionsComponent.get().forEach((dimension) => {
         dimensions.push({ start: dimension.start, end: dimension.end });
@@ -186,8 +189,8 @@ export class ViewpointsManager extends Component<string> implements UI {
 
     // #region Recover dimensions
     const dimensionsComponent = this._components.tools.get(
-      "SimpleDimensions"
-    ) as SimpleDimensions | undefined;
+      "LengthMeasurement"
+    ) as LengthMeasurement | undefined;
     if (dimensionsComponent) {
       viewpoint.dimensions.forEach((data) => {
         const dimension = new SimpleDimensionLine(this._components, {

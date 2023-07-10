@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import { DimensionData, DimensionLabelClassName } from "./types";
-import { Components } from "../Components";
-import { Disposer } from "../Disposer";
-import { Simple2DMarker } from "../Simple2DMarker";
+import { Components } from "../../core/Components";
+import { Disposer } from "../../core/Disposer";
+import { Simple2DMarker } from "../../core/Simple2DMarker";
 
 // TODO: Document + clean up this: way less parameters, clearer logic
 
