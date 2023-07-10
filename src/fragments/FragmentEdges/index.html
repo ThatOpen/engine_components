@@ -59,6 +59,31 @@
     const grid = new OBC.SimpleGrid(components);
     components.tools.add("grid", grid);
 
+    /*MD
+    ### 🧊 Beautiful Edges for your Scene
+    ---
+    Fragment offers the ability to load BIM models quickly and effortlessly.
+    However, rendering the Fragment only fixes half the problem.💪
+    The Fragment that we utilise should also be attractive to the user's eyes,
+    which is where adding Edges to the Fragment can help.🤩
+
+    :::tip First, let's set up a simple scene!
+
+    👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
+
+    :::
+
+    In this tutorial we will use **Fragment Edges** to add neat **Outlines** to your Fragment element.🦾
+
+    ### 🧩 Adding Fragments
+    ---
+    We'll start by adding a **Fragment** to our scene using Fragment Manager.
+
+    We'll use a simple fragment for the purposes of this tutorial, but the code is capable of handling big files as well.🏗️
+
+    */
+
+
     let fragments = new OBC.FragmentManager(components);
 
     const file = await fetch("../../../resources/small.frag");
@@ -66,34 +91,72 @@
     const buffer = new Uint8Array(data);
     const model = fragments.load(buffer);
 
+    /*MD
+
+    :::info Showing Fragments in the Scene
+
+    🏔️ There is a dedicated tutorial on how to use Fragment Manager to load **IFC files**, checkout [that tutorial here](FragmentManager.mdx)!
+
+    :::
+
+    ### ✒️ Generating Edges for Fragment
+    ---
+
+    Now that everything is set up, let's have a look at the code that will be used to generate Edges.🚀
+    It will amaze you how simple it is to add **Edges** to Fragment elements.⏱️
+
+    We'll use [Fragment Edges](../api/classes/components.FragmentHighlighter)
+    and give the reference of the `component` to it.
+
+    #### Screen Culling for Better Performance
+
+    You might have noticed, we are also passing the reference of `culler`.
+    We will also add [Screen Culler](../api/classes/components.ScreenCuller) which will enhance the performance of our BIM App.
+
+     */
+
     const culler = new OBC.ScreenCuller(components);
     const edges = new OBC.FragmentEdges(components, culler);
+
+    /*MD
+
+    :::info Culling unnecessary Fragments
+
+    🚅 If you're wondering how to add Screen Culler to your BIM app, we have a dedicated tutorial for it! Checkout [that tutorial here](ScreenCuller.mdx)!
+
+    :::
+
+    #### 🧱 Adding Edges to Scene
+
+    After generating edges, we will iteratively get the **fragment** from the **[model.items](../api/classes/components.FragmentManager.load)** and add edges to the scene using `edges.add()`.
+
+     */
 
     for(const fragment of model.items) {
         edges.add(fragment);
         culler.add(fragment.mesh);
     }
 
+    /*MD
+
+    #### ✂️ Adding Culling Events
+
+    **Screen Culler** needs to updated at certain intervals, we will bind these events on `mouseup` and `onwheel`.
+    It will help us to update the culler whenever the user zooms in or zooms out and the camera angles are changed.🎥
+
+     */
+
     culler.needsUpdate = true;
     window.onmouseup = () => culler.needsUpdate = true;
     window.onwheel = () => culler.needsUpdate = true;
 
-    // Bind edges visibility to fragments visibility
+    /*MD
 
-    const edgesList = edges.get();
-    culler.viewUpdated.on(() => {
-        if(!edges.visible) return;
-        for(const id of culler.currentVisibleMeshes) {
-            if(edgesList[id]) {
-                scene.add(edgesList[id]);
-            }
-        }
-        for(const id of culler.recentlyHiddenMeshes) {
-            if(edgesList[id]) {
-                scene.remove(edgesList[id]);
-            }
-        }
-    })
+    **Congratulations** 🎉 on successfully completing this tutorial!
+    You can now add attractive edges to your BIM models by using the Fragment Edges Component.💎
+    Let's keep going and look at another tutorial!🎓
+
+     */
 
     // Set up stats
 

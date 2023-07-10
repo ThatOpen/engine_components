@@ -56,11 +56,12 @@
     const grid = new OBC.SimpleGrid(components);
     components.tools.add("grid", grid);
 
+    const fragments = new OBC.FragmentManager(components);
+
     const file = await fetch("../../../resources/small.frag");
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
     fragments.load(buffer);
-
 
     const stats = new Stats();
     stats.showPanel(2);
@@ -69,8 +70,6 @@
     const renderer = components.renderer;
     renderer.beforeUpdate.on(() => stats.begin());
     renderer.afterUpdate.on(() => stats.end());
-
-
 </script>
 </body>
 </html>

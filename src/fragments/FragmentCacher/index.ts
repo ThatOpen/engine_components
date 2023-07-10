@@ -47,12 +47,12 @@ export class FragmentCacher extends LocalCacher {
 
     const { fragmentsCacheID, propertiesCacheID } = this.getIDs(id);
     const exported = fragments.export(group);
-    const fragmentsFile = this.newFile(exported, fragmentsCacheID);
+    const fragmentsFile = new File([new Blob([exported])], fragmentsCacheID);
     const fragmentsUrl = URL.createObjectURL(fragmentsFile);
     await this.save(fragmentsCacheID, fragmentsUrl);
 
     const json = JSON.stringify(group.properties);
-    const jsonFile = this.newFile(json, propertiesCacheID);
+    const jsonFile = new File([new Blob([json])], propertiesCacheID);
     const propertiesUrl = URL.createObjectURL(jsonFile);
     await this.save(propertiesCacheID, propertiesUrl);
   }
@@ -62,9 +62,5 @@ export class FragmentCacher extends LocalCacher {
       fragmentsCacheID: `${id}-fragments`,
       propertiesCacheID: `${id}-properties`,
     };
-  }
-
-  private newFile(data: any, name: string) {
-    return new File([new Blob([data])], name);
   }
 }

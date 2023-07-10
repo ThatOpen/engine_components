@@ -63,7 +63,7 @@
 	const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
 	components.tools.add('grid', grid);
 	const gridMesh = grid.get();
-	postproduction.outlines.excludedMeshes.push(gridMesh);
+	postproduction.customEffects.excludedMeshes.push(gridMesh);
 
 	const culler = new OBC.ScreenCuller(components);
 
