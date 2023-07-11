@@ -109,6 +109,7 @@ export class FragmentCacher extends LocalCacher {
 
         loadFileButton.onclick = async () => {
           await this.getFragmentGroup(id);
+          this.fileLoaded.trigger({ id });
         };
 
         this.floatingMenu.addChild(card);

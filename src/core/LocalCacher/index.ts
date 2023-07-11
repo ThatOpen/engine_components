@@ -10,7 +10,7 @@ export class LocalCacher extends Component<any> implements UI, Disposable {
 
   enabled = true;
 
-  fileLoaded = new Event<Blob>();
+  fileLoaded = new Event<{ id: string }>();
   itemSaved = new Event<{ id: string }>();
 
   protected _components: Components;
