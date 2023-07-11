@@ -1,25 +1,21 @@
 import * as WEBIFC from "web-ifc";
+import { FragmentsGroup } from "bim-fragment";
 import { Component } from "../../base-types";
 import { Components } from "../../core/Components";
 import { generateIfcGUID } from "../../utils";
+import { IfcPropertiesUtils, IfcProperties } from "../IfcPropertiesUtils";
 
-interface PropertyChange {
-  expressID: number;
-  propName: string;
-  newValue: string | boolean | number;
-}
+type BooleanPropTypes = "IfcBoolean" | "IfcLogical";
+type StringPropTypes = "IfcText" | "IfcLabel" | "IfcIdentifier";
+type NumericPropTypes = "IfcInteger" | "IfcReal";
 
-interface PsetProp {
-  name: string;
-  type: "IfcBoolean" | "IfcText" | "IfcReal";
-  value: string | number | boolean;
-}
-
-interface Pset {
-  name: string;
-  description: string | null;
-  elements: number[];
-  props: PsetProp[];
+interface ExtendedFragmentsGroup extends FragmentsGroup {
+  ifcFileData: {
+    name: string;
+    description: string;
+    schema: "IFC2X3" | "IFC4" | "IFC4X3";
+    maxExpressID: number;
+  };
 }
 
 export class IfcPropertiesManager extends Component<null> {
@@ -28,9 +24,7 @@ export class IfcPropertiesManager extends Component<null> {
   // @ts-ignore
   private _components: Components;
   private _ifcApi: WEBIFC.IfcAPI;
-  private _changesList: (PropertyChange & { id: string })[] = [];
-  private _psetsList: (Pset & { id: string })[] = [];
-  private _allowedSchemas = ["IFC2X3", "IFC4", "IFC4X3"];
+  private _changeMap: { [modelID: string]: Set<number> } = {};
 
   constructor(components: Components, ifcApi?: WEBIFC.IfcAPI) {
     super();
@@ -40,117 +34,178 @@ export class IfcPropertiesManager extends Component<null> {
     this._ifcApi.Init();
   }
 
-  addPset(name: string, description: string | null, groupId: string) {
-    const pset: Pset = {
-      name,
-      description,
-      elements: [],
-      props: [],
-    };
-    this._psetsList.push({ ...pset, id: groupId });
-    return pset;
+  private increaseMaxID(model: ExtendedFragmentsGroup) {
+    model.ifcFileData.maxExpressID++;
   }
 
-  addProperty(pset: Pset, prop: PsetProp) {
-    pset.props.push(prop);
+  private getIFCInfo(model: ExtendedFragmentsGroup) {
+    const properties: IfcProperties = model.properties;
+    if (!properties) throw new Error("FragmentsGroup properties not found");
+    const schema = model.ifcFileData.schema;
+    if (!schema) throw new Error("IFC Schema not found");
+    return { properties, schema };
   }
 
-  addChange(change: PropertyChange, id: string) {
-    const _id = `${id}/${change.expressID}/${change.propName}`;
-    this._changesList = this._changesList.filter((_change) => {
-      return `${_change.id}/${_change.expressID}/${_change.propName}` !== _id;
-    });
-    this._changesList.push({
-      ...change,
-      id,
-    });
+  private newGUID(model: ExtendedFragmentsGroup) {
+    const { schema } = this.getIFCInfo(model);
+    return new WEBIFC[schema].IfcGloballyUniqueId(generateIfcGUID());
   }
 
-  saveOnIfc(ifc: Uint8Array, ids?: string[]): Uint8Array | null {
-    const modelID = this._ifcApi.OpenModel(ifc);
-    const schema = this._ifcApi.GetModelSchema(modelID) as
-      | "IFC2X3"
-      | "IFC4"
-      | "IFC4X3";
-    if (!this._allowedSchemas.includes(schema)) {
-      return null;
-    }
-
-    // #region Property changes
-    const matchingChanges = this._changesList.filter((change) => {
-      return ids ? ids.includes(change.id) : true;
-    });
-
-    matchingChanges.forEach((change) => {
-      const { expressID, propName, newValue } = change;
-      const line = this._ifcApi.GetLine(modelID, expressID);
-      if (!line) {
-        console.warn(
-          `ExpressID: ${expressID}} doesn't exists in the IFC file.`
-        );
-        return;
-      }
-      line[propName] = newValue;
-      this._ifcApi.WriteLine(modelID, line);
-    });
-    // #endregion Property changes
-
-    // #region Psets
-    let maxExpressId = this._ifcApi.GetMaxExpressID(modelID);
-    const ownerHistory = this._ifcApi.GetLineIDsWithType(
-      modelID,
+  private getOwnerHistory(model: ExtendedFragmentsGroup) {
+    const { properties } = this.getIFCInfo(model);
+    const ownerHistory = IfcPropertiesUtils.findItemOfType(
+      properties,
       WEBIFC.IFCOWNERHISTORY
     );
+    if (!ownerHistory) throw new Error("No OwnerHistory was found.");
+    const ownerHistoryHandle = new WEBIFC.Handle(ownerHistory.expressID);
+    return { ownerHistory, ownerHistoryHandle };
+  }
 
-    const matchingPsets = this._psetsList.filter((pset) => {
-      return ids ? ids.includes(pset.id) : true;
-    });
+  private registerChange(model: ExtendedFragmentsGroup, expressID: number) {
+    if (!this._changeMap[model.uuid]) this._changeMap[model.uuid] = new Set();
+    this._changeMap[model.uuid].add(expressID);
+  }
 
-    matchingPsets.forEach((pset) => {
-      const _pset = new WEBIFC[schema].IfcPropertySet(
-        maxExpressId++,
-        new WEBIFC[schema].IfcGloballyUniqueId(generateIfcGUID()),
-        new WEBIFC.Handle(ownerHistory.get(0)),
-        new WEBIFC[schema].IfcLabel(pset.name),
-        null,
-        []
+  setData(model: ExtendedFragmentsGroup, ...dataToSave: Record<string, any>[]) {
+    const { properties } = this.getIFCInfo(model);
+    for (const data of dataToSave) {
+      const expressID = data.expressID;
+      if (!expressID) continue;
+      properties[expressID] = data;
+      this.registerChange(model, expressID);
+    }
+  }
+
+  newPset(model: ExtendedFragmentsGroup, name: string, description?: string) {
+    const { schema } = this.getIFCInfo(model);
+    const { ownerHistoryHandle } = this.getOwnerHistory(model);
+
+    this.increaseMaxID(model);
+    const psetGlobalId = this.newGUID(model);
+    const psetName = new WEBIFC[schema].IfcLabel(name);
+    const psetDescription = description
+      ? new WEBIFC[schema].IfcText(description)
+      : null;
+    const pset = new WEBIFC[schema].IfcPropertySet(
+      model.ifcFileData.maxExpressID,
+      psetGlobalId,
+      ownerHistoryHandle,
+      psetName,
+      psetDescription,
+      []
+    );
+
+    this.increaseMaxID(model);
+    const relGlobalId = this.newGUID(model);
+    const rel = new WEBIFC[schema].IfcRelDefinesByProperties(
+      model.ifcFileData.maxExpressID,
+      relGlobalId,
+      ownerHistoryHandle,
+      null,
+      null,
+      [],
+      new WEBIFC.Handle(pset.expressID)
+    );
+
+    this.setData(model, pset, rel);
+
+    return { pset, rel };
+  }
+
+  private newSingleProperty(
+    model: ExtendedFragmentsGroup,
+    type: string,
+    name: string,
+    value: string | number | boolean
+  ) {
+    const { schema } = this.getIFCInfo(model);
+    this.increaseMaxID(model);
+    const propName = new WEBIFC[schema].IfcIdentifier(name);
+    // @ts-ignore
+    const propValue = new WEBIFC[schema][type](value);
+    const prop = new WEBIFC[schema].IfcPropertySingleValue(
+      model.ifcFileData.maxExpressID,
+      propName,
+      null,
+      propValue,
+      null
+    );
+    this.setData(model, prop);
+    return prop;
+  }
+
+  newSingleStringProperty(
+    model: ExtendedFragmentsGroup,
+    type: StringPropTypes,
+    name: string,
+    value: string
+  ) {
+    return this.newSingleProperty(model, type, name, value);
+  }
+
+  newSingleNumericProperty(
+    model: ExtendedFragmentsGroup,
+    type: NumericPropTypes,
+    name: string,
+    value: number
+  ) {
+    return this.newSingleProperty(model, type, name, value);
+  }
+
+  newSingleBooleanProperty(
+    model: ExtendedFragmentsGroup,
+    type: BooleanPropTypes,
+    name: string,
+    value: boolean
+  ) {
+    return this.newSingleProperty(model, type, name, value);
+  }
+
+  addElementToPset(
+    model: ExtendedFragmentsGroup,
+    psetID: number,
+    ...elementExpressID: number[]
+  ) {
+    const { properties } = this.getIFCInfo(model);
+    const rel = IfcPropertiesUtils.getPsetRel(properties, psetID);
+    if (!rel) return;
+    for (const expressID of elementExpressID) {
+      const elementHandle = new WEBIFC.Handle(expressID);
+      rel.RelatedObjects.push(elementHandle);
+    }
+    this.registerChange(model, psetID);
+  }
+
+  addPropToPset(
+    model: ExtendedFragmentsGroup,
+    psetID: number,
+    ...propID: number[]
+  ) {
+    const { properties } = this.getIFCInfo(model);
+    const pset = properties[psetID];
+    if (!pset)
+      throw new Error(
+        `PsetID: ${psetID} not found in FragmentsGroup properties.`
       );
-      if (pset.description) {
-        _pset.Description = new WEBIFC[schema].IfcText(pset.description);
-      }
+    for (const expressID of propID) {
+      const elementHandle = new WEBIFC.Handle(expressID);
+      pset.HasProperties.push(elementHandle);
+    }
+    this.registerChange(model, psetID);
+  }
 
-      pset.props.forEach((prop) => {
-        const _prop = new WEBIFC[schema].IfcPropertySingleValue(
-          maxExpressId++,
-          new WEBIFC.IFC2X3.IfcIdentifier(prop.name),
-          null,
-          // @ts-ignore
-          new WEBIFC.IFC2X3[prop.type](prop.value.toString()),
-          null
-        );
-        _pset.HasProperties.push(new WEBIFC.Handle(_prop.expressID));
-        this._ifcApi.WriteLine(modelID, _prop);
-      });
-
-      const rel = new WEBIFC[schema].IfcRelDefinesByProperties(
-        maxExpressId++,
-        new WEBIFC[schema].IfcGloballyUniqueId(generateIfcGUID()),
-        new WEBIFC.Handle(ownerHistory.get(0)),
-        null,
-        null,
-        [],
-        new WEBIFC.Handle(_pset.expressID)
-      );
-
-      pset.elements.forEach((element) => {
-        rel.RelatedObjects.push(new WEBIFC.Handle(element));
-      });
-
-      this._ifcApi.WriteLine(modelID, _pset);
-      this._ifcApi.WriteLine(modelID, rel);
-    });
-    // #endregion Psets
-
+  saveOnIfc(
+    model: ExtendedFragmentsGroup,
+    ifcToSaveOn: Uint8Array
+  ): Uint8Array | null {
+    const { properties } = this.getIFCInfo(model);
+    const modelID = this._ifcApi.OpenModel(ifcToSaveOn);
+    for (const expressID of this._changeMap[model.uuid]) {
+      const data = properties[expressID] as any;
+      if (!data) continue;
+      this._ifcApi.WriteLine(modelID, data);
+    }
     const modifiedIFC = this._ifcApi.SaveModel(modelID);
     this._ifcApi.CloseModel(modelID);
     return modifiedIFC;

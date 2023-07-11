@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
 import { Createable, Event, UI } from "../../base-types/base-types";
 import { Component } from "../../base-types/component";
 import { Components } from "../../core/Components";
@@ -13,6 +14,7 @@ export class AngleMeasurement
   name: string = "AngleMeasurement";
   uiElement: Button;
 
+  private _lineMaterial: LineMaterial;
   private _components: Components;
   private _enabled: boolean = false;
   private _vertexPicker: VertexPicker;
@@ -26,6 +28,16 @@ export class AngleMeasurement
   readonly afterCancel = new Event<any>();
   readonly beforeDelete = new Event<any>();
   readonly afterDelete = new Event<any>();
+
+  set lineMaterial(material: LineMaterial) {
+    this._lineMaterial.dispose();
+    this._lineMaterial = material;
+    this._lineMaterial.resolution.set(window.innerWidth, window.innerHeight);
+  }
+
+  get lineMaterial() {
+    return this._lineMaterial;
+  }
 
   set enabled(value: boolean) {
     this._enabled = value;
@@ -49,6 +61,10 @@ export class AngleMeasurement
   constructor(components: Components) {
     super();
     this._components = components;
+    this._lineMaterial = new LineMaterial({
+      color: 0x6528d7,
+      linewidth: 2,
+    });
     this._vertexPicker = new VertexPicker(components);
     this.uiElement = new Button(components, {
       materialIconName: "square_foot",
@@ -63,8 +79,7 @@ export class AngleMeasurement
     const mouseMove = () => {
       const point = this._vertexPicker.get();
       if (!(point && this._currentAngleElement)) return;
-      // @ts-ignore
-      this._currentAngleElement.setPoint(point, this._clickCount);
+      this._currentAngleElement.setPoint(point, this._clickCount as 0 | 1 | 2);
       this._currentAngleElement.computeAngle();
     };
     const keydown = (e: KeyboardEvent) => {
@@ -103,15 +118,19 @@ export class AngleMeasurement
     if (!point) return;
     if (!this._currentAngleElement) {
       const angleElement = new AngleMeasureElement(this._components);
+      angleElement.lineMaterial = this.lineMaterial;
       // angleElement.onPointRemoved.on(() => this._clickCount--);
       this._currentAngleElement = angleElement;
     }
-    // @ts-ignore
-    this._currentAngleElement.setPoint(point, this._clickCount);
-    // @ts-ignore
-    this._currentAngleElement.setPoint(point, this._clickCount + 1);
-    // @ts-ignore
-    this._currentAngleElement.setPoint(point, this._clickCount + 2);
+    this._currentAngleElement.setPoint(point, this._clickCount as 0 | 1 | 2);
+    this._currentAngleElement.setPoint(
+      point,
+      (this._clickCount + 1) as 0 | 1 | 2
+    );
+    this._currentAngleElement.setPoint(
+      point,
+      (this._clickCount + 2) as 0 | 1 | 2
+    );
     this._currentAngleElement.computeAngle();
     this._clickCount++;
     if (this._clickCount === 3) this.endCreation();

@@ -1,9 +1,12 @@
 import * as WEBIFC from "web-ifc";
 
+export type IfcProperties = Record<string, Record<string, any>>;
+
 export class IfcPropertiesUtils {
-  static getUnits(properties: any) {
+  static getUnits(properties: IfcProperties) {
     const { IFCUNITASSIGNMENT } = WEBIFC;
     const allUnits = this.findItemOfType(properties, IFCUNITASSIGNMENT);
+    if (!allUnits) return 1;
     for (const unitRef of allUnits.Units) {
       if (unitRef.value === undefined || unitRef.value === null) continue;
       const unit = properties[unitRef.value];
@@ -20,7 +23,7 @@ export class IfcPropertiesUtils {
     return 1;
   }
 
-  static findItemOfType(properties: any, type: number) {
+  static findItemOfType(properties: IfcProperties, type: number) {
     for (const id in properties) {
       const property = properties[id];
       if (property.type === type) {
@@ -30,7 +33,7 @@ export class IfcPropertiesUtils {
     return null;
   }
 
-  static getAllItemsOfType(properties: any, type: number) {
+  static getAllItemsOfType(properties: IfcProperties, type: number) {
     const found: any[] = [];
     for (const id in properties) {
       const property = properties[id];
@@ -42,7 +45,7 @@ export class IfcPropertiesUtils {
   }
 
   static getRelationMap(
-    properties: Record<string, Record<string, any>>,
+    properties: IfcProperties,
     relationType: number,
     onElementsFound?: (relatingID: number, relatedIDs: number[]) => void
   ) {
@@ -72,28 +75,24 @@ export class IfcPropertiesUtils {
   }
 
   static getQsetQuantities(
-    properties: Record<string, Record<string, any>>,
+    properties: IfcProperties,
     expressID: number,
     onQuantityFound?: (expressID: number) => void
   ) {
     const defaultCallback = () => {};
     const _onQuantityFound = onQuantityFound ?? defaultCallback;
     const pset = properties[expressID];
-    if (pset?.type !== WEBIFC.IFCELEMENTQUANTITY) {
-      return null;
-    }
+    if (pset?.type !== WEBIFC.IFCELEMENTQUANTITY) return null;
     const quantities = pset.Quantities ?? [{}];
     const qtos = quantities.map((prop: any) => {
-      if (prop.value) {
-        _onQuantityFound(prop.value);
-      }
+      if (prop.value) _onQuantityFound(prop.value);
       return prop.value;
     });
     return qtos.filter((prop: any) => prop !== null);
   }
 
   static getPsetProps(
-    properties: Record<string, Record<string, any>>,
+    properties: IfcProperties,
     expressID: number,
     onPropFound?: (expressID: number) => void
   ) {
@@ -107,5 +106,21 @@ export class IfcPropertiesUtils {
       return prop.value;
     });
     return props.filter((prop: any) => prop !== null);
+  }
+
+  static getPsetRel(properties: IfcProperties, psetID: number) {
+    const arrayProperties = Object.values(properties);
+    if (!properties[psetID]) return undefined;
+    const rel = arrayProperties.find((data) => {
+      const isRelation = data.type === WEBIFC.IFCRELDEFINESBYPROPERTIES;
+      const relatesToPset = data.RelatingPropertyDefinition?.value === psetID;
+      if (!(isRelation && relatesToPset)) return false;
+      return true;
+    });
+    return rel;
+  }
+
+  static getQsetRel(properties: IfcProperties, qsetID: number) {
+    return IfcPropertiesUtils.getPsetRel(properties, qsetID);
   }
 }

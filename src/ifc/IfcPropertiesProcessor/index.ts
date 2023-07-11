@@ -10,7 +10,7 @@ import { IfcPropertiesManager } from "../IfcPropertiesManager";
 import { IfcCategoryMap } from "../ifc-category-map";
 import { PropertyTag, NewPset, NewProp, EditProp } from "./src";
 
-interface NewDataStructure {
+interface IndexMap {
   [modelID: string]: { [expressID: string]: Set<number> };
 }
 
@@ -24,10 +24,7 @@ type RenderFunction = (
   ...args: any
 ) => TreeView[];
 
-export class IfcPropertiesProcessor
-  extends Component<NewDataStructure>
-  implements UI
-{
+export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
   name: string = "PropertiesParser";
   enabled: boolean = true;
   uiElement!: { container: FloatingWindow; showButton: Button };
@@ -49,7 +46,7 @@ export class IfcPropertiesProcessor
   private _editInput: EditProp;
   private _newPsetBtn: Button;
   private _editContainerPopper!: PopperInstance;
-  private _map: NewDataStructure = {};
+  private _indexMap: IndexMap = {};
   private _processedModels: FragmentsGroup[] = [];
   private _renderFunctions: { [entityType: number]: RenderFunction } = {};
   // @ts-ignore
@@ -152,7 +149,7 @@ export class IfcPropertiesProcessor
     //   for (const fragmentID in selection) {
     //     const elements = selection[fragmentID];
     //     for (const expressID of elements) {
-    //       const elementPropertiesManager = this._map[fragmentID][expressID];
+    //       const elementPropertiesManager = this._indexMap[fragmentID][expressID];
     //       elementPropertiesManager.addGroup(pset);
     //       this.renderProperties(fragmentID, expressID);
     //     }
@@ -217,15 +214,15 @@ export class IfcPropertiesProcessor
     this._propsList.children = [];
   }
 
-  get(): NewDataStructure {
-    return this._map;
+  get(): IndexMap {
+    return this._indexMap;
   }
 
   process(model: FragmentsGroup) {
     const properties = model.properties;
     if (!properties) throw new Error("FragmentsGroup properties not found");
     this._processedModels.push(model);
-    this._map[model.uuid] = {};
+    this._indexMap[model.uuid] = {};
     this.indexTypes(model);
     this.indexStructure(model);
     this.indexProperties(model);
@@ -339,15 +336,15 @@ export class IfcPropertiesProcessor
   }
 
   private setEntityIndex(model: FragmentsGroup, expressID: number) {
-    if (!this._map[model.uuid][expressID])
-      this._map[model.uuid][expressID] = new Set();
-    return this._map[model.uuid][expressID];
+    if (!this._indexMap[model.uuid][expressID])
+      this._indexMap[model.uuid][expressID] = new Set();
+    return this._indexMap[model.uuid][expressID];
   }
 
   private generate(model: FragmentsGroup, expressID: number) {
     const properties = model.properties;
     if (!properties) throw new Error("FragmentsGroup properties not found.");
-    const modelElementsIndexation = this._map[model.uuid];
+    const modelElementsIndexation = this._indexMap[model.uuid];
     if (!modelElementsIndexation)
       throw new Error("FragmentsGroup properties are not indexed.");
     const elementPropsIndexation = modelElementsIndexation[expressID] ?? [];

@@ -1,4 +1,7 @@
 import * as THREE from "three";
+import { LineGeometry } from "three/examples/jsm/lines/LineGeometry";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
+import { Line2 } from "three/examples/jsm/lines/Line2";
 import { Simple2DMarker } from "../../core/Simple2DMarker/index";
 import { Hideable, Event, Disposable } from "../../base-types";
 import { Component } from "../../base-types/component";
@@ -18,19 +21,62 @@ export class AngleMeasureElement
   enabled: boolean = true;
   visible: boolean = true;
   points: THREE.Vector3[] = [];
-  labelMarker: Simple2DMarker;
 
-  // @ts-ignore
   private _components: Components;
-  private _defaultLineMaterial = new THREE.LineBasicMaterial({ color: "red" });
-  private _lineGeometry = new THREE.BufferGeometry().setAttribute(
-    "position",
-    new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 0, 0, 0, 0], 3)
-  );
-  private _line = new THREE.Line(this._lineGeometry, this._defaultLineMaterial);
+  private _lineMaterial = new LineMaterial({
+    color: 0x6528d7,
+    linewidth: 2,
+  });
+  private _lineGeometry = new LineGeometry();
+  private _line = new Line2(this._lineGeometry, this._lineMaterial);
+  private _labelMarker: Simple2DMarker;
 
   readonly onAngleComputed = new Event<number>();
   readonly onPointAdded = new Event<THREE.Vector3>();
+
+  set lineMaterial(material: LineMaterial) {
+    this._lineMaterial.dispose();
+    this._lineMaterial = material;
+    this._line.material = material;
+    this._lineMaterial.resolution.set(window.innerWidth, window.innerHeight);
+  }
+
+  get lineMaterial() {
+    return this._lineMaterial;
+  }
+
+  set labelMarker(marker: Simple2DMarker) {
+    this._labelMarker.dispose();
+    this._labelMarker = marker;
+  }
+
+  get labelMarker() {
+    return this._labelMarker;
+  }
+
+  private get scene() {
+    return this._components.scene.get();
+  }
+
+  constructor(components: Components, points?: THREE.Vector3[]) {
+    super();
+    this._components = components;
+    const htmlText = document.createElement("div");
+    htmlText.className = DimensionLabelClassName;
+    this._labelMarker = new Simple2DMarker(components, htmlText);
+    this.labelMarker.visible = false;
+    this.onPointAdded.on(() => {
+      if (this.points.length === 1) this.scene.add(this._line);
+      if (this.points.length === 3) this.labelMarker.visible = true;
+    });
+    this.onAngleComputed.on((angle) => {
+      this.labelMarker.get().element.textContent = `${angle.toFixed(2)}°`;
+      this.labelMarker
+        .get()
+        .position.copy(this.points[1] ?? new THREE.Vector3());
+    });
+    points?.forEach((point) => this.setPoint(point));
+  }
 
   setPoint(point: THREE.Vector3, index?: 0 | 1 | 2) {
     let _index: number;
@@ -42,53 +88,24 @@ export class AngleMeasureElement
     if (![0, 1, 2].includes(_index)) return;
     this.points[_index] = point;
     this.onPointAdded.trigger(point);
-    const positionAttribute = this._lineGeometry.getAttribute("position");
-    positionAttribute.setX(_index, point.x);
-    positionAttribute.setY(_index, point.y);
-    positionAttribute.setZ(_index, point.z);
-    positionAttribute.needsUpdate = true;
-  }
-
-  constructor(components: Components, points?: THREE.Vector3[]) {
-    super();
-    this._components = components;
-    const htmlText = document.createElement("div");
-    htmlText.className = DimensionLabelClassName;
-    this.labelMarker = new Simple2DMarker(components, htmlText);
-    this.labelMarker.visible = false;
-    this.onPointAdded.on(() => {
-      if (this.points.length === 2) {
-        this.labelMarker.visible = true;
-      }
-      if (this.points.length === 1) {
-        this._components.scene.get().add(this._line);
-      }
+    const points = this.points.map((point) => {
+      return [point.x, point.y, point.z];
     });
-    points?.forEach((point) => this.setPoint(point));
+    this._lineGeometry.setPositions(points.flat());
   }
 
   toggleLabel() {
     this.labelMarker.toggleVisibility();
   }
 
-  private getGeometryPosition(index: 0 | 1 | 2) {
-    const positionAttribute = this._lineGeometry.getAttribute("position");
-    return new THREE.Vector3(
-      positionAttribute.getX(index),
-      positionAttribute.getY(index),
-      positionAttribute.getZ(index)
-    );
-  }
-
   computeAngle() {
-    const v0 = this.getGeometryPosition(0);
-    const v1 = this.getGeometryPosition(1);
-    const v2 = this.getGeometryPosition(2);
+    const v0 = this.points[0];
+    const v1 = this.points[1];
+    const v2 = this.points[2];
+    if (!(v0 && v1 && v2)) return 0;
     const vA = new THREE.Vector3().subVectors(v1, v0);
     const vB = new THREE.Vector3().subVectors(v1, v2);
     const angle = THREE.MathUtils.radToDeg(vA.angleTo(vB));
-    this.labelMarker.get().element.textContent = `${angle.toFixed(2)}°`;
-    this.labelMarker.get().position.copy(v1);
     this.onAngleComputed.trigger(angle);
     return angle;
   }
@@ -97,7 +114,7 @@ export class AngleMeasureElement
     this.points = [];
     this.labelMarker.dispose();
     this._line.removeFromParent();
-    this._defaultLineMaterial.dispose();
+    this._lineMaterial.dispose();
     this._lineGeometry.dispose();
   }
 
