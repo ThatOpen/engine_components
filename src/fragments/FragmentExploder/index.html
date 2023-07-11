@@ -75,10 +75,15 @@
     const buffer = new Uint8Array(data);
     const model = fragments.load(buffer);
 
+    for(const fragment of model.items) {
+      culler.add(fragment.mesh);
+    }
+
+    culler.needsUpdate = true;
+
     const properties = await fetch("../../../resources/small.json");
     model.properties = await properties.json();
 
-    culler.needsUpdate = true;
     classifier.byStorey(model);
 
 	const exploder = new OBC.FragmentExploder(fragments, classifier);
