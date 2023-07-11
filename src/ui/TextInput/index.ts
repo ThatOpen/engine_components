@@ -17,7 +17,7 @@ export class TextInput extends BaseInput<HTMLInputElement> {
     const input = document.createElement("input");
     input.className = `
     block bg-ifcjs-100 w-full rounded-md border-0 h-[40px] px-3 text-white shadow-sm ring-1 
-    ring-inset ring-ifcjs-120 placeholder:text-gray-400 
+    ring-inset text-base ring-ifcjs-120 placeholder:text-gray-400 
     focus:ring-2 focus:ring-inset focus:ring-ifcjs-200
     `;
     super(components, input);

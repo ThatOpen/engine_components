@@ -87,7 +87,7 @@ export class FragmentIfcLoader
     const fileOpener = document.createElement("input");
     fileOpener.type = "file";
     fileOpener.accept = ".ifc";
-    fileOpener.style.visibility = "collapse";
+    fileOpener.style.display = "none";
     document.body.appendChild(fileOpener);
 
     fileOpener.onchange = async () => {
@@ -98,8 +98,7 @@ export class FragmentIfcLoader
       const result = await this.load(data);
       const scene = this._components.scene.get();
       scene.add(result);
-      button.clicked.trigger(result);
-      fileOpener.remove();
+      button.onClicked.trigger(result);
     };
 
     button.onclick = () => {

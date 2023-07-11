@@ -16,9 +16,9 @@ export function tooeenRandomId() {
 }
 
 export function generateExpressIDFragmentIDMap(fragmentsList: Fragment[]) {
-  const map: { [fragmentID: string]: string[] } = {};
+  const map: { [fragmentID: string]: Set<string> } = {};
   fragmentsList.forEach((fragment) => {
-    map[fragment.id] = fragment.items;
+    map[fragment.id] = new Set(fragment.items);
   });
   return map;
 }

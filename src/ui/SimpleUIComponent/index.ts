@@ -1,7 +1,7 @@
 import { Hideable, UIComponent, Event } from "../../base-types/base-types";
 import { Component } from "../../base-types/component";
 import { Components } from "../../core/Components";
-import { tooeenRandomId } from "../../utils";
+import { tooeenRandomId } from "../../utils/utils";
 
 export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   extends Component<T>
@@ -10,13 +10,13 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   name: string = "SimpleUIComponent";
   domElement: T;
   children: UIComponent[] = [];
-  components: Components;
   id: string;
   onVisible: Event<T> = new Event();
   onHidden: Event<T> = new Event();
   onEnabled: Event<T> = new Event();
   onDisabled: Event<T> = new Event();
 
+  protected _components: Components;
   protected _enabled: boolean = true;
   protected _visible: boolean = true;
   protected _active: boolean = false;
@@ -65,7 +65,7 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
 
   constructor(components: Components, domElement: T, id?: string) {
     super();
-    this.components = components;
+    this._components = components;
     this.id = id ?? tooeenRandomId();
     domElement.id = this.id;
     this.domElement = domElement;

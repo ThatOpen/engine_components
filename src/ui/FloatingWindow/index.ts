@@ -1,18 +1,15 @@
-import { generateUUID } from "three/src/math/MathUtils";
 import { Vector2 } from "three";
 import { SimpleUIComponent } from "../SimpleUIComponent";
 import { Event, UIComponent } from "../../base-types";
 import { Components } from "../../core";
 
 interface FloatingWindowConfig {
-  title: string;
+  title?: string;
   description?: string;
   id?: string;
-  initialWidth?: number;
 }
 
 export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
-  private _components: Components;
   onMoved: Event<FloatingWindow> = new Event();
   onResized: Event<FloatingWindow> = new Event();
   referencePoints!: {
@@ -27,7 +24,7 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
     bottomRight: Vector2;
   };
 
-  set description(value: string | null) {
+  set description(value: string | null | undefined) {
     const descriptionElement = document.getElementById(
       `${this.id}-description`
     );
@@ -46,68 +43,90 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
     return descriptionElement.textContent;
   }
 
-  constructor(
-    components: Components,
-    config: FloatingWindowConfig = { title: "Tooeen Floting Window" }
-  ) {
-    const { title, description, initialWidth } = config;
+  set title(value: string | null | undefined) {
+    const titleElement = document.getElementById(`${this.id}-title`);
+    if (titleElement && value) {
+      titleElement.textContent = value;
+      titleElement.classList.remove("hidden");
+    }
+  }
+
+  get title() {
+    const titleElement = document.getElementById(
+      `${this.id}-title`
+    ) as HTMLElement;
+    return titleElement.textContent;
+  }
+
+  constructor(components: Components, config?: FloatingWindowConfig) {
     const window = document.createElement("div");
-    window.className = `absolute overflow-auto top-5 resize z-50 left-5 min-h-[80px] max-h-[750px] min-w-[150px] max-w-sm text-white bg-ifcjs-100 rounded-md`;
-    window.style.width = initialWidth ? `${initialWidth.toString()}px` : "auto";
-    const id = config.id ?? generateUUID().toLowerCase();
-    window.id = id;
-    window.innerHTML = `
-        <div id="${id}-title-container" class="bg-ifcjs-120 sticky top-0 select-none cursor-move px-5 py-3 text-center ${
-      !title && !description ? "hidden" : ""
-    }">
-            <h3 id="${id}-title" class="${
-      !title ? "hidden" : ""
-    } text-lg font-bold">${title}</h3>
-            <p id="${id}-description" class="${
-      !description ? "hidden" : ""
-    }">${description}</p>
-            <span id="${id}-close" class="material-icons md-16 absolute right-2 top-2 z-20 hover:cursor-pointer hover:text-ifcjs-200">close</span>
-        </div>
-        <div id="${id}-content" class="flex-col gap-y-3 p-4 hidden overflow-auto"></div>
-        `;
-    requestAnimationFrame(() => {
-      const titleElement = document.getElementById(
-        `${this.id}-title-container`
-      ) as HTMLDivElement;
-      const viewerContainer = this._components.renderer.get().domElement
-        .parentNode as HTMLElement;
+    window.className = `absolute backdrop-blur-md shadow-md overflow-auto top-5 resize z-50 left-5 min-h-[80px] min-w-[150px] w-fit h-fit text-white bg-ifcjs-100 rounded-md`;
 
-      let isMouseDown = false;
-      let offsetX = 0;
-      let offsetY = 0;
+    super(components, window, config?.id);
 
-      titleElement.addEventListener("mousedown", (e) => {
-        isMouseDown = true;
-        const rect = this.domElement.getBoundingClientRect();
-        offsetX = e.clientX - rect.left;
-        offsetY = e.clientY - rect.top;
-      });
+    const titleElement = document.createElement("h3");
+    titleElement.id = `${this.id}-title`;
+    titleElement.textContent = "Tooeen Floating Window";
+    titleElement.className = "text-lg font-bold";
 
-      viewerContainer.addEventListener("mousemove", (e) => {
-        if (!isMouseDown) {
-          return;
-        }
-        this.domElement.style.left = `${e.clientX - offsetX}px`;
-        this.domElement.style.top = `${e.clientY - offsetY}px`;
-        this.onMoved.trigger(this);
-      });
+    const descriptionElement = document.createElement("p");
+    descriptionElement.id = `${this.id}-description`;
+    descriptionElement.className = "text-base";
 
-      viewerContainer.addEventListener("mouseup", () => (isMouseDown = false));
+    const closeElement = document.createElement("span");
+    closeElement.onclick = () => (this.visible = false);
+    closeElement.innerText = "close";
+    closeElement.className =
+      "material-icons md-16 absolute right-2 top-2 z-20 hover:cursor-pointer hover:text-ifcjs-200";
 
-      const closeButton = document.getElementById(
-        `${id}-close`
-      ) as HTMLDivElement;
-      closeButton.onclick = () => {
-        this.visible = false;
-      };
+    const titleContainer = document.createElement("div");
+    titleContainer.id = `${this.id}-title-container`;
+    titleContainer.className =
+      "bg-ifcjs-120 sticky z-10 top-0 select-none cursor-move px-5 py-3 text-center";
+    titleContainer.append(titleElement, descriptionElement, closeElement);
+
+    const content = document.createElement("div");
+    content.id = `${this.id}-content`;
+    content.className = "flex-col gap-y-3 p-3 hidden overflow-auto";
+
+    this.domElement.append(titleContainer, content);
+
+    const viewerContainer = this._components.renderer.get().domElement
+      .parentNode as HTMLElement;
+
+    let isMouseDown = false;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    titleContainer.addEventListener("mousedown", (e) => {
+      isMouseDown = true;
+      const rect = this.domElement.getBoundingClientRect();
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
     });
 
-    super(components, window, id);
+    viewerContainer.addEventListener("mousemove", (e) => {
+      if (!isMouseDown) {
+        return;
+      }
+      const { width, height } = this.domElement.getBoundingClientRect();
+      const {
+        x,
+        y,
+        width: containerWidth,
+        height: containerHeight,
+      } = viewerContainer.getBoundingClientRect();
+      const maxLeft = containerWidth - width;
+      const maxTop = containerHeight - height;
+      const left = Math.max(0, Math.min(e.clientX - offsetX - x, maxLeft));
+      const top = Math.max(0, Math.min(e.clientY - offsetY - y, maxTop));
+      this.domElement.style.left = `${left}px`;
+      this.domElement.style.top = `${top}px`;
+      this.onMoved.trigger(this);
+    });
+
+    viewerContainer.addEventListener("mouseup", () => (isMouseDown = false));
+    requestAnimationFrame(() => {});
 
     const observer = new ResizeObserver(() => {
       this.onResized.trigger(this);
@@ -125,7 +144,6 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
       bottom: new Vector2(),
       bottomRight: new Vector2(),
     };
-    this._components = components;
   }
 
   addChild(...items: UIComponent[]) {

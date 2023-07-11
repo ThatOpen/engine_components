@@ -4,7 +4,10 @@ import { SimpleUIComponent } from "../SimpleUIComponent";
 export class UIComponentsStack extends SimpleUIComponent<HTMLDivElement> {
   name = "UIComponentsStack";
 
-  constructor(components: Components, direction: "Vertical" | "Horizontal") {
+  constructor(
+    components: Components,
+    direction: "Vertical" | "Horizontal" = "Vertical"
+  ) {
     const stack = document.createElement("div");
     stack.className = `flex ${
       direction === "Vertical" ? "flex-col" : "flex-row"

@@ -142,6 +142,14 @@ export class SimpleClipper<Plane extends SimplePlane>
     this.uiElement.active = this.enabled;
   }
 
+  beforeCreate = new Event();
+  beforeCancel = new Event();
+  afterCancel = new Event();
+  beforeDelete = new Event();
+
+  endCreation() {}
+  cancelCreation() {}
+
   /** {@link Component.get} */
   get(): Plane[] {
     return this._planes;

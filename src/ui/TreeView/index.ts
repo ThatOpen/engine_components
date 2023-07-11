@@ -1,15 +1,13 @@
-import { UIComponent } from "../../base-types/base-types";
-import { Component } from "../../base-types/component";
+import { UIComponent, Event } from "../../base-types/base-types";
 import { Components } from "../../core";
+import { SimpleUIComponent } from "../SimpleUIComponent";
 import { UIComponentsStack } from "../UIComponentsStack";
+import { TreeTitle } from "./src/tree-title";
 
-export class TreeView extends Component<HTMLElement> implements UIComponent {
-  name: string;
-  enabled: boolean = true;
-  visible: boolean = true;
-  components: Components;
-  domElement: HTMLElement = document.createElement("div");
-  children: UIComponent[] = [];
+export class TreeView extends SimpleUIComponent<HTMLDivElement> {
+  titleElement: TreeTitle;
+  onExpand: Event<TreeView> = new Event();
+  onCollapse: Event<TreeView> = new Event();
   private _childrenContainer: UIComponentsStack;
   private _expanded: boolean = false;
 
@@ -20,6 +18,11 @@ export class TreeView extends Component<HTMLElement> implements UIComponent {
   set expanded(expanded: boolean) {
     this._expanded = expanded;
     this._childrenContainer.visible = expanded;
+    if (expanded) {
+      this.titleElement.get().classList.add("bg-ifcjs-120");
+    } else {
+      this.titleElement.get().classList.remove("bg-ifcjs-120");
+    }
   }
 
   set onclick(listener: (e?: MouseEvent) => void) {
@@ -36,31 +39,23 @@ export class TreeView extends Component<HTMLElement> implements UIComponent {
     };
   }
 
-  constructor(components: Components, name: string) {
-    super();
-    this.components = components;
-    this.name = name;
-
-    this.domElement.className = "tooeen-tree-item";
-
+  constructor(components: Components, name?: string) {
     const div = document.createElement("div");
-    div.className = "tooeen-tree-item-title";
-    const arrow = document.createElement("span");
-    arrow.onclick = () => this.toggle();
-    arrow.className = "material-icons";
-    arrow.innerText = "arrow_right";
-    const p = document.createElement("p");
-    p.innerText = name;
-    div.append(arrow, p);
-    this.domElement.append(div);
+    div.className = `
+    flex flex-col items-start w-full box-border cursor-pointer text-base
+    `;
+    super(components, div);
+    this.titleElement = new TreeTitle(components);
+    this.titleElement.title = name;
+    this.titleElement.arrow.onclick = () => {
+      this.toggle();
+    };
 
     this._childrenContainer = new UIComponentsStack(components, "Vertical");
-    this._childrenContainer.get().classList.add("ml-[14px]");
-    this.domElement.append(this._childrenContainer.get());
-  }
+    this._childrenContainer.get().classList.add("pl-[22px]", "w-full");
+    this.collapse();
 
-  get(): HTMLElement {
-    return this.domElement;
+    div.append(this.titleElement.get(), this._childrenContainer.get());
   }
 
   dispose(onlyChildren = false) {
@@ -99,6 +94,7 @@ export class TreeView extends Component<HTMLElement> implements UIComponent {
         }
       });
     }
+    this.onCollapse.trigger(this);
   }
 
   expand(deep = true) {
@@ -110,5 +106,6 @@ export class TreeView extends Component<HTMLElement> implements UIComponent {
         }
       });
     }
+    this.onExpand.trigger(this);
   }
 }
