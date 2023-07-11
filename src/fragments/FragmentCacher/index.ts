@@ -1,10 +1,124 @@
-import * as THREE from "three";
 import { FragmentsGroup } from "bim-fragment";
-import { LocalCacher } from "../../core";
+import { Components, LocalCacher } from "../../core";
 import { FragmentManager } from "../FragmentManager";
+import { Button, SimpleUICard } from "../../ui";
+
+// TODO: Clean up
 
 export class FragmentCacher extends LocalCacher {
-  async getFragmentGroup(id: string, fragments: FragmentManager) {
+  private _fragments: FragmentManager;
+  private _mode: "save" | "load" | "none" = "none";
+
+  get fragmentsIDs() {
+    const allIDs = this.ids;
+    const fragIDs = allIDs.filter((id) => id.includes("-fragments"));
+    if (!fragIDs.length) return fragIDs;
+    return fragIDs.map((id) => id.replace("-fragments", ""));
+  }
+
+  constructor(components: Components, fragments: FragmentManager) {
+    super(components);
+    this._fragments = fragments;
+
+    this.saveButton.onclick = () => {
+      this.floatingMenu.title = "Save items";
+      if (this.floatingMenu.visible && this._mode === "save") {
+        this.floatingMenu.visible = false;
+        return;
+      }
+      this._mode = "save";
+      for (const card of this._cards) {
+        card.dispose();
+      }
+      this._cards = [];
+
+      const savedIDs = this.fragmentsIDs;
+
+      const ids = this._fragments.groups.map((group) => group.uuid);
+      for (const id of ids) {
+        if (savedIDs.includes(id)) continue;
+
+        const card = new SimpleUICard(this._components, {
+          title: id,
+          id,
+        });
+        this._cards.push(card);
+        this.floatingMenu.addChild(card);
+
+        const saveCardButton = new Button(this._components, {
+          materialIconName: "save",
+        });
+        card.addChild(saveCardButton);
+
+        saveCardButton.onclick = async () => {
+          const group = this._fragments.groups.find(
+            (group) => group.uuid === id
+          );
+
+          if (group) {
+            await this.saveFragmentGroup(group);
+            const index = this._cards.indexOf(card);
+            this._cards.splice(index, 1);
+            card.dispose();
+            this.itemSaved.trigger({ id });
+          }
+        };
+      }
+      this.floatingMenu.visible = true;
+    };
+
+    this.loadButton.onclick = () => {
+      this.floatingMenu.title = "Load saved items";
+      if (this.floatingMenu.visible && this._mode === "load") {
+        this.floatingMenu.visible = false;
+        return;
+      }
+      this._mode = "load";
+
+      const allIDs = this.fragmentsIDs;
+
+      for (const card of this._cards) {
+        card.dispose();
+      }
+      this._cards = [];
+
+      for (const id of allIDs) {
+        const card = new SimpleUICard(this._components, {
+          title: id,
+          id,
+        });
+        this._cards.push(card);
+
+        const deleteCardButton = new Button(this._components, {
+          materialIconName: "delete",
+        });
+        card.addChild(deleteCardButton);
+
+        deleteCardButton.onclick = async () => {
+          const ids = Object.values(this.getIDs(id));
+          await this.delete(ids);
+          const index = this._cards.indexOf(card);
+          this._cards.splice(index, 1);
+          card.dispose();
+        };
+
+        const loadFileButton = new Button(this._components, {
+          materialIconName: "download",
+        });
+        card.addChild(loadFileButton);
+
+        loadFileButton.onclick = async () => {
+          await this.getFragmentGroup(id);
+        };
+
+        this.floatingMenu.addChild(card);
+      }
+
+      this.floatingMenu.visible = true;
+    };
+  }
+
+  async getFragmentGroup(id: string) {
     const { fragmentsCacheID, propertiesCacheID } = this.getIDs(id);
 
     if (!fragmentsCacheID || !propertiesCacheID) {
@@ -15,35 +129,23 @@ export class FragmentCacher extends LocalCacher {
     if (fragmentFile === null) {
       throw new Error("Loading error");
     }
+
     const fragmentsData = await fragmentFile.arrayBuffer();
     const buffer = new Uint8Array(fragmentsData);
-    fragments.load(buffer);
+    const group = this._fragments.load(buffer);
 
     const propertiesFile = await this.get(propertiesCacheID);
-    if (propertiesFile === null) {
-      throw new Error("Loading error");
-    }
-    const propertiesData = await propertiesFile.text();
-    const properties = JSON.parse(propertiesData);
-    const loadedModel: any = new THREE.Mesh();
-
-    this.components.scene.get().add(loadedModel);
-    for (const id in properties) {
-      loadedModel[id] = properties[id];
+    if (propertiesFile !== null) {
+      const propertiesData = await propertiesFile.text();
+      group.properties = JSON.parse(propertiesData);
     }
 
-    loadedModel.fragments = Object.values(fragments.list);
-
-    for (const id in fragments.list) {
-      const fragment = fragments.list[id];
-      loadedModel.attach(fragment.mesh);
-    }
-
-    return loadedModel;
+    this._components.scene.get().add(group);
+    return group;
   }
 
-  async saveFragmentGroup(group: FragmentsGroup, id: string) {
-    const fragments = new FragmentManager(this.components);
+  async saveFragmentGroup(group: FragmentsGroup, id = group.uuid) {
+    const fragments = new FragmentManager(this._components);
 
     const { fragmentsCacheID, propertiesCacheID } = this.getIDs(id);
     const exported = fragments.export(group);
@@ -51,10 +153,17 @@ export class FragmentCacher extends LocalCacher {
     const fragmentsUrl = URL.createObjectURL(fragmentsFile);
     await this.save(fragmentsCacheID, fragmentsUrl);
 
-    const json = JSON.stringify(group.properties);
-    const jsonFile = new File([new Blob([json])], propertiesCacheID);
-    const propertiesUrl = URL.createObjectURL(jsonFile);
-    await this.save(propertiesCacheID, propertiesUrl);
+    if (group.properties) {
+      const json = JSON.stringify(group.properties);
+      const jsonFile = new File([new Blob([json])], propertiesCacheID);
+      const propertiesUrl = URL.createObjectURL(jsonFile);
+      await this.save(propertiesCacheID, propertiesUrl);
+    }
+  }
+
+  dispose() {
+    super.dispose();
+    (this._fragments as any) = null;
   }
 
   private getIDs(id: string) {

@@ -66,7 +66,7 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
 
     const titleElement = document.createElement("h3");
     titleElement.id = `${this.id}-title`;
-    titleElement.textContent = "Tooeen Floating Window";
+    titleElement.textContent = config?.title || "Tooeen Floating Window";
     titleElement.className = "text-lg font-bold";
 
     const descriptionElement = document.createElement("p");

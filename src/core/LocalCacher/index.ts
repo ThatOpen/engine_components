@@ -1,14 +1,20 @@
 import { ModelDatabase } from "./db";
-import { Component, UI } from "../../base-types";
-import { Button, Toolbar } from "../../ui";
+import { Component, Disposable, UI, Event } from "../../base-types";
+import { Button, FloatingWindow, SimpleUICard, Toolbar } from "../../ui";
 import { Components } from "../Components";
 
-// TODO: Clean up UI logic and component type
+// TODO: Implement UI elements (this is probably just for 3d scans)
 
-export class LocalCacher extends Component<any> implements UI {
+export class LocalCacher extends Component<any> implements UI, Disposable {
   name = "LocalCacher";
 
   enabled = true;
+
+  fileLoaded = new Event<Blob>();
+  itemSaved = new Event<{ id: string }>();
+
+  protected _components: Components;
+  protected _cards: SimpleUICard[] = [];
 
   private _db: ModelDatabase;
   private readonly _storedModels = "open-bim-components-stored-files";
@@ -16,10 +22,17 @@ export class LocalCacher extends Component<any> implements UI {
   uiElement: Toolbar;
   saveButton: Button;
   loadButton: Button;
-  wipeButton: Button;
 
-  constructor(public components: Components) {
+  floatingMenu: FloatingWindow;
+
+  get ids() {
+    const serialized = localStorage.getItem(this._storedModels) || "[]";
+    return JSON.parse(serialized) as string[];
+  }
+
+  constructor(components: Components) {
     super();
+    this._components = components;
     this._db = new ModelDatabase();
 
     this.uiElement = new Toolbar(components, {
@@ -33,8 +46,28 @@ export class LocalCacher extends Component<any> implements UI {
     this.loadButton = new Button(components, { materialIconName: "download" });
     this.uiElement.addChild(this.loadButton);
 
-    this.wipeButton = new Button(components, { materialIconName: "delete" });
-    this.uiElement.addChild(this.wipeButton);
+    const renderer = this._components.renderer.get();
+    const viewerContainer = renderer.domElement.parentElement as HTMLElement;
+
+    this.floatingMenu = new FloatingWindow(components, {
+      id: "file-list-menu",
+      title: "Saved files",
+    });
+
+    this.floatingMenu.visible = false;
+    const savedFilesMenuHTML = this.floatingMenu.get();
+    savedFilesMenuHTML.style.left = "70px";
+    savedFilesMenuHTML.style.top = "100px";
+    savedFilesMenuHTML.style.width = "340px";
+    savedFilesMenuHTML.style.height = "400px";
+
+    viewerContainer.appendChild(this.floatingMenu.get());
+
+    this.saveButton.onclick = () => {
+      if (this.floatingMenu.visible) {
+        this.floatingMenu.visible = false;
+      }
+    };
   }
 
   async get(id: string) {
@@ -84,13 +117,17 @@ export class LocalCacher extends Component<any> implements UI {
     this._db.close();
   }
 
+  dispose() {
+    (this._components as any) = null;
+  }
+
   private async getModelFromLocalCache(id: string) {
     const found = await this._db.models.where("id").equals(id).toArray();
     return found[0].file;
   }
 
   private clearStoredIDs() {
-    const ids = this.getStoredIDs();
+    const ids = this.ids;
     for (const id of ids) {
       this.removeStoredID(id);
     }
@@ -98,21 +135,17 @@ export class LocalCacher extends Component<any> implements UI {
 
   private removeStoredID(id: string) {
     localStorage.removeItem(id);
-    const ids = this.getStoredIDs().filter((savedId) => savedId !== id);
+    const allIDs = this.ids;
+    const ids = allIDs.filter((savedId) => savedId !== id);
     this.setStoredIDs(ids);
   }
 
   private addStoredID(id: string) {
     const time = performance.now().toString();
     localStorage.setItem(id, time);
-    const ids = this.getStoredIDs();
+    const ids = this.ids;
     ids.push(id);
     this.setStoredIDs(ids);
-  }
-
-  private getStoredIDs() {
-    const serialized = localStorage.getItem(this._storedModels) || "[]";
-    return JSON.parse(serialized) as string[];
   }
 
   private setStoredIDs(ids: string[]) {

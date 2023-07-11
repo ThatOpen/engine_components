@@ -70,10 +70,10 @@
 
 	fragmentIfcLoader.settings.wasm = {
 		path: "https://unpkg.com/web-ifc@0.0.42/",
-	  absolute: true
+		absolute: true
 	}
 
-	fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = false;
+	fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
 	fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
 
 	async function loadIfcAsFragments() {
@@ -89,11 +89,11 @@
 		const group = fragments.groups[0];
 		const data = fragments.export(group);
 		const blob = new Blob([data]);
-		const fragmentFile = new File([blob], 'small.frag');
+		const fragmentFile = new File([blob], 'model.frag');
 
 		const files = [];
 		files.push(fragmentFile);
-		files.push(new File([JSON.stringify(group.properties)], 'small.json'));
+		files.push(new File([JSON.stringify(group.properties)], 'model.json'));
 		const result = await downloadZip(files).blob();
 		result.name = 'example';
 		download(result);

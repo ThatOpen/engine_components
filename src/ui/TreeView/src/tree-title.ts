@@ -39,7 +39,7 @@ export class TreeTitle extends UIComponentsStack {
       "items-center",
       "text-base",
       "justify-between",
-      "hover:bg-ifcjs-120",
+      "hover:[opacity: 0.5]",
       "rounded-md",
       "w-full",
       "min-h-[30px]"

@@ -1,5 +1,9 @@
 import * as WEBIFC from "web-ifc";
-import { createPopper, Instance as PopperInstance } from "@popperjs/core";
+import {
+  createPopper,
+  Instance as PopperInstance,
+  // @ts-ignore
+} from "@popperjs/core/dist/esm";
 import { FragmentsGroup } from "bim-fragment";
 import { IfcPropertiesUtils } from "../IfcPropertiesUtils";
 import { Button } from "../../ui/ButtonComponent";
