@@ -58,33 +58,57 @@
 	const grid = new OBC.SimpleGrid(components);
 	components.tools.add("grid", grid);
 
-	const culler = new OBC.ScreenCuller(components);
+    /*MD
+
+    ### Breaking down Model Dynamically
+
+    You may have previously used the Simple Clipper component to deconstruct 3D models.
+
+    Although Simple Clipper is fantastic for dissecting,
+    there may be instances when you need to inspect the model while keeping it intact.
+
+    At such times, Fragment Exploder is useful for giving you an exploded view of all the Elements inside the BIM Model.
+
+    :::tip First, let's set up a simple scene!
+
+    👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
+
+    :::
+
+    This tutorial will show you how to use **Fragment Exploder** for exploring BIM Models in detail.
+
+    ### 🧩 Adding Fragments
+    ---
+    We'll start by adding a **Fragment** to our scene using Fragment Manager.
+
+    We'll use a simple fragment for the purposes of this tutorial, but the code is capable of handling big files as well.🏗️
+
+     */
 
 	const fragments = new OBC.FragmentManager(components);
-	const classifier = new OBC.FragmentClassifier(components, fragments);
-
-	// Set up fragment culler update
-
-	container.addEventListener("mouseup", () => culler.needsUpdate = true);
-	container.addEventListener("wheel", () => culler.needsUpdate = true);
-
-	// Load the fragments
 
     const file = await fetch("../../../resources/small.frag");
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
     const model = fragments.load(buffer);
 
-    for(const fragment of model.items) {
-      culler.add(fragment.mesh);
-    }
+    /*MD
 
-    culler.needsUpdate = true;
+    :::info Showing Fragments in the Scene
+
+    🏔️ There is a dedicated tutorial on how to use Fragment Manager to load **IFC files**, checkout [that tutorial here](FragmentManager.mdx)!
+
+    :::
+
+    */
+
+    const classifier = new OBC.FragmentClassifier(components, fragments);
 
     const properties = await fetch("../../../resources/small.json");
     model.properties = await properties.json();
 
     classifier.byStorey(model);
+
 
 	const exploder = new OBC.FragmentExploder(fragments, classifier);
 
@@ -99,8 +123,30 @@
 		reset: () => exploder.reset()
 	}
 
+
 	actionsFolder.add(actions, "explode").name("Explode");
 	actionsFolder.add(actions, "reset").name("Reset");
+
+
+    /*
+    #### Screen Culling for Better Performance
+
+    You might have noticed, we are also passing the reference of `culler`.
+    We will also add [Screen Culler](../api/classes/components.ScreenCuller) which will enhance the performance of our BIM App.
+
+    */
+
+    const culler = new OBC.ScreenCuller(components);
+
+    container.addEventListener("mouseup", () => culler.needsUpdate = true);
+    container.addEventListener("wheel", () => culler.needsUpdate = true);
+
+    for(const fragment of model.items) {
+      culler.add(fragment.mesh);
+    }
+
+    culler.needsUpdate = true;
+
 
 	// Set up stats
 	const stats = new Stats();
