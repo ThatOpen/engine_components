@@ -60,12 +60,12 @@
 
     /*MD
 
-    ### Breaking down Model Dynamically
+    ### 💣 Breaking down Model Dynamically
 
-    You may have previously used the Simple Clipper component to deconstruct 3D models.
+    You may have previously used the Simple Clipper component to dismantle a 3D models.
 
     Although Simple Clipper is fantastic for dissecting,
-    there may be instances when you need to inspect the model while keeping it intact.
+    there may be instances when you need to inspect the model while keeping it intact.🔧
 
     At such times, Fragment Exploder is useful for giving you an exploded view of all the Elements inside the BIM Model.
 
@@ -75,11 +75,11 @@
 
     :::
 
-    This tutorial will show you how to use **Fragment Exploder** for exploring BIM Models in detail.
+    This tutorial will show you how to use **Fragment Exploder** for exploring BIM Models in detail.👓
 
     ### 🧩 Adding Fragments
     ---
-    We'll start by adding a **Fragment** to our scene using Fragment Manager.
+    We'll start by adding a **Fragment** to our scene using [**FragmentManager**](../api/classes/components.FragmentManager).
 
     We'll use a simple fragment for the purposes of this tutorial, but the code is capable of handling big files as well.🏗️
 
@@ -100,39 +100,54 @@
 
     :::
 
+    ### 🗂️ Strategically Classifying Fragments
+
+    In this tutorial, we will deconstruct the model into floors. But before we explode them, we need to classify them by floor.
+
+    For breaking down the model in the required way, we'll utilize [**FragmentClassifier**](../api/classes/components.FragmentClassifier).
+
     */
 
     const classifier = new OBC.FragmentClassifier(components, fragments);
 
+    /*MD
+
+    #### Getting Properties
+
+    Fragment Classifier requires model properties that will help the classifier in identifying the floors included inside the Fragment.🧮
+    We will fetch the properties from `json` file and store it in `model.properties`.
+
+     */
+
     const properties = await fetch("../../../resources/small.json");
     model.properties = await properties.json();
 
+    /*MD
+
+    Now that we have the properties, we will pass the model to classifier and use `classifier.byStorey()` which will group the Fragments according to Floors.
+
+     */
     classifier.byStorey(model);
 
 
+    /*MD
+
+    ### 💥 Exploding the Fragment
+
+    Now that we've completed the setup, we'll use the `FragmentExploder` and send the **fragment** and **classifier** data to it.
+
+    Our Fragment Exploder is now complete, and we can simply explode the model by calling [`exploder.explode()`](../api/classes/components.FragmentExploder.explode).💪
+
+    */
+
 	const exploder = new OBC.FragmentExploder(fragments, classifier);
 
-	// Set up GUI
+    /*MD
 
-	const gui = new dat.GUI();
+    ### 🌡️ Screen Culling for Better Performance
 
-	const actionsFolder = gui.addFolder("Actions");
-
-	const actions = {
-		explode: () => exploder.explode(),
-		reset: () => exploder.reset()
-	}
-
-
-	actionsFolder.add(actions, "explode").name("Explode");
-	actionsFolder.add(actions, "reset").name("Reset");
-
-
-    /*
-    #### Screen Culling for Better Performance
-
-    You might have noticed, we are also passing the reference of `culler`.
-    We will also add [Screen Culler](../api/classes/components.ScreenCuller) which will enhance the performance of our BIM App.
+    We will also add [Screen Culler](../api/classes/components.ScreenCuller) which will enhance the performance of our
+    BIM App by removing Fragment elements that are not in our viewing area.
 
     */
 
@@ -147,6 +162,34 @@
 
     culler.needsUpdate = true;
 
+    /*MD
+
+    :::info Culling unnecessary Fragments
+
+    🚅 If you're wondering how to add Screen Culler to your BIM app, we have a dedicated tutorial for it! Checkout [that tutorial here](ScreenCuller.mdx)!
+
+    :::
+
+    **Congratulations** 🎉 on completing this tutorial!
+    Your BIM App now has the power to deconstruct a model on a single click using **[Fragment Exploder](../api/classes/components.FragmentExploder)**😎
+    Let's keep it up and check out another tutorial! 🎓
+
+    */
+
+    // Set up GUI
+
+    const gui = new dat.GUI();
+
+    const actionsFolder = gui.addFolder("Actions");
+
+    const actions = {
+      explode: () => exploder.explode(),
+      reset: () => exploder.reset()
+    }
+
+
+    actionsFolder.add(actions, "explode").name("Explode");
+    actionsFolder.add(actions, "reset").name("Reset");
 
 	// Set up stats
 	const stats = new Stats();
