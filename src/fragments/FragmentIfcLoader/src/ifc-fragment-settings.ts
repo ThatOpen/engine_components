@@ -2,9 +2,6 @@ import * as WEBIFC from "web-ifc";
 
 /** Configuration of the IFC-fragment conversion. */
 export class IfcFragmentSettings {
-  /** Categories that always will be instanced. */
-  instancedCategories = new Set<number>();
-
   /** Whether to extract the IFC properties into a JSON. */
   includeProperties = true;
 
@@ -23,10 +20,4 @@ export class IfcFragmentSettings {
     USE_FAST_BOOLS: true,
     OPTIMIZE_PROFILES: true,
   };
-
-  constructor() {
-    this.instancedCategories.add(WEBIFC.IFCFURNISHINGELEMENT);
-    this.instancedCategories.add(WEBIFC.IFCWINDOW);
-    this.instancedCategories.add(WEBIFC.IFCDOOR);
-  }
 }

@@ -1,10 +1,8 @@
 import * as THREE from "three";
 import { Component } from "../../base-types/component";
 import { Components } from "../../core/Components";
-import {
-  HighlightMap,
-  FragmentHighlighter,
-} from "../../fragments/FragmentHighlighter";
+import { FragmentHighlighter } from "../../fragments/FragmentHighlighter";
+import { FragmentIdMap } from "../../base-types";
 
 interface SelectionHandlerConfig {
   selectionName: string;
@@ -13,7 +11,7 @@ interface SelectionHandlerConfig {
   highlightMaterial: THREE.Material;
 }
 
-export class SelectionHandler extends Component<HighlightMap> {
+export class SelectionHandler extends Component<FragmentIdMap> {
   name: string = "SelectionHandler";
   enabled: boolean = true;
   components: Components;
@@ -102,7 +100,7 @@ export class SelectionHandler extends Component<HighlightMap> {
     });
   }
 
-  get(): HighlightMap {
+  get(): FragmentIdMap {
     return this._fragmentHighlighter.selection.select;
   }
 }

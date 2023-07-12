@@ -14,14 +14,14 @@ import { CustomEffectsPass } from "./custom-effects-pass";
 
 export class Postproduction {
   excludedItems = new Set<THREE.Object3D>();
-  n8ao?: any;
-  customEffects?: CustomEffectsPass;
 
   readonly composer: EffectComposer;
 
   private _enabled = false;
   private _initialized = false;
 
+  private _n8ao?: any;
+  private _customEffects?: CustomEffectsPass;
   private _basePass?: RenderPass;
   private _fxaaPass?: ShaderPass;
   private _depthTexture?: THREE.DepthTexture;
@@ -29,6 +29,20 @@ export class Postproduction {
   private _customEffectsEnabled = true;
 
   private readonly _renderTarget: THREE.WebGLRenderTarget;
+
+  get customEffects() {
+    if (!this._customEffects) {
+      throw new Error("Custom effects not initialized!");
+    }
+    return this._customEffects;
+  }
+
+  get n8ao() {
+    if (!this._n8ao) {
+      throw new Error("Custom effects not initialized!");
+    }
+    return this._n8ao;
+  }
 
   get enabled() {
     return this._enabled;
@@ -48,18 +62,18 @@ export class Postproduction {
   set saoEnabled(active: boolean) {
     if (this._saoEnabled === active) return;
     this._saoEnabled = active;
-    if (!this.n8ao) return;
+    if (!this._n8ao) return;
     if (active) {
-      this.composer.addPass(this.n8ao);
-      if (this.customEffects && this._customEffectsEnabled) {
-        this.composer.removePass(this.customEffects);
-        this.composer.addPass(this.customEffects);
-        this.customEffects.correctColor = false;
+      this.composer.addPass(this._n8ao);
+      if (this._customEffects && this._customEffectsEnabled) {
+        this.composer.removePass(this._customEffects);
+        this.composer.addPass(this._customEffects);
+        this._customEffects.correctColor = false;
       }
     } else {
-      this.composer.removePass(this.n8ao);
-      if (this.customEffects) {
-        this.customEffects.correctColor = true;
+      this.composer.removePass(this._n8ao);
+      if (this._customEffects) {
+        this._customEffects.correctColor = true;
       }
     }
   }
@@ -71,11 +85,11 @@ export class Postproduction {
   set customEffectsEnabled(active: boolean) {
     if (this._customEffectsEnabled === active) return;
     this._customEffectsEnabled = active;
-    if (!this.customEffects) return;
+    if (!this._customEffects) return;
     if (active) {
-      this.composer.addPass(this.customEffects);
+      this.composer.addPass(this._customEffects);
     } else {
-      this.composer.removePass(this.customEffects);
+      this.composer.removePass(this._customEffects);
     }
   }
 
@@ -96,16 +110,16 @@ export class Postproduction {
   dispose() {
     this._renderTarget.dispose();
     this._depthTexture?.dispose();
-    this.customEffects?.dispose();
+    this._customEffects?.dispose();
     this._fxaaPass?.dispose();
-    this.n8ao?.dispose();
+    this._n8ao?.dispose();
     this.excludedItems.clear();
   }
 
   setSize(width: number, height: number) {
     this.composer.setSize(width, height);
-    this.n8ao?.setSize(width, height);
-    this.customEffects?.setSize(width, height);
+    this._n8ao?.setSize(width, height);
+    this._customEffects?.setSize(width, height);
     this._fxaaPass?.setSize(width, height);
   }
 
@@ -116,11 +130,11 @@ export class Postproduction {
 
   updateCamera() {
     const camera = this.components.camera.get();
-    if (this.n8ao) {
-      this.n8ao.camera = camera;
+    if (this._n8ao) {
+      this._n8ao.camera = camera;
     }
-    if (this.customEffects) {
-      this.customEffects.renderCamera = camera;
+    if (this._customEffects) {
+      this._customEffects.renderCamera = camera;
     }
     if (this._basePass) {
       this._basePass.camera = camera;
@@ -163,7 +177,7 @@ export class Postproduction {
       this.components
     );
 
-    this.customEffects = customOutline;
+    this._customEffects = customOutline;
     this.composer.addPass(customOutline);
   }
 
@@ -180,9 +194,9 @@ export class Postproduction {
 
   addSaoPass(scene: THREE.Scene, camera: THREE.Camera) {
     const { width, height } = this.components.renderer.getSize();
-    this.n8ao = new N8AOPass(scene, camera, width, height);
+    this._n8ao = new N8AOPass(scene, camera, width, height);
     // this.composer.addPass(this.n8ao);
-    const { configuration } = this.n8ao;
+    const { configuration } = this._n8ao;
     configuration.aoSamples = 16;
     configuration.denoiseSamples = 1;
     configuration.denoiseRadius = 13;

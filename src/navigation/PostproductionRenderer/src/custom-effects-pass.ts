@@ -11,29 +11,60 @@ export class CustomEffectsPass extends Pass {
   renderScene: THREE.Scene;
   renderCamera: THREE.Camera;
   fsQuad: FullScreenQuad;
-  planeBuffer: THREE.WebGLRenderTarget;
-  glossBuffer: THREE.WebGLRenderTarget;
   normalOverrideMaterial: THREE.ShaderMaterial;
   glossOverrideMaterial: THREE.ShaderMaterial;
+
+  planeBuffer: THREE.WebGLRenderTarget;
+  glossBuffer: THREE.WebGLRenderTarget;
+  outlineBuffer: THREE.WebGLRenderTarget;
+
   excludedMeshes: THREE.Mesh[] = [];
 
-  private _color = 0x999999;
+  outlinedMeshes: {
+    outline: THREE.InstancedMesh;
+    fragment: THREE.InstancedMesh;
+  }[] = [];
+
+  private _lineColor = 0x999999;
+  private _outlineColor = 0xffffff;
   private _opacity = 0.4;
   private _tolerance = 3;
   private _correctColor = false;
   private _glossEnabled = true;
+  private _outlineEnabled = false;
+  private _outlineThickness = 4;
   private _glossExponent = 0.7;
   private _minGloss = -0.15;
   private _maxGloss = 0.15;
 
-  get color() {
-    return this._color;
+  get lineColor() {
+    return this._lineColor;
   }
 
-  set color(color: number) {
-    this._color = color;
+  set lineColor(lineColor: number) {
+    this._lineColor = lineColor;
+    const material = this.fsQuad.material as THREE.ShaderMaterial;
+    material.uniforms.lineColor.value.set(lineColor);
+  }
+
+  get outlineColor() {
+    return this._outlineColor;
+  }
+
+  set outlineColor(color: number) {
+    this._outlineColor = color;
     const material = this.fsQuad.material as THREE.ShaderMaterial;
     material.uniforms.outlineColor.value.set(color);
+  }
+
+  get outlineThickness() {
+    return this._outlineThickness;
+  }
+
+  set outlineThickness(value: number) {
+    this._outlineThickness = value;
+    const material = this.fsQuad.material as THREE.ShaderMaterial;
+    material.uniforms.outlineThickness.value = value;
   }
 
   get tolerance() {
@@ -107,6 +138,16 @@ export class CustomEffectsPass extends Pass {
     material.uniforms.maxGloss.value = value;
   }
 
+  get outlineEnabled() {
+    return this._outlineEnabled;
+  }
+
+  set outlineEnabled(active: boolean) {
+    this._outlineEnabled = active;
+    const material = this.fsQuad.material as THREE.ShaderMaterial;
+    material.uniforms.outlineEnabled.value = active ? 1 : 0;
+  }
+
   constructor(resolution: THREE.Vector2, components: Components) {
     super();
 
@@ -119,6 +160,7 @@ export class CustomEffectsPass extends Pass {
 
     this.planeBuffer = this.newRenderTarget();
     this.glossBuffer = this.newRenderTarget();
+    this.outlineBuffer = this.newRenderTarget();
 
     const normalMaterial = getPlaneDistanceMaterial();
     normalMaterial.clippingPlanes = components.renderer.clippingPlanes;
@@ -132,14 +174,18 @@ export class CustomEffectsPass extends Pass {
   dispose() {
     this.planeBuffer.dispose();
     this.glossBuffer.dispose();
+    this.outlineBuffer.dispose();
     this.normalOverrideMaterial.dispose();
     this.glossOverrideMaterial.dispose();
     this.fsQuad.dispose();
+    // geometries disposed in fragmentoutliner
+    this.outlinedMeshes = [];
   }
 
   setSize(width: number, height: number) {
     this.planeBuffer.setSize(width, height);
     this.glossBuffer.setSize(width, height);
+    this.outlineBuffer.setSize(width, height);
     this.resolution.set(width, height);
 
     const material = this.fsQuad.material as THREE.ShaderMaterial;
@@ -181,16 +227,35 @@ export class CustomEffectsPass extends Pass {
       renderer.render(this.renderScene, this.renderCamera);
     }
 
+    this.renderScene.overrideMaterial = previousOverrideMaterial;
+
+    // Render outline pass
+
+    if (this._outlineEnabled) {
+      for (const { outline, fragment } of this.outlinedMeshes) {
+        fragment.visible = false;
+        this.renderScene.add(outline);
+      }
+
+      renderer.setRenderTarget(this.outlineBuffer);
+      renderer.render(this.renderScene, this.renderCamera);
+
+      for (const { outline, fragment } of this.outlinedMeshes) {
+        fragment.visible = true;
+        outline.removeFromParent();
+      }
+    }
+
     for (const mesh of this.excludedMeshes) {
       mesh.visible = true;
     }
 
-    this.renderScene.overrideMaterial = previousOverrideMaterial;
     this.renderScene.background = previousBackground;
 
     const material = this.fsQuad.material as THREE.ShaderMaterial;
     material.uniforms.planeBuffer.value = this.planeBuffer.texture;
     material.uniforms.glossBuffer.value = this.glossBuffer.texture;
+    material.uniforms.outlineBuffer.value = this.outlineBuffer.texture;
     material.uniforms.sceneColorBuffer.value = readBuffer.texture;
 
     // 2. Draw the outlines using the normal texture
@@ -223,13 +288,17 @@ export class CustomEffectsPass extends Pass {
 
   get fragmentShader() {
     return `
-	  uniform sampler2D sceneColorBuffer;
-	  uniform sampler2D planeBuffer;
-	  uniform sampler2D glossBuffer;
-	  uniform vec4 screenSize;
-	  uniform vec3 outlineColor;
+	    uniform sampler2D sceneColorBuffer;
+	    uniform sampler2D planeBuffer;
+	    uniform sampler2D glossBuffer;
+	    uniform sampler2D outlineBuffer;
+	    uniform vec4 screenSize;
+	    uniform vec3 lineColor;
+	    uniform vec3 outlineColor;
+	    uniform float outlineEnabled;
+	    uniform int outlineThickness;
       uniform int width;
-	  uniform float opacity;
+	    uniform float opacity;
       uniform float tolerance;
       uniform float correctColor;
       uniform float glossExponent;
@@ -260,7 +329,6 @@ export class CustomEffectsPass extends Pass {
 			void main() {
 				vec3 sceneColor = getValue(sceneColorBuffer, 0, 0).rgb;
 				vec3 normSceneColor = normalize(sceneColor);
-        vec4 color = vec4(outlineColor,1.);
 
         vec4 plane = getValue(planeBuffer, 0, 0);
 				vec3 normal = plane.xyz;
@@ -348,13 +416,13 @@ export class CustomEffectsPass extends Pass {
         // Tolerance sets the minimum amount of differences to consider
         // this texel an edge
 
-        float outline = step(tolerance, planeDiff);
+        float line = step(tolerance, planeDiff);
 
         // Exclude background and apply opacity
 
         float background = getIsBackground(normal);
-        outline *= background;
-        outline *= opacity;
+        line *= background;
+        line *= opacity;
         
         // Correct color to make it look similar to sao postprocessing colors
         
@@ -377,7 +445,28 @@ export class CustomEffectsPass extends Pass {
         
         corrected = mix(corrected, glossedColor, background);
         
-        gl_FragColor = mix(corrected, color, outline);
+        // Draw lines
+        
+        corrected = mix(corrected, vec4(lineColor, 1.), line);
+        
+        // Add selection outline
+        
+        float outlineDiff = 0.;
+        
+        outlineDiff += step(0.99, getValue(outlineBuffer, 0, 0).r);
+        outlineDiff += step(0.99, getValue(outlineBuffer, 1, 0).r);
+        outlineDiff += step(0.99, getValue(outlineBuffer, -1, 0).r);
+        outlineDiff += step(0.99, getValue(outlineBuffer, 0, -1).r);
+        outlineDiff += step(0.99, getValue(outlineBuffer, 0, 1).r);
+        outlineDiff += step(0.99, getValue(outlineBuffer, outlineThickness, 0).r);
+        outlineDiff += step(0.99, getValue(outlineBuffer, -outlineThickness, 0).r);
+        outlineDiff += step(0.99, getValue(outlineBuffer, 0, -outlineThickness).r);
+        outlineDiff += step(0.99, getValue(outlineBuffer, 0, outlineThickness).r);
+        
+        float outLine = step(4., outlineDiff) * step(outlineDiff, 8.) * outlineEnabled;
+        corrected = mix(corrected, vec4(outlineColor, 1.), outLine);
+        
+        gl_FragColor = corrected;
 	}
 			`;
   }
@@ -392,12 +481,16 @@ export class CustomEffectsPass extends Pass {
         tolerance: { value: this._tolerance },
         planeBuffer: { value: null },
         glossBuffer: { value: null },
+        outlineBuffer: { value: null },
         glossEnabled: { value: 1 },
         minGloss: { value: -0.4 },
         maxGloss: { value: 0 },
+        outlineEnabled: { value: 0 },
+        outlineColor: { value: new THREE.Color(this._outlineColor) },
+        outlineThickness: { value: this._outlineThickness },
         glossExponent: { value: this._glossExponent },
         width: { value: 1 },
-        outlineColor: { value: new THREE.Color(this._color) },
+        lineColor: { value: new THREE.Color(this._lineColor) },
         screenSize: {
           value: new THREE.Vector4(
             this.resolution.x,
