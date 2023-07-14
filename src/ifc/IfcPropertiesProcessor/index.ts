@@ -404,7 +404,7 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
     uiGroup: TreeView
   ) {
     if (!this.propertiesManager) return;
-    const { entityActions } = this.propertiesManager?.uiElement;
+    const { entityActions } = this.propertiesManager.uiElement;
     uiGroup.titleElement.get().onmouseenter = () => {
       entityActions.data = { model, elementID: expressID };
       uiGroup.titleElement.addChild(entityActions);

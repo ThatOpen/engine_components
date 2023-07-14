@@ -121,11 +121,10 @@ export class IfcPropertiesManager extends Component<ChangeMap> implements UI {
       if (!(model && expressID && valueKey)) return;
       const { properties } = this.getIFCInfo(model);
       const entity = properties[expressID];
-      // const currentName = entity.Name?.value;
       const currentValue = entity[valueKey]?.value;
       const name = prompt("Enter a new Name", entity.Name?.value);
       const value = prompt(`Enter a new ${valueKey}`, entity[valueKey]?.value);
-      entity.Name.value = name;
+      if (entity.Name) entity.Name.value = name;
       if (currentValue) entity[valueKey].value = value;
       this.setData(model, entity);
     };
@@ -227,7 +226,7 @@ export class IfcPropertiesManager extends Component<ChangeMap> implements UI {
   removePset(model: ExtendedFragmentsGroup, psetID: number) {
     const { properties } = this.getIFCInfo(model);
     const pset = properties[psetID];
-    if (pset.type !== WEBIFC.IFCPROPERTYSET) return;
+    if (pset?.type !== WEBIFC.IFCPROPERTYSET) return;
     const relID = IfcPropertiesUtils.getPsetRel(properties, psetID);
     if (relID) {
       delete properties[relID];
