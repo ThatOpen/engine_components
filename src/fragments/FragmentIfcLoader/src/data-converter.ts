@@ -57,6 +57,14 @@ export class DataConverter {
     this._model.data = itemsData;
     this._model.matrix = this.getCoordinationMatrix(webIfc);
     this._model.properties = await this.getModelProperties(webIfc);
+    this._model.uuid = this.getProjectID(webIfc) || this._model.uuid;
+  }
+
+  private getProjectID(webIfc: WEBIFC.IfcAPI) {
+    const projectsIDs = webIfc.GetLineIDsWithType(0, WEBIFC.IFCPROJECT);
+    const projectID = projectsIDs.get(0);
+    const project = webIfc.GetLine(0, projectID);
+    return project.GlobalId.value;
   }
 
   private getCoordinationMatrix(webIfc: WEBIFC.IfcAPI) {

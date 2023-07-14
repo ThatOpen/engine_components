@@ -9,3 +9,4 @@ export * from "./FragmentCacher";
 export * from "./FragmentCoordinator";
 export * from "./FragmentExploder";
 export * from "./FragmentPlans";
+export * from "./FragmentOutliner";

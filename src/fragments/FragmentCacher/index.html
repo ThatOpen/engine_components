@@ -7,6 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="stylesheet" href="../../../resources/styles.css">
     <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <title>Tools Component</title>
 </head>
 <body>
@@ -57,11 +58,25 @@
     components.tools.add("grid", grid);
 
     const fragments = new OBC.FragmentManager(components);
+    let fragmentIfcLoader = new OBC.FragmentIfcLoader(components, fragments);
+    fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
+    fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
+    fragmentIfcLoader.settings.wasm = {
+        path: "https://unpkg.com/web-ifc@0.0.42/",
+        absolute: true
+    }
 
-    const file = await fetch("../../../resources/small.frag");
-    const data = await file.arrayBuffer();
-    const buffer = new Uint8Array(data);
-    fragments.load(buffer);
+    const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
+    components.ui.addToolbar(mainToolbar);
+
+    const reloadButton = new OBC.Button(components, {materialIconName: "replay"});
+    mainToolbar.addChild(reloadButton);
+    reloadButton.onclick = () => location.reload();
+
+    mainToolbar.addChild(fragmentIfcLoader.uiElement);
+
+    const cacher = new OBC.FragmentCacher(components, fragments);
+    components.ui.addToolbar(cacher.uiElement);
 
     const stats = new Stats();
     stats.showPanel(2);

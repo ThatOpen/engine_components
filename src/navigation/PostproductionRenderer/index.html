@@ -110,8 +110,11 @@
 	const buffer = new Uint8Array(data);
 	const model = fragments.load(buffer);
 
+	const meshes = [];
+
 	const culler = new OBC.ScreenCuller(components);
 	for (const fragment of model.items) {
+		meshes.push(fragment.mesh);
 		culler.add(fragment.mesh);
 	}
 	culler.needsUpdate = true;
@@ -136,7 +139,14 @@
 	components.renderer.postproduction.enabled = true;
 	const postproduction = components.renderer.postproduction;
 
-	postproduction.customEffects.excludedMeshes.push(grid.get());
+	window.onmousemove = () => {
+		const result = components.raycaster.castRay(meshes);
+		if(result && postproduction._customEffects) {
+      postproduction._customEffects.selectedFragments = [result.object];
+    }
+	}
+
+	postproduction._customEffects.excludedMeshes.push(grid.get());
 
 	const gui = new dat.GUI();
 
@@ -144,16 +154,16 @@
 
 	const guiCustomEffects = gui.addFolder('Custom effects');
 	guiCustomEffects.add(postproduction, 'customEffectsEnabled');
-	guiCustomEffects.add(postproduction.customEffects, 'opacity').name('Line opacity').min(0).max(1).step(0.1);
-	guiCustomEffects.add(postproduction.customEffects, 'tolerance').name('Line tolerance').min(0).max(6).step(1);
-	guiCustomEffects.addColor(postproduction.customEffects, 'color').name('Line color');
-	guiCustomEffects.add(postproduction.customEffects, 'glossEnabled').name('Gloss enabled').min(0).max(2).step(0.1);
-	guiCustomEffects.add(postproduction.customEffects, 'glossExponent').name('Gloss exponent').min(0).max(3).step(0.1);
-	guiCustomEffects.add(postproduction.customEffects, 'maxGloss').name('Max gloss').min(-2).max(2).step(0.1);
-	guiCustomEffects.add(postproduction.customEffects, 'minGloss').name('Min gloss').min(-2).max(2).step(0.1);
+	guiCustomEffects.add(postproduction._customEffects, 'opacity').name('Line opacity').min(0).max(1).step(0.1);
+	guiCustomEffects.add(postproduction._customEffects, 'tolerance').name('Line tolerance').min(0).max(6).step(1);
+	guiCustomEffects.addColor(postproduction._customEffects, 'lineColor').name('Line color');
+	guiCustomEffects.add(postproduction._customEffects, 'glossEnabled').name('Gloss enabled').min(0).max(2).step(0.1);
+	guiCustomEffects.add(postproduction._customEffects, 'glossExponent').name('Gloss exponent').min(0).max(3).step(0.1);
+	guiCustomEffects.add(postproduction._customEffects, 'maxGloss').name('Max gloss').min(-2).max(2).step(0.1);
+	guiCustomEffects.add(postproduction._customEffects, 'minGloss').name('Min gloss').min(-2).max(2).step(0.1);
 
 	const guiSAO = gui.addFolder('SAO');
-	const configuration = postproduction.n8ao.configuration;
+	const configuration = postproduction._n8ao.configuration;
 	guiSAO.add(postproduction, 'saoEnabled');
 	guiSAO.add(configuration, 'aoSamples').step(1).min(1).max(16);
 	guiSAO.add(configuration, 'denoiseSamples').step(1).min(0).max(16);

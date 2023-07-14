@@ -5,14 +5,13 @@ import {
   LengthMeasurement,
 } from "../../measurement/LengthMeasurement";
 import { Components } from "../../core/Components";
-import { UI, Component, Event } from "../../base-types";
+import { UI, Component, Event, FragmentIdMap } from "../../base-types";
 import { Button, SimpleUICard, FloatingWindow } from "../../ui";
 
 import {
   FragmentManager,
   FragmentClassifier,
   FragmentHighlighter,
-  HighlightMap,
 } from "../../fragments";
 import { DrawManager } from "../../annotation";
 import { OrthoPerspectiveCamera } from "../OrthoPerspectiveCamera";
@@ -32,7 +31,7 @@ export interface IViewpoint {
   description: string | null;
   position: Vector3;
   target: Vector3;
-  selection: HighlightMap;
+  selection: FragmentIdMap;
   projection: CameraProjection;
   dimensions: { start: Vector3; end: Vector3 }[];
   filter?: { [groupSystem: string]: string };

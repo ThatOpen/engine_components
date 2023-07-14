@@ -1,6 +1,6 @@
 {
   "name": "openbim-components",
-  "version": "1.0.0-alpha.47",
+  "version": "1.0.0-alpha.49",
   "main": "index.js",
   "author": "harry collin, antonio gonzalez viegas",
   "license": "MIT",
@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "@popperjs/core": "latest",
-    "bim-fragment": "1.0.7",
+    "bim-fragment": "1.0.9",
     "camera-controls": "^1.36.0",
     "dexie": "^3.2.3",
     "mapbox-gl": "^2.15.0",

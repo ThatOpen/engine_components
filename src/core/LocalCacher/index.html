@@ -44,7 +44,6 @@
 
 	const scene = components.scene.get();
 
-	scene.background = null;
 	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
 	const directionalLight = new THREE.DirectionalLight();
@@ -64,7 +63,7 @@
 
 	const localCacher = new OBC.LocalCacher(components);
 	const url = "../../../resources/small.frag";
-  const id = "example-id";
+	const id = "example-id";
 
 	components.ui.addToolbar(localCacher.uiElement);
 
@@ -72,7 +71,7 @@
 		const exists = localCacher.exists(id);
 		if(exists) alert("Model exists in cache!");
 		else alert("Model isn't in cache!");
-  }
+	}
 
 	async function cacheModel() {
 		await localCacher.save(id, url);
@@ -86,7 +85,7 @@
 		if(file === null) {
 			alert("Model is not cached!");
 			return;
-    }
+		}
 		const data = await file.arrayBuffer();
 		const buffer = new Uint8Array(data);
 		fragments.load(buffer);
@@ -95,7 +94,7 @@
 	async function deleteCache() {
 		await localCacher.delete([id]);
 		alert("Model deleted from cache!");
-  }
+	}
 
 	// Set up stats
 
@@ -110,12 +109,12 @@
 
 	// Set up dat.gui menu
 
-  const settings = {
+	const settings = {
 		cacheModel: () => cacheModel(),
 		loadCachedModel: () => loadCachedModel(),
 		deleteCache: () => deleteCache(),
-    exists: () => checkIfExists(),
-  }
+		exists: () => checkIfExists(),
+	}
 
 	const gui = new dat.GUI();
 

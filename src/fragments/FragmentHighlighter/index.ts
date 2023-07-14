@@ -1,19 +1,15 @@
 import * as THREE from "three";
 import { Fragment } from "bim-fragment";
 import { FragmentMesh } from "bim-fragment/fragment-mesh";
-import { Component, Disposable, Event } from "../../base-types";
+import { Component, Disposable, Event, FragmentIdMap } from "../../base-types";
 import { FragmentManager } from "../index";
 import { Components } from "../../core";
 
 // TODO: Clean up and document
 
-export interface HighlightMap {
-  [fragmentID: string]: Set<string>;
-}
-
 interface HighlightEvents {
   [highlighterName: string]: {
-    onHighlight: Event<HighlightMap>;
+    onHighlight: Event<FragmentIdMap>;
     onClear: Event<null>;
   };
 }
@@ -33,14 +29,16 @@ export class FragmentHighlighter
 
   private tempMatrix = new THREE.Matrix4();
   selection: {
-    [selectionID: string]: HighlightMap;
+    [selectionID: string]: FragmentIdMap;
   } = {};
 
-  constructor(
-    private _components: Components,
-    private _fragments: FragmentManager
-  ) {
+  private _components: Components;
+  private _fragments: FragmentManager;
+
+  constructor(components: Components, fragments: FragmentManager) {
     super();
+    this._components = components;
+    this._fragments = fragments;
   }
 
   get(): HighlightMaterials {
