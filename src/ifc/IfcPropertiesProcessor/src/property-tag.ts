@@ -1,10 +1,8 @@
 import { SimpleUIComponent } from "../../../ui/SimpleUIComponent";
 import { Components } from "../../../core/Components";
-import { UIComponent } from "../../../base-types/base-types";
 
 export class PropertyTag extends SimpleUIComponent {
   name: string = "PropertyTag";
-  private _rightContainer = document.createElement("div");
   private _labelElement = document.createElement("p");
   private _valueElement = document.createElement("p");
   private _label: string | null = null;
@@ -39,14 +37,6 @@ export class PropertyTag extends SimpleUIComponent {
     this._valueElement.className = "text-base";
     tagInfo.append(this._labelElement, this._valueElement);
 
-    wrapper.append(tagInfo, this._rightContainer);
-    this._rightContainer.className = "flex gap-x-2";
-  }
-
-  addChild(...items: UIComponent[]) {
-    items.forEach((item) => {
-      this.children.push(item);
-      this._rightContainer.append(item.domElement);
-    });
+    wrapper.append(tagInfo);
   }
 }

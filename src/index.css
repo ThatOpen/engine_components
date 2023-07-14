@@ -870,17 +870,8 @@ select {
   margin-bottom: 0.5rem;
 }
 
-.my-\[8px\] {
-  margin-top: 8px;
-  margin-bottom: 8px;
-}
-
-.ml-5 {
-  margin-left: 1.25rem;
-}
-
-.mr-\[8px\] {
-  margin-right: 8px;
+.mr-4 {
+  margin-right: 1rem;
 }
 
 .mt-2 {
@@ -1087,10 +1078,6 @@ select {
   row-gap: 0.75rem;
 }
 
-.gap-y-\[5px\] {
-  row-gap: 5px;
-}
-
 .overflow-auto {
   overflow: auto;
 }
@@ -1237,16 +1224,16 @@ select {
   padding-left: 22px;
 }
 
+.pr-3 {
+  padding-right: 0.75rem;
+}
+
 .pr-4 {
   padding-right: 1rem;
 }
 
 .pt-4 {
   padding-top: 1rem;
-}
-
-.pt-\[5px\] {
-  padding-top: 5px;
 }
 
 .text-center {
@@ -1292,6 +1279,11 @@ select {
 .text-gray-400 {
   --tw-text-opacity: 1;
   color: rgb(156 163 175 / var(--tw-text-opacity));
+}
+
+.text-gray-500 {
+  --tw-text-opacity: 1;
+  color: rgb(107 114 128 / var(--tw-text-opacity));
 }
 
 .text-gray-900 {

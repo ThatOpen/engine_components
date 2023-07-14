@@ -6,10 +6,11 @@ import { TreeTitle } from "./src/tree-title";
 
 export class TreeView extends SimpleUIComponent<HTMLDivElement> {
   titleElement: TreeTitle;
-  onExpand: Event<TreeView> = new Event();
-  onCollapse: Event<TreeView> = new Event();
   private _childrenContainer: UIComponentsStack;
-  private _expanded: boolean = false;
+  private _expanded: boolean = true;
+
+  readonly onExpand = new Event();
+  readonly onCollapse = new Event();
 
   get expanded() {
     return this._expanded;
@@ -19,8 +20,10 @@ export class TreeView extends SimpleUIComponent<HTMLDivElement> {
     this._expanded = expanded;
     this._childrenContainer.visible = expanded;
     if (expanded) {
+      this.onExpand.trigger();
       this.titleElement.get().classList.add("bg-ifcjs-120");
     } else {
+      this.onCollapse.trigger();
       this.titleElement.get().classList.remove("bg-ifcjs-120");
     }
   }
@@ -86,26 +89,18 @@ export class TreeView extends SimpleUIComponent<HTMLDivElement> {
   }
 
   collapse(deep = true) {
+    if (!this.expanded) return;
     this.expanded = false;
-    if (deep) {
-      this.children.forEach((child) => {
-        if (child instanceof TreeView) {
-          child.collapse(deep);
-        }
-      });
-    }
-    this.onCollapse.trigger(this);
+    if (!deep) return;
+    for (const child of this.children)
+      if (child instanceof TreeView) child.collapse(deep);
   }
 
   expand(deep = true) {
+    if (this.expanded) return;
     this.expanded = true;
-    if (deep) {
-      this.children.forEach((child) => {
-        if (child instanceof TreeView) {
-          child.expand(deep);
-        }
-      });
-    }
-    this.onExpand.trigger(this);
+    if (!deep) return;
+    for (const child of this.children)
+      if (child instanceof TreeView) child.expand(deep);
   }
 }
