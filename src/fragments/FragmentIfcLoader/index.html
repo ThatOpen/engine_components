@@ -81,6 +81,7 @@
 		const data = await file.arrayBuffer();
 		const buffer = new Uint8Array(data);
 		const model = await fragmentIfcLoader.load(buffer);
+		console.log(model);
 		scene.add(model);
 	}
 

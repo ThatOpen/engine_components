@@ -58,6 +58,32 @@ export class DataConverter {
     this._model.matrix = this.getCoordinationMatrix(webIfc);
     this._model.properties = await this.getModelProperties(webIfc);
     this._model.uuid = this.getProjectID(webIfc) || this._model.uuid;
+    this._model.ifcMetadata = this.getIfcMetadata(webIfc);
+  }
+
+  private getIfcMetadata(webIfc: WEBIFC.IfcAPI) {
+    const { FILE_NAME, FILE_DESCRIPTION } = WEBIFC;
+    const name = this.getMetadataEntry(webIfc, FILE_NAME);
+    const description = this.getMetadataEntry(webIfc, FILE_DESCRIPTION);
+    const schema: string = webIfc.GetModelSchema(0) || "IFC2X3";
+    const maxExpressId: number = webIfc.GetMaxExpressID(0);
+    return { name, description, schema, maxExpressId };
+  }
+
+  private getMetadataEntry(webIfc: WEBIFC.IfcAPI, type: number) {
+    let description = "";
+    const descriptionData = webIfc.GetHeaderLine(0, type) || "";
+    if (!descriptionData) return description;
+    for (const arg of descriptionData.arguments) {
+      if (Array.isArray(arg)) {
+        for (const subArg of arg) {
+          description += `${subArg.value}|`;
+        }
+      } else {
+        description += `${arg.value}|`;
+      }
+    }
+    return description;
   }
 
   private getProjectID(webIfc: WEBIFC.IfcAPI) {
