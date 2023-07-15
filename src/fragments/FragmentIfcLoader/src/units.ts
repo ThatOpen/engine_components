@@ -13,11 +13,15 @@ export class Units {
 
   setUp(webIfc: WEBIFC.IfcAPI) {
     this.factor = 1;
-    const lengthUnits = this.getLengthUnits(webIfc);
-    if (lengthUnits === null || lengthUnits.Name === null) return;
-    if (lengthUnits.Name.value === "FOOT") {
+    const length = this.getLengthUnits(webIfc);
+    const isLengthNull = length === undefined || length === null;
+    const isValueNull = length.Name === undefined || length.Name === null;
+    if (isLengthNull || isValueNull) {
+      return;
+    }
+    if (length.Name.value === "FOOT") {
       this.factor = 0.3048;
-    } else if (lengthUnits.Prefix?.value === "MILLI") {
+    } else if (length.Prefix?.value === "MILLI") {
       this.complement = 0.001;
     }
   }
