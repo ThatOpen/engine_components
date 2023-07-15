@@ -1,10 +1,8 @@
-import { UIComponent } from "../../../base-types/base-types";
 import { Components } from "../../../core/Components";
 import { Button } from "../../ButtonComponent";
 import { UIComponentsStack } from "../../UIComponentsStack";
 
 export class TreeTitle extends UIComponentsStack {
-  rightContainer: UIComponentsStack;
   arrow: Button;
   private _titleElement: HTMLParagraphElement;
   private _descriptionElement: HTMLParagraphElement;
@@ -39,10 +37,11 @@ export class TreeTitle extends UIComponentsStack {
       "items-center",
       "text-base",
       "justify-between",
-      "hover:[opacity: 0.5]",
+      "hover:bg-ifcjs-120",
       "rounded-md",
       "w-full",
-      "min-h-[30px]"
+      "min-h-[30px]",
+      "pr-3"
     );
 
     this.arrow = new Button(components, { materialIconName: "arrow_right" });
@@ -50,7 +49,7 @@ export class TreeTitle extends UIComponentsStack {
     this.arrow.get().classList.add("p-1", "h-full");
 
     const leftContainer = new UIComponentsStack(components, "Horizontal");
-    leftContainer.get().classList.add("items-center", "gap-x-2");
+    leftContainer.get().classList.add("items-center", "gap-x-2", "mr-4");
     leftContainer.addChild(this.arrow);
 
     const titleContainer = document.createElement("div");
@@ -65,16 +64,6 @@ export class TreeTitle extends UIComponentsStack {
 
     leftContainer.get().append(titleContainer);
 
-    this.rightContainer = new UIComponentsStack(components, "Horizontal");
-    this.rightContainer.get().classList.add("ml-5", "mr-[8px]");
-
-    this.get().append(leftContainer.get(), this.rightContainer.get());
-  }
-
-  addChild(...items: UIComponent[]) {
-    items.forEach((item) => {
-      this.children.push(item);
-      this.rightContainer.addChild(item);
-    });
+    this.get().append(leftContainer.get());
   }
 }

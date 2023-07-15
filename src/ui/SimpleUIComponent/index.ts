@@ -11,10 +11,14 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   domElement: T;
   children: UIComponent[] = [];
   id: string;
-  onVisible: Event<T> = new Event();
-  onHidden: Event<T> = new Event();
-  onEnabled: Event<T> = new Event();
-  onDisabled: Event<T> = new Event();
+  data: Record<string, any> = {};
+
+  static readonly Class: { Base: string; [elementName: string]: string };
+
+  readonly onVisible: Event<T> = new Event();
+  readonly onHidden: Event<T> = new Event();
+  readonly onEnabled: Event<T> = new Event();
+  readonly onDisabled: Event<T> = new Event();
 
   protected _components: Components;
   protected _enabled: boolean = true;
@@ -71,15 +75,20 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
     this.domElement = domElement;
   }
 
+  cleanData() {
+    this.data = {};
+  }
+
   get(): T {
     return this.domElement;
   }
 
   dispose(onlyChildren = false) {
-    this.children.forEach((child) => child.dispose());
-    if (!onlyChildren) {
-      this.domElement.remove();
-    }
+    this.children.forEach((child) => {
+      child.dispose();
+      this.removeChild(child);
+    });
+    if (!onlyChildren) this.domElement.remove();
   }
 
   addChild(...items: UIComponent[]) {
@@ -87,6 +96,12 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
       this.children.push(item);
       this.domElement.append(item.domElement);
     });
+  }
+
+  removeChild(...items: UIComponent[]) {
+    for (const item of items) item.domElement.remove();
+    const filtered = this.children.filter((child) => !items.includes(child));
+    this.children = filtered;
   }
 
   // htmlToElement(htmlString: string) {

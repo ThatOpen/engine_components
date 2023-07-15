@@ -16,6 +16,10 @@ export class Toolbar extends SimpleUIComponent<HTMLDivElement> {
   children: Button[] = [];
   parent?: Button;
 
+  static Class = {
+    Base: "flex shadow-md w-fit h-fit gap-x-2 gap-y-2 p-2 text-white rounded pointer-events-auto bg-ifcjs-100 z-50 backdrop-blur-md",
+  };
+
   private _position!: IContainerPosition;
 
   set visible(visible: boolean) {
@@ -57,8 +61,7 @@ export class Toolbar extends SimpleUIComponent<HTMLDivElement> {
       ...options,
     };
     const toolbar = document.createElement("div");
-    toolbar.className =
-      "flex shadow-md w-fit h-fit gap-x-2 gap-y-2 p-2 text-white rounded pointer-events-auto bg-ifcjs-100 z-50 backdrop-blur-md";
+    toolbar.className = Toolbar.Class.Base;
     super(components, toolbar, options?.id);
     this.name = _options.name ?? "Toolbar";
     this.position = _options.position ?? "bottom";

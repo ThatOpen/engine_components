@@ -10,6 +10,14 @@ interface FloatingWindowConfig {
 }
 
 export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
+  private _resizeable = true;
+
+  static Class = {
+    Base: "absolute backdrop-blur-md shadow-md overflow-auto top-5 resize z-50 left-5 min-h-[80px] min-w-[150px] w-fit h-fit text-white bg-ifcjs-100 rounded-md",
+    Title: "text-lg font-bold",
+    Description: "text-base text-gray-400",
+  };
+
   onMoved: Event<FloatingWindow> = new Event();
   onResized: Event<FloatingWindow> = new Event();
   referencePoints!: {
@@ -58,20 +66,35 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
     return titleElement.textContent;
   }
 
+  set resizeable(value: boolean) {
+    this._resizeable = value;
+    if (value) {
+      this.get().classList.add("resize");
+    } else {
+      this.get().classList.remove("resize");
+    }
+  }
+
+  get resizeable() {
+    return this._resizeable;
+  }
+
   constructor(components: Components, config?: FloatingWindowConfig) {
     const window = document.createElement("div");
-    window.className = `absolute backdrop-blur-md shadow-md overflow-auto top-5 resize z-50 left-5 min-h-[80px] min-w-[150px] w-fit h-fit text-white bg-ifcjs-100 rounded-md`;
+    window.className = FloatingWindow.Class.Base;
 
     super(components, window, config?.id);
 
+    this.resizeable = true;
+
     const titleElement = document.createElement("h3");
     titleElement.id = `${this.id}-title`;
-    titleElement.textContent = config?.title || "Tooeen Floating Window";
-    titleElement.className = "text-lg font-bold";
+    titleElement.textContent = "Tooeen Floating Window";
+    titleElement.className = FloatingWindow.Class.Title;
 
     const descriptionElement = document.createElement("p");
     descriptionElement.id = `${this.id}-description`;
-    descriptionElement.className = "text-base";
+    descriptionElement.className = FloatingWindow.Class.Description;
 
     const closeElement = document.createElement("span");
     closeElement.onclick = () => (this.visible = false);
@@ -154,10 +177,8 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
       this.children.push(item);
       contentDiv.append(item.domElement);
     });
-    if (contentDiv.classList.contains("hidden")) {
-      contentDiv.classList.remove("hidden");
-      contentDiv.classList.add("flex");
-    }
+    contentDiv.classList.remove("hidden");
+    contentDiv.classList.add("flex");
   }
 
   updateReferencePoints() {

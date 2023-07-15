@@ -23,6 +23,17 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
 
   onClicked = new Event<any>();
 
+  static Class = {
+    Base: `
+    relative flex gap-x-2 items-center justify-start bg-transparent text-white text-base rounded-md h-fit p-2
+    hover:cursor-pointer hover:bg-ifcjs-200 hover:text-ifcjs-100
+    data-[active=true]:cursor-pointer data-[active=true]:bg-ifcjs-200 data-[active=true]:text-ifcjs-100
+    disabled:cursor-default disabled:bg-transparent disabled:text-gray-500
+    transition-all
+    `,
+    Label: "text-base whitespace-nowrap",
+  };
+
   private _closeOnClick = true;
   private _parent!: Toolbar;
   private _popper: PopperInstance;
@@ -67,15 +78,9 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
   constructor(components: Components, options?: IButtonOptions) {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = `
-    relative flex gap-x-2 items-center justify-start bg-transparent text-white text-base rounded-md h-fit p-2
-    hover:cursor-pointer hover:bg-ifcjs-200 hover:text-ifcjs-100
-    data-[active=true]:cursor-pointer data-[active=true]:bg-ifcjs-200 data-[active=true]:text-ifcjs-100
-    disabled:cursor-default disabled:bg-transparent disabled:text-gray-500
-    transition-all
-    `;
+    btn.className = Button.Class.Base;
     super(components, btn, options?.id);
-    this._labelElement.className = "text-base whitespace-nowrap";
+    this._labelElement.className = Button.Class.Label;
     this.label = options?.name ? options.name : null;
     if (options?.materialIconName) {
       const icon = document.createElement("span");

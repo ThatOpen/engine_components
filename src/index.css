@@ -870,6 +870,10 @@ select {
   margin-bottom: 0.5rem;
 }
 
+<<<<<<< HEAD
+.mr-4 {
+  margin-right: 1rem;
+=======
 .my-\[8px\] {
   margin-top: 8px;
   margin-bottom: 8px;
@@ -881,6 +885,7 @@ select {
 
 .mr-\[8px\] {
   margin-right: 8px;
+>>>>>>> big-restructure
 }
 
 .mt-2 {
@@ -1237,6 +1242,13 @@ select {
   padding-left: 22px;
 }
 
+<<<<<<< HEAD
+.pr-3 {
+  padding-right: 0.75rem;
+}
+
+=======
+>>>>>>> big-restructure
 .pr-4 {
   padding-right: 1rem;
 }
@@ -1292,6 +1304,11 @@ select {
 .text-gray-400 {
   --tw-text-opacity: 1;
   color: rgb(156 163 175 / var(--tw-text-opacity));
+}
+
+.text-gray-500 {
+  --tw-text-opacity: 1;
+  color: rgb(107 114 128 / var(--tw-text-opacity));
 }
 
 .text-gray-900 {

@@ -1,6 +1,9 @@
 import * as WEBIFC from "web-ifc";
 
-export type IfcProperties = Record<string, Record<string, any>>;
+export type IfcProperties = {
+  [expressID: number]: { [attribute: string]: any };
+};
+export type IfcSchemas = "IFC2X3" | "IFC4" | "IFC4X3";
 
 export class IfcPropertiesUtils {
   static getUnits(properties: IfcProperties) {
@@ -51,9 +54,9 @@ export class IfcPropertiesUtils {
   ) {
     const defaultCallback = () => {};
     const _onElementsFound = onElementsFound ?? defaultCallback;
-    const arrayProperties = Object.values(properties);
-    const result: { [groupID: string]: string[] } = {};
-    arrayProperties.forEach((prop: any) => {
+    const result: { [relatingID: number]: number[] } = {};
+    for (const expressID in properties) {
+      const prop = properties[expressID];
       const isRelation = prop.type === relationType;
       const relatingKey = Object.keys(prop).find((key) =>
         key.startsWith("Relating")
@@ -61,16 +64,16 @@ export class IfcPropertiesUtils {
       const relatedKey = Object.keys(prop).find((key) =>
         key.startsWith("Related")
       );
-      if (!(isRelation && relatingKey && relatedKey)) return;
+      if (!(isRelation && relatingKey && relatedKey)) continue;
       const relating = properties[prop[relatingKey]?.value];
       const related = prop[relatedKey];
-      if (!related) return;
+      if (!(related && Array.isArray(related))) continue;
       const elements = related.map((el: any) => {
         return el.value;
       });
       _onElementsFound(relating.expressID, elements);
       result[relating.expressID] = elements;
-    });
+    }
     return result;
   }
 
@@ -78,7 +81,7 @@ export class IfcPropertiesUtils {
     properties: IfcProperties,
     expressID: number,
     onQuantityFound?: (expressID: number) => void
-  ) {
+  ): number[] | null {
     const defaultCallback = () => {};
     const _onQuantityFound = onQuantityFound ?? defaultCallback;
     const pset = properties[expressID];
@@ -95,7 +98,7 @@ export class IfcPropertiesUtils {
     properties: IfcProperties,
     expressID: number,
     onPropFound?: (expressID: number) => void
-  ) {
+  ): number[] | null {
     const defaultCallback = () => {};
     const _onPropFound = onPropFound ?? defaultCallback;
     const pset = properties[expressID];
@@ -110,17 +113,31 @@ export class IfcPropertiesUtils {
 
   static getPsetRel(properties: IfcProperties, psetID: number) {
     const arrayProperties = Object.values(properties);
-    if (!properties[psetID]) return undefined;
+    if (!properties[psetID]) return null;
     const rel = arrayProperties.find((data) => {
       const isRelation = data.type === WEBIFC.IFCRELDEFINESBYPROPERTIES;
       const relatesToPset = data.RelatingPropertyDefinition?.value === psetID;
-      if (!(isRelation && relatesToPset)) return false;
-      return true;
+      return isRelation && relatesToPset;
     });
-    return rel;
+    return rel ? (rel.expressID as number) : null;
   }
 
   static getQsetRel(properties: IfcProperties, qsetID: number) {
     return IfcPropertiesUtils.getPsetRel(properties, qsetID);
+  }
+
+  static getEntityName(properties: IfcProperties, entityID: number) {
+    const entity = properties[entityID];
+    const key = Object.keys(entity).find((key) => key.endsWith("Name")) ?? null;
+    const name = key ? (entity[key].value as string) : null;
+    return { key, name };
+  }
+
+  static getQuantityValue(properties: IfcProperties, quantityID: number) {
+    const quantity = properties[quantityID];
+    const key =
+      Object.keys(quantity).find((key) => key.endsWith("Value")) ?? null;
+    const value = key ? (quantity[key].value as number) : null;
+    return { key, value };
   }
 }
