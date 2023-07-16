@@ -11,7 +11,7 @@ interface ICardInfo {
 }
 
 export class SimpleUICard extends SimpleUIComponent<HTMLDivElement> {
-  name: string = "UICard";
+  name: string = "SimpleUICard";
   rightContainer: UIComponentsStack;
 
   constructor(components: Components, info: ICardInfo) {

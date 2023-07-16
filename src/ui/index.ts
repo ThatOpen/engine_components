@@ -12,3 +12,4 @@ export * from "./CheckboxInput";
 export * from "./ColorInput";
 export * from "./RangeInput";
 export * from "./UIComponentsStack";
+export * from "./Canvas";

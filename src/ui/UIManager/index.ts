@@ -139,12 +139,13 @@ export class UIManager extends Component<Toolbar[]> {
   }
 
   add(...uiComponents: UIComponent[]) {
-    uiComponents.forEach((component) => {
-      if (!this.viewerContainer) {
-        return;
-      }
+    // TODO: Is this necessary?
+    if (!this.viewerContainer) {
+      return;
+    }
+    for (const component of uiComponents) {
       this.viewerContainer.append(component.domElement);
-    });
+    }
   }
 
   closeMenus() {

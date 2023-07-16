@@ -817,6 +817,10 @@ select {
   bottom: 0px;
 }
 
+.bottom-3 {
+  bottom: 0.75rem;
+}
+
 .bottom-8 {
   bottom: 2rem;
 }
@@ -839,6 +843,10 @@ select {
 
 .right-2 {
   right: 0.5rem;
+}
+
+.right-3 {
+  right: 0.75rem;
 }
 
 .right-8 {
@@ -926,6 +934,10 @@ select {
   height: 1rem;
 }
 
+.h-40 {
+  height: 10rem;
+}
+
 .h-\[15px\] {
   height: 15px;
 }
@@ -977,6 +989,10 @@ select {
 
 .w-4 {
   width: 1rem;
+}
+
+.w-80 {
+  width: 20rem;
 }
 
 .w-\[15px\] {
