@@ -1,6 +1,8 @@
 :root {
   --container-border-distance: 15px;
   --primary-color: #BCF124;
+  --secondary-color: #635DFF;
+  /* TODO: Probably this needs to be called background-color */
   --secondary-color-100: #00000099;
   --secondary-color-120: #1a2128;
 }
@@ -13,9 +15,7 @@
   font-size: 16px;
 }
 
-/*
-! tailwindcss v3.3.2 | MIT License | https://tailwindcss.com
-*/
+/* ! tailwindcss v3.3.2 | MIT License | https://tailwindcss.com */
 
 /*
 1. Prevent padding and border from affecting element width. (https://github.com/mozdevs/cssremedy/issues/4)
@@ -761,6 +761,18 @@ select {
   }
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 .pointer-events-none {
   pointer-events: none;
 }
@@ -886,6 +898,10 @@ select {
   margin-bottom: 1rem;
 }
 
+.mr-2 {
+  margin-right: 0.5rem;
+}
+
 .mr-4 {
   margin-right: 1rem;
 }
@@ -967,6 +983,10 @@ select {
   height: 100%;
 }
 
+.h-screen {
+  height: 100vh;
+}
+
 .min-h-\[30px\] {
   min-height: 30px;
 }
@@ -1020,6 +1040,10 @@ select {
   width: 100%;
 }
 
+.w-screen {
+  width: 100vw;
+}
+
 .min-w-\[150px\] {
   min-width: 150px;
 }
@@ -1030,6 +1054,16 @@ select {
 
 .transform {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 
 .cursor-move {
@@ -1208,6 +1242,10 @@ select {
 
 .bg-transparent {
   background-color: transparent;
+}
+
+.fill-black {
+  fill: #0D0D0D;
 }
 
 .p-1 {
@@ -1578,6 +1616,11 @@ select {
   .dark\:text-gray-400 {
     --tw-text-opacity: 1;
     color: rgb(156 163 175 / var(--tw-text-opacity));
+  }
+
+  .dark\:text-gray-600 {
+    --tw-text-opacity: 1;
+    color: rgb(75 85 99 / var(--tw-text-opacity));
   }
 
   .dark\:hover\:border-gray-500:hover {

@@ -8,7 +8,8 @@ module.exports = {
                 ifcjs: {
                     100: "var(--secondary-color-100)",
                     120: "var(--secondary-color-120)",
-                    200: "var(--primary-color)"
+                    200: "var(--primary-color)",
+                    300: "var(--secondary-color)"
                 }
             },
         },

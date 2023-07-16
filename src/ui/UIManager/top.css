@@ -1,6 +1,8 @@
 :root {
     --container-border-distance: 15px;
     --primary-color: #BCF124;
+    --secondary-color: #635DFF;
+    /* TODO: Probably this needs to be called background-color */
     --secondary-color-100: #00000099;
     --secondary-color-120: #1a2128;
 }

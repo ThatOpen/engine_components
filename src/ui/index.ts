@@ -14,3 +14,4 @@ export * from "./RangeInput";
 export * from "./UIComponentsStack";
 export * from "./Canvas";
 export * from "./DragAndDropInput";
+export * from "./Spinner";
