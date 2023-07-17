@@ -48,10 +48,10 @@ export abstract class BaseInput<
   }
 
   get inputValue() {
-    return this.inputElement.value;
+    return this.inputElement.value as any;
   }
 
-  set inputValue(value: string) {
+  set inputValue(value: any) {
     this.inputElement.value = value;
   }
 

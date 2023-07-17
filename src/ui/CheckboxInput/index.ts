@@ -20,12 +20,10 @@ export class CheckboxInput extends BaseInput<HTMLInputElement> {
     );
   }
 
-  // @ts-ignore
   set inputValue(value: boolean) {
     this.inputElement.checked = value;
   }
 
-  // @ts-ignore
   get inputValue() {
     return this.inputElement.checked;
   }
