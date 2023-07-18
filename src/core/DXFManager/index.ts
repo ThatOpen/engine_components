@@ -179,9 +179,9 @@ export class DXFManager
     for (const child of existingDrawing.children) {
       for (const groupChild of child.children) {
         // @ts-ignore
-        groupChild?.material.dispose();
+        groupChild.material?.dispose();
         // @ts-ignore
-        groupChild?.geometry.dispose();
+        groupChild.geometry?.dispose();
         groupChild.removeFromParent();
         const filteredMeshes = this._components.meshes.filter(
           (mesh) => mesh.uuid !== child.uuid
