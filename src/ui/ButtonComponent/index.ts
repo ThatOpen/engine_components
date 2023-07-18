@@ -34,8 +34,8 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
     Label: "text-base whitespace-nowrap",
   };
 
+  protected _parent: Toolbar | null = null;
   private _closeOnClick = true;
-  private _parent!: Toolbar;
   private _popper: PopperInstance;
   private _label: string | null = null;
   private _labelElement = document.createElement("p");
@@ -65,10 +65,12 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
     };
   }
 
-  set parent(toolbar: Toolbar) {
+  set parent(toolbar: Toolbar | null) {
     this._parent = toolbar;
-    this.menu.position = toolbar.position;
-    this.updateMenuPlacement();
+    if (toolbar) {
+      this.menu.position = toolbar.position;
+      this.updateMenuPlacement();
+    }
   }
 
   get parent() {

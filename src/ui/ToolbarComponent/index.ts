@@ -14,7 +14,7 @@ type IToolbarDirection = "horizontal" | "vertical";
 export class Toolbar extends SimpleUIComponent<HTMLDivElement> {
   name: string;
   children: Button[] = [];
-  parent?: Button;
+  protected _parent: Button | null = null;
 
   static Class = {
     Base: "flex shadow-md w-fit h-fit gap-x-2 gap-y-2 p-2 text-white rounded pointer-events-auto bg-ifcjs-100 z-50 backdrop-blur-md",

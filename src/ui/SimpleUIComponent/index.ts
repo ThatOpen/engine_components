@@ -21,9 +21,18 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   readonly onDisabled: Event<T> = new Event();
 
   protected _components: Components;
+  protected _parent: UIComponent | null = null;
   protected _enabled: boolean = true;
   protected _visible: boolean = true;
   protected _active: boolean = false;
+
+  set parent(value: UIComponent | null) {
+    this._parent = value;
+  }
+
+  get parent() {
+    return this._parent;
+  }
 
   get active() {
     return this._active;
@@ -92,14 +101,18 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   }
 
   addChild(...items: UIComponent[]) {
-    items.forEach((item) => {
+    for (const item of items) {
       this.children.push(item);
       this.domElement.append(item.domElement);
-    });
+      if (item instanceof SimpleUIComponent) item.parent = this;
+    }
   }
 
   removeChild(...items: UIComponent[]) {
-    for (const item of items) item.domElement.remove();
+    for (const item of items) {
+      item.domElement.remove();
+      if (item instanceof SimpleUIComponent) item.parent = null;
+    }
     const filtered = this.children.filter((child) => !items.includes(child));
     this.children = filtered;
   }

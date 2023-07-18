@@ -49,7 +49,7 @@ export class TreeView extends SimpleUIComponent<HTMLDivElement> {
     `;
     super(components, div);
     this.titleElement = new TreeTitle(components);
-    this.titleElement.title = name;
+    this.titleElement.title = name ?? null;
     this.titleElement.arrow.onclick = () => {
       this.toggle();
     };

@@ -7,7 +7,7 @@ import {
 import { FragmentsGroup } from "bim-fragment";
 import { IfcPropertiesUtils } from "../IfcPropertiesUtils";
 import { Button } from "../../ui/ButtonComponent";
-import { UI, Component, UIComponent } from "../../base-types";
+import { UI, Component } from "../../base-types";
 import {
   FloatingWindow,
   SimpleUIComponent,
@@ -18,6 +18,7 @@ import { Components } from "../../core/Components";
 import { IfcPropertiesManager } from "../IfcPropertiesManager";
 import { IfcCategoryMap } from "../ifc-category-map";
 import { PropertyTag, NewPset, NewProp, EditProp } from "./src";
+// import { UIPool } from "../../ui/UIPool";
 
 interface IndexMap {
   [modelID: string]: { [expressID: string]: Set<number> };
@@ -64,9 +65,9 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
   private _editContainerPopper!: PopperInstance;
   private _indexMap: IndexMap = {};
   private _renderFunctions: { [entityType: number]: RenderFunction } = {};
-  // @ts-ignore
-  private _uiList: { [expressID: number]: UIComponent } = {};
   private _propertiesManager: IfcPropertiesManager | null = null;
+
+  // private _entityUIPool: UIPool<TreeView>;
 
   set propertiesManager(manager: IfcPropertiesManager | null) {
     if (!this._propertiesManager && manager) {
@@ -86,6 +87,8 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
   constructor(components: Components) {
     super();
     this._components = components;
+
+    // this._entityUIPool = new UIPool(this._components, TreeView);
 
     this._propsList = new UIComponentsStack(this._components, "Vertical");
 
@@ -176,6 +179,13 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
 
   cleanPropertiesList() {
     this._propsList.dispose(true);
+    // for (const child of this._propsList.children) {
+    //   if (child instanceof TreeView) {
+    //     this._entityUIPool.return(child);
+    //     continue;
+    //   }
+    //   child.dispose();
+    // }
     this.uiElement.container.description = null;
     this._editContainer.visible = false;
     this._propsList.children = [];
@@ -272,6 +282,7 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
     const entityAttributes = properties[expressID];
     if (!entityAttributes) return [];
     const attributesGroup = new TreeView(this._components, "ATTRIBUTES");
+    // const attributesGroup = this._entityUIPool.get();
 
     attributesGroup.onExpand.on(() => {
       const { uiProcessed } = attributesGroup.data;
@@ -419,10 +430,9 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
     const properties = model.properties;
     const entity = properties[expressID];
     if (!entity) return null;
-    const entityTree = new TreeView(
-      this._components,
-      `${IfcCategoryMap[entity.type]}`
-    );
+    const entityTree = new TreeView(this._components);
+    // const entityTree = this._entityUIPool.get();
+    entityTree.titleElement.title = `${IfcCategoryMap[entity.type]}`;
     const { name } = IfcPropertiesUtils.getEntityName(properties, expressID);
     entityTree.titleElement.description = name;
     return entityTree;

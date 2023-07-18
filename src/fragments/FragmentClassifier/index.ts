@@ -3,6 +3,7 @@ import { Disposable } from "../../base-types";
 import { Component } from "../../base-types/component";
 import { FragmentManager } from "../FragmentManager";
 import { IfcCategoryMap } from "../../ifc";
+import { IfcPropertiesUtils } from "../../ifc/IfcPropertiesUtils";
 
 // TODO: Clean up and document
 
@@ -185,6 +186,31 @@ export class FragmentClassifier
     }
   }
 
+  byIfcRel(group: FragmentsGroup, ifcRel: number, systemName: string) {
+    const properties = group.properties;
+    if (!properties)
+      throw new Error("To group by IFC Rel, properties are needed");
+    if (!IfcPropertiesUtils.isRel(ifcRel)) return;
+    IfcPropertiesUtils.getRelationMap(
+      properties,
+      ifcRel,
+      (relatingID, relatedIDs) => {
+        const { name: relatingName } = IfcPropertiesUtils.getEntityName(
+          properties,
+          relatingID
+        );
+        for (const expressID of relatedIDs) {
+          this.saveItem(
+            group,
+            systemName,
+            relatingName ?? "NO REL NAME",
+            String(expressID)
+          );
+        }
+      }
+    );
+  }
+
   private saveItem(
     group: FragmentsGroup,
     systemName: string,
@@ -194,8 +220,9 @@ export class FragmentClassifier
     if (!this._groupSystems[systemName]) {
       this._groupSystems[systemName] = {};
     }
-    const keys = group.data[expressID as any][0];
-    for (const key of keys) {
+    const keys = group.data[expressID as any];
+    if (!keys) return;
+    for (const key of keys[0]) {
       const fragmentID = group.keyFragments[key];
       if (fragmentID) {
         const system = this._groupSystems[systemName];
