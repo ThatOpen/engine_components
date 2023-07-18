@@ -109,7 +109,7 @@
 	const actions = {
 		exit: () => {
 			plans.exitPlanView();
-			postproduction.outlines.opacity = 0.3;
+			postproduction.customEffects.opacity = 0.3;
 			postproduction.saoEnabled = true;
 			materialManager.resetBackgroundColor();
 			materialManager.set(false, ["white"]);
@@ -122,7 +122,7 @@
 	for(const plan of planList) {
 		actions[plan.id] = () => {
 			plans.goTo(plan.id);
-			postproduction.outlines.opacity = 0.5;
+			postproduction.customEffects.opacity = 0.5;
 			postproduction.saoEnabled = false;
 			materialManager.setBackgroundColor(whiteColor);
 			materialManager.set(true, ["white"]);
