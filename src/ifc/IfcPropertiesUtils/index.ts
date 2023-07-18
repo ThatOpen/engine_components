@@ -1,4 +1,5 @@
 import * as WEBIFC from "web-ifc";
+import { IfcCategoryMap } from "../ifc-category-map";
 
 export type IfcProperties = {
   [expressID: number]: { [attribute: string]: any };
@@ -139,5 +140,10 @@ export class IfcPropertiesUtils {
       Object.keys(quantity).find((key) => key.endsWith("Value")) ?? null;
     const value = key ? (quantity[key].value as number) : null;
     return { key, value };
+  }
+
+  static isRel(expressID: number) {
+    const entityName = IfcCategoryMap[expressID];
+    return entityName.startsWith("IFCREL");
   }
 }
