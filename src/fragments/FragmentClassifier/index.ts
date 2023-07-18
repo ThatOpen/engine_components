@@ -179,9 +179,10 @@ export class FragmentClassifier
     for (const expressID in group.data) {
       const rels = group.data[expressID][1];
       const storeyID = rels[0];
-      if (storeyID === -1) continue;
-      const storey = group.properties[storeyID].Name.value;
-      this.saveItem(group, "storeys", storey, expressID);
+      const storey = group.properties[storeyID];
+      if (storey === undefined) continue;
+      const storeyName = group.properties[storeyID].Name.value;
+      this.saveItem(group, "storeys", storeyName, expressID);
     }
   }
 

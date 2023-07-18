@@ -3,19 +3,56 @@ import { Units } from "./units";
 import { IfcItemsCategories } from "../../../ifc";
 
 export class SpatialStructure {
-  floorProperties: any[] = [];
   itemsByFloor: IfcItemsCategories = {};
 
   private _units = new Units();
 
   async setUp(webIfc: WEBIFC.IfcAPI) {
     this._units.setUp(webIfc);
-    this.reset();
+    this.cleanUp();
     try {
-      const floors = await this.getFloors(webIfc);
-      for (const floor of floors) {
-        await this.getFloorProperties(webIfc, floor);
-        this.saveFloorRelations(floor);
+      const spatialRels = webIfc.GetLineIDsWithType(
+        0,
+        WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE
+      );
+      const spatialRelsSize = spatialRels.size();
+      for (let i = 0; i < spatialRelsSize; i++) {
+        const id = spatialRels.get(i);
+        const properties = webIfc.GetLine(0, id);
+        if (
+          !properties ||
+          !properties.RelatingStructure ||
+          !properties.RelatedElements
+        ) {
+          continue;
+        }
+        const floor = properties.RelatingStructure.value;
+        const relatedItems = properties.RelatedElements;
+        for (const related of relatedItems) {
+          const id = related.value;
+          this.itemsByFloor[id] = floor;
+        }
+      }
+      const aggregates = webIfc.GetLineIDsWithType(0, WEBIFC.IFCRELAGGREGATES);
+      const aggregatesSize = aggregates.size();
+      for (let i = 0; i < aggregatesSize; i++) {
+        const id = aggregates.get(i);
+        const properties = webIfc.GetLine(0, id);
+        if (
+          !properties ||
+          !properties.RelatingObject ||
+          !properties.RelatedObjects
+        ) {
+          continue;
+        }
+        const container = properties.RelatingObject.value;
+        const relatedItems = properties.RelatedObjects;
+        for (const related of relatedItems) {
+          const containerFloor = this.itemsByFloor[container];
+          if (containerFloor === undefined) continue;
+          const id = related.value;
+          this.itemsByFloor[id] = containerFloor;
+        }
       }
     } catch (e) {
       console.log("Could not get floors.");
@@ -23,61 +60,6 @@ export class SpatialStructure {
   }
 
   cleanUp() {
-    this.floorProperties = [];
     this.itemsByFloor = {};
-  }
-
-  private reset() {
-    this.floorProperties = [];
-    this.itemsByFloor = {};
-  }
-
-  private async getFloorProperties(webIfc: WEBIFC.IfcAPI, floor: any) {
-    const id = floor.expressID;
-    const properties = webIfc.properties;
-    const props = await properties.getItemProperties(0, id, false);
-    props.SceneHeight = await this.getHeight(props, webIfc, properties);
-    this.floorProperties.push(props);
-  }
-
-  private async getHeight(props: any, webIfc: WEBIFC.IfcAPI, properties: any) {
-    const placementID = props.ObjectPlacement.value;
-    const coordArray = webIfc.GetCoordinationMatrix(0);
-    const coordHeight = coordArray[13] * this._units.factor;
-    const placement = await properties.getItemProperties(0, placementID, true);
-    return this.getPlacementHeight(placement, this._units) + coordHeight;
-  }
-
-  private getPlacementHeight(placement: any, units: Units) {
-    let value = 0;
-    const heightCoords = placement.RelativePlacement?.Location?.Coordinates;
-    if (heightCoords) {
-      value += heightCoords[2].value * units.complement * units.factor;
-    }
-    if (placement.PlacementRelTo) {
-      value += this.getPlacementHeight(placement.PlacementRelTo, units);
-    }
-    return value;
-  }
-
-  private saveFloorRelations(floor: any) {
-    for (const item of floor.children) {
-      this.itemsByFloor[item.expressID] = floor.expressID;
-      if (item.children.length) {
-        for (const child of item.children) {
-          this.itemsByFloor[child.expressID] = floor.expressID;
-        }
-      }
-    }
-  }
-
-  private async getFloors(webIfc: WEBIFC.IfcAPI) {
-    const project = await webIfc.properties.getSpatialStructure(0);
-
-    // TODO: This is fixed from web-ifc 0.0.37
-    // TODO: This fails with IFCs with uncommon spatial structure
-    // @ts-ignore
-    const floors = project.children[0].children[0].children;
-    return floors;
   }
 }

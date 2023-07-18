@@ -3,7 +3,7 @@ import { FragmentsGroup } from "bim-fragment";
 import { Disposable, Event, UI, Component } from "../../base-types";
 import { FragmentManager } from "../index";
 import { DataConverter, GeometryReader } from "./src";
-import { Button } from "../../ui";
+import { Button, ToastNotification } from "../../ui";
 import { Components } from "../../core";
 
 export * from "./src/types";
@@ -27,6 +27,8 @@ export class FragmentIfcLoader
 
   private _webIfc = new WEBIFC.IfcAPI();
 
+  private _toast: ToastNotification;
+
   private readonly _fragments: FragmentManager;
   private readonly _components: Components;
   private readonly _geometry = new GeometryReader();
@@ -37,6 +39,11 @@ export class FragmentIfcLoader
     this._components = components;
     this._fragments = fragments;
     this.uiElement = this.setupOpenButton();
+    this._toast = new ToastNotification(components, {
+      message: "IFC model successfully loaded!",
+    });
+    components.ui.add(this._toast);
+    this._toast.visible = false;
   }
 
   get(): WEBIFC.IfcAPI {
@@ -98,6 +105,7 @@ export class FragmentIfcLoader
       const result = await this.load(data);
       const scene = this._components.scene.get();
       scene.add(result);
+      this._toast.visible = true;
       button.onClicked.trigger(result);
     };
 

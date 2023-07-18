@@ -228,8 +228,14 @@ export class DataConverter {
       const keys: number[] = [];
       const rels: number[] = [];
       const idNum = parseInt(id, 10);
-      const level = this._spatialTree.itemsByFloor[idNum] || -1;
-      const category = this._categories[idNum] || -1;
+      const level = this._spatialTree.itemsByFloor[idNum] || 0;
+      if (level === -1) {
+        console.log(`level - ${id}`);
+      }
+      const category = this._categories[idNum] || 0;
+      if (category === -1) {
+        console.log(`category - ${id}`);
+      }
       rels.push(level, category);
       for (const key of this._itemKeyMap[id]) {
         keys.push(key);
