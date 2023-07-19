@@ -146,29 +146,44 @@
 	gui.add(settings, 'exportFragments').name('Export fragments');
 	gui.add(settings, 'disposeFragments').name('Dispose fragments');
 
+	const clipper = new OBC.EdgesClipper(components, OBC.EdgesPlane);
+	components.tools.add("clipper", clipper);
+	clipper.enabled = true;
+
+	window.ondblclick = () => {
+		clipper.create();
+  }
+
+
 	// For debugging
 
-	// fragmentIfcLoader.ifcLoaded.on((model) => {
-	//   let sorted = [];
-	//   for(const frag of model.fragments) {
-	// 		const size = frag.mesh.count;
-	// 		sorted.push({size, frag});
-	//   }
-	//
-	// 	sorted.sort((a, b) => {
-	// 		return a.size > b.size ? 1 : -1;
-	// 	});
-	// 	let value = 0;
-	// 	let step = 1 / sorted.length;
-	//
-	// 	for(const { frag } of sorted) {
-	// 		console.log(frag.mesh.material);
-	// 		const mat = frag.mesh.material[0];
-	// 		frag.mesh.instanceColor = null;
-	// 		mat.color.setRGB(value, value, value, "srgb");
-	// 		value += step;
-	//   }
-	// });
+	fragmentIfcLoader.ifcLoaded.on((model) => {
+		const meshes = model.items.map(frag => frag.mesh);
+
+		const blueFill = new THREE.MeshBasicMaterial({color: 'lightblue', side: 2});
+		const blueLine = new THREE.LineBasicMaterial({ color: 'blue' });
+		clipper.styles.create('Red lines', meshes, blueLine, blueFill);
+
+	  // let sorted = [];
+	  // for(const frag of model.fragments) {
+		// 	const size = frag.mesh.count;
+		// 	sorted.push({size, frag});
+	  // }
+    //
+		// sorted.sort((a, b) => {
+		// 	return a.size > b.size ? 1 : -1;
+		// });
+		// let value = 0;
+		// let step = 1 / sorted.length;
+    //
+		// for(const { frag } of sorted) {
+		// 	console.log(frag.mesh.material);
+		// 	const mat = frag.mesh.material[0];
+		// 	frag.mesh.instanceColor = null;
+		// 	mat.color.setRGB(value, value, value, "srgb");
+		// 	value += step;
+	  // }
+	});
 
 
 </script>

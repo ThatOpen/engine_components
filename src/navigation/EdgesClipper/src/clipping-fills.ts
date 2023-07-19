@@ -9,6 +9,9 @@ export class ClippingFills {
 
   private _plane: THREE.Plane;
   private _geometry: THREE.BufferGeometry;
+  private _coordinateSystem = new THREE.Matrix4();
+
+  private _isPlaneHorizontal: boolean;
 
   constructor(
     plane: THREE.Plane,
@@ -18,6 +21,9 @@ export class ClippingFills {
     this.mesh.material = material;
 
     this._plane = plane;
+    const vertical = plane.normal.y;
+    this._isPlaneHorizontal = vertical === 1 || vertical === -1;
+
     this._geometry = geometry;
 
     this.mesh.geometry.attributes.position = geometry.attributes.position;
@@ -36,44 +42,16 @@ export class ClippingFills {
     (this._geometry as any) = null;
   }
 
-  update() {
+  update(elements: number[]) {
     // temp
 
     const range = this._geometry.drawRange.count;
     const buffer = this._geometry.attributes.position.array as Float32Array;
     if (!buffer) return;
 
-    const zAxis = this._plane.normal;
+    let currentElement = elements.shift();
 
-    const localCoordSystem = new THREE.Matrix4();
-
-    // First, let's convert the 3d points to 2d to simplify
-    // if z is up or down, we can just ignore it
-    const isPlaneHorizontal = zAxis.y === 1 || zAxis.y === -1;
-    if (isPlaneHorizontal) {
-      const pos = new THREE.Vector3();
-      this._plane.coplanarPoint(pos);
-
-      const xAxis = new THREE.Vector3(1, 0, 0);
-      const yAxis = new THREE.Vector3(0, 1, 0);
-      const up = new THREE.Vector3(0, 1, 0);
-      xAxis.crossVectors(up, zAxis).normalize();
-      yAxis.crossVectors(zAxis, xAxis);
-
-      // prettier-ignore
-      localCoordSystem.fromArray([
-        xAxis.x, xAxis.y, xAxis.z, 0,
-        yAxis.x, yAxis.y, yAxis.z, 0,
-        zAxis.x, zAxis.y, zAxis.z, 0,
-        pos.x, pos.y, pos.z, 1
-      ]);
-
-      localCoordSystem.invert();
-    }
-
-    // -0.7851659380703032
-    // 0.6351651018463915
-    // -3.181819948588538
+    this.updateCoordinateSystem();
 
     const indices = new Map();
     const all2DVertices: { [index: number]: [number, number] } = {};
@@ -90,6 +68,11 @@ export class ClippingFills {
     for (let i = 0; i < range * 3; i += 6) {
       // Convert vertices to indices
 
+      if (currentElement !== undefined && i > currentElement) {
+        console.log("hey");
+        currentElement = elements.shift();
+      }
+
       let x1 = 0;
       let y1 = 0;
       let x2 = 0;
@@ -102,19 +85,19 @@ export class ClippingFills {
       const globalY2 = buffer[i + 4];
       const globalZ2 = buffer[i + 5];
 
-      if (isPlaneHorizontal) {
+      if (this._isPlaneHorizontal) {
         x1 = Math.trunc(globalX1 * p) / p;
         y1 = Math.trunc(globalZ1 * p) / p;
         x2 = Math.trunc(globalX2 * p) / p;
         y2 = Math.trunc(globalZ2 * p) / p;
       } else {
         tempVector.set(globalX1, globalY1, globalZ1);
-        tempVector.applyMatrix4(localCoordSystem);
+        tempVector.applyMatrix4(this._coordinateSystem);
         x1 = Math.trunc(tempVector.x * p) / p;
         y1 = Math.trunc(tempVector.y * p) / p;
 
         tempVector.set(globalX2, globalY2, globalZ2);
-        tempVector.applyMatrix4(localCoordSystem);
+        tempVector.applyMatrix4(this._coordinateSystem);
         x2 = Math.trunc(tempVector.x * p) / p;
         y2 = Math.trunc(tempVector.y * p) / p;
       }
@@ -244,5 +227,33 @@ export class ClippingFills {
     }
 
     this.mesh.geometry.setIndex(trueIndices);
+  }
+
+  private updateCoordinateSystem() {
+    this._coordinateSystem = new THREE.Matrix4();
+    const zAxis = this._plane.normal;
+
+    // First, let's convert the 3d points to 2d to simplify
+    // if z is up or down, we can just ignore it
+    if (this._isPlaneHorizontal) {
+      const pos = new THREE.Vector3();
+      this._plane.coplanarPoint(pos);
+
+      const xAxis = new THREE.Vector3(1, 0, 0);
+      const yAxis = new THREE.Vector3(0, 1, 0);
+      const up = new THREE.Vector3(0, 1, 0);
+      xAxis.crossVectors(up, zAxis).normalize();
+      yAxis.crossVectors(zAxis, xAxis);
+
+      // prettier-ignore
+      this._coordinateSystem.fromArray([
+        xAxis.x, xAxis.y, xAxis.z, 0,
+        yAxis.x, yAxis.y, yAxis.z, 0,
+        zAxis.x, zAxis.y, zAxis.z, 0,
+        pos.x, pos.y, pos.z, 1,
+      ]);
+
+      this._coordinateSystem.invert();
+    }
   }
 }

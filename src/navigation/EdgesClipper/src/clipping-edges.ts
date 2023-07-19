@@ -126,6 +126,9 @@ export class ClippingEdges
     // @ts-ignore
     posAttr.array.fill(0);
 
+    const indexes: number[] = [];
+    let lastIndex = 0;
+
     const notEmptyMeshes = style.meshes.filter((mesh) => mesh.geometry);
     notEmptyMeshes.forEach((mesh) => {
       if (!mesh.geometry.boundsTree) {
@@ -149,11 +152,21 @@ export class ClippingEdges
           this._localPlane.copy(this._plane).applyMatrix4(this._inverseMatrix);
 
           index = this.shapecast(tempMesh, posAttr, index);
+
+          if (index !== lastIndex) {
+            indexes.push(index);
+            lastIndex = index;
+          }
         }
       } else {
         this._inverseMatrix.copy(mesh.matrixWorld).invert();
         this._localPlane.copy(this._plane).applyMatrix4(this._inverseMatrix);
         index = this.shapecast(mesh, posAttr, index);
+
+        if (index !== lastIndex) {
+          indexes.push(index);
+          lastIndex = index;
+        }
       }
     });
 
@@ -168,7 +181,7 @@ export class ClippingEdges
     if (!Number.isNaN(position.array[0])) {
       const scene = this._components.scene.get();
       scene.add(edges.mesh);
-      edges.fill.update();
+      edges.fill.update(indexes);
       scene.add(edges.fill.mesh);
     }
   }
