@@ -43,16 +43,25 @@ export class ClippingFills {
   }
 
   update(elements: number[]) {
-    // temp
-
-    const range = this._geometry.drawRange.count;
     const buffer = this._geometry.attributes.position.array as Float32Array;
     if (!buffer) return;
 
-    let currentElement = elements.shift();
-
     this.updateCoordinateSystem();
 
+    const allIndices: number[] = [];
+    let start = 0;
+    for (let i = 0; i < elements.length; i++) {
+      const end = elements[i] * 3;
+      const indices = this.computeFill(start, end, buffer);
+      for (const index of indices) {
+        allIndices.push(index);
+      }
+      start = end;
+    }
+    this.mesh.geometry.setIndex(allIndices);
+  }
+
+  private computeFill(offset: number, count: number, buffer: Float32Array) {
     const indices = new Map();
     const all2DVertices: { [index: number]: [number, number] } = {};
     const shapes = new Map<number, number[]>();
@@ -65,13 +74,8 @@ export class ClippingFills {
     // precision
     const p = 1000;
 
-    for (let i = 0; i < range * 3; i += 6) {
+    for (let i = offset; i < count; i += 6) {
       // Convert vertices to indices
-
-      if (currentElement !== undefined && i > currentElement) {
-        console.log("hey");
-        currentElement = elements.shift();
-      }
 
       let x1 = 0;
       let y1 = 0;
@@ -105,8 +109,12 @@ export class ClippingFills {
       const startCode = `${x1}-${y1}`;
       const endCode = `${x2}-${y2}`;
 
-      if (!indices.has(startCode)) indices.set(startCode, i / 3);
-      if (!indices.has(endCode)) indices.set(endCode, i / 3 + 1);
+      if (!indices.has(startCode)) {
+        indices.set(startCode, i / 3);
+      }
+      if (!indices.has(endCode)) {
+        indices.set(endCode, i / 3 + 1);
+      }
 
       const start = indices.get(startCode);
       const end = indices.get(endCode);
@@ -141,7 +149,9 @@ export class ClippingFills {
           const endShape = shapes.get(endIndex);
           const startShape = shapes.get(startIndex);
           shapes.delete(startIndex);
-          if (!endShape || !startShape) throw new Error("Shape error!");
+          if (!endShape || !startShape) {
+            throw new Error("Shape error!");
+          }
           for (const index of startShape) {
             shapesEnds.set(index, endIndex);
             endShape.push(index);
@@ -159,7 +169,9 @@ export class ClippingFills {
           const endShape = shapes.get(endIndex);
           const startShape = shapes.get(startIndex);
           shapes.delete(startIndex);
-          if (!endShape || !startShape) throw new Error("Shape error!");
+          if (!endShape || !startShape) {
+            throw new Error("Shape error!");
+          }
           for (const index of startShape) {
             shapesEnds.set(index, endIndex);
             endShape.push(index);
@@ -171,7 +183,9 @@ export class ClippingFills {
         // existing contour on start - start
         const shapeIndex = shapesStarts.get(start);
         const shape = shapes.get(shapeIndex);
-        if (!shape) throw new Error("Shape error!");
+        if (!shape) {
+          throw new Error("Shape error!");
+        }
         shape.unshift(end);
         shapesStarts.delete(start);
         shapesStarts.set(end, shapeIndex);
@@ -179,7 +193,9 @@ export class ClippingFills {
         // existing contour on start - end
         const shapeIndex = shapesEnds.get(start);
         const shape = shapes.get(shapeIndex);
-        if (!shape) throw new Error("Shape error!");
+        if (!shape) {
+          throw new Error("Shape error!");
+        }
         shape.push(end);
         shapesEnds.delete(start);
         shapesEnds.set(end, shapeIndex);
@@ -187,7 +203,9 @@ export class ClippingFills {
         // existing contour on end - start
         const shapeIndex = shapesStarts.get(end);
         const shape = shapes.get(shapeIndex);
-        if (!shape) throw new Error("Shape error!");
+        if (!shape) {
+          throw new Error("Shape error!");
+        }
         shape.unshift(start);
         shapesStarts.delete(end);
         shapesStarts.set(start, shapeIndex);
@@ -195,7 +213,9 @@ export class ClippingFills {
         // existing contour on end - end
         const shapeIndex = shapesEnds.get(end);
         const shape = shapes.get(shapeIndex);
-        if (!shape) throw new Error("Shape error!");
+        if (!shape) {
+          throw new Error("Shape error!");
+        }
         shape.push(start);
         shapesEnds.delete(end);
         shapesEnds.set(start, shapeIndex);
@@ -226,7 +246,7 @@ export class ClippingFills {
       }
     }
 
-    this.mesh.geometry.setIndex(trueIndices);
+    return trueIndices;
   }
 
   private updateCoordinateSystem() {

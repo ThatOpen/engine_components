@@ -183,6 +183,7 @@ export class ClippingEdges
       scene.add(edges.mesh);
       edges.fill.update(indexes);
       scene.add(edges.fill.mesh);
+      console.log(indexes);
     }
   }
 
