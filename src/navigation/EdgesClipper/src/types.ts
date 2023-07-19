@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry";
+import { ClippingFills } from "./clipping-fills";
 
 /**
  * A style defines the appearance of the lines of the {@link ClippingEdges} for
@@ -17,7 +18,13 @@ export interface LineStyle {
    * The material that defines the appearance of the lines of the
    * {@link ClippingEdges}.
    * */
-  material: LineMaterial;
+  lineMaterial: LineMaterial;
+
+  /**
+   * The material that defines the appearance of the fill of the
+   * {@link ClippingEdges}.
+   * */
+  fillMaterial: THREE.Material;
 }
 
 /**
@@ -30,6 +37,9 @@ export interface Edge {
 
   /** The visible clipping lines in the scene. */
   mesh: THREE.LineSegments;
+
+  /** The fill of the section. */
+  fill: ClippingFills;
 }
 
 /**

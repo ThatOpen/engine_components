@@ -1,55 +1,49 @@
 import * as THREE from "three";
 import { Mesh } from "three";
 import earcut from "earcut";
-import { Components } from "../../../core";
 
 export class ClippingFills {
   // readonly worker: Worker;
 
-  mesh = new Mesh(
-    new THREE.BufferGeometry(),
-    new THREE.MeshBasicMaterial({
-      color: "white",
-      side: 2,
-    })
-  );
+  mesh = new Mesh(new THREE.BufferGeometry());
 
-  private _components: Components;
+  private _plane: THREE.Plane;
+  private _geometry: THREE.BufferGeometry;
 
-  constructor(components: Components) {
-    this._components = components;
-    this._components.scene.get().add(this.mesh);
+  constructor(
+    plane: THREE.Plane,
+    geometry: THREE.BufferGeometry,
+    material: THREE.Material
+  ) {
+    this.mesh.material = material;
 
-    this.mesh.position.y -= 0.01;
-    // const code = `
-    //   addEventListener("message", (event) => {
-    //     const { buffer } = event.data;
-    //     const vertices = new Map();
-    //     for (let i = 0; i < buffer.length; i += 3) {
-    //         const x = buffer[i];
-    //         const y = buffer[i + 1];
-    //         const code = \`\${x}-\${y}\`;
-    //         if()
-    //         const code = "" + r + "-" + g + "-" + b;
-    //         colors.add(code);
-    //     }
-    //     postMessage({ colors });
-    //   });
-    // `;
-    // const blob = new Blob([code], { type: "application/javascript" });
-    // this.worker = new Worker(URL.createObjectURL(blob));
-    // this.worker.addEventListener("message", this.handleWorkerMessage);
-  }
+    this._plane = plane;
+    this._geometry = geometry;
 
-  test(geometry: THREE.BufferGeometry, plane: THREE.Plane) {
-    // temp
     this.mesh.geometry.attributes.position = geometry.attributes.position;
 
-    const range = geometry.drawRange.count;
-    const buffer = geometry.attributes.position.array as Float32Array;
+    // To prevent clipping plane overlapping the filling mesh
+    const offset = plane.normal.clone().multiplyScalar(0.01);
+    this.mesh.position.copy(offset);
+  }
+
+  dispose() {
+    this.mesh.geometry.dispose();
+    this.mesh.removeFromParent();
+    (this.mesh.geometry as any) = null;
+    (this.mesh as any) = null;
+    (this._plane as any) = null;
+    (this._geometry as any) = null;
+  }
+
+  update() {
+    // temp
+
+    const range = this._geometry.drawRange.count;
+    const buffer = this._geometry.attributes.position.array as Float32Array;
     if (!buffer) return;
 
-    const zAxis = plane.normal;
+    const zAxis = this._plane.normal;
 
     const localCoordSystem = new THREE.Matrix4();
 
@@ -58,7 +52,7 @@ export class ClippingFills {
     const isPlaneHorizontal = zAxis.y === 1 || zAxis.y === -1;
     if (isPlaneHorizontal) {
       const pos = new THREE.Vector3();
-      plane.coplanarPoint(pos);
+      this._plane.coplanarPoint(pos);
 
       const xAxis = new THREE.Vector3(1, 0, 0);
       const yAxis = new THREE.Vector3(0, 1, 0);
@@ -225,27 +219,30 @@ export class ClippingFills {
       }
     }
 
-    if (shapes.size === 0) return;
-    // first shape only
-    const shapeIndices = shapes.get(1);
-    if (!shapeIndices) throw new Error("ShapeIndices not found!");
-    const vertices: number[] = [];
-    const indexMap = new Map();
-    let counter = 0;
-    for (const index of shapeIndices) {
-      const vertex = all2DVertices[index];
-      vertices.push(vertex[0], vertex[1]);
-      indexMap.set(counter++, index);
+    const trueIndices: number[] = [];
+
+    for (const entry of shapes) {
+      const shape = entry[1];
+
+      const vertices: number[] = [];
+      const indexMap = new Map();
+      let counter = 0;
+      for (const index of shape) {
+        const vertex = all2DVertices[index];
+        vertices.push(vertex[0], vertex[1]);
+        indexMap.set(counter++, index);
+      }
+
+      const result = earcut(vertices);
+      for (const index of result) {
+        const trueIndex = indexMap.get(index);
+        if (trueIndex === undefined) {
+          throw new Error("Map error!");
+        }
+        trueIndices.push(trueIndex);
+      }
     }
 
-    const result = earcut(vertices);
-    if (result.length) {
-      const mapped = result.map((index: number) => {
-        const result = indexMap.get(index);
-        if (result === undefined) throw new Error("Map error!");
-        return result;
-      });
-      this.mesh.geometry.setIndex(mapped);
-    }
+    this.mesh.geometry.setIndex(trueIndices);
   }
 }

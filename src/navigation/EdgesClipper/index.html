@@ -93,18 +93,18 @@
 
    */
 
-	const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+	const cubeGeometry = new THREE.BoxGeometry(3, 3, 3);
 
 	const cubeMaterial = new THREE.MeshStandardMaterial({ color: '#6528D7' });
 	const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-	cube.position.set(0.5, 0.5, 0.5);
+	cube.position.set(-2, 1.5, 0);
 	scene.add(cube);
 	components.meshes.push(cube);
 
-	// const blueCube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-	// blueCube.position.set(2, 1.5, 0);
-	// scene.add(blueCube);
-	// components.meshes.push(blueCube);
+	const cube2 = new THREE.Mesh(cubeGeometry, cubeMaterial);
+	cube2.position.set(2, 1.5, 0);
+	scene.add(cube2);
+	components.meshes.push(cube2);
 
 	/*MD
 
@@ -164,12 +164,13 @@
 
    */
 
+  const blueFill = new THREE.MeshBasicMaterial({color: 'lightblue', side: 2});
+	const blueLine = new THREE.LineBasicMaterial({ color: 'blue' });
+	clipper.styles.create('Red lines', [cube], blueLine, blueFill);
 
-	const redLineMaterial = new THREE.LineBasicMaterial({ color: 'blue' });
-	clipper.styles.create('Red lines', [cube], redLineMaterial);
-
-	// const blueLineMaterial = new THREE.LineBasicMaterial({ color: 'red' });
-	// clipper.styles.create('Blue lines', [blueCube], blueLineMaterial);
+	const salmonFill = new THREE.MeshBasicMaterial({color: 'salmon', side: 2});
+	const redLine = new THREE.LineBasicMaterial({ color: 'red' });
+	clipper.styles.create('Blue lines', [cube2], redLine, salmonFill);
 
 	/*MD
 
@@ -263,7 +264,7 @@
 		.name('Plane color')
 		.onChange((value) => {
 			helperColor.setHex(value);
-			clipper.material.material = helperColor;
+			clipper.material.lineMaterial = helperColor;
 		});
 
 	actionsFolder.add(clipper, 'size').name('Plane Size').min(0).max(15);
@@ -280,11 +281,11 @@
 			cube.updateMatrix();
 			cube.updateMatrixWorld();
 
-			blueCube.rotation.x = 2 * Math.PI * Math.random();
-			blueCube.rotation.y = 2 * Math.PI * Math.random();
-			blueCube.rotation.z = 2 * Math.PI * Math.random();
-			blueCube.updateMatrix();
-			blueCube.updateMatrixWorld();
+			cube2.rotation.x = 2 * Math.PI * Math.random();
+			cube2.rotation.y = 2 * Math.PI * Math.random();
+			cube2.rotation.z = 2 * Math.PI * Math.random();
+			cube2.updateMatrix();
+			cube2.updateMatrixWorld();
 
 			clipper.updateEdges();
 		},

@@ -141,12 +141,12 @@
     window.onmousemove = () => {
         const result = components.raycaster.castRay(cubes);
         if (previousSelection) {
-            previousSelection.material = cubeMaterial;
+            previousSelection.lineMaterial = cubeMaterial;
         }
         if (!result) {
             return;
         }
-        result.object.material = greenMaterial;
+        result.object.lineMaterial = greenMaterial;
         previousSelection = result.object;
     }
 

@@ -28,8 +28,6 @@ export class ClippingEdges
   /** {@link Component.enabled}. */
   enabled = true;
 
-  fills: ClippingFills;
-
   protected _edges: Edges = {};
   protected _styles: EdgesStyles;
   protected _disposer = new Disposer();
@@ -65,7 +63,6 @@ export class ClippingEdges
     this._components = components;
     this._plane = plane;
     this._styles = styles;
-    this.fills = new ClippingFills(components);
   }
 
   /** {@link Updateable.afterUpdate} */
@@ -91,20 +88,26 @@ export class ClippingEdges
   dispose() {
     const edges = Object.values(this._edges);
     for (const edge of edges) {
+      edge.fill.dispose();
       this._disposer.dispose(edge.mesh, false);
     }
   }
 
-  // Creates the geometry of the clipping edges
-  private newThickEdges(styleName: string) {
+  private newEdgesMesh(styleName: string) {
     const styles = this._styles.get();
-    const material = styles[styleName].material;
+    const material = styles[styleName].lineMaterial;
     const edgesGeometry = new THREE.BufferGeometry();
     const buffer = new Float32Array(300000);
     const linePosAttr = new THREE.BufferAttribute(buffer, 3, false);
     linePosAttr.setUsage(THREE.DynamicDrawUsage);
     edgesGeometry.setAttribute("position", linePosAttr);
     return new THREE.LineSegments(edgesGeometry, material);
+  }
+
+  private newFillMesh(name: string, geometry: THREE.BufferGeometry) {
+    const styles = this._styles.get();
+    const fillMaterial = styles[name].fillMaterial;
+    return new ClippingFills(this._plane, geometry, fillMaterial);
   }
 
   // Source: https://gkjohnson.github.io/three-mesh-bvh/example/bundle/clippedEdges.html
@@ -165,16 +168,16 @@ export class ClippingEdges
     if (!Number.isNaN(position.array[0])) {
       const scene = this._components.scene.get();
       scene.add(edges.mesh);
-      console.log(edges.mesh);
-      this.fills.test(edges.mesh.geometry, this._plane);
+      edges.fill.update();
+      scene.add(edges.fill.mesh);
     }
   }
 
-  private initializeStyle(styleName: string) {
-    this._edges[styleName] = {
-      name: styleName,
-      mesh: this.newThickEdges(styleName),
-    };
+  private initializeStyle(name: string) {
+    const mesh = this.newEdgesMesh(name);
+    const geometry = mesh.geometry;
+    const fill = this.newFillMesh(name, geometry);
+    this._edges[name] = { mesh, name, fill };
   }
 
   private shapecast(mesh: THREE.Mesh, posAttr: any, index: number) {
