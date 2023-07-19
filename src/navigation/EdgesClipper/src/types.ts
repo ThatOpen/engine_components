@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry";
-import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2";
 
 /**
  * A style defines the appearance of the lines of the {@link ClippingEdges} for
@@ -29,11 +28,8 @@ export interface Edge {
   /** The name of the style to which this Edges belong. */
   name: string;
 
-  /** The geometry used to compute the Edges lines. */
-  generatorGeometry: THREE.BufferGeometry;
-
   /** The visible clipping lines in the scene. */
-  mesh: LineSegments2;
+  mesh: THREE.LineSegments;
 }
 
 /**

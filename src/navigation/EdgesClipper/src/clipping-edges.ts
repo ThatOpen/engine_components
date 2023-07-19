@@ -1,6 +1,4 @@
 import * as THREE from "three";
-import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry";
-import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2";
 import { Edge } from "./types";
 import { EdgesStyles } from "./edges-styles";
 import {
@@ -11,6 +9,7 @@ import {
   Event,
 } from "../../../base-types";
 import { Components, Disposer } from "../../../core";
+import { ClippingFills } from "./clipping-fills";
 
 export type Edges = {
   [name: string]: Edge;
@@ -29,6 +28,8 @@ export class ClippingEdges
   /** {@link Component.enabled}. */
   enabled = true;
 
+  fills: ClippingFills;
+
   protected _edges: Edges = {};
   protected _styles: EdgesStyles;
   protected _disposer = new Disposer();
@@ -39,8 +40,6 @@ export class ClippingEdges
   protected _tempVector = new THREE.Vector3();
   protected _components: Components;
   protected _plane: THREE.Plane;
-
-  protected static _basicEdges = new THREE.LineSegments();
 
   /** {@link Hideable.visible} */
   get visible() {
@@ -66,6 +65,7 @@ export class ClippingEdges
     this._components = components;
     this._plane = plane;
     this._styles = styles;
+    this.fills = new ClippingFills(components);
   }
 
   /** {@link Updateable.afterUpdate} */
@@ -91,36 +91,20 @@ export class ClippingEdges
   dispose() {
     const edges = Object.values(this._edges);
     for (const edge of edges) {
-      this._disposer.disposeGeometry(edge.generatorGeometry);
       this._disposer.dispose(edge.mesh, false);
     }
-    ClippingEdges._basicEdges.removeFromParent();
-    ClippingEdges._basicEdges.geometry.dispose();
-    ClippingEdges._basicEdges = new THREE.LineSegments();
-  }
-
-  // Initializes the helper geometry used to compute the vertices
-  private static newGeneratorGeometry() {
-    // create line geometry with enough data to hold 100000 segments
-    const generatorGeometry = new THREE.BufferGeometry();
-    const buffer = new Float32Array(300000);
-    const linePosAttr = new THREE.BufferAttribute(buffer, 3, false);
-    linePosAttr.setUsage(THREE.DynamicDrawUsage);
-    generatorGeometry.setAttribute("position", linePosAttr);
-    return generatorGeometry;
   }
 
   // Creates the geometry of the clipping edges
   private newThickEdges(styleName: string) {
     const styles = this._styles.get();
     const material = styles[styleName].material;
-    const thickLineGeometry = new LineSegmentsGeometry();
-    const thickEdges = new LineSegments2(thickLineGeometry, material);
-    thickEdges.material.polygonOffset = true;
-    thickEdges.material.polygonOffsetFactor = -2;
-    thickEdges.material.polygonOffsetUnits = 1;
-    thickEdges.renderOrder = 3;
-    return thickEdges;
+    const edgesGeometry = new THREE.BufferGeometry();
+    const buffer = new Float32Array(300000);
+    const linePosAttr = new THREE.BufferAttribute(buffer, 3, false);
+    linePosAttr.setUsage(THREE.DynamicDrawUsage);
+    edgesGeometry.setAttribute("position", linePosAttr);
+    return new THREE.LineSegments(edgesGeometry, material);
   }
 
   // Source: https://gkjohnson.github.io/three-mesh-bvh/example/bundle/clippedEdges.html
@@ -134,7 +118,7 @@ export class ClippingEdges
     const edges = this._edges[styleName];
 
     let index = 0;
-    const posAttr = edges.generatorGeometry.attributes.position;
+    const posAttr = edges.mesh.geometry.attributes.position;
 
     // @ts-ignore
     posAttr.array.fill(0);
@@ -176,20 +160,19 @@ export class ClippingEdges
     posAttr.needsUpdate = true;
 
     // Update the edges geometry only if there is no NaN in the output (which means there's been an error)
-    const attributes = edges.generatorGeometry.attributes;
+    const attributes = edges.mesh.geometry.attributes;
     const position = attributes.position as THREE.BufferAttribute;
     if (!Number.isNaN(position.array[0])) {
-      ClippingEdges._basicEdges.geometry = edges.generatorGeometry;
-      edges.mesh.geometry.fromLineSegments(ClippingEdges._basicEdges);
       const scene = this._components.scene.get();
       scene.add(edges.mesh);
+      console.log(edges.mesh);
+      this.fills.test(edges.mesh.geometry, this._plane);
     }
   }
 
   private initializeStyle(styleName: string) {
     this._edges[styleName] = {
       name: styleName,
-      generatorGeometry: ClippingEdges.newGeneratorGeometry(),
       mesh: this.newThickEdges(styleName),
     };
   }

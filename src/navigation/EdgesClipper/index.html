@@ -165,11 +165,11 @@
    */
 
 
-	const redLineMaterial = new LineMaterial({ color: 'blue', linewidth: 0.002 });
+	const redLineMaterial = new THREE.LineBasicMaterial({ color: 'blue' });
 	clipper.styles.create('Red lines', [cube], redLineMaterial);
 
-	const blueLineMaterial = new LineMaterial({ color: 'red', linewidth: 0.003 });
-	clipper.styles.create('Blue lines', [blueCube], blueLineMaterial);
+	// const blueLineMaterial = new THREE.LineBasicMaterial({ color: 'red' });
+	// clipper.styles.create('Blue lines', [blueCube], blueLineMaterial);
 
 	/*MD
 
