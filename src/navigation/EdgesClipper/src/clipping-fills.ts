@@ -6,18 +6,21 @@ import { Components } from "../../../core";
 export class ClippingFills {
   // readonly worker: Worker;
 
-  mesh = new Mesh();
+  mesh = new Mesh(
+    new THREE.BufferGeometry(),
+    new THREE.MeshBasicMaterial({
+      color: "white",
+      side: 2,
+    })
+  );
 
   private _components: Components;
 
   constructor(components: Components) {
     this._components = components;
     this._components.scene.get().add(this.mesh);
-    this.mesh.material = new THREE.MeshBasicMaterial({
-      color: "white",
-      side: 2,
-    });
-    this.mesh.position.y -= 0.1;
+
+    this.mesh.position.y -= 0.01;
     // const code = `
     //   addEventListener("message", (event) => {
     //     const { buffer } = event.data;
@@ -40,7 +43,7 @@ export class ClippingFills {
 
   test(geometry: THREE.BufferGeometry, plane: THREE.Plane) {
     // temp
-    this.mesh.geometry = geometry;
+    this.mesh.geometry.attributes.position = geometry.attributes.position;
 
     const range = geometry.drawRange.count;
     const buffer = geometry.attributes.position.array as Float32Array;
@@ -237,7 +240,7 @@ export class ClippingFills {
 
     const result = earcut(vertices);
     if (result.length) {
-      const mapped = result.map((index) => {
+      const mapped = result.map((index: number) => {
         const result = indexMap.get(index);
         if (result === undefined) throw new Error("Map error!");
         return result;

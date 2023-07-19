@@ -93,18 +93,18 @@
 
    */
 
-	const cubeGeometry = new THREE.BoxGeometry(3, 3, 3);
+	const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
 
 	const cubeMaterial = new THREE.MeshStandardMaterial({ color: '#6528D7' });
 	const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-	cube.position.set(-2, 1.5, 0);
+	cube.position.set(0.5, 0.5, 0.5);
 	scene.add(cube);
 	components.meshes.push(cube);
 
-	const blueCube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-	blueCube.position.set(2, 1.5, 0);
-	scene.add(blueCube);
-	components.meshes.push(blueCube);
+	// const blueCube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+	// blueCube.position.set(2, 1.5, 0);
+	// scene.add(blueCube);
+	// components.meshes.push(blueCube);
 
 	/*MD
 
