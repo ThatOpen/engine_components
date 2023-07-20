@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { FragmentMesh } from "bim-fragment/fragment-mesh";
 import { Edge } from "./types";
 import { EdgesStyles } from "./edges-styles";
 import {
@@ -27,6 +28,10 @@ export class ClippingEdges
 
   /** {@link Component.enabled}. */
   enabled = true;
+
+  protected blocksMap: { [fragmentID: string]: number[] } = {};
+  protected fragmentSeams: number[] = [];
+  protected lastBlock = 0;
 
   protected _edges: Edges = {};
   protected _styles: EdgesStyles;
@@ -112,6 +117,9 @@ export class ClippingEdges
 
   // Source: https://gkjohnson.github.io/three-mesh-bvh/example/bundle/clippedEdges.html
   private drawEdges(styleName: string) {
+    this.fragmentSeams = [];
+    this.lastBlock = 0;
+
     const style = this._styles.get()[styleName];
 
     if (!this._edges[styleName]) {
@@ -161,7 +169,22 @@ export class ClippingEdges
       } else {
         this._inverseMatrix.copy(mesh.matrixWorld).invert();
         this._localPlane.copy(this._plane).applyMatrix4(this._inverseMatrix);
-        index = this.shapecast(mesh, posAttr, index);
+
+        const isFragment = mesh instanceof FragmentMesh;
+        if (isFragment && !this.blocksMap[mesh.id]) {
+          const fMesh = mesh as FragmentMesh;
+          // TODO: Make this accesible from fragments library
+          // @ts-ignore
+          const map = fMesh.fragment.blocks.blocksMap.indices.map;
+          const blocks: number[] = [];
+          for (const entry of map) {
+            const value = entry[1][0][1];
+            blocks.push(value);
+          }
+          this.blocksMap[fMesh.id] = blocks;
+        }
+
+        index = this.shapecast(mesh, posAttr, index, isFragment);
 
         if (index !== lastIndex) {
           indexes.push(index);
@@ -169,6 +192,8 @@ export class ClippingEdges
         }
       }
     });
+
+    console.log(this.fragmentSeams);
 
     // set the draw range to only the new segments and offset the lines so they don't intersect with the geometry
     edges.mesh.geometry.setDrawRange(0, index);
@@ -181,7 +206,7 @@ export class ClippingEdges
     if (!Number.isNaN(position.array[0])) {
       const scene = this._components.scene.get();
       scene.add(edges.mesh);
-      edges.fill.update(indexes);
+      edges.fill.update(indexes, this.fragmentSeams);
       scene.add(edges.fill.mesh);
       console.log(indexes);
     }
@@ -194,7 +219,12 @@ export class ClippingEdges
     this._edges[name] = { mesh, name, fill };
   }
 
-  private shapecast(mesh: THREE.Mesh, posAttr: any, index: number) {
+  private shapecast(
+    mesh: THREE.Mesh,
+    posAttr: any,
+    index: number,
+    isMultiblockFragment = false
+  ) {
     // @ts-ignore
     mesh.geometry.boundsTree.shapecast({
       intersectsBounds: (box: any) => {
@@ -202,7 +232,25 @@ export class ClippingEdges
       },
 
       // @ts-ignore
-      intersectsTriangle: (tri: any) => {
+      intersectsTriangle: (tri: any, triangleIndex: number) => {
+        if (isMultiblockFragment) {
+          const fMesh = mesh as FragmentMesh;
+          const blocks = this.blocksMap[fMesh.id];
+          if (!blocks) {
+            throw new Error("Blocks not found");
+          }
+          for (let i = 0; i < blocks.length; i++) {
+            const block = blocks[i];
+            if (block >= triangleIndex * 3) {
+              if (this.lastBlock !== i) {
+                this.fragmentSeams.push(index);
+                this.lastBlock = i;
+              }
+              break;
+            }
+          }
+        }
+
         // check each triangle edge to see if it intersects with the plane. If so then
         // add it to the list of segments.
         let count = 0;

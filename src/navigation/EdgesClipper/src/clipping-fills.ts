@@ -42,16 +42,30 @@ export class ClippingFills {
     (this._geometry as any) = null;
   }
 
-  update(elements: number[]) {
+  update(elements: number[], seams: number[]) {
     const buffer = this._geometry.attributes.position.array as Float32Array;
     if (!buffer) return;
 
     this.updateCoordinateSystem();
 
+    const j = 0;
+
     const allIndices: number[] = [];
     let start = 0;
     for (let i = 0; i < elements.length; i++) {
       const end = elements[i] * 3;
+
+      const currentSeam = seams[j] * 3;
+      const isSeam = seams.length && seams.length > j;
+
+      if (isSeam && currentSeam > start && currentSeam < end) {
+        const indices = this.computeFill(start, currentSeam, buffer);
+        for (const index of indices) {
+          allIndices.push(index);
+        }
+        start = currentSeam;
+      }
+
       const indices = this.computeFill(start, end, buffer);
       for (const index of indices) {
         allIndices.push(index);
