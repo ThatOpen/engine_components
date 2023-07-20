@@ -126,14 +126,18 @@ export class FragmentIfcLoader
   private async readAllGeometries() {
     this._converter.saveIfcCategories(this._webIfc);
 
+    // const isolated = new Set<number>([186]);
+
     // Some categories (like IfcSpace) need to be created explicitly
     const optionals = this.settings.optionalCategories;
     const callback = (mesh: WEBIFC.FlatMesh) => {
+      // if (!isolated.has(mesh.expressID)) return;
       this._geometry.streamMesh(this._webIfc, mesh);
     };
     this._webIfc.StreamAllMeshesWithTypes(0, optionals, callback);
 
     this._webIfc.StreamAllMeshes(0, (mesh: WEBIFC.FlatMesh) => {
+      // if (!isolated.has(mesh.expressID)) return;
       this._geometry.streamMesh(this._webIfc, mesh);
     });
   }

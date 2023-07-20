@@ -106,7 +106,9 @@ export class ClippingEdges
     const linePosAttr = new THREE.BufferAttribute(buffer, 3, false);
     linePosAttr.setUsage(THREE.DynamicDrawUsage);
     edgesGeometry.setAttribute("position", linePosAttr);
-    return new THREE.LineSegments(edgesGeometry, material);
+    const lines = new THREE.LineSegments(edgesGeometry, material);
+    lines.frustumCulled = false;
+    return lines;
   }
 
   private newFillMesh(name: string, geometry: THREE.BufferGeometry) {

@@ -158,11 +158,20 @@
 	// For debugging
 
 	fragmentIfcLoader.ifcLoaded.on((model) => {
-		const meshes = model.items.map(frag => frag.mesh);
+
+		const classifier = new OBC.FragmentClassifier();
+		classifier.byEntity(model);
+		const allWalls = [];
+		const standardWalls = classifier.find({entities: "IFCWALLSTANDARDCASE"});
+		const walls = classifier.find({entities: "IFCWALLSTANDARDCASE"});
+		for(const wall in standardWalls) allWalls.push(wall);
+		for(const wall in walls) allWalls.push(wall);
+
+		const wallMeshes = allWalls.map(id => fragments.list[id].mesh);
 
 		const blueFill = new THREE.MeshBasicMaterial({color: 'lightblue', side: 2});
 		const blueLine = new THREE.LineBasicMaterial({ color: 'blue' });
-		clipper.styles.create('Red lines', meshes, blueLine, blueFill);
+		clipper.styles.create('Red lines', wallMeshes, blueLine, blueFill);
 
 	  // let sorted = [];
 	  // for(const frag of model.fragments) {

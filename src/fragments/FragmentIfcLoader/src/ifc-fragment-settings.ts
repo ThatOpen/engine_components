@@ -5,8 +5,11 @@ export class IfcFragmentSettings {
   /** Whether to extract the IFC properties into a JSON. */
   includeProperties = true;
 
-  /** Generate the geometry for categories that are not included by default. */
-  optionalCategories: number[] = [WEBIFC.IFCSPACE];
+  /**
+   * Generate the geometry for categories that are not included by default,
+   * like IFCSPACE.
+   */
+  optionalCategories: number[] = [];
 
   /** Path of the WASM for [web-ifc](https://github.com/ifcjs/web-ifc). */
   wasm = {
