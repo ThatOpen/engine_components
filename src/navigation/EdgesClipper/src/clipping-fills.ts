@@ -44,55 +44,71 @@ export class ClippingFills {
     (this._geometry as any) = null;
   }
 
-  update(elements: number[], blockByIndex: number[]) {
+  update(elements: number[], blockByIndex: { [index: number]: number }) {
     const buffer = this._geometry.attributes.position.array as Float32Array;
     if (!buffer) return;
 
     this.updateCoordinateSystem();
 
-    const j = 0;
-
     const allIndices: number[] = [];
     let start = 0;
     for (let i = 0; i < elements.length; i++) {
-      const end = elements[i] * 3;
+      const end = elements[i];
 
-      const indices = this.computeFill(start, end, buffer);
-      for (const index of indices) {
-        allIndices.push(index);
+      const verticesByBlock: { [block: number]: number[] } = {};
+
+      for (let j = start; j < end; j += 2) {
+        let block = blockByIndex[j];
+        if (block === undefined) {
+          block = -1;
+        }
+        if (!verticesByBlock[block]) {
+          verticesByBlock[block] = [];
+        }
+        verticesByBlock[block].push(j * 3);
       }
+
+      for (const block in verticesByBlock) {
+        const vertices = verticesByBlock[block];
+        if (!vertices.length) continue;
+        const indices = this.computeFill(vertices, buffer);
+        for (const index of indices) {
+          allIndices.push(index);
+        }
+      }
+
       start = end;
     }
     this.mesh.geometry.setIndex(allIndices);
   }
 
-  private computeFill(offset: number, finish: number, buffer: Float32Array) {
+  private computeFill(vertices: number[], buffer: Float32Array) {
     const indices = new Map();
     const all2DVertices: { [index: number]: [number, number] } = {};
     const shapes = new Map<number, number[]>();
     let nextShapeID = 0;
     const shapesEnds = new Map();
     const shapesStarts = new Map();
+    const openShapes = new Set();
 
     const p = this._precission;
 
-    for (let i = offset; i < finish; i += 6) {
+    for (let i = 0; i < vertices.length; i++) {
       // Convert vertices to indices
 
-      const startIndex = i;
-      const endIndex = i + 3;
+      const startVertexIndex = vertices[i];
 
       let x1 = 0;
       let y1 = 0;
       let x2 = 0;
       let y2 = 0;
 
-      const globalX1 = buffer[startIndex];
-      const globalY1 = buffer[i + 1];
-      const globalZ1 = buffer[i + 2];
-      const globalX2 = buffer[endIndex + 3];
-      const globalY2 = buffer[i + 4];
-      const globalZ2 = buffer[i + 5];
+      const globalX1 = buffer[startVertexIndex];
+      const globalY1 = buffer[startVertexIndex + 1];
+      const globalZ1 = buffer[startVertexIndex + 2];
+      const globalX2 = buffer[startVertexIndex + 3];
+      const globalY2 = buffer[startVertexIndex + 4];
+      const globalZ2 = buffer[startVertexIndex + 5];
 
       if (this._isPlaneHorizontal) {
         x1 = Math.trunc(globalX1 * p) / p;
@@ -115,10 +131,10 @@ export class ClippingFills {
       const endCode = `${x2}|${y2}`;
 
       if (!indices.has(startCode)) {
-        indices.set(startCode, i / 3);
+        indices.set(startCode, startVertexIndex / 3);
       }
       if (!indices.has(endCode)) {
-        indices.set(endCode, i / 3 + 1);
+        indices.set(endCode, startVertexIndex / 3 + 1);
       }
 
       const start = indices.get(startCode);
@@ -142,6 +158,7 @@ export class ClippingFills {
         // New shape
         shapesStarts.set(start, nextShapeID);
         shapesEnds.set(end, nextShapeID);
+        openShapes.add(nextShapeID);
         shapes.set(nextShapeID, [start, end]);
         nextShapeID++;
       } else if (startMatchesStart && endMatchesEnd) {
@@ -154,6 +171,7 @@ export class ClippingFills {
           const endShape = shapes.get(endIndex);
           const startShape = shapes.get(startIndex);
           shapes.delete(startIndex);
+          openShapes.delete(startIndex);
           if (!endShape || !startShape) {
             throw new Error("Shape error!");
           }
@@ -161,6 +179,8 @@ export class ClippingFills {
             shapesEnds.set(index, endIndex);
             endShape.push(index);
           }
+        } else {
+          openShapes.delete(endIndex);
         }
         shapesStarts.delete(start);
         shapesEnds.delete(end);
@@ -174,6 +194,7 @@ export class ClippingFills {
           const endShape = shapes.get(endIndex);
           const startShape = shapes.get(startIndex);
           shapes.delete(startIndex);
+          openShapes.delete(startIndex);
           if (!endShape || !startShape) {
             throw new Error("Shape error!");
           }
@@ -181,6 +202,8 @@ export class ClippingFills {
             shapesEnds.set(index, endIndex);
             endShape.push(index);
           }
+        } else {
+          openShapes.delete(endIndex);
         }
         shapesStarts.delete(end);
         shapesEnds.delete(start);
@@ -229,8 +252,10 @@ export class ClippingFills {
 
     const trueIndices: number[] = [];
 
-    for (const entry of shapes) {
-      const shape = entry[1];
+    for (const [id, shape] of shapes) {
+      if (openShapes.has(id)) {
+        continue;
+      }
 
       const vertices: number[] = [];
       const indexMap = new Map();

@@ -30,7 +30,7 @@ export class ClippingEdges
   enabled = true;
 
   protected blocksMap: { [fragmentID: string]: number[] } = {};
-  protected blockByIndex: number[] = [];
+  protected blockByIndex: { [index: number]: number } = {};
   protected lastBlock = 0;
 
   protected _edges: Edges = {};
@@ -117,7 +117,7 @@ export class ClippingEdges
 
   // Source: https://gkjohnson.github.io/three-mesh-bvh/example/bundle/clippedEdges.html
   private drawEdges(styleName: string) {
-    this.blockByIndex = [];
+    this.blockByIndex = {};
 
     const style = this._styles.get()[styleName];
 
@@ -276,7 +276,7 @@ export class ClippingEdges
           for (let i = 0; i < blocks.length; i++) {
             const block = blocks[i];
             if (block >= vertexIndex) {
-              this.blockByIndex.push(i);
+              this.blockByIndex[index - 2] = i;
               break;
             }
           }
