@@ -7,6 +7,8 @@ export class ClippingFills {
 
   mesh = new Mesh(new THREE.BufferGeometry());
 
+  private _precission = 10000;
+  private _tempVector = new THREE.Vector3();
   private _plane: THREE.Plane;
   private _geometry: THREE.BufferGeometry;
   private _coordinateSystem = new THREE.Matrix4();
@@ -42,7 +44,7 @@ export class ClippingFills {
     (this._geometry as any) = null;
   }
 
-  update(elements: number[], seams: number[]) {
+  update(elements: number[], blockByIndex: number[]) {
     const buffer = this._geometry.attributes.position.array as Float32Array;
     if (!buffer) return;
 
@@ -55,17 +57,6 @@ export class ClippingFills {
     for (let i = 0; i < elements.length; i++) {
       const end = elements[i] * 3;
 
-      const currentSeam = seams[j] * 3;
-      const isSeam = seams.length && seams.length > j;
-
-      if (isSeam && currentSeam > start && currentSeam < end) {
-        const indices = this.computeFill(start, currentSeam, buffer);
-        for (const index of indices) {
-          allIndices.push(index);
-        }
-        start = currentSeam;
-      }
-
       const indices = this.computeFill(start, end, buffer);
       for (const index of indices) {
         allIndices.push(index);
@@ -75,7 +66,7 @@ export class ClippingFills {
     this.mesh.geometry.setIndex(allIndices);
   }
 
-  private computeFill(offset: number, count: number, buffer: Float32Array) {
+  private computeFill(offset: number, finish: number, buffer: Float32Array) {
     const indices = new Map();
     const all2DVertices: { [index: number]: [number, number] } = {};
     const shapes = new Map<number, number[]>();
@@ -83,23 +74,23 @@ export class ClippingFills {
     const shapesEnds = new Map();
     const shapesStarts = new Map();
 
-    const tempVector = new THREE.Vector3();
+    const p = this._precission;
 
-    // precision
-    const p = 1000;
-
-    for (let i = offset; i < count; i += 6) {
+    for (let i = offset; i < finish; i += 6) {
       // Convert vertices to indices
+
+      const startIndex = i;
+      const endIndex = i + 3;
 
       let x1 = 0;
       let y1 = 0;
       let x2 = 0;
       let y2 = 0;
 
-      const globalX1 = buffer[i];
+      const globalX1 = buffer[startIndex];
       const globalY1 = buffer[i + 1];
       const globalZ1 = buffer[i + 2];
-      const globalX2 = buffer[i + 3];
+      const globalX2 = buffer[endIndex + 3];
       const globalY2 = buffer[i + 4];
       const globalZ2 = buffer[i + 5];
 
@@ -109,19 +100,19 @@ export class ClippingFills {
         x2 = Math.trunc(globalX2 * p) / p;
         y2 = Math.trunc(globalZ2 * p) / p;
       } else {
-        tempVector.set(globalX1, globalY1, globalZ1);
-        tempVector.applyMatrix4(this._coordinateSystem);
-        x1 = Math.trunc(tempVector.x * p) / p;
-        y1 = Math.trunc(tempVector.y * p) / p;
+        this._tempVector.set(globalX1, globalY1, globalZ1);
+        this._tempVector.applyMatrix4(this._coordinateSystem);
+        x1 = Math.trunc(this._tempVector.x * p) / p;
+        y1 = Math.trunc(this._tempVector.y * p) / p;
 
-        tempVector.set(globalX2, globalY2, globalZ2);
-        tempVector.applyMatrix4(this._coordinateSystem);
-        x2 = Math.trunc(tempVector.x * p) / p;
-        y2 = Math.trunc(tempVector.y * p) / p;
+        this._tempVector.set(globalX2, globalY2, globalZ2);
+        this._tempVector.applyMatrix4(this._coordinateSystem);
+        x2 = Math.trunc(this._tempVector.x * p) / p;
+        y2 = Math.trunc(this._tempVector.y * p) / p;
       }
 
-      const startCode = `${x1}-${y1}`;
-      const endCode = `${x2}-${y2}`;
+      const startCode = `${x1}|${y1}`;
+      const endCode = `${x2}|${y2}`;
 
       if (!indices.has(startCode)) {
         indices.set(startCode, i / 3);

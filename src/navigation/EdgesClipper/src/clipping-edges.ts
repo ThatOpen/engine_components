@@ -30,7 +30,7 @@ export class ClippingEdges
   enabled = true;
 
   protected blocksMap: { [fragmentID: string]: number[] } = {};
-  protected fragmentSeams: number[] = [];
+  protected blockByIndex: number[] = [];
   protected lastBlock = 0;
 
   protected _edges: Edges = {};
@@ -117,8 +117,7 @@ export class ClippingEdges
 
   // Source: https://gkjohnson.github.io/three-mesh-bvh/example/bundle/clippedEdges.html
   private drawEdges(styleName: string) {
-    this.fragmentSeams = [];
-    this.lastBlock = 0;
+    this.blockByIndex = [];
 
     const style = this._styles.get()[styleName];
 
@@ -193,8 +192,6 @@ export class ClippingEdges
       }
     });
 
-    console.log(this.fragmentSeams);
-
     // set the draw range to only the new segments and offset the lines so they don't intersect with the geometry
     edges.mesh.geometry.setDrawRange(0, index);
     edges.mesh.position.copy(this._plane.normal).multiplyScalar(0.0001);
@@ -206,9 +203,8 @@ export class ClippingEdges
     if (!Number.isNaN(position.array[0])) {
       const scene = this._components.scene.get();
       scene.add(edges.mesh);
-      edges.fill.update(indexes, this.fragmentSeams);
+      edges.fill.update(indexes, this.blockByIndex);
       scene.add(edges.fill.mesh);
-      console.log(indexes);
     }
   }
 
@@ -233,24 +229,6 @@ export class ClippingEdges
 
       // @ts-ignore
       intersectsTriangle: (tri: any, triangleIndex: number) => {
-        if (isMultiblockFragment) {
-          const fMesh = mesh as FragmentMesh;
-          const blocks = this.blocksMap[fMesh.id];
-          if (!blocks) {
-            throw new Error("Blocks not found");
-          }
-          for (let i = 0; i < blocks.length; i++) {
-            const block = blocks[i];
-            if (block >= triangleIndex * 3) {
-              if (this.lastBlock !== i) {
-                this.fragmentSeams.push(index);
-                this.lastBlock = i;
-              }
-              break;
-            }
-          }
-        }
-
         // check each triangle edge to see if it intersects with the plane. If so then
         // add it to the list of segments.
         let count = 0;
@@ -285,6 +263,23 @@ export class ClippingEdges
         // more gracefully.
         if (count !== 2) {
           index -= count;
+        }
+
+        if (count === 2 && isMultiblockFragment) {
+          const fMesh = mesh as FragmentMesh;
+          const blocks = this.blocksMap[fMesh.id];
+          if (!blocks) {
+            throw new Error("Blocks not found");
+          }
+
+          const vertexIndex = fMesh.geometry.index.array[triangleIndex * 3];
+          for (let i = 0; i < blocks.length; i++) {
+            const block = blocks[i];
+            if (block >= vertexIndex) {
+              this.blockByIndex.push(i);
+              break;
+            }
+          }
         }
       },
     });
