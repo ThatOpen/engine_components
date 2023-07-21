@@ -108,27 +108,44 @@ export class FragmentHighlighter
 
     fragments.push(mesh.fragment);
     const blockID = mesh.fragment.getVertexBlockID(geometry, index);
-    const itemID = mesh.fragment.getItemID(instanceID, blockID);
+
+    const itemID = mesh.fragment
+      .getItemID(instanceID, blockID)
+      .replace(/\..*/, "");
+
+    const idNum = parseInt(itemID, 10);
     this.selection[name][mesh.uuid].add(itemID);
+    this.addComposites(mesh, idNum, name);
     this.updateFragmentHighlight(name, mesh.uuid);
 
     const group = mesh.fragment.group;
     if (group) {
-      const idNum = parseInt(itemID, 10);
       const keys = group.data[idNum][0];
       for (let i = 0; i < keys.length; i++) {
         const fragKey = keys[i];
         const fragID = group.keyFragments[fragKey];
-        fragments.push(this._fragments.list[fragID]);
+        const fragment = this._fragments.list[fragID];
+        fragments.push(fragment);
         if (!this.selection[name][fragID]) {
           this.selection[name][fragID] = new Set<string>();
         }
         this.selection[name][fragID].add(itemID);
+        this.addComposites(fragment.mesh, idNum, name);
         this.updateFragmentHighlight(name, fragID);
       }
     }
 
     return { id: itemID, fragments };
+  }
+
+  private addComposites(mesh: FragmentMesh, itemID: number, name: string) {
+    const composites = mesh.fragment.composites[itemID];
+    if (composites) {
+      for (let i = 1; i < composites; i++) {
+        const compositeID = (itemID + i * 0.001).toString();
+        this.selection[name][mesh.uuid].add(compositeID);
+      }
+    }
   }
 
   highlightByID(

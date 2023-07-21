@@ -150,19 +150,39 @@ export class DataConverter {
       const fragment = new FRAGS.Fragment(buffer, material, instances.length);
       this._keyFragmentMap[this._fragmentKey] = fragment.id;
 
+      const previousIDs = new Set<number>();
+
       for (let i = 0; i < instances.length; i++) {
         const instance = instances[i];
         matrix.fromArray(instance.matrix);
         const { expressID } = instance;
+
+        let instanceID = expressID;
+        let isRepeated = false;
+        if (!previousIDs.has(expressID)) {
+          previousIDs.add(expressID);
+        } else if (!fragment.composites[expressID]) {
+          fragment.composites[expressID] = 2;
+          instanceID += 0.001;
+          isRepeated = true;
+        } else {
+          fragment.composites[expressID]++;
+          instanceID += (fragment.composites[expressID] - 1) * 0.001;
+          isRepeated = true;
+        }
+
         fragment.setInstance(i, {
-          ids: [expressID.toString()],
+          ids: [instanceID.toString()],
           transform: matrix,
         });
 
         const { x, y, z } = instance.color;
         color.setRGB(x, y, z, "srgb");
         fragment.mesh.setColorAt(i, color);
-        this.saveExpressID(expressID.toString());
+
+        if (!isRepeated) {
+          this.saveExpressID(expressID.toString());
+        }
       }
 
       fragment.mesh.updateMatrix();
@@ -229,13 +249,7 @@ export class DataConverter {
       const rels: number[] = [];
       const idNum = parseInt(id, 10);
       const level = this._spatialTree.itemsByFloor[idNum] || 0;
-      if (level === -1) {
-        console.log(`level - ${id}`);
-      }
       const category = this._categories[idNum] || 0;
-      if (category === -1) {
-        console.log(`category - ${id}`);
-      }
       rels.push(level, category);
       for (const key of this._itemKeyMap[id]) {
         keys.push(key);

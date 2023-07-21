@@ -30,6 +30,7 @@ export class FragmentHider extends Component<void> implements Disposable {
           this.updateCulledVisibility(fragment);
         }
       }
+      return;
     }
     for (const fragID in items) {
       const ids = items[fragID];
