@@ -66,13 +66,13 @@
 	postproduction._customEffects.excludedMeshes.push(gridMesh);
 
     /*MD
-    ### Seamless Floor Plan Integration
+    ### 🪑 Seamless Floor Plan Integration
     ---
     While 3D technology and representations have become increasingly prevalent, 2D technology remains an essential tool,
     particularly in the context of BIM.
 
     The significance of 2D Floor Plans lies in their ability to convey important information
-    and facilitate planning.
+    and facilitate planning.👷🏽
 
     Along with loading 3D BIM files, we have made sure that we don't leave 2D Floor Plans behind. Let's get started!
 
@@ -120,11 +120,11 @@
 
     /*MD
 
-    ### Mastering Edges for Floor Plans
+    ### 🥋 Mastering Edges for Floor Plans
     ---
 
     After classifying the Floors according to properties, we need to slice these Floors dynamically
-    and apply beautiful outlines for the sliced floors.
+    and apply beautiful outlines for the sliced floors.🪚
 
     For doing so, we will use [**Edges Clipper**](../api/classes/components.EdgesClipper).
     Also, we will define the `sectionMaterial` by using **LineMaterial**.
@@ -141,7 +141,7 @@
     :::info Aesthetic Clipping Edges
 
     ⭕️ If you're curious about how the Edges Clipper works, we have a tutorial on how to use Edges Clipper to slice **IFC files**.
-    Check out the [tutorial here](FragmentManager.mdx)!
+    Check out the [tutorial here](EdgesClipper.mdx)!
 
     :::
 
@@ -166,7 +166,7 @@
     #### Changing Background Color
 
     For this tutorial, we will be changing background color when we are in **Plan View**,
-    this can be easily done using `materialManager.setBackgroundColor(whiteColor)`
+    this can be easily done using `**materialManager.setBackgroundColor(whiteColor)**`
 
     To know more in detail about **Material Manager** you can checkout [**this tutorial**](MaterialManager.mdx)📝
 
@@ -174,7 +174,7 @@
     ---
 
     Here comes the interesting part, we will use [**Plan Navigator**](../api/classes/components.PlanNavigator) to generate
-    the Floor Plans for model dynamically. We will have to compute the plans for model using **computeAllPlanViews**.🧪
+    the Floor Plans for model dynamically. We will have to compute the plans for model using **computeAllPlanViews()**.🧪
 
     Computing Plans make them ready to use!💪
 
@@ -186,11 +186,11 @@
 
     /*MD
 
-    The Floor Plans are now ready, and we can access them using `plans.get`.
+    The Floor Plans are now ready, and we can access them using `plans.get()`.
 
     #### 🎥 Navigating to Floor Plans
 
-    Every plan that has been computed has a [`**plan.id**`](../api/classes/components.PlanNavigator#goto)
+    Every plan that has been computed has a [**`plan.id`**](../api/classes/components.PlanNavigator#goto)
     which will help us navigate to the particular Floor Plan.
 
     ### 🌡️ Screen Culling for Better Performance
@@ -220,7 +220,7 @@
     :::
 
     Well done! 🎉 It is now more than easier to generate and view Floor Plans using **[Plan Navigator Component](../api/classes/components.PlanNavigator)**.
-    Along with providing 3D capability, your BIM app can now support 2D floor plans as well.🧐
+    Along with providing 3D capability, your BIM app can now support 2D floor plans as well.📐
 
     Let's keep it up and check out another tutorial! 🎓
 
