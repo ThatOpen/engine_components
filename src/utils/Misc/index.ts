@@ -1,6 +1,23 @@
 import { Fragment } from "bim-fragment";
 import * as THREE from "three";
 
+export function numberOfDigits(x: number) {
+  return Math.max(Math.floor(Math.log10(Math.abs(x))), 0) + 1;
+}
+
+export function toCompositeID(id: number, count: number) {
+  const factor = 0.1 ** numberOfDigits(count);
+  id += count * factor;
+  let idString = id.toString();
+  // add missing zeros
+  if (count % 10 === 0) {
+    for (let i = 0; i < factor; i++) {
+      idString += "0";
+    }
+  }
+  return idString;
+}
+
 // Temporal id generator until the IFC id algorithm is implemented.
 export function tooeenRandomId() {
   const characters =

@@ -3,6 +3,7 @@ import { Disposable } from "../../base-types";
 import { Component } from "../../base-types/component";
 import { FragmentManager } from "../FragmentManager";
 import { IfcCategoryMap } from "../../ifc";
+import { toCompositeID } from "../../utils";
 
 // TODO: Clean up and document
 
@@ -95,6 +96,15 @@ export class FragmentClassifier
             result[guid] = [];
           }
           result[guid].push(id);
+          const fragment = this._fragments.list[guid];
+          const composites = fragment.composites[id];
+          if (composites) {
+            const idNum = parseInt(id, 10);
+            for (let i = 1; i < composites; i++) {
+              const compositeID = toCompositeID(idNum, i);
+              result[guid].push(compositeID);
+            }
+          }
         }
       }
     }

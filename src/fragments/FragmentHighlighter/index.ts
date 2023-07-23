@@ -4,6 +4,7 @@ import { FragmentMesh } from "bim-fragment/fragment-mesh";
 import { Component, Disposable, Event, FragmentIdMap } from "../../base-types";
 import { FragmentManager } from "../index";
 import { Components } from "../../core";
+import { toCompositeID } from "../../utils";
 
 // TODO: Clean up and document
 
@@ -138,16 +139,6 @@ export class FragmentHighlighter
     return { id: itemID, fragments };
   }
 
-  private addComposites(mesh: FragmentMesh, itemID: number, name: string) {
-    const composites = mesh.fragment.composites[itemID];
-    if (composites) {
-      for (let i = 1; i < composites; i++) {
-        const compositeID = (itemID + i * 0.001).toString();
-        this.selection[name][mesh.uuid].add(compositeID);
-      }
-    }
-  }
-
   highlightByID(
     name: string,
     ids: { [fragmentID: string]: Set<string> | string[] },
@@ -162,8 +153,15 @@ export class FragmentHighlighter
       if (!styles[fragID]) {
         styles[fragID] = new Set<string>();
       }
+      const fragment = this._fragments.list[fragID];
+
+      const idsNum = new Set<number>();
       for (const id of ids[fragID]) {
         styles[fragID].add(id);
+        idsNum.add(parseInt(id, 10));
+      }
+      for (const id of idsNum) {
+        this.addComposites(fragment.mesh, id, name);
       }
       this.updateFragmentHighlight(name, fragID);
     }
@@ -176,6 +174,16 @@ export class FragmentHighlighter
     const names = name ? [name] : Object.keys(this.selection);
     for (const name of names) {
       this.clearStyle(name);
+    }
+  }
+
+  private addComposites(mesh: FragmentMesh, itemID: number, name: string) {
+    const composites = mesh.fragment.composites[itemID];
+    if (composites) {
+      for (let i = 1; i < composites; i++) {
+        const compositeID = toCompositeID(itemID, i);
+        this.selection[name][mesh.uuid].add(compositeID);
+      }
     }
   }
 

@@ -2,7 +2,7 @@ import { UIComponent, UI } from "./base-types";
 import { Component } from "./component";
 import { DrawManager } from "../annotation/DrawManager";
 import { Button } from "../ui/ButtonComponent";
-import { tooeenRandomId } from "../utils/utils";
+import { tooeenRandomId } from "../utils";
 
 export interface SVGAnnotationStyle {
   fillColor: string;

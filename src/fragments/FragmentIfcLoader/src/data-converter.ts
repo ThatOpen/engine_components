@@ -11,6 +11,7 @@ import {
 import { SpatialStructure } from "./spatial-structure";
 import { IfcFragmentSettings } from "./ifc-fragment-settings";
 import { IfcGeometries } from "./types";
+import { toCompositeID } from "../../../utils";
 
 export class DataConverter {
   settings = new IfcFragmentSettings();
@@ -157,22 +158,22 @@ export class DataConverter {
         matrix.fromArray(instance.matrix);
         const { expressID } = instance;
 
-        let instanceID = expressID;
-        let isRepeated = false;
+        let instanceID = expressID.toString();
+        let isComposite = false;
         if (!previousIDs.has(expressID)) {
           previousIDs.add(expressID);
-        } else if (!fragment.composites[expressID]) {
-          fragment.composites[expressID] = 2;
-          instanceID += 0.001;
-          isRepeated = true;
         } else {
+          if (!fragment.composites[expressID]) {
+            fragment.composites[expressID] = 1;
+          }
+          const count = fragment.composites[expressID];
+          instanceID = toCompositeID(expressID, count);
+          isComposite = true;
           fragment.composites[expressID]++;
-          instanceID += (fragment.composites[expressID] - 1) * 0.001;
-          isRepeated = true;
         }
 
         fragment.setInstance(i, {
-          ids: [instanceID.toString()],
+          ids: [instanceID],
           transform: matrix,
         });
 
@@ -180,7 +181,7 @@ export class DataConverter {
         color.setRGB(x, y, z, "srgb");
         fragment.mesh.setColorAt(i, color);
 
-        if (!isRepeated) {
+        if (!isComposite) {
           this.saveExpressID(expressID.toString());
         }
       }

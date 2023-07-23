@@ -129,13 +129,13 @@ export class FragmentIfcLoader
     // Some categories (like IfcSpace) need to be created explicitly
     const optionals = this.settings.optionalCategories;
     const callback = (mesh: WEBIFC.FlatMesh) => {
-      if (mesh.expressID !== 32063) return;
+      // if (mesh.expressID !== 32063) return;
       this._geometry.streamMesh(this._webIfc, mesh);
     };
     this._webIfc.StreamAllMeshesWithTypes(0, optionals, callback);
 
     this._webIfc.StreamAllMeshes(0, (mesh: WEBIFC.FlatMesh) => {
-      if (mesh.expressID !== 32063) return;
+      // if (mesh.expressID !== 32063) return;
       this._geometry.streamMesh(this._webIfc, mesh);
     });
   }
