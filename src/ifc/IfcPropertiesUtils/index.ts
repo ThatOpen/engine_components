@@ -161,7 +161,6 @@ export class IfcPropertiesUtils {
     properties: IfcProperties,
     expressID: number,
     attribute: string
-    // caseSensitive = true
   ) {
     const entity = properties[expressID];
     if (!entity) return false;

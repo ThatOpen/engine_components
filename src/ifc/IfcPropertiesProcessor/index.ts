@@ -43,7 +43,7 @@ type RenderFunction = (
 export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
   name: string = "PropertiesParser";
   enabled: boolean = true;
-  uiElement!: { container: FloatingWindow; showButton: Button };
+  uiElement: { propertiesWindow: FloatingWindow; main: Button };
 
   relationsToProcess = [
     WEBIFC.IFCRELDEFINESBYPROPERTIES,
@@ -117,6 +117,12 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
       this._newPsetInput
     );
 
+    this.uiElement = {
+      main: new Button(components, {
+        materialIconName: "list",
+      }),
+      propertiesWindow: new FloatingWindow(components),
+    };
     this.setUI();
 
     this._renderFunctions = {
@@ -134,23 +140,19 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
   }
 
   private setUI() {
-    const container = new FloatingWindow(this._components);
-    this._components.ui.add(container);
-    container.title = "Properties List";
-    container.visible = false;
+    this._components.ui.add(this.uiElement.propertiesWindow);
+    this.uiElement.propertiesWindow.title = "Element Properties";
+    this.uiElement.propertiesWindow.visible = false;
 
-    container.addChild(this._propsList);
+    this.uiElement.propertiesWindow.addChild(this._propsList);
 
-    const showButton = new Button(this._components, {
-      materialIconName: "list",
-    });
-
-    showButton.onclick = () => {
-      container.visible = !container.visible;
+    this.uiElement.main.onclick = () => {
+      this.uiElement.propertiesWindow.visible =
+        !this.uiElement.propertiesWindow.visible;
     };
 
     this._editContainerPopper = createPopper(
-      container.get(),
+      this.uiElement.propertiesWindow.get(),
       this._editContainer.get(),
       {
         modifiers: [
@@ -168,13 +170,21 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
 
     this._editContainerPopper.setOptions({ placement: "right" });
 
-    container.onMoved.on(() => this._editContainerPopper.update());
-    container.onResized.on(() => this._editContainerPopper.update());
-    container.onHidden.on(() => (this._editInput.visible = false));
-    container.onVisible.on(() => (showButton.active = true));
-    container.onHidden.on(() => (showButton.active = false));
-
-    this.uiElement = { container, showButton };
+    this.uiElement.propertiesWindow.onMoved.on(() =>
+      this._editContainerPopper.update()
+    );
+    this.uiElement.propertiesWindow.onResized.on(() =>
+      this._editContainerPopper.update()
+    );
+    this.uiElement.propertiesWindow.onHidden.on(
+      () => (this._editInput.visible = false)
+    );
+    this.uiElement.propertiesWindow.onVisible.on(
+      () => (this.uiElement.main.active = true)
+    );
+    this.uiElement.propertiesWindow.onHidden.on(
+      () => (this.uiElement.main.active = false)
+    );
   }
 
   cleanPropertiesList() {
@@ -186,7 +196,7 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
     //   }
     //   child.dispose();
     // }
-    this.uiElement.container.description = null;
+    this.uiElement.propertiesWindow.description = null;
     this._editContainer.visible = false;
     this._propsList.children = [];
   }
@@ -228,7 +238,7 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
       model.properties,
       expressID
     );
-    this.uiElement.container.description = name;
+    this.uiElement.propertiesWindow.description = name;
     this._propsList.addChild(...[ui].flat());
   }
 

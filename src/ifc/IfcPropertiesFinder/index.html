@@ -76,36 +76,37 @@
     const highlighter = new OBC.FragmentHighlighter(components, fragments);
     const selectionHandler = new OBC.SelectionHandler(components, highlighter);
 
-    // New instance of Properties Processor
-	// The components aims to show IFC properties as natural as possible
-    const propsProcessor = new OBC.IfcPropertiesProcessor(components)
-	propsProcessor.uiElement.propertiesWindow.visible = true
+    // New instance of Properties Finder
+    // Best way to describe the component is to find "Relations of entities meeting a set of attributes criteria"
+    // Each search group aims to find a set of entities matching the criteria
+    // The search result are all common relations of the entities that meet the criteria in each search group.
+    const propsFinder = new OBC.IfcPropertiesFinder(components, fragments);
+    propsFinder.uiElement.queryWindow.visible = true
 
-	// Process a model, so properties can be shown.
-	propsProcessor.process(model)
-
-	// On element selected, render its properties.
-    const highlighterEvents = highlighter.events;
-    highlighterEvents.select.onClear.on(() => {
-        propsProcessor.cleanPropertiesList();
-    });
-    highlighterEvents.select.onHighlight.on(
-        (selection) => {
-            const fragmentID = Object.keys(selection)[0];
-            const expressID = Number([...selection[fragmentID]][0]);
-            let model
-            for (const group of fragments.groups) {
-                const fragmentFound = Object.values(group.keyFragments).find(id => id === fragmentID)
-                if (fragmentFound) model = group;
+    // On elements found, select them.
+    propsFinder.onFound.on(result => {
+      const fragmentMap = {}
+      for (const modelID in result) {
+        const model = fragments.groups.find(m => m.uuid === modelID)
+        if (!model) continue;
+        const expressIDs = result[modelID]
+        expressIDs.forEach(expressID => {
+            const data = model.data[expressID]
+            if (!data) return;
+            for (const key of data[0]) {
+                const fragmentID = model.keyFragments[key]
+                if (!fragmentMap[fragmentID]) fragmentMap[fragmentID] = [];
+                fragmentMap[fragmentID].push(String(expressID))
             }
-            propsProcessor.renderProperties(model, expressID);
-        }
-    );
+        } )
+      }
+      highlighter.highlightByID("select", fragmentMap)
+    })
 
-	// Creating new toolbar + adding component button
+    // Creating new toolbar + adding component button
     const mainToolbar = new OBC.Toolbar(components)
     components.ui.addToolbar(mainToolbar)
-	mainToolbar.addChild(propsProcessor.uiElement.main)
+    mainToolbar.addChild(propsFinder.uiElement.main)
 
 </script>
 </body>

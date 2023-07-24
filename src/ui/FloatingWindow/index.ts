@@ -106,7 +106,11 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
     titleContainer.id = `${this.id}-title-container`;
     titleContainer.className =
       "sticky z-10 flex justify-between items-center top-0 select-none cursor-move px-6 py-3 border-b-2 border-solid border-[#3A444E]";
-    titleContainer.append(titleElement, descriptionElement, closeElement);
+
+    const head = document.createElement("div");
+    head.className = "flex flex-col";
+    head.append(titleElement, descriptionElement);
+    titleContainer.append(head, closeElement);
 
     const content = document.createElement("div");
     content.id = `${this.id}-content`;
