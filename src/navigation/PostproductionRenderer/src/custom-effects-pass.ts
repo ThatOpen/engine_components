@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Pass, FullScreenQuad } from "three/examples/jsm/postprocessing/Pass";
 import { getPlaneDistanceMaterial } from "./plane-distance-shader";
-import { Components } from "../../../core";
+import { Components, Disposer } from "../../../core";
 import { getProjectedNormalMaterial } from "./projected-normal-shader";
 
 // Follows the structure of
@@ -21,9 +21,14 @@ export class CustomEffectsPass extends Pass {
   excludedMeshes: THREE.Mesh[] = [];
 
   outlinedMeshes: {
-    outline: THREE.InstancedMesh;
-    fragment: THREE.InstancedMesh;
-  }[] = [];
+    [name: string]: {
+      meshes: THREE.InstancedMesh[];
+      material: THREE.MeshBasicMaterial;
+      width: number;
+    };
+  } = {};
+
+  private _disposer = new Disposer();
 
   private _lineColor = 0x999999;
   private _outlineColor = 0xffffff;
@@ -178,8 +183,14 @@ export class CustomEffectsPass extends Pass {
     this.normalOverrideMaterial.dispose();
     this.glossOverrideMaterial.dispose();
     this.fsQuad.dispose();
-    // geometries disposed in fragmentoutliner
-    this.outlinedMeshes = [];
+
+    for (const name in this.outlinedMeshes) {
+      const style = this.outlinedMeshes[name];
+      for (const mesh of style.meshes) {
+        this._disposer.dispose(mesh, true, true);
+      }
+      style.material.dispose();
+    }
   }
 
   setSize(width: number, height: number) {
@@ -232,17 +243,31 @@ export class CustomEffectsPass extends Pass {
     // Render outline pass
 
     if (this._outlineEnabled) {
-      for (const { outline, fragment } of this.outlinedMeshes) {
-        fragment.visible = false;
-        this.renderScene.add(outline);
+      for (const name in this.outlinedMeshes) {
+        const style = this.outlinedMeshes[name];
+        for (const mesh of style.meshes) {
+          mesh.userData.materialPreOutline = mesh.material;
+          mesh.material = style.material;
+          mesh.userData.groupsPreOutline = mesh.geometry.groups;
+          mesh.geometry.groups = [];
+          mesh.userData.colorPreOutline = mesh.instanceColor;
+          mesh.instanceColor = null;
+        }
       }
 
       renderer.setRenderTarget(this.outlineBuffer);
       renderer.render(this.renderScene, this.renderCamera);
 
-      for (const { outline, fragment } of this.outlinedMeshes) {
-        fragment.visible = true;
-        outline.removeFromParent();
+      for (const name in this.outlinedMeshes) {
+        const style = this.outlinedMeshes[name];
+        for (const mesh of style.meshes) {
+          mesh.material = mesh.userData.materialPreOutline;
+          mesh.geometry.groups = mesh.userData.groupsPreOutline;
+          mesh.instanceColor = mesh.userData.colorPreOutline;
+          mesh.userData.materialPreOutline = undefined;
+          mesh.userData.groupsPreOutline = undefined;
+          mesh.userData.colorPreOutline = undefined;
+        }
       }
     }
 
@@ -257,9 +282,6 @@ export class CustomEffectsPass extends Pass {
     material.uniforms.glossBuffer.value = this.glossBuffer.texture;
     material.uniforms.outlineBuffer.value = this.outlineBuffer.texture;
     material.uniforms.sceneColorBuffer.value = readBuffer.texture;
-
-    // 2. Draw the outlines using the normal texture
-    // and combine it with the scene color
 
     if (this.renderToScreen) {
       // If this is the last effect, then renderToScreen is true.
