@@ -24,7 +24,6 @@ export class CustomEffectsPass extends Pass {
     [name: string]: {
       meshes: THREE.InstancedMesh[];
       material: THREE.MeshBasicMaterial;
-      width: number;
     };
   } = {};
 
