@@ -1,12 +1,14 @@
 import * as THREE from "three";
 import { Mesh } from "three";
 import earcut from "earcut";
+import { Components } from "../../../core";
 
 export class ClippingFills {
   // readonly worker: Worker;
 
   mesh = new Mesh(new THREE.BufferGeometry());
 
+  private _components: Components;
   private _precission = 10000;
   private _tempVector = new THREE.Vector3();
   private _plane: THREE.Plane;
@@ -15,11 +17,26 @@ export class ClippingFills {
 
   private _isPlaneHorizontal: boolean;
 
+  get visible() {
+    return this.mesh.parent !== null;
+  }
+
+  set visible(value: boolean) {
+    if (value) {
+      const scene = this._components.scene.get();
+      scene.add(this.mesh);
+    } else {
+      this.mesh.removeFromParent();
+    }
+  }
+
   constructor(
+    components: Components,
     plane: THREE.Plane,
     geometry: THREE.BufferGeometry,
     material: THREE.Material
   ) {
+    this._components = components;
     this.mesh.material = material;
     this.mesh.frustumCulled = false;
 
@@ -34,6 +51,8 @@ export class ClippingFills {
     // To prevent clipping plane overlapping the filling mesh
     const offset = plane.normal.clone().multiplyScalar(0.01);
     this.mesh.position.copy(offset);
+
+    this.visible = true;
   }
 
   dispose() {

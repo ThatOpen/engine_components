@@ -29,6 +29,8 @@ export class ClippingEdges
   /** {@link Component.enabled}. */
   enabled = true;
 
+  protected _fillNeedsUpdate = false;
+
   protected blocksMap: { [fragmentID: string]: number[] } = {};
   protected blockByIndex: { [index: number]: number } = {};
   protected lastBlock = 0;
@@ -63,6 +65,15 @@ export class ClippingEdges
     }
   }
 
+  set fillVisible(visible: boolean) {
+    for (const name in this._edges) {
+      const edges = this._edges[name];
+      if (edges.fill) {
+        edges.fill.visible = visible;
+      }
+    }
+  }
+
   constructor(components: Components, plane: THREE.Plane, styles: EdgesStyles) {
     super();
     this._components = components;
@@ -84,6 +95,12 @@ export class ClippingEdges
     }
   }
 
+  updateFills() {
+    this._fillNeedsUpdate = true;
+    this.update();
+    this._fillNeedsUpdate = false;
+  }
+
   /** {@link Component.get} */
   get(): Edges {
     return this._edges;
@@ -93,7 +110,9 @@ export class ClippingEdges
   dispose() {
     const edges = Object.values(this._edges);
     for (const edge of edges) {
-      edge.fill.dispose();
+      if (edge.fill) {
+        edge.fill.dispose();
+      }
       this._disposer.dispose(edge.mesh, false);
     }
   }
@@ -114,7 +133,15 @@ export class ClippingEdges
   private newFillMesh(name: string, geometry: THREE.BufferGeometry) {
     const styles = this._styles.get();
     const fillMaterial = styles[name].fillMaterial;
-    return new ClippingFills(this._plane, geometry, fillMaterial);
+    if (fillMaterial) {
+      return new ClippingFills(
+        this._components,
+        this._plane,
+        geometry,
+        fillMaterial
+      );
+    }
+    return undefined;
   }
 
   // Source: https://gkjohnson.github.io/three-mesh-bvh/example/bundle/clippedEdges.html
@@ -139,7 +166,8 @@ export class ClippingEdges
     let lastIndex = 0;
 
     const notEmptyMeshes = style.meshes.filter((mesh) => mesh.geometry);
-    notEmptyMeshes.forEach((mesh) => {
+
+    for (const mesh of notEmptyMeshes) {
       if (!mesh.geometry.boundsTree) {
         throw new Error("Boundstree not found for clipping edges subset.");
       }
@@ -192,7 +220,7 @@ export class ClippingEdges
           lastIndex = index;
         }
       }
-    });
+    }
 
     // set the draw range to only the new segments and offset the lines so they don't intersect with the geometry
     edges.mesh.geometry.setDrawRange(0, index);
@@ -205,8 +233,9 @@ export class ClippingEdges
     if (!Number.isNaN(position.array[0])) {
       const scene = this._components.scene.get();
       scene.add(edges.mesh);
-      edges.fill.update(indexes, this.blockByIndex);
-      scene.add(edges.fill.mesh);
+      if (this._fillNeedsUpdate && edges.fill) {
+        edges.fill.update(indexes, this.blockByIndex);
+      }
     }
   }
 
@@ -290,6 +319,9 @@ export class ClippingEdges
 
   private updateEdgesVisibility(edgeName: string, visible: boolean) {
     const edges = this._edges[edgeName];
+    if (edges.fill) {
+      edges.fill.visible = visible;
+    }
     edges.mesh.visible = visible;
     if (visible) {
       const scene = this._components.scene.get();

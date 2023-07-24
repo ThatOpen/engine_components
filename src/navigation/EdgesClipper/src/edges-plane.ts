@@ -29,6 +29,8 @@ export class EdgesPlane extends SimplePlane {
     this.edges = new ClippingEdges(components, this._plane, styles);
     this.toggleControls(true);
     this.edges.visible = true;
+    this.draggingEnded.on(this.updateFill);
+    this.draggingStarted.on(this.hideFills);
   }
 
   /** {@link Hideable.visible} */
@@ -77,5 +79,14 @@ export class EdgesPlane extends SimplePlane {
         this.updateTimeout = -1;
       }, this.edgesMaxUpdateRate);
     }
+  };
+
+  private hideFills = () => {
+    this.edges.fillVisible = false;
+  };
+
+  private updateFill = () => {
+    this.edges.updateFills();
+    this.edges.fillVisible = true;
   };
 }

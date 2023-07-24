@@ -7,7 +7,7 @@ import { ClippingFills } from "./clipping-fills";
  * A style defines the appearance of the lines of the {@link ClippingEdges} for
  * a set of meshes.
  */
-export interface LineStyle {
+export interface ClipStyle {
   /** The name of the style. */
   name: string;
 
@@ -24,12 +24,12 @@ export interface LineStyle {
    * The material that defines the appearance of the fill of the
    * {@link ClippingEdges}.
    * */
-  fillMaterial: THREE.Material;
+  fillMaterial?: THREE.Material;
 }
 
 /**
  * The lines that are drawn when the clipping plane cuts the geometry specified
- * by the {@link LineStyle}.
+ * by the {@link ClipStyle}.
  */
 export interface Edge {
   /** The name of the style to which this Edges belong. */
@@ -39,7 +39,7 @@ export interface Edge {
   mesh: THREE.LineSegments;
 
   /** The fill of the section. */
-  fill: ClippingFills;
+  fill?: ClippingFills;
 }
 
 /**

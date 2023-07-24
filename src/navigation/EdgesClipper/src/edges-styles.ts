@@ -1,11 +1,11 @@
 import * as THREE from "three";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
-import { LineStyle } from "./types";
+import { ClipStyle } from "./types";
 import { Component, Disposable, Event, Updateable } from "../../../base-types";
 import { Components } from "../../../core";
 
 export type LineStyles = {
-  [name: string]: LineStyle;
+  [name: string]: ClipStyle;
 };
 
 export class EdgesStyles
@@ -21,11 +21,6 @@ export class EdgesStyles
   protected _defaultLineMaterial = new LineMaterial({
     color: 0x000000,
     linewidth: 0.001,
-  });
-
-  protected _defaultFillMaterial = new THREE.MeshBasicMaterial({
-    color: "black",
-    side: 2,
   });
 
   constructor(public components: Components) {
@@ -49,7 +44,7 @@ export class EdgesStyles
     name: string,
     meshes: THREE.Mesh[],
     lineMaterial = this._defaultLineMaterial,
-    fillMaterial = this._defaultFillMaterial
+    fillMaterial?: THREE.Material
   ) {
     for (const mesh of meshes) {
       if (!mesh.geometry.boundsTree) mesh.geometry.computeBoundsTree();
