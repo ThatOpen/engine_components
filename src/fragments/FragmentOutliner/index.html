@@ -67,7 +67,7 @@
     const outliner = new OBC.FragmentOutliner(components, fragments, renderer);
     components.tools.add('outliner', outliner);
 
-    const file = await fetch("../../../resources/small.frag");
+    const file = await fetch("../../../resources/model.frag");
     const dataBlob = await file.arrayBuffer();
     const buffer = new Uint8Array(dataBlob);
     fragments.load(buffer);

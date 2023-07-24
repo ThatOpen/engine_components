@@ -5,6 +5,7 @@ import { Component, Disposable, FragmentIdMap } from "../../base-types";
 import { FragmentManager } from "../index";
 import { Components } from "../../core";
 import { PostproductionRenderer } from "../../navigation";
+import { toCompositeID } from "../../utils";
 
 // TODO: Clean up and document
 // TODO: Deduplicate logic with highlighter
@@ -101,27 +102,33 @@ export class FragmentOutliner
     fragments.push(mesh.fragment);
     const blockID = mesh.fragment.getVertexBlockID(geometry, index);
     const itemID = mesh.fragment.getItemID(instanceID, blockID);
-    this._selection[mesh.uuid].add(itemID);
 
+    // Get rid of composite suffix (if any)
+    const idNum = parseInt(itemID, 10);
+    const trueID = idNum.toString();
+    this._selection[mesh.uuid].add(trueID);
+
+    this.addComposites(mesh, idNum);
     this.updateFragmentHighlight(mesh.uuid);
 
     const group = mesh.fragment.group;
     if (group) {
-      const idNum = parseInt(itemID, 10);
       const keys = group.data[idNum][0];
       for (let i = 0; i < keys.length; i++) {
         const fragKey = keys[i];
         const fragID = group.keyFragments[fragKey];
+        const fragment = this._fragments.list[fragID];
         fragments.push(this._fragments.list[fragID]);
         if (!this._selection[fragID]) {
           this._selection[fragID] = new Set<string>();
         }
-        this._selection[fragID].add(itemID);
+        this._selection[fragID].add(trueID);
+        this.addComposites(fragment.mesh, idNum);
         this.updateFragmentHighlight(fragID);
       }
     }
 
-    return { id: itemID, fragments };
+    return { id: trueID, fragments };
   }
 
   // highlightByID(
@@ -148,6 +155,16 @@ export class FragmentOutliner
   clear() {
     this._selection = {};
     this._renderer.postproduction.customEffects.outlinedMeshes = [];
+  }
+
+  private addComposites(mesh: FragmentMesh, itemID: number) {
+    const composites = mesh.fragment.composites[itemID];
+    if (composites) {
+      for (let i = 1; i < composites; i++) {
+        const compositeID = toCompositeID(itemID, i);
+        this._selection[mesh.uuid].add(compositeID);
+      }
+    }
   }
 
   private updateFragmentHighlight(fragmentID: string) {
