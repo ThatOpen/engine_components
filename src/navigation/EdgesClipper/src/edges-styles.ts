@@ -57,6 +57,7 @@ export class EdgesStyles
       lineMaterial,
       meshes,
       fillMaterial,
+      fragments: {},
     };
   }
 

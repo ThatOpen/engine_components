@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry";
 import { ClippingFills } from "./clipping-fills";
+import { FragmentIdMap } from "../../../base-types";
 
 /**
  * A style defines the appearance of the lines of the {@link ClippingEdges} for
@@ -19,6 +20,9 @@ export interface ClipStyle {
    * {@link ClippingEdges}.
    * */
   lineMaterial: LineMaterial;
+
+  /** The IDs of the fragment items that are clipped by this style. */
+  fragments: FragmentIdMap;
 
   /**
    * The material that defines the appearance of the fill of the

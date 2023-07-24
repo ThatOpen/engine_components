@@ -9,7 +9,7 @@ export class IfcFragmentSettings {
    * Generate the geometry for categories that are not included by default,
    * like IFCSPACE.
    */
-  optionalCategories: number[] = [];
+  optionalCategories: number[] = [WEBIFC.IFCSPACE];
 
   /** Path of the WASM for [web-ifc](https://github.com/ifcjs/web-ifc). */
   wasm = {
