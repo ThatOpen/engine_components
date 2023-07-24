@@ -26,6 +26,16 @@ export class IfcPropertiesUtils {
     return 1;
   }
 
+  static findItemByGuid(properties: IfcProperties, guid: string) {
+    for (const id in properties) {
+      const property = properties[id];
+      if (property.GlobalId?.value === guid) {
+        return property;
+      }
+    }
+    return null;
+  }
+
   static findItemOfType(properties: IfcProperties, type: number) {
     for (const id in properties) {
       const property = properties[id];
