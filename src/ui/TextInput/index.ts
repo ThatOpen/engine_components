@@ -16,9 +16,9 @@ export class TextInput extends BaseInput<HTMLInputElement> {
   constructor(components: Components, config?: TextInputConfig) {
     const input = document.createElement("input");
     input.className = `
-    block bg-ifcjs-100 w-full rounded-md border-0 h-[40px] px-3 text-white shadow-sm ring-1 
-    ring-inset text-base ring-ifcjs-120 placeholder:text-gray-400 
-    focus:ring-2 focus:ring-inset focus:ring-ifcjs-200
+    block bg-transparent w-full rounded-md p-3 text-white ring-1 
+    ring text-base ring-gray-500 placeholder:text-gray-400 
+    focus:ring-1 focus:ring-ifcjs-200 focus:outline-none
     `;
     super(components, input);
     this.labelElement.textContent = "Tooeen Text";

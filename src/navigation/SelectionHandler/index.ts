@@ -31,7 +31,7 @@ export class SelectionHandler extends Component<FragmentIdMap> {
         new THREE.MeshBasicMaterial({
           color: "#BCF124",
           transparent: true,
-          opacity: 0.6,
+          opacity: 0.85,
           depthTest: true,
         }),
       highlightName: config?.highlightName ?? "highlight",

@@ -53,6 +53,7 @@ export abstract class BaseInput<
 
   set inputValue(value: any) {
     this.inputElement.value = value;
+    this.onChange.trigger(this.inputValue);
   }
 
   clear() {

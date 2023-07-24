@@ -54,7 +54,7 @@ export class NewProp extends SimpleUIComponent<HTMLDivElement> {
     this.cancelButton.onclick = () => {
       this.nameInput.clear();
       this.valueInput.clear();
-      this.typeInput.clear();
+      // this.typeInput.clear();
       this.visible = false;
     };
 
