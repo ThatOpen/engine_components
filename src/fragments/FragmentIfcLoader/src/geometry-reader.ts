@@ -19,7 +19,11 @@ export class GeometryReader {
     (this._webIfc as any) = null;
   }
 
-  streamMesh(webifc: WEBIFC.IfcAPI, mesh: WEBIFC.FlatMesh) {
+  streamMesh(
+    webifc: WEBIFC.IfcAPI,
+    mesh: WEBIFC.FlatMesh,
+    forceTransparent = false
+  ) {
     this._webIfc = webifc;
     const size = mesh.geometries.size();
 
@@ -28,9 +32,11 @@ export class GeometryReader {
       const geometryID = geometry.geometryExpressID;
 
       // Transparent geometries need to be separated
-      const isTransparent = geometry.color.w !== 1;
+      const isColorTransparent = geometry.color.w !== 1;
+      const isTransparent = isColorTransparent || forceTransparent;
       const prefix = isTransparent ? "-" : "+";
       const idWithTransparency = prefix + geometryID;
+      if (forceTransparent) geometry.color.w = 0.1;
 
       if (!this.items[idWithTransparency]) {
         const buffer = this.newBufferGeometry(geometryID);

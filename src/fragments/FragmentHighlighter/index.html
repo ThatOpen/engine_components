@@ -103,7 +103,7 @@
 
     const highlighter = new OBC.FragmentHighlighter(components, fragments);
 
-    const file = await fetch("../../../resources/model.frag");
+    const file = await fetch("../../../resources/small.frag");
     const dataBlob = await file.arrayBuffer();
     const buffer = new Uint8Array(dataBlob);
     fragments.load(buffer);

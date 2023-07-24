@@ -148,23 +148,7 @@
 
 	// For debugging
 
-	fragmentIfcLoader.ifcLoaded.on((model) => {
-      const classifier = new OBC.FragmentClassifier(components, fragments);
-      classifier.byModel("Hey", model);
-      console.log(classifier.get());
-
-      const hider = new OBC.FragmentHider(fragments);
-
-      window.ondblclick = () => {
-        const result = components.raycaster.castRay();
-        console.log(result);
-      }
-
-      window.onkeydown = () => {
-
-      hider.set(false);
-      }
-
+	// fragmentIfcLoader.ifcLoaded.on((model) => {
 	//   let sorted = [];
 	//   for(const frag of model.fragments) {
 	// 		const size = frag.mesh.count;
@@ -184,7 +168,7 @@
 	// 		mat.color.setRGB(value, value, value, "srgb");
 	// 		value += step;
 	//   }
-	});
+	// });
 
 
 </script>
