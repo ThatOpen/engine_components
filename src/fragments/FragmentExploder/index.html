@@ -87,7 +87,7 @@
 
 	const fragments = new OBC.FragmentManager(components);
 
-    const file = await fetch("../../../resources/small.frag");
+    const file = await fetch("../../../resources/model.frag");
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
     const model = fragments.load(buffer);
@@ -119,7 +119,7 @@
 
      */
 
-    const properties = await fetch("../../../resources/small.json");
+    const properties = await fetch("../../../resources/model.json");
     model.properties = await properties.json();
 
     /*MD
