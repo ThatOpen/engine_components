@@ -77,12 +77,12 @@
 
     // Load the fragments
 
-    const file = await fetch('../../../resources/model2.frag');
+    const file = await fetch('../../../resources/model.frag');
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
     const model = fragments.load(buffer);
 
-    const properties = await fetch('../../../resources/model2.json');
+    const properties = await fetch('../../../resources/model.json');
     model.properties = await properties.json();
 
     culler.needsUpdate = true;
@@ -90,7 +90,7 @@
     const clipper = new OBC.EdgesClipper(components, OBC.EdgesPlane);
     const sectionMaterial = new THREE.LineBasicMaterial({color: 'black'});
     const fillMaterial = new THREE.MeshBasicMaterial({color: 'gray', side: 2});
-    const fillOutline = new THREE.MeshBasicMaterial({color: 'black', side: 1, opacity: 0.5});
+    const fillOutline = new THREE.MeshBasicMaterial({color: 'black', side: 1, opacity: 0.5, transparent: true});
 
     clipper.styles.create("filled", [], sectionMaterial, fillMaterial, fillOutline);
     clipper.styles.create("projected", [], sectionMaterial);

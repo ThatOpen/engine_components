@@ -150,11 +150,11 @@ export class ClippingEdges
       const outlines = pRenderer.postproduction.customEffects.outlinedMeshes;
       if (!outlines[name]) {
         outlines[name] = {
-          meshes: [],
+          meshes: new Set(),
           material: style.outlineMaterial,
         };
       }
-      outlines[name].meshes.push(fills.mesh);
+      fills.styleName = name;
     }
   }
 

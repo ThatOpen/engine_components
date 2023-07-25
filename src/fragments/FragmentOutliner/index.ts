@@ -150,6 +150,11 @@ export class FragmentOutliner
 
   clear() {
     this._selection = {};
+    const customEffects = this._renderer.postproduction.customEffects;
+    const fragmentsOutline = customEffects.outlinedMeshes.fragments;
+    if (fragmentsOutline) {
+      fragmentsOutline.meshes.clear();
+    }
     for (const fragID in this._outlinedMeshes) {
       const fragment = this._fragments.list[fragID];
       const isBlockFragment = fragment.blocks.count > 1;
@@ -176,14 +181,15 @@ export class FragmentOutliner
 
     if (!customEffects.outlinedMeshes.fragments) {
       customEffects.outlinedMeshes.fragments = {
-        meshes: [],
+        meshes: new Set(),
         material: this.outlineMaterial,
       };
     }
 
+    const outlineEffect = customEffects.outlinedMeshes.fragments;
+
     // Create a copy of the original fragment mesh for outline
     if (!this._outlinedMeshes[fragmentID]) {
-      const outlineEffect = customEffects.outlinedMeshes.fragments;
       const newGeometry = new THREE.BufferGeometry();
 
       newGeometry.attributes = geometry.attributes;
@@ -198,11 +204,10 @@ export class FragmentOutliner
 
       const scene = this._components.scene.get();
       scene.add(newMesh);
-
-      outlineEffect.meshes.push(newMesh);
     }
 
     const outlineMesh = this._outlinedMeshes[fragmentID];
+    outlineEffect.meshes.add(outlineMesh);
 
     const isBlockFragment = fragment.blocks.count > 1;
 

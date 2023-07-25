@@ -2,11 +2,14 @@ import * as THREE from "three";
 import { Mesh } from "three";
 import earcut from "earcut";
 import { Components } from "../../../core";
+import { PostproductionRenderer } from "../../PostproductionRenderer";
 
 export class ClippingFills {
   // readonly worker: Worker;
 
   mesh = new Mesh(new THREE.BufferGeometry());
+
+  styleName?: string;
 
   private _components: Components;
   private _precission = 10000;
@@ -25,11 +28,18 @@ export class ClippingFills {
   }
 
   set visible(value: boolean) {
+    const style = this.getStyle();
     if (value) {
       const scene = this._components.scene.get();
       scene.add(this.mesh);
+      if (style) {
+        style.meshes.add(this.mesh);
+      }
     } else {
       this.mesh.removeFromParent();
+      if (style) {
+        style.meshes.delete(this.mesh);
+      }
     }
   }
 
@@ -387,5 +397,14 @@ export class ClippingFills {
     ]);
 
     this._plane2DCoordinateSystem.invert();
+  }
+
+  private getStyle() {
+    const renderer = this._components.renderer as PostproductionRenderer;
+    if (this.styleName && renderer instanceof PostproductionRenderer) {
+      const effects = renderer.postproduction.customEffects;
+      return effects.outlinedMeshes[this.styleName];
+    }
+    return null;
   }
 }

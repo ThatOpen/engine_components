@@ -22,7 +22,7 @@ export class CustomEffectsPass extends Pass {
 
   outlinedMeshes: {
     [name: string]: {
-      meshes: (THREE.InstancedMesh | THREE.Mesh)[];
+      meshes: Set<THREE.InstancedMesh | THREE.Mesh>;
       material: THREE.MeshBasicMaterial;
     };
   } = {};
@@ -41,6 +41,8 @@ export class CustomEffectsPass extends Pass {
   private _glossExponent = 0.7;
   private _minGloss = -0.15;
   private _maxGloss = 0.15;
+
+  private _outlinesNeedsUpdate = false;
 
   get lineColor() {
     return this._lineColor;
@@ -241,9 +243,12 @@ export class CustomEffectsPass extends Pass {
         }
       }
 
-      if (outlinedMeshesFound) {
+      // This way, when there are no outlines meshes, it clears the outlines buffer only once
+      // and then skips this render
+      if (outlinedMeshesFound || this._outlinesNeedsUpdate) {
         renderer.setRenderTarget(this.outlineBuffer);
         renderer.render(this._outlineScene, this.renderCamera);
+        this._outlinesNeedsUpdate = outlinedMeshesFound;
       }
 
       for (const name in this.outlinedMeshes) {
@@ -491,7 +496,7 @@ export class CustomEffectsPass extends Pass {
         outlineDiff += step(0.1, getValue(outlineBuffer, -outlineThickness, -outlineThickness).a);
         outlineDiff += step(0.1, getValue(outlineBuffer, outlineThickness, -outlineThickness).a);
         
-        float outLine = step(4., outlineDiff) * step(outlineDiff, 8.) * outlineEnabled;
+        float outLine = step(4., outlineDiff) * step(outlineDiff, 12.) * outlineEnabled;
         corrected = mix(corrected, vec4(outlineColor, 1.), outLine);
         
         gl_FragColor = corrected;
