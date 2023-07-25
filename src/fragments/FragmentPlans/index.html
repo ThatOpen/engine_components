@@ -90,10 +90,13 @@
     const clipper = new OBC.EdgesClipper(components, OBC.EdgesPlane);
     const sectionMaterial = new THREE.LineBasicMaterial({color: 'black'});
     const fillMaterial = new THREE.MeshBasicMaterial({color: 'gray', side: 2});
+    const fillOutline = new THREE.MeshBasicMaterial({color: 'black', side: 1, opacity: 0.5});
 
-    clipper.styles.create("filled", [], sectionMaterial, fillMaterial);
+    clipper.styles.create("filled", [], sectionMaterial, fillMaterial, fillOutline);
     clipper.styles.create("projected", [], sectionMaterial);
     const styles = clipper.styles.get();
+
+    postproduction.customEffects.outlineEnabled = true;
 
     const classifier = new OBC.FragmentClassifier(fragments);
     classifier.byEntity(model);

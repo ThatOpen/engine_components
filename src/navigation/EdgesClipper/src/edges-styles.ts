@@ -44,7 +44,8 @@ export class EdgesStyles
     name: string,
     meshes: THREE.Mesh[],
     lineMaterial = this._defaultLineMaterial,
-    fillMaterial?: THREE.Material
+    fillMaterial?: THREE.Material,
+    outlineMaterial?: THREE.MeshBasicMaterial
   ) {
     for (const mesh of meshes) {
       if (!mesh.geometry.boundsTree) mesh.geometry.computeBoundsTree();
@@ -57,6 +58,7 @@ export class EdgesStyles
       lineMaterial,
       meshes,
       fillMaterial,
+      outlineMaterial,
       fragments: {},
     };
   }

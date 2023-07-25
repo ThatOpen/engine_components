@@ -38,10 +38,13 @@
 
 	const components = new OBC.Components();
 	components.scene = new OBC.SimpleScene(components);
-	components.renderer = new OBC.SimpleRenderer(components, container);
+	components.renderer = new OBC.PostproductionRenderer(components, container);
 	components.camera = new OBC.SimpleCamera(components);
 	components.raycaster = new OBC.SimpleRaycaster(components);
 	components.init();
+
+    components.renderer.postproduction.enabled = true;
+    components.renderer.postproduction.customEffects.outlineEnabled = true;
 
 	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
@@ -60,6 +63,7 @@
 
 	const grid = new OBC.SimpleGrid(components);
 	components.tools.add("grid", grid);
+    components.renderer.postproduction.customEffects.excludedMeshes.push(grid.get());
 
 	/*MD
   ### ⭕️ Aesthetic Clipping Edges
@@ -165,11 +169,13 @@
 
   const blueFill = new THREE.MeshBasicMaterial({color: 'lightblue', side: 2});
 	const blueLine = new THREE.LineBasicMaterial({ color: 'blue' });
-	clipper.styles.create('Red lines', [cube], blueLine, blueFill);
+    const blueOutline = new THREE.MeshBasicMaterial({color: 'blue', opacity: 0.2, side: 1});
+	clipper.styles.create('Red lines', [cube], blueLine, blueFill, blueOutline);
 
 	const salmonFill = new THREE.MeshBasicMaterial({color: 'salmon', side: 2});
 	const redLine = new THREE.LineBasicMaterial({ color: 'red' });
-	clipper.styles.create('Blue lines', [cube2], redLine, salmonFill);
+    const redOutline = new THREE.MeshBasicMaterial({color: 'red', opacity: 0.2, side: 1});
+	clipper.styles.create('Blue lines', [cube2], redLine, salmonFill, redOutline);
 
 	/*MD
 

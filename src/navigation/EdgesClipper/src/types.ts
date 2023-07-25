@@ -18,7 +18,7 @@ export interface ClipStyle {
   /**
    * The material that defines the appearance of the lines of the
    * {@link ClippingEdges}.
-   * */
+   */
   lineMaterial: LineMaterial;
 
   /** The IDs of the fragment items that are clipped by this style. */
@@ -27,8 +27,15 @@ export interface ClipStyle {
   /**
    * The material that defines the appearance of the fill of the
    * {@link ClippingEdges}.
-   * */
+   */
   fillMaterial?: THREE.Material;
+
+  /**
+   * The material that defines the appearance of the outline of the
+   * {@link ClippingEdges}. This requires to use the {@link PostproductionRenderer}
+   * and {@link fillMaterial}.
+   */
+  outlineMaterial?: THREE.MeshBasicMaterial;
 }
 
 /**

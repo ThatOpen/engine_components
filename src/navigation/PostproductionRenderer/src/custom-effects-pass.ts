@@ -22,7 +22,7 @@ export class CustomEffectsPass extends Pass {
 
   outlinedMeshes: {
     [name: string]: {
-      meshes: THREE.InstancedMesh[];
+      meshes: (THREE.InstancedMesh | THREE.Mesh)[];
       material: THREE.MeshBasicMaterial;
     };
   } = {};
@@ -223,29 +223,37 @@ export class CustomEffectsPass extends Pass {
     // Render outline pass
 
     if (this._outlineEnabled) {
+      let outlinedMeshesFound = false;
       for (const name in this.outlinedMeshes) {
         const style = this.outlinedMeshes[name];
         for (const mesh of style.meshes) {
+          outlinedMeshesFound = true;
           mesh.userData.materialPreOutline = mesh.material;
           mesh.material = style.material;
           mesh.userData.groupsPreOutline = mesh.geometry.groups;
           mesh.geometry.groups = [];
-          mesh.userData.colorPreOutline = mesh.instanceColor;
-          mesh.instanceColor = null;
+          if (mesh instanceof THREE.InstancedMesh) {
+            mesh.userData.colorPreOutline = mesh.instanceColor;
+            mesh.instanceColor = null;
+          }
           mesh.userData.parentPreOutline = mesh.parent;
           this._outlineScene.add(mesh);
         }
       }
 
-      renderer.setRenderTarget(this.outlineBuffer);
-      renderer.render(this._outlineScene, this.renderCamera);
+      if (outlinedMeshesFound) {
+        renderer.setRenderTarget(this.outlineBuffer);
+        renderer.render(this._outlineScene, this.renderCamera);
+      }
 
       for (const name in this.outlinedMeshes) {
         const style = this.outlinedMeshes[name];
         for (const mesh of style.meshes) {
           mesh.material = mesh.userData.materialPreOutline;
           mesh.geometry.groups = mesh.userData.groupsPreOutline;
-          mesh.instanceColor = mesh.userData.colorPreOutline;
+          if (mesh instanceof THREE.InstancedMesh) {
+            mesh.instanceColor = mesh.userData.colorPreOutline;
+          }
           if (mesh.userData.parentPreOutline) {
             mesh.userData.parentPreOutline.add(mesh);
           }
@@ -478,6 +486,10 @@ export class CustomEffectsPass extends Pass {
         outlineDiff += step(0.1, getValue(outlineBuffer, -outlineThickness, 0).a);
         outlineDiff += step(0.1, getValue(outlineBuffer, 0, -outlineThickness).a);
         outlineDiff += step(0.1, getValue(outlineBuffer, 0, outlineThickness).a);
+        outlineDiff += step(0.1, getValue(outlineBuffer, outlineThickness, outlineThickness).a);
+        outlineDiff += step(0.1, getValue(outlineBuffer, -outlineThickness, outlineThickness).a);
+        outlineDiff += step(0.1, getValue(outlineBuffer, -outlineThickness, -outlineThickness).a);
+        outlineDiff += step(0.1, getValue(outlineBuffer, outlineThickness, -outlineThickness).a);
         
         float outLine = step(4., outlineDiff) * step(outlineDiff, 8.) * outlineEnabled;
         corrected = mix(corrected, vec4(outlineColor, 1.), outLine);

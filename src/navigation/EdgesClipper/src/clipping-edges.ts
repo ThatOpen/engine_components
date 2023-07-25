@@ -11,6 +11,7 @@ import {
 } from "../../../base-types";
 import { Components, Disposer } from "../../../core";
 import { ClippingFills } from "./clipping-fills";
+import { PostproductionRenderer } from "../../PostproductionRenderer";
 
 export type Edges = {
   [name: string]: Edge;
@@ -126,16 +127,35 @@ export class ClippingEdges
 
   private newFillMesh(name: string, geometry: THREE.BufferGeometry) {
     const styles = this._styles.get();
-    const fillMaterial = styles[name].fillMaterial;
+    const style = styles[name];
+    const fillMaterial = style.fillMaterial;
     if (fillMaterial) {
-      return new ClippingFills(
+      const fills = new ClippingFills(
         this._components,
         this._plane,
         geometry,
         fillMaterial
       );
+      this.newFillOutline(name, fills, style);
+      return fills;
     }
     return undefined;
+  }
+
+  private newFillOutline(name: string, fills: ClippingFills, style: ClipStyle) {
+    if (!style.outlineMaterial) return;
+    const renderer = this._components.renderer;
+    if (renderer instanceof PostproductionRenderer) {
+      const pRenderer = renderer as PostproductionRenderer;
+      const outlines = pRenderer.postproduction.customEffects.outlinedMeshes;
+      if (!outlines[name]) {
+        outlines[name] = {
+          meshes: [],
+          material: style.outlineMaterial,
+        };
+      }
+      outlines[name].meshes.push(fills.mesh);
+    }
   }
 
   // Source: https://gkjohnson.github.io/three-mesh-bvh/example/bundle/clippedEdges.html
