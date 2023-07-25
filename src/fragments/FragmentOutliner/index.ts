@@ -13,7 +13,7 @@ export class FragmentOutliner
   extends Component<FragmentIdMap>
   implements Disposable
 {
-  name: string = "FragmentHighlighter";
+  name: string = "FragmentOutliner";
   private _enabled = true;
 
   private _invisibleMaterial = new THREE.MeshBasicMaterial({ visible: false });
@@ -25,7 +25,7 @@ export class FragmentOutliner
 
   private _outlinedMeshes: { [fragID: string]: THREE.InstancedMesh } = {};
 
-  private _outlineMaterial = new THREE.MeshBasicMaterial({
+  outlineMaterial = new THREE.MeshBasicMaterial({
     color: "white",
     transparent: true,
     depthTest: false,
@@ -40,7 +40,7 @@ export class FragmentOutliner
 
   set enabled(state: boolean) {
     this._enabled = state;
-    this._renderer.postproduction.customEffects.outlineEnabled = state;
+    delete this._renderer.postproduction.customEffects.outlinedMeshes.fragments;
   }
 
   constructor(
@@ -177,7 +177,7 @@ export class FragmentOutliner
     if (!customEffects.outlinedMeshes.fragments) {
       customEffects.outlinedMeshes.fragments = {
         meshes: [],
-        material: this._outlineMaterial,
+        material: this.outlineMaterial,
       };
     }
 

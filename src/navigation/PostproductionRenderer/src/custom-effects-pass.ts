@@ -29,14 +29,15 @@ export class CustomEffectsPass extends Pass {
 
   private _disposer = new Disposer();
 
+  private _outlineScene = new THREE.Scene();
+  private _outlineEnabled = false;
+
   private _lineColor = 0x999999;
-  private _outlineColor = 0xffffff;
   private _opacity = 0.4;
   private _tolerance = 3;
   private _correctColor = false;
   private _glossEnabled = true;
-  private _outlineEnabled = false;
-  private _outlineThickness = 4;
+
   private _glossExponent = 0.7;
   private _minGloss = -0.15;
   private _maxGloss = 0.15;
@@ -49,26 +50,6 @@ export class CustomEffectsPass extends Pass {
     this._lineColor = lineColor;
     const material = this.fsQuad.material as THREE.ShaderMaterial;
     material.uniforms.lineColor.value.set(lineColor);
-  }
-
-  get outlineColor() {
-    return this._outlineColor;
-  }
-
-  set outlineColor(color: number) {
-    this._outlineColor = color;
-    const material = this.fsQuad.material as THREE.ShaderMaterial;
-    material.uniforms.outlineColor.value.set(color);
-  }
-
-  get outlineThickness() {
-    return this._outlineThickness;
-  }
-
-  set outlineThickness(value: number) {
-    this._outlineThickness = value;
-    const material = this.fsQuad.material as THREE.ShaderMaterial;
-    material.uniforms.outlineThickness.value = value;
   }
 
   get tolerance() {
@@ -251,11 +232,13 @@ export class CustomEffectsPass extends Pass {
           mesh.geometry.groups = [];
           mesh.userData.colorPreOutline = mesh.instanceColor;
           mesh.instanceColor = null;
+          mesh.userData.parentPreOutline = mesh.parent;
+          this._outlineScene.add(mesh);
         }
       }
 
       renderer.setRenderTarget(this.outlineBuffer);
-      renderer.render(this.renderScene, this.renderCamera);
+      renderer.render(this._outlineScene, this.renderCamera);
 
       for (const name in this.outlinedMeshes) {
         const style = this.outlinedMeshes[name];
@@ -263,9 +246,13 @@ export class CustomEffectsPass extends Pass {
           mesh.material = mesh.userData.materialPreOutline;
           mesh.geometry.groups = mesh.userData.groupsPreOutline;
           mesh.instanceColor = mesh.userData.colorPreOutline;
+          if (mesh.userData.parentPreOutline) {
+            mesh.userData.parentPreOutline.add(mesh);
+          }
           mesh.userData.materialPreOutline = undefined;
           mesh.userData.groupsPreOutline = undefined;
           mesh.userData.colorPreOutline = undefined;
+          mesh.userData.parentPreOutline = undefined;
         }
       }
     }
@@ -299,27 +286,27 @@ export class CustomEffectsPass extends Pass {
 
   get vertexShader() {
     return `
-			varying vec2 vUv;
-			void main() {
-				vUv = uv;
-				gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-			}
-			`;
+	  varying vec2 vUv;
+	  void main() {
+	  	vUv = uv;
+	  	gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+	  }
+	`;
   }
 
   get fragmentShader() {
     return `
-	    uniform sampler2D sceneColorBuffer;
-	    uniform sampler2D planeBuffer;
-	    uniform sampler2D glossBuffer;
-	    uniform sampler2D outlineBuffer;
-	    uniform vec4 screenSize;
-	    uniform vec3 lineColor;
-	    uniform vec3 outlineColor;
-	    uniform float outlineEnabled;
-	    uniform int outlineThickness;
+	  uniform sampler2D sceneColorBuffer;
+	  uniform sampler2D planeBuffer;
+	  uniform sampler2D glossBuffer;
+	  uniform sampler2D outlineBuffer;
+	  uniform vec4 screenSize;
+	  uniform vec3 lineColor;
+	  
+	  uniform float outlineEnabled;
+	  
       uniform int width;
-	    uniform float opacity;
+	  uniform float opacity;
       uniform float tolerance;
       uniform float correctColor;
       uniform float glossExponent;
@@ -327,11 +314,11 @@ export class CustomEffectsPass extends Pass {
       uniform float maxGloss;
       uniform float glossEnabled;
 
-			varying vec2 vUv;
+	  varying vec2 vUv;
 
-			vec4 getValue(sampler2D buffer, int x, int y) {
-				return texture2D(buffer, vUv + screenSize.zw * vec2(x, y));
-			}
+	  vec4 getValue(sampler2D buffer, int x, int y) {
+	  	return texture2D(buffer, vUv + screenSize.zw * vec2(x, y));
+	  }
 
       float normalDiff(vec3 normal1, vec3 normal2) {
         return ((dot(normal1, normal2) - 1.) * -1.) / 2.;
@@ -347,14 +334,15 @@ export class CustomEffectsPass extends Pass {
         return background;
       }
 
-			void main() {
-				vec3 sceneColor = getValue(sceneColorBuffer, 0, 0).rgb;
-				vec3 normSceneColor = normalize(sceneColor);
-
+	  void main() {
+	  
+	    vec3 sceneColor = getValue(sceneColorBuffer, 0, 0).rgb;
+	    vec3 normSceneColor = normalize(sceneColor);
+  
         vec4 plane = getValue(planeBuffer, 0, 0);
-				vec3 normal = plane.xyz;
+	    vec3 normal = plane.xyz;
         float distance = plane.w;
-
+  
         vec3 normalTop = getValue(planeBuffer, 0, width).rgb;
         vec3 normalBottom = getValue(planeBuffer, 0, -width).rgb;
         vec3 normalRight = getValue(planeBuffer, width, 0).rgb;
@@ -363,7 +351,7 @@ export class CustomEffectsPass extends Pass {
         vec3 normalTopLeft = getValue(planeBuffer, -width, width).rgb;
         vec3 normalBottomRight = getValue(planeBuffer, width, -width).rgb;
         vec3 normalBottomLeft = getValue(planeBuffer, -width, -width).rgb;
-
+  
         float distanceTop = getValue(planeBuffer, 0, width).a;
         float distanceBottom = getValue(planeBuffer, 0, -width).a;
         float distanceRight = getValue(planeBuffer, width, 0).a;
@@ -470,19 +458,26 @@ export class CustomEffectsPass extends Pass {
         
         corrected = mix(corrected, vec4(lineColor, 1.), line);
         
-        // Add selection outline
+        // Add outline
         
-        float outlineDiff = 0.;
+        vec4 outlinePreview =getValue(outlineBuffer, 0, 0);
+        float outlineColorCorrection = 1. / max(0.2, outlinePreview.a);
+        vec3 outlineColor = outlinePreview.rgb * outlineColorCorrection;
         
-        outlineDiff += step(0.99, getValue(outlineBuffer, 0, 0).r);
-        outlineDiff += step(0.99, getValue(outlineBuffer, 1, 0).r);
-        outlineDiff += step(0.99, getValue(outlineBuffer, -1, 0).r);
-        outlineDiff += step(0.99, getValue(outlineBuffer, 0, -1).r);
-        outlineDiff += step(0.99, getValue(outlineBuffer, 0, 1).r);
-        outlineDiff += step(0.99, getValue(outlineBuffer, outlineThickness, 0).r);
-        outlineDiff += step(0.99, getValue(outlineBuffer, -outlineThickness, 0).r);
-        outlineDiff += step(0.99, getValue(outlineBuffer, 0, -outlineThickness).r);
-        outlineDiff += step(0.99, getValue(outlineBuffer, 0, outlineThickness).r);
+        // thickness between 10 and 2, opacity between 1 and 0.2
+	    int outlineThickness = int(outlinePreview.a * 10.);
+	    
+	    float outlineDiff = 0.;
+        
+        outlineDiff += step(0.1, getValue(outlineBuffer, 0, 0).a);
+        outlineDiff += step(0.1, getValue(outlineBuffer, 1, 0).a);
+        outlineDiff += step(0.1, getValue(outlineBuffer, -1, 0).a);
+        outlineDiff += step(0.1, getValue(outlineBuffer, 0, -1).a);
+        outlineDiff += step(0.1, getValue(outlineBuffer, 0, 1).a);
+        outlineDiff += step(0.1, getValue(outlineBuffer, outlineThickness, 0).a);
+        outlineDiff += step(0.1, getValue(outlineBuffer, -outlineThickness, 0).a);
+        outlineDiff += step(0.1, getValue(outlineBuffer, 0, -outlineThickness).a);
+        outlineDiff += step(0.1, getValue(outlineBuffer, 0, outlineThickness).a);
         
         float outLine = step(4., outlineDiff) * step(outlineDiff, 8.) * outlineEnabled;
         corrected = mix(corrected, vec4(outlineColor, 1.), outLine);
@@ -507,8 +502,6 @@ export class CustomEffectsPass extends Pass {
         minGloss: { value: -0.4 },
         maxGloss: { value: 0 },
         outlineEnabled: { value: 0 },
-        outlineColor: { value: new THREE.Color(this._outlineColor) },
-        outlineThickness: { value: this._outlineThickness },
         glossExponent: { value: this._glossExponent },
         width: { value: 1 },
         lineColor: { value: new THREE.Color(this._lineColor) },
