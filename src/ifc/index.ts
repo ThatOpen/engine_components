@@ -5,3 +5,5 @@ export * from "./ifc-json-exporter";
 export * from "./ifc-geometry-types";
 export * from "./IfcPropertiesManager";
 export * from "./IfcPropertiesProcessor";
+export * from "./IfcPropertiesFinder";
+export * from "./IfcPropertiesUtils";

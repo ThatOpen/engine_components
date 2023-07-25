@@ -40,7 +40,7 @@ export class NewPset extends SimpleUIComponent<HTMLDivElement> {
 
     const existingPsets = new Dropdown(components);
     existingPsets.addOption("My custom pset");
-    existingPsets.labelElement.textContent = "Property set";
+    existingPsets.label = "Property set";
 
     existingPsetContainer.addChild(existingPsets);
     // #endregion

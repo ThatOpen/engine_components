@@ -14,7 +14,7 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
 
   static Class = {
     Base: "absolute backdrop-blur-md shadow-md overflow-auto top-5 resize z-50 left-5 min-h-[80px] min-w-[150px] w-fit h-fit text-white bg-ifcjs-100 rounded-md",
-    Title: "text-lg font-bold",
+    Title: "text-3xl text-ifcjs-200 font-medium",
     Description: "text-base text-gray-400",
   };
 
@@ -100,13 +100,17 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
     closeElement.onclick = () => (this.visible = false);
     closeElement.innerText = "close";
     closeElement.className =
-      "material-icons md-16 absolute right-2 top-2 z-20 hover:cursor-pointer hover:text-ifcjs-200";
+      "material-icons text-2xl ml-4 text-gray-400 z-20 hover:cursor-pointer hover:text-ifcjs-200";
 
     const titleContainer = document.createElement("div");
     titleContainer.id = `${this.id}-title-container`;
     titleContainer.className =
-      "bg-ifcjs-120 sticky z-10 top-0 select-none cursor-move px-5 py-3 text-center";
-    titleContainer.append(titleElement, descriptionElement, closeElement);
+      "sticky z-10 flex justify-between items-center top-0 select-none cursor-move px-6 py-3 border-b-2 border-solid border-[#3A444E]";
+
+    const head = document.createElement("div");
+    head.className = "flex flex-col";
+    head.append(titleElement, descriptionElement);
+    titleContainer.append(head, closeElement);
 
     const content = document.createElement("div");
     content.id = `${this.id}-content`;
