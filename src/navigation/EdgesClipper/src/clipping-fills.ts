@@ -13,9 +13,12 @@ export class ClippingFills {
   private _tempVector = new THREE.Vector3();
   private _plane: THREE.Plane;
   private _geometry: THREE.BufferGeometry;
-  private _coordinateSystem = new THREE.Matrix4();
 
-  private _isPlaneHorizontal: boolean;
+  // Used to work in the 2D coordinate system of the plane
+  private _plane2DCoordinateSystem = new THREE.Matrix4();
+
+  // Used if the plane is orthogonal to the cartesian planes
+  private _planeAxis?: "x" | "y" | "z";
 
   get visible() {
     return this.mesh.parent !== null;
@@ -41,8 +44,15 @@ export class ClippingFills {
     this.mesh.frustumCulled = false;
 
     this._plane = plane;
-    const vertical = plane.normal.y;
-    this._isPlaneHorizontal = vertical === 1 || vertical === -1;
+
+    const { x, y, z } = plane.normal;
+    if (Math.abs(x) === 1) {
+      this._planeAxis = "x";
+    } else if (Math.abs(y) === 1) {
+      this._planeAxis = "y";
+    } else if (Math.abs(z) === 1) {
+      this._planeAxis = "z";
+    }
 
     this._geometry = geometry;
 
@@ -68,7 +78,7 @@ export class ClippingFills {
     const buffer = this._geometry.attributes.position.array as Float32Array;
     if (!buffer) return;
 
-    this.updateCoordinateSystem();
+    this.updatePlane2DCoordinateSystem();
 
     const allIndices: number[] = [];
     let start = 0;
@@ -132,22 +142,15 @@ export class ClippingFills {
       const globalY2 = buffer[startVertexIndex + 4];
       const globalZ2 = buffer[startVertexIndex + 5];
 
-      if (this._isPlaneHorizontal) {
-        x1 = Math.trunc(globalX1 * p) / p;
-        y1 = Math.trunc(globalZ1 * p) / p;
-        x2 = Math.trunc(globalX2 * p) / p;
-        y2 = Math.trunc(globalZ2 * p) / p;
-      } else {
-        this._tempVector.set(globalX1, globalY1, globalZ1);
-        this._tempVector.applyMatrix4(this._coordinateSystem);
-        x1 = Math.trunc(this._tempVector.x * p) / p;
-        y1 = Math.trunc(this._tempVector.y * p) / p;
+      this._tempVector.set(globalX1, globalY1, globalZ1);
+      this._tempVector.applyMatrix4(this._plane2DCoordinateSystem);
+      x1 = Math.trunc(this._tempVector.x * p) / p;
+      y1 = Math.trunc(this._tempVector.y * p) / p;
 
-        this._tempVector.set(globalX2, globalY2, globalZ2);
-        this._tempVector.applyMatrix4(this._coordinateSystem);
-        x2 = Math.trunc(this._tempVector.x * p) / p;
-        y2 = Math.trunc(this._tempVector.y * p) / p;
-      }
+      this._tempVector.set(globalX2, globalY2, globalZ2);
+      this._tempVector.applyMatrix4(this._plane2DCoordinateSystem);
+      x2 = Math.trunc(this._tempVector.x * p) / p;
+      y2 = Math.trunc(this._tempVector.y * p) / p;
 
       const startCode = `${x1}|${y1}`;
       const endCode = `${x2}|${y2}`;
@@ -351,31 +354,38 @@ export class ClippingFills {
     return trueIndices;
   }
 
-  private updateCoordinateSystem() {
-    this._coordinateSystem = new THREE.Matrix4();
+  private updatePlane2DCoordinateSystem() {
+    // Assuming the normal of the plane is called Z
+
+    this._plane2DCoordinateSystem = new THREE.Matrix4();
+
+    const xAxis = new THREE.Vector3(1, 0, 0);
+    const yAxis = new THREE.Vector3(0, 1, 0);
     const zAxis = this._plane.normal;
 
-    // First, let's convert the 3d points to 2d to simplify
-    // if z is up or down, we can just ignore it
-    if (this._isPlaneHorizontal) {
-      const pos = new THREE.Vector3();
-      this._plane.coplanarPoint(pos);
+    const pos = new THREE.Vector3();
+    this._plane.coplanarPoint(pos);
 
-      const xAxis = new THREE.Vector3(1, 0, 0);
-      const yAxis = new THREE.Vector3(0, 1, 0);
-      const up = new THREE.Vector3(0, 1, 0);
-      xAxis.crossVectors(up, zAxis).normalize();
+    if (this._planeAxis === "x") {
+      xAxis.crossVectors(yAxis, zAxis);
+    } else if (this._planeAxis === "y") {
       yAxis.crossVectors(zAxis, xAxis);
-
-      // prettier-ignore
-      this._coordinateSystem.fromArray([
-        xAxis.x, xAxis.y, xAxis.z, 0,
-        yAxis.x, yAxis.y, yAxis.z, 0,
-        zAxis.x, zAxis.y, zAxis.z, 0,
-        pos.x, pos.y, pos.z, 1,
-      ]);
-
-      this._coordinateSystem.invert();
+    } else if (this._planeAxis === "z") {
+      // Axes XYZ stay the same
+    } else {
+      // Non-orthogonal to cardinal axis
+      xAxis.crossVectors(yAxis, zAxis).normalize();
+      yAxis.crossVectors(zAxis, xAxis);
     }
+
+    // prettier-ignore
+    this._plane2DCoordinateSystem.fromArray([
+      xAxis.x, xAxis.y, xAxis.z, 0,
+      yAxis.x, yAxis.y, yAxis.z, 0,
+      zAxis.x, zAxis.y, zAxis.z, 0,
+      pos.x, pos.y, pos.z, 1,
+    ]);
+
+    this._plane2DCoordinateSystem.invert();
   }
 }

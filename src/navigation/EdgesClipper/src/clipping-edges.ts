@@ -92,11 +92,7 @@ export class ClippingEdges
     for (const style of styles) {
       this.drawEdges(style.name);
     }
-  }
-
-  updateFills() {
-    this.fillNeedsUpdate = true;
-    this.update();
+    this.fillNeedsUpdate = false;
   }
 
   /** {@link Component.get} */
@@ -231,7 +227,6 @@ export class ClippingEdges
       scene.add(edges.mesh);
       if (this.fillNeedsUpdate && edges.fill) {
         edges.fill.update(indexes, this.blockByIndex);
-        this.fillNeedsUpdate = false;
       }
     }
   }
@@ -261,14 +256,15 @@ export class ClippingEdges
         // Exclude triangles of fragment items that don't belong to this style
         if (isMultiblockFragment && style.fragments) {
           const fMesh = mesh as FragmentMesh;
-          const ids = style.fragments[mesh.id];
-          if (ids !== undefined) {
-            const index = fMesh.geometry.index.array[triangleIndex * 3];
-            const blockID = fMesh.geometry.attributes.blockID.array[index];
-            const id = fMesh.fragment.getItemID(0, blockID);
-            if (!ids.has(id)) {
-              return;
-            }
+          const ids = style.fragments[fMesh.fragment.id];
+          if (ids === undefined) {
+            return;
+          }
+          const index = fMesh.geometry.index.array[triangleIndex * 3];
+          const blockID = fMesh.geometry.attributes.blockID.array[index];
+          const id = fMesh.fragment.getItemID(0, blockID);
+          if (!ids.has(id)) {
+            return;
           }
         }
 

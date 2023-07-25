@@ -99,7 +99,8 @@
     const classifier = new OBC.FragmentClassifier(fragments);
     classifier.byEntity(model);
 
-    const found = classifier.find({entities: "IFCWALLSTANDARDCASE"});
+    const found = classifier.find({entities: ["IFCWALLSTANDARDCASE", "IFCWALL", "IFCROOF"]});
+
     for (const fragID in found) {
         const {mesh} = fragments.list[fragID];
         styles.filled.fragments[fragID] = new Set(found[fragID]);
@@ -130,9 +131,7 @@
     const actions = {
         exit: () => {
             plans.exitPlanView();
-            postproduction.customEffects.opacity = 0.3;
             postproduction.customEffects.glossEnabled = true;
-            postproduction.saoEnabled = true;
             materialManager.resetBackgroundColor();
             materialManager.set(false, ["white"]);
             grid.visible = true;
@@ -144,9 +143,7 @@
     for (const plan of planList) {
         actions[plan.id] = () => {
             plans.goTo(plan.id);
-            postproduction.customEffects.opacity = 0.5;
             postproduction.customEffects.glossEnabled = false;
-            postproduction.saoEnabled = false;
             materialManager.setBackgroundColor(whiteColor);
             materialManager.set(true, ["white"]);
             grid.visible = false;

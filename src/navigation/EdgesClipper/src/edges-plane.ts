@@ -86,7 +86,8 @@ export class EdgesPlane extends SimplePlane {
   };
 
   private updateFill = () => {
-    this.edges.updateFills();
+    this.edges.fillNeedsUpdate = true;
+    this.edges.update();
     this.edges.fillVisible = true;
   };
 }
