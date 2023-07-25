@@ -14,6 +14,9 @@ export class IfcFragmentSettings {
     absolute: false,
   };
 
+  /** Whether to save the absolute location of all IFC items. */
+  saveLocations = false;
+
   /** Loader settings for [web-ifc](https://github.com/ifcjs/web-ifc). */
   webIfc: WEBIFC.LoaderSettings = {
     COORDINATE_TO_ORIGIN: true,

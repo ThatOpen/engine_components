@@ -5,7 +5,10 @@ import { IfcGeometries } from "./types";
 export class GeometryReader {
   private _webIfc?: WEBIFC.IfcAPI;
 
+  saveLocations = false;
+
   items: IfcGeometries = {};
+  locations: { [itemID: number]: [number, number, number] } = {};
 
   get webIfc() {
     if (!this._webIfc) {
@@ -16,6 +19,7 @@ export class GeometryReader {
 
   cleanUp() {
     this.items = {};
+    this.locations = {};
     (this._webIfc as any) = null;
   }
 
@@ -27,9 +31,20 @@ export class GeometryReader {
     this._webIfc = webifc;
     const size = mesh.geometries.size();
 
+    const totalTransform = new THREE.Vector3();
+    const tempMatrix = new THREE.Matrix4();
+    const tempVector = new THREE.Vector3();
+
     for (let i = 0; i < size; i++) {
       const geometry = mesh.geometries.get(i);
       const geometryID = geometry.geometryExpressID;
+
+      if (this.saveLocations) {
+        tempVector.set(0, 0, 0);
+        tempMatrix.fromArray(geometry.flatTransformation);
+        tempVector.applyMatrix4(tempMatrix);
+        totalTransform.add(tempVector);
+      }
 
       // Transparent geometries need to be separated
       const isColorTransparent = geometry.color.w !== 1;
@@ -49,6 +64,11 @@ export class GeometryReader {
         matrix: geometry.flatTransformation,
         expressID: mesh.expressID,
       });
+    }
+
+    if (this.saveLocations) {
+      const { x, y, z } = totalTransform.divideScalar(size);
+      this.locations[mesh.expressID] = [x, y, z];
     }
   }
 

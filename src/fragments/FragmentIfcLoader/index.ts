@@ -25,6 +25,8 @@ export class FragmentIfcLoader
 
   ifcLoaded: Event<FragmentsGroup> = new Event();
 
+  locationsSaved = new Event<{ [id: number]: number[] }>();
+
   private _webIfc = new WEBIFC.IfcAPI();
 
   private _toast: ToastNotification;
@@ -65,6 +67,10 @@ export class FragmentIfcLoader
 
   /** Loads the IFC file and converts it to a set of fragments. */
   async load(data: Uint8Array) {
+    if (this.settings.saveLocations) {
+      this._geometry.saveLocations = true;
+    }
+
     const before = performance.now();
     await this.readIfcFile(data);
 
@@ -72,6 +78,10 @@ export class FragmentIfcLoader
 
     const items = this._geometry.items;
     const model = await this._converter.generate(this._webIfc, items);
+
+    if (this.settings.saveLocations) {
+      this.locationsSaved.trigger(this._geometry.locations);
+    }
 
     this.cleanUp();
 
@@ -83,6 +93,7 @@ export class FragmentIfcLoader
 
     this.ifcLoaded.trigger(model);
     console.log(`Loading the IFC took ${performance.now() - before} ms!`);
+
     return model;
   }
 
