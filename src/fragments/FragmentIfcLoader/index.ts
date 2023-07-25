@@ -134,7 +134,7 @@ export class FragmentIfcLoader
       const index = optionals.indexOf(WEBIFC.IFCSPACE);
       optionals.splice(index, 1);
       this._webIfc.StreamAllMeshesWithTypes(0, [WEBIFC.IFCSPACE], (mesh) => {
-        if (mesh.expressID !== 32063) return;
+        // if (mesh.expressID !== 32063) return;
         this._geometry.streamMesh(this._webIfc, mesh, true);
       });
     }
@@ -142,14 +142,14 @@ export class FragmentIfcLoader
     // Load rest of optional categories (if any)
     if (optionals.length) {
       this._webIfc.StreamAllMeshesWithTypes(0, optionals, (mesh) => {
-        if (mesh.expressID !== 32063) return;
+        // if (mesh.expressID !== 32063) return;
         this._geometry.streamMesh(this._webIfc, mesh);
       });
     }
 
     // Load common categories
     this._webIfc.StreamAllMeshes(0, (mesh: WEBIFC.FlatMesh) => {
-      if (mesh.expressID !== 32063) return;
+      // if (mesh.expressID !== 32063) return;
       this._geometry.streamMesh(this._webIfc, mesh);
     });
   }
