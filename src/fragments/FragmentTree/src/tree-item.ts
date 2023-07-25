@@ -42,7 +42,7 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
       const found = classifier.find(this.filter);
       this.selected.trigger(found);
     };
-    this.uiElement.onmouseover = () => {
+    this.uiElement.domElement.onmouseenter = () => {
       const found = classifier.find(this.filter);
       this.hovered.trigger(found);
     };

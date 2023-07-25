@@ -1,5 +1,4 @@
-// @ts-ignore
-import { createPopper } from "@popperjs/core/dist/esm";
+import { createPopper } from "@popperjs/core";
 import { Component, UIComponent } from "../../base-types";
 import { Toolbar } from "../ToolbarComponent";
 import { Components } from "../../core";

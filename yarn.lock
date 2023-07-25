@@ -430,6 +430,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@dxfom/mtext@npm:^0.3.2":
+  version: 0.3.2
+  resolution: "@dxfom/mtext@npm:0.3.2"
+  checksum: 9692c7d8d2f1bdee8038f0c0942fca36e811661864e4c43755112708cd19daac01295ddc7c59be055480353605a863b1ccffb83d414b7e535c5c8a9fa94fb2be
+  languageName: node
+  linkType: hard
+
 "@eslint/eslintrc@npm:^0.4.3":
   version: 0.4.3
   resolution: "@eslint/eslintrc@npm:0.4.3"
@@ -1920,9 +1927,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bim-fragment@npm:1.0.11":
-  version: 1.0.11
-  resolution: "bim-fragment@npm:1.0.11"
+"bidi-js@npm:^1.0.2":
+  version: 1.0.2
+  resolution: "bidi-js@npm:1.0.2"
+  dependencies:
+    require-from-string: ^2.0.2
+  checksum: 1e33008ed4b248b0350cfed5aebbc8717489bc0d3bcee9f5f99b778d82d997df621adefe6f22fffe005dc3bd8c08445b0b17af7c5d8d1a4a25f15f7702d30e68
+  languageName: node
+  linkType: hard
+
+"bim-fragment@npm:1.0.9":
+  version: 1.0.9
+  resolution: "bim-fragment@npm:1.0.9"
   dependencies:
     flatbuffers: ^23.3.3
     three: 0.152.2
@@ -2177,9 +2193,9 @@ __metadata:
   linkType: hard
 
 "caniuse-lite@npm:^1.0.30001503":
-  version: 1.0.30001515
-  resolution: "caniuse-lite@npm:1.0.30001515"
-  checksum: ec5d51785aea6af5cf62ca9d35821d36ab7fa0f85e3e7f752d532025ad59e07131fa3cb3a0a6c486b5ac8620c8c3440e761dc5b38c990d49c17655906f216123
+  version: 1.0.30001516
+  resolution: "caniuse-lite@npm:1.0.30001516"
+  checksum: 044adf3493b734a356a2922445a30095a0f6de6b9194695cdf74deafe7bef658e85858a31177762c2813f6e1ed2722d832d59eee0ecb2151e93a611ee18cb21f
   languageName: node
   linkType: hard
 
@@ -2819,6 +2835,15 @@ __metadata:
   dependencies:
     webidl-conversions: ^5.0.0
   checksum: d638e9cb05c52999f1b2eb87c374b03311ea5b1d69c2f875bc92da73e17db60c12142b45c950228642ff7f845c536b65305483350d080df59003a653da80b691
+  languageName: node
+  linkType: hard
+
+"dxf-parser@npm:^1.1.2":
+  version: 1.1.2
+  resolution: "dxf-parser@npm:1.1.2"
+  dependencies:
+    loglevel: ^1.7.1
+  checksum: 628ec229e30e1a8eeec86cd446ce27e81da94bc46dbfbe658db77c6c63f5017db6e453bbe23bb4b7f665fcb25528c63c1c9c75910ee7563eb9c0755169177899
   languageName: node
   linkType: hard
 
@@ -5273,6 +5298,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"js-base64@npm:^3.7.3":
+  version: 3.7.5
+  resolution: "js-base64@npm:3.7.5"
+  checksum: 67a78c8b1c47b73f1c6fba1957e9fe6fd9dc78ac93ac46cc2e43472dcb9cf150d126fb0e593192e88e0497354fa634d17d255add7cc6ee3c7b4d29870faa8e18
+  languageName: node
+  linkType: hard
+
 "js-tokens@npm:^4.0.0":
   version: 4.0.0
   resolution: "js-tokens@npm:4.0.0"
@@ -5514,6 +5546,13 @@ __metadata:
   version: 4.17.21
   resolution: "lodash@npm:4.17.21"
   checksum: eb835a2e51d381e561e508ce932ea50a8e5a68f4ebdd771ea240d3048244a8d13658acbd502cd4829768c56f2e16bdd4340b9ea141297d472517b83868e677f7
+  languageName: node
+  linkType: hard
+
+"loglevel@npm:^1.7.1":
+  version: 1.8.1
+  resolution: "loglevel@npm:1.8.1"
+  checksum: a1a62db40291aaeaef2f612334c49e531bff71cc1d01a2acab689ab80d59e092f852ab164a5aedc1a752fdc46b7b162cb097d8a9eb2cf0b299511106c29af61d
   languageName: node
   linkType: hard
 
@@ -6336,6 +6375,7 @@ __metadata:
     stats.js: ^0.17.0
     tailwindcss: ^3.3.2
     three: 0.152.2
+    three-dxf-loader: ^3.2.0
     three-mesh-bvh: 0.6.0
     ts-jest: ^27.0.3
     ts-node: ^10.0.0
@@ -7717,8 +7757,8 @@ __metadata:
   linkType: hard
 
 "sucrase@npm:^3.32.0":
-  version: 3.32.0
-  resolution: "sucrase@npm:3.32.0"
+  version: 3.33.0
+  resolution: "sucrase@npm:3.33.0"
   dependencies:
     "@jridgewell/gen-mapping": ^0.3.2
     commander: ^4.0.0
@@ -7730,7 +7770,7 @@ __metadata:
   bin:
     sucrase: bin/sucrase
     sucrase-node: bin/sucrase-node
-  checksum: 79f760aef513adcf22b882d43100296a8afa7f307acef3e8803304b763484cf138a3e2cebc498a6791110ab20c7b8deba097f6ce82f812ca8f1723e3440e5c95
+  checksum: 9d80cd789f74505dfac2ce2c0b9129ddaf8a4de960fbb52c9b286ce16ad2bdc5a8081a54f1a346d18e61dc7e7d19543b702b9ffee6dc3ecf37ff2a5ea9b1ee96
   languageName: node
   linkType: hard
 
@@ -7925,6 +7965,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"three-dxf-loader@npm:^3.2.0":
+  version: 3.2.0
+  resolution: "three-dxf-loader@npm:3.2.0"
+  dependencies:
+    "@dxfom/mtext": ^0.3.2
+    dxf-parser: ^1.1.2
+    js-base64: ^3.7.3
+    troika-three-text: ^0.42.0
+  peerDependencies:
+    three: 0.x.x
+  checksum: c696174ed41b25ba14920db6cff8327bba25c0d62f924912aaeb83bb0b99a6927ae9ee0c73d0618175f0bd132f7308dc2448b453edcb4b5d3ec7fec9eb6a1a1e
+  languageName: node
+  linkType: hard
+
 "three-mesh-bvh@npm:0.6.0":
   version: 0.6.0
   resolution: "three-mesh-bvh@npm:0.6.0"
@@ -8051,6 +8105,35 @@ __metadata:
   version: 3.0.1
   resolution: "trim-newlines@npm:3.0.1"
   checksum: b530f3fadf78e570cf3c761fb74fef655beff6b0f84b29209bac6c9622db75ad1417f4a7b5d54c96605dcd72734ad44526fef9f396807b90839449eb543c6206
+  languageName: node
+  linkType: hard
+
+"troika-three-text@npm:^0.42.0":
+  version: 0.42.0
+  resolution: "troika-three-text@npm:0.42.0"
+  dependencies:
+    bidi-js: ^1.0.2
+    troika-three-utils: ^0.42.0
+    troika-worker-utils: ^0.42.0
+  peerDependencies:
+    three: ">=0.103.0"
+  checksum: 3af4046fbc6f572e6216d4ffd5c9de1b46f40f114f383f3eaf03cc9e97613f92bb6b3d7d4241c537e7c33d3dc17e3f16bec8d79160ba365c05fa54a92e4ff7a1
+  languageName: node
+  linkType: hard
+
+"troika-three-utils@npm:^0.42.0":
+  version: 0.42.0
+  resolution: "troika-three-utils@npm:0.42.0"
+  peerDependencies:
+    three: ">=0.103.0"
+  checksum: a051d162f2969f597f4f4aec4c6540964dc22b2f5455c37affa9703b0bbecc1c0538a81f9fbcfc6b27b6ac75376ed738c1e17179a4a08bf4bf899949dde293b9
+  languageName: node
+  linkType: hard
+
+"troika-worker-utils@npm:^0.42.0":
+  version: 0.42.0
+  resolution: "troika-worker-utils@npm:0.42.0"
+  checksum: aceb84025d28be82f4a04af8adb9cb1cd471243c01c03e4c85978580c33746a1392fd6991b44726da92a97cd32148deced61f67259400091f0376c7591379f39
   languageName: node
   linkType: hard
 

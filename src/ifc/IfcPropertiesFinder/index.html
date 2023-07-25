@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="../../../resources/styles.css">
+    <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <title>IfcPropertiesFinder</title>
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+        "openbim-components": "../../../resources/openbim-components.js"
+      }
+    }
+
+</script>
+<script type="module">
+
+    // Set up scene (see SimpleScene tutorial)
+
+    import * as THREE from 'three';
+    import * as OBC from 'openbim-components';
+
+    const container = document.getElementById('container');
+
+    const components = new OBC.Components();
+
+    components.scene = new OBC.SimpleScene(components);
+    const renderer = new OBC.PostproductionRenderer(components, container);
+    components.renderer = renderer;
+    components.camera = new OBC.SimpleCamera(components);
+    components.raycaster = new OBC.SimpleRaycaster(components);
+
+    components.init();
+
+    renderer.postproduction.enabled = true;
+
+    const scene = components.scene.get();
+
+    components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+
+    const directionalLight = new THREE.DirectionalLight();
+    directionalLight.position.set(5, 10, 3);
+    directionalLight.intensity = 0.5;
+    scene.add(directionalLight);
+
+    const ambientLight = new THREE.AmbientLight();
+    ambientLight.intensity = 0.5;
+    scene.add(ambientLight);
+
+    const grid = new OBC.SimpleGrid(components);
+    components.tools.add('grid', grid);
+    const gridMesh = grid.get();
+    renderer.postproduction.customEffects.excludedMeshes.push(gridMesh);
+
+    const fragments = new OBC.FragmentManager(components);
+    
+    // Fragment file loading
+    const file = await fetch("../../../resources/small.frag");
+    const dataBlob = await file.arrayBuffer();
+    const buffer = new Uint8Array(dataBlob);
+    const model = fragments.load(buffer);
+
+    // Fragment properties loading
+    const properties = await fetch("../../../resources/small.json");
+    model.properties = await properties.json();
+
+    // Quick setup for element hovering and selection
+    const highlighter = new OBC.FragmentHighlighter(components, fragments);
+    const selectionHandler = new OBC.SelectionHandler(components, highlighter);
+
+    // New instance of Properties Finder
+    // Best way to describe the component is to find "Relations of entities meeting a set of attributes criteria"
+    // Each search group aims to find a set of entities matching the criteria
+    // The search result are all common relations of the entities that meet the criteria in each search group.
+    const propsFinder = new OBC.IfcPropertiesFinder(components, fragments);
+    propsFinder.uiElement.queryWindow.visible = true
+
+    // On elements found, select them.
+    propsFinder.onFound.on(result => {
+      const fragmentMap = {}
+      for (const modelID in result) {
+        const model = fragments.groups.find(m => m.uuid === modelID)
+        if (!model) continue;
+        const expressIDs = result[modelID]
+        expressIDs.forEach(expressID => {
+            const data = model.data[expressID]
+            if (!data) return;
+            for (const key of data[0]) {
+                const fragmentID = model.keyFragments[key]
+                if (!fragmentMap[fragmentID]) fragmentMap[fragmentID] = [];
+                fragmentMap[fragmentID].push(String(expressID))
+            }
+        } )
+      }
+      highlighter.highlightByID("select", fragmentMap)
+    })
+
+    // Creating new toolbar + adding component button
+    const mainToolbar = new OBC.Toolbar(components)
+    components.ui.addToolbar(mainToolbar)
+    mainToolbar.addChild(propsFinder.uiElement.main)
+
+</script>
+</body>
+</html>

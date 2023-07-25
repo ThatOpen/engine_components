@@ -21,10 +21,8 @@ export class TreeTitle extends UIComponentsStack {
     return this._descriptionElement.textContent;
   }
 
-  set title(value: string | null | undefined) {
-    if (value) {
-      this._titleElement.textContent = value;
-    }
+  set title(value: string | null) {
+    this._titleElement.textContent = value;
   }
 
   get title() {

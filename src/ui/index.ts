@@ -16,3 +16,4 @@ export * from "./Canvas";
 export * from "./DragAndDropInput";
 export * from "./Spinner";
 export * from "./ToastNotification";
+export * from "./UIPool";

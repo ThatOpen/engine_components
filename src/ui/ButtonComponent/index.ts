@@ -25,17 +25,17 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
 
   static Class = {
     Base: `
-    relative flex gap-x-2 items-center justify-start bg-transparent text-white text-base rounded-md h-fit p-2
-    hover:cursor-pointer hover:bg-ifcjs-200 hover:text-ifcjs-100
-    data-[active=true]:cursor-pointer data-[active=true]:bg-ifcjs-200 data-[active=true]:text-ifcjs-100
-    disabled:cursor-default disabled:bg-transparent disabled:text-gray-500
+    relative flex gap-x-2 items-center bg-transparent text-white rounded-[10px] h-fit p-2
+    hover:cursor-pointer hover:bg-ifcjs-200 hover:text-black
+    data-[active=true]:cursor-pointer data-[active=true]:bg-ifcjs-200 data-[active=true]:text-black
+    disabled:cursor-default disabled:bg-gray-600 disabled:text-gray-400
     transition-all
     `,
-    Label: "text-base whitespace-nowrap",
+    Label: "text-sm uppercase tracking-[1.25px] font-bold whitespace-nowrap",
   };
 
+  protected _parent: Toolbar | null = null;
   private _closeOnClick = true;
-  private _parent!: Toolbar;
   private _popper: PopperInstance;
   private _label: string | null = null;
   private _labelElement = document.createElement("p");
@@ -65,14 +65,25 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
     };
   }
 
-  set parent(toolbar: Toolbar) {
+  set parent(toolbar: Toolbar | null) {
     this._parent = toolbar;
-    this.menu.position = toolbar.position;
-    this.updateMenuPlacement();
+    if (toolbar) {
+      this.menu.position = toolbar.position;
+      this.updateMenuPlacement();
+    }
   }
 
   get parent() {
     return this._parent;
+  }
+
+  set alignment(value: "start" | "center" | "end") {
+    this.domElement.classList.remove(
+      "justify-start",
+      "justify-center",
+      "justify-end"
+    );
+    this.domElement.classList.add(`justify-${value}`);
   }
 
   constructor(components: Components, options?: IButtonOptions) {
@@ -82,6 +93,7 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
     super(components, btn, options?.id);
     this._labelElement.className = Button.Class.Label;
     this.label = options?.name ? options.name : null;
+    this.alignment = "start";
     if (options?.materialIconName) {
       const icon = document.createElement("span");
       icon.className = "material-icons md-18";
