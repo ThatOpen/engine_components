@@ -121,6 +121,7 @@
 		fragmentIfcLoader = new OBC.FragmentIfcLoader(fragments);
 	}
 
+
 	// Set up stats
 
 	const stats = new Stats();
@@ -165,7 +166,7 @@
 		classifier.byEntity(model);
         const walls = new Set();
 		const wallMeshes = [];
-		const foundWalls = classifier.find({entities: ["IFCWALLSTANDARDCASE", "IFCWALL"]});
+		const foundWalls = classifier.find({entities: ["IFCWALLSTANDARDCASE", "IFCWALL", "IFCBUILDINGSTOREY"]});
         for(const id in foundWalls) {
           walls[id] = new Set(foundWalls[id]);
           wallMeshes.push(fragments.list[id].mesh)

@@ -162,6 +162,10 @@ export class ClippingFills {
       x2 = Math.trunc(this._tempVector.x * p) / p;
       y2 = Math.trunc(this._tempVector.y * p) / p;
 
+      if (x1 === x2 && y1 === y2) {
+        continue;
+      }
+
       const startCode = `${x1}|${y1}`;
       const endCode = `${x2}|${y2}`;
 
@@ -206,7 +210,7 @@ export class ClippingFills {
           const endShape = shapes.get(endIndex);
           const startShape = shapes.get(startIndex);
           if (!endShape || !startShape) {
-            return [];
+            continue;
           }
 
           shapes.delete(startIndex);
@@ -233,7 +237,7 @@ export class ClippingFills {
           const endShape = shapes.get(endIndex);
           const startShape = shapes.get(startIndex);
           if (!endShape || !startShape) {
-            return [];
+            continue;
           }
 
           shapes.delete(startIndex);
@@ -258,7 +262,7 @@ export class ClippingFills {
         const startShape2 = shapes.get(startIndex2);
         const startShape1 = shapes.get(startIndex1);
         if (!startShape2 || !startShape1) {
-          return [];
+          continue;
         }
 
         shapes.delete(startIndex1);
@@ -279,7 +283,7 @@ export class ClippingFills {
         const endShape2 = shapes.get(endIndex2);
         const endShape1 = shapes.get(endIndex1);
         if (!endShape2 || !endShape1) {
-          return [];
+          continue;
         }
 
         shapes.delete(endIndex1);
@@ -297,7 +301,7 @@ export class ClippingFills {
         const shapeIndex = shapesStarts.get(start);
         const shape = shapes.get(shapeIndex);
         if (!shape) {
-          return [];
+          continue;
         }
         shape.unshift(end);
         shapesStarts.delete(start);
@@ -307,7 +311,7 @@ export class ClippingFills {
         const shapeIndex = shapesEnds.get(start);
         const shape = shapes.get(shapeIndex);
         if (!shape) {
-          return [];
+          continue;
         }
         shape.push(end);
         shapesEnds.delete(start);
@@ -317,7 +321,7 @@ export class ClippingFills {
         const shapeIndex = shapesStarts.get(end);
         const shape = shapes.get(shapeIndex);
         if (!shape) {
-          return [];
+          continue;
         }
         shape.unshift(start);
         shapesStarts.delete(end);
@@ -327,7 +331,7 @@ export class ClippingFills {
         const shapeIndex = shapesEnds.get(end);
         const shape = shapes.get(shapeIndex);
         if (!shape) {
-          return [];
+          continue;
         }
         shape.push(start);
         shapesEnds.delete(end);
