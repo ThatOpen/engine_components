@@ -1108,6 +1108,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/earcut@npm:^2.1.1":
+  version: 2.1.1
+  resolution: "@types/earcut@npm:2.1.1"
+  checksum: 7845dab97ba2bf379caeb4fb91bb732e6710b0ce018a8e357f023cb96ac2fa5c64352461e93ecac2504966dcf6b0b882d117c2258cf15a679bd0063b3cee0e14
+  languageName: node
+  linkType: hard
+
 "@types/estree@npm:*, @types/estree@npm:^1.0.0":
   version: 1.0.1
   resolution: "@types/estree@npm:1.0.1"
@@ -6347,6 +6354,7 @@ __metadata:
     "@rollup/plugin-commonjs": 25.0.0
     "@rollup/plugin-node-resolve": 15.1.0
     "@tailwindcss/forms": ^0.5.3
+    "@types/earcut": ^2.1.1
     "@types/jest": 27.0.0
     "@types/mapbox-gl": ^2.7.11
     "@types/node": ^14.14.31
@@ -6359,6 +6367,7 @@ __metadata:
     canvas: ^2.11.2
     cpy-cli: ^3.1.1
     dexie: ^3.2.3
+    earcut: ^2.2.4
     eslint: ^7.28.0
     eslint-config-airbnb-base: ^14.2.1
     eslint-config-prettier: ^8.3.0

@@ -14,8 +14,10 @@ export class FragmentOutliner
   extends Component<FragmentIdMap>
   implements Disposable
 {
-  name: string = "FragmentHighlighter";
+  name: string = "FragmentOutliner";
   private _enabled = true;
+
+  private _invisibleMaterial = new THREE.MeshBasicMaterial({ visible: false });
 
   private _selection: FragmentIdMap = {};
   private _components: Components;
@@ -24,13 +26,14 @@ export class FragmentOutliner
 
   private _outlinedMeshes: { [fragID: string]: THREE.InstancedMesh } = {};
 
-  private _tempMatrix = new THREE.Matrix4();
-
-  private _selectOverrideMaterial = new THREE.MeshBasicMaterial({
+  outlineMaterial = new THREE.MeshBasicMaterial({
     color: "white",
-    depthTest: false,
     transparent: true,
+    depthTest: false,
+    depthWrite: false,
   });
+
+  private _tempMatrix = new THREE.Matrix4();
 
   get enabled() {
     return this._enabled;
@@ -38,7 +41,7 @@ export class FragmentOutliner
 
   set enabled(state: boolean) {
     this._enabled = state;
-    this._renderer.postproduction.customEffects.outlineEnabled = state;
+    delete this._renderer.postproduction.customEffects.outlinedMeshes.fragments;
   }
 
   constructor(
@@ -53,17 +56,17 @@ export class FragmentOutliner
     this.enabled = true;
   }
 
-  get(): FragmentIdMap {
+  get() {
     return this._selection;
   }
 
   dispose() {
-    this._selectOverrideMaterial.dispose();
     this._selection = {};
     for (const id in this._outlinedMeshes) {
       const mesh = this._outlinedMeshes[id];
       mesh.geometry.dispose();
     }
+    this._invisibleMaterial.dispose();
     (this._fragments as any) = null;
     (this._components as any) = null;
     (this._renderer as any) = null;
@@ -103,13 +106,7 @@ export class FragmentOutliner
     const blockID = mesh.fragment.getVertexBlockID(geometry, index);
     const itemID = mesh.fragment.getItemID(instanceID, blockID);
 
-    // Get rid of composite suffix (if any)
-    const idNum = parseInt(itemID, 10);
-    const trueID = idNum.toString();
-    this._selection[mesh.uuid].add(trueID);
-
-    this.addComposites(mesh, idNum);
-    this.updateFragmentHighlight(mesh.uuid);
+    this.updateOutline(mesh.uuid);
 
     const group = mesh.fragment.group;
     if (group) {
@@ -122,9 +119,8 @@ export class FragmentOutliner
         if (!this._selection[fragID]) {
           this._selection[fragID] = new Set<string>();
         }
-        this._selection[fragID].add(trueID);
-        this.addComposites(fragment.mesh, idNum);
-        this.updateFragmentHighlight(fragID);
+        this._selection[fragID].add(itemID);
+        this.updateOutline(fragID);
       }
     }
 
@@ -154,67 +150,91 @@ export class FragmentOutliner
 
   clear() {
     this._selection = {};
-    this._renderer.postproduction.customEffects.outlinedMeshes = [];
-  }
-
-  private addComposites(mesh: FragmentMesh, itemID: number) {
-    const composites = mesh.fragment.composites[itemID];
-    if (composites) {
-      for (let i = 1; i < composites; i++) {
-        const compositeID = toCompositeID(itemID, i);
-        this._selection[mesh.uuid].add(compositeID);
+    const customEffects = this._renderer.postproduction.customEffects;
+    const fragmentsOutline = customEffects.outlinedMeshes.fragments;
+    if (fragmentsOutline) {
+      fragmentsOutline.meshes.clear();
+    }
+    for (const fragID in this._outlinedMeshes) {
+      const fragment = this._fragments.list[fragID];
+      const isBlockFragment = fragment.blocks.count > 1;
+      const mesh = this._outlinedMeshes[fragID];
+      if (isBlockFragment) {
+        mesh.geometry.setIndex([]);
+      } else {
+        mesh.count = 0;
       }
     }
   }
 
-  private updateFragmentHighlight(fragmentID: string) {
+  private updateOutline(fragmentID: string) {
+    if (!this._selection[fragmentID]) {
+      return;
+    }
+
     const ids = this._selection[fragmentID];
     const fragment = this._fragments.list[fragmentID];
     if (!fragment) return;
 
     const geometry = fragment.mesh.geometry;
+    const customEffects = this._renderer.postproduction.customEffects;
+
+    if (!customEffects.outlinedMeshes.fragments) {
+      customEffects.outlinedMeshes.fragments = {
+        meshes: new Set(),
+        material: this.outlineMaterial,
+      };
+    }
+
+    const outlineEffect = customEffects.outlinedMeshes.fragments;
 
     // Create a copy of the original fragment mesh for outline
     if (!this._outlinedMeshes[fragmentID]) {
+      const newGeometry = new THREE.BufferGeometry();
+
+      newGeometry.attributes = geometry.attributes;
       const newMesh = new THREE.InstancedMesh(
-        geometry.clone(),
-        [this._selectOverrideMaterial],
+        newGeometry,
+        this._invisibleMaterial,
         fragment.capacity
       );
       newMesh.frustumCulled = false;
       newMesh.renderOrder = 999;
       this._outlinedMeshes[fragmentID] = newMesh;
+
+      const scene = this._components.scene.get();
+      scene.add(newMesh);
     }
 
-    const outline = this._outlinedMeshes[fragmentID];
-    const customEffects = this._renderer.postproduction.customEffects;
-    customEffects.outlinedMeshes.push({ outline, fragment: fragment.mesh });
+    const outlineMesh = this._outlinedMeshes[fragmentID];
+    outlineEffect.meshes.add(outlineMesh);
 
     const isBlockFragment = fragment.blocks.count > 1;
 
     if (isBlockFragment) {
-      const groups: typeof outline.geometry.groups = [];
-      for (const id of ids) {
-        const { blockID } = fragment.getInstanceAndBlockID(id);
-        // @ts-ignore
-        const value = fragment.blocks.blocksMap.indices.map.get(blockID);
-        if (value) {
-          const [start, blockEnd] = value[0];
-          const end = blockEnd + 1;
-          const count = end - start;
-          groups.push({ start, count, materialIndex: 0 });
+      const indices = fragment.mesh.geometry.index.array;
+      const newIndex: number[] = [];
+      const idsSet = new Set(ids);
+      for (let i = 0; i < indices.length - 2; i += 3) {
+        const index = indices[i];
+        const blockID = fragment.mesh.geometry.attributes.blockID.array;
+        const block = blockID[index];
+        const itemID = fragment.mesh.fragment.getItemID(0, block);
+        if (idsSet.has(itemID)) {
+          newIndex.push(indices[i], indices[i + 1], indices[i + 2]);
         }
       }
-      outline.geometry.groups = groups;
+
+      outlineMesh.geometry.setIndex(newIndex);
     } else {
       let counter = 0;
       for (const id of ids) {
         const { instanceID } = fragment.getInstanceAndBlockID(id);
         fragment.mesh.getMatrixAt(instanceID, this._tempMatrix);
-        outline.setMatrixAt(counter++, this._tempMatrix);
+        outlineMesh.setMatrixAt(counter++, this._tempMatrix);
       }
-      outline.count = counter;
-      outline.instanceMatrix.needsUpdate = true;
+      outlineMesh.count = counter;
+      outlineMesh.instanceMatrix.needsUpdate = true;
     }
   }
 }

@@ -1,7 +1,6 @@
 import * as THREE from "three";
-import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry";
-import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2";
-import { Edge } from "./types";
+import { FragmentMesh } from "bim-fragment/fragment-mesh";
+import { ClipStyle, Edge } from "./types";
 import { EdgesStyles } from "./edges-styles";
 import {
   Component,
@@ -11,6 +10,8 @@ import {
   Event,
 } from "../../../base-types";
 import { Components, Disposer } from "../../../core";
+import { ClippingFills } from "./clipping-fills";
+import { PostproductionRenderer } from "../../PostproductionRenderer";
 
 export type Edges = {
   [name: string]: Edge;
@@ -29,6 +30,11 @@ export class ClippingEdges
   /** {@link Component.enabled}. */
   enabled = true;
 
+  fillNeedsUpdate = false;
+
+  protected blockByIndex: { [index: number]: number } = {};
+  protected lastBlock = 0;
+
   protected _edges: Edges = {};
   protected _styles: EdgesStyles;
   protected _disposer = new Disposer();
@@ -39,8 +45,6 @@ export class ClippingEdges
   protected _tempVector = new THREE.Vector3();
   protected _components: Components;
   protected _plane: THREE.Plane;
-
-  protected static _basicEdges = new THREE.LineSegments();
 
   /** {@link Hideable.visible} */
   get visible() {
@@ -58,6 +62,15 @@ export class ClippingEdges
 
     if (visible) {
       this.update();
+    }
+  }
+
+  set fillVisible(visible: boolean) {
+    for (const name in this._edges) {
+      const edges = this._edges[name];
+      if (edges.fill) {
+        edges.fill.visible = visible;
+      }
     }
   }
 
@@ -80,6 +93,7 @@ export class ClippingEdges
     for (const style of styles) {
       this.drawEdges(style.name);
     }
+    this.fillNeedsUpdate = false;
   }
 
   /** {@link Component.get} */
@@ -91,40 +105,63 @@ export class ClippingEdges
   dispose() {
     const edges = Object.values(this._edges);
     for (const edge of edges) {
-      this._disposer.disposeGeometry(edge.generatorGeometry);
+      if (edge.fill) {
+        edge.fill.dispose();
+      }
       this._disposer.dispose(edge.mesh, false);
     }
-    ClippingEdges._basicEdges.removeFromParent();
-    ClippingEdges._basicEdges.geometry.dispose();
-    ClippingEdges._basicEdges = new THREE.LineSegments();
   }
 
-  // Initializes the helper geometry used to compute the vertices
-  private static newGeneratorGeometry() {
-    // create line geometry with enough data to hold 100000 segments
-    const generatorGeometry = new THREE.BufferGeometry();
+  private newEdgesMesh(styleName: string) {
+    const styles = this._styles.get();
+    const material = styles[styleName].lineMaterial;
+    const edgesGeometry = new THREE.BufferGeometry();
     const buffer = new Float32Array(300000);
     const linePosAttr = new THREE.BufferAttribute(buffer, 3, false);
     linePosAttr.setUsage(THREE.DynamicDrawUsage);
-    generatorGeometry.setAttribute("position", linePosAttr);
-    return generatorGeometry;
+    edgesGeometry.setAttribute("position", linePosAttr);
+    const lines = new THREE.LineSegments(edgesGeometry, material);
+    lines.frustumCulled = false;
+    return lines;
   }
 
-  // Creates the geometry of the clipping edges
-  private newThickEdges(styleName: string) {
+  private newFillMesh(name: string, geometry: THREE.BufferGeometry) {
     const styles = this._styles.get();
-    const material = styles[styleName].material;
-    const thickLineGeometry = new LineSegmentsGeometry();
-    const thickEdges = new LineSegments2(thickLineGeometry, material);
-    thickEdges.material.polygonOffset = true;
-    thickEdges.material.polygonOffsetFactor = -2;
-    thickEdges.material.polygonOffsetUnits = 1;
-    thickEdges.renderOrder = 3;
-    return thickEdges;
+    const style = styles[name];
+    const fillMaterial = style.fillMaterial;
+    if (fillMaterial) {
+      const fills = new ClippingFills(
+        this._components,
+        this._plane,
+        geometry,
+        fillMaterial
+      );
+      this.newFillOutline(name, fills, style);
+      return fills;
+    }
+    return undefined;
+  }
+
+  private newFillOutline(name: string, fills: ClippingFills, style: ClipStyle) {
+    if (!style.outlineMaterial) return;
+    const renderer = this._components.renderer;
+    if (renderer instanceof PostproductionRenderer) {
+      const pRenderer = renderer as PostproductionRenderer;
+      const outlines = pRenderer.postproduction.customEffects.outlinedMeshes;
+      if (!outlines[name]) {
+        outlines[name] = {
+          meshes: new Set(),
+          material: style.outlineMaterial,
+        };
+      }
+      fills.styleName = name;
+    }
   }
 
   // Source: https://gkjohnson.github.io/three-mesh-bvh/example/bundle/clippedEdges.html
   private drawEdges(styleName: string) {
+    this.blockByIndex = {};
+
     const style = this._styles.get()[styleName];
 
     if (!this._edges[styleName]) {
@@ -134,13 +171,17 @@ export class ClippingEdges
     const edges = this._edges[styleName];
 
     let index = 0;
-    const posAttr = edges.generatorGeometry.attributes.position;
+    const posAttr = edges.mesh.geometry.attributes.position;
 
     // @ts-ignore
     posAttr.array.fill(0);
 
+    const indexes: number[] = [];
+    let lastIndex = 0;
+
     const notEmptyMeshes = style.meshes.filter((mesh) => mesh.geometry);
-    notEmptyMeshes.forEach((mesh) => {
+
+    for (const mesh of notEmptyMeshes) {
       if (!mesh.geometry.boundsTree) {
         throw new Error("Boundstree not found for clipping edges subset.");
       }
@@ -148,6 +189,17 @@ export class ClippingEdges
       const instanced = mesh as THREE.InstancedMesh;
       if (instanced.count > 1) {
         for (let i = 0; i < instanced.count; i++) {
+          // Exclude fragment instances that don't belong to this style
+          const isFragment = instanced instanceof FragmentMesh;
+          const fMesh = instanced as FragmentMesh;
+          const ids = style.fragments[fMesh.fragment.id];
+          if (isFragment && ids) {
+            const itemID = fMesh.fragment.items[i];
+            if (!ids.has(itemID)) {
+              continue;
+            }
+          }
+
           const tempMesh = new THREE.Mesh(mesh.geometry);
           tempMesh.matrix.copy(mesh.matrix);
 
@@ -161,14 +213,26 @@ export class ClippingEdges
           this._inverseMatrix.copy(tempMesh.matrixWorld).invert();
           this._localPlane.copy(this._plane).applyMatrix4(this._inverseMatrix);
 
-          index = this.shapecast(tempMesh, posAttr, index);
+          index = this.shapecast(tempMesh, posAttr, index, style);
+
+          if (index !== lastIndex) {
+            indexes.push(index);
+            lastIndex = index;
+          }
         }
       } else {
         this._inverseMatrix.copy(mesh.matrixWorld).invert();
         this._localPlane.copy(this._plane).applyMatrix4(this._inverseMatrix);
-        index = this.shapecast(mesh, posAttr, index);
+
+        const isFragment = mesh instanceof FragmentMesh;
+        index = this.shapecast(mesh, posAttr, index, style, isFragment);
+
+        if (index !== lastIndex) {
+          indexes.push(index);
+          lastIndex = index;
+        }
       }
-    });
+    }
 
     // set the draw range to only the new segments and offset the lines so they don't intersect with the geometry
     edges.mesh.geometry.setDrawRange(0, index);
@@ -176,25 +240,31 @@ export class ClippingEdges
     posAttr.needsUpdate = true;
 
     // Update the edges geometry only if there is no NaN in the output (which means there's been an error)
-    const attributes = edges.generatorGeometry.attributes;
+    const attributes = edges.mesh.geometry.attributes;
     const position = attributes.position as THREE.BufferAttribute;
     if (!Number.isNaN(position.array[0])) {
-      ClippingEdges._basicEdges.geometry = edges.generatorGeometry;
-      edges.mesh.geometry.fromLineSegments(ClippingEdges._basicEdges);
       const scene = this._components.scene.get();
       scene.add(edges.mesh);
+      if (this.fillNeedsUpdate && edges.fill) {
+        edges.fill.update(indexes, this.blockByIndex);
+      }
     }
   }
 
-  private initializeStyle(styleName: string) {
-    this._edges[styleName] = {
-      name: styleName,
-      generatorGeometry: ClippingEdges.newGeneratorGeometry(),
-      mesh: this.newThickEdges(styleName),
-    };
+  private initializeStyle(name: string) {
+    const mesh = this.newEdgesMesh(name);
+    const geometry = mesh.geometry;
+    const fill = this.newFillMesh(name, geometry);
+    this._edges[name] = { mesh, name, fill };
   }
 
-  private shapecast(mesh: THREE.Mesh, posAttr: any, index: number) {
+  private shapecast(
+    mesh: THREE.Mesh,
+    posAttr: any,
+    index: number,
+    style: ClipStyle,
+    isMultiblockFragment = false
+  ) {
     // @ts-ignore
     mesh.geometry.boundsTree.shapecast({
       intersectsBounds: (box: any) => {
@@ -202,7 +272,21 @@ export class ClippingEdges
       },
 
       // @ts-ignore
-      intersectsTriangle: (tri: any) => {
+      intersectsTriangle: (tri: any, triangleIndex: number) => {
+        // Exclude triangles of fragment items that don't belong to this style
+        if (isMultiblockFragment && style.fragments) {
+          const fMesh = mesh as FragmentMesh;
+          const ids = style.fragments[fMesh.fragment.id];
+          if (ids !== undefined) {
+            const index = fMesh.geometry.index.array[triangleIndex * 3];
+            const blockID = fMesh.geometry.attributes.blockID.array[index];
+            const id = fMesh.fragment.getItemID(0, blockID);
+            if (!ids.has(id)) {
+              return;
+            }
+          }
+        }
+
         // check each triangle edge to see if it intersects with the plane. If so then
         // add it to the list of segments.
         let count = 0;
@@ -238,6 +322,13 @@ export class ClippingEdges
         if (count !== 2) {
           index -= count;
         }
+
+        if (count === 2 && isMultiblockFragment) {
+          const fMesh = mesh as FragmentMesh;
+          const vertexIndex = fMesh.geometry.index.array[triangleIndex * 3];
+          const block = fMesh.geometry.attributes.blockID.array[vertexIndex];
+          this.blockByIndex[index - 2] = block;
+        }
       },
     });
     return index;
@@ -245,6 +336,9 @@ export class ClippingEdges
 
   private updateEdgesVisibility(edgeName: string, visible: boolean) {
     const edges = this._edges[edgeName];
+    if (edges.fill) {
+      edges.fill.visible = visible;
+    }
     edges.mesh.visible = visible;
     if (visible) {
       const scene = this._components.scene.get();

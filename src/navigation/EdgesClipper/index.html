@@ -29,7 +29,6 @@
 
 	import Stats from 'stats.js/src/Stats.js';
 	import * as THREE from 'three';
-	import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial';
 	import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
 	import * as OBC from 'openbim-components';
 
@@ -39,10 +38,13 @@
 
 	const components = new OBC.Components();
 	components.scene = new OBC.SimpleScene(components);
-	components.renderer = new OBC.SimpleRenderer(components, container);
+	components.renderer = new OBC.PostproductionRenderer(components, container);
 	components.camera = new OBC.SimpleCamera(components);
 	components.raycaster = new OBC.SimpleRaycaster(components);
 	components.init();
+
+    components.renderer.postproduction.enabled = true;
+    components.renderer.postproduction.customEffects.outlineEnabled = true;
 
 	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
@@ -61,6 +63,7 @@
 
 	const grid = new OBC.SimpleGrid(components);
 	components.tools.add("grid", grid);
+    components.renderer.postproduction.customEffects.excludedMeshes.push(grid.get());
 
 	/*MD
   ### ⭕️ Aesthetic Clipping Edges
@@ -101,10 +104,10 @@
 	scene.add(cube);
 	components.meshes.push(cube);
 
-	const blueCube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-	blueCube.position.set(2, 1.5, 0);
-	scene.add(blueCube);
-	components.meshes.push(blueCube);
+	const cube2 = new THREE.Mesh(cubeGeometry, cubeMaterial);
+	cube2.position.set(2, 1.5, 0);
+	scene.add(cube2);
+	components.meshes.push(cube2);
 
 	/*MD
 
@@ -164,12 +167,15 @@
 
    */
 
+  const blueFill = new THREE.MeshBasicMaterial({color: 'lightblue', side: 2});
+	const blueLine = new THREE.LineBasicMaterial({ color: 'blue' });
+    const blueOutline = new THREE.MeshBasicMaterial({color: 'blue', opacity: 0.2, side: 1});
+	clipper.styles.create('Red lines', [cube], blueLine, blueFill, blueOutline);
 
-	const redLineMaterial = new LineMaterial({ color: 'blue', linewidth: 0.002 });
-	clipper.styles.create('Red lines', [cube], redLineMaterial);
-
-	const blueLineMaterial = new LineMaterial({ color: 'red', linewidth: 0.003 });
-	clipper.styles.create('Blue lines', [blueCube], blueLineMaterial);
+	const salmonFill = new THREE.MeshBasicMaterial({color: 'salmon', side: 2});
+	const redLine = new THREE.LineBasicMaterial({ color: 'red' });
+    const redOutline = new THREE.MeshBasicMaterial({color: 'red', opacity: 0.2, side: 1});
+	clipper.styles.create('Blue lines', [cube2], redLine, salmonFill, redOutline);
 
 	/*MD
 
@@ -263,7 +269,7 @@
 		.name('Plane color')
 		.onChange((value) => {
 			helperColor.setHex(value);
-			clipper.material.material = helperColor;
+			clipper.material.lineMaterial = helperColor;
 		});
 
 	actionsFolder.add(clipper, 'size').name('Plane Size').min(0).max(15);
@@ -280,11 +286,11 @@
 			cube.updateMatrix();
 			cube.updateMatrixWorld();
 
-			blueCube.rotation.x = 2 * Math.PI * Math.random();
-			blueCube.rotation.y = 2 * Math.PI * Math.random();
-			blueCube.rotation.z = 2 * Math.PI * Math.random();
-			blueCube.updateMatrix();
-			blueCube.updateMatrixWorld();
+			cube2.rotation.x = 2 * Math.PI * Math.random();
+			cube2.rotation.y = 2 * Math.PI * Math.random();
+			cube2.rotation.z = 2 * Math.PI * Math.random();
+			cube2.updateMatrix();
+			cube2.updateMatrixWorld();
 
 			clipper.updateEdges();
 		},

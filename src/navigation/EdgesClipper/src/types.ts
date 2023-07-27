@@ -1,13 +1,14 @@
 import * as THREE from "three";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry";
-import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2";
+import { ClippingFills } from "./clipping-fills";
+import { FragmentIdMap } from "../../../base-types";
 
 /**
  * A style defines the appearance of the lines of the {@link ClippingEdges} for
  * a set of meshes.
  */
-export interface LineStyle {
+export interface ClipStyle {
   /** The name of the style. */
   name: string;
 
@@ -17,23 +18,39 @@ export interface LineStyle {
   /**
    * The material that defines the appearance of the lines of the
    * {@link ClippingEdges}.
-   * */
-  material: LineMaterial;
+   */
+  lineMaterial: LineMaterial;
+
+  /** The IDs of the fragment items that are clipped by this style. */
+  fragments: FragmentIdMap;
+
+  /**
+   * The material that defines the appearance of the fill of the
+   * {@link ClippingEdges}.
+   */
+  fillMaterial?: THREE.Material;
+
+  /**
+   * The material that defines the appearance of the outline of the
+   * {@link ClippingEdges}. This requires to use the {@link PostproductionRenderer}
+   * and {@link fillMaterial}.
+   */
+  outlineMaterial?: THREE.MeshBasicMaterial;
 }
 
 /**
  * The lines that are drawn when the clipping plane cuts the geometry specified
- * by the {@link LineStyle}.
+ * by the {@link ClipStyle}.
  */
 export interface Edge {
   /** The name of the style to which this Edges belong. */
   name: string;
 
-  /** The geometry used to compute the Edges lines. */
-  generatorGeometry: THREE.BufferGeometry;
-
   /** The visible clipping lines in the scene. */
-  mesh: LineSegments2;
+  mesh: THREE.LineSegments;
+
+  /** The fill of the section. */
+  fill?: ClippingFills;
 }
 
 /**

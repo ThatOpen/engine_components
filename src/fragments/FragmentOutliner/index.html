@@ -44,6 +44,7 @@
     components.init();
 
     renderer.postproduction.enabled = true;
+    renderer.postproduction.customEffects.outlineEnabled = true;
 
     const scene = components.scene.get();
 
@@ -100,8 +101,9 @@
     gui.add(commands, 'highlight');
     gui.add(outliner, 'enabled').name('Outline enabled');
     gui.add(commands, 'removePrevious').name("Remove previous");
-    gui.addColor(customEffects, 'outlineColor').name('Outline color');
-    gui.add(customEffects, 'outlineThickness').name('Outline thickness').step(1).min(2).max(10);
+
+    gui.addColor(outliner.outlineMaterial, 'color').name('Outline color');
+    gui.add(outliner.outlineMaterial, 'opacity').name('Outline thickness').step(0.1).min(0.2).max(1);
 
 </script>
 </body>

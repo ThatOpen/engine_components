@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <link rel="stylesheet" href="../../../resources/styles.css">
-  <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
-  <title>Components | Hello world</title>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="../../../resources/styles.css">
+    <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+    <title>Components | Hello world</title>
 
 </head>
 <body>
@@ -22,246 +22,146 @@
       }
     }
 
+
 </script>
 <script type="module">
-	import * as THREE from 'three';
-	import Stats from 'stats.js/src/Stats.js';
-	import * as OBC from '../../../resources/openbim-components.js';
-	import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
-	import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial';
+    import * as THREE from 'three';
+    import Stats from 'stats.js/src/Stats.js';
+    import * as OBC from '../../../resources/openbim-components.js';
+    import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
+    import {LineMaterial} from 'three/examples/jsm/lines/LineMaterial';
 
-	const container = document.getElementById('container');
+    const container = document.getElementById('container');
 
-	const components = new OBC.Components();
+    const components = new OBC.Components();
 
-	components.scene = new OBC.SimpleScene(components);
-	const renderer = new OBC.PostproductionRenderer(components, container);
-	components.renderer = renderer;
+    components.scene = new OBC.SimpleScene(components);
+    const renderer = new OBC.PostproductionRenderer(components, container);
+    components.renderer = renderer;
 
-	const camera = new OBC.OrthoPerspectiveCamera(components);
-	components.camera = camera;
-	camera.controls.setLookAt(10, 5, 10, -5, 0, -3);
+    const camera = new OBC.OrthoPerspectiveCamera(components);
+    components.camera = camera;
+    camera.controls.setLookAt(10, 5, 10, -5, 0, -3);
 
-	components.raycaster = new OBC.SimpleRaycaster(components);
+    components.raycaster = new OBC.SimpleRaycaster(components);
 
-	components.init();
+    components.init();
 
-	const {postproduction} = renderer;
-	postproduction.enabled = true;
+    const {postproduction} = renderer;
+    postproduction.enabled = true;
 
-	const scene = components.scene.get();
+    const scene = components.scene.get();
 
-	const directionalLight = new THREE.DirectionalLight();
-	directionalLight.position.set(5, 10, 3);
-	directionalLight.intensity = 0.5;
-	scene.add(directionalLight);
+    const directionalLight = new THREE.DirectionalLight();
+    directionalLight.position.set(5, 10, 3);
+    directionalLight.intensity = 0.5;
+    scene.add(directionalLight);
 
-	const ambientLight = new THREE.AmbientLight();
-	ambientLight.intensity = 0.5;
-	scene.add(ambientLight);
+    const ambientLight = new THREE.AmbientLight();
+    ambientLight.intensity = 0.5;
+    scene.add(ambientLight);
 
-	const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
-	components.tools.add('grid', grid);
-	const gridMesh = grid.get();
-	postproduction._customEffects.excludedMeshes.push(gridMesh);
-
-    /*MD
-    ### 🪑 Seamless Floor Plan Integration
-    ---
-    While 3D technology and representations have become increasingly prevalent, 2D technology remains an essential tool,
-    particularly in the context of BIM.
-
-    The significance of 2D Floor Plans lies in their ability to convey important information
-    and facilitate planning.👷🏽
-
-    Along with loading 3D BIM files, we have made sure that we don't leave 2D Floor Plans behind. Let's get started!
-
-    :::tip First, let's set up a simple scene!
-
-    👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
-
-    :::
-
-    We will be using [**Plan Navigator**](../api/classes/components.PlanNavigator) for accessing and viewing Floor Plans in 2D.
-
-    ### 🧩 Adding Fragments
-    ---
-    We'll start by adding a **Fragment** to our scene using [**FragmentManager**](../api/classes/components.FragmentManager).
-
-    We'll use a simple fragment for the purposes of this tutorial, but the code is capable of handling big files as well.🏗️
-
-    */
-
-    const fragments = new OBC.FragmentManager(components);
-
-	const file = await fetch('../../../resources/small.frag');
-	const data = await file.arrayBuffer();
-	const buffer = new Uint8Array(data);
-	const model = fragments.load(buffer);
-
-    /*MD
-
-    :::info Showing Fragments in the Scene
-
-    🏔️ There is a dedicated tutorial on how to use Fragment Manager to load **IFC files**, checkout [that tutorial here](FragmentManager.mdx)!
-
-    :::
-
-    #### Getting Properties
-
-    While creating the floor layouts, we must identify what elements are present on each floor.🔍
-    This information is saved within the properties, so we don't have to do anything manually.
-    We will fetch the properties from `json` file and store it in `model.properties`.🧮
-
-    */
-
-	const properties = await fetch('../../../resources/small.json');
-	model.properties = await properties.json();
-
-    /*MD
-
-    ### 🥋 Mastering Edges for Floor Plans
-    ---
-
-    After classifying the Floors according to properties, we need to slice these Floors dynamically
-    and apply beautiful outlines for the sliced floors.🪚
-
-    For doing so, we will use [**Edges Clipper**](../api/classes/components.EdgesClipper).
-    Also, we will define the `sectionMaterial` by using **LineMaterial**.
-
-    */
-
-	const clipper = new OBC.EdgesClipper(components, OBC.EdgesPlane);
-	const sectionMaterial = new LineMaterial({ color: 'black', linewidth: 0.002 });
-	const meshes = model.items.map(fragment => fragment.mesh);
-	clipper.styles.create("SectionEdges", meshes, sectionMaterial);
-
-    /*MD
-
-    :::info Aesthetic Clipping Edges
-
-    ⭕️ If you're curious about how the Edges Clipper works, we have a tutorial on how to use Edges Clipper to slice **IFC files**.
-    Check out the [tutorial here](EdgesClipper.mdx)!
-
-    :::
-
-    ### 🎨 Managing Materials and Scene Layout
-    ---
-
-    When floor plans are generated and rendered, they must be displayed in the same view.
-    The background of the scene is vital to consider while handling several views.🏝
-    For changes like these, let's use [**MaterialManager**](MaterialManager.mdx),
-    which allows us to adjust the background and color of items right out of the box.🕹
-
-     */
-
-	const whiteColor = new THREE.Color("white");
-	const whiteMaterial = new THREE.MeshBasicMaterial({color: whiteColor});
-	const materialManager = new OBC.MaterialManager(components);
-	materialManager.addMaterial("white", whiteMaterial);
-	materialManager.addMeshes("white", meshes);
-
-    /*MD
-
-    #### Changing Background Color
-
-    For this tutorial, we will be changing background color when we are in **Plan View**,
-    this can be easily done using **`materialManager.setBackgroundColor(whiteColor)`**
-
-    To know more in detail about **Material Manager** you can checkout [**this tutorial**](MaterialManager.mdx)📝
-
-    ### 🏠 Crafting Clear Floor Plans
-    ---
-
-    Here comes the interesting part, we will use [**Plan Navigator**](../api/classes/components.PlanNavigator) to generate
-    the Floor Plans for model dynamically. We will have to compute the plans for model using **computeAllPlanViews()**.🧪
-
-    Computing Plans make them ready to use!💪
-
-     */
-
-	const plans = new OBC.PlanNavigator(clipper, components.camera);
-	await plans.computeAllPlanViews(model);
-	const planList = plans.get();
-
-    /*MD
-
-    The Floor Plans are now ready, and we can access them using `plans.get()`.
-
-    #### 🎥 Navigating to Floor Plans
-
-    Every plan that has been computed has a [**`plan.id`**](../api/classes/components.PlanNavigator#goto)
-    which will help us navigate to the particular Floor Plan.
-
-    ### 🌡️ Screen Culling for Better Performance
-
-    We will also add [Screen Culler](../api/classes/components.ScreenCuller) which will enhance the performance of our
-    BIM App by removing Fragment elements that are not in our viewing area.
-
-    */
+    const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
+    components.tools.add('grid', grid);
+    const gridMesh = grid.get();
+    postproduction._customEffects.excludedMeshes.push(gridMesh);
 
     const culler = new OBC.ScreenCuller(components);
 
-    container.addEventListener("mouseup", () => culler.needsUpdate = true);
-    container.addEventListener("wheel", () => culler.needsUpdate = true);
+    const fragments = new OBC.FragmentManager(components);
 
-    for(const fragment of model.items) {
-      culler.add(fragment.mesh);
-    }
+    // Set up fragment culler update
+
+    container.addEventListener('mouseup', () => culler.needsUpdate = true);
+    container.addEventListener('wheel', () => culler.needsUpdate = true);
+
+    // Load the fragments
+
+    const file = await fetch('../../../resources/small.frag');
+    const data = await file.arrayBuffer();
+    const buffer = new Uint8Array(data);
+    const model = fragments.load(buffer);
+
+    const properties = await fetch('../../../resources/small.json');
+    model.properties = await properties.json();
 
     culler.needsUpdate = true;
 
-    /*MD
+    const clipper = new OBC.EdgesClipper(components, OBC.EdgesPlane);
+    const sectionMaterial = new THREE.LineBasicMaterial({color: 'black'});
+    const fillMaterial = new THREE.MeshBasicMaterial({color: 'gray', side: 2});
+    const fillOutline = new THREE.MeshBasicMaterial({color: 'black', side: 1, opacity: 0.5, transparent: true});
 
-    :::info Culling unnecessary Fragments
+    clipper.styles.create("filled", [], sectionMaterial, fillMaterial, fillOutline);
+    clipper.styles.create("projected", [], sectionMaterial);
+    const styles = clipper.styles.get();
 
-    🚅 If you're wondering how to add Screen Culler to your BIM app, we have a dedicated tutorial for it! Checkout [that tutorial here](ScreenCuller.mdx)!
+    postproduction.customEffects.outlineEnabled = true;
 
-    :::
+    const classifier = new OBC.FragmentClassifier(fragments);
+    classifier.byEntity(model);
 
-    Well done! 🎉 It is now more than easier to generate and view Floor Plans using **[Plan Navigator Component](../api/classes/components.PlanNavigator)**.
-    Along with providing 3D capability, your BIM app can now support 2D floor plans as well.📐
+    const found = classifier.find({entities: ["IFCWALLSTANDARDCASE", "IFCWALL"]});
 
-    Let's keep it up and check out another tutorial! 🎓
+    for (const fragID in found) {
+        const {mesh} = fragments.list[fragID];
+        styles.filled.fragments[fragID] = new Set(found[fragID]);
+        styles.filled.meshes.push(mesh);
+    }
 
-     */
+    const meshes = [];
+    for (const fragment of model.items) {
+        const {mesh} = fragment;
+        meshes.push(mesh);
+        styles.projected.meshes.push(mesh);
+    }
 
-	const gui = new dat.GUI();
+    const whiteColor = new THREE.Color("white");
+    const whiteMaterial = new THREE.MeshBasicMaterial({color: whiteColor});
+    const materialManager = new OBC.MaterialManager(components);
+    materialManager.addMaterial("white", whiteMaterial);
+    materialManager.addMeshes("white", meshes);
 
-	const actions = {
-		exit: () => {
-			plans.exitPlanView();
-			postproduction.customEffects.opacity = 0.3;
-			postproduction.saoEnabled = true;
-			materialManager.resetBackgroundColor();
-			materialManager.set(false, ["white"]);
-			grid.visible = true;
-		}
+    const plans = new OBC.PlanNavigator(clipper, components.camera);
+    await plans.computeAllPlanViews(model);
+    const planList = plans.get();
+
+    // Set up GUI
+
+    const gui = new dat.GUI();
+
+    const actions = {
+        exit: () => {
+            plans.exitPlanView();
+            postproduction.customEffects.glossEnabled = true;
+            materialManager.resetBackgroundColor();
+            materialManager.set(false, ["white"]);
+            grid.visible = true;
+        }
     };
 
-	gui.add(actions, "exit");
+    gui.add(actions, "exit");
 
-	for(const plan of planList) {
-		actions[plan.id] = () => {
-			plans.goTo(plan.id);
-			postproduction.customEffects.opacity = 0.5;
-			postproduction.saoEnabled = false;
-			materialManager.setBackgroundColor(whiteColor);
-			materialManager.set(true, ["white"]);
-			grid.visible = false;
-		}
-		gui.add(actions, plan.id);
-	}
+    for (const plan of planList) {
+        actions[plan.id] = () => {
+            plans.goTo(plan.id);
+            postproduction.customEffects.glossEnabled = false;
+            materialManager.setBackgroundColor(whiteColor);
+            materialManager.set(true, ["white"]);
+            grid.visible = false;
+        }
+        gui.add(actions, plan.id);
+    }
 
-	// Set up stats
-	const stats = new Stats();
-	stats.showPanel(2);
-	document.body.append(stats.dom);
-	stats.dom.style.left = '0px';
-	stats.dom.style.right = 'auto';
+    // Set up stats
+    const stats = new Stats();
+    stats.showPanel(2);
+    document.body.append(stats.dom);
+    stats.dom.style.left = '0px';
+    stats.dom.style.right = 'auto';
 
-	components.renderer.beforeUpdate.on(() => stats.begin());
-	components.renderer.afterUpdate.on(() => stats.end());
+    components.renderer.beforeUpdate.on(() => stats.begin());
+    components.renderer.afterUpdate.on(() => stats.end());
 
 </script>
 </body>

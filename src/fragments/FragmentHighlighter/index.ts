@@ -258,8 +258,9 @@ export class FragmentHighlighter
     for (const name in this.highlightMats) {
       if (!fragment.fragments[name]) {
         const material = this.highlightMats[name];
-        fragment.addFragment(name, material);
-        fragment.fragments[name].mesh.renderOrder = 1;
+        const subFragment = fragment.addFragment(name, material);
+        subFragment.mesh.renderOrder = 2;
+        subFragment.mesh.frustumCulled = false;
       }
     }
   }

@@ -6,6 +6,7 @@ import * as THREE from "three";
 
 export function getProjectedNormalMaterial() {
   return new THREE.ShaderMaterial({
+    side: 2,
     clipping: true,
     uniforms: {},
     vertexShader: `

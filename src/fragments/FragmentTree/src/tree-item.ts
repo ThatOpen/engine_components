@@ -5,14 +5,14 @@ import { FragmentClassifier } from "../../FragmentClassifier";
 
 interface TreeItem {
   name: string;
-  filter: { [groupSystemName: string]: string };
+  filter: { [groupSystemName: string]: string[] };
   children: TreeItem[];
 }
 
 export class FragmentTreeItem extends Component<TreeItem> implements UI {
   name = "FragmentTreeItem";
   enabled: boolean = true;
-  filter: { [name: string]: string } = {};
+  filter: { [name: string]: string[] } = {};
   components: Components;
   uiElement: TreeView;
 

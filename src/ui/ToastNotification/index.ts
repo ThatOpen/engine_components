@@ -1,5 +1,6 @@
 import { Components } from "../../core";
 import { SimpleUIComponent } from "../SimpleUIComponent";
+import { UIComponent } from "../../base-types";
 
 interface ToastConfig {
   message: string;
@@ -28,16 +29,28 @@ export class ToastNotification extends SimpleUIComponent<HTMLDivElement> {
     this._message = config.message;
     const messageID = this.getMessageID();
 
+    const slotID = `${this.id}-slot`;
+
     const template = `
         <div id="toast-default" class="flex items-center w-full max-w-xs p-4 text-gray-500 bg-ifcjs-200 rounded-lg shadow dark:text-gray-400 dark:bg-gray-800" role="alert">
             <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-ifcjs-200 bg-ifcjs-300 rounded-full dark:bg-blue-800 dark:text-blue-200">
                 ${icon}
             </div>
             <div id="${messageID}" class="ml-3 text-sm font-normal">${this._message}</div>
+            <div id="${slotID}-1"></div>
         </div>
     `;
 
     container.innerHTML = template;
+  }
+
+  addChild(...items: UIComponent[]) {
+    const slot = this.domElement.querySelector(`#${this.id}-slot`);
+    if (!slot) return;
+    for (const item of items) {
+      this.children.push(item);
+      slot.appendChild(item.domElement);
+    }
   }
 
   get message() {

@@ -25,6 +25,9 @@ export class FragmentIfcLoader
 
   ifcLoaded: Event<FragmentsGroup> = new Event();
 
+  // For debugging purposes
+  isolatedItems = new Set<number>();
+
   locationsSaved = new Event<{ [id: number]: number[] }>();
 
   private _webIfc = new WEBIFC.IfcAPI();
@@ -139,6 +142,13 @@ export class FragmentIfcLoader
 
     // Some categories (like IfcSpace) need to be created explicitly
     const optionals = this.settings.optionalCategories;
+    const callback = (mesh: WEBIFC.FlatMesh) => {
+      if (this.isExcluded(mesh.expressID)) {
+        return;
+      }
+      this._geometry.streamMesh(this._webIfc, mesh);
+    };
+    this._webIfc.StreamAllMeshesWithTypes(0, optionals, callback);
 
     // Force IFC space to be transparent
     if (optionals.includes(WEBIFC.IFCSPACE)) {
@@ -160,6 +170,9 @@ export class FragmentIfcLoader
 
     // Load common categories
     this._webIfc.StreamAllMeshes(0, (mesh: WEBIFC.FlatMesh) => {
+      if (this.isExcluded(mesh.expressID)) {
+        return;
+      }
       // if (mesh.expressID !== 32063) return;
       this._geometry.streamMesh(this._webIfc, mesh);
     });
@@ -170,5 +183,9 @@ export class FragmentIfcLoader
     this._webIfc = new WEBIFC.IfcAPI();
     this._geometry.cleanUp();
     this._converter.cleanUp();
+  }
+
+  private isExcluded(id: number) {
+    return this.isolatedItems.size && !this.isolatedItems.has(id);
   }
 }

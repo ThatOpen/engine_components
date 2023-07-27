@@ -51,7 +51,7 @@ export class FragmentClassifier
     }
   }
 
-  find(filter?: { [name: string]: string }) {
+  find(filter?: { [name: string]: string[] }) {
     if (!filter) {
       const result: { [p: string]: string[] } = {};
       const fragments = this._fragments.list;
@@ -66,22 +66,24 @@ export class FragmentClassifier
     const size = Object.keys(filter).length;
     const models: { [fragmentGuid: string]: { [id: string]: number } } = {};
     for (const name in filter) {
-      const value = filter[name];
+      const values = filter[name];
       if (!this._groupSystems[name]) {
         console.warn(`Classification ${name} does not exist.`);
         continue;
       }
-      const found = this._groupSystems[name][value];
-      if (found) {
-        for (const guid in found) {
-          if (!models[guid]) {
-            models[guid] = {};
-          }
-          for (const id of found[guid]) {
-            if (!models[guid][id]) {
-              models[guid][id] = 1;
-            } else {
-              models[guid][id]++;
+      for (const value of values) {
+        const found = this._groupSystems[name][value];
+        if (found) {
+          for (const guid in found) {
+            if (!models[guid]) {
+              models[guid] = {};
+            }
+            for (const id of found[guid]) {
+              if (!models[guid][id]) {
+                models[guid][id] = 1;
+              } else {
+                models[guid][id]++;
+              }
             }
           }
         }

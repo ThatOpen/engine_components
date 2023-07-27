@@ -225,7 +225,7 @@
 		.name("Plane color")
 		.onChange((value) => {
 			helperColor.setHex(value);
-			clipper.material.material = helperColor;
+			clipper.material.lineMaterial = helperColor;
 		});
 
 	actionsFolder.add(clipper, 'size').name("Plane Size").min(0).max(15);

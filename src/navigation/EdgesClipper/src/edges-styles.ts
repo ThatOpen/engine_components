@@ -1,11 +1,11 @@
 import * as THREE from "three";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
-import { LineStyle } from "./types";
+import { ClipStyle } from "./types";
 import { Component, Disposable, Event, Updateable } from "../../../base-types";
 import { Components } from "../../../core";
 
 export type LineStyles = {
-  [name: string]: LineStyle;
+  [name: string]: ClipStyle;
 };
 
 export class EdgesStyles
@@ -18,7 +18,7 @@ export class EdgesStyles
 
   protected _styles: LineStyles = {};
 
-  protected _defaultMaterial = new LineMaterial({
+  protected _defaultLineMaterial = new LineMaterial({
     color: 0x000000,
     linewidth: 0.001,
   });
@@ -43,18 +43,23 @@ export class EdgesStyles
   async create(
     name: string,
     meshes: THREE.Mesh[],
-    material = this._defaultMaterial
+    lineMaterial = this._defaultLineMaterial,
+    fillMaterial?: THREE.Material,
+    outlineMaterial?: THREE.MeshBasicMaterial
   ) {
     for (const mesh of meshes) {
       if (!mesh.geometry.boundsTree) mesh.geometry.computeBoundsTree();
     }
 
     const renderer = this.components.renderer;
-    material.clippingPlanes = renderer.clippingPlanes;
+    lineMaterial.clippingPlanes = renderer.clippingPlanes;
     this._styles[name] = {
       name,
-      material,
+      lineMaterial,
       meshes,
+      fillMaterial,
+      outlineMaterial,
+      fragments: {},
     };
   }
 
@@ -62,7 +67,7 @@ export class EdgesStyles
     const styles = Object.values(this._styles);
     for (const style of styles) {
       style.meshes.length = 0;
-      style.material.dispose();
+      style.lineMaterial.dispose();
     }
     this._styles = {};
   }
