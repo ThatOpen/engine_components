@@ -5,7 +5,6 @@ import { Component, Disposable, FragmentIdMap } from "../../base-types";
 import { FragmentManager } from "../index";
 import { Components } from "../../core";
 import { PostproductionRenderer } from "../../navigation";
-import { toCompositeID } from "../../utils";
 
 // TODO: Clean up and document
 // TODO: Deduplicate logic with highlighter
@@ -105,16 +104,17 @@ export class FragmentOutliner
     fragments.push(mesh.fragment);
     const blockID = mesh.fragment.getVertexBlockID(geometry, index);
     const itemID = mesh.fragment.getItemID(instanceID, blockID);
+    this._selection[mesh.uuid].add(itemID);
 
     this.updateOutline(mesh.uuid);
 
     const group = mesh.fragment.group;
     if (group) {
+      const idNum = parseInt(itemID, 10);
       const keys = group.data[idNum][0];
       for (let i = 0; i < keys.length; i++) {
         const fragKey = keys[i];
         const fragID = group.keyFragments[fragKey];
-        const fragment = this._fragments.list[fragID];
         fragments.push(this._fragments.list[fragID]);
         if (!this._selection[fragID]) {
           this._selection[fragID] = new Set<string>();
@@ -124,7 +124,7 @@ export class FragmentOutliner
       }
     }
 
-    return { id: trueID, fragments };
+    return { id: itemID, fragments };
   }
 
   // highlightByID(

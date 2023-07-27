@@ -142,20 +142,15 @@ export class FragmentIfcLoader
 
     // Some categories (like IfcSpace) need to be created explicitly
     const optionals = this.settings.optionalCategories;
-    const callback = (mesh: WEBIFC.FlatMesh) => {
-      if (this.isExcluded(mesh.expressID)) {
-        return;
-      }
-      this._geometry.streamMesh(this._webIfc, mesh);
-    };
-    this._webIfc.StreamAllMeshesWithTypes(0, optionals, callback);
 
     // Force IFC space to be transparent
     if (optionals.includes(WEBIFC.IFCSPACE)) {
       const index = optionals.indexOf(WEBIFC.IFCSPACE);
       optionals.splice(index, 1);
       this._webIfc.StreamAllMeshesWithTypes(0, [WEBIFC.IFCSPACE], (mesh) => {
-        // if (mesh.expressID !== 32063) return;
+        if (this.isExcluded(mesh.expressID)) {
+          return;
+        }
         this._geometry.streamMesh(this._webIfc, mesh, true);
       });
     }
@@ -163,7 +158,9 @@ export class FragmentIfcLoader
     // Load rest of optional categories (if any)
     if (optionals.length) {
       this._webIfc.StreamAllMeshesWithTypes(0, optionals, (mesh) => {
-        // if (mesh.expressID !== 32063) return;
+        if (this.isExcluded(mesh.expressID)) {
+          return;
+        }
         this._geometry.streamMesh(this._webIfc, mesh);
       });
     }
@@ -173,7 +170,6 @@ export class FragmentIfcLoader
       if (this.isExcluded(mesh.expressID)) {
         return;
       }
-      // if (mesh.expressID !== 32063) return;
       this._geometry.streamMesh(this._webIfc, mesh);
     });
   }

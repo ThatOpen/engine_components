@@ -169,12 +169,12 @@
 
   const blueFill = new THREE.MeshBasicMaterial({color: 'lightblue', side: 2});
 	const blueLine = new THREE.LineBasicMaterial({ color: 'blue' });
-    const blueOutline = new THREE.MeshBasicMaterial({color: 'blue', opacity: 0.2, side: 1});
+    const blueOutline = new THREE.MeshBasicMaterial({color: 'blue', opacity: 0.2, side: 2, transparent: true});
 	clipper.styles.create('Red lines', [cube], blueLine, blueFill, blueOutline);
 
 	const salmonFill = new THREE.MeshBasicMaterial({color: 'salmon', side: 2});
 	const redLine = new THREE.LineBasicMaterial({ color: 'red' });
-    const redOutline = new THREE.MeshBasicMaterial({color: 'red', opacity: 0.2, side: 1});
+    const redOutline = new THREE.MeshBasicMaterial({color: 'red', opacity: 0.2, side: 2, transparent: true});
 	clipper.styles.create('Blue lines', [cube2], redLine, salmonFill, redOutline);
 
 	/*MD
@@ -274,6 +274,12 @@
 
 	actionsFolder.add(clipper, 'size').name('Plane Size').min(0).max(15);
 	actionsFolder.add(clipper.material, 'opacity').name('Plane Opacity').min(0).max(1);
+
+    const width = {value: 0.2};
+    actionsFolder.add(width, 'value').name('Lines width').step(0.1).min(0.1).max(1).onChange(() => {
+      blueOutline.opacity = width.value;
+      redOutline.opacity = width.value;
+    })
 
 	const actions = {
 		'Delete all planes': () => {
