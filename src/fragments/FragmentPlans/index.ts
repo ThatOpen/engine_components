@@ -187,7 +187,7 @@ export class PlanNavigator extends Component<PlanView[]> implements Disposable {
         this.currentPlan.plane.edges.visible = true;
       }
     }
-    this.camera.setNavigationMode("Plan");
+    // this.camera.setNavigationMode("Plan");
     const projection = this.currentPlan.ortho ? "Orthographic" : "Perspective";
     this.camera.setProjection(projection);
   }

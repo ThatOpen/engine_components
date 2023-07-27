@@ -277,14 +277,13 @@ export class ClippingEdges
         if (isMultiblockFragment && style.fragments) {
           const fMesh = mesh as FragmentMesh;
           const ids = style.fragments[fMesh.fragment.id];
-          if (ids === undefined) {
-            return;
-          }
-          const index = fMesh.geometry.index.array[triangleIndex * 3];
-          const blockID = fMesh.geometry.attributes.blockID.array[index];
-          const id = fMesh.fragment.getItemID(0, blockID);
-          if (!ids.has(id)) {
-            return;
+          if (ids !== undefined) {
+            const index = fMesh.geometry.index.array[triangleIndex * 3];
+            const blockID = fMesh.geometry.attributes.blockID.array[index];
+            const id = fMesh.fragment.getItemID(0, blockID);
+            if (!ids.has(id)) {
+              return;
+            }
           }
         }
 

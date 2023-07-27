@@ -77,12 +77,12 @@
 
     // Load the fragments
 
-    const file = await fetch('../../../resources/model.frag');
+    const file = await fetch('../../../resources/small.frag');
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
     const model = fragments.load(buffer);
 
-    const properties = await fetch('../../../resources/model.json');
+    const properties = await fetch('../../../resources/small.json');
     model.properties = await properties.json();
 
     culler.needsUpdate = true;
@@ -101,7 +101,7 @@
     const classifier = new OBC.FragmentClassifier(fragments);
     classifier.byEntity(model);
 
-    const found = classifier.find({entities: ["IFCWALLSTANDARDCASE", "IFCWALL", "IFCROOF"]});
+    const found = classifier.find({entities: ["IFCWALLSTANDARDCASE", "IFCWALL"]});
 
     for (const fragID in found) {
         const {mesh} = fragments.list[fragID];
@@ -111,7 +111,7 @@
 
     const meshes = [];
     for (const fragment of model.items) {
-        const {mesh, id} = fragment;
+        const {mesh} = fragment;
         meshes.push(mesh);
         styles.projected.meshes.push(mesh);
     }

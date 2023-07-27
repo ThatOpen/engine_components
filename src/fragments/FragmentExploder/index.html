@@ -33,7 +33,7 @@
 	const components = new OBC.Components();
 
 	components.scene = new OBC.SimpleScene(components);
-	const renderer = new OBC.SimpleRenderer(components, container);
+	const renderer = new OBC.PostproductionRenderer(components, container);
 	components.renderer = renderer;
 
 	const camera = new OBC.SimpleCamera(components);
@@ -44,6 +44,7 @@
 
 	components.init();
 
+    renderer.postproduction.enabled = true;
 	const scene = components.scene.get();
 
 	const directionalLight = new THREE.DirectionalLight();
@@ -57,6 +58,9 @@
 
 	const grid = new OBC.SimpleGrid(components);
 	components.tools.add("grid", grid);
+    const gridMesh = grid.get();
+    const effects = renderer.postproduction.customEffects;
+    effects.excludedMeshes.push(gridMesh);
 
     /*MD
 

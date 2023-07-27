@@ -160,25 +160,7 @@
 
     // For debugging
 
-	fragmentIfcLoader.ifcLoaded.on((model) => {
-
-		const classifier = new OBC.FragmentClassifier();
-		classifier.byEntity(model);
-        const walls = new Set();
-		const wallMeshes = [];
-		const foundWalls = classifier.find({entities: ["IFCWALLSTANDARDCASE", "IFCWALL", "IFCBUILDINGSTOREY"]});
-        for(const id in foundWalls) {
-          walls[id] = new Set(foundWalls[id]);
-          wallMeshes.push(fragments.list[id].mesh)
-        }
-
-		const blueFill = new THREE.MeshBasicMaterial({color: 'lightblue', side: 2});
-		const blueLine = new THREE.LineBasicMaterial({ color: 'blue' });
-		const blueOutline = new THREE.MeshBasicMaterial({ color: 'blue', side: 1, transparent: true, opacity: 0.4 });
-		clipper.styles.create('walls', wallMeshes, blueLine, blueFill, blueOutline);
-
-        const styles = clipper.styles.get();
-        styles.walls.fragments = walls;
+	// fragmentIfcLoader.ifcLoaded.on((model) => {
 
 	  // let sorted = [];
 	  // for(const frag of model.fragments) {
@@ -199,7 +181,7 @@
 		// 	mat.color.setRGB(value, value, value, "srgb");
 		// 	value += step;
 	  // }
-	});
+	// });
 
 
 </script>

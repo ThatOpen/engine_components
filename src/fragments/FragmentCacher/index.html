@@ -36,10 +36,12 @@
     const components = new OBC.Components();
 
     components.scene = new OBC.SimpleScene(components);
-    components.renderer = new OBC.SimpleRenderer(components, container);
+    components.renderer = new OBC.PostproductionRenderer(components, container);
     components.camera = new OBC.SimpleCamera(components);
     components.raycaster = new OBC.SimpleRaycaster(components);
     components.init();
+
+    components.renderer.postproduction.enabled = true;
 
     const scene = components.scene.get();
 
@@ -56,6 +58,9 @@
 
     const grid = new OBC.SimpleGrid(components);
     components.tools.add("grid", grid);
+    const gridMesh = grid.get();
+    const effects = components.renderer.postproduction.customEffects;
+    effects.excludedMeshes.push(gridMesh);
 
     const fragments = new OBC.FragmentManager(components);
     let fragmentIfcLoader = new OBC.FragmentIfcLoader(components, fragments);
