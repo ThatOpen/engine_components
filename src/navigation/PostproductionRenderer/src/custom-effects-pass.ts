@@ -35,7 +35,6 @@ export class CustomEffectsPass extends Pass {
   private _lineColor = 0x999999;
   private _opacity = 0.4;
   private _tolerance = 3;
-  private _correctColor = false;
   private _glossEnabled = true;
 
   private _glossExponent = 0.7;
@@ -74,17 +73,6 @@ export class CustomEffectsPass extends Pass {
     material.uniforms.opacity.value = value;
   }
 
-  get correctColor() {
-    return this._correctColor;
-  }
-
-  set correctColor(active: boolean) {
-    this._correctColor = active;
-    const value = active ? 1 : 0;
-    const material = this.fsQuad.material as THREE.ShaderMaterial;
-    material.uniforms.correctColor.value = value;
-  }
-
   get glossEnabled() {
     return this._glossEnabled;
   }
@@ -116,6 +104,7 @@ export class CustomEffectsPass extends Pass {
   }
 
   get maxGloss() {
+    new THREE.MeshBasicMaterial().color.convertLinearToSRGB();
     return this._maxGloss;
   }
 
@@ -321,7 +310,6 @@ export class CustomEffectsPass extends Pass {
       uniform int width;
 	  uniform float opacity;
       uniform float tolerance;
-      uniform float correctColor;
       uniform float glossExponent;
       uniform float minGloss;
       uniform float maxGloss;
@@ -349,8 +337,8 @@ export class CustomEffectsPass extends Pass {
 
 	  void main() {
 	  
-	    vec3 sceneColor = getValue(sceneColorBuffer, 0, 0).rgb;
-	    vec3 normSceneColor = normalize(sceneColor);
+	    vec4 sceneColor = getValue(sceneColorBuffer, 0, 0);
+	    vec3 normSceneColor = normalize(sceneColor.rgb);
   
         vec4 plane = getValue(planeBuffer, 0, 0);
 	    vec3 normal = plane.xyz;
@@ -446,15 +434,6 @@ export class CustomEffectsPass extends Pass {
         line *= background;
         line *= opacity;
         
-        // Correct color to make it look similar to sao postprocessing colors
-        
-        float factor = clamp(correctColor * 1.5, 1., 4.);
-        float sum = 0.05 * step(1.5, factor);
-        float r = pow(sceneColor.r + sum, 1. / factor);
-        float g = pow(sceneColor.g + sum, 1. / factor);
-        float b = pow(sceneColor.b + sum, 1. / factor);
-        vec4 corrected = vec4(r, g, b, 1.);
-        
         // Add gloss
         
         vec3 gloss = getValue(glossBuffer, 0, 0).xyz;
@@ -463,9 +442,9 @@ export class CustomEffectsPass extends Pass {
         gloss = min(pow(gloss, glossExpVector), vec3(1.,1.,1.));
         gloss *= diffGloss;
         gloss += minGloss;
-        vec4 glossedColor = corrected + vec4(gloss, 1.) * glossEnabled;
+        vec4 glossedColor = sceneColor + vec4(gloss, 1.) * glossEnabled;
         
-        corrected = mix(corrected, glossedColor, background);
+        vec4 corrected = mix(sceneColor, glossedColor, background);
         
         // Draw lines
         
@@ -508,7 +487,6 @@ export class CustomEffectsPass extends Pass {
     return new THREE.ShaderMaterial({
       uniforms: {
         opacity: { value: this._opacity },
-        correctColor: { value: 1 },
         debugVisualize: { value: 0 },
         sceneColorBuffer: { value: null },
         tolerance: { value: this._tolerance },

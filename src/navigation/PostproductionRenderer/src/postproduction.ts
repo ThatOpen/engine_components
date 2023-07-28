@@ -3,12 +3,18 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
 import { N8AOPass } from "n8ao";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
-import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader";
+import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader";
 import { Components } from "../../../core";
 import { OrthoPerspectiveCamera } from "../../OrthoPerspectiveCamera";
 import { CustomEffectsPass } from "./custom-effects-pass";
 
 // TODO: Clean up and document this
+
+export interface PostproductionSettings {
+  gamma?: boolean;
+  custom?: boolean;
+  ao?: boolean;
+}
 
 // source: https://discourse.threejs.org/t/how-to-render-full-outlines-as-a-post-process-tutorial/22674
 
@@ -23,12 +29,30 @@ export class Postproduction {
   private _n8ao?: any;
   private _customEffects?: CustomEffectsPass;
   private _basePass?: RenderPass;
-  private _fxaaPass?: ShaderPass;
+  private _gammaPass?: ShaderPass;
   private _depthTexture?: THREE.DepthTexture;
-  private _saoEnabled = false;
-  private _customEffectsEnabled = true;
+
+  private _settings: PostproductionSettings = {
+    gamma: true,
+    custom: true,
+    ao: false,
+  };
 
   private readonly _renderTarget: THREE.WebGLRenderTarget;
+
+  get basePass() {
+    if (!this._basePass) {
+      throw new Error("Custom effects not initialized!");
+    }
+    return this._basePass;
+  }
+
+  get gammaPass() {
+    if (!this._gammaPass) {
+      throw new Error("Custom effects not initialized!");
+    }
+    return this._gammaPass;
+  }
 
   get customEffects() {
     if (!this._customEffects) {
@@ -55,42 +79,8 @@ export class Postproduction {
     this._enabled = active;
   }
 
-  get saoEnabled() {
-    return this._saoEnabled;
-  }
-
-  set saoEnabled(active: boolean) {
-    if (this._saoEnabled === active) return;
-    this._saoEnabled = active;
-    if (!this._n8ao) return;
-    if (active) {
-      this.composer.addPass(this._n8ao);
-      if (this._customEffects && this._customEffectsEnabled) {
-        this.composer.removePass(this._customEffects);
-        this.composer.addPass(this._customEffects);
-        this._customEffects.correctColor = false;
-      }
-    } else {
-      this.composer.removePass(this._n8ao);
-      if (this._customEffects) {
-        this._customEffects.correctColor = true;
-      }
-    }
-  }
-
-  get customEffectsEnabled() {
-    return this._customEffectsEnabled;
-  }
-
-  set customEffectsEnabled(active: boolean) {
-    if (this._customEffectsEnabled === active) return;
-    this._customEffectsEnabled = active;
-    if (!this._customEffects) return;
-    if (active) {
-      this.composer.addPass(this._customEffects);
-    } else {
-      this.composer.removePass(this._customEffects);
-    }
+  get settings() {
+    return { ...this._settings };
   }
 
   constructor(
@@ -111,16 +101,29 @@ export class Postproduction {
     this._renderTarget.dispose();
     this._depthTexture?.dispose();
     this._customEffects?.dispose();
-    this._fxaaPass?.dispose();
+    this._gammaPass?.dispose();
     this._n8ao?.dispose();
     this.excludedItems.clear();
   }
 
+  setPasses(settings: PostproductionSettings) {
+    for (const name in settings) {
+      const key = name as keyof PostproductionSettings;
+      if (this._settings[key] !== undefined) {
+        this._settings[key] = settings[key];
+      }
+    }
+    this.updatePasses();
+  }
+
   setSize(width: number, height: number) {
-    this.composer.setSize(width, height);
-    this._n8ao?.setSize(width, height);
-    this._customEffects?.setSize(width, height);
-    this._fxaaPass?.setSize(width, height);
+    if (this._initialized) {
+      this.composer.setSize(width, height);
+      this.basePass.setSize(width, height);
+      this.n8ao.setSize(width, height);
+      this.customEffects.setSize(width, height);
+      this.gammaPass.setSize(width, height);
+    }
   }
 
   update() {
@@ -154,13 +157,16 @@ export class Postproduction {
 
     const renderer = this.components.renderer;
     this.renderer.clippingPlanes = renderer.clippingPlanes;
+    this.renderer.outputColorSpace = "srgb";
+    this.renderer.toneMapping = THREE.NoToneMapping;
 
-    this.addBasePass(scene, camera);
-    this.addSaoPass(scene, camera);
-    this.addOutlinePass();
-    // this.addFXAAPass();
+    this.newBasePass(scene, camera);
+    this.newSaoPass(scene, camera);
+    this.newGammaPass();
+    this.newCustomPass();
 
     this._initialized = true;
+    this.updatePasses();
   }
 
   updateProjection(camera: THREE.Camera) {
@@ -171,28 +177,36 @@ export class Postproduction {
     this.update();
   }
 
-  private addOutlinePass() {
-    const customOutline = new CustomEffectsPass(
+  private updatePasses() {
+    for (const pass of this.composer.passes) {
+      this.composer.removePass(pass);
+    }
+    if (this._basePass) {
+      this.composer.addPass(this.basePass);
+    }
+    if (this._settings.gamma) {
+      this.composer.addPass(this.gammaPass);
+    }
+    if (this._settings.ao) {
+      this.composer.addPass(this.n8ao);
+    }
+    if (this._settings.custom) {
+      this.composer.addPass(this.customEffects);
+    }
+  }
+
+  private newCustomPass() {
+    this._customEffects = new CustomEffectsPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
       this.components
     );
-
-    this._customEffects = customOutline;
-    this.composer.addPass(customOutline);
   }
 
-  // TODO: Work in progress, this needs adjustment
-  // private addGlossPass() {
-  //   const customGloss = new CustomGlossPass(
-  //     new THREE.Vector2(window.innerWidth, window.innerHeight),
-  //     this.components
-  //   );
-  //
-  //   this.gloss = customGloss;
-  //   this.composer.addPass(customGloss);
-  // }
+  private newGammaPass() {
+    this._gammaPass = new ShaderPass(GammaCorrectionShader);
+  }
 
-  addSaoPass(scene: THREE.Scene, camera: THREE.Camera) {
+  private newSaoPass(scene: THREE.Scene, camera: THREE.Camera) {
     const { width, height } = this.components.renderer.getSize();
     this._n8ao = new N8AOPass(scene, camera, width, height);
     // this.composer.addPass(this.n8ao);
@@ -208,18 +222,7 @@ export class Postproduction {
     configuration.color = new THREE.Color().setHex(0xcccccc, "srgb-linear");
   }
 
-  addFXAAPass() {
-    const effectFXAA = new ShaderPass(FXAAShader);
-    effectFXAA.uniforms.resolution.value.set(
-      1 / window.innerWidth,
-      1 / window.innerHeight
-    );
-    this._fxaaPass = effectFXAA;
-    this.composer.addPass(effectFXAA);
-  }
-
-  private addBasePass(scene: THREE.Scene, camera: THREE.Camera) {
+  private newBasePass(scene: THREE.Scene, camera: THREE.Camera) {
     this._basePass = new RenderPass(scene, camera);
-    this.composer.addPass(this._basePass);
   }
 }
