@@ -10,11 +10,13 @@ import {
 } from "../../navigation";
 import { PlanView } from "./src/types";
 import { IfcPropertiesUtils } from "../../ifc/IfcPropertiesUtils";
+import { PlanObjects } from "./src/plan-objects";
+import { Components } from "../../core";
 
 /**
  * Helper to control the camera and easily define and navigate 2D floor plans.
  */
-export class PlanNavigator extends Component<PlanView[]> implements Disposable {
+export class FragmentPlans extends Component<PlanView[]> implements Disposable {
   name = "PlanNavigator";
 
   /** {@link Component.enabled} */
@@ -32,29 +34,38 @@ export class PlanNavigator extends Component<PlanView[]> implements Disposable {
   /** The created floor plans. */
   storeys: { [modelID: number]: any[] } = [];
 
-  private plans: PlanView[] = [];
-  private floorPlanViewCached = false;
-  private previousCamera = new THREE.Vector3();
-  private previousTarget = new THREE.Vector3();
-  private previousProjection: CameraProjection = "Perspective";
+  objects: PlanObjects;
+
+  private _clipper: EdgesClipper;
+  private _camera: OrthoPerspectiveCamera;
+  private _plans: PlanView[] = [];
+  private _floorPlanViewCached = false;
+  private _previousCamera = new THREE.Vector3();
+  private _previousTarget = new THREE.Vector3();
+  private _previousProjection: CameraProjection = "Perspective";
+
+  constructor(
+    components: Components,
+    clipper: EdgesClipper,
+    camera: OrthoPerspectiveCamera
+  ) {
+    super();
+    this._clipper = clipper;
+    this._camera = camera;
+    this.objects = new PlanObjects(components);
+  }
 
   /** {@link Component.get} */
   get() {
-    return this.plans;
-  }
-
-  constructor(
-    private clipper: EdgesClipper,
-    private camera: OrthoPerspectiveCamera
-  ) {
-    super();
+    return this._plans;
   }
 
   /** {@link Disposable.dispose} */
   dispose() {
     this.storeys = [];
-    this.plans = [];
-    this.clipper.dispose();
+    this._plans = [];
+    this._clipper.dispose();
+    this.objects.dispose();
   }
 
   // TODO: Compute georreference matrix when generating fragmentsgroup
@@ -71,17 +82,23 @@ export class PlanNavigator extends Component<PlanView[]> implements Disposable {
       WEBIFC.IFCBUILDINGSTOREY
     );
 
+    const coordHeight = model.coordinationMatrix.elements[13];
     const units = IfcPropertiesUtils.getUnits(properties);
 
     for (const floor of floorsProps) {
-      const height = floor.Elevation.value * units + this.defaultSectionOffset;
+      const height = floor.Elevation.value * units + coordHeight;
       await this.create({
+        name: floor.Name.value,
+        id: floor.GlobalId.value,
         normal: new THREE.Vector3(0, -1, 0),
         point: new THREE.Vector3(0, height, 0),
-        id: floor.Name.value,
         ortho: true,
+        offset: this.defaultSectionOffset,
       });
     }
+
+    const { min, max } = model.boundingBox;
+    this.objects.setBounds([min, max]);
   }
 
   /**
@@ -90,14 +107,15 @@ export class PlanNavigator extends Component<PlanView[]> implements Disposable {
    * @param config - Necessary data to initialize the floor plan.
    */
   async create(config: PlanView) {
-    const previousPlan = this.plans.find((plan) => plan.id === config.id);
+    const previousPlan = this._plans.find((plan) => plan.id === config.id);
     if (previousPlan) {
       throw new Error(`There's already a plan with the id: ${config.id}`);
     }
     const plane = await this.createClippingPlane(config);
     plane.visible = false;
     const plan = { ...config, plane };
-    this.plans.push(plan);
+    this._plans.push(plan);
+    this.objects.add(config.id, config.point);
   }
 
   /**
@@ -131,8 +149,8 @@ export class PlanNavigator extends Component<PlanView[]> implements Disposable {
 
     this.cacheFloorplanView();
 
-    this.camera.setNavigationMode("Orbit");
-    await this.camera.setProjection(this.previousProjection);
+    this._camera.setNavigationMode("Orbit");
+    await this._camera.setProjection(this._previousProjection);
     if (this.currentPlan && this.currentPlan.plane) {
       this.currentPlan.plane.enabled = false;
       if (this.currentPlan.plane instanceof EdgesPlane) {
@@ -140,13 +158,13 @@ export class PlanNavigator extends Component<PlanView[]> implements Disposable {
       }
     }
     this.currentPlan = null;
-    await this.camera.controls.setLookAt(
-      this.previousCamera.x,
-      this.previousCamera.y,
-      this.previousCamera.z,
-      this.previousTarget.x,
-      this.previousTarget.y,
-      this.previousTarget.z,
+    await this._camera.controls.setLookAt(
+      this._previousCamera.x,
+      this._previousCamera.y,
+      this._previousCamera.z,
+      this._previousTarget.x,
+      this._previousTarget.y,
+      this._previousTarget.z,
       animate
     );
   }
@@ -161,7 +179,14 @@ export class PlanNavigator extends Component<PlanView[]> implements Disposable {
 
   private async createClippingPlane(config: PlanView) {
     const { normal, point } = config;
-    const plane = this.clipper.createFromNormalAndCoplanarPoint(normal, point);
+    const clippingPoint = point.clone();
+    if (config.offset) {
+      clippingPoint.y += config.offset;
+    }
+    const plane = this._clipper.createFromNormalAndCoplanarPoint(
+      normal,
+      clippingPoint
+    );
     plane.enabled = false;
     await plane.edges.update();
     plane.edges.visible = false;
@@ -169,13 +194,13 @@ export class PlanNavigator extends Component<PlanView[]> implements Disposable {
   }
 
   private cacheFloorplanView() {
-    this.floorPlanViewCached = true;
-    this.camera.controls.saveState();
+    this._floorPlanViewCached = true;
+    this._camera.controls.saveState();
   }
 
   private async moveCameraTo2DPlanPosition(animate: boolean) {
-    if (this.floorPlanViewCached) await this.camera.controls.reset(animate);
-    else await this.camera.controls.setLookAt(0, 100, 0, 0, 0, 0, animate);
+    if (this._floorPlanViewCached) await this._camera.controls.reset(animate);
+    else await this._camera.controls.setLookAt(0, 100, 0, 0, 0, 0, animate);
   }
 
   private activateCurrentPlan() {
@@ -189,18 +214,18 @@ export class PlanNavigator extends Component<PlanView[]> implements Disposable {
     }
     // this.camera.setNavigationMode("Plan");
     const projection = this.currentPlan.ortho ? "Orthographic" : "Perspective";
-    this.camera.setProjection(projection);
+    this._camera.setProjection(projection);
   }
 
   private store3dCameraPosition() {
-    const camera = this.camera.get();
-    camera.getWorldPosition(this.previousCamera);
-    this.camera.controls.getTarget(this.previousTarget);
-    this.previousProjection = this.camera.getProjection();
+    const camera = this._camera.get();
+    camera.getWorldPosition(this._previousCamera);
+    this._camera.controls.getTarget(this._previousTarget);
+    this._previousProjection = this._camera.getProjection();
   }
 
   private updateCurrentPlan(id: string) {
-    const foundPlan = this.plans.find((plan) => plan.id === id);
+    const foundPlan = this._plans.find((plan) => plan.id === id);
     if (!foundPlan) {
       throw new Error("The specified plan is undefined!");
     }

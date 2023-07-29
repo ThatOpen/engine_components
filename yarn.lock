@@ -1943,14 +1943,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bim-fragment@npm:1.0.11":
-  version: 1.0.11
-  resolution: "bim-fragment@npm:1.0.11"
+"bim-fragment@npm:1.0.14":
+  version: 1.0.14
+  resolution: "bim-fragment@npm:1.0.14"
   dependencies:
     flatbuffers: ^23.3.3
     three: 0.152.2
     three-mesh-bvh: 0.6.0
-  checksum: d046a15746ffe50501a44276164788b53ad7fcb52e80b49002912573a44ca4b26f8ed89f40ca1c4174a5f5b6f9e514f8c21fc4d3ba6efa63560da76c79369c73
+  checksum: 51e7dd5f28b1712f7e2679a22abfe1ce89afc48f4a63b1a9a5e8bd476594a087dc15b70b47d8db29856b74eef4b4f2c3d9c58dfc5810196e35ed0ac67853872d
   languageName: node
   linkType: hard
 
@@ -6362,7 +6362,7 @@ __metadata:
     "@types/three": 0.152.1
     "@typescript-eslint/eslint-plugin": ^4.27.0
     "@typescript-eslint/parser": ^4.27.0
-    bim-fragment: 1.0.11
+    bim-fragment: 1.0.14
     camera-controls: ^1.36.0
     canvas: ^2.11.2
     cpy-cli: ^3.1.1
