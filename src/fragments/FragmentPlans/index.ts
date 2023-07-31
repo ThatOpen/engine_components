@@ -115,7 +115,7 @@ export class FragmentPlans extends Component<PlanView[]> implements Disposable {
     plane.visible = false;
     const plan = { ...config, plane };
     this._plans.push(plan);
-    this.objects.add(config.id, config.point);
+    this.objects.add(config);
   }
 
   /**
