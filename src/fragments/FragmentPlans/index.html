@@ -125,12 +125,14 @@
 
     const plans = new OBC.FragmentPlans(components, clipper, components.camera);
     await plans.computeAllPlanViews(model);
+    plans.updatePlansList();
     const planList = plans.get();
 
     const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
     components.ui.addToolbar(mainToolbar);
 
-    mainToolbar.addChild(plans.objects.uiElement);
+    mainToolbar.addChild(plans.uiElement.listButton);
+    mainToolbar.addChild(plans.objects.uiElement.planObjectButton);
 
     // Set up GUI
 

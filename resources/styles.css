@@ -951,6 +951,10 @@ html {
   margin-top: 0.5rem;
 }
 
+.mt-4{
+  margin-top: 1rem;
+}
+
 .mt-auto{
   margin-top: auto;
 }
@@ -1104,6 +1108,10 @@ html {
 
 .min-w-\[150px\]{
   min-width: 150px;
+}
+
+.min-w-\[300px\]{
+  min-width: 300px;
 }
 
 .max-w-xs{
@@ -1262,6 +1270,10 @@ html {
 
 .border-0{
   border-width: 0px;
+}
+
+.border-1{
+  border-width: 1px;
 }
 
 .border-2{
@@ -1539,6 +1551,10 @@ html {
 
 .opacity-0{
   opacity: 0;
+}
+
+.opacity-50{
+  opacity: 0.5;
 }
 
 .\!shadow{

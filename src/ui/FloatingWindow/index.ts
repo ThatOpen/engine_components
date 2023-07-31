@@ -91,6 +91,10 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
     titleElement.id = `${this.id}-title`;
     titleElement.textContent = "Tooeen Floating Window";
     titleElement.className = FloatingWindow.Class.Title;
+    if (config?.title) {
+      titleElement.textContent = config.title;
+      titleElement.classList.remove("hidden");
+    }
 
     const descriptionElement = document.createElement("p");
     descriptionElement.id = `${this.id}-description`;

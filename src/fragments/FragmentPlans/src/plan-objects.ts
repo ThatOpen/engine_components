@@ -4,6 +4,7 @@ import { Components } from "../../../core";
 import { FragmentBoundingBox } from "../../FragmentBoundingBox";
 import { PlanView } from "./types";
 import { Button } from "../../../ui";
+import { UI } from "../../../base-types";
 
 interface PlanObject {
   root: THREE.Group;
@@ -13,10 +14,10 @@ interface PlanObject {
   button: Button;
 }
 
-export class PlanObjects {
+export class PlanObjects implements UI {
   offsetFactor = 0.2;
 
-  uiElement: Button;
+  uiElement: { planObjectButton: Button };
 
   private _scale = new THREE.Vector2(1, 1);
   private _min = new THREE.Vector3();
@@ -64,13 +65,14 @@ export class PlanObjects {
     this._components = components;
     this.resetBounds();
     this.createPlaneOutlineGeometry();
-    this.uiElement = new Button(components, {
+    const button = new Button(components, {
       materialIconName: "layers",
       tooltip: "Plans",
     });
-    this.uiElement.onclick = () => {
+    button.onclick = () => {
       this.visible = !this.visible;
     };
+    this.uiElement = { planObjectButton: button };
   }
 
   dispose() {
@@ -82,7 +84,7 @@ export class PlanObjects {
     this._objects = {};
     this._planeGeometry.dispose();
     this._material.dispose();
-    this.uiElement.dispose();
+    this.uiElement.planObjectButton.dispose();
     (this._components as any) = null;
   }
 
@@ -110,7 +112,7 @@ export class PlanObjects {
 
     const { domElement } = button;
 
-    domElement.className = domElement.className.replace("bg-transparent", "");
+    domElement.classList.remove("bg-transparent");
     domElement.className += " bg-ifcjs-100 transition-none rounded-full";
 
     // element.className = this.pointClass;

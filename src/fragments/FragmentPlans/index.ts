@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { FragmentsGroup } from "bim-fragment";
 import * as WEBIFC from "web-ifc";
-import { Component, Disposable } from "../../base-types";
+import { Component, Disposable, UI } from "../../base-types";
 import {
   EdgesClipper,
   EdgesPlane,
@@ -12,11 +12,21 @@ import { PlanView } from "./src/types";
 import { IfcPropertiesUtils } from "../../ifc/IfcPropertiesUtils";
 import { PlanObjects } from "./src/plan-objects";
 import { Components } from "../../core";
+import {
+  Button,
+  FloatingWindow,
+  SimpleUICard,
+  SimpleUIComponent,
+  UIComponentsStack,
+} from "../../ui";
 
 /**
  * Helper to control the camera and easily define and navigate 2D floor plans.
  */
-export class FragmentPlans extends Component<PlanView[]> implements Disposable {
+export class FragmentPlans
+  extends Component<PlanView[]>
+  implements Disposable, UI
+{
   name = "PlanNavigator";
 
   /** {@link Component.enabled} */
@@ -36,6 +46,14 @@ export class FragmentPlans extends Component<PlanView[]> implements Disposable {
 
   objects: PlanObjects;
 
+  uiElement: {
+    floatingWindow: FloatingWindow;
+    listButton: Button;
+    planList: UIComponentsStack;
+    defaultText: SimpleUIComponent<any>;
+  };
+
+  private _components: Components;
   private _clipper: EdgesClipper;
   private _camera: OrthoPerspectiveCamera;
   private _plans: PlanView[] = [];
@@ -50,9 +68,44 @@ export class FragmentPlans extends Component<PlanView[]> implements Disposable {
     camera: OrthoPerspectiveCamera
   ) {
     super();
+    this._components = components;
     this._clipper = clipper;
     this._camera = camera;
     this.objects = new PlanObjects(components);
+
+    const listButton = new Button(components, {
+      materialIconName: "folder_copy",
+      tooltip: "Plans list",
+    });
+
+    const floatingWindow = new FloatingWindow(components, {
+      title: "Floor plans",
+    });
+    components.ui.add(floatingWindow);
+
+    const topButtonGroup = new UIComponentsStack(components, "Horizontal");
+    floatingWindow.addChild(topButtonGroup);
+
+    const exitButton = new Button(components, {
+      materialIconName: "logout",
+    });
+    topButtonGroup.addChild(exitButton);
+
+    floatingWindow.visible = false;
+
+    const planList = new UIComponentsStack(components, "Vertical");
+    floatingWindow.addChild(planList);
+
+    const text = document.createElement("p");
+    text.textContent = "No plans yet.";
+    const defaultText = new SimpleUIComponent(components, text);
+    floatingWindow.addChild(defaultText);
+
+    this.uiElement = { listButton, floatingWindow, planList, defaultText };
+
+    listButton.onclick = () => {
+      floatingWindow.visible = !floatingWindow.visible;
+    };
   }
 
   /** {@link Component.get} */
@@ -66,6 +119,10 @@ export class FragmentPlans extends Component<PlanView[]> implements Disposable {
     this._plans = [];
     this._clipper.dispose();
     this.objects.dispose();
+    const { planList, listButton, floatingWindow } = this.uiElement;
+    planList.dispose();
+    floatingWindow.dispose();
+    listButton.dispose();
   }
 
   // TODO: Compute georreference matrix when generating fragmentsgroup
@@ -167,6 +224,41 @@ export class FragmentPlans extends Component<PlanView[]> implements Disposable {
       this._previousTarget.z,
       animate
     );
+  }
+
+  updatePlansList() {
+    const { defaultText, planList } = this.uiElement;
+    planList.dispose(true);
+    if (!this._plans.length) {
+      defaultText.visible = true;
+      return;
+    }
+    defaultText.visible = false;
+    for (const plan of this._plans) {
+      const height = Math.trunc(plan.point.y * 10) / 10;
+      const description = `Height: ${height}`;
+
+      const simpleCard = new SimpleUICard(this._components, {
+        title: plan.name,
+        description,
+      });
+
+      const planButton = new Button(this._components, {
+        materialIconName: "arrow_outward",
+      });
+      simpleCard.addChild(planButton);
+
+      const extraButton = new Button(this._components, {
+        materialIconName: "expand_more",
+      });
+      simpleCard.addChild(extraButton);
+
+      simpleCard.domElement.classList.remove("bg-ifcjs-120");
+      simpleCard.domElement.classList.remove("border-transparent");
+      simpleCard.domElement.className += ` min-w-[300px] my-2 bg-ifcjs-100 border-1 border-solid border-[#3A444E] `;
+
+      planList.addChild(simpleCard);
+    }
   }
 
   private storeCameraPosition() {
