@@ -13,7 +13,7 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
   private _resizeable = true;
 
   static Class = {
-    Base: "absolute backdrop-blur-md shadow-md overflow-auto top-5 resize z-50 left-5 min-h-[80px] min-w-[150px] w-fit h-fit text-white bg-ifcjs-100 rounded-md",
+    Base: "absolute bg-ifcjs-100 backdrop-blur-md shadow-md overflow-auto top-5 resize z-50 left-5 min-h-[80px] min-w-[150px] w-fit h-fit text-white rounded-md",
     Title: "text-3xl text-ifcjs-200 font-medium",
     Description: "text-base text-gray-400",
   };
@@ -91,6 +91,10 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
     titleElement.id = `${this.id}-title`;
     titleElement.textContent = "Tooeen Floating Window";
     titleElement.className = FloatingWindow.Class.Title;
+    if (config?.title) {
+      titleElement.textContent = config.title;
+      titleElement.classList.remove("hidden");
+    }
 
     const descriptionElement = document.createElement("p");
     descriptionElement.id = `${this.id}-description`;

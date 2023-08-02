@@ -39,7 +39,7 @@
 
 	const camera = new OBC.SimpleCamera(components);
 	components.camera = camera;
-	camera.controls.setLookAt(10, 5, 10, -5, 0, -3);
+    components.camera.controls.setLookAt(30, 30, 30, 0, 0, 0);
 
 	components.raycaster = new OBC.SimpleRaycaster(components);
 
@@ -58,7 +58,7 @@
 	ambientLight.intensity = 0.5;
 	scene.add(ambientLight);
 
-	const grid = new OBC.SimpleGrid(components);
+	const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
 	components.tools.add("grid", grid);
     const gridMesh = grid.get();
     renderer.postproduction.customEffects.excludedMeshes.push(gridMesh);
@@ -70,10 +70,10 @@
     const buffer = new Uint8Array(data);
     const model = fragments.load(buffer);
 
-    const bbox = new OBC.FragmentBoundingBox();
-    bbox.addGroup(model);
-    bbox.update();
-    const bboxMesh = bbox.get();
+    const fragmentBbox = new OBC.FragmentBoundingBox();
+    fragmentBbox.add(model);
+    const bbox = fragmentBbox.getMesh();
+    fragmentBbox.reset();
 
     const toolbar = new OBC.Toolbar(components, {position: "bottom"});
     components.ui.addToolbar(toolbar);
@@ -82,7 +82,7 @@
 
     const controls = components.camera.controls;
     button.onclick = () => {
-      controls.fitToSphere(bboxMesh, true);
+      controls.fitToSphere(bbox, true);
     }
 
 	// Set up stats

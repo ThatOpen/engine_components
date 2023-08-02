@@ -1,14 +1,14 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <link rel="stylesheet" href="../../../resources/styles.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-  <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
-  <title>Tools Component</title>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="../../../resources/styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+    <title>Tools Component</title>
 </head>
 <body>
 <div class="full-screen" id="container"></div>
@@ -23,165 +23,165 @@
       }
     }
 
+
 </script>
 <script type="module">
 
-	// Set up scene (see SimpleScene tutorial)
+    // Set up scene (see SimpleScene tutorial)
 
-	import * as THREE from 'three';
-	import * as OBC from 'openbim-components';
-	import Stats from 'stats.js/src/Stats.js';
-	import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
-	import { downloadZip } from 'client-zip';
+    import * as THREE from 'three';
+    import * as OBC from 'openbim-components';
+    import Stats from 'stats.js/src/Stats.js';
+    import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
+    import {downloadZip} from 'client-zip';
 
-	const container = document.getElementById('container');
+    const container = document.getElementById('container');
 
-	const components = new OBC.Components();
+    const components = new OBC.Components();
 
-	components.scene = new OBC.SimpleScene(components);
-	components.renderer = new OBC.PostproductionRenderer(components, container);
-	components.camera = new OBC.SimpleCamera(components);
-	components.raycaster = new OBC.SimpleRaycaster(components);
+    components.scene = new OBC.SimpleScene(components);
+    components.renderer = new OBC.PostproductionRenderer(components, container);
+    components.camera = new OBC.SimpleCamera(components);
+    components.raycaster = new OBC.SimpleRaycaster(components);
 
-	components.init();
+    components.init();
 
-	components.renderer.postproduction.enabled = true;
+    components.renderer.postproduction.enabled = true;
 
-	const scene = components.scene.get();
+    const scene = components.scene.get();
 
-	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+    components.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
 
-	const directionalLight = new THREE.DirectionalLight();
-	directionalLight.position.set(5, 10, 3);
-	directionalLight.intensity = 0.5;
-	scene.add(directionalLight);
+    const directionalLight = new THREE.DirectionalLight();
+    directionalLight.position.set(5, 10, 3);
+    directionalLight.intensity = 0.5;
+    scene.add(directionalLight);
 
-	const ambientLight = new THREE.AmbientLight();
-	ambientLight.intensity = 0.5;
-	scene.add(ambientLight);
+    const ambientLight = new THREE.AmbientLight();
+    ambientLight.intensity = 0.5;
+    scene.add(ambientLight);
 
-	const grid = new OBC.SimpleGrid(components);
-	components.tools.add('grid', grid);
-	const customEffects = components.renderer.postproduction.customEffects;
-	customEffects.excludedMeshes.push(grid.get());
+    const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
+    components.tools.add('grid', grid);
+    const customEffects = components.renderer.postproduction.customEffects;
+    customEffects.excludedMeshes.push(grid.get());
 
-	let fragments = new OBC.FragmentManager(components);
-	let fragmentIfcLoader = new OBC.FragmentIfcLoader(components, fragments);
+    let fragments = new OBC.FragmentManager(components);
+    let fragmentIfcLoader = new OBC.FragmentIfcLoader(components, fragments);
 
-	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
-	components.ui.addToolbar(mainToolbar);
-	mainToolbar.addChild(fragmentIfcLoader.uiElement);
+    const mainToolbar = new OBC.Toolbar(components, {name: 'Main Toolbar', position: 'bottom'});
+    components.ui.addToolbar(mainToolbar);
+    mainToolbar.addChild(fragmentIfcLoader.uiElement);
 
-	fragmentIfcLoader.settings.wasm = {
-		path: "https://unpkg.com/web-ifc@0.0.42/",
-		absolute: true
-	}
+    fragmentIfcLoader.settings.wasm = {
+        path: "https://unpkg.com/web-ifc@0.0.42/",
+        absolute: true
+    }
 
-	fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
-	fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
+    fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
+    fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
 
-	async function loadIfcAsFragments() {
-		const file = await fetch('../../../resources/small.ifc');
-		const data = await file.arrayBuffer();
-		const buffer = new Uint8Array(data);
-		const model = await fragmentIfcLoader.load(buffer);
-		console.log(model);
-		scene.add(model);
-	}
+    async function loadIfcAsFragments() {
+        const file = await fetch('../../../resources/small.ifc');
+        const data = await file.arrayBuffer();
+        const buffer = new Uint8Array(data);
+        const model = await fragmentIfcLoader.load(buffer);
+        scene.add(model);
+    }
 
-	async function exportFragments() {
-		if(!fragments.groups.length) return;
-		const group = fragments.groups[0];
-		const data = fragments.export(group);
-		const blob = new Blob([data]);
-		const fragmentFile = new File([blob], 'model.frag');
+    async function exportFragments() {
+        if (!fragments.groups.length) return;
+        const group = fragments.groups[0];
+        const data = fragments.export(group);
+        const blob = new Blob([data]);
+        const fragmentFile = new File([blob], 'model.frag');
 
-		const files = [];
-		files.push(fragmentFile);
-		files.push(new File([JSON.stringify(group.properties)], 'model.json'));
-		const result = await downloadZip(files).blob();
-		result.name = 'example';
-		download(result);
-	}
-
-
-	function download(file) {
-		const link = document.createElement('a');
-		link.href = URL.createObjectURL(file);
-		link.download = file.name;
-		document.body.appendChild(link);
-		link.click();
-		link.remove();
-	}
-
-	function disposeFragments() {
-		fragments.dispose();
-		fragmentIfcLoader.dispose();
-		fragments = new OBC.FragmentManager(components);
-		fragmentIfcLoader = new OBC.FragmentIfcLoader(fragments);
-	}
+        const files = [];
+        files.push(fragmentFile);
+        files.push(new File([JSON.stringify(group.properties)], 'model.json'));
+        const result = await downloadZip(files).blob();
+        result.name = 'example';
+        download(result);
+    }
 
 
-	// Set up stats
+    function download(file) {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(file);
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    }
 
-	const stats = new Stats();
-	stats.showPanel(2);
-	document.body.append(stats.dom);
-	stats.dom.style.left = '0px';
-	const renderer = components.renderer;
-	renderer.beforeUpdate.on(() => stats.begin());
-	renderer.afterUpdate.on(() => stats.end());
+    function disposeFragments() {
+        fragments.dispose();
+        fragmentIfcLoader.dispose();
+        fragments = new OBC.FragmentManager(components);
+        fragmentIfcLoader = new OBC.FragmentIfcLoader(fragments);
+    }
 
 
-	// Set up dat.gui menu
+    // Set up stats
 
-	const settings = {
-		loadFragments: () => loadIfcAsFragments(),
-		exportFragments: () => exportFragments(),
-		disposeFragments: () => disposeFragments(),
-	};
+    const stats = new Stats();
+    stats.showPanel(2);
+    document.body.append(stats.dom);
+    stats.dom.style.left = '0px';
+    const renderer = components.renderer;
+    renderer.beforeUpdate.on(() => stats.begin());
+    renderer.afterUpdate.on(() => stats.end());
 
-	const gui = new dat.GUI();
 
-	gui.add(settings, 'loadFragments').name('Import fragments');
-	gui.add(settings, 'exportFragments').name('Export fragments');
-	gui.add(settings, 'disposeFragments').name('Dispose fragments');
+    // Set up dat.gui menu
 
-	const clipper = new OBC.EdgesClipper(components, OBC.EdgesPlane);
-	components.tools.add("clipper", clipper);
-	clipper.enabled = true;
+    const settings = {
+        loadFragments: () => loadIfcAsFragments(),
+        exportFragments: () => exportFragments(),
+        disposeFragments: () => disposeFragments(),
+    };
 
-	window.ondblclick = () => {
-		clipper.create();
-  }
+    const gui = new dat.GUI();
+
+    gui.add(settings, 'loadFragments').name('Import fragments');
+    gui.add(settings, 'exportFragments').name('Export fragments');
+    gui.add(settings, 'disposeFragments').name('Dispose fragments');
+
+    const clipper = new OBC.EdgesClipper(components, OBC.EdgesPlane);
+    components.tools.add("clipper", clipper);
+    clipper.enabled = true;
+
+    window.ondblclick = () => {
+        clipper.create();
+    }
 
     components.renderer.postproduction.customEffects.outlineEnabled = true;
 
 
     // For debugging
 
-	// fragmentIfcLoader.ifcLoaded.on((model) => {
+    // fragmentIfcLoader.ifcLoaded.on((model) => {
 
-	  // let sorted = [];
-	  // for(const frag of model.fragments) {
-		// 	const size = frag.mesh.count;
-		// 	sorted.push({size, frag});
-	  // }
+    // let sorted = [];
+    // for(const frag of model.fragments) {
+    // 	const size = frag.mesh.count;
+    // 	sorted.push({size, frag});
+    // }
     //
-		// sorted.sort((a, b) => {
-		// 	return a.size > b.size ? 1 : -1;
-		// });
-		// let value = 0;
-		// let step = 1 / sorted.length;
+    // sorted.sort((a, b) => {
+    // 	return a.size > b.size ? 1 : -1;
+    // });
+    // let value = 0;
+    // let step = 1 / sorted.length;
     //
-		// for(const { frag } of sorted) {
-		// 	console.log(frag.mesh.material);
-		// 	const mat = frag.mesh.material[0];
-		// 	frag.mesh.instanceColor = null;
-		// 	mat.color.setRGB(value, value, value, "srgb");
-		// 	value += step;
-	  // }
-	// });
+    // for(const { frag } of sorted) {
+    // 	console.log(frag.mesh.material);
+    // 	const mat = frag.mesh.material[0];
+    // 	frag.mesh.instanceColor = null;
+    // 	mat.color.setRGB(value, value, value, "srgb");
+    // 	value += step;
+    // }
+    // });
 
 
 </script>

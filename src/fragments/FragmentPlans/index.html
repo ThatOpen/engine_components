@@ -7,6 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="stylesheet" href="../../../resources/styles.css">
     <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <title>Components | Hello world</title>
 
 </head>
@@ -41,7 +42,7 @@
 
     const camera = new OBC.OrthoPerspectiveCamera(components);
     components.camera = camera;
-    camera.controls.setLookAt(10, 5, 10, -5, 0, -3);
+    components.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
 
     components.raycaster = new OBC.SimpleRaycaster(components);
 
@@ -81,6 +82,10 @@
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
     const model = fragments.load(buffer);
+
+    for(const fragment of model.items) {
+        culler.add(fragment.mesh);
+    }
 
     const properties = await fetch('../../../resources/small.json');
     model.properties = await properties.json();
@@ -122,36 +127,63 @@
     materialManager.addMaterial("white", whiteMaterial);
     materialManager.addMeshes("white", meshes);
 
-    const plans = new OBC.PlanNavigator(clipper, components.camera);
+    const plans = new OBC.FragmentPlans(components, clipper, components.camera);
     await plans.computeAllPlanViews(model);
-    const planList = plans.get();
 
-    // Set up GUI
+    classifier.byStorey(model);
 
-    const gui = new dat.GUI();
+    const hider = new OBC.FragmentHider(fragments, culler);
+    const highlighter = new OBC.FragmentHighlighter(components, fragments);
 
-    const actions = {
-        exit: () => {
-            plans.exitPlanView();
-            postproduction.customEffects.glossEnabled = true;
-            materialManager.resetBackgroundColor();
-            materialManager.set(false, ["white"]);
-            grid.visible = true;
-        }
-    };
+    const highlightMat =  new THREE.MeshBasicMaterial({
+        depthTest: false,
+        color: 0xBCF124,
+        transparent: true,
+        opacity: 0.3
+    });
 
-    gui.add(actions, "exit");
+    highlighter.add("default", highlightMat);
+    const canvas = renderer.get().domElement;
+    canvas.addEventListener("click", () => highlighter.clear("default"))
 
-    for (const plan of planList) {
-        actions[plan.id] = () => {
-            plans.goTo(plan.id);
-            postproduction.customEffects.glossEnabled = false;
-            materialManager.setBackgroundColor(whiteColor);
-            materialManager.set(true, ["white"]);
-            grid.visible = false;
-        }
-        gui.add(actions, plan.id);
+    highlighter.update();
+
+    plans.commands = {
+        "Select": (plan) => {
+            const found = classifier.find({storeys: [plan.name]});
+            highlighter.highlightByID("default", found);
+        },
+        "Show": (plan) => {
+            const found = classifier.find({storeys: [plan.name]});
+            hider.set(true, found);
+        },
+        "Hide": (plan) => {
+            const found = classifier.find({storeys: [plan.name]});
+            hider.set(false, found);
+        },
     }
+
+    plans.updatePlansList();
+
+    const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
+    components.ui.addToolbar(mainToolbar);
+
+    mainToolbar.addChild(plans.uiElement.listButton);
+    mainToolbar.addChild(plans.objects.uiElement.planObjectButton);
+
+    plans.navigated.on(() => {
+        postproduction.customEffects.glossEnabled = false;
+        materialManager.setBackgroundColor(whiteColor);
+        materialManager.set(true, ["white"]);
+        grid.visible = false;
+    });
+
+    plans.exited.on(() => {
+        postproduction.customEffects.glossEnabled = true;
+        materialManager.resetBackgroundColor();
+        materialManager.set(false, ["white"]);
+        grid.visible = true;
+    });
 
     // Set up stats
     const stats = new Stats();

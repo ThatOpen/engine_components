@@ -1,82 +1,88 @@
 import * as THREE from "three";
 import { Fragment, FragmentsGroup } from "bim-fragment";
-import { Component, Disposable } from "../../base-types";
 
 /**
  * A simple implementation of bounding box that works for fragments. The resulting bbox is not 100% precise, but
  * it's fast, and should suffice for general use cases such as camera zooming.
  */
-export class FragmentBoundingBox
-  extends Component<THREE.Mesh>
-  implements Disposable
-{
+export class FragmentBoundingBox {
   name = "FragmentBoundingBox";
   enabled = true;
 
   private _absoluteMin: THREE.Vector3;
   private _absoluteMax: THREE.Vector3;
 
-  private _mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(),
-    new THREE.MeshBasicMaterial({
-      color: "red",
-      depthTest: false,
-      depthWrite: false,
-      transparent: true,
-      opacity: 0.3,
-    })
-  );
-
   constructor() {
-    super();
-    this._mesh.renderOrder = 1;
     this._absoluteMin = FragmentBoundingBox.newBound(true);
     this._absoluteMax = FragmentBoundingBox.newBound(false);
   }
 
-  get() {
-    return this._mesh;
+  static getDimensions(bbox: THREE.Box3) {
+    const { min, max } = bbox;
+    const width = Math.abs(max.x - min.x);
+    const height = Math.abs(max.y - min.y);
+    const depth = Math.abs(max.z - min.z);
+    const center = new THREE.Vector3();
+    center.subVectors(max, min).divideScalar(2).add(min);
+    return { width, height, depth, center };
   }
 
-  dispose() {
-    this._mesh.removeFromParent();
-    this._mesh.geometry.dispose();
-    this._mesh.material.dispose();
-    (this._mesh.geometry as any) = null;
-    (this._mesh.material as any) = null;
-  }
-
-  update() {
-    const width = this._absoluteMax.x - this._absoluteMin.x;
-    const height = this._absoluteMax.y - this._absoluteMin.y;
-    const depth = this._absoluteMax.z - this._absoluteMin.z;
-
-    if (this._mesh.geometry) {
-      this._mesh.geometry.dispose();
-      this._mesh.geometry = new THREE.BoxGeometry(width, height, depth);
-    }
-
-    this._mesh.position.set(
-      this._absoluteMax.x - width / 2,
-      this._absoluteMax.y - height / 2,
-      this._absoluteMax.z - depth / 2
+  static newBound(positive: boolean) {
+    const factor = positive ? 1 : -1;
+    return new THREE.Vector3(
+      factor * Number.MAX_VALUE,
+      factor * Number.MAX_VALUE,
+      factor * Number.MAX_VALUE
     );
   }
 
+  static getBounds(
+    points: THREE.Vector3[],
+    min?: THREE.Vector3,
+    max?: THREE.Vector3
+  ) {
+    const maxPoint = max || this.newBound(false);
+    const minPoint = min || this.newBound(true);
+    for (const point of points) {
+      if (point.x < minPoint.x) minPoint.x = point.x;
+      if (point.y < minPoint.y) minPoint.y = point.y;
+      if (point.z < minPoint.z) minPoint.z = point.z;
+      if (point.x > maxPoint.x) maxPoint.x = point.x;
+      if (point.y > maxPoint.y) maxPoint.y = point.y;
+      if (point.z > maxPoint.z) maxPoint.z = point.z;
+    }
+    return new THREE.Box3(min, max);
+  }
+
+  get() {
+    const min = this._absoluteMin.clone();
+    const max = this._absoluteMax.clone();
+    return new THREE.Box3(min, max);
+  }
+
+  getMesh() {
+    const bbox = new THREE.Box3(this._absoluteMin, this._absoluteMax);
+    const dimensions = FragmentBoundingBox.getDimensions(bbox);
+    const { width, height, depth, center } = dimensions;
+    const box = new THREE.BoxGeometry(width, height, depth);
+    const mesh = new THREE.Mesh(box);
+    mesh.position.copy(center);
+    return mesh;
+  }
+
   reset() {
-    this._mesh.geometry.dispose();
     this._absoluteMin = FragmentBoundingBox.newBound(false);
     this._absoluteMax = FragmentBoundingBox.newBound(true);
   }
 
-  addGroup(group: FragmentsGroup) {
+  add(group: FragmentsGroup) {
     for (const frag of group.items) {
-      this.add(frag);
+      this.addFragment(frag);
     }
   }
 
-  add(fragment: any) {
-    const bbox = FragmentBoundingBox.getBounds(fragment);
+  addFragment(fragment: any) {
+    const bbox = FragmentBoundingBox.getFragmentBounds(fragment);
 
     const instanceTransform = new THREE.Matrix4();
     for (let i = 0; i < fragment.mesh.count; i++) {
@@ -96,7 +102,7 @@ export class FragmentBoundingBox
     }
   }
 
-  private static getBounds(fragment: Fragment) {
+  private static getFragmentBounds(fragment: Fragment) {
     const position = fragment.mesh.geometry.attributes.position;
 
     const maxNum = Number.MAX_VALUE;
@@ -119,14 +125,5 @@ export class FragmentBoundingBox
       if (z > max.z) max.z = z;
     }
     return new THREE.Box3(min, max);
-  }
-
-  private static newBound(positive: boolean) {
-    const factor = positive ? 1 : -1;
-    return new THREE.Vector3(
-      factor * Number.MAX_VALUE,
-      factor * Number.MAX_VALUE,
-      factor * Number.MAX_VALUE
-    );
   }
 }

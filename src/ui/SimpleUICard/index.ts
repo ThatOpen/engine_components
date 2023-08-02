@@ -18,11 +18,14 @@ export class SimpleUICard extends SimpleUIComponent<HTMLDivElement> {
     const card = document.createElement("div");
     card.className =
       "bg-ifcjs-120 p-2 text-white flex items-center rounded-lg border-transparent border border-solid";
+
     const id = info.id ?? generateUUID();
+
+    const descriptionClass = "opacity-50 mt-4";
 
     const descriptionMenu = `
             <div id="${id}-before-description"></div>
-            <p id="${id}-description">${info.description}</p>
+                <p class="${descriptionClass}" id="${id}-description">${info.description}</p>
             <div id="${id}-after-description"></div>
     `;
 

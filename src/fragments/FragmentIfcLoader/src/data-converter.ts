@@ -12,6 +12,7 @@ import { SpatialStructure } from "./spatial-structure";
 import { IfcFragmentSettings } from "./ifc-fragment-settings";
 import { IfcGeometries } from "./types";
 import { toCompositeID } from "../../../utils";
+import { FragmentBoundingBox } from "../../FragmentBoundingBox";
 
 export class DataConverter {
   settings = new IfcFragmentSettings();
@@ -19,6 +20,7 @@ export class DataConverter {
   private _categories: IfcItemsCategories = {};
   private _model = new FRAGS.FragmentsGroup();
   private _ifcCategories = new IfcCategories();
+  private _bbox = new FragmentBoundingBox();
 
   private _fragmentKey = 0;
 
@@ -56,10 +58,18 @@ export class DataConverter {
     const itemsData = this.getFragmentsGroupData();
     this._model.keyFragments = this._keyFragmentMap;
     this._model.data = itemsData;
-    this._model.matrix = this.getCoordinationMatrix(webIfc);
+    this._model.coordinationMatrix = this.getCoordinationMatrix(webIfc);
     this._model.properties = await this.getModelProperties(webIfc);
     this._model.uuid = this.getProjectID(webIfc) || this._model.uuid;
     this._model.ifcMetadata = this.getIfcMetadata(webIfc);
+    this._model.boundingBox = this.getBoundingBox();
+  }
+
+  private getBoundingBox() {
+    this._bbox.add(this._model);
+    const result = this._bbox.get();
+    this._bbox.reset();
+    return result;
   }
 
   private getIfcMetadata(webIfc: WEBIFC.IfcAPI) {
