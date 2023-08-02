@@ -31,7 +31,7 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
     disabled:cursor-default disabled:bg-gray-600 disabled:text-gray-400 pointer-events-auto
     transition-all
     `,
-    Label: "text-sm uppercase tracking-[1.25px] font-bold whitespace-nowrap",
+    Label: "text-sm tracking-[1.25px] whitespace-nowrap",
     Tooltip: `
     group-hover:opacity-100 transition-opacity bg-ifcjs-100 text-sm text-gray-100 rounded-md 
     absolute left-1/2 -translate-x-1/2 -translate-y-12 opacity-0 mx-auto p-4 w-max h-4 flex items-center
@@ -91,6 +91,14 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
     this.domElement.classList.add(`justify-${value}`);
   }
 
+  get icon() {
+    return this.domElement.querySelector(`#${this.id}-icon`);
+  }
+
+  get tooltip() {
+    return this.domElement.querySelector(`#${this.id}-tooltip`);
+  }
+
   constructor(components: Components, options?: IButtonOptions) {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -101,12 +109,14 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
     this.alignment = "start";
     if (options?.materialIconName) {
       const icon = document.createElement("span");
+      icon.id = `${this.id}-icon`;
       icon.className = "material-icons md-18";
       icon.textContent = options?.materialIconName;
       btn.append(icon);
     }
     if (options?.tooltip) {
       const tooltip = document.createElement("span");
+      tooltip.id = `${this.id}-tooltip`;
       tooltip.textContent = options.tooltip;
       tooltip.className = Button.Class.Tooltip;
       btn.append(tooltip);

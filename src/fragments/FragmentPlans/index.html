@@ -83,6 +83,10 @@
     const buffer = new Uint8Array(data);
     const model = fragments.load(buffer);
 
+    for(const fragment of model.items) {
+        culler.add(fragment.mesh);
+    }
+
     const properties = await fetch('../../../resources/small.json');
     model.properties = await properties.json();
 
@@ -125,8 +129,41 @@
 
     const plans = new OBC.FragmentPlans(components, clipper, components.camera);
     await plans.computeAllPlanViews(model);
+
+    classifier.byStorey(model);
+
+    const hider = new OBC.FragmentHider(fragments, culler);
+    const highlighter = new OBC.FragmentHighlighter(components, fragments);
+
+    const highlightMat =  new THREE.MeshBasicMaterial({
+        depthTest: false,
+        color: 0xBCF124,
+        transparent: true,
+        opacity: 0.3
+    });
+
+    highlighter.add("default", highlightMat);
+    const canvas = renderer.get().domElement;
+    canvas.addEventListener("click", () => highlighter.clear("default"))
+
+    highlighter.update();
+
+    plans.commands = {
+        "Select": (plan) => {
+            const found = classifier.find({storeys: [plan.name]});
+            highlighter.highlightByID("default", found);
+        },
+        "Show": (plan) => {
+            const found = classifier.find({storeys: [plan.name]});
+            hider.set(true, found);
+        },
+        "Hide": (plan) => {
+            const found = classifier.find({storeys: [plan.name]});
+            hider.set(false, found);
+        },
+    }
+
     plans.updatePlansList();
-    const planList = plans.get();
 
     const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
     components.ui.addToolbar(mainToolbar);
@@ -134,32 +171,19 @@
     mainToolbar.addChild(plans.uiElement.listButton);
     mainToolbar.addChild(plans.objects.uiElement.planObjectButton);
 
-    // Set up GUI
+    plans.navigated.on(() => {
+        postproduction.customEffects.glossEnabled = false;
+        materialManager.setBackgroundColor(whiteColor);
+        materialManager.set(true, ["white"]);
+        grid.visible = false;
+    });
 
-    const gui = new dat.GUI();
-
-    const actions = {
-        exit: () => {
-            plans.exitPlanView();
-            postproduction.customEffects.glossEnabled = true;
-            materialManager.resetBackgroundColor();
-            materialManager.set(false, ["white"]);
-            grid.visible = true;
-        }
-    };
-
-    gui.add(actions, "exit");
-
-    for (const plan of planList) {
-        actions[plan.id] = () => {
-            plans.goTo(plan.id);
-            postproduction.customEffects.glossEnabled = false;
-            materialManager.setBackgroundColor(whiteColor);
-            materialManager.set(true, ["white"]);
-            grid.visible = false;
-        }
-        gui.add(actions, plan.id);
-    }
+    plans.exited.on(() => {
+        postproduction.customEffects.glossEnabled = true;
+        materialManager.resetBackgroundColor();
+        materialManager.set(false, ["white"]);
+        grid.visible = true;
+    });
 
     // Set up stats
     const stats = new Stats();

@@ -4,7 +4,7 @@ import { Components } from "../../../core";
 import { FragmentBoundingBox } from "../../FragmentBoundingBox";
 import { PlanView } from "./types";
 import { Button } from "../../../ui";
-import { UI } from "../../../base-types";
+import { UI, Event } from "../../../base-types";
 
 interface PlanObject {
   root: THREE.Group;
@@ -18,6 +18,8 @@ export class PlanObjects implements UI {
   offsetFactor = 0.2;
 
   uiElement: { planObjectButton: Button };
+
+  planClicked = new Event<{ id: string }>();
 
   private _scale = new THREE.Vector2(1, 1);
   private _min = new THREE.Vector3();
@@ -67,7 +69,7 @@ export class PlanObjects implements UI {
     this.createPlaneOutlineGeometry();
     const button = new Button(components, {
       materialIconName: "layers",
-      tooltip: "Plans",
+      tooltip: "3D Plans",
     });
     button.onclick = () => {
       this.visible = !this.visible;
@@ -101,6 +103,7 @@ export class PlanObjects implements UI {
       this._linesGeometry,
       this.lineMaterial
     );
+
     outline.computeLineDistances();
     outline.rotation.x = -Math.PI / 2;
     root.add(outline);
@@ -109,6 +112,10 @@ export class PlanObjects implements UI {
       materialIconName: "location_on",
       tooltip: name,
     });
+
+    button.onclick = () => {
+      this.planClicked.trigger({ id: config.id });
+    };
 
     const { domElement } = button;
 
