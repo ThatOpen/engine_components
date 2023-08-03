@@ -1,7 +1,8 @@
 import { createPopper } from "@popperjs/core";
-import { Component, UIComponent } from "../../base-types";
+import { Component } from "../../base-types/component";
 import { Toolbar } from "../ToolbarComponent";
 import { Components } from "../../core";
+import { SimpleUIComponent } from "../SimpleUIComponent";
 
 export type IContainerPosition = "top" | "right" | "bottom" | "left";
 
@@ -26,6 +27,10 @@ export class UIManager extends Component<Toolbar[]> {
     right: document.createElement("div"),
     bottom: document.createElement("div"),
     left: document.createElement("div"),
+  };
+
+  static Class = {
+    Label: "block leading-6 text-gray-400 text-sm",
   };
 
   get(): Toolbar[] {
@@ -138,11 +143,9 @@ export class UIManager extends Component<Toolbar[]> {
     );
   }
 
-  add(...uiComponents: UIComponent[]) {
+  add(...uiComponents: SimpleUIComponent[]) {
     // TODO: Is this necessary?
-    if (!this.viewerContainer) {
-      return;
-    }
+    if (!this.viewerContainer) return;
     for (const component of uiComponents) {
       this.viewerContainer.append(component.domElement);
     }

@@ -1,10 +1,6 @@
 import * as WEBIFC from "web-ifc";
+import { IfcProperties } from "bim-fragment";
 import { IfcCategoryMap } from "../ifc-category-map";
-
-export type IfcProperties = {
-  [expressID: number]: { [attribute: string]: any };
-};
-export type IfcSchemas = "IFC2X3" | "IFC4" | "IFC4X3";
 
 export class IfcPropertiesUtils {
   static getUnits(properties: IfcProperties) {
@@ -166,4 +162,41 @@ export class IfcPropertiesUtils {
     if (!entity) return false;
     return Object.keys(properties[expressID]).includes(attribute);
   }
+
+  static groupEntitiesByType(
+    properties: IfcProperties,
+    expressIDs: Set<number> | number[]
+  ) {
+    const categoriesMap = new Map<number, Set<number>>();
+    for (const expressID of expressIDs) {
+      const entity = properties[expressID];
+      if (!entity) continue;
+      const key = entity.type;
+      const set = categoriesMap.get(key);
+      if (!set) categoriesMap.set(key, new Set());
+      categoriesMap.get(key)?.add(expressID);
+    }
+    return categoriesMap;
+  }
+
+  // static getPropertyUnits(properties: IfcProperties, expressID: number) {
+  //   const entity = properties[expressID];
+  //   if (!entity) return null;
+  //   const propertyInstance =
+  //     entity instanceof WEBIFC.IFC2X3.IfcProperty ||
+  //     entity instanceof WEBIFC.IFC4.IfcProperty ||
+  //     entity instanceof WEBIFC.IFC4X3.IfcProperty;
+  //   if (!propertyInstance) return null;
+  //   const { key: valueKey } = IfcPropertiesUtils.getQuantityValue(
+  //     properties,
+  //     expressID
+  //   );
+  //   if (!valueKey) return null;
+  //   // @ts-ignore
+  //   const measureName = entity[valueKey].constructor.name as string;
+  //   const isMeasureAttribute = measureName.endsWith("Measure");
+  //   if (!isMeasureAttribute) return null;
+  //   const measureType = measureName.slice(3, measureName.length - 7);
+  //   return propertyInstance;
+  // }
 }

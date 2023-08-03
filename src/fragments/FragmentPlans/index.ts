@@ -18,7 +18,6 @@ import {
   SimpleUICard,
   SimpleUIComponent,
   Toolbar,
-  UIComponentsStack,
 } from "../../ui";
 
 /**
@@ -53,11 +52,11 @@ export class FragmentPlans
 
   uiElement: {
     floatingWindow: FloatingWindow;
-    listButton: Button;
-    planList: UIComponentsStack;
-    defaultText: SimpleUIComponent<any>;
+    main: Button;
+    planList: SimpleUIComponent;
+    defaultText: SimpleUIComponent<HTMLParagraphElement>;
     exitButton: Button;
-    commandsMenu: SimpleUIComponent<any>;
+    commandsMenu: SimpleUIComponent<HTMLDivElement>;
   };
 
   commands: { [id: string]: (plan: PlanView) => void } = {};
@@ -84,50 +83,51 @@ export class FragmentPlans
     this.objects = new PlanObjects(components);
     this.setupPlanObjectUI();
 
-    const topButtonContainer = new UIComponentsStack(
+    const topButtonContainer = new SimpleUIComponent(
       this._components,
-      "Horizontal"
+      `<div class="flex"></div>`
     );
-    const exitButton = new Button(components, {
-      materialIconName: "logout",
-    });
+    const exitButton = new Button(components);
+    exitButton.materialIcon = "logout";
     topButtonContainer.addChild(exitButton);
 
     exitButton.enabled = false;
     exitButton.onclick = () => this.exitPlanView();
 
-    const listButton = new Button(components, {
-      materialIconName: "folder_copy",
+    const main = new Button(components, {
       tooltip: "Plans list",
     });
+    main.materialIcon = "folder_copy";
 
-    const floatingWindow = new FloatingWindow(components, {
-      title: "Floor plans",
-    });
+    const floatingWindow = new FloatingWindow(components);
+    floatingWindow.title = "Floor Plans";
     components.ui.add(floatingWindow);
     floatingWindow.visible = false;
 
     floatingWindow.addChild(topButtonContainer);
 
-    const planList = new UIComponentsStack(components, "Vertical");
+    const planList = new SimpleUIComponent(
+      components,
+      `<div class="flex flex-col"></div>`
+    );
     floatingWindow.addChild(planList);
 
-    const text = document.createElement("p");
-    text.textContent = "No plans yet.";
-    const defaultText = new SimpleUIComponent(components, text);
+    const defaultText = new SimpleUIComponent<HTMLParagraphElement>(
+      components,
+      `<p>No plans yet.</p>`
+    );
     floatingWindow.addChild(defaultText);
 
-    const commandsMenuDom = document.createElement("div");
-    const commandsMenu = new SimpleUIComponent(components, commandsMenuDom);
+    const commandsMenu = new SimpleUIComponent<HTMLDivElement>(
+      components,
+      `<div class="absolute bg-ifcjs-100 backdrop-blur-md rounded-md p-3 z-50"></div>`
+    );
     this.toggleCommandsMenuEvent(true);
-    commandsMenuDom.className =
-      "absolute bg-ifcjs-100 backdrop-blur-md rounded-md p-3";
-    commandsMenuDom.style.zIndex = "9999";
     components.ui.add(commandsMenu);
     commandsMenu.visible = false;
 
     this.uiElement = {
-      listButton,
+      main,
       floatingWindow,
       planList,
       defaultText,
@@ -135,7 +135,7 @@ export class FragmentPlans
       commandsMenu,
     };
 
-    listButton.onclick = () => {
+    main.onclick = () => {
       floatingWindow.visible = !floatingWindow.visible;
     };
   }
@@ -153,7 +153,7 @@ export class FragmentPlans
     this.objects.dispose();
     this.uiElement.planList.dispose();
     this.uiElement.floatingWindow.dispose();
-    this.uiElement.listButton.dispose();
+    this.uiElement.main.dispose();
     this.uiElement.commandsMenu.dispose();
     this.toggleCommandsMenuEvent(false);
   }
@@ -297,10 +297,9 @@ export class FragmentPlans
       const height = Math.trunc(plan.point.y * 10) / 10;
       const description = `Height: ${height}`;
 
-      const simpleCard = new SimpleUICard(this._components, {
-        title: plan.name,
-        description,
-      });
+      const simpleCard = new SimpleUICard(this._components);
+      simpleCard.title = plan.name;
+      simpleCard.description = description;
 
       const toolbar = new Toolbar(this._components);
       this._components.ui.addToolbar(toolbar);
@@ -418,17 +417,17 @@ export class FragmentPlans
 
   private setupPlanObjectUI() {
     this.objects.planClicked.on(async ({ id }) => {
-      const button = this.objects.uiElement.planObjectButton;
+      const button = this.objects.uiElement.main;
       if (!this.enabled) {
-        if (button.icon && button.tooltip) {
-          button.icon.textContent = "logout";
-          button.tooltip.textContent = "Exit floorplans";
+        if (button.innerElements.icon && button.innerElements.tooltip) {
+          button.materialIcon = "logout";
+          button.tooltip = "Exit floorplans";
         }
         button.onclick = () => {
           this.exitPlanView();
-          if (button.icon && button.tooltip) {
-            button.icon.textContent = "layers";
-            button.tooltip.textContent = "3D plans";
+          if (button.innerElements.icon && button.innerElements.tooltip) {
+            button.materialIcon = "layers";
+            button.tooltip = "3D plans";
           }
           button.onclick = () => (this.objects.visible = !this.objects.visible);
         };

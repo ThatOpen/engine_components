@@ -1,32 +1,43 @@
-import { Hideable, UIComponent, Event } from "../../base-types/base-types";
+import {
+  Hideable,
+  // UIComponent,
+  Event,
+  Disposable,
+} from "../../base-types/base-types";
 import { Component } from "../../base-types/component";
 import { Components } from "../../core/Components";
 import { tooeenRandomId } from "../../utils";
 
 export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   extends Component<T>
-  implements UIComponent, Hideable
+  implements Hideable, Disposable
 {
   name: string = "SimpleUIComponent";
   domElement: T;
-  children: UIComponent[] = [];
+  children: SimpleUIComponent[] = [];
   id: string;
   data: Record<string, any> = {};
 
-  static readonly Class: { Base: string; [elementName: string]: string };
+  // Slots are other UIComponents that inherits all the logic from SimpleUIComponent
+  slots: { [name: string]: SimpleUIComponent } = {};
 
-  readonly onVisible: Event<T> = new Event();
-  readonly onHidden: Event<T> = new Event();
-  readonly onEnabled: Event<T> = new Event();
-  readonly onDisabled: Event<T> = new Event();
+  // InnerElements are those HTML Elements which doesn't come from an UIComponent.
+  innerElements: { [name: string]: HTMLElement } = {};
+
+  static Class: { Base: string; [elementName: string]: string };
+
+  readonly onVisible = new Event();
+  readonly onHidden = new Event();
+  readonly onEnabled = new Event();
+  readonly onDisabled = new Event();
 
   protected _components: Components;
-  protected _parent: UIComponent | null = null;
+  protected _parent: SimpleUIComponent<HTMLElement> | null = null;
   protected _enabled: boolean = true;
   protected _visible: boolean = true;
   protected _active: boolean = false;
 
-  set parent(value: UIComponent | null) {
+  set parent(value: SimpleUIComponent<HTMLElement> | null) {
     this._parent = value;
   }
 
@@ -76,12 +87,23 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
     return this.children.length > 0;
   }
 
-  constructor(components: Components, domElement: T, id?: string) {
+  private set template(value: string) {
+    const regex = /id="([^"]+)"/g;
+    const template = value.replace(regex, `id="$1-${this.id}"`);
+    this.domElement.innerHTML = template;
+    const el = this.domElement.firstElementChild as HTMLElement;
+    el.id = this.id;
+    // @ts-ignore
+    this.domElement = el;
+  }
+
+  constructor(components: Components, template?: string, id?: string) {
     super();
     this._components = components;
     this.id = id ?? tooeenRandomId();
-    this.domElement = domElement ?? document.createElement("div");
-    this.domElement.id = this.id;
+    // @ts-ignore
+    this.domElement = document.createElement("div");
+    this.template = template ?? "<div></div>";
   }
 
   cleanData() {
@@ -100,27 +122,51 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
     if (!onlyChildren) this.domElement.remove();
   }
 
-  addChild(...items: UIComponent[]) {
+  addChild(...items: SimpleUIComponent[]) {
     for (const item of items) {
       this.children.push(item);
       this.domElement.append(item.domElement);
-      if (item instanceof SimpleUIComponent) item.parent = this;
+      item.parent = this;
     }
   }
 
-  removeChild(...items: UIComponent[]) {
+  removeChild(...items: SimpleUIComponent[]) {
     for (const item of items) {
       item.domElement.remove();
-      if (item instanceof SimpleUIComponent) item.parent = null;
+      item.parent = null;
     }
     const filtered = this.children.filter((child) => !items.includes(child));
     this.children = filtered;
   }
 
-  // htmlToElement(htmlString: string) {
-  //   const template = document.createElement("template");
-  //   htmlString = htmlString.trim();
-  //   template.innerHTML = htmlString;
-  //   return template.content.firstChild;
-  // }
+  removeFromParent() {
+    if (!this.parent) return;
+    this.get().removeAttribute("data-tooeen-slot");
+    this.parent.removeChild(this);
+  }
+
+  getInnerElement<T extends HTMLElement>(id: string) {
+    return this.get().querySelector(`#${id}-${this.id}`) as T | null;
+  }
+
+  setSlot(name: string, uiComponent: SimpleUIComponent) {
+    const slot = this.get().querySelector(`[data-tooeen-slot="${name}"]`);
+    if (!slot)
+      throw new Error(
+        `Slot ${name} not found. You need to declare it in the UIComponent template using data-tooeen="${name}"`
+      );
+    const existingSlot = this.slots[name];
+    if (existingSlot) existingSlot.removeFromParent();
+    this.slots[name] = uiComponent;
+    uiComponent.get().setAttribute("data-tooeen-slot", name);
+    slot.replaceWith(uiComponent.get());
+    this.children.push(uiComponent);
+  }
+
+  setSlots() {
+    for (const name in this.slots) {
+      const component = this.slots[name];
+      this.setSlot(name, component);
+    }
+  }
 }

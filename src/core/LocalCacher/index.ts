@@ -1,6 +1,6 @@
 import { ModelDatabase } from "./db";
 import { Component, Disposable, UI, Event } from "../../base-types";
-import { Button, FloatingWindow, SimpleUICard, Toolbar } from "../../ui";
+import { Button, FloatingWindow, SimpleUICard } from "../../ui";
 import { Components } from "../Components";
 
 // TODO: Implement UI elements (this is probably just for 3d scans)
@@ -19,7 +19,7 @@ export class LocalCacher extends Component<any> implements UI, Disposable {
   private _db: ModelDatabase;
   private readonly _storedModels = "open-bim-components-stored-files";
 
-  uiElement: Toolbar;
+  uiElement: { main: Button };
   saveButton: Button;
   loadButton: Button;
 
@@ -35,24 +35,24 @@ export class LocalCacher extends Component<any> implements UI, Disposable {
     this._components = components;
     this._db = new ModelDatabase();
 
-    this.uiElement = new Toolbar(components, {
-      name: "Local cacher toolbar",
-      position: "bottom",
-    });
+    this.uiElement = { main: new Button(components) };
+    this.uiElement.main.materialIcon = "storage";
 
-    this.saveButton = new Button(components, { materialIconName: "save" });
-    this.uiElement.addChild(this.saveButton);
+    this.saveButton = new Button(components);
+    this.saveButton.label = "Save";
+    this.saveButton.materialIcon = "save";
+    this.uiElement.main.addChild(this.saveButton);
 
-    this.loadButton = new Button(components, { materialIconName: "download" });
-    this.uiElement.addChild(this.loadButton);
+    this.loadButton = new Button(components);
+    this.loadButton.label = "Download";
+    this.loadButton.materialIcon = "download";
+    this.uiElement.main.addChild(this.loadButton);
 
     const renderer = this._components.renderer.get();
     const viewerContainer = renderer.domElement.parentElement as HTMLElement;
 
-    this.floatingMenu = new FloatingWindow(components, {
-      id: "file-list-menu",
-      title: "Saved files",
-    });
+    this.floatingMenu = new FloatingWindow(components, "file-list-menu");
+    this.floatingMenu.title = "Saved Files";
 
     this.floatingMenu.visible = false;
     const savedFilesMenuHTML = this.floatingMenu.get();

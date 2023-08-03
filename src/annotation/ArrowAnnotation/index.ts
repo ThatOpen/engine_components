@@ -7,31 +7,24 @@ import { DrawManager } from "../DrawManager";
 export class ArrowAnnotation extends BaseSVGAnnotation {
   name: string = "ArrowAnnotation";
   canvas: HTMLCanvasElement | null = null;
-  uiElement!: Button;
-  private _components: Components;
+  uiElement: { main: Button };
   private _previewElement: SVGArrow;
 
   constructor(components: Components, drawManager?: DrawManager) {
     super();
-    this._components = components;
     this._previewElement = new SVGArrow(components);
-    this.setUI();
     this.drawManager = drawManager;
-  }
 
-  private setUI() {
-    const button = new Button(this._components, {
-      name: "Arrow",
-      materialIconName: "north_east",
-    });
-    button.onclick = () => {
+    this.uiElement = { main: new Button(components) };
+    this.uiElement.main.label = "Arrow";
+    this.uiElement.main.materialIcon = "north_east";
+    this.uiElement.main.onclick = () => {
       if (this.drawManager) {
         this.drawManager.activateTool(this);
       } else {
         this.enabled = !this.enabled;
       }
     };
-    this.uiElement = button;
   }
 
   cancel() {

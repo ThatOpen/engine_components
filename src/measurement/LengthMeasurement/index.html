@@ -135,7 +135,7 @@
     This may appear to be a lot of effort, but we are handling all the heavy lifting for you,
     and you only need to write a few lines for creating the Dimension Tool.💪
      */
-	const dimensions = new OBC.SimpleDimensions(components);
+	const dimensions = new OBC.LengthMeasurement(components);
 
     /*MD
     We will build dimensions by supplying the `components` to **OBC.SimpleDimensions**.
@@ -217,7 +217,7 @@
 
      */
 	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
-	mainToolbar.addChild(dimensions.uiElement);
+	mainToolbar.addChild(dimensions.uiElement.main);
 	components.ui.addToolbar(mainToolbar);
 
     /*MD

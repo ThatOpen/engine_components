@@ -1,30 +1,53 @@
 import { Components } from "../../core";
-import { BaseInput } from "../BaseInput";
+import { Event } from "../../base-types";
+import { SimpleUIComponent } from "../SimpleUIComponent";
+import { UIManager } from "../UIManager";
 
-export class CheckboxInput extends BaseInput<HTMLInputElement> {
+export class CheckboxInput extends SimpleUIComponent<HTMLDivElement> {
   name = "TooeenCheckboxInput";
+  readonly onChange: Event<Boolean> = new Event();
+
+  set value(value: boolean) {
+    this.innerElements.input.checked = value;
+    this.onChange.trigger(this.value);
+  }
+
+  get value() {
+    return this.innerElements.input.checked;
+  }
+
+  set label(value: string | null) {
+    this.innerElements.label.textContent = value;
+    if (value) {
+      this.innerElements.label.classList.remove("hidden");
+    } else {
+      this.innerElements.label.classList.add("hidden");
+    }
+  }
+
+  get label() {
+    return this.innerElements.label.textContent;
+  }
+
+  innerElements: {
+    label: HTMLLabelElement;
+    input: HTMLInputElement;
+  };
 
   constructor(components: Components) {
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.className =
-      "h-4 w-4 rounded border-gray-300 text-ifcjs-200 focus:ring-ifcjs-200";
-    super(components, input);
-    this.labelElement.textContent = "Tooeen Checkbox";
-    this.wrapperElement.classList.remove("flex-col", "w-full");
-    this.wrapperElement.classList.add(
-      "items-center",
-      "flex-row-reverse",
-      "justify-end",
-      "gap-x-1"
-    );
-  }
+    const template = `
+    <div class="w-full flex gap-x-2 items-center">
+        <input id="input" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-ifcjs-200 focus:ring-ifcjs-200">
+        <label id="label" class="${UIManager.Class.Label}"></label>
+    </div>
+    `;
+    super(components, template);
 
-  set inputValue(value: boolean) {
-    this.inputElement.checked = value;
-  }
+    this.innerElements = {
+      label: this.getInnerElement("label") as HTMLLabelElement,
+      input: this.getInnerElement("input") as HTMLInputElement,
+    };
 
-  get inputValue() {
-    return this.inputElement.checked;
+    this.label = "Tooeen Checkbox";
   }
 }

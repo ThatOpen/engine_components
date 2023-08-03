@@ -1,25 +1,19 @@
 import { Vector2 } from "three";
 import { SimpleUIComponent } from "../SimpleUIComponent";
-import { Event, UIComponent } from "../../base-types";
+import { Event } from "../../base-types";
 import { Components } from "../../core";
-
-interface FloatingWindowConfig {
-  title?: string;
-  description?: string;
-  id?: string;
-}
 
 export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
   private _resizeable = true;
+  private _movable = true;
 
   static Class = {
-    Base: "absolute bg-ifcjs-100 backdrop-blur-md shadow-md overflow-auto top-5 resize z-50 left-5 min-h-[80px] min-w-[150px] w-fit h-fit text-white rounded-md",
-    Title: "text-3xl text-ifcjs-200 font-medium",
+    Base: "absolute flex flex-col backdrop-blur-md shadow-md overflow-auto top-5 resize z-50 left-5 min-h-[80px] min-w-[150px] w-fit h-fit text-white bg-ifcjs-100 rounded-md",
     Description: "text-base text-gray-400",
   };
 
-  onMoved: Event<FloatingWindow> = new Event();
-  onResized: Event<FloatingWindow> = new Event();
+  onMoved = new Event<FloatingWindow>();
+  onResized = new Event();
   referencePoints!: {
     topLeft: Vector2;
     top: Vector2;
@@ -32,38 +26,32 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
     bottomRight: Vector2;
   };
 
-  set description(value: string | null | undefined) {
-    const descriptionElement = document.getElementById(
-      `${this.id}-description`
-    );
-    if (descriptionElement && value) {
-      descriptionElement.textContent = value;
-      descriptionElement.classList.remove("hidden");
+  set description(value: string | null) {
+    const element = this.innerElements.description;
+    element.textContent = value;
+    if (value) {
+      element.classList.remove("hidden");
     } else {
-      descriptionElement?.classList.add("hidden");
+      element?.classList.add("hidden");
     }
   }
 
   get description() {
-    const descriptionElement = document.getElementById(
-      `${this.id}-description`
-    ) as HTMLElement;
-    return descriptionElement.textContent;
+    return this.innerElements.description.textContent;
   }
 
-  set title(value: string | null | undefined) {
-    const titleElement = document.getElementById(`${this.id}-title`);
-    if (titleElement && value) {
-      titleElement.textContent = value;
-      titleElement.classList.remove("hidden");
+  set title(value: string | null) {
+    const element = this.innerElements.title;
+    element.textContent = value;
+    if (value) {
+      element.classList.remove("hidden");
+    } else {
+      element.classList.add("hidden");
     }
   }
 
   get title() {
-    const titleElement = document.getElementById(
-      `${this.id}-title`
-    ) as HTMLElement;
-    return titleElement.textContent;
+    return this.innerElements.title.textContent;
   }
 
   set resizeable(value: boolean) {
@@ -79,67 +67,102 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
     return this._resizeable;
   }
 
-  constructor(components: Components, config?: FloatingWindowConfig) {
-    const window = document.createElement("div");
-    window.className = FloatingWindow.Class.Base;
+  set movable(value: boolean) {
+    this._movable = value;
+    if (value) {
+      this.innerElements.titleContainer.classList.add("cursor-move");
+    } else {
+      this.innerElements.titleContainer.classList.remove("cursor-move");
+    }
+  }
 
-    super(components, window, config?.id);
+  get movable() {
+    return this._movable;
+  }
 
+  innerElements: {
+    title: HTMLHeadingElement;
+    description: HTMLHeadingElement;
+    titleContainer: HTMLDivElement;
+    closeBtn: HTMLSpanElement;
+  };
+
+  slots: {
+    content: SimpleUIComponent<HTMLDivElement>;
+  };
+
+  constructor(components: Components, id?: string) {
+    const template = `
+    <div class="${FloatingWindow.Class.Base}">
+      <div id="title-container" class="z-10 flex justify-between items-center top-0 select-none cursor-move px-6 py-3 border-b-2 border-solid border-[#3A444E]">
+        <div class="flex flex-col">
+          <h3 id="title">Tooeen Floating Window</h3>
+          <p id="description" class="${FloatingWindow.Class.Description}"></p>
+        </div>
+        <span id="close" class="material-icons text-2xl ml-4 text-gray-400 z-20 hover:cursor-pointer hover:text-ifcjs-200">close</span>
+      </div>
+      <div data-tooeen-slot="content"></div>
+    </div>
+    `;
+
+    super(components, template, id);
+
+    this.innerElements = {
+      title: this.getInnerElement("title") as HTMLHeadingElement,
+      description: this.getInnerElement("description") as HTMLHeadingElement,
+      titleContainer: this.getInnerElement("title-container") as HTMLDivElement,
+      closeBtn: this.getInnerElement("close") as HTMLSpanElement,
+    };
+
+    this.slots = {
+      content: new SimpleUIComponent(
+        components,
+        `<div class="flex flex-col gap-y-4 p-4 overflow-auto"></div>`
+      ),
+    };
+    this.setSlots();
+
+    this.innerElements.closeBtn.onclick = () => (this.visible = false);
+    this.setMovableListeners();
+
+    const observer = new ResizeObserver(() => this.onResized.trigger());
+    observer.observe(this.get());
+
+    this.description = null;
+    this.movable = true;
     this.resizeable = true;
 
-    const titleElement = document.createElement("h3");
-    titleElement.id = `${this.id}-title`;
-    titleElement.textContent = "Tooeen Floating Window";
-    titleElement.className = FloatingWindow.Class.Title;
-    if (config?.title) {
-      titleElement.textContent = config.title;
-      titleElement.classList.remove("hidden");
-    }
+    this.referencePoints = {
+      topLeft: new Vector2(),
+      top: new Vector2(),
+      topRight: new Vector2(),
+      left: new Vector2(),
+      center: new Vector2(),
+      right: new Vector2(),
+      bottomLeft: new Vector2(),
+      bottom: new Vector2(),
+      bottomRight: new Vector2(),
+    };
+  }
 
-    const descriptionElement = document.createElement("p");
-    descriptionElement.id = `${this.id}-description`;
-    descriptionElement.className = FloatingWindow.Class.Description;
-
-    const closeElement = document.createElement("span");
-    closeElement.onclick = () => (this.visible = false);
-    closeElement.innerText = "close";
-    closeElement.className =
-      "material-icons text-2xl ml-4 text-gray-400 z-20 hover:cursor-pointer hover:text-ifcjs-200";
-
-    const titleContainer = document.createElement("div");
-    titleContainer.id = `${this.id}-title-container`;
-    titleContainer.className =
-      "sticky z-10 flex justify-between items-center top-0 select-none cursor-move px-6 py-3 border-b-2 border-solid border-[#3A444E]";
-
-    const head = document.createElement("div");
-    head.className = "flex flex-col";
-    head.append(titleElement, descriptionElement);
-    titleContainer.append(head, closeElement);
-
-    const content = document.createElement("div");
-    content.id = `${this.id}-content`;
-    content.className = "flex-col gap-y-3 p-3 hidden overflow-auto";
-
-    this.domElement.append(titleContainer, content);
-
-    const viewerContainer = this._components.renderer.get().domElement
-      .parentNode as HTMLElement;
-
+  private setMovableListeners() {
     let isMouseDown = false;
     let offsetX = 0;
     let offsetY = 0;
 
-    titleContainer.addEventListener("mousedown", (e) => {
+    this.innerElements.titleContainer.addEventListener("mousedown", (e) => {
+      if (!this.movable) return;
       isMouseDown = true;
       const rect = this.domElement.getBoundingClientRect();
       offsetX = e.clientX - rect.left;
       offsetY = e.clientY - rect.top;
     });
 
+    const viewerContainer = this._components.renderer.get().domElement
+      .parentNode as HTMLElement;
+
     viewerContainer.addEventListener("mousemove", (e) => {
-      if (!isMouseDown) {
-        return;
-      }
+      if (!(isMouseDown && this.movable)) return;
       const { width, height } = this.domElement.getBoundingClientRect();
       const {
         x,
@@ -157,36 +180,12 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
     });
 
     viewerContainer.addEventListener("mouseup", () => (isMouseDown = false));
-    requestAnimationFrame(() => {});
-
-    const observer = new ResizeObserver(() => {
-      this.onResized.trigger(this);
-    });
-    observer.observe(window);
-
-    this.referencePoints = {
-      topLeft: new Vector2(),
-      top: new Vector2(),
-      topRight: new Vector2(),
-      left: new Vector2(),
-      center: new Vector2(),
-      right: new Vector2(),
-      bottomLeft: new Vector2(),
-      bottom: new Vector2(),
-      bottomRight: new Vector2(),
-    };
   }
 
-  addChild(...items: UIComponent[]) {
-    const contentDiv = document.getElementById(
-      `${this.id}-content`
-    ) as HTMLDivElement;
-    items.forEach((item) => {
-      this.children.push(item);
-      contentDiv.append(item.domElement);
-    });
-    contentDiv.classList.remove("hidden");
-    contentDiv.classList.add("flex");
+  addChild(...items: SimpleUIComponent[]) {
+    const content = this.slots.content;
+    content.addChild(...items);
+    if (!content.visible) content.visible = true;
   }
 
   updateReferencePoints() {

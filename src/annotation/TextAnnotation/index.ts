@@ -6,32 +6,25 @@ import { SVGText } from "../SVGText";
 
 export class TextAnnotation extends BaseSVGAnnotation implements UI {
   name: string = "TextAnnotation";
-  uiElement!: Button;
+  uiElement: { main: Button };
   canvas: HTMLCanvasElement | null = null;
-  private _components: Components;
   private _previewElement: SVGText;
 
   constructor(components: Components, drawManager?: DrawManager) {
     super();
-    this._components = components;
     this._previewElement = new SVGText(components);
-    this.setUI();
     this.drawManager = drawManager;
-  }
 
-  private setUI() {
-    const button = new Button(this._components, {
-      name: "Text",
-      materialIconName: "title",
-    });
-    button.onclick = () => {
+    this.uiElement = { main: new Button(components) };
+    this.uiElement.main.label = "Text";
+    this.uiElement.main.materialIcon = "title";
+    this.uiElement.main.onclick = () => {
       if (this.drawManager) {
         this.drawManager.activateTool(this);
       } else {
         this.enabled = !this.enabled;
       }
     };
-    this.uiElement = button;
   }
 
   cancel() {
