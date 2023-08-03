@@ -21,9 +21,6 @@
         "openbim-components": "../../../resources/openbim-components.js"
       }
     }
-
-
-
 </script>
 </body>
 <script type="module">
@@ -116,7 +113,10 @@
 
   */
 
-	const alertButton = new OBC.Button(components, { materialIconName: 'info' });
+	const alertButton = new OBC.Button(components, {
+      materialIconName: 'info',
+      tooltip: 'Information'
+    });
 	mainToolbar.addChild(alertButton);
 	alertButton.onclick = () => {
 		alert('I\'ve been clicked!');
@@ -224,7 +224,8 @@
   */
 
 	const cubeTools = new OBC.Button(components, {
-		materialIconName: 'widgets'
+		materialIconName: 'widgets',
+        tooltip: "Tools"
 	});
 
 	mainToolbar.addChild(cubeTools);

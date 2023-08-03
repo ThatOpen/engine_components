@@ -25,7 +25,7 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
 
   static Class = {
     Base: `
-    group relative flex gap-x-2 items-center bg-transparent text-white rounded-[10px] 
+    relative flex gap-x-2 items-center bg-transparent text-white rounded-[10px] 
     h-fit p-2 hover:cursor-pointer hover:bg-ifcjs-200 hover:text-black
     data-[active=true]:cursor-pointer data-[active=true]:bg-ifcjs-200 data-[active=true]:text-black
     disabled:cursor-default disabled:bg-gray-600 disabled:text-gray-400 pointer-events-auto
@@ -33,7 +33,7 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
     `,
     Label: "text-sm tracking-[1.25px] whitespace-nowrap",
     Tooltip: `
-    group-hover:opacity-100 transition-opacity bg-ifcjs-100 text-sm text-gray-100 rounded-md 
+    transition-opacity bg-ifcjs-100 text-sm text-gray-100 rounded-md 
     absolute left-1/2 -translate-x-1/2 -translate-y-12 opacity-0 mx-auto p-4 w-max h-4 flex items-center
     pointer-events-none
     `,
@@ -120,6 +120,26 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
       tooltip.textContent = options.tooltip;
       tooltip.className = Button.Class.Tooltip;
       btn.append(tooltip);
+      btn.addEventListener("mouseover", ({ target }) => {
+        if (
+          target !== btn &&
+          target !== this.icon &&
+          target !== this._labelElement
+        ) {
+          return;
+        }
+        tooltip.classList.add("opacity-100");
+      });
+      btn.addEventListener("mouseout", ({ target }) => {
+        if (
+          target !== btn &&
+          target !== this.icon &&
+          target !== this._labelElement
+        ) {
+          return;
+        }
+        tooltip.classList.remove("opacity-100");
+      });
     }
     this.domElement.append(this._labelElement);
     if (options?.closeOnClick !== undefined) {
