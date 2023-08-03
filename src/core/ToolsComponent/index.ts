@@ -1,6 +1,6 @@
 import { Component, Disposable, Event } from "../../base-types";
 
-type ToolsList = { [id: symbol | string]: Component<any> };
+type ToolsList = Map<symbol | string, Component<any>>;
 
 /**
  * An object to easily handle all the tools used (e.g. updating them, retrieving
@@ -11,7 +11,7 @@ export class ToolComponent
   extends Component<ToolsList | Component<any> | null>
   implements Disposable
 {
-  list: ToolsList = {};
+  list: ToolsList = new Map();
   onToolAdded: Event<Component<any>> = new Event();
   onToolRemoved: Event<null> = new Event();
 
@@ -32,12 +32,12 @@ export class ToolComponent
    * @param tool - The tool to register.
    */
   add(id: symbol | string, tool: Component<any>) {
-    const existingTool = this.list[id];
+    const existingTool = this.list.get(id);
     if (existingTool) {
       console.warn(`A tool with the id: ${String(id)} already exists`);
       return;
     }
-    this.list[id] = tool;
+    this.list.set(id, tool);
   }
 
   /**
@@ -45,7 +45,7 @@ export class ToolComponent
    * @param id - The registered ID of the tool to be delete.
    */
   remove(id: symbol | string) {
-    delete this.list[id];
+    this.list.delete(id);
     this.onToolRemoved.trigger();
   }
 
@@ -54,10 +54,10 @@ export class ToolComponent
    * @param id - The id of the registered tool.
    */
   get<T extends Component<any>>(id: symbol | string): T {
-    if (!this.list[id]) {
+    if (!this.list.has(id)) {
       throw new Error("The requested component does not exist!");
     }
-    return this.list[id] as T;
+    return this.list.get(id) as T;
   }
 
   /**
