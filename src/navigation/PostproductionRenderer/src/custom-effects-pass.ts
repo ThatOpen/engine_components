@@ -37,9 +37,9 @@ export class CustomEffectsPass extends Pass {
   private _tolerance = 3;
   private _glossEnabled = true;
 
-  private _glossExponent = 0.7;
-  private _minGloss = -0.15;
-  private _maxGloss = 0.15;
+  private _glossExponent = 1.9;
+  private _minGloss = -0.1;
+  private _maxGloss = 0.1;
 
   private _outlinesNeedsUpdate = false;
 
@@ -494,8 +494,8 @@ export class CustomEffectsPass extends Pass {
         glossBuffer: { value: null },
         outlineBuffer: { value: null },
         glossEnabled: { value: 1 },
-        minGloss: { value: -0.4 },
-        maxGloss: { value: 0 },
+        minGloss: { value: this._minGloss },
+        maxGloss: { value: this._maxGloss },
         outlineEnabled: { value: 0 },
         glossExponent: { value: this._glossExponent },
         width: { value: 1 },

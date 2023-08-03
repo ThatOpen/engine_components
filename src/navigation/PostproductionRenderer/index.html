@@ -159,9 +159,9 @@
     guiCustomEffects.add(postproduction.customEffects, 'tolerance').name('Line tolerance').min(0).max(6).step(1);
     guiCustomEffects.addColor(postproduction.customEffects, 'lineColor').name('Line color');
     guiCustomEffects.add(postproduction.customEffects, 'glossEnabled').name('Gloss enabled').min(0).max(2).step(0.1);
-    guiCustomEffects.add(postproduction.customEffects, 'glossExponent').name('Gloss exponent').min(0).max(3).step(0.1);
-    guiCustomEffects.add(postproduction.customEffects, 'maxGloss').name('Max gloss').min(-2).max(2).step(0.1);
-    guiCustomEffects.add(postproduction.customEffects, 'minGloss').name('Min gloss').min(-2).max(2).step(0.1);
+    guiCustomEffects.add(postproduction.customEffects, 'glossExponent').name('Gloss exponent').min(0).max(5).step(0.1);
+    guiCustomEffects.add(postproduction.customEffects, 'maxGloss').name('Max gloss').min(-2).max(2).step(0.05);
+    guiCustomEffects.add(postproduction.customEffects, 'minGloss').name('Min gloss').min(-2).max(2).step(0.05);
 
     const guiAO = gui.addFolder('SAO');
     const configuration = postproduction._n8ao.configuration;

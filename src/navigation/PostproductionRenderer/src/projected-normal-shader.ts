@@ -50,6 +50,10 @@ export function getProjectedNormalMaterial() {
       #include <clipping_planes_fragment>
       vec3 cameraPixelVec = normalize(vCameraPosition - vPosition);
       float difference = abs(dot(vNormal, cameraPixelVec));
+      
+      // This achieves a double gloss effect: when the surface is perpendicular and when it's parallel
+      difference = abs((difference * 2.) - 1.);
+      
       gl_FragColor = vec4(difference, difference, difference, 1.);
     }
     `,
