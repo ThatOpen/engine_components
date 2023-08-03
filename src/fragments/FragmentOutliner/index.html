@@ -59,7 +59,7 @@
     ambientLight.intensity = 0.5;
     scene.add(ambientLight);
 
-    const grid = new OBC.SimpleGrid(components);
+    const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
     components.tools.add('grid', grid);
     const gridMesh = grid.get();
     renderer.postproduction.customEffects.excludedMeshes.push(gridMesh);

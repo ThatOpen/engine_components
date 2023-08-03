@@ -92,11 +92,11 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
   }
 
   get icon() {
-    return this.domElement.querySelector(`#${this.id}-icon`);
+    return this.domElement.querySelector(`#icon-${this.id}`);
   }
 
   get tooltip() {
-    return this.domElement.querySelector(`#${this.id}-tooltip`);
+    return this.domElement.querySelector(`#tooltip-${this.id}`);
   }
 
   constructor(components: Components, options?: IButtonOptions) {
@@ -109,14 +109,14 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
     this.alignment = "start";
     if (options?.materialIconName) {
       const icon = document.createElement("span");
-      icon.id = `${this.id}-icon`;
+      icon.id = `icon-${this.id}`;
       icon.className = "material-icons md-18";
       icon.textContent = options?.materialIconName;
       btn.append(icon);
     }
     if (options?.tooltip) {
       const tooltip = document.createElement("span");
-      tooltip.id = `${this.id}-tooltip`;
+      tooltip.id = `tooltip-${this.id}`;
       tooltip.textContent = options.tooltip;
       tooltip.className = Button.Class.Tooltip;
       btn.append(tooltip);
