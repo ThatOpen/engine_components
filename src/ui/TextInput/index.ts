@@ -21,7 +21,7 @@ export class TextInput extends BaseInput<HTMLInputElement> {
     focus:ring-ifcjs-200 focus:outline-none
     `;
     super(components, input);
-    this.labelElement.textContent = "Tooeen Text";
+    this.labelElement.textContent = config?.label || "Tooeen Text";
     // input.oninput = () => {
     //   this.onChange.trigger(this.inputValue);
     // };

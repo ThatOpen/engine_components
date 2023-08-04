@@ -1,10 +1,14 @@
 import { Vector2 } from "three";
 import { generateUUID } from "three/src/math/MathUtils";
 import { Component, SVGAnnotationStyle } from "../../base-types";
-import { Button, FloatingWindow, Toolbar } from "../../ui";
+import {
+  Button,
+  FloatingWindow,
+  Toolbar,
+  ColorInput,
+  RangeInput,
+} from "../../ui";
 import { Components } from "../Components";
-import { ColorInput } from "../../ui/ColorInput";
-import { RangeInput } from "../../ui/RangeInput";
 
 export interface SVGViewportConfig extends SVGAnnotationStyle {}
 
@@ -20,7 +24,7 @@ export class SimpleSVGViewport extends Component<SVGElement> {
   );
   private _components: Components;
   private _size: Vector2 = new Vector2();
-  private _undoList: ChildNode[] = [];
+  private _undoList: any[] = [];
 
   get enabled() {
     return this._enabled;

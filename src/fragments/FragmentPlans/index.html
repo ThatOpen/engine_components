@@ -97,8 +97,8 @@
     const fillMaterial = new THREE.MeshBasicMaterial({color: 'gray', side: 2});
     const fillOutline = new THREE.MeshBasicMaterial({color: 'black', side: 1, opacity: 0.5, transparent: true});
 
-    clipper.styles.create("filled", [], sectionMaterial, fillMaterial, fillOutline);
-    clipper.styles.create("projected", [], sectionMaterial);
+    clipper.styles.create("filled", new Set(), sectionMaterial, fillMaterial, fillOutline);
+    clipper.styles.create("projected", new Set(), sectionMaterial);
     const styles = clipper.styles.get();
 
     postproduction.customEffects.outlineEnabled = true;
@@ -111,14 +111,14 @@
     for (const fragID in found) {
         const {mesh} = fragments.list[fragID];
         styles.filled.fragments[fragID] = new Set(found[fragID]);
-        styles.filled.meshes.push(mesh);
+        styles.filled.meshes.add(mesh);
     }
 
     const meshes = [];
     for (const fragment of model.items) {
         const {mesh} = fragment;
         meshes.push(mesh);
-        styles.projected.meshes.push(mesh);
+        styles.projected.meshes.add(mesh);
     }
 
     const whiteColor = new THREE.Color("white");

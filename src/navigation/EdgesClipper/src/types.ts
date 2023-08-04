@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry";
 import { ClippingFills } from "./clipping-fills";
 import { FragmentIdMap } from "../../../base-types";
@@ -13,13 +12,13 @@ export interface ClipStyle {
   name: string;
 
   /** The meshes where the style will be applied. */
-  meshes: THREE.Mesh[];
+  meshes: Set<THREE.Mesh>;
 
   /**
    * The material that defines the appearance of the lines of the
    * {@link ClippingEdges}.
    */
-  lineMaterial: LineMaterial;
+  lineMaterial: THREE.LineBasicMaterial;
 
   /** The IDs of the fragment items that are clipped by this style. */
   fragments: FragmentIdMap;
