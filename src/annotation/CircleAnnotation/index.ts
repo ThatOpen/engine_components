@@ -8,32 +8,25 @@ import { SVGCircle } from "../SVGCircle";
 export class CircleAnnotation extends BaseSVGAnnotation {
   name: string = "CircleAnnotation";
   canvas: HTMLCanvasElement | null = null;
-  uiElement!: Button;
-  private _components: Components;
+  uiElement: { main: Button };
   private _previewElement: SVGCircle;
   private _cursorPosition: Vector2 = new Vector2();
 
   constructor(components: Components, drawManager?: DrawManager) {
     super();
-    this._components = components;
     this._previewElement = new SVGCircle(components);
-    this.setUI();
     this.drawManager = drawManager;
-  }
 
-  private setUI() {
-    const button = new Button(this._components, {
-      name: "Circle",
-      materialIconName: "radio_button_unchecked",
-    });
-    button.onclick = () => {
+    this.uiElement = { main: new Button(components) };
+    this.uiElement.main.label = "Circle";
+    this.uiElement.main.materialIcon = "radio_button_unchecked";
+    this.uiElement.main.onclick = () => {
       if (this.drawManager) {
         this.drawManager.activateTool(this);
       } else {
         this.enabled = !this.enabled;
       }
     };
-    this.uiElement = button;
   }
 
   start(e: MouseEvent) {

@@ -21,7 +21,7 @@ export class FragmentIfcLoader
   name: string = "FragmentIfcLoader";
   enabled: boolean = true;
 
-  uiElement: Button;
+  uiElement: { main: Button };
 
   ifcLoaded: Event<FragmentsGroup> = new Event();
 
@@ -43,7 +43,7 @@ export class FragmentIfcLoader
     super();
     this._components = components;
     this._fragments = fragments;
-    this.uiElement = this.setupOpenButton();
+    this.uiElement = { main: this.setupOpenButton() };
     this._toast = new ToastNotification(components, {
       message: "IFC model successfully loaded!",
     });
@@ -101,9 +101,8 @@ export class FragmentIfcLoader
   }
 
   private setupOpenButton() {
-    const button = new Button(this._components, {
-      materialIconName: "upload_file",
-    });
+    const button = new Button(this._components);
+    button.materialIcon = "upload_file";
 
     const fileOpener = document.createElement("input");
     fileOpener.type = "file";
@@ -123,9 +122,7 @@ export class FragmentIfcLoader
       button.onClicked.trigger(result);
     };
 
-    button.onclick = () => {
-      fileOpener.click();
-    };
+    button.onclick = () => fileOpener.click();
 
     return button;
   }

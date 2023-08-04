@@ -1,55 +1,64 @@
-import { generateUUID } from "three/src/math/MathUtils";
 import { SimpleUIComponent } from "../SimpleUIComponent";
 import { Components } from "../../core";
-import { UIComponentsStack } from "../UIComponentsStack";
-import { UIComponent } from "../../base-types";
-
-interface ICardInfo {
-  title: string;
-  description?: string;
-  id?: string;
-}
 
 export class SimpleUICard extends SimpleUIComponent<HTMLDivElement> {
   name: string = "SimpleUICard";
-  rightContainer: UIComponentsStack;
 
-  constructor(components: Components, info: ICardInfo) {
-    const card = document.createElement("div");
-    card.className =
-      "bg-ifcjs-120 p-2 text-white flex items-center rounded-lg border-transparent border border-solid";
-
-    const id = info.id ?? generateUUID();
-
-    const descriptionClass = "opacity-50 mt-4";
-
-    const descriptionMenu = `
-            <div id="${id}-before-description"></div>
-                <p class="${descriptionClass}" id="${id}-description">${info.description}</p>
-            <div id="${id}-after-description"></div>
-    `;
-
-    const description = info.description ? descriptionMenu : "";
-
-    super(components, card, id);
-
-    this.rightContainer = new UIComponentsStack(components, "Horizontal");
-
-    const template = `
-            <div class="mr-auto">
-              <div id="${id}-before-title"></div>
-              <h3 class="font-bold" id="${id}-title">${info.title}</h3>
-              ${description}
-            </div>
-        `;
-    card.innerHTML = template;
-    card.appendChild(this.rightContainer.get());
+  set title(value: string | null) {
+    this.innerElements.title.textContent = value;
   }
 
-  addChild(...items: UIComponent[]) {
+  get title() {
+    return this.innerElements.title.textContent;
+  }
+
+  set description(value: string | null) {
+    this.innerElements.description.textContent = value;
+  }
+
+  get description() {
+    return this.innerElements.description.textContent;
+  }
+
+  innerElements: {
+    title: HTMLHeadElement;
+    description: HTMLParagraphElement;
+  };
+
+  slots: {
+    rightContainer: SimpleUIComponent;
+  };
+
+  constructor(components: Components, id?: string) {
+    const template = `
+    <div class="bg-ifcjs-120 p-2 text-white flex items-center rounded-lg border-transparent border border-solid">
+      <div class="mr-auto">
+        <p id="title" class="text-base"></p>
+        <p id="description" class="text-sm text-gray-400"></p>
+      </div>
+      <div data-tooeen-slot="rightContainer"></div> 
+    </div> 
+    `;
+
+    super(components, template, id);
+
+    this.innerElements = {
+      title: this.getInnerElement("title") as HTMLHeadElement,
+      description: this.getInnerElement("description") as HTMLParagraphElement,
+    };
+
+    this.slots = {
+      rightContainer: new SimpleUIComponent(
+        components,
+        `<div class="flex"></div>`
+      ),
+    };
+    this.setSlots();
+  }
+
+  addChild(...items: SimpleUIComponent[]) {
     items.forEach((item) => {
-      this.children.push(item);
-      this.rightContainer.addChild(item);
+      this.slots.rightContainer.addChild(item);
     });
   }
 }

@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { Button } from "../ui/ButtonComponent";
+import { SimpleUIComponent } from "../ui/SimpleUIComponent";
 
 /**
  * Simple event handler by
@@ -122,16 +124,6 @@ export interface Progress {
   total: number;
 }
 
-/** Base interface to be implemented by any kind of component
- * aimed to render user interface (DOM elements) in the viewer.
- */
-export interface UIComponent extends Disposable, Hideable {
-  domElement: HTMLElement;
-  visible: boolean;
-  enabled: boolean;
-  active?: boolean;
-}
-
 /**
  * Whether this component supports create and destroy operations. This generally
  * applies for components that work with instances, such as clipping planes or
@@ -167,7 +159,10 @@ export interface Createable {
  * interface, like a button or a window.
  */
 export interface UI {
-  uiElement: UIComponent | { [name: string]: UIComponent };
+  uiElement: {
+    main: Button;
+    [name: string]: SimpleUIComponent;
+  };
 }
 
 export interface Item3D extends THREE.Object3D {

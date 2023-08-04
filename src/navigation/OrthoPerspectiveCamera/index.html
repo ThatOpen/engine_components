@@ -175,7 +175,7 @@
 
 	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
 	components.ui.addToolbar(mainToolbar);
-	mainToolbar.addChild(camera.uiElement);
+	mainToolbar.addChild(camera.uiElement.main);
 
 	// Set up stats
 	const stats = new Stats();

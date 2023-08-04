@@ -12,7 +12,7 @@ export class AngleMeasurement
   implements Createable, UI
 {
   name: string = "AngleMeasurement";
-  uiElement: Button;
+  uiElement: { main: Button };
 
   private _lineMaterial: LineMaterial;
   private _components: Components;
@@ -42,7 +42,7 @@ export class AngleMeasurement
   set enabled(value: boolean) {
     this._enabled = value;
     this._vertexPicker.enabled = value;
-    this.uiElement.active = value;
+    this.uiElement.main.active = value;
     if (!value) this.cancelCreation();
   }
 
@@ -66,9 +66,8 @@ export class AngleMeasurement
       linewidth: 2,
     });
     this._vertexPicker = new VertexPicker(components);
-    this.uiElement = new Button(components, {
-      materialIconName: "square_foot",
-    });
+    this.uiElement = { main: new Button(components) };
+    this.uiElement.main.materialIcon = "square_foot";
     this.setUI();
     this.enabled = false;
   }
@@ -95,16 +94,16 @@ export class AngleMeasurement
         }
       }
     };
-    this.uiElement.onclick = () => {
+    this.uiElement.main.onclick = () => {
       if (!this.enabled) {
         viewerContainer.addEventListener("click", createMeasurement);
         viewerContainer.addEventListener("mousemove", mouseMove);
         window.addEventListener("keydown", keydown);
-        this.uiElement.active = true;
+        this.uiElement.main.active = true;
         this.enabled = true;
       } else {
         this.enabled = false;
-        this.uiElement.active = false;
+        this.uiElement.main.active = false;
         viewerContainer.removeEventListener("click", createMeasurement);
         viewerContainer.removeEventListener("mousemove", mouseMove);
         window.removeEventListener("keydown", keydown);

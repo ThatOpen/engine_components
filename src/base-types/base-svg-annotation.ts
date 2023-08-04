@@ -1,4 +1,4 @@
-import { UIComponent, UI } from "./base-types";
+import { UI } from "./base-types";
 import { Component } from "./component";
 import { DrawManager } from "../annotation/DrawManager";
 import { Button } from "../ui/ButtonComponent";
@@ -13,7 +13,7 @@ export interface SVGAnnotationStyle {
 export abstract class BaseSVGAnnotation extends Component<null> implements UI {
   id = tooeenRandomId();
   abstract name: string;
-  abstract uiElement: UIComponent;
+  abstract uiElement: { main: Button };
   protected _enabled: boolean = false;
   protected _isDrawing: boolean = false;
   protected _svgViewport?: SVGElement | null = null;
@@ -43,10 +43,10 @@ export abstract class BaseSVGAnnotation extends Component<null> implements UI {
         this._svgViewport.addEventListener("mousedown", this._start);
         this._svgViewport.addEventListener("mouseup", this._end);
         document.addEventListener("keydown", this._cancel);
-        this.uiElement.active = true;
+        this.uiElement.main.active = true;
         this._enabled = true;
       } else {
-        this.uiElement.active = false;
+        this.uiElement.main.active = false;
         this._enabled = false;
         this._svgViewport.removeEventListener("mousemove", this._draw);
         this._svgViewport.removeEventListener("mousedown", this._start);
@@ -54,7 +54,7 @@ export abstract class BaseSVGAnnotation extends Component<null> implements UI {
         document.removeEventListener("keydown", this._cancel);
       }
     } else {
-      this.uiElement.active = false;
+      this.uiElement.main.active = false;
       this._enabled = false;
     }
   }
@@ -71,9 +71,7 @@ export abstract class BaseSVGAnnotation extends Component<null> implements UI {
     this._drawManager = manager;
     if (manager) {
       manager.addDrawingTool(this.name, this);
-      if (this.uiElement instanceof Button) {
-        manager.uiElement.drawingTools.addChild(this.uiElement);
-      }
+      manager.uiElement.drawingTools.addChild(this.uiElement.main);
       this.svgViewport = manager.viewport.get();
     } else {
       this.svgViewport = null;

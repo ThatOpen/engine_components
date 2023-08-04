@@ -2,16 +2,22 @@
 
 :root {
   --primary-color: #BCF124;
+<<<<<<< HEAD
+  --secondary-color: #6528D7;
+=======
   --secondary-color: #635DFF;
+>>>>>>> big-restructure
   /* TODO: Probably this needs to be called background-color */
   --secondary-color-100: #000000e0;
   --secondary-color-120: #1a2128;
 }
 
-.material-icons.md-18 {
-  font-size: 18px;
+* {
+  background-color: transparent;
 }
 
+<<<<<<< HEAD
+=======
 .material-icons.md-16 {
   font-size: 16px;
 }
@@ -23,6 +29,7 @@
   overflow: hidden;
 }
 
+>>>>>>> big-restructure
 /* ! tailwindcss v3.3.2 | MIT License | https://tailwindcss.com */
 
 /*
@@ -445,6 +452,12 @@ video {
   display: none;
 }
 
+<<<<<<< HEAD
+html {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+=======
 [type='text'],[type='email'],[type='url'],[type='password'],[type='number'],[type='date'],[type='datetime-local'],[type='month'],[type='search'],[type='tel'],[type='time'],[type='week'],[multiple],textarea,select{
   -webkit-appearance: none;
      -moz-appearance: none;
@@ -615,6 +628,7 @@ html {
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
+>>>>>>> big-restructure
 *, ::before, ::after{
   --tw-border-spacing-x: 0;
   --tw-border-spacing-y: 0;
@@ -809,10 +823,13 @@ html {
   position: static;
 }
 
+<<<<<<< HEAD
+=======
 .fixed{
   position: fixed;
 }
 
+>>>>>>> big-restructure
 .absolute{
   position: absolute;
 }
@@ -821,10 +838,13 @@ html {
   position: relative;
 }
 
+<<<<<<< HEAD
+=======
 .sticky{
   position: sticky;
 }
 
+>>>>>>> big-restructure
 .bottom-0{
   bottom: 0px;
 }
@@ -889,6 +909,12 @@ html {
   z-index: 50;
 }
 
+<<<<<<< HEAD
+.mb-2{
+  margin-bottom: 0.5rem;
+}
+
+=======
 .my-2{
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
@@ -898,6 +924,7 @@ html {
   margin-bottom: 0.5rem;
 }
 
+>>>>>>> big-restructure
 .mb-4{
   margin-bottom: 1rem;
 }
@@ -930,6 +957,12 @@ html {
   margin-top: 0.25rem;
 }
 
+<<<<<<< HEAD
+.mt-auto{
+  margin-top: auto;
+}
+
+=======
 .mt-2{
   margin-top: 0.5rem;
 }
@@ -938,6 +971,7 @@ html {
   margin-top: auto;
 }
 
+>>>>>>> big-restructure
 .box-border{
   box-sizing: border-box;
 }
@@ -990,8 +1024,13 @@ html {
   height: 15px;
 }
 
+<<<<<<< HEAD
+.h-\[48px\]{
+  height: 48px;
+=======
 .h-\[30px\]{
   height: 30px;
+>>>>>>> big-restructure
 }
 
 .h-\[60px\]{
@@ -1059,6 +1098,13 @@ html {
   width: 15px;
 }
 
+<<<<<<< HEAD
+.w-\[350px\]{
+  width: 350px;
+}
+
+=======
+>>>>>>> big-restructure
 .w-\[60px\]{
   width: 60px;
 }
@@ -1132,14 +1178,24 @@ html {
   flex-direction: row;
 }
 
+<<<<<<< HEAD
+=======
 .flex-row-reverse{
   flex-direction: row-reverse;
 }
 
+>>>>>>> big-restructure
 .flex-col{
   flex-direction: column;
 }
 
+<<<<<<< HEAD
+.flex-wrap{
+  flex-wrap: wrap;
+}
+
+=======
+>>>>>>> big-restructure
 .items-start{
   align-items: flex-start;
 }
@@ -1164,11 +1220,14 @@ html {
   justify-content: space-between;
 }
 
+<<<<<<< HEAD
+=======
 .gap-x-1{
   -moz-column-gap: 0.25rem;
        column-gap: 0.25rem;
 }
 
+>>>>>>> big-restructure
 .gap-x-2{
   -moz-column-gap: 0.5rem;
        column-gap: 0.5rem;
@@ -1179,11 +1238,14 @@ html {
        column-gap: 0.75rem;
 }
 
+<<<<<<< HEAD
+=======
 .gap-x-4{
   -moz-column-gap: 1rem;
        column-gap: 1rem;
 }
 
+>>>>>>> big-restructure
 .gap-y-2{
   row-gap: 0.5rem;
 }
@@ -1192,6 +1254,13 @@ html {
   row-gap: 0.75rem;
 }
 
+<<<<<<< HEAD
+.gap-y-4{
+  row-gap: 1rem;
+}
+
+=======
+>>>>>>> big-restructure
 .overflow-auto{
   overflow: auto;
 }
@@ -1293,6 +1362,14 @@ html {
   background-color: #BD4BF3DD;
 }
 
+<<<<<<< HEAD
+.bg-gray-50{
+  --tw-bg-opacity: 1;
+  background-color: rgb(249 250 251 / var(--tw-bg-opacity));
+}
+
+=======
+>>>>>>> big-restructure
 .bg-ifcjs-100{
   background-color: var(--secondary-color-100);
 }
@@ -1330,6 +1407,13 @@ html {
   padding: 0.5rem;
 }
 
+<<<<<<< HEAD
+.p-2\.5{
+  padding: 0.625rem;
+}
+
+=======
+>>>>>>> big-restructure
 .p-3{
   padding: 0.75rem;
 }
@@ -1419,11 +1503,14 @@ html {
   line-height: 2rem;
 }
 
+<<<<<<< HEAD
+=======
 .text-3xl{
   font-size: 24px;
   line-height: 2.25rem;
 }
 
+>>>>>>> big-restructure
 .text-base{
   font-size: 16px;
   line-height: 1.5rem;
@@ -1528,32 +1615,42 @@ html {
   outline-style: solid;
 }
 
+<<<<<<< HEAD
+=======
 .ring{
   --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
   --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);
   box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
 }
 
+>>>>>>> big-restructure
 .ring-1{
   --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
   --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
   box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
 }
 
+<<<<<<< HEAD
+.ring-gray-500{
+=======
 .ring-inset{
   --tw-ring-inset: inset;
 }
 
 .ring-gray-300{
+>>>>>>> big-restructure
   --tw-ring-opacity: 1;
-  --tw-ring-color: rgb(209 213 219 / var(--tw-ring-opacity));
+  --tw-ring-color: rgb(107 114 128 / var(--tw-ring-opacity));
 }
 
+<<<<<<< HEAD
+=======
 .ring-gray-500{
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(107 114 128 / var(--tw-ring-opacity));
 }
 
+>>>>>>> big-restructure
 .blur{
   --tw-blur: blur(8px);
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
@@ -1604,6 +1701,56 @@ html {
 
 .ease-in-out{
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+<<<<<<< HEAD
+}
+
+.material-icons.md-18 {
+  font-size: 18px;
+}
+
+.material-icons.md-16 {
+  font-size: 16px;
+}
+
+h3{
+  font-size: 24px;
+  line-height: 2.25rem;
+  font-weight: 500;
+  color: var(--primary-color);
+}
+
+dialog{
+  overflow: visible;
+}
+
+dialog::backdrop{
+  --tw-backdrop-blur: blur(12px);
+  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+          backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+}
+
+.full-screen, #app {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--secondary-color-100);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--secondary-color);
+  border-radius: 9999px;
+}
+
+.placeholder\:text-gray-400::-moz-placeholder{
+=======
 }
 
 .placeholder\:text-gray-400::-moz-placeholder{
@@ -1701,6 +1848,91 @@ html {
 }
 
 .disabled\:text-gray-400:disabled{
+>>>>>>> big-restructure
+  --tw-text-opacity: 1;
+  color: rgb(156 163 175 / var(--tw-text-opacity));
+}
+
+<<<<<<< HEAD
+.placeholder\:text-gray-400::placeholder{
+  --tw-text-opacity: 1;
+  color: rgb(156 163 175 / var(--tw-text-opacity));
+}
+
+.hover\:cursor-pointer:hover{
+  cursor: pointer;
+}
+
+.hover\:border-ifcjs-200:hover{
+  border-color: var(--primary-color);
+}
+
+.hover\:bg-error:hover{
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 82 82 / var(--tw-bg-opacity));
+}
+
+.hover\:bg-ifcjs-120:hover{
+  background-color: var(--secondary-color-120);
+}
+
+.hover\:bg-ifcjs-200:hover{
+  background-color: var(--primary-color);
+}
+
+.hover\:bg-success:hover{
+  --tw-bg-opacity: 1;
+  background-color: rgb(76 175 80 / var(--tw-bg-opacity));
+}
+
+.hover\:text-black:hover{
+  --tw-text-opacity: 1;
+  color: rgb(13 13 13 / var(--tw-text-opacity));
+}
+
+.hover\:text-ifcjs-100:hover{
+  color: var(--secondary-color-100);
+}
+
+.hover\:text-ifcjs-200:hover{
+  color: var(--primary-color);
+}
+
+.hover\:backdrop-blur-xl:hover{
+  --tw-backdrop-blur: blur(24px);
+  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+          backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+}
+
+.focus\:border-blue-500:focus{
+  --tw-border-opacity: 1;
+  border-color: rgb(59 130 246 / var(--tw-border-opacity));
+}
+
+.focus\:outline-none:focus{
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.focus\:ring-blue-500:focus{
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(59 130 246 / var(--tw-ring-opacity));
+}
+
+.focus\:ring-ifcjs-200:focus{
+  --tw-ring-color: var(--primary-color);
+}
+
+.disabled\:cursor-default:disabled{
+  cursor: default;
+}
+
+.disabled\:bg-gray-600:disabled{
+  --tw-bg-opacity: 1;
+  background-color: rgb(75 85 99 / var(--tw-bg-opacity));
+}
+
+.disabled\:text-gray-400:disabled{
   --tw-text-opacity: 1;
   color: rgb(156 163 175 / var(--tw-text-opacity));
 }
@@ -1713,6 +1945,16 @@ html {
   background-color: var(--primary-color);
 }
 
+=======
+.data-\[active\=true\]\:cursor-pointer[data-active=true]{
+  cursor: pointer;
+}
+
+.data-\[active\=true\]\:bg-ifcjs-200[data-active=true]{
+  background-color: var(--primary-color);
+}
+
+>>>>>>> big-restructure
 .data-\[active\=true\]\:text-black[data-active=true]{
   --tw-text-opacity: 1;
   color: rgb(13 13 13 / var(--tw-text-opacity));
@@ -1754,6 +1996,24 @@ html {
     color: rgb(75 85 99 / var(--tw-text-opacity));
   }
 
+<<<<<<< HEAD
+  .dark\:text-white{
+    --tw-text-opacity: 1;
+    color: rgb(242 242 242 / var(--tw-text-opacity));
+  }
+
+  .dark\:placeholder-gray-400::-moz-placeholder{
+    --tw-placeholder-opacity: 1;
+    color: rgb(156 163 175 / var(--tw-placeholder-opacity));
+  }
+
+  .dark\:placeholder-gray-400::placeholder{
+    --tw-placeholder-opacity: 1;
+    color: rgb(156 163 175 / var(--tw-placeholder-opacity));
+  }
+
+=======
+>>>>>>> big-restructure
   .dark\:hover\:border-gray-500:hover{
     --tw-border-opacity: 1;
     border-color: rgb(107 114 128 / var(--tw-border-opacity));
@@ -1763,4 +2023,18 @@ html {
     --tw-bg-opacity: 1;
     background-color: rgb(75 85 99 / var(--tw-bg-opacity));
   }
+<<<<<<< HEAD
+
+  .dark\:focus\:border-blue-500:focus{
+    --tw-border-opacity: 1;
+    border-color: rgb(59 130 246 / var(--tw-border-opacity));
+  }
+
+  .dark\:focus\:ring-blue-500:focus{
+    --tw-ring-opacity: 1;
+    --tw-ring-color: rgb(59 130 246 / var(--tw-ring-opacity));
+  }
 }
+=======
+}
+>>>>>>> big-restructure

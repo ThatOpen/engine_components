@@ -8,32 +8,25 @@ import { SVGRectangle } from "../SVGRectangle";
 export class RectangleAnnotation extends BaseSVGAnnotation {
   name: string = "RectangleAnnotation";
   canvas: HTMLCanvasElement | null = null;
-  uiElement!: Button;
-  private _components: Components;
+  uiElement: { main: Button };
   private _previewElement: SVGRectangle;
   private _startPoint: Vector2 = new Vector2();
 
   constructor(components: Components, drawManager?: DrawManager) {
     super();
-    this._components = components;
     this._previewElement = new SVGRectangle(components);
-    this.setUI();
     this.drawManager = drawManager;
-  }
 
-  private setUI() {
-    const button = new Button(this._components, {
-      name: "Rectangle",
-      materialIconName: "crop_square",
-    });
-    button.onclick = () => {
+    this.uiElement = { main: new Button(components) };
+    this.uiElement.main.label = "Rectangle";
+    this.uiElement.main.materialIcon = "crop_square";
+    this.uiElement.main.onclick = () => {
       if (this.drawManager) {
         this.drawManager.activateTool(this);
       } else {
         this.enabled = !this.enabled;
       }
     };
-    this.uiElement = button;
   }
 
   start(e: MouseEvent) {

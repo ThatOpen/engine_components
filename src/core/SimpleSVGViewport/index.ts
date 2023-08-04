@@ -1,13 +1,9 @@
 import { Vector2 } from "three";
 import { generateUUID } from "three/src/math/MathUtils";
 import { Component, SVGAnnotationStyle } from "../../base-types";
-import {
-  Button,
-  FloatingWindow,
-  Toolbar,
-  ColorInput,
-  RangeInput,
-} from "../../ui";
+import { Button } from "../../ui/ButtonComponent";
+import { FloatingWindow } from "../../ui/FloatingWindow";
+import { Toolbar } from "../../ui/ToolbarComponent";
 import { Components } from "../Components";
 
 export interface SVGViewportConfig extends SVGAnnotationStyle {}
@@ -108,50 +104,42 @@ export class SimpleSVGViewport extends Component<SVGElement> {
     clearDrawingBtn.onclick = () => this.clear();
 
     // #region Settings window
-    const settingsWindow = new FloatingWindow(this._components, {
-      title: "Drawing settings",
-      id: this.id,
-    });
+    const settingsWindow = new FloatingWindow(this._components, this.id);
+    settingsWindow.title = "Drawing Settings";
     settingsWindow.visible = false;
     const viewerContainer = this._components.renderer.get().domElement
       .parentElement as HTMLElement;
     viewerContainer.append(settingsWindow.get());
 
-    const strokeWidth = new RangeInput(this._components, {
-      label: "Stroke width",
-      name: "stroke-width",
-      min: 2,
-      max: 6,
-      initialValue: this.config.strokeWidth,
-      id: this.id,
-    });
+    const strokeWidth = new RangeInput(this._components);
+    strokeWidth.label = "Stroke Width";
+    strokeWidth.min = 2;
+    strokeWidth.max = 6;
+    strokeWidth.value = 4;
+    // strokeWidth.id = this.id;
 
     strokeWidth.onChange.on((value) => {
       // @ts-ignore
       this.config = { strokeWidth: value };
     });
 
-    const strokeColorInput = new ColorInput(this._components, {
-      label: "Stroke color",
-      initialValue: this.config.strokeColor,
-      name: "stroke-color",
-      id: this.id,
-    });
+    const strokeColorInput = new ColorInput(this._components);
+    strokeColorInput.label = "Stroke Color";
+    strokeColorInput.value = this.config.strokeColor ?? "#BCF124";
+    // strokeColorInput.name = "stroke-color";
+    // strokeColorInput.id = this.id;
 
     strokeColorInput.onChange.on((value) => {
-      // @ts-ignore
       this.config = { strokeColor: value };
     });
 
-    const fillColorInput = new ColorInput(this._components, {
-      label: "Fill color",
-      initialValue: this.config.fillColor,
-      name: "fill-color",
-      id: this.id,
-    });
+    const fillColorInput = new ColorInput(this._components);
+    strokeColorInput.label = "Fill Color";
+    strokeColorInput.value = this.config.fillColor ?? "#BCF124";
+    // strokeColorInput.name = "fill-color";
+    // strokeColorInput.id = this.id;
 
     fillColorInput.onChange.on((value) => {
-      // @ts-ignore
       this.config = { fillColor: value };
     });
 

@@ -49,7 +49,7 @@ export class LengthMeasurement
   /** {@link Createable.afterCancel} */
   readonly afterCancel = new Event<SimpleDimensionLine>();
 
-  uiElement: Button;
+  uiElement: { main: Button };
 
   /** The minimum distance to force the dimension cursor to a vertex. */
   snapDistance = 0.25;
@@ -89,7 +89,7 @@ export class LengthMeasurement
     if (!value) this.cancelCreation();
     this._enabled = value;
     this._vertexPicker.enabled = value;
-    this.uiElement.active = value;
+    this.uiElement.main.active = value;
   }
 
   /** {@link Hideable.visible} */
@@ -123,9 +123,8 @@ export class LengthMeasurement
       previewElement: this.newEndpoint(),
       snapDistance: this.snapDistance,
     });
-    this.uiElement = new Button(this._components, {
-      materialIconName: "straighten",
-    });
+    this.uiElement = { main: new Button(this._components) };
+    this.uiElement.main.materialIcon = "straighten";
     this.setUI();
     this.enabled = false;
   }
@@ -144,15 +143,15 @@ export class LengthMeasurement
         }
       }
     };
-    this.uiElement.onclick = () => {
+    this.uiElement.main.onclick = () => {
       if (!this.enabled) {
         viewerContainer.addEventListener("click", createDimension);
         window.addEventListener("keydown", keydown);
-        this.uiElement.active = true;
+        this.uiElement.main.active = true;
         this.enabled = true;
       } else {
         this.enabled = false;
-        this.uiElement.active = false;
+        this.uiElement.main.active = false;
         viewerContainer.removeEventListener("click", createDimension);
         window.removeEventListener("keydown", keydown);
       }

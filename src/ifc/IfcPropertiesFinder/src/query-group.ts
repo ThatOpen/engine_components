@@ -19,12 +19,12 @@ export class QueryGroupUI extends SimpleUIComponent {
     ) as AttributeQuery[];
     const query: QueryGroup = { queries };
     if (this.operator.visible)
-      query.operator = this.operator.inputValue as QueryOperators;
+      query.operator = this.operator.value as QueryOperators;
     return query;
   }
 
   set query(value: QueryGroup) {
-    if (value.operator) this.operator.inputValue = value.operator;
+    if (value.operator) this.operator.value = value.operator;
     for (const child of this.children) {
       if (!(child instanceof AttributeQueryUI)) continue;
       this.removeChild(child);
@@ -43,19 +43,20 @@ export class QueryGroupUI extends SimpleUIComponent {
   }
 
   constructor(components: Components) {
-    const div = document.createElement("div");
-    div.className =
-      "flex flex-col gap-y-3 p-3 border border-solid border-ifcjs-120 rounded-md";
-    super(components, div);
+    super(
+      components,
+      `<div class="flex flex-col gap-y-3 p-3 border border-solid border-ifcjs-120 rounded-md"></div>`
+    );
 
     this.operator = new Dropdown(components);
     this.operator.visible = false;
     this.operator.label = null;
     this.operator.addOption("AND", "OR");
 
-    const topContainerDiv = document.createElement("div");
-    const topContainer = new SimpleUIComponent(components, topContainerDiv);
-    topContainer.get().classList.add("flex", "gap-x-2", "w-fit", "ml-auto");
+    const topContainer = new SimpleUIComponent(
+      components,
+      `<div class="flex gap-x-2 w-fit ml-auto"></div>`
+    );
 
     const newRuleBtn = new Button(components, { materialIconName: "add" });
     newRuleBtn.get().classList.add("w-fit");
@@ -64,7 +65,7 @@ export class QueryGroupUI extends SimpleUIComponent {
     newRuleBtn.onclick = () => {
       const propertyQuery = new AttributeQueryUI(components);
       propertyQuery.operator.visible = true;
-      propertyQuery.operator.inputValue = propertyQuery.operator.options[0];
+      propertyQuery.operator.value = propertyQuery.operator.options[0];
       propertyQuery.removeBtn.visible = true;
       this.addChild(propertyQuery);
     };

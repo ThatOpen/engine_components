@@ -15,28 +15,28 @@ export class AttributeQueryUI extends SimpleUIComponent {
 
   // Is ok to use Type Assertion in this case?
   get query() {
-    const attribute = this.attribute.inputValue as string;
-    const condition = this.condition.inputValue as QueryConditions;
+    const attribute = this.attribute.value as string;
+    const condition = this.condition.value as QueryConditions;
     const value =
       attribute === "type"
-        ? this.getTypeConstant(this.ifcTypes.inputValue as string)
-        : this.value.inputValue;
+        ? (this.getTypeConstant(this.ifcTypes.value as string) as number)
+        : this.value.value;
     const query: AttributeQuery = { attribute, condition, value };
     if (this.operator.visible)
-      query.operator = this.operator.inputValue as QueryOperators;
+      query.operator = this.operator.value as QueryOperators;
     return query;
   }
 
   set query(value: AttributeQuery) {
-    if (value.operator) this.operator.inputValue = value.operator;
-    this.attribute.inputValue = value.attribute;
-    this.condition.inputValue = value.condition;
+    if (value.operator) this.operator.value = value.operator;
+    this.attribute.value = value.attribute;
+    this.condition.value = value.condition;
     if (value.attribute === "type") {
-      this.value.inputValue = null;
-      this.ifcTypes.inputValue = value.value.toString();
+      this.value.value = "";
+      this.ifcTypes.value = value.value.toString();
     } else {
-      this.ifcTypes.inputValue = null;
-      this.value.inputValue = value.value;
+      this.ifcTypes.value = null;
+      this.value.value = String(value.value);
     }
   }
 
@@ -48,9 +48,7 @@ export class AttributeQueryUI extends SimpleUIComponent {
   }
 
   constructor(components: Components) {
-    const div = document.createElement("div");
-    div.className = "flex gap-x-2";
-    super(components, div);
+    super(components, `<div class="flex gap-x-2"></div>`);
 
     this.operator = new Dropdown(components);
     this.operator.visible = false;
@@ -82,18 +80,19 @@ export class AttributeQueryUI extends SimpleUIComponent {
       "endsWith",
       "matches"
     );
-    this.condition.inputValue = this.condition.options[0];
+    this.condition.value = this.condition.options[0];
 
     this.value = new TextInput(components);
-    this.value.labelElement.textContent = "Value";
+    this.value.label = "Value";
 
     this.ifcTypes = new Dropdown(components);
+    this.ifcTypes.allowSearch = true;
     this.ifcTypes.visible = false;
     this.ifcTypes.label = "Value";
     for (const type of Object.values(IfcCategoryMap)) {
       this.ifcTypes.addOption(type);
     }
-    this.ifcTypes.inputValue = "IFCWALL";
+    this.ifcTypes.value = "IFCWALL";
 
     this.removeBtn = new Button(components, { materialIconName: "remove" });
     this.removeBtn.visible = false;
@@ -114,6 +113,6 @@ export class AttributeQueryUI extends SimpleUIComponent {
       this.removeBtn
     );
 
-    this.attribute.inputValue = "Name";
+    this.attribute.value = "Name";
   }
 }

@@ -55,7 +55,7 @@
     ambientLight.intensity = 0.5;
     scene.add(ambientLight);
 
-    const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
+    const grid = new OBC.SimpleGrid(components);
     components.tools.add('grid', grid);
     const gridMesh = grid.get();
     renderer.postproduction.customEffects.excludedMeshes.push(gridMesh);
@@ -78,29 +78,30 @@
 
     // New instance of Properties Finder
     // Best way to describe the component is to find "Relations of entities meeting a set of attributes criteria"
-    // Each search group aims to find a set of entities matching the criteria
+    // Each search group aims to find a set of entities matching the criteria and then its relations
     // The search result are all common relations of the entities that meet the criteria in each search group.
     const propsFinder = new OBC.IfcPropertiesFinder(components, fragments);
     propsFinder.uiElement.queryWindow.visible = true
 
     // On elements found, select them.
     propsFinder.onFound.on(result => {
-      const fragmentMap = {}
-      for (const modelID in result) {
-        const model = fragments.groups.find(m => m.uuid === modelID)
-        if (!model) continue;
-        const expressIDs = result[modelID]
-        expressIDs.forEach(expressID => {
-            const data = model.data[expressID]
-            if (!data) return;
-            for (const key of data[0]) {
-                const fragmentID = model.keyFragments[key]
-                if (!fragmentMap[fragmentID]) fragmentMap[fragmentID] = [];
-                fragmentMap[fragmentID].push(String(expressID))
+        console.log(result)
+        const fragmentMap = {}
+        for (const modelID in result) {
+            const model = fragments.groups.find(m => m.uuid === modelID)
+            if (!model) continue;
+            const matchingEntities = result[modelID].modelEntities
+            for (const expressID of matchingEntities) {
+                const data = model.data[expressID]
+                if (!data) return;
+                for (const key of data[0]) {
+                    const fragmentID = model.keyFragments[key]
+                    if (!fragmentMap[fragmentID]) fragmentMap[fragmentID] = [];
+                    fragmentMap[fragmentID].push(String(expressID))
+                }
             }
-        } )
-      }
-      highlighter.highlightByID("select", fragmentMap)
+        }
+        highlighter.highlightByID("select", fragmentMap)
     })
 
     // Creating new toolbar + adding component button

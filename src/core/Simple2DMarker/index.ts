@@ -1,5 +1,6 @@
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
-import { Component, Hideable, Disposable } from "../../base-types";
+import { Hideable, Disposable } from "../../base-types";
+import { Component } from "../../base-types/component";
 import { Components } from "../Components";
 
 export class Simple2DMarker

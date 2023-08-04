@@ -9,6 +9,7 @@ export class InfoCard extends Component<string> implements Updateable, UI {
   enabled: boolean = true;
   afterUpdate: Event<any> = new Event();
   beforeUpdate: Event<any> = new Event();
+  // @ts-ignore
   uiElement!: FloatingWindow;
   private _components: Components;
   private _startCSSElement: CSS2DObject;
@@ -60,7 +61,8 @@ export class InfoCard extends Component<string> implements Updateable, UI {
   }
 
   private setUI() {
-    const window = new FloatingWindow(this._components, { title: "Info card" });
+    const window = new FloatingWindow(this._components);
+    window.title = "Info card";
     this._viewerContainer.append(window.domElement);
     window.updateReferencePoints();
     this.uiElement = window;

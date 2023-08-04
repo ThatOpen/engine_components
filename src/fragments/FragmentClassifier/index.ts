@@ -147,7 +147,9 @@ export class FragmentClassifier
     const currentTypes = this._groupSystems.predefinedTypes;
 
     for (const expressID in group.data) {
-      const entity = group.properties[expressID];
+      const entity = group.properties[expressID] as {
+        [attribute: string]: any;
+      };
       if (!entity) continue;
 
       const predefinedType = String(entity.PredefinedType?.value).toUpperCase();

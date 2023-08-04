@@ -32,7 +32,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
   protected readonly _userInputButtons: any = {};
   protected readonly _frustumSize = 50;
   protected readonly _navigationModes = new Map<NavModeID, NavigationMode>();
-  uiElement: Button;
+  uiElement: { main: Button };
 
   constructor(components: Components) {
     super(components);
@@ -53,9 +53,8 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
   }
 
   private setUI() {
-    const mainButton = new Button(this.components, {
-      materialIconName: "video_camera_back",
-    });
+    const mainButton = new Button(this.components);
+    mainButton.materialIcon = "video_camera_back";
 
     const projection = new Button(this.components, {
       materialIconName: "camera",
@@ -94,7 +93,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
       }
     });
 
-    return mainButton;
+    return { main: mainButton };
   }
 
   /** {@link Disposable.dispose} */

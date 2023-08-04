@@ -6,11 +6,11 @@ import { SimpleUIComponent } from "../SimpleUIComponent";
 interface IToolbarOptions {
   name?: string;
   position?: IContainerPosition;
-  id?: string;
 }
 
 type IToolbarDirection = "horizontal" | "vertical";
 
+// export class Toolbar extends SimpleUIComponent<HTMLDivElement> {
 export class Toolbar extends SimpleUIComponent<HTMLDivElement> {
   name: string;
   children: Button[] = [];
@@ -61,9 +61,10 @@ export class Toolbar extends SimpleUIComponent<HTMLDivElement> {
       position: "bottom",
       ...options,
     };
-    const toolbar = document.createElement("div");
-    toolbar.className = Toolbar.Class.Base;
-    super(components, toolbar, options?.id);
+    const template = `
+    <div class="${Toolbar.Class.Base}"></div> 
+    `;
+    super(components, template);
     this.name = _options.name ?? "Toolbar";
     this.position = _options.position ?? "bottom";
     this.visible = true;

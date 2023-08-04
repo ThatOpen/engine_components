@@ -5,7 +5,7 @@ import { Button, Toolbar } from "../../ui";
 export class DrawManager extends Component<string> implements UI {
   name: string = "DrawManager";
   uiElement!: {
-    activationButton: Button;
+    main: Button;
     drawingTools: Toolbar;
   };
   viewport: SimpleSVGViewport;
@@ -29,7 +29,7 @@ export class DrawManager extends Component<string> implements UI {
 
   set enabled(value: boolean) {
     this._enabled = value;
-    this.uiElement.activationButton.active = value;
+    this.uiElement.main.active = value;
     this.uiElement.drawingTools.visible = value;
     this.viewport.enabled = value;
   }
@@ -39,6 +39,7 @@ export class DrawManager extends Component<string> implements UI {
     this._components = components;
     this.viewport = new SimpleSVGViewport(components);
     this.setUI();
+    this.enabled = false;
   }
 
   saveDrawing(name: string) {
@@ -60,6 +61,7 @@ export class DrawManager extends Component<string> implements UI {
   addDrawingTool(name: string, tool: BaseSVGAnnotation) {
     const existingTool = this.drawingTools[name];
     if (!existingTool) {
+      this.uiElement.drawingTools.addChild(tool.uiElement.main);
       this.drawingTools[name] = tool;
     }
   }
@@ -77,13 +79,11 @@ export class DrawManager extends Component<string> implements UI {
 
   private setUI() {
     const drawingTools = new Toolbar(this._components, { position: "top" });
-    const activationButton = new Button(this._components, {
-      materialIconName: "gesture",
-    });
-    activationButton.onclick = () => {
-      this.enabled = !this.enabled;
-    };
-    this.uiElement = { drawingTools, activationButton };
+    this._components.ui.addToolbar(drawingTools);
+    const main = new Button(this._components);
+    main.materialIcon = "gesture";
+    main.onclick = () => (this.enabled = !this.enabled);
+    this.uiElement = { drawingTools, main };
   }
 
   get(): string {

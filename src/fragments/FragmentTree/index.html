@@ -11,9 +11,7 @@
     <title>FragmentTree Component</title>
 </head>
 <body>
-<div class="full-screen" id="container">
-    <div id="tree-container" class="simple-container"></div>
-</div>
+<div class="full-screen" id="container"></div>
 <script type="importmap">
     {
       "imports": {
@@ -96,7 +94,10 @@
     });
 
     const treeContainer = document.getElementById('tree-container');
-    treeContainer.append(modelTree.uiElement.get());
+    const wnd = new OBC.FloatingWindow(components);
+    components.ui.add(wnd);
+    wnd.visible = true;
+    wnd.addChild(modelTree.uiElement.tree);
 
     // Set up stats
 
