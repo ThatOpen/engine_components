@@ -79,7 +79,7 @@ export class SimpleClipper<Plane extends SimplePlane>
   /** {@link Component.enabled} */
   set enabled(state: boolean) {
     this._enabled = state;
-    this.uiElement.active = state;
+    this.uiElement.main.active = state;
     for (const plane of this._planes) {
       plane.enabled = state;
     }
@@ -125,21 +125,20 @@ export class SimpleClipper<Plane extends SimplePlane>
     }
   }
 
-  uiElement: Button;
+  uiElement: { main: Button };
 
   constructor(
     public components: Components,
     public PlaneType: new (...args: any) => Plane
   ) {
     super();
-    this.uiElement = new Button(components, {
-      materialIconName: "content_cut",
-    });
-    this.uiElement.onclick = () => {
+    this.uiElement = { main: new Button(components) };
+    this.uiElement.main.materialIcon = "content_cut";
+    this.uiElement.main.onclick = () => {
       this.enabled = !this.enabled;
       this.visible = !this.visible;
     };
-    this.uiElement.active = this.enabled;
+    this.uiElement.main.active = this.enabled;
   }
 
   beforeCreate = new Event();

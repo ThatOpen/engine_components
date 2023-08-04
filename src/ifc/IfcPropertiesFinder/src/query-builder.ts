@@ -34,9 +34,7 @@ export class QueryBuilder extends SimpleUIComponent {
   }
 
   constructor(components: Components) {
-    const div = document.createElement("div");
-    div.className = "flex-col gap-y-3 flex";
-    super(components, div);
+    super(components, `<div class="flex flex-col gap-y-3"></div>`);
 
     this.findButton = new Button(this._components, {
       materialIconName: "search",
@@ -55,12 +53,10 @@ export class QueryBuilder extends SimpleUIComponent {
       this.findButton.onClicked.trigger(this.query);
     };
 
-    const topContainerDiv = document.createElement("div");
     const topContainer = new SimpleUIComponent(
       this._components,
-      topContainerDiv
+      `<div class="flex gap-x-2 w-fit ml-auto"></div>`
     );
-    topContainer.get().classList.add("flex", "gap-x-2", "w-fit", "ml-auto");
 
     const newGroupBtn = new Button(this._components, {
       materialIconName: "add",
@@ -70,7 +66,7 @@ export class QueryBuilder extends SimpleUIComponent {
     newGroupBtn.onclick = () => {
       const queryGroup = new QueryGroupUI(this._components);
       queryGroup.operator.visible = true;
-      queryGroup.operator.inputValue = queryGroup.operator.options[0];
+      queryGroup.operator.value = queryGroup.operator.options[0];
       queryGroup.removeBtn.visible = true;
       this.addChild(queryGroup);
       this.get().append(this.findButton.get());

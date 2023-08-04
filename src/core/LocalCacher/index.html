@@ -65,7 +65,9 @@
 	const url = "../../../resources/small.frag";
 	const id = "example-id";
 
-	components.ui.addToolbar(localCacher.uiElement);
+	const mainToolbar = new OBC.Toolbar(components);
+	components.ui.addToolbar(mainToolbar);
+	mainToolbar.addChild(localCacher.uiElement.main);
 
 	function checkIfExists() {
 		const exists = localCacher.exists(id);

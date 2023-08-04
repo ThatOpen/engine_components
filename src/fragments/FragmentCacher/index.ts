@@ -38,10 +38,8 @@ export class FragmentCacher extends LocalCacher {
       for (const id of ids) {
         if (savedIDs.includes(id)) continue;
 
-        const card = new SimpleUICard(this._components, {
-          title: id,
-          id,
-        });
+        const card = new SimpleUICard(this._components, id);
+        card.title = id;
         this._cards.push(card);
         this.floatingMenu.addChild(card);
 
@@ -83,10 +81,8 @@ export class FragmentCacher extends LocalCacher {
       this._cards = [];
 
       for (const id of allIDs) {
-        const card = new SimpleUICard(this._components, {
-          title: id,
-          id,
-        });
+        const card = new SimpleUICard(this._components, id);
+        card.title = id;
         this._cards.push(card);
 
         const deleteCardButton = new Button(this._components, {

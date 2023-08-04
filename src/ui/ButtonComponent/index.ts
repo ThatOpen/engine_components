@@ -42,21 +42,33 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
   protected _parent: Toolbar | null = null;
   private _closeOnClick = true;
   private _popper: PopperInstance;
-  private _label: string | null = null;
-  private _labelElement = document.createElement("p");
+
+  set tooltip(value: string | null) {
+    const element = this.innerElements.tooltip;
+    element.textContent = value;
+    if (value) {
+      element.classList.remove("hidden");
+    } else {
+      element.classList.add("hidden");
+    }
+  }
+
+  get tooltip() {
+    return this.innerElements.tooltip.textContent;
+  }
 
   set label(value: string | null) {
-    this._label = null;
-    this._labelElement.textContent = value;
+    const element = this.innerElements.label;
+    element.textContent = value;
     if (value) {
-      this._labelElement.classList.remove("hidden");
+      element.classList.remove("hidden");
     } else {
-      this._labelElement.classList.add("hidden");
+      element.classList.add("hidden");
     }
   }
 
   get label() {
-    return this._label;
+    return this.innerElements.label.textContent;
   }
 
   set onclick(listener: (e?: MouseEvent) => void) {
@@ -91,57 +103,45 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
     this.domElement.classList.add(`justify-${value}`);
   }
 
-  get icon() {
-    return this.domElement.querySelector(`#icon-${this.id}`);
+  set materialIcon(name: string | null) {
+    this.innerElements.icon.textContent = name;
+    if (name) {
+      this.innerElements.icon.classList.remove("hidden");
+    } else {
+      this.innerElements.icon.classList.add("hidden");
+    }
   }
 
-  get tooltip() {
-    return this.domElement.querySelector(`#tooltip-${this.id}`);
+  get materialIcon() {
+    return this.innerElements.icon.textContent;
   }
+
+  innerElements: {
+    icon: HTMLSpanElement;
+    label: HTMLParagraphElement;
+    tooltip: HTMLSpanElement;
+  };
 
   constructor(components: Components, options?: IButtonOptions) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = Button.Class.Base;
-    super(components, btn, options?.id);
-    this._labelElement.className = Button.Class.Label;
-    this.label = options?.name ? options.name : null;
+    const template = `
+    <button class="${Button.Class.Base}">
+      <span id="icon" class="material-icons md-18"></span> 
+      <span id="tooltip" class="${Button.Class.Tooltip}"></span> 
+      <p id="label" class="${Button.Class.Label}"></p>
+    </button>
+    `;
+    super(components, template);
+
+    this.innerElements = {
+      icon: this.getInnerElement("icon") as HTMLSpanElement,
+      label: this.getInnerElement("label") as HTMLParagraphElement,
+      tooltip: this.getInnerElement("tooltip") as HTMLSpanElement,
+    };
+
+    this.materialIcon = options?.materialIconName ?? null;
+    this.label = options?.name ?? null;
+    this.tooltip = options?.tooltip ?? null;
     this.alignment = "start";
-    if (options?.materialIconName) {
-      const icon = document.createElement("span");
-      icon.id = `icon-${this.id}`;
-      icon.className = "material-icons md-18";
-      icon.textContent = options?.materialIconName;
-      btn.append(icon);
-    }
-    if (options?.tooltip) {
-      const tooltip = document.createElement("span");
-      tooltip.id = `tooltip-${this.id}`;
-      tooltip.textContent = options.tooltip;
-      tooltip.className = Button.Class.Tooltip;
-      btn.append(tooltip);
-      btn.addEventListener("mouseover", ({ target }) => {
-        if (
-          target !== btn &&
-          target !== this.icon &&
-          target !== this._labelElement
-        ) {
-          return;
-        }
-        tooltip.classList.add("opacity-100");
-      });
-      btn.addEventListener("mouseout", ({ target }) => {
-        if (
-          target !== btn &&
-          target !== this.icon &&
-          target !== this._labelElement
-        ) {
-          return;
-        }
-        tooltip.classList.remove("opacity-100");
-      });
-    }
-    this.domElement.append(this._labelElement);
     if (options?.closeOnClick !== undefined) {
       this._closeOnClick = options.closeOnClick;
     }
@@ -155,6 +155,28 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
       this.menu.visible = true;
       this._popper.update();
     };
+
+    // this.domElement.addEventListener("mouseover", ({ target }) => {
+    //   if (
+    //     target !== this.get() &&
+    //     target !== this.innerElements.icon &&
+    //     target !== this.innerElements.label
+    //   ) {
+    //     return;
+    //   }
+    //   this.innerElements.tooltip.classList.add("opacity-100");
+    // });
+
+    // this.domElement.addEventListener("mouseleave", ({ target }) => {
+    //   if (
+    //     target !== this.get() &&
+    //     target !== this.innerElements.icon &&
+    //     target !== this.innerElements.label
+    //   ) {
+    //     return;
+    //   }
+    //   this.innerElements.tooltip.classList.add("opacity-0");
+    // });
 
     // #region Extensible menu
     this.menu = new Toolbar(components);

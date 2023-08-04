@@ -76,9 +76,9 @@ export class DataConverter {
     const { FILE_NAME, FILE_DESCRIPTION } = WEBIFC;
     const name = this.getMetadataEntry(webIfc, FILE_NAME);
     const description = this.getMetadataEntry(webIfc, FILE_DESCRIPTION);
-    const schema: string = webIfc.GetModelSchema(0) || "IFC2X3";
-    const maxExpressId: number = webIfc.GetMaxExpressID(0);
-    return { name, description, schema, maxExpressId };
+    const schema = (webIfc.GetModelSchema(0) as FRAGS.IfcSchema) || "IFC2X3";
+    const maxExpressID: number = webIfc.GetMaxExpressID(0);
+    return { name, description, schema, maxExpressID };
   }
 
   private getMetadataEntry(webIfc: WEBIFC.IfcAPI, type: number) {

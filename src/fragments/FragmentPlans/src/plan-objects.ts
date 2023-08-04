@@ -17,7 +17,7 @@ interface PlanObject {
 export class PlanObjects implements UI {
   offsetFactor = 0.2;
 
-  uiElement: { planObjectButton: Button };
+  uiElement: { main: Button };
 
   planClicked = new Event<{ id: string }>();
 
@@ -74,7 +74,7 @@ export class PlanObjects implements UI {
     button.onclick = () => {
       this.visible = !this.visible;
     };
-    this.uiElement = { planObjectButton: button };
+    this.uiElement = { main: button };
   }
 
   dispose() {
@@ -86,7 +86,7 @@ export class PlanObjects implements UI {
     this._objects = {};
     this._planeGeometry.dispose();
     this._material.dispose();
-    this.uiElement.planObjectButton.dispose();
+    this.uiElement.main.dispose();
     (this._components as any) = null;
   }
 

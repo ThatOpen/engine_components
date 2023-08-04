@@ -2,7 +2,8 @@ import * as THREE from "three";
 import { Event, Resizeable, UI, Updateable, Component } from "../../base-types";
 import { Canvas } from "../../ui/Canvas";
 import { Components, SimpleCamera } from "../../core";
-import { RangeInput } from "../../ui";
+import { Button } from "../../ui/ButtonComponent";
+import { RangeInput } from "../../ui/RangeInput";
 
 export class MiniMap
   extends Component<THREE.OrthographicCamera>
@@ -10,7 +11,7 @@ export class MiniMap
 {
   name = "MiniMap";
   enabled = true;
-  uiElement: Canvas;
+  uiElement: { main: Button; canvas: Canvas };
   afterUpdate = new Event();
   beforeUpdate = new Event();
 
@@ -51,13 +52,21 @@ export class MiniMap
   constructor(components: Components) {
     super();
 
-    this.uiElement = new Canvas(components);
+    this.uiElement = {
+      main: new Button(components),
+      canvas: new Canvas(components),
+    };
+
+    this.uiElement.main.materialIcon = "map";
+    this.uiElement.main.onclick = () => {
+      this.uiElement.canvas.visible = !this.uiElement.canvas.visible;
+    };
 
     const range = new RangeInput(components);
-    this.uiElement.addChild(range);
+    this.uiElement.canvas.addChild(range);
 
     this._components = components;
-    const canvas = this.uiElement.get();
+    const canvas = this.uiElement.canvas.get();
     this._renderer = new THREE.WebGLRenderer({ canvas });
     this._renderer.setSize(this._size.x, this._size.y);
 
@@ -106,13 +115,13 @@ export class MiniMap
   }
 
   getSize() {
-    return this.uiElement.getSize();
+    return this.uiElement.canvas.getSize();
   }
 
   resize(size?: THREE.Vector2) {
     if (size) {
       this._size.copy(size);
-      this.uiElement.resize(size);
+      this.uiElement.canvas.resize(size);
       this._renderer.setSize(size.x, size.y);
 
       const aspect = size.x / size.y;

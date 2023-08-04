@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { generateUUID } from "three/src/math/MathUtils";
 import { SimpleUIComponent } from "../SimpleUIComponent";
 import { Components } from "../../core";
 import { Resizeable } from "../../base-types";
@@ -13,12 +12,11 @@ export class Canvas
   private _canvas: HTMLCanvasElement;
 
   constructor(components: Components) {
-    const id = generateUUID();
-    const canvas = document.createElement("canvas");
-    canvas.className =
-      "absolute w-80 h-40 right-3 bottom-3 bg-ifcjs-120 border-transparent border border-solid";
-    super(components, canvas, id);
-    this._canvas = canvas;
+    const template = `
+    <canvas class="absolute w-80 h-40 right-3 bottom-3 bg-ifcjs-120 border-transparent border border-solid"></canvas> 
+    `;
+    super(components, template);
+    this._canvas = this.get();
   }
 
   getSize(): THREE.Vector2 {

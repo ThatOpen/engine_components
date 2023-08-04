@@ -1,9 +1,8 @@
 import * as WEBIFC from "web-ifc";
-import { FragmentsGroup } from "bim-fragment";
+import { FragmentsGroup, IfcProperties } from "bim-fragment";
 import { Event, UI } from "../../base-types";
 import { Component } from "../../base-types/component";
-import { IfcProperties, IfcPropertiesUtils } from "../IfcPropertiesUtils";
-import { IfcCategoryMap } from "../ifc-category-map";
+import { IfcPropertiesUtils } from "../IfcPropertiesUtils";
 import { Button, FloatingWindow } from "../../ui";
 import { Components } from "../../core/Components";
 import {
@@ -14,9 +13,13 @@ import {
 } from "./src/types";
 import { FragmentManager } from "../../fragments";
 import { QueryBuilder } from "./src/query-builder";
+import { IfcPropertiesManager } from "../IfcPropertiesManager";
 
 interface QueryResult {
-  [modelID: string]: Set<number>;
+  [modelID: string]: {
+    modelEntities: Set<number>;
+    otherEntities: Set<number>;
+  };
 }
 
 export class IfcPropertiesFinder extends Component<null> implements UI {
@@ -99,35 +102,30 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
     query.findButton.onClicked.on((query: QueryGroup[]) => {
       const model = this._fragmentManager.groups[0];
       if (!model) return;
-      this.find(model, query);
+      this.find(query);
     });
     this.uiElement.queryWindow.addChild(query);
   }
 
   private indexEntityRelations(model: FragmentsGroup) {
     const map: { [expressID: number]: Set<number> } = {};
+    const { properties } = IfcPropertiesManager.getIFCInfo(model);
 
     IfcPropertiesUtils.getRelationMap(
-      model.properties,
+      properties,
       WEBIFC.IFCRELDEFINESBYPROPERTIES,
       (relatingID, relatedIDs) => {
         if (!map[relatingID]) map[relatingID] = new Set();
         const props: number[] = [];
-        IfcPropertiesUtils.getPsetProps(
-          model.properties,
-          relatingID,
-          (propID) => {
-            props.push(propID);
-            map[relatingID].add(propID);
-            if (!map[propID]) map[propID] = new Set();
-            map[propID].add(relatingID);
-          }
-        );
+        IfcPropertiesUtils.getPsetProps(properties, relatingID, (propID) => {
+          props.push(propID);
+          map[relatingID].add(propID);
+          if (!map[propID]) map[propID] = new Set();
+          map[propID].add(relatingID);
+        });
         for (const relatedID of relatedIDs) {
           map[relatingID].add(relatedID);
           for (const propID of props) map[propID].add(relatedID);
-          // if (!map[relatedID]) map[relatedID] = [];
-          // map[relatedID].add(relatingID, ...props);
           if (!map[relatedID]) map[relatedID] = new Set();
           map[relatedID].add(relatedID);
         }
@@ -142,14 +140,12 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
 
     for (const relation of ifcRelations) {
       IfcPropertiesUtils.getRelationMap(
-        model.properties,
+        properties,
         relation,
         (relatingID, relatedIDs) => {
           if (!map[relatingID]) map[relatingID] = new Set();
           for (const relatedID of relatedIDs) {
             map[relatingID].add(relatedID);
-            // if (!map[relatedID]) map[relatedID] = [];
-            // map[relatedID].add(relatingID);
             if (!map[relatedID]) map[relatedID] = new Set();
             map[relatedID].add(relatedID);
           }
@@ -161,33 +157,46 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
     return map;
   }
 
-  find(model: FragmentsGroup, queryGroups: QueryGroup[]) {
-    let map = this._indexedModels[model.uuid];
-    if (!map) map = this.indexEntityRelations(model);
-    let relations: number[] = [];
-    for (const [index, group] of queryGroups.entries()) {
-      const groupResult = this.simpleQuery(model, group);
-      const groupRelations: number[] = [];
-      for (const expressID of groupResult) {
-        const relations = map[expressID];
-        if (!relations) continue;
-        groupRelations.push(...relations, expressID);
+  find(queryGroups: QueryGroup[], models = this._fragmentManager.groups) {
+    const result: QueryResult = {};
+
+    for (const model of models) {
+      let map = this._indexedModels[model.uuid];
+      if (!map) map = this.indexEntityRelations(model);
+      let relations: number[] = [];
+      for (const [index, group] of queryGroups.entries()) {
+        const groupResult = this.simpleQuery(model, group);
+        const groupRelations: number[] = [];
+        for (const expressID of groupResult) {
+          const relations = map[expressID];
+          if (!relations) continue;
+          groupRelations.push(...relations, expressID);
+        }
+        relations =
+          group.operator === "AND" && index > 0
+            ? this.getCommonElements(relations, groupRelations)
+            : [...relations, ...groupRelations];
       }
-      relations =
-        group.operator === "AND" && index > 0
-          ? this.getCommonElements(relations, groupRelations)
-          : [...relations, ...groupRelations];
+
+      const modelEntities = new Set<number>();
+
+      for (const expressID in model.data) {
+        const included = relations.includes(Number(expressID));
+        if (!included) continue;
+        modelEntities.add(Number(expressID));
+      }
+
+      const otherEntities = new Set<number>();
+
+      for (const expressID of relations) {
+        const included = modelEntities.has(expressID);
+        if (included) continue;
+        otherEntities.add(expressID);
+      }
+
+      result[model.uuid] = { modelEntities, otherEntities };
     }
-    const result = { [model.uuid]: new Set(relations) };
-    const categoriesMap: { [category: string]: number[] } = {};
-    result[model.uuid].forEach((r) => {
-      const entity = model.properties[r];
-      if (!entity) return;
-      const entityName = IfcCategoryMap[entity.type];
-      if (!categoriesMap[entityName]) categoriesMap[entityName] = [];
-      categoriesMap[entityName].push(r);
-    });
-    console.log(categoriesMap);
+
     this.onFound.trigger(result);
     return result;
   }
@@ -195,7 +204,9 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
   private simpleQuery(model: FragmentsGroup, queryGroup: QueryGroup) {
     const properties = model.properties as IfcProperties;
     if (!properties) throw new Error("Model has no properties");
-    let filteredProps = {};
+    let filteredProps: {
+      [expressID: number]: { [attributeName: string]: any };
+    } = {};
     let iterations = 0;
     let matchingEntities: number[] = [];
     for (const query of queryGroup.queries) {
@@ -227,13 +238,15 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
   }
 
   private getMatchingEntities(
-    entities: Record<string, Record<string, any>>,
+    entities: { [expressID: number]: { [attributeName: string]: any } },
     query: AttributeQuery
   ) {
     const { attribute: attributeName, condition, value } = query;
     const handleAttribute = !this._noHandleAttributes.includes(attributeName);
     const expressIDs: number[] = [];
-    const matchingEntities: Record<string, Record<string, any>>[] = [];
+    const matchingEntities: {
+      [expressID: number]: { [attributeName: string]: any };
+    }[] = [];
     for (const expressID in entities) {
       const entity = entities[expressID];
       const attribute = entity[attributeName];

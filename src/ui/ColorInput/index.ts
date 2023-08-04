@@ -1,29 +1,59 @@
 import { Components } from "../../core";
-import { BaseInput } from "../BaseInput";
+import { Event } from "../../base-types";
+import { SimpleUIComponent } from "../SimpleUIComponent";
+import { UIManager } from "../UIManager";
 
-interface ColorInputConfig {
-  name: string;
-  initialValue?: string;
-  label?: string;
-  id?: string;
-}
-
-export class ColorInput extends BaseInput<HTMLInputElement> {
+export class ColorInput extends SimpleUIComponent<HTMLDivElement> {
   name = "TooeenColorInput";
+  readonly onChange: Event<string> = new Event();
+
+  set value(value: string) {
+    this.innerElements.input.value = value;
+    this.onChange.trigger(this.value);
+  }
+
+  get value() {
+    return this.innerElements.input.value;
+  }
+
+  set label(value: string | null) {
+    this.innerElements.label.textContent = value;
+    if (value) {
+      this.innerElements.label.classList.remove("hidden");
+    } else {
+      this.innerElements.label.classList.add("hidden");
+    }
+  }
+
+  get label() {
+    return this.innerElements.label.textContent;
+  }
+
+  innerElements: {
+    label: HTMLLabelElement;
+    input: HTMLInputElement;
+  };
 
   // @ts-ignore
-  constructor(components: Components, config?: ColorInputConfig) {
-    const input = document.createElement("input");
-    input.type = "color";
-    input.value = "#BCF124";
-    input.className = `
-      block w-full h-[30px] rounded-md border-0 text-gray-900 shadow-sm ring-1 
-      ring-inset ring-gray-300
-      focus:ring-2 focus:ring-inset focus:ring-ifcjs-200`;
-    super(components, input);
-    this.labelElement.textContent = "Tooeen Color";
-    input.oninput = () => {
-      this.onChange.trigger(this.inputValue);
+  constructor(components: Components) {
+    const template = `
+    <div class="w-full">
+      <label id="label" class="${UIManager.Class.Label}"></label>
+      <input id="input" type="color" class="block w-full h-[48px] rounded-md text-white text-base ring-gray-500 focus:ring-ifcjs-200 focus:outline-none">
+    </div>
+    `;
+    super(components, template);
+
+    this.innerElements = {
+      label: this.getInnerElement("label") as HTMLLabelElement,
+      input: this.getInnerElement("input") as HTMLInputElement,
+    };
+
+    this.label = "Tooeen Color";
+    this.value = "#BCF124";
+
+    this.innerElements.input.oninput = () => {
+      this.onChange.trigger(this.value);
     };
   }
 }

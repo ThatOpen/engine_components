@@ -1,13 +1,13 @@
-import { UIComponent } from "../../base-types";
 import { Component } from "../../base-types/component";
 import { Components } from "../../core";
+import { SimpleUIComponent } from "../SimpleUIComponent";
 
-type UIClass<T extends UIComponent> = new (
+type UIClass<T extends SimpleUIComponent> = new (
   components: Components,
   ...args: any[]
 ) => T;
 
-export class UIPool<T extends UIComponent> extends Component<T> {
+export class UIPool<T extends SimpleUIComponent> extends Component<T> {
   name: string = "UIPool";
   enabled: boolean = true;
   list: T[] = [];

@@ -1,41 +1,24 @@
 import * as WEBIFC from "web-ifc";
-import {
-  createPopper,
-  Instance as PopperInstance,
-  // @ts-ignore
-} from "@popperjs/core/dist/esm";
 import { FragmentsGroup } from "bim-fragment";
 import { IfcPropertiesUtils } from "../IfcPropertiesUtils";
 import { Button } from "../../ui/ButtonComponent";
-import { UI, Component } from "../../base-types";
-import {
-  FloatingWindow,
-  SimpleUIComponent,
-  TreeView,
-  UIComponentsStack,
-} from "../../ui";
+import { UI, Event } from "../../base-types";
+import { Component } from "../../base-types/component";
+import { FloatingWindow } from "../../ui/FloatingWindow";
+import { SimpleUIComponent } from "../../ui/SimpleUIComponent";
+import { TreeView } from "../../ui/TreeView";
 import { Components } from "../../core/Components";
 import { IfcPropertiesManager } from "../IfcPropertiesManager";
 import { IfcCategoryMap } from "../ifc-category-map";
-import { PropertyTag, NewPset, NewProp, EditProp } from "./src";
+import { AttributeSet, PropertyTag } from "./src";
 // import { UIPool } from "../../ui/UIPool";
 
 interface IndexMap {
   [modelID: string]: { [expressID: string]: Set<number> };
 }
 
-interface ExtendedFragmentsGroup extends FragmentsGroup {
-  properties: Record<string, Record<string, any>>;
-  ifcFileData: {
-    name: string;
-    description: string;
-    schema: "IFC2X3" | "IFC4" | "IFC4X3";
-    maxExpressID: number;
-  };
-}
-
 type RenderFunction = (
-  model: ExtendedFragmentsGroup,
+  model: FragmentsGroup,
   expressID: number,
   ...args: any
 ) => TreeView[] | TreeView | null;
@@ -54,29 +37,47 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
     WEBIFC.IFCRELASSIGNSTOGROUP,
   ];
   entitiesToIgnore = [WEBIFC.IFCOWNERHISTORY, WEBIFC.IFCMATERIALLAYERSETUSAGE];
-  attributesToIgnore = ["CompositionType", "Representation", "ObjectPlacement"];
+  attributesToIgnore = [
+    "CompositionType",
+    "Representation",
+    "ObjectPlacement",
+    "OwnerHistory",
+  ];
 
   private _components: Components;
-  private _propsList: UIComponentsStack;
-  private _editContainer: UIComponentsStack;
-  private _newInput: NewProp;
-  private _newPsetInput: NewPset;
-  private _editInput: EditProp;
-  private _editContainerPopper!: PopperInstance;
+  private _propsList: SimpleUIComponent<HTMLDivElement>;
   private _indexMap: IndexMap = {};
   private _renderFunctions: { [entityType: number]: RenderFunction } = {};
   private _propertiesManager: IfcPropertiesManager | null = null;
+  private _currentUI: { [expressID: number]: TreeView } = {};
+  readonly onPropertiesManagerSet = new Event<IfcPropertiesManager>();
 
   // private _entityUIPool: UIPool<TreeView>;
 
   set propertiesManager(manager: IfcPropertiesManager | null) {
-    if (!this._propertiesManager && manager) {
+    if (this._propertiesManager) return;
+    this._propertiesManager = manager;
+    if (manager) {
       manager.onElementToPset.on(({ model, psetID, elementID }) => {
         const modelIndexMap = this._indexMap[model.uuid];
         if (!modelIndexMap) return;
         this.setEntityIndex(model, elementID).add(psetID);
+        if (this._currentUI[elementID]) {
+          const ui = this.newPsetUI(model, psetID);
+          this._currentUI[elementID].addChild(...ui);
+        }
       });
-      this._propertiesManager = manager;
+      manager.onPsetRemoved.on(({ psetID }) => {
+        const psetUI = this._currentUI[psetID];
+        if (psetUI) psetUI.dispose();
+      });
+      manager.onPropToPset.on(({ model, psetID, propID }) => {
+        const psetUI = this._currentUI[psetID];
+        if (!psetUI) return;
+        const tag = this.newPropertyTag(model, psetID, propID, "NominalValue");
+        if (tag) psetUI.addChild(tag);
+      });
+      this.onPropertiesManagerSet.trigger(manager);
     }
   }
 
@@ -90,31 +91,9 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
 
     // this._entityUIPool = new UIPool(this._components, TreeView);
 
-    this._propsList = new UIComponentsStack(this._components, "Vertical");
-
-    this._editInput = new EditProp(this._components);
-    this._editInput.visible = false;
-    this._editInput.nameInput.visible = false;
-
-    this._newInput = new NewProp(this._components);
-    this._newInput.visible = false;
-
-    this._newPsetInput = new NewPset(this._components);
-    this._newPsetInput.visible = false;
-
-    this._editContainer = new UIComponentsStack(this._components);
-    this._editContainer.onHidden.on(() => {
-      this._editInput.visible = false;
-      this._newInput.visible = false;
-      this._newPsetInput.visible = false;
-    });
-
-    this._components.ui.add(this._editContainer);
-    this._editContainer.get().classList.add("absolute", "top-5", "left-5");
-    this._editContainer.addChild(
-      this._editInput,
-      this._newInput,
-      this._newPsetInput
+    this._propsList = new SimpleUIComponent(
+      this._components,
+      `<div class="flex flex-col"></div>`
     );
 
     this.uiElement = {
@@ -126,23 +105,18 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
     this.setUI();
 
     this._renderFunctions = {
-      0: (model: ExtendedFragmentsGroup, expressID: number) =>
+      0: (model: FragmentsGroup, expressID: number) =>
         this.newEntityUI(model, expressID),
-      [WEBIFC.IFCPROPERTYSET]: (
-        model: ExtendedFragmentsGroup,
-        expressID: number
-      ) => this.newPsetUI(model, expressID),
-      [WEBIFC.IFCELEMENTQUANTITY]: (
-        model: ExtendedFragmentsGroup,
-        expressID: number
-      ) => this.newQsetUI(model, expressID),
+      [WEBIFC.IFCPROPERTYSET]: (model: FragmentsGroup, expressID: number) =>
+        this.newPsetUI(model, expressID),
+      [WEBIFC.IFCELEMENTQUANTITY]: (model: FragmentsGroup, expressID: number) =>
+        this.newQsetUI(model, expressID),
     };
   }
 
   private setUI() {
     this._components.ui.add(this.uiElement.propertiesWindow);
     this.uiElement.propertiesWindow.title = "Element Properties";
-    this.uiElement.propertiesWindow.visible = false;
 
     this.uiElement.propertiesWindow.addChild(this._propsList);
 
@@ -151,40 +125,15 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
         !this.uiElement.propertiesWindow.visible;
     };
 
-    this._editContainerPopper = createPopper(
-      this.uiElement.propertiesWindow.get(),
-      this._editContainer.get(),
-      {
-        modifiers: [
-          {
-            name: "offset",
-            options: { offset: [15, 15] },
-          },
-          {
-            name: "preventOverflow",
-            options: { boundary: this._components.ui.viewerContainer },
-          },
-        ],
-      }
-    );
-
-    this._editContainerPopper.setOptions({ placement: "right" });
-
-    this.uiElement.propertiesWindow.onMoved.on(() =>
-      this._editContainerPopper.update()
-    );
-    this.uiElement.propertiesWindow.onResized.on(() =>
-      this._editContainerPopper.update()
-    );
-    this.uiElement.propertiesWindow.onHidden.on(
-      () => (this._editInput.visible = false)
-    );
-    this.uiElement.propertiesWindow.onVisible.on(
-      () => (this.uiElement.main.active = true)
-    );
     this.uiElement.propertiesWindow.onHidden.on(
       () => (this.uiElement.main.active = false)
     );
+
+    this.uiElement.propertiesWindow.onVisible.on(
+      () => (this.uiElement.main.active = true)
+    );
+
+    this.uiElement.propertiesWindow.visible = false;
   }
 
   cleanPropertiesList() {
@@ -197,15 +146,15 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
     //   child.dispose();
     // }
     this.uiElement.propertiesWindow.description = null;
-    this._editContainer.visible = false;
     this._propsList.children = [];
+    this._currentUI = {};
   }
 
   get(): IndexMap {
     return this._indexMap;
   }
 
-  process(model: ExtendedFragmentsGroup) {
+  process(model: FragmentsGroup) {
     const properties = model.properties;
     if (!properties) throw new Error("FragmentsGroup properties not found");
     this._indexMap[model.uuid] = {};
@@ -223,26 +172,25 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
           const relationEntity = properties[relationID];
           if (!setEntities.includes(relationEntity.type))
             this.setEntityIndex(model, relationID);
-          for (const expressID of relatedIDs)
+          for (const expressID of relatedIDs) {
             this.setEntityIndex(model, expressID).add(relationID);
+          }
         }
       );
     }
   }
 
-  renderProperties(model: ExtendedFragmentsGroup, expressID: number) {
+  renderProperties(model: FragmentsGroup, expressID: number) {
     this.cleanPropertiesList();
     const ui = this.newEntityUI(model, expressID);
     if (!ui) return;
-    const { name } = IfcPropertiesUtils.getEntityName(
-      model.properties,
-      expressID
-    );
+    const { properties } = IfcPropertiesManager.getIFCInfo(model);
+    const { name } = IfcPropertiesUtils.getEntityName(properties, expressID);
     this.uiElement.propertiesWindow.description = name;
     this._propsList.addChild(...[ui].flat());
   }
 
-  private newEntityUI(model: ExtendedFragmentsGroup, expressID: number) {
+  private newEntityUI(model: FragmentsGroup, expressID: number) {
     const properties = model.properties;
     if (!properties) throw new Error("FragmentsGroup properties not found.");
     const modelElementsIndexation = this._indexMap[model.uuid];
@@ -281,63 +229,28 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
     return mainGroup;
   }
 
-  private setEntityIndex(model: ExtendedFragmentsGroup, expressID: number) {
+  private setEntityIndex(model: FragmentsGroup, expressID: number) {
     if (!this._indexMap[model.uuid][expressID])
       this._indexMap[model.uuid][expressID] = new Set();
     return this._indexMap[model.uuid][expressID];
   }
 
-  private newAttributesUI(model: ExtendedFragmentsGroup, expressID: number) {
-    const properties = model.properties;
-    const entityAttributes = properties[expressID];
+  private newAttributesUI(model: FragmentsGroup, expressID: number) {
+    const { properties } = IfcPropertiesManager.getIFCInfo(model);
+    const entityAttributes = properties;
     if (!entityAttributes) return [];
-    const attributesGroup = new TreeView(this._components, "ATTRIBUTES");
-    // const attributesGroup = this._entityUIPool.get();
-
-    attributesGroup.onExpand.on(() => {
-      const { uiProcessed } = attributesGroup.data;
-      if (uiProcessed) return;
-      let attributesCount = 0;
-      for (const name in entityAttributes) {
-        const attribute = entityAttributes[name];
-        if (!attribute) continue; // in case there is a null attribute
-        attributesCount++;
-        for (const handle of [attribute].flat()) {
-          const ui = this.newAttributeTag(model, name, handle);
-          if (!ui) continue;
-          attributesGroup.addChild(...[ui].flat());
-        }
-      }
-      if (attributesCount === 0) {
-        const p = document.createElement("p");
-        p.className = "text-base text-gray-500 py-1 px-3";
-        p.textContent = "This entity has no attributes";
-        const notFoundText = new SimpleUIComponent(this._components, p);
-        attributesGroup.addChild(notFoundText);
-      }
-      attributesGroup.data.uiProcessed = true;
-    });
-
+    const attributesGroup = new AttributeSet(
+      this._components,
+      this,
+      model,
+      expressID
+    );
+    attributesGroup.attributesToIgnore = this.attributesToIgnore;
     return [attributesGroup];
   }
 
-  private newAttributeTag(
-    model: ExtendedFragmentsGroup,
-    name: string,
-    attribute: { value: number; type: number }
-  ) {
-    if (this.attributesToIgnore.includes(name)) return null;
-    const { value, type } = attribute;
-    if (!(value && type)) return null;
-    if (type === WEBIFC.REF) return this.newEntityUI(model, value);
-    const tag = new PropertyTag(this._components);
-    tag.label = name;
-    tag.value = value;
-    return tag;
-  }
-
-  private newPsetUI(model: ExtendedFragmentsGroup, psetID: number) {
-    const properties = model.properties;
+  private newPsetUI(model: FragmentsGroup, psetID: number) {
+    const { properties } = IfcPropertiesManager.getIFCInfo(model);
     const uiGroups: TreeView[] = [];
     const pset = properties[psetID];
     if (pset.type !== WEBIFC.IFCPROPERTYSET) return uiGroups;
@@ -365,10 +278,12 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
         }
       );
       if (!psetPropsID || psetPropsID.length === 0) {
-        const p = document.createElement("p");
-        p.className = "text-base text-gray-500 py-1 px-3";
-        p.textContent = "This pset has no properties";
-        const notFoundText = new SimpleUIComponent(this._components, p);
+        const template = `
+         <p class="text-base text-gray-500 py-1 px-3">
+            This pset has no properties.
+         </p>
+        `;
+        const notFoundText = new SimpleUIComponent(this._components, template);
         uiGroup.addChild(notFoundText);
       }
       uiGroup.data.uiProcessed = true;
@@ -378,8 +293,8 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
     return uiGroups;
   }
 
-  private newQsetUI(model: ExtendedFragmentsGroup, qsetID: number) {
-    const properties = model.properties;
+  private newQsetUI(model: FragmentsGroup, qsetID: number) {
+    const { properties } = IfcPropertiesManager.getIFCInfo(model);
     const uiGroups: TreeView[] = [];
     const qset = properties[qsetID];
     if (qset.type !== WEBIFC.IFCELEMENTQUANTITY) return uiGroups;
@@ -403,63 +318,74 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
   }
 
   private addPsetActions(
-    model: ExtendedFragmentsGroup,
+    model: FragmentsGroup,
     psetID: number,
     uiGroup: TreeView
   ) {
     if (!this.propertiesManager) return;
     const { psetActions } = this.propertiesManager.uiElement;
-    uiGroup.titleElement.get().onmouseenter = () => {
+    const event = this.propertiesManager.setAttributeListener(
+      model,
+      psetID,
+      "Name"
+    );
+    event.on((v: String) => (uiGroup.description = v.toString()));
+    uiGroup.innerElements.titleContainer.onmouseenter = () => {
       psetActions.data = { model, psetID };
-      uiGroup.titleElement.addChild(psetActions);
+      uiGroup.slots.titleRight.addChild(psetActions);
     };
-    uiGroup.titleElement.get().onmouseleave = () => {
+    uiGroup.innerElements.titleContainer.onmouseleave = () => {
+      if (psetActions.modalVisible) return;
+      psetActions.removeFromParent();
       psetActions.cleanData();
-      uiGroup.titleElement.removeChild(psetActions);
     };
   }
 
   private addEntityActions(
-    model: ExtendedFragmentsGroup,
+    model: FragmentsGroup,
     expressID: number,
     uiGroup: TreeView
   ) {
     if (!this.propertiesManager) return;
     const { entityActions } = this.propertiesManager.uiElement;
-    uiGroup.titleElement.get().onmouseenter = () => {
-      entityActions.data = { model, elementID: expressID };
-      uiGroup.titleElement.addChild(entityActions);
+    uiGroup.innerElements.titleContainer.onmouseenter = () => {
+      entityActions.data = { model, elementIDs: [expressID] };
+      uiGroup.slots.titleRight.addChild(entityActions);
     };
-    uiGroup.titleElement.get().onmouseleave = () => {
+    uiGroup.innerElements.titleContainer.onmouseleave = () => {
+      if (entityActions.modal.visible) return;
+      entityActions.removeFromParent();
       entityActions.cleanData();
-      uiGroup.titleElement.removeChild(entityActions);
     };
   }
 
-  private newEntityTree(model: ExtendedFragmentsGroup, expressID: number) {
-    const properties = model.properties;
+  private newEntityTree(model: FragmentsGroup, expressID: number) {
+    const { properties } = IfcPropertiesManager.getIFCInfo(model);
     const entity = properties[expressID];
     if (!entity) return null;
+    const currentUI = this._currentUI[expressID];
+    if (currentUI) return currentUI;
     const entityTree = new TreeView(this._components);
+    this._currentUI[expressID] = entityTree;
     // const entityTree = this._entityUIPool.get();
-    entityTree.titleElement.title = `${IfcCategoryMap[entity.type]}`;
+    entityTree.title = `${IfcCategoryMap[entity.type]}`;
     const { name } = IfcPropertiesUtils.getEntityName(properties, expressID);
-    entityTree.titleElement.description = name;
+    entityTree.description = name;
     return entityTree;
   }
 
   private newPropertyTag(
-    model: ExtendedFragmentsGroup,
+    model: FragmentsGroup,
     setID: number,
     expressID: number,
     valueKey: string
   ) {
-    const properties = model.properties;
+    const { properties } = IfcPropertiesManager.getIFCInfo(model);
     const entity = properties[expressID];
     if (!entity) return null;
-    const tag = new PropertyTag(this._components);
-    tag.label = entity.Name?.value;
-    tag.value = entity[valueKey]?.value;
+    const tag = new PropertyTag(this._components, this, model, expressID);
+    // @ts-ignore
+    this._currentUI[expressID] = tag;
 
     if (!this.propertiesManager) return tag;
 
@@ -470,7 +396,8 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
       tag.addChild(propActions);
     };
     tag.get().onmouseleave = () => {
-      tag.removeChild(propActions);
+      if (propActions.modalVisible) return;
+      propActions.removeFromParent();
       propActions.cleanData();
     };
     // #endregion ManagementUI

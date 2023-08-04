@@ -45,8 +45,8 @@ export class ViewpointsManager extends Component<string> implements UI {
   private _fragmentHighlighter: FragmentHighlighter;
   private _drawManager?: DrawManager;
   name: string = "ViewpointsManager";
-  uiElement!: {
-    mainButton: Button;
+  uiElement: {
+    main: Button;
     newButton: Button;
     window: FloatingWindow;
   };
@@ -64,18 +64,17 @@ export class ViewpointsManager extends Component<string> implements UI {
     this._fragmentHighlighter = config.fragmentHighlighter;
     // this._fragmentManager = config.fragmentManager;
     this._drawManager = config.drawManager;
-    this.setUI();
+    this.uiElement = this.setUI();
   }
 
   private setUI() {
     const viewerContainer = this._components.renderer.get().domElement
       .parentElement as HTMLElement;
-    const window = new FloatingWindow(this._components, {
-      title: "Viewpoints",
-    });
+    const window = new FloatingWindow(this._components);
+    window.title = "Viewpoints";
     viewerContainer.append(window.get());
     window.visible = false;
-    const mainButton = new Button(this._components, {
+    const main = new Button(this._components, {
       materialIconName: "photo_camera",
     });
     const newButton = new Button(this._components, {
@@ -89,8 +88,8 @@ export class ViewpointsManager extends Component<string> implements UI {
     listButton.onclick = () => {
       window.visible = !window.visible;
     };
-    mainButton.addChild(listButton, newButton);
-    this.uiElement = { mainButton, newButton, window };
+    main.addChild(listButton, newButton);
+    return { main, newButton, window };
   }
 
   get(): string {
@@ -154,11 +153,9 @@ export class ViewpointsManager extends Component<string> implements UI {
     };
 
     // #region UI representation
-    const card = new SimpleUICard(this._components, {
-      title,
-      description: description ?? "",
-      id: viewpoint.guid,
-    });
+    const card = new SimpleUICard(this._components, viewpoint.guid);
+    card.title = title;
+    card.description = description;
     card.domElement.onclick = () => this.view(viewpoint.guid);
     this.uiElement.window.addChild(card);
     // #endregion

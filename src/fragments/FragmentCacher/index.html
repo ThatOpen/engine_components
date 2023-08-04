@@ -78,7 +78,7 @@
     mainToolbar.addChild(reloadButton);
     reloadButton.onclick = () => location.reload();
 
-    mainToolbar.addChild(fragmentIfcLoader.uiElement);
+    mainToolbar.addChild(fragmentIfcLoader.uiElement.main);
 
     const cacher = new OBC.FragmentCacher(components, fragments);
     components.ui.addToolbar(cacher.uiElement);

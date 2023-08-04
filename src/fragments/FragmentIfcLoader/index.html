@@ -69,9 +69,9 @@
     let fragments = new OBC.FragmentManager(components);
     let fragmentIfcLoader = new OBC.FragmentIfcLoader(components, fragments);
 
-    const mainToolbar = new OBC.Toolbar(components, {name: 'Main Toolbar', position: 'bottom'});
-    components.ui.addToolbar(mainToolbar);
-    mainToolbar.addChild(fragmentIfcLoader.uiElement);
+	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
+	components.ui.addToolbar(mainToolbar);
+	mainToolbar.addChild(fragmentIfcLoader.uiElement.main);
 
     fragmentIfcLoader.settings.wasm = {
         path: "https://unpkg.com/web-ifc@0.0.42/",

@@ -134,7 +134,7 @@
     In addition, we will add a clipper button to this toolbar that will be used to toggle the clipping state.
     */
 	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
-	mainToolbar.addChild(clipper.uiElement);
+	mainToolbar.addChild(clipper.uiElement.main);
 	components.ui.addToolbar(mainToolbar);
 
     /*MD

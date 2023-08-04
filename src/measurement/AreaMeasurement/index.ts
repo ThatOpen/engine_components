@@ -11,7 +11,7 @@ export class AreaMeasurement
   implements Createable, UI
 {
   name: string = "AreaMeasurement";
-  uiElement: Button;
+  uiElement: { main: Button };
 
   private _components: Components;
   private _enabled: boolean = false;
@@ -30,7 +30,7 @@ export class AreaMeasurement
   set enabled(value: boolean) {
     this._enabled = value;
     this._vertexPicker.enabled = value;
-    this.uiElement.active = value;
+    this.uiElement.main.active = value;
     if (!value) this.cancelCreation();
   }
 
@@ -50,9 +50,8 @@ export class AreaMeasurement
     super();
     this._components = components;
     this._vertexPicker = new VertexPicker(components);
-    this.uiElement = new Button(components, {
-      materialIconName: "check_box_outline_blank",
-    });
+    this.uiElement = { main: new Button(components) };
+    this.uiElement.main.materialIcon = "check_box_outline_blank";
     this.setUI();
     this.enabled = false;
   }
@@ -79,16 +78,16 @@ export class AreaMeasurement
         }
       }
     };
-    this.uiElement.onclick = () => {
+    this.uiElement.main.onclick = () => {
       if (!this.enabled) {
         viewerContainer.addEventListener("click", createMeasurement);
         viewerContainer.addEventListener("mousemove", mouseMove);
         window.addEventListener("keydown", keydown);
-        this.uiElement.active = true;
+        this.uiElement.main.active = true;
         this.enabled = true;
       } else {
         this.enabled = false;
-        this.uiElement.active = false;
+        this.uiElement.main.active = false;
         viewerContainer.removeEventListener("click", createMeasurement);
         viewerContainer.removeEventListener("mousemove", mouseMove);
         window.removeEventListener("keydown", keydown);
