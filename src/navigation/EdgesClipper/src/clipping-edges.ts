@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { FragmentMesh } from "bim-fragment/fragment-mesh";
 import { ClipStyle, Edge } from "./types";
-import { EdgesStyles } from "./edges-styles";
+import { EdgesStyles, LineStyles } from "./edges-styles";
 import {
   Component,
   Disposable,
@@ -89,9 +89,10 @@ export class ClippingEdges
 
   /** {@link Updateable.update} */
   update() {
-    const styles = Object.values(this._styles.get());
-    for (const style of styles) {
-      this.drawEdges(style.name);
+    const styles = this._styles.get();
+    this.updateDeletedEdges(styles);
+    for (const name in styles) {
+      this.drawEdges(name);
     }
     this.fillNeedsUpdate = false;
   }
@@ -103,12 +104,9 @@ export class ClippingEdges
 
   /** {@link Disposable.dispose} */
   dispose() {
-    const edges = Object.values(this._edges);
-    for (const edge of edges) {
-      if (edge.fill) {
-        edge.fill.dispose();
-      }
-      this._disposer.dispose(edge.mesh, false);
+    const names = Object.keys(this._edges);
+    for (const name of names) {
+      this.disposeEdge(name);
     }
   }
 
@@ -179,9 +177,8 @@ export class ClippingEdges
     const indexes: number[] = [];
     let lastIndex = 0;
 
-    const notEmptyMeshes = style.meshes.filter((mesh) => mesh.geometry);
-
-    for (const mesh of notEmptyMeshes) {
+    for (const mesh of style.meshes) {
+      if (!mesh.geometry) continue;
       if (!mesh.geometry.boundsTree) {
         throw new Error("Boundstree not found for clipping edges subset.");
       }
@@ -346,5 +343,28 @@ export class ClippingEdges
     } else {
       edges.mesh.removeFromParent();
     }
+  }
+
+  private updateDeletedEdges(styles: LineStyles) {
+    const renderer = this._components.renderer;
+    const names = Object.keys(this._edges);
+    for (const name of names) {
+      if (styles[name] === undefined) {
+        this.disposeEdge(name);
+        if (renderer instanceof PostproductionRenderer) {
+          const outlines = renderer.postproduction.customEffects.outlinedMeshes;
+          delete outlines[name];
+        }
+      }
+    }
+  }
+
+  private disposeEdge(name: string) {
+    const edge = this._edges[name];
+    if (edge.fill) {
+      edge.fill.dispose();
+    }
+    this._disposer.dispose(edge.mesh, false);
+    delete this._edges[name];
   }
 }

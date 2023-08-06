@@ -5,8 +5,7 @@ import { Button } from "../../ui/ButtonComponent";
 import { FloatingWindow } from "../../ui/FloatingWindow";
 import { Toolbar } from "../../ui/ToolbarComponent";
 import { Components } from "../Components";
-import { ColorInput } from "../../ui/ColorInput";
-import { RangeInput } from "../../ui/RangeInput";
+import { ColorInput, RangeInput } from "../../ui";
 
 export interface SVGViewportConfig extends SVGAnnotationStyle {}
 
@@ -22,7 +21,7 @@ export class SimpleSVGViewport extends Component<SVGElement> {
   );
   private _components: Components;
   private _size: Vector2 = new Vector2();
-  private _undoList: ChildNode[] = [];
+  private _undoList: any[] = [];
 
   get enabled() {
     return this._enabled;

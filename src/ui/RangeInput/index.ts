@@ -45,6 +45,14 @@ export class RangeInput extends SimpleUIComponent<HTMLDivElement> {
     return Number(this.innerElements.input.max);
   }
 
+  set step(value: number) {
+    this.innerElements.input.step = String(value);
+  }
+
+  get step() {
+    return Number(this.innerElements.input.step);
+  }
+
   innerElements: {
     label: HTMLLabelElement;
     input: HTMLInputElement;

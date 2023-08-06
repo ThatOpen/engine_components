@@ -10,3 +10,4 @@ export * from "./FragmentExploder";
 export * from "./FragmentPlans";
 export * from "./FragmentOutliner";
 export * from "./FragmentBoundingBox";
+export * from "./FragmentClipStyler";

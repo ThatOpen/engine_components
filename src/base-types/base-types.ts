@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { Button } from "../ui/ButtonComponent";
 import { SimpleUIComponent } from "../ui/SimpleUIComponent";
 
 /**
@@ -160,7 +159,6 @@ export interface Createable {
  */
 export interface UI {
   uiElement: {
-    main: Button;
     [name: string]: SimpleUIComponent;
   };
 }

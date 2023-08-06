@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
+import { LineBasicMaterial } from "three";
 import { ClipStyle } from "./types";
 import { Component, Disposable, Event, Updateable } from "../../../base-types";
 import { Components } from "../../../core";
@@ -18,7 +18,7 @@ export class EdgesStyles
 
   protected _styles: LineStyles = {};
 
-  protected _defaultLineMaterial = new LineMaterial({
+  protected _defaultLineMaterial = new LineBasicMaterial({
     color: 0x000000,
     linewidth: 0.001,
   });
@@ -40,9 +40,9 @@ export class EdgesStyles
   }
 
   // Creates a new style that applies to all clipping edges for generic models
-  async create(
+  create(
     name: string,
-    meshes: THREE.Mesh[],
+    meshes: Set<THREE.Mesh>,
     lineMaterial = this._defaultLineMaterial,
     fillMaterial?: THREE.Material,
     outlineMaterial?: THREE.MeshBasicMaterial
@@ -53,22 +53,36 @@ export class EdgesStyles
 
     const renderer = this.components.renderer;
     lineMaterial.clippingPlanes = renderer.clippingPlanes;
-    this._styles[name] = {
+    const newStyle = {
       name,
       lineMaterial,
       meshes,
       fillMaterial,
       outlineMaterial,
       fragments: {},
-    };
+    } as ClipStyle;
+    this._styles[name] = newStyle;
+    return newStyle;
   }
 
   dispose() {
-    const styles = Object.values(this._styles);
+    const styles = Object.keys(this._styles);
     for (const style of styles) {
-      style.meshes.length = 0;
-      style.lineMaterial.dispose();
+      this.deleteStyle(style);
     }
     this._styles = {};
+  }
+
+  deleteStyle(id: string, disposeMaterials = true) {
+    const style = this._styles[id];
+    if (style) {
+      style.meshes.clear();
+      if (disposeMaterials) {
+        style.lineMaterial.dispose();
+        style.fillMaterial?.dispose();
+        style.outlineMaterial?.dispose();
+      }
+    }
+    delete this._styles[id];
   }
 }

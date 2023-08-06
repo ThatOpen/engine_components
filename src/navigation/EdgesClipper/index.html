@@ -167,15 +167,15 @@
 
    */
 
-  const blueFill = new THREE.MeshBasicMaterial({color: 'lightblue', side: 2});
+    const blueFill = new THREE.MeshBasicMaterial({color: 'lightblue', side: 2});
 	const blueLine = new THREE.LineBasicMaterial({ color: 'blue' });
     const blueOutline = new THREE.MeshBasicMaterial({color: 'blue', opacity: 0.2, side: 2, transparent: true});
-	clipper.styles.create('Red lines', [cube], blueLine, blueFill, blueOutline);
+	clipper.styles.create('Red lines', new Set([cube]), blueLine, blueFill, blueOutline);
 
 	const salmonFill = new THREE.MeshBasicMaterial({color: 'salmon', side: 2});
 	const redLine = new THREE.LineBasicMaterial({ color: 'red' });
     const redOutline = new THREE.MeshBasicMaterial({color: 'red', opacity: 0.2, side: 2, transparent: true});
-	clipper.styles.create('Blue lines', [cube2], redLine, salmonFill, redOutline);
+	clipper.styles.create('Blue lines', new Set([cube2]), redLine, salmonFill, redOutline);
 
 	/*MD
 

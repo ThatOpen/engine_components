@@ -720,6 +720,10 @@ html {
   z-index: 50;
 }
 
+.m-4{
+  margin: 1rem;
+}
+
 .mx-auto{
   margin-left: auto;
   margin-right: auto;
@@ -933,6 +937,10 @@ html {
   max-width: 20rem;
 }
 
+.flex-1{
+  flex: 1 1 0%;
+}
+
 .flex-shrink-0{
   flex-shrink: 0;
 }
@@ -1017,6 +1025,10 @@ html {
 
 .justify-between{
   justify-content: space-between;
+}
+
+.gap-4{
+  gap: 1rem;
 }
 
 .gap-x-2{
