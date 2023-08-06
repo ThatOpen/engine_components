@@ -59,6 +59,12 @@ export class EdgesPlane extends SimplePlane {
     this.edges.dispose();
   }
 
+  updateFill = () => {
+    this.edges.fillNeedsUpdate = true;
+    this.edges.update();
+    this.edges.fillVisible = true;
+  };
+
   /** {@link Updateable.update} */
   update = () => {
     if (!this.enabled) return;
@@ -83,11 +89,5 @@ export class EdgesPlane extends SimplePlane {
 
   private hideFills = () => {
     this.edges.fillVisible = false;
-  };
-
-  private updateFill = () => {
-    this.edges.fillNeedsUpdate = true;
-    this.edges.update();
-    this.edges.fillVisible = true;
   };
 }

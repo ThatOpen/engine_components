@@ -5,6 +5,7 @@ import { Button } from "../../ui/ButtonComponent";
 import { FloatingWindow } from "../../ui/FloatingWindow";
 import { Toolbar } from "../../ui/ToolbarComponent";
 import { Components } from "../Components";
+import { ColorInput, RangeInput } from "../../ui";
 
 export interface SVGViewportConfig extends SVGAnnotationStyle {}
 

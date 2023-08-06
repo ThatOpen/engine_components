@@ -37,9 +37,10 @@ export class EdgesClipper extends SimpleClipper<EdgesPlane> {
     if (!this.enabled) return;
     for (const plane of this._planes) {
       if (updateFills) {
-        plane.edges.fillNeedsUpdate = updateFills;
+        plane.updateFill();
+      } else {
+        plane.update();
       }
-      plane.update();
     }
   }
 
