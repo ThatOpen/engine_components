@@ -157,9 +157,13 @@
     const dxfExporter = new OBC.DXFExporter(fragments, plans, clipper);
 
     window.ondblclick = async () => {
-        const result = await dxfExporter.export(1.5);
-        scene.add(result);
-        model.visible = false;
+        const link = document.createElement("a");
+        const result = await dxfExporter.export("Plan 02");
+        const file = new File([new Blob([result])], "example.dxf");
+        link.href = URL.createObjectURL(file);
+        link.download = "example.dxf";
+        link.click();
+        link.remove();
     }
 
     for(const {mesh} of model.items) {
