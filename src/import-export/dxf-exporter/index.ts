@@ -49,14 +49,28 @@ export class DXFExporter {
 
     // Draw section lines
 
-    drawing.addLayer("section", Drawing.ACI.RED, "CONTINUOUS");
-    drawing.setActiveLayer("section");
-
     const edges = plan.plane.edges.get();
 
     for (const layerName in edges) {
-      const geometry = edges[layerName].mesh.geometry;
-      this.drawGeometry(geometry, drawing);
+      const mesh = edges[layerName].mesh;
+      const material = mesh.material as THREE.LineBasicMaterial;
+      const { r, g, b } = material.color;
+
+      let layerColor: number;
+      if (r > g && r > b) {
+        layerColor = Drawing.ACI.RED;
+      } else if (g > r && g > b) {
+        layerColor = Drawing.ACI.GREEN;
+      } else if (b > r && b > g) {
+        layerColor = Drawing.ACI.BLUE;
+      } else {
+        layerColor = Drawing.ACI.WHITE;
+      }
+
+      drawing.addLayer(layerName, layerColor, "CONTINUOUS");
+      drawing.setActiveLayer(layerName);
+
+      this.drawGeometry(mesh.geometry, drawing);
     }
 
     return drawing.toDxfString();

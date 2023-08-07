@@ -78,7 +78,7 @@
 
     // Load the fragments
 
-    const file = await fetch('../../../resources/model.frag');
+    const file = await fetch('../../../resources/small.frag');
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
     const model = fragments.load(buffer);
@@ -87,18 +87,19 @@
         culler.add(fragment.mesh);
     }
 
-    const properties = await fetch('../../../resources/model.json');
+    const properties = await fetch('../../../resources/small.json');
     model.properties = await properties.json();
 
     culler.needsUpdate = true;
 
     const clipper = new OBC.EdgesClipper(components, OBC.EdgesPlane);
-    const sectionMaterial = new THREE.LineBasicMaterial({color: 'black'});
+    const thickMaterial = new THREE.LineBasicMaterial({color: 'black'});
+    const thinMaterial = new THREE.LineBasicMaterial({color: 'blue'});
     const fillMaterial = new THREE.MeshBasicMaterial({color: 'gray', side: 2});
     const fillOutline = new THREE.MeshBasicMaterial({color: 'black', side: 1, opacity: 0.5, transparent: true});
 
-    clipper.styles.create("filled", new Set(), sectionMaterial, fillMaterial, fillOutline);
-    clipper.styles.create("projected", new Set(), sectionMaterial);
+    clipper.styles.create("projected", new Set(), thinMaterial);
+    clipper.styles.create("filled", new Set(), thickMaterial, fillMaterial, fillOutline);
     const styles = clipper.styles.get();
 
     postproduction.customEffects.outlineEnabled = true;
@@ -138,7 +139,6 @@
     components.ui.addToolbar(mainToolbar);
 
     mainToolbar.addChild(plans.uiElement.main);
-    mainToolbar.addChild(plans.objects.uiElement.main);
 
     plans.navigated.on(() => {
         postproduction.customEffects.glossEnabled = false;
@@ -156,15 +156,20 @@
 
     const dxfExporter = new OBC.DXFExporter(fragments, plans, clipper);
 
-    window.ondblclick = async () => {
-        const link = document.createElement("a");
-        const result = await dxfExporter.export("Plan 02");
-        const file = new File([new Blob([result])], "example.dxf");
-        link.href = URL.createObjectURL(file);
-        link.download = "example.dxf";
-        link.click();
-        link.remove();
+    plans.commands = {
+        "Export to DXF": async (plan) => {
+            const link = document.createElement("a");
+            const result = await dxfExporter.export(plan.name);
+            const fileName = `${plan.name}.dxf`;
+            const file = new File([new Blob([result])], fileName);
+            link.href = URL.createObjectURL(file);
+            link.download = fileName;
+            link.click();
+            link.remove();
+        },
     }
+
+    plans.updatePlansList();
 
     for(const {mesh} of model.items) {
         if(mesh.material[0].opacity !== 1) {
@@ -175,10 +180,6 @@
         }
     }
 
-    // window.oncontextmenu = () => {
-    //     clipper.enabled = true;
-    //     clipper.create();
-    // }
 
     // Set up stats
     const stats = new Stats();
