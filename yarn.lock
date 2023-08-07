@@ -2856,6 +2856,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"dxf-writer@npm:^1.18.4":
+  version: 1.18.4
+  resolution: "dxf-writer@npm:1.18.4"
+  checksum: f40d281068fdd6f4f4d41d73113af67d63c831fd11e7d91fe882f37391c41781be6b14d144df5b460335c7ca17550a2d4f7eb10861b09309fd014ac664df2f10
+  languageName: node
+  linkType: hard
+
 "earcut@npm:^2.2.4":
   version: 2.2.4
   resolution: "earcut@npm:2.2.4"
@@ -6398,6 +6405,7 @@ __metadata:
     canvas: ^2.11.2
     cpy-cli: ^3.1.1
     dexie: ^3.2.3
+    dxf-writer: ^1.18.4
     earcut: ^2.2.4
     eslint: ^7.28.0
     eslint-config-airbnb-base: ^14.2.1

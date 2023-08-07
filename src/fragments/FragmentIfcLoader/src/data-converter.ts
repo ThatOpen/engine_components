@@ -140,8 +140,16 @@ export class DataConverter {
       const { buffer, instances } = geometries[id];
 
       const transparent = instances[0].color.w !== 1;
-      const opacity = transparent ? 0.5 : 1;
+      const opacity = transparent ? 0.4 : 1;
       const material = new THREE.MeshLambertMaterial({ transparent, opacity });
+
+      // This prevents z-fighting for ifc spaces
+      if (opacity !== 1) {
+        material.depthWrite = false;
+        material.polygonOffset = true;
+        material.polygonOffsetFactor = 5;
+        material.polygonOffsetUnits = 1;
+      }
 
       if (instances.length === 1) {
         const instance = instances[0];

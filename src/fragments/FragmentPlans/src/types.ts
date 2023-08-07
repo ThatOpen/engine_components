@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SimplePlane } from "../../../core";
+import { EdgesPlane } from "../../../navigation";
 
 /**
  * Necessary data to create a new floor plan in the navigator.
@@ -21,7 +21,7 @@ export interface PlanView {
   point: THREE.Vector3;
 
   /** The clipping plane object that cuts the model. */
-  plane?: SimplePlane;
+  plane?: EdgesPlane;
 
   /** The offset of the clipping plane to the plan height. */
   offset?: number;

@@ -176,7 +176,14 @@ export class FragmentPlans
     const units = IfcPropertiesUtils.getUnits(properties);
 
     for (const floor of floorsProps) {
-      const height = floor.Elevation.value * units + coordHeight;
+      const floorHeight = { value: 0 };
+      this.getAbsoluteFloorHeight(
+        floor.ObjectPlacement.value,
+        model.properties,
+        floorHeight
+      );
+
+      const height = floorHeight.value * units + coordHeight;
       await this.create({
         name: floor.Name.value,
         id: floor.GlobalId.value,
@@ -447,4 +454,21 @@ export class FragmentPlans
   private hideCommandsMenu = () => {
     this.uiElement.commandsMenu.visible = false;
   };
+
+  private getAbsoluteFloorHeight(
+    placementID: number,
+    properties: any,
+    height: { value: number }
+  ) {
+    const placementRef = properties[placementID];
+    const placement = properties[placementRef.RelativePlacement.value];
+    const location = properties[placement.Location.value];
+    const currentHeight = location.Coordinates[2].value;
+    height.value += currentHeight;
+
+    const parentRef = placementRef.PlacementRelTo;
+    if (parentRef && parentRef.value !== null) {
+      this.getAbsoluteFloorHeight(parentRef.value, properties, height);
+    }
+  }
 }
