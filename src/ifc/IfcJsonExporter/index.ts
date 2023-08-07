@@ -59,6 +59,44 @@ export class IfcJsonExporter {
   }
 
   private async getAllGeometriesIDs(modelID: number, webIfc: WEBIFC.IfcAPI) {
+    // Exclude location info of spatial structure
+
+    const placementIDs = new Set<number>();
+
+    const structures = new Set<number>();
+    this.getStructure(WEBIFC.IFCPROJECT, structures, webIfc);
+    this.getStructure(WEBIFC.IFCSITE, structures, webIfc);
+    this.getStructure(WEBIFC.IFCBUILDING, structures, webIfc);
+    this.getStructure(WEBIFC.IFCBUILDINGSTOREY, structures, webIfc);
+    this.getStructure(WEBIFC.IFCSPACE, structures, webIfc);
+
+    for (const id of structures) {
+      const properties = webIfc.GetLine(0, id);
+
+      const placementRef = properties.ObjectPlacement;
+      if (!placementRef || placementRef.value === null) {
+        continue;
+      }
+      const placementID = placementRef.value;
+      placementIDs.add(placementID);
+
+      const placementProps = webIfc.GetLine(0, placementID);
+
+      const relPlacementID = placementProps.RelativePlacement;
+      if (!relPlacementID || relPlacementID.value === null) {
+        continue;
+      }
+
+      placementIDs.add(relPlacementID.value);
+      const relPlacement = webIfc.GetLine(0, relPlacementID.value);
+
+      const location = relPlacement.Location;
+
+      if (location && location.value !== null) {
+        placementIDs.add(location.value);
+      }
+    }
+
     const geometriesIDs = new Set<number>();
     const geomTypesArray = Array.from(GeometryTypes);
     for (let i = 0; i < geomTypesArray.length; i++) {
@@ -67,9 +105,26 @@ export class IfcJsonExporter {
       const ids = await webIfc.GetLineIDsWithType(modelID, category);
       const idsSize = ids.size();
       for (let j = 0; j < idsSize; j++) {
-        geometriesIDs.add(ids.get(j));
+        const id = ids.get(j);
+        if (placementIDs.has(id)) {
+          continue;
+        }
+        geometriesIDs.add(id);
       }
     }
     return geometriesIDs;
+  }
+
+  private getStructure(
+    type: number,
+    result: Set<number>,
+    webIfc: WEBIFC.IfcAPI
+  ) {
+    const found = webIfc.GetLineIDsWithType(0, type);
+    const size = found.size();
+    for (let i = 0; i < size; i++) {
+      const id = found.get(i);
+      result.add(id);
+    }
   }
 }
