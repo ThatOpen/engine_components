@@ -9,8 +9,7 @@ export class InfoCard extends Component<string> implements Updateable, UI {
   enabled: boolean = true;
   afterUpdate: Event<any> = new Event();
   beforeUpdate: Event<any> = new Event();
-  // @ts-ignore
-  uiElement!: FloatingWindow;
+  uiElement!: { window: FloatingWindow };
   private _components: Components;
   private _startCSSElement: CSS2DObject;
   private _line: SVGLineElement;
@@ -65,7 +64,7 @@ export class InfoCard extends Component<string> implements Updateable, UI {
     window.title = "Info card";
     this._viewerContainer.append(window.domElement);
     window.updateReferencePoints();
-    this.uiElement = window;
+    this.uiElement = { window };
   }
 
   // private worldToScreen(vector3: Vector3, vector2: Vector2) {
@@ -88,9 +87,10 @@ export class InfoCard extends Component<string> implements Updateable, UI {
     this._line.setAttribute("x1", (rect.x + rect.width / 2).toString());
     this._line.setAttribute("y1", (rect.y + rect.height / 2).toString());
 
-    this.uiElement.updateReferencePoints();
-    let minimumPoint: Vector2 = this.uiElement.referencePoints.center;
-    for (const point in this.uiElement.referencePoints) {
+    const window = this.uiElement.window;
+    window.updateReferencePoints();
+    let minimumPoint: Vector2 = window.referencePoints.center;
+    for (const point in window.referencePoints) {
       // @ts-ignore
       const currentPoint = this.uiElement.referencePoints[point];
       const currentDistance = currentPoint.distanceTo(vector2);
