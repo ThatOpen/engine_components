@@ -120,7 +120,7 @@ export class FragmentPlans
 
     const commandsMenu = new SimpleUIComponent<HTMLDivElement>(
       components,
-      `<div class="absolute bg-ifcjs-100 backdrop-blur-md rounded-md p-3 z-50"></div>`
+      `<div class="absolute bg-ifcjs-100 backdrop-blur-xl rounded-md p-3 z-50"></div>`
     );
     this.toggleCommandsMenuEvent(true);
     components.ui.add(commandsMenu);

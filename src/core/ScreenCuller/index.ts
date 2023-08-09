@@ -3,6 +3,7 @@ import { Material } from "three";
 import { Component, Disposable, Event } from "../../base-types";
 import { Components } from "../Components";
 import { Disposer } from "../Disposer";
+import { readPixelsAsync } from "./src/screen-culler-helper";
 
 // TODO: Clean up and document
 // TODO: Work at the instance level instead of the mesh level
@@ -41,7 +42,13 @@ export class ScreenCuller extends Component<null> implements Disposable {
   private readonly _scene = new THREE.Scene();
   private readonly _buffer: Uint8Array;
 
-  constructor(private components: Components, readonly updateInterval = 1000, readonly rtWidth = 512, readonly rtHeight = 512, readonly autoUpdate = true) {
+  constructor(
+    private components: Components,
+    readonly updateInterval = 1000,
+    readonly rtWidth = 512,
+    readonly rtHeight = 512,
+    readonly autoUpdate = true
+  ) {
     super();
     this.renderer = new THREE.WebGLRenderer();
     const planes = this.components.renderer.clippingPlanes;
@@ -178,7 +185,16 @@ export class ScreenCuller extends Component<null> implements Disposable {
     this.renderer.render(this._scene, camera);
 
     const context = this.renderer.getContext() as WebGL2RenderingContext;
-    await readPixelsAsync(context, 0, 0, this.rtWidth, this.rtHeight, context.RGBA, context.UNSIGNED_BYTE, this._buffer);
+    await readPixelsAsync(
+      context,
+      0,
+      0,
+      this.rtWidth,
+      this.rtHeight,
+      context.RGBA,
+      context.UNSIGNED_BYTE,
+      this._buffer
+    );
 
     this.renderer.setRenderTarget(null);
 
@@ -279,59 +295,4 @@ export class ScreenCuller extends Component<null> implements Disposable {
       code: `${this._colors.r}-${this._colors.g}-${this._colors.b}`,
     };
   }
-}
-
-//
-// Thanks to the advice here https://github.com/zalo/TetSim/commit/9696c2e1cd6354fb9bd40dbd299c58f4de0341dd
-//
-
-function clientWaitAsync(gl: WebGL2RenderingContext, sync: WebGLSync, flags: GLenum, interval_ms: number) {
-  return new Promise<void>((resolve, reject) => {
-    function test() {
-      const res = gl.clientWaitSync(sync, flags, 0);
-      if (res == gl.WAIT_FAILED) {
-        reject();
-        return;
-      }
-      if (res == gl.TIMEOUT_EXPIRED) {
-        setTimeout(test, interval_ms);
-        return;
-      }
-      resolve();
-    }
-
-    test();
-  });
-}
-
-async function getBufferSubDataAsync(
-  gl: WebGL2RenderingContext,
-  target: number,
-  buffer: WebGLBuffer,
-  srcByteOffset: number,
-  dstBuffer: ArrayBufferView,
-  dstOffset?: number,
-  length?: number
-) {
-  const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)!;
-  gl.flush();
-
-  await clientWaitAsync(gl, sync, 0, 10);
-  gl.deleteSync(sync);
-  gl.bindBuffer(target, buffer);
-  gl.getBufferSubData(target, srcByteOffset, dstBuffer, dstOffset, length);
-  gl.bindBuffer(target, null);
-}
-
-async function readPixelsAsync(gl: WebGL2RenderingContext, x: number, y: number, w: number, h: number, format: GLenum, type: GLenum, dest: ArrayBufferView) {
-  const buf = gl.createBuffer()!;
-  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buf);
-  gl.bufferData(gl.PIXEL_PACK_BUFFER, dest.byteLength, gl.STREAM_READ);
-  gl.readPixels(x, y, w, h, format, type, 0);
-  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
-
-  await getBufferSubDataAsync(gl, gl.PIXEL_PACK_BUFFER, buf, 0, dest);
-
-  gl.deleteBuffer(buf);
-  return dest;
 }

@@ -8,7 +8,7 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
   private _movable = true;
 
   static Class = {
-    Base: "absolute flex flex-col backdrop-blur-md shadow-md overflow-auto top-5 resize z-50 left-5 min-h-[80px] min-w-[150px] w-fit h-fit text-white bg-ifcjs-100 rounded-md",
+    Base: "absolute flex flex-col backdrop-blur-xl shadow-md overflow-auto top-5 resize z-50 left-5 min-h-[80px] min-w-[150px] w-fit h-fit text-white bg-ifcjs-100 rounded-md",
     Description: "text-base text-gray-400",
   };
 

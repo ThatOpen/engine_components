@@ -1,7 +1,8 @@
 import { Fragment, FragmentsGroup, Serializer } from "bim-fragment";
 import * as THREE from "three";
-import { Component, Disposable, Event } from "../../base-types";
+import { Component, Disposable, Event, UI } from "../../base-types";
 import { Components } from "../../core";
+import { Button, FloatingWindow, SimpleUICard } from "../../ui";
 
 /**
  * Object that can efficiently load binary files that contain
@@ -9,7 +10,7 @@ import { Components } from "../../core";
  */
 export class FragmentManager
   extends Component<Fragment[]>
-  implements Disposable
+  implements Disposable, UI
 {
   /** {@link Component.name} */
   name = "FragmentManager";
@@ -24,8 +25,14 @@ export class FragmentManager
 
   onFragmentsLoaded: Event<FragmentsGroup> = new Event();
 
+  uiElement: {
+    main: Button;
+    window: FloatingWindow;
+  };
+
   private _loader = new Serializer();
   private _components: Components;
+  private _cards: SimpleUICard[] = [];
 
   /** The list of meshes of the created fragments. */
   get meshes() {
@@ -39,6 +46,27 @@ export class FragmentManager
   constructor(components: Components) {
     super();
     this._components = components;
+
+    const window = new FloatingWindow(components);
+    window.title = "Models";
+    window.domElement.style.left = "70px";
+    window.domElement.style.top = "100px";
+    window.domElement.style.width = "340px";
+    window.domElement.style.height = "400px";
+
+    components.ui.add(window);
+    window.visible = false;
+
+    const main = new Button(components);
+    main.tooltip = "Models";
+    main.materialIcon = "inbox";
+    main.onclick = () => {
+      window.visible = !window.visible;
+    };
+
+    this.uiElement = { main, window };
+
+    this.onFragmentsLoaded.on(() => this.updateWindow());
   }
 
   /** {@link Component.get} */
@@ -98,6 +126,19 @@ export class FragmentManager
    */
   export(group: FragmentsGroup) {
     return this._loader.export(group);
+  }
+
+  private updateWindow() {
+    for (const card of this._cards) {
+      card.dispose();
+    }
+    for (const group of this.groups) {
+      const card = new SimpleUICard(this._components);
+      card.title = group.ifcMetadata.name;
+      card.description = group.ifcMetadata.description;
+      this.uiElement.window.addChild(card);
+      this._cards.push(card);
+    }
   }
 
   private removeFragmentMesh(fragment: Fragment) {

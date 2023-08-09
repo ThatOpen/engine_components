@@ -63,7 +63,7 @@ export class Modal extends SimpleUIComponent<HTMLDialogElement> {
   constructor(components: Components, title = "Tooeen Modal") {
     const template = `
     <dialog>
-      <div class="flex flex-col backdrop-blur-md w-[350px] h-fit text-white bg-ifcjs-100 rounded-md">
+      <div class="flex flex-col backdrop-blur-xl w-[350px] h-fit text-white bg-ifcjs-100 rounded-md">
         <div class="flex justify-between items-center top-0 select-none px-6 py-3 border-b-2 border-solid border-[#3A444E]">
           <h3 id="title">${title}</h3>
           <p id="description" class="text-base text-gray-400"></p>
