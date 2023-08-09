@@ -146,6 +146,13 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
   }
 
   private setMovableListeners() {
+    // For node.js
+    try {
+      this._components.renderer;
+    } catch (_e) {
+      return;
+    }
+
     let isMouseDown = false;
     let offsetX = 0;
     let offsetY = 0;
