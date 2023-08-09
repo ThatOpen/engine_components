@@ -34,6 +34,7 @@ export class DataConverter {
   constructor() {}
 
   cleanUp() {
+    this._fragmentKey = 0;
     this._spatialTree.cleanUp();
     this._categories = {};
     this._model = new FRAGS.FragmentsGroup();
