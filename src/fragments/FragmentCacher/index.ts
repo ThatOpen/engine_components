@@ -20,7 +20,7 @@ export class FragmentCacher extends LocalCacher {
     super(components);
     this._fragments = fragments;
 
-    this.saveButton.onclick = () => {
+    this.uiElement.saveButton.onclick = () => {
       this.floatingMenu.title = "Save items";
       if (this.floatingMenu.visible && this._mode === "save") {
         this.floatingMenu.visible = false;
@@ -65,7 +65,7 @@ export class FragmentCacher extends LocalCacher {
       this.floatingMenu.visible = true;
     };
 
-    this.loadButton.onclick = () => {
+    this.uiElement.loadButton.onclick = () => {
       this.floatingMenu.title = "Load saved items";
       if (this.floatingMenu.visible && this._mode === "load") {
         this.floatingMenu.visible = false;

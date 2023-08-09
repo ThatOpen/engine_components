@@ -156,27 +156,19 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
       this._popper.update();
     };
 
-    // this.domElement.addEventListener("mouseover", ({ target }) => {
-    //   if (
-    //     target !== this.get() &&
-    //     target !== this.innerElements.icon &&
-    //     target !== this.innerElements.label
-    //   ) {
-    //     return;
-    //   }
-    //   this.innerElements.tooltip.classList.add("opacity-100");
-    // });
+    this.domElement.addEventListener("mouseover", ({ target }) => {
+      if (this.isButton(target)) {
+        if (this._components.ui.tooltipsEnabled) {
+          this.innerElements.tooltip.classList.remove("opacity-0");
+        }
+      }
+    });
 
-    // this.domElement.addEventListener("mouseleave", ({ target }) => {
-    //   if (
-    //     target !== this.get() &&
-    //     target !== this.innerElements.icon &&
-    //     target !== this.innerElements.label
-    //   ) {
-    //     return;
-    //   }
-    //   this.innerElements.tooltip.classList.add("opacity-0");
-    // });
+    this.domElement.addEventListener("mouseleave", ({ target }) => {
+      if (this.isButton(target)) {
+        this.innerElements.tooltip.classList.add("opacity-0");
+      }
+    });
 
     // #region Extensible menu
     this.menu = new Toolbar(components);
@@ -233,5 +225,13 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
       placement = "left";
     }
     this._popper.setOptions({ placement });
+  }
+
+  private isButton(element: any) {
+    return (
+      element === this.get() ||
+      element === this.innerElements.icon ||
+      element === this.innerElements.label
+    );
   }
 }

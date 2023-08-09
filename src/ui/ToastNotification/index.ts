@@ -43,6 +43,8 @@ export class ToastNotification extends SimpleUIComponent<HTMLDivElement> {
       message: this.getInnerElement("message") as HTMLParagraphElement,
     };
 
+    this.domElement.style.zIndex = "9999";
+
     this.materialIcon = config.materialIconName ?? "done";
     this.message = config.message;
   }

@@ -47,6 +47,9 @@ export class DXFExporter {
     const projectedLines = await this._projector.project(meshes, height);
     this.drawGeometry(projectedLines.geometry, drawing);
 
+    projectedLines.geometry.dispose();
+    projectedLines.material.dispose();
+
     // Draw section lines
 
     const edges = plan.plane.edges.get();

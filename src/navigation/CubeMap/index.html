@@ -30,7 +30,8 @@
 	const components = new OBC.Components();
 	components.scene = new OBC.SimpleScene(components);
 	components.renderer = new OBC.SimpleRenderer(components, container);
-	components.camera = new OBC.OrthoPerspectiveCamera(components);
+	const camera = new OBC.OrthoPerspectiveCamera(components);
+    components.camera = camera;
 	components.raycaster = new OBC.SimpleRaycaster(components);
 
 
@@ -64,6 +65,8 @@
 	navCube.offset = 1;
 	navCube.setPosition("bottom-left");
 	components.tools.add("navCube", navCube);
+
+    camera.up
 
 </script>
 </body>

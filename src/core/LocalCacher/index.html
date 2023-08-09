@@ -65,10 +65,6 @@
 	const url = "../../../resources/small.frag";
 	const id = "example-id";
 
-	const mainToolbar = new OBC.Toolbar(components);
-	components.ui.addToolbar(mainToolbar);
-	mainToolbar.addChild(localCacher.uiElement.main);
-
 	function checkIfExists() {
 		const exists = localCacher.exists(id);
 		if(exists) alert("Model exists in cache!");

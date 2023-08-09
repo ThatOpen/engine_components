@@ -103,6 +103,7 @@ export class FragmentIfcLoader
   private setupOpenButton() {
     const button = new Button(this._components);
     button.materialIcon = "upload_file";
+    button.tooltip = "Load IFC";
 
     const fileOpener = document.createElement("input");
     fileOpener.type = "file";

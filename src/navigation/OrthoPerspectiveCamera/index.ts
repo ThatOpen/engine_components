@@ -55,6 +55,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
   private setUI() {
     const mainButton = new Button(this.components);
     mainButton.materialIcon = "video_camera_back";
+    mainButton.tooltip = "Camera";
 
     const projection = new Button(this.components, {
       materialIconName: "camera",

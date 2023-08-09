@@ -19,9 +19,7 @@ export class LocalCacher extends Component<any> implements UI, Disposable {
   private _db: ModelDatabase;
   private readonly _storedModels = "open-bim-components-stored-files";
 
-  uiElement: { main: Button };
-  saveButton: Button;
-  loadButton: Button;
+  uiElement: { main: Button; saveButton: Button; loadButton: Button };
 
   floatingMenu: FloatingWindow;
 
@@ -35,18 +33,21 @@ export class LocalCacher extends Component<any> implements UI, Disposable {
     this._components = components;
     this._db = new ModelDatabase();
 
-    this.uiElement = { main: new Button(components) };
-    this.uiElement.main.materialIcon = "storage";
+    const main = new Button(components);
+    main.materialIcon = "storage";
+    main.tooltip = "Local cacher";
 
-    this.saveButton = new Button(components);
-    this.saveButton.label = "Save";
-    this.saveButton.materialIcon = "save";
-    this.uiElement.main.addChild(this.saveButton);
+    const saveButton = new Button(components);
+    saveButton.label = "Save";
+    saveButton.materialIcon = "save";
+    main.addChild(saveButton);
 
-    this.loadButton = new Button(components);
-    this.loadButton.label = "Download";
-    this.loadButton.materialIcon = "download";
-    this.uiElement.main.addChild(this.loadButton);
+    const loadButton = new Button(components);
+    loadButton.label = "Download";
+    loadButton.materialIcon = "download";
+    main.addChild(loadButton);
+
+    this.uiElement = { main, loadButton, saveButton };
 
     const renderer = this._components.renderer.get();
     const viewerContainer = renderer.domElement.parentElement as HTMLElement;
@@ -63,7 +64,7 @@ export class LocalCacher extends Component<any> implements UI, Disposable {
 
     viewerContainer.appendChild(this.floatingMenu.get());
 
-    this.saveButton.onclick = () => {
+    saveButton.onclick = () => {
       if (this.floatingMenu.visible) {
         this.floatingMenu.visible = false;
       }

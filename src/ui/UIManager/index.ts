@@ -22,6 +22,9 @@ export class UIManager extends Component<Toolbar[]> {
   toolbars: Toolbar[] = [];
   contextMenu: Toolbar;
   viewerContainer?: HTMLElement;
+
+  tooltipsEnabled = true;
+
   containers: IContainers = {
     top: document.createElement("div"),
     right: document.createElement("div"),

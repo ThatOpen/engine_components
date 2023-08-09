@@ -70,6 +70,10 @@ export class CubeMap
     this._cube.style.textTransform = "uppercase";
     this._cubeWrapper.append(this._cube);
 
+    if (components.camera.isUpdateable()) {
+      components.camera.afterUpdate.on(this.update);
+    }
+
     // #region Cube faces
     const frontFace = document.createElement("div");
     frontFace.id = "cube-map-front";
@@ -175,12 +179,12 @@ export class CubeMap
     }
   }
 
-  update() {
+  update = () => {
     this._matrix.extractRotation(this._camera.get().matrixWorldInverse);
     this._cube.style.transform = `translateZ(-300px) ${this.getCameraCSSMatrix(
       this._matrix
     )}`;
-  }
+  };
 
   private get _viewerContainer() {
     return this._components.renderer.get().domElement.parentElement;

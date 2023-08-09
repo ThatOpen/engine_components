@@ -74,14 +74,18 @@
     const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
     components.ui.addToolbar(mainToolbar);
 
-    const reloadButton = new OBC.Button(components, {materialIconName: "replay"});
+    const reloadButton = new OBC.Button(components);
+    reloadButton.materialIcon = "replay";
+    reloadButton.tooltip = "Reload page";
+
     mainToolbar.addChild(reloadButton);
     reloadButton.onclick = () => location.reload();
 
     mainToolbar.addChild(fragmentIfcLoader.uiElement.main);
 
     const cacher = new OBC.FragmentCacher(components, fragments);
-    components.ui.addToolbar(cacher.uiElement);
+
+    mainToolbar.addChild(cacher.uiElement.main);
 
     const stats = new Stats();
     stats.showPanel(2);
