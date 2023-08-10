@@ -851,6 +851,10 @@ html {
   height: 100vh;
 }
 
+.max-h-8{
+  max-height: 2rem;
+}
+
 .max-h-\[300px\]{
   max-height: 300px;
 }
