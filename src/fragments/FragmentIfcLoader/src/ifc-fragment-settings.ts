@@ -17,6 +17,9 @@ export class IfcFragmentSettings {
     absolute: false,
   };
 
+  /** List of categories that won't be converted to fragments. */
+  excludedCategories = new Set<number>();
+
   /** Whether to save the absolute location of all IFC items. */
   saveLocations = false;
 

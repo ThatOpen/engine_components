@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "@popperjs/core": "latest",
-    "bim-fragment": "1.0.15",
+    "bim-fragment": "1.0.16",
     "camera-controls": "^1.36.0",
     "dexie": "^3.2.3",
     "dxf-writer": "^1.18.4",

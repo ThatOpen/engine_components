@@ -2,7 +2,7 @@ import { Fragment, FragmentsGroup, Serializer } from "bim-fragment";
 import * as THREE from "three";
 import { Component, Disposable, Event, UI } from "../../base-types";
 import { Components } from "../../core";
-import { Button, FloatingWindow, SimpleUICard } from "../../ui";
+import { Button, FloatingWindow, SimpleUICard, Toolbar } from "../../ui";
 
 /**
  * Object that can efficiently load binary files that contain
@@ -30,6 +30,8 @@ export class FragmentManager
     window: FloatingWindow;
   };
 
+  commands: Button[] = [];
+
   private _loader = new Serializer();
   private _components: Components;
   private _cards: SimpleUICard[] = [];
@@ -53,6 +55,10 @@ export class FragmentManager
     window.domElement.style.top = "100px";
     window.domElement.style.width = "340px";
     window.domElement.style.height = "400px";
+
+    const windowContent = window.slots.content.domElement;
+    windowContent.classList.remove("overflow-auto");
+    windowContent.classList.add("overflow-x-hidden");
 
     components.ui.add(window);
     window.visible = false;
@@ -79,14 +85,23 @@ export class FragmentManager
     for (const group of this.groups) {
       group.dispose(true);
     }
-    this.groups = [];
 
-    for (const fragID in this.list) {
-      const fragment = this.list[fragID];
-      this.removeFragmentMesh(fragment);
-      fragment.dispose(true);
-    }
+    this.groups = [];
     this.list = {};
+
+    this.updateWindow();
+  }
+
+  disposeGroup(group: FragmentsGroup) {
+    for (const fragment of group.items) {
+      this.removeFragmentMesh(fragment);
+      delete this.list[fragment.id];
+    }
+    group.dispose(true);
+    const index = this.groups.indexOf(group);
+    this.groups.splice(index, 1);
+
+    this.updateWindow();
   }
 
   /** Disposes all existing fragments */
@@ -134,10 +149,25 @@ export class FragmentManager
     }
     for (const group of this.groups) {
       const card = new SimpleUICard(this._components);
-      card.title = group.ifcMetadata.name;
-      card.description = group.ifcMetadata.description;
+
+      // TODO: Make all cards like this?
+      card.domElement.classList.remove("bg-ifcjs-120");
+      card.domElement.classList.remove("border-transparent");
+      card.domElement.className += ` min-w-[300px] my-2 bg-ifcjs-100 border-1 border-solid border-[#3A444E] `;
+
+      const toolbar = new Toolbar(this._components);
+      this._components.ui.addToolbar(toolbar);
+      card.addChild(toolbar);
+
+      card.title = group.name;
       this.uiElement.window.addChild(card);
       this._cards.push(card);
+
+      const commandsButton = new Button(this._components);
+      commandsButton.materialIcon = "delete";
+      commandsButton.tooltip = "Delete model";
+      toolbar.addChild(commandsButton);
+      commandsButton.onclick = () => this.disposeGroup(group);
     }
   }
 

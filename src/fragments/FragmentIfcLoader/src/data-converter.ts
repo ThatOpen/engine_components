@@ -16,8 +16,8 @@ import { FragmentBoundingBox } from "../../FragmentBoundingBox";
 
 export class DataConverter {
   settings = new IfcFragmentSettings();
+  categories: IfcItemsCategories = {};
 
-  private _categories: IfcItemsCategories = {};
   private _model = new FRAGS.FragmentsGroup();
   private _ifcCategories = new IfcCategories();
   private _bbox = new FragmentBoundingBox();
@@ -36,7 +36,7 @@ export class DataConverter {
   cleanUp() {
     this._fragmentKey = 0;
     this._spatialTree.cleanUp();
-    this._categories = {};
+    this.categories = {};
     this._model = new FRAGS.FragmentsGroup();
     this._ifcCategories = new IfcCategories();
     this._propertyExporter = new IfcJsonExporter();
@@ -45,7 +45,7 @@ export class DataConverter {
   }
 
   saveIfcCategories(webIfc: WEBIFC.IfcAPI) {
-    this._categories = this._ifcCategories.getAll(webIfc, 0);
+    this.categories = this._ifcCategories.getAll(webIfc, 0);
   }
 
   async generate(webIfc: WEBIFC.IfcAPI, geometries: IfcGeometries) {
@@ -269,7 +269,7 @@ export class DataConverter {
       const rels: number[] = [];
       const idNum = parseInt(id, 10);
       const level = this._spatialTree.itemsByFloor[idNum] || 0;
-      const category = this._categories[idNum] || 0;
+      const category = this.categories[idNum] || 0;
       rels.push(level, category);
       for (const key of this._itemKeyMap[id]) {
         keys.push(key);

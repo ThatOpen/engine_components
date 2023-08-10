@@ -26,7 +26,7 @@ export class FragmentIfcLoader
   ifcLoaded: Event<FragmentsGroup> = new Event();
 
   // For debugging purposes
-  isolatedItems = new Set<number>();
+  // isolatedItems = new Set<number>();
 
   locationsSaved = new Event<{ [id: number]: number[] }>();
 
@@ -69,7 +69,7 @@ export class FragmentIfcLoader
   }
 
   /** Loads the IFC file and converts it to a set of fragments. */
-  async load(data: Uint8Array) {
+  async load(data: Uint8Array, name: string) {
     if (this.settings.saveLocations) {
       this._geometry.saveLocations = true;
     }
@@ -81,6 +81,7 @@ export class FragmentIfcLoader
 
     const items = this._geometry.items;
     const model = await this._converter.generate(this._webIfc, items);
+    model.name = name;
 
     if (this.settings.saveLocations) {
       this.locationsSaved.trigger(this._geometry.locations);
@@ -116,7 +117,7 @@ export class FragmentIfcLoader
       const file = fileOpener.files[0];
       const buffer = await file.arrayBuffer();
       const data = new Uint8Array(buffer);
-      const result = await this.load(data);
+      const result = await this.load(data, file.name);
       const scene = this._components.scene.get();
       scene.add(result);
       this._toast.visible = true;
@@ -180,6 +181,7 @@ export class FragmentIfcLoader
   }
 
   private isExcluded(id: number) {
-    return this.isolatedItems.size && !this.isolatedItems.has(id);
+    const category = this._converter.categories[id];
+    return this.settings.excludedCategories.has(category);
   }
 }

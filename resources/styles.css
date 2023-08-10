@@ -1061,6 +1061,10 @@ html {
   overflow: visible;
 }
 
+.overflow-x-hidden{
+  overflow-x: hidden;
+}
+
 .whitespace-nowrap{
   white-space: nowrap;
 }

@@ -21,8 +21,6 @@
         "openbim-components": "../../../resources/openbim-components.js"
       }
     }
-
-
 </script>
 <script type="module">
 
@@ -91,6 +89,14 @@
     let fragments = new OBC.FragmentManager(components);
 
     /*MD
+    Let's also create a toolbar to create a simple GUI for the functions we'll create:
+    */
+
+    const toolbar = new OBC.Toolbar(components);
+    components.ui.addToolbar(toolbar);
+    toolbar.addChild(fragments.uiElement.main);
+
+    /*MD
 
     ### 🧩 Add Fragment To Scene
     ---
@@ -100,11 +106,18 @@
 
      */
     async function loadFragments() {
+        if(fragments.groups.length) return;
         const file = await fetch("../../../resources/small.frag");
         const data = await file.arrayBuffer();
         const buffer = new Uint8Array(data);
         fragments.load(buffer);
     }
+
+    const loadButton = new OBC.Button(components);
+    loadButton.materialIcon = "download";
+    loadButton.tooltip = "Load model";
+    toolbar.addChild(loadButton);
+    loadButton.onclick = () => loadFragments();
 
     /*MD
 
@@ -135,10 +148,16 @@
         download(file);
     }
 
+    const exportButton = new OBC.Button(components);
+    exportButton.materialIcon = "exit_to_app";
+    exportButton.tooltip = "Export model";
+    toolbar.addChild(exportButton);
+    exportButton.onclick = () => exportFragments();
+
     /*MD
     #### 🗃️ Downloading Files
 
-    Now, we will create a small utility function which we will use to download the exported Fragment by passing the relevant file to it.
+    We have created a small utility function which we will use to download the exported Fragment by passing the relevant file to it.
 
     */
     function download(file) {
@@ -171,8 +190,43 @@
 
     function disposeFragments() {
         fragments.dispose();
-        fragments = new OBC.FragmentManager(components);
     }
+
+    const disposeButton = new OBC.Button(components);
+    disposeButton.materialIcon = "delete";
+    disposeButton.tooltip = "Delete model";
+    toolbar.addChild(disposeButton);
+    disposeButton.onclick = () => disposeFragments();
+
+    /*MD
+
+    Loading a .zip fragment that you have locally is also quite easy:
+
+    */
+
+    function importExternalFragment() {
+        if(fragments.groups.length) return;
+        const input = document.createElement("input");
+        input.type = "file";
+        input.onchange = async () => {
+            const file = input.files[0];
+            if(file.name.includes(".frag")) {
+                const url = URL.createObjectURL(file);
+                const result = await fetch(url);
+                const data = await result.arrayBuffer();
+                const buffer = new Uint8Array(data);
+                fragments.load(buffer);
+            }
+            input.remove();
+        }
+        input.click();
+    }
+
+    const openButton = new OBC.Button(components);
+    openButton.materialIcon = "folder_open";
+    openButton.tooltip = "Import model";
+    toolbar.addChild(openButton);
+    openButton.onclick = () => importExternalFragment();
 
     /*MD
 
@@ -182,9 +236,6 @@
 
     */
 
-    const mainToolbar = new OBC.Toolbar(components);
-    components.ui.addToolbar(mainToolbar);
-    mainToolbar.addChild(fragments.uiElement.main);
 
     // Set up stats
 
@@ -195,21 +246,6 @@
     const renderer = components.renderer;
     renderer.beforeUpdate.on(() => stats.begin());
     renderer.afterUpdate.on(() => stats.end());
-
-
-    // Set up dat.gui menu
-
-    const settings = {
-        loadFragments: () => loadFragments(),
-        exportFragments: () => exportFragments(),
-        disposeFragments: () => disposeFragments()
-    }
-
-    const gui = new dat.GUI();
-
-    gui.add(settings, "loadFragments").name("Import fragments");
-    gui.add(settings, "exportFragments").name("Export fragments");
-    gui.add(settings, "disposeFragments").name("Dispose fragments");
 
 
 </script>

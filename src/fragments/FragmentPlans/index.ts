@@ -18,6 +18,8 @@ import {
   SimpleUICard,
   SimpleUIComponent,
   Toolbar,
+  CommandsMenu,
+  UICommands,
 } from "../../ui";
 
 /**
@@ -56,10 +58,8 @@ export class FragmentPlans
     planList: SimpleUIComponent;
     defaultText: SimpleUIComponent<HTMLParagraphElement>;
     exitButton: Button;
-    commandsMenu: SimpleUIComponent<HTMLDivElement>;
+    commandsMenu: CommandsMenu<PlanView>;
   };
-
-  commands: { [id: string]: (plan: PlanView) => void } = {};
 
   private _components: Components;
   private _clipper: EdgesClipper;
@@ -69,7 +69,14 @@ export class FragmentPlans
   private _previousCamera = new THREE.Vector3();
   private _previousTarget = new THREE.Vector3();
   private _previousProjection: CameraProjection = "Perspective";
-  private _selectedPlanMenu?: string;
+
+  get commands() {
+    return this.uiElement.commandsMenu.commands;
+  }
+
+  set commands(commands: UICommands<PlanView>) {
+    this.uiElement.commandsMenu.commands = commands;
+  }
 
   constructor(
     components: Components,
@@ -118,11 +125,7 @@ export class FragmentPlans
     );
     floatingWindow.addChild(defaultText);
 
-    const commandsMenu = new SimpleUIComponent<HTMLDivElement>(
-      components,
-      `<div class="absolute bg-ifcjs-100 backdrop-blur-xl rounded-md p-3 z-50"></div>`
-    );
-    this.toggleCommandsMenuEvent(true);
+    const commandsMenu = new CommandsMenu<PlanView>(components);
     components.ui.add(commandsMenu);
     commandsMenu.visible = false;
 
@@ -155,7 +158,7 @@ export class FragmentPlans
     this.uiElement.floatingWindow.dispose();
     this.uiElement.main.dispose();
     this.uiElement.commandsMenu.dispose();
-    this.toggleCommandsMenuEvent(false);
+    this.uiElement.commandsMenu.dispose();
   }
 
   // TODO: Compute georreference matrix when generating fragmentsgroup
@@ -280,25 +283,9 @@ export class FragmentPlans
       return;
     }
     defaultText.visible = false;
-    commandsMenu.dispose(true);
 
-    const commandsCount = Object.keys(this.commands).length;
-
-    for (const name in this.commands) {
-      const command = this.commands[name];
-      const button = new Button(this._components, { name });
-      commandsMenu.addChild(button);
-      button.onclick = () => {
-        if (this._selectedPlanMenu) {
-          const plan = this._plans.find(
-            (plan) => plan.id === this._selectedPlanMenu
-          );
-          if (plan) {
-            command(plan);
-          }
-        }
-      };
-    }
+    commandsMenu.update();
+    const commandsExist = commandsMenu.hasCommands;
 
     for (const plan of this._plans) {
       const height = Math.trunc(plan.point.y * 10) / 10;
@@ -327,15 +314,13 @@ export class FragmentPlans
       });
 
       extraButton.onclick = (event) => {
-        if (!event) return;
-        this._selectedPlanMenu = plan.id;
-        const { x, y } = event;
-        commandsMenu.domElement.style.left = `${x + 20}px`;
-        commandsMenu.domElement.style.top = `${y - 10}px`;
-        commandsMenu.visible = true;
+        if (event) {
+          commandsMenu.commandData = plan;
+          commandsMenu.popup(event.x, event.y);
+        }
       };
 
-      if (!commandsCount) {
+      if (!commandsExist) {
         extraButton.enabled = false;
       }
 
@@ -387,10 +372,8 @@ export class FragmentPlans
     if (!this.currentPlan) throw new Error("Current plan is not defined.");
     if (this.currentPlan.plane) {
       this.currentPlan.plane.enabled = true;
-      if (this.currentPlan.plane instanceof EdgesPlane) {
-        this.currentPlan.plane.edges.fillNeedsUpdate = true;
-        this.currentPlan.plane.edges.visible = true;
-      }
+      this.currentPlan.plane.edges.fillNeedsUpdate = true;
+      this.currentPlan.plane.edges.visible = true;
     }
     this._camera.setNavigationMode("Plan");
     const projection = this.currentPlan.ortho ? "Orthographic" : "Perspective";
@@ -442,18 +425,6 @@ export class FragmentPlans
       this.goTo(id);
     });
   }
-
-  private toggleCommandsMenuEvent(active: boolean) {
-    if (active) {
-      window.addEventListener("click", this.hideCommandsMenu);
-    } else {
-      window.removeEventListener("click", this.hideCommandsMenu);
-    }
-  }
-
-  private hideCommandsMenu = () => {
-    this.uiElement.commandsMenu.visible = false;
-  };
 
   private getAbsoluteFloorHeight(
     placementID: number,

@@ -16,3 +16,4 @@ export * from "./DragAndDropInput";
 export * from "./Spinner";
 export * from "./ToastNotification";
 export * from "./TextArea";
+export * from "./CommandsMenu";
