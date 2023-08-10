@@ -93,7 +93,7 @@ export class ToolComponent
    * Disposes all the memory used by all the tools.
    */
   dispose() {
-    const tools = Object.values(this.list);
+    const tools = this.list.values();
     for (const tool of tools) {
       tool.enabled = false;
       if (tool.isDisposeable()) {
