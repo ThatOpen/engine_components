@@ -58,7 +58,7 @@
     ambientLight.intensity = 0.5;
     scene.add(ambientLight);
 
-    const grid = new OBC.SimpleGrid(components);
+    const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
     components.tools.add('grid', grid);
     const gridMesh = grid.get();
     renderer.postproduction.customEffects.excludedMeshes.push(gridMesh);
@@ -166,10 +166,12 @@
 
     const size = map.getSize();
 
+    gui.add(map, "enabled").name("Map enabled");
     gui.add(map, "lockRotation").name("Lock rotation");
     gui.add(map, "zoom").name("Zoom").min(0.01).max(0.5).step(0.01);
     gui.add(size, "x").name("Width").min(100).max(500).step(10).onChange(() => map.resize(size));
     gui.add(size, "y").name("Height").min(100).max(500).step(10).onChange(() => map.resize(size));
+    gui.addColor(map, "backgroundColor");
 
 </script>
 </body>

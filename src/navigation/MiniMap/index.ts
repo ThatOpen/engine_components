@@ -10,13 +10,15 @@ export class MiniMap
   implements UI, Resizeable, Updateable
 {
   name = "MiniMap";
-  enabled = true;
   uiElement: { main: Button; canvas: Canvas };
   afterUpdate = new Event();
   beforeUpdate = new Event();
 
   overrideMaterial = new THREE.MeshDepthMaterial();
 
+  backgroundColor = new THREE.Color(0x06080a);
+
+  private _enabled = true;
   private _lockRotation = true;
   private _components: Components;
   private _camera: THREE.OrthographicCamera;
@@ -47,6 +49,15 @@ export class MiniMap
   set zoom(value: number) {
     this._camera.zoom = value;
     this._camera.updateProjectionMatrix();
+  }
+
+  get enabled() {
+    return this._enabled;
+  }
+
+  set enabled(active: boolean) {
+    this._enabled = active;
+    this.uiElement.canvas.visible = active;
   }
 
   constructor(components: Components) {
@@ -92,6 +103,7 @@ export class MiniMap
   }
 
   update() {
+    if (!this.enabled) return;
     this.beforeUpdate.trigger();
     const scene = this._components.scene.get();
     const cameraComponent = this._components.camera as SimpleCamera;
@@ -110,7 +122,10 @@ export class MiniMap
     }
 
     this._plane.set(this.down, this._tempPosition.y);
+    const previousBackground = scene.background;
+    scene.background = this.backgroundColor;
     this._renderer.render(scene, this._camera);
+    scene.background = previousBackground;
     this.afterUpdate.trigger();
   }
 

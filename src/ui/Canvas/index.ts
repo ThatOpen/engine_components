@@ -13,7 +13,8 @@ export class Canvas
 
   constructor(components: Components) {
     const template = `
-    <canvas class="absolute w-80 h-40 right-3 bottom-3 bg-ifcjs-120 border-transparent border border-solid"></canvas> 
+        <canvas class="absolute w-80 h-40 right-8 bottom-8 bg-ifcjs-120 
+        border-transparent border border-solid rounded-lg"></canvas> 
     `;
     super(components, template);
     this._canvas = this.get();
