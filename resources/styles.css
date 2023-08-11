@@ -1187,6 +1187,10 @@ html {
   fill: #0D0D0D;
 }
 
+.fill-white{
+  fill: #F2F2F2;
+}
+
 .p-1{
   padding: 0.25rem;
 }
@@ -1544,6 +1548,10 @@ dialog::backdrop{
 .hover\:bg-success:hover{
   --tw-bg-opacity: 1;
   background-color: rgb(76 175 80 / var(--tw-bg-opacity));
+}
+
+.hover\:fill-black:hover{
+  fill: #0D0D0D;
 }
 
 .hover\:text-black:hover{

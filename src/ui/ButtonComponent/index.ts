@@ -30,7 +30,7 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
     max-h-8 p-2 hover:cursor-pointer hover:bg-ifcjs-200 hover:text-black
     data-[active=true]:cursor-pointer data-[active=true]:bg-ifcjs-200 data-[active=true]:text-black
     disabled:cursor-default disabled:bg-gray-600 disabled:text-gray-400 pointer-events-auto
-    transition-all 
+    transition-all fill-white hover:fill-black
     `,
     Label: "text-sm tracking-[1.25px] whitespace-nowrap",
     Tooltip: `

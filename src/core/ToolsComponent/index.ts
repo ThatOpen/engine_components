@@ -70,8 +70,20 @@ export class ToolComponent
   async use<T>(token: string, id: string) {
     const { base, path } = this._urls;
     const url = base + id + path + token;
-    const imported = await import(url);
-    return imported.get() as new (...args: any) => T;
+
+    const fetched = await fetch(url);
+    const code = await fetched.text();
+    const script = document.createElement("script");
+    script.textContent = code;
+    document.body.appendChild(script);
+
+    const win = window as any;
+    const tool = win.ThatOpenTool() as new (...args: any) => T;
+
+    win.ThatOpenTool = undefined;
+    script.remove();
+
+    return tool;
   }
 
   /**

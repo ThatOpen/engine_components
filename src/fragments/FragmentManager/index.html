@@ -114,7 +114,7 @@
     }
 
     const loadButton = new OBC.Button(components);
-    loadButton.materialIcon = "download";
+    loadButton.setCustomIcon("../../../resources/ruler.svg");
     loadButton.tooltip = "Load model";
     toolbar.addChild(loadButton);
     loadButton.onclick = () => loadFragments();
