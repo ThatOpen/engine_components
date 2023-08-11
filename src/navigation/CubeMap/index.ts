@@ -48,6 +48,10 @@ export class CubeMap
     back: new THREE.Vector3(0, 0, -1),
   };
 
+  get visible() {
+    return this._visible;
+  }
+
   set visible(value: boolean) {
     this._visible = value;
     if (this._visible) {
