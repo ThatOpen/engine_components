@@ -37,7 +37,8 @@ export class CheckboxInput extends SimpleUIComponent<HTMLDivElement> {
   constructor(components: Components) {
     const template = `
     <div class="w-full flex gap-x-2 items-center">
-        <input id="input" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-ifcjs-200 focus:ring-ifcjs-200">
+        <input id="input" type="checkbox" 
+            class="h-4 w-4 rounded border-gray-300 accent-ifcjs-300 text-ifcjs-300 focus:ring-ifcjs-300">
         <label id="label" class="${UIManager.Class.Label}"></label>
     </div>
     `;
@@ -47,6 +48,10 @@ export class CheckboxInput extends SimpleUIComponent<HTMLDivElement> {
       label: this.getInnerElement("label") as HTMLLabelElement,
       input: this.getInnerElement("input") as HTMLInputElement,
     };
+
+    this.innerElements.input.addEventListener("change", () => {
+      this.onChange.trigger(this.value);
+    });
 
     this.label = "Tooeen Checkbox";
   }

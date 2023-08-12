@@ -13,6 +13,8 @@ export class AttributeQueryUI extends SimpleUIComponent {
   ifcTypes: Dropdown;
   removeBtn: Button;
 
+  negate: Dropdown;
+
   // Is ok to use Type Assertion in this case?
   get query() {
     const attribute = this.attribute.value as string;
@@ -21,7 +23,8 @@ export class AttributeQueryUI extends SimpleUIComponent {
       attribute === "type"
         ? (this.getTypeConstant(this.ifcTypes.value as string) as number)
         : this.value.value;
-    const query: AttributeQuery = { attribute, condition, value };
+    const negateResult = this.negate.value === "NOT A";
+    const query: AttributeQuery = { attribute, condition, value, negateResult };
     if (this.operator.visible)
       query.operator = this.operator.value as QueryOperators;
     return query;
@@ -50,6 +53,11 @@ export class AttributeQueryUI extends SimpleUIComponent {
   constructor(components: Components) {
     super(components, `<div class="flex gap-x-2"></div>`);
 
+    this.negate = new Dropdown(components);
+    this.negate.label = "Sign";
+    this.negate.addOption("A", "NOT A");
+    this.negate.value = "A";
+
     this.operator = new Dropdown(components);
     this.operator.visible = false;
     this.operator.label = "Operator";
@@ -65,6 +73,7 @@ export class AttributeQueryUI extends SimpleUIComponent {
       "NominalValue",
       "Description"
     );
+
     this.attribute.onChange.on((selection) => {
       const attributeIsType = selection === "type";
       this.value.visible = !attributeIsType;
@@ -108,6 +117,7 @@ export class AttributeQueryUI extends SimpleUIComponent {
       this.operator,
       this.attribute,
       this.condition,
+      this.negate,
       this.value,
       this.ifcTypes,
       this.removeBtn

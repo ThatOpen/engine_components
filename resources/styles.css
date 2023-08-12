@@ -1049,6 +1049,10 @@ html {
   row-gap: 1rem;
 }
 
+.self-end{
+  align-self: flex-end;
+}
+
 .overflow-auto{
   overflow: auto;
 }
@@ -1359,9 +1363,17 @@ html {
   color: var(--primary-color);
 }
 
+.text-ifcjs-300{
+  color: var(--secondary-color);
+}
+
 .text-white{
   --tw-text-opacity: 1;
   color: rgb(242 242 242 / var(--tw-text-opacity));
+}
+
+.accent-ifcjs-300{
+  accent-color: var(--secondary-color);
 }
 
 .opacity-0{
@@ -1580,6 +1592,10 @@ dialog::backdrop{
 
 .focus\:ring-ifcjs-200:focus{
   --tw-ring-color: var(--primary-color);
+}
+
+.focus\:ring-ifcjs-300:focus{
+  --tw-ring-color: var(--secondary-color);
 }
 
 .disabled\:cursor-default:disabled{

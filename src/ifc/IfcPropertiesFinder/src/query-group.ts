@@ -1,9 +1,8 @@
-import { Components } from "../../../core/Components";
-import { SimpleUIComponent } from "../../../ui/SimpleUIComponent";
-import { Button } from "../../../ui/ButtonComponent";
+import { Components } from "../../../core";
+import { SimpleUIComponent, Button, Dropdown } from "../../../ui";
+
 import { AttributeQueryUI } from "./attribute-query";
 import { QueryGroup, AttributeQuery, QueryOperators } from "./types";
-import { Dropdown } from "../../../ui";
 
 export class QueryGroupUI extends SimpleUIComponent {
   operator: Dropdown;

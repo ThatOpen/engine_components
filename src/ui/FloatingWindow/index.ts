@@ -148,6 +148,7 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
   private setMovableListeners() {
     // For node.js
     try {
+      // eslint-disable-next-line no-unused-expressions
       this._components.renderer;
     } catch (_e) {
       return;

@@ -1,6 +1,6 @@
 import * as WEBIFC from "web-ifc";
 import { FragmentsGroup, IfcProperties } from "bim-fragment";
-import { Event, UI } from "../../base-types";
+import { Event, FragmentIdMap, UI } from "../../base-types";
 import { Component } from "../../base-types/component";
 import { IfcPropertiesUtils } from "../IfcPropertiesUtils";
 import { Button, FloatingWindow } from "../../ui";
@@ -25,27 +25,28 @@ interface QueryResult {
 export class IfcPropertiesFinder extends Component<null> implements UI {
   name: string = "IfcPropertiesFinder";
   enabled: boolean = true;
-  uiElement: { main: Button; queryWindow: FloatingWindow };
+  uiElement: { main: Button; queryWindow: FloatingWindow; query: QueryBuilder };
 
   private _components: Components;
-  private _fragmentManager: FragmentManager;
+  private _fragments: FragmentManager;
   private _indexedModels: {
     [modelID: string]: { [expressID: number]: Set<number> };
   } = {};
   private _noHandleAttributes = ["type"];
   private _conditionFunctions: ConditionFunctions;
 
-  readonly onFound = new Event<QueryResult>();
+  readonly onFound = new Event<FragmentIdMap>();
 
   constructor(components: Components, fragmentManager: FragmentManager) {
     super();
     this._components = components;
-    this._fragmentManager = fragmentManager;
+    this._fragments = fragmentManager;
     this.uiElement = {
       main: new Button(components, {
         materialIconName: "manage_search",
       }),
       queryWindow: new FloatingWindow(components),
+      query: new QueryBuilder(components),
     };
     this.setUI();
     this._conditionFunctions = {
@@ -83,12 +84,18 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
     };
   }
 
+  dispose() {
+    this._indexedModels = {};
+    this.uiElement.main.dispose();
+    this.uiElement.queryWindow.dispose();
+  }
+
   private setUI() {
     const mainButton = this.uiElement.main;
     this.uiElement.queryWindow = new FloatingWindow(this._components);
     this._components.ui.add(this.uiElement.queryWindow);
     this.uiElement.queryWindow.get().classList.add("overflow-visible");
-    this.uiElement.queryWindow.get().style.width = "500px";
+    this.uiElement.queryWindow.get().style.width = "700px";
     this.uiElement.queryWindow.visible = false;
     this.uiElement.queryWindow.resizeable = false;
     this.uiElement.queryWindow.title = "Model Queries";
@@ -98,9 +105,9 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
     this.uiElement.queryWindow.onVisible.on(() => (mainButton.active = true));
     this.uiElement.queryWindow.onHidden.on(() => (mainButton.active = false));
 
-    const query = new QueryBuilder(this._components);
+    const { query } = this.uiElement;
     query.findButton.onClicked.on((query: QueryGroup[]) => {
-      const model = this._fragmentManager.groups[0];
+      const model = this._fragments.groups[0];
       if (!model) return;
       this.find(query);
     });
@@ -157,7 +164,7 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
     return map;
   }
 
-  find(queryGroups: QueryGroup[], models = this._fragmentManager.groups) {
+  find(queryGroups: QueryGroup[], models = this._fragments.groups) {
     const result: QueryResult = {};
 
     for (const model of models) {
@@ -165,12 +172,18 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
       if (!map) map = this.indexEntityRelations(model);
       let relations: number[] = [];
       for (const [index, group] of queryGroups.entries()) {
-        const groupResult = this.simpleQuery(model, group);
+        const excludedItems = new Set<number>();
+        const groupResult = this.simpleQuery(model, group, excludedItems);
         const groupRelations: number[] = [];
         for (const expressID of groupResult) {
           const relations = map[expressID];
           if (!relations) continue;
-          groupRelations.push(...relations, expressID);
+          groupRelations.push(expressID);
+          for (const id of relations) {
+            if (!excludedItems.has(id)) {
+              groupRelations.push();
+            }
+          }
         }
         relations =
           group.operator === "AND" && index > 0
@@ -197,11 +210,37 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
       result[model.uuid] = { modelEntities, otherEntities };
     }
 
-    this.onFound.trigger(result);
-    return result;
+    const fragments = this.toFragmentMap(result);
+    this.onFound.trigger(fragments);
+    return fragments;
   }
 
-  private simpleQuery(model: FragmentsGroup, queryGroup: QueryGroup) {
+  private toFragmentMap(data: QueryResult) {
+    const fragmentMap: FragmentIdMap = {};
+    for (const modelID in data) {
+      const model = this._fragments.groups.find((m) => m.uuid === modelID);
+      if (!model) continue;
+      const matchingEntities = data[modelID].modelEntities;
+      for (const expressID of matchingEntities) {
+        const data = model.data[expressID];
+        if (!data) continue;
+        for (const key of data[0]) {
+          const fragmentID = model.keyFragments[key];
+          if (!fragmentMap[fragmentID]) {
+            fragmentMap[fragmentID] = new Set();
+          }
+          fragmentMap[fragmentID].add(String(expressID));
+        }
+      }
+    }
+    return fragmentMap;
+  }
+
+  private simpleQuery(
+    model: FragmentsGroup,
+    queryGroup: QueryGroup,
+    excludedItems: Set<number>
+  ) {
     const properties = model.properties as IfcProperties;
     if (!properties) throw new Error("Model has no properties");
     let filteredProps: {
@@ -217,12 +256,15 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
       if (isAttributeQuery) {
         const matchingResult = this.getMatchingEntities(
           workingProps,
-          query as AttributeQuery
+          query as AttributeQuery,
+          excludedItems
         );
         queryResult = matchingResult.expressIDs;
         filteredProps = { ...filteredProps, ...matchingResult.entities };
       } else {
-        queryResult = [...this.simpleQuery(model, query as QueryGroup)];
+        queryResult = [
+          ...this.simpleQuery(model, query as QueryGroup, excludedItems),
+        ];
       }
       matchingEntities =
         iterations === 0
@@ -239,7 +281,8 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
 
   private getMatchingEntities(
     entities: { [expressID: number]: { [attributeName: string]: any } },
-    query: AttributeQuery
+    query: AttributeQuery,
+    excludedItems: Set<number>
   ) {
     const { attribute: attributeName, condition, value } = query;
     const handleAttribute = !this._noHandleAttributes.includes(attributeName);
@@ -256,12 +299,17 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
         attributeValue,
         value
       );
-      if (query.negateResult) conditionMatches = !conditionMatches;
-      if (!conditionMatches) continue;
+      if (query.negateResult) {
+        conditionMatches = !conditionMatches;
+      }
+      if (!conditionMatches) {
+        excludedItems.add(entity.expressID);
+        continue;
+      }
       expressIDs.push(entity.expressID);
       matchingEntities.push(entity);
     }
-    return { expressIDs, entities: matchingEntities };
+    return { expressIDs, entities: matchingEntities, excludedItems };
   }
 
   private combineArrays(
