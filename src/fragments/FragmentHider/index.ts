@@ -11,6 +11,13 @@ import {
 } from "../../ui";
 import { IfcPropertiesFinder } from "../../ifc";
 
+interface FilterData {
+  name: string;
+  id: string;
+  visible: boolean;
+  enabled: boolean;
+}
+
 export class FragmentHider extends Component<void> implements Disposable, UI {
   name = "FragmentHider";
   enabled = true;
@@ -20,6 +27,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     window: FloatingWindow;
   };
 
+  private _localStorageID = "FragmentHiderCache";
   private _components: Components;
   private _fragments: FragmentManager;
   private _culler?: ScreenCuller;
@@ -78,6 +86,8 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     mainWindow.addChild(topButtonContainer);
 
     this.uiElement = { window: mainWindow, main: mainButton };
+
+    this.loadCached();
   }
 
   dispose() {
@@ -120,15 +130,18 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     }
   }
 
-  private createStyleCard(config?: any) {
-    const styleCard = new SimpleUIComponent(this._components);
-    const { id } = styleCard;
+  private createStyleCard(config?: FilterData) {
+    const filterCard = new SimpleUIComponent(this._components);
+    if (config && config.id.length) {
+      filterCard.id = config.id;
+    }
+    const { id } = filterCard;
 
-    styleCard.domElement.className = `m-4 p-4 border-1 border-solid border-[#3A444E] rounded-md flex flex-col gap-4 
+    filterCard.domElement.className = `m-4 p-4 border-1 border-solid border-[#3A444E] rounded-md flex flex-col 
       bg-ifcjs-100
     `;
 
-    styleCard.domElement.innerHTML = `
+    filterCard.domElement.innerHTML = `
         <div id="top-container-${id}" class="flex">
         </div>
         <div id="bottom-container-${id}" class="flex gap-4 items-center">
@@ -142,18 +155,22 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     deleteButton.domElement.classList.add("self-end");
     deleteButton.onclick = () => this.deleteStyleCard(id);
 
-    const topContainer = styleCard.getInnerElement("top-container");
+    const topContainer = filterCard.getInnerElement("top-container");
     if (topContainer) {
       topContainer.appendChild(deleteButton.domElement);
     }
 
-    const bottomContainer = styleCard.getInnerElement("bottom-container");
+    const bottomContainer = filterCard.getInnerElement("bottom-container");
     if (!bottomContainer) {
       throw new Error("Error creating UI elements!");
     }
 
     const name = new TextInput(this._components);
     name.label = "Name";
+    name.domElement.addEventListener("focusout", () => {
+      this.cache();
+    });
+
     if (config) {
       name.value = config.name;
     }
@@ -161,12 +178,12 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     bottomContainer.append(name.domElement);
 
     const visible = new CheckboxInput(this._components);
-    visible.value = true;
+    visible.value = config ? config.visible : true;
     visible.label = "Visible";
     visible.onChange.on(() => this.update());
 
     const enabled = new CheckboxInput(this._components);
-    enabled.value = true;
+    enabled.value = config ? config.enabled : true;
     enabled.label = "Enabled";
     enabled.onChange.on(() => this.update());
 
@@ -177,6 +194,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     bottomContainer.append(checkBoxContainer.domElement);
 
     const finder = new IfcPropertiesFinder(this._components, this._fragments);
+    // finder.loadCached(id);
 
     finder.uiElement.query.findButton.label = "Apply";
 
@@ -199,7 +217,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     const fragments: FragmentIdMap = {};
 
     this._filterCards[id] = {
-      styleCard,
+      styleCard: filterCard,
       fragments,
       name,
       finder,
@@ -208,7 +226,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
       enabled,
     };
 
-    this.uiElement.window.addChild(styleCard);
+    this.uiElement.window.addChild(filterCard);
 
     // this.cacheStyles();
   }
@@ -221,6 +239,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
         this.set(visible.value, fragments);
       }
     }
+    this.cache();
   }
 
   private deleteStyleCard(id: string) {
@@ -234,7 +253,8 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
       found.enabled.dispose();
     }
     delete this._filterCards[id];
-    // this.cacheStyles();
+
+    this.update();
   }
 
   private hideAllFinders(excludeID: string) {
@@ -250,30 +270,29 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     }
   }
 
-  // private loadCachedFilters() {
-  //   const savedData = localStorage.getItem(this._localStorageID);
-  //   if (savedData) {
-  //     const savedStyles = JSON.parse(savedData);
-  //     for (const id in savedStyles) {
-  //       const savedStyle = savedStyles[id] as ClipStyleCardData;
-  //       this.createStyleCard(savedStyle);
-  //     }
-  //   }
-  // }
-  //
-  // private cacheFilters() {
-  //   const styles: { [id: string]: ClipStyleCardData } = {};
-  //   for (const id in this._styleCards) {
-  //     const styleCard = this._styleCards[id];
-  //     styles[id] = {
-  //       name: styleCard.name.value,
-  //       lineColor: styleCard.lineColor.value,
-  //       lineThickness: styleCard.lineThickness.value,
-  //       fillColor: styleCard.fillColor.value,
-  //       categories: styleCard.categories.value,
-  //     };
-  //   }
-  //   const serialized = JSON.stringify(styles);
-  //   localStorage.setItem(this._localStorageID, serialized);
-  // }
+  private loadCached() {
+    const serialized = localStorage.getItem(this._localStorageID);
+    if (!serialized) return;
+    const filters = JSON.parse(serialized) as FilterData[];
+    for (const filter of filters) {
+      this.createStyleCard(filter);
+    }
+    this.update();
+  }
+
+  private cache() {
+    const filters: FilterData[] = [];
+    for (const id in this._filterCards) {
+      const styleCard = this._filterCards[id];
+      const { visible, enabled, name } = styleCard;
+      filters.push({
+        visible: visible.value,
+        enabled: enabled.value,
+        name: name.value,
+        id,
+      });
+    }
+    const serialized = JSON.stringify(filters);
+    localStorage.setItem(this._localStorageID, serialized);
+  }
 }
