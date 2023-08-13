@@ -31,6 +31,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
   private _components: Components;
   private _fragments: FragmentManager;
   private _culler?: ScreenCuller;
+  private _updateVisibilityOnFound = true;
 
   private _filterCards: {
     [id: string]: {
@@ -194,7 +195,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     bottomContainer.append(checkBoxContainer.domElement);
 
     const finder = new IfcPropertiesFinder(this._components, this._fragments);
-    // finder.loadCached(id);
+    finder.loadCached(id);
 
     finder.uiElement.query.findButton.label = "Apply";
 
@@ -209,9 +210,15 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     });
 
     finder.onFound.on((data) => {
-      finder.uiElement.main.domElement.click();
+      const { queryWindow, main } = finder.uiElement;
+      queryWindow.visible = false;
+      main.active = false;
+      finder.uiElement.main.active = false;
       this._filterCards[id].fragments = data;
-      this.update();
+      this.cache();
+      if (this._updateVisibilityOnFound) {
+        this.update();
+      }
     });
 
     const fragments: FragmentIdMap = {};
@@ -277,7 +284,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     for (const filter of filters) {
       this.createStyleCard(filter);
     }
-    this.update();
+    this.updateAllQueries();
   }
 
   private cache() {
@@ -294,5 +301,15 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     }
     const serialized = JSON.stringify(filters);
     localStorage.setItem(this._localStorageID, serialized);
+  }
+
+  private updateAllQueries() {
+    this._updateVisibilityOnFound = false;
+    for (const id in this._filterCards) {
+      const { finder } = this._filterCards[id];
+      finder.find();
+    }
+    this._updateVisibilityOnFound = true;
+    this.update();
   }
 }

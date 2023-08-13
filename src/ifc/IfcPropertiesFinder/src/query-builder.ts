@@ -20,16 +20,26 @@ export class QueryBuilder extends SimpleUIComponent {
 
   set query(value: QueryGroup[]) {
     for (const child of this.children) {
-      if (!(child instanceof QueryGroupUI)) continue;
-      this.removeChild(child);
-      child.dispose();
+      if (child instanceof QueryGroupUI) {
+        this.removeChild(child);
+        child.dispose();
+      }
     }
+    let first = true;
     for (const [index, group] of value.entries()) {
-      if (index === 0 && group.operator) delete group.operator;
+      if (index === 0 && group.operator) {
+        delete group.operator;
+      }
       const attributeQueryUI = new QueryGroupUI(this._components);
+      attributeQueryUI.removeBtn.visible = true;
       attributeQueryUI.query = group;
       this.addChild(attributeQueryUI);
+      if (first) {
+        first = false;
+        attributeQueryUI.removeBtn.visible = false;
+      }
     }
+    this.get().append(this.findButton.get());
     this.onQuerySet.trigger(value);
   }
 

@@ -27,6 +27,7 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
   enabled: boolean = true;
   uiElement: { main: Button; queryWindow: FloatingWindow; query: QueryBuilder };
 
+  private _localStorageID = "FragmentHiderCache";
   private _components: Components;
   private _fragments: FragmentManager;
   private _indexedModels: {
@@ -88,6 +89,16 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
     this._indexedModels = {};
     this.uiElement.main.dispose();
     this.uiElement.queryWindow.dispose();
+  }
+
+  loadCached(id?: string) {
+    if (id) {
+      this._localStorageID = `FragmentHiderCache-${id}`;
+    }
+    const serialized = localStorage.getItem(this._localStorageID);
+    if (!serialized) return;
+    const groups = JSON.parse(serialized);
+    this.uiElement.query.query = groups;
   }
 
   private setUI() {
@@ -164,8 +175,13 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
     return map;
   }
 
-  find(queryGroups: QueryGroup[], models = this._fragments.groups) {
+  find(
+    queryGroups = this.uiElement.query.query,
+    models = this._fragments.groups
+  ) {
     const result: QueryResult = {};
+
+    this.cache();
 
     for (const model of models) {
       let map = this._indexedModels[model.uuid];
@@ -354,6 +370,12 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
 
   private arrayUnion(arrA: number[], arrB: number[]) {
     return [...arrA, ...arrB];
+  }
+
+  private cache() {
+    const query = this.uiElement.query.query;
+    const serialized = JSON.stringify(query);
+    localStorage.setItem(this._localStorageID, serialized);
   }
 
   get(): null {

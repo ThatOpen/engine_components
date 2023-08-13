@@ -34,9 +34,13 @@ export class AttributeQueryUI extends SimpleUIComponent {
     if (value.operator) this.operator.value = value.operator;
     this.attribute.value = value.attribute;
     this.condition.value = value.condition;
+    this.negate.value = value.negateResult ? "NOT A" : "A";
     if (value.attribute === "type") {
+      if (typeof value.value !== "number") {
+        throw new Error("Corrupted IfcPropertiesFinder cached data!");
+      }
       this.value.value = "";
-      this.ifcTypes.value = value.value.toString();
+      this.ifcTypes.value = IfcCategoryMap[value.value];
     } else {
       this.ifcTypes.value = null;
       this.value.value = String(value.value);

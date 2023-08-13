@@ -29,6 +29,7 @@ export class QueryGroupUI extends SimpleUIComponent {
       this.removeChild(child);
       child.dispose();
     }
+    let first = true;
     for (const [index, query] of value.queries.entries()) {
       // @ts-ignore
       if (!query.condition) continue;
@@ -38,6 +39,11 @@ export class QueryGroupUI extends SimpleUIComponent {
       const attributeQueryUI = new AttributeQueryUI(this._components);
       attributeQueryUI.query = attributeQuery;
       this.addChild(attributeQueryUI);
+      if (first) {
+        first = false;
+      } else {
+        attributeQueryUI.removeBtn.visible = true;
+      }
     }
   }
 
