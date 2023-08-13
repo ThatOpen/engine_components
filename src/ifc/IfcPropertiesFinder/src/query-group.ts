@@ -50,7 +50,7 @@ export class QueryGroupUI extends SimpleUIComponent {
   constructor(components: Components) {
     super(
       components,
-      `<div class="flex flex-col gap-y-3 p-3 border border-solid border-ifcjs-120 rounded-md"></div>`
+      `<div class="flex flex-col gap-y-3 p-3 border border-solid border-ifcjs-120 bg-ifcjs-100 rounded-md"></div>`
     );
 
     this.operator = new Dropdown(components);

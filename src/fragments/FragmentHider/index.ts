@@ -70,6 +70,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     });
 
     mainButton.onclick = () => {
+      this.hideAllFinders();
       mainWindow.visible = !mainWindow.visible;
     };
 
@@ -255,6 +256,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
       found.styleCard.dispose();
       found.deleteButton.dispose();
       found.name.dispose();
+      found.finder.deleteCache();
       found.finder.dispose();
       found.visible.dispose();
       found.enabled.dispose();
@@ -264,7 +266,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     this.update();
   }
 
-  private hideAllFinders(excludeID: string) {
+  private hideAllFinders(excludeID?: string) {
     for (const id in this._filterCards) {
       const { finder } = this._filterCards[id];
       const window = finder.uiElement.queryWindow;

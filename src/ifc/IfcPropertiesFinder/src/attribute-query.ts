@@ -58,6 +58,9 @@ export class AttributeQueryUI extends SimpleUIComponent {
     super(components, `<div class="flex gap-x-2"></div>`);
 
     this.negate = new Dropdown(components);
+    const negateClass = this.negate.domElement.classList;
+    negateClass.remove("w-full");
+    negateClass.add("min-w-[4.5rem]");
     this.negate.label = "Sign";
     this.negate.addOption("A", "NOT A");
     this.negate.value = "A";

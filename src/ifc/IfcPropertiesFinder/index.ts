@@ -101,6 +101,10 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
     this.uiElement.query.query = groups;
   }
 
+  deleteCache() {
+    localStorage.removeItem(this._localStorageID);
+  }
+
   private setUI() {
     const mainButton = this.uiElement.main;
     this.uiElement.queryWindow = new FloatingWindow(this._components);
