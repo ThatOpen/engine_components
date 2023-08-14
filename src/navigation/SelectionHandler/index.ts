@@ -15,6 +15,11 @@ export class SelectionHandler extends Component<FragmentIdMap> {
   name: string = "SelectionHandler";
   enabled: boolean = true;
   components: Components;
+
+  highlightEnabled = true;
+  selectEnabled = true;
+  multiple: "none" | "shiftKey" | "ctrlKey" = "none";
+
   private _fragmentHighlighter: FragmentHighlighter;
   private _config: SelectionHandlerConfig;
 
@@ -24,6 +29,7 @@ export class SelectionHandler extends Component<FragmentIdMap> {
     config?: Partial<SelectionHandlerConfig>
   ) {
     super();
+
     this._config = {
       selectionName: config?.selectionName ?? "select",
       selectionMaterial:
@@ -45,6 +51,7 @@ export class SelectionHandler extends Component<FragmentIdMap> {
         }),
       ...config,
     };
+
     this.components = components;
     this._fragmentHighlighter = fragmentHighlighter;
     this.setup();
@@ -81,10 +88,10 @@ export class SelectionHandler extends Component<FragmentIdMap> {
         return;
       }
       mouseMoved = false;
-      this._fragmentHighlighter.highlight(
-        this._config.selectionName,
-        !e.ctrlKey
-      );
+      if (this.selectEnabled) {
+        const mult = this.multiple === "none" ? true : !e[this.multiple];
+        this._fragmentHighlighter.highlight(this._config.selectionName, mult);
+      }
     });
 
     this._viewerContainer.addEventListener("mousemove", () => {
@@ -92,10 +99,12 @@ export class SelectionHandler extends Component<FragmentIdMap> {
         this._fragmentHighlighter.clear(this._config.highlightName);
         return;
       }
-      this._fragmentHighlighter.highlight(this._config.highlightName);
       mouseMoved = true;
       if (!mouseDown) {
         mouseMoved = false;
+      }
+      if (this.highlightEnabled) {
+        this._fragmentHighlighter.highlight(this._config.highlightName);
       }
     });
   }

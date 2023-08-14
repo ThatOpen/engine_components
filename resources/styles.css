@@ -656,6 +656,10 @@ html {
   bottom: 0px;
 }
 
+.bottom-4{
+  bottom: 1rem;
+}
+
 .bottom-8{
   bottom: 2rem;
 }
