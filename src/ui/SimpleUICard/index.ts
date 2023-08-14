@@ -31,7 +31,7 @@ export class SimpleUICard extends SimpleUIComponent<HTMLDivElement> {
 
   constructor(components: Components, id?: string) {
     const template = `
-    <div class="bg-ifcjs-120 p-2 text-white flex items-center rounded-lg border-transparent border border-solid">
+    <div class="p-2 text-white flex items-center rounded-lg border-transparent border border-solid">
       <div class="mr-auto">
         <p id="title" class="text-base"></p>
         <p id="description" class="text-sm text-gray-400"></p>

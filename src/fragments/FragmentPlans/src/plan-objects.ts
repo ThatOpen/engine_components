@@ -120,7 +120,7 @@ export class PlanObjects implements UI {
     const { domElement } = button;
 
     domElement.classList.remove("bg-transparent");
-    domElement.className += " bg-ifcjs-100 transition-none rounded-full";
+    domElement.className += " transition-none rounded-full";
 
     // element.className = this.pointClass;
     const marker = new CSS2DObject(domElement);

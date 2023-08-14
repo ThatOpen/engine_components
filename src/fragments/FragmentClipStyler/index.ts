@@ -142,9 +142,7 @@ export class FragmentClipStyler implements UI {
     const { id } = styleCard;
 
     const styleRowClass = `flex gap-4`;
-    styleCard.domElement.className = `m-4 p-4 border-1 border-solid border-[#3A444E] rounded-md flex flex-col gap-4 
-      bg-ifcjs-100
-    `;
+    styleCard.domElement.className = `m-4 p-4 border-1 border-solid border-[#3A444E] rounded-md flex flex-col gap-4`;
 
     styleCard.domElement.innerHTML = `
         <div id="first-row-${id}" class="${styleRowClass}">

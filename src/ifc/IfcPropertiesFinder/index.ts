@@ -27,7 +27,7 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
   enabled: boolean = true;
   uiElement: { main: Button; queryWindow: FloatingWindow; query: QueryBuilder };
 
-  private _localStorageID = "FragmentHiderCache";
+  private _localStorageID = "IfcPropertiesFinder";
   private _components: Components;
   private _fragments: FragmentManager;
   private _indexedModels: {
@@ -93,7 +93,7 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
 
   loadCached(id?: string) {
     if (id) {
-      this._localStorageID = `FragmentHiderCache-${id}`;
+      this._localStorageID = `IfcPropertiesFinder-${id}`;
     }
     const serialized = localStorage.getItem(this._localStorageID);
     if (!serialized) return;
@@ -201,7 +201,7 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
           groupRelations.push(expressID);
           for (const id of relations) {
             if (!excludedItems.has(id)) {
-              groupRelations.push();
+              groupRelations.push(id);
             }
           }
         }
@@ -304,7 +304,9 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
     query: AttributeQuery,
     excludedItems: Set<number>
   ) {
-    const { attribute: attributeName, condition, value } = query;
+    const { attribute: attributeName, condition } = query;
+    let { value } = query;
+
     const handleAttribute = !this._noHandleAttributes.includes(attributeName);
     const expressIDs: number[] = [];
     const matchingEntities: {
@@ -312,9 +314,22 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
     }[] = [];
     for (const expressID in entities) {
       const entity = entities[expressID];
+      if (entity === undefined) {
+        continue;
+      }
       const attribute = entity[attributeName];
-      const attributeValue = handleAttribute ? attribute?.value : attribute;
+      let attributeValue = handleAttribute ? attribute?.value : attribute;
       if (attributeValue === undefined || attributeValue === null) continue;
+
+      // TODO: Maybe the user can specify the value type in the finder menu, so we don't need this
+      const type1 = typeof value;
+      const type2 = typeof attributeValue;
+      if (type1 === "number" && type2 === "string") {
+        value = value.toString();
+      } else if (type1 === "string" && type2 === "number") {
+        attributeValue = attributeValue.toString();
+      }
+
       let conditionMatches = this._conditionFunctions[condition](
         attributeValue,
         value
@@ -323,7 +338,9 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
         conditionMatches = !conditionMatches;
       }
       if (!conditionMatches) {
-        excludedItems.add(entity.expressID);
+        if (query.negateResult) {
+          excludedItems.add(entity.expressID);
+        }
         continue;
       }
       expressIDs.push(entity.expressID);

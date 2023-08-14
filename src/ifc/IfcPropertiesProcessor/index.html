@@ -88,6 +88,7 @@
     highlighterEvents.select.onClear.on(() => {
         propsProcessor.cleanPropertiesList();
     });
+
     highlighterEvents.select.onHighlight.on(
         (selection) => {
             const fragmentID = Object.keys(selection)[0];

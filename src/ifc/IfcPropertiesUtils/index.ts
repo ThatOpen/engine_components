@@ -64,6 +64,9 @@ export class IfcPropertiesUtils {
     const result: { [relatingID: number]: number[] } = {};
     for (const expressID in properties) {
       const prop = properties[expressID];
+      if (prop === undefined) {
+        continue;
+      }
       const isRelation = prop.type === relationType;
       const relatingKey = Object.keys(prop).find((key) =>
         key.startsWith("Relating")
@@ -74,6 +77,9 @@ export class IfcPropertiesUtils {
       if (!(isRelation && relatingKey && relatedKey)) continue;
       const relating = properties[prop[relatingKey]?.value];
       const related = prop[relatedKey];
+      if (relating === undefined || related === undefined) {
+        continue;
+      }
       if (!(related && Array.isArray(related))) continue;
       const elements = related.map((el: any) => {
         return el.value;
@@ -144,7 +150,15 @@ export class IfcPropertiesUtils {
     const quantity = properties[quantityID];
     const key =
       Object.keys(quantity).find((key) => key.endsWith("Value")) ?? null;
-    const value = key ? (quantity[key].value as number) : null;
+    let value;
+    if (key === null) {
+      value = null;
+    } else if (quantity[key] === undefined || quantity[key] === null) {
+      value = null;
+    } else {
+      value = quantity[key].value as number;
+    }
+
     return { key, value };
   }
 

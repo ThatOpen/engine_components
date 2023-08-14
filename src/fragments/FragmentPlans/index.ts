@@ -298,6 +298,11 @@ export class FragmentPlans
       const toolbar = new Toolbar(this._components);
       this._components.ui.addToolbar(toolbar);
       simpleCard.addChild(toolbar);
+      toolbar.domElement.classList.remove(
+        "shadow-md",
+        "backdrop-blur-xl",
+        "bg-ifcjs-100"
+      );
 
       const planButton = new Button(this._components, {
         materialIconName: "arrow_outward",
@@ -328,7 +333,7 @@ export class FragmentPlans
 
       simpleCard.domElement.classList.remove("bg-ifcjs-120");
       simpleCard.domElement.classList.remove("border-transparent");
-      simpleCard.domElement.className += ` min-w-[300px] my-2 bg-ifcjs-100 border-1 border-solid border-[#3A444E] `;
+      simpleCard.domElement.className += ` min-w-[300px] my-2 border-1 border-solid border-[#3A444E] `;
 
       planList.addChild(simpleCard);
     }

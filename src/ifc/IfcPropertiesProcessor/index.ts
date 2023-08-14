@@ -120,6 +120,7 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
 
     this.uiElement.propertiesWindow.addChild(this._propsList);
 
+    this.uiElement.main.tooltip = "Properties";
     this.uiElement.main.onclick = () => {
       this.uiElement.propertiesWindow.visible =
         !this.uiElement.propertiesWindow.visible;

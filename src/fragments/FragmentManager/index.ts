@@ -153,7 +153,7 @@ export class FragmentManager
       // TODO: Make all cards like this?
       card.domElement.classList.remove("bg-ifcjs-120");
       card.domElement.classList.remove("border-transparent");
-      card.domElement.className += ` min-w-[300px] my-2 bg-ifcjs-100 border-1 border-solid border-[#3A444E] `;
+      card.domElement.className += ` min-w-[300px] my-2 border-1 border-solid border-[#3A444E] `;
 
       const toolbar = new Toolbar(this._components);
       this._components.ui.addToolbar(toolbar);

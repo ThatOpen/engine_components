@@ -139,9 +139,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     }
     const { id } = filterCard;
 
-    filterCard.domElement.className = `m-4 p-4 border-1 border-solid border-[#3A444E] rounded-md flex flex-col 
-      bg-ifcjs-100
-    `;
+    filterCard.domElement.className = `m-4 p-4 border-1 border-solid border-[#3A444E] rounded-md flex flex-col`;
 
     filterCard.domElement.innerHTML = `
         <div id="top-container-${id}" class="flex">
