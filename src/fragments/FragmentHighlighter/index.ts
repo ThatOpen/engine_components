@@ -307,7 +307,7 @@ export class FragmentHighlighter
       if (!mouseDown) {
         mouseMoved = false;
       }
-      this.highlight(hoverName);
+      this.highlight(hoverName, true, false);
     });
   }
 

@@ -120,6 +120,7 @@ export class CustomEffectsPass extends Pass {
   }
 
   set outlineEnabled(active: boolean) {
+    if (active === this._outlineEnabled) return;
     this._outlineEnabled = active;
     const material = this.fsQuad.material as THREE.ShaderMaterial;
     material.uniforms.outlineEnabled.value = active ? 1 : 0;

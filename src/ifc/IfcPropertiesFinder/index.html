@@ -78,6 +78,7 @@
 
     components.renderer.postproduction.customEffects.outlineEnabled = true;
     highlighter.outlinesEnabled = true;
+    highlighter.zoomToSelection = true;
 
     // New instance of Properties Finder
     // Best way to describe the component is to find "Relations of entities meeting a set of attributes criteria"
@@ -88,7 +89,7 @@
 
     // On elements found, select them.
     propsFinder.onFound.on(result => {
-        highlighter.highlightByID("select", result, true, true);
+        highlighter.highlightByID("select", result);
     })
 
     // Creating new toolbar + adding component button
