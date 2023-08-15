@@ -219,10 +219,9 @@ export class ViewpointsManager extends Component<string> implements UI {
     // #endregion
 
     // Select elements in the viewpoint
-    const selection: { [fragmentID: string]: string[] } = {};
+    const selection: { [fragmentID: string]: Set<string> } = {};
     for (const fragmentID in viewpoint.selection) {
-      const idSet = viewpoint.selection[fragmentID];
-      selection[fragmentID] = [...idSet];
+      selection[fragmentID] = viewpoint.selection[fragmentID];
     }
     this._fragmentHighlighter.highlightByID(
       this.selectionHighlighter,

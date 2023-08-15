@@ -3,8 +3,6 @@ import { Component } from "../../base-types/component";
 import { Components } from "../../core/Components";
 import { FragmentHighlighter } from "../../fragments/FragmentHighlighter";
 import { FragmentIdMap } from "../../base-types";
-import { FragmentBoundingBox, FragmentManager } from "../../fragments";
-import { SimpleCamera } from "../../core";
 
 interface SelectionHandlerConfig {
   selectionName: string;
@@ -21,23 +19,18 @@ export class SelectionHandler extends Component<FragmentIdMap> {
   selectEnabled = true;
   multiple: "none" | "shiftKey" | "ctrlKey" = "none";
   zoomToSelection = false;
-  zoomFactor = 1.5;
 
   private _components: Components;
-  private _fragments: FragmentManager;
   private _fragmentHighlighter: FragmentHighlighter;
   private _config: SelectionHandlerConfig;
-  private _bbox = new FragmentBoundingBox();
 
   constructor(
     components: Components,
-    fragments: FragmentManager,
     fragmentHighlighter: FragmentHighlighter,
     config?: Partial<SelectionHandlerConfig>
   ) {
     super();
     this._components = components;
-    this._fragments = fragments;
     this._fragmentHighlighter = fragmentHighlighter;
 
     this._config = {
@@ -98,11 +91,11 @@ export class SelectionHandler extends Component<FragmentIdMap> {
       mouseMoved = false;
       if (this.selectEnabled) {
         const mult = this.multiple === "none" ? true : !e[this.multiple];
-        this._fragmentHighlighter.highlight(this._config.selectionName, mult);
-      }
-
-      if (this.zoomToSelection) {
-        this.zoomSelection();
+        this._fragmentHighlighter.highlight(
+          this._config.selectionName,
+          mult,
+          this.zoomToSelection
+        );
       }
     });
 
@@ -119,26 +112,6 @@ export class SelectionHandler extends Component<FragmentIdMap> {
         this._fragmentHighlighter.highlight(this._config.highlightName);
       }
     });
-  }
-
-  private zoomSelection() {
-    this._bbox.reset();
-    const name = this._config.highlightName;
-    const higlight = this._fragmentHighlighter.selection[name];
-    if (!Object.keys(higlight).length) {
-      return;
-    }
-    for (const fragID in higlight) {
-      const fragment = this._fragments.list[fragID];
-      const highlight = fragment.fragments[name];
-      if (highlight) {
-        this._bbox.addFragment(highlight);
-      }
-    }
-    const sphere = this._bbox.getSphere();
-    sphere.radius *= this.zoomFactor;
-    const camera = this._components.camera as SimpleCamera;
-    camera.controls.fitToSphere(sphere, true);
   }
 
   get(): FragmentIdMap {

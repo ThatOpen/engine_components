@@ -74,7 +74,7 @@
 
     // Quick setup for element hovering and selection
     const highlighter = new OBC.FragmentHighlighter(components, fragments);
-    const selectionHandler = new OBC.SelectionHandler(components, fragments, highlighter);
+    const selectionHandler = new OBC.SelectionHandler(components, highlighter);
     selectionHandler.zoomToSelection = true;
 
     // New instance of Properties Finder
@@ -86,7 +86,7 @@
 
     // On elements found, select them.
     propsFinder.onFound.on(result => {
-        highlighter.highlightByID("select", result);
+        highlighter.highlightByID("select", result, true, true);
     })
 
     // Creating new toolbar + adding component button

@@ -86,7 +86,7 @@
     modelTree.update(['storeys', 'entities']);
 
     modelTree.selected.on((filter) => {
-        highlighter.highlightByID('select', filter);
+        highlighter.highlightByID('select', filter, true, true);
     });
 
     modelTree.hovered.on((filter) => {

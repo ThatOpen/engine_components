@@ -2,8 +2,8 @@ import * as THREE from "three";
 import { Fragment } from "bim-fragment";
 import { FragmentMesh } from "bim-fragment/fragment-mesh";
 import { Component, Disposable, Event, FragmentIdMap } from "../../base-types";
-import { FragmentManager } from "../index";
-import { Components } from "../../core";
+import { FragmentBoundingBox, FragmentManager } from "../index";
+import { Components, SimpleCamera } from "../../core";
 import { toCompositeID } from "../../utils";
 
 // TODO: Clean up and document
@@ -28,6 +28,8 @@ export class FragmentHighlighter
   highlightMats: HighlightMaterials = {};
   events: HighlightEvents = {};
 
+  zoomFactor = 1.5;
+
   private tempMatrix = new THREE.Matrix4();
   selection: {
     [selectionID: string]: FragmentIdMap;
@@ -35,6 +37,7 @@ export class FragmentHighlighter
 
   private _components: Components;
   private _fragments: FragmentManager;
+  private _bbox = new FragmentBoundingBox();
 
   constructor(components: Components, fragments: FragmentManager) {
     super();
@@ -78,7 +81,7 @@ export class FragmentHighlighter
     }
   }
 
-  highlight(name: string, removePrevious = true) {
+  highlight(name: string, removePrevious = true, zoomToSelection = false) {
     if (!this.enabled) return null;
     this.checkSelection(name);
 
@@ -136,13 +139,18 @@ export class FragmentHighlighter
       }
     }
 
+    if (zoomToSelection) {
+      this.zoomSelection(name);
+    }
+
     return { id: itemID, fragments };
   }
 
   highlightByID(
     name: string,
-    ids: { [fragmentID: string]: Set<string> | string[] },
-    removePrevious = true
+    ids: FragmentIdMap,
+    removePrevious = true,
+    zoomToSelection = false
   ) {
     if (!this.enabled) return;
     if (removePrevious) {
@@ -165,6 +173,10 @@ export class FragmentHighlighter
       }
       this.updateFragmentHighlight(name, fragID);
     }
+
+    if (zoomToSelection) {
+      this.zoomSelection(name);
+    }
   }
 
   /**
@@ -175,6 +187,25 @@ export class FragmentHighlighter
     for (const name of names) {
       this.clearStyle(name);
     }
+  }
+
+  private zoomSelection(name: string) {
+    this._bbox.reset();
+    const higlight = this.selection[name];
+    if (!Object.keys(higlight).length) {
+      return;
+    }
+    for (const fragID in higlight) {
+      const fragment = this._fragments.list[fragID];
+      const highlight = fragment.fragments[name];
+      if (highlight) {
+        this._bbox.addFragment(highlight);
+      }
+    }
+    const sphere = this._bbox.getSphere();
+    sphere.radius *= this.zoomFactor;
+    const camera = this._components.camera as SimpleCamera;
+    camera.controls.fitToSphere(sphere, true);
   }
 
   private addComposites(mesh: FragmentMesh, itemID: number, name: string) {
