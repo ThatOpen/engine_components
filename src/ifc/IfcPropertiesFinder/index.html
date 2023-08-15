@@ -74,8 +74,10 @@
 
     // Quick setup for element hovering and selection
     const highlighter = new OBC.FragmentHighlighter(components, fragments);
-    const selectionHandler = new OBC.SelectionHandler(components, highlighter);
-    selectionHandler.zoomToSelection = true;
+    highlighter.setup();
+
+    components.renderer.postproduction.customEffects.outlineEnabled = true;
+    highlighter.outlinesEnabled = true;
 
     // New instance of Properties Finder
     // Best way to describe the component is to find "Relations of entities meeting a set of attributes criteria"

@@ -57,7 +57,7 @@
     ambientLight.intensity = 0.5;
     scene.add(ambientLight);
 
-    const grid = new OBC.SimpleGrid(components);
+    const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
     components.tools.add('grid', grid);
     const gridMesh = grid.get();
     const effects = components.renderer.postproduction.customEffects;
@@ -114,6 +114,9 @@
     fragments.load(buffer);
     highlighter.update();
 
+    components.renderer.postproduction.customEffects.outlineEnabled = true;
+    highlighter.outlinesEnabled = true;
+
     /*MD
 
     ### 🎨 Changing Highlight Appearance
@@ -130,11 +133,14 @@
      */
 
     const highlightMaterial = new THREE.MeshBasicMaterial({
-        color: 'red',
+        color: '#BCF124',
         depthTest: false,
+        opacity: 0.8,
+        transparent: true
     });
 
     highlighter.add('default', highlightMaterial);
+    highlighter.outlineMaterial.color.set(0xf0ff7a);
 
     /*MD
 
@@ -165,7 +171,7 @@
     To highlight the selection based upon the material you had created, you must pass the `Highlighter Name`.
 
      */
-    function highlightOnClick() {
+    function highlightOnClick(event) {
         const result = highlighter.highlight('default', singleSelection.value);
         if (result) {
             lastSelection = {};
@@ -176,7 +182,7 @@
         }
     }
 
-    container.addEventListener('click', () => highlightOnClick());
+    container.addEventListener('click', (event) => highlightOnClick(event));
 
     /*MD
 
@@ -224,6 +230,12 @@
     gui.add(commands, 'highlight');
     gui.add(commands, 'highlightOnID').name('Select last selection');
     gui.add(singleSelection, 'value').name('Single selection');
+    gui.add(highlighter, 'zoomToSelection').name("Zoom to selection");
+    gui.add(highlighter, 'fillEnabled').name("Fill enabled");
+    gui.add(highlighter, 'outlineEnabled').name("Outline enabled");
+    gui.addColor(highlightMaterial, 'color').name("Fill color");
+    gui.addColor(highlighter.outlineMaterial, 'color').name("Outline color");
+    gui.add(highlighter.outlineMaterial, 'opacity').name('Outline width').min(0.3).max(1).step(0.05);
 
 </script>
 </body>

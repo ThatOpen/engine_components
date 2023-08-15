@@ -38,11 +38,13 @@
     const components = new OBC.Components();
 
     components.scene = new OBC.SimpleScene(components);
-    components.renderer = new OBC.SimpleRenderer(components, container);
+    components.renderer = new OBC.PostproductionRenderer(components, container);
     components.camera = new OBC.SimpleCamera(components);
     components.raycaster = new OBC.SimpleRaycaster(components);
 
     components.init();
+
+    components.renderer.postproduction.enabled = true;
 
     const scene = components.scene.get();
 
@@ -57,17 +59,19 @@
     ambientLight.intensity = 0.5;
     scene.add(ambientLight);
 
-    const grid = new OBC.SimpleGrid(components);
+    const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
     components.tools.add("grid", grid);
+    components.renderer.postproduction.customEffects.excludedMeshes.push(grid.get());
 
     const fragments = new OBC.FragmentManager(components);
     const classifier = new OBC.FragmentClassifier(fragments);
 
     //#region Setup elements highlight
     const highlighter = new OBC.FragmentHighlighter(components, fragments);
-    highlighter.enabled = true;
-    highlighter.add('select', [new THREE.MeshLambertMaterial({color: 'gold'})]);
-    highlighter.add('hover', [new THREE.MeshLambertMaterial({color: 'gold', transparent: true, opacity: 0.3})]);
+    highlighter.setup();
+
+    components.renderer.postproduction.customEffects.outlineEnabled = true;
+    highlighter.outlinesEnabled = true;
 
     const file = await fetch("../../../resources/small.frag");
     const data = await file.arrayBuffer();

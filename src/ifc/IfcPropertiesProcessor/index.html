@@ -73,7 +73,10 @@
 
     // Quick setup for element hovering and selection
     const highlighter = new OBC.FragmentHighlighter(components, fragments);
-    const selectionHandler = new OBC.SelectionHandler(components, highlighter);
+    highlighter.setup();
+
+    components.renderer.postproduction.customEffects.outlineEnabled = true;
+    highlighter.outlinesEnabled = true;
 
     // New instance of Properties Processor
 	// The components aims to show IFC properties as natural as possible
