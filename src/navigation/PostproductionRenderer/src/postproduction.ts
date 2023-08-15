@@ -107,6 +107,18 @@ export class Postproduction {
   }
 
   setPasses(settings: PostproductionSettings) {
+    // This check can prevent some bugs
+    let settingsChanged = false;
+    for (const name in settings) {
+      const key = name as keyof PostproductionSettings;
+      if (this.settings[key] !== settings[key]) {
+        settingsChanged = true;
+        break;
+      }
+    }
+    if (!settingsChanged) {
+      return;
+    }
     for (const name in settings) {
       const key = name as keyof PostproductionSettings;
       if (this._settings[key] !== undefined) {

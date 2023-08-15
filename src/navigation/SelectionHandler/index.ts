@@ -3,6 +3,8 @@ import { Component } from "../../base-types/component";
 import { Components } from "../../core/Components";
 import { FragmentHighlighter } from "../../fragments/FragmentHighlighter";
 import { FragmentIdMap } from "../../base-types";
+import { FragmentBoundingBox, FragmentManager } from "../../fragments";
+import { SimpleCamera } from "../../core";
 
 interface SelectionHandlerConfig {
   selectionName: string;
@@ -14,21 +16,29 @@ interface SelectionHandlerConfig {
 export class SelectionHandler extends Component<FragmentIdMap> {
   name: string = "SelectionHandler";
   enabled: boolean = true;
-  components: Components;
 
   highlightEnabled = true;
   selectEnabled = true;
   multiple: "none" | "shiftKey" | "ctrlKey" = "none";
+  zoomToSelection = false;
+  zoomFactor = 1.5;
 
+  private _components: Components;
+  private _fragments: FragmentManager;
   private _fragmentHighlighter: FragmentHighlighter;
   private _config: SelectionHandlerConfig;
+  private _bbox = new FragmentBoundingBox();
 
   constructor(
     components: Components,
+    fragments: FragmentManager,
     fragmentHighlighter: FragmentHighlighter,
     config?: Partial<SelectionHandlerConfig>
   ) {
     super();
+    this._components = components;
+    this._fragments = fragments;
+    this._fragmentHighlighter = fragmentHighlighter;
 
     this._config = {
       selectionName: config?.selectionName ?? "select",
@@ -52,13 +62,11 @@ export class SelectionHandler extends Component<FragmentIdMap> {
       ...config,
     };
 
-    this.components = components;
-    this._fragmentHighlighter = fragmentHighlighter;
     this.setup();
   }
 
   private get _viewerContainer() {
-    const renderer = this.components.renderer.get();
+    const renderer = this._components.renderer.get();
     return renderer.domElement.parentElement as HTMLElement;
   }
 
@@ -81,7 +89,7 @@ export class SelectionHandler extends Component<FragmentIdMap> {
     });
 
     this._viewerContainer.addEventListener("mouseup", (e) => {
-      if (e.target !== this.components.renderer.get().domElement) return;
+      if (e.target !== this._components.renderer.get().domElement) return;
       mouseDown = false;
       if (mouseMoved || e.button !== 0) {
         mouseMoved = false;
@@ -91,6 +99,10 @@ export class SelectionHandler extends Component<FragmentIdMap> {
       if (this.selectEnabled) {
         const mult = this.multiple === "none" ? true : !e[this.multiple];
         this._fragmentHighlighter.highlight(this._config.selectionName, mult);
+      }
+
+      if (this.zoomToSelection) {
+        this.zoomSelection();
       }
     });
 
@@ -107,6 +119,26 @@ export class SelectionHandler extends Component<FragmentIdMap> {
         this._fragmentHighlighter.highlight(this._config.highlightName);
       }
     });
+  }
+
+  private zoomSelection() {
+    this._bbox.reset();
+    const name = this._config.highlightName;
+    const higlight = this._fragmentHighlighter.selection[name];
+    if (!Object.keys(higlight).length) {
+      return;
+    }
+    for (const fragID in higlight) {
+      const fragment = this._fragments.list[fragID];
+      const highlight = fragment.fragments[name];
+      if (highlight) {
+        this._bbox.addFragment(highlight);
+      }
+    }
+    const sphere = this._bbox.getSphere();
+    sphere.radius *= this.zoomFactor;
+    const camera = this._components.camera as SimpleCamera;
+    camera.controls.fitToSphere(sphere, true);
   }
 
   get(): FragmentIdMap {

@@ -78,6 +78,7 @@ export class CustomEffectsPass extends Pass {
   }
 
   set glossEnabled(active: boolean) {
+    if (active === this._glossEnabled) return;
     this._glossEnabled = active;
     const material = this.fsQuad.material as THREE.ShaderMaterial;
     material.uniforms.glossEnabled.value = active ? 1 : 0;

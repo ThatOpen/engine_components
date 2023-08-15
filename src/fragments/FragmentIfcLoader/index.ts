@@ -91,6 +91,7 @@ export class FragmentIfcLoader
 
     this._fragments.groups.push(model);
     for (const fragment of model.items) {
+      fragment.group = model;
       this._fragments.list[fragment.id] = fragment;
       this._components.meshes.push(fragment.mesh);
     }

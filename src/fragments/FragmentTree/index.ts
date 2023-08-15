@@ -54,7 +54,7 @@ export class FragmentTree extends Component<FragmentTreeItem> implements UI {
     for (const name in systemGroups) {
       // name is N00, N01, N02...
       // { storeys: "N00" }, { storeys: "N01" }...
-      const filter = { ...result, [currentSystemName]: name };
+      const filter = { ...result, [currentSystemName]: [name] };
       const found = this._classifier.find(filter);
       const hasElements = Object.keys(found).length > 0;
       if (hasElements) {

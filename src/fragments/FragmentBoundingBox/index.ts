@@ -60,6 +60,17 @@ export class FragmentBoundingBox {
     return new THREE.Box3(min, max);
   }
 
+  getSphere() {
+    const min = this._absoluteMin.clone();
+    const max = this._absoluteMax.clone();
+    const dx = Math.abs((max.x - min.x) / 2);
+    const dy = Math.abs((max.y - min.y) / 2);
+    const dz = Math.abs((max.z - min.z) / 2);
+    const center = new THREE.Vector3(min.x + dx, min.y + dy, min.z + dz);
+    const radius = center.distanceTo(min);
+    return new THREE.Sphere(center, radius);
+  }
+
   getMesh() {
     const bbox = new THREE.Box3(this._absoluteMin, this._absoluteMax);
     const dimensions = FragmentBoundingBox.getDimensions(bbox);
@@ -71,8 +82,8 @@ export class FragmentBoundingBox {
   }
 
   reset() {
-    this._absoluteMin = FragmentBoundingBox.newBound(false);
-    this._absoluteMax = FragmentBoundingBox.newBound(true);
+    this._absoluteMin = FragmentBoundingBox.newBound(true);
+    this._absoluteMax = FragmentBoundingBox.newBound(false);
   }
 
   add(group: FragmentsGroup) {
@@ -96,9 +107,18 @@ export class FragmentBoundingBox {
       if (min.x < this._absoluteMin.x) this._absoluteMin.x = min.x;
       if (min.y < this._absoluteMin.y) this._absoluteMin.y = min.y;
       if (min.z < this._absoluteMin.z) this._absoluteMin.z = min.z;
+
+      if (min.x > this._absoluteMax.x) this._absoluteMax.x = min.x;
+      if (min.y > this._absoluteMax.y) this._absoluteMax.y = min.y;
+      if (min.z > this._absoluteMax.z) this._absoluteMax.z = min.z;
+
       if (max.x > this._absoluteMax.x) this._absoluteMax.x = max.x;
       if (max.y > this._absoluteMax.y) this._absoluteMax.y = max.y;
       if (max.z > this._absoluteMax.z) this._absoluteMax.z = max.z;
+
+      if (max.x < this._absoluteMin.x) this._absoluteMin.x = max.x;
+      if (max.y < this._absoluteMin.y) this._absoluteMin.y = max.y;
+      if (max.z < this._absoluteMin.z) this._absoluteMin.z = max.z;
     }
   }
 
