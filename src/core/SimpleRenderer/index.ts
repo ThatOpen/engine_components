@@ -34,12 +34,16 @@ export class SimpleRenderer
   protected _renderer2D = new CSS2DRenderer();
   protected _renderer: THREE.WebGLRenderer;
 
-  constructor(public components: Components, public container: HTMLElement, parameters?: Partial<THREE.WebGLRendererParameters>) {
+  constructor(
+    public components: Components,
+    public container: HTMLElement,
+    parameters?: Partial<THREE.WebGLRendererParameters>
+  ) {
     super();
     this._renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
-      ...parameters
+      ...parameters,
     });
 
     this._renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -69,6 +73,7 @@ export class SimpleRenderer
     this.enabled = false;
     this._renderer.domElement.remove();
     this._renderer.dispose();
+    this._renderer2D.domElement.remove();
     this.afterUpdate.reset();
     this.beforeUpdate.reset();
   }

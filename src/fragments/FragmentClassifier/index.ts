@@ -1,5 +1,5 @@
 import { FragmentsGroup } from "bim-fragment";
-import { Disposable } from "../../base-types";
+import { Disposable, FragmentIdMap } from "../../base-types";
 import { Component } from "../../base-types/component";
 import { FragmentManager } from "../FragmentManager";
 import { IfcCategoryMap } from "../../ifc";
@@ -53,13 +53,13 @@ export class FragmentClassifier
 
   find(filter?: { [name: string]: string[] }) {
     if (!filter) {
-      const result: { [p: string]: string[] } = {};
+      const result: FragmentIdMap = {};
       const fragments = this._fragments.list;
       for (const id in fragments) {
         const fragment = fragments[id];
         const items = fragment.items;
         const hidden = Object.keys(fragment.hiddenInstances);
-        result[id] = [...items, ...hidden];
+        result[id] = new Set(...items, ...hidden);
       }
       return result;
     }
@@ -89,23 +89,23 @@ export class FragmentClassifier
         }
       }
     }
-    const result: { [fragmentGuid: string]: string[] } = {};
+    const result: FragmentIdMap = {};
     for (const guid in models) {
       const model = models[guid];
       for (const id in model) {
         const numberOfMatches = model[id];
         if (numberOfMatches === size) {
           if (!result[guid]) {
-            result[guid] = [];
+            result[guid] = new Set();
           }
-          result[guid].push(id);
+          result[guid].add(id);
           const fragment = this._fragments.list[guid];
           const composites = fragment.composites[id];
           if (composites) {
             const idNum = parseInt(id, 10);
             for (let i = 1; i < composites; i++) {
               const compositeID = toCompositeID(idNum, i);
-              result[guid].push(compositeID);
+              result[guid].add(compositeID);
             }
           }
         }

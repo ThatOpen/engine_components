@@ -1,4 +1,4 @@
-import { Component, UI, Event } from "../../../base-types";
+import { Component, UI, Event, FragmentIdMap } from "../../../base-types";
 import { TreeView } from "../../../ui/TreeView";
 import { Components } from "../../../core";
 import { FragmentClassifier } from "../../FragmentClassifier";
@@ -17,8 +17,8 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
   components: Components;
   uiElement: { main: Button; tree: TreeView };
 
-  selected = new Event<{ [name: string]: string[] }>();
-  hovered = new Event<{ [name: string]: string[] }>();
+  selected = new Event<FragmentIdMap>();
+  hovered = new Event<FragmentIdMap>();
 
   private _children: FragmentTreeItem[] = [];
 
