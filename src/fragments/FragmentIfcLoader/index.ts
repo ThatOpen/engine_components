@@ -87,6 +87,15 @@ export class FragmentIfcLoader
       this.locationsSaved.trigger(this._geometry.locations);
     }
 
+    if (this.settings.coordinate) {
+      const isFirstModel = this._fragments.groups.length === 0;
+      if (isFirstModel) {
+        this._fragments.baseCoordinationModel = model.uuid;
+      } else {
+        this._fragments.coordinate([model]);
+      }
+    }
+
     this.cleanUp();
 
     this._fragments.groups.push(model);
@@ -118,11 +127,12 @@ export class FragmentIfcLoader
       const file = fileOpener.files[0];
       const buffer = await file.arrayBuffer();
       const data = new Uint8Array(buffer);
-      const result = await this.load(data, file.name);
+      const model = await this.load(data, file.name);
       const scene = this._components.scene.get();
-      scene.add(result);
+      scene.add(model);
       this._toast.visible = true;
-      button.onClicked.trigger(result);
+      button.onClicked.trigger(model);
+      this._fragments.updateWindow();
     };
 
     button.onclick = () => fileOpener.click();

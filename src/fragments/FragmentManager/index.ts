@@ -23,6 +23,8 @@ export class FragmentManager
 
   groups: FragmentsGroup[] = [];
 
+  baseCoordinationModel = "";
+
   onFragmentsLoaded: Event<FragmentsGroup> = new Event();
 
   uiElement: {
@@ -143,7 +145,7 @@ export class FragmentManager
     return this._loader.export(group);
   }
 
-  private updateWindow() {
+  updateWindow() {
     for (const card of this._cards) {
       card.dispose();
     }
@@ -168,6 +170,29 @@ export class FragmentManager
       commandsButton.tooltip = "Delete model";
       toolbar.addChild(commandsButton);
       commandsButton.onclick = () => this.disposeGroup(group);
+    }
+  }
+
+  coordinate(models = this.groups) {
+    const baseModel = this.groups.find(
+      (group) => group.uuid === this.baseCoordinationModel
+    );
+
+    if (!baseModel) {
+      console.log("No base model found for coordination!");
+      return;
+    }
+
+    for (const model of models) {
+      if (model === baseModel) {
+        continue;
+      }
+      model.position.set(0, 0, 0);
+      model.rotation.set(0, 0, 0);
+      model.scale.set(1, 1, 1);
+      model.updateMatrix();
+      model.applyMatrix4(model.coordinationMatrix.clone().invert());
+      model.applyMatrix4(baseModel.coordinationMatrix);
     }
   }
 

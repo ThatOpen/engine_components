@@ -28,11 +28,22 @@ export class Units {
 
   private getLengthUnits(webIfc: WEBIFC.IfcAPI) {
     try {
-      const allUnits = webIfc.GetLineIDsWithType(0, WEBIFC.IFCUNITASSIGNMENT);
-      const units = allUnits.get(0);
-      const unitsProps = webIfc.GetLine(0, units);
-      const lengthUnitsID = unitsProps.Units[0].value;
-      return webIfc.GetLine(0, lengthUnitsID);
+      const allUnitsAssigns = webIfc.GetLineIDsWithType(
+        0,
+        WEBIFC.IFCUNITASSIGNMENT
+      );
+      const unitsAssign = allUnitsAssigns.get(0);
+      const unitsAssignProps = webIfc.GetLine(0, unitsAssign);
+      for (const units of unitsAssignProps.Units) {
+        if (!units || units.value === null || units.value === undefined) {
+          continue;
+        }
+        const unitsProps = webIfc.GetLine(0, units.value);
+        if (unitsProps.UnitType && unitsProps.UnitType.value === "LENGTHUNIT") {
+          return unitsProps;
+        }
+      }
+      return null;
     } catch (e) {
       console.log("Could not get units");
       return null;

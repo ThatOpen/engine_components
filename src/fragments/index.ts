@@ -5,7 +5,6 @@ export * from "./FragmentTree";
 export * from "./FragmentClassifier";
 export * from "./FragmentHider";
 export * from "./FragmentCacher";
-export * from "./FragmentCoordinator";
 export * from "./FragmentExploder";
 export * from "./FragmentPlans";
 export * from "./FragmentBoundingBox";
