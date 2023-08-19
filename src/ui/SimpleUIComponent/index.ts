@@ -115,6 +115,10 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   }
 
   dispose(onlyChildren = false) {
+    for (const slotName in this.slots) {
+      const slot = this.slots[slotName];
+      slot.dispose();
+    }
     this.children.forEach((child) => {
       child.dispose();
       this.removeChild(child);

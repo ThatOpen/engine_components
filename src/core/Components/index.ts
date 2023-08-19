@@ -131,7 +131,7 @@ export class Components {
   init() {
     this._enabled = true;
     this._clock.start();
-    this.ui.setup();
+    this.ui.init();
     this.update();
     this.onInitialized.trigger(this);
   }
@@ -154,6 +154,7 @@ export class Components {
   dispose() {
     this._enabled = false;
     this.tools.dispose();
+    this.ui.dispose();
     if (this.renderer.isDisposeable()) this.renderer.dispose();
     if (this.scene.isDisposeable()) this.scene.dispose();
     if (this.camera.isDisposeable()) this.camera.dispose();
