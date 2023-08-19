@@ -1,8 +1,8 @@
-import { Components } from "../../core";
-import { Component } from "../../base-types";
 import * as THREE from "three";
 import CameraControls from "camera-controls";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { Component } from "../../base-types";
+import { Components } from "../../core";
 
 export class TestCamera extends Component<
   THREE.PerspectiveCamera | THREE.OrthographicCamera

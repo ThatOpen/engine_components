@@ -52,6 +52,7 @@ export class TreeView extends SimpleUIComponent<HTMLDivElement> {
     }
   }
 
+  // TODO: Unify all events so that they are of type Event
   set onclick(listener: (e?: MouseEvent) => void) {
     this.domElement.onclick = (e) => {
       e.stopImmediatePropagation();
@@ -118,6 +119,14 @@ export class TreeView extends SimpleUIComponent<HTMLDivElement> {
 
     this.title = title ?? null;
     this.collapse();
+  }
+
+  dispose(onlyChildren: boolean = false) {
+    super.dispose(onlyChildren);
+    if (!onlyChildren) {
+      this.onExpand.reset();
+      this.onCollapse.reset();
+    }
   }
 
   toggle(deep = false) {

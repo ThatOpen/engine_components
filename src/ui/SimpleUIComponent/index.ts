@@ -1,11 +1,5 @@
-import {
-  Hideable,
-  // UIComponent,
-  Event,
-  Disposable,
-} from "../../base-types/base-types";
-import { Component } from "../../base-types/component";
-import { Components } from "../../core/Components";
+import { Component, Disposable, Event, Hideable } from "../../base-types";
+import { Components } from "../../core";
 import { tooeenRandomId } from "../../utils";
 
 export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
@@ -13,9 +7,12 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   implements Hideable, Disposable
 {
   name: string = "SimpleUIComponent";
-  domElement: T;
-  children: SimpleUIComponent[] = [];
+
   id: string;
+
+  // TODO: Remove children and leave only slots?
+  children: SimpleUIComponent[] = [];
+
   data: Record<string, any> = {};
 
   // Slots are other UIComponents that inherits all the logic from SimpleUIComponent
@@ -31,11 +28,26 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   readonly onEnabled = new Event();
   readonly onDisabled = new Event();
 
+  protected _domElement?: T;
   protected _components: Components;
   protected _parent: SimpleUIComponent<HTMLElement> | null = null;
   protected _enabled: boolean = true;
   protected _visible: boolean = true;
   protected _active: boolean = false;
+
+  get domElement() {
+    if (!this._domElement) {
+      throw new Error("Dom element not initialized!");
+    }
+    return this._domElement;
+  }
+
+  set domElement(ele: T) {
+    if (this._domElement) {
+      this._domElement.remove();
+    }
+    this._domElement = ele;
+  }
 
   set parent(value: SimpleUIComponent<HTMLElement> | null) {
     this._parent = value;
@@ -66,7 +78,6 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
       this.domElement.classList.add("hidden");
       this.onHidden.trigger(this.get());
     }
-    // this.onVisibilityChanged.trigger(value);
   }
 
   get enabled() {
@@ -89,20 +100,18 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
 
   private set template(value: string) {
     const regex = /id="([^"]+)"/g;
-    const template = value.replace(regex, `id="$1-${this.id}"`);
-    this.domElement.innerHTML = template;
-    const el = this.domElement.firstElementChild as HTMLElement;
-    el.id = this.id;
-    // @ts-ignore
-    this.domElement = el;
+    const temp = document.createElement("div");
+    temp.innerHTML = value.replace(regex, `id="$1-${this.id}"`);
+    const newElement = temp.firstElementChild as T;
+    newElement.id = this.id;
+    this.domElement = newElement;
+    temp.remove();
   }
 
   constructor(components: Components, template?: string, id?: string) {
     super();
     this._components = components;
     this.id = id ?? tooeenRandomId();
-    // @ts-ignore
-    this.domElement = document.createElement("div");
     this.template = template ?? "<div></div>";
   }
 
@@ -115,15 +124,28 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   }
 
   dispose(onlyChildren = false) {
-    for (const slotName in this.slots) {
-      const slot = this.slots[slotName];
+    for (const name in this.slots) {
+      const slot = this.slots[name];
       slot.dispose();
     }
-    this.children.forEach((child) => {
+    for (const child of this.children) {
       child.dispose();
       this.removeChild(child);
-    });
-    if (!onlyChildren) this.domElement.remove();
+    }
+    if (!onlyChildren) {
+      if (this._domElement) {
+        this._domElement.remove();
+      }
+      this.onVisible.reset();
+      this.onHidden.reset();
+      this.onEnabled.reset();
+      this.onDisabled.reset();
+      this.innerElements = {};
+      this.children = [];
+      this.slots = {};
+      (this.parent as any) = null;
+      (this._components as any) = null;
+    }
   }
 
   addChild(...items: SimpleUIComponent[]) {

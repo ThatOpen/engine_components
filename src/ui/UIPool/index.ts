@@ -22,20 +22,16 @@ export class UIPool<T extends SimpleUIComponent> extends Component<T> {
   }
 
   return(element: T) {
-    // @ts-ignore
-    element.parent?.removeChild(element);
+    if (element.parent) {
+      element.parent.removeChild(element);
+    }
     this.list.push(element);
-    console.log("Pool element returned");
   }
 
   get() {
     if (this.list.length > 0) {
-      const existingUI = this.list.pop()!;
-      console.log("Pool element taken");
-      return existingUI;
+      return this.list.pop()!;
     }
-    const newUI = new this._uiClass(this._components);
-    console.log("Pool element created");
-    return newUI;
+    return new this._uiClass(this._components);
   }
 }

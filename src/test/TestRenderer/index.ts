@@ -2,9 +2,9 @@ import * as THREE from "three";
 // @ts-ignore
 import createContext from "gl";
 import { createCanvas } from "canvas";
-import { BaseRenderer, Disposable } from "../../base-types";
 import { WebGLRenderer } from "three";
 import { WebGLRendererParameters } from "three/src/renderers/WebGLRenderer";
+import { BaseRenderer, Disposable } from "../../base-types";
 
 export class TestRenderer extends BaseRenderer implements Disposable {
   name = "TestRenderer";

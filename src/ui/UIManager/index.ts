@@ -1,5 +1,5 @@
 import { createPopper, Instance } from "@popperjs/core";
-import { Component } from "../../base-types/component";
+import { Component, Disposable } from "../../base-types";
 import { Toolbar } from "../ToolbarComponent";
 import { Components } from "../../core";
 import { SimpleUIComponent } from "../SimpleUIComponent";
@@ -17,7 +17,7 @@ type mouseEvents = "mouseup" | "mousedown" | "mousemove" | "contextmenu";
 /**
  * A component that handles all UI components.
  */
-export class UIManager extends Component<Toolbar[]> {
+export class UIManager extends Component<Toolbar[]> implements Disposable {
   name: string = "UIManager";
   enabled: boolean = true;
   toolbars: Toolbar[] = [];
@@ -132,10 +132,12 @@ export class UIManager extends Component<Toolbar[]> {
     for (const child of this.children) {
       child.dispose();
     }
+    this._popperInstance.destroy();
     this.children = [];
     this.contextMenu.dispose();
     this._containers = {};
     this._contextMenuContainer.remove();
+    (this._popperInstance as any) = null;
     (this._components as any) = null;
     (this.contextMenu as any) = null;
     (this._contextMenuContainer as any) = null;
