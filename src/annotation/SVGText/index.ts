@@ -1,18 +1,20 @@
 import { Vector2 } from "three";
-import { Component, SVGAnnotationStyle } from "../../base-types";
+import { Component, Disposable, SVGAnnotationStyle } from "../../base-types";
 import { Components } from "../../core";
 import { tooeenRandomId } from "../../utils";
 
-export class SVGText extends Component<SVGTextElement> {
+export class SVGText extends Component<SVGTextElement> implements Disposable {
   id = tooeenRandomId();
   name: string = "SVGRectangle";
   enabled: boolean = true;
+
   private _components: Components;
+  private _startPoint: Vector2 = new Vector2();
+
   private _text = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "text"
   );
-  private _startPoint: Vector2 = new Vector2();
 
   constructor(components: Components, text?: string, startPoint?: Vector2) {
     super();
@@ -22,6 +24,10 @@ export class SVGText extends Component<SVGTextElement> {
     this.text = text ?? "";
     this.startPoint = startPoint ?? this.startPoint;
     this._text.id = this.id;
+  }
+
+  dispose() {
+    this._text.remove();
   }
 
   setStyle(style?: Partial<SVGAnnotationStyle>) {

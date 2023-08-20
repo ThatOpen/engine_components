@@ -1,20 +1,25 @@
 import { Vector2 } from "three";
-import { Component, SVGAnnotationStyle } from "../../base-types";
+import { Component, Disposable, SVGAnnotationStyle } from "../../base-types";
 import { Components } from "../../core";
 import { tooeenRandomId } from "../../utils";
 
-export class SVGRectangle extends Component<SVGRectElement> {
+export class SVGRectangle
+  extends Component<SVGRectElement>
+  implements Disposable
+{
   id = tooeenRandomId();
   name: string = "SVGRectangle";
   enabled: boolean = true;
+
   private _components: Components;
+  private _startPoint: Vector2 = new Vector2();
+  private _endPoint: Vector2 = new Vector2();
+  private _dimensions: Vector2 = new Vector2();
+
   private _rect = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "rect"
   );
-  private _startPoint: Vector2 = new Vector2();
-  private _endPoint: Vector2 = new Vector2();
-  private _dimensions: Vector2 = new Vector2();
 
   constructor(
     components: Components,
@@ -28,6 +33,11 @@ export class SVGRectangle extends Component<SVGRectElement> {
     this._rect.setAttribute("rx", "5");
     this._rect.id = this.id;
     this.setStyle();
+  }
+
+  dispose() {
+    this._rect.remove();
+    (this._components as any) = null;
   }
 
   setStyle(style?: Partial<SVGAnnotationStyle>) {

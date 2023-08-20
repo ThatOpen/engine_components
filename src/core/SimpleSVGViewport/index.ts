@@ -43,6 +43,14 @@ export class SimpleSVGViewport extends Component<SVGElement> {
     }
   }
 
+  set config(value: Partial<SVGViewportConfig>) {
+    this._config = { ...this._config, ...value };
+  }
+
+  get config() {
+    return this._config;
+  }
+
   constructor(components: Components, config?: SVGViewportConfig) {
     super();
     this._components = components;
@@ -52,6 +60,7 @@ export class SimpleSVGViewport extends Component<SVGElement> {
       strokeColor: "#ff0000",
       strokeWidth: 4,
     };
+
     this.config = { ...defaultConfig, ...(config ?? {}) };
 
     this._viewport.classList.add("absolute", "top-0", "right-0");
@@ -65,19 +74,64 @@ export class SimpleSVGViewport extends Component<SVGElement> {
     // this._viewport.setAttribute("viewBox", `0 0 ${width} ${height}`);
     this.setUI();
     this.enabled = false;
-    const viewerContainer = components.renderer.get().domElement
-      .parentElement as HTMLElement;
-    viewerContainer.append(this._viewport);
-    window.addEventListener("resize", () => this.resize());
+
+    this._components.ui.viewerContainer.append(this._viewport);
+    this.setupEvents(true);
   }
 
-  set config(value: Partial<SVGViewportConfig>) {
-    this._config = { ...this._config, ...value };
+  dispose() {
+    this._undoList = [];
+    this.uiElement.toolbar.dispose();
+    this.uiElement.settingsWindow.dispose();
+    (this._components as any) = null;
   }
 
-  get config() {
-    return this._config;
+  get(): SVGElement {
+    return this._viewport;
   }
+
+  clear() {
+    const viewport = this.get();
+    this._undoList = [];
+    while (viewport.firstChild) {
+      viewport.removeChild(viewport.firstChild);
+    }
+  }
+
+  getDrawing() {
+    return this.get().childNodes;
+  }
+
+  //   setDrawing() {
+  //         if (!this.enabled) {  }
+  //     }
+
+  /** {@link Resizeable.resize}. */
+  resize() {
+    const renderer = this._components.renderer;
+    const rendererSize = renderer.getSize();
+    const width = this.enabled ? rendererSize.x : 0;
+    const height = this.enabled ? rendererSize.y : 0;
+    this._size.set(width, height);
+    // this._viewport.setAttribute("viewBox", `0 0 ${this._size.x} ${this._size.y}`);
+  }
+
+  /** {@link Resizeable.getSize}. */
+  getSize() {
+    return this._size;
+  }
+
+  private setupEvents(active: boolean) {
+    if (active) {
+      window.addEventListener("resize", this.onResize);
+    } else {
+      window.removeEventListener("resize", this.onResize);
+    }
+  }
+
+  private onResize = () => {
+    this.resize();
+  };
 
   private setUI() {
     const undoDrawingBtn = new Button(this._components, {
@@ -159,47 +213,14 @@ export class SimpleSVGViewport extends Component<SVGElement> {
     settingsWindow.onHidden.on(() => (settingsBtn.active = false));
 
     const toolbar = new Toolbar(this._components, { position: "right" });
+
     toolbar.addChild(
       settingsBtn,
       undoDrawingBtn,
       redoDrawingBtn,
       clearDrawingBtn
     );
+
     this.uiElement = { toolbar, settingsWindow };
-  }
-
-  get(): SVGElement {
-    return this._viewport;
-  }
-
-  clear() {
-    const viewport = this.get();
-    this._undoList = [];
-    while (viewport.firstChild) {
-      viewport.removeChild(viewport.firstChild);
-    }
-  }
-
-  getDrawing() {
-    return this.get().childNodes;
-  }
-
-  //   setDrawing() {
-  //         if (!this.enabled) {  }
-  //     }
-
-  /** {@link Resizeable.resize}. */
-  resize() {
-    const renderer = this._components.renderer;
-    const rendererSize = renderer.getSize();
-    const width = this.enabled ? rendererSize.x : 0;
-    const height = this.enabled ? rendererSize.y : 0;
-    this._size.set(width, height);
-    // this._viewport.setAttribute("viewBox", `0 0 ${this._size.x} ${this._size.y}`);
-  }
-
-  /** {@link Resizeable.getSize}. */
-  getSize() {
-    return this._size;
   }
 }

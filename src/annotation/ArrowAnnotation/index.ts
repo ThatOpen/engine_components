@@ -8,6 +8,7 @@ export class ArrowAnnotation extends BaseSVGAnnotation {
   name: string = "ArrowAnnotation";
   canvas: HTMLCanvasElement | null = null;
   uiElement: { main: Button };
+
   private _previewElement: SVGArrow;
 
   constructor(components: Components, drawManager?: DrawManager) {
@@ -27,26 +28,31 @@ export class ArrowAnnotation extends BaseSVGAnnotation {
     };
   }
 
-  cancel() {
+  dispose() {
+    super.dispose();
+    this._previewElement.dispose();
+  }
+
+  cancel = () => {
     if (!this._isDrawing) {
       return;
     }
     this._isDrawing = false;
     this._previewElement.reset();
     this._previewElement.get().remove();
-  }
+  };
 
-  start(e: MouseEvent) {
+  start = (event: MouseEvent) => {
     if (!this.canDraw) {
       return undefined;
     }
     if (!this._isDrawing) {
       this._isDrawing = true;
       this._previewElement.setStyle(this.drawManager?.viewport.config);
-      this._previewElement.x1 = e.clientX;
-      this._previewElement.y1 = e.clientY;
-      this._previewElement.x2 = e.clientX;
-      this._previewElement.y2 = e.clientY;
+      this._previewElement.x1 = event.clientX;
+      this._previewElement.y1 = event.clientY;
+      this._previewElement.x2 = event.clientX;
+      this._previewElement.y2 = event.clientY;
       this.svgViewport?.append(this._previewElement.get());
     } else {
       const arrow = this._previewElement.clone();
@@ -56,13 +62,13 @@ export class ArrowAnnotation extends BaseSVGAnnotation {
       return arrow;
     }
     return undefined;
-  }
+  };
 
-  draw(e: MouseEvent) {
+  draw = (e: MouseEvent) => {
     if (!this.canDraw || !this._isDrawing) {
       return;
     }
     this._previewElement.x1 = e.clientX;
     this._previewElement.y1 = e.clientY;
-  }
+  };
 }

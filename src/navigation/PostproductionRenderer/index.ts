@@ -13,6 +13,7 @@ export class PostproductionRenderer extends SimpleRenderer {
     super(components, container);
     this.postproduction = new Postproduction(components, this._renderer);
     this.setPostproductionSize();
+    this.resized.on(() => this.resizePostproduction);
   }
 
   /** {@link Updateable.update} */
@@ -37,8 +38,7 @@ export class PostproductionRenderer extends SimpleRenderer {
   }
 
   /** {@link Resizeable.resize}. */
-  resize() {
-    super.resize();
+  private resizePostproduction() {
     if (this.postproduction) {
       this.setPostproductionSize();
     }

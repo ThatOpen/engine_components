@@ -9,6 +9,7 @@ export class RectangleAnnotation extends BaseSVGAnnotation {
   name: string = "RectangleAnnotation";
   canvas: HTMLCanvasElement | null = null;
   uiElement: { main: Button };
+
   private _previewElement: SVGRectangle;
   private _startPoint: Vector2 = new Vector2();
 
@@ -29,7 +30,12 @@ export class RectangleAnnotation extends BaseSVGAnnotation {
     };
   }
 
-  start(e: MouseEvent) {
+  dispose() {
+    super.dispose();
+    this._previewElement.dispose();
+  }
+
+  start = (e: MouseEvent) => {
     if (!this.canDraw) {
       return undefined;
     }
@@ -46,9 +52,9 @@ export class RectangleAnnotation extends BaseSVGAnnotation {
       return rectangle;
     }
     return undefined;
-  }
+  };
 
-  cancel() {
+  cancel = () => {
     if (!this._isDrawing) {
       return;
     }
@@ -57,9 +63,9 @@ export class RectangleAnnotation extends BaseSVGAnnotation {
     this._startPoint.y = 0;
     this._previewElement.reset();
     this._previewElement.get().remove();
-  }
+  };
 
-  draw(e: MouseEvent) {
+  draw = (e: MouseEvent) => {
     if (!this.canDraw || !this._isDrawing) {
       return;
     }
@@ -67,5 +73,5 @@ export class RectangleAnnotation extends BaseSVGAnnotation {
     this._previewElement.y1 = this._startPoint.y;
     this._previewElement.x2 = e.clientX;
     this._previewElement.y2 = e.clientY;
-  }
+  };
 }

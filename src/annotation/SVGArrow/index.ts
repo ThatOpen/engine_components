@@ -1,29 +1,35 @@
 import { Vector2 } from "three";
-import { Component, SVGAnnotationStyle } from "../../base-types";
+import { Component, Disposable, SVGAnnotationStyle } from "../../base-types";
 import { Components } from "../../core";
 import { tooeenRandomId } from "../../utils";
 
-export class SVGArrow extends Component<SVGGElement> {
+export class SVGArrow extends Component<SVGGElement> implements Disposable {
   name: string = "SVGRectangle";
   enabled: boolean = true;
   id: string = tooeenRandomId();
+
   private _components: Components;
+
   private _line = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "line"
   );
+
   private _polygon = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "polygon"
   );
+
   private _marker = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "marker"
   );
+
   private _arrow: SVGGElement = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "g"
   );
+
   private _startPoint: Vector2 = new Vector2();
   private _endPoint: Vector2 = new Vector2();
 
@@ -54,6 +60,14 @@ export class SVGArrow extends Component<SVGGElement> {
     this.endPoint = endPoint ?? this.endPoint;
     this._arrow.id = this.id;
     this.setStyle();
+  }
+
+  dispose() {
+    this._arrow.remove();
+    this._marker.remove();
+    this._polygon.remove();
+    this._line.remove();
+    (this._components as any) = null;
   }
 
   setStyle(style?: Partial<SVGAnnotationStyle>) {

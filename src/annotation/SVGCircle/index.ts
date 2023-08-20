@@ -1,17 +1,23 @@
 import { Vector2 } from "three";
-import { Component, SVGAnnotationStyle } from "../../base-types";
+import { Component, Disposable, SVGAnnotationStyle } from "../../base-types";
 import { Components } from "../../core";
 import { tooeenRandomId } from "../../utils";
 
-export class SVGCircle extends Component<SVGCircleElement> {
+export class SVGCircle
+  extends Component<SVGCircleElement>
+  implements Disposable
+{
   id = tooeenRandomId();
   name: string = "SVGRectangle";
   enabled: boolean = true;
+
   private _components: Components;
+
   private _circle = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "circle"
   );
+
   private _centerPoint: Vector2 = new Vector2();
   private _radius: number = 20;
 
@@ -22,6 +28,11 @@ export class SVGCircle extends Component<SVGCircleElement> {
     this.radius = radius ?? this.radius;
     this._circle.id = this.id;
     this.setStyle();
+  }
+
+  dispose() {
+    this._circle.remove();
+    (this._components as any) = null;
   }
 
   setStyle(style?: Partial<SVGAnnotationStyle>) {

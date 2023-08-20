@@ -9,6 +9,7 @@ export class CircleAnnotation extends BaseSVGAnnotation {
   name: string = "CircleAnnotation";
   canvas: HTMLCanvasElement | null = null;
   uiElement: { main: Button };
+
   private _previewElement: SVGCircle;
   private _cursorPosition: Vector2 = new Vector2();
 
@@ -29,7 +30,12 @@ export class CircleAnnotation extends BaseSVGAnnotation {
     };
   }
 
-  start(e: MouseEvent) {
+  dispose() {
+    super.dispose();
+    this._previewElement.dispose();
+  }
+
+  start = (e: MouseEvent) => {
     if (!this.canDraw) {
       return undefined;
     }
@@ -47,18 +53,18 @@ export class CircleAnnotation extends BaseSVGAnnotation {
       return circle;
     }
     return undefined;
-  }
+  };
 
-  cancel() {
+  cancel = () => {
     if (!this._isDrawing) {
       return;
     }
     this._isDrawing = false;
     this._previewElement.reset();
     this._previewElement.get().remove();
-  }
+  };
 
-  draw(e: MouseEvent) {
+  draw = (e: MouseEvent) => {
     if (!this.canDraw || !this._isDrawing) {
       return;
     }
@@ -67,5 +73,5 @@ export class CircleAnnotation extends BaseSVGAnnotation {
     this._previewElement.radius = this._cursorPosition.distanceTo(
       this._previewElement.centerPoint
     );
-  }
+  };
 }

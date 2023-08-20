@@ -1,3 +1,5 @@
+import * as THREE from "three";
+import * as OBC from "../../index";
 import { Component, Disposable, Event } from "../../base-types";
 
 type ToolsList = Map<symbol | string, Component<any>>;
@@ -78,12 +80,12 @@ export class ToolComponent
     document.body.appendChild(script);
 
     const win = window as any;
-    const tool = win.ThatOpenTool() as new (...args: any) => T;
+    const toolClass = win.ThatOpenTool(OBC, THREE) as new (...args: any) => T;
 
     win.ThatOpenTool = undefined;
     script.remove();
 
-    return tool;
+    return toolClass;
   }
 
   /**
@@ -105,6 +107,8 @@ export class ToolComponent
    * Disposes all the memory used by all the tools.
    */
   dispose() {
+    this.onToolAdded.reset();
+    this.onToolRemoved.reset();
     const tools = this.list.values();
     for (const tool of tools) {
       tool.enabled = false;

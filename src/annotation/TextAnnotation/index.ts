@@ -8,6 +8,7 @@ export class TextAnnotation extends BaseSVGAnnotation implements UI {
   name: string = "TextAnnotation";
   uiElement: { main: Button };
   canvas: HTMLCanvasElement | null = null;
+
   private _previewElement: SVGText;
 
   constructor(components: Components, drawManager?: DrawManager) {
@@ -27,16 +28,21 @@ export class TextAnnotation extends BaseSVGAnnotation implements UI {
     };
   }
 
-  cancel() {
+  dispose() {
+    super.dispose();
+    this._previewElement.dispose();
+  }
+
+  cancel = () => {
     if (!this._isDrawing) {
       return;
     }
     this._isDrawing = false;
     this._previewElement.reset();
     this._previewElement.get().remove();
-  }
+  };
 
-  start(e: MouseEvent) {
+  start = (e: MouseEvent) => {
     if (!this.canDraw) {
       return undefined;
     }
@@ -60,13 +66,13 @@ export class TextAnnotation extends BaseSVGAnnotation implements UI {
       return text;
     }
     return undefined;
-  }
+  };
 
-  draw(e: MouseEvent) {
+  draw = (e: MouseEvent) => {
     if (!this.canDraw || !this._isDrawing) {
       return;
     }
     this._previewElement.x = e.clientX;
     this._previewElement.y = e.clientY;
-  }
+  };
 }

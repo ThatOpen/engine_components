@@ -31,6 +31,8 @@ export class SimpleRenderer
   /** {@link Updateable.afterUpdate} */
   afterUpdate = new Event<SimpleRenderer>();
 
+  resized = new Event();
+
   protected _renderer2D = new CSS2DRenderer();
   protected _renderer: THREE.WebGLRenderer;
 
@@ -93,6 +95,7 @@ export class SimpleRenderer
     const height = this.container.clientHeight;
     this._renderer.setSize(width, height);
     this._renderer2D.setSize(width, height);
+    this.resized.trigger();
   };
 
   private setupRenderers() {

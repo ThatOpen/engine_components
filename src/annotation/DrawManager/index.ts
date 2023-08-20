@@ -1,16 +1,19 @@
-import { Component, UI, BaseSVGAnnotation } from "../../base-types";
+import { Component, UI, BaseSVGAnnotation, Disposable } from "../../base-types";
 import { Components, SimpleSVGViewport } from "../../core";
 import { Button, Toolbar } from "../../ui";
 
-export class DrawManager extends Component<string> implements UI {
+export class DrawManager extends Component<string> implements UI, Disposable {
   name: string = "DrawManager";
+
   uiElement!: {
     main: Button;
     drawingTools: Toolbar;
   };
+
   viewport: SimpleSVGViewport;
   drawingTools: { [name: string]: BaseSVGAnnotation } = {};
   drawings: { [name: string]: SVGGElement } = {};
+
   private _enabled: boolean = false;
   private _isDrawing: boolean = false;
   private _components: Components;
@@ -40,6 +43,17 @@ export class DrawManager extends Component<string> implements UI {
     this.viewport = new SimpleSVGViewport(components);
     this.setUI();
     this.enabled = false;
+  }
+
+  dispose() {
+    this.uiElement.main.dispose();
+    this.uiElement.drawingTools.dispose();
+    this.viewport.dispose();
+    for (const name in this.drawings) {
+      this.drawings[name].remove();
+    }
+    this.drawings = {};
+    (this._components as any) = null;
   }
 
   saveDrawing(name: string) {
