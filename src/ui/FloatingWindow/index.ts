@@ -14,7 +14,12 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
 
   onMoved = new Event<FloatingWindow>();
   onResized = new Event();
-  referencePoints!: {
+
+  private _isMouseDown = false;
+  private _offsetX = 0;
+  private _offsetY = 0;
+
+  referencePoints: {
     topLeft: Vector2;
     top: Vector2;
     topRight: Vector2;
@@ -25,6 +30,11 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
     bottom: Vector2;
     bottomRight: Vector2;
   };
+
+  get viewerContainer() {
+    return this._components.renderer.get().domElement
+      .parentElement as HTMLElement;
+  }
 
   set description(value: string | null) {
     const element = this.innerElements.description;
@@ -145,6 +155,13 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
     };
   }
 
+  dispose(onlyChildren = false) {
+    super.dispose(onlyChildren);
+    this.setupEvents(false);
+    this.onMoved.reset();
+    this.onResized.reset();
+  }
+
   private setMovableListeners() {
     // For node.js
     try {
@@ -154,40 +171,7 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
       return;
     }
 
-    let isMouseDown = false;
-    let offsetX = 0;
-    let offsetY = 0;
-
-    this.innerElements.titleContainer.addEventListener("mousedown", (e) => {
-      if (!this.movable) return;
-      isMouseDown = true;
-      const rect = this.domElement.getBoundingClientRect();
-      offsetX = e.clientX - rect.left;
-      offsetY = e.clientY - rect.top;
-    });
-
-    const viewerContainer = this._components.renderer.get().domElement
-      .parentNode as HTMLElement;
-
-    viewerContainer.addEventListener("mousemove", (e) => {
-      if (!(isMouseDown && this.movable)) return;
-      const { width, height } = this.domElement.getBoundingClientRect();
-      const {
-        x,
-        y,
-        width: containerWidth,
-        height: containerHeight,
-      } = viewerContainer.getBoundingClientRect();
-      const maxLeft = containerWidth - width;
-      const maxTop = containerHeight - height;
-      const left = Math.max(0, Math.min(e.clientX - offsetX - x, maxLeft));
-      const top = Math.max(0, Math.min(e.clientY - offsetY - y, maxTop));
-      this.domElement.style.left = `${left}px`;
-      this.domElement.style.top = `${top}px`;
-      this.onMoved.trigger(this);
-    });
-
-    viewerContainer.addEventListener("mouseup", () => (isMouseDown = false));
+    this.setupEvents(true);
   }
 
   addChild(...items: SimpleUIComponent[]) {
@@ -232,4 +216,54 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
       uiElementRect.y + uiElementRect.height
     );
   }
+
+  private setupEvents(active: boolean) {
+    const title = this.innerElements.titleContainer;
+    const container = this.viewerContainer;
+    if (active) {
+      title.addEventListener("mousedown", this.onMOuseDown);
+      container.addEventListener("mousemove", this.onMouseMove);
+      container.addEventListener("mouseup", this.onMouseUp);
+    } else {
+      title.removeEventListener("mousedown", this.onMOuseDown);
+      container.removeEventListener("mousemove", this.onMouseMove);
+      container.removeEventListener("mouseup", this.onMouseUp);
+    }
+  }
+
+  private onMOuseDown = (event: MouseEvent) => {
+    if (!this.movable) return;
+    this._isMouseDown = true;
+    const rect = this.domElement.getBoundingClientRect();
+    this._offsetX = event.clientX - rect.left;
+    this._offsetY = event.clientY - rect.top;
+  };
+
+  private onMouseUp = () => {
+    this._isMouseDown = false;
+  };
+
+  private onMouseMove = (event: MouseEvent) => {
+    if (!(this._isMouseDown && this.movable)) return;
+    const { width, height } = this.domElement.getBoundingClientRect();
+    const {
+      x,
+      y,
+      width: containerWidth,
+      height: containerHeight,
+    } = this.viewerContainer.getBoundingClientRect();
+    const maxLeft = containerWidth - width;
+    const maxTop = containerHeight - height;
+    const left = Math.max(
+      0,
+      Math.min(event.clientX - this._offsetX - x, maxLeft)
+    );
+    const top = Math.max(
+      0,
+      Math.min(event.clientY - this._offsetY - y, maxTop)
+    );
+    this.domElement.style.left = `${left}px`;
+    this.domElement.style.top = `${top}px`;
+    this.onMoved.trigger(this);
+  };
 }

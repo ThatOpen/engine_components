@@ -52,4 +52,9 @@ export class DragAndDropInput extends SimpleUIComponent<HTMLDivElement> {
       onFilesLoaded();
     };
   }
+
+  dispose(onlyChildren: boolean = false) {
+    super.dispose(onlyChildren);
+    this.onFilesLoaded.reset();
+  }
 }

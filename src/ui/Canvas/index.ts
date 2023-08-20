@@ -7,9 +7,8 @@ export class Canvas
   extends SimpleUIComponent<HTMLCanvasElement>
   implements Resizeable
 {
-  name: string = "SimpleUICard";
+  name: string = "Canvas";
   private _size = new THREE.Vector2(320, 160);
-  private _canvas: HTMLCanvasElement;
 
   constructor(components: Components) {
     const template = `
@@ -17,7 +16,6 @@ export class Canvas
         border-transparent border border-solid rounded-lg"></canvas> 
     `;
     super(components, template);
-    this._canvas = this.get();
   }
 
   getSize(): THREE.Vector2 {
@@ -27,8 +25,8 @@ export class Canvas
   resize(size?: THREE.Vector2) {
     if (size) {
       this._size = size;
-      this._canvas.style.width = `${size.x}px`;
-      this._canvas.style.height = `${size.y}px`;
+      this.domElement.style.width = `${size.x}px`;
+      this.domElement.style.height = `${size.y}px`;
     }
   }
 }

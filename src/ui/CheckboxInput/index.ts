@@ -55,4 +55,9 @@ export class CheckboxInput extends SimpleUIComponent<HTMLDivElement> {
 
     this.label = "Tooeen Checkbox";
   }
+
+  dispose(onlyChildren: boolean = false) {
+    super.dispose(onlyChildren);
+    this.onChange.reset();
+  }
 }

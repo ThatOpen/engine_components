@@ -105,4 +105,10 @@ export class Modal extends SimpleUIComponent<HTMLDialogElement> {
 
     this.slots.actionButtons.addChild(cancelBtn, acceptBtn);
   }
+
+  dispose(onlyChildren: boolean = false) {
+    super.dispose(onlyChildren);
+    this.onCancel.reset();
+    this.onAccept.reset();
+  }
 }

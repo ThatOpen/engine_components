@@ -14,6 +14,7 @@ type IToolbarDirection = "horizontal" | "vertical";
 export class Toolbar extends SimpleUIComponent<HTMLDivElement> {
   name: string;
   children: Button[] = [];
+
   protected _parent: Button | null = null;
 
   static Class = {
@@ -68,13 +69,6 @@ export class Toolbar extends SimpleUIComponent<HTMLDivElement> {
     this.name = _options.name ?? "Toolbar";
     this.position = _options.position ?? "bottom";
     this.visible = true;
-  }
-
-  dispose(onlyChildren = false) {
-    this.children.forEach((button) => button.dispose());
-    if (!onlyChildren) {
-      this.domElement.remove();
-    }
   }
 
   get hasElements() {

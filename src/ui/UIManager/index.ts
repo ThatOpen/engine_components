@@ -1,4 +1,5 @@
-import { createPopper, Instance } from "@popperjs/core";
+// @ts-ignore
+import { createPopper, Instance } from "@popperjs/core/dist/esm";
 import { Component, Disposable } from "../../base-types";
 import { Toolbar } from "../ToolbarComponent";
 import { Components } from "../../core";
@@ -11,8 +12,6 @@ type IContainerAlingment = "start" | "center" | "end";
 interface IContainers {
   [key: string]: HTMLDivElement;
 }
-
-type mouseEvents = "mouseup" | "mousedown" | "mousemove" | "contextmenu";
 
 /**
  * A component that handles all UI components.
@@ -38,13 +37,6 @@ export class UIManager extends Component<Toolbar[]> implements Disposable {
     right: document.createElement("div"),
     bottom: document.createElement("div"),
     left: document.createElement("div"),
-  };
-
-  private _events: {
-    mouseup: (e: any) => void;
-    mousedown: (e: any) => void;
-    mousemove: (e: any) => void;
-    contextmenu: (e: any) => void;
   };
 
   // TODO: Does this need to be here?
@@ -107,13 +99,6 @@ export class UIManager extends Component<Toolbar[]> implements Disposable {
     this._containers.right.classList.add(...vContainerClass);
     this._containers.bottom.classList.add(...hContainerClass);
     this._containers.left.classList.add(...vContainerClass);
-
-    this._events = {
-      mousedown: this.onMouseDown,
-      mouseup: this.onMouseUp,
-      mousemove: this.onMouseMoved,
-      contextmenu: this.onContextMenu,
-    };
   }
 
   get() {
@@ -200,21 +185,27 @@ export class UIManager extends Component<Toolbar[]> implements Disposable {
   }
 
   private setupEvents(active: boolean) {
-    for (const name in this._events) {
-      const event = this._events[name as mouseEvents];
-      if (active) {
-        this.viewerContainer.addEventListener(name, event);
-      } else {
-        this.viewerContainer.removeEventListener(name, event);
-      }
+    if (active) {
+      this.viewerContainer.addEventListener("mouseup", this.onMouseUp);
+      this.viewerContainer.addEventListener("mousedown", this.onMouseDown);
+      this.viewerContainer.addEventListener("mousemove", this.onMouseMoved);
+      this.viewerContainer.addEventListener("contextmenu", this.onContextMenu);
+    } else {
+      this.viewerContainer.removeEventListener("mouseup", this.onMouseUp);
+      this.viewerContainer.removeEventListener("mousedown", this.onMouseDown);
+      this.viewerContainer.removeEventListener("mousemove", this.onMouseMoved);
+      this.viewerContainer.removeEventListener(
+        "contextmenu",
+        this.onContextMenu
+      );
     }
   }
 
-  private onMouseUp = (_event: MouseEvent) => {
+  private onMouseUp = () => {
     this._mouseDown = false;
   };
 
-  private onMouseMoved = (_event: MouseEvent) => {
+  private onMouseMoved = () => {
     if (this._mouseDown) {
       this._mouseMoved = true;
     }

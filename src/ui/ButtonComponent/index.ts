@@ -208,6 +208,8 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
     if (!onlyChildren) {
       this.domElement.remove();
     }
+    this.onClicked.reset();
+    this._popper.destroy();
   }
 
   addChild(...button: Button[]) {

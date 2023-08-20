@@ -56,6 +56,8 @@ export class CommandsMenu<T> extends SimpleUIComponent<HTMLDivElement> {
     super.dispose(onlyChildren);
     if (!onlyChildren) {
       this.toggleWindowEvent(false);
+      this.commands = {};
+      (this.commandData as any) = null;
     }
   }
 

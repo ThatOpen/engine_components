@@ -132,6 +132,10 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
       child.dispose();
       this.removeChild(child);
     }
+    for (const name in this.innerElements) {
+      const element = this.innerElements[name];
+      element.remove();
+    }
     if (!onlyChildren) {
       if (this._domElement) {
         this._domElement.remove();

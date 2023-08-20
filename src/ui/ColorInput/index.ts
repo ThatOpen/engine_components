@@ -56,4 +56,9 @@ export class ColorInput extends SimpleUIComponent<HTMLDivElement> {
       this.onChange.trigger(this.value);
     };
   }
+
+  dispose(onlyChildren: boolean = false) {
+    super.dispose(onlyChildren);
+    this.onChange.reset();
+  }
 }

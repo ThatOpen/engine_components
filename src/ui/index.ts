@@ -5,7 +5,6 @@ export * from "./UIManager";
 export * from "./SimpleUIComponent";
 export * from "./SimpleUICard";
 export * from "./FloatingWindow";
-export * from "./InfoCard";
 export * from "./Dropdown";
 export * from "./TextInput";
 export * from "./CheckboxInput";

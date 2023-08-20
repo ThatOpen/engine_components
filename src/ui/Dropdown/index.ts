@@ -6,9 +6,10 @@ import { UIManager } from "../UIManager";
 export class Dropdown extends SimpleUIComponent<HTMLDivElement> {
   name = "TooeenDropdown";
   options: string[] = [];
-  private _allowSearch = false;
 
-  readonly onChange: Event<string> = new Event();
+  readonly onChange = new Event<string>();
+
+  private _allowSearch = false;
 
   set value(value: string | null) {
     const option = this.options.find((v) => v === value) ?? this.options[0];
@@ -91,36 +92,15 @@ export class Dropdown extends SimpleUIComponent<HTMLDivElement> {
     this.setSearch();
 
     this.innerElements.button.onclick = () => this.toggle();
-    this.setClickOutside();
+    this.setupEvents(true);
 
     this.label = name;
   }
 
-  private setSearch() {
-    this.innerElements.searchInput.oninput = () => {
-      const searchValue = this.innerElements.searchInput.value.toLowerCase();
-      const list = this.innerElements.dropdownList.children;
-      for (const child of list) {
-        const childText = child.textContent?.toLowerCase();
-        if (!childText) continue;
-        if (childText.includes(searchValue)) {
-          child.classList.remove("hidden");
-        } else {
-          child.classList.add("hidden");
-        }
-      }
-    };
-  }
-
-  private setClickOutside() {
-    document.addEventListener(
-      "click",
-      (e) => {
-        if (!this.get().contains(e.target as Node))
-          this.innerElements.dropdown.classList.add("hidden");
-      },
-      true
-    );
+  dispose(onlyChildren: boolean = false) {
+    super.dispose(onlyChildren);
+    this.onChange.reset();
+    this.setupEvents(false);
   }
 
   toggle() {
@@ -162,4 +142,34 @@ export class Dropdown extends SimpleUIComponent<HTMLDivElement> {
     this.options = this.options.filter((option) => !value.includes(option));
     return this;
   }
+
+  private setSearch() {
+    this.innerElements.searchInput.oninput = () => {
+      const searchValue = this.innerElements.searchInput.value.toLowerCase();
+      const list = this.innerElements.dropdownList.children;
+      for (const child of list) {
+        const childText = child.textContent?.toLowerCase();
+        if (!childText) continue;
+        if (childText.includes(searchValue)) {
+          child.classList.remove("hidden");
+        } else {
+          child.classList.add("hidden");
+        }
+      }
+    };
+  }
+
+  private setupEvents(active: boolean) {
+    if (active) {
+      document.addEventListener("click", this.hide, true);
+    } else {
+      document.removeEventListener("click", this.hide, true);
+    }
+  }
+
+  private hide = (event: MouseEvent) => {
+    if (!this.get().contains(event.target as Node)) {
+      this.innerElements.dropdown.classList.add("hidden");
+    }
+  };
 }
