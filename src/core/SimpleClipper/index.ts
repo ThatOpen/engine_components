@@ -163,7 +163,11 @@ export class SimpleClipper<Plane extends SimplePlane>
     this._planes.length = 0;
     this._material.dispose();
     this.beforeDrag.reset();
+    this.beforeCancel.reset();
+    this.beforeCreate.reset();
     this.afterDrag.reset();
+    this.afterCancel.reset();
+    this.afterCreate.reset();
   }
 
   /** {@link Createable.create} */

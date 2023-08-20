@@ -1,16 +1,14 @@
 import * as THREE from "three";
-import { Component, Raycaster, Mouse } from "../../base-types";
+import { Component, Mouse } from "../../base-types";
 import { Components } from "../Components";
+import { BaseRaycaster } from "../../base-types/base-raycaster";
 
 /**
  * A simple [raycaster](https://threejs.org/docs/#api/en/core/Raycaster)
  * that allows to easily get items from the scene using the mouse and touch
  * events.
  */
-export class SimpleRaycaster
-  extends Component<THREE.Raycaster>
-  implements Raycaster
-{
+export class SimpleRaycaster extends BaseRaycaster {
   /** {@link Component.name} */
   name = "SimpleRaycaster";
 
@@ -32,6 +30,10 @@ export class SimpleRaycaster
   /** {@link Component.get} */
   get(): THREE.Raycaster {
     return this._raycaster;
+  }
+
+  dispose(): void {
+    this.mouse.dispose();
   }
 
   /**

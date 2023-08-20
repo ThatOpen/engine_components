@@ -15,10 +15,12 @@ export class SimpleSVGViewport extends Component<SVGElement> {
   id: string = generateUUID().toLowerCase();
   private _config!: SVGViewportConfig;
   private _enabled: boolean = false;
+
   private _viewport: SVGElement = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "svg"
   );
+
   private _components: Components;
   private _size: Vector2 = new Vector2();
   private _undoList: any[] = [];

@@ -6,8 +6,10 @@ import {
   disposeBoundsTree,
 } from "three-mesh-bvh";
 import { UIManager } from "../../ui";
-import { BaseRenderer, Component, Raycaster, Event } from "../../base-types";
+import { BaseRenderer, Component, Event } from "../../base-types";
 import { ToolComponent } from "../ToolsComponent";
+import { BaseRaycaster } from "../../base-types/base-raycaster";
+import { Disposer } from "../Disposer";
 
 /**
  * The entry point of Open BIM Components.
@@ -37,9 +39,10 @@ export class Components {
   private _renderer?: BaseRenderer;
   private _scene?: Component<THREE.Scene>;
   private _camera?: Component<THREE.Camera>;
-  private _raycaster?: Raycaster;
+  private _raycaster?: BaseRaycaster;
   private _clock: THREE.Clock;
   private _enabled = false;
+  private _disposer = new Disposer();
 
   /**
    * The [Three.js renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
@@ -111,7 +114,7 @@ export class Components {
    * Although this is not necessary to make the library work, it's necessary
    * to initialize this if any component that needs a raycaster is used.
    */
-  set raycaster(raycaster: Raycaster) {
+  set raycaster(raycaster: BaseRaycaster) {
     this._raycaster = raycaster;
   }
 
@@ -155,9 +158,16 @@ export class Components {
     this._enabled = false;
     this.tools.dispose();
     this.ui.dispose();
+    this.onInitialized.reset();
+    this._clock.stop();
+    for (const mesh of this.meshes) {
+      this._disposer.dispose(mesh);
+    }
+    this.meshes = [];
     if (this.renderer.isDisposeable()) this.renderer.dispose();
     if (this.scene.isDisposeable()) this.scene.dispose();
     if (this.camera.isDisposeable()) this.camera.dispose();
+    if (this.raycaster.isDisposeable()) this.raycaster.dispose();
   }
 
   private update = () => {

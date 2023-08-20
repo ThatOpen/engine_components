@@ -21,6 +21,7 @@ export class LocalCacher extends Component<any> implements UI, Disposable {
 
   uiElement: { main: Button; saveButton: Button; loadButton: Button };
 
+  // TODO: Bring this to uiElement
   floatingMenu: FloatingWindow;
 
   get ids() {
@@ -119,6 +120,17 @@ export class LocalCacher extends Component<any> implements UI, Disposable {
   }
 
   dispose() {
+    this.fileLoaded.reset();
+    this.itemSaved.reset();
+    for (const card of this._cards) {
+      card.dispose();
+    }
+    this._cards = [];
+    this.uiElement.main.dispose();
+    this.uiElement.saveButton.dispose();
+    this.uiElement.loadButton.dispose();
+    this.floatingMenu.dispose();
+    (this._db as any) = null;
     (this._components as any) = null;
   }
 

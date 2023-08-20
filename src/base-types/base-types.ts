@@ -109,11 +109,6 @@ export interface Updateable {
   update(delta?: number): void;
 }
 
-/** Whether this component is able to cast rays. */
-export interface Raycaster {
-  castRay: (items?: THREE.Mesh[]) => THREE.Intersection | null;
-}
-
 /** Basic type to describe the progress of any kind of process. */
 export interface Progress {
   /** The amount of things that have been done already. */

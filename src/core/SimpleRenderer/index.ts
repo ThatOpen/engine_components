@@ -48,7 +48,7 @@ export class SimpleRenderer
 
     this._renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.setupRenderers();
-    this.setupEvents();
+    this.setupEvents(true);
     this.resize();
   }
 
@@ -70,6 +70,7 @@ export class SimpleRenderer
 
   /** {@link Disposable.dispose} */
   dispose() {
+    this.setupEvents(false);
     this.enabled = false;
     this._renderer.domElement.remove();
     this._renderer.dispose();
@@ -87,12 +88,12 @@ export class SimpleRenderer
   }
 
   /** {@link Resizeable.resize}. */
-  resize() {
+  resize = () => {
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
     this._renderer.setSize(width, height);
     this._renderer2D.setSize(width, height);
-  }
+  };
 
   private setupRenderers() {
     this._renderer.localClippingEnabled = true;
@@ -104,9 +105,11 @@ export class SimpleRenderer
     this.container.appendChild(this._renderer2D.domElement);
   }
 
-  private setupEvents() {
-    window.addEventListener("resize", () => {
-      this.resize();
-    });
+  private setupEvents(active: boolean) {
+    if (active) {
+      window.addEventListener("resize", this.resize);
+    } else {
+      window.removeEventListener("resize", this.resize);
+    }
   }
 }

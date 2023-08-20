@@ -204,6 +204,7 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
   }
 
   dispose(onlyChildren = false) {
+    super.dispose(onlyChildren);
     this.menu.dispose();
     if (!onlyChildren) {
       this.domElement.remove();

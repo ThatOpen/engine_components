@@ -25,6 +25,7 @@ export class Disposer {
       this.disposeChildren(mesh);
     }
     mesh.material = [];
+    (mesh.geometry as any) = null;
     mesh.children.length = 0;
   }
 

@@ -45,6 +45,7 @@ export class Simple2DMarker
   dispose() {
     this._marker.removeFromParent();
     this._marker.element.remove();
+    (this._components as any) = null;
   }
 
   get(): CSS2DObject {
