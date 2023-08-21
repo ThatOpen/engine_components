@@ -157,6 +157,9 @@ export class CustomEffectsPass extends Pass {
     this.glossOverrideMaterial.dispose();
     this.fsQuad.dispose();
 
+    this.excludedMeshes = [];
+    this._outlineScene.children = [];
+
     for (const name in this.outlinedMeshes) {
       const style = this.outlinedMeshes[name];
       for (const mesh of style.meshes) {

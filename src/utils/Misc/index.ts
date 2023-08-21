@@ -42,71 +42,12 @@ export function generateExpressIDFragmentIDMap(fragmentsList: Fragment[]) {
 
 // Would need to review this!
 export function generateIfcGUID() {
+  // prettier-ignore
   const base64Chars = [
-    "0",
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "A",
-    "B",
-    "C",
-    "D",
-    "E",
-    "F",
-    "G",
-    "H",
-    "I",
-    "J",
-    "K",
-    "L",
-    "M",
-    "N",
-    "O",
-    "P",
-    "Q",
-    "R",
-    "S",
-    "T",
-    "U",
-    "V",
-    "W",
-    "X",
-    "Y",
-    "Z",
-    "a",
-    "b",
-    "c",
-    "d",
-    "e",
-    "f",
-    "g",
-    "h",
-    "i",
-    "j",
-    "k",
-    "l",
-    "m",
-    "n",
-    "o",
-    "p",
-    "q",
-    "r",
-    "s",
-    "t",
-    "u",
-    "v",
-    "w",
-    "x",
-    "y",
-    "z",
-    "_",
-    "$",
+      "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H",
+      "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+      "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
+      "s", "t", "u", "v", "w", "x", "y", "z", "_", "$",
   ];
 
   const guid = THREE.MathUtils.generateUUID();
@@ -154,12 +95,14 @@ export function generateIfcGUID() {
   };
 
   const toUInt16 = (bytes: string[], index: number) =>
+    // eslint-disable-next-line no-bitwise
     parseInt(
       bytes.slice(index, index + 2).reduce((str, v) => str + v, ""),
       16
     ) >>> 0;
 
   const toUInt32 = (bytes: string[], index: number) =>
+    // eslint-disable-next-line no-bitwise
     parseInt(
       bytes.slice(index, index + 4).reduce((str, v) => str + v, ""),
       16
@@ -173,13 +116,17 @@ export function generateIfcGUID() {
 
   num[0] = toUInt32(headBytes, 0) / 16777216;
   num[1] = toUInt32(headBytes, 0) % 16777216;
+  // eslint-disable-next-line no-bitwise
   num[2] = (toUInt16(headBytes, 4) * 256 + toUInt16(headBytes, 6) / 256) >>> 0;
   num[3] =
+    // eslint-disable-next-line no-bitwise
     ((toUInt16(headBytes, 6) % 256) * 65536 +
       tailBytes[8] * 256 +
       tailBytes[9]) >>>
     0;
+  // eslint-disable-next-line no-bitwise
   num[4] = (tailBytes[10] * 65536 + tailBytes[11] * 256 + tailBytes[12]) >>> 0;
+  // eslint-disable-next-line no-bitwise
   num[5] = (tailBytes[13] * 65536 + tailBytes[14] * 256 + tailBytes[15]) >>> 0;
 
   for (i = 0; i < 6; i++) {

@@ -17,6 +17,8 @@ import { DrawManager } from "../../annotation";
 import { OrthoPerspectiveCamera } from "../OrthoPerspectiveCamera";
 import { CameraProjection } from "../OrthoPerspectiveCamera/src/types";
 
+// TODO: Update and implement memory disposal
+
 export interface IViewpointsManagerConfig {
   selectionHighlighter: string;
   fragmentManager: FragmentManager;

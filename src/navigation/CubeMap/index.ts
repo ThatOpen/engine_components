@@ -1,5 +1,11 @@
 import * as THREE from "three";
-import { Component, Event, Hideable, Updateable } from "../../base-types";
+import {
+  Component,
+  Disposable,
+  Event,
+  Hideable,
+  Updateable,
+} from "../../base-types";
 import { Components } from "../../core";
 import { OrthoPerspectiveCamera } from "../OrthoPerspectiveCamera";
 
@@ -19,7 +25,7 @@ export type CubeMapFace =
 
 export class CubeMap
   extends Component<HTMLDivElement>
-  implements Updateable, Hideable
+  implements Updateable, Hideable, Disposable
 {
   name: string = "CubeMap";
   enabled: boolean = true;
@@ -130,6 +136,14 @@ export class CubeMap
     this._viewerContainer?.append(this._cubeWrapper);
 
     this.visible = true;
+  }
+
+  dispose() {
+    this.afterUpdate.reset();
+    this.beforeUpdate.reset();
+    this._cube.remove();
+    this._cubeWrapper.remove();
+    (this._components as any) = null;
   }
 
   setSize(value: string = "350") {

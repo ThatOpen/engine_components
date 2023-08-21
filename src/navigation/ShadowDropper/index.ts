@@ -52,10 +52,12 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
 
   /** {@link Disposable.dispose} */
   dispose() {
-    const shadowIDs = Object.keys(this.shadows);
-    shadowIDs.forEach((shadowID) => this.deleteShadow(shadowID));
+    for (const id in this.shadows) {
+      this.deleteShadow(id);
+    }
     this.tempMaterial.dispose();
     this.depthMaterial.dispose();
+    (this.components as any) = null;
   }
 
   /**

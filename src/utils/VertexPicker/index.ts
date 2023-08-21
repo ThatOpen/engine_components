@@ -152,6 +152,9 @@ export class VertexPicker
 
   dispose() {
     this._marker.dispose();
+    this.afterUpdate.reset();
+    this.beforeUpdate.reset();
+    (this._components as any) = null;
   }
 
   get(): THREE.Vector3 | null {

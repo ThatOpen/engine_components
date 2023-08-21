@@ -40,7 +40,10 @@ export class GeometryVerticesMarker
   }
 
   dispose() {
-    for (const marker of this._markers) marker.dispose();
+    for (const marker of this._markers) {
+      marker.dispose();
+    }
+    this._markers = [];
   }
 
   get(): Simple2DMarker[] {

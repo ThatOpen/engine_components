@@ -1,13 +1,18 @@
 import * as THREE from "three";
-import { Event, Resizeable, UI, Updateable, Component } from "../../base-types";
-import { Canvas } from "../../ui/Canvas";
+import {
+  Event,
+  Resizeable,
+  UI,
+  Updateable,
+  Component,
+  Disposable,
+} from "../../base-types";
+import { Canvas, Button, RangeInput } from "../../ui";
 import { Components, SimpleCamera } from "../../core";
-import { Button } from "../../ui/ButtonComponent";
-import { RangeInput } from "../../ui/RangeInput";
 
 export class MiniMap
   extends Component<THREE.OrthographicCamera>
-  implements UI, Resizeable, Updateable
+  implements UI, Resizeable, Updateable, Disposable
 {
   name = "MiniMap";
   uiElement: { main: Button; canvas: Canvas };
@@ -96,6 +101,17 @@ export class MiniMap
     this._camera.rotation.x = -Math.PI / 2;
     this._plane = new THREE.Plane(this.down, 200);
     this._renderer.clippingPlanes = [this._plane];
+  }
+
+  dispose() {
+    this.enabled = false;
+    this.uiElement.main.dispose();
+    this.uiElement.canvas.dispose();
+    this.beforeUpdate.reset();
+    this.afterUpdate.reset();
+    this.overrideMaterial.dispose();
+    this._renderer.dispose();
+    (this._components as any) = null;
   }
 
   get() {

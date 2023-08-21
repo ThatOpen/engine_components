@@ -1,6 +1,6 @@
 import { BufferAttribute, Line, Raycaster, Vector3 } from "three";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
-import { Event, Updateable } from "../../base-types/base-types";
+import { Disposable, Event, Updateable } from "../../base-types/base-types";
 import { Mouse } from "../../base-types/mouse";
 import { Component } from "../../base-types/component";
 import { Components } from "../../core/Components";
@@ -11,11 +11,12 @@ interface LineIntersectionPickerConfig {
 
 export class LineIntersectionPicker
   extends Component<Vector3 | null>
-  implements Updateable
+  implements Updateable, Disposable
 {
   name: string = "LineIntersectionPicker";
   afterUpdate: Event<LineIntersectionPicker> = new Event();
   beforeUpdate: Event<LineIntersectionPicker> = new Event();
+
   private _pickedPoint: Vector3 | null = null;
   private _config!: LineIntersectionPickerConfig;
   private _enabled!: boolean;
@@ -34,6 +35,14 @@ export class LineIntersectionPicker
 
   get enabled() {
     return this._enabled;
+  }
+
+  get config() {
+    return this._config;
+  }
+
+  set config(value: Partial<LineIntersectionPickerConfig>) {
+    this._config = { ...this._config, ...value };
   }
 
   constructor(
@@ -58,12 +67,11 @@ export class LineIntersectionPicker
     this.enabled = false;
   }
 
-  set config(value: Partial<LineIntersectionPickerConfig>) {
-    this._config = { ...this._config, ...value };
-  }
-
-  get config() {
-    return this._config;
+  dispose() {
+    this.afterUpdate.reset();
+    this.beforeUpdate.reset();
+    this._marker.removeFromParent();
+    this._marker.element.remove();
   }
 
   /** {@link Updateable.update} */
