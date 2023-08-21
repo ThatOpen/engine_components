@@ -221,11 +221,15 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
     const title = this.innerElements.titleContainer;
     const container = this.viewerContainer;
     if (active) {
-      title.addEventListener("mousedown", this.onMOuseDown);
+      if (title) {
+        title.addEventListener("mousedown", this.onMOuseDown);
+      }
       container.addEventListener("mousemove", this.onMouseMove);
       container.addEventListener("mouseup", this.onMouseUp);
     } else {
-      title.removeEventListener("mousedown", this.onMOuseDown);
+      if (title) {
+        title.removeEventListener("mousedown", this.onMOuseDown);
+      }
       container.removeEventListener("mousemove", this.onMouseMove);
       container.removeEventListener("mouseup", this.onMouseUp);
     }

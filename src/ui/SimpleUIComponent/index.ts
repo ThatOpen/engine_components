@@ -134,7 +134,9 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
     }
     for (const name in this.innerElements) {
       const element = this.innerElements[name];
-      element.remove();
+      if (element) {
+        element.remove();
+      }
     }
     if (!onlyChildren) {
       if (this._domElement) {
@@ -148,7 +150,6 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
       this.children = [];
       this.slots = {};
       (this.parent as any) = null;
-      (this._components as any) = null;
     }
   }
 

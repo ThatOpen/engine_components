@@ -59,6 +59,28 @@ export class FragmentHighlighter
   private _fragments: FragmentManager;
   private _bbox = new FragmentBoundingBox();
 
+  private _default = {
+    selectName: "select",
+    hoverName: "hover",
+
+    mouseDown: false,
+    mouseMoved: false,
+
+    selectionMaterial: new THREE.MeshBasicMaterial({
+      color: "#BCF124",
+      transparent: true,
+      opacity: 0.85,
+      depthTest: true,
+    }),
+
+    highlightMaterial: new THREE.MeshBasicMaterial({
+      color: "#6528D7",
+      transparent: true,
+      opacity: 0.2,
+      depthTest: true,
+    }),
+  };
+
   get fillEnabled() {
     return this._fillEnabled;
   }
@@ -100,6 +122,10 @@ export class FragmentHighlighter
   }
 
   dispose() {
+    this.setupEvents(false);
+    this._default.highlightMaterial.dispose();
+    this._default.selectionMaterial.dispose();
+
     for (const matID in this.highlightMats) {
       const mats = this.highlightMats[matID] || [];
       for (const mat of mats) {
@@ -263,63 +289,11 @@ export class FragmentHighlighter
 
   setup() {
     this.enabled = true;
-
     this.outlineMaterial.color.set(0xf0ff7a);
-
-    const selectName = "select";
-    const hoverName = "hover";
-
-    this.excludeOutline.add(hoverName);
-
-    const selectionMaterial = new THREE.MeshBasicMaterial({
-      color: "#BCF124",
-      transparent: true,
-      opacity: 0.85,
-      depthTest: true,
-    });
-
-    const highlightMaterial = new THREE.MeshBasicMaterial({
-      color: "#6528D7",
-      transparent: true,
-      opacity: 0.2,
-      depthTest: true,
-    });
-
-    this.add(selectName, [selectionMaterial]);
-    this.add(hoverName, [highlightMaterial]);
-
-    let mouseDown = false;
-    let mouseMoved = false;
-
-    const container = this._components.renderer.get().domElement;
-
-    container.addEventListener("mousedown", () => {
-      mouseDown = true;
-    });
-
-    container.addEventListener("mouseup", (e) => {
-      if (e.target !== this._components.renderer.get().domElement) return;
-      mouseDown = false;
-      if (mouseMoved || e.button !== 0) {
-        mouseMoved = false;
-        return;
-      }
-      mouseMoved = false;
-      const mult = this.multiple === "none" ? true : !e[this.multiple];
-      this.highlight(selectName, mult, this.zoomToSelection);
-    });
-
-    container.addEventListener("mousemove", () => {
-      if (mouseMoved) {
-        this.clearFills(hoverName);
-        return;
-      }
-      mouseMoved = true;
-      if (!mouseDown) {
-        mouseMoved = false;
-      }
-      this.highlight(hoverName, true, false);
-    });
+    this.excludeOutline.add(this._default.hoverName);
+    this.add(this._default.selectName, [this._default.selectionMaterial]);
+    this.add(this._default.hoverName, [this._default.highlightMaterial]);
+    this.setupEvents(true);
   }
 
   private regenerate(name: string, fragID: string) {
@@ -537,4 +511,46 @@ export class FragmentHighlighter
       outlineMesh.instanceMatrix.needsUpdate = true;
     }
   }
+
+  private setupEvents(active: boolean) {
+    const container = this._components.renderer.get().domElement;
+
+    if (active) {
+      container.addEventListener("mousedown", this.onMouseDown);
+      container.addEventListener("mouseup", this.onMouseUp);
+      container.addEventListener("mousemove", this.onMouseMove);
+    } else {
+      container.removeEventListener("mousedown", this.onMouseDown);
+      container.removeEventListener("mouseup", this.onMouseUp);
+      container.removeEventListener("mousemove", this.onMouseMove);
+    }
+  }
+
+  private onMouseDown = () => {
+    this._default.mouseDown = true;
+  };
+
+  private onMouseUp = (event: MouseEvent) => {
+    if (event.target !== this._components.renderer.get().domElement) return;
+    this._default.mouseDown = false;
+    if (this._default.mouseMoved || event.button !== 0) {
+      this._default.mouseMoved = false;
+      return;
+    }
+    this._default.mouseMoved = false;
+    const mult = this.multiple === "none" ? true : !event[this.multiple];
+    this.highlight(this._default.selectName, mult, this.zoomToSelection);
+  };
+
+  private onMouseMove = () => {
+    if (this._default.mouseMoved) {
+      this.clearFills(this._default.hoverName);
+      return;
+    }
+    this._default.mouseMoved = true;
+    if (!this._default.mouseDown) {
+      this._default.mouseMoved = false;
+    }
+    this.highlight(this._default.hoverName, true, false);
+  };
 }
