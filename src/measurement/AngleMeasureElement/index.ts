@@ -2,11 +2,9 @@ import * as THREE from "three";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
 import { Line2 } from "three/examples/jsm/lines/Line2";
-import { Simple2DMarker } from "../../core/Simple2DMarker/index";
-import { Hideable, Event, Disposable } from "../../base-types";
-import { Component } from "../../base-types/component";
+import { Simple2DMarker, Components } from "../../core";
+import { Hideable, Event, Disposable, Component } from "../../base-types";
 import { DimensionLabelClassName } from "../LengthMeasurement";
-import { Components } from "../../core/Components";
 
 interface Angle {
   points: THREE.Vector3[];
@@ -113,9 +111,13 @@ export class AngleMeasureElement
   dispose() {
     this.points = [];
     this.labelMarker.dispose();
+    this.onAngleComputed.reset();
+    this.onPointAdded.reset();
+    this.labelMarker.dispose();
     this._line.removeFromParent();
     this._lineMaterial.dispose();
     this._lineGeometry.dispose();
+    (this._components as any) = null;
   }
 
   get(): Angle {

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Createable, Event, UI } from "../../base-types/base-types";
+import { Createable, Disposable, Event, UI } from "../../base-types/base-types";
 import { Component } from "../../base-types/component";
 import { Components } from "../../core/Components";
 import { Button } from "../../ui/ButtonComponent";
@@ -8,7 +8,7 @@ import { AreaMeasureElement } from "../AreaMeasureElement";
 
 export class AreaMeasurement
   extends Component<AreaMeasureElement[]>
-  implements Createable, UI
+  implements Createable, UI, Disposable
 {
   name: string = "AreaMeasurement";
   uiElement: { main: Button };
@@ -56,41 +56,35 @@ export class AreaMeasurement
     this.enabled = false;
   }
 
+  dispose() {
+    this.setupEvents(false);
+    this.beforeCreate.reset();
+    this.afterCreate.reset();
+    this.beforeCancel.reset();
+    this.afterCancel.reset();
+    this.beforeDelete.reset();
+    this.afterDelete.reset();
+    this.uiElement.main.dispose();
+    this._vertexPicker.dispose();
+    if (this._currentAreaElement) {
+      this._currentAreaElement.dispose();
+    }
+    for (const measure of this._measurements) {
+      measure.dispose();
+    }
+    (this._components as any) = null;
+  }
+
   private setUI() {
-    const viewerContainer = this._components.ui.viewerContainer as HTMLElement;
-    const createMeasurement = () => this.create();
-    const mouseMove = () => {
-      const point = this._vertexPicker.get();
-      if (!(point && this._currentAreaElement)) return;
-      this._currentAreaElement.setPoint(point, this._clickCount);
-      this._currentAreaElement.computeArea();
-    };
-    const keydown = (e: KeyboardEvent) => {
-      if (!this.enabled) return;
-      if (e.key === "z" && e.ctrlKey && this._currentAreaElement)
-        this._currentAreaElement.removePoint(this._clickCount - 1);
-      if (e.key === "Enter" && this._currentAreaElement) this.endCreation();
-      if (e.key === "Escape") {
-        if (this._clickCount === 0 && !this._currentAreaElement) {
-          this.enabled = false;
-        } else {
-          this.cancelCreation();
-        }
-      }
-    };
     this.uiElement.main.onclick = () => {
       if (!this.enabled) {
-        viewerContainer.addEventListener("click", createMeasurement);
-        viewerContainer.addEventListener("mousemove", mouseMove);
-        window.addEventListener("keydown", keydown);
+        this.setupEvents(true);
         this.uiElement.main.active = true;
         this.enabled = true;
       } else {
         this.enabled = false;
         this.uiElement.main.active = false;
-        viewerContainer.removeEventListener("click", createMeasurement);
-        viewerContainer.removeEventListener("mousemove", mouseMove);
-        window.removeEventListener("keydown", keydown);
+        this.setupEvents(false);
       }
     };
   }
@@ -141,4 +135,42 @@ export class AreaMeasurement
   get() {
     return this._measurements;
   }
+
+  private setupEvents(active: boolean) {
+    const viewerContainer = this._components.ui.viewerContainer;
+    if (active) {
+      viewerContainer.addEventListener("click", this.onCreateMeasurement);
+      viewerContainer.addEventListener("mousemove", this.onMouseMove);
+      window.addEventListener("keydown", this.onKeydown);
+    } else {
+      viewerContainer.removeEventListener("click", this.onCreateMeasurement);
+      viewerContainer.removeEventListener("mousemove", this.onMouseMove);
+      window.removeEventListener("keydown", this.onKeydown);
+    }
+  }
+
+  private onCreateMeasurement = () => {
+    this.create();
+  };
+
+  private onMouseMove = () => {
+    const point = this._vertexPicker.get();
+    if (!(point && this._currentAreaElement)) return;
+    this._currentAreaElement.setPoint(point, this._clickCount);
+    this._currentAreaElement.computeArea();
+  };
+
+  private onKeydown = (e: KeyboardEvent) => {
+    if (!this.enabled) return;
+    if (e.key === "z" && e.ctrlKey && this._currentAreaElement)
+      this._currentAreaElement.removePoint(this._clickCount - 1);
+    if (e.key === "Enter" && this._currentAreaElement) this.endCreation();
+    if (e.key === "Escape") {
+      if (this._clickCount === 0 && !this._currentAreaElement) {
+        this.enabled = false;
+      } else {
+        this.cancelCreation();
+      }
+    }
+  };
 }

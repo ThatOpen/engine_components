@@ -1,12 +1,11 @@
 import * as THREE from "three";
-import { Simple2DMarker } from "../../core/Simple2DMarker/index";
-import { Hideable, Event, Disposable } from "../../base-types";
-import { Component } from "../../base-types/component";
+import { Simple2DMarker, Components } from "../../core";
+import { Hideable, Event, Disposable, Component } from "../../base-types";
+
 import {
   DimensionLabelClassName,
   SimpleDimensionLine,
 } from "../LengthMeasurement";
-import { Components } from "../../core/Components";
 
 interface Area {
   points: THREE.Vector3[];
@@ -34,6 +33,22 @@ export class AreaMeasureElement
   readonly onWorkingPlaneComputed = new Event<THREE.Plane>();
   readonly onPointAdded = new Event<THREE.Vector3>();
   readonly onPointRemoved = new Event<THREE.Vector3>();
+
+  constructor(components: Components, points?: THREE.Vector3[]) {
+    super();
+    this._components = components;
+    const htmlText = document.createElement("div");
+    htmlText.className = DimensionLabelClassName;
+    this.labelMarker = new Simple2DMarker(components, htmlText);
+    this.labelMarker.visible = false;
+    this.onPointAdded.on((point) => {
+      if (this.points.length === 3 && !this._dimensionLines[2]) {
+        this.addDimensionLine(point, this.points[0]);
+        this.labelMarker.visible = true;
+      }
+    });
+    points?.forEach((point) => this.setPoint(point));
+  }
 
   setPoint(point: THREE.Vector3, index?: number) {
     let _index: number;
@@ -66,22 +81,6 @@ export class AreaMeasureElement
     nextLine?.dispose();
     this._dimensionLines.splice(index, 1);
     this.onPointRemoved.trigger();
-  }
-
-  constructor(components: Components, points?: THREE.Vector3[]) {
-    super();
-    this._components = components;
-    const htmlText = document.createElement("div");
-    htmlText.className = DimensionLabelClassName;
-    this.labelMarker = new Simple2DMarker(components, htmlText);
-    this.labelMarker.visible = false;
-    this.onPointAdded.on((point) => {
-      if (this.points.length === 3 && !this._dimensionLines[2]) {
-        this.addDimensionLine(point, this.points[0]);
-        this.labelMarker.visible = true;
-      }
-    });
-    points?.forEach((point) => this.setPoint(point));
   }
 
   toggleLabel() {
@@ -171,13 +170,20 @@ export class AreaMeasureElement
   }
 
   dispose() {
-    for (const line of this._dimensionLines) line.dispose();
+    this.onAreaComputed.reset();
+    this.onWorkingPlaneComputed.reset();
+    this.onPointAdded.reset();
+    this.onPointRemoved.reset();
+    for (const line of this._dimensionLines) {
+      line.dispose();
+    }
     this.labelMarker.dispose();
     this._dimensionLines = [];
     this.points = [];
     this._rotationMatrix = null;
     this.workingPlane = null;
     this._defaultLineMaterial.dispose();
+    (this._components as any) = null;
   }
 
   get(): Area {

@@ -1,15 +1,14 @@
 import * as THREE from "three";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
-import { Createable, Event, UI } from "../../base-types/base-types";
-import { Component } from "../../base-types/component";
-import { Components } from "../../core/Components";
-import { Button } from "../../ui/ButtonComponent";
+import { Createable, Event, UI, Component, Disposable } from "../../base-types";
+import { Components } from "../../core";
+import { Button } from "../../ui";
 import { VertexPicker } from "../../utils";
 import { AngleMeasureElement } from "../AngleMeasureElement";
 
 export class AngleMeasurement
   extends Component<AngleMeasureElement[]>
-  implements Createable, UI
+  implements Createable, UI, Disposable
 {
   name: string = "AngleMeasurement";
   uiElement: { main: Button };
@@ -70,6 +69,25 @@ export class AngleMeasurement
     this.uiElement.main.materialIcon = "square_foot";
     this.setUI();
     this.enabled = false;
+  }
+
+  dispose() {
+    this.beforeCreate.reset();
+    this.afterCreate.reset();
+    this.beforeCancel.reset();
+    this.afterCancel.reset();
+    this.beforeDelete.reset();
+    this.afterDelete.reset();
+    this.uiElement.main.dispose();
+    this._lineMaterial.dispose();
+    this._vertexPicker.dispose();
+    for (const measure of this._measurements) {
+      measure.dispose();
+    }
+    if (this._currentAngleElement) {
+      this._currentAngleElement.dispose();
+    }
+    (this._components as any) = null;
   }
 
   private setUI() {

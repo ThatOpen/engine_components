@@ -9,10 +9,9 @@ import {
   Event,
   UI,
 } from "../../base-types";
-import { Components } from "../../core/Components";
-import { SimpleRaycaster } from "../../core/SimpleRaycaster";
-import { Button } from "../../ui/ButtonComponent";
-import { VertexPicker } from "../../utils/VertexPicker";
+import { Components, SimpleRaycaster } from "../../core";
+import { Button } from "../../ui";
+import { VertexPicker } from "../../utils";
 
 /**
  * A basic dimension tool to measure distances between 2 points in 3D and
@@ -166,7 +165,22 @@ export class LengthMeasurement
   /** {@link Disposable.dispose} */
   dispose() {
     this.enabled = false;
-    this._measurements.forEach((dim) => dim.dispose());
+    this.beforeUpdate.reset();
+    this.afterUpdate.reset();
+    this.beforeCreate.reset();
+    this.afterCreate.reset();
+    this.beforeDelete.reset();
+    this.afterDelete.reset();
+    this.beforeCancel.reset();
+    this.afterCancel.reset();
+    this.uiElement.main.dispose();
+    if (this.previewElement) {
+      this.previewElement.remove();
+    }
+    for (const measure of this._measurements) {
+      measure.dispose();
+    }
+    this._lineMaterial.dispose();
     this._measurements = [];
     this._vertexPicker.dispose();
   }
