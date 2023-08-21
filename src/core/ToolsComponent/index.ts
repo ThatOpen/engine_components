@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import * as OBC from "../../index";
 import { Component, Disposable, Event } from "../../base-types";
 
 type ToolsList = Map<symbol | string, Component<any>>;
@@ -68,8 +67,9 @@ export class ToolComponent
    * for the component.
    * @param token The authentication token to authorise this request.
    * @param id The ID of the tool you want to get
+   * @param OBC The whole components library (import * as OBC from "openbim-components")
    */
-  async use<T>(token: string, id: string) {
+  async use<T>(token: string, id: string, OBC: any) {
     const { base, path } = this._urls;
     const url = base + id + path + token;
 

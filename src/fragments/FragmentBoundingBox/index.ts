@@ -1,18 +1,23 @@
 import * as THREE from "three";
 import { Fragment, FragmentsGroup } from "bim-fragment";
+import { Component, Disposable } from "../../base-types";
+import { Disposer } from "../../core";
 
 /**
  * A simple implementation of bounding box that works for fragments. The resulting bbox is not 100% precise, but
  * it's fast, and should suffice for general use cases such as camera zooming.
  */
-export class FragmentBoundingBox {
+export class FragmentBoundingBox extends Component<void> implements Disposable {
   name = "FragmentBoundingBox";
   enabled = true;
 
+  private _disposer = new Disposer();
   private _absoluteMin: THREE.Vector3;
   private _absoluteMax: THREE.Vector3;
+  private _meshes: THREE.Mesh[] = [];
 
   constructor() {
+    super();
     this._absoluteMin = FragmentBoundingBox.newBound(true);
     this._absoluteMax = FragmentBoundingBox.newBound(false);
   }
@@ -54,6 +59,13 @@ export class FragmentBoundingBox {
     return new THREE.Box3(min, max);
   }
 
+  dispose() {
+    for (const mesh of this._meshes) {
+      this._disposer.dispose(mesh);
+    }
+    this._meshes = [];
+  }
+
   get() {
     const min = this._absoluteMin.clone();
     const max = this._absoluteMax.clone();
@@ -77,6 +89,7 @@ export class FragmentBoundingBox {
     const { width, height, depth, center } = dimensions;
     const box = new THREE.BoxGeometry(width, height, depth);
     const mesh = new THREE.Mesh(box);
+    this._meshes.push(mesh);
     mesh.position.copy(center);
     return mesh;
   }
@@ -144,6 +157,7 @@ export class FragmentBoundingBox {
       if (y > max.y) max.y = y;
       if (z > max.z) max.z = z;
     }
+
     return new THREE.Box3(min, max);
   }
 }

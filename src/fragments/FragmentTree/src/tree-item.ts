@@ -14,12 +14,12 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
   name = "FragmentTreeItem";
   enabled: boolean = true;
   filter: { [name: string]: string[] } = {};
-  components: Components;
   uiElement: { main: Button; tree: TreeView };
 
   selected = new Event<FragmentIdMap>();
   hovered = new Event<FragmentIdMap>();
 
+  private _components: Components;
   private _children: FragmentTreeItem[] = [];
 
   get children() {
@@ -39,7 +39,7 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
     content: string
   ) {
     super();
-    this.components = components;
+    this._components = components;
     this.uiElement = {
       main: new Button(components),
       tree: new TreeView(components, content),
@@ -55,12 +55,14 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
   }
 
   dispose() {
+    this.uiElement.main.dispose();
     this.uiElement.tree.dispose();
     this.selected.reset();
     this.hovered.reset();
     for (const child of this.children) {
       child.dispose();
     }
+    (this._components as any) = null;
   }
 
   get(): TreeItem {

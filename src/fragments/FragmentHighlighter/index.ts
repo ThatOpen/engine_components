@@ -2,7 +2,8 @@ import * as THREE from "three";
 import { Fragment } from "bim-fragment";
 import { FragmentMesh } from "bim-fragment/fragment-mesh";
 import { Component, Disposable, Event, FragmentIdMap } from "../../base-types";
-import { FragmentBoundingBox, FragmentManager } from "../index";
+import { FragmentManager } from "../FragmentManager";
+import { FragmentBoundingBox } from "../FragmentBoundingBox";
 import { Components, SimpleCamera } from "../../core";
 import { toCompositeID } from "../../utils";
 import { PostproductionRenderer } from "../../navigation";
@@ -109,8 +110,18 @@ export class FragmentHighlighter
       const mesh = this._outlinedMeshes[id];
       mesh.geometry.dispose();
     }
+    this.outlineMaterial.dispose();
+    this._bbox.dispose();
     this._invisibleMaterial.dispose();
     this.highlightMats = {};
+    this.selection = {};
+    for (const name in this.events) {
+      this.events[name].onClear.reset();
+      this.events[name].onHighlight.reset();
+    }
+    this.events = {};
+    (this._components as any) = null;
+    (this._fragments as any) = null;
   }
 
   add(name: string, material?: THREE.Material[]) {

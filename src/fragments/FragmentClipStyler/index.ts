@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { EdgesClipper } from "../../navigation";
 import { FragmentManager } from "../FragmentManager";
-import { UI } from "../../base-types";
+import { Disposable, UI } from "../../base-types";
 import {
   Button,
   ColorInput,
@@ -21,7 +21,7 @@ export interface ClipStyleCardData {
   categories: string;
 }
 
-export class FragmentClipStyler implements UI {
+export class FragmentClipStyler implements UI, Disposable {
   _fragments: FragmentManager;
   _clipper: EdgesClipper;
   _components: Components;
@@ -93,6 +93,18 @@ export class FragmentClipStyler implements UI {
     this.loadCachedStyles();
   }
 
+  dispose() {
+    for (const id in this._styleCards) {
+      this.deleteStyleCard(id, false);
+    }
+    this.uiElement.mainWindow.dispose();
+    this.uiElement.mainButton.dispose();
+    (this._clipper as any) = null;
+    (this._classifier as any) = null;
+    (this._components as any) = null;
+    (this._fragments as any) = null;
+  }
+
   private loadCachedStyles() {
     const savedData = localStorage.getItem(this._localStorageID);
     if (savedData) {
@@ -120,7 +132,7 @@ export class FragmentClipStyler implements UI {
     localStorage.setItem(this._localStorageID, serialized);
   }
 
-  private deleteStyleCard(id: string) {
+  private deleteStyleCard(id: string, updateCache = true) {
     const found = this._styleCards[id];
     this._clipper.styles.deleteStyle(id, true);
     if (found) {
@@ -134,7 +146,9 @@ export class FragmentClipStyler implements UI {
     }
     delete this._styleCards[id];
     this._clipper.updateEdges(true);
-    this.cacheStyles();
+    if (updateCache) {
+      this.cacheStyles();
+    }
   }
 
   private createStyleCard(config?: ClipStyleCardData) {

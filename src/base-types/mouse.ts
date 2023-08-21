@@ -12,7 +12,7 @@ export class Mouse implements Disposable {
   private _position = new THREE.Vector2();
 
   constructor(public dom: HTMLCanvasElement) {
-    this.setupMousePositionUpdate();
+    this.setupEvents(true);
   }
 
   /**
@@ -29,7 +29,7 @@ export class Mouse implements Disposable {
 
   /** {@link Disposable.dispose} */
   dispose() {
-    this.dom.removeEventListener("mousemove", this.updateMouseInfo);
+    this.setupEvents(false);
   }
 
   private getPositionY(bound: DOMRect, event: MouseEvent) {
@@ -40,11 +40,15 @@ export class Mouse implements Disposable {
     return ((event.clientX - bound.left) / (bound.right - bound.left)) * 2 - 1;
   }
 
-  private setupMousePositionUpdate() {
-    this.dom.addEventListener("mousemove", this.updateMouseInfo);
-  }
-
   private updateMouseInfo = (event: MouseEvent) => {
     this._event = event;
   };
+
+  private setupEvents(active: boolean) {
+    if (active) {
+      this.dom.addEventListener("mousemove", this.updateMouseInfo);
+    } else {
+      this.dom.removeEventListener("mousemove", this.updateMouseInfo);
+    }
+  }
 }

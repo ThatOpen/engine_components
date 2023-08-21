@@ -22,6 +22,8 @@ export class SimpleCamera
   /** {@link Updateable.afterUpdate} */
   readonly afterUpdate = new Event<SimpleCamera>();
 
+  readonly aspectUpdated = new Event();
+
   /**
    * The object that controls the camera. An instance of
    * [yomotsu's cameracontrols](https://github.com/yomotsu/camera-controls).
@@ -54,7 +56,7 @@ export class SimpleCamera
     this.controls = this.setupCameraControls();
     const scene = components.scene.get();
     scene.add(this._perspectiveCamera);
-    this.setupEvents();
+    this.setupEvents(true);
   }
 
   /** {@link Component.get} */
@@ -64,7 +66,9 @@ export class SimpleCamera
 
   /** {@link Disposable.dispose} */
   dispose() {
+    this.setupEvents(false);
     this.enabled = false;
+    this.aspectUpdated.reset();
     this.beforeUpdate.reset();
     this.afterUpdate.reset();
     this._perspectiveCamera.removeFromParent();
@@ -84,13 +88,14 @@ export class SimpleCamera
    * Updates the aspect of the camera to match the size of the
    * {@link Components.renderer}.
    */
-  updateAspect() {
+  updateAspect = () => {
     if (this.components.renderer.isResizeable()) {
       const size = this.components.renderer.getSize();
       this._perspectiveCamera.aspect = size.width / size.height;
       this._perspectiveCamera.updateProjectionMatrix();
+      this.aspectUpdated.trigger();
     }
-  }
+  };
 
   private setupCamera() {
     const aspect = window.innerWidth / window.innerHeight;
@@ -111,10 +116,12 @@ export class SimpleCamera
     return controls;
   }
 
-  private setupEvents() {
-    window.addEventListener("resize", () => {
-      this.updateAspect();
-    });
+  private setupEvents(active: boolean) {
+    if (active) {
+      window.addEventListener("resize", this.updateAspect);
+    } else {
+      window.removeEventListener("resize", this.updateAspect);
+    }
   }
 
   private static getSubsetOfThree() {

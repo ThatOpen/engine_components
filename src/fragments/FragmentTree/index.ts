@@ -1,9 +1,18 @@
-import { Component, Event, FragmentIdMap, UI } from "../../base-types";
+import {
+  Component,
+  Disposable,
+  Event,
+  FragmentIdMap,
+  UI,
+} from "../../base-types";
 import { FragmentTreeItem } from "./src/tree-item";
 import { Components } from "../../core";
 import { FragmentClassifier } from "../FragmentClassifier";
 
-export class FragmentTree extends Component<FragmentTreeItem> implements UI {
+export class FragmentTree
+  extends Component<FragmentTreeItem>
+  implements UI, Disposable
+{
   name = "FragmentTree";
   title = "Model Tree";
   enabled: boolean = true;
@@ -28,6 +37,14 @@ export class FragmentTree extends Component<FragmentTreeItem> implements UI {
 
   get(): FragmentTreeItem {
     return this._tree;
+  }
+
+  dispose() {
+    this.selected.reset();
+    this.hovered.reset();
+    this._tree.dispose();
+    (this._components as any) = null;
+    (this._classifier as any) = null;
   }
 
   update(groupSystems: string[]) {

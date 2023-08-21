@@ -84,14 +84,20 @@ export class FragmentManager
 
   /** {@link Component.get} */
   dispose() {
+    this.onFragmentsLoaded.reset();
+    this.uiElement.main.dispose();
+    this.uiElement.window.dispose();
     for (const group of this.groups) {
       group.dispose(true);
     }
-
+    for (const command of this.commands) {
+      command.dispose();
+    }
+    for (const card of this._cards) {
+      card.dispose();
+    }
     this.groups = [];
     this.list = {};
-
-    this.updateWindow();
   }
 
   disposeGroup(group: FragmentsGroup) {
@@ -165,6 +171,7 @@ export class FragmentManager
       this.uiElement.window.addChild(card);
       this._cards.push(card);
 
+      // TODO: Use command list just like in fragment plans
       const commandsButton = new Button(this._components);
       commandsButton.materialIcon = "delete";
       commandsButton.tooltip = "Delete model";

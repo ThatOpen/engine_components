@@ -61,6 +61,7 @@ export class SimpleRenderer
 
   /** {@link Updateable.update} */
   update(_delta: number) {
+    if (!this.enabled) return;
     this.beforeUpdate.trigger(this);
     const scene = this.components.scene?.get();
     const camera = this.components.camera?.get();
@@ -72,8 +73,8 @@ export class SimpleRenderer
 
   /** {@link Disposable.dispose} */
   dispose() {
-    this.setupEvents(false);
     this.enabled = false;
+    this.setupEvents(false);
     this._renderer.domElement.remove();
     this._renderer.dispose();
     this._renderer2D.domElement.remove();

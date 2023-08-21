@@ -39,6 +39,7 @@ export class FragmentClassifier
 
   dispose() {
     this._groupSystems = {};
+    (this._fragments as any) = null;
   }
 
   remove(guid: string) {

@@ -150,15 +150,21 @@ export class FragmentPlans
 
   /** {@link Disposable.dispose} */
   dispose() {
+    this.exited.reset();
+    this.navigated.reset();
     this.storeys = [];
     this._plans = [];
     this._clipper.dispose();
     this.objects.dispose();
-    this.uiElement.planList.dispose();
     this.uiElement.floatingWindow.dispose();
     this.uiElement.main.dispose();
+    this.uiElement.planList.dispose();
+    this.uiElement.defaultText.dispose();
+    this.uiElement.exitButton.dispose();
     this.uiElement.commandsMenu.dispose();
-    this.uiElement.commandsMenu.dispose();
+    (this._components as any) = null;
+    (this._clipper as any) = null;
+    (this._camera as any) = null;
   }
 
   // TODO: Compute georreference matrix when generating fragmentsgroup

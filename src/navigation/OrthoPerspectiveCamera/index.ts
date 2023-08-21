@@ -50,6 +50,8 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
 
     this._projectionManager = new ProjectionManager(components, this);
     this.uiElement = this.setUI();
+
+    this.aspectUpdated.on(() => this.setOrthoCameraAspect());
   }
 
   private setUI() {
@@ -174,12 +176,6 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
     }
     this.currentMode = this._navigationModes.get(mode)!;
     this.currentMode.toggle(true);
-  }
-
-  /** Updates the aspect ratio of the camera to match the Renderer's aspect ratio. */
-  updateAspect() {
-    super.updateAspect();
-    this.setOrthoCameraAspect();
   }
 
   /**

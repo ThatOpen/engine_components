@@ -93,6 +93,9 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
   }
 
   dispose() {
+    this.uiElement.main.dispose();
+    this.uiElement.window.dispose();
+    (this._components as any) = null;
     (this._fragments as any) = null;
     (this._culler as any) = null;
   }

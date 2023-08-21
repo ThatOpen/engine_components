@@ -78,15 +78,27 @@ export class PlanObjects implements UI {
   }
 
   dispose() {
+    this.planClicked.reset();
     this.visible = false;
     for (const id in this._objects) {
-      const { marker } = this._objects[id];
+      const { marker, button, outline, root, plane } = this._objects[id];
+      button.dispose();
+      outline.removeFromParent();
+      (outline.geometry as any) = null;
+      outline.material = [];
+      root.removeFromParent();
+      root.children = [];
+      plane.removeFromParent();
+      plane.material = [];
+      (plane.geometry as any) = null;
       marker.element.remove();
     }
     this._objects = {};
     this._planeGeometry.dispose();
     this._material.dispose();
     this.uiElement.main.dispose();
+    this.lineMaterial.dispose();
+    this._material.dispose();
     (this._components as any) = null;
   }
 

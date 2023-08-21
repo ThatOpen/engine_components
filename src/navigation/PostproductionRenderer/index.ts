@@ -18,6 +18,7 @@ export class PostproductionRenderer extends SimpleRenderer {
 
   /** {@link Updateable.update} */
   update(_delta: number) {
+    if (!this.enabled) return;
     this.beforeUpdate.trigger(this);
     const scene = this.components.scene?.get();
     const camera = this.components.camera?.get();

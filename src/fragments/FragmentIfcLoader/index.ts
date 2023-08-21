@@ -63,6 +63,10 @@ export class FragmentIfcLoader
   dispose() {
     this._geometry.cleanUp();
     this._converter.cleanUp();
+    this.ifcLoaded.reset();
+    this.locationsSaved.reset();
+    this._toast.dispose();
+    this.uiElement.main.dispose();
     (this._webIfc as any) = null;
     (this._geometry as any) = null;
     (this._converter as any) = null;
