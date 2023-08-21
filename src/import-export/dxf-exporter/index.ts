@@ -1,26 +1,34 @@
 import Drawing from "dxf-writer";
 import * as THREE from "three";
 import { FragmentManager, FragmentPlans } from "../../fragments";
-import { EdgesClipper } from "../../navigation";
 import { EdgeProjector } from "./src/edge-projector";
+import { Component } from "../../base-types";
 
-export class DXFExporter {
-  _fragments: FragmentManager;
-  _plans: FragmentPlans;
-  _clipper: EdgesClipper;
+export class DXFExporter extends Component<EdgeProjector> {
+  enabled = true;
+  name = "DXFExporter";
+
+  private _fragments: FragmentManager;
+  private _plans: FragmentPlans;
 
   precission = 0.001;
 
   private _projector = new EdgeProjector();
 
-  constructor(
-    fragments: FragmentManager,
-    plans: FragmentPlans,
-    clipper: EdgesClipper
-  ) {
+  constructor(fragments: FragmentManager, plans: FragmentPlans) {
+    super();
     this._fragments = fragments;
     this._plans = plans;
-    this._clipper = clipper;
+  }
+
+  get() {
+    return this._projector;
+  }
+
+  dispose() {
+    (this._fragments as any) = null;
+    this._plans.dispose();
+    this._projector.dispose();
   }
 
   async export(name: string) {

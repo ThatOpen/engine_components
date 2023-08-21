@@ -84,6 +84,7 @@ export class MapboxWindow {
     const label = this._labels[id];
     delete this._labels[id];
     label.removeFromParent();
+    (label.element as any) = undefined;
     const found = this._buildings.find((building) => building.id === id);
     if (found) {
       const index = this._buildings.indexOf(found);
@@ -108,6 +109,7 @@ export class MapboxWindow {
   dispose() {
     this._components.dispose();
     (this._components as any) = null;
+    this._map.remove();
     (this._map as any) = null;
     for (const id in this._labels) {
       const label = this._labels[id];

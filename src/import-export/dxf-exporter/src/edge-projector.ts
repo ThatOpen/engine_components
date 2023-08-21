@@ -34,6 +34,11 @@ export class EdgeProjector {
   projectedEdges: THREE.LineSegments[] = [];
 
   dispose() {
+    this.disposeGeometry();
+    this._defaultMaterial.dispose();
+  }
+
+  disposeGeometry() {
     this.projectedEdges.forEach((edge) => {
       edge.geometry.dispose();
       if (Array.isArray(edge.material))
