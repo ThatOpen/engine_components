@@ -1,36 +1,58 @@
 import * as THREE from "three";
-import { Component, Disposable } from "../../base-types";
+import { Component, Disposable, UI } from "../../base-types";
 import { FragmentClassifier, FragmentManager } from "../index";
 import { toCompositeID } from "../../utils";
+import { Button } from "../../ui";
+import { Components } from "../../core";
 
 // TODO: Clean up and document
 
 export class FragmentExploder
   extends Component<Set<string>>
-  implements Disposable
+  implements Disposable, UI
 {
   name = "FragmentExploder";
   height = 10;
   groupName = "storeys";
   enabled = false;
 
+  uiElement: { main: Button };
+
   private _explodedFragments = new Set<string>();
+  private _fragments: FragmentManager;
+  private _groups: FragmentClassifier;
 
   get(): Set<string> {
     return this._explodedFragments;
   }
 
   constructor(
-    public fragments: FragmentManager,
-    public groups: FragmentClassifier
+    components: Components,
+    fragments: FragmentManager,
+    groups: FragmentClassifier
   ) {
     super();
+    this._fragments = fragments;
+    this._groups = groups;
+
+    const main = new Button(components);
+    this.uiElement = { main };
+    main.tooltip = "Explode";
+    main.materialIcon = "splitscreen";
+    main.onclick = () => {
+      if (this.enabled) {
+        this.reset();
+      } else {
+        this.explode();
+      }
+    };
   }
 
   dispose() {
     this._explodedFragments.clear();
-    (this.fragments as any) = null;
-    (this.groups as any) = null;
+    this.uiElement.main.dispose();
+    (this._fragments as any) = null;
+    (this._groups as any) = null;
   }
 
   explode() {
@@ -47,7 +69,7 @@ export class FragmentExploder
     const factor = this.enabled ? 1 : -1;
     let i = 0;
 
-    const systems = this.groups.get();
+    const systems = this._groups.get();
     const groups = systems[this.groupName];
 
     const mergedIDHeightMap: { [frag: string]: { [id: string]: number } } = {};
@@ -57,7 +79,7 @@ export class FragmentExploder
     for (const groupName in groups) {
       yTransform.elements[13] = i * factor * this.height;
       for (const fragID in groups[groupName]) {
-        const fragment = this.fragments.list[fragID];
+        const fragment = this._fragments.list[fragID];
         const customID = groupName + fragID;
         if (!fragment) {
           continue;
@@ -114,7 +136,7 @@ export class FragmentExploder
     // Update merged fragments
     for (const fragID in mergedIDHeightMap) {
       const heights = mergedIDHeightMap[fragID];
-      const fragment = this.fragments.list[fragID];
+      const fragment = this._fragments.list[fragID];
       const geometry = fragment.mesh.geometry;
       const position = geometry.attributes.position;
       for (let i = 0; i < geometry.index.count; i++) {
