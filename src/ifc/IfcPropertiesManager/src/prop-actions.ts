@@ -1,9 +1,11 @@
 import { FragmentsGroup } from "bim-fragment";
-import { Components } from "../../../core/Components";
-import { SimpleUIComponent } from "../../../ui/SimpleUIComponent";
-import { FloatingWindow } from "../../../ui/FloatingWindow";
-import { TextInput } from "../../../ui/TextInput";
-import { Button } from "../../../ui/ButtonComponent";
+import { Components } from "../../../core";
+import {
+  SimpleUIComponent,
+  FloatingWindow,
+  TextInput,
+  Button,
+} from "../../../ui";
 import { Event } from "../../../base-types";
 import { IfcPropertiesUtils } from "../../IfcPropertiesUtils";
 
@@ -62,6 +64,16 @@ export class PropActionsUI extends SimpleUIComponent<HTMLDivElement> {
       "overflow-auto text-white bg-ifcjs-100 rounded-md w-[350px]";
     this._modalWindow.onHidden.on(() => this._modal.get().close());
     this._modal.addChild(this._modalWindow);
+  }
+
+  dispose(onlyChildren: boolean = false) {
+    super.dispose(onlyChildren);
+    this.onRemoveProp.reset();
+    this.editPropBtn.dispose();
+    this.removePropBtn.dispose();
+    this._modal.dispose();
+    this._modalWindow.dispose();
+    this.data = {};
   }
 
   private setEditUI() {

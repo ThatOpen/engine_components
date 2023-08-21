@@ -1,8 +1,7 @@
 import * as WEBIFC from "web-ifc";
 import { FragmentsGroup } from "bim-fragment";
-import { Event } from "../../base-types";
-import { Component } from "../../base-types/component";
-import { Components } from "../../core/Components";
+import { Disposable, Event, Component } from "../../base-types";
+import { Components } from "../../core";
 import { generateIfcGUID } from "../../utils";
 import { IfcPropertiesUtils } from "../IfcPropertiesUtils";
 import { EntityActionsUI } from "./src/entity-actions";
@@ -25,18 +24,20 @@ interface AttributeListener {
   };
 }
 
-export class IfcPropertiesManager extends Component<ChangeMap> {
+export class IfcPropertiesManager
+  extends Component<ChangeMap>
+  implements Disposable
+{
   name: string = "PropertiesManager";
   enabled: boolean = true;
   attributeListeners: AttributeListener = {};
+
   uiElement: {
     entityActions: EntityActionsUI;
     psetActions: PsetActionsUI;
     propActions: PropActionsUI;
   };
 
-  // @ts-ignore
-  private _components: Components;
   private _ifcApi: WEBIFC.IfcAPI;
   private _changeMap: ChangeMap = {};
 
@@ -62,11 +63,12 @@ export class IfcPropertiesManager extends Component<ChangeMap> {
     expressID: number;
   }>();
 
+  wasmPath = "/";
+
   constructor(components: Components, ifcApi?: WEBIFC.IfcAPI) {
     super();
-    this._components = components;
     this._ifcApi = ifcApi ?? new WEBIFC.IfcAPI();
-    this._ifcApi.SetWasmPath("/", true);
+    this._ifcApi.SetWasmPath(this.wasmPath, true);
     this._ifcApi.Init();
 
     this.uiElement = {
@@ -76,6 +78,19 @@ export class IfcPropertiesManager extends Component<ChangeMap> {
     };
 
     this.setUIEvents();
+  }
+
+  dispose() {
+    (this._ifcApi as any) = null;
+    this.attributeListeners = {};
+    this._changeMap = {};
+    this.onElementToPset.reset();
+    this.onPropToPset.reset();
+    this.onPsetRemoved.reset();
+    this.onDataChanged.reset();
+    this.uiElement.entityActions.dispose();
+    this.uiElement.psetActions.dispose();
+    this.uiElement.propActions.dispose();
   }
 
   private setUIEvents() {
@@ -379,6 +394,12 @@ export class IfcPropertiesManager extends Component<ChangeMap> {
     }
     const modifiedIFC = this._ifcApi.SaveModel(modelID);
     this._ifcApi.CloseModel(modelID);
+
+    (this._ifcApi as any) = null;
+    this._ifcApi = new WEBIFC.IfcAPI();
+    this._ifcApi.SetWasmPath(this.wasmPath, true);
+    this._ifcApi.Init();
+
     return modifiedIFC;
   }
 

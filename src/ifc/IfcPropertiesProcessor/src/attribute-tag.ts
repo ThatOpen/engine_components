@@ -25,6 +25,11 @@ export class AttributeTag extends PropertyTag {
     this.setListeners();
   }
 
+  dispose(onlyChildren: boolean = false) {
+    super.dispose(onlyChildren);
+    (this.model as any) = null;
+  }
+
   protected setListeners() {
     const propertiesManager = this._propertiesProcessor.propertiesManager;
     if (!propertiesManager) return;

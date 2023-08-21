@@ -1,7 +1,6 @@
-import { Components } from "../../../core/Components";
-import { SimpleUIComponent } from "../../../ui/SimpleUIComponent";
-import { Dropdown } from "../../../ui/Dropdown";
-import { Button, TextInput } from "../../../ui";
+import { Components } from "../../../core";
+import { SimpleUIComponent, Dropdown, Button, TextInput } from "../../../ui";
+
 import { AttributeQuery, QueryConditions, QueryOperators } from "./types";
 import { IfcCategoryMap } from "../../ifc-category-map";
 
@@ -131,5 +130,16 @@ export class AttributeQueryUI extends SimpleUIComponent {
     );
 
     this.attribute.value = "Name";
+  }
+
+  dispose(onlyChildren: boolean = false) {
+    super.dispose(onlyChildren);
+    this.operator.dispose();
+    this.attribute.dispose();
+    this.condition.dispose();
+    this.value.dispose();
+    this.ifcTypes.dispose();
+    this.removeBtn.dispose();
+    this.negate.dispose();
   }
 }

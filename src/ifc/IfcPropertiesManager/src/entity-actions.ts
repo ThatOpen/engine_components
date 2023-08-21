@@ -67,4 +67,14 @@ export class EntityActionsUI extends SimpleUIComponent<HTMLDivElement> {
 
     addPsetUI.addChild(this._nameInput, this._descriptionInput);
   }
+
+  dispose(onlyChildren: boolean = false) {
+    super.dispose(onlyChildren);
+    this.data = {};
+    this.onNewPset.reset();
+    this.addPsetBtn.dispose();
+    this.modal.dispose();
+    this._nameInput.dispose();
+    this._descriptionInput.dispose();
+  }
 }

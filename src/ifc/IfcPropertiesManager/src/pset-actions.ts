@@ -23,10 +23,12 @@ export class PsetActionsUI extends SimpleUIComponent<HTMLDivElement> {
     name: string;
     description: string;
   }>();
+
   readonly onRemovePset = new Event<{
     model: FragmentsGroup;
     psetID: number;
   }>();
+
   readonly onNewProp = new Event<{
     model: FragmentsGroup;
     psetID: number;
@@ -70,6 +72,19 @@ export class PsetActionsUI extends SimpleUIComponent<HTMLDivElement> {
       "overflow-auto text-white bg-ifcjs-100 rounded-md w-[350px]";
     this._modalWindow.onHidden.on(() => this._modal.get().close());
     this._modal.addChild(this._modalWindow);
+  }
+
+  dispose(onlyChildren: boolean = false) {
+    super.dispose(onlyChildren);
+    this.editPsetBtn.dispose();
+    this.removePsetBtn.dispose();
+    this.addPropBtn.dispose();
+    this._modal.dispose();
+    this._modalWindow.dispose();
+    this.onEditPset.reset();
+    this.onRemovePset.reset();
+    this.onNewProp.reset();
+    this.data = {};
   }
 
   private setEditUI() {

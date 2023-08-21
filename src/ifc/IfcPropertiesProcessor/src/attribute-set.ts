@@ -1,6 +1,6 @@
 import { FragmentsGroup } from "bim-fragment";
-import { Components } from "../../../core/Components";
-import { TreeView } from "../../../ui/TreeView";
+import { Components } from "../../../core";
+import { TreeView } from "../../../ui";
 import { AttributeTag } from "./attribute-tag";
 import { IfcPropertiesProcessor } from "..";
 
@@ -34,6 +34,14 @@ export class AttributeSet extends TreeView {
     this.expressID = expressID;
     this._propertiesProcessor = propertiesProcessor;
     this.onExpand.on(() => this.generate());
+  }
+
+  dispose(onlyChildren: boolean = false) {
+    super.dispose(onlyChildren);
+    (this.model as any) = null;
+    this.attributesToIgnore = [];
+    this._attributes = [];
+    (this._propertiesProcessor as any) = null;
   }
 
   private generate() {

@@ -2,7 +2,7 @@ import * as WEBIFC from "web-ifc";
 import { FragmentsGroup } from "bim-fragment";
 import { IfcPropertiesUtils } from "../IfcPropertiesUtils";
 import { Button } from "../../ui/ButtonComponent";
-import { UI, Event } from "../../base-types";
+import { UI, Event, Disposable } from "../../base-types";
 import { Component } from "../../base-types/component";
 import { FloatingWindow } from "../../ui/FloatingWindow";
 import { SimpleUIComponent } from "../../ui/SimpleUIComponent";
@@ -23,7 +23,10 @@ type RenderFunction = (
   ...args: any
 ) => TreeView[] | TreeView | null;
 
-export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
+export class IfcPropertiesProcessor
+  extends Component<IndexMap>
+  implements UI, Disposable
+{
   name: string = "PropertiesParser";
   enabled: boolean = true;
   uiElement: { propertiesWindow: FloatingWindow; main: Button };
@@ -36,6 +39,7 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
     WEBIFC.IFCRELASSOCIATESCLASSIFICATION,
     WEBIFC.IFCRELASSIGNSTOGROUP,
   ];
+
   entitiesToIgnore = [WEBIFC.IFCOWNERHISTORY, WEBIFC.IFCMATERIALLAYERSETUSAGE];
   attributesToIgnore = [
     "CompositionType",
@@ -112,6 +116,21 @@ export class IfcPropertiesProcessor extends Component<IndexMap> implements UI {
       [WEBIFC.IFCELEMENTQUANTITY]: (model: FragmentsGroup, expressID: number) =>
         this.newQsetUI(model, expressID),
     };
+  }
+
+  dispose() {
+    this.uiElement.main.dispose();
+    this.uiElement.propertiesWindow.dispose();
+    (this._components as any) = null;
+    this._propsList.dispose();
+    this._indexMap = {};
+    (this.propertiesManager as any) = null;
+    (this._components as any) = null;
+    for (const id in this._currentUI) {
+      this._currentUI[id].dispose();
+    }
+    this._currentUI = {};
+    this.onPropertiesManagerSet.reset();
   }
 
   private setUI() {

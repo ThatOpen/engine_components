@@ -107,4 +107,10 @@ export class QueryBuilder extends SimpleUIComponent {
     //   },
     // ];
   }
+
+  dispose(onlyChildren: boolean = false) {
+    super.dispose(onlyChildren);
+    this.findButton.dispose();
+    this.onQuerySet.reset();
+  }
 }

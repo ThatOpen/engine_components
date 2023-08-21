@@ -94,4 +94,10 @@ export class QueryGroupUI extends SimpleUIComponent {
 
     this.addChild(topContainer, this.operator, propertyQuery);
   }
+
+  dispose(onlyChildren: boolean = false) {
+    super.dispose(onlyChildren);
+    this.operator.dispose();
+    this.removeBtn.dispose();
+  }
 }

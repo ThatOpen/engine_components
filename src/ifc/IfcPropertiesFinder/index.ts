@@ -1,6 +1,6 @@
 import * as WEBIFC from "web-ifc";
 import { FragmentsGroup, IfcProperties } from "bim-fragment";
-import { Event, FragmentIdMap, UI } from "../../base-types";
+import { Disposable, Event, FragmentIdMap, UI } from "../../base-types";
 import { Component } from "../../base-types/component";
 import { IfcPropertiesUtils } from "../IfcPropertiesUtils";
 import { Button, FloatingWindow } from "../../ui";
@@ -22,7 +22,10 @@ interface QueryResult {
   };
 }
 
-export class IfcPropertiesFinder extends Component<null> implements UI {
+export class IfcPropertiesFinder
+  extends Component<null>
+  implements UI, Disposable
+{
   name: string = "IfcPropertiesFinder";
   enabled: boolean = true;
   uiElement: { main: Button; queryWindow: FloatingWindow; query: QueryBuilder };
@@ -87,8 +90,12 @@ export class IfcPropertiesFinder extends Component<null> implements UI {
 
   dispose() {
     this._indexedModels = {};
+    this.onFound.reset();
     this.uiElement.main.dispose();
     this.uiElement.queryWindow.dispose();
+    this.uiElement.query.dispose();
+    (this._fragments as any) = null;
+    (this._components as any) = null;
   }
 
   loadCached(id?: string) {
