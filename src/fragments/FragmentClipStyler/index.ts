@@ -121,6 +121,32 @@ export class FragmentClipStyler
     (this._fragments as any) = null;
   }
 
+  update(ids = Object.keys(this._styleCards)) {
+    for (const id of ids) {
+      const card = this._styleCards[id];
+      if (!card) return;
+
+      const allStyles = this._clipper.styles.get();
+      const style = allStyles[id];
+      if (!style) return;
+
+      style.meshes.clear();
+
+      const categoryList = card.categories.value.split(",");
+      const entities = categoryList.map((item) => item.replace(" ", ""));
+
+      const found = this._classifier.find({ entities });
+      for (const fragID in found) {
+        const { mesh } = this._fragments.list[fragID];
+        style.fragments[fragID] = new Set(found[fragID]);
+        style.meshes.add(mesh);
+      }
+    }
+
+    this._clipper.updateEdges(true);
+    this.cacheStyles();
+  }
+
   private loadCachedStyles() {
     const savedData = localStorage.getItem(this._localStorageID);
     if (savedData) {
@@ -312,7 +338,7 @@ export class FragmentClipStyler
       saveStyles();
     });
 
-    const style = this._clipper.styles.create(
+    this._clipper.styles.create(
       id,
       new Set(),
       lineMaterial,
@@ -320,28 +346,11 @@ export class FragmentClipStyler
       outlineMaterial
     );
 
-    const updateCategory = () => {
-      style.meshes.clear();
-
-      const categoryList = categories.value.split(",");
-      const entities = categoryList.map((item) => item.replace(" ", ""));
-
-      const found = this._classifier.find({ entities });
-      for (const fragID in found) {
-        const { mesh } = this._fragments.list[fragID];
-        style.fragments[fragID] = new Set(found[fragID]);
-        style.meshes.add(mesh);
-      }
-      this._clipper.updateEdges(true);
-
-      this.cacheStyles();
-    };
-
-    categories.domElement.addEventListener("focusout", updateCategory);
+    categories.domElement.addEventListener("focusout", () => this.update([id]));
 
     if (config) {
       categories.value = config.categories;
-      updateCategory();
+      this.update([id]);
     }
 
     this.cacheStyles();

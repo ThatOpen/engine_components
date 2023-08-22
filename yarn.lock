@@ -6384,7 +6384,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"openbim-components@workspace:.":
+"openbim-components@1.0.0-alpha.83, openbim-components@workspace:.":
   version: 0.0.0-use.local
   resolution: "openbim-components@workspace:."
   dependencies:
@@ -6417,6 +6417,7 @@ __metadata:
     jest: ^27.0.4
     mapbox-gl: ^2.15.0
     n8ao: ^1.5.1
+    openbim-components: 1.0.0-alpha.83
     postprocessing: ^6.31.0
     prettier: ^2.3.1
     rollup: ^3.2.3
