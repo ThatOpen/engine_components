@@ -2,7 +2,7 @@ import * as THREE from "three";
 import * as MAPBOX from "mapbox-gl";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
 import { MapboxBuilding, MapboxParameters } from "./src/types";
-import { Components, SimpleScene } from "../../core";
+import { Components, SimpleRaycaster, SimpleScene } from "../../core";
 import { MapboxRenderer } from "./src/mapbox-renderer";
 import { MapboxCamera } from "./src/mapbox-camera";
 
@@ -107,10 +107,6 @@ export class MapboxWindow {
    * will be created.
    */
   dispose() {
-    this._components.dispose();
-    (this._components as any) = null;
-    this._map.remove();
-    (this._map as any) = null;
     for (const id in this._labels) {
       const label = this._labels[id];
       label.removeFromParent();
@@ -118,6 +114,9 @@ export class MapboxWindow {
     }
     this._buildings = [];
     this._labels = {};
+    this._components.dispose();
+    (this._map as any) = null;
+    (this._components as any) = null;
   }
 
   centerMapToBuildings() {
@@ -173,7 +172,10 @@ export class MapboxWindow {
     this._components.camera = new MapboxCamera();
     const renderer = new MapboxRenderer(this._components, this._map, coords);
     this._components.renderer = renderer;
-    renderer.initialized.on(() => this._components.init());
+    renderer.initialized.on(() => {
+      this._components.raycaster = new SimpleRaycaster(this._components);
+      this._components.init();
+    });
   }
 
   private setupScene() {
