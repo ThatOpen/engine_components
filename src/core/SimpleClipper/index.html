@@ -188,7 +188,19 @@
     Let's keep it up and check out another tutorial! 🎓
      */
 
-	// Set up stats
+    // TODO: Add this to tutorial
+    const createButton = new OBC.Button(components);
+    createButton.label = "Add plane";
+    createButton.onclick = () => clipper.create();
+
+    const deleteButton = new OBC.Button(components);
+    deleteButton.label = "Delete plane";
+    deleteButton.onclick = () => clipper.delete();
+
+    components.ui.contextMenu.addChild(createButton, deleteButton);
+
+
+    // Set up stats
 
 	const stats = new Stats();
 	stats.showPanel(2);

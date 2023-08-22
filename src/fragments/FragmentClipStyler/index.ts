@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { EdgesClipper } from "../../navigation";
 import { FragmentManager } from "../FragmentManager";
-import { Disposable, UI } from "../../base-types";
+import { Component, Disposable, UI } from "../../base-types";
 import {
   Button,
   ColorInput,
@@ -21,7 +21,13 @@ export interface ClipStyleCardData {
   categories: string;
 }
 
-export class FragmentClipStyler implements UI, Disposable {
+export class FragmentClipStyler
+  extends Component<ClipStyleCardData[]>
+  implements UI, Disposable
+{
+  name = "FragmentClipStyler";
+  enabled = true;
+
   _fragments: FragmentManager;
   _clipper: EdgesClipper;
   _components: Components;
@@ -51,6 +57,7 @@ export class FragmentClipStyler implements UI, Disposable {
     classifier: FragmentClassifier,
     clipper: EdgesClipper
   ) {
+    super();
     this._components = components;
     this._fragments = fragments;
     this._clipper = clipper;
@@ -91,6 +98,15 @@ export class FragmentClipStyler implements UI, Disposable {
     this.uiElement = { mainWindow, mainButton };
 
     this.loadCachedStyles();
+  }
+
+  get() {
+    const saved = localStorage.getItem(this._localStorageID);
+    if (saved) {
+      const parsed = JSON.parse(saved) as any;
+      return Object.values(parsed) as ClipStyleCardData[];
+    }
+    return [];
   }
 
   dispose() {
