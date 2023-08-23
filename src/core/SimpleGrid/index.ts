@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { Component, Disposable, Hideable } from "../../base-types";
 import { Disposer } from "../Disposer";
 import { Components } from "../Components";
+import { SimpleCamera } from "../SimpleCamera";
 
 /**
  * An infinite grid. Created by
@@ -95,6 +96,9 @@ export class SimpleGrid
         uFade: {
           value: this._fade,
         },
+        uZoom: {
+          value: 1,
+        },
       },
       transparent: true,
       vertexShader: `
@@ -119,6 +123,7 @@ export class SimpleGrid
             
             varying vec3 worldPosition;
             
+            uniform float uZoom;
             uniform float uFade;
             uniform float uSize1;
             uniform float uSize2;
@@ -147,9 +152,12 @@ export class SimpleGrid
                     float g1 = getGrid(uSize1);
                     float g2 = getGrid(uSize2);
                     
+                    // Ortho camera fades the grid away when zooming out
+                    float minZoom = step(0.2, uZoom);
+                    float zoomFactor = pow(min(uZoom, 1.), 2.) * minZoom;
                     
                     gl_FragColor = vec4(uColor.rgb, mix(g2, g1, g1) * pow(d, uFade));
-                    gl_FragColor.a = mix(0.5 * gl_FragColor.a, gl_FragColor.a, g2);
+                    gl_FragColor.a = mix(0.5 * gl_FragColor.a, gl_FragColor.a, g2) * zoomFactor;
                     
                     if ( gl_FragColor.a <= 0.0 ) discard;
                     
@@ -167,6 +175,8 @@ export class SimpleGrid
     this._grid.frustumCulled = false;
     const scene = components.scene.get();
     scene.add(this._grid);
+
+    this.setupEvents(true);
   }
 
   /** {@link Component.get} */
@@ -176,7 +186,23 @@ export class SimpleGrid
 
   /** {@link Disposable.dispose} */
   dispose() {
+    this.setupEvents(false);
     this._disposer.dispose(this._grid);
     (this._components as any) = null;
   }
+
+  private setupEvents(active: boolean) {
+    const camera = this._components.camera as SimpleCamera;
+    const controls = camera.controls;
+    if (active) {
+      controls.addEventListener("update", this.updateZoom);
+    } else {
+      controls.removeEventListener("update", this.updateZoom);
+    }
+  }
+
+  private updateZoom = () => {
+    const camera = this._components.camera as SimpleCamera;
+    this.material.uniforms.uZoom.value = camera.get().zoom;
+  };
 }

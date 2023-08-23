@@ -51,9 +51,6 @@
 	ambientLight.intensity = 0.5;
 	scene.add(ambientLight);
 
-	const grid = new OBC.SimpleGrid(components);
-	components.tools.add("grid", grid);
-
 	/*MD
   ### 📽️ Managing Multiple Views
   ---
@@ -172,6 +169,9 @@
   Let's keep it up and check out another tutorial! 🎓
 
   */
+
+    const grid = new OBC.SimpleGrid(components);
+    components.tools.add("grid", grid);
 
 	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
 	components.ui.addToolbar(mainToolbar);
