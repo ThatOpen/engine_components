@@ -51,6 +51,25 @@ export class FragmentClipStyler
     mainWindow: FloatingWindow;
   };
 
+  private _defaultStyles = `
+     {
+        "B0ebxzZQvZ": {
+            "name": "thick",
+            "lineColor": "#36593e",
+            "lineThickness": 0.5,
+            "fillColor": "#ccdb9a",
+            "categories": "IFCWALLSTANDARDCASE, IFCWALL,IFCSLAB, IFCROOF"
+        },
+        "kG9B1Ojv08": {
+            "name": "thin",
+            "lineColor": "#92a59b",
+            "lineThickness": 0.25,
+            "fillColor": "#e6ffdb",
+            "categories": "IFCWINDOW, IFCDOOR"
+        }
+    }
+  `;
+
   constructor(
     components: Components,
     fragments: FragmentManager,
@@ -98,6 +117,14 @@ export class FragmentClipStyler
     this.uiElement = { mainWindow, mainButton };
 
     this.loadCachedStyles();
+  }
+
+  setup(force = false) {
+    const noCards = Object.keys(this._styleCards).length === 0;
+    if (force || noCards) {
+      localStorage.setItem(this._localStorageID, this._defaultStyles);
+      this.loadCachedStyles();
+    }
   }
 
   get() {
@@ -240,6 +267,8 @@ export class FragmentClipStyler
     if (name) {
       name.append(nameInput.domElement);
     }
+
+    nameInput.domElement.addEventListener("focusout", () => this.cacheStyles());
 
     const lineColor = new ColorInput(this._components);
     lineColor.label = "Line color";
