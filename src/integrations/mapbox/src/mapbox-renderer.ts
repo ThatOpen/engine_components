@@ -81,7 +81,7 @@ export class MapboxRenderer extends BaseRenderer implements Disposable {
   dispose() {
     this.initialized.reset();
     this.enabled = false;
-    window.removeEventListener("resize", this.updateLabelRendererSize);
+    this.setupEvents(false);
     this._renderer.dispose();
     this._map.remove();
     this._map = null;
@@ -185,7 +185,7 @@ export class MapboxRenderer extends BaseRenderer implements Disposable {
 
   private initializeLabelRenderer() {
     this.updateLabelRendererSize();
-    window.addEventListener("resize", this.updateLabelRendererSize);
+    this.setupEvents(true);
     this._labelRenderer.domElement.style.position = "absolute";
     this._labelRenderer.domElement.style.top = "0px";
     const dom = this._labelRenderer.domElement;
@@ -248,5 +248,13 @@ export class MapboxRenderer extends BaseRenderer implements Disposable {
         labelLayerId
       );
     });
+  }
+
+  private setupEvents(active: boolean) {
+    if (active) {
+      window.addEventListener("resize", this.updateLabelRendererSize);
+    } else {
+      window.removeEventListener("resize", this.updateLabelRendererSize);
+    }
   }
 }

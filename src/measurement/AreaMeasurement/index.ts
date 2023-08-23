@@ -89,7 +89,7 @@ export class AreaMeasurement
     };
   }
 
-  create() {
+  create = () => {
     if (!this.enabled) return;
     const point = this._vertexPicker.get();
     if (!point) return;
@@ -107,7 +107,7 @@ export class AreaMeasurement
     this._currentAreaElement.setPoint(point, this._clickCount);
     this._currentAreaElement.computeArea();
     this._clickCount++;
-  }
+  };
 
   delete() {}
 
@@ -139,19 +139,15 @@ export class AreaMeasurement
   private setupEvents(active: boolean) {
     const viewerContainer = this._components.ui.viewerContainer;
     if (active) {
-      viewerContainer.addEventListener("click", this.onCreateMeasurement);
+      viewerContainer.addEventListener("click", this.create);
       viewerContainer.addEventListener("mousemove", this.onMouseMove);
       window.addEventListener("keydown", this.onKeydown);
     } else {
-      viewerContainer.removeEventListener("click", this.onCreateMeasurement);
+      viewerContainer.removeEventListener("click", this.create);
       viewerContainer.removeEventListener("mousemove", this.onMouseMove);
       window.removeEventListener("keydown", this.onKeydown);
     }
   }
-
-  private onCreateMeasurement = () => {
-    this.create();
-  };
 
   private onMouseMove = () => {
     const point = this._vertexPicker.get();

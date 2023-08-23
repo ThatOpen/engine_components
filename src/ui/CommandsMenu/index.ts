@@ -32,7 +32,7 @@ export class CommandsMenu<T> extends SimpleUIComponent<HTMLDivElement> {
       window: this.getInnerElement("window") as HTMLDivElement,
     };
 
-    this.toggleWindowEvent(true);
+    this.setupEvents(true);
   }
 
   update() {
@@ -55,13 +55,13 @@ export class CommandsMenu<T> extends SimpleUIComponent<HTMLDivElement> {
   dispose(onlyChildren: boolean = false) {
     super.dispose(onlyChildren);
     if (!onlyChildren) {
-      this.toggleWindowEvent(false);
+      this.setupEvents(false);
       this.commands = {};
       (this.commandData as any) = null;
     }
   }
 
-  private toggleWindowEvent(active: boolean) {
+  private setupEvents(active: boolean) {
     if (active) {
       window.addEventListener("click", this.hideCommandsMenu);
     } else {

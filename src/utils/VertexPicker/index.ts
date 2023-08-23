@@ -36,6 +36,10 @@ export class VertexPicker
     return this._enabled;
   }
 
+  private get _raycaster() {
+    return this._components.raycaster;
+  }
+
   constructor(components: Components, config?: Partial<VertexPickerConfig>) {
     super();
     this._components = components;
@@ -46,9 +50,7 @@ export class VertexPicker
     };
     this._marker = new Simple2DMarker(components, this.config.previewElement);
     this._marker.visible = false;
-    components.ui.viewerContainer?.addEventListener("mousemove", () =>
-      this.update()
-    );
+    this.setupEvents(true);
     this.enabled = false;
   }
 
@@ -68,11 +70,19 @@ export class VertexPicker
     return this._config;
   }
 
-  private get _raycaster() {
-    return this._components.raycaster;
+  dispose() {
+    this.setupEvents(false);
+    this._marker.dispose();
+    this.afterUpdate.reset();
+    this.beforeUpdate.reset();
+    (this._components as any) = null;
   }
 
-  private update() {
+  get(): THREE.Vector3 | null {
+    return this._pickedPoint;
+  }
+
+  private update = () => {
     if (!this.enabled) return;
     this.beforeUpdate.trigger(this);
 
@@ -109,7 +119,7 @@ export class VertexPicker
         this._pickedPoint.z
       );
     this.afterUpdate.trigger(this);
-  }
+  };
 
   private getClosestVertex(intersects: THREE.Intersection) {
     let closestVertex = new THREE.Vector3();
@@ -150,14 +160,12 @@ export class VertexPicker
     );
   }
 
-  dispose() {
-    this._marker.dispose();
-    this.afterUpdate.reset();
-    this.beforeUpdate.reset();
-    (this._components as any) = null;
-  }
-
-  get(): THREE.Vector3 | null {
-    return this._pickedPoint;
+  private setupEvents(active: boolean) {
+    const container = this._components.ui.viewerContainer;
+    if (active) {
+      container.addEventListener("mousemove", this.update);
+    } else {
+      container.addEventListener("mousemove", this.update);
+    }
   }
 }

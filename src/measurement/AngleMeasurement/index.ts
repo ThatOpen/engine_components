@@ -72,6 +72,7 @@ export class AngleMeasurement
   }
 
   dispose() {
+    this.setupEvents(false);
     this.beforeCreate.reset();
     this.afterCreate.reset();
     this.beforeCancel.reset();
@@ -91,45 +92,20 @@ export class AngleMeasurement
   }
 
   private setUI() {
-    const viewerContainer = this._components.ui.viewerContainer as HTMLElement;
-    const createMeasurement = () => this.create();
-    const mouseMove = () => {
-      const point = this._vertexPicker.get();
-      if (!(point && this._currentAngleElement)) return;
-      this._currentAngleElement.setPoint(point, this._clickCount as 0 | 1 | 2);
-      this._currentAngleElement.computeAngle();
-    };
-    const keydown = (e: KeyboardEvent) => {
-      if (!this.enabled) return;
-      if (e.key === "z" && e.ctrlKey && this._currentAngleElement) {
-        // this._currentAngleElement.removePoint(this._clickCount - 1);
-      }
-      if (e.key === "Escape") {
-        if (this._clickCount === 0 && !this._currentAngleElement) {
-          this.enabled = false;
-        } else {
-          this.cancelCreation();
-        }
-      }
-    };
     this.uiElement.main.onclick = () => {
       if (!this.enabled) {
-        viewerContainer.addEventListener("click", createMeasurement);
-        viewerContainer.addEventListener("mousemove", mouseMove);
-        window.addEventListener("keydown", keydown);
+        this.setupEvents(true);
         this.uiElement.main.active = true;
         this.enabled = true;
       } else {
         this.enabled = false;
         this.uiElement.main.active = false;
-        viewerContainer.removeEventListener("click", createMeasurement);
-        viewerContainer.removeEventListener("mousemove", mouseMove);
-        window.removeEventListener("keydown", keydown);
+        this.setupEvents(false);
       }
     };
   }
 
-  create() {
+  create = () => {
     if (!this.enabled) return;
     const point = this._vertexPicker.get();
     if (!point) return;
@@ -151,7 +127,7 @@ export class AngleMeasurement
     this._currentAngleElement.computeAngle();
     this._clickCount++;
     if (this._clickCount === 3) this.endCreation();
-  }
+  };
 
   delete() {}
 
@@ -175,4 +151,39 @@ export class AngleMeasurement
   get() {
     return this._measurements;
   }
+
+  private setupEvents(active: boolean) {
+    const viewerContainer = this._components.ui.viewerContainer as HTMLElement;
+    if (active) {
+      viewerContainer.addEventListener("click", this.create);
+      viewerContainer.addEventListener("mousemove", this.onMouseMove);
+      window.addEventListener("keydown", this.onKeyDown);
+    } else {
+      this.uiElement.main.active = false;
+      viewerContainer.removeEventListener("click", this.create);
+      viewerContainer.removeEventListener("mousemove", this.onMouseMove);
+      window.removeEventListener("keydown", this.onKeyDown);
+    }
+  }
+
+  private onMouseMove = () => {
+    const point = this._vertexPicker.get();
+    if (!(point && this._currentAngleElement)) return;
+    this._currentAngleElement.setPoint(point, this._clickCount as 0 | 1 | 2);
+    this._currentAngleElement.computeAngle();
+  };
+
+  private onKeyDown = (e: KeyboardEvent) => {
+    if (!this.enabled) return;
+    if (e.key === "z" && e.ctrlKey && this._currentAngleElement) {
+      // this._currentAngleElement.removePoint(this._clickCount - 1);
+    }
+    if (e.key === "Escape") {
+      if (this._clickCount === 0 && !this._currentAngleElement) {
+        this.enabled = false;
+      } else {
+        this.cancelCreation();
+      }
+    }
+  };
 }

@@ -129,30 +129,15 @@ export class LengthMeasurement
   }
 
   private setUI() {
-    const viewerContainer = this._components.renderer.get().domElement
-      .parentElement as HTMLElement;
-    const createDimension = () => this.create();
-    const keydown = (e: KeyboardEvent) => {
-      if (!this.enabled) return;
-      if (e.key === "Escape") {
-        if (this._temp.isDragging) {
-          this.cancelCreation();
-        } else {
-          this.enabled = false;
-        }
-      }
-    };
     this.uiElement.main.onclick = () => {
       if (!this.enabled) {
-        viewerContainer.addEventListener("click", createDimension);
-        window.addEventListener("keydown", keydown);
+        this.setupEvents(true);
         this.uiElement.main.active = true;
         this.enabled = true;
       } else {
         this.enabled = false;
         this.uiElement.main.active = false;
-        viewerContainer.removeEventListener("click", createDimension);
-        window.removeEventListener("keydown", keydown);
+        this.setupEvents(false);
       }
     };
   }
@@ -164,6 +149,7 @@ export class LengthMeasurement
 
   /** {@link Disposable.dispose} */
   dispose() {
+    this.setupEvents(false);
     this.enabled = false;
     this.beforeUpdate.reset();
     this.afterUpdate.reset();
@@ -199,10 +185,11 @@ export class LengthMeasurement
   /**
    * Starts or finishes drawing a new dimension line.
    *
-   * @param plane - forces the dimension to be drawn on a plane. Use this if you are drawing
+   * @param data - forces the dimension to be drawn on a plane. Use this if you are drawing
    * dimensions in floor plan navigation.
    */
-  create(plane?: THREE.Object3D) {
+  create = (data?: any) => {
+    const plane = data instanceof THREE.Object3D ? data : undefined;
     if (!this._enabled) return;
     this.beforeCreate.trigger(this);
     if (!this._temp.isDragging) {
@@ -210,7 +197,7 @@ export class LengthMeasurement
       return;
     }
     this.endCreation();
-  }
+  };
 
   /** Deletes the dimension that the user is hovering over with the mouse or touch event. */
   delete() {
@@ -296,6 +283,28 @@ export class LengthMeasurement
       .map((dim) => dim.boundingBox)
       .filter((box) => box !== undefined) as THREE.Mesh[];
   }
+
+  private setupEvents(active: boolean) {
+    const viewerContainer = this._components.ui.viewerContainer;
+    if (active) {
+      viewerContainer.addEventListener("click", this.create);
+      window.addEventListener("keydown", this.onKeyDown);
+    } else {
+      viewerContainer.removeEventListener("click", this.create);
+      window.removeEventListener("keydown", this.onKeyDown);
+    }
+  }
+
+  private onKeyDown = (e: KeyboardEvent) => {
+    if (!this.enabled) return;
+    if (e.key === "Escape") {
+      if (this._temp.isDragging) {
+        this.cancelCreation();
+      } else {
+        this.enabled = false;
+      }
+    }
+  };
 }
 
 export * from "./simple-dimension-line";
