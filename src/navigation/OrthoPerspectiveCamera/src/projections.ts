@@ -83,6 +83,7 @@ export class ProjectionManager {
 
   private setupOrthoCamera(height: number, width: number) {
     this._camera.controls.mouseButtons.wheel = CameraControls.ACTION.ZOOM;
+    this._camera.controls.mouseButtons.middle = CameraControls.ACTION.ZOOM;
 
     const pCamera = this._camera.get("Perspective") as THREE.PerspectiveCamera;
     const oCamera = this._camera.get(
@@ -102,6 +103,8 @@ export class ProjectionManager {
 
   private async setPerspectiveCamera() {
     this._camera.controls.mouseButtons.wheel = CameraControls.ACTION.DOLLY;
+    this._camera.controls.mouseButtons.middle = CameraControls.ACTION.DOLLY;
+
     const pCamera = this._camera.get("Perspective") as THREE.PerspectiveCamera;
     const oCamera = this._camera.get(
       "Orthographic"
