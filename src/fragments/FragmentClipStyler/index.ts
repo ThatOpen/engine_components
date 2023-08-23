@@ -350,7 +350,6 @@ export class FragmentClipStyler
 
     if (config) {
       categories.value = config.categories;
-      this.update([id]);
     }
 
     this.cacheStyles();

@@ -48,7 +48,8 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
   constructor(
     components: Components,
     fragments: FragmentManager,
-    culler?: ScreenCuller
+    culler?: ScreenCuller,
+    loadCached = true
   ) {
     super();
     this._components = components;
@@ -89,7 +90,9 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
 
     this.uiElement = { window: mainWindow, main: mainButton };
 
-    this.loadCached();
+    if (loadCached) {
+      this.loadCached();
+    }
   }
 
   dispose() {

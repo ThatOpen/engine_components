@@ -64,8 +64,10 @@ export class PropertyTag extends SimpleUIComponent<HTMLDivElement> {
     super.dispose(onlyChildren);
     (this.model as any) = null;
     (this._propertiesProcessor as any) = null;
-    this.innerElements.value.remove();
-    this.innerElements.label.remove();
+    if (Object.keys(this.innerElements).length) {
+      this.innerElements.value.remove();
+      this.innerElements.label.remove();
+    }
   }
 
   protected setListeners() {

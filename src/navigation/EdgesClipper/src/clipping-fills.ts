@@ -76,6 +76,10 @@ export class ClippingFills {
   }
 
   dispose() {
+    const style = this.getStyle();
+    if (style) {
+      style.meshes.delete(this.mesh);
+    }
     this.mesh.geometry.dispose();
     this.mesh.removeFromParent();
     (this.mesh.geometry as any) = null;

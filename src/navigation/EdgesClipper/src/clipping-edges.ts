@@ -346,16 +346,20 @@ export class ClippingEdges
   }
 
   private updateDeletedEdges(styles: LineStyles) {
-    const renderer = this._components.renderer;
     const names = Object.keys(this._edges);
     for (const name of names) {
       if (styles[name] === undefined) {
         this.disposeEdge(name);
-        if (renderer instanceof PostproductionRenderer) {
-          const outlines = renderer.postproduction.customEffects.outlinedMeshes;
-          delete outlines[name];
-        }
+        this.disposeOutline(name);
       }
+    }
+  }
+
+  private disposeOutline(name: string) {
+    const renderer = this._components.renderer;
+    if (renderer instanceof PostproductionRenderer) {
+      const outlines = renderer.postproduction.customEffects.outlinedMeshes;
+      delete outlines[name];
     }
   }
 
