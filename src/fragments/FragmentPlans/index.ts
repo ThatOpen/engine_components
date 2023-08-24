@@ -443,6 +443,7 @@ export class FragmentPlans
     height: { value: number }
   ) {
     const placementRef = properties[placementID];
+    if (!placementRef) return;
     const placement = properties[placementRef.RelativePlacement.value];
     const location = properties[placement.Location.value];
     const currentHeight = location.Coordinates[2].value;

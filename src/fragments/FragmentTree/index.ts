@@ -8,6 +8,7 @@ import {
 import { FragmentTreeItem } from "./src/tree-item";
 import { Components } from "../../core";
 import { FragmentClassifier } from "../FragmentClassifier";
+import { Button, FloatingWindow } from "../../ui";
 
 export class FragmentTree
   extends Component<FragmentTreeItem>
@@ -24,15 +25,28 @@ export class FragmentTree
   private _classifier: FragmentClassifier;
   private _tree: FragmentTreeItem;
 
-  get uiElement() {
-    return this._tree.uiElement;
-  }
+  uiElement: { main: Button; window: FloatingWindow };
 
   constructor(components: Components, classifier: FragmentClassifier) {
     super();
     this._components = components;
     this._classifier = classifier;
     this._tree = new FragmentTreeItem(this._components, classifier, this.title);
+
+    const window = new FloatingWindow(components);
+    window.addChild(this._tree.uiElement.tree);
+    window.title = "Model tree";
+    components.ui.add(window);
+    window.visible = false;
+
+    const main = new Button(components);
+    main.materialIcon = "account_tree";
+    main.tooltip = "Model tree";
+    main.onclick = () => {
+      window.visible = !window.visible;
+    };
+
+    this.uiElement = { main, window };
   }
 
   get(): FragmentTreeItem {

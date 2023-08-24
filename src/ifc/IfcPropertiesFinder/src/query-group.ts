@@ -34,8 +34,9 @@ export class QueryGroupUI extends SimpleUIComponent {
       // @ts-ignore
       if (!query.condition) continue;
       const attributeQuery = query as AttributeQuery;
-      if (index === 0 && attributeQuery.operator)
+      if (index === 0 && attributeQuery.operator) {
         delete attributeQuery.operator;
+      }
       const attributeQueryUI = new AttributeQueryUI(this._components);
       attributeQueryUI.query = attributeQuery;
       this.addChild(attributeQueryUI);

@@ -47,6 +47,7 @@ export class IfcPropertiesUtils {
     const found: any[] = [];
     for (const id in properties) {
       const property = properties[id];
+      if (!property) continue;
       if (property.type === type) {
         found.push(property);
       }

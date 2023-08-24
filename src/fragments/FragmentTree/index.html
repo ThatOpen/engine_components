@@ -97,11 +97,9 @@
         highlighter.highlightByID('hover', filter);
     });
 
-    const treeContainer = document.getElementById('tree-container');
-    const wnd = new OBC.FloatingWindow(components);
-    components.ui.add(wnd);
-    wnd.visible = true;
-    wnd.addChild(modelTree.uiElement.tree);
+    const toolbar = new OBC.Toolbar(components);
+    toolbar.addChild(modelTree.uiElement.main);
+    components.ui.addToolbar(toolbar);
 
     // Set up stats
 
