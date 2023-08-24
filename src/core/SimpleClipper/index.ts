@@ -83,7 +83,7 @@ export class SimpleClipper<Plane extends SimplePlane>
     for (const plane of this._planes) {
       plane.enabled = state;
     }
-    this.updateMaterials();
+    this.updateMaterialsAndPlanes();
   }
 
   /** {@link Hideable.visible } */
@@ -192,7 +192,7 @@ export class SimpleClipper<Plane extends SimplePlane>
     point: THREE.Vector3
   ) {
     const plane = this.newPlane(point, normal);
-    this.updateMaterials();
+    this.updateMaterialsAndPlanes();
     return plane;
   }
 
@@ -222,7 +222,7 @@ export class SimpleClipper<Plane extends SimplePlane>
       this._planes.splice(index, 1);
       this.components.renderer.togglePlane(false, plane.get());
       plane.dispose();
-      this.updateMaterials();
+      this.updateMaterialsAndPlanes();
       this.afterDelete.trigger(plane);
     }
   }
@@ -253,7 +253,7 @@ export class SimpleClipper<Plane extends SimplePlane>
     const worldNormal = this.getWorldNormal(intersect, normal);
     const plane = this.newPlane(intersect.point, worldNormal.negate());
     this.components.renderer.togglePlane(true, plane.get());
-    this.updateMaterials();
+    this.updateMaterialsAndPlanes();
   }
 
   private getWorldNormal(intersect: THREE.Intersection, normal: THREE.Vector3) {
@@ -299,15 +299,18 @@ export class SimpleClipper<Plane extends SimplePlane>
     return new this.PlaneType(this.components, point, normal, this._material);
   }
 
-  private updateMaterials() {
+  private updateMaterialsAndPlanes() {
+    this.components.renderer.updateClippingPlanes();
     const planes = this.components.renderer.clippingPlanes;
-    this.components.meshes.forEach((model) => {
+    for (const model of this.components.meshes) {
       if (Array.isArray(model.material)) {
-        model.material.forEach((mat) => (mat.clippingPlanes = planes));
+        for (const mat of model.material) {
+          mat.clippingPlanes = planes;
+        }
       } else {
         model.material.clippingPlanes = planes;
       }
-    });
+    }
   }
 
   private _onStartDragging = () => {
