@@ -367,21 +367,13 @@ export class FragmentHighlighter
 
     const isBlockFragment = selection.blocks.count > 1;
     if (isBlockFragment) {
-      const blockIDs: number[] = [];
-      for (const id of ids) {
-        const { blockID } = fragment.getInstanceAndBlockID(id);
-        if (fragment.blocks.visibleIds.has(blockID)) {
-          blockIDs.push(blockID);
-        }
-      }
-
       fragment.getInstance(0, this._tempMatrix);
       selection.setInstance(0, {
-        ids: Array.from(ids),
+        ids: Array.from(fragment.ids),
         transform: this._tempMatrix,
       });
 
-      selection.blocks.add(blockIDs, true);
+      selection.blocks.setVisibility(true, ids, true);
     } else {
       let i = 0;
       for (const id of ids) {
@@ -406,6 +398,13 @@ export class FragmentHighlighter
       if (!fragment.fragments[name]) {
         const material = this.highlightMats[name];
         const subFragment = fragment.addFragment(name, material);
+        if (fragment.blocks.count > 1) {
+          subFragment.setInstance(0, {
+            ids: Array.from(fragment.ids),
+            transform: this._tempMatrix,
+          });
+          subFragment.blocks.setVisibility(false);
+        }
         subFragment.mesh.renderOrder = 2;
         subFragment.mesh.frustumCulled = false;
       }

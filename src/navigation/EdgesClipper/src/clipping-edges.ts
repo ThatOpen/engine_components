@@ -33,7 +33,6 @@ export class ClippingEdges
   fillNeedsUpdate = false;
 
   protected blockByIndex: { [index: number]: number } = {};
-  protected lastBlock = 0;
 
   protected _edges: Edges = {};
   protected _styles: EdgesStyles;
@@ -243,6 +242,7 @@ export class ClippingEdges
       const scene = this._components.scene.get();
       scene.add(edges.mesh);
       if (this.fillNeedsUpdate && edges.fill) {
+        edges.fill.geometry = edges.mesh.geometry;
         edges.fill.update(indexes, this.blockByIndex);
       }
     }

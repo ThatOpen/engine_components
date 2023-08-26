@@ -1954,14 +1954,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bim-fragment@npm:1.0.16":
-  version: 1.0.16
-  resolution: "bim-fragment@npm:1.0.16"
+"bim-fragment@npm:1.0.21":
+  version: 1.0.21
+  resolution: "bim-fragment@npm:1.0.21"
   dependencies:
     flatbuffers: ^23.3.3
     three: 0.152.2
     three-mesh-bvh: 0.6.0
-  checksum: 1490cbcc5d639c327b2497ae879c04b0d5d1fa2e7b1472bb83668f3f513b9ed40f78c7a5b185f8c4cfc3e2d6e3302382f4da3dba3dda4e0797b002d483a35970
+  checksum: 80f4cdd1a2be981553317c0cf17a65a0cb799f105e0a002e3e27e6307df09366d0b8648423a7cade1a870af4519200fd8d363fd0b28a1c763ed918cedf961c11
   languageName: node
   linkType: hard
 
@@ -6384,7 +6384,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"openbim-components@1.0.0-alpha.83, openbim-components@workspace:.":
+"openbim-components@workspace:.":
   version: 0.0.0-use.local
   resolution: "openbim-components@workspace:."
   dependencies:
@@ -6400,7 +6400,7 @@ __metadata:
     "@types/three": 0.152.1
     "@typescript-eslint/eslint-plugin": ^4.27.0
     "@typescript-eslint/parser": ^4.27.0
-    bim-fragment: 1.0.16
+    bim-fragment: 1.0.21
     camera-controls: ^1.36.0
     canvas: ^2.11.2
     cpy-cli: ^3.1.1
@@ -6417,7 +6417,6 @@ __metadata:
     jest: ^27.0.4
     mapbox-gl: ^2.15.0
     n8ao: ^1.5.1
-    openbim-components: 1.0.0-alpha.83
     postprocessing: ^6.31.0
     prettier: ^2.3.1
     rollup: ^3.2.3

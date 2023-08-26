@@ -14,6 +14,9 @@ export class Units {
   setUp(webIfc: WEBIFC.IfcAPI) {
     this.factor = 1;
     const length = this.getLengthUnits(webIfc);
+    if (!length) {
+      return;
+    }
     const isLengthNull = length === undefined || length === null;
     const isValueNull = length.Name === undefined || length.Name === null;
     if (isLengthNull || isValueNull) {

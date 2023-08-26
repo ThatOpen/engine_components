@@ -75,6 +75,7 @@
     const classifier = new OBC.FragmentClassifier(fragments);
 
     const styler = new OBC.FragmentClipStyler(components, fragments, classifier, clipper);
+    styler.setup();
 
     const toolbar = new OBC.Toolbar(components, { name: "MainToolbar" });
     components.ui.addToolbar(toolbar);
