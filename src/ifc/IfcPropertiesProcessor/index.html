@@ -59,38 +59,148 @@
     const gridMesh = grid.get();
     renderer.postproduction.customEffects.excludedMeshes.push(gridMesh);
 
+    /*MD
+
+    ### 🔬Element Insights Unlocked
+    ---
+
+    The IFC file contains complex architectural data that, when properly read, can provide precise insights.
+    Have you ever wondered how you can access properties from intricate web of IFC files?
+
+    The `IfcPropertiesProcessor` provides a user-friendly approach to processing IFC files and extracting the necessary properties.
+
+    :::tip First, let's set up a simple scene!
+
+    👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
+
+    :::
+
+    In this tutorial, we will render a BIM model and fetch properties when a user clicks on the individual elements.
+
+    ### 🧩 Adding Fragments
+    ---
+    We'll start by adding a **Fragment** to our scene using [**Fragment Manager**](../api/classes/components.FragmentManager).
+
+    We'll use a simple fragment for the purposes of this tutorial, but the code is capable of handling big files as well.🏗️
+
+    */
+
     const fragments = new OBC.FragmentManager(components);
-    
-    // Fragment file loading
+
+    /*MD
+
+    :::tip Showing Fragments in the Scene
+
+    🏔 Fragment Manager has its own tutorial, check out [that tutorial here](FragmentManager.mdx)!
+
+    :::
+
+     */
     const file = await fetch("../../../resources/small.frag");
     const dataBlob = await file.arrayBuffer();
     const buffer = new Uint8Array(dataBlob);
     const model = fragments.load(buffer);
 
-    // Fragment properties loading
-    const properties = await fetch("../../../resources/small.json");
-    model.properties = await properties.json();
+    /*MD
 
-    // Quick setup for element hovering and selection
+    ### 🕹 Selection of Fragments
+    ---
+    To fetch the properties, we need a selection mechanism.
+    We are going to process the properties when the Ifc Elements are selected.
+
+    To create a selection mechanism, we will use **[Fragment Highlighter](../api/classes/components.FragmentHighlighter)**
+    that manages the selection intuitively.
+
+
+     */
+
     const highlighter = new OBC.FragmentHighlighter(components, fragments);
     highlighter.setup();
+
+    /*MD
+
+    :::info Highlighting Fragments
+
+    🖱Check out **[FragmentHighlighter.mdx](FragmentHighlighter.mdx)** for a detailed tutorial on how to utilize Fragment Highlighter to conduct selection on **IFC files**!
+
+    :::
+
+    #### Adding Aesthetic Outlines
+
+    Now that highlighter setup is done, we will add a nice outline effect when the elements are selected.
+
+    */
 
     components.renderer.postproduction.customEffects.outlineEnabled = true;
     highlighter.outlinesEnabled = true;
 
-    // New instance of Properties Processor
-	// The components aims to show IFC properties as natural as possible
+    /*MD
+
+    #### Getting Properties
+
+    The Properties Processor requires model properties that will be utilized for mapping the required properties to a fragment.
+
+    We will fetch the properties from `json` file and store it in `model.properties`.
+
+    */
+
+    const properties = await fetch("../../../resources/small.json");
+    model.properties = await properties.json();
+
+    /*MD
+
+    ### 🗃 Unfolding the Properties
+    ---
+
+    Here comes the interesting part, we will process the properties using **[IfcPropertiesProcessor](../api/classes/components.IfcPropertiesProcessor)**.
+
+    Also, to display the properties in a pleasant UI, we will set the visibility of the properties window to true.
+
+    */
+
     const propsProcessor = new OBC.IfcPropertiesProcessor(components)
 	propsProcessor.uiElement.propertiesWindow.visible = true
 
-	// Process a model, so properties can be shown.
-	propsProcessor.process(model)
+    /*MD
 
-	// On element selected, render its properties.
+    #### Starting the model processing
+
+    To start the property mapping for a model, we will initiate it using `process(model)`.
+
+    We now have our properties ready for consumption!
+
+    */
+
+	propsProcessor.process(model);
+
+    /*MD
+
+    ### 🛎️ Managing Property Selection Events
+    ---
+
+    Now that we've completed our basic setup, we'll write the logic required to cast the properties in the Interface.
+
+    Let's store the **events** in `highlighterEvents` which will be accessed using `highlighter.events`.
+
+    Using the **`highlighterEvents.select.onClear`** event,
+    we will clear the properties window when the user clicks anywhere other than the BIM model.🧹
+
+    */
+
     const highlighterEvents = highlighter.events;
     highlighterEvents.select.onClear.on(() => {
         propsProcessor.cleanPropertiesList();
     });
+
+    /*MD
+
+    #### Rendering Properties
+
+    Let's have a look at how you can fetch the properties on clicking an element, we will use the **`highlighterEvents.select.onHighlight`**
+    event to get the selection. Using the nearest selected element we will get the **Express ID** of the element
+    and then use this Express ID to find the properties for that particular element.🔍
+
+     */
 
     highlighterEvents.select.onHighlight.on(
         (selection) => {
@@ -105,10 +215,29 @@
         }
     );
 
-	// Creating new toolbar + adding component button
+
+    /*MD
+
+    ### ⏏️ Refined Toolbar for Property Navigation
+    ---
+
+    We'll make a **Toolbar Component** and set it at the bottom.
+    In addition, we will add a properties viewer button to this toolbar that will be used to toggle the window state.
+
+    🎛️ Check **[Toolbar and UIManager](./UIManager.mdx)** tutorial if you have any doubts!
+
+    */
     const mainToolbar = new OBC.Toolbar(components)
     components.ui.addToolbar(mainToolbar)
 	mainToolbar.addChild(propsProcessor.uiElement.main)
+
+    /*MD
+
+    **Congratulations** 🎉 on completing this tutorial! Now you can fetch the properties for any BIM Model easily using
+    **[Ifc Properties Processor](../api/classes/components.IfcPropertiesProcessor)** 🔭
+    Let's keep it up and check out another tutorial! 🎓
+
+     */
 
 </script>
 </body>
