@@ -63,31 +63,130 @@
     components.tools.add("grid", grid);
     components.renderer.postproduction.customEffects.excludedMeshes.push(grid.get());
 
+    /*MD
+
+    ### 🌲 Gathering Structured Insights
+    ---
+
+    Building Information Modeling comprises nesting elements in multiple hierarchies.
+    Working with this information might become complicated and irritating.🤯
+
+    **Tree-View** is extremely effective in managing this volume of data.
+    Using **[Fragment Tree](../api/classes/components.FragmentTree)**, we have made it simple to generate a Tree-View for a fragment.🦾
+
+    :::tip First, let's set up a simple scene!
+
+    👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
+
+    :::
+
+    In this lesson, we'll create a **Tree-View** for the items in the IFC file and zoom in on them when a node is clicked.
+
+    ### 🧩 Adding Fragments
+    ---
+    We'll start by adding a **Fragment** to our scene using [**FragmentManager**](../api/classes/components.FragmentManager).
+
+    We'll use a simple fragment for the purposes of this tutorial, but the code is capable of handling big files as well.🏗️
+
+     */
     const fragments = new OBC.FragmentManager(components);
-    const classifier = new OBC.FragmentClassifier(fragments);
-
-    //#region Setup elements highlight
-    const highlighter = new OBC.FragmentHighlighter(components, fragments);
-    highlighter.setup();
-
-    components.renderer.postproduction.customEffects.outlineEnabled = true;
-    highlighter.outlinesEnabled = true;
-
     const file = await fetch("../../../resources/small.frag");
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
     const model = fragments.load(buffer);
 
+    /*MD
+
+    ### 🕹 Selection of Fragments
+    ---
+    Whenever you click on a `node` in **Tree-View**, that particular element would be highlighted.
+
+    To create the highlight mechanism, we will use **[Fragment Highlighter](../api/classes/components.FragmentHighlighter)**
+    that manages the material and selection intuitively.
+
+    */
+
+    const highlighter = new OBC.FragmentHighlighter(components, fragments);
+    highlighter.setup();
+
+    /*MD
+
+    :::info Highlighting Fragments
+
+    🖱Check out **[FragmentHighlighter.mdx](FragmentHighlighter.mdx)** for a detailed tutorial on how to utilize Fragment Highlighter to conduct selection on **IFC files**!
+
+    :::
+
+    #### Adding Aesthetic Outlines
+
+    Now that highlighter setup is done, we will add a nice outline effect when the elements are selected.
+
+    */
+
+    components.renderer.postproduction.customEffects.outlineEnabled = true;
+    highlighter.outlinesEnabled = true;
+
+    highlighter.update();
+
+    /*MD
+
+    ### 🗂️ Strategically Classifying Fragments
+
+    In this tutorial, we will deconstruct the model in order to obtain a hierarchical view.💣
+    To obtain a nested view, we must first classify them by **floors** and then by **type** entities.
+
+    For breaking down the model in the required way, we'll utilize **[Fragment Classifier](../api/classes/components.FragmentClassifier)**.
+
+    */
+
+    const classifier = new OBC.FragmentClassifier(fragments);
+
+    /*MD
+
+    #### Getting Properties
+
+    Fragment Classifier requires model properties that will help the classifier in identifying the floors and entities included inside the Fragment.🧮
+    We will fetch the properties from `json` file and store it in `model.properties`.
+
+    */
+
     const properties = await fetch("../../../resources/small.json");
     model.properties = await properties.json();
 
-    highlighter.update();
+    /*MD
+
+    Now that we have the properties, we will pass the model to classifier and use `classifier.byStorey()` which will group the Fragments according to Floors.
+
+    The model then needs to be classified according to entities using `classifier.byEntity()`.🗂
+
+    */
 
     classifier.byStorey(model);
     classifier.byEntity(model);
 
+    /*MD
+
+    ### 🪜 Building Insightful Tree Views
+    ---
+
+    Now comes the interesting part, we will create **`FragmentTree`** using **components** and **classifier**.
+
+    In addition, we will update the **Fragment Tree** to produce the Tree-View based on `storeys` and `entities`.
+
+     */
+
     const modelTree = new OBC.FragmentTree(components, classifier);
     modelTree.update(['storeys', 'entities']);
+
+    /*MD
+
+    #### 🛎️ Managing Tree-View Events
+    ---
+
+    We will zoom in on the element that is selected in the Tree-View and add a nice highlight effect when the user hovers over a tree node.🖱
+
+    Let's use `modelTree.selected` to get the active selection from Fragment Tree, and we will use `highlighter.highlightByID()` to zoom in.🔍
+    */
 
     modelTree.selected.on((filter) => {
         highlighter.highlightByID('select', filter, true, true);
@@ -97,13 +196,33 @@
         highlighter.highlightByID('hover', filter);
     });
 
+    /*MD
+
+    #### 🎨 Rendering the Fragment Tree
+    ---
+
+    Now, that all the setup is done we will add the **Fragment Tree** to a container that will be added to our **DOM**.
+
+    We will create a **[Floating Window](../api/classes/components.FloatingWindow)** and set the visibility to `true`
+    and use the `addChild()` method to pass the Fragment Tree data to the **Floating Window**
+
+     */
+
     const treeContainer = document.getElementById('tree-container');
     const wnd = new OBC.FloatingWindow(components);
     components.ui.add(wnd);
     wnd.visible = true;
     wnd.addChild(modelTree.uiElement.tree);
 
-    // Set up stats
+    /*MD
+
+    **Cheers and Congratulations** 🎉 on completing this short yet powerful tutorial!
+
+    Now, you can provide a structured, navigable, and user-friendly interface to manage, explore, and interact with your BIM models.🥁
+
+    Let's keep it up and check out another tutorial! 🎓
+
+     */
 
     const stats = new Stats();
     stats.showPanel(2);
