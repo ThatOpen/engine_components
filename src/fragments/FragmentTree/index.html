@@ -201,18 +201,17 @@
     #### 🎨 Rendering the Fragment Tree
     ---
 
-    Now, that all the setup is done we will add the **Fragment Tree** to a container that will be added to our **DOM**.
+    Now, that all the setup is done we will add the **Fragment Tree** to the **[Toolbar](../api/classes/components.Toolbar)**.
 
-    We will create a **[Floating Window](../api/classes/components.FloatingWindow)** and set the visibility to `true`
-    and use the `addChild()` method to pass the Fragment Tree data to the **Floating Window**
+    We will use the `addChild()` method to pass the Fragment Tree data to the **Toolbar**
+
+    🎛️ Check **[Toolbar and UIManager](./UIManager.mdx)** tutorial if you have any doubts!
 
      */
 
-    const treeContainer = document.getElementById('tree-container');
-    const wnd = new OBC.FloatingWindow(components);
-    components.ui.add(wnd);
-    wnd.visible = true;
-    wnd.addChild(modelTree.uiElement.tree);
+    const toolbar = new OBC.Toolbar(components);
+    toolbar.addChild(modelTree.uiElement.main);
+    components.ui.addToolbar(toolbar);
 
     /*MD
 
