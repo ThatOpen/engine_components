@@ -1954,14 +1954,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bim-fragment@npm:1.0.21":
-  version: 1.0.21
-  resolution: "bim-fragment@npm:1.0.21"
+"bim-fragment@npm:1.0.22":
+  version: 1.0.22
+  resolution: "bim-fragment@npm:1.0.22"
   dependencies:
     flatbuffers: ^23.3.3
     three: 0.152.2
     three-mesh-bvh: 0.6.0
-  checksum: 80f4cdd1a2be981553317c0cf17a65a0cb799f105e0a002e3e27e6307df09366d0b8648423a7cade1a870af4519200fd8d363fd0b28a1c763ed918cedf961c11
+  checksum: e00d103009fc66749cc93772481d01d1398e734af6c9b253f92db6c4a5e6041adec09f5bf5c1a109a84750b9d62ff62fd7088730ee09d30c79948bc681ced654
   languageName: node
   linkType: hard
 
@@ -6400,7 +6400,7 @@ __metadata:
     "@types/three": 0.152.1
     "@typescript-eslint/eslint-plugin": ^4.27.0
     "@typescript-eslint/parser": ^4.27.0
-    bim-fragment: 1.0.21
+    bim-fragment: 1.0.22
     camera-controls: ^1.36.0
     canvas: ^2.11.2
     cpy-cli: ^3.1.1
@@ -6424,6 +6424,7 @@ __metadata:
     tailwindcss: ^3.3.2
     three: 0.152.2
     three-mesh-bvh: 0.6.0
+    top-tool-package-reader: 0.0.3
     ts-jest: ^27.0.3
     ts-node: ^10.0.0
     typescript: ^4.3.2
@@ -8115,6 +8116,13 @@ __metadata:
     regex-not: ^1.0.2
     safe-regex: ^1.1.0
   checksum: 4ed4a619059b64e204aad84e4e5f3ea82d97410988bcece7cf6cbfdbf193d11bff48cf53842d88b8bb00b1bfc0d048f61f20f0709e6f393fd8fe0122662d9db4
+  languageName: node
+  linkType: hard
+
+"top-tool-package-reader@npm:0.0.3":
+  version: 0.0.3
+  resolution: "top-tool-package-reader@npm:0.0.3"
+  checksum: 8b197b0e9f03565c78c807e097d9b1e6a066af7916882bf211269c0d8ef52ce2bb320a87fc39988ff499fd250c97216a2b46a7067b22034ba724ba0e91e887bd
   languageName: node
   linkType: hard
 

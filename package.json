@@ -1,6 +1,6 @@
 {
   "name": "openbim-components",
-  "version": "1.0.0-alpha.95",
+  "version": "1.0.0-alpha.100",
   "main": "index.js",
   "author": "harry collin, antonio gonzalez viegas",
   "license": "MIT",
@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "@popperjs/core": "latest",
-    "bim-fragment": "1.0.21",
+    "bim-fragment": "1.0.22",
     "camera-controls": "^1.36.0",
     "dexie": "^3.2.3",
     "dxf-writer": "^1.18.4",
@@ -55,6 +55,7 @@
     "tailwindcss": "^3.3.2",
     "three": "0.152.2",
     "three-mesh-bvh": "0.6.0",
+    "top-tool-package-reader": "0.0.3",
     "web-ifc": "0.0.42"
   }
 }

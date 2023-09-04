@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import ToolBufferReader from "top-tool-package-reader";
 import { Component, Disposable, Event } from "../../base-types";
 
 type ToolsList = Map<symbol | string, Component<any>>;
@@ -15,6 +16,8 @@ export class ToolComponent
   list: ToolsList = new Map();
   onToolAdded: Event<Component<any>> = new Event();
   onToolRemoved: Event<null> = new Event();
+
+  private _reader = new ToolBufferReader();
 
   /** {@link Component.name} */
   name = "ToolComponent";
@@ -74,7 +77,9 @@ export class ToolComponent
     const url = base + id + path + token;
 
     const fetched = await fetch(url);
-    const code = await fetched.text();
+    const rawBuffer = await fetched.arrayBuffer();
+    const buffer = new Uint8Array(rawBuffer);
+    const code = this._reader.read(buffer);
     const script = document.createElement("script");
     script.textContent = code;
     document.body.appendChild(script);
