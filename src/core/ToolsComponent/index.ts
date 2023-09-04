@@ -81,7 +81,7 @@ export class ToolComponent
     const buffer = new Uint8Array(rawBuffer);
     const code = this._reader.read(buffer);
     const script = document.createElement("script");
-    script.textContent = code;
+    script.textContent = code.js;
     document.body.appendChild(script);
 
     const win = window as any;
