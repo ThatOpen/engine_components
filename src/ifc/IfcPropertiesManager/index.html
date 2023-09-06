@@ -19,6 +19,7 @@
         "openbim-components": "../../../resources/openbim-components.js"
       }
     }
+
 </script>
 <script type="module">
 
@@ -71,6 +72,20 @@
     const properties = await fetch("../../../resources/small.json");
     model.properties = await properties.json();
 
+    const propsProcessor = new OBC.IfcPropertiesProcessor(components);
+
+    const propsManager = new OBC.IfcPropertiesManager(components);
+    propsProcessor.propertiesManager = propsManager;
+
+    propsManager.wasm = {
+        path: "https://unpkg.com/web-ifc@0.0.42/",
+        absolute: true
+    }
+
+    propsManager.init();
+
+    propsProcessor.process(model);
+
     // Quick setup for element hovering and selection
     const highlighter = new OBC.FragmentHighlighter(components, fragments);
     highlighter.setup();
@@ -78,15 +93,6 @@
     components.renderer.postproduction.customEffects.outlineEnabled = true;
     highlighter.outlinesEnabled = true;
 
-    // New instance of Properties Processor
-	// The components aims to show IFC properties as natural as possible
-    const propsProcessor = new OBC.IfcPropertiesProcessor(components)
-	propsProcessor.uiElement.propertiesWindow.visible = true
-
-	// Process a model, so properties can be shown.
-	propsProcessor.process(model);
-
-	// On element selected, render its properties.
     const highlighterEvents = highlighter.events;
     highlighterEvents.select.onClear.on(() => {
         propsProcessor.cleanPropertiesList();
@@ -105,10 +111,10 @@
         }
     );
 
-	// Creating new toolbar + adding component button
+    // Creating new toolbar + adding component button
     const mainToolbar = new OBC.Toolbar(components)
     components.ui.addToolbar(mainToolbar)
-	mainToolbar.addChild(propsProcessor.uiElement.main)
+    mainToolbar.addChild(propsProcessor.uiElement.main)
 
 </script>
 </body>

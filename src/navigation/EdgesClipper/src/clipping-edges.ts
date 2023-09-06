@@ -177,12 +177,17 @@ export class ClippingEdges
     let lastIndex = 0;
 
     for (const mesh of style.meshes) {
-      if (!mesh.geometry) continue;
+      if (!mesh.geometry) {
+        continue;
+      }
       if (!mesh.geometry.boundsTree) {
         throw new Error("Boundstree not found for clipping edges subset.");
       }
 
       const instanced = mesh as THREE.InstancedMesh;
+      if (instanced.count === 0) {
+        continue;
+      }
       if (instanced.count > 1) {
         for (let i = 0; i < instanced.count; i++) {
           // Exclude fragment instances that don't belong to this style
