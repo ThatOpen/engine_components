@@ -40,6 +40,7 @@ export class AngleMeasurement
 
   set enabled(value: boolean) {
     this._enabled = value;
+    this.setupEvents(value);
     this._vertexPicker.enabled = value;
     this.uiElement.main.active = value;
     if (!value) this.cancelCreation();
@@ -67,8 +68,8 @@ export class AngleMeasurement
     this._vertexPicker = new VertexPicker(components);
     this.uiElement = { main: new Button(components) };
     this.uiElement.main.materialIcon = "square_foot";
-    this.setUI();
     this.enabled = false;
+    this.setUI();
   }
 
   dispose() {
@@ -94,13 +95,11 @@ export class AngleMeasurement
   private setUI() {
     this.uiElement.main.onclick = () => {
       if (!this.enabled) {
-        this.setupEvents(true);
         this.uiElement.main.active = true;
         this.enabled = true;
       } else {
         this.enabled = false;
         this.uiElement.main.active = false;
-        this.setupEvents(false);
       }
     };
   }

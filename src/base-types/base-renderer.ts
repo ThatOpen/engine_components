@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Component } from "./component";
-import { Resizeable } from "./base-types";
+import { Event, Resizeable } from "./base-types";
 
 /**
  * A base component for other components whose main mission is to render a
@@ -26,11 +26,17 @@ export abstract class BaseRenderer
   /** {@link Resizeable.resize}. */
   abstract resize(): void;
 
+  readonly onClippingPlanesUpdated = new Event();
+
   /**
    * The list of [clipping planes](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.clippingPlanes) used by this
    * instance of the renderer.
    */
   clippingPlanes: THREE.Plane[] = [];
+
+  updateClippingPlanes() {
+    this.onClippingPlanesUpdated.trigger();
+  }
 
   /**
    * Adds or removes a

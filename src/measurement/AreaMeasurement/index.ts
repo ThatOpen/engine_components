@@ -31,6 +31,7 @@ export class AreaMeasurement
     this._enabled = value;
     this._vertexPicker.enabled = value;
     this.uiElement.main.active = value;
+    this.setupEvents(value);
     if (!value) this.cancelCreation();
   }
 
@@ -78,13 +79,11 @@ export class AreaMeasurement
   private setUI() {
     this.uiElement.main.onclick = () => {
       if (!this.enabled) {
-        this.setupEvents(true);
         this.uiElement.main.active = true;
         this.enabled = true;
       } else {
         this.enabled = false;
         this.uiElement.main.active = false;
-        this.setupEvents(false);
       }
     };
   }

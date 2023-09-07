@@ -25,8 +25,8 @@ export class SimplePlane
 
   // TODO: Make all planes share the same geometry
   // TODO: Clean up unnecessary attributes, clean up constructor
-  private _visible = true;
-  private _enabled = true;
+  protected _visible = true;
+  protected _enabled = true;
 
   private _controlsActive = false;
 

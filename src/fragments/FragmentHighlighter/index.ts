@@ -48,6 +48,8 @@ export class FragmentHighlighter
     opacity: 0.4,
   });
 
+  private _eventsActive = false;
+
   private _fillEnabled = true;
   private _outlineEnabled = true;
 
@@ -237,6 +239,8 @@ export class FragmentHighlighter
       }
     }
 
+    this.events[name].onHighlight.trigger(this.selection[name]);
+
     if (zoomToSelection) {
       this.zoomSelection(name);
     }
@@ -271,6 +275,8 @@ export class FragmentHighlighter
       }
       this.regenerate(name, fragID);
     }
+
+    this.events[name].onHighlight.trigger(this.selection[name]);
 
     if (zoomToSelection) {
       this.zoomSelection(name);
@@ -367,21 +373,13 @@ export class FragmentHighlighter
 
     const isBlockFragment = selection.blocks.count > 1;
     if (isBlockFragment) {
-      const blockIDs: number[] = [];
-      for (const id of ids) {
-        const { blockID } = fragment.getInstanceAndBlockID(id);
-        if (fragment.blocks.visibleIds.has(blockID)) {
-          blockIDs.push(blockID);
-        }
-      }
-
       fragment.getInstance(0, this._tempMatrix);
       selection.setInstance(0, {
-        ids: Array.from(ids),
+        ids: Array.from(fragment.ids),
         transform: this._tempMatrix,
       });
 
-      selection.blocks.add(blockIDs, true);
+      selection.blocks.setVisibility(true, ids, true);
     } else {
       let i = 0;
       for (const id of ids) {
@@ -392,7 +390,6 @@ export class FragmentHighlighter
         i++;
       }
     }
-    this.events[name].onHighlight.trigger(this.selection[name]);
   }
 
   private checkSelection(name: string) {
@@ -406,6 +403,13 @@ export class FragmentHighlighter
       if (!fragment.fragments[name]) {
         const material = this.highlightMats[name];
         const subFragment = fragment.addFragment(name, material);
+        if (fragment.blocks.count > 1) {
+          subFragment.setInstance(0, {
+            ids: Array.from(fragment.ids),
+            transform: this._tempMatrix,
+          });
+          subFragment.blocks.setVisibility(false);
+        }
         subFragment.mesh.renderOrder = 2;
         subFragment.mesh.frustumCulled = false;
       }
@@ -514,6 +518,12 @@ export class FragmentHighlighter
 
   private setupEvents(active: boolean) {
     const container = this._components.renderer.get().domElement;
+
+    if (active === this._eventsActive) {
+      return;
+    }
+
+    this._eventsActive = active;
 
     if (active) {
       container.addEventListener("mousedown", this.onMouseDown);

@@ -7,6 +7,7 @@ import { IfcPropertiesUtils } from "../IfcPropertiesUtils";
 import { EntityActionsUI } from "./src/entity-actions";
 import { PsetActionsUI } from "./src/pset-actions";
 import { PropActionsUI } from "./src/prop-actions";
+import { Button } from "../../ui";
 
 type BooleanPropTypes = "IfcBoolean" | "IfcLogical";
 type StringPropTypes = "IfcText" | "IfcLabel" | "IfcIdentifier";
@@ -31,11 +32,13 @@ export class IfcPropertiesManager
   name: string = "PropertiesManager";
   enabled: boolean = true;
   attributeListeners: AttributeListener = {};
+  selectedModel?: FragmentsGroup;
 
   uiElement: {
     entityActions: EntityActionsUI;
     psetActions: PsetActionsUI;
     propActions: PropActionsUI;
+    exportButton: Button;
   };
 
   private _ifcApi: WEBIFC.IfcAPI;
@@ -63,15 +66,52 @@ export class IfcPropertiesManager
     expressID: number;
   }>();
 
-  wasmPath = "/";
+  wasm = {
+    path: "/",
+    absolute: false,
+  };
 
   constructor(components: Components, ifcApi?: WEBIFC.IfcAPI) {
     super();
     this._ifcApi = ifcApi ?? new WEBIFC.IfcAPI();
-    this._ifcApi.SetWasmPath(this.wasmPath, true);
-    this._ifcApi.Init();
+
+    // TODO: Save original IFC file so that opening it again is not necessary
+    const exportButton = new Button(components);
+    exportButton.tooltip = "Export IFC";
+    exportButton.materialIcon = "exit_to_app";
+    exportButton.onclick = () => {
+      const fileOpener = document.createElement("input");
+      fileOpener.type = "file";
+      fileOpener.onchange = async () => {
+        if (
+          !this.selectedModel ||
+          !fileOpener.files ||
+          !fileOpener.files.length
+        ) {
+          return;
+        }
+
+        const file = fileOpener.files[0];
+        const rawBuffer = await file.arrayBuffer();
+        const fileData = new Uint8Array(rawBuffer);
+
+        const resultBuffer = await this.saveToIfc(this.selectedModel, fileData);
+
+        const resultFile = new File([new Blob([resultBuffer])], file.name);
+
+        const link = document.createElement("a");
+        link.download = file.name;
+        link.href = URL.createObjectURL(resultFile);
+        link.click();
+
+        link.remove();
+        fileOpener.remove();
+      };
+      fileOpener.click();
+    };
 
     this.uiElement = {
+      exportButton,
       entityActions: new EntityActionsUI(components),
       psetActions: new PsetActionsUI(components),
       propActions: new PropActionsUI(components),
@@ -80,8 +120,15 @@ export class IfcPropertiesManager
     this.setUIEvents();
   }
 
+  async init() {
+    const { path, absolute } = this.wasm;
+    this._ifcApi.SetWasmPath(path, absolute);
+    await this._ifcApi.Init();
+  }
+
   dispose() {
     (this._ifcApi as any) = null;
+    this.selectedModel = undefined;
     this.attributeListeners = {};
     this._changeMap = {};
     this.onElementToPset.reset();
@@ -380,7 +427,7 @@ export class IfcPropertiesManager
     this.registerChange(model, psetID);
   }
 
-  saveToIfc(model: FragmentsGroup, ifcToSaveOn: Uint8Array) {
+  async saveToIfc(model: FragmentsGroup, ifcToSaveOn: Uint8Array) {
     const { properties } = IfcPropertiesManager.getIFCInfo(model);
     const modelID = this._ifcApi.OpenModel(ifcToSaveOn);
     const changes = this._changeMap[model.uuid] ?? [];
@@ -397,8 +444,9 @@ export class IfcPropertiesManager
 
     (this._ifcApi as any) = null;
     this._ifcApi = new WEBIFC.IfcAPI();
-    this._ifcApi.SetWasmPath(this.wasmPath, true);
-    this._ifcApi.Init();
+    const { path, absolute } = this.wasm;
+    this._ifcApi.SetWasmPath(path, absolute);
+    await this._ifcApi.Init();
 
     return modifiedIFC;
   }

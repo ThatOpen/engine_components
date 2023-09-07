@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="../../../resources/styles.css">
+    <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <title>IfcPropertiesFinder</title>
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+        "openbim-components": "../../../resources/openbim-components.js"
+      }
+    }
+
+</script>
+<script type="module">
+
+    // Set up scene (see SimpleScene tutorial)
+
+    import * as THREE from 'three';
+    import * as OBC from 'openbim-components';
+
+    const container = document.getElementById('container');
+
+    const components = new OBC.Components();
+
+    components.scene = new OBC.SimpleScene(components);
+    const renderer = new OBC.PostproductionRenderer(components, container);
+    components.renderer = renderer;
+    components.camera = new OBC.SimpleCamera(components);
+    components.raycaster = new OBC.SimpleRaycaster(components);
+
+    components.init();
+
+    renderer.postproduction.enabled = true;
+
+    const scene = components.scene.get();
+
+    components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+
+    const directionalLight = new THREE.DirectionalLight();
+    directionalLight.position.set(5, 10, 3);
+    directionalLight.intensity = 0.5;
+    scene.add(directionalLight);
+
+    const ambientLight = new THREE.AmbientLight();
+    ambientLight.intensity = 0.5;
+    scene.add(ambientLight);
+
+    const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
+    components.tools.add('grid', grid);
+    const gridMesh = grid.get();
+    renderer.postproduction.customEffects.excludedMeshes.push(gridMesh);
+
+    const fragments = new OBC.FragmentManager(components);
+    
+    // Fragment file loading
+    const file = await fetch("../../../resources/small.frag");
+    const dataBlob = await file.arrayBuffer();
+    const buffer = new Uint8Array(dataBlob);
+    const model = fragments.load(buffer);
+
+    // Fragment properties loading
+    const properties = await fetch("../../../resources/small.json");
+    model.properties = await properties.json();
+
+    const propsProcessor = new OBC.IfcPropertiesProcessor(components);
+
+    const propsManager = new OBC.IfcPropertiesManager(components);
+    propsProcessor.propertiesManager = propsManager;
+
+    propsManager.wasm = {
+        path: "https://unpkg.com/web-ifc@0.0.42/",
+        absolute: true
+    }
+
+    propsManager.init();
+
+    propsProcessor.process(model);
+
+    // Quick setup for element hovering and selection
+    const highlighter = new OBC.FragmentHighlighter(components, fragments);
+    highlighter.setup();
+
+    components.renderer.postproduction.customEffects.outlineEnabled = true;
+    highlighter.outlinesEnabled = true;
+
+    const highlighterEvents = highlighter.events;
+    highlighterEvents.select.onClear.on(() => {
+        propsProcessor.cleanPropertiesList();
+    });
+
+    highlighterEvents.select.onHighlight.on(
+        (selection) => {
+            const fragmentID = Object.keys(selection)[0];
+            const expressID = Number([...selection[fragmentID]][0]);
+            let model
+            for (const group of fragments.groups) {
+                const fragmentFound = Object.values(group.keyFragments).find(id => id === fragmentID)
+                if (fragmentFound) model = group;
+            }
+            propsProcessor.renderProperties(model, expressID);
+        }
+    );
+
+    // Creating new toolbar + adding component button
+    const mainToolbar = new OBC.Toolbar(components)
+    components.ui.addToolbar(mainToolbar)
+    mainToolbar.addChild(propsProcessor.uiElement.main)
+
+</script>
+</body>
+</html>

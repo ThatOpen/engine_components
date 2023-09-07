@@ -4,9 +4,7 @@ import { IfcPropertiesUtils } from "../IfcPropertiesUtils";
 import { Button } from "../../ui/ButtonComponent";
 import { UI, Event, Disposable } from "../../base-types";
 import { Component } from "../../base-types/component";
-import { FloatingWindow } from "../../ui/FloatingWindow";
-import { SimpleUIComponent } from "../../ui/SimpleUIComponent";
-import { TreeView } from "../../ui/TreeView";
+import { FloatingWindow, SimpleUIComponent, TreeView } from "../../ui";
 import { Components } from "../../core/Components";
 import { IfcPropertiesManager } from "../IfcPropertiesManager";
 import { IfcCategoryMap } from "../ifc-category-map";
@@ -50,6 +48,7 @@ export class IfcPropertiesProcessor
 
   private _components: Components;
   private _propsList: SimpleUIComponent<HTMLDivElement>;
+  private _topToolbar: SimpleUIComponent;
   private _indexMap: IndexMap = {};
   private _renderFunctions: { [entityType: number]: RenderFunction } = {};
   private _propertiesManager: IfcPropertiesManager | null = null;
@@ -95,6 +94,8 @@ export class IfcPropertiesProcessor
 
     // this._entityUIPool = new UIPool(this._components, TreeView);
 
+    this._topToolbar = new SimpleUIComponent(this._components);
+
     this._propsList = new SimpleUIComponent(
       this._components,
       `<div class="flex flex-col"></div>`
@@ -122,6 +123,7 @@ export class IfcPropertiesProcessor
     this.uiElement.main.dispose();
     this.uiElement.propertiesWindow.dispose();
     (this._components as any) = null;
+    this._topToolbar.dispose();
     this._propsList.dispose();
     this._indexMap = {};
     (this.propertiesManager as any) = null;
@@ -133,11 +135,51 @@ export class IfcPropertiesProcessor
     this.onPropertiesManagerSet.reset();
   }
 
+  getProperties(model: FragmentsGroup, id: string) {
+    if (!model.properties) return null;
+    const map = this._indexMap[model.uuid];
+    if (!map) return null;
+    const indices = map[id];
+    const idNumber = parseInt(id, 10);
+    const properties = [model.properties[idNumber]] as any[];
+
+    if (indices) {
+      for (const index of indices) {
+        const pset = model.properties[index];
+        if (!pset) continue;
+        this.getPsetProperties(pset, model.properties);
+        this.getNestedPsets(pset, model.properties);
+        properties.push(pset);
+      }
+    }
+
+    return properties;
+  }
+
+  private getNestedPsets(pset: { [p: string]: any }, props: any) {
+    if (pset.HasPropertySets) {
+      for (const subPSet of pset.HasPropertySets) {
+        const psetID = subPSet.value;
+        subPSet.value = props[psetID];
+        this.getPsetProperties(subPSet.value, props);
+      }
+    }
+  }
+
+  private getPsetProperties(pset: { [p: string]: any }, props: any) {
+    if (pset.HasProperties) {
+      for (const property of pset.HasProperties) {
+        const psetID = property.value;
+        property.value = props[psetID];
+      }
+    }
+  }
+
   private setUI() {
     this._components.ui.add(this.uiElement.propertiesWindow);
     this.uiElement.propertiesWindow.title = "Element Properties";
 
-    this.uiElement.propertiesWindow.addChild(this._propsList);
+    this.uiElement.propertiesWindow.addChild(this._topToolbar, this._propsList);
 
     this.uiElement.main.tooltip = "Properties";
     this.uiElement.main.onclick = () => {
@@ -157,6 +199,10 @@ export class IfcPropertiesProcessor
   }
 
   cleanPropertiesList() {
+    if (this._propertiesManager) {
+      this._propertiesManager.uiElement.exportButton.removeFromParent();
+    }
+
     this._propsList.dispose(true);
     // for (const child of this._propsList.children) {
     //   if (child instanceof TreeView) {
@@ -204,6 +250,11 @@ export class IfcPropertiesProcessor
     this.cleanPropertiesList();
     const ui = this.newEntityUI(model, expressID);
     if (!ui) return;
+    if (this._propertiesManager) {
+      this._propertiesManager.selectedModel = model;
+      const exporter = this._propertiesManager.uiElement.exportButton;
+      this._topToolbar.addChild(exporter);
+    }
     const { properties } = IfcPropertiesManager.getIFCInfo(model);
     const { name } = IfcPropertiesUtils.getEntityName(properties, expressID);
     this.uiElement.propertiesWindow.description = name;

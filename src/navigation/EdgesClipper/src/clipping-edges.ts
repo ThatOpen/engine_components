@@ -33,7 +33,6 @@ export class ClippingEdges
   fillNeedsUpdate = false;
 
   protected blockByIndex: { [index: number]: number } = {};
-  protected lastBlock = 0;
 
   protected _edges: Edges = {};
   protected _styles: EdgesStyles;
@@ -178,12 +177,17 @@ export class ClippingEdges
     let lastIndex = 0;
 
     for (const mesh of style.meshes) {
-      if (!mesh.geometry) continue;
+      if (!mesh.geometry) {
+        continue;
+      }
       if (!mesh.geometry.boundsTree) {
         throw new Error("Boundstree not found for clipping edges subset.");
       }
 
       const instanced = mesh as THREE.InstancedMesh;
+      if (instanced.count === 0) {
+        continue;
+      }
       if (instanced.count > 1) {
         for (let i = 0; i < instanced.count; i++) {
           // Exclude fragment instances that don't belong to this style
@@ -243,6 +247,7 @@ export class ClippingEdges
       const scene = this._components.scene.get();
       scene.add(edges.mesh);
       if (this.fillNeedsUpdate && edges.fill) {
+        edges.fill.geometry = edges.mesh.geometry;
         edges.fill.update(indexes, this.blockByIndex);
       }
     }

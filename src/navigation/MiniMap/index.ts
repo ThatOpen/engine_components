@@ -19,6 +19,9 @@ export class MiniMap
   afterUpdate = new Event();
   beforeUpdate = new Event();
 
+  // By pushing the map to the front, what the user sees on screen corresponds with what they see on the map
+  frontOffset = 0;
+
   overrideMaterial = new THREE.MeshDepthMaterial();
 
   backgroundColor = new THREE.Color(0x06080a);
@@ -31,7 +34,8 @@ export class MiniMap
   private _plane: THREE.Plane;
   private _size = new THREE.Vector2(320, 160);
 
-  private _tempPosition = new THREE.Vector3();
+  private _tempVector1 = new THREE.Vector3();
+  private _tempVector2 = new THREE.Vector3();
   private _tempTarget = new THREE.Vector3();
 
   private readonly down = new THREE.Vector3(0, -1, 0);
@@ -96,11 +100,13 @@ export class MiniMap
       frustumSize / -2
     );
 
+    this._components.renderer.onClippingPlanesUpdated.on(this.updatePlanes);
+
     this._camera.position.set(0, 200, 0);
     this._camera.zoom = 0.1;
     this._camera.rotation.x = -Math.PI / 2;
     this._plane = new THREE.Plane(this.down, 200);
-    this._renderer.clippingPlanes = [this._plane];
+    this.updatePlanes();
   }
 
   dispose() {
@@ -124,20 +130,29 @@ export class MiniMap
     const scene = this._components.scene.get();
     const cameraComponent = this._components.camera as SimpleCamera;
     const controls = cameraComponent.controls;
-    controls.getPosition(this._tempPosition);
-    this._camera.position.x = this._tempPosition.x;
-    this._camera.position.z = this._tempPosition.z;
+    controls.getPosition(this._tempVector1);
+
+    this._camera.position.x = this._tempVector1.x;
+    this._camera.position.z = this._tempVector1.z;
+
+    if (this.frontOffset !== 0) {
+      controls.getTarget(this._tempVector2);
+      this._tempVector2.sub(this._tempVector1);
+      this._tempVector2.normalize().multiplyScalar(this.frontOffset);
+      this._camera.position.x += this._tempVector2.x;
+      this._camera.position.z += this._tempVector2.z;
+    }
 
     if (!this._lockRotation) {
       controls.getTarget(this._tempTarget);
       const angle = Math.atan2(
-        this._tempTarget.x - this._tempPosition.x,
-        this._tempTarget.z - this._tempPosition.z
+        this._tempTarget.x - this._tempVector1.x,
+        this._tempTarget.z - this._tempVector1.z
       );
       this._camera.rotation.z = angle + Math.PI;
     }
 
-    this._plane.set(this.down, this._tempPosition.y);
+    this._plane.set(this.down, this._tempVector1.y);
     const previousBackground = scene.background;
     scene.background = this.backgroundColor;
     this._renderer.render(scene, this._camera);
@@ -165,4 +180,14 @@ export class MiniMap
       this._camera.updateProjectionMatrix();
     }
   }
+
+  private updatePlanes = () => {
+    const planes: THREE.Plane[] = [];
+    const renderer = this._components.renderer.get();
+    for (const plane of renderer.clippingPlanes) {
+      planes.push(plane);
+    }
+    planes.push(this._plane);
+    this._renderer.clippingPlanes = planes;
+  };
 }

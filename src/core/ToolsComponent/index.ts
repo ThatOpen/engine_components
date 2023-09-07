@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import ToolBufferReader from "top-tool-package-reader";
 import { Component, Disposable, Event } from "../../base-types";
 
 type ToolsList = Map<symbol | string, Component<any>>;
@@ -16,6 +17,8 @@ export class ToolComponent
   onToolAdded: Event<Component<any>> = new Event();
   onToolRemoved: Event<null> = new Event();
 
+  private _reader = new ToolBufferReader();
+
   /** {@link Component.name} */
   name = "ToolComponent";
 
@@ -23,8 +26,8 @@ export class ToolComponent
   enabled = true;
 
   private _urls = {
-    base: "https://2fomw59q4h.execute-api.eu-central-1.amazonaws.com/v1/tools/",
-    path: "/contents/index.js?accessToken=",
+    base: "https://dev.api.dev.platform.thatopen.com/v1/tools/",
+    path: "/download?accessToken=",
   };
 
   /**
@@ -74,9 +77,11 @@ export class ToolComponent
     const url = base + id + path + token;
 
     const fetched = await fetch(url);
-    const code = await fetched.text();
+    const rawBuffer = await fetched.arrayBuffer();
+    const buffer = new Uint8Array(rawBuffer);
+    const code = this._reader.read(buffer);
     const script = document.createElement("script");
-    script.textContent = code;
+    script.textContent = code.js;
     document.body.appendChild(script);
 
     const win = window as any;

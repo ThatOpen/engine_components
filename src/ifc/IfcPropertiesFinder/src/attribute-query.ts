@@ -18,19 +18,29 @@ export class AttributeQueryUI extends SimpleUIComponent {
   get query() {
     const attribute = this.attribute.value as string;
     const condition = this.condition.value as QueryConditions;
+    const operator = (this.operator.value as QueryOperators) || null;
     const value =
       attribute === "type"
         ? (this.getTypeConstant(this.ifcTypes.value as string) as number)
         : this.value.value;
     const negateResult = this.negate.value === "NOT A";
-    const query: AttributeQuery = { attribute, condition, value, negateResult };
+    const query: AttributeQuery = {
+      attribute,
+      condition,
+      value,
+      negateResult,
+      operator,
+    };
     if (this.operator.visible)
       query.operator = this.operator.value as QueryOperators;
     return query;
   }
 
   set query(value: AttributeQuery) {
-    if (value.operator) this.operator.value = value.operator;
+    if (value.operator) {
+      this.operator.value = value.operator;
+      this.operator.visible = true;
+    }
     this.attribute.value = value.attribute;
     this.condition.value = value.condition;
     this.negate.value = value.negateResult ? "NOT A" : "A";

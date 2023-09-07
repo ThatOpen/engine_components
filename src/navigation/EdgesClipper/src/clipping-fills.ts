@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { Mesh } from "three";
 import earcut from "earcut";
 import { Components } from "../../../core";
 import { PostproductionRenderer } from "../../PostproductionRenderer";
@@ -7,7 +6,7 @@ import { PostproductionRenderer } from "../../PostproductionRenderer";
 export class ClippingFills {
   // readonly worker: Worker;
 
-  mesh = new Mesh(new THREE.BufferGeometry());
+  mesh = new THREE.Mesh(new THREE.BufferGeometry());
 
   styleName?: string;
 
@@ -43,6 +42,11 @@ export class ClippingFills {
     }
   }
 
+  set geometry(geometry: THREE.BufferGeometry) {
+    this._geometry = geometry;
+    this.mesh.geometry.attributes.position = geometry.attributes.position;
+  }
+
   constructor(
     components: Components,
     plane: THREE.Plane,
@@ -65,7 +69,6 @@ export class ClippingFills {
     }
 
     this._geometry = geometry;
-
     this.mesh.geometry.attributes.position = geometry.attributes.position;
 
     // To prevent clipping plane overlapping the filling mesh
