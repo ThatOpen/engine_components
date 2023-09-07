@@ -36,12 +36,16 @@ export class SimpleRenderer
   protected _renderer2D = new CSS2DRenderer();
   protected _renderer: THREE.WebGLRenderer;
 
+  overrideScene?: THREE.Scene;
+  overrideCamera?: THREE.Camera;
+
   constructor(
     public components: Components,
     public container: HTMLElement,
     parameters?: Partial<THREE.WebGLRendererParameters>
   ) {
     super();
+
     this._renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
@@ -63,11 +67,16 @@ export class SimpleRenderer
   update(_delta: number) {
     if (!this.enabled) return;
     this.beforeUpdate.trigger(this);
-    const scene = this.components.scene?.get();
-    const camera = this.components.camera?.get();
-    if (!scene || !camera) return;
-    this._renderer.render(scene, camera);
-    this._renderer2D.render(scene, camera);
+    if (this.overrideScene && this.overrideCamera) {
+      this._renderer.render(this.overrideScene, this.overrideCamera);
+      this._renderer2D.render(this.overrideScene, this.overrideCamera);
+    } else {
+      const scene = this.components.scene.get();
+      const camera = this.components.camera.get();
+      if (!scene || !camera) return;
+      this._renderer.render(scene, camera);
+      this._renderer2D.render(scene, camera);
+    }
     this.afterUpdate.trigger(this);
   }
 
@@ -109,7 +118,7 @@ export class SimpleRenderer
     this.container.appendChild(this._renderer2D.domElement);
   }
 
-  private setupEvents(active: boolean) {
+  setupEvents(active: boolean) {
     if (active) {
       window.addEventListener("resize", this.resize);
     } else {

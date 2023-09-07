@@ -48,6 +48,8 @@ export class FragmentHighlighter
     opacity: 0.4,
   });
 
+  private _eventsActive = false;
+
   private _fillEnabled = true;
   private _outlineEnabled = true;
 
@@ -237,6 +239,8 @@ export class FragmentHighlighter
       }
     }
 
+    this.events[name].onHighlight.trigger(this.selection[name]);
+
     if (zoomToSelection) {
       this.zoomSelection(name);
     }
@@ -271,6 +275,8 @@ export class FragmentHighlighter
       }
       this.regenerate(name, fragID);
     }
+
+    this.events[name].onHighlight.trigger(this.selection[name]);
 
     if (zoomToSelection) {
       this.zoomSelection(name);
@@ -384,7 +390,6 @@ export class FragmentHighlighter
         i++;
       }
     }
-    this.events[name].onHighlight.trigger(this.selection[name]);
   }
 
   private checkSelection(name: string) {
@@ -513,6 +518,12 @@ export class FragmentHighlighter
 
   private setupEvents(active: boolean) {
     const container = this._components.renderer.get().domElement;
+
+    if (active === this._eventsActive) {
+      return;
+    }
+
+    this._eventsActive = active;
 
     if (active) {
       container.addEventListener("mousedown", this.onMouseDown);

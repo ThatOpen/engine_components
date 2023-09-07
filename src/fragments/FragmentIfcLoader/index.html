@@ -159,17 +159,6 @@
     gui.add(settings, 'exportFragments').name('Export fragments');
     gui.add(settings, 'disposeFragments').name('Dispose fragments');
 
-    const clipper = new OBC.EdgesClipper(components, OBC.EdgesPlane);
-    components.tools.add("clipper", clipper);
-    clipper.enabled = true;
-
-    window.ondblclick = () => {
-        clipper.create();
-    }
-
-    components.renderer.postproduction.customEffects.outlineEnabled = true;
-
-
     // For debugging
 
     // fragmentIfcLoader.ifcLoaded.on((model) => {

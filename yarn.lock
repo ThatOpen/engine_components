@@ -6384,7 +6384,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"openbim-components@workspace:.":
+"openbim-clay@npm:^1.0.0-alpha.1":
+  version: 1.0.0-alpha.1
+  resolution: "openbim-clay@npm:1.0.0-alpha.1"
+  dependencies:
+    earcut: ^2.2.4
+    openbim-components: 1.0.0-alpha.102
+    three: 0.152.2
+  checksum: 234e6fff69adaedeaac8f4daa96974aa65da6934f8047d8488e4bb8445b1042a7df74ea2a11a9b0b44a63c17fead13677943ae0c44835b13406ea0efa100f7c5
+  languageName: node
+  linkType: hard
+
+"openbim-components@1.0.0-alpha.102, openbim-components@workspace:.":
   version: 0.0.0-use.local
   resolution: "openbim-components@workspace:."
   dependencies:
@@ -6417,6 +6428,7 @@ __metadata:
     jest: ^27.0.4
     mapbox-gl: ^2.15.0
     n8ao: ^1.5.1
+    openbim-clay: ^1.0.0-alpha.1
     postprocessing: ^6.31.0
     prettier: ^2.3.1
     rollup: ^3.2.3

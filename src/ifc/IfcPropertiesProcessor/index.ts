@@ -135,6 +135,46 @@ export class IfcPropertiesProcessor
     this.onPropertiesManagerSet.reset();
   }
 
+  getProperties(model: FragmentsGroup, id: string) {
+    if (!model.properties) return null;
+    const map = this._indexMap[model.uuid];
+    if (!map) return null;
+    const indices = map[id];
+    const idNumber = parseInt(id, 10);
+    const properties = [model.properties[idNumber]] as any[];
+
+    if (indices) {
+      for (const index of indices) {
+        const pset = model.properties[index];
+        if (!pset) continue;
+        this.getPsetProperties(pset, model.properties);
+        this.getNestedPsets(pset, model.properties);
+        properties.push(pset);
+      }
+    }
+
+    return properties;
+  }
+
+  private getNestedPsets(pset: { [p: string]: any }, props: any) {
+    if (pset.HasPropertySets) {
+      for (const subPSet of pset.HasPropertySets) {
+        const psetID = subPSet.value;
+        subPSet.value = props[psetID];
+        this.getPsetProperties(subPSet.value, props);
+      }
+    }
+  }
+
+  private getPsetProperties(pset: { [p: string]: any }, props: any) {
+    if (pset.HasProperties) {
+      for (const property of pset.HasProperties) {
+        const psetID = property.value;
+        property.value = props[psetID];
+      }
+    }
+  }
+
   private setUI() {
     this._components.ui.add(this.uiElement.propertiesWindow);
     this.uiElement.propertiesWindow.title = "Element Properties";

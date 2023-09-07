@@ -92,8 +92,16 @@
         propsProcessor.cleanPropertiesList();
     });
 
+
     highlighterEvents.select.onHighlight.on(
         (selection) => {
+            // Get properties programmatically
+            // const first = Object.keys(selection)[0];
+            // const model = fragments.list[first].group;
+            // const id = Array.from(selection[first])[0];
+            // const props = propsProcessor.getProperties(model, id);
+            // console.log(props);
+
             const fragmentID = Object.keys(selection)[0];
             const expressID = Number([...selection[fragmentID]][0]);
             let model
