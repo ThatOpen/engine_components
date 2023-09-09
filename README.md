@@ -16,7 +16,7 @@
 [![Discord][discord]][discord-url]
 [![Tests](https://github.com/IFCjs/components/actions/workflows/tests.yml/badge.svg)](https://github.com/IFCjs/components/actions/workflows/tests.yml)
 
-This library is a collection of BIM tools based on [Three.js](https://github.com/mrdoob/three.js/) and other libraries. It includes pre-made features to easily build browser-based 3D BIM applications, such as postproduction, dimensions, floorplan navigation, DXF export and much more. 
+This library is a collection of BIM tools based on [Three.js](https://github.com/mrdoob/three.js/) and other libraries. It includes pre-made features to easily build browser-based 3D BIM applications, such as postproduction, dimensions, floorplan navigation, DXF export and much more.
 
 ### Usage
 
@@ -28,14 +28,14 @@ import * as OBC from "openbim-components";
 
 // Get the <div> element where the scene will be displayed
 
-const container = document.getElementById('container');
+const container = document.getElementById("container");
 
 // Initialize the basic components needed to use this library
 
 const components = new OBC.Components();
 
 components.scene = new OBC.SimpleScene(components);
-components._renderer = new OBC.SimpleRenderer(components, container);
+components.renderer = new OBC.SimpleRenderer(components, container);
 components.camera = new OBC.SimpleCamera(components);
 components.raycaster = new OBC.SimpleRaycaster(components);
 
@@ -45,9 +45,9 @@ components.init();
 
 const scene = components.scene.get();
 
-const geometry = new new THREE.BoxGeometry(3, 3, 3);
+const geometry = new THREE.BoxGeometry(3, 3, 3);
 const material = new THREE.MeshStandardMaterial({ color: "red" });
-const cube = THREE.Mesh(geometry, material);
+const cube = new THREE.Mesh(geometry, material);
 cube.position.set(0, 1.5, 0);
 scene.add(cube);
 
@@ -62,8 +62,6 @@ const ambientLight = new THREE.AmbientLight();
 ambientLight.intensity = 0.5;
 scene.add(ambientLight);
 ```
-
-
 
 [ifcjs]: https://ifcjs.io/
 [npm]: https://img.shields.io/npm/v/openbim-components
