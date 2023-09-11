@@ -1,15 +1,25 @@
 import * as THREE from "three";
 import { Lines } from "openbim-clay";
-import { Components } from "../../core";
+import { Components, Simple2DScene } from "../../core";
+import { Component } from "../../base-types";
 
-export class RoadNavigator {
+export class RoadNavigator extends Component<Lines> {
+  name = "RoadNavigator";
+
+  enabled = true;
+
+  longSection: Simple2DScene;
+
   private _components: Components;
   private _lines = new Lines();
+
+  private _longProjection: Lines;
 
   // TODO: this should be handled better and allow to define lines per IFC model
   private _defaultID = "RoadNavigator";
 
   constructor(components: Components) {
+    super();
     this._components = components;
     const raycaster = this._components.raycaster.get();
     raycaster.params.Points = { threshold: 1 };
@@ -17,6 +27,17 @@ export class RoadNavigator {
     const scene = components.scene.get();
     scene.add(this._lines.mesh);
     scene.add(this._lines.vertices.mesh);
+
+    this.longSection = new Simple2DScene(components);
+    this._longProjection = new Lines();
+    this.longSection.scene.add(
+      this._longProjection.mesh,
+      this._longProjection.vertices.mesh
+    );
+  }
+
+  get() {
+    return this._lines;
   }
 
   drawPoint() {
@@ -35,6 +56,7 @@ export class RoadNavigator {
     this._lines.selectPoints(false);
     this._lines.selectPoints(true, [id]);
 
+    this.updateLongProjection();
     this.cache();
   }
 
@@ -56,6 +78,7 @@ export class RoadNavigator {
     this._lines.vertices.selected.data.clear();
     this._lines.vertices.mesh.geometry.computeBoundingSphere();
 
+    this.updateLongProjection();
     this.cache();
   }
 
@@ -97,5 +120,32 @@ export class RoadNavigator {
         this._lines.add(line);
       }
     }
+  }
+
+  private updateLongProjection() {
+    // Assuming that the lines of the road axis are sorted
+    // TODO: Sort them in case they are not
+    this._longProjection.clear();
+    const vertices = this._lines.mesh.geometry.attributes.position;
+    console.log(vertices);
+    const v1 = new THREE.Vector3();
+    const v2 = new THREE.Vector3();
+    const points: [number, number, number][] = [];
+    let accumulatedX = 0;
+    for (let i = 0; i < vertices.count * 3 - 5; i += 6) {
+      const x1 = vertices.array[i];
+      const y1 = vertices.array[i + 1];
+      const z1 = vertices.array[i + 2];
+      const x2 = vertices.array[i + 3];
+      const y2 = vertices.array[i + 4];
+      const z2 = vertices.array[i + 5];
+      v1.set(x1, y1, z1);
+      v2.set(x2, y2, z2);
+      const length = v1.distanceTo(v2);
+      accumulatedX += length;
+      points.push([accumulatedX, y2, 0]);
+    }
+    const ids = this._longProjection.addPoints(points);
+    this._longProjection.add(ids);
   }
 }

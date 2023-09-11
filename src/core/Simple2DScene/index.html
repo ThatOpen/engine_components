@@ -1,14 +1,14 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <link rel="stylesheet" href="../../../resources/styles.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-  <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
-  <title>Tools Component</title>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="../../../resources/styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+    <title>Tools Component</title>
 </head>
 <body>
 <div class="full-screen" id="container"></div>
@@ -20,53 +20,63 @@
         "openbim-components": "../../../resources/openbim-components.js"
       }
     }
+
 </script>
 <script type="module">
 
-	import * as THREE from 'three';
-	import * as OBC from 'openbim-components';
+    import * as THREE from 'three';
+    import * as OBC from 'openbim-components';
 
-	const container = document.getElementById('container');
+    const container = document.getElementById('container');
 
-	const components = new OBC.Components();
-	components.scene = new OBC.SimpleScene(components);
-	components.renderer = new OBC.SimpleRenderer(components, container);
-	components.camera = new OBC.SimpleCamera(components);
-	components.raycaster = new OBC.SimpleRaycaster(components);
+    const components = new OBC.Components();
+    components.scene = new OBC.SimpleScene(components);
+    components.renderer = new OBC.SimpleRenderer(components, container);
+    components.camera = new OBC.SimpleCamera(components);
+    components.raycaster = new OBC.SimpleRaycaster(components);
 
-	components.init();
+    components.init();
 
-	const scene = components.scene.get();
+    const scene = components.scene.get();
 
-	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+    components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
-	const grid = new OBC.SimpleGrid(components);
-	components.tools.add("grid", grid);
+    const grid = new OBC.SimpleGrid(components);
+    components.tools.add("grid", grid);
 
-  const boxMaterial = new THREE.MeshStandardMaterial({ color: '#6528D7' });
-  const boxGeometry = new THREE.BoxGeometry(3, 3, 3);
-	const cube = new THREE.Mesh(boxGeometry, boxMaterial);
-	cube.position.set(0, 1.5, 0);
-	scene.add(cube);
+    const boxMaterial = new THREE.MeshStandardMaterial({color: '#6528D7'});
+    const boxGeometry = new THREE.BoxGeometry(3, 3, 3);
+    const cube = new THREE.Mesh(boxGeometry, boxMaterial);
+    cube.position.set(0, 1.5, 0);
+    scene.add(cube);
 
-	const directionalLight = new THREE.DirectionalLight();
-	directionalLight.position.set(5, 10, 3);
-	directionalLight.intensity = 0.5;
-	scene.add(directionalLight);
+    const directionalLight = new THREE.DirectionalLight();
+    directionalLight.position.set(5, 10, 3);
+    directionalLight.intensity = 0.5;
+    scene.add(directionalLight);
 
-	const ambientLight = new THREE.AmbientLight();
-	ambientLight.intensity = 0.5;
-	scene.add(ambientLight);
+    const ambientLight = new THREE.AmbientLight();
+    ambientLight.intensity = 0.5;
+    scene.add(ambientLight);
 
-  const simple2dScene = new OBC.Simple2DScene(components);
-  components.tools.add("Simple2DScene", simple2dScene);
+    const simple2dScene = new OBC.Simple2DScene(components);
+    components.tools.add("Simple2DScene", simple2dScene);
 
     const cube2 = new THREE.Mesh(boxGeometry, boxMaterial);
     simple2dScene.scene.add(cube2);
 
-  const mainToolbar = new OBC.Toolbar(components);
-  components.ui.addToolbar(mainToolbar);
-  mainToolbar.addChild(simple2dScene.uiElement.main);
+    const directionalLight2 = new THREE.DirectionalLight();
+    directionalLight2.position.set(5, 10, 3);
+    directionalLight2.intensity = 0.5;
+    simple2dScene.scene.add(directionalLight2);
+
+    const ambientLight2 = new THREE.AmbientLight();
+    ambientLight2.intensity = 0.5;
+    simple2dScene.scene.add(ambientLight2);
+
+    const mainToolbar = new OBC.Toolbar(components);
+    components.ui.addToolbar(mainToolbar);
+    mainToolbar.addChild(simple2dScene.uiElement.main);
 
 </script>
 </body>

@@ -851,10 +851,6 @@ html {
   max-height: 300px;
 }
 
-.max-h-full{
-  max-height: 100%;
-}
-
 .min-h-\[30px\]{
   min-height: 30px;
 }
@@ -931,10 +927,6 @@ html {
 
 .min-w-\[4\.5rem\]{
   min-width: 4.5rem;
-}
-
-.max-w-full{
-  max-width: 100%;
 }
 
 .max-w-xs{
@@ -1063,6 +1055,10 @@ html {
 
 .overflow-auto{
   overflow: auto;
+}
+
+.overflow-hidden{
+  overflow: hidden;
 }
 
 .overflow-visible{
