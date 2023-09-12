@@ -63,7 +63,7 @@ export class RangeInput extends SimpleUIComponent<HTMLDivElement> {
     const template = `
     <div>
       <label id="label" class="${UIManager.Class.Label}"></label>
-      <input id="input" type="range" class="block w-full rounded-md border-0 py-1.5 shadow-sm">
+      <input id="input" type="range" class="block w-full rounded-md border-0 py-1.5 shadow-sm accent-ifcjs-300">
     </div>
     `;
     super(components, template);
