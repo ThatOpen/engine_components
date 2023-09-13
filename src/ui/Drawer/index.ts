@@ -1,6 +1,8 @@
 import { Components } from "../../core";
 import { SimpleUIComponent } from "../SimpleUIComponent";
 
+// TODO: Fix tooltips for buttons in drawers
+
 export class Drawer extends SimpleUIComponent<HTMLDivElement> {
   name = "Drawer";
 
