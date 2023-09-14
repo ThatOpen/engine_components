@@ -141,11 +141,12 @@ export class IfcPropertiesProcessor
     if (!map) return null;
     const indices = map[id];
     const idNumber = parseInt(id, 10);
-    const properties = [model.properties[idNumber]] as any[];
+    const nativeProperties = this.cloneProperty(model.properties[idNumber]);
+    const properties = [nativeProperties] as any[];
 
     if (indices) {
       for (const index of indices) {
-        const pset = model.properties[index];
+        const pset = this.cloneProperty(model.properties[index]);
         if (!pset) continue;
         this.getPsetProperties(pset, model.properties);
         this.getNestedPsets(pset, model.properties);
@@ -160,7 +161,7 @@ export class IfcPropertiesProcessor
     if (pset.HasPropertySets) {
       for (const subPSet of pset.HasPropertySets) {
         const psetID = subPSet.value;
-        subPSet.value = props[psetID];
+        subPSet.value = this.cloneProperty(props[psetID]);
         this.getPsetProperties(subPSet.value, props);
       }
     }
@@ -170,7 +171,8 @@ export class IfcPropertiesProcessor
     if (pset.HasProperties) {
       for (const property of pset.HasProperties) {
         const psetID = property.value;
-        property.value = props[psetID];
+        const result = this.cloneProperty(props[psetID]);
+        property.value = { ...result };
       }
     }
   }
@@ -474,6 +476,53 @@ export class IfcPropertiesProcessor
     // #endregion ManagementUI
 
     return tag;
+  }
+
+  private cloneProperty(
+    item: { [name: string]: any },
+    result: { [name: string]: any } = {}
+  ) {
+    if (!item) {
+      return result;
+    }
+    for (const key in item) {
+      const value = item[key];
+
+      const isArray = Array.isArray(value);
+      const isObject = typeof value === "object" && !isArray && value !== null;
+
+      if (isArray) {
+        result[key] = [];
+        const subResult = result[key] as any[];
+        this.clonePropertyArray(value, subResult);
+      } else if (isObject) {
+        result[key] = {};
+        const subResult = result[key];
+        this.cloneProperty(value, subResult);
+      } else {
+        result[key] = value;
+      }
+    }
+    return result;
+  }
+
+  private clonePropertyArray(item: any[], result: any[]) {
+    for (const value of item) {
+      const isArray = Array.isArray(value);
+      const isObject = typeof value === "object" && !isArray && value !== null;
+
+      if (isArray) {
+        const subResult = [] as any[];
+        result.push(subResult);
+        this.clonePropertyArray(value, subResult);
+      } else if (isObject) {
+        const subResult = {} as any;
+        result.push(subResult);
+        this.cloneProperty(value, subResult);
+      } else {
+        result.push(value);
+      }
+    }
   }
 }
 
