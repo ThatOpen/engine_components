@@ -90,7 +90,7 @@ export class AttributeQueryUI extends SimpleUIComponent {
       "Description"
     );
 
-    this.attribute.onChange.on((selection) => {
+    this.attribute.onChange.add((selection) => {
       const attributeIsType = selection === "type";
       this.value.visible = !attributeIsType;
       this.ifcTypes.visible = attributeIsType;

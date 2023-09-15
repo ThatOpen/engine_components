@@ -73,7 +73,7 @@
     optionsDrawer.addChild(visibleCheckbox);
     visibleCheckbox.label = "Visible";
     visibleCheckbox.value = true;
-    visibleCheckbox.onChange.on(value => {
+    visibleCheckbox.onChange.add(value => {
        drawer.visible = value;
     });
 
@@ -83,7 +83,7 @@
     sizeRange.min = 1;
     sizeRange.max = 20;
     sizeRange.value = 10;
-    sizeRange.onChange.on((value) => {
+    sizeRange.onChange.add((value) => {
         drawer.size = `${value}rem`;
     });
 
@@ -92,7 +92,7 @@
     alignmentDropdown.label = "Alignment";
     alignmentDropdown.addOption("top", "bottom", "left", "right");
     alignmentDropdown.value = "left";
-    alignmentDropdown.onChange.on((value) => {
+    alignmentDropdown.onChange.add((value) => {
         drawer.alignment = value;
     });
 

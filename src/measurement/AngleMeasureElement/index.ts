@@ -63,11 +63,11 @@ export class AngleMeasureElement
     htmlText.className = DimensionLabelClassName;
     this._labelMarker = new Simple2DMarker(components, htmlText);
     this.labelMarker.visible = false;
-    this.onPointAdded.on(() => {
+    this.onPointAdded.add(() => {
       if (this.points.length === 1) this.scene.add(this._line);
       if (this.points.length === 3) this.labelMarker.visible = true;
     });
-    this.onAngleComputed.on((angle) => {
+    this.onAngleComputed.add((angle) => {
       this.labelMarker.get().element.textContent = `${angle.toFixed(2)}°`;
       this.labelMarker
         .get()

@@ -32,7 +32,7 @@ describe("Disposer", () => {
     const material = new THREE.MeshBasicMaterial();
     const mesh = new THREE.Mesh(geometry, material);
 
-    disposer.dispose(mesh);
+    disposer.destroy(mesh);
 
     expect(mesh.parent).toBeNull();
     expect(mesh.material).toEqual([]);
@@ -44,7 +44,7 @@ describe("Disposer", () => {
     const geometry = new THREE.BufferGeometry();
     const mesh = new THREE.Mesh(geometry);
 
-    disposer.dispose(mesh);
+    disposer.destroy(mesh);
 
     expect(mesh.parent).toBeNull();
     expect(mesh.material).toEqual([]);
@@ -56,7 +56,7 @@ describe("Disposer", () => {
     const mesh = new THREE.Mesh();
 
     expect(() => {
-      disposer.dispose(mesh);
+      disposer.destroy(mesh);
     }).not.toThrow();
   });
 
@@ -71,7 +71,7 @@ describe("Disposer", () => {
     const mesh = new THREE.Mesh(geometry, material);
 
     mesh.add(childMesh);
-    disposer.dispose(mesh, true, true);
+    disposer.destroy(mesh, true, true);
 
     expect(mesh.parent).toBeNull();
     expect(mesh.material).toEqual([]);
@@ -85,7 +85,7 @@ describe("Disposer", () => {
     const material = new THREE.MeshBasicMaterial();
     const mesh = new THREE.Mesh(undefined, material);
 
-    disposer.dispose(mesh);
+    disposer.destroy(mesh);
 
     expect(mesh.parent).toBeNull();
     expect(mesh.material).toEqual([]);
@@ -98,7 +98,7 @@ describe("Disposer", () => {
     const material = new THREE.MeshBasicMaterial();
     const mesh = new THREE.Mesh(geometry, material);
 
-    disposer.dispose(mesh, true, false);
+    disposer.destroy(mesh, true, false);
 
     expect(mesh.parent).toBeNull();
     expect(mesh.material).toEqual([]);

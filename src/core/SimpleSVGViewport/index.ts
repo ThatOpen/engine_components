@@ -1,18 +1,35 @@
 import { Vector2 } from "three";
 import { generateUUID } from "three/src/math/MathUtils";
-import { Component, SVGAnnotationStyle } from "../../base-types";
-import { Button } from "../../ui/ButtonComponent";
-import { FloatingWindow } from "../../ui/FloatingWindow";
-import { Toolbar } from "../../ui/ToolbarComponent";
+import {
+  Component,
+  Disposable,
+  SVGAnnotationStyle,
+  UI,
+  UIElement,
+} from "../../base-types";
+import {
+  Button,
+  FloatingWindow,
+  Toolbar,
+  ColorInput,
+  RangeInput,
+} from "../../ui";
+
 import { Components } from "../Components";
-import { ColorInput, RangeInput } from "../../ui";
 
 export interface SVGViewportConfig extends SVGAnnotationStyle {}
 
-export class SimpleSVGViewport extends Component<SVGElement> {
-  name: string = "SimpleCanvas2D";
-  uiElement!: { toolbar: Toolbar; settingsWindow: FloatingWindow };
+export class SimpleSVGViewport
+  extends Component<SVGElement>
+  implements UI, Disposable
+{
+  uiElement = new UIElement<{
+    toolbar: Toolbar;
+    settingsWindow: FloatingWindow;
+  }>();
+
   id: string = generateUUID().toLowerCase();
+
   private _config!: SVGViewportConfig;
   private _enabled: boolean = false;
 
@@ -21,7 +38,6 @@ export class SimpleSVGViewport extends Component<SVGElement> {
     "svg"
   );
 
-  private _components: Components;
   private _size: Vector2 = new Vector2();
   private _undoList: any[] = [];
 
@@ -33,12 +49,12 @@ export class SimpleSVGViewport extends Component<SVGElement> {
     this._enabled = value;
     this.resize();
     this._undoList = [];
-    this.uiElement.toolbar.visible = value;
+    this.uiElement.get("toolbar").visible = value;
     if (value) {
       this._viewport.classList.remove("pointer-events-none");
     } else {
       this.clear();
-      this.uiElement.settingsWindow.visible = false;
+      this.uiElement.get("settingsWindow").visible = false;
       this._viewport.classList.add("pointer-events-none");
     }
   }
@@ -52,8 +68,7 @@ export class SimpleSVGViewport extends Component<SVGElement> {
   }
 
   constructor(components: Components, config?: SVGViewportConfig) {
-    super();
-    this._components = components;
+    super(components);
 
     const defaultConfig: SVGViewportConfig = {
       fillColor: "transparent",
@@ -72,18 +87,18 @@ export class SimpleSVGViewport extends Component<SVGElement> {
     // const width = rendererSize.x
     // const height = rendererSize.y
     // this._viewport.setAttribute("viewBox", `0 0 ${width} ${height}`);
+
     this.setUI();
+
     this.enabled = false;
 
-    this._components.ui.viewerContainer.append(this._viewport);
+    this.components.ui.viewerContainer.append(this._viewport);
     this.setupEvents(true);
   }
 
-  dispose() {
+  async dispose() {
     this._undoList = [];
-    this.uiElement.toolbar.dispose();
-    this.uiElement.settingsWindow.dispose();
-    (this._components as any) = null;
+    this.uiElement.dispose();
   }
 
   get(): SVGElement {
@@ -108,7 +123,7 @@ export class SimpleSVGViewport extends Component<SVGElement> {
 
   /** {@link Resizeable.resize}. */
   resize() {
-    const renderer = this._components.renderer;
+    const renderer = this.components.renderer;
     const rendererSize = renderer.getSize();
     const width = this.enabled ? rendererSize.x : 0;
     const height = this.enabled ? rendererSize.y : 0;
@@ -134,85 +149,85 @@ export class SimpleSVGViewport extends Component<SVGElement> {
   };
 
   private setUI() {
-    const undoDrawingBtn = new Button(this._components, {
+    const undoDrawingBtn = new Button(this.components, {
       materialIconName: "undo",
     });
-    undoDrawingBtn.onclick = () => {
+    undoDrawingBtn.onClick.add(() => {
       if (this._viewport.lastChild) {
         this._undoList.push(this._viewport.lastChild);
         this._viewport.lastChild.remove();
       }
-    };
+    });
 
-    const redoDrawingBtn = new Button(this._components, {
+    const redoDrawingBtn = new Button(this.components, {
       materialIconName: "redo",
     });
-    redoDrawingBtn.onclick = () => {
+    redoDrawingBtn.onClick.add(() => {
       const childNode = this._undoList[this._undoList.length - 1];
       if (childNode) {
         this._undoList.pop();
         this._viewport.append(childNode);
       }
-    };
+    });
 
-    const clearDrawingBtn = new Button(this._components, {
+    const clearDrawingBtn = new Button(this.components, {
       materialIconName: "delete",
     });
-    clearDrawingBtn.onclick = () => this.clear();
+    clearDrawingBtn.onClick.add(() => this.clear());
 
     // #region Settings window
-    const settingsWindow = new FloatingWindow(this._components, this.id);
+    const settingsWindow = new FloatingWindow(this.components, this.id);
     settingsWindow.title = "Drawing Settings";
     settingsWindow.visible = false;
-    const viewerContainer = this._components.renderer.get().domElement
+    const viewerContainer = this.components.renderer.get().domElement
       .parentElement as HTMLElement;
     viewerContainer.append(settingsWindow.get());
 
-    const strokeWidth = new RangeInput(this._components);
+    const strokeWidth = new RangeInput(this.components);
     strokeWidth.label = "Stroke Width";
     strokeWidth.min = 2;
     strokeWidth.max = 6;
     strokeWidth.value = 4;
     // strokeWidth.id = this.id;
 
-    strokeWidth.onChange.on((value) => {
+    strokeWidth.onChange.add((value) => {
       // @ts-ignore
       this.config = { strokeWidth: value };
     });
 
-    const strokeColorInput = new ColorInput(this._components);
+    const strokeColorInput = new ColorInput(this.components);
     strokeColorInput.label = "Stroke Color";
     strokeColorInput.value = this.config.strokeColor ?? "#BCF124";
     // strokeColorInput.name = "stroke-color";
     // strokeColorInput.id = this.id;
 
-    strokeColorInput.onChange.on((value) => {
+    strokeColorInput.onChange.add((value) => {
       this.config = { strokeColor: value };
     });
 
-    const fillColorInput = new ColorInput(this._components);
+    const fillColorInput = new ColorInput(this.components);
     strokeColorInput.label = "Fill Color";
     strokeColorInput.value = this.config.fillColor ?? "#BCF124";
     // strokeColorInput.name = "fill-color";
     // strokeColorInput.id = this.id;
 
-    fillColorInput.onChange.on((value) => {
+    fillColorInput.onChange.add((value) => {
       this.config = { fillColor: value };
     });
 
     settingsWindow.addChild(strokeColorInput, fillColorInput, strokeWidth);
 
-    const settingsBtn = new Button(this._components, {
+    const settingsBtn = new Button(this.components, {
       materialIconName: "settings",
     });
-    settingsBtn.onclick = () => {
+    settingsBtn.onClick.add(() => {
       settingsWindow.visible = !settingsWindow.visible;
       settingsBtn.active = settingsWindow.visible;
-    };
+    });
 
-    settingsWindow.onHidden.on(() => (settingsBtn.active = false));
+    settingsWindow.onHidden.add(() => (settingsBtn.active = false));
 
-    const toolbar = new Toolbar(this._components, { position: "right" });
+    const toolbar = new Toolbar(this.components, { position: "right" });
 
     toolbar.addChild(
       settingsBtn,
@@ -221,6 +236,6 @@ export class SimpleSVGViewport extends Component<SVGElement> {
       clearDrawingBtn
     );
 
-    this.uiElement = { toolbar, settingsWindow };
+    this.uiElement.set({ toolbar, settingsWindow });
   }
 }

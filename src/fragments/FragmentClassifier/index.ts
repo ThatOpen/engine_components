@@ -1,10 +1,9 @@
 import { FragmentsGroup } from "bim-fragment";
-import { Disposable, FragmentIdMap } from "../../base-types";
-import { Component } from "../../base-types/component";
-import { FragmentManager } from "../FragmentManager";
-import { IfcCategoryMap } from "../../ifc";
-import { IfcPropertiesUtils } from "../../ifc/IfcPropertiesUtils";
+import { Disposable, FragmentIdMap, Component } from "../../base-types";
+import { IfcCategoryMap, IfcPropertiesUtils } from "../../ifc";
 import { toCompositeID } from "../../utils";
+import { Components } from "../../core";
+import { FragmentManager } from "../FragmentManager";
 
 // TODO: Clean up and document
 
@@ -18,18 +17,18 @@ export class FragmentClassifier
   extends Component<Classification>
   implements Disposable
 {
-  /** {@link Component.name} */
-  name = "FragmentClassifier";
+  static readonly uuid = "e25a7f3c-46c4-4a14-9d3d-5115f24ebeb7" as const;
 
   /** {@link Component.enabled} */
   enabled = true;
 
   private _groupSystems: Classification = {};
-  private _fragments: FragmentManager;
 
-  constructor(fragmentManager: FragmentManager) {
-    super();
-    this._fragments = fragmentManager;
+  constructor(components: Components) {
+    super(components);
+
+    components.tools.add(FragmentClassifier.uuid, this);
+    components.tools.libraryUUIDs.add(FragmentClassifier.uuid);
   }
 
   /** {@link Component.get} */
@@ -37,9 +36,8 @@ export class FragmentClassifier
     return this._groupSystems;
   }
 
-  dispose() {
+  async dispose() {
     this._groupSystems = {};
-    (this._fragments as any) = null;
   }
 
   remove(guid: string) {
@@ -52,12 +50,13 @@ export class FragmentClassifier
     }
   }
 
-  find(filter?: { [name: string]: string[] }) {
+  async find(filter?: { [name: string]: string[] }) {
+    const fragments = await this.components.tools.get(FragmentManager);
     if (!filter) {
       const result: FragmentIdMap = {};
-      const fragments = this._fragments.list;
-      for (const id in fragments) {
-        const fragment = fragments[id];
+      const fragList = fragments.list;
+      for (const id in fragList) {
+        const fragment = fragList[id];
         const items = fragment.items;
         const hidden = Object.keys(fragment.hiddenInstances);
         result[id] = new Set(...items, ...hidden);
@@ -100,7 +99,7 @@ export class FragmentClassifier
             result[guid] = new Set();
           }
           result[guid].add(id);
-          const fragment = this._fragments.list[guid];
+          const fragment = fragments.list[guid];
           const composites = fragment.composites[id];
           if (composites) {
             const idNum = parseInt(id, 10);

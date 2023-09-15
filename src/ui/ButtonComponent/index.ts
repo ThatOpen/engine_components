@@ -22,7 +22,7 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
   name: string = "TooeenButton";
   menu: Toolbar;
 
-  onClicked = new Event<any>();
+  readonly onClick = new Event<any>();
 
   static Class = {
     Base: `
@@ -70,17 +70,6 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
 
   get label() {
     return this.innerElements.label.textContent;
-  }
-
-  set onclick(listener: (e?: MouseEvent) => void) {
-    this.domElement.onclick = (e) => {
-      e.stopImmediatePropagation();
-      listener(e);
-      if (this._closeOnClick) {
-        this._components.ui.closeMenus();
-        this._components.ui.contextMenu.visible = false;
-      }
-    };
   }
 
   set parent(toolbar: Toolbar | null) {
@@ -157,10 +146,19 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
 
     this.domElement.onclick = (e) => {
       e.stopImmediatePropagation();
-      if (!this.parent?.parent) {
+
+      this.onClick.trigger();
+
+      if (this._closeOnClick) {
         this._components.ui.closeMenus();
+        this._components.ui.contextMenu.visible = false;
+      } else if (this.parent) {
+        if (!this.parent.parent) {
+          this._components.ui.closeMenus();
+        }
+        this.parent.closeMenus();
       }
-      this.parent?.closeMenus();
+
       this.menu.visible = true;
       this._popper.update();
     };
@@ -199,8 +197,8 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
     });
     // #endregion
 
-    this.onEnabled.on(() => (this.domElement.disabled = false));
-    this.onDisabled.on(() => (this.domElement.disabled = true));
+    this.onEnabled.add(() => (this.domElement.disabled = false));
+    this.onDisabled.add(() => (this.domElement.disabled = true));
   }
 
   dispose(onlyChildren = false) {
@@ -209,7 +207,7 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
     if (!onlyChildren) {
       this.domElement.remove();
     }
-    this.onClicked.reset();
+    this.onClick.reset();
     this._popper.destroy();
   }
 

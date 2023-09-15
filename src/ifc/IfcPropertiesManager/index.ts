@@ -141,7 +141,7 @@ export class IfcPropertiesManager
   }
 
   private setUIEvents() {
-    this.uiElement.entityActions.onNewPset.on(
+    this.uiElement.entityActions.onNewPset.add(
       ({ model, elementIDs, name, description }) => {
         const { pset } = this.newPset(
           model,
@@ -156,7 +156,7 @@ export class IfcPropertiesManager
         this.uiElement.entityActions.cleanData();
       }
     );
-    this.uiElement.propActions.onEditProp.on(
+    this.uiElement.propActions.onEditProp.add(
       ({ model, expressID, name, value }) => {
         const { properties } = IfcPropertiesManager.getIFCInfo(model);
         const prop = properties[expressID];
@@ -188,13 +188,13 @@ export class IfcPropertiesManager
         this.uiElement.propActions.cleanData();
       }
     );
-    this.uiElement.propActions.onRemoveProp.on(
+    this.uiElement.propActions.onRemoveProp.add(
       ({ model, expressID, setID }) => {
         this.removePsetProp(model, setID, expressID);
         this.uiElement.propActions.cleanData();
       }
     );
-    this.uiElement.psetActions.onEditPset.on(
+    this.uiElement.psetActions.onEditPset.add(
       ({ model, psetID, name, description }) => {
         const { properties } = IfcPropertiesManager.getIFCInfo(model);
         const pset = properties[psetID];
@@ -216,10 +216,10 @@ export class IfcPropertiesManager
         }
       }
     );
-    this.uiElement.psetActions.onRemovePset.on(({ model, psetID }) => {
+    this.uiElement.psetActions.onRemovePset.add(({ model, psetID }) => {
       this.removePset(model, psetID);
     });
-    this.uiElement.psetActions.onNewProp.on(
+    this.uiElement.psetActions.onNewProp.add(
       ({ model, psetID, name, type, value }) => {
         const prop = this.newSingleStringProperty(
           model,

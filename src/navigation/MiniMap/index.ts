@@ -16,8 +16,8 @@ export class MiniMap
 {
   name = "MiniMap";
   uiElement: { main: Button; canvas: Canvas };
-  afterUpdate = new Event();
-  beforeUpdate = new Event();
+  onAfterUpdate = new Event();
+  onBeforeUpdate = new Event();
 
   // By pushing the map to the front, what the user sees on screen corresponds with what they see on the map
   frontOffset = 0;
@@ -100,7 +100,7 @@ export class MiniMap
       frustumSize / -2
     );
 
-    this._components.renderer.onClippingPlanesUpdated.on(this.updatePlanes);
+    this._components.renderer.onClippingPlanesUpdated.add(this.updatePlanes);
 
     this._camera.position.set(0, 200, 0);
     this._camera.zoom = 0.1;
@@ -113,8 +113,8 @@ export class MiniMap
     this.enabled = false;
     this.uiElement.main.dispose();
     this.uiElement.canvas.dispose();
-    this.beforeUpdate.reset();
-    this.afterUpdate.reset();
+    this.onBeforeUpdate.reset();
+    this.onAfterUpdate.reset();
     this.overrideMaterial.dispose();
     this._renderer.dispose();
     (this._components as any) = null;
@@ -126,7 +126,7 @@ export class MiniMap
 
   update() {
     if (!this.enabled) return;
-    this.beforeUpdate.trigger();
+    this.onBeforeUpdate.trigger();
     const scene = this._components.scene.get();
     const cameraComponent = this._components.camera as SimpleCamera;
     const controls = cameraComponent.controls;
@@ -157,7 +157,7 @@ export class MiniMap
     scene.background = this.backgroundColor;
     this._renderer.render(scene, this._camera);
     scene.background = previousBackground;
-    this.afterUpdate.trigger();
+    this.onAfterUpdate.trigger();
   }
 
   getSize() {

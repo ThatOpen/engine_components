@@ -188,11 +188,11 @@
     Let's use `modelTree.selected` to get the active selection from Fragment Tree, and we will use `highlighter.highlightByID()` to zoom in.🔍
     */
 
-    modelTree.selected.on((filter) => {
+    modelTree.selected.add((filter) => {
         highlighter.highlightByID('select', filter, true, true);
     });
 
-    modelTree.hovered.on((filter) => {
+    modelTree.hovered.add((filter) => {
         highlighter.highlightByID('hover', filter);
     });
 

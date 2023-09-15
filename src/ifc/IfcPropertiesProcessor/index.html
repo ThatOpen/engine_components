@@ -88,12 +88,12 @@
 
 	// On element selected, render its properties.
     const highlighterEvents = highlighter.events;
-    highlighterEvents.select.onClear.on(() => {
+    highlighterEvents.select.onClear.add(() => {
         propsProcessor.cleanPropertiesList();
     });
 
 
-    highlighterEvents.select.onHighlight.on(
+    highlighterEvents.select.onHighlight.add(
         (selection) => {
             // Get properties programmatically
             // const first = Object.keys(selection)[0];

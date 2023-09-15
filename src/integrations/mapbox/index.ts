@@ -172,7 +172,7 @@ export class MapboxWindow {
     this._components.camera = new MapboxCamera();
     const renderer = new MapboxRenderer(this._components, this._map, coords);
     this._components.renderer = renderer;
-    renderer.initialized.on(() => {
+    renderer.initialized.add(() => {
       this._components.raycaster = new SimpleRaycaster(this._components);
       this._components.init();
     });

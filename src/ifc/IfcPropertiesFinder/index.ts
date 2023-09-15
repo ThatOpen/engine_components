@@ -124,11 +124,11 @@ export class IfcPropertiesFinder
     mainButton.onclick = () =>
       (this.uiElement.queryWindow.visible =
         !this.uiElement.queryWindow.visible);
-    this.uiElement.queryWindow.onVisible.on(() => (mainButton.active = true));
-    this.uiElement.queryWindow.onHidden.on(() => (mainButton.active = false));
+    this.uiElement.queryWindow.onVisible.add(() => (mainButton.active = true));
+    this.uiElement.queryWindow.onHidden.add(() => (mainButton.active = false));
 
     const { query } = this.uiElement;
-    query.findButton.onClicked.on((query: QueryGroup[]) => {
+    query.findButton.onClick.add((query: QueryGroup[]) => {
       const model = this._fragments.groups[0];
       if (!model) return;
       this.find(query);

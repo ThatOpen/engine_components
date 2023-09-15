@@ -29,8 +29,8 @@ export class CubeMap
 {
   name: string = "CubeMap";
   enabled: boolean = true;
-  afterUpdate: Event<CubeMap> = new Event();
-  beforeUpdate: Event<CubeMap> = new Event();
+  onAfterUpdate: Event<CubeMap> = new Event();
+  onBeforeUpdate: Event<CubeMap> = new Event();
 
   offset = 1;
 
@@ -81,7 +81,7 @@ export class CubeMap
     this._cubeWrapper.append(this._cube);
 
     if (components.camera.isUpdateable()) {
-      components.camera.afterUpdate.on(this.update);
+      components.camera.onAfterUpdate.add(this.update);
     }
 
     // #region Cube faces
@@ -139,8 +139,8 @@ export class CubeMap
   }
 
   dispose() {
-    this.afterUpdate.reset();
-    this.beforeUpdate.reset();
+    this.onAfterUpdate.reset();
+    this.onBeforeUpdate.reset();
     this._cube.remove();
     this._cubeWrapper.remove();
     (this._components as any) = null;

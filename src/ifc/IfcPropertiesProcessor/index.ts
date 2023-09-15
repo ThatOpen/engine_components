@@ -61,7 +61,7 @@ export class IfcPropertiesProcessor
     if (this._propertiesManager) return;
     this._propertiesManager = manager;
     if (manager) {
-      manager.onElementToPset.on(({ model, psetID, elementID }) => {
+      manager.onElementToPset.add(({ model, psetID, elementID }) => {
         const modelIndexMap = this._indexMap[model.uuid];
         if (!modelIndexMap) return;
         this.setEntityIndex(model, elementID).add(psetID);
@@ -70,11 +70,11 @@ export class IfcPropertiesProcessor
           this._currentUI[elementID].addChild(...ui);
         }
       });
-      manager.onPsetRemoved.on(({ psetID }) => {
+      manager.onPsetRemoved.add(({ psetID }) => {
         const psetUI = this._currentUI[psetID];
         if (psetUI) psetUI.dispose();
       });
-      manager.onPropToPset.on(({ model, psetID, propID }) => {
+      manager.onPropToPset.add(({ model, psetID, propID }) => {
         const psetUI = this._currentUI[psetID];
         if (!psetUI) return;
         const tag = this.newPropertyTag(model, psetID, propID, "NominalValue");
@@ -189,11 +189,11 @@ export class IfcPropertiesProcessor
         !this.uiElement.propertiesWindow.visible;
     };
 
-    this.uiElement.propertiesWindow.onHidden.on(
+    this.uiElement.propertiesWindow.onHidden.add(
       () => (this.uiElement.main.active = false)
     );
 
-    this.uiElement.propertiesWindow.onVisible.on(
+    this.uiElement.propertiesWindow.onVisible.add(
       () => (this.uiElement.main.active = true)
     );
 
@@ -280,7 +280,7 @@ export class IfcPropertiesProcessor
     if (!mainGroup) return null;
     this.addEntityActions(model, expressID, mainGroup);
 
-    mainGroup.onExpand.on(() => {
+    mainGroup.onExpand.add(() => {
       const { uiProcessed } = mainGroup.data;
       if (uiProcessed) return;
       mainGroup.addChild(...this.newAttributesUI(model, expressID));
@@ -332,7 +332,7 @@ export class IfcPropertiesProcessor
     if (!uiGroup) return uiGroups;
     this.addPsetActions(model, psetID, uiGroup);
 
-    uiGroup.onExpand.on(() => {
+    uiGroup.onExpand.add(() => {
       const { uiProcessed } = uiGroup.data;
       if (uiProcessed) return;
       const psetPropsID = IfcPropertiesUtils.getPsetProps(
@@ -402,7 +402,7 @@ export class IfcPropertiesProcessor
       psetID,
       "Name"
     );
-    event.on((v: String) => (uiGroup.description = v.toString()));
+    event.add((v: String) => (uiGroup.description = v.toString()));
     uiGroup.innerElements.titleContainer.onmouseenter = () => {
       psetActions.data = { model, psetID };
       uiGroup.slots.titleRight.addChild(psetActions);

@@ -62,7 +62,7 @@ export class PropActionsUI extends SimpleUIComponent<HTMLDivElement> {
     this._modalWindow = new FloatingWindow(this._components);
     this._modalWindow.get().className =
       "overflow-auto text-white bg-ifcjs-100 rounded-md w-[350px]";
-    this._modalWindow.onHidden.on(() => this._modal.get().close());
+    this._modalWindow.onHidden.add(() => this._modal.get().close());
     this._modal.addChild(this._modalWindow);
   }
 
@@ -152,7 +152,7 @@ export class PropActionsUI extends SimpleUIComponent<HTMLDivElement> {
       this._modalWindow.title = "Edit Property";
       this._modalWindow.setSlot("content", editUI);
       this.showModal();
-      this.editPropBtn.onClicked.trigger();
+      this.editPropBtn.onClick.trigger();
     };
   }
 
@@ -203,7 +203,7 @@ export class PropActionsUI extends SimpleUIComponent<HTMLDivElement> {
       this._modalWindow.title = "Remove Property";
       this._modalWindow.setSlot("content", removeUI);
       this.showModal();
-      this.removePropBtn.onClicked.trigger();
+      this.removePropBtn.onClick.trigger();
     };
   }
 

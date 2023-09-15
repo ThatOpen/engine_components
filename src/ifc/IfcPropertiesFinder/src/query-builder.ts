@@ -60,7 +60,7 @@ export class QueryBuilder extends SimpleUIComponent {
         "hover:border-ifcjs-200"
       );
     this.findButton.onclick = () => {
-      this.findButton.onClicked.trigger(this.query);
+      this.findButton.onClick.trigger(this.query);
     };
 
     const topContainer = new SimpleUIComponent(

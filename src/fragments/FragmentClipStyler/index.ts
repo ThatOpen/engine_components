@@ -1,7 +1,5 @@
 import * as THREE from "three";
-import { EdgesClipper } from "../../navigation";
-import { FragmentManager } from "../FragmentManager";
-import { Component, Disposable, UI } from "../../base-types";
+import { Component, Disposable, UI, UIElement } from "../../base-types";
 import {
   Button,
   ColorInput,
@@ -11,6 +9,8 @@ import {
   TextInput,
 } from "../../ui";
 import { Components } from "../../core";
+import { EdgesClipper } from "../../navigation";
+import { FragmentManager } from "../FragmentManager";
 import { FragmentClassifier } from "../FragmentClassifier";
 
 export interface ClipStyleCardData {
@@ -25,16 +25,13 @@ export class FragmentClipStyler
   extends Component<ClipStyleCardData[]>
   implements UI, Disposable
 {
-  name = "FragmentClipStyler";
+  static readonly uuid = "14de9fbd-2151-4c01-8e07-22a2667e1126" as const;
+
   enabled = true;
 
-  _fragments: FragmentManager;
-  _clipper: EdgesClipper;
-  _components: Components;
-  _classifier: FragmentClassifier;
-  _localStorageID = "FragmentClipStyler";
+  localStorageID = "FragmentClipStyler";
 
-  _styleCards: {
+  styleCards: {
     [id: string]: {
       styleCard: SimpleUIComponent<any>;
       name: TextInput;
@@ -46,10 +43,10 @@ export class FragmentClipStyler
     };
   } = {};
 
-  uiElement: {
+  uiElement = new UIElement<{
     mainButton: Button;
     mainWindow: FloatingWindow;
-  };
+  }>();
 
   private _defaultStyles = `
      {
@@ -70,18 +67,83 @@ export class FragmentClipStyler
     }
   `;
 
-  constructor(
-    components: Components,
-    fragments: FragmentManager,
-    classifier: FragmentClassifier,
-    clipper: EdgesClipper
-  ) {
-    super();
-    this._components = components;
-    this._fragments = fragments;
-    this._clipper = clipper;
-    this._classifier = classifier;
+  constructor(components: Components) {
+    super(components);
 
+    this.components.tools.add(FragmentClipStyler.uuid, this);
+    this.components.tools.libraryUUIDs.add(FragmentClipStyler.uuid);
+
+    if (components.ui.enabled) {
+      this.setupUI(components);
+    }
+  }
+
+  async setup(force = false) {
+    const noCards = Object.keys(this.styleCards).length === 0;
+    if (force || noCards) {
+      localStorage.setItem(this.localStorageID, this._defaultStyles);
+      await this.loadCachedStyles();
+    }
+  }
+
+  get() {
+    const saved = localStorage.getItem(this.localStorageID);
+    if (saved) {
+      const parsed = JSON.parse(saved) as any;
+      return Object.values(parsed) as ClipStyleCardData[];
+    }
+    return [];
+  }
+
+  async dispose() {
+    for (const id in this.styleCards) {
+      await this.deleteStyleCard(id, false);
+    }
+    this.uiElement.dispose();
+  }
+
+  async update(ids = Object.keys(this.styleCards)) {
+    const clipper = await this.components.tools.get(EdgesClipper);
+    const fragments = await this.components.tools.get(FragmentManager);
+    const classifier = await this.components.tools.get(FragmentClassifier);
+
+    for (const id of ids) {
+      const card = this.styleCards[id];
+      if (!card) return;
+
+      const allStyles = clipper.styles.get();
+      const style = allStyles[id];
+      if (!style) return;
+
+      style.meshes.clear();
+
+      const categoryList = card.categories.value.split(",");
+      const entities = categoryList.map((item) => item.replace(" ", ""));
+
+      const found = await classifier.find({ entities });
+      for (const fragID in found) {
+        const { mesh } = fragments.list[fragID];
+        style.fragments[fragID] = new Set(found[fragID]);
+        style.meshes.add(mesh);
+      }
+    }
+
+    clipper.updateEdges(true);
+    this.cacheStyles();
+  }
+
+  async loadCachedStyles() {
+    const savedData = localStorage.getItem(this.localStorageID);
+    if (savedData) {
+      const savedStyles = JSON.parse(savedData);
+      for (const id in savedStyles) {
+        const savedStyle = savedStyles[id] as ClipStyleCardData;
+        await this.createStyleCard(savedStyle);
+      }
+    }
+  }
+
+  private setupUI(components: Components) {
     const mainWindow = new FloatingWindow(components);
     mainWindow.title = "Clipping styles";
 
@@ -96,9 +158,9 @@ export class FragmentClipStyler
       tooltip: "Clipping styles",
     });
 
-    mainButton.onclick = () => {
+    mainButton.onClick.add(() => {
       mainWindow.visible = !mainWindow.visible;
-    };
+    });
 
     const topButtonContainerHtml = `<div class="flex"></div>`;
     const topButtonContainer = new SimpleUIComponent(
@@ -109,86 +171,18 @@ export class FragmentClipStyler
     const createButton = new Button(components, {
       materialIconName: "add",
     });
-    createButton.onclick = () => this.createStyleCard();
+    createButton.onClick.add(() => this.createStyleCard());
     topButtonContainer.addChild(createButton);
 
     mainWindow.addChild(topButtonContainer);
 
-    this.uiElement = { mainWindow, mainButton };
-
-    this.loadCachedStyles();
-  }
-
-  setup(force = false) {
-    const noCards = Object.keys(this._styleCards).length === 0;
-    if (force || noCards) {
-      localStorage.setItem(this._localStorageID, this._defaultStyles);
-      this.loadCachedStyles();
-    }
-  }
-
-  get() {
-    const saved = localStorage.getItem(this._localStorageID);
-    if (saved) {
-      const parsed = JSON.parse(saved) as any;
-      return Object.values(parsed) as ClipStyleCardData[];
-    }
-    return [];
-  }
-
-  dispose() {
-    for (const id in this._styleCards) {
-      this.deleteStyleCard(id, false);
-    }
-    this.uiElement.mainWindow.dispose();
-    this.uiElement.mainButton.dispose();
-    (this._clipper as any) = null;
-    (this._classifier as any) = null;
-    (this._components as any) = null;
-    (this._fragments as any) = null;
-  }
-
-  update(ids = Object.keys(this._styleCards)) {
-    for (const id of ids) {
-      const card = this._styleCards[id];
-      if (!card) return;
-
-      const allStyles = this._clipper.styles.get();
-      const style = allStyles[id];
-      if (!style) return;
-
-      style.meshes.clear();
-
-      const categoryList = card.categories.value.split(",");
-      const entities = categoryList.map((item) => item.replace(" ", ""));
-
-      const found = this._classifier.find({ entities });
-      for (const fragID in found) {
-        const { mesh } = this._fragments.list[fragID];
-        style.fragments[fragID] = new Set(found[fragID]);
-        style.meshes.add(mesh);
-      }
-    }
-
-    this._clipper.updateEdges(true);
-    this.cacheStyles();
-  }
-
-  private loadCachedStyles() {
-    const savedData = localStorage.getItem(this._localStorageID);
-    if (savedData) {
-      const savedStyles = JSON.parse(savedData);
-      for (const id in savedStyles) {
-        const savedStyle = savedStyles[id] as ClipStyleCardData;
-        this.createStyleCard(savedStyle);
-      }
-    }
+    this.uiElement.set({ mainWindow, mainButton });
   }
 
   private cacheStyles() {
     const styles: { [id: string]: ClipStyleCardData } = {};
-    for (const id in this._styleCards) {
-      const styleCard = this._styleCards[id];
+    for (const id in this.styleCards) {
+      const styleCard = this.styleCards[id];
       styles[id] = {
         name: styleCard.name.value,
         lineColor: styleCard.lineColor.value,
@@ -198,12 +192,13 @@ export class FragmentClipStyler
       };
     }
     const serialized = JSON.stringify(styles);
-    localStorage.setItem(this._localStorageID, serialized);
+    localStorage.setItem(this.localStorageID, serialized);
   }
 
-  private deleteStyleCard(id: string, updateCache = true) {
-    const found = this._styleCards[id];
-    this._clipper.styles.deleteStyle(id, true);
+  private async deleteStyleCard(id: string, updateCache = true) {
+    const found = this.styleCards[id];
+    const clipper = await this.components.tools.get(EdgesClipper);
+    clipper.styles.deleteStyle(id, true);
     if (found) {
       found.styleCard.dispose();
       found.deleteButton.dispose();
@@ -213,15 +208,15 @@ export class FragmentClipStyler
       found.lineColor.dispose();
       found.fillColor.dispose();
     }
-    delete this._styleCards[id];
-    this._clipper.updateEdges(true);
+    delete this.styleCards[id];
+    clipper.updateEdges(true);
     if (updateCache) {
       this.cacheStyles();
     }
   }
 
-  private createStyleCard(config?: ClipStyleCardData) {
-    const styleCard = new SimpleUIComponent(this._components);
+  private async createStyleCard(config?: ClipStyleCardData) {
+    const styleCard = new SimpleUIComponent(this.components);
     const { id } = styleCard;
 
     const styleRowClass = `flex gap-4`;
@@ -246,18 +241,18 @@ export class FragmentClipStyler
         </div>
     `;
 
-    const deleteButton = new Button(this._components, {
+    const deleteButton = new Button(this.components, {
       materialIconName: "close",
     });
 
-    deleteButton.onclick = () => this.deleteStyleCard(id);
+    deleteButton.onClick.add(() => this.deleteStyleCard(id));
 
     const firstRow = styleCard.getInnerElement("first-row");
     if (firstRow) {
       firstRow.insertBefore(deleteButton.domElement, firstRow.firstChild);
     }
 
-    const nameInput = new TextInput(this._components);
+    const nameInput = new TextInput(this.components);
     nameInput.label = "Name";
     if (config) {
       nameInput.value = config.name;
@@ -270,7 +265,7 @@ export class FragmentClipStyler
 
     nameInput.domElement.addEventListener("focusout", () => this.cacheStyles());
 
-    const lineColor = new ColorInput(this._components);
+    const lineColor = new ColorInput(this.components);
     lineColor.label = "Line color";
 
     const lineColorContainer = styleCard.getInnerElement("line-color");
@@ -279,7 +274,7 @@ export class FragmentClipStyler
     }
     lineColor.value = config ? config.lineColor : "#808080";
 
-    const fillColor = new ColorInput(this._components);
+    const fillColor = new ColorInput(this.components);
     fillColor.label = "Fill color";
 
     if (config) {
@@ -291,7 +286,7 @@ export class FragmentClipStyler
       fillColorContainer.append(fillColor.domElement);
     }
 
-    const lineThickness = new RangeInput(this._components);
+    const lineThickness = new RangeInput(this.components);
     lineThickness.label = "Line thickness";
     lineThickness.min = 0;
     lineThickness.max = 1;
@@ -304,7 +299,7 @@ export class FragmentClipStyler
       range.append(lineThickness.domElement);
     }
 
-    const categories = new TextInput(this._components);
+    const categories = new TextInput(this.components);
     categories.label = "Categories";
 
     const categoriesContainer = styleCard.getInnerElement("categories");
@@ -312,7 +307,7 @@ export class FragmentClipStyler
       categoriesContainer.append(categories.domElement);
     }
 
-    this._styleCards[id] = {
+    this.styleCards[id] = {
       styleCard,
       name: nameInput,
       lineThickness,
@@ -322,7 +317,7 @@ export class FragmentClipStyler
       lineColor,
     };
 
-    this.uiElement.mainWindow.addChild(styleCard);
+    this.uiElement.get("mainWindow").addChild(styleCard);
 
     // this._clipper.styles.dispose();
 
@@ -340,7 +335,7 @@ export class FragmentClipStyler
       saveTimer = setTimeout(() => this.cacheStyles(), 2000);
     };
 
-    fillColor.onChange.on(() => {
+    fillColor.onChange.add(() => {
       fillMaterial.color.set(fillColor.value);
       saveStyles();
     });
@@ -356,18 +351,20 @@ export class FragmentClipStyler
       transparent: true,
     });
 
-    lineThickness.onChange.on(() => {
+    lineThickness.onChange.add(() => {
       outlineMaterial.opacity = lineThickness.value;
       saveStyles();
     });
 
-    lineColor.onChange.on(() => {
+    lineColor.onChange.add(() => {
       lineMaterial.color.set(lineColor.value);
       outlineMaterial.color.set(lineColor.value);
       saveStyles();
     });
 
-    this._clipper.styles.create(
+    const clipper = await this.components.tools.get(EdgesClipper);
+
+    clipper.styles.create(
       id,
       new Set(),
       lineMaterial,

@@ -74,7 +74,7 @@ export class FragmentManager
 
     this.uiElement = { main, window };
 
-    this.onFragmentsLoaded.on(() => this.updateWindow());
+    this.onFragmentsLoaded.add(() => this.updateWindow());
   }
 
   /** {@link Component.get} */

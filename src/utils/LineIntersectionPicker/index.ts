@@ -14,8 +14,8 @@ export class LineIntersectionPicker
   implements Updateable, Disposable
 {
   name: string = "LineIntersectionPicker";
-  afterUpdate: Event<LineIntersectionPicker> = new Event();
-  beforeUpdate: Event<LineIntersectionPicker> = new Event();
+  onAfterUpdate: Event<LineIntersectionPicker> = new Event();
+  onBeforeUpdate: Event<LineIntersectionPicker> = new Event();
 
   private _pickedPoint: Vector3 | null = null;
   private _config!: LineIntersectionPickerConfig;
@@ -68,8 +68,8 @@ export class LineIntersectionPicker
   }
 
   dispose() {
-    this.afterUpdate.reset();
-    this.beforeUpdate.reset();
+    this.onAfterUpdate.reset();
+    this.onBeforeUpdate.reset();
     this._marker.removeFromParent();
     this._marker.element.remove();
   }
@@ -79,7 +79,7 @@ export class LineIntersectionPicker
     if (!this.enabled) {
       return;
     }
-    this.beforeUpdate.trigger(this);
+    this.onBeforeUpdate.trigger(this);
 
     this._raycaster.setFromCamera(
       this._mouse.position,
@@ -139,7 +139,7 @@ export class LineIntersectionPicker
       this.updateMarker();
     }
 
-    this.afterUpdate.trigger(this);
+    this.onAfterUpdate.trigger(this);
   }
 
   private findIntersection(p1: Vector3, p2: Vector3, p3: Vector3, p4: Vector3) {

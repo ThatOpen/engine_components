@@ -15,10 +15,10 @@ export class MapboxRenderer extends BaseRenderer implements Disposable {
   /** {@link Component.enabled} */
   enabled = true;
 
-  /** {@link Updateable.beforeUpdate} */
+  /** {@link Updateable.onBeforeUpdate} */
   beforeUpdate = new Event<MapboxRenderer>();
 
-  /** {@link Updateable.afterUpdate} */
+  /** {@link Updateable.onAfterUpdate} */
   afterUpdate = new Event<MapboxRenderer>();
 
   /**

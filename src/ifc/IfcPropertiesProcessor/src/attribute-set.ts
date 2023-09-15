@@ -33,7 +33,7 @@ export class AttributeSet extends TreeView {
     this.model = model;
     this.expressID = expressID;
     this._propertiesProcessor = propertiesProcessor;
-    this.onExpand.on(() => this.generate());
+    this.onExpand.add(() => this.generate());
   }
 
   dispose(onlyChildren: boolean = false) {

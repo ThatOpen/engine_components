@@ -89,7 +89,7 @@ export class PropertyTag extends SimpleUIComponent<HTMLDivElement> {
         this.expressID,
         nameKey
       );
-      event.on((v: String) => (this.label = v.toString()));
+      event.add((v: String) => (this.label = v.toString()));
     }
     if (valueKey) {
       const event = propertiesManager.setAttributeListener(
@@ -97,7 +97,7 @@ export class PropertyTag extends SimpleUIComponent<HTMLDivElement> {
         this.expressID,
         valueKey
       );
-      event.on((v: any) => (this.value = v));
+      event.add((v: any) => (this.value = v));
     }
   }
 

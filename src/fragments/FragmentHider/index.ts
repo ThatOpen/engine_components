@@ -1,7 +1,13 @@
 import { Fragment } from "bim-fragment";
 import { FragmentManager } from "../FragmentManager";
 import { Components, ScreenCuller } from "../../core";
-import { Component, Disposable, FragmentIdMap, UI } from "../../base-types";
+import {
+  Component,
+  Disposable,
+  FragmentIdMap,
+  UI,
+  UIElement,
+} from "../../base-types";
 import {
   Button,
   CheckboxInput,
@@ -19,18 +25,16 @@ interface FilterData {
 }
 
 export class FragmentHider extends Component<void> implements Disposable, UI {
-  name = "FragmentHider";
+  static readonly uuid = "dd9ccf2d-8a21-4821-b7f6-2949add16a29" as const;
+
   enabled = true;
 
-  uiElement: {
+  uiElement = new UIElement<{
     main: Button;
     window: FloatingWindow;
-  };
+  }>();
 
   private _localStorageID = "FragmentHiderCache";
-  private _components: Components;
-  private _fragments: FragmentManager;
-  private _culler?: ScreenCuller;
   private _updateVisibilityOnFound = true;
 
   private _filterCards: {
@@ -45,17 +49,18 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     };
   } = {};
 
-  constructor(
-    components: Components,
-    fragments: FragmentManager,
-    culler?: ScreenCuller,
-    loadCached = true
-  ) {
-    super();
-    this._components = components;
-    this._fragments = fragments;
-    this._culler = culler;
+  constructor(components: Components) {
+    super(components);
 
+    this.components.tools.add(FragmentHider.uuid, this);
+    this.components.tools.libraryUUIDs.add(FragmentHider.uuid);
+
+    if (components.ui.enabled) {
+      this.setupUI(components);
+    }
+  }
+
+  private setupUI(components: Components) {
     const mainWindow = new FloatingWindow(components);
     mainWindow.title = "Filters";
 
@@ -70,10 +75,10 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
       tooltip: "Visibility filters",
     });
 
-    mainButton.onclick = () => {
+    mainButton.onClick.add(() => {
       this.hideAllFinders();
       mainWindow.visible = !mainWindow.visible;
-    };
+    });
 
     const topButtonContainerHtml = `<div class="flex"></div>`;
     const topButtonContainer = new SimpleUIComponent(
@@ -84,72 +89,74 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     const createButton = new Button(components, {
       materialIconName: "add",
     });
-    createButton.onclick = () => this.createStyleCard();
+    createButton.onClick.add(() => this.createStyleCard());
     topButtonContainer.addChild(createButton);
     mainWindow.addChild(topButtonContainer);
 
-    this.uiElement = { window: mainWindow, main: mainButton };
-
-    if (loadCached) {
-      this.loadCached();
-    }
+    this.uiElement.set({ window: mainWindow, main: mainButton });
   }
 
-  dispose() {
-    this.uiElement.main.dispose();
-    this.uiElement.window.dispose();
-    (this._components as any) = null;
-    (this._fragments as any) = null;
-    (this._culler as any) = null;
+  async dispose() {
+    this.uiElement.dispose();
   }
 
-  set(visible: boolean, items?: FragmentIdMap) {
+  async set(visible: boolean, items?: FragmentIdMap) {
+    const fragments = await this.components.tools.get(FragmentManager);
     if (!items) {
-      for (const id in this._fragments.list) {
-        const fragment = this._fragments.list[id];
+      for (const id in fragments.list) {
+        const fragment = fragments.list[id];
         if (fragment) {
           fragment.setVisibility(visible);
-          this.updateCulledVisibility(fragment);
+          await this.updateCulledVisibility(fragment);
         }
       }
       return;
     }
     for (const fragID in items) {
       const ids = items[fragID];
-      const fragment = this._fragments.list[fragID];
+      const fragment = fragments.list[fragID];
       fragment.setVisibility(visible, ids);
-      this.updateCulledVisibility(fragment);
+      await this.updateCulledVisibility(fragment);
     }
   }
 
-  isolate(items: FragmentIdMap) {
-    this.set(false);
-    this.set(true, items);
+  async isolate(items: FragmentIdMap) {
+    await this.set(false);
+    await this.set(true, items);
   }
 
   get() {}
 
-  update() {
+  async update() {
     this._updateVisibilityOnFound = false;
     for (const id in this._filterCards) {
       const { finder } = this._filterCards[id];
       finder.find();
     }
     this._updateVisibilityOnFound = true;
-    this.updateQueries();
+    await this.updateQueries();
   }
 
-  private updateCulledVisibility(fragment: Fragment) {
-    if (this._culler) {
-      const culled = this._culler.colorMeshes.get(fragment.id);
-      if (culled) {
-        culled.count = fragment.mesh.count;
-      }
+  async loadCached() {
+    const serialized = localStorage.getItem(this._localStorageID);
+    if (!serialized) return;
+    const filters = JSON.parse(serialized) as FilterData[];
+    for (const filter of filters) {
+      await this.createStyleCard(filter);
+    }
+    await this.update();
+  }
+
+  private async updateCulledVisibility(fragment: Fragment) {
+    const culler = await this.components.tools.get(ScreenCuller);
+    const culled = culler.colorMeshes.get(fragment.id);
+    if (culled) {
+      culled.count = fragment.mesh.count;
     }
   }
 
-  private createStyleCard(config?: FilterData) {
-    const filterCard = new SimpleUIComponent(this._components);
+  private async createStyleCard(config?: FilterData) {
+    const filterCard = new SimpleUIComponent(this.components);
     if (config && config.id.length) {
       filterCard.id = config.id;
     }
@@ -164,12 +171,12 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
         </div>
     `;
 
-    const deleteButton = new Button(this._components, {
+    const deleteButton = new Button(this.components, {
       materialIconName: "close",
     });
 
     deleteButton.domElement.classList.add("self-end");
-    deleteButton.onclick = () => this.deleteStyleCard(id);
+    deleteButton.onClick.add(() => this.deleteStyleCard(id));
 
     const topContainer = filterCard.getInnerElement("top-container");
     if (topContainer) {
@@ -181,7 +188,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
       throw new Error("Error creating UI elements!");
     }
 
-    const name = new TextInput(this._components);
+    const name = new TextInput(this.components);
     name.label = "Name";
     name.domElement.addEventListener("focusout", () => {
       this.cache();
@@ -193,23 +200,23 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
 
     bottomContainer.append(name.domElement);
 
-    const visible = new CheckboxInput(this._components);
+    const visible = new CheckboxInput(this.components);
     visible.value = config ? config.visible : true;
     visible.label = "Visible";
-    visible.onChange.on(() => this.updateQueries());
+    visible.onChange.add(() => this.updateQueries());
 
-    const enabled = new CheckboxInput(this._components);
+    const enabled = new CheckboxInput(this.components);
     enabled.value = config ? config.enabled : true;
     enabled.label = "Enabled";
-    enabled.onChange.on(() => this.updateQueries());
+    enabled.onChange.add(() => this.updateQueries());
 
-    const checkBoxContainer = new SimpleUIComponent(this._components);
+    const checkBoxContainer = new SimpleUIComponent(this.components);
     checkBoxContainer.domElement.classList.remove("w-full");
     checkBoxContainer.addChild(visible);
     checkBoxContainer.addChild(enabled);
     bottomContainer.append(checkBoxContainer.domElement);
 
-    const finder = new IfcPropertiesFinder(this._components, this._fragments);
+    const finder = await this.components.tools.get(IfcPropertiesFinder);
     finder.loadCached(id);
 
     finder.uiElement.query.findButton.label = "Apply";
@@ -217,14 +224,14 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     bottomContainer.append(finder.uiElement.main.domElement);
     const window = finder.uiElement.queryWindow;
 
-    window.onVisible.on(() => {
+    window.onVisible.add(() => {
       this.hideAllFinders(window.id);
       const rect = finder.uiElement.main.domElement.getBoundingClientRect();
       window.domElement.style.left = `${rect.x + 90}px`;
       window.domElement.style.top = `${rect.y - 120}px`;
     });
 
-    finder.onFound.on((data) => {
+    finder.onFound.add((data) => {
       const { queryWindow, main } = finder.uiElement;
       queryWindow.visible = false;
       main.active = false;
@@ -248,23 +255,22 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
       enabled,
     };
 
-    this.uiElement.window.addChild(filterCard);
-
-    // this.cacheStyles();
+    const mainWindow = this.uiElement.get<FloatingWindow>("window");
+    mainWindow.addChild(filterCard);
   }
 
-  private updateQueries() {
-    this.set(true);
+  private async updateQueries() {
+    await this.set(true);
     for (const id in this._filterCards) {
       const { enabled, visible, fragments } = this._filterCards[id];
       if (enabled.value) {
-        this.set(visible.value, fragments);
+        await this.set(visible.value, fragments);
       }
     }
     this.cache();
   }
 
-  private deleteStyleCard(id: string) {
+  private async deleteStyleCard(id: string) {
     const found = this._filterCards[id];
     if (found) {
       found.styleCard.dispose();
@@ -277,7 +283,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     }
     delete this._filterCards[id];
 
-    this.updateQueries();
+    await this.updateQueries();
   }
 
   private hideAllFinders(excludeID?: string) {
@@ -291,16 +297,6 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
         finder.uiElement.main.domElement.click();
       }
     }
-  }
-
-  private loadCached() {
-    const serialized = localStorage.getItem(this._localStorageID);
-    if (!serialized) return;
-    const filters = JSON.parse(serialized) as FilterData[];
-    for (const filter of filters) {
-      this.createStyleCard(filter);
-    }
-    this.update();
   }
 
   private cache() {

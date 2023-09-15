@@ -51,7 +51,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
     this._projectionManager = new ProjectionManager(components, this);
     this.uiElement = this.setUI();
 
-    this.aspectUpdated.on(() => this.setOrthoCameraAspect());
+    this.onAspectUpdated.add(() => this.setOrthoCameraAspect());
   }
 
   private setUI() {
@@ -86,7 +86,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
 
     mainButton.addChild(navigation, projection);
 
-    this.projectionChanged.on((camera) => {
+    this.projectionChanged.add((camera) => {
       if (camera instanceof THREE.PerspectiveCamera) {
         perspective.active = true;
         orthographic.active = false;

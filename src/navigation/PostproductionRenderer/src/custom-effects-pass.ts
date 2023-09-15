@@ -163,7 +163,7 @@ export class CustomEffectsPass extends Pass {
     for (const name in this.outlinedMeshes) {
       const style = this.outlinedMeshes[name];
       for (const mesh of style.meshes) {
-        this._disposer.dispose(mesh, true, true);
+        this._disposer.destroy(mesh, true, true);
       }
       style.material.dispose();
     }

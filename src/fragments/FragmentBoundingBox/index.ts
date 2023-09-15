@@ -1,23 +1,28 @@
 import * as THREE from "three";
 import { Fragment, FragmentsGroup } from "bim-fragment";
 import { Component, Disposable } from "../../base-types";
-import { Disposer } from "../../core";
+import { Components, Disposer } from "../../core";
 
 /**
  * A simple implementation of bounding box that works for fragments. The resulting bbox is not 100% precise, but
- * it's fast, and should suffice for general use cases such as camera zooming.
+ * it's fast, and should suffice for general use cases such as camera zooming or general boundary determination.
  */
 export class FragmentBoundingBox extends Component<void> implements Disposable {
-  name = "FragmentBoundingBox";
+  static readonly uuid = "d1444724-dba6-4cdd-a0c7-68ee1450d166" as const;
+
+  /** {@link Component.enabled} */
   enabled = true;
 
-  private _disposer = new Disposer();
   private _absoluteMin: THREE.Vector3;
   private _absoluteMax: THREE.Vector3;
   private _meshes: THREE.Mesh[] = [];
 
-  constructor() {
-    super();
+  constructor(components: Components) {
+    super(components);
+
+    this.components.tools.add(FragmentBoundingBox.uuid, this);
+    this.components.tools.libraryUUIDs.add(FragmentBoundingBox.uuid);
+
     this._absoluteMin = FragmentBoundingBox.newBound(true);
     this._absoluteMax = FragmentBoundingBox.newBound(false);
   }
@@ -59,9 +64,11 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
     return new THREE.Box3(min, max);
   }
 
-  dispose() {
+  /** {@link Disposable.dispose} */
+  async dispose() {
+    const disposer = await this.components.tools.get(Disposer);
     for (const mesh of this._meshes) {
-      this._disposer.dispose(mesh);
+      disposer.destroy(mesh);
     }
     this._meshes = [];
   }
@@ -105,8 +112,11 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
     }
   }
 
-  addFragment(fragment: any) {
+  addFragment(fragment: Fragment) {
     const bbox = FragmentBoundingBox.getFragmentBounds(fragment);
+
+    fragment.mesh.updateMatrix();
+    const meshTransform = fragment.mesh.matrix;
 
     const instanceTransform = new THREE.Matrix4();
     for (let i = 0; i < fragment.mesh.count; i++) {
@@ -115,7 +125,9 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
       const max = bbox.max.clone();
 
       min.applyMatrix4(instanceTransform);
+      min.applyMatrix4(meshTransform);
       max.applyMatrix4(instanceTransform);
+      max.applyMatrix4(meshTransform);
 
       if (min.x < this._absoluteMin.x) this._absoluteMin.x = min.x;
       if (min.y < this._absoluteMin.y) this._absoluteMin.y = min.y;

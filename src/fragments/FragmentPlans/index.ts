@@ -417,7 +417,7 @@ export class FragmentPlans
   }
 
   private setupPlanObjectUI() {
-    this.objects.planClicked.on(async ({ id }) => {
+    this.objects.planClicked.add(async ({ id }) => {
       const button = this.objects.uiElement.main;
       if (!this.enabled) {
         if (button.innerElements.icon && button.innerElements.tooltip) {

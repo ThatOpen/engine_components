@@ -134,7 +134,7 @@
   when the projection changes. This will make the grid look good in orthographic mode:
   */
 
-	camera.projectionChanged.on(() => {
+	camera.projectionChanged.add(() => {
 		const projection = camera.getProjection();
 		grid.fade = projection === 'Perspective';
 	});

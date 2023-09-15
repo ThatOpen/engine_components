@@ -94,11 +94,11 @@
     highlighter.outlinesEnabled = true;
 
     const highlighterEvents = highlighter.events;
-    highlighterEvents.select.onClear.on(() => {
+    highlighterEvents.select.onClear.add(() => {
         propsProcessor.cleanPropertiesList();
     });
 
-    highlighterEvents.select.onHighlight.on(
+    highlighterEvents.select.onHighlight.add(
         (selection) => {
             const fragmentID = Object.keys(selection)[0];
             const expressID = Number([...selection[fragmentID]][0]);

@@ -98,8 +98,8 @@ export class FragmentTree
           `${treeItemName}: ${name}`
         );
 
-        treeItem.hovered.on((result) => this.hovered.trigger(result));
-        treeItem.selected.on((result) => this.selected.trigger(result));
+        treeItem.hovered.add((result) => this.hovered.trigger(result));
+        treeItem.selected.add((result) => this.selected.trigger(result));
 
         treeItem.filter = filter;
         groups.push(treeItem);

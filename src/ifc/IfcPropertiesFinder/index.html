@@ -88,7 +88,7 @@
     propsFinder.uiElement.queryWindow.visible = true;
 
     // On elements found, select them.
-    propsFinder.onFound.on(result => {
+    propsFinder.onFound.add(result => {
         highlighter.highlightByID("select", result);
     })
 

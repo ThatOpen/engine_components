@@ -94,13 +94,13 @@ export class AreaMeasurement
     if (!point) return;
     if (!this._currentAreaElement) {
       const areaShape = new AreaMeasureElement(this._components);
-      areaShape.onPointAdded.on(() => {
+      areaShape.onPointAdded.add(() => {
         if (this._clickCount === 3 && !areaShape.workingPlane) {
           areaShape.computeWorkingPlane();
           this._vertexPicker.workingPlane = areaShape.workingPlane;
         }
       });
-      areaShape.onPointRemoved.on(() => this._clickCount--);
+      areaShape.onPointRemoved.add(() => this._clickCount--);
       this._currentAreaElement = areaShape;
     }
     this._currentAreaElement.setPoint(point, this._clickCount);

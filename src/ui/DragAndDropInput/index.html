@@ -66,7 +66,7 @@
         dragAndDrop.visible = true;
     }
 
-    dragAndDrop.onFilesLoaded.on((files) => {
+    dragAndDrop.onFilesLoaded.add((files) => {
         const first = files[0].name;
         alert(`Loaded: ${first}`);
     })

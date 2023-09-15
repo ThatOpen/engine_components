@@ -135,7 +135,7 @@ export class FragmentIfcLoader
       const scene = this._components.scene.get();
       scene.add(model);
       this._toast.visible = true;
-      button.onClicked.trigger(model);
+      button.onClick.trigger(model);
       this._fragments.updateWindow();
     };
 

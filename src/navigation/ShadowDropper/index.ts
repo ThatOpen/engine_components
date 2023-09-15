@@ -87,8 +87,8 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
     const shadow = this.shadows[id];
     delete this.shadows[id];
     if (!shadow) throw new Error(`No shadow with ID ${id} was found.`);
-    this.disposer.dispose(shadow.root as any);
-    this.disposer.dispose(shadow.blurPlane);
+    this.disposer.destroy(shadow.root as any);
+    this.disposer.destroy(shadow.blurPlane);
     shadow.rt.dispose();
     shadow.rtBlur.dispose();
   }

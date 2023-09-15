@@ -70,7 +70,7 @@ export class PsetActionsUI extends SimpleUIComponent<HTMLDivElement> {
     this._modalWindow = new FloatingWindow(this._components);
     this._modalWindow.get().className =
       "overflow-auto text-white bg-ifcjs-100 rounded-md w-[350px]";
-    this._modalWindow.onHidden.on(() => this._modal.get().close());
+    this._modalWindow.onHidden.add(() => this._modal.get().close());
     this._modal.addChild(this._modalWindow);
   }
 
@@ -141,7 +141,7 @@ export class PsetActionsUI extends SimpleUIComponent<HTMLDivElement> {
       this._modalWindow.title = "Edit Property Set";
       this._modalWindow.setSlot("content", editUI);
       this.showModal();
-      this.editPsetBtn.onClicked.trigger();
+      this.editPsetBtn.onClick.trigger();
     };
   }
 
@@ -192,7 +192,7 @@ export class PsetActionsUI extends SimpleUIComponent<HTMLDivElement> {
       this._modalWindow.title = "Remove Property Set";
       this._modalWindow.setSlot("content", removeUI);
       this.showModal();
-      this.removePsetBtn.onClicked.trigger();
+      this.removePsetBtn.onClick.trigger();
     };
   }
 
@@ -256,7 +256,7 @@ export class PsetActionsUI extends SimpleUIComponent<HTMLDivElement> {
       this._modalWindow.title = "New Property";
       this._modalWindow.setSlot("content", addPropUI);
       this.showModal();
-      this.addPropBtn.onClicked.trigger();
+      this.addPropBtn.onClick.trigger();
     };
   }
 

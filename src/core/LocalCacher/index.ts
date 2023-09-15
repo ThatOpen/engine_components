@@ -1,77 +1,49 @@
 import { ModelDatabase } from "./db";
-import { Component, Disposable, UI, Event } from "../../base-types";
+import { Component, Disposable, UI, Event, UIElement } from "../../base-types";
 import { Button, FloatingWindow, SimpleUICard } from "../../ui";
 import { Components } from "../Components";
 
 // TODO: Implement UI elements (this is probably just for 3d scans)
 
 export class LocalCacher extends Component<any> implements UI, Disposable {
-  name = "LocalCacher";
+  static readonly uuid = "22ae591a-3a67-4988-86c6-68d7b83febf2" as const;
 
+  /** {@link Component.enabled} */
   enabled = true;
 
-  fileLoaded = new Event<{ id: string }>();
-  itemSaved = new Event<{ id: string }>();
+  /** {@link UI.uiElement} */
+  uiElement = new UIElement<{
+    main: Button;
+    saveButton: Button;
+    loadButton: Button;
+    floatingMenu: FloatingWindow;
+  }>();
 
-  protected _components: Components;
-  protected _cards: SimpleUICard[] = [];
+  readonly onFileLoaded = new Event<{ id: string }>();
+  readonly onItemSaved = new Event<{ id: string }>();
+
+  protected cards: SimpleUICard[] = [];
 
   private _db: ModelDatabase;
   private readonly _storedModels = "open-bim-components-stored-files";
 
-  uiElement: { main: Button; saveButton: Button; loadButton: Button };
-
-  // TODO: Bring this to uiElement
-  floatingMenu: FloatingWindow;
-
+  /** The IDs of all the stored files. */
   get ids() {
     const serialized = localStorage.getItem(this._storedModels) || "[]";
     return JSON.parse(serialized) as string[];
   }
 
   constructor(components: Components) {
-    super();
-    this._components = components;
+    super(components);
+    components.tools.add(LocalCacher.uuid, this);
+    components.tools.libraryUUIDs.add(LocalCacher.uuid);
     this._db = new ModelDatabase();
-
-    const main = new Button(components);
-    main.materialIcon = "storage";
-    main.tooltip = "Local cacher";
-
-    const saveButton = new Button(components);
-    saveButton.label = "Save";
-    saveButton.materialIcon = "save";
-    main.addChild(saveButton);
-
-    const loadButton = new Button(components);
-    loadButton.label = "Download";
-    loadButton.materialIcon = "download";
-    main.addChild(loadButton);
-
-    this.uiElement = { main, loadButton, saveButton };
-
-    const renderer = this._components.renderer.get();
-    const viewerContainer = renderer.domElement.parentElement as HTMLElement;
-
-    this.floatingMenu = new FloatingWindow(components, "file-list-menu");
-    this.floatingMenu.title = "Saved Files";
-
-    this.floatingMenu.visible = false;
-    const savedFilesMenuHTML = this.floatingMenu.get();
-    savedFilesMenuHTML.style.left = "70px";
-    savedFilesMenuHTML.style.top = "100px";
-    savedFilesMenuHTML.style.width = "340px";
-    savedFilesMenuHTML.style.height = "400px";
-
-    viewerContainer.appendChild(this.floatingMenu.get());
-
-    saveButton.onclick = () => {
-      if (this.floatingMenu.visible) {
-        this.floatingMenu.visible = false;
-      }
-    };
+    if (components.ui.enabled) {
+      this.setUI(components);
+    }
   }
 
+  /** {@link Component.get} */
   async get(id: string) {
     if (this.exists(id)) {
       await this._db.open();
@@ -119,19 +91,52 @@ export class LocalCacher extends Component<any> implements UI, Disposable {
     this._db.close();
   }
 
-  dispose() {
-    this.fileLoaded.reset();
-    this.itemSaved.reset();
-    for (const card of this._cards) {
+  async dispose() {
+    this.onFileLoaded.reset();
+    this.onItemSaved.reset();
+    for (const card of this.cards) {
       card.dispose();
     }
-    this._cards = [];
-    this.uiElement.main.dispose();
-    this.uiElement.saveButton.dispose();
-    this.uiElement.loadButton.dispose();
-    this.floatingMenu.dispose();
+    this.cards = [];
+    this.uiElement.dispose();
     (this._db as any) = null;
-    (this._components as any) = null;
+  }
+
+  private setUI(components: Components) {
+    const main = new Button(components);
+    main.materialIcon = "storage";
+    main.tooltip = "Local cacher";
+
+    const saveButton = new Button(components);
+    saveButton.label = "Save";
+    saveButton.materialIcon = "save";
+    main.addChild(saveButton);
+
+    const loadButton = new Button(components);
+    loadButton.label = "Download";
+    loadButton.materialIcon = "download";
+    main.addChild(loadButton);
+
+    const floatingMenu = new FloatingWindow(components, "file-list-menu");
+    this.uiElement.set({ main, loadButton, saveButton, floatingMenu });
+
+    floatingMenu.title = "Saved Files";
+    floatingMenu.visible = false;
+    const savedFilesMenuHTML = floatingMenu.get();
+    savedFilesMenuHTML.style.left = "70px";
+    savedFilesMenuHTML.style.top = "100px";
+    savedFilesMenuHTML.style.width = "340px";
+    savedFilesMenuHTML.style.height = "400px";
+
+    const renderer = this.components.renderer.get();
+    const viewerContainer = renderer.domElement.parentElement as HTMLElement;
+    viewerContainer.appendChild(floatingMenu.get());
+
+    saveButton.onClick.add(() => {
+      if (floatingMenu.visible) {
+        floatingMenu.visible = false;
+      }
+    });
   }
 
   private async getModelFromLocalCache(id: string) {

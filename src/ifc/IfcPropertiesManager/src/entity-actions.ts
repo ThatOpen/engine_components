@@ -34,14 +34,14 @@ export class EntityActionsUI extends SimpleUIComponent<HTMLDivElement> {
       this._nameInput.value = "";
       this._descriptionInput.value = "";
       this.modal.visible = true;
-      this.addPsetBtn.onClicked.trigger();
+      this.addPsetBtn.onClick.trigger();
     };
     this.addChild(this.addPsetBtn);
 
     this.modal = new Modal(components, "New Property Set");
     this._components.ui.add(this.modal);
     this.modal.visible = false;
-    this.modal.onHidden.on(() => this.removeFromParent());
+    this.modal.onHidden.add(() => this.removeFromParent());
 
     const addPsetUI = new SimpleUIComponent(
       this._components,
@@ -54,7 +54,7 @@ export class EntityActionsUI extends SimpleUIComponent<HTMLDivElement> {
     this._descriptionInput = new TextInput(this._components);
     this._descriptionInput.label = "Description";
 
-    this.modal.onAccept.on(() => {
+    this.modal.onAccept.add(() => {
       const name = this._nameInput.value;
       const description = this._descriptionInput.value;
       this.modal.visible = false;
@@ -63,7 +63,7 @@ export class EntityActionsUI extends SimpleUIComponent<HTMLDivElement> {
       this.onNewPset.trigger({ model, elementIDs, name, description });
     });
 
-    this.modal.onCancel.on(() => (this.modal.visible = false));
+    this.modal.onCancel.add(() => (this.modal.visible = false));
 
     addPsetUI.addChild(this._nameInput, this._descriptionInput);
   }

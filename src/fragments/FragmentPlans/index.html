@@ -169,14 +169,14 @@
     mainToolbar.addChild(plans.uiElement.main);
     mainToolbar.addChild(plans.objects.uiElement.main);
 
-    plans.navigated.on(() => {
+    plans.navigated.add(() => {
         postproduction.customEffects.glossEnabled = false;
         materialManager.setBackgroundColor(whiteColor);
         materialManager.set(true, ["white"]);
         grid.visible = false;
     });
 
-    plans.exited.on(() => {
+    plans.exited.add(() => {
         postproduction.customEffects.glossEnabled = true;
         materialManager.resetBackgroundColor();
         materialManager.set(false, ["white"]);

@@ -39,7 +39,7 @@ export class AttributeTag extends PropertyTag {
         this.expressID,
         this.attributeName
       );
-      event.on((v: any) => (this.value = v));
+      event.add((v: any) => (this.value = v));
     } catch (err) {
       // console.log(err);
     }

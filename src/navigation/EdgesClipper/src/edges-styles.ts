@@ -27,16 +27,16 @@ export class EdgesStyles
     super();
   }
 
-  afterUpdate = new Event<LineStyles>();
-  beforeUpdate = new Event<LineStyles>();
+  onAfterUpdate = new Event<LineStyles>();
+  onBeforeUpdate = new Event<LineStyles>();
 
   get(): LineStyles {
     return this._styles;
   }
 
   update(_delta: number): void {
-    this.beforeUpdate.trigger(this._styles);
-    this.afterUpdate.trigger(this._styles);
+    this.onBeforeUpdate.trigger(this._styles);
+    this.onAfterUpdate.trigger(this._styles);
   }
 
   // Creates a new style that applies to all clipping edges for generic models

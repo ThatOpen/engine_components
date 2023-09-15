@@ -79,15 +79,15 @@ export class SimpleDimensionLine {
 
   dispose() {
     this.visible = false;
-    this._disposer.dispose(this._root as any);
-    this._disposer.dispose(this._line as any);
+    this._disposer.destroy(this._root as any);
+    this._disposer.destroy(this._line as any);
     for (const marker of this._endpoints) {
       marker.dispose();
     }
     this._endpoints.length = 0;
     this.label.dispose();
     if (this.boundingBox) {
-      this._disposer.dispose(this.boundingBox);
+      this._disposer.destroy(this.boundingBox);
     }
     (this._components as any) = null;
   }

@@ -25,13 +25,14 @@ export class SimpleRenderer
   /** {@link Component.enabled} */
   enabled = true;
 
-  /** {@link Updateable.beforeUpdate} */
-  beforeUpdate = new Event<SimpleRenderer>();
+  /** The HTML container of the THREE.js canvas where the scene is rendered. */
+  container: HTMLElement;
 
-  /** {@link Updateable.afterUpdate} */
-  afterUpdate = new Event<SimpleRenderer>();
+  /** {@link Updateable.onBeforeUpdate} */
+  readonly onBeforeUpdate = new Event<SimpleRenderer>();
 
-  resized = new Event();
+  /** {@link Updateable.onAfterUpdate} */
+  readonly onAfterUpdate = new Event<SimpleRenderer>();
 
   protected _renderer2D = new CSS2DRenderer();
   protected _renderer: THREE.WebGLRenderer;
@@ -40,11 +41,12 @@ export class SimpleRenderer
   overrideCamera?: THREE.Camera;
 
   constructor(
-    public components: Components,
-    public container: HTMLElement,
+    components: Components,
+    container: HTMLElement,
     parameters?: Partial<THREE.WebGLRendererParameters>
   ) {
-    super();
+    super(components);
+    this.container = container;
 
     this._renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -66,7 +68,7 @@ export class SimpleRenderer
   /** {@link Updateable.update} */
   update(_delta: number) {
     if (!this.enabled) return;
-    this.beforeUpdate.trigger(this);
+    this.onBeforeUpdate.trigger(this);
     if (this.overrideScene && this.overrideCamera) {
       this._renderer.render(this.overrideScene, this.overrideCamera);
       this._renderer2D.render(this.overrideScene, this.overrideCamera);
@@ -77,18 +79,19 @@ export class SimpleRenderer
       this._renderer.render(scene, camera);
       this._renderer2D.render(scene, camera);
     }
-    this.afterUpdate.trigger(this);
+    this.onAfterUpdate.trigger(this);
   }
 
   /** {@link Disposable.dispose} */
-  dispose() {
+  async dispose() {
     this.enabled = false;
     this.setupEvents(false);
     this._renderer.domElement.remove();
     this._renderer.dispose();
     this._renderer2D.domElement.remove();
-    this.afterUpdate.reset();
-    this.beforeUpdate.reset();
+    this.onResize.reset();
+    this.onAfterUpdate.reset();
+    this.onBeforeUpdate.reset();
   }
 
   /** {@link Resizeable.getSize}. */
@@ -105,8 +108,16 @@ export class SimpleRenderer
     const height = this.container.clientHeight;
     this._renderer.setSize(width, height);
     this._renderer2D.setSize(width, height);
-    this.resized.trigger();
+    this.onResize.trigger();
   };
+
+  setupEvents(active: boolean) {
+    if (active) {
+      window.addEventListener("resize", this.resize);
+    } else {
+      window.removeEventListener("resize", this.resize);
+    }
+  }
 
   private setupRenderers() {
     this._renderer.localClippingEnabled = true;
@@ -116,13 +127,5 @@ export class SimpleRenderer
     this._renderer2D.domElement.style.top = "0px";
     this._renderer2D.domElement.style.pointerEvents = "none";
     this.container.appendChild(this._renderer2D.domElement);
-  }
-
-  setupEvents(active: boolean) {
-    if (active) {
-      window.addEventListener("resize", this.resize);
-    } else {
-      window.removeEventListener("resize", this.resize);
-    }
   }
 }

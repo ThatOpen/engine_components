@@ -16,7 +16,6 @@ export abstract class BaseSVGAnnotation
 {
   id = tooeenRandomId();
 
-  abstract name: string;
   abstract uiElement: { main: Button };
 
   protected _enabled: boolean = false;
@@ -55,7 +54,7 @@ export abstract class BaseSVGAnnotation
   set drawManager(manager: DrawManager | null | undefined) {
     this._drawManager = manager;
     if (manager) {
-      manager.addDrawingTool(this.name, this);
+      manager.addDrawingTool(this.uuid, this);
       manager.uiElement.drawingTools.addChild(this.uiElement.main);
       this.svgViewport = manager.viewport.get();
     } else {

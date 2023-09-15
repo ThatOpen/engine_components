@@ -80,11 +80,11 @@ export class ClippingEdges
     this._styles = styles;
   }
 
-  /** {@link Updateable.afterUpdate} */
-  afterUpdate = new Event<Edge[]>();
+  /** {@link Updateable.onAfterUpdate} */
+  onAfterUpdate = new Event<Edge[]>();
 
-  /** {@link Updateable.beforeUpdate} */
-  beforeUpdate = new Event<Edge[]>();
+  /** {@link Updateable.onBeforeUpdate} */
+  onBeforeUpdate = new Event<Edge[]>();
 
   /** {@link Updateable.update} */
   update() {
@@ -373,7 +373,7 @@ export class ClippingEdges
     if (edge.fill) {
       edge.fill.dispose();
     }
-    this._disposer.dispose(edge.mesh, false);
+    this._disposer.destroy(edge.mesh, false);
     delete this._edges[name];
   }
 }

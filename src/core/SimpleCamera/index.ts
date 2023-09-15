@@ -13,16 +13,13 @@ export class SimpleCamera
   extends Component<THREE.PerspectiveCamera | THREE.OrthographicCamera>
   implements Updateable, Disposable
 {
-  /** {@link Component.name} */
-  name = "SimpleCamera";
+  /** {@link Updateable.onBeforeUpdate} */
+  readonly onBeforeUpdate = new Event<SimpleCamera>();
 
-  /** {@link Updateable.beforeUpdate} */
-  readonly beforeUpdate = new Event<SimpleCamera>();
+  /** {@link Updateable.onAfterUpdate} */
+  readonly onAfterUpdate = new Event<SimpleCamera>();
 
-  /** {@link Updateable.afterUpdate} */
-  readonly afterUpdate = new Event<SimpleCamera>();
-
-  readonly aspectUpdated = new Event();
+  readonly onAspectUpdated = new Event();
 
   /**
    * The object that controls the camera. An instance of
@@ -49,8 +46,8 @@ export class SimpleCamera
 
   protected readonly _perspectiveCamera: THREE.PerspectiveCamera;
 
-  constructor(public components: Components) {
-    super();
+  constructor(components: Components) {
+    super(components);
     this._perspectiveCamera = this.setupCamera();
     this.activeCamera = this._perspectiveCamera;
     this.controls = this.setupCameraControls();
@@ -65,12 +62,12 @@ export class SimpleCamera
   }
 
   /** {@link Disposable.dispose} */
-  dispose() {
+  async dispose() {
     this.setupEvents(false);
     this.enabled = false;
-    this.aspectUpdated.reset();
-    this.beforeUpdate.reset();
-    this.afterUpdate.reset();
+    this.onAspectUpdated.reset();
+    this.onBeforeUpdate.reset();
+    this.onAfterUpdate.reset();
     this._perspectiveCamera.removeFromParent();
     this.controls.dispose();
   }
@@ -78,9 +75,9 @@ export class SimpleCamera
   /** {@link Updateable.update} */
   update(_delta: number): void {
     if (this.enabled) {
-      this.beforeUpdate.trigger(this);
+      this.onBeforeUpdate.trigger(this);
       this.controls.update(_delta);
-      this.afterUpdate.trigger(this);
+      this.onAfterUpdate.trigger(this);
     }
   }
 
@@ -93,7 +90,7 @@ export class SimpleCamera
       const size = this.components.renderer.getSize();
       this._perspectiveCamera.aspect = size.width / size.height;
       this._perspectiveCamera.updateProjectionMatrix();
-      this.aspectUpdated.trigger();
+      this.onAspectUpdated.trigger();
     }
   };
 

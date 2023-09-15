@@ -1,8 +1,11 @@
 import * as THREE from "three";
 import ToolBufferReader from "top-tool-package-reader";
-import { Component, Disposable, Event } from "../../base-types";
+import * as OBC from "../../index";
+import { Component, Disposable } from "../../base-types";
+import { Components } from "../Components";
 
-type ToolsList = Map<symbol | string, Component<any>>;
+/** A list of tools sorted by their UUID. */
+type ToolsList = Map<string, Component<any>>;
 
 /**
  * An object to easily handle all the tools used (e.g. updating them, retrieving
@@ -10,20 +13,25 @@ type ToolsList = Map<symbol | string, Component<any>>;
  * something through user interaction (e.g. clipping planes, dimensions, etc).
  */
 export class ToolComponent
-  extends Component<ToolsList | Component<any> | null>
+  extends Component<Promise<Component<any>>>
   implements Disposable
 {
+  /** The list of components created in this app. */
   list: ToolsList = new Map();
-  onToolAdded: Event<Component<any>> = new Event();
-  onToolRemoved: Event<null> = new Event();
 
-  private _reader = new ToolBufferReader();
+  /** The list of UUIDs of all the components in this library. */
+  libraryUUIDs = new Set();
 
-  /** {@link Component.name} */
-  name = "ToolComponent";
+  /** The auth token to get tools from That Open Platform. */
+  token = "";
+
+  /** {@link Component.uuid} */
+  uuid = "ToolComponent";
 
   /** {@link Component.enabled} */
   enabled = true;
+
+  private _reader = new ToolBufferReader();
 
   private _urls = {
     base: "https://dev.api.dev.platform.thatopen.com/v1/tools/",
@@ -31,66 +39,37 @@ export class ToolComponent
   };
 
   /**
-   * Registers a new tool component in the application instance.
-   * @param id - Unique ID to register the tool in the application.
-   * @param tool - The tool to register.
+   * Adds a new tool. Use this in the constructor of your tools.
+   *
+   * @param uuid The UUID of your tool.
+   * @param instance The instance of your tool (`this` inside the constructor).
    */
-  add(id: symbol | string, tool: Component<any>) {
-    const existingTool = this.list.get(id);
-    if (existingTool) {
-      console.warn(`A tool with the id: ${String(id)} already exists`);
-      return;
+  add(uuid: string, instance: Component<any>) {
+    if (!this.list.has(uuid)) {
+      this.list.set(uuid, instance);
     }
-    this.list.set(id, tool);
   }
 
   /**
-   * Deletes a previously registered tool component.
-   * @param id - The registered ID of the tool to be delete.
+   * Retrieves a tool component. If it already exists in this app, it returns the instance of the component. If it
+   * doesn't exist, it will instance it automatically.
+   *
+   * @param ToolClass - The component to get or create.
    */
-  remove(id: symbol | string) {
-    this.list.delete(id);
-    this.onToolRemoved.trigger();
-  }
-
-  /**
-   * Retrieves a tool component by its registered id.
-   * @param id - The id of the registered tool.
-   */
-  get<T extends Component<any>>(id: symbol | string): T {
+  async get<T, U extends Component<T>>(
+    ToolClass: new (components: Components) => U
+  ): Promise<U> {
+    const id = (ToolClass as any).uuid;
     if (!this.list.has(id)) {
-      throw new Error("The requested component does not exist!");
+      const isLibraryComponent = this.libraryUUIDs.has(id);
+      if (isLibraryComponent) {
+        const newLibraryComponent = new ToolClass(this.components);
+        this.list.set(id, newLibraryComponent);
+        return newLibraryComponent;
+      }
+      return this.getPlatformComponent(id);
     }
-    return this.list.get(id) as T;
-  }
-
-  /**
-   * Gets one of your tools of That Open Platform. You can pass the type of
-   * component as the generic parameter T to get the types and intellisense
-   * for the component.
-   * @param token The authentication token to authorise this request.
-   * @param id The ID of the tool you want to get
-   * @param OBC The whole components library (import * as OBC from "openbim-components")
-   */
-  async use<T>(token: string, id: string, OBC: any) {
-    const { base, path } = this._urls;
-    const url = base + id + path + token;
-
-    const fetched = await fetch(url);
-    const rawBuffer = await fetched.arrayBuffer();
-    const buffer = new Uint8Array(rawBuffer);
-    const code = this._reader.read(buffer);
-    const script = document.createElement("script");
-    script.textContent = code.js;
-    document.body.appendChild(script);
-
-    const win = window as any;
-    const toolClass = win.ThatOpenTool(OBC, THREE) as new (...args: any) => T;
-
-    win.ThatOpenTool = undefined;
-    script.remove();
-
-    return toolClass;
+    return this.list.get(id) as U;
   }
 
   /**
@@ -111,15 +90,36 @@ export class ToolComponent
   /**
    * Disposes all the memory used by all the tools.
    */
-  dispose() {
-    this.onToolAdded.reset();
-    this.onToolRemoved.reset();
+  async dispose() {
     const tools = this.list.values();
     for (const tool of tools) {
       tool.enabled = false;
       if (tool.isDisposeable()) {
-        tool.dispose();
+        await tool.dispose();
       }
     }
+  }
+
+  private async getPlatformComponent<T, U extends Component<T>>(
+    id: string
+  ): Promise<U> {
+    const { base, path } = this._urls;
+    const url = base + id + path + this.token;
+
+    const fetched = await fetch(url);
+    const rawBuffer = await fetched.arrayBuffer();
+    const buffer = new Uint8Array(rawBuffer);
+    const code = this._reader.read(buffer);
+    const script = document.createElement("script");
+    script.textContent = code.js;
+    document.body.appendChild(script);
+
+    const win = window as any;
+    const toolClass = win.ThatOpenTool(OBC, THREE) as U;
+
+    win.ThatOpenTool = undefined;
+    script.remove();
+
+    return toolClass;
   }
 }

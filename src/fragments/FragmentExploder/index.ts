@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Component, Disposable, UI } from "../../base-types";
+import { Component, Disposable, UI, UIElement } from "../../base-types";
 import { FragmentClassifier, FragmentManager } from "../index";
 import { toCompositeID } from "../../utils";
 import { Button } from "../../ui";
@@ -11,65 +11,55 @@ export class FragmentExploder
   extends Component<Set<string>>
   implements Disposable, UI
 {
-  name = "FragmentExploder";
-  height = 10;
-  groupName = "storeys";
+  static readonly uuid = "d260618b-ce88-4c7d-826c-6debb91de3e2" as const;
+
   enabled = false;
 
-  uiElement: { main: Button };
+  height = 10;
+  groupName = "storeys";
+
+  uiElement = new UIElement<{ main: Button }>();
 
   private _explodedFragments = new Set<string>();
-  private _fragments: FragmentManager;
-  private _groups: FragmentClassifier;
 
   get(): Set<string> {
     return this._explodedFragments;
   }
 
-  constructor(
-    components: Components,
-    fragments: FragmentManager,
-    groups: FragmentClassifier
-  ) {
-    super();
-    this._fragments = fragments;
-    this._groups = groups;
+  constructor(components: Components) {
+    super(components);
 
-    const main = new Button(components);
-    this.uiElement = { main };
-    main.tooltip = "Explode";
-    main.materialIcon = "splitscreen";
-    main.onclick = () => {
-      if (this.enabled) {
-        this.reset();
-      } else {
-        this.explode();
-      }
-    };
+    components.tools.add(FragmentExploder.uuid, this);
+    components.tools.libraryUUIDs.add(FragmentExploder.uuid);
+
+    if (components.ui.enabled) {
+      this.setupUI(components);
+    }
   }
 
-  dispose() {
+  async dispose() {
     this._explodedFragments.clear();
-    this.uiElement.main.dispose();
-    (this._fragments as any) = null;
-    (this._groups as any) = null;
+    this.uiElement.dispose();
   }
 
-  explode() {
+  async explode() {
     this.enabled = true;
-    this.update();
+    await this.update();
   }
 
-  reset() {
+  async reset() {
     this.enabled = false;
-    this.update();
+    await this.update();
   }
 
-  update() {
+  async update() {
+    const classifier = await this.components.tools.get(FragmentClassifier);
+    const fragments = await this.components.tools.get(FragmentManager);
+
     const factor = this.enabled ? 1 : -1;
     let i = 0;
 
-    const systems = this._groups.get();
+    const systems = classifier.get();
     const groups = systems[this.groupName];
 
     const mergedIDHeightMap: { [frag: string]: { [id: string]: number } } = {};
@@ -79,7 +69,7 @@ export class FragmentExploder
     for (const groupName in groups) {
       yTransform.elements[13] = i * factor * this.height;
       for (const fragID in groups[groupName]) {
-        const fragment = this._fragments.list[fragID];
+        const fragment = fragments.list[fragID];
         const customID = groupName + fragID;
         if (!fragment) {
           continue;
@@ -136,7 +126,7 @@ export class FragmentExploder
     // Update merged fragments
     for (const fragID in mergedIDHeightMap) {
       const heights = mergedIDHeightMap[fragID];
-      const fragment = this._fragments.list[fragID];
+      const fragment = fragments.list[fragID];
       const geometry = fragment.mesh.geometry;
       const position = geometry.attributes.position;
       for (let i = 0; i < geometry.index.count; i++) {
@@ -156,5 +146,19 @@ export class FragmentExploder
       }
       position.needsUpdate = true;
     }
+  }
+
+  private setupUI(components: Components) {
+    const main = new Button(components);
+    this.uiElement.set({ main });
+    main.tooltip = "Explode";
+    main.materialIcon = "splitscreen";
+    main.onClick.add(async () => {
+      if (this.enabled) {
+        await this.reset();
+      } else {
+        await this.explode();
+      }
+    });
   }
 }

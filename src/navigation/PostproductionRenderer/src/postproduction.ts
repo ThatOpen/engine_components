@@ -162,7 +162,7 @@ export class Postproduction {
     if (!scene || !camera) return;
 
     if (this.components.camera instanceof OrthoPerspectiveCamera) {
-      this.components.camera.projectionChanged.on(() => {
+      this.components.camera.projectionChanged.add(() => {
         this.updateCamera();
       });
     }

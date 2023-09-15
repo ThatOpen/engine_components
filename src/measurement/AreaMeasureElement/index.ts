@@ -41,7 +41,7 @@ export class AreaMeasureElement
     htmlText.className = DimensionLabelClassName;
     this.labelMarker = new Simple2DMarker(components, htmlText);
     this.labelMarker.visible = false;
-    this.onPointAdded.on((point) => {
+    this.onPointAdded.add((point) => {
       if (this.points.length === 3 && !this._dimensionLines[2]) {
         this.addDimensionLine(point, this.points[0]);
         this.labelMarker.visible = true;

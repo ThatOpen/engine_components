@@ -24,11 +24,11 @@ export class LengthMeasurement
   /** {@link Component.name} */
   readonly name = "LengthMeasurement";
 
-  /** {@link Updateable.beforeUpdate} */
-  readonly beforeUpdate = new Event<LengthMeasurement>();
+  /** {@link Updateable.onBeforeUpdate} */
+  readonly onBeforeUpdate = new Event<LengthMeasurement>();
 
-  /** {@link Updateable.afterUpdate} */
-  readonly afterUpdate = new Event<LengthMeasurement>();
+  /** {@link Updateable.onAfterUpdate} */
+  readonly onAfterUpdate = new Event<LengthMeasurement>();
 
   /** {@link Createable.afterCreate} */
   readonly afterCreate = new Event<SimpleDimensionLine>();
@@ -151,8 +151,8 @@ export class LengthMeasurement
   dispose() {
     this.setupEvents(false);
     this.enabled = false;
-    this.beforeUpdate.reset();
-    this.afterUpdate.reset();
+    this.onBeforeUpdate.reset();
+    this.onAfterUpdate.reset();
     this.beforeCreate.reset();
     this.afterCreate.reset();
     this.beforeDelete.reset();
@@ -174,11 +174,11 @@ export class LengthMeasurement
   /** {@link Updateable.update} */
   update(_delta: number) {
     if (this._enabled) {
-      this.beforeUpdate.trigger(this);
+      this.onBeforeUpdate.trigger(this);
       if (this._temp.isDragging) {
         this.drawInProcess();
       }
-      this.afterUpdate.trigger(this);
+      this.onAfterUpdate.trigger(this);
     }
   }
 
