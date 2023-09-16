@@ -6395,7 +6395,30 @@ __metadata:
   languageName: node
   linkType: hard
 
-"openbim-components@1.0.0-alpha.102, openbim-components@workspace:.":
+"openbim-components@npm:1.0.0-alpha.102":
+  version: 1.0.0-alpha.102
+  resolution: "openbim-components@npm:1.0.0-alpha.102"
+  dependencies:
+    "@popperjs/core": latest
+    bim-fragment: 1.0.22
+    camera-controls: ^1.36.0
+    dexie: ^3.2.3
+    dxf-writer: ^1.18.4
+    earcut: ^2.2.4
+    mapbox-gl: ^2.15.0
+    n8ao: ^1.5.1
+    postprocessing: ^6.31.0
+    stats.js: ^0.17.0
+    tailwindcss: ^3.3.2
+    three: 0.152.2
+    three-mesh-bvh: 0.6.0
+    top-tool-package-reader: 0.0.3
+    web-ifc: 0.0.42
+  checksum: 69ac9401e6189624fee0e4a67edf08e1f7855de2cc78f01f4dcfa35aa62f3b26014b6b21d542268950cb9e0c9df45f0e2df6222300ca157c9a080904fdf07373
+  languageName: node
+  linkType: hard
+
+"openbim-components@workspace:.":
   version: 0.0.0-use.local
   resolution: "openbim-components@workspace:."
   dependencies:

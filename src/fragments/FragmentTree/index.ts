@@ -4,6 +4,7 @@ import {
   Event,
   FragmentIdMap,
   UI,
+  UIElement,
 } from "../../base-types";
 import { FragmentTreeItem } from "./src/tree-item";
 import { Components } from "../../core";
@@ -14,70 +15,90 @@ export class FragmentTree
   extends Component<FragmentTreeItem>
   implements UI, Disposable
 {
-  name = "FragmentTree";
-  title = "Model Tree";
+  static readonly uuid = "5af6ebe1-26fc-4053-936a-801b6c7cb37e" as const;
+
   enabled: boolean = true;
+  onSelected = new Event<FragmentIdMap>();
 
-  selected = new Event<FragmentIdMap>();
-  hovered = new Event<FragmentIdMap>();
+  onHovered = new Event<FragmentIdMap>();
 
-  private _components: Components;
-  private _classifier: FragmentClassifier;
-  private _tree: FragmentTreeItem;
+  private _title = "Model Tree";
+  private _tree?: FragmentTreeItem;
 
-  uiElement: { main: Button; window: FloatingWindow };
+  uiElement = new UIElement<{ main: Button; window: FloatingWindow }>();
 
-  constructor(components: Components, classifier: FragmentClassifier) {
-    super();
-    this._components = components;
-    this._classifier = classifier;
-    this._tree = new FragmentTreeItem(this._components, classifier, this.title);
+  constructor(components: Components) {
+    super(components);
 
-    const window = new FloatingWindow(components);
-    window.addChild(this._tree.uiElement.tree);
-    window.title = "Model tree";
-    components.ui.add(window);
-    window.visible = false;
-
-    const main = new Button(components);
-    main.materialIcon = "account_tree";
-    main.tooltip = "Model tree";
-    main.onclick = () => {
-      window.visible = !window.visible;
-    };
-
-    this.uiElement = { main, window };
+    this.components.tools.add(FragmentTree.uuid, this);
+    this.components.tools.libraryUUIDs.add(FragmentTree.uuid);
   }
 
   get(): FragmentTreeItem {
+    if (!this._tree) {
+      throw new Error("Fragment tree not initialized yet!");
+    }
     return this._tree;
   }
 
-  dispose() {
-    this.selected.reset();
-    this.hovered.reset();
-    this._tree.dispose();
-    (this._components as any) = null;
-    (this._classifier as any) = null;
+  async init() {
+    const classifier = await this.components.tools.get(FragmentClassifier);
+    const tree = new FragmentTreeItem(
+      this.components,
+      classifier,
+      "Model Tree"
+    );
+    this._tree = tree;
+    if (this.components.ui.enabled) {
+      this.setupUI(tree);
+    }
   }
 
-  update(groupSystems: string[]) {
+  async dispose() {
+    this.onSelected.reset();
+    this.onHovered.reset();
+    this.uiElement.dispose();
+    if (this._tree) {
+      this._tree.dispose();
+    }
+  }
+
+  async update(groupSystems: string[]) {
+    if (!this._tree) return;
+    const classifier = await this.components.tools.get(FragmentClassifier);
     if (this._tree.children.length) {
       this._tree.dispose();
       this._tree = new FragmentTreeItem(
-        this._components,
-        this._classifier,
-        this.title
+        this.components,
+        classifier,
+        this._title
       );
     }
-    this._tree.children = this.regenerate(groupSystems);
-    return this.get();
+    this._tree.children = await this.regenerate(groupSystems);
   }
 
-  private regenerate(groupSystemNames: string[], result = {}) {
+  private setupUI(tree: FragmentTreeItem) {
+    const window = new FloatingWindow(this.components);
+    window.addChild(tree.uiElement.tree);
+    window.title = "Model tree";
+    this.components.ui.add(window);
+    window.visible = false;
+
+    const main = new Button(this.components);
+    main.materialIcon = "account_tree";
+    main.tooltip = "Model tree";
+    main.onClick.add(() => {
+      window.visible = !window.visible;
+    });
+
+    this.uiElement.set({ main, window });
+  }
+
+  private async regenerate(groupSystemNames: string[], result = {}) {
+    const classifier = await this.components.tools.get(FragmentClassifier);
+    const systems = classifier.get();
     const groups: FragmentTreeItem[] = [];
     const currentSystemName = groupSystemNames[0]; // storeys
-    const systems = this._classifier.get();
     const systemGroups = systems[currentSystemName];
     if (!currentSystemName || !systemGroups) {
       return groups;
@@ -85,25 +106,29 @@ export class FragmentTree
     for (const name in systemGroups) {
       // name is N00, N01, N02...
       // { storeys: "N00" }, { storeys: "N01" }...
+      const classifier = await this.components.tools.get(FragmentClassifier);
       const filter = { ...result, [currentSystemName]: [name] };
-      const found = this._classifier.find(filter);
+      const found = classifier.find(filter);
       const hasElements = Object.keys(found).length > 0;
       if (hasElements) {
         const firstLetter = currentSystemName[0].toUpperCase();
         const treeItemName = firstLetter + currentSystemName.slice(1); // Storeys
 
         const treeItem = new FragmentTreeItem(
-          this._components,
-          this._classifier,
+          this.components,
+          classifier,
           `${treeItemName}: ${name}`
         );
 
-        treeItem.hovered.add((result) => this.hovered.trigger(result));
-        treeItem.selected.add((result) => this.selected.trigger(result));
+        treeItem.hovered.add((result) => this.onHovered.trigger(result));
+        treeItem.selected.add((result) => this.onSelected.trigger(result));
 
         treeItem.filter = filter;
         groups.push(treeItem);
-        treeItem.children = this.regenerate(groupSystemNames.slice(1), filter);
+        treeItem.children = await this.regenerate(
+          groupSystemNames.slice(1),
+          filter
+        );
       }
     }
     return groups;

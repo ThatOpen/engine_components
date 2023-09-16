@@ -27,10 +27,13 @@ export class CubeMap
   extends Component<HTMLDivElement>
   implements Updateable, Hideable, Disposable
 {
+  static readonly uuid = "53311ea3-323a-476f-ae4a-d681778e8f67" as const;
+
   name: string = "CubeMap";
   enabled: boolean = true;
-  onAfterUpdate: Event<CubeMap> = new Event();
-  onBeforeUpdate: Event<CubeMap> = new Event();
+
+  readonly onAfterUpdate: Event<CubeMap> = new Event();
+  readonly onBeforeUpdate: Event<CubeMap> = new Event();
 
   offset = 1;
 
@@ -39,7 +42,6 @@ export class CubeMap
   private _cyan = "bg-[#3CE6FEDD]";
   private _pink = "bg-[#BD4BF3DD]";
   private _blue = "bg-[#201491DD]";
-  private _components: Components;
   private _cube = document.createElement("div");
   private _cubeWrapper = document.createElement("div");
   private _matrix = new THREE.Matrix4();
@@ -68,8 +70,11 @@ export class CubeMap
   }
 
   constructor(components: Components) {
-    super();
-    this._components = components;
+    super(components);
+
+    this.components.tools.add(CubeMap.uuid, this);
+    this.components.tools.libraryUUIDs.add(CubeMap.uuid);
+
     this._cubeWrapper.id = "tooeen-cube-map";
     this._cubeWrapper.className = "absolute z-10";
     this.setPosition("bottom-right");
@@ -138,12 +143,12 @@ export class CubeMap
     this.visible = true;
   }
 
-  dispose() {
+  async dispose() {
     this.onAfterUpdate.reset();
     this.onBeforeUpdate.reset();
     this._cube.remove();
     this._cubeWrapper.remove();
-    (this._components as any) = null;
+    (this.components as any) = null;
   }
 
   setSize(value: string = "350") {
@@ -205,11 +210,11 @@ export class CubeMap
   };
 
   private get _viewerContainer() {
-    return this._components.renderer.get().domElement.parentElement;
+    return this.components.renderer.get().domElement.parentElement;
   }
 
   private get _camera() {
-    return this._components.camera;
+    return this.components.camera;
   }
 
   private getCameraCSSMatrix(matrix: any) {

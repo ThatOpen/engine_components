@@ -1,11 +1,11 @@
 import * as THREE from "three";
-import { Simple2DMarker, Components } from "../../core";
-import { Hideable, Event, Disposable, Component } from "../../base-types";
+import { Simple2DMarker, Components } from "../../../core";
+import { Hideable, Event, Disposable, Component } from "../../../base-types";
 
 import {
   DimensionLabelClassName,
   SimpleDimensionLine,
-} from "../LengthMeasurement";
+} from "../../LengthMeasurement";
 
 interface Area {
   points: THREE.Vector3[];
@@ -24,7 +24,6 @@ export class AreaMeasureElement
   workingPlane: THREE.Plane | null = null;
   labelMarker: Simple2DMarker;
 
-  private _components: Components;
   private _rotationMatrix: THREE.Matrix4 | null = null;
   private _dimensionLines: SimpleDimensionLine[] = [];
   private _defaultLineMaterial = new THREE.LineBasicMaterial({ color: "red" });
@@ -35,8 +34,7 @@ export class AreaMeasureElement
   readonly onPointRemoved = new Event<THREE.Vector3>();
 
   constructor(components: Components, points?: THREE.Vector3[]) {
-    super();
-    this._components = components;
+    super(components);
     const htmlText = document.createElement("div");
     htmlText.className = DimensionLabelClassName;
     this.labelMarker = new Simple2DMarker(components, htmlText);
@@ -90,7 +88,7 @@ export class AreaMeasureElement
   private addDimensionLine(start: THREE.Vector3, end: THREE.Vector3) {
     const element = document.createElement("div");
     element.className = "w-2 h-2 bg-red-600 rounded-full";
-    const dimensionLine = new SimpleDimensionLine(this._components, {
+    const dimensionLine = new SimpleDimensionLine(this.components, {
       start,
       end,
       lineMaterial: this._defaultLineMaterial,
@@ -169,7 +167,7 @@ export class AreaMeasureElement
     return area;
   }
 
-  dispose() {
+  async dispose() {
     this.onAreaComputed.reset();
     this.onWorkingPlaneComputed.reset();
     this.onPointAdded.reset();
@@ -177,13 +175,13 @@ export class AreaMeasureElement
     for (const line of this._dimensionLines) {
       line.dispose();
     }
-    this.labelMarker.dispose();
+    await this.labelMarker.dispose();
     this._dimensionLines = [];
     this.points = [];
     this._rotationMatrix = null;
     this.workingPlane = null;
     this._defaultLineMaterial.dispose();
-    (this._components as any) = null;
+    (this.components as any) = null;
   }
 
   get(): Area {

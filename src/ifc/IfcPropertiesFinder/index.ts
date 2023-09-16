@@ -1,10 +1,16 @@
 import * as WEBIFC from "web-ifc";
 import { FragmentsGroup, IfcProperties } from "bim-fragment";
-import { Disposable, Event, FragmentIdMap, UI } from "../../base-types";
-import { Component } from "../../base-types/component";
+import {
+  Disposable,
+  Event,
+  FragmentIdMap,
+  UI,
+  Component,
+  UIElement,
+} from "../../base-types";
 import { IfcPropertiesUtils } from "../IfcPropertiesUtils";
 import { Button, FloatingWindow } from "../../ui";
-import { Components } from "../../core/Components";
+import { Components } from "../../core";
 import {
   QueryOperators,
   QueryGroup,
@@ -15,87 +21,54 @@ import { FragmentManager } from "../../fragments";
 import { QueryBuilder } from "./src/query-builder";
 import { IfcPropertiesManager } from "../IfcPropertiesManager";
 
-interface QueryResult {
+export interface QueryResult {
   [modelID: string]: {
     modelEntities: Set<number>;
     otherEntities: Set<number>;
   };
 }
 
+export interface IndexedModels {
+  [modelID: string]: { [expressID: number]: Set<number> };
+}
+
 export class IfcPropertiesFinder
-  extends Component<null>
+  extends Component<IndexedModels>
   implements UI, Disposable
 {
-  name: string = "IfcPropertiesFinder";
-  enabled: boolean = true;
-  uiElement: { main: Button; queryWindow: FloatingWindow; query: QueryBuilder };
-
-  private _localStorageID = "IfcPropertiesFinder";
-  private _components: Components;
-  private _fragments: FragmentManager;
-  private _indexedModels: {
-    [modelID: string]: { [expressID: number]: Set<number> };
-  } = {};
-  private _noHandleAttributes = ["type"];
-  private _conditionFunctions: ConditionFunctions;
-
   readonly onFound = new Event<FragmentIdMap>();
 
-  constructor(components: Components, fragmentManager: FragmentManager) {
-    super();
-    this._components = components;
-    this._fragments = fragmentManager;
-    this.uiElement = {
-      main: new Button(components, {
-        materialIconName: "manage_search",
-      }),
-      queryWindow: new FloatingWindow(components),
-      query: new QueryBuilder(components),
-    };
-    this.setUI();
-    this._conditionFunctions = {
-      is: (
-        leftValue: string | boolean | number,
-        rightValue: string | boolean | number
-      ) => {
-        return leftValue === rightValue;
-      },
-      includes: (
-        leftValue: string | boolean | number,
-        rightValue: string | boolean | number
-      ) => {
-        return leftValue.toString().includes(rightValue.toString());
-      },
-      startsWith: (
-        leftValue: string | boolean | number,
-        rightValue: string | boolean | number
-      ) => {
-        return leftValue.toString().startsWith(rightValue.toString());
-      },
-      endsWith: (
-        leftValue: string | boolean | number,
-        rightValue: string | boolean | number
-      ) => {
-        return leftValue.toString().endsWith(rightValue.toString());
-      },
-      matches: (
-        leftValue: string | boolean | number,
-        rightValue: string | boolean | number
-      ) => {
-        const regex = new RegExp(rightValue.toString());
-        return regex.test(leftValue.toString());
-      },
-    };
+  enabled: boolean = true;
+
+  uiElement = new UIElement<{
+    main: Button;
+    queryWindow: FloatingWindow;
+    query: QueryBuilder;
+  }>();
+
+  private readonly _conditionFunctions: ConditionFunctions;
+
+  private _localStorageID = "IfcPropertiesFinder";
+  private _indexedModels: IndexedModels = {};
+  private _noHandleAttributes = ["type"];
+
+  constructor(components: Components) {
+    super(components);
+
+    this._conditionFunctions = this.getConditionFunctions();
+    if (components.ui.enabled) {
+      this.setUI();
+    }
   }
 
-  dispose() {
+  get() {
+    return this._indexedModels;
+  }
+
+  async dispose() {
     this._indexedModels = {};
     this.onFound.reset();
-    this.uiElement.main.dispose();
-    this.uiElement.queryWindow.dispose();
-    this.uiElement.query.dispose();
-    (this._fragments as any) = null;
-    (this._components as any) = null;
+    this.uiElement.dispose();
   }
 
   loadCached(id?: string) {
@@ -105,35 +78,52 @@ export class IfcPropertiesFinder
     const serialized = localStorage.getItem(this._localStorageID);
     if (!serialized) return;
     const groups = JSON.parse(serialized);
-    this.uiElement.query.query = groups;
+    const queryBuilder = this.uiElement.get<QueryBuilder>("query");
+    queryBuilder.query = groups;
   }
 
   deleteCache() {
     localStorage.removeItem(this._localStorageID);
   }
 
-  private setUI() {
-    const mainButton = this.uiElement.main;
-    this.uiElement.queryWindow = new FloatingWindow(this._components);
-    this._components.ui.add(this.uiElement.queryWindow);
-    this.uiElement.queryWindow.get().classList.add("overflow-visible");
-    this.uiElement.queryWindow.get().style.width = "700px";
-    this.uiElement.queryWindow.visible = false;
-    this.uiElement.queryWindow.resizeable = false;
-    this.uiElement.queryWindow.title = "Model Queries";
-    mainButton.onclick = () =>
-      (this.uiElement.queryWindow.visible =
-        !this.uiElement.queryWindow.visible);
-    this.uiElement.queryWindow.onVisible.add(() => (mainButton.active = true));
-    this.uiElement.queryWindow.onHidden.add(() => (mainButton.active = false));
+  private async setUI() {
+    const main = new Button(this.components, {
+      materialIconName: "manage_search",
+    });
 
-    const { query } = this.uiElement;
+    const queryWindow = new FloatingWindow(this.components);
+    this.components.ui.add(queryWindow);
+
+    const fragments = await this.components.tools.get(FragmentManager);
+
+    queryWindow.get().classList.add("overflow-visible");
+    queryWindow.get().style.width = "700px";
+    queryWindow.visible = false;
+    queryWindow.resizeable = false;
+    queryWindow.title = "Model Queries";
+
+    main.onClick.add(() => {
+      queryWindow.visible = !queryWindow.visible;
+    });
+
+    queryWindow.onVisible.add(() => (main.active = true));
+    queryWindow.onHidden.add(() => (main.active = false));
+
+    const query = new QueryBuilder(this.components);
+
     query.findButton.onClick.add((query: QueryGroup[]) => {
-      const model = this._fragments.groups[0];
+      const model = fragments.groups[0];
       if (!model) return;
       this.find(query);
     });
-    this.uiElement.queryWindow.addChild(query);
+
+    queryWindow.addChild(query);
+
+    this.uiElement.set({
+      main,
+      queryWindow,
+      query,
+    });
   }
 
   private indexEntityRelations(model: FragmentsGroup) {
@@ -186,10 +176,12 @@ export class IfcPropertiesFinder
     return map;
   }
 
-  find(
-    queryGroups = this.uiElement.query.query,
-    models = this._fragments.groups
-  ) {
+  async find(queryGroups?: QueryGroup[], queryModels?: FragmentsGroup[]) {
+    const fragments = await this.components.tools.get(FragmentManager);
+
+    const queries = this.uiElement.get<QueryBuilder>("query");
+    const models = queryModels || fragments.groups;
+    const groups = queryGroups || queries.query;
     const result: QueryResult = {};
 
     this.cache();
@@ -198,7 +190,7 @@ export class IfcPropertiesFinder
       let map = this._indexedModels[model.uuid];
       if (!map) map = this.indexEntityRelations(model);
       let relations: number[] = [];
-      for (const [index, group] of queryGroups.entries()) {
+      for (const [index, group] of groups.entries()) {
         const excludedItems = new Set<number>();
         const groupResult = this.simpleQuery(model, group, excludedItems);
         const groupRelations: number[] = [];
@@ -237,15 +229,16 @@ export class IfcPropertiesFinder
       result[model.uuid] = { modelEntities, otherEntities };
     }
 
-    const fragments = this.toFragmentMap(result);
-    this.onFound.trigger(fragments);
-    return fragments;
+    const foundFragments = await this.toFragmentMap(result);
+    await this.onFound.trigger(foundFragments);
+    return foundFragments;
   }
 
-  private toFragmentMap(data: QueryResult) {
+  private async toFragmentMap(data: QueryResult) {
+    const fragments = await this.components.tools.get(FragmentManager);
     const fragmentMap: FragmentIdMap = {};
     for (const modelID in data) {
-      const model = this._fragments.groups.find((m) => m.uuid === modelID);
+      const model = fragments.groups.find((m) => m.uuid === modelID);
       if (!model) continue;
       const matchingEntities = data[modelID].modelEntities;
       for (const expressID of matchingEntities) {
@@ -401,12 +394,45 @@ export class IfcPropertiesFinder
   }
 
   private cache() {
-    const query = this.uiElement.query.query;
+    const queryBuilder = this.uiElement.get<QueryBuilder>("query");
+    const query = queryBuilder.query;
     const serialized = JSON.stringify(query);
     localStorage.setItem(this._localStorageID, serialized);
   }
 
-  get(): null {
-    throw new Error("Method not implemented.");
+  private getConditionFunctions() {
+    return {
+      is: (
+        leftValue: string | boolean | number,
+        rightValue: string | boolean | number
+      ) => {
+        return leftValue === rightValue;
+      },
+      includes: (
+        leftValue: string | boolean | number,
+        rightValue: string | boolean | number
+      ) => {
+        return leftValue.toString().includes(rightValue.toString());
+      },
+      startsWith: (
+        leftValue: string | boolean | number,
+        rightValue: string | boolean | number
+      ) => {
+        return leftValue.toString().startsWith(rightValue.toString());
+      },
+      endsWith: (
+        leftValue: string | boolean | number,
+        rightValue: string | boolean | number
+      ) => {
+        return leftValue.toString().endsWith(rightValue.toString());
+      },
+      matches: (
+        leftValue: string | boolean | number,
+        rightValue: string | boolean | number
+      ) => {
+        const regex = new RegExp(rightValue.toString());
+        return regex.test(leftValue.toString());
+      },
+    };
   }
 }

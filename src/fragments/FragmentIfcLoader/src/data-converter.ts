@@ -118,7 +118,7 @@ export class DataConverter {
       return {};
     }
     return new Promise<any>((resolve) => {
-      this._propertyExporter.propertiesSerialized.add((properties: any) => {
+      this._propertyExporter.onPropertiesSerialized.add((properties: any) => {
         resolve(properties);
       });
       this._propertyExporter.export(webIfc, 0);

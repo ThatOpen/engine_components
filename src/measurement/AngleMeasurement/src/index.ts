@@ -2,9 +2,9 @@ import * as THREE from "three";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
 import { Line2 } from "three/examples/jsm/lines/Line2";
-import { Simple2DMarker, Components } from "../../core";
-import { Hideable, Event, Disposable, Component } from "../../base-types";
-import { DimensionLabelClassName } from "../LengthMeasurement";
+import { Simple2DMarker, Components } from "../../../core";
+import { Hideable, Event, Disposable, Component } from "../../../base-types";
+import { DimensionLabelClassName } from "../../LengthMeasurement";
 
 interface Angle {
   points: THREE.Vector3[];
@@ -15,7 +15,6 @@ export class AngleMeasureElement
   extends Component<Angle>
   implements Hideable, Disposable
 {
-  name: string = "AngleMeasureElement";
   enabled: boolean = true;
   visible: boolean = true;
   points: THREE.Vector3[] = [];
@@ -57,7 +56,7 @@ export class AngleMeasureElement
   }
 
   constructor(components: Components, points?: THREE.Vector3[]) {
-    super();
+    super(components);
     this._components = components;
     const htmlText = document.createElement("div");
     htmlText.className = DimensionLabelClassName;
@@ -108,12 +107,12 @@ export class AngleMeasureElement
     return angle;
   }
 
-  dispose() {
+  async dispose() {
     this.points = [];
-    this.labelMarker.dispose();
+    await this.labelMarker.dispose();
     this.onAngleComputed.reset();
     this.onPointAdded.reset();
-    this.labelMarker.dispose();
+    await this.labelMarker.dispose();
     this._line.removeFromParent();
     this._lineMaterial.dispose();
     this._lineGeometry.dispose();

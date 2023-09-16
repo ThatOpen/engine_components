@@ -151,10 +151,12 @@ export interface Createable {
   readonly onAfterDelete: Event<any>;
 }
 
-/** Whether this component has a representation in the user
+/**
+ * Whether this component has a representation in the user
  * interface, like a button or a window.
  */
 export interface UI {
+  /** The class containing all the menus of this component.  */
   readonly uiElement: UIElement<any>;
 }
 

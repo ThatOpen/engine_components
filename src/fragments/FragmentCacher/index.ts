@@ -50,7 +50,7 @@ export class FragmentCacher extends LocalCacher {
 
     const fragmentsData = await fragmentFile.arrayBuffer();
     const buffer = new Uint8Array(fragmentsData);
-    const group = fragments.load(buffer);
+    const group = await fragments.load(buffer);
 
     const propertiesFile = await this.get(propertiesCacheID);
     if (propertiesFile !== null) {
@@ -122,7 +122,7 @@ export class FragmentCacher extends LocalCacher {
 
       loadFileButton.onClick.add(async () => {
         await this.getFragmentGroup(id);
-        this.onFileLoaded.trigger({ id });
+        await this.onFileLoaded.trigger({ id });
       });
 
       floatingMenu.addChild(card);
@@ -170,7 +170,7 @@ export class FragmentCacher extends LocalCacher {
           const index = this.cards.indexOf(card);
           this.cards.splice(index, 1);
           card.dispose();
-          this.onItemSaved.trigger({ id });
+          await this.onItemSaved.trigger({ id });
         }
       });
     }

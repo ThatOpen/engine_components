@@ -25,7 +25,7 @@ export class FragmentHighlighter
   extends Component<HighlightMaterials>
   implements Disposable
 {
-  static readonly uuid = "5af6ebe1-26fc-4053-936a-801b6c7cb37e" as const;
+  static readonly uuid = "cb8a76f2-654a-4b50-80c6-66fd83cafd77" as const;
 
   enabled = true;
   highlightMats: HighlightMaterials = {};
@@ -103,6 +103,9 @@ export class FragmentHighlighter
 
   constructor(components: Components) {
     super(components);
+
+    this.components.tools.add(FragmentHighlighter.uuid, this);
+    this.components.tools.libraryUUIDs.add(FragmentHighlighter.uuid);
   }
 
   get(): HighlightMaterials {

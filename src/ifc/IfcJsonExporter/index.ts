@@ -6,8 +6,9 @@ import { Event } from "../../base-types";
  * Object to export all the properties from an IFC to a JS object.
  */
 export class IfcJsonExporter {
-  loadProgress = new Event<{ progress: number; total: number }>();
-  propertiesSerialized = new Event<any>();
+  readonly onLoadProgress = new Event<{ progress: number; total: number }>();
+  readonly onPropertiesSerialized = new Event<any>();
+
   size?: number;
 
   private _progress = 0;
@@ -39,14 +40,14 @@ export class IfcJsonExporter {
       }
 
       if (this.size !== undefined && counter > this.size) {
-        this.propertiesSerialized.trigger(properties);
+        await this.onPropertiesSerialized.trigger(properties);
         properties = null;
         properties = {};
         counter = 0;
       }
 
       if (i / linesCount > this._progress) {
-        this.loadProgress.trigger({
+        await this.onLoadProgress.trigger({
           progress: i,
           total: linesCount,
         });
@@ -54,7 +55,7 @@ export class IfcJsonExporter {
       }
     }
 
-    this.propertiesSerialized.trigger(properties);
+    await this.onPropertiesSerialized.trigger(properties);
     properties = null;
   }
 

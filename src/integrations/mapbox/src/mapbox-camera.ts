@@ -10,9 +10,6 @@ export class MapboxCamera extends Component<THREE.Camera> {
   /** {@link Component.enabled} */
   enabled = true;
 
-  /** {@link Component.name} */
-  name = "MapboxCamera";
-
   private _camera = new THREE.PerspectiveCamera();
 
   /** {@link Component.get} */

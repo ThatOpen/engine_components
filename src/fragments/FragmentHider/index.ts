@@ -16,6 +16,7 @@ import {
   TextInput,
 } from "../../ui";
 import { IfcPropertiesFinder } from "../../ifc";
+import { QueryBuilder } from "../../ifc/IfcPropertiesFinder/src/query-builder";
 
 interface FilterData {
   name: string;
@@ -131,7 +132,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     this._updateVisibilityOnFound = false;
     for (const id in this._filterCards) {
       const { finder } = this._filterCards[id];
-      finder.find();
+      await finder.find();
     }
     this._updateVisibilityOnFound = true;
     await this.updateQueries();
@@ -216,26 +217,26 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     checkBoxContainer.addChild(enabled);
     bottomContainer.append(checkBoxContainer.domElement);
 
-    const finder = await this.components.tools.get(IfcPropertiesFinder);
+    const finder = new IfcPropertiesFinder(this.components);
     finder.loadCached(id);
 
-    finder.uiElement.query.findButton.label = "Apply";
+    const queryBuilder = finder.uiElement.get<QueryBuilder>("query");
+    const mainButton = finder.uiElement.get("main");
+    const finderWindow = finder.uiElement.get("queryWindow");
+    queryBuilder.findButton.label = "Apply";
 
-    bottomContainer.append(finder.uiElement.main.domElement);
-    const window = finder.uiElement.queryWindow;
+    bottomContainer.append(mainButton.domElement);
 
-    window.onVisible.add(() => {
-      this.hideAllFinders(window.id);
-      const rect = finder.uiElement.main.domElement.getBoundingClientRect();
-      window.domElement.style.left = `${rect.x + 90}px`;
-      window.domElement.style.top = `${rect.y - 120}px`;
+    finderWindow.onVisible.add(() => {
+      this.hideAllFinders(finderWindow.id);
+      const rect = mainButton.domElement.getBoundingClientRect();
+      finderWindow.domElement.style.left = `${rect.x + 90}px`;
+      finderWindow.domElement.style.top = `${rect.y - 120}px`;
     });
 
     finder.onFound.add((data) => {
-      const { queryWindow, main } = finder.uiElement;
-      queryWindow.visible = false;
-      main.active = false;
-      finder.uiElement.main.active = false;
+      finderWindow.visible = false;
+      mainButton.active = false;
       this._filterCards[id].fragments = data;
       this.cache();
       if (this._updateVisibilityOnFound) {
@@ -277,7 +278,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
       found.deleteButton.dispose();
       found.name.dispose();
       found.finder.deleteCache();
-      found.finder.dispose();
+      await found.finder.dispose();
       found.visible.dispose();
       found.enabled.dispose();
     }
@@ -289,12 +290,13 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
   private hideAllFinders(excludeID?: string) {
     for (const id in this._filterCards) {
       const { finder } = this._filterCards[id];
-      const window = finder.uiElement.queryWindow;
-      if (window.id === excludeID) {
+      const queryWindow = finder.uiElement.get("queryWindow");
+      const mainButton = finder.uiElement.get("main");
+      if (queryWindow.id === excludeID) {
         continue;
       }
-      if (finder.uiElement.queryWindow.visible) {
-        finder.uiElement.main.domElement.click();
+      if (queryWindow.visible) {
+        mainButton.domElement.click();
       }
     }
   }

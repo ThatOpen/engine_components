@@ -9,24 +9,21 @@ import { Components } from "../../../core";
  * [See example](https://ifcjs.github.io/components/examples/mapbox.html).
  */
 export class MapboxRenderer extends BaseRenderer implements Disposable {
-  /** {@link Component.name} */
-  name = "MapboxRenderer";
-
   /** {@link Component.enabled} */
   enabled = true;
 
   /** {@link Updateable.onBeforeUpdate} */
-  beforeUpdate = new Event<MapboxRenderer>();
+  readonly onBeforeUpdate = new Event<MapboxRenderer>();
 
   /** {@link Updateable.onAfterUpdate} */
-  afterUpdate = new Event<MapboxRenderer>();
+  readonly onAfterUpdate = new Event<MapboxRenderer>();
 
   /**
    * The renderer can only be initialized once Mapbox' map has been loaded. This
    * method triggers when that happens, so any initial logic that depends on the
    * renderer has to subscribe to this.
    */
-  initialized = new Event<THREE.Renderer>();
+  readonly onInitialized = new Event<THREE.Renderer>();
 
   private _labelRenderer = new CSS2DRenderer();
   private _renderer = new THREE.WebGLRenderer();
@@ -50,7 +47,7 @@ export class MapboxRenderer extends BaseRenderer implements Disposable {
     coords: any,
     rotation = new THREE.Vector3(Math.PI / 2, 0, 0)
   ) {
-    super();
+    super(components);
     this._components = components;
     this._map = map;
     this._modelTransform = this.newModelTransform(coords, rotation);
@@ -78,8 +75,8 @@ export class MapboxRenderer extends BaseRenderer implements Disposable {
   resize(): void {}
 
   /** {@link Disposable.dispose} */
-  dispose() {
-    this.initialized.reset();
+  async dispose() {
+    this.onInitialized.reset();
     this.enabled = false;
     this.setupEvents(false);
     this._renderer.dispose();
@@ -97,7 +94,7 @@ export class MapboxRenderer extends BaseRenderer implements Disposable {
     this._renderer = renderer;
     this._renderer.autoClear = false;
     this.initializeLabelRenderer();
-    this.initialized.trigger(renderer);
+    this.onInitialized.trigger(renderer);
   }
 
   private setupMap(map: any) {
@@ -136,7 +133,7 @@ export class MapboxRenderer extends BaseRenderer implements Disposable {
 
   private render(scene: THREE.Scene, matrix: number[]) {
     if (!this._renderer || !this.enabled) return;
-    this.beforeUpdate.trigger(this);
+    this.onBeforeUpdate.trigger(this);
 
     const rotationX = new THREE.Matrix4().makeRotationAxis(
       new THREE.Vector3(1, 0, 0),
@@ -180,7 +177,7 @@ export class MapboxRenderer extends BaseRenderer implements Disposable {
 
     this._map.triggerRepaint();
 
-    this.afterUpdate.trigger(this);
+    this.onAfterUpdate.trigger(this);
   }
 
   private initializeLabelRenderer() {

@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import { DimensionData, DimensionLabelClassName } from "./types";
-import { Components } from "../../core/Components";
-import { Disposer } from "../../core/Disposer";
-import { Simple2DMarker } from "../../core/Simple2DMarker";
+import { Components, Disposer, Simple2DMarker } from "../../../core";
+
+export * from "./types";
 
 // TODO: Document + clean up this: way less parameters, clearer logic
 
@@ -15,7 +15,6 @@ export class SimpleDimensionLine {
   static scale = 1;
   static units = "m";
 
-  private _disposer = new Disposer();
   private _length: number;
 
   private readonly _components: Components;
@@ -77,17 +76,18 @@ export class SimpleDimensionLine {
     this._components.scene.get().add(this._root);
   }
 
-  dispose() {
+  async dispose() {
+    const disposer = await this._components.tools.get(Disposer);
     this.visible = false;
-    this._disposer.destroy(this._root as any);
-    this._disposer.destroy(this._line as any);
+    disposer.destroy(this._root as any);
+    disposer.destroy(this._line as any);
     for (const marker of this._endpoints) {
-      marker.dispose();
+      await marker.dispose();
     }
     this._endpoints.length = 0;
-    this.label.dispose();
+    await this.label.dispose();
     if (this.boundingBox) {
-      this._disposer.destroy(this.boundingBox);
+      disposer.destroy(this.boundingBox);
     }
     (this._components as any) = null;
   }
