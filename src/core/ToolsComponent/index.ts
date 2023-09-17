@@ -115,11 +115,15 @@ export class ToolComponent
     document.body.appendChild(script);
 
     const win = window as any;
-    const toolClass = win.ThatOpenTool(OBC, THREE) as U;
+    if (!win.ThatOpenTool) {
+      throw new Error(`There was a problem fetching the tool ${id}.`);
+    }
 
+    const ToolClass = win.ThatOpenTool(OBC, THREE) as any;
     win.ThatOpenTool = undefined;
+
     script.remove();
 
-    return toolClass;
+    return new ToolClass(this.components) as Promise<U>;
   }
 }
