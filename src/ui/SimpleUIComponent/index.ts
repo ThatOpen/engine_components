@@ -11,7 +11,7 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   id: string;
 
   // TODO: Remove children and leave only slots?
-  children: SimpleUIComponent[] = [];
+  children: SimpleUIComponent<any>[] = [];
 
   data: Record<string, any> = {};
 
@@ -30,7 +30,7 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
 
   protected _domElement?: T;
   protected _components: Components;
-  protected _parent: SimpleUIComponent<HTMLElement> | null = null;
+  protected _parent: SimpleUIComponent<any> | null = null;
   protected _enabled: boolean = true;
   protected _visible: boolean = true;
   protected _active: boolean = false;
@@ -49,7 +49,7 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
     this._domElement = ele;
   }
 
-  set parent(value: SimpleUIComponent<HTMLElement> | null) {
+  set parent(value: SimpleUIComponent<any> | null) {
     this._parent = value;
   }
 
@@ -109,7 +109,7 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   }
 
   constructor(components: Components, template?: string, id?: string) {
-    super();
+    super(components);
     this._components = components;
     this.id = id ?? tooeenRandomId();
     this.template = template ?? "<div></div>";
@@ -123,13 +123,13 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
     return this.domElement;
   }
 
-  dispose(onlyChildren = false) {
+  async dispose(onlyChildren = false) {
     for (const name in this.slots) {
       const slot = this.slots[name];
-      slot.dispose();
+      await slot.dispose();
     }
     for (const child of this.children) {
-      child.dispose();
+      await child.dispose();
       this.removeChild(child);
     }
     for (const name in this.innerElements) {

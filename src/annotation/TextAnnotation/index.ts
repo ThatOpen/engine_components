@@ -1,4 +1,4 @@
-import { BaseSVGAnnotation, UI } from "../../base-types";
+import { BaseSVGAnnotation, UI, UIElement } from "../../base-types";
 import { Components } from "../../core";
 import { Button } from "../../ui";
 import { DrawManager } from "../DrawManager";
@@ -6,31 +6,32 @@ import { SVGText } from "../SVGText";
 
 export class TextAnnotation extends BaseSVGAnnotation implements UI {
   name: string = "TextAnnotation";
-  uiElement: { main: Button };
+  uiElement = new UIElement<{ main: Button }>();
   canvas: HTMLCanvasElement | null = null;
 
   private _previewElement: SVGText;
 
   constructor(components: Components, drawManager?: DrawManager) {
-    super();
+    super(components);
     this._previewElement = new SVGText(components);
     this.drawManager = drawManager;
 
-    this.uiElement = { main: new Button(components) };
-    this.uiElement.main.label = "Text";
-    this.uiElement.main.materialIcon = "title";
-    this.uiElement.main.onclick = () => {
+    const main = new Button(components);
+    this.uiElement.set({ main });
+    main.label = "Text";
+    main.materialIcon = "title";
+    main.onClick.add(() => {
       if (this.drawManager) {
         this.drawManager.activateTool(this);
       } else {
         this.enabled = !this.enabled;
       }
-    };
+    });
   }
 
-  dispose() {
-    super.dispose();
-    this._previewElement.dispose();
+  async dispose() {
+    await super.dispose();
+    await this._previewElement.dispose();
   }
 
   cancel = () => {

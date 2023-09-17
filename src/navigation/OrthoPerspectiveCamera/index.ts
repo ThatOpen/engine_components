@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Components, SimpleCamera } from "../../core";
-import { Event, UI } from "../../base-types";
+import { Event, UI, UIElement } from "../../base-types";
 import { CameraProjection, NavigationMode, NavModeID } from "./src/types";
 import { ProjectionManager } from "./src/projections";
 import { OrbitMode } from "./src/orbit-mode";
@@ -32,7 +32,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
   protected readonly _userInputButtons: any = {};
   protected readonly _frustumSize = 50;
   protected readonly _navigationModes = new Map<NavModeID, NavigationMode>();
-  uiElement: { main: Button };
+  uiElement = new UIElement<{ main: Button }>();
 
   constructor(components: Components) {
     super(components);
@@ -49,7 +49,10 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
     this.toggleEvents(true);
 
     this._projectionManager = new ProjectionManager(components, this);
-    this.uiElement = this.setUI();
+
+    if (components.ui.enabled) {
+      this.setUI();
+    }
 
     this.onAspectUpdated.add(() => this.setOrthoCameraAspect());
   }
@@ -66,9 +69,9 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
 
     const perspective = new Button(this.components, { name: "Perspective" });
     perspective.active = true;
-    perspective.onclick = () => this.setProjection("Perspective");
+    perspective.onClick.add(() => this.setProjection("Perspective"));
     const orthographic = new Button(this.components, { name: "Orthographic" });
-    orthographic.onclick = () => this.setProjection("Orthographic");
+    orthographic.onClick.add(() => this.setProjection("Orthographic"));
     projection.addChild(perspective, orthographic);
 
     const navigation = new Button(this.components, {
@@ -77,11 +80,11 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
     });
 
     const orbit = new Button(this.components, { name: "Orbit Around" });
-    orbit.onclick = () => this.setNavigationMode("Orbit");
+    orbit.onClick.add(() => this.setNavigationMode("Orbit"));
     const plan = new Button(this.components, { name: "Plan View" });
-    plan.onclick = () => this.setNavigationMode("Plan");
+    plan.onClick.add(() => this.setNavigationMode("Plan"));
     const firstPerson = new Button(this.components, { name: "First person" });
-    firstPerson.onclick = () => this.setNavigationMode("FirstPerson");
+    firstPerson.onClick.add(() => this.setNavigationMode("FirstPerson"));
     navigation.addChild(orbit, plan, firstPerson);
 
     mainButton.addChild(navigation, projection);
@@ -96,12 +99,12 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
       }
     });
 
-    return { main: mainButton };
+    this.uiElement.set({ main: mainButton });
   }
 
   /** {@link Disposable.dispose} */
-  dispose() {
-    super.dispose();
+  async dispose() {
+    await super.dispose();
     this.toggleEvents(false);
     this._orthoCamera.removeFromParent();
   }
@@ -147,7 +150,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
    */
   async setProjection(projection: CameraProjection) {
     await this._projectionManager.setProjection(projection);
-    this.projectionChanged.trigger(this.activeCamera);
+    await this.projectionChanged.trigger(this.activeCamera);
   }
 
   /**

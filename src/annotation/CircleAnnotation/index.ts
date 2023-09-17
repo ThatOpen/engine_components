@@ -1,5 +1,5 @@
 import { Vector2 } from "three";
-import { BaseSVGAnnotation } from "../../base-types";
+import { BaseSVGAnnotation, UIElement } from "../../base-types";
 import { Components } from "../../core";
 import { Button } from "../../ui";
 import { DrawManager } from "../DrawManager";
@@ -8,30 +8,31 @@ import { SVGCircle } from "../SVGCircle";
 export class CircleAnnotation extends BaseSVGAnnotation {
   name: string = "CircleAnnotation";
   canvas: HTMLCanvasElement | null = null;
-  uiElement: { main: Button };
+  uiElement = new UIElement<{ main: Button }>();
 
   private _previewElement: SVGCircle;
   private _cursorPosition: Vector2 = new Vector2();
 
   constructor(components: Components, drawManager?: DrawManager) {
-    super();
+    super(components);
     this._previewElement = new SVGCircle(components);
     this.drawManager = drawManager;
 
-    this.uiElement = { main: new Button(components) };
-    this.uiElement.main.label = "Circle";
-    this.uiElement.main.materialIcon = "radio_button_unchecked";
-    this.uiElement.main.onclick = () => {
+    const main = new Button(components);
+    this.uiElement.set({ main });
+    main.label = "Circle";
+    main.materialIcon = "radio_button_unchecked";
+    main.onClick.add(() => {
       if (this.drawManager) {
         this.drawManager.activateTool(this);
       } else {
         this.enabled = !this.enabled;
       }
-    };
+    });
   }
 
-  dispose() {
-    super.dispose();
+  async dispose() {
+    await super.dispose();
     this._previewElement.dispose();
   }
 

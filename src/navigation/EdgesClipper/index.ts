@@ -25,19 +25,19 @@ export class EdgesClipper extends SimpleClipper<EdgesPlane> {
   /** {@link Component.get} */
   async dispose() {
     await super.dispose();
-    this.styles.dispose();
+    await this.styles.dispose();
   }
 
   /**
    * Updates all the lines of the {@link ClippingEdges}.
    */
-  updateEdges(updateFills = false) {
+  async updateEdges(updateFills = false) {
     if (!this.enabled) return;
     for (const plane of this._planes) {
       if (updateFills) {
-        plane.updateFill();
+        await plane.updateFill();
       } else {
-        plane.update();
+        await plane.update();
       }
     }
   }

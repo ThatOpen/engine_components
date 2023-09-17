@@ -50,7 +50,7 @@ export class UIManager extends Component<Toolbar[]> implements Disposable {
   }
 
   constructor(components: Components) {
-    super();
+    super(components);
     this._components = components;
 
     this.contextMenu = new Toolbar(components);
@@ -105,21 +105,21 @@ export class UIManager extends Component<Toolbar[]> implements Disposable {
     return this.toolbars;
   }
 
-  dispose() {
+  async dispose() {
     this.setupEvents(false);
     for (const name in this._containers) {
       const element = this._containers[name];
       element.remove();
     }
     for (const toolbar of this.toolbars) {
-      toolbar.dispose();
+      await toolbar.dispose();
     }
     for (const child of this.children) {
-      child.dispose();
+      await child.dispose();
     }
     this._popperInstance.destroy();
     this.children = [];
-    this.contextMenu.dispose();
+    await this.contextMenu.dispose();
     this._containers = {};
     this._contextMenuContainer.remove();
     (this._popperInstance as any) = null;

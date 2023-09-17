@@ -94,14 +94,14 @@ export class Modal extends SimpleUIComponent<HTMLDialogElement> {
     acceptBtn.label = "Accept";
     acceptBtn.get().classList.remove("hover:bg-ifcjs-200");
     acceptBtn.get().classList.add("hover:bg-success");
-    acceptBtn.onclick = () => this.onAccept.trigger();
+    acceptBtn.onClick.add(() => this.onAccept.trigger());
 
     const cancelBtn = new Button(this._components);
     cancelBtn.materialIcon = "close";
     cancelBtn.label = "Cancel";
     cancelBtn.get().classList.remove("hover:bg-ifcjs-200");
     cancelBtn.get().classList.add("hover:bg-error");
-    cancelBtn.onclick = () => this.onCancel.trigger();
+    cancelBtn.onClick.add(() => this.onCancel.trigger());
 
     this.slots.actionButtons.addChild(cancelBtn, acceptBtn);
   }

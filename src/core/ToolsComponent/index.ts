@@ -78,11 +78,11 @@ export class ToolComponent
    * @param delta - The
    * [delta time](https://threejs.org/docs/#api/en/core/Clock) of the loop.
    */
-  update(delta: number) {
+  async update(delta: number) {
     const tools = this.list.values();
     for (const tool of tools) {
       if (tool.enabled && tool.isUpdateable()) {
-        tool.update(delta);
+        await tool.update(delta);
       }
     }
   }

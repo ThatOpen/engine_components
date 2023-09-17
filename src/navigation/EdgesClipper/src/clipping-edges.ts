@@ -24,6 +24,12 @@ export class ClippingEdges
   extends Component<Edges>
   implements Hideable, Disposable, Updateable
 {
+  /** {@link Updateable.onAfterUpdate} */
+  onAfterUpdate = new Event<Edge[]>();
+
+  /** {@link Updateable.onBeforeUpdate} */
+  onBeforeUpdate = new Event<Edge[]>();
+
   /** {@link Component.name} */
   name = "ClippingEdges";
 
@@ -48,20 +54,6 @@ export class ClippingEdges
     return this._visible;
   }
 
-  /** {@link Hideable.visible} */
-  set visible(visible: boolean) {
-    this._visible = visible;
-
-    const names = Object.keys(this._edges);
-    for (const edgeName of names) {
-      this.updateEdgesVisibility(edgeName, visible);
-    }
-
-    if (visible) {
-      this.update();
-    }
-  }
-
   set fillVisible(visible: boolean) {
     for (const name in this._edges) {
       const edges = this._edges[name];
@@ -77,11 +69,18 @@ export class ClippingEdges
     this._styles = styles;
   }
 
-  /** {@link Updateable.onAfterUpdate} */
-  onAfterUpdate = new Event<Edge[]>();
+  async setVisible(visible: boolean) {
+    this._visible = visible;
 
-  /** {@link Updateable.onBeforeUpdate} */
-  onBeforeUpdate = new Event<Edge[]>();
+    const names = Object.keys(this._edges);
+    for (const edgeName of names) {
+      this.updateEdgesVisibility(edgeName, visible);
+    }
+
+    if (visible) {
+      await this.update();
+    }
+  }
 
   /** {@link Updateable.update} */
   async update() {

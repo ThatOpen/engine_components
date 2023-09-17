@@ -1,14 +1,20 @@
-import { Component, UI, BaseSVGAnnotation, Disposable } from "../../base-types";
+import {
+  Component,
+  UI,
+  BaseSVGAnnotation,
+  Disposable,
+  UIElement,
+} from "../../base-types";
 import { Components, SimpleSVGViewport } from "../../core";
 import { Button, Toolbar } from "../../ui";
 
 export class DrawManager extends Component<string> implements UI, Disposable {
   name: string = "DrawManager";
 
-  uiElement!: {
+  uiElement = new UIElement<{
     main: Button;
     drawingTools: Toolbar;
-  };
+  }>();
 
   viewport: SimpleSVGViewport;
   drawingTools: { [name: string]: BaseSVGAnnotation } = {};
@@ -16,7 +22,6 @@ export class DrawManager extends Component<string> implements UI, Disposable {
 
   private _enabled: boolean = false;
   private _isDrawing: boolean = false;
-  private _components: Components;
 
   get isDrawing() {
     return this._isDrawing;
@@ -32,28 +37,26 @@ export class DrawManager extends Component<string> implements UI, Disposable {
 
   set enabled(value: boolean) {
     this._enabled = value;
-    this.uiElement.main.active = value;
-    this.uiElement.drawingTools.visible = value;
+    this.uiElement.get("main").active = value;
+    this.uiElement.get("drawingTools").visible = value;
     this.viewport.enabled = value;
   }
 
   constructor(components: Components) {
-    super();
-    this._components = components;
+    super(components);
     this.viewport = new SimpleSVGViewport(components);
     this.setUI();
     this.enabled = false;
   }
 
-  dispose() {
-    this.uiElement.main.dispose();
-    this.uiElement.drawingTools.dispose();
-    this.viewport.dispose();
+  async dispose() {
+    this.uiElement.dispose();
+    await this.viewport.dispose();
     for (const name in this.drawings) {
       this.drawings[name].remove();
     }
     this.drawings = {};
-    (this._components as any) = null;
+    (this.components as any) = null;
   }
 
   saveDrawing(name: string) {
@@ -75,7 +78,8 @@ export class DrawManager extends Component<string> implements UI, Disposable {
   addDrawingTool(name: string, tool: BaseSVGAnnotation) {
     const existingTool = this.drawingTools[name];
     if (!existingTool) {
-      this.uiElement.drawingTools.addChild(tool.uiElement.main);
+      const main = this.uiElement.get("main");
+      this.uiElement.get("drawingTools").addChild(main);
       this.drawingTools[name] = tool;
     }
   }
@@ -92,12 +96,12 @@ export class DrawManager extends Component<string> implements UI, Disposable {
   }
 
   private setUI() {
-    const drawingTools = new Toolbar(this._components, { position: "top" });
-    this._components.ui.addToolbar(drawingTools);
-    const main = new Button(this._components);
+    const drawingTools = new Toolbar(this.components, { position: "top" });
+    this.components.ui.addToolbar(drawingTools);
+    const main = new Button(this.components);
     main.materialIcon = "gesture";
-    main.onclick = () => (this.enabled = !this.enabled);
-    this.uiElement = { drawingTools, main };
+    main.onClick.add(() => (this.enabled = !this.enabled));
+    this.uiElement.set({ drawingTools, main });
   }
 
   get(): string {

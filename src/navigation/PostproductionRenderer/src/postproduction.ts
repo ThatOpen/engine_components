@@ -97,10 +97,10 @@ export class Postproduction {
     this.composer.setSize(window.innerWidth, window.innerHeight);
   }
 
-  dispose() {
+  async dispose() {
     this._renderTarget.dispose();
     this._depthTexture?.dispose();
-    this._customEffects?.dispose();
+    await this._customEffects?.dispose();
     this._gammaPass?.dispose();
     this._n8ao?.dispose();
     this.excludedItems.clear();

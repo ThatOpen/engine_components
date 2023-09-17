@@ -23,7 +23,7 @@ export class TestCamera extends Component<
   protected readonly _perspectiveCamera: THREE.PerspectiveCamera;
 
   constructor(components: Components) {
-    super();
+    super(components);
 
     this.components = components;
 
@@ -60,8 +60,7 @@ export class TestCamera extends Component<
     const dom = this.components.renderer.get().domElement;
 
     if (dom.style === undefined) {
-      // @ts-ignore
-      dom.style = {};
+      (dom.style as any) = {};
     }
 
     const controls = new OrbitControls(this._perspectiveCamera, dom);

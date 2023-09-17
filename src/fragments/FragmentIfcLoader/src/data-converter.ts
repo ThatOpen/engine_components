@@ -1,7 +1,7 @@
 import * as THREE from "three";
+import { BufferGeometry } from "three";
 import * as WEBIFC from "web-ifc";
 import * as FRAGS from "bim-fragment";
-import { BufferGeometry } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
 import {
   IfcCategories,
@@ -13,14 +13,15 @@ import { IfcFragmentSettings } from "./ifc-fragment-settings";
 import { IfcGeometries } from "./types";
 import { toCompositeID } from "../../../utils";
 import { FragmentBoundingBox } from "../../FragmentBoundingBox";
+import { Components } from "../../../core";
 
 export class DataConverter {
   settings = new IfcFragmentSettings();
   categories: IfcItemsCategories = {};
+  components: Components;
 
   private _model = new FRAGS.FragmentsGroup();
   private _ifcCategories = new IfcCategories();
-  private _bbox = new FragmentBoundingBox();
 
   private _fragmentKey = 0;
 
@@ -31,7 +32,9 @@ export class DataConverter {
 
   private readonly _spatialTree = new SpatialStructure();
 
-  constructor() {}
+  constructor(components: Components) {
+    this.components = components;
+  }
 
   cleanUp() {
     this._fragmentKey = 0;
@@ -63,14 +66,14 @@ export class DataConverter {
     this._model.properties = await this.getModelProperties(webIfc);
     this._model.uuid = this.getProjectID(webIfc) || this._model.uuid;
     this._model.ifcMetadata = this.getIfcMetadata(webIfc);
-    this._model.boundingBox = this.getBoundingBox();
+    this._model.boundingBox = await this.getBoundingBox();
   }
 
-  private getBoundingBox() {
-    this._bbox.add(this._model);
-    const result = this._bbox.get();
-    this._bbox.reset();
-    return result;
+  private async getBoundingBox() {
+    const bbox = await this.components.tools.get(FragmentBoundingBox);
+    bbox.reset();
+    bbox.add(this._model);
+    return bbox.get();
   }
 
   private getIfcMetadata(webIfc: WEBIFC.IfcAPI) {

@@ -1,4 +1,5 @@
 import { Component, Event } from "../../base-types";
+import { Components } from "../../core";
 
 /**
  * An object to easily use the services of That Open Platform.
@@ -23,8 +24,8 @@ export class CloudProcessor extends Component<any[]> {
     token: "?accessToken=",
   };
 
-  constructor(token: string) {
-    super();
+  constructor(components: Components, token: string) {
+    super(components);
     this._urls.token += token;
   }
 
@@ -70,7 +71,7 @@ export class CloudProcessor extends Component<any[]> {
     const interval = setInterval(async () => {
       const response = await this.getModel(modelID);
       if (response.model.status === "PROCESSED") {
-        this.modelProcessed.trigger(response);
+        await this.modelProcessed.trigger(response);
         clearInterval(interval);
       }
     }, this.checkInterval);

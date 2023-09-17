@@ -23,8 +23,8 @@ export class EdgesStyles
     linewidth: 0.001,
   });
 
-  constructor(public components: Components) {
-    super();
+  constructor(components: Components) {
+    super(components);
   }
 
   onAfterUpdate = new Event<LineStyles>();
@@ -34,9 +34,9 @@ export class EdgesStyles
     return this._styles;
   }
 
-  update(_delta: number): void {
-    this.onBeforeUpdate.trigger(this._styles);
-    this.onAfterUpdate.trigger(this._styles);
+  async update(_delta: number) {
+    await this.onBeforeUpdate.trigger(this._styles);
+    await this.onAfterUpdate.trigger(this._styles);
   }
 
   // Creates a new style that applies to all clipping edges for generic models
@@ -65,7 +65,7 @@ export class EdgesStyles
     return newStyle;
   }
 
-  dispose() {
+  async dispose() {
     const styles = Object.keys(this._styles);
     for (const style of styles) {
       this.deleteStyle(style);

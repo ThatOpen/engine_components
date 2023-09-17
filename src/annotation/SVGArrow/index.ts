@@ -8,8 +8,6 @@ export class SVGArrow extends Component<SVGGElement> implements Disposable {
   enabled: boolean = true;
   id: string = tooeenRandomId();
 
-  private _components: Components;
-
   private _line = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "line"
@@ -38,8 +36,7 @@ export class SVGArrow extends Component<SVGGElement> implements Disposable {
     startPoint?: Vector2,
     endPoint?: Vector2
   ) {
-    super();
-    this._components = components;
+    super(components);
 
     // Create marker for the arrow head
     this._marker.setAttribute("id", `${this.id}-arrowhead`);
@@ -62,12 +59,12 @@ export class SVGArrow extends Component<SVGGElement> implements Disposable {
     this.setStyle();
   }
 
-  dispose() {
+  async dispose() {
     this._arrow.remove();
     this._marker.remove();
     this._polygon.remove();
     this._line.remove();
-    (this._components as any) = null;
+    (this.components as any) = null;
   }
 
   setStyle(style?: Partial<SVGAnnotationStyle>) {
@@ -87,7 +84,7 @@ export class SVGArrow extends Component<SVGGElement> implements Disposable {
   }
 
   clone() {
-    return new SVGArrow(this._components, this.startPoint, this.endPoint);
+    return new SVGArrow(this.components, this.startPoint, this.endPoint);
   }
 
   set x1(value: number) {

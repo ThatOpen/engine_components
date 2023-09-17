@@ -42,7 +42,7 @@ export class CommandsMenu<T> extends SimpleUIComponent<HTMLDivElement> {
       const button = new Button(this._components, { name });
       button.name = name;
       this.addChild(button);
-      button.onclick = () => command(this.commandData);
+      button.onClick.add(() => command(this.commandData));
     }
   }
 
@@ -52,8 +52,8 @@ export class CommandsMenu<T> extends SimpleUIComponent<HTMLDivElement> {
     this.visible = true;
   }
 
-  dispose(onlyChildren: boolean = false) {
-    super.dispose(onlyChildren);
+  async dispose(onlyChildren: boolean = false) {
+    await super.dispose(onlyChildren);
     if (!onlyChildren) {
       this.setupEvents(false);
       this.commands = {};

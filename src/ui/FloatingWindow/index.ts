@@ -155,8 +155,8 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
     };
   }
 
-  dispose(onlyChildren = false) {
-    super.dispose(onlyChildren);
+  async dispose(onlyChildren = false) {
+    await super.dispose(onlyChildren);
     this.setupEvents(false);
     this.onMoved.reset();
     this.onResized.reset();

@@ -1,13 +1,15 @@
 import * as THREE from "three";
 import { SimpleUIComponent } from "../SimpleUIComponent";
 import { Components } from "../../core";
-import { Resizeable } from "../../base-types";
+import { Resizeable, Event } from "../../base-types";
 
 export class Canvas
   extends SimpleUIComponent<HTMLCanvasElement>
   implements Resizeable
 {
   name: string = "Canvas";
+  readonly onResize = new Event<THREE.Vector2>();
+
   private _size = new THREE.Vector2(320, 160);
 
   constructor(components: Components) {
@@ -27,6 +29,7 @@ export class Canvas
       this._size = size;
       this.domElement.style.width = `${size.x}px`;
       this.domElement.style.height = `${size.y}px`;
+      this.onResize.trigger(size);
     }
   }
 }

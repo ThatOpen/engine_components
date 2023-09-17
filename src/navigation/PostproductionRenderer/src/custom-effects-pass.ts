@@ -7,6 +7,8 @@ import { getProjectedNormalMaterial } from "./projected-normal-shader";
 // Follows the structure of
 // 		https://github.com/mrdoob/three.js/blob/master/examples/jsm/postprocessing/OutlinePass.js
 export class CustomEffectsPass extends Pass {
+  components: Components;
+
   resolution: THREE.Vector2;
   renderScene: THREE.Scene;
   renderCamera: THREE.Camera;
@@ -26,8 +28,6 @@ export class CustomEffectsPass extends Pass {
       material: THREE.MeshBasicMaterial;
     };
   } = {};
-
-  private _disposer = new Disposer();
 
   private _outlineScene = new THREE.Scene();
   private _outlineEnabled = false;
@@ -129,6 +129,8 @@ export class CustomEffectsPass extends Pass {
   constructor(resolution: THREE.Vector2, components: Components) {
     super();
 
+    this.components = components;
+
     this.renderScene = components.scene.get();
     this.renderCamera = components.camera.get();
     this.resolution = new THREE.Vector2(resolution.x, resolution.y);
@@ -149,7 +151,7 @@ export class CustomEffectsPass extends Pass {
     this.glossOverrideMaterial = glossMaterial;
   }
 
-  dispose() {
+  async dispose() {
     this.planeBuffer.dispose();
     this.glossBuffer.dispose();
     this.outlineBuffer.dispose();
@@ -160,10 +162,12 @@ export class CustomEffectsPass extends Pass {
     this.excludedMeshes = [];
     this._outlineScene.children = [];
 
+    const disposer = await this.components.tools.get(Disposer);
+
     for (const name in this.outlinedMeshes) {
       const style = this.outlinedMeshes[name];
       for (const mesh of style.meshes) {
-        this._disposer.destroy(mesh, true, true);
+        disposer.destroy(mesh, true, true);
       }
       style.material.dispose();
     }

@@ -138,6 +138,10 @@ export class SimpleClipper<T extends SimplePlane>
 
   constructor(components: Components) {
     super(components);
+
+    this.components.tools.add(SimpleClipper.uuid, this);
+    this.components.tools.libraryUUIDs.add(SimpleClipper.uuid);
+
     this.PlaneType = SimplePlane;
     if (components.ui.enabled) {
       this.setUI(components);

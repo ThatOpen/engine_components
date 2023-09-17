@@ -28,16 +28,9 @@ export class EdgesPlane extends SimplePlane {
     super(components, origin, normal, material, 5, false);
     this.edges = new ClippingEdges(components, this._plane, styles);
     this.toggleControls(true);
-    this.edges.visible = true;
+    this.edges.setVisible(true);
     this.onDraggingEnded.add(this.updateFill);
     this.onDraggingStarted.add(this.hideFills);
-  }
-
-  /** {@link Hideable.visible} */
-  set visible(state: boolean) {
-    super.visible = state;
-    this.toggleControls(state);
-    this.edges.visible = state;
   }
 
   /** {@link Component.enabled} */
@@ -45,30 +38,36 @@ export class EdgesPlane extends SimplePlane {
     return super.enabled;
   }
 
-  /** {@link Component.enabled} */
-  set enabled(state: boolean) {
-    super.enabled = state;
-    if (state) {
-      this.update();
-    }
-  }
-
   /** {@link Disposable.dispose} */
   async dispose() {
     await super.dispose();
-    this.edges.dispose();
+    await this.edges.dispose();
   }
 
-  updateFill = () => {
+  /** {@link Component.enabled} */
+  async setEnabled(state: boolean) {
+    super.enabled = state;
+    if (state) {
+      await this.update();
+    }
+  }
+
+  async setVisible(state: boolean) {
+    super.visible = state;
+    this.toggleControls(state);
+    await this.edges.setVisible(true);
+  }
+
+  updateFill = async () => {
     this.edges.fillNeedsUpdate = true;
-    this.edges.update();
+    await this.edges.update();
     if (this._visible) {
       this.edges.fillVisible = true;
     }
   };
 
   /** {@link Updateable.update} */
-  update = () => {
+  update = async () => {
     if (!this.enabled) return;
 
     this._plane.setFromNormalAndCoplanarPoint(
@@ -80,7 +79,7 @@ export class EdgesPlane extends SimplePlane {
     const now = Date.now();
     if (this.lastUpdate + this.edgesMaxUpdateRate < now) {
       this.lastUpdate = now;
-      this.edges.update();
+      await this.edges.update();
     } else if (this.updateTimeout === -1) {
       this.updateTimeout = window.setTimeout(() => {
         this.update();

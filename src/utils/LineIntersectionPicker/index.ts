@@ -1,9 +1,13 @@
 import { BufferAttribute, Line, Raycaster, Vector3 } from "three";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
-import { Disposable, Event, Updateable } from "../../base-types/base-types";
-import { Mouse } from "../../base-types/mouse";
-import { Component } from "../../base-types/component";
-import { Components } from "../../core/Components";
+import {
+  Component,
+  Disposable,
+  Event,
+  Mouse,
+  Updateable,
+} from "../../base-types";
+import { Components } from "../../core";
 
 interface LineIntersectionPickerConfig {
   snapDistance: number;
@@ -20,7 +24,6 @@ export class LineIntersectionPicker
   private _pickedPoint: Vector3 | null = null;
   private _config!: LineIntersectionPickerConfig;
   private _enabled!: boolean;
-  private _components: Components;
   private _marker: CSS2DObject;
   private _raycaster = new Raycaster();
   private _mouse: Mouse;
@@ -49,8 +52,7 @@ export class LineIntersectionPicker
     components: Components,
     config?: Partial<LineIntersectionPickerConfig>
   ) {
-    super();
-    this._components = components;
+    super(components);
     this.config = {
       snapDistance: 0.25,
       ...config,
@@ -63,11 +65,11 @@ export class LineIntersectionPicker
     marker.className = "w-[15px] h-[15px] border-3 border-solid border-red-500";
     this._marker = new CSS2DObject(marker);
     this._marker.visible = false;
-    this._components.scene.get().add(this._marker);
+    this.components.scene.get().add(this._marker);
     this.enabled = false;
   }
 
-  dispose() {
+  async dispose() {
     this.onAfterUpdate.reset();
     this.onBeforeUpdate.reset();
     this._marker.removeFromParent();
@@ -83,10 +85,10 @@ export class LineIntersectionPicker
 
     this._raycaster.setFromCamera(
       this._mouse.position,
-      this._components.camera.get()
+      this.components.camera.get()
     );
     // @ts-ignore
-    const lines = this._components.meshes.filter((mesh) => mesh.isLine);
+    const lines = this.components.meshes.filter((mesh) => mesh.isLine);
     const intersects = this._raycaster.intersectObjects(lines);
 
     // console.log(intersects)
@@ -156,11 +158,7 @@ export class LineIntersectionPicker
       lineToPoint
     );
     const t1 = lineToPointCross.dot(line2Dir) / denominator;
-    const intersectionPoint = new Vector3().addVectors(
-      p1,
-      line1Dir.multiplyScalar(t1)
-    );
-    return intersectionPoint;
+    return new Vector3().addVectors(p1, line1Dir.multiplyScalar(t1));
   }
 
   private updateMarker() {

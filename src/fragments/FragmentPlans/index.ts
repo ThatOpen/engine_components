@@ -100,7 +100,7 @@ export class FragmentPlans
     this.onNavigated.reset();
     this.storeys = [];
     this._plans = [];
-    this.objects.dispose();
+    await this.objects.dispose();
     this.uiElement.dispose();
   }
 
@@ -175,9 +175,9 @@ export class FragmentPlans
     await this.onNavigated.trigger({ id });
 
     this.storeCameraPosition();
-    this.hidePreviousClippingPlane();
+    await this.hidePreviousClippingPlane();
     this.updateCurrentPlan(id);
-    this.activateCurrentPlan();
+    await this.activateCurrentPlan();
     if (!this.enabled) {
       await this.moveCameraTo2DPlanPosition(animate);
       this.enabled = true;
@@ -203,8 +203,8 @@ export class FragmentPlans
     camera.setNavigationMode("Orbit");
     await camera.setProjection(this._previousProjection);
     if (this.currentPlan && this.currentPlan.plane) {
-      this.currentPlan.plane.enabled = false;
-      this.currentPlan.plane.edges.visible = false;
+      await this.currentPlan.plane.setEnabled(false);
+      await this.currentPlan.plane.edges.setVisible(false);
     }
     this.currentPlan = null;
     await camera.controls.setLookAt(
@@ -221,7 +221,7 @@ export class FragmentPlans
     }
   }
 
-  updatePlansList() {
+  async updatePlansList() {
     if (!this.components.ui.enabled) {
       return;
     }
@@ -231,7 +231,7 @@ export class FragmentPlans
     const commandsMenu =
       this.uiElement.get<CommandsMenu<PlanView>>("commandsMenu");
 
-    planList.dispose(true);
+    await planList.dispose(true);
     if (!this._plans.length) {
       defaultText.visible = true;
       return;
@@ -371,9 +371,9 @@ export class FragmentPlans
       clippingPoint
     );
 
-    plane.enabled = false;
+    await plane.setEnabled(false);
     await plane.edges.update();
-    plane.edges.visible = false;
+    await plane.edges.setVisible(false);
     return plane;
   }
 
@@ -392,17 +392,17 @@ export class FragmentPlans
     }
   }
 
-  private activateCurrentPlan() {
+  private async activateCurrentPlan() {
     if (!this.currentPlan) throw new Error("Current plan is not defined.");
     const camera = this.components.camera as OrthoPerspectiveCamera;
     if (this.currentPlan.plane) {
-      this.currentPlan.plane.enabled = true;
+      await this.currentPlan.plane.setEnabled(true);
       this.currentPlan.plane.edges.fillNeedsUpdate = true;
-      this.currentPlan.plane.edges.visible = true;
+      await this.currentPlan.plane.edges.setVisible(true);
     }
     camera.setNavigationMode("Plan");
     const projection = this.currentPlan.ortho ? "Orthographic" : "Perspective";
-    camera.setProjection(projection);
+    await camera.setProjection(projection);
   }
 
   private store3dCameraPosition() {
@@ -421,19 +421,21 @@ export class FragmentPlans
     this.currentPlan = foundPlan;
   }
 
-  private hidePreviousClippingPlane() {
+  private async hidePreviousClippingPlane() {
     if (this.currentPlan) {
       const plane = this.currentPlan.plane;
-      if (plane) plane.enabled = false;
+      if (plane) {
+        await plane.setEnabled(false);
+      }
       if (this.currentPlan.plane instanceof EdgesPlane) {
-        this.currentPlan.plane.edges.visible = false;
+        await this.currentPlan.plane.edges.setVisible(false);
       }
     }
   }
 
   private setupPlanObjectUI() {
     this.objects.planClicked.add(async ({ id }) => {
-      const button = this.objects.uiElement.main;
+      const button = this.objects.uiElement.get<Button>("main");
       if (!this.enabled) {
         if (button.innerElements.icon && button.innerElements.tooltip) {
           button.materialIcon = "logout";

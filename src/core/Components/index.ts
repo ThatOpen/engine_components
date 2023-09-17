@@ -178,21 +178,21 @@ export class Components {
     }
   }
 
-  private update = () => {
+  private update = async () => {
     if (!this._enabled) return;
     const delta = this._clock.getDelta();
-    Components.update(this.scene, delta);
-    Components.update(this.renderer, delta);
-    Components.update(this.camera, delta);
-    this.tools.update(delta);
+    await Components.update(this.scene, delta);
+    await Components.update(this.renderer, delta);
+    await Components.update(this.camera, delta);
+    await this.tools.update(delta);
     const renderer = this.renderer.get();
     // Works the same as requestAnimationFrame, but let us use WebXR.
     renderer.setAnimationLoop(this.update);
   };
 
-  private static update(component: Component<any>, delta: number) {
+  private static async update(component: Component<any>, delta: number) {
     if (component.isUpdateable() && component.enabled) {
-      component.update(delta);
+      await component.update(delta);
     }
   }
 

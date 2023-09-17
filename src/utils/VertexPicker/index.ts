@@ -41,7 +41,7 @@ export class VertexPicker
   }
 
   constructor(components: Components, config?: Partial<VertexPickerConfig>) {
-    super();
+    super(components);
     this._components = components;
     this.config = {
       snapDistance: 0.25,
@@ -70,9 +70,9 @@ export class VertexPicker
     return this._config;
   }
 
-  dispose() {
+  async dispose() {
     this.setupEvents(false);
-    this._marker.dispose();
+    await this._marker.dispose();
     this.afterUpdate.reset();
     this.beforeUpdate.reset();
     (this._components as any) = null;

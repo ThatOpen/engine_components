@@ -121,8 +121,8 @@ export class TreeView extends SimpleUIComponent<HTMLDivElement> {
     this.collapse();
   }
 
-  dispose(onlyChildren: boolean = false) {
-    super.dispose(onlyChildren);
+  async dispose(onlyChildren: boolean = false) {
+    await super.dispose(onlyChildren);
     if (!onlyChildren) {
       this.onExpand.reset();
       this.onCollapse.reset();

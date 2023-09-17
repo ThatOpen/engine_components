@@ -1,4 +1,4 @@
-import { Component } from "../../base-types/component";
+import { Component } from "../../base-types";
 import { Components } from "../../core";
 import { SimpleUIComponent } from "../SimpleUIComponent";
 
@@ -16,7 +16,7 @@ export class UIPool<T extends SimpleUIComponent> extends Component<T> {
   private _uiClass: UIClass<T>;
 
   constructor(components: Components, uiClass: UIClass<T>) {
-    super();
+    super(components);
     this._components = components;
     this._uiClass = uiClass;
   }

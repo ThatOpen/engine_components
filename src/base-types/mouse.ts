@@ -28,7 +28,7 @@ export class Mouse implements Disposable {
   }
 
   /** {@link Disposable.dispose} */
-  dispose() {
+  async dispose() {
     this.setupEvents(false);
   }
 

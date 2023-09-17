@@ -4,9 +4,9 @@ import {
   Instance as PopperInstance,
   // @ts-ignore
 } from "@popperjs/core/dist/esm";
-import { Event } from "../../base-types/base-types";
+import { Event } from "../../base-types";
 import { Toolbar } from "../ToolbarComponent";
-import { Components } from "../../core/Components";
+import { Components } from "../../core";
 import { SimpleUIComponent } from "../SimpleUIComponent";
 
 interface IButtonOptions {
@@ -201,9 +201,9 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
     this.onDisabled.add(() => (this.domElement.disabled = true));
   }
 
-  dispose(onlyChildren = false) {
-    super.dispose(onlyChildren);
-    this.menu.dispose();
+  async dispose(onlyChildren = false) {
+    await super.dispose(onlyChildren);
+    await this.menu.dispose();
     if (!onlyChildren) {
       this.domElement.remove();
     }

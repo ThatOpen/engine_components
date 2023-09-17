@@ -1,7 +1,8 @@
-import { Component, UI } from "../../base-types";
+// eslint-disable-next-line import/no-extraneous-dependencies
+import fetch from "node-fetch";
+import { Component, UI, UIElement } from "../../base-types";
 import { Button, Toolbar } from "../../ui";
 import { Components } from "../../core";
-import fetch from "node-fetch";
 import { ModelDatabase } from "../../core/LocalCacher/db";
 
 // TODO: Clean up UI logic and component type
@@ -14,29 +15,31 @@ export class TestLocalCacher extends Component<any> implements UI {
   private _db: ModelDatabase;
   private readonly _storedModels = "open-bim-components-stored-files";
 
-  uiElement: Toolbar;
+  uiElement = new UIElement<{ toolbar: Toolbar }>();
   saveButton: Button;
   loadButton: Button;
   wipeButton: Button;
 
-  constructor(public components: Components) {
-    super();
+  constructor(components: Components) {
+    super(components);
 
     this._db = new ModelDatabase();
 
-    this.uiElement = new Toolbar(components, {
+    const toolbar = new Toolbar(components, {
       name: "Local cacher toolbar",
       position: "bottom",
     });
 
+    this.uiElement.set({ toolbar });
+
     this.saveButton = new Button(components, { materialIconName: "save" });
-    this.uiElement.addButton(this.saveButton);
+    toolbar.addChild(this.saveButton);
 
     this.loadButton = new Button(components, { materialIconName: "download" });
-    this.uiElement.addButton(this.loadButton);
+    toolbar.addChild(this.loadButton);
 
     this.wipeButton = new Button(components, { materialIconName: "delete" });
-    this.uiElement.addButton(this.wipeButton);
+    toolbar.addChild(this.wipeButton);
   }
 
   async get(id: string) {

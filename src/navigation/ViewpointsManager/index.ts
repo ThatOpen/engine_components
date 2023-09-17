@@ -5,25 +5,24 @@ import {
   LengthMeasurement,
 } from "../../measurement/LengthMeasurement";
 import { Components } from "../../core/Components";
-import { UI, Component, Event, FragmentIdMap } from "../../base-types";
+import {
+  UI,
+  Component,
+  Event,
+  FragmentIdMap,
+  UIElement,
+} from "../../base-types";
 import { Button, SimpleUICard, FloatingWindow } from "../../ui";
 
-import {
-  FragmentManager,
-  FragmentClassifier,
-  FragmentHighlighter,
-} from "../../fragments";
 import { DrawManager } from "../../annotation";
 import { OrthoPerspectiveCamera } from "../OrthoPerspectiveCamera";
 import { CameraProjection } from "../OrthoPerspectiveCamera/src/types";
+import { FragmentHighlighter } from "../../fragments";
 
 // TODO: Update and implement memory disposal
 
 export interface IViewpointsManagerConfig {
   selectionHighlighter: string;
-  fragmentManager: FragmentManager;
-  fragmentGrouper: FragmentClassifier;
-  fragmentHighlighter: FragmentHighlighter;
   drawManager?: DrawManager;
 }
 
@@ -41,64 +40,68 @@ export interface IViewpoint {
 }
 
 export class ViewpointsManager extends Component<string> implements UI {
-  private _components: Components;
   //   private _fragmentManager: FragmentManager;
   //   private _fragmentGrouper: FragmentGrouper;
-  private _fragmentHighlighter: FragmentHighlighter;
   private _drawManager?: DrawManager;
   name: string = "ViewpointsManager";
-  uiElement: {
+
+  uiElement = new UIElement<{
     main: Button;
     newButton: Button;
     window: FloatingWindow;
-  };
+  }>();
+
   enabled: boolean = true;
   list: IViewpoint[] = [];
-  selectionHighlighter: string;
-  onViewpointViewed: Event<string> = new Event();
-  onViewpointAdded: Event<string> = new Event();
+  selectionHighlighter = "";
+  readonly onViewpointViewed = new Event<string>();
+  readonly onViewpointAdded = new Event<string>();
 
-  constructor(components: Components, config: IViewpointsManagerConfig) {
-    super();
-    this._components = components;
+  constructor(components: Components) {
+    super(components);
+    this.components = components;
+  }
+
+  initialize(config: IViewpointsManagerConfig) {
     this.selectionHighlighter = config.selectionHighlighter;
     // this._fragmentGrouper = config.fragmentGrouper;
-    this._fragmentHighlighter = config.fragmentHighlighter;
     // this._fragmentManager = config.fragmentManager;
     this._drawManager = config.drawManager;
-    this.uiElement = this.setUI();
+    if (this.components.ui.enabled) {
+      this.setUI();
+    }
   }
 
   private setUI() {
-    const viewerContainer = this._components.renderer.get().domElement
+    const viewerContainer = this.components.renderer.get().domElement
       .parentElement as HTMLElement;
-    const window = new FloatingWindow(this._components);
+    const window = new FloatingWindow(this.components);
     window.title = "Viewpoints";
     viewerContainer.append(window.get());
     window.visible = false;
-    const main = new Button(this._components, {
+    const main = new Button(this.components, {
       materialIconName: "photo_camera",
     });
-    const newButton = new Button(this._components, {
+    const newButton = new Button(this.components, {
       materialIconName: "add",
       name: "New viewpoint",
     });
-    const listButton = new Button(this._components, {
+    const listButton = new Button(this.components, {
       materialIconName: "format_list_bulleted",
       name: "Viewpoints list",
     });
-    listButton.onclick = () => {
+    listButton.onClick.add(() => {
       window.visible = !window.visible;
-    };
+    });
     main.addChild(listButton, newButton);
-    return { main, newButton, window };
+    this.uiElement.set({ main, newButton, window });
   }
 
   get(): string {
     throw new Error("Method not implemented.");
   }
 
-  add(data: { title: string; description: string | null }) {
+  async add(data: { title: string; description: string | null }) {
     const { title, description } = data;
     if (!title) {
       return undefined;
@@ -108,19 +111,16 @@ export class ViewpointsManager extends Component<string> implements UI {
 
     // #region Store dimensions
     const dimensions: { start: Vector3; end: Vector3 }[] = [];
-    const dimensionsComponent = this._components.tools.get(
-      "LengthMeasurement"
-    ) as LengthMeasurement | undefined;
-    if (dimensionsComponent) {
-      dimensionsComponent.get().forEach((dimension) => {
-        dimensions.push({ start: dimension.start, end: dimension.end });
-      });
+    const dimensionsComp = await this.components.tools.get(LengthMeasurement);
+    const allDimensions = dimensionsComp.get();
+    for (const dimension of allDimensions) {
+      dimensions.push({ start: dimension.start, end: dimension.end });
     }
     // #endregion
 
     // #redgion Store selection
-    const selection =
-      this._fragmentHighlighter.selection[this.selectionHighlighter];
+    const highlighter = await this.components.tools.get(FragmentHighlighter);
+    const selection = highlighter.selection[this.selectionHighlighter];
     // #endregion
 
     // #region Store filter (WIP)
@@ -128,7 +128,7 @@ export class ViewpointsManager extends Component<string> implements UI {
     // #endregion
 
     // #region Store camera position and target
-    const camera = this._components.camera as OrthoPerspectiveCamera;
+    const camera = this.components.camera as OrthoPerspectiveCamera;
     const controls = camera.controls;
     const target = new Vector3();
     const position = new Vector3();
@@ -155,15 +155,15 @@ export class ViewpointsManager extends Component<string> implements UI {
     };
 
     // #region UI representation
-    const card = new SimpleUICard(this._components, viewpoint.guid);
+    const card = new SimpleUICard(this.components, viewpoint.guid);
     card.title = title;
     card.description = description;
     card.domElement.onclick = () => this.view(viewpoint.guid);
-    this.uiElement.window.addChild(card);
+    this.uiElement.get("window").addChild(card);
     // #endregion
 
     this.list.push(viewpoint);
-    this.onViewpointAdded.trigger(guid);
+    await this.onViewpointAdded.trigger(guid);
     return viewpoint;
   }
 
@@ -171,7 +171,7 @@ export class ViewpointsManager extends Component<string> implements UI {
     return this.list.find((v) => v.guid === guid);
   }
 
-  view(guid: string) {
+  async view(guid: string) {
     const viewpoint = this.retrieve(guid);
     if (!viewpoint) {
       return;
@@ -186,24 +186,21 @@ export class ViewpointsManager extends Component<string> implements UI {
     // #endregion
 
     // #region Recover dimensions
-    const dimensionsComponent = this._components.tools.get(
-      "LengthMeasurement"
-    ) as LengthMeasurement | undefined;
-    if (dimensionsComponent) {
-      viewpoint.dimensions.forEach((data) => {
-        const dimension = new SimpleDimensionLine(this._components, {
-          start: data.start,
-          end: data.end,
-          // @ts-ignore
-          lineMaterial: dimensionsComponent._lineMaterial,
-          // @ts-ignore
-          endpoint: dimensionsComponent._endpointMesh,
-        });
-        dimension.createBoundingBox();
+    const dimensionsComponent = this.components.tools.get(LengthMeasurement);
+
+    viewpoint.dimensions.forEach((data) => {
+      const dimension = new SimpleDimensionLine(this.components, {
+        start: data.start,
+        end: data.end,
         // @ts-ignore
-        dimensionsComponent._dimensions.push(dimension);
+        lineMaterial: dimensionsComponent._lineMaterial,
+        // @ts-ignore
+        endpoint: dimensionsComponent._endpointMesh,
       });
-    }
+      dimension.createBoundingBox();
+      // @ts-ignore
+      dimensionsComponent._dimensions.push(dimension);
+    });
     // #endregion
 
     // #region Recover filtered elements
@@ -225,14 +222,12 @@ export class ViewpointsManager extends Component<string> implements UI {
     for (const fragmentID in viewpoint.selection) {
       selection[fragmentID] = viewpoint.selection[fragmentID];
     }
-    this._fragmentHighlighter.highlightByID(
-      this.selectionHighlighter,
-      selection,
-      true
-    );
+
+    const highlighter = await this.components.tools.get(FragmentHighlighter);
+    await highlighter.highlightByID(this.selectionHighlighter, selection, true);
 
     // #region Recover camera position & target
-    const camera = this._components.camera as OrthoPerspectiveCamera;
+    const camera = this.components.camera as OrthoPerspectiveCamera;
     const controls = camera.controls;
     controls.setLookAt(
       viewpoint.position.x,
@@ -243,7 +238,7 @@ export class ViewpointsManager extends Component<string> implements UI {
       viewpoint.target.z,
       true
     );
-    this.onViewpointViewed.trigger(guid);
+    await this.onViewpointViewed.trigger(guid);
     // #endregion
   }
 }
