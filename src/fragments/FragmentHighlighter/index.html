@@ -171,8 +171,8 @@
     To highlight the selection based upon the material you had created, you must pass the `Highlighter Name`.
 
      */
-    function highlightOnClick(event) {
-        const result = highlighter.highlight('default', singleSelection.value);
+    async function highlightOnClick(event) {
+        const result = await highlighter.highlight('default', singleSelection.value);
         if (result) {
             lastSelection = {};
             for (const fragment of result.fragments) {
@@ -214,8 +214,8 @@
     document.body.append(stats.dom);
     stats.dom.style.left = '0px';
     const renderer = components.renderer;
-    renderer.beforeUpdate.on(() => stats.begin());
-    renderer.afterUpdate.on(() => stats.end());
+    renderer.onBeforeUpdate.add(() => stats.begin());
+    renderer.onAfterUpdate.add(() => stats.end());
 
 
     // Set up dat.gui menu

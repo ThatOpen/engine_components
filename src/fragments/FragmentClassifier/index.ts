@@ -2,7 +2,7 @@ import { FragmentsGroup } from "bim-fragment";
 import { Disposable, FragmentIdMap, Component } from "../../base-types";
 import { IfcCategoryMap, IfcPropertiesUtils } from "../../ifc";
 import { toCompositeID } from "../../utils";
-import { Components } from "../../core";
+import { Components, ToolComponent } from "../../core";
 import { FragmentManager } from "../FragmentManager";
 
 // TODO: Clean up and document
@@ -28,7 +28,6 @@ export class FragmentClassifier
     super(components);
 
     components.tools.add(FragmentClassifier.uuid, this);
-    components.tools.libraryUUIDs.add(FragmentClassifier.uuid);
   }
 
   /** {@link Component.get} */
@@ -252,3 +251,5 @@ export class FragmentClassifier
     }
   }
 }
+
+ToolComponent.libraryUUIDs.add(FragmentClassifier.uuid);

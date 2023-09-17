@@ -43,14 +43,7 @@
 
     components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
-    const directionalLight = new THREE.DirectionalLight();
-    directionalLight.position.set(5, 10, 3);
-    directionalLight.intensity = 0.5;
-    scene.add(directionalLight);
-
-    const ambientLight = new THREE.AmbientLight();
-    ambientLight.intensity = 0.5;
-    scene.add(ambientLight);
+    components.scene.setup();
 
     const grid = new OBC.SimpleGrid(components);
     components.tools.add("grid", grid);
@@ -109,7 +102,7 @@
         cube3.rotation.z += oneDegree;
     }
 
-    components.renderer.beforeUpdate.on(rotateCubes);
+    components.renderer.onBeforeUpdate.add(rotateCubes);
 
     /*MD
 
@@ -141,12 +134,12 @@
     window.onmousemove = () => {
         const result = components.raycaster.castRay(cubes);
         if (previousSelection) {
-            previousSelection.lineMaterial = cubeMaterial;
+            previousSelection.material = cubeMaterial;
         }
         if (!result) {
             return;
         }
-        result.object.lineMaterial = greenMaterial;
+        result.object.material = greenMaterial;
         previousSelection = result.object;
     }
 

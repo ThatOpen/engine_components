@@ -7,7 +7,7 @@ import {
   Component,
   UIElement,
 } from "../../base-types";
-import { Components } from "../../core";
+import { Components, ToolComponent } from "../../core";
 import { Button } from "../../ui";
 import { VertexPicker } from "../../utils";
 import { AreaMeasureElement } from "./src";
@@ -60,7 +60,6 @@ export class AreaMeasurement
     super(components);
 
     this.components.tools.add(AreaMeasurement.uuid, this);
-    this.components.tools.libraryUUIDs.add(AreaMeasurement.uuid);
 
     // TODO: Make vertexpicker a tool?
     this._vertexPicker = new VertexPicker(components);
@@ -68,8 +67,6 @@ export class AreaMeasurement
     if (components.ui.enabled) {
       this.setUI();
     }
-
-    this.enabled = false;
   }
 
   async dispose() {
@@ -81,7 +78,7 @@ export class AreaMeasurement
     this.onBeforeDelete.reset();
     this.onAfterDelete.reset();
     this.uiElement.dispose();
-    this._vertexPicker.dispose();
+    await this._vertexPicker.dispose();
     if (this._currentAreaElement) {
       await this._currentAreaElement.dispose();
     }
@@ -187,3 +184,5 @@ export class AreaMeasurement
     }
   };
 }
+
+ToolComponent.libraryUUIDs.add(AreaMeasurement.uuid);

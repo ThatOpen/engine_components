@@ -25,8 +25,8 @@ export class AttributeTag extends PropertyTag {
     this.setListeners();
   }
 
-  dispose(onlyChildren: boolean = false) {
-    super.dispose(onlyChildren);
+  async dispose(onlyChildren: boolean = false) {
+    await super.dispose(onlyChildren);
     (this.model as any) = null;
   }
 

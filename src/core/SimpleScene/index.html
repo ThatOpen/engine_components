@@ -21,6 +21,8 @@
     }
 </script>
 <script type="module">
+	import Stats from 'stats.js/src/Stats.js';
+
 	/*MD
   ### 🌍 Let's create a 3D world!
   ___
@@ -143,14 +145,7 @@
   Of course, everything is black because we have no lights! Let's fix it by adding some basic illumination:
   */
 
-	const directionalLight = new THREE.DirectionalLight();
-	directionalLight.position.set(5, 10, 3);
-	directionalLight.intensity = 0.5;
-	scene.add(directionalLight);
-
-	const ambientLight = new THREE.AmbientLight();
-	ambientLight.intensity = 0.5;
-	scene.add(ambientLight);
+	components.scene.setup();
 
 	/*MD
   ### 🧹 Cleaning up
@@ -179,6 +174,13 @@
   And voilà! You have made your first 3D application using components. Easy, right? Of course, this is still far from a
   full-fledged BIM app, but don't worry! Keep following our tutorials and your app will go from zero to hero in no time! 🚀
   */
+
+	const stats = new Stats();
+	stats.showPanel(2);
+	document.body.append(stats.dom);
+	stats.dom.style.left = '0px';
+	components.renderer.onBeforeUpdate.add(() => stats.begin());
+	components.renderer.onAfterUpdate.add(() => stats.end());
 
 </script>
 </body>

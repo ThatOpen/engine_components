@@ -58,6 +58,6 @@
     "three": "0.152.2",
     "three-mesh-bvh": "0.6.0",
     "top-tool-package-reader": "0.0.3",
-    "web-ifc": "0.0.42"
+    "web-ifc": "0.0.43"
   }
 }

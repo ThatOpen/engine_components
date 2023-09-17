@@ -7,7 +7,7 @@ import {
   UIElement,
 } from "../../base-types";
 import { FragmentTreeItem } from "./src/tree-item";
-import { Components } from "../../core";
+import { Components, ToolComponent } from "../../core";
 import { FragmentClassifier } from "../FragmentClassifier";
 import { Button, FloatingWindow } from "../../ui";
 
@@ -31,7 +31,6 @@ export class FragmentTree
     super(components);
 
     this.components.tools.add(FragmentTree.uuid, this);
-    this.components.tools.libraryUUIDs.add(FragmentTree.uuid);
   }
 
   get(): FragmentTreeItem {
@@ -59,7 +58,7 @@ export class FragmentTree
     this.onHovered.reset();
     this.uiElement.dispose();
     if (this._tree) {
-      this._tree.dispose();
+      await this._tree.dispose();
     }
   }
 
@@ -67,7 +66,7 @@ export class FragmentTree
     if (!this._tree) return;
     const classifier = await this.components.tools.get(FragmentClassifier);
     if (this._tree.children.length) {
-      this._tree.dispose();
+      await this._tree.dispose();
       this._tree = new FragmentTreeItem(
         this.components,
         classifier,
@@ -79,7 +78,8 @@ export class FragmentTree
 
   private setupUI(tree: FragmentTreeItem) {
     const window = new FloatingWindow(this.components);
-    window.addChild(tree.uiElement.tree);
+    const subTree = tree.uiElement.get("tree");
+    window.addChild(subTree);
     window.title = "Model tree";
     this.components.ui.add(window);
     window.visible = false;
@@ -108,7 +108,7 @@ export class FragmentTree
       // { storeys: "N00" }, { storeys: "N01" }...
       const classifier = await this.components.tools.get(FragmentClassifier);
       const filter = { ...result, [currentSystemName]: [name] };
-      const found = classifier.find(filter);
+      const found = await classifier.find(filter);
       const hasElements = Object.keys(found).length > 0;
       if (hasElements) {
         const firstLetter = currentSystemName[0].toUpperCase();
@@ -120,8 +120,8 @@ export class FragmentTree
           `${treeItemName}: ${name}`
         );
 
-        treeItem.hovered.add((result) => this.onHovered.trigger(result));
-        treeItem.selected.add((result) => this.onSelected.trigger(result));
+        treeItem.onHovered.add((result) => this.onHovered.trigger(result));
+        treeItem.onSelected.add((result) => this.onSelected.trigger(result));
 
         treeItem.filter = filter;
         groups.push(treeItem);
@@ -134,3 +134,5 @@ export class FragmentTree
     return groups;
   }
 }
+
+ToolComponent.libraryUUIDs.add(FragmentTree.uuid);

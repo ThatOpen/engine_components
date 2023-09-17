@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { HorizontalBlurShader } from "three/examples/jsm/shaders/HorizontalBlurShader";
 import { VerticalBlurShader } from "three/examples/jsm/shaders/VerticalBlurShader";
 import { Component, Disposable } from "../../base-types";
-import { Components, Disposer } from "../../core";
+import { Components, Disposer, ToolComponent } from "../../core";
 
 // TODO: Clean up and document this
 
@@ -43,7 +43,6 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
     super(components);
 
     this.components.tools.add(ShadowDropper.uuid, this);
-    this.components.tools.libraryUUIDs.add(ShadowDropper.uuid);
 
     this.initializeDepthMaterial();
   }
@@ -340,3 +339,5 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
     shadow.blurPlane.visible = false;
   }
 }
+
+ToolComponent.libraryUUIDs.add(ShadowDropper.uuid);

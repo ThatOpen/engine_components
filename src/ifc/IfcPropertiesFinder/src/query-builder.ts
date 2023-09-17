@@ -1,5 +1,5 @@
 import { Event } from "../../../base-types";
-import { Components } from "../../../core/Components";
+import { Components } from "../../../core";
 import { Button, SimpleUIComponent } from "../../../ui";
 import { QueryGroupUI } from "./query-group";
 import { QueryGroup } from "./types";
@@ -14,8 +14,7 @@ export class QueryBuilder extends SimpleUIComponent {
       if (!(child instanceof QueryGroupUI)) return null;
       return child.query;
     });
-    const query = queriesMap.filter((query) => query !== null) as QueryGroup[];
-    return query;
+    return queriesMap.filter((query) => query !== null) as QueryGroup[];
   }
 
   set query(value: QueryGroup[]) {
@@ -59,9 +58,6 @@ export class QueryBuilder extends SimpleUIComponent {
         "border-ifcjs-120",
         "hover:border-ifcjs-200"
       );
-    this.findButton.onclick = () => {
-      this.findButton.onClick.trigger(this.query);
-    };
 
     const topContainer = new SimpleUIComponent(
       this._components,
@@ -73,14 +69,14 @@ export class QueryBuilder extends SimpleUIComponent {
     });
     newGroupBtn.get().classList.add("w-fit");
     newGroupBtn.label = "Add Group";
-    newGroupBtn.onclick = () => {
+    newGroupBtn.onClick.add(() => {
       const queryGroup = new QueryGroupUI(this._components);
       queryGroup.operator.visible = true;
       queryGroup.operator.value = queryGroup.operator.options[0];
       queryGroup.removeBtn.visible = true;
       this.addChild(queryGroup);
       this.get().append(this.findButton.get());
-    };
+    });
 
     const resetBtn = new Button(this._components, {
       materialIconName: "refresh",
@@ -108,9 +104,9 @@ export class QueryBuilder extends SimpleUIComponent {
     // ];
   }
 
-  dispose(onlyChildren: boolean = false) {
-    super.dispose(onlyChildren);
-    this.findButton.dispose();
+  async dispose(onlyChildren: boolean = false) {
+    await super.dispose(onlyChildren);
+    await this.findButton.dispose();
     this.onQuerySet.reset();
   }
 }

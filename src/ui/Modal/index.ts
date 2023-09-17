@@ -1,5 +1,5 @@
 import { Event } from "../../base-types";
-import { Components } from "../../core/Components";
+import { Components } from "../../core";
 import { Button } from "../ButtonComponent";
 import { SimpleUIComponent } from "../SimpleUIComponent";
 
@@ -106,8 +106,8 @@ export class Modal extends SimpleUIComponent<HTMLDialogElement> {
     this.slots.actionButtons.addChild(cancelBtn, acceptBtn);
   }
 
-  dispose(onlyChildren: boolean = false) {
-    super.dispose(onlyChildren);
+  async dispose(onlyChildren: boolean = false) {
+    await super.dispose(onlyChildren);
     this.onCancel.reset();
     this.onAccept.reset();
   }

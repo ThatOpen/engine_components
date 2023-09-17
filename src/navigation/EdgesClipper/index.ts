@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Components, SimpleClipper, SimplePlane } from "../../core";
+import { Components, SimpleClipper } from "../../core";
 import { EdgesPlane } from "./src/edges-plane";
 import { EdgesStyles } from "./src/edges-styles";
 
@@ -18,7 +18,7 @@ export class EdgesClipper extends SimpleClipper<EdgesPlane> {
 
     this.components.tools.list.set(EdgesClipper.uuid, this);
 
-    this.PlaneType = SimplePlane;
+    this.PlaneType = EdgesPlane;
     this.styles = new EdgesStyles(components);
   }
 

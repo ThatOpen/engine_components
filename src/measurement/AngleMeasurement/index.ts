@@ -8,7 +8,7 @@ import {
   Disposable,
   UIElement,
 } from "../../base-types";
-import { Components } from "../../core";
+import { Components, ToolComponent } from "../../core";
 import { Button } from "../../ui";
 import { VertexPicker } from "../../utils";
 import { AngleMeasureElement } from "./src";
@@ -22,7 +22,7 @@ export class AngleMeasurement
   uiElement = new UIElement<{ main: Button }>();
 
   private _lineMaterial: LineMaterial;
-  private _enabled: boolean = false;
+  private _enabled = false;
   private _vertexPicker: VertexPicker;
   private _currentAngleElement: AngleMeasureElement | null = null;
   private _clickCount: number = 0;
@@ -72,7 +72,6 @@ export class AngleMeasurement
     super(components);
 
     this.components.tools.add(AngleMeasurement.uuid, this);
-    this.components.tools.libraryUUIDs.add(AngleMeasurement.uuid);
 
     this.components = components;
     this._lineMaterial = new LineMaterial({
@@ -81,7 +80,7 @@ export class AngleMeasurement
     });
     this._vertexPicker = new VertexPicker(components);
 
-    this.enabled = false;
+    // this.enabled = false;
     if (components.ui.enabled) {
       this.setUI();
     }
@@ -97,7 +96,7 @@ export class AngleMeasurement
     this.onAfterDelete.reset();
     this.uiElement.dispose();
     this._lineMaterial.dispose();
-    this._vertexPicker.dispose();
+    await this._vertexPicker.dispose();
     for (const measure of this._measurements) {
       await measure.dispose();
     }
@@ -205,3 +204,5 @@ export class AngleMeasurement
     }
   };
 }
+
+ToolComponent.libraryUUIDs.add(AngleMeasurement.uuid);

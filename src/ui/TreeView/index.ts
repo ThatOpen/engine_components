@@ -7,6 +7,7 @@ export class TreeView extends SimpleUIComponent<HTMLDivElement> {
 
   readonly onExpand = new Event();
   readonly onCollapse = new Event();
+  readonly onClick = new Event();
 
   set description(value: string | null) {
     const element = this.innerElements.description;
@@ -52,14 +53,6 @@ export class TreeView extends SimpleUIComponent<HTMLDivElement> {
     }
   }
 
-  // TODO: Unify all events so that they are of type Event
-  set onclick(listener: (e?: MouseEvent) => void) {
-    this.domElement.onclick = (e) => {
-      e.stopImmediatePropagation();
-      listener(e);
-    };
-  }
-
   set onmouseover(listener: (e?: MouseEvent) => void) {
     this.domElement.onmouseover = (e) => {
       e.stopImmediatePropagation();
@@ -96,6 +89,11 @@ export class TreeView extends SimpleUIComponent<HTMLDivElement> {
     </div>
     `;
     super(components, template);
+
+    this.domElement.onclick = async (e) => {
+      e.stopImmediatePropagation();
+      await this.onClick.trigger(e);
+    };
 
     this.innerElements = {
       titleContainer: this.getInnerElement(

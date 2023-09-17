@@ -66,14 +66,14 @@
     const file = await fetch("../../../resources/small.frag");
     const dataBlob = await file.arrayBuffer();
     const buffer = new Uint8Array(dataBlob);
-    const model = fragments.load(buffer);
+    const model = await fragments.load(buffer);
 
     // Fragment properties loading
     const properties = await fetch("../../../resources/small.json");
     model.properties = await properties.json();
 
     // Quick setup for element hovering and selection
-    const highlighter = new OBC.FragmentHighlighter(components, fragments);
+    const highlighter = new OBC.FragmentHighlighter(components);
     highlighter.setup();
 
     components.renderer.postproduction.customEffects.outlineEnabled = true;
@@ -84,8 +84,10 @@
     // Best way to describe the component is to find "Relations of entities meeting a set of attributes criteria"
     // Each search group aims to find a set of entities matching the criteria and then its relations
     // The search result are all common relations of the entities that meet the criteria in each search group.
-    const propsFinder = new OBC.IfcPropertiesFinder(components, fragments);
-    propsFinder.uiElement.queryWindow.visible = true;
+    const propsFinder = new OBC.IfcPropertiesFinder(components);
+    await propsFinder.init();
+
+    propsFinder.uiElement.get("queryWindow").visible = true;
 
     // On elements found, select them.
     propsFinder.onFound.add(result => {
@@ -95,7 +97,7 @@
     // Creating new toolbar + adding component button
     const mainToolbar = new OBC.Toolbar(components)
     components.ui.addToolbar(mainToolbar)
-    mainToolbar.addChild(propsFinder.uiElement.main)
+    mainToolbar.addChild(propsFinder.uiElement.get("main"))
 
 </script>
 </body>

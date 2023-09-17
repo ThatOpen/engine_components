@@ -20,7 +20,7 @@ export class ToolComponent
   list: ToolsList = new Map();
 
   /** The list of UUIDs of all the components in this library. */
-  libraryUUIDs = new Set();
+  static readonly libraryUUIDs = new Set();
 
   /** The auth token to get tools from That Open Platform. */
   token = "";
@@ -61,7 +61,7 @@ export class ToolComponent
   ): Promise<U> {
     const id = (ToolClass as any).uuid;
     if (!this.list.has(id)) {
-      const isLibraryComponent = this.libraryUUIDs.has(id);
+      const isLibraryComponent = ToolComponent.libraryUUIDs.has(id);
       if (isLibraryComponent) {
         const newLibraryComponent = new ToolClass(this.components);
         this.list.set(id, newLibraryComponent);

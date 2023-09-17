@@ -8,7 +8,7 @@ import {
   SimpleUIComponent,
   TextInput,
 } from "../../ui";
-import { Components } from "../../core";
+import { Components, ToolComponent } from "../../core";
 import { EdgesClipper } from "../../navigation";
 import { FragmentManager } from "../FragmentManager";
 import { FragmentClassifier } from "../FragmentClassifier";
@@ -71,7 +71,6 @@ export class FragmentClipStyler
     super(components);
 
     this.components.tools.add(FragmentClipStyler.uuid, this);
-    this.components.tools.libraryUUIDs.add(FragmentClipStyler.uuid);
 
     if (components.ui.enabled) {
       this.setupUI(components);
@@ -128,7 +127,7 @@ export class FragmentClipStyler
       }
     }
 
-    clipper.updateEdges(true);
+    await clipper.updateEdges(true);
     this.cacheStyles();
   }
 
@@ -200,16 +199,16 @@ export class FragmentClipStyler
     const clipper = await this.components.tools.get(EdgesClipper);
     clipper.styles.deleteStyle(id, true);
     if (found) {
-      found.styleCard.dispose();
-      found.deleteButton.dispose();
-      found.name.dispose();
-      found.categories.dispose();
-      found.lineThickness.dispose();
-      found.lineColor.dispose();
-      found.fillColor.dispose();
+      await found.styleCard.dispose();
+      await found.deleteButton.dispose();
+      await found.name.dispose();
+      await found.categories.dispose();
+      await found.lineThickness.dispose();
+      await found.lineColor.dispose();
+      await found.fillColor.dispose();
     }
     delete this.styleCards[id];
-    clipper.updateEdges(true);
+    await clipper.updateEdges(true);
     if (updateCache) {
       this.cacheStyles();
     }
@@ -381,3 +380,5 @@ export class FragmentClipStyler
     this.cacheStyles();
   }
 }
+
+ToolComponent.libraryUUIDs.add(FragmentClipStyler.uuid);

@@ -1,7 +1,8 @@
 import * as THREE from "three";
-import { Fragment, FragmentsGroup } from "bim-fragment";
+import { FragmentsGroup } from "bim-fragment";
+import { InstancedMesh } from "three";
 import { Component, Disposable } from "../../base-types";
-import { Components, Disposer } from "../../core";
+import { Components, Disposer, ToolComponent } from "../../core";
 
 /**
  * A simple implementation of bounding box that works for fragments. The resulting bbox is not 100% precise, but
@@ -21,7 +22,6 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
     super(components);
 
     this.components.tools.add(FragmentBoundingBox.uuid, this);
-    this.components.tools.libraryUUIDs.add(FragmentBoundingBox.uuid);
 
     this._absoluteMin = FragmentBoundingBox.newBound(true);
     this._absoluteMax = FragmentBoundingBox.newBound(false);
@@ -108,19 +108,23 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
 
   add(group: FragmentsGroup) {
     for (const frag of group.items) {
-      this.addFragment(frag);
+      this.addMesh(frag.mesh);
     }
   }
 
-  addFragment(fragment: Fragment) {
-    const bbox = FragmentBoundingBox.getFragmentBounds(fragment);
+  addMesh(mesh: InstancedMesh) {
+    if (!mesh.geometry.index) {
+      return;
+    }
 
-    fragment.mesh.updateMatrix();
-    const meshTransform = fragment.mesh.matrix;
+    const bbox = FragmentBoundingBox.getFragmentBounds(mesh);
+
+    mesh.updateMatrix();
+    const meshTransform = mesh.matrix;
 
     const instanceTransform = new THREE.Matrix4();
-    for (let i = 0; i < fragment.mesh.count; i++) {
-      fragment.getInstance(i, instanceTransform);
+    for (let i = 0; i < mesh.count; i++) {
+      mesh.getMatrixAt(i, instanceTransform);
       const min = bbox.min.clone();
       const max = bbox.max.clone();
 
@@ -147,15 +151,19 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
     }
   }
 
-  private static getFragmentBounds(fragment: Fragment) {
-    const position = fragment.mesh.geometry.attributes.position;
+  private static getFragmentBounds(mesh: InstancedMesh) {
+    const position = mesh.geometry.attributes.position;
 
     const maxNum = Number.MAX_VALUE;
     const minNum = -maxNum;
     const min = new THREE.Vector3(maxNum, maxNum, maxNum);
     const max = new THREE.Vector3(minNum, minNum, minNum);
 
-    const indices = Array.from(fragment.mesh.geometry.index.array);
+    if (!mesh.geometry.index) {
+      throw new Error("Geometry must be indexed!");
+    }
+
+    const indices = Array.from(mesh.geometry.index.array);
 
     for (const index of indices) {
       const x = position.getX(index);
@@ -173,3 +181,5 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
     return new THREE.Box3(min, max);
   }
 }
+
+ToolComponent.libraryUUIDs.add(FragmentBoundingBox.uuid);

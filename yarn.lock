@@ -6508,7 +6508,7 @@ __metadata:
     ts-jest: ^27.0.3
     ts-node: ^10.0.0
     typescript: ^4.3.2
-    web-ifc: 0.0.42
+    web-ifc: 0.0.43
   languageName: unknown
   linkType: soft
 
@@ -8693,6 +8693,13 @@ __metadata:
   version: 0.0.42
   resolution: "web-ifc@npm:0.0.42"
   checksum: e9cab52eeee358e28e836e75201acdf6db0e78b9225640a36694ddc8be0a89e89a21162053ae1afacde4cd4ea98c3fd1e6b900e38b1e4e7ebe62adb6cbbe39af
+  languageName: node
+  linkType: hard
+
+"web-ifc@npm:0.0.43":
+  version: 0.0.43
+  resolution: "web-ifc@npm:0.0.43"
+  checksum: 6464767bf63b987d3f997d34f9d40c11579cfe1702b4966255888598b0629918bcbd132adaee049c62a3ad46334b213650b08531128ac17accc173d53cee9fb6
   languageName: node
   linkType: hard
 

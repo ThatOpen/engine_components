@@ -53,8 +53,8 @@ export class DragAndDropInput extends SimpleUIComponent<HTMLDivElement> {
     };
   }
 
-  dispose(onlyChildren: boolean = false) {
-    super.dispose(onlyChildren);
+  async dispose(onlyChildren: boolean = false) {
+    await super.dispose(onlyChildren);
     this.onFilesLoaded.reset();
   }
 }

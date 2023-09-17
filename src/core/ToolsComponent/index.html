@@ -20,6 +20,7 @@
       }
     }
 </script>
+</body>
 <script type="module">
 
 	// Set up scene (see SimpleScene tutorial)
@@ -42,23 +43,28 @@
 
 	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
-	const directionalLight = new THREE.DirectionalLight();
-	directionalLight.position.set(5, 10, 3);
-	directionalLight.intensity = 0.5;
-	scene.add(directionalLight);
-
-	const ambientLight = new THREE.AmbientLight();
-	ambientLight.intensity = 0.5;
-	scene.add(ambientLight);
+	components.scene.setup();
 
 	/*MD
   ### 🍱 Keeping things tidy
   ___
-  BIM applications are complex and can have a lot of different functionalities. Of course, this means that they can
-  have a lot of components. Keeping your project tidy and clean can be a challenge if you need certain components
-  in different places of your app.
+  BIM applications are complex and can have a lot of different functionalities. We distinguish between 2 types of
+  functionalities:
 
-  Luckily, there's an easier way of handling this: the [Tools Component](../api/classes/components.ToolComponent)!
+  - Components: self-contained pieces of logic that can be used to create tools.
+  - Tools: Features for the end user. They are unique and accessible from anywhere.
+
+  For example: the EdgesClipper of this library is a `tool`, and it can create, edit and destroy clipping planes. Each
+  clipping plane is a `component`.
+
+  	:::info Why unique? 🤔
+
+  Tools are unique because you generally want one object to handle a specific feature. That way, we foster the single
+  responsibility principle. That means that each tool has an UUID (Universal Unique ID).
+
+  :::
+
+  Luckily, there's an easy way to handle this: the [Tools Component](../api/classes/components.ToolComponent)!
   This component has two purposes:
 
   - Making your components available anywhere in your application.
@@ -67,86 +73,56 @@
   ### ✨ Components anywhere
   ___
   First, we will create a very simple tool: a [simple grid component](../api/classes/components.SimpleGrid). It's not
-  very exciting, but we don't want to distract you with the fanciness of the component! This same workflow will work for
+  very exciting, but we don't want to distract you with the fanciness of more complex tools! This same workflow will work for
   any other component that you use.
 
   First, let's instantiate it:
   */
 
-    const grid = new OBC.SimpleGrid(components);
+	const grid = new OBC.SimpleGrid(components);
 
 	/*MD
-  Now, it is likely that your application will have many menus. What if you need access to this component In many
+  Now, it is likely that your application will have many menus. What if you need access to this component in many
   places? For example, you may have a menu that controls the color and size of the grid, and other menus that goes
   into floor plan navigation mode and need to hide the grid.
 
-  To solve this situation, you just need to add the SimpleGrid component to the ToolComponent with some ID in 
-  the first argument. That's it!
-  */
-
-	components.tools.add("SimpleGrid", grid);
-
-	/*MD
   Now, getting the SimpleGrid component back is as easy as using the `get()` method and passing the id of the
   component as an argument. That's it! 👇
+
   */
 
-	const savedGrid = components.tools.get("SimpleGrid");
+	const simpleGrid = await components.tools.get(OBC.SimpleGrid);
 
 	/*MD
-	:::info Clean code, clean memory 🧹
+   :::info Psst... it get's even easier! 🧠
 
-  The tools component also keeps track of the memory usage of the components and automatically cleans it for you when
-  you call `components.dispose()`,
-  [so that you don't have to](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
+  You don't even need to instantiate the tool yourself. You can simply call `components.tools.get` and if the component
+  was not instantiated, the library will instantiate it for you! keep in mind that tools are designed to be singletons, so
+  you should never create more than one instance of a tool.
 
   :::
 
-	### ⛅ Components from the cloud
+  The components library will also take care of releasing the memory of all the tools you create as soon as you call
+  `components.dispose()`.
+
+	### ⛅ Tools from the cloud
   ___
-  Maybe you have uploaded some components to That Open Platform and want to easily share them with someone. Or maybe you
-  have got some nice components in the Marketplace and want to use them in your app. Either way, using these components
+  Maybe you have uploaded some tools to That Open Platform and want to easily share them with someone. Or maybe you
+  have got some nice tools in That Open Store and want to use them in your app. Either way, using these components
   is a piece of cake with ToolComponent!
 
    :::tip What's That Open Platform?
 
-  That Open Platform is a place where people can share, buy and sell their components for free. You can learn more about
+  That Open Platform is a place where people can share and make money from their tools. You can learn more about
   how to get started [right here](../that-open-platform/getting-started.mdx).
 
   :::
 
-  First, you will need a token to communicate with That Open Platform and the ID of the tool you want to 👇
-  */
-
-	const token =
-		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1IjoiNjQzZmFiN2NkM2QwMmJhOWY1NjA5ZTVlIiwiYSI6IjY0M2ZhYzMwZDcyMDZiNTU2ZGU4YTA4OCJ9.TAyzrhqOfJ-UCy35T3w5-wInF4NQ9grOlSD1VKlg0tM";
-
-	const id = "6441c4ca52e8be9f7711accb";
-
-	/*MD
-  Next, you can get the component with the `use` command. That will give you the class of the component, which you can
-  easily instantiate like a normal class. That's all it takes!
-
-   :::danger What about types?
-
-  If you want to get all the types and intellisense docs for the component,
-  [check this out](../that-open-platform/getting-started.mdx)!
-
-  :::
-  */
-
-	const CustomComponent = await components.tools.use(token, id);
-	const component = new CustomComponent();
-	component.greet();
-
-	/*MD
-  Fantastic work! 🎉🎉🎉 Now you know how to keep your components tidy and how to get them from the cloud. Another
+    Fantastic work! 🎉🎉🎉 Now you know how to keep your `Tools` tidy and how to get them from the cloud. Another
   step forward in your journey to build your own BIM software. 🥳 Don't forget to check out That Open Platform if
   you haven't already!
+
   */
 
-    // TODO: Use tool that has some geometry / ui elements to show it in the scene
-
 </script>
-</body>
 </html>

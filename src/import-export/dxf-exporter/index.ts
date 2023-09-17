@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { FragmentManager, FragmentPlans } from "../../fragments";
 import { EdgeProjector } from "./src/edge-projector";
 import { Component } from "../../base-types";
-import { Components } from "../../core";
+import { Components, ToolComponent } from "../../core";
 
 export class DXFExporter extends Component<EdgeProjector> {
   static readonly uuid = "568f2167-24a3-4519-b552-3b04cc74a6a6" as const;
@@ -18,7 +18,6 @@ export class DXFExporter extends Component<EdgeProjector> {
     super(components);
 
     this.components.tools.add(DXFExporter.uuid, this);
-    this.components.tools.libraryUUIDs.add(DXFExporter.uuid);
   }
 
   get() {
@@ -105,3 +104,5 @@ export class DXFExporter extends Component<EdgeProjector> {
     }
   }
 }
+
+ToolComponent.libraryUUIDs.add(DXFExporter.uuid);

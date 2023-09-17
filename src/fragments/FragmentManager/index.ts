@@ -1,7 +1,7 @@
 import { Fragment, FragmentsGroup, Serializer } from "bim-fragment";
 import * as THREE from "three";
 import { Component, Disposable, Event, UI, UIElement } from "../../base-types";
-import { Components } from "../../core";
+import { Components, ToolComponent } from "../../core";
 import { Button, FloatingWindow, SimpleUICard, Toolbar } from "../../ui";
 
 /**
@@ -49,7 +49,6 @@ export class FragmentManager
     super(components);
 
     this.components.tools.add(FragmentManager.uuid, this);
-    this.components.tools.libraryUUIDs.add(FragmentManager.uuid);
 
     if (components.ui.enabled) {
       this.setupUI(components);
@@ -62,23 +61,25 @@ export class FragmentManager
   }
 
   /** {@link Component.get} */
-  async dispose() {
-    this.onFragmentsLoaded.reset();
-    this.uiElement.dispose();
+  async dispose(disposeUI = false) {
+    if (disposeUI) {
+      this.onFragmentsLoaded.reset();
+      this.uiElement.dispose();
+    }
     for (const group of this.groups) {
       group.dispose(true);
     }
     for (const command of this.commands) {
-      command.dispose();
+      await command.dispose();
     }
     for (const card of this._cards) {
-      card.dispose();
+      await card.dispose();
     }
     this.groups = [];
     this.list = {};
   }
 
-  disposeGroup(group: FragmentsGroup) {
+  async disposeGroup(group: FragmentsGroup) {
     for (const fragment of group.items) {
       this.removeFragmentMesh(fragment);
       delete this.list[fragment.id];
@@ -87,7 +88,7 @@ export class FragmentManager
     const index = this.groups.indexOf(group);
     this.groups.splice(index, 1);
 
-    this.updateWindow();
+    await this.updateWindow();
   }
 
   /** Disposes all existing fragments */
@@ -129,13 +130,13 @@ export class FragmentManager
     return this._loader.export(group);
   }
 
-  updateWindow() {
+  async updateWindow() {
     if (!this.components.ui.enabled) {
       return;
     }
 
     for (const card of this._cards) {
-      card.dispose();
+      await card.dispose();
     }
     for (const group of this.groups) {
       const card = new SimpleUICard(this.components);
@@ -220,3 +221,5 @@ export class FragmentManager
     }
   }
 }
+
+ToolComponent.libraryUUIDs.add(FragmentManager.uuid);

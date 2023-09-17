@@ -3,7 +3,7 @@ import { Component, Disposable, UI, UIElement } from "../../base-types";
 import { FragmentClassifier, FragmentManager } from "../index";
 import { toCompositeID } from "../../utils";
 import { Button } from "../../ui";
-import { Components } from "../../core";
+import { Components, ToolComponent } from "../../core";
 
 // TODO: Clean up and document
 
@@ -30,7 +30,6 @@ export class FragmentExploder
     super(components);
 
     components.tools.add(FragmentExploder.uuid, this);
-    components.tools.libraryUUIDs.add(FragmentExploder.uuid);
 
     if (components.ui.enabled) {
       this.setupUI(components);
@@ -162,3 +161,5 @@ export class FragmentExploder
     });
   }
 }
+
+ToolComponent.libraryUUIDs.add(FragmentExploder.uuid);

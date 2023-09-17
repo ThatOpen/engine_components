@@ -53,17 +53,9 @@
 
     const scene = components.scene.get();
 
-    const directionalLight = new THREE.DirectionalLight();
-    directionalLight.position.set(5, 10, 3);
-    directionalLight.intensity = 0.5;
-    scene.add(directionalLight);
-
-    const ambientLight = new THREE.AmbientLight();
-    ambientLight.intensity = 0.5;
-    scene.add(ambientLight);
+    components.scene.setup();
 
     const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
-    components.tools.add('grid', grid);
     const gridMesh = grid.get();
     postproduction._customEffects.excludedMeshes.push(gridMesh);
 
@@ -81,7 +73,7 @@
     const file = await fetch('../../../resources/small.frag');
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
-    const model = fragments.load(buffer);
+    const model = await fragments.load(buffer);
 
     for(const fragment of model.items) {
         culler.add(fragment.mesh);
@@ -104,7 +96,7 @@
 
     postproduction.customEffects.outlineEnabled = true;
 
-    const classifier = new OBC.FragmentClassifier(fragments);
+    const classifier = new OBC.FragmentClassifier(components);
     classifier.byEntity(model);
 
     const found = classifier.find({entities: ["IFCWALLSTANDARDCASE", "IFCWALL"]});
@@ -133,28 +125,27 @@
 
     classifier.byStorey(model);
 
-    plans.updatePlansList();
 
-    const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
+    const mainToolbar = new OBC.Toolbar(components);
     components.ui.addToolbar(mainToolbar);
 
-    mainToolbar.addChild(plans.uiElement.main);
+    mainToolbar.addChild(plans.uiElement.get("main"));
 
-    plans.navigated.add(() => {
+    plans.onNavigated.add(() => {
         postproduction.customEffects.glossEnabled = false;
         materialManager.setBackgroundColor(whiteColor);
         materialManager.set(true, ["white"]);
         grid.visible = false;
     });
 
-    plans.exited.add(() => {
+    plans.onExited.add(() => {
         postproduction.customEffects.glossEnabled = true;
         materialManager.resetBackgroundColor();
         materialManager.set(false, ["white"]);
         grid.visible = true;
     });
 
-    const dxfExporter = new OBC.DXFExporter(fragments, plans, clipper);
+    const dxfExporter = new OBC.DXFExporter(components);
 
     plans.commands = {
         "Export to DXF": async (plan) => {
@@ -169,7 +160,7 @@
         },
     }
 
-    plans.updatePlansList();
+    await plans.updatePlansList();
 
     for(const {mesh} of model.items) {
         if(mesh.material[0].opacity !== 1) {
@@ -188,8 +179,8 @@
     stats.dom.style.left = '0px';
     stats.dom.style.right = 'auto';
 
-    components.renderer.beforeUpdate.on(() => stats.begin());
-    components.renderer.afterUpdate.on(() => stats.end());
+    components.renderer.onBeforeUpdate.add(() => stats.begin());
+    components.renderer.onAfterUpdate.add(() => stats.end());
 
 </script>
 </body>

@@ -1,6 +1,6 @@
 import { Fragment } from "bim-fragment";
 import { FragmentManager } from "../FragmentManager";
-import { Components, ScreenCuller } from "../../core";
+import { Components, ScreenCuller, ToolComponent } from "../../core";
 import {
   Component,
   Disposable,
@@ -54,7 +54,6 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     super(components);
 
     this.components.tools.add(FragmentHider.uuid, this);
-    this.components.tools.libraryUUIDs.add(FragmentHider.uuid);
 
     if (components.ui.enabled) {
       this.setupUI(components);
@@ -218,6 +217,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     bottomContainer.append(checkBoxContainer.domElement);
 
     const finder = new IfcPropertiesFinder(this.components);
+    await finder.init();
     finder.loadCached(id);
 
     const queryBuilder = finder.uiElement.get<QueryBuilder>("query");
@@ -274,13 +274,13 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
   private async deleteStyleCard(id: string) {
     const found = this._filterCards[id];
     if (found) {
-      found.styleCard.dispose();
-      found.deleteButton.dispose();
-      found.name.dispose();
+      await found.styleCard.dispose();
+      await found.deleteButton.dispose();
+      await found.name.dispose();
       found.finder.deleteCache();
       await found.finder.dispose();
-      found.visible.dispose();
-      found.enabled.dispose();
+      await found.visible.dispose();
+      await found.enabled.dispose();
     }
     delete this._filterCards[id];
 
@@ -317,3 +317,5 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     localStorage.setItem(this._localStorageID, serialized);
   }
 }
+
+ToolComponent.libraryUUIDs.add(FragmentHider.uuid);

@@ -10,7 +10,7 @@ import {
   UI,
   UIElement,
 } from "../../base-types";
-import { Components, SimpleRaycaster } from "../../core";
+import { Components, SimpleRaycaster, ToolComponent } from "../../core";
 import { Button } from "../../ui";
 import { VertexPicker } from "../../utils";
 
@@ -124,7 +124,6 @@ export class LengthMeasurement
     super(components);
 
     this.components.tools.add(LengthMeasurement.uuid, this);
-    this.components.tools.libraryUUIDs.add(LengthMeasurement.uuid);
 
     this._raycaster = new SimpleRaycaster(this.components);
     this._vertexPicker = new VertexPicker(components, {
@@ -135,8 +134,6 @@ export class LengthMeasurement
     if (components.ui.enabled) {
       this.setUI();
     }
-
-    this.enabled = false;
   }
 
   private setUI() {
@@ -182,7 +179,7 @@ export class LengthMeasurement
     }
     this._lineMaterial.dispose();
     this._measurements = [];
-    this._vertexPicker.dispose();
+    await this._vertexPicker.dispose();
   }
 
   /** {@link Updateable.update} */
@@ -320,3 +317,5 @@ export class LengthMeasurement
     }
   };
 }
+
+ToolComponent.libraryUUIDs.add(LengthMeasurement.uuid);

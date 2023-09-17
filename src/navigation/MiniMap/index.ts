@@ -9,7 +9,7 @@ import {
   UIElement,
 } from "../../base-types";
 import { Canvas, Button, RangeInput } from "../../ui";
-import { Components, SimpleCamera } from "../../core";
+import { Components, SimpleCamera, ToolComponent } from "../../core";
 
 export class MiniMap
   extends Component<THREE.OrthographicCamera>
@@ -76,7 +76,6 @@ export class MiniMap
   constructor(components: Components) {
     super(components);
     this.components.tools.add(MiniMap.uuid, this);
-    this.components.tools.libraryUUIDs.add(MiniMap.uuid);
 
     const main = new Button(components);
     const canvas = new Canvas(components);
@@ -198,3 +197,5 @@ export class MiniMap
     this._renderer.clippingPlanes = planes;
   };
 }
+
+ToolComponent.libraryUUIDs.add(MiniMap.uuid);

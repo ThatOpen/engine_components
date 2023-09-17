@@ -1,8 +1,13 @@
-import { Component, UI, Event, FragmentIdMap } from "../../../base-types";
-import { TreeView } from "../../../ui/TreeView";
+import {
+  Component,
+  UI,
+  Event,
+  FragmentIdMap,
+  UIElement,
+} from "../../../base-types";
+import { TreeView, Button } from "../../../ui";
 import { Components } from "../../../core";
 import { FragmentClassifier } from "../../FragmentClassifier";
-import { Button } from "../../../ui/ButtonComponent";
 
 interface TreeItem {
   name: string;
@@ -14,12 +19,11 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
   name = "FragmentTreeItem";
   enabled: boolean = true;
   filter: { [name: string]: string[] } = {};
-  uiElement: { main: Button; tree: TreeView };
+  uiElement = new UIElement<{ main: Button; tree: TreeView }>();
 
-  selected = new Event<FragmentIdMap>();
-  hovered = new Event<FragmentIdMap>();
+  onSelected = new Event<FragmentIdMap>();
+  onHovered = new Event<FragmentIdMap>();
 
-  private _components: Components;
   private _children: FragmentTreeItem[] = [];
 
   get children() {
@@ -28,9 +32,10 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
 
   set children(children: FragmentTreeItem[]) {
     this._children = children;
-    children.forEach((child) =>
-      this.uiElement.tree.addChild(child.uiElement.tree)
-    );
+    children.forEach((child) => {
+      const subTree = child.uiElement.get("tree");
+      this.uiElement.get("tree").addChild(subTree);
+    });
   }
 
   constructor(
@@ -38,31 +43,30 @@ export class FragmentTreeItem extends Component<TreeItem> implements UI {
     classifier: FragmentClassifier,
     content: string
   ) {
-    super();
-    this._components = components;
-    this.uiElement = {
-      main: new Button(components),
-      tree: new TreeView(components, content),
-    };
-    this.uiElement.tree.onclick = () => {
-      const found = classifier.find(this.filter);
-      this.selected.trigger(found);
-    };
-    this.uiElement.tree.get().onmouseenter = () => {
-      const found = classifier.find(this.filter);
-      this.hovered.trigger(found);
+    super(components);
+
+    const main = new Button(components);
+    const tree = new TreeView(components, content);
+
+    this.uiElement.set({ main, tree });
+    tree.onClick.add(async () => {
+      const found = await classifier.find(this.filter);
+      await this.onSelected.trigger(found);
+    });
+
+    tree.get().onmouseenter = async () => {
+      const found = await classifier.find(this.filter);
+      await this.onHovered.trigger(found);
     };
   }
 
-  dispose() {
-    this.uiElement.main.dispose();
-    this.uiElement.tree.dispose();
-    this.selected.reset();
-    this.hovered.reset();
+  async dispose() {
+    this.uiElement.dispose();
+    this.onSelected.reset();
+    this.onHovered.reset();
     for (const child of this.children) {
-      child.dispose();
+      await child.dispose();
     }
-    (this._components as any) = null;
   }
 
   get(): TreeItem {

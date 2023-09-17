@@ -93,7 +93,7 @@
     const file = await fetch("../../../resources/small.frag");
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
-    const model = fragments.load(buffer);
+    const model = await fragments.load(buffer);
 
     /*MD
 
@@ -139,7 +139,7 @@
 
     */
 
-    const classifier = new OBC.FragmentClassifier(fragments);
+    const classifier = new OBC.FragmentClassifier(components);
 
     /*MD
 
@@ -175,7 +175,9 @@
 
      */
 
-    const modelTree = new OBC.FragmentTree(components, classifier);
+    const modelTree = new OBC.FragmentTree(components);
+    await modelTree.init();
+
     modelTree.update(['storeys', 'entities']);
 
     /*MD
@@ -188,11 +190,11 @@
     Let's use `modelTree.selected` to get the active selection from Fragment Tree, and we will use `highlighter.highlightByID()` to zoom in.🔍
     */
 
-    modelTree.selected.add((filter) => {
+    modelTree.onSelected.add((filter) => {
         highlighter.highlightByID('select', filter, true, true);
     });
 
-    modelTree.hovered.add((filter) => {
+    modelTree.onHovered.add((filter) => {
         highlighter.highlightByID('hover', filter);
     });
 
@@ -210,7 +212,7 @@
      */
 
     const toolbar = new OBC.Toolbar(components);
-    toolbar.addChild(modelTree.uiElement.main);
+    toolbar.addChild(modelTree.uiElement.get("main"));
     components.ui.addToolbar(toolbar);
 
     /*MD
@@ -228,8 +230,8 @@
     document.body.append(stats.dom);
     stats.dom.style.left = '0px';
     const renderer = components.renderer;
-    renderer.beforeUpdate.on(() => stats.begin());
-    renderer.afterUpdate.on(() => stats.end());
+    renderer.onBeforeUpdate.add(() => stats.begin());
+    renderer.onAfterUpdate.add(() => stats.end());
 
 </script>
 </body>

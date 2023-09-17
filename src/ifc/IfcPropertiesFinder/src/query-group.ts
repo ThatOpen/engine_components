@@ -68,13 +68,13 @@ export class QueryGroupUI extends SimpleUIComponent {
     newRuleBtn.get().classList.add("w-fit");
     newRuleBtn.label = "Add Rule";
 
-    newRuleBtn.onclick = () => {
+    newRuleBtn.onClick.add(() => {
       const propertyQuery = new AttributeQueryUI(components);
       propertyQuery.operator.visible = true;
       propertyQuery.operator.value = propertyQuery.operator.options[0];
       propertyQuery.removeBtn.visible = true;
       this.addChild(propertyQuery);
-    };
+    });
 
     const newGroupBtn = new Button(components, { materialIconName: "add" });
     newGroupBtn.get().classList.add("w-fit");
@@ -83,11 +83,11 @@ export class QueryGroupUI extends SimpleUIComponent {
     this.removeBtn = new Button(components, { materialIconName: "delete" });
     this.removeBtn.label = "Delete Group";
     this.removeBtn.visible = false;
-    this.removeBtn.onclick = () => {
+    this.removeBtn.onClick.add(async () => {
       if (this.parent instanceof SimpleUIComponent)
         this.parent.removeChild(this);
-      this.dispose();
-    };
+      await this.dispose();
+    });
 
     topContainer.addChild(newRuleBtn, this.removeBtn);
 
@@ -96,9 +96,9 @@ export class QueryGroupUI extends SimpleUIComponent {
     this.addChild(topContainer, this.operator, propertyQuery);
   }
 
-  dispose(onlyChildren: boolean = false) {
-    super.dispose(onlyChildren);
-    this.operator.dispose();
-    this.removeBtn.dispose();
+  async dispose(onlyChildren: boolean = false) {
+    await super.dispose(onlyChildren);
+    await this.operator.dispose();
+    await this.removeBtn.dispose();
   }
 }

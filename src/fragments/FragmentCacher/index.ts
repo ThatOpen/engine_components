@@ -2,7 +2,6 @@ import { FragmentsGroup } from "bim-fragment";
 import { Components, LocalCacher } from "../../core";
 import { FragmentManager } from "../FragmentManager";
 import { Button, FloatingWindow, SimpleUICard } from "../../ui";
-import { EdgesClipper } from "../../navigation";
 
 // TODO: Clean up
 // TODO: Improve UI element
@@ -20,7 +19,7 @@ export class FragmentCacher extends LocalCacher {
   constructor(components: Components) {
     super(components);
 
-    components.tools.list.set(EdgesClipper.uuid, this);
+    components.tools.list.set(FragmentCacher.uuid, this);
 
     if (components.ui.enabled) {
       this.setupUI();
@@ -29,7 +28,7 @@ export class FragmentCacher extends LocalCacher {
 
   private setupUI() {
     const saveButton = this.uiElement.get<Button>("saveButton");
-    saveButton.onClick.add(() => this.onSaveButtonClicked);
+    saveButton.onClick.add(() => this.onSaveButtonClicked());
     const loadButton = this.uiElement.get<Button>("loadButton");
     loadButton.onClick.add(() => this.onLoadButtonClicked());
   }
@@ -81,7 +80,7 @@ export class FragmentCacher extends LocalCacher {
     }
   }
 
-  private onLoadButtonClicked() {
+  private async onLoadButtonClicked() {
     const floatingMenu = this.uiElement.get<FloatingWindow>("floatingMenu");
     floatingMenu.title = "Load saved items";
     if (floatingMenu.visible && this._mode === "load") {
@@ -93,7 +92,7 @@ export class FragmentCacher extends LocalCacher {
     const allIDs = this.fragmentsIDs;
 
     for (const card of this.cards) {
-      card.dispose();
+      await card.dispose();
     }
     this.cards = [];
 
@@ -112,7 +111,7 @@ export class FragmentCacher extends LocalCacher {
         await this.delete(ids);
         const index = this.cards.indexOf(card);
         this.cards.splice(index, 1);
-        card.dispose();
+        await card.dispose();
       });
 
       const loadFileButton = new Button(this.components, {
@@ -142,7 +141,7 @@ export class FragmentCacher extends LocalCacher {
     }
     this._mode = "save";
     for (const card of this.cards) {
-      card.dispose();
+      await card.dispose();
     }
     this.cards = [];
 
@@ -169,7 +168,7 @@ export class FragmentCacher extends LocalCacher {
           await this.saveFragmentGroup(group);
           const index = this.cards.indexOf(card);
           this.cards.splice(index, 1);
-          card.dispose();
+          await card.dispose();
           await this.onItemSaved.trigger({ id });
         }
       });

@@ -4,7 +4,7 @@ import { FragmentMesh } from "bim-fragment/fragment-mesh";
 import { Component, Disposable, Event, FragmentIdMap } from "../../base-types";
 import { FragmentManager } from "../FragmentManager";
 import { FragmentBoundingBox } from "../FragmentBoundingBox";
-import { Components, SimpleCamera } from "../../core";
+import { Components, SimpleCamera, ToolComponent } from "../../core";
 import { toCompositeID } from "../../utils";
 import { PostproductionRenderer } from "../../navigation";
 
@@ -105,7 +105,6 @@ export class FragmentHighlighter
     super(components);
 
     this.components.tools.add(FragmentHighlighter.uuid, this);
-    this.components.tools.libraryUUIDs.add(FragmentHighlighter.uuid);
   }
 
   get(): HighlightMaterials {
@@ -302,21 +301,32 @@ export class FragmentHighlighter
   }
 
   private async zoomSelection(name: string) {
+    if (!this.fillEnabled && !this._outlineEnabled) {
+      return;
+    }
+
     const bbox = await this.components.tools.get(FragmentBoundingBox);
     const fragments = await this.components.tools.get(FragmentManager);
     bbox.reset();
 
-    const higlight = this.selection[name];
-    if (!Object.keys(higlight).length) {
+    const selected = this.selection[name];
+    if (!Object.keys(selected).length) {
       return;
     }
-    for (const fragID in higlight) {
+    for (const fragID in selected) {
       const fragment = fragments.list[fragID];
-      const highlight = fragment.fragments[name];
-      if (highlight) {
-        bbox.addFragment(highlight);
+      if (this.fillEnabled) {
+        const highlight = fragment.fragments[name];
+        if (highlight) {
+          bbox.addMesh(highlight.mesh);
+        }
+      }
+
+      if (this._outlineEnabled && this._outlinedMeshes[fragID]) {
+        bbox.addMesh(this._outlinedMeshes[fragID]);
       }
     }
+
     const sphere = bbox.getSphere();
     sphere.radius *= this.zoomFactor;
     const camera = this.components.camera as SimpleCamera;
@@ -473,6 +483,7 @@ export class FragmentHighlighter
       const newGeometry = new THREE.BufferGeometry();
 
       newGeometry.attributes = geometry.attributes;
+      newGeometry.index = geometry.index;
       const newMesh = new THREE.InstancedMesh(
         newGeometry,
         this._invisibleMaterial,
@@ -564,3 +575,5 @@ export class FragmentHighlighter
     await this.highlight(this._default.hoverName, true, false);
   };
 }
+
+ToolComponent.libraryUUIDs.add(FragmentHighlighter.uuid);

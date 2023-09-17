@@ -4,6 +4,7 @@ import { Component, Disposable, Event } from "../../base-types";
 import { Components } from "../Components";
 import { readPixelsAsync } from "./src/screen-culler-helper";
 import { Disposer } from "../Disposer";
+import { ToolComponent } from "../ToolsComponent";
 
 // TODO: Clean up and document
 // TODO: Work at the instance level instead of the mesh level
@@ -54,7 +55,6 @@ export class ScreenCuller
   ) {
     super(components);
     components.tools.add(ScreenCuller.uuid, this);
-    components.tools.libraryUUIDs.add(ScreenCuller.uuid);
 
     this.renderer = new THREE.WebGLRenderer();
     const planes = this.components.renderer.clippingPlanes;
@@ -216,7 +216,7 @@ export class ScreenCuller
     this.needsUpdate = false;
   };
 
-  private handleWorkerMessage = (event: MessageEvent) => {
+  private handleWorkerMessage = async (event: MessageEvent) => {
     const colors = event.data.colors as Set<string>;
 
     this.recentlyHiddenMeshes = new Set(this.currentVisibleMeshes);
@@ -242,7 +242,7 @@ export class ScreenCuller
       mesh.visible = false;
     }
 
-    this.onViewUpdated.trigger();
+    await this.onViewUpdated.trigger();
   };
 
   private getMaterial(r: number, g: number, b: number) {
@@ -303,3 +303,5 @@ export class ScreenCuller
     };
   }
 }
+
+ToolComponent.libraryUUIDs.add(ScreenCuller.uuid);

@@ -218,7 +218,7 @@
 
      */
 	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
-	mainToolbar.addChild(dimensions.uiElement.main);
+	mainToolbar.addChild(dimensions.uiElement.get("main"));
 	components.ui.addToolbar(mainToolbar);
 
     /*MD
@@ -272,8 +272,8 @@
 	document.body.append(stats.dom);
 	stats.dom.style.left = '0px';
 	const renderer = components.renderer;
-	renderer.beforeUpdate.on(() => stats.begin());
-	renderer.afterUpdate.on(() => stats.end());
+	renderer.onBeforeUpdate.add(() => stats.begin());
+	renderer.onAfterUpdate.add(() => stats.end());
 
 	// Set up dat.gui menu
 

@@ -3,6 +3,7 @@ import { Component, Disposable, Hideable } from "../../base-types";
 import { Disposer } from "../Disposer";
 import { Components } from "../Components";
 import { SimpleCamera } from "../SimpleCamera";
+import { ToolComponent } from "../ToolsComponent";
 
 /**
  * An infinite grid. Created by
@@ -68,7 +69,6 @@ export class SimpleGrid
   ) {
     super(components);
     this.components.tools.add(SimpleGrid.uuid, this);
-    this.components.tools.libraryUUIDs.add(SimpleGrid.uuid);
 
     // Source: https://github.com/dkaraush/THREE.InfiniteGridHelper/blob/master/InfiniteGridHelper.ts
     // Author: Fyrestar https://mevedia.com (https://github.com/Fyrestar/THREE.InfiniteGridHelper)
@@ -204,3 +204,5 @@ export class SimpleGrid
     this.material.uniforms.uZoom.value = camera.get().zoom;
   };
 }
+
+ToolComponent.libraryUUIDs.add(SimpleGrid.uuid);

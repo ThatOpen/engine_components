@@ -1,7 +1,7 @@
 import * as WEBIFC from "web-ifc";
 import { FragmentsGroup } from "bim-fragment";
 import { Component, Disposable, Event, UI, UIElement } from "../../base-types";
-import { Components } from "../../core";
+import { Components, ToolComponent } from "../../core";
 import { generateIfcGUID } from "../../utils";
 import { IfcPropertiesUtils } from "../IfcPropertiesUtils";
 import { EntityActionsUI } from "./src/entity-actions";
@@ -76,16 +76,14 @@ export class IfcPropertiesManager
     super(components);
 
     this.components.tools.add(IfcPropertiesManager.uuid, this);
-    this.components.tools.libraryUUIDs.add(IfcPropertiesManager.uuid);
 
     this._ifcApi = new WEBIFC.IfcAPI();
 
     // TODO: Save original IFC file so that opening it again is not necessary
     if (components.ui.enabled) {
       this.setUI(components);
+      this.setUIEvents();
     }
-
-    this.setUIEvents();
   }
 
   get(): ChangeMap {
@@ -174,7 +172,7 @@ export class IfcPropertiesManager
       }
     );
 
-    propActions.onEditProp.add(({ model, expressID, name, value }) => {
+    propActions.onEditProp.add(async ({ model, expressID, name, value }) => {
       const { properties } = IfcPropertiesManager.getIFCInfo(model);
       const prop = properties[expressID];
       const { key: valueKey } = IfcPropertiesUtils.getQuantityValue(
@@ -202,6 +200,9 @@ export class IfcPropertiesManager
           prop.NominalValue = { type: 1, value }; // Need to change type based on property 1:STRING, 2: LABEL, 3: ENUM, 4: REAL
         }
       }
+
+      await this.registerChange(model, expressID);
+
       propActions.cleanData();
     });
 
@@ -210,7 +211,7 @@ export class IfcPropertiesManager
       propActions.cleanData();
     });
 
-    psetActions.onEditPset.add(({ model, psetID, name, description }) => {
+    psetActions.onEditPset.add(async ({ model, psetID, name, description }) => {
       const { properties } = IfcPropertiesManager.getIFCInfo(model);
       const pset = properties[psetID];
 
@@ -229,6 +230,8 @@ export class IfcPropertiesManager
           pset.Description = { type: 1, value: description };
         }
       }
+
+      await this.registerChange(model, psetID);
     });
 
     psetActions.onRemovePset.add(async ({ model, psetID }) => {
@@ -275,7 +278,9 @@ export class IfcPropertiesManager
   }
 
   private async registerChange(model: FragmentsGroup, ...expressID: number[]) {
-    if (!this._changeMap[model.uuid]) this._changeMap[model.uuid] = new Set();
+    if (!this._changeMap[model.uuid]) {
+      this._changeMap[model.uuid] = new Set();
+    }
     for (const id of expressID) {
       this._changeMap[model.uuid].add(id);
       await this.onDataChanged.trigger({ model, expressID: id });
@@ -304,7 +309,6 @@ export class IfcPropertiesManager
       ? new WEBIFC[schema].IfcText(description)
       : null;
     const pset = new WEBIFC[schema].IfcPropertySet(
-      model.ifcMetadata.maxExpressID,
       psetGlobalId,
       ownerHistoryHandle,
       psetName,
@@ -316,7 +320,6 @@ export class IfcPropertiesManager
     this.increaseMaxID(model);
     const relGlobalId = this.newGUID(model);
     const rel = new WEBIFC[schema].IfcRelDefinesByProperties(
-      model.ifcMetadata.maxExpressID,
       relGlobalId,
       ownerHistoryHandle,
       null,
@@ -362,7 +365,6 @@ export class IfcPropertiesManager
     // @ts-ignore
     const propValue = new WEBIFC[schema][type](value);
     const prop = new WEBIFC[schema].IfcPropertySingleValue(
-      model.ifcMetadata.maxExpressID,
       propName,
       null,
       propValue,
@@ -509,9 +511,9 @@ export class IfcPropertiesManager
       get() {
         return this._value;
       },
-      set(value) {
+      async set(value) {
         this._value = value;
-        event.trigger(value);
+        await event.trigger(value);
       },
     });
 
@@ -524,3 +526,5 @@ export class IfcPropertiesManager
     return event;
   }
 }
+
+ToolComponent.libraryUUIDs.add(IfcPropertiesManager.uuid);

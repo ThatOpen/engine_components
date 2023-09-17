@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Component, Disposable } from "../../base-types";
 import { Components } from "../Components";
+import { ToolComponent } from "../ToolsComponent";
 
 // TODO: Clean up and document
 // TODO: Disable / enable instance color for instance meshes
@@ -30,7 +31,6 @@ export class MaterialManager extends Component<string[]> implements Disposable {
   constructor(components: Components) {
     super(components);
     this.components.tools.add(MaterialManager.uuid, this);
-    this.components.tools.libraryUUIDs.add(MaterialManager.uuid);
   }
 
   /**
@@ -108,3 +108,5 @@ export class MaterialManager extends Component<string[]> implements Disposable {
     }
   }
 }
+
+ToolComponent.libraryUUIDs.add(MaterialManager.uuid);

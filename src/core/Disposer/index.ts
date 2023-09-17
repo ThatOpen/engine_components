@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Component, Item3D } from "../../base-types";
 import { Components } from "../Components";
+import { ToolComponent } from "../ToolsComponent";
 
 /**
  * A class to safely remove meshes and geometries from memory to
@@ -17,7 +18,6 @@ export class Disposer extends Component<Set<string>> {
   constructor(components: Components) {
     super(components);
     components.tools.add(Disposer.uuid, this);
-    components.tools.libraryUUIDs.add(Disposer.uuid);
   }
 
   /**
@@ -92,3 +92,5 @@ export class Disposer extends Component<Set<string>> {
     }
   }
 }
+
+ToolComponent.libraryUUIDs.add(Disposer.uuid);

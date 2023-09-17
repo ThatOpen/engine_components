@@ -144,23 +144,25 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
       this._closeOnClick = options.closeOnClick;
     }
 
-    this.domElement.onclick = (e) => {
+    this.domElement.onclick = async (e) => {
       e.stopImmediatePropagation();
 
-      this.onClick.trigger();
+      await this.onClick.trigger(e);
 
-      if (this._closeOnClick) {
+      if (this.menu.children.length) {
+        this.menu.visible = true;
+        this._popper.update();
+      } else if (this._closeOnClick) {
         this._components.ui.closeMenus();
         this._components.ui.contextMenu.visible = false;
-      } else if (this.parent) {
-        if (!this.parent.parent) {
-          this._components.ui.closeMenus();
-        }
-        this.parent.closeMenus();
-      }
 
-      this.menu.visible = true;
-      this._popper.update();
+        if (this.parent) {
+          if (!this.parent.parent) {
+            this._components.ui.closeMenus();
+          }
+          this.parent.closeMenus();
+        }
+      }
     };
 
     this.domElement.addEventListener("mouseover", ({ target }) => {

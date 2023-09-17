@@ -11,6 +11,7 @@ import {
 import { SimplePlane } from "./simple-plane";
 import { Components } from "../Components";
 import { Button } from "../../ui";
+import { ToolComponent } from "../ToolsComponent";
 
 export * from "./simple-plane";
 
@@ -140,7 +141,6 @@ export class SimpleClipper<T extends SimplePlane>
     super(components);
 
     this.components.tools.add(SimpleClipper.uuid, this);
-    this.components.tools.libraryUUIDs.add(SimpleClipper.uuid);
 
     this.PlaneType = SimplePlane;
     if (components.ui.enabled) {
@@ -346,3 +346,5 @@ export class SimpleClipper<T extends SimplePlane>
     this.onAfterDrag.trigger();
   };
 }
+
+ToolComponent.libraryUUIDs.add(SimpleClipper.uuid);

@@ -123,11 +123,11 @@ export class AttributeQueryUI extends SimpleUIComponent {
     this.removeBtn.visible = false;
     this.removeBtn.get().classList.remove("mt-auto", "hover:bg-ifcjs-200");
     this.removeBtn.get().classList.add("mt-auto", "mb-2", "hover:bg-error");
-    this.removeBtn.onclick = () => {
+    this.removeBtn.onClick.add(async () => {
       if (this.parent instanceof SimpleUIComponent)
         this.parent.removeChild(this);
-      this.dispose();
-    };
+      await this.dispose();
+    });
 
     this.addChild(
       this.operator,
@@ -142,14 +142,14 @@ export class AttributeQueryUI extends SimpleUIComponent {
     this.attribute.value = "Name";
   }
 
-  dispose(onlyChildren: boolean = false) {
-    super.dispose(onlyChildren);
-    this.operator.dispose();
-    this.attribute.dispose();
-    this.condition.dispose();
-    this.value.dispose();
-    this.ifcTypes.dispose();
-    this.removeBtn.dispose();
-    this.negate.dispose();
+  async dispose(onlyChildren: boolean = false) {
+    await super.dispose(onlyChildren);
+    await this.operator.dispose();
+    await this.attribute.dispose();
+    await this.condition.dispose();
+    await this.value.dispose();
+    await this.ifcTypes.dispose();
+    await this.removeBtn.dispose();
+    await this.negate.dispose();
   }
 }

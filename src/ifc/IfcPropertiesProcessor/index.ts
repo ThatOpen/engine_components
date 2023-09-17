@@ -1,11 +1,9 @@
 import * as WEBIFC from "web-ifc";
 import { FragmentsGroup } from "bim-fragment";
 import { IfcPropertiesUtils } from "../IfcPropertiesUtils";
-import { Button } from "../../ui/ButtonComponent";
-import { Disposable, Event, UI, UIElement } from "../../base-types";
-import { Component } from "../../base-types/component";
-import { FloatingWindow, SimpleUIComponent, TreeView } from "../../ui";
-import { Components } from "../../core/Components";
+import { Button, FloatingWindow, SimpleUIComponent, TreeView } from "../../ui";
+import { Disposable, Event, UI, UIElement, Component } from "../../base-types";
+import { Components, ToolComponent } from "../../core";
 import { IfcPropertiesManager } from "../IfcPropertiesManager";
 import { IfcCategoryMap } from "../ifc-category-map";
 import { AttributeSet, PropertyTag } from "./src";
@@ -13,7 +11,7 @@ import { PsetActionsUI } from "../IfcPropertiesManager/src/pset-actions";
 import { EntityActionsUI } from "../IfcPropertiesManager/src/entity-actions";
 import { PropActionsUI } from "../IfcPropertiesManager/src/prop-actions";
 
-// import { UIPool } from "../../ui/UIPool";
+export * from "./src";
 
 interface IndexMap {
   [modelID: string]: { [expressID: string]: Set<number> };
@@ -78,9 +76,11 @@ export class IfcPropertiesProcessor
           this._currentUI[elementID].addChild(...ui);
         }
       });
-      manager.onPsetRemoved.add(({ psetID }) => {
+      manager.onPsetRemoved.add(async ({ psetID }) => {
         const psetUI = this._currentUI[psetID];
-        if (psetUI) psetUI.dispose();
+        if (psetUI) {
+          await psetUI.dispose();
+        }
       });
       manager.onPropToPset.add(({ model, psetID, propID }) => {
         const psetUI = this._currentUI[psetID];
@@ -100,7 +100,6 @@ export class IfcPropertiesProcessor
     super(components);
 
     this.components.tools.add(IfcPropertiesProcessor.uuid, this);
-    this.components.tools.libraryUUIDs.add(IfcPropertiesProcessor.uuid);
 
     // this._entityUIPool = new UIPool(this._components, TreeView);
     this._renderFunctions = this.getRenderFunctions();
@@ -126,7 +125,7 @@ export class IfcPropertiesProcessor
     this._indexMap = {};
     (this.propertiesManager as any) = null;
     for (const id in this._currentUI) {
-      this._currentUI[id].dispose();
+      await this._currentUI[id].dispose();
     }
     this._currentUI = {};
     this.onPropertiesManagerSet.reset();
@@ -210,14 +209,14 @@ export class IfcPropertiesProcessor
     });
   }
 
-  cleanPropertiesList() {
+  async cleanPropertiesList() {
     if (this._propertiesManager) {
       const button = this._propertiesManager.uiElement.get("exportButton");
       button.removeFromParent();
     }
 
     const propsList = this.uiElement.get("propsList");
-    propsList.dispose(true);
+    await propsList.dispose(true);
     // for (const child of this._propsList.children) {
     //   if (child instanceof TreeView) {
     //     this._entityUIPool.return(child);
@@ -261,8 +260,8 @@ export class IfcPropertiesProcessor
     }
   }
 
-  renderProperties(model: FragmentsGroup, expressID: number) {
-    this.cleanPropertiesList();
+  async renderProperties(model: FragmentsGroup, expressID: number) {
+    await this.cleanPropertiesList();
     const topToolbar = this.uiElement.get("topToolbar");
     const propsList = this.uiElement.get("propsList");
     const propsWindow = this.uiElement.get<FloatingWindow>("propertiesWindow");
@@ -545,4 +544,4 @@ export class IfcPropertiesProcessor
   }
 }
 
-export * from "./src";
+ToolComponent.libraryUUIDs.add(IfcPropertiesProcessor.uuid);

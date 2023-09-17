@@ -36,7 +36,9 @@ export abstract class Component<Type> {
 
   /** Whether is component is {@link Updateable}. */
   isUpdateable = (): this is Updateable => {
-    return "afterUpdate" in this && "beforeUpdate" in this && "update" in this;
+    return (
+      "onAfterUpdate" in this && "onBeforeUpdate" in this && "update" in this
+    );
   };
 
   /** Whether is component is {@link Hideable}. */

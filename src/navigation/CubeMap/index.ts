@@ -6,7 +6,7 @@ import {
   Hideable,
   Updateable,
 } from "../../base-types";
-import { Components } from "../../core";
+import { Components, ToolComponent } from "../../core";
 import { OrthoPerspectiveCamera } from "../OrthoPerspectiveCamera";
 
 type CubeMapPositions =
@@ -73,7 +73,6 @@ export class CubeMap
     super(components);
 
     this.components.tools.add(CubeMap.uuid, this);
-    this.components.tools.libraryUUIDs.add(CubeMap.uuid);
 
     this._cubeWrapper.id = "tooeen-cube-map";
     this._cubeWrapper.className = "absolute z-10";
@@ -246,3 +245,5 @@ export class CubeMap
     return this._cubeWrapper;
   }
 }
+
+ToolComponent.libraryUUIDs.add(CubeMap.uuid);

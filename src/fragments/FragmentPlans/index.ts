@@ -11,7 +11,7 @@ import {
 import { PlanView } from "./src/types";
 import { IfcPropertiesUtils } from "../../ifc";
 import { PlanObjects } from "./src/plan-objects";
-import { Components } from "../../core";
+import { Components, ToolComponent } from "../../core";
 import {
   Button,
   FloatingWindow,
@@ -81,7 +81,6 @@ export class FragmentPlans
     super(components);
 
     this.components.tools.add(FragmentPlans.uuid, this);
-    this.components.tools.libraryUUIDs.add(FragmentPlans.uuid);
 
     this.objects = new PlanObjects(components);
     if (components.ui.enabled) {
@@ -474,3 +473,5 @@ export class FragmentPlans
     }
   }
 }
+
+ToolComponent.libraryUUIDs.add(FragmentPlans.uuid);

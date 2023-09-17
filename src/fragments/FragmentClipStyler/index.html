@@ -69,24 +69,23 @@
 
     postproduction.customEffects.outlineEnabled = true;
 
-    const clipper = new OBC.EdgesClipper(components, OBC.EdgesPlane);
+    const clipper = new OBC.EdgesClipper(components);
     clipper.enabled = true;
-
-    const classifier = new OBC.FragmentClassifier(fragments);
-
-    const styler = new OBC.FragmentClipStyler(components, fragments, classifier, clipper);
+    const classifier = new OBC.FragmentClassifier(components);
+    const styler = new OBC.FragmentClipStyler(components);
     styler.setup();
 
-    const toolbar = new OBC.Toolbar(components, { name: "MainToolbar" });
+    const toolbar = new OBC.Toolbar(components);
+    toolbar.name = "Main toolbar";
     components.ui.addToolbar(toolbar);
-    toolbar.addChild(styler.uiElement.mainButton);
+    toolbar.addChild(styler.uiElement.get("mainButton"));
 
     // Load the fragments
 
     const file = await fetch('../../../resources/small.frag');
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
-    const model = fragments.load(buffer);
+    const model = await fragments.load(buffer);
 
     const properties = await fetch('../../../resources/small.json');
     model.properties = await properties.json();
@@ -105,8 +104,8 @@
     stats.dom.style.left = '0px';
     stats.dom.style.right = 'auto';
 
-    components.renderer.beforeUpdate.on(() => stats.begin());
-    components.renderer.afterUpdate.on(() => stats.end());
+    components.renderer.onBeforeUpdate.add(() => stats.begin());
+    components.renderer.onAfterUpdate.add(() => stats.end());
 
 </script>
 </body>

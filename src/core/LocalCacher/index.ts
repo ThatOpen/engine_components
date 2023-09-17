@@ -2,6 +2,7 @@ import { ModelDatabase } from "./db";
 import { Component, Disposable, UI, Event, UIElement } from "../../base-types";
 import { Button, FloatingWindow, SimpleUICard } from "../../ui";
 import { Components } from "../Components";
+import { ToolComponent } from "../ToolsComponent";
 
 // TODO: Implement UI elements (this is probably just for 3d scans)
 
@@ -36,7 +37,6 @@ export class LocalCacher extends Component<any> implements UI, Disposable {
   constructor(components: Components) {
     super(components);
     components.tools.add(LocalCacher.uuid, this);
-    components.tools.libraryUUIDs.add(LocalCacher.uuid);
     this._db = new ModelDatabase();
     if (components.ui.enabled) {
       this.setUI(components);
@@ -95,7 +95,7 @@ export class LocalCacher extends Component<any> implements UI, Disposable {
     this.onFileLoaded.reset();
     this.onItemSaved.reset();
     for (const card of this.cards) {
-      card.dispose();
+      await card.dispose();
     }
     this.cards = [];
     this.uiElement.dispose();
@@ -110,12 +110,12 @@ export class LocalCacher extends Component<any> implements UI, Disposable {
     const saveButton = new Button(components);
     saveButton.label = "Save";
     saveButton.materialIcon = "save";
-    main.addChild(saveButton);
 
     const loadButton = new Button(components);
     loadButton.label = "Download";
     loadButton.materialIcon = "download";
-    main.addChild(loadButton);
+
+    main.addChild(saveButton, loadButton);
 
     const floatingMenu = new FloatingWindow(components, "file-list-menu");
     this.uiElement.set({ main, loadButton, saveButton, floatingMenu });
@@ -131,12 +131,6 @@ export class LocalCacher extends Component<any> implements UI, Disposable {
     const renderer = this.components.renderer.get();
     const viewerContainer = renderer.domElement.parentElement as HTMLElement;
     viewerContainer.appendChild(floatingMenu.get());
-
-    saveButton.onClick.add(() => {
-      if (floatingMenu.visible) {
-        floatingMenu.visible = false;
-      }
-    });
   }
 
   private async getModelFromLocalCache(id: string) {
@@ -170,3 +164,5 @@ export class LocalCacher extends Component<any> implements UI, Disposable {
     localStorage.setItem(this._storedModels, JSON.stringify(ids));
   }
 }
+
+ToolComponent.libraryUUIDs.add(LocalCacher.uuid);

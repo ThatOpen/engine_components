@@ -240,9 +240,8 @@
     stats.showPanel(2);
     document.body.append(stats.dom);
     stats.dom.style.left = '0px';
-    const renderer = components.renderer;
-    renderer.beforeUpdate.on(() => stats.begin());
-    renderer.afterUpdate.on(() => stats.end());
+    components.renderer.onBeforeUpdate.add(() => stats.begin());
+    components.renderer.onAfterUpdate.add(() => stats.end());
 
 </script>
 </body>

@@ -54,10 +54,12 @@ export class IfcPropertiesFinder
 
   constructor(components: Components) {
     super(components);
-
     this._conditionFunctions = this.getConditionFunctions();
-    if (components.ui.enabled) {
-      this.setUI();
+  }
+
+  async init() {
+    if (this.components.ui.enabled) {
+      await this.setUI();
     }
   }
 
@@ -111,10 +113,10 @@ export class IfcPropertiesFinder
 
     const query = new QueryBuilder(this.components);
 
-    query.findButton.onClick.add((query: QueryGroup[]) => {
+    query.findButton.onClick.add(async () => {
       const model = fragments.groups[0];
       if (!model) return;
-      this.find(query);
+      await this.find();
     });
 
     queryWindow.addChild(query);

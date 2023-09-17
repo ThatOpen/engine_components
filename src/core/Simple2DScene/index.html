@@ -20,7 +20,6 @@
         "openbim-components": "../../../resources/openbim-components.js"
       }
     }
-
 </script>
 <script type="module">
 
@@ -63,20 +62,22 @@
     components.tools.add("Simple2DScene", simple2dScene);
 
     const cube2 = new THREE.Mesh(boxGeometry, boxMaterial);
-    simple2dScene.scene.add(cube2);
+    const scene2d = simple2dScene.get();
+    scene2d.add(cube2);
 
     const directionalLight2 = new THREE.DirectionalLight();
     directionalLight2.position.set(5, 10, 3);
     directionalLight2.intensity = 0.5;
-    simple2dScene.scene.add(directionalLight2);
+    scene2d.add(directionalLight2);
 
     const ambientLight2 = new THREE.AmbientLight();
     ambientLight2.intensity = 0.5;
-    simple2dScene.scene.add(ambientLight2);
+    scene2d.add(ambientLight2);
 
+    const mainButton = simple2dScene.uiElement.get("main");
     const mainToolbar = new OBC.Toolbar(components);
     components.ui.addToolbar(mainToolbar);
-    mainToolbar.addChild(simple2dScene.uiElement.main);
+    mainToolbar.addChild(mainButton);
 
 </script>
 </body>

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Lines } from "openbim-clay";
-import { Components, Simple2DScene } from "../../core";
+import { Components, Simple2DScene, ToolComponent } from "../../core";
 import { Component } from "../../base-types";
 
 export class RoadNavigator extends Component<Lines> {
@@ -22,7 +22,6 @@ export class RoadNavigator extends Component<Lines> {
     super(components);
 
     this.components.tools.add(RoadNavigator.uuid, this);
-    this.components.tools.libraryUUIDs.add(RoadNavigator.uuid);
 
     const raycaster = this.components.raycaster.get();
     raycaster.params.Points = { threshold: 1 };
@@ -153,3 +152,5 @@ export class RoadNavigator extends Component<Lines> {
     this._longProjection.add(ids);
   }
 }
+
+ToolComponent.libraryUUIDs.add(RoadNavigator.uuid);

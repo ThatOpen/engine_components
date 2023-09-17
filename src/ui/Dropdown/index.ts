@@ -97,7 +97,7 @@ export class Dropdown extends SimpleUIComponent<HTMLDivElement> {
     this.label = name;
   }
 
-  dispose(onlyChildren: boolean = false) {
+  async dispose(onlyChildren: boolean = false) {
     super.dispose(onlyChildren);
     this.onChange.reset();
     this.setupEvents(false);

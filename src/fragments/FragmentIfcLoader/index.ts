@@ -4,7 +4,7 @@ import { Disposable, Event, UI, Component, UIElement } from "../../base-types";
 import { FragmentManager } from "../index";
 import { DataConverter, GeometryReader } from "./src";
 import { Button, ToastNotification } from "../../ui";
-import { Components } from "../../core";
+import { Components, ToolComponent } from "../../core";
 
 export * from "./src/types";
 
@@ -34,13 +34,13 @@ export class FragmentIfcLoader
   private _webIfc = new WEBIFC.IfcAPI();
 
   private readonly _geometry = new GeometryReader();
-  private readonly _converter = new DataConverter();
+  private readonly _converter: DataConverter;
 
   constructor(components: Components) {
     super(components);
 
+    this._converter = new DataConverter(components);
     this.components.tools.add(FragmentIfcLoader.uuid, this);
-    this.components.tools.libraryUUIDs.add(FragmentIfcLoader.uuid);
 
     if (components.ui.enabled) {
       this.setupUI();
@@ -117,33 +117,36 @@ export class FragmentIfcLoader
     main.materialIcon = "upload_file";
     main.tooltip = "Load IFC";
 
-    const fileOpener = document.createElement("input");
-    fileOpener.type = "file";
-    fileOpener.accept = ".ifc";
-    fileOpener.style.display = "none";
-    document.body.appendChild(fileOpener);
-
-    main.onClick.add(() => fileOpener.click());
-
     const toast = new ToastNotification(this.components, {
       message: "IFC model successfully loaded!",
     });
+
+    main.onClick.add(() => {
+      const fileOpener = document.createElement("input");
+      fileOpener.type = "file";
+      fileOpener.accept = ".ifc";
+      fileOpener.style.display = "none";
+
+      fileOpener.onchange = async () => {
+        const fragments = await this.components.tools.get(FragmentManager);
+        if (fileOpener.files === null || fileOpener.files.length === 0) return;
+        const file = fileOpener.files[0];
+        const buffer = await file.arrayBuffer();
+        const data = new Uint8Array(buffer);
+        const model = await this.load(data, file.name);
+        const scene = this.components.scene.get();
+        scene.add(model);
+        toast.visible = true;
+        await fragments.updateWindow();
+
+        fileOpener.remove();
+      };
+
+      fileOpener.click();
+    });
+
     this.components.ui.add(toast);
     toast.visible = false;
-
-    fileOpener.onchange = async () => {
-      const fragments = await this.components.tools.get(FragmentManager);
-      if (fileOpener.files === null || fileOpener.files.length === 0) return;
-      const file = fileOpener.files[0];
-      const buffer = await file.arrayBuffer();
-      const data = new Uint8Array(buffer);
-      const model = await this.load(data, file.name);
-      const scene = this.components.scene.get();
-      scene.add(model);
-      toast.visible = true;
-      await main.onClick.trigger(model);
-      fragments.updateWindow();
-    };
 
     this.uiElement.set({ main, toast });
   }
@@ -204,3 +207,5 @@ export class FragmentIfcLoader
     return this.settings.excludedCategories.has(category);
   }
 }
+
+ToolComponent.libraryUUIDs.add(FragmentIfcLoader.uuid);
