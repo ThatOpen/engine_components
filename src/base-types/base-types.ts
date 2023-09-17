@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SimpleUIComponent } from "../ui/SimpleUIComponent";
+import { UIElement } from "./ui-element";
 
 /**
  * Simple event handler by
@@ -15,7 +15,7 @@ export class Event<T> {
    * Add a callback to this event instance.
    * @param handler - the callback to be added to this event.
    */
-  on(handler: T extends void ? { (): void } : { (data: T): void }): void {
+  add(handler: T extends void ? { (): void } : { (data: T): void }): void {
     this.handlers.push(handler);
   }
 
@@ -23,19 +23,19 @@ export class Event<T> {
    * Removes a callback from this event instance.
    * @param handler - the callback to be removed from this event.
    */
-  off(handler: T extends void ? { (): void } : { (data: T): void }): void {
+  remove(handler: T extends void ? { (): void } : { (data: T): void }): void {
     this.handlers = this.handlers.filter((h) => h !== handler);
   }
 
   /**
    * Triggers all the callbacks assigned to this event.
    */
-  trigger: T extends void ? { (): void } : { (data?: T): void } = ((
-    data?: T
-  ) => {
-    // @ts-ignore
-    this.handlers.slice(0).forEach((h) => h(data));
-  }) as any;
+  trigger = async (data?: T) => {
+    const handlers = this.handlers.slice(0);
+    for (const handler of handlers) {
+      await handler(data as any);
+    }
+  };
 
   /**
    * Gets rid of all the suscribed events.
@@ -60,7 +60,7 @@ export interface Disposable {
    * Destroys the object from memory to prevent a
    * [memory leak](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
    */
-  dispose: () => void;
+  dispose: () => Promise<void>;
 }
 
 /**
@@ -88,6 +88,8 @@ export interface Resizeable {
    * component. */
   resize: (size?: THREE.Vector2) => void;
 
+  onResize: Event<THREE.Vector2>;
+
   /** Gets the current size of this component (e.g. the resolution of a
    * [Renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
    * component. */
@@ -97,10 +99,10 @@ export interface Resizeable {
 /** Whether this component should be updated each frame. */
 export interface Updateable {
   /** Actions that should be executed after updating the component. */
-  afterUpdate: Event<any>;
+  onAfterUpdate: Event<any>;
 
   /** Actions that should be executed before updating the component. */
-  beforeUpdate: Event<any>;
+  onBeforeUpdate: Event<any>;
 
   /**
    * Function used to update the state of this component each frame. For
@@ -124,38 +126,38 @@ export interface Progress {
  * dimensions.
  */
 export interface Createable {
-  readonly beforeCreate: Event<any>;
+  readonly onBeforeCreate: Event<any>;
 
   /** Creates a new instance of an element (e.g. a new Dimension). */
   create: (data: any) => void;
 
   /** Fired after successfully calling {@link Createable.create()}  */
-  readonly afterCreate: Event<any>;
+  readonly onAfterCreate: Event<any>;
 
   endCreation: (data: any) => void;
 
-  readonly beforeCancel: Event<any>;
+  readonly onBeforeCancel: Event<any>;
 
   cancelCreation: (data: any) => void;
 
-  readonly afterCancel: Event<any>;
+  readonly onAfterCancel: Event<any>;
 
-  readonly beforeDelete: Event<any>;
+  readonly onBeforeDelete: Event<any>;
 
   /** Deletes an existing instance of an element (e.g. a Dimension). */
   delete: (data: any) => void;
 
   /** Fired after successfully calling {@link Createable.delete()}  */
-  readonly afterDelete: Event<any>;
+  readonly onAfterDelete: Event<any>;
 }
 
-/** Whether this component has a representation in the user
+/**
+ * Whether this component has a representation in the user
  * interface, like a button or a window.
  */
 export interface UI {
-  uiElement: {
-    [name: string]: SimpleUIComponent;
-  };
+  /** The class containing all the menus of this component.  */
+  readonly uiElement: UIElement<any>;
 }
 
 export interface Item3D extends THREE.Object3D {

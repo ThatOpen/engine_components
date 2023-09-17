@@ -1,11 +1,33 @@
 import * as THREE from "three";
-import { Item3D } from "../../base-types";
+import { Component, Item3D } from "../../base-types";
+import { Components } from "../Components";
+import { ToolComponent } from "../ToolsComponent";
 
 /**
  * A class to safely remove meshes and geometries from memory to
  * [prevent memory leaks](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
  */
-export class Disposer {
+export class Disposer extends Component<Set<string>> {
+  private _disposedComponents = new Set<string>();
+
+  /** {@link Component.enabled} */
+  enabled = true;
+
+  static readonly uuid = "76e9cd8e-ad8f-4753-9ef6-cbc60f7247fe" as const;
+
+  constructor(components: Components) {
+    super(components);
+    components.tools.add(Disposer.uuid, this);
+  }
+
+  /**
+   * {@link Component.uuid}.
+   * @return the list of UUIDs of deleted components.
+   */
+  get() {
+    return this._disposedComponents;
+  }
+
   /**
    * Removes a mesh, its geometry and its materials from memory. If you are
    * using any of these in other parts of the application, make sure that you
@@ -18,7 +40,7 @@ export class Disposer {
    *
    * @param recursive - whether to recursively dispose the children of the mesh.
    */
-  dispose(mesh: Item3D, materials = true, recursive = true) {
+  destroy(mesh: Item3D, materials = true, recursive = true) {
     mesh.removeFromParent();
     this.disposeGeometryAndMaterials(mesh, materials);
     if (recursive && mesh.children.length) {
@@ -54,7 +76,7 @@ export class Disposer {
 
   private disposeChildren(mesh: Item3D) {
     for (const child of mesh.children) {
-      this.dispose(child as THREE.Mesh);
+      this.destroy(child as THREE.Mesh);
     }
   }
 
@@ -70,3 +92,5 @@ export class Disposer {
     }
   }
 }
+
+ToolComponent.libraryUUIDs.add(Disposer.uuid);

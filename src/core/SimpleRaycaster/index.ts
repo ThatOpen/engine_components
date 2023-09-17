@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Component, Mouse } from "../../base-types";
+import { Component, Disposable, Mouse } from "../../base-types";
 import { Components } from "../Components";
 import { BaseRaycaster } from "../../base-types/base-raycaster";
 
@@ -8,10 +8,7 @@ import { BaseRaycaster } from "../../base-types/base-raycaster";
  * that allows to easily get items from the scene using the mouse and touch
  * events.
  */
-export class SimpleRaycaster extends BaseRaycaster {
-  /** {@link Component.name} */
-  name = "SimpleRaycaster";
-
+export class SimpleRaycaster extends BaseRaycaster implements Disposable {
   /** {@link Component.enabled} */
   enabled = true;
 
@@ -20,19 +17,20 @@ export class SimpleRaycaster extends BaseRaycaster {
 
   private readonly _raycaster = new THREE.Raycaster();
 
-  constructor(private components: Components) {
-    super();
+  constructor(components: Components) {
+    super(components);
     const scene = components.renderer.get();
     const dom = scene.domElement;
     this.mouse = new Mouse(dom);
   }
 
   /** {@link Component.get} */
-  get(): THREE.Raycaster {
+  get() {
     return this._raycaster;
   }
 
-  dispose(): void {
+  /** {@link Disposable.dispose} */
+  async dispose() {
     this.mouse.dispose();
   }
 

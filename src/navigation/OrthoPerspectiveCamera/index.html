@@ -134,7 +134,7 @@
   when the projection changes. This will make the grid look good in orthographic mode:
   */
 
-	camera.projectionChanged.on(() => {
+	camera.projectionChanged.add(() => {
 		const projection = camera.getProjection();
 		grid.fade = projection === 'Perspective';
 	});
@@ -175,7 +175,7 @@
 
 	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
 	components.ui.addToolbar(mainToolbar);
-	mainToolbar.addChild(camera.uiElement.main);
+	mainToolbar.addChild(camera.uiElement.get("main"));
 
 	// Set up stats
 	const stats = new Stats();
@@ -183,8 +183,8 @@
 	document.body.append(stats.dom);
 	stats.dom.style.left = '0px';
 	const renderer = components.renderer;
-	renderer.beforeUpdate.on(() => stats.begin());
-	renderer.afterUpdate.on(() => stats.end());
+	renderer.onBeforeUpdate.add(() => stats.begin());
+	renderer.onAfterUpdate.add(() => stats.end());
 
 </script>
 </body>

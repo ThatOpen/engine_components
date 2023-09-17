@@ -89,12 +89,12 @@
 
      */
 
-	const fragments = new OBC.FragmentManager(components);
+	  const fragments = new OBC.FragmentManager(components);
 
     const file = await fetch("../../../resources/small.frag");
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
-    const model = fragments.load(buffer);
+    const model = await fragments.load(buffer);
 
     /*MD
     ### 🎲 Creation of Bounding Boxes
@@ -108,7 +108,7 @@
 
      */
 
-    const fragmentBbox = new OBC.FragmentBoundingBox();
+    const fragmentBbox = new OBC.FragmentBoundingBox(components);
     fragmentBbox.add(model);
 
     /*MD
@@ -132,7 +132,9 @@
 
     const toolbar = new OBC.Toolbar(components, {position: "bottom"});
     components.ui.addToolbar(toolbar);
-    const button = new OBC.Button(components, {materialIconName: "zoom_in_map"});
+    const button = new OBC.Button(components);
+		button.materialIcon = "zoom_in_map";
+		button.tooltip = "Zoom to building";
     toolbar.addChild(button);
 
     /*MD
@@ -156,9 +158,9 @@
     */
 
     const controls = components.camera.controls;
-    button.onclick = () => {
-      controls.fitToSphere(bbox, true);
-    }
+    button.onClick.add(() => {
+			controls.fitToSphere(bbox, true);
+		})
 
     /*MD
 
@@ -175,8 +177,8 @@
 	stats.dom.style.left = '0px';
 	stats.dom.style.right = 'auto';
 
-	components.renderer.beforeUpdate.on(() => stats.begin());
-	components.renderer.afterUpdate.on(() => stats.end());
+	components.renderer.onBeforeUpdate.add(() => stats.begin());
+	components.renderer.onAfterUpdate.add(() => stats.end());
 
 </script>
 </body>

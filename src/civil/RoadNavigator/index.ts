@@ -1,16 +1,16 @@
 import * as THREE from "three";
 import { Lines } from "openbim-clay";
-import { Components, Simple2DScene } from "../../core";
+import { Components, Simple2DScene, ToolComponent } from "../../core";
 import { Component } from "../../base-types";
 
 export class RoadNavigator extends Component<Lines> {
-  name = "RoadNavigator";
+  /** {@link Component.uuid} */
+  static readonly uuid = "85f2c89c-4c6b-4c7d-bc20-5b675874b228" as const;
 
   enabled = true;
 
   longSection: Simple2DScene;
 
-  private _components: Components;
   private _lines = new Lines();
 
   private _longProjection: Lines;
@@ -19,9 +19,11 @@ export class RoadNavigator extends Component<Lines> {
   private _defaultID = "RoadNavigator";
 
   constructor(components: Components) {
-    super();
-    this._components = components;
-    const raycaster = this._components.raycaster.get();
+    super(components);
+
+    this.components.tools.add(RoadNavigator.uuid, this);
+
+    const raycaster = this.components.raycaster.get();
     raycaster.params.Points = { threshold: 1 };
     this._lines.baseColor = new THREE.Color("#6528D7");
     const scene = components.scene.get();
@@ -30,7 +32,8 @@ export class RoadNavigator extends Component<Lines> {
 
     this.longSection = new Simple2DScene(components);
     this._longProjection = new Lines();
-    this.longSection.scene.add(
+    const longSection = this.longSection.get();
+    longSection.add(
       this._longProjection.mesh,
       this._longProjection.vertices.mesh
     );
@@ -41,7 +44,7 @@ export class RoadNavigator extends Component<Lines> {
   }
 
   drawPoint() {
-    const found = this._components.raycaster.castRay();
+    const found = this.components.raycaster.castRay();
     if (!found) return;
     const { x, y, z } = found.point;
     const [id] = this._lines.addPoints([[x, y, z]]);
@@ -63,7 +66,7 @@ export class RoadNavigator extends Component<Lines> {
   select() {
     this._lines.selectPoints(false);
     // TODO: Fix cast ray type
-    const found = this._components.raycaster.castRay([
+    const found = this.components.raycaster.castRay([
       this._lines.vertices.mesh as any,
     ]);
     if (found && found.index !== undefined) {
@@ -149,3 +152,5 @@ export class RoadNavigator extends Component<Lines> {
     this._longProjection.add(ids);
   }
 }
+
+ToolComponent.libraryUUIDs.add(RoadNavigator.uuid);

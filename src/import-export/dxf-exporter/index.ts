@@ -3,22 +3,21 @@ import * as THREE from "three";
 import { FragmentManager, FragmentPlans } from "../../fragments";
 import { EdgeProjector } from "./src/edge-projector";
 import { Component } from "../../base-types";
+import { Components, ToolComponent } from "../../core";
 
 export class DXFExporter extends Component<EdgeProjector> {
-  enabled = true;
-  name = "DXFExporter";
+  static readonly uuid = "568f2167-24a3-4519-b552-3b04cc74a6a6" as const;
 
-  private _fragments: FragmentManager;
-  private _plans: FragmentPlans;
+  enabled = true;
 
   precission = 0.001;
 
   private _projector = new EdgeProjector();
 
-  constructor(fragments: FragmentManager, plans: FragmentPlans) {
-    super();
-    this._fragments = fragments;
-    this._plans = plans;
+  constructor(components: Components) {
+    super(components);
+
+    this.components.tools.add(DXFExporter.uuid, this);
   }
 
   get() {
@@ -26,8 +25,6 @@ export class DXFExporter extends Component<EdgeProjector> {
   }
 
   dispose() {
-    (this._fragments as any) = null;
-    this._plans.dispose();
     this._projector.dispose();
   }
 
@@ -37,13 +34,16 @@ export class DXFExporter extends Component<EdgeProjector> {
 
     // Draw projected lines
 
-    const plans = this._plans.get();
+    const fragPlans = await this.components.tools.get(FragmentPlans);
+    const fragments = await this.components.tools.get(FragmentManager);
+
+    const plans = fragPlans.get();
     const plan = plans.find((plan) => plan.name === name);
     if (!plan || !plan.plane) {
       throw new Error("Plan doesn't exist!");
     }
 
-    const meshes = Object.values(this._fragments.list).map((frag) => frag.mesh);
+    const meshes = Object.values(fragments.list).map((frag) => frag.mesh);
     let height = plan.point.y;
     if (plan.offset) {
       height += plan.offset;
@@ -104,3 +104,5 @@ export class DXFExporter extends Component<EdgeProjector> {
     }
   }
 }
+
+ToolComponent.libraryUUIDs.add(DXFExporter.uuid);

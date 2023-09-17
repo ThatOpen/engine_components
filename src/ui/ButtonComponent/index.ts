@@ -4,9 +4,9 @@ import {
   Instance as PopperInstance,
   // @ts-ignore
 } from "@popperjs/core/dist/esm";
-import { Event } from "../../base-types/base-types";
+import { Event } from "../../base-types";
 import { Toolbar } from "../ToolbarComponent";
-import { Components } from "../../core/Components";
+import { Components } from "../../core";
 import { SimpleUIComponent } from "../SimpleUIComponent";
 
 interface IButtonOptions {
@@ -22,7 +22,7 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
   name: string = "TooeenButton";
   menu: Toolbar;
 
-  onClicked = new Event<any>();
+  readonly onClick = new Event<any>();
 
   static Class = {
     Base: `
@@ -70,17 +70,6 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
 
   get label() {
     return this.innerElements.label.textContent;
-  }
-
-  set onclick(listener: (e?: MouseEvent) => void) {
-    this.domElement.onclick = (e) => {
-      e.stopImmediatePropagation();
-      listener(e);
-      if (this._closeOnClick) {
-        this._components.ui.closeMenus();
-        this._components.ui.contextMenu.visible = false;
-      }
-    };
   }
 
   set parent(toolbar: Toolbar | null) {
@@ -155,14 +144,25 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
       this._closeOnClick = options.closeOnClick;
     }
 
-    this.domElement.onclick = (e) => {
+    this.domElement.onclick = async (e) => {
       e.stopImmediatePropagation();
-      if (!this.parent?.parent) {
+
+      await this.onClick.trigger(e);
+
+      if (this.menu.children.length) {
+        this.menu.visible = true;
+        this._popper.update();
+      } else if (this._closeOnClick) {
         this._components.ui.closeMenus();
+        this._components.ui.contextMenu.visible = false;
+
+        if (this.parent) {
+          if (!this.parent.parent) {
+            this._components.ui.closeMenus();
+          }
+          this.parent.closeMenus();
+        }
       }
-      this.parent?.closeMenus();
-      this.menu.visible = true;
-      this._popper.update();
     };
 
     this.domElement.addEventListener("mouseover", ({ target }) => {
@@ -199,17 +199,17 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
     });
     // #endregion
 
-    this.onEnabled.on(() => (this.domElement.disabled = false));
-    this.onDisabled.on(() => (this.domElement.disabled = true));
+    this.onEnabled.add(() => (this.domElement.disabled = false));
+    this.onDisabled.add(() => (this.domElement.disabled = true));
   }
 
-  dispose(onlyChildren = false) {
-    super.dispose(onlyChildren);
-    this.menu.dispose();
+  async dispose(onlyChildren = false) {
+    await super.dispose(onlyChildren);
+    await this.menu.dispose();
     if (!onlyChildren) {
       this.domElement.remove();
     }
-    this.onClicked.reset();
+    this.onClick.reset();
     this._popper.destroy();
   }
 

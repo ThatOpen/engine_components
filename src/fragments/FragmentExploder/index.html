@@ -95,7 +95,7 @@
     const file = await fetch("../../../resources/small.frag");
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
-    const model = fragments.load(buffer);
+    const model = await fragments.load(buffer);
 
     /*MD
 
@@ -182,23 +182,8 @@
     */
 
     const toolbar = new OBC.Toolbar(components);
-    toolbar.addChild(exploder.uiElement.main);
+    toolbar.addChild(exploder.uiElement.get("main"));
     components.ui.addToolbar(toolbar);
-
-    // Set up GUI
-
-    const gui = new dat.GUI();
-
-    const actionsFolder = gui.addFolder("Actions");
-
-    const actions = {
-      explode: () => exploder.explode(),
-      reset: () => exploder.reset()
-    }
-
-
-    actionsFolder.add(actions, "explode").name("Explode");
-    actionsFolder.add(actions, "reset").name("Reset");
 
 	// Set up stats
 	const stats = new Stats();
@@ -207,8 +192,8 @@
 	stats.dom.style.left = '0px';
 	stats.dom.style.right = 'auto';
 
-	components.renderer.beforeUpdate.on(() => stats.begin());
-	components.renderer.afterUpdate.on(() => stats.end());
+	components.renderer.onBeforeUpdate.add(() => stats.begin());
+	components.renderer.onAfterUpdate.add(() => stats.end());
 
 </script>
 </body>

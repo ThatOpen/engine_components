@@ -10,9 +10,6 @@ export abstract class BaseRaycaster
   extends Component<THREE.Raycaster>
   implements Disposable
 {
-  /** {@link Component.name} */
-  abstract name: string;
-
   /** Whether this component is able to cast rays. */
   abstract castRay(items?: THREE.Mesh[]): THREE.Intersection | null;
 
@@ -22,5 +19,5 @@ export abstract class BaseRaycaster
   /** {@link Component.get} */
   abstract get(): THREE.Raycaster;
 
-  abstract dispose(): void;
+  abstract dispose(): Promise<void>;
 }

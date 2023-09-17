@@ -6,7 +6,7 @@ import {
   Hideable,
   Updateable,
 } from "../../base-types";
-import { Components } from "../../core";
+import { Components, ToolComponent } from "../../core";
 import { OrthoPerspectiveCamera } from "../OrthoPerspectiveCamera";
 
 type CubeMapPositions =
@@ -27,10 +27,13 @@ export class CubeMap
   extends Component<HTMLDivElement>
   implements Updateable, Hideable, Disposable
 {
+  static readonly uuid = "53311ea3-323a-476f-ae4a-d681778e8f67" as const;
+
   name: string = "CubeMap";
   enabled: boolean = true;
-  afterUpdate: Event<CubeMap> = new Event();
-  beforeUpdate: Event<CubeMap> = new Event();
+
+  readonly onAfterUpdate: Event<CubeMap> = new Event();
+  readonly onBeforeUpdate: Event<CubeMap> = new Event();
 
   offset = 1;
 
@@ -39,7 +42,6 @@ export class CubeMap
   private _cyan = "bg-[#3CE6FEDD]";
   private _pink = "bg-[#BD4BF3DD]";
   private _blue = "bg-[#201491DD]";
-  private _components: Components;
   private _cube = document.createElement("div");
   private _cubeWrapper = document.createElement("div");
   private _matrix = new THREE.Matrix4();
@@ -68,8 +70,10 @@ export class CubeMap
   }
 
   constructor(components: Components) {
-    super();
-    this._components = components;
+    super(components);
+
+    this.components.tools.add(CubeMap.uuid, this);
+
     this._cubeWrapper.id = "tooeen-cube-map";
     this._cubeWrapper.className = "absolute z-10";
     this.setPosition("bottom-right");
@@ -81,7 +85,7 @@ export class CubeMap
     this._cubeWrapper.append(this._cube);
 
     if (components.camera.isUpdateable()) {
-      components.camera.afterUpdate.on(this.update);
+      components.camera.onAfterUpdate.add(this.update);
     }
 
     // #region Cube faces
@@ -138,12 +142,12 @@ export class CubeMap
     this.visible = true;
   }
 
-  dispose() {
-    this.afterUpdate.reset();
-    this.beforeUpdate.reset();
+  async dispose() {
+    this.onAfterUpdate.reset();
+    this.onBeforeUpdate.reset();
     this._cube.remove();
     this._cubeWrapper.remove();
-    (this._components as any) = null;
+    (this.components as any) = null;
   }
 
   setSize(value: string = "350") {
@@ -205,11 +209,11 @@ export class CubeMap
   };
 
   private get _viewerContainer() {
-    return this._components.renderer.get().domElement.parentElement;
+    return this.components.renderer.get().domElement.parentElement;
   }
 
   private get _camera() {
-    return this._components.camera;
+    return this.components.camera;
   }
 
   private getCameraCSSMatrix(matrix: any) {
@@ -241,3 +245,5 @@ export class CubeMap
     return this._cubeWrapper;
   }
 }
+
+ToolComponent.libraryUUIDs.add(CubeMap.uuid);

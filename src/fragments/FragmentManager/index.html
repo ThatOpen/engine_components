@@ -94,7 +94,7 @@
 
     const toolbar = new OBC.Toolbar(components);
     components.ui.addToolbar(toolbar);
-    toolbar.addChild(fragments.uiElement.main);
+    toolbar.addChild(fragments.uiElement.get("main"));
 
     /*MD
 
@@ -117,7 +117,7 @@
     loadButton.materialIcon = "download";
     loadButton.tooltip = "Load model";
     toolbar.addChild(loadButton);
-    loadButton.onclick = () => loadFragments();
+    loadButton.onClick.add(() => loadFragments());
 
     /*MD
 
@@ -152,7 +152,7 @@
     exportButton.materialIcon = "exit_to_app";
     exportButton.tooltip = "Export model";
     toolbar.addChild(exportButton);
-    exportButton.onclick = () => exportFragments();
+    exportButton.onClick.add(() => exportFragments());
 
     /*MD
     #### 🗃️ Downloading Files
@@ -196,7 +196,7 @@
     disposeButton.materialIcon = "delete";
     disposeButton.tooltip = "Delete model";
     toolbar.addChild(disposeButton);
-    disposeButton.onclick = () => disposeFragments();
+    disposeButton.onClick.add(() => disposeFragments());
 
     /*MD
 
@@ -226,7 +226,7 @@
     openButton.materialIcon = "folder_open";
     openButton.tooltip = "Import model";
     toolbar.addChild(openButton);
-    openButton.onclick = () => importExternalFragment();
+    openButton.onClick.add(() => importExternalFragment());
 
     /*MD
 
@@ -244,8 +244,8 @@
     document.body.append(stats.dom);
     stats.dom.style.left = '0px';
     const renderer = components.renderer;
-    renderer.beforeUpdate.on(() => stats.begin());
-    renderer.afterUpdate.on(() => stats.end());
+    renderer.onBeforeUpdate.add(() => stats.begin());
+    renderer.onAfterUpdate.add(() => stats.end());
 
 
 </script>

@@ -53,8 +53,8 @@ export class TextInput extends SimpleUIComponent<HTMLDivElement> {
     this.innerElements.label.setAttribute("for", `input-${this.id}`);
   }
 
-  dispose(onlyChildren: boolean = false) {
-    super.dispose(onlyChildren);
+  async dispose(onlyChildren: boolean = false) {
+    await super.dispose(onlyChildren);
     this.onChange.reset();
   }
 }

@@ -24,7 +24,7 @@ export class GeometryVerticesMarker
   }
 
   constructor(components: Components, geometry: THREE.BufferGeometry) {
-    super();
+    super(components);
     const position = geometry.getAttribute("position");
     for (let index = 0; index < position.count; index++) {
       const marker = new Simple2DMarker(components);
@@ -39,9 +39,9 @@ export class GeometryVerticesMarker
     }
   }
 
-  dispose() {
+  async dispose() {
     for (const marker of this._markers) {
-      marker.dispose();
+      await marker.dispose();
     }
     this._markers = [];
   }

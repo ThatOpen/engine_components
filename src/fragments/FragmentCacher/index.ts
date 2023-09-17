@@ -1,12 +1,12 @@
 import { FragmentsGroup } from "bim-fragment";
 import { Components, LocalCacher } from "../../core";
 import { FragmentManager } from "../FragmentManager";
-import { Button, SimpleUICard } from "../../ui";
+import { Button, FloatingWindow, SimpleUICard } from "../../ui";
 
 // TODO: Clean up
+// TODO: Improve UI element
 
 export class FragmentCacher extends LocalCacher {
-  private _fragments: FragmentManager;
   private _mode: "save" | "load" | "none" = "none";
 
   get fragmentsIDs() {
@@ -16,103 +16,21 @@ export class FragmentCacher extends LocalCacher {
     return fragIDs.map((id) => id.replace("-fragments", ""));
   }
 
-  constructor(components: Components, fragments: FragmentManager) {
+  constructor(components: Components) {
     super(components);
-    this._fragments = fragments;
 
-    this.uiElement.saveButton.onclick = () => {
-      this.floatingMenu.title = "Save items";
-      if (this.floatingMenu.visible && this._mode === "save") {
-        this.floatingMenu.visible = false;
-        return;
-      }
-      this._mode = "save";
-      for (const card of this._cards) {
-        card.dispose();
-      }
-      this._cards = [];
+    components.tools.list.set(FragmentCacher.uuid, this);
 
-      const savedIDs = this.fragmentsIDs;
+    if (components.ui.enabled) {
+      this.setupUI();
+    }
+  }
 
-      const ids = this._fragments.groups.map((group) => group.uuid);
-      for (const id of ids) {
-        if (savedIDs.includes(id)) continue;
-
-        const card = new SimpleUICard(this._components, id);
-        card.title = id;
-        this._cards.push(card);
-        this.floatingMenu.addChild(card);
-
-        const saveCardButton = new Button(this._components, {
-          materialIconName: "save",
-        });
-        card.addChild(saveCardButton);
-
-        saveCardButton.onclick = async () => {
-          const group = this._fragments.groups.find(
-            (group) => group.uuid === id
-          );
-
-          if (group) {
-            await this.saveFragmentGroup(group);
-            const index = this._cards.indexOf(card);
-            this._cards.splice(index, 1);
-            card.dispose();
-            this.itemSaved.trigger({ id });
-          }
-        };
-      }
-      this.floatingMenu.visible = true;
-    };
-
-    this.uiElement.loadButton.onclick = () => {
-      this.floatingMenu.title = "Load saved items";
-      if (this.floatingMenu.visible && this._mode === "load") {
-        this.floatingMenu.visible = false;
-        return;
-      }
-      this._mode = "load";
-
-      const allIDs = this.fragmentsIDs;
-
-      for (const card of this._cards) {
-        card.dispose();
-      }
-      this._cards = [];
-
-      for (const id of allIDs) {
-        const card = new SimpleUICard(this._components, id);
-        card.title = id;
-        this._cards.push(card);
-
-        const deleteCardButton = new Button(this._components, {
-          materialIconName: "delete",
-        });
-        card.addChild(deleteCardButton);
-
-        deleteCardButton.onclick = async () => {
-          const ids = Object.values(this.getIDs(id));
-          await this.delete(ids);
-          const index = this._cards.indexOf(card);
-          this._cards.splice(index, 1);
-          card.dispose();
-        };
-
-        const loadFileButton = new Button(this._components, {
-          materialIconName: "download",
-        });
-        card.addChild(loadFileButton);
-
-        loadFileButton.onclick = async () => {
-          await this.getFragmentGroup(id);
-          this.fileLoaded.trigger({ id });
-        };
-
-        this.floatingMenu.addChild(card);
-      }
-
-      this.floatingMenu.visible = true;
-    };
+  private setupUI() {
+    const saveButton = this.uiElement.get<Button>("saveButton");
+    saveButton.onClick.add(() => this.onSaveButtonClicked());
+    const loadButton = this.uiElement.get<Button>("loadButton");
+    loadButton.onClick.add(() => this.onLoadButtonClicked());
   }
 
   async getFragmentGroup(id: string) {
@@ -122,6 +40,8 @@ export class FragmentCacher extends LocalCacher {
       return null;
     }
 
+    const fragments = await this.components.tools.get(FragmentManager);
+
     const fragmentFile = await this.get(fragmentsCacheID);
     if (fragmentFile === null) {
       throw new Error("Loading error");
@@ -129,7 +49,7 @@ export class FragmentCacher extends LocalCacher {
 
     const fragmentsData = await fragmentFile.arrayBuffer();
     const buffer = new Uint8Array(fragmentsData);
-    const group = this._fragments.load(buffer);
+    const group = await fragments.load(buffer);
 
     const propertiesFile = await this.get(propertiesCacheID);
     if (propertiesFile !== null) {
@@ -137,12 +57,14 @@ export class FragmentCacher extends LocalCacher {
       group.properties = JSON.parse(propertiesData);
     }
 
-    this._components.scene.get().add(group);
+    const scene = this.components.scene.get();
+    scene.add(group);
+
     return group;
   }
 
   async saveFragmentGroup(group: FragmentsGroup, id = group.uuid) {
-    const fragments = new FragmentManager(this._components);
+    const fragments = await this.components.tools.get(FragmentManager);
 
     const { fragmentsCacheID, propertiesCacheID } = this.getIDs(id);
     const exported = fragments.export(group);
@@ -158,9 +80,101 @@ export class FragmentCacher extends LocalCacher {
     }
   }
 
-  dispose() {
-    super.dispose();
-    (this._fragments as any) = null;
+  private async onLoadButtonClicked() {
+    const floatingMenu = this.uiElement.get<FloatingWindow>("floatingMenu");
+    floatingMenu.title = "Load saved items";
+    if (floatingMenu.visible && this._mode === "load") {
+      floatingMenu.visible = false;
+      return;
+    }
+    this._mode = "load";
+
+    const allIDs = this.fragmentsIDs;
+
+    for (const card of this.cards) {
+      await card.dispose();
+    }
+    this.cards = [];
+
+    for (const id of allIDs) {
+      const card = new SimpleUICard(this.components, id);
+      card.title = id;
+      this.cards.push(card);
+
+      const deleteCardButton = new Button(this.components, {
+        materialIconName: "delete",
+      });
+      card.addChild(deleteCardButton);
+
+      deleteCardButton.onClick.add(async () => {
+        const ids = Object.values(this.getIDs(id));
+        await this.delete(ids);
+        const index = this.cards.indexOf(card);
+        this.cards.splice(index, 1);
+        await card.dispose();
+      });
+
+      const loadFileButton = new Button(this.components, {
+        materialIconName: "download",
+      });
+      card.addChild(loadFileButton);
+
+      loadFileButton.onClick.add(async () => {
+        await this.getFragmentGroup(id);
+        await this.onFileLoaded.trigger({ id });
+      });
+
+      floatingMenu.addChild(card);
+    }
+
+    floatingMenu.visible = true;
+  }
+
+  private async onSaveButtonClicked() {
+    const floatingMenu = this.uiElement.get<FloatingWindow>("floatingMenu");
+    const fragments = await this.components.tools.get(FragmentManager);
+
+    floatingMenu.title = "Save items";
+    if (floatingMenu.visible && this._mode === "save") {
+      floatingMenu.visible = false;
+      return;
+    }
+    this._mode = "save";
+    for (const card of this.cards) {
+      await card.dispose();
+    }
+    this.cards = [];
+
+    const savedIDs = this.fragmentsIDs;
+
+    const ids = fragments.groups.map((group) => group.uuid);
+    for (const id of ids) {
+      if (savedIDs.includes(id)) continue;
+
+      const card = new SimpleUICard(this.components, id);
+      card.title = id;
+      this.cards.push(card);
+      floatingMenu.addChild(card);
+
+      const saveCardButton = new Button(this.components, {
+        materialIconName: "save",
+      });
+      card.addChild(saveCardButton);
+
+      saveCardButton.onClick.add(async () => {
+        const group = fragments.groups.find((group) => group.uuid === id);
+
+        if (group) {
+          await this.saveFragmentGroup(group);
+          const index = this.cards.indexOf(card);
+          this.cards.splice(index, 1);
+          await card.dispose();
+          await this.onItemSaved.trigger({ id });
+        }
+      });
+    }
+
+    floatingMenu.visible = true;
   }
 
   private getIDs(id: string) {

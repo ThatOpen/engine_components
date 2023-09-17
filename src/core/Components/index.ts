@@ -19,30 +19,29 @@ import { Disposer } from "../Disposer";
  *
  */
 export class Components {
-  /**
-   * {@link ToolComponent}
-   */
+  /** {@link ToolComponent} */
   readonly tools: ToolComponent;
 
-  /**
-   * {@link UIManager}
-   */
+  /** {@link UIManager} */
   readonly ui: UIManager;
 
   /**
    * All the loaded [meshes](https://threejs.org/docs/#api/en/objects/Mesh).
-   * This includes IFC models, fragments, 3D scans, etc.
+   * This includes fragments, 3D scans, etc.
    */
-  meshes: THREE.Mesh[] = [];
+  readonly meshes: THREE.Mesh[] = [];
 
-  onInitialized: Event<Components> = new Event();
+  /**
+   * Event that fires when this instance has been fully initialized and is ready to work.
+   */
+  readonly onInitialized: Event<Components> = new Event();
+
+  private _enabled = false;
   private _renderer?: BaseRenderer;
   private _scene?: Component<THREE.Scene>;
   private _camera?: Component<THREE.Camera>;
   private _raycaster?: BaseRaycaster;
   private _clock: THREE.Clock;
-  private _enabled = false;
-  private _disposer = new Disposer();
 
   /**
    * The [Three.js renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
@@ -120,7 +119,7 @@ export class Components {
 
   constructor() {
     this._clock = new THREE.Clock();
-    this.tools = new ToolComponent();
+    this.tools = new ToolComponent(this);
     this.ui = new UIManager(this);
     Components.setupBVH();
   }
@@ -154,37 +153,46 @@ export class Components {
    * [here](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
    *
    */
-  dispose() {
+  async dispose() {
+    const disposer = await this.tools.get(Disposer);
     this._enabled = false;
-    this.tools.dispose();
+    await this.tools.dispose();
     this.ui.dispose();
     this.onInitialized.reset();
     this._clock.stop();
     for (const mesh of this.meshes) {
-      this._disposer.dispose(mesh);
+      disposer.destroy(mesh);
     }
-    this.meshes = [];
-    if (this.renderer.isDisposeable()) this.renderer.dispose();
-    if (this.scene.isDisposeable()) this.scene.dispose();
-    if (this.camera.isDisposeable()) this.camera.dispose();
-    if (this.raycaster.isDisposeable()) this.raycaster.dispose();
+    this.meshes.length = 0;
+    if (this.renderer.isDisposeable()) {
+      await this.renderer.dispose();
+    }
+    if (this.scene.isDisposeable()) {
+      await this.scene.dispose();
+    }
+    if (this.camera.isDisposeable()) {
+      await this.camera.dispose();
+    }
+    if (this.raycaster.isDisposeable()) {
+      await this.raycaster.dispose();
+    }
   }
 
-  private update = () => {
+  private update = async () => {
     if (!this._enabled) return;
     const delta = this._clock.getDelta();
-    Components.update(this.scene, delta);
-    Components.update(this.renderer, delta);
-    Components.update(this.camera, delta);
-    this.tools.update(delta);
+    await Components.update(this.scene, delta);
+    await Components.update(this.renderer, delta);
+    await Components.update(this.camera, delta);
+    await this.tools.update(delta);
     const renderer = this.renderer.get();
     // Works the same as requestAnimationFrame, but let us use WebXR.
     renderer.setAnimationLoop(this.update);
   };
 
-  private static update(component: Component<any>, delta: number) {
+  private static async update(component: Component<any>, delta: number) {
     if (component.isUpdateable() && component.enabled) {
-      component.update(delta);
+      await component.update(delta);
     }
   }
 

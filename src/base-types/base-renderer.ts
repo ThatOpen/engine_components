@@ -11,20 +11,14 @@ export abstract class BaseRenderer
   extends Component<THREE.WebGLRenderer>
   implements Resizeable
 {
-  /** {@link Component.name} */
-  abstract name: string;
-
-  /** {@link Component.enabled} */
-  abstract enabled: boolean;
-
-  /** {@link Component.get} */
-  abstract get(): THREE.WebGLRenderer;
-
   /** {@link Resizeable.getSize}. */
   abstract getSize(): THREE.Vector2;
 
   /** {@link Resizeable.resize}. */
   abstract resize(): void;
+
+  /** {@link Resizeable.onResize} */
+  readonly onResize = new Event();
 
   readonly onClippingPlanesUpdated = new Event();
 

@@ -79,7 +79,7 @@
     const file = await fetch('../../../resources/small.frag');
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
-    const model = fragments.load(buffer);
+    const model = await fragments.load(buffer);
 
     for(const fragment of model.items) {
         culler.add(fragment.mesh);
@@ -101,7 +101,7 @@
 
     postproduction.customEffects.outlineEnabled = true;
 
-    const classifier = new OBC.FragmentClassifier(fragments);
+    const classifier = new OBC.FragmentClassifier(components);
     classifier.byEntity(model);
 
     const found = classifier.find({entities: ["IFCWALLSTANDARDCASE", "IFCWALL"]});
@@ -125,13 +125,13 @@
     materialManager.addMaterial("white", whiteMaterial);
     materialManager.addMeshes("white", meshes);
 
-    const plans = new OBC.FragmentPlans(components, clipper, components.camera);
+    const plans = new OBC.FragmentPlans(components);
     await plans.computeAllPlanViews(model);
 
     classifier.byStorey(model);
 
-    const hider = new OBC.FragmentHider(components, fragments, culler, false);
-    const highlighter = new OBC.FragmentHighlighter(components, fragments);
+    const hider = new OBC.FragmentHider(components);
+    const highlighter = new OBC.FragmentHighlighter(components);
 
     const highlightMat =  new THREE.MeshBasicMaterial({
         depthTest: false,
@@ -147,36 +147,37 @@
     highlighter.update();
 
     plans.commands = {
-        "Select": (plan) => {
-            const found = classifier.find({storeys: [plan.name]});
+        "Select": async (plan) => {
+            const found = await classifier.find({storeys: [plan.name]});
             highlighter.highlightByID("default", found);
         },
-        "Show": (plan) => {
-            const found = classifier.find({storeys: [plan.name]});
+        "Show": async (plan) => {
+            const found = await classifier.find({storeys: [plan.name]});
             hider.set(true, found);
         },
-        "Hide": (plan) => {
-            const found = classifier.find({storeys: [plan.name]});
+        "Hide": async (plan) => {
+            const found = await classifier.find({storeys: [plan.name]});
             hider.set(false, found);
         },
     }
 
     plans.updatePlansList();
 
-    const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
+    const mainToolbar = new OBC.Toolbar(components);
+    mainToolbar.name = "Main Toolbar";
     components.ui.addToolbar(mainToolbar);
 
-    mainToolbar.addChild(plans.uiElement.main);
-    mainToolbar.addChild(plans.objects.uiElement.main);
+    mainToolbar.addChild(plans.uiElement.get('main'));
+    mainToolbar.addChild(plans.objects.uiElement.get('main'));
 
-    plans.navigated.on(() => {
+    plans.onNavigated.add(() => {
         postproduction.customEffects.glossEnabled = false;
         materialManager.setBackgroundColor(whiteColor);
         materialManager.set(true, ["white"]);
         grid.visible = false;
     });
 
-    plans.exited.on(() => {
+    plans.onExited.add(() => {
         postproduction.customEffects.glossEnabled = true;
         materialManager.resetBackgroundColor();
         materialManager.set(false, ["white"]);
@@ -190,8 +191,8 @@
     stats.dom.style.left = '0px';
     stats.dom.style.right = 'auto';
 
-    components.renderer.beforeUpdate.on(() => stats.begin());
-    components.renderer.afterUpdate.on(() => stats.end());
+    components.renderer.onBeforeUpdate.add(() => stats.begin());
+    components.renderer.onAfterUpdate.add(() => stats.end());
 
 </script>
 </body>

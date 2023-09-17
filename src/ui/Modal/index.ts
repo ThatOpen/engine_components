@@ -1,5 +1,5 @@
 import { Event } from "../../base-types";
-import { Components } from "../../core/Components";
+import { Components } from "../../core";
 import { Button } from "../ButtonComponent";
 import { SimpleUIComponent } from "../SimpleUIComponent";
 
@@ -94,20 +94,20 @@ export class Modal extends SimpleUIComponent<HTMLDialogElement> {
     acceptBtn.label = "Accept";
     acceptBtn.get().classList.remove("hover:bg-ifcjs-200");
     acceptBtn.get().classList.add("hover:bg-success");
-    acceptBtn.onclick = () => this.onAccept.trigger();
+    acceptBtn.onClick.add(() => this.onAccept.trigger());
 
     const cancelBtn = new Button(this._components);
     cancelBtn.materialIcon = "close";
     cancelBtn.label = "Cancel";
     cancelBtn.get().classList.remove("hover:bg-ifcjs-200");
     cancelBtn.get().classList.add("hover:bg-error");
-    cancelBtn.onclick = () => this.onCancel.trigger();
+    cancelBtn.onClick.add(() => this.onCancel.trigger());
 
     this.slots.actionButtons.addChild(cancelBtn, acceptBtn);
   }
 
-  dispose(onlyChildren: boolean = false) {
-    super.dispose(onlyChildren);
+  async dispose(onlyChildren: boolean = false) {
+    await super.dispose(onlyChildren);
     this.onCancel.reset();
     this.onAccept.reset();
   }

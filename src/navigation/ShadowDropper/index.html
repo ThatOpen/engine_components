@@ -162,8 +162,8 @@
 	document.body.append(stats.dom);
 	stats.dom.style.left = '0px';
 	const renderer = components.renderer;
-	renderer.beforeUpdate.on(() => stats.begin());
-	renderer.afterUpdate.on(() => stats.end());
+	renderer.onBeforeUpdate.add(() => stats.begin());
+	renderer.onAfterUpdate.add(() => stats.end());
 
 </script>
 </body>

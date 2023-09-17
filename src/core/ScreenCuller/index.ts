@@ -2,23 +2,28 @@ import * as THREE from "three";
 import { Material } from "three";
 import { Component, Disposable, Event } from "../../base-types";
 import { Components } from "../Components";
-import { Disposer } from "../Disposer";
 import { readPixelsAsync } from "./src/screen-culler-helper";
+import { Disposer } from "../Disposer";
+import { ToolComponent } from "../ToolsComponent";
 
 // TODO: Clean up and document
 // TODO: Work at the instance level instead of the mesh level
 
-export class ScreenCuller extends Component<null> implements Disposable {
+export class ScreenCuller
+  extends Component<THREE.WebGLRenderTarget>
+  implements Disposable
+{
+  static readonly uuid = "69f2a50d-c266-44fc-b1bd-fa4d34be89e6" as const;
+
+  /** {@link Component.enabled} */
+  enabled = true;
+
   readonly renderer: THREE.WebGLRenderer;
   readonly renderTarget: THREE.WebGLRenderTarget;
   readonly bufferSize: number;
   readonly materialCache: Map<string, THREE.MeshBasicMaterial>;
   readonly worker: Worker;
-
-  name: string = "ScreenCuller";
-  enabled = true;
-
-  viewUpdated = new Event();
+  readonly onViewUpdated = new Event();
 
   needsUpdate = false;
   meshColorMap = new Map<string, THREE.Mesh>();
@@ -35,7 +40,6 @@ export class ScreenCuller extends Component<null> implements Disposable {
     opacity: 0,
   });
 
-  private _disposer = new Disposer();
   private _colors = { r: 0, g: 0, b: 0, i: 0 };
 
   // Alternative scene and meshes to make the visibility check
@@ -43,13 +47,15 @@ export class ScreenCuller extends Component<null> implements Disposable {
   private readonly _buffer: Uint8Array;
 
   constructor(
-    private components: Components,
+    components: Components,
     readonly updateInterval = 1000,
     readonly rtWidth = 512,
     readonly rtHeight = 512,
     readonly autoUpdate = true
   ) {
-    super();
+    super(components);
+    components.tools.add(ScreenCuller.uuid, this);
+
     this.renderer = new THREE.WebGLRenderer();
     const planes = this.components.renderer.clippingPlanes;
     this.renderer.clippingPlanes = planes;
@@ -79,16 +85,16 @@ export class ScreenCuller extends Component<null> implements Disposable {
     if (autoUpdate) window.setInterval(this.updateVisibility, updateInterval);
   }
 
-  get(): null {
-    return null;
+  get() {
+    return this.renderTarget;
   }
 
-  dispose() {
+  async dispose() {
     this.enabled = false;
     this.currentVisibleMeshes.clear();
     this.recentlyHiddenMeshes.clear();
     this._scene.children.length = 0;
-    this.viewUpdated.reset();
+    this.onViewUpdated.reset();
     this.worker.terminate();
     this.renderer.dispose();
     this.renderTarget.dispose();
@@ -102,10 +108,11 @@ export class ScreenCuller extends Component<null> implements Disposable {
         material.dispose();
       }
     }
+    const disposer = await this.components.tools.get(Disposer);
     for (const id in this.colorMeshes) {
       const mesh = this.colorMeshes.get(id);
       if (mesh) {
-        this._disposer.dispose(mesh);
+        disposer.destroy(mesh);
       }
     }
     this.colorMeshes.clear();
@@ -209,7 +216,7 @@ export class ScreenCuller extends Component<null> implements Disposable {
     this.needsUpdate = false;
   };
 
-  private handleWorkerMessage = (event: MessageEvent) => {
+  private handleWorkerMessage = async (event: MessageEvent) => {
     const colors = event.data.colors as Set<string>;
 
     this.recentlyHiddenMeshes = new Set(this.currentVisibleMeshes);
@@ -235,7 +242,7 @@ export class ScreenCuller extends Component<null> implements Disposable {
       mesh.visible = false;
     }
 
-    this.viewUpdated.trigger();
+    await this.onViewUpdated.trigger();
   };
 
   private getMaterial(r: number, g: number, b: number) {
@@ -296,3 +303,5 @@ export class ScreenCuller extends Component<null> implements Disposable {
     };
   }
 }
+
+ToolComponent.libraryUUIDs.add(ScreenCuller.uuid);

@@ -1,16 +1,18 @@
 import * as THREE from "three";
 import { Component, Disposable } from "../../base-types";
 import { Components } from "../Components";
+import { ToolComponent } from "../ToolsComponent";
 
 // TODO: Clean up and document
 // TODO: Disable / enable instance color for instance meshes
 
 export class MaterialManager extends Component<string[]> implements Disposable {
-  private _components: Components;
-  private _originalBackground: THREE.Color | null = null;
+  static readonly uuid = "24989d27-fa2f-4797-8b08-35918f74e502" as const;
 
+  /** {@link Component.enabled} */
   enabled = true;
-  name = "MaterialManager";
+
+  private _originalBackground: THREE.Color | null = null;
 
   private _originals: {
     [guid: string]: {
@@ -27,10 +29,14 @@ export class MaterialManager extends Component<string[]> implements Disposable {
   } = {};
 
   constructor(components: Components) {
-    super();
-    this._components = components;
+    super(components);
+    this.components.tools.add(MaterialManager.uuid, this);
   }
 
+  /**
+   * {@link Component.get}.
+   * @return list of created materials.
+   */
   get() {
     return Object.keys(this._list);
   }
@@ -60,18 +66,17 @@ export class MaterialManager extends Component<string[]> implements Disposable {
     }
   }
 
-  dispose() {
+  async dispose() {
     for (const id in this._list) {
       const { material } = this._list[id];
       material.dispose();
     }
     this._list = {};
     this._originals = {};
-    (this._components as any) = null;
   }
 
   setBackgroundColor(color: THREE.Color) {
-    const scene = this._components.scene.get();
+    const scene = this.components.scene.get();
     if (!this._originalBackground) {
       this._originalBackground = scene.background as THREE.Color;
     }
@@ -81,7 +86,7 @@ export class MaterialManager extends Component<string[]> implements Disposable {
   }
 
   resetBackgroundColor() {
-    const scene = this._components.scene.get();
+    const scene = this.components.scene.get();
     if (this._originalBackground) {
       scene.background = this._originalBackground;
     }
@@ -103,3 +108,5 @@ export class MaterialManager extends Component<string[]> implements Disposable {
     }
   }
 }
+
+ToolComponent.libraryUUIDs.add(MaterialManager.uuid);

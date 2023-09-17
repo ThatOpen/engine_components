@@ -72,7 +72,7 @@ describe("SimpleScene", () => {
   test("disposer_called", () => {
     const components = new Components();
     const scene = new SimpleScene(components);
-    const disposerSpy = jest.spyOn(Disposer.prototype, "dispose");
+    const disposerSpy = jest.spyOn(Disposer.prototype, "destroy");
     const mesh = new Mesh(new BoxGeometry(), new MeshBasicMaterial());
     scene.get().add(mesh);
     scene.dispose();

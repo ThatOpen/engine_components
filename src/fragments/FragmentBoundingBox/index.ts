@@ -1,23 +1,28 @@
 import * as THREE from "three";
-import { Fragment, FragmentsGroup } from "bim-fragment";
+import { FragmentsGroup } from "bim-fragment";
+import { InstancedMesh } from "three";
 import { Component, Disposable } from "../../base-types";
-import { Disposer } from "../../core";
+import { Components, Disposer, ToolComponent } from "../../core";
 
 /**
  * A simple implementation of bounding box that works for fragments. The resulting bbox is not 100% precise, but
- * it's fast, and should suffice for general use cases such as camera zooming.
+ * it's fast, and should suffice for general use cases such as camera zooming or general boundary determination.
  */
 export class FragmentBoundingBox extends Component<void> implements Disposable {
-  name = "FragmentBoundingBox";
+  static readonly uuid = "d1444724-dba6-4cdd-a0c7-68ee1450d166" as const;
+
+  /** {@link Component.enabled} */
   enabled = true;
 
-  private _disposer = new Disposer();
   private _absoluteMin: THREE.Vector3;
   private _absoluteMax: THREE.Vector3;
   private _meshes: THREE.Mesh[] = [];
 
-  constructor() {
-    super();
+  constructor(components: Components) {
+    super(components);
+
+    this.components.tools.add(FragmentBoundingBox.uuid, this);
+
     this._absoluteMin = FragmentBoundingBox.newBound(true);
     this._absoluteMax = FragmentBoundingBox.newBound(false);
   }
@@ -59,9 +64,11 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
     return new THREE.Box3(min, max);
   }
 
-  dispose() {
+  /** {@link Disposable.dispose} */
+  async dispose() {
+    const disposer = await this.components.tools.get(Disposer);
     for (const mesh of this._meshes) {
-      this._disposer.dispose(mesh);
+      disposer.destroy(mesh);
     }
     this._meshes = [];
   }
@@ -101,21 +108,30 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
 
   add(group: FragmentsGroup) {
     for (const frag of group.items) {
-      this.addFragment(frag);
+      this.addMesh(frag.mesh);
     }
   }
 
-  addFragment(fragment: any) {
-    const bbox = FragmentBoundingBox.getFragmentBounds(fragment);
+  addMesh(mesh: InstancedMesh) {
+    if (!mesh.geometry.index) {
+      return;
+    }
+
+    const bbox = FragmentBoundingBox.getFragmentBounds(mesh);
+
+    mesh.updateMatrix();
+    const meshTransform = mesh.matrix;
 
     const instanceTransform = new THREE.Matrix4();
-    for (let i = 0; i < fragment.mesh.count; i++) {
-      fragment.getInstance(i, instanceTransform);
+    for (let i = 0; i < mesh.count; i++) {
+      mesh.getMatrixAt(i, instanceTransform);
       const min = bbox.min.clone();
       const max = bbox.max.clone();
 
       min.applyMatrix4(instanceTransform);
+      min.applyMatrix4(meshTransform);
       max.applyMatrix4(instanceTransform);
+      max.applyMatrix4(meshTransform);
 
       if (min.x < this._absoluteMin.x) this._absoluteMin.x = min.x;
       if (min.y < this._absoluteMin.y) this._absoluteMin.y = min.y;
@@ -135,15 +151,19 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
     }
   }
 
-  private static getFragmentBounds(fragment: Fragment) {
-    const position = fragment.mesh.geometry.attributes.position;
+  private static getFragmentBounds(mesh: InstancedMesh) {
+    const position = mesh.geometry.attributes.position;
 
     const maxNum = Number.MAX_VALUE;
     const minNum = -maxNum;
     const min = new THREE.Vector3(maxNum, maxNum, maxNum);
     const max = new THREE.Vector3(minNum, minNum, minNum);
 
-    const indices = Array.from(fragment.mesh.geometry.index.array);
+    if (!mesh.geometry.index) {
+      throw new Error("Geometry must be indexed!");
+    }
+
+    const indices = Array.from(mesh.geometry.index.array);
 
     for (const index of indices) {
       const x = position.getX(index);
@@ -161,3 +181,5 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
     return new THREE.Box3(min, max);
   }
 }
+
+ToolComponent.libraryUUIDs.add(FragmentBoundingBox.uuid);

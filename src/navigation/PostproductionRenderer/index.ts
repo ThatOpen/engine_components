@@ -13,13 +13,13 @@ export class PostproductionRenderer extends SimpleRenderer {
     super(components, container);
     this.postproduction = new Postproduction(components, this._renderer);
     this.setPostproductionSize();
-    this.resized.on(() => this.resizePostproduction());
+    this.onResize.add(() => this.resizePostproduction());
   }
 
   /** {@link Updateable.update} */
-  update(_delta: number) {
+  async update(_delta: number) {
     if (!this.enabled) return;
-    this.beforeUpdate.trigger(this);
+    await this.onBeforeUpdate.trigger();
     const scene = this.components.scene?.get();
     const camera = this.components.camera?.get();
     if (!scene || !camera) return;
@@ -29,13 +29,13 @@ export class PostproductionRenderer extends SimpleRenderer {
       this._renderer.render(scene, camera);
     }
     this._renderer2D.render(scene, camera);
-    this.afterUpdate.trigger(this);
+    await this.onAfterUpdate.trigger();
   }
 
   /** {@link Disposable.dispose}. */
-  dispose() {
-    super.dispose();
-    this.postproduction.dispose();
+  async dispose() {
+    await super.dispose();
+    await this.postproduction.dispose();
   }
 
   /** {@link Resizeable.resize}. */

@@ -7,9 +7,7 @@ import { MapboxRenderer } from "./src/mapbox-renderer";
 import { MapboxCamera } from "./src/mapbox-camera";
 
 /**
- * The entry point of Autility's Digital Gis Service.
- * Efficiently displays data on a 3D map built with
- * [mapbox](https://www.mapbox.com/).
+ * The main element to create a mapbox-IFC.js application.
  */
 export class MapboxWindow {
   minTargetZoom = 0.0015;
@@ -106,7 +104,7 @@ export class MapboxWindow {
    * component that contains the map is deleted: otherwise, a memory leak
    * will be created.
    */
-  dispose() {
+  async dispose() {
     for (const id in this._labels) {
       const label = this._labels[id];
       label.removeFromParent();
@@ -114,7 +112,7 @@ export class MapboxWindow {
     }
     this._buildings = [];
     this._labels = {};
-    this._components.dispose();
+    await this._components.dispose();
     (this._map as any) = null;
     (this._components as any) = null;
   }
@@ -169,10 +167,10 @@ export class MapboxWindow {
 
   private setupComponents(coords: MAPBOX.MercatorCoordinate) {
     this._components.scene = new SimpleScene(this._components);
-    this._components.camera = new MapboxCamera();
+    this._components.camera = new MapboxCamera(this._components);
     const renderer = new MapboxRenderer(this._components, this._map, coords);
     this._components.renderer = renderer;
-    renderer.initialized.on(() => {
+    renderer.onInitialized.add(() => {
       this._components.raycaster = new SimpleRaycaster(this._components);
       this._components.init();
     });

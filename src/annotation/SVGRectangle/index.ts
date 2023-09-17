@@ -11,7 +11,6 @@ export class SVGRectangle
   name: string = "SVGRectangle";
   enabled: boolean = true;
 
-  private _components: Components;
   private _startPoint: Vector2 = new Vector2();
   private _endPoint: Vector2 = new Vector2();
   private _dimensions: Vector2 = new Vector2();
@@ -26,8 +25,7 @@ export class SVGRectangle
     startPoint?: Vector2,
     endPoint?: Vector2
   ) {
-    super();
-    this._components = components;
+    super(components);
     this.startPoint = startPoint ?? this.startPoint;
     this.endPoint = endPoint ?? this.endPoint;
     this._rect.setAttribute("rx", "5");
@@ -35,9 +33,9 @@ export class SVGRectangle
     this.setStyle();
   }
 
-  dispose() {
+  async dispose() {
     this._rect.remove();
-    (this._components as any) = null;
+    (this.components as any) = null;
   }
 
   setStyle(style?: Partial<SVGAnnotationStyle>) {
@@ -57,7 +55,7 @@ export class SVGRectangle
   }
 
   clone() {
-    return new SVGRectangle(this._components, this.startPoint, this.endPoint);
+    return new SVGRectangle(this.components, this.startPoint, this.endPoint);
   }
 
   set x1(value: number) {

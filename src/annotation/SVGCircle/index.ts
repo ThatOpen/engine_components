@@ -11,8 +11,6 @@ export class SVGCircle
   name: string = "SVGRectangle";
   enabled: boolean = true;
 
-  private _components: Components;
-
   private _circle = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "circle"
@@ -22,17 +20,16 @@ export class SVGCircle
   private _radius: number = 20;
 
   constructor(components: Components, centerPoint?: Vector2, radius?: number) {
-    super();
-    this._components = components;
+    super(components);
     this.centerPoint = centerPoint ?? this.centerPoint;
     this.radius = radius ?? this.radius;
     this._circle.id = this.id;
     this.setStyle();
   }
 
-  dispose() {
+  async dispose() {
     this._circle.remove();
-    (this._components as any) = null;
+    (this.components as any) = null;
   }
 
   setStyle(style?: Partial<SVGAnnotationStyle>) {
@@ -51,7 +48,7 @@ export class SVGCircle
   }
 
   clone() {
-    return new SVGCircle(this._components, this.centerPoint, this.radius);
+    return new SVGCircle(this.components, this.centerPoint, this.radius);
   }
 
   set radius(value: number) {

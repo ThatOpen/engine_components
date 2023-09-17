@@ -25,8 +25,8 @@ export class AttributeTag extends PropertyTag {
     this.setListeners();
   }
 
-  dispose(onlyChildren: boolean = false) {
-    super.dispose(onlyChildren);
+  async dispose(onlyChildren: boolean = false) {
+    await super.dispose(onlyChildren);
     (this.model as any) = null;
   }
 
@@ -39,7 +39,7 @@ export class AttributeTag extends PropertyTag {
         this.expressID,
         this.attributeName
       );
-      event.on((v: any) => (this.value = v));
+      event.add((v: any) => (this.value = v));
     } catch (err) {
       // console.log(err);
     }

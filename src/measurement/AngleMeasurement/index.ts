@@ -1,32 +1,39 @@
 import * as THREE from "three";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
-import { Createable, Event, UI, Component, Disposable } from "../../base-types";
-import { Components } from "../../core";
+import {
+  Createable,
+  Event,
+  UI,
+  Component,
+  Disposable,
+  UIElement,
+} from "../../base-types";
+import { Components, ToolComponent } from "../../core";
 import { Button } from "../../ui";
 import { VertexPicker } from "../../utils";
-import { AngleMeasureElement } from "../AngleMeasureElement";
+import { AngleMeasureElement } from "./src";
 
 export class AngleMeasurement
   extends Component<AngleMeasureElement[]>
   implements Createable, UI, Disposable
 {
-  name: string = "AngleMeasurement";
-  uiElement: { main: Button };
+  static readonly uuid = "622fb2c9-528c-4b0a-8a0e-6a1375f0a3aa" as const;
+
+  uiElement = new UIElement<{ main: Button }>();
 
   private _lineMaterial: LineMaterial;
-  private _components: Components;
-  private _enabled: boolean = false;
+  private _enabled = false;
   private _vertexPicker: VertexPicker;
   private _currentAngleElement: AngleMeasureElement | null = null;
   private _clickCount: number = 0;
   private _measurements: AngleMeasureElement[] = [];
 
-  readonly beforeCreate = new Event<any>();
-  readonly afterCreate = new Event<AngleMeasureElement>();
-  readonly beforeCancel = new Event<any>();
-  readonly afterCancel = new Event<any>();
-  readonly beforeDelete = new Event<any>();
-  readonly afterDelete = new Event<any>();
+  readonly onBeforeCreate = new Event<any>();
+  readonly onAfterCreate = new Event<AngleMeasureElement>();
+  readonly onBeforeCancel = new Event<any>();
+  readonly onAfterCancel = new Event<any>();
+  readonly onBeforeDelete = new Event<any>();
+  readonly onAfterDelete = new Event<any>();
 
   set lineMaterial(material: LineMaterial) {
     this._lineMaterial.dispose();
@@ -42,7 +49,10 @@ export class AngleMeasurement
     this._enabled = value;
     this.setupEvents(value);
     this._vertexPicker.enabled = value;
-    this.uiElement.main.active = value;
+    if (this.components.ui.enabled) {
+      const main = this.uiElement.get("main");
+      main.active = value;
+    }
     if (!value) this.cancelCreation();
   }
 
@@ -59,49 +69,41 @@ export class AngleMeasurement
   }
 
   constructor(components: Components) {
-    super();
-    this._components = components;
+    super(components);
+
+    this.components.tools.add(AngleMeasurement.uuid, this);
+
+    this.components = components;
     this._lineMaterial = new LineMaterial({
       color: 0x6528d7,
       linewidth: 2,
     });
     this._vertexPicker = new VertexPicker(components);
-    this.uiElement = { main: new Button(components) };
-    this.uiElement.main.materialIcon = "square_foot";
-    this.enabled = false;
-    this.setUI();
+
+    // this.enabled = false;
+    if (components.ui.enabled) {
+      this.setUI();
+    }
   }
 
-  dispose() {
-    this.setupEvents(false);
-    this.beforeCreate.reset();
-    this.afterCreate.reset();
-    this.beforeCancel.reset();
-    this.afterCancel.reset();
-    this.beforeDelete.reset();
-    this.afterDelete.reset();
-    this.uiElement.main.dispose();
+  async dispose() {
+    await this.setupEvents(false);
+    this.onBeforeCreate.reset();
+    this.onAfterCreate.reset();
+    this.onBeforeCancel.reset();
+    this.onAfterCancel.reset();
+    this.onBeforeDelete.reset();
+    this.onAfterDelete.reset();
+    this.uiElement.dispose();
     this._lineMaterial.dispose();
-    this._vertexPicker.dispose();
+    await this._vertexPicker.dispose();
     for (const measure of this._measurements) {
-      measure.dispose();
+      await measure.dispose();
     }
     if (this._currentAngleElement) {
-      this._currentAngleElement.dispose();
+      await this._currentAngleElement.dispose();
     }
-    (this._components as any) = null;
-  }
-
-  private setUI() {
-    this.uiElement.main.onclick = () => {
-      if (!this.enabled) {
-        this.uiElement.main.active = true;
-        this.enabled = true;
-      } else {
-        this.enabled = false;
-        this.uiElement.main.active = false;
-      }
-    };
+    (this.components as any) = null;
   }
 
   create = () => {
@@ -109,7 +111,7 @@ export class AngleMeasurement
     const point = this._vertexPicker.get();
     if (!point) return;
     if (!this._currentAngleElement) {
-      const angleElement = new AngleMeasureElement(this._components);
+      const angleElement = new AngleMeasureElement(this.components);
       angleElement.lineMaterial = this.lineMaterial;
       // angleElement.onPointRemoved.on(() => this._clickCount--);
       this._currentAngleElement = angleElement;
@@ -151,14 +153,30 @@ export class AngleMeasurement
     return this._measurements;
   }
 
+  private setUI() {
+    const main = new Button(this.components);
+    main.materialIcon = "square_foot";
+    main.onClick.add(() => {
+      if (!this.enabled) {
+        main.active = true;
+        this.enabled = true;
+      } else {
+        this.enabled = false;
+        main.active = false;
+      }
+    });
+    this.uiElement.set({ main });
+  }
+
   private setupEvents(active: boolean) {
-    const viewerContainer = this._components.ui.viewerContainer as HTMLElement;
+    const viewerContainer = this.components.ui.viewerContainer as HTMLElement;
     if (active) {
       viewerContainer.addEventListener("click", this.create);
       viewerContainer.addEventListener("mousemove", this.onMouseMove);
       window.addEventListener("keydown", this.onKeyDown);
     } else {
-      this.uiElement.main.active = false;
+      const main = this.uiElement.get("main");
+      main.active = false;
       viewerContainer.removeEventListener("click", this.create);
       viewerContainer.removeEventListener("mousemove", this.onMouseMove);
       window.removeEventListener("keydown", this.onKeyDown);
@@ -186,3 +204,5 @@ export class AngleMeasurement
     }
   };
 }
+
+ToolComponent.libraryUUIDs.add(AngleMeasurement.uuid);

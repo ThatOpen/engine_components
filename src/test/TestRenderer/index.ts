@@ -1,10 +1,12 @@
 import * as THREE from "three";
 // @ts-ignore
 import createContext from "gl";
+// eslint-disable-next-line import/no-extraneous-dependencies
 import { createCanvas } from "canvas";
 import { WebGLRenderer } from "three";
 import { WebGLRendererParameters } from "three/src/renderers/WebGLRenderer";
 import { BaseRenderer, Disposable } from "../../base-types";
+import { Components } from "../../core";
 
 export class TestRenderer extends BaseRenderer implements Disposable {
   name = "TestRenderer";
@@ -14,20 +16,24 @@ export class TestRenderer extends BaseRenderer implements Disposable {
   // @ts-ignore * uninitialized
   private container: HTMLElement;
 
-  constructor(container: HTMLElement, options?: WebGLRendererParameters) {
-    super();
+  constructor(
+    components: Components,
+    container: HTMLElement,
+    options?: WebGLRendererParameters
+  ) {
+    super(components);
 
     this.container = container;
 
     const { canvas, context } = this.getCanvasContext(container);
 
-    // @ts-ignore
-    canvas.parentElement = document.createElement("div");
+    const div = document.createElement("div");
+    div.appendChild(canvas);
 
     this._renderer = new THREE.WebGLRenderer({ canvas, context, ...options });
   }
 
-  dispose(): void {}
+  async dispose() {}
 
   resize(): void {}
 

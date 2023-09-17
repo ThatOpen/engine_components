@@ -120,7 +120,7 @@
 
     const map = new OBC.MiniMap(components);
     components.tools.add("minimap", map);
-    components.ui.add(map.uiElement.canvas);
+    components.ui.add(map.uiElement.get("canvas"));
 
     /*MD
 
@@ -157,8 +157,8 @@
     stats.showPanel(2);
     document.body.append(stats.dom);
     stats.dom.style.left = '0px';
-    renderer.beforeUpdate.on(() => stats.begin());
-    renderer.afterUpdate.on(() => stats.end());
+    renderer.onBeforeUpdate.add(() => stats.begin());
+    renderer.onAfterUpdate.add(() => stats.end());
 
     // gui
 

@@ -24,6 +24,12 @@ export class ClippingEdges
   extends Component<Edges>
   implements Hideable, Disposable, Updateable
 {
+  /** {@link Updateable.onAfterUpdate} */
+  onAfterUpdate = new Event<Edge[]>();
+
+  /** {@link Updateable.onBeforeUpdate} */
+  onBeforeUpdate = new Event<Edge[]>();
+
   /** {@link Component.name} */
   name = "ClippingEdges";
 
@@ -36,32 +42,16 @@ export class ClippingEdges
 
   protected _edges: Edges = {};
   protected _styles: EdgesStyles;
-  protected _disposer = new Disposer();
   protected _visible = true;
   protected _inverseMatrix = new THREE.Matrix4();
   protected _localPlane = new THREE.Plane();
   protected _tempLine = new THREE.Line3();
   protected _tempVector = new THREE.Vector3();
-  protected _components: Components;
   protected _plane: THREE.Plane;
 
   /** {@link Hideable.visible} */
   get visible() {
     return this._visible;
-  }
-
-  /** {@link Hideable.visible} */
-  set visible(visible: boolean) {
-    this._visible = visible;
-
-    const names = Object.keys(this._edges);
-    for (const edgeName of names) {
-      this.updateEdgesVisibility(edgeName, visible);
-    }
-
-    if (visible) {
-      this.update();
-    }
   }
 
   set fillVisible(visible: boolean) {
@@ -74,22 +64,28 @@ export class ClippingEdges
   }
 
   constructor(components: Components, plane: THREE.Plane, styles: EdgesStyles) {
-    super();
-    this._components = components;
+    super(components);
     this._plane = plane;
     this._styles = styles;
   }
 
-  /** {@link Updateable.afterUpdate} */
-  afterUpdate = new Event<Edge[]>();
+  async setVisible(visible: boolean) {
+    this._visible = visible;
 
-  /** {@link Updateable.beforeUpdate} */
-  beforeUpdate = new Event<Edge[]>();
+    const names = Object.keys(this._edges);
+    for (const edgeName of names) {
+      this.updateEdgesVisibility(edgeName, visible);
+    }
+
+    if (visible) {
+      await this.update();
+    }
+  }
 
   /** {@link Updateable.update} */
-  update() {
+  async update() {
     const styles = this._styles.get();
-    this.updateDeletedEdges(styles);
+    await this.updateDeletedEdges(styles);
     for (const name in styles) {
       this.drawEdges(name);
     }
@@ -102,10 +98,10 @@ export class ClippingEdges
   }
 
   /** {@link Disposable.dispose} */
-  dispose() {
+  async dispose() {
     const names = Object.keys(this._edges);
     for (const name of names) {
-      this.disposeEdge(name);
+      await this.disposeEdge(name);
     }
   }
 
@@ -128,7 +124,7 @@ export class ClippingEdges
     const fillMaterial = style.fillMaterial;
     if (fillMaterial) {
       const fills = new ClippingFills(
-        this._components,
+        this.components,
         this._plane,
         geometry,
         fillMaterial
@@ -141,7 +137,7 @@ export class ClippingEdges
 
   private newFillOutline(name: string, fills: ClippingFills, style: ClipStyle) {
     if (!style.outlineMaterial) return;
-    const renderer = this._components.renderer;
+    const renderer = this.components.renderer;
     if (renderer instanceof PostproductionRenderer) {
       const pRenderer = renderer as PostproductionRenderer;
       const outlines = pRenderer.postproduction.customEffects.outlinedMeshes;
@@ -244,7 +240,7 @@ export class ClippingEdges
     const attributes = edges.mesh.geometry.attributes;
     const position = attributes.position as THREE.BufferAttribute;
     if (!Number.isNaN(position.array[0])) {
-      const scene = this._components.scene.get();
+      const scene = this.components.scene.get();
       scene.add(edges.mesh);
       if (this.fillNeedsUpdate && edges.fill) {
         edges.fill.geometry = edges.mesh.geometry;
@@ -343,37 +339,38 @@ export class ClippingEdges
     }
     edges.mesh.visible = visible;
     if (visible) {
-      const scene = this._components.scene.get();
+      const scene = this.components.scene.get();
       scene.add(edges.mesh);
     } else {
       edges.mesh.removeFromParent();
     }
   }
 
-  private updateDeletedEdges(styles: LineStyles) {
+  private async updateDeletedEdges(styles: LineStyles) {
     const names = Object.keys(this._edges);
     for (const name of names) {
       if (styles[name] === undefined) {
-        this.disposeEdge(name);
+        await this.disposeEdge(name);
         this.disposeOutline(name);
       }
     }
   }
 
   private disposeOutline(name: string) {
-    const renderer = this._components.renderer;
+    const renderer = this.components.renderer;
     if (renderer instanceof PostproductionRenderer) {
       const outlines = renderer.postproduction.customEffects.outlinedMeshes;
       delete outlines[name];
     }
   }
 
-  private disposeEdge(name: string) {
+  private async disposeEdge(name: string) {
+    const disposer = await this.components.tools.get(Disposer);
     const edge = this._edges[name];
     if (edge.fill) {
       edge.fill.dispose();
     }
-    this._disposer.dispose(edge.mesh, false);
+    disposer.destroy(edge.mesh, false);
     delete this._edges[name];
   }
 }

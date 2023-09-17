@@ -6,6 +6,7 @@
         content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <link rel="stylesheet" href="../../../resources/styles.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
   <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
   <title>Tools Component</title>
 </head>
@@ -94,7 +95,10 @@
 	culler.renderDebugFrame = true;
 	const debugFrame = culler.renderer.domElement;
 	document.body.appendChild(debugFrame);
-	debugFrame.style.position = 'absolute';
+	debugFrame.style.position = 'fixed';
+	debugFrame.style.left = '0';
+	debugFrame.style.bottom = '0';
+	debugFrame.style.visibility = 'collapse';
 
 	/*MD
 
@@ -193,32 +197,36 @@
   Let's keep it up and check out another tutorials!
    */
 
-	// Set up stats
-
 	const stats = new Stats();
 	stats.showPanel(2);
 	document.body.append(stats.dom);
 	stats.dom.style.left = '0px';
-	const renderer = components.renderer;
-	renderer.beforeUpdate.on(() => stats.begin());
-	renderer.afterUpdate.on(() => stats.end());
+	components.renderer.onBeforeUpdate.add(() => stats.begin());
+	components.renderer.onAfterUpdate.add(() => stats.end());
 
 	// Set up GUI
 
-	const gui = new dat.GUI();
+	const optionsDrawer = new OBC.Drawer(components);
+	optionsDrawer.size = "15rem";
+	components.ui.add(optionsDrawer);
+	optionsDrawer.visible = true;
+	optionsDrawer.alignment = "right";
 
-	const settings = {
-		renderDebugFrame: false,
-		update: () => {
-			culler.needsUpdate = true;
-		},
-	};
+	const regenerateButton = new OBC.Button(components);
+	regenerateButton.domElement.classList.add("shadow-md");
+	regenerateButton.domElement.classList.add("backdrop-blur-xl");
+	optionsDrawer.addChild(regenerateButton);
+	regenerateButton.label = "Regenerate";
+	regenerateButton.materialIcon = "cached";
+	regenerateButton.onClick.add(() => {
+		culler.needsUpdate = true;
+	});
 
-	debugFrame.style.visibility = 'collapse';
-
-	gui.add(settings, 'update').name('Update visibility');
-	gui.add(settings, 'renderDebugFrame').name('Render debug frame').onChange(() => {
-		debugFrame.style.visibility = settings.renderDebugFrame ? 'visible' : 'collapse';
+	const visibleCheckbox = new OBC.CheckboxInput(components);
+	optionsDrawer.addChild(visibleCheckbox);
+	visibleCheckbox.label = "Debug frame visible";
+	visibleCheckbox.onChange.add(value => {
+		debugFrame.style.visibility = value ? 'visible' : 'collapse';
 	});
 
 

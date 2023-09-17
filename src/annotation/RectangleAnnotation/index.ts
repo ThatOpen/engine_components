@@ -1,5 +1,5 @@
 import { Vector2 } from "three";
-import { BaseSVGAnnotation } from "../../base-types";
+import { BaseSVGAnnotation, UIElement } from "../../base-types";
 import { Components } from "../../core";
 import { Button } from "../../ui";
 import { DrawManager } from "../DrawManager";
@@ -8,30 +8,31 @@ import { SVGRectangle } from "../SVGRectangle";
 export class RectangleAnnotation extends BaseSVGAnnotation {
   name: string = "RectangleAnnotation";
   canvas: HTMLCanvasElement | null = null;
-  uiElement: { main: Button };
+  uiElement = new UIElement<{ main: Button }>();
 
   private _previewElement: SVGRectangle;
   private _startPoint: Vector2 = new Vector2();
 
   constructor(components: Components, drawManager?: DrawManager) {
-    super();
+    super(components);
     this._previewElement = new SVGRectangle(components);
     this.drawManager = drawManager;
 
-    this.uiElement = { main: new Button(components) };
-    this.uiElement.main.label = "Rectangle";
-    this.uiElement.main.materialIcon = "crop_square";
-    this.uiElement.main.onclick = () => {
+    const main = new Button(components);
+    this.uiElement.set({ main });
+    main.label = "Rectangle";
+    main.materialIcon = "crop_square";
+    main.onClick.add(() => {
       if (this.drawManager) {
         this.drawManager.activateTool(this);
       } else {
         this.enabled = !this.enabled;
       }
-    };
+    });
   }
 
-  dispose() {
-    super.dispose();
+  async dispose() {
+    await super.dispose();
     this._previewElement.dispose();
   }
 

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SimpleDimensionLine } from "./simple-dimension-line";
+import { SimpleDimensionLine } from "./src";
 import {
   Component,
   Createable,
@@ -8,10 +8,13 @@ import {
   Updateable,
   Event,
   UI,
+  UIElement,
 } from "../../base-types";
-import { Components, SimpleRaycaster } from "../../core";
+import { Components, SimpleRaycaster, ToolComponent } from "../../core";
 import { Button } from "../../ui";
 import { VertexPicker } from "../../utils";
+
+export * from "./src";
 
 /**
  * A basic dimension tool to measure distances between 2 points in 3D and
@@ -21,34 +24,33 @@ export class LengthMeasurement
   extends Component<SimpleDimensionLine[]>
   implements Createable, Hideable, Disposable, Updateable, UI
 {
-  /** {@link Component.name} */
-  readonly name = "LengthMeasurement";
+  static readonly uuid = "2f9bcacf-18a9-4be6-a293-e898eae64ea1" as const;
 
-  /** {@link Updateable.beforeUpdate} */
-  readonly beforeUpdate = new Event<LengthMeasurement>();
+  /** {@link Updateable.onBeforeUpdate} */
+  readonly onBeforeUpdate = new Event<LengthMeasurement>();
 
-  /** {@link Updateable.afterUpdate} */
-  readonly afterUpdate = new Event<LengthMeasurement>();
+  /** {@link Updateable.onAfterUpdate} */
+  readonly onAfterUpdate = new Event<LengthMeasurement>();
 
-  /** {@link Createable.afterCreate} */
-  readonly afterCreate = new Event<SimpleDimensionLine>();
+  /** {@link Createable.onAfterCreate} */
+  readonly onAfterCreate = new Event<SimpleDimensionLine>();
 
-  /** {@link Createable.beforeCreate} */
-  readonly beforeCreate = new Event<LengthMeasurement>();
+  /** {@link Createable.onBeforeCreate} */
+  readonly onBeforeCreate = new Event<LengthMeasurement>();
 
-  /** {@link Createable.afterDelete} */
-  readonly afterDelete = new Event<LengthMeasurement>();
+  /** {@link Createable.onAfterDelete} */
+  readonly onAfterDelete = new Event<LengthMeasurement>();
 
-  /** {@link Createable.beforeDelete} */
-  readonly beforeDelete = new Event<SimpleDimensionLine>();
+  /** {@link Createable.onBeforeDelete} */
+  readonly onBeforeDelete = new Event<SimpleDimensionLine>();
 
-  /** {@link Createable.beforeCancel} */
-  readonly beforeCancel = new Event<LengthMeasurement>();
+  /** {@link Createable.onBeforeCancel} */
+  readonly onBeforeCancel = new Event<LengthMeasurement>();
 
-  /** {@link Createable.afterCancel} */
-  readonly afterCancel = new Event<SimpleDimensionLine>();
+  /** {@link Createable.onAfterCancel} */
+  readonly onAfterCancel = new Event<SimpleDimensionLine>();
 
-  uiElement: { main: Button };
+  uiElement = new UIElement<{ main: Button }>();
 
   /** The minimum distance to force the dimension cursor to a vertex. */
   snapDistance = 0.25;
@@ -88,7 +90,10 @@ export class LengthMeasurement
     if (!value) this.cancelCreation();
     this._enabled = value;
     this._vertexPicker.enabled = value;
-    this.uiElement.main.active = value;
+    if (this.components.ui.enabled) {
+      const main = this.uiElement.get("main");
+      main.active = value;
+    }
   }
 
   /** {@link Hideable.visible} */
@@ -115,31 +120,37 @@ export class LengthMeasurement
     this._lineMaterial.color = color;
   }
 
-  constructor(private _components: Components) {
-    super();
-    this._raycaster = new SimpleRaycaster(this._components);
-    this._vertexPicker = new VertexPicker(_components, {
+  constructor(components: Components) {
+    super(components);
+
+    this.components.tools.add(LengthMeasurement.uuid, this);
+
+    this._raycaster = new SimpleRaycaster(this.components);
+    this._vertexPicker = new VertexPicker(components, {
       previewElement: this.newEndpoint(),
       snapDistance: this.snapDistance,
     });
-    this.uiElement = { main: new Button(this._components) };
-    this.uiElement.main.materialIcon = "straighten";
-    this.setUI();
-    this.enabled = false;
+
+    if (components.ui.enabled) {
+      this.setUI();
+    }
   }
 
   private setUI() {
-    this.uiElement.main.onclick = () => {
+    const main = new Button(this.components);
+    this.uiElement.set({ main });
+    main.materialIcon = "straighten";
+    main.onClick.add(() => {
       if (!this.enabled) {
         this.setupEvents(true);
-        this.uiElement.main.active = true;
+        main.active = true;
         this.enabled = true;
       } else {
         this.enabled = false;
-        this.uiElement.main.active = false;
+        main.active = false;
         this.setupEvents(false);
       }
-    };
+    });
   }
 
   /** {@link Component.get} */
@@ -148,37 +159,37 @@ export class LengthMeasurement
   }
 
   /** {@link Disposable.dispose} */
-  dispose() {
+  async dispose() {
     this.setupEvents(false);
     this.enabled = false;
-    this.beforeUpdate.reset();
-    this.afterUpdate.reset();
-    this.beforeCreate.reset();
-    this.afterCreate.reset();
-    this.beforeDelete.reset();
-    this.afterDelete.reset();
-    this.beforeCancel.reset();
-    this.afterCancel.reset();
-    this.uiElement.main.dispose();
+    this.onBeforeUpdate.reset();
+    this.onAfterUpdate.reset();
+    this.onBeforeCreate.reset();
+    this.onAfterCreate.reset();
+    this.onBeforeDelete.reset();
+    this.onAfterDelete.reset();
+    this.onBeforeCancel.reset();
+    this.onAfterCancel.reset();
+    this.uiElement.dispose();
     if (this.previewElement) {
       this.previewElement.remove();
     }
     for (const measure of this._measurements) {
-      measure.dispose();
+      await measure.dispose();
     }
     this._lineMaterial.dispose();
     this._measurements = [];
-    this._vertexPicker.dispose();
+    await this._vertexPicker.dispose();
   }
 
   /** {@link Updateable.update} */
-  update(_delta: number) {
+  async update(_delta: number) {
     if (this._enabled) {
-      this.beforeUpdate.trigger(this);
+      await this.onBeforeUpdate.trigger(this);
       if (this._temp.isDragging) {
         this.drawInProcess();
       }
-      this.afterUpdate.trigger(this);
+      await this.onAfterUpdate.trigger(this);
     }
   }
 
@@ -188,19 +199,19 @@ export class LengthMeasurement
    * @param data - forces the dimension to be drawn on a plane. Use this if you are drawing
    * dimensions in floor plan navigation.
    */
-  create = (data?: any) => {
+  create = async (data?: any) => {
     const plane = data instanceof THREE.Object3D ? data : undefined;
     if (!this._enabled) return;
-    this.beforeCreate.trigger(this);
+    await this.onBeforeCreate.trigger(this);
     if (!this._temp.isDragging) {
       this.drawStart(plane);
       return;
     }
-    this.endCreation();
+    await this.endCreation();
   };
 
   /** Deletes the dimension that the user is hovering over with the mouse or touch event. */
-  delete() {
+  async delete() {
     if (!this._enabled || this._measurements.length === 0) return;
     const boundingBoxes = this.getBoundingBoxes();
     const intersect = this._raycaster.castRay(boundingBoxes);
@@ -211,17 +222,17 @@ export class LengthMeasurement
     if (dimension) {
       const index = this._measurements.indexOf(dimension);
       this._measurements.splice(index, 1);
-      dimension.dispose();
-      this.afterDelete.trigger(this);
+      await dimension.dispose();
+      await this.onAfterDelete.trigger(this);
     }
   }
 
   /** Deletes all the dimensions that have been previously created. */
-  deleteAll() {
-    this._measurements.forEach((dim) => {
-      dim.dispose();
-      this.afterDelete.trigger(this);
-    });
+  async deleteAll() {
+    for (const dim of this._measurements) {
+      await dim.dispose();
+      await this.onAfterDelete.trigger(this);
+    }
     this._measurements = [];
   }
 
@@ -254,17 +265,17 @@ export class LengthMeasurement
     this._temp.dimension.endPoint = this._temp.end;
   }
 
-  endCreation() {
+  async endCreation() {
     if (!this._temp.dimension) return;
     this._temp.dimension.createBoundingBox();
     this._measurements.push(this._temp.dimension);
-    this.afterCreate.trigger(this._temp.dimension);
+    await this.onAfterCreate.trigger(this._temp.dimension);
     this._temp.dimension = undefined;
     this._temp.isDragging = false;
   }
 
   private drawDimension() {
-    return new SimpleDimensionLine(this._components, {
+    return new SimpleDimensionLine(this.components, {
       start: this._temp.start,
       end: this._temp.end,
       lineMaterial: this._lineMaterial,
@@ -285,7 +296,7 @@ export class LengthMeasurement
   }
 
   private setupEvents(active: boolean) {
-    const viewerContainer = this._components.ui.viewerContainer;
+    const viewerContainer = this.components.ui.viewerContainer;
     if (active) {
       viewerContainer.addEventListener("click", this.create);
       window.addEventListener("keydown", this.onKeyDown);
@@ -307,5 +318,4 @@ export class LengthMeasurement
   };
 }
 
-export * from "./simple-dimension-line";
-export * from "./types";
+ToolComponent.libraryUUIDs.add(LengthMeasurement.uuid);

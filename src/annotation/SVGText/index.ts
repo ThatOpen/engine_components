@@ -8,7 +8,6 @@ export class SVGText extends Component<SVGTextElement> implements Disposable {
   name: string = "SVGRectangle";
   enabled: boolean = true;
 
-  private _components: Components;
   private _startPoint: Vector2 = new Vector2();
 
   private _text = document.createElementNS(
@@ -17,8 +16,7 @@ export class SVGText extends Component<SVGTextElement> implements Disposable {
   );
 
   constructor(components: Components, text?: string, startPoint?: Vector2) {
-    super();
-    this._components = components;
+    super(components);
     this._text.setAttribute("fill", "red");
     this._text.classList.add("text-2xl", "font-medium");
     this.text = text ?? "";
@@ -26,7 +24,7 @@ export class SVGText extends Component<SVGTextElement> implements Disposable {
     this._text.id = this.id;
   }
 
-  dispose() {
+  async dispose() {
     this._text.remove();
   }
 
@@ -48,7 +46,7 @@ export class SVGText extends Component<SVGTextElement> implements Disposable {
   }
 
   clone() {
-    return new SVGText(this._components, this.text, this.startPoint);
+    return new SVGText(this.components, this.text, this.startPoint);
   }
 
   set x(value: number) {

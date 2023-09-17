@@ -62,17 +62,17 @@ export class PropActionsUI extends SimpleUIComponent<HTMLDivElement> {
     this._modalWindow = new FloatingWindow(this._components);
     this._modalWindow.get().className =
       "overflow-auto text-white bg-ifcjs-100 rounded-md w-[350px]";
-    this._modalWindow.onHidden.on(() => this._modal.get().close());
+    this._modalWindow.onHidden.add(() => this._modal.get().close());
     this._modal.addChild(this._modalWindow);
   }
 
-  dispose(onlyChildren: boolean = false) {
-    super.dispose(onlyChildren);
+  async dispose(onlyChildren: boolean = false) {
+    await super.dispose(onlyChildren);
     this.onRemoveProp.reset();
-    this.editPropBtn.dispose();
-    this.removePropBtn.dispose();
-    this._modal.dispose();
-    this._modalWindow.dispose();
+    await this.editPropBtn.dispose();
+    await this.removePropBtn.dispose();
+    await this._modal.dispose();
+    await this._modalWindow.dispose();
     this.data = {};
   }
 
@@ -92,24 +92,24 @@ export class PropActionsUI extends SimpleUIComponent<HTMLDivElement> {
     acceptBtn.label = "Accept";
     acceptBtn.get().classList.remove("hover:bg-ifcjs-200");
     acceptBtn.get().classList.add("hover:bg-success");
-    acceptBtn.onclick = () => {
+    acceptBtn.onClick.add(async () => {
       this._modal.get().close();
       const { model, expressID } = this.data;
       if (!model || !expressID) return;
-      this.onEditProp.trigger({
+      await this.onEditProp.trigger({
         model,
         expressID,
         name: nameInput.value,
         value: valueInput.value,
       });
-    };
+    });
 
     const cancelBtn = new Button(this._components);
     cancelBtn.materialIcon = "close";
     cancelBtn.label = "Cancel";
     cancelBtn.get().classList.remove("hover:bg-ifcjs-200");
     cancelBtn.get().classList.add("hover:bg-error");
-    cancelBtn.onclick = () => this._modal.get().close();
+    cancelBtn.onClick.add(() => this._modal.get().close());
 
     const actionBtns = new SimpleUIComponent(
       this._components,
@@ -120,7 +120,7 @@ export class PropActionsUI extends SimpleUIComponent<HTMLDivElement> {
 
     editUI.addChild(nameInput, valueInput, actionBtns);
 
-    this.editPropBtn.onclick = () => {
+    this.editPropBtn.onClick.add(async () => {
       const { model, expressID } = this.data;
       const properties = model?.properties;
       if (!model || !expressID || !properties) return;
@@ -152,8 +152,7 @@ export class PropActionsUI extends SimpleUIComponent<HTMLDivElement> {
       this._modalWindow.title = "Edit Property";
       this._modalWindow.setSlot("content", editUI);
       this.showModal();
-      this.editPropBtn.onClicked.trigger();
-    };
+    });
   }
 
   private setRemoveUI() {
@@ -173,20 +172,20 @@ export class PropActionsUI extends SimpleUIComponent<HTMLDivElement> {
     acceptBtn.label = "Accept";
     acceptBtn.get().classList.remove("hover:bg-ifcjs-200");
     acceptBtn.get().classList.add("hover:bg-success");
-    acceptBtn.onclick = () => {
+    acceptBtn.onClick.add(async () => {
       this._modal.get().close();
       const { model, expressID, setID } = this.data;
       if (!model || !expressID || !setID) return;
       this.removeFromParent(); // As the psetUI is going to be disposed, then we need to first remove the action buttons so they do not become disposed as well.
-      this.onRemoveProp.trigger({ model, expressID, setID });
-    };
+      await this.onRemoveProp.trigger({ model, expressID, setID });
+    });
 
     const cancelBtn = new Button(this._components);
     cancelBtn.materialIcon = "close";
     cancelBtn.label = "Cancel";
     cancelBtn.get().classList.remove("hover:bg-ifcjs-200");
     cancelBtn.get().classList.add("hover:bg-error");
-    cancelBtn.onclick = () => this._modal.get().close();
+    cancelBtn.onClick.add(() => this._modal.get().close());
 
     const actionBtns = new SimpleUIComponent(
       this._components,
@@ -197,14 +196,13 @@ export class PropActionsUI extends SimpleUIComponent<HTMLDivElement> {
 
     removeUI.addChild(actionBtns);
 
-    this.removePropBtn.onclick = () => {
+    this.removePropBtn.onClick.add(async () => {
       const { model, expressID, setID } = this.data;
       if (!model || !expressID || !setID) return;
       this._modalWindow.title = "Remove Property";
       this._modalWindow.setSlot("content", removeUI);
       this.showModal();
-      this.removePropBtn.onClicked.trigger();
-    };
+    });
   }
 
   private showModal() {

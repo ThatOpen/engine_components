@@ -45,14 +45,7 @@
 
     components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
-    const directionalLight = new THREE.DirectionalLight();
-    directionalLight.position.set(5, 10, 3);
-    directionalLight.intensity = 0.5;
-    scene.add(directionalLight);
-
-    const ambientLight = new THREE.AmbientLight();
-    ambientLight.intensity = 0.5;
-    scene.add(ambientLight);
+    components.scene.setup();
 
     const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
     components.tools.add('grid', grid);
@@ -65,7 +58,7 @@
     const file = await fetch("../../../resources/small.frag");
     const dataBlob = await file.arrayBuffer();
     const buffer = new Uint8Array(dataBlob);
-    const model = fragments.load(buffer);
+    const model = await fragments.load(buffer);
 
     // Fragment properties loading
     const properties = await fetch("../../../resources/small.json");
@@ -81,19 +74,19 @@
     // New instance of Properties Processor
 	// The components aims to show IFC properties as natural as possible
     const propsProcessor = new OBC.IfcPropertiesProcessor(components)
-	propsProcessor.uiElement.propertiesWindow.visible = true
+	propsProcessor.uiElement.get("propertiesWindow").visible = true
 
 	// Process a model, so properties can be shown.
 	propsProcessor.process(model);
 
 	// On element selected, render its properties.
     const highlighterEvents = highlighter.events;
-    highlighterEvents.select.onClear.on(() => {
+    highlighterEvents.select.onClear.add(() => {
         propsProcessor.cleanPropertiesList();
     });
 
 
-    highlighterEvents.select.onHighlight.on(
+    highlighterEvents.select.onHighlight.add(
         (selection) => {
             // Get properties programmatically
             // const first = Object.keys(selection)[0];
@@ -116,7 +109,7 @@
 	// Creating new toolbar + adding component button
     const mainToolbar = new OBC.Toolbar(components)
     components.ui.addToolbar(mainToolbar)
-	mainToolbar.addChild(propsProcessor.uiElement.main)
+	mainToolbar.addChild(propsProcessor.uiElement.get("main"))
 
 </script>
 </body>

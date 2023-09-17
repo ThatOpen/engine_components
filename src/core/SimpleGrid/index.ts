@@ -3,6 +3,7 @@ import { Component, Disposable, Hideable } from "../../base-types";
 import { Disposer } from "../Disposer";
 import { Components } from "../Components";
 import { SimpleCamera } from "../SimpleCamera";
+import { ToolComponent } from "../ToolsComponent";
 
 /**
  * An infinite grid. Created by
@@ -14,8 +15,7 @@ export class SimpleGrid
   extends Component<THREE.Mesh>
   implements Hideable, Disposable
 {
-  /** {@link Component.name} */
-  name = "SimpleGrid";
+  static readonly uuid = "d1e814d5-b81c-4452-87a2-f039375e0489" as const;
 
   /** {@link Component.enabled} */
   enabled = true;
@@ -28,7 +28,7 @@ export class SimpleGrid
   /** {@link Hideable.visible} */
   set visible(visible: boolean) {
     if (visible) {
-      const scene = this._components.scene.get();
+      const scene = this.components.scene.get();
       scene.add(this._grid);
     } else {
       this._grid.removeFromParent();
@@ -58,9 +58,7 @@ export class SimpleGrid
   }
 
   private readonly _grid: THREE.Mesh;
-  private _disposer = new Disposer();
   private _fade = 3;
-  private _components: Components;
 
   constructor(
     components: Components,
@@ -69,8 +67,8 @@ export class SimpleGrid
     size2: number = 10,
     distance: number = 500
   ) {
-    super();
-    this._components = components;
+    super(components);
+    this.components.tools.add(SimpleGrid.uuid, this);
 
     // Source: https://github.com/dkaraush/THREE.InfiniteGridHelper/blob/master/InfiniteGridHelper.ts
     // Author: Fyrestar https://mevedia.com (https://github.com/Fyrestar/THREE.InfiniteGridHelper)
@@ -185,14 +183,14 @@ export class SimpleGrid
   }
 
   /** {@link Disposable.dispose} */
-  dispose() {
+  async dispose() {
     this.setupEvents(false);
-    this._disposer.dispose(this._grid);
-    (this._components as any) = null;
+    const disposer = await this.components.tools.get(Disposer);
+    disposer.destroy(this._grid);
   }
 
   private setupEvents(active: boolean) {
-    const camera = this._components.camera as SimpleCamera;
+    const camera = this.components.camera as SimpleCamera;
     const controls = camera.controls;
     if (active) {
       controls.addEventListener("update", this.updateZoom);
@@ -202,7 +200,9 @@ export class SimpleGrid
   }
 
   private updateZoom = () => {
-    const camera = this._components.camera as SimpleCamera;
+    const camera = this.components.camera as SimpleCamera;
     this.material.uniforms.uZoom.value = camera.get().zoom;
   };
 }
+
+ToolComponent.libraryUUIDs.add(SimpleGrid.uuid);

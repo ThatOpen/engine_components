@@ -1,37 +1,54 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { Component, Updateable, UI, Disposable, Event } from "../../base-types";
+import {
+  Component,
+  Updateable,
+  UI,
+  Disposable,
+  Event,
+  UIElement,
+} from "../../base-types";
 import { Button, Canvas, FloatingWindow } from "../../ui";
 import { Components } from "../Components";
 
+// TODO: Decouple from UI components and make 2 variants: floating (this one) and drawer
+
 export class Simple2DScene
-  extends Component<void>
+  extends Component<THREE.Scene>
   implements UI, Updateable, Disposable
 {
-  uiElement: {
+  static readonly uuid = "b48b7194-0f9a-43a4-a718-270b1522595f" as const;
+
+  readonly onAfterUpdate = new Event();
+  readonly onBeforeUpdate = new Event();
+
+  /** {@link Component.enabled} */
+  enabled = true;
+
+  /** {@link UI.uiElement} */
+  uiElement = new UIElement<{
     main: Button;
     mainWindow: FloatingWindow;
     canvas: Canvas;
-  };
+  }>();
 
-  enabled = true;
-
-  afterUpdate = new Event();
-  beforeUpdate = new Event();
-
-  name = "Simple2DScene";
-
-  scene: THREE.Scene;
-  camera: THREE.OrthographicCamera;
-  renderer: THREE.WebGLRenderer;
-  grid: THREE.GridHelper;
   controls: OrbitControls;
-  frustumSize = 50;
 
-  size: { width: number; height: number };
+  private readonly _scene: THREE.Scene;
+  private readonly _camera: THREE.OrthographicCamera;
+  private readonly _renderer: THREE.WebGLRenderer;
+  private readonly _grid: THREE.GridHelper;
+  private readonly _size: { width: number; height: number };
+  private readonly _frustumSize = 50;
 
   constructor(components: Components) {
-    super();
+    super(components);
+
+    if (!components.ui.enabled) {
+      throw new Error(
+        "The Simple2DScene component needs to use UI elements (TODO: Decouple from them)."
+      );
+    }
 
     const canvas = new Canvas(components);
     canvas.domElement.classList.remove("absolute");
@@ -46,41 +63,41 @@ export class Simple2DScene
     const main = new Button(components);
     main.materialIcon = "fact_check";
     main.tooltip = "2D scene";
-    main.onclick = () => {
+    main.onClick.add(() => {
       mainWindow.visible = !mainWindow.visible;
-    };
+    });
 
-    this.uiElement = { mainWindow, main, canvas };
+    this.uiElement.set({ mainWindow, main, canvas });
 
-    this.scene = new THREE.Scene();
+    this._scene = new THREE.Scene();
 
-    this.grid = new THREE.GridHelper(1000, 1000);
-    this.grid.rotation.x = Math.PI / 2;
-    this.scene.add(this.grid);
+    this._grid = new THREE.GridHelper(1000, 1000);
+    this._grid.rotation.x = Math.PI / 2;
+    this._scene.add(this._grid);
 
-    this.size = {
+    this._size = {
       width: mainWindow.domElement.clientWidth,
       height: mainWindow.domElement.clientHeight,
     };
 
-    const { width, height } = this.size;
+    const { width, height } = this._size;
 
     // Creates the camera (point of view of the user)
-    this.camera = new THREE.OrthographicCamera(75, width / height);
-    this.camera.position.z = 10;
+    this._camera = new THREE.OrthographicCamera(75, width / height);
+    this._camera.position.z = 10;
 
-    this.renderer = new THREE.WebGLRenderer({ canvas: canvas.get() });
-    this.renderer.setSize(width, height);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this._renderer = new THREE.WebGLRenderer({ canvas: canvas.get() });
+    this._renderer.setSize(width, height);
+    this._renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
     // Creates the orbit controls (to navigate the scene)
 
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls = new OrbitControls(this._camera, this._renderer.domElement);
     this.controls.target.set(0, 0, 0);
     this.controls.enableRotate = false;
     this.controls.enableZoom = true;
 
-    const parent = this.uiElement.canvas.parent;
+    const parent = this.uiElement.get("canvas").parent;
     if (parent) {
       parent.domElement.classList.remove("p-4");
       parent.domElement.classList.remove("overflow-auto");
@@ -88,41 +105,42 @@ export class Simple2DScene
       parent.domElement.classList.add("h-full");
     }
 
-    mainWindow.onResized.on(this.resize);
+    mainWindow.onResized.add(this.resize);
 
     mainWindow.domElement.style.width = "20rem";
     mainWindow.domElement.style.height = "20rem";
   }
 
-  get() {}
+  /** {@link Component.get} */
+  get() {
+    return this._scene;
+  }
 
-  dispose() {
-    this.renderer.dispose();
-    this.grid.dispose();
-    this.uiElement.main.dispose();
-    this.uiElement.canvas.dispose();
-    this.uiElement.mainWindow.dispose();
+  async dispose() {
+    this._renderer.dispose();
+    this._grid.dispose();
+    this.uiElement.dispose();
   }
 
   update() {
     this.controls.update();
-    this.renderer.render(this.scene, this.camera);
+    this._renderer.render(this._scene, this._camera);
   }
 
   resize = () => {
-    const parent = this.uiElement.canvas.parent;
+    const parent = this.uiElement.get("canvas").parent;
     if (!parent) return;
     const { clientWidth, clientHeight } = parent.domElement;
-    this.size.width = clientWidth;
-    this.size.height = clientHeight;
-    const { width, height } = this.size;
+    this._size.width = clientWidth;
+    this._size.height = clientHeight;
+    const { width, height } = this._size;
     const aspect = width / height;
-    this.camera.left = (-this.frustumSize * aspect) / 2;
-    this.camera.right = (this.frustumSize * aspect) / 2;
-    this.camera.top = this.frustumSize / 2;
-    this.camera.bottom = -this.frustumSize / 2;
-    this.camera.updateProjectionMatrix();
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(this.size.width, this.size.height);
+    this._camera.left = (-this._frustumSize * aspect) / 2;
+    this._camera.right = (this._frustumSize * aspect) / 2;
+    this._camera.top = this._frustumSize / 2;
+    this._camera.bottom = -this._frustumSize / 2;
+    this._camera.updateProjectionMatrix();
+    this._camera.updateProjectionMatrix();
+    this._renderer.setSize(this._size.width, this._size.height);
   };
 }

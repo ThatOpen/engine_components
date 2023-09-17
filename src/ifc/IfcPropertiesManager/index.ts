@@ -1,7 +1,7 @@
 import * as WEBIFC from "web-ifc";
 import { FragmentsGroup } from "bim-fragment";
-import { Disposable, Event, Component } from "../../base-types";
-import { Components } from "../../core";
+import { Component, Disposable, Event, UI, UIElement } from "../../base-types";
+import { Components, ToolComponent } from "../../core";
 import { generateIfcGUID } from "../../utils";
 import { IfcPropertiesUtils } from "../IfcPropertiesUtils";
 import { EntityActionsUI } from "./src/entity-actions";
@@ -27,22 +27,9 @@ interface AttributeListener {
 
 export class IfcPropertiesManager
   extends Component<ChangeMap>
-  implements Disposable
+  implements Disposable, UI
 {
-  name: string = "PropertiesManager";
-  enabled: boolean = true;
-  attributeListeners: AttributeListener = {};
-  selectedModel?: FragmentsGroup;
-
-  uiElement: {
-    entityActions: EntityActionsUI;
-    psetActions: PsetActionsUI;
-    propActions: PropActionsUI;
-    exportButton: Button;
-  };
-
-  private _ifcApi: WEBIFC.IfcAPI;
-  private _changeMap: ChangeMap = {};
+  static readonly uuid = "58c2d9f0-183c-48d6-a402-dfcf5b9a34df" as const;
 
   readonly onElementToPset = new Event<{
     model: FragmentsGroup;
@@ -71,15 +58,61 @@ export class IfcPropertiesManager
     absolute: false,
   };
 
-  constructor(components: Components, ifcApi?: WEBIFC.IfcAPI) {
-    super();
-    this._ifcApi = ifcApi ?? new WEBIFC.IfcAPI();
+  enabled: boolean = true;
+  attributeListeners: AttributeListener = {};
+  selectedModel?: FragmentsGroup;
+
+  uiElement = new UIElement<{
+    entityActions: EntityActionsUI;
+    psetActions: PsetActionsUI;
+    propActions: PropActionsUI;
+    exportButton: Button;
+  }>();
+
+  private _ifcApi: WEBIFC.IfcAPI;
+  private _changeMap: ChangeMap = {};
+
+  constructor(components: Components) {
+    super(components);
+
+    this.components.tools.add(IfcPropertiesManager.uuid, this);
+
+    this._ifcApi = new WEBIFC.IfcAPI();
 
     // TODO: Save original IFC file so that opening it again is not necessary
+    if (components.ui.enabled) {
+      this.setUI(components);
+      this.setUIEvents();
+    }
+  }
+
+  get(): ChangeMap {
+    return this._changeMap;
+  }
+
+  async init() {
+    const { path, absolute } = this.wasm;
+    this._ifcApi.SetWasmPath(path, absolute);
+    await this._ifcApi.Init();
+  }
+
+  async dispose() {
+    (this._ifcApi as any) = null;
+    this.selectedModel = undefined;
+    this.attributeListeners = {};
+    this._changeMap = {};
+    this.onElementToPset.reset();
+    this.onPropToPset.reset();
+    this.onPsetRemoved.reset();
+    this.onDataChanged.reset();
+    this.uiElement.dispose();
+  }
+
+  private setUI(components: Components) {
     const exportButton = new Button(components);
     exportButton.tooltip = "Export IFC";
     exportButton.materialIcon = "exit_to_app";
-    exportButton.onclick = () => {
+    exportButton.onClick.add(() => {
       const fileOpener = document.createElement("input");
       fileOpener.type = "file";
       fileOpener.onchange = async () => {
@@ -108,128 +141,112 @@ export class IfcPropertiesManager
         fileOpener.remove();
       };
       fileOpener.click();
-    };
+    });
 
-    this.uiElement = {
+    this.uiElement.set({
       exportButton,
       entityActions: new EntityActionsUI(components),
       psetActions: new PsetActionsUI(components),
       propActions: new PropActionsUI(components),
-    };
-
-    this.setUIEvents();
-  }
-
-  async init() {
-    const { path, absolute } = this.wasm;
-    this._ifcApi.SetWasmPath(path, absolute);
-    await this._ifcApi.Init();
-  }
-
-  dispose() {
-    (this._ifcApi as any) = null;
-    this.selectedModel = undefined;
-    this.attributeListeners = {};
-    this._changeMap = {};
-    this.onElementToPset.reset();
-    this.onPropToPset.reset();
-    this.onPsetRemoved.reset();
-    this.onDataChanged.reset();
-    this.uiElement.entityActions.dispose();
-    this.uiElement.psetActions.dispose();
-    this.uiElement.propActions.dispose();
+    });
   }
 
   private setUIEvents() {
-    this.uiElement.entityActions.onNewPset.on(
-      ({ model, elementIDs, name, description }) => {
-        const { pset } = this.newPset(
+    const entityActions = this.uiElement.get<EntityActionsUI>("entityActions");
+    const propActions = this.uiElement.get<PropActionsUI>("propActions");
+    const psetActions = this.uiElement.get<PsetActionsUI>("psetActions");
+
+    entityActions.onNewPset.add(
+      async ({ model, elementIDs, name, description }) => {
+        const { pset } = await this.newPset(
           model,
           name,
           description === "" ? undefined : description
         );
 
         for (const expressID of elementIDs ?? []) {
-          this.addElementToPset(model, pset.expressID, expressID);
+          await this.addElementToPset(model, pset.expressID, expressID);
         }
 
-        this.uiElement.entityActions.cleanData();
+        entityActions.cleanData();
       }
     );
-    this.uiElement.propActions.onEditProp.on(
-      ({ model, expressID, name, value }) => {
-        const { properties } = IfcPropertiesManager.getIFCInfo(model);
-        const prop = properties[expressID];
-        const { key: valueKey } = IfcPropertiesUtils.getQuantityValue(
-          properties,
-          expressID
-        );
 
-        const { key: nameKey } = IfcPropertiesUtils.getEntityName(
-          properties,
-          expressID
-        );
+    propActions.onEditProp.add(async ({ model, expressID, name, value }) => {
+      const { properties } = IfcPropertiesManager.getIFCInfo(model);
+      const prop = properties[expressID];
+      const { key: valueKey } = IfcPropertiesUtils.getQuantityValue(
+        properties,
+        expressID
+      );
 
-        if (name !== "" && nameKey) {
-          if (prop[nameKey]?.value) {
-            prop[nameKey].value = name;
-          } else {
-            prop.Name = { type: 1, value: name };
-          }
-        }
+      const { key: nameKey } = IfcPropertiesUtils.getEntityName(
+        properties,
+        expressID
+      );
 
-        if (value !== "" && valueKey) {
-          if (prop[valueKey]?.value) {
-            prop[valueKey].value = value;
-          } else {
-            prop.NominalValue = { type: 1, value }; // Need to change type based on property 1:STRING, 2: LABEL, 3: ENUM, 4: REAL
-          }
-        }
-        this.uiElement.propActions.cleanData();
-      }
-    );
-    this.uiElement.propActions.onRemoveProp.on(
-      ({ model, expressID, setID }) => {
-        this.removePsetProp(model, setID, expressID);
-        this.uiElement.propActions.cleanData();
-      }
-    );
-    this.uiElement.psetActions.onEditPset.on(
-      ({ model, psetID, name, description }) => {
-        const { properties } = IfcPropertiesManager.getIFCInfo(model);
-        const pset = properties[psetID];
-
-        if (name !== "") {
-          if (pset.Name?.value) {
-            pset.Name.value = name;
-          } else {
-            pset.Name = { type: 1, value: name };
-          }
-        }
-
-        if (description !== "") {
-          if (pset.Description?.value) {
-            pset.Description.value = description;
-          } else {
-            pset.Description = { type: 1, value: description };
-          }
+      if (name !== "" && nameKey) {
+        if (prop[nameKey]?.value) {
+          prop[nameKey].value = name;
+        } else {
+          prop.Name = { type: 1, value: name };
         }
       }
-    );
-    this.uiElement.psetActions.onRemovePset.on(({ model, psetID }) => {
-      this.removePset(model, psetID);
+
+      if (value !== "" && valueKey) {
+        if (prop[valueKey]?.value) {
+          prop[valueKey].value = value;
+        } else {
+          prop.NominalValue = { type: 1, value }; // Need to change type based on property 1:STRING, 2: LABEL, 3: ENUM, 4: REAL
+        }
+      }
+
+      await this.registerChange(model, expressID);
+
+      propActions.cleanData();
     });
-    this.uiElement.psetActions.onNewProp.on(
-      ({ model, psetID, name, type, value }) => {
-        const prop = this.newSingleStringProperty(
-          model,
-          type as StringPropTypes,
-          name,
-          value
-        );
-        this.addPropToPset(model, psetID, prop.expressID);
+
+    propActions.onRemoveProp.add(async ({ model, expressID, setID }) => {
+      await this.removePsetProp(model, setID, expressID);
+      propActions.cleanData();
+    });
+
+    psetActions.onEditPset.add(async ({ model, psetID, name, description }) => {
+      const { properties } = IfcPropertiesManager.getIFCInfo(model);
+      const pset = properties[psetID];
+
+      if (name !== "") {
+        if (pset.Name?.value) {
+          pset.Name.value = name;
+        } else {
+          pset.Name = { type: 1, value: name };
+        }
       }
-    );
+
+      if (description !== "") {
+        if (pset.Description?.value) {
+          pset.Description.value = description;
+        } else {
+          pset.Description = { type: 1, value: description };
+        }
+      }
+
+      await this.registerChange(model, psetID);
+    });
+
+    psetActions.onRemovePset.add(async ({ model, psetID }) => {
+      await this.removePset(model, psetID);
+    });
+
+    psetActions.onNewProp.add(async ({ model, psetID, name, type, value }) => {
+      const prop = await this.newSingleStringProperty(
+        model,
+        type as StringPropTypes,
+        name,
+        value
+      );
+      await this.addPropToPset(model, psetID, prop.expressID);
+    });
   }
 
   private increaseMaxID(model: FragmentsGroup) {
@@ -260,25 +277,27 @@ export class IfcPropertiesManager
     return { ownerHistory, ownerHistoryHandle };
   }
 
-  private registerChange(model: FragmentsGroup, ...expressID: number[]) {
-    if (!this._changeMap[model.uuid]) this._changeMap[model.uuid] = new Set();
+  private async registerChange(model: FragmentsGroup, ...expressID: number[]) {
+    if (!this._changeMap[model.uuid]) {
+      this._changeMap[model.uuid] = new Set();
+    }
     for (const id of expressID) {
       this._changeMap[model.uuid].add(id);
-      this.onDataChanged.trigger({ model, expressID: id });
+      await this.onDataChanged.trigger({ model, expressID: id });
     }
   }
 
-  setData(model: FragmentsGroup, ...dataToSave: Record<string, any>[]) {
+  async setData(model: FragmentsGroup, ...dataToSave: Record<string, any>[]) {
     const { properties } = IfcPropertiesManager.getIFCInfo(model);
     for (const data of dataToSave) {
       const expressID = data.expressID;
       if (!expressID) continue;
       properties[expressID] = data;
-      this.registerChange(model, expressID);
+      await this.registerChange(model, expressID);
     }
   }
 
-  newPset(model: FragmentsGroup, name: string, description?: string) {
+  async newPset(model: FragmentsGroup, name: string, description?: string) {
     const { schema } = IfcPropertiesManager.getIFCInfo(model);
     const { ownerHistoryHandle } = this.getOwnerHistory(model);
 
@@ -290,7 +309,6 @@ export class IfcPropertiesManager
       ? new WEBIFC[schema].IfcText(description)
       : null;
     const pset = new WEBIFC[schema].IfcPropertySet(
-      model.ifcMetadata.maxExpressID,
       psetGlobalId,
       ownerHistoryHandle,
       psetName,
@@ -302,7 +320,6 @@ export class IfcPropertiesManager
     this.increaseMaxID(model);
     const relGlobalId = this.newGUID(model);
     const rel = new WEBIFC[schema].IfcRelDefinesByProperties(
-      model.ifcMetadata.maxExpressID,
       relGlobalId,
       ownerHistoryHandle,
       null,
@@ -311,12 +328,12 @@ export class IfcPropertiesManager
       new WEBIFC.Handle(pset.expressID)
     );
 
-    this.setData(model, pset, rel);
+    await this.setData(model, pset, rel);
 
     return { pset, rel };
   }
 
-  removePset(model: FragmentsGroup, ...psetID: number[]) {
+  async removePset(model: FragmentsGroup, ...psetID: number[]) {
     const { properties } = IfcPropertiesManager.getIFCInfo(model);
     for (const expressID of psetID) {
       const pset = properties[expressID];
@@ -324,19 +341,19 @@ export class IfcPropertiesManager
       const relID = IfcPropertiesUtils.getPsetRel(properties, expressID);
       if (relID) {
         delete properties[relID];
-        this.registerChange(model, relID);
+        await this.registerChange(model, relID);
       }
       if (pset) {
         for (const propHandle of pset.HasProperties)
           delete properties[propHandle.value];
         delete properties[expressID];
-        this.onPsetRemoved.trigger({ model, psetID: expressID });
-        this.registerChange(model, expressID);
+        await this.onPsetRemoved.trigger({ model, psetID: expressID });
+        await this.registerChange(model, expressID);
       }
     }
   }
 
-  private newSingleProperty(
+  private async newSingleProperty(
     model: FragmentsGroup,
     type: string,
     name: string,
@@ -348,13 +365,12 @@ export class IfcPropertiesManager
     // @ts-ignore
     const propValue = new WEBIFC[schema][type](value);
     const prop = new WEBIFC[schema].IfcPropertySingleValue(
-      model.ifcMetadata.maxExpressID,
       propName,
       null,
       propValue,
       null
     );
-    this.setData(model, prop);
+    await this.setData(model, prop);
     return prop;
   }
 
@@ -385,20 +401,19 @@ export class IfcPropertiesManager
     return this.newSingleProperty(model, type, name, value);
   }
 
-  removePsetProp(model: FragmentsGroup, psetID: number, propID: number) {
+  async removePsetProp(model: FragmentsGroup, psetID: number, propID: number) {
     const { properties } = IfcPropertiesManager.getIFCInfo(model);
     const pset = properties[psetID];
     const prop = properties[propID];
     if (!(pset.type === WEBIFC.IFCPROPERTYSET && prop)) return;
-    const propHandlers = pset.HasProperties.filter((handle: any) => {
+    pset.HasProperties = pset.HasProperties.filter((handle: any) => {
       return handle.value !== propID;
     });
-    pset.HasProperties = propHandlers;
     delete properties[propID];
-    this.registerChange(model, psetID, propID);
+    await this.registerChange(model, psetID, propID);
   }
 
-  addElementToPset(
+  async addElementToPset(
     model: FragmentsGroup,
     psetID: number,
     ...elementID: number[]
@@ -410,21 +425,29 @@ export class IfcPropertiesManager
     for (const expressID of elementID) {
       const elementHandle = new WEBIFC.Handle(expressID);
       rel.RelatedObjects.push(elementHandle);
-      this.onElementToPset.trigger({ model, psetID, elementID: expressID });
+      await this.onElementToPset.trigger({
+        model,
+        psetID,
+        elementID: expressID,
+      });
     }
-    this.registerChange(model, psetID);
+    await this.registerChange(model, psetID);
   }
 
-  addPropToPset(model: FragmentsGroup, psetID: number, ...propID: number[]) {
+  async addPropToPset(
+    model: FragmentsGroup,
+    psetID: number,
+    ...propID: number[]
+  ) {
     const { properties } = IfcPropertiesManager.getIFCInfo(model);
     const pset = properties[psetID];
     if (!pset) return;
     for (const expressID of propID) {
       const elementHandle = new WEBIFC.Handle(expressID);
       pset.HasProperties.push(elementHandle);
-      this.onPropToPset.trigger({ model, psetID, propID: expressID });
+      await this.onPropToPset.trigger({ model, psetID, propID: expressID });
     }
-    this.registerChange(model, psetID);
+    await this.registerChange(model, psetID);
   }
 
   async saveToIfc(model: FragmentsGroup, ifcToSaveOn: Uint8Array) {
@@ -478,18 +501,22 @@ export class IfcPropertiesManager
     if (value === undefined || value == null) {
       throw new Error(`Attribute ${attributeName} has a badly defined handle.`);
     }
-    // Is it good to set all the above as errors? Or better return null?
+
+    // TODO: Is it good to set all the above as errors? Or better return null?
+
+    // TODO: Do we need an async-await in the following set function?
 
     const event = new Event<String | Number | Boolean>();
     Object.defineProperty(entity[attributeName], "value", {
       get() {
         return this._value;
       },
-      set(value) {
+      async set(value) {
         this._value = value;
-        event.trigger(value);
+        await event.trigger(value);
       },
     });
+
     entity[attributeName].value = value;
 
     if (!this.attributeListeners[model.uuid][expressID])
@@ -498,8 +525,6 @@ export class IfcPropertiesManager
 
     return event;
   }
-
-  get(): ChangeMap {
-    return this._changeMap;
-  }
 }
+
+ToolComponent.libraryUUIDs.add(IfcPropertiesManager.uuid);

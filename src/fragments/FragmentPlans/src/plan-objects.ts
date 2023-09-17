@@ -4,7 +4,7 @@ import { Components } from "../../../core";
 import { FragmentBoundingBox } from "../../FragmentBoundingBox";
 import { PlanView } from "./types";
 import { Button } from "../../../ui";
-import { UI, Event } from "../../../base-types";
+import { UI, Event, UIElement } from "../../../base-types";
 
 interface PlanObject {
   root: THREE.Group;
@@ -17,14 +17,14 @@ interface PlanObject {
 export class PlanObjects implements UI {
   offsetFactor = 0.2;
 
-  uiElement: { main: Button };
+  uiElement = new UIElement<{ main: Button }>();
 
   planClicked = new Event<{ id: string }>();
+  components: Components;
 
   private _scale = new THREE.Vector2(1, 1);
   private _min = new THREE.Vector3();
   private _max = new THREE.Vector3();
-  private _components: Components;
   private _objects: { [id: string]: PlanObject } = {};
   private _visible = false;
 
@@ -50,7 +50,7 @@ export class PlanObjects implements UI {
 
   set visible(active: boolean) {
     this._visible = active;
-    const scene = this._components.scene.get();
+    const scene = this.components.scene.get();
     for (const id in this._objects) {
       const { root, marker } = this._objects[id];
       if (active) {
@@ -64,25 +64,20 @@ export class PlanObjects implements UI {
   }
 
   constructor(components: Components) {
-    this._components = components;
+    this.components = components;
     this.resetBounds();
     this.createPlaneOutlineGeometry();
-    const button = new Button(components, {
-      materialIconName: "layers",
-      tooltip: "3D Plans",
-    });
-    button.onclick = () => {
-      this.visible = !this.visible;
-    };
-    this.uiElement = { main: button };
+    if (components.ui.enabled) {
+      this.setUI(components);
+    }
   }
 
-  dispose() {
+  async dispose() {
     this.planClicked.reset();
     this.visible = false;
     for (const id in this._objects) {
       const { marker, button, outline, root, plane } = this._objects[id];
-      button.dispose();
+      await button.dispose();
       outline.removeFromParent();
       (outline.geometry as any) = null;
       outline.material = [];
@@ -96,10 +91,10 @@ export class PlanObjects implements UI {
     this._objects = {};
     this._planeGeometry.dispose();
     this._material.dispose();
-    this.uiElement.main.dispose();
+    this.uiElement.dispose();
     this.lineMaterial.dispose();
     this._material.dispose();
-    (this._components as any) = null;
+    (this.components as any) = null;
   }
 
   add(config: PlanView) {
@@ -120,14 +115,14 @@ export class PlanObjects implements UI {
     outline.rotation.x = -Math.PI / 2;
     root.add(outline);
 
-    const button = new Button(this._components, {
+    const button = new Button(this.components, {
       materialIconName: "location_on",
       tooltip: name,
     });
 
-    button.onclick = () => {
-      this.planClicked.trigger({ id: config.id });
-    };
+    button.onClick.add(async () => {
+      await this.planClicked.trigger({ id: config.id });
+    });
 
     const { domElement } = button;
 
@@ -167,6 +162,17 @@ export class PlanObjects implements UI {
       root.position.x = center.x;
       root.position.z = center.z;
     }
+  }
+
+  private setUI(components: Components) {
+    const button = new Button(components, {
+      materialIconName: "layers",
+      tooltip: "3D Plans",
+    });
+    button.onClick.add(() => {
+      this.visible = !this.visible;
+    });
+    this.uiElement.set({ main: button });
   }
 
   private resetBounds() {

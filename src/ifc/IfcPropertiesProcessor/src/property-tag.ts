@@ -60,8 +60,8 @@ export class PropertyTag extends SimpleUIComponent<HTMLDivElement> {
     this.setListeners();
   }
 
-  dispose(onlyChildren: boolean = false) {
-    super.dispose(onlyChildren);
+  async dispose(onlyChildren: boolean = false) {
+    await super.dispose(onlyChildren);
     (this.model as any) = null;
     (this._propertiesProcessor as any) = null;
     if (Object.keys(this.innerElements).length) {
@@ -89,7 +89,7 @@ export class PropertyTag extends SimpleUIComponent<HTMLDivElement> {
         this.expressID,
         nameKey
       );
-      event.on((v: String) => (this.label = v.toString()));
+      event.add((v: String) => (this.label = v.toString()));
     }
     if (valueKey) {
       const event = propertiesManager.setAttributeListener(
@@ -97,7 +97,7 @@ export class PropertyTag extends SimpleUIComponent<HTMLDivElement> {
         this.expressID,
         valueKey
       );
-      event.on((v: any) => (this.value = v));
+      event.add((v: any) => (this.value = v));
     }
   }
 

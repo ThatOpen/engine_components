@@ -1,7 +1,7 @@
 import { Fragment, FragmentsGroup, Serializer } from "bim-fragment";
 import * as THREE from "three";
-import { Component, Disposable, Event, UI } from "../../base-types";
-import { Components } from "../../core";
+import { Component, Disposable, Event, UI, UIElement } from "../../base-types";
+import { Components, ToolComponent } from "../../core";
 import { Button, FloatingWindow, SimpleUICard, Toolbar } from "../../ui";
 
 /**
@@ -12,8 +12,7 @@ export class FragmentManager
   extends Component<Fragment[]>
   implements Disposable, UI
 {
-  /** {@link Component.name} */
-  name = "FragmentManager";
+  static readonly uuid = "fef46874-46a3-461b-8c44-2922ab77c806" as const;
 
   /** {@link Component.enabled} */
   enabled = true;
@@ -27,15 +26,14 @@ export class FragmentManager
 
   onFragmentsLoaded: Event<FragmentsGroup> = new Event();
 
-  uiElement: {
+  uiElement = new UIElement<{
     main: Button;
     window: FloatingWindow;
-  };
+  }>();
 
   commands: Button[] = [];
 
   private _loader = new Serializer();
-  private _components: Components;
   private _cards: SimpleUICard[] = [];
 
   /** The list of meshes of the created fragments. */
@@ -48,33 +46,13 @@ export class FragmentManager
   }
 
   constructor(components: Components) {
-    super();
-    this._components = components;
+    super(components);
 
-    const window = new FloatingWindow(components);
-    window.title = "Models";
-    window.domElement.style.left = "70px";
-    window.domElement.style.top = "100px";
-    window.domElement.style.width = "340px";
-    window.domElement.style.height = "400px";
+    this.components.tools.add(FragmentManager.uuid, this);
 
-    const windowContent = window.slots.content.domElement;
-    windowContent.classList.remove("overflow-auto");
-    windowContent.classList.add("overflow-x-hidden");
-
-    components.ui.add(window);
-    window.visible = false;
-
-    const main = new Button(components);
-    main.tooltip = "Models";
-    main.materialIcon = "inbox";
-    main.onclick = () => {
-      window.visible = !window.visible;
-    };
-
-    this.uiElement = { main, window };
-
-    this.onFragmentsLoaded.on(() => this.updateWindow());
+    if (components.ui.enabled) {
+      this.setupUI(components);
+    }
   }
 
   /** {@link Component.get} */
@@ -83,24 +61,25 @@ export class FragmentManager
   }
 
   /** {@link Component.get} */
-  dispose() {
-    this.onFragmentsLoaded.reset();
-    this.uiElement.main.dispose();
-    this.uiElement.window.dispose();
+  async dispose(disposeUI = false) {
+    if (disposeUI) {
+      this.onFragmentsLoaded.reset();
+      this.uiElement.dispose();
+    }
     for (const group of this.groups) {
       group.dispose(true);
     }
     for (const command of this.commands) {
-      command.dispose();
+      await command.dispose();
     }
     for (const card of this._cards) {
-      card.dispose();
+      await card.dispose();
     }
     this.groups = [];
     this.list = {};
   }
 
-  disposeGroup(group: FragmentsGroup) {
+  async disposeGroup(group: FragmentsGroup) {
     for (const fragment of group.items) {
       this.removeFragmentMesh(fragment);
       delete this.list[fragment.id];
@@ -109,7 +88,7 @@ export class FragmentManager
     const index = this.groups.indexOf(group);
     this.groups.splice(index, 1);
 
-    this.updateWindow();
+    await this.updateWindow();
   }
 
   /** Disposes all existing fragments */
@@ -126,19 +105,19 @@ export class FragmentManager
    * @param data - the bytes containing the data for the fragments to load.
    * @returns the list of IDs of the loaded fragments.
    */
-  load(data: Uint8Array) {
+  async load(data: Uint8Array) {
     const group = this._loader.import(data);
-    const scene = this._components.scene.get();
+    const scene = this.components.scene.get();
     const ids: string[] = [];
     scene.add(group);
     for (const fragment of group.items) {
       fragment.group = group;
       this.list[fragment.id] = fragment;
       ids.push(fragment.id);
-      this._components.meshes.push(fragment.mesh);
+      this.components.meshes.push(fragment.mesh);
     }
     this.groups.push(group);
-    this.onFragmentsLoaded.trigger(group);
+    await this.onFragmentsLoaded.trigger(group);
     return group;
   }
 
@@ -151,32 +130,36 @@ export class FragmentManager
     return this._loader.export(group);
   }
 
-  updateWindow() {
+  async updateWindow() {
+    if (!this.components.ui.enabled) {
+      return;
+    }
+
     for (const card of this._cards) {
-      card.dispose();
+      await card.dispose();
     }
     for (const group of this.groups) {
-      const card = new SimpleUICard(this._components);
+      const card = new SimpleUICard(this.components);
 
       // TODO: Make all cards like this?
       card.domElement.classList.remove("bg-ifcjs-120");
       card.domElement.classList.remove("border-transparent");
       card.domElement.className += ` min-w-[300px] my-2 border-1 border-solid border-[#3A444E] `;
 
-      const toolbar = new Toolbar(this._components);
-      this._components.ui.addToolbar(toolbar);
+      const toolbar = new Toolbar(this.components);
+      this.components.ui.addToolbar(toolbar);
       card.addChild(toolbar);
 
       card.title = group.name;
-      this.uiElement.window.addChild(card);
+      this.uiElement.get("window").addChild(card);
       this._cards.push(card);
 
       // TODO: Use command list just like in fragment plans
-      const commandsButton = new Button(this._components);
+      const commandsButton = new Button(this.components);
       commandsButton.materialIcon = "delete";
       commandsButton.tooltip = "Delete model";
       toolbar.addChild(commandsButton);
-      commandsButton.onclick = () => this.disposeGroup(group);
+      commandsButton.onClick.add(() => this.disposeGroup(group));
     }
   }
 
@@ -203,11 +186,40 @@ export class FragmentManager
     }
   }
 
+  private setupUI(components: Components) {
+    const window = new FloatingWindow(components);
+    window.title = "Models";
+    window.domElement.style.left = "70px";
+    window.domElement.style.top = "100px";
+    window.domElement.style.width = "340px";
+    window.domElement.style.height = "400px";
+
+    const windowContent = window.slots.content.domElement;
+    windowContent.classList.remove("overflow-auto");
+    windowContent.classList.add("overflow-x-hidden");
+
+    components.ui.add(window);
+    window.visible = false;
+
+    const main = new Button(components);
+    main.tooltip = "Models";
+    main.materialIcon = "inbox";
+    main.onClick.add(() => {
+      window.visible = !window.visible;
+    });
+
+    this.uiElement.set({ main, window });
+
+    this.onFragmentsLoaded.add(() => this.updateWindow());
+  }
+
   private removeFragmentMesh(fragment: Fragment) {
-    const meshes = this._components.meshes;
+    const meshes = this.components.meshes;
     const mesh = fragment.mesh;
     if (meshes.includes(mesh)) {
       meshes.splice(meshes.indexOf(mesh), 1);
     }
   }
 }
+
+ToolComponent.libraryUUIDs.add(FragmentManager.uuid);

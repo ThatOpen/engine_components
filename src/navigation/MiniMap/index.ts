@@ -6,18 +6,21 @@ import {
   Updateable,
   Component,
   Disposable,
+  UIElement,
 } from "../../base-types";
 import { Canvas, Button, RangeInput } from "../../ui";
-import { Components, SimpleCamera } from "../../core";
+import { Components, SimpleCamera, ToolComponent } from "../../core";
 
 export class MiniMap
   extends Component<THREE.OrthographicCamera>
   implements UI, Resizeable, Updateable, Disposable
 {
-  name = "MiniMap";
-  uiElement: { main: Button; canvas: Canvas };
-  afterUpdate = new Event();
-  beforeUpdate = new Event();
+  static readonly uuid = "d1e814d5-b81c-4452-87a2-f039375e0489" as const;
+
+  readonly uiElement = new UIElement<{ main: Button; canvas: Canvas }>();
+  readonly onAfterUpdate = new Event();
+  readonly onBeforeUpdate = new Event();
+  readonly onResize = new Event<THREE.Vector2>();
 
   // By pushing the map to the front, what the user sees on screen corresponds with what they see on the map
   frontOffset = 0;
@@ -66,28 +69,29 @@ export class MiniMap
 
   set enabled(active: boolean) {
     this._enabled = active;
-    this.uiElement.canvas.visible = active;
+    const canvas = this.uiElement.get("canvas");
+    canvas.visible = active;
   }
 
   constructor(components: Components) {
-    super();
+    super(components);
+    this.components.tools.add(MiniMap.uuid, this);
 
-    this.uiElement = {
-      main: new Button(components),
-      canvas: new Canvas(components),
-    };
+    const main = new Button(components);
+    const canvas = new Canvas(components);
+    this.uiElement.set({ main, canvas });
 
-    this.uiElement.main.materialIcon = "map";
-    this.uiElement.main.onclick = () => {
-      this.uiElement.canvas.visible = !this.uiElement.canvas.visible;
-    };
+    main.materialIcon = "map";
+    main.onClick.add(() => {
+      canvas.visible = !canvas.visible;
+    });
 
     const range = new RangeInput(components);
-    this.uiElement.canvas.addChild(range);
+    canvas.addChild(range);
 
     this._components = components;
-    const canvas = this.uiElement.canvas.get();
-    this._renderer = new THREE.WebGLRenderer({ canvas });
+    const htmlCanvas = canvas.get();
+    this._renderer = new THREE.WebGLRenderer({ canvas: htmlCanvas });
     this._renderer.setSize(this._size.x, this._size.y);
 
     const frustumSize = 1;
@@ -100,7 +104,7 @@ export class MiniMap
       frustumSize / -2
     );
 
-    this._components.renderer.onClippingPlanesUpdated.on(this.updatePlanes);
+    this._components.renderer.onClippingPlanesUpdated.add(this.updatePlanes);
 
     this._camera.position.set(0, 200, 0);
     this._camera.zoom = 0.1;
@@ -109,24 +113,23 @@ export class MiniMap
     this.updatePlanes();
   }
 
-  dispose() {
+  async dispose() {
     this.enabled = false;
-    this.uiElement.main.dispose();
-    this.uiElement.canvas.dispose();
-    this.beforeUpdate.reset();
-    this.afterUpdate.reset();
+    this.uiElement.dispose();
+    this.onBeforeUpdate.reset();
+    this.onAfterUpdate.reset();
+    this.onResize.reset();
     this.overrideMaterial.dispose();
     this._renderer.dispose();
-    (this._components as any) = null;
   }
 
   get() {
     return this._camera;
   }
 
-  update() {
+  async update() {
     if (!this.enabled) return;
-    this.beforeUpdate.trigger();
+    await this.onBeforeUpdate.trigger();
     const scene = this._components.scene.get();
     const cameraComponent = this._components.camera as SimpleCamera;
     const controls = cameraComponent.controls;
@@ -157,17 +160,19 @@ export class MiniMap
     scene.background = this.backgroundColor;
     this._renderer.render(scene, this._camera);
     scene.background = previousBackground;
-    this.afterUpdate.trigger();
+    await this.onAfterUpdate.trigger();
   }
 
   getSize() {
-    return this.uiElement.canvas.getSize();
+    const canvas = this.uiElement.get<Canvas>("canvas");
+    return canvas.getSize();
   }
 
-  resize(size?: THREE.Vector2) {
+  async resize(size?: THREE.Vector2) {
+    const canvas = this.uiElement.get<Canvas>("canvas");
     if (size) {
       this._size.copy(size);
-      this.uiElement.canvas.resize(size);
+      canvas.resize(size);
       this._renderer.setSize(size.x, size.y);
 
       const aspect = size.x / size.y;
@@ -178,6 +183,7 @@ export class MiniMap
       this._camera.top = frustumSize / 2;
       this._camera.bottom = -frustumSize / 2;
       this._camera.updateProjectionMatrix();
+      await this.onResize.trigger(size);
     }
   }
 
@@ -191,3 +197,5 @@ export class MiniMap
     this._renderer.clippingPlanes = planes;
   };
 }
+
+ToolComponent.libraryUUIDs.add(MiniMap.uuid);

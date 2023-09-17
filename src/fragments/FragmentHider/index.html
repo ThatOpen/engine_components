@@ -68,12 +68,12 @@
     const file = await fetch("../../../resources/small.frag");
     const dataBlob = await file.arrayBuffer();
     const buffer = new Uint8Array(dataBlob);
-    const model = fragments.load(buffer);
+    const model = await fragments.load(buffer);
 
     const properties = await fetch("../../../resources/small.json");
     model.properties = await properties.json();
 
-    const classifier = new OBC.FragmentClassifier(fragments);
+    const classifier = new OBC.FragmentClassifier(components);
     classifier.byStorey(model);
     classifier.byEntity(model);
 
@@ -92,10 +92,11 @@
     }
 
     const hider = new OBC.FragmentHider(components, fragments, undefined, true);
+    await hider.loadCached();
 
     const toolbar = new OBC.Toolbar(components);
     components.ui.addToolbar(toolbar);
-    toolbar.addChild(hider.uiElement.main);
+    toolbar.addChild(hider.uiElement.get("main"));
 
     // Set up dat.gui menu
 
@@ -103,16 +104,16 @@
 
     const storeysGui = gui.addFolder("Storeys");
     for (const name in storeys) {
-        storeysGui.add(storeys, name).onChange((visible) => {
-            const found = classifier.find({storeys: [name]});
+        storeysGui.add(storeys, name).onChange(async (visible) => {
+            const found = await classifier.find({storeys: [name]});
             hider.set(visible, found);
         });
     }
 
     const entitiesGui = gui.addFolder("Classes");
     for (const name in classes) {
-        entitiesGui.add(classes, name).onChange((visible) => {
-            const found = classifier.find({entities: [name]});
+        entitiesGui.add(classes, name).onChange(async (visible) => {
+            const found = await classifier.find({entities: [name]});
             hider.set(visible, found);
         });
     }
@@ -124,8 +125,8 @@
     document.body.append(stats.dom);
     stats.dom.style.left = '0px';
     const renderer = components.renderer;
-    renderer.beforeUpdate.on(() => stats.begin());
-    renderer.afterUpdate.on(() => stats.end());
+    renderer.onBeforeUpdate.add(() => stats.begin());
+    renderer.onAfterUpdate.add(() => stats.end());
 
 </script>
 </body>

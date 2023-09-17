@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { HorizontalBlurShader } from "three/examples/jsm/shaders/HorizontalBlurShader";
 import { VerticalBlurShader } from "three/examples/jsm/shaders/VerticalBlurShader";
 import { Component, Disposable } from "../../base-types";
-import { Components, Disposer } from "../../core";
+import { Components, Disposer, ToolComponent } from "../../core";
 
 // TODO: Clean up and document this
 
@@ -19,7 +19,7 @@ export interface Shadows {
 }
 
 export class ShadowDropper extends Component<Shadows> implements Disposable {
-  name = "ShadowDropper";
+  static readonly uuid = "f833a09a-a3ab-4c58-b03e-da5298c7a1b6" as const;
 
   enabled = true;
 
@@ -36,12 +36,14 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
   shadowExtraScaleFactor = 1.5;
 
   private shadows: Shadows = {};
-  private disposer = new Disposer();
   private tempMaterial = new THREE.MeshBasicMaterial({ visible: false });
   private depthMaterial = new THREE.MeshDepthMaterial();
 
-  constructor(private components: Components) {
-    super();
+  constructor(components: Components) {
+    super(components);
+
+    this.components.tools.add(ShadowDropper.uuid, this);
+
     this.initializeDepthMaterial();
   }
 
@@ -51,9 +53,9 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
   }
 
   /** {@link Disposable.dispose} */
-  dispose() {
+  async dispose() {
     for (const id in this.shadows) {
-      this.deleteShadow(id);
+      await this.deleteShadow(id);
     }
     this.tempMaterial.dispose();
     this.depthMaterial.dispose();
@@ -83,12 +85,13 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
    *
    * @param id - the name of this shadow.
    */
-  deleteShadow(id: string) {
+  async deleteShadow(id: string) {
+    const disposer = await this.components.tools.get(Disposer);
     const shadow = this.shadows[id];
     delete this.shadows[id];
     if (!shadow) throw new Error(`No shadow with ID ${id} was found.`);
-    this.disposer.dispose(shadow.root as any);
-    this.disposer.dispose(shadow.blurPlane);
+    disposer.destroy(shadow.root as any);
+    disposer.destroy(shadow.blurPlane);
     shadow.rt.dispose();
     shadow.rtBlur.dispose();
   }
@@ -336,3 +339,5 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
     shadow.blurPlane.visible = false;
   }
 }
+
+ToolComponent.libraryUUIDs.add(ShadowDropper.uuid);

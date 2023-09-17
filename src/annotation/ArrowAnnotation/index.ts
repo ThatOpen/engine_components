@@ -1,4 +1,4 @@
-import { BaseSVGAnnotation } from "../../base-types";
+import { BaseSVGAnnotation, UIElement } from "../../base-types";
 import { Components } from "../../core";
 import { Button } from "../../ui";
 import { SVGArrow } from "../SVGArrow";
@@ -7,29 +7,30 @@ import { DrawManager } from "../DrawManager";
 export class ArrowAnnotation extends BaseSVGAnnotation {
   name: string = "ArrowAnnotation";
   canvas: HTMLCanvasElement | null = null;
-  uiElement: { main: Button };
+  uiElement = new UIElement<{ main: Button }>();
 
   private _previewElement: SVGArrow;
 
   constructor(components: Components, drawManager?: DrawManager) {
-    super();
+    super(components);
     this._previewElement = new SVGArrow(components);
     this.drawManager = drawManager;
 
-    this.uiElement = { main: new Button(components) };
-    this.uiElement.main.label = "Arrow";
-    this.uiElement.main.materialIcon = "north_east";
-    this.uiElement.main.onclick = () => {
+    const main = new Button(components);
+    this.uiElement.set({ main });
+    main.label = "Arrow";
+    main.materialIcon = "north_east";
+    main.onClick.add(() => {
       if (this.drawManager) {
         this.drawManager.activateTool(this);
       } else {
         this.enabled = !this.enabled;
       }
-    };
+    });
   }
 
-  dispose() {
-    super.dispose();
+  async dispose() {
+    await super.dispose();
     this._previewElement.dispose();
   }
 

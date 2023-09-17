@@ -1,4 +1,5 @@
 import { Disposable, Hideable, Resizeable, Updateable, UI } from "./base-types";
+import { Components } from "../core";
 
 /**
  * Components are the building blocks of this library. Everything is a
@@ -7,9 +8,6 @@ import { Disposable, Hideable, Resizeable, Updateable, UI } from "./base-types";
  * the type of the core of this component. For instance, a component containing a
  */
 export abstract class Component<Type> {
-  /** The main identifier of this component. It can be used to retrieve it and index it. */
-  abstract name: string;
-
   /**
    * Whether this component is active or not. The behaviour can vary depending
    * on the type of component. E.g. a disabled dimension tool will stop creating
@@ -24,6 +22,8 @@ export abstract class Component<Type> {
    */
   abstract get(...args: any): Type;
 
+  constructor(public components: Components) {}
+
   /** Whether is component is {@link Disposable}. */
   isDisposeable = (): this is Disposable => {
     return "dispose" in this;
@@ -36,7 +36,9 @@ export abstract class Component<Type> {
 
   /** Whether is component is {@link Updateable}. */
   isUpdateable = (): this is Updateable => {
-    return "afterUpdate" in this && "beforeUpdate" in this && "update" in this;
+    return (
+      "onAfterUpdate" in this && "onBeforeUpdate" in this && "update" in this
+    );
   };
 
   /** Whether is component is {@link Hideable}. */

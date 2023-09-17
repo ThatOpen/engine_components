@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { FragmentsGroup } from "bim-fragment";
 import * as WEBIFC from "web-ifc";
-import { Component, Disposable, UI, Event } from "../../base-types";
+import { Component, Disposable, UI, Event, UIElement } from "../../base-types";
 import {
   EdgesClipper,
   EdgesPlane,
@@ -9,9 +9,9 @@ import {
   OrthoPerspectiveCamera,
 } from "../../navigation";
 import { PlanView } from "./src/types";
-import { IfcPropertiesUtils } from "../../ifc/IfcPropertiesUtils";
+import { IfcPropertiesUtils } from "../../ifc";
 import { PlanObjects } from "./src/plan-objects";
-import { Components } from "../../core";
+import { Components, ToolComponent } from "../../core";
 import {
   Button,
   FloatingWindow,
@@ -29,7 +29,11 @@ export class FragmentPlans
   extends Component<PlanView[]>
   implements Disposable, UI
 {
-  name = "PlanNavigator";
+  static readonly uuid = "a80874aa-1c93-43a4-80f2-df346da086b1" as const;
+
+  readonly onNavigated = new Event<{ id: string }>();
+
+  readonly onExited = new Event();
 
   /** {@link Component.enabled} */
   enabled = false;
@@ -43,27 +47,21 @@ export class FragmentPlans
   /** The offset of the 2D camera to the floor plan elevation. */
   defaultCameraOffset = 30;
 
-  navigated = new Event<{ id: string }>();
-
-  exited = new Event();
-
   /** The created floor plans. */
   storeys: { [modelID: number]: any[] } = [];
 
   objects: PlanObjects;
 
-  uiElement: {
+  /** {@link UI.uiElement} */
+  uiElement = new UIElement<{
     floatingWindow: FloatingWindow;
     main: Button;
     planList: SimpleUIComponent;
     defaultText: SimpleUIComponent<HTMLParagraphElement>;
     exitButton: Button;
     commandsMenu: CommandsMenu<PlanView>;
-  };
+  }>();
 
-  private _components: Components;
-  private _clipper: EdgesClipper;
-  private _camera: OrthoPerspectiveCamera;
   private _plans: PlanView[] = [];
   private _floorPlanViewCached = false;
   private _previousCamera = new THREE.Vector3();
@@ -71,76 +69,23 @@ export class FragmentPlans
   private _previousProjection: CameraProjection = "Perspective";
 
   get commands() {
-    return this.uiElement.commandsMenu.commands;
+    return this.uiElement.get<CommandsMenu<PlanView>>("commandsMenu").commands;
   }
 
   set commands(commands: UICommands<PlanView>) {
-    this.uiElement.commandsMenu.commands = commands;
+    this.uiElement.get<CommandsMenu<PlanView>>("commandsMenu").commands =
+      commands;
   }
 
-  constructor(
-    components: Components,
-    clipper: EdgesClipper,
-    camera: OrthoPerspectiveCamera
-  ) {
-    super();
-    this._components = components;
-    this._clipper = clipper;
-    this._camera = camera;
+  constructor(components: Components) {
+    super(components);
+
+    this.components.tools.add(FragmentPlans.uuid, this);
+
     this.objects = new PlanObjects(components);
-    this.setupPlanObjectUI();
-
-    const topButtonContainer = new SimpleUIComponent(
-      this._components,
-      `<div class="flex"></div>`
-    );
-    const exitButton = new Button(components);
-    exitButton.materialIcon = "logout";
-    topButtonContainer.addChild(exitButton);
-
-    exitButton.enabled = false;
-    exitButton.onclick = () => this.exitPlanView();
-
-    const main = new Button(components, {
-      tooltip: "Plans list",
-    });
-    main.materialIcon = "folder_copy";
-
-    const floatingWindow = new FloatingWindow(components);
-    floatingWindow.title = "Floor Plans";
-    components.ui.add(floatingWindow);
-    floatingWindow.visible = false;
-
-    floatingWindow.addChild(topButtonContainer);
-
-    const planList = new SimpleUIComponent(
-      components,
-      `<div class="flex flex-col"></div>`
-    );
-    floatingWindow.addChild(planList);
-
-    const defaultText = new SimpleUIComponent<HTMLParagraphElement>(
-      components,
-      `<p>No plans yet.</p>`
-    );
-    floatingWindow.addChild(defaultText);
-
-    const commandsMenu = new CommandsMenu<PlanView>(components);
-    components.ui.add(commandsMenu);
-    commandsMenu.visible = false;
-
-    this.uiElement = {
-      main,
-      floatingWindow,
-      planList,
-      defaultText,
-      exitButton,
-      commandsMenu,
-    };
-
-    main.onclick = () => {
-      floatingWindow.visible = !floatingWindow.visible;
-    };
+    if (components.ui.enabled) {
+      this.setUI(components);
+    }
   }
 
   /** {@link Component.get} */
@@ -149,22 +94,13 @@ export class FragmentPlans
   }
 
   /** {@link Disposable.dispose} */
-  dispose() {
-    this.exited.reset();
-    this.navigated.reset();
+  async dispose() {
+    this.onExited.reset();
+    this.onNavigated.reset();
     this.storeys = [];
     this._plans = [];
-    this._clipper.dispose();
-    this.objects.dispose();
-    this.uiElement.floatingWindow.dispose();
-    this.uiElement.main.dispose();
-    this.uiElement.planList.dispose();
-    this.uiElement.defaultText.dispose();
-    this.uiElement.exitButton.dispose();
-    this.uiElement.commandsMenu.dispose();
-    (this._components as any) = null;
-    (this._clipper as any) = null;
-    (this._camera as any) = null;
+    await this.objects.dispose();
+    this.uiElement.dispose();
   }
 
   // TODO: Compute georreference matrix when generating fragmentsgroup
@@ -235,17 +171,19 @@ export class FragmentPlans
       return;
     }
     this.objects.visible = false;
-    this.navigated.trigger({ id });
+    await this.onNavigated.trigger({ id });
 
     this.storeCameraPosition();
-    this.hidePreviousClippingPlane();
+    await this.hidePreviousClippingPlane();
     this.updateCurrentPlan(id);
-    this.activateCurrentPlan();
+    await this.activateCurrentPlan();
     if (!this.enabled) {
       await this.moveCameraTo2DPlanPosition(animate);
       this.enabled = true;
     }
-    this.uiElement.exitButton.enabled = true;
+    if (this.components.ui.enabled) {
+      this.uiElement.get("exitButton").enabled = true;
+    }
   }
 
   /**
@@ -256,20 +194,19 @@ export class FragmentPlans
   async exitPlanView(animate = false) {
     if (!this.enabled) return;
     this.enabled = false;
-    this.exited.trigger();
+    await this.onExited.trigger();
 
     this.cacheFloorplanView();
 
-    this._camera.setNavigationMode("Orbit");
-    await this._camera.setProjection(this._previousProjection);
+    const camera = this.components.camera as OrthoPerspectiveCamera;
+    camera.setNavigationMode("Orbit");
+    await camera.setProjection(this._previousProjection);
     if (this.currentPlan && this.currentPlan.plane) {
-      this.currentPlan.plane.enabled = false;
-      if (this.currentPlan.plane instanceof EdgesPlane) {
-        this.currentPlan.plane.edges.visible = false;
-      }
+      await this.currentPlan.plane.setEnabled(false);
+      await this.currentPlan.plane.edges.setVisible(false);
     }
     this.currentPlan = null;
-    await this._camera.controls.setLookAt(
+    await camera.controls.setLookAt(
       this._previousCamera.x,
       this._previousCamera.y,
       this._previousCamera.z,
@@ -278,12 +215,22 @@ export class FragmentPlans
       this._previousTarget.z,
       animate
     );
-    this.uiElement.exitButton.enabled = false;
+    if (this.components.ui.enabled) {
+      this.uiElement.get("exitButton").enabled = false;
+    }
   }
 
-  updatePlansList() {
-    const { defaultText, planList, commandsMenu } = this.uiElement;
-    planList.dispose(true);
+  async updatePlansList() {
+    if (!this.components.ui.enabled) {
+      return;
+    }
+
+    const defaultText = this.uiElement.get("defaultText");
+    const planList = this.uiElement.get("planList");
+    const commandsMenu =
+      this.uiElement.get<CommandsMenu<PlanView>>("commandsMenu");
+
+    await planList.dispose(true);
     if (!this._plans.length) {
       defaultText.visible = true;
       return;
@@ -297,12 +244,12 @@ export class FragmentPlans
       const height = Math.trunc(plan.point.y * 10) / 10;
       const description = `Height: ${height}`;
 
-      const simpleCard = new SimpleUICard(this._components);
+      const simpleCard = new SimpleUICard(this.components);
       simpleCard.title = plan.name;
       simpleCard.description = description;
 
-      const toolbar = new Toolbar(this._components);
-      this._components.ui.addToolbar(toolbar);
+      const toolbar = new Toolbar(this.components);
+      this.components.ui.addToolbar(toolbar);
       simpleCard.addChild(toolbar);
       toolbar.domElement.classList.remove(
         "shadow-md",
@@ -310,26 +257,26 @@ export class FragmentPlans
         "bg-ifcjs-100"
       );
 
-      const planButton = new Button(this._components, {
+      const planButton = new Button(this.components, {
         materialIconName: "arrow_outward",
       });
 
-      planButton.onclick = () => {
-        this.goTo(plan.id);
-      };
+      planButton.onClick.add(async () => {
+        await this.goTo(plan.id);
+      });
 
       toolbar.addChild(planButton);
 
-      const extraButton = new Button(this._components, {
+      const extraButton = new Button(this.components, {
         materialIconName: "expand_more",
       });
 
-      extraButton.onclick = (event) => {
+      extraButton.onClick.add((event) => {
         if (event) {
           commandsMenu.commandData = plan;
           commandsMenu.popup(event.x, event.y);
         }
-      };
+      });
 
       if (!commandsExist) {
         extraButton.enabled = false;
@@ -343,6 +290,62 @@ export class FragmentPlans
 
       planList.addChild(simpleCard);
     }
+  }
+
+  private setUI(components: Components) {
+    this.setupPlanObjectUI();
+
+    const topButtonContainer = new SimpleUIComponent(
+      this.components,
+      `<div class="flex"></div>`
+    );
+    const exitButton = new Button(components);
+    exitButton.materialIcon = "logout";
+    topButtonContainer.addChild(exitButton);
+
+    exitButton.enabled = false;
+    exitButton.onClick.add(() => this.exitPlanView());
+
+    const main = new Button(components, {
+      tooltip: "Plans list",
+    });
+    main.materialIcon = "folder_copy";
+
+    const floatingWindow = new FloatingWindow(components);
+    floatingWindow.title = "Floor Plans";
+    components.ui.add(floatingWindow);
+    floatingWindow.visible = false;
+
+    floatingWindow.addChild(topButtonContainer);
+
+    const planList = new SimpleUIComponent(
+      components,
+      `<div class="flex flex-col"></div>`
+    );
+    floatingWindow.addChild(planList);
+
+    const defaultText = new SimpleUIComponent<HTMLParagraphElement>(
+      components,
+      `<p>No plans yet.</p>`
+    );
+    floatingWindow.addChild(defaultText);
+
+    const commandsMenu = new CommandsMenu<PlanView>(components);
+    components.ui.add(commandsMenu);
+    commandsMenu.visible = false;
+
+    this.uiElement.set({
+      main,
+      floatingWindow,
+      planList,
+      defaultText,
+      exitButton,
+      commandsMenu,
+    });
+
+    main.onClick.add(() => {
+      floatingWindow.visible = !floatingWindow.visible;
+    });
   }
 
   private storeCameraPosition() {
@@ -359,43 +362,54 @@ export class FragmentPlans
     if (config.offset) {
       clippingPoint.y += config.offset;
     }
-    const plane = this._clipper.createFromNormalAndCoplanarPoint(
+
+    const clipper = await this.components.tools.get(EdgesClipper);
+
+    const plane = clipper.createFromNormalAndCoplanarPoint(
       normal,
       clippingPoint
     );
-    plane.enabled = false;
+
+    await plane.setEnabled(false);
     await plane.edges.update();
-    plane.edges.visible = false;
+    await plane.edges.setVisible(false);
     return plane;
   }
 
   private cacheFloorplanView() {
     this._floorPlanViewCached = true;
-    this._camera.controls.saveState();
+    const camera = this.components.camera as OrthoPerspectiveCamera;
+    camera.controls.saveState();
   }
 
   private async moveCameraTo2DPlanPosition(animate: boolean) {
-    if (this._floorPlanViewCached) await this._camera.controls.reset(animate);
-    else await this._camera.controls.setLookAt(0, 100, 0, 0, 0, 0, animate);
+    const camera = this.components.camera as OrthoPerspectiveCamera;
+    if (this._floorPlanViewCached) {
+      await camera.controls.reset(animate);
+    } else {
+      await camera.controls.setLookAt(0, 100, 0, 0, 0, 0, animate);
+    }
   }
 
-  private activateCurrentPlan() {
+  private async activateCurrentPlan() {
     if (!this.currentPlan) throw new Error("Current plan is not defined.");
+    const camera = this.components.camera as OrthoPerspectiveCamera;
     if (this.currentPlan.plane) {
-      this.currentPlan.plane.enabled = true;
+      await this.currentPlan.plane.setEnabled(true);
       this.currentPlan.plane.edges.fillNeedsUpdate = true;
-      this.currentPlan.plane.edges.visible = true;
+      await this.currentPlan.plane.edges.setVisible(true);
     }
-    this._camera.setNavigationMode("Plan");
+    camera.setNavigationMode("Plan");
     const projection = this.currentPlan.ortho ? "Orthographic" : "Perspective";
-    this._camera.setProjection(projection);
+    await camera.setProjection(projection);
   }
 
   private store3dCameraPosition() {
-    const camera = this._camera.get();
-    camera.getWorldPosition(this._previousCamera);
-    this._camera.controls.getTarget(this._previousTarget);
-    this._previousProjection = this._camera.getProjection();
+    const camera = this.components.camera as OrthoPerspectiveCamera;
+    const activeCamera = this.components.camera.get();
+    activeCamera.getWorldPosition(this._previousCamera);
+    camera.controls.getTarget(this._previousTarget);
+    this._previousProjection = camera.getProjection();
   }
 
   private updateCurrentPlan(id: string) {
@@ -406,32 +420,36 @@ export class FragmentPlans
     this.currentPlan = foundPlan;
   }
 
-  private hidePreviousClippingPlane() {
+  private async hidePreviousClippingPlane() {
     if (this.currentPlan) {
       const plane = this.currentPlan.plane;
-      if (plane) plane.enabled = false;
+      if (plane) {
+        await plane.setEnabled(false);
+      }
       if (this.currentPlan.plane instanceof EdgesPlane) {
-        this.currentPlan.plane.edges.visible = false;
+        await this.currentPlan.plane.edges.setVisible(false);
       }
     }
   }
 
   private setupPlanObjectUI() {
-    this.objects.planClicked.on(async ({ id }) => {
-      const button = this.objects.uiElement.main;
+    this.objects.planClicked.add(async ({ id }) => {
+      const button = this.objects.uiElement.get<Button>("main");
       if (!this.enabled) {
         if (button.innerElements.icon && button.innerElements.tooltip) {
           button.materialIcon = "logout";
           button.tooltip = "Exit floorplans";
         }
-        button.onclick = () => {
+        button.onClick.add(() => {
           this.exitPlanView();
           if (button.innerElements.icon && button.innerElements.tooltip) {
             button.materialIcon = "layers";
             button.tooltip = "3D plans";
           }
-          button.onclick = () => (this.objects.visible = !this.objects.visible);
-        };
+          button.onClick.add(
+            () => (this.objects.visible = !this.objects.visible)
+          );
+        });
       }
       this.goTo(id);
     });
@@ -455,3 +473,5 @@ export class FragmentPlans
     }
   }
 }
+
+ToolComponent.libraryUUIDs.add(FragmentPlans.uuid);

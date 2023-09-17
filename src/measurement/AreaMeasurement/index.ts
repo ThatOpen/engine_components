@@ -1,36 +1,45 @@
 import * as THREE from "three";
-import { Createable, Disposable, Event, UI } from "../../base-types/base-types";
-import { Component } from "../../base-types/component";
-import { Components } from "../../core/Components";
-import { Button } from "../../ui/ButtonComponent";
+import {
+  Createable,
+  Disposable,
+  Event,
+  UI,
+  Component,
+  UIElement,
+} from "../../base-types";
+import { Components, ToolComponent } from "../../core";
+import { Button } from "../../ui";
 import { VertexPicker } from "../../utils";
-import { AreaMeasureElement } from "../AreaMeasureElement";
+import { AreaMeasureElement } from "./src";
 
 export class AreaMeasurement
   extends Component<AreaMeasureElement[]>
   implements Createable, UI, Disposable
 {
-  name: string = "AreaMeasurement";
-  uiElement: { main: Button };
+  static readonly uuid = "c453a99e-f054-4781-9060-33df617db4a5" as const;
 
-  private _components: Components;
+  uiElement = new UIElement<{ main: Button }>();
+
   private _enabled: boolean = false;
   private _vertexPicker: VertexPicker;
   private _currentAreaElement: AreaMeasureElement | null = null;
   private _clickCount: number = 0;
   private _measurements: AreaMeasureElement[] = [];
 
-  readonly beforeCreate = new Event<any>();
-  readonly afterCreate = new Event<AreaMeasureElement>();
-  readonly beforeCancel = new Event<any>();
-  readonly afterCancel = new Event<any>();
-  readonly beforeDelete = new Event<any>();
-  readonly afterDelete = new Event<any>();
+  readonly onBeforeCreate = new Event<any>();
+  readonly onAfterCreate = new Event<AreaMeasureElement>();
+  readonly onBeforeCancel = new Event<any>();
+  readonly onAfterCancel = new Event<any>();
+  readonly onBeforeDelete = new Event<any>();
+  readonly onAfterDelete = new Event<any>();
 
   set enabled(value: boolean) {
     this._enabled = value;
     this._vertexPicker.enabled = value;
-    this.uiElement.main.active = value;
+    if (this.components.ui.enabled) {
+      const main = this.uiElement.get("main");
+      main.active = value;
+    }
     this.setupEvents(value);
     if (!value) this.cancelCreation();
   }
@@ -48,44 +57,50 @@ export class AreaMeasurement
   }
 
   constructor(components: Components) {
-    super();
-    this._components = components;
+    super(components);
+
+    this.components.tools.add(AreaMeasurement.uuid, this);
+
+    // TODO: Make vertexpicker a tool?
     this._vertexPicker = new VertexPicker(components);
-    this.uiElement = { main: new Button(components) };
-    this.uiElement.main.materialIcon = "check_box_outline_blank";
-    this.setUI();
-    this.enabled = false;
+
+    if (components.ui.enabled) {
+      this.setUI();
+    }
   }
 
-  dispose() {
+  async dispose() {
     this.setupEvents(false);
-    this.beforeCreate.reset();
-    this.afterCreate.reset();
-    this.beforeCancel.reset();
-    this.afterCancel.reset();
-    this.beforeDelete.reset();
-    this.afterDelete.reset();
-    this.uiElement.main.dispose();
-    this._vertexPicker.dispose();
+    this.onBeforeCreate.reset();
+    this.onAfterCreate.reset();
+    this.onBeforeCancel.reset();
+    this.onAfterCancel.reset();
+    this.onBeforeDelete.reset();
+    this.onAfterDelete.reset();
+    this.uiElement.dispose();
+    await this._vertexPicker.dispose();
     if (this._currentAreaElement) {
-      this._currentAreaElement.dispose();
+      await this._currentAreaElement.dispose();
     }
     for (const measure of this._measurements) {
-      measure.dispose();
+      await measure.dispose();
     }
-    (this._components as any) = null;
+    (this.components as any) = null;
   }
 
   private setUI() {
-    this.uiElement.main.onclick = () => {
+    const main = new Button(this.components);
+    main.materialIcon = "check_box_outline_blank";
+    main.onClick.add(() => {
       if (!this.enabled) {
-        this.uiElement.main.active = true;
+        main.active = true;
         this.enabled = true;
       } else {
         this.enabled = false;
-        this.uiElement.main.active = false;
+        main.active = false;
       }
-    };
+    });
+    this.uiElement.set({ main });
   }
 
   create = () => {
@@ -93,14 +108,14 @@ export class AreaMeasurement
     const point = this._vertexPicker.get();
     if (!point) return;
     if (!this._currentAreaElement) {
-      const areaShape = new AreaMeasureElement(this._components);
-      areaShape.onPointAdded.on(() => {
+      const areaShape = new AreaMeasureElement(this.components);
+      areaShape.onPointAdded.add(() => {
         if (this._clickCount === 3 && !areaShape.workingPlane) {
           areaShape.computeWorkingPlane();
           this._vertexPicker.workingPlane = areaShape.workingPlane;
         }
       });
-      areaShape.onPointRemoved.on(() => this._clickCount--);
+      areaShape.onPointRemoved.add(() => this._clickCount--);
       this._currentAreaElement = areaShape;
     }
     this._currentAreaElement.setPoint(point, this._clickCount);
@@ -136,7 +151,7 @@ export class AreaMeasurement
   }
 
   private setupEvents(active: boolean) {
-    const viewerContainer = this._components.ui.viewerContainer;
+    const viewerContainer = this.components.ui.viewerContainer;
     if (active) {
       viewerContainer.addEventListener("click", this.create);
       viewerContainer.addEventListener("mousemove", this.onMouseMove);
@@ -169,3 +184,5 @@ export class AreaMeasurement
     }
   };
 }
+
+ToolComponent.libraryUUIDs.add(AreaMeasurement.uuid);

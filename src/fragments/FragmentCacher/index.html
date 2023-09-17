@@ -47,17 +47,9 @@
 
     components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
-    const directionalLight = new THREE.DirectionalLight();
-    directionalLight.position.set(5, 10, 3);
-    directionalLight.intensity = 0.5;
-    scene.add(directionalLight);
-
-    const ambientLight = new THREE.AmbientLight();
-    ambientLight.intensity = 0.5;
-    scene.add(ambientLight);
+    components.scene.setup();
 
     const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
-    components.tools.add("grid", grid);
     const gridMesh = grid.get();
     const effects = components.renderer.postproduction.customEffects;
     effects.excludedMeshes.push(gridMesh);
@@ -67,7 +59,7 @@
     fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
     fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
     fragmentIfcLoader.settings.wasm = {
-        path: "https://unpkg.com/web-ifc@0.0.42/",
+        path: "https://unpkg.com/web-ifc@0.0.43/",
         absolute: true
     }
 
@@ -81,19 +73,19 @@
     mainToolbar.addChild(reloadButton);
     reloadButton.onclick = () => location.reload();
 
-    mainToolbar.addChild(fragmentIfcLoader.uiElement.main);
+    mainToolbar.addChild(fragmentIfcLoader.uiElement.get("main"));
 
     const cacher = new OBC.FragmentCacher(components, fragments);
 
-    mainToolbar.addChild(cacher.uiElement.main);
+    mainToolbar.addChild(cacher.uiElement.get("main"));
 
     const stats = new Stats();
     stats.showPanel(2);
     document.body.append(stats.dom);
     stats.dom.style.left = '0px';
     const renderer = components.renderer;
-    renderer.beforeUpdate.on(() => stats.begin());
-    renderer.afterUpdate.on(() => stats.end());
+    renderer.onBeforeUpdate.add(() => stats.begin());
+    renderer.onAfterUpdate.add(() => stats.end());
 </script>
 </body>
 </html>

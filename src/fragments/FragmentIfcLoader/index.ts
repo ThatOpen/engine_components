@@ -1,10 +1,10 @@
 import * as WEBIFC from "web-ifc";
 import { FragmentsGroup } from "bim-fragment";
-import { Disposable, Event, UI, Component } from "../../base-types";
+import { Disposable, Event, UI, Component, UIElement } from "../../base-types";
 import { FragmentManager } from "../index";
 import { DataConverter, GeometryReader } from "./src";
 import { Button, ToastNotification } from "../../ui";
-import { Components } from "../../core";
+import { Components, ToolComponent } from "../../core";
 
 export * from "./src/types";
 
@@ -18,37 +18,33 @@ export class FragmentIfcLoader
   extends Component<WEBIFC.IfcAPI>
   implements Disposable, UI
 {
-  name: string = "FragmentIfcLoader";
+  static readonly uuid = "a659add7-1418-4771-a0d6-7d4d438e4624" as const;
+
   enabled: boolean = true;
 
-  uiElement: { main: Button };
+  uiElement = new UIElement<{ main: Button; toast: ToastNotification }>();
 
-  ifcLoaded: Event<FragmentsGroup> = new Event();
+  onIfcLoaded: Event<FragmentsGroup> = new Event();
 
   // For debugging purposes
   // isolatedItems = new Set<number>();
 
-  locationsSaved = new Event<{ [id: number]: number[] }>();
+  onLocationsSaved = new Event<{ [id: number]: number[] }>();
 
   private _webIfc = new WEBIFC.IfcAPI();
 
-  private _toast: ToastNotification;
-
-  private readonly _fragments: FragmentManager;
-  private readonly _components: Components;
   private readonly _geometry = new GeometryReader();
-  private readonly _converter = new DataConverter();
+  private readonly _converter: DataConverter;
 
-  constructor(components: Components, fragments: FragmentManager) {
-    super();
-    this._components = components;
-    this._fragments = fragments;
-    this.uiElement = { main: this.setupOpenButton() };
-    this._toast = new ToastNotification(components, {
-      message: "IFC model successfully loaded!",
-    });
-    components.ui.add(this._toast);
-    this._toast.visible = false;
+  constructor(components: Components) {
+    super(components);
+
+    this._converter = new DataConverter(components);
+    this.components.tools.add(FragmentIfcLoader.uuid, this);
+
+    if (components.ui.enabled) {
+      this.setupUI();
+    }
   }
 
   get(): WEBIFC.IfcAPI {
@@ -60,13 +56,12 @@ export class FragmentIfcLoader
   }
 
   /** {@link Disposable.dispose} */
-  dispose() {
+  async dispose() {
     this._geometry.cleanUp();
     this._converter.cleanUp();
-    this.ifcLoaded.reset();
-    this.locationsSaved.reset();
-    this._toast.dispose();
-    this.uiElement.main.dispose();
+    this.onIfcLoaded.reset();
+    this.onLocationsSaved.reset();
+    this.uiElement.dispose();
     (this._webIfc as any) = null;
     (this._geometry as any) = null;
     (this._converter as any) = null;
@@ -88,60 +83,72 @@ export class FragmentIfcLoader
     model.name = name;
 
     if (this.settings.saveLocations) {
-      this.locationsSaved.trigger(this._geometry.locations);
+      await this.onLocationsSaved.trigger(this._geometry.locations);
     }
 
+    const fragments = await this.components.tools.get(FragmentManager);
+
     if (this.settings.coordinate) {
-      const isFirstModel = this._fragments.groups.length === 0;
+      const isFirstModel = fragments.groups.length === 0;
       if (isFirstModel) {
-        this._fragments.baseCoordinationModel = model.uuid;
+        fragments.baseCoordinationModel = model.uuid;
       } else {
-        this._fragments.coordinate([model]);
+        fragments.coordinate([model]);
       }
     }
 
     this.cleanUp();
 
-    this._fragments.groups.push(model);
+    fragments.groups.push(model);
     for (const fragment of model.items) {
       fragment.group = model;
-      this._fragments.list[fragment.id] = fragment;
-      this._components.meshes.push(fragment.mesh);
+      fragments.list[fragment.id] = fragment;
+      this.components.meshes.push(fragment.mesh);
     }
 
-    this.ifcLoaded.trigger(model);
+    await this.onIfcLoaded.trigger(model);
     console.log(`Loading the IFC took ${performance.now() - before} ms!`);
 
     return model;
   }
 
-  private setupOpenButton() {
-    const button = new Button(this._components);
-    button.materialIcon = "upload_file";
-    button.tooltip = "Load IFC";
+  private setupUI() {
+    const main = new Button(this.components);
+    main.materialIcon = "upload_file";
+    main.tooltip = "Load IFC";
 
-    const fileOpener = document.createElement("input");
-    fileOpener.type = "file";
-    fileOpener.accept = ".ifc";
-    fileOpener.style.display = "none";
-    document.body.appendChild(fileOpener);
+    const toast = new ToastNotification(this.components, {
+      message: "IFC model successfully loaded!",
+    });
 
-    fileOpener.onchange = async () => {
-      if (fileOpener.files === null || fileOpener.files.length === 0) return;
-      const file = fileOpener.files[0];
-      const buffer = await file.arrayBuffer();
-      const data = new Uint8Array(buffer);
-      const model = await this.load(data, file.name);
-      const scene = this._components.scene.get();
-      scene.add(model);
-      this._toast.visible = true;
-      button.onClicked.trigger(model);
-      this._fragments.updateWindow();
-    };
+    main.onClick.add(() => {
+      const fileOpener = document.createElement("input");
+      fileOpener.type = "file";
+      fileOpener.accept = ".ifc";
+      fileOpener.style.display = "none";
 
-    button.onclick = () => fileOpener.click();
+      fileOpener.onchange = async () => {
+        const fragments = await this.components.tools.get(FragmentManager);
+        if (fileOpener.files === null || fileOpener.files.length === 0) return;
+        const file = fileOpener.files[0];
+        const buffer = await file.arrayBuffer();
+        const data = new Uint8Array(buffer);
+        const model = await this.load(data, file.name);
+        const scene = this.components.scene.get();
+        scene.add(model);
+        toast.visible = true;
+        await fragments.updateWindow();
 
-    return button;
+        fileOpener.remove();
+      };
+
+      fileOpener.click();
+    });
+
+    this.components.ui.add(toast);
+    toast.visible = false;
+
+    this.uiElement.set({ main, toast });
   }
 
   private async readIfcFile(data: Uint8Array) {
@@ -200,3 +207,5 @@ export class FragmentIfcLoader
     return this.settings.excludedCategories.has(category);
   }
 }
+
+ToolComponent.libraryUUIDs.add(FragmentIfcLoader.uuid);

@@ -16,10 +16,9 @@ export class SimpleScene extends Component<THREE.Scene> implements Disposable {
   name = "SimpleScene";
 
   private readonly _scene: THREE.Scene;
-  private readonly _disposer = new Disposer();
 
-  constructor(_components: Components) {
-    super();
+  constructor(components: Components) {
+    super(components);
     this._scene = new THREE.Scene();
     this._scene.background = new THREE.Color(0x202932);
   }
@@ -30,13 +29,25 @@ export class SimpleScene extends Component<THREE.Scene> implements Disposable {
   }
 
   /** {@link Disposable.dispose} */
-  dispose() {
+  async dispose() {
+    const disposer = await this.components.tools.get(Disposer);
     for (const child of this._scene.children) {
       const mesh = child as THREE.Mesh;
       if (mesh.geometry) {
-        this._disposer.dispose(mesh);
+        disposer.destroy(mesh);
       }
     }
     this._scene.children = [];
+  }
+
+  /** Creates a simple and nice default set up for the scene (e.g. lighting). */
+  setup() {
+    const directionalLight = new THREE.DirectionalLight();
+    directionalLight.position.set(5, 10, 3);
+    directionalLight.intensity = 0.5;
+    this._scene.add(directionalLight);
+    const ambientLight = new THREE.AmbientLight();
+    ambientLight.intensity = 0.5;
+    this._scene.add(ambientLight);
   }
 }

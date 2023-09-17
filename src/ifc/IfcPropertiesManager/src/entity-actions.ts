@@ -1,16 +1,14 @@
 import { FragmentsGroup } from "bim-fragment";
-import { Components } from "../../../core/Components";
-import { SimpleUIComponent } from "../../../ui/SimpleUIComponent";
-import { TextInput } from "../../../ui/TextInput";
-import { Button } from "../../../ui/ButtonComponent";
+import { Components } from "../../../core";
+import { SimpleUIComponent, TextInput, Button } from "../../../ui";
 import { Modal } from "../../../ui/Modal";
 import { Event } from "../../../base-types";
 
 export class EntityActionsUI extends SimpleUIComponent<HTMLDivElement> {
   addPsetBtn: Button;
   modal: Modal;
-  private _nameInput: TextInput;
-  private _descriptionInput: TextInput;
+  private readonly _nameInput: TextInput;
+  private readonly _descriptionInput: TextInput;
 
   readonly onNewPset = new Event<{
     model: FragmentsGroup;
@@ -30,18 +28,17 @@ export class EntityActionsUI extends SimpleUIComponent<HTMLDivElement> {
     this.addPsetBtn = new Button(this._components, {
       materialIconName: "add",
     });
-    this.addPsetBtn.onclick = () => {
+    this.addPsetBtn.onClick.add(async () => {
       this._nameInput.value = "";
       this._descriptionInput.value = "";
       this.modal.visible = true;
-      this.addPsetBtn.onClicked.trigger();
-    };
+    });
     this.addChild(this.addPsetBtn);
 
     this.modal = new Modal(components, "New Property Set");
     this._components.ui.add(this.modal);
     this.modal.visible = false;
-    this.modal.onHidden.on(() => this.removeFromParent());
+    this.modal.onHidden.add(() => this.removeFromParent());
 
     const addPsetUI = new SimpleUIComponent(
       this._components,
@@ -54,7 +51,7 @@ export class EntityActionsUI extends SimpleUIComponent<HTMLDivElement> {
     this._descriptionInput = new TextInput(this._components);
     this._descriptionInput.label = "Description";
 
-    this.modal.onAccept.on(() => {
+    this.modal.onAccept.add(() => {
       const name = this._nameInput.value;
       const description = this._descriptionInput.value;
       this.modal.visible = false;
@@ -63,18 +60,18 @@ export class EntityActionsUI extends SimpleUIComponent<HTMLDivElement> {
       this.onNewPset.trigger({ model, elementIDs, name, description });
     });
 
-    this.modal.onCancel.on(() => (this.modal.visible = false));
+    this.modal.onCancel.add(() => (this.modal.visible = false));
 
     addPsetUI.addChild(this._nameInput, this._descriptionInput);
   }
 
-  dispose(onlyChildren: boolean = false) {
-    super.dispose(onlyChildren);
+  async dispose(onlyChildren: boolean = false) {
+    await super.dispose(onlyChildren);
     this.data = {};
     this.onNewPset.reset();
-    this.addPsetBtn.dispose();
-    this.modal.dispose();
-    this._nameInput.dispose();
-    this._descriptionInput.dispose();
+    await this.addPsetBtn.dispose();
+    await this.modal.dispose();
+    await this._nameInput.dispose();
+    await this._descriptionInput.dispose();
   }
 }

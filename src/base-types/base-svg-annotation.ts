@@ -3,6 +3,7 @@ import { Component } from "./component";
 import { DrawManager } from "../annotation";
 import { Button } from "../ui";
 import { tooeenRandomId } from "../utils";
+import { UIElement } from "./ui-element";
 
 export interface SVGAnnotationStyle {
   fillColor: string;
@@ -16,8 +17,7 @@ export abstract class BaseSVGAnnotation
 {
   id = tooeenRandomId();
 
-  abstract name: string;
-  abstract uiElement: { main: Button };
+  abstract uiElement: UIElement<{ main: Button }>;
 
   protected _enabled: boolean = false;
   protected _isDrawing: boolean = false;
@@ -33,14 +33,15 @@ export abstract class BaseSVGAnnotation
   }
 
   set enabled(value: boolean) {
+    const main = this.uiElement.get("main");
     if (!this._svgViewport) {
-      this.uiElement.main.active = false;
+      main.active = false;
       this._enabled = false;
       return;
     }
     if (value === this._enabled) return;
     this._enabled = value;
-    this.uiElement.main.active = value;
+    main.active = value;
     this.setupEvents(value);
   }
 
@@ -55,8 +56,9 @@ export abstract class BaseSVGAnnotation
   set drawManager(manager: DrawManager | null | undefined) {
     this._drawManager = manager;
     if (manager) {
-      manager.addDrawingTool(this.name, this);
-      manager.uiElement.drawingTools.addChild(this.uiElement.main);
+      manager.addDrawingTool(this.id, this);
+      const main = this.uiElement.get<Button>("main");
+      manager.uiElement.get("drawingTools").addChild(main);
       this.svgViewport = manager.viewport.get();
     } else {
       this.svgViewport = null;
@@ -71,7 +73,7 @@ export abstract class BaseSVGAnnotation
     return null;
   }
 
-  dispose() {
+  async dispose() {
     if (this._drawManager) {
       this._drawManager.dispose();
     }
@@ -79,7 +81,7 @@ export abstract class BaseSVGAnnotation
       this._svgViewport.remove();
     }
     this.setupEvents(false);
-    this.uiElement.main.dispose();
+    this.uiElement.dispose();
     if (this.svgViewport) {
       this.svgViewport.remove();
     }
