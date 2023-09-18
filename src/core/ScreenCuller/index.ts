@@ -6,34 +6,49 @@ import { readPixelsAsync } from "./src/screen-culler-helper";
 import { Disposer } from "../Disposer";
 import { ToolComponent } from "../ToolsComponent";
 
-// TODO: Clean up and document
-// TODO: Work at the instance level instead of the mesh level
+// TODO: Work at the instance level instead of the mesh level?
 
+/**
+ * A tool to handle big scenes efficiently by automatically hiding the objects
+ * that are not visible to the camera.
+ */
 export class ScreenCuller
-  extends Component<THREE.WebGLRenderTarget>
+  extends Component<Map<string, THREE.InstancedMesh>>
   implements Disposable
 {
   static readonly uuid = "69f2a50d-c266-44fc-b1bd-fa4d34be89e6" as const;
 
+  /** Fires after hiding the objects that were not visible to the camera. */
+  readonly onViewUpdated = new Event();
+
   /** {@link Component.enabled} */
   enabled = true;
 
-  readonly renderer: THREE.WebGLRenderer;
-  readonly renderTarget: THREE.WebGLRenderTarget;
-  readonly bufferSize: number;
-  readonly materialCache: Map<string, THREE.MeshBasicMaterial>;
-  readonly worker: Worker;
-  readonly onViewUpdated = new Event();
-
+  /**
+   * Needs to check whether there are objects that need to be hidden or shown.
+   * You can bind this to the camera movement, to a certain interval, etc.
+   */
   needsUpdate = false;
-  meshColorMap = new Map<string, THREE.Mesh>();
-  renderDebugFrame = false;
-  visibleMeshes: THREE.Mesh[] = [];
-  colorMeshes = new Map<string, THREE.InstancedMesh>();
-  meshes = new Map<string, THREE.Mesh>();
 
-  currentVisibleMeshes = new Set<string>();
-  recentlyHiddenMeshes = new Set<string>();
+  /**
+   * Render the internal scene used to determine the object visibility. Used
+   * for debugging purposes.
+   */
+  renderDebugFrame = false;
+
+  private readonly renderer: THREE.WebGLRenderer;
+  private readonly renderTarget: THREE.WebGLRenderTarget;
+  private readonly bufferSize: number;
+  private readonly materialCache: Map<string, THREE.MeshBasicMaterial>;
+  private readonly worker: Worker;
+
+  private _meshColorMap = new Map<string, THREE.Mesh>();
+  private _visibleMeshes: THREE.Mesh[] = [];
+  private _colorMeshes = new Map<string, THREE.InstancedMesh>();
+  private _meshes = new Map<string, THREE.Mesh>();
+
+  private _currentVisibleMeshes = new Set<string>();
+  private _recentlyHiddenMeshes = new Set<string>();
 
   private readonly _transparentMat = new THREE.MeshBasicMaterial({
     transparent: true,
@@ -85,14 +100,19 @@ export class ScreenCuller
     if (autoUpdate) window.setInterval(this.updateVisibility, updateInterval);
   }
 
+  /**
+   * {@link Component.get}.
+   * @returns the map of internal meshes used to determine visibility.
+   */
   get() {
-    return this.renderTarget;
+    return this._colorMeshes;
   }
 
+  /** {@link Disposable.dispose} */
   async dispose() {
     this.enabled = false;
-    this.currentVisibleMeshes.clear();
-    this.recentlyHiddenMeshes.clear();
+    this._currentVisibleMeshes.clear();
+    this._recentlyHiddenMeshes.clear();
     this._scene.children.length = 0;
     this.onViewUpdated.reset();
     this.worker.terminate();
@@ -100,8 +120,8 @@ export class ScreenCuller
     this.renderTarget.dispose();
     (this._buffer as any) = null;
     this._transparentMat.dispose();
-    this.meshColorMap.clear();
-    this.visibleMeshes = [];
+    this._meshColorMap.clear();
+    this._visibleMeshes = [];
     for (const id in this.materialCache) {
       const material = this.materialCache.get(id);
       if (material) {
@@ -109,16 +129,20 @@ export class ScreenCuller
       }
     }
     const disposer = await this.components.tools.get(Disposer);
-    for (const id in this.colorMeshes) {
-      const mesh = this.colorMeshes.get(id);
+    for (const id in this._colorMeshes) {
+      const mesh = this._colorMeshes.get(id);
       if (mesh) {
         disposer.destroy(mesh);
       }
     }
-    this.colorMeshes.clear();
-    this.meshes.clear();
+    this._colorMeshes.clear();
+    this._meshes.clear();
   }
 
+  /**
+   * Adds a new mesh to be processed and managed by the culler.
+   * @mesh the mesh or instanced mesh to add.
+   */
   add(mesh: THREE.Mesh | THREE.InstancedMesh) {
     if (!this.enabled) return;
 
@@ -159,7 +183,7 @@ export class ScreenCuller
       newMaterial = colorMaterial;
     }
 
-    this.meshColorMap.set(code, mesh);
+    this._meshColorMap.set(code, mesh);
 
     const count = isInstanced ? mesh.count : 1;
     const colorMesh = new THREE.InstancedMesh(geometry, newMaterial, count);
@@ -176,10 +200,16 @@ export class ScreenCuller
     colorMesh.updateMatrix();
 
     this._scene.add(colorMesh);
-    this.colorMeshes.set(mesh.uuid, colorMesh);
-    this.meshes.set(mesh.uuid, mesh);
+    this._colorMeshes.set(mesh.uuid, colorMesh);
+    this._meshes.set(mesh.uuid, mesh);
   }
 
+  /**
+   * The function that the culler uses to reprocess the scene. Generally it's
+   * better to call needsUpdate, but you can also call this to force it.
+   * @param force if true, it will refresh the scene even if needsUpdate is
+   * not true.
+   */
   updateVisibility = async (force?: boolean) => {
     if (!this.enabled) return;
     if (!this.needsUpdate && !force) return;
@@ -219,25 +249,25 @@ export class ScreenCuller
   private handleWorkerMessage = async (event: MessageEvent) => {
     const colors = event.data.colors as Set<string>;
 
-    this.recentlyHiddenMeshes = new Set(this.currentVisibleMeshes);
-    this.currentVisibleMeshes.clear();
+    this._recentlyHiddenMeshes = new Set(this._currentVisibleMeshes);
+    this._currentVisibleMeshes.clear();
 
-    this.visibleMeshes = [];
+    this._visibleMeshes = [];
 
     // Make found meshes visible
     for (const code of colors.values()) {
-      const mesh = this.meshColorMap.get(code);
+      const mesh = this._meshColorMap.get(code);
       if (mesh) {
-        this.visibleMeshes.push(mesh);
+        this._visibleMeshes.push(mesh);
         mesh.visible = true;
-        this.currentVisibleMeshes.add(mesh.uuid);
-        this.recentlyHiddenMeshes.delete(mesh.uuid);
+        this._currentVisibleMeshes.add(mesh.uuid);
+        this._recentlyHiddenMeshes.delete(mesh.uuid);
       }
     }
 
     // Hide meshes that were visible before but not anymore
-    for (const uuid of this.recentlyHiddenMeshes) {
-      const mesh = this.meshes.get(uuid);
+    for (const uuid of this._recentlyHiddenMeshes) {
+      const mesh = this._meshes.get(uuid);
       if (mesh === undefined) continue;
       mesh.visible = false;
     }

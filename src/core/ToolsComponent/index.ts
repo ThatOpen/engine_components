@@ -88,7 +88,7 @@ export class ToolComponent
   }
 
   /**
-   * Disposes all the memory used by all the tools.
+   * Disposes all the MEMORY used by all the tools.
    */
   async dispose() {
     const tools = this.list.values();
@@ -100,7 +100,7 @@ export class ToolComponent
     }
   }
 
-  private async getPlatformComponent<T, U extends Component<T>>(
+  async getPlatformComponent<T, U extends Component<T>>(
     id: string
   ): Promise<U> {
     const { base, path } = this._urls;
@@ -124,6 +124,6 @@ export class ToolComponent
 
     script.remove();
 
-    return new ToolClass(this.components) as Promise<U>;
+    return new ToolClass(this.components);
   }
 }

@@ -19,5 +19,6 @@ export abstract class BaseRaycaster
   /** {@link Component.get} */
   abstract get(): THREE.Raycaster;
 
+  /** {@link Disposable.dispose} */
   abstract dispose(): Promise<void>;
 }

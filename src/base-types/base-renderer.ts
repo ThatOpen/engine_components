@@ -20,6 +20,10 @@ export abstract class BaseRenderer
   /** {@link Resizeable.onResize} */
   readonly onResize = new Event();
 
+  /**
+   * Event that fires when there has been a change to the list of clipping
+   * planes used by the active renderer.
+   */
   readonly onClippingPlanesUpdated = new Event();
 
   /**
@@ -28,8 +32,12 @@ export abstract class BaseRenderer
    */
   clippingPlanes: THREE.Plane[] = [];
 
-  updateClippingPlanes() {
-    this.onClippingPlanesUpdated.trigger();
+  /**
+   * Forces the update of the clipping planes and all components that depend
+   * on them that are subscribed to `onClippingPlanesUpdated`.
+   */
+  async updateClippingPlanes() {
+    await this.onClippingPlanesUpdated.trigger();
   }
 
   /**

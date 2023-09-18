@@ -27,9 +27,7 @@ export class Event<T> {
     this.handlers = this.handlers.filter((h) => h !== handler);
   }
 
-  /**
-   * Triggers all the callbacks assigned to this event.
-   */
+  /** Triggers all the callbacks assigned to this event. */
   trigger = async (data?: T) => {
     const handlers = this.handlers.slice(0);
     for (const handler of handlers) {
@@ -37,9 +35,7 @@ export class Event<T> {
     }
   };
 
-  /**
-   * Gets rid of all the suscribed events.
-   */
+  /** Gets rid of all the suscribed events. */
   reset() {
     this.handlers.length = 0;
   }
@@ -69,9 +65,11 @@ export interface Disposable {
  * [Three.js scene](https://threejs.org/docs/#api/en/scenes/Scene).
  */
 export interface Hideable {
-  /** Whether the geometric representation of this component is
+  /**
+   * Whether the geometric representation of this component is
    * currently visible or not in the
-   [Three.js scene](https://threejs.org/docs/#api/en/scenes/Scene). */
+   * [Three.js scene](https://threejs.org/docs/#api/en/scenes/Scene).
+   */
   visible: boolean;
 }
 
@@ -83,16 +81,21 @@ export interface Hideable {
  * [Mesh](https://threejs.org/docs/#api/en/objects/Mesh) would change its scale.
  */
 export interface Resizeable {
-  /** Sets size of this component (e.g. the resolution of a
+  /**
+   * Sets size of this component (e.g. the resolution of a
    * [Renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
-   * component. */
+   * component.
+   */
   resize: (size?: THREE.Vector2) => void;
 
+  /** Event that fires when the component has been resized. */
   onResize: Event<THREE.Vector2>;
 
-  /** Gets the current size of this component (e.g. the resolution of a
+  /**
+   * Gets the current size of this component (e.g. the resolution of a
    * [Renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
-   * component. */
+   * component.
+   */
   getSize: () => THREE.Vector2;
 }
 
@@ -131,17 +134,28 @@ export interface Createable {
   /** Creates a new instance of an element (e.g. a new Dimension). */
   create: (data: any) => void;
 
-  /** Fired after successfully calling {@link Createable.create()}  */
+  /** Fired after successfully calling {@link Createable.create}  */
   readonly onAfterCreate: Event<any>;
 
+  /**
+   * Finish the creation process of the component, successfully creating an
+   * instance of whatever the component creates.
+   */
   endCreation: (data: any) => void;
 
+  /** Fired before calling {@link Createable.cancelCreation}. */
   readonly onBeforeCancel: Event<any>;
 
+  /**
+   * Cancels the creation process of the component, going back to the state
+   * before starting to create.
+   */
   cancelCreation: (data: any) => void;
 
+  /** Fired after calling {@link Createable.cancelCreation}. */
   readonly onAfterCancel: Event<any>;
 
+  /** Fired before calling {@link Createable.delete}. */
   readonly onBeforeDelete: Event<any>;
 
   /** Deletes an existing instance of an element (e.g. a Dimension). */
@@ -160,11 +174,10 @@ export interface UI {
   readonly uiElement: UIElement<any>;
 }
 
-export interface Item3D extends THREE.Object3D {
-  geometry: THREE.BufferGeometry;
-  material: THREE.Material | THREE.Material[];
-}
-
+/**
+ * A list of IDs indexed by the fragments where they exist. As an item can be
+ * made of multiple fragments, there might be repeated IDs across entries.
+ */
 export interface FragmentIdMap {
   [fragmentID: string]: Set<string>;
 }

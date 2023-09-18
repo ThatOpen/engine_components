@@ -30,7 +30,6 @@
 	import * as THREE from 'three';
 	import * as OBC from 'openbim-components';
 	import Stats from 'stats.js/src/Stats.js';
-	import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
 
 	const container = document.getElementById('container');
 
@@ -184,10 +183,13 @@
 
   ** Remember to update culler every time the camera is updated ❕ **
 
-  For this tutorial, we are updating the culler on the click of button. 🖱
+  In this tutorial we are updating it each time the camera stops moving.
    */
 
 	culler.needsUpdate = true;
+  components.camera.controls.addEventListener("controlend", () => {
+		culler.needsUpdate = true;
+  });
 
 	/*MD
 

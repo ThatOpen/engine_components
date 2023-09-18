@@ -7,20 +7,31 @@ import {
   Disposable,
   Event,
   UIElement,
+  Resizeable,
 } from "../../base-types";
 import { Button, Canvas, FloatingWindow } from "../../ui";
 import { Components } from "../Components";
 
-// TODO: Decouple from UI components and make 2 variants: floating (this one) and drawer
+// TODO: Decouple from floating window so it can be used anywhere (eg. on drawers)
 
+/**
+ * A simple floating 2D scene that you can use to easily draw 2D graphics
+ * with all the power of Three.js.
+ */
 export class Simple2DScene
   extends Component<THREE.Scene>
-  implements UI, Updateable, Disposable
+  implements UI, Updateable, Disposable, Resizeable
 {
   static readonly uuid = "b48b7194-0f9a-43a4-a718-270b1522595f" as const;
 
+  /** {@link Updateable.onAfterUpdate} */
   readonly onAfterUpdate = new Event();
+
+  /** {@link Updateable.onBeforeUpdate} */
   readonly onBeforeUpdate = new Event();
+
+  /** {@link Resizeable.onResize} */
+  onResize = new Event<THREE.Vector2>();
 
   /** {@link Component.enabled} */
   enabled = true;
@@ -32,12 +43,12 @@ export class Simple2DScene
     canvas: Canvas;
   }>();
 
+  /** The camera controls that move around in the scene. */
   controls: OrbitControls;
 
   private readonly _scene: THREE.Scene;
   private readonly _camera: THREE.OrthographicCamera;
   private readonly _renderer: THREE.WebGLRenderer;
-  private readonly _grid: THREE.GridHelper;
   private readonly _size: { width: number; height: number };
   private readonly _frustumSize = 50;
 
@@ -70,10 +81,6 @@ export class Simple2DScene
     this.uiElement.set({ mainWindow, main, canvas });
 
     this._scene = new THREE.Scene();
-
-    this._grid = new THREE.GridHelper(1000, 1000);
-    this._grid.rotation.x = Math.PI / 2;
-    this._scene.add(this._grid);
 
     this._size = {
       width: mainWindow.domElement.clientWidth,
@@ -111,22 +118,34 @@ export class Simple2DScene
     mainWindow.domElement.style.height = "20rem";
   }
 
-  /** {@link Component.get} */
+  /**
+   * {@link Component.get}
+   * @returns the 2D scene.
+   */
   get() {
     return this._scene;
   }
 
+  /** {@link Disposable.dispose} */
   async dispose() {
     this._renderer.dispose();
-    this._grid.dispose();
-    this.uiElement.dispose();
+    await this.uiElement.dispose();
   }
 
-  update() {
+  /** {@link Updateable.update} */
+  async update() {
+    await this.onBeforeUpdate.trigger();
     this.controls.update();
     this._renderer.render(this._scene, this._camera);
+    await this.onAfterUpdate.trigger();
   }
 
+  /** {@link Resizeable.getSize} */
+  getSize() {
+    return new THREE.Vector2(this._size.width, this._size.height);
+  }
+
+  /** {@link Resizeable.resize} */
   resize = () => {
     const parent = this.uiElement.get("canvas").parent;
     if (!parent) return;

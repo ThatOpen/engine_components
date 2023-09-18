@@ -6,6 +6,10 @@ import { ToolComponent } from "../ToolsComponent";
 // TODO: Clean up and document
 // TODO: Disable / enable instance color for instance meshes
 
+/**
+ * A tool to easily handle the materials of massive amounts of
+ * objects and scene background easily.
+ */
 export class MaterialManager extends Component<string[]> implements Disposable {
   static readonly uuid = "24989d27-fa2f-4797-8b08-35918f74e502" as const;
 
@@ -41,6 +45,12 @@ export class MaterialManager extends Component<string[]> implements Disposable {
     return Object.keys(this._list);
   }
 
+  /**
+   * Turns the specified material styles on or off.
+   *
+   * @param active whether to turn it on or off.
+   * @param ids the ids of the style to turn on or off.
+   */
   set(active: boolean, ids = Object.keys(this._list)) {
     for (const id of ids) {
       const { material, meshes } = this._list[id];
@@ -66,6 +76,7 @@ export class MaterialManager extends Component<string[]> implements Disposable {
     }
   }
 
+  /** {@link Disposable.dispose} */
   async dispose() {
     for (const id in this._list) {
       const { material } = this._list[id];
@@ -75,6 +86,11 @@ export class MaterialManager extends Component<string[]> implements Disposable {
     this._originals = {};
   }
 
+  /**
+   * Sets the color of the background of the scene.
+   *
+   * @param color: the color to apply.
+   */
   setBackgroundColor(color: THREE.Color) {
     const scene = this.components.scene.get();
     if (!this._originalBackground) {
@@ -85,6 +101,10 @@ export class MaterialManager extends Component<string[]> implements Disposable {
     }
   }
 
+  /**
+   * Resets the scene background to the color that was being used
+   * before applying the material manager.
+   */
   resetBackgroundColor() {
     const scene = this.components.scene.get();
     if (this._originalBackground) {
@@ -92,6 +112,11 @@ export class MaterialManager extends Component<string[]> implements Disposable {
     }
   }
 
+  /**
+   * Creates a new material style.
+   * @param id the identifier of the style to create.
+   * @param material the material of the style.
+   */
   addMaterial(id: string, material: THREE.Material) {
     if (this._list[id]) {
       throw new Error("This ID already exists!");
@@ -99,6 +124,11 @@ export class MaterialManager extends Component<string[]> implements Disposable {
     this._list[id] = { material, meshes: new Set() };
   }
 
+  /**
+   * Assign meshes to a certain style.
+   * @param id the identifier of the style.
+   * @param meshes the meshes to assign to the style.
+   */
   addMeshes(id: string, meshes: THREE.Mesh[]) {
     if (!this._list[id]) {
       throw new Error("This ID doesn't exists!");

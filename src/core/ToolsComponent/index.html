@@ -118,11 +118,25 @@
 
   :::
 
-    Fantastic work! 🎉🎉🎉 Now you know how to keep your `Tools` tidy and how to get them from the cloud. Another
-  step forward in your journey to build your own BIM software. 🥳 Don't forget to check out That Open Platform if
-  you haven't already!
+  For example, let's fetch an example tool from the platform and add it to a simple toolbar:
 
-  */
+    */
+
+	components.tools.token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1IjoiNjUwNmYyZjk0NWM4YmM2YTk0Mzg0NjM4IiwiYSI6IjY1MDhhN2VjZGZjYTQ5Mjc2MmE0YjFlZiJ9.Rr7bq9qJdm4pRUnXF0pUt9QhrtJLOS6koVyZMcf5XoU";
+	const toolID = "7407f03f-7b5e-4f67-9951-1ce26776890f";
+	const tool = await components.tools.getPlatformComponent(toolID);
+
+	const toolbar = new OBC.Toolbar(components);
+	components.ui.addToolbar(toolbar);
+	toolbar.addChild(tool.uiElement.get("Camera"));
+
+	/*MD
+
+  Fantastic work! 🎉🎉🎉 Now you know how to keep your `Tools` tidy and how to get them from the cloud. Another
+step forward in your journey to build your own BIM software. 🥳 Don't forget to check out That Open Platform if
+you haven't already!
+
+*/
 
 </script>
 </html>

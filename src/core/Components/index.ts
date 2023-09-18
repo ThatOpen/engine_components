@@ -32,7 +32,8 @@ export class Components {
   readonly meshes: THREE.Mesh[] = [];
 
   /**
-   * Event that fires when this instance has been fully initialized and is ready to work.
+   * Event that fires when this instance has been fully initialized and is
+   * ready to work (scene, camera and renderer are ready).
    */
   readonly onInitialized: Event<Components> = new Event();
 
@@ -157,7 +158,7 @@ export class Components {
     const disposer = await this.tools.get(Disposer);
     this._enabled = false;
     await this.tools.dispose();
-    this.ui.dispose();
+    await this.ui.dispose();
     this.onInitialized.reset();
     this._clock.stop();
     for (const mesh of this.meshes) {
