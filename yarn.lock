@@ -1011,6 +1011,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tarikjabiri/dxf@npm:3.0.0-alpha.2":
+  version: 3.0.0-alpha.2
+  resolution: "@tarikjabiri/dxf@npm:3.0.0-alpha.2"
+  checksum: d0bcf391f9f0dac582212fe9636235220eee943056e5e81109ad27c37cc26a4d1400ff275d765380e1635b95eefe9bfe143fac817b1eb3b05071375c2170b64b
+  languageName: node
+  linkType: hard
+
 "@tootallnate/once@npm:1":
   version: 1.1.2
   resolution: "@tootallnate/once@npm:1.1.2"
@@ -6470,6 +6477,7 @@ __metadata:
     "@rollup/plugin-commonjs": 25.0.0
     "@rollup/plugin-node-resolve": 15.1.0
     "@tailwindcss/forms": ^0.5.3
+    "@tarikjabiri/dxf": 3.0.0-alpha.2
     "@types/earcut": ^2.1.1
     "@types/jest": 27.0.0
     "@types/mapbox-gl": ^2.7.11
@@ -6483,7 +6491,6 @@ __metadata:
     canvas: ^2.11.2
     cpy-cli: ^3.1.1
     dexie: ^3.2.3
-    dxf-writer: ^1.18.4
     earcut: ^2.2.4
     eslint: ^7.28.0
     eslint-config-airbnb-base: ^14.2.1

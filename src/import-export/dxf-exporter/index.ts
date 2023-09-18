@@ -1,5 +1,5 @@
-import Drawing from "dxf-writer";
 import * as THREE from "three";
+import { Writer, Units, Colors, Block, point } from "@tarikjabiri/dxf";
 import { FragmentManager, FragmentPlans } from "../../fragments";
 import { EdgeProjector } from "./src/edge-projector";
 import { Component } from "../../base-types";
@@ -28,9 +28,51 @@ export class DXFExporter extends Component<EdgeProjector> {
     this._projector.dispose();
   }
 
+  async export3D() {
+    const writer = new Writer();
+    writer.document.setUnits(Units.Meters);
+    const modelSpace = writer.document.modelSpace;
+
+    const fragments = await this.components.tools.get(FragmentManager);
+
+    fragments.groups[0].children.forEach((child) => {
+      if (!(child instanceof THREE.InstancedMesh)) return;
+
+      child.updateWorldMatrix(false, false);
+      const transform = child.matrixWorld.clone();
+      const matrix = new THREE.Matrix4();
+
+      for (let i = 0; i < child.count; i++) {
+        const mesh = modelSpace.addMesh({ size: 3 });
+        child.getMatrixAt(i, matrix);
+        matrix.multiply(transform);
+
+        const position = child.geometry.getAttribute("position");
+        const index = child.geometry.index;
+
+        for (let i = 0; i < position.count; i++) {
+          const vertex = new THREE.Vector3();
+          vertex.fromBufferAttribute(position, i);
+          vertex.applyMatrix4(matrix);
+          mesh.vertices.push(vertex);
+        }
+
+        for (let i = 0; i < index.count; ) {
+          const indices = [index.getX(i++), index.getX(i++), index.getX(i++)];
+          mesh.faces.push(indices as number[]);
+        }
+      }
+    });
+
+    return writer.stringify();
+  }
+
   async export(name: string) {
-    const drawing = new Drawing();
-    drawing.setUnits("Meters");
+    const writer = new Writer();
+    writer.document.setUnits(Units.Meters);
+
+    const modelSpace = writer.document.modelSpace;
+    const tables = writer.document.tables;
 
     // Draw projected lines
 
@@ -49,11 +91,14 @@ export class DXFExporter extends Component<EdgeProjector> {
       height += plan.offset;
     }
 
-    drawing.addLayer("projection", Drawing.ACI.BLUE, "CONTINUOUS");
-    drawing.setActiveLayer("projection");
+    const projectionLayer = tables.addLayer({
+      name: "projection",
+      colorNumber: Colors.Blue,
+    });
+    modelSpace.currentLayerName = projectionLayer.name;
 
     const projectedLines = await this._projector.project(meshes, height);
-    this.drawGeometry(projectedLines.geometry, drawing);
+    this.drawGeometry(projectedLines.geometry, modelSpace);
 
     projectedLines.geometry.dispose();
     projectedLines.material.dispose();
@@ -67,40 +112,30 @@ export class DXFExporter extends Component<EdgeProjector> {
       const material = mesh.material as THREE.LineBasicMaterial;
       const { r, g, b } = material.color;
 
-      let layerColor: number;
-      if (r > g && r > b) {
-        layerColor = Drawing.ACI.RED;
-      } else if (g > r && g > b) {
-        layerColor = Drawing.ACI.GREEN;
-      } else if (b > r && b > g) {
-        layerColor = Drawing.ACI.BLUE;
-      } else {
-        layerColor = Drawing.ACI.WHITE;
-      }
+      let colorNumber: number;
+      if (r > g && r > b) colorNumber = Colors.Red;
+      else if (g > r && g > b) colorNumber = Colors.Green;
+      else if (b > r && b > g) colorNumber = Colors.Blue;
+      else colorNumber = Colors.White;
 
-      drawing.addLayer(layerName, layerColor, "CONTINUOUS");
-      drawing.setActiveLayer(layerName);
+      const layer = tables.addLayer({ name: layerName, colorNumber });
+      modelSpace.currentLayerName = layer.name;
 
-      this.drawGeometry(mesh.geometry, drawing);
+      this.drawGeometry(mesh.geometry, modelSpace);
     }
 
-    return drawing.toDxfString();
+    return writer.stringify();
   }
 
-  private drawGeometry(geometry: THREE.BufferGeometry, drawing: Drawing) {
+  private drawGeometry(geometry: THREE.BufferGeometry, block: Block) {
     const pos = geometry.attributes.position.array;
     const range = Math.min(geometry.drawRange.count * 3, pos.length);
     for (let i = 0; i < range; i += 6) {
-      const x1 = pos[i];
-      const y1 = pos[i + 2];
-      const x2 = pos[i + 3];
-      const y2 = pos[i + 5];
-      const diffX = Math.abs(x2 - x1);
-      const diffY = Math.abs(y2 - y1);
-      const approxDistance = diffX + diffY;
-      if (approxDistance > this.precission) {
-        drawing.drawLine(x1, y1, x2, y2);
-      }
+      const start = point(pos[i], pos[i + 2]);
+      const end = point(pos[i + 3], pos[i + 5]);
+      const dx = Math.abs(end.x - start.x);
+      const dy = Math.abs(end.y - start.y);
+      if (dx + dy > this.precission) block.addLine({ start, end });
     }
   }
 }

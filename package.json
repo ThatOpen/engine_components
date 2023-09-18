@@ -44,10 +44,10 @@
   },
   "dependencies": {
     "@popperjs/core": "latest",
+    "@tarikjabiri/dxf": "3.0.0-alpha.2",
     "bim-fragment": "1.0.22",
     "camera-controls": "^1.36.0",
     "dexie": "^3.2.3",
-    "dxf-writer": "^1.18.4",
     "earcut": "^2.2.4",
     "mapbox-gl": "^2.15.0",
     "n8ao": "^1.5.1",

@@ -158,6 +158,16 @@
             link.click();
             link.remove();
         },
+        "Export to 3D DXF": async (plan) => {
+            const link = document.createElement("a");
+            const result = await dxfExporter.export3D();
+            const fileName = `${plan.name}.dxf`;
+            const file = new File([new Blob([result])], fileName);
+            link.href = URL.createObjectURL(file);
+            link.download = fileName;
+            link.click();
+            link.remove();
+        },
     }
 
     await plans.updatePlansList();
