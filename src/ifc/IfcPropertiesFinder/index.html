@@ -46,58 +46,88 @@
 
     components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
-    const directionalLight = new THREE.DirectionalLight();
-    directionalLight.position.set(5, 10, 3);
-    directionalLight.intensity = 0.5;
-    scene.add(directionalLight);
-
-    const ambientLight = new THREE.AmbientLight();
-    ambientLight.intensity = 0.5;
-    scene.add(ambientLight);
+    components.scene.setup();
 
     const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
     components.tools.add('grid', grid);
     const gridMesh = grid.get();
     renderer.postproduction.customEffects.excludedMeshes.push(gridMesh);
 
+    /*MD
+    ### 🔎 Find just what you need
+    ___
+    Sometimes data is buried inside our BIM models, and the
+    heterogeneity of BIM models doesn't make it easier. Luckily,
+    we have created a component that can go past this barrier:
+    the `IfcPropertiesFinder`.
+
+    :::info How can it find buried data?
+
+    Best way to describe the component is to find "Relations of entities meeting a set of attributes criteria".
+    Each search group aims to find a set of entities matching the criteria and then its relations.
+    The search result are all common relations of the entities that meet the criteria in each search group.
+
+    :::
+
+     Let's see how it works! As usual, let's start by loading our
+     classic model:
+    */
+
     const fragments = new OBC.FragmentManager(components);
-    
-    // Fragment file loading
     const file = await fetch("../../../resources/small.frag");
     const dataBlob = await file.arrayBuffer();
     const buffer = new Uint8Array(dataBlob);
     const model = await fragments.load(buffer);
-
-    // Fragment properties loading
     const properties = await fetch("../../../resources/small.json");
     model.properties = await properties.json();
 
-    // Quick setup for element hovering and selection
+    /*MD
+     Now, we can start the finder by just instancing the class and
+     calling the `init` method. It's asynchronous, so don't forget
+     to add an `await` before it! Then, you can make it `queryWindow`
+     visible to start working with it:
+    */
+
+    const propsFinder = new OBC.IfcPropertiesFinder(components);
+    await propsFinder.init();
+    propsFinder.uiElement.get("queryWindow").visible = true;
+
+    /*MD
+     We will also add a `Toolbar` so that you can see how to hide and
+     show it using the main built-in `Button` that it has:
+    */
+
+    const mainToolbar = new OBC.Toolbar(components)
+    components.ui.addToolbar(mainToolbar)
+    mainToolbar.addChild(propsFinder.uiElement.get("main"))
+
+    /*MD
+    ### ✨ Highlighting the results
+    ___
+    Right now our app is super boring, so let's make this a bit more
+    interesting. We will highlight the items found by the finder.
+    Doing this is super easy with the `FragmentHighlighter` and the
+    finder `onFound` event:
+    */
+
     const highlighter = new OBC.FragmentHighlighter(components);
     highlighter.setup();
 
     components.renderer.postproduction.customEffects.outlineEnabled = true;
     highlighter.outlinesEnabled = true;
     highlighter.zoomToSelection = true;
-
-    // New instance of Properties Finder
-    // Best way to describe the component is to find "Relations of entities meeting a set of attributes criteria"
-    // Each search group aims to find a set of entities matching the criteria and then its relations
-    // The search result are all common relations of the entities that meet the criteria in each search group.
-    const propsFinder = new OBC.IfcPropertiesFinder(components);
-    await propsFinder.init();
-
-    propsFinder.uiElement.get("queryWindow").visible = true;
-
-    // On elements found, select them.
     propsFinder.onFound.add(result => {
         highlighter.highlightByID("select", result);
     })
 
-    // Creating new toolbar + adding component button
-    const mainToolbar = new OBC.Toolbar(components)
-    components.ui.addToolbar(mainToolbar)
-    mainToolbar.addChild(propsFinder.uiElement.get("main"))
+    /*MD
+    This is it! Now you know how to find data using complex queries
+    in your BIM models. You can use the finder in combination
+    with your own tools, like we did with the `FragmentHider`. Let us
+    make the data heavy lifting for you and just focus on the results!
+    We'll see you in another tutorial of these docs.
+    */
+
 
 </script>
 </body>

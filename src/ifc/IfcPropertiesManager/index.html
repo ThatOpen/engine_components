@@ -46,47 +46,64 @@
 
     components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
-    const directionalLight = new THREE.DirectionalLight();
-    directionalLight.position.set(5, 10, 3);
-    directionalLight.intensity = 0.5;
-    scene.add(directionalLight);
-
-    const ambientLight = new THREE.AmbientLight();
-    ambientLight.intensity = 0.5;
-    scene.add(ambientLight);
+    components.scene.setup();
 
     const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
     components.tools.add('grid', grid);
     const gridMesh = grid.get();
     renderer.postproduction.customEffects.excludedMeshes.push(gridMesh);
 
+    /*MD
+    ### ✍ Edit properties at will!
+    ___
+    Viewing IFC files fast is great, but often the data inside
+    them is not correct or complete. Luckily, we can now directly
+    edit and add data super easily! First, let's start by adding
+    our classic fragment model:
+    */
+
     const fragments = new OBC.FragmentManager(components);
-    
-    // Fragment file loading
     const file = await fetch("../../../resources/small.frag");
     const dataBlob = await file.arrayBuffer();
     const buffer = new Uint8Array(dataBlob);
     const model = await fragments.load(buffer);
-
-    // Fragment properties loading
     const properties = await fetch("../../../resources/small.json");
     model.properties = await properties.json();
 
-    const propsProcessor = new OBC.IfcPropertiesProcessor(components);
+    /*MD
+    Then, we'll instance the tool that we need for editing properties:
+    the `IfcPropertiesManager`! It's designed as an extension of the
+    `IfcPropertiesProcessor`, so if you haven't seen that tutorial
+    yet, check it out before reading further.
+    */
 
+    const propsProcessor = new OBC.IfcPropertiesProcessor(components);
     const propsManager = new OBC.IfcPropertiesManager(components);
     propsProcessor.propertiesManager = propsManager;
+
+    /*MD
+    The `IfcPropertiesManager` can edit IFCs and export new IFC models,
+    so we will need to get access to the same WASM files we needed when
+    using the `FragmentIfcLoader` (as it uses the `web-ifc` library
+    directly). We can do it in a similar way, and then initialize the
+    properties manager and process the model:
+    */
 
     propsManager.wasm = {
         path: "https://unpkg.com/web-ifc@0.0.43/",
         absolute: true
     }
-
-    propsManager.init();
-
+    await propsManager.init();
     propsProcessor.process(model);
 
-    // Quick setup for element hovering and selection
+    /*MD
+    ### ✨ Setting up highlighting and selecting
+    ___
+    Now, we will set up highlighting logic to make our app more
+    interesting. It's done in a similar way to other tutorials,
+    so wander around the docs if you haven't already!
+    */
+
     const highlighter = new OBC.FragmentHighlighter(components, fragments);
     highlighter.setup();
 
@@ -97,6 +114,13 @@
     highlighterEvents.select.onClear.add(() => {
         propsProcessor.cleanPropertiesList();
     });
+
+    /*MD
+    Now, we will configure the highlighter so that each time that
+    we cick on the model, the properties menu is updated to display
+    its properties, just like we did in the `IfcPropertiesProcessor`
+    tutorial:
+    */
 
     highlighterEvents.select.onHighlight.add(
         (selection) => {
@@ -111,10 +135,20 @@
         }
     );
 
-    // Creating new toolbar + adding component button
-    const mainToolbar = new OBC.Toolbar(components)
-    components.ui.addToolbar(mainToolbar)
-    mainToolbar.addChild(propsProcessor.uiElement.get("main"))
+    /*MD
+    Finally, we will add the UI to the app by creating a simple
+    toolbar:
+    */
+
+    const mainToolbar = new OBC.Toolbar(components);
+    components.ui.addToolbar(mainToolbar);
+    mainToolbar.addChild(propsProcessor.uiElement.get("main"));
+
+    /*MD
+    Great job! Now you know how to support IFC property editing and
+    export in your apps. Check out the rest of the tutorials of
+    these docs for other cool BIM features.
+    */
 
 </script>
 </body>

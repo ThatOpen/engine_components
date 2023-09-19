@@ -2,7 +2,12 @@ import { Fragment, FragmentsGroup, Serializer } from "bim-fragment";
 import * as THREE from "three";
 import { Component, Disposable, Event, UI, UIElement } from "../../base-types";
 import { Components, ToolComponent } from "../../core";
-import { Button, FloatingWindow, SimpleUICard, Toolbar } from "../../ui";
+import {
+  Button,
+  FloatingWindow,
+  SimpleUICard,
+  SimpleUIComponent,
+} from "../../ui";
 
 /**
  * Object that can efficiently load binary files that contain
@@ -146,9 +151,8 @@ export class FragmentManager
       card.domElement.classList.remove("border-transparent");
       card.domElement.className += ` min-w-[300px] my-2 border-1 border-solid border-[#3A444E] `;
 
-      const toolbar = new Toolbar(this.components);
-      this.components.ui.addToolbar(toolbar);
-      card.addChild(toolbar);
+      const buttonContainer = new SimpleUIComponent(this.components);
+      card.addChild(buttonContainer);
 
       card.title = group.name;
       this.uiElement.get("window").addChild(card);
@@ -157,8 +161,7 @@ export class FragmentManager
       // TODO: Use command list just like in fragment plans
       const commandsButton = new Button(this.components);
       commandsButton.materialIcon = "delete";
-      commandsButton.tooltip = "Delete model";
-      toolbar.addChild(commandsButton);
+      buttonContainer.addChild(commandsButton);
       commandsButton.onClick.add(() => this.disposeGroup(group));
     }
   }

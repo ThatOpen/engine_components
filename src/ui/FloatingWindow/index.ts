@@ -153,6 +153,8 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
       bottom: new Vector2(),
       bottomRight: new Vector2(),
     };
+    this.domElement.style.width = "400px";
+    this.domElement.style.height = "250px";
   }
 
   async dispose(onlyChildren = false) {

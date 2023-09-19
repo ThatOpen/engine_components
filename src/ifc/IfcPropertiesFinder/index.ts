@@ -100,6 +100,7 @@ export class IfcPropertiesFinder
 
     queryWindow.get().classList.add("overflow-visible");
     queryWindow.get().style.width = "700px";
+    queryWindow.get().style.height = "420px";
     queryWindow.visible = false;
     queryWindow.resizeable = false;
     queryWindow.title = "Model Queries";

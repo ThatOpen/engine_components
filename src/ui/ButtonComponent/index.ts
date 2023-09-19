@@ -160,7 +160,9 @@ export class Button extends SimpleUIComponent<HTMLButtonElement> {
           if (!this.parent.parent) {
             this._components.ui.closeMenus();
           }
-          this.parent.closeMenus();
+          if (this.parent.closeMenus) {
+            this.parent.closeMenus();
+          }
         }
       }
     };

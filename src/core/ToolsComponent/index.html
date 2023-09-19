@@ -6,6 +6,7 @@
         content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <link rel="stylesheet" href="../../../resources/styles.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
   <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
   <title>Tools Component</title>
 </head>
@@ -118,17 +119,20 @@
 
   :::
 
-  For example, let's fetch an example tool from the platform and add it to a simple toolbar:
+  For example, let's fetch an example tool from the platform and add it to a simple toolbar. This is a
+  simple tool that just logs a message to the console:
 
     */
 
 	components.tools.token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1IjoiNjUwNmYyZjk0NWM4YmM2YTk0Mzg0NjM4IiwiYSI6IjY1MDhhN2VjZGZjYTQ5Mjc2MmE0YjFlZiJ9.Rr7bq9qJdm4pRUnXF0pUt9QhrtJLOS6koVyZMcf5XoU";
 	const toolID = "7407f03f-7b5e-4f67-9951-1ce26776890f";
 	const tool = await components.tools.getPlatformComponent(toolID);
+	const button = tool.uiElement.get("Measure");
+	button.materialIcon = "straighten";
 
 	const toolbar = new OBC.Toolbar(components);
 	components.ui.addToolbar(toolbar);
-	toolbar.addChild(tool.uiElement.get("Camera"));
+	toolbar.addChild(button);
 
 	/*MD
 

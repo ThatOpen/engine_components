@@ -54,6 +54,27 @@
     const effects = components.renderer.postproduction.customEffects;
     effects.excludedMeshes.push(gridMesh);
 
+    /*MD
+    ### 📦 Process once, load fast forever
+    ___
+    If you have checked the `FragmentIfcLoader` tutorial, you know how
+    easy it is to convert IFCs to fragment. But IFC has its limitations,
+    you probably want your app to be as fast as possible. You can
+    do this very easily with the `FragmentCacher`.
+
+    :::info Persisting data in frontend
+
+    All browsers have access to the memory of the device where they run.
+    That means that you can save the fragments you generate from the IFC,
+    so that the next time the user enters the app, you can load the
+    fragments directly, which is 10 times faster!
+
+    :::
+
+    Let's start by initializing the `FragmentManager` and `FragmentIfcLoader`.
+    If you haven't seen those tutorials, check them out before going forward!
+    */
+
     const fragments = new OBC.FragmentManager(components);
     let fragmentIfcLoader = new OBC.FragmentIfcLoader(components, fragments);
     fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
@@ -63,21 +84,61 @@
         absolute: true
     }
 
+    /*MD
+    ### 💅 Adding some UI
+    ___
+    Now, we will start creating some basic UI to test the caching system. Let's
+    add a toolbar and a button to reload the app:
+    */
+
     const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
     components.ui.addToolbar(mainToolbar);
 
     const reloadButton = new OBC.Button(components);
     reloadButton.materialIcon = "replay";
     reloadButton.tooltip = "Reload page";
-
     mainToolbar.addChild(reloadButton);
     reloadButton.onclick = () => location.reload();
 
-    mainToolbar.addChild(fragmentIfcLoader.uiElement.get("main"));
+    /*MD
+    Next, we need a way to load IFC files. To do that, we will simply use the
+    `Button` that the `FragmentIfcLoader` has built-in:
+    */
 
-    const cacher = new OBC.FragmentCacher(components, fragments);
+    const ifcButton = fragmentIfcLoader.uiElement.get("main");
+    mainToolbar.addChild(ifcButton);
 
-    mainToolbar.addChild(cacher.uiElement.get("main"));
+    /*MD
+    Finally, we will add the caching component. You can simply add it using
+    its built-in button:
+    */
+
+    const cacher = new OBC.FragmentCacher(components);
+    const cacherButton = cacher.uiElement.get("main");
+    mainToolbar.addChild(cacherButton);
+
+    /*MD
+    This should already work! Now you can:
+
+    - 1. Load an IFC.
+    - 2. Use the save button to save it in the cache.
+    - 3. Reload the app.
+    - 4. Use the load button to load it from cache.
+
+    :::info Have it your way!
+
+    You can also do this without UI components, if you prefer to use your own UI
+    or want to do it automatically (without the user clicking anything). For that
+    you can simply use the methods `getFragmentGroup` and `saveFragmentGroup`.
+
+    :::
+
+    Congratulations! Now you know how to cache fragments, so that the next time
+    your user opens an IFC that was already processed, they will see it load
+    super fast, almost like magic! Now, let's continue our journey with more
+    tutorials.
+
+    */
 
     const stats = new Stats();
     stats.showPanel(2);
