@@ -12,9 +12,6 @@ export class SimpleScene extends Component<THREE.Scene> implements Disposable {
   /** {@link Component.enabled} */
   enabled = true;
 
-  /** {@link Component.name} */
-  name = "SimpleScene";
-
   private readonly _scene: THREE.Scene;
 
   constructor(components: Components) {
