@@ -15,7 +15,7 @@ export class MiniMap
   extends Component<THREE.OrthographicCamera>
   implements UI, Resizeable, Updateable, Disposable
 {
-  static readonly uuid = "d1e814d5-b81c-4452-87a2-f039375e0489" as const;
+  static readonly uuid = "39ad6aad-84c8-4adf-a1e0-7f25313a9e7f" as const;
 
   readonly uiElement = new UIElement<{ main: Button; canvas: Canvas }>();
   readonly onAfterUpdate = new Event();

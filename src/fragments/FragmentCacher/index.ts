@@ -80,6 +80,11 @@ export class FragmentCacher extends LocalCacher {
     }
   }
 
+  existsFragmentGroup(id: string) {
+    const { fragmentsCacheID } = this.getIDs(id);
+    return this.exists(fragmentsCacheID);
+  }
+
   private async onLoadButtonClicked() {
     const floatingMenu = this.uiElement.get<FloatingWindow>("floatingMenu");
     floatingMenu.title = "Load saved items";

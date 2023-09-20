@@ -68,8 +68,8 @@
     stats.showPanel(2);
     document.body.append(stats.dom);
     stats.dom.style.left = '0px';
-    renderer.beforeUpdate.on(() => stats.begin());
-    renderer.afterUpdate.on(() => stats.end());
+    renderer.onBeforeUpdate.add(() => stats.begin());
+    renderer.onAfterUpdate.add(() => stats.end());
 
 </script>
 </body>

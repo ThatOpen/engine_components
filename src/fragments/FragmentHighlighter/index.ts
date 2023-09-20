@@ -491,6 +491,8 @@ export class FragmentHighlighter
       );
       newMesh.frustumCulled = false;
       newMesh.renderOrder = 999;
+      fragment.mesh.updateMatrixWorld(true);
+      newMesh.applyMatrix4(fragment.mesh.matrixWorld);
       this._outlinedMeshes[fragmentID] = newMesh;
 
       const scene = this.components.scene.get();

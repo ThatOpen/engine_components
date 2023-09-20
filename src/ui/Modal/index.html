@@ -58,18 +58,19 @@
     const grid = new OBC.SimpleGrid(components);
     components.tools.add('grid', grid);
 
-    const dragAndDrop = new OBC.DragAndDropInput(components, {subTitle: "Any modern IFC file will do!"});
-    components.ui.add(dragAndDrop);
-
-    const dom = components.renderer.get().domElement;
-    dom.ondragenter = () => {
-        dragAndDrop.visible = true;
+    const modal = new OBC.Modal(components, "Hello modal");
+    components.ui.add(modal);
+    modal.visible = true;
+    const content = modal.slots.actionButtons;
+    for(const child of content.children) {
+        child.visible = false;
     }
 
-    dragAndDrop.onFilesLoaded.add((files) => {
-        const first = files[0].name;
-        alert(`Loaded: ${first}`);
-    })
+    content.domElement.classList.remove("justify-end");
+    content.domElement.classList.add("justify-start");
+
+    const text = new OBC.SimpleUIComponent(components, `<p>Example text</p>`);
+    modal.slots.actionButtons.addChild(text);
 
     // Set up stats
 

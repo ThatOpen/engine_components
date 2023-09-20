@@ -34,10 +34,9 @@ export class DragAndDropInput extends SimpleUIComponent<HTMLDivElement> {
     const input = this.get().querySelector("input");
     if (!input) throw new Error("Input not found!");
 
-    const onFilesLoaded = () => {
+    const onFilesLoaded = async () => {
       if (input.files === null) return;
-      this.onFilesLoaded.trigger(input.files);
-      this.visible = false;
+      await this.onFilesLoaded.trigger(input.files);
     };
 
     input.onchange = () => onFilesLoaded();
@@ -46,10 +45,10 @@ export class DragAndDropInput extends SimpleUIComponent<HTMLDivElement> {
     this.get().ondragover = allowDragDrop;
     this.get().ondragenter = allowDragDrop;
 
-    this.get().ondrop = (event: any) => {
+    this.get().ondrop = async (event: any) => {
       event.preventDefault();
       input.files = event.dataTransfer.files;
-      onFilesLoaded();
+      await onFilesLoaded();
     };
   }
 

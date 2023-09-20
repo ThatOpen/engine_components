@@ -17,3 +17,4 @@ export * from "./ToastNotification";
 export * from "./TextArea";
 export * from "./CommandsMenu";
 export * from "./Drawer";
+export * from "./Modal";
