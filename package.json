@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "@popperjs/core": "latest",
-    "@tarikjabiri/dxf": "3.0.0-alpha.2",
+    "@tarikjabiri/dxf": "3.0.0-alpha.4",
     "bim-fragment": "1.0.22",
     "camera-controls": "^1.36.0",
     "dexie": "^3.2.3",

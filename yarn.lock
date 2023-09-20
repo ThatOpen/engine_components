@@ -1011,10 +1011,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tarikjabiri/dxf@npm:3.0.0-alpha.2":
-  version: 3.0.0-alpha.2
-  resolution: "@tarikjabiri/dxf@npm:3.0.0-alpha.2"
-  checksum: d0bcf391f9f0dac582212fe9636235220eee943056e5e81109ad27c37cc26a4d1400ff275d765380e1635b95eefe9bfe143fac817b1eb3b05071375c2170b64b
+"@tarikjabiri/dxf@npm:3.0.0-alpha.4":
+  version: 3.0.0-alpha.4
+  resolution: "@tarikjabiri/dxf@npm:3.0.0-alpha.4"
+  checksum: 03d8cc3b7d6744adf6206a20c1f8bb02e0a97483c04d15fdec3112ae921cc6b148ee3cad986780f9a1c540cc7b38943c04a69d51ef3082ee5741b5b294bb6921
   languageName: node
   linkType: hard
 
@@ -6477,7 +6477,7 @@ __metadata:
     "@rollup/plugin-commonjs": 25.0.0
     "@rollup/plugin-node-resolve": 15.1.0
     "@tailwindcss/forms": ^0.5.3
-    "@tarikjabiri/dxf": 3.0.0-alpha.2
+    "@tarikjabiri/dxf": 3.0.0-alpha.4
     "@types/earcut": ^2.1.1
     "@types/jest": 27.0.0
     "@types/mapbox-gl": ^2.7.11
