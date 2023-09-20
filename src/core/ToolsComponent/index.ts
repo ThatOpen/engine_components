@@ -34,7 +34,8 @@ export class ToolComponent
   private _reader = new ToolBufferReader();
 
   private _urls = {
-    base: "https://dev.api.dev.platform.thatopen.com/v1/tools/",
+    base: "https://api.platform.thatopen.com/v1/tools/",
+    baseDev: "https://dev.api.dev.platform.thatopen.com/v1/tools/",
     path: "/download?accessToken=",
   };
 
@@ -103,8 +104,12 @@ export class ToolComponent
   async getPlatformComponent<T, U extends Component<T>>(
     id: string
   ): Promise<U> {
-    const { base, path } = this._urls;
-    const url = base + id + path + this.token;
+    const { base, baseDev, path } = this._urls;
+    const currentUrl = window.location.href;
+    const devPattern = /(https:\/\/qa.)|(localhost)/;
+    const isDev = currentUrl.match(devPattern);
+    const baseUrl = isDev ? baseDev : base;
+    const url = baseUrl + id + path + this.token;
 
     const fetched = await fetch(url);
     const rawBuffer = await fetched.arrayBuffer();
