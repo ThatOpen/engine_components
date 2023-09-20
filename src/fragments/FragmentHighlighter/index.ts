@@ -160,6 +160,11 @@ export class FragmentHighlighter
     for (const fragmentID in fragments.list) {
       const fragment = fragments.list[fragmentID];
       this.addHighlightToFragment(fragment);
+      const outlinedMesh = this._outlinedMeshes[fragmentID];
+      if (outlinedMesh) {
+        fragment.mesh.updateMatrixWorld(true);
+        outlinedMesh.applyMatrix4(fragment.mesh.matrixWorld);
+      }
     }
   }
 
@@ -552,10 +557,12 @@ export class FragmentHighlighter
   }
 
   private onMouseDown = () => {
+    if (!this.enabled) return;
     this._default.mouseDown = true;
   };
 
   private onMouseUp = async (event: MouseEvent) => {
+    if (!this.enabled) return;
     if (event.target !== this.components.renderer.get().domElement) return;
     this._default.mouseDown = false;
     if (this._default.mouseMoved || event.button !== 0) {
@@ -568,6 +575,7 @@ export class FragmentHighlighter
   };
 
   private onMouseMove = async () => {
+    if (!this.enabled) return;
     if (this._default.mouseMoved) {
       await this.clearFills(this._default.hoverName);
       return;

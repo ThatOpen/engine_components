@@ -93,8 +93,14 @@
         path: "https://unpkg.com/web-ifc@0.0.43/",
         absolute: true
     }
+
     await propsManager.init();
     propsProcessor.process(model);
+
+    propsManager.onRequestFile.add(async () => {
+        const fetched = await fetch("../../../resources/small.ifc");
+        propsManager.ifcToExport = await fetched.arrayBuffer();
+    })
 
     /*MD
     ### ✨ Setting up highlighting and selecting

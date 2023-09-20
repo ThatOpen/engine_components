@@ -31,6 +31,9 @@ export class IfcPropertiesManager
 {
   static readonly uuid = "58c2d9f0-183c-48d6-a402-dfcf5b9a34df" as const;
 
+  readonly onRequestFile = new Event();
+  ifcToExport: ArrayBuffer | null = null;
+
   readonly onElementToPset = new Event<{
     model: FragmentsGroup;
     psetID: number;
@@ -105,42 +108,25 @@ export class IfcPropertiesManager
     this.onPropToPset.reset();
     this.onPsetRemoved.reset();
     this.onDataChanged.reset();
-    this.uiElement.dispose();
+    await this.uiElement.dispose();
   }
 
   private setUI(components: Components) {
     const exportButton = new Button(components);
     exportButton.tooltip = "Export IFC";
     exportButton.materialIcon = "exit_to_app";
-    exportButton.onClick.add(() => {
-      const fileOpener = document.createElement("input");
-      fileOpener.type = "file";
-      fileOpener.onchange = async () => {
-        if (
-          !this.selectedModel ||
-          !fileOpener.files ||
-          !fileOpener.files.length
-        ) {
-          return;
-        }
-
-        const file = fileOpener.files[0];
-        const rawBuffer = await file.arrayBuffer();
-        const fileData = new Uint8Array(rawBuffer);
-
-        const resultBuffer = await this.saveToIfc(this.selectedModel, fileData);
-
-        const resultFile = new File([new Blob([resultBuffer])], file.name);
-
-        const link = document.createElement("a");
-        link.download = file.name;
-        link.href = URL.createObjectURL(resultFile);
-        link.click();
-
-        link.remove();
-        fileOpener.remove();
-      };
-      fileOpener.click();
+    exportButton.onClick.add(async () => {
+      await this.onRequestFile.trigger();
+      if (!this.ifcToExport || !this.selectedModel) return;
+      const fileData = new Uint8Array(this.ifcToExport);
+      const name = this.selectedModel.name;
+      const resultBuffer = await this.saveToIfc(this.selectedModel, fileData);
+      const resultFile = new File([new Blob([resultBuffer])], name);
+      const link = document.createElement("a");
+      link.download = name;
+      link.href = URL.createObjectURL(resultFile);
+      link.click();
+      link.remove();
     });
 
     this.uiElement.set({
