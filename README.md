@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://ifcjs.io/">TOC</a>
+  <a href="https://thatopen.com/">TOC</a>
   |
   <a href="https://platform.thatopen.com/documentation">documentation</a>
   |
