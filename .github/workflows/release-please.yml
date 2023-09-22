@@ -14,7 +14,6 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-
       - uses: google-github-actions/release-please-action@v3 # Handle local releases
         id: release
         with:
@@ -23,6 +22,5 @@ jobs:
       - uses: ./.github/workflows/publish-npm.yml # Publish to npmjs
         with:
           secrets:
-            NPM_TOKEN: ${{ secrets.NPM_TOKEN }} 
-          # Publish only if release-please creates a published release
+            NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         if: ${{ steps.release.outputs.release_created }}
