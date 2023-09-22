@@ -72,6 +72,3 @@ scene.add(ambientLight);
 [npm]: https://img.shields.io/npm/v/openbim-components
 [npm-url]: https://www.npmjs.com/package/openbim-components
 [npm-downloads]: https://img.shields.io/npm/dw/openbim-components
-[discord]: https://img.shields.io/discord/799990228336115742
-[discord-url]: https://discord.gg/FXfyR4XrKT
-[oc-contributors]: https://opencollective.com/ifcjs/tiers/badge.svg
