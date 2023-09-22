@@ -10,8 +10,7 @@
     "build": "node resources/cleaner.js && tsc && yarn build-examples && tailwindcss build -i src/ui/UIManager/top.css -o resources/styles.css",
     "build-css": "tailwindcss build -i src/ui/UIManager/top.css -o src/index.css",
     "build-examples": "rollup -c resources/rollup.config.mjs",
-    "publish-repo": "cpy package.json dist && cd dist && npm publish",
-    "publish-repo-alpha": "cpy package.json dist && cd dist && npm publish --tag alpha"
+    "publish-repo": "cpy package.json dist && cd dist && npm publish"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "25.0.0",
