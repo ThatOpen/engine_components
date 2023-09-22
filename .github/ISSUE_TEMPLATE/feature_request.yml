@@ -41,7 +41,7 @@ body:
       label: Validations ✅
       description: "Before submitting the issue, please make sure that you have:"
       options:
-        - label: Read the [docs](https://ifcjs.github.io/info/docs/Introduction).
+        - label: Read the [docs](https://platform.thatopen.com/documentation).
           required: true
         - label: Check that there isn't [already an issue](https://github.com/IFCjs/components/issues) that requests the same feature to avoid creating a duplicate.
           required: true
