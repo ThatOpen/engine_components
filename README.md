@@ -24,7 +24,7 @@ This library is a collection of BIM tools based on [Three.js](https://github.com
 
 ### Usage
 
-You need to be familiar with [Three.js API](https://github.com/mrdoob/three.js/) to be able to use this library effectively. In the following example, we will create a cube in a 3D scene that can be navigated with the mouse or touch events. You can see the full example [here](https://github.com/IFCjs/components/blob/main/examples/hello-world.html) and the deployed app [here](https://ifcjs.github.io/components/src/core/SimpleScene/index.html).
+You need to be familiar with [Three.js API](https://github.com/mrdoob/three.js/) to be able to use this library effectively. In the following example, we will create a cube in a 3D scene that can be navigated with the mouse or touch events. You can see the full example [here](https://github.com/IFCjs/components/blob/main/src/core/SimpleScene/index.html) and the deployed app [here](https://ifcjs.github.io/components/src/core/SimpleScene/index.html).
 
 ```js
 import * as THREE from "three";
