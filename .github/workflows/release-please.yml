@@ -21,6 +21,5 @@ jobs:
           package-name: openbim-components
       - uses: ./.github/workflows/publish-npm.yml # Publish to npmjs
         with:
-          secrets:
-            NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         if: ${{ steps.release.outputs.release_created }}
