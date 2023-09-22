@@ -70,7 +70,7 @@
 
     // Load the fragments
 
-    const file = await fetch('../../../resources/model.frag');
+    const file = await fetch('../../../resources/small.frag');
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
     const model = await fragments.load(buffer);
@@ -79,7 +79,7 @@
         culler.add(fragment.mesh);
     }
 
-    const properties = await fetch('../../../resources/model.json');
+    const properties = await fetch('../../../resources/small.json');
     model.properties = await properties.json();
 
     culler.needsUpdate = true;

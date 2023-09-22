@@ -12,7 +12,7 @@
   <a href="https://airtable.com/appolsrsBWel2m6wr/shr4ybI6JOeHJEqkG">roadmap</a>
 </p>
 
-![cover](cover.png)
+![cover](resources/cover.png)
 
 <h1>Open BIM Components <img src="https://ifcjs.github.io/components/resources/favicon.ico" width="32"></h1>
 
