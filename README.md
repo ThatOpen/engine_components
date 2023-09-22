@@ -14,7 +14,7 @@
 
 ![cover](cover.png)
 
-<h1>Open BIM Components <img src="https://ifcjs.github.io/info/img/logo.svg" width="32"></h1>
+<h1>Open BIM Components <img src="https://ifcjs.github.io/components/resources/favicon.ico" width="32"></h1>
 
 [![NPM Package][npm]][npm-url]
 [![NPM Package][npm-downloads]][npm-url]
