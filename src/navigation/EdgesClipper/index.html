@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="../../../resources/styles.css">
+  <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+  <title>Tools Component</title>
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+        "three/examples/jsm/lines/LineMaterial": "https://unpkg.com/three@0.135.0/examples/jsm/lines/LineMaterial.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
+        "openbim-components": "../../../resources/openbim-components.js"
+      }
+    }
+
+</script>
+<script type="module">
+
+	// Set up scene (see SimpleScene tutorial)
+
+	import Stats from 'stats.js/src/Stats.js';
+	import * as THREE from 'three';
+	import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
+	import * as OBC from 'openbim-components';
+
+	// Set up basic components
+
+	const container = document.getElementById('container');
+
+	const components = new OBC.Components();
+	components.scene = new OBC.SimpleScene(components);
+	components.renderer = new OBC.PostproductionRenderer(components, container);
+	components.camera = new OBC.SimpleCamera(components);
+	components.raycaster = new OBC.SimpleRaycaster(components);
+	components.init();
+
+    components.renderer.postproduction.enabled = true;
+    components.renderer.postproduction.customEffects.outlineEnabled = true;
+
+	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+
+	const scene = components.scene.get();
+
+	// Add some lights to the scene
+
+	const directionalLight = new THREE.DirectionalLight();
+	directionalLight.position.set(5, 10, 3);
+	directionalLight.intensity = 0.5;
+	scene.add(directionalLight);
+
+	const ambientLight = new THREE.AmbientLight();
+	ambientLight.intensity = 0.5;
+	scene.add(ambientLight);
+
+	const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
+	components.tools.add("grid", grid);
+    components.renderer.postproduction.customEffects.excludedMeshes.push(grid.get());
+
+	/*MD
+  ### ⭕️ Aesthetic Clipping Edges
+  ---
+
+  You can build whole BIM application using Components.💪
+  One such essential component is **Edges Clipper** which helps you to add Clipping Planes along
+  with beautiful yet functional edges.🖍️
+
+  :::info Advanced but Simple to use
+
+  ⚡️ **Simple Clipper** and **Edges Clipper** are similar, but `Edges Clipper` offers more advanced options.
+  If you want to learn more about **[Simple Clipper](SimpleClipper.mdx)**, visit the tutorial.
+
+  :::
+
+  In this tutorial, we'll use the `EdgesClipper` to slice two distinct Cubes that each have a unique set of edge effects.
+  With the help of this tutorial, you can quickly add **Clipping Planes** and **Configurable Edges** to your project.🚀
+
+  :::tip First, let's set up a simple scene!
+
+  👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
+
+  :::
+
+  ### 🧩 Adding Objects to Scene
+  ---
+
+  Let's start by adding two Cubes, we will create a [Box Geometry](https://threejs.org/docs/index.html?q=box#api/en/geometries/BoxGeometry) and use it for both Meshes.
+
+   */
+
+	const cubeGeometry = new THREE.BoxGeometry(3, 3, 3);
+
+	const cubeMaterial = new THREE.MeshStandardMaterial({ color: '#6528D7' });
+	const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+	cube.position.set(-2, 1.5, 0);
+	scene.add(cube);
+	components.meshes.push(cube);
+
+	const cube2 = new THREE.Mesh(cubeGeometry, cubeMaterial);
+	cube2.position.set(2, 1.5, 0);
+	scene.add(cube2);
+	components.meshes.push(cube2);
+
+	/*MD
+
+  :::info Storing Components
+
+  🧰 After adding cubes to the scene, we must also add them to `components.meshes`,
+  which is just an array of all the meshes in the scene.🗄️
+
+  :::
+
+  ### ⚔️ Slicing Some Cubes
+  ---
+
+  Now that the setup is complete. Let's get started with the interesting part!
+  We will create **[Edges Clipper](../api/classes/components.EdgesClipper)** and pass the **components** and
+  **[Edges Plane](../api/classes/components.EdgesPlane)** to the constructor.
+
+   */
+
+	const clipper = new OBC.EdgesClipper(components);
+
+	/*MD
+
+  :::info PLANE WITH EDGES and TRANSFORMATION CONTROLS
+
+  🟦 **[Edges Plane](../api/classes/components.EdgesPlane)** helps us in adding Clipping Planes to the Clipper Component.
+
+  :::
+
+   */
+
+	components.tools.add("clipper", clipper);
+	clipper.enabled = true;
+
+	/*MD
+
+  When we set `clipper.enabled = true`, we will make the clipper functional; otherwise, clipping planes won't be formed.
+
+  :::tip Adding it to the tools component
+
+  The Tools Component will help you keep your code tidy. For more information about the Tools component, check out
+  [its own tutorial](./ToolsComponent.mdx). 🔍
+
+  :::
+
+  ### 🖌️ Creating Fine Edges
+  ---
+
+  Let's now prepare the materials that will be visible on the cube edges.
+
+  We will use **[LineMaterial](https://threejs.org/examples/?q=line#webgl_lines_fat)** for creating edges.
+
+  #### 💫 Using Line Material
+
+  After creating the Line Material we will add it to the **clipper**
+  using `clipper.styles.create(styleName: string, mesh: Mesh[], material: LineMaterial)`
+
+   */
+
+    const blueFill = new THREE.MeshBasicMaterial({color: 'lightblue', side: 2});
+	const blueLine = new THREE.LineBasicMaterial({ color: 'blue' });
+    const blueOutline = new THREE.MeshBasicMaterial({color: 'blue', opacity: 0.2, side: 2, transparent: true});
+	clipper.styles.create('Red lines', new Set([cube]), blueLine, blueFill, blueOutline);
+
+	const salmonFill = new THREE.MeshBasicMaterial({color: 'salmon', side: 2});
+	const redLine = new THREE.LineBasicMaterial({ color: 'red' });
+    const redOutline = new THREE.MeshBasicMaterial({color: 'red', opacity: 0.2, side: 2, transparent: true});
+	clipper.styles.create('Blue lines', new Set([cube2]), redLine, salmonFill, redOutline);
+
+	/*MD
+
+  ### 🤝 Performing Clipping Events
+  ---
+  We need a method for instantly producing a clipping plane;
+  this can be accomplished with either a `single click` or a `double click` of the mouse.
+
+  For this tutorial, we will use **Double Click**, to create a Clipper that will generate a
+  plane on the 3D object's face.
+
+   */
+	container.ondblclick = () => clipper.create();
+
+	/*MD
+
+  :::info Raycaster below the hood 🎩
+
+  We use the **[Simple Raycaster](SimpleRaycaster.mdx)** to determine if the intersection has occurred.
+  The clipper places a plane after detecting the face on which the mouse was clicked.
+  Here, the **EdgesClipper** handles everything for you 😎
+
+  :::
+
+  ### 🧹 Deleting the Clipping Planes
+  ---
+  Now that we know how to make multiple clippers, we must also know how to delete them when necessary.
+  Clipping Edges can be removed using `clipper.delete()` or `clipper.delete(plane)`, which deletes a single plane.
+
+  **clipper.delete()** deletes the plane on which your mouse pointer is now located.
+
+  */
+
+	window.onkeydown = (event) => {
+		if (event.code === 'Delete' || event.code === 'Backspace') {
+			clipper.delete();
+		}
+	};
+
+	/*MD
+
+  :::tip Delete all Clipping Planes
+
+  ❎ If you want to safely delete all the clipping edges that were created you can simply call
+  **`clipper.deleteAll()`**
+
+  :::
+
+  Great job! 🎉 Using the **[Clipper Component](../api/classes/components.SimpleClipper)**,
+  you can now effortlessly check BIM models or any other 3D objects with stunning edges.🧐
+
+  Let's keep it up and check out another tutorial! 🎓
+
+  */
+
+
+	const stats = new Stats();
+	stats.showPanel(2);
+	document.body.append(stats.dom);
+	stats.dom.style.left = '0px';
+	const renderer = components.renderer;
+	renderer.onBeforeUpdate.add(() => stats.begin());
+	renderer.onAfterUpdate.add(() => stats.end());
+
+	// Set up dat.gui menu
+
+	const gui = new dat.GUI();
+
+	const shortcutsFolder = gui.addFolder('Shortcuts');
+
+	const shortcuts = {
+		'Create clipping plane': 'Double click',
+		'Delete clipping plane': 'Delete',
+	};
+
+	shortcutsFolder.add(shortcuts, 'Create clipping plane');
+	shortcutsFolder.add(shortcuts, 'Delete clipping plane');
+
+	const actionsFolder = gui.addFolder('Actions');
+
+	actionsFolder.add(clipper, 'visible').name('Toggle clipping planes visible');
+
+	actionsFolder.add(clipper, 'enabled').name('Toggle clipping planes enabled');
+
+	const color = {
+		value: 0x000000,
+	};
+
+	const helperColor = new THREE.Color();
+	actionsFolder.addColor(color, 'value')
+		.name('Plane color')
+		.onChange((value) => {
+			helperColor.setHex(value);
+			clipper.material.lineMaterial = helperColor;
+		});
+
+	actionsFolder.add(clipper, 'size').name('Plane Size').min(0).max(15);
+	actionsFolder.add(clipper.material, 'opacity').name('Plane Opacity').min(0).max(1);
+
+    const width = {value: 0.2};
+    actionsFolder.add(width, 'value').name('Lines width').step(0.1).min(0.1).max(1).onChange(() => {
+      blueOutline.opacity = width.value;
+      redOutline.opacity = width.value;
+    })
+
+	const actions = {
+		'Delete all planes': () => {
+			clipper.deleteAll();
+		},
+		'Rotate cube': () => {
+			cube.rotation.x = 2 * Math.PI * Math.random();
+			cube.rotation.y = 2 * Math.PI * Math.random();
+			cube.rotation.z = 2 * Math.PI * Math.random();
+			cube.updateMatrix();
+			cube.updateMatrixWorld();
+
+			cube2.rotation.x = 2 * Math.PI * Math.random();
+			cube2.rotation.y = 2 * Math.PI * Math.random();
+			cube2.rotation.z = 2 * Math.PI * Math.random();
+			cube2.updateMatrix();
+			cube2.updateMatrixWorld();
+
+			clipper.updateEdges();
+		},
+	};
+
+	actionsFolder.add(actions, 'Rotate cube');
+	actionsFolder.add(actions, 'Delete all planes');
+
+</script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="../../../resources/styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+    <title>Tools Component</title>
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+        "web-ifc": "https://unpkg.com/web-ifc@0.0.42/web-ifc-api.js",
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
+        "openbim-components": "../../../resources/openbim-components.js",
+         "client-zip": "https://unpkg.com/client-zip@2.3.0/index.js"
+      }
+    }
+</script>
+</body>
+</html>
+<script type="module">
+
+    // Set up scene (see SimpleScene tutorial)
+
+    import * as THREE from 'three';
+    import * as OBC from 'openbim-components';
+    import * as WEBIFC from 'web-ifc';
+    import Stats from 'stats.js/src/Stats.js';
+    import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
+    import {downloadZip} from 'client-zip';
+
+    const container = document.getElementById('container');
+
+    const components = new OBC.Components();
+
+    components.scene = new OBC.SimpleScene(components);
+    components.renderer = new OBC.PostproductionRenderer(components, container);
+    components.camera = new OBC.SimpleCamera(components);
+    components.raycaster = new OBC.SimpleRaycaster(components);
+
+    components.init();
+
+    components.renderer.postproduction.enabled = true;
+
+    const scene = components.scene.get();
+
+    components.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
+
+    components.scene.setup();
+
+    const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
+    components.tools.add('grid', grid);
+    const customEffects = components.renderer.postproduction.customEffects;
+    customEffects.excludedMeshes.push(grid.get());
+
+    /*MD
+    ### 🏠👉🤖 From IFC to fragment in 1 minute
+    ___
+    Fragments are great: they are lightweight, they are fast and we
+    have tons of tools to work with them. But fragments are not used
+    outside our libraries. So how can we convert an IFC file to fragments?
+    Easy: with the `FragmentIfcLoader`! Let's start by creating it.
+    */
+
+    let fragments = new OBC.FragmentManager(components);
+    let fragmentIfcLoader = new OBC.FragmentIfcLoader(components, fragments);
+
+    /*MD
+    :::info Why not just IFC?
+
+    IFC is nice because it lets us exchange data with many tools in the
+    AECO industry. But it also has some limitations. In a nutshell,
+    data coming from IFC needs to be processed and converted to triangles
+    to be able to draw it in 3D, and that requires processing power
+    and time! That's why we convert it to fragments to display it.
+    Once you have the fragments, you can store them and load them
+    directly the next time your user tries to load that IFC: it will
+    load 10 times faster!
+
+    :::
+
+    Now, we will start using the built-in `Button` the ifc loader has.
+    To do that, we will create a `Toolbar` and add it to our app. This
+    button will give you all the features you need to load IFC files!
+    Don't worry, we'll also do this programmatically in a moment.
+    */
+
+    const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
+    components.ui.addToolbar(mainToolbar);
+    const ifcButton = fragmentIfcLoader.uiElement.get("main");
+    mainToolbar.addChild(ifcButton);
+
+    /*MD
+    ### 🔭🔧 Calibrating the converter
+    ___
+    Now, we need to configure the path of the WASM files. What's WASM?
+    It's a technology that lets us run C++ on the browser, which means
+    that we can load IFCs super fast! These files are the compilation of
+    our `web-ifc` library. You can find them in the github repo and in NPM.
+    These files need to be available to our app, so you have 2 options:
+
+    - Download them and serve them statically.
+    - Get them from a remote server.
+
+    The easiest way is getting them from unpkg, so let's do that!
+    */
+
+    fragmentIfcLoader.settings.wasm = {
+        path: "https://unpkg.com/web-ifc@0.0.43/",
+        absolute: true
+    }
+
+    /*MD
+    Awesome! Optionally, we can exclude categories that we don't want
+    to convert to fragments like very easily:
+    */
+
+    const excludedCats = [
+        WEBIFC.IFCTENDONANCHOR,
+        WEBIFC.IFCREINFORCINGBAR,
+        WEBIFC.IFCREINFORCINGELEMENT,
+    ];
+
+    for(const cat of excludedCats) {
+        fragmentIfcLoader.settings.excludedCategories.add(cat);
+    }
+
+    /*MD
+    We can further configure the conversion using the `webIfc` object.
+    In this example, we will make the IFC model go to the origin of
+    the scene (don't worry, this supports model federation) and
+    optimize the profiles geometry so that it generates very
+    efficient geometry for certain geometries (e.g. HVAC):
+    */
+
+    fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
+    fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
+
+    /*MD
+    ### 🚗🔥 Loading the IFC
+    ___
+    Next, let's define a function to load the IFC programmatically.
+    We have hardcoded the path to one of our IFC files, but feel free
+    to do this with any of your own files!
+
+   :::info Opening local IFCs
+
+    Keep in mind that the browser can't access the file of your
+    computer directly, so you will need to use the Open File API to
+    open local files.
+
+    :::
+    */
+
+    async function loadIfcAsFragments() {
+        const file = await fetch('../../../resources/small.ifc');
+        const data = await file.arrayBuffer();
+        const buffer = new Uint8Array(data);
+        const model = await fragmentIfcLoader.load(buffer);
+        scene.add(model);
+    }
+
+    /*MD
+    ### 🎁 Exporting the result
+    ___
+    Once you have your precious fragments, you might want to save them
+    so that you don't need to open this IFC file each time your user
+    gets into your app. Instead, the next time you can load the
+    fragments directly. Defining a function to export fragments
+    is as easy as this:
+
+    */
+
+    async function exportFragments() {
+        if (!fragments.groups.length) return;
+        const group = fragments.groups[0];
+        const data = fragments.export(group);
+        const blob = new Blob([data]);
+        const fragmentFile = new File([blob], 'model.frag');
+
+        const files = [];
+        files.push(fragmentFile);
+        files.push(new File([JSON.stringify(group.properties)], 'model.json'));
+        const result = await downloadZip(files).blob();
+        result.name = 'example';
+        download(result);
+    }
+
+    /*MD
+    Now, this is how the download function looks like:
+    */
+
+    function download(file) {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(file);
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    }
+
+    /*MD
+     ### 🧠🧼 Cleaning memory
+     ___
+     Now, just like in the `FragmentManager` tutorial, you will need
+     to dispose the memory if your user wants to reset the state of the
+     scene, especially if you are using Single Page Application
+     technologies like React, Angular, Vue, etc. To do that, you
+     can simply call the `dispose` method:
+    */
+
+    function disposeFragments() {
+        fragments.dispose();
+    }
+
+    /*MD
+     That's it! Congrats, now you can load IFC files into your app,
+     generate the 3D geometry and property data for them and navigate
+     them in 3D. In other tutorials, you'll find tons of tools to
+     work with them and create amazing BIM apps! See you there 💪
+    */
+
+
+    // Set up stats
+
+    const stats = new Stats();
+    stats.showPanel(2);
+    document.body.append(stats.dom);
+    stats.dom.style.left = '0px';
+    const renderer = components.renderer;
+    renderer.onBeforeUpdate.add(() => stats.begin());
+    renderer.onAfterUpdate.add(() => stats.end());
+
+
+    // Set up dat.gui menu
+
+    const settings = {
+        loadFragments: () => loadIfcAsFragments(),
+        exportFragments: () => exportFragments(),
+        disposeFragments: () => disposeFragments(),
+    };
+
+    const gui = new dat.GUI();
+
+    gui.add(settings, 'loadFragments').name('Import fragments');
+    gui.add(settings, 'exportFragments').name('Export fragments');
+    gui.add(settings, 'disposeFragments').name('Dispose fragments');
+
+    // For debugging
+
+    // fragmentIfcLoader.ifcLoaded.on((model) => {
+
+    // let sorted = [];
+    // for(const frag of model.fragments) {
+    // 	const size = frag.mesh.count;
+    // 	sorted.push({size, frag});
+    // }
+    //
+    // sorted.sort((a, b) => {
+    // 	return a.size > b.size ? 1 : -1;
+    // });
+    // let value = 0;
+    // let step = 1 / sorted.length;
+    //
+    // for(const { frag } of sorted) {
+    // 	console.log(frag.mesh.material);
+    // 	const mat = frag.mesh.material[0];
+    // 	frag.mesh.instanceColor = null;
+    // 	mat.color.setRGB(value, value, value, "srgb");
+    // 	value += step;
+    // }
+    // });
+
+
+</script>

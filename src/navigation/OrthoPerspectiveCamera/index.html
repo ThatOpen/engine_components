@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="../../../resources/styles.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+  <title>Tools Component</title>
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
+        "openbim-components": "../../../resources/openbim-components.js"
+      }
+    }
+
+</script>
+<script type="module">
+
+	// Set up scene (see SimpleScene tutorial)
+
+	import * as THREE from 'three';
+	import * as OBC from 'openbim-components';
+	import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
+	import Stats from 'stats.js/src/Stats.js';
+
+	const container = document.getElementById('container');
+
+	const components = new OBC.Components();
+
+	components.scene = new OBC.SimpleScene(components);
+	components.renderer = new OBC.SimpleRenderer(components, container);
+	components.raycaster = new OBC.SimpleRaycaster(components);
+
+	const scene = components.scene.get();
+
+	const directionalLight = new THREE.DirectionalLight();
+	directionalLight.position.set(5, 10, 3);
+	directionalLight.intensity = 0.5;
+	scene.add(directionalLight);
+
+	const ambientLight = new THREE.AmbientLight();
+	ambientLight.intensity = 0.5;
+	scene.add(ambientLight);
+
+	/*MD
+  ### 📽️ Managing Multiple Views
+  ---
+  Perspective view adds depth and realism, which helps in creating visually compelling representations in 3D scenes.🛤️
+  While, Orthographic view is important for precise measurements and proportions.📐
+
+  :::tip First, let's set up a simple scene!
+
+  👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
+
+  :::
+
+  We'll be using an advanced camera component for this tutorial.
+  OrthoPerspectiveCamera makes it simple to use Orthographic and Perspective projections.
+
+  ### 🎲 Creating a Cube Mesh
+  ---
+  First, let's create a simple Cube, which will render differently depending on the projection you choose.🧊
+  We will create a [Cube](https://threejs.org/docs/index.html?q=box#api/en/geometries/BoxGeometry)
+  with `3x3x3` dimensions and use red color for the material.🖍️
+
+  */
+
+	const cubeGeometry = new THREE.BoxGeometry(3, 3, 3);
+	const cubeMaterial = new THREE.MeshStandardMaterial({ color: '#6528D7' });
+	const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+	cube.position.set(0, 1.5, 0);
+
+	/*MD
+
+  Now, we will add the Cube to the `Scene`. We must also add the **cube** to `components.meshes`,
+  which is simply an array of all the meshes in the Scene 🗄️.
+
+  **`components.meshes`** acts as a store to help you manage your elements centrally.
+
+   */
+	scene.add(cube);
+	components.meshes.push(cube);
+
+	/*MD
+  ### 🎞️ Developing an OrthoPerspective Camera
+  ---
+
+  We will create OrthoPerspectiveCamera by passing `components` as an argument to it.🗃️
+  The OrthoPerspective Camera extends the SimpleCamera by providing you with extra controls.
+
+  We will then configure the camera location and update the look at target using `setLookAt()` API.👀
+
+   */
+
+	const camera = new OBC.OrthoPerspectiveCamera(components);
+	components.camera = camera;
+	camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+	components.init();
+
+	/*MD
+
+  :::info Igniting Components!
+
+  🔥 Whenever the components like scene, camera are created, you need to initialize the component library.
+  Check out components.init() for more info!🔖
+
+  :::
+
+  ### 🕹️ Changing Views and Navigation
+  ---
+  Now, that our camera setup is done, we need to manage the camera projection on demand.
+
+  #### Toggling Orthographic View and Perspective View
+
+  Let's create a simple method **`toggleProjection()`** which toggles the Camera View using `camera.toggleProjection`.
+  Alternatively, you can also use `camera.setProjection()` and pass `'Orthographic'` or `'Perspective'` to manage the views.💡
+
+  */
+	function toggleProjection() {
+		camera.toggleProjection();
+	}
+
+	/*MD
+  You can also subscribe to an event for when the projection changes. For instance, let's change the grid fading mode
+  when the projection changes. This will make the grid look good in orthographic mode:
+  */
+
+	camera.projectionChanged.add(() => {
+		const projection = camera.getProjection();
+		grid.fade = projection === 'Perspective';
+	});
+
+	/*MD
+  #### Managing Navigation Modes
+  Along with projection, we can also manage Navigation modes using **OrthoPerspective** camera.
+  To update navigation modes, we will use `camera.setNavigationMode('Orbit' | 'FirstPerson' | 'Plan')`
+
+  - **Orbit** - Orbit Mode helps us to easily navigate around the 3D Elements.
+  - **FirstPerson** - It helps you to visualize scene from your own perspective.
+  First Person mode is only available for Perspective Projection.
+  - **Plan** - This mode helps you to easily navigate in 2D Projections.
+
+  */
+	function setNavigationMode(navMode) {
+		camera.setNavigationMode(navMode);
+	}
+
+	/*MD
+  :::info MORE CONTROLS, MORE POWER
+
+  🧮 OrthoPerspective Camera also provides you an option to adjust your camera to fit the 3D elements.
+  You can simply use fitModelToFrame(mesh)
+  and provide the mesh which you want to fit to your window frame
+
+  :::
+
+  **Congratulations** 🎉 on completing this tutorial!
+  Now you can add Advance Camera System to your web-app in minutes using
+  **OrthoPerspectiveCamera** ⌚📽️
+  Let's keep it up and check out another tutorial! 🎓
+
+  */
+
+    const grid = new OBC.SimpleGrid(components);
+    components.tools.add("grid", grid);
+
+	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
+	components.ui.addToolbar(mainToolbar);
+	mainToolbar.addChild(camera.uiElement.get("main"));
+
+	// Set up stats
+	const stats = new Stats();
+	stats.showPanel(2);
+	document.body.append(stats.dom);
+	stats.dom.style.left = '0px';
+	const renderer = components.renderer;
+	renderer.onBeforeUpdate.add(() => stats.begin());
+	renderer.onAfterUpdate.add(() => stats.end());
+
+</script>
+</body>
+</html>

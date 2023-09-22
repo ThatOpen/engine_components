@@ -1,0 +1,89 @@
+name: "Bug report 🐛"
+description: Report an issue with IFC.js components
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! <img src="https://ifcjs.github.io/info/img/logo.svg" width="16">
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Describe the bug 📝
+      description: A clear and concise description of what the bug is. If you intend to submit a PR for this issue, tell us in the description. Thanks!
+      placeholder: |
+        I am doing ...
+        What I expect is ...
+        What is actually happening is...
+    validations:
+      required: true
+  - type: input
+    id: reproduction
+    attributes:
+      label: Reproduction ▶️
+      description: If possible, please provide an [asciinema record](https://asciinema.org/) or a link to a repo that can reproduce the problem you ran into. A [minimal reproduction](https://stackoverflow.com/help/minimal-reproducible-example) is desirable. If a report is vague (e.g. just a generic error message) and has no reproduction, solving it will also be a slower or unfeasible process.
+      placeholder: Reproduction URL
+    validations:
+      required: false
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Steps to reproduce 🔢
+      description: Please provide any reproduction steps that may need to be described.
+      placeholder: |
+        1. Run `npm install`.
+        2. ...
+    validations:
+      required: false
+  - type: textarea
+    id: system-info
+    attributes:
+      label: System Info 💻
+      description: Output of `npx envinfo --system --npmPackages 'openbim-components' --binaries --browsers`
+      render: shell
+      placeholder: System, Binaries, Browsers
+    validations:
+      required: true
+  - type: dropdown
+    id: package-manager
+    attributes:
+      label: Used Package Manager 📦
+      description: Select the used package manager
+      options:
+        - npm
+        - yarn
+        - pnpm
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Trace/Logs 📃
+      description: |
+        Optional if provided reproduction. Please try not to insert an image but copy paste the error trace/logs text.
+
+        Provide the error log here in the format below:
+        ````
+        <details>
+        <summary>Click to expand!</summary>
+
+        ```shell
+        // paste the log text here
+        ```
+        </details>
+        ````
+  - type: checkboxes
+    id: checkboxes
+    attributes:
+      label: Validations ✅
+      description: "Before submitting the issue, please make sure that you have:"
+      options:
+        - label: Read the [docs](https://ifcjs.github.io/info/docs/Introduction).
+          required: true
+        - label: Check that there isn't [already an issue](https://github.com/IFCjs/components/issues) that reports the same bug to avoid creating a duplicate.
+          required: true
+        - label: Make sure this is a IFC.js components issue and not a framework-specific issue. For example, if it's a THREE.js related bug, it should likely be reported to [mrdoob/threejs](https://github.com/mrdoob/three.js) instead.
+          required: true
+        - label: Check that this is a concrete bug. For Q&A join our [Discord Chat Server](https://discord.gg/FXfyR4XrKT).
+          required: true
+        - label: The provided reproduction is a [minimal reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) of the bug.
+          required: true

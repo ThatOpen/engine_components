@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="../../../resources/styles.css">
+  <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+  <title>Tools Component</title>
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
+        "openbim-components": "../../../resources/openbim-components.js"
+      }
+    }
+</script>
+<script type="module">
+	// Set up scene (see SimpleScene tutorial)
+
+	import * as THREE from 'three';
+	import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
+	import Stats from 'stats.js/src/Stats.js';
+	import * as OBC from 'openbim-components';
+
+	const container = document.getElementById('container');
+
+	const components = new OBC.Components();
+
+	components.scene = new OBC.SimpleScene(components);
+	components.renderer = new OBC.SimpleRenderer(components, container);
+	components.camera = new OBC.SimpleCamera(components);
+	components.raycaster = new OBC.SimpleRaycaster(components);
+
+	components.init();
+
+	const scene = components.scene.get();
+
+	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+
+	components.scene.setup();
+
+	/*MD
+	### 🌒 Adding Realism
+	---
+    Have you ever wondered what makes a scene look realistic?
+    Adding **Shadow** to 3D objects may quickly add depth to your creations.😎
+
+    In this tutorial, we'll show you how to use Shadow Dropper to quickly apply shadows.
+    In less than 5 minutes, you can create realistic shadows for all the meshes inside your scene.⏱️
+
+    :::tip First, let's set up a simple scene!
+
+    👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
+
+    :::
+
+    ### 🎲 Creating a Cube Mesh
+    ---
+    Let's start by adding a Cube, which we can dissect.
+    We will create a [Cube](https://threejs.org/docs/index.html?q=box#api/en/geometries/BoxGeometry)
+    with `3x3x3` dimensions and use red color for the material.
+
+    */
+
+    const cubeGeometry = new THREE.BoxGeometry(3, 3, 3);
+	const cubeMaterial = new THREE.MeshStandardMaterial({color: '#6528D7'});
+	const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+	cube.position.set(0, 1.5, 0);
+
+    /*MD
+
+    Now, we will add the Cube to the `Scene`. We must also add the **cube** to `components.meshes`,
+    which is simply an array of all the meshes in the Scene 🗄️.
+
+    **`components.meshes`** acts as a store to help you manage your elements centrally.
+
+     */
+
+  scene.background = new THREE.Color("gray");
+	scene.add(cube);
+	components.meshes.push(cube);
+
+    /*MD
+    ### 🌚 Adding Beautiful Shadow
+    ---
+    This completes our scene setup. Let's now include Shadows,
+    we'll use **`ShadowDropper`** and pass `components` as an argument to it.🔗
+
+     */
+
+	const shadows = new OBC.ShadowDropper(components);
+
+    /*MD
+
+    Shadow Dropper Component not only adds shadows to the scene, but it also helps you manage the **Shadows**.
+    To obtain the required results, you can alter the `ShadowDropper` parameters.🔧
+
+     */
+
+	shadows.shadowExtraScaleFactor = 15;
+	shadows.darkness = 2;
+    shadows.shadowOffset = 0.1;
+
+    /*MD
+    - `shadowExtraScalarFactor` - With this, the shadow's area of impact can be adjusted.
+    - `darkness` - This is used to increase or decrease the intensity of Shadow.
+
+    :::info SHADOW and realism ✨
+
+    Read the **Shadow Dropper** API for more on this.
+    The Shadow Dropper API offers more configuration options to render realistic shadows.
+
+    :::
+
+    ### 🎨 Rendering Shadow
+    ---
+    Now, we will use Shadow Dropper to create shadows for the element.
+    We will use **`renderShadow()`** to generate shadow for the `cube` we created.
+
+     */
+
+    shadows.renderShadow([cube], "example");
+
+    /*MD
+
+    **renderShadow** requires two parameter, the `element` and a `shadowID`.
+    **shadowID** needs to be unique for the entire scene.
+
+    :::tip Deleting Shadows
+
+    ❎ If you want to safely delete the shadow using **shadowID** you can call
+    **`shadows.deleteShadow(shadowId);`**
+
+    :::
+
+    **Congratulations** 🎉 on completing this tutorial!
+    Now you can add shadows to BIM Models or any 3D Object in minutes using
+    **Shadow Dropper** 🌗
+    Let's keep it up and check out another tutorial! 🎓
+     */
+
+
+	// Set up stats
+
+	const stats = new Stats();
+	stats.showPanel(2);
+	document.body.append(stats.dom);
+	stats.dom.style.left = '0px';
+	const renderer = components.renderer;
+	renderer.onBeforeUpdate.add(() => stats.begin());
+	renderer.onAfterUpdate.add(() => stats.end());
+
+</script>
+</body>
+</html>

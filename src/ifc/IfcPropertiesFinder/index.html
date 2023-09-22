@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="../../../resources/styles.css">
+    <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <title>IfcPropertiesFinder</title>
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+        "openbim-components": "../../../resources/openbim-components.js"
+      }
+    }
+
+</script>
+<script type="module">
+
+    // Set up scene (see SimpleScene tutorial)
+
+    import * as THREE from 'three';
+    import * as OBC from 'openbim-components';
+
+    const container = document.getElementById('container');
+
+    const components = new OBC.Components();
+
+    components.scene = new OBC.SimpleScene(components);
+    const renderer = new OBC.PostproductionRenderer(components, container);
+    components.renderer = renderer;
+    components.camera = new OBC.SimpleCamera(components);
+    components.raycaster = new OBC.SimpleRaycaster(components);
+
+    components.init();
+
+    renderer.postproduction.enabled = true;
+
+    const scene = components.scene.get();
+
+    components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+
+    components.scene.setup();
+
+    const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
+    components.tools.add('grid', grid);
+    const gridMesh = grid.get();
+    renderer.postproduction.customEffects.excludedMeshes.push(gridMesh);
+
+    /*MD
+    ### 🔎 Find just what you need
+    ___
+    Sometimes data is buried inside our BIM models, and the
+    heterogeneity of BIM models doesn't make it easier. Luckily,
+    we have created a component that can go past this barrier:
+    the `IfcPropertiesFinder`.
+
+    :::info How can it find buried data?
+
+    Best way to describe the component is to find "Relations of entities meeting a set of attributes criteria".
+    Each search group aims to find a set of entities matching the criteria and then its relations.
+    The search result are all common relations of the entities that meet the criteria in each search group.
+
+    :::
+
+     Let's see how it works! As usual, let's start by loading our
+     classic model:
+    */
+
+    const fragments = new OBC.FragmentManager(components);
+    const file = await fetch("../../../resources/small.frag");
+    const dataBlob = await file.arrayBuffer();
+    const buffer = new Uint8Array(dataBlob);
+    const model = await fragments.load(buffer);
+    const properties = await fetch("../../../resources/small.json");
+    model.properties = await properties.json();
+
+    /*MD
+     Now, we can start the finder by just instancing the class and
+     calling the `init` method. It's asynchronous, so don't forget
+     to add an `await` before it! Then, you can make it `queryWindow`
+     visible to start working with it:
+    */
+
+    const propsFinder = new OBC.IfcPropertiesFinder(components);
+    await propsFinder.init();
+    propsFinder.uiElement.get("queryWindow").visible = true;
+
+    /*MD
+     We will also add a `Toolbar` so that you can see how to hide and
+     show it using the main built-in `Button` that it has:
+    */
+
+    const mainToolbar = new OBC.Toolbar(components)
+    components.ui.addToolbar(mainToolbar)
+    mainToolbar.addChild(propsFinder.uiElement.get("main"))
+
+    /*MD
+    ### ✨ Highlighting the results
+    ___
+    Right now our app is super boring, so let's make this a bit more
+    interesting. We will highlight the items found by the finder.
+    Doing this is super easy with the `FragmentHighlighter` and the
+    finder `onFound` event:
+    */
+
+    const highlighter = new OBC.FragmentHighlighter(components);
+    highlighter.setup();
+
+    components.renderer.postproduction.customEffects.outlineEnabled = true;
+    highlighter.outlinesEnabled = true;
+    highlighter.zoomToSelection = true;
+    propsFinder.onFound.add(result => {
+        highlighter.highlightByID("select", result);
+    })
+
+    /*MD
+    This is it! Now you know how to find data using complex queries
+    in your BIM models. You can use the finder in combination
+    with your own tools, like we did with the `FragmentHider`. Let us
+    make the data heavy lifting for you and just focus on the results!
+    We'll see you in another tutorial of these docs.
+    */
+
+
+</script>
+</body>
+</html>

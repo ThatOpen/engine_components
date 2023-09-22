@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="../../../resources/styles.css">
+    <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <title>IfcPropertiesFinder</title>
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+        "openbim-components": "../../../resources/openbim-components.js"
+      }
+    }
+</script>
+<script type="module">
+
+    // Set up scene (see SimpleScene tutorial)
+
+    import * as THREE from 'three';
+    import * as OBC from 'openbim-components';
+
+    const container = document.getElementById('container');
+
+    const components = new OBC.Components();
+
+    components.scene = new OBC.SimpleScene(components);
+    const renderer = new OBC.PostproductionRenderer(components, container);
+    components.renderer = renderer;
+    components.camera = new OBC.SimpleCamera(components);
+    components.raycaster = new OBC.SimpleRaycaster(components);
+
+    components.init();
+
+    renderer.postproduction.enabled = true;
+
+    const scene = components.scene.get();
+
+    components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+
+    components.scene.setup();
+
+    const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
+    components.tools.add('grid', grid);
+    const gridMesh = grid.get();
+    renderer.postproduction.customEffects.excludedMeshes.push(gridMesh);
+
+    /*MD
+    ### 🧶 View all IFC properties FAST
+    ___
+    IFC elements have tons of data, and it's often indirectly
+    bound to the elements. Luckily, getting all the data for any
+    IFC element is trivial with these libraries. Let´s see how! First,
+    as usually, we'll load our classic fragment model and set up
+    the fragment highlighter:
+    */
+
+    const fragments = new OBC.FragmentManager(components);
+    const file = await fetch("../../../resources/small.frag");
+    const dataBlob = await file.arrayBuffer();
+    const buffer = new Uint8Array(dataBlob);
+    const model = await fragments.load(buffer);
+    const properties = await fetch("../../../resources/small.json");
+    model.properties = await properties.json();
+    const highlighter = new OBC.FragmentHighlighter(components, fragments);
+    highlighter.setup();
+    components.renderer.postproduction.customEffects.outlineEnabled = true;
+    highlighter.outlinesEnabled = true;
+
+    /*MD
+    Next, we will create a new instance of the component to navigate
+   IFC properties: the `IfcPropertiesProcessor`. We will also
+   make its built-in floating window visible by default.
+    */
+
+    const propsProcessor = new OBC.IfcPropertiesProcessor(components)
+	  propsProcessor.uiElement.get("propertiesWindow").visible = true
+
+    /*MD
+    Now, to view the properties of a model we need to process it:
+    */
+
+	propsProcessor.process(model);
+
+    /*MD
+  And now, we will bind the highlihgter logic to the properties
+  processor, so that each time that we click on an element, its
+  properties will be shown:
+  */
+
+    const highlighterEvents = highlighter.events;
+    highlighterEvents.select.onClear.add(() => {
+        propsProcessor.cleanPropertiesList();
+    });
+
+    highlighterEvents.select.onHighlight.add(
+        (selection) => {
+            const fragmentID = Object.keys(selection)[0];
+            const expressID = Number([...selection[fragmentID]][0]);
+            let model
+            for (const group of fragments.groups) {
+                const fragmentFound = Object.values(group.keyFragments).find(id => id === fragmentID)
+                if (fragmentFound) model = group;
+            }
+            propsProcessor.renderProperties(model, expressID);
+        }
+    );
+
+    /*MD
+    Finally, we will add the main built-in button of the properties
+    processor to a simple toolbar at the bottom of our app:
+    */
+
+    const mainToolbar = new OBC.Toolbar(components);
+    components.ui.addToolbar(mainToolbar);
+	  mainToolbar.addChild(propsProcessor.uiElement.get("main"));
+
+    /*MD
+    This is it! Congratulations, now you can see and navigate
+    the properties of any IFC model you load in your apps. Now,
+    let's continue navigating these docs for more cool open BIM tools!
+    */
+
+</script>
+</body>
+</html>

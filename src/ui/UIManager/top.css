@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap');
+
+:root {
+    --primary-color: #BCF124;
+    --secondary-color: #6528D7;
+    /* TODO: Probably this needs to be called background-color */
+    --secondary-color-100: #000000bb;
+    --secondary-color-120: #1a2128;
+}
+
+* {
+  background-color: transparent;
+}
+
+@layer base {
+  html {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+}
+
+@layer base {
+  html {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+}
+
+* {
+  background-color: transparent;
+}
+
+@layer base {
+  html {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.material-icons.md-18 { font-size: 18px; }
+.material-icons.md-16 { font-size: 16px; }
+
+h3 {
+  @apply text-3xl text-ifcjs-200 font-medium
+}
+
+dialog {
+  @apply overflow-visible
+}
+
+dialog::backdrop {
+  @apply backdrop-blur-md
+}
+
+.full-screen, #app {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--secondary-color-100);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--secondary-color);
+  border-radius: 9999px;
+}

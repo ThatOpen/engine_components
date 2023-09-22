@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="../../../resources/styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+    <title>Tools Component</title>
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
+        "openbim-components": "../../../resources/openbim-components.js"
+      }
+    }
+</script>
+<script type="module">
+
+    import * as THREE from 'three';
+    import * as OBC from 'openbim-components';
+
+    const container = document.getElementById('container');
+
+    const components = new OBC.Components();
+    components.scene = new OBC.SimpleScene(components);
+    components.renderer = new OBC.SimpleRenderer(components, container);
+    components.camera = new OBC.SimpleCamera(components);
+    components.raycaster = new OBC.SimpleRaycaster(components);
+
+    components.init();
+
+    const scene = components.scene.get();
+
+    components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+
+    const grid = new OBC.SimpleGrid(components);
+    components.tools.add("grid", grid);
+
+    const boxMaterial = new THREE.MeshStandardMaterial({color: '#6528D7'});
+    const boxGeometry = new THREE.BoxGeometry(3, 3, 3);
+    const cube = new THREE.Mesh(boxGeometry, boxMaterial);
+    cube.position.set(0, 1.5, 0);
+    scene.add(cube);
+
+
+    components.scene.setup();
+
+    /*MD
+    ### 🎨 Draw in 2D on top of 3D!
+    ___
+    The `Simple2DScene` component is an easy way to represent 2D data
+    using the same tools and API that you use for 3D. Using it is
+    super simple: just create a new instance and you can start
+    adding things to it!
+
+    :::tip Drawing 2D with THREE.js?
+
+    Yes! 2D is just a specific case of 3D. So we can use exactly the same
+    libraries and tools to display 2D data easily.
+
+    :::
+
+    The first step is to create a instance of the `Simple2DScene` component:
+
+    */
+
+    const simple2dScene = new OBC.Simple2DScene(components);
+    components.tools.add("Simple2DScene", simple2dScene);
+
+    /*MD
+    Great! Now we can start adding things to it, just like we would with the
+    3D scene. We will create a cube some lights and a grid: 💡🧊
+    */
+
+    const cube2 = new THREE.Mesh(boxGeometry, boxMaterial);
+    const scene2d = simple2dScene.get();
+    scene2d.add(cube2);
+
+    const directionalLight2 = new THREE.DirectionalLight();
+    directionalLight2.position.set(5, 10, 3);
+    directionalLight2.intensity = 0.5;
+    scene2d.add(directionalLight2);
+
+    const ambientLight2 = new THREE.AmbientLight();
+    ambientLight2.intensity = 0.5;
+    scene2d.add(ambientLight2);
+
+    const grid2d = new THREE.GridHelper(1000, 1000);
+    grid2d.rotation.x = Math.PI / 2;
+    scene2d.add(grid2d);
+
+    /*MD
+    ### 💅 Creating the UI
+    ___
+    The `Simple2DScene` comes with a button to easily turn it on and off.
+    Let's create a simple toolbar and add it to the scene:
+    */
+
+    const mainButton = simple2dScene.uiElement.get("main");
+    const mainToolbar = new OBC.Toolbar(components);
+    components.ui.addToolbar(mainToolbar);
+    mainToolbar.addChild(mainButton);
+
+    /*MD
+    That's it! Great work. Now you can easily draw 2D graphics with the same
+    API and expose them to your end users. 🥳
+    */
+
+</script>
+</body>
+</html>
