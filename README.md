@@ -1,7 +1,7 @@
 <p align="center">
   <a href="https://ifcjs.io/">ifc.js</a>
   |
-  <a href="https://ifcjs.github.io/components/docs/index.html">documentation</a>
+  <a href="https://platform.thatopen.com/documentation">documentation</a>
   |
   <a href="https://ifcjs.github.io/components/examples/fragment-hello-world.html">demo</a>
   |
