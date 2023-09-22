@@ -69,7 +69,6 @@ scene.add(ambientLight);
 
 
 
-[ifcjs]: https://ifcjs.io/
 [npm]: https://img.shields.io/npm/v/openbim-components
 [npm-url]: https://www.npmjs.com/package/openbim-components
 [npm-downloads]: https://img.shields.io/npm/dw/openbim-components
