@@ -23,18 +23,26 @@ export type CubeMapFace =
   | "left"
   | "back";
 
+/**
+ * A simple navigation cube to zoom the scene to its basic views (top, bottom,
+ * left, right, back and front).
+ */
 export class CubeMap
   extends Component<HTMLDivElement>
   implements Updateable, Hideable, Disposable
 {
   static readonly uuid = "53311ea3-323a-476f-ae4a-d681778e8f67" as const;
 
-  name: string = "CubeMap";
+  /** {@link Component.enabled} */
   enabled: boolean = true;
 
+  /** {@link Updateable.onAfterUpdate} */
   readonly onAfterUpdate: Event<CubeMap> = new Event();
+
+  /** {@link Updateable.onBeforeUpdate} */
   readonly onBeforeUpdate: Event<CubeMap> = new Event();
 
+  /** The minimum zoom distance to the scene. */
   offset = 1;
 
   private _cubeFaceClass =
