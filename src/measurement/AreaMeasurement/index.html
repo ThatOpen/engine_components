@@ -81,7 +81,6 @@
 	scene.add(ambientLight);
 
     const grid = new OBC.SimpleGrid(components);
-    components.tools.add("grid", grid);
 
 	/*MD
 	### 📏 Dimensions Tool
@@ -150,18 +149,6 @@
 
     🎨 **SimpleDimensions** has several properties that help you to customize the behaviour of the `Line Element`.
     One such property which you can use is **`dimensions.color`** which modifies the color of the Line Element.
-
-     */
-
-    components.tools.add("dimensions", dimensions);
-
-    /*MD
-    :::tip Adding it to the tools component
-
-    The Tools Component will help you keep your code tidy. For more information about the Tools component, check out
-    [its own tutorial](./ToolsComponent.mdx). 🔍
-
-    :::
 
 
     Now, let's enable dimensions and tell them to be snapped at a distance of one unit.

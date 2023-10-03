@@ -60,7 +60,6 @@
     scene.add(ambientLight);
 
     const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
-    components.tools.add("grid", grid);
     components.renderer.postproduction.customEffects.excludedMeshes.push(grid.get());
 
     /*MD

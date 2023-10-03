@@ -41,7 +41,6 @@
     components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
     const grid = new OBC.SimpleGrid(components);
-    components.tools.add("grid", grid);
 
     const boxMaterial = new THREE.MeshStandardMaterial({color: '#6528D7'});
     const boxGeometry = new THREE.BoxGeometry(3, 3, 3);
@@ -72,7 +71,6 @@
     */
 
     const simple2dScene = new OBC.Simple2DScene(components);
-    components.tools.add("Simple2DScene", simple2dScene);
 
     /*MD
     Great! Now we can start adding things to it, just like we would with the

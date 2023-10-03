@@ -48,7 +48,6 @@
 	  components.scene.setup();
 
     const grid = new OBC.SimpleGrid(components);
-    components.tools.add("grid", grid);
 
     /*MD
     ### ✂️ Clipping Tool
@@ -110,15 +109,9 @@
 
      */
 
-	components.tools.add("clipper", clipper);
 	clipper.enabled = true;
 
     /*MD
-    :::tip Adding it to the tools component
-    The Tools Component will help you keep your code tidy. For more information about the Tools component, check out
-    [its own tutorial](./ToolsComponent.mdx). 🔍
-
-    :::
 
     ### ⏏️ Creating a Toolbar for the Clipper
     ---

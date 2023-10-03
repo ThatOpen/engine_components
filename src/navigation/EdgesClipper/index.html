@@ -62,7 +62,6 @@
 	scene.add(ambientLight);
 
 	const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
-	components.tools.add("grid", grid);
     components.renderer.postproduction.customEffects.excludedMeshes.push(grid.get());
 
 	/*MD
@@ -139,19 +138,11 @@
 
    */
 
-	components.tools.add("clipper", clipper);
 	clipper.enabled = true;
 
 	/*MD
 
   When we set `clipper.enabled = true`, we will make the clipper functional; otherwise, clipping planes won't be formed.
-
-  :::tip Adding it to the tools component
-
-  The Tools Component will help you keep your code tidy. For more information about the Tools component, check out
-  [its own tutorial](./ToolsComponent.mdx). 🔍
-
-  :::
 
   ### 🖌️ Creating Fine Edges
   ---

@@ -58,7 +58,6 @@
 	scene.add(ambientLight);
 
 	const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
-	components.tools.add("grid", grid);
     const gridMesh = grid.get();
     const effects = renderer.postproduction.customEffects;
     effects.excludedMeshes.push(gridMesh);
@@ -113,7 +112,7 @@
 
     */
 
-    const classifier = new OBC.FragmentClassifier(components, fragments);
+    const classifier = new OBC.FragmentClassifier(components);
 
     /*MD
 
@@ -145,7 +144,7 @@
 
     */
 
-	const exploder = new OBC.FragmentExploder(components, fragments, classifier);
+	const exploder = new OBC.FragmentExploder(components);
 
     /*MD
 

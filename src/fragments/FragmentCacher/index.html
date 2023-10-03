@@ -76,7 +76,7 @@
     */
 
     const fragments = new OBC.FragmentManager(components);
-    let fragmentIfcLoader = new OBC.FragmentIfcLoader(components, fragments);
+    let fragmentIfcLoader = new OBC.FragmentIfcLoader(components);
     fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
     fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
     fragmentIfcLoader.settings.wasm = {

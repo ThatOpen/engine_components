@@ -59,12 +59,11 @@
     scene.add(ambientLight);
 
     const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
-    components.tools.add('grid', grid);
     const customEffects = components.renderer.postproduction.customEffects;
     customEffects.excludedMeshes.push(grid.get());
 
     let fragments = new OBC.FragmentManager(components);
-    let fragmentIfcLoader = new OBC.FragmentIfcLoader(components, fragments);
+    let fragmentIfcLoader = new OBC.FragmentIfcLoader(components);
 
 	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
 	components.ui.addToolbar(mainToolbar);
