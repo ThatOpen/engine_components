@@ -193,7 +193,8 @@
      */
 	window.onkeydown = (event) => {
 		if (event.code === 'Delete' || event.code === 'Backspace') {
-			dimensions.delete();
+			// WORK IN PROGRESS
+			// dimensions.delete();
 		}
 	}
 
@@ -265,42 +266,45 @@
 
 	// Set up dat.gui menu
 
-	const gui = new dat.GUI();
+	// const gui = new dat.GUI();
 
-	const shortcutsFolder = gui.addFolder('Shortcuts');
+	// const shortcutsFolder = gui.addFolder('Shortcuts');
 
-	const shortcuts = {
-		'Create dimension': "Double click" ,
-		'Delete dimension': "Delete"
-	}
+	// const shortcuts = {
+	// 	'Create dimension': "Double click" ,
+	// 	'Delete dimension': "Delete"
+	// }
 
-	shortcutsFolder.add(shortcuts, 'Create dimension');
-	shortcutsFolder.add(shortcuts, 'Delete dimension');
+	// shortcutsFolder.add(shortcuts, 'Create dimension');
+	// shortcutsFolder.add(shortcuts, 'Delete dimension');
 
-	const actionsFolder = gui.addFolder('Actions');
+	// const actionsFolder = gui.addFolder('Actions');
 
-	actionsFolder.add(dimensions, "enabled").name("Dimensions enabled");
+	// actionsFolder.add(dimensions, "enabled").name("Dimensions enabled");
 	// actionsFolder.add(dimensions, "visible").name("Dimensions visible");
 
-	const color = {
-		value: 0x000000
-	};
+	// const color = {
+	// 	value: 0x000000
+	// };
 
-	const helperColor = new THREE.Color();
-	actionsFolder.addColor(color, "value")
-		.name("Dimensions color")
-		.onChange((value) => {
-			helperColor.setHex(value);
-			dimensions.color = helperColor;
-		});
+	// const helperColor = new THREE.Color();
+	// actionsFolder.addColor(color, "value")
+	// 	.name("Dimensions color")
+	// 	.onChange((value) => {
+	// 		helperColor.setHex(value);
+	// 		dimensions.color = helperColor;
+	// 	});
 
-	const actions = {
-		'Delete all dimensions': () => {
-			dimensions.deleteAll();
-		}
-	}
+	// WORK IN PROGRESS
 
-	actionsFolder.add(actions, 'Delete all dimensions');
+	// dimensions.delete();
+	// const actions = {
+	// 	'Delete all dimensions': () => {
+	// 		dimensions.deleteAll();
+	// 	}
+	// }
+
+	// actionsFolder.add(actions, 'Delete all dimensions');
 
 </script>
 </body>
