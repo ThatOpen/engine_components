@@ -84,7 +84,7 @@
 
     culler.needsUpdate = true;
 
-    const clipper = new OBC.EdgesClipper(components, OBC.EdgesPlane);
+    const clipper = new OBC.EdgesClipper(components);
     const thickMaterial = new THREE.LineBasicMaterial({color: 'black'});
     const thinMaterial = new THREE.LineBasicMaterial({color: 'blue'});
     const fillMaterial = new THREE.MeshBasicMaterial({color: 'gray', side: 2});

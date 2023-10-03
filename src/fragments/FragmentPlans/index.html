@@ -106,7 +106,7 @@
 
     */
 
-    const clipper = new OBC.EdgesClipper(components, OBC.EdgesPlane);
+    const clipper = new OBC.EdgesClipper(components);
     const sectionMaterial = new THREE.LineBasicMaterial({color: 'black'});
     const fillMaterial = new THREE.MeshBasicMaterial({color: 'gray', side: 2});
     const fillOutline = new THREE.MeshBasicMaterial({color: 'black', side: 1, opacity: 0.5, transparent: true});
