@@ -19,8 +19,8 @@ export class SimpleRaycaster extends BaseRaycaster implements Disposable {
 
   constructor(components: Components) {
     super(components);
-    const scene = components.renderer.get();
-    const dom = scene.domElement;
+    const renderer = components.renderer.get();
+    const dom = renderer.domElement;
     this.mouse = new Mouse(dom);
   }
 
