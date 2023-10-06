@@ -132,6 +132,15 @@ export class AngleMeasurement
 
   delete() {}
 
+  /** Deletes all the dimensions that have been previously created. */
+  async deleteAll() {
+    for (const dim of this._measurements) {
+      await dim.dispose();
+      await this.onAfterDelete.trigger(this);
+    }
+    this._measurements = [];
+  }
+
   endCreation() {
     if (this._currentAngleElement) {
       this._measurements.push(this._currentAngleElement);
