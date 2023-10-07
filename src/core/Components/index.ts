@@ -37,7 +37,8 @@ export class Components {
    */
   readonly onInitialized: Event<Components> = new Event();
 
-  private _enabled = false;
+  enabled = false;
+
   private _renderer?: BaseRenderer;
   private _scene?: Component<THREE.Scene>;
   private _camera?: Component<THREE.Camera>;
@@ -132,7 +133,7 @@ export class Components {
    * used, the {@link raycaster} will need to be initialized.
    */
   init() {
-    this._enabled = true;
+    this.enabled = true;
     this._clock.start();
     this.ui.init();
     this.update();
@@ -156,7 +157,7 @@ export class Components {
    */
   async dispose() {
     const disposer = await this.tools.get(Disposer);
-    this._enabled = false;
+    this.enabled = false;
     await this.tools.dispose();
     await this.ui.dispose();
     this.onInitialized.reset();
@@ -180,7 +181,7 @@ export class Components {
   }
 
   private update = async () => {
-    if (!this._enabled) return;
+    if (!this.enabled) return;
     const delta = this._clock.getDelta();
     await Components.update(this.scene, delta);
     await Components.update(this.renderer, delta);

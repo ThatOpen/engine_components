@@ -46,6 +46,7 @@ export class SimpleRenderer
     parameters?: Partial<THREE.WebGLRendererParameters>
   ) {
     super(components);
+
     this.container = container;
 
     this._renderer = new THREE.WebGLRenderer({
@@ -58,6 +59,11 @@ export class SimpleRenderer
     this.setupRenderers();
     this.setupEvents(true);
     this.resize();
+
+    const context = this._renderer.getContext();
+    const { canvas } = context;
+    canvas.addEventListener("webglcontextlost", this.onContextLost, false);
+    canvas.addEventListener("webglcontextrestored", this.onContextBack, false);
   }
 
   /** {@link Component.get} */
@@ -122,10 +128,18 @@ export class SimpleRenderer
   private setupRenderers() {
     this._renderer.localClippingEnabled = true;
     this.container.appendChild(this._renderer.domElement);
-
     this._renderer2D.domElement.style.position = "absolute";
     this._renderer2D.domElement.style.top = "0px";
     this._renderer2D.domElement.style.pointerEvents = "none";
     this.container.appendChild(this._renderer2D.domElement);
   }
+
+  private onContextLost = (event: any) => {
+    event.preventDefault();
+    this.components.enabled = false;
+  };
+
+  private onContextBack = () => {
+    this.components.enabled = true;
+  };
 }
