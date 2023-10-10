@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Component } from "../../base-types";
+import { Component } from "../../base-types/component";
 import { Components } from "../Components";
 import { ToolComponent } from "../ToolsComponent";
 

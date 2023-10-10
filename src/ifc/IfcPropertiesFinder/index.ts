@@ -17,7 +17,7 @@ import {
   AttributeQuery,
   ConditionFunctions,
 } from "./src/types";
-import { FragmentManager } from "../../fragments";
+import { FragmentManager } from "../../fragments/FragmentManager";
 import { QueryBuilder } from "./src/query-builder";
 import { IfcPropertiesManager } from "../IfcPropertiesManager";
 

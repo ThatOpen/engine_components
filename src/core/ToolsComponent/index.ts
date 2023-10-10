@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import ToolBufferReader from "top-tool-package-reader";
-import * as OBC from "../../index";
 import { Component, Disposable } from "../../base-types";
 import { Components } from "../Components";
 
@@ -38,6 +37,15 @@ export class ToolComponent
     baseDev: "https://dev.api.dev.platform.thatopen.com/v1/tools/",
     path: "/download?accessToken=",
   };
+
+  private _OBC: any;
+
+  /** Pass the whole library object as argument.
+   * @param ORB: `import * as OBC from "openbim-components"`.
+   */
+  init(OBC: any) {
+    this._OBC = OBC;
+  }
 
   /**
    * Adds a new tool. Use this in the constructor of your tools.
@@ -104,6 +112,9 @@ export class ToolComponent
   async getPlatformComponent<T, U extends Component<T>>(
     id: string
   ): Promise<U> {
+    if (!this._OBC) {
+      console.log("Tools component not initialized! Call the init method.");
+    }
     const { base, baseDev, path } = this._urls;
     const currentUrl = window.location.href;
     const devPattern = /(https:\/\/qa.)|(localhost)/;
@@ -124,7 +135,7 @@ export class ToolComponent
       throw new Error(`There was a problem fetching the tool ${id}.`);
     }
 
-    const ToolClass = win.ThatOpenTool(OBC, THREE) as any;
+    const ToolClass = win.ThatOpenTool(this._OBC, THREE) as any;
     win.ThatOpenTool = undefined;
 
     script.remove();

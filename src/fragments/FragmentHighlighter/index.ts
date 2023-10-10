@@ -6,7 +6,7 @@ import { FragmentManager } from "../FragmentManager";
 import { FragmentBoundingBox } from "../FragmentBoundingBox";
 import { Components, SimpleCamera, ToolComponent } from "../../core";
 import { toCompositeID } from "../../utils";
-import { PostproductionRenderer } from "../../navigation";
+import { PostproductionRenderer } from "../../navigation/PostproductionRenderer";
 
 // TODO: Clean up and document
 

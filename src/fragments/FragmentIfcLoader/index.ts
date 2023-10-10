@@ -1,7 +1,7 @@
 import * as WEBIFC from "web-ifc";
 import { FragmentsGroup } from "bim-fragment";
 import { Disposable, Event, UI, Component, UIElement } from "../../base-types";
-import { FragmentManager } from "../index";
+import { FragmentManager } from "../FragmentManager";
 import { DataConverter, GeometryReader } from "./src";
 import { Button, ToastNotification } from "../../ui";
 import { Components, ToolComponent } from "../../core";

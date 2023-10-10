@@ -9,7 +9,7 @@ import {
   TextInput,
 } from "../../ui";
 import { Components, ToolComponent } from "../../core";
-import { EdgesClipper } from "../../navigation";
+import { EdgesClipper } from "../../navigation/EdgesClipper";
 import { FragmentManager } from "../FragmentManager";
 import { FragmentClassifier } from "../FragmentClassifier";
 

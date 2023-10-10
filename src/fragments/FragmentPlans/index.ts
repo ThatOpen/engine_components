@@ -2,12 +2,6 @@ import * as THREE from "three";
 import { FragmentsGroup } from "bim-fragment";
 import * as WEBIFC from "web-ifc";
 import { Component, Disposable, UI, Event, UIElement } from "../../base-types";
-import {
-  EdgesClipper,
-  EdgesPlane,
-  CameraProjection,
-  OrthoPerspectiveCamera,
-} from "../../navigation";
 import { PlanView } from "./src/types";
 import { IfcPropertiesUtils } from "../../ifc";
 import { PlanObjects } from "./src/plan-objects";
@@ -21,6 +15,11 @@ import {
   CommandsMenu,
   UICommands,
 } from "../../ui";
+import {
+  OrthoPerspectiveCamera,
+  CameraProjection,
+} from "../../navigation/OrthoPerspectiveCamera";
+import { EdgesClipper, EdgesPlane } from "../../navigation/EdgesClipper";
 
 /**
  * Helper to control the camera and easily define and navigate 2D floor plans.
