@@ -1,7 +1,8 @@
 import * as THREE from "three";
 import { Lines } from "openbim-clay";
 import { Components, Simple2DScene, ToolComponent } from "../../core";
-import { Component } from "../../base-types";
+import { Component, UIElement } from "../../base-types";
+import { Drawer } from "../../ui";
 
 export class RoadNavigator extends Component<Lines> {
   /** {@link Component.uuid} */
@@ -10,6 +11,8 @@ export class RoadNavigator extends Component<Lines> {
   enabled = true;
 
   longSection: Simple2DScene;
+
+  uiElement = new UIElement<{ main: Drawer }>();
 
   private _lines = new Lines();
 
@@ -63,8 +66,10 @@ export class RoadNavigator extends Component<Lines> {
     this.cache();
   }
 
-  select() {
-    this._lines.selectPoints(false);
+  select(removePrevious = true) {
+    if (removePrevious) {
+      this._lines.selectPoints(false);
+    }
     // TODO: Fix cast ray type
     const found = this.components.raycaster.castRay([
       this._lines.vertices.mesh as any,
@@ -125,10 +130,16 @@ export class RoadNavigator extends Component<Lines> {
     }
   }
 
+  // private setupUI() {
+  //   const main = new Drawer(this.components);
+  //   this.uiElement.set({});
+  // }
+
   private updateLongProjection() {
     // Assuming that the lines of the road axis are sorted
     // TODO: Sort them in case they are not
     this._longProjection.clear();
+    this._longProjection = new Lines();
     const vertices = this._lines.mesh.geometry.attributes.position;
     console.log(vertices);
     const v1 = new THREE.Vector3();

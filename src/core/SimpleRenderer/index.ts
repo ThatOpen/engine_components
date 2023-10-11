@@ -36,6 +36,8 @@ export class SimpleRenderer
 
   protected _renderer2D = new CSS2DRenderer();
   protected _renderer: THREE.WebGLRenderer;
+  protected _canvas: HTMLCanvasElement;
+  protected _parameters?: Partial<THREE.WebGLRendererParameters>;
 
   overrideScene?: THREE.Scene;
   overrideCamera?: THREE.Camera;
@@ -48,6 +50,7 @@ export class SimpleRenderer
     super(components);
 
     this.container = container;
+    this._parameters = parameters;
 
     this._renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -59,6 +62,8 @@ export class SimpleRenderer
     this.setupRenderers();
     this.setupEvents(true);
     this.resize();
+
+    this._canvas = this._renderer.domElement;
 
     const context = this._renderer.getContext();
     const { canvas } = context;
@@ -140,6 +145,14 @@ export class SimpleRenderer
   };
 
   private onContextBack = () => {
+    this._renderer.setRenderTarget(null);
+    this._renderer.dispose();
+    this._renderer = new THREE.WebGLRenderer({
+      canvas: this._canvas,
+      antialias: true,
+      alpha: true,
+      ...this._parameters,
+    });
     this.components.enabled = true;
   };
 }

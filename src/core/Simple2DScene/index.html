@@ -71,6 +71,7 @@
     */
 
     const simple2dScene = new OBC.Simple2DScene(components);
+    components.renderer.onAfterUpdate.add(() => simple2dScene.update());
 
     /*MD
     Great! Now we can start adding things to it, just like we would with the
@@ -101,7 +102,32 @@
     Let's create a simple toolbar and add it to the scene:
     */
 
-    const mainButton = simple2dScene.uiElement.get("main");
+
+    const mainWindow = new OBC.FloatingWindow(components);
+    components.ui.add(mainWindow);
+    mainWindow.visible = false;
+    mainWindow.domElement.style.height = "20rem";
+    mainWindow.addChild(simple2dScene.uiElement.get("canvas"));
+
+    mainWindow.slots.content.domElement.style.padding = "0";
+    mainWindow.slots.content.domElement.style.overflow = "hidden";
+
+    mainWindow.onResized.add(() => {
+        const {width, height} = mainWindow.containerSize;
+        simple2dScene.setSize(height, width);
+    });
+
+    mainWindow.domElement.style.width = "20rem";
+    mainWindow.domElement.style.height = "20rem";
+
+
+    const mainButton = new OBC.Button(components);
+    mainButton.materialIcon = "fact_check";
+    mainButton.tooltip = "2D scene";
+    mainButton.onClick.add(() => {
+        mainWindow.visible = !mainWindow.visible;
+    });
+
     const mainToolbar = new OBC.Toolbar(components);
     components.ui.addToolbar(mainToolbar);
     mainToolbar.addChild(mainButton);

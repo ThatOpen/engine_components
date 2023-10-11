@@ -65,14 +65,20 @@
     let fragments = new OBC.FragmentManager(components);
     let fragmentIfcLoader = new OBC.FragmentIfcLoader(components);
 
-	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
-	components.ui.addToolbar(mainToolbar);
-	mainToolbar.addChild(fragmentIfcLoader.uiElement.main);
-
     fragmentIfcLoader.settings.wasm = {
         path: "https://unpkg.com/web-ifc@0.0.44/",
         absolute: true
     }
+
+    const fetched = await fetch("../../../resources/small.ifc");
+    const buffer = await fetched.arrayBuffer();
+    const byteArray = new Uint8Array(buffer);
+    const model = await fragmentIfcLoader.load(byteArray);
+    components.scene.get().add(model);
+
+	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
+	components.ui.addToolbar(mainToolbar);
+	mainToolbar.addChild(fragmentIfcLoader.uiElement.get("main"));
 
     fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
     fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
@@ -100,8 +106,8 @@
     document.body.append(stats.dom);
     stats.dom.style.left = '0px';
     const renderer = components.renderer;
-    renderer.beforeUpdate.on(() => stats.begin());
-    renderer.afterUpdate.on(() => stats.end());
+    renderer.onBeforeUpdate.add(() => stats.begin());
+    renderer.onAfterUpdate.add(() => stats.end());
 
 
 </script>

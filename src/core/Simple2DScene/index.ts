@@ -9,10 +9,10 @@ import {
   UIElement,
   Resizeable,
 } from "../../base-types";
-import { Button, Canvas, FloatingWindow } from "../../ui";
+import { Canvas } from "../../ui";
 import { Components } from "../Components";
 
-// TODO: Decouple from floating window so it can be used anywhere (eg. on drawers)
+// TODO: Make a scene manager as a Tool (so that it as an UUID)
 
 /**
  * A simple floating 2D scene that you can use to easily draw 2D graphics
@@ -38,8 +38,6 @@ export class Simple2DScene
 
   /** {@link UI.uiElement} */
   uiElement = new UIElement<{
-    main: Button;
-    mainWindow: FloatingWindow;
     canvas: Canvas;
   }>();
 
@@ -64,27 +62,13 @@ export class Simple2DScene
     const canvas = new Canvas(components);
     canvas.domElement.classList.remove("absolute");
 
-    const mainWindow = new FloatingWindow(components);
-    components.ui.add(mainWindow);
-    mainWindow.visible = false;
-    mainWindow.domElement.style.height = "20rem";
-
-    mainWindow.addChild(canvas);
-
-    const main = new Button(components);
-    main.materialIcon = "fact_check";
-    main.tooltip = "2D scene";
-    main.onClick.add(() => {
-      mainWindow.visible = !mainWindow.visible;
-    });
-
-    this.uiElement.set({ mainWindow, main, canvas });
+    this.uiElement.set({ canvas });
 
     this._scene = new THREE.Scene();
 
     this._size = {
-      width: mainWindow.domElement.clientWidth,
-      height: mainWindow.domElement.clientHeight,
+      width: window.innerWidth,
+      height: window.innerHeight,
     };
 
     const { width, height } = this._size;
@@ -111,11 +95,6 @@ export class Simple2DScene
       parent.domElement.classList.add("overflow-hidden");
       parent.domElement.classList.add("h-full");
     }
-
-    mainWindow.onResized.add(this.resize);
-
-    mainWindow.domElement.style.width = "20rem";
-    mainWindow.domElement.style.height = "20rem";
   }
 
   /**
@@ -145,14 +124,15 @@ export class Simple2DScene
     return new THREE.Vector2(this._size.width, this._size.height);
   }
 
+  setSize(height: number, width: number) {
+    this._size.width = width;
+    this._size.height = height;
+    this.resize();
+  }
+
   /** {@link Resizeable.resize} */
   resize = () => {
-    const parent = this.uiElement.get("canvas").parent;
-    if (!parent) return;
-    const { clientWidth, clientHeight } = parent.domElement;
-    this._size.width = clientWidth;
-    this._size.height = clientHeight;
-    const { width, height } = this._size;
+    const { height, width } = this._size;
     const aspect = width / height;
     this._camera.left = (-this._frustumSize * aspect) / 2;
     this._camera.right = (this._frustumSize * aspect) / 2;
