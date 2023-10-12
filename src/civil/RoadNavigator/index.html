@@ -70,6 +70,9 @@
         absolute: true
     }
 
+    fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
+    fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
+
     const fetched = await fetch("../../../resources/small.ifc");
     const buffer = await fetched.arrayBuffer();
     const byteArray = new Uint8Array(buffer);
@@ -80,9 +83,6 @@
 	components.ui.addToolbar(mainToolbar);
 	mainToolbar.addChild(fragmentIfcLoader.uiElement.get("main"));
 
-    fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
-    fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
-
     // Set up road navigator
 
     const navigator = new OBC.RoadNavigator(components);
@@ -90,6 +90,12 @@
         navigator.drawPoint();
     }
     // navigator.loadCached();
+
+    const color = navigator._scene2d.camera.children[0];
+    console.log(color);
+    // navigator._scene2d.camera.children[0].material.color.set(40, 40, 40);
+
+    mainToolbar.addChild(navigator.uiElement.get("main"));
 
     window.onkeydown = (event) => {
         if(event.code === "KeyS") {

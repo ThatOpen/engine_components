@@ -71,7 +71,6 @@
     */
 
     const simple2dScene = new OBC.Simple2DScene(components);
-    components.renderer.onAfterUpdate.add(() => simple2dScene.update());
 
     /*MD
     Great! Now we can start adding things to it, just like we would with the
@@ -108,6 +107,12 @@
     mainWindow.visible = false;
     mainWindow.domElement.style.height = "20rem";
     mainWindow.addChild(simple2dScene.uiElement.get("canvas"));
+
+    components.renderer.onAfterUpdate.add(() => {
+        if(mainWindow.visible) {
+            simple2dScene.update()
+        }
+    });
 
     mainWindow.slots.content.domElement.style.padding = "0";
     mainWindow.slots.content.domElement.style.overflow = "hidden";

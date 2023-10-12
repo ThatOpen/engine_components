@@ -11,6 +11,7 @@ import {
 } from "../../base-types";
 import { Canvas } from "../../ui";
 import { Components } from "../Components";
+import { Disposer } from "../Disposer";
 
 // TODO: Make a scene manager as a Tool (so that it as an UUID)
 
@@ -42,10 +43,12 @@ export class Simple2DScene
   }>();
 
   /** The camera controls that move around in the scene. */
-  controls: OrbitControls;
+  readonly controls: OrbitControls;
+
+  /** The camera that renders the scene. */
+  readonly camera: THREE.OrthographicCamera;
 
   private readonly _scene: THREE.Scene;
-  private readonly _camera: THREE.OrthographicCamera;
   private readonly _renderer: THREE.WebGLRenderer;
   private readonly _size: { width: number; height: number };
   private readonly _frustumSize = 50;
@@ -74,8 +77,9 @@ export class Simple2DScene
     const { width, height } = this._size;
 
     // Creates the camera (point of view of the user)
-    this._camera = new THREE.OrthographicCamera(75, width / height);
-    this._camera.position.z = 10;
+    this.camera = new THREE.OrthographicCamera(75, width / height);
+    this._scene.add(this.camera);
+    this.camera.position.z = 10;
 
     this._renderer = new THREE.WebGLRenderer({ canvas: canvas.get() });
     this._renderer.setSize(width, height);
@@ -83,7 +87,7 @@ export class Simple2DScene
 
     // Creates the orbit controls (to navigate the scene)
 
-    this.controls = new OrbitControls(this._camera, this._renderer.domElement);
+    this.controls = new OrbitControls(this.camera, this._renderer.domElement);
     this.controls.target.set(0, 0, 0);
     this.controls.enableRotate = false;
     this.controls.enableZoom = true;
@@ -107,6 +111,13 @@ export class Simple2DScene
 
   /** {@link Disposable.dispose} */
   async dispose() {
+    const disposer = await this.components.tools.get(Disposer);
+    for (const child of this._scene.children) {
+      const item = child as any;
+      if (item instanceof THREE.Object3D) {
+        disposer.destroy(item);
+      }
+    }
     this._renderer.dispose();
     await this.uiElement.dispose();
   }
@@ -115,7 +126,7 @@ export class Simple2DScene
   async update() {
     await this.onBeforeUpdate.trigger();
     this.controls.update();
-    this._renderer.render(this._scene, this._camera);
+    this._renderer.render(this._scene, this.camera);
     await this.onAfterUpdate.trigger();
   }
 
@@ -134,12 +145,12 @@ export class Simple2DScene
   resize = () => {
     const { height, width } = this._size;
     const aspect = width / height;
-    this._camera.left = (-this._frustumSize * aspect) / 2;
-    this._camera.right = (this._frustumSize * aspect) / 2;
-    this._camera.top = this._frustumSize / 2;
-    this._camera.bottom = -this._frustumSize / 2;
-    this._camera.updateProjectionMatrix();
-    this._camera.updateProjectionMatrix();
+    this.camera.left = (-this._frustumSize * aspect) / 2;
+    this.camera.right = (this._frustumSize * aspect) / 2;
+    this.camera.top = this._frustumSize / 2;
+    this.camera.bottom = -this._frustumSize / 2;
+    this.camera.updateProjectionMatrix();
+    this.camera.updateProjectionMatrix();
     this._renderer.setSize(this._size.width, this._size.height);
   };
 }
