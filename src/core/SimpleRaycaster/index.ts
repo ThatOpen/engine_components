@@ -48,9 +48,7 @@ export class SimpleRaycaster extends BaseRaycaster implements Disposable {
   ): THREE.Intersection | null {
     const camera = this.components.camera.get();
     this._raycaster.setFromCamera(this.mouse.position, camera);
-    const result = this._raycaster.intersectObjects(items);
-    const filtered = this.filterClippingPlanes(result);
-    return filtered.length > 0 ? filtered[0] : null;
+    return this.intersect(items)
   }
 
   castRayFromVector(
@@ -59,6 +57,12 @@ export class SimpleRaycaster extends BaseRaycaster implements Disposable {
     items = this.components.meshes
   ) {
     this._raycaster.set(origin, direction);
+    return this.intersect(items);
+  }
+
+  private intersect(
+    items: THREE.Mesh[] = this.components.meshes
+  ) {
     const result = this._raycaster.intersectObjects(items);
     const filtered = this.filterClippingPlanes(result);
     return filtered.length > 0 ? filtered[0] : null;
