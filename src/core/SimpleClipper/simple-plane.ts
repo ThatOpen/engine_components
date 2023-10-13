@@ -110,6 +110,15 @@ export class SimplePlane
     }
   }
 
+  setFromNormalAndCoplanarPoint(normal: THREE.Vector3, point: THREE.Vector3) {
+    this._normal.copy(normal);
+    this._origin.copy(point);
+    this._helper.lookAt(normal);
+    this._helper.position.copy(point);
+    this._helper.updateMatrix();
+    this.update();
+  }
+
   /** {@link Updateable.update} */
   update = () => {
     if (!this._enabled) return;

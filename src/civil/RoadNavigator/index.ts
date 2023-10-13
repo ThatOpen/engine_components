@@ -9,6 +9,7 @@ import {
 } from "../../core";
 import { Component, Disposable, UIElement } from "../../base-types";
 import { Button, Drawer } from "../../ui";
+import { EdgesClipper, EdgesPlane } from "../../navigation";
 
 export class RoadNavigator extends Component<Lines> implements Disposable {
   /** {@link Component.uuid} */
@@ -22,6 +23,9 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
 
   offset = 10;
 
+  planeEnabled = true;
+
+  private _plane?: EdgesPlane;
   private _sphere = new THREE.Mesh(new THREE.SphereGeometry());
   private _scene2d?: Simple2DScene;
   private _lines = new Lines();
@@ -172,7 +176,12 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
     const data = this._roadDiagramData;
     if (!data) return;
     const { mousePosition, mouseSegment } = data;
-    if (mousePosition === null || mouseSegment === null) return;
+    if (mousePosition === null || mouseSegment === null) {
+      if (this.planeEnabled && this._plane) {
+        await this._plane.setEnabled(false);
+      }
+      return;
+    }
 
     const index = mouseSegment * 6;
     const position = this._longProjection.mesh.geometry.attributes.position;
@@ -202,6 +211,19 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
 
     const camera = this.components.camera as SimpleCamera;
 
+    if (this.planeEnabled) {
+      if (!this._plane) {
+        const clipper = await this.components.tools.get(EdgesClipper);
+        clipper.enabled = true;
+        this._plane = clipper.createFromNormalAndCoplanarPoint(vector, target);
+        this._plane.visible = false;
+      }
+      if (!this._plane.enabled) {
+        await this._plane.setEnabled(true);
+      }
+      this._plane.setFromNormalAndCoplanarPoint(vector, target);
+    }
+
     await camera.controls.fitToSphere(this._sphere, animate);
   }
 
@@ -222,7 +244,8 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
 
     const scene2d = new Simple2DScene(this.components);
 
-    drawer.addChild(scene2d.uiElement.get("canvas"));
+    const canvasUIElement = scene2d.uiElement.get("canvas");
+    drawer.addChild(canvasUIElement);
     const { clientHeight, clientWidth } = drawer.domElement;
 
     const windowStyle = drawer.slots.content.domElement.style;
@@ -248,12 +271,19 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
 
     // TODO: Make sure all this is disposed
     const mouse = new THREE.Vector2();
-    const canvas = scene2d.uiElement.get("canvas").domElement;
+    const canvas = canvasUIElement.domElement;
+
+    let mouseDown = false;
+
     const raycaster = new THREE.Raycaster();
     const plane = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000));
     plane.rotation.x += Math.PI / 90;
     plane.position.z = -10;
-    canvas.addEventListener("mousemove", (event) => {
+
+    canvas.addEventListener("mousedown", () => (mouseDown = true));
+    canvas.addEventListener("mouseup", () => (mouseDown = false));
+
+    canvas.addEventListener("mousemove", async (event) => {
       if (!this._roadDiagramData) return;
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -268,6 +298,10 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
           this._roadDiagramData.mousePosition = null;
         }
         this.updateMouseMarker();
+      }
+
+      if (mouseDown) {
+        await this.focus();
       }
     });
 
