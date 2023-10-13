@@ -23,6 +23,7 @@
          "client-zip": "https://unpkg.com/client-zip@2.3.0/index.js"
       }
     }
+
 </script>
 <script type="module">
 
@@ -79,9 +80,9 @@
     const model = await fragmentIfcLoader.load(byteArray);
     components.scene.get().add(model);
 
-	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
-	components.ui.addToolbar(mainToolbar);
-	mainToolbar.addChild(fragmentIfcLoader.uiElement.get("main"));
+    const mainToolbar = new OBC.Toolbar(components, {name: 'Main Toolbar', position: 'bottom'});
+    components.ui.addToolbar(mainToolbar);
+    mainToolbar.addChild(fragmentIfcLoader.uiElement.get("main"));
 
     // Set up road navigator
 
@@ -91,17 +92,17 @@
     }
     // navigator.loadCached();
 
-    const color = navigator._scene2d.camera.children[0];
-    console.log(color);
     // navigator._scene2d.camera.children[0].material.color.set(40, 40, 40);
 
     mainToolbar.addChild(navigator.uiElement.get("main"));
 
     window.onkeydown = (event) => {
-        if(event.code === "KeyS") {
+        if (event.code === "KeyS") {
             navigator.select();
-        } else if(event.code === "KeyP") {
+        } else if (event.code === "KeyP") {
             navigator.delete();
+        } else if (event.code === "KeyF") {
+            navigator.focus();
         }
     }
 
