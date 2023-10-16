@@ -2,13 +2,14 @@ import * as THREE from "three";
 import { Lines } from "openbim-clay";
 import {
   Components,
+  Disposer,
   Simple2DScene,
   SimpleCamera,
   SimpleRenderer,
   ToolComponent,
 } from "../../core";
 import { Component, Disposable, UIElement } from "../../base-types";
-import { Button, Drawer } from "../../ui";
+import { Button, Drawer, FloatingWindow } from "../../ui";
 import { EdgesClipper, EdgesPlane } from "../../navigation";
 
 export class RoadNavigator extends Component<Lines> implements Disposable {
@@ -27,7 +28,13 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
 
   private _plane?: EdgesPlane;
   private _sphere = new THREE.Mesh(new THREE.SphereGeometry());
-  private _scene2d?: Simple2DScene;
+  private _scene2dSide?: Simple2DScene;
+  private _scene2dTrans?: Simple2DScene;
+
+  private _crossSectionLines: {
+    [name: string]: { mesh: THREE.LineSegments; fill: THREE.Mesh };
+  } = {};
+
   private _lines = new Lines();
   private _longProjection: Lines;
 
@@ -78,8 +85,20 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
   }
 
   async dispose() {
-    if (this._scene2d) {
-      await this._scene2d.dispose();
+    if (this._scene2dSide) {
+      await this._scene2dSide.dispose();
+    }
+    if (this._scene2dTrans) {
+      await this._scene2dTrans.dispose();
+    }
+    const disposer = await this.components.tools.get(Disposer);
+    for (const name in this._crossSectionLines) {
+      const { mesh, fill } = this._crossSectionLines[name];
+      disposer.destroy(mesh);
+      disposer.destroy(fill);
+    }
+    if (this._plane) {
+      await this._plane.dispose();
     }
     await this.uiElement.dispose();
   }
@@ -169,7 +188,6 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
   }
 
   // Navigate through road with clipping plane
-  // TODO: 2d window with cross section
   // TODO: 2d window with floorplan
 
   async focus(animate = true) {
@@ -221,6 +239,9 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
       if (!this._plane.enabled) {
         await this._plane.setEnabled(true);
       }
+      if (this._plane.edges.fillVisible) {
+        this._plane.edges.fillVisible = false;
+      }
       this._plane.setFromNormalAndCoplanarPoint(vector, target);
     }
 
@@ -234,6 +255,48 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
   // goTo(view: any);
 
   private setupUI() {
+    const { main, drawer } = this.setupMainMenu();
+    this.setupTransMenu();
+
+    this.uiElement.set({ main, window: drawer });
+  }
+
+  private setupTransMenu() {
+    const floatingWindow = new FloatingWindow(this.components);
+    this.components.ui.add(floatingWindow);
+
+    const scene2d = new Simple2DScene(this.components);
+    const canvasUIElement = scene2d.uiElement.get("canvas");
+    floatingWindow.addChild(canvasUIElement);
+    this._scene2dTrans = scene2d;
+
+    const style = floatingWindow.slots.content.domElement.style;
+    style.padding = "0";
+    style.overflow = "hidden";
+
+    const { clientHeight, clientWidth } = floatingWindow.domElement;
+    scene2d.setSize(clientHeight, clientWidth);
+
+    floatingWindow.onResized.add(() => {
+      const { clientHeight, clientWidth } = floatingWindow.domElement;
+      scene2d.setSize(clientHeight, clientWidth);
+    });
+
+    const renderer = this.components.renderer as SimpleRenderer;
+    renderer.onAfterUpdate.add(async () => {
+      if (floatingWindow.visible) {
+        await scene2d.update();
+      }
+    });
+
+    const gray = new THREE.Color(0.05, 0.05, 0.05);
+    const grid2d = new THREE.GridHelper(1000, 1000, gray, gray);
+    grid2d.position.z = -10;
+    grid2d.rotation.x = Math.PI / 2;
+    scene2d.camera.add(grid2d);
+  }
+
+  private setupMainMenu() {
     const main = new Button(this.components);
     main.materialIcon = "edit_road";
     main.tooltip = "Road navigator";
@@ -259,8 +322,8 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
       scene2d.setSize(clientHeight, clientWidth);
     });
 
-    this._scene2d = scene2d;
-    this._scene2d.camera.zoom = 3;
+    this._scene2dSide = scene2d;
+    this._scene2dSide.camera.zoom = 3;
 
     const renderer = this.components.renderer as SimpleRenderer;
     renderer.onAfterUpdate.add(async () => {
@@ -280,11 +343,51 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
     plane.rotation.x += Math.PI / 90;
     plane.position.z = -10;
 
-    canvas.addEventListener("mousedown", () => (mouseDown = true));
-    canvas.addEventListener("mouseup", () => (mouseDown = false));
+    canvas.addEventListener("mousedown", async (event) => {
+      if (event.button !== 0) {
+        return;
+      }
+      mouseDown = true;
+      if (!this._roadDiagramData || !this._roadDiagramData.mousePosition) {
+        return;
+      }
+      if (this._plane && !this._plane.enabled) {
+        await this._plane.setEnabled(true);
+        await this._plane.edges.setVisible(true);
+      }
+      for (const id in this._crossSectionLines) {
+        const { fill } = this._crossSectionLines[id];
+        fill.visible = false;
+      }
+    });
+
+    canvas.addEventListener("mouseup", async (event) => {
+      if (event.button !== 0) {
+        return;
+      }
+      mouseDown = false;
+      if (!this._roadDiagramData || !this._roadDiagramData.mousePosition) {
+        if (this._plane) {
+          await this._plane.setEnabled(false);
+          await this._plane.edges.setVisible(false);
+        }
+        return;
+      }
+      if (this._plane) {
+        this._plane.edges.fillVisible = true;
+        await this._plane.updateFill();
+      }
+      for (const id in this._crossSectionLines) {
+        const { fill } = this._crossSectionLines[id];
+        fill.visible = true;
+      }
+      this.updateCrossSection();
+    });
 
     canvas.addEventListener("mousemove", async (event) => {
-      if (!this._roadDiagramData) return;
+      if (!this._roadDiagramData) {
+        return;
+      }
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
       raycaster.setFromCamera(mouse, scene2d.camera);
@@ -316,22 +419,21 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
     main.onClick.add(() => {
       drawer.visible = !drawer.visible;
     });
-
-    this.uiElement.set({ main, window: drawer });
+    return { main, drawer };
   }
 
   private updateLongProjection() {
     // Assuming that the lines of the road axis are sorted
     // TODO: Sort them in case they are not
-    if (this._scene2d) {
+    if (this._scene2dSide) {
       this._longProjection.mesh.removeFromParent();
       this._longProjection.vertices.mesh.removeFromParent();
     }
 
     this._longProjection.clear();
     this._longProjection = new Lines();
-    if (this._scene2d) {
-      const scene2d = this._scene2d.get();
+    if (this._scene2dSide) {
+      const scene2d = this._scene2dSide.get();
       scene2d.add(this._longProjection.mesh);
       scene2d.add(this._longProjection.vertices.mesh);
     }
@@ -382,7 +484,7 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
   }
 
   private updateTopDiagram(distance: number, minY: number) {
-    if (!this._scene2d) return;
+    if (!this._scene2dSide) return;
     const start = new THREE.Vector3(0, 0, 0);
     const one = new THREE.Vector3(1, 0, 0);
     const end = new THREE.Vector3(distance, 0, 0);
@@ -412,7 +514,7 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
       top.position.y = minY - 6;
       middle.position.y = minY - 10;
       bottom.position.y = minY - 13;
-      const scene = this._scene2d.get();
+      const scene = this._scene2dSide.get();
       scene.add(top);
       scene.add(middle);
       scene.add(bottom);
@@ -430,10 +532,32 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
     }
   }
 
+  private updateCrossSection() {
+    if (!this._plane || !this._scene2dTrans) return;
+    const meshes = this._plane.edges.get();
+    const scene = this._scene2dTrans.get();
+    for (const name in meshes) {
+      if (!this._crossSectionLines[name]) {
+        const mesh = new THREE.LineSegments();
+        const fill = new THREE.Mesh();
+        this._crossSectionLines[name] = { mesh, fill };
+        scene.add(mesh, fill);
+      }
+      const edge = meshes[name];
+      const { mesh, fill } = this._crossSectionLines[name];
+      mesh.geometry = edge.mesh.geometry;
+      mesh.material = edge.mesh.material;
+      if (edge.fill) {
+        fill.geometry = edge.fill.mesh.geometry;
+        fill.material = edge.fill.mesh.material;
+      }
+    }
+  }
+
   private updateMouseMarker() {
-    if (!this._scene2d || !this._roadDiagramData) return;
+    if (!this._scene2dSide || !this._roadDiagramData) return;
     if (!this._mouseMarker) {
-      const scene = this._scene2d.get();
+      const scene = this._scene2dSide.get();
       const redLineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
       const top = new THREE.Vector3(0, 1000, 0);
       const bottom = new THREE.Vector3(0, -1000, 0);

@@ -54,6 +54,16 @@ export class ClippingEdges
     return this._visible;
   }
 
+  get fillVisible() {
+    for (const name in this._edges) {
+      const edges = this._edges[name];
+      if (edges.fill) {
+        return edges.fill.visible;
+      }
+    }
+    return false;
+  }
+
   set fillVisible(visible: boolean) {
     for (const name in this._edges) {
       const edges = this._edges[name];

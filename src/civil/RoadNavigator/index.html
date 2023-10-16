@@ -45,6 +45,7 @@
     components.init();
 
     components.renderer.postproduction.enabled = true;
+    components.renderer.postproduction.customEffects.outlineEnabled = true;
 
     const scene = components.scene.get();
 
@@ -105,6 +106,15 @@
             navigator.focus();
         }
     }
+
+    const styler = new OBC.FragmentClipStyler(components);
+    await styler.setup();
+    const stylerButton = styler.uiElement.get("mainButton");
+    mainToolbar.addChild(stylerButton);
+
+    const classifier = new OBC.FragmentClassifier(components);
+    classifier.byEntity(model);
+    await styler.update();
 
     // Set up stats
 
