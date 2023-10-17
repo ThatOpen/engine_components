@@ -5,7 +5,6 @@ import {
   Disposer,
   Simple2DScene,
   SimpleCamera,
-  SimpleRenderer,
   ToolComponent,
 } from "../../core";
 import { Component, Disposable, UIElement } from "../../base-types";
@@ -82,6 +81,12 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
 
   get() {
     return this._lines;
+  }
+
+  async updateDrawings() {
+    if (this._scene2dTrans) {
+      await this._scene2dTrans.update();
+    }
   }
 
   async dispose() {
@@ -277,16 +282,18 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
     const { clientHeight, clientWidth } = floatingWindow.domElement;
     scene2d.setSize(clientHeight, clientWidth);
 
-    floatingWindow.onResized.add(() => {
+    floatingWindow.onResized.add(async () => {
       const { clientHeight, clientWidth } = floatingWindow.domElement;
       scene2d.setSize(clientHeight, clientWidth);
+      await scene2d.update();
     });
 
-    const renderer = this.components.renderer as SimpleRenderer;
-    renderer.onAfterUpdate.add(async () => {
-      if (floatingWindow.visible) {
-        await scene2d.update();
-      }
+    const canvas = scene2d.uiElement.get("canvas");
+    canvas.domElement.addEventListener("mousemove", async () => {
+      await scene2d.update();
+    });
+    canvas.domElement.addEventListener("wheel", async () => {
+      await scene2d.update();
     });
 
     const gray = new THREE.Color(0.05, 0.05, 0.05);
@@ -317,24 +324,25 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
 
     scene2d.setSize(clientHeight, clientWidth);
 
-    drawer.onResized.add(() => {
+    drawer.onResized.add(async () => {
       const { clientHeight, clientWidth } = drawer.domElement;
       scene2d.setSize(clientHeight, clientWidth);
+      await scene2d.update();
     });
 
     this._scene2dSide = scene2d;
     this._scene2dSide.camera.zoom = 3;
 
-    const renderer = this.components.renderer as SimpleRenderer;
-    renderer.onAfterUpdate.add(async () => {
-      if (drawer.visible) {
-        await scene2d.update();
-      }
-    });
-
     // TODO: Make sure all this is disposed
     const mouse = new THREE.Vector2();
     const canvas = canvasUIElement.domElement;
+
+    canvas.addEventListener("mousemove", async () => {
+      await scene2d.update();
+    });
+    canvas.addEventListener("wheel", async () => {
+      await scene2d.update();
+    });
 
     let mouseDown = false;
 
@@ -381,7 +389,7 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
         const { fill } = this._crossSectionLines[id];
         fill.visible = true;
       }
-      this.updateCrossSection();
+      await this.updateCrossSection();
     });
 
     canvas.addEventListener("mousemove", async (event) => {
@@ -405,6 +413,9 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
 
       if (mouseDown) {
         await this.focus();
+        if (this._scene2dTrans) {
+          await this._scene2dTrans.update();
+        }
       }
     });
 
@@ -532,7 +543,7 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
     }
   }
 
-  private updateCrossSection() {
+  private async updateCrossSection() {
     if (!this._plane || !this._scene2dTrans) return;
     const meshes = this._plane.edges.get();
     const scene = this._scene2dTrans.get();
@@ -551,6 +562,7 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
         fill.geometry = edge.fill.mesh.geometry;
         fill.material = edge.fill.mesh.material;
       }
+      await this._scene2dTrans.update();
     }
   }
 

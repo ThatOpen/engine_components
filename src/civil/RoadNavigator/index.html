@@ -112,6 +112,10 @@
     const stylerButton = styler.uiElement.get("mainButton");
     mainToolbar.addChild(stylerButton);
 
+    styler.onChange.add(async () => {
+        await navigator.updateDrawings();
+    })
+
     const classifier = new OBC.FragmentClassifier(components);
     classifier.byEntity(model);
     await styler.update();
