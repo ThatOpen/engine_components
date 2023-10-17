@@ -98,11 +98,11 @@ export class IfcPropertiesFinder
 
     const fragments = await this.components.tools.get(FragmentManager);
 
-    queryWindow.get().classList.add("overflow-visible");
+    // queryWindow.get().classList.add("overflow-visible");
     queryWindow.get().style.width = "700px";
     queryWindow.get().style.height = "420px";
     queryWindow.visible = false;
-    queryWindow.resizeable = false;
+    // queryWindow.resizeable = false;
     queryWindow.title = "Model Queries";
 
     main.onClick.add(() => {

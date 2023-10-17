@@ -64,7 +64,7 @@ export class FragmentClipStyler
             "lineColor": "#92a59b",
             "lineThickness": 0.25,
             "fillColor": "#e6ffdb",
-            "categories": "IFCWINDOW, IFCDOOR"
+            "categories": "IFCWINDOW, IFCDOOR, IFCBUILDINGELEMENTPROXY"
         }
     }
   `;

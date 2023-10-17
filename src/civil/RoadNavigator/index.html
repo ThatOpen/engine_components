@@ -91,7 +91,7 @@
     window.ondblclick = () => {
         navigator.drawPoint();
     }
-    // navigator.loadCached();
+    navigator.loadCached();
 
     // navigator._scene2d.camera.children[0].material.color.set(40, 40, 40);
 
@@ -119,6 +119,46 @@
     const classifier = new OBC.FragmentClassifier(components);
     classifier.byEntity(model);
     await styler.update();
+
+    const hider = new OBC.FragmentHider(components);
+    await hider.loadCached();
+    const hiderButton = hider.uiElement.get("main");
+    mainToolbar.addChild(hiderButton);
+
+    const propsProcessor = new OBC.IfcPropertiesProcessor(components);
+    const propsManager = new OBC.IfcPropertiesManager(components);
+    propsManager.wasm = {
+        path: "https://unpkg.com/web-ifc@0.0.44/",
+        absolute: true
+    }
+
+    propsProcessor.propertiesManager = propsManager;
+    await propsManager.init();
+    propsProcessor.process(model);
+    mainToolbar.addChild(propsProcessor.uiElement.get("main"));
+
+    const highlighter = new OBC.FragmentHighlighter(components);
+    highlighter.setup();
+
+    highlighter.outlinesEnabled = true;
+
+    const highlighterEvents = highlighter.events;
+    highlighterEvents.select.onClear.add(() => {
+        propsProcessor.cleanPropertiesList();
+    });
+
+    highlighterEvents.select.onHighlight.add(
+            (selection) => {
+                const fragmentID = Object.keys(selection)[0];
+                const expressID = Number([...selection[fragmentID]][0]);
+                let model
+                for (const group of fragments.groups) {
+                    const fragmentFound = Object.values(group.keyFragments).find(id => id === fragmentID)
+                    if (fragmentFound) model = group;
+                }
+                propsProcessor.renderProperties(model, expressID);
+            }
+    );
 
     // Set up stats
 

@@ -77,16 +77,11 @@ export class SimpleRenderer
   async update() {
     if (!this.enabled) return;
     await this.onBeforeUpdate.trigger(this);
-    if (this.overrideScene && this.overrideCamera) {
-      this._renderer.render(this.overrideScene, this.overrideCamera);
-      this._renderer2D.render(this.overrideScene, this.overrideCamera);
-    } else {
-      const scene = this.components.scene.get();
-      const camera = this.components.camera.get();
-      if (!scene || !camera) return;
-      this._renderer.render(scene, camera);
-      this._renderer2D.render(scene, camera);
-    }
+    const scene = this.overrideScene || this.components.scene.get();
+    const camera = this.overrideCamera || this.components.camera.get();
+    if (!scene || !camera) return;
+    this._renderer.render(scene, camera);
+    this._renderer2D.render(scene, camera);
     await this.onAfterUpdate.trigger(this);
   }
 
@@ -120,7 +115,7 @@ export class SimpleRenderer
     const height = size ? size.y : this.container.clientHeight;
     this._renderer.setSize(width, height);
     this._renderer2D.setSize(width, height);
-    this.onResize.trigger();
+    this.onResize.trigger(size);
   };
 
   private resizeEvent = () => {

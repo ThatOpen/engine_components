@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { Lines } from "openbim-clay";
-import { InstancedMesh } from "three";
 import { FragmentMesh } from "bim-fragment/fragment-mesh";
 import {
   Components,
@@ -11,7 +10,11 @@ import {
 } from "../../core";
 import { Component, Disposable, UIElement } from "../../base-types";
 import { Button, Drawer, FloatingWindow } from "../../ui";
-import { EdgesClipper, EdgesPlane } from "../../navigation";
+import {
+  EdgesClipper,
+  EdgesPlane,
+  PostproductionRenderer,
+} from "../../navigation";
 import { FragmentManager } from "../../fragments";
 
 export class RoadNavigator extends Component<Lines> implements Disposable {
@@ -29,11 +32,20 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
   planeEnabled = true;
 
   private _plane?: EdgesPlane;
-  private _sphere = new THREE.Mesh(new THREE.SphereGeometry());
+  private _focusSphere = new THREE.Mesh(new THREE.SphereGeometry());
+  private _focusBox = new THREE.Mesh(
+    new THREE.BoxGeometry(1000, 1, 0.2),
+    new THREE.MeshBasicMaterial({
+      color: "red",
+      depthTest: false,
+      transparent: true,
+    })
+  );
 
   private _scene2dSide?: Simple2DScene;
   private _scene2dTrans?: Simple2DScene;
   private _scene2dTop?: Simple2DScene;
+  private _basicMaterial = new THREE.MeshBasicMaterial({ color: "white" });
 
   private _crossSectionLines: {
     [name: string]: { mesh: THREE.LineSegments; fill: THREE.Mesh };
@@ -117,6 +129,8 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
       const group = this._floorPlanElements[id];
       disposer.destroy(group);
     }
+    disposer.destroy(this._focusSphere);
+    disposer.destroy(this._focusBox);
     this._floorPlanElements = {};
     if (this._plane) {
       await this._plane.dispose();
@@ -206,6 +220,7 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
         this._lines.add(line);
       }
     }
+    this.updateLongProjection();
   }
 
   // Navigate through road with clipping plane
@@ -245,8 +260,8 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
     target.add(p1);
 
     const scale = this.offset;
-    this._sphere.scale.set(scale, scale, scale);
-    this._sphere.position.copy(target);
+    this._focusSphere.scale.set(scale, scale, scale);
+    this._focusSphere.position.copy(target);
 
     const camera = this.components.camera as SimpleCamera;
 
@@ -264,9 +279,19 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
         this._plane.edges.fillVisible = false;
       }
       this._plane.setFromNormalAndCoplanarPoint(vector, target);
+
+      if (this._scene2dTop) {
+        this._focusBox.position.copy(target);
+        this._focusBox.rotation.y = Math.atan2(vector.x, vector.z);
+        this._scene2dTop.controls.target.copy(target);
+        this._scene2dTop.camera.position.x = target.x;
+        this._scene2dTop.camera.position.z = target.z;
+        this._scene2dTop.camera.up.copy(vector);
+        await this._scene2dTop.update();
+      }
     }
 
-    await camera.controls.fitToSphere(this._sphere, animate);
+    await camera.controls.fitToSphere(this._focusSphere, animate);
   }
 
   // saveView();
@@ -283,25 +308,38 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
   }
 
   private setupTransMenu() {
-    const { scene2d } = this.newFloating2DScene();
+    const { scene2d } = this.newFloating2DScene("Section");
+    const gray = new THREE.Color(0.05, 0.05, 0.05);
+    const grid2d = new THREE.GridHelper(1000, 1000, gray, gray);
+    grid2d.position.z = -20;
+    grid2d.rotation.x = Math.PI / 2;
+    scene2d.camera.add(grid2d);
     this._scene2dTrans = scene2d;
   }
 
   private setupTopMenu() {
-    const { scene2d } = this.newFloating2DScene();
+    const { scene2d } = this.newFloating2DScene("Floorplan", true);
+    const { postproduction } = scene2d.renderer as PostproductionRenderer;
+    postproduction.overrideClippingPlanes = true;
+    postproduction.overrideScene = scene2d.get();
+    postproduction.overrideCamera = scene2d.camera;
+    postproduction.enabled = true;
     scene2d.camera.position.set(0, 20, 0);
     scene2d.controls.target.set(0, 0, 0);
     const scene = scene2d.get();
     const light = new THREE.AmbientLight();
     scene.add(light);
+    this._focusBox.position.y -= 1;
+    scene.add(this._focusBox);
     this._scene2dTop = scene2d;
   }
 
-  private newFloating2DScene() {
+  private newFloating2DScene(title: string, postproduction = false) {
     const floatingWindow = new FloatingWindow(this.components);
     this.components.ui.add(floatingWindow);
+    floatingWindow.title = title;
 
-    const scene2d = new Simple2DScene(this.components);
+    const scene2d = new Simple2DScene(this.components, postproduction);
     const canvasUIElement = scene2d.uiElement.get("canvas");
     floatingWindow.addChild(canvasUIElement);
 
@@ -326,12 +364,6 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
       await scene2d.update();
     });
 
-    const gray = new THREE.Color(0.05, 0.05, 0.05);
-    const grid2d = new THREE.GridHelper(1000, 1000, gray, gray);
-    grid2d.position.z = -10;
-    grid2d.rotation.x = Math.PI / 2;
-    scene2d.camera.add(grid2d);
-
     return { scene2d, floatingWindow };
   }
 
@@ -351,14 +383,14 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
     const { clientHeight, clientWidth } = drawer.domElement;
 
     const windowStyle = drawer.slots.content.domElement.style;
-    windowStyle.padding = "0";
+    windowStyle.padding = "10px";
     windowStyle.overflow = "hidden";
 
-    scene2d.setSize(clientHeight, clientWidth);
+    scene2d.setSize(clientHeight - 20, clientWidth - 20);
 
     drawer.onResized.add(async () => {
       const { clientHeight, clientWidth } = drawer.domElement;
-      scene2d.setSize(clientHeight, clientWidth);
+      scene2d.setSize(clientHeight - 20, clientWidth - 20);
       await scene2d.update();
     });
 
@@ -564,22 +596,25 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
       scene.add(bottom);
 
       this._sideRoadDiagram = { top, bottom, middle };
-    } else {
-      const { top, bottom, middle } = this._sideRoadDiagram;
-      top.position.y = minY - 6;
-      middle.position.y = minY - 10;
-      bottom.position.y = minY - 13;
-      top.scale.x = distance;
-      bottom.scale.x = distance;
-      middle.geometry.setFromPoints([start, end]);
-      middle.computeLineDistances();
     }
+
+    const { top, bottom, middle } = this._sideRoadDiagram;
+    top.position.y = minY - 6;
+    middle.position.y = minY - 10;
+    bottom.position.y = minY - 13;
+    top.scale.x = distance;
+    bottom.scale.x = distance;
+    middle.geometry.setFromPoints([start, end]);
+    middle.computeLineDistances();
   }
 
   private async updateCrossSection() {
     if (!this._plane || !this._scene2dTrans) return;
     const meshes = this._plane.edges.get();
     const scene = this._scene2dTrans.get();
+    const translate = new THREE.Matrix4();
+    const rotate = new THREE.Matrix4();
+    const up = new THREE.Vector3(0, 1, 0);
     for (const name in meshes) {
       if (!this._crossSectionLines[name]) {
         const mesh = new THREE.LineSegments();
@@ -591,6 +626,22 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
       const { mesh, fill } = this._crossSectionLines[name];
       mesh.geometry = edge.mesh.geometry;
       mesh.material = edge.mesh.material;
+      // TODO: This doesn't work well
+      // Bring rotation to center looking at camera
+      mesh.position.set(0, 0, 0);
+      mesh.rotation.set(0, 0, 0);
+      fill.position.set(0, 0, 0);
+      fill.rotation.set(0, 0, 0);
+      mesh.updateMatrix();
+      if (this._plane) {
+        const trans = this._plane.origin;
+        translate.makeTranslation(trans.x, trans.y, trans.z).invert();
+        rotate.lookAt(trans, this._plane.normal, up).invert();
+        mesh.applyMatrix4(translate);
+        mesh.applyMatrix4(rotate);
+        fill.applyMatrix4(translate);
+        fill.applyMatrix4(rotate);
+      }
       if (edge.fill) {
         fill.geometry = edge.fill.mesh.geometry;
         fill.material = edge.fill.mesh.material;
@@ -612,13 +663,13 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
       for (const child of group.children) {
         const frag = child as FragmentMesh;
         const size = frag.fragment.capacity;
-        const newMesh = new InstancedMesh(frag.geometry, frag.material, size);
+        const newMesh = new THREE.InstancedMesh(
+          frag.geometry,
+          this._basicMaterial,
+          size
+        );
         newMesh.instanceMatrix = frag.instanceMatrix;
-        newMesh.instanceColor = frag.instanceColor;
         newMesh.instanceMatrix.needsUpdate = true;
-        if (newMesh.instanceColor) {
-          newMesh.instanceColor.needsUpdate = true;
-        }
         newGroup.add(newMesh);
       }
     }

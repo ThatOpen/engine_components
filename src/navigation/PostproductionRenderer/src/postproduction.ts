@@ -21,6 +21,10 @@ export interface PostproductionSettings {
 export class Postproduction {
   excludedItems = new Set<THREE.Object3D>();
 
+  overrideScene?: THREE.Scene;
+  overrideCamera?: THREE.Camera;
+  overrideClippingPlanes = false;
+
   readonly composer: EffectComposer;
 
   private _enabled = false;
@@ -157,8 +161,8 @@ export class Postproduction {
   }
 
   private initialize() {
-    const scene = this.components.scene.get();
-    const camera = this.components.camera.get();
+    const scene = this.overrideScene || this.components.scene.get();
+    const camera = this.overrideCamera || this.components.camera.get();
     if (!scene || !camera) return;
 
     if (this.components.camera instanceof OrthoPerspectiveCamera) {
@@ -168,14 +172,16 @@ export class Postproduction {
     }
 
     const renderer = this.components.renderer;
-    this.renderer.clippingPlanes = renderer.clippingPlanes;
+    if (!this.overrideClippingPlanes) {
+      this.renderer.clippingPlanes = renderer.clippingPlanes;
+    }
     this.renderer.outputColorSpace = "srgb";
     this.renderer.toneMapping = THREE.NoToneMapping;
 
     this.newBasePass(scene, camera);
     this.newSaoPass(scene, camera);
     this.newGammaPass();
-    this.newCustomPass();
+    this.newCustomPass(scene, camera);
 
     this._initialized = true;
     this.updatePasses();
@@ -207,10 +213,12 @@ export class Postproduction {
     }
   }
 
-  private newCustomPass() {
+  private newCustomPass(scene: THREE.Scene, camera: THREE.Camera) {
     this._customEffects = new CustomEffectsPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      this.components
+      this.components,
+      scene,
+      camera
     );
   }
 
