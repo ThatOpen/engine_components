@@ -132,12 +132,12 @@ export class Components {
    * camera. Additionally, if any component that need a raycaster is
    * used, the {@link raycaster} will need to be initialized.
    */
-  init() {
+  async init() {
     this.enabled = true;
     this._clock.start();
     this.ui.init();
-    this.update();
-    this.onInitialized.trigger(this);
+    await this.update();
+    await this.onInitialized.trigger(this);
   }
 
   /**

@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import { Lines } from "openbim-clay";
+import { InstancedMesh } from "three";
+import { FragmentMesh } from "bim-fragment/fragment-mesh";
 import {
   Components,
   Disposer,
@@ -10,6 +12,7 @@ import {
 import { Component, Disposable, UIElement } from "../../base-types";
 import { Button, Drawer, FloatingWindow } from "../../ui";
 import { EdgesClipper, EdgesPlane } from "../../navigation";
+import { FragmentManager } from "../../fragments";
 
 export class RoadNavigator extends Component<Lines> implements Disposable {
   /** {@link Component.uuid} */
@@ -27,17 +30,21 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
 
   private _plane?: EdgesPlane;
   private _sphere = new THREE.Mesh(new THREE.SphereGeometry());
+
   private _scene2dSide?: Simple2DScene;
   private _scene2dTrans?: Simple2DScene;
+  private _scene2dTop?: Simple2DScene;
 
   private _crossSectionLines: {
     [name: string]: { mesh: THREE.LineSegments; fill: THREE.Mesh };
   } = {};
 
+  private _floorPlanElements: { [name: string]: THREE.Group } = {};
+
   private _lines = new Lines();
   private _longProjection: Lines;
 
-  private _topRoadDiagram?: {
+  private _sideRoadDiagram?: {
     top: THREE.Line;
     bottom: THREE.Line;
     middle: THREE.Line;
@@ -96,12 +103,21 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
     if (this._scene2dTrans) {
       await this._scene2dTrans.dispose();
     }
+    if (this._scene2dTop) {
+      await this._scene2dTop.dispose();
+    }
     const disposer = await this.components.tools.get(Disposer);
     for (const name in this._crossSectionLines) {
       const { mesh, fill } = this._crossSectionLines[name];
       disposer.destroy(mesh);
       disposer.destroy(fill);
     }
+    this._crossSectionLines = {};
+    for (const id in this._floorPlanElements) {
+      const group = this._floorPlanElements[id];
+      disposer.destroy(group);
+    }
+    this._floorPlanElements = {};
     if (this._plane) {
       await this._plane.dispose();
     }
@@ -262,18 +278,32 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
   private setupUI() {
     const { main, drawer } = this.setupMainMenu();
     this.setupTransMenu();
-
+    this.setupTopMenu();
     this.uiElement.set({ main, window: drawer });
   }
 
   private setupTransMenu() {
+    const { scene2d } = this.newFloating2DScene();
+    this._scene2dTrans = scene2d;
+  }
+
+  private setupTopMenu() {
+    const { scene2d } = this.newFloating2DScene();
+    scene2d.camera.position.set(0, 20, 0);
+    scene2d.controls.target.set(0, 0, 0);
+    const scene = scene2d.get();
+    const light = new THREE.AmbientLight();
+    scene.add(light);
+    this._scene2dTop = scene2d;
+  }
+
+  private newFloating2DScene() {
     const floatingWindow = new FloatingWindow(this.components);
     this.components.ui.add(floatingWindow);
 
     const scene2d = new Simple2DScene(this.components);
     const canvasUIElement = scene2d.uiElement.get("canvas");
     floatingWindow.addChild(canvasUIElement);
-    this._scene2dTrans = scene2d;
 
     const style = floatingWindow.slots.content.domElement.style;
     style.padding = "0";
@@ -301,6 +331,8 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
     grid2d.position.z = -10;
     grid2d.rotation.x = Math.PI / 2;
     scene2d.camera.add(grid2d);
+
+    return { scene2d, floatingWindow };
   }
 
   private setupMainMenu() {
@@ -390,6 +422,7 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
         fill.visible = true;
       }
       await this.updateCrossSection();
+      await this.updateFloorPlan();
     });
 
     canvas.addEventListener("mousemove", async (event) => {
@@ -491,16 +524,16 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
 
     this._roadDiagramData.length = accumulatedX;
 
-    this.updateTopDiagram(accumulatedX, minY);
+    this.updateSideDiagram(accumulatedX, minY);
   }
 
-  private updateTopDiagram(distance: number, minY: number) {
+  private updateSideDiagram(distance: number, minY: number) {
     if (!this._scene2dSide) return;
     const start = new THREE.Vector3(0, 0, 0);
     const one = new THREE.Vector3(1, 0, 0);
     const end = new THREE.Vector3(distance, 0, 0);
 
-    if (!this._topRoadDiagram) {
+    if (!this._sideRoadDiagram) {
       const regularLine = new THREE.LineBasicMaterial({ color: 0xffffff });
       const dashedLine = new THREE.LineDashedMaterial({
         color: 0xffffff,
@@ -508,7 +541,7 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
         gapSize: 0.5,
       });
 
-      const topBottomGeometry = new THREE.BufferGeometry().setFromPoints([
+      const sideBottomGeometry = new THREE.BufferGeometry().setFromPoints([
         start,
         one,
       ]);
@@ -518,9 +551,9 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
         one,
       ]);
 
-      const top = new THREE.Line(topBottomGeometry, regularLine);
+      const top = new THREE.Line(sideBottomGeometry, regularLine);
       const middle = new THREE.Line(middleGeometry, dashedLine);
-      const bottom = new THREE.Line(topBottomGeometry, regularLine);
+      const bottom = new THREE.Line(sideBottomGeometry, regularLine);
 
       top.position.y = minY - 6;
       middle.position.y = minY - 10;
@@ -530,9 +563,9 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
       scene.add(middle);
       scene.add(bottom);
 
-      this._topRoadDiagram = { top, bottom, middle };
+      this._sideRoadDiagram = { top, bottom, middle };
     } else {
-      const { top, bottom, middle } = this._topRoadDiagram;
+      const { top, bottom, middle } = this._sideRoadDiagram;
       top.position.y = minY - 6;
       middle.position.y = minY - 10;
       bottom.position.y = minY - 13;
@@ -563,6 +596,31 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
         fill.material = edge.fill.mesh.material;
       }
       await this._scene2dTrans.update();
+    }
+  }
+
+  private async updateFloorPlan() {
+    if (!this._plane || !this._scene2dTop) return;
+    const fragments = await this.components.tools.get(FragmentManager);
+    const scene = this._scene2dTop.get();
+    for (const group of fragments.groups) {
+      if (this._floorPlanElements[group.uuid]) continue;
+      const newGroup = new THREE.Group();
+      this._floorPlanElements[group.uuid] = newGroup;
+      scene.add(newGroup);
+      newGroup.matrix = group.matrix;
+      for (const child of group.children) {
+        const frag = child as FragmentMesh;
+        const size = frag.fragment.capacity;
+        const newMesh = new InstancedMesh(frag.geometry, frag.material, size);
+        newMesh.instanceMatrix = frag.instanceMatrix;
+        newMesh.instanceColor = frag.instanceColor;
+        newMesh.instanceMatrix.needsUpdate = true;
+        if (newMesh.instanceColor) {
+          newMesh.instanceColor.needsUpdate = true;
+        }
+        newGroup.add(newMesh);
+      }
     }
   }
 

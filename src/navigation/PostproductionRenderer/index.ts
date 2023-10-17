@@ -17,7 +17,7 @@ export class PostproductionRenderer extends SimpleRenderer {
   }
 
   /** {@link Updateable.update} */
-  async update(_delta: number) {
+  async update() {
     if (!this.enabled) return;
     await this.onBeforeUpdate.trigger();
     const scene = this.components.scene?.get();
@@ -46,6 +46,7 @@ export class PostproductionRenderer extends SimpleRenderer {
   }
 
   private setPostproductionSize() {
+    if (!this.container) return;
     const { clientWidth, clientHeight } = this.container;
     this.postproduction.setSize(clientWidth, clientHeight);
   }

@@ -12,6 +12,7 @@ import {
 import { Canvas } from "../../ui";
 import { Components } from "../Components";
 import { Disposer } from "../Disposer";
+import { SimpleRenderer } from "../SimpleRenderer";
 
 // TODO: Make a scene manager as a Tool (so that it as an UUID)
 
@@ -49,8 +50,8 @@ export class Simple2DScene
   readonly camera: THREE.OrthographicCamera;
 
   private readonly _scene: THREE.Scene;
-  private readonly _renderer: THREE.WebGLRenderer;
-  private readonly _size: { width: number; height: number };
+  private readonly _renderer: SimpleRenderer;
+  private readonly _size = new THREE.Vector2();
   private readonly _frustumSize = 50;
 
   constructor(components: Components) {
@@ -69,11 +70,7 @@ export class Simple2DScene
 
     this._scene = new THREE.Scene();
 
-    this._size = {
-      width: window.innerWidth,
-      height: window.innerHeight,
-    };
-
+    this._size.set(window.innerWidth, window.innerHeight);
     const { width, height } = this._size;
 
     // Creates the camera (point of view of the user)
@@ -81,16 +78,16 @@ export class Simple2DScene
     this._scene.add(this.camera);
     this.camera.position.z = 10;
 
-    this._renderer = new THREE.WebGLRenderer({ canvas: canvas.get() });
-    this._renderer.setSize(width, height);
-    this._renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this._renderer = new SimpleRenderer(this.components, undefined, {
+      canvas: canvas.get(),
+    });
 
-    // Creates the orbit controls (to navigate the scene)
+    const renderer = this._renderer.get();
+    renderer.localClippingEnabled = false;
 
-    this.controls = new OrbitControls(this.camera, this._renderer.domElement);
-    this.controls.target.set(0, 0, 0);
-    this.controls.enableRotate = false;
-    this.controls.enableZoom = true;
+    this._renderer.setupEvents(false);
+    this._renderer.overrideScene = this._scene;
+    this._renderer.overrideCamera = this.camera;
 
     const parent = this.uiElement.get("canvas").parent;
     if (parent) {
@@ -99,6 +96,13 @@ export class Simple2DScene
       parent.domElement.classList.add("overflow-hidden");
       parent.domElement.classList.add("h-full");
     }
+
+    // Creates the orbit controls (to navigate the scene)
+
+    this.controls = new OrbitControls(this.camera, renderer.domElement);
+    this.controls.target.set(0, 0, 0);
+    this.controls.enableRotate = false;
+    this.controls.enableZoom = true;
   }
 
   /**
@@ -118,7 +122,7 @@ export class Simple2DScene
         disposer.destroy(item);
       }
     }
-    this._renderer.dispose();
+    await this._renderer.dispose();
     await this.uiElement.dispose();
   }
 
@@ -126,7 +130,7 @@ export class Simple2DScene
   async update() {
     await this.onBeforeUpdate.trigger();
     this.controls.update();
-    this._renderer.render(this._scene, this.camera);
+    await this._renderer.update();
     await this.onAfterUpdate.trigger();
   }
 
@@ -151,6 +155,6 @@ export class Simple2DScene
     this.camera.bottom = -this._frustumSize / 2;
     this.camera.updateProjectionMatrix();
     this.camera.updateProjectionMatrix();
-    this._renderer.setSize(this._size.width, this._size.height);
+    this._renderer.resize(this._size);
   };
 }

@@ -19,14 +19,11 @@ export class SimpleRenderer
   extends BaseRenderer
   implements Disposable, Updateable, Resizeable
 {
-  /** {@link Component.name} */
-  name = "SimpleRenderer";
-
   /** {@link Component.enabled} */
   enabled = true;
 
   /** The HTML container of the THREE.js canvas where the scene is rendered. */
-  container: HTMLElement;
+  container: HTMLElement | null;
 
   /** {@link Updateable.onBeforeUpdate} */
   readonly onBeforeUpdate = new Event<SimpleRenderer>();
@@ -44,12 +41,12 @@ export class SimpleRenderer
 
   constructor(
     components: Components,
-    container: HTMLElement,
+    container?: HTMLElement,
     parameters?: Partial<THREE.WebGLRendererParameters>
   ) {
     super(components);
 
-    this.container = container;
+    this.container = container || null;
     this._parameters = parameters;
 
     this._renderer = new THREE.WebGLRenderer({
@@ -77,9 +74,9 @@ export class SimpleRenderer
   }
 
   /** {@link Updateable.update} */
-  update(_delta: number) {
+  async update() {
     if (!this.enabled) return;
-    this.onBeforeUpdate.trigger(this);
+    await this.onBeforeUpdate.trigger(this);
     if (this.overrideScene && this.overrideCamera) {
       this._renderer.render(this.overrideScene, this.overrideCamera);
       this._renderer2D.render(this.overrideScene, this.overrideCamera);
@@ -90,7 +87,7 @@ export class SimpleRenderer
       this._renderer.render(scene, camera);
       this._renderer2D.render(scene, camera);
     }
-    this.onAfterUpdate.trigger(this);
+    await this.onAfterUpdate.trigger(this);
   }
 
   /** {@link Disposable.dispose} */
@@ -114,29 +111,42 @@ export class SimpleRenderer
   }
 
   /** {@link Resizeable.resize}. */
-  resize = () => {
-    const width = this.container.clientWidth;
-    const height = this.container.clientHeight;
+  resize = (size?: THREE.Vector2) => {
+    this.updateContainer();
+    if (!this.container) {
+      return;
+    }
+    const width = size ? size.x : this.container.clientWidth;
+    const height = size ? size.y : this.container.clientHeight;
     this._renderer.setSize(width, height);
     this._renderer2D.setSize(width, height);
     this.onResize.trigger();
   };
 
+  private resizeEvent = () => {
+    this.resize();
+  };
+
   setupEvents(active: boolean) {
     if (active) {
-      window.addEventListener("resize", this.resize);
+      window.addEventListener("resize", this.resizeEvent);
     } else {
-      window.removeEventListener("resize", this.resize);
+      window.removeEventListener("resize", this.resizeEvent);
     }
   }
 
   private setupRenderers() {
     this._renderer.localClippingEnabled = true;
-    this.container.appendChild(this._renderer.domElement);
     this._renderer2D.domElement.style.position = "absolute";
     this._renderer2D.domElement.style.top = "0px";
     this._renderer2D.domElement.style.pointerEvents = "none";
-    this.container.appendChild(this._renderer2D.domElement);
+    if (this.container) {
+      this.container.appendChild(this._renderer.domElement);
+    }
+    if (this.container) {
+      this.container.appendChild(this._renderer2D.domElement);
+    }
+    this.updateContainer();
   }
 
   private onContextLost = (event: any) => {
@@ -155,4 +165,14 @@ export class SimpleRenderer
     });
     this.components.enabled = true;
   };
+
+  private updateContainer() {
+    if (!this.container) {
+      const parent = this._renderer.domElement.parentElement;
+      if (parent) {
+        this.container = parent;
+        parent.appendChild(this._renderer2D.domElement);
+      }
+    }
+  }
 }
