@@ -31,6 +31,14 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
     bottomRight: Vector2;
   };
 
+  get containerSize() {
+    const baseHeight = this.domElement.clientHeight;
+    const titleHeight = this.innerElements.titleContainer.clientHeight;
+    const height = baseHeight - titleHeight;
+    const width = this.domElement.clientWidth;
+    return { height, width };
+  }
+
   get viewerContainer() {
     return this._components.renderer.get().domElement
       .parentElement as HTMLElement;

@@ -887,7 +887,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@popperjs/core@npm:latest":
+"@popperjs/core@npm:2.11.8":
   version: 2.11.8
   resolution: "@popperjs/core@npm:2.11.8"
   checksum: e5c69fdebf52a4012f6a1f14817ca8e9599cb1be73dd1387e1785e2ed5e5f0862ff817f420a87c7fc532add1f88a12e25aeb010ffcbdc98eace3d55ce2139cf0
@@ -1895,14 +1895,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bim-fragment@npm:1.0.22":
-  version: 1.0.22
-  resolution: "bim-fragment@npm:1.0.22"
+"bim-fragment@npm:1.0.23":
+  version: 1.0.23
+  resolution: "bim-fragment@npm:1.0.23"
   dependencies:
     flatbuffers: ^23.3.3
     three: 0.152.2
     three-mesh-bvh: 0.6.0
-  checksum: e00d103009fc66749cc93772481d01d1398e734af6c9b253f92db6c4a5e6041adec09f5bf5c1a109a84750b9d62ff62fd7088730ee09d30c79948bc681ced654
+  checksum: 0912fe3aca694d38b326846ac235541eac13cd096775ffb713cf2a537024e840592b022df53cd34b82e2f30194799a740cadab2d1b080fe810416724d6c60973
   languageName: node
   linkType: hard
 
@@ -2115,9 +2115,9 @@ __metadata:
   linkType: hard
 
 "caniuse-lite@npm:^1.0.30001538":
-  version: 1.0.30001538
-  resolution: "caniuse-lite@npm:1.0.30001538"
-  checksum: 94c5d55757a339c7cc175f08a024671e2b4e7c04f130b1015793303d637061347efb6ad84447c3b8137333e742d150b8ad9672716bbf2482646c2e63a56f6c55
+  version: 1.0.30001547
+  resolution: "caniuse-lite@npm:1.0.30001547"
+  checksum: ec0fc2b46721887f6f4aca1f3902f03d9a1a07416d16a86b7cd4bfba60e7b6b03ab3969659d3ea0158cc2f298972c80215c06c9457eb15c649d7780e8f5e91a7
   languageName: node
   linkType: hard
 
@@ -6113,37 +6113,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"openbim-clay@npm:0.0.3":
-  version: 0.0.3
-  resolution: "openbim-clay@npm:0.0.3"
+"openbim-clay@npm:0.0.5":
+  version: 0.0.5
+  resolution: "openbim-clay@npm:0.0.5"
   dependencies:
     earcut: ^2.2.4
-    openbim-components: 1.0.0-alpha.102
     three: 0.152.2
-  checksum: e2e343a9a4f210462449555a9b6ba81fa434f91bf6e48a0bdf63801f114c15d2cf012dfc5003a176960b161a250e849b9130782bd6a34418f97d47989cfdc1f5
-  languageName: node
-  linkType: hard
-
-"openbim-components@npm:1.0.0-alpha.102":
-  version: 1.0.0-alpha.102
-  resolution: "openbim-components@npm:1.0.0-alpha.102"
-  dependencies:
-    "@popperjs/core": latest
-    bim-fragment: 1.0.22
-    camera-controls: ^1.36.0
-    dexie: ^3.2.3
-    dxf-writer: ^1.18.4
-    earcut: ^2.2.4
-    mapbox-gl: ^2.15.0
-    n8ao: ^1.5.1
-    postprocessing: ^6.31.0
-    stats.js: ^0.17.0
-    tailwindcss: ^3.3.2
-    three: 0.152.2
-    three-mesh-bvh: 0.6.0
-    top-tool-package-reader: 0.0.3
-    web-ifc: 0.0.42
-  checksum: 69ac9401e6189624fee0e4a67edf08e1f7855de2cc78f01f4dcfa35aa62f3b26014b6b21d542268950cb9e0c9df45f0e2df6222300ca157c9a080904fdf07373
+  checksum: 94df015f0a7049a496c6f9a82fe72ce2e055febd021bf534fbd4f1c9effb659e5b814fa7debdd50335181d498a84d4c4ad431530906e2884fc14004dff72d84d
   languageName: node
   linkType: hard
 
@@ -6151,7 +6127,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "openbim-components@workspace:."
   dependencies:
-    "@popperjs/core": latest
+    "@popperjs/core": 2.11.8
     "@rollup/plugin-commonjs": 25.0.0
     "@rollup/plugin-node-resolve": 15.1.0
     "@tailwindcss/forms": ^0.5.3
@@ -6163,7 +6139,7 @@ __metadata:
     "@types/three": 0.152.1
     "@typescript-eslint/eslint-plugin": ^4.27.0
     "@typescript-eslint/parser": ^4.27.0
-    bim-fragment: 1.0.22
+    bim-fragment: 1.0.23
     camera-controls: ^1.36.0
     cpy-cli: ^3.1.1
     dexie: ^3.2.3
@@ -6178,7 +6154,7 @@ __metadata:
     mapbox-gl: ^2.15.0
     n8ao: ^1.5.1
     node-fetch: ^3.3.2
-    openbim-clay: 0.0.3
+    openbim-clay: 0.0.5
     postprocessing: ^6.31.0
     prettier: ^2.3.1
     rollup: ^3.2.3
@@ -6190,7 +6166,7 @@ __metadata:
     ts-jest: ^27.0.3
     ts-node: ^10.0.0
     typescript: ^4.3.2
-    web-ifc: 0.0.43
+    web-ifc: 0.0.44
   languageName: unknown
   linkType: soft
 
@@ -8201,14 +8177,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"web-ifc@npm:0.0.42":
-  version: 0.0.42
-  resolution: "web-ifc@npm:0.0.42"
-  checksum: e9cab52eeee358e28e836e75201acdf6db0e78b9225640a36694ddc8be0a89e89a21162053ae1afacde4cd4ea98c3fd1e6b900e38b1e4e7ebe62adb6cbbe39af
+"web-ifc@npm:0.0.44":
+  version: 0.0.44
+  resolution: "web-ifc@npm:0.0.44"
+  dependencies:
+    web-ifc: ^0.0.43
+  checksum: 2f9ac32f1015c858698183c74bf39b8c01e93bd794ec90a4800086d8fffd2ae9297fc8b9dbd943357a56b26dbbaefdee88d303f3fe51e528d0841cc48e03006c
   languageName: node
   linkType: hard
 
-"web-ifc@npm:0.0.43":
+"web-ifc@npm:^0.0.43":
   version: 0.0.43
   resolution: "web-ifc@npm:0.0.43"
   checksum: 6464767bf63b987d3f997d34f9d40c11579cfe1702b4966255888598b0629918bcbd132adaee049c62a3ad46334b213650b08531128ac17accc173d53cee9fb6

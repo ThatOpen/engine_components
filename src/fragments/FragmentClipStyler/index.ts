@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Component, Disposable, UI, UIElement } from "../../base-types";
+import { Component, Disposable, Event, UI, UIElement } from "../../base-types";
 import {
   Button,
   ColorInput,
@@ -9,7 +9,7 @@ import {
   TextInput,
 } from "../../ui";
 import { Components, ToolComponent } from "../../core";
-import { EdgesClipper } from "../../navigation";
+import { EdgesClipper } from "../../navigation/EdgesClipper";
 import { FragmentManager } from "../FragmentManager";
 import { FragmentClassifier } from "../FragmentClassifier";
 
@@ -26,6 +26,8 @@ export class FragmentClipStyler
   implements UI, Disposable
 {
   static readonly uuid = "14de9fbd-2151-4c01-8e07-22a2667e1126" as const;
+
+  readonly onChange = new Event();
 
   enabled = true;
 
@@ -62,7 +64,7 @@ export class FragmentClipStyler
             "lineColor": "#92a59b",
             "lineThickness": 0.25,
             "fillColor": "#e6ffdb",
-            "categories": "IFCWINDOW, IFCDOOR"
+            "categories": "IFCWINDOW, IFCDOOR, IFCBUILDINGELEMENTPROXY"
         }
     }
   `;
@@ -98,7 +100,8 @@ export class FragmentClipStyler
     for (const id in this.styleCards) {
       await this.deleteStyleCard(id, false);
     }
-    this.uiElement.dispose();
+    await this.uiElement.dispose();
+    this.onChange.reset();
   }
 
   async update(ids = Object.keys(this.styleCards)) {
@@ -337,6 +340,7 @@ export class FragmentClipStyler
     fillColor.onChange.add(() => {
       fillMaterial.color.set(fillColor.value);
       saveStyles();
+      this.onChange.trigger();
     });
 
     const lineMaterial = new THREE.LineBasicMaterial({
@@ -353,12 +357,14 @@ export class FragmentClipStyler
     lineThickness.onChange.add(() => {
       outlineMaterial.opacity = lineThickness.value;
       saveStyles();
+      this.onChange.trigger();
     });
 
     lineColor.onChange.add(() => {
       lineMaterial.color.set(lineColor.value);
       outlineMaterial.color.set(lineColor.value);
       saveStyles();
+      this.onChange.trigger();
     });
 
     const clipper = await this.components.tools.get(EdgesClipper);

@@ -71,7 +71,7 @@ export class EdgesPlane extends SimplePlane {
     if (!this.enabled) return;
 
     this._plane.setFromNormalAndCoplanarPoint(
-      this._normal,
+      this.normal,
       this._helper.position
     );
 

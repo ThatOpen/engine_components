@@ -1,9 +1,10 @@
 import * as THREE from "three";
 import { Component, Disposable, UI, UIElement } from "../../base-types";
-import { FragmentClassifier, FragmentManager } from "../index";
 import { toCompositeID } from "../../utils";
 import { Button } from "../../ui";
 import { Components, ToolComponent } from "../../core";
+import { FragmentClassifier } from "../FragmentClassifier";
+import { FragmentManager } from "../FragmentManager";
 
 // TODO: Clean up and document
 

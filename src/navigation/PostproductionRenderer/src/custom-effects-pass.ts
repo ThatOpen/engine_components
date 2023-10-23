@@ -126,13 +126,17 @@ export class CustomEffectsPass extends Pass {
     material.uniforms.outlineEnabled.value = active ? 1 : 0;
   }
 
-  constructor(resolution: THREE.Vector2, components: Components) {
+  constructor(
+    resolution: THREE.Vector2,
+    components: Components,
+    scene: THREE.Scene,
+    camera: THREE.Camera
+  ) {
     super();
 
     this.components = components;
-
-    this.renderScene = components.scene.get();
-    this.renderCamera = components.camera.get();
+    this.renderScene = scene;
+    this.renderCamera = camera;
     this.resolution = new THREE.Vector2(resolution.x, resolution.y);
 
     this.fsQuad = new FullScreenQuad();

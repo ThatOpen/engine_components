@@ -2,7 +2,7 @@ import { Disposable, UI } from "./base-types";
 import { Component } from "./component";
 import { DrawManager } from "../annotation";
 import { Button } from "../ui";
-import { tooeenRandomId } from "../utils";
+import { tooeenRandomId } from "../utils/Misc";
 import { UIElement } from "./ui-element";
 
 export interface SVGAnnotationStyle {

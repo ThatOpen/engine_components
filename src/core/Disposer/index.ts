@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Component } from "../../base-types";
+import { Component } from "../../base-types/component";
 import { Components } from "../Components";
 import { ToolComponent } from "../ToolsComponent";
 
@@ -33,26 +33,25 @@ export class Disposer extends Component<Set<string>> {
    * using any of these in other parts of the application, make sure that you
    * remove them from the mesh before disposing it.
    *
-   * @param mesh - the [mesh](https://threejs.org/docs/#api/en/objects/Mesh)
+   * @param object - the [object](https://threejs.org/docs/#api/en/core/Object3D)
    * to remove.
    *
    * @param materials - whether to dispose the materials of the mesh.
    *
    * @param recursive - whether to recursively dispose the children of the mesh.
    */
-  destroy(
-    mesh: THREE.Mesh | THREE.LineSegments,
-    materials = true,
-    recursive = true
-  ) {
-    mesh.removeFromParent();
-    this.disposeGeometryAndMaterials(mesh, materials);
-    if (recursive && mesh.children.length) {
-      this.disposeChildren(mesh);
+  destroy(object: THREE.Object3D, materials = true, recursive = true) {
+    object.removeFromParent();
+    const item = object as any;
+    if (item.dispose) {
+      item.dispose();
     }
-    mesh.material = [];
-    (mesh.geometry as any) = null;
-    mesh.children.length = 0;
+    this.disposeGeometryAndMaterials(object, materials);
+    if (recursive && item.children && item.children.length) {
+      this.disposeChildren(item);
+    }
+
+    object.children.length = 0;
   }
 
   /**
@@ -70,15 +69,18 @@ export class Disposer extends Component<Set<string>> {
   }
 
   private disposeGeometryAndMaterials(
-    mesh: THREE.Mesh | THREE.LineSegments,
+    mesh: THREE.Object3D,
     materials: boolean
   ) {
-    if (mesh.geometry) {
-      this.disposeGeometry(mesh.geometry);
+    const item = mesh as any;
+    if (item.geometry) {
+      this.disposeGeometry(item.geometry);
     }
-    if (materials) {
-      Disposer.disposeMaterial(mesh);
+    if (materials && item.material) {
+      Disposer.disposeMaterial(item);
     }
+    item.material = [];
+    item.geometry = null;
   }
 
   private disposeChildren(mesh: THREE.Mesh | THREE.LineSegments) {

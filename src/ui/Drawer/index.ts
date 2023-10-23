@@ -1,10 +1,11 @@
 import { Components } from "../../core";
 import { SimpleUIComponent } from "../SimpleUIComponent";
+import { Event } from "../../base-types";
 
 // TODO: Fix tooltips for buttons in drawers
 
 export class Drawer extends SimpleUIComponent<HTMLDivElement> {
-  name = "Drawer";
+  onResized = new Event();
 
   protected _size = "10rem";
   protected _visible = true;
@@ -87,9 +88,7 @@ export class Drawer extends SimpleUIComponent<HTMLDivElement> {
   constructor(components: Components) {
     const template = `
         <div class="fixed bg-ifcjs-100 backdrop-blur-xl shadow-md overflow-auto shadow-lg z-20 top-0 left-0 h-full transition-all duration-500 transform">
-            <div class="px-6 py-4">
-                <div data-tooeen-slot="content"></div>
-            </div>
+            <div data-tooeen-slot="content"></div>
         </div>
     `;
 
@@ -105,6 +104,9 @@ export class Drawer extends SimpleUIComponent<HTMLDivElement> {
     };
 
     this.setSlots();
+
+    const observer = new ResizeObserver(() => this.onResized.trigger());
+    observer.observe(this.get());
   }
 
   addChild(...items: SimpleUIComponent[]) {

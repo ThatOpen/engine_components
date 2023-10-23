@@ -18,7 +18,7 @@ export abstract class BaseRenderer
   abstract resize(): void;
 
   /** {@link Resizeable.onResize} */
-  readonly onResize = new Event();
+  readonly onResize = new Event<any>();
 
   /**
    * Event that fires when there has been a change to the list of clipping

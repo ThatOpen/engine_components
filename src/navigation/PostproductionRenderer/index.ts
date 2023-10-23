@@ -1,3 +1,4 @@
+import * as THREE from "three";
 import { SimpleRenderer } from "../../core/SimpleRenderer";
 import { Components } from "../../core/Components";
 import { Postproduction } from "./src/postproduction";
@@ -9,19 +10,23 @@ export class PostproductionRenderer extends SimpleRenderer {
   /** Helper object to handle the postproduction effects applied. */
   postproduction: Postproduction;
 
-  constructor(components: Components, container: HTMLElement) {
-    super(components, container);
+  constructor(
+    components: Components,
+    container?: HTMLElement,
+    parameters?: Partial<THREE.WebGLRendererParameters>
+  ) {
+    super(components, container, parameters);
     this.postproduction = new Postproduction(components, this._renderer);
     this.setPostproductionSize();
-    this.onResize.add(() => this.resizePostproduction());
+    this.onResize.add((size) => this.resizePostproduction(size));
   }
 
   /** {@link Updateable.update} */
-  async update(_delta: number) {
+  async update() {
     if (!this.enabled) return;
     await this.onBeforeUpdate.trigger();
-    const scene = this.components.scene?.get();
-    const camera = this.components.camera?.get();
+    const scene = this.overrideScene || this.components.scene.get();
+    const camera = this.overrideCamera || this.components.camera.get();
     if (!scene || !camera) return;
     if (this.postproduction.enabled) {
       this.postproduction.composer.render();
@@ -38,15 +43,16 @@ export class PostproductionRenderer extends SimpleRenderer {
     await this.postproduction.dispose();
   }
 
-  /** {@link Resizeable.resize}. */
-  private resizePostproduction() {
+  private resizePostproduction(size?: THREE.Vector2) {
     if (this.postproduction) {
-      this.setPostproductionSize();
+      this.setPostproductionSize(size);
     }
   }
 
-  private setPostproductionSize() {
-    const { clientWidth, clientHeight } = this.container;
-    this.postproduction.setSize(clientWidth, clientHeight);
+  private setPostproductionSize(size?: THREE.Vector2) {
+    if (!this.container) return;
+    const width = size ? size.x : this.container.clientWidth;
+    const height = size ? size.y : this.container.clientHeight;
+    this.postproduction.setSize(width, height);
   }
 }

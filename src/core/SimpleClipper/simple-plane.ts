@@ -19,21 +19,23 @@ export class SimplePlane
   /** Event that fires when the user stops dragging a clipping plane. */
   readonly onDraggingEnded = new Event<void>();
 
-  protected readonly _normal: THREE.Vector3;
-  protected readonly _helper: THREE.Object3D;
-  protected readonly _plane = new THREE.Plane();
+  readonly normal: THREE.Vector3;
 
+  readonly origin: THREE.Vector3;
+
+  protected readonly _helper: THREE.Object3D;
+
+  protected readonly _plane = new THREE.Plane();
   // TODO: Make all planes share the same geometry
   // TODO: Clean up unnecessary attributes, clean up constructor
   protected _visible = true;
+
   protected _enabled = true;
 
   private _controlsActive = false;
-
   private readonly _arrowBoundBox = new THREE.Mesh();
   private readonly _planeMesh: THREE.Mesh;
   private readonly _controls: TransformControls;
-  private readonly _origin: THREE.Vector3;
   private readonly _hiddenMaterial = new THREE.MeshBasicMaterial({
     visible: false,
   });
@@ -96,8 +98,8 @@ export class SimplePlane
     activateControls = true
   ) {
     super(components);
-    this._normal = normal;
-    this._origin = origin;
+    this.normal = normal;
+    this.origin = origin;
 
     this.components.renderer.togglePlane(true, this._plane);
     this._planeMesh = SimplePlane.newPlaneMesh(size, material);
@@ -110,11 +112,20 @@ export class SimplePlane
     }
   }
 
+  setFromNormalAndCoplanarPoint(normal: THREE.Vector3, point: THREE.Vector3) {
+    this.normal.copy(normal);
+    this.origin.copy(point);
+    this._helper.lookAt(normal);
+    this._helper.position.copy(point);
+    this._helper.updateMatrix();
+    this.update();
+  }
+
   /** {@link Updateable.update} */
   update = () => {
     if (!this._enabled) return;
     this._plane.setFromNormalAndCoplanarPoint(
-      this._normal,
+      this.normal,
       this._helper.position
     );
   };
@@ -196,8 +207,8 @@ export class SimplePlane
 
   private newHelper() {
     const helper = new THREE.Object3D();
-    helper.lookAt(this._normal);
-    helper.position.copy(this._origin);
+    helper.lookAt(this.normal);
+    helper.position.copy(this.origin);
     this._planeMesh.position.z += 0.01;
     helper.add(this._planeMesh);
     this.components.scene.get().add(helper);
