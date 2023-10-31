@@ -227,6 +227,15 @@ export class LengthMeasurement
     }
   }
 
+  async deleteMeasurement(measurement: SimpleDimensionLine) {
+    if (measurement) {
+      const index = this._measurements.indexOf(measurement);
+      this._measurements.splice(index, 1);
+      await measurement.dispose();
+      await this.onAfterDelete.trigger(this);
+    }
+  }
+
   /** Deletes all the dimensions that have been previously created. */
   async deleteAll() {
     for (const dim of this._measurements) {
