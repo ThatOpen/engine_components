@@ -42,6 +42,7 @@ export class FragmentHighlighter
   excludeOutline = new Set<string>();
 
   fillEnabled = true;
+  autoHighlightOnClick = true;
 
   outlineMaterial = new THREE.MeshBasicMaterial({
     color: "white",
@@ -109,6 +110,10 @@ export class FragmentHighlighter
 
   get(): HighlightMaterials {
     return this.highlightMats;
+  }
+
+  getHoveredSelection() {
+    return this.selection[this._default.hoverName];
   }
 
   async dispose() {
@@ -570,8 +575,10 @@ export class FragmentHighlighter
       return;
     }
     this._default.mouseMoved = false;
-    const mult = this.multiple === "none" ? true : !event[this.multiple];
-    await this.highlight(this._default.selectName, mult, this.zoomToSelection);
+    if (this.autoHighlightOnClick) {
+      const mult = this.multiple === "none" ? true : !event[this.multiple];
+      await this.highlight(this._default.selectName, mult, this.zoomToSelection);
+    }
   };
 
   private onMouseMove = async () => {
