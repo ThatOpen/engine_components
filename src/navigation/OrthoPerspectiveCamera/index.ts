@@ -131,6 +131,11 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
     return this._projectionManager.projection;
   }
 
+  /** Match Ortho zoom with Perspective distance when changing projection mode */
+  set matchOrthoDistanceEnabled(value: boolean) {
+    this._projectionManager.matchOrthoDistanceEnabled = value;
+  }
+
   /**
    * Changes the current {@link CameraProjection} from Ortographic to Perspective
    * and Viceversa.
