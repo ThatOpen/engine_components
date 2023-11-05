@@ -1,11 +1,11 @@
 name: "New feature proposal 🚀"
-description: Propose a new feature to be added to IFC.js components
+description: Propose a new feature or cool thing
 labels: [feature]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for your interest in the project and taking the time to fill out this feature report! <img src="https://ifcjs.github.io/info/img/logo.svg" width="16">
+        Thanks for your interest in the project and taking the time to fill out this feature report! 🙏
   - type: textarea
     id: feature-description
     attributes:
@@ -17,7 +17,7 @@ body:
   - type: textarea
     id: suggested-solution
     attributes:
-      label: Suggested solution 💡 
+      label: Suggested solution 💡
       description: If possible, include in this field a solution or approach that would solve or implement the described feature.
       placeholder: "In module/component [xy] we could provide the following implementation..."
     validations:
