@@ -74,7 +74,7 @@ export class FragmentClipStyler
 
     this.components.tools.add(FragmentClipStyler.uuid, this);
 
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setupUI(components);
     }
   }

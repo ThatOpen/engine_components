@@ -58,7 +58,7 @@ export class IfcPropertiesFinder
   }
 
   async init() {
-    if (this.components.ui.enabled) {
+    if (this.components.uiEnabled) {
       await this.setUI();
     }
   }

@@ -55,7 +55,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
 
     this.components.tools.add(FragmentHider.uuid, this);
 
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setupUI(components);
     }
   }

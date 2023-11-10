@@ -42,7 +42,7 @@ export class FragmentIfcLoader
     this._converter = new DataConverter(components);
     this.components.tools.add(FragmentIfcLoader.uuid, this);
 
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setupUI();
     }
   }

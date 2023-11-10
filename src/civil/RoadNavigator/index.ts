@@ -93,7 +93,7 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
       this._longProjection.vertices.mesh
     );
 
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setupUI();
     }
   }

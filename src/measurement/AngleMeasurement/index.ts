@@ -49,7 +49,7 @@ export class AngleMeasurement
     this._enabled = value;
     this.setupEvents(value);
     this._vertexPicker.enabled = value;
-    if (this.components.ui.enabled) {
+    if (this.components.uiEnabled) {
       const main = this.uiElement.get("main");
       main.active = value;
     }
@@ -81,7 +81,7 @@ export class AngleMeasurement
     this._vertexPicker = new VertexPicker(components);
 
     // this.enabled = false;
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setUI();
     }
   }

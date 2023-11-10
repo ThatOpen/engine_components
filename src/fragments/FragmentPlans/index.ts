@@ -82,7 +82,7 @@ export class FragmentPlans
     this.components.tools.add(FragmentPlans.uuid, this);
 
     this.objects = new PlanObjects(components);
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setUI(components);
     }
   }
@@ -181,7 +181,7 @@ export class FragmentPlans
       await this.moveCameraTo2DPlanPosition(animate);
       this.enabled = true;
     }
-    if (this.components.ui.enabled) {
+    if (this.components.uiEnabled) {
       this.uiElement.get("exitButton").enabled = true;
     }
   }
@@ -215,13 +215,13 @@ export class FragmentPlans
       this._previousTarget.z,
       animate
     );
-    if (this.components.ui.enabled) {
+    if (this.components.uiEnabled) {
       this.uiElement.get("exitButton").enabled = false;
     }
   }
 
   async updatePlansList() {
-    if (!this.components.ui.enabled) {
+    if (!this.components.uiEnabled) {
       return;
     }
 

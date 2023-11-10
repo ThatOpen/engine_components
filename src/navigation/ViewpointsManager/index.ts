@@ -67,7 +67,7 @@ export class ViewpointsManager extends Component<string> implements UI {
     // this._fragmentGrouper = config.fragmentGrouper;
     // this._fragmentManager = config.fragmentManager;
     this._drawManager = config.drawManager;
-    if (this.components.ui.enabled) {
+    if (this.components.uiEnabled) {
       this.setUI();
     }
   }

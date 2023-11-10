@@ -48,7 +48,7 @@ export class FragmentTree
       "Model Tree"
     );
     this._tree = tree;
-    if (this.components.ui.enabled) {
+    if (this.components.uiEnabled) {
       this.setupUI(tree);
     }
   }

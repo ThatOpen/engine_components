@@ -104,7 +104,7 @@ export class IfcPropertiesProcessor
     // this._entityUIPool = new UIPool(this._components, TreeView);
     this._renderFunctions = this.getRenderFunctions();
 
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setUI();
     }
   }

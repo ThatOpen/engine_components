@@ -93,7 +93,7 @@ export class SimpleClipper<T extends SimplePlane>
       plane.enabled = state;
     }
     this.updateMaterialsAndPlanes();
-    if (this.components.ui.enabled) {
+    if (this.components.uiEnabled) {
       this.uiElement.get("main").active = state;
     }
   }
@@ -143,7 +143,7 @@ export class SimpleClipper<T extends SimplePlane>
     this.components.tools.add(SimpleClipper.uuid, this);
 
     this.PlaneType = SimplePlane;
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setUI(components);
     }
   }

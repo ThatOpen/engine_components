@@ -46,7 +46,7 @@ export class LocalCacher extends Component<any> implements UI, Disposable {
     super(components);
     components.tools.add(LocalCacher.uuid, this);
     this._db = new ModelDatabase();
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setUI(components);
     }
   }

@@ -32,7 +32,7 @@ export class FragmentExploder
 
     components.tools.add(FragmentExploder.uuid, this);
 
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setupUI(components);
     }
   }

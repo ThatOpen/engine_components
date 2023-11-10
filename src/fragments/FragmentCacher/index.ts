@@ -21,7 +21,7 @@ export class FragmentCacher extends LocalCacher {
 
     components.tools.list.set(FragmentCacher.uuid, this);
 
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setupUI();
     }
   }

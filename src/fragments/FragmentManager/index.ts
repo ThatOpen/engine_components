@@ -55,7 +55,7 @@ export class FragmentManager
 
     this.components.tools.add(FragmentManager.uuid, this);
 
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setupUI(components);
     }
   }
@@ -136,7 +136,7 @@ export class FragmentManager
   }
 
   async updateWindow() {
-    if (!this.components.ui.enabled) {
+    if (!this.components.uiEnabled) {
       return;
     }
 

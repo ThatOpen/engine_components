@@ -59,7 +59,7 @@ export class Simple2DScene
   constructor(components: Components, postproduction = false) {
     super(components);
 
-    if (!components.ui.enabled) {
+    if (!components.uiEnabled) {
       throw new Error(
         "The Simple2DScene component needs to use UI elements (TODO: Decouple from them)."
       );

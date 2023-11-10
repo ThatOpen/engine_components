@@ -22,9 +22,6 @@ export class Components {
   /** {@link ToolComponent} */
   readonly tools: ToolComponent;
 
-  /** {@link UIManager} */
-  readonly ui: UIManager;
-
   /**
    * All the loaded [meshes](https://threejs.org/docs/#api/en/objects/Mesh).
    * This includes fragments, 3D scans, etc.
@@ -39,11 +36,23 @@ export class Components {
 
   enabled = false;
 
+  /** Whether UI components should be created. */
+  uiEnabled = true;
+
+  private _ui?: UIManager;
   private _renderer?: BaseRenderer;
   private _scene?: Component<THREE.Scene>;
   private _camera?: Component<THREE.Camera>;
   private _raycaster?: BaseRaycaster;
   private _clock: THREE.Clock;
+
+  /** {@link UIManager} */
+  get ui(): UIManager {
+    if (!this._ui) {
+      throw new Error("UIManager hasn't been initialised.");
+    }
+    return this._ui;
+  }
 
   /**
    * The [Three.js renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
@@ -122,7 +131,6 @@ export class Components {
   constructor() {
     this._clock = new THREE.Clock();
     this.tools = new ToolComponent(this);
-    this.ui = new UIManager(this);
     Components.setupBVH();
   }
 
@@ -135,7 +143,10 @@ export class Components {
   async init() {
     this.enabled = true;
     this._clock.start();
-    this.ui.init();
+    if (this.uiEnabled) {
+      this._ui = new UIManager(this);
+      this.ui.init();
+    }
     await this.update();
     await this.onInitialized.trigger(this);
   }

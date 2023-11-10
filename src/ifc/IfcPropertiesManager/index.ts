@@ -83,7 +83,7 @@ export class IfcPropertiesManager
     this._ifcApi = new WEBIFC.IfcAPI();
 
     // TODO: Save original IFC file so that opening it again is not necessary
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setUI(components);
       this.setUIEvents();
     }

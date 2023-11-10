@@ -90,7 +90,7 @@ export class LengthMeasurement
     if (!value) this.cancelCreation();
     this._enabled = value;
     this._vertexPicker.enabled = value;
-    if (this.components.ui.enabled) {
+    if (this.components.uiEnabled) {
       const main = this.uiElement.get("main");
       main.active = value;
     }
@@ -131,7 +131,7 @@ export class LengthMeasurement
       snapDistance: this.snapDistance,
     });
 
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setUI();
     }
   }

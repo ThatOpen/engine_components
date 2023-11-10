@@ -36,7 +36,7 @@ export class AreaMeasurement
   set enabled(value: boolean) {
     this._enabled = value;
     this._vertexPicker.enabled = value;
-    if (this.components.ui.enabled) {
+    if (this.components.uiEnabled) {
       const main = this.uiElement.get("main");
       main.active = value;
     }
@@ -64,7 +64,7 @@ export class AreaMeasurement
     // TODO: Make vertexpicker a tool?
     this._vertexPicker = new VertexPicker(components);
 
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setUI();
     }
   }

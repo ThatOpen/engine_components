@@ -67,7 +67,7 @@ export class PlanObjects implements UI {
     this.components = components;
     this.resetBounds();
     this.createPlaneOutlineGeometry();
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setUI(components);
     }
   }
