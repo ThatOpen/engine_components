@@ -106,7 +106,7 @@
      */
     async function loadFragments() {
         if(fragments.groups.length) return;
-        const file = await fetch("../../../resources/model.frag");
+        const file = await fetch("../../../resources/small.frag");
         const data = await file.arrayBuffer();
         const buffer = new Uint8Array(data);
        fragments.load(buffer);
