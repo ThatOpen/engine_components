@@ -16,7 +16,8 @@
       "imports": {
         "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
-        "openbim-components": "../../../resources/openbim-components.js"
+        "openbim-components": "../../../resources/openbim-components.js",
+        "unzipit": "https://unpkg.com/unzipit@1.4.3/dist/unzipit.module.js"
       }
     }
 </script>
@@ -24,8 +25,8 @@
 
 	// Set up scene (see SimpleScene tutorial)
 
-	import * as THREE from 'three';
 	import * as OBC from 'openbim-components';
+	import {unzip} from 'unzipit';
 
 	const container = document.getElementById('container');
 
@@ -49,7 +50,7 @@
   // Set up cloud processor
 
 	const storage = new OBC.CloudStorage(components);
-	storage.token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1IjoiNjUwOWU3ZDYwMDMzZWI5ZGZlMWVjMzZmIiwiYSI6IjY1NTRhOTExNTFiMTg1NjYyMDVmNjZkNCJ9.bid1-l_rvINlnded3twlGJflfnX5vscacc7vGOV_jM0";
+	storage.token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1IjoiNjUwNmYyZjk0NWM4YmM2YTk0Mzg0NjM4IiwiYSI6IjY1NTRjMTJjODRmZTUwOTk4Yzk2YWViYyJ9.orL8C6hAS4Lj6D_kDAeUiGytNVqgpPL2wV9a7sTMpAg";
 
 	// Get all the models
 
@@ -77,10 +78,6 @@
   async function loadModel(response) {
 		console.log("Model process successful!");
 		console.log(response);
-		const downloaded = await fetch(response.downloadUrl);
-		const model = await downloaded.arrayBuffer();
-		const data = new Uint8Array(model);
-		fragments.load(data);
   }
 
 	storage.modelProcessed.add(loadModel)

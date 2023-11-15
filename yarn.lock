@@ -6166,6 +6166,7 @@ __metadata:
     ts-jest: ^27.0.3
     ts-node: ^10.0.0
     typescript: ^4.3.2
+    unzipit: ^1.4.3
     web-ifc: 0.0.44
   languageName: unknown
   linkType: soft
@@ -8050,6 +8051,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"unzipit@npm:^1.4.3":
+  version: 1.4.3
+  resolution: "unzipit@npm:1.4.3"
+  dependencies:
+    uzip-module: ^1.0.2
+  checksum: ce29348edab7b5fb5b7b4d43437f48e35812ac8b3cc2d76efd1acfcad6dd1b96b4f96bfd03250a724b87ba99dd531d7727ad24b590acf727dde79f54f5e779ed
+  languageName: node
+  linkType: hard
+
 "update-browserslist-db@npm:^1.0.13":
   version: 1.0.13
   resolution: "update-browserslist-db@npm:1.0.13"
@@ -8101,6 +8111,13 @@ __metadata:
   version: 1.0.2
   resolution: "util-deprecate@npm:1.0.2"
   checksum: 474acf1146cb2701fe3b074892217553dfcf9a031280919ba1b8d651a068c9b15d863b7303cb15bd00a862b498e6cf4ad7b4a08fb134edd5a6f7641681cb54a2
+  languageName: node
+  linkType: hard
+
+"uzip-module@npm:^1.0.2":
+  version: 1.0.3
+  resolution: "uzip-module@npm:1.0.3"
+  checksum: fc286c44a04d75055577fae8293d3fee499d1e850f87e88c158b1e3657f4794a3a40ca2d34f73474ff82917176dd5ca9d1c0d1e375a083714e11afabd3afa423
   languageName: node
   linkType: hard
 

@@ -54,6 +54,7 @@
     "three": "0.152.2",
     "three-mesh-bvh": "0.6.0",
     "top-tool-package-reader": "0.0.3",
+    "unzipit": "^1.4.3",
     "web-ifc": "0.0.44"
   }
 }
