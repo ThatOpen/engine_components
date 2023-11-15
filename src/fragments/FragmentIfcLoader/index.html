@@ -164,7 +164,7 @@
         const file = await fetch('../../../resources/small.ifc');
         const data = await file.arrayBuffer();
         const buffer = new Uint8Array(data);
-        const model = await fragmentIfcLoader.load(buffer);
+        const model = await fragmentIfcLoader.load(buffer, "example");
         scene.add(model);
     }
 

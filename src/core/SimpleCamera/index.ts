@@ -73,11 +73,11 @@ export class SimpleCamera
   }
 
   /** {@link Updateable.update} */
-  update(_delta: number): void {
+  async update(_delta: number) {
     if (this.enabled) {
-      this.onBeforeUpdate.trigger(this);
+      await this.onBeforeUpdate.trigger(this);
       this.controls.update(_delta);
-      this.onAfterUpdate.trigger(this);
+      await this.onAfterUpdate.trigger(this);
     }
   }
 
