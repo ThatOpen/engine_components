@@ -4,8 +4,10 @@ import { Components } from "../../core";
 /**
  * An object to easily use the services of That Open Platform.
  */
-export class CloudProcessor extends Component<any[]> {
+export class CloudStorage extends Component<any[]> {
   tools: Component<any>[] = [];
+
+  static readonly uuid = "6fe6c739-d518-47b8-8057-a22a6c96e722" as const;
 
   /** {@link Component.name} */
   name = "CloudProcessor";
@@ -19,14 +21,17 @@ export class CloudProcessor extends Component<any[]> {
 
   private _models: any[] = [];
 
+  private _token?: string;
+
   private _urls = {
-    base: "https://01wj0udft7.execute-api.eu-central-1.amazonaws.com/v1/models",
-    token: "?accessToken=",
+    base: "https://dev.api.dev.platform.thatopen.com/v1/models/",
+    tokenParam: "?accessToken=",
   };
 
-  constructor(components: Components, token: string) {
+  constructor(components: Components) {
     super(components);
-    this._urls.token += token;
+
+    this.components.tools.add(CloudStorage.uuid, this);
   }
 
   /**
@@ -36,9 +41,28 @@ export class CloudProcessor extends Component<any[]> {
     return this._models;
   }
 
+  /**
+   * The authentication token generated in
+   * [That Open Platform](https://platform.thatopen.com/app)
+   */
+  get token() {
+    if (!this._token) {
+      throw new Error("Auth token has not been initialized!");
+    }
+    return this._token;
+  }
+
+  /**
+   * The authentication token generated in
+   * [That Open Platform](https://platform.thatopen.com/app)
+   */
+  set token(value: string) {
+    this._token = value;
+  }
+
   async update() {
-    const { base, token } = this._urls;
-    const url = `${base}${token}`;
+    const { base, tokenParam } = this._urls;
+    const url = `${base}${tokenParam}${this.token}`;
     const result = await fetch(url);
     const parsed = await result.json();
     this._models = parsed.models;
@@ -54,15 +78,15 @@ export class CloudProcessor extends Component<any[]> {
   }
 
   async delete(modelID: string) {
-    const { base, token } = this._urls;
-    const url = `${base}/${modelID}${token}`;
+    const { base, tokenParam } = this._urls;
+    const url = `${base}/${modelID}${tokenParam}`;
     const result = await fetch(url, { method: "DELETE" });
     return result.json();
   }
 
   async getModel(modelID: string) {
-    const { base, token } = this._urls;
-    const modelUrl = `${base}/${modelID}${token}`;
+    const { base, tokenParam } = this._urls;
+    const modelUrl = `${base}/${modelID}${tokenParam}${this.token}`;
     const modelResponse = await fetch(modelUrl);
     return modelResponse.json();
   }
@@ -78,8 +102,8 @@ export class CloudProcessor extends Component<any[]> {
   }
 
   private async createModel() {
-    const { base, token } = this._urls;
-    const url = `${base}${token}`;
+    const { base, tokenParam } = this._urls;
+    const url = `${base}${tokenParam}${this.token}`;
     const result = await fetch(url, { method: "POST" });
     return result.json();
   }
