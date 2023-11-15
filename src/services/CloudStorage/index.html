@@ -48,25 +48,25 @@
 
   // Set up cloud processor
 
-	const cloudProcessor = new OBC.CloudStorage(components);
-	cloudProcessor.token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1IjoiNjUwOWU3ZDYwMDMzZWI5ZGZlMWVjMzZmIiwiYSI6IjY1NTRhOTExNTFiMTg1NjYyMDVmNjZkNCJ9.bid1-l_rvINlnded3twlGJflfnX5vscacc7vGOV_jM0";
+	const storage = new OBC.CloudStorage(components);
+	storage.token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1IjoiNjUwOWU3ZDYwMDMzZWI5ZGZlMWVjMzZmIiwiYSI6IjY1NTRhOTExNTFiMTg1NjYyMDVmNjZkNCJ9.bid1-l_rvINlnded3twlGJflfnX5vscacc7vGOV_jM0";
 
 	// Get all the models
 
-	await cloudProcessor.update();
-	const models = cloudProcessor.get();
+	await storage.update();
+	const models = storage.get();
 	console.log(models);
 
 	// Delete models
 
   for(const model of models) {
-		cloudProcessor.delete(model._id);
+		storage.delete(model._id);
   }
 
   // Upload model
 
 	window.ondblclick = async () => {
-		await cloudProcessor.upload("../../../resources/small.ifc");
+		await storage.upload("../../../resources/small.ifc");
 		console.log("Model uploaded! Starting processing...");
   }
 
@@ -83,7 +83,7 @@
 		fragments.load(data);
   }
 
-	cloudProcessor.modelProcessed.add(loadModel)
+	storage.modelProcessed.add(loadModel)
 
 
 </script>
