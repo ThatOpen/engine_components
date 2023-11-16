@@ -79,7 +79,7 @@
 
     const cube2 = new THREE.Mesh(boxGeometry, boxMaterial);
     const scene2d = simple2dScene.get();
-    scene2d.add(cube2);
+    // scene2d.add(cube2);
 
     const directionalLight2 = new THREE.DirectionalLight();
     directionalLight2.position.set(5, 10, 3);
@@ -90,9 +90,167 @@
     ambientLight2.intensity = 0.5;
     scene2d.add(ambientLight2);
 
-    const grid2d = new THREE.GridHelper(1000, 1000);
-    grid2d.rotation.x = Math.PI / 2;
-    scene2d.add(grid2d);
+    const grid2d1 = new THREE.GridHelper(2, 2);
+    grid2d1.rotation.x = Math.PI / 2;
+    scene2d.add(grid2d1);
+
+    const grid2d2 = new THREE.GridHelper(2, 2);
+    grid2d2.rotation.x = Math.PI / 2;
+    scene2d.add(grid2d2);
+
+    const frustum = new THREE.Frustum();
+    const cam2d = simple2dScene.camera;
+    const canvasUI = simple2dScene.uiElement.get("canvas");
+    const canvas = canvasUI.domElement;
+
+    const mainGridGeom = new THREE.BufferGeometry();
+    const mainGridMat = new THREE.LineBasicMaterial();
+    const mainGrid = new THREE.LineSegments(mainGridGeom, mainGridMat);
+    mainGrid.frustumCulled = false;
+    mainGrid.renderOrder = -1;
+    scene2d.add(mainGrid);
+
+    const secondaryGridGeom = new THREE.BufferGeometry();
+    const secondaryGridMat = new THREE.LineBasicMaterial({color: "black"});
+    const secondaryGrid = new THREE.LineSegments(secondaryGridGeom, secondaryGridMat);
+    secondaryGrid.renderOrder = -2;
+    secondaryGrid.frustumCulled = false;
+    scene2d.add(secondaryGrid);
+
+    const mainGridFactor = 5;
+
+    simple2dScene.controls.addEventListener("change", () => {
+        const cam2dFrustumMatrix = new THREE.Matrix4().multiplyMatrices( cam2d.projectionMatrix, cam2d.matrixWorldInverse);
+        frustum.setFromProjectionMatrix(cam2dFrustumMatrix);
+
+        // Step 1: find out the distance of the visible area of the 2D scene
+
+        const {planes} = frustum;
+        const right = planes[0].constant * -planes[0].normal.x;
+        const left = planes[1].constant * -planes[1].normal.x;
+        const bottom = planes[2].constant * -planes[2].normal.y;
+        const top = planes[3].constant * -planes[3].normal.y;
+        const horizontalDistance = Math.abs(right - left);
+        const verticalDistance = Math.abs(top - bottom);
+
+        // Step 2: find out its order of magnitude
+        const maxDistance = Math.max(horizontalDistance, verticalDistance);
+        const orderOfMagnitude = Math.ceil(Math.log10(maxDistance));
+
+        // Step 3: represent main grid
+        const secondaryGridDistance = Math.pow(10, orderOfMagnitude - 2);
+        const mainGridDistance = mainGridFactor * secondaryGridDistance;
+        const mainGridCountVert = Math.ceil(verticalDistance / mainGridDistance);
+        const mainGridCountHor = Math.ceil(horizontalDistance / mainGridDistance);
+        const secondaryGridCountVert = Math.ceil(verticalDistance / secondaryGridDistance);
+        const secondaryGridCountHor = Math.ceil(horizontalDistance / secondaryGridDistance);
+
+        // Step 4: find out position of first lines
+        const secondaryTrueLeft = secondaryGridDistance * Math.ceil(left / secondaryGridDistance);
+        const secondaryTrueBottom = secondaryGridDistance * Math.ceil(bottom / secondaryGridDistance);
+        const mainTrueLeft = mainGridDistance * Math.ceil(left / mainGridDistance);
+        const mainTrueBottom = mainGridDistance * Math.ceil(bottom / mainGridDistance);
+
+        // Step 5: draw lines
+
+        const mainPoints = [];
+        for(let i = 0; i < mainGridCountHor; i++) {
+            const offset = mainTrueLeft + i * mainGridDistance;
+             mainPoints.push(
+                     offset, top, 0,
+                     offset, bottom, 0
+             );
+        }
+        for(let i = 0; i < mainGridCountVert; i++) {
+            const offset = mainTrueBottom + i * mainGridDistance;
+            mainPoints.push(
+                    left, offset, 0,
+                    right, offset, 0
+            );
+        }
+
+        const secondaryPoints = [];
+        for(let i = 0; i < secondaryGridCountHor; i++) {
+            const offset = secondaryTrueLeft + i * secondaryGridDistance;
+            secondaryPoints.push(
+                    offset, top, 0,
+                    offset, bottom, 0
+            );
+        }
+        for(let i = 0; i < secondaryGridCountVert; i++) {
+            const offset = secondaryTrueBottom + i * secondaryGridDistance;
+            secondaryPoints.push(
+                    left, offset, 0,
+                    right, offset, 0
+            );
+        }
+
+        const mainIndices = [];
+        for(let i = 0; i < mainPoints.length / 2 - 1; i+= 2) {
+            mainIndices.push(i, i + 1);
+        }
+
+        const secondaryIndices = [];
+        for(let i = 0; i < secondaryPoints.length / 2 - 1; i+= 2) {
+            secondaryIndices.push(i, i + 1);
+        }
+
+        const mainBuffer = new THREE.BufferAttribute(new Float32Array(mainPoints), 3);
+        mainGridGeom.setAttribute("position", mainBuffer);
+        mainGridGeom.setIndex(mainIndices);
+
+        const secondaryBuffer = new THREE.BufferAttribute(new Float32Array(secondaryPoints), 3);
+        secondaryGridGeom.setAttribute("position", secondaryBuffer);
+        secondaryGridGeom.setIndex(secondaryIndices);
+
+        // const {width, height} = canvas;
+        // const horizontalSquares = Math.ceil(width / gridSize);
+        // const verticalSquares = Math.ceil(height / gridSize);
+        // console.log(horizontalDistance);
+        //
+        // const roundingOffset = 2;
+        // const distance = horizontalDistance / horizontalSquares;
+        //
+        // const orderOfMagnitude = Math.ceil(Math.log10(distance));
+        // const factor = Math.pow(10, orderOfMagnitude - roundingOffset);
+        // const truncated = Math.trunc(distance / factor);
+        // const rounded = 5 * Math.round(truncated / 5)
+        // const adjusted = rounded * factor;
+        // console.log(distance, adjusted);
+        //
+        // const trueLeft = adjusted * Math.ceil(left / adjusted);
+        // const trueBottom = adjusted * Math.ceil(bottom / adjusted);
+        //
+        // // Start with initial horizontal and vertical line in 0,0
+        // const points = [];
+        // const indices = [];
+        //
+        // // Vertical lines
+        // for(let i = 0; i < horizontalSquares + 3; i++) {
+        //     const offset = trueLeft + i * adjusted;
+        //      points.push(
+        //              offset, top, 0,
+        //              offset, bottom, 0
+        //      );
+        // }
+        //
+        // // Horizontal lines
+        // for(let i = 0; i < verticalSquares + 3; i++) {
+        //     const offset = trueBottom + i * adjusted;
+        //     points.push(
+        //             left, offset, 0,
+        //             right, offset, 0
+        //     );
+        // }
+        //
+        // for(let i = 0; i < points.length / 2 - 1; i+= 2) {
+        //     indices.push(i, i + 1);
+        // }
+        //
+        // const buffer = new THREE.BufferAttribute(new Float32Array(points), 3);
+        // lineGeom.setAttribute("position", buffer);
+        // lineGeom.setIndex(indices);
+    })
 
     /*MD
     ### 💅 Creating the UI
