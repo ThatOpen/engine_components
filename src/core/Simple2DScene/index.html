@@ -1,14 +1,14 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <link rel="stylesheet" href="../../../resources/styles.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-    <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
-    <title>Tools Component</title>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="../../../resources/styles.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+  <title>Tools Component</title>
 </head>
 <body>
 <div class="full-screen" id="container"></div>
@@ -16,289 +16,285 @@
     {
       "imports": {
         "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+        "three/examples/jsm/renderers/CSS2DRenderer": "https://unpkg.com/three@0.152.2/examples/jsm/renderers/CSS2DRenderer.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
         "openbim-components": "../../../resources/openbim-components.js"
       }
     }
+
 </script>
 <script type="module">
 
-    import * as THREE from 'three';
-    import * as OBC from 'openbim-components';
+	import * as THREE from 'three';
+	import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer';
+	import * as OBC from 'openbim-components';
 
-    const container = document.getElementById('container');
+	const container = document.getElementById('container');
 
-    const components = new OBC.Components();
-    components.scene = new OBC.SimpleScene(components);
-    components.renderer = new OBC.SimpleRenderer(components, container);
-    components.camera = new OBC.SimpleCamera(components);
-    components.raycaster = new OBC.SimpleRaycaster(components);
+	const components = new OBC.Components();
+	components.scene = new OBC.SimpleScene(components);
+	components.renderer = new OBC.SimpleRenderer(components, container);
+	components.camera = new OBC.SimpleCamera(components);
+	components.raycaster = new OBC.SimpleRaycaster(components);
 
-    components.init();
+	components.init();
 
-    const scene = components.scene.get();
+	const scene = components.scene.get();
 
-    components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
-    const grid = new OBC.SimpleGrid(components);
+	const grid = new OBC.SimpleGrid(components);
 
-    const boxMaterial = new THREE.MeshStandardMaterial({color: '#6528D7'});
-    const boxGeometry = new THREE.BoxGeometry(3, 3, 3);
-    const cube = new THREE.Mesh(boxGeometry, boxMaterial);
-    cube.position.set(0, 1.5, 0);
-    scene.add(cube);
-
-
-    components.scene.setup();
-
-    /*MD
-    ### 🎨 Draw in 2D on top of 3D!
-    ___
-    The `Simple2DScene` component is an easy way to represent 2D data
-    using the same tools and API that you use for 3D. Using it is
-    super simple: just create a new instance and you can start
-    adding things to it!
-
-    :::tip Drawing 2D with THREE.js?
-
-    Yes! 2D is just a specific case of 3D. So we can use exactly the same
-    libraries and tools to display 2D data easily.
-
-    :::
-
-    The first step is to create a instance of the `Simple2DScene` component:
-
-    */
-
-    const simple2dScene = new OBC.Simple2DScene(components);
-
-    /*MD
-    Great! Now we can start adding things to it, just like we would with the
-    3D scene. We will create a cube some lights and a grid: 💡🧊
-    */
-
-    const cube2 = new THREE.Mesh(boxGeometry, boxMaterial);
-    const scene2d = simple2dScene.get();
-    // scene2d.add(cube2);
-
-    const directionalLight2 = new THREE.DirectionalLight();
-    directionalLight2.position.set(5, 10, 3);
-    directionalLight2.intensity = 0.5;
-    scene2d.add(directionalLight2);
-
-    const ambientLight2 = new THREE.AmbientLight();
-    ambientLight2.intensity = 0.5;
-    scene2d.add(ambientLight2);
-
-    const grid2d1 = new THREE.GridHelper(2, 2);
-    grid2d1.rotation.x = Math.PI / 2;
-    scene2d.add(grid2d1);
-
-    const grid2d2 = new THREE.GridHelper(2, 2);
-    grid2d2.rotation.x = Math.PI / 2;
-    scene2d.add(grid2d2);
-
-    const frustum = new THREE.Frustum();
-    const cam2d = simple2dScene.camera;
-    const canvasUI = simple2dScene.uiElement.get("canvas");
-    const canvas = canvasUI.domElement;
-
-    const mainGridGeom = new THREE.BufferGeometry();
-    const mainGridMat = new THREE.LineBasicMaterial();
-    const mainGrid = new THREE.LineSegments(mainGridGeom, mainGridMat);
-    mainGrid.frustumCulled = false;
-    mainGrid.renderOrder = -1;
-    scene2d.add(mainGrid);
-
-    const secondaryGridGeom = new THREE.BufferGeometry();
-    const secondaryGridMat = new THREE.LineBasicMaterial({color: "black"});
-    const secondaryGrid = new THREE.LineSegments(secondaryGridGeom, secondaryGridMat);
-    secondaryGrid.renderOrder = -2;
-    secondaryGrid.frustumCulled = false;
-    scene2d.add(secondaryGrid);
-
-    const mainGridFactor = 5;
-
-    simple2dScene.controls.addEventListener("change", () => {
-        const cam2dFrustumMatrix = new THREE.Matrix4().multiplyMatrices( cam2d.projectionMatrix, cam2d.matrixWorldInverse);
-        frustum.setFromProjectionMatrix(cam2dFrustumMatrix);
-
-        // Step 1: find out the distance of the visible area of the 2D scene
-
-        const {planes} = frustum;
-        const right = planes[0].constant * -planes[0].normal.x;
-        const left = planes[1].constant * -planes[1].normal.x;
-        const bottom = planes[2].constant * -planes[2].normal.y;
-        const top = planes[3].constant * -planes[3].normal.y;
-        const horizontalDistance = Math.abs(right - left);
-        const verticalDistance = Math.abs(top - bottom);
-
-        // Step 2: find out its order of magnitude
-        const maxDistance = Math.max(horizontalDistance, verticalDistance);
-        const orderOfMagnitude = Math.ceil(Math.log10(maxDistance));
-
-        // Step 3: represent main grid
-        const secondaryGridDistance = Math.pow(10, orderOfMagnitude - 2);
-        const mainGridDistance = mainGridFactor * secondaryGridDistance;
-        const mainGridCountVert = Math.ceil(verticalDistance / mainGridDistance);
-        const mainGridCountHor = Math.ceil(horizontalDistance / mainGridDistance);
-        const secondaryGridCountVert = Math.ceil(verticalDistance / secondaryGridDistance);
-        const secondaryGridCountHor = Math.ceil(horizontalDistance / secondaryGridDistance);
-
-        // Step 4: find out position of first lines
-        const secondaryTrueLeft = secondaryGridDistance * Math.ceil(left / secondaryGridDistance);
-        const secondaryTrueBottom = secondaryGridDistance * Math.ceil(bottom / secondaryGridDistance);
-        const mainTrueLeft = mainGridDistance * Math.ceil(left / mainGridDistance);
-        const mainTrueBottom = mainGridDistance * Math.ceil(bottom / mainGridDistance);
-
-        // Step 5: draw lines
-
-        const mainPoints = [];
-        for(let i = 0; i < mainGridCountHor; i++) {
-            const offset = mainTrueLeft + i * mainGridDistance;
-             mainPoints.push(
-                     offset, top, 0,
-                     offset, bottom, 0
-             );
-        }
-        for(let i = 0; i < mainGridCountVert; i++) {
-            const offset = mainTrueBottom + i * mainGridDistance;
-            mainPoints.push(
-                    left, offset, 0,
-                    right, offset, 0
-            );
-        }
-
-        const secondaryPoints = [];
-        for(let i = 0; i < secondaryGridCountHor; i++) {
-            const offset = secondaryTrueLeft + i * secondaryGridDistance;
-            secondaryPoints.push(
-                    offset, top, 0,
-                    offset, bottom, 0
-            );
-        }
-        for(let i = 0; i < secondaryGridCountVert; i++) {
-            const offset = secondaryTrueBottom + i * secondaryGridDistance;
-            secondaryPoints.push(
-                    left, offset, 0,
-                    right, offset, 0
-            );
-        }
-
-        const mainIndices = [];
-        for(let i = 0; i < mainPoints.length / 2 - 1; i+= 2) {
-            mainIndices.push(i, i + 1);
-        }
-
-        const secondaryIndices = [];
-        for(let i = 0; i < secondaryPoints.length / 2 - 1; i+= 2) {
-            secondaryIndices.push(i, i + 1);
-        }
-
-        const mainBuffer = new THREE.BufferAttribute(new Float32Array(mainPoints), 3);
-        mainGridGeom.setAttribute("position", mainBuffer);
-        mainGridGeom.setIndex(mainIndices);
-
-        const secondaryBuffer = new THREE.BufferAttribute(new Float32Array(secondaryPoints), 3);
-        secondaryGridGeom.setAttribute("position", secondaryBuffer);
-        secondaryGridGeom.setIndex(secondaryIndices);
-
-        // const {width, height} = canvas;
-        // const horizontalSquares = Math.ceil(width / gridSize);
-        // const verticalSquares = Math.ceil(height / gridSize);
-        // console.log(horizontalDistance);
-        //
-        // const roundingOffset = 2;
-        // const distance = horizontalDistance / horizontalSquares;
-        //
-        // const orderOfMagnitude = Math.ceil(Math.log10(distance));
-        // const factor = Math.pow(10, orderOfMagnitude - roundingOffset);
-        // const truncated = Math.trunc(distance / factor);
-        // const rounded = 5 * Math.round(truncated / 5)
-        // const adjusted = rounded * factor;
-        // console.log(distance, adjusted);
-        //
-        // const trueLeft = adjusted * Math.ceil(left / adjusted);
-        // const trueBottom = adjusted * Math.ceil(bottom / adjusted);
-        //
-        // // Start with initial horizontal and vertical line in 0,0
-        // const points = [];
-        // const indices = [];
-        //
-        // // Vertical lines
-        // for(let i = 0; i < horizontalSquares + 3; i++) {
-        //     const offset = trueLeft + i * adjusted;
-        //      points.push(
-        //              offset, top, 0,
-        //              offset, bottom, 0
-        //      );
-        // }
-        //
-        // // Horizontal lines
-        // for(let i = 0; i < verticalSquares + 3; i++) {
-        //     const offset = trueBottom + i * adjusted;
-        //     points.push(
-        //             left, offset, 0,
-        //             right, offset, 0
-        //     );
-        // }
-        //
-        // for(let i = 0; i < points.length / 2 - 1; i+= 2) {
-        //     indices.push(i, i + 1);
-        // }
-        //
-        // const buffer = new THREE.BufferAttribute(new Float32Array(points), 3);
-        // lineGeom.setAttribute("position", buffer);
-        // lineGeom.setIndex(indices);
-    })
-
-    /*MD
-    ### 💅 Creating the UI
-    ___
-    The `Simple2DScene` comes with a button to easily turn it on and off.
-    Let's create a simple toolbar and add it to the scene:
-    */
+	const boxMaterial = new THREE.MeshStandardMaterial({ color: '#6528D7' });
+	const boxGeometry = new THREE.BoxGeometry(3, 3, 3);
+	const cube = new THREE.Mesh(boxGeometry, boxMaterial);
+	cube.position.set(0, 1.5, 0);
+	scene.add(cube);
 
 
-    const mainWindow = new OBC.FloatingWindow(components);
-    components.ui.add(mainWindow);
-    mainWindow.visible = false;
-    mainWindow.domElement.style.height = "20rem";
-    mainWindow.addChild(simple2dScene.uiElement.get("canvas"));
+	components.scene.setup();
 
-    components.renderer.onAfterUpdate.add(() => {
-        if(mainWindow.visible) {
-            simple2dScene.update()
-        }
-    });
+	/*MD
+  ### 🎨 Draw in 2D on top of 3D!
+  ___
+  The `Simple2DScene` component is an easy way to represent 2D data
+  using the same tools and API that you use for 3D. Using it is
+  super simple: just create a new instance and you can start
+  adding things to it!
 
-    mainWindow.slots.content.domElement.style.padding = "0";
-    mainWindow.slots.content.domElement.style.overflow = "hidden";
+  :::tip Drawing 2D with THREE.js?
 
-    mainWindow.onResized.add(() => {
-        const {width, height} = mainWindow.containerSize;
-        simple2dScene.setSize(height, width);
-    });
+  Yes! 2D is just a specific case of 3D. So we can use exactly the same
+  libraries and tools to display 2D data easily.
 
-    mainWindow.domElement.style.width = "20rem";
-    mainWindow.domElement.style.height = "20rem";
+  :::
+
+  The first step is to create a instance of the `Simple2DScene` component:
+
+  */
+
+	const simple2dScene = new OBC.Simple2DScene(components);
+
+	/*MD
+  Great! Now we can start adding things to it, just like we would with the
+  3D scene. We will create a cube some lights and a grid: 💡🧊
+  */
+
+	const cube2 = new THREE.Mesh(boxGeometry, boxMaterial);
+	const scene2d = simple2dScene.get();
+	// scene2d.add(cube2);
+
+	const directionalLight2 = new THREE.DirectionalLight();
+	directionalLight2.position.set(5, 10, 3);
+	directionalLight2.intensity = 0.5;
+	scene2d.add(directionalLight2);
+
+	const ambientLight2 = new THREE.AmbientLight();
+	ambientLight2.intensity = 0.5;
+	scene2d.add(ambientLight2);
+
+	const grid2d1 = new THREE.GridHelper(2, 2);
+	grid2d1.rotation.x = Math.PI / 2;
+	scene2d.add(grid2d1);
+
+	const grid2d2 = new THREE.GridHelper(2, 2);
+	grid2d2.rotation.x = Math.PI / 2;
+	scene2d.add(grid2d2);
+
+	const frustum = new THREE.Frustum();
+	const cam2d = simple2dScene.camera;
+	const canvasUI = simple2dScene.uiElement.get('container');
+	const canvas = canvasUI.domElement;
+
+	const mainGridGeom = new THREE.BufferGeometry();
+	const mainGridMat = new THREE.LineBasicMaterial({color: 0x222222});
+	const mainGrid = new THREE.LineSegments(mainGridGeom, mainGridMat);
+	mainGrid.frustumCulled = false;
+	mainGrid.renderOrder = -1;
+	scene2d.add(mainGrid);
+
+	const secondaryGridGeom = new THREE.BufferGeometry();
+	const secondaryGridMat = new THREE.LineBasicMaterial({ color: 0x111111 });
+	const secondaryGrid = new THREE.LineSegments(secondaryGridGeom, secondaryGridMat);
+	secondaryGrid.renderOrder = -2;
+	secondaryGrid.frustumCulled = false;
+	scene2d.add(secondaryGrid);
+
+	const css2dObjects = [];
+
+	const mainGridFactor = 5;
+
+	function newSign(offset) {
+		const text = document.createElement('div');
+		text.textContent = `${offset}`;
+		if (text.textContent.length > 6) {
+			text.textContent = text.textContent.slice(0, 6);
+		}
+		// text.style.background = "black";
+		text.style.height = '24px';
+		text.style.fontSize = '12px';
+		const sign = new CSS2DObject(text);
+		scene2d.add(sign);
+		css2dObjects.push(sign);
+		return sign;
+	}
+
+	function regenerateGrid() {
+		const cam2dFrustumMatrix = new THREE.Matrix4().multiplyMatrices(cam2d.projectionMatrix, cam2d.matrixWorldInverse);
+		frustum.setFromProjectionMatrix(cam2dFrustumMatrix);
+
+		// Step 1: find out the distance of the visible area of the 2D scene
+		// and the translation pixel / 3d unit
+
+		const { planes } = frustum;
+		const right = planes[0].constant * -planes[0].normal.x;
+		const left = planes[1].constant * -planes[1].normal.x;
+		const bottom = planes[2].constant * -planes[2].normal.y;
+		const top = planes[3].constant * -planes[3].normal.y;
+		const horizontalDistance = Math.abs(right - left);
+		const verticalDistance = Math.abs(top - bottom);
+
+		const {clientWidth, clientHeight} = canvas;
+		const maxPixelDist = Math.max(clientWidth, clientHeight);
+		const maxUnit3dDist = Math.max(horizontalDistance, verticalDistance);
+		const unit3dPixelRel = maxUnit3dDist / maxPixelDist;
+
+		// Step 2: find out its order of magnitude
+		const maxDistance = Math.max(horizontalDistance, verticalDistance);
+		const orderOfMagnitude = Math.ceil(Math.log10(maxDistance));
+
+		// Step 3: represent main grid
+		const secondaryGridDistance = Math.pow(10, orderOfMagnitude - 2);
+		const mainGridDistance = mainGridFactor * secondaryGridDistance;
+		const mainGridCountVert = Math.ceil(verticalDistance / mainGridDistance);
+		const mainGridCountHor = Math.ceil(horizontalDistance / mainGridDistance);
+		const secondaryGridCountVert = Math.ceil(verticalDistance / secondaryGridDistance);
+		const secondaryGridCountHor = Math.ceil(horizontalDistance / secondaryGridDistance);
+
+		// Step 4: find out position of first lines
+		const secondaryTrueLeft = secondaryGridDistance * Math.ceil(left / secondaryGridDistance);
+		const secondaryTrueBottom = secondaryGridDistance * Math.ceil(bottom / secondaryGridDistance);
+		const mainTrueLeft = mainGridDistance * Math.ceil(left / mainGridDistance);
+		const mainTrueBottom = mainGridDistance * Math.ceil(bottom / mainGridDistance);
+
+		// Step 5: draw lines and texts
+
+		for (const object of css2dObjects) {
+			object.removeFromParent();
+		}
+		css2dObjects.length = 0;
+
+		const mainPoints = [];
+
+		for (let i = 0; i < mainGridCountHor; i++) {
+			const offset = mainTrueLeft + i * mainGridDistance;
+			mainPoints.push(
+				offset, top, 0,
+				offset, bottom, 0,
+			);
+			const sign = newSign(offset);
+			const textOffsetPixels = 12;
+			const textOffset = textOffsetPixels * unit3dPixelRel;
+			sign.position.set(offset, bottom + textOffset, 0);
+		}
+		for (let i = 0; i < mainGridCountVert; i++) {
+			const offset = mainTrueBottom + i * mainGridDistance;
+			mainPoints.push(
+				left, offset, 0,
+				right, offset, 0,
+			);
+			const sign = newSign(offset);
+			const textOffsetPixels = 12;
+			const textOffset = textOffsetPixels * unit3dPixelRel;
+			sign.position.set(left + textOffset, offset, 0);
+		}
+
+		const secondaryPoints = [];
+		for (let i = 0; i < secondaryGridCountHor; i++) {
+			const offset = secondaryTrueLeft + i * secondaryGridDistance;
+			secondaryPoints.push(
+				offset, top, 0,
+				offset, bottom, 0,
+			);
+		}
+		for (let i = 0; i < secondaryGridCountVert; i++) {
+			const offset = secondaryTrueBottom + i * secondaryGridDistance;
+			secondaryPoints.push(
+				left, offset, 0,
+				right, offset, 0,
+			);
+		}
+
+		const mainIndices = [];
+		for (let i = 0; i < mainPoints.length / 2 - 1; i += 2) {
+			mainIndices.push(i, i + 1);
+		}
+
+		const secondaryIndices = [];
+		for (let i = 0; i < secondaryPoints.length / 2 - 1; i += 2) {
+			secondaryIndices.push(i, i + 1);
+		}
+
+		const mainBuffer = new THREE.BufferAttribute(new Float32Array(mainPoints), 3);
+		mainGridGeom.setAttribute('position', mainBuffer);
+		mainGridGeom.setIndex(mainIndices);
+
+		const secondaryBuffer = new THREE.BufferAttribute(new Float32Array(secondaryPoints), 3);
+		secondaryGridGeom.setAttribute('position', secondaryBuffer);
+		secondaryGridGeom.setIndex(secondaryIndices);
+  }
+
+	simple2dScene.controls.addEventListener('change', regenerateGrid);
+
+	/*MD
+  ### 💅 Creating the UI
+  ___
+  The `Simple2DScene` comes with a button to easily turn it on and off.
+  Let's create a simple toolbar and add it to the scene:
+  */
 
 
-    const mainButton = new OBC.Button(components);
-    mainButton.materialIcon = "fact_check";
-    mainButton.tooltip = "2D scene";
-    mainButton.onClick.add(() => {
-        mainWindow.visible = !mainWindow.visible;
-    });
+	const mainWindow = new OBC.FloatingWindow(components);
+	components.ui.add(mainWindow);
+	mainWindow.visible = false;
+	mainWindow.domElement.style.height = '20rem';
+	mainWindow.addChild(simple2dScene.uiElement.get('container'));
 
-    const mainToolbar = new OBC.Toolbar(components);
-    components.ui.addToolbar(mainToolbar);
-    mainToolbar.addChild(mainButton);
+	mainWindow.onResized.add(regenerateGrid);
 
-    /*MD
-    That's it! Great work. Now you can easily draw 2D graphics with the same
-    API and expose them to your end users. 🥳
-    */
+	components.renderer.onAfterUpdate.add(() => {
+		if (mainWindow.visible) {
+			simple2dScene.update();
+		}
+	});
+
+	mainWindow.slots.content.domElement.style.padding = '0';
+	mainWindow.slots.content.domElement.style.overflow = 'hidden';
+
+	mainWindow.onResized.add(() => {
+		const { width, height } = mainWindow.containerSize;
+		simple2dScene.setSize(height, width);
+	});
+
+	mainWindow.domElement.style.width = '20rem';
+	mainWindow.domElement.style.height = '20rem';
+
+
+	const mainButton = new OBC.Button(components);
+	mainButton.materialIcon = 'fact_check';
+	mainButton.tooltip = '2D scene';
+	mainButton.onClick.add(() => {
+		mainWindow.visible = !mainWindow.visible;
+	});
+
+	const mainToolbar = new OBC.Toolbar(components);
+	components.ui.addToolbar(mainToolbar);
+	mainToolbar.addChild(mainButton);
+
+	/*MD
+  That's it! Great work. Now you can easily draw 2D graphics with the same
+  API and expose them to your end users. 🥳
+  */
 
 </script>
 </body>

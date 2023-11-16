@@ -9,7 +9,7 @@ import {
   UIElement,
   Resizeable,
 } from "../../base-types";
-import { Canvas } from "../../ui";
+import { SimpleUIComponent } from "../../ui";
 import { Components } from "../Components";
 import { Disposer } from "../Disposer";
 import { SimpleRenderer } from "../SimpleRenderer";
@@ -41,7 +41,7 @@ export class Simple2DScene
 
   /** {@link UI.uiElement} */
   uiElement = new UIElement<{
-    canvas: Canvas;
+    container: SimpleUIComponent;
   }>();
 
   /** The camera controls that move around in the scene. */
@@ -65,10 +65,9 @@ export class Simple2DScene
       );
     }
 
-    const canvas = new Canvas(components);
-    canvas.domElement.classList.remove("absolute");
-
-    this.uiElement.set({ canvas });
+    const container = new SimpleUIComponent(components);
+    container.domElement.classList.add("relative");
+    this.uiElement.set({ container });
 
     this._scene = new THREE.Scene();
 
@@ -80,14 +79,12 @@ export class Simple2DScene
     this._scene.add(this.camera);
     this.camera.position.z = 10;
 
+    const domContainer = container.domElement;
+
     if (postproduction) {
-      this.renderer = new PostproductionRenderer(this.components, undefined, {
-        canvas: canvas.get(),
-      });
+      this.renderer = new PostproductionRenderer(this.components, domContainer);
     } else {
-      this.renderer = new SimpleRenderer(this.components, undefined, {
-        canvas: canvas.get(),
-      });
+      this.renderer = new SimpleRenderer(this.components, domContainer);
     }
 
     const renderer = this.renderer.get();
@@ -101,13 +98,13 @@ export class Simple2DScene
     this.controls.enableRotate = false;
     this.controls.enableZoom = true;
 
-    const parent = this.uiElement.get("canvas").parent;
-    if (parent) {
-      parent.domElement.classList.remove("p-4");
-      parent.domElement.classList.remove("overflow-auto");
-      parent.domElement.classList.add("overflow-hidden");
-      parent.domElement.classList.add("h-full");
-    }
+    // const parent = this.uiElement.get("canvas").parent;
+    // if (parent) {
+    //   parent.domElement.classList.remove("p-4");
+    //   parent.domElement.classList.remove("overflow-auto");
+    //   parent.domElement.classList.add("overflow-hidden");
+    //   parent.domElement.classList.add("h-full");
+    // }
 
     // Creates the orbit controls (to navigate the scene)
   }

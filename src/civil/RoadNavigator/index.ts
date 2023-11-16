@@ -340,7 +340,7 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
     floatingWindow.title = title;
 
     const scene2d = new Simple2DScene(this.components, postproduction);
-    const canvasUIElement = scene2d.uiElement.get("canvas");
+    const canvasUIElement = scene2d.uiElement.get("container");
     floatingWindow.addChild(canvasUIElement);
 
     const style = floatingWindow.slots.content.domElement.style;
@@ -356,7 +356,7 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
       await scene2d.update();
     });
 
-    const canvas = scene2d.uiElement.get("canvas");
+    const canvas = scene2d.uiElement.get("container");
     canvas.domElement.addEventListener("mousemove", async () => {
       await scene2d.update();
     });
@@ -378,7 +378,7 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
 
     const scene2d = new Simple2DScene(this.components);
 
-    const canvasUIElement = scene2d.uiElement.get("canvas");
+    const canvasUIElement = scene2d.uiElement.get("container");
     drawer.addChild(canvasUIElement);
     const { clientHeight, clientWidth } = drawer.domElement;
 
