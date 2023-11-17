@@ -9,6 +9,15 @@ export class GeometryReader {
 
   items: IfcGeometries = {};
   locations: { [itemID: number]: [number, number, number] } = {};
+  CivilItems: {
+    IfcAlignment: WEBIFC.IfcAlignment[];
+    IfcCrossSection2D: WEBIFC.IfcCrossSection[];
+    IfcCrossSection3D: WEBIFC.IfcCrossSection[];
+  } = {
+    IfcAlignment: [],
+    IfcCrossSection2D: [],
+    IfcCrossSection3D: [],
+  };
 
   get webIfc() {
     if (!this._webIfc) {
@@ -70,6 +79,15 @@ export class GeometryReader {
       const { x, y, z } = totalTransform.divideScalar(size);
       this.locations[mesh.expressID] = [x, y, z];
     }
+  }
+
+  streamAlignment(webifc: WEBIFC.IfcAPI) {
+    this.CivilItems.IfcAlignment = webifc.GetAllAlignments(0);
+  }
+
+  streamCrossSection(webifc: WEBIFC.IfcAPI) {
+    this.CivilItems.IfcCrossSection2D = webifc.GetAllCrossSections2D(0);
+    this.CivilItems.IfcCrossSection3D = webifc.GetAllCrossSections3D(0);
   }
 
   private newBufferGeometry(geometryID: number) {

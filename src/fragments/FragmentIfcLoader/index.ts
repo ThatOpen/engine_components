@@ -193,6 +193,10 @@ export class FragmentIfcLoader
       }
       this._geometry.streamMesh(this._webIfc, mesh);
     });
+
+    // Load civil items
+    this._geometry.streamAlignment(this._webIfc);
+    this._geometry.streamCrossSection(this._webIfc);
   }
 
   private cleanUp() {
