@@ -123,6 +123,10 @@
 	const css2dObjects = [];
 
 	const mainGridFactor = 5;
+	const xScaleFactor = 1;
+	const yScaleFactor = 0.3;
+	const maxRegenerateRetrys = 4;
+	let regenerateCounter = 0;
 
 	function newSign(offset) {
 		const text = document.createElement('div');
@@ -139,7 +143,24 @@
 		return sign;
 	}
 
+
 	function regenerateGrid() {
+
+		const nums = cam2d.projectionMatrix.elements;
+		for(let i = 0; i < nums.length; i++) {
+			const num = nums[i];
+			if(isNaN(num)) {
+				regenerateCounter++;
+				if(regenerateCounter > maxRegenerateRetrys) {
+					throw new Error("Grid could not be regenerated");
+        }
+				setTimeout(regenerateGrid, 200);
+				return;
+			}
+    }
+
+		regenerateCounter = 0;
+
 		const cam2dFrustumMatrix = new THREE.Matrix4().multiplyMatrices(cam2d.projectionMatrix, cam2d.matrixWorldInverse);
 		frustum.setFromProjectionMatrix(cam2dFrustumMatrix);
 
@@ -160,22 +181,25 @@
 		const unit3dPixelRel = maxUnit3dDist / maxPixelDist;
 
 		// Step 2: find out its order of magnitude
-		const maxDistance = Math.max(horizontalDistance, verticalDistance);
-		const orderOfMagnitude = Math.ceil(Math.log10(maxDistance));
+		const orderOfMagnitudeX = Math.ceil(Math.log10(horizontalDistance / xScaleFactor));
+		const orderOfMagnitudeY = Math.ceil(Math.log10(verticalDistance / yScaleFactor));
 
 		// Step 3: represent main grid
-		const secondaryGridDistance = Math.pow(10, orderOfMagnitude - 2);
-		const mainGridDistance = mainGridFactor * secondaryGridDistance;
-		const mainGridCountVert = Math.ceil(verticalDistance / mainGridDistance);
-		const mainGridCountHor = Math.ceil(horizontalDistance / mainGridDistance);
-		const secondaryGridCountVert = Math.ceil(verticalDistance / secondaryGridDistance);
-		const secondaryGridCountHor = Math.ceil(horizontalDistance / secondaryGridDistance);
+		const secondaryGridDistanceHor = Math.pow(10, orderOfMagnitudeX - 2) * xScaleFactor;
+		const secondaryGridDistanceVert = Math.pow(10, orderOfMagnitudeY - 2) * yScaleFactor;
+		const mainGridDistanceHor = mainGridFactor * secondaryGridDistanceHor;
+		const mainGridDistanceVert = mainGridFactor * secondaryGridDistanceVert;
+
+		const mainGridCountVert = Math.ceil(verticalDistance / mainGridDistanceVert);
+		const mainGridCountHor = Math.ceil(horizontalDistance / mainGridDistanceHor);
+		const secondaryGridCountVert = Math.ceil(verticalDistance / secondaryGridDistanceVert);
+		const secondaryGridCountHor = Math.ceil(horizontalDistance / secondaryGridDistanceHor);
 
 		// Step 4: find out position of first lines
-		const secondaryTrueLeft = secondaryGridDistance * Math.ceil(left / secondaryGridDistance);
-		const secondaryTrueBottom = secondaryGridDistance * Math.ceil(bottom / secondaryGridDistance);
-		const mainTrueLeft = mainGridDistance * Math.ceil(left / mainGridDistance);
-		const mainTrueBottom = mainGridDistance * Math.ceil(bottom / mainGridDistance);
+		const secondaryTrueLeft = secondaryGridDistanceHor * Math.ceil(left / secondaryGridDistanceHor);
+		const secondaryTrueBottom = secondaryGridDistanceVert * Math.ceil(bottom / secondaryGridDistanceVert);
+		const mainTrueLeft = mainGridDistanceHor * Math.ceil(left / mainGridDistanceHor);
+		const mainTrueBottom = mainGridDistanceVert * Math.ceil(bottom / (mainGridDistanceVert));
 
 		// Step 5: draw lines and texts
 
@@ -187,7 +211,7 @@
 		const mainPoints = [];
 
 		for (let i = 0; i < mainGridCountHor; i++) {
-			const offset = mainTrueLeft + i * mainGridDistance;
+			const offset = mainTrueLeft + i * mainGridDistanceHor;
 			mainPoints.push(
 				offset, top, 0,
 				offset, bottom, 0,
@@ -198,7 +222,7 @@
 			sign.position.set(offset, bottom + textOffset, 0);
 		}
 		for (let i = 0; i < mainGridCountVert; i++) {
-			const offset = mainTrueBottom + i * mainGridDistance;
+			const offset = mainTrueBottom + i * mainGridDistanceVert;
 			mainPoints.push(
 				left, offset, 0,
 				right, offset, 0,
@@ -211,14 +235,14 @@
 
 		const secondaryPoints = [];
 		for (let i = 0; i < secondaryGridCountHor; i++) {
-			const offset = secondaryTrueLeft + i * secondaryGridDistance;
+			const offset = secondaryTrueLeft + i * secondaryGridDistanceHor;
 			secondaryPoints.push(
 				offset, top, 0,
 				offset, bottom, 0,
 			);
 		}
 		for (let i = 0; i < secondaryGridCountVert; i++) {
-			const offset = secondaryTrueBottom + i * secondaryGridDistance;
+			const offset = secondaryTrueBottom + i * secondaryGridDistanceVert;
 			secondaryPoints.push(
 				left, offset, 0,
 				right, offset, 0,
@@ -279,13 +303,18 @@
 	mainWindow.domElement.style.width = '20rem';
 	mainWindow.domElement.style.height = '20rem';
 
-
 	const mainButton = new OBC.Button(components);
 	mainButton.materialIcon = 'fact_check';
 	mainButton.tooltip = '2D scene';
 	mainButton.onClick.add(() => {
 		mainWindow.visible = !mainWindow.visible;
 	});
+
+	mainWindow.onVisible.add(() => {
+		if(mainWindow.visible) {
+			regenerateGrid();
+    }
+  })
 
 	const mainToolbar = new OBC.Toolbar(components);
 	components.ui.addToolbar(mainToolbar);
