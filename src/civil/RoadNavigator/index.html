@@ -97,16 +97,6 @@
 
     mainToolbar.addChild(navigator.uiElement.get("main"));
 
-    window.onkeydown = (event) => {
-        if (event.code === "KeyS") {
-            navigator.select();
-        } else if (event.code === "KeyP") {
-            navigator.delete();
-        } else if (event.code === "KeyF") {
-            navigator.focus();
-        }
-    }
-
     const styler = new OBC.FragmentClipStyler(components);
     await styler.setup();
     const stylerButton = styler.uiElement.get("mainButton");
@@ -121,7 +111,6 @@
     await styler.update();
 
     const hider = new OBC.FragmentHider(components);
-    await hider.loadCached();
     const hiderButton = hider.uiElement.get("main");
     mainToolbar.addChild(hiderButton);
 

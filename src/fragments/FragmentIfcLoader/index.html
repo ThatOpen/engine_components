@@ -184,11 +184,11 @@
         const group = fragments.groups[0];
         const data = fragments.export(group);
         const blob = new Blob([data]);
-        const fragmentFile = new File([blob], 'model.frag');
+        const fragmentFile = new File([blob], 'small.frag');
 
         const files = [];
         files.push(fragmentFile);
-        files.push(new File([JSON.stringify(group.properties)], 'model.json'));
+        files.push(new File([JSON.stringify(group.properties)], 'small.json'));
         const result = await downloadZip(files).blob();
         result.name = 'example';
         download(result);
