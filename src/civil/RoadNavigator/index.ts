@@ -19,7 +19,6 @@ export class RoadNavigator extends Component<any> {
   }
 
   get() {
-    return undefined as any;
   }
 }
 
