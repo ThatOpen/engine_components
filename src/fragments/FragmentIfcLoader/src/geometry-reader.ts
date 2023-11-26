@@ -1,6 +1,6 @@
 import * as WEBIFC from "web-ifc";
 import * as THREE from "three";
-import { IfcGeometries } from "./types";
+import { IfcCivil, IfcGeometries } from "./types";
 
 export class GeometryReader {
   private _webIfc?: WEBIFC.IfcAPI;
@@ -9,11 +9,7 @@ export class GeometryReader {
 
   items: IfcGeometries = {};
   locations: { [itemID: number]: [number, number, number] } = {};
-  CivilItems: {
-    IfcAlignment: WEBIFC.IfcAlignment[];
-    IfcCrossSection2D: WEBIFC.IfcCrossSection[];
-    IfcCrossSection3D: WEBIFC.IfcCrossSection[];
-  } = {
+  CivilItems: IfcCivil = {
     IfcAlignment: [],
     IfcCrossSection2D: [],
     IfcCrossSection3D: [],
