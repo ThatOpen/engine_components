@@ -3,6 +3,7 @@ import { BufferGeometry } from "three";
 import * as WEBIFC from "web-ifc";
 import * as FRAGS from "bim-fragment";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
+import { IfcAlignmentData } from "bim-fragment/alignment";
 import {
   IfcCategories,
   IfcItemsCategories,
@@ -51,9 +52,13 @@ export class DataConverter {
     this.categories = this._ifcCategories.getAll(webIfc, 0);
   }
 
-  async generate(webIfc: WEBIFC.IfcAPI, geometries: IfcGeometries) {
+  async generate(
+    webIfc: WEBIFC.IfcAPI,
+    geometries: IfcGeometries,
+    civilItems: any
+  ) {
     await this._spatialTree.setUp(webIfc);
-    this.createAllFragments(geometries);
+    this.createAllFragments(geometries, civilItems);
     await this.saveModelData(webIfc);
     return this._model;
   }
@@ -128,7 +133,7 @@ export class DataConverter {
     });
   }
 
-  private createAllFragments(geometries: IfcGeometries) {
+  private createAllFragments(geometries: IfcGeometries, civilItems: any) {
     const uniqueItems: {
       [matID: string]: {
         material: THREE.MeshLambertMaterial;
@@ -136,10 +141,63 @@ export class DataConverter {
         expressIDs: string[];
       };
     } = {};
-
+    this._model.ifcCivil = {
+      horizontalAlignments: [] as IfcAlignmentData[],
+      verticalAlignments: [] as IfcAlignmentData[],
+    };
     const matrix = new THREE.Matrix4();
     const color = new THREE.Color();
 
+    // Add alignments data
+    if (civilItems.IfcAlignment) {
+      const dataH: IfcAlignmentData = new IfcAlignmentData();
+      let countH = 0;
+      const valuesH: number[] = [];
+      for (const alignment of civilItems.IfcAlignment) {
+        dataH.CurveLenght.push(countH);
+        if (alignment.horizontal) {
+          for (const hAlignment of alignment.horizontal) {
+            dataH.SegmentLenght.push(countH);
+            for (const point of hAlignment.points) {
+              valuesH.push(point.x);
+              valuesH.push(point.y);
+              countH++;
+            }
+          }
+        }
+      }
+      // Create a new Float32Array with the desired size
+      const resizedCoordinatesH = new Float32Array(valuesH.length);
+      // Set the values from the number[] to the resized Float32Array
+      resizedCoordinatesH.set(valuesH);
+      // Assign the resized Float32Array to dataH.Coordinates
+      dataH.Coordinates = resizedCoordinatesH;
+      this._model.ifcCivil?.horizontalAlignments.push(dataH);
+
+      const dataV: IfcAlignmentData = new IfcAlignmentData();
+      let countV = 0;
+      const valuesV: number[] = [];
+      for (const alignment of civilItems.IfcAlignment) {
+        dataV.CurveLenght.push(countV);
+        if (alignment.vertical) {
+          for (const vAlignment of alignment.vertical) {
+            dataV.SegmentLenght.push(countV);
+            for (const point of vAlignment.points) {
+              valuesV.push(point.x);
+              valuesV.push(point.y);
+              countV++;
+            }
+          }
+        }
+      }
+      // Create a new Float32Array with the desired size
+      const resizedCoordinatesV = new Float32Array(valuesV.length);
+      // Set the values from the number[] to the resized Float32Array
+      resizedCoordinatesV.set(valuesV);
+      // Assign the resized Float32Array to dataH.Coordinates
+      dataV.Coordinates = resizedCoordinatesV;
+      this._model.ifcCivil?.verticalAlignments.push(dataV);
+    }
     for (const id in geometries) {
       const { buffer, instances } = geometries[id];
 

@@ -77,9 +77,12 @@ export class FragmentIfcLoader
     await this.readIfcFile(data);
 
     await this.readAllGeometries();
+    await this._geometry.streamAlignment(this._webIfc);
+    await this._geometry.streamCrossSection(this._webIfc);
 
     const items = this._geometry.items;
-    const model = await this._converter.generate(this._webIfc, items);
+    const civItems = this._geometry.CivilItems;
+    const model = await this._converter.generate(this._webIfc, items, civItems);
     model.name = name;
 
     if (this.settings.saveLocations) {
@@ -193,6 +196,10 @@ export class FragmentIfcLoader
       }
       this._geometry.streamMesh(this._webIfc, mesh);
     });
+
+    // Load civil items
+    this._geometry.streamAlignment(this._webIfc);
+    this._geometry.streamCrossSection(this._webIfc);
   }
 
   private cleanUp() {

@@ -1,5 +1,7 @@
+import { unzip } from "unzipit";
 import { Component, Event } from "../../base-types";
 import { Components } from "../../core";
+import { FragmentManager } from "../../fragments";
 
 /**
  * An object to easily use the services of That Open Platform.
@@ -79,7 +81,7 @@ export class CloudStorage extends Component<any[]> {
 
   async delete(modelID: string) {
     const { base, tokenParam } = this._urls;
-    const url = `${base}/${modelID}${tokenParam}`;
+    const url = `${base}/${modelID}${tokenParam}${this.token}`;
     const result = await fetch(url, { method: "DELETE" });
     return result.json();
   }
@@ -95,7 +97,13 @@ export class CloudStorage extends Component<any[]> {
     const interval = setInterval(async () => {
       const response = await this.getModel(modelID);
       if (response.model.status === "PROCESSED") {
-        await this.modelProcessed.trigger(response);
+        const { entries } = await unzip(response.downloadUrl);
+        const arrayBuffer = await entries["model.frag"].arrayBuffer();
+        const buffer = new Uint8Array(arrayBuffer);
+        const fragments = await this.components.tools.get(FragmentManager);
+        const model = await fragments.load(buffer);
+        model.properties = await entries["properties.json"].json();
+        await this.modelProcessed.trigger(model);
         clearInterval(interval);
       }
     }, this.checkInterval);
