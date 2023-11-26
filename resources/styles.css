@@ -1081,10 +1081,6 @@ html {
   overflow: auto;
 }
 
-.overflow-hidden{
-  overflow: hidden;
-}
-
 .overflow-visible{
   overflow: visible;
 }

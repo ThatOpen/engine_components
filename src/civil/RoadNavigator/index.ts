@@ -321,7 +321,7 @@ export class RoadNavigator extends Component<Lines> implements Disposable {
     const { scene2d } = this.newFloating2DScene("Floorplan", true);
     const { postproduction } = scene2d.renderer as PostproductionRenderer;
     postproduction.overrideClippingPlanes = true;
-    postproduction.overrideScene = scene2d.get();
+    postproduction.overrideScene = scene2d.scene;
     postproduction.overrideCamera = scene2d.camera;
     postproduction.enabled = true;
     scene2d.camera.position.set(0, 20, 0);
