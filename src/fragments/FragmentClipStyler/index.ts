@@ -1,5 +1,12 @@
 import * as THREE from "three";
-import { Component, Disposable, Event, UI, UIElement } from "../../base-types";
+import {
+  Component,
+  Configurable,
+  Disposable,
+  Event,
+  UI,
+  UIElement,
+} from "../../base-types";
 import {
   Button,
   ColorInput,
@@ -21,9 +28,13 @@ export interface ClipStyleCardData {
   categories: string;
 }
 
+export interface FragmentClipStylerConfig {
+  force: boolean;
+}
+
 export class FragmentClipStyler
   extends Component<ClipStyleCardData[]>
-  implements UI, Disposable
+  implements UI, Disposable, Configurable<FragmentClipStylerConfig>
 {
   static readonly uuid = "14de9fbd-2151-4c01-8e07-22a2667e1126" as const;
 
@@ -79,12 +90,19 @@ export class FragmentClipStyler
     }
   }
 
-  async setup(force = false) {
+  config: FragmentClipStylerConfig = {
+    force: false,
+  };
+  readonly onSetup = new Event<FragmentClipStyler>();
+  async setup(config?: Partial<FragmentClipStylerConfig>) {
+    this.config = { ...this.config, ...config };
+    const { force } = this.config;
     const noCards = Object.keys(this.styleCards).length === 0;
     if (force || noCards) {
       localStorage.setItem(this.localStorageID, this._defaultStyles);
       await this.loadCachedStyles();
     }
+    this.onSetup.trigger(this);
   }
 
   get() {
