@@ -99,9 +99,9 @@ export class RoadNavigator extends Component<any> implements UI {
       this._caster.setFromCamera(position, hCamera);
       const result = this._caster.intersectObject(this._alignments.horizontal);
       if (result.length) {
-        console.log(result);
         const { index, point } = result[0];
         if (index === undefined) return;
+
         const geom = this._alignments.horizontal.geometry;
         if (!geom.index) return;
 
@@ -126,6 +126,28 @@ export class RoadNavigator extends Component<any> implements UI {
         const coordsBuffer = new Float32Array([x, y, 0]);
         const coordsAttr = new THREE.BufferAttribute(coordsBuffer, 3);
         horizontal.geometry.setAttribute("position", coordsAttr);
+
+        let verticalIndex = -1;
+        const alignmentIndex =
+          this._selected.ifcCivil.horizontalAlignments.alignmentIndex;
+        if (pointIndex1 >= alignmentIndex[alignmentIndex.length - 1]) {
+          verticalIndex = alignmentIndex.length - 1;
+        } else {
+          for (let i = 0; i < alignmentIndex.length - 1; i++) {
+            const start = alignmentIndex[i];
+            const end = alignmentIndex[i + 1];
+            if (pointIndex1 >= start && pointIndex1 < end) {
+              verticalIndex = i;
+            }
+          }
+        }
+
+        this.getAlignmentGeometry(
+          this._selected.ifcCivil.verticalAlignments,
+          this._alignments.vertical.geometry,
+          false,
+          verticalIndex
+        );
 
         // const { alignmentIndex } = this._selected.ifcCivil.horizontalAlignments;
         // let counter = 0;
@@ -188,16 +210,21 @@ export class RoadNavigator extends Component<any> implements UI {
   private getAlignmentGeometry(
     alignment: IfcAlignmentData,
     geometry: THREE.BufferGeometry,
-    is3D: boolean
+    is3D: boolean,
+    selectedIndex: number = -1
   ) {
-    const data = this.getAlignmentData(alignment, is3D);
+    const data = this.getAlignmentData(alignment, is3D, selectedIndex);
     const coordsBuffer = new Float32Array(data.coords);
     const coordsAttr = new THREE.BufferAttribute(coordsBuffer, 3);
     geometry.setAttribute("position", coordsAttr);
     geometry.setIndex(data.index);
   }
 
-  private getAlignmentData(alignment: IfcAlignmentData, is3D: boolean) {
+  private getAlignmentData(
+    alignment: IfcAlignmentData,
+    is3D: boolean,
+    selectedIndex: number = -1
+  ) {
     const coords: number[] = [];
     const index: number[] = [];
     const { coordinates, curveIndex } = alignment;
@@ -207,24 +234,63 @@ export class RoadNavigator extends Component<any> implements UI {
     let isSegmentStart = true;
     const factor = is3D ? 3 : 2;
     const last = coordinates.length / factor - 1;
-    for (let i = 0; i < curveIndex.length; i++) {
-      const start = curveIndex[i];
-      const isLast = i === curveIndex.length - 1;
-      const end = isLast ? last : curveIndex[i + 1];
-      isSegmentStart = true;
-      for (let j = start; j < end; j++) {
-        const x = coordinates[j * factor] - offsetX;
-        const y = coordinates[j * factor + 1] - offsetY;
-        const z = is3D ? coordinates[j * factor + 2] - offsetZ : 0;
-        coords.push(x, y, z);
-        if (isSegmentStart) {
-          isSegmentStart = false;
-        } else {
-          index.push(j - 1, j);
+    if (selectedIndex === -1) {
+      for (let i = 0; i < curveIndex.length; i++) {
+        const start = curveIndex[i];
+        const isLast = i === curveIndex.length - 1;
+        const end = isLast ? last : curveIndex[i + 1];
+        isSegmentStart = true;
+        for (let j = start; j < end; j++) {
+          const x = coordinates[j * factor] - offsetX;
+          const y = coordinates[j * factor + 1] - offsetY;
+          const z = is3D ? coordinates[j * factor + 2] - offsetZ : 0;
+          coords.push(x, y, z);
+          if (isSegmentStart) {
+            isSegmentStart = false;
+          } else {
+            index.push(j - 1, j);
+          }
+        }
+      }
+    } else {
+      let counter = 0;
+      for (let i = 0; i < curveIndex.length; i++) {
+        if (selectedIndex === this.currentAlignment(alignment, curveIndex[i])) {
+          const start = curveIndex[i];
+          const isLast = i === curveIndex.length - 1;
+          const end = isLast ? last : curveIndex[i + 1];
+          isSegmentStart = true;
+          for (let j = start; j < end; j++) {
+            const x = coordinates[j * factor] - offsetX;
+            const y = coordinates[j * factor + 1] - offsetY;
+            const z = is3D ? coordinates[j * factor + 2] - offsetZ : 0;
+            coords.push(x, y, z);
+            if (isSegmentStart) {
+              isSegmentStart = false;
+            } else {
+              index.push(counter - 1, counter);
+            }
+            counter++;
+          }
         }
       }
     }
     return { coords, index };
+  }
+
+  private currentAlignment(alignment: IfcAlignmentData, curveIndex: number) {
+    const last = alignment.alignmentIndex.length - 1;
+    if (curveIndex >= alignment.alignmentIndex[last]) {
+      return last;
+    }
+    for (let i = 0; i < alignment.alignmentIndex.length - 1; i++) {
+      const start = alignment.alignmentIndex[i];
+      const end = alignment.alignmentIndex[i + 1];
+      if (curveIndex >= start && curveIndex < end) {
+        return i;
+      }
+    }
+    return -1;
   }
 
   private setUI() {
