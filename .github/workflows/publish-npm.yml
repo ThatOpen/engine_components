@@ -9,7 +9,6 @@ on:
     secrets:
       NPM_TOKEN:
         required: true
-        type: string
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,6 +20,6 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           scope: '@octocat'
       - run: yarn
-      - run: yarn npm publish
+      - run: yarn publish-repo
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
