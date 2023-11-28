@@ -1011,8 +1011,10 @@ base@^0.11.1:
     mixin-deep "^1.2.0"
     pascalcase "^0.1.1"
 
-bim-fragment@1.0.23:
-  version "1.0.23"
+bim-fragment@1.0.24:
+  version "1.0.24"
+  resolved "https://registry.npmjs.org/bim-fragment/-/bim-fragment-1.0.24.tgz"
+  integrity sha512-t3GFCpIjnexj3ao9578ys56Uopm/xIrfcOJuagNzYCPLSH878eADR8C9PheFGabOllnA63PdJ9mbjq0zVsPSBg==
   dependencies:
     flatbuffers "^23.3.3"
     three "0.152.2"
