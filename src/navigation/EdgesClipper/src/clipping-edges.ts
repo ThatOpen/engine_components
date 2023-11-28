@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { FragmentMesh } from "bim-fragment/fragment-mesh";
+import { FragmentMesh } from "bim-fragment";
 import { ClipStyle, Edge } from "./types";
 import { EdgesStyles, LineStyles } from "./edges-styles";
 import {

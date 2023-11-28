@@ -3,7 +3,7 @@ import { BufferGeometry } from "three";
 import * as WEBIFC from "web-ifc";
 import * as FRAGS from "bim-fragment";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
-import { IfcAlignmentData } from "bim-fragment/alignment";
+import { IfcAlignmentData } from "bim-fragment";
 import {
   IfcCategories,
   IfcItemsCategories,
@@ -141,23 +141,19 @@ export class DataConverter {
         expressIDs: string[];
       };
     } = {};
-    this._model.ifcCivil = {
-      horizontalAlignments: [] as IfcAlignmentData[],
-      verticalAlignments: [] as IfcAlignmentData[],
-    };
     const matrix = new THREE.Matrix4();
     const color = new THREE.Color();
 
     // Add alignments data
     if (civilItems.IfcAlignment) {
-      const dataH: IfcAlignmentData = new IfcAlignmentData();
+      const horizontalAlignments: IfcAlignmentData = new IfcAlignmentData();
       let countH = 0;
       const valuesH: number[] = [];
       for (const alignment of civilItems.IfcAlignment) {
-        dataH.CurveLenght.push(countH);
+        horizontalAlignments.alignmentIndex.push(countH);
         if (alignment.horizontal) {
           for (const hAlignment of alignment.horizontal) {
-            dataH.SegmentLenght.push(countH);
+            horizontalAlignments.curveIndex.push(countH);
             for (const point of hAlignment.points) {
               valuesH.push(point.x);
               valuesH.push(point.y);
@@ -171,17 +167,16 @@ export class DataConverter {
       // Set the values from the number[] to the resized Float32Array
       resizedCoordinatesH.set(valuesH);
       // Assign the resized Float32Array to dataH.Coordinates
-      dataH.Coordinates = resizedCoordinatesH;
-      this._model.ifcCivil?.horizontalAlignments.push(dataH);
+      horizontalAlignments.coordinates = resizedCoordinatesH;
 
-      const dataV: IfcAlignmentData = new IfcAlignmentData();
+      const verticalAlignments: IfcAlignmentData = new IfcAlignmentData();
       let countV = 0;
       const valuesV: number[] = [];
       for (const alignment of civilItems.IfcAlignment) {
-        dataV.CurveLenght.push(countV);
+        verticalAlignments.alignmentIndex.push(countV);
         if (alignment.vertical) {
           for (const vAlignment of alignment.vertical) {
-            dataV.SegmentLenght.push(countV);
+            verticalAlignments.curveIndex.push(countV);
             for (const point of vAlignment.points) {
               valuesV.push(point.x);
               valuesV.push(point.y);
@@ -195,8 +190,9 @@ export class DataConverter {
       // Set the values from the number[] to the resized Float32Array
       resizedCoordinatesV.set(valuesV);
       // Assign the resized Float32Array to dataH.Coordinates
-      dataV.Coordinates = resizedCoordinatesV;
-      this._model.ifcCivil?.verticalAlignments.push(dataV);
+      verticalAlignments.coordinates = resizedCoordinatesV;
+
+      this._model.ifcCivil = { horizontalAlignments, verticalAlignments };
     }
     for (const id in geometries) {
       const { buffer, instances } = geometries[id];

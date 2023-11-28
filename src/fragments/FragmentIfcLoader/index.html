@@ -256,7 +256,9 @@
 
     // For debugging
 
-    // fragmentIfcLoader.ifcLoaded.on((model) => {
+    fragmentIfcLoader.onIfcLoaded.add((model) => {
+
+        console.log(model);
 
     // let sorted = [];
     // for(const frag of model.fragments) {
@@ -277,7 +279,7 @@
     // 	mat.color.setRGB(value, value, value, "srgb");
     // 	value += step;
     // }
-    // });
+    });
 
 
 </script>

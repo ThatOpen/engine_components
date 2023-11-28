@@ -1,6 +1,5 @@
 import * as THREE from "three";
-import { Fragment } from "bim-fragment";
-import { FragmentMesh } from "bim-fragment/fragment-mesh";
+import { Fragment, FragmentMesh } from "bim-fragment";
 import { Component, Disposable, Event, FragmentIdMap } from "../../base-types";
 import { FragmentManager } from "../FragmentManager";
 import { FragmentBoundingBox } from "../FragmentBoundingBox";
