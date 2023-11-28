@@ -1,14 +1,29 @@
 import * as THREE from "three";
-import { Component, Disposable } from "../../base-types";
+import { Component, Configurable, Disposable, Event } from "../../base-types";
 import { Disposer } from "../Disposer";
 import { Components } from "../Components";
+
+export interface SimpleSceneConfig {
+  directionalLight: {
+    color: THREE.Color;
+    intensity: number;
+    position: THREE.Vector3;
+  };
+  ambientLight: {
+    color: THREE.Color;
+    intensity: number;
+  };
+}
 
 /**
  * A basic 3D [scene](https://threejs.org/docs/#api/en/scenes/Scene) to add
  * objects hierarchically, and easily dispose them when you are finished with it.
  * @noInheritDoc
  */
-export class SimpleScene extends Component<THREE.Scene> implements Disposable {
+export class SimpleScene
+  extends Component<THREE.Scene>
+  implements Disposable, Configurable<{}>
+{
   /** {@link Component.enabled} */
   enabled = true;
 
@@ -37,14 +52,32 @@ export class SimpleScene extends Component<THREE.Scene> implements Disposable {
     this._scene.children = [];
   }
 
+  config: Required<SimpleSceneConfig> = {
+    directionalLight: {
+      color: new THREE.Color("white"),
+      intensity: 0.6,
+      position: new THREE.Vector3(5, 10, 3),
+    },
+    ambientLight: {
+      color: new THREE.Color("white"),
+      intensity: 0.5,
+    },
+  };
+  readonly onSetup = new Event<SimpleScene>();
+
   /** Creates a simple and nice default set up for the scene (e.g. lighting). */
-  setup() {
-    const directionalLight = new THREE.DirectionalLight();
-    directionalLight.position.set(5, 10, 3);
-    directionalLight.intensity = 0.5;
-    this._scene.add(directionalLight);
-    const ambientLight = new THREE.AmbientLight();
-    ambientLight.intensity = 0.5;
-    this._scene.add(ambientLight);
+  async setup(config?: Partial<SimpleSceneConfig>) {
+    this.config = { ...this.config, ...config };
+    const directionalLight = new THREE.DirectionalLight(
+      this.config.directionalLight.color,
+      this.config.directionalLight.intensity
+    );
+    directionalLight.position.copy(this.config.directionalLight.position);
+    const ambientLight = new THREE.AmbientLight(
+      this.config.ambientLight.color,
+      this.config.ambientLight.intensity
+    );
+    this._scene.add(directionalLight, ambientLight);
+    this.onSetup.trigger(this);
   }
 }

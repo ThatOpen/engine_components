@@ -166,6 +166,22 @@ export interface Createable {
 }
 
 /**
+ * Whether this component supports to be configured.
+ */
+export interface Configurable<T extends Record<string, any>> {
+  /** Use the provided configuration to setup the tool. */
+  setup: (config?: Partial<T>) => Promise<void>;
+
+  /** Fired after successfully calling {@link Configurable.setup()}  */
+  readonly onSetup: Event<any>;
+
+  /** Object holding the tool configuration. Is not meant to be edited directly, if you need
+   * to make changes to this object, use {@link Configurable.setup()} just after the tool is instantiated.
+   */
+  config: Required<T>;
+}
+
+/**
  * Whether this component has a representation in the user
  * interface, like a button or a window.
  */
