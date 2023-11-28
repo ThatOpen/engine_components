@@ -27,7 +27,7 @@ export class SimpleScene extends Component<THREE.Scene> implements Disposable {
 
   /** {@link Disposable.dispose} */
   async dispose() {
-    const disposer = await this.components.tools.get(Disposer);
+    const disposer = this.components.tools.get(Disposer);
     for (const child of this._scene.children) {
       const mesh = child as THREE.Mesh;
       if (mesh.geometry) {

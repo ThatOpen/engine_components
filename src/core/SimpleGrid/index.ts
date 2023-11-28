@@ -185,7 +185,7 @@ export class SimpleGrid
   /** {@link Disposable.dispose} */
   async dispose() {
     this.setupEvents(false);
-    const disposer = await this.components.tools.get(Disposer);
+    const disposer = this.components.tools.get(Disposer);
     disposer.destroy(this._grid);
   }
 

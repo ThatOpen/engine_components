@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { MeshBVH } from "three-mesh-bvh";
-import { FragmentMesh } from "bim-fragment/fragment-mesh";
+import { FragmentMesh } from "bim-fragment";
 import {
   compressEdgeOverlaps,
   edgesToGeometry,
