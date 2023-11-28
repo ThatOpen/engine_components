@@ -16,7 +16,7 @@ export class EdgesClipper extends SimpleClipper<EdgesPlane> {
   constructor(components: Components) {
     super(components);
 
-    this.components.tools.list.set(EdgesClipper.uuid, this);
+    this.components.tools.list[EdgesClipper.uuid] = this;
 
     this.PlaneType = EdgesPlane;
     this.styles = new EdgesStyles(components);

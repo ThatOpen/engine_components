@@ -57,9 +57,9 @@ export class IfcPropertiesFinder
     this._conditionFunctions = this.getConditionFunctions();
   }
 
-  async init() {
+  init() {
     if (this.components.uiEnabled) {
-      await this.setUI();
+      this.setUI();
     }
   }
 
@@ -88,7 +88,7 @@ export class IfcPropertiesFinder
     localStorage.removeItem(this._localStorageID);
   }
 
-  private async setUI() {
+  private setUI() {
     const main = new Button(this.components, {
       materialIconName: "manage_search",
     });
@@ -96,7 +96,7 @@ export class IfcPropertiesFinder
     const queryWindow = new FloatingWindow(this.components);
     this.components.ui.add(queryWindow);
 
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
 
     // queryWindow.get().classList.add("overflow-visible");
     queryWindow.get().style.width = "700px";
@@ -180,7 +180,7 @@ export class IfcPropertiesFinder
   }
 
   async find(queryGroups?: QueryGroup[], queryModels?: FragmentsGroup[]) {
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
 
     const queries = this.uiElement.get<QueryBuilder>("query");
     const models = queryModels || fragments.groups;
@@ -232,13 +232,13 @@ export class IfcPropertiesFinder
       result[model.uuid] = { modelEntities, otherEntities };
     }
 
-    const foundFragments = await this.toFragmentMap(result);
-    await this.onFound.trigger(foundFragments);
+    const foundFragments = this.toFragmentMap(result);
+    this.onFound.trigger(foundFragments);
     return foundFragments;
   }
 
-  private async toFragmentMap(data: QueryResult) {
-    const fragments = await this.components.tools.get(FragmentManager);
+  private toFragmentMap(data: QueryResult) {
+    const fragments = this.components.tools.get(FragmentManager);
     const fragmentMap: FragmentIdMap = {};
     for (const modelID in data) {
       const model = fragments.groups.find((m) => m.uuid === modelID);

@@ -66,7 +66,7 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
 
   /** {@link Disposable.dispose} */
   async dispose() {
-    const disposer = await this.components.tools.get(Disposer);
+    const disposer = this.components.tools.get(Disposer);
     for (const mesh of this._meshes) {
       disposer.destroy(mesh);
     }

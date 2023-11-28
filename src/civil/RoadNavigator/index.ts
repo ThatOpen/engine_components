@@ -1,9 +1,5 @@
-
-import {
-  Components,
-  ToolComponent,
-} from "../../core";
-import { Component, Disposable, UIElement } from "../../base-types";
+import { Components, ToolComponent } from "../../core";
+import { Component } from "../../base-types";
 
 export class RoadNavigator extends Component<any> {
   /** {@link Component.uuid} */
@@ -15,11 +11,9 @@ export class RoadNavigator extends Component<any> {
     super(components);
 
     this.components.tools.add(RoadNavigator.uuid, this);
-
   }
 
-  get() {
-  }
+  get() {}
 }
 
 ToolComponent.libraryUUIDs.add(RoadNavigator.uuid);
