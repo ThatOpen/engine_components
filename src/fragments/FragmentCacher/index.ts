@@ -19,7 +19,7 @@ export class FragmentCacher extends LocalCacher {
   constructor(components: Components) {
     super(components);
 
-    components.tools.list.set(FragmentCacher.uuid, this);
+    components.tools.list[FragmentCacher.uuid] = this;
 
     if (components.uiEnabled) {
       this.setupUI();
@@ -40,7 +40,7 @@ export class FragmentCacher extends LocalCacher {
       return null;
     }
 
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
 
     const fragmentFile = await this.get(fragmentsCacheID);
     if (fragmentFile === null) {
@@ -64,7 +64,7 @@ export class FragmentCacher extends LocalCacher {
   }
 
   async saveFragmentGroup(group: FragmentsGroup, id = group.uuid) {
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
 
     const { fragmentsCacheID, propertiesCacheID } = this.getIDs(id);
     const exported = fragments.export(group);
@@ -137,7 +137,7 @@ export class FragmentCacher extends LocalCacher {
 
   private async onSaveButtonClicked() {
     const floatingMenu = this.uiElement.get<FloatingWindow>("floatingMenu");
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
 
     floatingMenu.title = "Save items";
     if (floatingMenu.visible && this._mode === "save") {

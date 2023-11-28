@@ -128,7 +128,7 @@ export class ScreenCuller
         material.dispose();
       }
     }
-    const disposer = await this.components.tools.get(Disposer);
+    const disposer = this.components.tools.get(Disposer);
     for (const id in this._colorMeshes) {
       const mesh = this._colorMeshes.get(id);
       if (mesh) {

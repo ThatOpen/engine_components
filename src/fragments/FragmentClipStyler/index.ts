@@ -105,9 +105,9 @@ export class FragmentClipStyler
   }
 
   async update(ids = Object.keys(this.styleCards)) {
-    const clipper = await this.components.tools.get(EdgesClipper);
-    const fragments = await this.components.tools.get(FragmentManager);
-    const classifier = await this.components.tools.get(FragmentClassifier);
+    const clipper = this.components.tools.get(EdgesClipper);
+    const fragments = this.components.tools.get(FragmentManager);
+    const classifier = this.components.tools.get(FragmentClassifier);
 
     for (const id of ids) {
       const card = this.styleCards[id];
@@ -122,7 +122,7 @@ export class FragmentClipStyler
       const categoryList = card.categories.value.split(",");
       const entities = categoryList.map((item) => item.replace(" ", ""));
 
-      const found = await classifier.find({ entities });
+      const found = classifier.find({ entities });
       for (const fragID in found) {
         const { mesh } = fragments.list[fragID];
         style.fragments[fragID] = new Set(found[fragID]);
@@ -199,7 +199,7 @@ export class FragmentClipStyler
 
   private async deleteStyleCard(id: string, updateCache = true) {
     const found = this.styleCards[id];
-    const clipper = await this.components.tools.get(EdgesClipper);
+    const clipper = this.components.tools.get(EdgesClipper);
     clipper.styles.deleteStyle(id, true);
     if (found) {
       await found.styleCard.dispose();
@@ -367,7 +367,7 @@ export class FragmentClipStyler
       this.onChange.trigger();
     });
 
-    const clipper = await this.components.tools.get(EdgesClipper);
+    const clipper = this.components.tools.get(EdgesClipper);
 
     clipper.styles.create(
       id,

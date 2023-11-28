@@ -1,6 +1,5 @@
 import * as THREE from "three";
-import { Fragment } from "bim-fragment";
-import { FragmentMesh } from "bim-fragment/fragment-mesh";
+import { Fragment, FragmentMesh } from "bim-fragment";
 import { Component, Disposable, Event, FragmentIdMap } from "../../base-types";
 import { FragmentManager } from "../FragmentManager";
 import { FragmentBoundingBox } from "../FragmentBoundingBox";
@@ -156,7 +155,7 @@ export class FragmentHighlighter
     if (!this.fillEnabled) {
       return;
     }
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
     for (const fragmentID in fragments.list) {
       const fragment = fragments.list[fragmentID];
       this.addHighlightToFragment(fragment);
@@ -176,7 +175,7 @@ export class FragmentHighlighter
     if (!this.enabled) return null;
     this.checkSelection(name);
 
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
     const fragList: Fragment[] = [];
     const meshes = fragments.meshes;
     const result = this.components.raycaster.castRay(meshes);
@@ -256,7 +255,7 @@ export class FragmentHighlighter
         styles[fragID] = new Set<string>();
       }
 
-      const fragments = await this.components.tools.get(FragmentManager);
+      const fragments = this.components.tools.get(FragmentManager);
       const fragment = fragments.list[fragID];
 
       const idsNum = new Set<number>();
@@ -310,8 +309,8 @@ export class FragmentHighlighter
       return;
     }
 
-    const bbox = await this.components.tools.get(FragmentBoundingBox);
-    const fragments = await this.components.tools.get(FragmentManager);
+    const bbox = this.components.tools.get(FragmentBoundingBox);
+    const fragments = this.components.tools.get(FragmentManager);
     bbox.reset();
 
     const selected = this.selection[name];
@@ -349,7 +348,7 @@ export class FragmentHighlighter
   }
 
   private async clearStyle(name: string) {
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
 
     for (const fragID in this.selection[name]) {
       const fragment = fragments.list[fragID];
@@ -365,7 +364,7 @@ export class FragmentHighlighter
   }
 
   private async updateFragmentFill(name: string, fragmentID: string) {
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
 
     const ids = this.selection[name][fragmentID];
     const fragment = fragments.list[fragmentID];
@@ -373,16 +372,9 @@ export class FragmentHighlighter
     const selection = fragment.fragments[name];
     if (!selection) return;
 
-    // #region Old child/parent code
-    // const scene = this._components.scene.get();
-    // scene.add(selection.mesh); //If we add selection.mesh directly to the scene, it won't be coordinated unless we do so manually.
-    // #endregion
-
-    // #region New child/parent code
     const fragmentParent = fragment.mesh.parent;
     if (!fragmentParent) return;
     fragmentParent.add(selection.mesh);
-    // #endregion
 
     const isBlockFragment = selection.blocks.count > 1;
     if (isBlockFragment) {
@@ -437,7 +429,7 @@ export class FragmentHighlighter
   }
 
   private async clearOutlines() {
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
 
     const effects = this._postproduction.customEffects;
     const fragmentsOutline = effects.outlinedMeshes.fragments;
@@ -457,7 +449,7 @@ export class FragmentHighlighter
   }
 
   private async updateFragmentOutline(name: string, fragmentID: string) {
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
 
     if (!this.selection[name][fragmentID]) {
       return;
