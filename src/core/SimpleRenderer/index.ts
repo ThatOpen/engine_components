@@ -163,7 +163,6 @@ export class SimpleRenderer
     if (!this.container) {
       const parent = this._renderer.domElement.parentElement;
       if (parent) {
-        parent.style.position = "relative";
         this.container = parent;
         parent.appendChild(this._renderer2D.domElement);
       }
