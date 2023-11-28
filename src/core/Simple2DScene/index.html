@@ -133,18 +133,18 @@
 	mainWindow.domElement.style.width = '20rem';
 	mainWindow.domElement.style.height = '20rem';
 
+	mainWindow.onVisible.add(() => {
+		if(mainWindow.visible) {
+			simple2dScene.grid.regenerate()
+		}
+	})
+
 	const mainButton = new OBC.Button(components);
 	mainButton.materialIcon = 'fact_check';
 	mainButton.tooltip = '2D scene';
 	mainButton.onClick.add(() => {
 		mainWindow.visible = !mainWindow.visible;
 	});
-
-	mainWindow.onVisible.add(() => {
-		if(mainWindow.visible) {
-			simple2dScene.grid.regenerate()
-    }
-  })
 
 	const mainToolbar = new OBC.Toolbar(components);
 	components.ui.addToolbar(mainToolbar);

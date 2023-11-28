@@ -87,7 +87,7 @@ export class Drawer extends SimpleUIComponent<HTMLDivElement> {
 
   constructor(components: Components) {
     const template = `
-        <div class="fixed bg-ifcjs-100 backdrop-blur-xl shadow-md overflow-auto shadow-lg z-20 top-0 left-0 h-full transition-all duration-500 transform">
+        <div class="fixed bg-ifcjs-100 backdrop-blur-xl shadow-md overflow-auto shadow-lg z-20 top-0 left-0 h-full transition-all duration-500 transform text-white">
             <div data-tooeen-slot="content"></div>
         </div>
     `;
