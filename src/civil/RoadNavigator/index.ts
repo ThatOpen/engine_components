@@ -1,8 +1,8 @@
 import * as THREE from "three";
-import { FragmentsGroup } from "bim-fragment";
+import { FragmentsGroup, IfcAlignmentData } from "bim-fragment";
 import { Components, Simple2DScene, ToolComponent } from "../../core";
 import { Component, UI, UIElement } from "../../base-types";
-import { FloatingWindow } from "../../ui";
+import { Drawer, FloatingWindow } from "../../ui";
 
 export class RoadNavigator extends Component<any> implements UI {
   /** {@link Component.uuid} */
@@ -12,16 +12,42 @@ export class RoadNavigator extends Component<any> implements UI {
 
   uiElement = new UIElement<{
     horizontalAlignment: FloatingWindow;
+    verticalAlignment: Drawer;
   }>();
 
-  private _horizontalScene: Simple2DScene;
+  private _scenes: {
+    horizontal: Simple2DScene;
+    vertical: Simple2DScene;
+  };
+
+  private _alignments: {
+    horizontal: THREE.LineSegments;
+    vertical: THREE.LineSegments;
+  };
 
   constructor(components: Components) {
     super(components);
 
     this.components.tools.add(RoadNavigator.uuid, this);
 
-    this._horizontalScene = new Simple2DScene(this.components, false);
+    this._scenes = {
+      horizontal: new Simple2DScene(this.components, false),
+      vertical: new Simple2DScene(this.components, false),
+    };
+
+    this._alignments = {
+      horizontal: new THREE.LineSegments(
+        new THREE.BufferGeometry(),
+        new THREE.LineBasicMaterial()
+      ),
+      vertical: new THREE.LineSegments(
+        new THREE.BufferGeometry(),
+        new THREE.LineBasicMaterial()
+      ),
+    };
+
+    this._scenes.vertical.get().add(this._alignments.vertical);
+    this._scenes.horizontal.get().add(this._alignments.horizontal);
 
     if (this.components.uiEnabled) {
       this.setUI();
@@ -35,25 +61,30 @@ export class RoadNavigator extends Component<any> implements UI {
       console.warn("The provided model doesn't have civil data!");
       return;
     }
-    if (!this._horizontalScene) {
-      throw new Error("Civil horizontal scene not initialized");
-    }
-    const hGeometry = new THREE.BufferGeometry();
-    const hMaterial = new THREE.LineBasicMaterial();
-    const hLineSegments = new THREE.LineSegments(hGeometry, hMaterial);
-    const horizontalRoot = this._horizontalScene.get();
-    horizontalRoot.add(hLineSegments);
 
-    const hCoords: number[] = [];
-    const hIndex: number[] = [];
+    this.getAlignmentGeometry(
+      model.ifcCivil.horizontalAlignments,
+      this._alignments.horizontal.geometry
+    );
+  }
 
-    const { horizontalAlignments } = model.ifcCivil;
+  private getAlignmentGeometry(
+    alignment: IfcAlignmentData,
+    geometry: THREE.BufferGeometry
+  ) {
+    const data = this.getAlignmentData(alignment);
+    const coordsBuffer = new Float32Array(data.coords);
+    const coordsAttr = new THREE.BufferAttribute(coordsBuffer, 3);
+    geometry.setAttribute("position", coordsAttr);
+    geometry.setIndex(data.index);
+  }
 
-    const { coordinates, curveIndex } = horizontalAlignments;
-
+  private getAlignmentData(alignment: IfcAlignmentData) {
+    const coords: number[] = [];
+    const index: number[] = [];
+    const { coordinates, curveIndex } = alignment;
     const offsetX = coordinates[0];
     const offsetY = coordinates[1];
-
     let isSegmentStart = true;
     const last = coordinates.length / 2 - 1;
     for (let i = 0; i < curveIndex.length; i++) {
@@ -64,47 +95,34 @@ export class RoadNavigator extends Component<any> implements UI {
       for (let j = start; j < end; j++) {
         const x = coordinates[j * 2] - offsetX;
         const y = coordinates[j * 2 + 1] - offsetY;
-        hCoords.push(x, y, 0);
+        coords.push(x, y, 0);
         if (isSegmentStart) {
           isSegmentStart = false;
         } else {
-          hIndex.push(j - 1, j);
+          index.push(j - 1, j);
         }
       }
     }
-
-    const hCoordsBuffer = new Float32Array(hCoords);
-    const hCoordsAttr = new THREE.BufferAttribute(hCoordsBuffer, 3);
-    hGeometry.setAttribute("position", hCoordsAttr);
-    hGeometry.setIndex(hIndex);
+    return { coords, index };
   }
 
   private setUI() {
     const horizontalAlignment = new FloatingWindow(this.components);
     this.components.ui.add(horizontalAlignment);
     horizontalAlignment.visible = false;
-    horizontalAlignment.domElement.style.height = "20rem";
-    const horContainer = this._horizontalScene.uiElement.get("container");
-    horizontalAlignment.addChild(horContainer);
+    const hContainer = this._scenes.horizontal.uiElement.get("container");
+    horizontalAlignment.addChild(hContainer);
 
     horizontalAlignment.onResized.add(() =>
-      this._horizontalScene.grid.regenerate()
+      this._scenes.horizontal.grid.regenerate()
     );
-
-    if (this.components.renderer.isUpdateable()) {
-      this.components.renderer.onAfterUpdate.add(async () => {
-        if (horizontalAlignment.visible) {
-          await this._horizontalScene.update();
-        }
-      });
-    }
 
     horizontalAlignment.slots.content.domElement.style.padding = "0";
     horizontalAlignment.slots.content.domElement.style.overflow = "hidden";
 
     horizontalAlignment.onResized.add(() => {
       const { width, height } = horizontalAlignment.containerSize;
-      this._horizontalScene.setSize(height, width);
+      this._scenes.horizontal.setSize(height, width);
     });
 
     horizontalAlignment.domElement.style.width = "20rem";
@@ -112,12 +130,42 @@ export class RoadNavigator extends Component<any> implements UI {
 
     horizontalAlignment.onVisible.add(() => {
       if (horizontalAlignment.visible) {
-        this._horizontalScene.grid.regenerate();
+        this._scenes.horizontal.grid.regenerate();
       }
     });
 
+    const verticalAlignment = new Drawer(this.components);
+    this.components.ui.add(verticalAlignment);
+    verticalAlignment.alignment = "top";
+
+    verticalAlignment.onVisible.add(() => {
+      this._scenes.vertical.grid.regenerate();
+    });
+    verticalAlignment.visible = false;
+
+    verticalAlignment.slots.content.domElement.style.padding = "0";
+    verticalAlignment.slots.content.domElement.style.overflow = "hidden";
+
+    const { clientWidth, clientHeight } = verticalAlignment.domElement;
+    this._scenes.vertical.setSize(clientHeight, clientWidth);
+
+    const vContainer = this._scenes.vertical.uiElement.get("container");
+    verticalAlignment.addChild(vContainer);
+
+    if (this.components.renderer.isUpdateable()) {
+      this.components.renderer.onAfterUpdate.add(async () => {
+        if (horizontalAlignment.visible) {
+          await this._scenes.horizontal.update();
+        }
+        if (verticalAlignment.visible) {
+          await this._scenes.vertical.update();
+        }
+      });
+    }
+
     this.uiElement.set({
       horizontalAlignment,
+      verticalAlignment,
     });
   }
 }
