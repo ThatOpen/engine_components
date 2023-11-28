@@ -91,9 +91,11 @@
     verticalWindow.visible = true;
 
     navigator.select(model);
-    window.addEventListener("dblclick", () => {
-        navigator._verticalScene.grid.regenerate();
-        navigator._verticalScene.setSize(300, 300);
+
+    window.addEventListener("keydown", (event) => {
+        if(event.code === "KeyP") {
+            navigator.setAnchor();
+        }
     })
 
     // Set up stats

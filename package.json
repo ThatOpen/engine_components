@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@popperjs/core": "2.11.8",
-    "bim-fragment": "1.0.24",
+    "bim-fragment": "1.0.25",
     "camera-controls": "^1.36.0",
     "dexie": "^3.2.3",
     "dxf-writer": "^1.18.4",
@@ -55,6 +55,6 @@
     "three-mesh-bvh": "0.6.0",
     "top-tool-package-reader": "0.0.3",
     "unzipit": "^1.4.3",
-    "web-ifc": "0.0.44"
+    "web-ifc": "0.0.46"
   }
 }

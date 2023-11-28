@@ -15,6 +15,12 @@ export class RoadNavigator extends Component<any> implements UI {
     verticalAlignment: Drawer;
   }>();
 
+  private _selected: FragmentsGroup | null = null;
+
+  private _points: {
+    horizontal: THREE.Points;
+  };
+
   private _scenes: {
     horizontal: Simple2DScene;
     vertical: Simple2DScene;
@@ -25,8 +31,13 @@ export class RoadNavigator extends Component<any> implements UI {
     vertical: THREE.LineSegments;
   };
 
+  private _caster = new THREE.Raycaster();
+
   constructor(components: Components) {
     super(components);
+
+    const threshold = 5;
+    this._caster.params.Line = { threshold };
 
     this.components.tools.add(RoadNavigator.uuid, this);
 
@@ -34,6 +45,17 @@ export class RoadNavigator extends Component<any> implements UI {
       horizontal: new Simple2DScene(this.components, false),
       vertical: new Simple2DScene(this.components, false),
     };
+
+    this._points = {
+      horizontal: new THREE.Points(
+        new THREE.BufferGeometry(),
+        new THREE.PointsMaterial({
+          size: 10,
+        })
+      ),
+    };
+    this._points.horizontal.frustumCulled = false;
+    this._scenes.horizontal.scene.add(this._points.horizontal);
 
     this._alignments = {
       horizontal: new THREE.LineSegments(
@@ -49,6 +71,55 @@ export class RoadNavigator extends Component<any> implements UI {
     this._scenes.vertical.get().add(this._alignments.vertical);
     this._scenes.horizontal.get().add(this._alignments.horizontal);
 
+    const hRenderer = this._scenes.horizontal.renderer.get();
+    const hCamera = this._scenes.horizontal.camera;
+    hRenderer.domElement.addEventListener("click", (event) => {
+      if (!this._selected || !this._selected.ifcCivil) return;
+      const lim = hRenderer.domElement.getBoundingClientRect();
+      const y = -((event.clientY - lim.top) / (lim.bottom - lim.top)) * 2 + 1;
+      const x = ((event.clientX - lim.left) / (lim.right - lim.left)) * 2 - 1;
+      const position = new THREE.Vector2(x, y);
+      this._caster.setFromCamera(position, hCamera);
+      const result = this._caster.intersectObject(this._alignments.horizontal);
+      if (result.length) {
+        console.log(result);
+        const { index, point } = result[0];
+        if (index === undefined) return;
+        const geom = this._alignments.horizontal.geometry;
+        if (!geom.index) return;
+
+        const pos = geom.attributes.position;
+        const pointIndex1 = geom.index.array[index];
+        const pointIndex2 = geom.index.array[index + 1];
+        const x1 = pos.getX(pointIndex1);
+        const y1 = pos.getY(pointIndex1);
+        const x2 = pos.getX(pointIndex2);
+        const y2 = pos.getY(pointIndex2);
+        const dist1 = new THREE.Vector3(x1, y1, 0).distanceTo(point);
+        const dist2 = new THREE.Vector3(x2, y2, 0).distanceTo(point);
+
+        const isFirst = dist1 < dist2;
+        const x = isFirst ? x1 : x2;
+        const y = isFirst ? y1 : y2;
+
+        const { horizontal } = this._points;
+        const coordsBuffer = new Float32Array([x, y, 0]);
+        const coordsAttr = new THREE.BufferAttribute(coordsBuffer, 3);
+        horizontal.geometry.setAttribute("position", coordsAttr);
+
+        // const { alignmentIndex } = this._selected.ifcCivil.horizontalAlignments;
+        // let counter = 0;
+        // for (let i = 0; i < alignmentIndex.length; i++) {
+        // const currentAlignment = alignmentIndex[i];
+        // if (currentAlignment > index) {
+        //   console.log(`Selected alignment: ${counter - 1}`);
+        //   break;
+        // }
+        // counter++;
+        // }
+      }
+    });
+
     if (this.components.uiEnabled) {
       this.setUI();
     }
@@ -62,10 +133,19 @@ export class RoadNavigator extends Component<any> implements UI {
       return;
     }
 
+    this._selected = model;
+
     this.getAlignmentGeometry(
       model.ifcCivil.horizontalAlignments,
       this._alignments.horizontal.geometry
     );
+  }
+
+  setAnchor() {
+    if (!this._selected) return;
+    const result = this.components.raycaster.castRay([this._selected]);
+    if (result === null) return;
+    console.log(result);
   }
 
   private getAlignmentGeometry(

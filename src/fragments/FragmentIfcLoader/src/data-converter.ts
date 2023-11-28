@@ -144,13 +144,23 @@ export class DataConverter {
     const matrix = new THREE.Matrix4();
     const color = new THREE.Color();
 
+    console.log(civilItems);
+
     // Add alignments data
     if (civilItems.IfcAlignment) {
-      const horizontalAlignments: IfcAlignmentData = new IfcAlignmentData();
+      const horizontalAlignments = new IfcAlignmentData();
+      const verticalAlignments = new IfcAlignmentData();
+      const realAlignments = new IfcAlignmentData();
       let countH = 0;
+      let countV = 0;
+      let countR = 0;
       const valuesH: number[] = [];
+      const valuesV: number[] = [];
+      const valuesR: number[] = [];
+
       for (const alignment of civilItems.IfcAlignment) {
         horizontalAlignments.alignmentIndex.push(countH);
+        verticalAlignments.alignmentIndex.push(countV);
         if (alignment.horizontal) {
           for (const hAlignment of alignment.horizontal) {
             horizontalAlignments.curveIndex.push(countH);
@@ -161,19 +171,6 @@ export class DataConverter {
             }
           }
         }
-      }
-      // Create a new Float32Array with the desired size
-      const resizedCoordinatesH = new Float32Array(valuesH.length);
-      // Set the values from the number[] to the resized Float32Array
-      resizedCoordinatesH.set(valuesH);
-      // Assign the resized Float32Array to dataH.Coordinates
-      horizontalAlignments.coordinates = resizedCoordinatesH;
-
-      const verticalAlignments: IfcAlignmentData = new IfcAlignmentData();
-      let countV = 0;
-      const valuesV: number[] = [];
-      for (const alignment of civilItems.IfcAlignment) {
-        verticalAlignments.alignmentIndex.push(countV);
         if (alignment.vertical) {
           for (const vAlignment of alignment.vertical) {
             verticalAlignments.curveIndex.push(countV);
@@ -184,15 +181,28 @@ export class DataConverter {
             }
           }
         }
+        if (alignment.curve3D) {
+          for (const rAlignment of alignment.curve3D) {
+            realAlignments.curveIndex.push(countR);
+            for (const point of rAlignment.points) {
+              valuesR.push(point.x);
+              valuesR.push(point.y);
+              valuesR.push(point.z);
+              countR++;
+            }
+          }
+        }
       }
-      // Create a new Float32Array with the desired size
-      const resizedCoordinatesV = new Float32Array(valuesV.length);
-      // Set the values from the number[] to the resized Float32Array
-      resizedCoordinatesV.set(valuesV);
-      // Assign the resized Float32Array to dataH.Coordinates
-      verticalAlignments.coordinates = resizedCoordinatesV;
 
-      this._model.ifcCivil = { horizontalAlignments, verticalAlignments };
+      horizontalAlignments.coordinates = new Float32Array(valuesH);
+      verticalAlignments.coordinates = new Float32Array(valuesV);
+      realAlignments.coordinates = new Float32Array(valuesR);
+
+      this._model.ifcCivil = {
+        horizontalAlignments,
+        verticalAlignments,
+        realAlignments,
+      };
     }
     for (const id in geometries) {
       const { buffer, instances } = geometries[id];
