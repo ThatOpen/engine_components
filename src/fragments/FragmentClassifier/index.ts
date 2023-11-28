@@ -49,8 +49,8 @@ export class FragmentClassifier
     }
   }
 
-  async find(filter?: { [name: string]: string[] }) {
-    const fragments = await this.components.tools.get(FragmentManager);
+  find(filter?: { [name: string]: string[] }) {
+    const fragments = this.components.tools.get(FragmentManager);
     if (!filter) {
       const result: FragmentIdMap = {};
       const fragList = fragments.list;

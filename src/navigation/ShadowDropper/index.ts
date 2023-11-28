@@ -55,7 +55,7 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
   /** {@link Disposable.dispose} */
   async dispose() {
     for (const id in this.shadows) {
-      await this.deleteShadow(id);
+      this.deleteShadow(id);
     }
     this.tempMaterial.dispose();
     this.depthMaterial.dispose();
@@ -85,8 +85,8 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
    *
    * @param id - the name of this shadow.
    */
-  async deleteShadow(id: string) {
-    const disposer = await this.components.tools.get(Disposer);
+  deleteShadow(id: string) {
+    const disposer = this.components.tools.get(Disposer);
     const shadow = this.shadows[id];
     delete this.shadows[id];
     if (!shadow) throw new Error(`No shadow with ID ${id} was found.`);

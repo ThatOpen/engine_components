@@ -363,7 +363,7 @@ export class FragmentPlans
       clippingPoint.y += config.offset;
     }
 
-    const clipper = await this.components.tools.get(EdgesClipper);
+    const clipper = this.components.tools.get(EdgesClipper);
 
     const plane = clipper.createFromNormalAndCoplanarPoint(
       normal,

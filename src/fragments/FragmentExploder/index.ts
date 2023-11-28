@@ -42,19 +42,19 @@ export class FragmentExploder
     this.uiElement.dispose();
   }
 
-  async explode() {
+  explode() {
     this.enabled = true;
-    await this.update();
+    this.update();
   }
 
-  async reset() {
+  reset() {
     this.enabled = false;
-    await this.update();
+    this.update();
   }
 
-  async update() {
-    const classifier = await this.components.tools.get(FragmentClassifier);
-    const fragments = await this.components.tools.get(FragmentManager);
+  update() {
+    const classifier = this.components.tools.get(FragmentClassifier);
+    const fragments = this.components.tools.get(FragmentManager);
 
     const factor = this.enabled ? 1 : -1;
     let i = 0;
@@ -155,9 +155,9 @@ export class FragmentExploder
     main.materialIcon = "splitscreen";
     main.onClick.add(async () => {
       if (this.enabled) {
-        await this.reset();
+        this.reset();
       } else {
-        await this.explode();
+        this.explode();
       }
     });
   }

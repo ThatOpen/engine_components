@@ -1,4 +1,11 @@
-import { Disposable, Hideable, Resizeable, Updateable, UI } from "./base-types";
+import {
+  Disposable,
+  Hideable,
+  Resizeable,
+  Updateable,
+  UI,
+  Configurable,
+} from "./base-types";
 import { Components } from "../core";
 
 /**
@@ -44,6 +51,11 @@ export abstract class Component<Type> {
   /** Whether is component is {@link Hideable}. */
   isHideable = (): this is Hideable => {
     return "visible" in this;
+  };
+
+  /** Whether is component is {@link Configurable}. */
+  isConfigurable = (): this is Configurable<any> => {
+    return "setup" in this && "config" in this && "onSetup" in this;
   };
 
   /** Whether is component implements any kind of {@link UI}. */

@@ -34,8 +34,8 @@ export class DXFExporter extends Component<EdgeProjector> {
 
     // Draw projected lines
 
-    const fragPlans = await this.components.tools.get(FragmentPlans);
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragPlans = this.components.tools.get(FragmentPlans);
+    const fragments = this.components.tools.get(FragmentManager);
 
     const plans = fragPlans.get();
     const plan = plans.find((plan) => plan.name === name);

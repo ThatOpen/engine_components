@@ -374,8 +374,8 @@ export class ClippingEdges
     }
   }
 
-  private async disposeEdge(name: string) {
-    const disposer = await this.components.tools.get(Disposer);
+  private disposeEdge(name: string) {
+    const disposer = this.components.tools.get(Disposer);
     const edge = this._edges[name];
     if (edge.fill) {
       edge.fill.dispose();
