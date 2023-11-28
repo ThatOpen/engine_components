@@ -89,7 +89,7 @@ export class FragmentIfcLoader
       await this.onLocationsSaved.trigger(this._geometry.locations);
     }
 
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
 
     if (this.settings.coordinate) {
       const isFirstModel = fragments.groups.length === 0;
@@ -131,7 +131,7 @@ export class FragmentIfcLoader
       fileOpener.style.display = "none";
 
       fileOpener.onchange = async () => {
-        const fragments = await this.components.tools.get(FragmentManager);
+        const fragments = this.components.tools.get(FragmentManager);
         if (fileOpener.files === null || fileOpener.files.length === 0) return;
         const file = fileOpener.files[0];
         const buffer = await file.arrayBuffer();

@@ -101,7 +101,7 @@ export class ViewpointsManager extends Component<string> implements UI {
     throw new Error("Method not implemented.");
   }
 
-  async add(data: { title: string; description: string | null }) {
+  add(data: { title: string; description: string | null }) {
     const { title, description } = data;
     if (!title) {
       return undefined;
@@ -111,7 +111,7 @@ export class ViewpointsManager extends Component<string> implements UI {
 
     // #region Store dimensions
     const dimensions: { start: Vector3; end: Vector3 }[] = [];
-    const dimensionsComp = await this.components.tools.get(LengthMeasurement);
+    const dimensionsComp = this.components.tools.get(LengthMeasurement);
     const allDimensions = dimensionsComp.get();
     for (const dimension of allDimensions) {
       dimensions.push({ start: dimension.start, end: dimension.end });
@@ -119,7 +119,7 @@ export class ViewpointsManager extends Component<string> implements UI {
     // #endregion
 
     // #redgion Store selection
-    const highlighter = await this.components.tools.get(FragmentHighlighter);
+    const highlighter = this.components.tools.get(FragmentHighlighter);
     const selection = highlighter.selection[this.selectionHighlighter];
     // #endregion
 
@@ -163,7 +163,7 @@ export class ViewpointsManager extends Component<string> implements UI {
     // #endregion
 
     this.list.push(viewpoint);
-    await this.onViewpointAdded.trigger(guid);
+    this.onViewpointAdded.trigger(guid);
     return viewpoint;
   }
 
@@ -223,7 +223,7 @@ export class ViewpointsManager extends Component<string> implements UI {
       selection[fragmentID] = viewpoint.selection[fragmentID];
     }
 
-    const highlighter = await this.components.tools.get(FragmentHighlighter);
+    const highlighter = this.components.tools.get(FragmentHighlighter);
     await highlighter.highlightByID(this.selectionHighlighter, selection, true);
 
     // #region Recover camera position & target

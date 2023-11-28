@@ -145,7 +145,7 @@ export class Simple2DScene
 
   /** {@link Disposable.dispose} */
   async dispose() {
-    const disposer = await this.components.tools.get(Disposer);
+    const disposer = this.components.tools.get(Disposer);
     for (const child of this.scene.children) {
       const item = child as any;
       if (item instanceof THREE.Object3D) {

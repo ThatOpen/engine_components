@@ -3,7 +3,7 @@ import { BufferGeometry } from "three";
 import * as WEBIFC from "web-ifc";
 import * as FRAGS from "bim-fragment";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
-import { IfcAlignmentData } from "bim-fragment/alignment";
+import { IfcAlignmentData } from "bim-fragment";
 import {
   IfcCategories,
   IfcItemsCategories,
@@ -171,7 +171,7 @@ export class DataConverter {
       // Set the values from the number[] to the resized Float32Array
       resizedCoordinatesH.set(valuesH);
       // Assign the resized Float32Array to dataH.Coordinates
-      dataH.Coordinates = resizedCoordinatesH;
+      dataH.coordinates = resizedCoordinatesH;
       this._model.ifcCivil?.horizontalAlignments.push(dataH);
 
       const dataV: IfcAlignmentData = new IfcAlignmentData();
@@ -195,7 +195,7 @@ export class DataConverter {
       // Set the values from the number[] to the resized Float32Array
       resizedCoordinatesV.set(valuesV);
       // Assign the resized Float32Array to dataH.Coordinates
-      dataV.Coordinates = resizedCoordinatesV;
+      dataV.coordinates = resizedCoordinatesV;
       this._model.ifcCivil?.verticalAlignments.push(dataV);
     }
     for (const id in geometries) {
