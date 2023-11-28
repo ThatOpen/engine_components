@@ -114,7 +114,7 @@ export class FloatingWindow extends SimpleUIComponent<HTMLDivElement> {
     <div class="${FloatingWindow.Class.Base}">
       <div id="title-container" class="z-10 flex justify-between items-center top-0 select-none cursor-move px-6 py-3 border-b-2 border-solid border-[#3A444E]">
         <div class="flex flex-col">
-          <h3 id="title">Tooeen Floating Window</h3>
+          <h3 class="text-3xl text-ifcjs-200 font-medium" id="title">Tooeen Floating Window</h3>
           <p id="description" class="${FloatingWindow.Class.Description}"></p>
         </div>
         <span id="close" class="material-icons text-2xl ml-4 text-gray-400 z-20 hover:cursor-pointer hover:text-ifcjs-200">close</span>
