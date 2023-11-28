@@ -17,6 +17,12 @@ export class RoadNavigator extends Component<any> implements UI {
 
   private _selected: FragmentsGroup | null = null;
 
+  private _anchors = {
+    horizontal: new THREE.Vector2(),
+    horizontalIndex: 0,
+    real: new THREE.Vector3(),
+  };
+
   private _points: {
     horizontal: THREE.Points;
   };
@@ -29,6 +35,7 @@ export class RoadNavigator extends Component<any> implements UI {
   private _alignments: {
     horizontal: THREE.LineSegments;
     vertical: THREE.LineSegments;
+    real: THREE.LineSegments;
   };
 
   private _caster = new THREE.Raycaster();
@@ -66,13 +73,23 @@ export class RoadNavigator extends Component<any> implements UI {
         new THREE.BufferGeometry(),
         new THREE.LineBasicMaterial()
       ),
+      real: new THREE.LineSegments(
+        new THREE.BufferGeometry(),
+        new THREE.LineBasicMaterial()
+      ),
     };
+
+    this._alignments.real.frustumCulled = false;
 
     this._scenes.vertical.get().add(this._alignments.vertical);
     this._scenes.horizontal.get().add(this._alignments.horizontal);
 
+    const scene = this.components.scene.get();
+    scene.add(this._alignments.real);
+
     const hRenderer = this._scenes.horizontal.renderer.get();
     const hCamera = this._scenes.horizontal.camera;
+
     hRenderer.domElement.addEventListener("click", (event) => {
       if (!this._selected || !this._selected.ifcCivil) return;
       const lim = hRenderer.domElement.getBoundingClientRect();
@@ -101,6 +118,9 @@ export class RoadNavigator extends Component<any> implements UI {
         const isFirst = dist1 < dist2;
         const x = isFirst ? x1 : x2;
         const y = isFirst ? y1 : y2;
+
+        this._anchors.horizontal.set(x, y);
+        this._anchors.horizontalIndex = isFirst ? pointIndex1 : pointIndex2;
 
         const { horizontal } = this._points;
         const coordsBuffer = new Float32Array([x, y, 0]);
@@ -137,45 +157,66 @@ export class RoadNavigator extends Component<any> implements UI {
 
     this.getAlignmentGeometry(
       model.ifcCivil.horizontalAlignments,
-      this._alignments.horizontal.geometry
+      this._alignments.horizontal.geometry,
+      false
+    );
+
+    this.getAlignmentGeometry(
+      model.ifcCivil.realAlignments,
+      this._alignments.real.geometry,
+      true
     );
   }
 
   setAnchor() {
-    if (!this._selected) return;
+    if (!this._selected || !this._selected.ifcCivil) return;
     const result = this.components.raycaster.castRay([this._selected]);
     if (result === null) return;
-    console.log(result);
+    this._anchors.real.copy(result.point);
+    const { horizontal, real, horizontalIndex } = this._anchors;
+
+    const position = this._alignments.real.position;
+
+    const geom = this._alignments.real.geometry;
+    const yPosition3D = geom.attributes.position.getY(horizontalIndex);
+
+    position.x = real.x - horizontal.x;
+    position.z = real.z + horizontal.y;
+    position.y = real.y - yPosition3D;
   }
 
   private getAlignmentGeometry(
     alignment: IfcAlignmentData,
-    geometry: THREE.BufferGeometry
+    geometry: THREE.BufferGeometry,
+    is3D: boolean
   ) {
-    const data = this.getAlignmentData(alignment);
+    const data = this.getAlignmentData(alignment, is3D);
     const coordsBuffer = new Float32Array(data.coords);
     const coordsAttr = new THREE.BufferAttribute(coordsBuffer, 3);
     geometry.setAttribute("position", coordsAttr);
     geometry.setIndex(data.index);
   }
 
-  private getAlignmentData(alignment: IfcAlignmentData) {
+  private getAlignmentData(alignment: IfcAlignmentData, is3D: boolean) {
     const coords: number[] = [];
     const index: number[] = [];
     const { coordinates, curveIndex } = alignment;
     const offsetX = coordinates[0];
     const offsetY = coordinates[1];
+    const offsetZ = is3D ? coordinates[2] : 0;
     let isSegmentStart = true;
-    const last = coordinates.length / 2 - 1;
+    const factor = is3D ? 3 : 2;
+    const last = coordinates.length / factor - 1;
     for (let i = 0; i < curveIndex.length; i++) {
       const start = curveIndex[i];
       const isLast = i === curveIndex.length - 1;
       const end = isLast ? last : curveIndex[i + 1];
       isSegmentStart = true;
       for (let j = start; j < end; j++) {
-        const x = coordinates[j * 2] - offsetX;
-        const y = coordinates[j * 2 + 1] - offsetY;
-        coords.push(x, y, 0);
+        const x = coordinates[j * factor] - offsetX;
+        const y = coordinates[j * factor + 1] - offsetY;
+        const z = is3D ? coordinates[j * factor + 2] - offsetZ : 0;
+        coords.push(x, y, z);
         if (isSegmentStart) {
           isSegmentStart = false;
         } else {
