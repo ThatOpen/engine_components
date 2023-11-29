@@ -1886,17 +1886,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bim-fragment@npm:1.0.25":
-  version: 1.0.25
-  resolution: "bim-fragment@npm:1.0.25"
-  dependencies:
-    flatbuffers: ^23.3.3
-    three: 0.152.2
-    three-mesh-bvh: 0.6.0
-  checksum: 686a5702a64d33c007ca2d34efe5dd856914e331ff4917782852011ebd74d2c248b2abc573b6f171aa8af387f529d47317798ad269c5a7a2dbff17aa27ea58c0
-  languageName: node
-  linkType: hard
-
 "binary-extensions@npm:^2.0.0":
   version: 2.2.0
   resolution: "binary-extensions@npm:2.2.0"
@@ -3378,13 +3367,6 @@ __metadata:
     keyv: ^4.5.3
     rimraf: ^3.0.2
   checksum: e7e0f59801e288b54bee5cb9681e9ee21ee28ef309f886b312c9d08415b79fc0f24ac842f84356ce80f47d6a53de62197ce0e6e148dc42d5db005992e2a756ec
-  languageName: node
-  linkType: hard
-
-"flatbuffers@npm:^23.3.3":
-  version: 23.5.26
-  resolution: "flatbuffers@npm:23.5.26"
-  checksum: 2528e549118d02fca9775cc9c17cf445741bb58b0a9575eb07bba823394a79dccb3bf97c48561720aa61d3dc9f42759129df0e05eb94c12f809cfb6126eaedd1
   languageName: node
   linkType: hard
 
@@ -6055,7 +6037,6 @@ __metadata:
     "@types/three": 0.152.1
     "@typescript-eslint/eslint-plugin": ^4.27.0
     "@typescript-eslint/parser": ^4.27.0
-    bim-fragment: 1.0.25
     camera-controls: ^1.36.0
     cpy-cli: ^3.1.1
     dexie: ^3.2.3
@@ -6076,13 +6057,15 @@ __metadata:
     rollup: ^3.2.3
     stats.js: ^0.17.0
     tailwindcss: ^3.3.5
-    three: 0.152.2
     three-mesh-bvh: 0.6.0
     top-tool-package-reader: 0.0.3
     ts-jest: ^27.0.3
     ts-node: ^10.0.0
     typescript: ^4.3.2
     unzipit: ^1.4.3
+  peerDependencies:
+    bim-fragment: 1.0.25
+    three: 0.152.2
     web-ifc: 0.0.46
   languageName: unknown
   linkType: soft
@@ -8099,13 +8082,6 @@ __metadata:
   dependencies:
     makeerror: 1.0.12
   checksum: ad7a257ea1e662e57ef2e018f97b3c02a7240ad5093c392186ce0bcf1f1a60bbadd520d073b9beb921ed99f64f065efb63dfc8eec689a80e569f93c1c5d5e16c
-  languageName: node
-  linkType: hard
-
-"web-ifc@npm:0.0.46":
-  version: 0.0.46
-  resolution: "web-ifc@npm:0.0.46"
-  checksum: edaa2460bae21319e66d25e29d17c4e2983530df0b83c60b5da866c09cba38661020873b247af6d0201709c878081539ed42b12697a37b4805d3c9960521f63c
   languageName: node
   linkType: hard
 
