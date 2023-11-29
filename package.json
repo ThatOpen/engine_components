@@ -24,6 +24,7 @@
     "@types/three": "0.152.1",
     "@typescript-eslint/eslint-plugin": "^4.27.0",
     "@typescript-eslint/parser": "^4.27.0",
+    "bim-fragment": "1.0.25",
     "cpy-cli": "^3.1.1",
     "eslint": "^7.28.0",
     "eslint-config-airbnb-base": "^14.2.1",
@@ -35,9 +36,11 @@
     "prettier": "^2.3.1",
     "rollup": "^3.2.3",
     "tailwindcss": "^3.3.5",
+    "three": "0.152.2",
     "ts-jest": "^27.0.3",
     "ts-node": "^10.0.0",
-    "typescript": "^4.3.2"
+    "typescript": "^4.3.2",
+    "web-ifc": "0.0.46"
   },
   "dependencies": {
     "@popperjs/core": "2.11.8",

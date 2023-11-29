@@ -305,6 +305,10 @@ textarea {
   z-index: 50;
 }
 
+.m-0{
+  margin: 0px;
+}
+
 .m-4{
   margin: 1rem;
 }
@@ -316,6 +320,11 @@ textarea {
 .mx-auto{
   margin-left: auto;
   margin-right: auto;
+}
+
+.my-0{
+  margin-top: 0px;
+  margin-bottom: 0px;
 }
 
 .my-2{
@@ -600,6 +609,10 @@ textarea {
   resize: both;
 }
 
+.list-none{
+  list-style-type: none;
+}
+
 .flex-row{
   flex-direction: row;
 }
@@ -810,6 +823,10 @@ textarea {
 
 .fill-white{
   fill: #F2F2F2;
+}
+
+.p-0{
+  padding: 0px;
 }
 
 .p-1{

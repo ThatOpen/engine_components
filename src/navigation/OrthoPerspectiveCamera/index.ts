@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import { Components, SimpleCamera } from "../../core";
+import { Components } from "../../core/Components";
+import { SimpleCamera } from "../../core/SimpleCamera";
 import { Event, UI, UIElement } from "../../base-types";
 import { CameraProjection, NavigationMode, NavModeID } from "./src/types";
 import { ProjectionManager } from "./src/projections";

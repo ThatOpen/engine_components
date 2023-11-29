@@ -13,7 +13,7 @@ import { SimpleUIComponent } from "../../ui";
 import { Components } from "../Components";
 import { Disposer } from "../Disposer";
 import { SimpleRenderer } from "../SimpleRenderer";
-import { PostproductionRenderer } from "../../navigation";
+import { PostproductionRenderer } from "../../navigation/PostproductionRenderer";
 import { Infinite2dGrid } from "./src";
 
 // TODO: Make a scene manager as a Tool (so that it as an UUID)

@@ -270,7 +270,7 @@
 		closeOnClick: false
 	});
 
-	deleteSingleCubeButton.onclick = () => deleteBox();
+	deleteSingleCubeButton.onClick.add(() => deleteBox());
 
 	deleteCubeButtons.addChild(deleteSingleCubeButton);
 
