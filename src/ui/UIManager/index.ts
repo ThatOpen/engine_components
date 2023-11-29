@@ -140,6 +140,16 @@ export class UIManager extends Component<Toolbar[]> implements Disposable {
     );
 
     this.viewerContainer.style.position = "relative";
+
+    const materialIconsLink = document.createElement("link")
+    materialIconsLink.rel = "stylesheet"
+    materialIconsLink.href = "https://fonts.googleapis.com/icon?family=Material+Icons"
+    const firstLinkTag = document.head.querySelector("link")
+    if (firstLinkTag) {
+      document.head.insertBefore(materialIconsLink, firstLinkTag)
+    } else {
+      document.head.append(materialIconsLink)
+    }
   }
 
   add(...uiComponents: SimpleUIComponent[]) {
