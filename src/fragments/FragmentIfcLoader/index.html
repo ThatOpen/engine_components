@@ -28,7 +28,7 @@
     {
       "imports": {
         "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
-        "web-ifc": "https://unpkg.com/web-ifc@0.0.44/web-ifc-api.js",
+        "web-ifc": "https://unpkg.com/web-ifc@0.0.46/web-ifc-api.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
         "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
         "openbim-components": "../../../resources/openbim-components.js",
@@ -69,7 +69,6 @@
     components.scene.setup();
 
     const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
-    components.tools.add('grid', grid);
     const customEffects = components.renderer.postproduction.customEffects;
     customEffects.excludedMeshes.push(grid.get());
 
@@ -126,7 +125,7 @@
     */
 
     fragmentIfcLoader.settings.wasm = {
-        path: "https://unpkg.com/web-ifc@0.0.44/",
+        path: "https://unpkg.com/web-ifc@0.0.46/",
         absolute: true
     }
 
@@ -268,7 +267,9 @@
 
     // For debugging
 
-    // fragmentIfcLoader.ifcLoaded.on((model) => {
+    fragmentIfcLoader.onIfcLoaded.add((model) => {
+
+        console.log(model);
 
     // let sorted = [];
     // for(const frag of model.fragments) {
@@ -289,7 +290,7 @@
     // 	mat.color.setRGB(value, value, value, "srgb");
     // 	value += step;
     // }
-    // });
+    });
 
 
 </script>

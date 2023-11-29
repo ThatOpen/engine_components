@@ -50,9 +50,9 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
 
     this._projectionManager = new ProjectionManager(components, this);
 
-    if (components.uiEnabled) {
+    components.onInitialized.add(() => {
       this.setUI();
-    }
+    });
 
     this.onAspectUpdated.add(() => this.setOrthoCameraAspect());
   }

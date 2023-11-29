@@ -11,7 +11,7 @@ export abstract class BaseRaycaster
   implements Disposable
 {
   /** Whether this component is able to cast rays. */
-  abstract castRay(items?: THREE.Mesh[]): THREE.Intersection | null;
+  abstract castRay(items?: THREE.Object3D[]): THREE.Intersection | null;
 
   /** {@link Component.enabled} */
   abstract enabled: boolean;

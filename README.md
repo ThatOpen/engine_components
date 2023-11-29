@@ -47,9 +47,9 @@ components.init();
 
 const scene = components.scene.get();
 
-const geometry = new new THREE.BoxGeometry(3, 3, 3);
+const geometry = new THREE.BoxGeometry(3, 3, 3);
 const material = new THREE.MeshStandardMaterial({ color: "red" });
-const cube = THREE.Mesh(geometry, material);
+const cube = new THREE.Mesh(geometry, material);
 cube.position.set(0, 1.5, 0);
 scene.add(cube);
 

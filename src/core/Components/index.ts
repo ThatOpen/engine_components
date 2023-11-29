@@ -167,7 +167,7 @@ export class Components {
    *
    */
   async dispose() {
-    const disposer = await this.tools.get(Disposer);
+    const disposer = this.tools.get(Disposer);
     this.enabled = false;
     await this.tools.dispose();
     await this.ui.dispose();
