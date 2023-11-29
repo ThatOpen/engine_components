@@ -15,6 +15,7 @@ export class ProjectionManager {
   private _currentCamera: THREE.PerspectiveCamera | THREE.OrthographicCamera;
   private _camera: any;
   private _previousDistance = -1;
+  matchOrthoDistanceEnabled = false;
 
   constructor(private components: Components, camera: any) {
     this._camera = camera;
@@ -101,6 +102,22 @@ export class ProjectionManager {
     this._camera.controls.camera = oCamera;
   }
 
+  private getDistance() {
+    // this handles ortho zoom to perpective distance
+    const pCamera = this._camera.get("Perspective") as THREE.PerspectiveCamera;
+    const oCamera = this._camera.get("Orthographic") as THREE.OrthographicCamera;
+
+    // this is the reverse of
+    // const height = depth * 2 * Math.atan((pCamera.fov * (Math.PI / 180)) / 2);
+    // accounting for zoom
+    const depth =
+      (oCamera.top - oCamera.bottom) /
+      oCamera.zoom /
+      (2 * Math.atan((pCamera.fov * (Math.PI / 180)) / 2));
+
+    return depth;
+  }
+
   private async setPerspectiveCamera() {
     this._camera.controls.mouseButtons.wheel = CameraControls.ACTION.DOLLY;
     this._camera.controls.mouseButtons.middle = CameraControls.ACTION.DOLLY;
@@ -114,7 +131,11 @@ export class ProjectionManager {
     pCamera.quaternion.copy(oCamera.quaternion);
     this._camera.controls.mouseButtons.wheel = CameraControls.ACTION.DOLLY;
 
-    this._camera.controls.distance = this._previousDistance;
+    if (this.matchOrthoDistanceEnabled) {
+      this._camera.controls.distance = this.getDistance();
+    } else {
+      this._camera.controls.distance = this._previousDistance;
+    }
     await this._camera.controls.zoomTo(1);
     pCamera.updateProjectionMatrix();
     this._camera.controls.camera = pCamera;
