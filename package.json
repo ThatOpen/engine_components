@@ -41,7 +41,6 @@
   },
   "dependencies": {
     "@popperjs/core": "2.11.8",
-    "bim-fragment": "1.0.25",
     "camera-controls": "^1.36.0",
     "dexie": "^3.2.3",
     "dxf-writer": "^1.18.4",
@@ -51,10 +50,13 @@
     "openbim-clay": "0.0.5",
     "postprocessing": "^6.31.0",
     "stats.js": "^0.17.0",
-    "three": "0.152.2",
     "three-mesh-bvh": "0.6.0",
     "top-tool-package-reader": "0.0.3",
-    "unzipit": "^1.4.3",
+    "unzipit": "^1.4.3"
+  },
+  "peerDependencies": {
+    "bim-fragment": "1.0.25",
+    "three": "0.152.2",
     "web-ifc": "0.0.46"
   }
 }
