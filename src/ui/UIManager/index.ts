@@ -138,6 +138,8 @@ export class UIManager extends Component<Toolbar[]> implements Disposable {
       this._containers.left,
       this._contextMenuContainer
     );
+
+    this.viewerContainer.style.position = "relative";
   }
 
   add(...uiComponents: SimpleUIComponent[]) {

@@ -137,8 +137,6 @@ export class SimpleRenderer
     this._renderer2D.domElement.style.pointerEvents = "none";
     if (this.container) {
       this.container.appendChild(this._renderer.domElement);
-    }
-    if (this.container) {
       this.container.appendChild(this._renderer2D.domElement);
     }
     this.updateContainer();

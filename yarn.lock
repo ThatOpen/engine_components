@@ -2703,9 +2703,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.4.535":
-  version: 1.4.595
-  resolution: "electron-to-chromium@npm:1.4.595"
-  checksum: 02f13c7c247883a2e15290360261c8ab9903b4c3dfd977ba9cbd998ba111a9cb2e6bf05e1147ae2a2b141012c476cab5f0b9480d7f53a56d9ba274d46c76ea06
+  version: 1.4.596
+  resolution: "electron-to-chromium@npm:1.4.596"
+  checksum: 87634f4a2d8a8a611a6fc970923b09d6873379077c3433470d88d4297ee5379315f58cc084a356caecedaa7e98a7905c34cc986508663fbab3981d25e50a3822
   languageName: node
   linkType: hard
 
@@ -6075,7 +6075,7 @@ __metadata:
     prettier: ^2.3.1
     rollup: ^3.2.3
     stats.js: ^0.17.0
-    tailwindcss: ^3.3.2
+    tailwindcss: ^3.3.5
     three: 0.152.2
     three-mesh-bvh: 0.6.0
     top-tool-package-reader: 0.0.3
@@ -7446,7 +7446,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tailwindcss@npm:^3.3.2":
+"tailwindcss@npm:^3.3.5":
   version: 3.3.5
   resolution: "tailwindcss@npm:3.3.5"
   dependencies:
