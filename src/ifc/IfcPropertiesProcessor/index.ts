@@ -222,13 +222,19 @@ export class IfcPropertiesProcessor
   }
 
   async cleanPropertiesList() {
-    if (this._propertiesManager) {
-      const button = this._propertiesManager.uiElement.get("exportButton");
-      button.removeFromParent();
+    this._currentUI = {};
+    if (this.components.uiEnabled) {
+      if (this._propertiesManager) {
+        const button = this._propertiesManager.uiElement.get("exportButton");
+        button.removeFromParent();
+      }
+      const propsList = this.uiElement.get("propsList");
+      await propsList.dispose(true);
+      const propsWindow =
+        this.uiElement.get<FloatingWindow>("propertiesWindow");
+      propsWindow.description = null;
+      propsList.children = [];
     }
-
-    const propsList = this.uiElement.get("propsList");
-    await propsList.dispose(true);
     // for (const child of this._propsList.children) {
     //   if (child instanceof TreeView) {
     //     this._entityUIPool.return(child);
@@ -236,10 +242,6 @@ export class IfcPropertiesProcessor
     //   }
     //   child.dispose();
     // }
-    const propsWindow = this.uiElement.get<FloatingWindow>("propertiesWindow");
-    propsWindow.description = null;
-    propsList.children = [];
-    this._currentUI = {};
   }
 
   get(): IndexMap {
@@ -273,6 +275,7 @@ export class IfcPropertiesProcessor
   }
 
   async renderProperties(model: FragmentsGroup, expressID: number) {
+    if (!this.components.uiEnabled) return;
     await this.cleanPropertiesList();
     const topToolbar = this.uiElement.get("topToolbar");
     const propsList = this.uiElement.get("propsList");
