@@ -161,11 +161,12 @@ export class VertexPicker
   }
 
   private setupEvents(active: boolean) {
-    const container = this._components.ui.viewerContainer;
+    const container = this.components.renderer.get().domElement.parentElement;
+    if (!container) return;
     if (active) {
       container.addEventListener("mousemove", this.update);
     } else {
-      container.addEventListener("mousemove", this.update);
+      container.removeEventListener("mousemove", this.update);
     }
   }
 }
