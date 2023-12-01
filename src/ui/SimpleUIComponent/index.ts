@@ -126,6 +126,7 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   async dispose(onlyChildren = false) {
     for (const name in this.slots) {
       const slot = this.slots[name];
+      if (!slot) continue;
       await slot.dispose();
     }
     for (const child of this.children) {
