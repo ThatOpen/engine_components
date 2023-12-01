@@ -55,7 +55,16 @@ export class IfcPropertiesFinder
   constructor(components: Components) {
     super(components);
     this._conditionFunctions = this.getConditionFunctions();
+    const fragmentManager = components.tools.get(FragmentManager);
+    fragmentManager.onFragmentsDisposed.add(this.onFragmentsDisposed);
   }
+
+  private onFragmentsDisposed = (data: {
+    groupID: string;
+    fragmentIDs: string[];
+  }) => {
+    delete this._indexedModels[data.groupID];
+  };
 
   init() {
     if (this.components.uiEnabled) {

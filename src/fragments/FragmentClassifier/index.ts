@@ -26,9 +26,37 @@ export class FragmentClassifier
 
   constructor(components: Components) {
     super(components);
-
     components.tools.add(FragmentClassifier.uuid, this);
+    const fragmentManager = components.tools.get(FragmentManager);
+    fragmentManager.onFragmentsDisposed.add(this.onFragmentsDisposed);
   }
+
+  private onFragmentsDisposed = (data: {
+    groupID: string;
+    fragmentIDs: string[];
+  }) => {
+    const { groupID, fragmentIDs } = data;
+    for (const systemName in this._groupSystems) {
+      const system = this._groupSystems[systemName];
+      const groupNames = Object.keys(system);
+      if (groupNames.includes(groupID)) {
+        delete system[groupID];
+        if (Object.values(system).length === 0) {
+          delete this._groupSystems[systemName];
+        }
+      } else {
+        for (const groupName of groupNames) {
+          const group = system[groupName];
+          for (const fragmentID of fragmentIDs) {
+            delete group[fragmentID];
+          }
+          if (Object.values(group).length === 0) {
+            delete system[groupName];
+          }
+        }
+      }
+    }
+  };
 
   /** {@link Component.get} */
   get(): Classification {
@@ -37,6 +65,8 @@ export class FragmentClassifier
 
   async dispose() {
     this._groupSystems = {};
+    const fragmentManager = this.components.tools.get(FragmentManager);
+    fragmentManager.onFragmentsDisposed.remove(this.onFragmentsDisposed);
   }
 
   remove(guid: string) {

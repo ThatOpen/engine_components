@@ -10,6 +10,7 @@ import { AttributeSet, PropertyTag } from "./src";
 import { PsetActionsUI } from "../IfcPropertiesManager/src/pset-actions";
 import { EntityActionsUI } from "../IfcPropertiesManager/src/entity-actions";
 import { PropActionsUI } from "../IfcPropertiesManager/src/prop-actions";
+import { FragmentManager } from "../../fragments/FragmentManager";
 
 export * from "./src";
 
@@ -103,11 +104,20 @@ export class IfcPropertiesProcessor
 
     // this._entityUIPool = new UIPool(this._components, TreeView);
     this._renderFunctions = this.getRenderFunctions();
+    const fragmentManager = components.tools.get(FragmentManager);
+    fragmentManager.onFragmentsDisposed.add(this.onFragmentsDisposed);
 
     if (components.uiEnabled) {
       this.setUI();
     }
   }
+
+  private onFragmentsDisposed = (data: {
+    groupID: string;
+    fragmentIDs: string[];
+  }) => {
+    delete this._indexMap[data.groupID];
+  };
 
   private getRenderFunctions() {
     return {
@@ -129,6 +139,8 @@ export class IfcPropertiesProcessor
     }
     this._currentUI = {};
     this.onPropertiesManagerSet.reset();
+    const fragmentManager = this.components.tools.get(FragmentManager);
+    fragmentManager.onFragmentsDisposed.remove(this.onFragmentsDisposed);
   }
 
   getProperties(model: FragmentsGroup, id: string) {
