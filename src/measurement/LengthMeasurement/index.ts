@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SimpleDimensionLine } from "./src";
+import { SimpleDimensionLine } from "../SimpleDimensionLine";
 import {
   Component,
   Createable,
@@ -13,8 +13,6 @@ import {
 import { Components, SimpleRaycaster, ToolComponent } from "../../core";
 import { Button } from "../../ui";
 import { VertexPicker } from "../../utils";
-
-export * from "./src";
 
 /**
  * A basic dimension tool to measure distances between 2 points in 3D and

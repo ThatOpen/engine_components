@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { DimensionData, DimensionLabelClassName } from "./types";
-import { Components, Disposer, Simple2DMarker } from "../../../core";
+import { Components, Disposer, Simple2DMarker } from "../../core";
 
 export * from "./types";
 
