@@ -24,6 +24,9 @@ export class VertexPicker
   private _enabled: boolean = false;
   private _workingPlane: THREE.Plane | null = null;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
+
   set enabled(value: boolean) {
     this._enabled = value;
     if (!value) {
@@ -76,6 +79,8 @@ export class VertexPicker
     this.afterUpdate.reset();
     this.beforeUpdate.reset();
     (this._components as any) = null;
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   get(): THREE.Vector3 | null {

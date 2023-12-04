@@ -8,6 +8,9 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
 {
   name: string = "SimpleUIComponent";
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
+
   id: string;
 
   // TODO: Remove children and leave only slots?
@@ -152,6 +155,8 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
       this.slots = {};
       (this.parent as any) = null;
     }
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   addChild(...items: SimpleUIComponent[]) {

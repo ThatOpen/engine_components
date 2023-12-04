@@ -39,6 +39,9 @@ export class FragmentHighlighter
 {
   static readonly uuid = "cb8a76f2-654a-4b50-80c6-66fd83cafd77" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   enabled = true;
   highlightMats: HighlightMaterials = {};
   events: HighlightEvents = {};
@@ -163,6 +166,8 @@ export class FragmentHighlighter
     const fragmentManager = this.components.tools.get(FragmentManager);
     fragmentManager.onFragmentsDisposed.remove(this.onFragmentsDisposed);
     this.events = {};
+    await this.onDisposed.trigger(FragmentHighlighter.uuid);
+    this.onDisposed.reset();
   }
 
   async add(name: string, material?: THREE.Material[]) {

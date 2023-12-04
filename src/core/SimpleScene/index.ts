@@ -27,6 +27,9 @@ export class SimpleScene
   /** {@link Component.enabled} */
   enabled = true;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
+
   private readonly _scene: THREE.Scene;
 
   constructor(components: Components) {
@@ -50,6 +53,8 @@ export class SimpleScene
       }
     }
     this._scene.children = [];
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   config: Required<SimpleSceneConfig> = {

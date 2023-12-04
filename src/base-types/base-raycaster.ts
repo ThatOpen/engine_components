@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Component } from "./component";
-import { Disposable } from "./base-types";
+import { Disposable, Event } from "./base-types";
 
 /**
  * A base component for other components whose main mission is to cast rays,
@@ -12,6 +12,9 @@ export abstract class BaseRaycaster
 {
   /** Whether this component is able to cast rays. */
   abstract castRay(items?: THREE.Object3D[]): THREE.Intersection | null;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
 
   /** {@link Component.enabled} */
   abstract enabled: boolean;

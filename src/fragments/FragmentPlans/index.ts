@@ -30,6 +30,9 @@ export class FragmentPlans
 {
   static readonly uuid = "a80874aa-1c93-43a4-80f2-df346da086b1" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   readonly onNavigated = new Event<{ id: string }>();
 
   readonly onExited = new Event();
@@ -100,6 +103,8 @@ export class FragmentPlans
     this._plans = [];
     await this.objects.dispose();
     await this.uiElement.dispose();
+    await this.onDisposed.trigger(FragmentPlans.uuid);
+    this.onDisposed.reset();
   }
 
   // TODO: Compute georreference matrix when generating fragmentsgroup

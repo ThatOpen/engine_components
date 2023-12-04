@@ -19,6 +19,9 @@ export class AngleMeasureElement
   visible: boolean = true;
   points: THREE.Vector3[] = [];
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
+
   private _components: Components;
   private _lineMaterial = new LineMaterial({
     color: 0x6528d7,
@@ -117,6 +120,8 @@ export class AngleMeasureElement
     this._lineMaterial.dispose();
     this._lineGeometry.dispose();
     (this._components as any) = null;
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   get(): Angle {

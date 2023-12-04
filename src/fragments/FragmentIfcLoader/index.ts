@@ -20,6 +20,9 @@ export class FragmentIfcLoader
 {
   static readonly uuid = "a659add7-1418-4771-a0d6-7d4d438e4624" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   enabled: boolean = true;
 
   uiElement = new UIElement<{ main: Button; toast: ToastNotification }>();
@@ -65,6 +68,8 @@ export class FragmentIfcLoader
     (this._webIfc as any) = null;
     (this._geometry as any) = null;
     (this._converter as any) = null;
+    await this.onDisposed.trigger(FragmentIfcLoader.uuid);
+    this.onDisposed.reset();
   }
 
   /** Loads the IFC file and converts it to a set of fragments. */
