@@ -1,5 +1,5 @@
 import { FragmentsGroup } from "bim-fragment";
-import { Disposable, FragmentIdMap, Component } from "../../base-types";
+import { Disposable, FragmentIdMap, Component, Event } from "../../base-types";
 import { IfcCategoryMap, IfcPropertiesUtils } from "../../ifc";
 import { toCompositeID } from "../../utils";
 import { Components, ToolComponent } from "../../core";
@@ -23,6 +23,9 @@ export class FragmentClassifier
   enabled = true;
 
   private _groupSystems: Classification = {};
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
 
   constructor(components: Components) {
     super(components);
@@ -67,6 +70,8 @@ export class FragmentClassifier
     this._groupSystems = {};
     const fragmentManager = this.components.tools.get(FragmentManager);
     fragmentManager.onFragmentsDisposed.remove(this.onFragmentsDisposed);
+    await this.onDisposed.trigger(FragmentClassifier.uuid);
+    this.onDisposed.reset();
   }
 
   remove(guid: string) {

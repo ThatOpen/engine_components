@@ -19,6 +19,9 @@ export class FragmentManager
 {
   static readonly uuid = "fef46874-46a3-461b-8c44-2922ab77c806" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   /** {@link Component.enabled} */
   enabled = true;
 
@@ -87,6 +90,8 @@ export class FragmentManager
     this.list = {};
     this.onFragmentsLoaded.reset();
     this.onFragmentsDisposed.reset();
+    await this.onDisposed.trigger(FragmentManager.uuid);
+    this.onDisposed.reset();
   }
 
   async disposeGroup(group: FragmentsGroup) {

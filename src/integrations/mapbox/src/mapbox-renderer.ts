@@ -9,6 +9,9 @@ import { Components } from "../../../core";
  * [See example](https://ifcjs.github.io/components/examples/mapbox.html).
  */
 export class MapboxRenderer extends BaseRenderer implements Disposable {
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
+
   /** {@link Component.enabled} */
   enabled = true;
 
@@ -82,6 +85,8 @@ export class MapboxRenderer extends BaseRenderer implements Disposable {
     this._renderer.dispose();
     this._map.remove();
     this._map = null;
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   private initialize(context: WebGLRenderingContext) {

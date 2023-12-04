@@ -69,6 +69,9 @@ export class SimpleClipper<T extends SimplePlane>
   protected _planes: T[] = [];
   protected PlaneType: new (...args: any) => SimplePlane | T;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   /** The material used in all the clipping planes. */
   protected _material: THREE.Material = new THREE.MeshBasicMaterial({
     color: 0xffff00,
@@ -173,6 +176,8 @@ export class SimpleClipper<T extends SimplePlane>
     this.onAfterCancel.reset();
     this.onAfterDelete.reset();
     this.onAfterDrag.reset();
+    await this.onDisposed.trigger(SimpleClipper.uuid);
+    this.onDisposed.reset();
   }
 
   /** {@link Createable.create} */

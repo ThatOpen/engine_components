@@ -1,5 +1,5 @@
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
-import { Hideable, Disposable } from "../../base-types";
+import { Hideable, Disposable, Event } from "../../base-types";
 import { Component } from "../../base-types/component";
 import { Components } from "../Components";
 
@@ -22,6 +22,7 @@ export class Simple2DMarker
     return this._visible;
   }
 
+  // Define marker as setup configuration?
   constructor(components: Components, marker?: HTMLElement) {
     super(components);
     let _marker: HTMLElement;
@@ -46,8 +47,13 @@ export class Simple2DMarker
     this.visible = !this.visible;
   }
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
+
   async dispose() {
     this._marker.removeFromParent();
     this._marker.element.remove();
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 }

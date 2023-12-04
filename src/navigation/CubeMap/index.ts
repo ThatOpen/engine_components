@@ -33,6 +33,9 @@ export class CubeMap
 {
   static readonly uuid = "53311ea3-323a-476f-ae4a-d681778e8f67" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   /** {@link Component.enabled} */
   enabled: boolean = true;
 
@@ -156,6 +159,8 @@ export class CubeMap
     this._cube.remove();
     this._cubeWrapper.remove();
     (this.components as any) = null;
+    await this.onDisposed.trigger(CubeMap.uuid);
+    this.onDisposed.reset();
   }
 
   setSize(value: string = "350") {

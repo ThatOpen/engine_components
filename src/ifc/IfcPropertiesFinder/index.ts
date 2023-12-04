@@ -38,6 +38,9 @@ export class IfcPropertiesFinder
 {
   readonly onFound = new Event<FragmentIdMap>();
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
+
   enabled: boolean = true;
 
   uiElement = new UIElement<{
@@ -80,6 +83,8 @@ export class IfcPropertiesFinder
     this._indexedModels = {};
     this.onFound.reset();
     this.uiElement.dispose();
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   loadCached(id?: string) {

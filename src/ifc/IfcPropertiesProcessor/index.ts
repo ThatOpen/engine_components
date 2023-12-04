@@ -30,6 +30,9 @@ export class IfcPropertiesProcessor
 {
   static readonly uuid = "23a889ab-83b3-44a4-8bee-ead83438370b" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   enabled: boolean = true;
   uiElement = new UIElement<{
     topToolbar: SimpleUIComponent;
@@ -141,6 +144,8 @@ export class IfcPropertiesProcessor
     this.onPropertiesManagerSet.reset();
     const fragmentManager = this.components.tools.get(FragmentManager);
     fragmentManager.onFragmentsDisposed.remove(this.onFragmentsDisposed);
+    await this.onDisposed.trigger(IfcPropertiesProcessor.uuid);
+    this.onDisposed.reset();
   }
 
   getProperties(model: FragmentsGroup, id: string) {
