@@ -18,6 +18,12 @@ export interface AreaSelection {
   label: Simple2DMarker;
 }
 
+export interface SerializedAreaMeasure {
+  position: Float32Array;
+  perimeter: number;
+  area: number;
+}
+
 export class FaceMeasurement
   extends Component<void>
   implements Createable, UI, Disposable
@@ -131,27 +137,11 @@ export class FaceMeasurement
     scene.add(mesh);
 
     geometry.computeBoundingSphere();
-    if (!geometry.boundingSphere) {
-      throw new Error("Error computing area geometry");
-    }
-    const { center } = geometry.boundingSphere;
-
     const { area, perimeter } = this._currentSelelection;
-    const htmlText = document.createElement("div");
-    htmlText.className = DimensionLabelClassName;
-    const formattedArea = Math.trunc(area * 100) / 100;
-    htmlText.textContent = formattedArea.toString();
-    const label = new Simple2DMarker(this.components, htmlText);
-    const labelObject = label.get();
-    labelObject.position.copy(center);
-    mesh.add(labelObject);
+    const label = this.newLabel(geometry, area);
+    mesh.add(label.get());
 
-    this.selection.push({
-      area,
-      perimeter,
-      mesh,
-      label,
-    });
+    this.selection.push({ area, perimeter, mesh, label });
   };
 
   async delete() {
@@ -182,9 +172,32 @@ export class FaceMeasurement
 
   cancelCreation() {}
 
-  get() {}
+  get() {
+    const serialized: SerializedAreaMeasure[] = [];
+    for (const item of this.selection) {
+      const geometry = item.mesh.geometry;
+      const { area, perimeter } = item;
+      const position = geometry.attributes.position.array as Float32Array;
+      serialized.push({ position, area, perimeter });
+    }
+    return serialized;
+  }
 
-  set() {}
+  set(serialized: SerializedAreaMeasure[]) {
+    const scene = this.components.scene.get();
+    for (const item of serialized) {
+      const geometry = new THREE.BufferGeometry();
+      const mesh = new THREE.Mesh(geometry, this.selectionMaterial);
+      scene.add(mesh);
+      const attr = new THREE.BufferAttribute(item.position, 3);
+      geometry.setAttribute("position", attr);
+      geometry.computeBoundingSphere();
+      const { area, perimeter } = item;
+      const label = this.newLabel(geometry, area);
+      mesh.add(label.get());
+      this.selection.push({ area, perimeter, mesh, label });
+    }
+  }
 
   private setupEvents(active: boolean) {
     const viewerContainer = this.components.ui.viewerContainer;
@@ -300,7 +313,6 @@ export class FaceMeasurement
       }
     }
 
-    // TODO: Find out real face by checking the index of the raycasted triangle
     const currentFace = face[raycasted.island];
     if (currentFace === undefined) return;
     const area = this.regenerateHighlight(mesh, currentFace.indices, instance);
@@ -318,6 +330,21 @@ export class FaceMeasurement
     }
 
     this._currentSelelection = { perimeter, area };
+  }
+
+  private newLabel(geometry: THREE.BufferGeometry, area: number) {
+    if (!geometry.boundingSphere) {
+      throw new Error("Error computing area geometry");
+    }
+    const { center } = geometry.boundingSphere;
+    const htmlText = document.createElement("div");
+    htmlText.className = DimensionLabelClassName;
+    const formattedArea = Math.trunc(area * 100) / 100;
+    htmlText.textContent = formattedArea.toString();
+    const label = new Simple2DMarker(this.components, htmlText);
+    const labelObject = label.get();
+    labelObject.position.copy(center);
+    return label;
   }
 
   private regenerateHighlight(
