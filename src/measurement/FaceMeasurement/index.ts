@@ -153,7 +153,20 @@ export class FaceMeasurement
     });
   };
 
-  delete() {}
+  async delete() {
+    const meshes = this.selection.map((item) => item.mesh);
+    const result = this.components.raycaster.castRay(meshes);
+    if (!result || !result.object) {
+      return;
+    }
+    const found = this.selection.find((item) => item.mesh === result.object);
+    if (!found) return;
+    found.mesh.removeFromParent();
+    found.mesh.geometry.dispose();
+    await found.label.dispose();
+    const index = this.selection.indexOf(found);
+    this.selection.splice(index, 1);
+  }
 
   /** Deletes all the dimensions that have been previously created. */
   async deleteAll() {}

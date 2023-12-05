@@ -95,8 +95,11 @@
 	const buffer = new Uint8Array(data);
 	fragments.load(buffer);
 
-	container.ondblclick = () => dimensions.create();
-	container.oncontextmenu = () => dimensions.endCreation();
+	window.addEventListener("keydown", (event) => {
+		 if(event.code === "KeyO") {
+			dimensions.delete();
+		}
+  })
 
 	const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
 	mainToolbar.addChild(dimensions.uiElement.get("main"));
