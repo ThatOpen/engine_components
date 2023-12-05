@@ -72,6 +72,7 @@ export class FaceMeasurement
       this.preview.removeFromParent();
       this.cancelCreation();
     }
+    this.setVisibility(value);
   }
 
   get enabled() {
@@ -168,14 +169,22 @@ export class FaceMeasurement
     this.selection.splice(index, 1);
   }
 
-  /** Deletes all the dimensions that have been previously created. */
-  async deleteAll() {}
+  async deleteAll() {
+    for (const item of this.selection) {
+      item.mesh.removeFromParent();
+      item.mesh.geometry.dispose();
+      await item.label.dispose();
+    }
+    this.selection = [];
+  }
 
   endCreation() {}
 
   cancelCreation() {}
 
   get() {}
+
+  set() {}
 
   private setupEvents(active: boolean) {
     const viewerContainer = this.components.ui.viewerContainer;
@@ -187,6 +196,20 @@ export class FaceMeasurement
       viewerContainer.removeEventListener("click", this.create);
       viewerContainer.removeEventListener("mousemove", this.onMouseMove);
       window.removeEventListener("keydown", this.onKeydown);
+    }
+  }
+
+  private setVisibility(active: boolean) {
+    const scene = this.components.scene.get();
+    for (const item of this.selection) {
+      const label = item.label.get();
+      if (active) {
+        scene.add(item.mesh);
+        item.mesh.add(label);
+      } else {
+        item.mesh.removeFromParent();
+        label.removeFromParent();
+      }
     }
   }
 
