@@ -5,7 +5,7 @@ import { Hideable, Event, Disposable, Component } from "../../../base-types";
 import {
   DimensionLabelClassName,
   SimpleDimensionLine,
-} from "../../LengthMeasurement";
+} from "../../SimpleDimensionLine";
 
 interface Area {
   points: THREE.Vector3[];

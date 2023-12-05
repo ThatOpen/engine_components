@@ -1,9 +1,6 @@
 import { Vector3 } from "three";
 import { generateUUID } from "three/src/math/MathUtils";
-import {
-  SimpleDimensionLine,
-  LengthMeasurement,
-} from "../../measurement/LengthMeasurement";
+import { LengthMeasurement, SimpleDimensionLine } from "../../measurement";
 import { Components } from "../../core/Components";
 import {
   UI,

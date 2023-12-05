@@ -83,7 +83,6 @@ export class VolumeMeasurement
   create = () => {
     if (!this.enabled) return;
     const result = this.components.raycaster.castRay();
-    console.log(result);
     if (!result || !result.object) return;
     const { object } = result;
     if (object instanceof THREE.Mesh) {
