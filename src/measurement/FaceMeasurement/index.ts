@@ -40,7 +40,8 @@ export class FaceMeasurement
       side: 2,
       depthTest: false,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.25,
+      color: "#BCF124",
     })
   );
 
@@ -48,6 +49,8 @@ export class FaceMeasurement
     side: 2,
     depthTest: false,
     transparent: true,
+    color: "#BCF124",
+    opacity: 0.75,
   });
 
   readonly onBeforeCreate = new Event<any>();
