@@ -7,8 +7,12 @@ import {
   Component,
   UIElement,
 } from "../../base-types";
-import { Components, ToolComponent } from "../../core";
+import { Components, Simple2DMarker, ToolComponent } from "../../core";
 import { Button } from "../../ui";
+import { DimensionLabelClassName } from "../SimpleDimensionLine";
+import { FragmentBoundingBox } from "../../fragments";
+
+// TODO: Make it work more similar to face measure?
 
 export class VolumeMeasurement
   extends Component<void>
@@ -17,6 +21,8 @@ export class VolumeMeasurement
   static readonly uuid = "811da532-7af3-4635-b592-1c06ae494af5" as const;
 
   uiElement = new UIElement<{ main: Button }>();
+
+  label: Simple2DMarker;
 
   private _enabled: boolean = false;
 
@@ -47,6 +53,9 @@ export class VolumeMeasurement
     super(components);
 
     this.components.tools.add(VolumeMeasurement.uuid, this);
+
+    this.label = this.newLabel();
+    this.label.get().removeFromParent();
 
     if (components.uiEnabled) {
       this.setUI();
@@ -102,12 +111,37 @@ export class VolumeMeasurement
 
   get() {}
 
-  getVolumeFromMeshes(meshes: THREE.Mesh[]) {
+  getVolumeFromMeshes(meshes: THREE.InstancedMesh[]) {
     let volume = 0;
     for (const mesh of meshes) {
       volume += this.getVolumeOfMesh(mesh);
     }
+
+    const scene = this.components.scene.get();
+    const labelObject = this.label.get();
+    scene.add(labelObject);
+
+    const bbox = this.components.tools.get(FragmentBoundingBox);
+    for (const mesh of meshes) {
+      mesh.geometry.computeBoundingSphere();
+      bbox.addMesh(mesh);
+    }
+
+    const sphere = bbox.getSphere();
+    bbox.reset();
+
+    labelObject.position.copy(sphere.center);
+
+    const formattedVolume = Math.trunc(volume * 100) / 100;
+    labelObject.element.textContent = formattedVolume.toString();
+
     return volume;
+  }
+
+  private newLabel() {
+    const htmlText = document.createElement("div");
+    htmlText.className = DimensionLabelClassName;
+    return new Simple2DMarker(this.components, htmlText);
   }
 
   private setupEvents(active: boolean) {

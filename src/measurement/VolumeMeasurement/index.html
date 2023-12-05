@@ -112,6 +112,10 @@
 		console.log(volume);
   })
 
+  highlighter.events.select.onClear.add(() => {
+		dimensions.label.get().removeFromParent();
+  })
+
 	container.ondblclick = () => dimensions.create();
 	container.oncontextmenu = () => dimensions.endCreation();
 
