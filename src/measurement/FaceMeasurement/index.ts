@@ -216,12 +216,11 @@ export class FaceMeasurement
     const face = [] as { indices: number[]; ids: Set<string> }[];
     const distances = {} as { [id: string]: number };
 
+    // Which of the face island was hit by the raycaster
+    const raycasted = { index: faceIndex * 3, island: 0 };
+
     for (let i = 0; i < index.length - 2; i += 3) {
       const current = this.getPlane(mesh, i, instance);
-
-      if (i === faceIndex * 3) {
-        console.log("This is the selected face");
-      }
 
       const isCoplanar = target.plane.equals(current.plane);
       if (isCoplanar) {
@@ -248,22 +247,26 @@ export class FaceMeasurement
         for (iterator.i; iterator.i < face.length; iterator.i++) {
           const loop = face[iterator.i];
           if (loop.ids.has(e1)) {
-            this.addTriangleToFace(face, iterator, e1, e2, e3, i);
+            this.addTriangleToFace(face, iterator, e1, e2, e3, i, raycasted);
           } else if (loop.ids.has(e2)) {
-            this.addTriangleToFace(face, iterator, e2, e3, e1, i);
+            this.addTriangleToFace(face, iterator, e2, e3, e1, i, raycasted);
           } else if (loop.ids.has(e3)) {
-            this.addTriangleToFace(face, iterator, e3, e1, e2, i);
+            this.addTriangleToFace(face, iterator, e3, e1, e2, i, raycasted);
           }
         }
 
         if (iterator.found === null) {
+          if (raycasted.index === i) {
+            raycasted.island = face.length;
+          }
           face.push({ indices: [i], ids: new Set([e1, e2, e3]) });
         }
       }
     }
 
     // TODO: Find out real face by checking the index of the raycasted triangle
-    const currentFace = face[0];
+    const currentFace = face[raycasted.island];
+    if (currentFace === undefined) return;
     const area = this.regenerateHighlight(mesh, currentFace.indices, instance);
 
     let perimeter = 0;
@@ -391,18 +394,19 @@ export class FaceMeasurement
     e1: string,
     e2: string,
     e3: string,
-    i: number
+    i: number,
+    raycasted: { index: number; island: number }
   ) {
     const loop = face[iterator.i];
     if (iterator.found === null) {
-      // When a triangle matches an island of triangles
+      // When a triangle matches an island of triangles for the first time
       loop.ids.delete(e1);
       loop.ids.add(e2);
       loop.ids.add(e3);
       loop.indices.push(i);
       iterator.found = iterator.i;
     } else {
-      // When a triangle has more than one match, fusion both islands
+      // This triangle has matched more than one island: fusion both islands
       loop.ids.delete(e1);
       const previous = face[iterator.found];
       for (const item of loop.ids) {
@@ -413,6 +417,9 @@ export class FaceMeasurement
       }
       face.splice(iterator.i, 1);
       iterator.i--;
+    }
+    if (raycasted.index === i) {
+      raycasted.island = iterator.found;
     }
   }
 }
