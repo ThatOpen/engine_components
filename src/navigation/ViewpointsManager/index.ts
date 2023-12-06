@@ -111,7 +111,7 @@ export class ViewpointsManager extends Component<string> implements UI {
     const dimensionsComp = this.components.tools.get(LengthMeasurement);
     const allDimensions = dimensionsComp.get();
     for (const dimension of allDimensions) {
-      dimensions.push({ start: dimension.start, end: dimension.end });
+      dimensions.push({ start: dimension.startPoint, end: dimension.endPoint });
     }
     // #endregion
 

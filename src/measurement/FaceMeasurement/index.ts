@@ -10,6 +10,7 @@ import {
 import { Components, Simple2DMarker, ToolComponent } from "../../core";
 import { Button } from "../../ui";
 import { DimensionLabelClassName } from "../SimpleDimensionLine";
+import { getRaycastedFace, getVertices } from "../../utils";
 
 export interface AreaSelection {
   area: number;
@@ -262,74 +263,18 @@ export class FaceMeasurement
     const scene = this.components.scene.get();
     scene.add(this.preview);
 
-    const target = this.getPlane(mesh, faceIndex * 3, instance);
-    const { index } = this.getIndexAndPos(mesh);
+    const result = getRaycastedFace(mesh, faceIndex, instance);
+    if (!result) return;
+    const { face, distances } = result;
 
-    const face = [] as { indices: number[]; ids: Set<string> }[];
-    const distances = {} as { [id: string]: number };
-
-    // Which of the face island was hit by the raycaster
-    const raycasted = { index: faceIndex * 3, island: 0 };
-
-    for (let i = 0; i < index.length - 2; i += 3) {
-      const current = this.getPlane(mesh, i, instance);
-
-      const isCoplanar = target.plane.equals(current.plane);
-      if (isCoplanar) {
-        const vectors = [current.v1, current.v2, current.v3];
-        vectors.sort((a, b) => a.x - b.x || a.y - b.y || a.z - b.z);
-        const [v1, v2, v3] = vectors;
-        const v1ID = `${v1.x}_${v1.y}_${v1.z}`;
-        const v2ID = `${v2.x}_${v2.y}_${v2.z}`;
-        const v3ID = `${v3.x}_${v3.y}_${v3.z}`;
-
-        const e1 = `${v1ID}|${v2ID}`;
-        const e2 = `${v2ID}|${v3ID}`;
-        const e3 = `${v1ID}|${v3ID}`;
-
-        distances[e1] = v1.distanceTo(v2);
-        distances[e2] = v2.distanceTo(v3);
-        distances[e3] = v3.distanceTo(v1);
-
-        const iterator: { found: null | number; i: number } = {
-          found: null,
-          i: 0,
-        };
-
-        for (iterator.i; iterator.i < face.length; iterator.i++) {
-          const loop = face[iterator.i];
-          if (loop.ids.has(e1)) {
-            this.addTriangleToFace(face, iterator, e1, e2, e3, i, raycasted);
-          } else if (loop.ids.has(e2)) {
-            this.addTriangleToFace(face, iterator, e2, e3, e1, i, raycasted);
-          } else if (loop.ids.has(e3)) {
-            this.addTriangleToFace(face, iterator, e3, e1, e2, i, raycasted);
-          }
-        }
-
-        if (iterator.found === null) {
-          if (raycasted.index === i) {
-            raycasted.island = face.length;
-          }
-          face.push({ indices: [i], ids: new Set([e1, e2, e3]) });
-        }
-      }
-    }
-
-    const currentFace = face[raycasted.island];
-    if (currentFace === undefined) return;
-    const area = this.regenerateHighlight(mesh, currentFace.indices, instance);
+    const area = this.regenerateHighlight(mesh, face.indices, instance);
 
     let perimeter = 0;
-    for (const id of currentFace.ids) {
+    for (const id of face.ids) {
       const number = distances[id];
       if (number !== undefined) {
         perimeter += number;
       }
-    }
-
-    if (face.length > 1) {
-      console.log("Hey");
     }
 
     this._currentSelelection = { perimeter, area };
@@ -363,7 +308,7 @@ export class FaceMeasurement
     const areaTriangle = new THREE.Triangle();
 
     for (const i of indices) {
-      const { v1, v2, v3 } = this.getVertices(mesh, i, instance);
+      const { v1, v2, v3 } = getVertices(mesh, i, instance);
       position.push(v1.x, v1.y, v1.z);
       position.push(v2.x, v2.y, v2.z);
       position.push(v3.x, v3.y, v3.z);
@@ -381,112 +326,6 @@ export class FaceMeasurement
     this.preview.geometry.setIndex(index);
 
     return area;
-  }
-
-  private getVertices(
-    mesh: THREE.Mesh | THREE.InstancedMesh,
-    i: number,
-    instance: number | undefined
-  ) {
-    const { index, pos } = this.getIndexAndPos(mesh);
-    const [i1, i2, i3] = this.getIndices(index, i);
-    const v1 = new THREE.Vector3();
-    const v2 = new THREE.Vector3();
-    const v3 = new THREE.Vector3();
-
-    v1.set(pos[i1], pos[i1 + 1], pos[i1 + 2]);
-    v2.set(pos[i2], pos[i2 + 1], pos[i2 + 2]);
-    v3.set(pos[i3], pos[i3 + 1], pos[i3 + 2]);
-
-    v1.applyMatrix4(mesh.matrixWorld);
-    v2.applyMatrix4(mesh.matrixWorld);
-    v3.applyMatrix4(mesh.matrixWorld);
-
-    if (mesh instanceof THREE.InstancedMesh && instance !== undefined) {
-      const instanceTransform = new THREE.Matrix4();
-      mesh.getMatrixAt(instance, instanceTransform);
-      v1.applyMatrix4(instanceTransform);
-      v2.applyMatrix4(instanceTransform);
-      v3.applyMatrix4(instanceTransform);
-    }
-    return { v1, v2, v3 };
-  }
-
-  private getPlane(
-    mesh: THREE.Mesh | THREE.InstancedMesh,
-    i: number,
-    instance?: number
-  ) {
-    const { v1, v2, v3 } = this.getVertices(mesh, i, instance);
-
-    this.roundVector(v1);
-    this.roundVector(v2);
-    this.roundVector(v3);
-
-    const plane = new THREE.Plane().setFromCoplanarPoints(v1, v2, v3);
-
-    this.roundVector(plane.normal);
-    plane.constant = Math.round(plane.constant * 10) / 10;
-
-    return { plane, v1, v2, v3 };
-  }
-
-  private getIndexAndPos(mesh: THREE.Mesh | THREE.InstancedMesh) {
-    const { geometry } = mesh;
-    if (!geometry.index) {
-      throw new Error("Geometry must be indexed!");
-    }
-    const index = geometry.index.array as number[];
-    const pos = geometry.attributes.position.array as number[];
-    return { index, pos };
-  }
-
-  private roundVector(vector: THREE.Vector3) {
-    vector.x = Math.round(vector.x * 100) / 100;
-    vector.y = Math.round(vector.y * 100) / 100;
-    vector.z = Math.round(vector.z * 100) / 100;
-  }
-
-  private getIndices(index: number[], i: number) {
-    const i1 = index[i] * 3;
-    const i2 = index[i + 1] * 3;
-    const i3 = index[i + 2] * 3;
-    return [i1, i2, i3];
-  }
-
-  private addTriangleToFace(
-    face: { indices: number[]; ids: Set<string> }[],
-    iterator: { found: null | number; i: number },
-    e1: string,
-    e2: string,
-    e3: string,
-    i: number,
-    raycasted: { index: number; island: number }
-  ) {
-    const loop = face[iterator.i];
-    if (iterator.found === null) {
-      // When a triangle matches an island of triangles for the first time
-      loop.ids.delete(e1);
-      loop.ids.add(e2);
-      loop.ids.add(e3);
-      loop.indices.push(i);
-      iterator.found = iterator.i;
-    } else {
-      // This triangle has matched more than one island: fusion both islands
-      loop.ids.delete(e1);
-      const previous = face[iterator.found];
-      for (const item of loop.ids) {
-        previous.ids.add(item);
-      }
-      for (const item of loop.indices) {
-        previous.indices.push(item);
-      }
-      face.splice(iterator.i, 1);
-      iterator.i--;
-    }
-    if (raycasted.index === i) {
-      raycasted.island = iterator.found;
-    }
   }
 }
 
