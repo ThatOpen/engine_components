@@ -31,6 +31,7 @@ export class EdgeMeasurement
   readonly onAfterCancel = new Event<any>();
   readonly onBeforeDelete = new Event<any>();
   readonly onAfterDelete = new Event<any>();
+  readonly onDisposed = new Event<any>();
 
   private _enabled: boolean = false;
 
@@ -92,6 +93,8 @@ export class EdgeMeasurement
     this.onBeforeDelete.reset();
     this.onAfterDelete.reset();
     await this.uiElement.dispose();
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
     (this.components as any) = null;
   }
 
