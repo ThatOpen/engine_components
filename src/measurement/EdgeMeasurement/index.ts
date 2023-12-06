@@ -11,6 +11,7 @@ import { Components, ToolComponent } from "../../core";
 import { Button } from "../../ui";
 import { SimpleDimensionLine } from "../SimpleDimensionLine";
 import { distanceFromPointToLine, getRaycastedFace } from "../../utils";
+import { LengthMeasurement } from "../LengthMeasurement";
 
 export class EdgeMeasurement
   extends Component<void>
@@ -20,7 +21,6 @@ export class EdgeMeasurement
 
   uiElement = new UIElement<{ main: Button }>();
 
-  selection: SimpleDimensionLine[] = [];
   preview: SimpleDimensionLine;
 
   tolerance = 0.3;
@@ -65,7 +65,15 @@ export class EdgeMeasurement
 
     this.components.tools.add(EdgeMeasurement.uuid, this);
 
-    this.preview = this.newDimensionLine();
+    const endpointElement = document.createElement("div");
+    endpointElement.className = "w-2 h-2 bg-red-600 rounded-full";
+    this.preview = new SimpleDimensionLine(this.components, {
+      start: new THREE.Vector3(),
+      end: new THREE.Vector3(),
+      lineMaterial: this._lineMaterial,
+      endpointElement,
+    });
+
     this.preview.visible = false;
 
     if (components.uiEnabled) {
@@ -100,36 +108,27 @@ export class EdgeMeasurement
     this.uiElement.set({ main });
   }
 
-  create = () => {
+  create = async () => {
     if (!this.enabled || !this.preview.visible) return;
-    const dimension = this.newDimensionLine();
-    dimension.startPoint = this.preview.startPoint.clone();
-    dimension.endPoint = this.preview.endPoint.clone();
-    this.selection.push(dimension);
+    const dims = this.components.tools.get(LengthMeasurement);
+    const start = this.preview.startPoint.clone();
+    const end = this.preview.endPoint.clone();
+    dims.createOnPoints(start, end);
   };
 
+  // TODO: this could be better. Fusion this class with lengthmeasurement?
   async delete() {
-    // const meshes = this.selection.map((item) => item.mesh);
-    // const result = this.components.raycaster.castRay(meshes);
-    // if (!result || !result.object) {
-    //   return;
-    // }
-    // const found = this.selection.find((item) => item.mesh === result.object);
-    // if (!found) return;
-    // found.mesh.removeFromParent();
-    // found.mesh.geometry.dispose();
-    // await found.label.dispose();
-    // const index = this.selection.indexOf(found);
-    // this.selection.splice(index, 1);
+    if (!this.enabled) return;
+    const dims = this.components.tools.get(LengthMeasurement);
+    const previous = dims.enabled;
+    dims.enabled = true;
+    await dims.delete();
+    dims.enabled = previous;
   }
 
   async deleteAll() {
-    // for (const item of this.selection) {
-    //   item.mesh.removeFromParent();
-    //   item.mesh.geometry.dispose();
-    //   await item.label.dispose();
-    // }
-    // this.selection = [];
+    const dims = this.components.tools.get(LengthMeasurement);
+    await dims.deleteAll();
   }
 
   endCreation() {}
@@ -137,45 +136,26 @@ export class EdgeMeasurement
   cancelCreation() {}
 
   get() {
-    // const serialized: SerializedAreaMeasure[] = [];
-    // for (const item of this.selection) {
-    //   const geometry = item.mesh.geometry;
-    //   const { area, perimeter } = item;
-    //   const position = geometry.attributes.position.array as Float32Array;
-    //   serialized.push({ position, area, perimeter });
-    // }
-    // return serialized;
+    const dims = this.components.tools.get(LengthMeasurement);
+    const lines = dims.get();
+    const serialized: number[][] = [];
+    for (const line of lines) {
+      const start = line.startPoint;
+      const end = line.endPoint;
+      const data = [start.x, start.y, start.z, end.x, end.y, end.z];
+      serialized.push(data);
+    }
+    return serialized;
   }
 
-  set() {
-    // const scene = this.components.scene.get();
-    // for (const item of serialized) {
-    //   const geometry = new THREE.BufferGeometry();
-    //   const mesh = new THREE.Mesh(geometry, this.selectionMaterial);
-    //   scene.add(mesh);
-    //   const attr = new THREE.BufferAttribute(item.position, 3);
-    //   geometry.setAttribute("position", attr);
-    //   geometry.computeBoundingSphere();
-    //   const { area, perimeter } = item;
-    //   const label = this.newLabel(geometry, area);
-    //   mesh.add(label.get());
-    //   this.selection.push({ area, perimeter, mesh, label });
-    // }
-  }
-
-  private newDimensionLine() {
-    return new SimpleDimensionLine(this.components, {
-      start: new THREE.Vector3(),
-      end: new THREE.Vector3(),
-      lineMaterial: this._lineMaterial,
-      endpointElement: this.newEndpoint(),
-    });
-  }
-
-  private newEndpoint() {
-    const element = document.createElement("div");
-    element.className = "w-2 h-2 bg-red-600 rounded-full";
-    return element;
+  set(dimensions: number[][]) {
+    const dims = this.components.tools.get(LengthMeasurement);
+    for (const dim of dimensions) {
+      const [x1, y1, z1, x2, y2, z2] = dim;
+      const v1 = new THREE.Vector3(x1, y1, z1);
+      const v2 = new THREE.Vector3(x2, y2, z2);
+      dims.createOnPoints(v1, v2);
+    }
   }
 
   private setupEvents(active: boolean) {
@@ -190,20 +170,6 @@ export class EdgeMeasurement
       window.removeEventListener("keydown", this.onKeydown);
     }
   }
-
-  // private setVisibility() {
-  // const scene = this.components.scene.get();
-  // for (const item of this.selection) {
-  //   const label = item.label.get();
-  //   if (active) {
-  //     scene.add(item.mesh);
-  //     item.mesh.add(label);
-  //   } else {
-  //     item.mesh.removeFromParent();
-  //     label.removeFromParent();
-  //   }
-  // }
-  // }
 
   private onMouseMove = () => {
     if (!this.enabled) {
