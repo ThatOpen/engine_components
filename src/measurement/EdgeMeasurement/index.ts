@@ -82,6 +82,8 @@ export class EdgeMeasurement
   }
 
   async dispose() {
+    await this.preview.dispose();
+    this._lineMaterial.dispose();
     this.setupEvents(false);
     this.onBeforeCreate.reset();
     this.onAfterCreate.reset();

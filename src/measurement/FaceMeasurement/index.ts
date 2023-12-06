@@ -103,6 +103,11 @@ export class FaceMeasurement
 
   async dispose() {
     this.setupEvents(false);
+    await this.deleteAll();
+    this.preview.removeFromParent();
+    this.preview.material.dispose();
+    this.preview.geometry.dispose();
+    this.selectionMaterial.dispose();
     this.onBeforeCreate.reset();
     this.onAfterCreate.reset();
     this.onBeforeCancel.reset();

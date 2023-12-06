@@ -64,6 +64,7 @@ export class VolumeMeasurement
 
   async dispose() {
     this.setupEvents(false);
+    await this.label.dispose();
     this.onBeforeCreate.reset();
     this.onAfterCreate.reset();
     this.onBeforeCancel.reset();
