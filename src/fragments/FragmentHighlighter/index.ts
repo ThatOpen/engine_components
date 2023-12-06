@@ -39,6 +39,9 @@ export class FragmentHighlighter
 {
   static readonly uuid = "cb8a76f2-654a-4b50-80c6-66fd83cafd77" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   enabled = true;
   highlightMats: HighlightMaterials = {};
   events: HighlightEvents = {};
@@ -115,29 +118,42 @@ export class FragmentHighlighter
 
   constructor(components: Components) {
     super(components);
-
     this.components.tools.add(FragmentHighlighter.uuid, this);
+    const fragmentManager = components.tools.get(FragmentManager);
+    fragmentManager.onFragmentsDisposed.add(this.onFragmentsDisposed);
   }
+
+  private onFragmentsDisposed = (data: {
+    groupID: string;
+    fragmentIDs: string[];
+  }) => {
+    this.disposeOutlinedMeshes(data.fragmentIDs);
+  };
 
   get(): HighlightMaterials {
     return this.highlightMats;
+  }
+
+  private disposeOutlinedMeshes(fragmentIDs: string[]) {
+    for (const id of fragmentIDs) {
+      const mesh = this._outlinedMeshes[id];
+      if (!mesh) continue;
+      mesh.geometry.dispose();
+      delete this._outlinedMeshes[id];
+    }
   }
 
   async dispose() {
     this.setupEvents(false);
     this.config.hoverMaterial.dispose();
     this.config.selectionMaterial.dispose();
-
     for (const matID in this.highlightMats) {
       const mats = this.highlightMats[matID] || [];
       for (const mat of mats) {
         mat.dispose();
       }
     }
-    for (const id in this._outlinedMeshes) {
-      const mesh = this._outlinedMeshes[id];
-      mesh.geometry.dispose();
-    }
+    this.disposeOutlinedMeshes(Object.keys(this._outlinedMeshes));
     this.outlineMaterial.dispose();
     this._invisibleMaterial.dispose();
     this.highlightMats = {};
@@ -147,7 +163,11 @@ export class FragmentHighlighter
       this.events[name].onHighlight.reset();
     }
     this.onSetup.reset();
+    const fragmentManager = this.components.tools.get(FragmentManager);
+    fragmentManager.onFragmentsDisposed.remove(this.onFragmentsDisposed);
     this.events = {};
+    await this.onDisposed.trigger(FragmentHighlighter.uuid);
+    this.onDisposed.reset();
   }
 
   async add(name: string, material?: THREE.Material[]) {

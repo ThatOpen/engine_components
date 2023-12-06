@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { Component } from "../../base-types/component";
 import { Components } from "../../core/Components";
 import { Simple2DMarker } from "../../core/Simple2DMarker";
-import { Disposable, Hideable } from "../../base-types/base-types";
+import { Disposable, Hideable, Event } from "../../base-types/base-types";
 
 export class GeometryVerticesMarker
   extends Component<Simple2DMarker[]>
@@ -10,6 +10,9 @@ export class GeometryVerticesMarker
 {
   name: string = "GeometryVerticesMarker";
   enabled: boolean = true;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
 
   private _markers: Simple2DMarker[] = [];
   private _visible = true;
@@ -44,6 +47,8 @@ export class GeometryVerticesMarker
       await marker.dispose();
     }
     this._markers = [];
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   get(): Simple2DMarker[] {

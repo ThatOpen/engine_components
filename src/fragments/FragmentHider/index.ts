@@ -7,6 +7,7 @@ import {
   FragmentIdMap,
   UI,
   UIElement,
+  Event,
 } from "../../base-types";
 import {
   Button,
@@ -27,6 +28,9 @@ interface FilterData {
 
 export class FragmentHider extends Component<void> implements Disposable, UI {
   static readonly uuid = "dd9ccf2d-8a21-4821-b7f6-2949add16a29" as const;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
 
   enabled = true;
 
@@ -98,6 +102,8 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
 
   async dispose() {
     this.uiElement.dispose();
+    await this.onDisposed.trigger(FragmentHider.uuid);
+    this.onDisposed.reset();
   }
 
   set(visible: boolean, items?: FragmentIdMap) {

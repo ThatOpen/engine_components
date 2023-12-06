@@ -20,6 +20,9 @@ export class LocalCacher extends Component<any> implements UI, Disposable {
   /** Fires when a file has been saved into cache. */
   readonly onItemSaved = new Event<{ id: string }>();
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   /** {@link Component.enabled} */
   enabled = true;
 
@@ -126,6 +129,8 @@ export class LocalCacher extends Component<any> implements UI, Disposable {
     this.cards = [];
     await this.uiElement.dispose();
     (this._db as any) = null;
+    await this.onDisposed.trigger(LocalCacher.uuid);
+    this.onDisposed.reset();
   }
 
   private setUI(components: Components) {

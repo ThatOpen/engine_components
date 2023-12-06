@@ -40,6 +40,9 @@ export class Simple2DScene
   /** {@link Component.enabled} */
   enabled = true;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   /** {@link UI.uiElement} */
   uiElement = new UIElement<{
     container: SimpleUIComponent;
@@ -154,6 +157,8 @@ export class Simple2DScene
     }
     await this.renderer.dispose();
     await this.uiElement.dispose();
+    await this.onDisposed.trigger(Simple2DScene.uuid);
+    this.onDisposed.reset();
   }
 
   /** {@link Updateable.update} */

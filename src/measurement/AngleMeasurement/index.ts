@@ -19,6 +19,9 @@ export class AngleMeasurement
 {
   static readonly uuid = "622fb2c9-528c-4b0a-8a0e-6a1375f0a3aa" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   uiElement = new UIElement<{ main: Button }>();
 
   private _lineMaterial: LineMaterial;
@@ -87,7 +90,7 @@ export class AngleMeasurement
   }
 
   async dispose() {
-    await this.setupEvents(false);
+    this.setupEvents(false);
     this.onBeforeCreate.reset();
     this.onAfterCreate.reset();
     this.onBeforeCancel.reset();
@@ -104,6 +107,8 @@ export class AngleMeasurement
       await this._currentAngleElement.dispose();
     }
     (this.components as any) = null;
+    await this.onDisposed.trigger(AngleMeasurement.uuid);
+    this.onDisposed.reset();
   }
 
   create = () => {

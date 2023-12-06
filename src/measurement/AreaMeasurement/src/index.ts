@@ -24,6 +24,9 @@ export class AreaMeasureElement
   workingPlane: THREE.Plane | null = null;
   labelMarker: Simple2DMarker;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
+
   private _rotationMatrix: THREE.Matrix4 | null = null;
   private _dimensionLines: SimpleDimensionLine[] = [];
   private _defaultLineMaterial = new THREE.LineBasicMaterial({ color: "red" });
@@ -182,6 +185,8 @@ export class AreaMeasureElement
     this.workingPlane = null;
     this._defaultLineMaterial.dispose();
     (this.components as any) = null;
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   get(): Area {

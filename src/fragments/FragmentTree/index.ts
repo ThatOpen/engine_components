@@ -17,6 +17,9 @@ export class FragmentTree
 {
   static readonly uuid = "5af6ebe1-26fc-4053-936a-801b6c7cb37e" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   enabled: boolean = true;
   onSelected = new Event<FragmentIdMap>();
 
@@ -60,6 +63,8 @@ export class FragmentTree
     if (this._tree) {
       await this._tree.dispose();
     }
+    await this.onDisposed.trigger(FragmentTree.uuid);
+    this.onDisposed.reset();
   }
 
   async update(groupSystems: string[]) {
