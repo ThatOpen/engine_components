@@ -101,7 +101,7 @@
 
      */
     const fragments = new OBC.FragmentManager(components);
-    const file = await fetch("../../../resources/small.frag");
+    const file = await fetch("../../../resources/bbbb.frag");
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
     const model = await fragments.load(buffer);
@@ -161,7 +161,7 @@
 
     */
 
-    const properties = await fetch("../../../resources/small.json");
+    const properties = await fetch("../../../resources/bbbb.json");
     model.properties = await properties.json();
 
     /*MD
@@ -198,15 +198,19 @@
 
     We will zoom in on the element that is selected in the Tree-View and add a nice highlight effect when the user hovers over a tree node.🖱
 
-    Let's use `modelTree.selected` to get the active selection from Fragment Tree, and we will use `highlighter.highlightByID()` to zoom in.🔍
+    Let's use `modelTree.onSelected` to get the active selection from Fragment Tree, and we will use `highlighter.highlightByID()` to zoom in.🔍
     */
 
-    modelTree.onSelected.add((filter) => {
-        highlighter.highlightByID('select', filter, true, true);
+    modelTree.onSelected.add(({ items, visible }) => {
+        if(visible) {
+            highlighter.highlightByID('select', items, true, true);
+        }
     });
 
-    modelTree.onHovered.add((filter) => {
-        highlighter.highlightByID('hover', filter);
+    modelTree.onHovered.add(({ items, visible }) => {
+        if(visible) {
+            highlighter.highlightByID('hover', items);
+        }
     });
 
     /*MD
