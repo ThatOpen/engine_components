@@ -83,7 +83,7 @@
 	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 	components.scene.setup();
 
-  const grid = new OBC.SimpleGrid(components);
+  const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
 	const effects = components.renderer.postproduction.customEffects;
 	effects.excludedMeshes.push(grid.get());
 
