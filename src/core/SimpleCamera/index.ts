@@ -21,6 +21,9 @@ export class SimpleCamera
 
   readonly onAspectUpdated = new Event();
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   /**
    * The object that controls the camera. An instance of
    * [yomotsu's cameracontrols](https://github.com/yomotsu/camera-controls).
@@ -70,14 +73,16 @@ export class SimpleCamera
     this.onAfterUpdate.reset();
     this._perspectiveCamera.removeFromParent();
     this.controls.dispose();
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   /** {@link Updateable.update} */
-  update(_delta: number): void {
+  async update(_delta: number) {
     if (this.enabled) {
-      this.onBeforeUpdate.trigger(this);
+      await this.onBeforeUpdate.trigger(this);
       this.controls.update(_delta);
-      this.onAfterUpdate.trigger(this);
+      await this.onAfterUpdate.trigger(this);
     }
   }
 

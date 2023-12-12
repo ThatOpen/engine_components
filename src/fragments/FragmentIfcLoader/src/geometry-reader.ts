@@ -1,6 +1,6 @@
 import * as WEBIFC from "web-ifc";
 import * as THREE from "three";
-import { IfcGeometries } from "./types";
+import { IfcCivil, IfcGeometries } from "./types";
 
 export class GeometryReader {
   private _webIfc?: WEBIFC.IfcAPI;
@@ -9,6 +9,11 @@ export class GeometryReader {
 
   items: IfcGeometries = {};
   locations: { [itemID: number]: [number, number, number] } = {};
+  CivilItems: IfcCivil = {
+    IfcAlignment: [],
+    IfcCrossSection2D: [],
+    IfcCrossSection3D: [],
+  };
 
   get webIfc() {
     if (!this._webIfc) {
@@ -70,6 +75,15 @@ export class GeometryReader {
       const { x, y, z } = totalTransform.divideScalar(size);
       this.locations[mesh.expressID] = [x, y, z];
     }
+  }
+
+  streamAlignment(webifc: WEBIFC.IfcAPI) {
+    this.CivilItems.IfcAlignment = webifc.GetAllAlignments(0);
+  }
+
+  streamCrossSection(webifc: WEBIFC.IfcAPI) {
+    this.CivilItems.IfcCrossSection2D = webifc.GetAllCrossSections2D(0);
+    this.CivilItems.IfcCrossSection3D = webifc.GetAllCrossSections3D(0);
   }
 
   private newBufferGeometry(geometryID: number) {

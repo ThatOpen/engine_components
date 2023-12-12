@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Component, Disposable, Mouse } from "../../base-types";
+import { Component, Disposable, Mouse, Event } from "../../base-types";
 import { Components } from "../Components";
 import { BaseRaycaster } from "../../base-types/base-raycaster";
 
@@ -11,6 +11,9 @@ import { BaseRaycaster } from "../../base-types/base-raycaster";
 export class SimpleRaycaster extends BaseRaycaster implements Disposable {
   /** {@link Component.enabled} */
   enabled = true;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
 
   /** The position of the mouse in the screen. */
   readonly mouse: Mouse;
@@ -32,6 +35,8 @@ export class SimpleRaycaster extends BaseRaycaster implements Disposable {
   /** {@link Disposable.dispose} */
   async dispose() {
     this.mouse.dispose();
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   /**
@@ -48,9 +53,7 @@ export class SimpleRaycaster extends BaseRaycaster implements Disposable {
   ): THREE.Intersection | null {
     const camera = this.components.camera.get();
     this._raycaster.setFromCamera(this.mouse.position, camera);
-    const result = this._raycaster.intersectObjects(items);
-    const filtered = this.filterClippingPlanes(result);
-    return filtered.length > 0 ? filtered[0] : null;
+    return this.intersect(items);
   }
 
   castRayFromVector(
@@ -59,6 +62,10 @@ export class SimpleRaycaster extends BaseRaycaster implements Disposable {
     items = this.components.meshes
   ) {
     this._raycaster.set(origin, direction);
+    return this.intersect(items);
+  }
+
+  private intersect(items: THREE.Mesh[] = this.components.meshes) {
     const result = this._raycaster.intersectObjects(items);
     const filtered = this.filterClippingPlanes(result);
     return filtered.length > 0 ? filtered[0] : null;

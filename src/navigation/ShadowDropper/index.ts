@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { HorizontalBlurShader } from "three/examples/jsm/shaders/HorizontalBlurShader";
 import { VerticalBlurShader } from "three/examples/jsm/shaders/VerticalBlurShader";
-import { Component, Disposable } from "../../base-types";
+import { Component, Disposable, Event } from "../../base-types";
 import { Components, Disposer, ToolComponent } from "../../core";
 
 // TODO: Clean up and document this
@@ -20,6 +20,9 @@ export interface Shadows {
 
 export class ShadowDropper extends Component<Shadows> implements Disposable {
   static readonly uuid = "f833a09a-a3ab-4c58-b03e-da5298c7a1b6" as const;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
 
   enabled = true;
 
@@ -55,11 +58,13 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
   /** {@link Disposable.dispose} */
   async dispose() {
     for (const id in this.shadows) {
-      await this.deleteShadow(id);
+      this.deleteShadow(id);
     }
     this.tempMaterial.dispose();
     this.depthMaterial.dispose();
     (this.components as any) = null;
+    await this.onDisposed.trigger(ShadowDropper.uuid);
+    this.onDisposed.reset();
   }
 
   /**
@@ -85,8 +90,8 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
    *
    * @param id - the name of this shadow.
    */
-  async deleteShadow(id: string) {
-    const disposer = await this.components.tools.get(Disposer);
+  deleteShadow(id: string) {
+    const disposer = this.components.tools.get(Disposer);
     const shadow = this.shadows[id];
     delete this.shadows[id];
     if (!shadow) throw new Error(`No shadow with ID ${id} was found.`);

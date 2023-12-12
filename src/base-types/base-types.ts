@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { UIElement } from "./ui-element";
+import { SimpleUIComponent } from "../ui/SimpleUIComponent";
 
 /**
  * Simple event handler by
@@ -57,6 +58,9 @@ export interface Disposable {
    * [memory leak](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
    */
   dispose: () => Promise<void>;
+
+  /** Fired after the tool has been {@link Disposable.dispose()}  */
+  readonly onDisposed: Event<any>;
 }
 
 /**
@@ -166,12 +170,28 @@ export interface Createable {
 }
 
 /**
+ * Whether this component supports to be configured.
+ */
+export interface Configurable<T extends Record<string, any>> {
+  /** Use the provided configuration to setup the tool. */
+  setup: (config?: Partial<T>) => Promise<void>;
+
+  /** Fired after successfully calling {@link Configurable.setup()}  */
+  readonly onSetup: Event<any>;
+
+  /** Object holding the tool configuration. Is not meant to be edited directly, if you need
+   * to make changes to this object, use {@link Configurable.setup()} just after the tool is instantiated.
+   */
+  config: Required<T>;
+}
+
+/**
  * Whether this component has a representation in the user
  * interface, like a button or a window.
  */
 export interface UI {
-  /** The class containing all the menus of this component.  */
-  readonly uiElement: UIElement<any>;
+  /** The class containing all the buttons, windows, tables, etc., of this component.  */
+  readonly uiElement: UIElement<{ [name: string]: SimpleUIComponent }>;
 }
 
 /**

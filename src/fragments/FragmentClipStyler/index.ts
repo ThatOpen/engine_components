@@ -1,5 +1,12 @@
 import * as THREE from "three";
-import { Component, Disposable, Event, UI, UIElement } from "../../base-types";
+import {
+  Component,
+  Configurable,
+  Disposable,
+  Event,
+  UI,
+  UIElement,
+} from "../../base-types";
 import {
   Button,
   ColorInput,
@@ -21,13 +28,20 @@ export interface ClipStyleCardData {
   categories: string;
 }
 
+export interface FragmentClipStylerConfig {
+  force: boolean;
+}
+
 export class FragmentClipStyler
   extends Component<ClipStyleCardData[]>
-  implements UI, Disposable
+  implements UI, Disposable, Configurable<FragmentClipStylerConfig>
 {
   static readonly uuid = "14de9fbd-2151-4c01-8e07-22a2667e1126" as const;
 
   readonly onChange = new Event();
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
 
   enabled = true;
 
@@ -74,17 +88,24 @@ export class FragmentClipStyler
 
     this.components.tools.add(FragmentClipStyler.uuid, this);
 
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setupUI(components);
     }
   }
 
-  async setup(force = false) {
+  config: FragmentClipStylerConfig = {
+    force: false,
+  };
+  readonly onSetup = new Event<FragmentClipStyler>();
+  async setup(config?: Partial<FragmentClipStylerConfig>) {
+    this.config = { ...this.config, ...config };
+    const { force } = this.config;
     const noCards = Object.keys(this.styleCards).length === 0;
     if (force || noCards) {
       localStorage.setItem(this.localStorageID, this._defaultStyles);
       await this.loadCachedStyles();
     }
+    this.onSetup.trigger(this);
   }
 
   get() {
@@ -102,12 +123,14 @@ export class FragmentClipStyler
     }
     await this.uiElement.dispose();
     this.onChange.reset();
+    await this.onDisposed.trigger(FragmentClipStyler.uuid);
+    this.onDisposed.reset();
   }
 
   async update(ids = Object.keys(this.styleCards)) {
-    const clipper = await this.components.tools.get(EdgesClipper);
-    const fragments = await this.components.tools.get(FragmentManager);
-    const classifier = await this.components.tools.get(FragmentClassifier);
+    const clipper = this.components.tools.get(EdgesClipper);
+    const fragments = this.components.tools.get(FragmentManager);
+    const classifier = this.components.tools.get(FragmentClassifier);
 
     for (const id of ids) {
       const card = this.styleCards[id];
@@ -122,7 +145,7 @@ export class FragmentClipStyler
       const categoryList = card.categories.value.split(",");
       const entities = categoryList.map((item) => item.replace(" ", ""));
 
-      const found = await classifier.find({ entities });
+      const found = classifier.find({ entities });
       for (const fragID in found) {
         const { mesh } = fragments.list[fragID];
         style.fragments[fragID] = new Set(found[fragID]);
@@ -199,7 +222,7 @@ export class FragmentClipStyler
 
   private async deleteStyleCard(id: string, updateCache = true) {
     const found = this.styleCards[id];
-    const clipper = await this.components.tools.get(EdgesClipper);
+    const clipper = this.components.tools.get(EdgesClipper);
     clipper.styles.deleteStyle(id, true);
     if (found) {
       await found.styleCard.dispose();
@@ -367,7 +390,7 @@ export class FragmentClipStyler
       this.onChange.trigger();
     });
 
-    const clipper = await this.components.tools.get(EdgesClipper);
+    const clipper = this.components.tools.get(EdgesClipper);
 
     clipper.styles.create(
       id,

@@ -18,6 +18,9 @@ export class AreaMeasurement
 {
   static readonly uuid = "c453a99e-f054-4781-9060-33df617db4a5" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   uiElement = new UIElement<{ main: Button }>();
 
   private _enabled: boolean = false;
@@ -36,7 +39,7 @@ export class AreaMeasurement
   set enabled(value: boolean) {
     this._enabled = value;
     this._vertexPicker.enabled = value;
-    if (this.components.ui.enabled) {
+    if (this.components.uiEnabled) {
       const main = this.uiElement.get("main");
       main.active = value;
     }
@@ -64,7 +67,7 @@ export class AreaMeasurement
     // TODO: Make vertexpicker a tool?
     this._vertexPicker = new VertexPicker(components);
 
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setUI();
     }
   }
@@ -86,6 +89,8 @@ export class AreaMeasurement
       await measure.dispose();
     }
     (this.components as any) = null;
+    await this.onDisposed.trigger(AreaMeasurement.uuid);
+    this.onDisposed.reset();
   }
 
   private setUI() {

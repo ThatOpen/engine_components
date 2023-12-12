@@ -25,6 +25,9 @@ export class SimpleRenderer
   /** The HTML container of the THREE.js canvas where the scene is rendered. */
   container: HTMLElement | null;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
+
   /** {@link Updateable.onBeforeUpdate} */
   readonly onBeforeUpdate = new Event<SimpleRenderer>();
 
@@ -95,6 +98,8 @@ export class SimpleRenderer
     this.onResize.reset();
     this.onAfterUpdate.reset();
     this.onBeforeUpdate.reset();
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   /** {@link Resizeable.getSize}. */
@@ -137,8 +142,6 @@ export class SimpleRenderer
     this._renderer2D.domElement.style.pointerEvents = "none";
     if (this.container) {
       this.container.appendChild(this._renderer.domElement);
-    }
-    if (this.container) {
       this.container.appendChild(this._renderer2D.domElement);
     }
     this.updateContainer();

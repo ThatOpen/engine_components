@@ -1,10 +1,7 @@
 import * as THREE from "three";
 import ToolBufferReader from "top-tool-package-reader";
-import { Component, Disposable } from "../../base-types";
+import { Component, Disposable, Event } from "../../base-types";
 import { Components } from "../Components";
-
-/** A list of tools sorted by their UUID. */
-type ToolsList = Map<string, Component<any>>;
 
 /**
  * An object to easily handle all the tools used (e.g. updating them, retrieving
@@ -12,11 +9,14 @@ type ToolsList = Map<string, Component<any>>;
  * something through user interaction (e.g. clipping planes, dimensions, etc).
  */
 export class ToolComponent
-  extends Component<Promise<Component<any>>>
+  extends Component<Component<any>>
   implements Disposable
 {
   /** The list of components created in this app. */
-  list: ToolsList = new Map();
+  list: Record<string, Component<any>> = {};
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
 
   /** The list of UUIDs of all the components in this library. */
   static readonly libraryUUIDs = new Set();
@@ -47,6 +47,8 @@ export class ToolComponent
     this._OBC = OBC;
   }
 
+  readonly onToolAdded = new Event<Component<any>>();
+
   /**
    * Adds a new tool. Use this in the constructor of your tools.
    *
@@ -54,9 +56,13 @@ export class ToolComponent
    * @param instance The instance of your tool (`this` inside the constructor).
    */
   add(uuid: string, instance: Component<any>) {
-    if (!this.list.has(uuid)) {
-      this.list.set(uuid, instance);
-    }
+    if (uuid in this.list)
+      throw new Error(
+        `You're trying to add a tool that already exists in the components intance. Use ToolsComponent.get() instead.`
+      );
+    this.validateUUID(uuid);
+    this.list[uuid] = instance;
+    this.onToolAdded.trigger(instance);
   }
 
   /**
@@ -65,20 +71,19 @@ export class ToolComponent
    *
    * @param ToolClass - The component to get or create.
    */
-  async get<T, U extends Component<T>>(
+  get<T, U extends Component<T>>(
     ToolClass: new (components: Components) => U
-  ): Promise<U> {
-    const id = (ToolClass as any).uuid;
-    if (!this.list.has(id)) {
-      const isLibraryComponent = ToolComponent.libraryUUIDs.has(id);
-      if (isLibraryComponent) {
-        const newLibraryComponent = new ToolClass(this.components);
-        this.list.set(id, newLibraryComponent);
-        return newLibraryComponent;
+  ): U {
+    const uuid = (ToolClass as any).uuid;
+    if (!(uuid in this.list)) {
+      const toolInstance = new ToolClass(this.components);
+      // If true, means the tool is not autoregistered.
+      if (!(uuid in this.list)) {
+        this.add(uuid, toolInstance);
       }
-      return this.getPlatformComponent(id);
+      return toolInstance;
     }
-    return this.list.get(id) as U;
+    return this.list[uuid] as U;
   }
 
   /**
@@ -88,8 +93,8 @@ export class ToolComponent
    * [delta time](https://threejs.org/docs/#api/en/core/Clock) of the loop.
    */
   async update(delta: number) {
-    const tools = this.list.values();
-    for (const tool of tools) {
+    for (const uuid in this.list) {
+      const tool = this.list[uuid];
       if (tool.enabled && tool.isUpdateable()) {
         await tool.update(delta);
       }
@@ -100,21 +105,36 @@ export class ToolComponent
    * Disposes all the MEMORY used by all the tools.
    */
   async dispose() {
-    const tools = this.list.values();
-    for (const tool of tools) {
+    for (const uuid in this.list) {
+      const tool = this.list[uuid];
       tool.enabled = false;
       if (tool.isDisposeable()) {
         await tool.dispose();
       }
     }
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
-  async getPlatformComponent<T, U extends Component<T>>(
-    id: string
-  ): Promise<U> {
+  private _uuidv4Pattern =
+    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+
+  private validateUUID(uuid: string) {
+    if (!this._uuidv4Pattern.test(uuid))
+      throw new Error(
+        `${uuid} is not a valid UUID v4.
+
+- If you're the tool creator, you can take one from https://www.uuidgenerator.net/.
+
+- If you're using a platform tool, verify the uuid isn't misspelled or contact the tool creator.`
+      );
+  }
+
+  async getPlatformComponent<T extends Component<any>>(id: string): Promise<T> {
     if (!this._OBC) {
       console.log("Tools component not initialized! Call the init method.");
     }
+    this.validateUUID(id);
     const { base, baseDev, path } = this._urls;
     const currentUrl = window.location.href;
     const devPattern = /(https:\/\/qa.)|(localhost)/;
