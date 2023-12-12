@@ -38,6 +38,9 @@ export class IfcPropertiesFinder
 {
   readonly onFound = new Event<FragmentIdMap>();
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
+
   enabled: boolean = true;
 
   uiElement = new UIElement<{
@@ -55,11 +58,20 @@ export class IfcPropertiesFinder
   constructor(components: Components) {
     super(components);
     this._conditionFunctions = this.getConditionFunctions();
+    const fragmentManager = components.tools.get(FragmentManager);
+    fragmentManager.onFragmentsDisposed.add(this.onFragmentsDisposed);
   }
 
-  async init() {
-    if (this.components.ui.enabled) {
-      await this.setUI();
+  private onFragmentsDisposed = (data: {
+    groupID: string;
+    fragmentIDs: string[];
+  }) => {
+    delete this._indexedModels[data.groupID];
+  };
+
+  init() {
+    if (this.components.uiEnabled) {
+      this.setUI();
     }
   }
 
@@ -71,6 +83,8 @@ export class IfcPropertiesFinder
     this._indexedModels = {};
     this.onFound.reset();
     this.uiElement.dispose();
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   loadCached(id?: string) {
@@ -88,7 +102,7 @@ export class IfcPropertiesFinder
     localStorage.removeItem(this._localStorageID);
   }
 
-  private async setUI() {
+  private setUI() {
     const main = new Button(this.components, {
       materialIconName: "manage_search",
     });
@@ -96,7 +110,7 @@ export class IfcPropertiesFinder
     const queryWindow = new FloatingWindow(this.components);
     this.components.ui.add(queryWindow);
 
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
 
     // queryWindow.get().classList.add("overflow-visible");
     queryWindow.get().style.width = "700px";
@@ -180,7 +194,7 @@ export class IfcPropertiesFinder
   }
 
   async find(queryGroups?: QueryGroup[], queryModels?: FragmentsGroup[]) {
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
 
     const queries = this.uiElement.get<QueryBuilder>("query");
     const models = queryModels || fragments.groups;
@@ -232,13 +246,13 @@ export class IfcPropertiesFinder
       result[model.uuid] = { modelEntities, otherEntities };
     }
 
-    const foundFragments = await this.toFragmentMap(result);
-    await this.onFound.trigger(foundFragments);
+    const foundFragments = this.toFragmentMap(result);
+    this.onFound.trigger(foundFragments);
     return foundFragments;
   }
 
-  private async toFragmentMap(data: QueryResult) {
-    const fragments = await this.components.tools.get(FragmentManager);
+  private toFragmentMap(data: QueryResult) {
+    const fragments = this.components.tools.get(FragmentManager);
     const fragmentMap: FragmentIdMap = {};
     for (const modelID in data) {
       const model = fragments.groups.find((m) => m.uuid === modelID);

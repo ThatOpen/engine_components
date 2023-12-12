@@ -6,7 +6,7 @@ import {
   disposeBoundsTree,
 } from "three-mesh-bvh";
 import { UIManager } from "../../ui";
-import { BaseRenderer, Component, Event } from "../../base-types";
+import { BaseRenderer, Component, Disposable, Event } from "../../base-types";
 import { ToolComponent } from "../ToolsComponent";
 import { BaseRaycaster } from "../../base-types/base-raycaster";
 import { Disposer } from "../Disposer";
@@ -18,12 +18,9 @@ import { Disposer } from "../Disposer";
  * loop of everything. Each instance has to be initialized with {@link init}.
  *
  */
-export class Components {
+export class Components implements Disposable {
   /** {@link ToolComponent} */
   readonly tools: ToolComponent;
-
-  /** {@link UIManager} */
-  readonly ui: UIManager;
 
   /**
    * All the loaded [meshes](https://threejs.org/docs/#api/en/objects/Mesh).
@@ -35,15 +32,30 @@ export class Components {
    * Event that fires when this instance has been fully initialized and is
    * ready to work (scene, camera and renderer are ready).
    */
-  readonly onInitialized: Event<Components> = new Event();
+  readonly onInitialized = new Event<Components>();
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
 
   enabled = false;
 
+  /** Whether UI components should be created. */
+  uiEnabled = true;
+
+  private _ui?: UIManager;
   private _renderer?: BaseRenderer;
   private _scene?: Component<THREE.Scene>;
   private _camera?: Component<THREE.Camera>;
   private _raycaster?: BaseRaycaster;
   private _clock: THREE.Clock;
+
+  /** {@link UIManager} */
+  get ui(): UIManager {
+    if (!this._ui) {
+      throw new Error("UIManager hasn't been initialised.");
+    }
+    return this._ui;
+  }
 
   /**
    * The [Three.js renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
@@ -122,7 +134,6 @@ export class Components {
   constructor() {
     this._clock = new THREE.Clock();
     this.tools = new ToolComponent(this);
-    this.ui = new UIManager(this);
     Components.setupBVH();
   }
 
@@ -135,7 +146,10 @@ export class Components {
   async init() {
     this.enabled = true;
     this._clock.start();
-    this.ui.init();
+    if (this.uiEnabled) {
+      this._ui = new UIManager(this);
+      this.ui.init();
+    }
     await this.update();
     await this.onInitialized.trigger(this);
   }
@@ -156,7 +170,7 @@ export class Components {
    *
    */
   async dispose() {
-    const disposer = await this.tools.get(Disposer);
+    const disposer = this.tools.get(Disposer);
     this.enabled = false;
     await this.tools.dispose();
     await this.ui.dispose();
@@ -178,6 +192,8 @@ export class Components {
     if (this.raycaster.isDisposeable()) {
       await this.raycaster.dispose();
     }
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   private update = async () => {

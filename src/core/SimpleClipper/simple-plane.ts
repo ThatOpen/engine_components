@@ -19,6 +19,9 @@ export class SimplePlane
   /** Event that fires when the user stops dragging a clipping plane. */
   readonly onDraggingEnded = new Event<void>();
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
+
   readonly normal: THREE.Vector3;
 
   readonly origin: THREE.Vector3;
@@ -147,6 +150,8 @@ export class SimplePlane
     this._planeMesh.geometry.dispose();
     this._controls.removeFromParent();
     this._controls.dispose();
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   protected toggleControls(state: boolean) {

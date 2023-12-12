@@ -24,6 +24,9 @@ export class VertexPicker
   private _enabled: boolean = false;
   private _workingPlane: THREE.Plane | null = null;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
+
   set enabled(value: boolean) {
     this._enabled = value;
     if (!value) {
@@ -76,6 +79,8 @@ export class VertexPicker
     this.afterUpdate.reset();
     this.beforeUpdate.reset();
     (this._components as any) = null;
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   get(): THREE.Vector3 | null {
@@ -161,11 +166,12 @@ export class VertexPicker
   }
 
   private setupEvents(active: boolean) {
-    const container = this._components.ui.viewerContainer;
+    const container = this.components.renderer.get().domElement.parentElement;
+    if (!container) return;
     if (active) {
       container.addEventListener("mousemove", this.update);
     } else {
-      container.addEventListener("mousemove", this.update);
+      container.removeEventListener("mousemove", this.update);
     }
   }
 }

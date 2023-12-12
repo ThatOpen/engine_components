@@ -17,6 +17,9 @@ export class FragmentTree
 {
   static readonly uuid = "5af6ebe1-26fc-4053-936a-801b6c7cb37e" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   enabled: boolean = true;
   onSelected = new Event<FragmentIdMap>();
 
@@ -40,15 +43,15 @@ export class FragmentTree
     return this._tree;
   }
 
-  async init() {
-    const classifier = await this.components.tools.get(FragmentClassifier);
+  init() {
+    const classifier = this.components.tools.get(FragmentClassifier);
     const tree = new FragmentTreeItem(
       this.components,
       classifier,
       "Model Tree"
     );
     this._tree = tree;
-    if (this.components.ui.enabled) {
+    if (this.components.uiEnabled) {
       this.setupUI(tree);
     }
   }
@@ -60,11 +63,13 @@ export class FragmentTree
     if (this._tree) {
       await this._tree.dispose();
     }
+    await this.onDisposed.trigger(FragmentTree.uuid);
+    this.onDisposed.reset();
   }
 
   async update(groupSystems: string[]) {
     if (!this._tree) return;
-    const classifier = await this.components.tools.get(FragmentClassifier);
+    const classifier = this.components.tools.get(FragmentClassifier);
     if (this._tree.children.length) {
       await this._tree.dispose();
       this._tree = new FragmentTreeItem(
@@ -73,7 +78,7 @@ export class FragmentTree
         this._title
       );
     }
-    this._tree.children = await this.regenerate(groupSystems);
+    this._tree.children = this.regenerate(groupSystems);
   }
 
   private setupUI(tree: FragmentTreeItem) {
@@ -94,8 +99,8 @@ export class FragmentTree
     this.uiElement.set({ main, window });
   }
 
-  private async regenerate(groupSystemNames: string[], result = {}) {
-    const classifier = await this.components.tools.get(FragmentClassifier);
+  private regenerate(groupSystemNames: string[], result = {}) {
+    const classifier = this.components.tools.get(FragmentClassifier);
     const systems = classifier.get();
     const groups: FragmentTreeItem[] = [];
     const currentSystemName = groupSystemNames[0]; // storeys
@@ -106,9 +111,9 @@ export class FragmentTree
     for (const name in systemGroups) {
       // name is N00, N01, N02...
       // { storeys: "N00" }, { storeys: "N01" }...
-      const classifier = await this.components.tools.get(FragmentClassifier);
+      const classifier = this.components.tools.get(FragmentClassifier);
       const filter = { ...result, [currentSystemName]: [name] };
-      const found = await classifier.find(filter);
+      const found = classifier.find(filter);
       const hasElements = Object.keys(found).length > 0;
       if (hasElements) {
         const firstLetter = currentSystemName[0].toUpperCase();
@@ -125,10 +130,7 @@ export class FragmentTree
 
         treeItem.filter = filter;
         groups.push(treeItem);
-        treeItem.children = await this.regenerate(
-          groupSystemNames.slice(1),
-          filter
-        );
+        treeItem.children = this.regenerate(groupSystemNames.slice(1), filter);
       }
     }
     return groups;

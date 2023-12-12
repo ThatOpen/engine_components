@@ -10,6 +10,18 @@
   <link rel="stylesheet" href="./top.css">
   <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
   <title>UI Manager Component</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    .full-screen {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+  </style>
 </head>
 <body>
 <div class="full-screen" id="viewer-container"></div>
@@ -258,7 +270,7 @@
 		closeOnClick: false
 	});
 
-	deleteSingleCubeButton.onclick = () => deleteBox();
+	deleteSingleCubeButton.onClick.add(() => deleteBox());
 
 	deleteCubeButtons.addChild(deleteSingleCubeButton);
 

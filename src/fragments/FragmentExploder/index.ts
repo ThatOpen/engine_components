@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Component, Disposable, UI, UIElement } from "../../base-types";
+import { Component, Disposable, UI, UIElement, Event } from "../../base-types";
 import { toCompositeID } from "../../utils";
 import { Button } from "../../ui";
 import { Components, ToolComponent } from "../../core";
@@ -21,6 +21,9 @@ export class FragmentExploder
 
   uiElement = new UIElement<{ main: Button }>();
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   private _explodedFragments = new Set<string>();
 
   get(): Set<string> {
@@ -32,7 +35,7 @@ export class FragmentExploder
 
     components.tools.add(FragmentExploder.uuid, this);
 
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setupUI(components);
     }
   }
@@ -40,21 +43,23 @@ export class FragmentExploder
   async dispose() {
     this._explodedFragments.clear();
     this.uiElement.dispose();
+    await this.onDisposed.trigger(FragmentExploder.uuid);
+    this.onDisposed.reset();
   }
 
-  async explode() {
+  explode() {
     this.enabled = true;
-    await this.update();
+    this.update();
   }
 
-  async reset() {
+  reset() {
     this.enabled = false;
-    await this.update();
+    this.update();
   }
 
-  async update() {
-    const classifier = await this.components.tools.get(FragmentClassifier);
-    const fragments = await this.components.tools.get(FragmentManager);
+  update() {
+    const classifier = this.components.tools.get(FragmentClassifier);
+    const fragments = this.components.tools.get(FragmentManager);
 
     const factor = this.enabled ? 1 : -1;
     let i = 0;
@@ -155,9 +160,9 @@ export class FragmentExploder
     main.materialIcon = "splitscreen";
     main.onClick.add(async () => {
       if (this.enabled) {
-        await this.reset();
+        this.reset();
       } else {
-        await this.explode();
+        this.explode();
       }
     });
   }

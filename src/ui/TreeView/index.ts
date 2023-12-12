@@ -74,13 +74,13 @@ export class TreeView extends SimpleUIComponent<HTMLDivElement> {
 
   constructor(components: Components, title?: string) {
     const template = `
-    <div class="flex flex-col items-start w-full box-border cursor-pointer text-base">
-      <div id="title-container" class="flex flex-wrap items-center text-base justify-between hover:bg-ifcjs-120 rounded-md w-full min-h-[30px] pr-3 bg-ifcjs-120">
+    <div class="flex flex-col items-start w-full box-border cursor-pointer text-base my-0">
+      <div id="title-container" class="flex flex-wrap items-center text-base my-0 justify-between hover:bg-ifcjs-120 rounded-md w-full min-h-[30px] pr-3 bg-ifcjs-120">
         <div class="flex flex-row items-center gap-x-2 mr-4">
           <span id="expandBtn" class="material-icons md-18 text-white rounded-[10px] h-fit hover:cursor-pointer hover:bg-ifcjs-200 hover:text-black transition-all p-1"></span>
           <div class="flex flex-col items-start py-[5px]">
-            <p id="title" class="text-base"></p>
-            <p id="description" class="text-sm text-gray-400"></p>
+            <p id="title" class="text-base my-0"></p>
+            <p id="description" class="text-sm text-gray-400 my-0"></p>
           </div>
         </div> 
         <div data-tooeen-slot="titleRight"></div>

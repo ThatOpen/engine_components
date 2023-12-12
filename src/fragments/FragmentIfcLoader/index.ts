@@ -20,6 +20,9 @@ export class FragmentIfcLoader
 {
   static readonly uuid = "a659add7-1418-4771-a0d6-7d4d438e4624" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   enabled: boolean = true;
 
   uiElement = new UIElement<{ main: Button; toast: ToastNotification }>();
@@ -42,7 +45,7 @@ export class FragmentIfcLoader
     this._converter = new DataConverter(components);
     this.components.tools.add(FragmentIfcLoader.uuid, this);
 
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setupUI();
     }
   }
@@ -65,6 +68,8 @@ export class FragmentIfcLoader
     (this._webIfc as any) = null;
     (this._geometry as any) = null;
     (this._converter as any) = null;
+    await this.onDisposed.trigger(FragmentIfcLoader.uuid);
+    this.onDisposed.reset();
   }
 
   /** Loads the IFC file and converts it to a set of fragments. */
@@ -77,16 +82,19 @@ export class FragmentIfcLoader
     await this.readIfcFile(data);
 
     await this.readAllGeometries();
+    await this._geometry.streamAlignment(this._webIfc);
+    await this._geometry.streamCrossSection(this._webIfc);
 
     const items = this._geometry.items;
-    const model = await this._converter.generate(this._webIfc, items);
+    const civItems = this._geometry.CivilItems;
+    const model = await this._converter.generate(this._webIfc, items, civItems);
     model.name = name;
 
     if (this.settings.saveLocations) {
       await this.onLocationsSaved.trigger(this._geometry.locations);
     }
 
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
 
     if (this.settings.coordinate) {
       const isFirstModel = fragments.groups.length === 0;
@@ -128,7 +136,7 @@ export class FragmentIfcLoader
       fileOpener.style.display = "none";
 
       fileOpener.onchange = async () => {
-        const fragments = await this.components.tools.get(FragmentManager);
+        const fragments = this.components.tools.get(FragmentManager);
         if (fileOpener.files === null || fileOpener.files.length === 0) return;
         const file = fileOpener.files[0];
         const buffer = await file.arrayBuffer();
@@ -193,6 +201,10 @@ export class FragmentIfcLoader
       }
       this._geometry.streamMesh(this._webIfc, mesh);
     });
+
+    // Load civil items
+    this._geometry.streamAlignment(this._webIfc);
+    this._geometry.streamCrossSection(this._webIfc);
   }
 
   private cleanUp() {

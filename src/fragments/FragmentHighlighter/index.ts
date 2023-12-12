@@ -1,7 +1,12 @@
 import * as THREE from "three";
-import { Fragment } from "bim-fragment";
-import { FragmentMesh } from "bim-fragment/fragment-mesh";
-import { Component, Disposable, Updateable, Event, FragmentIdMap } from "../../base-types";
+import { Fragment, FragmentMesh } from "bim-fragment";
+import {
+  Component,
+  Disposable,
+  Updateable, Event,
+  FragmentIdMap,
+  Configurable,
+} from "../../base-types";
 import { FragmentManager } from "../FragmentManager";
 import { FragmentBoundingBox } from "../FragmentBoundingBox";
 import { Components, SimpleCamera, ToolComponent } from "../../core";
@@ -21,11 +26,21 @@ interface HighlightMaterials {
   [name: string]: THREE.Material[] | undefined;
 }
 
+export interface FragmentHighlighterConfig {
+  selectName: string;
+  hoverName: string;
+  selectionMaterial: THREE.Material;
+  hoverMaterial: THREE.Material;
+}
+
 export class FragmentHighlighter
   extends Component<HighlightMaterials>
-  implements Disposable, Updateable 
+  implements Disposable, Updateable , Configurable<FragmentHighlighterConfig>
 {
   static readonly uuid = "cb8a76f2-654a-4b50-80c6-66fd83cafd77" as const;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
 
   /** {@link Updateable.onBeforeUpdate} */
   readonly onBeforeUpdate = new Event<FragmentHighlighter>();
@@ -66,26 +81,26 @@ export class FragmentHighlighter
 
   private _tempMatrix = new THREE.Matrix4();
 
-  private _default = {
+  config: Required<FragmentHighlighterConfig> = {
     selectName: "select",
     hoverName: "hover",
-
-    mouseDown: false,
-    mouseMoved: false,
-
     selectionMaterial: new THREE.MeshBasicMaterial({
       color: "#BCF124",
       transparent: true,
       opacity: 0.85,
       depthTest: true,
     }),
-
-    highlightMaterial: new THREE.MeshBasicMaterial({
+    hoverMaterial: new THREE.MeshBasicMaterial({
       color: "#6528D7",
       transparent: true,
       opacity: 0.2,
       depthTest: true,
     }),
+  };
+
+  private _mouseState = {
+    down: false,
+    moved: false,
   };
 
   get outlineEnabled() {
@@ -109,31 +124,44 @@ export class FragmentHighlighter
 
   constructor(components: Components) {
     super(components);
-
     this.components.tools.add(FragmentHighlighter.uuid, this);
+    const fragmentManager = components.tools.get(FragmentManager);
+    fragmentManager.onFragmentsDisposed.add(this.onFragmentsDisposed);
   }
+
+  private onFragmentsDisposed = (data: {
+    groupID: string;
+    fragmentIDs: string[];
+  }) => {
+    this.disposeOutlinedMeshes(data.fragmentIDs);
+  };
 
   get(): HighlightMaterials {
     return this.highlightMats;
   }
 
+  private disposeOutlinedMeshes(fragmentIDs: string[]) {
+    for (const id of fragmentIDs) {
+      const mesh = this._outlinedMeshes[id];
+      if (!mesh) continue;
+      mesh.geometry.dispose();
+      delete this._outlinedMeshes[id];
+    }
+  }
+
   async dispose() {
     this.setupEvents(false);
-    this._default.highlightMaterial.dispose();
-    this._default.selectionMaterial.dispose();
+    this.config.hoverMaterial.dispose();
+    this.config.selectionMaterial.dispose();
     this.onBeforeUpdate.reset();
     this.onAfterUpdate.reset();
-
     for (const matID in this.highlightMats) {
       const mats = this.highlightMats[matID] || [];
       for (const mat of mats) {
         mat.dispose();
       }
     }
-    for (const id in this._outlinedMeshes) {
-      const mesh = this._outlinedMeshes[id];
-      mesh.geometry.dispose();
-    }
+    this.disposeOutlinedMeshes(Object.keys(this._outlinedMeshes));
     this.outlineMaterial.dispose();
     this._invisibleMaterial.dispose();
     this.highlightMats = {};
@@ -142,7 +170,12 @@ export class FragmentHighlighter
       this.events[name].onClear.reset();
       this.events[name].onHighlight.reset();
     }
+    this.onSetup.reset();
+    const fragmentManager = this.components.tools.get(FragmentManager);
+    fragmentManager.onFragmentsDisposed.remove(this.onFragmentsDisposed);
     this.events = {};
+    await this.onDisposed.trigger(FragmentHighlighter.uuid);
+    this.onDisposed.reset();
   }
 
   async add(name: string, material?: THREE.Material[]) {
@@ -166,7 +199,7 @@ export class FragmentHighlighter
       return;
     }
     this.onBeforeUpdate.trigger(this);
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
     for (const fragmentID in fragments.list) {
       const fragment = fragments.list[fragmentID];
       this.addHighlightToFragment(fragment);
@@ -187,7 +220,7 @@ export class FragmentHighlighter
     if (!this.enabled) return null;
     this.checkSelection(name);
 
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
     const fragList: Fragment[] = [];
     const meshes = fragments.meshes;
     const result = this.components.raycaster.castRay(meshes);
@@ -267,7 +300,7 @@ export class FragmentHighlighter
         styles[fragID] = new Set<string>();
       }
 
-      const fragments = await this.components.tools.get(FragmentManager);
+      const fragments = this.components.tools.get(FragmentManager);
       const fragment = fragments.list[fragID];
 
       const idsNum = new Set<number>();
@@ -298,13 +331,22 @@ export class FragmentHighlighter
     }
   }
 
-  async setup() {
-    this.enabled = true;
+  readonly onSetup = new Event<FragmentHighlighter>();
+  async setup(config?: Partial<FragmentHighlighterConfig>) {
+    if (config?.selectionMaterial) {
+      this.config.selectionMaterial.dispose();
+    }
+    if (config?.hoverMaterial) {
+      this.config.hoverMaterial.dispose();
+    }
+    this.config = { ...this.config, ...config };
     this.outlineMaterial.color.set(0xf0ff7a);
-    this.excludeOutline.add(this._default.hoverName);
-    await this.add(this._default.selectName, [this._default.selectionMaterial]);
-    await this.add(this._default.hoverName, [this._default.highlightMaterial]);
+    this.excludeOutline.add(this.config.hoverName);
+    await this.add(this.config.selectName, [this.config.selectionMaterial]);
+    await this.add(this.config.hoverName, [this.config.hoverMaterial]);
     this.setupEvents(true);
+    this.enabled = true;
+    this.onSetup.trigger(this);
   }
 
   private async regenerate(name: string, fragID: string) {
@@ -321,8 +363,8 @@ export class FragmentHighlighter
       return;
     }
 
-    const bbox = await this.components.tools.get(FragmentBoundingBox);
-    const fragments = await this.components.tools.get(FragmentManager);
+    const bbox = this.components.tools.get(FragmentBoundingBox);
+    const fragments = this.components.tools.get(FragmentManager);
     bbox.reset();
 
     const selected = this.selection[name];
@@ -360,7 +402,7 @@ export class FragmentHighlighter
   }
 
   private async clearStyle(name: string) {
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
 
     for (const fragID in this.selection[name]) {
       const fragment = fragments.list[fragID];
@@ -376,7 +418,7 @@ export class FragmentHighlighter
   }
 
   private async updateFragmentFill(name: string, fragmentID: string) {
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
 
     const ids = this.selection[name][fragmentID];
     const fragment = fragments.list[fragmentID];
@@ -384,16 +426,9 @@ export class FragmentHighlighter
     const selection = fragment.fragments[name];
     if (!selection) return;
 
-    // #region Old child/parent code
-    // const scene = this._components.scene.get();
-    // scene.add(selection.mesh); //If we add selection.mesh directly to the scene, it won't be coordinated unless we do so manually.
-    // #endregion
-
-    // #region New child/parent code
     const fragmentParent = fragment.mesh.parent;
     if (!fragmentParent) return;
     fragmentParent.add(selection.mesh);
-    // #endregion
 
     const isBlockFragment = selection.blocks.count > 1;
     if (isBlockFragment) {
@@ -448,7 +483,7 @@ export class FragmentHighlighter
   }
 
   private async clearOutlines() {
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
 
     const effects = this._postproduction.customEffects;
     const fragmentsOutline = effects.outlinedMeshes.fragments;
@@ -468,7 +503,7 @@ export class FragmentHighlighter
   }
 
   private async updateFragmentOutline(name: string, fragmentID: string) {
-    const fragments = await this.components.tools.get(FragmentManager);
+    const fragments = this.components.tools.get(FragmentManager);
 
     if (!this.selection[name][fragmentID]) {
       return;
@@ -569,31 +604,31 @@ export class FragmentHighlighter
 
   private onMouseDown = () => {
     if (!this.enabled) return;
-    this._default.mouseDown = true;
+    this._mouseState.down = true;
   };
 
   private onMouseUp = async (event: MouseEvent) => {
     if (!this.enabled) return;
     if (event.target !== this.components.renderer.get().domElement) return;
-    this._default.mouseDown = false;
-    if (this._default.mouseMoved || event.button !== 0) {
-      this._default.mouseMoved = false;
+    this._mouseState.down = false;
+    if (this._mouseState.moved || event.button !== 0) {
+      this._mouseState.moved = false;
       return;
     }
-    this._default.mouseMoved = false;
+    this._mouseState.moved = false;
     const mult = this.multiple === "none" ? true : !event[this.multiple];
-    await this.highlight(this._default.selectName, mult, this.zoomToSelection);
+    await this.highlight(this.config.selectName, mult, this.zoomToSelection);
   };
 
   private onMouseMove = async () => {
     if (!this.enabled) return;
-    if (this._default.mouseMoved) {
-      await this.clearFills(this._default.hoverName);
+    if (this._mouseState.moved) {
+      await this.clearFills(this.config.hoverName);
       return;
     }
 
-    this._default.mouseMoved = this._default.mouseDown;
-    await this.highlight(this._default.hoverName, true, false);
+    this._mouseState.moved = this._mouseState.down;
+    await this.highlight(this.config.hoverName, true, false);
   };
 }
 

@@ -31,6 +31,9 @@ export class IfcPropertiesManager
 {
   static readonly uuid = "58c2d9f0-183c-48d6-a402-dfcf5b9a34df" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   readonly onRequestFile = new Event();
   ifcToExport: ArrayBuffer | null = null;
 
@@ -83,7 +86,7 @@ export class IfcPropertiesManager
     this._ifcApi = new WEBIFC.IfcAPI();
 
     // TODO: Save original IFC file so that opening it again is not necessary
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setUI(components);
       this.setUIEvents();
     }
@@ -109,6 +112,8 @@ export class IfcPropertiesManager
     this.onPsetRemoved.reset();
     this.onDataChanged.reset();
     await this.uiElement.dispose();
+    await this.onDisposed.trigger(IfcPropertiesManager.uuid);
+    this.onDisposed.reset();
   }
 
   private setUI(components: Components) {

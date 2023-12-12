@@ -18,6 +18,9 @@ export class ScreenCuller
 {
   static readonly uuid = "69f2a50d-c266-44fc-b1bd-fa4d34be89e6" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   /** Fires after hiding the objects that were not visible to the camera. */
   readonly onViewUpdated = new Event();
 
@@ -128,7 +131,7 @@ export class ScreenCuller
         material.dispose();
       }
     }
-    const disposer = await this.components.tools.get(Disposer);
+    const disposer = this.components.tools.get(Disposer);
     for (const id in this._colorMeshes) {
       const mesh = this._colorMeshes.get(id);
       if (mesh) {
@@ -137,6 +140,8 @@ export class ScreenCuller
     }
     this._colorMeshes.clear();
     this._meshes.clear();
+    await this.onDisposed.trigger(ScreenCuller.uuid);
+    this.onDisposed.reset();
   }
 
   /**
