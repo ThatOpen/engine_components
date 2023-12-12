@@ -14,6 +14,9 @@ export class EdgesStyles
 {
   name = "EdgesStyles";
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
+
   enabled = true;
 
   protected _styles: LineStyles = {};
@@ -71,6 +74,8 @@ export class EdgesStyles
       this.deleteStyle(style);
     }
     this._styles = {};
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   deleteStyle(id: string, disposeMaterials = true) {

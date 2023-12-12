@@ -1,5 +1,10 @@
 import { Vector2 } from "three";
-import { Component, Disposable, SVGAnnotationStyle } from "../../base-types";
+import {
+  Component,
+  Disposable,
+  SVGAnnotationStyle,
+  Event,
+} from "../../base-types";
 import { Components } from "../../core";
 import { tooeenRandomId } from "../../utils";
 
@@ -10,6 +15,9 @@ export class SVGCircle
   id = tooeenRandomId();
   name: string = "SVGRectangle";
   enabled: boolean = true;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
 
   private _circle = document.createElementNS(
     "http://www.w3.org/2000/svg",
@@ -30,6 +38,8 @@ export class SVGCircle
   async dispose() {
     this._circle.remove();
     (this.components as any) = null;
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   setStyle(style?: Partial<SVGAnnotationStyle>) {

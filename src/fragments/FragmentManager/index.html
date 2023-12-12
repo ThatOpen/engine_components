@@ -9,6 +9,18 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
     <title>Tools Component</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      .full-screen {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+        overflow: hidden;
+      }
+    </style>
 </head>
 <body>
 <div class="full-screen" id="container"></div>
@@ -109,7 +121,9 @@
         const file = await fetch("../../../resources/small.frag");
         const data = await file.arrayBuffer();
         const buffer = new Uint8Array(data);
-        fragments.load(buffer);
+       fragments.load(buffer);
+        // const scene = components.scene.get();
+        // scene.add(model);
     }
 
     const loadButton = new OBC.Button(components);

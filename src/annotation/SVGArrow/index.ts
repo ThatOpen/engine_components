@@ -1,5 +1,10 @@
 import { Vector2 } from "three";
-import { Component, Disposable, SVGAnnotationStyle } from "../../base-types";
+import {
+  Component,
+  Disposable,
+  SVGAnnotationStyle,
+  Event,
+} from "../../base-types";
 import { Components } from "../../core";
 import { tooeenRandomId } from "../../utils";
 
@@ -7,6 +12,9 @@ export class SVGArrow extends Component<SVGGElement> implements Disposable {
   name: string = "SVGRectangle";
   enabled: boolean = true;
   id: string = tooeenRandomId();
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
 
   private _line = document.createElementNS(
     "http://www.w3.org/2000/svg",
@@ -65,6 +73,8 @@ export class SVGArrow extends Component<SVGGElement> implements Disposable {
     this._polygon.remove();
     this._line.remove();
     (this.components as any) = null;
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   setStyle(style?: Partial<SVGAnnotationStyle>) {

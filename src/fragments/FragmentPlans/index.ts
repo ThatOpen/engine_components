@@ -30,6 +30,9 @@ export class FragmentPlans
 {
   static readonly uuid = "a80874aa-1c93-43a4-80f2-df346da086b1" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   readonly onNavigated = new Event<{ id: string }>();
 
   readonly onExited = new Event();
@@ -82,7 +85,7 @@ export class FragmentPlans
     this.components.tools.add(FragmentPlans.uuid, this);
 
     this.objects = new PlanObjects(components);
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setUI(components);
     }
   }
@@ -99,7 +102,9 @@ export class FragmentPlans
     this.storeys = [];
     this._plans = [];
     await this.objects.dispose();
-    this.uiElement.dispose();
+    await this.uiElement.dispose();
+    await this.onDisposed.trigger(FragmentPlans.uuid);
+    this.onDisposed.reset();
   }
 
   // TODO: Compute georreference matrix when generating fragmentsgroup
@@ -150,7 +155,8 @@ export class FragmentPlans
   async create(config: PlanView) {
     const previousPlan = this._plans.find((plan) => plan.id === config.id);
     if (previousPlan) {
-      throw new Error(`There's already a plan with the id: ${config.id}`);
+      console.warn(`There's already a plan with the id: ${config.id}`);
+      return;
     }
     const plane = await this.createClippingPlane(config);
     plane.visible = false;
@@ -180,7 +186,7 @@ export class FragmentPlans
       await this.moveCameraTo2DPlanPosition(animate);
       this.enabled = true;
     }
-    if (this.components.ui.enabled) {
+    if (this.components.uiEnabled) {
       this.uiElement.get("exitButton").enabled = true;
     }
   }
@@ -214,13 +220,13 @@ export class FragmentPlans
       this._previousTarget.z,
       animate
     );
-    if (this.components.ui.enabled) {
+    if (this.components.uiEnabled) {
       this.uiElement.get("exitButton").enabled = false;
     }
   }
 
   async updatePlansList() {
-    if (!this.components.ui.enabled) {
+    if (!this.components.uiEnabled) {
       return;
     }
 
@@ -362,7 +368,7 @@ export class FragmentPlans
       clippingPoint.y += config.offset;
     }
 
-    const clipper = await this.components.tools.get(EdgesClipper);
+    const clipper = this.components.tools.get(EdgesClipper);
 
     const plane = clipper.createFromNormalAndCoplanarPoint(
       normal,

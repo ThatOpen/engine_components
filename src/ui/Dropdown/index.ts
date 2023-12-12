@@ -63,7 +63,7 @@ export class Dropdown extends SimpleUIComponent<HTMLDivElement> {
       <button
       id="button"
       data-dropdown-toggle="dropdown"
-      class="text-white w-full ring-1 ring-gray-500 focus:outline-none focus:ring-ifcjs-200 rounded-md text-base p-3 text-center inline-flex items-center"
+      class="text-white bg-transparent w-full ring-1 ring-gray-500 focus:outline-none focus:ring-ifcjs-200 rounded-md text-base p-3 text-center inline-flex items-center"
       type="button">
         <svg class="w-2.5 h-2.5 ml-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
           <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
@@ -74,7 +74,7 @@ export class Dropdown extends SimpleUIComponent<HTMLDivElement> {
           <label class="block leading-6 text-gray-400 text-xs">Search</label>
           <input id="searchInput" class="block bg-transparent w-full rounded-md p-3 text-white ring-1 text-base ring-gray-500 placeholder:text-gray-400 focus:ring-ifcjs-200 focus:outline-none"></input>
         </div>
-        <ul id="dropdownList" class="text-sm text-white"></ul>
+        <ul id="dropdownList" class="text-sm text-white list-none m-0 p-0"></ul>
       </div>
     </div>
     `;
@@ -117,7 +117,8 @@ export class Dropdown extends SimpleUIComponent<HTMLDivElement> {
       this.options.push(option);
       const li = document.createElement("li");
       li.id = `${option.replace(/\s+/g, "_")}-${this.id}`;
-      li.className = "py-2 text-base cursor-pointer hover:text-ifcjs-200";
+      li.className =
+        "py-2 text-base cursor-pointer hover:text-ifcjs-200 m-0 p-0";
       li.textContent = option;
       li.onclick = () => {
         this.value = option;

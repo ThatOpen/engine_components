@@ -17,6 +17,9 @@ export class MiniMap
 {
   static readonly uuid = "39ad6aad-84c8-4adf-a1e0-7f25313a9e7f" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   readonly uiElement = new UIElement<{ main: Button; canvas: Canvas }>();
   readonly onAfterUpdate = new Event();
   readonly onBeforeUpdate = new Event();
@@ -121,6 +124,8 @@ export class MiniMap
     this.onResize.reset();
     this.overrideMaterial.dispose();
     this._renderer.dispose();
+    await this.onDisposed.trigger(MiniMap.uuid);
+    this.onDisposed.reset();
   }
 
   get() {

@@ -7,6 +7,7 @@ import {
   FragmentIdMap,
   UI,
   UIElement,
+  Event,
 } from "../../base-types";
 import {
   Button,
@@ -27,6 +28,9 @@ interface FilterData {
 
 export class FragmentHider extends Component<void> implements Disposable, UI {
   static readonly uuid = "dd9ccf2d-8a21-4821-b7f6-2949add16a29" as const;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
 
   enabled = true;
 
@@ -55,7 +59,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
 
     this.components.tools.add(FragmentHider.uuid, this);
 
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setupUI(components);
     }
   }
@@ -98,16 +102,18 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
 
   async dispose() {
     this.uiElement.dispose();
+    await this.onDisposed.trigger(FragmentHider.uuid);
+    this.onDisposed.reset();
   }
 
-  async set(visible: boolean, items?: FragmentIdMap) {
-    const fragments = await this.components.tools.get(FragmentManager);
+  set(visible: boolean, items?: FragmentIdMap) {
+    const fragments = this.components.tools.get(FragmentManager);
     if (!items) {
       for (const id in fragments.list) {
         const fragment = fragments.list[id];
         if (fragment) {
           fragment.setVisibility(visible);
-          await this.updateCulledVisibility(fragment);
+          this.updateCulledVisibility(fragment);
         }
       }
       return;
@@ -116,13 +122,13 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
       const ids = items[fragID];
       const fragment = fragments.list[fragID];
       fragment.setVisibility(visible, ids);
-      await this.updateCulledVisibility(fragment);
+      this.updateCulledVisibility(fragment);
     }
   }
 
-  async isolate(items: FragmentIdMap) {
-    await this.set(false);
-    await this.set(true, items);
+  isolate(items: FragmentIdMap) {
+    this.set(false);
+    this.set(true, items);
   }
 
   get() {}
@@ -134,7 +140,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
       await finder.find();
     }
     this._updateVisibilityOnFound = true;
-    await this.updateQueries();
+    this.updateQueries();
   }
 
   async loadCached() {
@@ -142,13 +148,13 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     if (!serialized) return;
     const filters = JSON.parse(serialized) as FilterData[];
     for (const filter of filters) {
-      await this.createStyleCard(filter);
+      this.createStyleCard(filter);
     }
     await this.update();
   }
 
-  private async updateCulledVisibility(fragment: Fragment) {
-    const culler = await this.components.tools.get(ScreenCuller);
+  private updateCulledVisibility(fragment: Fragment) {
+    const culler = this.components.tools.get(ScreenCuller);
     const colorMeshes = culler.get();
     const culled = colorMeshes.get(fragment.id);
     if (culled) {
@@ -156,7 +162,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     }
   }
 
-  private async createStyleCard(config?: FilterData) {
+  private createStyleCard(config?: FilterData) {
     const filterCard = new SimpleUIComponent(this.components);
     if (config && config.id.length) {
       filterCard.id = config.id;
@@ -218,7 +224,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     bottomContainer.append(checkBoxContainer.domElement);
 
     const finder = new IfcPropertiesFinder(this.components);
-    await finder.init();
+    finder.init();
     finder.loadCached(id);
 
     const queryBuilder = finder.uiElement.get<QueryBuilder>("query");
@@ -261,12 +267,12 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     mainWindow.addChild(filterCard);
   }
 
-  private async updateQueries() {
-    await this.set(true);
+  private updateQueries() {
+    this.set(true);
     for (const id in this._filterCards) {
       const { enabled, visible, fragments } = this._filterCards[id];
       if (enabled.value) {
-        await this.set(visible.value, fragments);
+        this.set(visible.value, fragments);
       }
     }
     this.cache();
@@ -285,7 +291,7 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     }
     delete this._filterCards[id];
 
-    await this.updateQueries();
+    this.updateQueries();
   }
 
   private hideAllFinders(excludeID?: string) {

@@ -1,15 +1,13 @@
 <p align="center">
   <a href="https://thatopen.com/">TOC</a>
   |
-  <a href="https://platform.thatopen.com/documentation">documentation</a>
+  <a href="https://docs.thatopen.com/intro">documentation</a>
   |
   <a href="https://platform.thatopen.com/app">demo</a>
   |
   <a href="https://people.thatopen.com/">community</a>
   |
   <a href="https://www.npmjs.com/package/openbim-components">npm package</a>
-  |
-  <a href="https://airtable.com/appolsrsBWel2m6wr/shr4ybI6JOeHJEqkG">roadmap</a>
 </p>
 
 ![cover](resources/cover.png)
@@ -49,9 +47,9 @@ components.init();
 
 const scene = components.scene.get();
 
-const geometry = new new THREE.BoxGeometry(3, 3, 3);
+const geometry = new THREE.BoxGeometry(3, 3, 3);
 const material = new THREE.MeshStandardMaterial({ color: "red" });
-const cube = THREE.Mesh(geometry, material);
+const cube = new THREE.Mesh(geometry, material);
 cube.position.set(0, 1.5, 0);
 scene.add(cube);
 

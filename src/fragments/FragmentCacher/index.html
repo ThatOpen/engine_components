@@ -9,6 +9,18 @@
     <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <title>Tools Component</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      .full-screen {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+        overflow: hidden;
+      }
+    </style>
 </head>
 <body>
 <div class="full-screen" id="container"></div>
@@ -80,7 +92,7 @@
     fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
     fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
     fragmentIfcLoader.settings.wasm = {
-        path: "https://unpkg.com/web-ifc@0.0.44/",
+        path: "https://unpkg.com/web-ifc@0.0.46/",
         absolute: true
     }
 

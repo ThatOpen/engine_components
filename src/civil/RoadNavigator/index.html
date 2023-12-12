@@ -9,6 +9,18 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
     <title>Tools Component</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      .full-screen {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+        overflow: hidden;
+      }
+    </style>
 </head>
 <body>
 <div class="full-screen" id="container"></div>
@@ -16,7 +28,7 @@
     {
       "imports": {
         "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
-        "web-ifc": "https://unpkg.com/web-ifc@0.0.44/web-ifc-api.js",
+        "web-ifc": "https://unpkg.com/web-ifc@0.0.46/web-ifc-api.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
         "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
         "openbim-components": "../../../resources/openbim-components.js",
@@ -51,14 +63,7 @@
 
     components.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
 
-    const directionalLight = new THREE.DirectionalLight();
-    directionalLight.position.set(5, 10, 3);
-    directionalLight.intensity = 0.5;
-    scene.add(directionalLight);
-
-    const ambientLight = new THREE.AmbientLight();
-    ambientLight.intensity = 0.5;
-    scene.add(ambientLight);
+    components.scene.setup();
 
     const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
     const customEffects = components.renderer.postproduction.customEffects;
@@ -68,18 +73,20 @@
     let fragmentIfcLoader = new OBC.FragmentIfcLoader(components);
 
     fragmentIfcLoader.settings.wasm = {
-        path: "https://unpkg.com/web-ifc@0.0.44/",
+        path: "https://unpkg.com/web-ifc@0.0.46/",
         absolute: true
     }
 
     fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
     fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
 
-    const fetched = await fetch("../../../resources/small.ifc");
-    const buffer = await fetched.arrayBuffer();
-    const byteArray = new Uint8Array(buffer);
-    const model = await fragmentIfcLoader.load(byteArray);
-    components.scene.get().add(model);
+    const file = await fetch("../../../resources/asdf.frag");
+    const data = await file.arrayBuffer();
+    const buffer = new Uint8Array(data);
+    const model = await fragments.load(buffer);
+    const properties = await fetch("../../../resources/asdf.json");
+    model.properties = await properties.json();
+    console.log(model);
 
     const mainToolbar = new OBC.Toolbar(components, {name: 'Main Toolbar', position: 'bottom'});
     components.ui.addToolbar(mainToolbar);
@@ -88,77 +95,20 @@
     // Set up road navigator
 
     const navigator = new OBC.RoadNavigator(components);
-    window.ondblclick = () => {
-        navigator.drawPoint();
-    }
-    navigator.loadCached();
 
-    // navigator._scene2d.camera.children[0].material.color.set(40, 40, 40);
+    const horizontalWindow = navigator.uiElement.get("horizontalAlignment");
+    horizontalWindow.visible = true;
 
-    mainToolbar.addChild(navigator.uiElement.get("main"));
+    const verticalWindow = navigator.uiElement.get("verticalAlignment");
+    verticalWindow.visible = true;
 
-    window.onkeydown = (event) => {
-        if (event.code === "KeyS") {
-            navigator.select();
-        } else if (event.code === "KeyP") {
-            navigator.delete();
-        } else if (event.code === "KeyF") {
-            navigator.focus();
+    navigator.select(model);
+
+    window.addEventListener("keydown", (event) => {
+        if(event.code === "KeyP") {
+            navigator.setAnchor();
         }
-    }
-
-    const styler = new OBC.FragmentClipStyler(components);
-    await styler.setup();
-    const stylerButton = styler.uiElement.get("mainButton");
-    mainToolbar.addChild(stylerButton);
-
-    styler.onChange.add(async () => {
-        await navigator.updateDrawings();
     })
-
-    const classifier = new OBC.FragmentClassifier(components);
-    classifier.byEntity(model);
-    await styler.update();
-
-    const hider = new OBC.FragmentHider(components);
-    await hider.loadCached();
-    const hiderButton = hider.uiElement.get("main");
-    mainToolbar.addChild(hiderButton);
-
-    const propsProcessor = new OBC.IfcPropertiesProcessor(components);
-    const propsManager = new OBC.IfcPropertiesManager(components);
-    propsManager.wasm = {
-        path: "https://unpkg.com/web-ifc@0.0.44/",
-        absolute: true
-    }
-
-    propsProcessor.propertiesManager = propsManager;
-    await propsManager.init();
-    propsProcessor.process(model);
-    mainToolbar.addChild(propsProcessor.uiElement.get("main"));
-
-    const highlighter = new OBC.FragmentHighlighter(components);
-    highlighter.setup();
-
-    highlighter.outlinesEnabled = true;
-
-    const highlighterEvents = highlighter.events;
-    highlighterEvents.select.onClear.add(() => {
-        propsProcessor.cleanPropertiesList();
-    });
-
-    highlighterEvents.select.onHighlight.add(
-            (selection) => {
-                const fragmentID = Object.keys(selection)[0];
-                const expressID = Number([...selection[fragmentID]][0]);
-                let model
-                for (const group of fragments.groups) {
-                    const fragmentFound = Object.values(group.keyFragments).find(id => id === fragmentID)
-                    if (fragmentFound) model = group;
-                }
-                propsProcessor.renderProperties(model, expressID);
-            }
-    );
 
     // Set up stats
 

@@ -19,6 +19,9 @@ export class AngleMeasurement
 {
   static readonly uuid = "622fb2c9-528c-4b0a-8a0e-6a1375f0a3aa" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   uiElement = new UIElement<{ main: Button }>();
 
   private _lineMaterial: LineMaterial;
@@ -49,7 +52,7 @@ export class AngleMeasurement
     this._enabled = value;
     this.setupEvents(value);
     this._vertexPicker.enabled = value;
-    if (this.components.ui.enabled) {
+    if (this.components.uiEnabled) {
       const main = this.uiElement.get("main");
       main.active = value;
     }
@@ -81,13 +84,13 @@ export class AngleMeasurement
     this._vertexPicker = new VertexPicker(components);
 
     // this.enabled = false;
-    if (components.ui.enabled) {
+    if (components.uiEnabled) {
       this.setUI();
     }
   }
 
   async dispose() {
-    await this.setupEvents(false);
+    this.setupEvents(false);
     this.onBeforeCreate.reset();
     this.onAfterCreate.reset();
     this.onBeforeCancel.reset();
@@ -104,6 +107,8 @@ export class AngleMeasurement
       await this._currentAngleElement.dispose();
     }
     (this.components as any) = null;
+    await this.onDisposed.trigger(AngleMeasurement.uuid);
+    this.onDisposed.reset();
   }
 
   create = () => {

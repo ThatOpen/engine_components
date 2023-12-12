@@ -7,3 +7,9 @@ export interface IfcGeometries {
     instances: { color: WEBIFC.Color; matrix: number[]; expressID: number }[];
   };
 }
+
+export interface IfcCivil {
+  IfcAlignment: WEBIFC.IfcAlignment[];
+  IfcCrossSection2D: WEBIFC.IfcCrossSection[];
+  IfcCrossSection3D: WEBIFC.IfcCrossSection[];
+}
