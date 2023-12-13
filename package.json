@@ -1,6 +1,6 @@
 {
   "name": "openbim-components",
-  "version": "1.2.0-alpha.2",
+  "version": "1.2.0-alpha.10",
   "main": "src/index.js",
   "author": "harry collin, antonio gonzalez viegas",
   "license": "MIT",
@@ -59,7 +59,7 @@
     "unzipit": "^1.4.3"
   },
   "peerDependencies": {
-    "bim-fragment": "1.0.25",
+    "bim-fragment": "1.2.1",
     "three": "0.152.2",
     "web-ifc": "0.0.46"
   }

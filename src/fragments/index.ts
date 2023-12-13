@@ -9,3 +9,4 @@ export * from "./FragmentExploder";
 export * from "./FragmentPlans";
 export * from "./FragmentBoundingBox";
 export * from "./FragmentClipStyler";
+export * from "./FragmentIfcStreamer";
