@@ -1,6 +1,13 @@
 import * as WEBIFC from "web-ifc";
 import { FragmentsGroup } from "bim-fragment";
-import { Disposable, Event, UI, Component, UIElement } from "../../base-types";
+import {
+  Disposable,
+  Event,
+  UI,
+  Component,
+  UIElement,
+  Configurable,
+} from "../../base-types";
 import { FragmentManager } from "../FragmentManager";
 import { DataConverter } from "./src/data-converter";
 import { GeometryReader } from "./src/geometry-reader";
@@ -8,6 +15,11 @@ import { Button, ToastNotification } from "../../ui";
 import { Components, ToolComponent } from "../../core";
 
 export * from "./src/types";
+
+export interface FragmentIfcLoaderConfig {
+  autoWasm: boolean;
+  checkWebIfcVersion: boolean;
+}
 
 /**
  * Reads all the geometry of the IFC file and generates a set of
@@ -17,7 +29,7 @@ export * from "./src/types";
  */
 export class FragmentIfcLoader
   extends Component<WEBIFC.IfcAPI>
-  implements Disposable, UI
+  implements Disposable, UI, Configurable<FragmentIfcLoaderConfig>
 {
   static readonly uuid = "a659add7-1418-4771-a0d6-7d4d438e4624" as const;
 
@@ -29,6 +41,13 @@ export class FragmentIfcLoader
   uiElement = new UIElement<{ main: Button; toast: ToastNotification }>();
 
   onIfcLoaded: Event<FragmentsGroup> = new Event();
+
+  config: Required<FragmentIfcLoaderConfig> = {
+    autoWasm: true,
+    checkWebIfcVersion: true,
+  };
+
+  readonly onSetup = new Event<FragmentIfcLoader>();
 
   // For debugging purposes
   // isolatedItems = new Set<number>();
@@ -51,6 +70,58 @@ export class FragmentIfcLoader
     }
   }
 
+  async setup(config?: Partial<FragmentIfcLoaderConfig>) {
+    this.config = { ...this.config, ...config };
+
+    // Read app web-ifc version
+    let appWebIfcVersion;
+    const appPackage = await fetch("../package.json");
+    if (appPackage.ok) {
+      const appPackageJSON = await appPackage.json();
+      if (!("web-ifc" in appPackageJSON.dependencies ?? {})) {
+        throw new Error(
+          "You need to install web-ifc as a dependency of your project in order to load IFC models. Read more here: https://docs.thatopen.com/components/getting-started#try-them"
+        );
+      } else {
+        appWebIfcVersion = appPackageJSON.dependencies["web-ifc"];
+      }
+    }
+
+    // Read openbim-components web-ifc version
+    let componentsWebIfcVersion;
+    const componentsPackage = await fetch(
+      "../../../node_modules/openbim-components/package.json"
+    );
+    if (componentsPackage.ok) {
+      const componentsPackageJSON = await componentsPackage.json();
+      if (!("web-ifc" in componentsPackageJSON.peerDependencies ?? {})) {
+        throw new Error(
+          "Couldn't get web-ifc from peer dependencies in openbim-components."
+        );
+      } else {
+        componentsWebIfcVersion =
+          componentsPackageJSON.peerDependencies["web-ifc"];
+      }
+    }
+
+    if (
+      this.config.checkWebIfcVersion &&
+      appWebIfcVersion !== componentsWebIfcVersion
+    ) {
+      throw new Error(
+        `You have installed web-ifc@${appWebIfcVersion}, but openbim-components needs web-ifc@${componentsWebIfcVersion} in order to work properly.`
+      );
+    }
+
+    if (this.config.autoWasm) {
+      const path = `https://unpkg.com/web-ifc@${componentsWebIfcVersion}/`;
+      this.settings.wasm = {
+        path,
+        absolute: true,
+      };
+    }
+  }
+
   get(): WEBIFC.IfcAPI {
     return this._webIfc;
   }
@@ -65,6 +136,7 @@ export class FragmentIfcLoader
     this._converter.cleanUp();
     this.onIfcLoaded.reset();
     this.onLocationsSaved.reset();
+    this.onSetup.reset();
     this.uiElement.dispose();
     (this._webIfc as any) = null;
     (this._geometry as any) = null;
