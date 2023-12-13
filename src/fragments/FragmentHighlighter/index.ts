@@ -3,7 +3,7 @@ import { Fragment, FragmentMesh } from "bim-fragment";
 import {
   Component,
   Disposable,
-  Event,
+  Updateable, Event,
   FragmentIdMap,
   Configurable,
 } from "../../base-types";
@@ -35,12 +35,18 @@ export interface FragmentHighlighterConfig {
 
 export class FragmentHighlighter
   extends Component<HighlightMaterials>
-  implements Disposable, Configurable<FragmentHighlighterConfig>
+  implements Disposable, Updateable , Configurable<FragmentHighlighterConfig>
 {
   static readonly uuid = "cb8a76f2-654a-4b50-80c6-66fd83cafd77" as const;
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
+
+  /** {@link Updateable.onBeforeUpdate} */
+  readonly onBeforeUpdate = new Event<FragmentHighlighter>();
+
+  /** {@link Updateable.onAfterUpdate} */
+  readonly onAfterUpdate = new Event<FragmentHighlighter>();
 
   enabled = true;
   highlightMats: HighlightMaterials = {};
@@ -147,6 +153,8 @@ export class FragmentHighlighter
     this.setupEvents(false);
     this.config.hoverMaterial.dispose();
     this.config.selectionMaterial.dispose();
+    this.onBeforeUpdate.reset();
+    this.onAfterUpdate.reset();
     for (const matID in this.highlightMats) {
       const mats = this.highlightMats[matID] || [];
       for (const mat of mats) {
@@ -185,10 +193,12 @@ export class FragmentHighlighter
     await this.update();
   }
 
+  /** {@link Updateable.update} */
   async update() {
     if (!this.fillEnabled) {
       return;
     }
+    this.onBeforeUpdate.trigger(this);
     const fragments = this.components.tools.get(FragmentManager);
     for (const fragmentID in fragments.list) {
       const fragment = fragments.list[fragmentID];
@@ -199,6 +209,7 @@ export class FragmentHighlighter
         outlinedMesh.applyMatrix4(fragment.mesh.matrixWorld);
       }
     }
+    this.onAfterUpdate.trigger(this);
   }
 
   async highlight(
