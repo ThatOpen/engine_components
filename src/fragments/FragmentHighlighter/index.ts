@@ -31,6 +31,7 @@ export interface FragmentHighlighterConfig {
   hoverName: string;
   selectionMaterial: THREE.Material;
   hoverMaterial: THREE.Material;
+  autoHighlightOnClick: boolean;
 }
 
 export class FragmentHighlighter
@@ -96,6 +97,7 @@ export class FragmentHighlighter
       opacity: 0.2,
       depthTest: true,
     }),
+    autoHighlightOnClick: true,
   };
 
   private _mouseState = {
@@ -138,6 +140,10 @@ export class FragmentHighlighter
 
   get(): HighlightMaterials {
     return this.highlightMats;
+  }
+
+  getHoveredSelection() {
+    return this.selection[this.config.hoverName];
   }
 
   private disposeOutlinedMeshes(fragmentIDs: string[]) {
@@ -616,8 +622,10 @@ export class FragmentHighlighter
       return;
     }
     this._mouseState.moved = false;
-    const mult = this.multiple === "none" ? true : !event[this.multiple];
-    await this.highlight(this.config.selectName, mult, this.zoomToSelection);
+    if (this.config.autoHighlightOnClick) {
+      const mult = this.multiple === "none" ? true : !event[this.multiple];
+      await this.highlight(this.config.selectName, mult, this.zoomToSelection);
+    }
   };
 
   private onMouseMove = async () => {
