@@ -2,7 +2,8 @@ import * as WEBIFC from "web-ifc";
 import { FragmentsGroup } from "bim-fragment";
 import { Disposable, Event, UI, Component, UIElement } from "../../base-types";
 import { FragmentManager } from "../FragmentManager";
-import { DataConverter, GeometryReader } from "./src";
+import { DataConverter } from "./src/data-converter";
+import { GeometryReader } from "./src/geometry-reader";
 import { Button, ToastNotification } from "../../ui";
 import { Components, ToolComponent } from "../../core";
 
@@ -159,11 +160,11 @@ export class FragmentIfcLoader
     this.uiElement.set({ main, toast });
   }
 
-  private async readIfcFile(data: Uint8Array) {
+  async readIfcFile(data: Uint8Array) {
     const { path, absolute } = this.settings.wasm;
     this._webIfc.SetWasmPath(path, absolute);
     await this._webIfc.Init();
-    this._webIfc.OpenModel(data, this.settings.webIfc);
+    return this._webIfc.OpenModel(data, this.settings.webIfc);
   }
 
   private async readAllGeometries() {
@@ -207,9 +208,13 @@ export class FragmentIfcLoader
     this._geometry.streamCrossSection(this._webIfc);
   }
 
-  private cleanUp() {
+  cleanIfcApi() {
     (this._webIfc as any) = null;
     this._webIfc = new WEBIFC.IfcAPI();
+  }
+
+  private cleanUp() {
+    this.cleanIfcApi();
     this._geometry.cleanUp();
     this._converter.cleanUp();
   }
