@@ -1,13 +1,8 @@
 import { FragmentsGroup } from "bim-fragment";
 import { Components } from "../../../core";
-import {
-  SimpleUIComponent,
-  FloatingWindow,
-  TextInput,
-  Dropdown,
-  Button,
-} from "../../../ui";
+import { SimpleUIComponent, TextInput, Dropdown, Button } from "../../../ui";
 import { Event } from "../../../base-types";
+import { Modal } from "../../../ui/Modal";
 
 type StringPropTypes = "IfcText" | "IfcLabel" | "IfcIdentifier";
 
@@ -16,8 +11,7 @@ export class PsetActionsUI extends SimpleUIComponent<HTMLDivElement> {
   removePsetBtn: Button;
   addPropBtn: Button;
   modalVisible = false;
-  private _modal: SimpleUIComponent<HTMLDialogElement>;
-  private _modalWindow: FloatingWindow;
+  private _modal: Modal;
 
   readonly onEditPset = new Event<{
     model: FragmentsGroup;
@@ -47,33 +41,28 @@ export class PsetActionsUI extends SimpleUIComponent<HTMLDivElement> {
   constructor(components: Components) {
     super(components, `<div class="flex"></div>`);
 
+    this._modal = new Modal(components, "New Property Set");
+    this._components.ui.add(this._modal);
+    this._modal.visible = false;
+    this._modal.onHidden.add(() => this.removeFromParent());
+    this._modal.onCancel.add(() => {
+      this._modal.visible = false;
+      this._modal.slots.content.dispose(true);
+    });
+
     this.editPsetBtn = new Button(this._components);
     this.editPsetBtn.materialIcon = "edit";
-    this.setEditUI();
+    this.editPsetBtn.onClick.add(() => this.setEditUI());
 
     this.removePsetBtn = new Button(this._components);
     this.removePsetBtn.materialIcon = "delete";
-    this.setRemoveUI();
+    this.removePsetBtn.onClick.add(() => this.setRemoveUI());
 
     this.addPropBtn = new Button(this._components);
     this.addPropBtn.materialIcon = "add";
-    this.setAddPropUI();
+    this.addPropBtn.onClick.add(() => this.setAddPropUI());
 
     this.addChild(this.addPropBtn, this.editPsetBtn, this.removePsetBtn);
-
-    this._modal = new SimpleUIComponent(components, `<dialog></dialog>`);
-    this._components.ui.add(this._modal);
-    this._modal.get().addEventListener("close", () => {
-      this.removeFromParent();
-      this.modalVisible = false;
-      this._modalWindow.visible = false;
-    });
-
-    this._modalWindow = new FloatingWindow(this._components);
-    this._modalWindow.get().className =
-      "overflow-auto text-white bg-ifcjs-100 rounded-md w-[350px]";
-    this._modalWindow.onHidden.add(() => this._modal.get().close());
-    this._modal.addChild(this._modalWindow);
   }
 
   async dispose(onlyChildren: boolean = false) {
@@ -82,7 +71,6 @@ export class PsetActionsUI extends SimpleUIComponent<HTMLDivElement> {
     await this.removePsetBtn.dispose();
     await this.addPropBtn.dispose();
     await this._modal.dispose();
-    await this._modalWindow.dispose();
     this.onEditPset.reset();
     this.onRemovePset.reset();
     this.onNewProp.reset();
@@ -90,6 +78,13 @@ export class PsetActionsUI extends SimpleUIComponent<HTMLDivElement> {
   }
 
   private setEditUI() {
+    const { model, psetID } = this.data;
+    const properties = model?.properties;
+    if (!model || !psetID || !properties) return;
+
+    this._modal.onAccept.reset();
+    this._modal.title = "Edit Property Set";
+
     const editUI = new SimpleUIComponent(
       this._components,
       `<div class="flex flex-col gap-y-4 p-4 overflow-auto"></div>`
@@ -100,15 +95,8 @@ export class PsetActionsUI extends SimpleUIComponent<HTMLDivElement> {
     const descriptionInput = new TextInput(this._components);
     descriptionInput.label = "Description";
 
-    const acceptBtn = new Button(this._components);
-    acceptBtn.materialIcon = "check";
-    acceptBtn.label = "Accept";
-    acceptBtn.get().classList.remove("hover:bg-ifcjs-200");
-    acceptBtn.get().classList.add("hover:bg-success");
-    acceptBtn.onClick.add(async () => {
-      this._modal.get().close();
-      const { model, psetID } = this.data;
-      if (!model || !psetID) return;
+    this._modal.onAccept.add(async () => {
+      this._modal.visible = false;
       await this.onEditPset.trigger({
         model,
         psetID,
@@ -117,36 +105,22 @@ export class PsetActionsUI extends SimpleUIComponent<HTMLDivElement> {
       });
     });
 
-    const cancelBtn = new Button(this._components);
-    cancelBtn.materialIcon = "close";
-    cancelBtn.label = "Cancel";
-    cancelBtn.get().classList.remove("hover:bg-ifcjs-200");
-    cancelBtn.get().classList.add("hover:bg-error");
-    cancelBtn.onClick.add(() => this._modal.get().close());
+    editUI.addChild(nameInput, descriptionInput);
 
-    const actionBtns = new SimpleUIComponent(
-      this._components,
-      `<div class="flex gap-x-2 justify-end"></div>`
-    );
-
-    actionBtns.addChild(cancelBtn, acceptBtn);
-
-    editUI.addChild(nameInput, descriptionInput, actionBtns);
-
-    this.editPsetBtn.onClick.add(async () => {
-      const { model, psetID } = this.data;
-      const properties = model?.properties;
-      if (!model || !psetID || !properties) return;
-      const entity = properties[psetID];
-      nameInput.value = entity.Name?.value ?? "";
-      descriptionInput.value = entity.Description?.value ?? "";
-      this._modalWindow.title = "Edit Property Set";
-      this._modalWindow.setSlot("content", editUI);
-      this.showModal();
-    });
+    const entity = properties[psetID];
+    nameInput.value = entity.Name?.value ?? "";
+    descriptionInput.value = entity.Description?.value ?? "";
+    this._modal.setSlot("content", editUI);
+    this._modal.visible = true;
   }
 
   private setRemoveUI() {
+    const { model, psetID } = this.data;
+    if (!model || !psetID) return;
+
+    this._modal.onAccept.reset();
+    this._modal.title = "Remove Property Set";
+
     const removeUI = new SimpleUIComponent(
       this._components,
       `<div class="flex flex-col gap-y-4 p-4 overflow-auto"></div>`
@@ -158,45 +132,23 @@ export class PsetActionsUI extends SimpleUIComponent<HTMLDivElement> {
       "Are you sure to delete this property set? This action can't be undone.";
     removeUI.get().append(warningText);
 
-    const acceptBtn = new Button(this._components);
-    acceptBtn.materialIcon = "check";
-    acceptBtn.label = "Accept";
-    acceptBtn.get().classList.remove("hover:bg-ifcjs-200");
-    acceptBtn.get().classList.add("hover:bg-success");
-    acceptBtn.onClick.add(async () => {
-      this._modal.get().close();
-      const { model, psetID } = this.data;
-      if (!model || !psetID) return;
+    this._modal.onAccept.add(async () => {
+      this._modal.visible = false;
       this.removeFromParent(); // As the psetUI is going to be disposed, then we need to first remove the action buttons so they do not become disposed as well.
       await this.onRemovePset.trigger({ model, psetID });
     });
 
-    const cancelBtn = new Button(this._components);
-    cancelBtn.materialIcon = "close";
-    cancelBtn.label = "Cancel";
-    cancelBtn.get().classList.remove("hover:bg-ifcjs-200");
-    cancelBtn.get().classList.add("hover:bg-error");
-    cancelBtn.onClick.add(() => this._modal.get().close());
-
-    const actionBtns = new SimpleUIComponent(
-      this._components,
-      `<div class="flex gap-x-2 justify-end"></div>`
-    );
-
-    actionBtns.addChild(cancelBtn, acceptBtn);
-
-    removeUI.addChild(actionBtns);
-
-    this.removePsetBtn.onClick.add(async () => {
-      const { model, psetID } = this.data;
-      if (!model || !psetID) return;
-      this._modalWindow.title = "Remove Property Set";
-      this._modalWindow.setSlot("content", removeUI);
-      this.showModal();
-    });
+    this._modal.setSlot("content", removeUI);
+    this._modal.visible = true;
   }
 
   private setAddPropUI() {
+    const { model, psetID } = this.data;
+    if (!model || !psetID) return;
+
+    this._modal.onAccept.reset();
+    this._modal.title = "New Property";
+
     const addPropUI = new SimpleUIComponent(
       this._components,
       `<div class="flex flex-col gap-y-4 p-4 overflow-auto"></div>`
@@ -213,15 +165,8 @@ export class PsetActionsUI extends SimpleUIComponent<HTMLDivElement> {
     const valueInput = new TextInput(this._components);
     valueInput.label = "Value";
 
-    const acceptBtn = new Button(this._components);
-    acceptBtn.materialIcon = "check";
-    acceptBtn.label = "Accept";
-    acceptBtn.get().classList.remove("hover:bg-ifcjs-200");
-    acceptBtn.get().classList.add("hover:bg-success");
-    acceptBtn.onClick.add(async () => {
-      this._modal.get().close();
-      const { model, psetID } = this.data;
-      if (!model || !psetID) return;
+    this._modal.onAccept.add(async () => {
+      this._modal.visible = false;
       const name = nameInput.value;
       const type = typeInput.value as StringPropTypes;
       if (name === "" || !type) return;
@@ -234,34 +179,8 @@ export class PsetActionsUI extends SimpleUIComponent<HTMLDivElement> {
       });
     });
 
-    const cancelBtn = new Button(this._components);
-    cancelBtn.materialIcon = "close";
-    cancelBtn.label = "Cancel";
-    cancelBtn.get().classList.remove("hover:bg-ifcjs-200");
-    cancelBtn.get().classList.add("hover:bg-error");
-    cancelBtn.onClick.add(() => this._modal.get().close());
-
-    const actionBtns = new SimpleUIComponent(
-      this._components,
-      `<div class="flex gap-x-2 justify-end"></div>`
-    );
-
-    actionBtns.addChild(cancelBtn, acceptBtn);
-
-    addPropUI.addChild(nameInput, typeInput, valueInput, actionBtns);
-
-    this.addPropBtn.onClick.add(async () => {
-      const { model, psetID } = this.data;
-      if (!model || !psetID) return;
-      this._modalWindow.title = "New Property";
-      this._modalWindow.setSlot("content", addPropUI);
-      this.showModal();
-    });
-  }
-
-  private showModal() {
-    this.modalVisible = true;
-    this._modalWindow.visible = true;
-    this._modal.get().showModal();
+    addPropUI.addChild(nameInput, typeInput, valueInput);
+    this._modal.setSlot("content", addPropUI);
+    this._modal.visible = true;
   }
 }
