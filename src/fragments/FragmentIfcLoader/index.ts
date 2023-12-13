@@ -17,8 +17,7 @@ import { Components, ToolComponent } from "../../core";
 export * from "./src/types";
 
 export interface FragmentIfcLoaderConfig {
-  autoWasm: boolean;
-  checkWebIfcVersion: boolean;
+  autoSetWasm: boolean;
 }
 
 /**
@@ -43,8 +42,7 @@ export class FragmentIfcLoader
   onIfcLoaded: Event<FragmentsGroup> = new Event();
 
   config: Required<FragmentIfcLoaderConfig> = {
-    autoWasm: true,
-    checkWebIfcVersion: true,
+    autoSetWasm: true,
   };
 
   readonly onSetup = new Event<FragmentIfcLoader>();
@@ -70,56 +68,36 @@ export class FragmentIfcLoader
     }
   }
 
-  async setup(config?: Partial<FragmentIfcLoaderConfig>) {
-    this.config = { ...this.config, ...config };
-
-    // Read app web-ifc version
-    let appWebIfcVersion;
-    const appPackage = await fetch("../package.json");
-    if (appPackage.ok) {
-      const appPackageJSON = await appPackage.json();
-      if (!("web-ifc" in appPackageJSON.dependencies ?? {})) {
-        throw new Error(
-          "You need to install web-ifc as a dependency of your project in order to load IFC models. Read more here: https://docs.thatopen.com/components/getting-started#try-them"
-        );
-      } else {
-        appWebIfcVersion = appPackageJSON.dependencies["web-ifc"];
-      }
-    }
-
-    // Read openbim-components web-ifc version
-    let componentsWebIfcVersion;
+  private async autoSetWasm() {
     const componentsPackage = await fetch(
-      "../../../node_modules/openbim-components/package.json"
+      `https://unpkg.com/openbim-components@${Components.release}/package.json`
     );
-    if (componentsPackage.ok) {
-      const componentsPackageJSON = await componentsPackage.json();
-      if (!("web-ifc" in componentsPackageJSON.peerDependencies ?? {})) {
-        throw new Error(
-          "Couldn't get web-ifc from peer dependencies in openbim-components."
-        );
-      } else {
-        componentsWebIfcVersion =
-          componentsPackageJSON.peerDependencies["web-ifc"];
-      }
-    }
-
-    if (
-      this.config.checkWebIfcVersion &&
-      appWebIfcVersion !== componentsWebIfcVersion
-    ) {
-      throw new Error(
-        `You have installed web-ifc@${appWebIfcVersion}, but openbim-components needs web-ifc@${componentsWebIfcVersion} in order to work properly.`
+    if (!componentsPackage.ok) {
+      console.warn(
+        "Couldn't get openbim-components package.json. Set wasm settings manually."
       );
+      return;
     }
-
-    if (this.config.autoWasm) {
+    const componentsPackageJSON = await componentsPackage.json();
+    if (!("web-ifc" in componentsPackageJSON.peerDependencies ?? {})) {
+      console.warn(
+        "Couldn't get web-ifc from peer dependencies in openbim-components. Set wasm settings manually."
+      );
+    } else {
+      const componentsWebIfcVersion =
+        componentsPackageJSON.peerDependencies["web-ifc"];
       const path = `https://unpkg.com/web-ifc@${componentsWebIfcVersion}/`;
       this.settings.wasm = {
         path,
         absolute: true,
       };
     }
+  }
+
+  async setup(config?: Partial<FragmentIfcLoaderConfig>) {
+    this.config = { ...this.config, ...config };
+    if (this.config.autoSetWasm) await this.autoSetWasm();
+    await this.onSetup.trigger();
   }
 
   get(): WEBIFC.IfcAPI {

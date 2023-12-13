@@ -121,13 +121,19 @@
     - Download them and serve them statically.
     - Get them from a remote server.
 
-    The easiest way is getting them from unpkg, so let's do that!
+    The easiest way is getting them from unpkg, and the cool thing is that 
+    you don't need to do it manually! It can be done directly by the tool 
+    just by writing the following:
     */
 
+    await fragmentIfcLoader.setup()
+
+    /* If you want to the path to unpkg manually, then you can skip the line 
+    above and set them manually as below:
     fragmentIfcLoader.settings.wasm = {
         path: "https://unpkg.com/web-ifc@0.0.46/",
         absolute: true
-    }
+    } */
 
     /*MD
     Awesome! Optionally, we can exclude categories that we don't want
