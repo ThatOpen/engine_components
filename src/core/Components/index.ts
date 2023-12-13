@@ -39,6 +39,8 @@ export class Components implements Disposable {
 
   enabled = false;
 
+  static readonly release = "1.2.0";
+
   /** Whether UI components should be created. */
   uiEnabled = true;
 

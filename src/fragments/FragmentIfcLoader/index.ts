@@ -1,12 +1,24 @@
 import * as WEBIFC from "web-ifc";
 import { FragmentsGroup } from "bim-fragment";
-import { Disposable, Event, UI, Component, UIElement } from "../../base-types";
+import {
+  Disposable,
+  Event,
+  UI,
+  Component,
+  UIElement,
+  Configurable,
+} from "../../base-types";
 import { FragmentManager } from "../FragmentManager";
-import { DataConverter, GeometryReader } from "./src";
+import { DataConverter } from "./src/data-converter";
+import { GeometryReader } from "./src/geometry-reader";
 import { Button, ToastNotification } from "../../ui";
 import { Components, ToolComponent } from "../../core";
 
 export * from "./src/types";
+
+export interface FragmentIfcLoaderConfig {
+  autoSetWasm: boolean;
+}
 
 /**
  * Reads all the geometry of the IFC file and generates a set of
@@ -16,7 +28,7 @@ export * from "./src/types";
  */
 export class FragmentIfcLoader
   extends Component<WEBIFC.IfcAPI>
-  implements Disposable, UI
+  implements Disposable, UI, Configurable<FragmentIfcLoaderConfig>
 {
   static readonly uuid = "a659add7-1418-4771-a0d6-7d4d438e4624" as const;
 
@@ -28,6 +40,12 @@ export class FragmentIfcLoader
   uiElement = new UIElement<{ main: Button; toast: ToastNotification }>();
 
   onIfcLoaded: Event<FragmentsGroup> = new Event();
+
+  config: Required<FragmentIfcLoaderConfig> = {
+    autoSetWasm: true,
+  };
+
+  readonly onSetup = new Event<FragmentIfcLoader>();
 
   // For debugging purposes
   // isolatedItems = new Set<number>();
@@ -50,6 +68,38 @@ export class FragmentIfcLoader
     }
   }
 
+  private async autoSetWasm() {
+    const componentsPackage = await fetch(
+      `https://unpkg.com/openbim-components@${Components.release}/package.json`
+    );
+    if (!componentsPackage.ok) {
+      console.warn(
+        "Couldn't get openbim-components package.json. Set wasm settings manually."
+      );
+      return;
+    }
+    const componentsPackageJSON = await componentsPackage.json();
+    if (!("web-ifc" in componentsPackageJSON.peerDependencies ?? {})) {
+      console.warn(
+        "Couldn't get web-ifc from peer dependencies in openbim-components. Set wasm settings manually."
+      );
+    } else {
+      const componentsWebIfcVersion =
+        componentsPackageJSON.peerDependencies["web-ifc"];
+      const path = `https://unpkg.com/web-ifc@${componentsWebIfcVersion}/`;
+      this.settings.wasm = {
+        path,
+        absolute: true,
+      };
+    }
+  }
+
+  async setup(config?: Partial<FragmentIfcLoaderConfig>) {
+    this.config = { ...this.config, ...config };
+    if (this.config.autoSetWasm) await this.autoSetWasm();
+    await this.onSetup.trigger();
+  }
+
   get(): WEBIFC.IfcAPI {
     return this._webIfc;
   }
@@ -64,6 +114,7 @@ export class FragmentIfcLoader
     this._converter.cleanUp();
     this.onIfcLoaded.reset();
     this.onLocationsSaved.reset();
+    this.onSetup.reset();
     this.uiElement.dispose();
     (this._webIfc as any) = null;
     (this._geometry as any) = null;
@@ -159,11 +210,11 @@ export class FragmentIfcLoader
     this.uiElement.set({ main, toast });
   }
 
-  private async readIfcFile(data: Uint8Array) {
+  async readIfcFile(data: Uint8Array) {
     const { path, absolute } = this.settings.wasm;
     this._webIfc.SetWasmPath(path, absolute);
     await this._webIfc.Init();
-    this._webIfc.OpenModel(data, this.settings.webIfc);
+    return this._webIfc.OpenModel(data, this.settings.webIfc);
   }
 
   private async readAllGeometries() {
@@ -207,9 +258,13 @@ export class FragmentIfcLoader
     this._geometry.streamCrossSection(this._webIfc);
   }
 
-  private cleanUp() {
+  cleanIfcApi() {
     (this._webIfc as any) = null;
     this._webIfc = new WEBIFC.IfcAPI();
+  }
+
+  private cleanUp() {
+    this.cleanIfcApi();
     this._geometry.cleanUp();
     this._converter.cleanUp();
   }
