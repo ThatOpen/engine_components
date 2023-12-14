@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { FragmentsGroup } from "bim-fragment";
-import { InstancedMesh } from "three";
-import { Component, Disposable } from "../../base-types";
+import { Component, Disposable, Event } from "../../base-types";
 import { Components, Disposer, ToolComponent } from "../../core";
 
 /**
@@ -13,6 +12,9 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
 
   /** {@link Component.enabled} */
   enabled = true;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
 
   private _absoluteMin: THREE.Vector3;
   private _absoluteMax: THREE.Vector3;
@@ -71,6 +73,8 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
       disposer.destroy(mesh);
     }
     this._meshes = [];
+    await this.onDisposed.trigger(FragmentBoundingBox.uuid);
+    this.onDisposed.reset();
   }
 
   get() {
@@ -112,7 +116,7 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
     }
   }
 
-  addMesh(mesh: InstancedMesh) {
+  addMesh(mesh: THREE.InstancedMesh | THREE.Mesh) {
     if (!mesh.geometry.index) {
       return;
     }
@@ -123,14 +127,20 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
     const meshTransform = mesh.matrix;
 
     const instanceTransform = new THREE.Matrix4();
-    for (let i = 0; i < mesh.count; i++) {
-      mesh.getMatrixAt(i, instanceTransform);
+    const isInstanced = mesh instanceof THREE.InstancedMesh;
+    const count = isInstanced ? mesh.count : 1;
+
+    for (let i = 0; i < count; i++) {
       const min = bbox.min.clone();
       const max = bbox.max.clone();
 
-      min.applyMatrix4(instanceTransform);
+      if (isInstanced) {
+        mesh.getMatrixAt(i, instanceTransform);
+        min.applyMatrix4(instanceTransform);
+        max.applyMatrix4(instanceTransform);
+      }
+
       min.applyMatrix4(meshTransform);
-      max.applyMatrix4(instanceTransform);
       max.applyMatrix4(meshTransform);
 
       if (min.x < this._absoluteMin.x) this._absoluteMin.x = min.x;
@@ -151,7 +161,7 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
     }
   }
 
-  private static getFragmentBounds(mesh: InstancedMesh) {
+  private static getFragmentBounds(mesh: THREE.InstancedMesh | THREE.Mesh) {
     const position = mesh.geometry.attributes.position;
 
     const maxNum = Number.MAX_VALUE;

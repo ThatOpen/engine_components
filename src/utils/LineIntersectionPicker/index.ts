@@ -21,6 +21,9 @@ export class LineIntersectionPicker
   onAfterUpdate: Event<LineIntersectionPicker> = new Event();
   onBeforeUpdate: Event<LineIntersectionPicker> = new Event();
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
+
   private _pickedPoint: Vector3 | null = null;
   private _config!: LineIntersectionPickerConfig;
   private _enabled!: boolean;
@@ -74,6 +77,8 @@ export class LineIntersectionPicker
     this.onBeforeUpdate.reset();
     this._marker.removeFromParent();
     this._marker.element.remove();
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   /** {@link Updateable.update} */

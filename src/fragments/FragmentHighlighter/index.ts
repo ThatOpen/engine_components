@@ -3,7 +3,7 @@ import { Fragment, FragmentMesh } from "bim-fragment";
 import {
   Component,
   Disposable,
-  Event,
+  Updateable, Event,
   FragmentIdMap,
   Configurable,
 } from "../../base-types";
@@ -31,13 +31,23 @@ export interface FragmentHighlighterConfig {
   hoverName: string;
   selectionMaterial: THREE.Material;
   hoverMaterial: THREE.Material;
+  autoHighlightOnClick: boolean;
 }
 
 export class FragmentHighlighter
   extends Component<HighlightMaterials>
-  implements Disposable, Configurable<FragmentHighlighterConfig>
+  implements Disposable, Updateable , Configurable<FragmentHighlighterConfig>
 {
   static readonly uuid = "cb8a76f2-654a-4b50-80c6-66fd83cafd77" as const;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
+  /** {@link Updateable.onBeforeUpdate} */
+  readonly onBeforeUpdate = new Event<FragmentHighlighter>();
+
+  /** {@link Updateable.onAfterUpdate} */
+  readonly onAfterUpdate = new Event<FragmentHighlighter>();
 
   enabled = true;
   highlightMats: HighlightMaterials = {};
@@ -87,6 +97,7 @@ export class FragmentHighlighter
       opacity: 0.2,
       depthTest: true,
     }),
+    autoHighlightOnClick: true,
   };
 
   private _mouseState = {
@@ -115,29 +126,48 @@ export class FragmentHighlighter
 
   constructor(components: Components) {
     super(components);
-
     this.components.tools.add(FragmentHighlighter.uuid, this);
+    const fragmentManager = components.tools.get(FragmentManager);
+    fragmentManager.onFragmentsDisposed.add(this.onFragmentsDisposed);
   }
+
+  private onFragmentsDisposed = (data: {
+    groupID: string;
+    fragmentIDs: string[];
+  }) => {
+    this.disposeOutlinedMeshes(data.fragmentIDs);
+  };
 
   get(): HighlightMaterials {
     return this.highlightMats;
+  }
+
+  getHoveredSelection() {
+    return this.selection[this.config.hoverName];
+  }
+
+  private disposeOutlinedMeshes(fragmentIDs: string[]) {
+    for (const id of fragmentIDs) {
+      const mesh = this._outlinedMeshes[id];
+      if (!mesh) continue;
+      mesh.geometry.dispose();
+      delete this._outlinedMeshes[id];
+    }
   }
 
   async dispose() {
     this.setupEvents(false);
     this.config.hoverMaterial.dispose();
     this.config.selectionMaterial.dispose();
-
+    this.onBeforeUpdate.reset();
+    this.onAfterUpdate.reset();
     for (const matID in this.highlightMats) {
       const mats = this.highlightMats[matID] || [];
       for (const mat of mats) {
         mat.dispose();
       }
     }
-    for (const id in this._outlinedMeshes) {
-      const mesh = this._outlinedMeshes[id];
-      mesh.geometry.dispose();
-    }
+    this.disposeOutlinedMeshes(Object.keys(this._outlinedMeshes));
     this.outlineMaterial.dispose();
     this._invisibleMaterial.dispose();
     this.highlightMats = {};
@@ -147,7 +177,11 @@ export class FragmentHighlighter
       this.events[name].onHighlight.reset();
     }
     this.onSetup.reset();
+    const fragmentManager = this.components.tools.get(FragmentManager);
+    fragmentManager.onFragmentsDisposed.remove(this.onFragmentsDisposed);
     this.events = {};
+    await this.onDisposed.trigger(FragmentHighlighter.uuid);
+    this.onDisposed.reset();
   }
 
   async add(name: string, material?: THREE.Material[]) {
@@ -165,10 +199,12 @@ export class FragmentHighlighter
     await this.update();
   }
 
+  /** {@link Updateable.update} */
   async update() {
     if (!this.fillEnabled) {
       return;
     }
+    this.onBeforeUpdate.trigger(this);
     const fragments = this.components.tools.get(FragmentManager);
     for (const fragmentID in fragments.list) {
       const fragment = fragments.list[fragmentID];
@@ -179,6 +215,7 @@ export class FragmentHighlighter
         outlinedMesh.applyMatrix4(fragment.mesh.matrixWorld);
       }
     }
+    this.onAfterUpdate.trigger(this);
   }
 
   async highlight(
@@ -355,6 +392,15 @@ export class FragmentHighlighter
     }
 
     const sphere = bbox.getSphere();
+    const i = Infinity;
+    const mi = -Infinity;
+    const { x, y, z } = sphere.center;
+    const isInf = sphere.radius === i || x === i || y === i || z === i;
+    const isMInf = sphere.radius === mi || x === mi || y === mi || z === mi;
+    const isZero = sphere.radius === 0;
+    if (isInf || isMInf || isZero) {
+      return;
+    }
     sphere.radius *= this.zoomFactor;
     const camera = this.components.camera as SimpleCamera;
     await camera.controls.fitToSphere(sphere, true);
@@ -407,7 +453,17 @@ export class FragmentHighlighter
         transform: this._tempMatrix,
       });
 
-      selection.blocks.setVisibility(true, ids, true);
+      // Only highlight visible blocks
+      const visibleIDs = new Set<string>();
+      let counter = 0;
+      for (const id of ids) {
+        if (fragment.blocks.visibleIds.has(counter)) {
+          visibleIDs.add(id);
+        }
+        counter++;
+      }
+
+      selection.blocks.setVisibility(true, visibleIDs, true);
     } else {
       let i = 0;
       for (const id of ids) {
@@ -585,8 +641,10 @@ export class FragmentHighlighter
       return;
     }
     this._mouseState.moved = false;
-    const mult = this.multiple === "none" ? true : !event[this.multiple];
-    await this.highlight(this.config.selectName, mult, this.zoomToSelection);
+    if (this.config.autoHighlightOnClick) {
+      const mult = this.multiple === "none" ? true : !event[this.multiple];
+      await this.highlight(this.config.selectName, mult, this.zoomToSelection);
+    }
   };
 
   private onMouseMove = async () => {

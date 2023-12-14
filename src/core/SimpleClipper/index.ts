@@ -69,6 +69,9 @@ export class SimpleClipper<T extends SimplePlane>
   protected _planes: T[] = [];
   protected PlaneType: new (...args: any) => SimplePlane | T;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   /** The material used in all the clipping planes. */
   protected _material: THREE.Material = new THREE.MeshBasicMaterial({
     color: 0xffff00,
@@ -79,7 +82,7 @@ export class SimpleClipper<T extends SimplePlane>
 
   private _size = 5;
   private _enabled = false;
-  private _visible = true;
+  private _visible = false;
 
   /** {@link Component.enabled} */
   get enabled() {
@@ -173,6 +176,8 @@ export class SimpleClipper<T extends SimplePlane>
     this.onAfterCancel.reset();
     this.onAfterDelete.reset();
     this.onAfterDrag.reset();
+    await this.onDisposed.trigger(SimpleClipper.uuid);
+    this.onDisposed.reset();
   }
 
   /** {@link Createable.create} */
@@ -240,10 +245,10 @@ export class SimpleClipper<T extends SimplePlane>
     const main = new Button(components);
     main.materialIcon = "content_cut";
     main.onClick.add(() => {
-      this.enabled = !this.enabled;
-      this.visible = !this.visible;
+      main.active = !main.active;
+      this.enabled = main.active;
+      this.visible = main.active;
     });
-    main.active = this.enabled;
     this.uiElement.set({ main });
   }
 

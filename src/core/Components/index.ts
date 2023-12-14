@@ -6,7 +6,7 @@ import {
   disposeBoundsTree,
 } from "three-mesh-bvh";
 import { UIManager } from "../../ui";
-import { BaseRenderer, Component, Event } from "../../base-types";
+import { BaseRenderer, Component, Disposable, Event } from "../../base-types";
 import { ToolComponent } from "../ToolsComponent";
 import { BaseRaycaster } from "../../base-types/base-raycaster";
 import { Disposer } from "../Disposer";
@@ -18,7 +18,7 @@ import { Disposer } from "../Disposer";
  * loop of everything. Each instance has to be initialized with {@link init}.
  *
  */
-export class Components {
+export class Components implements Disposable {
   /** {@link ToolComponent} */
   readonly tools: ToolComponent;
 
@@ -32,9 +32,14 @@ export class Components {
    * Event that fires when this instance has been fully initialized and is
    * ready to work (scene, camera and renderer are ready).
    */
-  readonly onInitialized: Event<Components> = new Event();
+  readonly onInitialized = new Event<Components>();
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
 
   enabled = false;
+
+  static readonly release = "1.2.0";
 
   /** Whether UI components should be created. */
   uiEnabled = true;
@@ -189,6 +194,8 @@ export class Components {
     if (this.raycaster.isDisposeable()) {
       await this.raycaster.dispose();
     }
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   private update = async () => {

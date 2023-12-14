@@ -6,6 +6,7 @@ import {
   SVGAnnotationStyle,
   UI,
   UIElement,
+  Event,
 } from "../../base-types";
 import {
   Button,
@@ -32,6 +33,9 @@ export class SimpleSVGViewport
 
   private _config!: SVGViewportConfig;
   private _enabled: boolean = false;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
 
   private _viewport: SVGElement = document.createElementNS(
     "http://www.w3.org/2000/svg",
@@ -99,6 +103,8 @@ export class SimpleSVGViewport
   async dispose() {
     this._undoList = [];
     this.uiElement.dispose();
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   get(): SVGElement {

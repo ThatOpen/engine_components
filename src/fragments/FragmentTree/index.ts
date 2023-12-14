@@ -17,10 +17,12 @@ export class FragmentTree
 {
   static readonly uuid = "5af6ebe1-26fc-4053-936a-801b6c7cb37e" as const;
 
-  enabled: boolean = true;
-  onSelected = new Event<FragmentIdMap>();
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
 
-  onHovered = new Event<FragmentIdMap>();
+  enabled: boolean = true;
+  onSelected = new Event<{ items: FragmentIdMap; visible: boolean }>();
+  onHovered = new Event<{ items: FragmentIdMap; visible: boolean }>();
 
   private _title = "Model Tree";
   private _tree?: FragmentTreeItem;
@@ -47,6 +49,7 @@ export class FragmentTree
       classifier,
       "Model Tree"
     );
+
     this._tree = tree;
     if (this.components.uiEnabled) {
       this.setupUI(tree);
@@ -60,6 +63,8 @@ export class FragmentTree
     if (this._tree) {
       await this._tree.dispose();
     }
+    await this.onDisposed.trigger(FragmentTree.uuid);
+    this.onDisposed.reset();
   }
 
   async update(groupSystems: string[]) {

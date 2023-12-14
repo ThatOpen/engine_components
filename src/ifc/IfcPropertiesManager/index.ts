@@ -8,6 +8,7 @@ import { EntityActionsUI } from "./src/entity-actions";
 import { PsetActionsUI } from "./src/pset-actions";
 import { PropActionsUI } from "./src/prop-actions";
 import { Button } from "../../ui";
+import { FragmentIfcLoader } from "../../fragments/FragmentIfcLoader";
 
 type BooleanPropTypes = "IfcBoolean" | "IfcLogical";
 type StringPropTypes = "IfcText" | "IfcLabel" | "IfcIdentifier";
@@ -30,6 +31,9 @@ export class IfcPropertiesManager
   implements Disposable, UI
 {
   static readonly uuid = "58c2d9f0-183c-48d6-a402-dfcf5b9a34df" as const;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
 
   readonly onRequestFile = new Event();
   ifcToExport: ArrayBuffer | null = null;
@@ -72,15 +76,12 @@ export class IfcPropertiesManager
     exportButton: Button;
   }>();
 
-  private _ifcApi: WEBIFC.IfcAPI;
   private _changeMap: ChangeMap = {};
 
   constructor(components: Components) {
     super(components);
 
     this.components.tools.add(IfcPropertiesManager.uuid, this);
-
-    this._ifcApi = new WEBIFC.IfcAPI();
 
     // TODO: Save original IFC file so that opening it again is not necessary
     if (components.uiEnabled) {
@@ -93,14 +94,7 @@ export class IfcPropertiesManager
     return this._changeMap;
   }
 
-  async init() {
-    const { path, absolute } = this.wasm;
-    this._ifcApi.SetWasmPath(path, absolute);
-    await this._ifcApi.Init();
-  }
-
   async dispose() {
-    (this._ifcApi as any) = null;
     this.selectedModel = undefined;
     this.attributeListeners = {};
     this._changeMap = {};
@@ -109,6 +103,8 @@ export class IfcPropertiesManager
     this.onPsetRemoved.reset();
     this.onDataChanged.reset();
     await this.uiElement.dispose();
+    await this.onDisposed.trigger(IfcPropertiesManager.uuid);
+    this.onDisposed.reset();
   }
 
   private setUI(components: Components) {
@@ -237,6 +233,7 @@ export class IfcPropertiesManager
 
   private increaseMaxID(model: FragmentsGroup) {
     model.ifcMetadata.maxExpressID++;
+    return model.ifcMetadata.maxExpressID;
   }
 
   static getIFCInfo(model: FragmentsGroup) {
@@ -288,7 +285,6 @@ export class IfcPropertiesManager
     const { ownerHistoryHandle } = this.getOwnerHistory(model);
 
     // Create the Pset
-    this.increaseMaxID(model);
     const psetGlobalId = this.newGUID(model);
     const psetName = new WEBIFC[schema].IfcLabel(name);
     const psetDescription = description
@@ -301,9 +297,9 @@ export class IfcPropertiesManager
       psetDescription,
       []
     );
+    pset.expressID = this.increaseMaxID(model);
 
     // Create the Pset relation
-    this.increaseMaxID(model);
     const relGlobalId = this.newGUID(model);
     const rel = new WEBIFC[schema].IfcRelDefinesByProperties(
       relGlobalId,
@@ -313,6 +309,7 @@ export class IfcPropertiesManager
       [],
       new WEBIFC.Handle(pset.expressID)
     );
+    rel.expressID = this.increaseMaxID(model);
 
     await this.setData(model, pset, rel);
 
@@ -346,7 +343,6 @@ export class IfcPropertiesManager
     value: string | number | boolean
   ) {
     const { schema } = IfcPropertiesManager.getIFCInfo(model);
-    this.increaseMaxID(model);
     const propName = new WEBIFC[schema].IfcIdentifier(name);
     // @ts-ignore
     const propValue = new WEBIFC[schema][type](value);
@@ -356,6 +352,7 @@ export class IfcPropertiesManager
       propValue,
       null
     );
+    prop.expressID = this.increaseMaxID(model);
     await this.setData(model, prop);
     return prop;
   }
@@ -429,6 +426,9 @@ export class IfcPropertiesManager
     const pset = properties[psetID];
     if (!pset) return;
     for (const expressID of propID) {
+      if (pset.HasProperties.includes(expressID)) {
+        continue;
+      }
       const elementHandle = new WEBIFC.Handle(expressID);
       pset.HasProperties.push(elementHandle);
       await this.onPropToPset.trigger({ model, psetID, propID: expressID });
@@ -438,24 +438,29 @@ export class IfcPropertiesManager
 
   async saveToIfc(model: FragmentsGroup, ifcToSaveOn: Uint8Array) {
     const { properties } = IfcPropertiesManager.getIFCInfo(model);
-    const modelID = this._ifcApi.OpenModel(ifcToSaveOn);
+    const ifcLoader = this.components.tools.get(FragmentIfcLoader);
+    const ifcApi = ifcLoader.get();
+    const modelID = await ifcLoader.readIfcFile(ifcToSaveOn);
     const changes = this._changeMap[model.uuid] ?? [];
     for (const expressID of changes) {
       const data = properties[expressID] as any;
       if (!data) {
-        this._ifcApi.DeleteLine(modelID, expressID);
+        try {
+          ifcApi.DeleteLine(modelID, expressID);
+        } catch (err) {
+          // Nothing here...
+        }
       } else {
-        this._ifcApi.WriteLine(modelID, data);
+        try {
+          ifcApi.WriteLine(modelID, data);
+        } catch (err) {
+          // Nothing here...
+        }
       }
     }
-    const modifiedIFC = this._ifcApi.SaveModel(modelID);
-    this._ifcApi.CloseModel(modelID);
-
-    (this._ifcApi as any) = null;
-    this._ifcApi = new WEBIFC.IfcAPI();
-    const { path, absolute } = this.wasm;
-    this._ifcApi.SetWasmPath(path, absolute);
-    await this._ifcApi.Init();
+    const modifiedIFC = ifcApi.SaveModel(modelID);
+    ifcLoader.get().CloseModel(modelID);
+    ifcLoader.cleanIfcApi();
 
     return modifiedIFC;
   }

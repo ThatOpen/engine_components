@@ -19,6 +19,9 @@ export class FragmentManager
 {
   static readonly uuid = "fef46874-46a3-461b-8c44-2922ab77c806" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   /** {@link Component.enabled} */
   enabled = true;
 
@@ -29,7 +32,11 @@ export class FragmentManager
 
   baseCoordinationModel = "";
 
-  onFragmentsLoaded: Event<FragmentsGroup> = new Event();
+  readonly onFragmentsLoaded: Event<FragmentsGroup> = new Event();
+  readonly onFragmentsDisposed: Event<{
+    groupID: string;
+    fragmentIDs: string[];
+  }> = new Event();
 
   uiElement = new UIElement<{
     main: Button;
@@ -68,7 +75,6 @@ export class FragmentManager
   /** {@link Component.get} */
   async dispose(disposeUI = false) {
     if (disposeUI) {
-      this.onFragmentsLoaded.reset();
       this.uiElement.dispose();
     }
     for (const group of this.groups) {
@@ -82,9 +88,15 @@ export class FragmentManager
     }
     this.groups = [];
     this.list = {};
+    this.onFragmentsLoaded.reset();
+    this.onFragmentsDisposed.reset();
+    await this.onDisposed.trigger(FragmentManager.uuid);
+    this.onDisposed.reset();
   }
 
   async disposeGroup(group: FragmentsGroup) {
+    const { uuid: groupID } = group;
+    const fragmentIDs = group.items.map((fragment) => fragment.id);
     for (const fragment of group.items) {
       this.removeFragmentMesh(fragment);
       delete this.list[fragment.id];
@@ -92,6 +104,10 @@ export class FragmentManager
     group.dispose(true);
     const index = this.groups.indexOf(group);
     this.groups.splice(index, 1);
+    await this.onFragmentsDisposed.trigger({
+      groupID,
+      fragmentIDs,
+    });
 
     await this.updateWindow();
   }

@@ -26,6 +26,9 @@ export class LengthMeasurement
 {
   static readonly uuid = "2f9bcacf-18a9-4be6-a293-e898eae64ea1" as const;
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   /** {@link Updateable.onBeforeUpdate} */
   readonly onBeforeUpdate = new Event<LengthMeasurement>();
 
@@ -180,6 +183,8 @@ export class LengthMeasurement
     this._lineMaterial.dispose();
     this._measurements = [];
     await this._vertexPicker.dispose();
+    await this.onDisposed.trigger(LengthMeasurement.uuid);
+    this.onDisposed.reset();
   }
 
   /** {@link Updateable.update} */
@@ -223,6 +228,15 @@ export class LengthMeasurement
       const index = this._measurements.indexOf(dimension);
       this._measurements.splice(index, 1);
       await dimension.dispose();
+      await this.onAfterDelete.trigger(this);
+    }
+  }
+
+  async deleteMeasurement(measurement: SimpleDimensionLine) {
+    if (measurement) {
+      const index = this._measurements.indexOf(measurement);
+      this._measurements.splice(index, 1);
+      await measurement.dispose();
       await this.onAfterDelete.trigger(this);
     }
   }

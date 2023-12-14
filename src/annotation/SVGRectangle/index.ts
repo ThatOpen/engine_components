@@ -1,5 +1,10 @@
 import { Vector2 } from "three";
-import { Component, Disposable, SVGAnnotationStyle } from "../../base-types";
+import {
+  Component,
+  Disposable,
+  SVGAnnotationStyle,
+  Event,
+} from "../../base-types";
 import { Components } from "../../core";
 import { tooeenRandomId } from "../../utils";
 
@@ -10,6 +15,9 @@ export class SVGRectangle
   id = tooeenRandomId();
   name: string = "SVGRectangle";
   enabled: boolean = true;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
 
   private _startPoint: Vector2 = new Vector2();
   private _endPoint: Vector2 = new Vector2();
@@ -36,6 +44,8 @@ export class SVGRectangle
   async dispose() {
     this._rect.remove();
     (this.components as any) = null;
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   setStyle(style?: Partial<SVGAnnotationStyle>) {

@@ -40,6 +40,9 @@ export class FragmentClipStyler
 
   readonly onChange = new Event();
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   enabled = true;
 
   localStorageID = "FragmentClipStyler";
@@ -120,6 +123,8 @@ export class FragmentClipStyler
     }
     await this.uiElement.dispose();
     this.onChange.reset();
+    await this.onDisposed.trigger(FragmentClipStyler.uuid);
+    this.onDisposed.reset();
   }
 
   async update(ids = Object.keys(this.styleCards)) {

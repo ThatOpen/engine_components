@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Disposable } from "./base-types";
+import { Disposable, Event } from "./base-types";
 
 /**
  * A helper to easily get the real position of the mouse in the Three.js canvas
@@ -10,6 +10,9 @@ import { Disposable } from "./base-types";
 export class Mouse implements Disposable {
   private _event?: MouseEvent;
   private _position = new THREE.Vector2();
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
 
   constructor(public dom: HTMLCanvasElement) {
     this.setupEvents(true);
@@ -30,6 +33,8 @@ export class Mouse implements Disposable {
   /** {@link Disposable.dispose} */
   async dispose() {
     this.setupEvents(false);
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   private getPositionY(bound: DOMRect, event: MouseEvent) {
