@@ -150,7 +150,7 @@ export class Components implements Disposable {
     this._clock.start();
     if (this.uiEnabled) {
       this._ui = new UIManager(this);
-      this.ui.init();
+      await this.ui.init();
     }
     await this.update();
     await this.onInitialized.trigger(this);
