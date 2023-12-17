@@ -6075,7 +6075,7 @@ __metadata:
     prettier: ^2.3.1
     rollup: ^3.2.3
     stats.js: ^0.17.0
-    tailwindcss: ^3.3.2
+    tailwindcss: ^3.3.5
     three: 0.152.2
     three-mesh-bvh: 0.6.0
     top-tool-package-reader: 0.0.3
@@ -6083,6 +6083,10 @@ __metadata:
     ts-node: ^10.0.0
     typescript: ^4.3.2
     unzipit: ^1.4.3
+    web-ifc: 0.0.46
+  peerDependencies:
+    bim-fragment: 1.0.25
+    three: 0.152.2
     web-ifc: 0.0.46
   languageName: unknown
   linkType: soft
@@ -7446,7 +7450,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tailwindcss@npm:^3.3.2":
+"tailwindcss@npm:^3.3.5":
   version: 3.3.5
   resolution: "tailwindcss@npm:3.3.5"
   dependencies:

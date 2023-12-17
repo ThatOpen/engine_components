@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Component, Disposable, UI, UIElement } from "../../base-types";
+import { Component, Disposable, UI, UIElement, Event } from "../../base-types";
 import { toCompositeID } from "../../utils";
 import { Button } from "../../ui";
 import { Components, ToolComponent } from "../../core";
@@ -21,6 +21,9 @@ export class FragmentExploder
 
   uiElement = new UIElement<{ main: Button }>();
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
   private _explodedFragments = new Set<string>();
 
   get(): Set<string> {
@@ -40,6 +43,8 @@ export class FragmentExploder
   async dispose() {
     this._explodedFragments.clear();
     this.uiElement.dispose();
+    await this.onDisposed.trigger(FragmentExploder.uuid);
+    this.onDisposed.reset();
   }
 
   explode() {

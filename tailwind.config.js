@@ -17,6 +17,7 @@ module.exports = {
             },
             borderWidth: {
                 '1': '1px',
+                '3': '3px',
             },
             fontSize: {
                 'xs': ['12px', { lineHeight: '1rem' }],
@@ -34,8 +35,5 @@ module.exports = {
                 '9xl': ['36px', { lineHeight: '1' }],
             },
         }
-    },
-    // plugins: [
-    //     require('@tailwindcss/forms')
-    // ],
+    }
 };

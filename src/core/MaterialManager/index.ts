@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Component, Disposable } from "../../base-types";
+import { Component, Disposable, Event } from "../../base-types";
 import { Components } from "../Components";
 import { ToolComponent } from "../ToolsComponent";
 
@@ -17,6 +17,9 @@ export class MaterialManager extends Component<string[]> implements Disposable {
   enabled = true;
 
   private _originalBackground: THREE.Color | null = null;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
 
   private _originals: {
     [guid: string]: {
@@ -84,6 +87,8 @@ export class MaterialManager extends Component<string[]> implements Disposable {
     }
     this._list = {};
     this._originals = {};
+    await this.onDisposed.trigger(MaterialManager.uuid);
+    this.onDisposed.reset();
   }
 
   /**

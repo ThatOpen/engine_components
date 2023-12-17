@@ -4,12 +4,17 @@ import {
   BaseSVGAnnotation,
   Disposable,
   UIElement,
+  Event,
 } from "../../base-types";
 import { Components, SimpleSVGViewport } from "../../core";
 import { Button, Toolbar } from "../../ui";
 
 export class DrawManager extends Component<string> implements UI, Disposable {
+  static readonly uuid = "4ab8b0f4-665d-4ea2-8f6e-66c98ed04392";
   name: string = "DrawManager";
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
 
   uiElement = new UIElement<{
     main: Button;
@@ -44,8 +49,11 @@ export class DrawManager extends Component<string> implements UI, Disposable {
 
   constructor(components: Components) {
     super(components);
+    components.tools.add(DrawManager.uuid, this);
     this.viewport = new SimpleSVGViewport(components);
-    this.setUI();
+    if (components.uiEnabled) {
+      this.setUI();
+    }
     this.enabled = false;
   }
 
@@ -57,6 +65,8 @@ export class DrawManager extends Component<string> implements UI, Disposable {
     }
     this.drawings = {};
     (this.components as any) = null;
+    await this.onDisposed.trigger(DrawManager.uuid);
+    this.onDisposed.reset();
   }
 
   saveDrawing(name: string) {

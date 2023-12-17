@@ -1,5 +1,10 @@
 import { Vector2 } from "three";
-import { Component, Disposable, SVGAnnotationStyle } from "../../base-types";
+import {
+  Component,
+  Disposable,
+  SVGAnnotationStyle,
+  Event,
+} from "../../base-types";
 import { Components } from "../../core";
 import { tooeenRandomId } from "../../utils";
 
@@ -7,6 +12,9 @@ export class SVGText extends Component<SVGTextElement> implements Disposable {
   id = tooeenRandomId();
   name: string = "SVGRectangle";
   enabled: boolean = true;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
 
   private _startPoint: Vector2 = new Vector2();
 
@@ -26,6 +34,8 @@ export class SVGText extends Component<SVGTextElement> implements Disposable {
 
   async dispose() {
     this._text.remove();
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   setStyle(style?: Partial<SVGAnnotationStyle>) {

@@ -15,6 +15,9 @@ export class ToolComponent
   /** The list of components created in this app. */
   list: Record<string, Component<any>> = {};
 
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
+
   /** The list of UUIDs of all the components in this library. */
   static readonly libraryUUIDs = new Set();
 
@@ -109,6 +112,8 @@ export class ToolComponent
         await tool.dispose();
       }
     }
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   private _uuidv4Pattern =

@@ -24,6 +24,9 @@ export class ClippingEdges
   extends Component<Edges>
   implements Hideable, Disposable, Updateable
 {
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
+
   /** {@link Updateable.onAfterUpdate} */
   onAfterUpdate = new Event<Edge[]>();
 
@@ -111,8 +114,10 @@ export class ClippingEdges
   async dispose() {
     const names = Object.keys(this._edges);
     for (const name of names) {
-      await this.disposeEdge(name);
+      this.disposeEdge(name);
     }
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   private newEdgesMesh(styleName: string) {
