@@ -13,7 +13,7 @@ import { SimpleUIComponent } from "../../ui";
 import { Components } from "../Components";
 import { Disposer } from "../Disposer";
 import { SimpleRenderer } from "../SimpleRenderer";
-import { PostproductionRenderer } from "../../navigation";
+import { PostproductionRenderer } from "../../navigation/PostproductionRenderer";
 import { Infinite2dGrid } from "./src";
 
 // TODO: Make a scene manager as a Tool (so that it as an UUID)
@@ -39,6 +39,9 @@ export class Simple2DScene
 
   /** {@link Component.enabled} */
   enabled = true;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
 
   /** {@link UI.uiElement} */
   uiElement = new UIElement<{
@@ -154,6 +157,8 @@ export class Simple2DScene
     }
     await this.renderer.dispose();
     await this.uiElement.dispose();
+    await this.onDisposed.trigger(Simple2DScene.uuid);
+    this.onDisposed.reset();
   }
 
   /** {@link Updateable.update} */

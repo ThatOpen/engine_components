@@ -10,6 +10,7 @@ import { AttributeSet, PropertyTag } from "./src";
 import { PsetActionsUI } from "../IfcPropertiesManager/src/pset-actions";
 import { EntityActionsUI } from "../IfcPropertiesManager/src/entity-actions";
 import { PropActionsUI } from "../IfcPropertiesManager/src/prop-actions";
+import { FragmentManager } from "../../fragments/FragmentManager";
 
 export * from "./src";
 
@@ -28,6 +29,9 @@ export class IfcPropertiesProcessor
   implements UI, Disposable
 {
   static readonly uuid = "23a889ab-83b3-44a4-8bee-ead83438370b" as const;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
 
   enabled: boolean = true;
   uiElement = new UIElement<{
@@ -103,11 +107,20 @@ export class IfcPropertiesProcessor
 
     // this._entityUIPool = new UIPool(this._components, TreeView);
     this._renderFunctions = this.getRenderFunctions();
+    const fragmentManager = components.tools.get(FragmentManager);
+    fragmentManager.onFragmentsDisposed.add(this.onFragmentsDisposed);
 
     if (components.uiEnabled) {
       this.setUI();
     }
   }
+
+  private onFragmentsDisposed = (data: {
+    groupID: string;
+    fragmentIDs: string[];
+  }) => {
+    delete this._indexMap[data.groupID];
+  };
 
   private getRenderFunctions() {
     return {
@@ -129,6 +142,10 @@ export class IfcPropertiesProcessor
     }
     this._currentUI = {};
     this.onPropertiesManagerSet.reset();
+    const fragmentManager = this.components.tools.get(FragmentManager);
+    fragmentManager.onFragmentsDisposed.remove(this.onFragmentsDisposed);
+    await this.onDisposed.trigger(IfcPropertiesProcessor.uuid);
+    this.onDisposed.reset();
   }
 
   getProperties(model: FragmentsGroup, id: string) {
@@ -210,13 +227,19 @@ export class IfcPropertiesProcessor
   }
 
   async cleanPropertiesList() {
-    if (this._propertiesManager) {
-      const button = this._propertiesManager.uiElement.get("exportButton");
-      button.removeFromParent();
+    this._currentUI = {};
+    if (this.components.uiEnabled) {
+      if (this._propertiesManager) {
+        const button = this._propertiesManager.uiElement.get("exportButton");
+        button.removeFromParent();
+      }
+      const propsList = this.uiElement.get("propsList");
+      await propsList.dispose(true);
+      const propsWindow =
+        this.uiElement.get<FloatingWindow>("propertiesWindow");
+      propsWindow.description = null;
+      propsList.children = [];
     }
-
-    const propsList = this.uiElement.get("propsList");
-    await propsList.dispose(true);
     // for (const child of this._propsList.children) {
     //   if (child instanceof TreeView) {
     //     this._entityUIPool.return(child);
@@ -224,10 +247,6 @@ export class IfcPropertiesProcessor
     //   }
     //   child.dispose();
     // }
-    const propsWindow = this.uiElement.get<FloatingWindow>("propertiesWindow");
-    propsWindow.description = null;
-    propsList.children = [];
-    this._currentUI = {};
   }
 
   get(): IndexMap {
@@ -261,6 +280,7 @@ export class IfcPropertiesProcessor
   }
 
   async renderProperties(model: FragmentsGroup, expressID: number) {
+    if (!this.components.uiEnabled) return;
     await this.cleanPropertiesList();
     const topToolbar = this.uiElement.get("topToolbar");
     const propsList = this.uiElement.get("propsList");

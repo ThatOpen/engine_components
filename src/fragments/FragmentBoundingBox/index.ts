@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { FragmentsGroup } from "bim-fragment";
 import { InstancedMesh } from "three";
-import { Component, Disposable } from "../../base-types";
+import { Component, Disposable, Event } from "../../base-types";
 import { Components, Disposer, ToolComponent } from "../../core";
 
 /**
@@ -13,6 +13,9 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
 
   /** {@link Component.enabled} */
   enabled = true;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
 
   private _absoluteMin: THREE.Vector3;
   private _absoluteMax: THREE.Vector3;
@@ -71,6 +74,8 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
       disposer.destroy(mesh);
     }
     this._meshes = [];
+    await this.onDisposed.trigger(FragmentBoundingBox.uuid);
+    this.onDisposed.reset();
   }
 
   get() {

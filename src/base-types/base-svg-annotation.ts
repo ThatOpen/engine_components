@@ -1,4 +1,4 @@
-import { Disposable, UI } from "./base-types";
+import { Disposable, UI, Event } from "./base-types";
 import { Component } from "./component";
 import { DrawManager } from "../annotation";
 import { Button } from "../ui";
@@ -16,6 +16,9 @@ export abstract class BaseSVGAnnotation
   implements UI, Disposable
 {
   id = tooeenRandomId();
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
 
   abstract uiElement: UIElement<{ main: Button }>;
 
@@ -85,6 +88,8 @@ export abstract class BaseSVGAnnotation
     if (this.svgViewport) {
       this.svgViewport.remove();
     }
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   private setupEvents(active: boolean) {

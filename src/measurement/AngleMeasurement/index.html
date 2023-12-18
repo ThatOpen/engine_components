@@ -33,6 +33,16 @@
           padding: 8px;
           border-radius: 100%;
       }
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      .full-screen {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+        overflow: hidden;
+      }
   </style>
 </head>
 <body>
@@ -82,7 +92,6 @@
 	scene.add(ambientLight);
 
 	const grid = new OBC.SimpleGrid(components);
-	components.tools.add('grid', grid);
 
 	/*MD
 	### 📏 Dimensions Tool

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Component, Disposable, Hideable } from "../../base-types";
+import { Component, Disposable, Hideable, Event } from "../../base-types";
 import { Disposer } from "../Disposer";
 import { Components } from "../Components";
 import { SimpleCamera } from "../SimpleCamera";
@@ -16,6 +16,9 @@ export class SimpleGrid
   implements Hideable, Disposable
 {
   static readonly uuid = "d1e814d5-b81c-4452-87a2-f039375e0489" as const;
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
 
   /** {@link Component.enabled} */
   enabled = true;
@@ -187,6 +190,8 @@ export class SimpleGrid
     this.setupEvents(false);
     const disposer = this.components.tools.get(Disposer);
     disposer.destroy(this._grid);
+    await this.onDisposed.trigger(SimpleGrid.uuid);
+    this.onDisposed.reset();
   }
 
   private setupEvents(active: boolean) {

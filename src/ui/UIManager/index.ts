@@ -1,6 +1,6 @@
 // @ts-ignore
 import { createPopper, Instance } from "@popperjs/core/dist/esm";
-import { Component, Disposable } from "../../base-types";
+import { Component, Disposable, Event } from "../../base-types";
 import { Toolbar } from "../ToolbarComponent";
 import { Components } from "../../core";
 import { SimpleUIComponent } from "../SimpleUIComponent";
@@ -25,6 +25,9 @@ export class UIManager extends Component<Toolbar[]> implements Disposable {
   tooltipsEnabled = true;
 
   children: SimpleUIComponent[] = [];
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<undefined>();
 
   private _components: Components;
   private _contextMenuContainer: HTMLDivElement;
@@ -126,6 +129,8 @@ export class UIManager extends Component<Toolbar[]> implements Disposable {
     (this._components as any) = null;
     (this.contextMenu as any) = null;
     (this._contextMenuContainer as any) = null;
+    await this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
   init() {
@@ -138,6 +143,8 @@ export class UIManager extends Component<Toolbar[]> implements Disposable {
       this._containers.left,
       this._contextMenuContainer
     );
+
+    this.viewerContainer.style.position = "relative";
   }
 
   add(...uiComponents: SimpleUIComponent[]) {

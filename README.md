@@ -1,7 +1,7 @@
 <p align="center">
   <a href="https://thatopen.com/">TOC</a>
   |
-  <a href="https://platform.thatopen.com/documentation">documentation</a>
+  <a href="https://docs.thatopen.com/intro">documentation</a>
   |
   <a href="https://platform.thatopen.com/app">demo</a>
   |

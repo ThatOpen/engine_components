@@ -34,6 +34,12 @@ export class EdgesPlane extends SimplePlane {
   }
 
   /** {@link Component.enabled} */
+  set enabled(state: boolean) {
+    this._enabled = state;
+    this.components.renderer.togglePlane(state, this._plane);
+  }
+
+  /** {@link Component.enabled} */
   get enabled() {
     return super.enabled;
   }

@@ -1,7 +1,8 @@
 import * as THREE from "three";
 import { Pass, FullScreenQuad } from "three/examples/jsm/postprocessing/Pass";
 import { getPlaneDistanceMaterial } from "./plane-distance-shader";
-import { Components, Disposer } from "../../../core";
+import { Components } from "../../../core/Components";
+import { Disposer } from "../../../core/Disposer";
 import { getProjectedNormalMaterial } from "./projected-normal-shader";
 
 // Follows the structure of
