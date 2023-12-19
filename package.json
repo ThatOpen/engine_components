@@ -1,6 +1,6 @@
 {
   "name": "openbim-components",
-  "version": "1.2.0-alpha.10",
+  "version": "1.2.0-alpha.11",
   "main": "src/index.js",
   "author": "harry collin, antonio gonzalez viegas",
   "license": "MIT",
@@ -25,7 +25,7 @@
     "@types/three": "0.152.1",
     "@typescript-eslint/eslint-plugin": "^4.27.0",
     "@typescript-eslint/parser": "^4.27.0",
-    "bim-fragment": "1.0.25",
+    "bim-fragment": "1.2.1",
     "cpy-cli": "^3.1.1",
     "eslint": "^7.28.0",
     "eslint-config-airbnb-base": "^14.2.1",

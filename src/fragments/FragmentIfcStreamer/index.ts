@@ -258,6 +258,7 @@ export class FragmentIfcStreamer
     }
     this.onGeometryStreamed.trigger({ data, buffer });
     this._geometries = {};
+    this._currentGeometrySize = 0;
   }
 }
 
