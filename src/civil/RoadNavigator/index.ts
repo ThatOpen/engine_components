@@ -378,6 +378,8 @@ export class RoadNavigator extends Component<any> implements UI {
 
     horizontalAlignment.onVisible.add(() => {
       if (horizontalAlignment.visible) {
+        const { width, height } = horizontalAlignment.containerSize;
+        this._scenes.horizontal.setSize(height, width);
         this._scenes.horizontal.grid.regenerate();
       }
     });
