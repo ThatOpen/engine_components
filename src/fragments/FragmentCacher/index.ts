@@ -102,7 +102,7 @@ export class FragmentCacher extends LocalCacher {
     this.cards = [];
 
     for (const id of allIDs) {
-      const card = new SimpleUICard(this.components, id);
+      const card = new SimpleUICard(this.components);
       card.title = id;
       this.cards.push(card);
 
@@ -156,7 +156,7 @@ export class FragmentCacher extends LocalCacher {
     for (const id of ids) {
       if (savedIDs.includes(id)) continue;
 
-      const card = new SimpleUICard(this.components, id);
+      const card = new SimpleUICard(this.components);
       card.title = id;
       this.cards.push(card);
       floatingMenu.addChild(card);
