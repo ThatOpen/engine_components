@@ -22,7 +22,12 @@ export class FragmentIfcStreamConverter
 
   onGeometryStreamed = new Event<{
     buffer: Uint8Array;
-    data: { [id: number]: Float32Array };
+    data: {
+      [id: number]: {
+        boundingBox: Float32Array;
+        hasHoles: boolean;
+      };
+    };
   }>();
 
   onAssetStreamed = new Event<StreamedAsset[]>();
@@ -295,10 +300,15 @@ export class FragmentIfcStreamConverter
 
   private streamGeometries() {
     const buffer = this._serializer.export(this._geometries);
-    const data: { [id: number]: Float32Array } = {};
+    const data: {
+      [id: number]: {
+        boundingBox: Float32Array;
+        hasHoles: boolean;
+      };
+    } = {};
     for (const geomID in this._geometries) {
-      const { id, boundingBox } = this._geometries[geomID];
-      data[id] = boundingBox;
+      const { id, boundingBox, hasHoles } = this._geometries[geomID];
+      data[id] = { boundingBox, hasHoles };
     }
     this.onGeometryStreamed.trigger({ data, buffer });
     this._geometries = {};
