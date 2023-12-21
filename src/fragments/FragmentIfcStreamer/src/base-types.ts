@@ -5,6 +5,7 @@ export interface StreamedGeometries {
     normal: Float32Array;
     index: Uint32Array;
     boundingBox: Float32Array;
+    hasHoles: boolean;
   };
 }
 

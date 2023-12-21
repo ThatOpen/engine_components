@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="../../../resources/styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+    <title>Tools Component</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      .full-screen {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+        overflow: hidden;
+      }
+    </style>
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+        "web-ifc": "https://unpkg.com/web-ifc@0.0.46/web-ifc-api.js",
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
+        "openbim-components": "../../../resources/openbim-components.js",
+         "client-zip": "https://unpkg.com/client-zip@2.3.0/index.js"
+      }
+    }
+</script>
+</body>
+</html>
+<script type="module">
+
+    // Set up scene (see SimpleScene tutorial)
+
+    import * as THREE from 'three';
+    import * as OBC from 'openbim-components';
+    import * as WEBIFC from 'web-ifc';
+    import Stats from 'stats.js/src/Stats.js';
+    import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
+    import {downloadZip} from 'client-zip';
+
+    const container = document.getElementById('container');
+
+    const components = new OBC.Components();
+
+    components.scene = new OBC.SimpleScene(components);
+    components.renderer = new OBC.PostproductionRenderer(components, container);
+    components.camera = new OBC.SimpleCamera(components);
+    components.raycaster = new OBC.SimpleRaycaster(components);
+
+    components.init();
+
+    components.renderer.postproduction.enabled = true;
+
+    const scene = components.scene.get();
+
+    components.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
+
+    components.scene.setup();
+
+    const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
+    const customEffects = components.renderer.postproduction.customEffects;
+    customEffects.excludedMeshes.push(grid.get());
+
+
+    const fragments = new OBC.FragmentManager(components);
+    const loader = new OBC.FragmentStreamLoader(components);
+
+    const streamer  = new OBC.FragmentIfcStreamConverter(components);
+    streamer.settings.wasm = {
+        path: "https://unpkg.com/web-ifc@0.0.46/",
+        absolute: true
+    }
+
+    const fetchedIfc = await fetch("../../../resources/small.ifc");
+    const ifcBuffer = await fetchedIfc.arrayBuffer();
+    streamer.stream(new Uint8Array(ifcBuffer));
+
+    const rawData = await fetch("./test.json");
+    const data = await rawData.json();
+    const {assets, geometries} = data;
+    await loader.load(assets, geometries);
+
+    // const mainToolbar = new OBC.Toolbar(components);
+    // components.ui.addToolbar(mainToolbar);
+    //
+    // const button = new OBC.Button(components);
+    // button.materialIcon = "upload";
+    // button.onClick.add(() => {
+    //     loader.load
+    // })
+
+
+
+
+    // Set up stats
+
+    const stats = new Stats();
+    stats.showPanel(2);
+    document.body.append(stats.dom);
+    stats.dom.style.left = '0px';
+    const renderer = components.renderer;
+    renderer.onBeforeUpdate.add(() => stats.begin());
+    renderer.onAfterUpdate.add(() => stats.end());
+
+
+
+</script>
