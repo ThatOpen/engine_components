@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { Component, Disposable, Event } from "../../base-types";
 import { Components } from "../Components";
 import { ToolComponent } from "../ToolsComponent";
-import { CullerRenderer, CullerRendererSettings } from "./src/culler-renderer";
+import { MeshCullerRenderer, CullerRendererSettings } from "./src";
 
 // TODO: Work at the instance level instead of the mesh level?
 
@@ -53,17 +53,17 @@ export class ScreenCuller
     this.elements.renderDebugFrame = value;
   }
 
-  elements: CullerRenderer;
+  elements: MeshCullerRenderer;
 
-  /** @deprecated use ScreenCuller.elements.renderer instead. */
+  /** @deprecated use ScreenCuller.elements.get instead. */
   get renderer() {
-    return this.elements.renderer;
+    return this.elements.get();
   }
 
   constructor(components: Components, settings?: CullerRendererSettings) {
     super(components);
     components.tools.add(ScreenCuller.uuid, this);
-    this.elements = new CullerRenderer(components, settings);
+    this.elements = new MeshCullerRenderer(components, settings);
 
     this.elements.onViewUpdated.add(({ seen, unseen }) => {
       for (const mesh of seen) {
@@ -80,7 +80,7 @@ export class ScreenCuller
    * @returns the map of internal meshes used to determine visibility.
    */
   get() {
-    return this.elements.get();
+    return this.elements.colorMeshes;
   }
 
   /** {@link Disposable.dispose} */

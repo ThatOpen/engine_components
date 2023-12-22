@@ -103,7 +103,7 @@
 
    */
 	culler.elements.renderDebugFrame = true;
-	const debugFrame = culler.elements.renderer.domElement;
+	const debugFrame = culler.elements.get().domElement;
 	document.body.appendChild(debugFrame);
 	debugFrame.style.position = 'fixed';
 	debugFrame.style.left = '0';
@@ -197,7 +197,7 @@
   In this tutorial we are updating it each time the camera stops moving.
    */
 
-	culler.elements.needsUpdate = true;
+  culler.elements.needsUpdate = true;
   components.camera.controls.addEventListener("controlend", () => {
 		culler.elements.needsUpdate = true;
   });
