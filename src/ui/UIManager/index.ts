@@ -145,6 +145,7 @@ export class UIManager extends Component<Toolbar[]> implements Disposable {
     );
 
     this.viewerContainer.style.position = "relative";
+    this.viewerContainer.classList.add("obc-viewer");
   }
 
   add(...uiComponents: SimpleUIComponent[]) {
