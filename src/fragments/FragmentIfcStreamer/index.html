@@ -86,6 +86,14 @@
     const ifcBuffer = await fetchedIfc.arrayBuffer();
     streamer.stream(new Uint8Array(ifcBuffer));
 
+    streamer.onGeometryStreamed.add((geometry) => {
+        console.log(geometry);
+    });
+
+    streamer.onAssetStreamed.add((assets) => {
+        console.log(assets);
+    });
+
     const rawData = await fetch("./test.json");
     const data = await rawData.json();
     const {assets, geometries} = data;

@@ -97,13 +97,13 @@
 
 	/*MD
 
-  Additionally, we will activate the `culler.renderDebugFrame`
+  Additionally, we will activate the `culler.elements.renderDebugFrame`
   so that we can see the 2D screen of the elements that are not occluded.💻
   Also, we will get the **domElement** and attach it to the body so that we can see this frame in real-time.📊
 
    */
-	culler.renderDebugFrame = true;
-	const debugFrame = culler.renderer.domElement;
+	culler.elements.renderDebugFrame = true;
+	const debugFrame = culler.elements.renderer.domElement;
 	document.body.appendChild(debugFrame);
 	debugFrame.style.position = 'fixed';
 	debugFrame.style.left = '0';
@@ -146,7 +146,7 @@
   and randomly position them. We'll add the cube to the scene and adjust its position between 0 and 10.
 
   Additionally, we will add meshes to the `culler` object, which will help **SimpleCuller** to recognize and
-  draw the elements that are visible to the camera. To do this, **`culler.add(cube)`** will be used.
+  draw the elements that are visible to the camera. To do this, **`culler.elements.add(cube)`** will be used.
 
    */
 	function regenerateCubes() {
@@ -158,7 +158,7 @@
 			cube.position.z = getRandomNumber(10);
 			cube.updateMatrix();
 			scene.add(cube);
-			culler.add(cube);
+			culler.elements.add(cube);
 			cubes.push(cube);
 		}
 	}
@@ -190,16 +190,16 @@
   Here comes the most crucial part! The core aim of **ScreenCuller** is to output just those components that are
   visible to the camera.
 
-  `culler.needsUpdate = true` instructs the ScreenCuller to render the updated view.
+  `culler.elements.needsUpdate = true` instructs the ScreenCuller to render the updated view.
 
   ** Remember to update culler every time the camera is updated ❕ **
 
   In this tutorial we are updating it each time the camera stops moving.
    */
 
-	culler.needsUpdate = true;
+	culler.elements.needsUpdate = true;
   components.camera.controls.addEventListener("controlend", () => {
-		culler.needsUpdate = true;
+		culler.elements.needsUpdate = true;
   });
 
 	/*MD
@@ -232,7 +232,7 @@
 	regenerateButton.label = "Regenerate";
 	regenerateButton.materialIcon = "cached";
 	regenerateButton.onClick.add(() => {
-		culler.needsUpdate = true;
+		culler.elements.needsUpdate = true;
 	});
 
 	const visibleCheckbox = new OBC.CheckboxInput(components);

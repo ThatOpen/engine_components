@@ -203,3 +203,7 @@ export function isPointInFrontOfPlane(
 
   return dotProduct > 0;
 }
+
+export function isTransparent(material: THREE.Material) {
+  return material.transparent && material.opacity < 1;
+}

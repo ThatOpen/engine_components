@@ -54,6 +54,8 @@ export class FragmentStreamLoader extends Component<any> {
 
   get() {}
 
+  update() {}
+
   private getBoundingBoxesGeometry() {
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     geometry.deleteAttribute("uv");

@@ -251,6 +251,7 @@ export class FragmentIfcStreamConverter
     }
 
     // Simple hole test: see if all triangles are facing away the center
+    // Using the vertex normal because it's easier
     // Geometries with holes are treated as transparent items
     // in the visibility test for geometry streaming
     // Not perfect, but it will work for most cases and all the times it fails
