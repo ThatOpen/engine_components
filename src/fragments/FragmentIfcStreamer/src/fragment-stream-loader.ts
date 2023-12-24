@@ -2,9 +2,12 @@ import * as THREE from "three";
 import { Component } from "../../../base-types";
 import { StreamedAsset, StreamedGeometries } from "./base-types";
 import { Components, ToolComponent } from "../../../core";
+import { GeometryCullerRenderer } from "./geometry-culler-renderer";
 
 export class FragmentStreamLoader extends Component<any> {
   enabled = true;
+
+  culler: GeometryCullerRenderer;
 
   private _boundingBoxes: THREE.InstancedMesh;
 
@@ -12,10 +15,19 @@ export class FragmentStreamLoader extends Component<any> {
     super(components);
     this.components.tools.add(FragmentStreamLoader.uuid, this);
     const geometry = this.getBoundingBoxesGeometry();
-    const material = new THREE.MeshBasicMaterial();
+    const material = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 1,
+    });
     this._boundingBoxes = new THREE.InstancedMesh(geometry, material, 1000);
     this._boundingBoxes.frustumCulled = false;
     this.components.scene.get().add(this._boundingBoxes);
+    this.culler = new GeometryCullerRenderer(components);
+
+    const color = new THREE.Color("rgb(255, 0, 0)");
+    for (let i = 0; i < this._boundingBoxes.count; i++) {
+      this._boundingBoxes.setColorAt(i, color);
+    }
   }
 
   static readonly uuid = "22437e8d-9dbc-4b99-a04f-d2da280d50c8" as const;
@@ -27,9 +39,12 @@ export class FragmentStreamLoader extends Component<any> {
     const translation = new THREE.Matrix4();
     const inverseTranslation = new THREE.Matrix4();
     const scale = new THREE.Matrix4();
+    const geometryIDs: number[] = [];
+    const tempColor = new THREE.Color().setRGB(255, 0, 0);
     for (const asset of assets) {
       for (const geometryData of asset.geometries) {
         const { geometryID, transformation } = geometryData;
+        geometryIDs.push(geometryID);
         globalTransform.fromArray(transformation);
         const { boundingBox } = geometries[geometryID];
         geometryTransform.identity();
@@ -45,11 +60,13 @@ export class FragmentStreamLoader extends Component<any> {
         geometryTransform.multiply(translation);
         geometryTransform.multiply(scale);
         this._boundingBoxes.setMatrixAt(counter, geometryTransform);
+        this._boundingBoxes.setColorAt(counter, tempColor);
         counter++;
       }
     }
     this._boundingBoxes.count = counter;
     this._boundingBoxes.instanceMatrix.needsUpdate = true;
+    this.culler.add("modelID", this._boundingBoxes, geometryIDs);
   }
 
   get() {}

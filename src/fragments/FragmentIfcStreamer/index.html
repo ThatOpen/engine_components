@@ -82,22 +82,66 @@
         absolute: true
     }
 
-    const fetchedIfc = await fetch("../../../resources/small.ifc");
-    const ifcBuffer = await fetchedIfc.arrayBuffer();
-    streamer.stream(new Uint8Array(ifcBuffer));
-
-    streamer.onGeometryStreamed.add((geometry) => {
-        console.log(geometry);
-    });
-
-    streamer.onAssetStreamed.add((assets) => {
-        console.log(assets);
-    });
+    // const fetchedIfc = await fetch("../../../resources/small.ifc");
+    // const ifcBuffer = await fetchedIfc.arrayBuffer();
+    // streamer.stream(new Uint8Array(ifcBuffer));
+    //
+    // streamer.onGeometryStreamed.add((geometry) => {
+    //     console.log(geometry);
+    // });
+    //
+    // streamer.onAssetStreamed.add((assets) => {
+    //     console.log(assets);
+    // });
 
     const rawData = await fetch("./test.json");
     const data = await rawData.json();
     const {assets, geometries} = data;
     await loader.load(assets, geometries);
+
+    // const geometry = new THREE.BoxGeometry(1, 1, 0.1);
+    // const material = new THREE.MeshBasicMaterial({
+    //     transparent: true,
+    //     opacity: 1,
+    // });
+    // const plane = new THREE.InstancedMesh(geometry, material, 11856);
+    // scene.add(plane);
+
+    //dummy
+    // const dummy = new THREE.Object3D();
+    // const defaultColor = new THREE.Color(0xffff00);
+
+    // let mm = 0;
+
+    // for (let i = 0; i < 152; i++) {
+    //     for (let j = 0; j < 78; j++) {
+    //         dummy.position.x = i - 76;
+    //         dummy.position.y = j - 39;
+    //         dummy.position.z = 0;
+    //
+    //         dummy.updateMatrix();
+    //         plane.setMatrixAt(mm, dummy.matrix);
+    //         plane.setColorAt(mm, defaultColor);
+    //         mm++;
+    //     }
+    // }
+    //
+    // const color = new THREE.Color();
+    // const mouse = new THREE.Vector2();
+    // const rayCaster = new THREE.Raycaster();
+    // function onPointerMove(e) {
+    //     mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    //     mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    //
+    //     rayCaster.setFromCamera(mouse, components.camera.get());
+    //     const intersects = rayCaster.intersectObject(plane);
+    //     for (let obj of intersects) {
+    //         plane.setColorAt(obj.instanceId, color.set(0xff0000));
+    //         plane.instanceColor.needsUpdate = true;
+    //     }
+    // }
+
+    // window.addEventListener("mousemove", onPointerMove)
 
     // const mainToolbar = new OBC.Toolbar(components);
     // components.ui.addToolbar(mainToolbar);
