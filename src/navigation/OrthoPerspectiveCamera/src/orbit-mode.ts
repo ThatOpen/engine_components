@@ -32,6 +32,14 @@ export class OrbitMode implements NavigationMode {
     const controls = this.camera.controls;
     controls.minDistance = 1;
     controls.maxDistance = 300;
+    const position = new THREE.Vector3();
+    controls.getPosition(position);
+    const distance = position.length();
+    controls.distance = distance;
     controls.truckSpeed = 2;
+    const { rotation } = this.camera.get();
+    const direction = new THREE.Vector3(0, 0, -1).applyEuler(rotation);
+    const target = position.addScaledVector(direction, distance);
+    controls.moveTo(target.x, target.y, target.z);
   }
 }
