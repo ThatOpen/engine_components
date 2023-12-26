@@ -99,6 +99,21 @@
     const {assets, geometries} = data;
     await loader.load(assets, geometries);
 
+    loader.culler.onViewUpdated.add((result) => {
+        console.log(result);
+    })
+
+    loader.culler.renderDebugFrame = true;
+    const debugFrame = loader.culler.get().domElement;
+    document.body.appendChild(debugFrame);
+    debugFrame.style.position = 'fixed';
+    debugFrame.style.left = '0';
+    debugFrame.style.bottom = '0';
+
+    components.camera.controls.addEventListener("controlend", () => {
+        loader.culler.needsUpdate = true;
+    });
+
     // const geometry = new THREE.BoxGeometry(1, 1, 0.1);
     // const material = new THREE.MeshBasicMaterial({
     //     transparent: true,
