@@ -7,45 +7,40 @@ import {
 import { Components } from "../../../core";
 import { StreamedAsset, StreamedGeometries } from "./base-types";
 
+type CullerBoundingBox = {
+  modelIndex: number;
+  geometryID: number;
+  indices: number[];
+  translucent: boolean;
+  transforms?: number[][];
+  lostTime?: number;
+  hiddenTime?: number;
+};
+
 /**
  * A renderer to determine a geometry visibility on screen
  */
 export class GeometryCullerRenderer extends CullerRenderer {
   private _capacity = 1000;
   private _resizeStep = 1000;
-
-  private _transparentBboxesReload = 30000;
-  private _lastTransparentReload = 0;
+  private _maxLostTime = 60000;
+  private _maxHiddenTime = 10000;
 
   private _boundingBoxes: THREE.InstancedMesh;
 
   readonly onViewUpdated = new Event<{
     seen: { [modelID: string]: number[] };
-    // unseen: Set<{ modelID: string; geometryID: number }>;
+    unseen: { [modelID: string]: number[] };
   }>();
 
   private _modelIDIndex = new Map<string, number>();
   private _indexModelID = new Map<number, string>();
 
-  private _geometriesToFind = new Map<
-    string,
-    { modelIndex: number; geometryID: number }
-  >();
-
-  private _hiddenBBoxes = new Map<number, number[]>();
-  private _translucentIndices = new Map<string, number[]>();
-
-  // private _geometriesFound = new Map<
-  //   string,
-  //   { modelIndex: number; geometryID: number }
-  // >();
-  //
-  // private _geometriesLost = new Map<
-  //   string,
-  //   { modelIndex: number; geometryID: number; time: number }
-  // >();
-
-  // private _whiteMaterial = new THREE.MeshBasicMaterial({ color: "white" });
+  private _geometries = {
+    toFind: new Map() as Map<string, CullerBoundingBox>,
+    found: new Map() as Map<string, CullerBoundingBox>,
+    lost: new Map() as Map<string, CullerBoundingBox>,
+  };
 
   constructor(components: Components, settings?: CullerRendererSettings) {
     super(components, settings);
@@ -128,16 +123,21 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
         const { r, g, b, code } = nextColor;
 
-        this._geometriesToFind.set(code, { modelIndex, geometryID });
+        const translucent = hasHoles || color[3] !== 1;
 
-        // Save translucent bboxes index so that we can hide them later
-        const isTranslucent = hasHoles || color[3] !== 1;
-        if (isTranslucent) {
-          if (!this._translucentIndices.has(code)) {
-            this._translucentIndices.set(code, []);
-          }
-          const colorMap = this._translucentIndices.get(code) as number[];
-          colorMap.push(count);
+        if (!this._geometries.toFind.has(code)) {
+          this._geometries.toFind.set(code, {
+            modelIndex,
+            geometryID,
+            translucent,
+            indices: [count],
+          });
+        } else {
+          const box = this._geometries.toFind.get(code) as CullerBoundingBox;
+          box.indices.push(count);
+          // For simplicity, when a geometry is sometimes translucent, treat it
+          // as if it was always translucent. Maybe this needs to be optimized
+          box.translucent = box.translucent || translucent;
         }
 
         tempColor.set(`rgb(${r}, ${g}, ${b})`);
@@ -155,80 +155,121 @@ export class GeometryCullerRenderer extends CullerRenderer {
   private handleWorkerMessage = async (event: MessageEvent) => {
     const colors = event.data.colors as Set<string>;
 
-    // Restore transparent bounding boxes that were hidden to reveal
-    // the boxes that are behind
-    const now = performance.now();
-    if (now - this._lastTransparentReload > this._transparentBboxesReload) {
-      const invisibleBoxes = Array.from(this._hiddenBBoxes.keys());
-      this.setBoundingBoxesVisibility(invisibleBoxes, true);
-      this._lastTransparentReload = now;
-    }
-
     const foundGeometries: { [modelID: string]: number[] } = {};
+    const unFoundGeometries: { [modelID: string]: number[] } = {};
     let viewWasUpdated = false;
 
-    const translucentIndices: number[] = [];
+    const translucentFound = false;
+
+    const boxesThatJustDissappeared = new Set(this._geometries.found.keys());
 
     for (const code of colors.values()) {
-      if (this._geometriesToFind.has(code)) {
-        const found = this._geometriesToFind.get(code);
+      if (this._geometries.toFind.has(code)) {
+        // New geometry was found
+        const found = this._geometries.toFind.get(code) as CullerBoundingBox;
 
-        if (!found) {
-          throw new Error("Error with bounding box color map.");
-        }
-
-        const { modelIndex, geometryID } = found;
-        const modelID = this._indexModelID.get(modelIndex);
-
-        if (!modelID) {
-          throw new Error("Error getting the modelID.");
-        }
-
+        const modelID = this._indexModelID.get(found.modelIndex) as string;
         if (!foundGeometries[modelID]) {
           foundGeometries[modelID] = [];
         }
-
-        foundGeometries[modelID].push(geometryID);
-        this._geometriesToFind.delete(code);
+        foundGeometries[modelID].push(found.geometryID);
         viewWasUpdated = true;
 
-        if (this._translucentIndices.has(code)) {
-          const indices = this._translucentIndices.get(code) as number[];
-          for (const index of indices) {
-            translucentIndices.push(index);
-          }
+        if (found.translucent) {
+          this.setVisibility([found], false);
         }
+
+        this._geometries.toFind.delete(code);
+        this._geometries.found.set(code, found);
+      } else if (this._geometries.found.has(code)) {
+        // A box that was previously found is still visible
+        boxesThatJustDissappeared.delete(code);
+
+        const found = this._geometries.found.get(code) as CullerBoundingBox;
+        if (found.translucent) {
+          this.setVisibility([found], false);
+        }
+      } else if (this._geometries.lost.has(code)) {
+        // We found back a lost box, put them back at the found group
+        const found = this._geometries.lost.get(code) as CullerBoundingBox;
+        found.lostTime = undefined;
+        this._geometries.lost.delete(code);
+        this._geometries.found.set(code, found);
+      }
+    }
+
+    const now = performance.now();
+
+    // Update previously found boxes that were just lost
+    for (const code of boxesThatJustDissappeared) {
+      const box = this._geometries.found.get(code);
+      if (!box) continue;
+      box.lostTime = now;
+      this._geometries.found.delete(code);
+      this._geometries.lost.set(code, box);
+    }
+
+    // Update lost boxes whose lost or hidden time has expired
+    for (const [code, box] of this._geometries.lost) {
+      if (!box || !box.lostTime) continue;
+      if (now - box.lostTime > this._maxLostTime) {
+        // This box is not seen anymore, notify to remove from memory
+        box.lostTime = undefined;
+        box.hiddenTime = undefined;
+
+        const modelID = this._indexModelID.get(box.modelIndex) as string;
+        if (!unFoundGeometries[modelID]) {
+          unFoundGeometries[modelID] = [];
+        }
+        unFoundGeometries[modelID].push(box.geometryID);
+        viewWasUpdated = true;
+
+        this._geometries.lost.delete(code);
+        this._geometries.toFind.set(code, box);
+      } else if (box.hiddenTime && now - box.hiddenTime > this._maxHiddenTime) {
+        // This box was hidden for translucency and can be revealed again
+        this.setVisibility([box], true);
       }
     }
 
     if (viewWasUpdated) {
-      await this.onViewUpdated.trigger({ seen: foundGeometries });
+      await this.onViewUpdated.trigger({
+        seen: foundGeometries,
+        unseen: unFoundGeometries,
+      });
     }
 
-    // When we find a transparent bboxes, we hide them to reveal what's
-    // behind. We will put them all back after some time
-    if (translucentIndices.length) {
-      this.setBoundingBoxesVisibility(translucentIndices, false);
+    // When we find a translucent bboxes, we hide them and then force a re-render
+    // to reveal what's behind. We will make them visible again after its hidden
+    // time expires.
+    if (translucentFound) {
       await this.updateVisibility(true);
     }
   };
 
-  private setBoundingBoxesVisibility(indices: number[], visible: boolean) {
+  private setVisibility(boxes: CullerBoundingBox[], visible: boolean) {
+    const now = performance.now();
     const tempMatrix = new THREE.Matrix4();
-    for (const index of indices) {
+    for (const box of boxes) {
       if (visible) {
-        if (!this._hiddenBBoxes.has(index)) {
+        if (!box.transforms) {
           continue;
         }
-        const transform = this._hiddenBBoxes.get(index) as number[];
-        tempMatrix.fromArray(transform);
-        this._boundingBoxes.setMatrixAt(index, tempMatrix);
-        this._hiddenBBoxes.delete(index);
+        box.hiddenTime = undefined;
+        for (let i = 0; i < box.indices.length; i++) {
+          tempMatrix.fromArray(box.transforms[i]);
+          this._boundingBoxes.setMatrixAt(box.indices[i], tempMatrix);
+        }
+        delete box.transforms;
       } else {
-        this._boundingBoxes.getMatrixAt(index, tempMatrix);
-        this._hiddenBBoxes.set(index, [...tempMatrix.elements]);
-        tempMatrix.makeScale(0, 0, 0);
-        this._boundingBoxes.setMatrixAt(index, tempMatrix);
+        box.hiddenTime = now;
+        box.transforms = [];
+        for (const index of box.indices) {
+          this._boundingBoxes.getMatrixAt(index, tempMatrix);
+          box.transforms.push([...tempMatrix.elements]);
+          tempMatrix.makeScale(0, 0, 0);
+          this._boundingBoxes.setMatrixAt(index, tempMatrix);
+        }
       }
     }
     this._boundingBoxes.instanceMatrix.needsUpdate = true;
