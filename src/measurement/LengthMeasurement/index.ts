@@ -310,7 +310,9 @@ export class LengthMeasurement
   }
 
   private setupEvents(active: boolean) {
-    const viewerContainer = this.components.ui.viewerContainer;
+    const viewerContainer =
+      this.components.renderer.get().domElement.parentElement;
+    if (!viewerContainer) return;
     if (active) {
       viewerContainer.addEventListener("click", this.create);
       window.addEventListener("keydown", this.onKeyDown);
