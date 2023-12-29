@@ -3,13 +3,19 @@ import { Fragment, FragmentMesh } from "bim-fragment";
 import {
   Component,
   Disposable,
-  Updateable, Event,
+  Updateable,
+  Event,
   FragmentIdMap,
   Configurable,
 } from "../../base-types";
 import { FragmentManager } from "../FragmentManager";
 import { FragmentBoundingBox } from "../FragmentBoundingBox";
-import { Components, SimpleCamera, ToolComponent } from "../../core";
+import {
+  Components,
+  ScreenCuller,
+  SimpleCamera,
+  ToolComponent,
+} from "../../core";
 import { toCompositeID } from "../../utils";
 import { PostproductionRenderer } from "../../navigation/PostproductionRenderer";
 
@@ -32,11 +38,12 @@ export interface FragmentHighlighterConfig {
   selectionMaterial: THREE.Material;
   hoverMaterial: THREE.Material;
   autoHighlightOnClick: boolean;
+  cullHighlightMesh: boolean;
 }
 
 export class FragmentHighlighter
   extends Component<HighlightMaterials>
-  implements Disposable, Updateable , Configurable<FragmentHighlighterConfig>
+  implements Disposable, Updateable, Configurable<FragmentHighlighterConfig>
 {
   static readonly uuid = "cb8a76f2-654a-4b50-80c6-66fd83cafd77" as const;
 
@@ -98,6 +105,7 @@ export class FragmentHighlighter
       depthTest: true,
     }),
     autoHighlightOnClick: true,
+    cullHighlightMesh: true,
   };
 
   private _mouseState = {
@@ -468,6 +476,15 @@ export class FragmentHighlighter
       if (!fragment.fragments[name]) {
         const material = this.highlightMats[name];
         const subFragment = fragment.addFragment(name, material);
+        if (this.config.cullHighlightMesh) {
+          const culler = this.components.tools.get(ScreenCuller);
+          if (
+            name !== this.config.selectName &&
+            name !== this.config.hoverName
+          ) {
+            culler.add(subFragment.mesh);
+          }
+        }
         if (fragment.blocks.count > 1) {
           subFragment.setInstance(0, {
             ids: Array.from(fragment.ids),
