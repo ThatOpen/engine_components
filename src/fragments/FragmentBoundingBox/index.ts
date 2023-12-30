@@ -2,7 +2,9 @@ import * as THREE from "three";
 import { FragmentsGroup } from "bim-fragment";
 import { InstancedMesh } from "three";
 import { Component, Disposable, Event } from "../../base-types";
-import { Components, Disposer, ToolComponent } from "../../core";
+import { Components } from "../../core/Components";
+import { Disposer } from "../../core/Disposer";
+import { ToolComponent } from "../../core/ToolsComponent";
 
 /**
  * A simple implementation of bounding box that works for fragments. The resulting bbox is not 100% precise, but
