@@ -1,7 +1,10 @@
 import { Fragment, FragmentsGroup, Serializer } from "bim-fragment";
 import * as THREE from "three";
-import { Component, Disposable, Event, UI, UIElement } from "../../base-types";
-import { Components, ToolComponent } from "../../core";
+import { Component } from "../../base-types/component";
+import { UIElement } from "../../base-types/ui-element";
+import { Disposable, Event, UI } from "../../base-types";
+import { Components } from "../../core/Components";
+import { ToolComponent } from "../../core/ToolsComponent";
 import {
   Button,
   FloatingWindow,

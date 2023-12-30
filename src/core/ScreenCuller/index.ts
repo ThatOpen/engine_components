@@ -1,10 +1,12 @@
 import * as THREE from "three";
 import { Material } from "three";
+import { FragmentsGroup } from "bim-fragment";
 import { Component, Disposable, Event } from "../../base-types";
 import { Components } from "../Components";
 import { readPixelsAsync } from "./src/screen-culler-helper";
 import { Disposer } from "../Disposer";
 import { ToolComponent } from "../ToolsComponent";
+import { FragmentManager } from "../../fragments/FragmentManager";
 
 // TODO: Work at the instance level instead of the mesh level?
 
@@ -203,6 +205,18 @@ export class ScreenCuller
 
     colorMesh.applyMatrix4(mesh.matrix);
     colorMesh.updateMatrix();
+
+    const parent = mesh.parent;
+    if (parent instanceof FragmentsGroup) {
+      const manager = this.components.tools.get(FragmentManager);
+      const coordinationModel = manager.groups.find(
+        (model) => model.uuid === manager.baseCoordinationModel
+      );
+      if (coordinationModel) {
+        colorMesh.applyMatrix4(parent.coordinationMatrix.clone().invert());
+        colorMesh.applyMatrix4(coordinationModel.coordinationMatrix);
+      }
+    }
 
     this._scene.add(colorMesh);
     this._colorMeshes.set(mesh.uuid, colorMesh);

@@ -1,7 +1,10 @@
 import { FragmentsGroup } from "bim-fragment";
-import { Components, LocalCacher } from "../../core";
+import { Components } from "../../core/Components";
+import { LocalCacher } from "../../core/LocalCacher";
 import { FragmentManager } from "../FragmentManager";
-import { Button, FloatingWindow, SimpleUICard } from "../../ui";
+import { Button } from "../../ui/ButtonComponent";
+import { FloatingWindow } from "../../ui/FloatingWindow";
+import { SimpleUICard } from "../../ui/SimpleUICard";
 
 // TODO: Clean up
 // TODO: Improve UI element
