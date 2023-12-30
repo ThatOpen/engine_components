@@ -35,6 +35,7 @@ export interface FragmentHighlighterConfig {
   selectionMaterial: THREE.Material;
   hoverMaterial: THREE.Material;
   autoHighlightOnClick: boolean;
+  cullHighlightMeshes: boolean;
 }
 
 export class FragmentHighlighter
@@ -101,6 +102,7 @@ export class FragmentHighlighter
       depthTest: true,
     }),
     autoHighlightOnClick: true,
+    cullHighlightMeshes: true,
   };
 
   private _mouseState = {

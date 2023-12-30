@@ -7,6 +7,7 @@ import { readPixelsAsync } from "./src/screen-culler-helper";
 import { Disposer } from "../Disposer";
 import { ToolComponent } from "../ToolsComponent";
 import { FragmentManager } from "../../fragments/FragmentManager";
+import { FragmentHighlighter } from "../../fragments/FragmentHighlighter";
 
 // TODO: Work at the instance level instead of the mesh level?
 
@@ -300,8 +301,16 @@ export class ScreenCuller
         this._currentVisibleMeshes.add(mesh.uuid);
         this._recentlyHiddenMeshes.delete(mesh.uuid);
         if (mesh instanceof FragmentMesh) {
+          const highlighter = this.components.tools.get(FragmentHighlighter);
+          const { cullHighlightMeshes, selectName } = highlighter.config;
+          if (!cullHighlightMeshes) {
+            continue;
+          }
           const fragments = mesh.fragment.fragments;
           for (const name in fragments) {
+            if (name === selectName) {
+              continue;
+            }
             const fragment = fragments[name];
             fragment.mesh.visible = true;
           }
@@ -315,8 +324,16 @@ export class ScreenCuller
       if (mesh === undefined) continue;
       mesh.visible = false;
       if (mesh instanceof FragmentMesh) {
+        const highlighter = this.components.tools.get(FragmentHighlighter);
+        const { cullHighlightMeshes, selectName } = highlighter.config;
+        if (!cullHighlightMeshes) {
+          continue;
+        }
         const fragments = mesh.fragment.fragments;
         for (const name in fragments) {
+          if (name === selectName) {
+            continue;
+          }
           const fragment = fragments[name];
           fragment.mesh.visible = false;
         }
