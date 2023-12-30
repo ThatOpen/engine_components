@@ -1,21 +1,18 @@
 import * as THREE from "three";
 import { Fragment, FragmentMesh } from "bim-fragment";
 import {
-  Component,
   Disposable,
   Updateable,
   Event,
   FragmentIdMap,
   Configurable,
 } from "../../base-types";
+import { Component } from "../../base-types/component";
 import { FragmentManager } from "../FragmentManager";
 import { FragmentBoundingBox } from "../FragmentBoundingBox";
-import {
-  Components,
-  ScreenCuller,
-  SimpleCamera,
-  ToolComponent,
-} from "../../core";
+import { Components } from "../../core/Components";
+import { SimpleCamera } from "../../core/SimpleCamera";
+import { ToolComponent } from "../../core/ToolsComponent";
 import { toCompositeID } from "../../utils";
 import { PostproductionRenderer } from "../../navigation/PostproductionRenderer";
 
@@ -38,7 +35,6 @@ export interface FragmentHighlighterConfig {
   selectionMaterial: THREE.Material;
   hoverMaterial: THREE.Material;
   autoHighlightOnClick: boolean;
-  cullHighlightMesh: boolean;
 }
 
 export class FragmentHighlighter
@@ -105,7 +101,6 @@ export class FragmentHighlighter
       depthTest: true,
     }),
     autoHighlightOnClick: true,
-    cullHighlightMesh: true,
   };
 
   private _mouseState = {
@@ -476,15 +471,7 @@ export class FragmentHighlighter
       if (!fragment.fragments[name]) {
         const material = this.highlightMats[name];
         const subFragment = fragment.addFragment(name, material);
-        if (this.config.cullHighlightMesh) {
-          const culler = this.components.tools.get(ScreenCuller);
-          if (
-            name !== this.config.selectName &&
-            name !== this.config.hoverName
-          ) {
-            culler.add(subFragment.mesh);
-          }
-        }
+        subFragment.group = fragment.group;
         if (fragment.blocks.count > 1) {
           subFragment.setInstance(0, {
             ids: Array.from(fragment.ids),
