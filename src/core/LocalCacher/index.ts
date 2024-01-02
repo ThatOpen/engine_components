@@ -1,6 +1,10 @@
 import { ModelDatabase } from "./db";
-import { Component, Disposable, UI, Event, UIElement } from "../../base-types";
-import { Button, FloatingWindow, SimpleUICard } from "../../ui";
+import { Component } from "../../base-types/component";
+import { UIElement } from "../../base-types/ui-element";
+import { Disposable, UI, Event } from "../../base-types/base-types";
+import { Button } from "../../ui/ButtonComponent";
+import { FloatingWindow } from "../../ui/FloatingWindow";
+import { SimpleUICard } from "../../ui/SimpleUICard";
 import { Components } from "../Components";
 import { ToolComponent } from "../ToolsComponent";
 
