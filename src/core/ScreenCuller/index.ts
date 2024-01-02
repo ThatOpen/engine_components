@@ -1,12 +1,22 @@
 import * as THREE from "three";
 import { Material } from "three";
-import { Component, Disposable, Event } from "../../base-types";
+import { FragmentMesh } from "bim-fragment";
+import { Component, Configurable, Disposable, Event } from "../../base-types";
 import { Components } from "../Components";
 import { readPixelsAsync } from "./src/screen-culler-helper";
 import { Disposer } from "../Disposer";
 import { ToolComponent } from "../ToolsComponent";
+import { FragmentManager } from "../../fragments/FragmentManager";
+import { FragmentHighlighter } from "../../fragments/FragmentHighlighter";
 
 // TODO: Work at the instance level instead of the mesh level?
+
+export interface ScreenCullerConfig {
+  updateInterval?: number;
+  rtWidth?: number;
+  rtHeight?: number;
+  autoUpdate?: boolean;
+}
 
 /**
  * A tool to handle big scenes efficiently by automatically hiding the objects
@@ -14,7 +24,7 @@ import { ToolComponent } from "../ToolsComponent";
  */
 export class ScreenCuller
   extends Component<Map<string, THREE.InstancedMesh>>
-  implements Disposable
+  implements Disposable, Configurable<ScreenCullerConfig>
 {
   static readonly uuid = "69f2a50d-c266-44fc-b1bd-fa4d34be89e6" as const;
 
@@ -39,9 +49,9 @@ export class ScreenCuller
    */
   renderDebugFrame = false;
 
-  private readonly renderer: THREE.WebGLRenderer;
-  private readonly renderTarget: THREE.WebGLRenderTarget;
-  private readonly bufferSize: number;
+  readonly renderer: THREE.WebGLRenderer;
+  private renderTarget: THREE.WebGLRenderTarget | null = null;
+  private bufferSize: number | null = null;
   private readonly materialCache: Map<string, THREE.MeshBasicMaterial>;
   private readonly worker: Worker;
 
@@ -62,24 +72,15 @@ export class ScreenCuller
 
   // Alternative scene and meshes to make the visibility check
   private readonly _scene = new THREE.Scene();
-  private readonly _buffer: Uint8Array;
+  private _buffer: Uint8Array | null = null;
 
-  constructor(
-    components: Components,
-    readonly updateInterval = 1000,
-    readonly rtWidth = 512,
-    readonly rtHeight = 512,
-    readonly autoUpdate = true
-  ) {
+  constructor(components: Components) {
     super(components);
     components.tools.add(ScreenCuller.uuid, this);
 
     this.renderer = new THREE.WebGLRenderer();
     const planes = this.components.renderer.clippingPlanes;
     this.renderer.clippingPlanes = planes;
-    this.renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight);
-    this.bufferSize = rtWidth * rtHeight * 4;
-    this._buffer = new Uint8Array(this.bufferSize);
     this.materialCache = new Map<string, THREE.MeshBasicMaterial>();
 
     const code = `
@@ -100,7 +101,23 @@ export class ScreenCuller
     const blob = new Blob([code], { type: "application/javascript" });
     this.worker = new Worker(URL.createObjectURL(blob));
     this.worker.addEventListener("message", this.handleWorkerMessage);
+  }
+
+  config: Required<ScreenCullerConfig> = {
+    updateInterval: 1000,
+    rtWidth: 512,
+    rtHeight: 512,
+    autoUpdate: true,
+  };
+  readonly onSetup = new Event<ScreenCuller>();
+  async setup(config?: Partial<ScreenCullerConfig>) {
+    this.config = { ...this.config, ...config };
+    const { autoUpdate, updateInterval, rtHeight, rtWidth } = this.config;
+    this.renderTarget = new THREE.WebGLRenderTarget(rtWidth, rtHeight);
+    this.bufferSize = rtWidth * rtHeight * 4;
+    this._buffer = new Uint8Array(this.bufferSize);
     if (autoUpdate) window.setInterval(this.updateVisibility, updateInterval);
+    this.onSetup.trigger(this);
   }
 
   /**
@@ -118,10 +135,11 @@ export class ScreenCuller
     this._recentlyHiddenMeshes.clear();
     this._scene.children.length = 0;
     this.onViewUpdated.reset();
+    this.onSetup.reset();
     this.worker.terminate();
     this.renderer.dispose();
-    this.renderTarget.dispose();
-    (this._buffer as any) = null;
+    this.renderTarget?.dispose();
+    this._buffer = null;
     this._transparentMat.dispose();
     this._meshColorMap.clear();
     this._visibleMeshes = [];
@@ -204,6 +222,21 @@ export class ScreenCuller
     colorMesh.applyMatrix4(mesh.matrix);
     colorMesh.updateMatrix();
 
+    if (mesh instanceof FragmentMesh) {
+      const fragment = mesh.fragment;
+      const parent = fragment.group;
+      if (parent) {
+        const manager = this.components.tools.get(FragmentManager);
+        const coordinationModel = manager.groups.find(
+          (model) => model.uuid === manager.baseCoordinationModel
+        );
+        if (coordinationModel) {
+          colorMesh.applyMatrix4(parent.coordinationMatrix.clone().invert());
+          colorMesh.applyMatrix4(coordinationModel.coordinationMatrix);
+        }
+      }
+    }
+
     this._scene.add(colorMesh);
     this._colorMeshes.set(mesh.uuid, colorMesh);
     this._meshes.set(mesh.uuid, mesh);
@@ -216,13 +249,13 @@ export class ScreenCuller
    * not true.
    */
   updateVisibility = async (force?: boolean) => {
-    if (!this.enabled) return;
+    if (!(this.enabled && this._buffer)) return;
     if (!this.needsUpdate && !force) return;
 
     const camera = this.components.camera.get();
     camera.updateMatrix();
 
-    this.renderer.setSize(this.rtWidth, this.rtHeight);
+    this.renderer.setSize(this.config.rtWidth, this.config.rtHeight);
     this.renderer.setRenderTarget(this.renderTarget);
     this.renderer.render(this._scene, camera);
 
@@ -231,8 +264,8 @@ export class ScreenCuller
       context,
       0,
       0,
-      this.rtWidth,
-      this.rtHeight,
+      this.config.rtWidth,
+      this.config.rtHeight,
       context.RGBA,
       context.UNSIGNED_BYTE,
       this._buffer
@@ -267,6 +300,21 @@ export class ScreenCuller
         mesh.visible = true;
         this._currentVisibleMeshes.add(mesh.uuid);
         this._recentlyHiddenMeshes.delete(mesh.uuid);
+        if (mesh instanceof FragmentMesh) {
+          const highlighter = this.components.tools.get(FragmentHighlighter);
+          const { cullHighlightMeshes, selectName } = highlighter.config;
+          if (!cullHighlightMeshes) {
+            continue;
+          }
+          const fragments = mesh.fragment.fragments;
+          for (const name in fragments) {
+            if (name === selectName) {
+              continue;
+            }
+            const fragment = fragments[name];
+            fragment.mesh.visible = true;
+          }
+        }
       }
     }
 
@@ -275,6 +323,21 @@ export class ScreenCuller
       const mesh = this._meshes.get(uuid);
       if (mesh === undefined) continue;
       mesh.visible = false;
+      if (mesh instanceof FragmentMesh) {
+        const highlighter = this.components.tools.get(FragmentHighlighter);
+        const { cullHighlightMeshes, selectName } = highlighter.config;
+        if (!cullHighlightMeshes) {
+          continue;
+        }
+        const fragments = mesh.fragment.fragments;
+        for (const name in fragments) {
+          if (name === selectName) {
+            continue;
+          }
+          const fragment = fragments[name];
+          fragment.mesh.visible = false;
+        }
+      }
     }
 
     await this.onViewUpdated.trigger();

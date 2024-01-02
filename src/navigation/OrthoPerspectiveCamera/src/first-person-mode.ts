@@ -34,11 +34,9 @@ export class FirstPersonMode implements NavigationMode {
 
   private setupFirstPersonCamera() {
     const controls = this.camera.controls;
-    const cameraPosition = new THREE.Vector3();
-    controls.camera.getWorldPosition(cameraPosition);
     const newTargetPosition = new THREE.Vector3();
     controls.distance--;
-    controls.camera.getWorldPosition(newTargetPosition);
+    controls.getPosition(newTargetPosition);
     controls.minDistance = 1;
     controls.maxDistance = 1;
     controls.distance = 1;
