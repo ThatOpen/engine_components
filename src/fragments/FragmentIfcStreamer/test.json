@@ -8784,7 +8784,6 @@
   ],
   "geometries": {
     "186": {
-      "hasHoles":  true,
       "boundingBox": {
         "0": -5.062616992290714e-14,
         "1": 1.7763568394002505e-15,
@@ -8793,10 +8792,10 @@
         "4": 16.885000228881836,
         "5": 0
       },
+      "hasHoles": true,
       "geometryFile": "test.ifc-processed-geometries-1"
     },
     "294": {
-      "hasHoles": true,
       "boundingBox": {
         "0": -7.300000190734863,
         "1": -1.634803403760543e-14,
@@ -8805,10 +8804,10 @@
         "4": 0.10000000149011612,
         "5": 0
       },
+      "hasHoles": true,
       "geometryFile": "test.ifc-processed-geometries-1"
     },
     "6425": {
-      "hasHoles": false,
       "boundingBox": {
         "0": 0.029999999329447746,
         "1": 0.040137261152267456,
@@ -8817,10 +8816,10 @@
         "4": 0.05299999937415123,
         "5": 2.2699999809265137
       },
+      "hasHoles": false,
       "geometryFile": "test.ifc-processed-geometries-1"
     },
     "6437": {
-      "hasHoles": false,
       "boundingBox": {
         "0": 0.014999999664723873,
         "1": 0.023137260228395462,
@@ -8829,10 +8828,10 @@
         "4": 0.06313726305961609,
         "5": 2.2850000858306885
       },
+      "hasHoles": true,
       "geometryFile": "test.ifc-processed-geometries-1"
     },
     "6449": {
-      "hasHoles": false,
       "boundingBox": {
         "0": 0,
         "1": 0.023137260228395462,
@@ -8841,10 +8840,10 @@
         "4": 0.07813726365566254,
         "5": 2.299999952316284
       },
+      "hasHoles": true,
       "geometryFile": "test.ifc-processed-geometries-1"
     },
     "6455": {
-      "hasHoles": false,
       "boundingBox": {
         "0": 0,
         "1": -0.06830000132322311,
@@ -8853,10 +8852,10 @@
         "4": 0.16830000281333923,
         "5": 0.003000000026077032
       },
-      "geometryFile": "test.ifc-processed-geometries-2"
+      "hasHoles": false,
+      "geometryFile": "test.ifc-processed-geometries-1"
     },
     "7726": {
-      "hasHoles": false,
       "boundingBox": {
         "0": -0.09966803342103958,
         "1": -0.3882286846637726,
@@ -8865,10 +8864,10 @@
         "4": 0.018471311777830124,
         "5": 0.6477000117301941
       },
-      "geometryFile": "test.ifc-processed-geometries-2"
+      "hasHoles": true,
+      "geometryFile": "test.ifc-processed-geometries-1"
     },
     "7738": {
-      "hasHoles": false,
       "boundingBox": {
         "0": -0.1250680387020111,
         "1": -0.4136286973953247,
@@ -8877,10 +8876,10 @@
         "4": 0.04387131333351135,
         "5": 0.7239000201225281
       },
-      "geometryFile": "test.ifc-processed-geometries-2"
+      "hasHoles": true,
+      "geometryFile": "test.ifc-processed-geometries-1"
     },
     "7744": {
-      "hasHoles": false,
       "boundingBox": {
         "0": -0.3522554337978363,
         "1": -0.6423786878585815,
@@ -8889,10 +8888,10 @@
         "4": 0.2726213037967682,
         "5": 0.7620000243186951
       },
-      "geometryFile": "test.ifc-processed-geometries-2"
+      "hasHoles": false,
+      "geometryFile": "test.ifc-processed-geometries-1"
     },
     "18684": {
-      "hasHoles": false,
       "boundingBox": {
         "0": -0.2159000039100647,
         "1": -0.22357405722141266,
@@ -8901,10 +8900,10 @@
         "4": -0.1612677276134491,
         "5": 0.8064692616462708
       },
-      "geometryFile": "test.ifc-processed-geometries-3"
+      "hasHoles": false,
+      "geometryFile": "test.ifc-processed-geometries-1"
     },
     "18696": {
-      "hasHoles": false,
       "boundingBox": {
         "0": -0.2159000039100647,
         "1": -0.15240000188350677,
@@ -8913,10 +8912,10 @@
         "4": 0.24130000174045563,
         "5": 0.45719999074935913
       },
-      "geometryFile": "test.ifc-processed-geometries-3"
+      "hasHoles": false,
+      "geometryFile": "test.ifc-processed-geometries-1"
     },
     "18702": {
-      "hasHoles": false,
       "boundingBox": {
         "0": 0.1910332590341568,
         "1": -0.21550597250461578,
@@ -8925,10 +8924,10 @@
         "4": 0.24169161915779114,
         "5": 0.4577546715736389
       },
-      "geometryFile": "test.ifc-processed-geometries-3"
+      "hasHoles": true,
+      "geometryFile": "test.ifc-processed-geometries-1"
     },
     "18714": {
-      "hasHoles": false,
       "boundingBox": {
         "0": 0.1910332590341568,
         "1": -0.24565447866916656,
@@ -8937,10 +8936,10 @@
         "4": -0.19010838866233826,
         "5": 0.8034305572509766
       },
-      "geometryFile": "test.ifc-processed-geometries-4"
+      "hasHoles": false,
+      "geometryFile": "test.ifc-processed-geometries-1"
     },
     "18720": {
-      "hasHoles": false,
       "boundingBox": {
         "0": -0.21617861092090607,
         "1": -0.21550597250461578,
@@ -8949,10 +8948,10 @@
         "4": 0.24169161915779114,
         "5": 0.4577546715736389
       },
-      "geometryFile": "test.ifc-processed-geometries-4"
+      "hasHoles": true,
+      "geometryFile": "test.ifc-processed-geometries-1"
     },
     "18726": {
-      "hasHoles": false,
       "boundingBox": {
         "0": -0.21617861092090607,
         "1": -0.24565447866916656,
@@ -8961,10 +8960,10 @@
         "4": -0.19010838866233826,
         "5": 0.8034305572509766
       },
-      "geometryFile": "test.ifc-processed-geometries-5"
+      "hasHoles": false,
+      "geometryFile": "test.ifc-processed-geometries-2"
     },
     "18732": {
-      "hasHoles": false,
       "boundingBox": {
         "0": -0.2159000039100647,
         "1": -0.2159000039100647,
@@ -8973,10 +8972,10 @@
         "4": 0.17819161713123322,
         "5": 0.02539222314953804
       },
-      "geometryFile": "test.ifc-processed-geometries-5"
+      "hasHoles": true,
+      "geometryFile": "test.ifc-processed-geometries-2"
     },
     "22428": {
-      "hasHoles": false,
       "boundingBox": {
         "0": -0.07500000298023224,
         "1": -0.009999999776482582,
@@ -8985,10 +8984,10 @@
         "4": 0,
         "5": 2.174999952316284
       },
-      "geometryFile": "test.ifc-processed-geometries-6"
+      "hasHoles": true,
+      "geometryFile": "test.ifc-processed-geometries-2"
     },
     "22434": {
-      "hasHoles": false,
       "boundingBox": {
         "0": -0.07000000029802322,
         "1": 0.10000000149011612,
@@ -8997,10 +8996,10 @@
         "4": 0.10999999940395355,
         "5": 2.1700000762939453
       },
-      "geometryFile": "test.ifc-processed-geometries-6"
+      "hasHoles": true,
+      "geometryFile": "test.ifc-processed-geometries-2"
     },
     "22440": {
-      "hasHoles": false,
       "boundingBox": {
         "0": 0,
         "1": 0,
@@ -9009,10 +9008,10 @@
         "4": 0.10000000149011612,
         "5": 2.0999999046325684
       },
-      "geometryFile": "test.ifc-processed-geometries-6"
+      "hasHoles": true,
+      "geometryFile": "test.ifc-processed-geometries-2"
     },
     "22446": {
-      "hasHoles": false,
       "boundingBox": {
         "0": 0.014999999664723873,
         "1": 0.06499999761581421,
@@ -9021,10 +9020,10 @@
         "4": 0.10999999940395355,
         "5": 2.0999999046325684
       },
-      "geometryFile": "test.ifc-processed-geometries-6"
+      "hasHoles": true,
+      "geometryFile": "test.ifc-processed-geometries-2"
     },
     "22452": {
-      "hasHoles": false,
       "boundingBox": {
         "0": 0.05999999865889549,
         "1": 0.10999999940395355,
@@ -9033,10 +9032,10 @@
         "4": 0.17000000178813934,
         "5": 1.0599573850631714
       },
-      "geometryFile": "test.ifc-processed-geometries-6"
+      "hasHoles": true,
+      "geometryFile": "test.ifc-processed-geometries-2"
     },
     "22458": {
-      "hasHoles": false,
       "boundingBox": {
         "0": 0.061500001698732376,
         "1": 0.007986893877387047,
@@ -9045,10 +9044,10 @@
         "4": 0.06499999761581421,
         "5": 1.0599573850631714
       },
-      "geometryFile": "test.ifc-processed-geometries-7"
+      "hasHoles": true,
+      "geometryFile": "test.ifc-processed-geometries-2"
     },
     "22464": {
-      "hasHoles": false,
       "boundingBox": {
         "0": 0.06499999761581421,
         "1": 0.04648689180612564,
@@ -9057,10 +9056,10 @@
         "4": 0.1404896080493927,
         "5": 1.0020930767059326
       },
-      "geometryFile": "test.ifc-processed-geometries-7"
+      "hasHoles": true,
+      "geometryFile": "test.ifc-processed-geometries-2"
     },
     "25139": {
-      "hasHoles": false,
       "boundingBox": {
         "0": -0.5,
         "1": -0.5,
@@ -9069,6 +9068,7 @@
         "4": 0.5,
         "5": 1
       },
+      "hasHoles": false,
       "geometryFile": "test.ifc-processed-geometries-1"
     }
   }

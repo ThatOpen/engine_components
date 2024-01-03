@@ -97,11 +97,7 @@
     const rawData = await fetch("./test.json");
     const data = await rawData.json();
     const {assets, geometries} = data;
-    await loader.load(assets, geometries);
-
-    loader.culler.onViewUpdated.add((result) => {
-        console.log(result);
-    })
+    await loader.load("example", assets, geometries);
 
     loader.culler.renderDebugFrame = true;
     const debugFrame = loader.culler.get().domElement;

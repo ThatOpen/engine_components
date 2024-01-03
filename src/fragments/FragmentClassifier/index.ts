@@ -181,7 +181,7 @@ export class FragmentClassifier
     const currentTypes = this._groupSystems.predefinedTypes;
 
     for (const expressID in group.data) {
-      const entity = group.properties[expressID] as {
+      const entity = group.properties[parseInt(expressID, 10)] as {
         [attribute: string]: any;
       };
       if (!entity) continue;

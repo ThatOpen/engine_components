@@ -1,5 +1,5 @@
 export interface StreamedGeometries {
-  [id: number]: {
+  [id: string]: {
     id: number;
     position: Float32Array;
     normal: Float32Array;
