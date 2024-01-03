@@ -21,7 +21,7 @@ export class FragmentStreamLoader extends Component<any> {
 
   private _loadedFiles = new Set<string>();
   private _fragmentsByGeometry: {
-    [modelID: string]: { [geometryID: number]: FRAG.Fragment[] };
+    [modelID: string]: { [geometryID: number]: FRAG.Items[][] };
   } = {};
 
   private _baseMaterial = new THREE.MeshLambertMaterial();
@@ -72,7 +72,7 @@ export class FragmentStreamLoader extends Component<any> {
                 continue;
               }
 
-              const frags = this._fragmentsByGeometry[modelID][idNum];
+              const itemsGroups = this._fragmentsByGeometry[modelID][idNum];
 
               const { index, normal, position } = result[id];
 
@@ -89,12 +89,18 @@ export class FragmentStreamLoader extends Component<any> {
 
               geom.setIndex(Array.from(index));
 
-              for (const frag of frags) {
+              for (const items of itemsGroups) {
                 const fragment = new FRAG.Fragment(
                   geom,
                   this._baseMaterial,
-                  frag.capacity
+                  items.length
                 );
+
+                for (let i = 0; i < items.length; i++) {
+                  const item = items[i];
+                  fragment.setInstance(i, item);
+                }
+
                 this.components.scene.get().add(fragment.mesh);
               }
             }
@@ -128,20 +134,14 @@ export class FragmentStreamLoader extends Component<any> {
       }
     }
 
-    const matrix = new THREE.Matrix4();
     for (const id in fragData) {
       const data = fragData[id];
-      const geometry = new THREE.BoxGeometry();
 
-      if (!geometry.index) {
-        throw new Error("Error creating geometry");
+      const items: FRAG.Items[] = [];
+      for (const { transformation, id } of data) {
+        const transform = new THREE.Matrix4().fromArray(transformation);
+        items.push({ ids: [id], transform });
       }
-
-      geometry.groups = [
-        { start: 0, count: geometry.index.count, materialIndex: 0 },
-      ];
-
-      const frag = new FRAG.Fragment(geometry, this._baseMaterial, data.length);
 
       if (!this._fragmentsByGeometry[modelID]) {
         this._fragmentsByGeometry[modelID] = {};
@@ -149,15 +149,7 @@ export class FragmentStreamLoader extends Component<any> {
       if (!this._fragmentsByGeometry[modelID][id]) {
         this._fragmentsByGeometry[modelID][id] = [];
       }
-      this._fragmentsByGeometry[modelID][id].push(frag);
-
-      this.components.scene.get().add(frag.mesh);
-
-      const items: FRAG.Items[] = [];
-      for (const { transformation, id } of data) {
-        const transform = new THREE.Matrix4().fromArray(transformation);
-        items.push({ ids: [id], transform });
-      }
+      this._fragmentsByGeometry[modelID][id].push(items);
     }
   }
 
