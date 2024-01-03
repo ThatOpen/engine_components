@@ -17,6 +17,8 @@ type CullerBoundingBox = {
   hiddenTime?: number;
 };
 
+// TODO: Set pixel threshold (e.g. meshes below the threshold are hardly-seen?)
+
 /**
  * A renderer to determine a geometry visibility on screen
  */
@@ -159,7 +161,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
     const unFoundGeometries: { [modelID: string]: number[] } = {};
     let viewWasUpdated = false;
 
-    const translucentFound = false;
+    let translucentExists = false;
 
     const boxesThatJustDissappeared = new Set(this._geometries.found.keys());
 
@@ -176,6 +178,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
         viewWasUpdated = true;
 
         if (found.translucent) {
+          translucentExists = true;
           this.setVisibility([found], false);
         }
 
@@ -187,6 +190,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
         const found = this._geometries.found.get(code) as CullerBoundingBox;
         if (found.translucent) {
+          translucentExists = true;
           this.setVisibility([found], false);
         }
       } else if (this._geometries.lost.has(code)) {
@@ -242,7 +246,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
     // When we find a translucent bboxes, we hide them and then force a re-render
     // to reveal what's behind. We will make them visible again after its hidden
     // time expires.
-    if (translucentFound) {
+    if (translucentExists) {
       await this.updateVisibility(true);
     }
   };
