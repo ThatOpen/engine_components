@@ -1,3 +1,4 @@
+import * as THREE from "three";
 import * as FRAG from "bim-fragment";
 import { Component } from "../../../base-types";
 import { StreamedAsset, StreamedGeometries } from "./base-types";
@@ -19,6 +20,11 @@ export class FragmentStreamLoader extends Component<any> {
   serializer = new FRAG.StreamSerializer();
 
   private _loadedFiles = new Set<string>();
+  private _fragmentsByGeometry: {
+    [modelID: string]: { [geometryID: number]: FRAG.Fragment[] };
+  } = {};
+
+  private _baseMaterial = new THREE.MeshLambertMaterial();
 
   constructor(components: Components) {
     super(components);
@@ -57,7 +63,41 @@ export class FragmentStreamLoader extends Component<any> {
           const result = this.serializer.import(bytes);
 
           if (result) {
-            console.log(result);
+            for (const id in result) {
+              const idNum = parseInt(id, 10);
+              if (
+                !this._fragmentsByGeometry[modelID] ||
+                !this._fragmentsByGeometry[modelID][idNum]
+              ) {
+                continue;
+              }
+
+              const frags = this._fragmentsByGeometry[modelID][idNum];
+
+              const { index, normal, position } = result[id];
+
+              const geom = new THREE.BufferGeometry() as FRAG.IFragmentGeometry;
+
+              const posAttr = new THREE.BufferAttribute(position, 3);
+              const norAttr = new THREE.BufferAttribute(normal, 3);
+              const blockBuffer = new Uint8Array(position.length / 3);
+              const blockID = new THREE.BufferAttribute(blockBuffer, 1);
+
+              geom.setAttribute("position", posAttr);
+              geom.setAttribute("normal", norAttr);
+              geom.setAttribute("blockID", blockID);
+
+              geom.setIndex(Array.from(index));
+
+              for (const frag of frags) {
+                const fragment = new FRAG.Fragment(
+                  geom,
+                  this._baseMaterial,
+                  frag.capacity
+                );
+                this.components.scene.get().add(fragment.mesh);
+              }
+            }
           }
         }
       }
@@ -73,6 +113,52 @@ export class FragmentStreamLoader extends Component<any> {
   ) {
     this.culler.add(modelID, assets, geometries);
     this.models[modelID] = { assets, geometries };
+
+    const fragData: {
+      [geomID: number]: { id: string; transformation: number[] }[];
+    } = {};
+
+    for (const asset of assets) {
+      const id = asset.id.toString();
+      for (const { transformation, geometryID } of asset.geometries) {
+        if (!fragData[geometryID]) {
+          fragData[geometryID] = [];
+        }
+        fragData[geometryID].push({ id, transformation });
+      }
+    }
+
+    const matrix = new THREE.Matrix4();
+    for (const id in fragData) {
+      const data = fragData[id];
+      const geometry = new THREE.BoxGeometry();
+
+      if (!geometry.index) {
+        throw new Error("Error creating geometry");
+      }
+
+      geometry.groups = [
+        { start: 0, count: geometry.index.count, materialIndex: 0 },
+      ];
+
+      const frag = new FRAG.Fragment(geometry, this._baseMaterial, data.length);
+
+      if (!this._fragmentsByGeometry[modelID]) {
+        this._fragmentsByGeometry[modelID] = {};
+      }
+      if (!this._fragmentsByGeometry[modelID][id]) {
+        this._fragmentsByGeometry[modelID][id] = [];
+      }
+      this._fragmentsByGeometry[modelID][id].push(frag);
+
+      this.components.scene.get().add(frag.mesh);
+
+      const items: FRAG.Items[] = [];
+      for (const { transformation, id } of data) {
+        const transform = new THREE.Matrix4().fromArray(transformation);
+        items.push({ ids: [id], transform });
+      }
+    }
   }
 
   get() {}
