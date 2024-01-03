@@ -5,6 +5,16 @@ import { StreamedAsset, StreamedGeometries } from "./base-types";
 import { Components, ToolComponent } from "../../../core";
 import { GeometryCullerRenderer } from "./geometry-culler-renderer";
 
+interface StreamedInstance {
+  id: string;
+  color: number[];
+  transformation: number[];
+}
+
+interface StreamedInstances {
+  [geometryID: number]: StreamedInstance[];
+}
+
 export class FragmentStreamLoader extends Component<any> {
   enabled = true;
 
@@ -20,11 +30,15 @@ export class FragmentStreamLoader extends Component<any> {
   serializer = new FRAG.StreamSerializer();
 
   private _loadedFiles = new Set<string>();
-  private _fragmentsByGeometry: {
-    [modelID: string]: { [geometryID: number]: FRAG.Items[][] };
+  private _geometryInstances: {
+    [modelID: string]: StreamedInstances;
   } = {};
 
   private _baseMaterial = new THREE.MeshLambertMaterial();
+  private _baseMaterialT = new THREE.MeshLambertMaterial({
+    transparent: true,
+    opacity: 0.5,
+  });
 
   constructor(components: Components) {
     super(components);
@@ -64,15 +78,18 @@ export class FragmentStreamLoader extends Component<any> {
 
           if (result) {
             for (const id in result) {
-              const idNum = parseInt(id, 10);
+              const geometryID = parseInt(id, 10);
+
               if (
-                !this._fragmentsByGeometry[modelID] ||
-                !this._fragmentsByGeometry[modelID][idNum]
+                !this._geometryInstances[modelID] ||
+                !this._geometryInstances[modelID][geometryID]
               ) {
                 continue;
               }
 
-              const itemsGroups = this._fragmentsByGeometry[modelID][idNum];
+              const geoms = this._geometryInstances[modelID];
+              const instances = geoms[geometryID] || geoms[-geometryID];
+              // const isTrans = geoms[geometryID] === undefined;
 
               const { index, normal, position } = result[id];
 
@@ -89,20 +106,20 @@ export class FragmentStreamLoader extends Component<any> {
 
               geom.setIndex(Array.from(index));
 
-              for (const items of itemsGroups) {
-                const fragment = new FRAG.Fragment(
-                  geom,
-                  this._baseMaterial,
-                  items.length
-                );
+              // Separating opaque and transparent items is neccesary for Three.js
 
-                for (let i = 0; i < items.length; i++) {
-                  const item = items[i];
-                  fragment.setInstance(i, item);
+              const transparent: StreamedInstance[] = [];
+              const opaque: StreamedInstance[] = [];
+              for (const instance of instances) {
+                if (instance.color[3] === 1) {
+                  opaque.push(instance);
+                } else {
+                  transparent.push(instance);
                 }
-
-                this.components.scene.get().add(fragment.mesh);
               }
+
+              this.createFragment(geom, transparent, true);
+              this.createFragment(geom, opaque, false);
             }
           }
         }
@@ -120,42 +137,50 @@ export class FragmentStreamLoader extends Component<any> {
     this.culler.add(modelID, assets, geometries);
     this.models[modelID] = { assets, geometries };
 
-    const fragData: {
-      [geomID: number]: { id: string; transformation: number[] }[];
-    } = {};
+    const instances: StreamedInstances = {};
 
     for (const asset of assets) {
       const id = asset.id.toString();
-      for (const { transformation, geometryID } of asset.geometries) {
-        if (!fragData[geometryID]) {
-          fragData[geometryID] = [];
+      for (const { transformation, geometryID, color } of asset.geometries) {
+        if (!instances[geometryID]) {
+          instances[geometryID] = [];
         }
-        fragData[geometryID].push({ id, transformation });
+        instances[geometryID].push({ id, transformation, color });
       }
     }
 
-    for (const id in fragData) {
-      const data = fragData[id];
-
-      const items: FRAG.Items[] = [];
-      for (const { transformation, id } of data) {
-        const transform = new THREE.Matrix4().fromArray(transformation);
-        items.push({ ids: [id], transform });
-      }
-
-      if (!this._fragmentsByGeometry[modelID]) {
-        this._fragmentsByGeometry[modelID] = {};
-      }
-      if (!this._fragmentsByGeometry[modelID][id]) {
-        this._fragmentsByGeometry[modelID][id] = [];
-      }
-      this._fragmentsByGeometry[modelID][id].push(items);
-    }
+    this._geometryInstances[modelID] = instances;
   }
 
   get() {}
 
   update() {}
+
+  private createFragment(
+    geometry: FRAG.IFragmentGeometry,
+    instances: StreamedInstance[],
+    transparent: boolean
+  ) {
+    if (instances.length === 0) return;
+
+    const transform = new THREE.Matrix4();
+    const col = new THREE.Color();
+
+    const material = transparent ? this._baseMaterialT : this._baseMaterial;
+    const fragment = new FRAG.Fragment(geometry, material, instances.length);
+
+    for (let i = 0; i < instances.length; i++) {
+      const { id, transformation, color } = instances[i];
+      transform.fromArray(transformation);
+      fragment.setInstance(i, { ids: [id], transform });
+      const [r, g, b] = color;
+      col.setRGB(r, g, b, "srgb");
+      fragment.mesh.setColorAt(i, col);
+    }
+
+    fragment.mesh.instanceColor!.needsUpdate = true;
+    this.components.scene.get().add(fragment.mesh);
+  }
 }
 
 ToolComponent.libraryUUIDs.add(FragmentStreamLoader.uuid);
