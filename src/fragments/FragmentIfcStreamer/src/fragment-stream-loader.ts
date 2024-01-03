@@ -29,9 +29,12 @@ export class FragmentStreamLoader extends Component<any> {
 
   serializer = new FRAG.StreamSerializer();
 
-  private _loadedFiles = new Set<string>();
   private _geometryInstances: {
     [modelID: string]: StreamedInstances;
+  } = {};
+
+  private _loadedFragments: {
+    [modelID: string]: { [geometryID: number]: FRAG.Fragment[] };
   } = {};
 
   private _baseMaterial = new THREE.MeshLambertMaterial();
@@ -46,84 +49,9 @@ export class FragmentStreamLoader extends Component<any> {
 
     this.culler = new GeometryCullerRenderer(components);
 
-    this.culler.onViewUpdated.add(async ({ seen }) => {
-      for (const modelID in seen) {
-        const ids = seen[modelID];
-        const { geometries } = this.models[modelID];
-
-        const files = new Set<string>();
-
-        for (const id of ids) {
-          const geometry = geometries[id] as any;
-          if (!geometry) {
-            throw new Error("Geometry not found");
-          }
-          if (geometry.geometryFile) {
-            const file = geometry.geometryFile;
-            if (!this._loadedFiles.has(file)) {
-              this._loadedFiles.add(file);
-              files.add(file);
-            }
-          }
-        }
-
-        const base = "http://dev.api.thatopen.com:3000/storage?fileId=";
-
-        for (const file of files) {
-          const url = base + file;
-          const fetched = await fetch(url);
-          const buffer = await fetched.arrayBuffer();
-          const bytes = new Uint8Array(buffer);
-          const result = this.serializer.import(bytes);
-
-          if (result) {
-            for (const id in result) {
-              const geometryID = parseInt(id, 10);
-
-              if (
-                !this._geometryInstances[modelID] ||
-                !this._geometryInstances[modelID][geometryID]
-              ) {
-                continue;
-              }
-
-              const geoms = this._geometryInstances[modelID];
-              const instances = geoms[geometryID] || geoms[-geometryID];
-              // const isTrans = geoms[geometryID] === undefined;
-
-              const { index, normal, position } = result[id];
-
-              const geom = new THREE.BufferGeometry() as FRAG.IFragmentGeometry;
-
-              const posAttr = new THREE.BufferAttribute(position, 3);
-              const norAttr = new THREE.BufferAttribute(normal, 3);
-              const blockBuffer = new Uint8Array(position.length / 3);
-              const blockID = new THREE.BufferAttribute(blockBuffer, 1);
-
-              geom.setAttribute("position", posAttr);
-              geom.setAttribute("normal", norAttr);
-              geom.setAttribute("blockID", blockID);
-
-              geom.setIndex(Array.from(index));
-
-              // Separating opaque and transparent items is neccesary for Three.js
-
-              const transparent: StreamedInstance[] = [];
-              const opaque: StreamedInstance[] = [];
-              for (const instance of instances) {
-                if (instance.color[3] === 1) {
-                  opaque.push(instance);
-                } else {
-                  transparent.push(instance);
-                }
-              }
-
-              this.createFragment(geom, transparent, true);
-              this.createFragment(geom, opaque, false);
-            }
-          }
-        }
-      }
+    this.culler.onViewUpdated.add(async ({ seen, unseen }) => {
+      await this.handleSeenGeometries(seen);
+      await this.handleUnseenGeometries(unseen);
     });
   }
 
@@ -156,7 +84,103 @@ export class FragmentStreamLoader extends Component<any> {
 
   update() {}
 
+  private async handleSeenGeometries(seen: { [modelID: string]: number[] }) {
+    for (const modelID in seen) {
+      const ids = new Set(seen[modelID]);
+      const { geometries } = this.models[modelID];
+
+      const files = new Set<string>();
+
+      for (const id of ids) {
+        const geometry = geometries[id] as any;
+        if (!geometry) {
+          throw new Error("Geometry not found");
+        }
+        if (geometry.geometryFile) {
+          const file = geometry.geometryFile;
+          files.add(file);
+        }
+      }
+
+      const base = "http://dev.api.thatopen.com:3000/storage?fileId=";
+
+      for (const file of files) {
+        const url = base + file;
+        const fetched = await fetch(url);
+        const buffer = await fetched.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        const result = this.serializer.import(bytes);
+
+        if (result) {
+          for (const id in result) {
+            const geometryID = parseInt(id, 10);
+            if (!ids.has(geometryID)) continue;
+
+            if (
+              !this._geometryInstances[modelID] ||
+              !this._geometryInstances[modelID][geometryID]
+            ) {
+              continue;
+            }
+
+            const geoms = this._geometryInstances[modelID];
+            const instances = geoms[geometryID] || geoms[-geometryID];
+            // const isTrans = geoms[geometryID] === undefined;
+
+            const { index, normal, position } = result[id];
+
+            const geom = new THREE.BufferGeometry() as FRAG.IFragmentGeometry;
+
+            const posAttr = new THREE.BufferAttribute(position, 3);
+            const norAttr = new THREE.BufferAttribute(normal, 3);
+            const blockBuffer = new Uint8Array(position.length / 3);
+            const blockID = new THREE.BufferAttribute(blockBuffer, 1);
+
+            geom.setAttribute("position", posAttr);
+            geom.setAttribute("normal", norAttr);
+            geom.setAttribute("blockID", blockID);
+
+            geom.setIndex(Array.from(index));
+
+            // Separating opaque and transparent items is neccesary for Three.js
+
+            const transparent: StreamedInstance[] = [];
+            const opaque: StreamedInstance[] = [];
+            for (const instance of instances) {
+              if (instance.color[3] === 1) {
+                opaque.push(instance);
+              } else {
+                transparent.push(instance);
+              }
+            }
+
+            this.createFragment(modelID, geometryID, geom, transparent, true);
+            this.createFragment(modelID, geometryID, geom, opaque, false);
+          }
+        }
+      }
+    }
+  }
+
+  private async handleUnseenGeometries(unseen: { [p: string]: number[] }) {
+    for (const modelID in unseen) {
+      if (!this._loadedFragments[modelID]) continue;
+      const geoms = this._loadedFragments[modelID];
+      const geometries = unseen[modelID];
+      for (const geometryID of geometries) {
+        if (!geoms[geometryID]) continue;
+        const frags = geoms[geometryID];
+        for (const frag of frags) {
+          frag.mesh.material = [] as THREE.Material[];
+          frag.dispose(true);
+        }
+      }
+    }
+  }
+
   private createFragment(
+    modelID: string,
+    geometryID: number,
     geometry: FRAG.IFragmentGeometry,
     instances: StreamedInstance[],
     transparent: boolean
@@ -168,6 +192,15 @@ export class FragmentStreamLoader extends Component<any> {
 
     const material = transparent ? this._baseMaterialT : this._baseMaterial;
     const fragment = new FRAG.Fragment(geometry, material, instances.length);
+
+    if (!this._loadedFragments[modelID]) {
+      this._loadedFragments[modelID] = {};
+    }
+    const geoms = this._loadedFragments[modelID];
+    if (!geoms[geometryID]) {
+      geoms[geometryID] = [];
+    }
+    geoms[geometryID].push(fragment);
 
     for (let i = 0; i < instances.length; i++) {
       const { id, transformation, color } = instances[i];

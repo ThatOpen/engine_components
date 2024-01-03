@@ -23,7 +23,7 @@ type CullerBoundingBox = {
 export class GeometryCullerRenderer extends CullerRenderer {
   private _capacity = 1000;
   private _resizeStep = 1000;
-  private _maxLostTime = 60000;
+  private _maxLostTime = 30000;
   private _maxHiddenTime = 10000;
 
   private _boundingBoxes: THREE.InstancedMesh;
