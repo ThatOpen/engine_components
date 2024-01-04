@@ -121,12 +121,12 @@ export class MeshCullerRenderer extends CullerRenderer {
   }
 
   private handleWorkerMessage = async (event: MessageEvent) => {
-    const colors = event.data.colors as Set<string>;
+    const colors = event.data.colors as Map<string, number>;
 
     this._recentlyHiddenMeshes = new Set(this._currentVisibleMeshes);
     this._currentVisibleMeshes.clear();
 
-    for (const code of colors.values()) {
+    for (const [code] of colors) {
       const mesh = this._meshColorMap.get(code);
       if (mesh) {
         this._currentVisibleMeshes.add(mesh);

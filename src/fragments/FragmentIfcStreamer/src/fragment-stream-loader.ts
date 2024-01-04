@@ -29,6 +29,8 @@ export class FragmentStreamLoader extends Component<any> {
 
   serializer = new FRAG.StreamSerializer();
 
+  // private _hardlySeenGeometries: THREE.InstancedMesh;
+
   private _geometryInstances: {
     [modelID: string]: StreamedInstances;
   } = {};
@@ -47,9 +49,13 @@ export class FragmentStreamLoader extends Component<any> {
     super(components);
     this.components.tools.add(FragmentStreamLoader.uuid, this);
 
+    // const hardlyGeometry = new THREE.BoxGeometry();
+    // this._hardlySeenGeometries = new THREE.InstancedMesh();
+
     this.culler = new GeometryCullerRenderer(components);
 
-    this.culler.onViewUpdated.add(async ({ seen, unseen }) => {
+    this.culler.onViewUpdated.add(async ({ seen, unseen, hardlySeen }) => {
+      console.log(hardlySeen);
       await this.handleSeenGeometries(seen);
       await this.handleUnseenGeometries(unseen);
     });
@@ -178,6 +184,8 @@ export class FragmentStreamLoader extends Component<any> {
       }
     }
   }
+
+  // private async handleHardlySeenGeometries() {}
 
   private createFragment(
     modelID: string,

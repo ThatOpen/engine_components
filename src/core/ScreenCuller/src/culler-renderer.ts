@@ -71,13 +71,17 @@ export class CullerRenderer extends Component<THREE.WebGLRenderer> {
     const code = `
       addEventListener("message", (event) => {
         const { buffer } = event.data;
-        const colors = new Set();
+        const colors = new Map();
         for (let i = 0; i < buffer.length; i += 4) {
-            const r = buffer[i];
-            const g = buffer[i + 1];
-            const b = buffer[i + 2];
-            const code = "" + r + "-" + g + "-" + b;
-            colors.add(code);
+          const r = buffer[i];
+          const g = buffer[i + 1];
+          const b = buffer[i + 2];
+          const code = "" + r + "-" + g + "-" + b;
+          if(colors.has(code)) {
+            colors.set(code, colors.get(code) + 1);
+          } else {
+            colors.set(code, 1);
+          }
         }
         postMessage({ colors });
       });

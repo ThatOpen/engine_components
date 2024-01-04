@@ -6,6 +6,7 @@ import {
 } from "../../../core/ScreenCuller/src";
 import { Components } from "../../../core";
 import { StreamedAsset, StreamedGeometries } from "./base-types";
+import { BoundingBoxes } from "./bounding-boxes";
 
 type CullerBoundingBox = {
   modelIndex: number;
@@ -17,21 +18,21 @@ type CullerBoundingBox = {
   hiddenTime?: number;
 };
 
-// TODO: Set pixel threshold (e.g. meshes below the threshold are hardly-seen?)
-
 /**
  * A renderer to determine a geometry visibility on screen
  */
 export class GeometryCullerRenderer extends CullerRenderer {
-  private _capacity = 1000;
-  private _resizeStep = 1000;
+  /* Pixels in screen a geometry must occupy to be considered "seen". */
+  threshold = 400;
+
   private _maxLostTime = 30000;
   private _maxHiddenTime = 10000;
 
-  private _boundingBoxes: THREE.InstancedMesh;
+  private _boundingBoxes = new BoundingBoxes();
 
   readonly onViewUpdated = new Event<{
     seen: { [modelID: string]: number[] };
+    hardlySeen: { [modelID: string]: number[] };
     unseen: { [modelID: string]: number[] };
   }>();
 
@@ -47,9 +48,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
   constructor(components: Components, settings?: CullerRendererSettings) {
     super(components, settings);
 
-    this._boundingBoxes = this.initializeBoundingBoxes();
-    // this.components.scene.get().add(this._boundingBoxes);
-    this.scene.add(this._boundingBoxes);
+    this.scene.add(this._boundingBoxes.mesh);
 
     this.worker.addEventListener("message", this.handleWorkerMessage);
     if (this.autoUpdate) {
@@ -71,49 +70,13 @@ export class GeometryCullerRenderer extends CullerRenderer {
     const colorEnabled = THREE.ColorManagement.enabled;
     THREE.ColorManagement.enabled = false;
 
-    const geometryTransform = new THREE.Matrix4();
-    const globalTransform = new THREE.Matrix4();
-    const translation = new THREE.Matrix4();
-    const inverseTranslation = new THREE.Matrix4();
-    const scale = new THREE.Matrix4();
-    const tempColor = new THREE.Color();
-
     type NextColor = { r: number; g: number; b: number; code: string };
     const visitedGeometries = new Map<number, NextColor>();
 
-    if (!this._boundingBoxes.instanceColor) {
-      throw new Error("Error with boundinb box color");
-    }
-
     for (const asset of assets) {
       for (const geometryData of asset.geometries) {
-        if (this._boundingBoxes.count === this._capacity) {
-          this.resizeBoundingBoxes();
-        }
-
         const { geometryID, transformation, color } = geometryData;
-
-        globalTransform.fromArray(transformation);
         const { boundingBox, hasHoles } = geometries[geometryID];
-
-        geometryTransform.identity();
-        const [minX, minY, minZ, maxX, maxY, maxZ] = Object.values(boundingBox);
-
-        translation.makeTranslation(minX, minY, minZ);
-        inverseTranslation.copy(translation).invert();
-
-        const scaleX = Math.abs(maxX - minX);
-        const scaleY = Math.abs(maxY - minY);
-        const scaleZ = Math.abs(maxZ - minZ);
-
-        scale.makeScale(scaleX, scaleY, scaleZ);
-
-        geometryTransform.multiply(globalTransform);
-        geometryTransform.multiply(translation);
-        geometryTransform.multiply(scale);
-
-        const count = this._boundingBoxes.count;
-        this._boundingBoxes.setMatrixAt(count, geometryTransform);
 
         let nextColor: NextColor;
         if (visitedGeometries.has(geometryID)) {
@@ -122,8 +85,13 @@ export class GeometryCullerRenderer extends CullerRenderer {
           nextColor = this.getNextColor();
           visitedGeometries.set(geometryID, nextColor);
         }
-
         const { r, g, b, code } = nextColor;
+
+        const count = this._boundingBoxes.mesh.count;
+
+        const colorArray = [r, g, b];
+        const bbox = Object.values(boundingBox);
+        this._boundingBoxes.add(bbox, transformation, colorArray);
 
         const translucent = hasHoles || color[3] !== 1;
 
@@ -141,23 +109,18 @@ export class GeometryCullerRenderer extends CullerRenderer {
           // as if it was always translucent. Maybe this needs to be optimized
           box.translucent = box.translucent || translucent;
         }
-
-        tempColor.set(`rgb(${r}, ${g}, ${b})`);
-        this._boundingBoxes.setColorAt(count, tempColor);
-        this._boundingBoxes.count++;
       }
     }
 
-    const { instanceMatrix, instanceColor } = this._boundingBoxes;
-    instanceMatrix.needsUpdate = true;
-    instanceColor.needsUpdate = true;
+    this._boundingBoxes.update();
     THREE.ColorManagement.enabled = colorEnabled;
   }
 
   private handleWorkerMessage = async (event: MessageEvent) => {
-    const colors = event.data.colors as Set<string>;
+    const colors = event.data.colors as Map<string, number>;
 
     const foundGeometries: { [modelID: string]: number[] } = {};
+    const hardlyFoundGeometries: { [modelID: string]: number[] } = {};
     const unFoundGeometries: { [modelID: string]: number[] } = {};
     let viewWasUpdated = false;
 
@@ -165,16 +128,19 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
     const boxesThatJustDissappeared = new Set(this._geometries.found.keys());
 
-    for (const code of colors.values()) {
+    for (const [code, pixels] of colors) {
       if (this._geometries.toFind.has(code)) {
         // New geometry was found
         const found = this._geometries.toFind.get(code) as CullerBoundingBox;
 
         const modelID = this._indexModelID.get(found.modelIndex) as string;
-        if (!foundGeometries[modelID]) {
-          foundGeometries[modelID] = [];
+
+        const isHardlySeen = pixels < this.threshold;
+        const geoms = isHardlySeen ? hardlyFoundGeometries : foundGeometries;
+        if (!geoms[modelID]) {
+          geoms[modelID] = [];
         }
-        foundGeometries[modelID].push(found.geometryID);
+        geoms[modelID].push(found.geometryID);
         viewWasUpdated = true;
 
         if (found.translucent) {
@@ -239,6 +205,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
     if (viewWasUpdated) {
       await this.onViewUpdated.trigger({
         seen: foundGeometries,
+        hardlySeen: hardlyFoundGeometries,
         unseen: unFoundGeometries,
       });
     }
@@ -254,6 +221,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
   private setVisibility(boxes: CullerBoundingBox[], visible: boolean) {
     const now = performance.now();
     const tempMatrix = new THREE.Matrix4();
+    const { mesh } = this._boundingBoxes;
     for (const box of boxes) {
       if (visible) {
         if (!box.transforms) {
@@ -262,49 +230,21 @@ export class GeometryCullerRenderer extends CullerRenderer {
         box.hiddenTime = undefined;
         for (let i = 0; i < box.indices.length; i++) {
           tempMatrix.fromArray(box.transforms[i]);
-          this._boundingBoxes.setMatrixAt(box.indices[i], tempMatrix);
+          mesh.setMatrixAt(box.indices[i], tempMatrix);
         }
         delete box.transforms;
       } else {
         box.hiddenTime = now;
         box.transforms = [];
         for (const index of box.indices) {
-          this._boundingBoxes.getMatrixAt(index, tempMatrix);
+          mesh.getMatrixAt(index, tempMatrix);
           box.transforms.push([...tempMatrix.elements]);
           tempMatrix.makeScale(0, 0, 0);
-          this._boundingBoxes.setMatrixAt(index, tempMatrix);
+          mesh.setMatrixAt(index, tempMatrix);
         }
       }
     }
-    this._boundingBoxes.instanceMatrix.needsUpdate = true;
-  }
-
-  private resizeBoundingBoxes() {
-    this._capacity += this._resizeStep;
-    const { geometry, material } = this._boundingBoxes;
-    this._boundingBoxes.removeFromParent();
-    const newBoundingBox = new THREE.InstancedMesh(
-      geometry,
-      material,
-      this._capacity
-    );
-    newBoundingBox.frustumCulled = false;
-    this.initializeBboxColor(newBoundingBox);
-    newBoundingBox.count = this._boundingBoxes.count;
-
-    const { instanceMatrix, instanceColor } = this._boundingBoxes;
-    if (!instanceColor) {
-      throw new Error("Error with bounding box color!");
-    }
-
-    newBoundingBox.instanceMatrix = instanceMatrix.clone() as any;
-    newBoundingBox.instanceColor = instanceColor.clone() as any;
-    this._boundingBoxes.geometry = null as any;
-    this._boundingBoxes.material = null as any;
-    this._boundingBoxes.dispose();
-    this._boundingBoxes = newBoundingBox;
-    // this.components.scene.get().add(newBoundingBox);
-    this.scene.add(newBoundingBox);
+    mesh.instanceMatrix.needsUpdate = true;
   }
 
   private getModelIndex(modelID: string) {
@@ -316,36 +256,4 @@ export class GeometryCullerRenderer extends CullerRenderer {
     this._indexModelID.set(count, modelID);
     return count;
   }
-
-  private initializeBoundingBoxes() {
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    geometry.deleteAttribute("uv");
-    const position = geometry.attributes.position.array as Float32Array;
-    for (let i = 0; i < position.length; i++) {
-      position[i] += 0.5;
-    }
-    geometry.attributes.position.needsUpdate = true;
-
-    const material = new THREE.MeshBasicMaterial({
-      transparent: true,
-      opacity: 1,
-    });
-
-    const bbox = new THREE.InstancedMesh(geometry, material, this._capacity);
-    bbox.frustumCulled = false;
-    this.initializeBboxColor(bbox);
-    bbox.count = 0;
-    return bbox;
-  }
-
-  private initializeBboxColor(bbox: THREE.InstancedMesh) {
-    const color = new THREE.Color("rgb(255, 0, 0)");
-    for (let i = 0; i < bbox.count; i++) {
-      bbox.setColorAt(i, color);
-    }
-  }
-
-  // private handleWorkerMessage = async (event: MessageEvent) => {
-  //   const colors = event.data.colors as Set<string>;
-  // };
 }
