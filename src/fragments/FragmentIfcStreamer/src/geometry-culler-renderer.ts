@@ -27,6 +27,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
   private _maxLostTime = 30000;
   private _maxHiddenTime = 10000;
+  private _lastUpdate = 0;
 
   private _boundingBoxes = new BoundingBoxes();
 
@@ -128,14 +129,17 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
     const boxesThatJustDissappeared = new Set(this._geometries.found.keys());
 
+    const now = performance.now();
+
     for (const [code, pixels] of colors) {
+      const isHardlySeen = pixels < this.threshold;
+
       if (this._geometries.toFind.has(code)) {
         // New geometry was found
         const found = this._geometries.toFind.get(code) as CullerBoundingBox;
 
         const modelID = this._indexModelID.get(found.modelIndex) as string;
 
-        const isHardlySeen = pixels < this.threshold;
         const geoms = isHardlySeen ? hardlyFoundGeometries : foundGeometries;
         if (!geoms[modelID]) {
           geoms[modelID] = [];
@@ -158,15 +162,28 @@ export class GeometryCullerRenderer extends CullerRenderer {
         this._geometries.toFind.delete(code);
         this._geometries.found.set(code, found);
       } else if (this._geometries.found.has(code)) {
+        const found = this._geometries.found.get(code) as CullerBoundingBox;
+
+        // A box that was previously found is now very far away
+        // consider this geometry lost, so that the geometry can
+        // get released in the future and substituted by a bbox
+        if (isHardlySeen) {
+          continue;
+        }
+
         // A box that was previously found is still visible
         boxesThatJustDissappeared.delete(code);
 
-        const found = this._geometries.found.get(code) as CullerBoundingBox;
         if (found.translucent) {
           translucentExists = true;
           this.setVisibility([found], false);
         }
       } else if (this._geometries.lost.has(code)) {
+        // A box is too far away to be considered "found"
+        if (isHardlySeen) {
+          continue;
+        }
+
         // We found back a lost box, put them back at the found group
         const found = this._geometries.lost.get(code) as CullerBoundingBox;
         found.lostTime = undefined;
@@ -174,8 +191,6 @@ export class GeometryCullerRenderer extends CullerRenderer {
         this._geometries.found.set(code, found);
       }
     }
-
-    const now = performance.now();
 
     // Update previously found boxes that were just lost
     for (const code of boxesThatJustDissappeared) {
@@ -189,7 +204,12 @@ export class GeometryCullerRenderer extends CullerRenderer {
     // Update lost boxes whose lost or hidden time has expired
     for (const [code, box] of this._geometries.lost) {
       if (!box || !box.lostTime) continue;
-      if (now - box.lostTime > this._maxLostTime) {
+
+      // Make sure the box is not considered "lost" because the last update
+      // was a long time ago
+      const lastUpdateValid = now - this._lastUpdate < this._maxLostTime;
+
+      if (lastUpdateValid && now - box.lostTime > this._maxLostTime) {
         // This box is not seen anymore, notify to remove from memory
         box.lostTime = undefined;
         box.hiddenTime = undefined;
@@ -208,6 +228,8 @@ export class GeometryCullerRenderer extends CullerRenderer {
         this.setVisibility([box], true);
       }
     }
+
+    this._lastUpdate = now;
 
     if (viewWasUpdated) {
       await this.onViewUpdated.trigger({
