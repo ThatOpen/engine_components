@@ -143,6 +143,13 @@ export class GeometryCullerRenderer extends CullerRenderer {
         geoms[modelID].push(found.geometryID);
         viewWasUpdated = true;
 
+        // When a geometry is hardly seen, keep it in the "toFind" group
+        // That way, we will be able to find it later again and
+        // mark it as "found" if it's closer
+        if (isHardlySeen) {
+          continue;
+        }
+
         if (found.translucent) {
           translucentExists = true;
           this.setVisibility([found], false);
