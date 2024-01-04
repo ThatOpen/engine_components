@@ -165,15 +165,16 @@ export class FragmentStreamLoader extends Component<any> {
   private async handleUnseenGeometries(unseen: { [p: string]: number[] }) {
     for (const modelID in unseen) {
       if (!this._loadedFragments[modelID]) continue;
-      const geoms = this._loadedFragments[modelID];
+      const fragments = this._loadedFragments[modelID];
       const geometries = unseen[modelID];
       for (const geometryID of geometries) {
-        if (!geoms[geometryID]) continue;
-        const frags = geoms[geometryID];
+        if (!fragments[geometryID]) continue;
+        const frags = fragments[geometryID];
         for (const frag of frags) {
           frag.mesh.material = [] as THREE.Material[];
           frag.dispose(true);
         }
+        delete fragments[geometryID];
       }
     }
   }
