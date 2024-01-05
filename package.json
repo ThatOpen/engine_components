@@ -25,7 +25,7 @@
     "@types/three": "0.152.1",
     "@typescript-eslint/eslint-plugin": "^4.27.0",
     "@typescript-eslint/parser": "^4.27.0",
-    "bim-fragment": "1.2.1",
+    "bim-fragment": "1.2.6",
     "cpy-cli": "^3.1.1",
     "eslint": "^7.28.0",
     "eslint-config-airbnb-base": "^14.2.1",
@@ -59,7 +59,7 @@
     "unzipit": "^1.4.3"
   },
   "peerDependencies": {
-    "bim-fragment": "1.2.1",
+    "bim-fragment": "1.2.6",
     "three": "0.152.2",
     "web-ifc": "0.0.46"
   }

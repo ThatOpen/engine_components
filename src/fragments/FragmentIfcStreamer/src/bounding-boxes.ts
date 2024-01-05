@@ -4,20 +4,24 @@ export class BoundingBoxes {
   mesh: THREE.InstancedMesh;
 
   resizeStep = 1000;
-  capacity = 1000;
 
+  private _capacity = 1000;
   private _globalTransform = new THREE.Matrix4();
   private _geometryTransform = new THREE.Matrix4();
   private _translation = new THREE.Matrix4();
   private _scale = new THREE.Matrix4();
   private _color = new THREE.Color();
 
+  get capacity() {
+    return this._capacity;
+  }
+
   constructor() {
     this.mesh = this.initializeBoundingBoxes();
   }
 
   add(bbox: number[], transformation: number[], color: number[]) {
-    if (this.mesh.count === this.capacity) {
+    if (this.mesh.count === this._capacity) {
       this.resizeBoundingBoxes();
     }
 
@@ -59,14 +63,14 @@ export class BoundingBoxes {
   setVisibility() {}
 
   private resizeBoundingBoxes() {
-    this.capacity += this.resizeStep;
+    this._capacity += this.resizeStep;
     const { geometry, material } = this.mesh;
-    const parent = this.mesh.removeFromParent();
+    const parent = this.mesh.parent;
     this.mesh.removeFromParent();
     const newBoundingBox = new THREE.InstancedMesh(
       geometry,
       material,
-      this.capacity
+      this._capacity
     );
     newBoundingBox.frustumCulled = false;
     this.initializeBboxColor(newBoundingBox);
@@ -84,7 +88,9 @@ export class BoundingBoxes {
     this.mesh.dispose();
     this.mesh = newBoundingBox;
     // this.components.scene.get().add(newBoundingBox);
-    parent.add(newBoundingBox);
+    if (parent) {
+      parent.add(newBoundingBox);
+    }
   }
 
   private initializeBoundingBoxes() {
@@ -101,7 +107,7 @@ export class BoundingBoxes {
       opacity: 1,
     });
 
-    const bbox = new THREE.InstancedMesh(geometry, material, this.capacity);
+    const bbox = new THREE.InstancedMesh(geometry, material, this._capacity);
     bbox.frustumCulled = false;
     this.initializeBboxColor(bbox);
     bbox.count = 0;

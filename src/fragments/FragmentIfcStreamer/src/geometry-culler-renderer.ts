@@ -50,6 +50,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
     super(components, settings);
 
     this.scene.add(this._boundingBoxes.mesh);
+    // this.components.scene.get().add(this._boundingBoxes.mesh);
 
     this.worker.addEventListener("message", this.handleWorkerMessage);
     if (this.autoUpdate) {
@@ -75,6 +76,8 @@ export class GeometryCullerRenderer extends CullerRenderer {
     const visitedGeometries = new Map<number, NextColor>();
 
     for (const asset of assets) {
+      // if (asset.id !== 13365433) continue;
+
       for (const geometryData of asset.geometries) {
         const { geometryID, transformation, color } = geometryData;
         const { boundingBox, hasHoles } = geometries[geometryID];

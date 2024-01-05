@@ -1,4 +1,5 @@
 import * as WEBIFC from "web-ifc";
+import * as THREE from "three";
 import { StreamSerializer } from "bim-fragment";
 import {
   Disposable,
@@ -12,7 +13,7 @@ import { Button, ToastNotification } from "../../../ui";
 import { Components, ToolComponent } from "../../../core";
 import { IfcStreamingSettings } from "./streaming-settings";
 import { StreamedAsset, StreamedGeometries } from "./base-types";
-import { isPointInFrontOfPlane } from "../../../utils";
+import { isPointInFrontOfPlane, makeApproxBoundingBox } from "../../../utils";
 
 export class FragmentIfcStreamConverter
   extends Component<WEBIFC.IfcAPI>
@@ -221,27 +222,10 @@ export class FragmentIfcStreamConverter
     const position = new Float32Array(vertexData.length / 2);
     const normal = new Float32Array(vertexData.length / 2);
 
-    const min = -Number.MAX_VALUE;
-    const max = Number.MAX_VALUE;
-
-    // Min and max points
-    const boundingBox = new Float32Array([max, max, max, min, min, min]);
-
     for (let i = 0; i < vertexData.length; i += 6) {
-      const x = vertexData[i];
-      const y = vertexData[i + 1];
-      const z = vertexData[i + 2];
-
-      if (x < boundingBox[0]) boundingBox[0] = x;
-      if (y < boundingBox[1]) boundingBox[1] = y;
-      if (z < boundingBox[2]) boundingBox[2] = z;
-      if (x > boundingBox[3]) boundingBox[3] = x;
-      if (y > boundingBox[4]) boundingBox[4] = y;
-      if (z > boundingBox[5]) boundingBox[5] = z;
-
-      position[i / 2] = x;
-      position[i / 2 + 1] = y;
-      position[i / 2 + 2] = z;
+      position[i / 2] = vertexData[i];
+      position[i / 2 + 1] = vertexData[i + 1];
+      position[i / 2 + 2] = vertexData[i + 2];
 
       normal[i / 2] = vertexData[i + 3];
       normal[i / 2 + 1] = vertexData[i + 4];
@@ -250,6 +234,9 @@ export class FragmentIfcStreamConverter
       this._currentGeometrySize++;
     }
 
+    const bbox = makeApproxBoundingBox(position, index);
+    const boundingBox = new Float32Array(bbox.elements);
+
     // Simple hole test: see if all triangles are facing away the center
     // Using the vertex normal because it's easier
     // Geometries with holes are treated as transparent items
@@ -257,10 +244,8 @@ export class FragmentIfcStreamConverter
     // Not perfect, but it will work for most cases and all the times it fails
     // are false positives, so it's always on the safety side
 
-    const centerX = boundingBox[0] + (boundingBox[3] - boundingBox[0]) / 2;
-    const centerY = boundingBox[1] + (boundingBox[4] - boundingBox[1]) / 2;
-    const centerZ = boundingBox[2] + (boundingBox[5] - boundingBox[2]) / 2;
-    const center = [centerX, centerY, centerZ];
+    const center = new THREE.Vector3(0.5, 0.5, 0.5).applyMatrix4(bbox);
+    const centerArray = [center.x, center.y, center.z];
 
     let hasHoles = false;
     for (let i = 0; i < position.length - 2; i += 3) {
@@ -274,7 +259,7 @@ export class FragmentIfcStreamConverter
 
       const pos = [x, y, z];
       const nor = [nx, ny, nz];
-      if (isPointInFrontOfPlane(center, pos, nor)) {
+      if (isPointInFrontOfPlane(centerArray, pos, nor)) {
         hasHoles = true;
         break;
       }
