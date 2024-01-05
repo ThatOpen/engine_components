@@ -266,7 +266,7 @@ export class FragmentClassifier
           throw new Error("To group by GlobalId, properties are needed");
         for (const expressID in group.data) {
             if (group.properties === undefined) continue;
-            const globalId = group.properties[expressID].GlobalId.value;
+            const globalId = group.properties[expressID]?.GlobalId?.value;
             if (globalId === undefined) continue;
             this.saveItem(group, "globalIds", globalId, expressID);
         }
