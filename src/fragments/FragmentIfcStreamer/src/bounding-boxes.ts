@@ -6,10 +6,8 @@ export class BoundingBoxes {
   resizeStep = 1000;
 
   private _capacity = 1000;
-  private _globalTransform = new THREE.Matrix4();
-  private _geometryTransform = new THREE.Matrix4();
-  private _translation = new THREE.Matrix4();
-  private _scale = new THREE.Matrix4();
+  private _m1 = new THREE.Matrix4();
+  private _m2 = new THREE.Matrix4();
   private _color = new THREE.Color();
 
   get capacity() {
@@ -25,25 +23,12 @@ export class BoundingBoxes {
       this.resizeBoundingBoxes();
     }
 
-    this._globalTransform.fromArray(transformation);
-    this._geometryTransform.identity();
-
-    const [minX, minY, minZ, maxX, maxY, maxZ] = bbox;
-
-    this._translation.makeTranslation(minX, minY, minZ);
-
-    const scaleX = Math.abs(maxX - minX);
-    const scaleY = Math.abs(maxY - minY);
-    const scaleZ = Math.abs(maxZ - minZ);
-
-    this._scale.makeScale(scaleX, scaleY, scaleZ);
-
-    this._geometryTransform.multiply(this._globalTransform);
-    this._geometryTransform.multiply(this._translation);
-    this._geometryTransform.multiply(this._scale);
+    this._m1.fromArray(transformation);
+    this._m2.fromArray(bbox);
+    this._m1.multiply(this._m2);
 
     const count = this.mesh.count;
-    this.mesh.setMatrixAt(count, this._geometryTransform);
+    this.mesh.setMatrixAt(count, this._m1);
 
     const [r, g, b] = color;
     this._color.set(`rgb(${r}, ${g}, ${b})`);
