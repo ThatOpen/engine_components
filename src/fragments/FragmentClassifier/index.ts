@@ -260,6 +260,18 @@ export class FragmentClassifier
     );
   }
 
+  byGlobalId(group: FragmentsGroup){
+        const properties = group.properties;
+        if (!properties)
+          throw new Error("To group by GlobalId, properties are needed");
+        for (const expressID in group.data) {
+            if (group.properties === undefined) continue;
+            const globalId = group.properties[expressID].GlobalId.value;
+            if (globalId === undefined) continue;
+            this.saveItem(group, "globalIds", globalId, expressID);
+        }
+  }
+
   private saveItem(
     group: FragmentsGroup,
     systemName: string,
