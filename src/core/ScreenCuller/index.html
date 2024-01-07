@@ -151,7 +151,7 @@
    */
 	function regenerateCubes() {
 		resetCubes();
-		for (let i = 0; i < 300; i++) {
+		for (let i = 0; i < 10; i++) {
 			const cube = new THREE.Mesh(geometry, material);
 			cube.position.x = getRandomNumber(10);
 			cube.position.y = getRandomNumber(10);
@@ -201,6 +201,17 @@
   components.camera.controls.addEventListener("controlend", () => {
 		culler.elements.needsUpdate = true;
   });
+
+  const deletedMaterial = new THREE.MeshLambertMaterial({color: "red"});
+
+  window.addEventListener("keydown", (e) => {
+    if(e.code === "KeyP") {
+      const lastCube = cubes.shift();
+      lastCube.visible = true;
+      lastCube.material = deletedMaterial;
+      culler.elements.remove(lastCube);
+    }
+  })
 
 	/*MD
 

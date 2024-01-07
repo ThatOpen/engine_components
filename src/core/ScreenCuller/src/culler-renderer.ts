@@ -181,6 +181,45 @@ export class CullerRenderer extends Component<THREE.WebGLRenderer> {
       }
     }
 
+    return this.getLastColor();
+  }
+
+  protected decreaseNextColor() {
+    if (this._colors.i === 0) {
+      this._colors.b--;
+      if (this._colors.b === -1) {
+        if (this._colors.g !== 0 || this._colors.r !== 0) {
+          this._colors.b = 255;
+          this._colors.i = 1;
+        } else {
+          this._colors.b = 0;
+        }
+      }
+    }
+
+    if (this._colors.i === 1) {
+      this._colors.g--;
+      this._colors.i = 0;
+      if (this._colors.g === -1) {
+        if (this._colors.r !== 0) {
+          this._colors.g = 255;
+          this._colors.i = 2;
+        } else {
+          this._colors.g = 0;
+        }
+      }
+    }
+
+    if (this._colors.i === 2) {
+      this._colors.r--;
+      this._colors.i = 1;
+      if (this._colors.r === -1) {
+        this._colors.r = 0;
+      }
+    }
+  }
+
+  protected getLastColor() {
     return {
       r: this._colors.r,
       g: this._colors.g,

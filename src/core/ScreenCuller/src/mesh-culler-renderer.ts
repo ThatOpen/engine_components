@@ -5,6 +5,8 @@ import { isTransparent } from "../../../utils";
 import { Event } from "../../../base-types";
 import { Disposer } from "../../Disposer";
 
+// TODO: Use just one manterial and instanceColor for all colorMeshes
+
 /**
  * A renderer to determine a mesh visibility on screen
  */
@@ -16,9 +18,8 @@ export class MeshCullerRenderer extends CullerRenderer {
 
   colorMeshes = new Map<string, THREE.InstancedMesh>();
 
-  private readonly materialCache = new Map<string, THREE.MeshBasicMaterial>();
-  private _meshColorMap = new Map<string, THREE.Mesh>();
-  private _meshes = new Map<string, THREE.Mesh>();
+  private _colorCodeMeshMap = new Map<string, THREE.Mesh>();
+  private _meshIDColorCodeMap = new Map<string, string>();
 
   private _currentVisibleMeshes = new Set<THREE.Mesh>();
   private _recentlyHiddenMeshes = new Set<THREE.Mesh>();
@@ -41,26 +42,20 @@ export class MeshCullerRenderer extends CullerRenderer {
     this._currentVisibleMeshes.clear();
     this._recentlyHiddenMeshes.clear();
 
+    this._meshIDColorCodeMap.clear();
     this._transparentMat.dispose();
-    this._meshColorMap.clear();
-    for (const id in this.materialCache) {
-      const material = this.materialCache.get(id);
-      if (material) {
-        material.dispose();
-      }
-    }
+    this._colorCodeMeshMap.clear();
     const disposer = this.components.tools.get(Disposer);
     for (const id in this.colorMeshes) {
       const mesh = this.colorMeshes.get(id);
       if (mesh) {
-        disposer.destroy(mesh);
+        disposer.destroy(mesh, true);
       }
     }
     this.colorMeshes.clear();
-    this._meshes.clear();
   }
 
-  add(mesh: THREE.Mesh | THREE.InstancedMesh): void {
+  add(mesh: THREE.Mesh | THREE.InstancedMesh) {
     if (!this.enabled) return;
 
     const isInstanced = mesh instanceof THREE.InstancedMesh;
@@ -99,7 +94,8 @@ export class MeshCullerRenderer extends CullerRenderer {
       newMaterial = colorMaterial;
     }
 
-    this._meshColorMap.set(code, mesh);
+    this._colorCodeMeshMap.set(code, mesh);
+    this._meshIDColorCodeMap.set(mesh.uuid, code);
 
     const count = isInstanced ? mesh.count : 1;
     const colorMesh = new THREE.InstancedMesh(geometry, newMaterial, count);
@@ -117,7 +113,84 @@ export class MeshCullerRenderer extends CullerRenderer {
 
     this.scene.add(colorMesh);
     this.colorMeshes.set(mesh.uuid, colorMesh);
-    this._meshes.set(mesh.uuid, mesh);
+  }
+
+  remove(mesh: THREE.Mesh | THREE.InstancedMesh) {
+    // Strategy: Substitute mesh to delete by the last mesh
+    const disposer = this.components.tools.get(Disposer);
+
+    this._currentVisibleMeshes.delete(mesh);
+    this._recentlyHiddenMeshes.delete(mesh);
+
+    const { code } = this.getLastColor();
+
+    const colorMeshToDelete = this.colorMeshes.get(mesh.uuid);
+    const previousCode = this._meshIDColorCodeMap.get(mesh.uuid);
+    if (!colorMeshToDelete || !previousCode) {
+      return;
+    }
+    const lastMesh = this._colorCodeMeshMap.get(code);
+    if (!lastMesh) {
+      throw new Error("Last mesh not found!");
+    }
+    const lastColorMesh = this.colorMeshes.get(lastMesh.uuid);
+    if (!lastColorMesh) {
+      throw new Error("Last color mesh not found!");
+    }
+
+    if (mesh !== lastMesh) {
+      // Get the color of the mesh to delete and give it to the
+      // last mesh
+
+      const colorOfMeshToDelete = new THREE.Color();
+      let colorFound = false;
+      if (Array.isArray(colorMeshToDelete.material)) {
+        for (const mat of colorMeshToDelete.material as THREE.MeshBasicMaterial[]) {
+          if (mat !== this._transparentMat) {
+            colorOfMeshToDelete.copy(mat.color);
+            colorFound = true;
+            mat.dispose();
+            break;
+          }
+        }
+      } else if (colorMeshToDelete.material !== this._transparentMat) {
+        const mat = colorMeshToDelete.material as THREE.MeshBasicMaterial;
+        colorOfMeshToDelete.copy(mat.color);
+        colorFound = true;
+        mat.dispose();
+      }
+
+      if (!colorFound) {
+        throw new Error("Color of mesh to delete not found!");
+      }
+
+      if (Array.isArray(lastColorMesh.material)) {
+        for (const mat of lastColorMesh.material as THREE.MeshBasicMaterial[]) {
+          if (mat !== this._transparentMat) {
+            mat.color.copy(colorOfMeshToDelete);
+          }
+        }
+      } else if (lastColorMesh.material !== this._transparentMat) {
+        const mat = lastColorMesh.material as THREE.MeshBasicMaterial;
+        mat.color.copy(colorOfMeshToDelete);
+      }
+    }
+
+    // Make the last color available again
+    this.decreaseNextColor();
+
+    // Change the deleted mesh by the last mesh
+
+    this._colorCodeMeshMap.delete(code);
+    this._colorCodeMeshMap.set(previousCode, lastMesh);
+    this._meshIDColorCodeMap.delete(lastMesh.uuid);
+    this._meshIDColorCodeMap.set(lastMesh.uuid, previousCode);
+
+    // dispose the colorMesh of the deleted geometry
+
+    this.colorMeshes.delete(mesh.uuid);
+    colorMeshToDelete.geometry = new THREE.BufferGeometry();
+    disposer.destroy(colorMeshToDelete, false);
   }
 
   private handleWorkerMessage = async (event: MessageEvent) => {
@@ -127,7 +200,7 @@ export class MeshCullerRenderer extends CullerRenderer {
     this._currentVisibleMeshes.clear();
 
     for (const [code] of colors) {
-      const mesh = this._meshColorMap.get(code);
+      const mesh = this._colorCodeMeshMap.get(code);
       if (mesh) {
         this._currentVisibleMeshes.add(mesh);
         this._recentlyHiddenMeshes.delete(mesh);
@@ -145,16 +218,12 @@ export class MeshCullerRenderer extends CullerRenderer {
     const colorEnabled = THREE.ColorManagement.enabled;
     THREE.ColorManagement.enabled = false;
     const color = new THREE.Color(`rgb(${r}, ${g}, ${b})`);
-    let colorMaterial = this.materialCache.get(code);
-    if (!colorMaterial) {
-      const clippingPlanes = this.components.renderer.clippingPlanes;
-      colorMaterial = new THREE.MeshBasicMaterial({
-        color,
-        clippingPlanes,
-        side: THREE.DoubleSide,
-      });
-      this.materialCache.set(code, colorMaterial);
-    }
+    const clippingPlanes = this.components.renderer.clippingPlanes;
+    const colorMaterial = new THREE.MeshBasicMaterial({
+      color,
+      clippingPlanes,
+      side: THREE.DoubleSide,
+    });
     THREE.ColorManagement.enabled = colorEnabled;
     return { colorMaterial, code };
   }
