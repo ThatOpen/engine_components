@@ -100,67 +100,25 @@
     const {assets, geometries} = data;
     await loader.load("test.ifc", assets, geometries);
 
-    // const boxGeom = new THREE.BoxGeometry();
-    // const scale = new THREE.Matrix4().makeScale(10, 3, 0.2);
-    // const rotation = new THREE.Matrix4().makeRotationY(Math.PI / 5);
-    // boxGeom.applyMatrix4(scale);
-    // boxGeom.applyMatrix4(rotation);
-    // const box = new THREE.Mesh(boxGeom, new THREE.MeshLambertMaterial());
-    // components.scene.get().add(box);
-    //
-    // const bboxGeom = new THREE.BoxGeometry();
-    // for (let i = 0; i < bboxGeom.attributes.position.array.length; i++) {
-    //     bboxGeom.attributes.position.array[i] += 0.5;
-    // }
-    // const bbox = new THREE.Mesh(bboxGeom, new THREE.MeshBasicMaterial({color: "red"}));
-    // components.scene.get().add(bbox);
+    const culler = new OBC.ScreenCuller(components);
 
+    loader.onFragmentsDeleted.add((frags) => {
+        for(const frag of frags) {
+            culler.elements.remove(frag.mesh);
+        }
+    })
 
-    // loader.culler.renderDebugFrame = true;
-    // const debugFrame = loader.culler.get().domElement;
-    // document.body.appendChild(debugFrame);
-    // debugFrame.style.position = 'fixed';
-    // debugFrame.style.left = '0';
-    // debugFrame.style.bottom = '0';
-
+    loader.onFragmentsLoaded.add((frags) => {
+        for(const frag of frags) {
+            culler.elements.add(frag.mesh);
+        }
+        culler.needsUpdate = true;
+    })
 
     components.camera.controls.addEventListener("controlend", () => {
         loader.culler.needsUpdate = true;
+        culler.needsUpdate = true;
     });
-    // const dataResponse = await fetch("data.json");
-    // const testData = await dataResponse.json();
-
-    // const geometry = new THREE.BufferGeometry();
-    // geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(testData.position), 3));
-    // geometry.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(testData.normal), 3));
-    // geometry.setIndex(testData.index);
-    // geometry.applyMatrix4(new THREE.Matrix4().makeScale(0.001, 0.001, 0.001));
-    // geometry.attributes.position.needsUpdate = true;
-
-    // const testMesh = new THREE.Mesh(geometry);
-    // components.scene.get().add(testMesh);
-
-    // const pos = geometry.attributes.position.array;
-    // const result = OBC.obbFromPoints(pos);
-    // console.log(result);
-    // const {transformation} = result;
-
-    // const {x, y, z} = halfSizes;
-    // const bboxG = new THREE.BoxGeometry(x * 2, y * 2, z * 2);
-    // const bbox = new THREE.Mesh(bboxG, new THREE.MeshBasicMaterial({color: "red"}));
-    // const rot = new THREE.Matrix4().setFromMatrix3(rotation);
-    // bbox.applyMatrix4(rot);
-    // bbox.position.copy(center);
-    // components.scene.get().add(bbox);
-
-    // const bboxG = new THREE.BoxGeometry();
-    // const bboxPos = bboxG.attributes.position.array;
-    // for(let i = 0; i < bboxPos.length; i++) {
-    //     bboxPos[i] += 0.5;
-    // }
-    // const bbox = new THREE.Mesh(bboxG, new THREE.MeshBasicMaterial({color: "red"}));
-    // components.scene.get().add(bbox);
-    // bbox.applyMatrix4(transformation);
 
 
     // Set up stats

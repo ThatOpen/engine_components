@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import * as FRAG from "bim-fragment";
-import { Component } from "../../../base-types";
+import { Component, Event } from "../../../base-types";
 import { StreamedAsset, StreamedGeometries } from "./base-types";
 import { Components, ToolComponent } from "../../../core";
 import { GeometryCullerRenderer } from "./geometry-culler-renderer";
@@ -19,6 +19,9 @@ export class FragmentStreamLoader extends Component<any> {
   enabled = true;
 
   culler: GeometryCullerRenderer;
+
+  readonly onFragmentsDeleted = new Event<FRAG.Fragment[]>();
+  readonly onFragmentsLoaded = new Event<FRAG.Fragment[]>();
 
   models: {
     [modelID: string]: {
@@ -54,8 +57,8 @@ export class FragmentStreamLoader extends Component<any> {
 
     this.culler = new GeometryCullerRenderer(components);
 
-    this.culler.onViewUpdated.add(async ({ seen, unseen, hardlySeen }) => {
-      console.log(hardlySeen);
+    this.culler.onViewUpdated.add(async ({ seen, unseen }) => {
+      // console.log(hardlySeen);
       await this.handleSeenGeometries(seen);
       await this.handleUnseenGeometries(unseen);
     });
@@ -117,6 +120,8 @@ export class FragmentStreamLoader extends Component<any> {
         const bytes = new Uint8Array(buffer);
         const result = this.serializer.import(bytes);
 
+        const loaded: FRAG.Fragment[] = [];
+
         if (result) {
           for (const id in result) {
             const geometryID = parseInt(id, 10);
@@ -149,19 +154,23 @@ export class FragmentStreamLoader extends Component<any> {
 
             // Separating opaque and transparent items is neccesary for Three.js
 
-            const transparent: StreamedInstance[] = [];
+            const transp: StreamedInstance[] = [];
             const opaque: StreamedInstance[] = [];
             for (const instance of instances) {
               if (instance.color[3] === 1) {
                 opaque.push(instance);
               } else {
-                transparent.push(instance);
+                transp.push(instance);
               }
             }
 
-            this.createFragment(modelID, geometryID, geom, transparent, true);
-            this.createFragment(modelID, geometryID, geom, opaque, false);
+            this.newFragment(modelID, geometryID, geom, transp, true, loaded);
+            this.newFragment(modelID, geometryID, geom, opaque, false, loaded);
           }
+        }
+
+        if (loaded.length) {
+          await this.onFragmentsLoaded.trigger(loaded);
         }
       }
     }
@@ -172,26 +181,32 @@ export class FragmentStreamLoader extends Component<any> {
       if (!this._loadedFragments[modelID]) continue;
       const fragments = this._loadedFragments[modelID];
       const geometries = unseen[modelID];
+      const deletedFragments: FRAG.Fragment[] = [];
       for (const geometryID of geometries) {
         if (!fragments[geometryID]) continue;
         const frags = fragments[geometryID];
         for (const frag of frags) {
-          frag.mesh.material = [] as THREE.Material[];
-          frag.dispose(true);
+          deletedFragments.push(frag);
         }
         delete fragments[geometryID];
+      }
+      await this.onFragmentsDeleted.trigger(deletedFragments);
+      for (const frag of deletedFragments) {
+        frag.mesh.material = [] as THREE.Material[];
+        frag.dispose(true);
       }
     }
   }
 
   // private async handleHardlySeenGeometries() {}
 
-  private createFragment(
+  private newFragment(
     modelID: string,
     geometryID: number,
     geometry: FRAG.IFragmentGeometry,
     instances: StreamedInstance[],
-    transparent: boolean
+    transparent: boolean,
+    result: FRAG.Fragment[]
   ) {
     if (instances.length === 0) return;
 
@@ -221,6 +236,8 @@ export class FragmentStreamLoader extends Component<any> {
 
     fragment.mesh.instanceColor!.needsUpdate = true;
     this.components.scene.get().add(fragment.mesh);
+
+    result.push(fragment);
   }
 }
 
