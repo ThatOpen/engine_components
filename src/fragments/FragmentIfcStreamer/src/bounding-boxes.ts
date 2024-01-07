@@ -57,17 +57,28 @@ export class BoundingBoxes {
       material,
       this._capacity
     );
+
     newBoundingBox.frustumCulled = false;
     this.initializeBboxColor(newBoundingBox);
-    newBoundingBox.count = this.mesh.count;
 
-    const { instanceMatrix, instanceColor } = this.mesh;
-    if (!instanceColor) {
+    if (!this.mesh.instanceColor) {
       throw new Error("Error with bounding box color!");
     }
 
-    newBoundingBox.instanceMatrix = instanceMatrix.clone() as any;
-    newBoundingBox.instanceColor = instanceColor.clone() as any;
+    const tempMatrix = new THREE.Matrix4();
+    for (let i = 0; i < this.mesh.instanceMatrix.count; i++) {
+      this.mesh.getMatrixAt(i, tempMatrix);
+      newBoundingBox.setMatrixAt(i, tempMatrix);
+    }
+
+    const tempColor = new THREE.Color();
+    for (let i = 0; i < this.mesh.instanceColor.count; i++) {
+      this.mesh.getColorAt(i, tempColor);
+      newBoundingBox.setColorAt(i, tempColor);
+    }
+
+    newBoundingBox.count = this.mesh.count;
+
     this.mesh.geometry = null as any;
     this.mesh.material = null as any;
     this.mesh.dispose();

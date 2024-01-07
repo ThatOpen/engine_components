@@ -50,7 +50,6 @@ export class GeometryCullerRenderer extends CullerRenderer {
     super(components, settings);
 
     this.scene.add(this._boundingBoxes.mesh);
-    // this.components.scene.get().add(this._boundingBoxes.mesh);
 
     this.worker.addEventListener("message", this.handleWorkerMessage);
     if (this.autoUpdate) {
@@ -118,6 +117,8 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
     this._boundingBoxes.update();
     THREE.ColorManagement.enabled = colorEnabled;
+
+    // this.components.scene.get().add(this._boundingBoxes.mesh.clone());
   }
 
   private handleWorkerMessage = async (event: MessageEvent) => {

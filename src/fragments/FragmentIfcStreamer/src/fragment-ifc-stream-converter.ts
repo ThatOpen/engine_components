@@ -1,5 +1,4 @@
 import * as WEBIFC from "web-ifc";
-import * as THREE from "three";
 import { StreamSerializer } from "bim-fragment";
 import {
   Disposable,
@@ -13,7 +12,7 @@ import { Button, ToastNotification } from "../../../ui";
 import { Components, ToolComponent } from "../../../core";
 import { IfcStreamingSettings } from "./streaming-settings";
 import { StreamedAsset, StreamedGeometries } from "./base-types";
-import { isPointInFrontOfPlane, makeApproxBoundingBox } from "../../../utils";
+import { isPointInFrontOfPlane, obbFromPoints } from "../../../utils";
 
 export class FragmentIfcStreamConverter
   extends Component<WEBIFC.IfcAPI>
@@ -234,8 +233,9 @@ export class FragmentIfcStreamConverter
       this._currentGeometrySize++;
     }
 
-    const bbox = makeApproxBoundingBox(position, index);
-    const boundingBox = new Float32Array(bbox.elements);
+    // const bbox = makeApproxBoundingBox(position, index);
+    const obb = obbFromPoints(position);
+    const boundingBox = new Float32Array(obb.transformation.elements);
 
     // Simple hole test: see if all triangles are facing away the center
     // Using the vertex normal because it's easier
@@ -244,8 +244,7 @@ export class FragmentIfcStreamConverter
     // Not perfect, but it will work for most cases and all the times it fails
     // are false positives, so it's always on the safety side
 
-    const center = new THREE.Vector3(0.5, 0.5, 0.5).applyMatrix4(bbox);
-    const centerArray = [center.x, center.y, center.z];
+    const centerArray = [obb.center.x, obb.center.y, obb.center.z];
 
     let hasHoles = false;
     for (let i = 0; i < position.length - 2; i += 3) {

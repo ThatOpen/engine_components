@@ -130,7 +130,7 @@ export class FragmentStreamLoader extends Component<any> {
             }
 
             const geoms = this._geometryInstances[modelID];
-            const instances = geoms[geometryID] || geoms[-geometryID];
+            const instances = geoms[geometryID];
 
             const { index, normal, position } = result[id];
 

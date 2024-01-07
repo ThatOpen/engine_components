@@ -1,109 +1,338 @@
 import * as THREE from "three";
+import { ConvexHull } from "three/examples/jsm/math/ConvexHull";
+import ArrayLike = jasmine.ArrayLike;
 
-// Makes approx bounding box by rotating the object so that it's longest edge
-// is aligned with the axes. Return the matrix that needs to be multiplied to
-// a 1x1x1 box with its bottom corner at the origin to become the OBB
-export function makeApproxBoundingBox(
-  position: ArrayLike<number>,
-  index: ArrayLike<number>
-) {
-  let longestDistance = -Number.MAX_VALUE;
-  const longestStart = new THREE.Vector3();
-  const longestEnd = new THREE.Vector3();
-  const longestVector = new THREE.Vector3();
+// src: https://github.com/Mugen87/yuka/blob/844b2581d29de0105336be80eb2fe4cc8dca4ede/src/math/OBB.js#L409-L597
+
+type EigenResult = {
+  unitary: THREE.Matrix3;
+  diagonal: THREE.Matrix3;
+};
+
+const colVal = [2, 2, 1];
+const rowVal = [1, 0, 0];
+
+function getElementIndex(column: number, row: number) {
+  return column * 3 + row;
+}
+
+function frobeniusNorm(matrix: THREE.Matrix3) {
+  const e = matrix.elements;
+  let norm = 0;
+
+  for (let i = 0; i < 9; i++) {
+    norm += e[i] * e[i];
+  }
+
+  return Math.sqrt(norm);
+}
+
+function offDiagonalFrobeniusNorm(source: THREE.Matrix3) {
+  const e = source.elements;
+  let norm = 0;
+
+  for (let i = 0; i < 3; i++) {
+    const t = e[getElementIndex(colVal[i], rowVal[i])];
+    norm += 2 * t * t; // multiply the result by two since the matrix is symetric
+  }
+
+  return Math.sqrt(norm);
+}
+
+function shurDecomposition(source: THREE.Matrix3, result: THREE.Matrix3) {
+  let maxDiagonal = 0;
+  let rotAxis = 1;
+
+  // find pivot (rotAxis) based on largest off-diagonal term
+
+  const e = source.elements;
+
+  for (let i = 0; i < 3; i++) {
+    const t = Math.abs(e[getElementIndex(colVal[i], rowVal[i])]);
+
+    if (t > maxDiagonal) {
+      maxDiagonal = t;
+      rotAxis = i;
+    }
+  }
+
+  let c = 1;
+  let s = 0;
+
+  const p = rowVal[rotAxis];
+  const q = colVal[rotAxis];
+
+  if (Math.abs(e[getElementIndex(q, p)]) > Number.EPSILON) {
+    const qq = e[getElementIndex(q, q)];
+    const pp = e[getElementIndex(p, p)];
+    const qp = e[getElementIndex(q, p)];
+
+    const tau = (qq - pp) / 2 / qp;
+
+    let t;
+
+    if (tau < 0) {
+      t = -1 / (-tau + Math.sqrt(1 + tau * tau));
+    } else {
+      t = 1 / (tau + Math.sqrt(1.0 + tau * tau));
+    }
+
+    c = 1.0 / Math.sqrt(1.0 + t * t);
+    s = t * c;
+  }
+
+  result.identity();
+
+  result.elements[getElementIndex(p, p)] = c;
+  result.elements[getElementIndex(q, q)] = c;
+  result.elements[getElementIndex(q, p)] = s;
+  result.elements[getElementIndex(p, q)] = -s;
+
+  return result;
+}
+
+function eigenDecomposition(source: THREE.Matrix3, result: EigenResult) {
+  let count = 0;
+  let sweep = 0;
+
+  const maxSweeps = 10;
+
+  result.unitary.identity();
+  result.diagonal.copy(source);
+
+  const unitaryMatrix = result.unitary;
+  const diagonalMatrix = result.diagonal;
+
+  const m1 = new THREE.Matrix3();
+  const m2 = new THREE.Matrix3();
+
+  const epsilon = Number.EPSILON * frobeniusNorm(diagonalMatrix);
+
+  while (
+    sweep < maxSweeps &&
+    offDiagonalFrobeniusNorm(diagonalMatrix) > epsilon
+  ) {
+    shurDecomposition(diagonalMatrix, m1);
+    m2.copy(m1).transpose();
+    diagonalMatrix.multiply(m1);
+    diagonalMatrix.premultiply(m2);
+    unitaryMatrix.multiply(m1);
+
+    if (++count > 2) {
+      sweep++;
+      count = 0;
+    }
+  }
+
+  return result;
+}
+
+export function obbFromPoints(vertices: ArrayLike<number>) {
+  const points: THREE.Vector3[] = [];
+  for (let i = 0; i < vertices.length - 2; i += 3) {
+    const x = vertices[i];
+    const y = vertices[i + 1];
+    const z = vertices[i + 2];
+    points.push(new THREE.Vector3(x, y, z));
+  }
+
+  const convexHull = new ConvexHull();
+  convexHull.setFromPoints(points);
+
+  const eigenDecomposed: EigenResult = {
+    unitary: new THREE.Matrix3(),
+    diagonal: new THREE.Matrix3(),
+  };
+
+  // 1. iterate over all faces of the convex hull and triangulate
+
+  const faces = convexHull.faces;
+  const edges = [];
+  const triangles = [];
+
+  for (let i = 0, il = faces.length; i < il; i++) {
+    const face = faces[i];
+    let edge = face.edge;
+
+    edges.length = 0;
+
+    // gather edges
+
+    do {
+      edges.push(edge);
+
+      edge = edge.next;
+    } while (edge !== face.edge);
+
+    // triangulate
+
+    const triangleCount = edges.length - 2;
+
+    for (let j = 1, jl = triangleCount; j <= jl; j++) {
+      const v1 = edges[0].vertex;
+      const v2 = edges[j + 0].vertex;
+      const v3 = edges[j + 1].vertex;
+
+      triangles.push(v1.point.x, v1.point.y, v1.point.z);
+      triangles.push(v2.point.x, v2.point.y, v2.point.z);
+      triangles.push(v3.point.x, v3.point.y, v3.point.z);
+    }
+  }
+
+  // 2. build covariance matrix
+
+  const p = new THREE.Vector3();
+  const q = new THREE.Vector3();
+  const r = new THREE.Vector3();
+
+  const qp = new THREE.Vector3();
+  const rp = new THREE.Vector3();
+
+  const v = new THREE.Vector3();
+
+  const mean = new THREE.Vector3();
+  const weightedMean = new THREE.Vector3();
+  let areaSum = 0;
+
+  let cxx = 0;
+  let cxy = 0;
+  let cxz = 0;
+  let cyy = 0;
+  let cyz = 0;
+  let czz = 0;
+
+  for (let i = 0, l = triangles.length; i < l; i += 9) {
+    p.fromArray(triangles, i);
+    q.fromArray(triangles, i + 3);
+    r.fromArray(triangles, i + 6);
+
+    mean.set(0, 0, 0);
+    mean.add(p).add(q).add(r).divideScalar(3);
+
+    qp.subVectors(q, p);
+    rp.subVectors(r, p);
+
+    const area = v.crossVectors(qp, rp).length() / 2; // .length() represents the frobenius norm here
+    weightedMean.add(v.copy(mean).multiplyScalar(area));
+
+    areaSum += area;
+
+    cxx +=
+      (9.0 * mean.x * mean.x + p.x * p.x + q.x * q.x + r.x * r.x) * (area / 12);
+    cxy +=
+      (9.0 * mean.x * mean.y + p.x * p.y + q.x * q.y + r.x * r.y) * (area / 12);
+    cxz +=
+      (9.0 * mean.x * mean.z + p.x * p.z + q.x * q.z + r.x * r.z) * (area / 12);
+    cyy +=
+      (9.0 * mean.y * mean.y + p.y * p.y + q.y * q.y + r.y * r.y) * (area / 12);
+    cyz +=
+      (9.0 * mean.y * mean.z + p.y * p.z + q.y * q.z + r.y * r.z) * (area / 12);
+    czz +=
+      (9.0 * mean.z * mean.z + p.z * p.z + q.z * q.z + r.z * r.z) * (area / 12);
+  }
+
+  weightedMean.divideScalar(areaSum);
+
+  cxx /= areaSum;
+  cxy /= areaSum;
+  cxz /= areaSum;
+  cyy /= areaSum;
+  cyz /= areaSum;
+  czz /= areaSum;
+
+  cxx -= weightedMean.x * weightedMean.x;
+  cxy -= weightedMean.x * weightedMean.y;
+  cxz -= weightedMean.x * weightedMean.z;
+  cyy -= weightedMean.y * weightedMean.y;
+  cyz -= weightedMean.y * weightedMean.z;
+  czz -= weightedMean.z * weightedMean.z;
+
+  const covarianceMatrix = new THREE.Matrix3();
+
+  covarianceMatrix.elements[0] = cxx;
+  covarianceMatrix.elements[1] = cxy;
+  covarianceMatrix.elements[2] = cxz;
+  covarianceMatrix.elements[3] = cxy;
+  covarianceMatrix.elements[4] = cyy;
+  covarianceMatrix.elements[5] = cyz;
+  covarianceMatrix.elements[6] = cxz;
+  covarianceMatrix.elements[7] = cyz;
+  covarianceMatrix.elements[8] = czz;
+
+  // 3. compute rotation, center and half sizes
+
+  eigenDecomposition(covarianceMatrix, eigenDecomposed);
+
+  const unitary = eigenDecomposed.unitary;
 
   const v1 = new THREE.Vector3();
   const v2 = new THREE.Vector3();
   const v3 = new THREE.Vector3();
 
-  for (let i = 0; i < index.length; i += 3) {
-    const i1 = index[i] * 3;
-    const i2 = index[i + 1] * 3;
-    const i3 = index[i + 2] * 3;
+  unitary.extractBasis(v1, v2, v3);
 
-    const x1 = position[i1];
-    const y1 = position[i1 + 1];
-    const z1 = position[i1 + 2];
-    v1.set(x1, y1, z1);
+  let u1 = -Infinity;
+  let u2 = -Infinity;
+  let u3 = -Infinity;
+  let l1 = Infinity;
+  let l2 = Infinity;
+  let l3 = Infinity;
 
-    const x2 = position[i2];
-    const y2 = position[i2 + 1];
-    const z2 = position[i2 + 2];
-    v2.set(x2, y2, z2);
+  for (let i = 0, l = points.length; i < l; i++) {
+    const p = points[i];
 
-    const x3 = position[i3];
-    const y3 = position[i3 + 1];
-    const z3 = position[i3 + 2];
-    v3.set(x3, y3, z3);
+    u1 = Math.max(v1.dot(p), u1);
+    u2 = Math.max(v2.dot(p), u2);
+    u3 = Math.max(v3.dot(p), u3);
 
-    const d1 = v1.distanceTo(v2);
-    const d2 = v2.distanceTo(v3);
-    const d3 = v3.distanceTo(v1);
-
-    if (d1 > longestDistance) {
-      longestDistance = d1;
-      longestStart.copy(v1);
-      longestEnd.copy(v2);
-    }
-
-    if (d2 > longestDistance) {
-      longestDistance = d2;
-      longestStart.copy(v2);
-      longestEnd.copy(v3);
-    }
-
-    if (d3 > longestDistance) {
-      longestDistance = d3;
-      longestStart.copy(v3);
-      longestEnd.copy(v1);
-    }
+    l1 = Math.min(v1.dot(p), l1);
+    l2 = Math.min(v2.dot(p), l2);
+    l3 = Math.min(v3.dot(p), l3);
   }
 
-  longestVector.subVectors(longestEnd, longestStart);
-  longestVector.normalize();
-  longestVector.y = 0;
-  longestVector.normalize();
+  v1.multiplyScalar(0.5 * (l1 + u1));
+  v2.multiplyScalar(0.5 * (l2 + u2));
+  v3.multiplyScalar(0.5 * (l3 + u3));
 
-  const isVertical = longestVector.x < 0.1 && longestVector.z < 0.1;
-  const angle = isVertical ? 0 : Math.atan2(longestVector.x, longestVector.z);
-  console.log((angle * 180) / Math.PI);
+  // center
 
-  const rotation = new THREE.Matrix4().makeRotationY(-angle);
-  const v = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  const halfSizes = new THREE.Vector3();
+  const rotation = new THREE.Matrix3();
 
-  const min = -Number.MAX_VALUE;
-  const max = Number.MAX_VALUE;
-  const minMax = new Float32Array([max, max, max, min, min, min]);
+  center.add(v1).add(v2).add(v3);
 
-  for (let i = 0; i < position.length; i += 3) {
-    v.set(position[i], position[i + 1], position[i + 2]);
+  halfSizes.x = u1 - l1;
+  halfSizes.y = u2 - l2;
+  halfSizes.z = u3 - l3;
 
-    v.applyMatrix4(rotation);
+  // halfSizes
 
-    const { x, y, z } = v;
+  halfSizes.multiplyScalar(0.5);
 
-    if (x < minMax[0]) minMax[0] = x;
-    if (y < minMax[1]) minMax[1] = y;
-    if (z < minMax[2]) minMax[2] = z;
-    if (x > minMax[3]) minMax[3] = x;
-    if (y > minMax[4]) minMax[4] = y;
-    if (z > minMax[5]) minMax[5] = z;
-  }
+  // rotation
 
-  const translation = new THREE.Matrix4().makeTranslation(
-    minMax[0],
-    minMax[1],
-    minMax[2]
-  );
-  const scale = new THREE.Matrix4().makeScale(
-    minMax[3] - minMax[0],
-    minMax[4] - minMax[1],
-    minMax[5] - minMax[2]
-  );
+  rotation.copy(unitary);
 
-  rotation.invert();
+  // Whole matrix to be multiplied by a 1x1x1 box with one of
+  // its lower conrners at the origin
 
-  const result = new THREE.Matrix4();
-  result.multiply(rotation).multiply(translation).multiply(scale);
-  return result;
+  const { x, y, z } = halfSizes;
+
+  const scale = new THREE.Matrix4();
+  scale.makeScale(x * 2, y * 2, z * 2);
+  const offset = new THREE.Matrix4();
+  offset.makeTranslation(-x, -y, -z);
+  const translation = new THREE.Matrix4();
+  translation.makeTranslation(center.x, center.y, center.z);
+  const rot = new THREE.Matrix4();
+  rot.setFromMatrix3(rotation);
+
+  const transformation = new THREE.Matrix4();
+  transformation.multiply(translation);
+  transformation.multiply(rot);
+  transformation.multiply(offset);
+  transformation.multiply(scale);
+
+  return { center, halfSizes, rotation, transformation };
 }

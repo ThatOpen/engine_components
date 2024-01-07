@@ -10,16 +10,17 @@
     <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
     <title>Tools Component</title>
     <style>
-      body {
-        margin: 0;
-        padding: 0;
-      }
-      .full-screen {
-        width: 100vw;
-        height: 100vh;
-        position: relative;
-        overflow: hidden;
-      }
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .full-screen {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body>
@@ -76,7 +77,7 @@
     const fragments = new OBC.FragmentManager(components);
     const loader = new OBC.FragmentStreamLoader(components);
 
-    const streamer  = new OBC.FragmentIfcStreamConverter(components);
+    const streamer = new OBC.FragmentIfcStreamConverter(components);
     streamer.settings.wasm = {
         path: "https://unpkg.com/web-ifc@0.0.46/",
         absolute: true
@@ -94,76 +95,72 @@
     //     console.log(assets);
     // });
 
-    const rawData = await fetch("./test.json");
+    const rawData = await fetch("./test-2.json");
     const data = await rawData.json();
     const {assets, geometries} = data;
     await loader.load("test.ifc", assets, geometries);
 
-    loader.culler.renderDebugFrame = true;
-    const debugFrame = loader.culler.get().domElement;
-    document.body.appendChild(debugFrame);
-    debugFrame.style.position = 'fixed';
-    debugFrame.style.left = '0';
-    debugFrame.style.bottom = '0';
+    // const boxGeom = new THREE.BoxGeometry();
+    // const scale = new THREE.Matrix4().makeScale(10, 3, 0.2);
+    // const rotation = new THREE.Matrix4().makeRotationY(Math.PI / 5);
+    // boxGeom.applyMatrix4(scale);
+    // boxGeom.applyMatrix4(rotation);
+    // const box = new THREE.Mesh(boxGeom, new THREE.MeshLambertMaterial());
+    // components.scene.get().add(box);
+    //
+    // const bboxGeom = new THREE.BoxGeometry();
+    // for (let i = 0; i < bboxGeom.attributes.position.array.length; i++) {
+    //     bboxGeom.attributes.position.array[i] += 0.5;
+    // }
+    // const bbox = new THREE.Mesh(bboxGeom, new THREE.MeshBasicMaterial({color: "red"}));
+    // components.scene.get().add(bbox);
+
+
+    // loader.culler.renderDebugFrame = true;
+    // const debugFrame = loader.culler.get().domElement;
+    // document.body.appendChild(debugFrame);
+    // debugFrame.style.position = 'fixed';
+    // debugFrame.style.left = '0';
+    // debugFrame.style.bottom = '0';
+
 
     components.camera.controls.addEventListener("controlend", () => {
         loader.culler.needsUpdate = true;
     });
+    // const dataResponse = await fetch("data.json");
+    // const testData = await dataResponse.json();
 
-    // const geometry = new THREE.BoxGeometry(1, 1, 0.1);
-    // const material = new THREE.MeshBasicMaterial({
-    //     transparent: true,
-    //     opacity: 1,
-    // });
-    // const plane = new THREE.InstancedMesh(geometry, material, 11856);
-    // scene.add(plane);
+    // const geometry = new THREE.BufferGeometry();
+    // geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(testData.position), 3));
+    // geometry.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(testData.normal), 3));
+    // geometry.setIndex(testData.index);
+    // geometry.applyMatrix4(new THREE.Matrix4().makeScale(0.001, 0.001, 0.001));
+    // geometry.attributes.position.needsUpdate = true;
 
-    //dummy
-    // const dummy = new THREE.Object3D();
-    // const defaultColor = new THREE.Color(0xffff00);
+    // const testMesh = new THREE.Mesh(geometry);
+    // components.scene.get().add(testMesh);
 
-    // let mm = 0;
+    // const pos = geometry.attributes.position.array;
+    // const result = OBC.obbFromPoints(pos);
+    // console.log(result);
+    // const {transformation} = result;
 
-    // for (let i = 0; i < 152; i++) {
-    //     for (let j = 0; j < 78; j++) {
-    //         dummy.position.x = i - 76;
-    //         dummy.position.y = j - 39;
-    //         dummy.position.z = 0;
-    //
-    //         dummy.updateMatrix();
-    //         plane.setMatrixAt(mm, dummy.matrix);
-    //         plane.setColorAt(mm, defaultColor);
-    //         mm++;
-    //     }
+    // const {x, y, z} = halfSizes;
+    // const bboxG = new THREE.BoxGeometry(x * 2, y * 2, z * 2);
+    // const bbox = new THREE.Mesh(bboxG, new THREE.MeshBasicMaterial({color: "red"}));
+    // const rot = new THREE.Matrix4().setFromMatrix3(rotation);
+    // bbox.applyMatrix4(rot);
+    // bbox.position.copy(center);
+    // components.scene.get().add(bbox);
+
+    // const bboxG = new THREE.BoxGeometry();
+    // const bboxPos = bboxG.attributes.position.array;
+    // for(let i = 0; i < bboxPos.length; i++) {
+    //     bboxPos[i] += 0.5;
     // }
-    //
-    // const color = new THREE.Color();
-    // const mouse = new THREE.Vector2();
-    // const rayCaster = new THREE.Raycaster();
-    // function onPointerMove(e) {
-    //     mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-    //     mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-    //
-    //     rayCaster.setFromCamera(mouse, components.camera.get());
-    //     const intersects = rayCaster.intersectObject(plane);
-    //     for (let obj of intersects) {
-    //         plane.setColorAt(obj.instanceId, color.set(0xff0000));
-    //         plane.instanceColor.needsUpdate = true;
-    //     }
-    // }
-
-    // window.addEventListener("mousemove", onPointerMove)
-
-    // const mainToolbar = new OBC.Toolbar(components);
-    // components.ui.addToolbar(mainToolbar);
-    //
-    // const button = new OBC.Button(components);
-    // button.materialIcon = "upload";
-    // button.onClick.add(() => {
-    //     loader.load
-    // })
-
-
+    // const bbox = new THREE.Mesh(bboxG, new THREE.MeshBasicMaterial({color: "red"}));
+    // components.scene.get().add(bbox);
+    // bbox.applyMatrix4(transformation);
 
 
     // Set up stats
@@ -175,7 +172,6 @@
     const renderer = components.renderer;
     renderer.onBeforeUpdate.add(() => stats.begin());
     renderer.onAfterUpdate.add(() => stats.end());
-
 
 
 </script>
