@@ -121,9 +121,12 @@ export class FragmentIfcStreamConverter
   }
 
   private async readIfcFile(data: Uint8Array) {
-    const { path, absolute } = this.settings.wasm;
+    const { path, absolute, logLevel } = this.settings.wasm;
     this._webIfc.SetWasmPath(path, absolute);
     await this._webIfc.Init();
+    if (logLevel) {
+      this._webIfc.SetLogLevel(logLevel);
+    }
     this._webIfc.OpenModel(data, this.settings.webIfc);
   }
 

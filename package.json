@@ -1,6 +1,6 @@
 {
   "name": "openbim-components",
-  "version": "1.2.0-alpha.17",
+  "version": "1.2.0-alpha.18",
   "main": "src/index.js",
   "author": "harry collin, antonio gonzalez viegas",
   "license": "MIT",

@@ -18,6 +18,7 @@ export class IfcFragmentSettings {
   wasm = {
     path: "",
     absolute: false,
+    logLevel: WEBIFC.LogLevel.LOG_LEVEL_OFF as WEBIFC.LogLevel | undefined,
   };
 
   /** List of categories that won't be converted to fragments. */
