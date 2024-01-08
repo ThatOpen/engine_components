@@ -162,7 +162,9 @@ export class FragmentPlans
     plane.visible = false;
     const plan = { ...config, plane };
     this._plans.push(plan);
-    this.objects.add(config);
+    if (this.components.uiEnabled) {
+      this.objects.add(config);
+    }
   }
 
   /**
