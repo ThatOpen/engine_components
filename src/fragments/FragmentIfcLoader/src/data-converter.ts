@@ -142,8 +142,6 @@ export class DataConverter {
     const matrix = new THREE.Matrix4();
     const color = new THREE.Color();
 
-    console.log(civilItems);
-
     // Add alignments data
     if (civilItems.IfcAlignment) {
       const horizontalAlignments = new IfcAlignmentData();
