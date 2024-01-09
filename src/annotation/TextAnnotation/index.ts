@@ -5,28 +5,31 @@ import { DrawManager } from "../DrawManager";
 import { SVGText } from "../SVGText";
 
 export class TextAnnotation extends BaseSVGAnnotation implements UI {
-  name: string = "TextAnnotation";
+  readonly name: string = "TextAnnotation";
   uiElement = new UIElement<{ main: Button }>();
   canvas: HTMLCanvasElement | null = null;
 
   private _previewElement: SVGText;
 
-  constructor(components: Components, drawManager?: DrawManager) {
+  constructor(components: Components) {
     super(components);
     this._previewElement = new SVGText(components);
-    this.drawManager = drawManager;
+    const drawManager = this.components.tools.get(DrawManager);
+    if (components.uiEnabled) {
+      this.setUI();
+    }
+    drawManager.addDrawingTool(this.name, this);
+  }
 
-    const main = new Button(components);
-    this.uiElement.set({ main });
+  private setUI() {
+    const drawManager = this.components.tools.get(DrawManager);
+    const main = new Button(this.components);
     main.label = "Text";
     main.materialIcon = "title";
     main.onClick.add(() => {
-      if (this.drawManager) {
-        this.drawManager.activateTool(this);
-      } else {
-        this.enabled = !this.enabled;
-      }
+      drawManager.activateTool(this);
     });
+    this.uiElement.set({ main });
   }
 
   async dispose() {
@@ -45,28 +48,29 @@ export class TextAnnotation extends BaseSVGAnnotation implements UI {
 
   start = (e: MouseEvent) => {
     if (!this.canDraw) {
-      return undefined;
+      return null;
     }
+    const drawManager = this.components.tools.get(DrawManager);
     if (!this._isDrawing) {
       this._isDrawing = true;
       const text = prompt("Enter your text", this._previewElement.text);
       if (!text) {
         this.cancel();
-        return undefined;
+        return null;
       }
-      this._previewElement.setStyle(this.drawManager?.viewport.config);
+      this._previewElement.setStyle(drawManager.viewport.config);
       this._previewElement.text = text;
       this._previewElement.x = e.clientX;
       this._previewElement.y = e.clientY;
       this.svgViewport?.append(this._previewElement.get());
     } else {
       const text = this._previewElement.clone();
-      text.setStyle(this.drawManager?.viewport.config);
+      text.setStyle(drawManager.viewport.config);
       this.svgViewport?.append(text.get());
       this.cancel();
       return text;
     }
-    return undefined;
+    return null;
   };
 
   draw = (e: MouseEvent) => {

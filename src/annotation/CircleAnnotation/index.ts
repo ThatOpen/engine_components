@@ -6,29 +6,32 @@ import { DrawManager } from "../DrawManager";
 import { SVGCircle } from "../SVGCircle";
 
 export class CircleAnnotation extends BaseSVGAnnotation {
-  name: string = "CircleAnnotation";
+  readonly name: string = "CircleAnnotation";
   canvas: HTMLCanvasElement | null = null;
   uiElement = new UIElement<{ main: Button }>();
 
   private _previewElement: SVGCircle;
   private _cursorPosition: Vector2 = new Vector2();
 
-  constructor(components: Components, drawManager?: DrawManager) {
+  constructor(components: Components) {
     super(components);
     this._previewElement = new SVGCircle(components);
-    this.drawManager = drawManager;
+    const drawManager = this.components.tools.get(DrawManager);
+    if (components.uiEnabled) {
+      this.setUI();
+    }
+    drawManager.addDrawingTool("circle_annotation", this);
+  }
 
-    const main = new Button(components);
-    this.uiElement.set({ main });
+  private setUI() {
+    const drawManager = this.components.tools.get(DrawManager);
+    const main = new Button(this.components);
     main.label = "Circle";
     main.materialIcon = "radio_button_unchecked";
     main.onClick.add(() => {
-      if (this.drawManager) {
-        this.drawManager.activateTool(this);
-      } else {
-        this.enabled = !this.enabled;
-      }
+      drawManager.activateTool(this);
     });
+    this.uiElement.set({ main });
   }
 
   async dispose() {
@@ -38,22 +41,23 @@ export class CircleAnnotation extends BaseSVGAnnotation {
 
   start = (e: MouseEvent) => {
     if (!this.canDraw) {
-      return undefined;
+      return null;
     }
+    const drawManager = this.components.tools.get(DrawManager);
     if (!this._isDrawing) {
       this._isDrawing = true;
-      this._previewElement.setStyle(this.drawManager?.viewport.config);
+      this._previewElement.setStyle(drawManager.viewport.config);
       this._previewElement.cx = e.clientX;
       this._previewElement.cy = e.clientY;
       this.svgViewport?.append(this._previewElement.get());
     } else {
       const circle = this._previewElement.clone();
-      circle.setStyle(this.drawManager?.viewport.config);
+      circle.setStyle(drawManager.viewport.config);
       this.svgViewport?.append(circle.get());
       this.cancel();
       return circle;
     }
-    return undefined;
+    return null;
   };
 
   cancel = () => {

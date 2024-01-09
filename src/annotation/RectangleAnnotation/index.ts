@@ -6,29 +6,32 @@ import { DrawManager } from "../DrawManager";
 import { SVGRectangle } from "../SVGRectangle";
 
 export class RectangleAnnotation extends BaseSVGAnnotation {
-  name: string = "RectangleAnnotation";
+  readonly name: string = "RectangleAnnotation";
   canvas: HTMLCanvasElement | null = null;
   uiElement = new UIElement<{ main: Button }>();
 
   private _previewElement: SVGRectangle;
   private _startPoint: Vector2 = new Vector2();
 
-  constructor(components: Components, drawManager?: DrawManager) {
+  constructor(components: Components) {
     super(components);
     this._previewElement = new SVGRectangle(components);
-    this.drawManager = drawManager;
+    const drawManager = this.components.tools.get(DrawManager);
+    if (components.uiEnabled) {
+      this.setUI();
+    }
+    drawManager.addDrawingTool(this.name, this);
+  }
 
-    const main = new Button(components);
-    this.uiElement.set({ main });
+  private setUI() {
+    const drawManager = this.components.tools.get(DrawManager);
+    const main = new Button(this.components);
     main.label = "Rectangle";
     main.materialIcon = "crop_square";
     main.onClick.add(() => {
-      if (this.drawManager) {
-        this.drawManager.activateTool(this);
-      } else {
-        this.enabled = !this.enabled;
-      }
+      drawManager.activateTool(this);
     });
+    this.uiElement.set({ main });
   }
 
   async dispose() {
@@ -38,21 +41,22 @@ export class RectangleAnnotation extends BaseSVGAnnotation {
 
   start = (e: MouseEvent) => {
     if (!this.canDraw) {
-      return undefined;
+      return null;
     }
+    const drawManager = this.components.tools.get(DrawManager);
     if (!this._isDrawing) {
       this._isDrawing = true;
-      this._previewElement.setStyle(this.drawManager?.viewport.config);
+      this._previewElement.setStyle(drawManager.viewport.config);
       this._startPoint.set(e.clientX, e.clientY);
       this.svgViewport?.append(this._previewElement.get());
     } else {
       const rectangle = this._previewElement.clone();
-      rectangle.setStyle(this.drawManager?.viewport.config);
+      rectangle.setStyle(drawManager.viewport.config);
       this.svgViewport?.append(rectangle.get());
       this.cancel();
       return rectangle;
     }
-    return undefined;
+    return null;
   };
 
   cancel = () => {
