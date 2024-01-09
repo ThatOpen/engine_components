@@ -21,9 +21,8 @@ export class FragmentTree
   readonly onDisposed = new Event<string>();
 
   enabled: boolean = true;
-  onSelected = new Event<FragmentIdMap>();
-
-  onHovered = new Event<FragmentIdMap>();
+  onSelected = new Event<{ items: FragmentIdMap; visible: boolean }>();
+  onHovered = new Event<{ items: FragmentIdMap; visible: boolean }>();
 
   private _title = "Model Tree";
   private _tree?: FragmentTreeItem;
@@ -50,6 +49,7 @@ export class FragmentTree
       classifier,
       "Model Tree"
     );
+
     this._tree = tree;
     if (this.components.uiEnabled) {
       this.setupUI(tree);

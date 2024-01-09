@@ -397,6 +397,15 @@ export class FragmentHighlighter
     }
 
     const sphere = bbox.getSphere();
+    const i = Infinity;
+    const mi = -Infinity;
+    const { x, y, z } = sphere.center;
+    const isInf = sphere.radius === i || x === i || y === i || z === i;
+    const isMInf = sphere.radius === mi || x === mi || y === mi || z === mi;
+    const isZero = sphere.radius === 0;
+    if (isInf || isMInf || isZero) {
+      return;
+    }
     sphere.radius *= this.zoomFactor;
     const camera = this.components.camera as SimpleCamera;
     await camera.controls.fitToSphere(sphere, true);
@@ -449,7 +458,17 @@ export class FragmentHighlighter
         transform: this._tempMatrix,
       });
 
-      selection.blocks.setVisibility(true, ids, true);
+      // Only highlight visible blocks
+      const visibleIDs = new Set<string>();
+      let counter = 0;
+      for (const id of ids) {
+        if (fragment.blocks.visibleIds.has(counter)) {
+          visibleIDs.add(id);
+        }
+        counter++;
+      }
+
+      selection.blocks.setVisibility(true, visibleIDs, true);
     } else {
       let i = 0;
       for (const id of ids) {
