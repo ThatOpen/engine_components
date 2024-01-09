@@ -47,8 +47,9 @@ export class FragmentIfcStreamConverter
   private _webIfc = new WEBIFC.IfcAPI();
   private _serializer = new StreamSerializer();
   private _geometries: StreamedGeometries = {};
+  private _geometryCount = 0;
+
   private _assets: StreamedAsset[] = [];
-  private _currentGeometrySize = 0;
 
   private _meshesWithHoles = new Set<number>();
 
@@ -131,37 +132,65 @@ export class FragmentIfcStreamConverter
   }
 
   private async streamAllGeometries() {
+    const { minGeometrySize, minAssetsSize } = this.settings;
+
+    // Get all IFC objects and group them in chunks of specified size
+
+    const allIfcEntities = this._webIfc.GetIfcEntityList(0);
+    const chunks: number[][] = [[]];
+
+    let counter = 0;
+    let index = 0;
+    for (const type of allIfcEntities) {
+      if (!this._webIfc.IsIfcElement(type) && type !== WEBIFC.IFCSPACE) {
+        continue;
+      }
+      const result = this._webIfc.GetLineIDsWithType(0, type);
+      const size = result.size();
+      for (let i = 0; i < size; i++) {
+        if (counter > minGeometrySize) {
+          counter = 0;
+          index++;
+          chunks.push([]);
+        }
+        chunks[index].push(result.get(i));
+        counter++;
+      }
+    }
+
+    for (const chunk of chunks) {
+      this._webIfc.StreamMeshes(0, chunk, (mesh) => {
+        this.getMesh(this._webIfc, mesh);
+      });
+
+      if (this._geometryCount > minGeometrySize) {
+        await this.streamGeometries();
+      }
+      if (this._assets.length > minAssetsSize) {
+        await this.streamAssets();
+      }
+    }
+
+    // Stream remaining assets and geometries
+    if (this._geometryCount) {
+      await this.streamGeometries();
+    }
+
+    if (this._assets.length) {
+      await this.streamAssets();
+    }
+
     // Some categories (like IfcSpace) need to be created explicitly
-    const optionals = [...this.settings.optionalCategories];
+    // const optionals = [...this.settings.optionalCategories];
 
     // Force IFC space to be transparent
-    if (optionals.includes(WEBIFC.IFCSPACE)) {
-      const index = optionals.indexOf(WEBIFC.IFCSPACE);
-      optionals.splice(index, 1);
-      this._webIfc.StreamAllMeshesWithTypes(0, [WEBIFC.IFCSPACE], (mesh) => {
-        this.streamMesh(this._webIfc, mesh);
-      });
-    }
-
-    // Load rest of optional categories (if any)
-    if (optionals.length) {
-      this._webIfc.StreamAllMeshesWithTypes(0, optionals, (mesh) => {
-        this.streamMesh(this._webIfc, mesh);
-      });
-    }
-
-    // Load common categories
-    this._webIfc.StreamAllMeshes(0, (mesh: WEBIFC.FlatMesh) => {
-      this.streamMesh(this._webIfc, mesh);
-    });
-
-    // Stream remaining items
-    if (this._assets.length) {
-      this.streamAssets();
-    }
-    if (Object.keys(this._geometries).length) {
-      this.streamGeometries();
-    }
+    // if (optionals.includes(WEBIFC.IFCSPACE)) {
+    //   const index = optionals.indexOf(WEBIFC.IFCSPACE);
+    //   optionals.splice(index, 1);
+    //   this._webIfc.StreamAllMeshesWithTypes(0, [WEBIFC.IFCSPACE], (mesh) => {
+    //     this.streamMesh(this._webIfc, mesh);
+    //   });
+    // }
 
     // Load civil items
     // this.streamAlignment(this._webIfc);
@@ -177,7 +206,7 @@ export class FragmentIfcStreamConverter
     this._meshesWithHoles.clear();
   }
 
-  private streamMesh(webIfc: WEBIFC.IfcAPI, mesh: WEBIFC.FlatMesh) {
+  private getMesh(webIfc: WEBIFC.IfcAPI, mesh: WEBIFC.FlatMesh) {
     const size = mesh.geometries.size();
 
     const asset: StreamedAsset = {
@@ -190,25 +219,20 @@ export class FragmentIfcStreamConverter
       const geometryID = geometry.geometryExpressID;
 
       if (!this._visitedGeometries.has(geometryID)) {
-        this.updateGeometryData(webIfc, geometryID);
+        this.getGeometry(webIfc, geometryID);
         this._visitedGeometries.add(geometryID);
       }
 
       const { x, y, z, w } = geometry.color;
       const color = [x, y, z, w];
-
       const transformation = geometry.flatTransformation;
       asset.geometries.push({ color, geometryID, transformation });
     }
 
     this._assets.push(asset);
-
-    if (this._assets.length > this.settings.maxAssetSize) {
-      this.streamAssets();
-    }
   }
 
-  private updateGeometryData(webIfc: WEBIFC.IfcAPI, id: number) {
+  private getGeometry(webIfc: WEBIFC.IfcAPI, id: number) {
     const geometry = webIfc.GetGeometry(0, id);
 
     const index = webIfc.GetIndexArray(
@@ -232,8 +256,6 @@ export class FragmentIfcStreamConverter
       normal[i / 2] = vertexData[i + 3];
       normal[i / 2 + 1] = vertexData[i + 4];
       normal[i / 2 + 2] = vertexData[i + 5];
-
-      this._currentGeometrySize++;
     }
 
     // const bbox = makeApproxBoundingBox(position, index);
@@ -276,19 +298,18 @@ export class FragmentIfcStreamConverter
       hasHoles,
     };
 
-    if (this._currentGeometrySize > this.settings.maxGeometrySize) {
-      this.streamGeometries();
-    }
+    this._geometryCount++;
   }
 
-  private streamAssets() {
-    this.onAssetStreamed.trigger(this._assets);
+  private async streamAssets() {
+    await this.onAssetStreamed.trigger(this._assets);
+    this._assets = null as any;
     this._assets = [];
   }
 
-  private streamGeometries() {
-    const buffer = this._serializer.export(this._geometries);
-    const data: {
+  private async streamGeometries() {
+    let buffer = this._serializer.export(this._geometries) as Uint8Array;
+    let data: {
       [id: number]: {
         boundingBox: Float32Array;
         hasHoles: boolean;
@@ -298,9 +319,13 @@ export class FragmentIfcStreamConverter
       const { id, boundingBox, hasHoles } = this._geometries[geomID];
       data[id] = { boundingBox, hasHoles };
     }
-    this.onGeometryStreamed.trigger({ data, buffer });
+    await this.onGeometryStreamed.trigger({ data, buffer });
+    // Force memory disposal of all created items
+    data = null as any;
+    buffer = null as any;
+    this._geometries = null as any;
     this._geometries = {};
-    this._currentGeometrySize = 0;
+    this._geometryCount = 0;
   }
 }
 
