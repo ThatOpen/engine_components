@@ -34,6 +34,11 @@ export class FragmentStreamLoader extends Component<any> {
 
   // private _hardlySeenGeometries: THREE.InstancedMesh;
 
+  // This ensures that event executions don't overlap
+  // The next event will fire only when the previous has ended
+  private _isEventFree = true;
+  private _eventDelay = 100;
+
   private _geometryInstances: {
     [modelID: string]: StreamedInstances;
   } = {};
@@ -170,7 +175,7 @@ export class FragmentStreamLoader extends Component<any> {
         }
 
         if (loaded.length) {
-          await this.onFragmentsLoaded.trigger(loaded);
+          await this.notifyFragmentsFound(loaded);
         }
       }
     }
@@ -182,6 +187,7 @@ export class FragmentStreamLoader extends Component<any> {
       const fragments = this._loadedFragments[modelID];
       const geometries = unseen[modelID];
       const deletedFragments: FRAG.Fragment[] = [];
+
       for (const geometryID of geometries) {
         if (!fragments[geometryID]) continue;
         const frags = fragments[geometryID];
@@ -190,7 +196,13 @@ export class FragmentStreamLoader extends Component<any> {
         }
         delete fragments[geometryID];
       }
-      await this.onFragmentsDeleted.trigger(deletedFragments);
+
+      if (!deletedFragments.length) {
+        continue;
+      }
+
+      await this.notifyFragmentsDeleted(deletedFragments);
+
       for (const frag of deletedFragments) {
         frag.mesh.material = [] as THREE.Material[];
         frag.dispose(true);
@@ -239,6 +251,26 @@ export class FragmentStreamLoader extends Component<any> {
 
     result.push(fragment);
   }
+
+  private notifyFragmentsFound = async (frags: FRAG.Fragment[]) => {
+    if (!this._isEventFree) {
+      setTimeout(() => this.notifyFragmentsFound(frags), this._eventDelay);
+    } else {
+      this._isEventFree = false;
+      await this.onFragmentsLoaded.trigger(frags);
+      this._isEventFree = true;
+    }
+  };
+
+  private notifyFragmentsDeleted = async (frags: FRAG.Fragment[]) => {
+    if (!this._isEventFree) {
+      setTimeout(() => this.notifyFragmentsDeleted(frags), this._eventDelay);
+    } else {
+      this._isEventFree = false;
+      await this.onFragmentsDeleted.trigger(frags);
+      this._isEventFree = true;
+    }
+  };
 }
 
 ToolComponent.libraryUUIDs.add(FragmentStreamLoader.uuid);

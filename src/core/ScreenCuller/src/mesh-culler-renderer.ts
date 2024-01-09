@@ -187,9 +187,9 @@ export class MeshCullerRenderer extends CullerRenderer {
     this._meshIDColorCodeMap.set(lastMesh.uuid, previousCode);
 
     // dispose the colorMesh of the deleted geometry
-
     this.colorMeshes.delete(mesh.uuid);
-    colorMeshToDelete.geometry = new THREE.BufferGeometry();
+    colorMeshToDelete.geometry = undefined as any;
+    colorMeshToDelete.material = [];
     disposer.destroy(colorMeshToDelete, false);
   }
 

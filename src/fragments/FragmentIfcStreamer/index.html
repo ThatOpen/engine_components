@@ -83,19 +83,19 @@
         absolute: true
     }
 
-    // const fetchedIfc = await fetch("../../../resources/small.ifc");
-    // const ifcBuffer = await fetchedIfc.arrayBuffer();
-    // streamer.stream(new Uint8Array(ifcBuffer));
-    //
-    // streamer.onGeometryStreamed.add((geometry) => {
-    //     console.log(geometry);
-    // });
-    //
-    // streamer.onAssetStreamed.add((assets) => {
-    //     console.log(assets);
-    // });
+    const fetchedIfc = await fetch("../../../resources/small.ifc");
+    const ifcBuffer = await fetchedIfc.arrayBuffer();
+    streamer.stream(new Uint8Array(ifcBuffer));
 
-    const rawData = await fetch("./test-2.json");
+    streamer.onGeometryStreamed.add((geometry) => {
+        console.log(geometry);
+    });
+
+    streamer.onAssetStreamed.add((assets) => {
+        console.log(assets);
+    });
+
+    const rawData = await fetch("./test.json");
     const data = await rawData.json();
     const {assets, geometries} = data;
     await loader.load("test.ifc", assets, geometries);
@@ -110,10 +110,21 @@
 
     loader.onFragmentsLoaded.add((frags) => {
         for(const frag of frags) {
-            culler.elements.add(frag.mesh);
+            culler.elements.remove(frag.mesh);
         }
-        culler.needsUpdate = true;
     })
+
+    components.camera.controls.addEventListener("controlend", () => {
+        loader.culler.needsUpdate = true;
+        culler.needsUpdate = true;
+    });
+
+    // loader.culler.renderDebugFrame = true;
+    // const debugFrame = loader.culler.get().domElement;
+    // document.body.appendChild(debugFrame);
+    // debugFrame.style.position = 'fixed';
+    // debugFrame.style.left = '0';
+    // debugFrame.style.bottom = '0';
 
     components.camera.controls.addEventListener("controlend", () => {
         loader.culler.needsUpdate = true;
