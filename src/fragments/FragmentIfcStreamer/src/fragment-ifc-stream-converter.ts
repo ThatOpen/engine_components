@@ -1,5 +1,6 @@
 import * as WEBIFC from "web-ifc";
-import { StreamSerializer } from "bim-fragment";
+import * as THREE from "three";
+import * as FRAGS from "bim-fragment";
 import {
   Disposable,
   Event,
@@ -13,6 +14,9 @@ import { Components, ToolComponent } from "../../../core";
 import { IfcStreamingSettings } from "./streaming-settings";
 import { StreamedAsset, StreamedGeometries } from "./base-types";
 import { isPointInFrontOfPlane, obbFromPoints } from "../../../utils";
+import { SpatialStructure } from "../../FragmentIfcLoader/src/spatial-structure";
+import { CivilReader } from "../../FragmentIfcLoader/src/civil-reader";
+import { IfcMetadataReader } from "../../FragmentIfcLoader/src/ifc-metadata-reader";
 
 export class FragmentIfcStreamConverter
   extends Component<WEBIFC.IfcAPI>
@@ -32,6 +36,8 @@ export class FragmentIfcStreamConverter
 
   onAssetStreamed = new Event<StreamedAsset[]>();
 
+  onIfcLoaded = new Event<Uint8Array>();
+
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
 
@@ -41,13 +47,21 @@ export class FragmentIfcStreamConverter
 
   uiElement = new UIElement<{ main: Button; toast: ToastNotification }>();
 
-  onIfcLoaded = new Event();
+  private _spatialTree = new SpatialStructure();
+  private _metaData = new IfcMetadataReader();
 
-  private _visitedGeometries = new Set<number>();
+  private _visitedGeometries = new Map<
+    number,
+    { uuid: string; index: number }
+  >();
+
   private _webIfc = new WEBIFC.IfcAPI();
-  private _serializer = new StreamSerializer();
+  private _streamSerializer = new FRAGS.StreamSerializer();
   private _geometries: StreamedGeometries = {};
   private _geometryCount = 0;
+
+  private _civil = new CivilReader();
+  private _groupSerializer = new FRAGS.Serializer();
 
   private _assets: StreamedAsset[] = [];
 
@@ -68,6 +82,8 @@ export class FragmentIfcStreamConverter
 
   async dispose() {
     this.onIfcLoaded.reset();
+    this.onGeometryStreamed.reset();
+    this.onAssetStreamed.reset();
     await this.uiElement.dispose();
     (this._webIfc as any) = null;
     await this.onDisposed.trigger(FragmentIfcStreamConverter.uuid);
@@ -81,7 +97,6 @@ export class FragmentIfcStreamConverter
     await this.streamAllGeometries();
     this.cleanUp();
 
-    await this.onIfcLoaded.trigger();
     console.log(`Streaming the IFC took ${performance.now() - before} ms!`);
   }
 
@@ -134,10 +149,26 @@ export class FragmentIfcStreamConverter
   private async streamAllGeometries() {
     const { minGeometrySize, minAssetsSize } = this.settings;
 
+    // Precompute the level to which each item belongs
+    this._spatialTree.setUp(this._webIfc);
+
     // Get all IFC objects and group them in chunks of specified size
 
     const allIfcEntities = this._webIfc.GetIfcEntityList(0);
     const chunks: number[][] = [[]];
+
+    const group = new FRAGS.FragmentsGroup();
+    const matrix = this._webIfc.GetCoordinationMatrix(0);
+    group.coordinationMatrix.fromArray(matrix);
+    group.ifcCivil = this._civil.read(this._webIfc);
+
+    const { FILE_NAME, FILE_DESCRIPTION } = WEBIFC;
+    group.ifcMetadata = {
+      name: this._metaData.get(this._webIfc, FILE_NAME),
+      description: this._metaData.get(this._webIfc, FILE_DESCRIPTION),
+      schema: (this._webIfc.GetModelSchema(0) as FRAGS.IfcSchema) || "IFC2X3",
+      maxExpressID: this._webIfc.GetMaxExpressID(0),
+    };
 
     let counter = 0;
     let index = 0;
@@ -153,19 +184,25 @@ export class FragmentIfcStreamConverter
           index++;
           chunks.push([]);
         }
-        chunks[index].push(result.get(i));
+        const itemID = result.get(i);
+        chunks[index].push(itemID);
+        const level = this._spatialTree.itemsByFloor[itemID] || 0;
+        group.data[itemID] = [[], [level, type]];
         counter++;
       }
     }
 
+    this._spatialTree.cleanUp();
+
     for (const chunk of chunks) {
       this._webIfc.StreamMeshes(0, chunk, (mesh) => {
-        this.getMesh(this._webIfc, mesh);
+        this.getMesh(this._webIfc, mesh, group);
       });
 
       if (this._geometryCount > minGeometrySize) {
         await this.streamGeometries();
       }
+
       if (this._assets.length > minAssetsSize) {
         await this.streamAssets();
       }
@@ -180,21 +217,14 @@ export class FragmentIfcStreamConverter
       await this.streamAssets();
     }
 
-    // Some categories (like IfcSpace) need to be created explicitly
-    // const optionals = [...this.settings.optionalCategories];
+    for (const entry of this._visitedGeometries) {
+      const { index, uuid } = entry[1];
+      group.keyFragments[index] = uuid;
+    }
 
-    // Force IFC space to be transparent
-    // if (optionals.includes(WEBIFC.IFCSPACE)) {
-    //   const index = optionals.indexOf(WEBIFC.IFCSPACE);
-    //   optionals.splice(index, 1);
-    //   this._webIfc.StreamAllMeshesWithTypes(0, [WEBIFC.IFCSPACE], (mesh) => {
-    //     this.streamMesh(this._webIfc, mesh);
-    //   });
-    // }
-
-    // Load civil items
-    // this.streamAlignment(this._webIfc);
-    // this.streamCrossSection(this._webIfc);
+    const buffer = this._groupSerializer.export(group);
+    await this.onIfcLoaded.trigger(buffer);
+    group.dispose(true);
   }
 
   private cleanUp() {
@@ -206,13 +236,16 @@ export class FragmentIfcStreamConverter
     this._meshesWithHoles.clear();
   }
 
-  private getMesh(webIfc: WEBIFC.IfcAPI, mesh: WEBIFC.FlatMesh) {
+  private getMesh(
+    webIfc: WEBIFC.IfcAPI,
+    mesh: WEBIFC.FlatMesh,
+    group: FRAGS.FragmentsGroup
+  ) {
     const size = mesh.geometries.size();
 
-    const asset: StreamedAsset = {
-      id: mesh.expressID,
-      geometries: [],
-    };
+    const id = mesh.expressID;
+
+    const asset: StreamedAsset = { id, geometries: [] };
 
     for (let i = 0; i < size; i++) {
       const geometry = mesh.geometries.get(i);
@@ -220,8 +253,16 @@ export class FragmentIfcStreamConverter
 
       if (!this._visitedGeometries.has(geometryID)) {
         this.getGeometry(webIfc, geometryID);
-        this._visitedGeometries.add(geometryID);
+        const index = this._visitedGeometries.size;
+        const uuid = THREE.MathUtils.generateUUID();
+        this._visitedGeometries.set(geometryID, { uuid, index });
       }
+
+      const geometryData = this._visitedGeometries.get(geometryID);
+      if (geometryData === undefined) {
+        throw new Error("Error getting geometry data for streaming!");
+      }
+      group.data[id][0].push(geometryData.index);
 
       const { x, y, z, w } = geometry.color;
       const color = [x, y, z, w];
@@ -308,7 +349,7 @@ export class FragmentIfcStreamConverter
   }
 
   private async streamGeometries() {
-    let buffer = this._serializer.export(this._geometries) as Uint8Array;
+    let buffer = this._streamSerializer.export(this._geometries) as Uint8Array;
     let data: {
       [id: number]: {
         boundingBox: Float32Array;

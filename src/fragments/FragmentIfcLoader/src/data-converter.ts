@@ -3,7 +3,6 @@ import { BufferGeometry } from "three";
 import * as WEBIFC from "web-ifc";
 import * as FRAGS from "bim-fragment";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
-import { IfcAlignmentData } from "bim-fragment";
 import {
   IfcCategories,
   IfcItemsCategories,
@@ -15,6 +14,8 @@ import { IfcGeometries } from "./types";
 import { toCompositeID } from "../../../utils";
 import { FragmentBoundingBox } from "../../FragmentBoundingBox";
 import { Components } from "../../../core";
+import { CivilReader } from "./civil-reader";
+import { IfcMetadataReader } from "./ifc-metadata-reader";
 
 export class DataConverter {
   settings = new IfcFragmentSettings();
@@ -32,6 +33,9 @@ export class DataConverter {
   private _propertyExporter = new IfcJsonExporter();
 
   private readonly _spatialTree = new SpatialStructure();
+
+  private _civilReader = new CivilReader();
+  private _metaData = new IfcMetadataReader();
 
   constructor(components: Components) {
     this.components = components;
@@ -83,30 +87,11 @@ export class DataConverter {
 
   private getIfcMetadata(webIfc: WEBIFC.IfcAPI) {
     const { FILE_NAME, FILE_DESCRIPTION } = WEBIFC;
-    const name = this.getMetadataEntry(webIfc, FILE_NAME);
-    const description = this.getMetadataEntry(webIfc, FILE_DESCRIPTION);
+    const name = this._metaData.get(webIfc, FILE_NAME);
+    const description = this._metaData.get(webIfc, FILE_DESCRIPTION);
     const schema = (webIfc.GetModelSchema(0) as FRAGS.IfcSchema) || "IFC2X3";
     const maxExpressID: number = webIfc.GetMaxExpressID(0);
     return { name, description, schema, maxExpressID };
-  }
-
-  private getMetadataEntry(webIfc: WEBIFC.IfcAPI, type: number) {
-    let description = "";
-    const descriptionData = webIfc.GetHeaderLine(0, type) || "";
-    if (!descriptionData) return description;
-    for (const arg of descriptionData.arguments) {
-      if (arg === null || arg === undefined) {
-        continue;
-      }
-      if (Array.isArray(arg)) {
-        for (const subArg of arg) {
-          description += `${subArg.value}|`;
-        }
-      } else {
-        description += `${arg.value}|`;
-      }
-    }
-    return description;
   }
 
   private getProjectID(webIfc: WEBIFC.IfcAPI) {
@@ -144,66 +129,9 @@ export class DataConverter {
     const matrix = new THREE.Matrix4();
     const color = new THREE.Color();
 
-    console.log(civilItems);
+    this._model.ifcCivil = this._civilReader.get(civilItems);
+    // console.log(this._model.ifcCivil);
 
-    // Add alignments data
-    if (civilItems.IfcAlignment) {
-      const horizontalAlignments = new IfcAlignmentData();
-      const verticalAlignments = new IfcAlignmentData();
-      const realAlignments = new IfcAlignmentData();
-      let countH = 0;
-      let countV = 0;
-      let countR = 0;
-      const valuesH: number[] = [];
-      const valuesV: number[] = [];
-      const valuesR: number[] = [];
-
-      for (const alignment of civilItems.IfcAlignment) {
-        horizontalAlignments.alignmentIndex.push(countH);
-        verticalAlignments.alignmentIndex.push(countV);
-        if (alignment.horizontal) {
-          for (const hAlignment of alignment.horizontal) {
-            horizontalAlignments.curveIndex.push(countH);
-            for (const point of hAlignment.points) {
-              valuesH.push(point.x);
-              valuesH.push(point.y);
-              countH++;
-            }
-          }
-        }
-        if (alignment.vertical) {
-          for (const vAlignment of alignment.vertical) {
-            verticalAlignments.curveIndex.push(countV);
-            for (const point of vAlignment.points) {
-              valuesV.push(point.x);
-              valuesV.push(point.y);
-              countV++;
-            }
-          }
-        }
-        if (alignment.curve3D) {
-          for (const rAlignment of alignment.curve3D) {
-            realAlignments.curveIndex.push(countR);
-            for (const point of rAlignment.points) {
-              valuesR.push(point.x);
-              valuesR.push(point.y);
-              valuesR.push(point.z);
-              countR++;
-            }
-          }
-        }
-      }
-
-      horizontalAlignments.coordinates = new Float32Array(valuesH);
-      verticalAlignments.coordinates = new Float32Array(valuesV);
-      realAlignments.coordinates = new Float32Array(valuesR);
-
-      this._model.ifcCivil = {
-        horizontalAlignments,
-        verticalAlignments,
-        realAlignments,
-      };
-    }
     for (const id in geometries) {
       const { buffer, instances } = geometries[id];
 

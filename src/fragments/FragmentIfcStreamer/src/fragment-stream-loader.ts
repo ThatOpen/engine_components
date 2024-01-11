@@ -99,6 +99,7 @@ export class FragmentStreamLoader extends Component<any> {
   update() {}
 
   private async handleSeenGeometries(seen: { [modelID: string]: number[] }) {
+    const now = performance.now();
     for (const modelID in seen) {
       const ids = new Set(seen[modelID]);
       const { geometries } = this.models[modelID];
@@ -179,6 +180,8 @@ export class FragmentStreamLoader extends Component<any> {
         }
       }
     }
+
+    console.log(`This took ${performance.now() - now}!`);
   }
 
   private async handleUnseenGeometries(unseen: { [p: string]: number[] }) {

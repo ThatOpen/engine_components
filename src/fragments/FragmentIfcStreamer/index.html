@@ -83,6 +83,8 @@
         absolute: true
     }
 
+    // loader.culler.threshold = 10;
+
     const fetchedIfc = await fetch("../../../resources/small.ifc");
     const ifcBuffer = await fetchedIfc.arrayBuffer();
     streamer.stream(new Uint8Array(ifcBuffer));
@@ -95,12 +97,20 @@
         console.log(assets);
     });
 
-    const rawData = await fetch("./test.json");
-    const data = await rawData.json();
-    const {assets, geometries} = data;
-    await loader.load("test.ifc", assets, geometries);
+    streamer.onIfcLoaded.add((groupBuffer) => {
+        console.log(groupBuffer);
+    })
+
+
 
     const culler = new OBC.ScreenCuller(components);
+
+    async function loadModel(url) {
+        const rawData = await fetch(url);
+        const data = await rawData.json();
+        const {assets, geometries} = data;
+        await loader.load(url, assets, geometries);
+    }
 
     loader.onFragmentsDeleted.add((frags) => {
         for(const frag of frags) {
@@ -113,6 +123,9 @@
             culler.elements.remove(frag.mesh);
         }
     })
+
+    await loadModel("./test.json");
+
 
     components.camera.controls.addEventListener("controlend", () => {
         loader.culler.needsUpdate = true;

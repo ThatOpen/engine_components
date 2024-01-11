@@ -82,8 +82,8 @@ export class FragmentIfcLoader
     await this.readIfcFile(data);
 
     await this.readAllGeometries();
-    await this._geometry.streamAlignment(this._webIfc);
-    await this._geometry.streamCrossSection(this._webIfc);
+    this._geometry.streamAlignment(this._webIfc);
+    this._geometry.streamCrossSection(this._webIfc);
 
     const items = this._geometry.items;
     const civItems = this._geometry.CivilItems;

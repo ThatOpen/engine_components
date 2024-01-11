@@ -8,7 +8,7 @@ export class SpatialStructure {
   private _units = new Units();
 
   // TODO: Maybe make this more flexible so that it also support more exotic spatial structures?
-  async setUp(webIfc: WEBIFC.IfcAPI) {
+  setUp(webIfc: WEBIFC.IfcAPI) {
     this._units.setUp(webIfc);
     this.cleanUp();
     try {
