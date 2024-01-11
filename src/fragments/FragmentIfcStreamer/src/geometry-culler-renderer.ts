@@ -75,7 +75,8 @@ export class GeometryCullerRenderer extends CullerRenderer {
     const visitedGeometries = new Map<number, NextColor>();
 
     for (const asset of assets) {
-      // if (asset.id !== 5904139) continue;
+      // if (asset.id !== 186) continue;
+      console.log(asset.id);
 
       for (const geometryData of asset.geometries) {
         const { geometryID, transformation, color } = geometryData;

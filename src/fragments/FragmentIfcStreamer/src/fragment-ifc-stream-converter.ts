@@ -74,6 +74,8 @@ export class FragmentIfcStreamConverter
     if (components.uiEnabled) {
       this.setupUI();
     }
+
+    this.settings.excludedCategories.add(WEBIFC.IFCOPENINGELEMENT);
   }
 
   get(): WEBIFC.IfcAPI {

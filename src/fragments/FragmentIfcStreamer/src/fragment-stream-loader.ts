@@ -4,6 +4,7 @@ import { Component, Event } from "../../../base-types";
 import { StreamedAsset, StreamedGeometries } from "./base-types";
 import { Components, ToolComponent } from "../../../core";
 import { GeometryCullerRenderer } from "./geometry-culler-renderer";
+import { FragmentManager } from "../../FragmentManager";
 
 interface StreamedInstance {
   id: string;
@@ -13,6 +14,12 @@ interface StreamedInstance {
 
 interface StreamedInstances {
   [geometryID: number]: StreamedInstance[];
+}
+
+export interface StreamLoaderSettings {
+  assets: StreamedAsset[];
+  geometries: StreamedGeometries;
+  globalDataFileId: string;
 }
 
 export class FragmentStreamLoader extends Component<any> {
@@ -31,6 +38,8 @@ export class FragmentStreamLoader extends Component<any> {
   } = {};
 
   serializer = new FRAG.StreamSerializer();
+
+  url = "http://dev.api.thatopen.com/storage?fileId=";
 
   // private _hardlySeenGeometries: THREE.InstancedMesh;
 
@@ -71,13 +80,18 @@ export class FragmentStreamLoader extends Component<any> {
 
   static readonly uuid = "22437e8d-9dbc-4b99-a04f-d2da280d50c8" as const;
 
-  async load(
-    modelID: string,
-    assets: StreamedAsset[],
-    geometries: StreamedGeometries
-  ) {
-    this.culler.add(modelID, assets, geometries);
-    this.models[modelID] = { assets, geometries };
+  async load(settings: StreamLoaderSettings) {
+    const { assets, geometries, globalDataFileId } = settings;
+
+    const groupUrl = this.url + globalDataFileId;
+    const groupData = await fetch(groupUrl);
+    const groupArrayBuffer = await groupData.arrayBuffer();
+    const groupBuffer = new Uint8Array(groupArrayBuffer);
+    const fragments = this.components.tools.get(FragmentManager);
+    const group = await fragments.load(groupBuffer);
+
+    this.culler.add(group.uuid, assets, geometries);
+    this.models[group.uuid] = { assets, geometries };
 
     const instances: StreamedInstances = {};
 
@@ -91,7 +105,7 @@ export class FragmentStreamLoader extends Component<any> {
       }
     }
 
-    this._geometryInstances[modelID] = instances;
+    this._geometryInstances[group.uuid] = instances;
   }
 
   get() {}
@@ -117,10 +131,8 @@ export class FragmentStreamLoader extends Component<any> {
         }
       }
 
-      const base = "http://dev.api.thatopen.com:3000/storage?fileId=";
-
       for (const file of files) {
-        const url = base + file;
+        const url = this.url + file;
         const fetched = await fetch(url);
         const buffer = await fetched.arrayBuffer();
         const bytes = new Uint8Array(buffer);

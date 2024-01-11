@@ -33,7 +33,7 @@
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
         "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
         "openbim-components": "../../../resources/openbim-components.js",
-         "client-zip": "https://unpkg.com/client-zip@2.3.0/index.js"
+        "client-zip": "https://unpkg.com/client-zip@2.3.0/index.js"
       }
     }
 </script>
@@ -85,21 +85,21 @@
 
     // loader.culler.threshold = 10;
 
-    const fetchedIfc = await fetch("../../../resources/small.ifc");
-    const ifcBuffer = await fetchedIfc.arrayBuffer();
-    streamer.stream(new Uint8Array(ifcBuffer));
-
-    streamer.onGeometryStreamed.add((geometry) => {
-        console.log(geometry);
-    });
-
-    streamer.onAssetStreamed.add((assets) => {
-        console.log(assets);
-    });
-
-    streamer.onIfcLoaded.add((groupBuffer) => {
-        console.log(groupBuffer);
-    })
+    // const fetchedIfc = await fetch("../../../resources/small.ifc");
+    // const ifcBuffer = await fetchedIfc.arrayBuffer();
+    // streamer.stream(new Uint8Array(ifcBuffer));
+    //
+    // streamer.onGeometryStreamed.add((geometry) => {
+    //     console.log(geometry);
+    // });
+    //
+    // streamer.onAssetStreamed.add((assets) => {
+    //     console.log(assets);
+    // });
+    //
+    // streamer.onIfcLoaded.add(async (groupBuffer) => {
+    //     console.log(groupBuffer);
+    // })
 
 
 
@@ -108,8 +108,7 @@
     async function loadModel(url) {
         const rawData = await fetch(url);
         const data = await rawData.json();
-        const {assets, geometries} = data;
-        await loader.load(url, assets, geometries);
+        await loader.load(data);
     }
 
     loader.onFragmentsDeleted.add((frags) => {
