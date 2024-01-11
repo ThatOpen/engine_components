@@ -178,6 +178,9 @@ export class FragmentIfcStreamConverter
       if (!this._webIfc.IsIfcElement(type) && type !== WEBIFC.IFCSPACE) {
         continue;
       }
+      if (this.settings.excludedCategories.has(type)) {
+        continue;
+      }
       const result = this._webIfc.GetLineIDsWithType(0, type);
       const size = result.size();
       for (let i = 0; i < size; i++) {
