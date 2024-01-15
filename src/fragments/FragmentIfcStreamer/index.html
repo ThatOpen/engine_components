@@ -123,8 +123,14 @@
         }
     })
 
-    await loadModel("./test.json");
-
+    // await loadModel("http://localhost:3000/storage?fileId=dm1_ark.ifc-processed.json");
+    await loadModel("http://localhost:3000/storage?fileId=dm1_riv.ifc-processed.json");
+    //
+    // fragments.baseCoordinationModel = fragments.groups[0].uuid;
+    // fragments.coordinate();
+    // for(const group of fragments.groups) {
+    //     console.log(group);
+    // }
 
     components.camera.controls.addEventListener("controlend", () => {
         loader.culler.needsUpdate = true;

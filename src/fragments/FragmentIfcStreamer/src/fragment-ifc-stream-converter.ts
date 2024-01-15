@@ -160,9 +160,6 @@ export class FragmentIfcStreamConverter
     const chunks: number[][] = [[]];
 
     const group = new FRAGS.FragmentsGroup();
-    const matrix = this._webIfc.GetCoordinationMatrix(0);
-    group.coordinationMatrix.fromArray(matrix);
-    group.ifcCivil = this._civil.read(this._webIfc);
 
     const { FILE_NAME, FILE_DESCRIPTION } = WEBIFC;
     group.ifcMetadata = {
@@ -226,6 +223,10 @@ export class FragmentIfcStreamConverter
       const { index, uuid } = entry[1];
       group.keyFragments[index] = uuid;
     }
+
+    const matrix = this._webIfc.GetCoordinationMatrix(0);
+    group.coordinationMatrix.fromArray(matrix);
+    group.ifcCivil = this._civil.read(this._webIfc);
 
     const buffer = this._groupSerializer.export(group);
     await this.onIfcLoaded.trigger(buffer);

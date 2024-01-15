@@ -29,6 +29,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
   private _maxHiddenTime = 10000;
   private _lastUpdate = 0;
 
+  private _indices = new Map<string, number>();
   private _boundingBoxes = new BoundingBoxes();
 
   readonly onViewUpdated = new Event<{
@@ -75,12 +76,12 @@ export class GeometryCullerRenderer extends CullerRenderer {
     const visitedGeometries = new Map<number, NextColor>();
 
     for (const asset of assets) {
-      // if (asset.id !== 186) continue;
-      console.log(asset.id);
-
       for (const geometryData of asset.geometries) {
         const { geometryID, transformation, color } = geometryData;
         const { boundingBox, hasHoles } = geometries[geometryID];
+
+        const id = this.getInstanceID(modelID, asset.id, geometryID);
+        this._indices.set(id, this._boundingBoxes.mesh.count);
 
         let nextColor: NextColor;
         if (visitedGeometries.has(geometryID)) {
@@ -120,6 +121,20 @@ export class GeometryCullerRenderer extends CullerRenderer {
     THREE.ColorManagement.enabled = colorEnabled;
 
     // this.components.scene.get().add(this._boundingBoxes.mesh.clone());
+  }
+
+  setTransformation(
+    modelID: string,
+    assetID: number,
+    geometryID: number,
+    transform: THREE.Matrix4
+  ) {
+    const id = this.getInstanceID(modelID, assetID, geometryID);
+    const index = this._indices.get(id);
+    if (index === undefined) {
+      throw new Error(`Instance not found: ${id}`);
+    }
+    this._boundingBoxes.mesh.setMatrixAt(index, transform);
   }
 
   private handleWorkerMessage = async (event: MessageEvent) => {
@@ -289,5 +304,9 @@ export class GeometryCullerRenderer extends CullerRenderer {
     this._modelIDIndex.set(modelID, count);
     this._indexModelID.set(count, modelID);
     return count;
+  }
+
+  private getInstanceID(modelID: string, asset: number, geometryID: number) {
+    return `${modelID}-${asset}-${geometryID}`;
   }
 }

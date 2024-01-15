@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import * as FRAG from "bim-fragment";
+import { FragmentsGroup } from "bim-fragment";
 import { Component, Event } from "../../../base-types";
 import { StreamedAsset, StreamedGeometries } from "./base-types";
 import { Components, ToolComponent } from "../../../core";
@@ -112,9 +113,30 @@ export class FragmentStreamLoader extends Component<any> {
 
   update() {}
 
+  setTransformation(modelID: string, transform: THREE.Matrix4) {
+    if (!this.models[modelID]) {
+      throw new Error(`Model ${modelID} not found!`);
+    }
+    const { assets } = this.models[modelID];
+    const tempMatrix = new THREE.Matrix4();
+    for (const asset of assets) {
+      const { id } = asset;
+      for (const { geometryID, transformation } of asset.geometries) {
+        tempMatrix.fromArray(transformation);
+        tempMatrix.premultiply(transform);
+        this.culler.setTransformation(modelID, id, geometryID, tempMatrix);
+      }
+    }
+  }
+
   private async handleSeenGeometries(seen: { [modelID: string]: number[] }) {
-    const now = performance.now();
     for (const modelID in seen) {
+      const fragments = this.components.tools.get(FragmentManager);
+      const group = fragments.groups.find((group) => group.uuid === modelID);
+      if (!group) {
+        throw new Error("Fragment group not found!");
+      }
+
       const ids = new Set(seen[modelID]);
       const { geometries } = this.models[modelID];
 
@@ -182,8 +204,8 @@ export class FragmentStreamLoader extends Component<any> {
               }
             }
 
-            this.newFragment(modelID, geometryID, geom, transp, true, loaded);
-            this.newFragment(modelID, geometryID, geom, opaque, false, loaded);
+            this.newFragment(group, geometryID, geom, transp, true, loaded);
+            this.newFragment(group, geometryID, geom, opaque, false, loaded);
           }
         }
 
@@ -192,24 +214,29 @@ export class FragmentStreamLoader extends Component<any> {
         }
       }
     }
-
-    console.log(`This took ${performance.now() - now}!`);
   }
 
   private async handleUnseenGeometries(unseen: { [p: string]: number[] }) {
     for (const modelID in unseen) {
+      const fragments = this.components.tools.get(FragmentManager);
+      const group = fragments.groups.find((group) => group.uuid === modelID);
+      if (!group) {
+        throw new Error("Fragment group not found!");
+      }
+
       if (!this._loadedFragments[modelID]) continue;
-      const fragments = this._loadedFragments[modelID];
+      const loadedFrags = this._loadedFragments[modelID];
       const geometries = unseen[modelID];
       const deletedFragments: FRAG.Fragment[] = [];
 
       for (const geometryID of geometries) {
-        if (!fragments[geometryID]) continue;
-        const frags = fragments[geometryID];
+        if (!loadedFrags[geometryID]) continue;
+        const frags = loadedFrags[geometryID];
         for (const frag of frags) {
+          group.items.splice(group.items.indexOf(frag), 1);
           deletedFragments.push(frag);
         }
-        delete fragments[geometryID];
+        delete loadedFrags[geometryID];
       }
 
       if (!deletedFragments.length) {
@@ -228,7 +255,7 @@ export class FragmentStreamLoader extends Component<any> {
   // private async handleHardlySeenGeometries() {}
 
   private newFragment(
-    modelID: string,
+    group: FragmentsGroup,
     geometryID: number,
     geometry: FRAG.IFragmentGeometry,
     instances: StreamedInstance[],
@@ -243,10 +270,13 @@ export class FragmentStreamLoader extends Component<any> {
     const material = transparent ? this._baseMaterialT : this._baseMaterial;
     const fragment = new FRAG.Fragment(geometry, material, instances.length);
 
-    if (!this._loadedFragments[modelID]) {
-      this._loadedFragments[modelID] = {};
+    group.add(fragment.mesh);
+    group.items.push(fragment);
+
+    if (!this._loadedFragments[group.uuid]) {
+      this._loadedFragments[group.uuid] = {};
     }
-    const geoms = this._loadedFragments[modelID];
+    const geoms = this._loadedFragments[group.uuid];
     if (!geoms[geometryID]) {
       geoms[geometryID] = [];
     }
