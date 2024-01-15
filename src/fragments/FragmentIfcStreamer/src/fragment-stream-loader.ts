@@ -113,20 +113,15 @@ export class FragmentStreamLoader extends Component<any> {
 
   update() {}
 
-  setTransformation(modelID: string, transform: THREE.Matrix4) {
+  applyTransformation(modelID: string, transform: THREE.Matrix4) {
     if (!this.models[modelID]) {
       throw new Error(`Model ${modelID} not found!`);
     }
     const { assets } = this.models[modelID];
-    const tempMatrix = new THREE.Matrix4();
     for (const asset of assets) {
-      const { id } = asset;
-      for (const { geometryID, transformation } of asset.geometries) {
-        tempMatrix.fromArray(transformation);
-        tempMatrix.premultiply(transform);
-        this.culler.setTransformation(modelID, id, geometryID, tempMatrix);
-      }
+      this.culler.applyTransformation(modelID, asset.id, transform);
     }
+    this.culler.boxes.update();
   }
 
   private async handleSeenGeometries(seen: { [modelID: string]: number[] }) {
@@ -292,7 +287,6 @@ export class FragmentStreamLoader extends Component<any> {
     }
 
     fragment.mesh.instanceColor!.needsUpdate = true;
-    this.components.scene.get().add(fragment.mesh);
 
     result.push(fragment);
   }

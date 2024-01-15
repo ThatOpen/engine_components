@@ -25,12 +25,13 @@ export class GeometryCullerRenderer extends CullerRenderer {
   /* Pixels in screen a geometry must occupy to be considered "seen". */
   threshold = 400;
 
+  boxes = new BoundingBoxes();
+
   private _maxLostTime = 30000;
   private _maxHiddenTime = 10000;
-  private _lastUpdate = 0;
 
-  private _indices = new Map<string, number>();
-  private _boundingBoxes = new BoundingBoxes();
+  private _lastUpdate = 0;
+  private _assetIndices: { [modelID: string]: Map<number, number[]> } = {};
 
   readonly onViewUpdated = new Event<{
     seen: { [modelID: string]: number[] };
@@ -50,7 +51,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
   constructor(components: Components, settings?: CullerRendererSettings) {
     super(components, settings);
 
-    this.scene.add(this._boundingBoxes.mesh);
+    this.scene.add(this.boxes.mesh);
 
     this.worker.addEventListener("message", this.handleWorkerMessage);
     if (this.autoUpdate) {
@@ -75,13 +76,16 @@ export class GeometryCullerRenderer extends CullerRenderer {
     type NextColor = { r: number; g: number; b: number; code: string };
     const visitedGeometries = new Map<number, NextColor>();
 
+    // Store the index of the instances per asset to be able to access it later
+    this._assetIndices[modelID] = new Map();
+    const indices = this._assetIndices[modelID];
+
     for (const asset of assets) {
+      const start = this.boxes.mesh.count;
+
       for (const geometryData of asset.geometries) {
         const { geometryID, transformation, color } = geometryData;
         const { boundingBox, hasHoles } = geometries[geometryID];
-
-        const id = this.getInstanceID(modelID, asset.id, geometryID);
-        this._indices.set(id, this._boundingBoxes.mesh.count);
 
         let nextColor: NextColor;
         if (visitedGeometries.has(geometryID)) {
@@ -92,11 +96,11 @@ export class GeometryCullerRenderer extends CullerRenderer {
         }
         const { r, g, b, code } = nextColor;
 
-        const count = this._boundingBoxes.mesh.count;
+        const count = this.boxes.mesh.count;
 
         const colorArray = [r, g, b];
         const bbox = Object.values(boundingBox);
-        this._boundingBoxes.add(bbox, transformation, colorArray);
+        this.boxes.add(bbox, transformation, colorArray);
 
         const translucent = hasHoles || color[3] !== 1;
 
@@ -115,26 +119,34 @@ export class GeometryCullerRenderer extends CullerRenderer {
           box.translucent = box.translucent || translucent;
         }
       }
+
+      const end = this.boxes.mesh.count;
+      indices.set(asset.id, [start, end]);
     }
 
-    this._boundingBoxes.update();
+    this.boxes.update();
     THREE.ColorManagement.enabled = colorEnabled;
 
     // this.components.scene.get().add(this._boundingBoxes.mesh.clone());
   }
 
-  setTransformation(
+  applyTransformation(
     modelID: string,
     assetID: number,
-    geometryID: number,
     transform: THREE.Matrix4
   ) {
-    const id = this.getInstanceID(modelID, assetID, geometryID);
-    const index = this._indices.get(id);
-    if (index === undefined) {
-      throw new Error(`Instance not found: ${id}`);
+    const indices = this._assetIndices[modelID];
+    const found = indices.get(assetID);
+    if (!found) {
+      throw new Error(`Instance not found: ${modelID}-${assetID}`);
     }
-    this._boundingBoxes.mesh.setMatrixAt(index, transform);
+    const [start, end] = found;
+    const tempMatrix = new THREE.Matrix4();
+    for (let i = start; i < end; i++) {
+      this.boxes.mesh.getMatrixAt(i, tempMatrix);
+      tempMatrix.premultiply(transform);
+      this.boxes.mesh.setMatrixAt(i, tempMatrix);
+    }
   }
 
   private handleWorkerMessage = async (event: MessageEvent) => {
@@ -270,7 +282,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
   private setVisibility(boxes: CullerBoundingBox[], visible: boolean) {
     const now = performance.now();
     const tempMatrix = new THREE.Matrix4();
-    const { mesh } = this._boundingBoxes;
+    const { mesh } = this.boxes;
     for (const box of boxes) {
       if (visible) {
         if (!box.transforms) {
@@ -304,9 +316,5 @@ export class GeometryCullerRenderer extends CullerRenderer {
     this._modelIDIndex.set(modelID, count);
     this._indexModelID.set(count, modelID);
     return count;
-  }
-
-  private getInstanceID(modelID: string, asset: number, geometryID: number) {
-    return `${modelID}-${asset}-${geometryID}`;
   }
 }

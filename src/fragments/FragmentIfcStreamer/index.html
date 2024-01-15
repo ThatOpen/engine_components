@@ -123,14 +123,16 @@
         }
     })
 
-    // await loadModel("http://localhost:3000/storage?fileId=dm1_ark.ifc-processed.json");
-    await loadModel("http://localhost:3000/storage?fileId=dm1_riv.ifc-processed.json");
-    //
-    // fragments.baseCoordinationModel = fragments.groups[0].uuid;
-    // fragments.coordinate();
-    // for(const group of fragments.groups) {
-    //     console.log(group);
-    // }
+    // await loadModel("test.json");
+    await loadModel("dm1_ark.json");
+    await loadModel("dm1_riv.json");
+
+    fragments.baseCoordinationModel = fragments.groups[0].uuid;
+    fragments.coordinate();
+    for(const group of fragments.groups) {
+        const {uuid, matrix} = group;
+        loader.applyTransformation(uuid, matrix);
+    }
 
     components.camera.controls.addEventListener("controlend", () => {
         loader.culler.needsUpdate = true;
@@ -143,11 +145,6 @@
     // debugFrame.style.position = 'fixed';
     // debugFrame.style.left = '0';
     // debugFrame.style.bottom = '0';
-
-    components.camera.controls.addEventListener("controlend", () => {
-        loader.culler.needsUpdate = true;
-        culler.needsUpdate = true;
-    });
 
 
     // Set up stats
