@@ -92,9 +92,19 @@ export class FragmentIfcStreamConverter
     this.onDisposed.reset();
   }
 
-  async stream(data: Uint8Array) {
+  async streamFromBuffer(data: Uint8Array) {
     const before = performance.now();
     await this.readIfcFile(data);
+
+    await this.streamAllGeometries();
+    this.cleanUp();
+
+    console.log(`Streaming the IFC took ${performance.now() - before} ms!`);
+  }
+
+  async streamFromCallBack(loadCallback: WEBIFC.ModelLoadCallback) {
+    const before = performance.now();
+    await this.streamIfcFile(loadCallback);
 
     await this.streamAllGeometries();
     this.cleanUp();
@@ -123,7 +133,7 @@ export class FragmentIfcStreamConverter
         const file = fileOpener.files[0];
         const buffer = await file.arrayBuffer();
         const data = new Uint8Array(buffer);
-        await this.stream(data);
+        await this.streamFromBuffer(data);
         toast.visible = true;
         await fragments.updateWindow();
         fileOpener.remove();
@@ -146,6 +156,16 @@ export class FragmentIfcStreamConverter
       this._webIfc.SetLogLevel(logLevel);
     }
     this._webIfc.OpenModel(data, this.settings.webIfc);
+  }
+
+   private async streamIfcFile(loadCallback: WEBIFC.ModelLoadCallback) {
+    const { path, absolute, logLevel } = this.settings.wasm;
+    this._webIfc.SetWasmPath(path, absolute);
+    await this._webIfc.Init();
+    if (logLevel) {
+      this._webIfc.SetLogLevel(logLevel);
+    }
+    this._webIfc.OpenModelFromCallback(loadCallback, this.settings.webIfc);
   }
 
   private async streamAllGeometries() {
