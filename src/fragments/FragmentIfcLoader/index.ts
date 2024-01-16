@@ -133,8 +133,8 @@ export class FragmentIfcLoader
     await this.readIfcFile(data);
 
     await this.readAllGeometries();
-    await this._geometry.streamAlignment(this._webIfc);
-    await this._geometry.streamCrossSection(this._webIfc);
+    this._geometry.streamAlignment(this._webIfc);
+    this._geometry.streamCrossSection(this._webIfc);
 
     const items = this._geometry.items;
     const civItems = this._geometry.CivilItems;
@@ -221,7 +221,7 @@ export class FragmentIfcLoader
     this._converter.saveIfcCategories(this._webIfc);
 
     // Some categories (like IfcSpace) need to be created explicitly
-    const optionals = this.settings.optionalCategories;
+    const optionals = [...this.settings.optionalCategories];
 
     // Force IFC space to be transparent
     if (optionals.includes(WEBIFC.IFCSPACE)) {
