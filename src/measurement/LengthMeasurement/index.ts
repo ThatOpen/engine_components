@@ -107,11 +107,8 @@ export class LengthMeasurement
   /** {@link Hideable.visible} */
   set visible(value: boolean) {
     this._visible = value;
-    if (!this._visible) {
-      this.enabled = false;
-    }
     for (const dimension of this._measurements) {
-      dimension.visible = this._visible;
+      dimension.visible = value;
     }
   }
 
