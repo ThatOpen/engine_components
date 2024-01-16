@@ -26,11 +26,7 @@ export class SimpleDimensionLine {
     this.label.visible = value;
     this._endpoints[0].visible = value;
     this._endpoints[1].visible = value;
-    if (value) {
-      this._components.scene.get().add(this._root);
-    } else {
-      this._root.removeFromParent();
-    }
+    this._root.visible = value;
   }
 
   set endPoint(point: THREE.Vector3) {
