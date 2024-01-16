@@ -39,7 +39,7 @@ export class Components implements Disposable {
 
   enabled = false;
 
-  static readonly release = "1.2.0";
+  static readonly release = "1.3.0";
 
   /** Whether UI components should be created. */
   uiEnabled = true;
@@ -175,7 +175,7 @@ export class Components implements Disposable {
     const disposer = this.tools.get(Disposer);
     this.enabled = false;
     await this.tools.dispose();
-    await this.ui.dispose();
+    await this.ui?.dispose();
     this.onInitialized.reset();
     this._clock.stop();
     for (const mesh of this.meshes) {
