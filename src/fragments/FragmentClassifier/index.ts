@@ -9,7 +9,7 @@ import { FragmentManager } from "../FragmentManager";
 
 export interface Classification {
   [system: string]: {
-    [className: string]: { [fragmentID: string]: Set<string> };
+    [className: string]: FragmentIdMap;
   };
 }
 
@@ -201,7 +201,7 @@ export class FragmentClassifier
             currentType[fragmentID] = new Set<string>();
           }
           const currentFragment = currentType[fragmentID];
-          currentFragment.add(entity.expressID);
+          currentFragment.add(String(entity.expressID));
         }
       }
     }
