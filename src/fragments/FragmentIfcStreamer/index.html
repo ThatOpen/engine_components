@@ -119,13 +119,13 @@
 
     loader.onFragmentsLoaded.add((frags) => {
         for(const frag of frags) {
-            culler.elements.remove(frag.mesh);
+            culler.elements.add(frag.mesh);
         }
     })
 
     // await loadModel("test.json");
-    await loadModel("dm1_ark.json");
-    await loadModel("dm1_riv.json");
+    await loadModel("test-2.json");
+    // await loadModel("dm1_riv.json");
 
     fragments.baseCoordinationModel = fragments.groups[0].uuid;
     fragments.coordinate();
