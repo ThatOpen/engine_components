@@ -175,24 +175,24 @@ export class Components implements Disposable {
     const disposer = this.tools.get(Disposer);
     this.enabled = false;
     await this.tools.dispose();
-    await this.ui?.dispose();
+    await this._ui?.dispose();
     this.onInitialized.reset();
     this._clock.stop();
     for (const mesh of this.meshes) {
       disposer.destroy(mesh);
     }
     this.meshes.length = 0;
-    if (this.renderer.isDisposeable()) {
-      await this.renderer.dispose();
+    if (this._renderer?.isDisposeable()) {
+      await this._renderer.dispose();
     }
-    if (this.scene.isDisposeable()) {
-      await this.scene.dispose();
+    if (this._scene?.isDisposeable()) {
+      await this._scene.dispose();
     }
-    if (this.camera.isDisposeable()) {
-      await this.camera.dispose();
+    if (this._camera?.isDisposeable()) {
+      await this._camera.dispose();
     }
-    if (this.raycaster.isDisposeable()) {
-      await this.raycaster.dispose();
+    if (this._raycaster?.isDisposeable()) {
+      await this._raycaster.dispose();
     }
     await this.onDisposed.trigger();
     this.onDisposed.reset();
