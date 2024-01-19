@@ -364,6 +364,7 @@ export class FragmentIfcStreamConverter
       id,
       hasHoles,
     };
+    geometry.delete();
 
     this._geometryCount++;
   }
