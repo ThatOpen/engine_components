@@ -1,63 +1,72 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <link rel="stylesheet" href="../../../resources/styles.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-  <link rel="stylesheet" href="./top.css">
-  <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
-  <title>UI Manager Component</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-    }
-    .full-screen {
-      width: 100vw;
-      height: 100vh;
-      position: relative;
-      overflow: hidden;
-    }
-  </style>
-</head>
-<body>
-<div class="full-screen" id="viewer-container"></div>
-<script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
-        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
-        "openbim-components": "../../../resources/openbim-components.js"
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="../../../resources/styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    />
+    <link rel="stylesheet" href="./top.css" />
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="../../../resources/favicon.ico"
+    />
+    <title>UI Manager Component</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
       }
-    }
-</script>
-</body>
-<script type="module">
-	import * as OBC from 'openbim-components';
-	import * as THREE from 'three';
+      .full-screen {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="full-screen" id="viewer-container"></div>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+          "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
+          "openbim-components": "../../../resources/openbim-components.js"
+        }
+      }
+    </script>
+  </body>
+  <script type="module">
+    import * as OBC from "openbim-components";
+    import * as THREE from "three";
 
-	// Set up scene (see SimpleScene tutorial)
+    // Set up scene (see SimpleScene tutorial)
 
-	const viewerContainer = document.getElementById('viewer-container');
-	const components = new OBC.Components();
-	components.scene = new OBC.SimpleScene(components);
-	components.renderer = new OBC.SimpleRenderer(components, viewerContainer);
-	components.camera = new OBC.SimpleCamera(components);
-	components.raycaster = new OBC.SimpleRaycaster(components);
-	components.init();
+    const viewerContainer = document.getElementById("viewer-container");
+    const components = new OBC.Components();
+    components.scene = new OBC.SimpleScene(components);
+    components.renderer = new OBC.SimpleRenderer(components, viewerContainer);
+    components.camera = new OBC.SimpleCamera(components);
+    components.raycaster = new OBC.SimpleRaycaster(components);
+    components.init();
 
-	components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+    components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
-	const scene = components.scene.get();
+    const scene = components.scene.get();
 
-	components.scene.setup();
+    components.scene.setup();
 
-	const grid = new OBC.SimpleGrid(components);
+    const grid = new OBC.SimpleGrid(components);
 
-	/*MD
+    /*MD
   ### 🎛️ Making your user interactive
    ---
   One of the most important things about making a BIM app is to give the user the ability to interact with the
@@ -75,7 +84,7 @@
 
    ### 🎨 Adding styles
 
-  The first step is to get the CSS file with the default styles. You can get it from ..................
+  The first step is to get the CSS file with the default styles. You can get it from [Styles.css](https://github.com/IFCjs/components/blob/main/resources/styles.css) 
 
   ### 🧰 Creating a toolbar
   ---
@@ -83,14 +92,14 @@
   place is called a `Toolbar`. Creating and adding a `Toolbar` to the viewer is as simple as this:
   */
 
-	const mainToolbar = new OBC.Toolbar(components);
-	mainToolbar.name = "Main toolbar";
-	components.ui.addToolbar(mainToolbar);
+    const mainToolbar = new OBC.Toolbar(components);
+    mainToolbar.name = "Main toolbar";
+    components.ui.addToolbar(mainToolbar);
 
-	/*MD
+    /*MD
 
 	 By default, the toolbar is added to the bottom 👇 of the viewer container, so you technically don't need to type
-  `position: "bootom"` in the options argument of your toolbar, but we just did it so that you know you can change
+  `position: "bottom"` in the options argument of your toolbar, but we just did it so that you know you can change
   the toolbar position to either top, right, bottom or left.
 
 	:::info What about more complex layouts?
@@ -108,7 +117,7 @@
 
   */
 
-	/*MD
+    /*MD
 
   ### 👨‍🎨 Creating your own UIs
   ___
@@ -118,15 +127,15 @@
 
   */
 
-	const alertButton = new OBC.Button(components);
-	alertButton.materialIcon = "info";
-	alertButton.tooltip = "Information";
-	mainToolbar.addChild(alertButton);
-	alertButton.onClick.add(() => {
-		alert('I\'ve been clicked!');
-	});
+    const alertButton = new OBC.Button(components);
+    alertButton.materialIcon = "info";
+    alertButton.tooltip = "Information";
+    mainToolbar.addChild(alertButton);
+    alertButton.onClick.add(() => {
+      alert("I've been clicked!");
+    });
 
-	/*MD
+    /*MD
 
 	:::warning Where do these cool icons come from?
 
@@ -145,79 +154,78 @@
   boxes. We will also create a super simple function to get a random number within a given limit:
   */
 
-	const boxes = [];
-	const boxGeometry = new THREE.BoxGeometry();
-	const boxMaterial = new THREE.MeshLambertMaterial({ color: '#6528D7' });
+    const boxes = [];
+    const boxGeometry = new THREE.BoxGeometry();
+    const boxMaterial = new THREE.MeshLambertMaterial({ color: "#6528D7" });
 
-	/*MD
+    /*MD
 
   🔢 Next, let's define some simple functions. To create a random number:
 
   */
 
-	function getRandomNumber(limit) {
-		return Math.random() * limit;
-	}
+    function getRandomNumber(limit) {
+      return Math.random() * limit;
+    }
 
-	/*MD
+    /*MD
 
   ✅📦 To delete a box from the scene:
 
   */
 
+    function createBox() {
+      const mesh = new THREE.Mesh(boxGeometry, boxMaterial);
+      scene.add(mesh);
+      mesh.position.x = getRandomNumber(10);
+      mesh.position.y = getRandomNumber(10);
+      mesh.position.z = getRandomNumber(10);
+      boxes.push(mesh);
+    }
 
-	function createBox() {
-		const mesh = new THREE.Mesh(boxGeometry, boxMaterial);
-		scene.add(mesh);
-		mesh.position.x = getRandomNumber(10);
-		mesh.position.y = getRandomNumber(10);
-		mesh.position.z = getRandomNumber(10);
-		boxes.push(mesh);
-  }
-
-	/*MD
+    /*MD
 
   ❎📦 To delete a box from the scene:
 
   */
 
-	function deleteBox() {
-		if(!boxes.length) return;
-		const box = boxes.pop();
-		box.removeFromParent();
-	}
+    function deleteBox() {
+      if (!boxes.length) return;
+      const box = boxes.pop();
+      box.removeFromParent();
+    }
 
-	/*MD
+    /*MD
 
   ❎📦📦📦 To delete all existing boxes:
 
   */
 
-	function deleteAllBoxes() {
-		const count = boxes.length;
-		for(let i = 0; i < count; i++) {
-			deleteBox();
+    function deleteAllBoxes() {
+      const count = boxes.length;
+      for (let i = 0; i < count; i++) {
+        deleteBox();
+      }
     }
-	}
 
-	/*MD
+    /*MD
 
   🔄📦📦📦 And to animate all the boxes, so that our scene is more interesting:
 
   */
 
-	function animateBoxes() {
-		const oneDegree = Math.PI / 180;
-		for(const box of boxes) {
-			box.rotation.x += oneDegree;
-			box.rotation.y += oneDegree;
-			box.rotation.z += oneDegree;
+    function animateBoxes() {
+      const oneDegree = Math.PI / 180;
+      for (const box of boxes) {
+        box.rotation.x += oneDegree;
+        box.rotation.y += oneDegree;
+        box.rotation.z += oneDegree;
+      }
     }
-  }
 
-	components.renderer.onBeforeUpdate.add(animateBoxes);
+    components.renderer.onBeforeUpdate.add(animateBoxes);
 
-	/*MD
+    /*MD
 
   ### 🌲 Composing menus
   ---
@@ -227,12 +235,12 @@
 
   */
 
-	const cubeTools = new OBC.Button(components);
-	cubeTools.materialIcon = "widgets";
-	cubeTools.tooltip = "Tools";
-	mainToolbar.addChild(cubeTools);
+    const cubeTools = new OBC.Button(components);
+    cubeTools.materialIcon = "widgets";
+    cubeTools.tooltip = "Tools";
+    mainToolbar.addChild(cubeTools);
 
-	/*MD
+    /*MD
 
   Let's start with the button to create boxes. This buttons needs a couple of extra things:
   - A `label` so that it displays the text.
@@ -240,53 +248,53 @@
 
   */
 
-	const createCubeButton = new OBC.Button(components);
-	createCubeButton.materialIcon = "add_box";
-	createCubeButton.label = "Create box";
-	createCubeButton.onClick.add(() => createBox());
-	cubeTools.addChild(createCubeButton);
+    const createCubeButton = new OBC.Button(components);
+    createCubeButton.materialIcon = "add_box";
+    createCubeButton.label = "Create box";
+    createCubeButton.onClick.add(() => createBox());
+    cubeTools.addChild(createCubeButton);
 
-	/*MD
+    /*MD
 
   Now, let's go with the "delete single" and "delete all buttons" buttons. Both are related, so we will group them
   together (yes, multiple-level nesting is allowed!). So first, let's create the parent button:
 
   */
 
-	const deleteCubeButtons = new OBC.Button(components);
-	deleteCubeButtons.materialIcon = "disabled_by_default";
-	deleteCubeButtons.label = "Delete box";
-	cubeTools.addChild(deleteCubeButtons);
+    const deleteCubeButtons = new OBC.Button(components);
+    deleteCubeButtons.materialIcon = "disabled_by_default";
+    deleteCubeButtons.label = "Delete box";
+    cubeTools.addChild(deleteCubeButtons);
 
-	/*MD
+    /*MD
 
   Next, the "delete single" button:
 
   */
 
-	const deleteSingleCubeButton = new OBC.Button(components, {
-		materialIconName: 'disabled_by_default',
-		name: 'Single',
-		closeOnClick: false
-	});
+    const deleteSingleCubeButton = new OBC.Button(components, {
+      materialIconName: "disabled_by_default",
+      name: "Single",
+      closeOnClick: false,
+    });
 
-	deleteSingleCubeButton.onClick.add(() => deleteBox());
+    deleteSingleCubeButton.onClick.add(() => deleteBox());
 
-	deleteCubeButtons.addChild(deleteSingleCubeButton);
+    deleteCubeButtons.addChild(deleteSingleCubeButton);
 
-	/*MD
+    /*MD
 
   And finally the "delete all" button:
 
   */
 
-	const deleteAllCubesButton = new OBC.Button(components);
-	deleteAllCubesButton.materialIcon = "disabled_by_default";
-	deleteAllCubesButton.label = "All";
-	deleteAllCubesButton.onClick.add(() => deleteAllBoxes());
-	deleteCubeButtons.addChild(deleteAllCubesButton);
+    const deleteAllCubesButton = new OBC.Button(components);
+    deleteAllCubesButton.materialIcon = "disabled_by_default";
+    deleteAllCubesButton.label = "All";
+    deleteAllCubesButton.onClick.add(() => deleteAllBoxes());
+    deleteCubeButtons.addChild(deleteAllCubesButton);
 
-	/*MD
+    /*MD
 
   And this is it! Easy, right? You can now create add menus to your components and easily share them with other
   BIM software developers!
@@ -301,25 +309,24 @@
 
   */
 
-	const contextDeleteButtons = new OBC.Button(components);
-	contextDeleteButtons.materialIcon = 'widgets';
-	contextDeleteButtons.label = "Delete";
+    const contextDeleteButtons = new OBC.Button(components);
+    contextDeleteButtons.materialIcon = "widgets";
+    contextDeleteButtons.label = "Delete";
 
-	const deleteAllCubesContextButton = new OBC.Button(components);
-	deleteAllCubesContextButton.materialIcon = "widgets";
-  deleteAllCubesContextButton.label = "All cubes";
-	deleteAllCubesContextButton.onClick.add(() => deleteAllBoxes());
+    const deleteAllCubesContextButton = new OBC.Button(components);
+    deleteAllCubesContextButton.materialIcon = "widgets";
+    deleteAllCubesContextButton.label = "All cubes";
+    deleteAllCubesContextButton.onClick.add(() => deleteAllBoxes());
 
-	contextDeleteButtons.addChild(deleteAllCubesContextButton);
-	components.ui.contextMenu.addChild(contextDeleteButtons);
+    contextDeleteButtons.addChild(deleteAllCubesContextButton);
+    components.ui.contextMenu.addChild(contextDeleteButtons);
 
-	/*MD
+    /*MD
 
   And this is it! 🥳 Cool, right? Now you can easily use the UI elements in the components of this library and the
   marketplace, as well as create your own custom menus in minutes. 💪🎨 You are now one step closer to create your
   BIM applications from scratch. 🔥
 
   */
-
-</script>
+  </script>
 </html>
