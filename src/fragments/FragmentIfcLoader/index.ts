@@ -18,7 +18,8 @@ export * from "./src/types";
 
 export interface FragmentIfcLoaderConfig {
   autoSetWasm: boolean;
-  logLevel?: WEBIFC.LogLevel;
+  logLevel: WEBIFC.LogLevel;
+  customLocateFileHandler: WEBIFC.LocateFileHandlerFn | null;
 }
 
 /**
@@ -45,6 +46,7 @@ export class FragmentIfcLoader
   config: Required<FragmentIfcLoaderConfig> = {
     autoSetWasm: true,
     logLevel: WEBIFC.LogLevel.LOG_LEVEL_ERROR,
+    customLocateFileHandler: null,
   };
 
   readonly onSetup = new Event<FragmentIfcLoader>();
@@ -215,7 +217,7 @@ export class FragmentIfcLoader
   async readIfcFile(data: Uint8Array) {
     const { path, absolute } = this.settings.wasm;
     this._webIfc.SetWasmPath(path, absolute);
-    await this._webIfc.Init();
+    await this._webIfc.Init(this.config.customLocateFileHandler ?? undefined);
     this._webIfc.SetLogLevel(this.config.logLevel);
     return this._webIfc.OpenModel(data, this.settings.webIfc);
   }
