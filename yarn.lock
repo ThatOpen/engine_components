@@ -1025,13 +1025,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tweenjs/tween.js@npm:~18.6.4":
-  version: 18.6.4
-  resolution: "@tweenjs/tween.js@npm:18.6.4"
-  checksum: 47208db3f6c32cde80284a852d0fca016284f90c4798eb4ebb2ebfc2e379504007bf0c031c2c33044df8a0878fd1942ebc4e0b7f5b8bcccf812b532ea1ee73eb
-  languageName: node
-  linkType: hard
-
 "@types/babel__core@npm:^7.0.0, @types/babel__core@npm:^7.1.14":
   version: 7.20.5
   resolution: "@types/babel__core@npm:7.20.5"
@@ -1246,16 +1239,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/three@npm:0.152.1":
-  version: 0.152.1
-  resolution: "@types/three@npm:0.152.1"
+"@types/three@npm:0.160.0":
+  version: 0.160.0
+  resolution: "@types/three@npm:0.160.0"
   dependencies:
-    "@tweenjs/tween.js": ~18.6.4
     "@types/stats.js": "*"
     "@types/webxr": "*"
-    fflate: ~0.6.9
-    lil-gui: ~0.17.0
-  checksum: 25388e5c65414d4dd586ff0ec1615418838ceba293918b66755c08e263975db7913fc75dbe26b3342ba00ea0bc09af7428668194612bbd6ef7dd6cef3e4d4758
+    fflate: ~0.6.10
+    meshoptimizer: ~0.18.1
+  checksum: feec3c36b544f495184b7fc96e79ad4e0d43cd594029de1f1f31fe0a005dd8a0d14d979ead21927bc8fc4d7d3614002fa3a5e0b3e2b642e61ee089171ed9d7d2
   languageName: node
   linkType: hard
 
@@ -1886,15 +1878,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bim-fragment@npm:1.3.1":
-  version: 1.3.1
-  resolution: "bim-fragment@npm:1.3.1"
+"bim-fragment@npm:1.3.2":
+  version: 1.3.2
+  resolution: "bim-fragment@npm:1.3.2"
   dependencies:
     flatbuffers: ^23.3.3
     three-mesh-bvh: 0.6.0
   peerDependencies:
-    three: 0.152.2
-  checksum: 25493ef7dba2cbba8edcd24333b43c3ccfc4b0795f0684e509454689e75fee15694273c458d3f1a4b85b40ab2970303f2bf7b4c3cc92f0dca8bb55949d0f85ac
+    three: ^0.160.1
+  checksum: cc2d894346b09ba215f55f4a2312c9148757c9494eb906777aed902597f423d6b0448ff6a9be4e5f7f131421ca93429f5836dd05071c86ae34627060153e9149
   languageName: node
   linkType: hard
 
@@ -2098,12 +2090,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"camera-controls@npm:^1.36.0":
-  version: 1.38.2
-  resolution: "camera-controls@npm:1.38.2"
+"camera-controls@npm:2.7.3":
+  version: 2.7.3
+  resolution: "camera-controls@npm:2.7.3"
   peerDependencies:
     three: ">=0.126.1"
-  checksum: c452c8342cb35af296acd688d5a99cdf11faf59d4d13b1666353b36ff1dee8e2adad8b6f90ad48862c7bfe3e863d98a35da30ea2e8cb3a2900ed263c7a7c94a4
+  checksum: 33d5429459e44adfab3d79f6ede984b5b7a56764a62d105178ff5f8ef45dc383a1f03b1038d77349eb23deb66838515970d4a96e85bdd2a3e44c02c801452f1a
   languageName: node
   linkType: hard
 
@@ -3324,7 +3316,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fflate@npm:~0.6.9":
+"fflate@npm:~0.6.10":
   version: 0.6.10
   resolution: "fflate@npm:0.6.10"
   checksum: 96384bc4090987fe565c0de8204e3830f538144ec950576fea50aee1b42adbe9fc3ed5e7905dfa7979faaa20979def330dbebce548f3dcafc3e118cc9838526d
@@ -5239,13 +5231,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lil-gui@npm:~0.17.0":
-  version: 0.17.0
-  resolution: "lil-gui@npm:0.17.0"
-  checksum: a6f33e90748ea98477f1f7af6d6cbdc4a1b38ce9da86d674d73f7b0bbdc7f3e947d81edee04c32f33fb28c69a108ba04c24270a8398064ffcc56ffeabc0a916e
-  languageName: node
-  linkType: hard
-
 "lilconfig@npm:^2.1.0":
   version: 2.1.0
   resolution: "lilconfig@npm:2.1.0"
@@ -5481,6 +5466,13 @@ __metadata:
   version: 1.4.1
   resolution: "merge2@npm:1.4.1"
   checksum: 7268db63ed5169466540b6fb947aec313200bcf6d40c5ab722c22e242f651994619bcd85601602972d3c85bd2cc45a358a4c61937e9f11a061919a1da569b0c2
+  languageName: node
+  linkType: hard
+
+"meshoptimizer@npm:~0.18.1":
+  version: 0.18.1
+  resolution: "meshoptimizer@npm:0.18.1"
+  checksum: 101dbed8abd4cf167cdb7a0bc13db90dd0743332c689e43b18cc5254d238f0766750752432401fa63dc7e9e32399ef68daacf48f0d89db1484042c1761c7362d
   languageName: node
   linkType: hard
 
@@ -5741,13 +5733,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"n8ao@npm:^1.5.1":
-  version: 1.7.0
-  resolution: "n8ao@npm:1.7.0"
+"n8ao@npm:1.8.0":
+  version: 1.8.0
+  resolution: "n8ao@npm:1.8.0"
   peerDependencies:
     postprocessing: ">=6.30.0"
     three: ">=0.137"
-  checksum: da3649819c4cdcb084db26dc956d0ee02c9d878b3a9753f6b4ea4dcaf5fa9b3238632c6e41c49a94f33b8f28e5d3a1280cfc88133a9922757fde8eb68690435c
+  checksum: 9687ba8146ea1d0d00a8bddc937591d223543cc9c16d8617da3e8bc5a083f234d6f664d439ba215f3de02ccbabe554c5d5c4fe3e106634c2f11d594a9e5668a4
   languageName: node
   linkType: hard
 
@@ -6053,11 +6045,11 @@ __metadata:
     "@types/mapbox-gl": ^2.7.11
     "@types/node": ^14.14.31
     "@types/node-fetch": ^2.6.4
-    "@types/three": 0.152.1
+    "@types/three": 0.160.0
     "@typescript-eslint/eslint-plugin": ^4.27.0
     "@typescript-eslint/parser": ^4.27.0
-    bim-fragment: 1.3.1
-    camera-controls: ^1.36.0
+    bim-fragment: 1.3.2
+    camera-controls: 2.7.3
     cpy-cli: ^3.1.1
     dexie: ^3.2.3
     dxf-writer: ^1.18.4
@@ -6069,16 +6061,16 @@ __metadata:
     eslint-plugin-prettier: ^3.4.0
     jest: ^27.0.4
     mapbox-gl: ^2.15.0
-    n8ao: ^1.5.1
+    n8ao: 1.8.0
     node-fetch: ^3.3.2
     openbim-clay: 0.0.5
-    postprocessing: ^6.31.0
+    postprocessing: 6.34.1
     prettier: ^2.3.1
     rollup: ^3.2.3
     stats.js: ^0.17.0
     tailwindcss: ^3.3.5
-    three: 0.152.2
-    three-mesh-bvh: 0.6.0
+    three: ^0.160.1
+    three-mesh-bvh: 0.7.0
     top-tool-package-reader: 0.0.3
     ts-jest: ^27.0.3
     ts-node: ^10.0.0
@@ -6086,9 +6078,9 @@ __metadata:
     unzipit: ^1.4.3
     web-ifc: ^0.0.50
   peerDependencies:
-    bim-fragment: 1.3.1
+    bim-fragment: 1.3.2
     mapbox-gl: ^2.15.0
-    three: 0.152.2
+    three: ^0.160.1
     web-ifc: ^0.0.50
   languageName: unknown
   linkType: soft
@@ -6447,12 +6439,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postprocessing@npm:^6.31.0":
-  version: 6.33.3
-  resolution: "postprocessing@npm:6.33.3"
+"postprocessing@npm:6.34.1":
+  version: 6.34.1
+  resolution: "postprocessing@npm:6.34.1"
   peerDependencies:
-    three: ">= 0.138.0 < 0.159.0"
-  checksum: d37ae7438c637c4271d00c94389ae478565d72611cd3a6974cfc0985aaef51fa1357d56c7d853964c72f78e1363031e36a226a4d83b94e8b24c13d9144649a5f
+    three: ">= 0.138.0 < 0.161.0"
+  checksum: e441cc8155b09684833090367590ae55509bc8d2e1c9b2f9dab219626325820d11c97ab962081d10f090014700b0a11bddfc184d22ed278b8b65197d271f494a
   languageName: node
   linkType: hard
 
@@ -7554,10 +7546,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"three-mesh-bvh@npm:0.7.0":
+  version: 0.7.0
+  resolution: "three-mesh-bvh@npm:0.7.0"
+  peerDependencies:
+    three: ">= 0.151.0"
+  checksum: 888259676dfc975d184a8536fd42a870d02704309348677fbcd94a8b710e16749af8806a9e52801992bd00f39feb971863165cdcab4853fa6a3b67447443dfba
+  languageName: node
+  linkType: hard
+
 "three@npm:0.152.2":
   version: 0.152.2
   resolution: "three@npm:0.152.2"
   checksum: 6d2d990dbff60b99c7e58b7f1446bb4bd235c7db5dd848a671385e01ae5c72bec865265be7f5a82907ecc96186acc13177d7de1252bc9592f5c9ebaffd1da1e7
+  languageName: node
+  linkType: hard
+
+"three@npm:^0.160.1":
+  version: 0.160.1
+  resolution: "three@npm:0.160.1"
+  checksum: 5f4be21df6ee5abf63a21513e9650a4956e3699d59f16b4545b27e1c421405d452c132253381e8f5cca3f609d41c4e29dad24fddab526156017ec215ab244ad1
   languageName: node
   linkType: hard
 

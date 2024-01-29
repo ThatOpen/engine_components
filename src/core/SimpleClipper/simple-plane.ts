@@ -192,13 +192,13 @@ export class SimplePlane
     this._arrowBoundBox.geometry.applyMatrix4(this._arrowBoundBox.matrix);
   }
 
-  private changeDrag = (event: THREE.Event) => {
+  private changeDrag = (event: any) => {
     this._visible = !event.value;
     this.preventCameraMovement();
     this.notifyDraggingChanged(event);
   };
 
-  private notifyDraggingChanged(event: THREE.Event) {
+  private notifyDraggingChanged(event: any) {
     if (event.value) {
       this.onDraggingStarted.trigger();
     } else {
