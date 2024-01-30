@@ -244,7 +244,7 @@ export class FaceMeasurement
       return;
     }
     const result = this.components.raycaster.castRay();
-    if (!result || !result.object || !result.faceIndex) {
+    if (!result || !result.object || result.faceIndex === undefined) {
       this.unselect();
       return;
     }

@@ -182,11 +182,15 @@ export class EdgeMeasurement
       return;
     }
     const result = this.components.raycaster.castRay();
-    if (!result || !result.object || !result.faceIndex) {
+    if (!result || !result.object) {
       this.preview.visible = false;
       return;
     }
     const { object, faceIndex, point } = result;
+    if (faceIndex === undefined) {
+      this.preview.visible = false;
+      return;
+    }
     if (object instanceof THREE.Mesh || object instanceof THREE.InstancedMesh) {
       this.updateSelection(object, point, faceIndex, result.instanceId);
     } else {
