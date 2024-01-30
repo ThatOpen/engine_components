@@ -6,7 +6,7 @@ export function roundVector(vector: THREE.Vector3, factor = 100) {
   vector.z = Math.round(vector.z * factor) / factor;
 }
 
-export function getIndices(index: number[], i: number) {
+export function getIndices(index: THREE.TypedArray, i: number) {
   const i1 = index[i] * 3;
   const i2 = index[i + 1] * 3;
   const i3 = index[i + 2] * 3;
@@ -18,8 +18,8 @@ export function getIndexAndPos(mesh: THREE.Mesh | THREE.InstancedMesh) {
   if (!geometry.index) {
     throw new Error("Geometry must be indexed!");
   }
-  const index = geometry.index.array as number[];
-  const pos = geometry.attributes.position.array as number[];
+  const index = geometry.index.array as THREE.TypedArray;
+  const pos = geometry.attributes.position.array as THREE.TypedArray;
   return { index, pos };
 }
 
