@@ -105,11 +105,8 @@ export class LengthMeasurement
   /** {@link Hideable.visible} */
   set visible(value: boolean) {
     this._visible = value;
-    if (!this._visible) {
-      this.enabled = false;
-    }
     for (const dimension of this._measurements) {
-      dimension.visible = this._visible;
+      dimension.visible = value;
     }
   }
 
@@ -239,6 +236,15 @@ export class LengthMeasurement
     }
   }
 
+  async deleteMeasurement(measurement: SimpleDimensionLine) {
+    if (measurement) {
+      const index = this._measurements.indexOf(measurement);
+      this._measurements.splice(index, 1);
+      await measurement.dispose();
+      await this.onAfterDelete.trigger(this);
+    }
+  }
+
   /** Deletes all the dimensions that have been previously created. */
   async deleteAll() {
     for (const dim of this._measurements) {
@@ -308,7 +314,9 @@ export class LengthMeasurement
   }
 
   private setupEvents(active: boolean) {
-    const viewerContainer = this.components.ui.viewerContainer;
+    const viewerContainer =
+      this.components.renderer.get().domElement.parentElement;
+    if (!viewerContainer) return;
     if (active) {
       viewerContainer.addEventListener("click", this.create);
       window.addEventListener("keydown", this.onKeyDown);

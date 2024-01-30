@@ -27,10 +27,10 @@
 <script type="importmap">
     {
       "imports": {
-        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
-        "web-ifc": "https://unpkg.com/web-ifc@0.0.46/web-ifc-api.js",
+        "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
+        "web-ifc": "https://unpkg.com/web-ifc@0.0.50/web-ifc-api.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
-        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.160.1/examples/jsm/libs/lil-gui.module.min.js",
         "openbim-components": "../../../resources/openbim-components.js",
          "client-zip": "https://unpkg.com/client-zip@2.3.0/index.js"
       }
@@ -121,13 +121,19 @@
     - Download them and serve them statically.
     - Get them from a remote server.
 
-    The easiest way is getting them from unpkg, so let's do that!
+    The easiest way is getting them from unpkg, and the cool thing is that 
+    you don't need to do it manually! It can be done directly by the tool 
+    just by writing the following:
     */
 
+    await fragmentIfcLoader.setup()
+
+    /* If you want to the path to unpkg manually, then you can skip the line 
+    above and set them manually as below:
     fragmentIfcLoader.settings.wasm = {
-        path: "https://unpkg.com/web-ifc@0.0.46/",
+        path: "https://unpkg.com/web-ifc@0.0.50/",
         absolute: true
-    }
+    } */
 
     /*MD
     Awesome! Optionally, we can exclude categories that we don't want

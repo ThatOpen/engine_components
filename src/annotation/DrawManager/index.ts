@@ -1,15 +1,17 @@
 import {
-  Component,
   UI,
   BaseSVGAnnotation,
   Disposable,
   UIElement,
   Event,
 } from "../../base-types";
-import { Components, SimpleSVGViewport } from "../../core";
-import { Button, Toolbar } from "../../ui";
+import { Component } from "../../base-types/component";
+import { Components } from "../../core/Components";
+import { SimpleSVGViewport } from "../../core/SimpleSVGViewport";
+import { Button } from "../../ui/ButtonComponent";
+import { Toolbar } from "../../ui/ToolbarComponent";
 
-export class DrawManager extends Component<string> implements UI, Disposable {
+export class DrawManager extends Component<null> implements UI, Disposable {
   static readonly uuid = "4ab8b0f4-665d-4ea2-8f6e-66c98ed04392";
   name: string = "DrawManager";
 
@@ -42,8 +44,10 @@ export class DrawManager extends Component<string> implements UI, Disposable {
 
   set enabled(value: boolean) {
     this._enabled = value;
-    this.uiElement.get("main").active = value;
-    this.uiElement.get("drawingTools").visible = value;
+    if (this.components.uiEnabled) {
+      this.uiElement.get("main").active = value;
+      this.uiElement.get("drawingTools").visible = value;
+    }
     this.viewport.enabled = value;
   }
 
@@ -88,15 +92,27 @@ export class DrawManager extends Component<string> implements UI, Disposable {
   addDrawingTool(name: string, tool: BaseSVGAnnotation) {
     const existingTool = this.drawingTools[name];
     if (!existingTool) {
-      const main = this.uiElement.get("main");
-      this.uiElement.get("drawingTools").addChild(main);
+      if (this.components.uiEnabled) {
+        const main = tool.uiElement.get("main");
+        this.uiElement.get("drawingTools").addChild(main);
+      }
+      tool.svgViewport = this.viewport.get();
       this.drawingTools[name] = tool;
     }
   }
 
   activateTool(tool: BaseSVGAnnotation) {
-    const drawingTools = Object.values(this.drawingTools);
-    drawingTools.forEach((tool) => (tool.enabled = false));
+    const tools = Object.values(this.drawingTools);
+    const existingTool = tools.find((t) => t === tool);
+    if (!existingTool) {
+      console.warn(
+        "DrawManager: Tried to activate a drawing tool that is not registered yet."
+      );
+      return;
+    }
+    for (const t of tools) {
+      t.enabled = false;
+    }
     tool.enabled = true;
   }
 
@@ -106,15 +122,21 @@ export class DrawManager extends Component<string> implements UI, Disposable {
   }
 
   private setUI() {
+    const viewportToolbar = this.viewport.uiElement.get<Toolbar>("toolbar");
     const drawingTools = new Toolbar(this.components, { position: "top" });
+    setTimeout(() => {
+      drawingTools.visible = false;
+      viewportToolbar.visible = false;
+    }, 0.001);
     this.components.ui.addToolbar(drawingTools);
+    this.components.ui.addToolbar(viewportToolbar);
     const main = new Button(this.components);
     main.materialIcon = "gesture";
     main.onClick.add(() => (this.enabled = !this.enabled));
     this.uiElement.set({ drawingTools, main });
   }
 
-  get(): string {
-    throw new Error("Method not implemented.");
+  get() {
+    return null;
   }
 }

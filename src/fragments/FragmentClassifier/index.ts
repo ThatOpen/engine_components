@@ -9,7 +9,7 @@ import { FragmentManager } from "../FragmentManager";
 
 export interface Classification {
   [system: string]: {
-    [className: string]: { [fragmentID: string]: Set<string> };
+    [className: string]: FragmentIdMap;
   };
 }
 
@@ -181,7 +181,7 @@ export class FragmentClassifier
     const currentTypes = this._groupSystems.predefinedTypes;
 
     for (const expressID in group.data) {
-      const entity = group.properties[expressID] as {
+      const entity = group.properties[parseInt(expressID, 10)] as {
         [attribute: string]: any;
       };
       if (!entity) continue;
@@ -201,7 +201,7 @@ export class FragmentClassifier
             currentType[fragmentID] = new Set<string>();
           }
           const currentFragment = currentType[fragmentID];
-          currentFragment.add(entity.expressID);
+          currentFragment.add(String(entity.expressID));
         }
       }
     }

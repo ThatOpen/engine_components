@@ -1,7 +1,10 @@
 import { Fragment, FragmentsGroup, Serializer } from "bim-fragment";
 import * as THREE from "three";
-import { Component, Disposable, Event, UI, UIElement } from "../../base-types";
-import { Components, ToolComponent } from "../../core";
+import { Component } from "../../base-types/component";
+import { UIElement } from "../../base-types/ui-element";
+import { Disposable, Event, UI } from "../../base-types";
+import { Components } from "../../core/Components";
+import { ToolComponent } from "../../core/ToolsComponent";
 import {
   Button,
   FloatingWindow,
@@ -126,20 +129,28 @@ export class FragmentManager
    * @param data - the bytes containing the data for the fragments to load.
    * @returns the list of IDs of the loaded fragments.
    */
-  async load(data: Uint8Array) {
-    const group = this._loader.import(data);
+  async load(data: Uint8Array, coordinate = true) {
+    const model = this._loader.import(data);
     const scene = this.components.scene.get();
     const ids: string[] = [];
-    scene.add(group);
-    for (const fragment of group.items) {
-      fragment.group = group;
+    scene.add(model);
+    for (const fragment of model.items) {
+      fragment.group = model;
       this.list[fragment.id] = fragment;
       ids.push(fragment.id);
       this.components.meshes.push(fragment.mesh);
     }
-    this.groups.push(group);
-    await this.onFragmentsLoaded.trigger(group);
-    return group;
+    if (coordinate) {
+      const isFirstModel = this.groups.length === 0;
+      if (isFirstModel) {
+        this.baseCoordinationModel = model.uuid;
+      } else {
+        this.coordinate([model]);
+      }
+    }
+    this.groups.push(model);
+    await this.onFragmentsLoaded.trigger(model);
+    return model;
   }
 
   /**

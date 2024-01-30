@@ -4,11 +4,8 @@ import * as WEBIFC from "web-ifc";
 import * as FRAGS from "bim-fragment";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
 import { IfcAlignmentData } from "bim-fragment";
-import {
-  IfcCategories,
-  IfcItemsCategories,
-  IfcJsonExporter,
-} from "../../../ifc";
+import { IfcCategories, IfcItemsCategories } from "../../../ifc/ifc-categories";
+import { IfcJsonExporter } from "../../../ifc/IfcJsonExporter";
 import { SpatialStructure } from "./spatial-structure";
 import { IfcFragmentSettings } from "./ifc-fragment-settings";
 import { IfcGeometries } from "./types";
@@ -100,6 +97,7 @@ export class DataConverter {
       }
       if (Array.isArray(arg)) {
         for (const subArg of arg) {
+          if (!subArg) continue;
           description += `${subArg.value}|`;
         }
       } else {
@@ -143,8 +141,6 @@ export class DataConverter {
     } = {};
     const matrix = new THREE.Matrix4();
     const color = new THREE.Color();
-
-    console.log(civilItems);
 
     // Add alignments data
     if (civilItems.IfcAlignment) {

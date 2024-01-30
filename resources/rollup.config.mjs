@@ -8,9 +8,6 @@ export default {
 	output: {
 		file: "./resources/openbim-components.js",
 		format: "esm",
-		paths: {
-			three: "https://unpkg.com/three@0.152.2/build/three.module.js",
-		},
 	},
 	external: ["three"], // so it's not included
 	plugins: [
