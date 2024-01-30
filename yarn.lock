@@ -5733,13 +5733,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"n8ao@npm:1.8.0":
-  version: 1.8.0
-  resolution: "n8ao@npm:1.8.0"
+"n8ao@npm:1.5.1":
+  version: 1.5.1
+  resolution: "n8ao@npm:1.5.1"
   peerDependencies:
     postprocessing: ">=6.30.0"
     three: ">=0.137"
-  checksum: 9687ba8146ea1d0d00a8bddc937591d223543cc9c16d8617da3e8bc5a083f234d6f664d439ba215f3de02ccbabe554c5d5c4fe3e106634c2f11d594a9e5668a4
+  checksum: 228ad7eba3833bda9941065c37ee83e9f273160e359a6978a8ff42059b8922ad823f8907424985a2cc970e2aa3413bda6b0f0a475c48d9b9cf697c04abdb25e1
   languageName: node
   linkType: hard
 
@@ -6061,10 +6061,10 @@ __metadata:
     eslint-plugin-prettier: ^3.4.0
     jest: ^27.0.4
     mapbox-gl: ^2.15.0
-    n8ao: 1.8.0
+    n8ao: 1.5.1
     node-fetch: ^3.3.2
     openbim-clay: 0.0.5
-    postprocessing: 6.34.1
+    postprocessing: 6.30.0
     prettier: ^2.3.1
     rollup: ^3.2.3
     stats.js: ^0.17.0
@@ -6439,12 +6439,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postprocessing@npm:6.34.1":
-  version: 6.34.1
-  resolution: "postprocessing@npm:6.34.1"
+"postprocessing@npm:6.30.0":
+  version: 6.30.0
+  resolution: "postprocessing@npm:6.30.0"
   peerDependencies:
-    three: ">= 0.138.0 < 0.161.0"
-  checksum: e441cc8155b09684833090367590ae55509bc8d2e1c9b2f9dab219626325820d11c97ab962081d10f090014700b0a11bddfc184d22ed278b8b65197d271f494a
+    three: ">= 0.138.0 < 0.150.0"
+  checksum: 353e84cd261d1ab1bd79c8ebb0002bbfb4af50cb55d935e2c7c9b18a026c95422dda1c8df620aa4cd14993f7a043155acff444a5ad46b55e2ae2e393a4d0b920
   languageName: node
   linkType: hard
 
