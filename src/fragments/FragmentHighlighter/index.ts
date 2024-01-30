@@ -275,6 +275,7 @@ export class FragmentHighlighter
       for (let i = 0; i < keys.length; i++) {
         const fragKey = keys[i];
         const fragID = group.keyFragments[fragKey];
+        if (fragID === mesh.uuid) continue;
         const fragment = fragments.list[fragID];
         fragList.push(fragment);
         if (!this.selection[name][fragID]) {
@@ -343,6 +344,7 @@ export class FragmentHighlighter
   }
 
   readonly onSetup = new Event<FragmentHighlighter>();
+
   async setup(config?: Partial<FragmentHighlighterConfig>) {
     if (config?.selectionMaterial) {
       this.config.selectionMaterial.dispose();
@@ -357,7 +359,7 @@ export class FragmentHighlighter
     await this.add(this.config.hoverName, [this.config.hoverMaterial]);
     this.setupEvents(true);
     this.enabled = true;
-    this.onSetup.trigger(this);
+    await this.onSetup.trigger(this);
   }
 
   private async regenerate(name: string, fragID: string) {
