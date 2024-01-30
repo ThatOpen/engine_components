@@ -8,7 +8,7 @@ import { SimpleUICard } from "../../ui/SimpleUICard";
 import { Components } from "../Components";
 import { ToolComponent } from "../ToolsComponent";
 
-// TODO: Implement UI elements (this is probably just for 3d scans)
+// TODO: Get rid of this class, it's not used
 
 /**
  * A tool to cache files using the browser's IndexedDB API. This might

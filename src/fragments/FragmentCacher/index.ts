@@ -6,8 +6,7 @@ import { Button } from "../../ui/ButtonComponent";
 import { FloatingWindow } from "../../ui/FloatingWindow";
 import { SimpleUICard } from "../../ui/SimpleUICard";
 
-// TODO: Clean up
-// TODO: Improve UI element
+// TODO: Get rid of this class, it's not used
 
 export class FragmentCacher extends LocalCacher {
   private _mode: "save" | "load" | "none" = "none";
