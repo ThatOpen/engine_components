@@ -53,6 +53,8 @@
     components.raycaster = new OBC.SimpleRaycaster(components);
     components.init();
 
+    components.scene.setup();
+
     components.renderer.postproduction.enabled = true;
     const scene = components.scene.get();
 

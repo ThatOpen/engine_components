@@ -78,6 +78,8 @@
     */
 
     const culler = new OBC.ScreenCuller(components);
+    culler.setup();
+
     container.addEventListener('mouseup', () => culler.needsUpdate = true);
     container.addEventListener('wheel', () => culler.needsUpdate = true);
 

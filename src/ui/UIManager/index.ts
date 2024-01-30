@@ -44,7 +44,7 @@ export class UIManager extends Component<Toolbar[]> implements Disposable {
 
   // TODO: Does this need to be here?
   static Class = {
-    Label: "block leading-6 text-gray-400 text-sm",
+    Label: "block leading-6 text-gray-400 text-sm my-0",
   };
 
   get viewerContainer() {
