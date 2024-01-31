@@ -123,22 +123,28 @@
         }
     })
 
-    // await loadModel("test.json");
-    await loadModel("test-2.json");
+    await loadModel("test.json");
+    // await loadModel("test-2.json");
     // await loadModel("dm1_riv.json");
 
     fragments.baseCoordinationModel = fragments.groups[0].uuid;
     fragments.coordinate();
     for(const group of fragments.groups) {
         const {uuid, matrix} = group;
-        loader.applyTransformation(uuid, matrix);
+        const matrixe = new THREE.Matrix4();
+        matrixe.setPosition(0, 5, 0);
+        loader.applyTransformation(uuid, matrixe);
     }
+
+    console.log(fragments);
 
     components.camera.controls.addEventListener("controlend", () => {
         loader.culler.needsUpdate = true;
         culler.needsUpdate = true;
     });
 
+    loader.getMesh();
+    components.camera.controls.fitToSphere(loader.getSphere(), false);
     // loader.culler.renderDebugFrame = true;
     // const debugFrame = loader.culler.get().domElement;
     // document.body.appendChild(debugFrame);

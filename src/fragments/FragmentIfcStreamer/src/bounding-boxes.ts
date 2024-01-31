@@ -89,6 +89,24 @@ export class BoundingBoxes {
     }
   }
 
+  getMesh() {
+    this.mesh.computeBoundingBox();
+    const { min, max } = this.mesh.boundingBox as THREE.Box3;
+    const width = Math.abs(max.x - min.x);
+    const height = Math.abs(max.y - min.y);
+    const depth = Math.abs(max.z - min.z);
+    const center = new THREE.Vector3();
+    const box = new THREE.BoxGeometry(width, height, depth);
+    const boxMesh = new THREE.Mesh(box);
+    boxMesh.position.copy(center);
+    return boxMesh;
+  }
+
+  getSphere() {
+    this.mesh.computeBoundingSphere();
+    return this.mesh.boundingSphere;
+  }
+
   private initializeBoundingBoxes() {
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     geometry.deleteAttribute("uv");
