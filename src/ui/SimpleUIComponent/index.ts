@@ -192,8 +192,6 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
       throw new Error(
         `Slot ${name} not found. You need to declare it in the UIComponent template using data-tooeen-slot="${name}"`
       );
-    const existingSlot = this.slots[name];
-    if (existingSlot) existingSlot.removeFromParent();
     this.slots[name] = uiComponent;
     uiComponent.get().setAttribute("data-tooeen-slot", name);
     uiComponent.parent = this;

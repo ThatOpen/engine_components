@@ -64,6 +64,9 @@
     const gridMesh = grid.get();
     renderer.postproduction.customEffects.excludedMeshes.push(gridMesh);
 
+    const loader = new OBC.FragmentIfcLoader(components)
+    await loader.setup()
+
     /*MD
     ### ✍ Edit properties at will!
     ___
@@ -104,7 +107,14 @@
 
     propsManager.onRequestFile.add(async () => {
         const fetched = await fetch("../../../resources/small.ifc");
-        propsManager.ifcToExport = await fetched.arrayBuffer();
+        const buffer = await fetched.arrayBuffer()
+        const ifc = await propsManager.saveToIfc(model, new Uint8Array(buffer));
+        const a = document.createElement("a");
+        const url = URL.createObjectURL(new Blob([ifc]));
+        a.href = url;
+        a.download = model.name;
+        a.click();
+        URL.revokeObjectURL(url);
     })
 
     /*MD
