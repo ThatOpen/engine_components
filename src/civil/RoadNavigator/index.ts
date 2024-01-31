@@ -17,11 +17,8 @@ export class RoadNavigator extends Component<any> implements UI {
 
   private _selected: FragmentsGroup | null = null;
 
-  private _data = {
-    id: "thatopen-roadnavigator-data",
-    anchor: new THREE.Vector3(),
-    verticalIndex: null as null | number,
-  };
+  private _anchor = new THREE.Vector3();
+  private _anchorID = "thatopen-roadnavigator-anchor";
 
   private _anchors = {
     horizontal: new THREE.Vector2(),
@@ -85,8 +82,6 @@ export class RoadNavigator extends Component<any> implements UI {
       ),
     };
 
-    this._alignments.vertical.frustumCulled = false;
-    this._alignments.horizontal.frustumCulled = false;
     this._alignments.real.frustumCulled = false;
 
     this._scenes.vertical.get().add(this._alignments.vertical);
@@ -135,18 +130,17 @@ export class RoadNavigator extends Component<any> implements UI {
         const coordsAttr = new THREE.BufferAttribute(coordsBuffer, 3);
         horizontal.geometry.setAttribute("position", coordsAttr);
 
-        this._data.verticalIndex = null;
+        let verticalIndex = -1;
         const alignmentIndex =
           this._selected.ifcCivil.horizontalAlignments.alignmentIndex;
         if (pointIndex1 >= alignmentIndex[alignmentIndex.length - 1]) {
-          this._data.verticalIndex = null;
+          verticalIndex = alignmentIndex.length - 1;
         } else {
           for (let i = 0; i < alignmentIndex.length - 1; i++) {
             const start = alignmentIndex[i];
             const end = alignmentIndex[i + 1];
             if (pointIndex1 >= start && pointIndex1 < end) {
-              this._data.verticalIndex = i;
-              break;
+              verticalIndex = i;
             }
           }
         }
@@ -155,7 +149,7 @@ export class RoadNavigator extends Component<any> implements UI {
           this._selected.ifcCivil.verticalAlignments,
           this._alignments.vertical.geometry,
           false,
-          this._data.verticalIndex
+          verticalIndex
         );
 
         // const { alignmentIndex } = this._selected.ifcCivil.horizontalAlignments;
@@ -209,70 +203,36 @@ export class RoadNavigator extends Component<any> implements UI {
     const geom = this._alignments.real.geometry;
     const yPosition3D = geom.attributes.position.getY(horizontalIndex);
 
-    const { anchor } = this._data;
-    anchor.set(
-      real.x - horizontal.x,
-      real.z + horizontal.y,
-      real.y - yPosition3D
-    );
+    this._anchor.x = real.x - horizontal.x;
+    this._anchor.z = real.z + horizontal.y;
+    this._anchor.y = real.y - yPosition3D;
 
     this.updateAnchor();
   }
 
-  save() {
-    const { anchor } = this._data;
-    const horCam = this._scenes.horizontal.camera.position;
-    const horTar = this._scenes.horizontal.controls.target;
-    const verCam = this._scenes.vertical.camera.position;
-    const verTar = this._scenes.vertical.controls.target;
-    const data = {
-      anchor: { x: anchor.x, y: anchor.y, z: anchor.z },
-      horizontal: {
-        camera: { x: horCam.x, y: horCam.y, z: horCam.z },
-        target: { x: horTar.x, y: horTar.y, z: horTar.z },
-      },
-      vertical: {
-        camera: { x: verCam.x, y: verCam.y, z: verCam.z },
-        target: { x: verTar.x, y: verTar.y, z: verTar.z },
-        index: this._data.verticalIndex,
-      },
-    };
-    const serialized = JSON.stringify(data);
-    localStorage.setItem(this._data.id, serialized);
+  saveAnchor() {
+    const { x, y, z } = this._anchor;
+    localStorage.setItem(this._anchorID, `${x}_${y}_${z}`);
   }
 
-  load() {
-    const serialized = localStorage.getItem(this._data.id);
+  loadAnchor() {
+    const serialized = localStorage.getItem(this._anchorID);
     if (!serialized) return;
-    const data = JSON.parse(serialized);
-    const { anchor, horizontal, vertical } = data;
-    this._scenes.horizontal.camera.position.copy(horizontal.camera);
-    this._scenes.horizontal.controls.target.copy(horizontal.target);
-    this._scenes.vertical.camera.position.copy(vertical.camera);
-    this._scenes.vertical.controls.target.copy(vertical.target);
-    this._data.anchor.copy(anchor);
+    const [x, y, z] = serialized.split("_").map((item) => parseFloat(item));
+    this._anchor.set(x, y, z);
     this.updateAnchor();
-    this._data.verticalIndex = data.vertical.index;
-    if (this._selected && this._selected.ifcCivil) {
-      this.getAlignmentGeometry(
-        this._selected.ifcCivil.verticalAlignments,
-        this._alignments.vertical.geometry,
-        false,
-        this._data.verticalIndex
-      );
-    }
   }
 
   private updateAnchor() {
     const position = this._alignments.real.position;
-    position.copy(this._data.anchor);
+    position.copy(this._anchor);
   }
 
   private getAlignmentGeometry(
     alignment: IfcAlignmentData,
     geometry: THREE.BufferGeometry,
     is3D: boolean,
-    selectedIndex: number | null = null
+    selectedIndex: number = -1
   ) {
     const data = this.getAlignmentData(alignment, is3D, selectedIndex);
     const coordsBuffer = new Float32Array(data.coords);
@@ -284,7 +244,7 @@ export class RoadNavigator extends Component<any> implements UI {
   private getAlignmentData(
     alignment: IfcAlignmentData,
     is3D: boolean,
-    selectedIndex: number | null = null
+    selectedIndex: number = -1
   ) {
     const coords: number[] = [];
     const index: number[] = [];
@@ -295,7 +255,7 @@ export class RoadNavigator extends Component<any> implements UI {
     let isSegmentStart = true;
     const factor = is3D ? 3 : 2;
     const last = coordinates.length / factor - 1;
-    if (selectedIndex === null) {
+    if (selectedIndex === -1) {
       for (let i = 0; i < curveIndex.length; i++) {
         const start = curveIndex[i];
         const isLast = i === curveIndex.length - 1;
@@ -351,7 +311,7 @@ export class RoadNavigator extends Component<any> implements UI {
         return i;
       }
     }
-    return null;
+    return -1;
   }
 
   private setUI() {
@@ -378,8 +338,6 @@ export class RoadNavigator extends Component<any> implements UI {
 
     horizontalAlignment.onVisible.add(() => {
       if (horizontalAlignment.visible) {
-        const { width, height } = horizontalAlignment.containerSize;
-        this._scenes.horizontal.setSize(height, width);
         this._scenes.horizontal.grid.regenerate();
       }
     });
