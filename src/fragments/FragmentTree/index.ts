@@ -7,7 +7,7 @@ import {
   UIElement,
 } from "../../base-types";
 import { FragmentTreeItem } from "./src/tree-item";
-import { Components, ToolComponent } from "../../core";
+import { Components } from "../../core";
 import { FragmentClassifier } from "../FragmentClassifier";
 import { Button, FloatingWindow } from "../../ui";
 
@@ -15,15 +15,12 @@ export class FragmentTree
   extends Component<FragmentTreeItem>
   implements UI, Disposable
 {
-  static readonly uuid = "5af6ebe1-26fc-4053-936a-801b6c7cb37e" as const;
-
   /** {@link Disposable.onDisposed} */
-  readonly onDisposed = new Event<string>();
+  readonly onDisposed = new Event<undefined>();
 
   enabled: boolean = true;
-  onSelected = new Event<FragmentIdMap>();
-
-  onHovered = new Event<FragmentIdMap>();
+  onSelected = new Event<{ items: FragmentIdMap; visible: boolean }>();
+  onHovered = new Event<{ items: FragmentIdMap; visible: boolean }>();
 
   private _title = "Model Tree";
   private _tree?: FragmentTreeItem;
@@ -32,8 +29,6 @@ export class FragmentTree
 
   constructor(components: Components) {
     super(components);
-
-    this.components.tools.add(FragmentTree.uuid, this);
   }
 
   get(): FragmentTreeItem {
@@ -50,6 +45,7 @@ export class FragmentTree
       classifier,
       "Model Tree"
     );
+
     this._tree = tree;
     if (this.components.uiEnabled) {
       this.setupUI(tree);
@@ -63,7 +59,7 @@ export class FragmentTree
     if (this._tree) {
       await this._tree.dispose();
     }
-    await this.onDisposed.trigger(FragmentTree.uuid);
+    await this.onDisposed.trigger();
     this.onDisposed.reset();
   }
 
@@ -136,5 +132,3 @@ export class FragmentTree
     return groups;
   }
 }
-
-ToolComponent.libraryUUIDs.add(FragmentTree.uuid);

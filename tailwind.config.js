@@ -1,5 +1,6 @@
 module.exports = {
-    content: ['./src/**/*.html', './src/**/*.{js,ts}'],
+  content: ['./src/**/*.html', './src/**/*.{js,ts}'],
+  important: ".obc-viewer",
     theme: {
         extend: {
             colors: {

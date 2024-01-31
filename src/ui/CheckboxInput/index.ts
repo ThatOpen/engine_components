@@ -5,7 +5,7 @@ import { UIManager } from "../UIManager";
 
 export class CheckboxInput extends SimpleUIComponent<HTMLDivElement> {
   name = "TooeenCheckboxInput";
-  readonly onChange: Event<Boolean> = new Event();
+  readonly onChange: Event<boolean> = new Event();
 
   set value(value: boolean) {
     this.innerElements.input.checked = value;

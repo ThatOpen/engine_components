@@ -41,7 +41,7 @@ export class PropertyTag extends SimpleUIComponent<HTMLDivElement> {
     <div class="flex gap-x-2 hover:bg-ifcjs-120 py-1 px-3 rounded-md items-center min-h-[40px]">
       <div class="flex flex-col grow">
         <p id="label" class="${UIManager.Class.Label}"></p>
-        <p id="value" class="text-base"></p>
+        <p id="value" class="text-base my-0"></p>
       </div> 
     </div> 
     `;

@@ -1,10 +1,12 @@
 import { FragmentsGroup } from "bim-fragment";
-import { Components, LocalCacher } from "../../core";
+import { Components } from "../../core/Components";
+import { LocalCacher } from "../../core/LocalCacher";
 import { FragmentManager } from "../FragmentManager";
-import { Button, FloatingWindow, SimpleUICard } from "../../ui";
+import { Button } from "../../ui/ButtonComponent";
+import { FloatingWindow } from "../../ui/FloatingWindow";
+import { SimpleUICard } from "../../ui/SimpleUICard";
 
-// TODO: Clean up
-// TODO: Improve UI element
+// TODO: Get rid of this class, it's not used
 
 export class FragmentCacher extends LocalCacher {
   private _mode: "save" | "load" | "none" = "none";
@@ -102,7 +104,7 @@ export class FragmentCacher extends LocalCacher {
     this.cards = [];
 
     for (const id of allIDs) {
-      const card = new SimpleUICard(this.components, id);
+      const card = new SimpleUICard(this.components);
       card.title = id;
       this.cards.push(card);
 
@@ -156,7 +158,7 @@ export class FragmentCacher extends LocalCacher {
     for (const id of ids) {
       if (savedIDs.includes(id)) continue;
 
-      const card = new SimpleUICard(this.components, id);
+      const card = new SimpleUICard(this.components);
       card.title = id;
       this.cards.push(card);
       floatingMenu.addChild(card);

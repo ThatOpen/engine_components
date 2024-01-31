@@ -190,12 +190,11 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
     const slot = this.get().querySelector(`[data-tooeen-slot="${name}"]`);
     if (!slot)
       throw new Error(
-        `Slot ${name} not found. You need to declare it in the UIComponent template using data-tooeen="${name}"`
+        `Slot ${name} not found. You need to declare it in the UIComponent template using data-tooeen-slot="${name}"`
       );
-    const existingSlot = this.slots[name];
-    if (existingSlot) existingSlot.removeFromParent();
     this.slots[name] = uiComponent;
     uiComponent.get().setAttribute("data-tooeen-slot", name);
+    uiComponent.parent = this;
     slot.replaceWith(uiComponent.get());
     this.children.push(uiComponent);
   }

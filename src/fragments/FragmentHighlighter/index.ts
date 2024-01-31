@@ -1,15 +1,18 @@
 import * as THREE from "three";
 import { Fragment, FragmentMesh } from "bim-fragment";
 import {
-  Component,
   Disposable,
+  Updateable,
   Event,
   FragmentIdMap,
   Configurable,
 } from "../../base-types";
+import { Component } from "../../base-types/component";
 import { FragmentManager } from "../FragmentManager";
 import { FragmentBoundingBox } from "../FragmentBoundingBox";
-import { Components, SimpleCamera, ToolComponent } from "../../core";
+import { Components } from "../../core/Components";
+import { SimpleCamera } from "../../core/SimpleCamera";
+import { ToolComponent } from "../../core/ToolsComponent";
 import { toCompositeID } from "../../utils";
 import { PostproductionRenderer } from "../../navigation/PostproductionRenderer";
 
@@ -31,16 +34,24 @@ export interface FragmentHighlighterConfig {
   hoverName: string;
   selectionMaterial: THREE.Material;
   hoverMaterial: THREE.Material;
+  autoHighlightOnClick: boolean;
+  cullHighlightMeshes: boolean;
 }
 
 export class FragmentHighlighter
   extends Component<HighlightMaterials>
-  implements Disposable, Configurable<FragmentHighlighterConfig>
+  implements Disposable, Updateable, Configurable<FragmentHighlighterConfig>
 {
   static readonly uuid = "cb8a76f2-654a-4b50-80c6-66fd83cafd77" as const;
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
+
+  /** {@link Updateable.onBeforeUpdate} */
+  readonly onBeforeUpdate = new Event<FragmentHighlighter>();
+
+  /** {@link Updateable.onAfterUpdate} */
+  readonly onAfterUpdate = new Event<FragmentHighlighter>();
 
   enabled = true;
   highlightMats: HighlightMaterials = {};
@@ -90,6 +101,8 @@ export class FragmentHighlighter
       opacity: 0.2,
       depthTest: true,
     }),
+    autoHighlightOnClick: true,
+    cullHighlightMeshes: true,
   };
 
   private _mouseState = {
@@ -134,6 +147,10 @@ export class FragmentHighlighter
     return this.highlightMats;
   }
 
+  getHoveredSelection() {
+    return this.selection[this.config.hoverName];
+  }
+
   private disposeOutlinedMeshes(fragmentIDs: string[]) {
     for (const id of fragmentIDs) {
       const mesh = this._outlinedMeshes[id];
@@ -147,6 +164,8 @@ export class FragmentHighlighter
     this.setupEvents(false);
     this.config.hoverMaterial.dispose();
     this.config.selectionMaterial.dispose();
+    this.onBeforeUpdate.reset();
+    this.onAfterUpdate.reset();
     for (const matID in this.highlightMats) {
       const mats = this.highlightMats[matID] || [];
       for (const mat of mats) {
@@ -185,10 +204,12 @@ export class FragmentHighlighter
     await this.update();
   }
 
+  /** {@link Updateable.update} */
   async update() {
     if (!this.fillEnabled) {
       return;
     }
+    this.onBeforeUpdate.trigger(this);
     const fragments = this.components.tools.get(FragmentManager);
     for (const fragmentID in fragments.list) {
       const fragment = fragments.list[fragmentID];
@@ -199,6 +220,7 @@ export class FragmentHighlighter
         outlinedMesh.applyMatrix4(fragment.mesh.matrixWorld);
       }
     }
+    this.onAfterUpdate.trigger(this);
   }
 
   async highlight(
@@ -253,6 +275,7 @@ export class FragmentHighlighter
       for (let i = 0; i < keys.length; i++) {
         const fragKey = keys[i];
         const fragID = group.keyFragments[fragKey];
+        if (fragID === mesh.uuid) continue;
         const fragment = fragments.list[fragID];
         fragList.push(fragment);
         if (!this.selection[name][fragID]) {
@@ -321,6 +344,7 @@ export class FragmentHighlighter
   }
 
   readonly onSetup = new Event<FragmentHighlighter>();
+
   async setup(config?: Partial<FragmentHighlighterConfig>) {
     if (config?.selectionMaterial) {
       this.config.selectionMaterial.dispose();
@@ -335,7 +359,7 @@ export class FragmentHighlighter
     await this.add(this.config.hoverName, [this.config.hoverMaterial]);
     this.setupEvents(true);
     this.enabled = true;
-    this.onSetup.trigger(this);
+    await this.onSetup.trigger(this);
   }
 
   private async regenerate(name: string, fragID: string) {
@@ -375,6 +399,15 @@ export class FragmentHighlighter
     }
 
     const sphere = bbox.getSphere();
+    const i = Infinity;
+    const mi = -Infinity;
+    const { x, y, z } = sphere.center;
+    const isInf = sphere.radius === i || x === i || y === i || z === i;
+    const isMInf = sphere.radius === mi || x === mi || y === mi || z === mi;
+    const isZero = sphere.radius === 0;
+    if (isInf || isMInf || isZero) {
+      return;
+    }
     sphere.radius *= this.zoomFactor;
     const camera = this.components.camera as SimpleCamera;
     await camera.controls.fitToSphere(sphere, true);
@@ -427,7 +460,17 @@ export class FragmentHighlighter
         transform: this._tempMatrix,
       });
 
-      selection.blocks.setVisibility(true, ids, true);
+      // Only highlight visible blocks
+      const visibleIDs = new Set<string>();
+      let counter = 0;
+      for (const id of ids) {
+        if (fragment.blocks.visibleIds.has(counter)) {
+          visibleIDs.add(id);
+        }
+        counter++;
+      }
+
+      selection.blocks.setVisibility(true, visibleIDs, true);
     } else {
       let i = 0;
       for (const id of ids) {
@@ -451,6 +494,7 @@ export class FragmentHighlighter
       if (!fragment.fragments[name]) {
         const material = this.highlightMats[name];
         const subFragment = fragment.addFragment(name, material);
+        subFragment.group = fragment.group;
         if (fragment.blocks.count > 1) {
           subFragment.setInstance(0, {
             ids: Array.from(fragment.ids),
@@ -605,8 +649,10 @@ export class FragmentHighlighter
       return;
     }
     this._mouseState.moved = false;
-    const mult = this.multiple === "none" ? true : !event[this.multiple];
-    await this.highlight(this.config.selectName, mult, this.zoomToSelection);
+    if (this.config.autoHighlightOnClick) {
+      const mult = this.multiple === "none" ? true : !event[this.multiple];
+      await this.highlight(this.config.selectName, mult, this.zoomToSelection);
+    }
   };
 
   private onMouseMove = async () => {

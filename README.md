@@ -3,7 +3,7 @@
   |
   <a href="https://docs.thatopen.com/intro">documentation</a>
   |
-  <a href="https://platform.thatopen.com/app">demo</a>
+  <a href="https://ifcjs.github.io/components/src/fragments/FragmentIfcLoader/index.html">demo</a>
   |
   <a href="https://people.thatopen.com/">community</a>
   |
