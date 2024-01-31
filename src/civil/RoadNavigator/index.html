@@ -105,10 +105,15 @@
     navigator.select(model);
 
     window.addEventListener("keydown", (event) => {
+        if(event.code === "KeyS") {
+            navigator.saveAnchor();
+        }
         if(event.code === "KeyP") {
             navigator.setAnchor();
         }
     })
+
+    navigator.loadAnchor();
 
     // Set up stats
 

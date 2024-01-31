@@ -109,9 +109,9 @@
 	const canvasUI = simple2dScene.uiElement.get('container');
 	const canvas = canvasUI.domElement;
 
-	window.ondblclick = () => {
-		simple2dScene.scaleY += 0.1;
-  }
+	// window.ondblclick = () => {
+	// 	simple2dScene.scaleY += 0.1;
+  // }
 
 	/*MD
   ### 💅 Creating the UI
@@ -147,6 +147,8 @@
 
 	mainWindow.onVisible.add(() => {
 		if(mainWindow.visible) {
+			const { width, height } = mainWindow.containerSize;
+			simple2dScene.setSize(height, width);
 			simple2dScene.grid.regenerate()
 		}
 	})
