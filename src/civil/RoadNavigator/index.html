@@ -105,8 +105,14 @@
     navigator.select(model);
 
     window.addEventListener("keydown", (event) => {
+        if(event.code === "KeyS") {
+            navigator.save();
+        }
         if(event.code === "KeyP") {
             navigator.setAnchor();
+        }
+        if(event.code === "KeyL") {
+            navigator.load();
         }
     })
 

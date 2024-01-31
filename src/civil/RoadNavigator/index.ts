@@ -17,6 +17,12 @@ export class RoadNavigator extends Component<any> implements UI {
 
   private _selected: FragmentsGroup | null = null;
 
+  private _data = {
+    id: "thatopen-roadnavigator-data",
+    anchor: new THREE.Vector3(),
+    verticalIndex: null as null | number,
+  };
+
   private _anchors = {
     horizontal: new THREE.Vector2(),
     horizontalIndex: 0,
@@ -79,6 +85,8 @@ export class RoadNavigator extends Component<any> implements UI {
       ),
     };
 
+    this._alignments.vertical.frustumCulled = false;
+    this._alignments.horizontal.frustumCulled = false;
     this._alignments.real.frustumCulled = false;
 
     this._scenes.vertical.get().add(this._alignments.vertical);
@@ -127,17 +135,18 @@ export class RoadNavigator extends Component<any> implements UI {
         const coordsAttr = new THREE.BufferAttribute(coordsBuffer, 3);
         horizontal.geometry.setAttribute("position", coordsAttr);
 
-        let verticalIndex = -1;
+        this._data.verticalIndex = null;
         const alignmentIndex =
           this._selected.ifcCivil.horizontalAlignments.alignmentIndex;
         if (pointIndex1 >= alignmentIndex[alignmentIndex.length - 1]) {
-          verticalIndex = alignmentIndex.length - 1;
+          this._data.verticalIndex = null;
         } else {
           for (let i = 0; i < alignmentIndex.length - 1; i++) {
             const start = alignmentIndex[i];
             const end = alignmentIndex[i + 1];
             if (pointIndex1 >= start && pointIndex1 < end) {
-              verticalIndex = i;
+              this._data.verticalIndex = i;
+              break;
             }
           }
         }
@@ -146,7 +155,7 @@ export class RoadNavigator extends Component<any> implements UI {
           this._selected.ifcCivil.verticalAlignments,
           this._alignments.vertical.geometry,
           false,
-          verticalIndex
+          this._data.verticalIndex
         );
 
         // const { alignmentIndex } = this._selected.ifcCivil.horizontalAlignments;
@@ -197,21 +206,73 @@ export class RoadNavigator extends Component<any> implements UI {
     this._anchors.real.copy(result.point);
     const { horizontal, real, horizontalIndex } = this._anchors;
 
-    const position = this._alignments.real.position;
-
     const geom = this._alignments.real.geometry;
     const yPosition3D = geom.attributes.position.getY(horizontalIndex);
 
-    position.x = real.x - horizontal.x;
-    position.z = real.z + horizontal.y;
-    position.y = real.y - yPosition3D;
+    const { anchor } = this._data;
+    anchor.set(
+      real.x - horizontal.x,
+      real.z + horizontal.y,
+      real.y - yPosition3D
+    );
+
+    this.updateAnchor();
+  }
+
+  save() {
+    const { anchor } = this._data;
+    const horCam = this._scenes.horizontal.camera.position;
+    const horTar = this._scenes.horizontal.controls.target;
+    const verCam = this._scenes.vertical.camera.position;
+    const verTar = this._scenes.vertical.controls.target;
+    const data = {
+      anchor: { x: anchor.x, y: anchor.y, z: anchor.z },
+      horizontal: {
+        camera: { x: horCam.x, y: horCam.y, z: horCam.z },
+        target: { x: horTar.x, y: horTar.y, z: horTar.z },
+      },
+      vertical: {
+        camera: { x: verCam.x, y: verCam.y, z: verCam.z },
+        target: { x: verTar.x, y: verTar.y, z: verTar.z },
+        index: this._data.verticalIndex,
+      },
+    };
+    const serialized = JSON.stringify(data);
+    localStorage.setItem(this._data.id, serialized);
+  }
+
+  load() {
+    const serialized = localStorage.getItem(this._data.id);
+    if (!serialized) return;
+    const data = JSON.parse(serialized);
+    const { anchor, horizontal, vertical } = data;
+    this._scenes.horizontal.camera.position.copy(horizontal.camera);
+    this._scenes.horizontal.controls.target.copy(horizontal.target);
+    this._scenes.vertical.camera.position.copy(vertical.camera);
+    this._scenes.vertical.controls.target.copy(vertical.target);
+    this._data.anchor.copy(anchor);
+    this.updateAnchor();
+    this._data.verticalIndex = data.vertical.index;
+    if (this._selected && this._selected.ifcCivil) {
+      this.getAlignmentGeometry(
+        this._selected.ifcCivil.verticalAlignments,
+        this._alignments.vertical.geometry,
+        false,
+        this._data.verticalIndex
+      );
+    }
+  }
+
+  private updateAnchor() {
+    const position = this._alignments.real.position;
+    position.copy(this._data.anchor);
   }
 
   private getAlignmentGeometry(
     alignment: IfcAlignmentData,
     geometry: THREE.BufferGeometry,
     is3D: boolean,
-    selectedIndex: number = -1
+    selectedIndex: number | null = null
   ) {
     const data = this.getAlignmentData(alignment, is3D, selectedIndex);
     const coordsBuffer = new Float32Array(data.coords);
@@ -223,7 +284,7 @@ export class RoadNavigator extends Component<any> implements UI {
   private getAlignmentData(
     alignment: IfcAlignmentData,
     is3D: boolean,
-    selectedIndex: number = -1
+    selectedIndex: number | null = null
   ) {
     const coords: number[] = [];
     const index: number[] = [];
@@ -234,7 +295,7 @@ export class RoadNavigator extends Component<any> implements UI {
     let isSegmentStart = true;
     const factor = is3D ? 3 : 2;
     const last = coordinates.length / factor - 1;
-    if (selectedIndex === -1) {
+    if (selectedIndex === null) {
       for (let i = 0; i < curveIndex.length; i++) {
         const start = curveIndex[i];
         const isLast = i === curveIndex.length - 1;
@@ -290,7 +351,7 @@ export class RoadNavigator extends Component<any> implements UI {
         return i;
       }
     }
-    return -1;
+    return null;
   }
 
   private setUI() {
@@ -317,6 +378,8 @@ export class RoadNavigator extends Component<any> implements UI {
 
     horizontalAlignment.onVisible.add(() => {
       if (horizontalAlignment.visible) {
+        const { width, height } = horizontalAlignment.containerSize;
+        this._scenes.horizontal.setSize(height, width);
         this._scenes.horizontal.grid.regenerate();
       }
     });
