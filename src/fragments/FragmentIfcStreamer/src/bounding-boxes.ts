@@ -96,6 +96,7 @@ export class BoundingBoxes {
     const height = Math.abs(max.y - min.y);
     const depth = Math.abs(max.z - min.z);
     const center = new THREE.Vector3();
+    center.subVectors(max, min).divideScalar(2).add(min);
     const box = new THREE.BoxGeometry(width, height, depth);
     const boxMesh = new THREE.Mesh(box);
     boxMesh.position.copy(center);

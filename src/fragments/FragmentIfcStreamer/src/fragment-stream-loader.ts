@@ -122,11 +122,13 @@ export class FragmentStreamLoader extends Component<any> {
 
   getMesh(): THREE.Mesh {
     const box = this.culler.boxes.getMesh();
-    // if (box instanceof THREE.Box3) {
-    //   // @ts-ignore
-    //   const bHelper = new THREE.Box3Helper(box, 0xff0000);
-    //   this.components.scene.get().add(bHelper);
-    // }
+    if (box) {
+      // this.components.scene.get().add(box);
+      // const boundingBox = new THREE.Box3().setFromObject(box);
+      // // @ts-ignore
+      // const bHelper = new THREE.Box3Helper(boundingBox, 0xff0000);
+      // this.components.scene.get().add(bHelper);
+    }
     return box;
   }
   getSphere() {
