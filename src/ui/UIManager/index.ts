@@ -147,28 +147,31 @@ export class UIManager extends Component<Toolbar[]> implements Disposable {
     this.viewerContainer.style.position = "relative";
     this.viewerContainer.classList.add("obc-viewer");
 
-    // Get material icons
-    const materialIconsLink = document.createElement("link");
-    materialIconsLink.rel = "stylesheet";
-    materialIconsLink.href =
-      "https://fonts.googleapis.com/icon?family=Material+Icons";
+    if (this.components.globalStylesEnabled) {
+      // Get material icons
+      const materialIconsLink = document.createElement("link");
+      materialIconsLink.rel = "stylesheet";
+      materialIconsLink.href =
+        "https://fonts.googleapis.com/icon?family=Material+Icons";
 
-    // Get openbim-components styles
-    const fetchResponse = await fetch(
-      "https://raw.githubusercontent.com/IFCjs/components/main/resources/styles.css"
-    );
-    const componentsCSS = await fetchResponse.text();
-    const styleElement = document.createElement("style");
-    styleElement.id = "openbim-components";
-    styleElement.textContent = componentsCSS;
+      // Get openbim-components styles
+      const fetchResponse = await fetch(
+        "https://raw.githubusercontent.com/IFCjs/components/main/resources/styles.css"
+      );
+      const componentsCSS = await fetchResponse.text();
+      const styleElement = document.createElement("style");
+      styleElement.id = "openbim-components";
+      styleElement.textContent = componentsCSS;
 
-    const firstLinkTag = document.head.querySelector("link");
-    if (firstLinkTag) {
-      // Inserting the styles before any link tag makes sure the developer can override the library styles
-      document.head.insertBefore(materialIconsLink, firstLinkTag);
-      document.head.insertBefore(styleElement, firstLinkTag);
-    } else {
-      document.head.append(materialIconsLink, styleElement);
+      const firstLinkTag = document.head.querySelector("link");
+
+      if (firstLinkTag) {
+        // Inserting the styles before any link tag makes sure the developer can override the library styles
+        document.head.insertBefore(materialIconsLink, firstLinkTag);
+        document.head.insertBefore(styleElement, firstLinkTag);
+      } else {
+        document.head.append(materialIconsLink, styleElement);
+      }
     }
   }
 

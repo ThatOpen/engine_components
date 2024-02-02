@@ -44,6 +44,9 @@ export class Components implements Disposable {
   /** Whether UI components should be created. */
   uiEnabled = true;
 
+  /** Whether global styles should be loaded automatically. */
+  globalStylesEnabled = true;
+
   private _ui?: UIManager;
   private _renderer?: BaseRenderer;
   private _scene?: Component<THREE.Scene>;
