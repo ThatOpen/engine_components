@@ -63,6 +63,8 @@ export class FragmentStreamLoader extends Component<any> {
     opacity: 0.5,
   });
 
+  private transformation = new THREE.Matrix4();
+
   constructor(components: Components) {
     super(components);
     this.components.tools.add(FragmentStreamLoader.uuid, this);
@@ -93,7 +95,6 @@ export class FragmentStreamLoader extends Component<any> {
 
     this.culler.add(group.uuid, assets, geometries);
     this.models[group.uuid] = { assets, geometries };
-
     const instances: StreamedInstances = {};
 
     for (const asset of assets) {
@@ -107,11 +108,32 @@ export class FragmentStreamLoader extends Component<any> {
     }
 
     this._geometryInstances[group.uuid] = instances;
+
+    // Move it to DT
+    this.culler.needsUpdate = true;
+
+    // console.log("----Group----");
+    // console.log(group);
   }
 
   get() {}
 
   update() {}
+
+  getMesh(): THREE.Mesh {
+    const box = this.culler.boxes.getMesh();
+    if (box) {
+      // this.components.scene.get().add(box);
+      // const boundingBox = new THREE.Box3().setFromObject(box);
+      // // @ts-ignore
+      // const bHelper = new THREE.Box3Helper(boundingBox, 0xff0000);
+      // this.components.scene.get().add(bHelper);
+    }
+    return box;
+  }
+  getSphere() {
+    return this.culler.boxes.getSphere();
+  }
 
   applyTransformation(modelID: string, transform: THREE.Matrix4) {
     if (!this.models[modelID]) {
@@ -122,6 +144,8 @@ export class FragmentStreamLoader extends Component<any> {
       this.culler.applyTransformation(modelID, asset.id, transform);
     }
     this.culler.boxes.update();
+
+    this.transformation.fromArray(transform.elements);
   }
 
   private async handleSeenGeometries(seen: { [modelID: string]: number[] }) {
@@ -264,7 +288,6 @@ export class FragmentStreamLoader extends Component<any> {
 
     const material = transparent ? this._baseMaterialT : this._baseMaterial;
     const fragment = new FRAG.Fragment(geometry, material, instances.length);
-
     group.add(fragment.mesh);
     group.items.push(fragment);
 
@@ -287,6 +310,9 @@ export class FragmentStreamLoader extends Component<any> {
     }
 
     fragment.mesh.instanceColor!.needsUpdate = true;
+
+    fragment.mesh.applyMatrix4(this.transformation);
+    fragment.mesh.updateMatrix();
 
     result.push(fragment);
   }
