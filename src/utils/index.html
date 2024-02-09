@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <!-- <link rel="stylesheet" href="../../../resources/styles.css">
+  <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico"> -->
+  <title>Renderer Physical Edges</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    .full-screen {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "openbim-components": "../../resources/openbim-components.js",
+        "three": "https://unpkg.com/three@0.160.1/build/three.module.js"
+        
+      }
+    }
+</script>
+<script type="module">
+	
+	/*MD
+  ### 🌍 An example on creating physical edges!
+  ___
+  There are two ways to create model edges in the Components library. The less memory intensive is using the PostProduction Renderer. However there is a second way. Creating edges using actual THREE.js geometry results in crisp look, but it is more memory intensive.
+  */
+
+    //import { createPhysicalEdges } from 'GeometryUtils'
+
+	import * as THREE from 'three';
+	import * as OBC from 'openbim-components';
+    
+  const container = document.getElementById('container');
+  const components = new OBC.Components();
+	components.scene = new OBC.SimpleScene(components);
+	components.renderer = new OBC.SimpleRenderer(components, container);
+	components.camera = new OBC.SimpleCamera(components);
+	components.raycaster = new OBC.SimpleRaycaster(components);
+  components.init();
+
+  const scene = components.scene.get();
+  components.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
+
+	const grid = new OBC.SimpleGrid(components);
+
+  /*MD
+
+  Let's add some real geometry to our app.
+
+  */
+
+  const fragments = new OBC.FragmentManager(components);
+  const file = await fetch("../../resources/small.frag");
+  const data = await file.arrayBuffer();
+  const buffer = new Uint8Array(data);
+  const model = await fragments.load(buffer);
+
+	components.scene.setup();
+
+	/*MD
+  ### Finally, let's add the edges. Function createPhysicalEdges traverses the model, and creates physical edges.
+  ___
+ 
+
+  */
+  OBC.createPhysicalEdges(components, model)
+
+
+</script>
+</body>
+</html>

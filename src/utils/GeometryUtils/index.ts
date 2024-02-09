@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { Components } from "../../core";
+import { FragmentsGroup } from 'bim-fragment';
 
 export function roundVector(vector: THREE.Vector3, factor = 100) {
   vector.x = Math.round(vector.x * factor) / factor;
@@ -218,3 +220,41 @@ export function getRaycastedFace(
 
   return { face: currentFace, distances, edges };
 }
+
+export function createPhysicalEdges(components: Components, model: FragmentsGroup) {
+  
+  for (let index = 0; index < model.items.length; index++) {
+    const element = model.items[index];
+    const instancedMesh = element.mesh;
+
+    const geometry = instancedMesh.geometry;
+    const material = instancedMesh.material;
+
+    for (let i = 0; i < instancedMesh.count; i++) {
+      const mesh = new THREE.Mesh(geometry, material);
+
+      instancedMesh.getMatrixAt(i, mesh.matrix);
+
+      const position = new THREE.Vector3();
+      const rotation = new THREE.Quaternion();
+      const scale = new THREE.Vector3();
+      mesh.matrix.decompose(position, rotation, scale);
+
+      mesh.position.copy(position);
+      mesh.setRotationFromQuaternion(rotation);
+      mesh.scale.copy(scale);
+
+      const edgesGeometry = new THREE.EdgesGeometry(geometry);
+
+      const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x333333 });
+      const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+
+      edges.position.copy(position);
+      edges.setRotationFromQuaternion(rotation);
+      edges.scale.copy(scale);
+      const scene = components.scene.get()
+      scene.add(edges);
+    }
+  }
+}
+
