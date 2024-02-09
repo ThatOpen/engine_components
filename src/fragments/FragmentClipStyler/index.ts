@@ -105,7 +105,7 @@ export class FragmentClipStyler
       localStorage.setItem(this.localStorageID, this._defaultStyles);
       await this.loadCachedStyles();
     }
-    this.onSetup.trigger(this);
+    await this.onSetup.trigger(this);
   }
 
   get() {

@@ -1,6 +1,6 @@
+import { generateUUID } from "three/src/math/MathUtils";
 import { Component, Disposable, Event, Hideable } from "../../base-types";
 import { Components } from "../../core";
-import { tooeenRandomId } from "../../utils";
 
 export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   extends Component<T>
@@ -114,7 +114,7 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   constructor(components: Components, template?: string, id?: string) {
     super(components);
     this._components = components;
-    this.id = id ?? tooeenRandomId();
+    this.id = id ?? generateUUID();
     this.template = template ?? "<div></div>";
   }
 
@@ -190,12 +190,11 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
     const slot = this.get().querySelector(`[data-tooeen-slot="${name}"]`);
     if (!slot)
       throw new Error(
-        `Slot ${name} not found. You need to declare it in the UIComponent template using data-tooeen="${name}"`
+        `Slot ${name} not found. You need to declare it in the UIComponent template using data-tooeen-slot="${name}"`
       );
-    const existingSlot = this.slots[name];
-    if (existingSlot) existingSlot.removeFromParent();
     this.slots[name] = uiComponent;
     uiComponent.get().setAttribute("data-tooeen-slot", name);
+    uiComponent.parent = this;
     slot.replaceWith(uiComponent.get());
     this.children.push(uiComponent);
   }

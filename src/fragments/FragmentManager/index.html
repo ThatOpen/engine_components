@@ -27,9 +27,9 @@
 <script type="importmap">
     {
       "imports": {
-        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+        "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
-        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.160.1/examples/jsm/libs/lil-gui.module.min.js",
         "openbim-components": "../../../resources/openbim-components.js"
       }
     }
@@ -52,6 +52,8 @@
     components.camera = new OBC.SimpleCamera(components);
     components.raycaster = new OBC.SimpleRaycaster(components);
     components.init();
+
+    components.scene.setup();
 
     components.renderer.postproduction.enabled = true;
     const scene = components.scene.get();

@@ -27,10 +27,10 @@
 <script type="importmap">
     {
       "imports": {
-        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
-        "web-ifc": "https://unpkg.com/web-ifc@0.0.46/web-ifc-api.js",
+        "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
+        "web-ifc": "https://unpkg.com/web-ifc@0.0.50/web-ifc-api.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
-        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.160.1/examples/jsm/libs/lil-gui.module.min.js",
         "openbim-components": "../../../resources/openbim-components.js",
          "client-zip": "https://unpkg.com/client-zip@2.3.0/index.js"
       }
@@ -73,7 +73,7 @@
     let fragmentIfcLoader = new OBC.FragmentIfcLoader(components);
 
     fragmentIfcLoader.settings.wasm = {
-        path: "https://unpkg.com/web-ifc@0.0.46/",
+        path: "https://unpkg.com/web-ifc@0.0.50/",
         absolute: true
     }
 
@@ -105,10 +105,21 @@
     navigator.select(model);
 
     window.addEventListener("keydown", (event) => {
+        if(event.code === "KeyS") {
+            navigator.saveAnchor();
+        }
         if(event.code === "KeyP") {
             navigator.setAnchor();
         }
     })
+
+    window.ondblclick = () => {
+        const result = components.raycaster.castRay();
+        console.log(result);
+    }
+
+    navigator.loadAnchor();
+
 
     // Set up stats
 

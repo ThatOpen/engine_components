@@ -199,5 +199,5 @@ export interface UI {
  * made of multiple fragments, there might be repeated IDs across entries.
  */
 export interface FragmentIdMap {
-  [fragmentID: string]: Set<string>;
+  [fragmentID: string]: Set<number>;
 }

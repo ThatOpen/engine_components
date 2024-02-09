@@ -6,13 +6,20 @@ import { MeshCullerRenderer, CullerRendererSettings } from "./src";
 
 // TODO: Work at the instance level instead of the mesh level?
 
+export interface ScreenCullerConfig {
+  updateInterval?: number;
+  rtWidth?: number;
+  rtHeight?: number;
+  autoUpdate?: boolean;
+}
+
 /**
  * A tool to handle big scenes efficiently by automatically hiding the objects
  * that are not visible to the camera.
  */
 export class ScreenCuller
   extends Component<Map<string, THREE.InstancedMesh>>
-  implements Disposable
+  implements Disposable, Configurable<ScreenCullerConfig>
 {
   static readonly uuid = "69f2a50d-c266-44fc-b1bd-fa4d34be89e6" as const;
 

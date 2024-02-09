@@ -1,16 +1,18 @@
 import * as THREE from "three";
 import { Fragment, FragmentMesh } from "bim-fragment";
 import {
-  Component,
   Disposable,
+  Updateable,
   Event,
   FragmentIdMap,
   Configurable,
 } from "../../base-types";
+import { Component } from "../../base-types/component";
 import { FragmentManager } from "../FragmentManager";
 import { FragmentBoundingBox } from "../FragmentBoundingBox";
-import { Components, SimpleCamera, ToolComponent } from "../../core";
-import { toCompositeID } from "../../utils";
+import { Components } from "../../core/Components";
+import { SimpleCamera } from "../../core/SimpleCamera";
+import { ToolComponent } from "../../core/ToolsComponent";
 import { PostproductionRenderer } from "../../navigation/PostproductionRenderer";
 
 // TODO: Clean up and document
@@ -31,16 +33,24 @@ export interface FragmentHighlighterConfig {
   hoverName: string;
   selectionMaterial: THREE.Material;
   hoverMaterial: THREE.Material;
+  autoHighlightOnClick: boolean;
+  cullHighlightMeshes: boolean;
 }
 
 export class FragmentHighlighter
   extends Component<HighlightMaterials>
-  implements Disposable, Configurable<FragmentHighlighterConfig>
+  implements Disposable, Updateable, Configurable<FragmentHighlighterConfig>
 {
   static readonly uuid = "cb8a76f2-654a-4b50-80c6-66fd83cafd77" as const;
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
+
+  /** {@link Updateable.onBeforeUpdate} */
+  readonly onBeforeUpdate = new Event<FragmentHighlighter>();
+
+  /** {@link Updateable.onAfterUpdate} */
+  readonly onAfterUpdate = new Event<FragmentHighlighter>();
 
   enabled = true;
   highlightMats: HighlightMaterials = {};
@@ -90,6 +100,8 @@ export class FragmentHighlighter
       opacity: 0.2,
       depthTest: true,
     }),
+    autoHighlightOnClick: true,
+    cullHighlightMeshes: true,
   };
 
   private _mouseState = {
@@ -134,6 +146,10 @@ export class FragmentHighlighter
     return this.highlightMats;
   }
 
+  getHoveredSelection() {
+    return this.selection[this.config.hoverName];
+  }
+
   private disposeOutlinedMeshes(fragmentIDs: string[]) {
     for (const id of fragmentIDs) {
       const mesh = this._outlinedMeshes[id];
@@ -147,6 +163,8 @@ export class FragmentHighlighter
     this.setupEvents(false);
     this.config.hoverMaterial.dispose();
     this.config.selectionMaterial.dispose();
+    this.onBeforeUpdate.reset();
+    this.onAfterUpdate.reset();
     for (const matID in this.highlightMats) {
       const mats = this.highlightMats[matID] || [];
       for (const mat of mats) {
@@ -185,10 +203,12 @@ export class FragmentHighlighter
     await this.update();
   }
 
+  /** {@link Updateable.update} */
   async update() {
     if (!this.fillEnabled) {
       return;
     }
+    this.onBeforeUpdate.trigger(this);
     const fragments = this.components.tools.get(FragmentManager);
     for (const fragmentID in fragments.list) {
       const fragment = fragments.list[fragmentID];
@@ -199,6 +219,7 @@ export class FragmentHighlighter
         outlinedMesh.applyMatrix4(fragment.mesh.matrixWorld);
       }
     }
+    this.onAfterUpdate.trigger(this);
   }
 
   async highlight(
@@ -214,14 +235,14 @@ export class FragmentHighlighter
     const meshes = fragments.meshes;
     const result = this.components.raycaster.castRay(meshes);
 
-    if (!result) {
+    if (!result || !result.face) {
       await this.clear(name);
       return null;
     }
 
     const mesh = result.object as FragmentMesh;
     const geometry = mesh.geometry;
-    const index = result.face?.a;
+    const index = result.face.a;
     const instanceID = result.instanceId;
     if (!geometry || index === undefined || instanceID === undefined) {
       return null;
@@ -232,34 +253,43 @@ export class FragmentHighlighter
     }
 
     if (!this.selection[name][mesh.uuid]) {
-      this.selection[name][mesh.uuid] = new Set<string>();
+      this.selection[name][mesh.uuid] = new Set<number>();
     }
 
     fragList.push(mesh.fragment);
-    const blockID = mesh.fragment.getVertexBlockID(geometry, index);
 
-    const itemID = mesh.fragment
-      .getItemID(instanceID, blockID)
-      .replace(/\..*/, "");
+    const itemID = mesh.fragment.getItemID(instanceID);
+    if (itemID === null) {
+      throw new Error("Item ID not found!");
+    }
 
-    const idNum = parseInt(itemID, 10);
     this.selection[name][mesh.uuid].add(itemID);
-    this.addComposites(mesh, idNum, name);
     await this.regenerate(name, mesh.uuid);
 
     const group = mesh.fragment.group;
     if (group) {
-      const keys = group.data[idNum][0];
+      const data = group.data.get(itemID);
+      if (!data) {
+        throw new Error("Data not found!");
+      }
+      const keys = data[0];
       for (let i = 0; i < keys.length; i++) {
         const fragKey = keys[i];
-        const fragID = group.keyFragments[fragKey];
+        const fragID = group.keyFragments.get(fragKey);
+
+        if (!fragID) {
+          throw new Error("Fragment ID not found!");
+        }
+
+        if (fragID === mesh.uuid) continue;
         const fragment = fragments.list[fragID];
         fragList.push(fragment);
+
         if (!this.selection[name][fragID]) {
-          this.selection[name][fragID] = new Set<string>();
+          this.selection[name][fragID] = new Set<number>();
         }
+
         this.selection[name][fragID].add(itemID);
-        this.addComposites(fragment.mesh, idNum, name);
         await this.regenerate(name, fragID);
       }
     }
@@ -286,20 +316,13 @@ export class FragmentHighlighter
     const styles = this.selection[name];
     for (const fragID in ids) {
       if (!styles[fragID]) {
-        styles[fragID] = new Set<string>();
+        styles[fragID] = new Set<number>();
       }
 
-      const fragments = this.components.tools.get(FragmentManager);
-      const fragment = fragments.list[fragID];
-
-      const idsNum = new Set<number>();
       for (const id of ids[fragID]) {
         styles[fragID].add(id);
-        idsNum.add(parseInt(id, 10));
       }
-      for (const id of idsNum) {
-        this.addComposites(fragment.mesh, id, name);
-      }
+
       await this.regenerate(name, fragID);
     }
 
@@ -321,6 +344,7 @@ export class FragmentHighlighter
   }
 
   readonly onSetup = new Event<FragmentHighlighter>();
+
   async setup(config?: Partial<FragmentHighlighterConfig>) {
     if (config?.selectionMaterial) {
       this.config.selectionMaterial.dispose();
@@ -335,7 +359,7 @@ export class FragmentHighlighter
     await this.add(this.config.hoverName, [this.config.hoverMaterial]);
     this.setupEvents(true);
     this.enabled = true;
-    this.onSetup.trigger(this);
+    await this.onSetup.trigger(this);
   }
 
   private async regenerate(name: string, fragID: string) {
@@ -389,16 +413,6 @@ export class FragmentHighlighter
     await camera.controls.fitToSphere(sphere, true);
   }
 
-  private addComposites(mesh: FragmentMesh, itemID: number, name: string) {
-    const composites = mesh.fragment.composites[itemID];
-    if (composites) {
-      for (let i = 1; i < composites; i++) {
-        const compositeID = toCompositeID(itemID, i);
-        this.selection[name][mesh.uuid].add(compositeID);
-      }
-    }
-  }
-
   private async clearStyle(name: string) {
     const fragments = this.components.tools.get(FragmentManager);
 
@@ -426,37 +440,10 @@ export class FragmentHighlighter
 
     const fragmentParent = fragment.mesh.parent;
     if (!fragmentParent) return;
+
     fragmentParent.add(selection.mesh);
-
-    const isBlockFragment = selection.blocks.count > 1;
-    if (isBlockFragment) {
-      fragment.getInstance(0, this._tempMatrix);
-      selection.setInstance(0, {
-        ids: Array.from(fragment.ids),
-        transform: this._tempMatrix,
-      });
-
-      // Only highlight visible blocks
-      const visibleIDs = new Set<string>();
-      let counter = 0;
-      for (const id of ids) {
-        if (fragment.blocks.visibleIds.has(counter)) {
-          visibleIDs.add(id);
-        }
-        counter++;
-      }
-
-      selection.blocks.setVisibility(true, visibleIDs, true);
-    } else {
-      let i = 0;
-      for (const id of ids) {
-        selection.mesh.count = i + 1;
-        const { instanceID } = fragment.getInstanceAndBlockID(id);
-        fragment.getInstance(instanceID, this._tempMatrix);
-        selection.setInstance(i, { ids: [id], transform: this._tempMatrix });
-        i++;
-      }
-    }
+    selection.setVisibility(false);
+    selection.setVisibility(true, ids);
   }
 
   private checkSelection(name: string) {
@@ -470,13 +457,7 @@ export class FragmentHighlighter
       if (!fragment.fragments[name]) {
         const material = this.highlightMats[name];
         const subFragment = fragment.addFragment(name, material);
-        if (fragment.blocks.count > 1) {
-          subFragment.setInstance(0, {
-            ids: Array.from(fragment.ids),
-            transform: this._tempMatrix,
-          });
-          subFragment.blocks.setVisibility(false);
-        }
+        subFragment.group = fragment.group;
         subFragment.mesh.renderOrder = 2;
         subFragment.mesh.frustumCulled = false;
       }
@@ -491,22 +472,14 @@ export class FragmentHighlighter
   }
 
   private async clearOutlines() {
-    const fragments = this.components.tools.get(FragmentManager);
-
     const effects = this._postproduction.customEffects;
     const fragmentsOutline = effects.outlinedMeshes.fragments;
     if (fragmentsOutline) {
       fragmentsOutline.meshes.clear();
     }
     for (const fragID in this._outlinedMeshes) {
-      const fragment = fragments.list[fragID];
-      const isBlockFragment = fragment.blocks.count > 1;
       const mesh = this._outlinedMeshes[fragID];
-      if (isBlockFragment) {
-        mesh.geometry.setIndex([]);
-      } else {
-        mesh.count = 0;
-      }
+      mesh.count = 0;
     }
   }
 
@@ -561,33 +534,19 @@ export class FragmentHighlighter
     const outlineMesh = this._outlinedMeshes[fragmentID];
     outlineEffect.meshes.add(outlineMesh);
 
-    const isBlockFragment = fragment.blocks.count > 1;
-
-    if (isBlockFragment) {
-      const indices = fragment.mesh.geometry.index.array;
-      const newIndex: number[] = [];
-      const idsSet = new Set(ids);
-      for (let i = 0; i < indices.length - 2; i += 3) {
-        const index = indices[i];
-        const blockID = fragment.mesh.geometry.attributes.blockID.array;
-        const block = blockID[index];
-        const itemID = fragment.mesh.fragment.getItemID(0, block);
-        if (idsSet.has(itemID)) {
-          newIndex.push(indices[i], indices[i + 1], indices[i + 2]);
-        }
+    let counter = 0;
+    for (const id of ids) {
+      const instancesIDs = fragment.getInstancesIDs(id);
+      if (!instancesIDs) {
+        throw new Error("Instances IDs not found!");
       }
-
-      outlineMesh.geometry.setIndex(newIndex);
-    } else {
-      let counter = 0;
-      for (const id of ids) {
-        const { instanceID } = fragment.getInstanceAndBlockID(id);
-        fragment.mesh.getMatrixAt(instanceID, this._tempMatrix);
+      for (const instance of instancesIDs) {
+        fragment.mesh.getMatrixAt(instance, this._tempMatrix);
         outlineMesh.setMatrixAt(counter++, this._tempMatrix);
       }
-      outlineMesh.count = counter;
-      outlineMesh.instanceMatrix.needsUpdate = true;
     }
+    outlineMesh.count = counter;
+    outlineMesh.instanceMatrix.needsUpdate = true;
   }
 
   private setupEvents(active: boolean) {
@@ -624,8 +583,10 @@ export class FragmentHighlighter
       return;
     }
     this._mouseState.moved = false;
-    const mult = this.multiple === "none" ? true : !event[this.multiple];
-    await this.highlight(this.config.selectName, mult, this.zoomToSelection);
+    if (this.config.autoHighlightOnClick) {
+      const mult = this.multiple === "none" ? true : !event[this.multiple];
+      await this.highlight(this.config.selectName, mult, this.zoomToSelection);
+    }
   };
 
   private onMouseMove = async () => {

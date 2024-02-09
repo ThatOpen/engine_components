@@ -1,7 +1,9 @@
 import * as THREE from "three";
 import { FragmentsGroup } from "bim-fragment";
 import { Component, Disposable, Event } from "../../base-types";
-import { Components, Disposer, ToolComponent } from "../../core";
+import { Components } from "../../core/Components";
+import { Disposer } from "../../core/Disposer";
+import { ToolComponent } from "../../core/ToolsComponent";
 
 /**
  * A simple implementation of bounding box that works for fragments. The resulting bbox is not 100% precise, but
@@ -175,7 +177,15 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
 
     const indices = Array.from(mesh.geometry.index.array);
 
-    for (const index of indices) {
+    for (let i = 0; i < indices.length; i++) {
+      if (i % 3 === 0) {
+        if (indices[i] === 0 && indices[i + 1] === 0 && indices[i + 2] === 0) {
+          i += 2;
+          continue;
+        }
+      }
+
+      const index = indices[i];
       const x = position.getX(index);
       const y = position.getY(index);
       const z = position.getZ(index);

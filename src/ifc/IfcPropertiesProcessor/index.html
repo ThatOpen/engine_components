@@ -27,7 +27,7 @@
 <script type="importmap">
     {
       "imports": {
-        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+        "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
         "openbim-components": "../../../resources/openbim-components.js"
       }
     }
@@ -114,13 +114,19 @@
     highlighterEvents.select.onHighlight.add(
         (selection) => {
             const fragmentID = Object.keys(selection)[0];
-            const expressID = Number([...selection[fragmentID]][0]);
+            const expressID = [...selection[fragmentID]][0];
             let model
             for (const group of fragments.groups) {
-                const fragmentFound = Object.values(group.keyFragments).find(id => id === fragmentID)
-                if (fragmentFound) model = group;
+                for(const [_key, value] of group.keyFragments) {
+                    if(value === fragmentID) {
+                        model = group;
+                        break;
+                    }
+                }
             }
-            propsProcessor.renderProperties(model, expressID);
+            if(model) {
+                propsProcessor.renderProperties(model, expressID);
+            }
         }
     );
 

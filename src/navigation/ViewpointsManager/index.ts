@@ -1,9 +1,6 @@
 import { Vector3 } from "three";
 import { generateUUID } from "three/src/math/MathUtils";
-import {
-  SimpleDimensionLine,
-  LengthMeasurement,
-} from "../../measurement/LengthMeasurement";
+import { LengthMeasurement, SimpleDimensionLine } from "../../measurement";
 import { Components } from "../../core/Components";
 import {
   UI,
@@ -114,7 +111,7 @@ export class ViewpointsManager extends Component<string> implements UI {
     const dimensionsComp = this.components.tools.get(LengthMeasurement);
     const allDimensions = dimensionsComp.get();
     for (const dimension of allDimensions) {
-      dimensions.push({ start: dimension.start, end: dimension.end });
+      dimensions.push({ start: dimension.startPoint, end: dimension.endPoint });
     }
     // #endregion
 
@@ -218,7 +215,7 @@ export class ViewpointsManager extends Component<string> implements UI {
     // #endregion
 
     // Select elements in the viewpoint
-    const selection: { [fragmentID: string]: Set<string> } = {};
+    const selection: FragmentIdMap = {};
     for (const fragmentID in viewpoint.selection) {
       selection[fragmentID] = viewpoint.selection[fragmentID];
     }

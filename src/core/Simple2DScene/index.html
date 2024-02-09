@@ -27,8 +27,8 @@
 <script type="importmap">
     {
       "imports": {
-        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
-        "three/examples/jsm/renderers/CSS2DRenderer": "https://unpkg.com/three@0.152.2/examples/jsm/renderers/CSS2DRenderer.js",
+        "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
+        "three/examples/jsm/renderers/CSS2DRenderer": "https://unpkg.com/three@0.160.1/examples/jsm/renderers/CSS2DRenderer.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
         "openbim-components": "../../../resources/openbim-components.js"
       }
@@ -109,9 +109,9 @@
 	const canvasUI = simple2dScene.uiElement.get('container');
 	const canvas = canvasUI.domElement;
 
-	window.ondblclick = () => {
-		simple2dScene.scaleY += 0.1;
-  }
+	// window.ondblclick = () => {
+	// 	simple2dScene.scaleY += 0.1;
+  // }
 
 	/*MD
   ### 💅 Creating the UI
@@ -147,6 +147,8 @@
 
 	mainWindow.onVisible.add(() => {
 		if(mainWindow.visible) {
+			const { width, height } = mainWindow.containerSize;
+			simple2dScene.setSize(height, width);
 			simple2dScene.grid.regenerate()
 		}
 	})

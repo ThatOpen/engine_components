@@ -33,4 +33,8 @@ export class IfcFragmentSettings {
     USE_FAST_BOOLS: true,
     OPTIMIZE_PROFILES: true,
   };
+
+  autoSetWasm = true;
+
+  customLocateFileHandler: WEBIFC.LocateFileHandlerFn | null = null;
 }
