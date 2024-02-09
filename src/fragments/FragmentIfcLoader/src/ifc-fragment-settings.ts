@@ -18,6 +18,7 @@ export class IfcFragmentSettings {
   wasm = {
     path: "",
     absolute: false,
+    logLevel: WEBIFC.LogLevel.LOG_LEVEL_OFF,
   };
 
   /** List of categories that won't be converted to fragments. */
@@ -32,4 +33,8 @@ export class IfcFragmentSettings {
     USE_FAST_BOOLS: true,
     OPTIMIZE_PROFILES: true,
   };
+
+  autoSetWasm = true;
+
+  customLocateFileHandler: WEBIFC.LocateFileHandlerFn | null = null;
 }

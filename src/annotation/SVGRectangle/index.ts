@@ -1,4 +1,5 @@
 import { Vector2 } from "three";
+import { generateUUID } from "three/src/math/MathUtils";
 import {
   Component,
   Disposable,
@@ -6,13 +7,12 @@ import {
   Event,
 } from "../../base-types";
 import { Components } from "../../core";
-import { tooeenRandomId } from "../../utils";
 
 export class SVGRectangle
   extends Component<SVGRectElement>
   implements Disposable
 {
-  id = tooeenRandomId();
+  id = generateUUID();
   name: string = "SVGRectangle";
   enabled: boolean = true;
 

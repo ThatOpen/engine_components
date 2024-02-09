@@ -78,7 +78,7 @@ export class FragmentManager
   /** {@link Component.get} */
   async dispose(disposeUI = false) {
     if (disposeUI) {
-      this.uiElement.dispose();
+      await this.uiElement.dispose();
     }
     for (const group of this.groups) {
       group.dispose(true);

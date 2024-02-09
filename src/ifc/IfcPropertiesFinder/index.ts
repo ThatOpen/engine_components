@@ -229,10 +229,11 @@ export class IfcPropertiesFinder
 
       const modelEntities = new Set<number>();
 
-      for (const expressID in model.data) {
-        const included = relations.includes(Number(expressID));
-        if (!included) continue;
-        modelEntities.add(Number(expressID));
+      for (const [expressID] of model.data) {
+        const included = relations.includes(expressID);
+        if (included) {
+          modelEntities.add(expressID);
+        }
       }
 
       const otherEntities = new Set<number>();
@@ -259,14 +260,17 @@ export class IfcPropertiesFinder
       if (!model) continue;
       const matchingEntities = data[modelID].modelEntities;
       for (const expressID of matchingEntities) {
-        const data = model.data[expressID];
+        const data = model.data.get(expressID);
         if (!data) continue;
         for (const key of data[0]) {
-          const fragmentID = model.keyFragments[key];
+          const fragmentID = model.keyFragments.get(key);
+          if (!fragmentID) {
+            throw new Error("Fragment ID not found!");
+          }
           if (!fragmentMap[fragmentID]) {
             fragmentMap[fragmentID] = new Set();
           }
-          fragmentMap[fragmentID].add(String(expressID));
+          fragmentMap[fragmentID].add(expressID);
         }
       }
     }

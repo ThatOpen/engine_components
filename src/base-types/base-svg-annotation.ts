@@ -1,7 +1,7 @@
+import { generateUUID } from "three/src/math/MathUtils";
 import { Disposable, UI, Event } from "./base-types";
 import { Component } from "./component";
 import { Button } from "../ui";
-import { tooeenRandomId } from "../utils/Misc";
 import { UIElement } from "./ui-element";
 
 export interface SVGAnnotationStyle {
@@ -14,7 +14,7 @@ export abstract class BaseSVGAnnotation
   extends Component<null>
   implements UI, Disposable
 {
-  id = tooeenRandomId();
+  id = generateUUID();
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<undefined>();

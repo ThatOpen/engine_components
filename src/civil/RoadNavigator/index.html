@@ -113,7 +113,13 @@
         }
     })
 
+    window.ondblclick = () => {
+        const result = components.raycaster.castRay();
+        console.log(result);
+    }
+
     navigator.loadAnchor();
+
 
     // Set up stats
 

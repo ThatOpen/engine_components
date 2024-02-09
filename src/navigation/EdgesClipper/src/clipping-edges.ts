@@ -41,8 +41,6 @@ export class ClippingEdges
 
   fillNeedsUpdate = false;
 
-  protected blockByIndex: { [index: number]: number } = {};
-
   protected _edges: Edges = {};
   protected _styles: EdgesStyles;
   protected _visible = true;
@@ -168,8 +166,6 @@ export class ClippingEdges
 
   // Source: https://gkjohnson.github.io/three-mesh-bvh/example/bundle/clippedEdges.html
   private drawEdges(styleName: string) {
-    this.blockByIndex = {};
-
     const style = this._styles.get()[styleName];
 
     if (!this._edges[styleName]) {
@@ -184,6 +180,7 @@ export class ClippingEdges
     // @ts-ignore
     posAttr.array.fill(0);
 
+    // The indexex of the points that draw the lines
     const indexes: number[] = [];
     let lastIndex = 0;
 
@@ -195,19 +192,19 @@ export class ClippingEdges
         throw new Error("Boundstree not found for clipping edges subset.");
       }
 
-      const instanced = mesh as THREE.InstancedMesh;
-      if (instanced.count === 0) {
-        continue;
-      }
-      if (instanced.count > 1) {
+      if (mesh instanceof THREE.InstancedMesh) {
+        if (mesh.count === 0) {
+          continue;
+        }
+        const instanced = mesh as THREE.InstancedMesh;
         for (let i = 0; i < instanced.count; i++) {
           // Exclude fragment instances that don't belong to this style
           const isFragment = instanced instanceof FragmentMesh;
           const fMesh = instanced as FragmentMesh;
           const ids = style.fragments[fMesh.fragment.id];
           if (isFragment && ids) {
-            const itemID = fMesh.fragment.items[i];
-            if (!ids.has(itemID)) {
+            const itemID = fMesh.fragment.getItemID(i);
+            if (itemID === null || !ids.has(itemID)) {
               continue;
             }
           }
@@ -225,7 +222,7 @@ export class ClippingEdges
           this._inverseMatrix.copy(tempMesh.matrixWorld).invert();
           this._localPlane.copy(this._plane).applyMatrix4(this._inverseMatrix);
 
-          index = this.shapecast(tempMesh, posAttr, index, style);
+          index = this.shapecast(tempMesh, posAttr, index);
 
           if (index !== lastIndex) {
             indexes.push(index);
@@ -236,8 +233,7 @@ export class ClippingEdges
         this._inverseMatrix.copy(mesh.matrixWorld).invert();
         this._localPlane.copy(this._plane).applyMatrix4(this._inverseMatrix);
 
-        const isFragment = mesh instanceof FragmentMesh;
-        index = this.shapecast(mesh, posAttr, index, style, isFragment);
+        index = this.shapecast(mesh, posAttr, index);
 
         if (index !== lastIndex) {
           indexes.push(index);
@@ -259,7 +255,7 @@ export class ClippingEdges
       scene.add(edges.mesh);
       if (this.fillNeedsUpdate && edges.fill) {
         edges.fill.geometry = edges.mesh.geometry;
-        edges.fill.update(indexes, this.blockByIndex);
+        edges.fill.update(indexes);
       }
     }
   }
@@ -271,13 +267,7 @@ export class ClippingEdges
     this._edges[name] = { mesh, name, fill };
   }
 
-  private shapecast(
-    mesh: THREE.Mesh,
-    posAttr: any,
-    index: number,
-    style: ClipStyle,
-    isMultiblockFragment = false
-  ) {
+  private shapecast(mesh: THREE.Mesh, posAttr: any, index: number) {
     // @ts-ignore
     mesh.geometry.boundsTree.shapecast({
       intersectsBounds: (box: any) => {
@@ -285,21 +275,7 @@ export class ClippingEdges
       },
 
       // @ts-ignore
-      intersectsTriangle: (tri: any, triangleIndex: number) => {
-        // Exclude triangles of fragment items that don't belong to this style
-        if (isMultiblockFragment && style.fragments) {
-          const fMesh = mesh as FragmentMesh;
-          const ids = style.fragments[fMesh.fragment.id];
-          if (ids !== undefined) {
-            const index = fMesh.geometry.index.array[triangleIndex * 3];
-            const blockID = fMesh.geometry.attributes.blockID.array[index];
-            const id = fMesh.fragment.getItemID(0, blockID);
-            if (!ids.has(id)) {
-              return;
-            }
-          }
-        }
-
+      intersectsTriangle: (tri: any) => {
         // check each triangle edge to see if it intersects with the plane. If so then
         // add it to the list of segments.
         let count = 0;
@@ -335,13 +311,6 @@ export class ClippingEdges
         if (count !== 2) {
           index -= count;
         }
-
-        if (count === 2 && isMultiblockFragment) {
-          const fMesh = mesh as FragmentMesh;
-          const vertexIndex = fMesh.geometry.index.array[triangleIndex * 3];
-          const block = fMesh.geometry.attributes.blockID.array[vertexIndex];
-          this.blockByIndex[index - 2] = block;
-        }
       },
     });
     return index;
@@ -365,7 +334,7 @@ export class ClippingEdges
     const names = Object.keys(this._edges);
     for (const name of names) {
       if (styles[name] === undefined) {
-        await this.disposeEdge(name);
+        this.disposeEdge(name);
         this.disposeOutline(name);
       }
     }
