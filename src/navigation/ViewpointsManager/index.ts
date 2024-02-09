@@ -215,7 +215,7 @@ export class ViewpointsManager extends Component<string> implements UI {
     // #endregion
 
     // Select elements in the viewpoint
-    const selection: { [fragmentID: string]: Set<string> } = {};
+    const selection: FragmentIdMap = {};
     for (const fragmentID in viewpoint.selection) {
       selection[fragmentID] = viewpoint.selection[fragmentID];
     }

@@ -460,7 +460,7 @@ export class IfcPropertiesManager
     }
     const modifiedIFC = ifcApi.SaveModel(modelID);
     ifcLoader.get().CloseModel(modelID);
-    ifcLoader.cleanIfcApi();
+    ifcLoader.cleanUp();
 
     return modifiedIFC;
   }

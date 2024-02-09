@@ -1,6 +1,6 @@
+import { generateUUID } from "three/src/math/MathUtils";
 import { Component, Disposable, Event, Hideable } from "../../base-types";
 import { Components } from "../../core";
-import { tooeenRandomId } from "../../utils";
 
 export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   extends Component<T>
@@ -114,7 +114,7 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   constructor(components: Components, template?: string, id?: string) {
     super(components);
     this._components = components;
-    this.id = id ?? tooeenRandomId();
+    this.id = id ?? generateUUID();
     this.template = template ?? "<div></div>";
   }
 

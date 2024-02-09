@@ -91,42 +91,29 @@ export class ClippingFills {
     (this._geometry as any) = null;
   }
 
-  update(elements: number[], blockByIndex: { [index: number]: number }) {
+  update(trianglesIndices: number[]) {
     const buffer = this._geometry.attributes.position.array as Float32Array;
     if (!buffer) return;
 
     this.updatePlane2DCoordinateSystem();
 
     const allIndices: number[] = [];
-    let start = 0;
-    for (let i = 0; i < elements.length; i++) {
-      const end = elements[i];
+    let currentTriangle = 0;
+    for (let i = 0; i < trianglesIndices.length; i++) {
+      const nextTriangle = trianglesIndices[i];
 
-      const verticesByBlock: { [block: number]: number[] } = {};
+      const vertices: number[] = [];
 
-      for (let j = start; j < end; j += 2) {
-        let block = blockByIndex[j];
-        if (block === undefined) {
-          block = -1;
-        }
-        if (!verticesByBlock[block]) {
-          verticesByBlock[block] = [];
-        }
-        verticesByBlock[block].push(j * 3);
+      for (let j = currentTriangle; j < nextTriangle; j += 2) {
+        vertices.push(j * 3);
       }
 
-      for (const block in verticesByBlock) {
-        const vertices = verticesByBlock[block];
-        if (!vertices.length) {
-          continue;
-        }
-        const indices = this.computeFill(vertices, buffer);
-        for (const index of indices) {
-          allIndices.push(index);
-        }
+      const indices = this.computeFill(vertices, buffer);
+      for (const index of indices) {
+        allIndices.push(index);
       }
 
-      start = end;
+      currentTriangle = nextTriangle;
     }
     this.mesh.geometry.setIndex(allIndices);
   }
