@@ -6050,7 +6050,7 @@ __metadata:
     n8ao: 1.5.1
     node-fetch: ^3.3.2
     openbim-clay: 0.0.5
-    postprocessing: 6.30.0
+    postprocessing: 6.34.2
     prettier: ^2.3.1
     rollup: ^3.2.3
     stats.js: ^0.17.0
@@ -6425,12 +6425,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postprocessing@npm:6.30.0":
-  version: 6.30.0
-  resolution: "postprocessing@npm:6.30.0"
+"postprocessing@npm:6.34.2":
+  version: 6.34.2
+  resolution: "postprocessing@npm:6.34.2"
   peerDependencies:
-    three: ">= 0.138.0 < 0.150.0"
-  checksum: 353e84cd261d1ab1bd79c8ebb0002bbfb4af50cb55d935e2c7c9b18a026c95422dda1c8df620aa4cd14993f7a043155acff444a5ad46b55e2ae2e393a4d0b920
+    three: ">= 0.138.0 < 0.162.0"
+  checksum: 023d26c588bb4714ca017829f4dc02510c366ea5b0d2e72454d0e64be36cbc506536c54ea5abc615f117bac89857e120afc88e0a4a7f64c4bb4511b05e7ecc45
   languageName: node
   linkType: hard
 

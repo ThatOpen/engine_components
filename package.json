@@ -1,6 +1,6 @@
 {
   "name": "openbim-components",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "main": "src/index.js",
   "author": "harry collin, antonio gonzalez viegas",
   "license": "MIT",
@@ -52,7 +52,7 @@
     "earcut": "^2.2.4",
     "n8ao": "1.5.1",
     "openbim-clay": "0.0.5",
-    "postprocessing": "6.30.0",
+    "postprocessing": "6.34.2",
     "stats.js": "^0.17.0",
     "three-mesh-bvh": "0.7.0",
     "top-tool-package-reader": "0.0.3",
