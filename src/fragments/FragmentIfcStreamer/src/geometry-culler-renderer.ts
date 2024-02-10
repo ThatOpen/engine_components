@@ -5,7 +5,7 @@ import {
   CullerRendererSettings,
 } from "../../../core/ScreenCuller/src";
 import { Components } from "../../../core";
-import { StreamedAsset, StreamedGeometries } from "./base-types";
+import { StreamedGeometries, StreamedAsset } from "./base-types";
 import { BoundingBoxes } from "./bounding-boxes";
 
 type CullerBoundingBox = {
@@ -85,7 +85,12 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
       for (const geometryData of asset.geometries) {
         const { geometryID, transformation, color } = geometryData;
-        const { boundingBox, hasHoles } = geometries[geometryID];
+        const geometry = geometries[geometryID];
+        if (!geometry) {
+          throw new Error("Geometry not found!");
+        }
+
+        const { boundingBox, hasHoles } = geometry;
 
         let nextColor: NextColor;
         if (visitedGeometries.has(geometryID)) {

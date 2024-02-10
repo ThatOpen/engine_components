@@ -1,11 +1,8 @@
 export interface StreamedGeometries {
-  [id: string]: {
-    id: number;
-    position: Float32Array;
-    normal: Float32Array;
-    index: Uint32Array;
+  [id: number]: {
     boundingBox: Float32Array;
     hasHoles: boolean;
+    geometryFile?: string;
   };
 }
 

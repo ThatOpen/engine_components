@@ -5,8 +5,6 @@ import { isTransparent } from "../../../utils";
 import { Event } from "../../../base-types";
 import { Disposer } from "../../Disposer";
 
-// TODO: Use just one manterial and instanceColor for all colorMeshes
-
 /**
  * A renderer to determine a mesh visibility on screen
  */

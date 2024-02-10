@@ -1,17 +1,8 @@
 import * as THREE from "three";
-import { Component, Disposable, Event } from "../../base-types";
+import { Component, Configurable, Disposable, Event } from "../../base-types";
 import { Components } from "../Components";
 import { ToolComponent } from "../ToolsComponent";
 import { MeshCullerRenderer, CullerRendererSettings } from "./src";
-
-// TODO: Work at the instance level instead of the mesh level?
-
-export interface ScreenCullerConfig {
-  updateInterval?: number;
-  rtWidth?: number;
-  rtHeight?: number;
-  autoUpdate?: boolean;
-}
 
 /**
  * A tool to handle big scenes efficiently by automatically hiding the objects
@@ -19,9 +10,16 @@ export interface ScreenCullerConfig {
  */
 export class ScreenCuller
   extends Component<Map<string, THREE.InstancedMesh>>
-  implements Disposable, Configurable<ScreenCullerConfig>
+  implements Disposable, Configurable<CullerRendererSettings>
 {
   static readonly uuid = "69f2a50d-c266-44fc-b1bd-fa4d34be89e6" as const;
+
+  config: Required<CullerRendererSettings> = {
+    updateInterval: 1000,
+    width: 512,
+    height: 512,
+    autoUpdate: true,
+  };
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
@@ -60,17 +58,30 @@ export class ScreenCuller
     this.elements.renderDebugFrame = value;
   }
 
-  elements: MeshCullerRenderer;
+  private _elements?: MeshCullerRenderer;
+
+  get elements() {
+    if (!this._elements) {
+      throw new Error(
+        "Elements not initialized! Call ScreenCuller.setup() first"
+      );
+    }
+    return this._elements;
+  }
 
   /** @deprecated use ScreenCuller.elements.get instead. */
   get renderer() {
     return this.elements.get();
   }
 
-  constructor(components: Components, settings?: CullerRendererSettings) {
+  constructor(components: Components) {
     super(components);
     components.tools.add(ScreenCuller.uuid, this);
-    this.elements = new MeshCullerRenderer(components, settings);
+  }
+
+  readonly onSetup = new Event<ScreenCuller>();
+  async setup(config?: Partial<CullerRendererSettings>) {
+    this._elements = new MeshCullerRenderer(this.components, config);
 
     this.elements.onViewUpdated.add(({ seen, unseen }) => {
       for (const mesh of seen) {
@@ -80,6 +91,7 @@ export class ScreenCuller
         mesh.visible = false;
       }
     });
+    await this.onSetup.trigger(this);
   }
 
   /**

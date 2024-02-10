@@ -2,20 +2,18 @@ import * as THREE from "three";
 import * as FRAG from "bim-fragment";
 import { FragmentsGroup } from "bim-fragment";
 import { Component, Event } from "../../../base-types";
-import { StreamedAsset, StreamedGeometries } from "./base-types";
+import { StreamedGeometries, StreamedAsset } from "./base-types";
 import { Components, ToolComponent } from "../../../core";
 import { GeometryCullerRenderer } from "./geometry-culler-renderer";
 import { FragmentManager } from "../../FragmentManager";
 
 interface StreamedInstance {
-  id: string;
+  id: number;
   color: number[];
   transformation: number[];
 }
 
-interface StreamedInstances {
-  [geometryID: number]: StreamedInstance[];
-}
+type StreamedInstances = Map<number, StreamedInstance[]>;
 
 export interface StreamLoaderSettings {
   assets: StreamedAsset[];
@@ -95,15 +93,19 @@ export class FragmentStreamLoader extends Component<any> {
 
     this.culler.add(group.uuid, assets, geometries);
     this.models[group.uuid] = { assets, geometries };
-    const instances: StreamedInstances = {};
+    const instances: StreamedInstances = new Map();
 
     for (const asset of assets) {
-      const id = asset.id.toString();
+      const id = asset.id;
       for (const { transformation, geometryID, color } of asset.geometries) {
-        if (!instances[geometryID]) {
-          instances[geometryID] = [];
+        if (!instances.has(geometryID)) {
+          instances.set(geometryID, []);
         }
-        instances[geometryID].push({ id, transformation, color });
+        const current = instances.get(geometryID);
+        if (!current) {
+          throw new Error("Malformed instances");
+        }
+        current.push({ id, transformation, color });
       }
     }
 
@@ -162,7 +164,7 @@ export class FragmentStreamLoader extends Component<any> {
       const files = new Set<string>();
 
       for (const id of ids) {
-        const geometry = geometries[id] as any;
+        const geometry = geometries[id];
         if (!geometry) {
           throw new Error("Geometry not found");
         }
@@ -182,23 +184,24 @@ export class FragmentStreamLoader extends Component<any> {
         const loaded: FRAG.Fragment[] = [];
 
         if (result) {
-          for (const id in result) {
-            const geometryID = parseInt(id, 10);
+          for (const [geometryID, { position, index, normal }] of result) {
             if (!ids.has(geometryID)) continue;
 
             if (
               !this._geometryInstances[modelID] ||
-              !this._geometryInstances[modelID][geometryID]
+              !this._geometryInstances[modelID].has(geometryID)
             ) {
               continue;
             }
 
             const geoms = this._geometryInstances[modelID];
-            const instances = geoms[geometryID];
+            const instances = geoms.get(geometryID);
 
-            const { index, normal, position } = result[id];
+            if (!instances) {
+              throw new Error("Instances not found!");
+            }
 
-            const geom = new THREE.BufferGeometry() as FRAG.IFragmentGeometry;
+            const geom = new THREE.BufferGeometry();
 
             const posAttr = new THREE.BufferAttribute(position, 3);
             const norAttr = new THREE.BufferAttribute(normal, 3);
@@ -276,7 +279,7 @@ export class FragmentStreamLoader extends Component<any> {
   private newFragment(
     group: FragmentsGroup,
     geometryID: number,
-    geometry: FRAG.IFragmentGeometry,
+    geometry: THREE.BufferGeometry,
     instances: StreamedInstance[],
     transparent: boolean,
     result: FRAG.Fragment[]
@@ -303,14 +306,12 @@ export class FragmentStreamLoader extends Component<any> {
     for (let i = 0; i < instances.length; i++) {
       const { id, transformation, color } = instances[i];
       transform.fromArray(transformation);
-      fragment.setInstance(i, { ids: [id], transform });
       const [r, g, b] = color;
       col.setRGB(r, g, b, "srgb");
-      fragment.mesh.setColorAt(i, col);
+      fragment.add([{ id, colors: [col], transforms: [transform] }]);
     }
 
     fragment.mesh.instanceColor!.needsUpdate = true;
-
     fragment.mesh.applyMatrix4(this.transformation);
     fragment.mesh.updateMatrix();
 

@@ -12,11 +12,13 @@ import { FragmentManager } from "../../FragmentManager";
 import { Button, ToastNotification } from "../../../ui";
 import { Components, ToolComponent } from "../../../core";
 import { IfcStreamingSettings } from "./streaming-settings";
-import { StreamedAsset, StreamedGeometries } from "./base-types";
+import { StreamedGeometries, StreamedAsset } from "./base-types";
 import { isPointInFrontOfPlane, obbFromPoints } from "../../../utils";
 import { SpatialStructure } from "../../FragmentIfcLoader/src/spatial-structure";
 import { CivilReader } from "../../FragmentIfcLoader/src/civil-reader";
 import { IfcMetadataReader } from "../../FragmentIfcLoader/src/ifc-metadata-reader";
+
+// TODO: Deduplicate with IfcFragmentLoader
 
 export class FragmentIfcStreamConverter
   extends Component<WEBIFC.IfcAPI>
@@ -26,12 +28,7 @@ export class FragmentIfcStreamConverter
 
   onGeometryStreamed = new Event<{
     buffer: Uint8Array;
-    data: {
-      [id: number]: {
-        boundingBox: Float32Array;
-        hasHoles: boolean;
-      };
-    };
+    data: StreamedGeometries;
   }>();
 
   onAssetStreamed = new Event<StreamedAsset[]>();
@@ -57,7 +54,18 @@ export class FragmentIfcStreamConverter
 
   private _webIfc = new WEBIFC.IfcAPI();
   private _streamSerializer = new FRAGS.StreamSerializer();
-  private _geometries: StreamedGeometries = {};
+
+  private _geometries: Map<
+    number,
+    {
+      position: Float32Array;
+      normal: Float32Array;
+      index: Uint32Array;
+      boundingBox: Float32Array;
+      hasHoles: boolean;
+    }
+  > = new Map();
+
   private _geometryCount = 0;
 
   private _civil = new CivilReader();
@@ -158,7 +166,7 @@ export class FragmentIfcStreamConverter
     this._webIfc.OpenModel(data, this.settings.webIfc);
   }
 
-   private async streamIfcFile(loadCallback: WEBIFC.ModelLoadCallback) {
+  private async streamIfcFile(loadCallback: WEBIFC.ModelLoadCallback) {
     const { path, absolute, logLevel } = this.settings.wasm;
     this._webIfc.SetWasmPath(path, absolute);
     await this._webIfc.Init();
@@ -209,7 +217,7 @@ export class FragmentIfcStreamConverter
         const itemID = result.get(i);
         chunks[index].push(itemID);
         const level = this._spatialTree.itemsByFloor[itemID] || 0;
-        group.data[itemID] = [[], [level, type]];
+        group.data.set(itemID, [[], [level, type]]);
         counter++;
       }
     }
@@ -241,7 +249,7 @@ export class FragmentIfcStreamConverter
 
     for (const entry of this._visitedGeometries) {
       const { index, uuid } = entry[1];
-      group.keyFragments[index] = uuid;
+      group.keyFragments.set(index, uuid);
     }
 
     const matrix = this._webIfc.GetCoordinationMatrix(0);
@@ -257,7 +265,7 @@ export class FragmentIfcStreamConverter
     (this._webIfc as any) = null;
     this._webIfc = new WEBIFC.IfcAPI();
     this._visitedGeometries.clear();
-    this._geometries = {};
+    this._geometries.clear();
     this._assets = [];
     this._meshesWithHoles.clear();
   }
@@ -288,7 +296,12 @@ export class FragmentIfcStreamConverter
       if (geometryData === undefined) {
         throw new Error("Error getting geometry data for streaming!");
       }
-      group.data[id][0].push(geometryData.index);
+      const data = group.data.get(id);
+      if (!data) {
+        throw new Error("Data not found!");
+      }
+
+      data[0].push(geometryData.index);
 
       const { x, y, z, w } = geometry.color;
       const color = [x, y, z, w];
@@ -356,14 +369,14 @@ export class FragmentIfcStreamConverter
       }
     }
 
-    this._geometries[id] = {
+    this._geometries.set(id, {
       position,
       normal,
       index,
       boundingBox,
-      id,
       hasHoles,
-    };
+    });
+
     geometry.delete();
 
     this._geometryCount++;
@@ -377,22 +390,19 @@ export class FragmentIfcStreamConverter
 
   private async streamGeometries() {
     let buffer = this._streamSerializer.export(this._geometries) as Uint8Array;
-    let data: {
-      [id: number]: {
-        boundingBox: Float32Array;
-        hasHoles: boolean;
-      };
-    } = {};
-    for (const geomID in this._geometries) {
-      const { id, boundingBox, hasHoles } = this._geometries[geomID];
+
+    let data: StreamedGeometries = {};
+
+    for (const [id, { boundingBox, hasHoles }] of this._geometries) {
       data[id] = { boundingBox, hasHoles };
     }
+
     await this.onGeometryStreamed.trigger({ data, buffer });
+
     // Force memory disposal of all created items
     data = null as any;
     buffer = null as any;
-    this._geometries = null as any;
-    this._geometries = {};
+    this._geometries.clear();
     this._geometryCount = 0;
   }
 }

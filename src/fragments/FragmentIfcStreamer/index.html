@@ -28,10 +28,10 @@
 <script type="importmap">
     {
       "imports": {
-        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
-        "web-ifc": "https://unpkg.com/web-ifc@0.0.46/web-ifc-api.js",
+        "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
+        "web-ifc": "https://unpkg.com/web-ifc@0.0.50/web-ifc-api.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
-        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.160.1/examples/jsm/libs/lil-gui.module.min.js",
         "openbim-components": "../../../resources/openbim-components.js",
         "client-zip": "https://unpkg.com/client-zip@2.3.0/index.js"
       }
@@ -79,72 +79,71 @@
 
     const streamer = new OBC.FragmentIfcStreamConverter(components);
     streamer.settings.wasm = {
-        path: "https://unpkg.com/web-ifc@0.0.46/",
+        path: "https://unpkg.com/web-ifc@0.0.50/",
         absolute: true
     }
 
     // loader.culler.threshold = 10;
 
-    // const fetchedIfc = await fetch("../../../resources/small.ifc");
-    // const ifcBuffer = await fetchedIfc.arrayBuffer();
-    // streamer.stream(new Uint8Array(ifcBuffer));
+    const fetchedIfc = await fetch("../../../resources/small.ifc");
+    const ifcBuffer = await fetchedIfc.arrayBuffer();
+
+    streamer.onGeometryStreamed.add((geometry) => {
+        console.log(geometry);
+    });
+
+    streamer.onAssetStreamed.add((assets) => {
+        console.log(assets);
+    });
+
+    streamer.onIfcLoaded.add(async (groupBuffer) => {
+        console.log(groupBuffer);
+    })
+
+    streamer.streamFromBuffer(new Uint8Array(ifcBuffer));
+
+    // const culler = new OBC.ScreenCuller(components);
+
+    // async function loadModel(url) {
+    //     const rawData = await fetch(url);
+    //     const data = await rawData.json();
+    //     await loader.load(data);
+    // }
+
+    // loader.onFragmentsDeleted.add((frags) => {
+    //     for(const frag of frags) {
+    //         culler.elements.remove(frag.mesh);
+    //     }
+    // })
     //
-    // streamer.onGeometryStreamed.add((geometry) => {
-    //     console.log(geometry);
-    // });
-    //
-    // streamer.onAssetStreamed.add((assets) => {
-    //     console.log(assets);
-    // });
-    //
-    // streamer.onIfcLoaded.add(async (groupBuffer) => {
-    //     console.log(groupBuffer);
+    // loader.onFragmentsLoaded.add((frags) => {
+    //     for(const frag of frags) {
+    //         culler.elements.add(frag.mesh);
+    //     }
     // })
 
-
-
-    const culler = new OBC.ScreenCuller(components);
-
-    async function loadModel(url) {
-        const rawData = await fetch(url);
-        const data = await rawData.json();
-        await loader.load(data);
-    }
-
-    loader.onFragmentsDeleted.add((frags) => {
-        for(const frag of frags) {
-            culler.elements.remove(frag.mesh);
-        }
-    })
-
-    loader.onFragmentsLoaded.add((frags) => {
-        for(const frag of frags) {
-            culler.elements.add(frag.mesh);
-        }
-    })
-
-    await loadModel("test.json");
+    // await loadModel("test.json");
     // await loadModel("test-2.json");
     // await loadModel("dm1_riv.json");
 
-    fragments.baseCoordinationModel = fragments.groups[0].uuid;
-    fragments.coordinate();
-    for(const group of fragments.groups) {
-        const {uuid, matrix} = group;
-        const matrixe = new THREE.Matrix4();
-        matrixe.setPosition(0, 5, 0);
-        loader.applyTransformation(uuid, matrixe);
-    }
+    // fragments.baseCoordinationModel = fragments.groups[0].uuid;
+    // fragments.coordinate();
+    // for(const group of fragments.groups) {
+    //     const {uuid, matrix} = group;
+    //     const matrixe = new THREE.Matrix4();
+    //     matrixe.setPosition(0, 5, 0);
+    //     loader.applyTransformation(uuid, matrixe);
+    // }
+    //
+    // console.log(fragments);
+    //
+    // components.camera.controls.addEventListener("controlend", () => {
+    //     loader.culler.needsUpdate = true;
+    //     culler.needsUpdate = true;
+    // });
 
-    console.log(fragments);
-
-    components.camera.controls.addEventListener("controlend", () => {
-        loader.culler.needsUpdate = true;
-        culler.needsUpdate = true;
-    });
-
-    components.camera.controls.fitToSphere(loader.getSphere(), false);
-    loader.getMesh();
+    // components.camera.controls.fitToSphere(loader.getSphere(), false);
+    // loader.getMesh();
     // loader.culler.renderDebugFrame = true;
     // const debugFrame = loader.culler.get().domElement;
     // document.body.appendChild(debugFrame);

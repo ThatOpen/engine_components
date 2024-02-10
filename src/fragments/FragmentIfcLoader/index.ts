@@ -94,8 +94,6 @@ export class FragmentIfcLoader
 
     const fragments = this.components.tools.get(FragmentManager);
     fragments.groups.push(group);
-    const scene = this.components.scene.get();
-    scene.add(group);
 
     return group;
   }
@@ -121,7 +119,10 @@ export class FragmentIfcLoader
         const file = fileOpener.files[0];
         const buffer = await file.arrayBuffer();
         const data = new Uint8Array(buffer);
-        await this.load(data);
+        const model = await this.load(data);
+        const scene = this.components.scene.get();
+        scene.add(model);
+
         toast.visible = true;
         await fragments.updateWindow();
         fileOpener.remove();
