@@ -9,6 +9,9 @@ import { Disposer } from "../../Disposer";
  * A renderer to determine a mesh visibility on screen
  */
 export class MeshCullerRenderer extends CullerRenderer {
+  /* Pixels in screen a geometry must occupy to be considered "seen". */
+  threshold = 100;
+
   readonly onViewUpdated = new Event<{
     seen: Set<THREE.Mesh>;
     unseen: Set<THREE.Mesh>;
@@ -197,7 +200,10 @@ export class MeshCullerRenderer extends CullerRenderer {
     this._recentlyHiddenMeshes = new Set(this._currentVisibleMeshes);
     this._currentVisibleMeshes.clear();
 
-    for (const [code] of colors) {
+    for (const [code, pixels] of colors) {
+      if (pixels < this.threshold) {
+        continue;
+      }
       const mesh = this._colorCodeMeshMap.get(code);
       if (mesh) {
         this._currentVisibleMeshes.add(mesh);
@@ -205,7 +211,7 @@ export class MeshCullerRenderer extends CullerRenderer {
       }
     }
 
-    await this.onViewUpdated.trigger({
+    this.onViewUpdated.trigger({
       seen: this._currentVisibleMeshes,
       unseen: this._recentlyHiddenMeshes,
     });
