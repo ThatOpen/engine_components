@@ -61,8 +61,6 @@ export class FragmentStreamLoader extends Component<any> {
     opacity: 0.5,
   });
 
-  private transformation = new THREE.Matrix4();
-
   constructor(components: Components) {
     super(components);
     this.components.tools.add(FragmentStreamLoader.uuid, this);
@@ -122,32 +120,27 @@ export class FragmentStreamLoader extends Component<any> {
 
   update() {}
 
-  getMesh(): THREE.Mesh {
-    const box = this.culler.boxes.getMesh();
-    if (box) {
-      // this.components.scene.get().add(box);
-      // const boundingBox = new THREE.Box3().setFromObject(box);
-      // // @ts-ignore
-      // const bHelper = new THREE.Box3Helper(boundingBox, 0xff0000);
-      // this.components.scene.get().add(bHelper);
-    }
-    return box;
-  }
-  getSphere() {
-    return this.culler.boxes.getSphere();
-  }
+  // getMesh(): THREE.Mesh {
+  //   const box = this.culler.boxes.getMesh();
+  //   if (box) {
+  // this.components.scene.get().add(box);
+  // const boundingBox = new THREE.Box3().setFromObject(box);
+  // // @ts-ignore
+  // const bHelper = new THREE.Box3Helper(boundingBox, 0xff0000);
+  // this.components.scene.get().add(bHelper);
+  // }
+  // return box;
+  // }
+  // getSphere() {
+  //   return this.culler.boxes.getSphere();
+  // }
 
   applyTransformation(modelID: string, transform: THREE.Matrix4) {
     if (!this.models[modelID]) {
       throw new Error(`Model ${modelID} not found!`);
     }
     const { assets } = this.models[modelID];
-    for (const asset of assets) {
-      this.culler.applyTransformation(modelID, asset.id, transform);
-    }
-    this.culler.boxes.update();
-
-    this.transformation.fromArray(transform.elements);
+    this.culler.applyTransformation(modelID, assets, transform);
   }
 
   private async handleSeenGeometries(seen: { [modelID: string]: number[] }) {
@@ -312,7 +305,6 @@ export class FragmentStreamLoader extends Component<any> {
     }
 
     fragment.mesh.instanceColor!.needsUpdate = true;
-    fragment.mesh.applyMatrix4(this.transformation);
     fragment.mesh.updateMatrix();
 
     result.push(fragment);

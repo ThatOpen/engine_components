@@ -77,52 +77,57 @@
     const fragments = new OBC.FragmentManager(components);
     const loader = new OBC.FragmentStreamLoader(components);
 
-    const streamer = new OBC.FragmentIfcStreamConverter(components);
-    streamer.settings.wasm = {
-        path: "https://unpkg.com/web-ifc@0.0.50/",
-        absolute: true
-    }
+    // const streamer = new OBC.FragmentIfcStreamConverter(components);
+    // streamer.settings.wasm = {
+    //     path: "https://unpkg.com/web-ifc@0.0.50/",
+    //     absolute: true
+    // }
 
     // loader.culler.threshold = 10;
 
-    const fetchedIfc = await fetch("../../../resources/small.ifc");
-    const ifcBuffer = await fetchedIfc.arrayBuffer();
+    // const fetchedIfc = await fetch("../../../resources/small.ifc");
+    // const ifcBuffer = await fetchedIfc.arrayBuffer();
+    //
+    // streamer.onGeometryStreamed.add((geometry) => {
+    //     console.log(geometry);
+    // });
+    //
+    // streamer.onAssetStreamed.add((assets) => {
+    //     console.log(assets);
+    // });
+    //
+    // streamer.onIfcLoaded.add(async (groupBuffer) => {
+    //     console.log(groupBuffer);
+    // })
+    //
+    // streamer.streamFromBuffer(new Uint8Array(ifcBuffer));
 
-    streamer.onGeometryStreamed.add((geometry) => {
-        console.log(geometry);
-    });
+    const culler = new OBC.ScreenCuller(components);
+    culler.setup();
 
-    streamer.onAssetStreamed.add((assets) => {
-        console.log(assets);
-    });
-
-    streamer.onIfcLoaded.add(async (groupBuffer) => {
-        console.log(groupBuffer);
-    })
-
-    streamer.streamFromBuffer(new Uint8Array(ifcBuffer));
-
-    // const culler = new OBC.ScreenCuller(components);
-
-    // async function loadModel(url) {
-    //     const rawData = await fetch(url);
-    //     const data = await rawData.json();
-    //     await loader.load(data);
-    // }
+    async function loadModel(url) {
+        const rawData = await fetch(url);
+        const data = await rawData.json();
+        await loader.load(data);
+    }
 
     // loader.onFragmentsDeleted.add((frags) => {
+    //     console.log("Remove started!");
     //     for(const frag of frags) {
     //         culler.elements.remove(frag.mesh);
     //     }
+    //     console.log("Remove finished!");
     // })
-    //
+
     // loader.onFragmentsLoaded.add((frags) => {
+    //     console.log("Add started!");
     //     for(const frag of frags) {
     //         culler.elements.add(frag.mesh);
     //     }
+    //     console.log("Add finished!");
     // })
 
-    // await loadModel("test.json");
+    await loadModel("../../../resources/cims.ifc-processed.json");
     // await loadModel("test-2.json");
     // await loadModel("dm1_riv.json");
 
@@ -137,13 +142,15 @@
     //
     // console.log(fragments);
     //
-    // components.camera.controls.addEventListener("controlend", () => {
-    //     loader.culler.needsUpdate = true;
-    //     culler.needsUpdate = true;
-    // });
+
+    components.camera.controls.addEventListener("controlend", () => {
+        loader.culler.needsUpdate = true;
+        // culler.needsUpdate = true;
+    });
 
     // components.camera.controls.fitToSphere(loader.getSphere(), false);
     // loader.getMesh();
+
     // loader.culler.renderDebugFrame = true;
     // const debugFrame = loader.culler.get().domElement;
     // document.body.appendChild(debugFrame);

@@ -1,3 +1,4 @@
+import * as FRAGS from "bim-fragment";
 import * as THREE from "three";
 import { Event } from "../../../base-types";
 import {
@@ -6,14 +7,12 @@ import {
 } from "../../../core/ScreenCuller/src";
 import { Components } from "../../../core";
 import { StreamedGeometries, StreamedAsset } from "./base-types";
-import { BoundingBoxes } from "./bounding-boxes";
 
 type CullerBoundingBox = {
   modelIndex: number;
   geometryID: number;
-  indices: number[];
+  assetIDs: Set<number>;
   translucent: boolean;
-  transforms?: number[][];
   lostTime?: number;
   hiddenTime?: number;
 };
@@ -25,17 +24,21 @@ export class GeometryCullerRenderer extends CullerRenderer {
   /* Pixels in screen a geometry must occupy to be considered "seen". */
   threshold = 400;
 
-  boxes = new BoundingBoxes();
+  boxes = new Map<number, FRAGS.Fragment>();
+
+  private _geometry: THREE.BufferGeometry;
+  private _material = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 1,
+  });
 
   private _maxLostTime = 30000;
   private _maxHiddenTime = 10000;
 
   private _lastUpdate = 0;
-  private _assetIndices: { [modelID: string]: Map<number, number[]> } = {};
 
   readonly onViewUpdated = new Event<{
     seen: { [modelID: string]: number[] };
-    hardlySeen: { [modelID: string]: number[] };
     unseen: { [modelID: string]: number[] };
   }>();
 
@@ -51,7 +54,14 @@ export class GeometryCullerRenderer extends CullerRenderer {
   constructor(components: Components, settings?: CullerRendererSettings) {
     super(components, settings);
 
-    this.scene.add(this.boxes.mesh);
+    this._geometry = new THREE.BoxGeometry(1, 1, 1);
+    this._geometry.groups = [];
+    this._geometry.deleteAttribute("uv");
+    const position = this._geometry.attributes.position.array as Float32Array;
+    for (let i = 0; i < position.length; i++) {
+      position[i] += 0.5;
+    }
+    this._geometry.attributes.position.needsUpdate = true;
 
     this.worker.addEventListener("message", this.handleWorkerMessage);
     if (this.autoUpdate) {
@@ -68,7 +78,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
     assets: StreamedAsset[],
     geometries: StreamedGeometries
   ): void {
-    const modelIndex = this.getModelIndex(modelID);
+    const modelIndex = this.createModelIndex(modelID);
 
     const colorEnabled = THREE.ColorManagement.enabled;
     THREE.ColorManagement.enabled = false;
@@ -76,21 +86,30 @@ export class GeometryCullerRenderer extends CullerRenderer {
     type NextColor = { r: number; g: number; b: number; code: string };
     const visitedGeometries = new Map<number, NextColor>();
 
-    // Store the index of the instances per asset to be able to access it later
-    this._assetIndices[modelID] = new Map();
-    const indices = this._assetIndices[modelID];
+    const tempMatrix = new THREE.Matrix4();
+
+    const bboxes = new FRAGS.Fragment(this._geometry, this._material, 10);
+    this.boxes.set(modelIndex, bboxes);
+    this.scene.add(bboxes.mesh);
+
+    const items = new Map<number, FRAGS.Item>();
 
     for (const asset of assets) {
-      const start = this.boxes.mesh.count;
-
       for (const geometryData of asset.geometries) {
         const { geometryID, transformation, color } = geometryData;
+
+        const instanceID = this.getInstanceID(asset.id, geometryID);
+
+        // if (geometryID !== 186) continue;
+
         const geometry = geometries[geometryID];
         if (!geometry) {
           throw new Error("Geometry not found!");
         }
 
         const { boundingBox, hasHoles } = geometry;
+
+        // Get bounding box color
 
         let nextColor: NextColor;
         if (visitedGeometries.has(geometryID)) {
@@ -100,65 +119,95 @@ export class GeometryCullerRenderer extends CullerRenderer {
           visitedGeometries.set(geometryID, nextColor);
         }
         const { r, g, b, code } = nextColor;
+        const threeColor = new THREE.Color();
+        threeColor.setRGB(r / 255, g / 255, b / 255, "srgb");
 
-        const count = this.boxes.mesh.count;
+        // Get bounding box transform
 
-        const colorArray = [r, g, b];
-        const bbox = Object.values(boundingBox);
-        this.boxes.add(bbox, transformation, colorArray);
+        const instanceMatrix = new THREE.Matrix4();
+        const boundingBoxArray = Object.values(boundingBox);
+        instanceMatrix.fromArray(transformation);
+        tempMatrix.fromArray(boundingBoxArray);
+        instanceMatrix.multiply(tempMatrix);
+
+        if (items.has(instanceID)) {
+          // This geometry exists multiple times in this asset
+          const item = items.get(instanceID);
+          if (item === undefined || !item.colors) {
+            throw new Error("Malformed item!");
+          }
+          item.colors.push(threeColor);
+          item.transforms.push(instanceMatrix);
+        } else {
+          // This geometry exists only once in this asset (for now)
+          items.set(instanceID, {
+            id: instanceID,
+            colors: [threeColor],
+            transforms: [instanceMatrix],
+          });
+        }
 
         const translucent = hasHoles || color[3] !== 1;
 
         if (!this._geometries.toFind.has(code)) {
+          const assetIDs = new Set([asset.id]);
           this._geometries.toFind.set(code, {
             modelIndex,
             geometryID,
             translucent,
-            indices: [count],
+            assetIDs,
           });
         } else {
           const box = this._geometries.toFind.get(code) as CullerBoundingBox;
-          box.indices.push(count);
           // For simplicity, when a geometry is sometimes translucent, treat it
           // as if it was always translucent. Maybe this needs to be optimized
           box.translucent = box.translucent || translucent;
+          box.assetIDs.add(asset.id);
         }
       }
-
-      const end = this.boxes.mesh.count;
-      indices.set(asset.id, [start, end]);
     }
 
-    this.boxes.update();
+    const itemsArray = Array.from(items.values());
+    bboxes.add(itemsArray);
+
     THREE.ColorManagement.enabled = colorEnabled;
 
-    // this.components.scene.get().add(this._boundingBoxes.mesh.clone());
+    // const { geometry, material, count, instanceMatrix, instanceColor } = [
+    //   ...this.boxes.values(),
+    // ][0].mesh;
+    // const mesh = new THREE.InstancedMesh(geometry, material, count);
+    // mesh.instanceMatrix = instanceMatrix;
+    // mesh.instanceColor = instanceColor;
+    // this.components.scene.get().add(mesh);
   }
 
   applyTransformation(
     modelID: string,
-    assetID: number,
+    assets: StreamedAsset[],
     transform: THREE.Matrix4
   ) {
-    const indices = this._assetIndices[modelID];
-    const found = indices.get(assetID);
-    if (!found) {
-      throw new Error(`Instance not found: ${modelID}-${assetID}`);
+    const modelIndex = this._modelIDIndex.get(modelID);
+    if (modelIndex === undefined) {
+      throw new Error("Model not found!");
     }
-    const [start, end] = found;
-    const tempMatrix = new THREE.Matrix4();
-    for (let i = start; i < end; i++) {
-      this.boxes.mesh.getMatrixAt(i, tempMatrix);
-      tempMatrix.premultiply(transform);
-      this.boxes.mesh.setMatrixAt(i, tempMatrix);
+    const bbox = this.boxes.get(modelIndex);
+    if (bbox === undefined) {
+      throw new Error("Bounding boxes not found!");
     }
+    const ids = new Set<number>();
+    for (const { id, geometries } of assets) {
+      for (const { geometryID } of geometries) {
+        const instanceID = this.getInstanceID(id, geometryID);
+        ids.add(instanceID);
+      }
+    }
+    bbox.applyTransform(ids, transform);
   }
 
   private handleWorkerMessage = async (event: MessageEvent) => {
     const colors = event.data.colors as Map<string, number>;
 
     const foundGeometries: { [modelID: string]: number[] } = {};
-    const hardlyFoundGeometries: { [modelID: string]: number[] } = {};
     const unFoundGeometries: { [modelID: string]: number[] } = {};
     let viewWasUpdated = false;
 
@@ -169,7 +218,10 @@ export class GeometryCullerRenderer extends CullerRenderer {
     const now = performance.now();
 
     for (const [code, pixels] of colors) {
-      const isHardlySeen = pixels < this.threshold;
+      // Geometries that are too small in the screen to be considered found
+      if (pixels < this.threshold) {
+        continue;
+      }
 
       if (this._geometries.toFind.has(code)) {
         // New geometry was found
@@ -177,23 +229,15 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
         const modelID = this._indexModelID.get(found.modelIndex) as string;
 
-        const geoms = isHardlySeen ? hardlyFoundGeometries : foundGeometries;
-        if (!geoms[modelID]) {
-          geoms[modelID] = [];
+        if (!foundGeometries[modelID]) {
+          foundGeometries[modelID] = [];
         }
-        geoms[modelID].push(found.geometryID);
+        foundGeometries[modelID].push(found.geometryID);
         viewWasUpdated = true;
-
-        // When a geometry is hardly seen, keep it in the "toFind" group
-        // That way, we will be able to find it later again and
-        // mark it as "found" if it's closer
-        if (isHardlySeen) {
-          continue;
-        }
 
         if (found.translucent) {
           translucentExists = true;
-          this.setVisibility([found], false);
+          this.setGeometryVisibility([found], false);
         }
 
         this._geometries.toFind.delete(code);
@@ -201,26 +245,14 @@ export class GeometryCullerRenderer extends CullerRenderer {
       } else if (this._geometries.found.has(code)) {
         const found = this._geometries.found.get(code) as CullerBoundingBox;
 
-        // A box that was previously found is now very far away
-        // consider this geometry lost, so that the geometry can
-        // get released in the future and substituted by a bbox
-        if (isHardlySeen) {
-          continue;
-        }
-
         // A box that was previously found is still visible
         boxesThatJustDissappeared.delete(code);
 
         if (found.translucent) {
           translucentExists = true;
-          this.setVisibility([found], false);
+          this.setGeometryVisibility([found], false);
         }
       } else if (this._geometries.lost.has(code)) {
-        // A box is too far away to be considered "found"
-        if (isHardlySeen) {
-          continue;
-        }
-
         // We found back a lost box, put them back at the found group
         const found = this._geometries.lost.get(code) as CullerBoundingBox;
         found.lostTime = undefined;
@@ -262,7 +294,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
         this._geometries.toFind.set(code, box);
       } else if (box.hiddenTime && now - box.hiddenTime > this._maxHiddenTime) {
         // This box was hidden for translucency and can be revealed again
-        this.setVisibility([box], true);
+        this.setGeometryVisibility([box], true);
       }
     }
 
@@ -271,7 +303,6 @@ export class GeometryCullerRenderer extends CullerRenderer {
     if (viewWasUpdated) {
       await this.onViewUpdated.trigger({
         seen: foundGeometries,
-        hardlySeen: hardlyFoundGeometries,
         unseen: unFoundGeometries,
       });
     }
@@ -284,36 +315,27 @@ export class GeometryCullerRenderer extends CullerRenderer {
     }
   };
 
-  private setVisibility(boxes: CullerBoundingBox[], visible: boolean) {
-    const now = performance.now();
-    const tempMatrix = new THREE.Matrix4();
-    const { mesh } = this.boxes;
-    for (const box of boxes) {
-      if (visible) {
-        if (!box.transforms) {
-          continue;
-        }
-        box.hiddenTime = undefined;
-        for (let i = 0; i < box.indices.length; i++) {
-          tempMatrix.fromArray(box.transforms[i]);
-          mesh.setMatrixAt(box.indices[i], tempMatrix);
-        }
-        delete box.transforms;
-      } else {
-        box.hiddenTime = now;
-        box.transforms = [];
-        for (const index of box.indices) {
-          mesh.getMatrixAt(index, tempMatrix);
-          box.transforms.push([...tempMatrix.elements]);
-          tempMatrix.makeScale(0, 0, 0);
-          mesh.setMatrixAt(index, tempMatrix);
-        }
+  private setGeometryVisibility(
+    geometries: CullerBoundingBox[],
+    visible: boolean
+  ) {
+    for (const geometry of geometries) {
+      const { modelIndex, geometryID, assetIDs } = geometry;
+      const bbox = this.boxes.get(modelIndex);
+      if (bbox === undefined) {
+        throw new Error("Model not found!");
       }
+      const instancesID = new Set<number>();
+      for (const id of assetIDs) {
+        const instanceID = this.getInstanceID(id, geometryID);
+        instancesID.add(instanceID);
+      }
+      bbox.setVisibility(visible, instancesID);
+      geometry.hiddenTime = visible ? undefined : performance.now();
     }
-    mesh.instanceMatrix.needsUpdate = true;
   }
 
-  private getModelIndex(modelID: string) {
+  private createModelIndex(modelID: string) {
     if (this._modelIDIndex.has(modelID)) {
       throw new Error("Can't load the same model twice!");
     }
@@ -321,5 +343,13 @@ export class GeometryCullerRenderer extends CullerRenderer {
     this._modelIDIndex.set(modelID, count);
     this._indexModelID.set(count, modelID);
     return count;
+  }
+
+  private getInstanceID(assetID: number, geometryID: number) {
+    // src: https://stackoverflow.com/questions/14879691/get-number-of-digits-with-javascript
+    // eslint-disable-next-line no-bitwise
+    const size = (Math.log(geometryID) * Math.LOG10E + 1) | 0;
+    const factor = 10 ** size;
+    return assetID + geometryID / factor;
   }
 }
