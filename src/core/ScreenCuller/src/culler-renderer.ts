@@ -53,7 +53,7 @@ export class CullerRenderer extends Component<THREE.WebGLRenderer> {
 
   private readonly bufferSize: number;
 
-  private _colors = { r: 0, g: 0, b: 0, i: 0 };
+  private _availableColor = 1;
 
   private readonly _buffer: Uint8Array;
 
@@ -154,78 +154,40 @@ export class CullerRenderer extends Component<THREE.WebGLRenderer> {
     this.needsUpdate = false;
   };
 
-  protected getNextColor() {
-    if (this._colors.i === 0) {
-      this._colors.b++;
-      if (this._colors.b === 256) {
-        this._colors.b = 0;
-        this._colors.i = 1;
-      }
+  protected getAvailableColor() {
+    // src: https://stackoverflow.com/a/67579485
+
+    let bigOne = BigInt(this._availableColor.toString());
+    const colorArray = [];
+    do {
+      colorArray.unshift(Number(bigOne % 256n));
+      bigOne /= 256n;
+    } while (bigOne);
+
+    while (colorArray.length !== 3) {
+      colorArray.unshift(0);
     }
 
-    if (this._colors.i === 1) {
-      this._colors.g++;
-      this._colors.i = 0;
-      if (this._colors.g === 256) {
-        this._colors.g = 0;
-        this._colors.i = 2;
-      }
-    }
+    const [r, g, b] = colorArray;
+    const code = `${r}-${g}-${b}`;
 
-    if (this._colors.i === 2) {
-      this._colors.r++;
-      this._colors.i = 1;
-      if (this._colors.r === 256) {
-        this._colors.r = 0;
-        this._colors.i = 0;
-      }
-    }
-
-    return this.getLastColor();
+    return { r, g, b, code };
   }
 
-  protected decreaseNextColor() {
-    if (this._colors.i === 0) {
-      this._colors.b--;
-      if (this._colors.b === -1) {
-        if (this._colors.g !== 0 || this._colors.r !== 0) {
-          this._colors.b = 255;
-          this._colors.i = 1;
-        } else {
-          this._colors.b = 0;
-        }
-      }
+  protected increaseColor() {
+    if (this._availableColor === 256 * 256 * 256) {
+      console.warn("Color can't be increased over 256 x 256 x 256!");
+      return;
     }
-
-    if (this._colors.i === 1) {
-      this._colors.g--;
-      this._colors.i = 0;
-      if (this._colors.g === -1) {
-        if (this._colors.r !== 0) {
-          this._colors.g = 255;
-          this._colors.i = 2;
-        } else {
-          this._colors.g = 0;
-        }
-      }
-    }
-
-    if (this._colors.i === 2) {
-      this._colors.r--;
-      this._colors.i = 1;
-      if (this._colors.r === -1) {
-        this._colors.r = 0;
-      }
-    }
+    this._availableColor++;
   }
 
-  protected getLastColor() {
-    return {
-      r: this._colors.r,
-      g: this._colors.g,
-      b: this._colors.b,
-      code: `${this._colors.r}-${this._colors.g}-${this._colors.b}`,
-    };
+  protected decreaseColor() {
+    if (this._availableColor === 1) {
+      console.warn("Color can't be decreased under 0!");
+      return;
+    }
+    this._availableColor--;
   }
 
   private applySettings(settings?: CullerRendererSettings) {

@@ -115,7 +115,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
         if (visitedGeometries.has(geometryID)) {
           nextColor = visitedGeometries.get(geometryID) as NextColor;
         } else {
-          nextColor = this.getNextColor();
+          nextColor = this.getAvailableColor();
           visitedGeometries.set(geometryID, nextColor);
         }
         const { r, g, b, code } = nextColor;
