@@ -32,8 +32,8 @@ export class GeometryCullerRenderer extends CullerRenderer {
     opacity: 1,
   });
 
-  private _maxLostTime = 30000;
-  private _maxHiddenTime = 10000;
+  private _maxLostTime = 5000;
+  private _maxHiddenTime = 2000;
 
   private _lastUpdate = 0;
 
@@ -53,6 +53,8 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
   constructor(components: Components, settings?: CullerRendererSettings) {
     super(components, settings);
+
+    this.updateInterval = 500;
 
     this._geometry = new THREE.BoxGeometry(1, 1, 1);
     this._geometry.groups = [];
@@ -116,6 +118,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
           nextColor = visitedGeometries.get(geometryID) as NextColor;
         } else {
           nextColor = this.getAvailableColor();
+          this.increaseColor();
           visitedGeometries.set(geometryID, nextColor);
         }
         const { r, g, b, code } = nextColor;
@@ -311,7 +314,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
     // to reveal what's behind. We will make them visible again after its hidden
     // time expires.
     if (translucentExists) {
-      await this.updateVisibility(true);
+      this.needsUpdate = true;
     }
   };
 

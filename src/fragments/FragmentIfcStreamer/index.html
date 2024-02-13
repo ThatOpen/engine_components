@@ -111,21 +111,30 @@
         await loader.load(data);
     }
 
-    // loader.onFragmentsDeleted.add((frags) => {
-    //     console.log("Remove started!");
-    //     for(const frag of frags) {
-    //         culler.elements.remove(frag.mesh);
-    //     }
-    //     console.log("Remove finished!");
-    // })
+    loader.onFragmentsDeleted.add((frags) => {
+        console.log("Remove started!");
+        for(const frag of frags) {
+            culler.elements.remove(frag.mesh);
+        }
+        culler.needsUpdate = true;
+        console.log("Remove finished!");
+    })
 
-    // loader.onFragmentsLoaded.add((frags) => {
-    //     console.log("Add started!");
-    //     for(const frag of frags) {
-    //         culler.elements.add(frag.mesh);
-    //     }
-    //     console.log("Add finished!");
-    // })
+    loader.onFragmentsLoaded.add((frags) => {
+        console.log("Add started!");
+        for(const frag of frags) {
+            culler.elements.add(frag.mesh);
+        }
+        culler.needsUpdate = true;
+        console.log("Add finished!");
+    })
+
+    // culler.elements.renderDebugFrame = true;
+    // const debugFrame = culler.elements.get().domElement;
+    // document.body.appendChild(debugFrame);
+    // debugFrame.style.position = 'fixed';
+    // debugFrame.style.left = '0';
+    // debugFrame.style.bottom = '0';
 
     await loadModel("../../../resources/cims.ifc-processed.json");
     // await loadModel("test-2.json");
@@ -151,12 +160,12 @@
     // components.camera.controls.fitToSphere(loader.getSphere(), false);
     // loader.getMesh();
 
-    loader.culler.renderDebugFrame = true;
-    const debugFrame = loader.culler.get().domElement;
-    document.body.appendChild(debugFrame);
-    debugFrame.style.position = 'fixed';
-    debugFrame.style.left = '0';
-    debugFrame.style.bottom = '0';
+    // loader.culler.renderDebugFrame = true;
+    // const debugFrame = loader.culler.get().domElement;
+    // document.body.appendChild(debugFrame);
+    // debugFrame.style.position = 'fixed';
+    // debugFrame.style.left = '0';
+    // debugFrame.style.bottom = '0';
 
     // Set up stats
 
