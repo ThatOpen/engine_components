@@ -66,7 +66,6 @@ export class FragmentStreamLoader extends Component<any> {
     this.culler = new GeometryCullerRenderer(components);
 
     this.culler.onViewUpdated.add(async ({ seen, unseen }) => {
-      // console.log(hardlySeen);
       await this.handleSeenGeometries(seen);
       await this.handleUnseenGeometries(unseen);
     });
@@ -138,7 +137,7 @@ export class FragmentStreamLoader extends Component<any> {
     this.culler.applyTransformation(modelID, assets, transform);
   }
 
-  private async handleSeenGeometries(seen: { [modelID: string]: number[] }) {
+  private async handleSeenGeometries(seen: { [modelID: string]: Set<number> }) {
     for (const modelID in seen) {
       const fragments = this.components.tools.get(FragmentManager);
       const group = fragments.groups.find((group) => group.uuid === modelID);
@@ -226,7 +225,7 @@ export class FragmentStreamLoader extends Component<any> {
     }
   }
 
-  private async handleUnseenGeometries(unseen: { [p: string]: number[] }) {
+  private async handleUnseenGeometries(unseen: { [p: string]: Set<number> }) {
     const deletedFragments: FRAG.Fragment[] = [];
     for (const modelID in unseen) {
       const fragments = this.components.tools.get(FragmentManager);

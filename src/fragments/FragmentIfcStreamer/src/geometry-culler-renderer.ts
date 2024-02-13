@@ -12,9 +12,8 @@ type CullerBoundingBox = {
   modelIndex: number;
   geometryID: number;
   assetIDs: Set<number>;
-  translucent: boolean;
-  lostTime?: number;
-  hiddenTime?: number;
+  exists: boolean;
+  time: number;
 };
 
 /**
@@ -33,23 +32,16 @@ export class GeometryCullerRenderer extends CullerRenderer {
   });
 
   private _maxLostTime = 5000;
-  private _maxHiddenTime = 2000;
-
-  private _lastUpdate = 0;
 
   readonly onViewUpdated = new Event<{
-    seen: { [modelID: string]: number[] };
-    unseen: { [modelID: string]: number[] };
+    seen: { [modelID: string]: Set<number> };
+    unseen: { [modelID: string]: Set<number> };
   }>();
 
   private _modelIDIndex = new Map<string, number>();
   private _indexModelID = new Map<number, string>();
 
-  private _geometries = {
-    toFind: new Map() as Map<string, CullerBoundingBox>,
-    found: new Map() as Map<string, CullerBoundingBox>,
-    lost: new Map() as Map<string, CullerBoundingBox>,
-  };
+  private _geometries = new Map<string, CullerBoundingBox>();
 
   constructor(components: Components, settings?: CullerRendererSettings) {
     super(components, settings);
@@ -98,18 +90,16 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
     for (const asset of assets) {
       for (const geometryData of asset.geometries) {
-        const { geometryID, transformation, color } = geometryData;
+        const { geometryID, transformation } = geometryData;
 
         const instanceID = this.getInstanceID(asset.id, geometryID);
-
-        // if (geometryID !== 186) continue;
 
         const geometry = geometries[geometryID];
         if (!geometry) {
           throw new Error("Geometry not found!");
         }
 
-        const { boundingBox, hasHoles } = geometry;
+        const { boundingBox } = geometry;
 
         // Get bounding box color
 
@@ -150,21 +140,17 @@ export class GeometryCullerRenderer extends CullerRenderer {
           });
         }
 
-        const translucent = hasHoles || color[3] !== 1;
-
-        if (!this._geometries.toFind.has(code)) {
+        if (!this._geometries.has(code)) {
           const assetIDs = new Set([asset.id]);
-          this._geometries.toFind.set(code, {
+          this._geometries.set(code, {
             modelIndex,
             geometryID,
-            translucent,
             assetIDs,
+            exists: false,
+            time: 0,
           });
         } else {
-          const box = this._geometries.toFind.get(code) as CullerBoundingBox;
-          // For simplicity, when a geometry is sometimes translucent, treat it
-          // as if it was always translucent. Maybe this needs to be optimized
-          box.translucent = box.translucent || translucent;
+          const box = this._geometries.get(code) as CullerBoundingBox;
           box.assetIDs.add(asset.id);
         }
       }
@@ -210,133 +196,59 @@ export class GeometryCullerRenderer extends CullerRenderer {
   private handleWorkerMessage = async (event: MessageEvent) => {
     const colors = event.data.colors as Map<string, number>;
 
-    const foundGeometries: { [modelID: string]: number[] } = {};
-    const unFoundGeometries: { [modelID: string]: number[] } = {};
-    let viewWasUpdated = false;
+    const seen: { [modelID: string]: Set<number> } = {};
+    const unseen: { [modelID: string]: Set<number> } = {};
 
-    let translucentExists = false;
-
-    const boxesThatJustDissappeared = new Set(this._geometries.found.keys());
+    // const translucentToHide = new Set<CullerBoundingBox>();
+    // const translucentToRecover = new Set<CullerBoundingBox>();
 
     const now = performance.now();
+    let viewWasUpdated = false;
 
-    for (const [code, pixels] of colors) {
-      // Geometries that are too small in the screen to be considered found
-      if (pixels < this.threshold) {
+    for (const [code, geometry] of this._geometries) {
+      const pixels = colors.get(code);
+
+      const isFound = pixels !== undefined && pixels > this.threshold;
+      const { exists } = geometry;
+
+      const modelID = this._indexModelID.get(geometry.modelIndex) as string;
+
+      if (!isFound && !exists) {
+        // Geometry doesn't exist and is not visible
         continue;
       }
 
-      if (this._geometries.toFind.has(code)) {
-        // New geometry was found
-        const found = this._geometries.toFind.get(code) as CullerBoundingBox;
-
-        const modelID = this._indexModelID.get(found.modelIndex) as string;
-
-        if (!foundGeometries[modelID]) {
-          foundGeometries[modelID] = [];
+      if (isFound && exists) {
+        // Geometry was visible, and still is
+        geometry.time = now;
+      } else if (isFound && !exists) {
+        // New geometry found
+        if (!seen[modelID]) {
+          seen[modelID] = new Set();
         }
-        foundGeometries[modelID].push(found.geometryID);
+        geometry.time = now;
+        geometry.exists = true;
+        seen[modelID].add(geometry.geometryID);
         viewWasUpdated = true;
-
-        if (found.translucent) {
-          translucentExists = true;
-          this.setGeometryVisibility([found], false);
+      } else if (!isFound && exists) {
+        // Geometry was lost
+        const lostTime = now - geometry.time;
+        const shouldDelete = lostTime > this._maxLostTime;
+        if (shouldDelete) {
+          if (!unseen[modelID]) {
+            unseen[modelID] = new Set();
+          }
+          geometry.exists = false;
+          unseen[modelID].add(geometry.geometryID);
+          viewWasUpdated = true;
         }
-
-        this._geometries.toFind.delete(code);
-        this._geometries.found.set(code, found);
-      } else if (this._geometries.found.has(code)) {
-        const found = this._geometries.found.get(code) as CullerBoundingBox;
-
-        // A box that was previously found is still visible
-        boxesThatJustDissappeared.delete(code);
-
-        if (found.translucent) {
-          translucentExists = true;
-          this.setGeometryVisibility([found], false);
-        }
-      } else if (this._geometries.lost.has(code)) {
-        // We found back a lost box, put them back at the found group
-        const found = this._geometries.lost.get(code) as CullerBoundingBox;
-        found.lostTime = undefined;
-        this._geometries.lost.delete(code);
-        this._geometries.found.set(code, found);
       }
     }
-
-    // Update previously found boxes that were just lost
-    for (const code of boxesThatJustDissappeared) {
-      const box = this._geometries.found.get(code);
-      if (!box) continue;
-      box.lostTime = now;
-      this._geometries.found.delete(code);
-      this._geometries.lost.set(code, box);
-    }
-
-    // Update lost boxes whose lost or hidden time has expired
-    for (const [code, box] of this._geometries.lost) {
-      if (!box || !box.lostTime) continue;
-
-      // Make sure the box is not considered "lost" because the last update
-      // was a long time ago
-      const lastUpdateValid = now - this._lastUpdate < this._maxLostTime;
-
-      if (lastUpdateValid && now - box.lostTime > this._maxLostTime) {
-        // This box is not seen anymore, notify to remove from memory
-        box.lostTime = undefined;
-        box.hiddenTime = undefined;
-
-        const modelID = this._indexModelID.get(box.modelIndex) as string;
-        if (!unFoundGeometries[modelID]) {
-          unFoundGeometries[modelID] = [];
-        }
-        unFoundGeometries[modelID].push(box.geometryID);
-        viewWasUpdated = true;
-
-        this._geometries.lost.delete(code);
-        this._geometries.toFind.set(code, box);
-      } else if (box.hiddenTime && now - box.hiddenTime > this._maxHiddenTime) {
-        // This box was hidden for translucency and can be revealed again
-        this.setGeometryVisibility([box], true);
-      }
-    }
-
-    this._lastUpdate = now;
 
     if (viewWasUpdated) {
-      await this.onViewUpdated.trigger({
-        seen: foundGeometries,
-        unseen: unFoundGeometries,
-      });
-    }
-
-    // When we find a translucent bboxes, we hide them and then force a re-render
-    // to reveal what's behind. We will make them visible again after its hidden
-    // time expires.
-    if (translucentExists) {
-      this.needsUpdate = true;
+      await this.onViewUpdated.trigger({ seen, unseen });
     }
   };
-
-  private setGeometryVisibility(
-    geometries: CullerBoundingBox[],
-    visible: boolean
-  ) {
-    for (const geometry of geometries) {
-      const { modelIndex, geometryID, assetIDs } = geometry;
-      const bbox = this.boxes.get(modelIndex);
-      if (bbox === undefined) {
-        throw new Error("Model not found!");
-      }
-      const instancesID = new Set<number>();
-      for (const id of assetIDs) {
-        const instanceID = this.getInstanceID(id, geometryID);
-        instancesID.add(instanceID);
-      }
-      bbox.setVisibility(visible, instancesID);
-      geometry.hiddenTime = visible ? undefined : performance.now();
-    }
-  }
 
   private createModelIndex(modelID: string) {
     if (this._modelIDIndex.has(modelID)) {

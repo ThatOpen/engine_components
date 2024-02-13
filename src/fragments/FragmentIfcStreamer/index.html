@@ -112,21 +112,17 @@
     }
 
     loader.onFragmentsDeleted.add((frags) => {
-        console.log("Remove started!");
         for(const frag of frags) {
             culler.elements.remove(frag.mesh);
         }
         culler.needsUpdate = true;
-        console.log("Remove finished!");
     })
 
     loader.onFragmentsLoaded.add((frags) => {
-        console.log("Add started!");
         for(const frag of frags) {
             culler.elements.add(frag.mesh);
         }
         culler.needsUpdate = true;
-        console.log("Add finished!");
     })
 
     // culler.elements.renderDebugFrame = true;
@@ -136,7 +132,7 @@
     // debugFrame.style.left = '0';
     // debugFrame.style.bottom = '0';
 
-    await loadModel("../../../resources/cims.ifc-processed.json");
+    await loadModel("../../../resources/small.ifc-processed.json");
     // await loadModel("test-2.json");
     // await loadModel("dm1_riv.json");
 
