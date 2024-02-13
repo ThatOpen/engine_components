@@ -239,6 +239,8 @@ export class FragmentStreamLoader extends Component<any> {
       const geometries = unseen[modelID];
 
       for (const geometryID of geometries) {
+        this.culler.removeFragment(group.uuid, geometryID);
+
         if (!loadedFrags[geometryID]) continue;
         const frags = loadedFrags[geometryID];
         for (const frag of frags) {
@@ -271,9 +273,6 @@ export class FragmentStreamLoader extends Component<any> {
   ) {
     if (instances.length === 0) return;
 
-    const transform = new THREE.Matrix4();
-    const col = new THREE.Color();
-
     const material = transparent ? this._baseMaterialT : this._baseMaterial;
     const fragment = new FRAG.Fragment(geometry, material, instances.length);
     group.add(fragment.mesh);
@@ -288,16 +287,20 @@ export class FragmentStreamLoader extends Component<any> {
     }
     geoms[geometryID].push(fragment);
 
+    const items: FRAG.Item[] = [];
     for (let i = 0; i < instances.length; i++) {
+      const transform = new THREE.Matrix4();
+      const col = new THREE.Color();
       const { id, transformation, color } = instances[i];
       transform.fromArray(transformation);
       const [r, g, b] = color;
       col.setRGB(r, g, b, "srgb");
-      fragment.add([{ id, colors: [col], transforms: [transform] }]);
+      items.push({ id, colors: [col], transforms: [transform] });
     }
 
-    fragment.mesh.instanceColor!.needsUpdate = true;
-    fragment.mesh.updateMatrix();
+    fragment.add(items);
+
+    this.culler.addFragment(group.uuid, geometryID, fragment);
 
     result.push(fragment);
   }

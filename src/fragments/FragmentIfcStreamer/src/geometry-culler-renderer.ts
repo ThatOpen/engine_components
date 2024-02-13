@@ -14,6 +14,7 @@ type CullerBoundingBox = {
   assetIDs: Set<number>;
   exists: boolean;
   time: number;
+  fragment?: FRAGS.Fragment;
 };
 
 /**
@@ -26,6 +27,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
   boxes = new Map<number, FRAGS.Fragment>();
 
   private _geometry: THREE.BufferGeometry;
+
   private _material = new THREE.MeshBasicMaterial({
     transparent: true,
     opacity: 1,
@@ -42,6 +44,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
   private _indexModelID = new Map<number, string>();
 
   private _geometries = new Map<string, CullerBoundingBox>();
+  private codes = new Map<number, Map<number, string>>();
 
   constructor(components: Components, settings?: CullerRendererSettings) {
     super(components, settings);
@@ -115,6 +118,14 @@ export class GeometryCullerRenderer extends CullerRenderer {
         const threeColor = new THREE.Color();
         threeColor.setRGB(r / 255, g / 255, b / 255, "srgb");
 
+        // Save color code by model and geometry
+
+        if (!this.codes.has(modelIndex)) {
+          this.codes.set(modelIndex, new Map());
+        }
+        const map = this.codes.get(modelIndex) as Map<number, string>;
+        map.set(geometryID, code);
+
         // Get bounding box transform
 
         const instanceMatrix = new THREE.Matrix4();
@@ -170,6 +181,68 @@ export class GeometryCullerRenderer extends CullerRenderer {
     // this.components.scene.get().add(mesh);
   }
 
+  addFragment(modelID: string, geometryID: number, frag: FRAGS.Fragment) {
+    const colorEnabled = THREE.ColorManagement.enabled;
+    THREE.ColorManagement.enabled = false;
+
+    const modelIndex = this._modelIDIndex.get(modelID) as number;
+
+    // Hide bounding box
+
+    const map = this.codes.get(modelIndex) as Map<number, string>;
+    const code = map.get(geometryID) as string;
+    const geometry = this._geometries.get(code) as CullerBoundingBox;
+    this.setGeometryVisibility(geometry, false);
+
+    // Substitute it by fragment with same color
+
+    if (!geometry.fragment) {
+      geometry.fragment = new FRAGS.Fragment(
+        frag.mesh.geometry,
+        this._material,
+        frag.capacity
+      );
+      this.scene.add(geometry.fragment.mesh);
+    } else {
+      console.log("Heyy");
+    }
+
+    const [r, g, b] = code.split("-").map((value) => parseInt(value, 10));
+
+    const items: FRAGS.Item[] = [];
+    for (const itemID of frag.ids) {
+      const item = frag.get(itemID);
+      if (!item.colors) {
+        throw new Error("Malformed fragments!");
+      }
+      for (const color of item.colors) {
+        color.setRGB(r / 255, g / 255, b / 255, "srgb");
+      }
+      items.push(item);
+    }
+
+    geometry.fragment.add(items);
+
+    THREE.ColorManagement.enabled = colorEnabled;
+
+    this.needsUpdate = true;
+  }
+
+  removeFragment(modelID: string, geometryID: number) {
+    const modelIndex = this._modelIDIndex.get(modelID) as number;
+
+    const map = this.codes.get(modelIndex) as Map<number, string>;
+    const code = map.get(geometryID) as string;
+    const geometry = this._geometries.get(code) as CullerBoundingBox;
+    this.setGeometryVisibility(geometry, true);
+
+    if (geometry.fragment) {
+      const { fragment } = geometry;
+      fragment.dispose(false);
+      geometry.fragment = undefined;
+    }
+  }
+
   applyTransformation(
     modelID: string,
     assets: StreamedAsset[],
@@ -193,14 +266,25 @@ export class GeometryCullerRenderer extends CullerRenderer {
     bbox.applyTransform(ids, transform);
   }
 
+  private setGeometryVisibility(geometry: CullerBoundingBox, visible: boolean) {
+    const { modelIndex, geometryID, assetIDs } = geometry;
+    const bbox = this.boxes.get(modelIndex);
+    if (bbox === undefined) {
+      throw new Error("Model not found!");
+    }
+    const instancesID = new Set<number>();
+    for (const id of assetIDs) {
+      const instanceID = this.getInstanceID(id, geometryID);
+      instancesID.add(instanceID);
+    }
+    bbox.setVisibility(visible, instancesID);
+  }
+
   private handleWorkerMessage = async (event: MessageEvent) => {
     const colors = event.data.colors as Map<string, number>;
 
     const seen: { [modelID: string]: Set<number> } = {};
     const unseen: { [modelID: string]: Set<number> } = {};
-
-    // const translucentToHide = new Set<CullerBoundingBox>();
-    // const translucentToRecover = new Set<CullerBoundingBox>();
 
     const now = performance.now();
     let viewWasUpdated = false;
