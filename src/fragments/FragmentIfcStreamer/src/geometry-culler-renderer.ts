@@ -22,9 +22,12 @@ type CullerBoundingBox = {
  */
 export class GeometryCullerRenderer extends CullerRenderer {
   /* Pixels in screen a geometry must occupy to be considered "seen". */
-  threshold = 400;
+  threshold = 50;
 
   boxes = new Map<number, FRAGS.Fragment>();
+
+  maxLostTime = 30000;
+  maxHiddenTime = 5000;
 
   private _geometry: THREE.BufferGeometry;
 
@@ -33,11 +36,11 @@ export class GeometryCullerRenderer extends CullerRenderer {
     opacity: 1,
   });
 
-  private _maxLostTime = 5000;
-
   readonly onViewUpdated = new Event<{
-    seen: { [modelID: string]: Set<number> };
-    unseen: { [modelID: string]: Set<number> };
+    toLoad: { [modelID: string]: Set<number> };
+    toRemove: { [modelID: string]: Set<number> };
+    toHide: { [modelID: string]: Set<number> };
+    toShow: { [modelID: string]: Set<number> };
   }>();
 
   private _modelIDIndex = new Map<string, number>();
@@ -92,79 +95,80 @@ export class GeometryCullerRenderer extends CullerRenderer {
     const items = new Map<number, FRAGS.Item>();
 
     for (const asset of assets) {
-      for (const geometryData of asset.geometries) {
-        const { geometryID, transformation } = geometryData;
+      if (asset)
+        for (const geometryData of asset.geometries) {
+          const { geometryID, transformation } = geometryData;
 
-        const instanceID = this.getInstanceID(asset.id, geometryID);
+          const instanceID = this.getInstanceID(asset.id, geometryID);
 
-        const geometry = geometries[geometryID];
-        if (!geometry) {
-          throw new Error("Geometry not found!");
-        }
-
-        const { boundingBox } = geometry;
-
-        // Get bounding box color
-
-        let nextColor: NextColor;
-        if (visitedGeometries.has(geometryID)) {
-          nextColor = visitedGeometries.get(geometryID) as NextColor;
-        } else {
-          nextColor = this.getAvailableColor();
-          this.increaseColor();
-          visitedGeometries.set(geometryID, nextColor);
-        }
-        const { r, g, b, code } = nextColor;
-        const threeColor = new THREE.Color();
-        threeColor.setRGB(r / 255, g / 255, b / 255, "srgb");
-
-        // Save color code by model and geometry
-
-        if (!this.codes.has(modelIndex)) {
-          this.codes.set(modelIndex, new Map());
-        }
-        const map = this.codes.get(modelIndex) as Map<number, string>;
-        map.set(geometryID, code);
-
-        // Get bounding box transform
-
-        const instanceMatrix = new THREE.Matrix4();
-        const boundingBoxArray = Object.values(boundingBox);
-        instanceMatrix.fromArray(transformation);
-        tempMatrix.fromArray(boundingBoxArray);
-        instanceMatrix.multiply(tempMatrix);
-
-        if (items.has(instanceID)) {
-          // This geometry exists multiple times in this asset
-          const item = items.get(instanceID);
-          if (item === undefined || !item.colors) {
-            throw new Error("Malformed item!");
+          const geometry = geometries[geometryID];
+          if (!geometry) {
+            throw new Error("Geometry not found!");
           }
-          item.colors.push(threeColor);
-          item.transforms.push(instanceMatrix);
-        } else {
-          // This geometry exists only once in this asset (for now)
-          items.set(instanceID, {
-            id: instanceID,
-            colors: [threeColor],
-            transforms: [instanceMatrix],
-          });
-        }
 
-        if (!this._geometries.has(code)) {
-          const assetIDs = new Set([asset.id]);
-          this._geometries.set(code, {
-            modelIndex,
-            geometryID,
-            assetIDs,
-            exists: false,
-            time: 0,
-          });
-        } else {
-          const box = this._geometries.get(code) as CullerBoundingBox;
-          box.assetIDs.add(asset.id);
+          const { boundingBox } = geometry;
+
+          // Get bounding box color
+
+          let nextColor: NextColor;
+          if (visitedGeometries.has(geometryID)) {
+            nextColor = visitedGeometries.get(geometryID) as NextColor;
+          } else {
+            nextColor = this.getAvailableColor();
+            this.increaseColor();
+            visitedGeometries.set(geometryID, nextColor);
+          }
+          const { r, g, b, code } = nextColor;
+          const threeColor = new THREE.Color();
+          threeColor.setRGB(r / 255, g / 255, b / 255, "srgb");
+
+          // Save color code by model and geometry
+
+          if (!this.codes.has(modelIndex)) {
+            this.codes.set(modelIndex, new Map());
+          }
+          const map = this.codes.get(modelIndex) as Map<number, string>;
+          map.set(geometryID, code);
+
+          // Get bounding box transform
+
+          const instanceMatrix = new THREE.Matrix4();
+          const boundingBoxArray = Object.values(boundingBox);
+          instanceMatrix.fromArray(transformation);
+          tempMatrix.fromArray(boundingBoxArray);
+          instanceMatrix.multiply(tempMatrix);
+
+          if (items.has(instanceID)) {
+            // This geometry exists multiple times in this asset
+            const item = items.get(instanceID);
+            if (item === undefined || !item.colors) {
+              throw new Error("Malformed item!");
+            }
+            item.colors.push(threeColor);
+            item.transforms.push(instanceMatrix);
+          } else {
+            // This geometry exists only once in this asset (for now)
+            items.set(instanceID, {
+              id: instanceID,
+              colors: [threeColor],
+              transforms: [instanceMatrix],
+            });
+          }
+
+          if (!this._geometries.has(code)) {
+            const assetIDs = new Set([asset.id]);
+            this._geometries.set(code, {
+              modelIndex,
+              geometryID,
+              assetIDs,
+              exists: false,
+              time: 0,
+            });
+          } else {
+            const box = this._geometries.get(code) as CullerBoundingBox;
+            box.assetIDs.add(asset.id);
+          }
         }
-      }
     }
 
     const itemsArray = Array.from(items.values());
@@ -283,8 +287,10 @@ export class GeometryCullerRenderer extends CullerRenderer {
   private handleWorkerMessage = async (event: MessageEvent) => {
     const colors = event.data.colors as Map<string, number>;
 
-    const seen: { [modelID: string]: Set<number> } = {};
-    const unseen: { [modelID: string]: Set<number> } = {};
+    const toLoad: { [modelID: string]: Set<number> } = {};
+    const toRemove: { [modelID: string]: Set<number> } = {};
+    const toHide: { [modelID: string]: Set<number> } = {};
+    const toShow: { [modelID: string]: Set<number> } = {};
 
     const now = performance.now();
     let viewWasUpdated = false;
@@ -305,32 +311,43 @@ export class GeometryCullerRenderer extends CullerRenderer {
       if (isFound && exists) {
         // Geometry was visible, and still is
         geometry.time = now;
+        if (!toShow[modelID]) {
+          toShow[modelID] = new Set();
+        }
+        toShow[modelID].add(geometry.geometryID);
+        viewWasUpdated = true;
       } else if (isFound && !exists) {
         // New geometry found
-        if (!seen[modelID]) {
-          seen[modelID] = new Set();
+        if (!toLoad[modelID]) {
+          toLoad[modelID] = new Set();
         }
         geometry.time = now;
         geometry.exists = true;
-        seen[modelID].add(geometry.geometryID);
+        toLoad[modelID].add(geometry.geometryID);
         viewWasUpdated = true;
       } else if (!isFound && exists) {
         // Geometry was lost
         const lostTime = now - geometry.time;
-        const shouldDelete = lostTime > this._maxLostTime;
-        if (shouldDelete) {
-          if (!unseen[modelID]) {
-            unseen[modelID] = new Set();
+        if (lostTime > this.maxLostTime) {
+          // This geometry was lost too long - delete it
+          if (!toRemove[modelID]) {
+            toRemove[modelID] = new Set();
           }
           geometry.exists = false;
-          unseen[modelID].add(geometry.geometryID);
-          viewWasUpdated = true;
+          toRemove[modelID].add(geometry.geometryID);
+        } else if (lostTime > this.maxHiddenTime) {
+          // This geometry was lost for a while - hide it
+          if (!toHide[modelID]) {
+            toHide[modelID] = new Set();
+          }
+          toHide[modelID].add(geometry.geometryID);
         }
+        viewWasUpdated = true;
       }
     }
 
     if (viewWasUpdated) {
-      await this.onViewUpdated.trigger({ seen, unseen });
+      await this.onViewUpdated.trigger({ toLoad, toRemove, toHide, toShow });
     }
   };
 

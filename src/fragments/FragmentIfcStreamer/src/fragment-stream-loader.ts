@@ -65,10 +65,14 @@ export class FragmentStreamLoader extends Component<any> {
 
     this.culler = new GeometryCullerRenderer(components);
 
-    this.culler.onViewUpdated.add(async ({ seen, unseen }) => {
-      await this.handleSeenGeometries(seen);
-      await this.handleUnseenGeometries(unseen);
-    });
+    this.culler.onViewUpdated.add(
+      async ({ toLoad, toRemove, toShow, toHide }) => {
+        await this.loadFoundGeometries(toLoad);
+        await this.unloadLostGeometries(toRemove);
+        this.setVisibility(toShow, true);
+        this.setVisibility(toHide, false);
+      }
+    );
   }
 
   static readonly uuid = "22437e8d-9dbc-4b99-a04f-d2da280d50c8" as const;
@@ -137,7 +141,7 @@ export class FragmentStreamLoader extends Component<any> {
     this.culler.applyTransformation(modelID, assets, transform);
   }
 
-  private async handleSeenGeometries(seen: { [modelID: string]: Set<number> }) {
+  private async loadFoundGeometries(seen: { [modelID: string]: Set<number> }) {
     for (const modelID in seen) {
       const fragments = this.components.tools.get(FragmentManager);
       const group = fragments.groups.find((group) => group.uuid === modelID);
@@ -225,7 +229,7 @@ export class FragmentStreamLoader extends Component<any> {
     }
   }
 
-  private async handleUnseenGeometries(unseen: { [p: string]: Set<number> }) {
+  private async unloadLostGeometries(unseen: { [p: string]: Set<number> }) {
     const deletedFragments: FRAG.Fragment[] = [];
     for (const modelID in unseen) {
       const fragments = this.components.tools.get(FragmentManager);
@@ -261,7 +265,22 @@ export class FragmentStreamLoader extends Component<any> {
     }
   }
 
-  // private async handleHardlySeenGeometries() {}
+  private setVisibility(
+    filter: { [p: string]: Set<number> },
+    visible: boolean
+  ) {
+    for (const modelID in filter) {
+      for (const geometryID of filter[modelID]) {
+        const geometries = this._loadedFragments[modelID];
+        if (!geometries) continue;
+        const frags = geometries[geometryID];
+        if (!frags) continue;
+        for (const frag of frags) {
+          frag.mesh.visible = visible;
+        }
+      }
+    }
+  }
 
   private newFragment(
     group: FragmentsGroup,
