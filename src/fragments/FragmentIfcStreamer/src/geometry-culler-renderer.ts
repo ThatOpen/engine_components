@@ -47,6 +47,8 @@ export class GeometryCullerRenderer extends CullerRenderer {
   private _indexModelID = new Map<number, string>();
 
   private _geometries = new Map<string, CullerBoundingBox>();
+  private _geometriesGroups = new Map<number, THREE.Group>();
+
   private codes = new Map<number, Map<number, string>>();
 
   constructor(components: Components, settings?: CullerRendererSettings) {
@@ -91,6 +93,10 @@ export class GeometryCullerRenderer extends CullerRenderer {
     const bboxes = new FRAGS.Fragment(this._geometry, this._material, 10);
     this.boxes.set(modelIndex, bboxes);
     this.scene.add(bboxes.mesh);
+
+    const fragmentsGroup = new THREE.Group();
+    this.scene.add(fragmentsGroup);
+    this._geometriesGroups.set(modelIndex, fragmentsGroup);
 
     const items = new Map<number, FRAGS.Item>();
 
@@ -206,9 +212,13 @@ export class GeometryCullerRenderer extends CullerRenderer {
         this._material,
         frag.capacity
       );
-      this.scene.add(geometry.fragment.mesh);
-    } else {
-      console.log("Heyy");
+
+      const group = this._geometriesGroups.get(modelIndex);
+      if (!group) {
+        throw new Error("Group not found!");
+      }
+
+      group.add(geometry.fragment.mesh);
     }
 
     const [r, g, b] = code.split("-").map((value) => parseInt(value, 10));
@@ -247,27 +257,25 @@ export class GeometryCullerRenderer extends CullerRenderer {
     }
   }
 
-  applyTransformation(
-    modelID: string,
-    assets: StreamedAsset[],
-    transform: THREE.Matrix4
-  ) {
+  setModelTransformation(modelID: string, transform: THREE.Matrix4) {
     const modelIndex = this._modelIDIndex.get(modelID);
     if (modelIndex === undefined) {
       throw new Error("Model not found!");
     }
     const bbox = this.boxes.get(modelIndex);
-    if (bbox === undefined) {
-      throw new Error("Bounding boxes not found!");
+    if (bbox) {
+      bbox.mesh.position.set(0, 0, 0);
+      bbox.mesh.rotation.set(0, 0, 0);
+      bbox.mesh.scale.set(1, 1, 1);
+      bbox.mesh.applyMatrix4(transform);
     }
-    const ids = new Set<number>();
-    for (const { id, geometries } of assets) {
-      for (const { geometryID } of geometries) {
-        const instanceID = this.getInstanceID(id, geometryID);
-        ids.add(instanceID);
-      }
+    const group = this._geometriesGroups.get(modelIndex);
+    if (group) {
+      group.position.set(0, 0, 0);
+      group.rotation.set(0, 0, 0);
+      group.scale.set(1, 1, 1);
+      group.applyMatrix4(transform);
     }
-    bbox.applyTransform(ids, transform);
   }
 
   private setGeometryVisibility(geometry: CullerBoundingBox, visible: boolean) {

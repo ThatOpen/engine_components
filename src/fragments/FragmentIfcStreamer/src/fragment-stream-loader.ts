@@ -77,7 +77,7 @@ export class FragmentStreamLoader extends Component<any> {
 
   static readonly uuid = "22437e8d-9dbc-4b99-a04f-d2da280d50c8" as const;
 
-  async load(settings: StreamLoaderSettings) {
+  async load(settings: StreamLoaderSettings, coordinate = true) {
     const { assets, geometries, globalDataFileId } = settings;
 
     const groupUrl = this.url + globalDataFileId;
@@ -85,7 +85,7 @@ export class FragmentStreamLoader extends Component<any> {
     const groupArrayBuffer = await groupData.arrayBuffer();
     const groupBuffer = new Uint8Array(groupArrayBuffer);
     const fragments = this.components.tools.get(FragmentManager);
-    const group = await fragments.load(groupBuffer);
+    const group = await fragments.load(groupBuffer, coordinate);
 
     this.culler.add(group.uuid, assets, geometries);
     this.models[group.uuid] = { assets, geometries };
@@ -107,11 +107,7 @@ export class FragmentStreamLoader extends Component<any> {
 
     this._geometryInstances[group.uuid] = instances;
 
-    // Move it to DT
     this.culler.needsUpdate = true;
-
-    // console.log("----Group----");
-    // console.log(group);
   }
 
   get() {}
@@ -132,14 +128,6 @@ export class FragmentStreamLoader extends Component<any> {
   // getSphere() {
   //   return this.culler.boxes.getSphere();
   // }
-
-  applyTransformation(modelID: string, transform: THREE.Matrix4) {
-    if (!this.models[modelID]) {
-      throw new Error(`Model ${modelID} not found!`);
-    }
-    const { assets } = this.models[modelID];
-    this.culler.applyTransformation(modelID, assets, transform);
-  }
 
   private async loadFoundGeometries(seen: { [modelID: string]: Set<number> }) {
     for (const modelID in seen) {
@@ -260,6 +248,7 @@ export class FragmentStreamLoader extends Component<any> {
     }
 
     for (const frag of deletedFragments) {
+      this.components.meshes.delete(frag.mesh);
       frag.mesh.material = [] as THREE.Material[];
       frag.dispose(true);
     }
@@ -296,6 +285,7 @@ export class FragmentStreamLoader extends Component<any> {
     const fragment = new FRAG.Fragment(geometry, material, instances.length);
     group.add(fragment.mesh);
     group.items.push(fragment);
+    this.components.meshes.add(fragment.mesh);
 
     if (!this._loadedFragments[group.uuid]) {
       this._loadedFragments[group.uuid] = {};

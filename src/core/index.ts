@@ -13,4 +13,3 @@ export * from "./SimpleSVGViewport";
 export * from "./Simple2DMarker";
 export * from "./MaterialManager";
 export * from "./Simple2DScene";
-// export * from "./DXFManager";

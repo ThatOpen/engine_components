@@ -30,7 +30,6 @@ export class IfcFragmentSettings {
   /** Loader settings for [web-ifc](https://github.com/ifcjs/web-ifc). */
   webIfc: WEBIFC.LoaderSettings = {
     COORDINATE_TO_ORIGIN: true,
-    USE_FAST_BOOLS: true,
     OPTIMIZE_PROFILES: true,
   };
 

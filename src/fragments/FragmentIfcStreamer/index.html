@@ -108,32 +108,48 @@
         await loader.load(data);
     }
 
-    // culler.elements.renderDebugFrame = true;
-    // const debugFrame = culler.elements.get().domElement;
-    // document.body.appendChild(debugFrame);
-    // debugFrame.style.position = 'fixed';
-    // debugFrame.style.left = '0';
-    // debugFrame.style.bottom = '0';
+    // await loadModel("../../../resources/dm1_ark.ifc-processed.json");
+    // await loadModel("../../../resources/dm1_riv.ifc-processed.json");
 
-    await loadModel("../../../resources/doli.ifc-processed.json");
-    // await loadModel("test-2.json");
-    // await loadModel("dm1_riv.json");
+    // COORDINATION - OK
 
-    // fragments.baseCoordinationModel = fragments.groups[0].uuid;
-    // fragments.coordinate();
-    // for(const group of fragments.groups) {
-    //     const {uuid, matrix} = group;
-    //     const matrixe = new THREE.Matrix4();
-    //     matrixe.setPosition(0, 5, 0);
-    //     loader.applyTransformation(uuid, matrixe);
-    // }
-    //
-    // console.log(fragments);
-    //
+    for(const group of fragments.groups) {
+        const {uuid, matrix} = group;
+        loader.culler.setModelTransformation(uuid, matrix);
+    }
 
     components.camera.controls.addEventListener("controlend", () => {
         loader.culler.needsUpdate = true;
     });
+
+    // CLIPPING PLANES - OK
+
+    // const clipper = new OBC.EdgesClipper(components);
+    // clipper.enabled = true;
+    //
+    // const salmonFill = new THREE.MeshBasicMaterial({color: 'salmon', side: 2});
+    // const redLine = new THREE.LineBasicMaterial({ color: 'red' });
+    // const redOutline = new THREE.MeshBasicMaterial({color: 'red', opacity: 0.2, side: 2, transparent: true});
+    // const style = clipper.styles.create('Blue lines', new Set(), redLine, salmonFill, redOutline);
+    //
+    // loader.onFragmentsDeleted.add((frags) => {
+    //     for(const frag of frags) {
+    //         style.meshes.delete(frag.mesh);
+    //     }
+    //     clipper.fillsNeedUpdate = true;
+    // })
+    //
+    // loader.onFragmentsLoaded.add((frags) => {
+    //     for(const frag of frags) {
+    //         style.meshes.add(frag.mesh);
+    //     }
+    //     clipper.fillsNeedUpdate = true;
+    // })
+    //
+    // window.onkeydown = () => {
+    //     clipper.create();
+    // }
+
 
     // components.camera.controls.fitToSphere(loader.getSphere(), false);
     // loader.getMesh();

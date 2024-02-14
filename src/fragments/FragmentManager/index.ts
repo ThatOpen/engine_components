@@ -101,7 +101,7 @@ export class FragmentManager
     const { uuid: groupID } = group;
     const fragmentIDs = group.items.map((fragment) => fragment.id);
     for (const fragment of group.items) {
-      this.removeFragmentMesh(fragment);
+      this.components.meshes.delete(fragment.mesh);
       delete this.list[fragment.id];
     }
     group.dispose(true);
@@ -127,6 +127,7 @@ export class FragmentManager
   /**
    * Loads one or many fragments into the scene.
    * @param data - the bytes containing the data for the fragments to load.
+   * @param coordinate - whether this fragmentsgroup should be federated with the others.
    * @returns the list of IDs of the loaded fragments.
    */
   async load(data: Uint8Array, coordinate = true) {
@@ -138,7 +139,7 @@ export class FragmentManager
       fragment.group = model;
       this.list[fragment.id] = fragment;
       ids.push(fragment.id);
-      this.components.meshes.push(fragment.mesh);
+      this.components.meshes.add(fragment.mesh);
     }
     if (coordinate) {
       const isFirstModel = this.groups.length === 0;
@@ -241,14 +242,6 @@ export class FragmentManager
     this.uiElement.set({ main, window });
 
     this.onFragmentsLoaded.add(() => this.updateWindow());
-  }
-
-  private removeFragmentMesh(fragment: Fragment) {
-    const meshes = this.components.meshes;
-    const mesh = fragment.mesh;
-    if (meshes.includes(mesh)) {
-      meshes.splice(meshes.indexOf(mesh), 1);
-    }
   }
 }
 
