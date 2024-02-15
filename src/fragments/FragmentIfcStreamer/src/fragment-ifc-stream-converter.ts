@@ -247,9 +247,20 @@ export class FragmentIfcStreamConverter
       await this.streamAssets();
     }
 
-    for (const entry of this._visitedGeometries) {
-      const { index, uuid } = entry[1];
+    const { opaque, transparent } = group.geometryIDs;
+    for (const [id, { index, uuid }] of this._visitedGeometries) {
       group.keyFragments.set(index, uuid);
+      const geometryID = id > 1 ? opaque : transparent;
+      geometryID.set(id, index);
+    }
+
+    // Delete assets that have no geometric representation
+    const ids = group.data.keys();
+    for (const id of ids) {
+      const [keys] = group.data.get(id)!;
+      if (!keys.length) {
+        group.data.delete(id);
+      }
     }
 
     const matrix = this._webIfc.GetCoordinationMatrix(0);
@@ -281,18 +292,32 @@ export class FragmentIfcStreamConverter
 
     const asset: StreamedAsset = { id, geometries: [] };
 
+    if (mesh.expressID === 664833) {
+      console.log("Heyyy");
+    }
+
     for (let i = 0; i < size; i++) {
       const geometry = mesh.geometries.get(i);
       const geometryID = geometry.geometryExpressID;
 
-      if (!this._visitedGeometries.has(geometryID)) {
-        this.getGeometry(webIfc, geometryID);
+      // Distinguish between opaque and transparent geometries
+      const factor = geometry.color.w === 1 ? 1 : -1;
+      const transpGeometryID = geometryID * factor;
+
+      if (!this._visitedGeometries.has(transpGeometryID)) {
+        if (!this._visitedGeometries.has(geometryID)) {
+          // This is the first time we see this geometry
+          this.getGeometry(webIfc, geometryID);
+        }
+
+        // Save geometry for fragment generation
+        // separating transparent and opaque geometries
         const index = this._visitedGeometries.size;
         const uuid = THREE.MathUtils.generateUUID();
-        this._visitedGeometries.set(geometryID, { uuid, index });
+        this._visitedGeometries.set(transpGeometryID, { uuid, index });
       }
 
-      const geometryData = this._visitedGeometries.get(geometryID);
+      const geometryData = this._visitedGeometries.get(transpGeometryID);
       if (geometryData === undefined) {
         throw new Error("Error getting geometry data for streaming!");
       }

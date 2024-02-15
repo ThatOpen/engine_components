@@ -125,8 +125,8 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
 
     const bbox = FragmentBoundingBox.getFragmentBounds(mesh);
 
-    mesh.updateMatrix();
-    const meshTransform = mesh.matrix;
+    mesh.updateMatrixWorld();
+    const meshTransform = mesh.matrixWorld;
 
     const instanceTransform = new THREE.Matrix4();
     const isInstanced = mesh instanceof THREE.InstancedMesh;

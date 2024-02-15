@@ -8,7 +8,6 @@ export * from "./SimpleGrid";
 export * from "./Components";
 export * from "./SimpleClipper";
 export * from "./ScreenCuller";
-export * from "./LocalCacher";
 export * from "./SimpleSVGViewport";
 export * from "./Simple2DMarker";
 export * from "./MaterialManager";

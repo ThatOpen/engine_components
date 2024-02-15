@@ -147,7 +147,9 @@ export class FragmentClipStyler
 
       const found = classifier.find({ entities });
       for (const fragID in found) {
-        const { mesh } = fragments.list[fragID];
+        const frag = fragments.list[fragID];
+        if (!frag) continue;
+        const { mesh } = frag;
         style.fragments[fragID] = new Set(found[fragID]);
         style.meshes.add(mesh);
       }

@@ -14,6 +14,7 @@ type CullerBoundingBox = {
   assetIDs: Set<number>;
   exists: boolean;
   time: number;
+  hidden: boolean;
   fragment?: FRAGS.Fragment;
 };
 
@@ -101,80 +102,81 @@ export class GeometryCullerRenderer extends CullerRenderer {
     const items = new Map<number, FRAGS.Item>();
 
     for (const asset of assets) {
-      if (asset)
-        for (const geometryData of asset.geometries) {
-          const { geometryID, transformation } = geometryData;
+      // if (asset.id !== 664833) continue;
+      for (const geometryData of asset.geometries) {
+        const { geometryID, transformation } = geometryData;
 
-          const instanceID = this.getInstanceID(asset.id, geometryID);
+        const instanceID = this.getInstanceID(asset.id, geometryID);
 
-          const geometry = geometries[geometryID];
-          if (!geometry) {
-            throw new Error("Geometry not found!");
-          }
-
-          const { boundingBox } = geometry;
-
-          // Get bounding box color
-
-          let nextColor: NextColor;
-          if (visitedGeometries.has(geometryID)) {
-            nextColor = visitedGeometries.get(geometryID) as NextColor;
-          } else {
-            nextColor = this.getAvailableColor();
-            this.increaseColor();
-            visitedGeometries.set(geometryID, nextColor);
-          }
-          const { r, g, b, code } = nextColor;
-          const threeColor = new THREE.Color();
-          threeColor.setRGB(r / 255, g / 255, b / 255, "srgb");
-
-          // Save color code by model and geometry
-
-          if (!this.codes.has(modelIndex)) {
-            this.codes.set(modelIndex, new Map());
-          }
-          const map = this.codes.get(modelIndex) as Map<number, string>;
-          map.set(geometryID, code);
-
-          // Get bounding box transform
-
-          const instanceMatrix = new THREE.Matrix4();
-          const boundingBoxArray = Object.values(boundingBox);
-          instanceMatrix.fromArray(transformation);
-          tempMatrix.fromArray(boundingBoxArray);
-          instanceMatrix.multiply(tempMatrix);
-
-          if (items.has(instanceID)) {
-            // This geometry exists multiple times in this asset
-            const item = items.get(instanceID);
-            if (item === undefined || !item.colors) {
-              throw new Error("Malformed item!");
-            }
-            item.colors.push(threeColor);
-            item.transforms.push(instanceMatrix);
-          } else {
-            // This geometry exists only once in this asset (for now)
-            items.set(instanceID, {
-              id: instanceID,
-              colors: [threeColor],
-              transforms: [instanceMatrix],
-            });
-          }
-
-          if (!this._geometries.has(code)) {
-            const assetIDs = new Set([asset.id]);
-            this._geometries.set(code, {
-              modelIndex,
-              geometryID,
-              assetIDs,
-              exists: false,
-              time: 0,
-            });
-          } else {
-            const box = this._geometries.get(code) as CullerBoundingBox;
-            box.assetIDs.add(asset.id);
-          }
+        const geometry = geometries[geometryID];
+        if (!geometry) {
+          throw new Error("Geometry not found!");
         }
+
+        const { boundingBox } = geometry;
+
+        // Get bounding box color
+
+        let nextColor: NextColor;
+        if (visitedGeometries.has(geometryID)) {
+          nextColor = visitedGeometries.get(geometryID) as NextColor;
+        } else {
+          nextColor = this.getAvailableColor();
+          this.increaseColor();
+          visitedGeometries.set(geometryID, nextColor);
+        }
+        const { r, g, b, code } = nextColor;
+        const threeColor = new THREE.Color();
+        threeColor.setRGB(r / 255, g / 255, b / 255, "srgb");
+
+        // Save color code by model and geometry
+
+        if (!this.codes.has(modelIndex)) {
+          this.codes.set(modelIndex, new Map());
+        }
+        const map = this.codes.get(modelIndex) as Map<number, string>;
+        map.set(geometryID, code);
+
+        // Get bounding box transform
+
+        const instanceMatrix = new THREE.Matrix4();
+        const boundingBoxArray = Object.values(boundingBox);
+        instanceMatrix.fromArray(transformation);
+        tempMatrix.fromArray(boundingBoxArray);
+        instanceMatrix.multiply(tempMatrix);
+
+        if (items.has(instanceID)) {
+          // This geometry exists multiple times in this asset
+          const item = items.get(instanceID);
+          if (item === undefined || !item.colors) {
+            throw new Error("Malformed item!");
+          }
+          item.colors.push(threeColor);
+          item.transforms.push(instanceMatrix);
+        } else {
+          // This geometry exists only once in this asset (for now)
+          items.set(instanceID, {
+            id: instanceID,
+            colors: [threeColor],
+            transforms: [instanceMatrix],
+          });
+        }
+
+        if (!this._geometries.has(code)) {
+          const assetIDs = new Set([asset.id]);
+          this._geometries.set(code, {
+            modelIndex,
+            geometryID,
+            assetIDs,
+            exists: false,
+            hidden: false,
+            time: 0,
+          });
+        } else {
+          const box = this._geometries.get(code) as CullerBoundingBox;
+          box.assetIDs.add(asset.id);
+        }
+      }
     }
 
     const itemsArray = Array.from(items.values());
@@ -202,7 +204,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
     const map = this.codes.get(modelIndex) as Map<number, string>;
     const code = map.get(geometryID) as string;
     const geometry = this._geometries.get(code) as CullerBoundingBox;
-    this.setGeometryVisibility(geometry, false);
+    this.setGeometryVisibility(geometry, false, false);
 
     // Substitute it by fragment with same color
 
@@ -248,7 +250,9 @@ export class GeometryCullerRenderer extends CullerRenderer {
     const map = this.codes.get(modelIndex) as Map<number, string>;
     const code = map.get(geometryID) as string;
     const geometry = this._geometries.get(code) as CullerBoundingBox;
-    this.setGeometryVisibility(geometry, true);
+    if (!geometry.hidden) {
+      this.setGeometryVisibility(geometry, true, false);
+    }
 
     if (geometry.fragment) {
       const { fragment } = geometry;
@@ -278,18 +282,53 @@ export class GeometryCullerRenderer extends CullerRenderer {
     }
   }
 
-  private setGeometryVisibility(geometry: CullerBoundingBox, visible: boolean) {
+  setVisibility(
+    visible: boolean,
+    modelID: string,
+    geometryIDsAssetIDs: Map<number, Set<number>>
+  ) {
+    const modelIndex = this._modelIDIndex.get(modelID);
+    if (modelIndex === undefined) {
+      return;
+    }
+    for (const [geometryID, assets] of geometryIDsAssetIDs) {
+      const map = this.codes.get(modelIndex);
+      if (map === undefined) {
+        throw new Error("Map not found!");
+      }
+      const code = map.get(geometryID) as string;
+      const geometry = this._geometries.get(code);
+      if (geometry === undefined) {
+        throw new Error("Geometry not found!");
+      }
+      geometry.hidden = !visible;
+      this.setGeometryVisibility(geometry, visible, true, assets);
+    }
+  }
+
+  private setGeometryVisibility(
+    geometry: CullerBoundingBox,
+    visible: boolean,
+    includeFragments: boolean,
+    assets?: Iterable<number>
+  ) {
     const { modelIndex, geometryID, assetIDs } = geometry;
     const bbox = this.boxes.get(modelIndex);
     if (bbox === undefined) {
       throw new Error("Model not found!");
     }
-    const instancesID = new Set<number>();
-    for (const id of assetIDs) {
-      const instanceID = this.getInstanceID(id, geometryID);
-      instancesID.add(instanceID);
+    const items = assets || assetIDs;
+
+    if (includeFragments && geometry.fragment) {
+      geometry.fragment.setVisibility(visible, items);
+    } else {
+      const instancesID = new Set<number>();
+      for (const id of items) {
+        const instanceID = this.getInstanceID(id, geometryID);
+        instancesID.add(instanceID);
+      }
+      bbox.setVisibility(visible, instancesID);
     }
-    bbox.setVisibility(visible, instancesID);
   }
 
   private handleWorkerMessage = async (event: MessageEvent) => {

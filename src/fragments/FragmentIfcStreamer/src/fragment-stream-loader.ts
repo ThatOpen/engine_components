@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import * as FRAG from "bim-fragment";
-import { FragmentsGroup } from "bim-fragment";
+import { FragmentIdMap, FragmentsGroup } from "bim-fragment";
 import { Component, Event } from "../../../base-types";
 import { StreamedGeometries, StreamedAsset } from "./base-types";
 import { Components, ToolComponent } from "../../../core";
@@ -50,6 +50,12 @@ export class FragmentStreamLoader extends Component<any> {
     [modelID: string]: { [geometryID: number]: FRAG.Fragment[] };
   } = {};
 
+  // FragID, [model, geometryID, hiddenItems]
+  private fragIDData = new Map<
+    string,
+    [FRAG.FragmentsGroup, number, Set<number>]
+  >();
+
   private _baseMaterial = new THREE.MeshLambertMaterial();
   private _baseMaterialT = new THREE.MeshLambertMaterial({
     transparent: true,
@@ -69,8 +75,8 @@ export class FragmentStreamLoader extends Component<any> {
       async ({ toLoad, toRemove, toShow, toHide }) => {
         await this.loadFoundGeometries(toLoad);
         await this.unloadLostGeometries(toRemove);
-        this.setVisibility(toShow, true);
-        this.setVisibility(toHide, false);
+        this.setMeshVisibility(toShow, true);
+        this.setMeshVisibility(toHide, false);
       }
     );
   }
@@ -86,6 +92,22 @@ export class FragmentStreamLoader extends Component<any> {
     const groupBuffer = new Uint8Array(groupArrayBuffer);
     const fragments = this.components.tools.get(FragmentManager);
     const group = await fragments.load(groupBuffer, coordinate);
+
+    const { opaque, transparent } = group.geometryIDs;
+    for (const [geometryID, key] of opaque) {
+      const fragID = group.keyFragments.get(key);
+      if (fragID === undefined) {
+        throw new Error("Malformed fragments group!");
+      }
+      this.fragIDData.set(fragID, [group, geometryID, new Set()]);
+    }
+    for (const [geometryID, key] of transparent) {
+      const fragID = group.keyFragments.get(key);
+      if (fragID === undefined) {
+        throw new Error("Malformed fragments group!");
+      }
+      this.fragIDData.set(fragID, [group, Math.abs(geometryID), new Set()]);
+    }
 
     this.culler.add(group.uuid, assets, geometries);
     this.models[group.uuid] = { assets, geometries };
@@ -106,6 +128,60 @@ export class FragmentStreamLoader extends Component<any> {
     }
 
     this._geometryInstances[group.uuid] = instances;
+
+    this.culler.needsUpdate = true;
+  }
+
+  setVisibility(visible: boolean, filter: FragmentIdMap) {
+    const modelGeomsAssets = new Map<string, Map<number, Set<number>>>();
+    for (const fragID in filter) {
+      const found = this.fragIDData.get(fragID);
+      if (found === undefined) {
+        throw new Error("Geometry not found!");
+      }
+      const [group, geometryID, hiddenItems] = found;
+      const modelID = group.uuid;
+      if (!modelGeomsAssets.has(modelID)) {
+        modelGeomsAssets.set(modelID, new Map());
+      }
+      const geometriesAsset = modelGeomsAssets.get(modelID)!;
+      const assets = filter[fragID];
+
+      // Store the visible filter so that it's applied if this fragment
+      // is loaded later
+      for (const itemID of assets) {
+        if (visible) {
+          hiddenItems.delete(itemID);
+        } else {
+          hiddenItems.add(itemID);
+        }
+      }
+
+      if (!geometriesAsset.get(geometryID)) {
+        geometriesAsset.set(geometryID, new Set());
+      }
+
+      const assetGroup = geometriesAsset.get(geometryID)!;
+      for (const asset of assets) {
+        assetGroup.add(asset);
+      }
+    }
+    for (const [modelID, geometriesAssets] of modelGeomsAssets) {
+      // Set visibility of stream culler
+      this.culler.setVisibility(visible, modelID, geometriesAssets);
+      // set visibility of loaded fragments
+      for (const [geometryID] of geometriesAssets) {
+        const allFrags = this._loadedFragments[modelID];
+        if (!allFrags) continue;
+        const frags = allFrags[geometryID];
+        if (!frags) continue;
+        for (const frag of frags) {
+          const ids = filter[frag.id];
+          if (!ids) continue;
+          frag.setVisibility(visible, ids);
+        }
+      }
+    }
 
     this.culler.needsUpdate = true;
   }
@@ -219,8 +295,8 @@ export class FragmentStreamLoader extends Component<any> {
 
   private async unloadLostGeometries(unseen: { [p: string]: Set<number> }) {
     const deletedFragments: FRAG.Fragment[] = [];
+    const fragments = this.components.tools.get(FragmentManager);
     for (const modelID in unseen) {
-      const fragments = this.components.tools.get(FragmentManager);
       const group = fragments.groups.find((group) => group.uuid === modelID);
       if (!group) {
         throw new Error("Fragment group not found!");
@@ -248,14 +324,15 @@ export class FragmentStreamLoader extends Component<any> {
     }
 
     for (const frag of deletedFragments) {
+      delete fragments.list[frag.id];
       this.components.meshes.delete(frag.mesh);
       frag.mesh.material = [] as THREE.Material[];
       frag.dispose(true);
     }
   }
 
-  private setVisibility(
-    filter: { [p: string]: Set<number> },
+  private setMeshVisibility(
+    filter: { [modelID: string]: Set<number> },
     visible: boolean
   ) {
     for (const modelID in filter) {
@@ -281,10 +358,35 @@ export class FragmentStreamLoader extends Component<any> {
   ) {
     if (instances.length === 0) return;
 
+    const uuids = group.geometryIDs;
+    const uuidMap = transparent ? uuids.transparent : uuids.opaque;
+    const factor = transparent ? -1 : 1;
+    const tranpsGeomID = geometryID * factor;
+    const key = uuidMap.get(tranpsGeomID);
+    if (key === undefined) {
+      throw new Error("Malformed fragment!");
+    }
+    const fragID = group.keyFragments.get(key);
+    if (fragID === undefined) {
+      throw new Error("Malformed fragment!");
+    }
+
+    const fragments = this.components.tools.get(FragmentManager);
+    const fragmentAlreadyExists = fragments.list[fragID] !== undefined;
+    if (fragmentAlreadyExists) {
+      return;
+    }
+
     const material = transparent ? this._baseMaterialT : this._baseMaterial;
     const fragment = new FRAG.Fragment(geometry, material, instances.length);
+
+    fragment.id = fragID;
+    fragment.mesh.uuid = fragID;
+
     group.add(fragment.mesh);
     group.items.push(fragment);
+
+    fragments.list[fragment.id] = fragment;
     this.components.meshes.add(fragment.mesh);
 
     if (!this._loadedFragments[group.uuid]) {
@@ -294,6 +396,7 @@ export class FragmentStreamLoader extends Component<any> {
     if (!geoms[geometryID]) {
       geoms[geometryID] = [];
     }
+
     geoms[geometryID].push(fragment);
 
     const items: FRAG.Item[] = [];
@@ -308,6 +411,16 @@ export class FragmentStreamLoader extends Component<any> {
     }
 
     fragment.add(items);
+
+    const data = this.fragIDData.get(fragment.id);
+    if (!data) {
+      throw new Error("Fragment data not found!");
+    }
+
+    const hiddenItems = data[2];
+    if (hiddenItems.size) {
+      fragment.setVisibility(false, hiddenItems);
+    }
 
     this.culler.addFragment(group.uuid, geometryID, fragment);
 

@@ -213,6 +213,10 @@ textarea {
   pointer-events: auto;
 }
 
+.obc-viewer :is(.\!visible){
+  visibility: visible !important;
+}
+
 .obc-viewer :is(.visible){
   visibility: visible;
 }

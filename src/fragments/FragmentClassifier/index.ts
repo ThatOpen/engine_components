@@ -224,16 +224,10 @@ export class FragmentClassifier
   }
 
   byStorey(group: FragmentsGroup) {
-    if (!group.properties) {
-      throw new Error("To group by storey, properties are needed");
-    }
-
     for (const [expressID, data] of group.data) {
       const rels = data[1];
       const storeyID = rels[0];
-      const storey = group.properties[storeyID];
-      if (storey === undefined) continue;
-      const storeyName = group.properties[storeyID].Name.value;
+      const storeyName = storeyID.toString();
       this.saveItem(group, "storeys", storeyName, expressID);
     }
   }
