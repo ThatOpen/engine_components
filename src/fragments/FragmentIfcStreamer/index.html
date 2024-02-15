@@ -77,54 +77,54 @@
     const fragments = new OBC.FragmentManager(components);
     const loader = new OBC.FragmentStreamLoader(components);
 
-    const streamer = new OBC.FragmentIfcStreamConverter(components);
-    streamer.settings.wasm = {
-        path: "https://unpkg.com/web-ifc@0.0.51/",
-        absolute: true
+    // const streamer = new OBC.FragmentIfcStreamConverter(components);
+    // streamer.settings.wasm = {
+    //     path: "https://unpkg.com/web-ifc@0.0.51/",
+    //     absolute: true
+    // }
+    //
+    // loader.culler.threshold = 10;
+    //
+    // const fetchedIfc = await fetch("../../../resources/small.ifc");
+    // const ifcBuffer = await fetchedIfc.arrayBuffer();
+    //
+    // streamer.onGeometryStreamed.add((geometry) => {
+    //     console.log(geometry);
+    // });
+    //
+    // streamer.onAssetStreamed.add((assets) => {
+    //     console.log(assets);
+    // });
+    //
+    // streamer.onIfcLoaded.add(async (groupBuffer) => {
+    //     console.log(groupBuffer);
+    // })
+    //
+    // streamer.streamFromBuffer(new Uint8Array(ifcBuffer));
+
+    async function loadModel(url) {
+        const rawData = await fetch(url);
+        const data = await rawData.json();
+        await loader.load(data);
     }
 
-    loader.culler.threshold = 10;
-
-    const fetchedIfc = await fetch("../../../resources/cims.ifc");
-    const ifcBuffer = await fetchedIfc.arrayBuffer();
-
-    streamer.onGeometryStreamed.add((geometry) => {
-        console.log(geometry);
-    });
-
-    streamer.onAssetStreamed.add((assets) => {
-        console.log(assets);
-    });
-
-    streamer.onIfcLoaded.add(async (groupBuffer) => {
-        console.log(groupBuffer);
-    })
-
-    streamer.streamFromBuffer(new Uint8Array(ifcBuffer));
-
-    // async function loadModel(url) {
-    //     const rawData = await fetch(url);
-    //     const data = await rawData.json();
-    //     await loader.load(data);
-    // }
-
-    // await loadModel("../../../resources/cims.ifc-processed.json");
+    await loadModel("../../../resources/cims.ifc-processed.json");
     // await loadModel("../../../resources/dm1_riv.ifc-processed.json");
 
-    // loader.culler.maxHiddenTime = 3000;
-    // loader.culler.maxLostTime = 10000;
-    //
-    // components.camera.controls.addEventListener("controlend", () => {
-    //     loader.culler.needsUpdate = true;
-    // });
+    loader.culler.maxHiddenTime = 3000;
+    loader.culler.maxLostTime = 10000;
+
+    components.camera.controls.addEventListener("controlend", () => {
+        loader.culler.needsUpdate = true;
+    });
 
     // COORDINATION - OK
 
-    // for(const group of fragments.groups) {
-    //     console.log(group);
-    //     const {uuid, matrix} = group;
-    //     loader.culler.setModelTransformation(uuid, matrix);
-    // }
+    for(const group of fragments.groups) {
+        console.log(group);
+        const {uuid, matrix} = group;
+        loader.culler.setModelTransformation(uuid, matrix);
+    }
 
     // BOUNDINGBOX - OK
 
@@ -170,45 +170,45 @@
     // }
 
 
-    // FRAGMENT HIDER - OK
+    // FRAGMENT HIDER -
 
-    // const classifier = new OBC.FragmentClassifier(components);
-    // for(const model of fragments.groups) {
-    //     classifier.byStorey(model);
-    //     classifier.byEntity(model);
-    // }
-    //
-    // const classifications = classifier.get();
-    //
-    // const storeys = {};
-    // const storeyNames = Object.keys(classifications.storeys);
-    // for (const name of storeyNames) {
-    //     storeys[name] = true;
-    // }
-    //
-    // const classes = {};
-    // const classNames = Object.keys(classifications.entities);
-    // for (const name of classNames) {
-    //     classes[name] = true;
-    // }
-    //
-    // const gui = new dat.GUI();
-    //
-    // const storeysGui = gui.addFolder("Storeys");
-    // for (const name in storeys) {
-    //     storeysGui.add(storeys, name).onChange(async (visible) => {
-    //         const found = await classifier.find({storeys: [name]});
-    //         loader.setVisibility(visible, found);
-    //     });
-    // }
-    //
-    // const entitiesGui = gui.addFolder("Classes");
-    // for (const name in classes) {
-    //     entitiesGui.add(classes, name).onChange(async (visible) => {
-    //         const found = await classifier.find({entities: [name]});
-    //         loader.setVisibility(visible, found);
-    //     });
-    // }
+    const classifier = new OBC.FragmentClassifier(components);
+    for(const model of fragments.groups) {
+        classifier.byStorey(model);
+        classifier.byEntity(model);
+    }
+
+    const classifications = classifier.get();
+
+    const storeys = {};
+    const storeyNames = Object.keys(classifications.storeys);
+    for (const name of storeyNames) {
+        storeys[name] = true;
+    }
+
+    const classes = {};
+    const classNames = Object.keys(classifications.entities);
+    for (const name of classNames) {
+        classes[name] = true;
+    }
+
+    const gui = new dat.GUI();
+
+    const storeysGui = gui.addFolder("Storeys");
+    for (const name in storeys) {
+        storeysGui.add(storeys, name).onChange(async (visible) => {
+            const found = await classifier.find({storeys: [name]});
+            loader.setVisibility(visible, found);
+        });
+    }
+
+    const entitiesGui = gui.addFolder("Classes");
+    for (const name in classes) {
+        entitiesGui.add(classes, name).onChange(async (visible) => {
+            const found = await classifier.find({entities: [name]});
+            loader.setVisibility(visible, found);
+        });
+    }
 
     // FRAGMENT CLIP STYLER
 
@@ -246,12 +246,12 @@
     // postproduction.customEffects.outlineEnabled = true;
 
 
-    loader.culler.renderDebugFrame = true;
-    const debugFrame = loader.culler.get().domElement;
-    document.body.appendChild(debugFrame);
-    debugFrame.style.position = 'fixed';
-    debugFrame.style.left = '0';
-    debugFrame.style.bottom = '0';
+    // loader.culler.renderDebugFrame = true;
+    // const debugFrame = loader.culler.get().domElement;
+    // document.body.appendChild(debugFrame);
+    // debugFrame.style.position = 'fixed';
+    // debugFrame.style.left = '0';
+    // debugFrame.style.bottom = '0';
 
 
     // Set up stats

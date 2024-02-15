@@ -399,7 +399,7 @@ export class FragmentStreamLoader extends Component<any> {
 
     geoms[geometryID].push(fragment);
 
-    const items: FRAG.Item[] = [];
+    const itemsMap = new Map<number, FRAG.Item>();
     for (let i = 0; i < instances.length; i++) {
       const transform = new THREE.Matrix4();
       const col = new THREE.Color();
@@ -407,9 +407,19 @@ export class FragmentStreamLoader extends Component<any> {
       transform.fromArray(transformation);
       const [r, g, b] = color;
       col.setRGB(r, g, b, "srgb");
-      items.push({ id, colors: [col], transforms: [transform] });
+      if (itemsMap.has(id)) {
+        const item = itemsMap.get(id)!;
+        if (!item) continue;
+        item.transforms.push(transform);
+        if (item.colors) {
+          item.colors.push(col);
+        }
+      } else {
+        itemsMap.set(id, { id, colors: [col], transforms: [transform] });
+      }
     }
 
+    const items = Array.from(itemsMap.values());
     fragment.add(items);
 
     const data = this.fragIDData.get(fragment.id);
