@@ -73,9 +73,10 @@
     const customEffects = components.renderer.postproduction.customEffects;
     customEffects.excludedMeshes.push(grid.get());
 
-
     const fragments = new OBC.FragmentManager(components);
     const loader = new OBC.FragmentStreamLoader(components);
+
+    // GEOMETRY STREAMING - OK
 
     // const streamer = new OBC.FragmentIfcStreamConverter(components);
     // streamer.settings.wasm = {
@@ -102,29 +103,49 @@
     //
     // streamer.streamFromBuffer(new Uint8Array(ifcBuffer));
 
-    async function loadModel(url) {
-        const rawData = await fetch(url);
-        const data = await rawData.json();
-        await loader.load(data);
+    // PROPERTIES STREAMING - OK
+
+    const fetchedIfc = await fetch("../../../resources/small.ifc");
+    const ifcBuffer = await fetchedIfc.arrayBuffer();
+
+    const propsStreamer = new OBC.FragmentPropsStreamConverter(components);
+
+    propsStreamer.settings.wasm = {
+        path: "https://unpkg.com/web-ifc@0.0.51/",
+        absolute: true
     }
 
-    await loadModel("../../../resources/cims.ifc-processed.json");
-    // await loadModel("../../../resources/dm1_riv.ifc-processed.json");
+    propsStreamer.streamFromBuffer(new Uint8Array(ifcBuffer));
 
-    loader.culler.maxHiddenTime = 3000;
-    loader.culler.maxLostTime = 10000;
+    // propsStreamer.onPropertiesStreamed.add(async (props) => {
+    //     console.log(props);
+    // })
 
-    components.camera.controls.addEventListener("controlend", () => {
-        loader.culler.needsUpdate = true;
-    });
+    // STREAM MODEL LOADING - OK
+
+    // async function loadModel(url) {
+    //     const rawData = await fetch(url);
+    //     const data = await rawData.json();
+    //     await loader.load(data);
+    // }
+    //
+    // await loadModel("../../../resources/cims.ifc-processed.json");
+    // // await loadModel("../../../resources/dm1_riv.ifc-processed.json");
+    //
+    // loader.culler.maxHiddenTime = 3000;
+    // loader.culler.maxLostTime = 10000;
+    //
+    // components.camera.controls.addEventListener("controlend", () => {
+    //     loader.culler.needsUpdate = true;
+    // });
 
     // COORDINATION - OK
 
-    for(const group of fragments.groups) {
-        console.log(group);
-        const {uuid, matrix} = group;
-        loader.culler.setModelTransformation(uuid, matrix);
-    }
+    // for(const group of fragments.groups) {
+    //     console.log(group);
+    //     const {uuid, matrix} = group;
+    //     loader.culler.setModelTransformation(uuid, matrix);
+    // }
 
     // BOUNDINGBOX - OK
 
@@ -170,45 +191,49 @@
     // }
 
 
-    // FRAGMENT HIDER -
+    // FRAGMENT HIDER - OK
 
-    const classifier = new OBC.FragmentClassifier(components);
-    for(const model of fragments.groups) {
-        classifier.byStorey(model);
-        classifier.byEntity(model);
-    }
+    // const classifier = new OBC.FragmentClassifier(components);
+    // for(const model of fragments.groups) {
+    //     classifier.byStorey(model);
+    //     classifier.byEntity(model);
+    // }
+    //
+    // const classifications = classifier.get();
+    //
+    // const storeys = {};
+    // const storeyNames = Object.keys(classifications.storeys);
+    // for (const name of storeyNames) {
+    //     storeys[name] = true;
+    // }
+    //
+    // const classes = {};
+    // const classNames = Object.keys(classifications.entities);
+    // for (const name of classNames) {
+    //     classes[name] = true;
+    // }
+    //
+    // const gui = new dat.GUI();
+    //
+    // const storeysGui = gui.addFolder("Storeys");
+    // for (const name in storeys) {
+    //     storeysGui.add(storeys, name).onChange(async (visible) => {
+    //         const found = await classifier.find({storeys: [name]});
+    //         loader.setVisibility(visible, found);
+    //     });
+    // }
+    //
+    // const entitiesGui = gui.addFolder("Classes");
+    // for (const name in classes) {
+    //     entitiesGui.add(classes, name).onChange(async (visible) => {
+    //         const found = await classifier.find({entities: [name]});
+    //         loader.setVisibility(visible, found);
+    //     });
+    // }
 
-    const classifications = classifier.get();
+    // FRAGMENT HIGHLIGHTER
 
-    const storeys = {};
-    const storeyNames = Object.keys(classifications.storeys);
-    for (const name of storeyNames) {
-        storeys[name] = true;
-    }
-
-    const classes = {};
-    const classNames = Object.keys(classifications.entities);
-    for (const name of classNames) {
-        classes[name] = true;
-    }
-
-    const gui = new dat.GUI();
-
-    const storeysGui = gui.addFolder("Storeys");
-    for (const name in storeys) {
-        storeysGui.add(storeys, name).onChange(async (visible) => {
-            const found = await classifier.find({storeys: [name]});
-            loader.setVisibility(visible, found);
-        });
-    }
-
-    const entitiesGui = gui.addFolder("Classes");
-    for (const name in classes) {
-        entitiesGui.add(classes, name).onChange(async (visible) => {
-            const found = await classifier.find({entities: [name]});
-            loader.setVisibility(visible, found);
-        });
-    }
+    // FRAGMENT PLANS
 
     // FRAGMENT CLIP STYLER
 
