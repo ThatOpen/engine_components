@@ -77,10 +77,12 @@ export class PsetActionsUI extends SimpleUIComponent<HTMLDivElement> {
     this.data = {};
   }
 
-  private setEditUI() {
+  private async setEditUI() {
     const { model, psetID } = this.data;
-    const properties = model?.properties;
-    if (!model || !psetID || !properties) return;
+    if (!model || !psetID || !model.hasProperties) return;
+
+    const entity = await model.getProperties(psetID);
+    if (!entity) return;
 
     this._modal.onAccept.reset();
     this._modal.title = "Edit Property Set";
@@ -107,7 +109,6 @@ export class PsetActionsUI extends SimpleUIComponent<HTMLDivElement> {
 
     editUI.addChild(nameInput, descriptionInput);
 
-    const entity = properties[psetID];
     nameInput.value = entity.Name?.value ?? "";
     descriptionInput.value = entity.Description?.value ?? "";
     this._modal.setSlot("content", editUI);

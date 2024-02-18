@@ -44,17 +44,14 @@ export class AttributeSet extends TreeView {
     (this._propertiesProcessor as any) = null;
   }
 
-  private generate() {
-    const properties = this.model.properties;
-    if (this._generated || !properties) return;
-    this.update();
+  private async generate() {
+    if (this._generated || !this.model.hasProperties) return;
+    await this.update();
     this._generated = true;
   }
 
-  update() {
-    const properties = this.model.properties;
-    if (!properties) return;
-    const entity = properties[this.expressID];
+  async update() {
+    const entity = await this.model.getProperties(this.expressID);
     if (!entity) return;
     for (const attributeName in entity) {
       const ignore = this.attributesToIgnore.includes(attributeName);

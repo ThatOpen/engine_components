@@ -93,6 +93,7 @@ export class CloudStorage extends Component<any[]> {
     return modelResponse.json();
   }
 
+  // TODO: This just work for local properties. Implement it for streamed props
   private setupModelProcessEvent(modelID: string) {
     const interval = setInterval(async () => {
       const response = await this.getModel(modelID);
@@ -100,9 +101,12 @@ export class CloudStorage extends Component<any[]> {
         const { entries } = await unzip(response.downloadUrl);
         const arrayBuffer = await entries["model.frag"].arrayBuffer();
         const buffer = new Uint8Array(arrayBuffer);
-        const fragments = await this.components.tools.get(FragmentManager);
+        const fragments = this.components.tools.get(FragmentManager);
         const model = await fragments.load(buffer);
-        model.properties = await entries["properties.json"].json();
+
+        const props = await entries["properties.json"].json();
+        model.setLocalProperties(props);
+
         await this.modelProcessed.trigger(model);
         clearInterval(interval);
       }

@@ -19,7 +19,8 @@ import {
 } from "./src/types";
 import { FragmentManager } from "../../fragments/FragmentManager";
 import { QueryBuilder } from "./src/query-builder";
-import { IfcPropertiesManager } from "../IfcPropertiesManager";
+
+// TODO: This works only for local properties, implement for streaming
 
 export interface QueryResult {
   [modelID: string]: {
@@ -82,7 +83,7 @@ export class IfcPropertiesFinder
   async dispose() {
     this._indexedModels = {};
     this.onFound.reset();
-    this.uiElement.dispose();
+    await this.uiElement.dispose();
     await this.onDisposed.trigger();
     this.onDisposed.reset();
   }
@@ -143,17 +144,16 @@ export class IfcPropertiesFinder
     });
   }
 
-  private indexEntityRelations(model: FragmentsGroup) {
+  private async indexEntityRelations(model: FragmentsGroup) {
     const map: { [expressID: number]: Set<number> } = {};
-    const { properties } = IfcPropertiesManager.getIFCInfo(model);
 
-    IfcPropertiesUtils.getRelationMap(
-      properties,
+    await IfcPropertiesUtils.getRelationMap(
+      model,
       WEBIFC.IFCRELDEFINESBYPROPERTIES,
-      (relatingID, relatedIDs) => {
+      async (relatingID, relatedIDs) => {
         if (!map[relatingID]) map[relatingID] = new Set();
         const props: number[] = [];
-        IfcPropertiesUtils.getPsetProps(properties, relatingID, (propID) => {
+        await IfcPropertiesUtils.getPsetProps(model, relatingID, (propID) => {
           props.push(propID);
           map[relatingID].add(propID);
           if (!map[propID]) map[propID] = new Set();
@@ -175,10 +175,10 @@ export class IfcPropertiesFinder
     ];
 
     for (const relation of ifcRelations) {
-      IfcPropertiesUtils.getRelationMap(
-        properties,
+      await IfcPropertiesUtils.getRelationMap(
+        model,
         relation,
-        (relatingID, relatedIDs) => {
+        async (relatingID, relatedIDs) => {
           if (!map[relatingID]) map[relatingID] = new Set();
           for (const relatedID of relatedIDs) {
             map[relatingID].add(relatedID);
@@ -205,7 +205,9 @@ export class IfcPropertiesFinder
 
     for (const model of models) {
       let map = this._indexedModels[model.uuid];
-      if (!map) map = this.indexEntityRelations(model);
+      if (!map) {
+        map = await this.indexEntityRelations(model);
+      }
       let relations: number[] = [];
       for (const [index, group] of groups.entries()) {
         const excludedItems = new Set<number>();
@@ -248,7 +250,7 @@ export class IfcPropertiesFinder
     }
 
     const foundFragments = this.toFragmentMap(result);
-    this.onFound.trigger(foundFragments);
+    await this.onFound.trigger(foundFragments);
     return foundFragments;
   }
 
@@ -282,7 +284,7 @@ export class IfcPropertiesFinder
     queryGroup: QueryGroup,
     excludedItems: Set<number>
   ) {
-    const properties = model.properties as IfcProperties;
+    const properties = model.getLocalProperties() as IfcProperties;
     if (!properties) throw new Error("Model has no properties");
     let filteredProps: {
       [expressID: number]: { [attributeName: string]: any };

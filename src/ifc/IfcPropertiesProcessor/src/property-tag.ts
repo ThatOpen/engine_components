@@ -4,7 +4,6 @@ import { Components } from "../../../core/Components";
 import { UIManager } from "../../../ui/UIManager";
 import { IfcPropertiesUtils } from "../../IfcPropertiesUtils";
 import { IfcPropertiesProcessor } from "..";
-import { IfcPropertiesManager } from "../../IfcPropertiesManager";
 
 export class PropertyTag extends SimpleUIComponent<HTMLDivElement> {
   name = "PropertyTag";
@@ -70,21 +69,20 @@ export class PropertyTag extends SimpleUIComponent<HTMLDivElement> {
     }
   }
 
-  protected setListeners() {
+  protected async setListeners() {
     const propertiesManager = this._propertiesProcessor.propertiesManager;
     if (!propertiesManager) return;
 
-    const { properties } = IfcPropertiesManager.getIFCInfo(this.model);
-    const { key: nameKey } = IfcPropertiesUtils.getEntityName(
-      properties,
+    const { key: nameKey } = await IfcPropertiesUtils.getEntityName(
+      this.model,
       this.expressID
     );
-    const { key: valueKey } = IfcPropertiesUtils.getQuantityValue(
-      properties,
+    const { key: valueKey } = await IfcPropertiesUtils.getQuantityValue(
+      this.model,
       this.expressID
     );
     if (nameKey) {
-      const event = propertiesManager.setAttributeListener(
+      const event = await propertiesManager.setAttributeListener(
         this.model,
         this.expressID,
         nameKey
@@ -92,7 +90,7 @@ export class PropertyTag extends SimpleUIComponent<HTMLDivElement> {
       event.add((v: String) => (this.label = v.toString()));
     }
     if (valueKey) {
-      const event = propertiesManager.setAttributeListener(
+      const event = await propertiesManager.setAttributeListener(
         this.model,
         this.expressID,
         valueKey
@@ -101,19 +99,18 @@ export class PropertyTag extends SimpleUIComponent<HTMLDivElement> {
     }
   }
 
-  protected setInitialValues() {
-    const { properties } = IfcPropertiesManager.getIFCInfo(this.model);
-    const entity = properties[this.expressID];
+  protected async setInitialValues() {
+    const entity = await this.model.getProperties(this.expressID);
     if (!entity) {
       this.label = "NULL";
       this.value = `ExpressID ${this.expressID} not found`;
     } else {
-      const { name } = IfcPropertiesUtils.getEntityName(
-        properties,
+      const { name } = await IfcPropertiesUtils.getEntityName(
+        this.model,
         this.expressID
       );
-      const { value } = IfcPropertiesUtils.getQuantityValue(
-        properties,
+      const { value } = await IfcPropertiesUtils.getQuantityValue(
+        this.model,
         this.expressID
       );
       this.label = name;

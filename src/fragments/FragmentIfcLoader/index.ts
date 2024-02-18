@@ -83,7 +83,8 @@ export class FragmentIfcLoader
     await this.readIfcFile(data);
     const group = await this.getAllGeometries();
 
-    group.properties = await this._propertyExporter.export(this._webIfc, 0);
+    const properties = await this._propertyExporter.export(this._webIfc, 0);
+    group.setLocalProperties(properties);
 
     this.cleanUp();
     console.log(`Streaming the IFC took ${performance.now() - before} ms!`);
