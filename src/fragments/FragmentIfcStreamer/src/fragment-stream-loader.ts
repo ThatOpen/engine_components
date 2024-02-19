@@ -21,6 +21,11 @@ export interface StreamLoaderSettings {
   globalDataFileId: string;
 }
 
+export interface StreamPropertiesSettings {
+  ids: { [id: number]: number };
+  types: { [type: number]: number[] };
+}
+
 export class FragmentStreamLoader extends Component<any> {
   enabled = true;
 
@@ -38,7 +43,7 @@ export class FragmentStreamLoader extends Component<any> {
 
   serializer = new FRAG.StreamSerializer();
 
-  url = "http://dev.api.thatopen.com/storage?fileId=";
+  private _url: string | null = null;
 
   // private _hardlySeenGeometries: THREE.InstancedMesh;
 
@@ -62,6 +67,17 @@ export class FragmentStreamLoader extends Component<any> {
     opacity: 0.5,
   });
 
+  get url() {
+    if (!this._url) {
+      throw new Error("url must be set before using the streaming service!");
+    }
+    return this._url;
+  }
+
+  set url(value: string) {
+    this._url = value;
+  }
+
   constructor(components: Components) {
     super(components);
     this.components.tools.add(FragmentStreamLoader.uuid, this);
@@ -83,7 +99,11 @@ export class FragmentStreamLoader extends Component<any> {
 
   static readonly uuid = "22437e8d-9dbc-4b99-a04f-d2da280d50c8" as const;
 
-  async load(settings: StreamLoaderSettings, coordinate = true) {
+  async load(
+    settings: StreamLoaderSettings,
+    coordinate = true,
+    properties?: StreamPropertiesSettings
+  ) {
     const { assets, geometries, globalDataFileId } = settings;
 
     const groupUrl = this.url + globalDataFileId;
@@ -128,6 +148,35 @@ export class FragmentStreamLoader extends Component<any> {
     }
 
     this._geometryInstances[group.uuid] = instances;
+
+    if (properties) {
+      const ids = new Map<number, number>();
+      const types = new Map<number, number[]>();
+
+      for (const id in properties.ids) {
+        const value = properties.ids[id];
+        const idNum = parseInt(id, 10);
+        ids.set(idNum, value);
+      }
+
+      for (const type in properties.types) {
+        const value = properties.types[type];
+        const idNum = parseInt(type, 10);
+        types.set(idNum, value);
+      }
+
+      // TODO: Make this better when backend is ready
+      const propertiesFileID = globalDataFileId.replace(
+        "-global",
+        "-properties"
+      );
+      group.streamSettings = {
+        baseUrl: this.url,
+        baseFileName: propertiesFileID,
+        ids,
+        types,
+      };
+    }
 
     this.culler.needsUpdate = true;
   }
@@ -383,6 +432,7 @@ export class FragmentStreamLoader extends Component<any> {
     fragment.id = fragID;
     fragment.mesh.uuid = fragID;
 
+    fragment.group = group;
     group.add(fragment.mesh);
     group.items.push(fragment);
 

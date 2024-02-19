@@ -110,7 +110,8 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
         const geometry = geometries[geometryID];
         if (!geometry) {
-          throw new Error("Geometry not found!");
+          console.log(`Geometry not found: ${geometryID}`);
+          continue;
         }
 
         const { boundingBox } = geometry;

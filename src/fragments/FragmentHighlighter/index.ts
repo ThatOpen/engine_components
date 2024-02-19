@@ -208,7 +208,7 @@ export class FragmentHighlighter
     if (!this.fillEnabled) {
       return;
     }
-    this.onBeforeUpdate.trigger(this);
+    await this.onBeforeUpdate.trigger(this);
     const fragments = this.components.tools.get(FragmentManager);
     for (const fragmentID in fragments.list) {
       const fragment = fragments.list[fragmentID];
@@ -219,7 +219,7 @@ export class FragmentHighlighter
         outlinedMesh.applyMatrix4(fragment.mesh.matrixWorld);
       }
     }
-    this.onAfterUpdate.trigger(this);
+    await this.onAfterUpdate.trigger(this);
   }
 
   async highlight(

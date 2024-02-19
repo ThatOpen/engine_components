@@ -135,3 +135,4 @@ resources/asdf.json
 resources/bbbb.ifc
 
 resources/*-processed.json
+resources/*-processed-properties.json
