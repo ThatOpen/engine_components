@@ -104,7 +104,7 @@
     const buffer = new Uint8Array(dataBlob);
     const model = await fragments.load(buffer);
     const properties = await fetch("../../../resources/small.json");
-    model.properties = await properties.json();
+    model.setLocalProperties(await properties.json());
 
     /*MD
     Now that we have our model, let's start the `FragmentHider`. You

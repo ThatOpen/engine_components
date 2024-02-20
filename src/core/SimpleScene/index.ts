@@ -27,6 +27,9 @@ export class SimpleScene
   /** {@link Component.enabled} */
   enabled = true;
 
+  /** {@link Configurable.isSetup} */
+  isSetup = false;
+
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<undefined>();
 
@@ -83,6 +86,7 @@ export class SimpleScene
       this.config.ambientLight.intensity
     );
     this._scene.add(directionalLight, ambientLight);
+    this.isSetup = true;
     this.onSetup.trigger(this);
   }
 }

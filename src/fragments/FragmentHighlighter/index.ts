@@ -52,6 +52,9 @@ export class FragmentHighlighter
   /** {@link Updateable.onAfterUpdate} */
   readonly onAfterUpdate = new Event<FragmentHighlighter>();
 
+  /** {@link Configurable.isSetup} */
+  isSetup = false;
+
   enabled = true;
   highlightMats: HighlightMaterials = {};
   events: HighlightEvents = {};
@@ -359,6 +362,7 @@ export class FragmentHighlighter
     await this.add(this.config.hoverName, [this.config.hoverMaterial]);
     this.setupEvents(true);
     this.enabled = true;
+    this.isSetup = true;
     await this.onSetup.trigger(this);
   }
 

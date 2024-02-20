@@ -173,6 +173,9 @@ export interface Createable {
  * Whether this component supports to be configured.
  */
 export interface Configurable<T extends Record<string, any>> {
+  /** Wether this components has been already configured. */
+  isSetup: boolean;
+
   /** Use the provided configuration to setup the tool. */
   setup: (config?: Partial<T>) => Promise<void>;
 

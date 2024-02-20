@@ -76,8 +76,8 @@
 
     // Set up fragment culler update
 
-    container.addEventListener('mouseup', () => culler.needsUpdate = true);
-    container.addEventListener('wheel', () => culler.needsUpdate = true);
+    container.addEventListener('mouseup', () => culler.elements.needsUpdate = true);
+    container.addEventListener('wheel', () => culler.elements.needsUpdate = true);
 
     // Load the fragments
 
@@ -87,13 +87,13 @@
     const model = await fragments.load(buffer);
 
     for(const fragment of model.items) {
-        culler.add(fragment.mesh);
+        culler.elements.add(fragment.mesh);
     }
 
     const properties = await fetch('../../../resources/small.json');
-    model.properties = await properties.json();
+    model.setLocalProperties(await properties.json());
 
-    culler.needsUpdate = true;
+    culler.elements.needsUpdate = true;
 
     const clipper = new OBC.EdgesClipper(components);
     const thickMaterial = new THREE.LineBasicMaterial({color: 'black'});

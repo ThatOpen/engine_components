@@ -129,7 +129,7 @@
     const buffer = new Uint8Array(data);
     const model = await fragments.load(buffer);
     const properties = await fetch('../../../resources/small.json');
-    model.properties = await properties.json();
+    model.setLocalProperties(await properties.json());
 
     /*MD
     Great, now we have something in our scene. Now, let's see the

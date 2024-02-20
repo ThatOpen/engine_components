@@ -119,13 +119,13 @@
 
     for (const fragment of model.items) {
         meshes.push(fragment.mesh);
-        culler.add(fragment.mesh);
+        culler.elements.add(fragment.mesh);
     }
-    culler.needsUpdate = true;
+    culler.elements.needsUpdate = true;
 
     const controls = components.camera.controls;
     controls.addEventListener('controlend', () => {
-        culler.needsUpdate = true;
+        culler.elements.needsUpdate = true;
     });
 
     /*MD

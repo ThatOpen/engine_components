@@ -21,15 +21,23 @@ export class ScreenCuller
     autoUpdate: true,
   };
 
+  isSetup = false;
+
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
 
   /** {@link Component.enabled} */
   get enabled() {
+    if (!this._elements) {
+      return false;
+    }
     return this.elements.enabled;
   }
 
   set enabled(value: boolean) {
+    if (!this._elements) {
+      return;
+    }
     this.elements.enabled = value;
   }
 
@@ -91,6 +99,7 @@ export class ScreenCuller
         mesh.visible = false;
       }
     });
+    this.isSetup = true;
     await this.onSetup.trigger(this);
   }
 
