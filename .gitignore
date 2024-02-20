@@ -132,7 +132,7 @@ dist/
 resources/asdf.ifc
 resources/asdf.frag
 resources/asdf.json
-resources/bbbb.ifc
+resources/bbbb.*
 
 resources/*-processed.json
 resources/*-processed-properties.json

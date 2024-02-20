@@ -89,11 +89,11 @@
     */
 
     const fragments = new OBC.FragmentManager(components);
-    const file = await fetch('../../../resources/small.frag');
+    const file = await fetch('../../../resources/bbbb.frag');
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
     const model = await fragments.load(buffer);
-    const properties = await fetch('../../../resources/small.json');
+    const properties = await fetch('../../../resources/bbbb.json');
     const props = await properties.json();
     model.setLocalProperties(props);
 
