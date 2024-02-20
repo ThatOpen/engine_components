@@ -16,7 +16,7 @@ export class FragmentPropsStreamConverter
     data: { [id: number]: any };
   }>();
 
-  onIndicesStreamed = new Event<{ [id: number]: Set<number> }>();
+  onIndicesStreamed = new Event<number[][]>();
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
@@ -83,6 +83,18 @@ export class FragmentPropsStreamConverter
 
     const allIfcEntities = new Set(this._webIfc.GetIfcEntityList(0));
 
+    // Types used to construct the property index
+    const relationTypes = [
+      WEBIFC.IFCRELDEFINESBYPROPERTIES,
+      WEBIFC.IFCRELDEFINESBYTYPE,
+      WEBIFC.IFCRELASSOCIATESMATERIAL,
+      WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE,
+      WEBIFC.IFCRELASSOCIATESCLASSIFICATION,
+      WEBIFC.IFCRELASSIGNSTOGROUP,
+    ];
+
+    const propertyIndices = new Map<number, Set<number>>();
+
     // let finalCount = 0;
 
     // Spatial items get their properties recursively to make
@@ -118,6 +130,7 @@ export class FragmentPropsStreamConverter
         const data: { [id: number]: any } = {};
         for (let j = 0; j < propertiesSize; j++) {
           count++;
+
           // finalCount++;
           const nextProperty = ids.get(i + j);
 
@@ -127,6 +140,10 @@ export class FragmentPropsStreamConverter
             isSpatial,
             true
           );
+
+          if (relationTypes.includes(type)) {
+            this.getIndices(property, nextProperty, propertyIndices);
+          }
 
           data[property.expressID] = property;
         }
@@ -147,13 +164,72 @@ export class FragmentPropsStreamConverter
             true
           );
 
+          if (relationTypes.includes(type)) {
+            this.getIndices(property, nextProperty, propertyIndices);
+          }
+
           data[property.expressID] = property;
         }
         await this.onPropertiesStreamed.trigger({ type, data });
       }
     }
 
+    // Stream indices
+
+    const compressedIndices: number[][] = [];
+    for (const [id, indices] of propertyIndices) {
+      compressedIndices.push([id, ...indices]);
+    }
+
+    await this.onIndicesStreamed.trigger(compressedIndices);
+
     // console.log(finalCount);
+  }
+
+  private getIndices(
+    property: any,
+    nextProperty: number,
+    propertyIndex: Map<number, Set<number>>
+  ) {
+    const related = property.RelatedObjects || property.RelatedElements;
+    if (!related) {
+      console.log(`Related objects not found: ${nextProperty}`);
+      return;
+    }
+
+    const relating =
+      property.RelatingType ||
+      property.RelatingMaterial ||
+      property.RelatingStructure ||
+      property.RelatingPropertyDefinition ||
+      property.RelatingGroup ||
+      property.RelatingClassification;
+
+    if (!relating) {
+      console.log(`Relating object not found: ${nextProperty}`);
+      return;
+    }
+
+    if (!Array.isArray(related) || relating.value === undefined) {
+      return;
+    }
+
+    const relatingID = relating.value;
+
+    for (const item of related) {
+      if (item.value === undefined || item.value === null) {
+        continue;
+      }
+
+      const id = item.value;
+
+      if (!propertyIndex.has(id)) {
+        propertyIndex.set(id, new Set());
+      }
+
+      const indices = propertyIndex.get(id) as Set<number>;
+      indices.add(relatingID);
+    }
   }
 
   private cleanUp() {

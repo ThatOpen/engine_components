@@ -92,6 +92,8 @@ export class FragmentIfcLoader
     const fragments = this.components.tools.get(FragmentManager);
     fragments.groups.push(group);
 
+    await this.onIfcLoaded.trigger(group);
+
     return group;
   }
 
@@ -202,8 +204,6 @@ export class FragmentIfcLoader
     const matrix = this._webIfc.GetCoordinationMatrix(0);
     group.coordinationMatrix.fromArray(matrix);
     group.ifcCivil = this._civil.read(this._webIfc);
-
-    await this.onIfcLoaded.trigger(group);
 
     return group;
   }
