@@ -34,6 +34,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
   private _material = new THREE.MeshBasicMaterial({
     transparent: true,
+    side: 2,
     opacity: 1,
   });
 

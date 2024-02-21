@@ -1,11 +1,13 @@
 import * as THREE from "three";
 import * as FRAG from "bim-fragment";
+import { unzip } from "unzipit";
 import { FragmentIdMap, FragmentsGroup } from "bim-fragment";
 import { Component, Event } from "../../../base-types";
 import { StreamedGeometries, StreamedAsset } from "./base-types";
 import { Components, ToolComponent } from "../../../core";
 import { GeometryCullerRenderer } from "./geometry-culler-renderer";
 import { FragmentManager } from "../../FragmentManager";
+import { IfcPropertiesProcessor } from "../../../ifc";
 
 interface StreamedInstance {
   id: number;
@@ -24,6 +26,7 @@ export interface StreamLoaderSettings {
 export interface StreamPropertiesSettings {
   ids: { [id: number]: number };
   types: { [type: number]: number[] };
+  indexesFile: string;
 }
 
 export class FragmentStreamLoader extends Component<any> {
@@ -176,6 +179,23 @@ export class FragmentStreamLoader extends Component<any> {
         ids,
         types,
       };
+
+      const { indexesFile } = properties;
+      const fetched = await fetch(this.url + indexesFile);
+      const data = await fetched.arrayBuffer();
+      const file = new File([new Blob([data])], indexesFile);
+      const fileURL = URL.createObjectURL(file);
+      const result = await unzip(fileURL);
+      const first = Object.keys(result.entries)[0];
+      const indices = await result.entries[first].json();
+
+      const processor = this.components.tools.get(IfcPropertiesProcessor);
+      const indexMap = processor.get();
+      indexMap[group.uuid] = {};
+      for (const index of indices) {
+        const id = index.shift();
+        indexMap[group.uuid][id] = new Set(index);
+      }
     }
 
     this.culler.needsUpdate = true;

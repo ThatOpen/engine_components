@@ -56,7 +56,7 @@
 
     components.scene = new OBC.SimpleScene(components);
     components.renderer = new OBC.PostproductionRenderer(components, container);
-    components.camera = new OBC.SimpleCamera(components);
+    components.camera = new OBC.OrthoPerspectiveCamera(components);
     components.raycaster = new OBC.SimpleRaycaster(components);
 
     components.init();
@@ -128,30 +128,30 @@
 
     // STREAM MODEL LOADING - OK
 
-    // async function loadModel(geometryURL, propertiesURL) {
-    //     const rawGeometryData = await fetch(geometryURL);
-    //     const geometryData = await rawGeometryData.json();
-    //     let propertiesData;
-    //     if(propertiesURL) {
-    //         const rawPropertiesData = await fetch(propertiesURL);
-    //         propertiesData = await rawPropertiesData.json();
-    //     }
-    //     await loader.load(geometryData, true, propertiesData);
-    // }
-    //
-    // await loadModel(
-    //     "../../../resources/small.ifc-processed.json",
-    //     "../../../resources/small.ifc-processed-properties.json"
-    // );
-    //
-    // // await loadModel("../../../resources/dm1_riv.ifc-processed.json");
-    //
-    // loader.culler.maxHiddenTime = 3000;
-    // loader.culler.maxLostTime = 10000;
-    //
-    // components.camera.controls.addEventListener("controlend", () => {
-    //     loader.culler.elements.needsUpdate = true;
-    // });
+    async function loadModel(geometryURL, propertiesURL) {
+        const rawGeometryData = await fetch(geometryURL);
+        const geometryData = await rawGeometryData.json();
+        let propertiesData;
+        if (propertiesURL) {
+            const rawPropertiesData = await fetch(propertiesURL);
+            propertiesData = await rawPropertiesData.json();
+        }
+        await loader.load(geometryData, true, propertiesData);
+    }
+
+    await loadModel(
+        "../../../resources/small.ifc-processed.json",
+        "../../../resources/small.ifc-processed-properties.json"
+    );
+
+    // await loadModel("../../../resources/dm1_riv.ifc-processed.json");
+
+    loader.culler.maxHiddenTime = 3000;
+    loader.culler.maxLostTime = 10000;
+
+    components.camera.controls.addEventListener("controlend", () => {
+        loader.culler.needsUpdate = true;
+    });
 
     // COORDINATION - OK
 
@@ -253,7 +253,84 @@
     // highlighter.outlinesEnabled = true;
 
 
-    // FRAGMENT PLANS
+    // FRAGMENT PLANS - OK
+
+    // const plans = new OBC.FragmentPlans(components);
+    // const classifier = new OBC.FragmentClassifier(components);
+    //
+    // components.renderer.postproduction.customEffects.outlineEnabled = true;
+    //
+    // const whiteColor = new THREE.Color("white");
+    // const whiteMaterial = new THREE.MeshBasicMaterial({color: whiteColor});
+    // const materialManager = new OBC.MaterialManager(components);
+    // materialManager.addMaterial("white", whiteMaterial);
+    //
+    // const sectionMaterial = new THREE.LineBasicMaterial({color: 'black'});
+    // const fillMaterial = new THREE.MeshBasicMaterial({color: 'gray', side: 2});
+    // const fillOutline = new THREE.MeshBasicMaterial({color: 'black', side: 1, opacity: 0.5, transparent: true});
+    //
+    // const clipper = components.tools.get(OBC.EdgesClipper);
+    // clipper.enabled = true;
+    // clipper.styles.create("filled", new Set(), sectionMaterial, fillMaterial, fillOutline);
+    // clipper.styles.create("projected", new Set(), sectionMaterial);
+    // const styles = clipper.styles.get();
+    //
+    // for (const model of fragments.groups) {
+    //     await plans.computeAllPlanViews(model);
+    //     classifier.byEntity(model);
+    //     classifier.byStorey(model);
+    // }
+    //
+    // const found = classifier.find({entities: ["IFCWALLSTANDARDCASE", "IFCWALL"]});
+    // const walls = new Set(Object.keys(found));
+    //
+    // loader.onFragmentsLoaded.add((frags) => {
+    //     for(const frag of frags) {
+    //         if(walls.has(frag.id)) {
+    //             styles.filled.meshes.add(frag.mesh);
+    //         } else {
+    //             styles.projected.meshes.add(frag.mesh);
+    //         }
+    //         materialManager.addMeshes("white", [frag.mesh]);
+    //         if(plans.enabled) {
+    //             materialManager.set(true, ["white"]);
+    //         }
+    //         clipper.fillsNeedUpdate = true
+    //         clipper.updateEdges(true);
+    //     }
+    // })
+    //
+    // loader.onFragmentsDeleted.add((frags) => {
+    //     for(const frag of frags) {
+    //         if(walls.has(frag.id)) {
+    //             styles.filled.meshes.add(frag.mesh);
+    //         } else {
+    //             styles.projected.meshes.add(frag.mesh);
+    //         }
+    //         materialManager.removeMeshes("white", [frag.mesh]);
+    //     }
+    // })
+    //
+    // plans.updatePlansList();
+    //
+    // plans.onNavigated.add(() => {
+    //     components.renderer.postproduction.customEffects.glossEnabled = false;
+    //     materialManager.setBackgroundColor(whiteColor);
+    //     materialManager.set(true, ["white"]);
+    //     grid.visible = false;
+    // });
+    //
+    // plans.onExited.add(() => {
+    //     components.renderer.postproduction.customEffects.glossEnabled = true;
+    //     materialManager.resetBackgroundColor();
+    //     materialManager.set(false, ["white"]);
+    //     grid.visible = true;
+    // });
+    //
+    // const mainToolbar = new OBC.Toolbar(components);
+    // mainToolbar.name = "Main Toolbar";
+    // components.ui.addToolbar(mainToolbar);
+    // mainToolbar.addChild(plans.uiElement.get('main'));
 
     // FRAGMENT CLIP STYLER
 
@@ -290,27 +367,15 @@
     // const postproduction = components.renderer.postproduction;
     // postproduction.customEffects.outlineEnabled = true;
 
-    // PROPERTIES PROCESSOR - NEED TO GENERATE PROPERTY INDEX IN BACKEND
+    // PROPERTIES PROCESSOR - OK
 
     // const highlighter = new OBC.FragmentHighlighter(components, fragments);
     // highlighter.setup();
     // components.renderer.postproduction.customEffects.outlineEnabled = true;
     // highlighter.outlinesEnabled = true;
     //
-    // const propsProcessor = new OBC.IfcPropertiesProcessor(components)
+    // const propsProcessor = components.tools.get(OBC.IfcPropertiesProcessor);
     // propsProcessor.uiElement.get("propertiesWindow").visible = true
-    //
-    // for(const model of fragments.groups) {
-    //
-    //
-    //     const propertyIndex = JSON.parse(`{"129":[24544],"138":[24460],"144":[24519],"186":[250,253,257,232,231,138],"226":[],"231":[],"232":[226],"294":[298,301,303,232,297,138],"297":[],"338":[342,345,347,232,341,138],"341":[],"6471":[6505],"6475":[],"6505":[],"6518":[6524,6527,6530,6471,6521,138],"6521":[],"6563":[6569,6571,6574,6471,6566,138],"6566":[],"6595":[6601,6603,6606,6471,6598,138],"6598":[],"6627":[6633,6635,6638,6471,6630,138],"6630":[],"6659":[6665,6667,6670,6471,6662,138],"6662":[],"6691":[6697,6699,6702,6471,6694,138],"6694":[],"6723":[6729,6731,6734,6471,6726,138],"6726":[],"6755":[6761,6763,6766,6471,6758,138],"6758":[],"6787":[6793,6795,6798,6471,6790,138],"6790":[],"7758":[7780],"7780":[],"7792":[7798,7758,7795,138],"7795":[],"18740":[18762],"18762":[],"18774":[18780,18740,18777,138],"18777":[],"18799":[18804,18740,18802,138],"18802":[],"18819":[18824,18740,18822,138],"18822":[],"18839":[18844,18740,18842,138],"18842":[],"18859":[18864,7758,18862,138],"18862":[],"18879":[18884,18740,18882,138],"18882":[],"18899":[18904,18740,18902,138],"18902":[],"18919":[18924,18740,18922,138],"18922":[],"18939":[18944,18740,18942,138],"18942":[],"18959":[18964,7758,18962,138],"18962":[],"18979":[18984,18740,18982,138],"18982":[],"18999":[19004,18740,19002,138],"19002":[],"19019":[19024,18740,19022,138],"19022":[],"19039":[19044,18740,19042,138],"19042":[],"19059":[19064,7758,19062,138],"19062":[],"19079":[19084,18740,19082,138],"19082":[],"19099":[19104,18740,19102,138],"19102":[],"19119":[19124,18740,19122,138],"19122":[],"19139":[19144,18740,19142,138],"19142":[],"19159":[19164,7758,19162,138],"19162":[],"19179":[19184,18740,19182,138],"19182":[],"19199":[19204,18740,19202,138],"19202":[],"19219":[19224,18740,19222,138],"19222":[],"19239":[19244,18740,19242,138],"19242":[],"19259":[19264,7758,19262,138],"19262":[],"19279":[19284,18740,19282,138],"19282":[],"19299":[19304,18740,19302,138],"19302":[],"19319":[19324,18740,19322,138],"19322":[],"19339":[19344,18740,19342,138],"19342":[],"19359":[19364,7758,19362,138],"19362":[],"19379":[19384,18740,19382,138],"19382":[],"19399":[19404,18740,19402,138],"19402":[],"19419":[19424,18740,19422,138],"19422":[],"19439":[19444,18740,19442,138],"19442":[],"22474":[22480],"22479":[],"22480":[],"22492":[22497,22500,22502,22474,6475,138],"22551":[22571,22574,22577,22554,22569,138],"22554":[22566],"22566":[],"22569":[],"22620":[22625,22628,22630,22623,22624,144],"22623":[22566],"22624":[],"22655":[23924,23926,23921,138],"22678":[22680],"22680":[],"22705":[23929,23931,22678,22680],"22732":[22680],"22748":[23934,23936,22732,22680],"22772":[23939,23941,22732,22680],"22788":[23944,23946,22678,22680],"22804":[23949,23951,22678,22680],"22820":[23954,23956,22732,22680],"22836":[23959,23961,22732,22680],"22852":[23964,23966,22678,22680],"22868":[23969,23971,22678,22680],"22884":[23974,23976,22732,22680],"22900":[23979,23981,22732,22680],"22916":[23984,23986,22678,22680],"22936":[22479],"22952":[23989,23991,22936],"22980":[22479],"22996":[23994,23996,22980],"23023":[22479],"23039":[23999,24001,23023],"23062":[24004,24006,23023],"23078":[24009,24011,23023],"23098":[22479],"23114":[24014,24016,23098],"23141":[22479],"23157":[24019,24021,23141],"23184":[22479],"23200":[24024,24026,23184],"23227":[22479],"23243":[24029,24031,23227],"23270":[22479],"23286":[24034,24036,23270],"23313":[22479],"23329":[24039,24041,23313],"23352":[24044,24046,23270],"23368":[24049,24051,23313],"23384":[24054,24056,23270],"23400":[24059,24061,23313],"23420":[22479],"23436":[24064,24066,23420],"23463":[22479],"23479":[24069,24071,23463],"23502":[24074,24076,23463],"23518":[24079,24081,23420],"23534":[24084,24086,23420],"23550":[24089,24091,23463],"23566":[24094,24096,23463],"23582":[24099,24101,23420],"23602":[22479],"23618":[24104,24106,23602],"23645":[22479],"23661":[24109,24111,23645],"23688":[22479],"23704":[24114,24116,23688],"23727":[24119,24121,23688],"23747":[22479],"23763":[24124,24126,23747],"23790":[22479],"23806":[24129,24131,23790],"23829":[24134,24136,23790],"23849":[22479],"23865":[24139,24141,23849],"23921":[]}`);
-    //
-    //     const result = {};
-    //     for(const id in propertyIndex) {
-    //         result[id] = new Set(propertyIndex[id]);
-    //     }
-    //     propsProcessor._indexMap = {[model.uuid]: result};
-    // }
     //
     // const highlighterEvents = highlighter.events;
     // highlighterEvents.select.onClear.add(() => {
@@ -336,13 +401,12 @@
     //     }
     // );
 
-    // loader.culler.renderDebugFrame = true;
-    // const debugFrame = loader.culler.get().domElement;
-    // document.body.appendChild(debugFrame);
-    // debugFrame.style.position = 'fixed';
-    // debugFrame.style.left = '0';
-    // debugFrame.style.bottom = '0';
-
+    loader.culler.renderDebugFrame = true;
+    const debugFrame = loader.culler.get().domElement;
+    document.body.appendChild(debugFrame);
+    debugFrame.style.position = 'fixed';
+    debugFrame.style.left = '0';
+    debugFrame.style.bottom = '0';
 
 
     // Set up stats
