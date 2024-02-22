@@ -25,6 +25,8 @@ export class FragmentIfcStreamConverter
 
   onAssetStreamed = new Event<StreamedAsset[]>();
 
+  onProgress = new Event<number>();
+
   onIfcLoaded = new Event<Uint8Array>();
 
   /** {@link Disposable.onDisposed} */
@@ -172,7 +174,12 @@ export class FragmentIfcStreamConverter
 
     this._spatialTree.cleanUp();
 
+    let nextProgress = 0.01;
+    let chunkCounter = 0;
+
     for (const chunk of chunks) {
+      chunkCounter++;
+
       this._webIfc.StreamMeshes(0, chunk, (mesh) => {
         this.getMesh(this._webIfc, mesh, group);
       });
@@ -183,6 +190,13 @@ export class FragmentIfcStreamConverter
 
       if (this._assets.length > minAssetsSize) {
         await this.streamAssets();
+      }
+
+      const currentProgress = chunkCounter / chunks.length;
+      if (currentProgress > nextProgress) {
+        nextProgress += 0.01;
+        nextProgress = Math.max(nextProgress, currentProgress);
+        await this.onProgress.trigger(Math.round(nextProgress * 100) / 100);
       }
     }
 

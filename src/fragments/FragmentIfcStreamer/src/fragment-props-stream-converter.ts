@@ -16,6 +16,8 @@ export class FragmentPropsStreamConverter
     data: { [id: number]: any };
   }>();
 
+  onProgress = new Event<number>();
+
   onIndicesStreamed = new Event<number[][]>();
 
   /** {@link Disposable.onDisposed} */
@@ -111,7 +113,11 @@ export class FragmentPropsStreamConverter
       allIfcEntities.add(type);
     }
 
+    let nextProgress = 0.01;
+    let typeCounter = 0;
+
     for (const type of allIfcEntities) {
+      typeCounter++;
       if (GeometryTypes.has(type)) {
         continue;
       }
@@ -134,12 +140,7 @@ export class FragmentPropsStreamConverter
           // finalCount++;
           const nextProperty = ids.get(i + j);
 
-          const property = this._webIfc.GetLine(
-            0,
-            nextProperty,
-            isSpatial,
-            true
-          );
+          const property = this._webIfc.GetLine(0, nextProperty, isSpatial);
 
           if (relationTypes.includes(type)) {
             this.getIndices(property, nextProperty, propertyIndices);
@@ -157,12 +158,7 @@ export class FragmentPropsStreamConverter
         for (let i = count; i < idCount; i++) {
           // finalCount++;
           const nextProperty = ids.get(i);
-          const property = this._webIfc.GetLine(
-            0,
-            nextProperty,
-            isSpatial,
-            true
-          );
+          const property = this._webIfc.GetLine(0, nextProperty, isSpatial);
 
           if (relationTypes.includes(type)) {
             this.getIndices(property, nextProperty, propertyIndices);
@@ -171,6 +167,13 @@ export class FragmentPropsStreamConverter
           data[property.expressID] = property;
         }
         await this.onPropertiesStreamed.trigger({ type, data });
+      }
+
+      const currentProgress = typeCounter / allIfcEntities.size;
+      if (currentProgress > nextProgress) {
+        nextProgress += 0.01;
+        nextProgress = Math.max(nextProgress, currentProgress);
+        await this.onProgress.trigger(Math.round(nextProgress * 100) / 100);
       }
     }
 

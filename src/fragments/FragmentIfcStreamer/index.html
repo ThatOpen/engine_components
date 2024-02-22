@@ -102,6 +102,10 @@
     //     console.log(groupBuffer);
     // })
     //
+    // streamer.onProgress.add((progress) => {
+    //     console.log(progress);
+    // })
+    //
     // streamer.streamFromBuffer(new Uint8Array(ifcBuffer));
 
     // PROPERTIES STREAMING - OK
@@ -117,9 +121,13 @@
     // }
     //
     // propsStreamer.streamFromBuffer(new Uint8Array(ifcBuffer));
-    //
+
     // propsStreamer.onPropertiesStreamed.add(async (props) => {
     //     console.log(props);
+    // })
+
+    // propsStreamer.onProgress.add(async (progress) => {
+    //     console.log(progress);
     // })
     //
     // propsStreamer.onIndicesStreamed.add(async (props) => {
@@ -128,30 +136,30 @@
 
     // STREAM MODEL LOADING - OK
 
-    async function loadModel(geometryURL, propertiesURL) {
-        const rawGeometryData = await fetch(geometryURL);
-        const geometryData = await rawGeometryData.json();
-        let propertiesData;
-        if (propertiesURL) {
-            const rawPropertiesData = await fetch(propertiesURL);
-            propertiesData = await rawPropertiesData.json();
-        }
-        await loader.load(geometryData, true, propertiesData);
-    }
-
-    await loadModel(
-        "../../../resources/small.ifc-processed.json",
-        "../../../resources/small.ifc-processed-properties.json"
-    );
+    // async function loadModel(geometryURL, propertiesURL) {
+    //     const rawGeometryData = await fetch(geometryURL);
+    //     const geometryData = await rawGeometryData.json();
+    //     let propertiesData;
+    //     if (propertiesURL) {
+    //         const rawPropertiesData = await fetch(propertiesURL);
+    //         propertiesData = await rawPropertiesData.json();
+    //     }
+    //     await loader.load(geometryData, true, propertiesData);
+    // }
+    //
+    // await loadModel(
+    //     "../../../resources/small.ifc-processed.json",
+    //     "../../../resources/small.ifc-processed-properties.json"
+    // );
 
     // await loadModel("../../../resources/dm1_riv.ifc-processed.json");
-
-    loader.culler.maxHiddenTime = 3000;
-    loader.culler.maxLostTime = 10000;
-
-    components.camera.controls.addEventListener("controlend", () => {
-        loader.culler.needsUpdate = true;
-    });
+    //
+    // loader.culler.maxHiddenTime = 3000;
+    // loader.culler.maxLostTime = 10000;
+    //
+    // components.camera.controls.addEventListener("controlend", () => {
+    //     loader.culler.needsUpdate = true;
+    // });
 
     // COORDINATION - OK
 
