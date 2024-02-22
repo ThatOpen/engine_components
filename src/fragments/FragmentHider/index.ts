@@ -155,6 +155,9 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
 
   private updateCulledVisibility(fragment: Fragment) {
     const culler = this.components.tools.get(ScreenCuller);
+    if (!culler.isSetup) {
+      return;
+    }
     const colorMeshes = culler.get();
     const culled = colorMeshes.get(fragment.id);
     if (culled) {

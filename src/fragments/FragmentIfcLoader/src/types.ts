@@ -1,7 +1,7 @@
 import * as WEBIFC from "web-ifc";
 
 export interface IfcCivil {
-  IfcAlignment: WEBIFC.IfcAlignment[];
-  IfcCrossSection2D: WEBIFC.IfcCrossSection[];
-  IfcCrossSection3D: WEBIFC.IfcCrossSection[];
+  IfcAlignment: WEBIFC.Alignment[];
+  IfcCrossSection2D: WEBIFC.CrossSection[];
+  IfcCrossSection3D: WEBIFC.CrossSection[];
 }

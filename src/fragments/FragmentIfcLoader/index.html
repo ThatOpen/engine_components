@@ -10,16 +10,17 @@
     <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
     <title>Tools Component</title>
     <style>
-      body {
-        margin: 0;
-        padding: 0;
-      }
-      .full-screen {
-        width: 100vw;
-        height: 100vh;
-        position: relative;
-        overflow: hidden;
-      }
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .full-screen {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body>
@@ -104,7 +105,7 @@
     Don't worry, we'll also do this programmatically in a moment.
     */
 
-    const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
+    const mainToolbar = new OBC.Toolbar(components, {name: 'Main Toolbar', position: 'bottom'});
     components.ui.addToolbar(mainToolbar);
     const ifcButton = fragmentIfcLoader.uiElement.get("main");
     mainToolbar.addChild(ifcButton);
@@ -146,7 +147,7 @@
         WEBIFC.IFCREINFORCINGELEMENT,
     ];
 
-    for(const cat of excludedCats) {
+    for (const cat of excludedCats) {
         fragmentIfcLoader.settings.excludedCategories.add(cat);
     }
 
@@ -205,7 +206,10 @@
 
         const files = [];
         files.push(fragmentFile);
-        files.push(new File([JSON.stringify(group.properties)], 'small.json'));
+        const properties = group.getLocalProperties();
+        if (properties) {
+            files.push(new File([JSON.stringify(properties)], 'small.json'));
+        }
         const result = await downloadZip(files).blob();
         result.name = 'example';
         download(result);
@@ -277,25 +281,25 @@
 
         console.log(model);
 
-    // let sorted = [];
-    // for(const frag of model.fragments) {
-    // 	const size = frag.mesh.count;
-    // 	sorted.push({size, frag});
-    // }
-    //
-    // sorted.sort((a, b) => {
-    // 	return a.size > b.size ? 1 : -1;
-    // });
-    // let value = 0;
-    // let step = 1 / sorted.length;
-    //
-    // for(const { frag } of sorted) {
-    // 	console.log(frag.mesh.material);
-    // 	const mat = frag.mesh.material[0];
-    // 	frag.mesh.instanceColor = null;
-    // 	mat.color.setRGB(value, value, value, "srgb");
-    // 	value += step;
-    // }
+        // let sorted = [];
+        // for(const frag of model.fragments) {
+        // 	const size = frag.mesh.count;
+        // 	sorted.push({size, frag});
+        // }
+        //
+        // sorted.sort((a, b) => {
+        // 	return a.size > b.size ? 1 : -1;
+        // });
+        // let value = 0;
+        // let step = 1 / sorted.length;
+        //
+        // for(const { frag } of sorted) {
+        // 	console.log(frag.mesh.material);
+        // 	const mat = frag.mesh.material[0];
+        // 	frag.mesh.instanceColor = null;
+        // 	mat.color.setRGB(value, value, value, "srgb");
+        // 	value += step;
+        // }
     });
 
 

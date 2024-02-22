@@ -137,7 +137,7 @@
      */
 
     const properties = await fetch("../../../resources/small.json");
-    model.properties = await properties.json();
+    model.setLocalProperties(await properties.json());
 
     /*MD
 
@@ -171,14 +171,14 @@
     const culler = new OBC.ScreenCuller(components);
     culler.setup();
 
-    container.addEventListener("mouseup", () => culler.needsUpdate = true);
-    container.addEventListener("wheel", () => culler.needsUpdate = true);
+    container.addEventListener("mouseup", () => culler.elements.needsUpdate = true);
+    container.addEventListener("wheel", () => culler.elements.needsUpdate = true);
 
     for(const fragment of model.items) {
-      culler.add(fragment.mesh);
+      culler.elements.add(fragment.mesh);
     }
 
-    culler.needsUpdate = true;
+    culler.elements.needsUpdate = true;
 
     /*MD
 

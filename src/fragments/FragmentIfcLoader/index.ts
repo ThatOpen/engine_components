@@ -8,7 +8,7 @@ import { Disposable, Event, UI, Component, UIElement } from "../../base-types";
 import { FragmentManager } from "../FragmentManager";
 import { Button, ToastNotification } from "../../ui";
 import { Components, ToolComponent } from "../../core";
-import { IfcJsonExporter } from "../../ifc";
+import { IfcJsonExporter } from "../../ifc/IfcJsonExporter";
 
 export class FragmentIfcLoader
   extends Component<WEBIFC.IfcAPI>
@@ -30,26 +30,22 @@ export class FragmentIfcLoader
   uiElement = new UIElement<{ main: Button; toast: ToastNotification }>();
 
   private _material = new THREE.MeshLambertMaterial();
-  private _materialT = new THREE.MeshLambertMaterial({
-    transparent: true,
-    opacity: 0.5,
-  });
-
   private _spatialTree = new SpatialStructure();
   private _metaData = new IfcMetadataReader();
+  private _fragmentInstances = new Map<string, Map<number, FRAGS.Item>>();
+  private _webIfc = new WEBIFC.IfcAPI();
+  private _civil = new CivilReader();
+  private _propertyExporter = new IfcJsonExporter();
 
   private _visitedFragments = new Map<
     string,
     { index: number; fragment: FRAGS.Fragment }
   >();
 
-  private _fragmentInstances = new Map<string, Map<number, FRAGS.Item>>();
-
-  private _webIfc = new WEBIFC.IfcAPI();
-
-  private _civil = new CivilReader();
-
-  private _propertyExporter = new IfcJsonExporter();
+  private _materialT = new THREE.MeshLambertMaterial({
+    transparent: true,
+    opacity: 0.5,
+  });
 
   constructor(components: Components) {
     super(components);
@@ -87,15 +83,16 @@ export class FragmentIfcLoader
     await this.readIfcFile(data);
     const group = await this.getAllGeometries();
 
-    group.properties = await this.getModelProperties();
+    const properties = await this._propertyExporter.export(this._webIfc, 0);
+    group.setLocalProperties(properties);
 
     this.cleanUp();
     console.log(`Streaming the IFC took ${performance.now() - before} ms!`);
 
     const fragments = this.components.tools.get(FragmentManager);
     fragments.groups.push(group);
-    const scene = this.components.scene.get();
-    scene.add(group);
+
+    await this.onIfcLoaded.trigger(group);
 
     return group;
   }
@@ -121,7 +118,10 @@ export class FragmentIfcLoader
         const file = fileOpener.files[0];
         const buffer = await file.arrayBuffer();
         const data = new Uint8Array(buffer);
-        await this.load(data);
+        const model = await this.load(data);
+        const scene = this.components.scene.get();
+        scene.add(model);
+
         toast.visible = true;
         await fragments.updateWindow();
         fileOpener.remove();
@@ -148,7 +148,7 @@ export class FragmentIfcLoader
 
   private async getAllGeometries() {
     // Precompute the level and category to which each item belongs
-    await this._spatialTree.setUp(this._webIfc);
+    this._spatialTree.setUp(this._webIfc);
 
     const allIfcEntities = this._webIfc.GetIfcEntityList(0);
 
@@ -204,8 +204,6 @@ export class FragmentIfcLoader
     const matrix = this._webIfc.GetCoordinationMatrix(0);
     group.coordinationMatrix.fromArray(matrix);
     group.ifcCivil = this._civil.read(this._webIfc);
-
-    await this.onIfcLoaded.trigger(group);
 
     return group;
   }
@@ -329,18 +327,6 @@ export class FragmentIfcLoader
     geometry.delete();
 
     return bufferGeometry;
-  }
-
-  private async getModelProperties() {
-    if (!this.settings.includeProperties) {
-      return {};
-    }
-    return new Promise<any>((resolve) => {
-      this._propertyExporter.onPropertiesSerialized.add((properties: any) => {
-        resolve(properties);
-      });
-      this._propertyExporter.export(this._webIfc, 0);
-    });
   }
 
   private async autoSetWasm() {

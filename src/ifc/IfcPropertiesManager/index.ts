@@ -155,15 +155,15 @@ export class IfcPropertiesManager
     );
 
     propActions.onEditProp.add(async ({ model, expressID, name, value }) => {
-      const { properties } = IfcPropertiesManager.getIFCInfo(model);
-      const prop = properties[expressID];
-      const { key: valueKey } = IfcPropertiesUtils.getQuantityValue(
-        properties,
+      const prop = await model.getProperties(expressID);
+      if (!prop) return;
+      const { key: valueKey } = await IfcPropertiesUtils.getQuantityValue(
+        model,
         expressID
       );
 
-      const { key: nameKey } = IfcPropertiesUtils.getEntityName(
-        properties,
+      const { key: nameKey } = await IfcPropertiesUtils.getEntityName(
+        model,
         expressID
       );
 
@@ -194,8 +194,9 @@ export class IfcPropertiesManager
     });
 
     psetActions.onEditPset.add(async ({ model, psetID, name, description }) => {
-      const { properties } = IfcPropertiesManager.getIFCInfo(model);
-      const pset = properties[psetID];
+      const pset = await model.getProperties(psetID);
+
+      if (!pset) return;
 
       if (name !== "") {
         if (pset.Name?.value) {
@@ -236,26 +237,28 @@ export class IfcPropertiesManager
     return model.ifcMetadata.maxExpressID;
   }
 
-  static getIFCInfo(model: FragmentsGroup) {
-    const properties = model.properties;
-    if (!properties) throw new Error("FragmentsGroup properties not found");
+  static getIFCSchema(model: FragmentsGroup) {
     const schema = model.ifcMetadata.schema;
-    if (!schema) throw new Error("IFC Schema not found");
-    return { properties, schema };
+    if (!schema) {
+      throw new Error("IFC Schema not found");
+    }
+    return schema;
   }
 
   private newGUID(model: FragmentsGroup) {
-    const { schema } = IfcPropertiesManager.getIFCInfo(model);
+    const schema = IfcPropertiesManager.getIFCSchema(model);
     return new WEBIFC[schema].IfcGloballyUniqueId(generateIfcGUID());
   }
 
-  private getOwnerHistory(model: FragmentsGroup) {
-    const { properties } = IfcPropertiesManager.getIFCInfo(model);
-    const ownerHistory = IfcPropertiesUtils.findItemOfType(
-      properties,
+  private async getOwnerHistory(model: FragmentsGroup) {
+    const ownerHistories = await model.getAllPropertiesOfType(
       WEBIFC.IFCOWNERHISTORY
     );
-    if (!ownerHistory) throw new Error("No OwnerHistory was found.");
+    if (!ownerHistories) {
+      throw new Error("No OwnerHistory was found.");
+    }
+    const keys = Object.keys(ownerHistories).map((key) => parseInt(key, 10));
+    const ownerHistory = ownerHistories[keys[0]];
     const ownerHistoryHandle = new WEBIFC.Handle(ownerHistory.expressID);
     return { ownerHistory, ownerHistoryHandle };
   }
@@ -271,18 +274,17 @@ export class IfcPropertiesManager
   }
 
   async setData(model: FragmentsGroup, ...dataToSave: Record<string, any>[]) {
-    const { properties } = IfcPropertiesManager.getIFCInfo(model);
     for (const data of dataToSave) {
       const expressID = data.expressID;
       if (!expressID) continue;
-      properties[expressID] = data;
+      await model.setProperties(expressID, data);
       await this.registerChange(model, expressID);
     }
   }
 
   async newPset(model: FragmentsGroup, name: string, description?: string) {
-    const { schema } = IfcPropertiesManager.getIFCInfo(model);
-    const { ownerHistoryHandle } = this.getOwnerHistory(model);
+    const schema = IfcPropertiesManager.getIFCSchema(model);
+    const { ownerHistoryHandle } = await this.getOwnerHistory(model);
 
     // Create the Pset
     const psetGlobalId = this.newGUID(model);
@@ -317,19 +319,19 @@ export class IfcPropertiesManager
   }
 
   async removePset(model: FragmentsGroup, ...psetID: number[]) {
-    const { properties } = IfcPropertiesManager.getIFCInfo(model);
     for (const expressID of psetID) {
-      const pset = properties[expressID];
+      const pset = await model.getProperties(expressID);
       if (pset?.type !== WEBIFC.IFCPROPERTYSET) continue;
-      const relID = IfcPropertiesUtils.getPsetRel(properties, expressID);
+      const relID = await IfcPropertiesUtils.getPsetRel(model, expressID);
       if (relID) {
-        delete properties[relID];
+        await model.setProperties(relID, null);
         await this.registerChange(model, relID);
       }
       if (pset) {
-        for (const propHandle of pset.HasProperties)
-          delete properties[propHandle.value];
-        delete properties[expressID];
+        for (const propHandle of pset.HasProperties) {
+          await model.setProperties(propHandle.value, null);
+        }
+        await model.setProperties(expressID, null);
         await this.onPsetRemoved.trigger({ model, psetID: expressID });
         await this.registerChange(model, expressID);
       }
@@ -342,7 +344,7 @@ export class IfcPropertiesManager
     name: string,
     value: string | number | boolean
   ) {
-    const { schema } = IfcPropertiesManager.getIFCInfo(model);
+    const schema = IfcPropertiesManager.getIFCSchema(model);
     const propName = new WEBIFC[schema].IfcIdentifier(name);
     // @ts-ignore
     const propValue = new WEBIFC[schema][type](value);
@@ -385,14 +387,14 @@ export class IfcPropertiesManager
   }
 
   async removePsetProp(model: FragmentsGroup, psetID: number, propID: number) {
-    const { properties } = IfcPropertiesManager.getIFCInfo(model);
-    const pset = properties[psetID];
-    const prop = properties[propID];
+    const pset = await model.getProperties(psetID);
+    const prop = await model.getProperties(propID);
+    if (!pset || !prop) return;
     if (!(pset.type === WEBIFC.IFCPROPERTYSET && prop)) return;
     pset.HasProperties = pset.HasProperties.filter((handle: any) => {
       return handle.value !== propID;
     });
-    delete properties[propID];
+    await model.setProperties(propID, null);
     await this.registerChange(model, psetID, propID);
   }
 
@@ -401,10 +403,10 @@ export class IfcPropertiesManager
     psetID: number,
     ...elementID: number[]
   ) {
-    const { properties } = IfcPropertiesManager.getIFCInfo(model);
-    const relID = IfcPropertiesUtils.getPsetRel(properties, psetID);
+    const relID = await IfcPropertiesUtils.getPsetRel(model, psetID);
     if (!relID) return;
-    const rel = properties[relID];
+    const rel = await model.getProperties(relID);
+    if (!rel) return;
     for (const expressID of elementID) {
       const elementHandle = new WEBIFC.Handle(expressID);
       rel.RelatedObjects.push(elementHandle);
@@ -422,8 +424,7 @@ export class IfcPropertiesManager
     psetID: number,
     ...propID: number[]
   ) {
-    const { properties } = IfcPropertiesManager.getIFCInfo(model);
-    const pset = properties[psetID];
+    const pset = await model.getProperties(psetID);
     if (!pset) return;
     for (const expressID of propID) {
       if (pset.HasProperties.includes(expressID)) {
@@ -437,13 +438,12 @@ export class IfcPropertiesManager
   }
 
   async saveToIfc(model: FragmentsGroup, ifcToSaveOn: Uint8Array) {
-    const { properties } = IfcPropertiesManager.getIFCInfo(model);
     const ifcLoader = this.components.tools.get(FragmentIfcLoader);
     const ifcApi = ifcLoader.get();
     const modelID = await ifcLoader.readIfcFile(ifcToSaveOn);
     const changes = this._changeMap[model.uuid] ?? [];
     for (const expressID of changes) {
-      const data = properties[expressID] as any;
+      const data = (await model.getProperties(expressID)) as any;
       if (!data) {
         try {
           ifcApi.DeleteLine(modelID, expressID);
@@ -465,7 +465,7 @@ export class IfcPropertiesManager
     return modifiedIFC;
   }
 
-  setAttributeListener(
+  async setAttributeListener(
     model: FragmentsGroup,
     expressID: number,
     attributeName: string
@@ -477,8 +477,7 @@ export class IfcPropertiesManager
       : null;
     if (existingListener) return existingListener;
 
-    const { properties } = IfcPropertiesManager.getIFCInfo(model);
-    const entity = properties[expressID];
+    const entity = await model.getProperties(expressID);
     if (!entity) {
       throw new Error(`Entity with expressID ${expressID} doesn't exists.`);
     }

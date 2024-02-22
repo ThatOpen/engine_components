@@ -64,7 +64,7 @@
 
     const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
     const gridMesh = grid.get();
-    postproduction._customEffects.excludedMeshes.push(gridMesh);
+    postproduction.customEffects.excludedMeshes.push(gridMesh);
 
     /*MD
     ### 📃📜📄 Navigating our 3D world in 2D
@@ -80,8 +80,8 @@
     const culler = new OBC.ScreenCuller(components);
     culler.setup();
 
-    container.addEventListener('mouseup', () => culler.needsUpdate = true);
-    container.addEventListener('wheel', () => culler.needsUpdate = true);
+    container.addEventListener('mouseup', () => culler.elements.needsUpdate = true);
+    container.addEventListener('wheel', () => culler.elements.needsUpdate = true);
 
     /*MD
     Next, let's load our classic fragment model and add it to the
@@ -94,13 +94,14 @@
     const buffer = new Uint8Array(data);
     const model = await fragments.load(buffer);
     const properties = await fetch('../../../resources/small.json');
-    model.properties = await properties.json();
+    const props = await properties.json();
+    model.setLocalProperties(props);
 
     for(const fragment of model.items) {
-        culler.add(fragment.mesh);
+        culler.elements.add(fragment.mesh);
     }
 
-    culler.needsUpdate = true;
+    culler.elements.needsUpdate = true;
 
     /*MD
     ### ✨ Styling our floorplans

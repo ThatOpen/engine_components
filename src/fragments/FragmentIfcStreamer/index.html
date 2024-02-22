@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="../../../resources/styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+    <title>Tools Component</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .full-screen {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
+        "web-ifc": "https://unpkg.com/web-ifc@0.0.50/web-ifc-api.js",
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.160.1/examples/jsm/libs/lil-gui.module.min.js",
+        "openbim-components": "../../../resources/openbim-components.js",
+        "client-zip": "https://unpkg.com/client-zip@2.3.0/index.js"
+      }
+    }
+</script>
+</body>
+</html>
+<script type="module">
+
+    // Set up scene (see SimpleScene tutorial)
+
+    import * as THREE from 'three';
+    import * as OBC from 'openbim-components';
+    import * as WEBIFC from 'web-ifc';
+    import Stats from 'stats.js/src/Stats.js';
+    import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
+    import {downloadZip} from 'client-zip';
+
+    const container = document.getElementById('container');
+
+    const components = new OBC.Components();
+
+    components.scene = new OBC.SimpleScene(components);
+    components.renderer = new OBC.PostproductionRenderer(components, container);
+    components.camera = new OBC.OrthoPerspectiveCamera(components);
+    components.raycaster = new OBC.SimpleRaycaster(components);
+
+    components.init();
+
+    components.renderer.postproduction.enabled = true;
+
+    const scene = components.scene.get();
+
+    components.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
+
+    components.scene.setup();
+
+    const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
+    const customEffects = components.renderer.postproduction.customEffects;
+    customEffects.excludedMeshes.push(grid.get());
+
+    // GEOMETRY STREAMING - OK
+
+    // const streamer = new OBC.FragmentIfcStreamConverter(components);
+    // streamer.settings.wasm = {
+    //     path: "https://unpkg.com/web-ifc@0.0.51/",
+    //     absolute: true
+    // }
+    //
+    // loader.culler.threshold = 10;
+    //
+    // const fetchedIfc = await fetch("../../../resources/small.ifc");
+    // const ifcBuffer = await fetchedIfc.arrayBuffer();
+    //
+    // streamer.onGeometryStreamed.add((geometry) => {
+    //     console.log(geometry);
+    // });
+    //
+    // streamer.onAssetStreamed.add((assets) => {
+    //     console.log(assets);
+    // });
+    //
+    // streamer.onIfcLoaded.add(async (groupBuffer) => {
+    //     console.log(groupBuffer);
+    // })
+    //
+    // streamer.onProgress.add((progress) => {
+    //     console.log(progress);
+    // })
+    //
+    // streamer.streamFromBuffer(new Uint8Array(ifcBuffer));
+
+    // PROPERTIES STREAMING - OK
+
+    // const fetchedIfc = await fetch("../../../resources/small.ifc");
+    // const ifcBuffer = await fetchedIfc.arrayBuffer();
+    //
+    // const propsStreamer = new OBC.FragmentPropsStreamConverter(components);
+    //
+    // propsStreamer.settings.wasm = {
+    //     path: "https://unpkg.com/web-ifc@0.0.51/",
+    //     absolute: true
+    // }
+    //
+    // propsStreamer.streamFromBuffer(new Uint8Array(ifcBuffer));
+
+    // propsStreamer.onPropertiesStreamed.add(async (props) => {
+    //     console.log(props);
+    // })
+
+    // propsStreamer.onProgress.add(async (progress) => {
+    //     console.log(progress);
+    // })
+    //
+    // propsStreamer.onIndicesStreamed.add(async (props) => {
+    //     console.log(props);
+    // })
+
+    // STREAM MODEL LOADING - OK
+
+    let loader = new OBC.FragmentStreamLoader(components);
+    loader.url = "http://dev.api.thatopen.com/storage?fileId=";
+    let fragments = new OBC.FragmentManager(components);
+
+    async function loadModel(geometryURL, propertiesURL) {
+        const rawGeometryData = await fetch(geometryURL);
+        const geometryData = await rawGeometryData.json();
+        let propertiesData;
+        if (propertiesURL) {
+            const rawPropertiesData = await fetch(propertiesURL);
+            propertiesData = await rawPropertiesData.json();
+        }
+        await loader.load(geometryData, true, propertiesData);
+    }
+
+    // await loadModel(
+    //     "../../../resources/dm1_ark.ifc-processed.json",
+    //     // "../../../resources/small.ifc-processed-properties.json"
+    // );
+
+    // loader.culler.maxHiddenTime = 3000;
+    // loader.culler.maxLostTime = 10000;
+
+    components.camera.controls.addEventListener("controlend", () => {
+        loader.culler.needsUpdate = true;
+    });
+
+    // DISPOSING ALL - OK
+
+    // async function dispose() {
+    //     await loader.dispose();
+    //     await fragments.dispose();
+    // }
+    //
+    // window.addEventListener("keydown", async ({code}) => {
+    //     if(code === "KeyP") {
+    //         await dispose();
+    //     } else if(code === "KeyO") {
+    //         await loadModel(
+    //             "../../../resources/dm1_ark.ifc-processed.json",
+    //             // "../../../resources/small.ifc-processed-properties.json"
+    //         );
+    //         await loadModel(
+    //             "../../../resources/dm1_riv.ifc-processed.json",
+    //             // "../../../resources/small.ifc-processed-properties.json"
+    //         );
+    //     }
+    // })
+
+    // DISPOSING JUST ONE MODEL - OK
+
+    // async function disposeOne() {
+    //     const first = fragments.groups[0];
+    //     await loader.remove(first.uuid);
+    //     await fragments.disposeGroup(first);
+    // }
+    //
+    // window.addEventListener("keydown", async ({code}) => {
+    //     if(code === "KeyP") {
+    //         await disposeOne();
+    //     } else if(code === "KeyO") {
+    //         await loadModel(
+    //             "../../../resources/dm1_ark.ifc-processed.json",
+    //             // "../../../resources/small.ifc-processed-properties.json"
+    //         );
+    //     }
+    // })
+
+
+    // COORDINATION - OK
+
+    // for(const group of fragments.groups) {
+    //     console.log(group);
+    //     const {uuid, matrix} = group;
+    //     loader.culler.setModelTransformation(uuid, matrix);
+    // }
+
+    // BOUNDINGBOX - OK
+
+    // const bbox = components.tools.get(OBC.FragmentBoundingBox);
+    //
+    // for(const box of loader.culler.boxes.values()) {
+    //     bbox.addMesh(box.mesh);
+    // }
+    //
+    // const sphere = bbox.getSphere();
+    //
+    // window.addEventListener("keydown", () => {
+    //     components.camera.controls.fitToSphere(sphere, true);
+    // })
+
+
+    // CLIPPING PLANES - OK
+
+    // const clipper = new OBC.EdgesClipper(components);
+    // clipper.enabled = true;
+    //
+    // const salmonFill = new THREE.MeshBasicMaterial({color: 'salmon', side: 2});
+    // const redLine = new THREE.LineBasicMaterial({ color: 'red' });
+    // const redOutline = new THREE.MeshBasicMaterial({color: 'red', opacity: 0.2, side: 2, transparent: true});
+    // const style = clipper.styles.create('Blue lines', new Set(), redLine, salmonFill, redOutline);
+    //
+    // loader.onFragmentsDeleted.add((frags) => {
+    //     for(const frag of frags) {
+    //         style.meshes.delete(frag.mesh);
+    //     }
+    //     clipper.fillsNeedUpdate = true;
+    // })
+    //
+    // loader.onFragmentsLoaded.add((frags) => {
+    //     for(const frag of frags) {
+    //         style.meshes.add(frag.mesh);
+    //     }
+    //     clipper.fillsNeedUpdate = true;
+    // })
+    //
+    // window.onkeydown = () => {
+    //     clipper.create();
+    // }
+
+
+    // FRAGMENT HIDER - OK
+
+    // const classifier = new OBC.FragmentClassifier(components);
+    // for(const model of fragments.groups) {
+    //     classifier.byStorey(model);
+    //     classifier.byEntity(model);
+    // }
+    //
+    // const classifications = classifier.get();
+    //
+    // const storeys = {};
+    // const storeyNames = Object.keys(classifications.storeys);
+    // for (const name of storeyNames) {
+    //     storeys[name] = true;
+    // }
+    //
+    // const classes = {};
+    // const classNames = Object.keys(classifications.entities);
+    // for (const name of classNames) {
+    //     classes[name] = true;
+    // }
+    //
+    // const gui = new dat.GUI();
+    //
+    // const storeysGui = gui.addFolder("Storeys");
+    // for (const name in storeys) {
+    //     storeysGui.add(storeys, name).onChange(async (visible) => {
+    //         const found = await classifier.find({storeys: [name]});
+    //         loader.setVisibility(visible, found);
+    //     });
+    // }
+    //
+    // const entitiesGui = gui.addFolder("Classes");
+    // for (const name in classes) {
+    //     entitiesGui.add(classes, name).onChange(async (visible) => {
+    //         const found = await classifier.find({entities: [name]});
+    //         loader.setVisibility(visible, found);
+    //     });
+    // }
+
+    // FRAGMENT HIGHLIGHTER - OK
+
+    // const highlighter = new OBC.FragmentHighlighter(components, fragments);
+    // highlighter.setup();
+    // components.renderer.postproduction.customEffects.outlineEnabled = true;
+    // highlighter.outlinesEnabled = true;
+
+
+    // FRAGMENT PLANS - OK
+
+    // const plans = new OBC.FragmentPlans(components);
+    // const classifier = new OBC.FragmentClassifier(components);
+    //
+    // components.renderer.postproduction.customEffects.outlineEnabled = true;
+    //
+    // const whiteColor = new THREE.Color("white");
+    // const whiteMaterial = new THREE.MeshBasicMaterial({color: whiteColor});
+    // const materialManager = new OBC.MaterialManager(components);
+    // materialManager.addMaterial("white", whiteMaterial);
+    //
+    // const sectionMaterial = new THREE.LineBasicMaterial({color: 'black'});
+    // const fillMaterial = new THREE.MeshBasicMaterial({color: 'gray', side: 2});
+    // const fillOutline = new THREE.MeshBasicMaterial({color: 'black', side: 1, opacity: 0.5, transparent: true});
+    //
+    // const clipper = components.tools.get(OBC.EdgesClipper);
+    // clipper.enabled = true;
+    // clipper.styles.create("filled", new Set(), sectionMaterial, fillMaterial, fillOutline);
+    // clipper.styles.create("projected", new Set(), sectionMaterial);
+    // const styles = clipper.styles.get();
+    //
+    // for (const model of fragments.groups) {
+    //     await plans.computeAllPlanViews(model);
+    //     classifier.byEntity(model);
+    //     classifier.byStorey(model);
+    // }
+    //
+    // const found = classifier.find({entities: ["IFCWALLSTANDARDCASE", "IFCWALL"]});
+    // const walls = new Set(Object.keys(found));
+    //
+    // loader.onFragmentsLoaded.add((frags) => {
+    //     for(const frag of frags) {
+    //         if(walls.has(frag.id)) {
+    //             styles.filled.meshes.add(frag.mesh);
+    //         } else {
+    //             styles.projected.meshes.add(frag.mesh);
+    //         }
+    //         materialManager.addMeshes("white", [frag.mesh]);
+    //         if(plans.enabled) {
+    //             materialManager.set(true, ["white"]);
+    //         }
+    //         clipper.fillsNeedUpdate = true
+    //         clipper.updateEdges(true);
+    //     }
+    // })
+    //
+    // loader.onFragmentsDeleted.add((frags) => {
+    //     for(const frag of frags) {
+    //         if(walls.has(frag.id)) {
+    //             styles.filled.meshes.add(frag.mesh);
+    //         } else {
+    //             styles.projected.meshes.add(frag.mesh);
+    //         }
+    //         materialManager.removeMeshes("white", [frag.mesh]);
+    //     }
+    // })
+    //
+    // plans.updatePlansList();
+    //
+    // plans.onNavigated.add(() => {
+    //     components.renderer.postproduction.customEffects.glossEnabled = false;
+    //     materialManager.setBackgroundColor(whiteColor);
+    //     materialManager.set(true, ["white"]);
+    //     grid.visible = false;
+    // });
+    //
+    // plans.onExited.add(() => {
+    //     components.renderer.postproduction.customEffects.glossEnabled = true;
+    //     materialManager.resetBackgroundColor();
+    //     materialManager.set(false, ["white"]);
+    //     grid.visible = true;
+    // });
+    //
+    // const mainToolbar = new OBC.Toolbar(components);
+    // mainToolbar.name = "Main Toolbar";
+    // components.ui.addToolbar(mainToolbar);
+    // mainToolbar.addChild(plans.uiElement.get('main'));
+
+    // FRAGMENT CLIP STYLER
+
+    // const clipper = new OBC.EdgesClipper(components);
+    // clipper.enabled = true;
+    // const classifier = new OBC.FragmentClassifier(components);
+    // const styler = new OBC.FragmentClipStyler(components);
+    // await styler.setup();
+    //
+    // for(const model of fragments.groups) {
+    //     classifier.byEntity(model);
+    // }
+    //
+    // window.onkeydown = () => {
+    //     clipper.create();
+    // }
+    //
+    // let stylerNeedsUpdate = false;
+    // setInterval(async () => {
+    //     if(stylerNeedsUpdate) {
+    //         await styler.update();
+    //         stylerNeedsUpdate = false;
+    //     }
+    // }, 10000)
+    //
+    // loader.onFragmentsDeleted.add((frags) => {
+    //     stylerNeedsUpdate = true;
+    // })
+    //
+    // loader.onFragmentsLoaded.add((frags) => {
+    //     stylerNeedsUpdate = true;
+    // })
+    //
+    // const postproduction = components.renderer.postproduction;
+    // postproduction.customEffects.outlineEnabled = true;
+
+    // PROPERTIES PROCESSOR - OK
+
+    // const highlighter = new OBC.FragmentHighlighter(components, fragments);
+    // highlighter.setup();
+    // components.renderer.postproduction.customEffects.outlineEnabled = true;
+    // highlighter.outlinesEnabled = true;
+    //
+    // const propsProcessor = components.tools.get(OBC.IfcPropertiesProcessor);
+    // propsProcessor.uiElement.get("propertiesWindow").visible = true
+    //
+    // const highlighterEvents = highlighter.events;
+    // highlighterEvents.select.onClear.add(() => {
+    //     propsProcessor.cleanPropertiesList();
+    // });
+    //
+    // highlighterEvents.select.onHighlight.add(
+    //     (selection) => {
+    //         const fragmentID = Object.keys(selection)[0];
+    //         const expressID = [...selection[fragmentID]][0];
+    //         let model
+    //         for (const group of fragments.groups) {
+    //             for(const [_key, value] of group.keyFragments) {
+    //                 if(value === fragmentID) {
+    //                     model = group;
+    //                     break;
+    //                 }
+    //             }
+    //         }
+    //         if(model) {
+    //             propsProcessor.renderProperties(model, expressID);
+    //         }
+    //     }
+    // );
+
+    // loader.culler.renderDebugFrame = true;
+    // const debugFrame = loader.culler.get().domElement;
+    // document.body.appendChild(debugFrame);
+    // debugFrame.style.position = 'fixed';
+    // debugFrame.style.left = '0';
+    // debugFrame.style.bottom = '0';
+
+
+    // Set up stats
+
+    const stats = new Stats();
+    stats.showPanel(2);
+    document.body.append(stats.dom);
+    stats.dom.style.left = '0px';
+    const renderer = components.renderer;
+    renderer.onBeforeUpdate.add(() => stats.begin());
+    renderer.onAfterUpdate.add(() => stats.end());
+
+
+</script>

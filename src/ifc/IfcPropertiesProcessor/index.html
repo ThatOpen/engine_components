@@ -79,7 +79,9 @@
     const buffer = new Uint8Array(dataBlob);
     const model = await fragments.load(buffer);
     const properties = await fetch("../../../resources/small.json");
-    model.properties = await properties.json();
+    const props = await properties.json();
+    model.setLocalProperties(props);
+    
     const highlighter = new OBC.FragmentHighlighter(components, fragments);
     highlighter.setup();
     components.renderer.postproduction.customEffects.outlineEnabled = true;
@@ -130,6 +132,26 @@
         }
     );
 
+
+
+    // console.log(propsProcessor._indexMap);
+    //
+    // setTimeout(
+    //     () => {
+    //         const toExport = {};
+    //         for(const fragID in propsProcessor._indexMap) {
+    //             const ids = propsProcessor._indexMap[fragID];
+    //             for(const expressID in ids) {
+    //                 const associatedIDs = ids[expressID];
+    //                 toExport[expressID] = [...associatedIDs];
+    //             }
+    //         }
+    //
+    //         console.log(JSON.stringify(toExport));
+    //     },
+    //     1000
+    // )
+
     /*MD
     Finally, we will add the main built-in button of the properties
     processor to a simple toolbar at the bottom of our app:
@@ -137,7 +159,7 @@
 
     const mainToolbar = new OBC.Toolbar(components);
     components.ui.addToolbar(mainToolbar);
-	  mainToolbar.addChild(propsProcessor.uiElement.get("main"));
+    mainToolbar.addChild(propsProcessor.uiElement.get("main"));
 
     /*MD
     This is it! Congratulations, now you can see and navigate

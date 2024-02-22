@@ -26,7 +26,7 @@ export class Components implements Disposable {
    * All the loaded [meshes](https://threejs.org/docs/#api/en/objects/Mesh).
    * This includes fragments, 3D scans, etc.
    */
-  readonly meshes: THREE.Mesh[] = [];
+  readonly meshes = new Set<THREE.Mesh>();
 
   /**
    * Event that fires when this instance has been fully initialized and is
@@ -181,7 +181,7 @@ export class Components implements Disposable {
     for (const mesh of this.meshes) {
       disposer.destroy(mesh);
     }
-    this.meshes.length = 0;
+    this.meshes.clear();
     if (this._renderer?.isDisposeable()) {
       await this._renderer.dispose();
     }

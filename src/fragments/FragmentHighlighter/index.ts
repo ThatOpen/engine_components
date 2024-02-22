@@ -52,6 +52,9 @@ export class FragmentHighlighter
   /** {@link Updateable.onAfterUpdate} */
   readonly onAfterUpdate = new Event<FragmentHighlighter>();
 
+  /** {@link Configurable.isSetup} */
+  isSetup = false;
+
   enabled = true;
   highlightMats: HighlightMaterials = {};
   events: HighlightEvents = {};
@@ -208,7 +211,7 @@ export class FragmentHighlighter
     if (!this.fillEnabled) {
       return;
     }
-    this.onBeforeUpdate.trigger(this);
+    await this.onBeforeUpdate.trigger(this);
     const fragments = this.components.tools.get(FragmentManager);
     for (const fragmentID in fragments.list) {
       const fragment = fragments.list[fragmentID];
@@ -219,7 +222,7 @@ export class FragmentHighlighter
         outlinedMesh.applyMatrix4(fragment.mesh.matrixWorld);
       }
     }
-    this.onAfterUpdate.trigger(this);
+    await this.onAfterUpdate.trigger(this);
   }
 
   async highlight(
@@ -359,6 +362,7 @@ export class FragmentHighlighter
     await this.add(this.config.hoverName, [this.config.hoverMaterial]);
     this.setupEvents(true);
     this.enabled = true;
+    this.isSetup = true;
     await this.onSetup.trigger(this);
   }
 

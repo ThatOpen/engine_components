@@ -30,6 +30,9 @@ export class SimpleSVGViewport
     settingsWindow: FloatingWindow;
   }>();
 
+  /** {@link Configurable.isSetup} */
+  isSetup = false;
+
   id: string = generateUUID().toLowerCase();
 
   private _enabled: boolean = false;
@@ -92,12 +95,13 @@ export class SimpleSVGViewport
 
   async setup(config?: Partial<SVGViewportConfig>) {
     this.config = { ...this.config, ...config };
+    this.isSetup = true;
     await this.onSetup.trigger(this);
   }
 
   async dispose() {
     this._undoList = [];
-    this.uiElement.dispose();
+    await this.uiElement.dispose();
     await this.onDisposed.trigger();
     this.onDisposed.reset();
   }

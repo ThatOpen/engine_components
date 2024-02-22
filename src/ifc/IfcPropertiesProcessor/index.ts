@@ -22,7 +22,7 @@ type RenderFunction = (
   model: FragmentsGroup,
   expressID: number,
   ...args: any
-) => TreeView[] | TreeView | null;
+) => Promise<TreeView[] | TreeView | null>;
 
 export class IfcPropertiesProcessor
   extends Component<IndexMap>
@@ -71,27 +71,35 @@ export class IfcPropertiesProcessor
     if (this._propertiesManager) return;
     this._propertiesManager = manager;
     if (manager) {
-      manager.onElementToPset.add(({ model, psetID, elementID }) => {
+      manager.onElementToPset.add(async ({ model, psetID, elementID }) => {
         const modelIndexMap = this._indexMap[model.uuid];
         if (!modelIndexMap) return;
         this.setEntityIndex(model, elementID).add(psetID);
         if (this._currentUI[elementID]) {
-          const ui = this.newPsetUI(model, psetID);
+          const ui = await this.newPsetUI(model, psetID);
           this._currentUI[elementID].addChild(...ui);
         }
       });
+
       manager.onPsetRemoved.add(async ({ psetID }) => {
         const psetUI = this._currentUI[psetID];
         if (psetUI) {
           await psetUI.dispose();
         }
       });
-      manager.onPropToPset.add(({ model, psetID, propID }) => {
+
+      manager.onPropToPset.add(async ({ model, psetID, propID }) => {
         const psetUI = this._currentUI[psetID];
         if (!psetUI) return;
-        const tag = this.newPropertyTag(model, psetID, propID, "NominalValue");
+        const tag = await this.newPropertyTag(
+          model,
+          psetID,
+          propID,
+          "NominalValue"
+        );
         if (tag) psetUI.addChild(tag);
       });
+
       this.onPropertiesManagerSet.trigger(manager);
     }
   }
@@ -134,7 +142,7 @@ export class IfcPropertiesProcessor
   }
 
   async dispose() {
-    this.uiElement.dispose();
+    await this.uiElement.dispose();
     this._indexMap = {};
     (this.propertiesManager as any) = null;
     for (const id in this._currentUI) {
@@ -148,21 +156,29 @@ export class IfcPropertiesProcessor
     this.onDisposed.reset();
   }
 
-  getProperties(model: FragmentsGroup, id: string) {
-    if (!model.properties) return null;
+  async getProperties(model: FragmentsGroup, id: string) {
+    if (!model.hasProperties) return null;
     const map = this._indexMap[model.uuid];
     if (!map) return null;
     const indices = map[id];
     const idNumber = parseInt(id, 10);
-    const nativeProperties = this.cloneProperty(model.properties[idNumber]);
+    const props = model.getProperties(idNumber);
+    const nativeProperties = this.cloneProperty(props);
+
+    if (!nativeProperties) {
+      throw new Error("Properties not found!");
+    }
+
     const properties = [nativeProperties] as any[];
 
     if (indices) {
       for (const index of indices) {
-        const pset = this.cloneProperty(model.properties[index]);
+        const props = model.getProperties(index);
+        if (!props) continue;
+        const pset = this.cloneProperty(props);
         if (!pset) continue;
-        this.getPsetProperties(pset, model.properties);
-        this.getNestedPsets(pset, model.properties);
+        this.getPsetProperties(pset, model);
+        this.getNestedPsets(pset, model);
         properties.push(pset);
       }
     }
@@ -253,9 +269,10 @@ export class IfcPropertiesProcessor
     return this._indexMap;
   }
 
-  process(model: FragmentsGroup) {
-    const properties = model.properties;
-    if (!properties) throw new Error("FragmentsGroup properties not found");
+  async process(model: FragmentsGroup) {
+    if (!model.hasProperties) {
+      throw new Error("FragmentsGroup properties not found");
+    }
     this._indexMap[model.uuid] = {};
     // const relations: number[] = [];
     // for (const typeID in IfcCategoryMap) {
@@ -264,13 +281,18 @@ export class IfcPropertiesProcessor
     // }
     const setEntities = [WEBIFC.IFCPROPERTYSET, WEBIFC.IFCELEMENTQUANTITY];
     for (const relation of this.relationsToProcess) {
-      IfcPropertiesUtils.getRelationMap(
-        properties,
+      await IfcPropertiesUtils.getRelationMap(
+        model,
         relation,
-        (relationID, relatedIDs) => {
-          const relationEntity = properties[relationID];
-          if (!setEntities.includes(relationEntity.type))
+        // eslint-disable-next-line no-loop-func
+        async (relationID, relatedIDs) => {
+          const relationEntity = await model.getProperties(relationID);
+          if (!relationEntity) {
+            return;
+          }
+          if (!setEntities.includes(relationEntity.type)) {
             this.setEntityIndex(model, relationID);
+          }
           for (const expressID of relatedIDs) {
             this.setEntityIndex(model, expressID).add(relationID);
           }
@@ -285,52 +307,61 @@ export class IfcPropertiesProcessor
     const topToolbar = this.uiElement.get("topToolbar");
     const propsList = this.uiElement.get("propsList");
     const propsWindow = this.uiElement.get<FloatingWindow>("propertiesWindow");
-    const ui = this.newEntityUI(model, expressID);
+    const ui = await this.newEntityUI(model, expressID);
+
     if (!ui) return;
+
     if (this._propertiesManager) {
       this._propertiesManager.selectedModel = model;
       const exporter = this._propertiesManager.uiElement.get("exportButton");
       topToolbar.addChild(exporter);
     }
-    const { properties } = IfcPropertiesManager.getIFCInfo(model);
-    const { name } = IfcPropertiesUtils.getEntityName(properties, expressID);
+
+    const { name } = await IfcPropertiesUtils.getEntityName(model, expressID);
     propsWindow.description = name;
     propsList.addChild(...[ui].flat());
   }
 
-  private newEntityUI(model: FragmentsGroup, expressID: number) {
-    const properties = model.properties;
-    if (!properties) throw new Error("FragmentsGroup properties not found.");
+  private async newEntityUI(model: FragmentsGroup, expressID: number) {
+    if (!model.hasProperties) {
+      throw new Error("FragmentsGroup properties not found.");
+    }
+
     const modelElementsIndexation = this._indexMap[model.uuid];
     if (!modelElementsIndexation) return null;
 
-    const entity = properties[expressID];
+    const entity = await model.getProperties(expressID);
+
     const ignorable = this.entitiesToIgnore.includes(entity?.type);
     if (!entity || ignorable) return null;
 
     if (entity.type === WEBIFC.IFCPROPERTYSET)
       return this.newPsetUI(model, expressID);
 
-    const mainGroup = this.newEntityTree(model, expressID);
+    const mainGroup = await this.newEntityTree(model, expressID);
     if (!mainGroup) return null;
     this.addEntityActions(model, expressID, mainGroup);
 
-    mainGroup.onExpand.add(() => {
+    mainGroup.onExpand.add(async () => {
       const { uiProcessed } = mainGroup.data;
       if (uiProcessed) return;
       mainGroup.addChild(...this.newAttributesUI(model, expressID));
       const elementPropsIndexation = modelElementsIndexation[expressID] ?? [];
       for (const id of elementPropsIndexation) {
-        const entity = properties[id];
+        const entity = await model.getProperties(id);
         if (!entity) continue;
+
         const renderFunction =
           this._renderFunctions[entity.type] ?? this._renderFunctions[0];
+
         const ui = modelElementsIndexation[id]
-          ? this.newEntityUI(model, id)
-          : renderFunction(model, id);
+          ? await this.newEntityUI(model, id)
+          : await renderFunction(model, id);
+
         if (!ui) continue;
         mainGroup.addChild(...[ui].flat());
       }
+
       mainGroup.data.uiProcessed = true;
     });
 
@@ -344,8 +375,7 @@ export class IfcPropertiesProcessor
   }
 
   private newAttributesUI(model: FragmentsGroup, expressID: number) {
-    const { properties } = IfcPropertiesManager.getIFCInfo(model);
-    if (!properties) return [];
+    if (!model.hasProperties) return [];
     const attributesGroup = new AttributeSet(
       this.components,
       this,
@@ -356,34 +386,41 @@ export class IfcPropertiesProcessor
     return [attributesGroup];
   }
 
-  private newPsetUI(model: FragmentsGroup, psetID: number) {
-    const { properties } = IfcPropertiesManager.getIFCInfo(model);
+  private async newPsetUI(model: FragmentsGroup, psetID: number) {
     const uiGroups: TreeView[] = [];
-    const pset = properties[psetID];
-    if (pset.type !== WEBIFC.IFCPROPERTYSET) return uiGroups;
+    const pset = await model.getProperties(psetID);
+    if (!pset || pset.type !== WEBIFC.IFCPROPERTYSET) {
+      return uiGroups;
+    }
 
-    const uiGroup = this.newEntityTree(model, psetID);
-    if (!uiGroup) return uiGroups;
-    this.addPsetActions(model, psetID, uiGroup);
+    const uiGroup = await this.newEntityTree(model, psetID);
+    if (!uiGroup) {
+      return uiGroups;
+    }
 
-    uiGroup.onExpand.add(() => {
+    await this.addPsetActions(model, psetID, uiGroup);
+
+    uiGroup.onExpand.add(async () => {
       const { uiProcessed } = uiGroup.data;
       if (uiProcessed) return;
-      const psetPropsID = IfcPropertiesUtils.getPsetProps(
-        properties,
+      const psetPropsID = await IfcPropertiesUtils.getPsetProps(
+        model,
         psetID,
-        (propID) => {
-          const prop = properties[propID];
+        async (propID) => {
+          const prop = await model.getProperties(propID);
           if (!prop) return;
-          const tag = this.newPropertyTag(
+          const tag = await this.newPropertyTag(
             model,
             psetID,
             propID,
             "NominalValue"
           );
-          if (tag) uiGroup.addChild(tag);
+          if (tag) {
+            uiGroup.addChild(tag);
+          }
         }
       );
+
       if (!psetPropsID || psetPropsID.length === 0) {
         const template = `
          <p class="text-base text-gray-500 py-1 px-3">
@@ -400,31 +437,40 @@ export class IfcPropertiesProcessor
     return uiGroups;
   }
 
-  private newQsetUI(model: FragmentsGroup, qsetID: number) {
-    const { properties } = IfcPropertiesManager.getIFCInfo(model);
+  private async newQsetUI(model: FragmentsGroup, qsetID: number) {
     const uiGroups: TreeView[] = [];
-    const qset = properties[qsetID];
-    if (qset.type !== WEBIFC.IFCELEMENTQUANTITY) return uiGroups;
+    const qset = await model.getProperties(qsetID);
+    if (!qset || qset.type !== WEBIFC.IFCELEMENTQUANTITY) {
+      return uiGroups;
+    }
 
-    const uiGroup = this.newEntityTree(model, qsetID);
-    if (!uiGroup) return uiGroups;
+    const uiGroup = await this.newEntityTree(model, qsetID);
+    if (!uiGroup) {
+      return uiGroups;
+    }
 
-    this.addPsetActions(model, qsetID, uiGroup);
+    await this.addPsetActions(model, qsetID, uiGroup);
 
-    IfcPropertiesUtils.getQsetQuantities(properties, qsetID, (quantityID) => {
-      const { key } = IfcPropertiesUtils.getQuantityValue(
-        properties,
-        quantityID
-      );
-      if (!key) return;
-      const tag = this.newPropertyTag(model, qsetID, quantityID, key);
-      if (tag) uiGroup.addChild(tag);
-    });
+    await IfcPropertiesUtils.getQsetQuantities(
+      model,
+      qsetID,
+      async (quantityID) => {
+        const { key } = await IfcPropertiesUtils.getQuantityValue(
+          model,
+          quantityID
+        );
+        if (!key) return;
+        const tag = await this.newPropertyTag(model, qsetID, quantityID, key);
+        if (tag) {
+          uiGroup.addChild(tag);
+        }
+      }
+    );
     uiGroups.push(uiGroup);
     return uiGroups;
   }
 
-  private addPsetActions(
+  private async addPsetActions(
     model: FragmentsGroup,
     psetID: number,
     uiGroup: TreeView
@@ -433,7 +479,7 @@ export class IfcPropertiesProcessor
     const propsUI = this.propertiesManager.uiElement;
     const psetActions = propsUI.get<PsetActionsUI>("psetActions");
 
-    const event = this.propertiesManager.setAttributeListener(
+    const event = await this.propertiesManager.setAttributeListener(
       model,
       psetID,
       "Name"
@@ -469,9 +515,8 @@ export class IfcPropertiesProcessor
     };
   }
 
-  private newEntityTree(model: FragmentsGroup, expressID: number) {
-    const { properties } = IfcPropertiesManager.getIFCInfo(model);
-    const entity = properties[expressID];
+  private async newEntityTree(model: FragmentsGroup, expressID: number) {
+    const entity = await model.getProperties(expressID);
     if (!entity) return null;
     const currentUI = this._currentUI[expressID];
     if (currentUI) return currentUI;
@@ -479,20 +524,22 @@ export class IfcPropertiesProcessor
     this._currentUI[expressID] = entityTree;
     // const entityTree = this._entityUIPool.get();
     entityTree.title = `${IfcCategoryMap[entity.type]}`;
-    const { name } = IfcPropertiesUtils.getEntityName(properties, expressID);
+    const { name } = await IfcPropertiesUtils.getEntityName(model, expressID);
     entityTree.description = name;
     return entityTree;
   }
 
-  private newPropertyTag(
+  private async newPropertyTag(
     model: FragmentsGroup,
     setID: number,
     expressID: number,
     valueKey: string
   ) {
-    const { properties } = IfcPropertiesManager.getIFCInfo(model);
-    const entity = properties[expressID];
-    if (!entity) return null;
+    const entity = await model.getProperties(expressID);
+    if (!entity) {
+      return null;
+    }
+
     const tag = new PropertyTag(this.components, this, model, expressID);
     // @ts-ignore
     this._currentUI[expressID] = tag;

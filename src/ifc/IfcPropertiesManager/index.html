@@ -82,7 +82,8 @@
     const buffer = new Uint8Array(dataBlob);
     const model = await fragments.load(buffer);
     const properties = await fetch("../../../resources/small.json");
-    model.properties = await properties.json();
+    const props = await properties.json();
+    model.setLocalProperties(props);
 
     /*MD
     Then, we'll instance the tool that we need for editing properties:

@@ -13,6 +13,8 @@ export class EdgesClipper extends SimpleClipper<EdgesPlane> {
   /** The list of defined {@link LineStyle} instances. */
   styles: EdgesStyles;
 
+  fillsNeedUpdate = false;
+
   constructor(components: Components) {
     super(components);
 
@@ -34,8 +36,9 @@ export class EdgesClipper extends SimpleClipper<EdgesPlane> {
   async updateEdges(updateFills = false) {
     if (!this.enabled) return;
     for (const plane of this._planes) {
-      if (updateFills) {
+      if (updateFills || this.fillsNeedUpdate) {
         await plane.updateFill();
+        this.fillsNeedUpdate = false;
       } else {
         await plane.update();
       }

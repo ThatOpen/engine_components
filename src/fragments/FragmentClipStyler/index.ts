@@ -43,6 +43,9 @@ export class FragmentClipStyler
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
 
+  /** {@link Configurable.isSetup} */
+  isSetup = false;
+
   enabled = true;
 
   localStorageID = "FragmentClipStyler";
@@ -105,6 +108,7 @@ export class FragmentClipStyler
       localStorage.setItem(this.localStorageID, this._defaultStyles);
       await this.loadCachedStyles();
     }
+    this.isSetup = true;
     await this.onSetup.trigger(this);
   }
 
@@ -147,7 +151,9 @@ export class FragmentClipStyler
 
       const found = classifier.find({ entities });
       for (const fragID in found) {
-        const { mesh } = fragments.list[fragID];
+        const frag = fragments.list[fragID];
+        if (!frag) continue;
+        const { mesh } = frag;
         style.fragments[fragID] = new Set(found[fragID]);
         style.meshes.add(mesh);
       }

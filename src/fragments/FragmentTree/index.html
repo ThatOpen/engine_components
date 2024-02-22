@@ -154,8 +154,8 @@
 
     */
 
-    const properties = await fetch("../../../resources/small.json");
-    model.properties = await properties.json();
+    const properties = await fetch("../../../resources/bbbb.json");
+    model.setLocalProperties(await properties.json());
 
     /*MD
 

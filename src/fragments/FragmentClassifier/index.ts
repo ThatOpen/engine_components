@@ -169,21 +169,17 @@ export class FragmentClassifier
     }
   }
 
-  byPredefinedType(group: FragmentsGroup) {
-    if (!group.properties) {
-      throw new Error("To group by predefined type, properties are needed");
-    }
-
+  async byPredefinedType(group: FragmentsGroup) {
     if (!this._groupSystems.predefinedTypes) {
       this._groupSystems.predefinedTypes = {};
     }
 
     const currentTypes = this._groupSystems.predefinedTypes;
 
-    for (const expressID in group.data) {
-      const entity = group.properties[parseInt(expressID, 10)] as {
-        [attribute: string]: any;
-      };
+    const ids = group.getAllPropertiesIDs();
+    for (const id of ids) {
+      const entity = await group.getProperties(id);
+
       if (!entity) continue;
 
       const predefinedType = String(entity.PredefinedType?.value).toUpperCase();
@@ -224,31 +220,22 @@ export class FragmentClassifier
   }
 
   byStorey(group: FragmentsGroup) {
-    if (!group.properties) {
-      throw new Error("To group by storey, properties are needed");
-    }
-
     for (const [expressID, data] of group.data) {
       const rels = data[1];
       const storeyID = rels[0];
-      const storey = group.properties[storeyID];
-      if (storey === undefined) continue;
-      const storeyName = group.properties[storeyID].Name.value;
+      const storeyName = storeyID.toString();
       this.saveItem(group, "storeys", storeyName, expressID);
     }
   }
 
-  byIfcRel(group: FragmentsGroup, ifcRel: number, systemName: string) {
-    const properties = group.properties;
-    if (!properties)
-      throw new Error("To group by IFC Rel, properties are needed");
+  async byIfcRel(group: FragmentsGroup, ifcRel: number, systemName: string) {
     if (!IfcPropertiesUtils.isRel(ifcRel)) return;
-    IfcPropertiesUtils.getRelationMap(
-      properties,
+    await IfcPropertiesUtils.getRelationMap(
+      group,
       ifcRel,
-      (relatingID, relatedIDs) => {
-        const { name: relatingName } = IfcPropertiesUtils.getEntityName(
-          properties,
+      async (relatingID, relatedIDs) => {
+        const { name: relatingName } = await IfcPropertiesUtils.getEntityName(
+          group,
           relatingID
         );
         for (const expressID of relatedIDs) {
