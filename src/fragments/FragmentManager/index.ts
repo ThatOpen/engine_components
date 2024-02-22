@@ -102,8 +102,9 @@ export class FragmentManager
 
   async disposeGroup(group: FragmentsGroup) {
     const { uuid: groupID } = group;
-    const fragmentIDs = group.items.map((fragment) => fragment.id);
+    const fragmentIDs: string[] = [];
     for (const fragment of group.items) {
+      fragmentIDs.push(fragment.id);
       this.components.meshes.delete(fragment.mesh);
       delete this.list[fragment.id];
     }

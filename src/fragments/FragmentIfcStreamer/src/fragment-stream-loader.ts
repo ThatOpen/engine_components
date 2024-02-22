@@ -100,7 +100,7 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
   async dispose() {
     this._isDisposing = true;
     this.onFragmentsLoaded.reset();
-    this.onFragmentsLoaded.reset();
+    this.onFragmentsDeleted.reset();
 
     this.models = {};
     this._geometryInstances = {};
@@ -217,6 +217,30 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
     }
 
     this.culler.needsUpdate = true;
+  }
+
+  remove(modelID: string) {
+    this._isDisposing = true;
+
+    const fragments = this.components.tools.get(FragmentManager);
+    const group = fragments.groups.find((group) => group.uuid === modelID);
+    if (group === undefined) {
+      console.log("Group to delete not found.");
+      return;
+    }
+
+    delete this.models[modelID];
+    delete this._geometryInstances[modelID];
+    delete this._loadedFragments[modelID];
+
+    const ids = group.keyFragments.values();
+    for (const id of ids) {
+      this.fragIDData.delete(id);
+    }
+
+    this.culler.remove(modelID);
+
+    this._isDisposing = false;
   }
 
   setVisibility(visible: boolean, filter: FragmentIdMap) {

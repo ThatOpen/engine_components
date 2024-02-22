@@ -231,31 +231,31 @@ export class GeometryCullerRenderer extends CullerRenderer {
       throw new Error("Model doesn't exist!");
     }
 
-    this._modelIDIndex.delete(modelID);
-    this._indexModelID.delete(index);
+    const group = this._geometriesGroups.get(index) as THREE.Group;
+    group.removeFromParent();
+    const children = [...group.children];
+    for (const child of children) {
+      child.removeFromParent();
+    }
+    this._geometriesGroups.delete(index);
 
     const box = this.boxes.get(index) as FRAGS.Fragment;
     box.dispose(false);
     this.boxes.delete(index);
 
-    const group = this._geometriesGroups.get(index) as THREE.Group;
-    group.removeFromParent();
-    for (const item of group.children) {
-      item.removeFromParent();
-    }
-    this._geometriesGroups.delete(index);
-
     const codes = this.codes.get(index) as Map<number, string>;
     this.codes.delete(index);
     for (const [_id, code] of codes) {
       const geometry = this._geometries.get(code);
-      if (!geometry) continue;
-      if (geometry.fragment) {
+      if (geometry && geometry.fragment) {
         geometry.fragment.dispose(false);
         geometry.fragment = undefined;
       }
       this._geometries.delete(code);
     }
+
+    this._modelIDIndex.delete(modelID);
+    this._indexModelID.delete(index);
   }
 
   addFragment(modelID: string, geometryID: number, frag: FRAGS.Fragment) {

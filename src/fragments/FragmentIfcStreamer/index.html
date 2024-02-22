@@ -147,10 +147,10 @@
         await loader.load(geometryData, true, propertiesData);
     }
 
-    await loadModel(
-        "../../../resources/dm1_ark.ifc-processed.json",
-        // "../../../resources/small.ifc-processed-properties.json"
-    );
+    // await loadModel(
+    //     "../../../resources/dm1_ark.ifc-processed.json",
+    //     // "../../../resources/small.ifc-processed-properties.json"
+    // );
 
     // loader.culler.maxHiddenTime = 3000;
     // loader.culler.maxLostTime = 10000;
@@ -180,6 +180,26 @@
     //         );
     //     }
     // })
+
+    // DISPOSING JUST ONE MODEL - OK
+
+    // async function disposeOne() {
+    //     const first = fragments.groups[0];
+    //     await loader.remove(first.uuid);
+    //     await fragments.disposeGroup(first);
+    // }
+    //
+    // window.addEventListener("keydown", async ({code}) => {
+    //     if(code === "KeyP") {
+    //         await disposeOne();
+    //     } else if(code === "KeyO") {
+    //         await loadModel(
+    //             "../../../resources/dm1_ark.ifc-processed.json",
+    //             // "../../../resources/small.ifc-processed-properties.json"
+    //         );
+    //     }
+    // })
+
 
     // COORDINATION - OK
 
