@@ -81,6 +81,9 @@ export class FragmentManager
       await this.uiElement.dispose();
     }
     for (const group of this.groups) {
+      for (const frag of group.items) {
+        this.components.meshes.delete(frag.mesh);
+      }
       group.dispose(true);
     }
     for (const command of this.commands) {

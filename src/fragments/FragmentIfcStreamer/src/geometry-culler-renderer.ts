@@ -25,10 +25,10 @@ export class GeometryCullerRenderer extends CullerRenderer {
   /* Pixels in screen a geometry must occupy to be considered "seen". */
   threshold = 50;
 
-  boxes = new Map<number, FRAGS.Fragment>();
-
   maxLostTime = 30000;
   maxHiddenTime = 5000;
+
+  boxes = new Map<number, FRAGS.Fragment>();
 
   private _geometry: THREE.BufferGeometry;
 
@@ -47,6 +47,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
   private _modelIDIndex = new Map<string, number>();
   private _indexModelID = new Map<number, string>();
+  private _nextModelID = 0;
 
   private _geometries = new Map<string, CullerBoundingBox>();
   private _geometriesGroups = new Map<number, THREE.Group>();
@@ -75,6 +76,35 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
   async dispose() {
     await super.dispose();
+    this.onViewUpdated.reset();
+
+    for (const [_id, group] of this._geometriesGroups) {
+      group.removeFromParent();
+      const children = [...group.children];
+      for (const child of children) {
+        child.removeFromParent();
+      }
+    }
+    this._geometriesGroups.clear();
+
+    for (const [_id, frag] of this.boxes) {
+      frag.dispose(true);
+    }
+    this.boxes.clear();
+
+    for (const [_id, box] of this._geometries) {
+      if (box.fragment) {
+        box.fragment.dispose(true);
+        box.fragment = undefined;
+      }
+    }
+    this._geometries.clear();
+
+    this._geometry.dispose();
+    this._material.dispose();
+    this._modelIDIndex.clear();
+    this._indexModelID.clear();
+    this.codes.clear();
   }
 
   add(
@@ -193,6 +223,39 @@ export class GeometryCullerRenderer extends CullerRenderer {
     // mesh.instanceMatrix = instanceMatrix;
     // mesh.instanceColor = instanceColor;
     // this.components.scene.get().add(mesh);
+  }
+
+  remove(modelID: string) {
+    const index = this._modelIDIndex.get(modelID);
+    if (index === undefined) {
+      throw new Error("Model doesn't exist!");
+    }
+
+    this._modelIDIndex.delete(modelID);
+    this._indexModelID.delete(index);
+
+    const box = this.boxes.get(index) as FRAGS.Fragment;
+    box.dispose(false);
+    this.boxes.delete(index);
+
+    const group = this._geometriesGroups.get(index) as THREE.Group;
+    group.removeFromParent();
+    for (const item of group.children) {
+      item.removeFromParent();
+    }
+    this._geometriesGroups.delete(index);
+
+    const codes = this.codes.get(index) as Map<number, string>;
+    this.codes.delete(index);
+    for (const [_id, code] of codes) {
+      const geometry = this._geometries.get(code);
+      if (!geometry) continue;
+      if (geometry.fragment) {
+        geometry.fragment.dispose(false);
+        geometry.fragment = undefined;
+      }
+      this._geometries.delete(code);
+    }
   }
 
   addFragment(modelID: string, geometryID: number, frag: FRAGS.Fragment) {
@@ -404,7 +467,8 @@ export class GeometryCullerRenderer extends CullerRenderer {
     if (this._modelIDIndex.has(modelID)) {
       throw new Error("Can't load the same model twice!");
     }
-    const count = this._modelIDIndex.size;
+    const count = this._nextModelID;
+    this._nextModelID++;
     this._modelIDIndex.set(modelID, count);
     this._indexModelID.set(count, modelID);
     return count;

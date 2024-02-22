@@ -2,7 +2,7 @@ import * as THREE from "three";
 import * as FRAG from "bim-fragment";
 import { unzip } from "unzipit";
 import { FragmentIdMap, FragmentsGroup } from "bim-fragment";
-import { Component, Event } from "../../../base-types";
+import { Component, Disposable, Event } from "../../../base-types";
 import { StreamedGeometries, StreamedAsset } from "./base-types";
 import { Components, ToolComponent } from "../../../core";
 import { GeometryCullerRenderer } from "./geometry-culler-renderer";
@@ -29,13 +29,14 @@ export interface StreamPropertiesSettings {
   indexesFile: string;
 }
 
-export class FragmentStreamLoader extends Component<any> {
+export class FragmentStreamLoader extends Component<any> implements Disposable {
   enabled = true;
 
   culler: GeometryCullerRenderer;
 
   readonly onFragmentsDeleted = new Event<FRAG.Fragment[]>();
   readonly onFragmentsLoaded = new Event<FRAG.Fragment[]>();
+  readonly onDisposed = new Event<string>();
 
   models: {
     [modelID: string]: {
@@ -47,6 +48,8 @@ export class FragmentStreamLoader extends Component<any> {
   serializer = new FRAG.StreamSerializer();
 
   private _url: string | null = null;
+
+  private _isDisposing = false;
 
   // private _hardlySeenGeometries: THREE.InstancedMesh;
 
@@ -89,18 +92,33 @@ export class FragmentStreamLoader extends Component<any> {
     // this._hardlySeenGeometries = new THREE.InstancedMesh();
 
     this.culler = new GeometryCullerRenderer(components);
-
-    this.culler.onViewUpdated.add(
-      async ({ toLoad, toRemove, toShow, toHide }) => {
-        await this.loadFoundGeometries(toLoad);
-        await this.unloadLostGeometries(toRemove);
-        this.setMeshVisibility(toShow, true);
-        this.setMeshVisibility(toHide, false);
-      }
-    );
+    this.setupCullerEvents();
   }
 
   static readonly uuid = "22437e8d-9dbc-4b99-a04f-d2da280d50c8" as const;
+
+  async dispose() {
+    this._isDisposing = true;
+    this.onFragmentsLoaded.reset();
+    this.onFragmentsLoaded.reset();
+
+    this.models = {};
+    this._geometryInstances = {};
+    // Disposed by fragment manager
+    this._loadedFragments = {};
+    this.fragIDData.clear();
+
+    this._baseMaterial.dispose();
+    this._baseMaterialT.dispose();
+
+    await this.culler.dispose();
+    this.culler = new GeometryCullerRenderer(this.components);
+    this.setupCullerEvents();
+
+    await this.onDisposed.trigger(FragmentStreamLoader.uuid);
+    this.onDisposed.reset();
+    this._isDisposing = false;
+  }
 
   async load(
     settings: StreamLoaderSettings,
@@ -276,10 +294,14 @@ export class FragmentStreamLoader extends Component<any> {
 
   private async loadFoundGeometries(seen: { [modelID: string]: Set<number> }) {
     for (const modelID in seen) {
+      if (this._isDisposing) return;
+
       const fragments = this.components.tools.get(FragmentManager);
       const group = fragments.groups.find((group) => group.uuid === modelID);
       if (!group) {
-        throw new Error("Fragment group not found!");
+        // throw new Error("Fragment group not found!");
+        // Might happen when disposing
+        return;
       }
 
       const ids = new Set(seen[modelID]);
@@ -309,6 +331,8 @@ export class FragmentStreamLoader extends Component<any> {
 
         if (result) {
           for (const [geometryID, { position, index, normal }] of result) {
+            if (this._isDisposing) return;
+
             if (!ids.has(geometryID)) continue;
 
             if (
@@ -355,7 +379,7 @@ export class FragmentStreamLoader extends Component<any> {
           }
         }
 
-        if (loaded.length) {
+        if (loaded.length && !this._isDisposing) {
           await this.onFragmentsLoaded.trigger(loaded);
         }
       }
@@ -363,6 +387,8 @@ export class FragmentStreamLoader extends Component<any> {
   }
 
   private async unloadLostGeometries(unseen: { [p: string]: Set<number> }) {
+    if (this._isDisposing) return;
+
     const deletedFragments: FRAG.Fragment[] = [];
     const fragments = this.components.tools.get(FragmentManager);
     for (const modelID in unseen) {
@@ -426,6 +452,7 @@ export class FragmentStreamLoader extends Component<any> {
     result: FRAG.Fragment[]
   ) {
     if (instances.length === 0) return;
+    if (this._isDisposing) return;
 
     const uuids = group.geometryIDs;
     const uuidMap = transparent ? uuids.transparent : uuids.opaque;
@@ -433,11 +460,13 @@ export class FragmentStreamLoader extends Component<any> {
     const tranpsGeomID = geometryID * factor;
     const key = uuidMap.get(tranpsGeomID);
     if (key === undefined) {
-      throw new Error("Malformed fragment!");
+      // throw new Error("Malformed fragment!");
+      return;
     }
     const fragID = group.keyFragments.get(key);
     if (fragID === undefined) {
-      throw new Error("Malformed fragment!");
+      // throw new Error("Malformed fragment!");
+      return;
     }
 
     const fragments = this.components.tools.get(FragmentManager);
@@ -505,6 +534,17 @@ export class FragmentStreamLoader extends Component<any> {
     this.culler.addFragment(group.uuid, geometryID, fragment);
 
     result.push(fragment);
+  }
+
+  private setupCullerEvents() {
+    this.culler.onViewUpdated.add(
+      async ({ toLoad, toRemove, toShow, toHide }) => {
+        await this.loadFoundGeometries(toLoad);
+        await this.unloadLostGeometries(toRemove);
+        this.setMeshVisibility(toShow, true);
+        this.setMeshVisibility(toHide, false);
+      }
+    );
   }
 }
 

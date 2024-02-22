@@ -73,10 +73,6 @@
     const customEffects = components.renderer.postproduction.customEffects;
     customEffects.excludedMeshes.push(grid.get());
 
-    const fragments = new OBC.FragmentManager(components);
-    const loader = new OBC.FragmentStreamLoader(components);
-    loader.url = "http://dev.api.thatopen.com/storage?fileId=";
-
     // GEOMETRY STREAMING - OK
 
     // const streamer = new OBC.FragmentIfcStreamConverter(components);
@@ -136,30 +132,54 @@
 
     // STREAM MODEL LOADING - OK
 
-    // async function loadModel(geometryURL, propertiesURL) {
-    //     const rawGeometryData = await fetch(geometryURL);
-    //     const geometryData = await rawGeometryData.json();
-    //     let propertiesData;
-    //     if (propertiesURL) {
-    //         const rawPropertiesData = await fetch(propertiesURL);
-    //         propertiesData = await rawPropertiesData.json();
-    //     }
-    //     await loader.load(geometryData, true, propertiesData);
-    // }
-    //
-    // await loadModel(
-    //     "../../../resources/small.ifc-processed.json",
-    //     "../../../resources/small.ifc-processed-properties.json"
-    // );
+    let loader = new OBC.FragmentStreamLoader(components);
+    loader.url = "http://dev.api.thatopen.com/storage?fileId=";
+    let fragments = new OBC.FragmentManager(components);
 
-    // await loadModel("../../../resources/dm1_riv.ifc-processed.json");
-    //
+    async function loadModel(geometryURL, propertiesURL) {
+        const rawGeometryData = await fetch(geometryURL);
+        const geometryData = await rawGeometryData.json();
+        let propertiesData;
+        if (propertiesURL) {
+            const rawPropertiesData = await fetch(propertiesURL);
+            propertiesData = await rawPropertiesData.json();
+        }
+        await loader.load(geometryData, true, propertiesData);
+    }
+
+    await loadModel(
+        "../../../resources/dm1_ark.ifc-processed.json",
+        // "../../../resources/small.ifc-processed-properties.json"
+    );
+
     // loader.culler.maxHiddenTime = 3000;
     // loader.culler.maxLostTime = 10000;
+
+    components.camera.controls.addEventListener("controlend", () => {
+        loader.culler.needsUpdate = true;
+    });
+
+    // DISPOSING ALL - OK
+
+    // async function dispose() {
+    //     await loader.dispose();
+    //     await fragments.dispose();
+    // }
     //
-    // components.camera.controls.addEventListener("controlend", () => {
-    //     loader.culler.needsUpdate = true;
-    // });
+    // window.addEventListener("keydown", async ({code}) => {
+    //     if(code === "KeyP") {
+    //         await dispose();
+    //     } else if(code === "KeyO") {
+    //         await loadModel(
+    //             "../../../resources/dm1_ark.ifc-processed.json",
+    //             // "../../../resources/small.ifc-processed-properties.json"
+    //         );
+    //         await loadModel(
+    //             "../../../resources/dm1_riv.ifc-processed.json",
+    //             // "../../../resources/small.ifc-processed-properties.json"
+    //         );
+    //     }
+    // })
 
     // COORDINATION - OK
 
@@ -409,12 +429,12 @@
     //     }
     // );
 
-    loader.culler.renderDebugFrame = true;
-    const debugFrame = loader.culler.get().domElement;
-    document.body.appendChild(debugFrame);
-    debugFrame.style.position = 'fixed';
-    debugFrame.style.left = '0';
-    debugFrame.style.bottom = '0';
+    // loader.culler.renderDebugFrame = true;
+    // const debugFrame = loader.culler.get().domElement;
+    // document.body.appendChild(debugFrame);
+    // debugFrame.style.position = 'fixed';
+    // debugFrame.style.left = '0';
+    // debugFrame.style.bottom = '0';
 
 
     // Set up stats
