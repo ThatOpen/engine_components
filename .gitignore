@@ -134,5 +134,4 @@ resources/asdf.frag
 resources/asdf.json
 resources/bbbb.*
 
-resources/*-processed.json
-resources/*-processed-properties.json
+
