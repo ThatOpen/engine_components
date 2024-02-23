@@ -125,7 +125,7 @@
     const dataBlob = await file.arrayBuffer();
     const buffer = new Uint8Array(dataBlob);
     fragments.load(buffer);
-    highlighter.update();
+    highlighter.updateHighlight();
 
     components.renderer.postproduction.customEffects.outlineEnabled = true;
     highlighter.outlinesEnabled = true;

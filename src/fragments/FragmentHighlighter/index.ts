@@ -39,7 +39,7 @@ export interface FragmentHighlighterConfig {
 
 export class FragmentHighlighter
   extends Component<HighlightMaterials>
-  implements Disposable, Updateable, Configurable<FragmentHighlighterConfig>
+  implements Disposable, Configurable<FragmentHighlighterConfig>
 {
   static readonly uuid = "cb8a76f2-654a-4b50-80c6-66fd83cafd77" as const;
 
@@ -51,6 +51,8 @@ export class FragmentHighlighter
 
   /** {@link Updateable.onAfterUpdate} */
   readonly onAfterUpdate = new Event<FragmentHighlighter>();
+
+  needsUpdate = false;
 
   /** {@link Configurable.isSetup} */
   isSetup = false;
@@ -203,11 +205,10 @@ export class FragmentHighlighter
       onClear: new Event(),
     };
 
-    await this.update();
+    await this.updateHighlight();
   }
 
-  /** {@link Updateable.update} */
-  async update() {
+  async updateHighlight() {
     if (!this.fillEnabled) {
       return;
     }
@@ -219,6 +220,9 @@ export class FragmentHighlighter
       const outlinedMesh = this._outlinedMeshes[fragmentID];
       if (outlinedMesh) {
         fragment.mesh.updateMatrixWorld(true);
+        outlinedMesh.position.set(0, 0, 0);
+        outlinedMesh.rotation.set(0, 0, 0);
+        outlinedMesh.scale.set(1, 1, 1);
         outlinedMesh.applyMatrix4(fragment.mesh.matrixWorld);
       }
     }

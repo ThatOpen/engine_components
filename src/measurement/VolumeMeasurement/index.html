@@ -97,7 +97,7 @@
 
 	const highlighter = new OBC.FragmentHighlighter(components, fragments);
 	highlighter.setup();
-	highlighter.update();
+	highlighter.updateHighlight();
 
 	highlighter.events.select.onHighlight.add((event) => {
 		const fragmentIDs = Object.keys(event);
