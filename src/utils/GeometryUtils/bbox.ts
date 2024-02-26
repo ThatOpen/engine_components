@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { ConvexHull } from "three/examples/jsm/math/ConvexHull";
-import ArrayLike = jasmine.ArrayLike;
 
 // src: https://github.com/Mugen87/yuka/blob/844b2581d29de0105336be80eb2fe4cc8dca4ede/src/math/OBB.js#L409-L597
 

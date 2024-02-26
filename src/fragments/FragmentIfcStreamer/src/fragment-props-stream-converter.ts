@@ -140,13 +140,17 @@ export class FragmentPropsStreamConverter
           // finalCount++;
           const nextProperty = ids.get(i + j);
 
-          const property = this._webIfc.GetLine(0, nextProperty, isSpatial);
+          try {
+            const property = this._webIfc.GetLine(0, nextProperty, isSpatial);
 
-          if (relationTypes.includes(type)) {
-            this.getIndices(property, nextProperty, propertyIndices);
+            if (relationTypes.includes(type)) {
+              this.getIndices(property, nextProperty, propertyIndices);
+            }
+
+            data[property.expressID] = property;
+          } catch (e) {
+            console.log(`Could not get property: ${nextProperty}`);
           }
-
-          data[property.expressID] = property;
         }
         await this.onPropertiesStreamed.trigger({ type, data });
       }
@@ -158,14 +162,20 @@ export class FragmentPropsStreamConverter
         for (let i = count; i < idCount; i++) {
           // finalCount++;
           const nextProperty = ids.get(i);
-          const property = this._webIfc.GetLine(0, nextProperty, isSpatial);
 
-          if (relationTypes.includes(type)) {
-            this.getIndices(property, nextProperty, propertyIndices);
+          try {
+            const property = this._webIfc.GetLine(0, nextProperty, isSpatial);
+
+            if (relationTypes.includes(type)) {
+              this.getIndices(property, nextProperty, propertyIndices);
+            }
+
+            data[property.expressID] = property;
+          } catch (e) {
+            console.log(`Could not get property: ${nextProperty}`);
           }
-
-          data[property.expressID] = property;
         }
+
         await this.onPropertiesStreamed.trigger({ type, data });
       }
 
