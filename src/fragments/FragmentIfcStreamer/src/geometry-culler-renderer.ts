@@ -53,6 +53,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
   private _geometries = new Map<string, CullerBoundingBox>();
   private _geometriesGroups = new Map<number, THREE.Group>();
+  private _foundGeometries = new Set<string>();
 
   private codes = new Map<number, Map<number, string>>();
 
@@ -424,18 +425,24 @@ export class GeometryCullerRenderer extends CullerRenderer {
       }
     }
 
-    for (const [code, geometry] of this._geometries) {
-      const pixels = colors.get(code);
+    const lostGeometries = new Set(this._foundGeometries);
 
-      const isFound = pixels !== undefined && pixels > this.threshold;
+    for (const [color, number] of colors) {
+      const geometry = this._geometries.get(color);
+      if (!geometry) {
+        continue;
+      }
+      const isFound = number > this.threshold;
       const { exists } = geometry;
-
-      const modelID = this._indexModelID.get(geometry.modelIndex) as string;
 
       if (!isFound && !exists) {
         // Geometry doesn't exist and is not visible
         continue;
       }
+
+      const modelID = this._indexModelID.get(geometry.modelIndex) as string;
+
+      lostGeometries.delete(color);
 
       if (isFound && exists) {
         // Geometry was visible, and still is
@@ -444,6 +451,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
           toShow[modelID] = new Set();
         }
         toShow[modelID].add(geometry.geometryID);
+        this._foundGeometries.add(color);
         viewWasUpdated = true;
       } else if (isFound && !exists) {
         // New geometry found
@@ -453,29 +461,28 @@ export class GeometryCullerRenderer extends CullerRenderer {
         geometry.time = now;
         geometry.exists = true;
         toLoad[modelID].add(geometry.geometryID);
+        this._foundGeometries.add(color);
         viewWasUpdated = true;
       } else if (!isFound && exists) {
-        // Geometry was lost
-        if (bboxAmount > this.bboxThreshold) {
+        // Geometry is hardly seen, so it can be considered lost
+        if (bboxAmount < this.bboxThreshold) {
           // When too many bounding boxes on sight
           // don't hide / destroy geometry to prevent flickering
-          continue;
+          this.handleLostGeometries(now, color, geometry, toRemove, toHide);
+          viewWasUpdated = true;
         }
-        const lostTime = now - geometry.time;
-        if (lostTime > this.maxLostTime) {
-          // This geometry was lost too long - delete it
-          if (!toRemove[modelID]) {
-            toRemove[modelID] = new Set();
-          }
-          geometry.exists = false;
-          toRemove[modelID].add(geometry.geometryID);
-        } else if (lostTime > this.maxHiddenTime) {
-          // This geometry was lost for a while - hide it
-          if (!toHide[modelID]) {
-            toHide[modelID] = new Set();
-          }
-          toHide[modelID].add(geometry.geometryID);
+      }
+    }
+
+    if (bboxAmount <= this.bboxThreshold) {
+      // When too many bounding boxes on sight
+      // don't hide / destroy geometry to prevent flickering
+      for (const color of lostGeometries) {
+        const geometry = this._geometries.get(color);
+        if (!geometry) {
+          throw new Error("Geometry not found!");
         }
+        this.handleLostGeometries(now, color, geometry, toRemove, toHide);
         viewWasUpdated = true;
       }
     }
@@ -484,6 +491,34 @@ export class GeometryCullerRenderer extends CullerRenderer {
       await this.onViewUpdated.trigger({ toLoad, toRemove, toHide, toShow });
     }
   };
+
+  private handleLostGeometries(
+    now: number,
+    color: string,
+    geometry: CullerBoundingBox,
+    toRemove: {
+      [p: string]: Set<number>;
+    },
+    toHide: { [p: string]: Set<number> }
+  ) {
+    const modelID = this._indexModelID.get(geometry.modelIndex) as string;
+    const lostTime = now - geometry.time;
+    if (lostTime > this.maxLostTime) {
+      // This geometry was lost too long - delete it
+      if (!toRemove[modelID]) {
+        toRemove[modelID] = new Set();
+      }
+      geometry.exists = false;
+      toRemove[modelID].add(geometry.geometryID);
+      this._foundGeometries.delete(color);
+    } else if (lostTime > this.maxHiddenTime) {
+      // This geometry was lost for a while - hide it
+      if (!toHide[modelID]) {
+        toHide[modelID] = new Set();
+      }
+      toHide[modelID].add(geometry.geometryID);
+    }
+  }
 
   private createModelIndex(modelID: string) {
     if (this._modelIDIndex.has(modelID)) {
