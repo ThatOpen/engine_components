@@ -41,7 +41,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
   });
 
   readonly onViewUpdated = new Event<{
-    toLoad: { [modelID: string]: Set<number> };
+    toLoad: { [modelID: string]: Map<number, Set<number>> };
     toRemove: { [modelID: string]: Set<number> };
     toHide: { [modelID: string]: Set<number> };
     toShow: { [modelID: string]: Set<number> };
@@ -402,7 +402,8 @@ export class GeometryCullerRenderer extends CullerRenderer {
   private handleWorkerMessage = async (event: MessageEvent) => {
     const colors = event.data.colors as Map<string, number>;
 
-    const toLoad: { [modelID: string]: Set<number> } = {};
+    const toLoad: { [modelID: string]: Map<number, Set<number>> } = {};
+
     const toRemove: { [modelID: string]: Set<number> } = {};
     const toHide: { [modelID: string]: Set<number> } = {};
     const toShow: { [modelID: string]: Set<number> } = {};
@@ -456,11 +457,16 @@ export class GeometryCullerRenderer extends CullerRenderer {
       } else if (isFound && !exists) {
         // New geometry found
         if (!toLoad[modelID]) {
-          toLoad[modelID] = new Set();
+          toLoad[modelID] = new Map();
         }
         geometry.time = now;
         geometry.exists = true;
-        toLoad[modelID].add(geometry.geometryID);
+
+        if (!toLoad[modelID].has(number)) {
+          toLoad[modelID].set(number, new Set());
+        }
+        const set = toLoad[modelID].get(number) as Set<number>;
+        set.add(geometry.geometryID);
         this._foundGeometries.add(color);
         viewWasUpdated = true;
       } else if (!isFound && exists) {
@@ -489,6 +495,10 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
     if (viewWasUpdated) {
       await this.onViewUpdated.trigger({ toLoad, toRemove, toHide, toShow });
+    }
+
+    if (bboxAmount > this.bboxThreshold) {
+      this.needsUpdate = true;
     }
   };
 

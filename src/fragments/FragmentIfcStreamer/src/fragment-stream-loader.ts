@@ -66,7 +66,11 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
 
   serializer = new FRAG.StreamSerializer();
 
-  private _ramCache = new Map<string, FRAG.StreamedGeometries>();
+  maxCacheTime = 5000;
+  private _ramCache = new Map<
+    string,
+    { data: FRAG.StreamedGeometries; time: number }
+  >();
   // private _storageCache = new StreamFileDatabase();
 
   private _url: string | null = null;
@@ -338,7 +342,9 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
   //   return this.culler.boxes.getSphere();
   // }
 
-  private async loadFoundGeometries(seen: { [modelID: string]: Set<number> }) {
+  private async loadFoundGeometries(seen: {
+    [modelID: string]: Map<number, Set<number>>;
+  }) {
     for (const modelID in seen) {
       if (this._isDisposing) return;
 
@@ -350,25 +356,30 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
         return;
       }
 
-      const ids = new Set(seen[modelID]);
       const { geometries } = this.models[modelID];
 
-      const files = new Set<string>();
+      const files = new Map<string, number>();
 
-      for (const id of ids) {
-        const geometry = geometries[id];
-        if (!geometry) {
-          throw new Error("Geometry not found");
-        }
-        if (geometry.geometryFile) {
-          const file = geometry.geometryFile;
-          files.add(file);
+      const allIDs = new Set<number>();
+
+      for (const [priority, ids] of seen[modelID]) {
+        for (const id of ids) {
+          allIDs.add(id);
+          const geometry = geometries[id];
+          if (!geometry) {
+            throw new Error("Geometry not found");
+          }
+          if (geometry.geometryFile) {
+            const file = geometry.geometryFile;
+            const value = files.get(file) || 0;
+            files.set(file, value + priority);
+          }
         }
       }
 
-      // this._storageCache.open();
+      const sortedFiles = Array.from(files).sort((a, b) => b[1] - a[1]);
 
-      for (const file of files) {
+      for (const [file] of sortedFiles) {
         const url = this.url + file;
 
         if (!this._ramCache.has(url)) {
@@ -377,19 +388,24 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
           const fetched = await fetch(url);
           const buffer = await fetched.arrayBuffer();
           const bytes = new Uint8Array(buffer);
-          const result = this.serializer.import(bytes);
-          this._ramCache.set(url, result);
+          const data = this.serializer.import(bytes);
+          this._ramCache.set(url, { data, time: performance.now() });
         }
 
-        const result = this._ramCache.get(url) as FRAG.StreamedGeometries;
+        const result = this._ramCache.get(url);
+        if (!result) {
+          continue;
+        }
+
+        result.time = performance.now();
 
         const loaded: FRAG.Fragment[] = [];
 
         if (result) {
-          for (const [geometryID, { position, index, normal }] of result) {
+          for (const [geometryID, { position, index, normal }] of result.data) {
             if (this._isDisposing) return;
 
-            if (!ids.has(geometryID)) continue;
+            if (!allIDs.has(geometryID)) continue;
 
             if (
               !this._geometryInstances[modelID] ||
@@ -409,12 +425,9 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
 
             const posAttr = new THREE.BufferAttribute(position, 3);
             const norAttr = new THREE.BufferAttribute(normal, 3);
-            const blockBuffer = new Uint8Array(position.length / 3);
-            const blockID = new THREE.BufferAttribute(blockBuffer, 1);
 
             geom.setAttribute("position", posAttr);
             geom.setAttribute("normal", norAttr);
-            geom.setAttribute("blockID", blockID);
 
             geom.setIndex(Array.from(index));
 
@@ -438,6 +451,18 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
         if (loaded.length && !this._isDisposing) {
           await this.onFragmentsLoaded.trigger(loaded);
         }
+      }
+
+      const expiredIDs = new Set<string>();
+      const now = performance.now();
+      for (const [id, { time }] of this._ramCache) {
+        if (now - time > this.maxCacheTime) {
+          expiredIDs.add(id);
+        }
+      }
+
+      for (const id of expiredIDs) {
+        this._ramCache.delete(id);
       }
 
       // this._storageCache.close();
