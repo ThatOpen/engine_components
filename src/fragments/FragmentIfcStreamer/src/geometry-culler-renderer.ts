@@ -25,6 +25,8 @@ export class GeometryCullerRenderer extends CullerRenderer {
   /* Pixels in screen a geometry must occupy to be considered "seen". */
   threshold = 50;
 
+  bboxThreshold = 200;
+
   maxLostTime = 30000;
   maxHiddenTime = 5000;
 
@@ -407,6 +409,21 @@ export class GeometryCullerRenderer extends CullerRenderer {
     const now = performance.now();
     let viewWasUpdated = false;
 
+    let bboxAmount = 0;
+    for (const [color, number] of colors) {
+      if (number < this.threshold) {
+        continue;
+      }
+      const found = this._geometries.get(color);
+      if (!found) {
+        continue;
+      }
+      const isBoundingBox = found.fragment === undefined;
+      if (isBoundingBox) {
+        bboxAmount += number;
+      }
+    }
+
     for (const [code, geometry] of this._geometries) {
       const pixels = colors.get(code);
 
@@ -439,6 +456,11 @@ export class GeometryCullerRenderer extends CullerRenderer {
         viewWasUpdated = true;
       } else if (!isFound && exists) {
         // Geometry was lost
+        if (bboxAmount > this.bboxThreshold) {
+          // When too many bounding boxes on sight
+          // don't hide / destroy geometry to prevent flickering
+          continue;
+        }
         const lostTime = now - geometry.time;
         if (lostTime > this.maxLostTime) {
           // This geometry was lost too long - delete it

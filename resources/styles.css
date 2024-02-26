@@ -392,6 +392,10 @@ textarea {
   display: inline-flex;
 }
 
+.obc-viewer :is(.table){
+  display: table;
+}
+
 .obc-viewer :is(.grid){
   display: grid;
 }

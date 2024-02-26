@@ -81,8 +81,6 @@
     //     absolute: true
     // }
     //
-    // loader.culler.threshold = 10;
-    //
     // const fetchedIfc = await fetch("../../../resources/small.ifc");
     // const ifcBuffer = await fetchedIfc.arrayBuffer();
     //
@@ -136,6 +134,8 @@
     loader.url = "http://dev.api.thatopen.com/storage?fileId=";
     let fragments = new OBC.FragmentManager(components);
 
+    loader.culler.threshold = 20;
+
     async function loadModel(geometryURL, propertiesURL) {
         const rawGeometryData = await fetch(geometryURL);
         const geometryData = await rawGeometryData.json();
@@ -152,8 +152,9 @@
         // "../../../resources/small.ifc-processed-properties.json"
     );
 
-    // loader.culler.maxHiddenTime = 3000;
-    // loader.culler.maxLostTime = 10000;
+    loader.culler.bboxThreshold = 500;
+    // loader.culler.maxHiddenTime = 1000;
+    // loader.culler.maxLostTime = 40000;
 
     components.camera.controls.addEventListener("controlend", () => {
         loader.culler.needsUpdate = true;

@@ -2,12 +2,31 @@ import * as THREE from "three";
 import * as FRAG from "bim-fragment";
 import { unzip } from "unzipit";
 import { FragmentIdMap, FragmentsGroup } from "bim-fragment";
+// import Dexie from "dexie";
 import { Component, Disposable, Event } from "../../../base-types";
 import { StreamedGeometries, StreamedAsset } from "./base-types";
 import { Components, ToolComponent } from "../../../core";
 import { GeometryCullerRenderer } from "./geometry-culler-renderer";
 import { FragmentManager } from "../../FragmentManager";
 import { IfcPropertiesProcessor } from "../../../ifc";
+
+// interface IStreamedFile {
+//   id: string;
+//   file: Blob;
+// }
+//
+// class StreamFileDatabase extends Dexie {
+//   // Declare implicit table properties.
+//   // (just to inform Typescript. Instantiated by Dexie in stores() method)
+//   files!: Dexie.Table<IStreamedFile, string>; // number = type of the primkey
+//
+//   constructor() {
+//     super("MyAppDatabase");
+//     this.version(1).stores({
+//       files: "id, file",
+//     });
+//   }
+// }
 
 interface StreamedInstance {
   id: number;
@@ -46,6 +65,9 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
   } = {};
 
   serializer = new FRAG.StreamSerializer();
+
+  private _ramCache = new Map<string, FRAG.StreamedGeometries>();
+  // private _storageCache = new StreamFileDatabase();
 
   private _url: string | null = null;
 
@@ -344,12 +366,22 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
         }
       }
 
+      // this._storageCache.open();
+
       for (const file of files) {
         const url = this.url + file;
-        const fetched = await fetch(url);
-        const buffer = await fetched.arrayBuffer();
-        const bytes = new Uint8Array(buffer);
-        const result = this.serializer.import(bytes);
+
+        if (!this._ramCache.has(url)) {
+          // const file = this._storageCache.files.get(url);
+          // console.log(file);
+          const fetched = await fetch(url);
+          const buffer = await fetched.arrayBuffer();
+          const bytes = new Uint8Array(buffer);
+          const result = this.serializer.import(bytes);
+          this._ramCache.set(url, result);
+        }
+
+        const result = this._ramCache.get(url) as FRAG.StreamedGeometries;
 
         const loaded: FRAG.Fragment[] = [];
 
@@ -407,6 +439,8 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
           await this.onFragmentsLoaded.trigger(loaded);
         }
       }
+
+      // this._storageCache.close();
     }
   }
 
