@@ -45,6 +45,8 @@ components.init();
 
 // Add some elements to the scene
 
+components.scene.setup();
+
 const scene = components.scene.get();
 
 const geometry = new THREE.BoxGeometry(3, 3, 3);
@@ -54,15 +56,6 @@ cube.position.set(0, 1.5, 0);
 scene.add(cube);
 
 components.meshes.push(cube);
-
-const directionalLight = new THREE.DirectionalLight();
-directionalLight.position.set(5, 10, 3);
-directionalLight.intensity = 0.5;
-scene.add(directionalLight);
-
-const ambientLight = new THREE.AmbientLight();
-ambientLight.intensity = 0.5;
-scene.add(ambientLight);
 ```
 
 
