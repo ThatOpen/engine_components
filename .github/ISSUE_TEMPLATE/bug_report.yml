@@ -80,7 +80,7 @@ body:
       options:
         - label: Read the [docs](https://docs.thatopen.com/intro).
           required: true
-        - label: Check that there isn't [already an issue](https://github.com/IFCjs/components/issues) that reports the same bug to avoid creating a duplicate.
+        - label: Check that there isn't [already an issue](https://github.com/ThatOpen/engine_components/issues) that reports the same bug to avoid creating a duplicate.
           required: true
         - label: Make sure this is a repository issue and not a framework-specific issue. For example, if it's a THREE.js related bug, it should likely be reported to [mrdoob/threejs](https://github.com/mrdoob/three.js) instead.
           required: true

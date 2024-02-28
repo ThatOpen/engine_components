@@ -155,7 +155,7 @@ export class UIManager extends Component<Toolbar[]> implements Disposable {
 
     // Get openbim-components styles
     const fetchResponse = await fetch(
-      "https://raw.githubusercontent.com/IFCjs/components/main/resources/styles.css"
+      "https://raw.githubusercontent.com/ThatOpen/engine_components/main/resources/styles.css"
     );
     const componentsCSS = await fetchResponse.text();
     const styleElement = document.createElement("style");

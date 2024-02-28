@@ -8,7 +8,7 @@ import { GeometryTypes } from "./src/ifc-geometry-types";
 export class IfcJsonExporter {
   /**
    * Exports all the properties of an IFC into an array of JS objects.
-   * @param webIfc The instance of [web-ifc]{@link https://github.com/ifcjs/web-ifc} to use.
+   * @param webIfc The instance of [web-ifc]{@link https://github.com/ThatOpen/engine_web-ifc} to use.
    * @param modelID ID of the IFC model whose properties to extract.
    * @param indirect whether to get the indirect relationships as well.
    * @param recursiveSpatial whether to get the properties of spatial items recursively

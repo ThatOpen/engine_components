@@ -14,7 +14,7 @@ import {
 
 /**
  * Object that can efficiently load binary files that contain
- * [fragment geometry](https://github.com/ifcjs/fragment).
+ * [fragment geometry](https://github.com/ThatOpen/engine_fragment).
  */
 export class FragmentManager
   extends Component<Fragment[]>
@@ -28,7 +28,7 @@ export class FragmentManager
   /** {@link Component.enabled} */
   enabled = true;
 
-  /** All the created [fragments](https://github.com/ifcjs/fragment). */
+  /** All the created [fragments](https://github.com/ThatOpen/engine_fragment). */
   list: { [guid: string]: Fragment } = {};
 
   groups: FragmentsGroup[] = [];
