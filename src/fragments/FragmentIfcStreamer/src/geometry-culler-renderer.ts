@@ -32,6 +32,10 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
   boxes = new Map<number, FRAGS.Fragment>();
 
+  useLowLod = false;
+
+  lowLod = new Map<number, FRAGS.Fragment>();
+
   private _geometry: THREE.BufferGeometry;
 
   private _material = new THREE.MeshBasicMaterial({
@@ -39,6 +43,8 @@ export class GeometryCullerRenderer extends CullerRenderer {
     side: 2,
     opacity: 1,
   });
+
+  private _lodMaterial = new THREE.MeshLambertMaterial();
 
   readonly onViewUpdated = new Event<{
     toLoad: { [modelID: string]: Map<number, Set<number>> };
@@ -129,16 +135,27 @@ export class GeometryCullerRenderer extends CullerRenderer {
     this.boxes.set(modelIndex, bboxes);
     this.scene.add(bboxes.mesh);
 
+    if (this.useLowLod) {
+      const lowLod = new FRAGS.Fragment(this._geometry, this._lodMaterial, 10);
+      this.lowLod.set(modelIndex, lowLod);
+    }
+
     const fragmentsGroup = new THREE.Group();
     this.scene.add(fragmentsGroup);
     this._geometriesGroups.set(modelIndex, fragmentsGroup);
 
-    const items = new Map<number, FRAGS.Item>();
+    const items = new Map<
+      number,
+      FRAGS.Item & { geometryColors: THREE.Color[] }
+    >();
 
     for (const asset of assets) {
       // if (asset.id !== 664833) continue;
       for (const geometryData of asset.geometries) {
-        const { geometryID, transformation } = geometryData;
+        const { geometryID, transformation, color } = geometryData;
+
+        const geometryColor = new THREE.Color();
+        geometryColor.setRGB(color[0], color[1], color[2], "srgb");
 
         const instanceID = this.getInstanceID(asset.id, geometryID);
 
@@ -187,12 +204,14 @@ export class GeometryCullerRenderer extends CullerRenderer {
             throw new Error("Malformed item!");
           }
           item.colors.push(threeColor);
+          item.geometryColors.push(geometryColor);
           item.transforms.push(instanceMatrix);
         } else {
           // This geometry exists only once in this asset (for now)
           items.set(instanceID, {
             id: instanceID,
             colors: [threeColor],
+            geometryColors: [geometryColor],
             transforms: [instanceMatrix],
           });
         }
@@ -216,6 +235,14 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
     const itemsArray = Array.from(items.values());
     bboxes.add(itemsArray);
+
+    if (this.useLowLod) {
+      for (const item of itemsArray) {
+        item.colors = item.geometryColors;
+      }
+      const lowLod = this.lowLod.get(modelIndex) as FRAGS.Fragment;
+      lowLod.add(itemsArray);
+    }
 
     THREE.ColorManagement.enabled = colorEnabled;
 
@@ -411,6 +438,9 @@ export class GeometryCullerRenderer extends CullerRenderer {
     const now = performance.now();
     let viewWasUpdated = false;
 
+    const lodsToShow = new Set<CullerBoundingBox>();
+    const lodsToHide = new Set<CullerBoundingBox>();
+
     let bboxAmount = 0;
     for (const [color, number] of colors) {
       if (number < this.threshold) {
@@ -454,6 +484,9 @@ export class GeometryCullerRenderer extends CullerRenderer {
         toShow[modelID].add(geometry.geometryID);
         this._foundGeometries.add(color);
         viewWasUpdated = true;
+        if (this.useLowLod) {
+          lodsToHide.add(geometry);
+        }
       } else if (isFound && !exists) {
         // New geometry found
         if (!toLoad[modelID]) {
@@ -469,12 +502,19 @@ export class GeometryCullerRenderer extends CullerRenderer {
         set.add(geometry.geometryID);
         this._foundGeometries.add(color);
         viewWasUpdated = true;
+
+        if (this.useLowLod) {
+          lodsToHide.add(geometry);
+        }
       } else if (!isFound && exists) {
         // Geometry is hardly seen, so it can be considered lost
         if (bboxAmount < this.bboxThreshold) {
           // When too many bounding boxes on sight
           // don't hide / destroy geometry to prevent flickering
           this.handleLostGeometries(now, color, geometry, toRemove, toHide);
+          if (this.useLowLod) {
+            lodsToShow.add(geometry);
+          }
           viewWasUpdated = true;
         }
       }
@@ -489,12 +529,24 @@ export class GeometryCullerRenderer extends CullerRenderer {
           throw new Error("Geometry not found!");
         }
         this.handleLostGeometries(now, color, geometry, toRemove, toHide);
+        if (this.useLowLod) {
+          lodsToShow.add(geometry);
+        }
         viewWasUpdated = true;
       }
     }
 
     if (viewWasUpdated) {
       await this.onViewUpdated.trigger({ toLoad, toRemove, toHide, toShow });
+    }
+
+    if (this.useLowLod) {
+      for (const geometry of lodsToShow) {
+        this.setLodVisibility(true, geometry);
+      }
+      for (const geometry of lodsToHide) {
+        this.setLodVisibility(false, geometry);
+      }
     }
 
     if (bboxAmount > this.bboxThreshold) {
@@ -527,6 +579,14 @@ export class GeometryCullerRenderer extends CullerRenderer {
         toHide[modelID] = new Set();
       }
       toHide[modelID].add(geometry.geometryID);
+    }
+  }
+
+  private setLodVisibility(visible: boolean, geometry: CullerBoundingBox) {
+    const lod = this.lowLod.get(geometry.modelIndex) as FRAGS.Fragment;
+    for (const assetID of geometry.assetIDs) {
+      const instanceID = this.getInstanceID(assetID, geometry.geometryID);
+      lod.setVisibility(visible, [instanceID]);
     }
   }
 

@@ -134,7 +134,6 @@
     loader.url = "http://dev.api.thatopen.com/storage?fileId=";
     let fragments = new OBC.FragmentManager(components);
 
-    loader.culler.threshold = 20;
 
     async function loadModel(geometryURL, propertiesURL) {
         const rawGeometryData = await fetch(geometryURL);
@@ -147,14 +146,25 @@
         await loader.load(geometryData, true, propertiesData);
     }
 
+    loader.culler.useLowLod = true;
+
     await loadModel(
         "../../../resources/small.ifc-processed.json",
         // "../../../resources/small.ifc-processed-properties.json"
     );
 
+
+    scene.add(loader.culler.lowLod.get(0).mesh);
+
+    // const cam = components.camera.get();
+    // cam.far = 20000;
+    // cam.updateProjectionMatrix();
+
+
+    // loader.culler.threshold = 20;
     loader.culler.bboxThreshold = 500;
-    // loader.culler.maxHiddenTime = 1000;
-    // loader.culler.maxLostTime = 40000;
+    loader.culler.maxHiddenTime = 1000;
+    loader.culler.maxLostTime = 40000;
 
     components.camera.controls.addEventListener("controlend", () => {
         loader.culler.needsUpdate = true;
@@ -450,12 +460,12 @@
     //     }
     // );
 
-    // loader.culler.renderDebugFrame = true;
-    // const debugFrame = loader.culler.get().domElement;
-    // document.body.appendChild(debugFrame);
-    // debugFrame.style.position = 'fixed';
-    // debugFrame.style.left = '0';
-    // debugFrame.style.bottom = '0';
+    loader.culler.renderDebugFrame = true;
+    const debugFrame = loader.culler.get().domElement;
+    document.body.appendChild(debugFrame);
+    debugFrame.style.position = 'fixed';
+    debugFrame.style.left = '0';
+    debugFrame.style.bottom = '0';
 
 
     // Set up stats
