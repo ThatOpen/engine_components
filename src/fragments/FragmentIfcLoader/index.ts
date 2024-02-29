@@ -96,6 +96,7 @@ export class FragmentIfcLoader
       fragments.list[frag.id] = frag;
       frag.mesh.uuid = frag.id;
       frag.group = group;
+      this.components.meshes.add(frag.mesh);
     }
 
     await this.onIfcLoaded.trigger(group);
