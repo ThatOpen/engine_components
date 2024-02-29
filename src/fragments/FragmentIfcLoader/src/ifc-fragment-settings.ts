@@ -15,10 +15,14 @@ export class IfcFragmentSettings {
   coordinate = true;
 
   /** Path of the WASM for [web-ifc](https://github.com/ThatOpen/engine_web-ifc). */
-  wasm = {
+  wasm: {
+    path: string;
+    absolute: boolean;
+    logLevel?: WEBIFC.LogLevel;
+  } = {
     path: "",
     absolute: false,
-    logLevel: WEBIFC.LogLevel.LOG_LEVEL_OFF as WEBIFC.LogLevel | undefined,
+    logLevel: WEBIFC.LogLevel.LOG_LEVEL_OFF,
   };
 
   /** List of categories that won't be converted to fragments. */

@@ -148,17 +148,9 @@
         (selection) => {
             const fragmentID = Object.keys(selection)[0];
             const expressID = [...selection[fragmentID]][0];
-            let model
-            for (const group of fragments.groups) {
-                for(const [_key, value] of group.keyFragments) {
-                    if(value === fragmentID) {
-                        model = group;
-                        break;
-                    }
-                }
-            }
-            if(model) {
-                propsProcessor.renderProperties(model, expressID);
+            const fragment = fragments.list[fragmentID];
+            if(fragment.group) {
+                propsProcessor.renderProperties(fragment.group, expressID);
             }
         }
     );

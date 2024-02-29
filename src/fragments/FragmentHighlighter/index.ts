@@ -259,8 +259,8 @@ export class FragmentHighlighter
       await this.clear(name);
     }
 
-    if (!this.selection[name][mesh.uuid]) {
-      this.selection[name][mesh.uuid] = new Set<number>();
+    if (!this.selection[name][mesh.fragment.id]) {
+      this.selection[name][mesh.fragment.id] = new Set<number>();
     }
 
     fragList.push(mesh.fragment);
@@ -270,8 +270,8 @@ export class FragmentHighlighter
       throw new Error("Item ID not found!");
     }
 
-    this.selection[name][mesh.uuid].add(itemID);
-    await this.regenerate(name, mesh.uuid);
+    this.selection[name][mesh.fragment.id].add(itemID);
+    await this.regenerate(name, mesh.fragment.id);
 
     const group = mesh.fragment.group;
     if (group) {
@@ -288,7 +288,7 @@ export class FragmentHighlighter
           throw new Error("Fragment ID not found!");
         }
 
-        if (fragID === mesh.uuid) continue;
+        if (fragID === mesh.fragment.id) continue;
         const fragment = fragments.list[fragID];
         fragList.push(fragment);
 

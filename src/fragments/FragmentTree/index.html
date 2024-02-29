@@ -100,11 +100,6 @@
     const buffer = new Uint8Array(data);
     const model = await fragments.load(buffer);
 
-    const file2 = await fetch("../../../resources/small2.frag");
-    const data2 = await file2.arrayBuffer();
-    const buffer2 = new Uint8Array(data2);
-    const model2 = await fragments.load(buffer2);
-
     /*MD
 
     ### 🕹 Selection of Fragments
@@ -163,9 +158,6 @@
     const properties = await fetch("../../../resources/small.json");
     model.setLocalProperties(await properties.json());
 
-    const properties2 = await fetch("../../../resources/small2.json");
-    model2.setLocalProperties(await properties2.json());
-
     /*MD
 
     Now that we have the properties, we will pass the model to classifier and use `classifier.byStorey()` which will group the Fragments according to Floors.
@@ -174,11 +166,9 @@
 
     */
 
-    // classifier.byStorey(model);
-    // classifier.byEntity(model);
+    classifier.byStorey(model);
+    classifier.byEntity(model);
 
-    classifier.byStorey(model2);
-    classifier.byEntity(model2);
 
     /*MD
 
