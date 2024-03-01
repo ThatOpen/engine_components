@@ -87,6 +87,12 @@ export class GeometryCullerRenderer extends CullerRenderer {
     await super.dispose();
     this.onViewUpdated.reset();
 
+    this._lodMaterial.dispose();
+    for (const [_id, fragment] of this.lowLod) {
+      fragment.dispose(true);
+    }
+    this.lowLod.clear();
+
     for (const [_id, group] of this._geometriesGroups) {
       group.removeFromParent();
       const children = [...group.children];
@@ -272,6 +278,10 @@ export class GeometryCullerRenderer extends CullerRenderer {
     const box = this.boxes.get(index) as FRAGS.Fragment;
     box.dispose(false);
     this.boxes.delete(index);
+
+    const frag = this.lowLod.get(index) as FRAGS.Fragment;
+    frag.dispose(false);
+    this.lowLod.delete(index);
 
     const codes = this.codes.get(index) as Map<number, string>;
     this.codes.delete(index);

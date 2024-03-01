@@ -2,31 +2,13 @@ import * as THREE from "three";
 import * as FRAG from "bim-fragment";
 import { unzip } from "unzipit";
 import { FragmentIdMap, FragmentsGroup } from "bim-fragment";
-// import Dexie from "dexie";
 import { Component, Disposable, Event } from "../../../base-types";
 import { StreamedGeometries, StreamedAsset } from "./base-types";
 import { Components, ToolComponent } from "../../../core";
 import { GeometryCullerRenderer } from "./geometry-culler-renderer";
 import { FragmentManager } from "../../FragmentManager";
 import { IfcPropertiesProcessor } from "../../../ifc";
-
-// interface IStreamedFile {
-//   id: string;
-//   file: Blob;
-// }
-//
-// class StreamFileDatabase extends Dexie {
-//   // Declare implicit table properties.
-//   // (just to inform Typescript. Instantiated by Dexie in stores() method)
-//   files!: Dexie.Table<IStreamedFile, string>; // number = type of the primkey
-//
-//   constructor() {
-//     super("MyAppDatabase");
-//     this.version(1).stores({
-//       files: "id, file",
-//     });
-//   }
-// }
+import { StreamFileDatabase } from "./streamer-db";
 
 interface StreamedInstance {
   id: number;
@@ -66,12 +48,16 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
 
   serializer = new FRAG.StreamSerializer();
 
-  maxCacheTime = 5000;
+  maxRamTime = 5000;
+
+  useCache = true;
+
   private _ramCache = new Map<
     string,
     { data: FRAG.StreamedGeometries; time: number }
   >();
-  // private _storageCache = new StreamFileDatabase();
+
+  private _fileCache = new StreamFileDatabase();
 
   private _url: string | null = null;
 
@@ -127,6 +113,8 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
     this._isDisposing = true;
     this.onFragmentsLoaded.reset();
     this.onFragmentsDeleted.reset();
+
+    this._ramCache.clear();
 
     this.models = {};
     this._geometryInstances = {};
@@ -323,6 +311,10 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
     this.culler.needsUpdate = true;
   }
 
+  async clearCache() {
+    await this._fileCache.delete();
+  }
+
   get() {}
 
   update() {}
@@ -382,12 +374,29 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
       for (const [file] of sortedFiles) {
         const url = this.url + file;
 
+        // If this file is still in the ram, get it
+
         if (!this._ramCache.has(url)) {
-          // const file = this._storageCache.files.get(url);
-          // console.log(file);
-          const fetched = await fetch(url);
-          const buffer = await fetched.arrayBuffer();
-          const bytes = new Uint8Array(buffer);
+          let bytes = new Uint8Array();
+
+          // If this file is in the local cache, get it
+          if (this.useCache) {
+            const found = await this._fileCache.files.get(url);
+
+            if (found) {
+              bytes = found.file;
+            } else {
+              const fetched = await fetch(url);
+              const buffer = await fetched.arrayBuffer();
+              bytes = new Uint8Array(buffer);
+              await this._fileCache.files.add({ file: bytes, id: url });
+            }
+          } else {
+            const fetched = await fetch(url);
+            const buffer = await fetched.arrayBuffer();
+            bytes = new Uint8Array(buffer);
+          }
+
           const data = this.serializer.import(bytes);
           this._ramCache.set(url, { data, time: performance.now() });
         }
@@ -456,7 +465,7 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
       const expiredIDs = new Set<string>();
       const now = performance.now();
       for (const [id, { time }] of this._ramCache) {
-        if (now - time > this.maxCacheTime) {
+        if (now - time > this.maxRamTime) {
           expiredIDs.add(id);
         }
       }
