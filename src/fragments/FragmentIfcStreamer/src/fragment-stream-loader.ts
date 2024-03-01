@@ -8,6 +8,7 @@ import { Components, ToolComponent } from "../../../core";
 import { GeometryCullerRenderer } from "./geometry-culler-renderer";
 import { FragmentManager } from "../../FragmentManager";
 import { IfcPropertiesProcessor } from "../../../ifc";
+import { StreamFileDatabase } from "./streamer-db";
 
 interface StreamedInstance {
   id: number;
@@ -46,6 +47,17 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
   } = {};
 
   serializer = new FRAG.StreamSerializer();
+
+  maxRamTime = 5000;
+
+  useCache = true;
+
+  private _ramCache = new Map<
+    string,
+    { data: FRAG.StreamedGeometries; time: number }
+  >();
+
+  private _fileCache = new StreamFileDatabase();
 
   private _url: string | null = null;
 
@@ -101,6 +113,8 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
     this._isDisposing = true;
     this.onFragmentsLoaded.reset();
     this.onFragmentsDeleted.reset();
+
+    this._ramCache.clear();
 
     this.models = {};
     this._geometryInstances = {};
@@ -297,6 +311,10 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
     this.culler.needsUpdate = true;
   }
 
+  async clearCache() {
+    await this._fileCache.delete();
+  }
+
   get() {}
 
   update() {}
@@ -316,7 +334,9 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
   //   return this.culler.boxes.getSphere();
   // }
 
-  private async loadFoundGeometries(seen: { [modelID: string]: Set<number> }) {
+  private async loadFoundGeometries(seen: {
+    [modelID: string]: Map<number, Set<number>>;
+  }) {
     for (const modelID in seen) {
       if (this._isDisposing) return;
 
@@ -328,36 +348,73 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
         return;
       }
 
-      const ids = new Set(seen[modelID]);
       const { geometries } = this.models[modelID];
 
-      const files = new Set<string>();
+      const files = new Map<string, number>();
 
-      for (const id of ids) {
-        const geometry = geometries[id];
-        if (!geometry) {
-          throw new Error("Geometry not found");
-        }
-        if (geometry.geometryFile) {
-          const file = geometry.geometryFile;
-          files.add(file);
+      const allIDs = new Set<number>();
+
+      for (const [priority, ids] of seen[modelID]) {
+        for (const id of ids) {
+          allIDs.add(id);
+          const geometry = geometries[id];
+          if (!geometry) {
+            throw new Error("Geometry not found");
+          }
+          if (geometry.geometryFile) {
+            const file = geometry.geometryFile;
+            const value = files.get(file) || 0;
+            files.set(file, value + priority);
+          }
         }
       }
 
-      for (const file of files) {
+      const sortedFiles = Array.from(files).sort((a, b) => b[1] - a[1]);
+
+      for (const [file] of sortedFiles) {
         const url = this.url + file;
-        const fetched = await fetch(url);
-        const buffer = await fetched.arrayBuffer();
-        const bytes = new Uint8Array(buffer);
-        const result = this.serializer.import(bytes);
+
+        // If this file is still in the ram, get it
+
+        if (!this._ramCache.has(url)) {
+          let bytes = new Uint8Array();
+
+          // If this file is in the local cache, get it
+          if (this.useCache) {
+            const found = await this._fileCache.files.get(url);
+
+            if (found) {
+              bytes = found.file;
+            } else {
+              const fetched = await fetch(url);
+              const buffer = await fetched.arrayBuffer();
+              bytes = new Uint8Array(buffer);
+              await this._fileCache.files.add({ file: bytes, id: url });
+            }
+          } else {
+            const fetched = await fetch(url);
+            const buffer = await fetched.arrayBuffer();
+            bytes = new Uint8Array(buffer);
+          }
+
+          const data = this.serializer.import(bytes);
+          this._ramCache.set(url, { data, time: performance.now() });
+        }
+
+        const result = this._ramCache.get(url);
+        if (!result) {
+          continue;
+        }
+
+        result.time = performance.now();
 
         const loaded: FRAG.Fragment[] = [];
 
         if (result) {
-          for (const [geometryID, { position, index, normal }] of result) {
+          for (const [geometryID, { position, index, normal }] of result.data) {
             if (this._isDisposing) return;
 
-            if (!ids.has(geometryID)) continue;
+            if (!allIDs.has(geometryID)) continue;
 
             if (
               !this._geometryInstances[modelID] ||
@@ -377,12 +434,9 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
 
             const posAttr = new THREE.BufferAttribute(position, 3);
             const norAttr = new THREE.BufferAttribute(normal, 3);
-            const blockBuffer = new Uint8Array(position.length / 3);
-            const blockID = new THREE.BufferAttribute(blockBuffer, 1);
 
             geom.setAttribute("position", posAttr);
             geom.setAttribute("normal", norAttr);
-            geom.setAttribute("blockID", blockID);
 
             geom.setIndex(Array.from(index));
 
@@ -407,6 +461,20 @@ export class FragmentStreamLoader extends Component<any> implements Disposable {
           await this.onFragmentsLoaded.trigger(loaded);
         }
       }
+
+      const expiredIDs = new Set<string>();
+      const now = performance.now();
+      for (const [id, { time }] of this._ramCache) {
+        if (now - time > this.maxRamTime) {
+          expiredIDs.add(id);
+        }
+      }
+
+      for (const id of expiredIDs) {
+        this._ramCache.delete(id);
+      }
+
+      // this._storageCache.close();
     }
   }
 

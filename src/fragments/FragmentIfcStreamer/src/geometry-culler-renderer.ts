@@ -25,10 +25,16 @@ export class GeometryCullerRenderer extends CullerRenderer {
   /* Pixels in screen a geometry must occupy to be considered "seen". */
   threshold = 50;
 
+  bboxThreshold = 200;
+
   maxLostTime = 30000;
   maxHiddenTime = 5000;
 
   boxes = new Map<number, FRAGS.Fragment>();
+
+  useLowLod = false;
+
+  lowLod = new Map<number, FRAGS.Fragment>();
 
   private _geometry: THREE.BufferGeometry;
 
@@ -38,8 +44,10 @@ export class GeometryCullerRenderer extends CullerRenderer {
     opacity: 1,
   });
 
+  private _lodMaterial = new THREE.MeshLambertMaterial();
+
   readonly onViewUpdated = new Event<{
-    toLoad: { [modelID: string]: Set<number> };
+    toLoad: { [modelID: string]: Map<number, Set<number>> };
     toRemove: { [modelID: string]: Set<number> };
     toHide: { [modelID: string]: Set<number> };
     toShow: { [modelID: string]: Set<number> };
@@ -51,6 +59,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
   private _geometries = new Map<string, CullerBoundingBox>();
   private _geometriesGroups = new Map<number, THREE.Group>();
+  private _foundGeometries = new Set<string>();
 
   private codes = new Map<number, Map<number, string>>();
 
@@ -77,6 +86,12 @@ export class GeometryCullerRenderer extends CullerRenderer {
   async dispose() {
     await super.dispose();
     this.onViewUpdated.reset();
+
+    this._lodMaterial.dispose();
+    for (const [_id, fragment] of this.lowLod) {
+      fragment.dispose(true);
+    }
+    this.lowLod.clear();
 
     for (const [_id, group] of this._geometriesGroups) {
       group.removeFromParent();
@@ -126,16 +141,27 @@ export class GeometryCullerRenderer extends CullerRenderer {
     this.boxes.set(modelIndex, bboxes);
     this.scene.add(bboxes.mesh);
 
+    if (this.useLowLod) {
+      const lowLod = new FRAGS.Fragment(this._geometry, this._lodMaterial, 10);
+      this.lowLod.set(modelIndex, lowLod);
+    }
+
     const fragmentsGroup = new THREE.Group();
     this.scene.add(fragmentsGroup);
     this._geometriesGroups.set(modelIndex, fragmentsGroup);
 
-    const items = new Map<number, FRAGS.Item>();
+    const items = new Map<
+      number,
+      FRAGS.Item & { geometryColors: THREE.Color[] }
+    >();
 
     for (const asset of assets) {
       // if (asset.id !== 664833) continue;
       for (const geometryData of asset.geometries) {
-        const { geometryID, transformation } = geometryData;
+        const { geometryID, transformation, color } = geometryData;
+
+        const geometryColor = new THREE.Color();
+        geometryColor.setRGB(color[0], color[1], color[2], "srgb");
 
         const instanceID = this.getInstanceID(asset.id, geometryID);
 
@@ -184,12 +210,14 @@ export class GeometryCullerRenderer extends CullerRenderer {
             throw new Error("Malformed item!");
           }
           item.colors.push(threeColor);
+          item.geometryColors.push(geometryColor);
           item.transforms.push(instanceMatrix);
         } else {
           // This geometry exists only once in this asset (for now)
           items.set(instanceID, {
             id: instanceID,
             colors: [threeColor],
+            geometryColors: [geometryColor],
             transforms: [instanceMatrix],
           });
         }
@@ -213,6 +241,14 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
     const itemsArray = Array.from(items.values());
     bboxes.add(itemsArray);
+
+    if (this.useLowLod) {
+      for (const item of itemsArray) {
+        item.colors = item.geometryColors;
+      }
+      const lowLod = this.lowLod.get(modelIndex) as FRAGS.Fragment;
+      lowLod.add(itemsArray);
+    }
 
     THREE.ColorManagement.enabled = colorEnabled;
 
@@ -242,6 +278,10 @@ export class GeometryCullerRenderer extends CullerRenderer {
     const box = this.boxes.get(index) as FRAGS.Fragment;
     box.dispose(false);
     this.boxes.delete(index);
+
+    const frag = this.lowLod.get(index) as FRAGS.Fragment;
+    frag.dispose(false);
+    this.lowLod.delete(index);
 
     const codes = this.codes.get(index) as Map<number, string>;
     this.codes.delete(index);
@@ -399,7 +439,8 @@ export class GeometryCullerRenderer extends CullerRenderer {
   private handleWorkerMessage = async (event: MessageEvent) => {
     const colors = event.data.colors as Map<string, number>;
 
-    const toLoad: { [modelID: string]: Set<number> } = {};
+    const toLoad: { [modelID: string]: Map<number, Set<number>> } = {};
+
     const toRemove: { [modelID: string]: Set<number> } = {};
     const toHide: { [modelID: string]: Set<number> } = {};
     const toShow: { [modelID: string]: Set<number> } = {};
@@ -407,18 +448,42 @@ export class GeometryCullerRenderer extends CullerRenderer {
     const now = performance.now();
     let viewWasUpdated = false;
 
-    for (const [code, geometry] of this._geometries) {
-      const pixels = colors.get(code);
+    const lodsToShow = new Set<CullerBoundingBox>();
+    const lodsToHide = new Set<CullerBoundingBox>();
 
-      const isFound = pixels !== undefined && pixels > this.threshold;
+    let bboxAmount = 0;
+    for (const [color, number] of colors) {
+      if (number < this.threshold) {
+        continue;
+      }
+      const found = this._geometries.get(color);
+      if (!found) {
+        continue;
+      }
+      const isBoundingBox = found.fragment === undefined;
+      if (isBoundingBox) {
+        bboxAmount += number;
+      }
+    }
+
+    const lostGeometries = new Set(this._foundGeometries);
+
+    for (const [color, number] of colors) {
+      const geometry = this._geometries.get(color);
+      if (!geometry) {
+        continue;
+      }
+      const isFound = number > this.threshold;
       const { exists } = geometry;
-
-      const modelID = this._indexModelID.get(geometry.modelIndex) as string;
 
       if (!isFound && !exists) {
         // Geometry doesn't exist and is not visible
         continue;
       }
+
+      const modelID = this._indexModelID.get(geometry.modelIndex) as string;
+
+      lostGeometries.delete(color);
 
       if (isFound && exists) {
         // Geometry was visible, and still is
@@ -427,32 +492,55 @@ export class GeometryCullerRenderer extends CullerRenderer {
           toShow[modelID] = new Set();
         }
         toShow[modelID].add(geometry.geometryID);
+        this._foundGeometries.add(color);
         viewWasUpdated = true;
+        if (this.useLowLod) {
+          lodsToHide.add(geometry);
+        }
       } else if (isFound && !exists) {
         // New geometry found
         if (!toLoad[modelID]) {
-          toLoad[modelID] = new Set();
+          toLoad[modelID] = new Map();
         }
         geometry.time = now;
         geometry.exists = true;
-        toLoad[modelID].add(geometry.geometryID);
+
+        if (!toLoad[modelID].has(number)) {
+          toLoad[modelID].set(number, new Set());
+        }
+        const set = toLoad[modelID].get(number) as Set<number>;
+        set.add(geometry.geometryID);
+        this._foundGeometries.add(color);
         viewWasUpdated = true;
+
+        if (this.useLowLod) {
+          lodsToHide.add(geometry);
+        }
       } else if (!isFound && exists) {
-        // Geometry was lost
-        const lostTime = now - geometry.time;
-        if (lostTime > this.maxLostTime) {
-          // This geometry was lost too long - delete it
-          if (!toRemove[modelID]) {
-            toRemove[modelID] = new Set();
+        // Geometry is hardly seen, so it can be considered lost
+        if (bboxAmount < this.bboxThreshold) {
+          // When too many bounding boxes on sight
+          // don't hide / destroy geometry to prevent flickering
+          this.handleLostGeometries(now, color, geometry, toRemove, toHide);
+          if (this.useLowLod) {
+            lodsToShow.add(geometry);
           }
-          geometry.exists = false;
-          toRemove[modelID].add(geometry.geometryID);
-        } else if (lostTime > this.maxHiddenTime) {
-          // This geometry was lost for a while - hide it
-          if (!toHide[modelID]) {
-            toHide[modelID] = new Set();
-          }
-          toHide[modelID].add(geometry.geometryID);
+          viewWasUpdated = true;
+        }
+      }
+    }
+
+    if (bboxAmount <= this.bboxThreshold) {
+      // When too many bounding boxes on sight
+      // don't hide / destroy geometry to prevent flickering
+      for (const color of lostGeometries) {
+        const geometry = this._geometries.get(color);
+        if (!geometry) {
+          throw new Error("Geometry not found!");
+        }
+        this.handleLostGeometries(now, color, geometry, toRemove, toHide);
+        if (this.useLowLod) {
+          lodsToShow.add(geometry);
         }
         viewWasUpdated = true;
       }
@@ -461,7 +549,56 @@ export class GeometryCullerRenderer extends CullerRenderer {
     if (viewWasUpdated) {
       await this.onViewUpdated.trigger({ toLoad, toRemove, toHide, toShow });
     }
+
+    if (this.useLowLod) {
+      for (const geometry of lodsToShow) {
+        this.setLodVisibility(true, geometry);
+      }
+      for (const geometry of lodsToHide) {
+        this.setLodVisibility(false, geometry);
+      }
+    }
+
+    if (bboxAmount > this.bboxThreshold) {
+      this.needsUpdate = true;
+    }
   };
+
+  private handleLostGeometries(
+    now: number,
+    color: string,
+    geometry: CullerBoundingBox,
+    toRemove: {
+      [p: string]: Set<number>;
+    },
+    toHide: { [p: string]: Set<number> }
+  ) {
+    const modelID = this._indexModelID.get(geometry.modelIndex) as string;
+    const lostTime = now - geometry.time;
+    if (lostTime > this.maxLostTime) {
+      // This geometry was lost too long - delete it
+      if (!toRemove[modelID]) {
+        toRemove[modelID] = new Set();
+      }
+      geometry.exists = false;
+      toRemove[modelID].add(geometry.geometryID);
+      this._foundGeometries.delete(color);
+    } else if (lostTime > this.maxHiddenTime) {
+      // This geometry was lost for a while - hide it
+      if (!toHide[modelID]) {
+        toHide[modelID] = new Set();
+      }
+      toHide[modelID].add(geometry.geometryID);
+    }
+  }
+
+  private setLodVisibility(visible: boolean, geometry: CullerBoundingBox) {
+    const lod = this.lowLod.get(geometry.modelIndex) as FRAGS.Fragment;
+    for (const assetID of geometry.assetIDs) {
+      const instanceID = this.getInstanceID(assetID, geometry.geometryID);
+      lod.setVisibility(visible, [instanceID]);
+    }
+  }
 
   private createModelIndex(modelID: string) {
     if (this._modelIDIndex.has(modelID)) {
