@@ -73,6 +73,15 @@
     const customEffects = components.renderer.postproduction.customEffects;
     customEffects.excludedMeshes.push(grid.get());
 
+    // Temporary until we have a backend with auth
+    let fragmentIfcLoader = new OBC.FragmentIfcLoader(components);
+    await fragmentIfcLoader.setup();
+    const file = await fetch('../../../resources/small.ifc');
+    const data = await file.arrayBuffer();
+    const buffer = new Uint8Array(data);
+    const model = await fragmentIfcLoader.load(buffer, "example");
+    scene.add(model);
+
     /*MD
     ### 💪 Let's go BIG
     ___
@@ -284,8 +293,7 @@
 
     let loader = new OBC.FragmentStreamLoader(components);
     loader.url = "http://YOUR_BACKEND_URL";
-    let fragments = new OBC.FragmentManager(components);
-
+    let fragments = components.tools.get(OBC.FragmentManager);
 
     async function loadModel(geometryURL, propertiesURL) {
         const rawGeometryData = await fetch(geometryURL);
