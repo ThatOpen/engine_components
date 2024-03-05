@@ -231,8 +231,6 @@ export class FragmentIfcLoader
 
     const id = mesh.expressID;
 
-    // Create geometry if it doesn't exist
-
     for (let i = 0; i < size; i++) {
       const geometry = mesh.geometries.get(i);
 
@@ -240,6 +238,8 @@ export class FragmentIfcLoader
       const transparent = w !== 1;
       const { geometryExpressID } = geometry;
       const geometryID = `${geometryExpressID}-${transparent}`;
+
+      // Create geometry if it doesn't exist
 
       if (!this._visitedFragments.has(geometryID)) {
         const bufferGeometry = this.getGeometry(webIfc, geometryExpressID);
@@ -266,10 +266,9 @@ export class FragmentIfcLoader
       }
 
       const data = group.data.get(id);
-      if (!data) {
-        throw new Error("Data not found!");
+      if (data) {
+        data[0].push(fragmentData.index);
       }
-      data[0].push(fragmentData.index);
 
       const { fragment } = fragmentData;
 
