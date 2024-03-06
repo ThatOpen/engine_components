@@ -28,8 +28,6 @@ export class FragmentIfcLoader
 
   enabled: boolean = true;
 
-  autoCoordinate = true;
-
   uiElement = new UIElement<{ main: Button; toast: ToastNotification }>();
 
   private _material = new THREE.MeshLambertMaterial();
@@ -81,7 +79,7 @@ export class FragmentIfcLoader
     await this.onSetup.trigger();
   }
 
-  async load(data: Uint8Array) {
+  async load(data: Uint8Array, coordinate = true) {
     const before = performance.now();
     await this.onIfcStartedLoading.trigger();
     await this.readIfcFile(data);
@@ -103,9 +101,11 @@ export class FragmentIfcLoader
       this.components.meshes.add(frag.mesh);
     }
 
-    await this.onIfcLoaded.trigger(group);
+    if (coordinate) {
+      fragments.coordinate([group]);
+    }
 
-    fragments.coordinate()
+    await this.onIfcLoaded.trigger(group);
 
     return group;
   }
