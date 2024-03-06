@@ -17,6 +17,7 @@ export class FragmentIfcLoader
   static readonly uuid = "a659add7-1418-4771-a0d6-7d4d438e4624" as const;
 
   readonly onIfcLoaded = new Event<FragmentsGroup>();
+  readonly onIfcStartedLoading = new Event<void>();
 
   readonly onSetup = new Event<void>();
 
@@ -26,6 +27,8 @@ export class FragmentIfcLoader
   settings = new IfcFragmentSettings();
 
   enabled: boolean = true;
+
+  autoCoordinate = true;
 
   uiElement = new UIElement<{ main: Button; toast: ToastNotification }>();
 
@@ -80,6 +83,7 @@ export class FragmentIfcLoader
 
   async load(data: Uint8Array) {
     const before = performance.now();
+    await this.onIfcStartedLoading.trigger();
     await this.readIfcFile(data);
     const group = await this.getAllGeometries();
 
@@ -100,6 +104,8 @@ export class FragmentIfcLoader
     }
 
     await this.onIfcLoaded.trigger(group);
+
+    fragments.coordinate()
 
     return group;
   }
@@ -169,6 +175,8 @@ export class FragmentIfcLoader
       maxExpressID: this._webIfc.GetMaxExpressID(0),
     };
 
+    const ids: number[] = [];
+
     for (const type of allIfcEntities) {
       if (!this._webIfc.IsIfcElement(type) && type !== WEBIFC.IFCSPACE) {
         continue;
@@ -180,6 +188,7 @@ export class FragmentIfcLoader
       const size = result.size();
       for (let i = 0; i < size; i++) {
         const itemID = result.get(i);
+        ids.push(itemID);
         const level = this._spatialTree.itemsByFloor[itemID] || 0;
         group.data.set(itemID, [[], [level, type]]);
       }
@@ -187,8 +196,8 @@ export class FragmentIfcLoader
 
     this._spatialTree.cleanUp();
 
-    this._webIfc.StreamAllMeshes(0, (mesh) => {
-      this.getMesh(this._webIfc, mesh, group);
+    this._webIfc.StreamMeshes(0, ids, (mesh) => {
+      this.getMesh(mesh, group);
     });
 
     for (const entry of this._visitedFragments) {
@@ -222,11 +231,7 @@ export class FragmentIfcLoader
     this._fragmentInstances.clear();
   }
 
-  private getMesh(
-    webIfc: WEBIFC.IfcAPI,
-    mesh: WEBIFC.FlatMesh,
-    group: FRAGS.FragmentsGroup
-  ) {
+  private getMesh(mesh: WEBIFC.FlatMesh, group: FRAGS.FragmentsGroup) {
     const size = mesh.geometries.size();
 
     const id = mesh.expressID;
@@ -242,7 +247,10 @@ export class FragmentIfcLoader
       // Create geometry if it doesn't exist
 
       if (!this._visitedFragments.has(geometryID)) {
-        const bufferGeometry = this.getGeometry(webIfc, geometryExpressID);
+        const bufferGeometry = this.getGeometry(
+          this._webIfc,
+          geometryExpressID
+        );
 
         const material = transparent ? this._materialT : this._material;
         const fragment = new FRAGS.Fragment(bufferGeometry, material, 1);
@@ -266,9 +274,11 @@ export class FragmentIfcLoader
       }
 
       const data = group.data.get(id);
-      if (data) {
-        data[0].push(fragmentData.index);
+      if (!data) {
+        throw new Error("Data not found!");
       }
+
+      data[0].push(fragmentData.index);
 
       const { fragment } = fragmentData;
 

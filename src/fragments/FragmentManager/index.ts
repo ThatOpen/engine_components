@@ -146,12 +146,7 @@ export class FragmentManager
       this.components.meshes.add(fragment.mesh);
     }
     if (coordinate) {
-      const isFirstModel = this.groups.length === 0;
-      if (isFirstModel) {
-        this.baseCoordinationModel = model.uuid;
-      } else {
-        this.coordinate([model]);
-      }
+      this.coordinate([model]);
     }
     this.groups.push(model);
     await this.onFragmentsLoaded.trigger(model);
@@ -199,6 +194,19 @@ export class FragmentManager
   }
 
   coordinate(models = this.groups) {
+    const isFirstModel = this.baseCoordinationModel.length === 0;
+    if (isFirstModel) {
+      const first = models.pop();
+      if (!first) {
+        return;
+      }
+      this.baseCoordinationModel = first.uuid;
+    }
+
+    if (!models.length) {
+      return;
+    }
+
     const baseModel = this.groups.find(
       (group) => group.uuid === this.baseCoordinationModel
     );
