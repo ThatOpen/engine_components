@@ -1,8 +1,11 @@
+import * as THREE from "three";
 import * as WEBIFC from "web-ifc";
-import { IfcAlignmentData } from "bim-fragment";
+import * as FRAGS from "bim-fragment";
 import { IfcCivil } from "./types";
 
 export class CivilReader {
+  defLineMat = new THREE.LineBasicMaterial({ color: 0xffffff });
+
   read(webIfc: WEBIFC.IfcAPI) {
     const IfcAlignment = webIfc.GetAllAlignments(0);
     const IfcCrossSection2D = webIfc.GetAllCrossSections2D(0);
@@ -19,62 +22,51 @@ export class CivilReader {
 
   get(civilItems: any) {
     if (civilItems.IfcAlignment) {
-      const horizontalAlignments = new IfcAlignmentData();
-      const verticalAlignments = new IfcAlignmentData();
-      const realAlignments = new IfcAlignmentData();
-      let countH = 0;
-      let countV = 0;
-      let countR = 0;
-      const valuesH: number[] = [];
-      const valuesV: number[] = [];
-      const valuesR: number[] = [];
+
+      const alignments = new Map<number, FRAGS.Alignment>();
 
       for (const alignment of civilItems.IfcAlignment) {
-        horizontalAlignments.alignmentIndex.push(countH);
-        verticalAlignments.alignmentIndex.push(countV);
-        if (alignment.horizontal) {
-          for (const hAlignment of alignment.horizontal) {
-            horizontalAlignments.curveIndex.push(countH);
-            for (const point of hAlignment.points) {
-              valuesH.push(point.x);
-              valuesH.push(point.y);
-              countH++;
-            }
-          }
-        }
-        if (alignment.vertical) {
-          for (const vAlignment of alignment.vertical) {
-            verticalAlignments.curveIndex.push(countV);
-            for (const point of vAlignment.points) {
-              valuesV.push(point.x);
-              valuesV.push(point.y);
-              countV++;
-            }
-          }
-        }
-        if (alignment.curve3D) {
-          for (const rAlignment of alignment.curve3D) {
-            realAlignments.curveIndex.push(countR);
-            for (const point of rAlignment.points) {
-              valuesR.push(point.x);
-              valuesR.push(point.y);
-              valuesR.push(point.z);
-              countR++;
-            }
-          }
-        }
+        const absolute = this.getCurves(alignment.curve3D);
+        const horizontal = this.getCurves(alignment.horizontal);
+        const vertical = this.getCurves(alignment.vertical);
+        const count = alignments.size;
+        alignments.set(count, { horizontal, vertical, absolute });
       }
 
-      horizontalAlignments.coordinates = new Float32Array(valuesH);
-      verticalAlignments.coordinates = new Float32Array(valuesV);
-      realAlignments.coordinates = new Float32Array(valuesR);
-
-      return {
-        horizontalAlignments,
-        verticalAlignments,
-        realAlignments,
-      };
+      return { alignments };
     }
     return undefined;
+  }
+
+  private getCurves(alignment: any) {
+    const curves: FRAGS.CivilCurve[] = [];
+    for (const curve of alignment) {
+      const mesh = this.getCurveMesh(curve.points);
+      const data = {} as { [key: string]: string };
+      if (curve.data) {
+        for (const entry of curve.data) {
+          const [key, value] = entry.split(": ");
+          const numValue = parseFloat(value);
+          data[key] = numValue || value;
+        }
+      }
+      curves.push({ mesh, data });
+    }
+    return curves;
+  }
+
+  private getCurveMesh(points: { x: number; y: number; z?: number }[]) {
+    const array = new Float32Array(points.length * 3);
+    for (let i = 0; i < points.length; i++) {
+      const { x, y, z } = points[i];
+      array[i * 3] = x;
+      array[i * 3 + 1] = y;
+      array[i * 3 + 2] = z || 0;
+    }
+
+    const attr = new THREE.BufferAttribute(array, 3);
+    const geometry = new THREE.EdgesGeometry();
+    geometry.setAttribute("position", attr);
+    return new THREE.LineSegments(geometry, this.defLineMat);
   }
 }
