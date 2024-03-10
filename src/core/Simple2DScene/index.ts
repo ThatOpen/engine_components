@@ -66,6 +66,10 @@ export class Simple2DScene
   private readonly _size = new THREE.Vector2();
   private readonly _frustumSize = 50;
 
+  get size() {
+    return this._size.clone();
+  }
+
   get scaleX() {
     return this._scaleX;
   }
