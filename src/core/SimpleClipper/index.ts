@@ -213,7 +213,7 @@ export class SimpleClipper<T extends SimplePlane>
    * found under the cursor will be deleted.
    */
   delete(plane?: T) {
-    if (!this.enabled) return;
+    // if (!this.enabled) return;
     if (!plane) {
       plane = this.pickPlane();
     }

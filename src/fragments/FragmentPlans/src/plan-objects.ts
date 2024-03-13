@@ -10,8 +10,8 @@ interface PlanObject {
   root: THREE.Group;
   plane: THREE.Mesh;
   outline: THREE.LineSegments;
-  marker: CSS2DObject;
-  button: Button;
+  marker?: CSS2DObject;
+  button?: Button;
 }
 
 export class PlanObjects implements UI {
@@ -55,10 +55,14 @@ export class PlanObjects implements UI {
       const { root, marker } = this._objects[id];
       if (active) {
         scene.add(root);
-        root.add(marker);
+        if (marker) {
+          root.add(marker);
+        }
       } else {
         root.removeFromParent();
-        marker.removeFromParent();
+        if (marker) {
+          marker.removeFromParent();
+        }
       }
     }
   }
@@ -77,7 +81,9 @@ export class PlanObjects implements UI {
     this.visible = false;
     for (const id in this._objects) {
       const { marker, button, outline, root, plane } = this._objects[id];
-      await button.dispose();
+      if (button) {
+        await button.dispose();
+      }
       outline.removeFromParent();
       (outline.geometry as any) = null;
       outline.material = [];
@@ -86,7 +92,9 @@ export class PlanObjects implements UI {
       plane.removeFromParent();
       plane.material = [];
       (plane.geometry as any) = null;
-      marker.element.remove();
+      if (marker) {
+        marker.element.remove();
+      }
     }
     this._objects = {};
     this._planeGeometry.dispose();
@@ -115,25 +123,29 @@ export class PlanObjects implements UI {
     outline.rotation.x = -Math.PI / 2;
     root.add(outline);
 
-    const button = new Button(this.components, {
-      materialIconName: "location_on",
-      tooltip: name,
-    });
+    if (this.components.uiEnabled) {
+      const button = new Button(this.components, {
+        materialIconName: "location_on",
+        tooltip: name,
+      });
 
-    button.onClick.add(async () => {
-      await this.planClicked.trigger({ id: config.id });
-    });
+      button.onClick.add(async () => {
+        await this.planClicked.trigger({ id: config.id });
+      });
 
-    const { domElement } = button;
+      const { domElement } = button;
 
-    domElement.classList.remove("bg-transparent");
-    domElement.className += " transition-none rounded-full";
+      domElement.classList.remove("bg-transparent");
+      domElement.className += " transition-none rounded-full";
 
-    // element.className = this.pointClass;
-    const marker = new CSS2DObject(domElement);
-    root.add(marker);
+      // element.className = this.pointClass;
+      const marker = new CSS2DObject(domElement);
+      root.add(marker);
 
-    this._objects[id] = { root, plane, outline, marker, button };
+      this._objects[id] = { root, plane, outline, marker, button };
+    } else {
+      this._objects[id] = { root, plane, outline };
+    }
   }
 
   setBounds(points: THREE.Vector3[], override = false) {
