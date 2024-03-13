@@ -65,10 +65,12 @@ export class PropActionsUI extends SimpleUIComponent<HTMLDivElement> {
     this.data = {};
   }
 
-  private setEditUI() {
+  private async setEditUI() {
     const { model, expressID } = this.data;
-    const properties = model?.properties;
-    if (!model || !expressID || !properties) return;
+    if (!model || !expressID || !model.hasProperties) return;
+
+    const prop = await model.getProperties(expressID);
+    if (!prop) return;
 
     this._modal.onAccept.reset();
     this._modal.title = "Edit Property";
@@ -95,10 +97,8 @@ export class PropActionsUI extends SimpleUIComponent<HTMLDivElement> {
 
     editUI.addChild(nameInput, valueInput);
 
-    const prop = properties[expressID];
-
-    const { key: nameKey } = IfcPropertiesUtils.getEntityName(
-      properties,
+    const { key: nameKey } = await IfcPropertiesUtils.getEntityName(
+      model,
       expressID
     );
 
@@ -108,8 +108,8 @@ export class PropActionsUI extends SimpleUIComponent<HTMLDivElement> {
       nameInput.value = prop.Name?.value ?? "";
     }
 
-    const { key: valueKey } = IfcPropertiesUtils.getQuantityValue(
-      properties,
+    const { key: valueKey } = await IfcPropertiesUtils.getQuantityValue(
+      model,
       expressID
     );
 

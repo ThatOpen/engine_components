@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="../../../resources/styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
+    <title>Tools Component</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .full-screen {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<div class="full-screen" id="container"></div>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
+        "web-ifc": "https://unpkg.com/web-ifc@0.0.50/web-ifc-api.js",
+        "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.160.1/examples/jsm/libs/lil-gui.module.min.js",
+        "openbim-components": "../../../resources/openbim-components.js",
+        "client-zip": "https://unpkg.com/client-zip@2.3.0/index.js"
+      }
+    }
+</script>
+</body>
+</html>
+<script type="module">
+
+    // Set up scene (see SimpleScene tutorial)
+
+    import * as THREE from 'three';
+    import * as OBC from 'openbim-components';
+    import * as WEBIFC from 'web-ifc';
+    import Stats from 'stats.js/src/Stats.js';
+    import * as dat from 'three/examples/jsm/libs/lil-gui.module.min';
+    import {downloadZip} from 'client-zip';
+
+    const container = document.getElementById('container');
+
+    const components = new OBC.Components();
+
+    components.scene = new OBC.SimpleScene(components);
+    components.renderer = new OBC.PostproductionRenderer(components, container);
+    components.camera = new OBC.OrthoPerspectiveCamera(components);
+    components.raycaster = new OBC.SimpleRaycaster(components);
+
+    components.init();
+
+    components.renderer.postproduction.enabled = true;
+
+    const scene = components.scene.get();
+
+    components.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
+
+    components.scene.setup();
+
+    const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
+    const customEffects = components.renderer.postproduction.customEffects;
+    customEffects.excludedMeshes.push(grid.get());
+
+    // Temporary until we have a backend with auth
+    let fragmentIfcLoader = new OBC.FragmentIfcLoader(components);
+    await fragmentIfcLoader.setup();
+    const file = await fetch('../../../resources/small.ifc');
+    const data = await file.arrayBuffer();
+    const buffer = new Uint8Array(data);
+    const model = await fragmentIfcLoader.load(buffer, "example");
+    scene.add(model);
+
+    /*MD
+    ### 💪 Let's go BIG
+    ___
+    Do you need to open huge big IFC files fast, even on more modest devices?
+    If so, you are in luck! We can open virtually any model on any device in
+    seconds thanks to BIM TILES!
+
+    :::info BIM tiles?
+
+    The idea behind BIM tiles is pretty simple! Instead of loading the whole BIM
+    model at once, we just load the explicit geometries that are seen by the user.
+    It's way faster than opening the IFC directly, but for this you'll need
+    a backend (or to rely on the file system of the user if you are building a
+    desktop or mobile app).
+
+    :::
+
+    Let's see how to do this step by step!
+
+    ### 🧩 Converting the IFC model to tiles
+    ___
+
+    The first step is to transform the IFC model into BIM tiles. The reason why we
+    have to do this is pretty simple: geometry in IFC is implicit (e.g. a wall is
+    defined as an extrusion). This means that it needs to be computed and converted
+    to explicit geometry (triangles) so that it can be displayed in 3D. Let's start
+    converting the IFC geometry:
+
+    */
+
+    const streamer = new OBC.FragmentIfcStreamConverter(components);
+    streamer.settings.wasm = {
+        path: "https://unpkg.com/web-ifc@0.0.51/",
+        absolute: true
+    }
+
+    /*MD
+    The `FragmentIfcStreamConverter` class takes IFC files and transform them into
+    tiles. You can use events to get the data. The `onGeometryStreamed` event will
+    give you the geometries bundled in a binary file, as well as an object with
+    information about the geometries contained within this file.
+    */
+
+    streamer.onGeometryStreamed.add((geometry) => {
+        console.log(geometry);
+    });
+
+    /*MD
+    You can control the amount of geometries inside a file using the settings. The
+    way the streaming works can't guarantee a precise number of geometries within a file,
+    but in most cases it will be quite close to the given number.
+    */
+
+    streamer.settings.minGeometrySize = 20;
+
+    /*MD
+    Similarly, you can get the assets data and control the number of assets per chunk like this:
+    */
+
+    streamer.onAssetStreamed.add((assets) => {
+        console.log(assets);
+    });
+
+    streamer.settings.minAssetsSize = 1000;
+
+    /*MD
+    Just like when using the normal `FragmentIfcLoader`, when you stream an IFC file you are
+    creating a `FragmentsGroup`. Using this event, you can get it:
+    */
+
+
+    streamer.onIfcLoaded.add(async (groupBuffer) => {
+        console.log(groupBuffer);
+    })
+
+    /*MD
+    Finally, you can use this to get notified as the streaming process progresses:
+    */
+
+    streamer.onProgress.add((progress) => {
+        console.log(progress);
+    })
+
+    /*MD
+    With everything in place, it's time to stream the IFC file and get all the tiles!
+    */
+
+    const fetchedIfc = await fetch("../../../resources/small.ifc");
+    const ifcBuffer = await fetchedIfc.arrayBuffer();
+    streamer.streamFromBuffer(new Uint8Array(ifcBuffer));
+
+    /*MD
+    ### 📋 Streaming the properties
+    ___
+    You can also stream the properties of an IFC file. Why? Because some files can have
+    millions of properties, and trying to save them naively in a normal DB is not very
+    scalable/affordable. Using this system, you'll be able to store and retrieve the
+    data of models of any size without big cloud costs. We can do this conversion
+    using the `FragmentPropsStreamConverter`:
+
+    */
+
+
+    const propsStreamer = new OBC.FragmentPropsStreamConverter(components);
+
+    propsStreamer.settings.wasm = {
+        path: "https://unpkg.com/web-ifc@0.0.51/",
+        absolute: true
+    }
+
+    /*MD
+    Similarly to geometries, here you will also get data and progress notification
+    using events. In addition to properties, you will get `indices`, which is an
+    indexation data of the properties to be able to use them effectively when
+    streamed.
+    */
+
+
+    propsStreamer.onPropertiesStreamed.add(async (props) => {
+        console.log(props);
+    })
+
+    propsStreamer.onProgress.add(async (progress) => {
+        console.log(progress);
+    })
+
+    propsStreamer.onIndicesStreamed.add(async (props) => {
+        console.log(props);
+    })
+
+    /*MD
+    Just call the `streamFromBuffer` method and you are ready to go!
+    */
+
+    propsStreamer.streamFromBuffer(new Uint8Array(ifcBuffer));
+
+    /*MD
+    ### 🧱 Assembling the data
+    ___
+    Now you are ready to start streaming your data. The first step is to create 2 JSON
+    files so that the library can access your backend: one for the geometries and other for
+    the properties. You have examples of both JSONs [here](https://github.com/ThatOpen/engine_components/blob/main/resources/small.ifc-processed.json)
+    and [here](https://github.com/ThatOpen/engine_components/blob/main/resources/small.ifc-processed-properties.json).
+    The JSON file for the geometries should look like this, and you should
+    be able to create them with the data given in the previous steps. The `globalDataIDFile`
+    is expected to have a name that ends with `-global`.
+
+    ```ts
+    interface StreamedGeometries {
+        assets: {
+            id: number;
+            geometries: {
+                color: number[];
+                geometryID: number;
+                transformation: number[];
+            }[];
+        }[];
+
+        geometries: {
+            [id: number]: {
+                boundingBox: {[id: number]: number};
+                hasHoles: boolean;
+                geometryFile: "url-to-geometry-file-in-your-backend";
+            };
+        };
+
+        globalDataFileId: "url-to-fragments-group-file-in-your-backend";
+    }
+    ```
+
+    The JSON for geometries should look like this. The values in `types` and in `ids`
+    are the suffix of the name of the properties file in your backend. In other words,
+    the library expects that if your globalDataFile is called `small.ifc-global`, the
+    properties files will be called `small.ifc-properties-1`, `small.ifc-properties-2`,
+    etc. In other words: `types: {1837: [1, 2], ...}, ids: {8: 1, ...}` means that
+    all the items of type `1837` are in the files `small.ifc-properties-1` and
+    `small.ifc-properties-2`, and that the properties of the item with id 8 is in the
+    file `small.ifc-properties-1`.
+
+
+    ```ts
+    interface StreamedProperties {
+        types: {
+          [typeID: number]: number[]
+        };
+
+        ids: {
+            [id: number]: {
+                boundingBox: {[id: number]: number};
+                hasHoles: boolean;
+                geometryFile: "url-to-geometry-file-in-your-backend";
+            };
+        };
+
+        indexesFile: "url-to-indexes-file-in-your-backend";
+    }
+    ```
+
+    Once you get both files, you are ready to start streaming!
+
+    ### 🧱 Streaming the data
+    ___
+
+    Now, streaming the data is quite easy once you have the JSON files.
+    You can just instantiate the loader, give it the base URL to your
+    backend and just load the models like this:
+
+    */
+
+    let loader = new OBC.FragmentStreamLoader(components);
+    loader.url = "http://YOUR_BACKEND_URL";
+    let fragments = components.tools.get(OBC.FragmentManager);
+
+    async function loadModel(geometryURL, propertiesURL) {
+        const rawGeometryData = await fetch(geometryURL);
+        const geometryData = await rawGeometryData.json();
+        let propertiesData;
+        if (propertiesURL) {
+            const rawPropertiesData = await fetch(propertiesURL);
+            propertiesData = await rawPropertiesData.json();
+        }
+        await loader.load(geometryData, true, propertiesData);
+    }
+
+    await loadModel(
+        "../../../resources/small.ifc-processed.json",
+        "../../../resources/small.ifc-processed-properties.json"
+    );
+
+    /*MD
+    Now, streaming works by updating the scene depending on the user's perspective
+    and getting the necessary geometries from the backend. A simple way to achieve
+    this is by updating the scene each time the user stops the camera:
+    */
+
+    components.camera.controls.addEventListener("controlend", () => {
+        loader.culler.needsUpdate = true;
+    });
+
+    /*MD
+    As you can imagine, downloading the geometries from the server each time can
+    take time, especially for heavier geometries. This is why the stream loader
+    automatically caches the files locally to get them much faster. This means that
+    the loading experience the first time might be a bit slower, but then later
+    it will be much better. You can control this using the `useCache` property
+    and clear the cache using the `clearCache()` method:
+    */
+
+    loader.useCache = true;
+    await loader.clearCache();
+
+    /*MD
+    You can also customize the loader through the `culler` property:
+    - Threshold determines how bit an object must be in the screen to stream it.
+    - maxHiddenTime determines how long an object must be lost to remove it from the scene.
+    - maxLostTime determines how long an object must be lost to remove it from memory.
+    */
+
+    loader.culler.threshold = 20;
+    loader.culler.maxHiddenTime = 1000;
+    loader.culler.maxLostTime = 40000;
+
+    /*MD
+    This is it! Now you should be able to stream your own IFC models and open them anywhere,
+    no matter how big they are! 💪 We will keep improving and making this API more powerful
+    to handle any model on any device smoothly.
+    */
+
+    // DISPOSING ALL - OK
+
+    // async function dispose() {
+    //     await loader.dispose();
+    //     await fragments.dispose();
+    // }
+    //
+    // window.addEventListener("keydown", async ({code}) => {
+    //     if(code === "KeyP") {
+    //         await dispose();
+    //     } else if(code === "KeyO") {
+    //         await loadModel(
+    //             "../../../resources/dm1_ark.ifc-processed.json",
+    //             // "../../../resources/small.ifc-processed-properties.json"
+    //         );
+    //         await loadModel(
+    //             "../../../resources/dm1_riv.ifc-processed.json",
+    //             // "../../../resources/small.ifc-processed-properties.json"
+    //         );
+    //     }
+    // })
+
+    // DISPOSING JUST ONE MODEL - OK
+
+    // async function disposeOne() {
+    //     const first = fragments.groups[0];
+    //     await loader.remove(first.uuid);
+    //     await fragments.disposeGroup(first);
+    // }
+    //
+    // window.addEventListener("keydown", async ({code}) => {
+    //     if(code === "KeyP") {
+    //         await disposeOne();
+    //     } else if(code === "KeyO") {
+    //         await loadModel(
+    //             "../../../resources/dm1_ark.ifc-processed.json",
+    //             // "../../../resources/small.ifc-processed-properties.json"
+    //         );
+    //     }
+    // })
+
+
+    // COORDINATION - OK
+
+    // for(const group of fragments.groups) {
+    //     console.log(group);
+    //     const {uuid, matrix} = group;
+    //     loader.culler.setModelTransformation(uuid, matrix);
+    // }
+
+    // BOUNDINGBOX - OK
+
+    // const bbox = components.tools.get(OBC.FragmentBoundingBox);
+    //
+    // for(const box of loader.culler.boxes.values()) {
+    //     bbox.addMesh(box.mesh);
+    // }
+    //
+    // const sphere = bbox.getSphere();
+    //
+    // window.addEventListener("keydown", () => {
+    //     components.camera.controls.fitToSphere(sphere, true);
+    // })
+
+
+    // CLIPPING PLANES - OK
+
+    // const clipper = new OBC.EdgesClipper(components);
+    // clipper.enabled = true;
+    //
+    // const salmonFill = new THREE.MeshBasicMaterial({color: 'salmon', side: 2});
+    // const redLine = new THREE.LineBasicMaterial({ color: 'red' });
+    // const redOutline = new THREE.MeshBasicMaterial({color: 'red', opacity: 0.2, side: 2, transparent: true});
+    // const style = clipper.styles.create('Blue lines', new Set(), redLine, salmonFill, redOutline);
+    //
+    // loader.onFragmentsDeleted.add((frags) => {
+    //     for(const frag of frags) {
+    //         style.meshes.delete(frag.mesh);
+    //     }
+    //     clipper.fillsNeedUpdate = true;
+    // })
+    //
+    // loader.onFragmentsLoaded.add((frags) => {
+    //     for(const frag of frags) {
+    //         style.meshes.add(frag.mesh);
+    //     }
+    //     clipper.fillsNeedUpdate = true;
+    // })
+    //
+    // window.onkeydown = () => {
+    //     clipper.create();
+    // }
+
+
+    // FRAGMENT HIDER - OK
+
+    // const classifier = new OBC.FragmentClassifier(components);
+    // for(const model of fragments.groups) {
+    //     classifier.byStorey(model);
+    //     classifier.byEntity(model);
+    // }
+    //
+    // const classifications = classifier.get();
+    //
+    // const storeys = {};
+    // const storeyNames = Object.keys(classifications.storeys);
+    // for (const name of storeyNames) {
+    //     storeys[name] = true;
+    // }
+    //
+    // const classes = {};
+    // const classNames = Object.keys(classifications.entities);
+    // for (const name of classNames) {
+    //     classes[name] = true;
+    // }
+    //
+    // const gui = new dat.GUI();
+    //
+    // const storeysGui = gui.addFolder("Storeys");
+    // for (const name in storeys) {
+    //     storeysGui.add(storeys, name).onChange(async (visible) => {
+    //         const found = await classifier.find({storeys: [name]});
+    //         loader.setVisibility(visible, found);
+    //     });
+    // }
+    //
+    // const entitiesGui = gui.addFolder("Classes");
+    // for (const name in classes) {
+    //     entitiesGui.add(classes, name).onChange(async (visible) => {
+    //         const found = await classifier.find({entities: [name]});
+    //         loader.setVisibility(visible, found);
+    //     });
+    // }
+
+    // FRAGMENT HIGHLIGHTER - OK
+
+    // const highlighter = new OBC.FragmentHighlighter(components, fragments);
+    // highlighter.setup();
+    // components.renderer.postproduction.customEffects.outlineEnabled = true;
+    // highlighter.outlinesEnabled = true;
+
+
+    // FRAGMENT PLANS - OK
+
+    // const plans = new OBC.FragmentPlans(components);
+    // const classifier = new OBC.FragmentClassifier(components);
+    //
+    // components.renderer.postproduction.customEffects.outlineEnabled = true;
+    //
+    // const whiteColor = new THREE.Color("white");
+    // const whiteMaterial = new THREE.MeshBasicMaterial({color: whiteColor});
+    // const materialManager = new OBC.MaterialManager(components);
+    // materialManager.addMaterial("white", whiteMaterial);
+    //
+    // const sectionMaterial = new THREE.LineBasicMaterial({color: 'black'});
+    // const fillMaterial = new THREE.MeshBasicMaterial({color: 'gray', side: 2});
+    // const fillOutline = new THREE.MeshBasicMaterial({color: 'black', side: 1, opacity: 0.5, transparent: true});
+    //
+    // const clipper = components.tools.get(OBC.EdgesClipper);
+    // clipper.enabled = true;
+    // clipper.styles.create("filled", new Set(), sectionMaterial, fillMaterial, fillOutline);
+    // clipper.styles.create("projected", new Set(), sectionMaterial);
+    // const styles = clipper.styles.get();
+    //
+    // for (const model of fragments.groups) {
+    //     await plans.computeAllPlanViews(model);
+    //     classifier.byEntity(model);
+    //     classifier.byStorey(model);
+    // }
+    //
+    // const found = classifier.find({entities: ["IFCWALLSTANDARDCASE", "IFCWALL"]});
+    // const walls = new Set(Object.keys(found));
+    //
+    // loader.onFragmentsLoaded.add((frags) => {
+    //     for(const frag of frags) {
+    //         if(walls.has(frag.id)) {
+    //             styles.filled.meshes.add(frag.mesh);
+    //         } else {
+    //             styles.projected.meshes.add(frag.mesh);
+    //         }
+    //         materialManager.addMeshes("white", [frag.mesh]);
+    //         if(plans.enabled) {
+    //             materialManager.set(true, ["white"]);
+    //         }
+    //         clipper.fillsNeedUpdate = true
+    //         clipper.updateEdges(true);
+    //     }
+    // })
+    //
+    // loader.onFragmentsDeleted.add((frags) => {
+    //     for(const frag of frags) {
+    //         if(walls.has(frag.id)) {
+    //             styles.filled.meshes.add(frag.mesh);
+    //         } else {
+    //             styles.projected.meshes.add(frag.mesh);
+    //         }
+    //         materialManager.removeMeshes("white", [frag.mesh]);
+    //     }
+    // })
+    //
+    // plans.updatePlansList();
+    //
+    // plans.onNavigated.add(() => {
+    //     components.renderer.postproduction.customEffects.glossEnabled = false;
+    //     materialManager.setBackgroundColor(whiteColor);
+    //     materialManager.set(true, ["white"]);
+    //     grid.visible = false;
+    // });
+    //
+    // plans.onExited.add(() => {
+    //     components.renderer.postproduction.customEffects.glossEnabled = true;
+    //     materialManager.resetBackgroundColor();
+    //     materialManager.set(false, ["white"]);
+    //     grid.visible = true;
+    // });
+    //
+    // const mainToolbar = new OBC.Toolbar(components);
+    // mainToolbar.name = "Main Toolbar";
+    // components.ui.addToolbar(mainToolbar);
+    // mainToolbar.addChild(plans.uiElement.get('main'));
+
+    // FRAGMENT CLIP STYLER
+
+    // const clipper = new OBC.EdgesClipper(components);
+    // clipper.enabled = true;
+    // const classifier = new OBC.FragmentClassifier(components);
+    // const styler = new OBC.FragmentClipStyler(components);
+    // await styler.setup();
+    //
+    // for(const model of fragments.groups) {
+    //     classifier.byEntity(model);
+    // }
+    //
+    // window.onkeydown = () => {
+    //     clipper.create();
+    // }
+    //
+    // let stylerNeedsUpdate = false;
+    // setInterval(async () => {
+    //     if(stylerNeedsUpdate) {
+    //         await styler.update();
+    //         stylerNeedsUpdate = false;
+    //     }
+    // }, 10000)
+    //
+    // loader.onFragmentsDeleted.add((frags) => {
+    //     stylerNeedsUpdate = true;
+    // })
+    //
+    // loader.onFragmentsLoaded.add((frags) => {
+    //     stylerNeedsUpdate = true;
+    // })
+    //
+    // const postproduction = components.renderer.postproduction;
+    // postproduction.customEffects.outlineEnabled = true;
+
+    // PROPERTIES PROCESSOR - OK
+
+    // const highlighter = new OBC.FragmentHighlighter(components, fragments);
+    // highlighter.setup();
+    // components.renderer.postproduction.customEffects.outlineEnabled = true;
+    // highlighter.outlinesEnabled = true;
+    //
+    // const propsProcessor = components.tools.get(OBC.IfcPropertiesProcessor);
+    // propsProcessor.uiElement.get("propertiesWindow").visible = true
+    //
+    // const highlighterEvents = highlighter.events;
+    // highlighterEvents.select.onClear.add(() => {
+    //     propsProcessor.cleanPropertiesList();
+    // });
+    //
+    // highlighterEvents.select.onHighlight.add(
+    //     (selection) => {
+    //         const fragmentID = Object.keys(selection)[0];
+    //         const expressID = [...selection[fragmentID]][0];
+    //         let model
+    //         for (const group of fragments.groups) {
+    //             for(const [_key, value] of group.keyFragments) {
+    //                 if(value === fragmentID) {
+    //                     model = group;
+    //                     break;
+    //                 }
+    //             }
+    //         }
+    //         if(model) {
+    //             propsProcessor.renderProperties(model, expressID);
+    //         }
+    //     }
+    // );
+
+    // loader.culler.renderDebugFrame = true;
+    // const debugFrame = loader.culler.get().domElement;
+    // document.body.appendChild(debugFrame);
+    // debugFrame.style.position = 'fixed';
+    // debugFrame.style.left = '0';
+    // debugFrame.style.bottom = '0';
+
+
+    // Set up stats
+
+    const stats = new Stats();
+    stats.showPanel(2);
+    document.body.append(stats.dom);
+    stats.dom.style.left = '0px';
+    const renderer = components.renderer;
+    renderer.onBeforeUpdate.add(() => stats.begin());
+    renderer.onAfterUpdate.add(() => stats.end());
+
+
+</script>

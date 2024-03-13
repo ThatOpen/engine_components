@@ -14,7 +14,7 @@ import {
 
 /**
  * Object that can efficiently load binary files that contain
- * [fragment geometry](https://github.com/ifcjs/fragment).
+ * [fragment geometry](https://github.com/ThatOpen/engine_fragment).
  */
 export class FragmentManager
   extends Component<Fragment[]>
@@ -28,7 +28,7 @@ export class FragmentManager
   /** {@link Component.enabled} */
   enabled = true;
 
-  /** All the created [fragments](https://github.com/ifcjs/fragment). */
+  /** All the created [fragments](https://github.com/ThatOpen/engine_fragment). */
   list: { [guid: string]: Fragment } = {};
 
   groups: FragmentsGroup[] = [];
@@ -78,9 +78,12 @@ export class FragmentManager
   /** {@link Component.get} */
   async dispose(disposeUI = false) {
     if (disposeUI) {
-      this.uiElement.dispose();
+      await this.uiElement.dispose();
     }
     for (const group of this.groups) {
+      for (const frag of group.items) {
+        this.components.meshes.delete(frag.mesh);
+      }
       group.dispose(true);
     }
     for (const command of this.commands) {
@@ -99,9 +102,10 @@ export class FragmentManager
 
   async disposeGroup(group: FragmentsGroup) {
     const { uuid: groupID } = group;
-    const fragmentIDs = group.items.map((fragment) => fragment.id);
+    const fragmentIDs: string[] = [];
     for (const fragment of group.items) {
-      this.removeFragmentMesh(fragment);
+      fragmentIDs.push(fragment.id);
+      this.components.meshes.delete(fragment.mesh);
       delete this.list[fragment.id];
     }
     group.dispose(true);
@@ -127,22 +131,26 @@ export class FragmentManager
   /**
    * Loads one or many fragments into the scene.
    * @param data - the bytes containing the data for the fragments to load.
+   * @param coordinate - whether this fragmentsgroup should be federated with the others.
    * @returns the list of IDs of the loaded fragments.
    */
-  async load(data: Uint8Array) {
-    const group = this._loader.import(data);
+  async load(data: Uint8Array, coordinate = true) {
+    const model = this._loader.import(data);
     const scene = this.components.scene.get();
     const ids: string[] = [];
-    scene.add(group);
-    for (const fragment of group.items) {
-      fragment.group = group;
+    scene.add(model);
+    for (const fragment of model.items) {
+      fragment.group = model;
       this.list[fragment.id] = fragment;
       ids.push(fragment.id);
-      this.components.meshes.push(fragment.mesh);
+      this.components.meshes.add(fragment.mesh);
     }
-    this.groups.push(group);
-    await this.onFragmentsLoaded.trigger(group);
-    return group;
+    if (coordinate) {
+      this.coordinate([model]);
+    }
+    this.groups.push(model);
+    await this.onFragmentsLoaded.trigger(model);
+    return model;
   }
 
   /**
@@ -186,6 +194,19 @@ export class FragmentManager
   }
 
   coordinate(models = this.groups) {
+    const isFirstModel = this.baseCoordinationModel.length === 0;
+    if (isFirstModel) {
+      const first = models.pop();
+      if (!first) {
+        return;
+      }
+      this.baseCoordinationModel = first.uuid;
+    }
+
+    if (!models.length) {
+      return;
+    }
+
     const baseModel = this.groups.find(
       (group) => group.uuid === this.baseCoordinationModel
     );
@@ -233,14 +254,6 @@ export class FragmentManager
     this.uiElement.set({ main, window });
 
     this.onFragmentsLoaded.add(() => this.updateWindow());
-  }
-
-  private removeFragmentMesh(fragment: Fragment) {
-    const meshes = this.components.meshes;
-    const mesh = fragment.mesh;
-    if (meshes.includes(mesh)) {
-      meshes.splice(meshes.indexOf(mesh), 1);
-    }
   }
 }
 

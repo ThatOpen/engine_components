@@ -27,9 +27,9 @@
 <script type="importmap">
     {
       "imports": {
-        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+        "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
-        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.160.1/examples/jsm/libs/lil-gui.module.min.js",
         "openbim-components": "../../../resources/openbim-components.js"
       }
     }
@@ -52,6 +52,8 @@
     components.camera = new OBC.SimpleCamera(components);
     components.raycaster = new OBC.SimpleRaycaster(components);
     components.init();
+
+    components.scene.setup();
 
     components.renderer.postproduction.enabled = true;
     const scene = components.scene.get();
@@ -77,7 +79,7 @@
     ---
 
     Until recently, we had been adding 3D objects to the **Scene** with the traditional `scene.add` API.
-    We will now use **[Fragment](https://github.com/IFCjs/fragment)** to work with large BIM models.🏗️
+    We will now use **[Fragment](https://github.com/ThatOpen/engine_fragment)** to work with large BIM models.🏗️
 
     Fragment are faster and easier to use Geometric API, which reduces draw calls and speeds up the processing of 3D objects.
     In this tutorial, we will load and render `.frag` files using **Fragment Manager**.
@@ -105,7 +107,6 @@
 
     const toolbar = new OBC.Toolbar(components);
     components.ui.addToolbar(toolbar);
-    toolbar.addChild(fragments.uiElement.get("main"));
 
     /*MD
 
@@ -121,7 +122,8 @@
         const file = await fetch("../../../resources/small.frag");
         const data = await file.arrayBuffer();
         const buffer = new Uint8Array(data);
-       fragments.load(buffer);
+       const group = await fragments.load(buffer);
+       console.log(group)
         // const scene = components.scene.get();
         // scene.add(model);
     }

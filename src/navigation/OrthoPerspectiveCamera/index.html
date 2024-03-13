@@ -27,8 +27,8 @@
 <script type="importmap">
     {
       "imports": {
-        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
-        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
+        "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.160.1/examples/jsm/libs/lil-gui.module.min.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
         "openbim-components": "../../../resources/openbim-components.js"
       }
@@ -100,7 +100,7 @@
 
    */
 	scene.add(cube);
-	components.meshes.push(cube);
+	components.meshes.add(cube);
 
 	/*MD
   ### 🎞️ Developing an OrthoPerspective Camera

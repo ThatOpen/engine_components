@@ -142,6 +142,20 @@ export class MaterialManager extends Component<string[]> implements Disposable {
       this._list[id].meshes.add(mesh);
     }
   }
+
+  /**
+   * Remove meshes from a certain style.
+   * @param id the identifier of the style.
+   * @param meshes the meshes to assign to the style.
+   */
+  removeMeshes(id: string, meshes: THREE.Mesh[]) {
+    if (!this._list[id]) {
+      throw new Error("This ID doesn't exists!");
+    }
+    for (const mesh of meshes) {
+      this._list[id].meshes.delete(mesh);
+    }
+  }
 }
 
 ToolComponent.libraryUUIDs.add(MaterialManager.uuid);

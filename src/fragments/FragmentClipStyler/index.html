@@ -27,9 +27,9 @@
 <script type="importmap">
     {
       "imports": {
-        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
-        "three/examples/jsm/lines/LineMaterial": "https://unpkg.com/three@0.152.2/examples/jsm/lines/LineMaterial.js",
-        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
+        "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
+        "three/examples/jsm/lines/LineMaterial": "https://unpkg.com/three@0.160.1/examples/jsm/lines/LineMaterial.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.160.1/examples/jsm/libs/lil-gui.module.min.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js"
       }
     }
@@ -129,7 +129,7 @@
     const buffer = new Uint8Array(data);
     const model = await fragments.load(buffer);
     const properties = await fetch('../../../resources/small.json');
-    model.properties = await properties.json();
+    model.setLocalProperties(await properties.json());
 
     /*MD
     Great, now we have something in our scene. Now, let's see the

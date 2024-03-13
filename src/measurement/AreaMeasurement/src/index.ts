@@ -5,7 +5,7 @@ import { Hideable, Event, Disposable, Component } from "../../../base-types";
 import {
   DimensionLabelClassName,
   SimpleDimensionLine,
-} from "../../LengthMeasurement";
+} from "../../SimpleDimensionLine";
 
 interface Area {
   points: THREE.Vector3[];
@@ -78,7 +78,7 @@ export class AreaMeasureElement
     if (this.points.length === 3) return;
     this.points.splice(index, 1);
     const { previousLine, nextLine } = this.getLinesBetweenIndex(index);
-    if (nextLine) previousLine.endPoint = nextLine.end;
+    if (nextLine) previousLine.endPoint = nextLine.endPoint;
     nextLine?.dispose();
     this._dimensionLines.splice(index, 1);
     this.onPointRemoved.trigger();

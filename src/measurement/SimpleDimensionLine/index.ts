@@ -1,14 +1,12 @@
 import * as THREE from "three";
 import { DimensionData, DimensionLabelClassName } from "./types";
-import { Components, Disposer, Simple2DMarker } from "../../../core";
+import { Components, Disposer, Simple2DMarker } from "../../core";
 
 export * from "./types";
 
 // TODO: Document + clean up this: way less parameters, clearer logic
 
 export class SimpleDimensionLine {
-  start: THREE.Vector3;
-  end: THREE.Vector3;
   label: Simple2DMarker;
   boundingBox = new THREE.Mesh();
 
@@ -16,25 +14,47 @@ export class SimpleDimensionLine {
   static units = "m";
 
   private _length: number;
+  private _visible = true;
+  private _start: THREE.Vector3;
+  private _end: THREE.Vector3;
 
   private readonly _components: Components;
   private readonly _root = new THREE.Group();
   private readonly _endpoints: Simple2DMarker[] = [];
   private readonly _line: THREE.Line;
 
+  get visible() {
+    return this._visible;
+  }
+
   set visible(value: boolean) {
+    this._visible = value;
     this.label.visible = value;
     this._endpoints[0].visible = value;
     this._endpoints[1].visible = value;
+
+    const [endpoint1, endpoint2] = this._endpoints;
+    const ep1Object = endpoint1.get();
+    const ep2Object = endpoint2.get();
+    const label = this.label.get();
+
     if (value) {
       this._components.scene.get().add(this._root);
+      this._root.add(label, ep1Object, ep2Object);
     } else {
+      label.removeFromParent();
+      ep1Object.removeFromParent();
+      ep2Object.removeFromParent();
       this._root.removeFromParent();
     }
   }
 
+  get endPoint() {
+    return this._end;
+  }
+
   set endPoint(point: THREE.Vector3) {
-    this.end = point;
+    this._end = point;
     const position = this._line.geometry.attributes
       .position as THREE.BufferAttribute;
     position.setXYZ(1, point.x, point.y, point.z);
@@ -43,8 +63,12 @@ export class SimpleDimensionLine {
     this.updateLabel();
   }
 
+  get startPoint() {
+    return this._start;
+  }
+
   set startPoint(point: THREE.Vector3) {
-    this.start = point;
+    this._start = point;
     const position = this._line.geometry.attributes
       .position as THREE.BufferAttribute;
     position.setXYZ(0, point.x, point.y, point.z);
@@ -54,17 +78,17 @@ export class SimpleDimensionLine {
   }
 
   private get _center() {
-    let dir = this.end.clone().sub(this.start);
+    let dir = this._end.clone().sub(this._start);
     const len = dir.length() * 0.5;
     dir = dir.normalize().multiplyScalar(len);
-    return this.start.clone().add(dir);
+    return this._start.clone().add(dir);
   }
 
   constructor(components: Components, data: DimensionData) {
     this._components = components;
 
-    this.start = data.start;
-    this.end = data.end;
+    this._start = data.start;
+    this._end = data.end;
     this._length = this.getLength();
     this._line = this.createLine(data);
 
@@ -95,7 +119,7 @@ export class SimpleDimensionLine {
   createBoundingBox() {
     this.boundingBox.geometry = new THREE.BoxGeometry(1, 1, this._length);
     this.boundingBox.position.copy(this._center);
-    this.boundingBox.lookAt(this.end);
+    this.boundingBox.lookAt(this._end);
     this.boundingBox.visible = false;
     this._root.add(this.boundingBox);
   }
@@ -106,7 +130,7 @@ export class SimpleDimensionLine {
 
   private newEndpointElement(element: HTMLElement) {
     const isFirst = this._endpoints.length === 0;
-    const position = isFirst ? this.start : this.end;
+    const position = isFirst ? this._start : this._end;
     const marker = new Simple2DMarker(this._components, element);
     marker.get().position.copy(position);
     this._endpoints.push(marker);
@@ -145,6 +169,6 @@ export class SimpleDimensionLine {
   }
 
   private getLength() {
-    return parseFloat(this.start.distanceTo(this.end).toFixed(2));
+    return parseFloat(this._start.distanceTo(this._end).toFixed(2));
   }
 }

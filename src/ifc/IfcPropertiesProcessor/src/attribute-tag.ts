@@ -30,11 +30,11 @@ export class AttributeTag extends PropertyTag {
     (this.model as any) = null;
   }
 
-  protected setListeners() {
+  protected async setListeners() {
     const propertiesManager = this._propertiesProcessor.propertiesManager;
     if (!propertiesManager) return;
     try {
-      const event = propertiesManager.setAttributeListener(
+      const event = await propertiesManager.setAttributeListener(
         this.model,
         this.expressID,
         this.attributeName
@@ -45,14 +45,13 @@ export class AttributeTag extends PropertyTag {
     }
   }
 
-  protected setInitialValues() {
-    const properties = this.model.properties;
-    if (!properties) {
+  protected async setInitialValues() {
+    if (!this.model.hasProperties) {
       this.label = `Model ${this.model.ifcMetadata.name} has no properties`;
       this.value = "NULL";
       return;
     }
-    const entity = properties[this.expressID];
+    const entity = await this.model.getProperties(this.expressID);
     if (!entity) {
       this.label = `ExpressID ${this.expressID} not found`;
       this.value = "NULL";

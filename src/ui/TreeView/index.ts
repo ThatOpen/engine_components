@@ -7,7 +7,7 @@ export class TreeView extends SimpleUIComponent<HTMLDivElement> {
 
   readonly onExpand = new Event();
   readonly onCollapse = new Event();
-  readonly onClick = new Event();
+  readonly onClick = new Event<PointerEvent>();
 
   set description(value: string | null) {
     const element = this.innerElements.description;
@@ -92,7 +92,7 @@ export class TreeView extends SimpleUIComponent<HTMLDivElement> {
 
     this.domElement.onclick = async (e) => {
       e.stopImmediatePropagation();
-      await this.onClick.trigger(e);
+      await this.onClick.trigger(e as PointerEvent);
     };
 
     this.innerElements = {

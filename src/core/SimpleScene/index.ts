@@ -27,6 +27,9 @@ export class SimpleScene
   /** {@link Component.enabled} */
   enabled = true;
 
+  /** {@link Configurable.isSetup} */
+  isSetup = false;
+
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<undefined>();
 
@@ -60,12 +63,12 @@ export class SimpleScene
   config: Required<SimpleSceneConfig> = {
     directionalLight: {
       color: new THREE.Color("white"),
-      intensity: 0.6,
+      intensity: 1.5,
       position: new THREE.Vector3(5, 10, 3),
     },
     ambientLight: {
       color: new THREE.Color("white"),
-      intensity: 0.5,
+      intensity: 1,
     },
   };
   readonly onSetup = new Event<SimpleScene>();
@@ -83,6 +86,7 @@ export class SimpleScene
       this.config.ambientLight.intensity
     );
     this._scene.add(directionalLight, ambientLight);
+    this.isSetup = true;
     this.onSetup.trigger(this);
   }
 }

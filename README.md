@@ -3,7 +3,7 @@
   |
   <a href="https://docs.thatopen.com/intro">documentation</a>
   |
-  <a href="https://ifcjs.github.io/components/src/fragments/FragmentIfcLoader/index.html">demo</a>
+  <a href="https://thatopen.github.io/engine_components/src/fragments/FragmentIfcLoader/index.html">demo</a>
   |
   <a href="https://people.thatopen.com/">community</a>
   |
@@ -12,17 +12,17 @@
 
 ![cover](resources/cover.png)
 
-<h1>Open BIM Components <img src="https://ifcjs.github.io/components/resources/favicon.ico" width="32"></h1>
+<h1>Open BIM Components <img src="https://thatopen.github.io/engine_components/resources/favicon.ico" width="32"/></h1>
 
 [![NPM Package][npm]][npm-url]
 [![NPM Package][npm-downloads]][npm-url]
-[![Tests](https://github.com/IFCjs/components/actions/workflows/tests.yml/badge.svg)](https://github.com/IFCjs/components/actions/workflows/tests.yaml)
+[![Tests](https://github.com/ThatOpen/engine_components/actions/workflows/tests.yml/badge.svg)](https://github.com/ThatOpen/engine_components/actions/workflows/tests.yaml)
 
 This library is a collection of BIM tools based on [Three.js](https://github.com/mrdoob/three.js/) and other libraries. It includes pre-made features to easily build browser-based 3D BIM applications, such as postproduction, dimensions, floorplan navigation, DXF export and much more. 
 
 ### Usage
 
-You need to be familiar with [Three.js API](https://github.com/mrdoob/three.js/) to be able to use this library effectively. In the following example, we will create a cube in a 3D scene that can be navigated with the mouse or touch events. You can see the full example [here](https://github.com/IFCjs/components/blob/main/src/core/SimpleScene/index.html) and the deployed app [here](https://ifcjs.github.io/components/src/core/SimpleScene/index.html).
+You need to be familiar with [Three.js API](https://github.com/mrdoob/three.js/) to be able to use this library effectively. In the following example, we will create a cube in a 3D scene that can be navigated with the mouse or touch events. You can see the full example [here](https://github.com/ThatOpen/engine_components/blob/main/src/core/SimpleScene/index.html) and the deployed app [here](https://thatopen.github.io/engine_components/src/core/SimpleScene/index.html).
 
 ```js
 import * as THREE from "three";
@@ -45,6 +45,8 @@ components.init();
 
 // Add some elements to the scene
 
+components.scene.setup();
+
 const scene = components.scene.get();
 
 const geometry = new THREE.BoxGeometry(3, 3, 3);
@@ -54,15 +56,6 @@ cube.position.set(0, 1.5, 0);
 scene.add(cube);
 
 components.meshes.push(cube);
-
-const directionalLight = new THREE.DirectionalLight();
-directionalLight.position.set(5, 10, 3);
-directionalLight.intensity = 0.5;
-scene.add(directionalLight);
-
-const ambientLight = new THREE.AmbientLight();
-ambientLight.intensity = 0.5;
-scene.add(ambientLight);
 ```
 
 

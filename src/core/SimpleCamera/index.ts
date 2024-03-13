@@ -111,7 +111,7 @@ export class SimpleCamera
     CameraControls.install({ THREE: SimpleCamera.getSubsetOfThree() });
     const dom = this.components.renderer.get().domElement;
     const controls = new CameraControls(this._perspectiveCamera, dom);
-    controls.dampingFactor = 0.2;
+    controls.smoothTime = 0.2;
     controls.dollyToCursor = true;
     controls.infinityDolly = true;
     controls.setTarget(0, 0, 0);

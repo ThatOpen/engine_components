@@ -26,9 +26,9 @@
 <script type="importmap">
     {
       "imports": {
-        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+        "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
         "three/examples/jsm/lines/LineMaterial": "https://unpkg.com/three@0.135.0/examples/jsm/lines/LineMaterial.js",
-        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.160.1/examples/jsm/libs/lil-gui.module.min.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
         "openbim-components": "../../../resources/openbim-components.js"
       }
@@ -113,12 +113,14 @@
 	const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
 	cube.position.set(-2, 1.5, 0);
 	scene.add(cube);
-	components.meshes.push(cube);
+	components.meshes.add(cube);
 
 	const cube2 = new THREE.Mesh(cubeGeometry, cubeMaterial);
 	cube2.position.set(2, 1.5, 0);
 	scene.add(cube2);
-	components.meshes.push(cube2);
+	components.meshes.add(cube2);
+
+
 
 	/*MD
 
@@ -216,6 +218,10 @@
 		if (event.code === 'Delete' || event.code === 'Backspace') {
 			clipper.delete();
 		}
+
+      if (event.code === 'KeyP') {
+        console.log(clipper);
+      }
 	};
 
 	/*MD

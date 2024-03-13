@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { FragmentsGroup } from "bim-fragment";
-import { InstancedMesh } from "three";
 import { Component, Disposable, Event } from "../../base-types";
 import { Components } from "../../core/Components";
 import { Disposer } from "../../core/Disposer";
@@ -119,25 +118,31 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
     }
   }
 
-  addMesh(mesh: InstancedMesh) {
+  addMesh(mesh: THREE.InstancedMesh | THREE.Mesh) {
     if (!mesh.geometry.index) {
       return;
     }
 
     const bbox = FragmentBoundingBox.getFragmentBounds(mesh);
 
-    mesh.updateMatrix();
-    const meshTransform = mesh.matrix;
+    mesh.updateMatrixWorld();
+    const meshTransform = mesh.matrixWorld;
 
     const instanceTransform = new THREE.Matrix4();
-    for (let i = 0; i < mesh.count; i++) {
-      mesh.getMatrixAt(i, instanceTransform);
+    const isInstanced = mesh instanceof THREE.InstancedMesh;
+    const count = isInstanced ? mesh.count : 1;
+
+    for (let i = 0; i < count; i++) {
       const min = bbox.min.clone();
       const max = bbox.max.clone();
 
-      min.applyMatrix4(instanceTransform);
+      if (isInstanced) {
+        mesh.getMatrixAt(i, instanceTransform);
+        min.applyMatrix4(instanceTransform);
+        max.applyMatrix4(instanceTransform);
+      }
+
       min.applyMatrix4(meshTransform);
-      max.applyMatrix4(instanceTransform);
       max.applyMatrix4(meshTransform);
 
       if (min.x < this._absoluteMin.x) this._absoluteMin.x = min.x;
@@ -158,7 +163,7 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
     }
   }
 
-  private static getFragmentBounds(mesh: InstancedMesh) {
+  private static getFragmentBounds(mesh: THREE.InstancedMesh | THREE.Mesh) {
     const position = mesh.geometry.attributes.position;
 
     const maxNum = Number.MAX_VALUE;
@@ -172,7 +177,15 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
 
     const indices = Array.from(mesh.geometry.index.array);
 
-    for (const index of indices) {
+    for (let i = 0; i < indices.length; i++) {
+      if (i % 3 === 0) {
+        if (indices[i] === 0 && indices[i + 1] === 0 && indices[i + 2] === 0) {
+          i += 2;
+          continue;
+        }
+      }
+
+      const index = indices[i];
       const x = position.getX(index);
       const y = position.getY(index);
       const z = position.getZ(index);

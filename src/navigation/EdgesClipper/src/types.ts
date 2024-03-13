@@ -12,7 +12,7 @@ export interface ClipStyle {
   name: string;
 
   /** The meshes where the style will be applied. */
-  meshes: Set<THREE.Mesh>;
+  meshes: Set<THREE.Mesh | THREE.InstancedMesh>;
 
   /**
    * The material that defines the appearance of the lines of the

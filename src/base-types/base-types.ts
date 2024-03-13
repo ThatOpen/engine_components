@@ -173,6 +173,9 @@ export interface Createable {
  * Whether this component supports to be configured.
  */
 export interface Configurable<T extends Record<string, any>> {
+  /** Wether this components has been already configured. */
+  isSetup: boolean;
+
   /** Use the provided configuration to setup the tool. */
   setup: (config?: Partial<T>) => Promise<void>;
 
@@ -199,5 +202,5 @@ export interface UI {
  * made of multiple fragments, there might be repeated IDs across entries.
  */
 export interface FragmentIdMap {
-  [fragmentID: string]: Set<string>;
+  [fragmentID: string]: Set<number>;
 }

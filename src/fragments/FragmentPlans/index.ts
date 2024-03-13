@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { FragmentsGroup } from "bim-fragment";
+import * as FRAGS from "bim-fragment";
 import * as WEBIFC from "web-ifc";
 import { Component, Disposable, UI, Event, UIElement } from "../../base-types";
 import { PlanView } from "./src/types";
@@ -110,27 +110,26 @@ export class FragmentPlans
   // TODO: Compute georreference matrix when generating fragmentsgroup
   // so that we can correctly add floors in georreferenced models
   // where the IfcSite / IfcBuilding have location information
-  async computeAllPlanViews(model: FragmentsGroup) {
-    if (!model.properties) {
+  async computeAllPlanViews(model: FRAGS.FragmentsGroup) {
+    if (!model.hasProperties) {
       throw new Error("Properties are needed to compute plan views!");
     }
-    const { properties } = model;
 
-    const floorsProps = IfcPropertiesUtils.getAllItemsOfType(
-      properties,
+    const floorsProps = await model.getAllPropertiesOfType(
       WEBIFC.IFCBUILDINGSTOREY
     );
 
-    const coordHeight = model.coordinationMatrix.elements[13];
-    const units = IfcPropertiesUtils.getUnits(properties);
+    if (!floorsProps) {
+      throw new Error("Floorplans not found!");
+    }
 
-    for (const floor of floorsProps) {
+    const coordHeight = model.coordinationMatrix.elements[13];
+    const units = await IfcPropertiesUtils.getUnits(model);
+
+    for (const floor of Object.values(floorsProps)) {
       const floorHeight = { value: 0 };
-      this.getAbsoluteFloorHeight(
-        floor.ObjectPlacement.value,
-        model.properties,
-        floorHeight
-      );
+
+      this.getAbsoluteFloorHeight(floor.ObjectPlacement, floorHeight);
 
       const height = floorHeight.value * units + coordHeight;
       await this.create({
@@ -460,21 +459,11 @@ export class FragmentPlans
     });
   }
 
-  private getAbsoluteFloorHeight(
-    placementID: number,
-    properties: any,
-    height: { value: number }
-  ) {
-    const placementRef = properties[placementID];
-    if (!placementRef) return;
-    const placement = properties[placementRef.RelativePlacement.value];
-    const location = properties[placement.Location.value];
-    const currentHeight = location.Coordinates[2].value;
-    height.value += currentHeight;
-
-    const parentRef = placementRef.PlacementRelTo;
-    if (parentRef && parentRef.value !== null) {
-      this.getAbsoluteFloorHeight(parentRef.value, properties, height);
+  private getAbsoluteFloorHeight(placement: any, height: { value: number }) {
+    const coords = placement.RelativePlacement.Location.Coordinates;
+    height.value += coords[2].value;
+    if (placement.PlacementRelTo) {
+      this.getAbsoluteFloorHeight(placement.PlacementRelTo, height);
     }
   }
 }

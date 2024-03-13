@@ -17,6 +17,9 @@ export class RoadNavigator extends Component<any> implements UI {
 
   private _selected: FragmentsGroup | null = null;
 
+  private _anchor = new THREE.Vector3();
+  private _anchorID = "thatopen-roadnavigator-anchor";
+
   private _anchors = {
     horizontal: new THREE.Vector2(),
     horizontalIndex: 0,
@@ -197,14 +200,32 @@ export class RoadNavigator extends Component<any> implements UI {
     this._anchors.real.copy(result.point);
     const { horizontal, real, horizontalIndex } = this._anchors;
 
-    const position = this._alignments.real.position;
-
     const geom = this._alignments.real.geometry;
     const yPosition3D = geom.attributes.position.getY(horizontalIndex);
 
-    position.x = real.x - horizontal.x;
-    position.z = real.z + horizontal.y;
-    position.y = real.y - yPosition3D;
+    this._anchor.x = real.x - horizontal.x;
+    this._anchor.z = real.z + horizontal.y;
+    this._anchor.y = real.y - yPosition3D;
+
+    this.updateAnchor();
+  }
+
+  saveAnchor() {
+    const { x, y, z } = this._anchor;
+    localStorage.setItem(this._anchorID, `${x}_${y}_${z}`);
+  }
+
+  loadAnchor() {
+    const serialized = localStorage.getItem(this._anchorID);
+    if (!serialized) return;
+    const [x, y, z] = serialized.split("_").map((item) => parseFloat(item));
+    this._anchor.set(x, y, z);
+    this.updateAnchor();
+  }
+
+  private updateAnchor() {
+    const position = this._alignments.real.position;
+    position.copy(this._anchor);
   }
 
   private getAlignmentGeometry(

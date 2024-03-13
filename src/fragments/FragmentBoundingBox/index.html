@@ -27,9 +27,9 @@
 <script type="importmap">
     {
       "imports": {
-        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
-        "three/examples/jsm/lines/LineMaterial": "https://unpkg.com/three@0.152.2/examples/jsm/lines/LineMaterial.js",
-        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
+        "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
+        "three/examples/jsm/lines/LineMaterial": "https://unpkg.com/three@0.160.1/examples/jsm/lines/LineMaterial.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.160.1/examples/jsm/libs/lil-gui.module.min.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js"
       }
     }
@@ -56,6 +56,8 @@
 
 	components.init();
 
+    components.scene.setup();
+
     renderer.postproduction.enabled = true;
 
 	const scene = components.scene.get();
@@ -77,7 +79,7 @@
     ### 🧳 Gathering BIM Data
     ---
 
-    Fragment help you to render your BIM files faster than ever.🚅 [**Fragment**](https://github.com/ifcjs/fragment) is a group of `FragmentMeshes`
+    Fragment help you to render your BIM files faster than ever.🚅 [**Fragment**](https://github.com/ThatOpen/engine_fragment) is a group of `FragmentMeshes`
     which are clubbed together to visualize the BIM model.
 
     When working with **large** BIM models, you may need to quit the navigation to see the whole model.📌

@@ -26,7 +26,7 @@ export class Components implements Disposable {
    * All the loaded [meshes](https://threejs.org/docs/#api/en/objects/Mesh).
    * This includes fragments, 3D scans, etc.
    */
-  readonly meshes: THREE.Mesh[] = [];
+  readonly meshes = new Set<THREE.Mesh>();
 
   /**
    * Event that fires when this instance has been fully initialized and is
@@ -38,6 +38,8 @@ export class Components implements Disposable {
   readonly onDisposed = new Event<string>();
 
   enabled = false;
+
+  static readonly release = "1.3.0";
 
   /** Whether UI components should be created. */
   uiEnabled = true;
@@ -148,7 +150,7 @@ export class Components implements Disposable {
     this._clock.start();
     if (this.uiEnabled) {
       this._ui = new UIManager(this);
-      this.ui.init();
+      await this.ui.init();
     }
     await this.update();
     await this.onInitialized.trigger(this);
@@ -173,24 +175,24 @@ export class Components implements Disposable {
     const disposer = this.tools.get(Disposer);
     this.enabled = false;
     await this.tools.dispose();
-    await this.ui.dispose();
+    await this._ui?.dispose();
     this.onInitialized.reset();
     this._clock.stop();
     for (const mesh of this.meshes) {
       disposer.destroy(mesh);
     }
-    this.meshes.length = 0;
-    if (this.renderer.isDisposeable()) {
-      await this.renderer.dispose();
+    this.meshes.clear();
+    if (this._renderer?.isDisposeable()) {
+      await this._renderer.dispose();
     }
-    if (this.scene.isDisposeable()) {
-      await this.scene.dispose();
+    if (this._scene?.isDisposeable()) {
+      await this._scene.dispose();
     }
-    if (this.camera.isDisposeable()) {
-      await this.camera.dispose();
+    if (this._camera?.isDisposeable()) {
+      await this._camera.dispose();
     }
-    if (this.raycaster.isDisposeable()) {
-      await this.raycaster.dispose();
+    if (this._raycaster?.isDisposeable()) {
+      await this._raycaster.dispose();
     }
     await this.onDisposed.trigger();
     this.onDisposed.reset();

@@ -1,41 +1,10 @@
 import { Fragment } from "bim-fragment";
 import * as THREE from "three";
 
-export function numberOfDigits(x: number) {
-  return Math.max(Math.floor(Math.log10(Math.abs(x))), 0) + 1;
-}
-
-export function toCompositeID(id: number, count: number) {
-  const factor = 0.1 ** numberOfDigits(count);
-  id += count * factor;
-  let idString = id.toString();
-  // add missing zeros
-  if (count % 10 === 0) {
-    for (let i = 0; i < factor; i++) {
-      idString += "0";
-    }
-  }
-  return idString;
-}
-
-// Temporal id generator until the IFC id algorithm is implemented.
-export function tooeenRandomId() {
-  const characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let id = "";
-
-  for (let i = 0; i < 10; i++) {
-    const randomIndex = Math.floor(Math.random() * characters.length);
-    id += characters.charAt(randomIndex);
-  }
-
-  return id;
-}
-
 export function generateExpressIDFragmentIDMap(fragmentsList: Fragment[]) {
-  const map: { [fragmentID: string]: Set<string> } = {};
+  const map: { [fragmentID: string]: Set<number> } = {};
   fragmentsList.forEach((fragment) => {
-    map[fragment.id] = new Set(fragment.items);
+    map[fragment.id] = new Set(fragment.ids);
   });
   return map;
 }
@@ -181,4 +150,29 @@ export function bufferGeometryToIndexed(geometry: THREE.BufferGeometry) {
   );
   geometry.setIndex(new THREE.BufferAttribute(outIndices, 1));
   geometry.getAttribute("position").needsUpdate = true;
+}
+
+export function isPointInFrontOfPlane(
+  point: number[],
+  planePoint: number[],
+  planeNormal: number[]
+) {
+  // Calculate the vector from the plane to the point
+  const vectorToPlane = [
+    point[0] - planePoint[0],
+    point[1] - planePoint[1],
+    point[2] - planePoint[2],
+  ];
+
+  // Calculate the dot product between the normal vector and the vector to the point
+  const dotProduct =
+    planeNormal[0] * vectorToPlane[0] +
+    planeNormal[1] * vectorToPlane[1] +
+    planeNormal[2] * vectorToPlane[2];
+
+  return dotProduct > 0;
+}
+
+export function isTransparent(material: THREE.Material) {
+  return material.transparent && material.opacity < 1;
 }

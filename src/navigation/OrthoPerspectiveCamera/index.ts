@@ -194,7 +194,10 @@ export class OrthoPerspectiveCamera extends SimpleCamera implements UI {
    * evaluate {@link Components.meshes}.
    * @param offset the distance to the fit object
    */
-  async fit(meshes: THREE.Mesh[] = this.components.meshes, offset = 1.5) {
+  async fit(
+    meshes: Iterable<THREE.Mesh> = this.components.meshes,
+    offset = 1.5
+  ) {
     if (!this.enabled) return;
 
     const maxNum = Number.MAX_VALUE;

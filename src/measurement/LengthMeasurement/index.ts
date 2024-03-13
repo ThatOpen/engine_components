@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { SimpleDimensionLine } from "./src";
+import { SimpleDimensionLine } from "../SimpleDimensionLine";
 import {
   Component,
   Createable,
@@ -13,8 +13,6 @@ import {
 import { Components, SimpleRaycaster, ToolComponent } from "../../core";
 import { Button } from "../../ui";
 import { VertexPicker } from "../../utils";
-
-export * from "./src";
 
 /**
  * A basic dimension tool to measure distances between 2 points in 3D and
@@ -107,11 +105,8 @@ export class LengthMeasurement
   /** {@link Hideable.visible} */
   set visible(value: boolean) {
     this._visible = value;
-    if (!this._visible) {
-      this.enabled = false;
-    }
     for (const dimension of this._measurements) {
-      dimension.visible = this._visible;
+      dimension.visible = value;
     }
   }
 
@@ -198,6 +193,7 @@ export class LengthMeasurement
     }
   }
 
+  // TODO: The data arg needs to be better defined
   /**
    * Starts or finishes drawing a new dimension line.
    *
@@ -214,6 +210,14 @@ export class LengthMeasurement
     }
     await this.endCreation();
   };
+
+  createOnPoints(p1: THREE.Vector3, p2: THREE.Vector3) {
+    const dimension = this.drawDimension();
+    dimension.startPoint = p1;
+    dimension.endPoint = p2;
+    dimension.createBoundingBox();
+    this._measurements.push(dimension);
+  }
 
   /** Deletes the dimension that the user is hovering over with the mouse or touch event. */
   async delete() {

@@ -26,8 +26,8 @@
 <script type="importmap">
     {
       "imports": {
-        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
-        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
+        "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.160.1/examples/jsm/libs/lil-gui.module.min.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
         "openbim-components": "../../../resources/openbim-components.js"
       }
@@ -115,15 +115,17 @@
     const meshes = [];
 
     const culler = new OBC.ScreenCuller(components);
+    culler.setup();
+
     for (const fragment of model.items) {
         meshes.push(fragment.mesh);
-        culler.add(fragment.mesh);
+        culler.elements.add(fragment.mesh);
     }
-    culler.needsUpdate = true;
+    culler.elements.needsUpdate = true;
 
     const controls = components.camera.controls;
     controls.addEventListener('controlend', () => {
-        culler.needsUpdate = true;
+        culler.elements.needsUpdate = true;
     });
 
     /*MD

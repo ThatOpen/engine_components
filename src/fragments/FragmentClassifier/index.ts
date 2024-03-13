@@ -1,7 +1,6 @@
 import { FragmentsGroup } from "bim-fragment";
 import { Disposable, FragmentIdMap, Component, Event } from "../../base-types";
 import { IfcCategoryMap, IfcPropertiesUtils } from "../../ifc";
-import { toCompositeID } from "../../utils";
 import { Components, ToolComponent } from "../../core";
 import { FragmentManager } from "../FragmentManager";
 
@@ -9,7 +8,7 @@ import { FragmentManager } from "../FragmentManager";
 
 export interface Classification {
   [system: string]: {
-    [className: string]: { [fragmentID: string]: Set<string> };
+    [className: string]: FragmentIdMap;
   };
 }
 
@@ -91,14 +90,18 @@ export class FragmentClassifier
       const fragList = fragments.list;
       for (const id in fragList) {
         const fragment = fragList[id];
-        const items = fragment.items;
-        const hidden = Object.keys(fragment.hiddenInstances);
-        result[id] = new Set(...items, ...hidden);
+        result[id] = new Set(fragment.ids);
       }
       return result;
     }
-    const size = Object.keys(filter).length;
-    const models: { [fragmentGuid: string]: { [id: string]: number } } = {};
+
+    // There must be as many matches as conditions.
+    // E.g.: if the filter is "floor 1 and category wall",
+    // this gets the items with 2 matches (1 match per condition)
+    const filterCount = Object.keys(filter).length;
+
+    const models: { [fragmentGuid: string]: Map<number, number> } = {};
+
     for (const name in filter) {
       const values = filter[name];
       if (!this._groupSystems[name]) {
@@ -110,41 +113,37 @@ export class FragmentClassifier
         if (found) {
           for (const guid in found) {
             if (!models[guid]) {
-              models[guid] = {};
+              models[guid] = new Map();
             }
             for (const id of found[guid]) {
-              if (!models[guid][id]) {
-                models[guid][id] = 1;
+              const matchCount = models[guid].get(id);
+              if (matchCount === undefined) {
+                models[guid].set(id, 1);
               } else {
-                models[guid][id]++;
+                models[guid].set(id, matchCount + 1);
               }
             }
           }
         }
       }
     }
+
     const result: FragmentIdMap = {};
     for (const guid in models) {
       const model = models[guid];
-      for (const id in model) {
-        const numberOfMatches = model[id];
-        if (numberOfMatches === size) {
+      for (const [id, numberOfMatches] of model) {
+        if (numberOfMatches === undefined) {
+          throw new Error("Malformed fragments map!");
+        }
+        if (numberOfMatches === filterCount) {
           if (!result[guid]) {
             result[guid] = new Set();
           }
           result[guid].add(id);
-          const fragment = fragments.list[guid];
-          const composites = fragment.composites[id];
-          if (composites) {
-            const idNum = parseInt(id, 10);
-            for (let i = 1; i < composites; i++) {
-              const compositeID = toCompositeID(idNum, i);
-              result[guid].add(compositeID);
-            }
-          }
         }
       }
     }
+
     return result;
   }
 
@@ -157,33 +156,30 @@ export class FragmentClassifier
       modelsClassification[modelID] = {};
     }
     const currentModel = modelsClassification[modelID];
-    for (const expressID in group.data) {
-      const keys = group.data[expressID][0];
+    for (const [expressID, data] of group.data) {
+      const keys = data[0];
       for (const key of keys) {
-        const fragID = group.keyFragments[key];
+        const fragID = group.keyFragments.get(key);
+        if (!fragID) continue;
         if (!currentModel[fragID]) {
-          currentModel[fragID] = new Set<string>();
+          currentModel[fragID] = new Set<number>();
         }
         currentModel[fragID].add(expressID);
       }
     }
   }
 
-  byPredefinedType(group: FragmentsGroup) {
-    if (!group.properties) {
-      throw new Error("To group by predefined type, properties are needed");
-    }
-
+  async byPredefinedType(group: FragmentsGroup) {
     if (!this._groupSystems.predefinedTypes) {
       this._groupSystems.predefinedTypes = {};
     }
 
     const currentTypes = this._groupSystems.predefinedTypes;
 
-    for (const expressID in group.data) {
-      const entity = group.properties[parseInt(expressID, 10)] as {
-        [attribute: string]: any;
-      };
+    const ids = group.getAllPropertiesIDs();
+    for (const id of ids) {
+      const entity = await group.getProperties(id);
+
       if (!entity) continue;
 
       const predefinedType = String(entity.PredefinedType?.value).toUpperCase();
@@ -193,12 +189,15 @@ export class FragmentClassifier
       }
       const currentType = currentTypes[predefinedType];
 
-      for (const expressID in group.data) {
-        const keys = group.data[expressID][0];
+      for (const [_expressID, data] of group.data) {
+        const keys = data[0];
         for (const key of keys) {
-          const fragmentID = group.keyFragments[key];
+          const fragmentID = group.keyFragments.get(key);
+          if (!fragmentID) {
+            throw new Error("Fragment ID not found!");
+          }
           if (!currentType[fragmentID]) {
-            currentType[fragmentID] = new Set<string>();
+            currentType[fragmentID] = new Set<number>();
           }
           const currentFragment = currentType[fragmentID];
           currentFragment.add(entity.expressID);
@@ -212,8 +211,8 @@ export class FragmentClassifier
       this._groupSystems.entities = {};
     }
 
-    for (const expressID in group.data) {
-      const rels = group.data[expressID][1];
+    for (const [expressID, data] of group.data) {
+      const rels = data[1];
       const type = rels[1];
       const entity = IfcCategoryMap[type];
       this.saveItem(group, "entities", entity, expressID);
@@ -221,31 +220,22 @@ export class FragmentClassifier
   }
 
   byStorey(group: FragmentsGroup) {
-    if (!group.properties) {
-      throw new Error("To group by storey, properties are needed");
-    }
-
-    for (const expressID in group.data) {
-      const rels = group.data[expressID][1];
+    for (const [expressID, data] of group.data) {
+      const rels = data[1];
       const storeyID = rels[0];
-      const storey = group.properties[storeyID];
-      if (storey === undefined) continue;
-      const storeyName = group.properties[storeyID].Name.value;
+      const storeyName = storeyID.toString();
       this.saveItem(group, "storeys", storeyName, expressID);
     }
   }
 
-  byIfcRel(group: FragmentsGroup, ifcRel: number, systemName: string) {
-    const properties = group.properties;
-    if (!properties)
-      throw new Error("To group by IFC Rel, properties are needed");
+  async byIfcRel(group: FragmentsGroup, ifcRel: number, systemName: string) {
     if (!IfcPropertiesUtils.isRel(ifcRel)) return;
-    IfcPropertiesUtils.getRelationMap(
-      properties,
+    await IfcPropertiesUtils.getRelationMap(
+      group,
       ifcRel,
-      (relatingID, relatedIDs) => {
-        const { name: relatingName } = IfcPropertiesUtils.getEntityName(
-          properties,
+      async (relatingID, relatedIDs) => {
+        const { name: relatingName } = await IfcPropertiesUtils.getEntityName(
+          group,
           relatingID
         );
         for (const expressID of relatedIDs) {
@@ -253,7 +243,7 @@ export class FragmentClassifier
             group,
             systemName,
             relatingName ?? "NO REL NAME",
-            String(expressID)
+            expressID
           );
         }
       }
@@ -264,22 +254,22 @@ export class FragmentClassifier
     group: FragmentsGroup,
     systemName: string,
     className: string,
-    expressID: string
+    expressID: number
   ) {
     if (!this._groupSystems[systemName]) {
       this._groupSystems[systemName] = {};
     }
-    const keys = group.data[expressID as any];
+    const keys = group.data.get(expressID);
     if (!keys) return;
     for (const key of keys[0]) {
-      const fragmentID = group.keyFragments[key];
+      const fragmentID = group.keyFragments.get(key);
       if (fragmentID) {
         const system = this._groupSystems[systemName];
         if (!system[className]) {
           system[className] = {};
         }
         if (!system[className][fragmentID]) {
-          system[className][fragmentID] = new Set<string>();
+          system[className][fragmentID] = new Set<number>();
         }
         system[className][fragmentID].add(expressID);
       }

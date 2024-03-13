@@ -10,16 +10,17 @@
     <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
     <title>Tools Component</title>
     <style>
-      body {
-        margin: 0;
-        padding: 0;
-      }
-      .full-screen {
-        width: 100vw;
-        height: 100vh;
-        position: relative;
-        overflow: hidden;
-      }
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .full-screen {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body>
@@ -27,10 +28,10 @@
 <script type="importmap">
     {
       "imports": {
-        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
-        "web-ifc": "https://unpkg.com/web-ifc@0.0.46/web-ifc-api.js",
+        "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
+        "web-ifc": "https://unpkg.com/web-ifc@0.0.50/web-ifc-api.js",
         "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
-        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.152.2/examples/jsm/libs/lil-gui.module.min.js",
+        "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.160.1/examples/jsm/libs/lil-gui.module.min.js",
         "openbim-components": "../../../resources/openbim-components.js",
          "client-zip": "https://unpkg.com/client-zip@2.3.0/index.js"
       }
@@ -104,7 +105,7 @@
     Don't worry, we'll also do this programmatically in a moment.
     */
 
-    const mainToolbar = new OBC.Toolbar(components, { name: 'Main Toolbar', position: 'bottom' });
+    const mainToolbar = new OBC.Toolbar(components, {name: 'Main Toolbar', position: 'bottom'});
     components.ui.addToolbar(mainToolbar);
     const ifcButton = fragmentIfcLoader.uiElement.get("main");
     mainToolbar.addChild(ifcButton);
@@ -121,13 +122,19 @@
     - Download them and serve them statically.
     - Get them from a remote server.
 
-    The easiest way is getting them from unpkg, so let's do that!
+    The easiest way is getting them from unpkg, and the cool thing is that 
+    you don't need to do it manually! It can be done directly by the tool 
+    just by writing the following:
     */
 
+    await fragmentIfcLoader.setup()
+
+    /* If you want to the path to unpkg manually, then you can skip the line 
+    above and set them manually as below:
     fragmentIfcLoader.settings.wasm = {
-        path: "https://unpkg.com/web-ifc@0.0.46/",
+        path: "https://unpkg.com/web-ifc@0.0.50/",
         absolute: true
-    }
+    } */
 
     /*MD
     Awesome! Optionally, we can exclude categories that we don't want
@@ -140,7 +147,7 @@
         WEBIFC.IFCREINFORCINGELEMENT,
     ];
 
-    for(const cat of excludedCats) {
+    for (const cat of excludedCats) {
         fragmentIfcLoader.settings.excludedCategories.add(cat);
     }
 
@@ -199,7 +206,10 @@
 
         const files = [];
         files.push(fragmentFile);
-        files.push(new File([JSON.stringify(group.properties)], 'small.json'));
+        const properties = group.getLocalProperties();
+        if (properties) {
+            files.push(new File([JSON.stringify(properties)], 'small.json'));
+        }
         const result = await downloadZip(files).blob();
         result.name = 'example';
         download(result);
@@ -271,25 +281,25 @@
 
         console.log(model);
 
-    // let sorted = [];
-    // for(const frag of model.fragments) {
-    // 	const size = frag.mesh.count;
-    // 	sorted.push({size, frag});
-    // }
-    //
-    // sorted.sort((a, b) => {
-    // 	return a.size > b.size ? 1 : -1;
-    // });
-    // let value = 0;
-    // let step = 1 / sorted.length;
-    //
-    // for(const { frag } of sorted) {
-    // 	console.log(frag.mesh.material);
-    // 	const mat = frag.mesh.material[0];
-    // 	frag.mesh.instanceColor = null;
-    // 	mat.color.setRGB(value, value, value, "srgb");
-    // 	value += step;
-    // }
+        // let sorted = [];
+        // for(const frag of model.fragments) {
+        // 	const size = frag.mesh.count;
+        // 	sorted.push({size, frag});
+        // }
+        //
+        // sorted.sort((a, b) => {
+        // 	return a.size > b.size ? 1 : -1;
+        // });
+        // let value = 0;
+        // let step = 1 / sorted.length;
+        //
+        // for(const { frag } of sorted) {
+        // 	console.log(frag.mesh.material);
+        // 	const mat = frag.mesh.material[0];
+        // 	frag.mesh.instanceColor = null;
+        // 	mat.color.setRGB(value, value, value, "srgb");
+        // 	value += step;
+        // }
     });
 
 
