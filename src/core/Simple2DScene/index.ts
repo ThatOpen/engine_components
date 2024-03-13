@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import CameraControls from "camera-controls";
 import {
   Component,
   Updateable,
@@ -49,7 +49,7 @@ export class Simple2DScene
   }>();
 
   /** The camera controls that move around in the scene. */
-  controls: OrbitControls;
+  readonly controls: CameraControls;
 
   /** The camera that renders the scene. */
   readonly camera: THREE.OrthographicCamera;
@@ -135,11 +135,11 @@ export class Simple2DScene
     this.renderer.overrideScene = this.scene;
     this.renderer.overrideCamera = this.camera;
 
-    this.controls = new OrbitControls(this.camera, renderer.domElement);
-    this.controls.target.set(0, 0, 0);
-    this.controls.enableRotate = false;
-    this.controls.enableZoom = true;
-    this.controls.addEventListener("change", () => this.grid.regenerate());
+    this.controls = new CameraControls(this.camera, renderer.domElement);
+    this.controls.smoothTime = 0.6;
+    this.controls.setTarget(0, 0, 0);
+    this.controls.addEventListener("update", () => this.grid.regenerate());
+    this.controls.mouseButtons.left = CameraControls.ACTION.TRUCK;
   }
 
   /**
@@ -168,7 +168,7 @@ export class Simple2DScene
   /** {@link Updateable.update} */
   async update() {
     await this.onBeforeUpdate.trigger();
-    this.controls.update();
+    this.controls.update(1 / 60);
     await this.renderer.update();
     await this.onAfterUpdate.trigger();
   }

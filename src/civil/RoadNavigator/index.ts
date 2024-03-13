@@ -13,6 +13,8 @@ export abstract class RoadNavigator extends Component<any> {
 
   abstract view: "horizontal" | "vertical";
 
+  private totalBBox: THREE.Box3 = new THREE.Box3();
+
   protected _curves = new Set<FRAGS.CivilCurve>();
 
   protected constructor(components: Components) {
@@ -33,6 +35,7 @@ export abstract class RoadNavigator extends Component<any> {
     const allIDs = ids || alignments.keys();
 
     const scene = this.scene.get();
+    this.totalBBox.makeEmpty();
 
     for (const id of allIDs) {
       const alignment = alignments.get(id);
@@ -49,12 +52,37 @@ export abstract class RoadNavigator extends Component<any> {
         if (firstCurve) {
           const pos = curve.mesh.geometry.attributes.position.array;
           const [x, y, z] = pos;
-          this.scene.controls.target.set(x, y, z);
+          this.scene.controls.setTarget(x, y, z);
           this.scene.camera.position.set(x, y, z + 10);
           firstCurve = false;
         }
       }
     }
+    this.totalBBox.min.x = Number.MAX_VALUE;
+    this.totalBBox.min.y = Number.MAX_VALUE;
+    this.totalBBox.min.z = Number.MAX_VALUE;
+    this.totalBBox.max.x = -Number.MAX_VALUE;
+    this.totalBBox.max.y = -Number.MAX_VALUE;
+    this.totalBBox.max.z = -Number.MAX_VALUE;
+    for (const curve of this._curves) {
+      curve.mesh.geometry.computeBoundingBox();
+      const cbox = curve.mesh.geometry.boundingBox;
+      if (!(cbox instanceof THREE.Box3)) {
+        return;
+      }
+      const max = cbox.max.clone().applyMatrix4(curve.mesh.matrixWorld);
+      const min = cbox.min.clone().applyMatrix4(curve.mesh.matrixWorld);
+      if (min instanceof THREE.Vector3 && max instanceof THREE.Vector3) {
+        if (max.x > this.totalBBox.max.x) this.totalBBox.max.x = min.x;
+        if (max.y > this.totalBBox.max.y) this.totalBBox.max.y = max.y;
+        if (min.x < this.totalBBox.min.x) this.totalBBox.min.x = min.x;
+        if (min.y < this.totalBBox.min.y) this.totalBBox.min.y = max.y;
+      }
+    }
+  }
+
+  getTotalBBox(): THREE.Box3 {
+    return this.totalBBox;
   }
 
   clear() {

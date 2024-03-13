@@ -22,7 +22,12 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
     this.components.ui.add(floatingWindow);
     floatingWindow.visible = false;
     const hContainer = this.scene.uiElement.get("container");
+    console.log("hContainer", hContainer);
+    const totalBBox = this.getTotalBBox();
+    console.log("totalBBox", totalBBox);
     floatingWindow.addChild(hContainer);
+
+    // this.scene.controls.fitToBox(totalBBox,false,);
 
     floatingWindow.onResized.add(() => this.scene.grid.regenerate());
 
