@@ -1,5 +1,5 @@
 import * as WEBIFC from "web-ifc";
-import { FragmentsGroup } from "bim-fragment";
+import { FragmentsGroup, IfcProperties } from "bim-fragment";
 import { IfcPropertiesUtils } from "../IfcPropertiesUtils";
 import { Button, FloatingWindow, SimpleUIComponent, TreeView } from "../../ui";
 import { Disposable, Event, UI, UIElement, Component } from "../../base-types";
@@ -158,11 +158,18 @@ export class IfcPropertiesProcessor
 
   async getProperties(model: FragmentsGroup, id: string) {
     if (!model.hasProperties) return null;
+    const modelProperties: IfcProperties | undefined =
+      model.getLocalProperties();
+    if (!modelProperties) return null;
+
     const map = this._indexMap[model.uuid];
     if (!map) return null;
     const indices = map[id];
     const idNumber = parseInt(id, 10);
-    const props = model.getProperties(idNumber);
+    const props = await model.getProperties(idNumber);
+    if (!props) {
+      throw new Error("Properties not found!");
+    }
     const nativeProperties = this.cloneProperty(props);
 
     if (!nativeProperties) {
@@ -173,12 +180,12 @@ export class IfcPropertiesProcessor
 
     if (indices) {
       for (const index of indices) {
-        const props = model.getProperties(index);
+        const props = await model.getProperties(index);
         if (!props) continue;
         const pset = this.cloneProperty(props);
         if (!pset) continue;
-        this.getPsetProperties(pset, model);
-        this.getNestedPsets(pset, model);
+        this.getPsetProperties(pset, modelProperties);
+        this.getNestedPsets(pset, modelProperties);
         properties.push(pset);
       }
     }
