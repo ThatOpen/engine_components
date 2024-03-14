@@ -110,40 +110,14 @@ export abstract class RoadNavigator extends Component<any> {
     });
   }
 
-  // // change the color of the curve
-  // updateColor(color: THREE.Color){
-  //   for (const curve of this._curves) {
-  //     if(curve.data.hasOwnProperty("TYPE")){
-  //       if(curve.data.TYPE === "LINE"){
-  //         curve.mesh.material = new THREE.LineBasicMaterial({ color });
-  //       }
-  //       else if(curve.data.TYPE === "CIRCULARARC"){
-  //         curve.mesh.material = new THREE.LineBasicMaterial({ color: 0xffff00 });
-  //       }
-  //       else if(curve.data.TYPE === "CLOTHOID"){
-  //         curve.mesh.material = new THREE.LineBasicMaterial({ color: 0xff0000 });
-  //       }
-  //     }
-  //   }
-  // }
-
-  // updateColorByIndex(index: number, color: THREE.Color){
-  //   let i = 0;
-  //   for (const curve of this._curves) {
-  //     if(i === index){
-  //       curve.mesh.material = new THREE.LineBasicMaterial({ color });
-  //     }
-  //     i++;
-  //   }
-  // }
-
-  // updateColorByType(type: string, color: THREE.Color){
-  //   for (const curve of this._curves) {
-  //     if(curve.data.type === type){
-  //       curve.mesh.material = new THREE.LineBasicMaterial({ color });
-  //     }
-  //   }
-  // }
+  dispose() {
+    this.highlighter.dispose();
+    this.clear();
+    this.onHighlight.reset();
+    this.caster = null as any;
+    this.scene.dispose();
+    this._curves = null as any;
+  }
 
   clear() {
     for (const curve of this._curves) {

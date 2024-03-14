@@ -6,7 +6,7 @@ import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial';
 export class CurveHighlighter {
     private scene: THREE.Scene | THREE.Group;
     private _highlightColor: THREE.ColorRepresentation;
-    private activeSelection: Line2 | undefined;
+    activeSelection: Line2 | undefined | THREE.Line;
 
     constructor(scene: THREE.Group | THREE.Scene) {
         this.scene = scene;
@@ -25,12 +25,11 @@ export class CurveHighlighter {
         lGeom.setPositions(new Float32Array(curve.geometry.attributes.position.array));
         const lMat = new LineMaterial({ 
             color: this._highlightColor,
-            linewidth: 1.5,
-            worldUnits: true
+            linewidth: 0.015,
+            worldUnits: false,
+            
         });
-        lMat.needsUpdate = true;
         const line = new Line2(lGeom, lMat);
-        line.updateMatrix();
         this.scene.add(line);
         this.activeSelection = line;
     }
@@ -39,6 +38,7 @@ export class CurveHighlighter {
         if (this.activeSelection) {
             this.scene.remove(this.activeSelection);
         }
+        this.activeSelection = null as any;
         this.scene = null as any;
         this._highlightColor = null as any;
     }
