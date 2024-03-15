@@ -13,8 +13,6 @@ export abstract class RoadNavigator extends Component<any> {
 
   abstract view: "horizontal" | "vertical";
 
-  private totalBBox: THREE.Box3 = new THREE.Box3();
-
   protected _curves = new Set<FRAGS.CivilCurve>();
 
   protected constructor(components: Components) {
@@ -27,7 +25,7 @@ export abstract class RoadNavigator extends Component<any> {
     return null as any;
   }
 
-  draw(model: FragmentsGroup, ids?: Iterable<number>) {
+  async draw(model: FragmentsGroup, ids?: Iterable<number>) {
     if (!model.civilData) {
       throw new Error("The provided model doesn't have civil data!");
     }
@@ -35,7 +33,11 @@ export abstract class RoadNavigator extends Component<any> {
     const allIDs = ids || alignments.keys();
 
     const scene = this.scene.get();
-    this.totalBBox.makeEmpty();
+
+    const totalBBox: THREE.Box3 = new THREE.Box3();
+    totalBBox.makeEmpty();
+    totalBBox.min.set(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
+    totalBBox.max.set(-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE);
 
     for (const id of allIDs) {
       const alignment = alignments.get(id);
@@ -43,46 +45,23 @@ export abstract class RoadNavigator extends Component<any> {
         throw new Error("Alignment not found!");
       }
 
-      let firstCurve = true;
-
       for (const curve of alignment[this.view]) {
         this._curves.add(curve);
         scene.add(curve.mesh);
 
-        if (firstCurve) {
-          const pos = curve.mesh.geometry.attributes.position.array;
-          const [x, y, z] = pos;
-          this.scene.controls.setTarget(x, y, z);
-          this.scene.camera.position.set(x, y, z + 10);
-          firstCurve = false;
+        if (!totalBBox.isEmpty()) {
+          totalBBox.expandByObject(curve.mesh);
+        } else {
+          curve.mesh.geometry.computeBoundingBox();
+          const cbox = curve.mesh.geometry.boundingBox;
+
+          if (cbox instanceof THREE.Box3) {
+            totalBBox.copy(cbox).applyMatrix4(curve.mesh.matrixWorld);
+          }
         }
       }
     }
-    this.totalBBox.min.x = Number.MAX_VALUE;
-    this.totalBBox.min.y = Number.MAX_VALUE;
-    this.totalBBox.min.z = Number.MAX_VALUE;
-    this.totalBBox.max.x = -Number.MAX_VALUE;
-    this.totalBBox.max.y = -Number.MAX_VALUE;
-    this.totalBBox.max.z = -Number.MAX_VALUE;
-    for (const curve of this._curves) {
-      curve.mesh.geometry.computeBoundingBox();
-      const cbox = curve.mesh.geometry.boundingBox;
-      if (!(cbox instanceof THREE.Box3)) {
-        return;
-      }
-      const max = cbox.max.clone().applyMatrix4(curve.mesh.matrixWorld);
-      const min = cbox.min.clone().applyMatrix4(curve.mesh.matrixWorld);
-      if (min instanceof THREE.Vector3 && max instanceof THREE.Vector3) {
-        if (max.x > this.totalBBox.max.x) this.totalBBox.max.x = min.x;
-        if (max.y > this.totalBBox.max.y) this.totalBBox.max.y = max.y;
-        if (min.x < this.totalBBox.min.x) this.totalBBox.min.x = min.x;
-        if (min.y < this.totalBBox.min.y) this.totalBBox.min.y = max.y;
-      }
-    }
-  }
-
-  getTotalBBox(): THREE.Box3 {
-    return this.totalBBox;
+    await this.scene.controls.fitToBox(totalBBox, false);
   }
 
   clear() {

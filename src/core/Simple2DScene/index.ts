@@ -111,7 +111,18 @@ export class Simple2DScene
     const { width, height } = this._size;
 
     // Creates the camera (point of view of the user)
-    this.camera = new THREE.OrthographicCamera(75, width / height);
+    const aspect = width / height;
+    const halfSize = this._frustumSize * 0.5;
+
+    this.camera = new THREE.OrthographicCamera(
+      -halfSize * aspect,
+      halfSize * aspect,
+      halfSize,
+      -halfSize,
+      -1000,
+      1000
+    );
+
     this.scene.add(this.camera);
     this.camera.position.z = 10;
 
