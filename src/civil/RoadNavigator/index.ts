@@ -30,7 +30,7 @@ export abstract class RoadNavigator extends Component<any> {
     return null as any;
   }
 
-  draw(model: FragmentsGroup, ids?: Iterable<number>) {
+  async draw(model: FragmentsGroup, ids?: Iterable<number>) {
     if (!model.civilData) {
       throw new Error("The provided model doesn't have civil data!");
     }
@@ -39,13 +39,16 @@ export abstract class RoadNavigator extends Component<any> {
 
     const scene = this.scene.get();
 
+    const totalBBox: THREE.Box3 = new THREE.Box3();
+    totalBBox.makeEmpty();
+    totalBBox.min.set(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
+    totalBBox.max.set(-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE);
+
     for (const id of allIDs) {
       const alignment = alignments.get(id);
       if (!alignment) {
         throw new Error("Alignment not found!");
       }
-
-      let firstCurve = true;
 
       for (const curve of alignment[this.view]) {
         this._curves.add(curve);
