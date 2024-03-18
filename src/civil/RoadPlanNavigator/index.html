@@ -101,6 +101,11 @@
     horizontalWindow.visible = true;
     navigator.draw(model);
 
+    // navigator.highlighter.highlightColor = 0xff0000;
+    navigator.onHighlight.add((data) => {
+      navigator.highlighter.highlight(data);
+    });
+
     let first = true;
     const mat = new THREE.Matrix4();
     for(const [id, alignment] of model.civilData.alignments) {
@@ -115,8 +120,6 @@
             scene.add(curve.mesh);
         }
     }
-
-    // Set up stats
 
     const stats = new Stats();
     stats.showPanel(2);

@@ -1,8 +1,9 @@
 import * as THREE from "three";
 import * as FRAGS from "bim-fragment";
 import { FragmentsGroup } from "bim-fragment";
-import { Component } from "../../base-types";
+import { Component, Event } from "../../base-types";
 import { Components, Simple2DScene } from "../../core";
+import { CurveHighlighter } from "./civil-road/curve-highlighter";
 
 export abstract class RoadNavigator extends Component<any> {
   enabled = true;
@@ -15,10 +16,14 @@ export abstract class RoadNavigator extends Component<any> {
 
   protected _curves = new Set<FRAGS.CivilCurve>();
 
+  readonly onHighlight = new Event();
+  highlighter: CurveHighlighter;
+
   protected constructor(components: Components) {
     super(components);
     this.caster.params.Line = { threshold: 5 };
     this.scene = new Simple2DScene(this.components, false);
+    this.highlighter = new CurveHighlighter(this.scene.get());
   }
 
   get() {
@@ -45,7 +50,6 @@ export abstract class RoadNavigator extends Component<any> {
       for (const curve of alignment[this.view]) {
         this._curves.add(curve);
         scene.add(curve.mesh);
-
         if (firstCurve) {
           const pos = curve.mesh.geometry.attributes.position.array;
           const [x, y, z] = pos;
@@ -55,6 +59,64 @@ export abstract class RoadNavigator extends Component<any> {
         }
       }
     }
+
+    const curveMesh: THREE.Object3D[] = [];
+    for (const curve of this._curves) {
+      curveMesh.push(curve.mesh);
+    }
+    const mousePositionSphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.5),
+      new THREE.MeshBasicMaterial({ color: 0xff0000 })
+    );
+    scene.add(mousePositionSphere);
+    this.scene.uiElement.get("container").domElement.addEventListener("mousemove", (event) => {
+      const dom = this.scene.uiElement.get("container").domElement;
+      const mouse = new THREE.Vector2();
+      const rect = dom.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, this.scene.camera);
+      const intersects = raycaster.intersectObjects(curveMesh);
+      if (intersects.length > 0) {
+        const intersect = intersects[0];
+        const { point } = intersect;
+        mousePositionSphere.position.copy(point);
+      }
+    });
+
+    this.setupEvents();
+  }
+
+  setupEvents() {
+    const curveMesh: THREE.Object3D[] = [];
+    for (const curve of this._curves) {
+      curveMesh.push(curve.mesh);
+    }
+
+    this.scene.uiElement.get("container").domElement.addEventListener("click", (event) => {
+      const dom = this.scene.uiElement.get("container").domElement;
+      const mouse = new THREE.Vector2();
+      const rect = dom.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, this.scene.camera);
+      const intersects = raycaster.intersectObjects(curveMesh);
+      if (intersects.length > 0) {
+        const curve = intersects[0].object as THREE.LineSegments;
+        this.onHighlight.trigger(curve);
+      }
+    });
+  }
+
+  dispose() {
+    this.highlighter.dispose();
+    this.clear();
+    this.onHighlight.reset();
+    this.caster = null as any;
+    this.scene.dispose();
+    this._curves = null as any;
   }
 
   clear() {
