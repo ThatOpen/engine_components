@@ -22,7 +22,6 @@ export class CivilReader {
 
   get(civilItems: any) {
     if (civilItems.IfcAlignment) {
-
       const alignments = new Map<number, FRAGS.Alignment>();
 
       for (const alignment of civilItems.IfcAlignment) {
@@ -30,10 +29,10 @@ export class CivilReader {
         const horizontal = this.getCurves(alignment.horizontal);
         const vertical = this.getCurves(alignment.vertical);
         const count = alignments.size;
-        alignments.set(count, { horizontal, vertical, absolute });
+        alignments.set(count, { horizontal, vertical, absolute, initialKP: 0 });
       }
 
-      return { alignments };
+      return { alignments, coordinationMatrix: new THREE.Matrix4() };
     }
     return undefined;
   }
