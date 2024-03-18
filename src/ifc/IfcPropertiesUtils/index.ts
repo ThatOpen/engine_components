@@ -173,7 +173,7 @@ export class IfcPropertiesUtils {
       return { key: null, name: null };
     }
     const key = Object.keys(entity).find((key) => key.endsWith("Name")) ?? null;
-    const name = key ? (entity[key]?.value as string) : null;
+    const name = key ? (entity[key].value as string) : null;
     return { key, name };
   }
 
