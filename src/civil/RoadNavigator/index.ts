@@ -53,25 +53,35 @@ export abstract class RoadNavigator extends Component<any> {
       for (const curve of alignment[this.view]) {
         this._curves.add(curve);
         scene.add(curve.mesh);
-        if (firstCurve) {
-          const pos = curve.mesh.geometry.attributes.position.array;
-          const [x, y, z] = pos;
-          this.scene.controls.target.set(x, y, z);
-          this.scene.camera.position.set(x, y, z + 10);
-          firstCurve = false;
+
+        if (!totalBBox.isEmpty()) {
+          totalBBox.expandByObject(curve.mesh);
+        } else {
+          curve.mesh.geometry.computeBoundingBox();
+          const cbox = curve.mesh.geometry.boundingBox;
+
+          if (cbox instanceof THREE.Box3) {
+            totalBBox.copy(cbox).applyMatrix4(curve.mesh.matrixWorld);
+          }
         }
       }
     }
 
+    await this.scene.controls.fitToBox(totalBBox, false);
+
     const curveMesh: THREE.Object3D[] = [];
+
     for (const curve of this._curves) {
       curveMesh.push(curve.mesh);
     }
+
     const mousePositionSphere = new THREE.Mesh(
       new THREE.SphereGeometry(0.5),
       new THREE.MeshBasicMaterial({ color: 0xff0000 })
     );
+
     scene.add(mousePositionSphere);
+
     this.scene.uiElement
       .get("container")
       .domElement.addEventListener("mousemove", (event) => {
