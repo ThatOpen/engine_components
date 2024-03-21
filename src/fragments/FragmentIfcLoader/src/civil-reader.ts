@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import * as WEBIFC from "web-ifc";
 import * as FRAGS from "bim-fragment";
+import { Alignment } from "bim-fragment";
 import { IfcCivil } from "./types";
 
 export class CivilReader {
@@ -24,12 +25,12 @@ export class CivilReader {
     if (civilItems.IfcAlignment) {
       const alignments = new Map<number, FRAGS.Alignment>();
 
-      for (const alignment of civilItems.IfcAlignment) {
-        const absolute = this.getCurves(alignment.curve3D);
-        const horizontal = this.getCurves(alignment.horizontal);
-        const vertical = this.getCurves(alignment.vertical);
-        const count = alignments.size;
-        alignments.set(count, { horizontal, vertical, absolute, initialKP: 0 });
+      for (const ifcAlign of civilItems.IfcAlignment) {
+        const alignment = new Alignment();
+        alignment.absolute = this.getCurves(ifcAlign.curve3D, alignment);
+        alignment.horizontal = this.getCurves(ifcAlign.horizontal, alignment);
+        alignment.vertical = this.getCurves(ifcAlign.vertical, alignment);
+        alignments.set(alignments.size, alignment);
       }
 
       return { alignments, coordinationMatrix: new THREE.Matrix4() };
@@ -37,10 +38,10 @@ export class CivilReader {
     return undefined;
   }
 
-  private getCurves(alignment: any) {
+  private getCurves(ifcAlignData: any, alignment: Alignment) {
     const curves: FRAGS.CivilCurve[] = [];
-    for (const curve of alignment) {
-      const mesh = this.getCurveMesh(curve.points);
+    let index = 0;
+    for (const curve of ifcAlignData) {
       const data = {} as { [key: string]: string };
       if (curve.data) {
         for (const entry of curve.data) {
@@ -49,23 +50,31 @@ export class CivilReader {
           data[key] = numValue || value;
         }
       }
-      curves.push({ mesh, data });
+
+      const { points } = curve;
+      const array = new Float32Array(points.length * 3);
+      for (let i = 0; i < points.length; i++) {
+        const { x, y, z } = points[i];
+        array[i * 3] = x;
+        array[i * 3 + 1] = y;
+        array[i * 3 + 2] = z || 0;
+      }
+
+      const attr = new THREE.BufferAttribute(array, 3);
+      const geometry = new THREE.EdgesGeometry();
+      geometry.setAttribute("position", attr);
+
+      const mesh = new FRAGS.CurveMesh(
+        index,
+        data,
+        alignment,
+        geometry,
+        this.defLineMat
+      );
+
+      curves.push(mesh.curve);
+      index++;
     }
     return curves;
-  }
-
-  private getCurveMesh(points: { x: number; y: number; z?: number }[]) {
-    const array = new Float32Array(points.length * 3);
-    for (let i = 0; i < points.length; i++) {
-      const { x, y, z } = points[i];
-      array[i * 3] = x;
-      array[i * 3 + 1] = y;
-      array[i * 3 + 2] = z || 0;
-    }
-
-    const attr = new THREE.BufferAttribute(array, 3);
-    const geometry = new THREE.EdgesGeometry();
-    geometry.setAttribute("position", attr);
-    return new THREE.LineSegments(geometry, this.defLineMat);
   }
 }
