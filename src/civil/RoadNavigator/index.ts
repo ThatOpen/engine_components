@@ -15,6 +15,7 @@ export abstract class RoadNavigator extends Component<any> {
   abstract view: "horizontal" | "vertical";
 
   protected _curves = new Set<FRAGS.CivilCurve>();
+  private curveMeshes: THREE.Object3D[] = [];
 
   readonly onHighlight = new Event();
   highlighter: CurveHighlighter;
@@ -24,6 +25,7 @@ export abstract class RoadNavigator extends Component<any> {
     this.caster.params.Line = { threshold: 5 };
     this.scene = new Simple2DScene(this.components, false);
     this.highlighter = new CurveHighlighter(this.scene.get());
+    this.setupEvents();
   }
 
   get() {
@@ -53,6 +55,7 @@ export abstract class RoadNavigator extends Component<any> {
       for (const curve of alignment[this.view]) {
         this._curves.add(curve);
         scene.add(curve.mesh);
+        this.curveMeshes.push(curve.mesh);
 
         if (!totalBBox.isEmpty()) {
           totalBBox.expandByObject(curve.mesh);
@@ -68,19 +71,15 @@ export abstract class RoadNavigator extends Component<any> {
     }
 
     await this.scene.controls.fitToBox(totalBBox, false);
+  }
 
-    const curveMesh: THREE.Object3D[] = [];
-
-    for (const curve of this._curves) {
-      curveMesh.push(curve.mesh);
-    }
-
+  setupEvents() {
     const mousePositionSphere = new THREE.Mesh(
       new THREE.SphereGeometry(0.5),
       new THREE.MeshBasicMaterial({ color: 0xff0000 })
     );
 
-    scene.add(mousePositionSphere);
+    this.scene.get().add(mousePositionSphere);
 
     this.scene.uiElement
       .get("container")
@@ -92,22 +91,13 @@ export abstract class RoadNavigator extends Component<any> {
         mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
         const raycaster = new THREE.Raycaster();
         raycaster.setFromCamera(mouse, this.scene.camera);
-        const intersects = raycaster.intersectObjects(curveMesh);
+        const intersects = raycaster.intersectObjects(this.curveMeshes);
         if (intersects.length > 0) {
           const intersect = intersects[0];
           const { point } = intersect;
           mousePositionSphere.position.copy(point);
         }
       });
-
-    this.setupEvents();
-  }
-
-  setupEvents() {
-    const curveMesh: THREE.Object3D[] = [];
-    for (const curve of this._curves) {
-      curveMesh.push(curve.mesh);
-    }
 
     this.scene.uiElement
       .get("container")
@@ -119,7 +109,7 @@ export abstract class RoadNavigator extends Component<any> {
         mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
         const raycaster = new THREE.Raycaster();
         raycaster.setFromCamera(mouse, this.scene.camera);
-        const intersects = raycaster.intersectObjects(curveMesh);
+        const intersects = raycaster.intersectObjects(this.curveMeshes);
         if (intersects.length > 0) {
           const curve = intersects[0].object as THREE.LineSegments;
           this.onHighlight.trigger(curve);
@@ -134,6 +124,7 @@ export abstract class RoadNavigator extends Component<any> {
     this.caster = null as any;
     this.scene.dispose();
     this._curves = null as any;
+    this.curveMeshes = null as any;
   }
 
   clear() {
