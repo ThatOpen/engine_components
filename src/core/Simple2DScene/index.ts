@@ -151,6 +151,7 @@ export class Simple2DScene
     this.controls.setTarget(0, 0, 0);
     this.controls.addEventListener("update", () => this.grid.regenerate());
     this.controls.mouseButtons.left = CameraControls.ACTION.TRUCK;
+    this.controls.dollyToCursor = true;
   }
 
   /**
