@@ -103,7 +103,8 @@
 
     // navigator.highlighter.highlightColor = 0xff0000;
     navigator.onHighlight.add((data) => {
-      navigator.highlighter.highlight(data);
+      navigator.highlighter1.highlight(data);
+      navigator.highlighter2.showCurveInfo(data, scene);
     });
 
     let first = true;

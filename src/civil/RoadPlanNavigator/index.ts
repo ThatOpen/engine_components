@@ -2,6 +2,8 @@ import { UI, UIElement } from "../../base-types";
 import { FloatingWindow } from "../../ui";
 import { Components } from "../../core";
 import { RoadNavigator } from "../RoadNavigator";
+import { PlanHighlighter } from "./src/plan-highlighter";
+import { CurveHighlighter } from "../RoadNavigator/src/curve-highlighter";
 
 export class RoadPlanNavigator extends RoadNavigator implements UI {
   static readonly uuid = "3096dea0-5bc2-41c7-abce-9089b6c9431b" as const;
@@ -11,9 +13,13 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
   uiElement = new UIElement<{
     floatingWindow: FloatingWindow;
   }>();
+  highlighter1: CurveHighlighter;
+  highlighter2: PlanHighlighter;
 
   constructor(components: Components) {
     super(components);
+    this.highlighter1 = new CurveHighlighter(this.scene.get());
+    this.highlighter2 = new PlanHighlighter(this.scene.get());
     this.setUI();
   }
 

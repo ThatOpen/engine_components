@@ -4,9 +4,9 @@ import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial';
 
 export class CurveHighlighter {
-    private scene: THREE.Scene | THREE.Group;
     private _highlightColor: THREE.ColorRepresentation;
     activeSelection: Line2 | undefined | THREE.Line;
+  protected scene: THREE.Scene | THREE.Group;
 
     constructor(scene: THREE.Group | THREE.Scene) {
         this.scene = scene;
