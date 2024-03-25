@@ -51,6 +51,8 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
       });
     }
 
+    floatingWindow.onResized.trigger();
+
     this.uiElement.set({ floatingWindow });
   }
 }
