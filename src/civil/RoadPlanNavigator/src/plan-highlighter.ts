@@ -38,32 +38,14 @@ export class PlanHighlighter extends CurveHighlighter {
         positions[middlePointIndex + 1],
         positions[middlePointIndex + 2]
       );
-      console.log("First Point:", firstPoint);
-      console.log("Last Point:", lastPoint);
-      console.log("Middle Point:", middlePoint);
-      const secondPoint = new THREE.Vector3(
-        positions[3],
-        positions[4],
-        positions[5]
+      const tangentVector = lastPoint.clone().sub(firstPoint).normalize();
+      const perpendicularVector = new THREE.Vector3(
+        -tangentVector.y,
+        tangentVector.x,
+        0
       );
-      const thirdPoint = new THREE.Vector3(
-        positions[6],
-        positions[7],
-        positions[8]
-      );
-      const line1 = new THREE.Line3(firstPoint, secondPoint);
-      const line2 = new THREE.Line3(secondPoint, thirdPoint);
-
-      const delta1 = line1.end.clone().sub(line1.start);
-      const delta2 = line2.end.clone().sub(line2.start);
-      const angleBetweenSegments = delta1.angleTo(delta2);
-      const halfAngle = angleBetweenSegments / 2;
-      const angleDirection = Math.atan2(delta2.y, delta2.x) + halfAngle;
-      const endPointX = secondPoint.x + radius * Math.cos(angleDirection);
-      const endPointY = secondPoint.y + radius * Math.sin(angleDirection);
-      const endPointZ = secondPoint.z;
-      const arcCenterPoint = new THREE.Vector3(endPointX, endPointY, endPointZ);
-      console.log("Center of the arc:", arcCenterPoint);
+      perpendicularVector.multiplyScalar(radius);
+      const arcCenterPoint = middlePoint.clone().add(perpendicularVector);
       linePoints.push(middlePoint);
       linePoints.push(arcCenterPoint);
       const testGeometry = new THREE.BufferGeometry().setFromPoints(linePoints);
