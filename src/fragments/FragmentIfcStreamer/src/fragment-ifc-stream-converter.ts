@@ -227,7 +227,7 @@ export class FragmentIfcStreamConverter
 
     const matrix = this._webIfc.GetCoordinationMatrix(0);
     group.coordinationMatrix.fromArray(matrix);
-    group.ifcCivil = this._civil.read(this._webIfc);
+    group.civilData = this._civil.read(this._webIfc);
 
     const buffer = this._groupSerializer.export(group);
     await this.onIfcLoaded.trigger(buffer);
