@@ -3,7 +3,7 @@ import * as FRAGS from "bim-fragment";
 import { FragmentsGroup } from "bim-fragment";
 import { Component, Event } from "../../base-types";
 import { Components, Simple2DScene } from "../../core";
-import { CurveHighlighter } from "./src/curve-highlighter";
+// import { CurveHighlighter } from "./src/curve-highlighter";
 
 export abstract class RoadNavigator extends Component<any> {
   enabled = true;
@@ -24,7 +24,7 @@ export abstract class RoadNavigator extends Component<any> {
     super(components);
     this.caster.params.Line = { threshold: 10 };
     this.scene = new Simple2DScene(this.components, false);
-    this.highlighter = new CurveHighlighter(this.scene.get());
+    // this.highlighter = new CurveHighlighter(this.scene.get());
     this.setupEvents();
     this.adjustRaycasterOnZoom();
   }
@@ -132,7 +132,7 @@ export abstract class RoadNavigator extends Component<any> {
   }
 
   dispose() {
-    this.highlighter.dispose();
+    // this.highlighter.dispose();
     this.clear();
     this.onHighlight.reset();
     this.caster = null as any;

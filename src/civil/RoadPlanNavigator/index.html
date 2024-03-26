@@ -127,6 +127,11 @@
   const rotation = new THREE.Quaternion();
   const scale = new THREE.Vector3();
   model.coordinationMatrix.decompose(translation, rotation, scale);
+    // navigator.highlighter.highlightColor = 0xff0000;
+    navigator.onHighlight.add((data) => {
+      navigator.highlighter1.highlight(data);
+      navigator.highlighter2.showCurveInfo(data, scene);
+    });
 
   let first = true;
   const mat = new THREE.Matrix4();
