@@ -4,15 +4,18 @@ import { Line2 } from "three/examples/jsm/lines/Line2";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
 
-// 1. Highlight all alignment lines ✅
-// 2. Show all endpoints of curves ✅
-// 3. Highlight curves on hover ✅
-// 4. Adjust raycaster Line threshold to zoom ✅
-// 5. Use a different color depending on the curve type
-// 6. Method to center camera on selected alignment / selected curve
 
 export class CurveHighlighter {
   private scene: THREE.Scene | THREE.Group;
+
+  static settings = {
+    colors: {
+      LINE: [213 / 255, 0 / 255, 255 / 255],
+      CIRCULARARC: [0 / 255, 46, 255 / 255],
+      CLOTHOID: [0 / 255, 255 / 255, 234 / 255],
+      PARABOLIC: [0 / 255, 255 / 255, 72 / 255],
+    } as { [curve: string]: number[] },
+  };
 
   selectCurve: Line2;
 
@@ -24,9 +27,9 @@ export class CurveHighlighter {
 
   constructor(scene: THREE.Group | THREE.Scene) {
     this.scene = scene;
-    this.hoverCurve = this.newCurve(0x444444, 0.003);
+    this.hoverCurve = this.newCurve(0.003, 0x444444, false);
     this.hoverPoints = this.newPoints(5, 0x444444);
-    this.selectCurve = this.newCurve(0xbcf124, 0.005);
+    this.selectCurve = this.newCurve(0.005, 0xffffff, true);
     this.selectPoints = this.newPoints(7, 0xffffff);
   }
 
@@ -53,7 +56,7 @@ export class CurveHighlighter {
   }
 
   select(mesh: FRAGS.CurveMesh) {
-    this.highlight(mesh, this.selectCurve, this.selectPoints);
+    this.highlight(mesh, this.selectCurve, this.selectPoints, true);
   }
 
   unSelect() {
@@ -62,7 +65,7 @@ export class CurveHighlighter {
   }
 
   hover(mesh: FRAGS.CurveMesh) {
-    this.highlight(mesh, this.hoverCurve, this.hoverPoints);
+    this.highlight(mesh, this.hoverCurve, this.hoverPoints, false);
   }
 
   unHover() {
@@ -70,18 +73,31 @@ export class CurveHighlighter {
     this.hoverPoints.removeFromParent();
   }
 
-  private highlight(mesh: FRAGS.CurveMesh, curve: Line2, points: THREE.Points) {
+  private highlight(
+    mesh: FRAGS.CurveMesh,
+    curve: Line2,
+    points: THREE.Points,
+    useColors: boolean
+  ) {
     const { alignment } = mesh.curve;
 
     this.scene.add(curve);
     this.scene.add(points);
 
     const lines: number[] = [];
+    const colors: number[] = [];
     const vertices: THREE.Vector3[] = [];
     for (const foundCurve of alignment.horizontal) {
       const position = foundCurve.mesh.geometry.attributes.position;
       for (const coord of position.array) {
         lines.push(coord);
+      }
+      if (useColors) {
+        const type = foundCurve.data.TYPE;
+        const found = CurveHighlighter.settings.colors[type] || [1, 1, 1];
+        for (let i = 0; i < position.count; i++) {
+          colors.push(...found);
+        }
       }
       const [x, y, z] = position.array;
       vertices.push(new THREE.Vector3(x, y, z));
@@ -98,15 +114,19 @@ export class CurveHighlighter {
     }
 
     curve.geometry.setPositions(lines);
+    if (useColors) {
+      curve.geometry.setColors(colors);
+    }
 
     points.geometry.setFromPoints(vertices);
   }
 
-  private newCurve(color: number, linewidth: number) {
+  private newCurve(linewidth: number, color: number, vertexColors: boolean) {
     const selectGeometry = new LineGeometry();
     const selectMaterial = new LineMaterial({
       color,
       linewidth,
+      vertexColors,
       worldUnits: false,
     });
     const curve = new Line2(selectGeometry, selectMaterial);

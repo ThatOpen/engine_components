@@ -81,25 +81,24 @@
   fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
   fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
 
-  const file = await fetch("../../../resources/asdf2.frag");
+  const file = await fetch("../../../resources/asdf.frag");
   const data = await file.arrayBuffer();
   const buffer = new Uint8Array(data);
   const model = await fragments.load(buffer);
   // const properties = await fetch("../../../resources/asdf.json");
   // model.setLocalProperties(await properties.json());
-  // console.log(model);
 
-  const culler = new OBC.ScreenCuller(components);
-  culler.setup();
+  // const culler = new OBC.ScreenCuller(components);
+  // culler.setup();
+  //
+  // for(const fragment of model.items) {
+  //   culler.elements.add(fragment.mesh);
+  // }
+  //
+  // container.addEventListener("mouseup", () => culler.elements.needsUpdate = true);
+  // container.addEventListener("wheel", () => culler.elements.needsUpdate = true);
 
-  for(const fragment of model.items) {
-    culler.elements.add(fragment.mesh);
-  }
-
-  container.addEventListener("mouseup", () => culler.elements.needsUpdate = true);
-  container.addEventListener("wheel", () => culler.elements.needsUpdate = true);
-
-  culler.elements.needsUpdate = true;
+  // culler.elements.needsUpdate = true;
 
   const mainToolbar = new OBC.Toolbar(components, { name: "Main Toolbar", position: "bottom" });
   components.ui.addToolbar(mainToolbar);
@@ -119,11 +118,10 @@
   });
 
 
-  // const zMovement = model.coordinationMatrix.elements[14];
-  // const yMovement = model.coordinationMatrix.elements[13];
 
-  // model.coordinationMatrix.elements[14] = yMovement;
-  // model.coordinationMatrix.elements[13] = zMovement;
+  // const hider = new OBC.FragmentHider(components);
+  // await hider.loadCached();
+  // mainToolbar.addChild(hider.uiElement.get("main"));
 
   const translation = new THREE.Vector3();
   const rotation = new THREE.Quaternion();
@@ -141,12 +139,6 @@
       //     mat.makeTranslation(-x, -y, -z);
       //     first = false;
       // }
-
-      console.log(translation)
-
-      // curve.mesh.position.y += translation.y;
-      // curve.mesh.position.z += translation.z + translation.y;
-
 
       scene.add(curve.mesh);
     }
