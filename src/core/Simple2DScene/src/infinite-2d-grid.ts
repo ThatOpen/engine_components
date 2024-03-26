@@ -170,11 +170,24 @@ export class Infinite2dGrid {
       sPoints.push(left, offset, 0, right, offset, 0);
     }
 
+    const mIndices: number[] = [];
+    const sIndices: number[] = [];
+    this.fillIndices(mPoints, mIndices);
+    this.fillIndices(sPoints, sIndices);
+
     const mBuffer = new THREE.BufferAttribute(new Float32Array(mPoints), 3);
     const sBuffer = new THREE.BufferAttribute(new Float32Array(sPoints), 3);
     const { main, secondary } = this.grids;
     main.geometry.setAttribute("position", mBuffer);
+    main.geometry.setIndex(mIndices);
     secondary.geometry.setAttribute("position", sBuffer);
+    secondary.geometry.setIndex(sIndices);
+  }
+
+  private fillIndices(points: any[], indices: any[]) {
+    for (let i = 0; i < points.length / 2 - 1; i += 2) {
+      indices.push(i, i + 1);
+    }
   }
 
   private newNumber(offset: number) {

@@ -84,37 +84,42 @@
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
     const model = await fragments.load(buffer);
-    // const properties = await fetch("../../../resources/asdf.json");
-    // model.setLocalProperties(await properties.json());
-    // console.log(model);
+    const properties = await fetch("../../../resources/asdf.json");
+    model.setLocalProperties(await properties.json());
+    console.log(model);
 
     const mainToolbar = new OBC.Toolbar(components, {name: 'Main Toolbar', position: 'bottom'});
     components.ui.addToolbar(mainToolbar);
     mainToolbar.addChild(fragmentIfcLoader.uiElement.get("main"));
 
-    console.log(model);
-
     // Set up road navigator
 
-    const navigator = new OBC.RoadElevationNavigator(components);
-    const drawer = navigator.uiElement.get("drawer");
-    drawer.visible = true;
-    navigator.draw(model);
+    const navigator = new OBC.RoadNavigator(components);
 
-    let first = true;
-    const mat = new THREE.Matrix4();
-    for(const [id, alignment] of model.civilData.alignments) {
-        for(const curve of alignment.absolute) {
-            if(first) {
-                const pos = curve.mesh.geometry.attributes.position.array;
-                const [x, y, z] = pos;
-                mat.makeTranslation(-x, -y, -z);
-                first = false;
-            }
-            curve.mesh.applyMatrix4(mat);
-            scene.add(curve.mesh);
+    const horizontalWindow = navigator.uiElement.get("horizontalAlignment");
+    horizontalWindow.visible = true;
+
+    const verticalWindow = navigator.uiElement.get("verticalAlignment");
+    verticalWindow.visible = true;
+
+    navigator.select(model);
+
+    window.addEventListener("keydown", (event) => {
+        if(event.code === "KeyS") {
+            navigator.saveAnchor();
         }
+        if(event.code === "KeyP") {
+            navigator.setAnchor();
+        }
+    })
+
+    window.ondblclick = () => {
+        const result = components.raycaster.castRay();
+        console.log(result);
     }
+
+    navigator.loadAnchor();
+
 
     // Set up stats
 
