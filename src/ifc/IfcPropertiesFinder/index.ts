@@ -183,7 +183,7 @@ export class IfcPropertiesFinder
           for (const relatedID of relatedIDs) {
             map[relatingID].add(relatedID);
             if (!map[relatedID]) map[relatedID] = new Set();
-            map[relatedID].add(relatedID);
+            map[relatedID].add(relatingID);
           }
         }
       );
