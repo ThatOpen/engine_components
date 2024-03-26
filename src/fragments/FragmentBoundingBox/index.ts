@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import * as FRAGS from "bim-fragment";
 import { FragmentsGroup } from "bim-fragment";
 import { Component, Disposable, Event } from "../../base-types";
 import { Components } from "../../core/Components";
@@ -118,7 +119,7 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
     }
   }
 
-  addMesh(mesh: THREE.InstancedMesh | THREE.Mesh) {
+  addMesh(mesh: THREE.InstancedMesh | THREE.Mesh | FRAGS.CurveMesh) {
     if (!mesh.geometry.index) {
       return;
     }
@@ -163,7 +164,9 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
     }
   }
 
-  private static getFragmentBounds(mesh: THREE.InstancedMesh | THREE.Mesh) {
+  private static getFragmentBounds(
+    mesh: THREE.InstancedMesh | THREE.Mesh | FRAGS.CurveMesh
+  ) {
     const position = mesh.geometry.attributes.position;
 
     const maxNum = Number.MAX_VALUE;

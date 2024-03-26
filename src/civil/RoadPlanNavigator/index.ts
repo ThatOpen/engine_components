@@ -1,7 +1,9 @@
+import * as THREE from "three";
 import { UI, UIElement } from "../../base-types";
 import { FloatingWindow } from "../../ui";
 import { Components } from "../../core";
 import { RoadNavigator } from "../RoadNavigator";
+import { FragmentBoundingBox } from "../../fragments";
 import { PlanHighlighter } from "./src/plan-highlighter";
 import { CurveHighlighter } from "../RoadNavigator/src/curve-highlighter";
 
@@ -21,10 +23,32 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
     this.highlighter1 = new CurveHighlighter(this.scene.get());
     this.highlighter2 = new PlanHighlighter(this.scene.get());
     this.setUI();
+
+    this.onHighlight.add(async (curveMesh) => {
+      const bbox = this.components.tools.get(FragmentBoundingBox);
+      const alignment = curveMesh.curve.alignment;
+      for (const curve of alignment.horizontal) {
+        bbox.addMesh(curve.mesh);
+      }
+      const box = bbox.get();
+      const center = new THREE.Vector3();
+      const { min, max } = box;
+      const offset = 1.2;
+      const size = new THREE.Vector3(
+        (max.x - min.x) * offset,
+        (max.y - min.y) * offset,
+        (max.z - min.z) * offset
+      );
+      box.getCenter(center);
+      box.setFromCenterAndSize(center, size);
+      bbox.reset();
+      await this.scene.controls.fitToBox(box, true);
+    });
   }
 
   private setUI() {
     const floatingWindow = new FloatingWindow(this.components);
+    floatingWindow.title = "Horizontal alignments";
     this.components.ui.add(floatingWindow);
     floatingWindow.visible = false;
     const hContainer = this.scene.uiElement.get("container");
@@ -56,6 +80,8 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
         }
       });
     }
+
+    floatingWindow.onResized.trigger();
 
     this.uiElement.set({ floatingWindow });
   }
