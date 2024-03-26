@@ -4,6 +4,8 @@ import { FragmentsGroup } from "bim-fragment";
 import { Component, Event } from "../../base-types";
 import { Components, Simple2DScene } from "../../core";
 import { CurveHighlighter } from "./src/curve-highlighter";
+import { AnchorPosition } from "../AnchorPosition";
+import { RoadElevationNavigator } from "../RoadElevationNavigator";
 
 export abstract class RoadNavigator extends Component<any> {
   enabled = true;
@@ -12,10 +14,16 @@ export abstract class RoadNavigator extends Component<any> {
 
   scene: Simple2DScene;
 
+  anchor: AnchorPosition;
+
+  model: any;
+
   abstract view: "horizontal" | "vertical";
 
   protected _curves = new Set<FRAGS.CivilCurve>();
   private curveMeshes: THREE.Object3D[] = [];
+
+  private _navigatorVertical!: RoadElevationNavigator;
 
   readonly onHighlight = new Event();
   highlighter: CurveHighlighter;
@@ -25,17 +33,36 @@ export abstract class RoadNavigator extends Component<any> {
     this.caster.params.Line = { threshold: 5 };
     this.scene = new Simple2DScene(this.components, false);
     this.highlighter = new CurveHighlighter(this.scene.get());
+    this.model = null;
+
+    const { domElement } = components.renderer.get();
+    this.anchor = new AnchorPosition(components, domElement, this, this.model);
+
     this.setupEvents();
+  }
+
+  get getAnchor() {
+    return this.anchor;
   }
 
   get() {
     return null as any;
   }
 
+  get navigatorVertical(): RoadElevationNavigator {
+    return this._navigatorVertical;
+  }
+
+  set navigatorVertical(navigatorVertical: RoadElevationNavigator) {
+    this._navigatorVertical = navigatorVertical;
+  }
+
   async draw(model: FragmentsGroup, ids?: Iterable<number>) {
     if (!model.civilData) {
       throw new Error("The provided model doesn't have civil data!");
     }
+
+    this.model = model;
     const { alignments } = model.civilData;
     const allIDs = ids || alignments.keys();
 
@@ -95,24 +122,54 @@ export abstract class RoadNavigator extends Component<any> {
         if (intersects.length > 0) {
           const intersect = intersects[0];
           const { point } = intersect;
-          mousePositionSphere.position.copy(point);
+
+          const alignment2DPosition = this.anchor.alignment2D;
+
+          if (!alignment2DPosition) {
+            mousePositionSphere.position.copy(point);
+          }
         }
       });
 
     this.scene.uiElement
       .get("container")
-      .domElement.addEventListener("click", (event) => {
+      .domElement.addEventListener("click", async (event) => {
         const dom = this.scene.uiElement.get("container").domElement;
         const mouse = new THREE.Vector2();
         const rect = dom.getBoundingClientRect();
+
         mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
         const raycaster = new THREE.Raycaster();
         raycaster.setFromCamera(mouse, this.scene.camera);
+
         const intersects = raycaster.intersectObjects(this.curveMeshes);
+
         if (intersects.length > 0) {
           const curve = intersects[0].object as THREE.LineSegments;
-          this.onHighlight.trigger(curve);
+          await this.onHighlight.trigger(curve);
+
+          // Anchor set & load alignment vertical
+
+          const intersect = intersects[0];
+          const { point, object } = intersect;
+
+          this.anchor.model2DPosition = point;
+          this.anchor.alignment2D = object;
+
+          // @ts-ignore
+          const index = object.curve.index;
+
+          const verticalAlignment =
+            // @ts-ignore
+            object.curve.alignment.vertical[index].mesh;
+
+          this.navigatorVertical.scene.get().add(verticalAlignment);
+
+          const controlsElevation = this.navigatorVertical.scene.controls;
+
+          await controlsElevation.fitToBox(verticalAlignment, true);
         }
       });
   }
