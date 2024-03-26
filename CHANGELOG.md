@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.5.0](https://github.com/ThatOpen/engine_components/compare/v1.4.5...v1.5.0) (2024-03-26)
+
+
+### Features
+
+* add basic LOD system using OBBs ([a4faf2f](https://github.com/ThatOpen/engine_components/commit/a4faf2f1080822a409ebaaaf8684b46c385ee7f4))
+* anchor position ([#333](https://github.com/ThatOpen/engine_components/issues/333)) ([5c0ebba](https://github.com/ThatOpen/engine_components/commit/5c0ebba19134925b7259ab4f3d4be4060a1ff850))
+* finish streaming tutorial ([652ecd7](https://github.com/ThatOpen/engine_components/commit/652ecd729bb9fcafa4a974ec981af97581d0717f))
+* improve coordination logic ([ec14e54](https://github.com/ThatOpen/engine_components/commit/ec14e5425b66bbfac85806305f5c8ee7a3c259a0))
+* improve tiles, make tutorial ([eedaa55](https://github.com/ThatOpen/engine_components/commit/eedaa559bc4491441b8392ff98deb69d372acf95))
+* revert anchor position ([#333](https://github.com/ThatOpen/engine_components/issues/333)) to manually pick changes ([7d42dca](https://github.com/ThatOpen/engine_components/commit/7d42dca582c290d527505b5d75cddd122a30784a))
+
+
+### Bug Fixes
+
+* add ifc items to components mesh set ([c758266](https://github.com/ThatOpen/engine_components/commit/c7582668833ca57c82966226fca326af7d893cf4))
+* improve coordinate, correct excluded categories ([699ce7d](https://github.com/ThatOpen/engine_components/commit/699ce7d49c45473d15386b6b879aaf3627a68867))
+* make fragment loading continue when data not found ([9abb99c](https://github.com/ThatOpen/engine_components/commit/9abb99ce95c7a4d8bbe3886ef78cacbdb38fb248))
+* various corrections ([03c70f4](https://github.com/ThatOpen/engine_components/commit/03c70f422ba64ad024b54bc353029ce2264740b5))
+
 ## [1.4.5](https://github.com/ThatOpen/engine_components/compare/v1.3.0...v1.4.5) (2024-02-28)
 
 
