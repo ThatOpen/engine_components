@@ -113,41 +113,10 @@
   horizontalWindow.visible = true;
   navigator.draw(model);
 
-  // navigator.highlighter.highlightColor = 0xff0000;
-  navigator.onHighlight.add((data) => {
-  });
-
-
-
   // const hider = new OBC.FragmentHider(components);
   // await hider.loadCached();
   // mainToolbar.addChild(hider.uiElement.get("main"));
 
-  const translation = new THREE.Vector3();
-  const rotation = new THREE.Quaternion();
-  const scale = new THREE.Vector3();
-  model.coordinationMatrix.decompose(translation, rotation, scale);
-    // navigator.highlighter.highlightColor = 0xff0000;
-    navigator.onHighlight.add((data) => {
-      navigator.highlighter1.highlight(data);
-      navigator.highlighter2.showCurveInfo(data, scene);
-    });
-
-  let first = true;
-  const mat = new THREE.Matrix4();
-  for (const [id, alignment] of model.civilData.alignments) {
-    for (const curve of alignment.absolute) {
-      // if(first) {
-      //     const pos = curve.mesh.geometry.attributes.position.array;
-      //     const [x, y, z] = pos;
-      //     console.log(x, y, z);
-      //     mat.makeTranslation(-x, -y, -z);
-      //     first = false;
-      // }
-
-      scene.add(curve.mesh);
-    }
-  }
 
   const stats = new Stats();
   stats.showPanel(2);

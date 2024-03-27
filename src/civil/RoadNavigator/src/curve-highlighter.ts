@@ -4,9 +4,10 @@ import { Line2 } from "three/examples/jsm/lines/Line2";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
 
+type CivilHighlightType = "horizontal" | "absolute" | "vertical";
 
 export class CurveHighlighter {
-  private scene: THREE.Scene | THREE.Group;
+  protected scene: THREE.Scene | THREE.Group;
 
   static settings = {
     colors: {
@@ -17,6 +18,8 @@ export class CurveHighlighter {
     } as { [curve: string]: number[] },
   };
 
+  type: CivilHighlightType;
+
   selectCurve: Line2;
 
   selectPoints: THREE.Points;
@@ -25,8 +28,11 @@ export class CurveHighlighter {
 
   hoverPoints: THREE.Points;
 
-  constructor(scene: THREE.Group | THREE.Scene) {
+  caster = new THREE.Raycaster();
+
+  constructor(scene: THREE.Group | THREE.Scene, type: CivilHighlightType) {
     this.scene = scene;
+    this.type = type;
     this.hoverCurve = this.newCurve(0.003, 0x444444, false);
     this.hoverPoints = this.newPoints(5, 0x444444);
     this.selectCurve = this.newCurve(0.005, 0xffffff, true);
@@ -55,6 +61,24 @@ export class CurveHighlighter {
     this.scene = null as any;
   }
 
+  castRay(
+    event: MouseEvent,
+    camera: THREE.Camera,
+    dom: HTMLElement,
+    meshes: FRAGS.CurveMesh[]
+  ) {
+    const mouse = new THREE.Vector2();
+    const rect = dom.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    this.caster.setFromCamera(mouse, camera);
+    const intersects = this.caster.intersectObjects(meshes);
+    if (!intersects.length) {
+      return null;
+    }
+    return intersects[0];
+  }
+
   select(mesh: FRAGS.CurveMesh) {
     this.highlight(mesh, this.selectCurve, this.selectPoints, true);
   }
@@ -73,7 +97,7 @@ export class CurveHighlighter {
     this.hoverPoints.removeFromParent();
   }
 
-  private highlight(
+  protected highlight(
     mesh: FRAGS.CurveMesh,
     curve: Line2,
     points: THREE.Points,
@@ -87,13 +111,22 @@ export class CurveHighlighter {
     const lines: number[] = [];
     const colors: number[] = [];
     const vertices: THREE.Vector3[] = [];
-    for (const foundCurve of alignment.horizontal) {
+
+    for (const foundCurve of alignment[this.type]) {
       const position = foundCurve.mesh.geometry.attributes.position;
       for (const coord of position.array) {
         lines.push(coord);
       }
       if (useColors) {
-        const type = foundCurve.data.TYPE;
+        let type: any;
+        if (this.type === "absolute") {
+          // 3D curves don't have type defined, so we take the horizontal
+          const { horizontal } = foundCurve.alignment;
+          type = horizontal[foundCurve.index].data.TYPE;
+        } else {
+          type = foundCurve.data.TYPE;
+        }
+
         const found = CurveHighlighter.settings.colors[type] || [1, 1, 1];
         for (let i = 0; i < position.count; i++) {
           colors.push(...found);
@@ -128,6 +161,7 @@ export class CurveHighlighter {
       linewidth,
       vertexColors,
       worldUnits: false,
+      depthTest: false,
     });
     const curve = new Line2(selectGeometry, selectMaterial);
     this.scene.add(curve);

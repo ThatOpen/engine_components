@@ -8,10 +8,27 @@ export class PlanHighlighter extends CurveHighlighter {
   private markupLines: THREE.Line[] = [];
 
   constructor(scene: THREE.Group | THREE.Scene) {
-    super(scene);
+    super(scene, "horizontal");
     this.markupMaterial = new THREE.LineBasicMaterial({
       color: 0x686868,
     });
+  }
+
+  showCurveInfo(curveMesh: FRAGS.CurveMesh): void {
+    this.clearMarkups();
+
+    // eslint-disable-next-line default-case
+    switch (curveMesh.curve.data.TYPE) {
+      case "LINE":
+        this.showLineInfo(curveMesh);
+        break;
+      case "CIRCULARARC":
+        this.showCircularArcInfo(curveMesh);
+        break;
+      case "CLOTHOID":
+        this.showClothoidInfo(curveMesh);
+        break;
+    }
   }
 
   private calculateTangent(
@@ -54,24 +71,6 @@ export class PlanHighlighter extends CurveHighlighter {
     return parallelCurvePoints;
   }
 
-  public showCurveInfo(curveMesh: FRAGS.CurveMesh): void {
-    this.clearMarkups();
-    this.highlight(curveMesh);
-
-    // eslint-disable-next-line default-case
-    switch (curveMesh.curve.data.TYPE) {
-      case "LINE":
-        this.showLineInfo(curveMesh);
-        break;
-      case "CIRCULARARC":
-        this.showCircularArcInfo(curveMesh);
-        break;
-      case "CLOTHOID":
-        this.showClothoidInfo(curveMesh);
-        break;
-    }
-  }
-
   private clearMarkups(): void {
     for (const line of this.markupLines) {
       this.scene.remove(line);
@@ -85,7 +84,7 @@ export class PlanHighlighter extends CurveHighlighter {
     this.markupLines.push(markupLine);
   }
 
-  showLineInfo(curveMesh: FRAGS.CurveMesh) {
+  private showLineInfo(curveMesh: FRAGS.CurveMesh) {
     // console.log("ES LINE");
     // console.log(curveMesh);
 
@@ -101,7 +100,7 @@ export class PlanHighlighter extends CurveHighlighter {
     this.addMarkupLine(lengthGeometry);
   }
 
-  showCircularArcInfo(curveMesh: FRAGS.CurveMesh) {
+  private showCircularArcInfo(curveMesh: FRAGS.CurveMesh) {
     // console.log("ES CIRCULARARC");
     // console.log(curveMesh);
 
@@ -169,7 +168,7 @@ export class PlanHighlighter extends CurveHighlighter {
     this.addMarkupLine(lengthGeometry);
   }
 
-  showClothoidInfo(curveMesh: FRAGS.CurveMesh) {
+  private showClothoidInfo(curveMesh: FRAGS.CurveMesh) {
     // console.log("ES CLOTHOID");
     // console.log(curveMesh);
     const positions = curveMesh.geometry.attributes.position.array;

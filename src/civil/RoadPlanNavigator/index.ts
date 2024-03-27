@@ -1,11 +1,11 @@
 import * as THREE from "three";
+import * as FRAGS from "bim-fragment";
 import { UI, UIElement } from "../../base-types";
 import { FloatingWindow } from "../../ui";
-import { Components } from "../../core";
+import { Components, ToolComponent } from "../../core";
 import { RoadNavigator } from "../RoadNavigator";
 import { FragmentBoundingBox } from "../../fragments";
 import { PlanHighlighter } from "./src/plan-highlighter";
-import { CurveHighlighter } from "../RoadNavigator/src/curve-highlighter";
 
 export class RoadPlanNavigator extends RoadNavigator implements UI {
   static readonly uuid = "3096dea0-5bc2-41c7-abce-9089b6c9431b" as const;
@@ -15,35 +15,42 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
   uiElement = new UIElement<{
     floatingWindow: FloatingWindow;
   }>();
-  highlighter1: CurveHighlighter;
-  highlighter2: PlanHighlighter;
+
+  highlighter: PlanHighlighter;
 
   constructor(components: Components) {
     super(components);
-    this.highlighter1 = new CurveHighlighter(this.scene.get());
-    this.highlighter2 = new PlanHighlighter(this.scene.get());
+    const scene = this.scene.get();
+    this.highlighter = new PlanHighlighter(scene);
     this.setUI();
 
+    this.components.tools.add(RoadPlanNavigator.uuid, this);
+
     this.onHighlight.add(async (curveMesh) => {
-      const bbox = this.components.tools.get(FragmentBoundingBox);
-      const alignment = curveMesh.curve.alignment;
-      for (const curve of alignment.horizontal) {
-        bbox.addMesh(curve.mesh);
-      }
-      const box = bbox.get();
-      const center = new THREE.Vector3();
-      const { min, max } = box;
-      const offset = 1.2;
-      const size = new THREE.Vector3(
-        (max.x - min.x) * offset,
-        (max.y - min.y) * offset,
-        (max.z - min.z) * offset
-      );
-      box.getCenter(center);
-      box.setFromCenterAndSize(center, size);
-      bbox.reset();
-      await this.scene.controls.fitToBox(box, true);
+      this.highlighter.showCurveInfo(curveMesh);
+      await this.fitCameraToAlignment(curveMesh);
     });
+  }
+
+  private async fitCameraToAlignment(curveMesh: FRAGS.CurveMesh) {
+    const bbox = this.components.tools.get(FragmentBoundingBox);
+    const alignment = curveMesh.curve.alignment;
+    for (const curve of alignment.horizontal) {
+      bbox.addMesh(curve.mesh);
+    }
+    const box = bbox.get();
+    const center = new THREE.Vector3();
+    const { min, max } = box;
+    const offset = 1.2;
+    const size = new THREE.Vector3(
+      (max.x - min.x) * offset,
+      (max.y - min.y) * offset,
+      (max.z - min.z) * offset
+    );
+    box.getCenter(center);
+    box.setFromCenterAndSize(center, size);
+    bbox.reset();
+    await this.scene.controls.fitToBox(box, true);
   }
 
   private setUI() {
@@ -86,3 +93,5 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
     this.uiElement.set({ floatingWindow });
   }
 }
+
+ToolComponent.libraryUUIDs.add(RoadPlanNavigator.uuid);
