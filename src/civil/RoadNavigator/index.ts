@@ -14,7 +14,10 @@ export abstract class RoadNavigator extends Component<any> {
 
   abstract highlighter: CurveHighlighter;
 
-  readonly onHighlight = new Event<FRAGS.CurveMesh>();
+  readonly onHighlight = new Event<{
+    point: THREE.Vector3;
+    mesh: FRAGS.CurveMesh;
+  }>();
 
   private _curveMeshes: FRAGS.CurveMesh[] = [];
 
@@ -29,12 +32,12 @@ export abstract class RoadNavigator extends Component<any> {
     return null as any;
   }
 
-  async draw(model: FragmentsGroup, ids?: Iterable<number>) {
+  async draw(model: FragmentsGroup, filter?: Iterable<FRAGS.Alignment>) {
     if (!model.civilData) {
       throw new Error("The provided model doesn't have civil data!");
     }
     const { alignments } = model.civilData;
-    const allIDs = ids || alignments.keys();
+    const allAlignments = filter || alignments.values();
 
     const scene = this.scene.get();
 
@@ -43,8 +46,7 @@ export abstract class RoadNavigator extends Component<any> {
     totalBBox.min.set(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
     totalBBox.max.set(-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE);
 
-    for (const id of allIDs) {
-      const alignment = alignments.get(id);
+    for (const alignment of allAlignments) {
       if (!alignment) {
         throw new Error("Alignment not found!");
       }
@@ -114,9 +116,9 @@ export abstract class RoadNavigator extends Component<any> {
         if (intersects) {
           const { point, object } = intersects;
           mousePositionSphere.position.copy(point);
-          const curve = object as FRAGS.CurveMesh;
-          this.highlighter.select(curve);
-          await this.onHighlight.trigger(curve);
+          const mesh = object as FRAGS.CurveMesh;
+          this.highlighter.select(mesh);
+          await this.onHighlight.trigger({ mesh, point });
           return;
         }
 
@@ -133,9 +135,12 @@ export abstract class RoadNavigator extends Component<any> {
   }
 
   clear() {
+    this.highlighter.unSelect();
+    this.highlighter.unHover();
     for (const mesh of this._curveMeshes) {
       mesh.removeFromParent();
     }
+    this._curveMeshes = [];
   }
 
   private adjustRaycasterOnZoom() {

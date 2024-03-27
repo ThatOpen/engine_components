@@ -113,6 +113,16 @@
   horizontalWindow.visible = true;
   navigator.draw(model);
 
+  const elevationNavigator = new OBC.RoadElevationNavigator(components);
+  const drawer = elevationNavigator.uiElement.get("drawer");
+  drawer.visible = true;
+
+  navigator.onHighlight.add(({ mesh }) => {
+    elevationNavigator.clear();
+    elevationNavigator.draw(model, [mesh.curve.alignment])
+  })
+
+
   // const hider = new OBC.FragmentHider(components);
   // await hider.loadCached();
   // mainToolbar.addChild(hider.uiElement.get("main"));

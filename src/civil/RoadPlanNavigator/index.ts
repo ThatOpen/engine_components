@@ -26,9 +26,9 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
 
     this.components.tools.add(RoadPlanNavigator.uuid, this);
 
-    this.onHighlight.add(async (curveMesh) => {
-      this.highlighter.showCurveInfo(curveMesh);
-      await this.fitCameraToAlignment(curveMesh);
+    this.onHighlight.add(({ mesh }) => {
+      this.highlighter.showCurveInfo(mesh);
+      this.fitCameraToAlignment(mesh);
     });
   }
 
