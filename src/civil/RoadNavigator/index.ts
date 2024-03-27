@@ -68,7 +68,15 @@ export abstract class RoadNavigator extends Component<any> {
       }
     }
 
-    await this.scene.controls.fitToBox(totalBBox, false);
+    const scaledBbox = new THREE.Box3();
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    totalBBox.getCenter(center);
+    totalBBox.getSize(size);
+    size.multiplyScalar(1.2);
+    scaledBbox.setFromCenterAndSize(center, size);
+
+    await this.scene.controls.fitToBox(scaledBbox, false);
   }
 
   setupEvents() {

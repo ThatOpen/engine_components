@@ -53,6 +53,11 @@ export class RoadElevationNavigator extends RoadNavigator implements UI {
       this.scene.setSize(height, width);
     });
 
+    drawer.onResized.add(() => {
+      const { width, height } = drawer.containerSize;
+      this.scene.setSize(height, width);
+    });
+
     if (this.components.renderer.isUpdateable()) {
       this.components.renderer.onAfterUpdate.add(async () => {
         if (drawer.visible) {

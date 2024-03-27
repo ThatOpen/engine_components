@@ -14,7 +14,8 @@ export class CurveHighlighter {
       LINE: [213 / 255, 0 / 255, 255 / 255],
       CIRCULARARC: [0 / 255, 46, 255 / 255],
       CLOTHOID: [0 / 255, 255 / 255, 0 / 255],
-      PARABOLIC: [0 / 255, 255 / 255, 72 / 255],
+      PARABOLICARC: [0 / 255, 255 / 255, 72 / 255],
+      CONSTANTGRADIENT: [213 / 255, 0 / 255, 255 / 255],
     } as { [curve: string]: number[] },
   };
 

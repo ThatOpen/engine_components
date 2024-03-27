@@ -81,7 +81,7 @@
   fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
   fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
 
-  const file = await fetch("../../../resources/asdf.frag");
+  const file = await fetch("../../../resources/asdf2.frag");
   const data = await file.arrayBuffer();
   const buffer = new Uint8Array(data);
   const model = await fragments.load(buffer);
@@ -117,9 +117,28 @@
   const drawer = elevationNavigator.uiElement.get("drawer");
   drawer.visible = true;
 
+
+
+  const navigator3D = new OBC.Road3DNavigator(components);
+  navigator3D.draw(model);
+  navigator3D.setup();
+
+  navigator3D.highlighter.hoverCurve.material.color.set(1, 1, 1);
+  navigator3D.highlighter.hoverPoints.material.color.set(1, 1, 1);
+
+  const sphere = new THREE.Sphere(undefined, 20);
+
   navigator.onHighlight.add(({ mesh }) => {
     elevationNavigator.clear();
-    elevationNavigator.draw(model, [mesh.curve.alignment])
+    elevationNavigator.draw(model, [mesh.curve.alignment]);
+    elevationNavigator.highlighter.select(mesh);
+    navigator3D.highlighter.select(mesh);
+
+    const index = mesh.curve.index;
+    const curve3d = mesh.curve.alignment.absolute[index];
+    curve3d.mesh.geometry.computeBoundingSphere();
+    components.camera.controls.fitToSphere(curve3d.mesh.geometry.boundingSphere, true);
+
   })
 
 
