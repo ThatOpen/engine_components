@@ -13,7 +13,7 @@ export class CurveHighlighter {
     colors: {
       LINE: [213 / 255, 0 / 255, 255 / 255],
       CIRCULARARC: [0 / 255, 46, 255 / 255],
-      CLOTHOID: [0 / 255, 255 / 255, 234 / 255],
+      CLOTHOID: [0 / 255, 255 / 255, 0 / 255],
       PARABOLIC: [0 / 255, 255 / 255, 72 / 255],
     } as { [curve: string]: number[] },
   };
@@ -172,7 +172,12 @@ export class CurveHighlighter {
     const pointsGeometry = new THREE.BufferGeometry();
     const pointsAttr = new THREE.BufferAttribute(new Float32Array(), 3);
     pointsGeometry.setAttribute("position", pointsAttr);
-    const pointsMaterial = new THREE.PointsMaterial({ size, color });
+    const pointsMaterial = new THREE.PointsMaterial({
+      size,
+      color,
+      sizeAttenuation: false,
+      depthTest: false,
+    });
     const points = new THREE.Points(pointsGeometry, pointsMaterial);
     points.frustumCulled = false;
     this.scene.add(points);
