@@ -10,7 +10,7 @@ import {
 import { Components, Simple2DMarker, ToolComponent } from "../../core";
 import { Button } from "../../ui";
 import { DimensionLabelClassName } from "../SimpleDimensionLine";
-import { getRaycastedFace, getVertices } from "../../utils";
+import { MeasurementUtils } from "../MeasurementUtils";
 
 export interface AreaSelection {
   area: number;
@@ -271,18 +271,17 @@ export class FaceMeasurement
     const scene = this.components.scene.get();
     scene.add(this.preview);
 
-    const result = getRaycastedFace(mesh, faceIndex, instance);
-    if (!result) return;
-    const { face, distances } = result;
+    const result = MeasurementUtils.getFace(mesh, faceIndex, instance);
+    if (result === null) {
+      console.log("Hey!");
+      return;
+    }
 
-    const area = this.regenerateHighlight(mesh, face.indices, instance);
+    const area = this.regenerateHighlight(mesh, result.indices, instance);
 
     let perimeter = 0;
-    for (const id of face.ids) {
-      const number = distances[id];
-      if (number !== undefined) {
-        perimeter += number;
-      }
+    for (const { distance } of result.edges) {
+      perimeter += distance;
     }
 
     this._currentSelelection = { perimeter, area };
@@ -305,7 +304,7 @@ export class FaceMeasurement
 
   private regenerateHighlight(
     mesh: THREE.Mesh | THREE.InstancedMesh,
-    indices: number[],
+    indices: Iterable<number>,
     instance?: number
   ) {
     const position: number[] = [];
@@ -316,12 +315,17 @@ export class FaceMeasurement
     const areaTriangle = new THREE.Triangle();
 
     for (const i of indices) {
-      const { v1, v2, v3 } = getVertices(mesh, i, instance);
-      position.push(v1.x, v1.y, v1.z);
-      position.push(v2.x, v2.y, v2.z);
-      position.push(v3.x, v3.y, v3.z);
+      const { p1, p2, p3 } = MeasurementUtils.getVerticesAndNormal(
+        mesh,
+        i,
+        instance
+      );
 
-      areaTriangle.set(v1, v2, v3);
+      position.push(p1.x, p1.y, p1.z);
+      position.push(p2.x, p2.y, p2.z);
+      position.push(p3.x, p3.y, p3.z);
+
+      areaTriangle.set(p1, p2, p3);
       area += areaTriangle.getArea();
 
       index.push(counter, counter + 1, counter + 2);
