@@ -113,36 +113,39 @@
   horizontalWindow.visible = true;
   navigator.draw(model);
 
-  // navigator.highlighter.highlightColor = 0xff0000;
-  navigator.onHighlight.add((data) => {
-  });
+  const elevationNavigator = new OBC.RoadElevationNavigator(components);
+  const drawer = elevationNavigator.uiElement.get("drawer");
+  drawer.visible = true;
 
+
+
+  const navigator3D = new OBC.Road3DNavigator(components);
+  navigator3D.draw(model);
+  navigator3D.setup();
+
+  navigator3D.highlighter.hoverCurve.material.color.set(1, 1, 1);
+  navigator3D.highlighter.hoverPoints.material.color.set(1, 1, 1);
+
+  const sphere = new THREE.Sphere(undefined, 20);
+
+  navigator.onHighlight.add(({ mesh }) => {
+    elevationNavigator.clear();
+    elevationNavigator.draw(model, [mesh.curve.alignment]);
+    elevationNavigator.highlighter.select(mesh);
+    navigator3D.highlighter.select(mesh);
+
+    const index = mesh.curve.index;
+    const curve3d = mesh.curve.alignment.absolute[index];
+    curve3d.mesh.geometry.computeBoundingSphere();
+    components.camera.controls.fitToSphere(curve3d.mesh.geometry.boundingSphere, true);
+
+  })
 
 
   // const hider = new OBC.FragmentHider(components);
   // await hider.loadCached();
   // mainToolbar.addChild(hider.uiElement.get("main"));
 
-  const translation = new THREE.Vector3();
-  const rotation = new THREE.Quaternion();
-  const scale = new THREE.Vector3();
-  model.coordinationMatrix.decompose(translation, rotation, scale);
-
-  let first = true;
-  const mat = new THREE.Matrix4();
-  for (const [id, alignment] of model.civilData.alignments) {
-    for (const curve of alignment.absolute) {
-      // if(first) {
-      //     const pos = curve.mesh.geometry.attributes.position.array;
-      //     const [x, y, z] = pos;
-      //     console.log(x, y, z);
-      //     mat.makeTranslation(-x, -y, -z);
-      //     first = false;
-      // }
-
-      scene.add(curve.mesh);
-    }
-  }
 
   const stats = new Stats();
   stats.showPanel(2);

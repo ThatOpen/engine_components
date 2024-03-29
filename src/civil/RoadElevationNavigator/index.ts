@@ -2,6 +2,7 @@ import { UI, UIElement } from "../../base-types";
 import { Drawer } from "../../ui";
 import { Components } from "../../core";
 import { RoadNavigator } from "../RoadNavigator";
+import { CurveHighlighter } from "../RoadNavigator/src/curve-highlighter";
 
 export class RoadElevationNavigator extends RoadNavigator implements UI {
   static readonly uuid = "097eea29-2d5a-431a-a247-204d44670621" as const;
@@ -12,9 +13,13 @@ export class RoadElevationNavigator extends RoadNavigator implements UI {
     drawer: Drawer;
   }>();
 
+  highlighter: CurveHighlighter;
+
   constructor(components: Components) {
     super(components);
     this.setUI();
+    const scene = this.scene.get();
+    this.highlighter = new CurveHighlighter(scene, "vertical");
   }
 
   get() {
@@ -45,6 +50,11 @@ export class RoadElevationNavigator extends RoadNavigator implements UI {
     drawer.onResized.add(() => {
       const width = window.innerWidth;
       const height = this.scene.size.y;
+      this.scene.setSize(height, width);
+    });
+
+    drawer.onResized.add(() => {
+      const { width, height } = drawer.containerSize;
       this.scene.setSize(height, width);
     });
 

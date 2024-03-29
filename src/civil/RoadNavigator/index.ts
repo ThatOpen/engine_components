@@ -9,25 +9,24 @@ import { MarkerManager } from "../../core/Simple2DMarker/src/marker-manager";
 export abstract class RoadNavigator extends Component<any> {
   enabled = true;
 
-  caster = new THREE.Raycaster();
-
   scene: Simple2DScene;
 
   abstract view: "horizontal" | "vertical";
 
-  protected _curves = new Set<FRAGS.CivilCurve>();
-  private curveMeshes: THREE.Object3D[] = [];
+  abstract highlighter: CurveHighlighter;
 
-  readonly onHighlight = new Event<FRAGS.CurveMesh>();
-  highlighter: CurveHighlighter;
+  readonly onHighlight = new Event<{
+    point: THREE.Vector3;
+    mesh: FRAGS.CurveMesh;
+  }>();
+
+  private _curveMeshes: FRAGS.CurveMesh[] = [];
 
   markerManager: MarkerManager;
 
   protected constructor(components: Components) {
     super(components);
-    this.caster.params.Line = { threshold: 10 };
     this.scene = new Simple2DScene(this.components, false);
-    this.highlighter = new CurveHighlighter(this.scene.get());
     this.markerManager = new MarkerManager(this.components, this.scene);
     this.setupEvents();
     this.adjustRaycasterOnZoom();
@@ -37,12 +36,12 @@ export abstract class RoadNavigator extends Component<any> {
     return null as any;
   }
 
-  async draw(model: FragmentsGroup, ids?: Iterable<number>) {
+  async draw(model: FragmentsGroup, filter?: Iterable<FRAGS.Alignment>) {
     if (!model.civilData) {
       throw new Error("The provided model doesn't have civil data!");
     }
     const { alignments } = model.civilData;
-    const allIDs = ids || alignments.keys();
+    const allAlignments = filter || alignments.values();
 
     const scene = this.scene.get();
 
@@ -51,8 +50,7 @@ export abstract class RoadNavigator extends Component<any> {
     totalBBox.min.set(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
     totalBBox.max.set(-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE);
 
-    for (const id of allIDs) {
-      const alignment = alignments.get(id);
+    for (const alignment of allAlignments) {
       if (!alignment) {
         throw new Error("Alignment not found!");
       }
@@ -71,9 +69,8 @@ export abstract class RoadNavigator extends Component<any> {
       );
 
       for (const curve of alignment[this.view]) {
-        this._curves.add(curve);
         scene.add(curve.mesh);
-        this.curveMeshes.push(curve.mesh);
+        this._curveMeshes.push(curve.mesh);
 
         if (!totalBBox.isEmpty()) {
           totalBBox.expandByObject(curve.mesh);
@@ -88,7 +85,15 @@ export abstract class RoadNavigator extends Component<any> {
       }
     }
 
-    await this.scene.controls.fitToBox(totalBBox, false);
+    const scaledBbox = new THREE.Box3();
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    totalBBox.getCenter(center);
+    totalBBox.getSize(size);
+    size.multiplyScalar(1.2);
+    scaledBbox.setFromCenterAndSize(center, size);
+
+    await this.scene.controls.fitToBox(scaledBbox, false);
   }
 
   setupEvents() {
@@ -103,21 +108,19 @@ export abstract class RoadNavigator extends Component<any> {
       .get("container")
       .domElement.addEventListener("mousemove", (event) => {
         const dom = this.scene.uiElement.get("container").domElement;
-        const mouse = new THREE.Vector2();
-        const rect = dom.getBoundingClientRect();
-        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-        this.caster.setFromCamera(mouse, this.scene.camera);
-        const intersects = this.caster.intersectObjects(this.curveMeshes);
+        const intersects = this.highlighter.castRay(
+          event,
+          this.scene.camera,
+          dom,
+          this._curveMeshes
+        );
 
-        if (intersects.length > 0) {
-          const { point, object } = intersects[0];
-          if (object instanceof FRAGS.CurveMesh) {
-            mousePositionSphere.position.copy(point);
-            this.highlighter.hover(object);
-            return;
-          }
+        if (intersects) {
+          const { point, object } = intersects;
+          mousePositionSphere.position.copy(point);
+          this.highlighter.hover(object as FRAGS.CurveMesh);
+          return;
         }
 
         this.highlighter.unHover();
@@ -127,45 +130,45 @@ export abstract class RoadNavigator extends Component<any> {
       .get("container")
       .domElement.addEventListener("click", async (event) => {
         const dom = this.scene.uiElement.get("container").domElement;
-        const mouse = new THREE.Vector2();
-        const rect = dom.getBoundingClientRect();
-        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-        this.caster.setFromCamera(mouse, this.scene.camera);
-        const intersects = this.caster.intersectObjects(this.curveMeshes);
+        const intersects = this.highlighter.castRay(
+          event,
+          this.scene.camera,
+          dom,
+          this._curveMeshes
+        );
 
-        if (intersects.length > 0) {
-          const curve = intersects[0].object;
-          if (curve instanceof FRAGS.CurveMesh) {
-            this.highlighter.select(curve);
-            // TODO: Example and Test, should be replaced with the actual implementation
-            this.markerManager.addCivilMarker("Curve", curve, "Length");
-            await this.onHighlight.trigger(curve);
-            return;
-          }
+        if (intersects) {
+          const { point, object } = intersects;
+          mousePositionSphere.position.copy(point);
+          const mesh = object as FRAGS.CurveMesh;
+          this.highlighter.select(mesh);
+          // TODO: Example and Test, should be replaced with the actual implementation
+          this.markerManager.addCivilMarker("Curve", mesh, "Length");
+          await this.onHighlight.trigger({ mesh, point });
+          return;
         }
 
         this.highlighter.unSelect();
       });
   }
 
-  dispose() {
+  async dispose() {
     this.highlighter.dispose();
     this.clear();
     this.onHighlight.reset();
-    this.caster = null as any;
-    this.scene.dispose();
-    this._curves = null as any;
-    this.curveMeshes = null as any;
+    await this.scene.dispose();
+    this._curveMeshes = [];
     this.markerManager.dispose();
   }
 
   clear() {
-    for (const curve of this._curves) {
-      curve.mesh.removeFromParent();
+    this.highlighter.unSelect();
+    this.highlighter.unHover();
+    for (const mesh of this._curveMeshes) {
+      mesh.removeFromParent();
     }
-    this._curves.clear();
+    this._curveMeshes = [];
   }
 
   private adjustRaycasterOnZoom() {
@@ -176,7 +179,8 @@ export abstract class RoadNavigator extends Component<any> {
       const screenSize = Math.max(width, height);
       const realScreenSize = screenSize / zoom;
       const range = 50;
-      this.caster.params.Line.threshold = realScreenSize / range;
+      const { caster } = this.highlighter;
+      caster.params.Line.threshold = realScreenSize / range;
     });
   }
 }

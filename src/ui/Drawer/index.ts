@@ -55,6 +55,12 @@ export class Drawer extends SimpleUIComponent<HTMLDivElement> {
     this.domElement.style.width = width;
   }
 
+  get containerSize() {
+    const height = this.domElement.clientHeight;
+    const width = this.domElement.clientWidth;
+    return { height, width };
+  }
+
   set alignment(value: typeof Drawer.prototype._type) {
     const classes = this.domElement.classList;
 

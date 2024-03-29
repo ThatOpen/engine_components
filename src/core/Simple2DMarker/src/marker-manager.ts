@@ -48,7 +48,7 @@ export class MarkerManager {
     if (scene) {
       this.scene = scene;
     }
-    this.boundingB = new FragmentBoundingBox(this.components);
+    this.boundingB = this.components.tools.get(FragmentBoundingBox);
     this.setupEvents();
   }
 
