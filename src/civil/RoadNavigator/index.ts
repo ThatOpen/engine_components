@@ -4,6 +4,7 @@ import { FragmentsGroup } from "bim-fragment";
 import { Component, Event } from "../../base-types";
 import { Components, Simple2DScene } from "../../core";
 import { CurveHighlighter } from "./src/curve-highlighter";
+import { MarkerManager } from "../../core/Simple2DMarker/src/marker-manager";
 
 export abstract class RoadNavigator extends Component<any> {
   enabled = true;
@@ -20,11 +21,14 @@ export abstract class RoadNavigator extends Component<any> {
   readonly onHighlight = new Event<FRAGS.CurveMesh>();
   highlighter: CurveHighlighter;
 
+  markerManager: MarkerManager;
+
   protected constructor(components: Components) {
     super(components);
     this.caster.params.Line = { threshold: 10 };
     this.scene = new Simple2DScene(this.components, false);
     this.highlighter = new CurveHighlighter(this.scene.get());
+    this.markerManager = new MarkerManager(this.components, this.scene);
     this.setupEvents();
     this.adjustRaycasterOnZoom();
   }
@@ -52,6 +56,19 @@ export abstract class RoadNavigator extends Component<any> {
       if (!alignment) {
         throw new Error("Alignment not found!");
       }
+
+      // TODO: Generate All The KPs and Stations
+      this.markerManager.addCivilMarker(
+        `0+${alignment.initialKP.toFixed(2)}`,
+        alignment[this.view][0].mesh,
+        "InitialKP"
+      );
+
+      this.markerManager.addCivilMarker(
+        "end",
+        alignment[this.view][alignment[this.view].length - 1].mesh,
+        "FinalKP"
+      );
 
       for (const curve of alignment[this.view]) {
         this._curves.add(curve);
@@ -122,6 +139,8 @@ export abstract class RoadNavigator extends Component<any> {
           const curve = intersects[0].object;
           if (curve instanceof FRAGS.CurveMesh) {
             this.highlighter.select(curve);
+            // TODO: Example and Test, should be replaced with the actual implementation
+            this.markerManager.addCivilMarker("Curve", curve, "Length");
             await this.onHighlight.trigger(curve);
             return;
           }
@@ -138,6 +157,8 @@ export abstract class RoadNavigator extends Component<any> {
     this.caster = null as any;
     this.scene.dispose();
     this._curves = null as any;
+    this.curveMeshes = null as any;
+    this.markerManager.dispose();
   }
 
   clear() {
