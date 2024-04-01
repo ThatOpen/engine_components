@@ -26,8 +26,7 @@ type RenderFunction = (
 
 export class IfcPropertiesProcessor
   extends Component<IndexMap>
-  implements UI, Disposable
-{
+  implements UI, Disposable {
   static readonly uuid = "23a889ab-83b3-44a4-8bee-ead83438370b" as const;
 
   /** {@link Disposable.onDisposed} */
@@ -307,6 +306,60 @@ export class IfcPropertiesProcessor
         }
       );
     }
+  }
+
+  getProperty(model: FragmentsGroup, expressID: number) {
+    //@ts-ignore
+    const allProperties = model._properties;
+    if (!allProperties) {
+      return null;
+    }
+    return allProperties[expressID];
+  };
+
+  processNoAsync(model: FragmentsGroup) {
+    if (!model.hasProperties) {
+      throw new Error("FragmentsGroup properties not found");
+    }
+    this._indexMap[model.uuid] = {};
+    const setEntities = [WEBIFC.IFCPROPERTYSET, WEBIFC.IFCELEMENTQUANTITY];
+    for (const relation of this.relationsToProcess) {
+      /* fork of IfcPropertiesUtils.getRelationMap(model, relation, ...): */
+      const ids = model.getAllPropertiesIDs();
+      for (const expressID of ids) {
+        const prop = this.getProperty(model, expressID);
+        if (!prop) {
+          continue;
+        }
+        const isRelation = prop.type === relation;
+        const relatingKey = Object.keys(prop).find(key => key.startsWith("Relating"));
+        const relatedKey = Object.keys(prop).find(key => key.startsWith("Related"));
+        if (!(isRelation && relatingKey && relatedKey)) continue;
+        const relating = this.getProperty(model, prop[relatingKey]?.value);
+        const related = prop[relatedKey];
+        if (!relating || !related) {
+          continue;
+        }
+        if (!(related && Array.isArray(related))) continue;
+        const elements = related.map(el => {
+          return el.value;
+        });
+
+        const relationEntity = this.getProperty(model, relating.expressID);
+        if (!relationEntity) {
+          return;
+        }
+        if (!setEntities.includes(relationEntity.type)) {
+          //@ts-ignore
+          this.setEntityIndex(model, relating.expressID);
+        }
+        for (const expressID of elements) {
+          //@ts-ignore
+          this.setEntityIndex(model, expressID).add(relating.expressID);
+        }
+      }
+    }
+
   }
 
   async renderProperties(model: FragmentsGroup, expressID: number) {

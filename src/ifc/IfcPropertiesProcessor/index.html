@@ -100,7 +100,21 @@
     Now, to view the properties of a model we need to process it:
     */
 
-	propsProcessor.process(model);
+
+  const timerStart = Date.now();
+  const version = 2;
+	/* async version */ if(version == 1) {
+    await propsProcessor.process(model);
+    const timerEnd = Date.now();
+    // expected: 15-19ms
+    console.log(`Execution time: ${timerEnd - timerStart} ms`);
+  }
+  /* no async version */ if(version == 2) {
+    propsProcessor.processNoAsync(model);
+    const timerEnd = Date.now();
+    // expected: 2-3ms
+    console.log(`Execution time: ${timerEnd - timerStart} ms`);
+  }
 
     /*MD
   And now, we will bind the highlihgter logic to the properties
