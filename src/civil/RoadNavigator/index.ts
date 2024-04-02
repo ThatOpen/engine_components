@@ -144,7 +144,7 @@ export abstract class RoadNavigator extends Component<any> {
           const mesh = object as FRAGS.CurveMesh;
           this.highlighter.select(mesh);
           // TODO: Example and Test, should be replaced with the actual implementation
-          this.markerManager.addCivilMarker("Curve", mesh, "Length");
+          // this.markerManager.addCivilMarker("Curve", mesh, "Length");
           await this.onHighlight.trigger({ mesh, point });
           return;
         }
