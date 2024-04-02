@@ -1,7 +1,6 @@
 import * as FRAGS from "bim-fragment";
 import * as THREE from "three";
 import { Components, Simple2DScene, Simple2DMarker } from "../..";
-import { FragmentBoundingBox } from "../../../fragments";
 
 type CivilLabels = "Station" | "Radius" | "Length" | "InitialKP" | "FinalKP";
 
@@ -39,16 +38,12 @@ export class MarkerManager {
   private _clusterKey = 0;
 
   private _clusterThreeshold = 50;
-
-  private boundingB: FragmentBoundingBox;
-
   private isNavigating = false;
 
   constructor(private components: Components, scene?: Simple2DScene) {
     if (scene) {
       this.scene = scene;
     }
-    this.boundingB = this.components.tools.get(FragmentBoundingBox);
     this.setupEvents();
   }
 
@@ -318,15 +313,15 @@ export class MarkerManager {
     const dy = screenPosition1.y - screenPosition2.y;
     const distance = Math.sqrt(dx * dx + dy * dy) * 0.5;
     // Managing Overlapping Labels
-    // if (distance === 0) {
-    //   const updateDistance = this._clusterThreeshold + 1;
-    //   return updateDistance;
-    // }
+    if (distance === 0) {
+      const updateDistance = this._clusterThreeshold + 1;
+      return updateDistance;
+    }
     return distance;
   }
 
   private navigateToCluster(key: string) {
-    this.boundingB.reset();
+    const boundingRegion: THREE.Vector3[] = [];
 
     const cluster = Array.from(this.clusterLabels).find(
       (cluster) => cluster.key === key
@@ -337,16 +332,40 @@ export class MarkerManager {
           (marker) => marker.key === markerKey
         );
         if (marker) {
-          this.boundingB.addMesh(marker.mesh as THREE.Mesh);
+          boundingRegion.push(marker.label.get().position);
         }
       });
       this.scene?.get().remove(cluster?.label.get());
       this.clusterLabels.delete(cluster);
     }
     if (this.scene) {
-      this.scene.controls.fitToSphere(this.boundingB.getSphere(), true);
+      const box3 = this.createBox3FromPoints(boundingRegion);
+      const size = new THREE.Vector3();
+      box3.getSize(size);
+      const center = new THREE.Vector3();
+      box3.getCenter(center);
+      const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
+      geometry.translate(center.x, center.y, center.z);
+      const mesh = new THREE.Mesh(geometry);
+      mesh.geometry.computeBoundingSphere();
+      const boundingSphere = mesh.geometry?.boundingSphere;
+      if (this.scene.controls && boundingSphere) {
+        this.scene.controls.fitToSphere(mesh, true);
+      }
       this.isNavigating = true;
+      geometry.dispose();
+      mesh.clear();
     }
+
+    boundingRegion.length = 0;
+  }
+
+  private createBox3FromPoints(points: THREE.Vector3[]) {
+    const bbox = new THREE.Box3();
+    points.forEach((point) => {
+      bbox.expandByPoint(point);
+    });
+    return bbox;
   }
 
   dispose() {
