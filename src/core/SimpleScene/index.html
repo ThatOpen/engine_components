@@ -152,6 +152,14 @@
 
 	components.scene.setup();
 
+  const label = new OBC.Simple2DMarker(components);
+  label.get().position.set(0, 4, 0);
+  label.get().element.textContent = 'Hello, Components!';
+  label.get().element.addEventListener('pointerdown', () => {
+    console.log('Hello, Components!');
+  });
+
+
 	/*MD
   ### 🧹 Cleaning up
   ___

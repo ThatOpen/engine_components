@@ -147,11 +147,13 @@ export class Simple2DScene
     this.renderer.overrideCamera = this.camera;
 
     this.controls = new CameraControls(this.camera, renderer.domElement);
-    this.controls.smoothTime = 0.6;
+    // this.controls.smoothTime = 0.6;
     this.controls.setTarget(0, 0, 0);
     this.controls.addEventListener("update", () => this.grid.regenerate());
     this.controls.mouseButtons.left = CameraControls.ACTION.TRUCK;
     this.controls.dollyToCursor = true;
+    this.controls.restThreshold = 2;
+    this.controls.dampingFactor = 0;
   }
 
   /**

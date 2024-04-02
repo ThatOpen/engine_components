@@ -81,7 +81,7 @@
   fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
   fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
 
-  const file = await fetch("../../../resources/asdf2.frag");
+  const file = await fetch("../../../resources/asdf.frag");
   const data = await file.arrayBuffer();
   const buffer = new Uint8Array(data);
   const model = await fragments.load(buffer);
@@ -116,8 +116,6 @@
   const elevationNavigator = new OBC.RoadElevationNavigator(components);
   const drawer = elevationNavigator.uiElement.get("drawer");
   drawer.visible = true;
-
-
 
   const navigator3D = new OBC.Road3DNavigator(components);
   navigator3D.draw(model);
