@@ -121,8 +121,11 @@ export class FragmentHider extends Component<void> implements Disposable, UI {
     for (const fragID in items) {
       const ids = items[fragID];
       const fragment = fragments.list[fragID];
-      fragment.setVisibility(visible, ids);
-      this.updateCulledVisibility(fragment);
+
+      if (fragment) {
+        fragment.setVisibility(visible, ids);
+        this.updateCulledVisibility(fragment);
+      }
     }
   }
 
