@@ -1,6 +1,6 @@
 {
   "name": "openbim-components",
-  "version": "1.4.18",
+  "version": "1.4.19",
   "main": "src/index.js",
   "author": "harry collin, antonio gonzalez viegas",
   "license": "MIT",
@@ -40,7 +40,7 @@
     "ts-jest": "^27.0.3",
     "ts-node": "^10.0.0",
     "typescript": "^4.3.2",
-    "web-ifc": "0.0.51"
+    "web-ifc": "0.0.52"
   },
   "dependencies": {
     "@popperjs/core": "2.11.8",
@@ -59,6 +59,6 @@
   "peerDependencies": {
     "bim-fragment": "1.4.0",
     "three": "^0.160.1",
-    "web-ifc": "0.0.51"
+    "web-ifc": "0.0.52"
   }
 }

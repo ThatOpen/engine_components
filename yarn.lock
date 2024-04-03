@@ -5903,11 +5903,11 @@ __metadata:
     ts-node: ^10.0.0
     typescript: ^4.3.2
     unzipit: ^1.4.3
-    web-ifc: 0.0.51
+    web-ifc: 0.0.52
   peerDependencies:
     bim-fragment: 1.4.0
     three: ^0.160.1
-    web-ifc: 0.0.51
+    web-ifc: 0.0.52
   languageName: unknown
   linkType: soft
 
@@ -7858,10 +7858,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"web-ifc@npm:0.0.51":
-  version: 0.0.51
-  resolution: "web-ifc@npm:0.0.51"
-  checksum: 079fb2ae460c757fb5b2259031b896bbabcb32abcfb76454ef7ebd01783170abbc4285fa63a4e763ab943ad99a63a1a22207bfd09ab93fb2fc47930cd2a7e0c8
+"web-ifc@npm:0.0.52":
+  version: 0.0.52
+  resolution: "web-ifc@npm:0.0.52"
+  checksum: 22d76af5e92ee05ed693996c8693d86d6ae93b5174da91d7c992d7f37c82767c711334ea121cd9ec8be8ee40a08f407f4359a18ee1fc36ba456f0d1a46184896
   languageName: node
   linkType: hard
 
