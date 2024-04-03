@@ -98,6 +98,16 @@ export class CurveHighlighter {
     this.hoverPoints.removeFromParent();
   }
 
+  setScale(
+    windowHeight: number,
+    windowWidth: number,
+    _triggerRedraw: boolean = false
+  ) {
+    const raycasterRange = 50;
+    const biggerSize = Math.max(windowHeight, windowWidth);
+    this.caster.params.Line.threshold = biggerSize / raycasterRange;
+  }
+
   protected highlight(
     mesh: FRAGS.CurveMesh,
     curve: Line2,

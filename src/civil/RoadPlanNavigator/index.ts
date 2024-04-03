@@ -50,6 +50,7 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
     box.getCenter(center);
     box.setFromCenterAndSize(center, size);
     bbox.reset();
+    this.highlighter.showCurveInfo(curveMesh);
     await this.scene.controls.fitToBox(box, true);
   }
 
@@ -88,8 +89,18 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
       });
     }
 
-    floatingWindow.onResized.trigger();
+    floatingWindow.onResized.add(() => {
+      const screenSize = floatingWindow.containerSize;
+      this.highlighter.setScale(screenSize.height, screenSize.width, true);
+      console.log("Setscale #1");
+    });
+    this.scene.controls.addEventListener("update", () => {
+      const screenSize = floatingWindow.containerSize;
+      this.highlighter.setScale(screenSize.height, screenSize.width, true);
+      console.log("Setscale #2");
+    });
 
+    floatingWindow.onResized.trigger();
     this.uiElement.set({ floatingWindow });
   }
 }
