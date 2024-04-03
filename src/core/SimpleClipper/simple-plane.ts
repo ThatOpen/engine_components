@@ -92,6 +92,10 @@ export class SimplePlane
     this._planeMesh.scale.set(size, size, size);
   }
 
+  get helper() {
+    return this._helper;
+  }
+
   constructor(
     components: Components,
     origin: THREE.Vector3,
@@ -115,17 +119,23 @@ export class SimplePlane
     }
   }
 
-  setFromNormalAndCoplanarPoint(normal: THREE.Vector3, point: THREE.Vector3) {
-    this.normal.copy(normal);
+  async setFromNormalAndCoplanarPoint(
+    normal: THREE.Vector3,
+    point: THREE.Vector3
+  ) {
+    this.reset();
+    if (!this.normal.equals(normal)) {
+      this.normal.copy(normal);
+      this._helper.lookAt(normal);
+    }
     this.origin.copy(point);
-    this._helper.lookAt(normal);
     this._helper.position.copy(point);
     this._helper.updateMatrix();
-    this.update();
+    await this.update();
   }
 
   /** {@link Updateable.update} */
-  update = () => {
+  update = async () => {
     if (!this._enabled) return;
     this._plane.setFromNormalAndCoplanarPoint(
       this.normal,
@@ -152,6 +162,18 @@ export class SimplePlane
     this._controls.dispose();
     await this.onDisposed.trigger();
     this.onDisposed.reset();
+  }
+
+  private reset() {
+    const normal = new THREE.Vector3(1, 0, 0);
+    const point = new THREE.Vector3();
+    if (!this.normal.equals(normal)) {
+      this.normal.copy(normal);
+      this._helper.lookAt(normal);
+    }
+    this.origin.copy(point);
+    this._helper.position.copy(point);
+    this._helper.updateMatrix();
   }
 
   protected toggleControls(state: boolean) {
