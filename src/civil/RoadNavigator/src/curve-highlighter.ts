@@ -99,12 +99,15 @@ export class CurveHighlighter {
   }
 
   setScale(
-    windowHeight: number,
-    windowWidth: number,
-    _triggerRedraw: boolean = false
+    screenSize: {
+      height: number;
+      width: number;
+    },
+    _zoom: number,
+    _triggerRedraw: boolean
   ) {
     const raycasterRange = 50;
-    const biggerSize = Math.max(windowHeight, windowWidth);
+    const biggerSize = Math.max(screenSize.height, screenSize.width);
     this.caster.params.Line.threshold = biggerSize / raycasterRange;
   }
 

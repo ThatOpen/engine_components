@@ -36,12 +36,17 @@ export class PlanHighlighter extends CurveHighlighter {
     }
   }
 
-  setScale(windowHeight: number, windowWidth: number, _triggerRedraw: boolean) {
-    super.setScale(windowHeight, windowWidth, _triggerRedraw);
-    const dimensionRange = 20;
-    const biggerSize = Math.max(windowHeight, windowWidth);
-    console.log("Height & Width", windowHeight, windowWidth);
-    const newOffset = biggerSize / dimensionRange;
+  setScale(
+    screenSize: {
+      height: number;
+      width: number;
+    },
+    _zoom: number,
+    _triggerRedraw: boolean
+  ) {
+    super.setScale(screenSize, _zoom, _triggerRedraw);
+    const biggerSize = Math.max(screenSize.height, screenSize.width);
+    const newOffset = biggerSize / (_zoom * 100);
     if (newOffset !== this.offset) {
       this.offset = newOffset;
       if (_triggerRedraw && this.currentCurveMesh) {
