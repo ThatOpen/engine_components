@@ -81,12 +81,12 @@
   fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
   fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
 
-  const file = await fetch("../../../resources/asdf.frag");
+  const file = await fetch("../../../resources/asdf2.frag");
   const data = await file.arrayBuffer();
   const buffer = new Uint8Array(data);
   const model = await fragments.load(buffer);
-  // const properties = await fetch("../../../resources/asdf.json");
-  // model.setLocalProperties(await properties.json());
+  const properties = await fetch("../../../resources/asdf2.json");
+  model.setLocalProperties(await properties.json());
 
   // const culler = new OBC.ScreenCuller(components);
   // culler.setup();
@@ -120,17 +120,16 @@
   navigator.onHighlight.add(({ point }) => {
     // sphere.center.copy(point);
     // components.camera.controls.fitToSphere(sphere, true);
-  })
+  });
 
   const crossNavigator = new OBC.RoadCrossSectionNavigator(components);
-
 
   const horizontalWindow = crossNavigator.uiElement.get("floatingWindow");
   horizontalWindow.visible = true;
 
   // navigator.highlighter.highlightColor = 0xff0000;
-  navigator.onHighlight.add(({curve, point, index}) => {
-    console.log(crossNavigator.plane)
+  navigator.onHighlight.add(({ curve, point, index }) => {
+    console.log(crossNavigator.plane);
     crossNavigator.set(curve, point, index);
     crossNavigator.updateStyles();
   });
@@ -139,20 +138,48 @@
 
   const axis = new THREE.AxesHelper();
   scene.add(axis);
-  axis.geometry.applyMatrix4(new THREE.Matrix4().makeScale(10, 10, 10))
+  axis.geometry.applyMatrix4(new THREE.Matrix4().makeScale(10, 10, 10));
   axis.material.depthTest = false;
 
+  const classifier = new OBC.FragmentClassifier(components);
+  classifier.byEntity(model);
+  console.log(classifier);
+
+  const classifications = classifier.get();
 
   const clipper = components.tools.get(OBC.EdgesClipper);
-  // const blueFill = new THREE.MeshBasicMaterial({color: 'lightblue', side: 2});
-  const blueLine = new THREE.LineBasicMaterial({ color: 0xff0000 });
-  // const blueOutline = new THREE.MeshBasicMaterial({color: 'blue', opacity: 0.2, side: 2, transparent: true});
-  clipper.styles.create('Red lines', new Set(components.meshes), blueLine, undefined, undefined);
+  const styles = clipper.styles.get();
+
+  for (const category in classifications.entities) {
+    const found = classifier.find({ entities: [category] });
+
+    const color = new THREE.Color(
+      Math.random(),
+      Math.random(),
+      Math.random()
+    );
+
+    const lineMaterial = new THREE.LineBasicMaterial({ color });
+    clipper.styles.create(category, new Set(), lineMaterial);
+
+    for (const fragID in found) {
+      const foundFrag = fragments.list[fragID];
+      if(!foundFrag) {
+        continue;
+      }
+      styles[category].fragments[fragID] = new Set(found[fragID]);
+      styles[category].meshes.add(foundFrag.mesh);
+    }
+  }
+
+
+  // classifier.find({{entities: []}})
 
 
   // const hider = new OBC.FragmentHider(components);
   // await hider.loadCached();
   // mainToolbar.addChild(hider.uiElement.get("main"));
+
 
   const stats = new Stats();
   stats.showPanel(2);
