@@ -93,13 +93,11 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
       const screenSize = floatingWindow.containerSize;
       const { zoom } = this.scene.camera;
       this.highlighter.setScale(screenSize, zoom, true);
-      console.log("Setscale #1");
     });
     this.scene.controls.addEventListener("update", () => {
       const screenSize = floatingWindow.containerSize;
       const { zoom } = this.scene.camera;
       this.highlighter.setScale(screenSize, zoom, true);
-      console.log("Setscale #2");
     });
 
     floatingWindow.onResized.trigger();

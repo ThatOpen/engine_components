@@ -50,7 +50,6 @@ export class PlanHighlighter extends CurveHighlighter {
     if (newOffset !== this.offset) {
       this.offset = newOffset;
       if (_triggerRedraw && this.currentCurveMesh) {
-        console.log("new offset", this.offset);
         this.showCurveInfo(this.currentCurveMesh);
       }
     }
@@ -168,10 +167,6 @@ export class PlanHighlighter extends CurveHighlighter {
   }
 
   private showLineInfo(curveMesh: FRAGS.CurveMesh, offset: number) {
-    // console.log("ES LINE");
-    // console.log(curveMesh);
-    console.log("Used offset to draw", offset);
-
     const positions = curveMesh.geometry.attributes.position.array;
     const parallelCurvePoints = this.calculateParallelCurve(
       positions,
@@ -196,10 +191,6 @@ export class PlanHighlighter extends CurveHighlighter {
   }
 
   private showCircularArcInfo(curveMesh: FRAGS.CurveMesh, offset: number) {
-    // console.log("ES CIRCULARARC");
-    // console.log(curveMesh);
-    console.log("Used offset to draw", offset);
-
     const radius = curveMesh.curve.data.RADIUS;
     const positions = curveMesh.geometry.attributes.position.array;
     const count = curveMesh.geometry.attributes.position.count;
@@ -273,10 +264,6 @@ export class PlanHighlighter extends CurveHighlighter {
   }
 
   private showClothoidInfo(curveMesh: FRAGS.CurveMesh, offset: number) {
-    // console.log("ES CLOTHOID");
-    // console.log(curveMesh);
-    console.log("Used offset to draw", offset);
-
     const positions = curveMesh.geometry.attributes.position.array;
     const parallelCurvePoints = this.calculateParallelCurve(
       positions,
