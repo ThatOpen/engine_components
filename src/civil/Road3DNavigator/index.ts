@@ -11,6 +11,7 @@ export class Road3DNavigator extends Component<any> {
   readonly onHighlight = new Event<{
     curve: FRAGS.CurveMesh;
     point: THREE.Vector3;
+    index: number;
   }>();
 
   highlighter: CurveHighlighter;
@@ -57,8 +58,10 @@ export class Road3DNavigator extends Component<any> {
       if (found) {
         const curve = found.object as FRAGS.CurveMesh;
         this.highlighter.select(curve);
-        const { point } = found;
-        await this.onHighlight.trigger({ curve, point });
+        const { point, index } = found;
+        if (index !== undefined) {
+          await this.onHighlight.trigger({ curve, point, index });
+        }
         return;
       }
       this.highlighter.unSelect();

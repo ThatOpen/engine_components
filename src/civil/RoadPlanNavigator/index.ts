@@ -6,6 +6,7 @@ import { Components, ToolComponent } from "../../core";
 import { RoadNavigator } from "../RoadNavigator";
 import { FragmentBoundingBox } from "../../fragments";
 import { PlanHighlighter } from "./src/plan-highlighter";
+import { CivilFloatingWindow } from "../CivilFloatingWindow";
 
 export class RoadPlanNavigator extends RoadNavigator implements UI {
   static readonly uuid = "3096dea0-5bc2-41c7-abce-9089b6c9431b" as const;
@@ -55,13 +56,12 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
   }
 
   private setUI() {
-    const floatingWindow = new FloatingWindow(this.components);
-    floatingWindow.title = "Horizontal alignments";
-    this.components.ui.add(floatingWindow);
-    floatingWindow.visible = false;
-    const hContainer = this.scene.uiElement.get("container");
-    floatingWindow.addChild(hContainer);
-
+    const name = "Horizontal alignment";
+    const floatingWindow = CivilFloatingWindow.get(
+      this.components,
+      this.scene,
+      name
+    );
     floatingWindow.onResized.add(() => this.scene.grid.regenerate());
 
     floatingWindow.slots.content.domElement.style.padding = "0";
