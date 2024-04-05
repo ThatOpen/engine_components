@@ -51,6 +51,7 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
     box.getCenter(center);
     box.setFromCenterAndSize(center, size);
     bbox.reset();
+    this.highlighter.showCurveInfo(curveMesh);
     await this.scene.controls.fitToBox(box, true);
   }
 
@@ -61,6 +62,45 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
       this.scene,
       name
     );
+    floatingWindow.onResized.add(() => this.scene.grid.regenerate());
+
+    floatingWindow.slots.content.domElement.style.padding = "0";
+    floatingWindow.slots.content.domElement.style.overflow = "hidden";
+
+    floatingWindow.onResized.add(() => {
+      const { width, height } = floatingWindow.containerSize;
+      this.scene.setSize(height, width);
+    });
+
+    floatingWindow.domElement.style.width = "20rem";
+    floatingWindow.domElement.style.height = "20rem";
+
+    floatingWindow.onVisible.add(() => {
+      if (floatingWindow.visible) {
+        this.scene.grid.regenerate();
+      }
+    });
+
+    if (this.components.renderer.isUpdateable()) {
+      this.components.renderer.onAfterUpdate.add(async () => {
+        if (floatingWindow.visible) {
+          await this.scene.update();
+        }
+      });
+    }
+
+    floatingWindow.onResized.add(() => {
+      const screenSize = floatingWindow.containerSize;
+      const { zoom } = this.scene.camera;
+      this.highlighter.setScale(screenSize, zoom, true);
+    });
+    this.scene.controls.addEventListener("update", () => {
+      const screenSize = floatingWindow.containerSize;
+      const { zoom } = this.scene.camera;
+      this.highlighter.setScale(screenSize, zoom, true);
+    });
+
+    floatingWindow.onResized.trigger();
     this.uiElement.set({ floatingWindow });
   }
 }
