@@ -4,9 +4,7 @@ import { CurveHighlighter } from "../../RoadNavigator/src/curve-highlighter";
 
 export class PlanHighlighter extends CurveHighlighter {
   private readonly markupMaterial: THREE.LineBasicMaterial;
-  private offset: number = 10;
-  private currentCurveMesh?: FRAGS.CurveMesh;
-
+  private readonly offset: number = 10;
   private markupLines: THREE.Line[] = [];
 
   constructor(scene: THREE.Group | THREE.Scene) {
@@ -17,65 +15,20 @@ export class PlanHighlighter extends CurveHighlighter {
   }
 
   showCurveInfo(curveMesh: FRAGS.CurveMesh): void {
-    this.currentCurveMesh = curveMesh;
-    this.disposeMarkups();
+    this.clearMarkups();
 
+    // eslint-disable-next-line default-case
     switch (curveMesh.curve.data.TYPE) {
       case "LINE":
-        this.showLineInfo(curveMesh, this.offset);
+        this.showLineInfo(curveMesh);
         break;
       case "CIRCULARARC":
-        this.showCircularArcInfo(curveMesh, this.offset);
+        this.showCircularArcInfo(curveMesh);
         break;
       case "CLOTHOID":
-        this.showClothoidInfo(curveMesh, this.offset);
-        break;
-      default:
-        console.log("Unknown curve type:", curveMesh.curve.data.TYPE);
+        this.showClothoidInfo(curveMesh);
         break;
     }
-  }
-
-  setScale(
-    screenSize: {
-      height: number;
-      width: number;
-    },
-    _zoom: number,
-    _triggerRedraw: boolean
-  ) {
-    super.setScale(screenSize, _zoom, _triggerRedraw);
-    const biggerSize = Math.max(screenSize.height, screenSize.width);
-    const newOffset = biggerSize / (_zoom * 150);
-    if (newOffset !== this.offset) {
-      this.offset = newOffset;
-      if (_triggerRedraw && this.currentCurveMesh) {
-        this.showCurveInfo(this.currentCurveMesh);
-      }
-    }
-  }
-
-  dispose() {
-    super.dispose();
-    for (const line of this.markupLines) {
-      this.scene.remove(line);
-      line.removeFromParent();
-    }
-    this.disposeMarkups();
-    this.markupMaterial.dispose();
-  }
-
-  private disposeMarkups(): void {
-    for (const line of this.markupLines) {
-      line.geometry.dispose();
-      this.scene.remove(line);
-    }
-    this.markupLines = [];
-  }
-
-  unSelect(): void {
-    super.unSelect();
-    this.disposeMarkups();
   }
 
   private calculateTangent(
@@ -95,12 +48,27 @@ export class PlanHighlighter extends CurveHighlighter {
     return tangent;
   }
 
+  private calculateTangentFromVectors(
+    vectors: THREE.Vector3[],
+    index: number
+  ): THREE.Vector3 {
+    const prevIndex = Math.max(index - 1, 0);
+    const nextIndex = Math.min(index + 1, vectors.length - 1);
+
+    const prevVector = vectors[prevIndex];
+    const nextVector = vectors[nextIndex];
+
+    const tangent = nextVector.clone().sub(prevVector).normalize();
+    return tangent;
+  }
+
   private calculateParallelCurve(
     positions: THREE.TypedArray,
     count: number,
     offset: number
   ): THREE.Vector3[] {
     const parallelCurvePoints = [];
+    console.log(offset);
     for (let i = 0; i < count; i++) {
       const tangentVector = this.calculateTangent(positions, i);
       const perpendicularVector = tangentVector
@@ -118,149 +86,97 @@ export class PlanHighlighter extends CurveHighlighter {
   }
 
   private calculateDimensionLines(
-    curve: FRAGS.CurveMesh,
-    line: THREE.Line
+    parallelCurvePoints: THREE.Vector3[],
+    dimensionLength: number
   ): {
     startDimensionPoints: THREE.Vector3[];
     endDimensionPoints: THREE.Vector3[];
   } {
     const startDimensionPoints = [];
-    const curvePositions = curve.geometry.attributes.position.array;
-    const linePositions = line.geometry.attributes.position.array;
-    if (curvePositions.length < 6 && linePositions.length < 6) {
-      throw new Error("Line must have at least two vertices");
-    }
-    const startCurvePoint = new THREE.Vector3(
-      curvePositions[0],
-      curvePositions[1],
-      curvePositions[2]
-    );
-    const startLinePoint = new THREE.Vector3(
-      linePositions[0],
-      linePositions[1],
-      linePositions[2]
-    );
     const endDimensionPoints = [];
-    const lastCurveIndex = curvePositions.length - 3;
-    const endCurvePoint = new THREE.Vector3(
-      curvePositions[lastCurveIndex],
-      curvePositions[lastCurveIndex + 1],
-      curvePositions[lastCurveIndex + 2]
-    );
-    const lastLineIndex = linePositions.length - 3;
-    const endLinePoint = new THREE.Vector3(
-      linePositions[lastLineIndex],
-      linePositions[lastLineIndex + 1],
-      linePositions[lastLineIndex + 2]
-    );
-    startDimensionPoints.push(startCurvePoint, startLinePoint);
-    endDimensionPoints.push(endCurvePoint, endLinePoint);
+
+    // Calculate start dimension line
+    const startTangentVector = this.calculateTangentFromVectors(
+      parallelCurvePoints,
+      0
+    ); // Assuming parallelCurvePoints start at index 0
+    const startPerpendicularVector = startTangentVector
+      .clone()
+      .applyAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2);
+    startPerpendicularVector.normalize();
+    const startPoint = parallelCurvePoints[0].clone();
+    const startLineVector = startPerpendicularVector
+      .clone()
+      .multiplyScalar(dimensionLength / 2);
+    const startLineStart = startPoint.clone().add(startLineVector);
+    const startLineEnd = startPoint.clone().sub(startLineVector);
+    startDimensionPoints.push(startLineStart, startLineEnd);
+
+    // Calculate end dimension line
+    const lastIndex = parallelCurvePoints.length - 1;
+    const endTangentVector = this.calculateTangentFromVectors(
+      parallelCurvePoints,
+      lastIndex
+    ); // Assuming parallelCurvePoints end at index lastIndex
+    const endPerpendicularVector = endTangentVector
+      .clone()
+      .applyAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2);
+    endPerpendicularVector.normalize();
+    const endPoint = parallelCurvePoints[lastIndex].clone();
+    const endLineVector = endPerpendicularVector
+      .clone()
+      .multiplyScalar(dimensionLength / 2);
+    const endLineStart = endPoint.clone().add(endLineVector);
+    const endLineEnd = endPoint.clone().sub(endLineVector);
+    endDimensionPoints.push(endLineStart, endLineEnd);
+
     return { startDimensionPoints, endDimensionPoints };
   }
 
-  private offsetDimensionLine(points: THREE.Vector3[], offset: number) {
-    const direction = new THREE.Vector3()
-      .copy(points[points.length - 1])
-      .sub(points[0])
-      .normalize();
-    const offsetVector = direction.clone().multiplyScalar(offset);
-    const newPoints = points.map((point) => point.clone().add(offsetVector));
-    return newPoints;
+  private clearMarkups(): void {
+    for (const line of this.markupLines) {
+      this.scene.remove(line);
+    }
+    this.markupLines = [];
   }
 
-  private showLineInfo(curveMesh: FRAGS.CurveMesh, offset: number) {
+  private addMarkupLine(geometry: THREE.BufferGeometry): void {
+    const markupLine = new THREE.Line(geometry, this.markupMaterial);
+    this.scene.add(markupLine);
+    this.markupLines.push(markupLine);
+  }
+
+  private showLineInfo(curveMesh: FRAGS.CurveMesh) {
+    // console.log("ES LINE");
+    // console.log(curveMesh);
+
     const positions = curveMesh.geometry.attributes.position.array;
     const parallelCurvePoints = this.calculateParallelCurve(
       positions,
       positions.length / 3,
-      offset
+      this.offset
     );
     const lengthGeometry = new THREE.BufferGeometry().setFromPoints(
       parallelCurvePoints
     );
-    const lineParallelLine = new THREE.Line(
-      lengthGeometry,
-      this.markupMaterial
-    );
-    this.scene.add(lineParallelLine);
-    this.markupLines.push(lineParallelLine);
+    this.addMarkupLine(lengthGeometry);
+
     const { startDimensionPoints, endDimensionPoints } =
-      this.calculateDimensionLines(curveMesh, lineParallelLine);
-    const offsetStartDimensionPoints = this.offsetDimensionLine(
-      startDimensionPoints,
-      offset * 0.1
-    );
-    const offsetEndDimensionPoints = this.offsetDimensionLine(
-      endDimensionPoints,
-      offset * 0.1
-    );
+      this.calculateDimensionLines(parallelCurvePoints, this.offset);
     const startDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
-      offsetStartDimensionPoints
+      startDimensionPoints
     );
     const endDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
-      offsetEndDimensionPoints
+      endDimensionPoints
     );
-    const lineStartDimensionlLine = new THREE.Line(
-      startDimensionGeometry,
-      this.markupMaterial
-    );
-    this.scene.add(lineStartDimensionlLine);
-    this.markupLines.push(lineStartDimensionlLine);
-    const lineEndDimensionlLine = new THREE.Line(
-      endDimensionGeometry,
-      this.markupMaterial
-    );
-    this.scene.add(lineEndDimensionlLine);
-    this.markupLines.push(lineEndDimensionlLine);
+    this.addMarkupLine(startDimensionGeometry);
+    this.addMarkupLine(endDimensionGeometry);
   }
 
-  private showClothoidInfo(curveMesh: FRAGS.CurveMesh, offset: number) {
-    const positions = curveMesh.geometry.attributes.position.array;
-    const parallelCurvePoints = this.calculateParallelCurve(
-      positions,
-      positions.length / 3,
-      offset
-    );
-    const lengthGeometry = new THREE.BufferGeometry().setFromPoints(
-      parallelCurvePoints
-    );
-    const clothParallelLine = new THREE.Line(
-      lengthGeometry,
-      this.markupMaterial
-    );
-    this.scene.add(clothParallelLine);
-    this.markupLines.push(clothParallelLine);
-    const { startDimensionPoints, endDimensionPoints } =
-      this.calculateDimensionLines(curveMesh, clothParallelLine);
-    const offsetStartDimensionPoints = this.offsetDimensionLine(
-      startDimensionPoints,
-      offset * 0.1
-    );
-    const offsetEndDimensionPoints = this.offsetDimensionLine(
-      endDimensionPoints,
-      offset * 0.1
-    );
-    const startDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
-      offsetStartDimensionPoints
-    );
-    const endDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
-      offsetEndDimensionPoints
-    );
-    const clothStartDimensionlLine = new THREE.Line(
-      startDimensionGeometry,
-      this.markupMaterial
-    );
-    this.scene.add(clothStartDimensionlLine);
-    this.markupLines.push(clothStartDimensionlLine);
-    const clothEndDimensionlLine = new THREE.Line(
-      endDimensionGeometry,
-      this.markupMaterial
-    );
-    this.scene.add(clothEndDimensionlLine);
-    this.markupLines.push(clothEndDimensionlLine);
-  }
+  private showCircularArcInfo(curveMesh: FRAGS.CurveMesh) {
+    // console.log("ES CIRCULARARC");
+    // console.log(curveMesh);
 
-  private showCircularArcInfo(curveMesh: FRAGS.CurveMesh, offset: number) {
     const radius = curveMesh.curve.data.RADIUS;
     const positions = curveMesh.geometry.attributes.position.array;
     const count = curveMesh.geometry.attributes.position.count;
@@ -293,9 +209,7 @@ export class PlanHighlighter extends CurveHighlighter {
     linePoints.push(middlePoint);
     linePoints.push(arcCenterPoint);
     const radiusGeometry = new THREE.BufferGeometry().setFromPoints(linePoints);
-    const radiusLine = new THREE.Line(radiusGeometry, this.markupMaterial);
-    this.scene.add(radiusLine);
-    this.markupLines.push(radiusLine);
+    this.addMarkupLine(radiusGeometry);
 
     const parallelCurvePoints = [];
     for (let i = 0; i < count; i++) {
@@ -310,7 +224,9 @@ export class PlanHighlighter extends CurveHighlighter {
       if (radius < 0) {
         perpendicularVector.negate();
       }
-      const offsetVector = perpendicularVector.clone().multiplyScalar(offset);
+      const offsetVector = perpendicularVector
+        .clone()
+        .multiplyScalar(this.offset);
       const pointIndex = i * 3;
       const parallelPoint = new THREE.Vector3(
         positions[pointIndex] + offsetVector.x,
@@ -322,40 +238,41 @@ export class PlanHighlighter extends CurveHighlighter {
     const lengthGeometry = new THREE.BufferGeometry().setFromPoints(
       parallelCurvePoints
     );
-    const circArcParallelLine = new THREE.Line(
-      lengthGeometry,
-      this.markupMaterial
-    );
-    this.scene.add(circArcParallelLine);
-    this.markupLines.push(circArcParallelLine);
+    this.addMarkupLine(lengthGeometry);
     const { startDimensionPoints, endDimensionPoints } =
-      this.calculateDimensionLines(curveMesh, circArcParallelLine);
-
-    const offsetStartDimensionPoints = this.offsetDimensionLine(
-      startDimensionPoints,
-      offset * 0.1
-    );
-    const offsetEndDimensionPoints = this.offsetDimensionLine(
-      endDimensionPoints,
-      offset * 0.1
-    );
+      this.calculateDimensionLines(parallelCurvePoints, this.offset);
     const startDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
-      offsetStartDimensionPoints
+      startDimensionPoints
     );
     const endDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
-      offsetEndDimensionPoints
+      endDimensionPoints
     );
-    const circArcStartDimensionlLine = new THREE.Line(
-      startDimensionGeometry,
-      this.markupMaterial
+    this.addMarkupLine(startDimensionGeometry);
+    this.addMarkupLine(endDimensionGeometry);
+  }
+
+  private showClothoidInfo(curveMesh: FRAGS.CurveMesh) {
+    // console.log("ES CLOTHOID");
+    // console.log(curveMesh);
+    const positions = curveMesh.geometry.attributes.position.array;
+    const parallelCurvePoints = this.calculateParallelCurve(
+      positions,
+      positions.length / 3,
+      this.offset
     );
-    this.scene.add(circArcStartDimensionlLine);
-    this.markupLines.push(circArcStartDimensionlLine);
-    const circArcEndDimensionlLine = new THREE.Line(
-      endDimensionGeometry,
-      this.markupMaterial
+    const lengthGeometry = new THREE.BufferGeometry().setFromPoints(
+      parallelCurvePoints
     );
-    this.scene.add(circArcEndDimensionlLine);
-    this.markupLines.push(circArcEndDimensionlLine);
+    this.addMarkupLine(lengthGeometry);
+    const { startDimensionPoints, endDimensionPoints } =
+      this.calculateDimensionLines(parallelCurvePoints, this.offset);
+    const startDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
+      startDimensionPoints
+    );
+    const endDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
+      endDimensionPoints
+    );
+    this.addMarkupLine(startDimensionGeometry);
+    this.addMarkupLine(endDimensionGeometry);
   }
 }
