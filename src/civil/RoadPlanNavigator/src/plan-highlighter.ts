@@ -48,6 +48,20 @@ export class PlanHighlighter extends CurveHighlighter {
     return tangent;
   }
 
+  private calculateTangentFromVectors(
+    vectors: THREE.Vector3[],
+    index: number
+  ): THREE.Vector3 {
+    const prevIndex = Math.max(index - 1, 0);
+    const nextIndex = Math.min(index + 1, vectors.length - 1);
+
+    const prevVector = vectors[prevIndex];
+    const nextVector = vectors[nextIndex];
+
+    const tangent = nextVector.clone().sub(prevVector).normalize();
+    return tangent;
+  }
+
   private calculateParallelCurve(
     positions: THREE.TypedArray,
     count: number,
@@ -69,6 +83,54 @@ export class PlanHighlighter extends CurveHighlighter {
       parallelCurvePoints.push(parallelPoint);
     }
     return parallelCurvePoints;
+  }
+
+  private calculateDimensionLines(
+    parallelCurvePoints: THREE.Vector3[],
+    dimensionLength: number
+  ): {
+    startDimensionPoints: THREE.Vector3[];
+    endDimensionPoints: THREE.Vector3[];
+  } {
+    const startDimensionPoints = [];
+    const endDimensionPoints = [];
+
+    // Calculate start dimension line
+    const startTangentVector = this.calculateTangentFromVectors(
+      parallelCurvePoints,
+      0
+    ); // Assuming parallelCurvePoints start at index 0
+    const startPerpendicularVector = startTangentVector
+      .clone()
+      .applyAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2);
+    startPerpendicularVector.normalize();
+    const startPoint = parallelCurvePoints[0].clone();
+    const startLineVector = startPerpendicularVector
+      .clone()
+      .multiplyScalar(dimensionLength / 2);
+    const startLineStart = startPoint.clone().add(startLineVector);
+    const startLineEnd = startPoint.clone().sub(startLineVector);
+    startDimensionPoints.push(startLineStart, startLineEnd);
+
+    // Calculate end dimension line
+    const lastIndex = parallelCurvePoints.length - 1;
+    const endTangentVector = this.calculateTangentFromVectors(
+      parallelCurvePoints,
+      lastIndex
+    ); // Assuming parallelCurvePoints end at index lastIndex
+    const endPerpendicularVector = endTangentVector
+      .clone()
+      .applyAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2);
+    endPerpendicularVector.normalize();
+    const endPoint = parallelCurvePoints[lastIndex].clone();
+    const endLineVector = endPerpendicularVector
+      .clone()
+      .multiplyScalar(dimensionLength / 2);
+    const endLineStart = endPoint.clone().add(endLineVector);
+    const endLineEnd = endPoint.clone().sub(endLineVector);
+    endDimensionPoints.push(endLineStart, endLineEnd);
+
+    return { startDimensionPoints, endDimensionPoints };
   }
 
   private clearMarkups(): void {
@@ -98,6 +160,17 @@ export class PlanHighlighter extends CurveHighlighter {
       parallelCurvePoints
     );
     this.addMarkupLine(lengthGeometry);
+
+    const { startDimensionPoints, endDimensionPoints } =
+      this.calculateDimensionLines(parallelCurvePoints, this.offset);
+    const startDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
+      startDimensionPoints
+    );
+    const endDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
+      endDimensionPoints
+    );
+    this.addMarkupLine(startDimensionGeometry);
+    this.addMarkupLine(endDimensionGeometry);
   }
 
   private showCircularArcInfo(curveMesh: FRAGS.CurveMesh) {
@@ -166,6 +239,16 @@ export class PlanHighlighter extends CurveHighlighter {
       parallelCurvePoints
     );
     this.addMarkupLine(lengthGeometry);
+    const { startDimensionPoints, endDimensionPoints } =
+      this.calculateDimensionLines(parallelCurvePoints, this.offset);
+    const startDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
+      startDimensionPoints
+    );
+    const endDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
+      endDimensionPoints
+    );
+    this.addMarkupLine(startDimensionGeometry);
+    this.addMarkupLine(endDimensionGeometry);
   }
 
   private showClothoidInfo(curveMesh: FRAGS.CurveMesh) {
@@ -181,5 +264,15 @@ export class PlanHighlighter extends CurveHighlighter {
       parallelCurvePoints
     );
     this.addMarkupLine(lengthGeometry);
+    const { startDimensionPoints, endDimensionPoints } =
+      this.calculateDimensionLines(parallelCurvePoints, this.offset);
+    const startDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
+      startDimensionPoints
+    );
+    const endDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
+      endDimensionPoints
+    );
+    this.addMarkupLine(startDimensionGeometry);
+    this.addMarkupLine(endDimensionGeometry);
   }
 }

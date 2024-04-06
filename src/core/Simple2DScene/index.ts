@@ -153,7 +153,7 @@ export class Simple2DScene
     this.controls.mouseButtons.left = CameraControls.ACTION.TRUCK;
     this.controls.dollyToCursor = true;
     this.controls.restThreshold = 2;
-    this.controls.dampingFactor = 0;
+    this.controls.smoothTime = 0.2;
   }
 
   /**

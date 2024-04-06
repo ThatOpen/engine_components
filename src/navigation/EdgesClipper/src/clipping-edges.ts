@@ -244,6 +244,7 @@ export class ClippingEdges
 
     // set the draw range to only the new segments and offset the lines so they don't intersect with the geometry
     edges.mesh.geometry.setDrawRange(0, index);
+
     edges.mesh.position.copy(this._plane.normal).multiplyScalar(0.0001);
     posAttr.needsUpdate = true;
 
@@ -251,8 +252,10 @@ export class ClippingEdges
     const attributes = edges.mesh.geometry.attributes;
     const position = attributes.position as THREE.BufferAttribute;
     if (!Number.isNaN(position.array[0])) {
-      const scene = this.components.scene.get();
-      scene.add(edges.mesh);
+      if (!edges.mesh.parent) {
+        const scene = this.components.scene.get();
+        scene.add(edges.mesh);
+      }
       if (this.fillNeedsUpdate && edges.fill) {
         edges.fill.geometry = edges.mesh.geometry;
         edges.fill.update(indexes);
