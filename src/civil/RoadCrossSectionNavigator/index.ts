@@ -38,45 +38,27 @@ export class RoadCrossSectionNavigator extends Component<any> implements UI {
     return null as any;
   }
 
-  updateStyles() {
-    const scene = this.scene.get();
-    const edges = this.plane.edges.get();
-    for (const styleName in edges) {
-      const { mesh } = edges[styleName];
-      scene.add(mesh);
-    }
-  }
+  async set(curveMesh: FRAGS.CurveMesh, point: THREE.Vector3) {
+    this.plane.enabled = true;
 
-  async set(curve: FRAGS.CurveMesh, point: THREE.Vector3, curveIndex: number) {
-    if (curve.geometry.index === null) {
+    const percentage = curveMesh.curve.getPercentageAt(point);
+    if (percentage === null) return;
+    const { startPoint, endPoint } = curveMesh.curve.getSegmentAt(percentage);
+
+    if (curveMesh.geometry.index === null) {
       throw new Error("Geometry must be indexed!");
     }
 
-    const pos = curve.geometry.attributes.position.array;
-    const index = curve.geometry.index.array;
-
-    const start = index[curveIndex] * 3;
-    const end = index[curveIndex + 1] * 3;
-
-    const startX = pos[start];
-    const startY = pos[start + 1];
-    const startZ = pos[start + 2];
-
-    const endX = pos[end];
-    const endY = pos[end + 1];
-    const endZ = pos[end + 2];
-
-    const direction = new THREE.Vector3(
-      endX - startX,
-      endY - startY,
-      endZ - startZ
-    );
+    const direction = new THREE.Vector3();
+    direction.subVectors(endPoint, startPoint);
     direction.normalize();
 
     await this.plane.setFromNormalAndCoplanarPoint(direction, point);
 
     const transform = this.plane.helper.matrix.clone();
     transform.invert();
+
+    const scene = this.scene.get();
 
     const edges = this.plane.edges.get();
     for (const styleName in edges) {
@@ -85,7 +67,12 @@ export class RoadCrossSectionNavigator extends Component<any> implements UI {
       mesh.rotation.set(0, 0, 0);
       mesh.updateMatrix();
       mesh.applyMatrix4(transform);
+      if (mesh.parent !== scene) {
+        scene.add(mesh);
+      }
     }
+
+    this.plane.enabled = false;
   }
 
   private setUI() {

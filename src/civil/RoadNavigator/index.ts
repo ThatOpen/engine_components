@@ -26,6 +26,7 @@ export abstract class RoadNavigator extends Component<any> {
     alignment: FRAGS.Alignment;
     percentage: number;
     type: CivilMarkerType;
+    curve: FRAGS.CivilCurve;
   }>();
 
   private _curveMeshes: FRAGS.CurveMesh[] = [];
@@ -248,12 +249,13 @@ export abstract class RoadNavigator extends Component<any> {
   ) {
     const { point, index, object } = intersects;
     const mesh = object as FRAGS.CurveMesh;
+    const curve = mesh.curve;
     const alignment = mesh.curve.alignment;
     const percentage = alignment.getPercentageAt(point, this.view);
     const markerPoint = point.clone();
     this.setMouseMarker(markerPoint, mesh, index, type);
     if (percentage !== null) {
-      await this.onMarkerChange.trigger({ alignment, percentage, type });
+      await this.onMarkerChange.trigger({ alignment, percentage, type, curve });
     }
   }
 }
