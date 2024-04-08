@@ -68,7 +68,7 @@ export class PlanHighlighter extends CurveHighlighter {
     offset: number
   ): THREE.Vector3[] {
     const parallelCurvePoints = [];
-    console.log(offset);
+    // console.log(offset);
     for (let i = 0; i < count; i++) {
       const tangentVector = this.calculateTangent(positions, i);
       const perpendicularVector = tangentVector
