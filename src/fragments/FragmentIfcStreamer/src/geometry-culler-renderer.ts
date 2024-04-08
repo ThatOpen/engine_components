@@ -296,6 +296,7 @@ export class GeometryCullerRenderer extends CullerRenderer {
 
     this._modelIDIndex.delete(modelID);
     this._indexModelID.delete(index);
+    this._foundGeometries.clear();
   }
 
   addFragment(modelID: string, geometryID: number, frag: FRAGS.Fragment) {
