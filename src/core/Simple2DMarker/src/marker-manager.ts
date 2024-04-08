@@ -262,7 +262,6 @@ export class MarkerManager {
 
   // TODO: Move this to switch statement inside addCivilMarker
   addKPStation(text: string, mesh: THREE.Line) {
-    // Generating Labels that are perpendicular to the point and has dotted line beneath it
     const container = document.createElement("div");
     const span = document.createElement("div");
     container.appendChild(span);
@@ -271,7 +270,6 @@ export class MarkerManager {
 
     span.style.color = this._color;
     span.style.borderBottom = "1px dotted white";
-    // span.style.paddingBottom = "5px";
     span.style.width = "160px";
     span.style.textAlign = "left";
 
@@ -306,7 +304,6 @@ export class MarkerManager {
 
     marker.get().position.copy(midPoint);
 
-    // Get Rotation
     const direction = new THREE.Vector3();
     direction.subVectors(point, secondLastPoint).normalize();
     const quaternion = new THREE.Quaternion();
@@ -317,7 +314,7 @@ export class MarkerManager {
 
     span.style.transform = `rotate(${
       -rotationZ - 90
-    }deg) translate(-50%, -50%)`;
+    }deg) translate(-35%, -50%)`;
 
     this.markers.add({
       label: marker,

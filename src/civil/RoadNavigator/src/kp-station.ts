@@ -10,7 +10,7 @@ type CivilHighlightType = "horizontal" | "absolute" | "vertical";
 export class KPStation {
   private type: CivilHighlightType;
 
-  private scene: THREE.Group | THREE.Scene;
+  // private scene: THREE.Group | THREE.Scene;
 
   private markerManager: MarkerManager;
 
@@ -23,7 +23,7 @@ export class KPStation {
     controls: CameraControls,
     type: CivilHighlightType
   ) {
-    this.scene = scene;
+    // this.scene = scene;
     this.type = type;
 
     this.markerManager = new MarkerManager(
@@ -41,8 +41,10 @@ export class KPStation {
         this.markerManager.addKPStation(data.value, data.normal);
       }
 
-      // const constantKPStations =
-      this.generateConstantKP(mesh);
+      const constantKPStations = this.generateConstantKP(mesh);
+      for (const [, data] of constantKPStations) {
+        this.markerManager.addKPStation(data.value, data.normal);
+      }
     }
   }
 
@@ -142,53 +144,91 @@ export class KPStation {
 
   private generateConstantKP(mesh: FRAGS.CurveMesh) {
     const { alignment } = mesh.curve;
-    // const data = new Map<
-    //   number,
-    //   {
-    //     value: string;
-    //     distance: number;
-    //     point: THREE.Vector3;
-    //     normal: THREE.Line;
-    //   }
-    // >();
+    const data = new Map<
+      number,
+      {
+        value: string;
+        distance: number;
+        point: THREE.Vector3;
+        normal: THREE.Line;
+      }
+    >();
 
     const alignmentLength = alignment.getLength("horizontal");
     const divisions = Math.floor(alignmentLength / this.divisionLength);
-    console.log(`divisions: ${divisions}`);
     for (let i = 0; i < divisions; i++) {
-      // const percentage = i / divisions;
-      // const point = alignment.getPointAt(percentage, "horizontal");
-      console.log(this.scene);
+      const percentage = i / divisions;
+      const kpPoint = alignment.getPointAt(percentage, "horizontal");
+      const length = alignmentLength * percentage;
+      // const curve = alignment.getCurveAt(percentage, "horizontal");
+      const normalLine = this.getNormal(alignment, kpPoint);
+      data.set(i, {
+        value: this.getShortendKPValue(length),
+        distance: length,
+        point: kpPoint,
+        normal: normalLine,
+      });
     }
+
+    return data;
   }
 
-  // private getDistanceTillPercentage(
-  //   alignment: FRAGS.Alignment,
-  //   percentage: number
-  // ) {
-  //   if (percentage < 0) {
-  //     percentage = 0;
-  //   } else if (percentage > 1) {
-  //     percentage = 1;
-  //   }
-  //   for (const curve of alignment.horizontal) {
-  //     const curvePosition = curve.mesh.geometry.getAttribute("position");
-  //     const lastSegmentIndex = curvePosition.count - 1;
+  // TODO: Move Generation of Points to Previous Method Call
+  private getNormal(curve: FRAGS.Alignment, point: THREE.Vector3) {
+    const pointsInCurve = [];
+    const normalPoints = {
+      start: new THREE.Vector3(),
+      end: new THREE.Vector3(),
+    };
 
-  //     const lastSegment = new THREE.Vector3();
-  //     lastSegment.x = curvePosition.getX(lastSegmentIndex);
-  //     lastSegment.y = curvePosition.getY(lastSegmentIndex);
-  //     lastSegment.z = curvePosition.getZ(lastSegmentIndex);
+    for (let i = 0; i < curve.horizontal.length; i++) {
+      const curveMesh = curve.horizontal[i].mesh;
+      const position = curveMesh.geometry.attributes.position;
+      const length = position.count;
 
-  //     if (lastSegment.equals(point)) {
-  //       return distance;
-  //     }
+      for (let j = 0; j < length; j++) {
+        const x = position.getX(j);
+        const y = position.getY(j);
+        const z = position.getZ(j);
+        pointsInCurve.push(new THREE.Vector3(x, y, z));
+      }
+    }
 
-  //     distance += curve.getLength();
-  //   }
+    for (let i = 0; i < pointsInCurve.length - 1; i++) {
+      const p1 = pointsInCurve[i];
+      const p2 = pointsInCurve[i + 1];
 
-  //   return distance;
-  // }
+      const distanceP1 = p1.distanceTo(point);
+      const distanceP2 = p2.distanceTo(point);
+      const distanceP1P2 = p1.distanceTo(p2);
+
+      const epsilion = 0.00001;
+      const isOnLine = Math.abs(distanceP1 + distanceP2 - distanceP1P2);
+
+      if (isOnLine < epsilion) {
+        normalPoints.start = p1;
+        normalPoints.end = p2;
+      }
+    }
+
+    const direction = new THREE.Vector3().subVectors(
+      normalPoints.end,
+      normalPoints.start
+    );
+    const normal = direction
+      .clone()
+      .applyAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI * 0.5)
+      .normalize();
+    const normalGeom = new THREE.BufferGeometry().setFromPoints([
+      normal.clone().setLength(10).add(point),
+      normal.clone().setLength(-10).add(point),
+    ]);
+    const normalLine = new THREE.Line(
+      normalGeom,
+      new THREE.LineBasicMaterial({ color: 0xff0000 })
+    );
+    return normalLine;
+  }
 
   private getShortendKPValue(value: number) {
     const formattedValue = value.toFixed(2);

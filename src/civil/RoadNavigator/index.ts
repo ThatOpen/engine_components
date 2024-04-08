@@ -74,10 +74,6 @@ export abstract class RoadNavigator extends Component<any> {
         throw new Error("Alignment not found!");
       }
 
-      if (this._curveMeshes.length > 20) {
-        break;
-      }
-
       for (const curve of alignment[this.view]) {
         scene.add(curve.mesh);
         this._curveMeshes.push(curve.mesh);
