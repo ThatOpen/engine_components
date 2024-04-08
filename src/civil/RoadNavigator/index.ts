@@ -4,7 +4,6 @@ import { FragmentsGroup } from "bim-fragment";
 import { Component, Event } from "../../base-types";
 import { Components, Simple2DScene } from "../../core";
 import { CurveHighlighter } from "./src/curve-highlighter";
-import { MarkerManager } from "../../core/Simple2DMarker/src/marker-manager";
 
 export abstract class RoadNavigator extends Component<any> {
   enabled = true;
@@ -15,6 +14,9 @@ export abstract class RoadNavigator extends Component<any> {
 
   abstract highlighter: CurveHighlighter;
 
+  abstract showKPStations(curveMesh: FRAGS.CurveMesh): void;
+  abstract clearKPStations(): void;
+
   readonly onHighlight = new Event<{
     point: THREE.Vector3;
     mesh: FRAGS.CurveMesh;
@@ -22,12 +24,9 @@ export abstract class RoadNavigator extends Component<any> {
 
   private _curveMeshes: FRAGS.CurveMesh[] = [];
 
-  markerManager: MarkerManager;
-
   protected constructor(components: Components) {
     super(components);
     this.scene = new Simple2DScene(this.components, false);
-    this.markerManager = new MarkerManager(this.components, this.scene);
     this.setupEvents();
     this.adjustRaycasterOnZoom();
   }
@@ -55,18 +54,9 @@ export abstract class RoadNavigator extends Component<any> {
         throw new Error("Alignment not found!");
       }
 
-      // TODO: Generate All The KPs and Stations
-      this.markerManager.addCivilMarker(
-        `0+${alignment.initialKP.toFixed(2)}`,
-        alignment[this.view][0].mesh,
-        "InitialKP"
-      );
-
-      this.markerManager.addCivilMarker(
-        "end",
-        alignment[this.view][alignment[this.view].length - 1].mesh,
-        "FinalKP"
-      );
+      if (this._curveMeshes.length > 20) {
+        break;
+      }
 
       for (const curve of alignment[this.view]) {
         scene.add(curve.mesh);
@@ -142,14 +132,20 @@ export abstract class RoadNavigator extends Component<any> {
           const { point, object } = intersects;
           mousePositionSphere.position.copy(point);
           const mesh = object as FRAGS.CurveMesh;
+          console.log(mesh);
           this.highlighter.select(mesh);
           // TODO: Example and Test, should be replaced with the actual implementation
           // this.markerManager.addCivilMarker("Curve", mesh, "Length");
+
+          // this.addKPStations(mesh);
+          this.showKPStations(mesh);
+
           await this.onHighlight.trigger({ mesh, point });
           return;
         }
 
         this.highlighter.unSelect();
+        this.clearKPStations();
       });
   }
 
@@ -159,7 +155,6 @@ export abstract class RoadNavigator extends Component<any> {
     this.onHighlight.reset();
     await this.scene.dispose();
     this._curveMeshes = [];
-    this.markerManager.dispose();
   }
 
   clear() {

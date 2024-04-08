@@ -7,6 +7,7 @@ import { RoadNavigator } from "../RoadNavigator";
 import { FragmentBoundingBox } from "../../fragments";
 import { PlanHighlighter } from "./src/plan-highlighter";
 import { CivilFloatingWindow } from "../CivilFloatingWindow";
+import { KPStation } from "../RoadNavigator/src/kp-station";
 
 export class RoadPlanNavigator extends RoadNavigator implements UI {
   static readonly uuid = "3096dea0-5bc2-41c7-abce-9089b6c9431b" as const;
@@ -18,11 +19,21 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
   }>();
 
   highlighter: PlanHighlighter;
+  kpStation: KPStation;
 
   constructor(components: Components) {
     super(components);
     const scene = this.scene.get();
     this.highlighter = new PlanHighlighter(scene);
+
+    this.kpStation = new KPStation(
+      components,
+      this.scene.renderer,
+      this.scene.get(),
+      this.scene.controls,
+      this.view
+    );
+
     this.setUI();
 
     this.components.tools.add(RoadPlanNavigator.uuid, this);
@@ -52,6 +63,14 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
     box.setFromCenterAndSize(center, size);
     bbox.reset();
     await this.scene.controls.fitToBox(box, true);
+  }
+
+  showKPStations(curveMesh: FRAGS.CurveMesh): void {
+    this.kpStation.showKPStations(curveMesh);
+  }
+
+  clearKPStations(): void {
+    this.kpStation.clearKPStations();
   }
 
   private setUI() {

@@ -1,8 +1,8 @@
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
+import * as THREE from "three";
 import { Hideable, Disposable, Event } from "../../base-types";
 import { Component } from "../../base-types/component";
 import { Components } from "../Components";
-import { Simple2DScene } from "..";
 
 export class Simple2DMarker
   extends Component<CSS2DObject>
@@ -27,7 +27,7 @@ export class Simple2DMarker
   constructor(
     components: Components,
     marker?: HTMLElement,
-    scene?: Simple2DScene
+    scene?: THREE.Group | THREE.Scene
   ) {
     super(components);
     let _marker: HTMLElement;
@@ -40,7 +40,7 @@ export class Simple2DMarker
     }
     this._marker = new CSS2DObject(_marker);
     if (scene) {
-      scene.get().add(this._marker);
+      scene.add(this._marker);
     } else {
       this.components.scene.get().add(this._marker);
     }
