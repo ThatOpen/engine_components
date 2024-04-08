@@ -137,6 +137,9 @@ export class MarkerManager {
           }
         });
         if (this.currentKeys.size > 0) {
+          if (!this.scene) {
+            return;
+          }
           this.currentKeys.add(marker.key);
           marker.merged = true;
           const clusterGroup = Array.from(this.currentKeys);
@@ -145,7 +148,7 @@ export class MarkerManager {
           const clusterLabel = new Simple2DMarker(
             this.components,
             this.createClusterElement(this._clusterKey.toString()),
-            this.scene
+            this.scene.get()
           );
           clusterLabel.get().element.textContent =
             clusterGroup.length.toString();
@@ -191,7 +194,7 @@ export class MarkerManager {
     div.style.padding = "5px 11px";
     div.style.textAlign = "center";
     div.style.cursor = "pointer";
-    div.style.transition = "all 0.05s";
+    // div.style.transition = "all 0.05s";
     div.addEventListener("pointerdown", () => {
       this.navigateToCluster(key);
     });
@@ -209,7 +212,7 @@ export class MarkerManager {
     span.innerHTML = text;
     span.style.color = this._color;
 
-    const marker = new Simple2DMarker(this.components, span, this.scene);
+    const marker = this.addMarkerToScene(span);
 
     marker.get().position.copy(mesh.position);
     this.markers.add({
@@ -226,7 +229,7 @@ export class MarkerManager {
     span.innerHTML = text;
     span.style.color = this._color;
 
-    const marker = new Simple2DMarker(this.components, span, this.scene);
+    const marker = this.addMarkerToScene(span);
 
     if (type === "InitialKP") {
       const pX = mesh.geometry.attributes.position.getX(0);
@@ -277,6 +280,15 @@ export class MarkerManager {
     });
     this._markerKey++;
 
+    return marker;
+  }
+
+  private addMarkerToScene(span: HTMLSpanElement) {
+    if (!this.scene) {
+      throw new Error("Scene is needed to add markers!");
+    }
+    const scene = this.scene.get();
+    const marker = new Simple2DMarker(this.components, span, scene);
     return marker;
   }
 

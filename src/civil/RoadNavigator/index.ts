@@ -1,10 +1,12 @@
 import * as THREE from "three";
 import * as FRAGS from "bim-fragment";
-import { FragmentsGroup } from "bim-fragment";
+import { Alignment, FragmentsGroup } from "bim-fragment";
 import { Component, Event } from "../../base-types";
-import { Components, Simple2DScene } from "../../core";
+import { Components, Simple2DMarker, Simple2DScene } from "../../core";
 import { CurveHighlighter } from "./src/curve-highlighter";
 import { MarkerManager } from "../../core/Simple2DMarker/src/marker-manager";
+
+export type CivilMarkerType = "hover" | "select";
 
 export abstract class RoadNavigator extends Component<any> {
   enabled = true;
@@ -20,14 +22,32 @@ export abstract class RoadNavigator extends Component<any> {
     mesh: FRAGS.CurveMesh;
   }>();
 
+  readonly onMarkerChange = new Event<{
+    alignment: FRAGS.Alignment;
+    percentage: number;
+    type: CivilMarkerType;
+    curve: FRAGS.CivilCurve;
+  }>();
+
   private _curveMeshes: FRAGS.CurveMesh[] = [];
 
   markerManager: MarkerManager;
+
+  mouseMarkers: {
+    hover: Simple2DMarker;
+    select: Simple2DMarker;
+  };
 
   protected constructor(components: Components) {
     super(components);
     this.scene = new Simple2DScene(this.components, false);
     this.markerManager = new MarkerManager(this.components, this.scene);
+
+    this.mouseMarkers = {
+      select: this.newMouseMarker(components, "#ffffff"),
+      hover: this.newMouseMarker(components, "#575757"),
+    };
+
     this.setupEvents();
     this.adjustRaycasterOnZoom();
   }
@@ -97,32 +117,26 @@ export abstract class RoadNavigator extends Component<any> {
   }
 
   setupEvents() {
-    const mousePositionSphere = new THREE.Mesh(
-      new THREE.SphereGeometry(0.5),
-      new THREE.MeshBasicMaterial({ color: 0xff0000 })
-    );
-
-    this.scene.get().add(mousePositionSphere);
-
     this.scene.uiElement
       .get("container")
-      .domElement.addEventListener("mousemove", (event) => {
+      .domElement.addEventListener("mousemove", async (event) => {
         const dom = this.scene.uiElement.get("container").domElement;
 
-        const intersects = this.highlighter.castRay(
+        const result = this.highlighter.castRay(
           event,
           this.scene.camera,
           dom,
           this._curveMeshes
         );
 
-        if (intersects) {
-          const { point, object } = intersects;
-          mousePositionSphere.position.copy(point);
+        if (result) {
+          const { object } = result;
           this.highlighter.hover(object as FRAGS.CurveMesh);
+          await this.updateMarker(result, "hover");
           return;
         }
 
+        this.mouseMarkers.hover.visible = false;
         this.highlighter.unHover();
       });
 
@@ -139,13 +153,12 @@ export abstract class RoadNavigator extends Component<any> {
         );
 
         if (intersects) {
-          const { point, object } = intersects;
-          mousePositionSphere.position.copy(point);
-          const mesh = object as FRAGS.CurveMesh;
+          const result = intersects;
+          const mesh = result.object as FRAGS.CurveMesh;
           this.highlighter.select(mesh);
-          // TODO: Example and Test, should be replaced with the actual implementation
-          // this.markerManager.addCivilMarker("Curve", mesh, "Length");
-          await this.onHighlight.trigger({ mesh, point });
+          await this.updateMarker(result, "select");
+
+          await this.onHighlight.trigger({ mesh, point: result.point });
           return;
         }
 
@@ -171,6 +184,16 @@ export abstract class RoadNavigator extends Component<any> {
     this._curveMeshes = [];
   }
 
+  setMarker(alignment: Alignment, percentage: number, type: CivilMarkerType) {
+    if (!this._curveMeshes.length) {
+      return;
+    }
+    const found = alignment.getCurveAt(percentage, this.view);
+    const point = alignment.getPointAt(percentage, this.view);
+    const { index } = found.curve.getSegmentAt(found.percentage);
+    this.setMouseMarker(point, found.curve.mesh, index, type);
+  }
+
   private adjustRaycasterOnZoom() {
     this.scene.controls.addEventListener("update", () => {
       const { zoom, left, right, top, bottom } = this.scene.camera;
@@ -178,9 +201,61 @@ export abstract class RoadNavigator extends Component<any> {
       const height = top - bottom;
       const screenSize = Math.max(width, height);
       const realScreenSize = screenSize / zoom;
-      const range = 50;
+      const range = 40;
       const { caster } = this.highlighter;
       caster.params.Line.threshold = realScreenSize / range;
     });
+  }
+
+  private newMouseMarker(components: Components, color: string) {
+    const scene = this.scene.get();
+    const hoverHtml = document.createElement("div");
+    const hoverHtmlBar = document.createElement("div");
+    hoverHtml.appendChild(hoverHtmlBar);
+    hoverHtmlBar.style.backgroundColor = color;
+    hoverHtmlBar.style.width = "3rem";
+    hoverHtmlBar.style.height = "3px";
+    const mouseMarker = new Simple2DMarker(components, hoverHtml, scene);
+    mouseMarker.visible = false;
+    return mouseMarker;
+  }
+
+  private setMouseMarker(
+    point: THREE.Vector3,
+    object: THREE.Object3D,
+    index: number | undefined,
+    type: CivilMarkerType
+  ) {
+    if (index === undefined) {
+      return;
+    }
+    this.mouseMarkers[type].visible = true;
+    const marker = this.mouseMarkers[type].get();
+    marker.position.copy(point);
+    const curveMesh = object as FRAGS.CurveMesh;
+    const { startPoint, endPoint } = curveMesh.curve.getSegment(index);
+    const angle = Math.atan2(
+      endPoint.y - startPoint.y,
+      endPoint.x - startPoint.x
+    );
+    const bar = marker.element.children[0] as HTMLDivElement;
+    const trueAngle = 90 - (angle / Math.PI) * 180;
+    bar.style.transform = `rotate(${trueAngle}deg)`;
+  }
+
+  private async updateMarker(
+    intersects: THREE.Intersection,
+    type: CivilMarkerType
+  ) {
+    const { point, index, object } = intersects;
+    const mesh = object as FRAGS.CurveMesh;
+    const curve = mesh.curve;
+    const alignment = mesh.curve.alignment;
+    const percentage = alignment.getPercentageAt(point, this.view);
+    const markerPoint = point.clone();
+    this.setMouseMarker(markerPoint, mesh, index, type);
+    if (percentage !== null) {
+      await this.onMarkerChange.trigger({ alignment, percentage, type, curve });
+    }
   }
 }
