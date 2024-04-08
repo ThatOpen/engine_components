@@ -32,6 +32,8 @@ export class RoadCrossSectionNavigator extends Component<any> implements UI {
       new THREE.Vector3(1, 0, 0),
       new THREE.Vector3()
     );
+
+    this.plane.enabled = false;
   }
 
   get() {

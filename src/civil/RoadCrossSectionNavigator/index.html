@@ -139,12 +139,18 @@
 
   navigator.onMarkerChange.add(({ alignment, percentage, type, curve }) => {
     elevationNavigator.setMarker(alignment, percentage, type);
+    navigator3D.setMarker(alignment, percentage, type);
 
     if(type === "select") {
       const mesh = curve.alignment.absolute[curve.index].mesh;
       const point = alignment.getPointAt(percentage, "absolute");
       crossNavigator.set(mesh, point);
     }
+  })
+
+  navigator.onMarkerHidden.add(({ type }) => {
+    elevationNavigator.hideMarker(type);
+    navigator3D.hideMarker(type);
   })
 
   // const navigator = new OBC.Road3DNavigator(components);

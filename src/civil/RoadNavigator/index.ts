@@ -29,6 +29,10 @@ export abstract class RoadNavigator extends Component<any> {
     curve: FRAGS.CivilCurve;
   }>();
 
+  readonly onMarkerHidden = new Event<{
+    type: CivilMarkerType;
+  }>();
+
   private _curveMeshes: FRAGS.CurveMesh[] = [];
 
   markerManager: MarkerManager;
@@ -44,8 +48,8 @@ export abstract class RoadNavigator extends Component<any> {
     this.markerManager = new MarkerManager(this.components, this.scene);
 
     this.mouseMarkers = {
-      select: this.newMouseMarker(components, "#ffffff"),
-      hover: this.newMouseMarker(components, "#575757"),
+      select: this.newMouseMarker("#ffffff"),
+      hover: this.newMouseMarker("#575757"),
     };
 
     this.setupEvents();
@@ -138,6 +142,7 @@ export abstract class RoadNavigator extends Component<any> {
 
         this.mouseMarkers.hover.visible = false;
         this.highlighter.unHover();
+        await this.onMarkerHidden.trigger({ type: "hover" });
       });
 
     this.scene.uiElement
@@ -194,6 +199,10 @@ export abstract class RoadNavigator extends Component<any> {
     this.setMouseMarker(point, found.curve.mesh, index, type);
   }
 
+  hideMarker(type: CivilMarkerType) {
+    this.mouseMarkers[type].visible = false;
+  }
+
   private adjustRaycasterOnZoom() {
     this.scene.controls.addEventListener("update", () => {
       const { zoom, left, right, top, bottom } = this.scene.camera;
@@ -207,15 +216,15 @@ export abstract class RoadNavigator extends Component<any> {
     });
   }
 
-  private newMouseMarker(components: Components, color: string) {
+  private newMouseMarker(color: string) {
     const scene = this.scene.get();
-    const hoverHtml = document.createElement("div");
-    const hoverHtmlBar = document.createElement("div");
-    hoverHtml.appendChild(hoverHtmlBar);
-    hoverHtmlBar.style.backgroundColor = color;
-    hoverHtmlBar.style.width = "3rem";
-    hoverHtmlBar.style.height = "3px";
-    const mouseMarker = new Simple2DMarker(components, hoverHtml, scene);
+    const root = document.createElement("div");
+    const bar = document.createElement("div");
+    root.appendChild(bar);
+    bar.style.backgroundColor = color;
+    bar.style.width = "3rem";
+    bar.style.height = "3px";
+    const mouseMarker = new Simple2DMarker(this.components, root, scene);
     mouseMarker.visible = false;
     return mouseMarker;
   }
