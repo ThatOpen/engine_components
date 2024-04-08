@@ -126,7 +126,7 @@
 
   const sphere = new THREE.Sphere(undefined, 20);
 
-  navigator.onHighlight.add(({ mesh }) => {
+  navigator.onHighlight.add(({ mesh, point }) => {
     elevationNavigator.clear();
     elevationNavigator.draw(model, [mesh.curve.alignment]);
     elevationNavigator.highlighter.select(mesh);
@@ -137,6 +137,10 @@
     curve3d.mesh.geometry.computeBoundingSphere();
     components.camera.controls.fitToSphere(curve3d.mesh.geometry.boundingSphere, true);
 
+  })
+
+  navigator.onMarkerChange.add(({ alignment, percentage, type }) => {
+    elevationNavigator.setMarker(alignment, percentage, type);
   })
 
 
