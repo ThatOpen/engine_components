@@ -33,6 +33,7 @@ export class RoadCrossSectionNavigator extends Component<any> implements UI {
       new THREE.Vector3()
     );
 
+    this.plane.visible = false;
     this.plane.enabled = false;
   }
 

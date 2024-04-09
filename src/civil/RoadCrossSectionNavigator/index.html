@@ -164,20 +164,12 @@
   const crossWindow = crossNavigator.uiElement.get("floatingWindow");
   crossWindow.visible = true;
 
-  crossNavigator.plane.visible = false;
-
   window.addEventListener("keydown", () => {
     elevationNavigator.scene.scaleY += 0.1;
   })
 
-  const axis = new THREE.AxesHelper();
-  scene.add(axis);
-  axis.geometry.applyMatrix4(new THREE.Matrix4().makeScale(10, 10, 10));
-  axis.material.depthTest = false;
-
   const classifier = new OBC.FragmentClassifier(components);
   classifier.byEntity(model);
-  console.log(classifier);
 
   const classifications = classifier.get();
 
