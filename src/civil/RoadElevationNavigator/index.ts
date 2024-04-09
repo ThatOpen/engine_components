@@ -1,3 +1,4 @@
+import * as FRAGS from "bim-fragment";
 import { UI, UIElement } from "../../base-types";
 import { Drawer } from "../../ui";
 import { Components } from "../../core";
@@ -24,6 +25,15 @@ export class RoadElevationNavigator extends RoadNavigator implements UI {
 
   get() {
     return null as any;
+  }
+
+  showKPStations(mesh: FRAGS.CurveMesh) {
+    // TODO: Discuss and Implement the Logic for Vertical Views and KP Stations
+    console.log(mesh);
+  }
+
+  clearKPStations(): void {
+    // Clearing KP Stations
   }
 
   private setUI() {

@@ -4,7 +4,6 @@ import { Alignment, FragmentsGroup } from "bim-fragment";
 import { Component, Event } from "../../base-types";
 import { Components, Simple2DMarker, Simple2DScene } from "../../core";
 import { CurveHighlighter } from "./src/curve-highlighter";
-import { MarkerManager } from "../../core/Simple2DMarker/src/marker-manager";
 
 export type CivilMarkerType = "hover" | "select";
 
@@ -16,6 +15,9 @@ export abstract class RoadNavigator extends Component<any> {
   abstract view: "horizontal" | "vertical";
 
   abstract highlighter: CurveHighlighter;
+
+  abstract showKPStations(curveMesh: FRAGS.CurveMesh): void;
+  abstract clearKPStations(): void;
 
   readonly onHighlight = new Event<{
     point: THREE.Vector3;
@@ -35,8 +37,6 @@ export abstract class RoadNavigator extends Component<any> {
 
   private _curveMeshes: FRAGS.CurveMesh[] = [];
 
-  markerManager: MarkerManager;
-
   mouseMarkers: {
     hover: Simple2DMarker;
     select: Simple2DMarker;
@@ -45,7 +45,6 @@ export abstract class RoadNavigator extends Component<any> {
   protected constructor(components: Components) {
     super(components);
     this.scene = new Simple2DScene(this.components, false);
-    this.markerManager = new MarkerManager(this.components, this.scene);
 
     this.mouseMarkers = {
       select: this.newMouseMarker("#ffffff"),
@@ -78,19 +77,6 @@ export abstract class RoadNavigator extends Component<any> {
       if (!alignment) {
         throw new Error("Alignment not found!");
       }
-
-      // TODO: Generate All The KPs and Stations
-      this.markerManager.addCivilMarker(
-        `0+${alignment.initialKP.toFixed(2)}`,
-        alignment[this.view][0].mesh,
-        "InitialKP"
-      );
-
-      this.markerManager.addCivilMarker(
-        "end",
-        alignment[this.view][alignment[this.view].length - 1].mesh,
-        "FinalKP"
-      );
 
       for (const curve of alignment[this.view]) {
         scene.add(curve.mesh);
@@ -164,10 +150,14 @@ export abstract class RoadNavigator extends Component<any> {
           await this.updateMarker(result, "select");
 
           await this.onHighlight.trigger({ mesh, point: result.point });
+
+          this.showKPStations(mesh);
+
           return;
         }
 
         this.highlighter.unSelect();
+        this.clearKPStations();
       });
   }
 
@@ -177,7 +167,6 @@ export abstract class RoadNavigator extends Component<any> {
     this.onHighlight.reset();
     await this.scene.dispose();
     this._curveMeshes = [];
-    this.markerManager.dispose();
   }
 
   clear() {
