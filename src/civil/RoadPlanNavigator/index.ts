@@ -7,6 +7,7 @@ import { RoadNavigator } from "../RoadNavigator";
 import { FragmentBoundingBox } from "../../fragments";
 import { PlanHighlighter } from "./src/plan-highlighter";
 import { CivilFloatingWindow } from "../CivilFloatingWindow";
+import { MarkerManager } from "../../core/Simple2DMarker/src/marker-manager";
 
 export class RoadPlanNavigator extends RoadNavigator implements UI {
   static readonly uuid = "3096dea0-5bc2-41c7-abce-9089b6c9431b" as const;
@@ -23,14 +24,47 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
     super(components);
     const scene = this.scene.get();
     this.highlighter = new PlanHighlighter(scene);
+    this.markerManager = new MarkerManager(components, this.scene);
+    this.setupEvents();
     this.setUI();
 
     this.components.tools.add(RoadPlanNavigator.uuid, this);
 
     this.onHighlight.add(({ mesh }) => {
       this.highlighter.showCurveInfo(mesh);
+      this.addCurveLabel(mesh);
       this.fitCameraToAlignment(mesh);
     });
+  }
+
+  addCurveLabel(curve: FRAGS.CurveMesh) {
+    switch (curve.curve.data.TYPE) {
+      case "LINE":
+        this.lineLabels(curve);
+        break;
+      case "CLOTHOID":
+        this.lineLabels(curve);
+        break;
+      case "CIRCULARARC":
+        console.log(
+          "Labels not defined yet for curve type:",
+          curve.curve.data.TYPE
+        );
+        break;
+      default:
+        console.log("Unknown curve type:", curve.curve.data.TYPE);
+        break;
+    }
+  }
+
+  lineLabels(curve: FRAGS.CurveMesh): void {
+    const lengthLabelPosition = this.highlighter.lineLengthLabelPosition(curve);
+    const label = this.markerManager.addCivilMarker(
+      "spaceholder",
+      curve,
+      "Length"
+    );
+    label.get().position.copy(lengthLabelPosition);
   }
 
   private async fitCameraToAlignment(curveMesh: FRAGS.CurveMesh) {

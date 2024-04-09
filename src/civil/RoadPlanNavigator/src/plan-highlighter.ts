@@ -115,6 +115,21 @@ export class PlanHighlighter extends CurveHighlighter {
     return parallelCurvePoints;
   }
 
+  lineLengthLabelPosition(curve: FRAGS.CurveMesh) {
+    const positions = curve.geometry.attributes.position.array;
+    const offset = this.offset;
+    const parallelCurvePoints = this.calculateParallelCurve(
+      positions,
+      positions.length / 3,
+      offset
+    );
+    const middlePoint = parallelCurvePoints
+      .reduce((acc, curr) => acc.add(curr), new THREE.Vector3())
+      .divideScalar(parallelCurvePoints.length);
+
+    return middlePoint;
+  }
+
   private calculateDimensionLines(
     curve: FRAGS.CurveMesh,
     line: THREE.Line
