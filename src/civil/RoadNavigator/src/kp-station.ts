@@ -249,7 +249,6 @@ export class KPStation {
 
   clearKPStations() {
     this.markerManager.clearMarkers();
-    this.markerManager.clearClusters();
   }
 
   dispose() {

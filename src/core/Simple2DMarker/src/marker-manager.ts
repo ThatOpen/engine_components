@@ -489,14 +489,6 @@ export class MarkerManager {
     this._markerKey = 0;
   }
 
-  clearClusters() {
-    this.clusterLabels.forEach((cluster) => {
-      this.scene.remove(cluster.label.get());
-    });
-    this.clusterLabels.clear();
-    this._clusterKey = 0;
-  }
-
   dispose() {
     this.markers.forEach((marker) => {
       marker.label.dispose();
