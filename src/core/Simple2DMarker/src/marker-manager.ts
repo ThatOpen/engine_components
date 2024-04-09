@@ -1,8 +1,11 @@
 import * as FRAGS from "bim-fragment";
 import * as THREE from "three";
+import { Components, Simple2DScene, Simple2DMarker } from "../..";
+import { FragmentBoundingBox } from "../../../fragments";
 import CameraControls from "camera-controls";
 import { Components, Simple2DMarker, SimpleRenderer } from "../..";
 import { PostproductionRenderer } from "../../../navigation/PostproductionRenderer";
+
 
 type CivilLabels =
   | "Station"
@@ -10,7 +13,12 @@ type CivilLabels =
   | "Length"
   | "InitialKP"
   | "FinalKP"
+  | "Coordinate"
+  | "InitialKPV"
+  | "FinalKPV"
+  | "Slope";
   | "KP";
+
 
 interface IMarker {
   key: string;
@@ -370,8 +378,53 @@ export class MarkerManager {
       marker
         .get()
         .position.copy(pointEnd.clone().add(pointStart).divideScalar(2));
-    }
+    } else if (type === "Coordinate") {
+      const span = document.createElement("span");
+      span.innerHTML = text;
+      span.style.color = this._color;
 
+      const marker = new Simple2DMarker(this.components, span, this.scene);
+
+      const { position } = mesh.geometry.attributes;
+      const setArray = position.array.length / 3;
+
+      const firstIndex = (setArray - 1) * 3;
+      const lastIndex = position.array.slice(firstIndex, firstIndex + 3);
+
+      marker.get().position.set(lastIndex[0], lastIndex[1] + 10, lastIndex[2]);
+    } else if (type === "InitialKPV") {
+      const { position } = mesh.geometry.attributes;
+      const pX = position.getX(0);
+      const pY = position.getY(0);
+      const pZ = position.getZ(0);
+      marker.get().position.set(pX - 20, pY, pZ);
+    } else if (type === "FinalKPV") {
+      const { position } = mesh.geometry.attributes;
+
+      const pX = position.getX(mesh.geometry.attributes.position.count - 1);
+      const pY = position.getY(mesh.geometry.attributes.position.count - 1);
+      const pZ = position.getZ(mesh.geometry.attributes.position.count - 1);
+      marker.get().position.set(pX + 20, pY, pZ);
+    } else if (type === "Slope") {
+      span.style.color = "grey";
+
+      const { position } = mesh.geometry.attributes;
+
+      const pointStart = new THREE.Vector3();
+      pointStart.x = position.getX(0);
+      pointStart.y = position.getY(0);
+      pointStart.z = position.getZ(0);
+
+      const pointEnd = new THREE.Vector3();
+      pointEnd.x = position.getX(position.count - 1);
+      pointEnd.y = position.getY(position.count - 1);
+      pointEnd.z = position.getZ(position.count - 1);
+
+      const midPoint = new THREE.Vector3();
+      midPoint.addVectors(pointStart, pointEnd).multiplyScalar(0.5);
+
+      marker.get().position.set(midPoint.x, midPoint.y - 10, midPoint.z);
+    }
     this.markers.add({
       label: marker,
       mesh,
