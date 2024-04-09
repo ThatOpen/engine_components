@@ -166,6 +166,10 @@
 
   crossNavigator.plane.visible = false;
 
+  window.addEventListener("keydown", () => {
+    elevationNavigator.scene.scaleY += 0.1;
+  })
+
   const axis = new THREE.AxesHelper();
   scene.add(axis);
   axis.geometry.applyMatrix4(new THREE.Matrix4().makeScale(10, 10, 10));

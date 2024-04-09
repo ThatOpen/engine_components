@@ -37,6 +37,8 @@ export abstract class RoadNavigator extends Component<any> {
 
   private _curveMeshes: FRAGS.CurveMesh[] = [];
 
+  private _previousAlignment: FRAGS.Alignment | null = null;
+
   mouseMarkers: {
     hover: Simple2DMarker;
     select: Simple2DMarker;
@@ -159,8 +161,6 @@ export abstract class RoadNavigator extends Component<any> {
         );
 
         if (intersects) {
-          this.clearKPStations();
-
           const result = intersects;
           const mesh = result.object as FRAGS.CurveMesh;
           this.highlighter.select(mesh);
@@ -296,13 +296,15 @@ export abstract class RoadNavigator extends Component<any> {
 
           await this.onHighlight.trigger({ mesh, point: result.point });
 
-          this.showKPStations(mesh);
-
-          return;
+          if (this._previousAlignment !== mesh.curve.alignment) {
+            this.clearKPStations();
+            this.showKPStations(mesh);
+            this._previousAlignment = mesh.curve.alignment;
+          }
         }
 
         // this.highlighter.unSelect();
-        this.clearKPStations();
+        // this.clearKPStations();
       });
   }
 
