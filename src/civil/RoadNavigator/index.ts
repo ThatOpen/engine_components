@@ -246,7 +246,7 @@ export abstract class RoadNavigator extends Component<any> {
 
             alignment.vertical.forEach((align, index: number) => {
               this.markerManager.addCivilMarker(
-                `S: ${slope[index].slope}`,
+                `S: ${slope[index].slope}%`,
                 align.mesh,
                 "Slope"
               );
