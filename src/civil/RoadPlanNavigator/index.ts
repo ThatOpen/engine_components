@@ -7,7 +7,8 @@ import { RoadNavigator } from "../RoadNavigator";
 import { FragmentBoundingBox } from "../../fragments";
 import { PlanHighlighter } from "./src/plan-highlighter";
 import { CivilFloatingWindow } from "../CivilFloatingWindow";
-import { KPStation } from "../RoadNavigator/src/kp-station";
+// import { KPStation } from "../RoadNavigator/src/kp-station";
+import { KPManager } from "../RoadNavigator/src/kp-manager";
 
 export class RoadPlanNavigator extends RoadNavigator implements UI {
   static readonly uuid = "3096dea0-5bc2-41c7-abce-9089b6c9431b" as const;
@@ -19,20 +20,22 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
   }>();
 
   highlighter: PlanHighlighter;
-  kpStation: KPStation;
+
+  kpManager: KPManager;
 
   constructor(components: Components) {
     super(components);
     const scene = this.scene.get();
-    this.highlighter = new PlanHighlighter(scene);
 
-    this.kpStation = new KPStation(
+    this.kpManager = new KPManager(
       components,
       this.scene.renderer,
       this.scene.get(),
       this.scene.controls,
       this.view
     );
+
+    this.highlighter = new PlanHighlighter(scene, this.kpManager);
 
     this.setUI();
 
@@ -65,13 +68,13 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
     await this.scene.controls.fitToBox(box, true);
   }
 
-  showKPStations(curveMesh: FRAGS.CurveMesh): void {
-    this.kpStation.showKPStations(curveMesh);
-  }
+  // showKPStations(curveMesh: FRAGS.CurveMesh): void {
+  //   this.kpStation.showKPStations(curveMesh);
+  // }
 
-  clearKPStations(): void {
-    this.kpStation.clearKPStations();
-  }
+  // clearKPStations(): void {
+  //   this.kpStation.clearKPStations();
+  // }
 
   private setUI() {
     const name = "Horizontal alignment";
@@ -82,7 +85,7 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
     );
     this.uiElement.set({ floatingWindow });
 
-    this.scene.controls.addEventListener("update", () => {
+    this.scene.controls.addEventListener("sleep", () => {
       const screenSize = floatingWindow.containerSize;
       const { zoom } = this.scene.camera;
       this.highlighter.updateOffset(screenSize, zoom, true);

@@ -4,6 +4,7 @@ import { Alignment, FragmentsGroup } from "bim-fragment";
 import { Component, Event } from "../../base-types";
 import { Components, Simple2DMarker, Simple2DScene } from "../../core";
 import { CurveHighlighter } from "./src/curve-highlighter";
+import { KPManager } from "./src/kp-manager";
 
 export type CivilMarkerType = "hover" | "select";
 
@@ -16,8 +17,11 @@ export abstract class RoadNavigator extends Component<any> {
 
   abstract highlighter: CurveHighlighter;
 
-  abstract showKPStations(curveMesh: FRAGS.CurveMesh): void;
-  abstract clearKPStations(): void;
+  // abstract showKPStations(curveMesh: FRAGS.CurveMesh): void;
+  // abstract clearKPStations(): void;
+
+  // abstract kpManager: KPManager;
+  abstract kpManager: KPManager;
 
   readonly onHighlight = new Event<{
     point: THREE.Vector3;
@@ -55,6 +59,10 @@ export abstract class RoadNavigator extends Component<any> {
 
     this.setupEvents();
     this.adjustRaycasterOnZoom();
+  }
+
+  initialize() {
+    console.log("View for RoadNavigator: ", this.view);
   }
 
   get() {
@@ -154,8 +162,12 @@ export abstract class RoadNavigator extends Component<any> {
           await this.onHighlight.trigger({ mesh, point: result.point });
 
           if (this._previousAlignment !== mesh.curve.alignment) {
-            this.clearKPStations();
-            this.showKPStations(mesh);
+            this.kpManager.clearKPStations();
+            // this.showKPStations(mesh);
+            this.kpManager.showKPStations(mesh);
+
+            // this.kpManager.createKP();
+
             this._previousAlignment = mesh.curve.alignment;
           }
         }

@@ -253,6 +253,7 @@ export class MarkerManager {
         mesh: new THREE.Mesh(),
         key: this._markerKey.toString(),
         merged: false,
+        type,
       });
       this._markerKey++;
     } else {
@@ -487,6 +488,17 @@ export class MarkerManager {
     });
     this.markers.clear();
     this._markerKey = 0;
+  }
+
+  clearMarkersByType(type: CivilLabels) {
+    this.markers.forEach((marker) => {
+      if (marker.type === type) {
+        this.scene.remove(marker.label.get());
+      }
+    });
+    this.markers = new Set<IMarker>(
+      Array.from(this.markers).filter((marker) => marker.type !== type)
+    );
   }
 
   dispose() {

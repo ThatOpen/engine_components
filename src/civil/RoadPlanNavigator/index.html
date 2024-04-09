@@ -83,7 +83,7 @@
 
   // 2. IFC 4 fragment integration
 
-  const file = await fetch("../../../resources/asdf2.frag");
+  const file = await fetch("../../../resources/asdf.frag");
   const data = await file.arrayBuffer();
   const buffer = new Uint8Array(data);
   const model = await fragments.load(buffer);
@@ -111,45 +111,45 @@
 
   // 6. Cross section
 
-  const crossNavigator = new OBC.RoadCrossSectionNavigator(components);
-  const crossWindow = crossNavigator.uiElement.get("floatingWindow");
-  crossWindow.visible = true;
+  // const crossNavigator = new OBC.RoadCrossSectionNavigator(components);
+  // const crossWindow = crossNavigator.uiElement.get("floatingWindow");
+  // crossWindow.visible = true;
 
 
-  const classifier = new OBC.FragmentClassifier(components);
-  classifier.byEntity(model);
+  // const classifier = new OBC.FragmentClassifier(components);
+  // classifier.byEntity(model);
 
-  const classifications = classifier.get();
+  // const classifications = classifier.get();
 
-  const clipper = components.tools.get(OBC.EdgesClipper);
-  const styles = clipper.styles.get();
+  // const clipper = components.tools.get(OBC.EdgesClipper);
+  // const styles = clipper.styles.get();
 
-  for (const category in classifications.entities) {
-    const found = classifier.find({ entities: [category] });
+  // for (const category in classifications.entities) {
+  //   const found = classifier.find({ entities: [category] });
 
-    const color = new THREE.Color(
-      Math.random(),
-      Math.random(),
-      Math.random()
-    );
+  //   const color = new THREE.Color(
+  //     Math.random(),
+  //     Math.random(),
+  //     Math.random()
+  //   );
 
-    const lineMaterial = new THREE.LineBasicMaterial({ color });
-    clipper.styles.create(category, new Set(), lineMaterial);
+  //   const lineMaterial = new THREE.LineBasicMaterial({ color });
+  //   clipper.styles.create(category, new Set(), lineMaterial);
 
-    for (const fragID in found) {
-      const foundFrag = fragments.list[fragID];
-      if(!foundFrag) {
-        continue;
-      }
-      styles[category].fragments[fragID] = new Set(found[fragID]);
-      styles[category].meshes.add(foundFrag.mesh);
-    }
-  }
+  //   for (const fragID in found) {
+  //     const foundFrag = fragments.list[fragID];
+  //     if(!foundFrag) {
+  //       continue;
+  //     }
+  //     styles[category].fragments[fragID] = new Set(found[fragID]);
+  //     styles[category].meshes.add(foundFrag.mesh);
+  //   }
+  // }
 
-  // 7. Synchronization
+  // // 7. Synchronization
 
 
-  const sphere = new THREE.Sphere(undefined, 20);
+  // const sphere = new THREE.Sphere(undefined, 20);
 
   planNavigator.onHighlight.add(({ mesh, point }) => {
     elevationNavigator.clear();
@@ -164,16 +164,16 @@
     components.camera.controls.fitToSphere(curve3d.mesh.geometry.boundingSphere, true);
   })
 
-  planNavigator.onMarkerChange.add(({ alignment, percentage, type, curve }) => {
-    elevationNavigator.setMarker(alignment, percentage, type);
-    navigator3D.setMarker(alignment, percentage, type);
+  // planNavigator.onMarkerChange.add(({ alignment, percentage, type, curve }) => {
+  //   elevationNavigator.setMarker(alignment, percentage, type);
+  //   navigator3D.setMarker(alignment, percentage, type);
 
-    if(type === "select") {
-      const mesh = curve.alignment.absolute[curve.index].mesh;
-      const point = alignment.getPointAt(percentage, "absolute");
-      crossNavigator.set(mesh, point);
-    }
-  })
+  //   if(type === "select") {
+  //     const mesh = curve.alignment.absolute[curve.index].mesh;
+  //     const point = alignment.getPointAt(percentage, "absolute");
+  //     crossNavigator.set(mesh, point);
+  //   }
+  // })
 
   // window.addEventListener("keydown", () => {
   //   elevationNavigator.scene.scaleY += 0.2;
