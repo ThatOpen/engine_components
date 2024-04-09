@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import * as FRAGS from "bim-fragment";
 import { CurveHighlighter } from "../../RoadNavigator/src/curve-highlighter";
+import { KPManager } from "../../RoadNavigator/src/kp-manager";
 
 export class PlanHighlighter extends CurveHighlighter {
   private readonly markupMaterial: THREE.LineBasicMaterial;
@@ -8,7 +9,7 @@ export class PlanHighlighter extends CurveHighlighter {
   private markupLines: THREE.Line[] = [];
   private currentCurveMesh?: FRAGS.CurveMesh;
 
-  constructor(scene: THREE.Group | THREE.Scene) {
+  constructor(scene: THREE.Group | THREE.Scene, private kpManager: KPManager) {
     super(scene, "horizontal");
     this.markupMaterial = new THREE.LineBasicMaterial({
       color: 0x686868,
@@ -182,6 +183,7 @@ export class PlanHighlighter extends CurveHighlighter {
   }
 
   private showLineInfo(curveMesh: FRAGS.CurveMesh, offset: number) {
+    this.kpManager.clearMarkersByType("Length");
     const positions = curveMesh.geometry.attributes.position.array;
     const parallelCurvePoints = this.calculateParallelCurve(
       positions,
@@ -225,6 +227,11 @@ export class PlanHighlighter extends CurveHighlighter {
     );
     this.scene.add(lineEndDimensionlLine);
     this.markupLines.push(lineEndDimensionlLine);
+    // TODO: Felipe, replace with your implementation
+    this.kpManager.showCurveLength(
+      lineParallelLine,
+      curveMesh.curve.getLength()
+    );
   }
 
   private showClothoidInfo(curveMesh: FRAGS.CurveMesh, offset: number) {

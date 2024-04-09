@@ -1,13 +1,21 @@
 import * as FRAGS from "bim-fragment";
 import * as THREE from "three";
-import { Components, Simple2DScene, Simple2DMarker } from "../..";
+import CameraControls from "camera-controls";
+import { Components, Simple2DMarker, SimpleRenderer } from "../..";
+import { PostproductionRenderer } from "../../../navigation/PostproductionRenderer";
 
-type CivilLabels = "Station" | "Radius" | "Length" | "InitialKP" | "FinalKP";
+type CivilLabels =
+  | "Station"
+  | "Radius"
+  | "Length"
+  | "InitialKP"
+  | "FinalKP"
+  | "KP";
 
 interface IMarker {
   key: string;
   label: Simple2DMarker;
-  mesh: FRAGS.CurveMesh | THREE.Mesh;
+  mesh: FRAGS.CurveMesh | THREE.Mesh | THREE.Line;
   type?: CivilLabels;
   merged: boolean;
 }
@@ -29,7 +37,7 @@ export class MarkerManager {
 
   private currentKeys: Set<string> = new Set<string>();
 
-  private scene: Simple2DScene | undefined;
+  private scene: THREE.Group | THREE.Scene;
   private _clusterOnZoom = true;
   private _color = "white";
 
@@ -40,10 +48,13 @@ export class MarkerManager {
   private _clusterThreeshold = 50;
   private isNavigating = false;
 
-  constructor(private components: Components, scene?: Simple2DScene) {
-    if (scene) {
-      this.scene = scene;
-    }
+  constructor(
+    private components: Components,
+    private renderer: SimpleRenderer | PostproductionRenderer,
+    scene: THREE.Group | THREE.Scene,
+    private controls: CameraControls
+  ) {
+    this.scene = scene;
     this.setupEvents();
   }
 
@@ -57,9 +68,9 @@ export class MarkerManager {
 
   set color(value: string) {
     this._color = value;
-    this.markers.forEach((marker) => {
+    for (const marker of this.markers) {
       marker.label.get().element.style.color = value;
-    });
+    }
   }
 
   set clusterThreeshold(value: number) {
@@ -72,11 +83,11 @@ export class MarkerManager {
 
   private setupEvents() {
     if (this.scene) {
-      this.scene.controls.addEventListener("sleep", () => {
+      this.controls.addEventListener("sleep", () => {
         this.manageCluster();
       });
 
-      this.scene.controls.addEventListener("rest", () => {
+      this.controls.addEventListener("rest", () => {
         if (this.isNavigating) {
           this.manageCluster();
           this.isNavigating = false;
@@ -86,48 +97,49 @@ export class MarkerManager {
   }
 
   private resetMarkers() {
-    this.markers.forEach((marker) => {
+    for (const marker of this.markers) {
       marker.merged = false;
-    });
-    this.clusterLabels.forEach((cluster) => {
-      this.scene?.get().remove(cluster.label.get());
-    });
+    }
+    for (const cluster of this.clusterLabels) {
+      this.scene.remove(cluster.label.get());
+    }
     this.clusterLabels.clear();
     this._clusterKey = 0;
   }
 
   private removeMergeMarkers() {
-    this.markers.forEach((marker) => {
+    for (const marker of this.markers) {
       if (marker.merged) {
-        this.scene?.get().remove(marker.label.get());
+        this.scene.remove(marker.label.get());
       } else {
-        this.scene?.get().add(marker.label.get());
+        this.scene.add(marker.label.get());
       }
-    });
-    this.clusterLabels.forEach((cluster) => {
+    }
+
+    for (const cluster of this.clusterLabels) {
       if (cluster.markerKeys.length === 1) {
         const marker = Array.from(this.markers).find(
           (marker) => marker.key === cluster.markerKeys[0]
         );
 
         if (marker) {
-          this.scene?.get().add(marker.label.get());
+          this.scene.add(marker.label.get());
           marker.merged = false;
         }
 
-        this.scene?.get().remove(cluster.label.get());
+        this.scene.remove(cluster.label.get());
         this.clusterLabels.delete(cluster);
       }
-    });
+    }
   }
 
   private manageCluster() {
     this.resetMarkers();
 
-    this.markers.forEach((marker) => {
+    for (const marker of this.markers) {
       if (!marker.merged) {
         this.currentKeys.clear();
-        this.markers.forEach((marker2) => {
+        for (const marker2 of this.markers) {
           if (marker.key !== marker2.key && !marker2.merged) {
             const distance = this.distance(marker.label, marker2.label);
             if (distance < this._clusterThreeshold) {
@@ -135,7 +147,7 @@ export class MarkerManager {
               marker2.merged = true;
             }
           }
-        });
+        }
         if (this.currentKeys.size > 0) {
           if (!this.scene) {
             return;
@@ -148,7 +160,7 @@ export class MarkerManager {
           const clusterLabel = new Simple2DMarker(
             this.components,
             this.createClusterElement(this._clusterKey.toString()),
-            this.scene.get()
+            this.scene
           );
           clusterLabel.get().element.textContent =
             clusterGroup.length.toString();
@@ -161,7 +173,7 @@ export class MarkerManager {
           this._clusterKey++;
         }
       }
-    });
+    }
 
     this.removeMergeMarkers();
   }
@@ -215,6 +227,97 @@ export class MarkerManager {
     const marker = this.addMarkerToScene(span);
 
     marker.get().position.copy(mesh.position);
+    this.markers.add({
+      label: marker,
+      mesh,
+      key: this._markerKey.toString(),
+      merged: false,
+    });
+    this._markerKey++;
+  }
+
+  addMarkerAtPoint(
+    text: string,
+    point: THREE.Vector3,
+    type?: CivilLabels | undefined
+  ) {
+    if (type !== undefined) {
+      const span = document.createElement("span");
+      span.innerHTML = text;
+      span.style.color = this._color;
+
+      const marker = new Simple2DMarker(this.components, span, this.scene);
+
+      marker.get().position.copy(point);
+      this.markers.add({
+        label: marker,
+        mesh: new THREE.Mesh(),
+        key: this._markerKey.toString(),
+        merged: false,
+        type,
+      });
+      this._markerKey++;
+    } else {
+      // Generating Labels that are perpendicular to the point and has dotted line beneath it
+    }
+  }
+
+  // TODO: Move this to switch statement inside addCivilMarker
+  addKPStation(text: string, mesh: THREE.Line) {
+    const container = document.createElement("div");
+    const span = document.createElement("div");
+    container.appendChild(span);
+
+    span.innerHTML = text;
+
+    span.style.color = this._color;
+    span.style.borderBottom = "1px dotted white";
+    span.style.width = "160px";
+    span.style.textAlign = "left";
+
+    const marker = new Simple2DMarker(this.components, container, this.scene);
+
+    const point = new THREE.Vector3();
+    point.x = mesh.geometry.attributes.position.getX(
+      mesh.geometry.attributes.position.count - 1
+    );
+    point.y = mesh.geometry.attributes.position.getY(
+      mesh.geometry.attributes.position.count - 1
+    );
+    point.z = mesh.geometry.attributes.position.getZ(
+      mesh.geometry.attributes.position.count - 1
+    );
+
+    const secondLastPoint = new THREE.Vector3();
+    secondLastPoint.x = mesh.geometry.attributes.position.getX(
+      mesh.geometry.attributes.position.count - 2
+    );
+    secondLastPoint.y = mesh.geometry.attributes.position.getY(
+      mesh.geometry.attributes.position.count - 2
+    );
+    secondLastPoint.z = mesh.geometry.attributes.position.getZ(
+      mesh.geometry.attributes.position.count - 2
+    );
+
+    const midPoint = new THREE.Vector3();
+    midPoint.x = (point.x + secondLastPoint.x) / 2;
+    midPoint.y = (point.y + secondLastPoint.y) / 2;
+    midPoint.z = (point.z + secondLastPoint.z) / 2;
+
+    marker.get().position.copy(midPoint);
+
+    const direction = new THREE.Vector3();
+    direction.subVectors(point, secondLastPoint).normalize();
+    const quaternion = new THREE.Quaternion();
+    quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+
+    const eulerZ = new THREE.Euler().setFromQuaternion(quaternion).z;
+    const rotationZ = THREE.MathUtils.radToDeg(eulerZ);
+
+    span.style.transform = `rotate(${
+      -rotationZ - 90
+    }deg) translate(-35%, -50%)`;
+
     this.markers.add({
       label: marker,
       mesh,
@@ -287,7 +390,7 @@ export class MarkerManager {
     if (!this.scene) {
       throw new Error("Scene is needed to add markers!");
     }
-    const scene = this.scene.get();
+    const scene = this.scene;
     const marker = new Simple2DMarker(this.components, span, scene);
     return marker;
   }
@@ -308,8 +411,8 @@ export class MarkerManager {
       const labelPosition = label
         .get()
         .position.clone()
-        .project(this.scene?.camera);
-      const dimensions = this.scene?.renderer.getSize();
+        .project(this.controls.camera);
+      const dimensions = this.renderer.getSize();
       screenPosition.x =
         (labelPosition.x * dimensions.x) / 2 + dimensions.x / 2;
       screenPosition.y =
@@ -339,15 +442,15 @@ export class MarkerManager {
       (cluster) => cluster.key === key
     );
     if (cluster) {
-      cluster.markerKeys.forEach((markerKey) => {
+      for (const markerKey of cluster.markerKeys) {
         const marker = Array.from(this.markers).find(
           (marker) => marker.key === markerKey
         );
         if (marker) {
           boundingRegion.push(marker.label.get().position);
         }
-      });
-      this.scene?.get().remove(cluster?.label.get());
+      }
+      this.scene.remove(cluster?.label.get());
       this.clusterLabels.delete(cluster);
     }
     if (this.scene) {
@@ -361,8 +464,8 @@ export class MarkerManager {
       const mesh = new THREE.Mesh(geometry);
       mesh.geometry.computeBoundingSphere();
       const boundingSphere = mesh.geometry?.boundingSphere;
-      if (this.scene.controls && boundingSphere) {
-        this.scene.controls.fitToSphere(mesh, true);
+      if (this.controls && boundingSphere) {
+        this.controls.fitToSphere(mesh, true);
       }
       this.isNavigating = true;
       geometry.dispose();
@@ -374,10 +477,27 @@ export class MarkerManager {
 
   private createBox3FromPoints(points: THREE.Vector3[]) {
     const bbox = new THREE.Box3();
-    points.forEach((point) => {
+    for (const point of points) {
       bbox.expandByPoint(point);
-    });
+    }
     return bbox;
+  }
+
+  clearMarkers() {
+    for (const marker of this.markers) {
+      this.scene.remove(marker.label.get());
+    }
+    this.markers.clear();
+    this._markerKey = 0;
+  }
+
+  clearMarkersByType(type: CivilLabels) {
+    for (const marker of this.markers) {
+      if (marker.type === type) {
+        this.scene.remove(marker.label.get());
+        this.markers.delete(marker);
+      }
+    }
   }
 
   dispose() {
