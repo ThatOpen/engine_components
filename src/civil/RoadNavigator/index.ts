@@ -144,6 +144,8 @@ export abstract class RoadNavigator extends Component<any> {
         );
 
         if (intersects) {
+          this.clearKPStations();
+
           const result = intersects;
           const mesh = result.object as FRAGS.CurveMesh;
           this.highlighter.select(mesh);
