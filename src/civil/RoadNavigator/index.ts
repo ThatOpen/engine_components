@@ -156,7 +156,7 @@ export abstract class RoadNavigator extends Component<any> {
           return;
         }
 
-        this.highlighter.unSelect();
+        // this.highlighter.unSelect();
         this.clearKPStations();
       });
   }
