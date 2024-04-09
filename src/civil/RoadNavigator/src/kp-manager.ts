@@ -1,18 +1,14 @@
-import * as FRAGS from "bim-fragment";
 import * as THREE from "three";
+import * as FRAGS from "bim-fragment";
 import CameraControls from "camera-controls";
-import { MarkerManager } from "../../../core/Simple2DMarker/src/marker-manager";
 import { Components, SimpleRenderer } from "../../../core";
+import { MarkerManager } from "../../../core/Simple2DMarker/src/marker-manager";
 import { PostproductionRenderer } from "../../../navigation";
 
 type CivilHighlightType = "horizontal" | "absolute" | "vertical";
 
-export class KPStation {
-  private type: CivilHighlightType;
-
-  // private scene: THREE.Group | THREE.Scene;
-
-  private markerManager: MarkerManager;
+export class KPManager extends MarkerManager {
+  private view: CivilHighlightType;
 
   private divisionLength = 100;
 
@@ -23,29 +19,40 @@ export class KPStation {
     controls: CameraControls,
     type: CivilHighlightType
   ) {
-    // this.scene = scene;
-    this.type = type;
-
-    this.markerManager = new MarkerManager(
-      components,
-      renderer,
-      scene,
-      controls
-    );
+    super(components, renderer, scene, controls);
+    this.view = type;
   }
 
   showKPStations(mesh: FRAGS.CurveMesh) {
-    if (this.type === "horizontal") {
+    if (this.view === "horizontal") {
       const endKPStations = this.generateStartAndEndKP(mesh);
       for (const [, data] of endKPStations) {
-        this.markerManager.addKPStation(data.value, data.normal);
+        this.addKPStation(data.value, data.normal);
       }
 
       const constantKPStations = this.generateConstantKP(mesh);
       for (const [, data] of constantKPStations) {
-        this.markerManager.addKPStation(data.value, data.normal);
+        this.addKPStation(data.value, data.normal);
       }
     }
+  }
+
+  showCurveLength(line: THREE.Line, length: number) {
+    const startPoint = new THREE.Vector3();
+    startPoint.x = line.geometry.getAttribute("position").getX(0);
+    startPoint.y = line.geometry.getAttribute("position").getY(0);
+    startPoint.z = line.geometry.getAttribute("position").getZ(0);
+
+    const endPoint = new THREE.Vector3();
+    endPoint.x = line.geometry.getAttribute("position").getX(1);
+    endPoint.y = line.geometry.getAttribute("position").getY(1);
+    endPoint.z = line.geometry.getAttribute("position").getZ(1);
+
+    const formattedLength = length.toFixed(2);
+    const middlePoint = new THREE.Vector3();
+    middlePoint.addVectors(startPoint, endPoint).multiplyScalar(0.5);
+
+    this.addMarkerAtPoint(formattedLength, middlePoint, "Length");
   }
 
   private generateStartAndEndKP(mesh: FRAGS.CurveMesh) {
@@ -248,10 +255,10 @@ export class KPStation {
   }
 
   clearKPStations() {
-    this.markerManager.clearMarkers();
+    this.clearMarkers();
   }
 
   dispose() {
-    this.markerManager.dispose();
+    this.dispose();
   }
 }

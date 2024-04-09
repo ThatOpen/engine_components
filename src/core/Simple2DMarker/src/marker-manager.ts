@@ -68,9 +68,9 @@ export class MarkerManager {
 
   set color(value: string) {
     this._color = value;
-    this.markers.forEach((marker) => {
+    for (const marker of this.markers) {
       marker.label.get().element.style.color = value;
-    });
+    }
   }
 
   set clusterThreeshold(value: number) {
@@ -97,25 +97,26 @@ export class MarkerManager {
   }
 
   private resetMarkers() {
-    this.markers.forEach((marker) => {
+    for (const marker of this.markers) {
       marker.merged = false;
-    });
-    this.clusterLabels.forEach((cluster) => {
+    }
+    for (const cluster of this.clusterLabels) {
       this.scene.remove(cluster.label.get());
-    });
+    }
     this.clusterLabels.clear();
     this._clusterKey = 0;
   }
 
   private removeMergeMarkers() {
-    this.markers.forEach((marker) => {
+    for (const marker of this.markers) {
       if (marker.merged) {
         this.scene.remove(marker.label.get());
       } else {
         this.scene.add(marker.label.get());
       }
-    });
-    this.clusterLabels.forEach((cluster) => {
+    }
+
+    for (const cluster of this.clusterLabels) {
       if (cluster.markerKeys.length === 1) {
         const marker = Array.from(this.markers).find(
           (marker) => marker.key === cluster.markerKeys[0]
@@ -129,16 +130,16 @@ export class MarkerManager {
         this.scene.remove(cluster.label.get());
         this.clusterLabels.delete(cluster);
       }
-    });
+    }
   }
 
   private manageCluster() {
     this.resetMarkers();
 
-    this.markers.forEach((marker) => {
+    for (const marker of this.markers) {
       if (!marker.merged) {
         this.currentKeys.clear();
-        this.markers.forEach((marker2) => {
+        for (const marker2 of this.markers) {
           if (marker.key !== marker2.key && !marker2.merged) {
             const distance = this.distance(marker.label, marker2.label);
             if (distance < this._clusterThreeshold) {
@@ -146,7 +147,7 @@ export class MarkerManager {
               marker2.merged = true;
             }
           }
-        });
+        }
         if (this.currentKeys.size > 0) {
           if (!this.scene) {
             return;
@@ -172,7 +173,7 @@ export class MarkerManager {
           this._clusterKey++;
         }
       }
-    });
+    }
 
     this.removeMergeMarkers();
   }
@@ -253,6 +254,7 @@ export class MarkerManager {
         mesh: new THREE.Mesh(),
         key: this._markerKey.toString(),
         merged: false,
+        type,
       });
       this._markerKey++;
     } else {
@@ -440,14 +442,14 @@ export class MarkerManager {
       (cluster) => cluster.key === key
     );
     if (cluster) {
-      cluster.markerKeys.forEach((markerKey) => {
+      for (const markerKey of cluster.markerKeys) {
         const marker = Array.from(this.markers).find(
           (marker) => marker.key === markerKey
         );
         if (marker) {
           boundingRegion.push(marker.label.get().position);
         }
-      });
+      }
       this.scene.remove(cluster?.label.get());
       this.clusterLabels.delete(cluster);
     }
@@ -475,18 +477,27 @@ export class MarkerManager {
 
   private createBox3FromPoints(points: THREE.Vector3[]) {
     const bbox = new THREE.Box3();
-    points.forEach((point) => {
+    for (const point of points) {
       bbox.expandByPoint(point);
-    });
+    }
     return bbox;
   }
 
   clearMarkers() {
-    this.markers.forEach((marker) => {
+    for (const marker of this.markers) {
       this.scene.remove(marker.label.get());
-    });
+    }
     this.markers.clear();
     this._markerKey = 0;
+  }
+
+  clearMarkersByType(type: CivilLabels) {
+    for (const marker of this.markers) {
+      if (marker.type === type) {
+        this.scene.remove(marker.label.get());
+        this.markers.delete(marker);
+      }
+    }
   }
 
   dispose() {

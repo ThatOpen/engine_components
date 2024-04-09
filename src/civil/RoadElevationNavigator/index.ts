@@ -4,6 +4,7 @@ import { Drawer } from "../../ui";
 import { Components } from "../../core";
 import { RoadNavigator } from "../RoadNavigator";
 import { CurveHighlighter } from "../RoadNavigator/src/curve-highlighter";
+import { KPManager } from "../RoadNavigator/src/kp-manager";
 
 export class RoadElevationNavigator extends RoadNavigator implements UI {
   static readonly uuid = "097eea29-2d5a-431a-a247-204d44670621" as const;
@@ -16,11 +17,20 @@ export class RoadElevationNavigator extends RoadNavigator implements UI {
 
   highlighter: CurveHighlighter;
 
+  kpManager: KPManager;
+
   constructor(components: Components) {
     super(components);
     this.setUI();
     const scene = this.scene.get();
     this.highlighter = new CurveHighlighter(scene, "vertical");
+    this.kpManager = new KPManager(
+      components,
+      this.scene.renderer,
+      this.scene.get(),
+      this.scene.controls,
+      this.view
+    );
   }
 
   get() {
