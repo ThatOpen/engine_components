@@ -22,6 +22,7 @@ interface IMarker {
   mesh: FRAGS.CurveMesh | THREE.Mesh | THREE.Line;
   type?: CivilLabels;
   merged: boolean;
+  static: boolean;
 }
 
 interface IGroupedLabels {
@@ -141,9 +142,12 @@ export class MarkerManager {
     this.resetMarkers();
 
     for (const marker of this.markers) {
-      if (!marker.merged) {
+      if (!marker.merged && !marker.static) {
         this.currentKeys.clear();
         for (const marker2 of this.markers) {
+          if (marker2.static) {
+            continue;
+          }
           if (marker.key !== marker2.key && !marker2.merged) {
             const distance = this.distance(marker.label, marker2.label);
             if (distance < this._clusterThreeshold) {
@@ -236,6 +240,7 @@ export class MarkerManager {
       mesh,
       key: this._markerKey.toString(),
       merged: false,
+      static: false,
     });
     this._markerKey++;
   }
@@ -243,7 +248,8 @@ export class MarkerManager {
   addMarkerAtPoint(
     text: string,
     point: THREE.Vector3,
-    type?: CivilLabels | undefined
+    type?: CivilLabels | undefined,
+    isStatic = false
   ) {
     if (type !== undefined) {
       const span = document.createElement("span");
@@ -259,6 +265,7 @@ export class MarkerManager {
         key: this._markerKey.toString(),
         merged: false,
         type,
+        static: isStatic,
       });
       this._markerKey++;
     } else {
@@ -327,6 +334,7 @@ export class MarkerManager {
       mesh,
       key: this._markerKey.toString(),
       merged: false,
+      static: false,
     });
     this._markerKey++;
   }
@@ -455,6 +463,7 @@ export class MarkerManager {
       key: this._markerKey.toString(),
       type,
       merged: false,
+      static: false,
     });
     this._markerKey++;
 
