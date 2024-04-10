@@ -27,8 +27,6 @@
     "preserveSymlinks": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["testing", "src"],
-  "exclude": ["src/**/*.test.ts", "src/test"],
   "references": [{ "path": "./tsconfig.node.json" }],
   "typedocOptions": {
     "entryPoints": ["src/index.ts"],
