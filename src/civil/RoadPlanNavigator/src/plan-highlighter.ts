@@ -169,6 +169,7 @@ export class PlanHighlighter extends CurveHighlighter {
 
   private showLineInfo(curveMesh: FRAGS.CurveMesh, offset: number) {
     this.kpManager.clearMarkersByType("Length");
+    this.kpManager.clearMarkersByType("Radius");
     const positions = curveMesh.geometry.attributes.position.array;
     const parallelCurvePoints = this.calculateParallelCurve(
       positions,
@@ -220,6 +221,7 @@ export class PlanHighlighter extends CurveHighlighter {
 
   private showClothoidInfo(curveMesh: FRAGS.CurveMesh, offset: number) {
     this.kpManager.clearMarkersByType("Length");
+    this.kpManager.clearMarkersByType("Radius");
     const positions = curveMesh.geometry.attributes.position.array;
     const parallelCurvePoints = this.calculateParallelCurve(
       positions,
