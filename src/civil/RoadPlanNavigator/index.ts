@@ -43,39 +43,8 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
 
     this.onHighlight.add(({ mesh }) => {
       this.highlighter.showCurveInfo(mesh);
-      this.addCurveLabel(mesh);
       this.fitCameraToAlignment(mesh);
     });
-  }
-
-  addCurveLabel(curve: FRAGS.CurveMesh) {
-    switch (curve.curve.data.TYPE) {
-      case "LINE":
-        this.lineLabels(curve);
-        break;
-      case "CLOTHOID":
-        this.lineLabels(curve);
-        break;
-      case "CIRCULARARC":
-        console.log(
-          "Labels not defined yet for curve type:",
-          curve.curve.data.TYPE
-        );
-        break;
-      default:
-        console.log("Unknown curve type:", curve.curve.data.TYPE);
-        break;
-    }
-  }
-
-  lineLabels(curve: FRAGS.CurveMesh): void {
-    const lengthLabelPosition = this.highlighter.lineLengthLabelPosition(curve);
-    const label = this.markerManager.addCivilMarker(
-      "spaceholder",
-      curve,
-      "Length"
-    );
-    label.get().position.copy(lengthLabelPosition);
   }
 
   private async fitCameraToAlignment(curveMesh: FRAGS.CurveMesh) {
@@ -116,7 +85,7 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
     );
     this.uiElement.set({ floatingWindow });
 
-    this.scene.controls.addEventListener("sleep", () => {
+    this.scene.controls.addEventListener("update", () => {
       const screenSize = floatingWindow.containerSize;
       const { zoom } = this.scene.camera;
       this.highlighter.updateOffset(screenSize, zoom, true);

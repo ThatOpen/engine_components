@@ -37,7 +37,16 @@ export class KPManager extends MarkerManager {
     }
   }
 
-  showCurveLength(line: THREE.Line, length: number) {
+  showCurveLength(points: THREE.Vector3[], length: number) {
+    const count = points.length;
+    const formattedLength = `${length.toFixed(2)} m`;
+    const midpointIndex = Math.round(count / 2);
+    const middlePoint = points[midpointIndex];
+
+    this.addMarkerAtPoint(formattedLength, middlePoint, "Length");
+  }
+
+  showLineLength(line: THREE.Line, length: number) {
     const startPoint = new THREE.Vector3();
     startPoint.x = line.geometry.getAttribute("position").getX(0);
     startPoint.y = line.geometry.getAttribute("position").getY(0);
@@ -48,11 +57,29 @@ export class KPManager extends MarkerManager {
     endPoint.y = line.geometry.getAttribute("position").getY(1);
     endPoint.z = line.geometry.getAttribute("position").getZ(1);
 
-    const formattedLength = length.toFixed(2);
+    const formattedLength = `${length.toFixed(2)} m`;
     const middlePoint = new THREE.Vector3();
     middlePoint.addVectors(startPoint, endPoint).multiplyScalar(0.5);
 
     this.addMarkerAtPoint(formattedLength, middlePoint, "Length");
+  }
+
+  showCurveRadius(line: THREE.Line, radius: number) {
+    const startPoint = new THREE.Vector3();
+    startPoint.x = line.geometry.getAttribute("position").getX(0);
+    startPoint.y = line.geometry.getAttribute("position").getY(0);
+    startPoint.z = line.geometry.getAttribute("position").getZ(0);
+
+    const endPoint = new THREE.Vector3();
+    endPoint.x = line.geometry.getAttribute("position").getX(1);
+    endPoint.y = line.geometry.getAttribute("position").getY(1);
+    endPoint.z = line.geometry.getAttribute("position").getZ(1);
+
+    const formattedLength = `R = ${radius.toFixed(2)} m`;
+    const middlePoint = new THREE.Vector3();
+    middlePoint.addVectors(startPoint, endPoint).multiplyScalar(0.5);
+
+    this.addMarkerAtPoint(formattedLength, middlePoint, "Radius");
   }
 
   private generateStartAndEndKP(mesh: FRAGS.CurveMesh) {

@@ -116,21 +116,6 @@ export class PlanHighlighter extends CurveHighlighter {
     return parallelCurvePoints;
   }
 
-  lineLengthLabelPosition(curve: FRAGS.CurveMesh) {
-    const positions = curve.geometry.attributes.position.array;
-    const offset = this.offset;
-    const parallelCurvePoints = this.calculateParallelCurve(
-      positions,
-      positions.length / 3,
-      offset
-    );
-    const middlePoint = parallelCurvePoints
-      .reduce((acc, curr) => acc.add(curr), new THREE.Vector3())
-      .divideScalar(parallelCurvePoints.length);
-
-    return middlePoint;
-  }
-
   private calculateDimensionLines(
     curve: FRAGS.CurveMesh,
     line: THREE.Line
@@ -197,6 +182,10 @@ export class PlanHighlighter extends CurveHighlighter {
       lengthGeometry,
       this.markupMaterial
     );
+    this.kpManager.showLineLength(
+      lineParallelLine,
+      curveMesh.curve.getLength()
+    );
     this.scene.add(lineParallelLine);
     this.markupLines.push(lineParallelLine);
     const { startDimensionPoints, endDimensionPoints } =
@@ -227,14 +216,10 @@ export class PlanHighlighter extends CurveHighlighter {
     );
     this.scene.add(lineEndDimensionlLine);
     this.markupLines.push(lineEndDimensionlLine);
-    // TODO: Felipe, replace with your implementation
-    this.kpManager.showCurveLength(
-      lineParallelLine,
-      curveMesh.curve.getLength()
-    );
   }
 
   private showClothoidInfo(curveMesh: FRAGS.CurveMesh, offset: number) {
+    this.kpManager.clearMarkersByType("Length");
     const positions = curveMesh.geometry.attributes.position.array;
     const parallelCurvePoints = this.calculateParallelCurve(
       positions,
@@ -243,6 +228,10 @@ export class PlanHighlighter extends CurveHighlighter {
     );
     const lengthGeometry = new THREE.BufferGeometry().setFromPoints(
       parallelCurvePoints
+    );
+    this.kpManager.showCurveLength(
+      parallelCurvePoints,
+      curveMesh.curve.getLength()
     );
     const clothParallelLine = new THREE.Line(
       lengthGeometry,
@@ -281,6 +270,8 @@ export class PlanHighlighter extends CurveHighlighter {
   }
 
   private showCircularArcInfo(curveMesh: FRAGS.CurveMesh, offset: number) {
+    this.kpManager.clearMarkersByType("Length");
+    this.kpManager.clearMarkersByType("Radius");
     const radius = curveMesh.curve.data.RADIUS;
     const positions = curveMesh.geometry.attributes.position.array;
     const count = curveMesh.geometry.attributes.position.count;
@@ -314,6 +305,7 @@ export class PlanHighlighter extends CurveHighlighter {
     linePoints.push(arcCenterPoint);
     const radiusGeometry = new THREE.BufferGeometry().setFromPoints(linePoints);
     const radiusLine = new THREE.Line(radiusGeometry, this.markupMaterial);
+    this.kpManager.showCurveRadius(radiusLine, Math.abs(radius));
     this.scene.add(radiusLine);
     this.markupLines.push(radiusLine);
 
@@ -341,6 +333,10 @@ export class PlanHighlighter extends CurveHighlighter {
     }
     const lengthGeometry = new THREE.BufferGeometry().setFromPoints(
       parallelCurvePoints
+    );
+    this.kpManager.showCurveLength(
+      parallelCurvePoints,
+      curveMesh.curve.getLength()
     );
     const circArcParallelLine = new THREE.Line(
       lengthGeometry,
