@@ -43,7 +43,7 @@ export class KPManager extends MarkerManager {
     const midpointIndex = Math.round(count / 2);
     const middlePoint = points[midpointIndex];
 
-    this.addMarkerAtPoint(formattedLength, middlePoint, "Length");
+    this.addMarkerAtPoint(formattedLength, middlePoint, "Length", true);
   }
 
   showLineLength(line: THREE.Line, length: number) {
@@ -61,7 +61,7 @@ export class KPManager extends MarkerManager {
     const middlePoint = new THREE.Vector3();
     middlePoint.addVectors(startPoint, endPoint).multiplyScalar(0.5);
 
-    this.addMarkerAtPoint(formattedLength, middlePoint, "Length");
+    this.addMarkerAtPoint(formattedLength, middlePoint, "Length", true);
   }
 
   showCurveRadius(line: THREE.Line, radius: number) {
@@ -79,7 +79,7 @@ export class KPManager extends MarkerManager {
     const middlePoint = new THREE.Vector3();
     middlePoint.addVectors(startPoint, endPoint).multiplyScalar(0.5);
 
-    this.addMarkerAtPoint(formattedLength, middlePoint, "Radius");
+    this.addMarkerAtPoint(formattedLength, middlePoint, "Radius", true);
   }
 
   private generateStartAndEndKP(mesh: FRAGS.CurveMesh) {
