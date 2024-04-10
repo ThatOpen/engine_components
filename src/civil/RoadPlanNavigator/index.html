@@ -1,199 +1,256 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <link rel="stylesheet" href="../../../resources/styles.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-  <link rel="icon" type="image/x-icon" href="../../../resources/favicon.ico">
-  <title>Tools Component</title>
-  <style>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="../../../resources/styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    />
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="../../../resources/favicon.ico"
+    />
+    <title>Tools Component</title>
+    <style>
       body {
-          margin: 0;
-          padding: 0;
+        margin: 0;
+        padding: 0;
       }
 
       .full-screen {
-          width: 100vw;
-          height: 100vh;
-          position: relative;
-          overflow: hidden;
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+        overflow: hidden;
       }
-  </style>
-</head>
-<body>
-<div class="full-screen" id="container"></div>
-<script type="importmap">
-  {
-    "imports": {
-      "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
-      "web-ifc": "https://unpkg.com/web-ifc@0.0.50/web-ifc-api.js",
-      "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
-      "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.160.1/examples/jsm/libs/lil-gui.module.min.js",
-      "openbim-components": "../../../resources/openbim-components.js",
-       "client-zip": "https://unpkg.com/client-zip@2.3.0/index.js"
-    }
-  }
+    </style>
+  </head>
+  <body>
+    <div class="full-screen" id="container"></div>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
+          "web-ifc": "https://unpkg.com/web-ifc@0.0.50/web-ifc-api.js",
+          "stats.js/src/Stats.js": "https://unpkg.com/stats-js@1.0.1/src/Stats.js",
+          "three/examples/jsm/libs/lil-gui.module.min": "https://unpkg.com/three@0.160.1/examples/jsm/libs/lil-gui.module.min.js",
+          "openbim-components": "../../../resources/openbim-components.js",
+          "client-zip": "https://unpkg.com/client-zip@2.3.0/index.js"
+        }
+      }
+    </script>
+    <script type="module">
+      // Set up scene (see SimpleScene tutorial)
 
-</script>
-<script type="module">
+      import * as THREE from "three";
+      import * as OBC from "openbim-components";
+      import Stats from "stats.js/src/Stats.js";
 
-  // Set up scene (see SimpleScene tutorial)
+      const container = document.getElementById("container");
 
-  import * as THREE from "three";
-  import * as OBC from "openbim-components";
-  import Stats from "stats.js/src/Stats.js";
+      const components = new OBC.Components();
 
-  const container = document.getElementById("container");
+      components.scene = new OBC.SimpleScene(components);
+      components.renderer = new OBC.PostproductionRenderer(
+        components,
+        container
+      );
+      components.camera = new OBC.SimpleCamera(components);
+      components.raycaster = new OBC.SimpleRaycaster(components);
 
-  const components = new OBC.Components();
+      components.init();
 
-  components.scene = new OBC.SimpleScene(components);
-  components.renderer = new OBC.PostproductionRenderer(components, container);
-  components.camera = new OBC.SimpleCamera(components);
-  components.raycaster = new OBC.SimpleRaycaster(components);
+      components.renderer.postproduction.enabled = true;
+      components.renderer.postproduction.customEffects.outlineEnabled = true;
 
-  components.init();
+      const scene = components.scene.get();
 
-  components.renderer.postproduction.enabled = true;
-  components.renderer.postproduction.customEffects.outlineEnabled = true;
+      components.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
 
-  const scene = components.scene.get();
+      components.scene.setup();
 
-  components.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
+      const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
+      const customEffects = components.renderer.postproduction.customEffects;
+      customEffects.excludedMeshes.push(grid.get());
 
-  components.scene.setup();
+      let fragments = new OBC.FragmentManager(components);
+      let fragmentIfcLoader = new OBC.FragmentIfcLoader(components);
 
-  const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
-  const customEffects = components.renderer.postproduction.customEffects;
-  customEffects.excludedMeshes.push(grid.get());
+      fragmentIfcLoader.settings.wasm = {
+        path: "https://unpkg.com/web-ifc@0.0.50/",
+        absolute: true,
+      };
 
-  let fragments = new OBC.FragmentManager(components);
-  let fragmentIfcLoader = new OBC.FragmentIfcLoader(components);
+      fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
+      fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
 
-  fragmentIfcLoader.settings.wasm = {
-    path: "https://unpkg.com/web-ifc@0.0.50/",
-    absolute: true
-  };
+      // 2. IFC 4 fragment integration
 
-  fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
-  fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
+      const file = await fetch("../../../resources/asdf.frag");
+      const data = await file.arrayBuffer();
+      const buffer = new Uint8Array(data);
+      const model = await fragments.load(buffer);
 
-  // 2. IFC 4 fragment integration
+      // 3. Horizontal alignment
 
-  const file = await fetch("../../../resources/asdf.frag");
-  const data = await file.arrayBuffer();
-  const buffer = new Uint8Array(data);
-  const model = await fragments.load(buffer);
+      const planNavigator = new OBC.RoadPlanNavigator(components);
+      const horizontalWindow = planNavigator.uiElement.get("floatingWindow");
+      horizontalWindow.visible = true;
+      planNavigator.draw(model);
 
-  // 3. Horizontal alignment
+      // 4. Vertical alignment
 
-  const planNavigator = new OBC.RoadPlanNavigator(components);
-  const horizontalWindow = planNavigator.uiElement.get("floatingWindow");
-  horizontalWindow.visible = true;
-  planNavigator.draw(model);
+      const elevationNavigator = new OBC.RoadElevationNavigator(components);
+      const drawer = elevationNavigator.uiElement.get("drawer");
+      drawer.visible = true;
 
-  // 4. Vertical alignment
+      // 4.5 Set scene elevation in horizontal
+      planNavigator.elevation = elevationNavigator.scene.scene;
 
-  const elevationNavigator = new OBC.RoadElevationNavigator(components);
-  const drawer = elevationNavigator.uiElement.get("drawer");
-  drawer.visible = true;
+      // 5. 3D alignment
 
-  // 5. 3D alignment
+      const navigator3D = new OBC.Road3DNavigator(components);
+      navigator3D.draw(model);
+      navigator3D.setup();
+      navigator3D.highlighter.hoverCurve.material.color.set(1, 1, 1);
+      navigator3D.highlighter.hoverPoints.material.color.set(1, 1, 1);
 
-  const navigator3D = new OBC.Road3DNavigator(components);
-  navigator3D.draw(model);
-  navigator3D.setup();
-  navigator3D.highlighter.hoverCurve.material.color.set(1, 1, 1);
-  navigator3D.highlighter.hoverPoints.material.color.set(1, 1, 1);
+      // 6. Cross section
 
-  // 6. Cross section
+      // const crossNavigator = new OBC.RoadCrossSectionNavigator(components);
+      // const crossWindow = crossNavigator.uiElement.get("floatingWindow");
+      // crossWindow.visible = true;
 
-  // const crossNavigator = new OBC.RoadCrossSectionNavigator(components);
-  // const crossWindow = crossNavigator.uiElement.get("floatingWindow");
-  // crossWindow.visible = true;
+      // const classifier = new OBC.FragmentClassifier(components);
+      // classifier.byEntity(model);
 
+      // const classifications = classifier.get();
 
-  // const classifier = new OBC.FragmentClassifier(components);
-  // classifier.byEntity(model);
+      // const clipper = components.tools.get(OBC.EdgesClipper);
+      // const styles = clipper.styles.get();
 
-  // const classifications = classifier.get();
+      // for (const category in classifications.entities) {
+      //   const found = classifier.find({ entities: [category] });
 
-  // const clipper = components.tools.get(OBC.EdgesClipper);
-  // const styles = clipper.styles.get();
+      //   const color = new THREE.Color(
+      //     Math.random(),
+      //     Math.random(),
+      //     Math.random()
+      //   );
 
-  // for (const category in classifications.entities) {
-  //   const found = classifier.find({ entities: [category] });
+      //   const lineMaterial = new THREE.LineBasicMaterial({ color });
+      //   clipper.styles.create(category, new Set(), lineMaterial);
 
-  //   const color = new THREE.Color(
-  //     Math.random(),
-  //     Math.random(),
-  //     Math.random()
-  //   );
+      //   for (const fragID in found) {
+      //     const foundFrag = fragments.list[fragID];
+      //     if(!foundFrag) {
+      //       continue;
+      //     }
+      //     styles[category].fragments[fragID] = new Set(found[fragID]);
+      //     styles[category].meshes.add(foundFrag.mesh);
+      //   }
+      // }
 
-  //   const lineMaterial = new THREE.LineBasicMaterial({ color });
-  //   clipper.styles.create(category, new Set(), lineMaterial);
+      // // 7. Synchronization
 
-  //   for (const fragID in found) {
-  //     const foundFrag = fragments.list[fragID];
-  //     if(!foundFrag) {
-  //       continue;
-  //     }
-  //     styles[category].fragments[fragID] = new Set(found[fragID]);
-  //     styles[category].meshes.add(foundFrag.mesh);
-  //   }
-  // }
+      // const sphere = new THREE.Sphere(undefined, 20);
 
-  // // 7. Synchronization
+      planNavigator.onHighlight.add(({ mesh, point }) => {
+        elevationNavigator.clear();
+        elevationNavigator.draw(model, [mesh.curve.alignment]);
+        elevationNavigator.highlighter.select(mesh);
 
+        navigator3D.highlighter.select(mesh);
 
-  // const sphere = new THREE.Sphere(undefined, 20);
+        const index = mesh.curve.index;
+        const curve3d = mesh.curve.alignment.absolute[index];
+        curve3d.mesh.geometry.computeBoundingSphere();
+        components.camera.controls.fitToSphere(
+          curve3d.mesh.geometry.boundingSphere,
+          true
+        );
 
-  planNavigator.onHighlight.add(({ mesh, point }) => {
-    elevationNavigator.clear();
-    elevationNavigator.draw(model, [mesh.curve.alignment]);
-    elevationNavigator.highlighter.select(mesh);
+        // Add markers elevation
 
-    navigator3D.highlighter.select(mesh);
+        planNavigator.markerManager.dispose();
 
-    const index = mesh.curve.index;
-    const curve3d = mesh.curve.alignment.absolute[index];
-    curve3d.mesh.geometry.computeBoundingSphere();
-    components.camera.controls.fitToSphere(curve3d.mesh.geometry.boundingSphere, true);
-  })
+        const { alignment } = mesh.curve;
+        let positionsVertical = [];
 
-  // planNavigator.onMarkerChange.add(({ alignment, percentage, type, curve }) => {
-  //   elevationNavigator.setMarker(alignment, percentage, type);
-  //   navigator3D.setMarker(alignment, percentage, type);
+        alignment.vertical.forEach((align) => {
+          const pos = align.mesh.geometry.attributes.position.array;
+          positionsVertical.push(pos);
+        });
 
-  //   if(type === "select") {
-  //     const mesh = curve.alignment.absolute[curve.index].mesh;
-  //     const point = alignment.getPointAt(percentage, "absolute");
-  //     crossNavigator.set(mesh, point);
-  //   }
-  // })
+        const { defSegments, slope } =
+          planNavigator.setDefSegments(positionsVertical);
 
-  // window.addEventListener("keydown", () => {
-  //   elevationNavigator.scene.scaleY += 0.2;
-  // })
+        const sceneElevation = planNavigator.elevation;
 
+        alignment.vertical.forEach((align, index) => {
+          planNavigator.markerManager.addCivilVerticalMarker(
+            `S: ${slope[index].slope}%`,
+            align.mesh,
+            "Slope",
+            sceneElevation
+          );
 
-  // const hider = new OBC.FragmentHider(components);
-  // await hider.loadCached();
-  // mainToolbar.addChild(hider.uiElement.get("main"));
+          planNavigator.markerManager.addCivilVerticalMarker(
+            `H: ${defSegments[index].end.y.toFixed(2)}`,
+            align.mesh,
+            "Height",
+            sceneElevation
+          );
+        });
 
+        planNavigator.markerManager.addCivilVerticalMarker(
+          "KP: 0",
+          alignment.vertical[0].mesh,
+          "InitialKPV",
+          sceneElevation
+        );
 
-  const stats = new Stats();
-  stats.showPanel(2);
-  document.body.append(stats.dom);
-  stats.dom.style.left = "0px";
-  const renderer = components.renderer;
-  renderer.onBeforeUpdate.add(() => stats.begin());
-  renderer.onAfterUpdate.add(() => stats.end());
+        planNavigator.markerManager.addCivilVerticalMarker(
+          `KP: ${alignment.vertical.length}`,
+          alignment.vertical[alignment.vertical.length - 1].mesh,
+          "FinalKPV",
+          sceneElevation
+        );
+      });
 
+      // planNavigator.onMarkerChange.add(({ alignment, percentage, type, curve }) => {
+      //   elevationNavigator.setMarker(alignment, percentage, type);
+      //   navigator3D.setMarker(alignment, percentage, type);
 
-</script>
-</body>
+      //   if(type === "select") {
+      //     const mesh = curve.alignment.absolute[curve.index].mesh;
+      //     const point = alignment.getPointAt(percentage, "absolute");
+      //     crossNavigator.set(mesh, point);
+      //   }
+      // })
+
+      // window.addEventListener("keydown", () => {
+      //   elevationNavigator.scene.scaleY += 0.2;
+      // })
+
+      // const hider = new OBC.FragmentHider(components);
+      // await hider.loadCached();
+      // mainToolbar.addChild(hider.uiElement.get("main"));
+
+      const stats = new Stats();
+      stats.showPanel(2);
+      document.body.append(stats.dom);
+      stats.dom.style.left = "0px";
+      const renderer = components.renderer;
+      renderer.onBeforeUpdate.add(() => stats.begin());
+      renderer.onAfterUpdate.add(() => stats.end());
+    </script>
+  </body>
 </html>

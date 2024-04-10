@@ -5,6 +5,7 @@ import { Component, Event } from "../../base-types";
 import { Components, Simple2DMarker, Simple2DScene } from "../../core";
 import { CurveHighlighter } from "./src/curve-highlighter";
 import { KPManager } from "./src/kp-manager";
+import { MarkerManager } from "../../core/Simple2DMarker/src/marker-manager";
 
 export type CivilMarkerType = "hover" | "select";
 
@@ -43,6 +44,8 @@ export abstract class RoadNavigator extends Component<any> {
 
   private _previousAlignment: FRAGS.Alignment | null = null;
 
+  markerManager: MarkerManager;
+
   mouseMarkers: {
     hover: Simple2DMarker;
     select: Simple2DMarker;
@@ -51,6 +54,17 @@ export abstract class RoadNavigator extends Component<any> {
   protected constructor(components: Components) {
     super(components);
     this.scene = new Simple2DScene(this.components, false);
+    // @ts-ignore
+    const renderer = this.components._renderer._renderer;
+    // @ts-ignore
+    const controls = this.components._camera.controls;
+
+    this.markerManager = new MarkerManager(
+      this.components,
+      this.scene.renderer,
+      this.scene.scene,
+      controls
+    );
 
     this.mouseMarkers = {
       select: this.newMouseMarker("#ffffff"),
@@ -165,9 +179,7 @@ export abstract class RoadNavigator extends Component<any> {
             this.kpManager.clearKPStations();
             // this.showKPStations(mesh);
             this.kpManager.showKPStations(mesh);
-
             // this.kpManager.createKP();
-
             this._previousAlignment = mesh.curve.alignment;
           }
         }
@@ -202,6 +214,69 @@ export abstract class RoadNavigator extends Component<any> {
     const point = alignment.getPointAt(percentage, this.view);
     const { index } = found.curve.getSegmentAt(found.percentage);
     this.setMouseMarker(point, found.curve.mesh, index, type);
+  }
+
+  setDefSegments(segmentsArray: any[]) {
+    let defSegments: any = [];
+    let slope: any = [];
+
+    const calculateSlopeSegment = (point1: number[], point2: number[]) => {
+      const deltaY = point2[1] - point1[1];
+      const deltaX = point2[0] - point1[0];
+      return deltaY / deltaX;
+    };
+
+    for (let i = 0; i < segmentsArray.length; i++) {
+      const segment = segmentsArray[i];
+      let startX: number, startY: number, endX: number, endY: number;
+
+      // Set start
+      for (let j = 0; j < Object.keys(segment).length / 3; j++) {
+        if (segment[j * 3] !== undefined && segment[j * 3 + 1] !== undefined) {
+          startX = segment[j * 3];
+          startY = segment[j * 3 + 1];
+          break;
+        }
+      }
+
+      // Set end
+      for (let j = Object.keys(segment).length / 3 - 1; j >= 0; j--) {
+        if (segment[j * 3] !== undefined && segment[j * 3 + 1] !== undefined) {
+          endX = segment[j * 3];
+          endY = segment[j * 3 + 1];
+          break;
+        }
+      }
+
+      const defSlope = calculateSlopeSegment(
+        // @ts-ignore
+        [startX, startY],
+        // @ts-ignore
+        [endX, endY]
+      );
+
+      const slopeSegment = (defSlope * 100).toFixed(2);
+      slope.push({ slope: slopeSegment });
+    }
+
+    segmentsArray.forEach((segment: any) => {
+      for (let i = 0; i < segment.length - 3; i += 3) {
+        let startX = segment[i];
+        let startY = segment[i + 1];
+        let startZ = segment[i + 2];
+
+        let endX = segment[i + 3];
+        let endY = segment[i + 4];
+        let endZ = segment[i + 5];
+
+        defSegments.push({
+          start: new THREE.Vector3(startX, startY, startZ),
+          end: new THREE.Vector3(endX, endY, endZ),
+        });
+      }
+    });
+
+    return { defSegments, slope };
   }
 
   hideMarker(type: CivilMarkerType) {
