@@ -2,7 +2,7 @@ import * as FRAGS from "bim-fragment";
 import * as THREE from "three";
 import CameraControls from "camera-controls";
 import { Components, Simple2DMarker, SimpleRenderer } from "../..";
-import { PostproductionRenderer } from "../../../navigation/PostproductionRenderer";
+import { PostproductionRenderer } from "../../../navigation";
 
 type CivilLabels =
   | "Station"
@@ -405,6 +405,7 @@ export class MarkerManager {
       key: this._markerKey.toString(),
       type,
       merged: false,
+      static: false,
     });
     this._markerKey++;
 
