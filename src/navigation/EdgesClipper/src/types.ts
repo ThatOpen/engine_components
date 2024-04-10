@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry";
+import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
 import { ClippingFills } from "./clipping-fills";
 import { FragmentIdMap } from "../../../base-types";
 

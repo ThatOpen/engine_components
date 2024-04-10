@@ -1,9 +1,9 @@
 import * as THREE from "three";
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
-import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { N8AOPass } from "n8ao";
-import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
-import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader";
+import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
+import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader.js";
 import { Components } from "../../../core";
 import { OrthoPerspectiveCamera } from "../../OrthoPerspectiveCamera";
 import { CustomEffectsPass } from "./custom-effects-pass";

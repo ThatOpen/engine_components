@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import {
   Createable,
   Event,

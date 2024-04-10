@@ -1,4 +1,4 @@
-import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
+import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import { Hideable, Disposable, Event } from "../../base-types";
 import { Component } from "../../base-types/component";
 import { Components } from "../Components";

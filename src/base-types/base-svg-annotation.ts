@@ -1,4 +1,4 @@
-import { generateUUID } from "three/src/math/MathUtils";
+import { generateUUID } from "three/src/math/MathUtils.js";
 import { Disposable, UI, Event } from "./base-types";
 import { Component } from "./component";
 import { Button } from "../ui";

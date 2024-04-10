@@ -1,5 +1,5 @@
 import { BufferAttribute, Line, Raycaster, Vector3 } from "three";
-import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
+import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import {
   Component,
   Disposable,

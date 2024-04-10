@@ -1,3 +1,18 @@
+import { MeshBVH, acceleratedRaycast, computeBoundsTree, disposeBoundsTree } from "three-mesh-bvh";
+
+// TODO: Find a better place to put this.
+declare module 'three' {
+  export interface BufferGeometry {
+    boundsTree?: MeshBVH;
+    computeBoundsTree: typeof computeBoundsTree;
+    disposeBoundsTree: typeof disposeBoundsTree;
+  }
+
+  export interface Mesh {
+    raycast: typeof acceleratedRaycast;
+  }
+}
+
 export * from "./Disposer";
 export * from "./SimpleScene";
 export * from "./ToolsComponent";

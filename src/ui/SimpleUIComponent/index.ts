@@ -1,4 +1,4 @@
-import { generateUUID } from "three/src/math/MathUtils";
+import { generateUUID } from "three/src/math/MathUtils.js";
 import { Component, Disposable, Event, Hideable } from "../../base-types";
 import { Components } from "../../core";
 
