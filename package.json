@@ -1,7 +1,7 @@
 {
   "name": "openbim-components",
   "description": "Collection of components and tools to author BIM apps.",
-  "version": "1.4.15",
+  "version": "1.5.0",
   "author": "That Open Company",
   "contributors": [
     "Antonio Gonzalez Viegas (https://github.com/agviegas)",
@@ -41,7 +41,7 @@
     "@types/three": "0.160.0",
     "@typescript-eslint/eslint-plugin": "7.2.0",
     "@typescript-eslint/parser": "7.2.0",
-    "bim-fragment": "1.4.0",
+    "bim-fragment": "1.5.0",
     "cpy-cli": "3.1.1",
     "eslint": "8.57.0",
     "eslint-config-airbnb-base": "15.0.0",
@@ -59,7 +59,7 @@
     "typescript": "5.4.2",
     "vite": "5.1.6",
     "vite-plugin-dts": "3.7.3",
-    "web-ifc": "0.0.51"
+    "web-ifc": "0.0.53"
   },
   "dependencies": {
     "@popperjs/core": "2.11.8",
@@ -76,8 +76,8 @@
     "unzipit": "^1.4.3"
   },
   "peerDependencies": {
-    "bim-fragment": "1.4.0",
+    "bim-fragment": "1.5.0",
     "three": "^0.160.1",
-    "web-ifc": "0.0.51"
+    "web-ifc": "0.0.53"
   }
 }

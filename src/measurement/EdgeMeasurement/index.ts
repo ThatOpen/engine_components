@@ -10,8 +10,8 @@ import {
 import { Components, ToolComponent } from "../../core";
 import { Button } from "../../ui";
 import { SimpleDimensionLine } from "../SimpleDimensionLine";
-import { distanceFromPointToLine, getRaycastedFace } from "../../utils";
 import { LengthMeasurement } from "../LengthMeasurement";
+import { MeasurementUtils } from "../MeasurementUtils";
 
 export class EdgeMeasurement
   extends Component<void>
@@ -209,19 +209,25 @@ export class EdgeMeasurement
     if (!mesh.geometry.index) {
       return;
     }
-    const result = getRaycastedFace(mesh, faceIndex, instance);
+    const result = MeasurementUtils.getFace(mesh, faceIndex, instance);
     if (!result) return;
     const { edges } = result;
 
     let minDistance = Number.MAX_VALUE;
     let currentEdge: THREE.Vector3[] = [];
-    for (const id in edges) {
-      const edge = edges[id];
-      const [v1, v2] = edge;
-      const distance = distanceFromPointToLine(point, v1, v2, true);
+    for (const edge of edges) {
+      const [v1, v2] = edge.points;
+
+      const distance = MeasurementUtils.distanceFromPointToLine(
+        point,
+        v1,
+        v2,
+        true
+      );
+
       if (distance < this.tolerance && distance < minDistance) {
         minDistance = distance;
-        currentEdge = edge;
+        currentEdge = edge.points;
       }
     }
 

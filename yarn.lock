@@ -2240,16 +2240,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bim-fragment@npm:1.4.0":
-  version: 1.4.0
-  resolution: "bim-fragment@npm:1.4.0"
+"bim-fragment@npm:1.5.0":
+  version: 1.5.0
+  resolution: "bim-fragment@npm:1.5.0"
   dependencies:
     flatbuffers: ^23.3.3
     three-mesh-bvh: 0.7.0
     unzipit: 1.4.3
   peerDependencies:
     three: ^0.160.1
-  checksum: eb7e4001b96d60e9fdb85d5cf750d88e0b6808340170cda133778caa1760138fcf23ab753cac9ed1d257b8d6b60c2e63fbb12f383975d0a1788d85d2383a16fb
+  checksum: ca2ad34691ac7fd4ea036c510bb3a7bda8d744cccbc5aa5cd88dbcf7537f2277fa923eae65ddbe1ad20c93dae9263f3bc30dde1c08f9dceb6d51f2913c861e71
   languageName: node
   linkType: hard
 
@@ -6509,7 +6509,7 @@ __metadata:
     "@types/three": 0.160.0
     "@typescript-eslint/eslint-plugin": 7.2.0
     "@typescript-eslint/parser": 7.2.0
-    bim-fragment: 1.4.0
+    bim-fragment: 1.5.0
     camera-controls: 2.7.3
     cpy-cli: 3.1.1
     dexie: ^3.2.3
@@ -6538,11 +6538,11 @@ __metadata:
     unzipit: ^1.4.3
     vite: 5.1.6
     vite-plugin-dts: 3.7.3
-    web-ifc: 0.0.51
+    web-ifc: 0.0.53
   peerDependencies:
-    bim-fragment: 1.4.0
+    bim-fragment: 1.5.0
     three: ^0.160.1
-    web-ifc: 0.0.51
+    web-ifc: 0.0.53
   languageName: unknown
   linkType: soft
 
@@ -8719,10 +8719,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"web-ifc@npm:0.0.51":
-  version: 0.0.51
-  resolution: "web-ifc@npm:0.0.51"
-  checksum: 079fb2ae460c757fb5b2259031b896bbabcb32abcfb76454ef7ebd01783170abbc4285fa63a4e763ab943ad99a63a1a22207bfd09ab93fb2fc47930cd2a7e0c8
+"web-ifc@npm:0.0.53":
+  version: 0.0.53
+  resolution: "web-ifc@npm:0.0.53"
+  checksum: 26f86094083173ada19b4e75f6d6b777ee93c4192be415bdd8ef6565494434288cf80e6f78a856654c6663f88db43ccf297f111a62d008aef3f78e2e40276a44
   languageName: node
   linkType: hard
 
