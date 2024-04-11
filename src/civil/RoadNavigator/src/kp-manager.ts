@@ -284,8 +284,4 @@ export class KPManager extends MarkerManager {
   clearKPStations() {
     this.clearMarkers();
   }
-
-  dispose() {
-    this.dispose();
-  }
 }

@@ -5,7 +5,6 @@ import { Component, Event } from "../../base-types";
 import { Components, Simple2DMarker, Simple2DScene } from "../../core";
 import { CurveHighlighter } from "./src/curve-highlighter";
 import { KPManager } from "./src/kp-manager";
-import { MarkerManager } from "../../core/Simple2DMarker/src/marker-manager";
 
 export type CivilMarkerType = "hover" | "select";
 
@@ -21,7 +20,6 @@ export abstract class RoadNavigator extends Component<any> {
   // abstract showKPStations(curveMesh: FRAGS.CurveMesh): void;
   // abstract clearKPStations(): void;
 
-  // abstract kpManager: KPManager;
   abstract kpManager: KPManager;
 
   readonly onHighlight = new Event<{
@@ -44,8 +42,6 @@ export abstract class RoadNavigator extends Component<any> {
 
   private _previousAlignment: FRAGS.Alignment | null = null;
 
-  markerManager: MarkerManager;
-
   mouseMarkers: {
     hover: Simple2DMarker;
     select: Simple2DMarker;
@@ -54,17 +50,6 @@ export abstract class RoadNavigator extends Component<any> {
   protected constructor(components: Components) {
     super(components);
     this.scene = new Simple2DScene(this.components, false);
-    // @ts-ignore
-    const renderer = this.components._renderer._renderer;
-    // @ts-ignore
-    const controls = this.components._camera.controls;
-
-    this.markerManager = new MarkerManager(
-      this.components,
-      this.scene.renderer,
-      this.scene.scene,
-      controls
-    );
 
     this.mouseMarkers = {
       select: this.newMouseMarker("#ffffff"),
@@ -217,8 +202,8 @@ export abstract class RoadNavigator extends Component<any> {
   }
 
   setDefSegments(segmentsArray: any[]) {
-    let defSegments: any = [];
-    let slope: any = [];
+    const defSegments: any = [];
+    const slope: any = [];
 
     const calculateSlopeSegment = (point1: number[], point2: number[]) => {
       const deltaY = point2[1] - point1[1];
@@ -228,7 +213,10 @@ export abstract class RoadNavigator extends Component<any> {
 
     for (let i = 0; i < segmentsArray.length; i++) {
       const segment = segmentsArray[i];
-      let startX: number, startY: number, endX: number, endY: number;
+      let startX: number;
+      let startY: number;
+      let endX: number;
+      let endY: number;
 
       // Set start
       for (let j = 0; j < Object.keys(segment).length / 3; j++) {
@@ -259,22 +247,22 @@ export abstract class RoadNavigator extends Component<any> {
       slope.push({ slope: slopeSegment });
     }
 
-    segmentsArray.forEach((segment: any) => {
+    for (const segment of segmentsArray) {
       for (let i = 0; i < segment.length - 3; i += 3) {
-        let startX = segment[i];
-        let startY = segment[i + 1];
-        let startZ = segment[i + 2];
+        const startX = segment[i];
+        const startY = segment[i + 1];
+        const startZ = segment[i + 2];
 
-        let endX = segment[i + 3];
-        let endY = segment[i + 4];
-        let endZ = segment[i + 5];
+        const endX = segment[i + 3];
+        const endY = segment[i + 4];
+        const endZ = segment[i + 5];
 
         defSegments.push({
           start: new THREE.Vector3(startX, startY, startZ),
           end: new THREE.Vector3(endX, endY, endZ),
         });
       }
-    });
+    }
 
     return { defSegments, slope };
   }

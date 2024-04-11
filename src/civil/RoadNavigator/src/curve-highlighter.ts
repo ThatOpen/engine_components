@@ -3,6 +3,7 @@ import * as FRAGS from "bim-fragment";
 import { Line2 } from "three/examples/jsm/lines/Line2";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
+import { Event } from "../../../base-types";
 
 type CivilHighlightType = "horizontal" | "absolute" | "vertical";
 
@@ -18,6 +19,8 @@ export class CurveHighlighter {
       CONSTANTGRADIENT: [213 / 255, 0 / 255, 255 / 255],
     } as { [curve: string]: number[] },
   };
+
+  readonly onSelect = new Event<FRAGS.CurveMesh>();
 
   type: CivilHighlightType;
 
@@ -82,6 +85,7 @@ export class CurveHighlighter {
 
   select(mesh: FRAGS.CurveMesh) {
     this.highlight(mesh, this.selectCurve, this.selectPoints, true);
+    this.onSelect.trigger(mesh);
   }
 
   unSelect() {

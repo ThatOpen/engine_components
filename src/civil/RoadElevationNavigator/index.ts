@@ -31,6 +31,56 @@ export class RoadElevationNavigator extends RoadNavigator implements UI {
       this.scene.controls,
       this.view
     );
+
+    this.highlighter.onSelect.add((mesh) => {
+      // Add markers elevation
+
+      this.kpManager.dispose();
+
+      const { alignment } = mesh.curve;
+      const positionsVertical = [];
+
+      for (const align of alignment.vertical) {
+        const pos = align.mesh.geometry.attributes.position.array;
+        positionsVertical.push(pos);
+      }
+
+      const { defSegments, slope } = this.setDefSegments(positionsVertical);
+
+      const scene = this.scene.get();
+
+      for (let i = 0; i < alignment.vertical.length; i++) {
+        const align = alignment.vertical[i];
+
+        this.kpManager.addCivilVerticalMarker(
+          `S: ${slope[i].slope}%`,
+          align.mesh,
+          "Slope",
+          scene
+        );
+
+        this.kpManager.addCivilVerticalMarker(
+          `H: ${defSegments[i].end.y.toFixed(2)}`,
+          align.mesh,
+          "Height",
+          scene
+        );
+      }
+
+      this.kpManager.addCivilVerticalMarker(
+        "KP: 0",
+        alignment.vertical[0].mesh,
+        "InitialKPV",
+        scene
+      );
+
+      this.kpManager.addCivilVerticalMarker(
+        `KP: ${alignment.vertical.length}`,
+        alignment.vertical[alignment.vertical.length - 1].mesh,
+        "FinalKPV",
+        scene
+      );
+    });
   }
 
   get() {

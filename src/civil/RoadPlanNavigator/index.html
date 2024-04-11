@@ -62,6 +62,7 @@
         components,
         container
       );
+
       components.camera = new OBC.SimpleCamera(components);
       components.raycaster = new OBC.SimpleRaycaster(components);
 
@@ -177,52 +178,7 @@
           true
         );
 
-        // Add markers elevation
 
-        planNavigator.markerManager.dispose();
-
-        const { alignment } = mesh.curve;
-        let positionsVertical = [];
-
-        alignment.vertical.forEach((align) => {
-          const pos = align.mesh.geometry.attributes.position.array;
-          positionsVertical.push(pos);
-        });
-
-        const { defSegments, slope } =
-          planNavigator.setDefSegments(positionsVertical);
-
-        const sceneElevation = planNavigator.elevation;
-
-        alignment.vertical.forEach((align, index) => {
-          planNavigator.markerManager.addCivilVerticalMarker(
-            `S: ${slope[index].slope}%`,
-            align.mesh,
-            "Slope",
-            sceneElevation
-          );
-
-          planNavigator.markerManager.addCivilVerticalMarker(
-            `H: ${defSegments[index].end.y.toFixed(2)}`,
-            align.mesh,
-            "Height",
-            sceneElevation
-          );
-        });
-
-        planNavigator.markerManager.addCivilVerticalMarker(
-          "KP: 0",
-          alignment.vertical[0].mesh,
-          "InitialKPV",
-          sceneElevation
-        );
-
-        planNavigator.markerManager.addCivilVerticalMarker(
-          `KP: ${alignment.vertical.length}`,
-          alignment.vertical[alignment.vertical.length - 1].mesh,
-          "FinalKPV",
-          sceneElevation
-        );
       });
 
       // planNavigator.onMarkerChange.add(({ alignment, percentage, type, curve }) => {

@@ -343,13 +343,13 @@ export class MarkerManager {
     text: string,
     mesh: FRAGS.CurveMesh,
     type: CivilLabels,
-    scene: THREE.Scene
+    root: THREE.Object3D
   ) {
     const span = document.createElement("span");
     span.innerHTML = text;
     span.style.color = this._color;
 
-    const marker = new Simple2DMarker(this.components, span, scene);
+    const marker = new Simple2DMarker(this.components, span, root);
 
     if (type === "Height") {
       const span = document.createElement("span");
@@ -587,15 +587,17 @@ export class MarkerManager {
   }
 
   dispose() {
-    this.markers.forEach((marker) => {
+    for (const marker of this.markers) {
       marker.label.dispose();
-    });
+    }
+
     this.markers.clear();
     this._markerKey = 0;
 
-    this.clusterLabels.forEach((cluster) => {
+    for (const cluster of this.clusterLabels) {
       cluster.label.dispose();
-    });
+    }
+
     this.clusterLabels.clear();
     this._clusterKey = 0;
 
