@@ -1,5 +1,5 @@
 import { Vector3 } from "three";
-import { generateUUID } from "three/src/math/MathUtils";
+import { generateUUID } from "three/src/math/MathUtils.js";
 import { LengthMeasurement, SimpleDimensionLine } from "../../measurement";
 import { Components } from "../../core/Components";
 import {

@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import * as FRAGS from "bim-fragment";
-import { Line2 } from "three/examples/jsm/lines/Line2";
-import { LineGeometry } from "three/examples/jsm/lines/LineGeometry";
-import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
+import { Line2 } from "three/examples/jsm/lines/Line2.js";
+import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { Event } from "../../../base-types";
 
 type CivilHighlightType = "horizontal" | "absolute" | "vertical";
@@ -69,7 +69,7 @@ export class CurveHighlighter {
     event: MouseEvent,
     camera: THREE.Camera,
     dom: HTMLElement,
-    meshes: FRAGS.CurveMesh[]
+    meshes: FRAGS.CurveMesh[],
   ) {
     const mouse = new THREE.Vector2();
     const rect = dom.getBoundingClientRect();
@@ -106,7 +106,7 @@ export class CurveHighlighter {
     mesh: FRAGS.CurveMesh,
     curve: Line2,
     points: THREE.Points,
-    useColors: boolean
+    useColors: boolean,
   ) {
     const { alignment } = mesh.curve;
 

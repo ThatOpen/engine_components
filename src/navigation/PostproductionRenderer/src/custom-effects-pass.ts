@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Pass, FullScreenQuad } from "three/examples/jsm/postprocessing/Pass";
+import { Pass, FullScreenQuad } from "three/examples/jsm/postprocessing/Pass.js";
 import { getPlaneDistanceMaterial } from "./plane-distance-shader";
 import { Components } from "../../../core/Components";
 import { Disposer } from "../../../core/Disposer";

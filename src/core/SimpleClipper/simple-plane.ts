@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { TransformControls } from "three/examples/jsm/controls/TransformControls";
+import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import { Component, Disposable, Event, Hideable } from "../../base-types";
 import { Components } from "../Components";
 

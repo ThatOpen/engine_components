@@ -1,5 +1,5 @@
 import { Vector2 } from "three";
-import { generateUUID } from "three/src/math/MathUtils";
+import { generateUUID } from "three/src/math/MathUtils.js";
 import {
   Component,
   Disposable,
