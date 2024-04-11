@@ -6,7 +6,7 @@ import { Components, Simple2DScene, ToolComponent } from "../../core";
 import { CivilFloatingWindow } from "../CivilFloatingWindow";
 import { EdgesClipper, EdgesPlane } from "../../navigation";
 
-export class RoadCrossSectionNavigator extends Component<any> implements UI {
+export class CivilCrossSectionNavigator extends Component<any> implements UI {
   static readonly uuid = "96b2c87e-d90b-4639-8257-8f01136fe324" as const;
 
   scene: Simple2DScene;
@@ -24,7 +24,7 @@ export class RoadCrossSectionNavigator extends Component<any> implements UI {
     this.scene = new Simple2DScene(components);
     this.setUI();
 
-    this.components.tools.add(RoadCrossSectionNavigator.uuid, this);
+    this.components.tools.add(CivilCrossSectionNavigator.uuid, this);
 
     const clipper = components.tools.get(EdgesClipper);
 
@@ -89,4 +89,4 @@ export class RoadCrossSectionNavigator extends Component<any> implements UI {
   }
 }
 
-ToolComponent.libraryUUIDs.add(RoadCrossSectionNavigator.uuid);
+ToolComponent.libraryUUIDs.add(CivilCrossSectionNavigator.uuid);

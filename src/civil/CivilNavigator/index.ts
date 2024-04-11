@@ -8,7 +8,7 @@ import { KPManager } from "./src/kp-manager";
 
 export type CivilMarkerType = "hover" | "select";
 
-export abstract class RoadNavigator extends Component<any> {
+export abstract class CivilNavigator extends Component<any> {
   enabled = true;
 
   scene: Simple2DScene;
@@ -61,7 +61,7 @@ export abstract class RoadNavigator extends Component<any> {
   }
 
   initialize() {
-    console.log("View for RoadNavigator: ", this.view);
+    console.log("View for CivilNavigator: ", this.view);
   }
 
   get() {

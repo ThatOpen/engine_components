@@ -1,12 +1,12 @@
 import * as THREE from "three";
 import * as FRAGS from "bim-fragment";
 import { Alignment, FragmentsGroup } from "bim-fragment";
-import { CurveHighlighter } from "../RoadNavigator/src/curve-highlighter";
+import { CurveHighlighter } from "../CivilNavigator/src/curve-highlighter";
 import { Component, Event } from "../../base-types";
 import { Components, Simple2DMarker, ToolComponent } from "../../core";
-import { CivilMarkerType } from "../RoadNavigator";
+import { CivilMarkerType } from "../CivilNavigator";
 
-export class Road3DNavigator extends Component<any> {
+export class Civil3DNavigator extends Component<any> {
   static readonly uuid = "0a59c09e-2b49-474a-9320-99f51f40f182" as const;
 
   readonly onHighlight = new Event<{
@@ -40,7 +40,7 @@ export class Road3DNavigator extends Component<any> {
   constructor(components: Components) {
     super(components);
 
-    this.components.tools.add(Road3DNavigator.uuid, this);
+    this.components.tools.add(Civil3DNavigator.uuid, this);
 
     const scene = this.components.scene.get();
     this.highlighter = new CurveHighlighter(scene, "absolute");
@@ -149,4 +149,4 @@ export class Road3DNavigator extends Component<any> {
   }
 }
 
-ToolComponent.libraryUUIDs.add(Road3DNavigator.uuid);
+ToolComponent.libraryUUIDs.add(Civil3DNavigator.uuid);

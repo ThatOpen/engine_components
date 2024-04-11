@@ -3,14 +3,14 @@ import * as FRAGS from "bim-fragment";
 import { UI, UIElement } from "../../base-types";
 import { FloatingWindow } from "../../ui";
 import { Components, ToolComponent } from "../../core";
-import { RoadNavigator } from "../RoadNavigator";
+import { CivilNavigator } from "../CivilNavigator";
 import { FragmentBoundingBox } from "../../fragments";
 import { PlanHighlighter } from "./src/plan-highlighter";
 import { CivilFloatingWindow } from "../CivilFloatingWindow";
-// import { KPStation } from "../RoadNavigator/src/kp-station";
-import { KPManager } from "../RoadNavigator/src/kp-manager";
+// import { KPStation } from "../CivilNavigator/src/kp-station";
+import { KPManager } from "../CivilNavigator/src/kp-manager";
 
-export class RoadPlanNavigator extends RoadNavigator implements UI {
+export class CivilPlanNavigator extends CivilNavigator implements UI {
   static readonly uuid = "3096dea0-5bc2-41c7-abce-9089b6c9431b" as const;
 
   readonly view = "horizontal";
@@ -39,7 +39,7 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
 
     this.setUI();
 
-    this.components.tools.add(RoadPlanNavigator.uuid, this);
+    this.components.tools.add(CivilPlanNavigator.uuid, this);
 
     this.onHighlight.add(({ mesh }) => {
       this.highlighter.showCurveInfo(mesh);
@@ -98,4 +98,4 @@ export class RoadPlanNavigator extends RoadNavigator implements UI {
   }
 }
 
-ToolComponent.libraryUUIDs.add(RoadPlanNavigator.uuid);
+ToolComponent.libraryUUIDs.add(CivilPlanNavigator.uuid);

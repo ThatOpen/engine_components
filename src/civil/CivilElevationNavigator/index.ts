@@ -2,11 +2,11 @@ import * as FRAGS from "bim-fragment";
 import { UI, UIElement } from "../../base-types";
 import { Drawer } from "../../ui";
 import { Components } from "../../core";
-import { RoadNavigator } from "../RoadNavigator";
-import { CurveHighlighter } from "../RoadNavigator/src/curve-highlighter";
-import { KPManager } from "../RoadNavigator/src/kp-manager";
+import { CivilNavigator } from "../CivilNavigator";
+import { CurveHighlighter } from "../CivilNavigator/src/curve-highlighter";
+import { KPManager } from "../CivilNavigator/src/kp-manager";
 
-export class RoadElevationNavigator extends RoadNavigator implements UI {
+export class CivilElevationNavigator extends CivilNavigator implements UI {
   static readonly uuid = "097eea29-2d5a-431a-a247-204d44670621" as const;
 
   readonly view = "vertical";

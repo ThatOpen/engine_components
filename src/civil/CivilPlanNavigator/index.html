@@ -101,14 +101,14 @@
 
       // 3. Horizontal alignment
 
-      const planNavigator = new OBC.RoadPlanNavigator(components);
+      const planNavigator = new OBC.CivilPlanNavigator(components);
       const horizontalWindow = planNavigator.uiElement.get("floatingWindow");
       horizontalWindow.visible = true;
       planNavigator.draw(model);
 
       // 4. Vertical alignment
 
-      const elevationNavigator = new OBC.RoadElevationNavigator(components);
+      const elevationNavigator = new OBC.CivilElevationNavigator(components);
       const drawer = elevationNavigator.uiElement.get("drawer");
       drawer.visible = true;
 
@@ -117,7 +117,7 @@
 
       // 5. 3D alignment
 
-      const navigator3D = new OBC.Road3DNavigator(components);
+      const navigator3D = new OBC.Civil3DNavigator(components);
       navigator3D.draw(model);
       navigator3D.setup();
       navigator3D.highlighter.hoverCurve.material.color.set(1, 1, 1);
@@ -125,7 +125,7 @@
 
       // 6. Cross section
 
-      // const crossNavigator = new OBC.RoadCrossSectionNavigator(components);
+      // const crossNavigator = new OBC.CivilCrossSectionNavigator(components);
       // const crossWindow = crossNavigator.uiElement.get("floatingWindow");
       // crossWindow.visible = true;
 

@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import * as FRAGS from "bim-fragment";
-import { CurveHighlighter } from "../../RoadNavigator/src/curve-highlighter";
-import { KPManager } from "../../RoadNavigator/src/kp-manager";
+import { CurveHighlighter } from "../../CivilNavigator/src/curve-highlighter";
+import { KPManager } from "../../CivilNavigator/src/kp-manager";
 
 export class PlanHighlighter extends CurveHighlighter {
   private readonly markupMaterial: THREE.LineBasicMaterial;

@@ -109,16 +109,16 @@
   // Set up road navigator
 
 
-  const navigator = new OBC.RoadPlanNavigator(components);
+  const navigator = new OBC.CivilPlanNavigator(components);
   const horizontalWindow = navigator.uiElement.get("floatingWindow");
   horizontalWindow.visible = true;
   navigator.draw(model);
 
-  const elevationNavigator = new OBC.RoadElevationNavigator(components);
+  const elevationNavigator = new OBC.CivilElevationNavigator(components);
   const drawer = elevationNavigator.uiElement.get("drawer");
   drawer.visible = true;
 
-  const navigator3D = new OBC.Road3DNavigator(components);
+  const navigator3D = new OBC.Civil3DNavigator(components);
   navigator3D.draw(model);
   navigator3D.setup();
 
@@ -153,14 +153,14 @@
     navigator3D.hideMarker(type);
   })
 
-  // const navigator = new OBC.Road3DNavigator(components);
+  // const navigator = new OBC.Civil3DNavigator(components);
   // navigator.draw(model);
   // navigator.setup();
   //
   // navigator.highlighter.hoverCurve.material.color.set(1, 1, 1);
   // navigator.highlighter.hoverPoints.material.color.set(1, 1, 1);
 
-  const crossNavigator = new OBC.RoadCrossSectionNavigator(components);
+  const crossNavigator = new OBC.CivilCrossSectionNavigator(components);
   const crossWindow = crossNavigator.uiElement.get("floatingWindow");
   crossWindow.visible = true;
 
