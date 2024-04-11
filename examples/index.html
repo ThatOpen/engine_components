@@ -9,12 +9,19 @@
 <body>
   <h2>
     If you're developing, append the component folder to the URL in order to see the example working without
-    compiling. For example: <a href="/src/core/SimpleScene/example.html">/src/core/SimpleScene/example.html</a>
+    compiling. For example: <a id="dev">/src/core/SimpleScene/example.html</a>
   </h2>
   <h2>
     To see the compiled example after you run yarn build, append the name of the component at the end of the URL. For
-    example: <a href="/examples/SimpleScene/">/examples/SimpleScene/</a>
+    example: <a id="exp">/examples/SimpleScene/</a>
   </h2>
+  <script>
+    const dev = document.getElementById("dev")
+    dev.href = location.href + "src/core/SimpleScene/example.html"
+
+    const exp = document.getElementById("exp")
+    exp.href = location.href + "examples/SimpleScene/"
+  </script>
 </body>
 
 </html>

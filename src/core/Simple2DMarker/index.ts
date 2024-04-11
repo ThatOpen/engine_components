@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer";
+import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import { Hideable, Disposable, Event } from "../../base-types";
 import { Component } from "../../base-types/component";
 import { Components } from "../Components";
@@ -27,7 +27,7 @@ export class Simple2DMarker
   constructor(
     components: Components,
     marker?: HTMLElement,
-    parent?: THREE.Object3D
+    parent?: THREE.Object3D,
   ) {
     super(components);
     let _marker: HTMLElement;

@@ -70,7 +70,7 @@ export class Infinite2dGrid {
 
     const matrix = this._frustumMat.multiplyMatrices(
       this._camera.projectionMatrix,
-      this._camera.matrixWorldInverse
+      this._camera.matrixWorldInverse,
     );
     this._frustum.setFromProjectionMatrix(matrix);
 
