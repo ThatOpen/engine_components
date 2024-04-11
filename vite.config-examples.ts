@@ -43,6 +43,11 @@ input.main = "./index.html";
 
 export default defineConfig({
   base: "./",
+  esbuild: {
+    supported: {
+      "top-level-await": true,
+    },
+  },
   build: {
     outDir: "./examples",
     rollupOptions: {

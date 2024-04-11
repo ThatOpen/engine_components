@@ -97,6 +97,7 @@ cameraComponent.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
   */
 
+// @ts-ignore
 const grid = new OBC.SimpleGrid(components);
 
 /* MD

@@ -38,6 +38,7 @@
     "@types/jest": "27.0.0",
     "@types/node": "20.11.30",
     "@types/node-fetch": "^2.6.4",
+    "@types/stats": "0.16.30",
     "@types/three": "0.160.0",
     "@typescript-eslint/eslint-plugin": "7.2.0",
     "@typescript-eslint/parser": "7.2.0",

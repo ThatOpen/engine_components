@@ -1510,6 +1510,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/stats@npm:0.16.30":
+  version: 0.16.30
+  resolution: "@types/stats@npm:0.16.30"
+  checksum: cd526ff4bb6c3159531911d9a8a6f0928a783fcc9c4364a8b6626fb123e64ad895da2629f768781cada63f54fea93c85ba4b06a842d86bc1f63e6894c55f5d1d
+  languageName: node
+  linkType: hard
+
 "@types/three@npm:0.160.0":
   version: 0.160.0
   resolution: "@types/three@npm:0.160.0"
@@ -6506,6 +6513,7 @@ __metadata:
     "@types/jest": 27.0.0
     "@types/node": 20.11.30
     "@types/node-fetch": ^2.6.4
+    "@types/stats": 0.16.30
     "@types/three": 0.160.0
     "@typescript-eslint/eslint-plugin": 7.2.0
     "@typescript-eslint/parser": 7.2.0

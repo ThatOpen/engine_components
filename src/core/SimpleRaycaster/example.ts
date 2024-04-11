@@ -25,6 +25,7 @@ cameraComponent.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
 sceneComponent.setup();
 
+// @ts-ignore
 const grid = new OBC.SimpleGrid(components);
 
 /* MD
@@ -85,7 +86,7 @@ rendererComponent.onBeforeUpdate.add(rotateCubes);
 
 /* MD
 
-    :::info Turning off animations
+  :::info Turning off animations
 
   You can turn off animations simply by using the `off()` method.
   [This works for any event](../api/classes/components.Event)
@@ -93,8 +94,8 @@ rendererComponent.onBeforeUpdate.add(rotateCubes);
 
   :::
 
-    ### ⚡ Casting rays around
-    ___
+  ### ⚡ Casting rays around
+  ___
 
   Finally, we will use the raycaster. This is very easy using the
   **[raycaster component](../api/classes/components.SimpleRaycaster)**, which solves this for all screen sizes.

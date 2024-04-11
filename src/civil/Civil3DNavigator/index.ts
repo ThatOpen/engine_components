@@ -133,7 +133,7 @@ export class Civil3DNavigator extends Component<any> {
 
   private async updateMarker(
     intersects: THREE.Intersection,
-    type: CivilMarkerType
+    type: CivilMarkerType,
   ) {
     const { point, object } = intersects;
     const mesh = object as FRAGS.CurveMesh;
