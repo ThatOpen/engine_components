@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import CameraControls from "camera-controls";
 import {
   Component,
   Updateable,
@@ -49,7 +49,7 @@ export class Simple2DScene
   }>();
 
   /** The camera controls that move around in the scene. */
-  controls: OrbitControls;
+  readonly controls: CameraControls;
 
   /** The camera that renders the scene. */
   readonly camera: THREE.OrthographicCamera;
@@ -65,6 +65,10 @@ export class Simple2DScene
   private readonly _root = new THREE.Group();
   private readonly _size = new THREE.Vector2();
   private readonly _frustumSize = 50;
+
+  get size() {
+    return this._size.clone();
+  }
 
   get scaleX() {
     return this._scaleX;
@@ -107,7 +111,18 @@ export class Simple2DScene
     const { width, height } = this._size;
 
     // Creates the camera (point of view of the user)
-    this.camera = new THREE.OrthographicCamera(75, width / height);
+    const aspect = width / height;
+    const halfSize = this._frustumSize * 0.5;
+
+    this.camera = new THREE.OrthographicCamera(
+      -halfSize * aspect,
+      halfSize * aspect,
+      halfSize,
+      -halfSize,
+      -1000,
+      1000
+    );
+
     this.scene.add(this.camera);
     this.camera.position.z = 10;
 
@@ -131,11 +146,14 @@ export class Simple2DScene
     this.renderer.overrideScene = this.scene;
     this.renderer.overrideCamera = this.camera;
 
-    this.controls = new OrbitControls(this.camera, renderer.domElement);
-    this.controls.target.set(0, 0, 0);
-    this.controls.enableRotate = false;
-    this.controls.enableZoom = true;
-    this.controls.addEventListener("change", () => this.grid.regenerate());
+    this.controls = new CameraControls(this.camera, renderer.domElement);
+    // this.controls.smoothTime = 0.6;
+    this.controls.setTarget(0, 0, 0);
+    this.controls.addEventListener("update", () => this.grid.regenerate());
+    this.controls.mouseButtons.left = CameraControls.ACTION.TRUCK;
+    this.controls.dollyToCursor = true;
+    this.controls.restThreshold = 2;
+    this.controls.smoothTime = 0.2;
   }
 
   /**
@@ -164,7 +182,7 @@ export class Simple2DScene
   /** {@link Updateable.update} */
   async update() {
     await this.onBeforeUpdate.trigger();
-    this.controls.update();
+    this.controls.update(1 / 60);
     await this.renderer.update();
     await this.onAfterUpdate.trigger();
   }

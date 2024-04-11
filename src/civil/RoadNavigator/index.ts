@@ -1,381 +1,338 @@
 import * as THREE from "three";
-import { FragmentsGroup, IfcAlignmentData } from "bim-fragment";
-import { Components, Simple2DScene, ToolComponent } from "../../core";
-import { Component, UI, UIElement } from "../../base-types";
-import { Drawer, FloatingWindow } from "../../ui";
+import * as FRAGS from "bim-fragment";
+import { Alignment, FragmentsGroup } from "bim-fragment";
+import { Component, Event } from "../../base-types";
+import { Components, Simple2DMarker, Simple2DScene } from "../../core";
+import { CurveHighlighter } from "./src/curve-highlighter";
+import { KPManager } from "./src/kp-manager";
 
-export class RoadNavigator extends Component<any> implements UI {
-  /** {@link Component.uuid} */
-  static readonly uuid = "85f2c89c-4c6b-4c7d-bc20-5b675874b228" as const;
+export type CivilMarkerType = "hover" | "select";
 
+export abstract class RoadNavigator extends Component<any> {
   enabled = true;
 
-  uiElement = new UIElement<{
-    horizontalAlignment: FloatingWindow;
-    verticalAlignment: Drawer;
+  scene: Simple2DScene;
+
+  abstract view: "horizontal" | "vertical";
+
+  abstract highlighter: CurveHighlighter;
+
+  // abstract showKPStations(curveMesh: FRAGS.CurveMesh): void;
+  // abstract clearKPStations(): void;
+
+  abstract kpManager: KPManager;
+
+  readonly onHighlight = new Event<{
+    point: THREE.Vector3;
+    mesh: FRAGS.CurveMesh;
   }>();
 
-  private _selected: FragmentsGroup | null = null;
+  readonly onMarkerChange = new Event<{
+    alignment: FRAGS.Alignment;
+    percentage: number;
+    type: CivilMarkerType;
+    curve: FRAGS.CivilCurve;
+  }>();
 
-  private _anchor = new THREE.Vector3();
-  private _anchorID = "thatopen-roadnavigator-anchor";
+  readonly onMarkerHidden = new Event<{
+    type: CivilMarkerType;
+  }>();
 
-  private _anchors = {
-    horizontal: new THREE.Vector2(),
-    horizontalIndex: 0,
-    real: new THREE.Vector3(),
+  private _curveMeshes: FRAGS.CurveMesh[] = [];
+
+  private _previousAlignment: FRAGS.Alignment | null = null;
+
+  mouseMarkers: {
+    hover: Simple2DMarker;
+    select: Simple2DMarker;
   };
 
-  private _points: {
-    horizontal: THREE.Points;
-  };
-
-  private _scenes: {
-    horizontal: Simple2DScene;
-    vertical: Simple2DScene;
-  };
-
-  private _alignments: {
-    horizontal: THREE.LineSegments;
-    vertical: THREE.LineSegments;
-    real: THREE.LineSegments;
-  };
-
-  private _caster = new THREE.Raycaster();
-
-  constructor(components: Components) {
+  protected constructor(components: Components) {
     super(components);
+    this.scene = new Simple2DScene(this.components, false);
 
-    const threshold = 5;
-    this._caster.params.Line = { threshold };
-
-    this.components.tools.add(RoadNavigator.uuid, this);
-
-    this._scenes = {
-      horizontal: new Simple2DScene(this.components, false),
-      vertical: new Simple2DScene(this.components, false),
+    this.mouseMarkers = {
+      select: this.newMouseMarker("#ffffff"),
+      hover: this.newMouseMarker("#575757"),
     };
 
-    this._points = {
-      horizontal: new THREE.Points(
-        new THREE.BufferGeometry(),
-        new THREE.PointsMaterial({
-          size: 10,
-        })
-      ),
-    };
-    this._points.horizontal.frustumCulled = false;
-    this._scenes.horizontal.scene.add(this._points.horizontal);
+    this.setupEvents();
+    this.adjustRaycasterOnZoom();
+  }
 
-    this._alignments = {
-      horizontal: new THREE.LineSegments(
-        new THREE.BufferGeometry(),
-        new THREE.LineBasicMaterial()
-      ),
-      vertical: new THREE.LineSegments(
-        new THREE.BufferGeometry(),
-        new THREE.LineBasicMaterial()
-      ),
-      real: new THREE.LineSegments(
-        new THREE.BufferGeometry(),
-        new THREE.LineBasicMaterial()
-      ),
-    };
+  initialize() {
+    console.log("View for RoadNavigator: ", this.view);
+  }
 
-    this._alignments.real.frustumCulled = false;
+  get() {
+    return null as any;
+  }
 
-    this._scenes.vertical.get().add(this._alignments.vertical);
-    this._scenes.horizontal.get().add(this._alignments.horizontal);
+  async draw(model: FragmentsGroup, filter?: Iterable<FRAGS.Alignment>) {
+    if (!model.civilData) {
+      throw new Error("The provided model doesn't have civil data!");
+    }
+    const { alignments } = model.civilData;
+    const allAlignments = filter || alignments.values();
 
-    const scene = this.components.scene.get();
-    scene.add(this._alignments.real);
+    const scene = this.scene.get();
 
-    const hRenderer = this._scenes.horizontal.renderer.get();
-    const hCamera = this._scenes.horizontal.camera;
+    const totalBBox: THREE.Box3 = new THREE.Box3();
+    totalBBox.makeEmpty();
+    totalBBox.min.set(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
+    totalBBox.max.set(-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE);
 
-    hRenderer.domElement.addEventListener("click", (event) => {
-      if (!this._selected || !this._selected.ifcCivil) return;
-      const lim = hRenderer.domElement.getBoundingClientRect();
-      const y = -((event.clientY - lim.top) / (lim.bottom - lim.top)) * 2 + 1;
-      const x = ((event.clientX - lim.left) / (lim.right - lim.left)) * 2 - 1;
-      const position = new THREE.Vector2(x, y);
-      this._caster.setFromCamera(position, hCamera);
-      const result = this._caster.intersectObject(this._alignments.horizontal);
-      if (result.length) {
-        const { index, point } = result[0];
-        if (index === undefined) return;
+    for (const alignment of allAlignments) {
+      if (!alignment) {
+        throw new Error("Alignment not found!");
+      }
 
-        const geom = this._alignments.horizontal.geometry;
-        if (!geom.index) return;
+      for (const curve of alignment[this.view]) {
+        scene.add(curve.mesh);
+        this._curveMeshes.push(curve.mesh);
 
-        const pos = geom.attributes.position;
-        const pointIndex1 = geom.index.array[index];
-        const pointIndex2 = geom.index.array[index + 1];
-        const x1 = pos.getX(pointIndex1);
-        const y1 = pos.getY(pointIndex1);
-        const x2 = pos.getX(pointIndex2);
-        const y2 = pos.getY(pointIndex2);
-        const dist1 = new THREE.Vector3(x1, y1, 0).distanceTo(point);
-        const dist2 = new THREE.Vector3(x2, y2, 0).distanceTo(point);
-
-        const isFirst = dist1 < dist2;
-        const x = isFirst ? x1 : x2;
-        const y = isFirst ? y1 : y2;
-
-        this._anchors.horizontal.set(x, y);
-        this._anchors.horizontalIndex = isFirst ? pointIndex1 : pointIndex2;
-
-        const { horizontal } = this._points;
-        const coordsBuffer = new Float32Array([x, y, 0]);
-        const coordsAttr = new THREE.BufferAttribute(coordsBuffer, 3);
-        horizontal.geometry.setAttribute("position", coordsAttr);
-
-        let verticalIndex = -1;
-        const alignmentIndex =
-          this._selected.ifcCivil.horizontalAlignments.alignmentIndex;
-        if (pointIndex1 >= alignmentIndex[alignmentIndex.length - 1]) {
-          verticalIndex = alignmentIndex.length - 1;
+        if (!totalBBox.isEmpty()) {
+          totalBBox.expandByObject(curve.mesh);
         } else {
-          for (let i = 0; i < alignmentIndex.length - 1; i++) {
-            const start = alignmentIndex[i];
-            const end = alignmentIndex[i + 1];
-            if (pointIndex1 >= start && pointIndex1 < end) {
-              verticalIndex = i;
-            }
+          curve.mesh.geometry.computeBoundingBox();
+          const cbox = curve.mesh.geometry.boundingBox;
+
+          if (cbox instanceof THREE.Box3) {
+            totalBBox.copy(cbox).applyMatrix4(curve.mesh.matrixWorld);
           }
         }
+      }
+    }
 
-        this.getAlignmentGeometry(
-          this._selected.ifcCivil.verticalAlignments,
-          this._alignments.vertical.geometry,
-          false,
-          verticalIndex
+    const scaledBbox = new THREE.Box3();
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    totalBBox.getCenter(center);
+    totalBBox.getSize(size);
+    size.multiplyScalar(1.2);
+    scaledBbox.setFromCenterAndSize(center, size);
+
+    await this.scene.controls.fitToBox(scaledBbox, false);
+  }
+
+  setupEvents() {
+    this.scene.uiElement
+      .get("container")
+      .domElement.addEventListener("mousemove", async (event) => {
+        const dom = this.scene.uiElement.get("container").domElement;
+
+        const result = this.highlighter.castRay(
+          event,
+          this.scene.camera,
+          dom,
+          this._curveMeshes
         );
 
-        // const { alignmentIndex } = this._selected.ifcCivil.horizontalAlignments;
-        // let counter = 0;
-        // for (let i = 0; i < alignmentIndex.length; i++) {
-        // const currentAlignment = alignmentIndex[i];
-        // if (currentAlignment > index) {
-        //   console.log(`Selected alignment: ${counter - 1}`);
-        //   break;
-        // }
-        // counter++;
-        // }
-      }
-    });
+        if (result) {
+          const { object } = result;
+          this.highlighter.hover(object as FRAGS.CurveMesh);
+          await this.updateMarker(result, "hover");
+          return;
+        }
 
-    if (this.components.uiEnabled) {
-      this.setUI();
-    }
+        this.mouseMarkers.hover.visible = false;
+        this.highlighter.unHover();
+        await this.onMarkerHidden.trigger({ type: "hover" });
+      });
+
+    this.scene.uiElement
+      .get("container")
+      .domElement.addEventListener("click", async (event) => {
+        const dom = this.scene.uiElement.get("container").domElement;
+
+        const intersects = this.highlighter.castRay(
+          event,
+          this.scene.camera,
+          dom,
+          this._curveMeshes
+        );
+
+        if (intersects) {
+          const result = intersects;
+          const mesh = result.object as FRAGS.CurveMesh;
+          this.highlighter.select(mesh);
+          await this.updateMarker(result, "select");
+
+          await this.onHighlight.trigger({ mesh, point: result.point });
+
+          if (this._previousAlignment !== mesh.curve.alignment) {
+            this.kpManager.clearKPStations();
+            // this.showKPStations(mesh);
+            this.kpManager.showKPStations(mesh);
+            // this.kpManager.createKP();
+            this._previousAlignment = mesh.curve.alignment;
+          }
+        }
+
+        // this.highlighter.unSelect();
+        // this.clearKPStations();
+      });
   }
 
-  get() {}
+  async dispose() {
+    this.highlighter.dispose();
+    this.clear();
+    this.onHighlight.reset();
+    await this.scene.dispose();
+    this._curveMeshes = [];
+  }
 
-  select(model: FragmentsGroup) {
-    if (!model.ifcCivil) {
-      console.warn("The provided model doesn't have civil data!");
+  clear() {
+    this.highlighter.unSelect();
+    this.highlighter.unHover();
+    for (const mesh of this._curveMeshes) {
+      mesh.removeFromParent();
+    }
+    this._curveMeshes = [];
+  }
+
+  setMarker(alignment: Alignment, percentage: number, type: CivilMarkerType) {
+    if (!this._curveMeshes.length) {
       return;
     }
-
-    this._selected = model;
-
-    this.getAlignmentGeometry(
-      model.ifcCivil.horizontalAlignments,
-      this._alignments.horizontal.geometry,
-      false
-    );
-
-    this.getAlignmentGeometry(
-      model.ifcCivil.realAlignments,
-      this._alignments.real.geometry,
-      true
-    );
+    const found = alignment.getCurveAt(percentage, this.view);
+    const point = alignment.getPointAt(percentage, this.view);
+    const { index } = found.curve.getSegmentAt(found.percentage);
+    this.setMouseMarker(point, found.curve.mesh, index, type);
   }
 
-  setAnchor() {
-    if (!this._selected || !this._selected.ifcCivil) return;
-    const result = this.components.raycaster.castRay([this._selected]);
-    if (result === null) return;
-    this._anchors.real.copy(result.point);
-    const { horizontal, real, horizontalIndex } = this._anchors;
+  setDefSegments(segmentsArray: any[]) {
+    const defSegments: any = [];
+    const slope: any = [];
 
-    const geom = this._alignments.real.geometry;
-    const yPosition3D = geom.attributes.position.getY(horizontalIndex);
+    const calculateSlopeSegment = (point1: number[], point2: number[]) => {
+      const deltaY = point2[1] - point1[1];
+      const deltaX = point2[0] - point1[0];
+      return deltaY / deltaX;
+    };
 
-    this._anchor.x = real.x - horizontal.x;
-    this._anchor.z = real.z + horizontal.y;
-    this._anchor.y = real.y - yPosition3D;
+    for (let i = 0; i < segmentsArray.length; i++) {
+      const segment = segmentsArray[i];
+      let startX: number;
+      let startY: number;
+      let endX: number;
+      let endY: number;
 
-    this.updateAnchor();
+      // Set start
+      for (let j = 0; j < Object.keys(segment).length / 3; j++) {
+        if (segment[j * 3] !== undefined && segment[j * 3 + 1] !== undefined) {
+          startX = segment[j * 3];
+          startY = segment[j * 3 + 1];
+          break;
+        }
+      }
+
+      // Set end
+      for (let j = Object.keys(segment).length / 3 - 1; j >= 0; j--) {
+        if (segment[j * 3] !== undefined && segment[j * 3 + 1] !== undefined) {
+          endX = segment[j * 3];
+          endY = segment[j * 3 + 1];
+          break;
+        }
+      }
+
+      const defSlope = calculateSlopeSegment(
+        // @ts-ignore
+        [startX, startY],
+        // @ts-ignore
+        [endX, endY]
+      );
+
+      const slopeSegment = (defSlope * 100).toFixed(2);
+      slope.push({ slope: slopeSegment });
+    }
+
+    for (const segment of segmentsArray) {
+      for (let i = 0; i < segment.length - 3; i += 3) {
+        const startX = segment[i];
+        const startY = segment[i + 1];
+        const startZ = segment[i + 2];
+
+        const endX = segment[i + 3];
+        const endY = segment[i + 4];
+        const endZ = segment[i + 5];
+
+        defSegments.push({
+          start: new THREE.Vector3(startX, startY, startZ),
+          end: new THREE.Vector3(endX, endY, endZ),
+        });
+      }
+    }
+
+    return { defSegments, slope };
   }
 
-  saveAnchor() {
-    const { x, y, z } = this._anchor;
-    localStorage.setItem(this._anchorID, `${x}_${y}_${z}`);
+  hideMarker(type: CivilMarkerType) {
+    this.mouseMarkers[type].visible = false;
   }
 
-  loadAnchor() {
-    const serialized = localStorage.getItem(this._anchorID);
-    if (!serialized) return;
-    const [x, y, z] = serialized.split("_").map((item) => parseFloat(item));
-    this._anchor.set(x, y, z);
-    this.updateAnchor();
+  private adjustRaycasterOnZoom() {
+    this.scene.controls.addEventListener("update", () => {
+      const { zoom, left, right, top, bottom } = this.scene.camera;
+      const width = left - right;
+      const height = top - bottom;
+      const screenSize = Math.max(width, height);
+      const realScreenSize = screenSize / zoom;
+      const range = 40;
+      const { caster } = this.highlighter;
+      caster.params.Line.threshold = realScreenSize / range;
+    });
   }
 
-  private updateAnchor() {
-    const position = this._alignments.real.position;
-    position.copy(this._anchor);
+  private newMouseMarker(color: string) {
+    const scene = this.scene.get();
+    const root = document.createElement("div");
+    const bar = document.createElement("div");
+    root.appendChild(bar);
+    bar.style.backgroundColor = color;
+    bar.style.width = "3rem";
+    bar.style.height = "3px";
+    const mouseMarker = new Simple2DMarker(this.components, root, scene);
+    mouseMarker.visible = false;
+    return mouseMarker;
   }
 
-  private getAlignmentGeometry(
-    alignment: IfcAlignmentData,
-    geometry: THREE.BufferGeometry,
-    is3D: boolean,
-    selectedIndex: number = -1
+  private setMouseMarker(
+    point: THREE.Vector3,
+    object: THREE.Object3D,
+    index: number | undefined,
+    type: CivilMarkerType
   ) {
-    const data = this.getAlignmentData(alignment, is3D, selectedIndex);
-    const coordsBuffer = new Float32Array(data.coords);
-    const coordsAttr = new THREE.BufferAttribute(coordsBuffer, 3);
-    geometry.setAttribute("position", coordsAttr);
-    geometry.setIndex(data.index);
-  }
-
-  private getAlignmentData(
-    alignment: IfcAlignmentData,
-    is3D: boolean,
-    selectedIndex: number = -1
-  ) {
-    const coords: number[] = [];
-    const index: number[] = [];
-    const { coordinates, curveIndex } = alignment;
-    const offsetX = coordinates[0];
-    const offsetY = coordinates[1];
-    const offsetZ = is3D ? coordinates[2] : 0;
-    let isSegmentStart = true;
-    const factor = is3D ? 3 : 2;
-    const last = coordinates.length / factor - 1;
-    if (selectedIndex === -1) {
-      for (let i = 0; i < curveIndex.length; i++) {
-        const start = curveIndex[i];
-        const isLast = i === curveIndex.length - 1;
-        const end = isLast ? last : curveIndex[i + 1];
-        isSegmentStart = true;
-        for (let j = start; j < end; j++) {
-          const x = coordinates[j * factor] - offsetX;
-          const y = coordinates[j * factor + 1] - offsetY;
-          const z = is3D ? coordinates[j * factor + 2] - offsetZ : 0;
-          coords.push(x, y, z);
-          if (isSegmentStart) {
-            isSegmentStart = false;
-          } else {
-            index.push(j - 1, j);
-          }
-        }
-      }
-    } else {
-      let counter = 0;
-      for (let i = 0; i < curveIndex.length; i++) {
-        if (selectedIndex === this.currentAlignment(alignment, curveIndex[i])) {
-          const start = curveIndex[i];
-          const isLast = i === curveIndex.length - 1;
-          const end = isLast ? last : curveIndex[i + 1];
-          isSegmentStart = true;
-          for (let j = start; j < end; j++) {
-            const x = coordinates[j * factor] - offsetX;
-            const y = coordinates[j * factor + 1] - offsetY;
-            const z = is3D ? coordinates[j * factor + 2] - offsetZ : 0;
-            coords.push(x, y, z);
-            if (isSegmentStart) {
-              isSegmentStart = false;
-            } else {
-              index.push(counter - 1, counter);
-            }
-            counter++;
-          }
-        }
-      }
+    if (index === undefined) {
+      return;
     }
-    return { coords, index };
-  }
-
-  private currentAlignment(alignment: IfcAlignmentData, curveIndex: number) {
-    const last = alignment.alignmentIndex.length - 1;
-    if (curveIndex >= alignment.alignmentIndex[last]) {
-      return last;
-    }
-    for (let i = 0; i < alignment.alignmentIndex.length - 1; i++) {
-      const start = alignment.alignmentIndex[i];
-      const end = alignment.alignmentIndex[i + 1];
-      if (curveIndex >= start && curveIndex < end) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
-  private setUI() {
-    const horizontalAlignment = new FloatingWindow(this.components);
-    this.components.ui.add(horizontalAlignment);
-    horizontalAlignment.visible = false;
-    const hContainer = this._scenes.horizontal.uiElement.get("container");
-    horizontalAlignment.addChild(hContainer);
-
-    horizontalAlignment.onResized.add(() =>
-      this._scenes.horizontal.grid.regenerate()
+    this.mouseMarkers[type].visible = true;
+    const marker = this.mouseMarkers[type].get();
+    marker.position.copy(point);
+    const curveMesh = object as FRAGS.CurveMesh;
+    const { startPoint, endPoint } = curveMesh.curve.getSegment(index);
+    const angle = Math.atan2(
+      endPoint.y - startPoint.y,
+      endPoint.x - startPoint.x
     );
+    const bar = marker.element.children[0] as HTMLDivElement;
+    const trueAngle = 90 - (angle / Math.PI) * 180;
+    bar.style.transform = `rotate(${trueAngle}deg)`;
+  }
 
-    horizontalAlignment.slots.content.domElement.style.padding = "0";
-    horizontalAlignment.slots.content.domElement.style.overflow = "hidden";
-
-    horizontalAlignment.onResized.add(() => {
-      const { width, height } = horizontalAlignment.containerSize;
-      this._scenes.horizontal.setSize(height, width);
-    });
-
-    horizontalAlignment.domElement.style.width = "20rem";
-    horizontalAlignment.domElement.style.height = "20rem";
-
-    horizontalAlignment.onVisible.add(() => {
-      if (horizontalAlignment.visible) {
-        this._scenes.horizontal.grid.regenerate();
-      }
-    });
-
-    const verticalAlignment = new Drawer(this.components);
-    this.components.ui.add(verticalAlignment);
-    verticalAlignment.alignment = "top";
-
-    verticalAlignment.onVisible.add(() => {
-      this._scenes.vertical.grid.regenerate();
-    });
-    verticalAlignment.visible = false;
-
-    verticalAlignment.slots.content.domElement.style.padding = "0";
-    verticalAlignment.slots.content.domElement.style.overflow = "hidden";
-
-    const { clientWidth, clientHeight } = verticalAlignment.domElement;
-    this._scenes.vertical.setSize(clientHeight, clientWidth);
-
-    const vContainer = this._scenes.vertical.uiElement.get("container");
-    verticalAlignment.addChild(vContainer);
-
-    if (this.components.renderer.isUpdateable()) {
-      this.components.renderer.onAfterUpdate.add(async () => {
-        if (horizontalAlignment.visible) {
-          await this._scenes.horizontal.update();
-        }
-        if (verticalAlignment.visible) {
-          await this._scenes.vertical.update();
-        }
-      });
+  private async updateMarker(
+    intersects: THREE.Intersection,
+    type: CivilMarkerType
+  ) {
+    const { point, index, object } = intersects;
+    const mesh = object as FRAGS.CurveMesh;
+    const curve = mesh.curve;
+    const alignment = mesh.curve.alignment;
+    const percentage = alignment.getPercentageAt(point, this.view);
+    const markerPoint = point.clone();
+    this.setMouseMarker(markerPoint, mesh, index, type);
+    if (percentage !== null) {
+      await this.onMarkerChange.trigger({ alignment, percentage, type, curve });
     }
-
-    this.uiElement.set({
-      horizontalAlignment,
-      verticalAlignment,
-    });
   }
 }
-
-ToolComponent.libraryUUIDs.add(RoadNavigator.uuid);

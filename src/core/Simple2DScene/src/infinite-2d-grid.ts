@@ -94,11 +94,10 @@ export class Infinite2dGrid {
 
     const magnitudeX = Math.ceil(Math.log10(horizontalDistance / this.scaleX));
     const magnitudeY = Math.ceil(Math.log10(verticalDistance / this.scaleY));
-    const magnitude = Math.min(magnitudeX, magnitudeY);
 
     // Step 3: represent main grid
-    const sDistanceHor = 10 ** (magnitude - 2) * this.scaleX;
-    const sDistanceVert = 10 ** (magnitude - 2) * this.scaleY;
+    const sDistanceHor = 10 ** (magnitudeX - 2) * this.scaleX;
+    const sDistanceVert = 10 ** (magnitudeY - 2) * this.scaleY;
     const mDistanceHor = sDistanceHor * this.gridsFactor;
     const mDistanceVert = sDistanceVert * this.gridsFactor;
 
@@ -124,22 +123,33 @@ export class Infinite2dGrid {
 
     const realWidthPerCharacter = 9 * unit3dPixelRel; // 9 pixels per char
 
+    const p = 10000;
+
     // Avoid horizontal text overlap by computing the real width of a text
     // and computing which lines should have a label starting from zero
-    const minLabel = Math.abs(mTrueLeft / this.scaleX);
+    const minLabel = Math.round(Math.abs(mTrueLeft / this.scaleX) * p) / p;
     const maxDist = (mainGridCountHor - 1) * mDistanceHor;
-    const maxLabel = Math.abs((mTrueLeft + maxDist) / this.scaleX);
+    const maxLabel =
+      Math.round(Math.abs((mTrueLeft + maxDist) / this.scaleX) * p) / p;
     const biggestLabelLength = Math.max(minLabel, maxLabel).toString().length;
     const biggestLabelSize = biggestLabelLength * realWidthPerCharacter;
     const cellsOccupiedByALabel = Math.ceil(biggestLabelSize / mDistanceHor);
-    const offsetToZero = cellsOccupiedByALabel * mDistanceHor;
+    let offsetToZero = cellsOccupiedByALabel * mDistanceHor;
 
     for (let i = 0; i < mainGridCountHor; i++) {
-      const offset = mTrueLeft + i * mDistanceHor;
+      let offset = mTrueLeft + i * mDistanceHor;
       mPoints.push(offset, top, 0, offset, bottom, 0);
 
       const value = offset / this.scaleX;
-      if (Math.abs(offset % offsetToZero) > 0.01) {
+
+      offset = Math.round(offset * p) / p;
+      offsetToZero = Math.round(offsetToZero * p) / p;
+      const result = offset % offsetToZero;
+
+      // TODO: Removing horizontal labels for clarity doesn't work for small distances
+      const isSmall = mDistanceHor < 1 || mDistanceVert < 1;
+
+      if (!isSmall && Math.abs(result) > 0.01) {
         continue;
       }
 
@@ -170,29 +180,17 @@ export class Infinite2dGrid {
       sPoints.push(left, offset, 0, right, offset, 0);
     }
 
-    const mIndices: number[] = [];
-    const sIndices: number[] = [];
-    this.fillIndices(mPoints, mIndices);
-    this.fillIndices(sPoints, sIndices);
-
     const mBuffer = new THREE.BufferAttribute(new Float32Array(mPoints), 3);
     const sBuffer = new THREE.BufferAttribute(new Float32Array(sPoints), 3);
     const { main, secondary } = this.grids;
     main.geometry.setAttribute("position", mBuffer);
-    main.geometry.setIndex(mIndices);
     secondary.geometry.setAttribute("position", sBuffer);
-    secondary.geometry.setIndex(sIndices);
-  }
-
-  private fillIndices(points: any[], indices: any[]) {
-    for (let i = 0; i < points.length / 2 - 1; i += 2) {
-      indices.push(i, i + 1);
-    }
   }
 
   private newNumber(offset: number) {
     const text = document.createElement("div");
-    text.textContent = `${offset}`;
+    const formattedNumber = Math.round(offset * 100) / 100;
+    text.textContent = `${formattedNumber}`;
     text.style.height = "24px";
     text.style.fontSize = "12px";
     const sign = new CSS2DObject(text);
