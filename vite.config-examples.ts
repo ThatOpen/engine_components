@@ -30,7 +30,7 @@ const restructureExamples = () => {
   };
 };
 
-const entries = globSync("src/**/example.html").map((file) => {
+const entries = globSync("packages/**/src/**/example.html").map((file) => {
   const directory = path.dirname(file);
   const exampleName = path.basename(directory);
   const fixedName = exampleName[0].toLowerCase() + exampleName.slice(1);
