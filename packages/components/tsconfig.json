@@ -20,10 +20,6 @@
     "noFallthroughCasesInSwitch": true,
 
     "allowJs": false,
-    "declaration": true,
-    "sourceMap": true,
-    "composite": true,
-    "allowSyntheticDefaultImports": true,
     "preserveSymlinks": true,
     "forceConsistentCasingInFileNames": true
   },
