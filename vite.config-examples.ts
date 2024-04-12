@@ -8,7 +8,7 @@ const restructureExamples = () => {
   return {
     name: "examples-refactor",
     async writeBundle() {
-      const outDir = "examples/src";
+      const outDir = "examples/packages";
       const files = globSync(`${outDir}/**/example.html`);
 
       for (const file of files) {
@@ -21,7 +21,8 @@ const restructureExamples = () => {
         const buffer = fs.readFileSync(file);
         const newBuffer = buffer
           .toString()
-          .replace(/(\.\.\/){3}assets/g, "../assets");
+          .replace(/(\.\.\/)+assets/g, "../assets")
+          .replace(/(\.\.\/)+resources/g, "../../resources");
         fs.writeFileSync(path.join(targetDirectory, "index.html"), newBuffer);
       }
 
@@ -30,7 +31,7 @@ const restructureExamples = () => {
   };
 };
 
-const entries = globSync("src/**/example.html").map((file) => {
+const entries = globSync("packages/**/src/**/example.html").map((file) => {
   const directory = path.dirname(file);
   const exampleName = path.basename(directory);
   const fixedName = exampleName[0].toLowerCase() + exampleName.slice(1);
@@ -39,7 +40,6 @@ const entries = globSync("src/**/example.html").map((file) => {
 });
 
 const input = Object.fromEntries(entries);
-input.main = "./index.html";
 
 export default defineConfig({
   base: "./",
