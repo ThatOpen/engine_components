@@ -1,5 +1,3 @@
-// Set up scene (see SimpleScene tutorial)
-
 import * as THREE from "three";
 import Stats from "stats.js";
 import * as OBC from "../..";
@@ -46,20 +44,8 @@ const file = await fetch("../../../resources/asdf.frag");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = await fragments.load(buffer);
-// const properties = await fetch("../../../resources/asdf.json");
-// model.setLocalProperties(await properties.json());
-
-// const culler = new OBC.ScreenCuller(components);
-// culler.setup();
-//
-// for(const fragment of model.items) {
-//   culler.elements.add(fragment.mesh);
-// }
-//
-// container.addEventListener("mouseup", () => culler.elements.needsUpdate = true);
-// container.addEventListener("wheel", () => culler.elements.needsUpdate = true);
-
-// culler.elements.needsUpdate = true;
+const properties = await fetch("../../../resources/asdf.json");
+model.setLocalProperties(await properties.json());
 
 const mainToolbar = new OBC.Toolbar(components, {
   name: "Main Toolbar",
@@ -70,11 +56,35 @@ mainToolbar.addChild(fragmentIfcLoader.uiElement.get("main"));
 
 console.log(model);
 
-// Set up road navigator
+/*
+### 🌍 Creating a 3D World with Civil 3D Navigator
+
+**🔧 Setting up Civil 3D Navigator**
+    ___
+    Now that we've established our simple scene, let's integrate the
+    Civil 3D Navigator to explore our 3D model further.
+*/
 
 const navigator = new OBC.Civil3DNavigator(components);
+
+/*
+**🛠️ Initializing the Navigator**
+    ___
+    First, we need to create an instance of the Civil 3D Navigator
+    component. This will enable us to navigate through our 3D environment
+    and interact with the model.
+*/
+
 navigator.draw(model);
 navigator.setup();
+
+/*
+**🖌️ Configuring Navigator Highlighting**
+    ___
+    To enhance user interaction, we'll configure highlighting for
+    civil elements within the navigator. This will provide visual feedback
+    when navigating through the model, making the experience more intuitive.
+*/
 
 navigator.highlighter.hoverCurve.material.color.set(1, 1, 1);
 
@@ -91,13 +101,6 @@ navigator.onHighlight.add(({ point }) => {
   sphere.center.copy(point);
   cameraComponent.controls.fitToSphere(sphere, true);
 });
-
-// navigator.highlighter.highlightColor = 0xff0000;
-// navigator.onHighlight.add((data) => {});
-
-// const hider = new OBC.FragmentHider(components);
-// await hider.loadCached();
-// mainToolbar.addChild(hider.uiElement.get("main"));
 
 const stats = new Stats();
 stats.showPanel(2);

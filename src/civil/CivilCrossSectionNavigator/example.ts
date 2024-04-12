@@ -1,5 +1,3 @@
-// Set up scene (see SimpleScene tutorial)
-
 import * as THREE from "three";
 import Stats from "stats.js";
 import * as OBC from "../..";
@@ -17,6 +15,8 @@ components.renderer = rendererComponent;
 
 const cameraComponent = new OBC.SimpleCamera(components);
 components.camera = cameraComponent;
+
+components.raycaster = new OBC.SimpleRaycaster(components);
 
 components.init();
 
@@ -40,24 +40,12 @@ fragmentIfcLoader.settings.wasm = {
 fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
 fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
 
-const file = await fetch("../../../resources/asdf2.frag");
+const file = await fetch("../../../resources/asdf.frag");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = await fragments.load(buffer);
-const properties = await fetch("../../../resources/asdf2.json");
+const properties = await fetch("../../../resources/asdf.json");
 model.setLocalProperties(await properties.json());
-
-// const culler = new OBC.ScreenCuller(components);
-// culler.setup();
-//
-// for(const fragment of model.items) {
-//   culler.elements.add(fragment.mesh);
-// }
-//
-// container.addEventListener("mouseup", () => culler.elements.needsUpdate = true);
-// container.addEventListener("wheel", () => culler.elements.needsUpdate = true);
-
-// culler.elements.needsUpdate = true;
 
 const mainToolbar = new OBC.Toolbar(components, {
   name: "Main Toolbar",
@@ -68,12 +56,37 @@ mainToolbar.addChild(fragmentIfcLoader.uiElement.get("main"));
 
 console.log(model);
 
-// Set up road navigator
+/*
+### 🌍 Exploring Civil Cross Sections with Navigators
+
+**🔧 Setting up Civil Cross Section Navigator**
+    ___
+    Let's dive into exploring cross sections of our civil plans using the
+    Civil Cross Section Navigator. We'll start by setting up the navigator
+    component within our scene.
+*/
 
 const navigator = new OBC.CivilPlanNavigator(components);
 const horizontalWindow = navigator.uiElement.get("floatingWindow");
 horizontalWindow.visible = true;
+
+/*
+**🗺️ Drawing the Model**
+    ___
+    With the Civil Cross Section Navigator initialized, we can now draw our
+    model within the navigator. This step prepares the model for exploration
+    through cross sections.
+*/
+
 navigator.draw(model);
+
+/*
+**📈 Setting up Elevation Navigator**
+    ___
+    Next, we'll set up the Elevation Navigator component to explore
+    elevation views of our model. Similar to the Civil Cross Section
+    Navigator, we'll configure the drawer to be visible and draw the model.
+*/
 
 const elevationNavigator = new OBC.CivilElevationNavigator(components);
 const drawer = elevationNavigator.uiElement.get("drawer");
@@ -126,13 +139,6 @@ navigator.onMarkerHidden.add(({ type }) => {
   navigator3D.hideMarker(type);
 });
 
-// const navigator = new OBC.Civil3DNavigator(components);
-// navigator.draw(model);
-// navigator.setup();
-//
-// navigator.highlighter.hoverCurve.material.color.set(1, 1, 1);
-// navigator.highlighter.hoverPoints.material.color.set(1, 1, 1);
-
 window.addEventListener("keydown", () => {
   elevationNavigator.scene.scaleY += 0.1;
 });
@@ -162,12 +168,6 @@ for (const category in classifications.entities) {
     styles[category].meshes.add(foundFrag.mesh);
   }
 }
-
-// classifier.find({{entities: []}})
-
-// const hider = new OBC.FragmentHider(components);
-// await hider.loadCached();
-// mainToolbar.addChild(hider.uiElement.get("main"));
 
 const stats = new Stats();
 stats.showPanel(2);
