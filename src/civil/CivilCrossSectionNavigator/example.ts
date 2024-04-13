@@ -92,9 +92,21 @@ const elevationNavigator = new OBC.CivilElevationNavigator(components);
 const drawer = elevationNavigator.uiElement.get("drawer");
 drawer.visible = true;
 
+/*
+Civil 3D Navigator - Check out the tutorial for this specific tool
+*/
+
 const navigator3D = new OBC.Civil3DNavigator(components);
 navigator3D.draw(model);
 navigator3D.setup();
+
+/*
+**🎨 Customizing Highlighting**
+    ___
+    To enhance interaction, we'll configure highlighting for elements
+    within the 3D scene and elevation views. This provides visual
+    feedback during navigation and selection.
+*/
 
 navigator3D.highlighter.hoverCurve.material.color.set(1, 1, 1);
 const { material: hoverPointsMaterial } = navigator.highlighter.hoverPoints;
@@ -123,6 +135,14 @@ const crossNavigator = new OBC.CivilCrossSectionNavigator(components);
 const crossWindow = crossNavigator.uiElement.get("floatingWindow");
 crossWindow.visible = true;
 
+/*
+**📍 Marker Interaction**
+    ___
+    We'll set up marker interaction between different navigators.
+    This allows for synchronized marker updates and selection across
+    elevation, 3D, and cross-section views.
+*/
+
 navigator.onMarkerChange.add(({ alignment, percentage, type, curve }) => {
   elevationNavigator.setMarker(alignment, percentage, type);
   navigator3D.setMarker(alignment, percentage, type);
@@ -142,6 +162,14 @@ navigator.onMarkerHidden.add(({ type }) => {
 window.addEventListener("keydown", () => {
   elevationNavigator.scene.scaleY += 0.1;
 });
+
+/*
+**🛠️ Customizing Fragment Classifications**
+    ___
+    Finally, we'll customize fragment classifications to categorize and
+    style elements within the model. This step helps organize and visualize
+    different components of the model.
+*/
 
 const classifier = new OBC.FragmentClassifier(components);
 classifier.byEntity(model);
