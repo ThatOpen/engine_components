@@ -95,12 +95,24 @@ if (Array.isArray(hoverPointsMaterial)) {
 } else if ("color" in hoverPointsMaterial)
   (hoverPointsMaterial.color as THREE.Color).set(1, 1, 1);
 
+/*
+**⚪ Highlight Sphere**
+    ___
+    A sphere object is defined and introduced to the scene everytime the
+    user interacts with the alignments. Try it out!
+*/
+
 const sphere = new THREE.Sphere(undefined, 20);
 
 navigator.onHighlight.add(({ point }) => {
   sphere.center.copy(point);
   cameraComponent.controls.fitToSphere(sphere, true);
 });
+
+/*
+  With that, we finished! You've successfully created a Navigator compatible
+  with Civil elements and other Civil components.
+*/
 
 const stats = new Stats();
 stats.showPanel(2);

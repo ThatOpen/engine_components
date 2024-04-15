@@ -56,57 +56,19 @@ mainToolbar.addChild(fragmentIfcLoader.uiElement.get("main"));
 
 console.log(model);
 
-/*
-### 🌍 Exploring Civil Cross Sections with Navigators
-
-**🔧 Setting up Civil Cross Section Navigator**
-    ___
-    Let's dive into exploring cross sections of our civil plans using the
-    Civil Cross Section Navigator. We'll start by setting up the navigator
-    component within our scene.
-*/
-
 const navigator = new OBC.CivilPlanNavigator(components);
 const horizontalWindow = navigator.uiElement.get("floatingWindow");
 horizontalWindow.visible = true;
 
-/*
-**🗺️ Drawing the Model**
-    ___
-    With the Civil Cross Section Navigator initialized, we can now draw our
-    model within the navigator. This step prepares the model for exploration
-    through cross sections.
-*/
-
 navigator.draw(model);
-
-/*
-**📈 Setting up Elevation Navigator**
-    ___
-    Next, we'll set up the Elevation Navigator component to explore
-    elevation views of our model. Similar to the Civil Cross Section
-    Navigator, we'll configure the drawer to be visible and draw the model.
-*/
 
 const elevationNavigator = new OBC.CivilElevationNavigator(components);
 const drawer = elevationNavigator.uiElement.get("drawer");
 drawer.visible = true;
 
-/*
-Civil 3D Navigator - Check out the tutorial for this specific tool
-*/
-
 const navigator3D = new OBC.Civil3DNavigator(components);
 navigator3D.draw(model);
 navigator3D.setup();
-
-/*
-**🎨 Customizing Highlighting**
-    ___
-    To enhance interaction, we'll configure highlighting for elements
-    within the 3D scene and elevation views. This provides visual
-    feedback during navigation and selection.
-*/
 
 navigator3D.highlighter.hoverCurve.material.color.set(1, 1, 1);
 const { material: hoverPointsMaterial } = navigator.highlighter.hoverPoints;
@@ -131,16 +93,37 @@ navigator.onHighlight.add(({ mesh }) => {
   );
 });
 
+/*
+### 🌍 Exploring Civil Cross Sections with Navigators
+
+**🔧 Setting up Civil Cross Section Navigator**
+    ___
+    Let's explore cross sections of our civil plans using the Civil Cross
+    Section Navigator.
+
+    **Important**: This tool requires the Civil Plan Navigator tool to be
+    initialized beforehand. Make sure to check out that respective tutorial
+    before proceeding.
+
+    We'll start by setting up the navigator component within our scene.
+*/
+
 const crossNavigator = new OBC.CivilCrossSectionNavigator(components);
+
+/*
+**🌅 Defining the UI for the tool**
+    ___
+    The UI element to be used with this tool is a floating window, so let's
+    define it and introduce it to our scene.
+*/
+
 const crossWindow = crossNavigator.uiElement.get("floatingWindow");
 crossWindow.visible = true;
 
 /*
-**📍 Marker Interaction**
-    ___
-    We'll set up marker interaction between different navigators.
-    This allows for synchronized marker updates and selection across
-    elevation, 3D, and cross-section views.
+  That's it! You've successfully set up the Civil Cross Section Navigator.
+  Now you can interact with the Horizontal Alignment Window, and the cross
+  section of the selected area will be displayed in the Cross Section Window.
 */
 
 navigator.onMarkerChange.add(({ alignment, percentage, type, curve }) => {
@@ -162,14 +145,6 @@ navigator.onMarkerHidden.add(({ type }) => {
 window.addEventListener("keydown", () => {
   elevationNavigator.scene.scaleY += 0.1;
 });
-
-/*
-**🛠️ Customizing Fragment Classifications**
-    ___
-    Finally, we'll customize fragment classifications to categorize and
-    style elements within the model. This step helps organize and visualize
-    different components of the model.
-*/
 
 const classifier = new OBC.FragmentClassifier(components);
 classifier.byEntity(model);
