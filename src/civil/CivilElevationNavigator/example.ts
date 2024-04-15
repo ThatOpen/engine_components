@@ -86,15 +86,15 @@ const elevationNavigator = new OBC.CivilElevationNavigator(components);
 const drawer = elevationNavigator.uiElement.get("drawer");
 drawer.visible = true;
 
-/*
-**🖌️ Configuring Navigator Highlighting**
-    ___
-    Finally, we
-    *
-    *
-*/
 
 planNavigator.onHighlight.add(({ mesh }) => {
+  /*
+  **🖌️ Configuring Navigator Highlighting**
+      ___
+      Finally, these lines are added to the same highlighter tool defined
+      previously for the Plan Navigator. These likes provide visual objects
+      specific to the Elevation Navigator.
+  */
   elevationNavigator.clear();
   elevationNavigator.draw(model, [mesh.curve.alignment]);
   elevationNavigator.highlighter.select(mesh);
@@ -111,9 +111,9 @@ planNavigator.onHighlight.add(({ mesh }) => {
 });
 
 /*
-
-
-
+  That's it! We're done setting up the Civil Elevation Navigator. Now you can
+  interact with the Horizontal Alignment Window, and the Elevation View of
+  the selected alignment will be displayed in the Elevation Window.
 */
 
 const stats = new Stats();
