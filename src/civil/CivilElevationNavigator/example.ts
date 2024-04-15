@@ -15,7 +15,6 @@ components.renderer = rendererComponent;
 
 const cameraComponent = new OBC.SimpleCamera(components);
 components.camera = cameraComponent;
-
 components.raycaster = new OBC.SimpleRaycaster(components);
 
 components.init();
@@ -44,43 +43,11 @@ const file = await fetch("../../../resources/asdf.frag");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = await fragments.load(buffer);
-const properties = await fetch("../../../resources/asdf.json");
-model.setLocalProperties(await properties.json());
-
-const mainToolbar = new OBC.Toolbar(components, {
-  name: "Main Toolbar",
-  position: "bottom",
-});
-components.ui.addToolbar(mainToolbar);
-mainToolbar.addChild(fragmentIfcLoader.uiElement.get("main"));
-
-console.log(model);
-
-/*
-### 🌍 Creating a 3D World with Civil 3D Navigator
-
-**🔧 Setting up Civil 3D Navigator**
-    ___
-    Now that we've established our simple scene, let's integrate the
-    Civil 3D Navigator to explore our 3D model further. First, we need to
-    create an instance of the Civil 3D Navigator component. This will enable
-    us to navigate through our 3D environment and interact with the model.
-*/
 
 const navigator = new OBC.Civil3DNavigator(components);
 navigator.draw(model);
 navigator.setup();
-
-/*
-**🖌️ Configuring Navigator Highlighting**
-    ___
-    To enhance user interaction, we'll configure highlighting for
-    civil elements within the navigator. This will provide visual feedback
-    when navigating through the model, making the experience more intuitive.
-*/
-
 navigator.highlighter.hoverCurve.material.color.set(1, 1, 1);
-
 const { material: hoverPointsMaterial } = navigator.highlighter.hoverPoints;
 if (Array.isArray(hoverPointsMaterial)) {
   const material = hoverPointsMaterial[0];
@@ -88,23 +55,65 @@ if (Array.isArray(hoverPointsMaterial)) {
 } else if ("color" in hoverPointsMaterial)
   (hoverPointsMaterial.color as THREE.Color).set(1, 1, 1);
 
+const planNavigator = new OBC.CivilPlanNavigator(components);
+const horizontalWindow = planNavigator.uiElement.get("floatingWindow");
+horizontalWindow.visible = true;
+planNavigator.draw(model);
+
 /*
-**⚪ Highlight Sphere**
+### 🌍 Exploring Civil Elevation View with Navigators
+
+**🔧 Setting up Civil Elevation Navigator**
     ___
-    A sphere object is defined and introduced to the scene everytime the
-    user interacts with the alignments. Try it out!
+    Let's explore Elevation Navigator of our civil alignments using the Civil Elevation Navigator.
+
+    **Important**: This tool requires the Civil 3D Navigator and the Civil Plan Navigator
+    tools to be initialized beforehand. Make sure to check out those respective tutorials
+    before proceeding.
+
+    We'll start by setting up the navigator component within our scene.
 */
 
-const sphere = new THREE.Sphere(undefined, 20);
+const elevationNavigator = new OBC.CivilElevationNavigator(components);
 
-navigator.onHighlight.add(({ point }) => {
-  sphere.center.copy(point);
-  cameraComponent.controls.fitToSphere(sphere, true);
+/*
+**🌅 Defining the UI for the tool**
+    ___
+    The UI element to be used with this tool is a drawer element, so let's
+    define it and introduce it to our scene.
+*/
+
+const drawer = elevationNavigator.uiElement.get("drawer");
+drawer.visible = true;
+
+/*
+**🖌️ Configuring Navigator Highlighting**
+    ___
+    Finally, we
+    *
+    *
+*/
+
+planNavigator.onHighlight.add(({ mesh }) => {
+  elevationNavigator.clear();
+  elevationNavigator.draw(model, [mesh.curve.alignment]);
+  elevationNavigator.highlighter.select(mesh);
+
+  navigator.highlighter.select(mesh);
+
+  const index = mesh.curve.index;
+  const curve3d = mesh.curve.alignment.absolute[index];
+  curve3d.mesh.geometry.computeBoundingSphere();
+  cameraComponent.controls.fitToSphere(
+    curve3d.mesh.geometry.boundingSphere,
+    true,
+  );
 });
 
 /*
-  With that, we finished! You've successfully created a Navigator compatible
-  with Civil elements and other Civil components.
+
+
+
 */
 
 const stats = new Stats();

@@ -1,5 +1,3 @@
-// Set up scene (see SimpleScene tutorial)
-
 import * as THREE from "three";
 import Stats from "stats.js";
 import * as OBC from "../..";
@@ -41,30 +39,10 @@ fragmentIfcLoader.settings.wasm = {
 fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
 fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
 
-// 2. IFC 4 fragment integration
-
 const file = await fetch("../../../resources/asdf.frag");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = await fragments.load(buffer);
-
-// 3. Horizontal alignment
-
-const planNavigator = new OBC.CivilPlanNavigator(components);
-const horizontalWindow = planNavigator.uiElement.get("floatingWindow");
-horizontalWindow.visible = true;
-planNavigator.draw(model);
-
-// 4. Vertical alignment
-
-const elevationNavigator = new OBC.CivilElevationNavigator(components);
-const drawer = elevationNavigator.uiElement.get("drawer");
-drawer.visible = true;
-
-// 4.5 Set scene elevation in horizontal
-// planNavigator.elevation = elevationNavigator.scene.scene;
-
-// 5. 3D alignment
 
 const navigator = new OBC.Civil3DNavigator(components);
 navigator.draw(model);
@@ -77,51 +55,43 @@ if (Array.isArray(hoverPointsMaterial)) {
 } else if ("color" in hoverPointsMaterial)
   (hoverPointsMaterial.color as THREE.Color).set(1, 1, 1);
 
-// 6. Cross section
+/*
+### 🌍 Exploring Civil Plan View with Navigators
 
-// const crossNavigator = new OBC.CivilCrossSectionNavigator(components);
-// const crossWindow = crossNavigator.uiElement.get("floatingWindow");
-// crossWindow.visible = true;
+**🔧 Setting up Civil Plan Navigator**
+    ___
+    Let's explore Plan Navigator of our civil alignments using the Civil Plan Navigator.
 
-// const classifier = new OBC.FragmentClassifier(components);
-// classifier.byEntity(model);
+    **Important**: This tool requires the Civil 3D Navigator tool to be
+    initialized beforehand. Make sure to check out that respective tutorial
+    before proceeding.
 
-// const classifications = classifier.get();
+    We'll start by setting up the navigator component within our scene and
+    adding our civil model to it.
+*/
 
-// const clipper = components.tools.get(OBC.EdgesClipper);
-// const styles = clipper.styles.get();
+const planNavigator = new OBC.CivilPlanNavigator(components);
+planNavigator.draw(model);
 
-// for (const category in classifications.entities) {
-//   const found = classifier.find({ entities: [category] });
+/*
+**🌅 Defining the UI for the tool**
+    ___
+    The UI element to be used with this tool is a floating window, so let's
+    define it and introduce it to our scene.
+*/
 
-//   const color = new THREE.Color(
-//     Math.random(),
-//     Math.random(),
-//     Math.random()
-//   );
+const horizontalWindow = planNavigator.uiElement.get("floatingWindow");
+horizontalWindow.visible = true;
 
-//   const lineMaterial = new THREE.LineBasicMaterial({ color });
-//   clipper.styles.create(category, new Set(), lineMaterial);
-
-//   for (const fragID in found) {
-//     const foundFrag = fragments.list[fragID];
-//     if(!foundFrag) {
-//       continue;
-//     }
-//     styles[category].fragments[fragID] = new Set(found[fragID]);
-//     styles[category].meshes.add(foundFrag.mesh);
-//   }
-// }
-
-// // 7. Synchronization
-
-// const sphere = new THREE.Sphere(undefined, 20);
+/*
+**🖌️ Configuring Navigator Highlighting**
+    ___
+    Finally, we configure a highlighter to be able to interact with the
+    alignments shown in the navigator. This will provide multiple visual objects
+    when navigating through the model, making the experience more intuitive.
+*/
 
 planNavigator.onHighlight.add(({ mesh }) => {
-  elevationNavigator.clear();
-  elevationNavigator.draw(model, [mesh.curve.alignment]);
-  elevationNavigator.highlighter.select(mesh);
-
   navigator.highlighter.select(mesh);
 
   const index = mesh.curve.index;
@@ -133,24 +103,12 @@ planNavigator.onHighlight.add(({ mesh }) => {
   );
 });
 
-// planNavigator.onMarkerChange.add(({ alignment, percentage, type, curve }) => {
-//   elevationNavigator.setMarker(alignment, percentage, type);
-//   navigator3D.setMarker(alignment, percentage, type);
-
-//   if(type === "select") {
-//     const mesh = curve.alignment.absolute[curve.index].mesh;
-//     const point = alignment.getPointAt(percentage, "absolute");
-//     crossNavigator.set(mesh, point);
-//   }
-// })
-
-// window.addEventListener("keydown", () => {
-//   elevationNavigator.scene.scaleY += 0.2;
-// })
-
-// const hider = new OBC.FragmentHider(components);
-// await hider.loadCached();
-// mainToolbar.addChild(hider.uiElement.get("main"));
+/*
+  And we're done! You've successfully set up the Civil Plan Navigator.
+  Now you can interact with the Horizontal Alignment Window. Now try adding
+  some other compatible tools like the Civil Elevation Navigator and the
+  Civil Cross Section Navigator.
+*/
 
 const stats = new Stats();
 stats.showPanel(2);
