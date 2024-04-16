@@ -98,11 +98,12 @@ navigator.onHighlight.add(({ mesh }) => {
 
 **🔧 Setting up Civil Cross Section Navigator**
     ___
-    Let's explore cross sections of our civil plans using the Civil Cross
-    Section Navigator.
+    The Cross Section Navigator is a tool that will allow you to clearly visualize
+    the cross section of any civil IFC model, in any point selected in an alignment.
+    Let's begin!
 
-    **Important**: This tool requires the Civil Plan Navigator tool to be
-    initialized beforehand. Make sure to check out that respective tutorial
+    **Important**: This tool requires the Civil 3D Navigator and the Civil Plan Navigator
+    tools to be initialized beforehand. Make sure to check out those respective tutorials
     before proceeding.
 
     We'll start by setting up the navigator component within our scene.
@@ -121,9 +122,9 @@ const crossWindow = crossNavigator.uiElement.get("floatingWindow");
 crossWindow.visible = true;
 
 /*
-  That's it! You've successfully set up the Civil Cross Section Navigator.
-  Now you can interact with the Horizontal Alignment Window, and the cross
-  section of the selected area will be displayed in the Cross Section Window.
+  And that's it! You've successfully set up the Civil Cross Section Navigator.
+  Go ahead and interact with the Horizontal Alignment Window in any point of an alignment,
+  and the cross section of the selected area will be displayed in the Cross Section Window.
 */
 
 navigator.onMarkerChange.add(({ alignment, percentage, type, curve }) => {

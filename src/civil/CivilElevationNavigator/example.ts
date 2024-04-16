@@ -65,7 +65,9 @@ planNavigator.draw(model);
 
 **🔧 Setting up Civil Elevation Navigator**
     ___
-    Let's explore Elevation Navigator of our civil alignments using the Civil Elevation Navigator.
+    The Elevation Navigator is a tool that allows exploration and visualization of
+    the alignments in a civil IFC file, by creating a drawer that shows their
+    its elevation view. Let's get into it!
 
     **Important**: This tool requires the Civil 3D Navigator and the Civil Plan Navigator
     tools to be initialized beforehand. Make sure to check out those respective tutorials
@@ -86,14 +88,13 @@ const elevationNavigator = new OBC.CivilElevationNavigator(components);
 const drawer = elevationNavigator.uiElement.get("drawer");
 drawer.visible = true;
 
-
 planNavigator.onHighlight.add(({ mesh }) => {
   /*
   **🖌️ Configuring Navigator Highlighting**
       ___
-      Finally, these lines are added to the same highlighter tool defined
-      previously for the Plan Navigator. These likes provide visual objects
-      specific to the Elevation Navigator.
+      Finally, the following lines are added to the highlighter tool defined
+      previously for the Plan Navigator. These lines provide visual objects
+      specific to the Elevation Navigator, improving user experience.
   */
   elevationNavigator.clear();
   elevationNavigator.draw(model, [mesh.curve.alignment]);
@@ -112,8 +113,8 @@ planNavigator.onHighlight.add(({ mesh }) => {
 
 /*
   That's it! We're done setting up the Civil Elevation Navigator. Now you can
-  interact with the Horizontal Alignment Window, and the Elevation View of
-  the selected alignment will be displayed in the Elevation Window.
+  interact with any alignment in the Horizontal Alignment Window, and the Elevation
+  View of that specific alignment will be displayed in the Elevation Window.
 */
 
 const stats = new Stats();

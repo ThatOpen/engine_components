@@ -76,7 +76,7 @@ navigator.setup();
     ___
     To enhance user interaction, we'll configure highlighting for
     civil elements within the navigator. This will provide visual feedback
-    when navigating through the model, making the experience more intuitive.
+    when interacting with civil elements, making the experience more intuitive.
 */
 
 navigator.highlighter.hoverCurve.material.color.set(1, 1, 1);

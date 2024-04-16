@@ -60,7 +60,9 @@ if (Array.isArray(hoverPointsMaterial)) {
 
 **🔧 Setting up Civil Plan Navigator**
     ___
-    Let's explore Plan Navigator of our civil alignments using the Civil Plan Navigator.
+    The Plan Navigator is a tool that allows exploration and visualization of
+    the alignments in a civil IFC file, by creating a window that shows their
+    plan view. Let's explore it!
 
     **Important**: This tool requires the Civil 3D Navigator tool to be
     initialized beforehand. Make sure to check out that respective tutorial
@@ -107,7 +109,7 @@ planNavigator.onHighlight.add(({ mesh }) => {
   And we're done! You've successfully set up the Civil Plan Navigator.
   Now you can interact with the Horizontal Alignment Window. Now try adding
   some other compatible tools like the Civil Elevation Navigator and the
-  Civil Cross Section Navigator.
+  Civil Cross Section Navigator.🚀
 */
 
 const stats = new Stats();
