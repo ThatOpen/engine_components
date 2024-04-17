@@ -40,11 +40,19 @@ fragmentIfcLoader.settings.wasm = {
 fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
 fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
 
+<<<<<<< HEAD
 const file = await fetch("../../../../../resources/civil-example.frag");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = await fragments.load(buffer);
 const properties = await fetch("../../../../../resources/civil-example.json");
+=======
+const file = await fetch("../../../resources/asdf.frag");
+const data = await file.arrayBuffer();
+const buffer = new Uint8Array(data);
+const model = await fragments.load(buffer);
+const properties = await fetch("../../../resources/asdf.json");
+>>>>>>> 1.6.0-that-open
 model.setLocalProperties(await properties.json());
 
 const mainToolbar = new OBC.Toolbar(components, {
