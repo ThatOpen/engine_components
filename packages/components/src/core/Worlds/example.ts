@@ -7,13 +7,12 @@ const components = new OBC.Components();
 
 const worlds = components.get(OBC.Worlds);
 const world = new OBC.SimpleWorld(components);
-worlds.list.set(world.uuid, world);
 
 world.scene = new OBC.SimpleScene(components);
 world.renderer = new OBC.SimpleRenderer(components, container);
 world.camera = new OBC.SimpleCamera(components);
 
-world.enabled = true;
+worlds.add(world);
 
 components.init();
 

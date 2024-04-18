@@ -14,7 +14,7 @@ export class SimpleWorld extends Base implements World {
 
   readonly onBeforeUpdate = new Event();
 
-  enabled = false;
+  enabled = true;
 
   uuid = UUID.create();
 

@@ -21,6 +21,14 @@ export class Worlds extends Component implements Updateable, Disposable {
     components.add(Worlds.uuid, this);
   }
 
+  add(world: World) {
+    const id = world.uuid;
+    if (this.list.has(id)) {
+      throw new Error("There is already a world with this name!");
+    }
+    this.list.set(id, world);
+  }
+
   dispose() {
     this.enabled = false;
     for (const [_id, world] of this.list) {

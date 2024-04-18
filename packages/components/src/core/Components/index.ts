@@ -73,10 +73,10 @@ export class Components implements Disposable {
    * camera. Additionally, if any component that need a raycaster is
    * used, the {@link raycaster} will need to be initialized.
    */
-  async init() {
+  init() {
     this.enabled = true;
     this._clock.start();
-    await this.update();
+    this.update();
   }
 
   /**
@@ -115,14 +115,14 @@ export class Components implements Disposable {
     this.onDisposed.reset();
   }
 
-  private update = async () => {
+  private update = () => {
     if (!this.enabled) return;
 
     const delta = this._clock.getDelta();
 
     for (const [_id, component] of this.list) {
       if (component.enabled && component.isUpdateable()) {
-        await component.update(delta);
+        component.update(delta);
       }
     }
 

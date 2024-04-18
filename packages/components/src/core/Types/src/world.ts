@@ -7,4 +7,5 @@ export interface World extends Disposable, Updateable {
   scene: BaseScene;
   camera: BaseCamera;
   renderer: BaseRenderer | null;
+  uuid: string;
 }
