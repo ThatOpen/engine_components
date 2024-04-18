@@ -33,11 +33,8 @@
     "prepublishOnly": "yarn build"
   },
   "devDependencies": {
-    "@types/earcut": "^2.1.1",
     "@types/jest": "27.0.0",
     "@types/node": "20.11.30",
-    "@types/node-fetch": "^2.6.4",
-    "@types/stats": "0.16.30",
     "@types/three": "0.160.0",
     "@typescript-eslint/eslint-plugin": "7.2.0",
     "@typescript-eslint/parser": "7.2.0",
@@ -50,9 +47,7 @@
     "eslint-plugin-prettier": "5.1.3",
     "glob": "latest",
     "jest": "^27.0.4",
-    "node-fetch": "^3.3.2",
     "prettier": "3.2.5",
-    "tailwindcss": "^3.3.5",
     "three": "^0.160.1",
     "ts-jest": "^27.0.3",
     "ts-node": "^10.0.0",
@@ -60,18 +55,9 @@
     "web-ifc": "0.0.53"
   },
   "dependencies": {
-    "@popperjs/core": "2.11.8",
     "camera-controls": "2.7.3",
-    "dexie": "^3.2.3",
-    "dxf-writer": "^1.18.4",
-    "earcut": "^2.2.4",
-    "n8ao": "1.5.1",
-    "openbim-clay": "0.0.5",
-    "postprocessing": "6.34.2",
-    "stats.js": "^0.17.0",
     "three-mesh-bvh": "0.7.0",
-    "top-tool-package-reader": "0.0.3",
-    "unzipit": "^1.4.3"
+    "top-tool-package-reader": "0.0.3"
   },
   "peerDependencies": {
     "bim-fragment": "1.5.0",

@@ -1,13 +1,12 @@
 import * as THREE from "three";
-import { Component } from "../../base-types/component";
 import { Components } from "../Components";
-import { ToolComponent } from "../ToolsComponent";
+import { BVHGeometry, Component } from "../Types";
 
 /**
  * A tool to safely remove meshes and geometries from memory to
  * [prevent memory leaks](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
  */
-export class Disposer extends Component<Set<string>> {
+export class Disposer extends Component {
   private _disposedComponents = new Set<string>();
 
   /** {@link Component.enabled} */
@@ -17,7 +16,7 @@ export class Disposer extends Component<Set<string>> {
 
   constructor(components: Components) {
     super(components);
-    components.tools.add(Disposer.uuid, this);
+    components.add(Disposer.uuid, this);
   }
 
   /**
@@ -62,15 +61,16 @@ export class Disposer extends Component<Set<string>> {
    * to remove.
    */
   disposeGeometry(geometry: THREE.BufferGeometry) {
-    if (geometry.boundsTree) {
-      geometry.disposeBoundsTree();
+    const bvhGeom = geometry as BVHGeometry;
+    if (bvhGeom.boundsTree) {
+      bvhGeom.disposeBoundsTree();
     }
     geometry.dispose();
   }
 
   private disposeGeometryAndMaterials(
     mesh: THREE.Object3D,
-    materials: boolean
+    materials: boolean,
   ) {
     const item = mesh as any;
     if (item.geometry) {
@@ -101,5 +101,3 @@ export class Disposer extends Component<Set<string>> {
     }
   }
 }
-
-ToolComponent.libraryUUIDs.add(Disposer.uuid);
