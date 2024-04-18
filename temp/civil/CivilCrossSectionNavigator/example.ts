@@ -1,5 +1,3 @@
-// Set up scene (see SimpleScene tutorial)
-
 import * as THREE from "three";
 import Stats from "stats.js";
 import * as OBC from "../..";
@@ -17,6 +15,8 @@ components.renderer = rendererComponent;
 
 const cameraComponent = new OBC.SimpleCamera(components);
 components.camera = cameraComponent;
+
+components.raycaster = new OBC.SimpleRaycaster(components);
 
 components.init();
 
@@ -40,24 +40,12 @@ fragmentIfcLoader.settings.wasm = {
 fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
 fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
 
-const file = await fetch("../../../resources/asdf2.frag");
+const file = await fetch("../../../resources/asdf.frag");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = await fragments.load(buffer);
-const properties = await fetch("../../../resources/asdf2.json");
+const properties = await fetch("../../../resources/asdf.json");
 model.setLocalProperties(await properties.json());
-
-// const culler = new OBC.ScreenCuller(components);
-// culler.setup();
-//
-// for(const fragment of model.items) {
-//   culler.elements.add(fragment.mesh);
-// }
-//
-// container.addEventListener("mouseup", () => culler.elements.needsUpdate = true);
-// container.addEventListener("wheel", () => culler.elements.needsUpdate = true);
-
-// culler.elements.needsUpdate = true;
 
 const mainToolbar = new OBC.Toolbar(components, {
   name: "Main Toolbar",
@@ -68,11 +56,10 @@ mainToolbar.addChild(fragmentIfcLoader.uiElement.get("main"));
 
 console.log(model);
 
-// Set up road navigator
-
 const navigator = new OBC.CivilPlanNavigator(components);
 const horizontalWindow = navigator.uiElement.get("floatingWindow");
 horizontalWindow.visible = true;
+
 navigator.draw(model);
 
 const elevationNavigator = new OBC.CivilElevationNavigator(components);
@@ -106,9 +93,39 @@ navigator.onHighlight.add(({ mesh }) => {
   );
 });
 
+/*
+### 🌍 Exploring Civil Cross Sections with Navigators
+
+**🔧 Setting up Civil Cross Section Navigator**
+    ___
+    The Cross Section Navigator is a tool that will allow you to clearly visualize
+    the cross section of any civil IFC model, in any point selected in an alignment.
+    Let's begin!
+
+    **Important**: This tool requires the Civil 3D Navigator and the Civil Plan Navigator
+    tools to be initialized beforehand. Make sure to check out those respective tutorials
+    before proceeding.
+
+    We'll start by setting up the navigator component within our scene.
+*/
+
 const crossNavigator = new OBC.CivilCrossSectionNavigator(components);
+
+/*
+**🌅 Defining the UI for the tool**
+    ___
+    The UI element to be used with this tool is a floating window, so let's
+    define it and introduce it to our scene.
+*/
+
 const crossWindow = crossNavigator.uiElement.get("floatingWindow");
 crossWindow.visible = true;
+
+/*
+  And that's it! You've successfully set up the Civil Cross Section Navigator.
+  Go ahead and interact with the Horizontal Alignment Window in any point of an alignment,
+  and the cross section of the selected area will be displayed in the Cross Section Window.
+*/
 
 navigator.onMarkerChange.add(({ alignment, percentage, type, curve }) => {
   elevationNavigator.setMarker(alignment, percentage, type);
@@ -125,13 +142,6 @@ navigator.onMarkerHidden.add(({ type }) => {
   elevationNavigator.hideMarker(type);
   navigator3D.hideMarker(type);
 });
-
-// const navigator = new OBC.Civil3DNavigator(components);
-// navigator.draw(model);
-// navigator.setup();
-//
-// navigator.highlighter.hoverCurve.material.color.set(1, 1, 1);
-// navigator.highlighter.hoverPoints.material.color.set(1, 1, 1);
 
 window.addEventListener("keydown", () => {
   elevationNavigator.scene.scaleY += 0.1;
@@ -162,12 +172,6 @@ for (const category in classifications.entities) {
     styles[category].meshes.add(foundFrag.mesh);
   }
 }
-
-// classifier.find({{entities: []}})
-
-// const hider = new OBC.FragmentHider(components);
-// await hider.loadCached();
-// mainToolbar.addChild(hider.uiElement.get("main"));
 
 const stats = new Stats();
 stats.showPanel(2);
