@@ -9,19 +9,6 @@ import {
 } from "../../Types";
 import { Components } from "../../Components";
 
-// const components = new Components();
-// const worlds = components.get(Worlds);
-// const world = new SimpleWorld(components);
-// worlds.list.add(world);
-//
-// world.scene = new SimpleScene();
-// world.renderer = new SimpleRenderer(container);
-// world.camera = new SimpleCamera();
-//
-// world.enabled = true;
-//
-// const {scene} = worlds.get("id");
-
 export class SimpleWorld extends Base implements World {
   readonly onAfterUpdate = new Event();
 
@@ -50,6 +37,7 @@ export class SimpleWorld extends Base implements World {
     if (this._scene) {
       this._scene.world = null;
     }
+    this._scene = scene;
     scene.world = this;
   }
 
@@ -64,6 +52,7 @@ export class SimpleWorld extends Base implements World {
     if (this._camera) {
       this._camera.world = null;
     }
+    this._camera = camera;
     camera.world = this;
   }
 
@@ -75,6 +64,7 @@ export class SimpleWorld extends Base implements World {
     if (this._renderer) {
       this._renderer.world = null;
     }
+    this._renderer = renderer;
     if (renderer) {
       renderer.world = this;
     }
@@ -84,11 +74,14 @@ export class SimpleWorld extends Base implements World {
     super(components);
   }
 
-  update() {
+  update(delta?: number) {
     if (!this.enabled) return;
     this.onBeforeUpdate.trigger();
+    if (this.camera.isUpdateable()) {
+      this.camera.update(delta);
+    }
     if (this.renderer) {
-      this.renderer.update();
+      this.renderer.update(delta);
     }
     this.onAfterUpdate.trigger();
   }

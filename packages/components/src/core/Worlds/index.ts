@@ -1,4 +1,7 @@
 import { Component, Disposable, Updateable, World, Event } from "../Types";
+import { Components } from "../Components";
+
+export * from "./src";
 
 export class Worlds extends Component implements Updateable, Disposable {
   static readonly uuid = "fdb61dc4-2ec1-4966-b83d-54ea795fad4a" as const;
@@ -12,6 +15,11 @@ export class Worlds extends Component implements Updateable, Disposable {
   list = new Map<string, World>();
 
   enabled = true;
+
+  constructor(components: Components) {
+    super(components);
+    components.add(Worlds.uuid, this);
+  }
 
   dispose() {
     this.enabled = false;

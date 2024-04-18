@@ -27,7 +27,7 @@ export class Components implements Disposable {
   readonly onDisposed = new Event<void>();
 
   /** The list of components created in this app. */
-  readonly list: Record<string, Component> = {};
+  readonly list = new Map<string, Component>();
 
   /** If disabled, the animation loop will be stopped. */
   enabled = false;
@@ -35,12 +35,12 @@ export class Components implements Disposable {
   private _clock: THREE.Clock;
 
   add(uuid: string, instance: Component) {
-    if (uuid in this.list)
+    if (this.list.has(uuid))
       throw new Error(
         `You're trying to add a component that already exists in the components intance. Use Components.get() instead.`,
       );
     UUID.validate(uuid);
-    this.list[uuid] = instance;
+    this.list.set(uuid, instance);
   }
 
   /**
@@ -51,15 +51,15 @@ export class Components implements Disposable {
    */
   get<U extends Component>(Component: new (components: Components) => U): U {
     const uuid = (Component as any).uuid;
-    if (!(uuid in this.list)) {
+    if (!this.list.has(uuid)) {
       const toolInstance = new Component(this);
-      if (!(uuid in this.list)) {
+      if (!this.list.has(uuid)) {
         // In case the component is not auto-registered.
         this.add(uuid, toolInstance);
       }
       return toolInstance;
     }
-    return this.list[uuid] as U;
+    return this.list.get(uuid) as U;
   }
 
   constructor() {
@@ -94,15 +94,14 @@ export class Components implements Disposable {
    * [here](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
    *
    */
-  async dispose() {
+  dispose() {
     const disposer = this.get(Disposer);
     this.enabled = false;
 
-    for (const uuid in this.list) {
-      const tool = this.list[uuid];
-      tool.enabled = false;
-      if (tool.isDisposeable()) {
-        await tool.dispose();
+    for (const [_id, component] of this.list) {
+      component.enabled = false;
+      if (component.isDisposeable()) {
+        component.dispose();
       }
     }
 
@@ -112,7 +111,7 @@ export class Components implements Disposable {
     }
 
     this.meshes.clear();
-    await this.onDisposed.trigger();
+    this.onDisposed.trigger();
     this.onDisposed.reset();
   }
 
@@ -121,12 +120,13 @@ export class Components implements Disposable {
 
     const delta = this._clock.getDelta();
 
-    for (const uuid in this.list) {
-      const component = this.list[uuid];
+    for (const [_id, component] of this.list) {
       if (component.enabled && component.isUpdateable()) {
         await component.update(delta);
       }
     }
+
+    requestAnimationFrame(this.update);
   };
 
   private static setupBVH() {
