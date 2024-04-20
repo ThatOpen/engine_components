@@ -1,5 +1,3 @@
-// Set up scene (see SimpleScene tutorial)
-
 import * as THREE from "three";
 import * as OBC from "../..";
 
@@ -7,26 +5,27 @@ const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
 
-const sceneComponent = new OBC.SimpleScene(components);
-components.scene = sceneComponent;
+const worlds = components.get(OBC.Worlds);
+const world = new OBC.SimpleWorld<
+  OBC.SimpleScene,
+  OBC.SimpleCamera,
+  OBC.SimpleRenderer
+>(components);
 
-const rendererComponent = new OBC.SimpleRenderer(components, container);
-components.renderer = rendererComponent;
+world.scene = new OBC.SimpleScene(components);
+world.renderer = new OBC.SimpleRenderer(components, container);
+world.camera = new OBC.SimpleCamera(components);
 
-const cameraComponent = new OBC.SimpleCamera(components);
-components.camera = cameraComponent;
-components.raycaster = new OBC.SimpleRaycaster(components);
+worlds.add(world);
 
 components.init();
 
-const scene = components.scene.get();
+world.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
-cameraComponent.controls.setLookAt(10, 10, 10, 0, 0, 0);
-
-sceneComponent.setup();
+world.scene.setup();
 
 // @ts-ignore
-const grid = new OBC.SimpleGrid(components);
+// const grid = new OBC.SimpleGrid(components);
 
 /* MD
   ### 🤏 Touching things
@@ -53,7 +52,7 @@ const boxGeometry = new THREE.BoxGeometry(3, 3, 3);
 const cube1 = new THREE.Mesh(boxGeometry, cubeMaterial);
 const cube2 = new THREE.Mesh(boxGeometry, cubeMaterial);
 const cube3 = new THREE.Mesh(boxGeometry, cubeMaterial);
-scene.add(cube1, cube2, cube3);
+world.scene.three.add(cube1, cube2, cube3);
 const cubes = [cube1, cube2, cube3];
 
 /* MD
@@ -82,7 +81,7 @@ function rotateCubes() {
   cube3.rotation.z += oneDegree;
 }
 
-rendererComponent.onBeforeUpdate.add(rotateCubes);
+world.renderer.onBeforeUpdate.add(rotateCubes);
 
 /* MD
 
@@ -109,10 +108,13 @@ rendererComponent.onBeforeUpdate.add(rotateCubes);
   :::
   */
 
+const casters = components.get(OBC.Raycasters);
+const caster = casters.create(world);
+
 let previousSelection: THREE.Mesh | null = null;
 
 window.onmousemove = () => {
-  const result = components.raycaster.castRay(cubes);
+  const result = caster.castRay(cubes);
   if (previousSelection) {
     previousSelection.material = cubeMaterial;
   }

@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { BaseScene, Configurable, Event } from "../Types";
-import { Components } from "../Components";
+import { BaseScene, Configurable, Event } from "../../Types";
+import { Components } from "../../Components";
 
 export interface SimpleSceneConfig {
   directionalLight: {

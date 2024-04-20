@@ -1,41 +1,43 @@
 import * as THREE from "three";
-import { Component, Disposable, Mouse, Event } from "../../base-types";
-import { Components } from "../Components";
-import { BaseRaycaster } from "../../base-types/base-raycaster";
+import { Components } from "../../Components";
+import { Component, Event, World, Disposable } from "../../Types";
+import { Mouse } from "./mouse";
 
 /**
  * A simple [raycaster](https://threejs.org/docs/#api/en/core/Raycaster)
  * that allows to easily get items from the scene using the mouse and touch
  * events.
  */
-export class SimpleRaycaster extends BaseRaycaster implements Disposable {
+export class SimpleRaycaster implements Disposable {
   /** {@link Component.enabled} */
   enabled = true;
 
+  components: Components;
+
   /** {@link Disposable.onDisposed} */
-  readonly onDisposed = new Event<undefined>();
+  readonly onDisposed = new Event();
 
   /** The position of the mouse in the screen. */
   readonly mouse: Mouse;
 
-  private readonly _raycaster = new THREE.Raycaster();
+  readonly three = new THREE.Raycaster();
 
-  constructor(components: Components) {
-    super(components);
-    const renderer = components.renderer.get();
-    const dom = renderer.domElement;
-    this.mouse = new Mouse(dom);
-  }
+  world: World;
 
-  /** {@link Component.get} */
-  get() {
-    return this._raycaster;
+  constructor(components: Components, world: World) {
+    const renderer = world.renderer;
+    if (!renderer) {
+      throw new Error("A renderer is needed for the raycaster to work!");
+    }
+    this.world = world;
+    this.mouse = new Mouse(renderer.three.domElement);
+    this.components = components;
   }
 
   /** {@link Disposable.dispose} */
-  async dispose() {
+  dispose() {
     this.mouse.dispose();
-    await this.onDisposed.trigger();
+    this.onDisposed.trigger();
     this.onDisposed.reset();
   }
 
@@ -49,37 +51,43 @@ export class SimpleRaycaster extends BaseRaycaster implements Disposable {
    * {@link Components.meshes}.
    */
   castRay(
-    items: THREE.Mesh[] = Array.from(this.components.meshes)
+    items: THREE.Mesh[] = Array.from(this.components.meshes),
   ): THREE.Intersection | null {
-    const camera = this.components.camera.get();
-    this._raycaster.setFromCamera(this.mouse.position, camera);
+    if (!this.world) {
+      throw new Error("A world is needed to cast rays!");
+    }
+    const camera = this.world.camera.three;
+    this.three.setFromCamera(this.mouse.position, camera);
     return this.intersect(items);
   }
 
   castRayFromVector(
     origin: THREE.Vector3,
     direction: THREE.Vector3,
-    items = Array.from(this.components.meshes)
+    items = Array.from(this.components.meshes),
   ) {
-    this._raycaster.set(origin, direction);
+    this.three.set(origin, direction);
     return this.intersect(items);
   }
 
   private intersect(items: THREE.Mesh[] = Array.from(this.components.meshes)) {
-    const result = this._raycaster.intersectObjects(items);
+    const result = this.three.intersectObjects(items);
     const filtered = this.filterClippingPlanes(result);
     return filtered.length > 0 ? filtered[0] : null;
   }
 
   private filterClippingPlanes(objs: THREE.Intersection[]) {
-    const renderer = this.components.renderer;
+    if (!this.world.renderer) {
+      throw new Error("Renderer not found!");
+    }
+    const renderer = this.world.renderer.three;
     if (!renderer.clippingPlanes) {
       return objs;
     }
     const planes = renderer.clippingPlanes;
     if (objs.length <= 0 || !planes || planes?.length <= 0) return objs;
     return objs.filter((elem) =>
-      planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0)
+      planes.every((elem2) => elem2.distanceToPoint(elem.point) > 0),
     );
   }
 }

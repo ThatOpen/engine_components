@@ -8,7 +8,7 @@ export abstract class BaseRenderer
   extends BaseWorldItem
   implements Updateable, Disposable, Resizeable
 {
-  abstract three: THREE.Renderer;
+  abstract three: THREE.WebGLRenderer;
 
   /** {@link Updateable.onBeforeUpdate} */
   onAfterUpdate = new Event();
