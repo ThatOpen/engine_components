@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { Disposable } from "./interfaces";
 import { Event } from "./event";
 import { Components } from "../../Components";
-import { Disposer } from "../../Disposer";
+import { Disposer } from "../../Utils";
 import { BaseWorldItem } from "./base-world-item";
 
 export abstract class BaseScene extends BaseWorldItem implements Disposable {

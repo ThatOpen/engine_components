@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { Components } from "../Components";
-import { BVHGeometry, Component } from "../Types";
+import { Components } from "../../Components";
+import { BVHGeometry, Component } from "../../Types";
 
 /**
  * A tool to safely remove meshes and geometries from memory to
