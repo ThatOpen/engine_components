@@ -1249,11 +1249,15 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/components-front"
   dependencies:
-    "@thatopen/components": 1.5.0
+    "@thatopen/components": "workspace:^"
+    "@types/three": ^0.160.0
+    three: ^0.160.1
+  peerDependencies:
+    three: ^0.160.1
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@1.5.0, @thatopen/components@workspace:packages/components":
+"@thatopen/components@workspace:^, @thatopen/components@workspace:packages/components":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/components"
   dependencies:
@@ -1480,7 +1484,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/three@npm:0.160.0":
+"@types/three@npm:0.160.0, @types/three@npm:^0.160.0":
   version: 0.160.0
   resolution: "@types/three@npm:0.160.0"
   dependencies:

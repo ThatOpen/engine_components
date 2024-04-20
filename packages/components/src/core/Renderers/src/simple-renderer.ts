@@ -1,13 +1,16 @@
 import * as THREE from "three";
-import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
-import { Disposable, Updateable, Resizeable, BaseRenderer } from "../../Types";
+import {
+  Disposable,
+  Updateable,
+  Resizeable,
+  BaseRenderer,
+  Event,
+} from "../../Types";
 import { Components } from "../../Components";
 
 /**
- * A basic renderer capable of rendering 3D and 2D objects
- * ([Objec3Ds](https://threejs.org/docs/#api/en/core/Object3D) and
- * [CSS2DObjects](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer)
- * respectively).
+ * A basic renderer capable of rendering
+ * ([Objec3Ds](https://threejs.org/docs/#api/en/core/Object3D).
  */
 export class SimpleRenderer extends BaseRenderer {
   /** {@link Component.enabled} */
@@ -18,9 +21,10 @@ export class SimpleRenderer extends BaseRenderer {
 
   three: THREE.WebGLRenderer;
 
-  protected _renderer2D = new CSS2DRenderer();
   protected _canvas: HTMLCanvasElement;
   protected _parameters?: Partial<THREE.WebGLRendererParameters>;
+
+  protected onContainerUpdated = new Event<HTMLElement>();
 
   constructor(
     components: Components,
@@ -39,7 +43,7 @@ export class SimpleRenderer extends BaseRenderer {
     });
 
     this.three.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.setupRenderers();
+    this.setupRenderer();
     this.setupEvents(true);
     this.resize();
 
@@ -51,11 +55,6 @@ export class SimpleRenderer extends BaseRenderer {
     canvas.addEventListener("webglcontextrestored", this.onContextBack, false);
   }
 
-  /** {@link Component.get} */
-  get() {
-    return this.three;
-  }
-
   /** {@link Updateable.update} */
   update() {
     if (!this.enabled || !this.currentWorld) return;
@@ -63,9 +62,9 @@ export class SimpleRenderer extends BaseRenderer {
     const scene = this.currentWorld.scene.three;
     const camera = this.currentWorld.camera.three;
     this.three.render(scene, camera);
-    if (scene instanceof THREE.Scene) {
-      this._renderer2D.render(scene, camera);
-    }
+    // if (scene instanceof THREE.Scene) {
+    //   this._renderer2D.render(scene, camera);
+    // }
     this.onAfterUpdate.trigger(this);
   }
 
@@ -75,7 +74,7 @@ export class SimpleRenderer extends BaseRenderer {
     this.setupEvents(false);
     this.three.domElement.remove();
     this.three.dispose();
-    this._renderer2D.domElement.remove();
+    // this._renderer2D.domElement.remove();
     this.onResize.reset();
     this.onAfterUpdate.reset();
     this.onBeforeUpdate.reset();
@@ -91,7 +90,7 @@ export class SimpleRenderer extends BaseRenderer {
     );
   }
 
-  /** {@link Resizeable.resize}. */
+  /** {@link Resizeable.resize} */
   resize = (size?: THREE.Vector2) => {
     this.updateContainer();
     if (!this.container) {
@@ -100,30 +99,27 @@ export class SimpleRenderer extends BaseRenderer {
     const width = size ? size.x : this.container.clientWidth;
     const height = size ? size.y : this.container.clientHeight;
     this.three.setSize(width, height);
-    this._renderer2D.setSize(width, height);
+    // this._renderer2D.setSize(width, height);
     this.onResize.trigger(size);
   };
+
+  setupEvents(active: boolean) {
+    const dom = this.three.domElement;
+    if (active) {
+      dom.addEventListener("resize", this.resizeEvent);
+    } else {
+      dom.removeEventListener("resize", this.resizeEvent);
+    }
+  }
 
   private resizeEvent = () => {
     this.resize();
   };
 
-  setupEvents(active: boolean) {
-    if (active) {
-      window.addEventListener("resize", this.resizeEvent);
-    } else {
-      window.removeEventListener("resize", this.resizeEvent);
-    }
-  }
-
-  private setupRenderers() {
+  private setupRenderer() {
     this.three.localClippingEnabled = true;
-    this._renderer2D.domElement.style.position = "absolute";
-    this._renderer2D.domElement.style.top = "0px";
-    this._renderer2D.domElement.style.pointerEvents = "none";
     if (this.container) {
       this.container.appendChild(this.three.domElement);
-      this.container.appendChild(this._renderer2D.domElement);
     }
     this.updateContainer();
   }
@@ -150,7 +146,7 @@ export class SimpleRenderer extends BaseRenderer {
       const parent = this.three.domElement.parentElement;
       if (parent) {
         this.container = parent;
-        parent.appendChild(this._renderer2D.domElement);
+        this.onContainerUpdated.trigger(parent);
       }
     }
   }

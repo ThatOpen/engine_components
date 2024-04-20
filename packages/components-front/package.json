@@ -32,6 +32,13 @@
     "publish-repo-alpha": "yarn build && cpy package.json dist && cd dist && npm publish --tag alpha",
     "prepublishOnly": "yarn build"
   },
+  "peerDependencies": {
+    "three": "^0.160.1"
+  },
+  "devDependencies": {
+    "@types/three": "^0.160.0",
+    "three": "^0.160.1"
+  },
   "dependencies": {
     "@thatopen/components": "1.5.0"
   }

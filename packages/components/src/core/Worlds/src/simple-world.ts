@@ -126,5 +126,7 @@ export class SimpleWorld<
     this._scene = null as any;
     this._camera = null as any;
     this._renderer = null as any;
+
+    this.onDisposed.trigger();
   }
 }
