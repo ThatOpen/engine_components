@@ -5,7 +5,8 @@ import {
   disposeBoundsTree,
 } from "three-mesh-bvh";
 import { Component, Disposable, Event } from "../Types";
-import { Disposer, UUID } from "../Utils";
+import { Disposer } from "../Disposer";
+import { UUID } from "../UUID";
 
 /**
  * The entry point of the Components library.

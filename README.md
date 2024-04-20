@@ -37,7 +37,7 @@ const container = document.getElementById('container');
 const components = new OBC.Components();
 
 components.scene = new OBC.SimpleScene(components);
-components._renderer = new OBC.SimpleRenderer(components, container);
+components._renderer = new OBC.Index(components, container);
 components.camera = new OBC.SimpleCamera(components);
 components.raycaster = new OBC.SimpleRaycaster(components);
 

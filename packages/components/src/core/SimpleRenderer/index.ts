@@ -5,8 +5,8 @@ import {
   Resizeable,
   BaseRenderer,
   Event,
-} from "../../Types";
-import { Components } from "../../Components";
+} from "../Types";
+import { Components } from "../Components";
 
 /**
  * A basic renderer capable of rendering
