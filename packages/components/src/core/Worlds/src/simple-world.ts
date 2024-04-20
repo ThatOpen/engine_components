@@ -1,4 +1,4 @@
-import { UUID } from "../../UUID";
+import { UUID } from "../../../utils";
 import {
   Event,
   Base,

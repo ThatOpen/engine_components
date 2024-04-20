@@ -6,7 +6,7 @@ import {
 } from "three-mesh-bvh";
 import { Component, Disposable, Event } from "../Types";
 import { Disposer } from "../Disposer";
-import { UUID } from "../UUID";
+import { UUID } from "../../utils";
 
 /**
  * The entry point of the Components library.
