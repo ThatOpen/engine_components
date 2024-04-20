@@ -1,5 +1,4 @@
-import { Vector2 } from "three";
-import { generateUUID } from "three/src/math/MathUtils";
+import { Vector2, MathUtils } from "three";
 import {
   Component,
   Disposable,
@@ -33,7 +32,7 @@ export class SimpleSVGViewport
   /** {@link Configurable.isSetup} */
   isSetup = false;
 
-  id: string = generateUUID().toLowerCase();
+  id: string = MathUtils.generateUUID().toLowerCase();
 
   private _enabled: boolean = false;
 

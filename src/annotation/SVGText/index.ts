@@ -1,5 +1,4 @@
-import { Vector2 } from "three";
-import { generateUUID } from "three/src/math/MathUtils";
+import { Vector2, MathUtils } from "three";
 import {
   Component,
   Disposable,
@@ -9,7 +8,7 @@ import {
 import { Components } from "../../core";
 
 export class SVGText extends Component<SVGTextElement> implements Disposable {
-  id = generateUUID();
+  id = MathUtils.generateUUID();
   name: string = "SVGRectangle";
   enabled: boolean = true;
 
