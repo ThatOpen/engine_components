@@ -1,9 +1,15 @@
 import * as THREE from "three";
-import { Component, Disposable, Hideable, Event } from "../../base-types";
-import { Disposer } from "../Disposer";
-import { Components } from "../Components";
-import { SimpleCamera } from "../SimpleCamera";
-import { ToolComponent } from "../ToolsComponent";
+import { Component, Hideable, Event, World } from "../../Types";
+import { Components } from "../../Components";
+import { Disposer } from "../../Disposer";
+import { SimpleCamera } from "../../Worlds";
+
+export interface GridConfig {
+  color: THREE.Color;
+  size1: number;
+  size2: number;
+  distance: number;
+}
 
 /**
  * An infinite grid. Created by
@@ -11,17 +17,13 @@ import { ToolComponent } from "../ToolsComponent";
  * and translated to typescript by
  * [dkaraush](https://github.com/dkaraush/THREE.InfiniteGridHelper/blob/master/InfiniteGridHelper.ts).
  */
-export class SimpleGrid
-  extends Component<THREE.Mesh>
-  implements Hideable, Disposable
-{
-  static readonly uuid = "d1e814d5-b81c-4452-87a2-f039375e0489" as const;
-
+export class SimpleGrid implements Hideable, Disposable {
   /** {@link Disposable.onDisposed} */
-  readonly onDisposed = new Event<string>();
+  readonly onDisposed = new Event();
 
-  /** {@link Component.enabled} */
-  enabled = true;
+  world: World;
+
+  components: Components;
 
   /** {@link Hideable.visible} */
   get visible() {
@@ -31,7 +33,7 @@ export class SimpleGrid
   /** {@link Hideable.visible} */
   set visible(visible: boolean) {
     if (visible) {
-      const scene = this.components.scene.get();
+      const scene = this.world.scene.three;
       scene.add(this._grid);
     } else {
       this._grid.removeFromParent();
@@ -63,18 +65,15 @@ export class SimpleGrid
   private readonly _grid: THREE.Mesh;
   private _fade = 3;
 
-  constructor(
-    components: Components,
-    color = new THREE.Color(0xbbbbbb),
-    size1: number = 1,
-    size2: number = 10,
-    distance: number = 500
-  ) {
-    super(components);
-    this.components.tools.add(SimpleGrid.uuid, this);
-
+  constructor(components: Components, world: World, config: GridConfig) {
     // Source: https://github.com/dkaraush/THREE.InfiniteGridHelper/blob/master/InfiniteGridHelper.ts
     // Author: Fyrestar https://mevedia.com (https://github.com/Fyrestar/THREE.InfiniteGridHelper)
+
+    this.world = world;
+
+    const { color, size1, size2, distance } = config;
+
+    this.components = components;
 
     const geometry = new THREE.PlaneGeometry(2, 2, 1, 1);
 
@@ -174,10 +173,13 @@ export class SimpleGrid
 
     this._grid = new THREE.Mesh(geometry, material);
     this._grid.frustumCulled = false;
-    const scene = components.scene.get();
-    scene.add(this._grid);
+    world.scene.three.add(this._grid);
 
     this.setupEvents(true);
+  }
+
+  [Symbol.dispose](): void {
+    throw new Error("Method not implemented.");
   }
 
   /** {@link Component.get} */
@@ -186,17 +188,21 @@ export class SimpleGrid
   }
 
   /** {@link Disposable.dispose} */
-  async dispose() {
+  dispose() {
     this.setupEvents(false);
-    const disposer = this.components.tools.get(Disposer);
+    const disposer = this.components.get(Disposer);
     disposer.destroy(this._grid);
-    await this.onDisposed.trigger(SimpleGrid.uuid);
+    this.onDisposed.trigger();
     this.onDisposed.reset();
+    this.world = null as any;
+    this.components = null as any;
   }
 
   private setupEvents(active: boolean) {
-    const camera = this.components.camera as SimpleCamera;
-    const controls = camera.controls;
+    if (!(this.world.camera instanceof SimpleCamera)) {
+      return;
+    }
+    const controls = this.world.camera.controls;
     if (active) {
       controls.addEventListener("update", this.updateZoom);
     } else {
@@ -205,9 +211,9 @@ export class SimpleGrid
   }
 
   private updateZoom = () => {
-    const camera = this.components.camera as SimpleCamera;
-    this.material.uniforms.uZoom.value = camera.get().zoom;
+    if (!(this.world.camera instanceof SimpleCamera)) {
+      return;
+    }
+    this.material.uniforms.uZoom.value = this.world.camera.three.zoom;
   };
 }
-
-ToolComponent.libraryUUIDs.add(SimpleGrid.uuid);
