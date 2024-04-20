@@ -6,7 +6,11 @@ const container = document.getElementById("container")!;
 const components = new OBC.Components();
 
 const worlds = components.get(OBC.Worlds);
-const world = new OBC.SimpleWorld(components);
+const world = new OBC.SimpleWorld<
+  OBC.SimpleScene,
+  OBC.SimpleCamera,
+  OBC.SimpleRenderer
+>(components);
 
 world.scene = new OBC.SimpleScene(components);
 world.renderer = new OBC.SimpleRenderer(components, container);

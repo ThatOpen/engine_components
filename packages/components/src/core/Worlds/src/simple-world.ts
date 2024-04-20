@@ -9,7 +9,14 @@ import {
 } from "../../Types";
 import { Components } from "../../Components";
 
-export class SimpleWorld extends Base implements World {
+export class SimpleWorld<
+    T extends BaseScene = BaseScene,
+    U extends BaseCamera = BaseCamera,
+    S extends BaseRenderer = BaseRenderer,
+  >
+  extends Base
+  implements World
+{
   readonly onAfterUpdate = new Event();
 
   readonly onBeforeUpdate = new Event();
@@ -20,11 +27,11 @@ export class SimpleWorld extends Base implements World {
 
   readonly onDisposed = new Event();
 
-  private _scene?: BaseScene;
+  private _scene?: T;
 
-  private _camera?: BaseCamera;
+  private _camera?: U;
 
-  private _renderer: BaseRenderer | null = null;
+  private _renderer: S | null = null;
 
   get scene() {
     if (!this._scene) {
@@ -33,7 +40,7 @@ export class SimpleWorld extends Base implements World {
     return this._scene;
   }
 
-  set scene(scene: BaseScene) {
+  set scene(scene: T) {
     this._scene = scene;
     scene.worlds.set(this.uuid, this);
     scene.currentWorld = this;
@@ -47,7 +54,7 @@ export class SimpleWorld extends Base implements World {
     return this._camera;
   }
 
-  set camera(camera: BaseCamera) {
+  set camera(camera: U) {
     this._camera = camera;
     camera.worlds.set(this.uuid, this);
     camera.currentWorld = this;
@@ -58,7 +65,7 @@ export class SimpleWorld extends Base implements World {
     return this._renderer;
   }
 
-  set renderer(renderer: BaseRenderer | null) {
+  set renderer(renderer: S | null) {
     this._renderer = renderer;
     if (renderer) {
       renderer.worlds.set(this.uuid, this);
