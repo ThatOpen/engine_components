@@ -1,4 +1,4 @@
-import { generateUUID } from "three/src/math/MathUtils";
+import { MathUtils } from "three";
 import { Component, Disposable, Event, Hideable } from "../../base-types";
 import { Components } from "../../core";
 
@@ -114,7 +114,7 @@ export class SimpleUIComponent<T extends HTMLElement = HTMLElement>
   constructor(components: Components, template?: string, id?: string) {
     super(components);
     this._components = components;
-    this.id = id ?? generateUUID();
+    this.id = id ?? MathUtils.generateUUID();
     this.template = template ?? "<div></div>";
   }
 

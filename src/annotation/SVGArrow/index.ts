@@ -1,5 +1,4 @@
-import { Vector2 } from "three";
-import { generateUUID } from "three/src/math/MathUtils";
+import { Vector2, MathUtils } from "three";
 import {
   Component,
   Disposable,
@@ -11,7 +10,7 @@ import { Components } from "../../core";
 export class SVGArrow extends Component<SVGGElement> implements Disposable {
   name: string = "SVGRectangle";
   enabled: boolean = true;
-  id: string = generateUUID();
+  id: string = MathUtils.generateUUID();
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<undefined>();

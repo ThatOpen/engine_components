@@ -1,4 +1,4 @@
-import { generateUUID } from "three/src/math/MathUtils";
+import { MathUtils } from "three";
 import { Disposable, UI, Event } from "./base-types";
 import { Component } from "./component";
 import { Button } from "../ui";
@@ -14,7 +14,7 @@ export abstract class BaseSVGAnnotation
   extends Component<null>
   implements UI, Disposable
 {
-  id = generateUUID();
+  id = MathUtils.generateUUID();
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<undefined>();

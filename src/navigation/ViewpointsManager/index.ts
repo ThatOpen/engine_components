@@ -1,5 +1,4 @@
-import { Vector3 } from "three";
-import { generateUUID } from "three/src/math/MathUtils";
+import { Vector3, MathUtils } from "three";
 import { LengthMeasurement, SimpleDimensionLine } from "../../measurement";
 import { Components } from "../../core/Components";
 import {
@@ -104,7 +103,7 @@ export class ViewpointsManager extends Component<string> implements UI {
       return undefined;
     }
 
-    const guid = generateUUID().toLowerCase();
+    const guid = MathUtils.generateUUID().toLowerCase();
 
     // #region Store dimensions
     const dimensions: { start: Vector3; end: Vector3 }[] = [];
