@@ -34,11 +34,10 @@ export class SimpleWorld extends Base implements World {
   }
 
   set scene(scene: BaseScene) {
-    if (this._scene) {
-      this._scene.world = null;
-    }
     this._scene = scene;
-    scene.world = this;
+    scene.worlds.set(this.uuid, this);
+    scene.currentWorld = this;
+    scene.onWorldChanged.trigger({ world: this, action: "added" });
   }
 
   get camera() {
@@ -49,11 +48,10 @@ export class SimpleWorld extends Base implements World {
   }
 
   set camera(camera: BaseCamera) {
-    if (this._camera) {
-      this._camera.world = null;
-    }
     this._camera = camera;
-    camera.world = this;
+    camera.worlds.set(this.uuid, this);
+    camera.currentWorld = this;
+    camera.onWorldChanged.trigger({ world: this, action: "added" });
   }
 
   get renderer() {
@@ -61,12 +59,11 @@ export class SimpleWorld extends Base implements World {
   }
 
   set renderer(renderer: BaseRenderer | null) {
-    if (this._renderer) {
-      this._renderer.world = null;
-    }
     this._renderer = renderer;
     if (renderer) {
-      renderer.world = this;
+      renderer.worlds.set(this.uuid, this);
+      renderer.currentWorld = this;
+      renderer.onWorldChanged.trigger({ world: this, action: "added" });
     }
   }
 
@@ -76,24 +73,51 @@ export class SimpleWorld extends Base implements World {
 
   update(delta?: number) {
     if (!this.enabled) return;
+
+    this.scene.currentWorld = this;
+    this.camera.currentWorld = this;
+    if (this.renderer) {
+      this.renderer.currentWorld = this;
+    }
+
     this.onBeforeUpdate.trigger();
+
+    if (this.scene.isUpdateable()) {
+      this.scene.update(delta);
+    }
+
     if (this.camera.isUpdateable()) {
       this.camera.update(delta);
     }
+
     if (this.renderer) {
       this.renderer.update(delta);
     }
+
     this.onAfterUpdate.trigger();
   }
 
-  dispose() {
+  dispose(disposeResources = true) {
     this.enabled = false;
-    this.scene.dispose();
-    if (this.camera.isDisposeable()) {
-      this.camera.dispose();
-    }
+
+    this.scene.onWorldChanged.trigger({ world: this, action: "removed" });
+    this.camera.onWorldChanged.trigger({ world: this, action: "removed" });
     if (this.renderer) {
-      this.renderer.dispose();
+      this.renderer.onWorldChanged.trigger({ world: this, action: "removed" });
     }
+
+    if (disposeResources) {
+      this.scene.dispose();
+      if (this.camera.isDisposeable()) {
+        this.camera.dispose();
+      }
+      if (this.renderer) {
+        this.renderer.dispose();
+      }
+    }
+
+    this._scene = null as any;
+    this._camera = null as any;
+    this._renderer = null as any;
   }
 }

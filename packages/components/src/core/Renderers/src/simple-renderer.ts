@@ -58,10 +58,10 @@ export class SimpleRenderer extends BaseRenderer {
 
   /** {@link Updateable.update} */
   update() {
-    if (!this.enabled || !this.world) return;
+    if (!this.enabled || !this.currentWorld) return;
     this.onBeforeUpdate.trigger(this);
-    const scene = this.world.scene.three;
-    const camera = this.world.camera.three;
+    const scene = this.currentWorld.scene.three;
+    const camera = this.currentWorld.camera.three;
     this.three.render(scene, camera);
     if (scene instanceof THREE.Scene) {
       this._renderer2D.render(scene, camera);

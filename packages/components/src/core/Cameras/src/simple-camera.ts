@@ -29,7 +29,7 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
 
   readonly three: THREE.PerspectiveCamera;
 
-  private _controls?: CameraControls;
+  private _allControls = new Map<string, CameraControls>();
 
   /**
    * The object that controls the camera. An instance of
@@ -38,14 +38,21 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
    * object to move, rotate, look at objects, etc.
    */
   get controls() {
-    if (!this._controls) {
-      throw new Error("Camera not initialized!");
+    if (!this.currentWorld) {
+      throw new Error("This camera needs a world to work!");
     }
-    return this._controls;
+    const controls = this._allControls.get(this.currentWorld.uuid);
+    if (!controls) {
+      throw new Error("Controls not found!");
+    }
+    return controls;
   }
 
   /** {@link Component.enabled} */
   get enabled() {
+    if (this.currentWorld === null) {
+      return false;
+    }
     return this.controls.enabled;
   }
 
@@ -60,13 +67,22 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
 
     this.setupEvents(true);
 
-    this.onWorldChanged.add(() => {
+    this.onWorldChanged.add(({ action, world }) => {
       // This makes sure the DOM element of the camera
-      // controls matches the one of the renderer
-      if (this._controls) {
-        this._controls.dispose();
+      // controls matches the one of the renderer for
+      // a specific world
+      if (action === "added") {
+        const controls = this.newCameraControls();
+        this._allControls.set(world.uuid, controls);
       }
-      this._controls = this.newCameraControls();
+
+      if (action === "removed") {
+        const controls = this._allControls.get(world.uuid);
+        if (controls) {
+          controls.dispose();
+          this._allControls.delete(world.uuid);
+        }
+      }
     });
   }
 
@@ -78,17 +94,19 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
     this.onBeforeUpdate.reset();
     this.onAfterUpdate.reset();
     this.three.removeFromParent();
-    this.controls.dispose();
     this.onDisposed.trigger();
     this.onDisposed.reset();
+    for (const [_id, controls] of this._allControls) {
+      controls.dispose();
+    }
   }
 
   /** {@link Updateable.update} */
-  async update(_delta: number) {
+  update(_delta: number) {
     if (this.enabled) {
-      await this.onBeforeUpdate.trigger(this);
+      this.onBeforeUpdate.trigger(this);
       this.controls.update(_delta);
-      await this.onAfterUpdate.trigger(this);
+      this.onAfterUpdate.trigger(this);
     }
   }
 
@@ -97,9 +115,9 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
    * {@link Components.renderer}.
    */
   updateAspect = () => {
-    if (!this.world || !this.world.renderer) return;
-    if (this.world.renderer?.isResizeable()) {
-      const size = this.world.renderer.getSize();
+    if (!this.currentWorld || !this.currentWorld.renderer) return;
+    if (this.currentWorld.renderer?.isResizeable()) {
+      const size = this.currentWorld.renderer.getSize();
       this.three.aspect = size.width / size.height;
       this.three.updateProjectionMatrix();
       this.onAspectUpdated.trigger();
@@ -115,14 +133,14 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
   }
 
   private newCameraControls() {
-    if (!this.world) {
+    if (!this.currentWorld) {
       throw new Error("This camera needs a world to work!");
     }
-    if (!this.world.renderer) {
+    if (!this.currentWorld.renderer) {
       throw new Error("This camera needs a renderer to work!");
     }
     CameraControls.install({ THREE: SimpleCamera.getSubsetOfThree() });
-    const { domElement } = this.world.renderer.three;
+    const { domElement } = this.currentWorld.renderer.three;
     const controls = new CameraControls(this.three, domElement);
     controls.smoothTime = 0.2;
     controls.dollyToCursor = true;

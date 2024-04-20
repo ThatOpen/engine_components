@@ -1,25 +1,29 @@
 import { Base } from "./base";
 import { World } from "./world";
 import { Event } from "./event";
+import { Components } from "../../Components";
 
 /**
  * One of the elements that make a world. It can be either a scene, a camera
  * or a renderer.
  */
 export abstract class BaseWorldItem extends Base {
-  private _world: World | null = null;
+  readonly worlds = new Map<string, World>();
 
-  readonly onWorldChanged = new Event<World | null>();
+  readonly onWorldChanged = new Event<{
+    world: World;
+    action: "added" | "removed";
+  }>();
 
-  get world() {
-    if (!this._world) {
-      throw new Error("World not initialized!");
-    }
-    return this._world;
-  }
+  currentWorld: World | null = null;
 
-  set world(world: World | null) {
-    this._world = world;
-    this.onWorldChanged.trigger(world);
+  protected constructor(components: Components) {
+    super(components);
+
+    this.onWorldChanged.add(({ world, action }) => {
+      if (action === "removed") {
+        this.worlds.delete(world.uuid);
+      }
+    });
   }
 }
