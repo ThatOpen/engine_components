@@ -5,7 +5,7 @@ function clientWaitAsync(
   gl: WebGL2RenderingContext,
   sync: WebGLSync,
   flags: any,
-  intervalMilliseconds: number
+  intervalMilliseconds: number,
 ) {
   return new Promise<void>((resolve, reject) => {
     function test() {
@@ -32,7 +32,7 @@ async function getBufferSubDataAsync(
   srcByteOffset: number,
   dstBuffer: ArrayBufferView,
   dstOffset?: number,
-  length?: number
+  length?: number,
 ) {
   const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0)!;
   gl.flush();
@@ -52,7 +52,7 @@ export async function readPixelsAsync(
   h: number,
   format: any,
   type: any,
-  dest: ArrayBufferView
+  dest: ArrayBufferView,
 ) {
   const buf = gl.createBuffer()!;
   gl.bindBuffer(gl.PIXEL_PACK_BUFFER, buf);

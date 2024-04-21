@@ -1,9 +1,9 @@
 import * as THREE from "three";
 import { CullerRenderer, CullerRendererSettings } from "./culler-renderer";
 import { Components } from "../../Components";
-import { isTransparent } from "../../../utils";
-import { Event } from "../../../base-types";
 import { Disposer } from "../../Disposer";
+import { Event, World } from "../../Types";
+import { MaterialsUtils } from "../../../utils";
 
 /**
  * A renderer to determine a mesh visibility on screen
@@ -32,8 +32,12 @@ export class MeshCullerRenderer extends CullerRenderer {
     opacity: 0,
   });
 
-  constructor(components: Components, settings?: CullerRendererSettings) {
-    super(components, settings);
+  constructor(
+    components: Components,
+    world: World,
+    settings?: CullerRendererSettings,
+  ) {
+    super(components, world, settings);
     this.worker.addEventListener("message", this.handleWorkerMessage);
     if (this.autoUpdate) {
       window.setInterval(async () => {
@@ -42,17 +46,26 @@ export class MeshCullerRenderer extends CullerRenderer {
         }
       }, this.updateInterval);
     }
+
+    this.onViewUpdated.add(({ seen, unseen }) => {
+      for (const mesh of seen) {
+        mesh.visible = true;
+      }
+      for (const mesh of unseen) {
+        mesh.visible = false;
+      }
+    });
   }
 
-  async dispose() {
-    await super.dispose();
+  dispose() {
+    super.dispose();
     this._currentVisibleMeshes.clear();
     this._recentlyHiddenMeshes.clear();
 
     this._meshIDColorCodeMap.clear();
     this._transparentMat.dispose();
     this._colorCodeMeshMap.clear();
-    const disposer = this.components.tools.get(Disposer);
+    const disposer = this.components.get(Disposer);
     for (const id in this.colorMeshes) {
       const mesh = this.colorMeshes.get(id);
       if (mesh) {
@@ -85,7 +98,7 @@ export class MeshCullerRenderer extends CullerRenderer {
       const matArray: any[] = [];
 
       for (const mat of material) {
-        if (isTransparent(mat)) {
+        if (MaterialsUtils.isTransparent(mat)) {
           matArray.push(this._transparentMat);
         } else {
           transparentOnly = false;
@@ -101,7 +114,7 @@ export class MeshCullerRenderer extends CullerRenderer {
       }
 
       newMaterial = matArray;
-    } else if (isTransparent(material)) {
+    } else if (MaterialsUtils.isTransparent(material)) {
       // This material is transparent, so we must remove it from analysis
       // TODO: Make transparent meshes blink like in the memory culler?
       colorMaterial.dispose();
@@ -144,7 +157,7 @@ export class MeshCullerRenderer extends CullerRenderer {
 
     this.isProcessing = true;
 
-    const disposer = this.components.tools.get(Disposer);
+    const disposer = this.components.get(Disposer);
 
     this._currentVisibleMeshes.delete(mesh);
     this._recentlyHiddenMeshes.delete(mesh);
@@ -205,7 +218,12 @@ export class MeshCullerRenderer extends CullerRenderer {
     THREE.ColorManagement.enabled = false;
 
     const color = new THREE.Color(`rgb(${r}, ${g}, ${b})`);
-    const clippingPlanes = this.components.renderer.clippingPlanes;
+
+    if (!this.world.renderer) {
+      throw new Error("Renderer not found in the world!");
+    }
+
+    const clippingPlanes = this.world.renderer.clippingPlanes;
     const colorMaterial = new THREE.MeshBasicMaterial({
       color,
       clippingPlanes,

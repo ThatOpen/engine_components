@@ -1,6 +1,5 @@
-// Set up scene (see SimpleScene tutorial)
-
 import * as THREE from "three";
+// eslint-disable-next-line import/no-extraneous-dependencies
 import Stats from "stats.js";
 import * as OBC from "../..";
 
@@ -8,26 +7,27 @@ const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
 
-const sceneComponent = new OBC.SimpleScene(components);
-sceneComponent.setup();
-components.scene = sceneComponent;
+const worlds = components.get(OBC.Worlds);
+const world = new OBC.SimpleWorld<
+  OBC.SimpleScene,
+  OBC.SimpleCamera,
+  OBC.SimpleRenderer
+>(components);
 
-const rendererComponent = new OBC.PostproductionRenderer(components, container);
-components.renderer = rendererComponent;
+world.scene = new OBC.SimpleScene(components);
+world.renderer = new OBC.SimpleRenderer(components, container);
+world.camera = new OBC.SimpleCamera(components);
 
-const cameraComponent = new OBC.SimpleCamera(components);
-components.camera = cameraComponent;
-
-components.raycaster = new OBC.SimpleRaycaster(components);
+worlds.add(world);
 
 components.init();
 
-const scene = components.scene.get();
+world.camera.controls.setLookAt(13, 13, 13, 0, 0, 0);
 
-cameraComponent.controls.setLookAt(13, 13, 13, 0, 0, 0);
+world.scene.setup();
 
-// @ts-ignore
-const grid = new OBC.SimpleGrid(components);
+const grids = components.get(OBC.Grids);
+grids.create(world);
 
 /* MD
 
@@ -53,8 +53,8 @@ const grid = new OBC.SimpleGrid(components);
 
   */
 
-const culler = new OBC.ScreenCuller(components);
-await culler.setup();
+const cullers = new OBC.Cullers(components);
+const culler = cullers.create(world);
 
 /* MD
 
@@ -63,18 +63,18 @@ await culler.setup();
 
   */
 
-culler.elements.threshold = 200;
+culler.threshold = 200;
 
 /* MD
 
-  Additionally, we will activate the `culler.elements.renderDebugFrame`
+  Additionally, we will activate the `culler.renderDebugFrame`
   so that we can see the 2D screen of the elements that are not occluded.💻
   Also, we will get the **domElement** and attach it to the body so that we can see this frame in real-time.📊
 
   */
 
-culler.elements.renderDebugFrame = true;
-const debugFrame = culler.elements.get().domElement;
+culler.renderDebugFrame = true;
+const debugFrame = culler.renderer.domElement;
 document.body.appendChild(debugFrame);
 debugFrame.style.position = "fixed";
 debugFrame.style.left = "0";
@@ -117,7 +117,7 @@ const material = new THREE.MeshLambertMaterial({ color: "#6528D7" });
   and randomly position them. We'll add the cube to the scene and adjust its position between 0 and 10.
 
   Additionally, we will add meshes to the `culler` object, which will help **SimpleCuller** to recognize and
-  draw the elements that are visible to the camera. To do this, **`culler.elements.add(cube)`** will be used.
+  draw the elements that are visible to the camera. To do this, **`culler.add(cube)`** will be used.
 
   Also, now that we can create multiple cubes, we will write a function to remove the cubes from scene on demand.
   `resetCubes()` iteratively removes the **cubes** using [**`cube.removeFromParent`**](https://threejs.org/docs/index.html?q=obje#api/en/core/Object3D.removeFromParent).
@@ -139,8 +139,8 @@ function regenerateCubes() {
     cube.position.y = getRandomNumber(10);
     cube.position.z = getRandomNumber(10);
     cube.updateMatrix();
-    scene.add(cube);
-    culler.elements.add(cube);
+    world.scene.three.add(cube);
+    culler.add(cube);
     cubes.push(cube);
   }
 }
@@ -158,16 +158,16 @@ regenerateCubes();
   Here comes the most crucial part! The core aim of **ScreenCuller** is to output just those components that are
   visible to the camera.
 
-  `culler.elements.needsUpdate = true` instructs the ScreenCuller to render the updated view.
+  `culler.needsUpdate = true` instructs the ScreenCuller to render the updated view.
 
   ** Remember to update culler every time the camera is updated ❕ **
 
   In this tutorial we are updating it each time the camera stops moving.
   */
 
-culler.elements.needsUpdate = true;
-cameraComponent.controls.addEventListener("controlend", () => {
-  culler.elements.needsUpdate = true;
+culler.needsUpdate = true;
+world.camera.controls.addEventListener("controlend", () => {
+  culler.needsUpdate = true;
 });
 
 /* MD
@@ -182,30 +182,5 @@ const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
-rendererComponent.onBeforeUpdate.add(() => stats.begin());
-rendererComponent.onAfterUpdate.add(() => stats.end());
-
-// Set up GUI
-
-const optionsDrawer = new OBC.Drawer(components);
-optionsDrawer.size = "15rem";
-components.ui.add(optionsDrawer);
-optionsDrawer.visible = true;
-optionsDrawer.alignment = "right";
-
-const regenerateButton = new OBC.Button(components);
-regenerateButton.domElement.classList.add("shadow-md");
-regenerateButton.domElement.classList.add("backdrop-blur-xl");
-optionsDrawer.addChild(regenerateButton);
-regenerateButton.label = "Regenerate";
-regenerateButton.materialIcon = "cached";
-regenerateButton.onClick.add(() => {
-  culler.elements.needsUpdate = true;
-});
-
-const visibleCheckbox = new OBC.CheckboxInput(components);
-optionsDrawer.addChild(visibleCheckbox);
-visibleCheckbox.label = "Debug frame visible";
-visibleCheckbox.onChange.add((value: boolean) => {
-  debugFrame.style.visibility = value ? "visible" : "collapse";
-});
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());

@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import { Component, Disposable, Event } from "../../../base-types";
 import { Components } from "../../Components";
 import { readPixelsAsync } from "./screen-culler-helper";
+import { Event, World } from "../../Types";
 
 export interface CullerRendererSettings {
   updateInterval?: number;
@@ -13,7 +13,7 @@ export interface CullerRendererSettings {
 /**
  * A base renderer to determine visibility on screen
  */
-export class CullerRenderer extends Component<THREE.WebGLRenderer> {
+export class CullerRenderer {
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
 
@@ -39,34 +39,52 @@ export class CullerRenderer extends Component<THREE.WebGLRenderer> {
    */
   renderDebugFrame = false;
 
-  private _width = 512;
-  private _height = 512;
+  components: Components;
+
+  readonly world: World;
+
+  readonly renderer: THREE.WebGLRenderer;
 
   protected autoUpdate = true;
+
   protected updateInterval = 1000;
 
   protected readonly worker: Worker;
 
-  protected readonly renderer: THREE.WebGLRenderer;
-  private readonly renderTarget: THREE.WebGLRenderTarget;
   protected readonly scene = new THREE.Scene();
 
-  private readonly bufferSize: number;
+  private _width = 512;
+
+  private _height = 512;
 
   private _availableColor = 1;
 
+  private readonly renderTarget: THREE.WebGLRenderTarget;
+
+  private readonly bufferSize: number;
+
   private readonly _buffer: Uint8Array;
 
-  constructor(components: Components, settings?: CullerRendererSettings) {
-    super(components);
+  constructor(
+    components: Components,
+    world: World,
+    settings?: CullerRendererSettings,
+  ) {
+    if (!world.renderer) {
+      throw new Error("The given world must have a renderer!");
+    }
+
+    this.components = components;
     this.applySettings(settings);
 
+    this.world = world;
     this.renderer = new THREE.WebGLRenderer();
-    const planes = this.components.renderer.clippingPlanes;
-    this.renderer.clippingPlanes = planes;
+
     this.renderTarget = new THREE.WebGLRenderTarget(this._width, this._height);
     this.bufferSize = this._width * this._height * 4;
     this._buffer = new Uint8Array(this.bufferSize);
+
+    this.renderer.clippingPlanes = world.renderer.clippingPlanes;
 
     const code = `
       addEventListener("message", (event) => {
@@ -91,15 +109,8 @@ export class CullerRenderer extends Component<THREE.WebGLRenderer> {
     this.worker = new Worker(URL.createObjectURL(blob));
   }
 
-  /**
-   * {@link Component.get}.
-   */
-  get() {
-    return this.renderer;
-  }
-
   /** {@link Disposable.dispose} */
-  async dispose() {
+  dispose() {
     this.enabled = false;
     for (const child of this.scene.children) {
       child.removeFromParent();
@@ -122,7 +133,7 @@ export class CullerRenderer extends Component<THREE.WebGLRenderer> {
     if (!this.enabled) return;
     if (!this.needsUpdate && !force) return;
 
-    const camera = this.components.camera.get();
+    const camera = this.world.camera.three;
     camera.updateMatrix();
 
     this.renderer.setSize(this._width, this._height);
@@ -138,7 +149,7 @@ export class CullerRenderer extends Component<THREE.WebGLRenderer> {
       this._height,
       context.RGBA,
       context.UNSIGNED_BYTE,
-      this._buffer
+      this._buffer,
     );
 
     this.renderer.setRenderTarget(null);
