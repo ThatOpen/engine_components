@@ -22,3 +22,5 @@ components.init();
 
 const cube = new THREE.Mesh(new THREE.BoxGeometry());
 world.scene.three.add(cube);
+
+world.camera.controls.setLookAt(13, 13, 13, 0, 0, 0);

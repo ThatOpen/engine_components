@@ -1,7 +1,6 @@
 import * as THREE from "three";
-import { Component, Disposable, Event } from "../../base-types";
+import { Component, Disposable, Event, World } from "../Types";
 import { Components } from "../Components";
-import { ToolComponent } from "../ToolsComponent";
 
 // TODO: Clean up and document
 // TODO: Disable / enable instance color for instance meshes
@@ -10,16 +9,23 @@ import { ToolComponent } from "../ToolsComponent";
  * A tool to easily handle the materials of massive amounts of
  * objects and scene background easily.
  */
-export class MaterialManager extends Component<string[]> implements Disposable {
+export class Materials extends Component implements Disposable {
   static readonly uuid = "24989d27-fa2f-4797-8b08-35918f74e502" as const;
 
   /** {@link Component.enabled} */
   enabled = true;
 
-  private _originalBackground: THREE.Color | null = null;
+  private _originalBackground = new Map<string, THREE.Color>();
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
+
+  list: {
+    [id: string]: {
+      material: THREE.Material;
+      meshes: Set<THREE.Mesh | THREE.InstancedMesh>;
+    };
+  } = {};
 
   private _originals: {
     [guid: string]: {
@@ -28,24 +34,9 @@ export class MaterialManager extends Component<string[]> implements Disposable {
     };
   } = {};
 
-  private _list: {
-    [id: string]: {
-      material: THREE.Material;
-      meshes: Set<THREE.Mesh | THREE.InstancedMesh>;
-    };
-  } = {};
-
   constructor(components: Components) {
     super(components);
-    this.components.tools.add(MaterialManager.uuid, this);
-  }
-
-  /**
-   * {@link Component.get}.
-   * @return list of created materials.
-   */
-  get() {
-    return Object.keys(this._list);
+    this.components.add(Materials.uuid, this);
   }
 
   /**
@@ -54,9 +45,9 @@ export class MaterialManager extends Component<string[]> implements Disposable {
    * @param active whether to turn it on or off.
    * @param ids the ids of the style to turn on or off.
    */
-  set(active: boolean, ids = Object.keys(this._list)) {
+  set(active: boolean, ids = Object.keys(this.list)) {
     for (const id of ids) {
-      const { material, meshes } = this._list[id];
+      const { material, meshes } = this.list[id];
       for (const mesh of meshes) {
         if (active) {
           if (!this._originals[mesh.uuid]) {
@@ -80,15 +71,16 @@ export class MaterialManager extends Component<string[]> implements Disposable {
   }
 
   /** {@link Disposable.dispose} */
-  async dispose() {
-    for (const id in this._list) {
-      const { material } = this._list[id];
+  dispose() {
+    for (const id in this.list) {
+      const { material } = this.list[id];
       material.dispose();
     }
-    this._list = {};
+    this.list = {};
     this._originals = {};
-    await this.onDisposed.trigger(MaterialManager.uuid);
+    this.onDisposed.trigger(Materials.uuid);
     this.onDisposed.reset();
+    this._originalBackground.clear();
   }
 
   /**
@@ -96,10 +88,13 @@ export class MaterialManager extends Component<string[]> implements Disposable {
    *
    * @param color: the color to apply.
    */
-  setBackgroundColor(color: THREE.Color) {
-    const scene = this.components.scene.get();
-    if (!this._originalBackground) {
-      this._originalBackground = scene.background as THREE.Color;
+  setBackgroundColor(color: THREE.Color, world: World) {
+    const scene = world.scene.three;
+    if (!(scene instanceof THREE.Scene)) {
+      return;
+    }
+    if (!this._originalBackground.has(world.uuid)) {
+      this._originalBackground.set(world.uuid, scene.background as THREE.Color);
     }
     if (this._originalBackground) {
       scene.background = color;
@@ -110,10 +105,14 @@ export class MaterialManager extends Component<string[]> implements Disposable {
    * Resets the scene background to the color that was being used
    * before applying the material manager.
    */
-  resetBackgroundColor() {
-    const scene = this.components.scene.get();
-    if (this._originalBackground) {
-      scene.background = this._originalBackground;
+  resetBackgroundColor(world: World) {
+    const scene = world.scene.three;
+    if (!(scene instanceof THREE.Scene)) {
+      return;
+    }
+    const color = this._originalBackground.get(world.uuid);
+    if (color) {
+      scene.background = color;
     }
   }
 
@@ -123,10 +122,10 @@ export class MaterialManager extends Component<string[]> implements Disposable {
    * @param material the material of the style.
    */
   addMaterial(id: string, material: THREE.Material) {
-    if (this._list[id]) {
+    if (this.list[id]) {
       throw new Error("This ID already exists!");
     }
-    this._list[id] = { material, meshes: new Set() };
+    this.list[id] = { material, meshes: new Set() };
   }
 
   /**
@@ -135,11 +134,11 @@ export class MaterialManager extends Component<string[]> implements Disposable {
    * @param meshes the meshes to assign to the style.
    */
   addMeshes(id: string, meshes: THREE.Mesh[]) {
-    if (!this._list[id]) {
+    if (!this.list[id]) {
       throw new Error("This ID doesn't exists!");
     }
     for (const mesh of meshes) {
-      this._list[id].meshes.add(mesh);
+      this.list[id].meshes.add(mesh);
     }
   }
 
@@ -149,13 +148,11 @@ export class MaterialManager extends Component<string[]> implements Disposable {
    * @param meshes the meshes to assign to the style.
    */
   removeMeshes(id: string, meshes: THREE.Mesh[]) {
-    if (!this._list[id]) {
+    if (!this.list[id]) {
       throw new Error("This ID doesn't exists!");
     }
     for (const mesh of meshes) {
-      this._list[id].meshes.delete(mesh);
+      this.list[id].meshes.delete(mesh);
     }
   }
 }
-
-ToolComponent.libraryUUIDs.add(MaterialManager.uuid);

@@ -1,38 +1,31 @@
 import * as THREE from "three";
+import * as dat from "three/examples/jsm/libs/lil-gui.module.min.js";
+// eslint-disable-next-line import/no-extraneous-dependencies
 import Stats from "stats.js";
-// @ts-ignore
-import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
 import * as OBC from "../..";
 
 const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
 
-const sceneComponent = new OBC.SimpleScene(components);
-sceneComponent.setup();
-components.scene = sceneComponent;
+const worlds = components.get(OBC.Worlds);
+const world = new OBC.SimpleWorld<
+  OBC.SimpleScene,
+  OBC.SimpleCamera,
+  OBC.SimpleRenderer
+>(components);
 
-const rendererComponent = new OBC.PostproductionRenderer(components, container);
-components.renderer = rendererComponent;
+world.scene = new OBC.SimpleScene(components);
+world.renderer = new OBC.SimpleRenderer(components, container);
+world.camera = new OBC.SimpleCamera(components);
 
-const cameraComponent = new OBC.SimpleCamera(components);
-components.camera = cameraComponent;
-components.raycaster = new OBC.SimpleRaycaster(components);
+worlds.add(world);
 
 components.init();
 
-const scene = components.scene.get();
+world.camera.controls.setLookAt(13, 13, 13, 0, 0, 0);
 
-cameraComponent.controls.setLookAt(13, 13, 13, 0, 0, 0);
-
-const directionalLight = new THREE.DirectionalLight();
-directionalLight.position.set(5, 10, 3);
-directionalLight.intensity = 0.5;
-scene.add(directionalLight);
-
-const ambientLight = new THREE.AmbientLight();
-ambientLight.intensity = 0.5;
-scene.add(ambientLight);
+world.scene.setup();
 
 /* MD
   ### 👨‍🎨 Seamless Material Control
@@ -108,7 +101,7 @@ function generateCubes() {
     cube.position.y = getRandomNumber(10);
     cube.position.z = getRandomNumber(10);
     cube.updateMatrix();
-    scene.add(cube);
+    world.scene.three.add(cube);
     cubes.push(cube);
   }
 }
@@ -120,7 +113,7 @@ function generateSpheres() {
     sphere.position.y = getRandomNumber(10);
     sphere.position.z = getRandomNumber(10);
     sphere.updateMatrix();
-    scene.add(sphere);
+    world.scene.three.add(sphere);
     spheres.push(sphere);
   }
 }
@@ -137,7 +130,7 @@ generateSpheres();
   for manipulating the materials and background. Let's create different materials for Cubes and Spheres.🎭
 
   */
-const materialManager = new OBC.MaterialManager(components);
+const materials = components.get(OBC.Materials);
 
 const backgroundColor = new THREE.Color("white");
 
@@ -165,11 +158,11 @@ const sphereMaterial = new THREE.MeshBasicMaterial({ color: sphereColor });
   Next, we'll add the necessary meshes to help **materialManager** to choose which mesh to use when applying materials.🧮
 
 */
-materialManager.addMaterial("cubeMaterial", cubeMaterial);
-materialManager.addMeshes("cubeMaterial", cubes);
+materials.addMaterial("cubeMaterial", cubeMaterial);
+materials.addMeshes("cubeMaterial", cubes);
 
-materialManager.addMaterial("sphereMaterial", sphereMaterial);
-materialManager.addMeshes("sphereMaterial", spheres);
+materials.addMaterial("sphereMaterial", sphereMaterial);
+materials.addMeshes("sphereMaterial", spheres);
 
 /* MD
   ### 🚦 Controlling the Manager Events
@@ -186,17 +179,17 @@ const gui = new dat.GUI();
 
 const actions = {
   changeSphereMaterial: () => {
-    materialManager.set(true, ["sphereMaterial"]);
+    materials.set(true, ["sphereMaterial"]);
   },
   changeCubeMaterial: () => {
-    materialManager.set(true, ["cubeMaterial"]);
+    materials.set(true, ["cubeMaterial"]);
   },
   changeBackground: () => {
-    materialManager.setBackgroundColor(backgroundColor);
+    materials.setBackgroundColor(backgroundColor, world);
   },
   reset: () => {
-    materialManager.set(false, ["cubeMaterial", "sphereMaterial"]);
-    materialManager.resetBackgroundColor();
+    materials.set(false, ["cubeMaterial", "sphereMaterial"]);
+    materials.resetBackgroundColor(world);
   },
 };
 
@@ -218,5 +211,5 @@ const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
-rendererComponent.onBeforeUpdate.add(() => stats.begin());
-rendererComponent.onAfterUpdate.add(() => stats.end());
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
