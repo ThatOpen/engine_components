@@ -1249,7 +1249,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/components-front"
   dependencies:
-    "@thatopen/components": "workspace:^"
+    "@thatopen/components": 1.5.0
     "@types/three": ^0.160.0
     three: ^0.160.1
   peerDependencies:
@@ -1257,7 +1257,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@workspace:^, @thatopen/components@workspace:packages/components":
+"@thatopen/components@1.5.0, @thatopen/components@workspace:packages/components":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/components"
   dependencies:
@@ -5910,6 +5910,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
+    stats.js: ^0.17.0
     vite: 5.1.6
     vite-plugin-dts: 3.7.3
   languageName: unknown
@@ -6164,6 +6165,13 @@ __metadata:
   dependencies:
     escape-string-regexp: ^2.0.0
   checksum: 052bf4d25bbf5f78e06c1d5e67de2e088b06871fa04107ca8d3f0e9d9263326e2942c8bedee3545795fc77d787d443a538345eef74db2f8e35db3558c6f91ff7
+  languageName: node
+  linkType: hard
+
+"stats.js@npm:^0.17.0":
+  version: 0.17.0
+  resolution: "stats.js@npm:0.17.0"
+  checksum: 62d55d9e28e701f5638eac312ab45f66da8cc14b43d4eba4d3ab5a26f444a91d3e0dd1f52e8fc182b03cae955dae4af471d54f1975525cc1e47dfa89a54a47c6
   languageName: node
   linkType: hard
 

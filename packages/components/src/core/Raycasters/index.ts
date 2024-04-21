@@ -16,9 +16,9 @@ export class Raycasters extends Component implements Disposable {
     components.add(Raycasters.uuid, this);
   }
 
-  create(world: World) {
+  get(world: World) {
     if (this.list.has(world.uuid)) {
-      throw new Error("This world already has a Raycaster!");
+      return this.list.get(world.uuid) as SimpleRaycaster;
     }
     const raycaster = new SimpleRaycaster(this.components, world);
     this.list.set(world.uuid, raycaster);

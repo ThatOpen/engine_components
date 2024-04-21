@@ -1,8 +1,6 @@
-// Set up scene (see SimpleScene tutorial)
-
 import * as THREE from "three";
-// @ts-ignore
-import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
+import * as dat from "three/examples/jsm/libs/lil-gui.module.min.js";
+// eslint-disable-next-line import/no-extraneous-dependencies
 import Stats from "stats.js";
 import * as OBC from "../..";
 
@@ -10,26 +8,27 @@ const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
 
-const sceneComponent = new OBC.SimpleScene(components);
-sceneComponent.setup();
-components.scene = sceneComponent;
+const worlds = components.get(OBC.Worlds);
+const world = new OBC.SimpleWorld<
+  OBC.SimpleScene,
+  OBC.SimpleCamera,
+  OBC.SimpleRenderer
+>(components);
 
-const rendererComponent = new OBC.PostproductionRenderer(components, container);
-components.renderer = rendererComponent;
+world.scene = new OBC.SimpleScene(components);
+world.renderer = new OBC.SimpleRenderer(components, container);
+world.camera = new OBC.SimpleCamera(components);
 
-const cameraComponent = new OBC.SimpleCamera(components);
-components.camera = cameraComponent;
-
-components.raycaster = new OBC.SimpleRaycaster(components);
+worlds.add(world);
 
 components.init();
 
-const scene = components.scene.get();
+world.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
-cameraComponent.controls.setLookAt(10, 10, 10, 0, 0, 0);
+world.scene.setup();
 
 // @ts-ignore
-const grid = new OBC.SimpleGrid(components);
+// const grid = new OBC.SimpleGrid(components);
 
 /* MD
   ### ✂️ Clipping Tool
@@ -63,7 +62,7 @@ cube.position.set(0, 1.5, 0);
   which is simply an array of all the meshes in the Scene 🗄️.
     */
 
-scene.add(cube);
+world.scene.three.add(cube);
 components.meshes.add(cube);
 
 /* MD
@@ -73,7 +72,8 @@ components.meshes.add(cube);
   A **[Simple Clipper](../api/classes/components.SimpleClipper)** requires two things: `components` and `Simple Plane`
   */
 
-const clipper = new OBC.SimpleClipper(components);
+const clipper = new OBC.Clipper(components);
+clipper.world = world;
 
 /* MD
 
@@ -95,23 +95,6 @@ const clipper = new OBC.SimpleClipper(components);
 clipper.enabled = true;
 
 /* MD
-
-  ### ⏏️ Creating a Toolbar for the Clipper
-  ---
-  We'll make a **Toolbar Component** and set it at the bottom.
-  In addition, we will add a clipper button to this toolbar that will be used to toggle the clipping state.
-  */
-
-const mainButton = clipper.uiElement.get<OBC.Button>("main");
-const mainToolbar = new OBC.Toolbar(components, {
-  name: "Main Toolbar",
-  position: "bottom",
-});
-mainToolbar.addChild(mainButton);
-components.ui.addToolbar(mainToolbar);
-
-/* MD
-  🎛️ Check **[Toolbar and UIManager](./UIManager.mdx)** tutorial if you have any doubts!
 
   ### 🤝 Performing Clipping Events
   ---
@@ -162,25 +145,14 @@ window.onkeydown = (event) => {
   Let's keep it up and check out another tutorial! 🎓
   */
 
-// TODO: Add this to tutorial
-const createButton = new OBC.Button(components);
-createButton.label = "Add plane";
-createButton.onClick.add(() => clipper.create());
-
-const deleteButton = new OBC.Button(components);
-deleteButton.label = "Delete plane";
-deleteButton.onClick.add(() => clipper.delete());
-
-components.ui.contextMenu.addChild(createButton, deleteButton);
-
 // Set up stats
 
 const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
-rendererComponent.onBeforeUpdate.add(() => stats.begin());
-rendererComponent.onAfterUpdate.add(() => stats.end());
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
 
 // Set up dat.gui menu
 

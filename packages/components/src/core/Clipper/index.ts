@@ -5,17 +5,13 @@ import {
   Disposable,
   Event,
   Hideable,
-  UI,
-  UIElement,
-} from "../../base-types";
-import { SimplePlane } from "./simple-plane";
+  World,
+} from "../Types";
+import { SimplePlane } from "./src";
 import { Components } from "../Components";
-import { Button } from "../../ui";
-import { ToolComponent } from "../ToolsComponent";
+import { Raycasters } from "../Raycasters";
 
-export * from "./simple-plane";
-
-// TODO: Clean up UI element
+export * from "./src";
 
 /**
  * A lightweight component to easily create and handle
@@ -25,9 +21,9 @@ export * from "./simple-plane";
  * @param planeType - the type of plane to be used by the clipper.
  * E.g. {@link SimplePlane}.
  */
-export class SimpleClipper<T extends SimplePlane>
-  extends Component<T[]>
-  implements Createable, Disposable, Hideable, UI
+export class Clipper<T extends SimplePlane>
+  extends Component
+  implements Createable, Disposable, Hideable
 {
   static readonly uuid = "66290bc5-18c4-4cd1-9379-2e17a0617611" as const;
 
@@ -43,34 +39,52 @@ export class SimpleClipper<T extends SimplePlane>
   /** Event that fires when the user stops dragging a clipping plane. */
   readonly onAfterDrag = new Event<void>();
 
-  onBeforeCreate = new Event();
-  onBeforeCancel = new Event();
-  onAfterCancel = new Event();
-  onBeforeDelete = new Event();
+  readonly onBeforeCreate = new Event();
 
-  /** {@link UI.uiElement} */
-  uiElement = new UIElement<{ main: Button }>();
+  readonly onBeforeCancel = new Event();
+
+  readonly onAfterCancel = new Event();
+
+  readonly onBeforeDelete = new Event();
+
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event<string>();
+
+  protected _world: World | null = null;
+
+  get world() {
+    return this._world;
+  }
+
+  set world(world: World | null) {
+    this._world = world;
+    const casters = this.components.get(Raycasters);
+    if (world === null) return;
+    // Create raycaster if it doesn't exist, so that when the user
+    // creates the first plane, the mouse position is tracked
+    if (!casters.list.has(world.uuid)) {
+      casters.get(world);
+    }
+  }
 
   /**
    * Whether to force the clipping plane to be orthogonal in the Y direction
    * (up). This is desirable when clipping a building horizontally and a
-   * clipping plane is created in it's roof, which might have a slight
+   * clipping plane is created in its roof, which might have a slight
    * slope for draining purposes.
    */
   orthogonalY = false;
 
   /**
-   * The tolerance that determines whether a horizontallish clipping plane
+   * The tolerance that determines whether an almost-horizontal clipping plane
    * will be forced to be orthogonal to the Y direction. {@link orthogonalY}
    * has to be `true` for this to apply.
    */
   toleranceOrthogonalY = 0.7;
 
-  protected _planes: T[] = [];
-  protected PlaneType: new (...args: any) => SimplePlane | T;
+  planes: T[] = [];
 
-  /** {@link Disposable.onDisposed} */
-  readonly onDisposed = new Event<string>();
+  protected PlaneType: new (...args: any) => SimplePlane | T;
 
   /** The material used in all the clipping planes. */
   protected _material: THREE.Material = new THREE.MeshBasicMaterial({
@@ -92,13 +106,10 @@ export class SimpleClipper<T extends SimplePlane>
   /** {@link Component.enabled} */
   set enabled(state: boolean) {
     this._enabled = state;
-    for (const plane of this._planes) {
+    for (const plane of this.planes) {
       plane.enabled = state;
     }
     this.updateMaterialsAndPlanes();
-    if (this.components.uiEnabled) {
-      this.uiElement.get("main").active = state;
-    }
   }
 
   /** {@link Hideable.visible } */
@@ -109,7 +120,7 @@ export class SimpleClipper<T extends SimplePlane>
   /** {@link Hideable.visible } */
   set visible(state: boolean) {
     this._visible = state;
-    for (const plane of this._planes) {
+    for (const plane of this.planes) {
       plane.visible = state;
     }
   }
@@ -122,7 +133,7 @@ export class SimpleClipper<T extends SimplePlane>
   /** The material of the clipping plane representation. */
   set material(material: THREE.Material) {
     this._material = material;
-    for (const plane of this._planes) {
+    for (const plane of this.planes) {
       plane.planeMaterial = material;
     }
   }
@@ -135,38 +146,27 @@ export class SimpleClipper<T extends SimplePlane>
   /** The size of the geometric representation of the clippings planes. */
   set size(size: number) {
     this._size = size;
-    for (const plane of this._planes) {
+    for (const plane of this.planes) {
       plane.size = size;
     }
   }
 
   constructor(components: Components) {
     super(components);
-
-    this.components.tools.add(SimpleClipper.uuid, this);
-
+    this.components.add(Clipper.uuid, this);
     this.PlaneType = SimplePlane;
-    if (components.uiEnabled) {
-      this.setUI(components);
-    }
   }
 
   endCreation() {}
   cancelCreation() {}
 
-  /** {@link Component.get} */
-  get(): T[] {
-    return this._planes;
-  }
-
   /** {@link Disposable.dispose} */
-  async dispose() {
+  dispose() {
     this._enabled = false;
-    for (const plane of this._planes) {
-      await plane.dispose();
+    for (const plane of this.planes) {
+      plane.dispose();
     }
-    this._planes.length = 0;
-    this.uiElement.dispose();
+    this.planes.length = 0;
     this._material.dispose();
     this.onBeforeCreate.reset();
     this.onBeforeCancel.reset();
@@ -176,16 +176,24 @@ export class SimpleClipper<T extends SimplePlane>
     this.onAfterCancel.reset();
     this.onAfterDelete.reset();
     this.onAfterDrag.reset();
-    await this.onDisposed.trigger(SimpleClipper.uuid);
+    this.onDisposed.trigger(Clipper.uuid);
     this.onDisposed.reset();
   }
 
   /** {@link Createable.create} */
   create() {
     if (!this.enabled) return;
-    const intersects = this.components.raycaster.castRay();
-    if (!intersects) return;
-    this.createPlaneFromIntersection(intersects);
+    if (!this._world) {
+      throw new Error("You must set a world before creating a plane!");
+    }
+
+    const casters = this.components.get(Raycasters);
+    const caster = casters.get(this._world);
+
+    const intersects = caster.castRay();
+    if (intersects) {
+      this.createPlaneFromIntersection(intersects);
+    }
   }
 
   /**
@@ -194,12 +202,11 @@ export class SimpleClipper<T extends SimplePlane>
    *
    * @param normal - the orientation of the clipping plane.
    * @param point - the position of the clipping plane.
-   * @param isPlan - whether this is a clipping plane used for floor plan
    * navigation.
    */
   createFromNormalAndCoplanarPoint(
     normal: THREE.Vector3,
-    point: THREE.Vector3
+    point: THREE.Vector3,
   ) {
     const plane = this.newPlane(point, normal);
     this.updateMaterialsAndPlanes();
@@ -209,7 +216,7 @@ export class SimpleClipper<T extends SimplePlane>
   /**
    * {@link Createable.delete}
    *
-   * @param plane - the plane to delete. If undefined, the the first plane
+   * @param plane - the plane to delete. If undefined, the first plane
    * found under the cursor will be deleted.
    */
   delete(plane?: T) {
@@ -225,59 +232,67 @@ export class SimpleClipper<T extends SimplePlane>
 
   /** Deletes all the existing clipping planes. */
   deleteAll() {
-    while (this._planes.length > 0) {
-      this.delete(this._planes[0]);
+    while (this.planes.length > 0) {
+      this.delete(this.planes[0]);
     }
   }
 
   private deletePlane(plane: T) {
-    const index = this._planes.indexOf(plane);
+    if (!this._world) {
+      throw new Error("You must select a world to delete a plane!");
+    }
+    if (!this._world.renderer) {
+      console.warn("The selected world doesn't have a renderer.");
+      return;
+    }
+    const index = this.planes.indexOf(plane);
     if (index !== -1) {
-      this._planes.splice(index, 1);
-      this.components.renderer.togglePlane(false, plane.get());
+      this.planes.splice(index, 1);
+      this._world.renderer.setPlane(false, plane.three);
       plane.dispose();
       this.updateMaterialsAndPlanes();
       this.onAfterDelete.trigger(plane);
     }
   }
 
-  private setUI(components: Components) {
-    const main = new Button(components);
-    main.materialIcon = "content_cut";
-    main.onClick.add(() => {
-      main.active = !main.active;
-      this.enabled = main.active;
-      this.visible = main.active;
-    });
-    this.uiElement.set({ main });
-  }
-
   private pickPlane(): T | undefined {
+    if (!this._world) {
+      throw new Error("World not found!");
+    }
+    const casters = this.components.get(Raycasters);
+    const caster = casters.get(this._world);
     const meshes = this.getAllPlaneMeshes();
-    const intersects = this.components.raycaster.castRay(meshes);
+    const intersects = caster.castRay(meshes);
     if (intersects) {
       const found = intersects.object as THREE.Mesh;
-      return this._planes.find((p) => p.meshes.includes(found));
+      return this.planes.find((p) => p.meshes.includes(found));
     }
     return undefined;
   }
 
   private getAllPlaneMeshes() {
     const meshes: THREE.Mesh[] = [];
-    for (const plane of this._planes) {
+    for (const plane of this.planes) {
       meshes.push(...plane.meshes);
     }
     return meshes;
   }
 
   private createPlaneFromIntersection(intersect: THREE.Intersection) {
+    if (!this._world) {
+      throw new Error("World not found!");
+    }
+    if (!this._world.renderer) {
+      console.warn("The selected world doesn't have a renderer.");
+      return;
+    }
     const constant = intersect.point.distanceTo(new THREE.Vector3(0, 0, 0));
     const normal = intersect.face?.normal;
     if (!constant || !normal) return;
 
     const worldNormal = this.getWorldNormal(intersect, normal);
     const plane = this.newPlane(intersect.point, worldNormal.negate());
-    this.components.renderer.togglePlane(true, plane.get());
+    this._world.renderer.setPlane(true, plane.three);
     this.updateMaterialsAndPlanes();
   }
 
@@ -315,7 +330,7 @@ export class SimpleClipper<T extends SimplePlane>
     const plane = this.newPlaneInstance(point, normal);
     plane.onDraggingStarted.add(this._onStartDragging);
     plane.onDraggingEnded.add(this._onEndDragging);
-    this._planes.push(plane);
+    this.planes.push(plane);
     this.onAfterCreate.trigger(plane);
     return plane;
   }
@@ -323,22 +338,30 @@ export class SimpleClipper<T extends SimplePlane>
   protected newPlaneInstance(point: THREE.Vector3, normal: THREE.Vector3) {
     return new this.PlaneType(
       this.components,
+      this._world,
       point,
       normal,
-      this._material
+      this._material,
     ) as T;
   }
 
   private updateMaterialsAndPlanes() {
-    this.components.renderer.updateClippingPlanes();
-    const planes = this.components.renderer.clippingPlanes;
+    if (!this._world) {
+      throw new Error("World not found!");
+    }
+    if (!this._world.renderer) {
+      console.warn("The selected world doesn't have a renderer.");
+      return;
+    }
+    this._world.renderer.updateClippingPlanes();
+    const { clippingPlanes } = this._world.renderer;
     for (const model of this.components.meshes) {
       if (Array.isArray(model.material)) {
         for (const mat of model.material) {
-          mat.clippingPlanes = planes;
+          mat.clippingPlanes = clippingPlanes;
         }
       } else {
-        model.material.clippingPlanes = planes;
+        model.material.clippingPlanes = clippingPlanes;
       }
     }
   }
@@ -351,5 +374,3 @@ export class SimpleClipper<T extends SimplePlane>
     this.onAfterDrag.trigger();
   };
 }
-
-ToolComponent.libraryUUIDs.add(SimpleClipper.uuid);

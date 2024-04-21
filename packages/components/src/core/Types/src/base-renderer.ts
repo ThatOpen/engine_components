@@ -21,6 +21,12 @@ export abstract class BaseRenderer
 
   readonly onResize = new Event<THREE.Vector2>();
 
+  /**
+   * Event that fires when there has been a change to the list of clipping
+   * planes used by the active renderer.
+   */
+  readonly onClippingPlanesUpdated = new Event();
+
   abstract update(delta?: number): void | Promise<void>;
 
   abstract dispose(): void;
@@ -28,4 +34,38 @@ export abstract class BaseRenderer
   abstract getSize(): Vector2;
 
   abstract resize(size: Vector2 | undefined): void;
+
+  /**
+   * The list of [clipping planes](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.clippingPlanes) used by this
+   * instance of the renderer.
+   */
+  clippingPlanes: THREE.Plane[] = [];
+
+  /**
+   * Forces the update of the clipping planes and all components that depend
+   * on them that are subscribed to `onClippingPlanesUpdated`.
+   */
+  updateClippingPlanes() {
+    this.onClippingPlanesUpdated.trigger();
+  }
+
+  /**
+   * Adds or removes a
+   * [clipping plane](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.clippingPlanes)
+   * to the renderer.
+   */
+  setPlane(active: boolean, plane: THREE.Plane, isLocal?: boolean) {
+    (plane as any).isLocal = isLocal;
+
+    const index = this.clippingPlanes.indexOf(plane);
+    if (active && index === -1) {
+      this.clippingPlanes.push(plane);
+    } else if (!active && index > -1) {
+      this.clippingPlanes.splice(index, 1);
+    }
+
+    this.three.clippingPlanes = this.clippingPlanes.filter(
+      (plane: any) => !plane.isLocal,
+    );
+  }
 }

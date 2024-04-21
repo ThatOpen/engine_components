@@ -1,57 +1,60 @@
 import * as THREE from "three";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
-import { Component, Disposable, Event, Hideable } from "../../base-types";
-import { Components } from "../Components";
+import { Hideable, Disposable, Event, World } from "../../Types";
+import { Components } from "../../Components";
 
 /**
  * Each of the planes created by {@link SimpleClipper}.
  */
-export class SimplePlane
-  extends Component<THREE.Plane>
-  implements Disposable, Hideable
-{
-  /** {@link Component.name} */
-  name = "SimplePlane";
-
+export class SimplePlane implements Disposable, Hideable {
   /** Event that fires when the user starts dragging a clipping plane. */
-  readonly onDraggingStarted = new Event<void>();
+  readonly onDraggingStarted = new Event();
 
   /** Event that fires when the user stops dragging a clipping plane. */
-  readonly onDraggingEnded = new Event<void>();
+  readonly onDraggingEnded = new Event();
 
   /** {@link Disposable.onDisposed} */
-  readonly onDisposed = new Event<undefined>();
+  readonly onDisposed = new Event();
 
   readonly normal: THREE.Vector3;
 
   readonly origin: THREE.Vector3;
 
+  readonly three = new THREE.Plane();
+
   protected readonly _helper: THREE.Object3D;
 
-  protected readonly _plane = new THREE.Plane();
-  // TODO: Make all planes share the same geometry
-  // TODO: Clean up unnecessary attributes, clean up constructor
   protected _visible = true;
 
   protected _enabled = true;
 
+  components: Components;
+
+  world: World;
+
   private _controlsActive = false;
+
   private readonly _arrowBoundBox = new THREE.Mesh();
+
   private readonly _planeMesh: THREE.Mesh;
+
   private readonly _controls: TransformControls;
+
   private readonly _hiddenMaterial = new THREE.MeshBasicMaterial({
     visible: false,
   });
 
-  /** {@link Component.enabled} */
   get enabled() {
     return this._enabled;
   }
 
   /** {@link Component.enabled} */
   set enabled(state: boolean) {
+    if (!this.world.renderer) {
+      throw new Error("No renderer found for clipping plane!");
+    }
     this._enabled = state;
-    this.components.renderer.togglePlane(state, this._plane);
+    this.world.renderer.setPlane(state, this.three);
   }
 
   /** {@link Hideable.visible } */
@@ -98,22 +101,30 @@ export class SimplePlane
 
   constructor(
     components: Components,
+    world: World,
     origin: THREE.Vector3,
     normal: THREE.Vector3,
     material: THREE.Material,
     size = 5,
-    activateControls = true
+    activateControls = true,
   ) {
-    super(components);
+    this.components = components;
+    this.world = world;
+
+    if (!world.renderer) {
+      throw new Error("The given world must have a renderer!");
+    }
+
     this.normal = normal;
     this.origin = origin;
 
-    this.components.renderer.togglePlane(true, this._plane);
+    world.renderer.setPlane(true, this.three);
+
     this._planeMesh = SimplePlane.newPlaneMesh(size, material);
     this._helper = this.newHelper();
     this._controls = this.newTransformControls();
 
-    this._plane.setFromNormalAndCoplanarPoint(normal, origin);
+    this.three.setFromNormalAndCoplanarPoint(normal, origin);
     if (activateControls) {
       this.toggleControls(true);
     }
@@ -121,7 +132,7 @@ export class SimplePlane
 
   async setFromNormalAndCoplanarPoint(
     normal: THREE.Vector3,
-    point: THREE.Vector3
+    point: THREE.Vector3,
   ) {
     this.reset();
     if (!this.normal.equals(normal)) {
@@ -137,30 +148,29 @@ export class SimplePlane
   /** {@link Updateable.update} */
   update = async () => {
     if (!this._enabled) return;
-    this._plane.setFromNormalAndCoplanarPoint(
+    this.three.setFromNormalAndCoplanarPoint(
       this.normal,
-      this._helper.position
+      this._helper.position,
     );
   };
 
-  /** {@link Component.get} */
-  get() {
-    return this._plane;
-  }
-
   /** {@link Disposable.dispose} */
-  async dispose() {
+  dispose() {
     this._enabled = false;
     this.onDraggingStarted.reset();
     this.onDraggingEnded.reset();
     this._helper.removeFromParent();
-    this.components.renderer.togglePlane(false, this._plane);
+
+    if (this.world.renderer) {
+      this.world.renderer.setPlane(false, this.three);
+    }
+
     this._arrowBoundBox.removeFromParent();
     this._arrowBoundBox.geometry.dispose();
     this._planeMesh.geometry.dispose();
     this._controls.removeFromParent();
     this._controls.dispose();
-    await this.onDisposed.trigger();
+    this.onDisposed.trigger();
     this.onDisposed.reset();
   }
 
@@ -189,11 +199,14 @@ export class SimplePlane
   }
 
   private newTransformControls() {
-    const camera = this.components.camera.get();
-    const container = this.components.renderer.get().domElement;
+    if (!this.world.renderer) {
+      throw new Error("No renderer found for clipping plane!");
+    }
+    const camera = this.world.camera.three;
+    const container = this.world.renderer.three.domElement;
     const controls = new TransformControls(camera, container);
     this.initializeControls(controls);
-    this.components.scene.get().add(controls);
+    this.world.scene.three.add(controls);
     return controls;
   }
 
@@ -229,7 +242,7 @@ export class SimplePlane
   }
 
   private preventCameraMovement() {
-    this.components.camera.enabled = this._visible;
+    this.world.camera.enabled = this._visible;
   }
 
   private newHelper() {
@@ -238,7 +251,7 @@ export class SimplePlane
     helper.position.copy(this.origin);
     this._planeMesh.position.z += 0.01;
     helper.add(this._planeMesh);
-    this.components.scene.get().add(helper);
+    this.world.scene.three.add(helper);
     return helper;
   }
 

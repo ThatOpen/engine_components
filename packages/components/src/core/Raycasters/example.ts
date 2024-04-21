@@ -109,7 +109,7 @@ world.renderer.onBeforeUpdate.add(rotateCubes);
   */
 
 const casters = components.get(OBC.Raycasters);
-const caster = casters.create(world);
+const caster = casters.get(world);
 
 let previousSelection: THREE.Mesh | null = null;
 
