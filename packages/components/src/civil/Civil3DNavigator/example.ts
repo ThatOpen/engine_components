@@ -45,6 +45,7 @@ const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = await fragments.load(buffer);
 const properties = await fetch("../../../../../resources/civil-example.json");
+
 model.setLocalProperties(await properties.json());
 
 const mainToolbar = new OBC.Toolbar(components, {
