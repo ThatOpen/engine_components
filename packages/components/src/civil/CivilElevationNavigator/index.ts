@@ -10,6 +10,7 @@ export class CivilElevationNavigator extends CivilNavigator implements UI {
   static readonly uuid = "097eea29-2d5a-431a-a247-204d44670621" as const;
   private currentMesh?: FRAGS.CurveMesh;
   private offset: number = 10;
+  private fontSize: number = 10;
 
   readonly view = "vertical";
 
@@ -50,11 +51,18 @@ export class CivilElevationNavigator extends CivilNavigator implements UI {
   }
 
   updateOffset(height: number, width: number, _zoom: number) {
-    const biggerSize = Math.max(height, width);
-    const newOffset = biggerSize / (_zoom * 150);
-    if (newOffset !== this.offset) {
+    const smallerSize = Math.min(height, width);
+    const newOffset = smallerSize / (_zoom * 15);
+    const fontSizeCalculation = smallerSize / (_zoom * 10);
+    const minFontSize = 18;
+    const maxFontSize = 25;
+    const fontSize = Math.max(
+      minFontSize,
+      Math.min(maxFontSize, fontSizeCalculation),
+    );
+    if (newOffset !== this.offset || fontSize !== this.fontSize) {
       this.offset = newOffset;
-      console.log("⭐ new offset⭐", this.offset);
+      this.fontSize = fontSize;
       if (this.currentMesh) {
         this.showElevationMarkers(this.currentMesh);
       }
@@ -76,45 +84,52 @@ export class CivilElevationNavigator extends CivilNavigator implements UI {
     const { defSegments, slope } = this.setDefSegments(positionsVertical);
 
     const scene = this.scene.get();
-    const offset = 20;
 
     for (let i = 0; i < alignment.vertical.length; i++) {
       const align = alignment.vertical[i];
+      const fontSize = this.fontSize;
+      const labelOffset = this.offset;
+
+      const slopeText = `S: ${slope[i].slope}%`;
+      const heightText = `H: ${defSegments[i].end.y.toFixed(2)}`;
 
       this.kpManager.addCivilVerticalMarker(
-        `S: ${slope[i].slope}%`,
+        slopeText,
         align.mesh,
         "Slope",
-        offset,
-        offset,
+        fontSize,
+        labelOffset,
         scene,
       );
 
       this.kpManager.addCivilVerticalMarker(
-        `H: ${defSegments[i].end.y.toFixed(2)}`,
+        heightText,
         align.mesh,
         "Height",
-        offset,
-        offset,
+        fontSize,
+        labelOffset,
         scene,
       );
     }
 
+    const firstMesh = alignment.vertical[0].mesh;
+    const lastMesh = alignment.vertical[alignment.vertical.length - 1].mesh;
+
     this.kpManager.addCivilVerticalMarker(
       "KP: 0",
-      alignment.vertical[0].mesh,
+      firstMesh,
       "InitialKPV",
-      offset,
-      offset,
+      this.fontSize,
+      this.offset,
       scene,
     );
 
     this.kpManager.addCivilVerticalMarker(
       `KP: ${alignment.vertical.length}`,
-      alignment.vertical[alignment.vertical.length - 1].mesh,
+      lastMesh,
       "FinalKPV",
-      offset,
-      offset,
+      this.fontSize,
+      this.offset,
       scene,
     );
   }
@@ -144,24 +159,15 @@ export class CivilElevationNavigator extends CivilNavigator implements UI {
 
     this.uiElement.set({ drawer });
 
-    drawer.onResized.add(() => {
-      const width = window.innerWidth;
-      const height = this.scene.size.y;
-      this.scene.setSize(height, width);
-    });
-
-    drawer.onResized.add(() => {
+    const updateOffsetAndSceneSize = () => {
       const { width, height } = drawer.containerSize;
       this.scene.setSize(height, width);
       const { zoom } = this.scene.camera;
       this.updateOffset(height, width, zoom);
-    });
+    };
 
-    this.scene.controls.addEventListener("update", () => {
-      const { width, height } = drawer.containerSize;
-      const { zoom } = this.scene.camera;
-      this.updateOffset(height, width, zoom);
-    });
+    drawer.onResized.add(updateOffsetAndSceneSize);
+    this.scene.controls.addEventListener("update", updateOffsetAndSceneSize);
 
     if (this.components.renderer.isUpdateable()) {
       this.components.renderer.onAfterUpdate.add(async () => {
