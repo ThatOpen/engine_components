@@ -9,7 +9,10 @@ export class PlanHighlighter extends CurveHighlighter {
   private markupLines: THREE.Line[] = [];
   private currentCurveMesh?: FRAGS.CurveMesh;
 
-  constructor(scene: THREE.Group | THREE.Scene, private kpManager: KPManager) {
+  constructor(
+    scene: THREE.Group | THREE.Scene,
+    private kpManager: KPManager,
+  ) {
     super(scene, "horizontal");
     this.markupMaterial = new THREE.LineBasicMaterial({
       color: 0x686868,
@@ -42,7 +45,7 @@ export class PlanHighlighter extends CurveHighlighter {
       width: number;
     },
     _zoom: number,
-    _triggerRedraw: boolean
+    _triggerRedraw: boolean,
   ) {
     const biggerSize = Math.max(screenSize.height, screenSize.width);
     const newOffset = biggerSize / (_zoom * 150);
@@ -79,14 +82,14 @@ export class PlanHighlighter extends CurveHighlighter {
 
   private calculateTangent(
     positions: THREE.TypedArray,
-    index: number
+    index: number,
   ): THREE.Vector3 {
     const numComponents = 3;
     const pointIndex = index * numComponents;
     const prevPointIndex = Math.max(0, pointIndex - numComponents);
     const nextPointIndex = Math.min(
       positions.length - numComponents,
-      pointIndex + numComponents
+      pointIndex + numComponents,
     );
     const prevPoint = new THREE.Vector3().fromArray(positions, prevPointIndex);
     const nextPoint = new THREE.Vector3().fromArray(positions, nextPointIndex);
@@ -97,7 +100,7 @@ export class PlanHighlighter extends CurveHighlighter {
   private calculateParallelCurve(
     positions: THREE.TypedArray,
     count: number,
-    offset: number
+    offset: number,
   ): THREE.Vector3[] {
     const parallelCurvePoints = [];
     for (let i = 0; i < count; i++) {
@@ -118,7 +121,7 @@ export class PlanHighlighter extends CurveHighlighter {
 
   private calculateDimensionLines(
     curve: FRAGS.CurveMesh,
-    line: THREE.Line
+    line: THREE.Line,
   ): {
     startDimensionPoints: THREE.Vector3[];
     endDimensionPoints: THREE.Vector3[];
@@ -132,25 +135,25 @@ export class PlanHighlighter extends CurveHighlighter {
     const startCurvePoint = new THREE.Vector3(
       curvePositions[0],
       curvePositions[1],
-      curvePositions[2]
+      curvePositions[2],
     );
     const startLinePoint = new THREE.Vector3(
       linePositions[0],
       linePositions[1],
-      linePositions[2]
+      linePositions[2],
     );
     const endDimensionPoints = [];
     const lastCurveIndex = curvePositions.length - 3;
     const endCurvePoint = new THREE.Vector3(
       curvePositions[lastCurveIndex],
       curvePositions[lastCurveIndex + 1],
-      curvePositions[lastCurveIndex + 2]
+      curvePositions[lastCurveIndex + 2],
     );
     const lastLineIndex = linePositions.length - 3;
     const endLinePoint = new THREE.Vector3(
       linePositions[lastLineIndex],
       linePositions[lastLineIndex + 1],
-      linePositions[lastLineIndex + 2]
+      linePositions[lastLineIndex + 2],
     );
     startDimensionPoints.push(startCurvePoint, startLinePoint);
     endDimensionPoints.push(endCurvePoint, endLinePoint);
@@ -174,18 +177,18 @@ export class PlanHighlighter extends CurveHighlighter {
     const parallelCurvePoints = this.calculateParallelCurve(
       positions,
       positions.length / 3,
-      offset
+      offset,
     );
     const lengthGeometry = new THREE.BufferGeometry().setFromPoints(
-      parallelCurvePoints
+      parallelCurvePoints,
     );
     const lineParallelLine = new THREE.Line(
       lengthGeometry,
-      this.markupMaterial
+      this.markupMaterial,
     );
     this.kpManager.showLineLength(
       lineParallelLine,
-      curveMesh.curve.getLength()
+      curveMesh.curve.getLength(),
     );
     this.scene.add(lineParallelLine);
     this.markupLines.push(lineParallelLine);
@@ -193,27 +196,27 @@ export class PlanHighlighter extends CurveHighlighter {
       this.calculateDimensionLines(curveMesh, lineParallelLine);
     const offsetStartDimensionPoints = this.offsetDimensionLine(
       startDimensionPoints,
-      offset * 0.1
+      offset * 0.1,
     );
     const offsetEndDimensionPoints = this.offsetDimensionLine(
       endDimensionPoints,
-      offset * 0.1
+      offset * 0.1,
     );
     const startDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
-      offsetStartDimensionPoints
+      offsetStartDimensionPoints,
     );
     const endDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
-      offsetEndDimensionPoints
+      offsetEndDimensionPoints,
     );
     const lineStartDimensionlLine = new THREE.Line(
       startDimensionGeometry,
-      this.markupMaterial
+      this.markupMaterial,
     );
     this.scene.add(lineStartDimensionlLine);
     this.markupLines.push(lineStartDimensionlLine);
     const lineEndDimensionlLine = new THREE.Line(
       endDimensionGeometry,
-      this.markupMaterial
+      this.markupMaterial,
     );
     this.scene.add(lineEndDimensionlLine);
     this.markupLines.push(lineEndDimensionlLine);
@@ -226,18 +229,18 @@ export class PlanHighlighter extends CurveHighlighter {
     const parallelCurvePoints = this.calculateParallelCurve(
       positions,
       positions.length / 3,
-      offset
+      offset,
     );
     const lengthGeometry = new THREE.BufferGeometry().setFromPoints(
-      parallelCurvePoints
+      parallelCurvePoints,
     );
     this.kpManager.showCurveLength(
       parallelCurvePoints,
-      curveMesh.curve.getLength()
+      curveMesh.curve.getLength(),
     );
     const clothParallelLine = new THREE.Line(
       lengthGeometry,
-      this.markupMaterial
+      this.markupMaterial,
     );
     this.scene.add(clothParallelLine);
     this.markupLines.push(clothParallelLine);
@@ -245,27 +248,27 @@ export class PlanHighlighter extends CurveHighlighter {
       this.calculateDimensionLines(curveMesh, clothParallelLine);
     const offsetStartDimensionPoints = this.offsetDimensionLine(
       startDimensionPoints,
-      offset * 0.1
+      offset * 0.1,
     );
     const offsetEndDimensionPoints = this.offsetDimensionLine(
       endDimensionPoints,
-      offset * 0.1
+      offset * 0.1,
     );
     const startDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
-      offsetStartDimensionPoints
+      offsetStartDimensionPoints,
     );
     const endDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
-      offsetEndDimensionPoints
+      offsetEndDimensionPoints,
     );
     const clothStartDimensionlLine = new THREE.Line(
       startDimensionGeometry,
-      this.markupMaterial
+      this.markupMaterial,
     );
     this.scene.add(clothStartDimensionlLine);
     this.markupLines.push(clothStartDimensionlLine);
     const clothEndDimensionlLine = new THREE.Line(
       endDimensionGeometry,
-      this.markupMaterial
+      this.markupMaterial,
     );
     this.scene.add(clothEndDimensionlLine);
     this.markupLines.push(clothEndDimensionlLine);
@@ -281,25 +284,25 @@ export class PlanHighlighter extends CurveHighlighter {
     const firstPoint = new THREE.Vector3(
       positions[0],
       positions[1],
-      positions[2]
+      positions[2],
     );
     const lastPointIndex = (count - 1) * 3;
     const lastPoint = new THREE.Vector3(
       positions[lastPointIndex],
       positions[lastPointIndex + 1],
-      positions[lastPointIndex + 2]
+      positions[lastPointIndex + 2],
     );
     const middlePointIndex = (count / 2) * 3;
     const middlePoint = new THREE.Vector3(
       positions[middlePointIndex],
       positions[middlePointIndex + 1],
-      positions[middlePointIndex + 2]
+      positions[middlePointIndex + 2],
     );
     const tangentVector = lastPoint.clone().sub(firstPoint).normalize();
     const perpendicularVector = new THREE.Vector3(
       -tangentVector.y,
       tangentVector.x,
-      0
+      0,
     );
     perpendicularVector.multiplyScalar(radius);
     const arcCenterPoint = middlePoint.clone().add(perpendicularVector);
@@ -318,7 +321,7 @@ export class PlanHighlighter extends CurveHighlighter {
       const perpendicularVector = new THREE.Vector3(
         tangentVector.y,
         -tangentVector.x,
-        0
+        0,
       );
       perpendicularVector.normalize();
       if (radius < 0) {
@@ -329,20 +332,20 @@ export class PlanHighlighter extends CurveHighlighter {
       const parallelPoint = new THREE.Vector3(
         positions[pointIndex] + offsetVector.x,
         positions[pointIndex + 1] + offsetVector.y,
-        positions[pointIndex + 2] + offsetVector.z
+        positions[pointIndex + 2] + offsetVector.z,
       );
       parallelCurvePoints.push(parallelPoint);
     }
     const lengthGeometry = new THREE.BufferGeometry().setFromPoints(
-      parallelCurvePoints
+      parallelCurvePoints,
     );
     this.kpManager.showCurveLength(
       parallelCurvePoints,
-      curveMesh.curve.getLength()
+      curveMesh.curve.getLength(),
     );
     const circArcParallelLine = new THREE.Line(
       lengthGeometry,
-      this.markupMaterial
+      this.markupMaterial,
     );
     this.scene.add(circArcParallelLine);
     this.markupLines.push(circArcParallelLine);
@@ -351,27 +354,27 @@ export class PlanHighlighter extends CurveHighlighter {
 
     const offsetStartDimensionPoints = this.offsetDimensionLine(
       startDimensionPoints,
-      offset * 0.1
+      offset * 0.1,
     );
     const offsetEndDimensionPoints = this.offsetDimensionLine(
       endDimensionPoints,
-      offset * 0.1
+      offset * 0.1,
     );
     const startDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
-      offsetStartDimensionPoints
+      offsetStartDimensionPoints,
     );
     const endDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
-      offsetEndDimensionPoints
+      offsetEndDimensionPoints,
     );
     const circArcStartDimensionlLine = new THREE.Line(
       startDimensionGeometry,
-      this.markupMaterial
+      this.markupMaterial,
     );
     this.scene.add(circArcStartDimensionlLine);
     this.markupLines.push(circArcStartDimensionlLine);
     const circArcEndDimensionlLine = new THREE.Line(
       endDimensionGeometry,
-      this.markupMaterial
+      this.markupMaterial,
     );
     this.scene.add(circArcEndDimensionlLine);
     this.markupLines.push(circArcEndDimensionlLine);

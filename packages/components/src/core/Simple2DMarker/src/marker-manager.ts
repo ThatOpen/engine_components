@@ -57,7 +57,7 @@ export class MarkerManager {
     private components: Components,
     private renderer: SimpleRenderer | PostproductionRenderer,
     scene: THREE.Group | THREE.Scene,
-    private controls: CameraControls
+    private controls: CameraControls,
   ) {
     this.scene = scene;
     this.setupEvents();
@@ -124,7 +124,7 @@ export class MarkerManager {
     for (const cluster of this.clusterLabels) {
       if (cluster.markerKeys.length === 1) {
         const marker = Array.from(this.markers).find(
-          (marker) => marker.key === cluster.markerKeys[0]
+          (marker) => marker.key === cluster.markerKeys[0],
         );
 
         if (marker) {
@@ -168,7 +168,7 @@ export class MarkerManager {
           const clusterLabel = new Simple2DMarker(
             this.components,
             this.createClusterElement(this._clusterKey.toString()),
-            this.scene
+            this.scene,
           );
           clusterLabel.get().element.textContent =
             clusterGroup.length.toString();
@@ -189,7 +189,7 @@ export class MarkerManager {
   getAveragePositionFromLabels(clusterGroup: string[]) {
     const positions = clusterGroup.map((key) => {
       const marker = Array.from(this.markers).find(
-        (marker: IMarker) => marker.key === key
+        (marker: IMarker) => marker.key === key,
       );
       if (marker) {
         return marker.label.get().position;
@@ -249,7 +249,7 @@ export class MarkerManager {
     text: string,
     point: THREE.Vector3,
     type?: CivilLabels | undefined,
-    isStatic = false
+    isStatic = false,
   ) {
     if (type !== undefined) {
       const span = document.createElement("span");
@@ -290,24 +290,24 @@ export class MarkerManager {
 
     const point = new THREE.Vector3();
     point.x = mesh.geometry.attributes.position.getX(
-      mesh.geometry.attributes.position.count - 1
+      mesh.geometry.attributes.position.count - 1,
     );
     point.y = mesh.geometry.attributes.position.getY(
-      mesh.geometry.attributes.position.count - 1
+      mesh.geometry.attributes.position.count - 1,
     );
     point.z = mesh.geometry.attributes.position.getZ(
-      mesh.geometry.attributes.position.count - 1
+      mesh.geometry.attributes.position.count - 1,
     );
 
     const secondLastPoint = new THREE.Vector3();
     secondLastPoint.x = mesh.geometry.attributes.position.getX(
-      mesh.geometry.attributes.position.count - 2
+      mesh.geometry.attributes.position.count - 2,
     );
     secondLastPoint.y = mesh.geometry.attributes.position.getY(
-      mesh.geometry.attributes.position.count - 2
+      mesh.geometry.attributes.position.count - 2,
     );
     secondLastPoint.z = mesh.geometry.attributes.position.getZ(
-      mesh.geometry.attributes.position.count - 2
+      mesh.geometry.attributes.position.count - 2,
     );
 
     const midPoint = new THREE.Vector3();
@@ -343,11 +343,14 @@ export class MarkerManager {
     text: string,
     mesh: FRAGS.CurveMesh,
     type: CivilLabels,
-    root: THREE.Object3D
+    fontSize: number,
+    offset: number,
+    root: THREE.Object3D,
   ) {
     const span = document.createElement("span");
     span.innerHTML = text;
     span.style.color = this._color;
+    span.style.fontSize = `${fontSize}px`;
 
     const marker = new Simple2DMarker(this.components, span, root);
 
@@ -362,7 +365,9 @@ export class MarkerManager {
       const firstIndex = (setArray - 1) * 3;
       const lastIndex = position.array.slice(firstIndex, firstIndex + 3);
 
-      marker.get().position.set(lastIndex[0], lastIndex[1] + 10, lastIndex[2]);
+      marker
+        .get()
+        .position.set(lastIndex[0], lastIndex[1] + offset, lastIndex[2]);
     } else if (type === "InitialKPV") {
       const { position } = mesh.geometry.attributes;
 
@@ -370,7 +375,7 @@ export class MarkerManager {
       const pY = position.getY(0);
       const pZ = position.getZ(0);
 
-      marker.get().position.set(pX - 20, pY, pZ);
+      marker.get().position.set(pX - offset, pY, pZ);
     } else if (type === "FinalKPV") {
       const { position } = mesh.geometry.attributes;
 
@@ -378,7 +383,7 @@ export class MarkerManager {
       const pY = position.getY(mesh.geometry.attributes.position.count - 1);
       const pZ = position.getZ(mesh.geometry.attributes.position.count - 1);
 
-      marker.get().position.set(pX + 20, pY, pZ);
+      marker.get().position.set(pX + offset, pY, pZ);
     } else if (type === "Slope") {
       span.style.color = "grey";
       const { position } = mesh.geometry.attributes;
@@ -396,7 +401,7 @@ export class MarkerManager {
       const midPoint = new THREE.Vector3();
       midPoint.addVectors(pointStart, pointEnd).multiplyScalar(0.5);
 
-      marker.get().position.set(midPoint.x, midPoint.y - 10, midPoint.z);
+      marker.get().position.set(midPoint.x, midPoint.y - offset, midPoint.z);
     }
 
     this.markers.add({
@@ -426,13 +431,13 @@ export class MarkerManager {
       marker.get().position.set(pX + 2, pY + 2, pZ);
     } else if (type === "FinalKP") {
       const pX = mesh.geometry.attributes.position.getX(
-        mesh.geometry.attributes.position.count - 1
+        mesh.geometry.attributes.position.count - 1,
       );
       const pY = mesh.geometry.attributes.position.getY(
-        mesh.geometry.attributes.position.count - 1
+        mesh.geometry.attributes.position.count - 1,
       );
       const pZ = mesh.geometry.attributes.position.getZ(
-        mesh.geometry.attributes.position.count - 1
+        mesh.geometry.attributes.position.count - 1,
       );
       marker.get().position.set(pX + 2, pY - 2, pZ);
     } else if (type === "Length") {
@@ -443,13 +448,13 @@ export class MarkerManager {
 
       const pointEnd = new THREE.Vector3();
       pointEnd.x = mesh.geometry.attributes.position.getX(
-        mesh.geometry.attributes.position.count - 1
+        mesh.geometry.attributes.position.count - 1,
       );
       pointEnd.y = mesh.geometry.attributes.position.getY(
-        mesh.geometry.attributes.position.count - 1
+        mesh.geometry.attributes.position.count - 1,
       );
       pointEnd.z = mesh.geometry.attributes.position.getZ(
-        mesh.geometry.attributes.position.count - 1
+        mesh.geometry.attributes.position.count - 1,
       );
 
       const length = pointStart.distanceTo(pointEnd);
@@ -525,12 +530,12 @@ export class MarkerManager {
     const boundingRegion: THREE.Vector3[] = [];
 
     const cluster = Array.from(this.clusterLabels).find(
-      (cluster) => cluster.key === key
+      (cluster) => cluster.key === key,
     );
     if (cluster) {
       for (const markerKey of cluster.markerKeys) {
         const marker = Array.from(this.markers).find(
-          (marker) => marker.key === markerKey
+          (marker) => marker.key === markerKey,
         );
         if (marker) {
           boundingRegion.push(marker.label.get().position);

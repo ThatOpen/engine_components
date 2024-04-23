@@ -98,10 +98,6 @@ mainToolbar.addChild(ifcButton);
   */
 
 await fragmentIfcLoader.setup();
-fragmentIfcLoader.settings.wasm = {
-  path: "../../../node_modules/web-ifc/",
-  absolute: false,
-};
 
 /* If you want to the path to unpkg manually, then you can skip the line
   above and set them manually as below:
