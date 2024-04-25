@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import CameraControls from "camera-controls";
 import { Event } from "./event";
 
 /**
@@ -150,4 +151,11 @@ export interface Configurable<T extends Record<string, any>> {
 export interface BVHGeometry extends THREE.BufferGeometry {
   boundsTree: Object | undefined;
   disposeBoundsTree: () => void;
+}
+
+/**
+ * Whether a camera uses the Camera Controls library.
+ */
+export interface CameraControllable {
+  controls: CameraControls;
 }

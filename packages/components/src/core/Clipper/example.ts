@@ -9,17 +9,15 @@ const container = document.getElementById("container")!;
 const components = new OBC.Components();
 
 const worlds = components.get(OBC.Worlds);
-const world = new OBC.SimpleWorld<
+const world = worlds.create<
   OBC.SimpleScene,
   OBC.SimpleCamera,
   OBC.SimpleRenderer
->(components);
+>();
 
 world.scene = new OBC.SimpleScene(components);
 world.renderer = new OBC.SimpleRenderer(components, container);
 world.camera = new OBC.SimpleCamera(components);
-
-worlds.add(world);
 
 components.init();
 
@@ -63,7 +61,7 @@ cube.position.set(0, 1.5, 0);
     */
 
 world.scene.three.add(cube);
-components.meshes.add(cube);
+world.meshes.add(cube);
 
 /* MD
   ### ⚙️ Adding Simple Clipper
@@ -73,7 +71,6 @@ components.meshes.add(cube);
   */
 
 const clipper = new OBC.Clipper(components);
-clipper.world = world;
 
 /* MD
 
@@ -106,7 +103,7 @@ clipper.enabled = true;
 
   */
 
-container.ondblclick = () => clipper.create();
+container.ondblclick = () => clipper.create(world);
 
 /* MD
 
@@ -129,7 +126,7 @@ container.ondblclick = () => clipper.create();
 
 window.onkeydown = (event) => {
   if (event.code === "Delete" || event.code === "Backspace") {
-    clipper.delete();
+    clipper.delete(world);
   }
 };
 

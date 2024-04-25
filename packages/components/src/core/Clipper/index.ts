@@ -10,6 +10,7 @@ import {
 import { SimplePlane } from "./src";
 import { Components } from "../Components";
 import { Raycasters } from "../Raycasters";
+import { Worlds } from "../Worlds";
 
 export * from "./src";
 
@@ -49,23 +50,6 @@ export class Clipper<T extends SimplePlane>
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
-
-  protected _world: World | null = null;
-
-  get world() {
-    return this._world;
-  }
-
-  set world(world: World | null) {
-    this._world = world;
-    const casters = this.components.get(Raycasters);
-    if (world === null) return;
-    // Create raycaster if it doesn't exist, so that when the user
-    // creates the first plane, the mouse position is tracked
-    if (!casters.list.has(world.uuid)) {
-      casters.get(world);
-    }
-  }
 
   /**
    * Whether to force the clipping plane to be orthogonal in the Y direction
@@ -181,18 +165,15 @@ export class Clipper<T extends SimplePlane>
   }
 
   /** {@link Createable.create} */
-  create() {
+  create(world: World) {
     if (!this.enabled) return;
-    if (!this._world) {
-      throw new Error("You must set a world before creating a plane!");
-    }
 
     const casters = this.components.get(Raycasters);
-    const caster = casters.get(this._world);
+    const caster = casters.get(world);
 
     const intersects = caster.castRay();
     if (intersects) {
-      this.createPlaneFromIntersection(intersects);
+      this.createPlaneFromIntersection(world, intersects);
     }
   }
 
@@ -200,15 +181,17 @@ export class Clipper<T extends SimplePlane>
    * Creates a plane in a certain place and with a certain orientation,
    * without the need of the mouse.
    *
+   * @param world - the world where this plane should be created.
    * @param normal - the orientation of the clipping plane.
    * @param point - the position of the clipping plane.
    * navigation.
    */
   createFromNormalAndCoplanarPoint(
+    world: World,
     normal: THREE.Vector3,
     point: THREE.Vector3,
   ) {
-    const plane = this.newPlane(point, normal);
+    const plane = this.newPlane(world, point, normal);
     this.updateMaterialsAndPlanes();
     return plane;
   }
@@ -216,13 +199,14 @@ export class Clipper<T extends SimplePlane>
   /**
    * {@link Createable.delete}
    *
+   * @param world - the world where the plane to delete is.
    * @param plane - the plane to delete. If undefined, the first plane
    * found under the cursor will be deleted.
    */
-  delete(plane?: T) {
+  delete(world: World, plane?: T) {
     if (!this.enabled) return;
     if (!plane) {
-      plane = this.pickPlane();
+      plane = this.pickPlane(world);
     }
     if (!plane) {
       return;
@@ -233,34 +217,28 @@ export class Clipper<T extends SimplePlane>
   /** Deletes all the existing clipping planes. */
   deleteAll() {
     while (this.planes.length > 0) {
-      this.delete(this.planes[0]);
+      const plane = this.planes[0];
+      this.delete(plane.world, plane);
     }
   }
 
   private deletePlane(plane: T) {
-    if (!this._world) {
-      throw new Error("You must select a world to delete a plane!");
-    }
-    if (!this._world.renderer) {
-      console.warn("The selected world doesn't have a renderer.");
-      return;
-    }
     const index = this.planes.indexOf(plane);
     if (index !== -1) {
       this.planes.splice(index, 1);
-      this._world.renderer.setPlane(false, plane.three);
+      if (!plane.world.renderer) {
+        throw new Error("Renderer not found for this plane's world!");
+      }
+      plane.world.renderer.setPlane(false, plane.three);
       plane.dispose();
       this.updateMaterialsAndPlanes();
       this.onAfterDelete.trigger(plane);
     }
   }
 
-  private pickPlane(): T | undefined {
-    if (!this._world) {
-      throw new Error("World not found!");
-    }
+  private pickPlane(world: World): T | undefined {
     const casters = this.components.get(Raycasters);
-    const caster = casters.get(this._world);
+    const caster = casters.get(world);
     const meshes = this.getAllPlaneMeshes();
     const intersects = caster.castRay(meshes);
     if (intersects) {
@@ -278,21 +256,20 @@ export class Clipper<T extends SimplePlane>
     return meshes;
   }
 
-  private createPlaneFromIntersection(intersect: THREE.Intersection) {
-    if (!this._world) {
-      throw new Error("World not found!");
-    }
-    if (!this._world.renderer) {
-      console.warn("The selected world doesn't have a renderer.");
-      return;
+  private createPlaneFromIntersection(
+    world: World,
+    intersect: THREE.Intersection,
+  ) {
+    if (!world.renderer) {
+      throw new Error("The given world must have a renderer!");
     }
     const constant = intersect.point.distanceTo(new THREE.Vector3(0, 0, 0));
     const normal = intersect.face?.normal;
     if (!constant || !normal) return;
 
     const worldNormal = this.getWorldNormal(intersect, normal);
-    const plane = this.newPlane(intersect.point, worldNormal.negate());
-    this._world.renderer.setPlane(true, plane.three);
+    const plane = this.newPlane(world, intersect.point, worldNormal.negate());
+    world.renderer.setPlane(true, plane.three);
     this.updateMaterialsAndPlanes();
   }
 
@@ -326,8 +303,8 @@ export class Clipper<T extends SimplePlane>
     }
   }
 
-  private newPlane(point: THREE.Vector3, normal: THREE.Vector3) {
-    const plane = this.newPlaneInstance(point, normal);
+  private newPlane(world: World, point: THREE.Vector3, normal: THREE.Vector3) {
+    const plane = this.newPlaneInstance(world, point, normal);
     plane.onDraggingStarted.add(this._onStartDragging);
     plane.onDraggingEnded.add(this._onEndDragging);
     this.planes.push(plane);
@@ -335,10 +312,14 @@ export class Clipper<T extends SimplePlane>
     return plane;
   }
 
-  protected newPlaneInstance(point: THREE.Vector3, normal: THREE.Vector3) {
+  protected newPlaneInstance(
+    world: World,
+    point: THREE.Vector3,
+    normal: THREE.Vector3,
+  ) {
     return new this.PlaneType(
       this.components,
-      this._world,
+      world,
       point,
       normal,
       this._material,
@@ -346,22 +327,21 @@ export class Clipper<T extends SimplePlane>
   }
 
   private updateMaterialsAndPlanes() {
-    if (!this._world) {
-      throw new Error("World not found!");
-    }
-    if (!this._world.renderer) {
-      console.warn("The selected world doesn't have a renderer.");
-      return;
-    }
-    this._world.renderer.updateClippingPlanes();
-    const { clippingPlanes } = this._world.renderer;
-    for (const model of this.components.meshes) {
-      if (Array.isArray(model.material)) {
-        for (const mat of model.material) {
-          mat.clippingPlanes = clippingPlanes;
+    const worlds = this.components.get(Worlds);
+    for (const [_id, world] of worlds.list) {
+      if (!world.renderer) {
+        continue;
+      }
+      world.renderer.updateClippingPlanes();
+      const { clippingPlanes } = world.renderer;
+      for (const model of world.meshes) {
+        if (Array.isArray(model.material)) {
+          for (const mat of model.material) {
+            mat.clippingPlanes = clippingPlanes;
+          }
+        } else {
+          model.material.clippingPlanes = clippingPlanes;
         }
-      } else {
-        model.material.clippingPlanes = clippingPlanes;
       }
     }
   }

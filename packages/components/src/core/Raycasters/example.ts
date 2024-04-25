@@ -6,17 +6,15 @@ const container = document.getElementById("container")!;
 const components = new OBC.Components();
 
 const worlds = components.get(OBC.Worlds);
-const world = new OBC.SimpleWorld<
+const world = worlds.create<
   OBC.SimpleScene,
   OBC.SimpleCamera,
   OBC.SimpleRenderer
->(components);
+>();
 
 world.scene = new OBC.SimpleScene(components);
 world.renderer = new OBC.SimpleRenderer(components, container);
 world.camera = new OBC.SimpleCamera(components);
-
-worlds.add(world);
 
 components.init();
 

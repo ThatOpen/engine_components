@@ -8,7 +8,7 @@ import { Components, SimpleRenderer } from "@thatopen/components";
  * [CSS2DObjects](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer)
  * respectively).
  */
-export class SimpleRendererWithHTML extends SimpleRenderer {
+export class RendererWith2D extends SimpleRenderer {
   three2D = new CSS2DRenderer();
 
   constructor(
@@ -41,6 +41,7 @@ export class SimpleRendererWithHTML extends SimpleRenderer {
     });
 
     this.setupHtmlRenderer();
+    this.resize();
   }
 
   private setupHtmlRenderer() {
@@ -48,7 +49,7 @@ export class SimpleRendererWithHTML extends SimpleRenderer {
     this.three2D.domElement.style.top = "0px";
     this.three2D.domElement.style.pointerEvents = "none";
     if (this.container) {
-      this.container.appendChild(this.three.domElement);
+      this.container.appendChild(this.three2D.domElement);
     }
   }
 }

@@ -5,7 +5,6 @@ import {
   disposeBoundsTree,
 } from "three-mesh-bvh";
 import { Component, Disposable, Event } from "../Types";
-import { Disposer } from "../Disposer";
 import { UUID } from "../../utils";
 
 /**
@@ -17,11 +16,6 @@ import { UUID } from "../../utils";
  */
 export class Components implements Disposable {
   static readonly release = "1.4.21";
-
-  /**
-   * All the loaded [meshes](https://threejs.org/docs/#api/en/objects/Mesh).
-   */
-  readonly meshes = new Set<THREE.Mesh>();
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<void>();
@@ -95,7 +89,6 @@ export class Components implements Disposable {
    *
    */
   dispose() {
-    const disposer = this.get(Disposer);
     this.enabled = false;
 
     for (const [_id, component] of this.list) {
@@ -106,11 +99,7 @@ export class Components implements Disposable {
     }
 
     this._clock.stop();
-    for (const mesh of this.meshes) {
-      disposer.destroy(mesh);
-    }
 
-    this.meshes.clear();
     this.onDisposed.trigger();
     this.onDisposed.reset();
   }

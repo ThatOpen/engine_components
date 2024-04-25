@@ -1,3 +1,4 @@
+import * as THREE from "three";
 import { UUID } from "../../../utils";
 import {
   Event,
@@ -8,6 +9,7 @@ import {
   BaseRenderer,
 } from "../../Types";
 import { Components } from "../../Components";
+import { Disposer } from "../../Disposer";
 
 export class SimpleWorld<
     T extends BaseScene = BaseScene,
@@ -17,6 +19,11 @@ export class SimpleWorld<
   extends Base
   implements World
 {
+  /**
+   * All the loaded [meshes](https://threejs.org/docs/#api/en/objects/Mesh).
+   */
+  readonly meshes = new Set<THREE.Mesh>();
+
   readonly onAfterUpdate = new Event();
 
   readonly onBeforeUpdate = new Event();
@@ -81,6 +88,10 @@ export class SimpleWorld<
   update(delta?: number) {
     if (!this.enabled) return;
 
+    if (!this._scene || !this._camera) {
+      return;
+    }
+
     this.scene.currentWorld = this;
     this.camera.currentWorld = this;
     if (this.renderer) {
@@ -114,6 +125,8 @@ export class SimpleWorld<
     }
 
     if (disposeResources) {
+      const disposer = this.components.get(Disposer);
+
       this.scene.dispose();
       if (this.camera.isDisposeable()) {
         this.camera.dispose();
@@ -121,6 +134,11 @@ export class SimpleWorld<
       if (this.renderer) {
         this.renderer.dispose();
       }
+      for (const mesh of this.meshes) {
+        disposer.destroy(mesh);
+      }
+
+      this.meshes.clear();
     }
 
     this._scene = null as any;

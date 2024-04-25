@@ -100,7 +100,7 @@ export class SimpleRenderer extends BaseRenderer {
     const height = size ? size.y : this.container.clientHeight;
     this.three.setSize(width, height);
     // this._renderer2D.setSize(width, height);
-    this.onResize.trigger(size);
+    this.onResize.trigger(new THREE.Vector2(width, height));
   };
 
   setupEvents(active: boolean) {

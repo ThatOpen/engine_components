@@ -1,0 +1,1 @@
+import{b as o,u as r}from"./three.module-CYx2Afzj.js";import{C as s,W as t,S as a,a as c,b as m}from"./index-DCLJCpH4.js";import{G as i}from"./index-C2l-cS9k.js";const d=document.getElementById("container"),e=new s,p=e.get(t),n=p.create();n.scene=new a(e);n.renderer=new c(e,d);n.camera=new m(e);e.init();const w=new o(new r);n.scene.three.add(w);const l=e.get(i);l.create(n);
