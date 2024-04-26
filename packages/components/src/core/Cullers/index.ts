@@ -42,7 +42,7 @@ export class Cullers extends Component implements Disposable {
     return culler;
   }
 
-  remove(world: World) {
+  delete(world: World) {
     const culler = this.list.get(world.uuid);
     if (culler) {
       culler.dispose();

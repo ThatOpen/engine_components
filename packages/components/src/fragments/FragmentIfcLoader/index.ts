@@ -6,7 +6,6 @@ import { SpatialStructure } from "./src/spatial-structure";
 import { CivilReader, IfcFragmentSettings, IfcMetadataReader } from "./src";
 import { Disposable, Event, UI, Component, UIElement } from "../../base-types";
 import { FragmentManager } from "../FragmentManager";
-import { Button, ToastNotification } from "../../ui";
 import { Components, ToolComponent } from "../../core";
 import { IfcJsonExporter } from "../../ifc/IfcJsonExporter";
 

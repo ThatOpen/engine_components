@@ -1,7 +1,7 @@
 // Set up scene (see SimpleScene tutorial)
 
 import * as THREE from "three";
-import Stats from "stats.js";
+// import Stats from "stats.js";
 // @ts-ignore
 import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
 import * as OBC from "../..";
@@ -10,37 +10,26 @@ const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
 
-const sceneComponent = new OBC.SimpleScene(components);
-sceneComponent.setup();
-components.scene = sceneComponent;
+const worlds = components.get(OBC.Worlds);
 
-const rendererComponent = new OBC.PostproductionRenderer(components, container);
-components.renderer = rendererComponent;
+const world = worlds.create<
+  OBC.SimpleScene,
+  OBC.SimpleCamera,
+  OBC.SimpleRenderer
+>();
 
-const cameraComponent = new OBC.SimpleCamera(components);
-components.camera = cameraComponent;
+world.scene = new OBC.SimpleScene(components);
+world.renderer = new OBC.SimpleRenderer(components, container);
+world.camera = new OBC.SimpleCamera(components);
 
-components.raycaster = new OBC.SimpleRaycaster(components);
 components.init();
 
-rendererComponent.postproduction.enabled = true;
-const scene = components.scene.get();
+const cube = new THREE.Mesh(new THREE.BoxGeometry());
+world.scene.three.add(cube);
 
-cameraComponent.controls.setLookAt(12, 6, 8, 0, 0, -10);
+world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
 
-const directionalLight = new THREE.DirectionalLight();
-directionalLight.position.set(5, 10, 3);
-directionalLight.intensity = 0.5;
-scene.add(directionalLight);
-
-const ambientLight = new THREE.AmbientLight();
-ambientLight.intensity = 0.5;
-scene.add(ambientLight);
-
-const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
-const gridMesh = grid.get();
-const effects = rendererComponent.postproduction.customEffects;
-effects.excludedMeshes.push(gridMesh);
+world.scene.setup();
 
 /* MD
   ### 🧶 Managing Fragment Efficiently
@@ -70,13 +59,6 @@ effects.excludedMeshes.push(gridMesh);
 const fragments = new OBC.FragmentManager(components);
 
 /* MD
-    Let's also create a toolbar to create a simple GUI for the functions we'll create:
-    */
-
-const toolbar = new OBC.Toolbar(components);
-components.ui.addToolbar(toolbar);
-
-/* MD
 
   ### 🧩 Add Fragment To Scene
   ---
@@ -86,22 +68,20 @@ components.ui.addToolbar(toolbar);
 
   */
 
+let uuid: string = "";
+
 async function loadFragments() {
-  if (fragments.groups.length) return;
+  if (fragments.groups.size) {
+    return;
+  }
   const file = await fetch("../../../resources/small.frag");
   const data = await file.arrayBuffer();
   const buffer = new Uint8Array(data);
-  const group = await fragments.load(buffer);
+  const group = fragments.load(buffer);
+  world.scene.three.add(group);
+  uuid = group.uuid;
   console.log(group);
-  // const scene = components.scene.get();
-  // scene.add(model);
 }
-
-const loadButton = new OBC.Button(components);
-loadButton.materialIcon = "download";
-loadButton.tooltip = "Load model";
-toolbar.addChild(loadButton);
-loadButton.onClick.add(() => loadFragments());
 
 /* MD
 
@@ -134,19 +114,18 @@ function download(file: File) {
 }
 
 function exportFragments() {
-  if (!fragments.groups.length) return;
-  const group = fragments.groups[0];
+  if (!fragments.groups.size) {
+    return;
+  }
+  const group = fragments.groups.get(uuid);
+  if (!group) {
+    return;
+  }
   const data = fragments.export(group);
   const blob = new Blob([data]);
   const file = new File([blob], "small.frag");
   download(file);
 }
-
-const exportButton = new OBC.Button(components);
-exportButton.materialIcon = "exit_to_app";
-exportButton.tooltip = "Export model";
-toolbar.addChild(exportButton);
-exportButton.onClick.add(() => exportFragments());
 
 /* MD
 
@@ -171,12 +150,6 @@ function disposeFragments() {
   fragments.dispose();
 }
 
-const disposeButton = new OBC.Button(components);
-disposeButton.materialIcon = "delete";
-disposeButton.tooltip = "Delete model";
-toolbar.addChild(disposeButton);
-disposeButton.onClick.add(() => disposeFragments());
-
 /* MD
 
   Loading a .zip fragment that you have locally is also quite easy:
@@ -184,7 +157,9 @@ disposeButton.onClick.add(() => disposeFragments());
   */
 
 function importExternalFragment() {
-  if (fragments.groups.length) return;
+  if (fragments.groups.size) {
+    return;
+  }
   const input = document.createElement("input");
   input.type = "file";
   input.onchange = async () => {
@@ -202,11 +177,19 @@ function importExternalFragment() {
   input.click();
 }
 
-const openButton = new OBC.Button(components);
-openButton.materialIcon = "folder_open";
-openButton.tooltip = "Import model";
-toolbar.addChild(openButton);
-openButton.onClick.add(() => importExternalFragment());
+const gui = new dat.GUI();
+
+const actions = {
+  loadFragments: () => loadFragments(),
+  disposeFragments: () => disposeFragments(),
+  exportFragments: () => exportFragments(),
+  importExternalFragment: () => importExternalFragment(),
+};
+
+gui.add(actions, "loadFragments").name("Load Fragments");
+gui.add(actions, "disposeFragments").name("Dispose Fragments");
+gui.add(actions, "exportFragments").name("Export Fragments");
+gui.add(actions, "importExternalFragment").name("Import External Fragment");
 
 /* MD
 
@@ -218,9 +201,9 @@ openButton.onClick.add(() => importExternalFragment());
 
 // Set up stats
 
-const stats = new Stats();
-stats.showPanel(2);
-document.body.append(stats.dom);
-stats.dom.style.left = "0px";
-rendererComponent.onBeforeUpdate.add(() => stats.begin());
-rendererComponent.onAfterUpdate.add(() => stats.end());
+// const stats = new Stats();
+// stats.showPanel(2);
+// document.body.append(stats.dom);
+// stats.dom.style.left = "0px";
+// world.renderer.onBeforeUpdate.add(() => stats.begin());
+// world.renderer.onAfterUpdate.add(() => stats.end());

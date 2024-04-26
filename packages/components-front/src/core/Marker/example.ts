@@ -20,9 +20,6 @@ world.camera = new OBC.SimpleCamera(components);
 
 components.init();
 
-// const cube = new THREE.Mesh(new THREE.BoxGeometry());
-// world.scene.three.add(cube);
-
 world.camera.controls.setLookAt(5, 5, 5, 0, 0, 0);
 
 const grids = components.get(OBC.Grids);
