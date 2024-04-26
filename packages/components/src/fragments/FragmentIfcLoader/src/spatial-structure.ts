@@ -14,7 +14,7 @@ export class SpatialStructure {
     try {
       const spatialRels = webIfc.GetLineIDsWithType(
         0,
-        WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE
+        WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE,
       );
 
       const allRooms = new Set<number>();

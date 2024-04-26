@@ -4,15 +4,11 @@ import * as FRAGS from "bim-fragment";
 import { FragmentsGroup } from "bim-fragment";
 import { SpatialStructure } from "./src/spatial-structure";
 import { CivilReader, IfcFragmentSettings, IfcMetadataReader } from "./src";
-import { Disposable, Event, UI, Component, UIElement } from "../../base-types";
 import { FragmentManager } from "../FragmentManager";
-import { Components, ToolComponent } from "../../core";
+import { Component, Components, Event, Disposable } from "../../core";
 import { IfcJsonExporter } from "../../ifc/IfcJsonExporter";
 
-export class FragmentIfcLoader
-  extends Component<WEBIFC.IfcAPI>
-  implements Disposable, UI
-{
+export class FragmentIfcLoader extends Component implements Disposable {
   static readonly uuid = "a659add7-1418-4771-a0d6-7d4d438e4624" as const;
 
   readonly onIfcLoaded = new Event<FragmentsGroup>();
@@ -27,13 +23,12 @@ export class FragmentIfcLoader
 
   enabled: boolean = true;
 
-  uiElement = new UIElement<{ main: Button; toast: ToastNotification }>();
+  webIfc = new WEBIFC.IfcAPI();
 
   private _material = new THREE.MeshLambertMaterial();
   private _spatialTree = new SpatialStructure();
   private _metaData = new IfcMetadataReader();
   private _fragmentInstances = new Map<string, Map<number, FRAGS.Item>>();
-  private _webIfc = new WEBIFC.IfcAPI();
   private _civil = new CivilReader();
   private _propertyExporter = new IfcJsonExporter();
 
@@ -49,24 +44,14 @@ export class FragmentIfcLoader
 
   constructor(components: Components) {
     super(components);
-    this.components.tools.add(FragmentIfcLoader.uuid, this);
-
-    if (components.uiEnabled) {
-      this.setupUI();
-    }
-
+    this.components.add(FragmentIfcLoader.uuid, this);
     this.settings.excludedCategories.add(WEBIFC.IFCOPENINGELEMENT);
   }
 
-  get(): WEBIFC.IfcAPI {
-    return this._webIfc;
-  }
-
-  async dispose() {
+  dispose() {
     this.onIfcLoaded.reset();
-    await this.uiElement.dispose();
-    (this._webIfc as any) = null;
-    await this.onDisposed.trigger(FragmentIfcLoader.uuid);
+    (this.webIfc as any) = null;
+    this.onDisposed.trigger(FragmentIfcLoader.uuid);
     this.onDisposed.reset();
   }
 
@@ -75,115 +60,75 @@ export class FragmentIfcLoader
     if (this.settings.autoSetWasm) {
       await this.autoSetWasm();
     }
-    await this.onSetup.trigger();
+    this.onSetup.trigger();
   }
 
   async load(data: Uint8Array, coordinate = true) {
     const before = performance.now();
-    await this.onIfcStartedLoading.trigger();
+    this.onIfcStartedLoading.trigger();
     await this.readIfcFile(data);
     const group = await this.getAllGeometries();
 
-    const properties = await this._propertyExporter.export(this._webIfc, 0);
+    const properties = await this._propertyExporter.export(this.webIfc, 0);
     group.setLocalProperties(properties);
 
     this.cleanUp();
     console.log(`Streaming the IFC took ${performance.now() - before} ms!`);
 
-    const fragments = this.components.tools.get(FragmentManager);
-    fragments.groups.push(group);
+    const fragments = this.components.get(FragmentManager);
+    fragments.groups.set(group.uuid, group);
 
     for (const frag of group.items) {
-      fragments.list[frag.id] = frag;
+      fragments.list.set(frag.id, frag);
       frag.mesh.uuid = frag.id;
       frag.group = group;
-      this.components.meshes.add(frag.mesh);
     }
 
     if (coordinate) {
       fragments.coordinate([group]);
     }
 
-    await this.onIfcLoaded.trigger(group);
+    this.onIfcLoaded.trigger(group);
 
     return group;
   }
 
-  private setupUI() {
-    const main = new Button(this.components);
-    main.materialIcon = "upload_file";
-    main.tooltip = "Load IFC";
-
-    const toast = new ToastNotification(this.components, {
-      message: "IFC model successfully loaded!",
-    });
-
-    main.onClick.add(() => {
-      const fileOpener = document.createElement("input");
-      fileOpener.type = "file";
-      fileOpener.accept = ".ifc";
-      fileOpener.style.display = "none";
-
-      fileOpener.onchange = async () => {
-        const fragments = this.components.tools.get(FragmentManager);
-        if (fileOpener.files === null || fileOpener.files.length === 0) return;
-        const file = fileOpener.files[0];
-        const buffer = await file.arrayBuffer();
-        const data = new Uint8Array(buffer);
-        const model = await this.load(data);
-        const scene = this.components.scene.get();
-        scene.add(model);
-
-        toast.visible = true;
-        await fragments.updateWindow();
-        fileOpener.remove();
-      };
-
-      fileOpener.click();
-    });
-
-    this.components.ui.add(toast);
-    toast.visible = false;
-
-    this.uiElement.set({ main, toast });
-  }
-
   async readIfcFile(data: Uint8Array) {
     const { path, absolute, logLevel } = this.settings.wasm;
-    this._webIfc.SetWasmPath(path, absolute);
-    await this._webIfc.Init();
+    this.webIfc.SetWasmPath(path, absolute);
+    await this.webIfc.Init();
     if (logLevel) {
-      this._webIfc.SetLogLevel(logLevel);
+      this.webIfc.SetLogLevel(logLevel);
     }
-    return this._webIfc.OpenModel(data, this.settings.webIfc);
+    return this.webIfc.OpenModel(data, this.settings.webIfc);
   }
 
   private async getAllGeometries() {
     // Precompute the level and category to which each item belongs
-    this._spatialTree.setUp(this._webIfc);
+    this._spatialTree.setUp(this.webIfc);
 
-    const allIfcEntities = this._webIfc.GetIfcEntityList(0);
+    const allIfcEntities = this.webIfc.GetIfcEntityList(0);
 
     const group = new FRAGS.FragmentsGroup();
 
     const { FILE_NAME, FILE_DESCRIPTION } = WEBIFC;
     group.ifcMetadata = {
-      name: this._metaData.get(this._webIfc, FILE_NAME),
-      description: this._metaData.get(this._webIfc, FILE_DESCRIPTION),
-      schema: (this._webIfc.GetModelSchema(0) as FRAGS.IfcSchema) || "IFC2X3",
-      maxExpressID: this._webIfc.GetMaxExpressID(0),
+      name: this._metaData.get(this.webIfc, FILE_NAME),
+      description: this._metaData.get(this.webIfc, FILE_DESCRIPTION),
+      schema: (this.webIfc.GetModelSchema(0) as FRAGS.IfcSchema) || "IFC2X3",
+      maxExpressID: this.webIfc.GetMaxExpressID(0),
     };
 
     const ids: number[] = [];
 
     for (const type of allIfcEntities) {
-      if (!this._webIfc.IsIfcElement(type) && type !== WEBIFC.IFCSPACE) {
+      if (!this.webIfc.IsIfcElement(type) && type !== WEBIFC.IFCSPACE) {
         continue;
       }
       if (this.settings.excludedCategories.has(type)) {
         continue;
       }
-      const result = this._webIfc.GetLineIDsWithType(0, type);
+      const result = this.webIfc.GetLineIDsWithType(0, type);
       const size = result.size();
       for (let i = 0; i < size; i++) {
         const itemID = result.get(i);
@@ -195,7 +140,7 @@ export class FragmentIfcLoader
 
     this._spatialTree.cleanUp();
 
-    this._webIfc.StreamMeshes(0, ids, (mesh) => {
+    this.webIfc.StreamMeshes(0, ids, (mesh) => {
       this.getMesh(mesh, group);
     });
 
@@ -216,16 +161,16 @@ export class FragmentIfcLoader
       fragment.add(items);
     }
 
-    const matrix = this._webIfc.GetCoordinationMatrix(0);
+    const matrix = this.webIfc.GetCoordinationMatrix(0);
     group.coordinationMatrix.fromArray(matrix);
-    group.civilData = this._civil.read(this._webIfc);
+    group.civilData = this._civil.read(this.webIfc);
 
     return group;
   }
 
   cleanUp() {
-    (this._webIfc as any) = null;
-    this._webIfc = new WEBIFC.IfcAPI();
+    (this.webIfc as any) = null;
+    this.webIfc = new WEBIFC.IfcAPI();
     this._visitedFragments.clear();
     this._fragmentInstances.clear();
   }
@@ -246,10 +191,7 @@ export class FragmentIfcLoader
       // Create geometry if it doesn't exist
 
       if (!this._visitedFragments.has(geometryID)) {
-        const bufferGeometry = this.getGeometry(
-          this._webIfc,
-          geometryExpressID
-        );
+        const bufferGeometry = this.getGeometry(this.webIfc, geometryExpressID);
 
         const material = transparent ? this._materialT : this._material;
         const fragment = new FRAGS.Fragment(bufferGeometry, material, 1);
@@ -311,12 +253,12 @@ export class FragmentIfcLoader
 
     const index = webIfc.GetIndexArray(
       geometry.GetIndexData(),
-      geometry.GetIndexDataSize()
+      geometry.GetIndexDataSize(),
     ) as Uint32Array;
 
     const vertexData = webIfc.GetVertexArray(
       geometry.GetVertexData(),
-      geometry.GetVertexDataSize()
+      geometry.GetVertexDataSize(),
     ) as Float32Array;
 
     const position = new Float32Array(vertexData.length / 2);
@@ -346,18 +288,18 @@ export class FragmentIfcLoader
 
   private async autoSetWasm() {
     const componentsPackage = await fetch(
-      `https://unpkg.com/openbim-components@${Components.release}/package.json`
+      `https://unpkg.com/openbim-components@${Components.release}/package.json`,
     );
     if (!componentsPackage.ok) {
       console.warn(
-        "Couldn't get openbim-components package.json. Set wasm settings manually."
+        "Couldn't get openbim-components package.json. Set wasm settings manually.",
       );
       return;
     }
     const componentsPackageJSON = await componentsPackage.json();
     if (!("web-ifc" in componentsPackageJSON.peerDependencies ?? {})) {
       console.warn(
-        "Couldn't get web-ifc from peer dependencies in openbim-components. Set wasm settings manually."
+        "Couldn't get web-ifc from peer dependencies in openbim-components. Set wasm settings manually.",
       );
     } else {
       const webIfcVer = componentsPackageJSON.peerDependencies["web-ifc"];
@@ -366,5 +308,3 @@ export class FragmentIfcLoader
     }
   }
 }
-
-ToolComponent.libraryUUIDs.add(FragmentIfcLoader.uuid);

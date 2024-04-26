@@ -18,7 +18,7 @@ export class IfcJsonExporter {
     webIfc: WEBIFC.IfcAPI,
     modelID: number,
     indirect = false,
-    recursiveSpatial = true
+    recursiveSpatial = true,
   ) {
     const properties: FRAG.IfcProperties = {};
 

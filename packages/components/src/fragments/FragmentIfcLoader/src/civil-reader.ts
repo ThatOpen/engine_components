@@ -1,8 +1,6 @@
 import * as THREE from "three";
 import * as WEBIFC from "web-ifc";
 import * as FRAGS from "bim-fragment";
-import { Alignment } from "bim-fragment";
-import { IfcCivil } from "./types";
 
 export class CivilReader {
   defLineMat = new THREE.LineBasicMaterial({ color: 0xffffff });
@@ -12,7 +10,7 @@ export class CivilReader {
     const IfcCrossSection2D = webIfc.GetAllCrossSections2D(0);
     const IfcCrossSection3D = webIfc.GetAllCrossSections3D(0);
 
-    const civilItems: IfcCivil = {
+    const civilItems = {
       IfcAlignment,
       IfcCrossSection2D,
       IfcCrossSection3D,
@@ -26,7 +24,7 @@ export class CivilReader {
       const alignments = new Map<number, FRAGS.Alignment>();
 
       for (const ifcAlign of civilItems.IfcAlignment) {
-        const alignment = new Alignment();
+        const alignment = new FRAGS.Alignment();
         alignment.absolute = this.getCurves(ifcAlign.curve3D, alignment);
         alignment.horizontal = this.getCurves(ifcAlign.horizontal, alignment);
         alignment.vertical = this.getCurves(ifcAlign.vertical, alignment);
@@ -38,7 +36,7 @@ export class CivilReader {
     return undefined;
   }
 
-  private getCurves(ifcAlignData: any, alignment: Alignment) {
+  private getCurves(ifcAlignData: any, alignment: FRAGS.Alignment) {
     const curves: FRAGS.CivilCurve[] = [];
     let index = 0;
     for (const curve of ifcAlignData) {
@@ -69,7 +67,7 @@ export class CivilReader {
         data,
         alignment,
         geometry,
-        this.defLineMat
+        this.defLineMat,
       );
 
       curves.push(mesh.curve);

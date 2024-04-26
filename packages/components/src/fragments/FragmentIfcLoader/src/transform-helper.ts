@@ -181,23 +181,12 @@ export class TransformHelper {
     vz = vz.setLength(newDimz);
 
     baseHelper.matrix = new THREE.Matrix4();
+    // prettier-ignore
     baseHelper.matrix.set(
-      vx.x,
-      vx.y,
-      vx.z,
-      0,
-      vy.x,
-      vy.y,
-      vy.z,
-      0,
-      vz.x,
-      vz.y,
-      vz.z,
-      0,
-      cen.x,
-      cen.y,
-      cen.z,
-      1
+      vx.x,  vx.y, vx.z, 0,
+      vy.x,  vy.y, vy.z, 0,
+      vz.x,  vz.y, vz.z, 0,
+      cen.x,cen.y,cen.z, 1,
     );
 
     baseHelper.matrix.transpose();
