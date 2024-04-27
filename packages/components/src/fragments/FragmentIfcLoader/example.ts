@@ -43,8 +43,8 @@ grids.create(world);
   Easy: with the `FragmentIfcLoader`! Let's start by creating it.
   */
 
-const fragments = new OBC.FragmentManager(components);
-const fragmentIfcLoader = new OBC.FragmentIfcLoader(components);
+const fragments = components.get(OBC.FragmentManager);
+const fragmentIfcLoader = components.get(OBC.FragmentIfcLoader);
 
 /* MD
   :::info Why not just IFC?

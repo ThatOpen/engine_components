@@ -1,23 +1,20 @@
 import * as THREE from "three";
 import * as FRAGS from "bim-fragment";
 import { FragmentsGroup } from "bim-fragment";
-import { Component, Disposable, Event } from "../../base-types";
-import { Components } from "../../core/Components";
-import { Disposer } from "../../core/Disposer";
-import { ToolComponent } from "../../core/ToolsComponent";
+import { Component, Components, Disposer, Disposable, Event } from "../../core";
 
 /**
  * A simple implementation of bounding box that works for fragments. The resulting bbox is not 100% precise, but
  * it's fast, and should suffice for general use cases such as camera zooming or general boundary determination.
  */
-export class FragmentBoundingBox extends Component<void> implements Disposable {
+export class FragmentBoundingBox extends Component implements Disposable {
   static readonly uuid = "d1444724-dba6-4cdd-a0c7-68ee1450d166" as const;
 
   /** {@link Component.enabled} */
   enabled = true;
 
   /** {@link Disposable.onDisposed} */
-  readonly onDisposed = new Event<string>();
+  readonly onDisposed = new Event();
 
   private _absoluteMin: THREE.Vector3;
   private _absoluteMax: THREE.Vector3;
@@ -25,9 +22,7 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
 
   constructor(components: Components) {
     super(components);
-
-    this.components.tools.add(FragmentBoundingBox.uuid, this);
-
+    this.components.add(FragmentBoundingBox.uuid, this);
     this._absoluteMin = FragmentBoundingBox.newBound(true);
     this._absoluteMax = FragmentBoundingBox.newBound(false);
   }
@@ -47,14 +42,14 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
     return new THREE.Vector3(
       factor * Number.MAX_VALUE,
       factor * Number.MAX_VALUE,
-      factor * Number.MAX_VALUE
+      factor * Number.MAX_VALUE,
     );
   }
 
   static getBounds(
     points: THREE.Vector3[],
     min?: THREE.Vector3,
-    max?: THREE.Vector3
+    max?: THREE.Vector3,
   ) {
     const maxPoint = max || this.newBound(false);
     const minPoint = min || this.newBound(true);
@@ -70,13 +65,13 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
   }
 
   /** {@link Disposable.dispose} */
-  async dispose() {
-    const disposer = this.components.tools.get(Disposer);
+  dispose() {
+    const disposer = this.components.get(Disposer);
     for (const mesh of this._meshes) {
       disposer.destroy(mesh);
     }
     this._meshes = [];
-    await this.onDisposed.trigger(FragmentBoundingBox.uuid);
+    this.onDisposed.trigger(FragmentBoundingBox.uuid);
     this.onDisposed.reset();
   }
 
@@ -165,7 +160,7 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
   }
 
   private static getFragmentBounds(
-    mesh: THREE.InstancedMesh | THREE.Mesh | FRAGS.CurveMesh
+    mesh: THREE.InstancedMesh | THREE.Mesh | FRAGS.CurveMesh,
   ) {
     const position = mesh.geometry.attributes.position;
 
@@ -204,5 +199,3 @@ export class FragmentBoundingBox extends Component<void> implements Disposable {
     return new THREE.Box3(min, max);
   }
 }
-
-ToolComponent.libraryUUIDs.add(FragmentBoundingBox.uuid);

@@ -1,44 +1,36 @@
-import * as THREE from "three";
-import Stats from "stats.js";
+/* eslint import/no-extraneous-dependencies: 0 */
+
+// Set up scene (see SimpleScene tutorial)
+
 // @ts-ignore
 import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
+import Stats from "stats.js";
 import * as OBC from "../..";
 
 const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
 
-const sceneComponent = new OBC.SimpleScene(components);
-sceneComponent.setup();
-components.scene = sceneComponent;
+const worlds = components.get(OBC.Worlds);
 
-const rendererComponent = new OBC.PostproductionRenderer(components, container);
-components.renderer = rendererComponent;
+const world = worlds.create<
+  OBC.SimpleScene,
+  OBC.SimpleCamera,
+  OBC.SimpleRenderer
+>();
 
-const cameraComponent = new OBC.SimpleCamera(components);
-components.camera = cameraComponent;
-cameraComponent.controls.setLookAt(30, 30, 30, 0, 0, 0);
-
-components.raycaster = new OBC.SimpleRaycaster(components);
+world.scene = new OBC.SimpleScene(components);
+world.renderer = new OBC.SimpleRenderer(components, container);
+world.camera = new OBC.SimpleCamera(components);
 
 components.init();
 
-rendererComponent.postproduction.enabled = true;
+world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
 
-const scene = components.scene.get();
+world.scene.setup();
 
-const directionalLight = new THREE.DirectionalLight();
-directionalLight.position.set(5, 10, 3);
-directionalLight.intensity = 0.5;
-scene.add(directionalLight);
-
-const ambientLight = new THREE.AmbientLight();
-ambientLight.intensity = 0.5;
-scene.add(ambientLight);
-
-const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
-const gridMesh = grid.get();
-rendererComponent.postproduction.customEffects.excludedMeshes.push(gridMesh);
+const grids = components.get(OBC.Grids);
+grids.create(world);
 
 /* MD
   ### 🧳 Gathering BIM Data
@@ -68,10 +60,11 @@ rendererComponent.postproduction.customEffects.excludedMeshes.push(gridMesh);
 
 const fragments = new OBC.FragmentManager(components);
 
-const file = await fetch("../../../resources/small.frag");
+const file = await fetch("../../../../../resources/small.frag");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
-const model = await fragments.load(buffer);
+const model = fragments.load(buffer);
+world.scene.three.add(model);
 
 /* MD
   ### 🎲 Creation of Bounding Boxes
@@ -85,7 +78,7 @@ const model = await fragments.load(buffer);
 
     */
 
-const fragmentBbox = new OBC.FragmentBoundingBox(components);
+const fragmentBbox = components.get(OBC.FragmentBoundingBox);
 fragmentBbox.add(model);
 
 /* MD
@@ -100,28 +93,6 @@ fragmentBbox.reset();
 
 /* MD
 
-  ### ⏏️ Creating a Toolbar for Navigating the Model
-  ---
-  We'll make a **Toolbar Component** and set it at the bottom.
-  In addition, we will add a **zoom in** button to this toolbar that will be used to zoom in at the BIM Model.
-
-  */
-
-const toolbar = new OBC.Toolbar(components, { position: "bottom" });
-components.ui.addToolbar(toolbar);
-const button = new OBC.Button(components);
-button.materialIcon = "zoom_in_map";
-button.tooltip = "Zoom to building";
-toolbar.addChild(button);
-
-/* MD
-
-  :::tip Simplistic and Powerful Toolbar!
-
-  🎛️ We have a dedicated tutorial on how to implement **Toolbar**, check **[Toolbar and UIManager](UIManager.mdx)** tutorial if you have any doubts!
-
-  :::
-
   ### 🎮 Managing Zoom Events
   ---
 
@@ -134,10 +105,13 @@ toolbar.addChild(button);
 
   */
 
-const controls = cameraComponent.controls;
-button.onClick.add(() => {
-  controls.fitToSphere(bbox, true);
-});
+const settings = {
+  fitToModel: () => world.camera.controls.fitToSphere(bbox, true),
+};
+
+const gui = new dat.GUI();
+
+gui.add(settings, "fitToModel").name("Fit to model");
 
 /* MD
 
@@ -154,5 +128,5 @@ document.body.append(stats.dom);
 stats.dom.style.left = "0px";
 stats.dom.style.right = "auto";
 
-rendererComponent.onBeforeUpdate.add(() => stats.begin());
-rendererComponent.onAfterUpdate.add(() => stats.end());
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
