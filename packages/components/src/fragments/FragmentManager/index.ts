@@ -51,6 +51,7 @@ export class FragmentManager extends Component implements Disposable {
       group.dispose(true);
     }
 
+    this.baseCoordinationModel = "";
     this.groups.clear();
     this.list.clear();
     this.onFragmentsLoaded.reset();

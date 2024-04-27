@@ -1270,6 +1270,7 @@ __metadata:
     "@typescript-eslint/parser": 7.2.0
     bim-fragment: 1.5.0
     camera-controls: 2.7.3
+    client-zip: 2.3.0
     eslint: 8.57.0
     eslint-config-airbnb-base: 15.0.0
     eslint-config-prettier: 9.1.0
@@ -1278,6 +1279,7 @@ __metadata:
     glob: latest
     jest: ^27.0.4
     prettier: 3.2.5
+    stats.js: ^0.17.0
     three: ^0.160.1
     three-mesh-bvh: 0.7.0
     top-tool-package-reader: 0.0.3
@@ -2328,6 +2330,13 @@ __metadata:
   version: 2.2.0
   resolution: "clean-stack@npm:2.2.0"
   checksum: 2ac8cd2b2f5ec986a3c743935ec85b07bc174d5421a5efc8017e1f146a1cf5f781ae962618f416352103b32c9cd7e203276e8c28241bbe946160cab16149fb68
+  languageName: node
+  linkType: hard
+
+"client-zip@npm:2.3.0":
+  version: 2.3.0
+  resolution: "client-zip@npm:2.3.0"
+  checksum: 3286ab695a5582d66819f716477ddc66ec1e88532acc4ad33276e090e9a141f097bd874852f430cce01b7975dc4bd6d11ed034f6d9daff38934518f123128fc1
   languageName: node
   linkType: hard
 
