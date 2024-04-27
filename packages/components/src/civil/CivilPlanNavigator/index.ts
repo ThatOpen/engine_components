@@ -7,7 +7,6 @@ import { CivilNavigator } from "../CivilNavigator";
 import { FragmentBoundingBox } from "../../fragments";
 import { PlanHighlighter } from "./src/plan-highlighter";
 import { CivilFloatingWindow } from "../CivilFloatingWindow";
-// import { KPStation } from "../CivilNavigator/src/kp-station";
 import { KPManager } from "../CivilNavigator/src/kp-manager";
 
 export class CivilPlanNavigator extends CivilNavigator implements UI {
@@ -32,7 +31,7 @@ export class CivilPlanNavigator extends CivilNavigator implements UI {
       this.scene.renderer,
       this.scene.get(),
       this.scene.controls,
-      this.view
+      this.view,
     );
 
     this.highlighter = new PlanHighlighter(scene, this.kpManager);
@@ -60,7 +59,7 @@ export class CivilPlanNavigator extends CivilNavigator implements UI {
     const size = new THREE.Vector3(
       (max.x - min.x) * offset,
       (max.y - min.y) * offset,
-      (max.z - min.z) * offset
+      (max.z - min.z) * offset,
     );
     box.getCenter(center);
     box.setFromCenterAndSize(center, size);
@@ -81,7 +80,7 @@ export class CivilPlanNavigator extends CivilNavigator implements UI {
     const floatingWindow = CivilFloatingWindow.get(
       this.components,
       this.scene,
-      name
+      name,
     );
     this.uiElement.set({ floatingWindow });
 

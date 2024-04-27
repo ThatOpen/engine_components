@@ -9,11 +9,8 @@ export class PlanHighlighter extends CurveHighlighter {
   private markupLines: THREE.Line[] = [];
   private currentCurveMesh?: FRAGS.CurveMesh;
 
-  constructor(
-    scene: THREE.Group | THREE.Scene,
-    private kpManager: KPManager,
-  ) {
-    super(scene, "horizontal");
+  constructor(scene: THREE.Group | THREE.Scene, kpManager: KPManager) {
+    super(scene, "horizontal", kpManager);
     this.markupMaterial = new THREE.LineBasicMaterial({
       color: 0x686868,
     });

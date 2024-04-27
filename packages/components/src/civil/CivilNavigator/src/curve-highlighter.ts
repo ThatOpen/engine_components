@@ -4,6 +4,7 @@ import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { Event } from "../../../base-types";
+import { KPManager } from "./kp-manager";
 
 type CivilHighlightType = "horizontal" | "absolute" | "vertical";
 
@@ -34,9 +35,16 @@ export class CurveHighlighter {
 
   caster = new THREE.Raycaster();
 
-  constructor(scene: THREE.Group | THREE.Scene, type: CivilHighlightType) {
+  kpManager: KPManager;
+
+  constructor(
+    scene: THREE.Group | THREE.Scene,
+    type: CivilHighlightType,
+    kpManager: KPManager,
+  ) {
     this.scene = scene;
     this.type = type;
+    this.kpManager = kpManager;
     this.hoverCurve = this.newCurve(0.003, 0x444444, false);
     this.hoverPoints = this.newPoints(5, 0x444444);
     this.selectCurve = this.newCurve(0.005, 0xffffff, true);

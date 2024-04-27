@@ -3,11 +3,20 @@ import * as FRAGS from "bim-fragment";
 import { Alignment, FragmentsGroup } from "bim-fragment";
 import { CurveHighlighter } from "../CivilNavigator/src/curve-highlighter";
 import { Component, Event } from "../../base-types";
-import { Components, Simple2DMarker, ToolComponent } from "../../core";
+import {
+  Components,
+  Simple2DMarker,
+  SimpleCamera,
+  SimpleRenderer,
+  ToolComponent,
+} from "../../core";
 import { CivilMarkerType } from "../CivilNavigator";
+import { KPManager } from "../CivilNavigator/src/kp-manager.ts";
 
 export class Civil3DNavigator extends Component<any> {
   static readonly uuid = "0a59c09e-2b49-474a-9320-99f51f40f182" as const;
+
+  readonly view = "absolute";
 
   readonly onHighlight = new Event<{
     curve: FRAGS.CurveMesh;
@@ -43,7 +52,16 @@ export class Civil3DNavigator extends Component<any> {
     this.components.tools.add(Civil3DNavigator.uuid, this);
 
     const scene = this.components.scene.get();
-    this.highlighter = new CurveHighlighter(scene, "absolute");
+    const camera = this.components.camera as SimpleCamera;
+
+    const kpManager = new KPManager(
+      components,
+      this.components.renderer as SimpleRenderer,
+      scene,
+      camera.controls,
+      this.view,
+    );
+    this.highlighter = new CurveHighlighter(scene, "absolute", kpManager);
 
     this.mouseMarkers = {
       select: this.newMouseMarker("#ffffff"),

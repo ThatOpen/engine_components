@@ -26,7 +26,6 @@ export class CivilElevationNavigator extends CivilNavigator implements UI {
     super(components);
     this.setUI();
     const scene = this.scene.get();
-    this.highlighter = new CurveHighlighter(scene, "vertical");
     this.kpManager = new KPManager(
       components,
       this.scene.renderer,
@@ -34,6 +33,7 @@ export class CivilElevationNavigator extends CivilNavigator implements UI {
       this.scene.controls,
       this.view,
     );
+    this.highlighter = new CurveHighlighter(scene, this.view, this.kpManager);
 
     this.highlighter.onSelect.add((mesh) => {
       // Add markers elevation
