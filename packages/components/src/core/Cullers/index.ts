@@ -2,6 +2,8 @@ import { Components } from "../Components";
 import { MeshCullerRenderer, CullerRendererSettings } from "./src";
 import { Component, Event, Disposable, World } from "../Types";
 
+export * from "./src";
+
 /**
  * A tool to handle big scenes efficiently by automatically hiding the objects
  * that are not visible to the camera.

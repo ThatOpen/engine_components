@@ -297,7 +297,7 @@ export class FragmentIfcLoader extends Component implements Disposable {
       return;
     }
     const componentsPackageJSON = await componentsPackage.json();
-    if (!("web-ifc" in componentsPackageJSON.peerDependencies ?? {})) {
+    if (!("web-ifc" in componentsPackageJSON.peerDependencies)) {
       console.warn(
         "Couldn't get web-ifc from peer dependencies in openbim-components. Set wasm settings manually.",
       );

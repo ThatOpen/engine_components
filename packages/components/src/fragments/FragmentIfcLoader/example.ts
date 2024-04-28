@@ -1,7 +1,5 @@
 /* eslint import/no-extraneous-dependencies: 0 */
 
-// Set up scene (see SimpleScene tutorial)
-
 import * as WEBIFC from "web-ifc";
 import Stats from "stats.js";
 // @ts-ignore

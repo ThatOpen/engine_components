@@ -1252,6 +1252,7 @@ __metadata:
     "@thatopen/components": 1.5.0
     "@types/three": ^0.160.0
     camera-controls: 2.7.3
+    dexie: ^4.0.4
     three: ^0.160.1
   peerDependencies:
     bim-fragment: 1.5.0
@@ -2629,6 +2630,13 @@ __metadata:
   version: 3.1.0
   resolution: "detect-newline@npm:3.1.0"
   checksum: ae6cd429c41ad01b164c59ea36f264a2c479598e61cba7c99da24175a7ab80ddf066420f2bec9a1c57a6bead411b4655ff15ad7d281c000a89791f48cbe939e7
+  languageName: node
+  linkType: hard
+
+"dexie@npm:^4.0.4":
+  version: 4.0.4
+  resolution: "dexie@npm:4.0.4"
+  checksum: d0da752b676c7c0b8924e7819768db37cdd2a37ae7b1298a7f4fa0b93a8e87851c432dca4dc82b7562811647e31d2d06a27522b43372a3900deab9c57735983c
   languageName: node
   linkType: hard
 
