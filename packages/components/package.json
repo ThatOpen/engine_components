@@ -28,8 +28,8 @@
     "dev": "vite --host",
     "test": "jest",
     "build": "tsc --p ./tsconfig-build.json && vite build",
-    "publish-alpha": "npm publish --tag alpha",
-    "prepublishOnly": "yarn build"
+    "publish-repo": "cd dist && npm publish --access public",
+    "publish-alpha": "cd dist && npm publish --tag alpha --access public"
   },
   "devDependencies": {
     "@types/jest": "27.0.0",
