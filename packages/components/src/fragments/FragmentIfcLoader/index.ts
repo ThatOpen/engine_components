@@ -1,7 +1,6 @@
 import * as WEBIFC from "web-ifc";
 import * as THREE from "three";
 import * as FRAGS from "bim-fragment";
-import { FragmentsGroup } from "bim-fragment";
 import { SpatialStructure } from "./src/spatial-structure";
 import { CivilReader, IfcFragmentSettings, IfcMetadataReader } from "./src";
 import { FragmentManager } from "../FragmentManager";
@@ -11,7 +10,6 @@ import { IfcJsonExporter } from "../../ifc/IfcJsonExporter";
 export class FragmentIfcLoader extends Component implements Disposable {
   static readonly uuid = "a659add7-1418-4771-a0d6-7d4d438e4624" as const;
 
-  readonly onIfcLoaded = new Event<FragmentsGroup>();
   readonly onIfcStartedLoading = new Event<void>();
 
   readonly onSetup = new Event<void>();
@@ -49,7 +47,6 @@ export class FragmentIfcLoader extends Component implements Disposable {
   }
 
   dispose() {
-    this.onIfcLoaded.reset();
     (this.webIfc as any) = null;
     this.onDisposed.trigger(FragmentIfcLoader.uuid);
     this.onDisposed.reset();
@@ -73,7 +70,6 @@ export class FragmentIfcLoader extends Component implements Disposable {
     group.setLocalProperties(properties);
 
     this.cleanUp();
-    console.log(`Streaming the IFC took ${performance.now() - before} ms!`);
 
     const fragments = this.components.get(FragmentManager);
     fragments.groups.set(group.uuid, group);
@@ -84,11 +80,11 @@ export class FragmentIfcLoader extends Component implements Disposable {
       frag.group = group;
     }
 
-    if (coordinate) {
-      fragments.coordinate([group]);
-    }
+    fragments.onFragmentsLoaded.trigger(group);
 
-    this.onIfcLoaded.trigger(group);
+    if (coordinate) fragments.coordinate([group]);
+
+    console.log(`Streaming the IFC took ${performance.now() - before} ms!`);
 
     return group;
   }
