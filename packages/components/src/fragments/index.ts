@@ -1,4 +1,5 @@
 export * from "./FragmentBoundingBox";
-export * from "./FragmentManager";
+export * from "./FragmentClassifier";
 export * from "./FragmentIfcLoader";
 export * from "./FragmentIfcStreamer";
+export * from "./FragmentManager";

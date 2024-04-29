@@ -1,21 +1,18 @@
-import { FragmentsGroup } from "bim-fragment";
-import { Disposable, FragmentIdMap, Component, Event } from "../../base-types";
+import * as FRAGS from "bim-fragment";
+import { Disposable, Component, Event, Components } from "../../core";
 import { IfcCategoryMap, IfcPropertiesUtils } from "../../ifc";
-import { Components, ToolComponent } from "../../core";
+
 import { FragmentManager } from "../FragmentManager";
 
 // TODO: Clean up and document
 
 export interface Classification {
   [system: string]: {
-    [className: string]: FragmentIdMap;
+    [className: string]: FRAGS.FragmentIdMap;
   };
 }
 
-export class FragmentClassifier
-  extends Component<Classification>
-  implements Disposable
-{
+export class FragmentClassifier extends Component implements Disposable {
   static readonly uuid = "e25a7f3c-46c4-4a14-9d3d-5115f24ebeb7" as const;
 
   /** {@link Component.enabled} */
@@ -24,12 +21,12 @@ export class FragmentClassifier
   private _groupSystems: Classification = {};
 
   /** {@link Disposable.onDisposed} */
-  readonly onDisposed = new Event<string>();
+  readonly onDisposed = new Event();
 
   constructor(components: Components) {
     super(components);
-    components.tools.add(FragmentClassifier.uuid, this);
-    const fragmentManager = components.tools.get(FragmentManager);
+    components.add(FragmentClassifier.uuid, this);
+    const fragmentManager = components.get(FragmentManager);
     fragmentManager.onFragmentsDisposed.add(this.onFragmentsDisposed);
   }
 
@@ -65,11 +62,11 @@ export class FragmentClassifier
     return this._groupSystems;
   }
 
-  async dispose() {
+  dispose() {
     this._groupSystems = {};
-    const fragmentManager = this.components.tools.get(FragmentManager);
+    const fragmentManager = this.components.get(FragmentManager);
     fragmentManager.onFragmentsDisposed.remove(this.onFragmentsDisposed);
-    await this.onDisposed.trigger(FragmentClassifier.uuid);
+    this.onDisposed.trigger();
     this.onDisposed.reset();
   }
 
@@ -84,12 +81,10 @@ export class FragmentClassifier
   }
 
   find(filter?: { [name: string]: string[] }) {
-    const fragments = this.components.tools.get(FragmentManager);
+    const fragments = this.components.get(FragmentManager);
     if (!filter) {
-      const result: FragmentIdMap = {};
-      const fragList = fragments.list;
-      for (const id in fragList) {
-        const fragment = fragList[id];
+      const result: FRAGS.FragmentIdMap = {};
+      for (const [id, fragment] of fragments.list) {
         result[id] = new Set(fragment.ids);
       }
       return result;
@@ -128,7 +123,7 @@ export class FragmentClassifier
       }
     }
 
-    const result: FragmentIdMap = {};
+    const result: FRAGS.FragmentIdMap = {};
     for (const guid in models) {
       const model = models[guid];
       for (const [id, numberOfMatches] of model) {
@@ -147,7 +142,7 @@ export class FragmentClassifier
     return result;
   }
 
-  byModel(modelID: string, group: FragmentsGroup) {
+  byModel(modelID: string, group: FRAGS.FragmentsGroup) {
     if (!this._groupSystems.model) {
       this._groupSystems.model = {};
     }
@@ -169,7 +164,7 @@ export class FragmentClassifier
     }
   }
 
-  async byPredefinedType(group: FragmentsGroup) {
+  async byPredefinedType(group: FRAGS.FragmentsGroup) {
     if (!this._groupSystems.predefinedTypes) {
       this._groupSystems.predefinedTypes = {};
     }
@@ -206,7 +201,7 @@ export class FragmentClassifier
     }
   }
 
-  byEntity(group: FragmentsGroup) {
+  byEntity(group: FRAGS.FragmentsGroup) {
     if (!this._groupSystems.entities) {
       this._groupSystems.entities = {};
     }
@@ -219,7 +214,7 @@ export class FragmentClassifier
     }
   }
 
-  byStorey(group: FragmentsGroup) {
+  byStorey(group: FRAGS.FragmentsGroup) {
     for (const [expressID, data] of group.data) {
       const rels = data[1];
       const storeyID = rels[0];
@@ -228,7 +223,11 @@ export class FragmentClassifier
     }
   }
 
-  async byIfcRel(group: FragmentsGroup, ifcRel: number, systemName: string) {
+  async byIfcRel(
+    group: FRAGS.FragmentsGroup,
+    ifcRel: number,
+    systemName: string,
+  ) {
     if (!IfcPropertiesUtils.isRel(ifcRel)) return;
     await IfcPropertiesUtils.getRelationMap(
       group,
@@ -236,25 +235,25 @@ export class FragmentClassifier
       async (relatingID, relatedIDs) => {
         const { name: relatingName } = await IfcPropertiesUtils.getEntityName(
           group,
-          relatingID
+          relatingID,
         );
         for (const expressID of relatedIDs) {
           this.saveItem(
             group,
             systemName,
             relatingName ?? "NO REL NAME",
-            expressID
+            expressID,
           );
         }
-      }
+      },
     );
   }
 
   private saveItem(
-    group: FragmentsGroup,
+    group: FRAGS.FragmentsGroup,
     systemName: string,
     className: string,
-    expressID: number
+    expressID: number,
   ) {
     if (!this._groupSystems[systemName]) {
       this._groupSystems[systemName] = {};
@@ -276,5 +275,3 @@ export class FragmentClassifier
     }
   }
 }
-
-ToolComponent.libraryUUIDs.add(FragmentClassifier.uuid);
