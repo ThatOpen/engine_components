@@ -5,18 +5,6 @@ import * as path from "path";
 import * as fs from "fs";
 import * as packageJson from "./package.json";
 
-const clonePackageJSON = () => {
-  return {
-    name: "copy-package-json",
-    async writeBundle() {
-      if (!fs.existsSync("./dist")) return;
-      console.log("Cloning package.json!");
-      const packageBuffer = fs.readFileSync("./package.json");
-      fs.writeFileSync("./dist/package.json", packageBuffer);
-    },
-  };
-};
-
 const generateTSNamespace = (dts: Map<string, string>) => {
   if (!fs.existsSync("./dist")) return;
   console.log("Generating namespace!");
@@ -36,10 +24,17 @@ const generateTSNamespace = (dts: Map<string, string>) => {
 
 export default defineConfig({
   build: {
+    outDir: "./dist",
     lib: {
       entry: path.resolve(__dirname, "./src/index.ts"),
-      formats: ["es"],
-      fileName: "index",
+      formats: ["es", "cjs"],
+      fileName: (format) => {
+        const map = {
+          cjs: "cjs",
+          es: "mjs",
+        };
+        return `index.${map[format]}`;
+      },
     },
     rollupOptions: {
       external: Object.keys(packageJson.peerDependencies),
@@ -53,7 +48,6 @@ export default defineConfig({
     },
   },
   plugins: [
-    clonePackageJSON(),
     dts({
       include: ["./src"],
       exclude: ["./src/**/example.ts", "./src/**/*.test.ts"],

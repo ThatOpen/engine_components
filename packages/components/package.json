@@ -1,7 +1,7 @@
 {
   "name": "@thatopen/components",
   "description": "Collection of core functionalities to author BIM apps.",
-  "version": "1.5.0",
+  "version": "2.0.0",
   "author": "That Open Company",
   "contributors": [
     "Antonio Gonzalez Viegas (https://github.com/agviegas)",
@@ -14,7 +14,8 @@
     "url": "https://github.com/ThatOpen/engine_components/issues"
   },
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
@@ -28,8 +29,12 @@
     "dev": "vite --host",
     "test": "jest",
     "build": "tsc --p ./tsconfig-build.json && vite build",
-    "publish-repo": "cd dist && npm publish --access public",
-    "publish-alpha": "cd dist && npm publish --tag alpha --access public"
+    "prepublishOnly": "yarn build",
+    "publish-repo": "npm publish",
+    "publish-alpha": "npm publish --tag alpha"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "devDependencies": {
     "@types/jest": "27.0.0",
