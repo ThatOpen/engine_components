@@ -1,8 +1,7 @@
 import * as THREE from "three";
+import * as OBC from "@thatopen/components";
 import { HorizontalBlurShader } from "three/examples/jsm/shaders/HorizontalBlurShader.js";
 import { VerticalBlurShader } from "three/examples/jsm/shaders/VerticalBlurShader.js";
-import { Component, Disposable, Event } from "../../base-types";
-import { Components, Disposer, ToolComponent } from "../../core";
 
 // TODO: Clean up and document this
 
@@ -12,17 +11,18 @@ export interface Shadow {
   rtBlur: THREE.WebGLRenderTarget;
   blurPlane: THREE.Mesh;
   camera: THREE.Camera;
+  world: OBC.World;
 }
 
 export interface Shadows {
   [id: string]: Shadow;
 }
 
-export class ShadowDropper extends Component<Shadows> implements Disposable {
+export class ShadowDropper extends OBC.Component implements OBC.Disposable {
   static readonly uuid = "f833a09a-a3ab-4c58-b03e-da5298c7a1b6" as const;
 
   /** {@link Disposable.onDisposed} */
-  readonly onDisposed = new Event<string>();
+  readonly onDisposed = new OBC.Event();
 
   enabled = true;
 
@@ -38,32 +38,28 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
 
   shadowExtraScaleFactor = 1.5;
 
-  private shadows: Shadows = {};
+  list: Shadows = {};
+
   private tempMaterial = new THREE.MeshBasicMaterial({ visible: false });
   private depthMaterial = new THREE.MeshDepthMaterial();
 
-  constructor(components: Components) {
+  constructor(components: OBC.Components) {
     super(components);
 
-    this.components.tools.add(ShadowDropper.uuid, this);
+    this.components.add(ShadowDropper.uuid, this);
 
     this.initializeDepthMaterial();
   }
 
-  /** {@link Component.get} */
-  get(): Shadows {
-    return this.shadows;
-  }
-
   /** {@link Disposable.dispose} */
-  async dispose() {
-    for (const id in this.shadows) {
+  dispose() {
+    for (const id in this.list) {
       this.deleteShadow(id);
     }
     this.tempMaterial.dispose();
     this.depthMaterial.dispose();
     (this.components as any) = null;
-    await this.onDisposed.trigger(ShadowDropper.uuid);
+    this.onDisposed.trigger(ShadowDropper.uuid);
     this.onDisposed.reset();
   }
 
@@ -73,12 +69,12 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
    * @param model - the mesh whose shadow to generate.
    * @param id - the name of this shadow.
    */
-  renderShadow(model: THREE.Mesh[], id: string) {
-    if (this.shadows[id]) {
+  create(model: THREE.Mesh[], id: string, world: OBC.World) {
+    if (this.list[id]) {
       throw new Error(`There is already a shadow with ID ${id}`);
     }
     const { size, center, min } = this.getSizeCenterMin(model);
-    const shadow = this.createShadow(id, size);
+    const shadow = this.createShadow(id, size, world);
     this.initializeShadow(shadow, center, min);
     this.createPlanes(shadow, size);
     this.bakeShadow(model, shadow);
@@ -91,9 +87,9 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
    * @param id - the name of this shadow.
    */
   deleteShadow(id: string) {
-    const disposer = this.components.tools.get(Disposer);
-    const shadow = this.shadows[id];
-    delete this.shadows[id];
+    const disposer = this.components.get(OBC.Disposer);
+    const shadow = this.list[id];
+    delete this.list[id];
     if (!shadow) throw new Error(`No shadow with ID ${id} was found.`);
     disposer.destroy(shadow.root as any);
     disposer.destroy(shadow.blurPlane);
@@ -103,7 +99,7 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
 
   private createPlanes(currentShadow: Shadow, size: THREE.Vector3) {
     const planeGeometry = new THREE.PlaneGeometry(size.x, size.z).rotateX(
-      Math.PI / 2
+      Math.PI / 2,
     );
     this.createBasePlane(currentShadow, planeGeometry);
     ShadowDropper.createBlurPlane(currentShadow, planeGeometry);
@@ -113,7 +109,7 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
   private initializeShadow(
     shadow: Shadow,
     center: THREE.Vector3,
-    min: THREE.Vector3
+    min: THREE.Vector3,
   ) {
     this.initializeRoot(shadow, center, min);
     ShadowDropper.initializeRenderTargets(shadow);
@@ -121,7 +117,17 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
   }
 
   private bakeShadow(meshes: THREE.Mesh[], shadow: Shadow) {
-    const scene = this.components.scene.get();
+    const scene = shadow.world.scene.three;
+
+    if (!(scene instanceof THREE.Scene)) {
+      throw new Error("The core of the scene of the world must be a scene!");
+    }
+
+    if (!shadow.world.renderer) {
+      throw new Error("The given world must have a renderer!");
+    }
+
+    const renderer = shadow.world.renderer.three;
 
     const areModelsInScene = meshes.map((mesh) => !!mesh.parent);
     for (let i = 0; i < meshes.length; i++) {
@@ -131,7 +137,7 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
     }
 
     const children = scene.children.filter(
-      (obj) => !meshes.includes(obj as any) && obj !== shadow.root
+      (obj) => !meshes.includes(obj as any) && obj !== shadow.root,
     );
 
     for (let i = children.length - 1; i >= 0; i--) {
@@ -153,7 +159,6 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
     }
 
     // render to the render target to get the depths
-    const renderer = this.components.renderer.get();
     renderer.setRenderTarget(shadow.rt);
     renderer.render(scene, shadow.camera);
 
@@ -198,9 +203,9 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
   private initializeRoot(
     shadow: Shadow,
     center: THREE.Vector3,
-    min: THREE.Vector3
+    min: THREE.Vector3,
   ) {
-    const scene = this.components.scene.get();
+    const scene = shadow.world.scene.three;
     shadow.root.position.set(center.x, min.y - this.shadowOffset, center.z);
     scene.add(shadow.root);
   }
@@ -232,7 +237,7 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
 
   private static createBlurPlane(
     shadow: Shadow,
-    planeGeometry: THREE.BufferGeometry
+    planeGeometry: THREE.BufferGeometry,
   ) {
     shadow.blurPlane.geometry = planeGeometry;
     shadow.blurPlane.visible = false;
@@ -240,13 +245,18 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
   }
 
   private createPlaneMaterial(shadow: Shadow) {
-    const renderer = this.components.renderer;
+    if (!shadow.world.renderer) {
+      throw new Error("The given world must have a renderer!");
+    }
+
+    const renderer = shadow.world.renderer.three;
+
     return new THREE.MeshBasicMaterial({
       map: shadow.rt.texture,
       opacity: this.opacity,
       transparent: true,
       depthWrite: false,
-      clippingPlanes: renderer.clippingPlanes,
+      clippingPlanes: renderer.clippingPlanes as THREE.Plane[],
     });
   }
 
@@ -272,15 +282,16 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
     };
   }
 
-  private createShadow(id: string, size: THREE.Vector3) {
-    this.shadows[id] = {
+  private createShadow(id: string, size: THREE.Vector3, world: OBC.World) {
+    this.list[id] = {
       root: new THREE.Group(),
+      world,
       rt: new THREE.WebGLRenderTarget(this.resolution, this.resolution),
       rtBlur: new THREE.WebGLRenderTarget(this.resolution, this.resolution),
       blurPlane: new THREE.Mesh(),
       camera: this.createCamera(size),
     };
-    return this.shadows[id];
+    return this.list[id];
   }
 
   private createCamera(size: THREE.Vector3) {
@@ -290,7 +301,7 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
       size.z / 2,
       -size.z / 2,
       0,
-      this.cameraHeight
+      this.cameraHeight,
     );
   }
 
@@ -312,8 +323,12 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
   }
 
   private blurShadow(shadow: Shadow, amount: number) {
+    if (!shadow.world.renderer) {
+      throw new Error("The given world must have a renderer!");
+    }
+
     const horizontalBlurMaterial = new THREE.ShaderMaterial(
-      HorizontalBlurShader
+      HorizontalBlurShader,
     );
     horizontalBlurMaterial.depthTest = false;
 
@@ -328,7 +343,7 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
     shadow.blurPlane.material.uniforms.tDiffuse.value = shadow.rt.texture;
     horizontalBlurMaterial.uniforms.h.value = (amount * 1) / 256;
 
-    const renderer = this.components.renderer.get();
+    const renderer = shadow.world.renderer.three;
     renderer.setRenderTarget(shadow.rtBlur);
     renderer.render(shadow.blurPlane, shadow.camera);
 
@@ -344,5 +359,3 @@ export class ShadowDropper extends Component<Shadows> implements Disposable {
     shadow.blurPlane.visible = false;
   }
 }
-
-ToolComponent.libraryUUIDs.add(ShadowDropper.uuid);
