@@ -66,7 +66,7 @@ export class Clipper<T extends SimplePlane>
    */
   toleranceOrthogonalY = 0.7;
 
-  planes: T[] = [];
+  list: T[] = [];
 
   protected PlaneType: new (...args: any) => SimplePlane | T;
 
@@ -90,7 +90,7 @@ export class Clipper<T extends SimplePlane>
   /** {@link Component.enabled} */
   set enabled(state: boolean) {
     this._enabled = state;
-    for (const plane of this.planes) {
+    for (const plane of this.list) {
       plane.enabled = state;
     }
     this.updateMaterialsAndPlanes();
@@ -104,7 +104,7 @@ export class Clipper<T extends SimplePlane>
   /** {@link Hideable.visible } */
   set visible(state: boolean) {
     this._visible = state;
-    for (const plane of this.planes) {
+    for (const plane of this.list) {
       plane.visible = state;
     }
   }
@@ -117,7 +117,7 @@ export class Clipper<T extends SimplePlane>
   /** The material of the clipping plane representation. */
   set material(material: THREE.Material) {
     this._material = material;
-    for (const plane of this.planes) {
+    for (const plane of this.list) {
       plane.planeMaterial = material;
     }
   }
@@ -130,7 +130,7 @@ export class Clipper<T extends SimplePlane>
   /** The size of the geometric representation of the clippings planes. */
   set size(size: number) {
     this._size = size;
-    for (const plane of this.planes) {
+    for (const plane of this.list) {
       plane.size = size;
     }
   }
@@ -147,10 +147,10 @@ export class Clipper<T extends SimplePlane>
   /** {@link Disposable.dispose} */
   dispose() {
     this._enabled = false;
-    for (const plane of this.planes) {
+    for (const plane of this.list) {
       plane.dispose();
     }
-    this.planes.length = 0;
+    this.list.length = 0;
     this._material.dispose();
     this.onBeforeCreate.reset();
     this.onBeforeCancel.reset();
@@ -216,16 +216,16 @@ export class Clipper<T extends SimplePlane>
 
   /** Deletes all the existing clipping planes. */
   deleteAll() {
-    while (this.planes.length > 0) {
-      const plane = this.planes[0];
+    while (this.list.length > 0) {
+      const plane = this.list[0];
       this.delete(plane.world, plane);
     }
   }
 
   private deletePlane(plane: T) {
-    const index = this.planes.indexOf(plane);
+    const index = this.list.indexOf(plane);
     if (index !== -1) {
-      this.planes.splice(index, 1);
+      this.list.splice(index, 1);
       if (!plane.world.renderer) {
         throw new Error("Renderer not found for this plane's world!");
       }
@@ -243,14 +243,14 @@ export class Clipper<T extends SimplePlane>
     const intersects = caster.castRay(meshes);
     if (intersects) {
       const found = intersects.object as THREE.Mesh;
-      return this.planes.find((p) => p.meshes.includes(found));
+      return this.list.find((p) => p.meshes.includes(found));
     }
     return undefined;
   }
 
   private getAllPlaneMeshes() {
     const meshes: THREE.Mesh[] = [];
-    for (const plane of this.planes) {
+    for (const plane of this.list) {
       meshes.push(...plane.meshes);
     }
     return meshes;
@@ -307,7 +307,7 @@ export class Clipper<T extends SimplePlane>
     const plane = this.newPlaneInstance(world, point, normal);
     plane.onDraggingStarted.add(this._onStartDragging);
     plane.onDraggingEnded.add(this._onEndDragging);
-    this.planes.push(plane);
+    this.list.push(plane);
     this.onAfterCreate.trigger(plane);
     return plane;
   }

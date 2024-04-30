@@ -1249,18 +1249,24 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/components-front"
   dependencies:
-    "@thatopen/components": 1.5.0
+    "@thatopen/components": 2.0.0-alpha.1
+    "@types/earcut": ^2.1.4
     "@types/three": ^0.160.0
     camera-controls: 2.7.3
     dexie: ^4.0.4
+    earcut: ^2.2.4
+    n8ao: 1.5.1
+    postprocessing: 6.34.2
     three: ^0.160.1
+    web-ifc: 0.0.53
   peerDependencies:
     bim-fragment: 1.5.0
     three: ^0.160.1
+    web-ifc: 0.0.53
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@1.5.0, @thatopen/components@workspace:packages/components":
+"@thatopen/components@2.0.0-alpha.1, @thatopen/components@workspace:packages/components":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/components"
   dependencies:
@@ -1375,6 +1381,13 @@ __metadata:
   dependencies:
     "@babel/types": ^7.20.7
   checksum: 608e0ab4fc31cd47011d98942e6241b34d461608c0c0e153377c5fd822c436c475f1ded76a56bfa76a1adf8d9266b727bbf9bfac90c4cb152c97f30dadc5b7e8
+  languageName: node
+  linkType: hard
+
+"@types/earcut@npm:^2.1.4":
+  version: 2.1.4
+  resolution: "@types/earcut@npm:2.1.4"
+  checksum: 167e1c6d60e9d964d0f496c11b5065b9d155b4c1df04fb9abcec88af2c16213999ea8ed7cddeec9475620152e7e9e99a0f118e1c8070e1396cf0f299642beb6b
   languageName: node
   linkType: hard
 
@@ -2694,6 +2707,13 @@ __metadata:
   dependencies:
     webidl-conversions: ^5.0.0
   checksum: d638e9cb05c52999f1b2eb87c374b03311ea5b1d69c2f875bc92da73e17db60c12142b45c950228642ff7f845c536b65305483350d080df59003a653da80b691
+  languageName: node
+  linkType: hard
+
+"earcut@npm:^2.2.4":
+  version: 2.2.4
+  resolution: "earcut@npm:2.2.4"
+  checksum: aea0466cb2f24e0c3c57148d8d28ac9846f53c4f43ee66780826474303ac851b305ef988152d0bdeb31e8f7ca939dc0df737e7505cfb1c1bdf2ff9d7f9ea2faa
   languageName: node
   linkType: hard
 
@@ -5251,6 +5271,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"n8ao@npm:1.5.1":
+  version: 1.5.1
+  resolution: "n8ao@npm:1.5.1"
+  peerDependencies:
+    postprocessing: ">=6.30.0"
+    three: ">=0.137"
+  checksum: 228ad7eba3833bda9941065c37ee83e9f273160e359a6978a8ff42059b8922ad823f8907424985a2cc970e2aa3413bda6b0f0a475c48d9b9cf697c04abdb25e1
+  languageName: node
+  linkType: hard
+
 "nanoid@npm:^3.3.7":
   version: 3.3.7
   resolution: "nanoid@npm:3.3.7"
@@ -5622,6 +5652,15 @@ __metadata:
     picocolors: ^1.0.0
     source-map-js: ^1.2.0
   checksum: 649f9e60a763ca4b5a7bbec446a069edf07f057f6d780a5a0070576b841538d1ecf7dd888f2fbfd1f76200e26c969e405aeeae66332e6927dbdc8bdcb90b9451
+  languageName: node
+  linkType: hard
+
+"postprocessing@npm:6.34.2":
+  version: 6.34.2
+  resolution: "postprocessing@npm:6.34.2"
+  peerDependencies:
+    three: ">= 0.138.0 < 0.162.0"
+  checksum: 023d26c588bb4714ca017829f4dc02510c366ea5b0d2e72454d0e64be36cbc506536c54ea5abc615f117bac89857e120afc88e0a4a7f64c4bb4511b05e7ecc45
   languageName: node
   linkType: hard
 
