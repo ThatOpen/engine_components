@@ -1,26 +1,16 @@
 import * as THREE from "three";
-import { Fragment, FragmentMesh } from "bim-fragment";
-import {
-  Disposable,
-  Updateable,
-  Event,
-  FragmentIdMap,
-  Configurable,
-} from "../../base-types";
-import { Component } from "../../base-types/component";
-import { FragmentManager } from "../FragmentManager";
-import { FragmentBoundingBox } from "../FragmentBoundingBox";
-import { Components } from "../../core/Components";
-import { SimpleCamera } from "../../core/SimpleCamera";
-import { ToolComponent } from "../../core/ToolsComponent";
-import { PostproductionRenderer } from "../../navigation/PostproductionRenderer";
+import * as FRAGS from "bim-fragment";
+import * as OBC from "@thatopen/components";
+import { Fragment, FragmentIdMap, FragmentMesh } from "bim-fragment";
+import { World } from "@thatopen/components";
+import { PostproductionRenderer } from "../../navigation";
 
 // TODO: Clean up and document
 
 interface HighlightEvents {
   [highlighterName: string]: {
-    onHighlight: Event<FragmentIdMap>;
-    onClear: Event<null>;
+    onHighlight: OBC.Event<FRAGS.FragmentIdMap>;
+    onClear: OBC.Event<null>;
   };
 }
 
@@ -35,26 +25,25 @@ export interface FragmentHighlighterConfig {
   hoverMaterial: THREE.Material;
   autoHighlightOnClick: boolean;
   cullHighlightMeshes: boolean;
+  world: OBC.World | null;
 }
 
 export class FragmentHighlighter
-  extends Component<HighlightMaterials>
-  implements Disposable, Configurable<FragmentHighlighterConfig>
+  extends OBC.Component
+  implements OBC.Disposable, OBC.Configurable<FragmentHighlighterConfig>
 {
   static readonly uuid = "cb8a76f2-654a-4b50-80c6-66fd83cafd77" as const;
 
-  /** {@link Disposable.onDisposed} */
-  readonly onDisposed = new Event<string>();
+  readonly onDisposed = new OBC.Event();
 
-  /** {@link Updateable.onBeforeUpdate} */
-  readonly onBeforeUpdate = new Event<FragmentHighlighter>();
+  readonly onBeforeUpdate = new OBC.Event<FragmentHighlighter>();
 
-  /** {@link Updateable.onAfterUpdate} */
-  readonly onAfterUpdate = new Event<FragmentHighlighter>();
+  readonly onAfterUpdate = new OBC.Event<FragmentHighlighter>();
+
+  readonly onSetup = new OBC.Event<FragmentHighlighter>();
 
   needsUpdate = false;
 
-  /** {@link Configurable.isSetup} */
   isSetup = false;
 
   enabled = true;
@@ -66,7 +55,7 @@ export class FragmentHighlighter
   zoomToSelection = false;
 
   selection: {
-    [selectionID: string]: FragmentIdMap;
+    [selectionID: string]: FRAGS.FragmentIdMap;
   } = {};
 
   excludeOutline = new Set<string>();
@@ -107,6 +96,7 @@ export class FragmentHighlighter
     }),
     autoHighlightOnClick: true,
     cullHighlightMeshes: true,
+    world: null,
   };
 
   private _mouseState = {
@@ -114,29 +104,10 @@ export class FragmentHighlighter
     moved: false,
   };
 
-  get outlineEnabled() {
-    return this._outlineEnabled;
-  }
-
-  set outlineEnabled(value: boolean) {
-    this._outlineEnabled = value;
-    if (!value) {
-      delete this._postproduction.customEffects.outlinedMeshes.fragments;
-    }
-  }
-
-  private get _postproduction() {
-    if (!(this.components.renderer instanceof PostproductionRenderer)) {
-      throw new Error("Postproduction renderer is needed for outlines!");
-    }
-    const renderer = this.components.renderer as PostproductionRenderer;
-    return renderer.postproduction;
-  }
-
-  constructor(components: Components) {
+  constructor(components: OBC.Components) {
     super(components);
-    this.components.tools.add(FragmentHighlighter.uuid, this);
-    const fragmentManager = components.tools.get(FragmentManager);
+    this.components.add(FragmentHighlighter.uuid, this);
+    const fragmentManager = components.get(OBC.FragmentManager);
     fragmentManager.onFragmentsDisposed.add(this.onFragmentsDisposed);
   }
 
@@ -147,8 +118,16 @@ export class FragmentHighlighter
     this.disposeOutlinedMeshes(data.fragmentIDs);
   };
 
-  get(): HighlightMaterials {
-    return this.highlightMats;
+  getOutlineEnabled() {
+    return this._outlineEnabled;
+  }
+
+  setOutlineEnabled(value: boolean, world: OBC.World) {
+    this._outlineEnabled = value;
+    if (!value) {
+      const postproduction = this.getPostproduction(world);
+      delete postproduction.customEffects.outlinedMeshes.fragments;
+    }
   }
 
   getHoveredSelection() {
@@ -186,14 +165,14 @@ export class FragmentHighlighter
       this.events[name].onHighlight.reset();
     }
     this.onSetup.reset();
-    const fragmentManager = this.components.tools.get(FragmentManager);
+    const fragmentManager = this.components.get(OBC.FragmentManager);
     fragmentManager.onFragmentsDisposed.remove(this.onFragmentsDisposed);
     this.events = {};
-    await this.onDisposed.trigger(FragmentHighlighter.uuid);
+    this.onDisposed.trigger(FragmentHighlighter.uuid);
     this.onDisposed.reset();
   }
 
-  async add(name: string, material?: THREE.Material[]) {
+  add(name: string, material?: THREE.Material[]) {
     if (this.highlightMats[name]) {
       throw new Error("A highlight with this name already exists.");
     }
@@ -201,23 +180,22 @@ export class FragmentHighlighter
     this.highlightMats[name] = material;
     this.selection[name] = {};
     this.events[name] = {
-      onHighlight: new Event(),
-      onClear: new Event(),
+      onHighlight: new OBC.Event(),
+      onClear: new OBC.Event(),
     };
 
-    await this.updateHighlight();
+    this.updateHighlight();
   }
 
-  async updateHighlight() {
+  updateHighlight() {
     if (!this.fillEnabled) {
       return;
     }
-    await this.onBeforeUpdate.trigger(this);
-    const fragments = this.components.tools.get(FragmentManager);
-    for (const fragmentID in fragments.list) {
-      const fragment = fragments.list[fragmentID];
+    this.onBeforeUpdate.trigger(this);
+    const fragments = this.components.get(OBC.FragmentManager);
+    for (const [id, fragment] of fragments.list) {
       this.addHighlightToFragment(fragment);
-      const outlinedMesh = this._outlinedMeshes[fragmentID];
+      const outlinedMesh = this._outlinedMeshes[id];
       if (outlinedMesh) {
         fragment.mesh.updateMatrixWorld(true);
         outlinedMesh.position.set(0, 0, 0);
@@ -226,24 +204,32 @@ export class FragmentHighlighter
         outlinedMesh.applyMatrix4(fragment.mesh.matrixWorld);
       }
     }
-    await this.onAfterUpdate.trigger(this);
+    this.onAfterUpdate.trigger(this);
   }
 
   async highlight(
     name: string,
     removePrevious = true,
-    zoomToSelection = this.zoomToSelection
+    zoomToSelection = this.zoomToSelection,
   ) {
     if (!this.enabled) return null;
+    if (!this.config.world) {
+      throw new Error("No world found in config!");
+    }
+
+    const world = this.config.world;
     this.checkSelection(name);
 
-    const fragments = this.components.tools.get(FragmentManager);
+    const fragments = this.components.get(OBC.FragmentManager);
     const fragList: Fragment[] = [];
     const meshes = fragments.meshes;
-    const result = this.components.raycaster.castRay(meshes);
+
+    const casters = this.components.get(OBC.Raycasters);
+    const caster = casters.get(world);
+    const result = caster.castRay(meshes);
 
     if (!result || !result.face) {
-      await this.clear(name);
+      this.clear(world, name);
       return null;
     }
 
@@ -256,7 +242,7 @@ export class FragmentHighlighter
     }
 
     if (removePrevious) {
-      await this.clear(name);
+      this.clear(world, name);
     }
 
     if (!this.selection[name][mesh.fragment.id]) {
@@ -271,7 +257,7 @@ export class FragmentHighlighter
     }
 
     this.selection[name][mesh.fragment.id].add(itemID);
-    await this.regenerate(name, mesh.fragment.id);
+    await this.regenerate(name, mesh.fragment.id, world);
 
     const group = mesh.fragment.group;
     if (group) {
@@ -289,7 +275,10 @@ export class FragmentHighlighter
         }
 
         if (fragID === mesh.fragment.id) continue;
-        const fragment = fragments.list[fragID];
+        const fragment = fragments.list.get(fragID);
+        if (!fragment) {
+          throw new Error("Fragment not found!");
+        }
         fragList.push(fragment);
 
         if (!this.selection[name][fragID]) {
@@ -297,14 +286,14 @@ export class FragmentHighlighter
         }
 
         this.selection[name][fragID].add(itemID);
-        await this.regenerate(name, fragID);
+        await this.regenerate(name, fragID, world);
       }
     }
 
-    await this.events[name].onHighlight.trigger(this.selection[name]);
+    this.events[name].onHighlight.trigger(this.selection[name]);
 
     if (zoomToSelection) {
-      await this.zoomSelection(name);
+      await this.zoomSelection(name, world);
     }
 
     return { id: itemID, fragments: fragList };
@@ -314,12 +303,20 @@ export class FragmentHighlighter
     name: string,
     ids: FragmentIdMap,
     removePrevious = true,
-    zoomToSelection = this.zoomToSelection
+    zoomToSelection = this.zoomToSelection,
   ) {
     if (!this.enabled) return;
-    if (removePrevious) {
-      await this.clear(name);
+
+    if (!this.config.world) {
+      throw new Error("No world found in config!");
     }
+
+    const world = this.config.world;
+
+    if (removePrevious) {
+      this.clear(world, name);
+    }
+
     const styles = this.selection[name];
     for (const fragID in ids) {
       if (!styles[fragID]) {
@@ -330,62 +327,65 @@ export class FragmentHighlighter
         styles[fragID].add(id);
       }
 
-      await this.regenerate(name, fragID);
+      await this.regenerate(name, fragID, world);
     }
 
-    await this.events[name].onHighlight.trigger(this.selection[name]);
+    this.events[name].onHighlight.trigger(this.selection[name]);
 
     if (zoomToSelection) {
-      await this.zoomSelection(name);
+      await this.zoomSelection(name, world);
     }
   }
 
   /**
    * Clears any selection previously made by calling {@link highlight}.
    */
-  async clear(name?: string) {
-    await this.clearFills(name);
+  clear(world: World, name?: string) {
+    this.clearFills(name);
     if (!name || !this.excludeOutline.has(name)) {
-      await this.clearOutlines();
+      this.clearOutlines(world);
     }
   }
 
-  readonly onSetup = new Event<FragmentHighlighter>();
-
-  async setup(config?: Partial<FragmentHighlighterConfig>) {
+  setup(config?: Partial<FragmentHighlighterConfig>) {
     if (config?.selectionMaterial) {
       this.config.selectionMaterial.dispose();
     }
     if (config?.hoverMaterial) {
       this.config.hoverMaterial.dispose();
     }
+
     this.config = { ...this.config, ...config };
     this.outlineMaterial.color.set(0xf0ff7a);
     this.excludeOutline.add(this.config.hoverName);
-    await this.add(this.config.selectName, [this.config.selectionMaterial]);
-    await this.add(this.config.hoverName, [this.config.hoverMaterial]);
+    this.add(this.config.selectName, [this.config.selectionMaterial]);
+    this.add(this.config.hoverName, [this.config.hoverMaterial]);
     this.setupEvents(true);
     this.enabled = true;
     this.isSetup = true;
-    await this.onSetup.trigger(this);
+    this.onSetup.trigger(this);
   }
 
-  private async regenerate(name: string, fragID: string) {
+  private async regenerate(name: string, fragID: string, world: OBC.World) {
     if (this.fillEnabled) {
       await this.updateFragmentFill(name, fragID);
     }
     if (this._outlineEnabled) {
-      await this.updateFragmentOutline(name, fragID);
+      await this.updateFragmentOutline(name, fragID, world);
     }
   }
 
-  private async zoomSelection(name: string) {
+  private async zoomSelection(name: string, world: OBC.World) {
     if (!this.fillEnabled && !this._outlineEnabled) {
       return;
     }
 
-    const bbox = this.components.tools.get(FragmentBoundingBox);
-    const fragments = this.components.tools.get(FragmentManager);
+    if (!world.camera.hasCameraControls()) {
+      return;
+    }
+
+    const bbox = this.components.get(OBC.FragmentBoundingBox);
+    const fragments = this.components.get(OBC.FragmentManager);
     bbox.reset();
 
     const selected = this.selection[name];
@@ -393,7 +393,8 @@ export class FragmentHighlighter
       return;
     }
     for (const fragID in selected) {
-      const fragment = fragments.list[fragID];
+      const fragment = fragments.list.get(fragID);
+      if (!fragment) continue;
       if (this.fillEnabled) {
         const highlight = fragment.fragments[name];
         if (highlight) {
@@ -416,16 +417,17 @@ export class FragmentHighlighter
     if (isInf || isMInf || isZero) {
       return;
     }
+
     sphere.radius *= this.zoomFactor;
-    const camera = this.components.camera as SimpleCamera;
+    const camera = world.camera;
     await camera.controls.fitToSphere(sphere, true);
   }
 
-  private async clearStyle(name: string) {
-    const fragments = this.components.tools.get(FragmentManager);
+  private clearStyle(name: string) {
+    const fragments = this.components.get(OBC.FragmentManager);
 
     for (const fragID in this.selection[name]) {
-      const fragment = fragments.list[fragID];
+      const fragment = fragments.list.get(fragID);
       if (!fragment) continue;
       const selection = fragment.fragments[name];
       if (selection) {
@@ -433,15 +435,15 @@ export class FragmentHighlighter
       }
     }
 
-    await this.events[name].onClear.trigger(null);
+    this.events[name].onClear.trigger(null);
     this.selection[name] = {};
   }
 
   private async updateFragmentFill(name: string, fragmentID: string) {
-    const fragments = this.components.tools.get(FragmentManager);
+    const fragments = this.components.get(OBC.FragmentManager);
 
     const ids = this.selection[name][fragmentID];
-    const fragment = fragments.list[fragmentID];
+    const fragment = fragments.list.get(fragmentID);
     if (!fragment) return;
     const selection = fragment.fragments[name];
     if (!selection) return;
@@ -472,15 +474,16 @@ export class FragmentHighlighter
     }
   }
 
-  private async clearFills(name: string | undefined) {
+  private clearFills(name: string | undefined) {
     const names = name ? [name] : Object.keys(this.selection);
     for (const name of names) {
-      await this.clearStyle(name);
+      this.clearStyle(name);
     }
   }
 
-  private async clearOutlines() {
-    const effects = this._postproduction.customEffects;
+  private clearOutlines(world: OBC.World) {
+    const postproduction = this.getPostproduction(world);
+    const effects = postproduction.customEffects;
     const fragmentsOutline = effects.outlinedMeshes.fragments;
     if (fragmentsOutline) {
       fragmentsOutline.meshes.clear();
@@ -491,8 +494,12 @@ export class FragmentHighlighter
     }
   }
 
-  private async updateFragmentOutline(name: string, fragmentID: string) {
-    const fragments = this.components.tools.get(FragmentManager);
+  private async updateFragmentOutline(
+    name: string,
+    fragmentID: string,
+    world: OBC.World,
+  ) {
+    const fragments = this.components.get(OBC.FragmentManager);
 
     if (!this.selection[name][fragmentID]) {
       return;
@@ -503,11 +510,12 @@ export class FragmentHighlighter
     }
 
     const ids = this.selection[name][fragmentID];
-    const fragment = fragments.list[fragmentID];
+    const fragment = fragments.list.get(fragmentID);
     if (!fragment) return;
 
     const geometry = fragment.mesh.geometry;
-    const customEffects = this._postproduction.customEffects;
+    const postproduciton = this.getPostproduction(world);
+    const customEffects = postproduciton.customEffects;
 
     if (!customEffects.outlinedMeshes.fragments) {
       customEffects.outlinedMeshes.fragments = {
@@ -527,7 +535,7 @@ export class FragmentHighlighter
       const newMesh = new THREE.InstancedMesh(
         newGeometry,
         this._invisibleMaterial,
-        fragment.capacity
+        fragment.capacity,
       );
       newMesh.frustumCulled = false;
       newMesh.renderOrder = 999;
@@ -535,7 +543,7 @@ export class FragmentHighlighter
       newMesh.applyMatrix4(fragment.mesh.matrixWorld);
       this._outlinedMeshes[fragmentID] = newMesh;
 
-      const scene = this.components.scene.get();
+      const scene = world.scene.three;
       scene.add(newMesh);
     }
 
@@ -558,7 +566,15 @@ export class FragmentHighlighter
   }
 
   private setupEvents(active: boolean) {
-    const container = this.components.renderer.get().domElement;
+    if (!this.config.world) {
+      return;
+    }
+
+    if (!this.config.world.renderer) {
+      throw new Error("The given world doesn't have a renderer!");
+    }
+
+    const container = this.config.world.renderer.three.domElement;
 
     if (active === this._eventsActive) {
       return;
@@ -583,8 +599,15 @@ export class FragmentHighlighter
   };
 
   private onMouseUp = async (event: MouseEvent) => {
+    const world = this.config.world;
+    if (!world) {
+      throw new Error("No world found!");
+    }
+    if (!world.renderer) {
+      throw new Error("This world doesn't have a renderer!");
+    }
     if (!this.enabled) return;
-    if (event.target !== this.components.renderer.get().domElement) return;
+    if (event.target !== world.renderer.three.domElement) return;
     this._mouseState.down = false;
     if (this._mouseState.moved || event.button !== 0) {
       this._mouseState.moved = false;
@@ -600,13 +623,22 @@ export class FragmentHighlighter
   private onMouseMove = async () => {
     if (!this.enabled) return;
     if (this._mouseState.moved) {
-      await this.clearFills(this.config.hoverName);
+      this.clearFills(this.config.hoverName);
       return;
     }
 
     this._mouseState.moved = this._mouseState.down;
     await this.highlight(this.config.hoverName, true, false);
   };
-}
 
-ToolComponent.libraryUUIDs.add(FragmentHighlighter.uuid);
+  private getPostproduction(world: OBC.World) {
+    if (!world.renderer) {
+      throw new Error("The given world doesn't have a renderer!");
+    }
+    if (!(world.renderer instanceof PostproductionRenderer)) {
+      throw new Error("Postproduction renderer is needed for outlines!");
+    }
+    const renderer = world.renderer as PostproductionRenderer;
+    return renderer.postproduction;
+  }
+}
