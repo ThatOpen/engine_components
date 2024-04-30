@@ -2,25 +2,15 @@ import * as THREE from "three";
 import {
   Event,
   Resizeable,
-  UI,
   Updateable,
-  Component,
   Disposable,
-  UIElement,
-} from "../../base-types";
-import { Canvas, Button, RangeInput } from "../../ui";
-import { Components, SimpleCamera, ToolComponent } from "../../core";
+  World,
+} from "../../../core";
 
-export class MiniMap
-  extends Component<THREE.OrthographicCamera>
-  implements UI, Resizeable, Updateable, Disposable
-{
-  static readonly uuid = "39ad6aad-84c8-4adf-a1e0-7f25313a9e7f" as const;
-
+export class MiniMap implements Resizeable, Updateable, Disposable {
   /** {@link Disposable.onDisposed} */
-  readonly onDisposed = new Event<string>();
+  readonly onDisposed = new Event();
 
-  readonly uiElement = new UIElement<{ main: Button; canvas: Canvas }>();
   readonly onAfterUpdate = new Event();
   readonly onBeforeUpdate = new Event();
   readonly onResize = new Event<THREE.Vector2>();
@@ -32,11 +22,14 @@ export class MiniMap
 
   backgroundColor = new THREE.Color(0x06080a);
 
-  private _enabled = true;
+  renderer: THREE.WebGLRenderer;
+
+  enabled = true;
+
+  world: World;
+
   private _lockRotation = true;
-  private _components: Components;
   private _camera: THREE.OrthographicCamera;
-  private _renderer: THREE.WebGLRenderer;
   private _plane: THREE.Plane;
   private _size = new THREE.Vector2(320, 160);
 
@@ -66,36 +59,15 @@ export class MiniMap
     this._camera.updateProjectionMatrix();
   }
 
-  get enabled() {
-    return this._enabled;
-  }
+  constructor(world: World) {
+    this.world = world;
 
-  set enabled(active: boolean) {
-    this._enabled = active;
-    const canvas = this.uiElement.get("canvas");
-    canvas.visible = active;
-  }
+    if (!this.world.renderer) {
+      throw new Error("The given world must have a renderer!");
+    }
 
-  constructor(components: Components) {
-    super(components);
-    this.components.tools.add(MiniMap.uuid, this);
-
-    const main = new Button(components);
-    const canvas = new Canvas(components);
-    this.uiElement.set({ main, canvas });
-
-    main.materialIcon = "map";
-    main.onClick.add(() => {
-      canvas.visible = !canvas.visible;
-    });
-
-    const range = new RangeInput(components);
-    canvas.addChild(range);
-
-    this._components = components;
-    const htmlCanvas = canvas.get();
-    this._renderer = new THREE.WebGLRenderer({ canvas: htmlCanvas });
-    this._renderer.setSize(this._size.x, this._size.y);
+    this.renderer = new THREE.WebGLRenderer();
+    this.renderer.setSize(this._size.x, this._size.y);
 
     const frustumSize = 1;
     const aspect = this._size.x / this._size.y;
@@ -104,10 +76,10 @@ export class MiniMap
       (frustumSize * aspect) / -2,
       (frustumSize * aspect) / 2,
       frustumSize / 2,
-      frustumSize / -2
+      frustumSize / -2,
     );
 
-    this._components.renderer.onClippingPlanesUpdated.add(this.updatePlanes);
+    this.world.renderer.onClippingPlanesUpdated.add(this.updatePlanes);
 
     this._camera.position.set(0, 200, 0);
     this._camera.zoom = 0.1;
@@ -116,15 +88,14 @@ export class MiniMap
     this.updatePlanes();
   }
 
-  async dispose() {
+  dispose() {
     this.enabled = false;
-    this.uiElement.dispose();
     this.onBeforeUpdate.reset();
     this.onAfterUpdate.reset();
     this.onResize.reset();
     this.overrideMaterial.dispose();
-    this._renderer.dispose();
-    await this.onDisposed.trigger(MiniMap.uuid);
+    this.renderer.dispose();
+    this.onDisposed.trigger();
     this.onDisposed.reset();
   }
 
@@ -132,12 +103,21 @@ export class MiniMap
     return this._camera;
   }
 
-  async update() {
+  update() {
     if (!this.enabled) return;
-    await this.onBeforeUpdate.trigger();
-    const scene = this._components.scene.get();
-    const cameraComponent = this._components.camera as SimpleCamera;
-    const controls = cameraComponent.controls;
+    this.onBeforeUpdate.trigger();
+    const scene = this.world.scene.three;
+    const camera = this.world.camera;
+
+    if (!camera.hasCameraControls()) {
+      throw new Error("The given world must use camera controls!");
+    }
+
+    if (!(scene instanceof THREE.Scene)) {
+      throw new Error("The given world must have a THREE.Scene as a root!");
+    }
+
+    const controls = camera.controls;
     controls.getPosition(this._tempVector1);
 
     this._camera.position.x = this._tempVector1.x;
@@ -155,7 +135,7 @@ export class MiniMap
       controls.getTarget(this._tempTarget);
       const angle = Math.atan2(
         this._tempTarget.x - this._tempVector1.x,
-        this._tempTarget.z - this._tempVector1.z
+        this._tempTarget.z - this._tempVector1.z,
       );
       this._camera.rotation.z = angle + Math.PI;
     }
@@ -163,22 +143,19 @@ export class MiniMap
     this._plane.set(this.down, this._tempVector1.y);
     const previousBackground = scene.background;
     scene.background = this.backgroundColor;
-    this._renderer.render(scene, this._camera);
+    this.renderer.render(scene, this._camera);
     scene.background = previousBackground;
-    await this.onAfterUpdate.trigger();
+    this.onAfterUpdate.trigger();
   }
 
   getSize() {
-    const canvas = this.uiElement.get<Canvas>("canvas");
-    return canvas.getSize();
+    return this._size;
   }
 
-  async resize(size?: THREE.Vector2) {
-    const canvas = this.uiElement.get<Canvas>("canvas");
+  resize(size?: THREE.Vector2) {
     if (size) {
       this._size.copy(size);
-      canvas.resize(size);
-      this._renderer.setSize(size.x, size.y);
+      this.renderer.setSize(size.x, size.y);
 
       const aspect = size.x / size.y;
       const frustumSize = 1;
@@ -188,19 +165,20 @@ export class MiniMap
       this._camera.top = frustumSize / 2;
       this._camera.bottom = -frustumSize / 2;
       this._camera.updateProjectionMatrix();
-      await this.onResize.trigger(size);
+      this.onResize.trigger(size);
     }
   }
 
   private updatePlanes = () => {
+    if (!this.world.renderer) {
+      throw new Error("The given world must have a renderer!");
+    }
     const planes: THREE.Plane[] = [];
-    const renderer = this._components.renderer.get();
+    const renderer = this.world.renderer.three;
     for (const plane of renderer.clippingPlanes) {
       planes.push(plane);
     }
     planes.push(this._plane);
-    this._renderer.clippingPlanes = planes;
+    this.renderer.clippingPlanes = planes;
   };
 }
-
-ToolComponent.libraryUUIDs.add(MiniMap.uuid);

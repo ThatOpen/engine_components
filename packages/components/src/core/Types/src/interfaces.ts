@@ -72,7 +72,7 @@ export interface Updateable {
    * Function used to update the state of this component each frame. For
    * instance, a renderer component will make a render each frame.
    */
-  update(delta?: number): void | Promise<void>;
+  update(delta?: number): void;
 }
 
 /** Basic type to describe the progress of any kind of process. */
