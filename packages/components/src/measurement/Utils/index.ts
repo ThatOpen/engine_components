@@ -231,6 +231,7 @@ export class MeasurementUtils {
 
     const plane = new THREE.Plane();
     plane.setFromNormalAndCoplanarPoint(faceNormal, p1);
+    plane.constant = Math.round(plane.constant * 10) / 10;
     return { plane, edges };
   }
 

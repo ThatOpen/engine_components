@@ -1,15 +1,14 @@
 import * as THREE from "three";
 import * as FRAGS from "bim-fragment";
-import { Alignment, FragmentsGroup } from "bim-fragment";
+import * as OBC from "@thatopen/components";
 import { CurveHighlighter } from "../CivilNavigator/src/curve-highlighter";
-import { Component, Event } from "../../base-types";
-import { Components, Simple2DMarker, ToolComponent } from "../../core";
 import { CivilMarkerType } from "../CivilNavigator";
+import { Mark } from "../../core";
 
-export class Civil3DNavigator extends Component<any> {
+export class Civil3DNavigator extends OBC.Component {
   static readonly uuid = "0a59c09e-2b49-474a-9320-99f51f40f182" as const;
 
-  readonly onHighlight = new Event<{
+  readonly onHighlight = new OBC.Event<{
     curve: FRAGS.CurveMesh;
     point: THREE.Vector3;
     index: number;
@@ -20,8 +19,8 @@ export class Civil3DNavigator extends Component<any> {
   enabled = true;
 
   mouseMarkers: {
-    hover: Simple2DMarker;
-    select: Simple2DMarker;
+    hover: Mark;
+    select: Mark;
   };
 
   readonly onMarkerChange = new Event<{
