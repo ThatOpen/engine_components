@@ -7,6 +7,7 @@ import { Mark } from "./src";
 // TODO: Optimize by computing clusters in worker
 // TODO: Optimize by only computing visible marks
 
+export * from "./src";
 
 export interface IMarker {
   key: string;

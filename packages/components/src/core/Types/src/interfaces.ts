@@ -90,40 +90,23 @@ export interface Progress {
  * dimensions.
  */
 export interface Createable {
-  readonly onBeforeCreate: Event<any>;
-
   /** Creates a new instance of an element (e.g. a new Dimension). */
   create: (data: any) => void;
-
-  /** Fired after successfully calling {@link Createable.create}  */
-  readonly onAfterCreate: Event<any>;
 
   /**
    * Finish the creation process of the component, successfully creating an
    * instance of whatever the component creates.
    */
-  endCreation: (data: any) => void;
-
-  /** Fired before calling {@link Createable.cancelCreation}. */
-  readonly onBeforeCancel: Event<any>;
+  endCreation?: (data: any) => void;
 
   /**
    * Cancels the creation process of the component, going back to the state
    * before starting to create.
    */
-  cancelCreation: (data: any) => void;
-
-  /** Fired after calling {@link Createable.cancelCreation}. */
-  readonly onAfterCancel: Event<any>;
-
-  /** Fired before calling {@link Createable.delete}. */
-  readonly onBeforeDelete: Event<any>;
+  cancelCreation?: (data: any) => void;
 
   /** Deletes an existing instance of an element (e.g. a Dimension). */
   delete: (data: any) => void;
-
-  /** Fired after successfully calling {@link Createable.delete()}  */
-  readonly onAfterDelete: Event<any>;
 }
 
 /**
