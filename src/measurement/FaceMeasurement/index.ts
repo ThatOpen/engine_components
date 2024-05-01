@@ -273,7 +273,6 @@ export class FaceMeasurement
 
     const result = MeasurementUtils.getFace(mesh, faceIndex, instance);
     if (result === null) {
-      console.log("Hey!");
       return;
     }
 

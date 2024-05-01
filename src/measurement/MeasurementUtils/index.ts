@@ -229,6 +229,7 @@ export class MeasurementUtils {
 
     const plane = new THREE.Plane();
     plane.setFromNormalAndCoplanarPoint(faceNormal, p1);
+    plane.constant = Math.round(plane.constant * 10) / 10;
     return { plane, edges };
   }
 
@@ -262,10 +263,6 @@ export class MeasurementUtils {
     const averageNy = (n1.y + n2.y + n3.y) / 3;
     const averageNz = (n1.z + n2.z + n3.z) / 3;
     const faceNormal = new THREE.Vector3(averageNx, averageNy, averageNz);
-
-    if (!faceNormal.x && !faceNormal.y && !faceNormal.z) {
-      console.log("hey");
-    }
 
     // Apply instance transformation to vertex and normal
 
