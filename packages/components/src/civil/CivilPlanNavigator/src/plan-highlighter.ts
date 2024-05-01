@@ -257,18 +257,18 @@ export class PlanHighlighter extends CurveHighlighter {
     const endDimensionGeometry = new THREE.BufferGeometry().setFromPoints(
       offsetEndDimensionPoints,
     );
-    const clothStartDimensionlLine = new THREE.Line(
+    const clothStartDimensionLine = new THREE.Line(
       startDimensionGeometry,
       this.markupMaterial,
     );
-    this.scene.add(clothStartDimensionlLine);
-    this.markupLines.push(clothStartDimensionlLine);
-    const clothEndDimensionlLine = new THREE.Line(
+    this.scene.add(clothStartDimensionLine);
+    this.markupLines.push(clothStartDimensionLine);
+    const clothEndDimensionLine = new THREE.Line(
       endDimensionGeometry,
       this.markupMaterial,
     );
-    this.scene.add(clothEndDimensionlLine);
-    this.markupLines.push(clothEndDimensionlLine);
+    this.scene.add(clothEndDimensionLine);
+    this.markupLines.push(clothEndDimensionLine);
   }
 
   private showCircularArcInfo(curveMesh: FRAGS.CurveMesh, offset: number) {

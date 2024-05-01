@@ -47,6 +47,8 @@ export abstract class CivilNavigator extends Component<any> {
     select: Simple2DMarker;
   };
 
+  private kpLabel: Simple2DMarker | null = null;
+
   protected constructor(components: Components) {
     super(components);
     this.scene = new Simple2DScene(this.components, false);
@@ -58,6 +60,7 @@ export abstract class CivilNavigator extends Component<any> {
 
     this.setupEvents();
     this.adjustRaycasterOnZoom();
+    this.newKPLabel(this.scene);
   }
 
   initialize() {
@@ -125,7 +128,7 @@ export abstract class CivilNavigator extends Component<any> {
           event,
           this.scene.camera,
           dom,
-          this._curveMeshes
+          this._curveMeshes,
         );
 
         if (result) {
@@ -149,7 +152,7 @@ export abstract class CivilNavigator extends Component<any> {
           event,
           this.scene.camera,
           dom,
-          this._curveMeshes
+          this._curveMeshes,
         );
 
         if (intersects) {
@@ -240,7 +243,7 @@ export abstract class CivilNavigator extends Component<any> {
         // @ts-ignore
         [startX, startY],
         // @ts-ignore
-        [endX, endY]
+        [endX, endY],
       );
 
       const slopeSegment = (defSlope * 100).toFixed(2);
@@ -301,7 +304,7 @@ export abstract class CivilNavigator extends Component<any> {
     point: THREE.Vector3,
     object: THREE.Object3D,
     index: number | undefined,
-    type: CivilMarkerType
+    type: CivilMarkerType,
   ) {
     if (index === undefined) {
       return;
@@ -313,16 +316,44 @@ export abstract class CivilNavigator extends Component<any> {
     const { startPoint, endPoint } = curveMesh.curve.getSegment(index);
     const angle = Math.atan2(
       endPoint.y - startPoint.y,
-      endPoint.x - startPoint.x
+      endPoint.x - startPoint.x,
     );
     const bar = marker.element.children[0] as HTMLDivElement;
     const trueAngle = 90 - (angle / Math.PI) * 180;
     bar.style.transform = `rotate(${trueAngle}deg)`;
   }
 
+  private newKPLabel(scene: Simple2DScene) {
+    const div = document.createElement("div");
+    div.textContent = `${0o0}`;
+    const parentObject = scene.get();
+    const kpLabel = new Simple2DMarker(this.components, div, parentObject);
+
+    this.kpLabel = kpLabel;
+  }
+  private setKPLabel(
+    // mesh: FRAGS.CurveMesh,
+    point: THREE.Vector3,
+  ) {
+    // const scene = this.scene.get();
+    if (!this.kpLabel) {
+      console.error("Label is not created yet!");
+      return;
+    }
+
+    const KpPoint = point.clone();
+    KpPoint.y += 7;
+
+    const markerElement = this.kpLabel.get().element as HTMLDivElement;
+    markerElement.textContent = `${1234}`;
+
+    this.kpLabel.get().position.copy(KpPoint);
+    this.kpLabel.visible = true;
+  }
+
   private async updateMarker(
     intersects: THREE.Intersection,
-    type: CivilMarkerType
+    type: CivilMarkerType,
   ) {
     const { point, index, object } = intersects;
     const mesh = object as FRAGS.CurveMesh;
@@ -331,6 +362,7 @@ export abstract class CivilNavigator extends Component<any> {
     const percentage = alignment.getPercentageAt(point, this.view);
     const markerPoint = point.clone();
     this.setMouseMarker(markerPoint, mesh, index, type);
+    this.setKPLabel(markerPoint);
     if (percentage !== null) {
       await this.onMarkerChange.trigger({ alignment, percentage, type, curve });
     }
