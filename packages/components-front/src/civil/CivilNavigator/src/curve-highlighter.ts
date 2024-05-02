@@ -1,14 +1,14 @@
 import * as THREE from "three";
 import * as FRAGS from "bim-fragment";
+import * as OBC from "@thatopen/components";
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
-import { Event } from "../../../base-types";
 
 type CivilHighlightType = "horizontal" | "absolute" | "vertical";
 
 export class CurveHighlighter {
-  protected scene: THREE.Scene | THREE.Group;
+  protected scene: THREE.Object3D;
 
   static settings = {
     colors: {
@@ -20,7 +20,7 @@ export class CurveHighlighter {
     } as { [curve: string]: number[] },
   };
 
-  readonly onSelect = new Event<FRAGS.CurveMesh>();
+  readonly onSelect = new OBC.Event<FRAGS.CurveMesh>();
 
   type: CivilHighlightType;
 
@@ -34,7 +34,7 @@ export class CurveHighlighter {
 
   caster = new THREE.Raycaster();
 
-  constructor(scene: THREE.Group | THREE.Scene, type: CivilHighlightType) {
+  constructor(scene: THREE.Object3D, type: CivilHighlightType) {
     this.scene = scene;
     this.type = type;
     this.hoverCurve = this.newCurve(0.003, 0x444444, false);

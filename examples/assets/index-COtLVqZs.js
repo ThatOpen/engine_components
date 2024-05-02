@@ -1,4 +1,4 @@
-var S=Object.defineProperty;var T=(l,t,e)=>t in l?S(l,t,{enumerable:!0,configurable:!0,writable:!0,value:e}):l[t]=e;var o=(l,t,e)=>(T(l,typeof t!="symbol"?t+"":t,e),e);import{c as h,U as E,n as m,W as v,H as B,N as R,z as M,C as _,S as w,M as y,I as b,x as z,R as k,E as x,J as V}from"./unzipit.module-DoMll51G.js";import{P as d,a as P,z as L,J as G,$ as O,R as N}from"./N8AO-DNqyA7wK.js";const A={name:"CopyShader",uniforms:{tDiffuse:{value:null},opacity:{value:1}},vertexShader:`
+var S=Object.defineProperty;var T=(l,t,e)=>t in l?S(l,t,{enumerable:!0,configurable:!0,writable:!0,value:e}):l[t]=e;var o=(l,t,e)=>(T(l,typeof t!="symbol"?t+"":t,e),e);import{c as h,U as E,k as m,W as v,H as B,N as R,z as M,C as _,S as w,M as y,I as b,u as z,R as k,E as x,J as V}from"./unzipit.module-zU76GtL2.js";import{P as d,a as P,z as L,J as G,$ as O,R as N}from"./N8AO-B1xyQodp.js";const A={name:"CopyShader",uniforms:{tDiffuse:{value:null},opacity:{value:1}},vertexShader:`
 
 		varying vec2 vUv;
 

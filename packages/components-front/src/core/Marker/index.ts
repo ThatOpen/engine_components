@@ -37,7 +37,7 @@ export class Marker extends OBC.Component {
 
   autoCluster = true;
 
-  protected list = new Map<string, IMarker>();
+  list = new Map<string, IMarker>();
 
   protected clusterLabels: Set<IGroupedMarkers> = new Set<IGroupedMarkers>();
 
@@ -70,7 +70,12 @@ export class Marker extends OBC.Component {
     }
   }
 
-  create(world: OBC.World, text: string, point: THREE.Vector3) {
+  create(
+    world: OBC.World,
+    text: string,
+    point: THREE.Vector3,
+    isStatic = false,
+  ) {
     this.setupEvents(world, true);
 
     const span = document.createElement("span");
@@ -86,7 +91,7 @@ export class Marker extends OBC.Component {
       key,
       label: marker,
       merged: false,
-      static: false,
+      static: isStatic,
     });
 
     this._markerKey++;

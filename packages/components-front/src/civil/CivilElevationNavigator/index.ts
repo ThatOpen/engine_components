@@ -1,41 +1,34 @@
-import * as FRAGS from "bim-fragment";
-import { UI, UIElement } from "../../base-types";
-import { Drawer } from "../../ui";
-import { Components } from "../../core";
+import * as OBC from "@thatopen/components";
+import { CivilMarker } from "../CivilMarker";
 import { CivilNavigator } from "../CivilNavigator";
-import { CurveHighlighter } from "../CivilNavigator/src/curve-highlighter";
-import { KPManager } from "../CivilNavigator/src/kp-manager";
 
-export class CivilElevationNavigator extends CivilNavigator implements UI {
+export class CivilElevationNavigator extends CivilNavigator {
   static readonly uuid = "097eea29-2d5a-431a-a247-204d44670621" as const;
 
   readonly view = "vertical";
 
-  uiElement = new UIElement<{
-    drawer: Drawer;
-  }>();
+  enabled = true;
 
-  highlighter: CurveHighlighter;
+  set world(world: OBC.World) {
+    if (this.world === world) return;
+    super.world = world;
 
-  kpManager: KPManager;
+    if (!this.highlighter) {
+      return;
+    }
 
-  constructor(components: Components) {
-    super(components);
-    this.setUI();
-    const scene = this.scene.get();
-    this.highlighter = new CurveHighlighter(scene, "vertical");
-    this.kpManager = new KPManager(
-      components,
-      this.scene.renderer,
-      this.scene.get(),
-      this.scene.controls,
-      this.view
-    );
-
+    // TODO: Can we substitute this by the .onHighlight event?
+    //  That way we can put this in the constructor
     this.highlighter.onSelect.add((mesh) => {
+      if (!this.world) {
+        throw new Error("A world is needed to work with this component!");
+      }
+
       // Add markers elevation
 
-      this.kpManager.dispose();
+      const marker = this.components.get(CivilMarker);
+
+      marker.deleteByType(["Slope", "Height", "InitialKPV", "FinalKPV"]);
 
       const { alignment } = mesh.curve;
       const positionsVertical = [];
@@ -47,93 +40,48 @@ export class CivilElevationNavigator extends CivilNavigator implements UI {
 
       const { defSegments, slope } = this.setDefSegments(positionsVertical);
 
-      const scene = this.scene.get();
+      const scene = this.world.scene.three;
 
       for (let i = 0; i < alignment.vertical.length; i++) {
         const align = alignment.vertical[i];
 
-        this.kpManager.addCivilVerticalMarker(
+        marker.addVerticalMarker(
+          this.world,
           `S: ${slope[i].slope}%`,
           align.mesh,
           "Slope",
-          scene
+          scene,
         );
 
-        this.kpManager.addCivilVerticalMarker(
+        marker.addVerticalMarker(
+          this.world,
           `H: ${defSegments[i].end.y.toFixed(2)}`,
           align.mesh,
           "Height",
-          scene
+          scene,
         );
       }
 
-      this.kpManager.addCivilVerticalMarker(
+      marker.addVerticalMarker(
+        this.world,
         "KP: 0",
         alignment.vertical[0].mesh,
         "InitialKPV",
-        scene
+        scene,
       );
 
-      this.kpManager.addCivilVerticalMarker(
+      marker.addVerticalMarker(
+        this.world,
         `KP: ${alignment.vertical.length}`,
         alignment.vertical[alignment.vertical.length - 1].mesh,
         "FinalKPV",
-        scene
+        scene,
       );
     });
   }
 
-  get() {
-    return null as any;
-  }
-
-  showKPStations(mesh: FRAGS.CurveMesh) {
-    // TODO: Discuss and Implement the Logic for Vertical Views and KP Stations
-    console.log(mesh);
-  }
-
-  clearKPStations(): void {
-    // Clearing KP Stations
-  }
-
-  private setUI() {
-    const drawer = new Drawer(this.components);
-    this.components.ui.add(drawer);
-    drawer.alignment = "top";
-
-    drawer.onVisible.add(() => {
-      this.scene.grid.regenerate();
-    });
-    drawer.visible = false;
-
-    drawer.slots.content.domElement.style.padding = "0";
-    drawer.slots.content.domElement.style.overflow = "hidden";
-
-    const { clientWidth, clientHeight } = drawer.domElement;
-    this.scene.setSize(clientHeight, clientWidth);
-
-    const vContainer = this.scene.uiElement.get("container");
-    drawer.addChild(vContainer);
-
-    this.uiElement.set({ drawer });
-
-    drawer.onResized.add(() => {
-      const width = window.innerWidth;
-      const height = this.scene.size.y;
-      this.scene.setSize(height, width);
-    });
-
-    drawer.onResized.add(() => {
-      const { width, height } = drawer.containerSize;
-      this.scene.setSize(height, width);
-    });
-
-    if (this.components.renderer.isUpdateable()) {
-      this.components.renderer.onAfterUpdate.add(async () => {
-        if (drawer.visible) {
-          await this.scene.update();
-        }
-      });
-    }
+  constructor(components: OBC.Components) {
+    super(components);
+    this.components.add(CivilElevationNavigator.uuid, this);
   }
 }

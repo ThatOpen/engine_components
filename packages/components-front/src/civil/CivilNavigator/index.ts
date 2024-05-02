@@ -1,81 +1,101 @@
 import * as THREE from "three";
 import * as FRAGS from "bim-fragment";
+import * as OBC from "@thatopen/components";
 import { Alignment, FragmentsGroup } from "bim-fragment";
-import { Component, Event } from "../../base-types";
-import { Components, Simple2DMarker, Simple2DScene } from "../../core";
 import { CurveHighlighter } from "./src/curve-highlighter";
-import { KPManager } from "./src/kp-manager";
+import { CivilMarker } from "../CivilMarker";
+import { Mark } from "../../core";
 
 export type CivilMarkerType = "hover" | "select";
 
-export abstract class CivilNavigator extends Component<any> {
-  enabled = true;
-
-  scene: Simple2DScene;
-
+export abstract class CivilNavigator extends OBC.Component {
   abstract view: "horizontal" | "vertical";
 
-  abstract highlighter: CurveHighlighter;
+  enabled = true;
+
+  highlighter?: CurveHighlighter;
 
   // abstract showKPStations(curveMesh: FRAGS.CurveMesh): void;
   // abstract clearKPStations(): void;
 
-  abstract kpManager: KPManager;
-
-  readonly onHighlight = new Event<{
+  readonly onHighlight = new OBC.Event<{
     point: THREE.Vector3;
     mesh: FRAGS.CurveMesh;
   }>();
 
-  readonly onMarkerChange = new Event<{
+  readonly onMarkerChange = new OBC.Event<{
     alignment: FRAGS.Alignment;
     percentage: number;
     type: CivilMarkerType;
     curve: FRAGS.CivilCurve;
   }>();
 
-  readonly onMarkerHidden = new Event<{
+  mouseMarkers?: {
+    hover: Mark;
+    select: Mark;
+  };
+
+  readonly onMarkerHidden = new OBC.Event<{
     type: CivilMarkerType;
   }>();
 
-  private _curveMeshes: FRAGS.CurveMesh[] = [];
+  private _curves: FRAGS.CurveMesh[] = [];
 
   private _previousAlignment: FRAGS.Alignment | null = null;
 
-  mouseMarkers: {
-    hover: Simple2DMarker;
-    select: Simple2DMarker;
-  };
+  private _world: OBC.World | null = null;
 
-  protected constructor(components: Components) {
-    super(components);
-    this.scene = new Simple2DScene(this.components, false);
+  get world() {
+    return this._world;
+  }
+
+  set world(world: OBC.World | null) {
+    if (world === this._world) {
+      return;
+    }
+
+    if (this._world) {
+      this.setupEvents(false);
+    }
+
+    this._world = world;
+
+    this.highlighter?.dispose();
+    this.mouseMarkers?.hover.dispose();
+    this.mouseMarkers?.select.dispose();
+
+    if (!world) {
+      return;
+    }
+
+    const scene = world.scene.three;
+    this.highlighter = new CurveHighlighter(scene, "absolute");
 
     this.mouseMarkers = {
-      select: this.newMouseMarker("#ffffff"),
-      hover: this.newMouseMarker("#575757"),
+      select: this.newMouseMarker("#ffffff", world),
+      hover: this.newMouseMarker("#575757", world),
     };
 
-    this.setupEvents();
-    this.adjustRaycasterOnZoom();
+    this.setupEvents(true);
   }
 
-  initialize() {
-    console.log("View for CivilNavigator: ", this.view);
-  }
-
-  get() {
-    return null as any;
+  protected constructor(components: OBC.Components) {
+    super(components);
   }
 
   async draw(model: FragmentsGroup, filter?: Iterable<FRAGS.Alignment>) {
     if (!model.civilData) {
       throw new Error("The provided model doesn't have civil data!");
     }
+
+    if (!this.world) {
+      throw new Error("No world was given for this navigator!");
+    }
+
     const { alignments } = model.civilData;
     const allAlignments = filter || alignments.values();
 
-    const scene = this.scene.get();
+    const scene = this.world.scene.three;
 
     const totalBBox: THREE.Box3 = new THREE.Box3();
     totalBBox.makeEmpty();
@@ -89,7 +109,7 @@ export abstract class CivilNavigator extends Component<any> {
 
       for (const curve of alignment[this.view]) {
         scene.add(curve.mesh);
-        this._curveMeshes.push(curve.mesh);
+        this._curves.push(curve.mesh);
 
         if (!totalBBox.isEmpty()) {
           totalBBox.expandByObject(curve.mesh);
@@ -112,87 +132,29 @@ export abstract class CivilNavigator extends Component<any> {
     size.multiplyScalar(1.2);
     scaledBbox.setFromCenterAndSize(center, size);
 
-    await this.scene.controls.fitToBox(scaledBbox, false);
-  }
-
-  setupEvents() {
-    this.scene.uiElement
-      .get("container")
-      .domElement.addEventListener("mousemove", async (event) => {
-        const dom = this.scene.uiElement.get("container").domElement;
-
-        const result = this.highlighter.castRay(
-          event,
-          this.scene.camera,
-          dom,
-          this._curveMeshes
-        );
-
-        if (result) {
-          const { object } = result;
-          this.highlighter.hover(object as FRAGS.CurveMesh);
-          await this.updateMarker(result, "hover");
-          return;
-        }
-
-        this.mouseMarkers.hover.visible = false;
-        this.highlighter.unHover();
-        await this.onMarkerHidden.trigger({ type: "hover" });
-      });
-
-    this.scene.uiElement
-      .get("container")
-      .domElement.addEventListener("click", async (event) => {
-        const dom = this.scene.uiElement.get("container").domElement;
-
-        const intersects = this.highlighter.castRay(
-          event,
-          this.scene.camera,
-          dom,
-          this._curveMeshes
-        );
-
-        if (intersects) {
-          const result = intersects;
-          const mesh = result.object as FRAGS.CurveMesh;
-          this.highlighter.select(mesh);
-          await this.updateMarker(result, "select");
-
-          await this.onHighlight.trigger({ mesh, point: result.point });
-
-          if (this._previousAlignment !== mesh.curve.alignment) {
-            this.kpManager.clearKPStations();
-            // this.showKPStations(mesh);
-            this.kpManager.showKPStations(mesh);
-            // this.kpManager.createKP();
-            this._previousAlignment = mesh.curve.alignment;
-          }
-        }
-
-        // this.highlighter.unSelect();
-        // this.clearKPStations();
-      });
+    if (this.world.camera.hasCameraControls()) {
+      await this.world.camera.controls.fitToBox(scaledBbox, false);
+    }
   }
 
   async dispose() {
-    this.highlighter.dispose();
+    this.highlighter?.dispose();
     this.clear();
     this.onHighlight.reset();
-    await this.scene.dispose();
-    this._curveMeshes = [];
+    this._curves = [];
   }
 
   clear() {
-    this.highlighter.unSelect();
-    this.highlighter.unHover();
-    for (const mesh of this._curveMeshes) {
+    this.highlighter?.unSelect();
+    this.highlighter?.unHover();
+    for (const mesh of this._curves) {
       mesh.removeFromParent();
     }
-    this._curveMeshes = [];
+    this._curves = [];
   }
 
   setMarker(alignment: Alignment, percentage: number, type: CivilMarkerType) {
-    if (!this._curveMeshes.length) {
+    if (!this._curves.length) {
       return;
     }
     const found = alignment.getCurveAt(percentage, this.view);
@@ -240,7 +202,7 @@ export abstract class CivilNavigator extends Component<any> {
         // @ts-ignore
         [startX, startY],
         // @ts-ignore
-        [endX, endY]
+        [endX, endY],
       );
 
       const slopeSegment = (defSlope * 100).toFixed(2);
@@ -268,31 +230,52 @@ export abstract class CivilNavigator extends Component<any> {
   }
 
   hideMarker(type: CivilMarkerType) {
-    this.mouseMarkers[type].visible = false;
+    if (this.mouseMarkers) {
+      this.mouseMarkers[type].visible = false;
+    }
   }
 
-  private adjustRaycasterOnZoom() {
-    this.scene.controls.addEventListener("update", () => {
-      const { zoom, left, right, top, bottom } = this.scene.camera;
-      const width = left - right;
-      const height = top - bottom;
-      const screenSize = Math.max(width, height);
-      const realScreenSize = screenSize / zoom;
-      const range = 40;
-      const { caster } = this.highlighter;
-      caster.params.Line.threshold = realScreenSize / range;
-    });
+  private setupEvents(active: boolean) {
+    if (!this.world) {
+      throw new Error("No world was given for this navigator!");
+    }
+
+    if (!this.world.renderer) {
+      return;
+    }
+
+    const canvas = this.world.renderer.three.domElement;
+    const container = canvas.parentElement as HTMLElement;
+
+    if (active) {
+      container.addEventListener("mousemove", this.onMouseMove);
+      container.addEventListener("click", this.onClick);
+      if (this.world.camera.hasCameraControls()) {
+        const controls = this.world.camera.controls;
+        controls.addEventListener("update", this.onControlsUpdated);
+      }
+    } else {
+      container.removeEventListener("mousemove", this.onMouseMove);
+      container.removeEventListener("click", this.onClick);
+      if (this.world.camera.hasCameraControls()) {
+        const controls = this.world.camera.controls;
+        controls.removeEventListener("update", this.onControlsUpdated);
+      }
+    }
   }
 
-  private newMouseMarker(color: string) {
-    const scene = this.scene.get();
+  private newMouseMarker(color: string, world: OBC.World) {
+    if (!this.world) {
+      throw new Error("No world was given for this navigator!");
+    }
+    const scene = world.scene.three;
     const root = document.createElement("div");
     const bar = document.createElement("div");
     root.appendChild(bar);
     bar.style.backgroundColor = color;
     bar.style.width = "3rem";
     bar.style.height = "3px";
-    const mouseMarker = new Simple2DMarker(this.components, root, scene);
+    const mouseMarker = new Mark(this.world, root, scene);
     mouseMarker.visible = false;
     return mouseMarker;
   }
@@ -301,29 +284,24 @@ export abstract class CivilNavigator extends Component<any> {
     point: THREE.Vector3,
     object: THREE.Object3D,
     index: number | undefined,
-    type: CivilMarkerType
+    type: CivilMarkerType,
   ) {
-    if (index === undefined) {
-      return;
-    }
+    if (index === undefined || !this.mouseMarkers) return;
     this.mouseMarkers[type].visible = true;
-    const marker = this.mouseMarkers[type].get();
+    const marker = this.mouseMarkers[type].three;
     marker.position.copy(point);
     const curveMesh = object as FRAGS.CurveMesh;
     const { startPoint, endPoint } = curveMesh.curve.getSegment(index);
     const angle = Math.atan2(
       endPoint.y - startPoint.y,
-      endPoint.x - startPoint.x
+      endPoint.x - startPoint.x,
     );
     const bar = marker.element.children[0] as HTMLDivElement;
     const trueAngle = 90 - (angle / Math.PI) * 180;
     bar.style.transform = `rotate(${trueAngle}deg)`;
   }
 
-  private async updateMarker(
-    intersects: THREE.Intersection,
-    type: CivilMarkerType
-  ) {
+  private updateMarker(intersects: THREE.Intersection, type: CivilMarkerType) {
     const { point, index, object } = intersects;
     const mesh = object as FRAGS.CurveMesh;
     const curve = mesh.curve;
@@ -332,7 +310,97 @@ export abstract class CivilNavigator extends Component<any> {
     const markerPoint = point.clone();
     this.setMouseMarker(markerPoint, mesh, index, type);
     if (percentage !== null) {
-      await this.onMarkerChange.trigger({ alignment, percentage, type, curve });
+      this.onMarkerChange.trigger({ alignment, percentage, type, curve });
     }
   }
+
+  private onMouseMove = (event: MouseEvent) => {
+    if (!this.world) {
+      throw new Error("No world was given for this navigator!");
+    }
+
+    if (!this.world.renderer) {
+      return;
+    }
+
+    const canvas = this.world.renderer.three.domElement;
+    const dom = canvas.parentElement as HTMLElement;
+    const camera = this.world.camera.three;
+
+    const result = this.highlighter?.castRay(event, camera, dom, this._curves);
+
+    if (result) {
+      const { object } = result;
+      this.highlighter?.hover(object as FRAGS.CurveMesh);
+      this.updateMarker(result, "hover");
+      return;
+    }
+
+    if (this.mouseMarkers) {
+      this.mouseMarkers.hover.visible = false;
+    }
+    this.highlighter?.unHover();
+    this.onMarkerHidden.trigger({ type: "hover" });
+  };
+
+  private onClick = (event: MouseEvent) => {
+    if (!this.world) {
+      throw new Error("No world was given for this navigator!");
+    }
+
+    if (!this.world.renderer) {
+      return;
+    }
+
+    const canvas = this.world.renderer.three.domElement;
+    const dom = canvas.parentElement as HTMLElement;
+    const camera = this.world.camera.three;
+
+    const found = this.highlighter?.castRay(event, camera, dom, this._curves);
+
+    if (found) {
+      const result = found;
+      const mesh = result.object as FRAGS.CurveMesh;
+      this.highlighter?.select(mesh);
+      this.updateMarker(result, "select");
+
+      this.onHighlight.trigger({ mesh, point: result.point });
+
+      if (this._previousAlignment !== mesh.curve.alignment) {
+        const marker = this.components.get(CivilMarker);
+
+        marker.deleteByType(["KP"]);
+        // this.showKPStations(mesh);
+        marker.showKPStations(mesh);
+        // this.kpManager.createKP();
+        this._previousAlignment = mesh.curve.alignment;
+      }
+    }
+
+    // this.highlighter.unSelect();
+    // this.clearKPStations();
+  };
+
+  private onControlsUpdated = () => {
+    if (!this.world) {
+      throw new Error("No world was given for this navigator!");
+    }
+
+    if (!(this.world.camera.three instanceof THREE.OrthographicCamera)) {
+      return;
+    }
+
+    if (!this.highlighter) {
+      return;
+    }
+
+    const { zoom, left, right, top, bottom } = this.world.camera.three;
+    const width = left - right;
+    const height = top - bottom;
+    const screenSize = Math.max(width, height);
+    const realScreenSize = screenSize / zoom;
+    const range = 40;
+    const { caster } = this.highlighter;
+    caster.params.Line.threshold = realScreenSize / range;
+  };
 }

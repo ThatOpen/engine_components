@@ -17,6 +17,11 @@ export class EdgesClipper extends OBC.Clipper<EdgesPlane> {
 
   constructor(components: OBC.Components) {
     super(components);
+    if (this.components.list.has(EdgesClipper.uuid)) {
+      throw new Error(
+        "You can't use a component and his parent at the same time. Use child only!",
+      );
+    }
     this.components.list.set(EdgesClipper.uuid, this);
     this.PlaneType = EdgesPlane;
     this.styles = new EdgesStyles();

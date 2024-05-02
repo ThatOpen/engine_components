@@ -1,54 +1,41 @@
 import * as THREE from "three";
 import * as FRAGS from "bim-fragment";
-import { UI, UIElement } from "../../base-types";
-import { FloatingWindow } from "../../ui";
-import { Components, ToolComponent } from "../../core";
+import * as OBC from "@thatopen/components";
 import { CivilNavigator } from "../CivilNavigator";
-import { FragmentBoundingBox } from "../../fragments";
 import { PlanHighlighter } from "./src/plan-highlighter";
-import { CivilFloatingWindow } from "../CivilFloatingWindow";
-// import { KPStation } from "../CivilNavigator/src/kp-station";
-import { KPManager } from "../CivilNavigator/src/kp-manager";
 
-export class CivilPlanNavigator extends CivilNavigator implements UI {
+export class CivilPlanNavigator extends CivilNavigator {
   static readonly uuid = "3096dea0-5bc2-41c7-abce-9089b6c9431b" as const;
 
   readonly view = "horizontal";
 
-  uiElement = new UIElement<{
-    floatingWindow: FloatingWindow;
-  }>();
+  private planHighlighter?: PlanHighlighter;
 
-  highlighter: PlanHighlighter;
-
-  kpManager: KPManager;
-
-  constructor(components: Components) {
-    super(components);
-    const scene = this.scene.get();
-
-    this.kpManager = new KPManager(
-      components,
-      this.scene.renderer,
-      this.scene.get(),
-      this.scene.controls,
-      this.view
+  set world(world: OBC.World) {
+    super.world = world;
+    if (!world) return;
+    this.planHighlighter?.dispose();
+    this.planHighlighter = new PlanHighlighter(
+      this.components,
+      world.scene.three,
     );
+  }
 
-    this.highlighter = new PlanHighlighter(scene, this.kpManager);
-
-    this.setUI();
-
-    this.components.tools.add(CivilPlanNavigator.uuid, this);
+  constructor(components: OBC.Components) {
+    super(components);
+    this.components.add(CivilPlanNavigator.uuid, this);
 
     this.onHighlight.add(({ mesh }) => {
-      this.highlighter.showCurveInfo(mesh);
+      if (!this.highlighter || !this.planHighlighter) {
+        return;
+      }
+      this.planHighlighter.showCurveInfo(mesh);
       this.fitCameraToAlignment(mesh);
     });
   }
 
   private async fitCameraToAlignment(curveMesh: FRAGS.CurveMesh) {
-    const bbox = this.components.tools.get(FragmentBoundingBox);
+    const bbox = this.components.get(OBC.FragmentBoundingBox);
     const alignment = curveMesh.curve.alignment;
     for (const curve of alignment.horizontal) {
       bbox.addMesh(curve.mesh);
@@ -60,42 +47,13 @@ export class CivilPlanNavigator extends CivilNavigator implements UI {
     const size = new THREE.Vector3(
       (max.x - min.x) * offset,
       (max.y - min.y) * offset,
-      (max.z - min.z) * offset
+      (max.z - min.z) * offset,
     );
     box.getCenter(center);
     box.setFromCenterAndSize(center, size);
     bbox.reset();
-    await this.scene.controls.fitToBox(box, true);
-  }
-
-  // showKPStations(curveMesh: FRAGS.CurveMesh): void {
-  //   this.kpStation.showKPStations(curveMesh);
-  // }
-
-  // clearKPStations(): void {
-  //   this.kpStation.clearKPStations();
-  // }
-
-  private setUI() {
-    const name = "Horizontal alignment";
-    const floatingWindow = CivilFloatingWindow.get(
-      this.components,
-      this.scene,
-      name
-    );
-    this.uiElement.set({ floatingWindow });
-
-    this.scene.controls.addEventListener("update", () => {
-      const screenSize = floatingWindow.containerSize;
-      const { zoom } = this.scene.camera;
-      this.highlighter.updateOffset(screenSize, zoom, true);
-    });
-    floatingWindow.onResized.add(() => {
-      const screenSize = floatingWindow.containerSize;
-      const { zoom } = this.scene.camera;
-      this.highlighter.updateOffset(screenSize, zoom, true);
-    });
+    if (this.world && this.world.camera.hasCameraControls()) {
+      await this.world.camera.controls.fitToBox(box, true);
+    }
   }
 }
-
-ToolComponent.libraryUUIDs.add(CivilPlanNavigator.uuid);

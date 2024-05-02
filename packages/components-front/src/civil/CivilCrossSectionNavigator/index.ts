@@ -1,47 +1,50 @@
 import * as THREE from "three";
 import * as FRAGS from "bim-fragment";
-import { Component, UI, UIElement } from "../../base-types";
-import { FloatingWindow } from "../../ui";
-import { Components, Simple2DScene, ToolComponent } from "../../core";
-import { CivilFloatingWindow } from "../CivilFloatingWindow";
+import * as OBC from "@thatopen/components";
 import { EdgesClipper, EdgesPlane } from "../../navigation";
 
-export class CivilCrossSectionNavigator extends Component<any> implements UI {
+export class CivilCrossSectionNavigator extends OBC.Component {
   static readonly uuid = "96b2c87e-d90b-4639-8257-8f01136fe324" as const;
 
-  scene: Simple2DScene;
-
-  uiElement = new UIElement<{
-    floatingWindow: FloatingWindow;
-  }>();
+  private _world: OBC.World | null = null;
 
   enabled = true;
 
-  plane: EdgesPlane;
+  plane?: EdgesPlane;
 
-  constructor(components: Components) {
-    super(components);
-    this.scene = new Simple2DScene(components);
-    this.setUI();
+  get world() {
+    return this._world;
+  }
 
-    this.components.tools.add(CivilCrossSectionNavigator.uuid, this);
+  set world(world: OBC.World | null) {
+    this._world = world;
 
-    const clipper = components.tools.get(EdgesClipper);
+    this.plane?.dispose();
 
+    if (!world) {
+      return;
+    }
+
+    const clipper = this.components.get(EdgesClipper);
     this.plane = clipper.createFromNormalAndCoplanarPoint(
+      world,
       new THREE.Vector3(1, 0, 0),
-      new THREE.Vector3()
+      new THREE.Vector3(),
     );
-
     this.plane.visible = false;
     this.plane.enabled = false;
   }
 
-  get() {
-    return null as any;
+  constructor(components: OBC.Components) {
+    super(components);
+    this.components.add(CivilCrossSectionNavigator.uuid, this);
   }
 
   async set(curveMesh: FRAGS.CurveMesh, point: THREE.Vector3) {
+    if (!this.world || !this.plane) {
+      throw new Error("You must set a world before using this component");
+    }
+
     this.plane.enabled = true;
 
     const percentage = curveMesh.curve.getPercentageAt(point);
@@ -61,7 +64,7 @@ export class CivilCrossSectionNavigator extends Component<any> implements UI {
     const transform = this.plane.helper.matrix.clone();
     transform.invert();
 
-    const scene = this.scene.get();
+    const scene = this.world.scene.three;
 
     const edges = this.plane.edges.get();
     for (const styleName in edges) {
@@ -77,16 +80,4 @@ export class CivilCrossSectionNavigator extends Component<any> implements UI {
 
     this.plane.enabled = false;
   }
-
-  private setUI() {
-    const name = "Cross section";
-    const floatingWindow = CivilFloatingWindow.get(
-      this.components,
-      this.scene,
-      name
-    );
-    this.uiElement.set({ floatingWindow });
-  }
 }
-
-ToolComponent.libraryUUIDs.add(CivilCrossSectionNavigator.uuid);
