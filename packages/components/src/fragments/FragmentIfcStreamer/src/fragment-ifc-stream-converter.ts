@@ -250,10 +250,6 @@ export class FragmentIfcStreamConverter
 
     const asset: StreamedAsset = { id, geometries: [] };
 
-    if (mesh.expressID === 664833) {
-      console.log("Heyyy");
-    }
-
     for (let i = 0; i < size; i++) {
       const geometry = mesh.geometries.get(i);
       const geometryID = geometry.geometryExpressID;

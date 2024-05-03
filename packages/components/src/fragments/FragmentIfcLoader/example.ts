@@ -221,7 +221,7 @@ gui.add(settings, "disposeFragments").name("Dispose fragments");
 
 // For debugging
 
-fragmentIfcLoader.onIfcLoaded.add((model) => {
+fragments.onFragmentsLoaded.add((model) => {
   console.log(model);
 
   // let sorted = [];

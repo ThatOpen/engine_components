@@ -29,109 +29,226 @@ world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
 
 const grids = components.get(OBC.Grids);
 grids.create(world);
+// customEffects.excludedMeshes.push(grid.get());
 
-const streamer = new OBC.FragmentIfcStreamConverter(components);
-streamer.settings.wasm = {
+// rendererComponent.postproduction.enabled = true;
+
+/* MD
+  ## 💪 Let's go BIG
+  ___
+  Do you need to open huge big IFC files fast, even on more modest devices? If so, you are in luck! We can open virtually any model on any device in seconds thanks to BIM TILES!
+
+  :::info BIM tiles?
+
+  The idea behind BIM tiles is pretty simple! Instead of loading the whole BIM model at once, we just load the explicit geometries that are seen by the user. It's way faster than opening the IFC directly, but for this you'll need a backend (or to rely on the file system of the user if you are building a desktop or mobile app).
+
+  :::
+
+  Let's see how to do this step by step!
+
+  ### 🧩 Converting the IFC model to tiles
+  ___
+
+  The first step is to transform the IFC model into BIM tiles. The reason why we have to do this is pretty simple: geometry in IFC is implicit (e.g. a wall is defined as an extrusion). This means that it needs to be computed and converted to explicit geometry (triangles) so that it can be displayed in 3D. 
+  
+  :::note
+  
+  As you know, IFC files contains two things: geometries and properties. We need to convert both things if we want to take full advantage of streaming!
+
+  :::
+
+  The way the streaming works is by fetching files based on the visible things in the viewer. Those files contain pieces of geometry information (geometry chunks) that the engine uses in order to create and display the geometry. But, where do we get those files from? Easy! From the IFC conversion to tiles. So, let's start converting the IFC geometry to tiles and getting those files so the streamer can do its job. In order to do it, we need the first component from the collection of streaming components: `FragmentIfcStreamConverter`:
+
+  */
+
+// We need this wasm configuration later to convert properties
+const wasm = {
   path: "https://unpkg.com/web-ifc@0.0.53/",
   absolute: true,
 };
 
-/* MD
-    The `FragmentIfcStreamConverter` class takes IFC files and transform them into
-    tiles. You can use events to get the data. The `onGeometryStreamed` event will
-    give you the geometries bundled in a binary file, as well as an object with
-    information about the geometries contained within this file.
-    */
+const geometryConverter = new OBC.FragmentIfcStreamConverter(components);
+geometryConverter.settings.wasm = wasm;
+geometryConverter.settings.minGeometrySize = 20;
+geometryConverter.settings.minAssetsSize = 1000;
 
-streamer.onGeometryStreamed.add((geometry) => {
-  console.log(geometry);
+/* MD
+  The `FragmentIfcStreamConverter` class takes IFC files and transform their geometry into tiles. 
+  
+  :::warning
+
+  The converter doesn't give you the files needed to streaming right away, just the data that must be contained in those files. Is your job to create the files! Why? Because then you can have full control over when, where and how to create them.
+
+  :::
+
+  The first file we need is a JSON which is the entry point of the geometries streaming. That JSON must have the following structure:
+  */
+
+// @ts-ignore
+interface GeometriesStreaming {
+  assets: {
+    id: number;
+    geometries: {
+      color: number[];
+      geometryID: number;
+      transformation: number[];
+    }[];
+  }[];
+
+  geometries: {
+    [id: number]: {
+      boundingBox: { [id: number]: number };
+      hasHoles: boolean;
+      geometryFile: "url-to-geometry-file-in-your-backend";
+    };
+  };
+
+  globalDataFileId: "url-to-fragments-group-file-in-your-backend";
+}
+
+/* MD
+  The second file is actually not just a single file, but X number of files (depends on how big is your model) that contains the required information to generate the geometry while streaming.
+
+  In order to create the JSON file and get the information with the geometry, the `FragmentIfcStreamConverter` as well as other components in the collection of streaming components, emits events that let you get the processed data from the conversion process.
+  
+  :::important
+
+  Nedless to say, you need to set up your event listeners before triggering the conversion!
+
+  :::
+  
+  Let's start with the first event:
+*/
+
+let files: { name: string; bits: (Uint8Array | string)[] }[] = [];
+
+let geometriesData: OBC.StreamedGeometries = {};
+let geometryFilesCount = 1;
+
+geometryConverter.onGeometryStreamed.add((geometry) => {
+  const { buffer, data } = geometry;
+  const bufferFileName = `small.ifc-processed-geometries-${geometryFilesCount}`;
+  for (const expressID in data) {
+    const value = data[expressID];
+    value.geometryFile = bufferFileName;
+    geometriesData[expressID] = value;
+  }
+  files.push({ name: bufferFileName, bits: [buffer] });
+  geometryFilesCount++;
 });
 
 /* MD
-    You can control the amount of geometries inside a file using the settings. The
-    way the streaming works can't guarantee a precise number of geometries within a file,
-    but in most cases it will be quite close to the given number.
-    */
+  One of the most important things to keep in mind is that the event we just setup will get fired as many times as per the "chunk" data generated by the converted. Simply put, the event will get fired several times ⏲ and per each time we will produce one file data that is stored in the `geometryFiles` array. Later on, we will download the geometry files ⏬.
 
-streamer.settings.minGeometrySize = 20;
+  :::note
 
-/* MD
-    Similarly, you can get the assets data and control the number of assets per chunk like this:
-    */
+  As you see, `geometriesData` is not being stored as a file to be downloaded. The reason is because that is part of the information we need to create the entry JSON file 🚀.
 
-streamer.onAssetStreamed.add((assets) => {
-  console.log(assets);
-});
+  :::
 
-streamer.settings.minAssetsSize = 1000;
+  Nice! Let's go with the second event that will give us more information to create the required files:
+  */
 
-/* MD
-    Just like when using the normal `FragmentIfcLoader`, when you stream an IFC file you are
-    creating a `FragmentsGroup`. Using this event, you can get it:
-    */
+let assetsData: OBC.StreamedAsset[] = [];
 
-streamer.onIfcLoaded.add(async (groupBuffer) => {
-  console.log(groupBuffer);
+geometryConverter.onAssetStreamed.add((assets) => {
+  assetsData = [...assetsData, ...assets];
 });
 
 /* MD
-    Finally, you can use this to get notified as the streaming process progresses:
-    */
+  This one is easier as the event doesn't produce binary data, but information we need to create the JSON file. 
+  
+  :::note Are you familiar with That Open Engine?
+  
+  If you're familiar with That Open Engine, you should recall fragments. Fragments are just a fancy word we use to refer to ThreeJS geometry efficiently created from IFC files which are the things you end up see in the viewer... one IFC file is usually composed of many fragments and all of them are grouped in a FragmentsGroup, which is the final processed IFC model.
+  
+  :::
+  
+  Why do we remind you about FragmentsGroup? Because streaming also works with them! So yes, when you convert an IFC to tiles, the converter also creates a FragmentsGroup in the background, and that information is extremely important for the streamer in order to display the streamed file as everything gets grouped there. So, there is another event that gives you the FragmentsGroup binary data and we also need to create a file with that information.
+  */
 
-streamer.onProgress.add((progress) => {
-  console.log(progress);
+geometryConverter.onIfcLoaded.add((groupBuffer) => {
+  files.push({
+    name: "small.ifc-processed-global",
+    bits: [groupBuffer],
+  });
 });
 
 /* MD
-    With everything in place, it's time to stream the IFC file and get all the tiles!
-    */
+  :::warning
 
-const fetchedIfc = await fetch("../../../resources/small.ifc");
-const ifcBuffer = await fetchedIfc.arrayBuffer();
-streamer.streamFromBuffer(new Uint8Array(ifcBuffer));
+  You can name the file whatever you want, but is *extremely important* you finish the file name with `-global`!
+
+  :::
+
+  This is pretty much it! Now that we've setup the main listeners, the last thing is to download all the data once the conversion has fininshed. To do so, we can use the progress event:
+  */
+
+function downloadFile(name: string, ...bits: (Uint8Array | string)[]) {
+  const file = new File(bits, name);
+  const anchor = document.createElement("a");
+  const url = URL.createObjectURL(file);
+  anchor.href = url;
+  anchor.download = file.name;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+async function downloadFilesSequentially(
+  fileList: { name: string; bits: (Uint8Array | string)[] }[],
+) {
+  for (const { name, bits } of fileList) {
+    downloadFile(name, ...bits);
+    await new Promise((resolve) => {
+      setTimeout(resolve, 100);
+    });
+  }
+}
+
+geometryConverter.onProgress.add((progress) => {
+  if (progress !== 1) return;
+  setTimeout(async () => {
+    const processedData = {
+      geometries: geometriesData,
+      assets: assetsData,
+      globalDataFileId: "small.ifc-processed-global",
+    };
+    files.push({
+      name: "small.ifc-processed.json",
+      bits: [JSON.stringify(processedData)],
+    });
+    await downloadFilesSequentially(files);
+    assetsData = [];
+    geometriesData = {};
+    files = [];
+    geometryFilesCount = 1;
+  });
+});
 
 /* MD
-    ### 📋 Streaming the properties
-    ___
-    You can also stream the properties of an IFC file. Why? Because some files can have
-    millions of properties, and trying to save them naively in a normal DB is not very
-    scalable/affordable. Using this system, you'll be able to store and retrieve the
-    data of models of any size without big cloud costs. We can do this conversion
-    using the `FragmentPropsStreamConverter`:
+  Great! Now that we have everything setup, is time to finally convert the IFC file. In order to trigger the conversion, we can just do the following:
+  */
 
-    */
+async function processFile() {
+  const fetchedIfc = await fetch("../../../../../resources/small.ifc");
+  const ifcBuffer = await fetchedIfc.arrayBuffer();
+  // We will need this information later to also convert the properties
+  const ifcArrayBuffer = new Uint8Array(ifcBuffer);
+  // This triggers the conversion, so the listeners start to be called
+  await geometryConverter.streamFromBuffer(ifcArrayBuffer);
+}
 
-const propsStreamer = new OBC.FragmentPropsStreamConverter(components);
+/* MD
+  If everything went as expected, you should now be seeing some files being downloaded from your app 🤯 Do not get scary if they're a lot, as big models tend to have many files! All of that is the information the streaming uses in order to display the geometry in the most efficient way possible 💪
+  */
 
-propsStreamer.settings.wasm = {
-  path: "https://unpkg.com/web-ifc@0.0.53/",
-  absolute: true,
+const actions = {
+  processFile,
 };
 
-/* MD
-    Similarly to geometries, here you will also get data and progress notification
-    using events. In addition to properties, you will get `indices`, which is an
-    indexation data of the properties to be able to use them effectively when
-    streamed.
-    */
+const gui = new dat.GUI();
 
-propsStreamer.onPropertiesStreamed.add(async (props) => {
-  console.log(props);
-});
-
-propsStreamer.onProgress.add(async (progress) => {
-  console.log(progress);
-});
-
-propsStreamer.onIndicesStreamed.add(async (props) => {
-  console.log(props);
-});
-
-/* MD
-    Just call the `streamFromBuffer` method and you are ready to go!
-    */
-
-propsStreamer.streamFromBuffer(new Uint8Array(ifcBuffer));
+gui.add(actions, "processFile").name("Process file");
 
 // Set up stats
 

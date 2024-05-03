@@ -28,14 +28,14 @@ export class FragmentStreamLoader
   extends OBC.Component
   implements OBC.Disposable
 {
+  static readonly uuid = "22437e8d-9dbc-4b99-a04f-d2da280d50c8" as const;
+
   enabled = true;
 
-  culler: GeometryCullerRenderer;
-
   readonly onFragmentsDeleted = new OBC.Event<FRAG.Fragment[]>();
+
   readonly onFragmentsLoaded = new OBC.Event<FRAG.Fragment[]>();
   readonly onDisposed = new OBC.Event();
-
   models: {
     [modelID: string]: {
       assets: OBC.StreamedAsset[];
@@ -49,6 +49,10 @@ export class FragmentStreamLoader
 
   useCache = true;
 
+  private _culler: GeometryCullerRenderer | null = null;
+
+  private _world: OBC.World | null = null;
+
   private _ramCache = new Map<
     string,
     { data: FRAG.StreamedGeometries; time: number }
@@ -59,8 +63,6 @@ export class FragmentStreamLoader
   private _url: string | null = null;
 
   private _isDisposing = false;
-
-  private world: OBC.World;
 
   // private _hardlySeenGeometries: THREE.InstancedMesh;
 
@@ -96,19 +98,42 @@ export class FragmentStreamLoader
     this._url = value;
   }
 
-  constructor(components: OBC.Components, world: OBC.World) {
+  get world() {
+    if (!this._world) {
+      throw new Error("You must set a world before using the streamer!");
+    }
+    return this._world;
+  }
+
+  set world(world: OBC.World) {
+    this._world = world;
+    this._culler?.dispose();
+
+    this._culler = new GeometryCullerRenderer(this.components, world);
+    this._culler.onViewUpdated.add(
+      async ({ toLoad, toRemove, toShow, toHide }) => {
+        await this.loadFoundGeometries(toLoad);
+        await this.unloadLostGeometries(toRemove);
+        this.setMeshVisibility(toShow, true);
+        this.setMeshVisibility(toHide, false);
+      },
+    );
+  }
+
+  get culler() {
+    if (!this._culler) {
+      throw new Error("You must set a world before using the streamer!");
+    }
+    return this._culler;
+  }
+
+  constructor(components: OBC.Components) {
     super(components);
     this.components.add(FragmentStreamLoader.uuid, this);
-    this.world = world;
 
     // const hardlyGeometry = new THREE.BoxGeometry();
     // this._hardlySeenGeometries = new THREE.InstancedMesh();
-
-    this.culler = new GeometryCullerRenderer(components, world);
-    this.setupCullerEvents();
   }
-
-  static readonly uuid = "22437e8d-9dbc-4b99-a04f-d2da280d50c8" as const;
 
   dispose() {
     this._isDisposing = true;
@@ -126,9 +151,7 @@ export class FragmentStreamLoader
     this._baseMaterial.dispose();
     this._baseMaterialT.dispose();
 
-    this.culler.dispose();
-    this.culler = new GeometryCullerRenderer(this.components, this.world);
-    this.setupCullerEvents();
+    this._culler?.dispose();
 
     this.onDisposed.trigger(FragmentStreamLoader.uuid);
     this.onDisposed.reset();
@@ -148,6 +171,7 @@ export class FragmentStreamLoader
     const groupBuffer = new Uint8Array(groupArrayBuffer);
     const fragments = this.components.get(OBC.FragmentManager);
     const group = fragments.load(groupBuffer, coordinate);
+    this.world.scene.three.add(group);
 
     const { opaque, transparent } = group.geometryIDs;
     for (const [geometryID, key] of opaque) {
@@ -626,16 +650,5 @@ export class FragmentStreamLoader
     this.culler.addFragment(group.uuid, geometryID, fragment);
 
     result.push(fragment);
-  }
-
-  private setupCullerEvents() {
-    this.culler.onViewUpdated.add(
-      async ({ toLoad, toRemove, toShow, toHide }) => {
-        await this.loadFoundGeometries(toLoad);
-        await this.unloadLostGeometries(toRemove);
-        this.setMeshVisibility(toShow, true);
-        this.setMeshVisibility(toHide, false);
-      },
-    );
   }
 }
