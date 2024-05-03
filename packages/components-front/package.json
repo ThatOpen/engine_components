@@ -1,7 +1,7 @@
 {
   "name": "@thatopen/components-front",
   "description": "Collection of frontend tools to author BIM apps.",
-  "version": "2.0.0-alpha.1",
+  "version": "2.0.0-alpha.3",
   "author": "That Open Company",
   "contributors": [
     "Antonio Gonzalez Viegas (https://github.com/agviegas)",
@@ -29,8 +29,8 @@
     "test": "jest",
     "build": "tsc --p ./tsconfig-build.json && vite build",
     "prepublishOnly": "yarn build",
-    "publish-repo": "cd dist && npm publish --access public",
-    "publish-repo-alpha": "cd dist && npm publish --tag alpha --access public"
+    "publish-repo": "npm publish",
+    "publish-alpha": "npm publish --tag alpha"
   },
   "peerDependencies": {
     "bim-fragment": "1.5.0",
