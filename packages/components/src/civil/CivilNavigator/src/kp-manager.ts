@@ -264,7 +264,7 @@ export class KPManager extends MarkerManager {
     return normalLine;
   }
 
-  private getShortendKPValue(value: number) {
+  public getShortendKPValue(value: number) {
     const formattedValue = value.toFixed(2);
     const [integerPart, fractionalPart] = formattedValue.toString().split(".");
     const formattedFractionalPart = fractionalPart || "00";

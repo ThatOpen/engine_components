@@ -61,8 +61,8 @@ export abstract class CivilNavigator extends Component<any> {
       hover: this.newMouseMarker("#575757"),
     };
     this.kpLabels = {
-      select: this.newKPLabel(this.scene),
-      hover: this.newKPLabel(this.scene),
+      select: this.newKPLabel("#ffffff"),
+      hover: this.newKPLabel("#575757"),
     };
 
     this.setupEvents();
@@ -299,7 +299,7 @@ export abstract class CivilNavigator extends Component<any> {
     const bar = document.createElement("div");
     root.appendChild(bar);
     bar.style.backgroundColor = color;
-    bar.style.width = "3rem";
+    bar.style.width = "1.5rem";
     bar.style.height = "3px";
     const mouseMarker = new Simple2DMarker(this.components, root, scene);
     mouseMarker.visible = false;
@@ -329,8 +329,10 @@ export abstract class CivilNavigator extends Component<any> {
     bar.style.transform = `rotate(${trueAngle}deg)`;
   }
 
-  private newKPLabel(scene: Simple2DScene) {
+  private newKPLabel(color: string) {
+    const scene = this.scene;
     const div = document.createElement("div");
+    div.style.color = color;
     div.textContent = `${0o0}`;
     const parentObject = scene.get();
     const kpLabel = new Simple2DMarker(this.components, div, parentObject);
@@ -348,15 +350,20 @@ export abstract class CivilNavigator extends Component<any> {
     }
     const kpLabel = this.kpLabels[type];
     const KpPoint = point.clone();
-    KpPoint.y += 7;
-    KpPoint.z += 7;
+    KpPoint.y += 8;
     const markerElement = kpLabel.get().element as HTMLDivElement;
 
-    const constantKPStations = this.kpManager.generateConstantKP(mesh);
-    for (const [, data] of constantKPStations) {
-      markerElement.textContent = `KP: ${data.value}`;
-      console.log("⭐data⭐", data);
+    const { alignment } = mesh.curve;
+    const alignmentLength = alignment.getLength("horizontal");
+
+    let percentage = alignment.getPercentageAt(point, "horizontal");
+    if (percentage === null) {
+      percentage = alignment.getPercentageAt(point, "vertical") || 0;
     }
+
+    const length = alignmentLength * percentage;
+    const kp = this.kpManager.getShortendKPValue(length);
+    markerElement.textContent = `KP: ${kp}`;
 
     kpLabel.get().position.copy(KpPoint);
     kpLabel.visible = true;
