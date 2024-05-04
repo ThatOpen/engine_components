@@ -1,6 +1,6 @@
 import * as WEBIFC from "web-ifc";
 import * as THREE from "three";
-import * as FRAGS from "bim-fragment";
+import * as FRAGS from "@thatopen/fragments";
 import { Components, Disposable, Event, Component } from "../../../core";
 import { IfcStreamingSettings } from "./streaming-settings";
 import { StreamedGeometries, StreamedAsset } from "./base-types";

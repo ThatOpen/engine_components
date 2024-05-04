@@ -1,6 +1,6 @@
 import * as WEBIFC from "web-ifc";
 import * as THREE from "three";
-import * as FRAGS from "bim-fragment";
+import * as FRAGS from "@thatopen/fragments";
 import { SpatialStructure } from "./src/spatial-structure";
 import { CivilReader, IfcFragmentSettings, IfcMetadataReader } from "./src";
 import { FragmentManager } from "../FragmentManager";

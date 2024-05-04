@@ -1,7 +1,7 @@
 {
   "name": "@thatopen/components",
   "description": "Collection of core functionalities to author BIM apps.",
-  "version": "2.0.0-alpha.3",
+  "version": "2.0.0-alpha.5",
   "author": "That Open Company",
   "contributors": [
     "Antonio Gonzalez Viegas (https://github.com/agviegas)",
@@ -37,12 +37,12 @@
     "access": "public"
   },
   "devDependencies": {
+    "@thatopen/fragments": "2.0.0-alpha.1",
     "@types/jest": "27.0.0",
     "@types/node": "20.11.30",
     "@types/three": "0.160.0",
     "@typescript-eslint/eslint-plugin": "7.2.0",
     "@typescript-eslint/parser": "7.2.0",
-    "bim-fragment": "1.5.0",
     "client-zip": "2.3.0",
     "eslint": "8.57.0",
     "eslint-config-airbnb-base": "15.0.0",
@@ -65,7 +65,7 @@
     "top-tool-package-reader": "0.0.3"
   },
   "peerDependencies": {
-    "bim-fragment": "1.5.0",
+    "@thatopen/fragments": "2.0.0-alpha.1",
     "three": "^0.160.1",
     "web-ifc": "0.0.53"
   }

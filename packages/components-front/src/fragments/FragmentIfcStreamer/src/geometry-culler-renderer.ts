@@ -1,4 +1,4 @@
-import * as FRAGS from "bim-fragment";
+import * as FRAGS from "@thatopen/fragments";
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 

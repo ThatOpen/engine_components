@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import * as FRAGS from "bim-fragment";
+import * as FRAGS from "@thatopen/fragments";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
 import { ClippingFills } from "./clipping-fills";
 

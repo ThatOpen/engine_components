@@ -1,5 +1,5 @@
 import * as WEBIFC from "web-ifc";
-import * as FRAGS from "bim-fragment";
+import * as FRAGS from "@thatopen/fragments";
 import { IfcCategoryMap } from "./ifc-category-map";
 
 export class IfcPropertiesUtils {

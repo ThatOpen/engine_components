@@ -1,5 +1,5 @@
 import * as WEBIFC from "web-ifc";
-import * as FRAG from "bim-fragment";
+import * as FRAG from "@thatopen/fragments";
 import { GeometryTypes } from "./src/ifc-geometry-types";
 
 /**

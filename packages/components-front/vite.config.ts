@@ -46,7 +46,7 @@ export default defineConfig({
       output: {
         globals: {
           three: "THREE",
-          "bim-fragment": "FRAGS",
+          "@thatopen/fragments": "FRAGS",
           "web-ifc": "WEB-IFC",
         },
       },

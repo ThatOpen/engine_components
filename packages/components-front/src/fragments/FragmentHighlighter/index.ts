@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import * as FRAGS from "bim-fragment";
+import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
-import { Fragment, FragmentIdMap, FragmentMesh } from "bim-fragment";
+import { Fragment, FragmentIdMap, FragmentMesh } from "@thatopen/fragments";
 import { World } from "@thatopen/components";
 import { PostproductionRenderer } from "../../navigation";
 

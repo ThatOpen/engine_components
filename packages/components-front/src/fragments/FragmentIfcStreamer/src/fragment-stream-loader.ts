@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import * as FRAG from "bim-fragment";
+import * as FRAG from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
 import { GeometryCullerRenderer } from "./geometry-culler-renderer";
 import { StreamFileDatabase } from "./streamer-db";
