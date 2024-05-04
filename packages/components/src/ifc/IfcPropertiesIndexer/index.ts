@@ -1,14 +1,17 @@
 import * as WEBIFC from "web-ifc";
-import { FragmentsGroup, IfcProperties } from "bim-fragment";
+import { FragmentsGroup } from "bim-fragment";
 import { Disposable, Event, Component, Components } from "../../core";
 import { FragmentManager } from "../../fragments/FragmentManager";
-import { IfcPropertiesManager } from "../IfcPropertiesManager";
 import { IfcPropertiesUtils } from "../Utils";
 
-interface IndexMap {
-  [modelID: string]: { [expressID: string]: Set<number> };
+interface RelationMap {
+  [modelID: string]: Map<number, Map<number, number[]>>;
 }
 
+/**
+ * Indexer for IFC properties, facilitating the indexing and retrieval of IFC entity relationships.
+ * It is designed to process models properties by indexing their IFC entities' relations based on predefined inverse attributes, and provides methods to query these relations.
+ */
 export class IfcPropertiesIndexer extends Component implements Disposable {
   static readonly uuid = "23a889ab-83b3-44a4-8bee-ead83438370b" as const;
 
@@ -17,205 +20,296 @@ export class IfcPropertiesIndexer extends Component implements Disposable {
 
   enabled: boolean = true;
 
-  relationsToProcess = [
-    WEBIFC.IFCRELDEFINESBYPROPERTIES,
-    WEBIFC.IFCRELDEFINESBYTYPE,
-    WEBIFC.IFCRELASSOCIATESMATERIAL,
-    WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE,
-    WEBIFC.IFCRELASSOCIATESCLASSIFICATION,
-    WEBIFC.IFCRELASSIGNSTOGROUP,
+  /**
+   * All the inverse attributes this component can processes.
+   */
+  readonly inverseAttributes = [
+    "IsDecomposedBy",
+    "Decomposes",
+    "AssociatedTo",
+    "HasAssociations",
+    "ClassificationForObjects",
+    "IsGroupedBy",
+    "HasAssignments",
+    "IsDefinedBy",
+    "DefinesOcurrence",
+    "IsTypedBy",
+    "Types",
+    "Defines",
+    "ContainedInStructure",
+    "ContainsElements",
   ];
 
-  indexMap: IndexMap = {};
+  inverseAttributesToProcess = [
+    "HasAssignments",
+    "IsDecomposedBy",
+    "IsDefinedBy",
+    "IsTypedBy",
+    "HasAssociations",
+    "ContainedInStructure",
+  ];
 
-  private _propertiesManager: IfcPropertiesManager | null = null;
-  readonly onPropertiesManagerSet = new Event<IfcPropertiesManager>();
+  private _relToAttributesMap = new Map<
+    number,
+    { forRelating?: string; forRelated?: string }
+  >();
 
-  // private _entityUIPool: UIPool<TreeView>;
-
-  set propertiesManager(manager: IfcPropertiesManager | null) {
-    if (this._propertiesManager) return;
-    this._propertiesManager = manager;
-    if (manager) {
-      manager.onElementToPset.add(async ({ model, psetID, elementID }) => {
-        const modelIndexMap = this.indexMap[model.uuid];
-        if (!modelIndexMap) return;
-        this.setEntityIndex(model, elementID).add(psetID);
-      });
-
-      this.onPropertiesManagerSet.trigger(manager);
-    }
-  }
-
-  get propertiesManager() {
-    return this._propertiesManager;
-  }
+  /**
+   * Holds the relationship mappings for each model processed by the indexer.
+   * The structure is a map where each key is a model's UUID, and the value is another map.
+   * This inner map's keys are entity expressIDs, and its values are maps where each key is an index
+   * representing a specific relation type, and the value is an array of expressIDs of entities
+   * that are related through that relation type. This structure allows for efficient querying
+   * of entity relationships within a model.
+   */
+  readonly relationMaps: RelationMap = {};
 
   constructor(components: Components) {
     super(components);
     this.components.add(IfcPropertiesIndexer.uuid, this);
     const fragmentManager = components.get(FragmentManager);
     fragmentManager.onFragmentsDisposed.add(this.onFragmentsDisposed);
+    this.setRelMap();
   }
 
   private onFragmentsDisposed = (data: {
     groupID: string;
     fragmentIDs: string[];
   }) => {
-    delete this.indexMap[data.groupID];
+    delete this.relationMaps[data.groupID];
   };
 
-  async dispose() {
-    this.indexMap = {};
-    (this.propertiesManager as any) = null;
+  private getAttributeRels(value: string) {
+    const keys: number[] = [];
+    for (const [rel, attribute] of this._relToAttributesMap.entries()) {
+      const { forRelating, forRelated } = attribute;
+      if (forRelating === value || forRelated === value) keys.push(rel);
+    }
+    return keys;
+  }
 
-    this.onPropertiesManagerSet.reset();
+  // TODO: Construct this based on the IFC EXPRESS long form schema?
+  private setRelMap() {
+    this._relToAttributesMap.set(WEBIFC.IFCRELAGGREGATES, {
+      forRelating: "IsDecomposedBy",
+      forRelated: "Decomposes",
+    });
+
+    this._relToAttributesMap.set(WEBIFC.IFCRELASSOCIATESMATERIAL, {
+      forRelating: "AssociatedTo",
+      forRelated: "HasAssociations",
+    });
+
+    this._relToAttributesMap.set(WEBIFC.IFCRELASSOCIATESCLASSIFICATION, {
+      forRelating: "ClassificationForObjects",
+      forRelated: "HasAssociations",
+    });
+
+    this._relToAttributesMap.set(WEBIFC.IFCRELASSIGNSTOGROUP, {
+      forRelating: "IsGroupedBy",
+      forRelated: "HasAssignments",
+    });
+
+    this._relToAttributesMap.set(WEBIFC.IFCRELDEFINESBYPROPERTIES, {
+      forRelated: "IsDefinedBy",
+      forRelating: "DefinesOcurrence",
+    });
+
+    this._relToAttributesMap.set(WEBIFC.IFCRELDEFINESBYTYPE, {
+      forRelated: "IsTypedBy",
+      forRelating: "Types",
+    });
+
+    this._relToAttributesMap.set(WEBIFC.IFCRELDEFINESBYTEMPLATE, {
+      forRelated: "IsDefinedBy",
+      forRelating: "Defines",
+    });
+
+    this._relToAttributesMap.set(WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE, {
+      forRelated: "ContainedInStructure",
+      forRelating: "ContainsElements",
+    });
+  }
+
+  /**
+   * Processes a given model to index its IFC entities relations based on predefined inverse attributes.
+   * This method iterates through each specified inverse attribute, retrieves the corresponding relations,
+   * and maps them in a structured way to facilitate quick access to related entities.
+   *
+   * The process involves querying the model for each relation type associated with the inverse attributes
+   * and updating the internal relationMaps with the relationships found. This map is keyed by the model's UUID
+   * and contains a nested map where each key is an entity's expressID and its value is another map.
+   * This inner map's keys are the indices of the inverse attributes, and its values are arrays of expressIDs
+   * of entities that are related through that attribute.
+   *
+   * @param model The `FragmentsGroup` model to be processed. It must have properties loaded.
+   * @returns A promise that resolves to the relations map for the processed model. This map is a detailed
+   * representation of the relations indexed by entity expressIDs and relation types.
+   * @throws An error if the model does not have properties loaded.
+   */
+  async process(model: FragmentsGroup) {
+    if (!model.hasProperties)
+      throw new Error("FragmentsGroup properties not found");
+
+    this.relationMaps[model.uuid] = new Map();
+
+    const relationsMap = this.relationMaps[model.uuid];
+
+    for (const attribute of this.inverseAttributesToProcess) {
+      const rels = this.getAttributeRels(attribute);
+      for (const rel of rels) {
+        await IfcPropertiesUtils.getRelationMap(
+          model,
+          rel,
+          async (relatingID, relatedID) => {
+            const inverseAttributes = this._relToAttributesMap.get(rel);
+            if (!inverseAttributes) return;
+            const { forRelated: related, forRelating: relating } =
+              inverseAttributes;
+            if (
+              relating &&
+              this.inverseAttributesToProcess.includes(relating)
+            ) {
+              const currentMap =
+                relationsMap.get(relatingID) ?? new Map<number, number[]>();
+              const index = this.inverseAttributes.indexOf(relating);
+              currentMap.set(index, relatedID);
+              relationsMap.set(relatingID, currentMap);
+            }
+            if (related && this.inverseAttributesToProcess.includes(related)) {
+              for (const id of relatedID) {
+                const currentMap =
+                  relationsMap.get(id) ?? new Map<number, number[]>();
+                const index = this.inverseAttributes.indexOf(related);
+                const relations = currentMap.get(index) ?? [];
+                relations.push(relatingID);
+                currentMap.set(index, relations);
+                relationsMap.set(id, currentMap);
+              }
+            }
+          },
+        );
+      }
+    }
+
+    return relationsMap;
+  }
+
+  /**
+   * Retrieves the relations of a specific entity within a model based on the given relation name.
+   * This method searches the indexed relation maps for the specified model and entity,
+   * returning the IDs of related entities if a match is found.
+   *
+   * @param model The `FragmentsGroup` model containing the entity.
+   * @param expressID The unique identifier of the entity within the model.
+   * @param relationName The IFC schema inverse attribute of the relation to search for (e.g., "IsDefinedBy", "ContainsElements").
+   * @returns An array of express IDs representing the related entities, or `null` if no relations are found
+   * or the specified relation name is not indexed.
+   */
+  getEntityRelations(
+    model: FragmentsGroup,
+    expressID: number,
+    relationName: string,
+  ) {
+    const indexMap = this.relationMaps[model.uuid];
+    if (!indexMap) return null;
+    const entityRelations = indexMap.get(expressID);
+    const attributeIndex = this.inverseAttributes.indexOf(relationName);
+    if (!entityRelations || attributeIndex === -1) return null;
+    const relations = entityRelations.get(attributeIndex);
+    if (!relations) return null;
+    return relations;
+  }
+
+  /**
+   * Serializes the relations of a specific model into a JSON string.
+   * This method iterates through the relations indexed for the given model,
+   * organizing them into a structured object where each key is an expressID of an entity,
+   * and its value is another object mapping relation indices to arrays of related entity expressIDs.
+   * The resulting object is then serialized into a JSON string.
+   *
+   * @param model The `FragmentsGroup` model whose relations are to be serialized.
+   * @returns A JSON string representing the serialized relations of the specified model.
+   * If the model has no indexed relations, `null` is returned.
+   */
+  serializeModelRelations(model: FragmentsGroup) {
+    const indexMap = this.relationMaps[model.uuid];
+    if (!indexMap) return null;
+    const object: Record<string, Record<string, number[]>> = {};
+    for (const [expressID, relations] of indexMap.entries()) {
+      if (!object[expressID]) object[expressID] = {};
+      for (const [relationID, relationEntities] of relations.entries()) {
+        object[expressID][relationID] = relationEntities;
+      }
+    }
+    return JSON.stringify(object);
+  }
+
+  /**
+   * Serializes all relations of every model processed by the indexer into a JSON string.
+   * This method iterates through each model's relations indexed in `relationMaps`, organizing them
+   * into a structured JSON object. Each top-level key in this object corresponds to a model's UUID,
+   * and its value is another object mapping entity expressIDs to their related entities, categorized
+   * by relation types. The structure facilitates easy access to any entity's relations across all models.
+   *
+   * @returns A JSON string representing the serialized relations of all models processed by the indexer.
+   *          If no relations have been indexed, an empty object is returned as a JSON string.
+   */
+  serializeRelations() {
+    const jsonObject: Record<
+      string,
+      Record<string, Record<string, number[]>>
+    > = {};
+    for (const uuid in this.relationMaps) {
+      const indexMap = this.relationMaps[uuid];
+      const object: Record<string, Record<string, number[]>> = {};
+      for (const [expressID, relations] of indexMap.entries()) {
+        if (!object[expressID]) object[expressID] = {};
+        for (const [relationID, relationEntities] of relations.entries()) {
+          object[expressID][relationID] = relationEntities;
+        }
+      }
+      jsonObject[uuid] = object;
+    }
+    return JSON.stringify(jsonObject);
+  }
+
+  /**
+   * Converts a JSON string representing relations between entities into a structured map.
+   * This method parses the JSON string to reconstruct the relations map that indexes
+   * entity relations by their express IDs. The outer map keys are the express IDs of entities,
+   * and the values are maps where each key is a relation type ID and its value is an array
+   * of express IDs of entities related through that relation type.
+   *
+   * @param json The JSON string to be parsed into the relations map.
+   * @returns A `Map` where the key is the express ID of an entity as a number, and the value
+   * is another `Map`. This inner map's key is the relation type ID as a number, and its value
+   * is an array of express IDs (as numbers) of entities related through that relation type.
+   */
+  getRelationsMapFromJSON(json: string) {
+    const relations = JSON.parse(json);
+    const indexMap = new Map<number, Map<number, number[]>>();
+    for (const expressID in relations) {
+      const expressIDRelations = relations[expressID];
+      const relationMap = new Map<number, number[]>();
+      for (const relationID in expressIDRelations) {
+        relationMap.set(Number(relationID), expressIDRelations[relationID]);
+      }
+      indexMap.set(Number(expressID), relationMap);
+    }
+    return indexMap;
+  }
+
+  /**
+   * Disposes of the `IfcPropertiesIndexer` component, cleaning up resources and detaching event listeners.
+   * This ensures that the component is properly cleaned up and does not leave behind any
+   * references that could prevent garbage collection.
+   */
+  dispose() {
+    (this.relationMaps as any) = {};
     const fragmentManager = this.components.get(FragmentManager);
     fragmentManager.onFragmentsDisposed.remove(this.onFragmentsDisposed);
     this.onDisposed.trigger(IfcPropertiesIndexer.uuid);
     this.onDisposed.reset();
-  }
-
-  async getProperties(model: FragmentsGroup, id: string) {
-    if (!model.hasProperties) return null;
-    const modelProperties: IfcProperties | undefined =
-      model.getLocalProperties();
-    if (modelProperties === undefined) {
-      return null;
-    }
-    const map = this.indexMap[model.uuid];
-    if (!map) return null;
-    const indices = map[id];
-    const idNumber = parseInt(id, 10);
-    const props = await model.getProperties(idNumber);
-    if (!props) {
-      throw new Error("Properties not found!");
-    }
-    const nativeProperties = this.cloneProperty(props);
-
-    if (!nativeProperties) {
-      throw new Error("Properties not found!");
-    }
-
-    const properties = [nativeProperties] as any[];
-
-    if (indices) {
-      for (const index of indices) {
-        const props = await model.getProperties(index);
-        if (!props) continue;
-        const pset = this.cloneProperty(props);
-        if (!pset) continue;
-        this.getPsetProperties(pset, modelProperties);
-        this.getNestedPsets(pset, modelProperties);
-        properties.push(pset);
-      }
-    }
-
-    return properties;
-  }
-
-  private getNestedPsets(pset: { [p: string]: any }, props: any) {
-    if (pset.HasPropertySets) {
-      for (const subPSet of pset.HasPropertySets) {
-        const psetID = subPSet.value;
-        subPSet.value = this.cloneProperty(props[psetID]);
-        this.getPsetProperties(subPSet.value, props);
-      }
-    }
-  }
-
-  private getPsetProperties(pset: { [p: string]: any }, props: any) {
-    if (pset.HasProperties) {
-      for (const property of pset.HasProperties) {
-        const psetID = property.value;
-        const result = this.cloneProperty(props[psetID]);
-        property.value = { ...result };
-      }
-    }
-  }
-
-  async process(model: FragmentsGroup) {
-    if (!model.hasProperties) {
-      throw new Error("FragmentsGroup properties not found");
-    }
-    this.indexMap[model.uuid] = {};
-    // const relations: number[] = [];
-    // for (const typeID in IfcCategoryMap) {
-    //   const name = IfcCategoryMap[typeID];
-    //   if (name.startsWith("IFCREL")) relations.push(Number(typeID));
-    // }
-    const setEntities = [WEBIFC.IFCPROPERTYSET, WEBIFC.IFCELEMENTQUANTITY];
-    for (const relation of this.relationsToProcess) {
-      await IfcPropertiesUtils.getRelationMap(
-        model,
-        relation,
-        // eslint-disable-next-line no-loop-func
-        async (relationID, relatedIDs) => {
-          const relationEntity = await model.getProperties(relationID);
-          if (!relationEntity) {
-            return;
-          }
-          if (!setEntities.includes(relationEntity.type)) {
-            this.setEntityIndex(model, relationID);
-          }
-          for (const expressID of relatedIDs) {
-            this.setEntityIndex(model, expressID).add(relationID);
-          }
-        },
-      );
-    }
-  }
-
-  private setEntityIndex(model: FragmentsGroup, expressID: number) {
-    if (!this.indexMap[model.uuid][expressID])
-      this.indexMap[model.uuid][expressID] = new Set();
-    return this.indexMap[model.uuid][expressID];
-  }
-
-  private cloneProperty(
-    item: { [name: string]: any },
-    result: { [name: string]: any } = {},
-  ) {
-    if (!item) {
-      return result;
-    }
-    for (const key in item) {
-      const value = item[key];
-
-      const isArray = Array.isArray(value);
-      const isObject = typeof value === "object" && !isArray && value !== null;
-
-      if (isArray) {
-        result[key] = [];
-        const subResult = result[key] as any[];
-        this.clonePropertyArray(value, subResult);
-      } else if (isObject) {
-        result[key] = {};
-        const subResult = result[key];
-        this.cloneProperty(value, subResult);
-      } else {
-        result[key] = value;
-      }
-    }
-    return result;
-  }
-
-  private clonePropertyArray(item: any[], result: any[]) {
-    for (const value of item) {
-      const isArray = Array.isArray(value);
-      const isObject = typeof value === "object" && !isArray && value !== null;
-
-      if (isArray) {
-        const subResult = [] as any[];
-        result.push(subResult);
-        this.clonePropertyArray(value, subResult);
-      } else if (isObject) {
-        const subResult = {} as any;
-        result.push(subResult);
-        this.cloneProperty(value, subResult);
-      } else {
-        result.push(value);
-      }
-    }
   }
 }
