@@ -161,6 +161,7 @@ export class FragmentIfcStreamConverter
           chunks.push([]);
         }
         const itemID = result.get(i);
+        if (itemID !== 9056429) continue;
         chunks[index].push(itemID);
         const level = this._spatialTree.itemsByFloor[itemID] || 0;
         group.data.set(itemID, [[], [level, type]]);

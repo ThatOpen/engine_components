@@ -126,14 +126,25 @@ fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
   :::
   */
 
+// const cullers = components.get(OBC.Cullers);
+// const culler = cullers.create(world);
+// culler.enabled = true;
+
 async function loadIfcAsFragments() {
-  const file = await fetch("../../../../../resources/small.ifc");
+  const file = await fetch("../../../../../resources/02.ifc");
   const data = await file.arrayBuffer();
   const buffer = new Uint8Array(data);
   const model = await fragmentIfcLoader.load(buffer);
   model.name = "example";
   world.scene.three.add(model);
+  // for (const mesh of model.children) {
+  //   culler.add(mesh as any);
+  // }
 }
+
+// world.camera.controls.addEventListener("sleep", () => {
+//   culler.needsUpdate = true
+// })
 
 /* MD
   ### 🎁 Exporting the result

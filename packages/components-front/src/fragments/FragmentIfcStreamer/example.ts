@@ -66,7 +66,7 @@ and getting the necessary geometries from the backend. A simple way to achieve
 this is by updating the scene each time the user stops the camera:
 */
 
-world.camera.controls.addEventListener("controlend", () => {
+world.camera.controls.addEventListener("sleep", () => {
   loader.culler.needsUpdate = true;
 });
 
@@ -79,8 +79,12 @@ it will be much better. You can control this using the `useCache` property
 and clear the cache using the `clearCache()` method:
 */
 
-// loader.useCache = true;
-// await loader.clearCache();
+loader.useCache = true;
+
+async function clearCache() {
+  await loader.clearCache();
+  window.location.reload();
+}
 
 /* MD
 You can also customize the loader through the `culler` property:
@@ -89,7 +93,7 @@ You can also customize the loader through the `culler` property:
 - maxLostTime determines how long an object must be lost to remove it from memory.
 */
 
-loader.culler.threshold = 20;
+loader.culler.threshold = 10;
 loader.culler.maxHiddenTime = 1000;
 loader.culler.maxLostTime = 40000;
 
@@ -212,7 +216,14 @@ to handle any model on any device smoothly.
 //     classes[name] = true;
 // }
 //
-// const gui = new dat.GUI();
+const gui = new dat.GUI();
+
+const actions = {
+  clearCache,
+};
+
+gui.add(actions, "clearCache");
+
 //
 // const storeysGui = gui.addFolder("Storeys");
 // for (const name in storeys) {

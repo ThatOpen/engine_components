@@ -12,10 +12,10 @@ export class MeshCullerRenderer extends CullerRenderer {
   /* Pixels in screen a geometry must occupy to be considered "seen". */
   threshold = 100;
 
-  readonly onViewUpdated = new Event<{
+  readonly onViewUpdated: Event<{
     seen: Set<THREE.Mesh>;
     unseen: Set<THREE.Mesh>;
-  }>();
+  }> = new Event();
 
   colorMeshes = new Map<string, THREE.InstancedMesh>();
 
@@ -26,6 +26,7 @@ export class MeshCullerRenderer extends CullerRenderer {
 
   private _currentVisibleMeshes = new Set<THREE.Mesh>();
   private _recentlyHiddenMeshes = new Set<THREE.Mesh>();
+  private _intervalID: number | null = null;
 
   private readonly _transparentMat = new THREE.MeshBasicMaterial({
     transparent: true,
@@ -59,6 +60,10 @@ export class MeshCullerRenderer extends CullerRenderer {
 
   dispose() {
     super.dispose();
+    if (this._intervalID !== null) {
+      window.clearInterval(this._intervalID);
+      this._intervalID = null;
+    }
     this._currentVisibleMeshes.clear();
     this._recentlyHiddenMeshes.clear();
 
@@ -209,6 +214,8 @@ export class MeshCullerRenderer extends CullerRenderer {
       seen: this._currentVisibleMeshes,
       unseen: this._recentlyHiddenMeshes,
     });
+
+    this._isWorkerBusy = false;
   };
 
   private getAvailableMaterial() {

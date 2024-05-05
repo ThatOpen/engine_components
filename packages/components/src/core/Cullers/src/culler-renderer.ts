@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Components } from "../../Components";
 import { readPixelsAsync } from "./screen-culler-helper";
-import { Event, World } from "../../Types";
+import { AsyncEvent, Event, World } from "../../Types";
 
 export interface CullerRendererSettings {
   updateInterval?: number;
@@ -22,7 +22,7 @@ export class CullerRenderer {
    * meshes that are currently visible, and the ones that were visible
    * just before but not anymore.
    */
-  readonly onViewUpdated = new Event<any>();
+  readonly onViewUpdated: Event<any> | AsyncEvent<any> = new AsyncEvent<any>();
 
   /** {@link Component.enabled} */
   enabled = true;
@@ -64,6 +64,9 @@ export class CullerRenderer {
   private readonly bufferSize: number;
 
   private readonly _buffer: Uint8Array;
+
+  // Prevents worker being fired multiple times
+  protected _isWorkerBusy = false;
 
   constructor(
     components: Components,
@@ -132,6 +135,9 @@ export class CullerRenderer {
   updateVisibility = async (force?: boolean) => {
     if (!this.enabled) return;
     if (!this.needsUpdate && !force) return;
+
+    if (this._isWorkerBusy) return;
+    this._isWorkerBusy = true;
 
     const camera = this.world.camera.three;
     camera.updateMatrix();

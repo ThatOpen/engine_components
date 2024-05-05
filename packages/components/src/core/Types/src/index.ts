@@ -1,4 +1,5 @@
 export * from "./event";
+export * from "./async-event";
 export * from "./interfaces";
 export * from "./component";
 export * from "./base";
