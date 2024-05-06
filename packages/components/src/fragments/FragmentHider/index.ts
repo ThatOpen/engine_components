@@ -1,4 +1,4 @@
-import * as FRAGS from "bim-fragment";
+import * as FRAGS from "@thatopen/fragments";
 import { FragmentManager } from "../FragmentManager";
 import { Components, Component, Cullers } from "../../core";
 

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import * as WEBIFC from "web-ifc";
-import * as FRAGS from "bim-fragment";
+import * as FRAGS from "@thatopen/fragments";
 
 export class CivilReader {
   defLineMat = new THREE.LineBasicMaterial({ color: 0xffffff });

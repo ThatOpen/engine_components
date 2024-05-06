@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import * as FRAGS from "bim-fragment";
-import { FragmentsGroup } from "bim-fragment";
+import * as FRAGS from "@thatopen/fragments";
+import { FragmentsGroup } from "@thatopen/fragments";
 import { Component, Components, Disposer, Disposable, Event } from "../../core";
 
 /**

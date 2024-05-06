@@ -1,4 +1,4 @@
-import { Fragment, FragmentsGroup, Serializer } from "bim-fragment";
+import { Fragment, FragmentsGroup, Serializer } from "@thatopen/fragments";
 import * as THREE from "three";
 import { Component, Components, Event, Disposable } from "../../core";
 

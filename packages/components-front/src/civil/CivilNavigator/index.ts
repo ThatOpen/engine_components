@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import * as FRAGS from "bim-fragment";
+import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
-import { Alignment, FragmentsGroup } from "bim-fragment";
+import { Alignment, FragmentsGroup } from "@thatopen/fragments";
 import { CurveHighlighter } from "./src/curve-highlighter";
 import { CivilMarker } from "../CivilMarker";
 import { Mark } from "../../core";

@@ -1,4 +1,4 @@
-import * as FRAGS from "bim-fragment";
+import * as FRAGS from "@thatopen/fragments";
 import { Disposable, Component, Event, Components } from "../../core";
 import { IfcCategoryMap, IfcPropertiesUtils } from "../../ifc";
 

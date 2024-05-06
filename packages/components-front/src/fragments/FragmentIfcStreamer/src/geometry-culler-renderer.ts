@@ -1,4 +1,4 @@
-import * as FRAGS from "bim-fragment";
+import * as FRAGS from "@thatopen/fragments";
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 
@@ -26,10 +26,6 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
 
   boxes = new Map<number, FRAGS.Fragment>();
 
-  useLowLod = false;
-
-  lowLod = new Map<number, FRAGS.Fragment>();
-
   private readonly _geometry: THREE.BufferGeometry;
 
   private _material = new THREE.MeshBasicMaterial({
@@ -38,9 +34,7 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     opacity: 1,
   });
 
-  private _lodMaterial = new THREE.MeshLambertMaterial();
-
-  readonly onViewUpdated = new OBC.Event<{
+  readonly onViewUpdated = new OBC.AsyncEvent<{
     toLoad: { [modelID: string]: Map<number, Set<number>> };
     toRemove: { [modelID: string]: Set<number> };
     toHide: { [modelID: string]: Set<number> };
@@ -54,6 +48,7 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
   private _geometries = new Map<string, CullerBoundingBox>();
   private _geometriesGroups = new Map<number, THREE.Group>();
   private _foundGeometries = new Set<string>();
+  private _intervalID: number | null = null;
 
   private codes = new Map<number, Map<number, string>>();
 
@@ -77,7 +72,10 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
 
     this.worker.addEventListener("message", this.handleWorkerMessage);
     if (this.autoUpdate) {
-      window.setInterval(this.updateVisibility, this.updateInterval);
+      this._intervalID = window.setInterval(
+        this.updateVisibility,
+        this.updateInterval,
+      );
     }
   }
 
@@ -85,11 +83,10 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     super.dispose();
     this.onViewUpdated.reset();
 
-    this._lodMaterial.dispose();
-    for (const [_id, fragment] of this.lowLod) {
-      fragment.dispose(true);
+    if (this._intervalID !== null) {
+      window.clearInterval(this._intervalID);
+      this._intervalID = null;
     }
-    this.lowLod.clear();
 
     for (const [_id, group] of this._geometriesGroups) {
       group.removeFromParent();
@@ -139,11 +136,6 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     this.boxes.set(modelIndex, bboxes);
     this.scene.add(bboxes.mesh);
 
-    if (this.useLowLod) {
-      const lowLod = new FRAGS.Fragment(this._geometry, this._lodMaterial, 10);
-      this.lowLod.set(modelIndex, lowLod);
-    }
-
     const fragmentsGroup = new THREE.Group();
     this.scene.add(fragmentsGroup);
     this._geometriesGroups.set(modelIndex, fragmentsGroup);
@@ -154,7 +146,7 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     >();
 
     for (const asset of assets) {
-      // if (asset.id !== 664833) continue;
+      // if (asset.id !== 9056429) continue;
       for (const geometryData of asset.geometries) {
         const { geometryID, transformation, color } = geometryData;
 
@@ -240,14 +232,6 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     const itemsArray = Array.from(items.values());
     bboxes.add(itemsArray);
 
-    if (this.useLowLod) {
-      for (const item of itemsArray) {
-        item.colors = item.geometryColors;
-      }
-      const lowLod = this.lowLod.get(modelIndex) as FRAGS.Fragment;
-      lowLod.add(itemsArray);
-    }
-
     THREE.ColorManagement.enabled = colorEnabled;
 
     // const { geometry, material, count, instanceMatrix, instanceColor } = [
@@ -276,10 +260,6 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     const box = this.boxes.get(index) as FRAGS.Fragment;
     box.dispose(false);
     this.boxes.delete(index);
-
-    const frag = this.lowLod.get(index) as FRAGS.Fragment;
-    frag.dispose(false);
-    this.lowLod.delete(index);
 
     const codes = this.codes.get(index) as Map<number, string>;
     this.codes.delete(index);
@@ -447,24 +427,6 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     const now = performance.now();
     let viewWasUpdated = false;
 
-    const lodsToShow = new Set<CullerBoundingBox>();
-    const lodsToHide = new Set<CullerBoundingBox>();
-
-    let bboxAmount = 0;
-    for (const [color, number] of colors) {
-      if (number < this.threshold) {
-        continue;
-      }
-      const found = this._geometries.get(color);
-      if (!found) {
-        continue;
-      }
-      const isBoundingBox = found.fragment === undefined;
-      if (isBoundingBox) {
-        bboxAmount += number;
-      }
-    }
-
     const lostGeometries = new Set(this._foundGeometries);
 
     for (const [color, number] of colors) {
@@ -493,9 +455,6 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
         toShow[modelID].add(geometry.geometryID);
         this._foundGeometries.add(color);
         viewWasUpdated = true;
-        if (this.useLowLod) {
-          lodsToHide.add(geometry);
-        }
       } else if (isFound && !exists) {
         // New geometry found
         if (!toLoad[modelID]) {
@@ -511,37 +470,14 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
         set.add(geometry.geometryID);
         this._foundGeometries.add(color);
         viewWasUpdated = true;
-
-        if (this.useLowLod) {
-          lodsToHide.add(geometry);
-        }
       } else if (!isFound && exists) {
         // Geometry is hardly seen, so it can be considered lost
-        if (bboxAmount < this.bboxThreshold) {
-          // When too many bounding boxes on sight
-          // don't hide / destroy geometry to prevent flickering
-          this.handleLostGeometries(now, color, geometry, toRemove, toHide);
-          if (this.useLowLod) {
-            lodsToShow.add(geometry);
-          }
-          viewWasUpdated = true;
-        }
-      }
-    }
-
-    if (bboxAmount <= this.bboxThreshold) {
-      // When too many bounding boxes on sight
-      // don't hide / destroy geometry to prevent flickering
-      for (const color of lostGeometries) {
-        const geometry = this._geometries.get(color);
-        if (!geometry) {
-          throw new Error("Geometry not found!");
-        }
+        // if (bboxAmount < this.bboxThreshold) {
+        // When too many bounding boxes on sight
+        // don't hide / destroy geometry to prevent flickering
         this.handleLostGeometries(now, color, geometry, toRemove, toHide);
-        if (this.useLowLod) {
-          lodsToShow.add(geometry);
-        }
         viewWasUpdated = true;
+        // }
       }
     }
 
@@ -549,18 +485,7 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
       await this.onViewUpdated.trigger({ toLoad, toRemove, toHide, toShow });
     }
 
-    if (this.useLowLod) {
-      for (const geometry of lodsToShow) {
-        this.setLodVisibility(true, geometry);
-      }
-      for (const geometry of lodsToHide) {
-        this.setLodVisibility(false, geometry);
-      }
-    }
-
-    if (bboxAmount > this.bboxThreshold) {
-      this.needsUpdate = true;
-    }
+    this._isWorkerBusy = false;
   };
 
   private handleLostGeometries(
@@ -588,14 +513,6 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
         toHide[modelID] = new Set();
       }
       toHide[modelID].add(geometry.geometryID);
-    }
-  }
-
-  private setLodVisibility(visible: boolean, geometry: CullerBoundingBox) {
-    const lod = this.lowLod.get(geometry.modelIndex) as FRAGS.Fragment;
-    for (const assetID of geometry.assetIDs) {
-      const instanceID = this.getInstanceID(assetID, geometry.geometryID);
-      lod.setVisibility(visible, [instanceID]);
     }
   }
 

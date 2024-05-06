@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import * as FRAGS from "bim-fragment";
+import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
 import { Mark, Marker } from "../../core";
 

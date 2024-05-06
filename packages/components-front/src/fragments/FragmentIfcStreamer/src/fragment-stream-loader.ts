@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import * as FRAG from "bim-fragment";
+import * as FRAG from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
 import { GeometryCullerRenderer } from "./geometry-culler-renderer";
 import { StreamFileDatabase } from "./streamer-db";
@@ -343,21 +343,6 @@ export class FragmentStreamLoader
 
   update() {}
 
-  // getMesh(): THREE.Mesh {
-  //   const box = this.culler.boxes.getMesh();
-  //   if (box) {
-  // this.components.scene.get().add(box);
-  // const boundingBox = new THREE.Box3().setFromObject(box);
-  // // @ts-ignore
-  // const bHelper = new THREE.Box3Helper(boundingBox, 0xff0000);
-  // this.components.scene.get().add(bHelper);
-  // }
-  // return box;
-  // }
-  // getSphere() {
-  //   return this.culler.boxes.getSphere();
-  // }
-
   private async loadFoundGeometries(seen: {
     [modelID: string]: Map<number, Set<number>>;
   }) {
@@ -413,7 +398,8 @@ export class FragmentStreamLoader
               const fetched = await fetch(url);
               const buffer = await fetched.arrayBuffer();
               bytes = new Uint8Array(buffer);
-              await this._fileCache.files.add({ file: bytes, id: url });
+              // await this._fileCache.files.delete(url);
+              this._fileCache.files.add({ file: bytes, id: url });
             }
           } else {
             const fetched = await fetch(url);
@@ -482,7 +468,7 @@ export class FragmentStreamLoader
         }
 
         if (loaded.length && !this._isDisposing) {
-          await this.onFragmentsLoaded.trigger(loaded);
+          this.onFragmentsLoaded.trigger(loaded);
         }
       }
 

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { FragmentMesh } from "bim-fragment";
+import { FragmentMesh } from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
 import { ClipStyle, Edge } from "./types";
 import { EdgesStyles, LineStyles } from "./edges-styles";

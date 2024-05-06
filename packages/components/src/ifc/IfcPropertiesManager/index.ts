@@ -1,5 +1,5 @@
 import * as WEBIFC from "web-ifc";
-import { FragmentsGroup } from "bim-fragment";
+import { FragmentsGroup } from "@thatopen/fragments";
 import { Component, Disposable, Event, Components } from "../../core";
 import { IfcPropertiesUtils } from "../Utils";
 import { FragmentIfcLoader } from "../../fragments/FragmentIfcLoader";
