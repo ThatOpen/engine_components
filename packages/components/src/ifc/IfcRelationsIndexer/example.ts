@@ -3,9 +3,9 @@ import * as OBC from "../..";
 /* MD
  ## Getting entity relations the easy way 💪
  ---
- If you're aware of the IFC schema, you should know that all the possible information an entity have is not directly inside the entity attributes. For example, the property sets, classifications, materials, etc, of a wall (or any other element) are not directly in the wall attributes 🤯 but in other entities which are related to the wall using relations. <br><br>
+ If you're aware of the IFC schema, you should know that all the possible information an entity have is not directly inside its attributes. For example, the property sets, classifications, materials, etc, of a wall (or any other element) are not directly in the wall attributes 🤯 but in other entities which are related to the wall using relations. <br><br>
 
- Now, that is perfect for an schema like the IFC which aims to store all the building data within a single text file in the easiest way possible. However, is not that easy to work with it just because you need to find the relations you want to get to the element data you're looking for 😪. Luckily for you, the `IfcRelationsIndexer` already gives you an easy way to get the entities which are related with your elements thanks to the inverse attributes! 🔥🔥
+ Now, that is perfect for an schema like the IFC which aims to store all the building data within a single text file in the easiest way possible. However, is not that easy to work just because you need to find the relations you want to get to the element data you're looking for 😪. Luckily for you, the `IfcRelationsIndexer` already gives you an easy way to get the entities which are related with your elements thanks to the inverse attributes! 🔥🔥
 
  ### Loading a model 🏦
  First things first, lets load an IFC model to process its relations.
@@ -118,11 +118,16 @@ const buildingStorey = indexer.getEntityRelations(
   "ContainedInStructure",
 );
 
-if (buildingStorey) {
+if (buildingStorey && buildingStorey[0]) {
   const storey = await model.getProperties(buildingStorey[0]);
   console.log(storey);
 }
 
 /* MD
+ :::tip
+
+ Despite there are some relations that corresponds to only one element (e.g., an element can only have one associated building storey) the `getEntityRelations` will always return an array. That's the reason we take the first buildingStorey relation despite it will always be the only one.
+
+ :::
  Congratulations! Now you know how to get an easy way to get the relations of your model. Keep going with more tutorials! 💪
  */

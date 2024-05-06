@@ -1266,7 +1266,22 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@2.0.0-alpha.1, @thatopen/components@workspace:packages/components":
+"@thatopen/components@npm:2.0.0-alpha.1":
+  version: 2.0.0-alpha.1
+  resolution: "@thatopen/components@npm:2.0.0-alpha.1"
+  dependencies:
+    camera-controls: 2.7.3
+    three-mesh-bvh: 0.7.0
+    top-tool-package-reader: 0.0.3
+  peerDependencies:
+    bim-fragment: 1.5.0
+    three: ^0.160.1
+    web-ifc: 0.0.53
+  checksum: 04e9785bd8f1cd68e32e0e6fcaa2392d22827a01a8d955363b5ba597834fda67cbbd658263e16ad8d34326888d0aef06f2d29f7a4f775ce170d51944d08cf16e
+  languageName: node
+  linkType: hard
+
+"@thatopen/components@workspace:packages/components":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/components"
   dependencies:
