@@ -5,7 +5,7 @@ import * as OBC from "../..";
  ---
  If you're aware of the IFC schema, you should know that all the possible information an entity have is not directly inside the entity attributes. For example, the property sets, classifications, materials, etc, of a wall (or any other element) are not directly in the wall attributes 🤯 but in other entities which are related to the wall using relations. <br><br>
 
- Now, that is perfect for an schema like the IFC which aims to store all the building data within a single text file in the easiest way possible. However, is not that easy to work with it just because you need to find the relations you want to get to the element data you're looking for 😪. Luckily for you, the `IfcPropertiesIndexer` already gives you an easy way to get the entities which are related with your elements thanks to the inverse attributes! 🔥🔥
+ Now, that is perfect for an schema like the IFC which aims to store all the building data within a single text file in the easiest way possible. However, is not that easy to work with it just because you need to find the relations you want to get to the element data you're looking for 😪. Luckily for you, the `IfcRelationsIndexer` already gives you an easy way to get the entities which are related with your elements thanks to the inverse attributes! 🔥🔥
 
  ### Loading a model 🏦
  First things first, lets load an IFC model to process its relations.
@@ -27,17 +27,17 @@ const typedArray = new Uint8Array(buffer);
 const model = await ifcLoader.load(typedArray);
 
 /* MD
- Once the model is loaded in memory, you just need to get an instance of the IfcPropertiesIndexer and process the model... it's as easy as that! 😎
+ Once the model is loaded in memory, you just need to get an instance of the IfcRelationsIndexer and process the model... it's as easy as that! 😎
  */
 
-const indexer = components.get(OBC.IfcPropertiesIndexer);
+const indexer = components.get(OBC.IfcRelationsIndexer);
 await indexer.process(model);
 
 /* MD
  The result of that is basically a map where the keys are the expressIDs and the values are other expressIDs related to the first one and grouped by the type of relation. You don't need to worry too much about the details of that, as the usage is pretty straighforward 🔝. The only thing that matters is you've now an easy way to access the entities related to your element 🙂
 
  ### Getting element psets 📄
- One of the most important relations between different entities is the `IfcRelDefinesByProperties`. That relation links together an arbitrary entity with a set of `IfcPropertySet` entities that applies properties. Getting them with the `IfcPropertiesIndexer` once the model is indexed is pretty easy:
+ One of the most important relations between different entities is the `IfcRelDefinesByProperties`. That relation links together an arbitrary entity with a set of `IfcPropertySet` entities that applies properties. Getting them with the `IfcRelationsIndexer` once the model is indexed is pretty easy:
  */
 
 const psets = indexer.getEntityRelations(model, 6518, "IsDefinedBy");

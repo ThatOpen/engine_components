@@ -245,7 +245,7 @@ export class FragmentStreamLoader
       // const first = Object.keys(data.entries)[0];
       // const indices = await data.entries[first].json();
 
-      // const indexer = this.components.get(OBC.IfcPropertiesIndexer);
+      // const indexer = this.components.get(OBC.IfcRelationsIndexer);
       // const { indexMap } = indexer;
       // indexMap[group.uuid] = {};
       // for (const index of indices) {

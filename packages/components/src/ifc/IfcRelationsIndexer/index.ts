@@ -12,7 +12,7 @@ interface RelationMap {
  * Indexer for IFC properties, facilitating the indexing and retrieval of IFC entity relationships.
  * It is designed to process models properties by indexing their IFC entities' relations based on predefined inverse attributes, and provides methods to query these relations.
  */
-export class IfcPropertiesIndexer extends Component implements Disposable {
+export class IfcRelationsIndexer extends Component implements Disposable {
   static readonly uuid = "23a889ab-83b3-44a4-8bee-ead83438370b" as const;
 
   /** {@link Disposable.onDisposed} */
@@ -66,7 +66,7 @@ export class IfcPropertiesIndexer extends Component implements Disposable {
 
   constructor(components: Components) {
     super(components);
-    this.components.add(IfcPropertiesIndexer.uuid, this);
+    this.components.add(IfcRelationsIndexer.uuid, this);
     const fragmentManager = components.get(FragmentManager);
     fragmentManager.onFragmentsDisposed.add(this.onFragmentsDisposed);
     this.setRelMap();
@@ -301,7 +301,7 @@ export class IfcPropertiesIndexer extends Component implements Disposable {
   }
 
   /**
-   * Disposes of the `IfcPropertiesIndexer` component, cleaning up resources and detaching event listeners.
+   * Disposes the component, cleaning up resources and detaching event listeners.
    * This ensures that the component is properly cleaned up and does not leave behind any
    * references that could prevent garbage collection.
    */
@@ -309,7 +309,7 @@ export class IfcPropertiesIndexer extends Component implements Disposable {
     (this.relationMaps as any) = {};
     const fragmentManager = this.components.get(FragmentManager);
     fragmentManager.onFragmentsDisposed.remove(this.onFragmentsDisposed);
-    this.onDisposed.trigger(IfcPropertiesIndexer.uuid);
+    this.onDisposed.trigger(IfcRelationsIndexer.uuid);
     this.onDisposed.reset();
   }
 }
