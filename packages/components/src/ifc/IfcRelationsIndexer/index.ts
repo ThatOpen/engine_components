@@ -1,5 +1,5 @@
 import * as WEBIFC from "web-ifc";
-import { FragmentsGroup } from "bim-fragment";
+import { FragmentsGroup } from "@thatopen/fragments";
 import { Disposable, Event, Component, Components } from "../../core";
 import { FragmentManager } from "../../fragments/FragmentManager";
 import { IfcPropertiesUtils } from "../Utils";
@@ -9,7 +9,7 @@ interface RelationMap {
 }
 
 /**
- * Indexer for IFC properties, facilitating the indexing and retrieval of IFC entity relationships.
+ * Indexer for IFC entities, facilitating the indexing and retrieval of IFC entity relationships.
  * It is designed to process models properties by indexing their IFC entities' relations based on predefined inverse attributes, and provides methods to query these relations.
  */
 export class IfcRelationsIndexer extends Component implements Disposable {
