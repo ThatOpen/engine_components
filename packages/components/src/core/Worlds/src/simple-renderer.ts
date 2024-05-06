@@ -13,27 +13,27 @@ import { Components } from "../../Components";
  * ([Objec3Ds](https://threejs.org/docs/#api/en/core/Object3D).
  */
 export class SimpleRenderer extends BaseRenderer {
-  /** {@link Component.enabled} */
   enabled = true;
 
   /** The HTML container of the THREE.js canvas where the scene is rendered. */
-  container: HTMLElement | null;
+  container: HTMLElement;
 
   three: THREE.WebGLRenderer;
 
   protected _canvas: HTMLCanvasElement;
   protected _parameters?: Partial<THREE.WebGLRendererParameters>;
+  protected _resizeObserver: ResizeObserver | null = null;
 
-  protected onContainerUpdated = new Event<HTMLElement>();
+  protected onContainerUpdated = new Event();
 
   constructor(
     components: Components,
-    container?: HTMLElement,
+    container: HTMLElement,
     parameters?: Partial<THREE.WebGLRendererParameters>,
   ) {
     super(components);
 
-    this.container = container || null;
+    this.container = container;
     this._parameters = parameters;
 
     this.three = new THREE.WebGLRenderer({
@@ -92,10 +92,7 @@ export class SimpleRenderer extends BaseRenderer {
 
   /** {@link Resizeable.resize} */
   resize = (size?: THREE.Vector2) => {
-    this.updateContainer();
-    if (!this.container) {
-      return;
-    }
+    this.onContainerUpdated.trigger();
     const width = size ? size.x : this.container.clientWidth;
     const height = size ? size.y : this.container.clientHeight;
     this.three.setSize(width, height);
@@ -104,29 +101,33 @@ export class SimpleRenderer extends BaseRenderer {
   };
 
   setupEvents(active: boolean) {
-    const dom = this.three.domElement;
+    const dom = this.three.domElement.parentElement;
+    if (!dom) {
+      throw new Error("This renderer needs to have an HTML container!");
+    }
+
+    if (this._resizeObserver) {
+      this._resizeObserver.disconnect();
+      this._resizeObserver = null;
+    }
+
     if (active) {
-      dom.addEventListener("resize", this.resizeEvent);
-    } else {
-      dom.removeEventListener("resize", this.resizeEvent);
+      this._resizeObserver = new ResizeObserver(() => this.resize());
+      this._resizeObserver.observe(dom);
     }
   }
-
-  private resizeEvent = () => {
-    this.resize();
-  };
 
   private setupRenderer() {
     this.three.localClippingEnabled = true;
     if (this.container) {
       this.container.appendChild(this.three.domElement);
     }
-    this.updateContainer();
+    this.onContainerUpdated.trigger();
   }
 
   private onContextLost = (event: any) => {
     event.preventDefault();
-    this.components.enabled = false;
+    this.enabled = false;
   };
 
   private onContextBack = () => {
@@ -138,16 +139,6 @@ export class SimpleRenderer extends BaseRenderer {
       alpha: true,
       ...this._parameters,
     });
-    this.components.enabled = true;
+    this.enabled = true;
   };
-
-  private updateContainer() {
-    if (!this.container) {
-      const parent = this.three.domElement.parentElement;
-      if (parent) {
-        this.container = parent;
-        this.onContainerUpdated.trigger(parent);
-      }
-    }
-  }
 }
