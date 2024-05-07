@@ -19,7 +19,11 @@ world.camera = new OBC.SimpleCamera(components);
 
 components.init();
 
-const cube = new THREE.Mesh(new THREE.BoxGeometry());
+const material = new THREE.MeshLambertMaterial({color: "#6528D7"});
+const geometry = new THREE.BoxGeometry();
+const cube = new THREE.Mesh(geometry, material);
 world.scene.three.add(cube);
 
-world.camera.controls.setLookAt(13, 13, 13, 0, 0, 0);
+world.scene.setup();
+
+world.camera.controls.setLookAt(3, 3, 3, 0, 0, 0);

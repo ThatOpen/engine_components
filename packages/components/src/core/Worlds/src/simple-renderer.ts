@@ -112,10 +112,17 @@ export class SimpleRenderer extends BaseRenderer {
     }
 
     if (active) {
-      this._resizeObserver = new ResizeObserver(() => this.resize());
+      this._resizeObserver = new ResizeObserver(this.resizeEvent);
       this._resizeObserver.observe(dom);
+      this._resizeObserver.observe(document.body);
+
+      window.addEventListener("resize", this.resizeEvent);
     }
   }
+
+  private resizeEvent = () => {
+    this.resize();
+  };
 
   private setupRenderer() {
     this.three.localClippingEnabled = true;
