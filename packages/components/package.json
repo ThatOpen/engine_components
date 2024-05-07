@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "@thatopen/fragments": "2.0.0-alpha.1",
+    "@thatopen/ui": "2.0.0-alpha.1",
     "@types/jest": "27.0.0",
     "@types/node": "20.11.30",
     "@types/three": "0.160.0",

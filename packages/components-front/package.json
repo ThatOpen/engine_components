@@ -39,6 +39,7 @@
   },
   "devDependencies": {
     "@thatopen/fragments": "2.0.0-alpha.1",
+    "@thatopen/ui": "2.0.0-alpha.1",
     "@types/earcut": "^2.1.4",
     "@types/three": "^0.160.0",
     "three": "^0.160.1",

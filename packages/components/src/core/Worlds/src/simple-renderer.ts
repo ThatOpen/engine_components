@@ -111,6 +111,8 @@ export class SimpleRenderer extends BaseRenderer {
       this._resizeObserver = null;
     }
 
+    window.removeEventListener("resize", this.resizeEvent);
+
     if (active) {
       this._resizeObserver = new ResizeObserver(this.resizeEvent);
       this._resizeObserver.observe(dom);

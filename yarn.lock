@@ -610,6 +610,32 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@floating-ui/core@npm:^1.0.0":
+  version: 1.6.1
+  resolution: "@floating-ui/core@npm:1.6.1"
+  dependencies:
+    "@floating-ui/utils": ^0.2.0
+  checksum: 77ae1bc49127a694f37464e78d8eb7971c346a8691ea62a038beeddb22b80910d326fe544267c2b15fa49ff23ae403bc2763658f6413b67dbd759ab950c11939
+  languageName: node
+  linkType: hard
+
+"@floating-ui/dom@npm:1.6.3":
+  version: 1.6.3
+  resolution: "@floating-ui/dom@npm:1.6.3"
+  dependencies:
+    "@floating-ui/core": ^1.0.0
+    "@floating-ui/utils": ^0.2.0
+  checksum: 81cbb18ece3afc37992f436e469e7fabab2e433248e46fff4302d12493a175b0c64310f8a971e6e1eda7218df28ace6b70237b0f3c22fe12a21bba05b5579555
+  languageName: node
+  linkType: hard
+
+"@floating-ui/utils@npm:^0.2.0":
+  version: 0.2.2
+  resolution: "@floating-ui/utils@npm:0.2.2"
+  checksum: 3d8d46fd1b071c98e10d374e2dcf54d1eb9de0aa75ed2b994c9132ebf6f783f896f979053be71450bdb6d60021120cfc24d25a5c84ebb3db0994080e13d9762f
+  languageName: node
+  linkType: hard
+
 "@humanwhocodes/config-array@npm:^0.11.14":
   version: 0.11.14
   resolution: "@humanwhocodes/config-array@npm:0.11.14"
@@ -632,6 +658,13 @@ __metadata:
   version: 2.0.3
   resolution: "@humanwhocodes/object-schema@npm:2.0.3"
   checksum: d3b78f6c5831888c6ecc899df0d03bcc25d46f3ad26a11d7ea52944dc36a35ef543fad965322174238d677a43d5c694434f6607532cff7077062513ad7022631
+  languageName: node
+  linkType: hard
+
+"@iconify/types@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@iconify/types@npm:2.0.0"
+  checksum: 029f58542c160e9d4a746869cf2e475b603424d3adf3994c5cc8d0406c47e6e04a3b898b2707840c1c5b9bd5563a1660a34b110d89fce43923baca5222f4e597
   languageName: node
   linkType: hard
 
@@ -932,6 +965,22 @@ __metadata:
     "@jridgewell/resolve-uri": ^3.1.0
     "@jridgewell/sourcemap-codec": ^1.4.14
   checksum: 9d3c40d225e139987b50c48988f8717a54a8c994d8a948ee42e1412e08988761d0754d7d10b803061cc3aebf35f92a5dbbab493bd0e1a9ef9e89a2130e83ba34
+  languageName: node
+  linkType: hard
+
+"@lit-labs/ssr-dom-shim@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "@lit-labs/ssr-dom-shim@npm:1.2.0"
+  checksum: 704621c28df8d651e54a1b93f6ede8103db2dd3e7a1f02463fe5492bd28aa22de813314c7833260204fed5c8491a6bbd763f6051abc25690df537d812a508c35
+  languageName: node
+  linkType: hard
+
+"@lit/reactive-element@npm:^2.0.4":
+  version: 2.0.4
+  resolution: "@lit/reactive-element@npm:2.0.4"
+  dependencies:
+    "@lit-labs/ssr-dom-shim": ^1.2.0
+  checksum: 368d788d9eefdde74e77721e38c78de222dc5ec87d543e0638d0d28f7a8cf530c3d7b49aa8606efeec3f3485abbb22a43b58c2f20c1e6e7f0de266d4c6d125c4
   languageName: node
   linkType: hard
 
@@ -1244,6 +1293,7 @@ __metadata:
   dependencies:
     "@thatopen/components": 2.0.0-alpha.7
     "@thatopen/fragments": 2.0.0-alpha.1
+    "@thatopen/ui": 2.0.0-alpha.1
     "@types/earcut": ^2.1.4
     "@types/three": ^0.160.0
     camera-controls: 2.7.3
@@ -1265,6 +1315,7 @@ __metadata:
   resolution: "@thatopen/components@workspace:packages/components"
   dependencies:
     "@thatopen/fragments": 2.0.0-alpha.1
+    "@thatopen/ui": 2.0.0-alpha.1
     "@types/jest": 27.0.0
     "@types/node": 20.11.30
     "@types/three": 0.160.0
@@ -1305,6 +1356,17 @@ __metadata:
   peerDependencies:
     three: ^0.160.1
   checksum: df668eaebc5bb6903360cf1b8cbc943dc60701b1baba776c836240d239cd0e1df1f2b0b60e5588d1ba0ebf324b73cfb20fe7b6dfe158405b571b73306cb82e2d
+  languageName: node
+  linkType: hard
+
+"@thatopen/ui@npm:2.0.0-alpha.1":
+  version: 2.0.0-alpha.1
+  resolution: "@thatopen/ui@npm:2.0.0-alpha.1"
+  dependencies:
+    "@floating-ui/dom": 1.6.3
+    iconify-icon: 2.0.0
+    lit: 3.1.2
+  checksum: 7797a17e39c3a136884cc736393d6ba6a66e3f572bb4a358ce3b421328df5a6cad15693ff774f34a43e49f20b429b0d9aa4987524462a4767efa208b5b89bd2c
   languageName: node
   linkType: hard
 
@@ -1518,6 +1580,13 @@ __metadata:
     fflate: ~0.6.10
     meshoptimizer: ~0.18.1
   checksum: feec3c36b544f495184b7fc96e79ad4e0d43cd594029de1f1f31fe0a005dd8a0d14d979ead21927bc8fc4d7d3614002fa3a5e0b3e2b642e61ee089171ed9d7d2
+  languageName: node
+  linkType: hard
+
+"@types/trusted-types@npm:^2.0.2":
+  version: 2.0.7
+  resolution: "@types/trusted-types@npm:2.0.7"
+  checksum: 8e4202766a65877efcf5d5a41b7dd458480b36195e580a3b1085ad21e948bc417d55d6f8af1fd2a7ad008015d4117d5fdfe432731157da3c68678487174e4ba3
   languageName: node
   linkType: hard
 
@@ -3829,6 +3898,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"iconify-icon@npm:2.0.0":
+  version: 2.0.0
+  resolution: "iconify-icon@npm:2.0.0"
+  dependencies:
+    "@iconify/types": ^2.0.0
+  checksum: 9da96aadcd21cc1fbf2b95a00b8446aeced2406b8f7d13796e9931fc92863d2dec8304d75c2b53d0fa052bf43ea8fffa995d87f16028291f00e29638131ef61b
+  languageName: node
+  linkType: hard
+
 "iconv-lite@npm:0.4.24":
   version: 0.4.24
   resolution: "iconv-lite@npm:0.4.24"
@@ -4939,6 +5017,37 @@ __metadata:
   version: 1.2.4
   resolution: "lines-and-columns@npm:1.2.4"
   checksum: 0c37f9f7fa212b38912b7145e1cd16a5f3cd34d782441c3e6ca653485d326f58b3caccda66efce1c5812bde4961bbde3374fae4b0d11bf1226152337f3894aa5
+  languageName: node
+  linkType: hard
+
+"lit-element@npm:^4.0.4":
+  version: 4.0.5
+  resolution: "lit-element@npm:4.0.5"
+  dependencies:
+    "@lit-labs/ssr-dom-shim": ^1.2.0
+    "@lit/reactive-element": ^2.0.4
+    lit-html: ^3.1.2
+  checksum: c6dac74ea4eb88a0b4b086b9363ecd726c477a68fc40963fa1787d3d5d2b543c254b4e20c304ce343883553319a5f5783d6c88d8ecebb33a9a9215beac182c10
+  languageName: node
+  linkType: hard
+
+"lit-html@npm:^3.1.2":
+  version: 3.1.3
+  resolution: "lit-html@npm:3.1.3"
+  dependencies:
+    "@types/trusted-types": ^2.0.2
+  checksum: b079d785860378ab1b9d6ba4f5a367c30dc64a98da696b9dd8e4c68bd26f6478aa74099e56062358f2f0fc75e9ee949b1e1723abf85cde00c86d27d56d2d3717
+  languageName: node
+  linkType: hard
+
+"lit@npm:3.1.2":
+  version: 3.1.2
+  resolution: "lit@npm:3.1.2"
+  dependencies:
+    "@lit/reactive-element": ^2.0.4
+    lit-element: ^4.0.4
+    lit-html: ^3.1.2
+  checksum: 7776fc5f17a093aafa8d2194725692be2e233d893909722e2fc86ef0bd167f60846fa24054bbca40028bb71262dfa12947e39cb46ad1d0f949dbf0298c7754d1
   languageName: node
   linkType: hard
 
