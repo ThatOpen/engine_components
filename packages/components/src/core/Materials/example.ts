@@ -1,7 +1,9 @@
+/* eslint import/no-extraneous-dependencies: 0 */
+
 import * as THREE from "three";
-import * as dat from "three/examples/jsm/libs/lil-gui.module.min.js";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import Stats from "stats.js";
+import * as BUI from "@thatopen/ui";
 import * as OBC from "../..";
 
 const container = document.getElementById("container")!;
@@ -130,8 +132,6 @@ generateSpheres();
   */
 const materials = components.get(OBC.Materials);
 
-const backgroundColor = new THREE.Color("white");
-
 const cubeColor = new THREE.Color(0x71d728);
 const cubeMaterial = new THREE.MeshBasicMaterial({ color: cubeColor });
 
@@ -173,23 +173,40 @@ materials.addMeshes("sphereMaterial", spheres);
 
   */
 
-const gui = new dat.GUI();
+BUI.Manager.registerComponents();
 
-const actions = {
-  changeSphereMaterial: () => {
-    materials.set(true, ["sphereMaterial"]);
-  },
-  changeCubeMaterial: () => {
-    materials.set(true, ["cubeMaterial"]);
-  },
-  changeBackground: () => {
-    materials.setBackgroundColor(backgroundColor, world);
-  },
-  reset: () => {
-    materials.set(false, ["cubeMaterial", "sphereMaterial"]);
-    materials.resetBackgroundColor(world);
-  },
-};
+const panel = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+    <bim-panel label="Materials Tutorial" style="position: fixed; top: 5px; right: 5px" active>
+      <bim-panel-section style="padding-top: 10px">
+      
+        <bim-button 
+          label="Change spheres material" 
+          @click="${() => {
+            materials.set(true, ["sphereMaterial"]);
+          }}">  
+        </bim-button>  
+              
+        <bim-button 
+          label="Change cubes material" 
+          @click="${() => {
+            materials.set(true, ["cubeMaterial"]);
+          }}">  
+        </bim-button>  
+              
+        <bim-button 
+          label="Reset materials" 
+          @click="${() => {
+            materials.set(false, ["cubeMaterial", "sphereMaterial"]);
+          }}">  
+        </bim-button>
+        
+      </bim-panel-section>
+    </bim-panel>
+    `;
+});
+
+document.body.append(panel);
 
 /* MD
 
@@ -199,11 +216,6 @@ const actions = {
   Let's keep it up and check out another tutorials!
 
   */
-
-gui.add(actions, "changeSphereMaterial").name("Change Sphere Material");
-gui.add(actions, "changeCubeMaterial").name("Change Cube Material");
-gui.add(actions, "changeBackground").name("Change Background");
-gui.add(actions, "reset").name("Reset Material");
 
 const stats = new Stats();
 stats.showPanel(2);

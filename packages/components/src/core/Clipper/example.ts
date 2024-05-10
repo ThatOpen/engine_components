@@ -159,8 +159,6 @@ world.renderer.onAfterUpdate.add(() => stats.end());
 
 BUI.Manager.registerComponents();
 
-BUI.Manager.registerComponents();
-
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
     <bim-panel label="Clipper Tutorial" style="position: fixed; top: 5px; right: 5px" active>
@@ -206,31 +204,26 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           }}">
         </bim-number-input>
         
+        <bim-button 
+          label="Delete all" 
+          @click="${() => {
+            clipper.deleteAll();
+          }}">  
+        </bim-button>        
+        
+        <bim-button 
+          label="Rotate cube" 
+          @click="${() => {
+            cube.rotation.x = 2 * Math.PI * Math.random();
+            cube.rotation.y = 2 * Math.PI * Math.random();
+            cube.rotation.z = 2 * Math.PI * Math.random();
+          }}">  
+        </bim-button>
+       
+        
       </bim-panel-section>
     </bim-panel>
     `;
 });
 
 document.body.append(panel);
-
-//
-// actionsFolder.add(clipper, "size").name("Plane Size").min(0).max(15);
-// actionsFolder
-//   .add(clipper.material, "opacity")
-//   .name("Plane Opacity")
-//   .min(0)
-//   .max(1);
-//
-// const actions = {
-//   "Delete all planes": () => {
-//     clipper.deleteAll();
-//   },
-//   "Rotate cube": () => {
-//     cube.rotation.x = 2 * Math.PI * Math.random();
-//     cube.rotation.y = 2 * Math.PI * Math.random();
-//     cube.rotation.z = 2 * Math.PI * Math.random();
-//   },
-// };
-//
-// actionsFolder.add(actions, "Rotate cube");
-// actionsFolder.add(actions, "Delete all planes");

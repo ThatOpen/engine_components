@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Component, Disposable, Event, World } from "../Types";
+import { Component, Disposable, Event } from "../Types";
 import { Components } from "../Components";
 
 // TODO: Clean up and document
@@ -14,8 +14,6 @@ export class Materials extends Component implements Disposable {
 
   /** {@link Component.enabled} */
   enabled = true;
-
-  private _originalBackground = new Map<string, THREE.Color>();
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
@@ -37,6 +35,18 @@ export class Materials extends Component implements Disposable {
   constructor(components: Components) {
     super(components);
     this.components.add(Materials.uuid, this);
+  }
+
+  /** {@link Disposable.dispose} */
+  dispose() {
+    for (const id in this.list) {
+      const { material } = this.list[id];
+      material.dispose();
+    }
+    this.list = {};
+    this._originals = {};
+    this.onDisposed.trigger(Materials.uuid);
+    this.onDisposed.reset();
   }
 
   /**
@@ -67,52 +77,6 @@ export class Materials extends Component implements Disposable {
           }
         }
       }
-    }
-  }
-
-  /** {@link Disposable.dispose} */
-  dispose() {
-    for (const id in this.list) {
-      const { material } = this.list[id];
-      material.dispose();
-    }
-    this.list = {};
-    this._originals = {};
-    this.onDisposed.trigger(Materials.uuid);
-    this.onDisposed.reset();
-    this._originalBackground.clear();
-  }
-
-  /**
-   * Sets the color of the background of the scene.
-   *
-   * @param color: the color to apply.
-   */
-  setBackgroundColor(color: THREE.Color, world: World) {
-    const scene = world.scene.three;
-    if (!(scene instanceof THREE.Scene)) {
-      return;
-    }
-    if (!this._originalBackground.has(world.uuid)) {
-      this._originalBackground.set(world.uuid, scene.background as THREE.Color);
-    }
-    if (this._originalBackground) {
-      scene.background = color;
-    }
-  }
-
-  /**
-   * Resets the scene background to the color that was being used
-   * before applying the material manager.
-   */
-  resetBackgroundColor(world: World) {
-    const scene = world.scene.three;
-    if (!(scene instanceof THREE.Scene)) {
-      return;
-    }
-    const color = this._originalBackground.get(world.uuid);
-    if (color) {
-      scene.background = color;
     }
   }
 
