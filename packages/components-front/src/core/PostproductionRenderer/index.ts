@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import { Postproduction } from "./src/postproduction";
-import { RendererWith2D } from "../../core";
+import { RendererWith2D } from "../RendererWith2D";
 
 /**
  * Renderer that uses efficient postproduction effects (e.g. Ambient Occlusion).
@@ -19,7 +19,7 @@ export class PostproductionRenderer extends RendererWith2D {
 
   constructor(
     components: OBC.Components,
-    container?: HTMLElement,
+    container: HTMLElement,
     parameters?: Partial<THREE.WebGLRendererParameters>,
   ) {
     super(components, container, parameters);

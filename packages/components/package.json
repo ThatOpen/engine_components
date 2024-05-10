@@ -37,8 +37,8 @@
     "access": "public"
   },
   "devDependencies": {
-    "@thatopen/fragments": "2.0.0-alpha.3",
-    "@thatopen/ui": "2.0.0-alpha.1",
+    "@thatopen/fragments": "2.0.0-alpha.4",
+    "@thatopen/ui": "2.0.0-alpha.5",
     "@types/jest": "27.0.0",
     "@types/node": "20.11.30",
     "@types/three": "0.160.0",
@@ -66,7 +66,7 @@
     "top-tool-package-reader": "0.0.3"
   },
   "peerDependencies": {
-    "@thatopen/fragments": "2.0.0-alpha.3",
+    "@thatopen/fragments": "2.0.0-alpha.4",
     "three": "^0.160.1",
     "web-ifc": "0.0.53"
   }

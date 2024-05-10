@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { EdgesPlane } from "../../../navigation";
+import { EdgesPlane } from "../../../core";
 
 /**
  * Necessary data to create a new floor plan in the navigator.

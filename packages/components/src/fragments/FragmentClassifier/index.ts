@@ -1,3 +1,4 @@
+import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import { Disposable, Component, Event, Components } from "../../core";
 import { IfcCategoryMap, IfcPropertiesUtils } from "../../ifc";
@@ -18,7 +19,7 @@ export class FragmentClassifier extends Component implements Disposable {
   /** {@link Component.enabled} */
   enabled = true;
 
-  private _groupSystems: Classification = {};
+  list: Classification = {};
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
@@ -35,13 +36,13 @@ export class FragmentClassifier extends Component implements Disposable {
     fragmentIDs: string[];
   }) => {
     const { groupID, fragmentIDs } = data;
-    for (const systemName in this._groupSystems) {
-      const system = this._groupSystems[systemName];
+    for (const systemName in this.list) {
+      const system = this.list[systemName];
       const groupNames = Object.keys(system);
       if (groupNames.includes(groupID)) {
         delete system[groupID];
         if (Object.values(system).length === 0) {
-          delete this._groupSystems[systemName];
+          delete this.list[systemName];
         }
       } else {
         for (const groupName of groupNames) {
@@ -57,13 +58,8 @@ export class FragmentClassifier extends Component implements Disposable {
     }
   };
 
-  /** {@link Component.get} */
-  get(): Classification {
-    return this._groupSystems;
-  }
-
   dispose() {
-    this._groupSystems = {};
+    this.list = {};
     const fragmentManager = this.components.get(FragmentManager);
     fragmentManager.onFragmentsDisposed.remove(this.onFragmentsDisposed);
     this.onDisposed.trigger();
@@ -71,8 +67,8 @@ export class FragmentClassifier extends Component implements Disposable {
   }
 
   remove(guid: string) {
-    for (const systemName in this._groupSystems) {
-      const system = this._groupSystems[systemName];
+    for (const systemName in this.list) {
+      const system = this.list[systemName];
       for (const groupName in system) {
         const group = system[groupName];
         delete group[guid];
@@ -99,12 +95,12 @@ export class FragmentClassifier extends Component implements Disposable {
 
     for (const name in filter) {
       const values = filter[name];
-      if (!this._groupSystems[name]) {
+      if (!this.list[name]) {
         console.warn(`Classification ${name} does not exist.`);
         continue;
       }
       for (const value of values) {
-        const found = this._groupSystems[name][value];
+        const found = this.list[name][value];
         if (found) {
           for (const guid in found) {
             if (!models[guid]) {
@@ -143,10 +139,10 @@ export class FragmentClassifier extends Component implements Disposable {
   }
 
   byModel(modelID: string, group: FRAGS.FragmentsGroup) {
-    if (!this._groupSystems.model) {
-      this._groupSystems.model = {};
+    if (!this.list.model) {
+      this.list.model = {};
     }
-    const modelsClassification = this._groupSystems.model;
+    const modelsClassification = this.list.model;
     if (!modelsClassification[modelID]) {
       modelsClassification[modelID] = {};
     }
@@ -165,11 +161,11 @@ export class FragmentClassifier extends Component implements Disposable {
   }
 
   async byPredefinedType(group: FRAGS.FragmentsGroup) {
-    if (!this._groupSystems.predefinedTypes) {
-      this._groupSystems.predefinedTypes = {};
+    if (!this.list.predefinedTypes) {
+      this.list.predefinedTypes = {};
     }
 
-    const currentTypes = this._groupSystems.predefinedTypes;
+    const currentTypes = this.list.predefinedTypes;
 
     const ids = group.getAllPropertiesIDs();
     for (const id of ids) {
@@ -202,8 +198,8 @@ export class FragmentClassifier extends Component implements Disposable {
   }
 
   byEntity(group: FRAGS.FragmentsGroup) {
-    if (!this._groupSystems.entities) {
-      this._groupSystems.entities = {};
+    if (!this.list.entities) {
+      this.list.entities = {};
     }
 
     for (const [expressID, data] of group.data) {
@@ -249,21 +245,41 @@ export class FragmentClassifier extends Component implements Disposable {
     );
   }
 
+  setColor(items: FRAGS.FragmentIdMap, color: THREE.Color, _override?: boolean) {
+    const fragments = this.components.get(FragmentManager);
+    for (const fragID in items) {
+      const found = fragments.list.get(fragID);
+      if (!found) continue;
+      const ids = items[fragID];
+      found.setColor(color, ids);
+    }
+  }
+
+  resetColor(items: FRAGS.FragmentIdMap) {
+    const fragments = this.components.get(FragmentManager);
+    for (const fragID in items) {
+      const found = fragments.list.get(fragID);
+      if (!found) continue;
+      const ids = items[fragID];
+      found.resetColor(ids);
+    }
+  }
+
   private saveItem(
     group: FRAGS.FragmentsGroup,
     systemName: string,
     className: string,
     expressID: number,
   ) {
-    if (!this._groupSystems[systemName]) {
-      this._groupSystems[systemName] = {};
+    if (!this.list[systemName]) {
+      this.list[systemName] = {};
     }
     const keys = group.data.get(expressID);
     if (!keys) return;
     for (const key of keys[0]) {
       const fragmentID = group.keyFragments.get(key);
       if (fragmentID) {
-        const system = this._groupSystems[systemName];
+        const system = this.list[systemName];
         if (!system[className]) {
           system[className] = {};
         }

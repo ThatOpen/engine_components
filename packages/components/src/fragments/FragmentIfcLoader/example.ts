@@ -4,7 +4,6 @@ import * as WEBIFC from "web-ifc";
 import Stats from "stats.js";
 // @ts-ignore
 import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
-import { downloadZip } from "client-zip";
 import * as OBC from "../..";
 
 const container = document.getElementById("container")!;
@@ -172,18 +171,12 @@ async function exportFragments() {
   }
   const group = Array.from(fragments.groups.values())[0];
   const data = fragments.export(group);
-  const blob = new Blob([data]);
-  const fragmentFile = new File([blob], "small.frag");
+  download(new File([new Blob([data])], "small.frag"));
 
-  const files = [];
-  files.push(fragmentFile);
   const properties = group.getLocalProperties();
   if (properties) {
-    files.push(new File([JSON.stringify(properties)], "small.json"));
+    download(new File([JSON.stringify(properties)], "small.json"));
   }
-  const result = await downloadZip(files).blob();
-  const file = new File([result], "example");
-  download(file);
 }
 
 /* MD

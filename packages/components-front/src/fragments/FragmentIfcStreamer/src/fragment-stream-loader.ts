@@ -240,16 +240,9 @@ export class FragmentStreamLoader
 
       const { indexesFile } = properties;
       const fetched = await fetch(this.url + indexesFile);
-      const indices = await fetched.json();
-
-      const indexer = this.components.get(OBC.IfcPropertiesIndexer);
-      const { indexMap } = indexer;
-
-      indexMap[group.uuid] = {};
-      for (const index of indices) {
-        const id = index.shift();
-        indexMap[group.uuid][id] = new Set(index);
-      }
+      const rels = await fetched.text();
+      const indexer = this.components.get(OBC.IfcRelationsIndexer);
+      indexer.getRelationsMapFromJSON(rels);
     }
 
     this.culler.needsUpdate = true;

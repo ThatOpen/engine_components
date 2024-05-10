@@ -13,7 +13,7 @@ export class RendererWith2D extends SimpleRenderer {
 
   constructor(
     components: Components,
-    container?: HTMLElement,
+    container: HTMLElement,
     parameters?: Partial<THREE.WebGLRendererParameters>,
   ) {
     super(components, container, parameters);
@@ -36,7 +36,7 @@ export class RendererWith2D extends SimpleRenderer {
       this.three2D.setSize(x, y);
     });
 
-    this.onContainerUpdated.add((parent) => {
+    this.onContainerUpdated.add((parent: HTMLElement) => {
       parent.appendChild(this.three2D.domElement);
     });
 

@@ -3,7 +3,6 @@
 import Stats from "stats.js";
 // @ts-ignore
 import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
-import * as JSZip from "jszip";
 import * as OBC from "../..";
 
 const container = document.getElementById("container")!;
@@ -66,7 +65,7 @@ async function downloadFilesSequentially(
 
   */
 
-const propsStreamer = new OBC.FragmentPropsStreamConverter(components);
+const propsStreamer = new OBC.IfcPropertiesTiler(components);
 
 propsStreamer.settings.wasm = {
   path: "https://unpkg.com/web-ifc@0.0.53/",
@@ -103,13 +102,9 @@ indexation data of the properties to be able to use them effectively when
 streamed.
 */
 
-console.log(JSZip);
-
 let counter = 0;
 
 const files: { name: string; bits: Blob }[] = [];
-
-let first = true;
 
 propsStreamer.onPropertiesStreamed.add(async (props) => {
   if (!jsonFile.types[props.type]) {
@@ -121,20 +116,9 @@ propsStreamer.onPropertiesStreamed.add(async (props) => {
     jsonFile.ids[id] = counter;
   }
 
-  if (first) {
-    first = false;
-
-    const zip = new JSZip();
-
-    const data = JSON.stringify(props.data);
-    const name = `small.ifc-processed-properties-${counter}`;
-    zip.file(name, data);
-    const bits = await zip.generateAsync({ type: "blob" });
-
-    // const name = `small.ifc-processed-properties-${counter}`;
-    // const bits = [JSON.stringify(props.data)];
-    files.push({ bits, name });
-  }
+  const name = `small.ifc-processed-properties-${counter}`;
+  const bits = new Blob([JSON.stringify(props.data)]);
+  files.push({ bits, name });
 
   counter++;
 });
@@ -149,9 +133,12 @@ propsStreamer.onIndicesStreamed.add(async (props) => {
     bits: new Blob([JSON.stringify(jsonFile)]),
   });
 
+  const relations = components.get(OBC.IfcRelationsIndexer);
+  const serializedRels = relations.serializeRelations(props);
+
   files.push({
-    name: "small.ifc-processed-indexes.json",
-    bits: new Blob([JSON.stringify(props)]),
+    name: "small.ifc-processed-properties-indexes",
+    bits: new Blob([serializedRels]),
   });
 
   await downloadFilesSequentially(files);

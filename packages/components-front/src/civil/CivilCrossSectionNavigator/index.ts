@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
-import { EdgesClipper, EdgesPlane } from "../../navigation";
+import { EdgesClipper, EdgesPlane } from "../../core";
 
 export class CivilCrossSectionNavigator extends OBC.Component {
   static readonly uuid = "96b2c87e-d90b-4639-8257-8f01136fe324" as const;

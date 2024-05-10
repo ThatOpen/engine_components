@@ -46,8 +46,7 @@ export class FragmentExploder extends Component implements Disposable {
     const factor = this.enabled ? 1 : -1;
     let i = 0;
 
-    const systems = classifier.get();
-    const groups = systems[this.groupName];
+    const groups = classifier.list[this.groupName];
 
     const yTransform = new THREE.Matrix4();
 

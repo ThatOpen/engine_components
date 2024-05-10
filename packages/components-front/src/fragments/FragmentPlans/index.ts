@@ -4,7 +4,7 @@ import * as WEBIFC from "web-ifc";
 import * as OBC from "@thatopen/components";
 import { PlanView } from "./src";
 
-import { EdgesClipper, EdgesPlane } from "../../navigation/EdgesClipper";
+import { EdgesClipper, EdgesPlane } from "../../core/EdgesClipper";
 
 /**
  * Helper to control the camera and easily define and navigate 2D floor plans.

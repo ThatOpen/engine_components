@@ -52,7 +52,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     "ContainedInStructure",
   ];
 
-  private _relToAttributesMap = new Map<
+  relToAttributesMap = new Map<
     number,
     { forRelating?: string; forRelated?: string }
   >();
@@ -84,7 +84,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
 
   private getAttributeRels(value: string) {
     const keys: number[] = [];
-    for (const [rel, attribute] of this._relToAttributesMap.entries()) {
+    for (const [rel, attribute] of this.relToAttributesMap.entries()) {
       const { forRelating, forRelated } = attribute;
       if (forRelating === value || forRelated === value) keys.push(rel);
     }
@@ -93,42 +93,42 @@ export class IfcRelationsIndexer extends Component implements Disposable {
 
   // TODO: Construct this based on the IFC EXPRESS long form schema?
   private setRelMap() {
-    this._relToAttributesMap.set(WEBIFC.IFCRELAGGREGATES, {
+    this.relToAttributesMap.set(WEBIFC.IFCRELAGGREGATES, {
       forRelating: "IsDecomposedBy",
       forRelated: "Decomposes",
     });
 
-    this._relToAttributesMap.set(WEBIFC.IFCRELASSOCIATESMATERIAL, {
+    this.relToAttributesMap.set(WEBIFC.IFCRELASSOCIATESMATERIAL, {
       forRelating: "AssociatedTo",
       forRelated: "HasAssociations",
     });
 
-    this._relToAttributesMap.set(WEBIFC.IFCRELASSOCIATESCLASSIFICATION, {
+    this.relToAttributesMap.set(WEBIFC.IFCRELASSOCIATESCLASSIFICATION, {
       forRelating: "ClassificationForObjects",
       forRelated: "HasAssociations",
     });
 
-    this._relToAttributesMap.set(WEBIFC.IFCRELASSIGNSTOGROUP, {
+    this.relToAttributesMap.set(WEBIFC.IFCRELASSIGNSTOGROUP, {
       forRelating: "IsGroupedBy",
       forRelated: "HasAssignments",
     });
 
-    this._relToAttributesMap.set(WEBIFC.IFCRELDEFINESBYPROPERTIES, {
+    this.relToAttributesMap.set(WEBIFC.IFCRELDEFINESBYPROPERTIES, {
       forRelated: "IsDefinedBy",
       forRelating: "DefinesOcurrence",
     });
 
-    this._relToAttributesMap.set(WEBIFC.IFCRELDEFINESBYTYPE, {
+    this.relToAttributesMap.set(WEBIFC.IFCRELDEFINESBYTYPE, {
       forRelated: "IsTypedBy",
       forRelating: "Types",
     });
 
-    this._relToAttributesMap.set(WEBIFC.IFCRELDEFINESBYTEMPLATE, {
+    this.relToAttributesMap.set(WEBIFC.IFCRELDEFINESBYTEMPLATE, {
       forRelated: "IsDefinedBy",
       forRelating: "Defines",
     });
 
-    this._relToAttributesMap.set(WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE, {
+    this.relToAttributesMap.set(WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE, {
       forRelated: "ContainedInStructure",
       forRelating: "ContainsElements",
     });
@@ -165,7 +165,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
           model,
           rel,
           async (relatingID, relatedID) => {
-            const inverseAttributes = this._relToAttributesMap.get(rel);
+            const inverseAttributes = this.relToAttributesMap.get(rel);
             if (!inverseAttributes) return;
             const { forRelated: related, forRelating: relating } =
               inverseAttributes;
@@ -175,6 +175,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
             ) {
               const currentMap =
                 relationsMap.get(relatingID) ?? new Map<number, number[]>();
+              // TODO: indexOf might be slow. Better a Map<string, number>?
               const index = this.inverseAttributes.indexOf(relating);
               currentMap.set(index, relatedID);
               relationsMap.set(relatingID, currentMap);
@@ -222,7 +223,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
       const rels = this.getAttributeRels(attribute);
       for (const rel of rels) {
         getRelationMap(properties, rel, (relatingID, relatedID) => {
-          const inverseAttributes = this._relToAttributesMap.get(rel);
+          const inverseAttributes = this.relToAttributesMap.get(rel);
           if (!inverseAttributes) return;
           const { forRelated: related, forRelating: relating } =
             inverseAttributes;

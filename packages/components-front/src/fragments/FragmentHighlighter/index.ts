@@ -3,7 +3,7 @@ import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
 import { Fragment, FragmentIdMap, FragmentMesh } from "@thatopen/fragments";
 import { World } from "@thatopen/components";
-import { PostproductionRenderer } from "../../navigation";
+import { PostproductionRenderer } from "../../core";
 
 // TODO: Clean up and document
 

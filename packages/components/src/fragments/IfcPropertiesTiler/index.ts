@@ -2,6 +2,7 @@ import * as WEBIFC from "web-ifc";
 import { AsyncEvent, Component, Disposable, Event } from "../../core";
 import { PropertiesStreamingSettings } from "../IfcGeometryTiler";
 import { GeometryTypes } from "../../ifc/IfcJsonExporter/src/ifc-geometry-types";
+import { IfcRelationsIndexer } from "../../ifc";
 
 // TODO: Deduplicate with IFC stream converter
 // TODO: Use flatbuffers instead of JSON?
@@ -16,7 +17,7 @@ export class IfcPropertiesTiler extends Component implements Disposable {
 
   onProgress = new AsyncEvent<number>();
 
-  onIndicesStreamed = new AsyncEvent<number[][]>();
+  onIndicesStreamed = new AsyncEvent<Map<number, Map<number, number[]>>>();
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
@@ -79,18 +80,6 @@ export class IfcPropertiesTiler extends Component implements Disposable {
 
     const allIfcEntities = new Set(this.webIfc.GetIfcEntityList(0));
 
-    // Types used to construct the property index
-    const relationTypes = [
-      WEBIFC.IFCRELDEFINESBYPROPERTIES,
-      WEBIFC.IFCRELDEFINESBYTYPE,
-      WEBIFC.IFCRELASSOCIATESMATERIAL,
-      WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE,
-      WEBIFC.IFCRELASSOCIATESCLASSIFICATION,
-      WEBIFC.IFCRELASSIGNSTOGROUP,
-    ];
-
-    const propertyIndices = new Map<number, Set<number>>();
-
     // let finalCount = 0;
 
     // Spatial items get their properties recursively to make
@@ -136,11 +125,6 @@ export class IfcPropertiesTiler extends Component implements Disposable {
 
           try {
             const property = this.webIfc.GetLine(0, nextProperty, isSpatial);
-
-            if (relationTypes.includes(type)) {
-              this.getIndices(property, nextProperty, propertyIndices);
-            }
-
             data[property.expressID] = property;
           } catch (e) {
             console.log(`Could not get property: ${nextProperty}`);
@@ -159,11 +143,6 @@ export class IfcPropertiesTiler extends Component implements Disposable {
 
           try {
             const property = this.webIfc.GetLine(0, nextProperty, isSpatial);
-
-            if (relationTypes.includes(type)) {
-              this.getIndices(property, nextProperty, propertyIndices);
-            }
-
             data[property.expressID] = property;
           } catch (e) {
             console.log(`Could not get property: ${nextProperty}`);
@@ -183,60 +162,11 @@ export class IfcPropertiesTiler extends Component implements Disposable {
 
     // Stream indices
 
-    const compressedIndices: number[][] = [];
-    for (const [id, indices] of propertyIndices) {
-      compressedIndices.push([id, ...indices]);
-    }
-
-    await this.onIndicesStreamed.trigger(compressedIndices);
+    const relations = this.components.get(IfcRelationsIndexer);
+    const rels = await relations.processFromWebIfc(this.webIfc, 0);
+    await this.onIndicesStreamed.trigger(rels);
 
     // console.log(finalCount);
-  }
-
-  private getIndices(
-    property: any,
-    nextProperty: number,
-    propertyIndex: Map<number, Set<number>>,
-  ) {
-    const related = property.RelatedObjects || property.RelatedElements;
-    if (!related) {
-      console.log(`Related objects not found: ${nextProperty}`);
-      return;
-    }
-
-    const relating =
-      property.RelatingType ||
-      property.RelatingMaterial ||
-      property.RelatingStructure ||
-      property.RelatingPropertyDefinition ||
-      property.RelatingGroup ||
-      property.RelatingClassification;
-
-    if (!relating) {
-      console.log(`Relating object not found: ${nextProperty}`);
-      return;
-    }
-
-    if (!Array.isArray(related) || relating.value === undefined) {
-      return;
-    }
-
-    const relatingID = relating.value;
-
-    for (const item of related) {
-      if (item.value === undefined || item.value === null) {
-        continue;
-      }
-
-      const id = item.value;
-
-      if (!propertyIndex.has(id)) {
-        propertyIndex.set(id, new Set());
-      }
-
-      const indices = propertyIndex.get(id) as Set<number>;
-      indices.add(relatingID);
-    }
   }
 
   private cleanUp() {
