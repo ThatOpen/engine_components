@@ -92,7 +92,7 @@ if (json) downloadJSON(json, "small-relations.json");
  Now, in case you've loaded several models and want to get all the calculated relations, there is also a handy method to do it.
  */
 
-const allRelationsJSON = indexer.serializeRelations();
+const allRelationsJSON = indexer.serializeAllRelations();
 downloadJSON(allRelationsJSON, "relations-index-all.json");
 
 /* MD 

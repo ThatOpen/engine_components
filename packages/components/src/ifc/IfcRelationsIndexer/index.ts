@@ -3,6 +3,9 @@ import { FragmentsGroup } from "@thatopen/fragments";
 import { Disposable, Event, Component, Components } from "../../core";
 import { FragmentManager } from "../../fragments/FragmentManager";
 import { IfcPropertiesUtils } from "../Utils";
+import { getRelationMap } from "./src/get-relation-map";
+
+// TODO: Refactor to combine logic from process and processFromWebIfc
 
 interface RelationMap {
   [modelID: string]: Map<number, Map<number, number[]>>;
@@ -196,6 +199,59 @@ export class IfcRelationsIndexer extends Component implements Disposable {
   }
 
   /**
+   * Processes a given model from a WebIfc API to index its IFC entities relations based on predefined inverse attributes.
+   *
+   * @param ifcApi - The WebIfc API instance from which to retrieve the model's properties.
+   * @param modelID - The unique identifier of the model within the WebIfc API.
+   * @returns A promise that resolves to the relations map for the processed model.
+   *          This map is a detailed representation of the relations indexed by entity expressIDs and relation types.
+   */
+  async processFromWebIfc(ifcApi: WEBIFC.IfcAPI, modelID: number) {
+    const relationsMap = new Map<number, Map<number, number[]>>();
+
+    const properties: Record<string, Record<string, any>> = {};
+    const lines = ifcApi.GetAllLines(modelID);
+
+    for (let i = 0; i < lines.size(); i++) {
+      const line = lines.get(i);
+      const attrs = await ifcApi.properties.getItemProperties(modelID, line);
+      properties[line] = attrs;
+    }
+
+    for (const attribute of this.inverseAttributesToProcess) {
+      const rels = this.getAttributeRels(attribute);
+      for (const rel of rels) {
+        getRelationMap(properties, rel, (relatingID, relatedID) => {
+          const inverseAttributes = this._relToAttributesMap.get(rel);
+          if (!inverseAttributes) return;
+          const { forRelated: related, forRelating: relating } =
+            inverseAttributes;
+          if (relating && this.inverseAttributesToProcess.includes(relating)) {
+            const currentMap =
+              relationsMap.get(relatingID) ?? new Map<number, number[]>();
+            const index = this.inverseAttributes.indexOf(relating);
+            currentMap.set(index, relatedID);
+            relationsMap.set(relatingID, currentMap);
+          }
+          if (related && this.inverseAttributesToProcess.includes(related)) {
+            for (const id of relatedID) {
+              const currentMap =
+                relationsMap.get(id) ?? new Map<number, number[]>();
+              const index = this.inverseAttributes.indexOf(related);
+              const relations = currentMap.get(index) ?? [];
+              relations.push(relatingID);
+              currentMap.set(index, relations);
+              relationsMap.set(id, currentMap);
+            }
+          }
+        });
+      }
+    }
+
+    return relationsMap;
+  }
+
+  /**
    * Retrieves the relations of a specific entity within a model based on the given relation name.
    * This method searches the indexed relation maps for the specified model and entity,
    * returning the IDs of related entities if a match is found.
@@ -222,6 +278,26 @@ export class IfcRelationsIndexer extends Component implements Disposable {
   }
 
   /**
+   * Serializes the relations of a given relation map into a JSON string.
+   * This method iterates through the relations in the given map, organizing them into a structured object where each key is an expressID of an entity,
+   * and its value is another object mapping relation indices to arrays of related entity expressIDs.
+   * The resulting object is then serialized into a JSON string.
+   *
+   * @param relationMap - The map of relations to be serialized. The map keys are expressIDs of entities, and the values are maps where each key is a relation type ID and its value is an array of expressIDs of entities related through that relation type.
+   * @returns A JSON string representing the serialized relations of the given relation map.
+   */
+  serializeRelations(relationMap: Map<number, Map<number, number[]>>) {
+    const object: Record<string, Record<string, number[]>> = {};
+    for (const [expressID, relations] of relationMap.entries()) {
+      if (!object[expressID]) object[expressID] = {};
+      for (const [relationID, relationEntities] of relations.entries()) {
+        object[expressID][relationID] = relationEntities;
+      }
+    }
+    return JSON.stringify(object);
+  }
+
+  /**
    * Serializes the relations of a specific model into a JSON string.
    * This method iterates through the relations indexed for the given model,
    * organizing them into a structured object where each key is an expressID of an entity,
@@ -233,16 +309,10 @@ export class IfcRelationsIndexer extends Component implements Disposable {
    * If the model has no indexed relations, `null` is returned.
    */
   serializeModelRelations(model: FragmentsGroup) {
-    const indexMap = this.relationMaps[model.uuid];
-    if (!indexMap) return null;
-    const object: Record<string, Record<string, number[]>> = {};
-    for (const [expressID, relations] of indexMap.entries()) {
-      if (!object[expressID]) object[expressID] = {};
-      for (const [relationID, relationEntities] of relations.entries()) {
-        object[expressID][relationID] = relationEntities;
-      }
-    }
-    return JSON.stringify(object);
+    const relationsMap = this.relationMaps[model.uuid];
+    if (!relationsMap) return null;
+    const json = this.serializeRelations(relationsMap);
+    return json;
   }
 
   /**
@@ -255,7 +325,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
    * @returns A JSON string representing the serialized relations of all models processed by the indexer.
    *          If no relations have been indexed, an empty object is returned as a JSON string.
    */
-  serializeRelations() {
+  serializeAllRelations() {
     const jsonObject: Record<
       string,
       Record<string, Record<string, number[]>>
