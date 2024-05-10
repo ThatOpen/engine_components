@@ -1,5 +1,5 @@
 import * as WEBIFC from "web-ifc";
-import { Component, Disposable, Event } from "../../../core";
+import { AsyncEvent, Component, Disposable, Event } from "../../../core";
 import { PropertiesStreamingSettings } from "./streaming-settings";
 import { GeometryTypes } from "../../../ifc/IfcJsonExporter/src/ifc-geometry-types";
 
@@ -11,14 +11,14 @@ export class FragmentPropsStreamConverter
 {
   static readonly uuid = "88d2c89c-ce32-47d7-8cb6-d51e4b311a0b" as const;
 
-  onPropertiesStreamed = new Event<{
+  onPropertiesStreamed = new AsyncEvent<{
     type: number;
     data: { [id: number]: any };
   }>();
 
-  onProgress = new Event<number>();
+  onProgress = new AsyncEvent<number>();
 
-  onIndicesStreamed = new Event<number[][]>();
+  onIndicesStreamed = new AsyncEvent<number[][]>();
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();

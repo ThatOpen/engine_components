@@ -1,7 +1,8 @@
+/* eslint import/no-extraneous-dependencies: 0 */
+
 import * as THREE from "three";
-import * as dat from "three/examples/jsm/libs/lil-gui.module.min.js";
-// eslint-disable-next-line import/no-extraneous-dependencies
 import Stats from "stats.js";
+import * as BUI from "@thatopen/ui";
 import * as OBC from "../..";
 
 const container = document.getElementById("container")!;
@@ -62,6 +63,9 @@ cube.position.set(0, 1.5, 0);
 
 world.scene.three.add(cube);
 world.meshes.add(cube);
+
+const casters = components.get(OBC.Raycasters);
+casters.get(world);
 
 /* MD
   ### ⚙️ Adding Simple Clipper
@@ -151,54 +155,82 @@ stats.dom.style.left = "0px";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
 
-// Set up dat.gui menu
+// Set up UI
 
-const gui = new dat.GUI();
+BUI.Manager.registerComponents();
 
-const shortcutsFolder = gui.addFolder("Shortcuts");
+BUI.Manager.registerComponents();
 
-const shortcuts = {
-  "Create clipping plane": "Double click",
-  "Delete clipping plane": "Delete",
-};
-shortcutsFolder.add(shortcuts, "Create clipping plane");
-shortcutsFolder.add(shortcuts, "Delete clipping plane");
+const panel = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+    <bim-panel label="Clipper Tutorial" style="position: fixed; top: 5px; right: 5px" active>
+          <bim-panel-section style="padding-top: 10px">
+      
+        <bim-label label="Double click: Create clipping plane"></bim-label>
+        <bim-label label="Delete key: Delete clipping plane"></bim-label>
+       
+        
+      </bim-panel-section>
+      <bim-panel-section style="padding-top: 10px">
+          
+        <bim-checkbox label="Clipper enabled" checked 
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            clipper.enabled = target.value;
+          }}">
+        </bim-checkbox>
+        
+        <bim-checkbox label="Clipper visible" checked 
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            clipper.visible = target.value;
+          }}">
+        </bim-checkbox>
+      
+        <bim-color-input 
+          label="Planes Color" color="#202932" 
+          @input="${({ target }: { target: BUI.ColorInput }) => {
+            clipper.material.color.set(target.color);
+          }}">
+        </bim-color-input>
+        
+        <bim-number-input 
+          slider step="0.01" label="Planes opacity" value="0.2" min="0.1" max="1"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            clipper.material.opacity = target.value;
+          }}">
+        </bim-number-input>
+        
+        <bim-number-input 
+          slider step="0.1" label="Planes size" value="5" min="2" max="10"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            clipper.size = target.value;
+          }}">
+        </bim-number-input>
+        
+      </bim-panel-section>
+    </bim-panel>
+    `;
+});
 
-const actionsFolder = gui.addFolder("Actions");
+document.body.append(panel);
 
-actionsFolder.add(clipper, "enabled").name("Toggle clipping planes enabled");
-actionsFolder.add(clipper, "visible").name("Toggle clipping planes visible");
-
-const color = {
-  value: 0x000000,
-};
-
-const helperColor = new THREE.Color();
-actionsFolder
-  .addColor(color, "value")
-  .name("Plane color")
-  .onChange((value: number) => {
-    helperColor.setHex(value);
-    if ("color" in clipper.material) clipper.material.color = helperColor;
-  });
-
-actionsFolder.add(clipper, "size").name("Plane Size").min(0).max(15);
-actionsFolder
-  .add(clipper.material, "opacity")
-  .name("Plane Opacity")
-  .min(0)
-  .max(1);
-
-const actions = {
-  "Delete all planes": () => {
-    clipper.deleteAll();
-  },
-  "Rotate cube": () => {
-    cube.rotation.x = 2 * Math.PI * Math.random();
-    cube.rotation.y = 2 * Math.PI * Math.random();
-    cube.rotation.z = 2 * Math.PI * Math.random();
-  },
-};
-
-actionsFolder.add(actions, "Rotate cube");
-actionsFolder.add(actions, "Delete all planes");
+//
+// actionsFolder.add(clipper, "size").name("Plane Size").min(0).max(15);
+// actionsFolder
+//   .add(clipper.material, "opacity")
+//   .name("Plane Opacity")
+//   .min(0)
+//   .max(1);
+//
+// const actions = {
+//   "Delete all planes": () => {
+//     clipper.deleteAll();
+//   },
+//   "Rotate cube": () => {
+//     cube.rotation.x = 2 * Math.PI * Math.random();
+//     cube.rotation.y = 2 * Math.PI * Math.random();
+//     cube.rotation.z = 2 * Math.PI * Math.random();
+//   },
+// };
+//
+// actionsFolder.add(actions, "Rotate cube");
+// actionsFolder.add(actions, "Delete all planes");

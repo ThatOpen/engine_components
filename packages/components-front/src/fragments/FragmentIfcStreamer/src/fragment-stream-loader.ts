@@ -238,23 +238,23 @@ export class FragmentStreamLoader
         types,
       };
 
-      // const { indexesFile } = properties;
-      // const fetched = await fetch(this.url + indexesFile);
-      // const data = await fetched.json();
+      const { indexesFile } = properties;
+      const fetched = await fetch(this.url + indexesFile);
+      const indices = await fetched.json();
 
-      // const first = Object.keys(data.entries)[0];
-      // const indices = await data.entries[first].json();
+      const indexer = this.components.get(OBC.IfcPropertiesIndexer);
+      const { indexMap } = indexer;
 
-      // const indexer = this.components.get(OBC.IfcRelationsIndexer);
-      // const { indexMap } = indexer;
-      // indexMap[group.uuid] = {};
-      // for (const index of indices) {
-      //   const id = index.shift();
-      //   indexMap[group.uuid][id] = new Set(index);
-      // }
+      indexMap[group.uuid] = {};
+      for (const index of indices) {
+        const id = index.shift();
+        indexMap[group.uuid][id] = new Set(index);
+      }
     }
 
     this.culler.needsUpdate = true;
+
+    return group;
   }
 
   remove(modelID: string) {

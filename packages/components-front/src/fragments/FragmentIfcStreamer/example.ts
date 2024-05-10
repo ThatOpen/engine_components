@@ -52,12 +52,17 @@ async function loadModel(geometryURL: string, propertiesURL?: string) {
     const rawPropertiesData = await fetch(propertiesURL);
     propertiesData = await rawPropertiesData.json();
   }
-  await loader.load(geometryData, true, propertiesData);
+
+  const model = await loader.load(geometryData, true, propertiesData);
+
+  console.log(model);
+  const props = await model.getProperties(186);
+  console.log(props);
 }
 
 await loadModel(
   "../../../../../resources/streaming/small.ifc-processed.json",
-  // "../../../resources/small.ifc-processed-properties.json",
+  "../../../../../resources/streaming/small.ifc-processed-properties.json",
 );
 
 /* MD
@@ -224,7 +229,6 @@ const actions = {
 
 gui.add(actions, "clearCache");
 
-//
 // const storeysGui = gui.addFolder("Storeys");
 // for (const name in storeys) {
 //     storeysGui.add(storeys, name).onChange(async (visible) => {
@@ -396,12 +400,12 @@ gui.add(actions, "clearCache");
 //     }
 // );
 
-loader.culler.renderDebugFrame = true;
-const debugFrame = loader.culler.renderer.domElement;
-document.body.appendChild(debugFrame);
-debugFrame.style.position = "fixed";
-debugFrame.style.left = "0";
-debugFrame.style.bottom = "0";
+// loader.culler.renderDebugFrame = true;
+// const debugFrame = loader.culler.renderer.domElement;
+// document.body.appendChild(debugFrame);
+// debugFrame.style.position = "fixed";
+// debugFrame.style.left = "0";
+// debugFrame.style.bottom = "0";
 
 // Set up stats
 

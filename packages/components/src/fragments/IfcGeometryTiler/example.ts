@@ -67,10 +67,10 @@ const wasm = {
   absolute: true,
 };
 
-const geometryConverter = new OBC.FragmentIfcStreamConverter(components);
-geometryConverter.settings.wasm = wasm;
-geometryConverter.settings.minGeometrySize = 20;
-geometryConverter.settings.minAssetsSize = 1000;
+const tiler = new OBC.IfcGeometryTiler(components);
+tiler.settings.wasm = wasm;
+tiler.settings.minGeometrySize = 20;
+tiler.settings.minAssetsSize = 1000;
 
 /* MD
   The `FragmentIfcStreamConverter` class takes IFC files and transform their geometry into tiles. 
@@ -125,7 +125,7 @@ let files: { name: string; bits: (Uint8Array | string)[] }[] = [];
 let geometriesData: OBC.StreamedGeometries = {};
 let geometryFilesCount = 1;
 
-geometryConverter.onGeometryStreamed.add((geometry) => {
+tiler.onGeometryStreamed.add((geometry) => {
   const { buffer, data } = geometry;
   const bufferFileName = `small.ifc-processed-geometries-${geometryFilesCount}`;
   for (const expressID in data) {
@@ -151,7 +151,7 @@ geometryConverter.onGeometryStreamed.add((geometry) => {
 
 let assetsData: OBC.StreamedAsset[] = [];
 
-geometryConverter.onAssetStreamed.add((assets) => {
+tiler.onAssetStreamed.add((assets) => {
   assetsData = [...assetsData, ...assets];
 });
 
@@ -167,7 +167,7 @@ geometryConverter.onAssetStreamed.add((assets) => {
   Why do we remind you about FragmentsGroup? Because streaming also works with them! So yes, when you convert an IFC to tiles, the converter also creates a FragmentsGroup in the background, and that information is extremely important for the streamer in order to display the streamed file as everything gets grouped there. So, there is another event that gives you the FragmentsGroup binary data and we also need to create a file with that information.
   */
 
-geometryConverter.onIfcLoaded.add((groupBuffer) => {
+tiler.onIfcLoaded.add((groupBuffer) => {
   files.push({
     name: "small.ifc-processed-global",
     bits: [groupBuffer],
@@ -205,7 +205,7 @@ async function downloadFilesSequentially(
   }
 }
 
-geometryConverter.onProgress.add((progress) => {
+tiler.onProgress.add((progress) => {
   if (progress !== 1) return;
   setTimeout(async () => {
     const processedData = {
@@ -235,7 +235,7 @@ async function processFile() {
   // We will need this information later to also convert the properties
   const ifcArrayBuffer = new Uint8Array(ifcBuffer);
   // This triggers the conversion, so the listeners start to be called
-  await geometryConverter.streamFromBuffer(ifcArrayBuffer);
+  await tiler.streamFromBuffer(ifcArrayBuffer);
 }
 
 /* MD

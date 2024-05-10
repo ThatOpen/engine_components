@@ -1,20 +1,21 @@
 import * as WEBIFC from "web-ifc";
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
-import { Components, Disposable, Event, Component } from "../../../core";
-import { IfcStreamingSettings } from "./streaming-settings";
-import { StreamedGeometries, StreamedAsset } from "./base-types";
-import { SpatialStructure } from "../../FragmentIfcLoader/src/spatial-structure";
-import { CivilReader } from "../../FragmentIfcLoader/src/civil-reader";
-import { IfcMetadataReader } from "../../FragmentIfcLoader/src/ifc-metadata-reader";
-import { isPointInFrontOfPlane, obbFromPoints } from "../../../utils";
+import { Components, Disposable, Event, Component } from "../../core";
+import { IfcStreamingSettings, StreamedGeometries, StreamedAsset } from "./src";
+import {
+  SpatialStructure,
+  CivilReader,
+  IfcMetadataReader,
+} from "../FragmentIfcLoader/src";
+
+import { isPointInFrontOfPlane, obbFromPoints } from "../../utils";
+
+export * from "./src";
 
 // TODO: Deduplicate with IfcFragmentLoader
 
-export class FragmentIfcStreamConverter
-  extends Component
-  implements Disposable
-{
+export class IfcGeometryTiler extends Component implements Disposable {
   static readonly uuid = "d9999a00-e1f5-4d3f-8cfe-c56e08609764" as const;
 
   onGeometryStreamed = new Event<{
@@ -69,7 +70,7 @@ export class FragmentIfcStreamConverter
 
   constructor(components: Components) {
     super(components);
-    this.components.add(FragmentIfcStreamConverter.uuid, this);
+    this.components.add(IfcGeometryTiler.uuid, this);
     this.settings.excludedCategories.add(WEBIFC.IFCOPENINGELEMENT);
   }
 

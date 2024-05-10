@@ -33,12 +33,12 @@
     "publish-alpha": "npm publish --tag alpha"
   },
   "peerDependencies": {
-    "@thatopen/fragments": "2.0.0-alpha.1",
+    "@thatopen/fragments": "2.0.0-alpha.3",
     "three": "^0.160.1",
     "web-ifc": "0.0.53"
   },
   "devDependencies": {
-    "@thatopen/fragments": "2.0.0-alpha.1",
+    "@thatopen/fragments": "2.0.0-alpha.3",
     "@thatopen/ui": "2.0.0-alpha.1",
     "@types/earcut": "^2.1.4",
     "@types/three": "^0.160.0",

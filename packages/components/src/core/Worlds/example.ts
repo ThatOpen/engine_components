@@ -4,8 +4,6 @@ import * as THREE from "three";
 import * as BUI from "@thatopen/ui";
 import * as OBC from "../..";
 
-BUI.Manager.registerComponents();
-
 const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
@@ -32,6 +30,8 @@ world.scene.three.add(cube);
 world.scene.setup();
 
 world.camera.controls.setLookAt(3, 3, 3, 0, 0, 0);
+
+BUI.Manager.registerComponents();
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`

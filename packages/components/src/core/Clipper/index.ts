@@ -71,8 +71,8 @@ export class Clipper<T extends SimplePlane>
   protected PlaneType: new (...args: any) => SimplePlane | T;
 
   /** The material used in all the clipping planes. */
-  protected _material: THREE.Material = new THREE.MeshBasicMaterial({
-    color: 0xffff00,
+  protected _material = new THREE.MeshBasicMaterial({
+    color: 0xBB00FF,
     side: THREE.DoubleSide,
     transparent: true,
     opacity: 0.2,
@@ -115,7 +115,7 @@ export class Clipper<T extends SimplePlane>
   }
 
   /** The material of the clipping plane representation. */
-  set material(material: THREE.Material) {
+  set material(material: THREE.MeshBasicMaterial) {
     this._material = material;
     for (const plane of this.list) {
       plane.planeMaterial = material;
@@ -269,6 +269,7 @@ export class Clipper<T extends SimplePlane>
 
     const worldNormal = this.getWorldNormal(intersect, normal);
     const plane = this.newPlane(world, intersect.point, worldNormal.negate());
+    plane.size = this._size;
     world.renderer.setPlane(true, plane.three);
     this.updateMaterialsAndPlanes();
   }
