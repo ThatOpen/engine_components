@@ -245,13 +245,13 @@ export class FragmentClassifier extends Component implements Disposable {
     );
   }
 
-  setColor(items: FRAGS.FragmentIdMap, color: THREE.Color, _override?: boolean) {
+  setColor(items: FRAGS.FragmentIdMap, color: THREE.Color, override = false) {
     const fragments = this.components.get(FragmentManager);
     for (const fragID in items) {
       const found = fragments.list.get(fragID);
       if (!found) continue;
       const ids = items[fragID];
-      found.setColor(color, ids);
+      found.setColor(color, ids, override);
     }
   }
 
