@@ -242,7 +242,7 @@ export class FragmentStreamLoader
       const fetched = await fetch(this.url + indexesFile);
       const rels = await fetched.text();
       const indexer = this.components.get(OBC.IfcRelationsIndexer);
-      indexer.getRelationsMapFromJSON(rels);
+      indexer.relationMaps[group.uuid] = indexer.getRelationsMapFromJSON(rels);
     }
 
     this.culler.needsUpdate = true;

@@ -1294,6 +1294,7 @@ __metadata:
     "@thatopen/components": 2.0.0-alpha.8
     "@thatopen/fragments": 2.0.0-alpha.4
     "@thatopen/ui": 2.0.0-alpha.5
+    "@thatopen/ui-obc": 2.0.0-alpha.5
     "@types/earcut": ^2.1.4
     "@types/three": ^0.160.0
     camera-controls: 2.7.3
@@ -1355,6 +1356,18 @@ __metadata:
   peerDependencies:
     three: ^0.160.1
   checksum: dc06258529d7a954c0a2e4a58d131ffdae730e6f80f20c3ae4a082ec49bc3a8a0822dedbd8a33cdfcbff5fc6756a8aed27741daeacc3fe12a97897a8359727d1
+  languageName: node
+  linkType: hard
+
+"@thatopen/ui-obc@npm:2.0.0-alpha.5":
+  version: 2.0.0-alpha.5
+  resolution: "@thatopen/ui-obc@npm:2.0.0-alpha.5"
+  dependencies:
+    "@thatopen/ui": 2.0.0-alpha.5
+  peerDependencies:
+    "@thatopen/components": 2.0.0-alpha.7
+    three: 0.160.1
+  checksum: 8fa3bc052705e53c096cfc438d9fb9fec8b744db6c22d2fb8ee1483b7dd65e3451db887704535aff06f64c89b06919313ee3a051da3a089df8902479db7a63eb
   languageName: node
   linkType: hard
 
