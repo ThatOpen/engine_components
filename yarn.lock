@@ -1291,7 +1291,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/components-front"
   dependencies:
-    "@thatopen/components": 2.0.0-alpha.7
+    "@thatopen/components": 2.0.0-alpha.8
     "@thatopen/fragments": 2.0.0-alpha.4
     "@thatopen/ui": 2.0.0-alpha.5
     "@types/earcut": ^2.1.4
@@ -1310,7 +1310,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@2.0.0-alpha.7, @thatopen/components@workspace:packages/components":
+"@thatopen/components@2.0.0-alpha.8, @thatopen/components@workspace:packages/components":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/components"
   dependencies:
