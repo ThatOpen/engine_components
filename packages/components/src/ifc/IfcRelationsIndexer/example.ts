@@ -102,11 +102,11 @@ downloadJSON(allRelationsJSON, "relations-index-all.json");
 
 // Lets first delete the existing model relations
 delete indexer.relationMaps[model.uuid];
-
-const relationsIndex = await fetch("/resources/small-relations.json");
-indexer.relationMaps[model.uuid] = indexer.getRelationsMapFromJSON(
-  await relationsIndex.text(),
+const relationsIndexFile = await fetch("/resources/small-relations.json");
+const relationsIndex = indexer.getRelationsMapFromJSON(
+  await relationsIndexFile.text(),
 );
+indexer.setRelationMap(model, relationsIndex);
 
 /* MD
  Great! Now try to get again the property sets and you will see everything working nice and neat. In fact, lets try to get the building storey of one element in the IFC 👇
