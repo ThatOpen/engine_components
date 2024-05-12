@@ -114,7 +114,10 @@ export class FragmentBoundingBox extends Component implements Disposable {
     }
   }
 
-  addMesh(mesh: THREE.InstancedMesh | THREE.Mesh | FRAGS.CurveMesh) {
+  addMesh(
+    mesh: THREE.InstancedMesh | THREE.Mesh | FRAGS.CurveMesh,
+    itemIDs?: Iterable<number>,
+  ) {
     if (!mesh.geometry.index) {
       return;
     }
@@ -126,14 +129,28 @@ export class FragmentBoundingBox extends Component implements Disposable {
 
     const instanceTransform = new THREE.Matrix4();
     const isInstanced = mesh instanceof THREE.InstancedMesh;
-    const count = isInstanced ? mesh.count : 1;
+    // const count = isInstanced ? mesh.count : 1;
 
-    for (let i = 0; i < count; i++) {
+    const instances = new Set<number>();
+
+    if (itemIDs && mesh instanceof FRAGS.FragmentMesh) {
+      for (const itemID of itemIDs) {
+        const ids = mesh.fragment.getInstancesIDs(itemID);
+        if (!ids) continue;
+        for (const id of ids) {
+          instances.add(id);
+        }
+      }
+    } else {
+      instances.add(0);
+    }
+
+    for (const instance of instances) {
       const min = bbox.min.clone();
       const max = bbox.max.clone();
 
       if (isInstanced) {
-        mesh.getMatrixAt(i, instanceTransform);
+        mesh.getMatrixAt(instance, instanceTransform);
         min.applyMatrix4(instanceTransform);
         max.applyMatrix4(instanceTransform);
       }

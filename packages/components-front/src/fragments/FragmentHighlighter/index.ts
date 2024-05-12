@@ -251,42 +251,46 @@ export class FragmentHighlighter
     this.onSetup.trigger(this);
   }
 
-  private async zoomSelection(_name: string) {
-    // if (!this.config.world) {
-    //   throw new Error("No world found in config!");
-    // }
-    // const world = this.config.world;
-    //
-    // if (!world.camera.hasCameraControls()) {
-    //   return;
-    // }
-    //
-    // const bbox = this.components.get(OBC.FragmentBoundingBox);
-    // const fragments = this.components.get(OBC.FragmentManager);
-    // bbox.reset();
-    //
-    // const selected = this.selection[name];
-    // if (!Object.keys(selected).length) {
-    //   return;
-    // }
-    //
-    // for (const fragID in selected) {
-    // }
-    //
-    // const sphere = bbox.getSphere();
-    // const i = Infinity;
-    // const mi = -Infinity;
-    // const { x, y, z } = sphere.center;
-    // const isInf = sphere.radius === i || x === i || y === i || z === i;
-    // const isMInf = sphere.radius === mi || x === mi || y === mi || z === mi;
-    // const isZero = sphere.radius === 0;
-    // if (isInf || isMInf || isZero) {
-    //   return;
-    // }
-    //
-    // sphere.radius *= this.zoomFactor;
-    // const camera = world.camera;
-    // await camera.controls.fitToSphere(sphere, true);
+  private async zoomSelection(name: string) {
+    if (!this.config.world) {
+      throw new Error("No world found in config!");
+    }
+    const world = this.config.world;
+
+    if (!world.camera.hasCameraControls()) {
+      return;
+    }
+
+    const bbox = this.components.get(OBC.FragmentBoundingBox);
+    const fragments = this.components.get(OBC.FragmentManager);
+    bbox.reset();
+
+    const selected = this.selection[name];
+    if (!Object.keys(selected).length) {
+      return;
+    }
+
+    for (const fragID in selected) {
+      const fragment = fragments.list.get(fragID);
+      if (!fragment) continue;
+      const ids = selected[fragID];
+      bbox.addMesh(fragment.mesh, ids);
+    }
+
+    const sphere = bbox.getSphere();
+    const i = Infinity;
+    const mi = -Infinity;
+    const { x, y, z } = sphere.center;
+    const isInf = sphere.radius === i || x === i || y === i || z === i;
+    const isMInf = sphere.radius === mi || x === mi || y === mi || z === mi;
+    const isZero = sphere.radius === 0;
+    if (isInf || isMInf || isZero) {
+      return;
+    }
+
+    sphere.radius *= this.zoomFactor;
+    const camera = world.camera;
+    await camera.controls.fitToSphere(sphere, true);
   }
 
   private setupEvents(active: boolean) {

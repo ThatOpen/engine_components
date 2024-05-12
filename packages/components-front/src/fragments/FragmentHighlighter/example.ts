@@ -60,7 +60,8 @@ model.name = "example";
 world.scene.three.add(model);
 
 const highlighter = components.get(OBCF.FragmentHighlighter);
-highlighter.setup({world});
+highlighter.setup({ world });
+highlighter.zoomToSelection = true;
 
 // Set up stats
 
