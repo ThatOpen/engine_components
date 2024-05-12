@@ -1,4 +1,4 @@
-export * from "./FragmentBoundingBox";
+export * from "./BoundingBoxes";
 export * from "./FragmentClassifier";
 export * from "./FragmentExploder";
 export * from "./FragmentHider";

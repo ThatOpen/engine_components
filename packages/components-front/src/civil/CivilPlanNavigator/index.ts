@@ -35,7 +35,7 @@ export class CivilPlanNavigator extends CivilNavigator {
   }
 
   private async fitCameraToAlignment(curveMesh: FRAGS.CurveMesh) {
-    const bbox = this.components.get(OBC.FragmentBoundingBox);
+    const bbox = this.components.get(OBC.BoundingBoxes);
     const alignment = curveMesh.curve.alignment;
     for (const curve of alignment.horizontal) {
       bbox.addMesh(curve.mesh);
