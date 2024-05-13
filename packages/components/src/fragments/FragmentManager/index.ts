@@ -1,6 +1,9 @@
 import { Fragment, FragmentsGroup, Serializer } from "@thatopen/fragments";
 import * as THREE from "three";
+import * as FRAGS from "@thatopen/fragments";
 import { Component, Components, Event, Disposable } from "../../core";
+import { RelationsMap } from "../../ifc/IfcRelationsIndexer/src/types";
+import { IfcRelationsIndexer } from "../../ifc/IfcRelationsIndexer";
 
 /**
  * Object that can efficiently load binary files that contain
@@ -76,12 +79,28 @@ export class FragmentManager extends Component implements Disposable {
   }
 
   /**
-   * Loads one or many fragments into the scene.
-   * @param data - the bytes containing the data for the fragments to load.
-   * @param coordinate - whether this fragmentsgroup should be federated with the others.
-   * @returns the list of IDs of the loaded fragments.
+   * Loads a binar file that contain fragment geometry.
+   * @param data - The binary data to load.
+   * @param config - Optional configuration for loading.
+   * @param config.coordinate - Whether to apply coordinate transformation. Default is true.
+   * @param config.properties - Ifc properties to set on the loaded fragments. Not to be used when streaming.
+   * @returns The loaded FragmentsGroup.
    */
-  load(data: Uint8Array, coordinate = true) {
+  load(
+    data: Uint8Array,
+    config?: Partial<{
+      coordinate: boolean;
+      properties: FRAGS.IfcProperties;
+      relationsMap: RelationsMap;
+    }>,
+  ) {
+    const defaultConfig: {
+      coordinate: boolean;
+      properties?: FRAGS.IfcProperties;
+      relationsMap?: RelationsMap;
+    } = { coordinate: true };
+    const _config = { ...defaultConfig, config };
+    const { coordinate, properties, relationsMap } = _config;
     const model = this._loader.import(data);
     for (const fragment of model.items) {
       fragment.group = model;
@@ -91,6 +110,13 @@ export class FragmentManager extends Component implements Disposable {
       this.coordinate([model]);
     }
     this.groups.set(model.uuid, model);
+    if (properties) {
+      model.setLocalProperties(properties);
+    }
+    if (relationsMap) {
+      const indexer = this.components.get(IfcRelationsIndexer);
+      indexer.setRelationMap(model, relationsMap);
+    }
     this.onFragmentsLoaded.trigger(model);
     return model;
   }

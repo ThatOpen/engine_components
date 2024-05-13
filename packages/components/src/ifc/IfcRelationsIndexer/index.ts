@@ -120,7 +120,11 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     if (!model.hasProperties)
       throw new Error("FragmentsGroup properties not found");
 
-    const relationsMap: RelationsMap = new Map();
+    let relationsMap = this.relationMaps[model.uuid];
+    if (relationsMap) {
+      return relationsMap;
+    }
+    relationsMap = new Map();
 
     for (const rel of this._ifcRels) {
       await IfcPropertiesUtils.getRelationMap(
@@ -349,3 +353,5 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     this.onDisposed.reset();
   }
 }
+
+export type { InverseAttribute } from "./src/types";
