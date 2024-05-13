@@ -112,8 +112,6 @@ export class Highlighter
       return null;
     }
 
-    console.log(exclude);
-
     if (!this.config.world) {
       throw new Error("No world found in config!");
     }

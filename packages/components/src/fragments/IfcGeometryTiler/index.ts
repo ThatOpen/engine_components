@@ -155,6 +155,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
       }
       const result = this.webIfc.GetLineIDsWithType(0, type);
       const size = result.size();
+      console.log(size)
       for (let i = 0; i < size; i++) {
         if (counter > minGeometrySize) {
           counter = 0;
@@ -162,7 +163,6 @@ export class IfcGeometryTiler extends Component implements Disposable {
           chunks.push([]);
         }
         const itemID = result.get(i);
-        if (itemID !== 9056429) continue;
         chunks[index].push(itemID);
         const level = this._spatialTree.itemsByFloor[itemID] || 0;
         group.data.set(itemID, [[], [level, type]]);
