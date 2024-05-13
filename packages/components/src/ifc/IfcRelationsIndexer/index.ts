@@ -31,11 +31,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
 
   private _relToAttributesMap = relToAttributesMap;
 
-  /**
-   * Array of inverse attribute names.
-   * This array is used to define the inverse attributes that the indexer will process and index.
-   */
-  readonly inverseAttributes: InverseAttributes = [
+  private _inverseAttributes: InverseAttributes = [
     "IsDecomposedBy",
     "Decomposes",
     "AssociatedTo",
@@ -88,15 +84,6 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     delete this.relationMaps[data.groupID];
   };
 
-  private getAttributeRels(value: string) {
-    const keys: number[] = [];
-    for (const [rel, attribute] of this._relToAttributesMap.entries()) {
-      const { forRelating, forRelated } = attribute;
-      if (forRelating === value || forRelated === value) keys.push(rel);
-    }
-    return keys;
-  }
-
   /**
    * Adds a relation map to the model's relations map.
    *
@@ -135,40 +122,37 @@ export class IfcRelationsIndexer extends Component implements Disposable {
 
     const relationsMap: RelationsMap = new Map();
 
-    for (const attribute of this.inverseAttributes) {
-      const rels = this.getAttributeRels(attribute);
-      for (const rel of rels) {
-        await IfcPropertiesUtils.getRelationMap(
-          model,
-          rel,
-          async (relatingID, relatedID) => {
-            const inverseAttributes = this._relToAttributesMap.get(rel);
-            if (!inverseAttributes) return;
-            const { forRelated: related, forRelating: relating } =
-              inverseAttributes;
-            if (relating) {
-              const currentMap =
-                relationsMap.get(relatingID) ?? new Map<number, number[]>();
-              // TODO: indexOf might be slow. Better a Map<string, number>?
-              const index = this.inverseAttributes.indexOf(relating);
-              currentMap.set(index, relatedID);
-              relationsMap.set(relatingID, currentMap);
-            }
-            if (related) {
-              for (const id of relatedID) {
-                const currentMap =
-                  relationsMap.get(id) ?? new Map<number, number[]>();
-                const index = this.inverseAttributes.indexOf(related);
-                const relations = currentMap.get(index) ?? [];
-                relations.push(relatingID);
-                currentMap.set(index, relations);
-                relationsMap.set(id, currentMap);
-              }
-            }
-          },
-        );
-      }
+    for (const rel of this._ifcRels) {
+      await IfcPropertiesUtils.getRelationMap(
+        model,
+        rel,
+        async (relatingID, relatedIDs) => {
+          const inverseAttributes = this._relToAttributesMap.get(rel);
+          if (!inverseAttributes) return;
+          const { forRelated: related, forRelating: relating } =
+            inverseAttributes;
+
+          // forRelating
+          const currentMap =
+            relationsMap.get(relatingID) ?? new Map<number, number[]>();
+          const index = this._inverseAttributes.indexOf(relating);
+          currentMap.set(index, relatedIDs);
+          relationsMap.set(relatingID, currentMap);
+
+          // forRelated
+          for (const id of relatedIDs) {
+            const currentMap =
+              relationsMap.get(id) ?? new Map<number, number[]>();
+            const index = this._inverseAttributes.indexOf(related);
+            const relations = currentMap.get(index) ?? [];
+            relations.push(relatingID);
+            currentMap.set(index, relations);
+            relationsMap.set(id, currentMap);
+          }
+        },
+      );
     }
+
     this.setRelationMap(model, relationsMap);
     return relationsMap;
   }
@@ -208,7 +192,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
         // forRelating
         const currentMap =
           relationsMap.get(relatingID) ?? new Map<number, number[]>();
-        const index = this.inverseAttributes.indexOf(relating);
+        const index = this._inverseAttributes.indexOf(relating);
         currentMap.set(index, relatedIDs);
         relationsMap.set(relatingID, currentMap);
 
@@ -216,7 +200,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
         for (const id of relatedIDs) {
           const currentMap =
             relationsMap.get(id) ?? new Map<number, number[]>();
-          const index = this.inverseAttributes.indexOf(related);
+          const index = this._inverseAttributes.indexOf(related);
           const relations = currentMap.get(index) ?? [];
           relations.push(relatingID);
           currentMap.set(index, relations);
@@ -252,7 +236,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     const indexMap = this.relationMaps[model.uuid];
     if (!indexMap) return null;
     const entityRelations = indexMap.get(expressID);
-    const attributeIndex = this.inverseAttributes.indexOf(relationName);
+    const attributeIndex = this._inverseAttributes.indexOf(relationName);
     if (!entityRelations || attributeIndex === -1) return null;
     const relations = entityRelations.get(attributeIndex);
     if (!relations) return null;
