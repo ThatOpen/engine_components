@@ -3,7 +3,6 @@ import { FragmentsGroup } from "@thatopen/fragments";
 import { Disposable, Event, Component, Components } from "../../core";
 import { FragmentManager } from "../../fragments/FragmentManager";
 import { IfcPropertiesUtils } from "../Utils";
-import { getRelationMap } from "./src/getRelationMap";
 import {
   RelationsMap,
   ModelsRelationMap,
@@ -52,6 +51,17 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     "ContainedInStructure",
     "ContainsElements",
   ];
+
+  private _ifcRels = [
+    WEBIFC.IFCRELAGGREGATES,
+    WEBIFC.IFCRELASSOCIATESMATERIAL,
+    WEBIFC.IFCRELASSOCIATESCLASSIFICATION,
+    WEBIFC.IFCRELASSIGNSTOGROUP,
+    WEBIFC.IFCRELDEFINESBYPROPERTIES,
+    WEBIFC.IFCRELDEFINESBYTYPE,
+    WEBIFC.IFCRELDEFINESBYTEMPLATE,
+    WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE,
+  ] as const;
 
   /**
    * Holds the relationship mappings for each model processed by the indexer.
@@ -164,7 +174,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
   }
 
   /**
-   * Processes a given model from a WebIfc API to index its IFC entities relations based on predefined inverse attributes.
+   * Processes a given model from a WebIfc API to index its IFC entities relations.
    *
    * @param ifcApi - The WebIfc API instance from which to retrieve the model's properties.
    * @param modelID - The unique identifier of the model within the WebIfc API.
@@ -174,42 +184,44 @@ export class IfcRelationsIndexer extends Component implements Disposable {
   async processFromWebIfc(ifcApi: WEBIFC.IfcAPI, modelID: number) {
     const relationsMap: RelationsMap = new Map();
 
-    const properties: Record<string, Record<string, any>> = {};
-    const lines = ifcApi.GetAllLines(modelID);
+    for (const relType of this._ifcRels) {
+      const relInverseAttributes = this._relToAttributesMap.get(relType);
+      if (!relInverseAttributes) continue;
+      const { forRelated: related, forRelating: relating } =
+        relInverseAttributes;
+      const relExpressIDs = ifcApi.GetLineIDsWithType(modelID, relType);
+      for (let i = 0; i < relExpressIDs.size(); i++) {
+        const relAttrs = await ifcApi.properties.getItemProperties(
+          modelID,
+          relExpressIDs.get(i),
+        );
+        const relatingKey = Object.keys(relAttrs).find((key) =>
+          key.startsWith("Relating"),
+        );
+        const relatedKey = Object.keys(relAttrs).find((key) =>
+          key.startsWith("Related"),
+        );
+        if (!(relatingKey && relatedKey)) continue;
+        const relatingID = relAttrs[relatingKey].value;
+        const relatedIDs = relAttrs[relatedKey].map((el: any) => el.value);
 
-    for (let i = 0; i < lines.size(); i++) {
-      const line = lines.get(i);
-      const attrs = await ifcApi.properties.getItemProperties(modelID, line);
-      properties[line] = attrs;
-    }
+        // forRelating
+        const currentMap =
+          relationsMap.get(relatingID) ?? new Map<number, number[]>();
+        const index = this.inverseAttributes.indexOf(relating);
+        currentMap.set(index, relatedIDs);
+        relationsMap.set(relatingID, currentMap);
 
-    for (const attribute of this.inverseAttributes) {
-      const rels = this.getAttributeRels(attribute);
-      for (const rel of rels) {
-        getRelationMap(properties, rel, (relatingID, relatedID) => {
-          const inverseAttributes = this._relToAttributesMap.get(rel);
-          if (!inverseAttributes) return;
-          const { forRelated: related, forRelating: relating } =
-            inverseAttributes;
-          if (relating) {
-            const currentMap =
-              relationsMap.get(relatingID) ?? new Map<number, number[]>();
-            const index = this.inverseAttributes.indexOf(relating);
-            currentMap.set(index, relatedID);
-            relationsMap.set(relatingID, currentMap);
-          }
-          if (related) {
-            for (const id of relatedID) {
-              const currentMap =
-                relationsMap.get(id) ?? new Map<number, number[]>();
-              const index = this.inverseAttributes.indexOf(related);
-              const relations = currentMap.get(index) ?? [];
-              relations.push(relatingID);
-              currentMap.set(index, relations);
-              relationsMap.set(id, currentMap);
-            }
-          }
-        });
+        // forRelated
+        for (const id of relatedIDs) {
+          const currentMap =
+            relationsMap.get(id) ?? new Map<number, number[]>();
+          const index = this.inverseAttributes.indexOf(related);
+          const relations = currentMap.get(index) ?? [];
+          relations.push(relatingID);
+          currentMap.set(index, relations);
+          relationsMap.set(id, currentMap);
+        }
       }
     }
 
