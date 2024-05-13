@@ -170,7 +170,7 @@ export class FragmentStreamLoader
     const groupArrayBuffer = await groupData.arrayBuffer();
     const groupBuffer = new Uint8Array(groupArrayBuffer);
     const fragments = this.components.get(OBC.FragmentManager);
-    const group = fragments.load(groupBuffer, coordinate);
+    const group = fragments.load(groupBuffer, { coordinate });
     this.world.scene.three.add(group);
 
     const { opaque, transparent } = group.geometryIDs;
@@ -242,7 +242,7 @@ export class FragmentStreamLoader
       const fetched = await fetch(this.url + indexesFile);
       const rels = await fetched.text();
       const indexer = this.components.get(OBC.IfcRelationsIndexer);
-      indexer.relationMaps[group.uuid] = indexer.getRelationsMapFromJSON(rels);
+      indexer.setRelationMap(group, indexer.getRelationsMapFromJSON(rels));
     }
 
     this.culler.needsUpdate = true;
