@@ -99,7 +99,7 @@ export class FragmentManager extends Component implements Disposable {
       properties?: FRAGS.IfcProperties;
       relationsMap?: RelationsMap;
     } = { coordinate: true };
-    const _config = { ...defaultConfig, config };
+    const _config = { ...defaultConfig, ...config };
     const { coordinate, properties, relationsMap } = _config;
     const model = this._loader.import(data);
     for (const fragment of model.items) {
