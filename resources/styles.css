@@ -1,11 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap');
 
 :root {
-  --primary-color: #BCF124;
-  --secondary-color: #6528D7;
+  --engine-components-primary-color: #BCF124;
+  --engine-components-secondary-color: #6528D7;
   /* TODO: Probably this needs to be called background-color */
-  --secondary-color-100: #000000bb;
-  --secondary-color-120: #1a2128;
+  --engine-components-secondary-color-100: #000000bb;
+  --engine-components-secondary-color-120: #1a2128;
 }
 
 /* Tailwind Base Directive */
@@ -766,7 +766,7 @@ textarea {
 }
 
 .obc-viewer :is(.border-ifcjs-120){
-  border-color: var(--secondary-color-120);
+  border-color: var(--engine-components-secondary-color-120);
 }
 
 .obc-viewer :is(.border-red-500){
@@ -801,19 +801,19 @@ textarea {
 }
 
 .obc-viewer :is(.bg-ifcjs-100){
-  background-color: var(--secondary-color-100);
+  background-color: var(--engine-components-secondary-color-100);
 }
 
 .obc-viewer :is(.bg-ifcjs-120){
-  background-color: var(--secondary-color-120);
+  background-color: var(--engine-components-secondary-color-120);
 }
 
 .obc-viewer :is(.bg-ifcjs-200){
-  background-color: var(--primary-color);
+  background-color: var(--engine-components-primary-color);
 }
 
 .obc-viewer :is(.bg-ifcjs-300){
-  background-color: var(--secondary-color);
+  background-color: var(--engine-components-secondary-color);
 }
 
 .obc-viewer :is(.bg-red-600){
@@ -1003,15 +1003,15 @@ textarea {
 }
 
 .obc-viewer :is(.text-ifcjs-100){
-  color: var(--secondary-color-100);
+  color: var(--engine-components-secondary-color-100);
 }
 
 .obc-viewer :is(.text-ifcjs-200){
-  color: var(--primary-color);
+  color: var(--engine-components-primary-color);
 }
 
 .obc-viewer :is(.text-ifcjs-300){
-  color: var(--secondary-color);
+  color: var(--engine-components-secondary-color);
 }
 
 .obc-viewer :is(.text-white){
@@ -1020,7 +1020,7 @@ textarea {
 }
 
 .obc-viewer :is(.accent-ifcjs-300){
-  accent-color: var(--secondary-color);
+  accent-color: var(--engine-components-secondary-color);
 }
 
 .obc-viewer :is(.opacity-0){
@@ -1150,11 +1150,11 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-  background-color: var(--secondary-color-100);
+  background-color: var(--engine-components-secondary-color-100);
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--secondary-color);
+  background-color: var(--engine-components-secondary-color);
   border-radius: 9999px;
 }
 
@@ -1179,7 +1179,7 @@ html {
 }
 
 .obc-viewer :is(.hover\:border-ifcjs-200:hover){
-  border-color: var(--primary-color);
+  border-color: var(--engine-components-primary-color);
 }
 
 .obc-viewer :is(.hover\:bg-error:hover){
@@ -1188,11 +1188,11 @@ html {
 }
 
 .obc-viewer :is(.hover\:bg-ifcjs-120:hover){
-  background-color: var(--secondary-color-120);
+  background-color: var(--engine-components-secondary-color-120);
 }
 
 .obc-viewer :is(.hover\:bg-ifcjs-200:hover){
-  background-color: var(--primary-color);
+  background-color: var(--engine-components-primary-color);
 }
 
 .obc-viewer :is(.hover\:bg-success:hover){
@@ -1210,11 +1210,11 @@ html {
 }
 
 .obc-viewer :is(.hover\:text-ifcjs-100:hover){
-  color: var(--secondary-color-100);
+  color: var(--engine-components-secondary-color-100);
 }
 
 .obc-viewer :is(.hover\:text-ifcjs-200:hover){
-  color: var(--primary-color);
+  color: var(--engine-components-primary-color);
 }
 
 .obc-viewer :is(.hover\:backdrop-blur-xl:hover){
@@ -1229,11 +1229,11 @@ html {
 }
 
 .obc-viewer :is(.focus\:ring-ifcjs-200:focus){
-  --tw-ring-color: var(--primary-color);
+  --tw-ring-color: var(--engine-components-primary-color);
 }
 
 .obc-viewer :is(.focus\:ring-ifcjs-300:focus){
-  --tw-ring-color: var(--secondary-color);
+  --tw-ring-color: var(--engine-components-secondary-color);
 }
 
 .obc-viewer :is(.disabled\:cursor-default:disabled){
@@ -1255,7 +1255,7 @@ html {
 }
 
 .obc-viewer :is(.data-\[active\=true\]\:bg-ifcjs-200[data-active=true]){
-  background-color: var(--primary-color);
+  background-color: var(--engine-components-primary-color);
 }
 
 .obc-viewer :is(.data-\[active\=true\]\:text-black[data-active=true]){

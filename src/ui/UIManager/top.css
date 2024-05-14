@@ -1,11 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap');
 
 :root {
-  --primary-color: #BCF124;
-  --secondary-color: #6528D7;
+  --engine-components-primary-color: #BCF124;
+  --engine-components-secondary-color: #6528D7;
   /* TODO: Probably this needs to be called background-color */
-  --secondary-color-100: #000000bb;
-  --secondary-color-120: #1a2128;
+  --engine-components-secondary-color-100: #000000bb;
+  --engine-components-secondary-color-120: #1a2128;
 }
 
 /* Tailwind Base Directive */
@@ -148,10 +148,10 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-  background-color: var(--secondary-color-100);
+  background-color: var(--engine-components-secondary-color-100);
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--secondary-color);
+  background-color: var(--engine-components-secondary-color);
   border-radius: 9999px;
 }

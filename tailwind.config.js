@@ -10,10 +10,10 @@ module.exports = {
                 warning: "#FB8C00",
                 success: "#4CAF50",
                 ifcjs: {
-                    100: "var(--secondary-color-100)",
-                    120: "var(--secondary-color-120)",
-                    200: "var(--primary-color)",
-                    300: "var(--secondary-color)"
+                    100: "var(--engine-components-secondary-color-100)",
+                    120: "var(--engine-components-secondary-color-120)",
+                    200: "var(--engine-components-primary-color)",
+                    300: "var(--engine-components-secondary-color)"
                 }
             },
             borderWidth: {
