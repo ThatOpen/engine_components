@@ -4,7 +4,7 @@ import { InverseAttribute } from "./types";
 // TODO: Construct this based on the IFC EXPRESS long form schema?
 export const relToAttributesMap = new Map<
   number,
-  { forRelating?: InverseAttribute; forRelated?: InverseAttribute }
+  { forRelating: InverseAttribute; forRelated: InverseAttribute }
 >([
   [
     WEBIFC.IFCRELAGGREGATES,

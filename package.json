@@ -10,8 +10,9 @@
     "dev": "vite --host",
     "build-core": "yarn workspace @thatopen/components build",
     "build-front": "yarn workspace @thatopen/components-front build",
+    "build-libraries": "yarn build-core && yarn build-front",
     "build-examples": "vite build --config ./vite.config-examples.ts",
-    "build": "yarn build-examples && yarn build-core && yarn build-front"
+    "build": "yarn build-examples && yarn build-libraries"
   },
   "license": "MIT",
   "homepage": "https://github.com/ThatOpen/engine_components#readme",
