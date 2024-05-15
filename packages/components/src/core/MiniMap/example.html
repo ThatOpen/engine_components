@@ -13,6 +13,7 @@
     body {
       margin: 0;
       padding: 0;
+      font-family: "Plus Jakarta Sans", sans-serif;
     }
 
     .full-screen {
@@ -21,11 +22,19 @@
       position: relative;
       overflow: hidden;
     }
+
+    .minimap {
+        position: fixed;
+        z-index: 999;
+        bottom: 1rem;
+        right: 1rem;
+    }
   </style>
 </head>
 
 <body>
   <div class="full-screen" id="container"></div>
+  <div class="minimap" id="minimap"></div>
   <script type="module" src="./example.ts"></script>
 </body>
 

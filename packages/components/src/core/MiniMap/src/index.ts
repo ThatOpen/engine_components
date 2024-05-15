@@ -1,11 +1,5 @@
 import * as THREE from "three";
-import {
-  Event,
-  Resizeable,
-  Updateable,
-  Disposable,
-  World,
-} from "../../../core";
+import { Resizeable, Updateable, World, Event, Disposable } from "../../Types";
 
 export class MiniMap implements Resizeable, Updateable, Disposable {
   /** {@link Disposable.onDisposed} */

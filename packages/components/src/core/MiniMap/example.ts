@@ -1,47 +1,33 @@
-// Set up scene (see SimpleScene tutorial)
+/* eslint import/no-extraneous-dependencies: 0 */
 
-import * as THREE from "three";
 import Stats from "stats.js";
-// @ts-ignore
-import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
+import * as BUI from "@thatopen/ui";
+import * as THREE from "three";
 import * as OBC from "../..";
 
 const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
 
-const sceneComponent = new OBC.SimpleScene(components);
-sceneComponent.setup();
-components.scene = sceneComponent;
+const worlds = components.get(OBC.Worlds);
+const world = worlds.create<
+  OBC.SimpleScene,
+  OBC.SimpleCamera,
+  OBC.SimpleRenderer
+>();
 
-const rendererComponent = new OBC.PostproductionRenderer(components, container);
-components.renderer = rendererComponent;
+world.scene = new OBC.SimpleScene(components);
+world.renderer = new OBC.SimpleRenderer(components, container);
+world.camera = new OBC.SimpleCamera(components);
 
-const cameraComponent = new OBC.SimpleCamera(components);
-components.camera = cameraComponent;
-
-components.raycaster = new OBC.SimpleRaycaster(components);
+world.scene.setup();
 
 components.init();
 
-rendererComponent.postproduction.enabled = true;
+const grids = components.get(OBC.Grids);
+grids.create(world);
 
-const scene = components.scene.get();
-
-cameraComponent.controls.setLookAt(10, 10, 10, 0, 0, 0);
-
-const directionalLight = new THREE.DirectionalLight();
-directionalLight.position.set(5, 10, 3);
-directionalLight.intensity = 0.5;
-scene.add(directionalLight);
-
-const ambientLight = new THREE.AmbientLight();
-ambientLight.intensity = 0.5;
-scene.add(ambientLight);
-
-const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
-const gridMesh = grid.get();
-rendererComponent.postproduction.customEffects.excludedMeshes.push(gridMesh);
+world.camera.controls.setLookAt(1, 2, -2, -2, 0, -5);
 
 /* MD
   ### 🏂 Navigate through BIM like Pro!
@@ -75,10 +61,11 @@ rendererComponent.postproduction.customEffects.excludedMeshes.push(gridMesh);
 
 const fragments = new OBC.FragmentManager(components);
 
-const file = await fetch("../../../resources/small.frag");
+const file = await fetch("../../../../../resources/small.frag");
 const dataBlob = await file.arrayBuffer();
 const buffer = new Uint8Array(dataBlob);
-fragments.load(buffer);
+const model = fragments.load(buffer);
+world.scene.three.add(model);
 
 /* MD
 
@@ -98,8 +85,13 @@ fragments.load(buffer);
 
   */
 
-const map = new OBC.MiniMap(components);
-components.ui.add(map.uiElement.get("canvas"));
+const maps = new OBC.MiniMaps(components);
+const map = maps.create(world);
+
+const mapContainer = document.getElementById("minimap") as HTMLDivElement;
+const canvas = map.renderer.domElement;
+canvas.style.borderRadius = "12px";
+mapContainer.append(canvas);
 
 /* MD
 
@@ -128,31 +120,69 @@ const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
-rendererComponent.onBeforeUpdate.add(() => stats.begin());
-rendererComponent.onAfterUpdate.add(() => stats.end());
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
 
-// gui
+BUI.Manager.registerComponents();
 
-const gui = new dat.GUI();
+const mapSize = map.getSize();
 
-const size = map.getSize();
+const panel = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+    <bim-panel label="Minimap Tutorial" style="position: fixed; top: 5px; right: 5px" active>
+      <bim-panel-section style="padding-top: 10px">
+      
+        <bim-checkbox checked="true" label="Enabled" 
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            map.enabled = target.value;
+          }}">  
+        </bim-checkbox>
+        
+        <bim-checkbox label="Lock rotation" 
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            map.lockRotation = target.value;
+          }}">  
+        </bim-checkbox>
+      
+        <bim-color-input 
+          label="Background Color" color="#202932" 
+          @input="${({ target }: { target: BUI.ColorInput }) => {
+            world.scene.three.background = new THREE.Color(target.color);
+          }}">
+        </bim-color-input>
+        
+        
+        <bim-number-input 
+          slider label="Zoom" value="${map.zoom}" min="0.01" max="0.5" step="0.01" 
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            // gui.add(map, "zoom").name("Zoom").min(0.01).max(0.5).step(0.01);
+            map.frontOffset = target.value;
+          }}">
+        </bim-number-input>
+                
+        <div style="display: flex; gap: 12px">
+        
+          <bim-number-input slider value="${mapSize.x}" pref="Size X" min="100" max="500" step="10"              
+            @change="${({ target }: { target: BUI.NumberInput }) => {
+              const size = map.getSize();
+              size.x = target.value;
+              map.resize(size);
+            }}">
+          </bim-number-input>        
+        
+          <bim-number-input slider value="${mapSize.y}" pref="Size Y" min="100" max="500" step="10"            
+            @change="${({ target }: { target: BUI.NumberInput }) => {
+              const size = map.getSize();
+              size.y = target.value;
+              map.resize(size);
+            }}">
+          </bim-number-input>
+        </div>
+  
+        
+      </bim-panel-section>
+    </bim-panel>
+    `;
+});
 
-gui.add(map, "enabled").name("Map enabled");
-gui.add(map, "lockRotation").name("Lock rotation");
-gui.add(map, "zoom").name("Zoom").min(0.01).max(0.5).step(0.01);
-gui.add(map, "frontOffset").name("Front offset").min(0).max(10).step(0.5);
-gui
-  .add(size, "x")
-  .name("Width")
-  .min(100)
-  .max(500)
-  .step(10)
-  .onChange(() => map.resize(size));
-gui
-  .add(size, "y")
-  .name("Height")
-  .min(100)
-  .max(500)
-  .step(10)
-  .onChange(() => map.resize(size));
-gui.addColor(map, "backgroundColor");
+document.body.append(panel);

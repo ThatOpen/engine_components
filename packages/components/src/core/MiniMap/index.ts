@@ -1,12 +1,6 @@
-import {
-  Component,
-  Components,
-  Disposable,
-  Updateable,
-  World,
-  Event,
-} from "../../core";
 import { MiniMap } from "./src";
+import { Component, Updateable, World, Event, Disposable } from "../Types";
+import { Components } from "../Components";
 
 export class MiniMaps extends Component implements Updateable, Disposable {
   static readonly uuid = "39ad6aad-84c8-4adf-a1e0-7f25313a9e7f" as const;
@@ -43,8 +37,12 @@ export class MiniMaps extends Component implements Updateable, Disposable {
     this.list.delete(id);
   }
 
-  dispose(): void | Promise<void> {
-    return undefined;
+  dispose() {
+    for (const [_id, map] of this.list) {
+      map.dispose();
+    }
+    this.list.clear();
+    this.onDisposed.trigger();
   }
 
   update() {
