@@ -184,7 +184,13 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           <bim-option checked label="Perspective"></bim-option>
           <bim-option label="Orthographic"></bim-option>
         </bim-dropdown>
-        
+
+        <bim-checkbox 
+          label="Allow user input" checked 
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            world.camera.setUserInput(target.checked);
+          }}">  
+        </bim-checkbox>  
         
         <bim-button 
           label="Fit cube" 
@@ -192,7 +198,6 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
             world.camera.fit([cube]);
           }}">  
         </bim-button>  
-              
 
       </bim-panel-section>
     </bim-panel>
