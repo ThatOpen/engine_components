@@ -5,6 +5,7 @@
 // @ts-ignore
 import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
 import Stats from "stats.js";
+import * as BUI from "@thatopen/ui";
 import * as OBC from "../..";
 
 const container = document.getElementById("container")!;
@@ -105,13 +106,27 @@ fragmentBbox.reset();
 
   */
 
-const settings = {
-  fitToModel: () => world.camera.controls.fitToSphere(bbox, true),
-};
+BUI.Manager.registerComponents();
 
-const gui = new dat.GUI();
+const panel = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+    <bim-panel active label="Bounding Boxes Tutorial" 
+      style="position: fixed; top: 5px; right: 5px">
+      <bim-panel-section style="padding-top: 10px;">
+         
+        <bim-button 
+          label="Fit BIM model" 
+          @click="${() => {
+            world.camera.controls.fitToSphere(bbox, true);
+          }}">  
+        </bim-button>  
 
-gui.add(settings, "fitToModel").name("Fit to model");
+      </bim-panel-section>
+    </bim-panel>
+    `;
+});
+
+document.body.append(panel);
 
 /* MD
 
