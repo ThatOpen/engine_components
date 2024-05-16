@@ -1,5 +1,6 @@
 import CameraControls from "camera-controls";
 import { NavigationMode } from "./types";
+import { OrthoPerspectiveCamera } from "../index";
 
 /**
  * A {@link NavigationMode} that allows to navigate floorplans in 2D,
@@ -19,7 +20,7 @@ export class PlanMode implements NavigationMode {
   private readonly defaultAzimuthSpeed: number;
   private readonly defaultPolarSpeed: number;
 
-  constructor(private camera: any) {
+  constructor(private camera: OrthoPerspectiveCamera) {
     this.defaultAzimuthSpeed = camera.controls.azimuthRotateSpeed;
     this.defaultPolarSpeed = camera.controls.polarRotateSpeed;
   }

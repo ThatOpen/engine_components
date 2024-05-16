@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { NavigationMode } from "./types";
+import { OrthoPerspectiveCamera } from "../index";
 
 /**
  * A {@link NavigationMode} that allows 3D navigation and panning
@@ -12,7 +13,7 @@ export class OrbitMode implements NavigationMode {
   /** {@link NavigationMode.id} */
   readonly id = "Orbit";
 
-  constructor(public camera: any) {
+  constructor(public camera: OrthoPerspectiveCamera) {
     this.activateOrbitControls();
   }
 
@@ -33,7 +34,7 @@ export class OrbitMode implements NavigationMode {
     const distance = position.length();
     controls.distance = distance;
     controls.truckSpeed = 2;
-    const { rotation } = this.camera.get();
+    const { rotation } = this.camera.three;
     const direction = new THREE.Vector3(0, 0, -1).applyEuler(rotation);
     const target = position.addScaledVector(direction, distance);
     controls.moveTo(target.x, target.y, target.z);

@@ -27,7 +27,7 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
 
-  readonly three: THREE.PerspectiveCamera;
+  three: THREE.PerspectiveCamera | THREE.OrthographicCamera;
 
   private _allControls = new Map<string, CameraControls>();
 

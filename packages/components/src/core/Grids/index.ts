@@ -28,6 +28,7 @@ export class Grids extends Component implements Disposable {
     world.onDisposed.add(() => {
       this.delete(world);
     });
+    return grid;
   }
 
   delete(world: World) {

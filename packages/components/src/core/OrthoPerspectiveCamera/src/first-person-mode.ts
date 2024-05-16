@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import CameraControls from "camera-controls";
 import { NavigationMode } from "./types";
+import { OrthoPerspectiveCamera } from "../index";
 
 /**
  * A {@link NavigationMode} that allows first person navigation,
@@ -13,15 +14,15 @@ export class FirstPersonMode implements NavigationMode {
   /** {@link NavigationMode.id} */
   readonly id = "FirstPerson";
 
-  constructor(private camera: any) {}
+  constructor(private camera: OrthoPerspectiveCamera) {}
 
   /** {@link NavigationMode.set} */
   set(active: boolean) {
     this.enabled = active;
     if (active) {
-      const projection = this.camera.getProjection();
+      const projection = this.camera.projection.current;
       if (projection !== "Perspective") {
-        this.camera.setNavigationMode("Orbit");
+        this.camera.set("Orbit");
         return;
       }
       this.setupFirstPersonCamera();

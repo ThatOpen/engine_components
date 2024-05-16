@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import CameraControls from "camera-controls";
 import { CameraProjection } from "./types";
-import { Event } from "../../../core";
+import { Event } from "../../Types";
 import { OrthoPerspectiveCamera } from "../index";
 
 /**
@@ -11,7 +11,9 @@ export class ProjectionManager {
   /**
    * Event that fires when the {@link CameraProjection} changes.
    */
-  readonly onChanged = new Event<THREE.Camera>();
+  readonly onChanged = new Event<
+    THREE.PerspectiveCamera | THREE.OrthographicCamera
+  >();
 
   current: CameraProjection = "Perspective";
 
@@ -42,7 +44,7 @@ export class ProjectionManager {
     } else {
       await this.setPerspectiveCamera();
     }
-    this.onChanged.trigger();
+    this.onChanged.trigger(this.camera);
   }
 
   /**
@@ -56,6 +58,7 @@ export class ProjectionManager {
   }
 
   private setOrthoCamera() {
+    if (this._component.mode === null) return;
     // Matching orthographic camera to perspective camera
     // Resource: https://stackoverflow.com/questions/48758959/what-is-required-to-convert-threejs-perspective-camera-to-orthographic
     if (this._component.mode.id === "FirstPerson") {
@@ -63,7 +66,7 @@ export class ProjectionManager {
     }
     this._previousDistance = this._component.controls.distance;
     this._component.controls.distance = 200;
-    const dims = this.getDims();
+    const dims = this.getPerspectiveDims();
     if (!dims) {
       return;
     }
@@ -73,22 +76,22 @@ export class ProjectionManager {
     this.current = "Orthographic";
   }
 
-  private getDims() {
+  private getPerspectiveDims() {
     const world = this._component.currentWorld;
     if (!world || !world.renderer) {
       return null;
     }
 
     const lineOfSight = new THREE.Vector3();
-    this._component.three.getWorldDirection(lineOfSight);
+    this._component.threePersp.getWorldDirection(lineOfSight);
     const target = new THREE.Vector3();
     this._component.controls.getTarget(target);
-    const distance = target.clone().sub(this._component.three.position);
+    const distance = target.clone().sub(this._component.threePersp.position);
 
     const depth = distance.dot(lineOfSight);
     const dims = world.renderer.getSize();
     const aspect = dims.x / dims.y;
-    const camera = this._component.three;
+    const camera = this._component.threePersp;
     const height = depth * 2 * Math.atan((camera.fov * (Math.PI / 180)) / 2);
     const width = height * aspect;
     return { width, height };
@@ -98,7 +101,7 @@ export class ProjectionManager {
     this._component.controls.mouseButtons.wheel = CameraControls.ACTION.ZOOM;
     this._component.controls.mouseButtons.middle = CameraControls.ACTION.ZOOM;
 
-    const pCamera = this._component.three;
+    const pCamera = this._component.threePersp;
     const oCamera = this._component.threeOrtho;
 
     oCamera.zoom = 1;
@@ -114,7 +117,7 @@ export class ProjectionManager {
 
   private getDistance() {
     // this handles ortho zoom to perpective distance
-    const pCamera = this._component.three;
+    const pCamera = this._component.threePersp;
     const oCamera = this._component.threeOrtho;
 
     // this is the reverse of
@@ -132,7 +135,7 @@ export class ProjectionManager {
     this._component.controls.mouseButtons.wheel = CameraControls.ACTION.DOLLY;
     this._component.controls.mouseButtons.middle = CameraControls.ACTION.DOLLY;
 
-    const pCamera = this._component.three;
+    const pCamera = this._component.threePersp;
     const oCamera = this._component.threeOrtho;
 
     pCamera.position.copy(oCamera.position);

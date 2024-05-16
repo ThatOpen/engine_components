@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { Components } from "../../core/Components";
-import { SimpleCamera } from "../../core";
+import { Components } from "../Components";
+import { SimpleCamera } from "..";
 
 import {
   NavigationMode,
@@ -23,11 +23,13 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
   /**
    * The current {@link NavigationMode}.
    */
-  mode: NavigationMode;
+  _mode: NavigationMode | null = null;
 
   readonly projection: ProjectionManager;
 
   readonly threeOrtho: THREE.OrthographicCamera;
+
+  readonly threePersp: THREE.PerspectiveCamera;
 
   protected readonly _userInputButtons: any = {};
 
@@ -35,25 +37,37 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
 
   protected readonly _navigationModes = new Map<NavModeID, NavigationMode>();
 
-  get current() {
-    return this.projection.camera;
+  get mode() {
+    if (!this._mode) {
+      throw new Error("Mode not found, camera not initialized");
+    }
+    return this._mode;
   }
 
   constructor(components: Components) {
     super(components);
-
+    this.threePersp = this.three as THREE.PerspectiveCamera;
     this.threeOrtho = this.newOrthoCamera();
-
-    this._navigationModes.set("Orbit", new OrbitMode(this));
-    this._navigationModes.set("FirstPerson", new FirstPersonMode(this));
-    this._navigationModes.set("Plan", new PlanMode(this));
-
-    this.mode = this._navigationModes.get("Orbit")!;
-    this.mode.set(true, { preventTargetAdjustment: true });
-
     this.projection = new ProjectionManager(this);
 
-    this.onAspectUpdated.add(() => this.setOrthoCameraAspect());
+    this.onAspectUpdated.add(() => {
+      this.setOrthoCameraAspect();
+    });
+
+    this.projection.onChanged.add(
+      (camera: THREE.PerspectiveCamera | THREE.OrthographicCamera) => {
+        this.three = camera;
+      },
+    );
+
+    this.onWorldChanged.add(() => {
+      this._navigationModes.clear();
+      this._navigationModes.set("Orbit", new OrbitMode(this));
+      this._navigationModes.set("FirstPerson", new FirstPersonMode(this));
+      this._navigationModes.set("Plan", new PlanMode(this));
+      this._mode = this._navigationModes.get("Orbit")!;
+      this.mode.set(true, { preventTargetAdjustment: true });
+    });
   }
 
   /** {@link Disposable.dispose} */
@@ -68,12 +82,13 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
    * @param mode - The {@link NavigationMode} to set.
    */
   set(mode: NavModeID) {
+    if (this.mode === null) return;
     if (this.mode.id === mode) return;
     this.mode.set(false);
     if (!this._navigationModes.has(mode)) {
       throw new Error("The specified mode does not exist!");
     }
-    this.mode = this._navigationModes.get(mode)!;
+    this._mode = this._navigationModes.get(mode)!;
     this.mode.set(true);
   }
 
