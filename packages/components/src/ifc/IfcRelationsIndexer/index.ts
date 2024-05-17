@@ -1,7 +1,7 @@
 import * as WEBIFC from "web-ifc";
 import { FragmentsGroup } from "@thatopen/fragments";
 import { Disposable, Event, Component, Components } from "../../core";
-import { FragmentManager } from "../../fragments/FragmentManager";
+import { FragmentsManager } from "../../fragments/FragmentsManager";
 import { IfcPropertiesUtils } from "../Utils";
 import {
   RelationsMap,
@@ -72,7 +72,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
   constructor(components: Components) {
     super(components);
     this.components.add(IfcRelationsIndexer.uuid, this);
-    const fragmentManager = components.get(FragmentManager);
+    const fragmentManager = components.get(FragmentsManager);
     fragmentManager.onFragmentsDisposed.add(this.onFragmentsDisposed);
     // this.setRelMap();
   }
@@ -347,7 +347,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
    */
   dispose() {
     (this.relationMaps as any) = {};
-    const fragmentManager = this.components.get(FragmentManager);
+    const fragmentManager = this.components.get(FragmentsManager);
     fragmentManager.onFragmentsDisposed.remove(this.onFragmentsDisposed);
     this.onDisposed.trigger(IfcRelationsIndexer.uuid);
     this.onDisposed.reset();

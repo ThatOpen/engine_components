@@ -9,7 +9,7 @@ import { IfcRelationsIndexer } from "../../ifc/IfcRelationsIndexer";
  * Object that can efficiently load binary files that contain
  * [fragment geometry](https://github.com/ThatOpen/engine_fragment).
  */
-export class FragmentManager extends Component implements Disposable {
+export class FragmentsManager extends Component implements Disposable {
   static readonly uuid = "fef46874-46a3-461b-8c44-2922ab77c806" as const;
 
   /** {@link Disposable.onDisposed} */
@@ -45,7 +45,7 @@ export class FragmentManager extends Component implements Disposable {
 
   constructor(components: Components) {
     super(components);
-    this.components.add(FragmentManager.uuid, this);
+    this.components.add(FragmentsManager.uuid, this);
   }
 
   /** {@link Disposable.dispose} */

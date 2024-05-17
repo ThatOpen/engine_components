@@ -59,7 +59,7 @@ world.camera.controls.setLookAt(1, 2, -2, -2, 0, -5);
 
   */
 
-const fragments = new OBC.FragmentManager(components);
+const fragments = new OBC.FragmentsManager(components);
 
 const file = await fetch("../../../../../resources/small.frag");
 const dataBlob = await file.arrayBuffer();

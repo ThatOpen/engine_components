@@ -56,7 +56,7 @@ world.scene.setup();
 
   */
 
-const fragments = new OBC.FragmentManager(components);
+const fragments = new OBC.FragmentsManager(components);
 
 /* MD
 

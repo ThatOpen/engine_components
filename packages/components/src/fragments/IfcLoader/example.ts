@@ -40,7 +40,7 @@ grids.create(world);
   Easy: with the `FragmentIfcLoader`! Let's start by creating it.
   */
 
-const fragments = components.get(OBC.FragmentManager);
+const fragments = components.get(OBC.FragmentsManager);
 const fragmentIfcLoader = components.get(OBC.IfcLoader);
 
 /* MD

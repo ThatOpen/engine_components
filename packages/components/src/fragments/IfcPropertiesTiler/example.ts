@@ -3,6 +3,7 @@
 import Stats from "stats.js";
 // @ts-ignore
 import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
+import * as BUI from "@thatopen/ui";
 import * as OBC from "../..";
 
 const container = document.getElementById("container")!;
@@ -161,13 +162,28 @@ async function processFile() {
   If everything went as expected, you should now be seeing some files being downloaded from your app 🤯 Do not get scary if they're a lot, as big models tend to have many files! All of that is the information the streaming uses in order to display the geometry in the most efficient way possible 💪
   */
 
-const actions = {
-  processFile,
-};
+BUI.Manager.registerComponents();
 
-const gui = new dat.GUI();
+const panel = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+    <bim-panel active label="IFC Properties Tiler Tutorial" 
+      style="position: fixed; top: 5px; right: 5px">
+      
+      <bim-panel-section style="padding-top: 12px;">
+      
+        <bim-button label="Load IFC"
+          @click="${() => {
+            processFile();
+          }}">
+        </bim-button>  
+      
+      </bim-panel-section>
+      
+    </bim-panel>
+  `;
+});
 
-gui.add(actions, "processFile").name("Process file");
+document.body.append(panel);
 
 // Set up stats
 

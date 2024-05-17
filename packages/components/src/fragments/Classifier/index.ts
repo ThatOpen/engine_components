@@ -3,7 +3,7 @@ import * as FRAGS from "@thatopen/fragments";
 import { Disposable, Component, Event, Components } from "../../core";
 import { IfcCategoryMap, IfcPropertiesUtils } from "../../ifc";
 
-import { FragmentManager } from "../FragmentManager";
+import { FragmentsManager } from "../FragmentsManager";
 
 // TODO: Clean up and document
 
@@ -27,7 +27,7 @@ export class Classifier extends Component implements Disposable {
   constructor(components: Components) {
     super(components);
     components.add(Classifier.uuid, this);
-    const fragmentManager = components.get(FragmentManager);
+    const fragmentManager = components.get(FragmentsManager);
     fragmentManager.onFragmentsDisposed.add(this.onFragmentsDisposed);
   }
 
@@ -60,7 +60,7 @@ export class Classifier extends Component implements Disposable {
 
   dispose() {
     this.list = {};
-    const fragmentManager = this.components.get(FragmentManager);
+    const fragmentManager = this.components.get(FragmentsManager);
     fragmentManager.onFragmentsDisposed.remove(this.onFragmentsDisposed);
     this.onDisposed.trigger();
     this.onDisposed.reset();
@@ -77,7 +77,7 @@ export class Classifier extends Component implements Disposable {
   }
 
   find(filter?: { [name: string]: string[] }) {
-    const fragments = this.components.get(FragmentManager);
+    const fragments = this.components.get(FragmentsManager);
     if (!filter) {
       const result: FRAGS.FragmentIdMap = {};
       for (const [id, fragment] of fragments.list) {
@@ -246,7 +246,7 @@ export class Classifier extends Component implements Disposable {
   }
 
   setColor(items: FRAGS.FragmentIdMap, color: THREE.Color, override = false) {
-    const fragments = this.components.get(FragmentManager);
+    const fragments = this.components.get(FragmentsManager);
     for (const fragID in items) {
       const found = fragments.list.get(fragID);
       if (!found) continue;
@@ -256,7 +256,7 @@ export class Classifier extends Component implements Disposable {
   }
 
   resetColor(items: FRAGS.FragmentIdMap) {
-    const fragments = this.components.get(FragmentManager);
+    const fragments = this.components.get(FragmentsManager);
     for (const fragID in items) {
       const found = fragments.list.get(fragID);
       if (!found) continue;

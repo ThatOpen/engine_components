@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Component, Disposable, Event, Components } from "../../core";
 import { Classifier } from "../Classifier";
-import { FragmentManager } from "../FragmentManager";
+import { FragmentsManager } from "../FragmentsManager";
 
 // TODO: Improve, Clean up and document
 
@@ -32,7 +32,7 @@ export class Exploder extends Component implements Disposable {
   set(active: boolean) {
     if (!this.enabled) return;
     const classifier = this.components.get(Classifier);
-    const fragments = this.components.get(FragmentManager);
+    const fragments = this.components.get(FragmentsManager);
 
     const factor = active ? 1 : -1;
     let i = 0;

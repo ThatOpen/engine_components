@@ -1,5 +1,5 @@
 import * as FRAGS from "@thatopen/fragments";
-import { FragmentManager } from "../FragmentManager";
+import { FragmentsManager } from "../FragmentsManager";
 import { Components, Component, Cullers } from "../../core";
 
 export class FragmentHider extends Component {
@@ -14,7 +14,7 @@ export class FragmentHider extends Component {
   }
 
   set(visible: boolean, items?: FRAGS.FragmentIdMap) {
-    const fragments = this.components.get(FragmentManager);
+    const fragments = this.components.get(FragmentsManager);
     if (!items) {
       for (const id in fragments.list) {
         const fragment = fragments.list.get(id);

@@ -7,7 +7,7 @@ import { Component, Components, Disposer, Disposable, Event } from "../../core";
  * A simple implementation of bounding box that works for fragments. The resulting bbox is not 100% precise, but
  * it's fast, and should suffice for general use cases such as camera zooming or general boundary determination.
  */
-export class BoundingBoxes extends Component implements Disposable {
+export class BoundingBoxer extends Component implements Disposable {
   static readonly uuid = "d1444724-dba6-4cdd-a0c7-68ee1450d166" as const;
 
   /** {@link Component.enabled} */
@@ -22,9 +22,9 @@ export class BoundingBoxes extends Component implements Disposable {
 
   constructor(components: Components) {
     super(components);
-    this.components.add(BoundingBoxes.uuid, this);
-    this._absoluteMin = BoundingBoxes.newBound(true);
-    this._absoluteMax = BoundingBoxes.newBound(false);
+    this.components.add(BoundingBoxer.uuid, this);
+    this._absoluteMin = BoundingBoxer.newBound(true);
+    this._absoluteMax = BoundingBoxer.newBound(false);
   }
 
   static getDimensions(bbox: THREE.Box3) {
@@ -71,7 +71,7 @@ export class BoundingBoxes extends Component implements Disposable {
       disposer.destroy(mesh);
     }
     this._meshes = [];
-    this.onDisposed.trigger(BoundingBoxes.uuid);
+    this.onDisposed.trigger(BoundingBoxer.uuid);
     this.onDisposed.reset();
   }
 
@@ -94,7 +94,7 @@ export class BoundingBoxes extends Component implements Disposable {
 
   getMesh() {
     const bbox = new THREE.Box3(this._absoluteMin, this._absoluteMax);
-    const dimensions = BoundingBoxes.getDimensions(bbox);
+    const dimensions = BoundingBoxer.getDimensions(bbox);
     const { width, height, depth, center } = dimensions;
     const box = new THREE.BoxGeometry(width, height, depth);
     const mesh = new THREE.Mesh(box);
@@ -104,8 +104,8 @@ export class BoundingBoxes extends Component implements Disposable {
   }
 
   reset() {
-    this._absoluteMin = BoundingBoxes.newBound(true);
-    this._absoluteMax = BoundingBoxes.newBound(false);
+    this._absoluteMin = BoundingBoxer.newBound(true);
+    this._absoluteMax = BoundingBoxer.newBound(false);
   }
 
   add(group: FragmentsGroup) {
@@ -122,7 +122,7 @@ export class BoundingBoxes extends Component implements Disposable {
       return;
     }
 
-    const bbox = BoundingBoxes.getFragmentBounds(mesh);
+    const bbox = BoundingBoxer.getFragmentBounds(mesh);
 
     mesh.updateMatrixWorld();
     const meshTransform = mesh.matrixWorld;

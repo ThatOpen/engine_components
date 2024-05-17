@@ -3,7 +3,7 @@ import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import { SpatialStructure } from "./src/spatial-structure";
 import { CivilReader, IfcFragmentSettings, IfcMetadataReader } from "./src";
-import { FragmentManager } from "../FragmentManager";
+import { FragmentsManager } from "../FragmentsManager";
 import { Component, Components, Event, Disposable } from "../../core";
 import { IfcJsonExporter } from "../../ifc/IfcJsonExporter";
 
@@ -71,7 +71,7 @@ export class IfcLoader extends Component implements Disposable {
 
     this.cleanUp();
 
-    const fragments = this.components.get(FragmentManager);
+    const fragments = this.components.get(FragmentsManager);
     fragments.groups.set(group.uuid, group);
 
     for (const frag of group.items) {
