@@ -93,7 +93,7 @@ await hider.loadCached();
   the more complex filters later!
   */
 
-const classifier = new OBC.FragmentClassifier(components);
+const classifier = new OBC.Classifier(components);
 classifier.byStorey(model);
 classifier.byEntity(model);
 

@@ -1,5 +1,5 @@
 export * from "./BoundingBoxes";
-export * from "./FragmentClassifier";
+export * from "./Classifier";
 export * from "./FragmentExploder";
 export * from "./FragmentHider";
 export * from "./FragmentIfcLoader";

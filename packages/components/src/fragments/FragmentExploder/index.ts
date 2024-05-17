@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Component, Disposable, Event, Components } from "../../core";
-import { FragmentClassifier } from "../FragmentClassifier";
+import { Classifier } from "../Classifier";
 import { FragmentManager } from "../FragmentManager";
 
 // TODO: Clean up and document
@@ -40,7 +40,7 @@ export class FragmentExploder extends Component implements Disposable {
   }
 
   update() {
-    const classifier = this.components.get(FragmentClassifier);
+    const classifier = this.components.get(Classifier);
     const fragments = this.components.get(FragmentManager);
 
     const factor = this.enabled ? 1 : -1;

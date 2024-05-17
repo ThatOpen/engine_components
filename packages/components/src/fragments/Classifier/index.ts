@@ -13,7 +13,7 @@ export interface Classification {
   };
 }
 
-export class FragmentClassifier extends Component implements Disposable {
+export class Classifier extends Component implements Disposable {
   static readonly uuid = "e25a7f3c-46c4-4a14-9d3d-5115f24ebeb7" as const;
 
   /** {@link Component.enabled} */
@@ -26,7 +26,7 @@ export class FragmentClassifier extends Component implements Disposable {
 
   constructor(components: Components) {
     super(components);
-    components.add(FragmentClassifier.uuid, this);
+    components.add(Classifier.uuid, this);
     const fragmentManager = components.get(FragmentManager);
     fragmentManager.onFragmentsDisposed.add(this.onFragmentsDisposed);
   }
@@ -139,10 +139,10 @@ export class FragmentClassifier extends Component implements Disposable {
   }
 
   byModel(modelID: string, group: FRAGS.FragmentsGroup) {
-    if (!this.list.model) {
-      this.list.model = {};
+    if (!this.list.models) {
+      this.list.models = {};
     }
-    const modelsClassification = this.list.model;
+    const modelsClassification = this.list.models;
     if (!modelsClassification[modelID]) {
       modelsClassification[modelID] = {};
     }
