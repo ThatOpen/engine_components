@@ -2,7 +2,7 @@ import * as WEBIFC from "web-ifc";
 import { FragmentsGroup } from "@thatopen/fragments";
 import { Component, Disposable, Event, Components } from "../../core";
 import { IfcPropertiesUtils } from "../Utils";
-import { FragmentIfcLoader } from "../../fragments/FragmentIfcLoader";
+import { IfcLoader } from "../../fragments/IfcLoader";
 import { UUID } from "../../utils";
 
 type BooleanPropTypes = "IfcBoolean" | "IfcLogical";
@@ -292,7 +292,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
   }
 
   async saveToIfc(model: FragmentsGroup, ifcToSaveOn: Uint8Array) {
-    const ifcLoader = this.components.get(FragmentIfcLoader);
+    const ifcLoader = this.components.get(IfcLoader);
     const ifcApi = ifcLoader.webIfc;
     const modelID = await ifcLoader.readIfcFile(ifcToSaveOn);
     const changes = this._changeMap[model.uuid] ?? [];

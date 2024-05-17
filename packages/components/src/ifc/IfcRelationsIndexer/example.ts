@@ -19,7 +19,7 @@ import * as OBC from "../..";
 
 const components = new OBC.Components();
 
-const ifcLoader = components.get(OBC.FragmentIfcLoader);
+const ifcLoader = components.get(OBC.IfcLoader);
 await ifcLoader.setup();
 const file = await fetch("/resources/small.ifc");
 const buffer = await file.arrayBuffer();

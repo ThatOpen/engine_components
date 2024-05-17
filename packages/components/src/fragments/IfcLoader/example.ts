@@ -3,7 +3,7 @@
 import * as WEBIFC from "web-ifc";
 import Stats from "stats.js";
 // @ts-ignore
-import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
+import * as BUI from "@thatopen/ui";
 import * as OBC from "../..";
 
 const container = document.getElementById("container")!;
@@ -41,7 +41,7 @@ grids.create(world);
   */
 
 const fragments = components.get(OBC.FragmentManager);
-const fragmentIfcLoader = components.get(OBC.FragmentIfcLoader);
+const fragmentIfcLoader = components.get(OBC.IfcLoader);
 
 /* MD
   :::info Why not just IFC?
@@ -129,8 +129,8 @@ fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
 // const culler = cullers.create(world);
 // culler.enabled = true;
 
-async function loadIfcAsFragments() {
-  const file = await fetch("../../../../../resources/02.ifc");
+async function loadIfc() {
+  const file = await fetch("../../../../../resources/small.ifc");
   const data = await file.arrayBuffer();
   const buffer = new Uint8Array(data);
   const model = await fragmentIfcLoader.load(buffer);
@@ -209,42 +209,43 @@ stats.dom.style.left = "0px";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
 
-// Set up dat.gui menu
+BUI.Manager.registerComponents();
 
-const settings = {
-  loadFragments: () => loadIfcAsFragments(),
-  exportFragments: () => exportFragments(),
-  disposeFragments: () => disposeFragments(),
-};
+const panel = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+    <bim-panel active label="IFC Loader Tutorial" 
+      style="position: fixed; top: 5px; right: 5px">
+      
+      <bim-panel-section style="padding-top: 12px;">
+      
+        <bim-button label="Load IFC"
+          @click="${() => {
+            loadIfc();
+          }}">
+        </bim-button>  
+            
+        <bim-button label="Export fragments"
+          @click="${() => {
+            exportFragments();
+          }}">
+        </bim-button>  
+            
+        <bim-button label="Dispose fragments"
+          @click="${() => {
+            disposeFragments();
+          }}">
+        </bim-button>
+      
+      </bim-panel-section>
+      
+    </bim-panel>
+  `;
+});
 
-const gui = new dat.GUI();
-
-gui.add(settings, "loadFragments").name("Import fragments");
-gui.add(settings, "exportFragments").name("Export fragments");
-gui.add(settings, "disposeFragments").name("Dispose fragments");
+document.body.append(panel);
 
 // For debugging
 
 fragments.onFragmentsLoaded.add((model) => {
   console.log(model);
-
-  // let sorted = [];
-  // for(const frag of model.fragments) {
-  // 	const size = frag.mesh.count;
-  // 	sorted.push({size, frag});
-  // }
-  //
-  // sorted.sort((a, b) => {
-  // 	return a.size > b.size ? 1 : -1;
-  // });
-  // let value = 0;
-  // let step = 1 / sorted.length;
-  //
-  // for(const { frag } of sorted) {
-  // 	console.log(frag.mesh.material);
-  // 	const mat = frag.mesh.material[0];
-  // 	frag.mesh.instanceColor = null;
-  // 	mat.color.setRGB(value, value, value, "srgb");
-  // 	value += step;
-  // }
 });

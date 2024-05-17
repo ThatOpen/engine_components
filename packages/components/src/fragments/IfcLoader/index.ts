@@ -7,7 +7,7 @@ import { FragmentManager } from "../FragmentManager";
 import { Component, Components, Event, Disposable } from "../../core";
 import { IfcJsonExporter } from "../../ifc/IfcJsonExporter";
 
-export class FragmentIfcLoader extends Component implements Disposable {
+export class IfcLoader extends Component implements Disposable {
   static readonly uuid = "a659add7-1418-4771-a0d6-7d4d438e4624" as const;
 
   readonly onIfcStartedLoading = new Event<void>();
@@ -42,13 +42,13 @@ export class FragmentIfcLoader extends Component implements Disposable {
 
   constructor(components: Components) {
     super(components);
-    this.components.add(FragmentIfcLoader.uuid, this);
+    this.components.add(IfcLoader.uuid, this);
     this.settings.excludedCategories.add(WEBIFC.IFCOPENINGELEMENT);
   }
 
   dispose() {
     (this.webIfc as any) = null;
-    this.onDisposed.trigger(FragmentIfcLoader.uuid);
+    this.onDisposed.trigger(IfcLoader.uuid);
     this.onDisposed.reset();
   }
 

@@ -1,5 +1,5 @@
 // eslint-disable-next-line max-classes-per-file
-import { IfcFragmentSettings } from "../../FragmentIfcLoader/src";
+import { IfcFragmentSettings } from "../../IfcLoader/src";
 
 /** Configuration of the IFC-fragment streaming. */
 export class IfcStreamingSettings extends IfcFragmentSettings {

@@ -7,7 +7,7 @@ import {
   SpatialStructure,
   CivilReader,
   IfcMetadataReader,
-} from "../FragmentIfcLoader/src";
+} from "../IfcLoader/src";
 
 import { isPointInFrontOfPlane, obbFromPoints } from "../../utils";
 
@@ -155,7 +155,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
       }
       const result = this.webIfc.GetLineIDsWithType(0, type);
       const size = result.size();
-      console.log(size)
+      console.log(size);
       for (let i = 0; i < size; i++) {
         if (counter > minGeometrySize) {
           counter = 0;
