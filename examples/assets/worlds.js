@@ -1,4 +1,4 @@
-import{m as i,B as r,M as a,C as s,D as c,A as l}from"./web-ifc-api-DH5A5LIH.js";import{k as m,C as p,b}from"./index-CA2cPfXk.js";import{C as d}from"./index-CyDQMoMp.js";import{W as u,S as h}from"./index-CF7dJ_Hf.js";import{S as f,a as g}from"./simple-camera-B35NBbik.js";const w=document.getElementById("container"),o=new d,y=o.get(u),e=y.create();e.scene=new f(o);e.renderer=new h(o,w);e.camera=new g(o);o.init();const C=new i({color:"#6528D7"}),x=new r,S=new a(x,C);e.scene.three.add(S);e.scene.setup();e.camera.controls.setLookAt(3,3,3,0,0,0);m.registerComponents();const k=p.create(()=>b`
+import{m as i,B as r,M as a,C as s,D as c,A as l}from"./web-ifc-api-BFxa4VQ4.js";import{k as m,C as p,b}from"./index-CA2cPfXk.js";import{C as d}from"./index-2WRq2SpB.js";import{W as u,S as h,a as g,b as f}from"./index-BSY2u5SV.js";const w=document.getElementById("container"),o=new d,y=o.get(u),e=y.create();e.scene=new h(o);e.renderer=new g(o,w);e.camera=new f(o);o.init();const C=new i({color:"#6528D7"}),x=new r,k=new a(x,C);e.scene.three.add(k);e.scene.setup();e.camera.controls.setLookAt(3,3,3,0,0,0);m.registerComponents();const v=p.create(()=>b`
     <bim-panel label="Worlds Tutorial" style="position: fixed; top: 5px; right: 5px" active>
       <bim-panel-section style="padding-top: 10px">
       
@@ -19,4 +19,4 @@ import{m as i,B as r,M as a,C as s,D as c,A as l}from"./web-ifc-api-DH5A5LIH.js"
         
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(k);
+    `);document.body.append(v);

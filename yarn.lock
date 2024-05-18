@@ -1287,9 +1287,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@thatopen/components-front@workspace:packages/components-front":
+"@thatopen/components-front@workspace:packages/front":
   version: 0.0.0-use.local
-  resolution: "@thatopen/components-front@workspace:packages/components-front"
+  resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
     "@thatopen/components": 2.0.0-alpha.14
     "@thatopen/fragments": 2.0.0-alpha.5
@@ -1311,9 +1311,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@2.0.0-alpha.14, @thatopen/components@workspace:packages/components":
+"@thatopen/components@2.0.0-alpha.14, @thatopen/components@workspace:packages/core":
   version: 0.0.0-use.local
-  resolution: "@thatopen/components@workspace:packages/components"
+  resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
     "@thatopen/fragments": 2.0.0-alpha.5
     "@thatopen/ui": 2.0.0-alpha.5
