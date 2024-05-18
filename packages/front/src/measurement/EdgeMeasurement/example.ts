@@ -35,7 +35,7 @@ effects.excludedMeshes.push(grid.get());
 
 const dimensions = new OBC.EdgeMeasurement(components);
 
-const fragments = new OBC.FragmentManager(components);
+const fragments = new OBC.FragmentsManager(components);
 const file = await fetch("../../../resources/small.frag");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);

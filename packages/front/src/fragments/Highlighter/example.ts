@@ -34,7 +34,7 @@ world.scene.setup();
 const grids = components.get(OBC.Grids);
 grids.create(world);
 
-// const fragments = components.get(OBC.FragmentManager);
+// const fragments = components.get(OBC.FragmentsManager);
 const fragmentIfcLoader = components.get(OBC.FragmentIfcLoader);
 
 await fragmentIfcLoader.setup();

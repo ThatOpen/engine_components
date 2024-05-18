@@ -187,7 +187,9 @@ export class EdgeMeasurement
     if (!mesh.geometry.index) {
       return;
     }
-    const result = OBC.MeasurementUtils.getFace(mesh, faceIndex, instance);
+
+    const measurements = this.components.get(OBC.MeasurementUtils);
+    const result = measurements.getFace(mesh, faceIndex, instance);
     if (!result) return;
     const { edges } = result;
 

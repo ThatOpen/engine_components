@@ -29,7 +29,7 @@ const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
 const customEffects = rendererComponent.postproduction.customEffects;
 customEffects.excludedMeshes.push(grid.get());
 
-const fragments = new OBC.FragmentManager(components);
+const fragments = new OBC.FragmentsManager(components);
 const fragmentIfcLoader = new OBC.FragmentIfcLoader(components);
 
 fragmentIfcLoader.settings.wasm = {

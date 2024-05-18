@@ -1,4 +1,4 @@
-var S=Object.defineProperty;var T=(l,t,e)=>t in l?S(l,t,{enumerable:!0,configurable:!0,writable:!0,value:e}):l[t]=e;var o=(l,t,e)=>(T(l,typeof t!="symbol"?t+"":t,e),e);import{s as h,U as E,f as m,W as v,a0 as B,a1 as R,a2 as M,C as _,p as w,d as y,I as b,$ as z,a3 as k,a4 as x,a5 as V}from"./web-ifc-api-BFxa4VQ4.js";import{P as d,F as P,b as L,d as G,$ as O}from"./import-wrapper-prod-BtIvq9o4.js";import{R as N}from"./index-Czb5ZY1a.js";const A={name:"CopyShader",uniforms:{tDiffuse:{value:null},opacity:{value:1}},vertexShader:`
+var S=Object.defineProperty;var T=(l,t,e)=>t in l?S(l,t,{enumerable:!0,configurable:!0,writable:!0,value:e}):l[t]=e;var o=(l,t,e)=>(T(l,typeof t!="symbol"?t+"":t,e),e);import{s as h,U as E,f as m,W as v,a0 as B,a1 as R,a2 as M,C as _,p as w,d as y,I as b,$ as z,a3 as k,a4 as x,a5 as V}from"./web-ifc-api-eJ7dR4yy.js";import{P as d,F as P,a as L,n as G,$ as O}from"./import-wrapper-prod-Dt8pgrvp.js";import{R as N}from"./index-BXaXqD4l.js";const A={name:"CopyShader",uniforms:{tDiffuse:{value:null},opacity:{value:1}},vertexShader:`
 
 		varying vec2 vUv;
 

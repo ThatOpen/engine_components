@@ -259,7 +259,8 @@ export class FaceMeasurement
     const scene = this.world.scene.three;
     scene.add(this.preview);
 
-    const result = OBC.MeasurementUtils.getFace(mesh, faceIndex, instance);
+    const measurements = this.components.get(OBC.MeasurementUtils);
+    const result = measurements.getFace(mesh, faceIndex, instance);
     if (result === null) {
       console.log("Hey!");
       return;
@@ -305,8 +306,10 @@ export class FaceMeasurement
     let area = 0;
     const areaTriangle = new THREE.Triangle();
 
+    const measurements = this.components.get(OBC.MeasurementUtils);
+
     for (const i of indices) {
-      const { p1, p2, p3 } = OBC.MeasurementUtils.getVerticesAndNormal(
+      const { p1, p2, p3 } = measurements.getVerticesAndNormal(
         mesh,
         i,
         instance,

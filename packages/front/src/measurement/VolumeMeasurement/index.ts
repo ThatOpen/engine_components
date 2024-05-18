@@ -90,7 +90,7 @@ export class VolumeMeasurement
     const labelObject = this.label.three;
     scene.add(labelObject);
 
-    const bbox = this.components.get(OBC.BoundingBoxes);
+    const bbox = this.components.get(OBC.BoundingBoxer);
     for (const mesh of meshes) {
       mesh.geometry.computeBoundingSphere();
       bbox.addMesh(mesh);

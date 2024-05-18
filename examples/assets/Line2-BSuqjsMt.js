@@ -1,4 +1,4 @@
-import{f as K,U as R,z as A,s as X,F as M,r as O,V as y,H as Y,K as W,Y as T,Z as _,_ as Z,w as N,$ as L,a as Q,t as ee,M as te,h as ie}from"./web-ifc-api-BFxa4VQ4.js";A.line={worldUnits:{value:1},linewidth:{value:1},resolution:{value:new K(1,1)},dashOffset:{value:0},dashScale:{value:1},dashSize:{value:1},gapSize:{value:1}};M.line={uniforms:R.merge([A.common,A.fog,A.line]),vertexShader:`
+import{f as K,U as R,z as A,s as X,F as M,r as O,V as y,H as Y,K as W,Y as T,Z as _,_ as Z,w as N,$ as L,a as Q,t as ee,M as te,h as ie}from"./web-ifc-api-eJ7dR4yy.js";A.line={worldUnits:{value:1},linewidth:{value:1},resolution:{value:new K(1,1)},dashOffset:{value:0},dashScale:{value:1},dashSize:{value:1},gapSize:{value:1}};M.line={uniforms:R.merge([A.common,A.fog,A.line]),vertexShader:`
 		#include <common>
 		#include <color_pars_vertex>
 		#include <fog_pars_vertex>

@@ -42,7 +42,7 @@ grids.create(world);
 const loader = new OBCF.FragmentStreamLoader(components);
 loader.world = world;
 loader.url = "../../../../../resources/streaming/";
-// const fragments = components.get(OBC.FragmentManager);
+// const fragments = components.get(OBC.FragmentsManager);
 
 async function loadModel(geometryURL: string, propertiesURL?: string) {
   const rawGeometryData = await fetch(geometryURL);

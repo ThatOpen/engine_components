@@ -241,8 +241,7 @@ export class FragmentPlans extends OBC.Component implements OBC.Disposable {
       throw new Error("World is needed to create clipping planes!");
     }
     const camera = this.world.camera as OBC.OrthoPerspectiveCamera;
-    const activeCamera = camera.current;
-    activeCamera.getWorldPosition(this._previousCamera);
+    camera.three.getWorldPosition(this._previousCamera);
     camera.controls.getTarget(this._previousTarget);
     this._previousProjection = camera.projection.current;
   }

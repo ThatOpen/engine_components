@@ -122,7 +122,7 @@ export class Highlighter
       throw new Error(`Selection ${name} does not exist.`);
     }
 
-    const fragments = this.components.get(OBC.FragmentManager);
+    const fragments = this.components.get(OBC.FragmentsManager);
     const meshes = fragments.meshes;
 
     const casters = this.components.get(OBC.Raycasters);
@@ -186,7 +186,7 @@ export class Highlighter
       this.clear(name);
     }
 
-    const fragments = this.components.get(OBC.FragmentManager);
+    const fragments = this.components.get(OBC.FragmentsManager);
 
     const color = this.colors.get(name);
     if (!color) {
@@ -221,7 +221,7 @@ export class Highlighter
   clear(name?: string) {
     const names = name ? [name] : Object.keys(this.selection);
     for (const name of names) {
-      const fragments = this.components.get(OBC.FragmentManager);
+      const fragments = this.components.get(OBC.FragmentsManager);
 
       const selected = this.selection[name];
 
@@ -259,8 +259,8 @@ export class Highlighter
       return;
     }
 
-    const bbox = this.components.get(OBC.BoundingBoxes);
-    const fragments = this.components.get(OBC.FragmentManager);
+    const bbox = this.components.get(OBC.BoundingBoxer);
+    const fragments = this.components.get(OBC.FragmentsManager);
     bbox.reset();
 
     const selected = this.selection[name];

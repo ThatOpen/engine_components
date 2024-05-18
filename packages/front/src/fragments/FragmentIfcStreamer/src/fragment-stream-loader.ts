@@ -169,7 +169,7 @@ export class FragmentStreamLoader
     const groupData = await fetch(groupUrl);
     const groupArrayBuffer = await groupData.arrayBuffer();
     const groupBuffer = new Uint8Array(groupArrayBuffer);
-    const fragments = this.components.get(OBC.FragmentManager);
+    const fragments = this.components.get(OBC.FragmentsManager);
     const group = fragments.load(groupBuffer, { coordinate });
     this.world.scene.three.add(group);
 
@@ -253,7 +253,7 @@ export class FragmentStreamLoader
   remove(modelID: string) {
     this._isDisposing = true;
 
-    const fragments = this.components.get(OBC.FragmentManager);
+    const fragments = this.components.get(OBC.FragmentsManager);
     const group = fragments.groups.get(modelID);
     if (group === undefined) {
       console.log("Group to delete not found.");
@@ -342,7 +342,7 @@ export class FragmentStreamLoader
     for (const modelID in seen) {
       if (this._isDisposing) return;
 
-      const fragments = this.components.get(OBC.FragmentManager);
+      const fragments = this.components.get(OBC.FragmentsManager);
       const group = fragments.groups.get(modelID);
       if (!group) {
         // throw new Error("Fragment group not found!");
@@ -485,7 +485,7 @@ export class FragmentStreamLoader
     if (this._isDisposing) return;
 
     const deletedFragments: FRAG.Fragment[] = [];
-    const fragments = this.components.get(OBC.FragmentManager);
+    const fragments = this.components.get(OBC.FragmentsManager);
     for (const modelID in unseen) {
       const group = fragments.groups.get(modelID);
       if (!group) {
@@ -564,7 +564,7 @@ export class FragmentStreamLoader
       return;
     }
 
-    const fragments = this.components.get(OBC.FragmentManager);
+    const fragments = this.components.get(OBC.FragmentsManager);
     const fragmentAlreadyExists = fragments.list.has(fragID);
     if (fragmentAlreadyExists) {
       return;
