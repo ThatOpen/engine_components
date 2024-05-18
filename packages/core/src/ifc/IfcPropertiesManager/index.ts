@@ -63,21 +63,17 @@ export class IfcPropertiesManager extends Component implements Disposable {
 
   selectedModel?: FragmentsGroup;
 
-  private _changeMap: ChangeMap = {};
+  changeMap: ChangeMap = {};
 
   constructor(components: Components) {
     super(components);
     this.components.add(IfcPropertiesManager.uuid, this);
   }
 
-  get(): ChangeMap {
-    return this._changeMap;
-  }
-
   dispose() {
     this.selectedModel = undefined;
     this.attributeListeners = {};
-    this._changeMap = {};
+    this.changeMap = {};
     this.onElementToPset.reset();
     this.onPropToPset.reset();
     this.onPsetRemoved.reset();
@@ -118,11 +114,11 @@ export class IfcPropertiesManager extends Component implements Disposable {
   }
 
   private registerChange(model: FragmentsGroup, ...expressID: number[]) {
-    if (!this._changeMap[model.uuid]) {
-      this._changeMap[model.uuid] = new Set();
+    if (!this.changeMap[model.uuid]) {
+      this.changeMap[model.uuid] = new Set();
     }
     for (const id of expressID) {
-      this._changeMap[model.uuid].add(id);
+      this.changeMap[model.uuid].add(id);
       this.onDataChanged.trigger({ model, expressID: id });
     }
   }
@@ -295,7 +291,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
     const ifcLoader = this.components.get(IfcLoader);
     const ifcApi = ifcLoader.webIfc;
     const modelID = await ifcLoader.readIfcFile(ifcToSaveOn);
-    const changes = this._changeMap[model.uuid] ?? [];
+    const changes = this.changeMap[model.uuid] ?? [];
     for (const expressID of changes) {
       const data = (await model.getProperties(expressID)) as any;
       if (!data) {

@@ -1,4 +1,36 @@
+/* eslint import/no-extraneous-dependencies: 0 */
+
+// @ts-ignore
+import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
+// import Stats from "stats.js";
+// import * as BUI from "@thatopen/ui";
+import * as BUI from "@thatopen/ui";
 import * as OBC from "../..";
+
+const container = document.getElementById("container")!;
+
+const components = new OBC.Components();
+
+const worlds = components.get(OBC.Worlds);
+
+const world = worlds.create<
+  OBC.SimpleScene,
+  OBC.SimpleCamera,
+  OBC.SimpleRenderer
+>();
+
+world.scene = new OBC.SimpleScene(components);
+world.renderer = new OBC.SimpleRenderer(components, container);
+world.camera = new OBC.SimpleCamera(components);
+
+components.init();
+
+world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
+
+world.scene.setup();
+
+const grids = components.get(OBC.Grids);
+grids.create(world);
 
 /* MD
  ## Getting entity relations the easy way 💪
@@ -17,18 +49,17 @@ import * as OBC from "../..";
  :::
  */
 
-const components = new OBC.Components();
-
 const ifcLoader = components.get(OBC.IfcLoader);
 await ifcLoader.setup();
 const file = await fetch("/resources/small.ifc");
 const buffer = await file.arrayBuffer();
 const typedArray = new Uint8Array(buffer);
 const model = await ifcLoader.load(typedArray);
+world.scene.three.add(model);
 
 /* MD
  Once the model is loaded in memory, you just need to get an instance of the IfcRelationsIndexer and process the model... it's as easy as that! 😎
- */
+*/
 
 const indexer = components.get(OBC.IfcRelationsIndexer);
 await indexer.process(model);
@@ -81,7 +112,7 @@ const downloadJSON = (json: string, name: string) => {
 };
 
 const json = indexer.serializeModelRelations(model);
-if (json) downloadJSON(json, "small-relations.json");
+console.log(json);
 
 /* MD
  :::tip
@@ -89,11 +120,10 @@ if (json) downloadJSON(json, "small-relations.json");
  As `@thatopen/components` can be used in either NodeJS and Browser environments, the logic to generate a JSON file may vary!
 
  :::
- Now, in case you've loaded several models and want to get all the calculated relations, there is also a handy method to do it.
+ Now, in case you've loaded several models and want to get all the computed relations, there is also a handy method to do it.
  */
 
 const allRelationsJSON = indexer.serializeAllRelations();
-downloadJSON(allRelationsJSON, "relations-index-all.json");
 
 /* MD 
  ### Loading back the relations index
@@ -131,3 +161,26 @@ if (buildingStorey && buildingStorey[0]) {
  :::
  Congratulations! Now you know how to get an easy way to get the relations of your model. Keep going with more tutorials! 💪
  */
+
+BUI.Manager.registerComponents();
+
+const panel = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+    <bim-panel active label="IFC JSON Exporter Tutorial" 
+      style="position: fixed; top: 5px; right: 5px">
+      <bim-panel-section style="padding-top: 10px;">
+      
+        <bim-button 
+          label="Download relations" 
+          @click="${async () => {
+            downloadJSON(allRelationsJSON, "relations-index-all.json");
+          }}">  
+        </bim-button>        
+        
+
+      </bim-panel-section>
+    </bim-panel>
+    `;
+});
+
+document.body.append(panel);
