@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import { Postproduction } from "./src/postproduction";
-import { RendererWith2D } from "../RendererWith2D";
+import { RendererWith2D } from "../Marker";
 
 /**
  * Renderer that uses efficient postproduction effects (e.g. Ambient Occlusion).

@@ -4,7 +4,7 @@ import * as WEBIFC from "web-ifc";
 import * as OBC from "@thatopen/components";
 import { PlanView } from "./src";
 
-import { ClipEdges, EdgesPlane } from "../../core/EdgesClipper";
+import { EdgesPlane } from "../../core/EdgesClipper";
 
 /**
  * Helper to control the camera and easily define and navigate 2D floor plans.
@@ -150,8 +150,8 @@ export class FragmentPlans extends OBC.Component implements OBC.Disposable {
 
     await camera.projection.set(this._previousProjection);
     if (this.currentPlan && this.currentPlan.plane) {
-      await this.currentPlan.plane.setEnabled(false);
-      await this.currentPlan.plane.edges.setVisible(false);
+      this.currentPlan.plane.enabled = false;
+      this.currentPlan.plane.edges.enabled = false;
     }
 
     this.currentPlan = null;
@@ -185,17 +185,22 @@ export class FragmentPlans extends OBC.Component implements OBC.Disposable {
       clippingPoint.y += config.offset;
     }
 
-    const clipper = this.components.get(ClipEdges);
+    const clipper = this.components.get(OBC.Clipper);
+    const previousType = clipper.Type;
+    clipper.Type = EdgesPlane;
 
     const plane = clipper.createFromNormalAndCoplanarPoint(
       this.world,
       normal,
       clippingPoint,
-    );
+    ) as EdgesPlane;
 
-    await plane.setEnabled(false);
-    await plane.edges.update();
-    await plane.edges.setVisible(false);
+    plane.enabled = false;
+    plane.edges.update();
+    plane.edges.visible = false;
+
+    clipper.Type = previousType;
+
     return plane;
   }
 
@@ -227,9 +232,9 @@ export class FragmentPlans extends OBC.Component implements OBC.Disposable {
     if (!this.currentPlan) throw new Error("Current plan is not defined.");
     const camera = this.world.camera as OBC.OrthoPerspectiveCamera;
     if (this.currentPlan.plane) {
-      await this.currentPlan.plane.setEnabled(true);
+      this.currentPlan.plane.enabled = true;
       this.currentPlan.plane.edges.fillNeedsUpdate = true;
-      await this.currentPlan.plane.edges.setVisible(true);
+      this.currentPlan.plane.edges.visible = true;
     }
     camera.set("Plan");
     const projection = this.currentPlan.ortho ? "Orthographic" : "Perspective";
@@ -258,10 +263,10 @@ export class FragmentPlans extends OBC.Component implements OBC.Disposable {
     if (this.currentPlan) {
       const plane = this.currentPlan.plane;
       if (plane) {
-        await plane.setEnabled(false);
+        plane.enabled = false;
       }
       if (this.currentPlan.plane instanceof EdgesPlane) {
-        await this.currentPlan.plane.edges.setVisible(false);
+        this.currentPlan.plane.edges.visible = false;
       }
     }
   }

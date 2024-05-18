@@ -1,7 +1,8 @@
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
-import { ClipEdges, EdgesPlane } from "../../core";
+import { Clipper } from "@thatopen/components";
+import { EdgesPlane } from "../../core";
 
 export class CivilCrossSectionNavigator extends OBC.Component {
   static readonly uuid = "96b2c87e-d90b-4639-8257-8f01136fe324" as const;
@@ -25,12 +26,15 @@ export class CivilCrossSectionNavigator extends OBC.Component {
       return;
     }
 
-    const clipper = this.components.get(ClipEdges);
+    const clipper = this.components.get(Clipper);
+    const previousType = clipper.Type;
+    clipper.Type = EdgesPlane;
     this.plane = clipper.createFromNormalAndCoplanarPoint(
       world,
       new THREE.Vector3(1, 0, 0),
       new THREE.Vector3(),
-    );
+    ) as EdgesPlane;
+    clipper.Type = previousType;
     this.plane.visible = false;
     this.plane.enabled = false;
   }
