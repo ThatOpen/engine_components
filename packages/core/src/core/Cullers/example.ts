@@ -1,5 +1,6 @@
+/* eslint import/no-extraneous-dependencies: 0 */
+
 import * as THREE from "three";
-// eslint-disable-next-line import/no-extraneous-dependencies
 import Stats from "stats.js";
 import * as OBC from "../..";
 

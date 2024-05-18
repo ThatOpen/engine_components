@@ -1,30 +1,38 @@
-// Set up scene (see SimpleScene tutorial)
+/* eslint import/no-extraneous-dependencies: 0 */
 
 import * as THREE from "three";
+import * as OBC from "@thatopen/components";
 import Stats from "stats.js";
-import * as OBC from "../..";
+import * as BUI from "@thatopen/ui";
+import * as OBCF from "../..";
 
 const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
 
-const sceneComponent = new OBC.SimpleScene(components);
-sceneComponent.setup();
-components.scene = sceneComponent;
+const worlds = components.get(OBC.Worlds);
 
-const rendererComponent = new OBC.PostproductionRenderer(components, container);
-components.renderer = rendererComponent;
+const world = worlds.create<
+  OBC.SimpleScene,
+  OBC.SimpleCamera,
+  OBCF.RendererWith2D
+>();
 
-const cameraComponent = new OBC.SimpleCamera(components);
-components.camera = cameraComponent;
+world.scene = new OBC.SimpleScene(components);
+world.renderer = new OBCF.RendererWith2D(components, container);
+world.camera = new OBC.SimpleCamera(components);
 
-components.raycaster = new OBC.SimpleRaycaster(components);
+world.scene.setup();
 
 components.init();
 
-const scene = components.scene.get();
+world.camera.controls.setLookAt(5, 5, 5, 0, 0, 0);
 
-cameraComponent.controls.setLookAt(10, 10, 10, 0, 0, 0);
+container.appendChild(world.renderer.three2D.domElement);
+
+const grids = components.get(OBC.Grids);
+grids.config.color.setHex(0xdddddd);
+grids.create(world);
 
 /* MD
   ### 🌒 Adding Realism
@@ -63,9 +71,9 @@ cube.position.set(0, 1.5, 0);
 
   */
 
-scene.background = new THREE.Color("gray");
-scene.add(cube);
-components.meshes.add(cube);
+world.scene.three.background = new THREE.Color("white");
+world.scene.three.add(cube);
+world.meshes.add(cube);
 
 /* MD
   ### 🌚 Adding Beautiful Shadow
@@ -75,7 +83,7 @@ components.meshes.add(cube);
 
   */
 
-const shadows = new OBC.ShadowDropper(components);
+const shadows = new OBCF.ShadowDropper(components);
 
 /* MD
 
@@ -85,7 +93,6 @@ const shadows = new OBC.ShadowDropper(components);
   */
 
 shadows.shadowExtraScaleFactor = 15;
-shadows.darkness = 2;
 shadows.shadowOffset = 0.1;
 
 /* MD
@@ -106,7 +113,8 @@ shadows.shadowOffset = 0.1;
 
   */
 
-shadows.renderShadow([cube], "example");
+const shadowID = "example";
+shadows.create([cube], shadowID, world);
 
 /* MD
 
@@ -126,11 +134,56 @@ shadows.renderShadow([cube], "example");
   Let's keep it up and check out another tutorial! 🎓
   */
 
+BUI.Manager.registerComponents();
+
+const panel = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+    <bim-panel active label="Shadow Dropper Tutorial" 
+      style="position: fixed; top: 5px; right: 5px">
+      <bim-panel-section style="padding-top: 10px;">
+          
+        <bim-number-input 
+          slider label="Extra scale factor" step="1" 
+          value="${shadows.shadowExtraScaleFactor}" min="0" max="20"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            shadows.shadowExtraScaleFactor = target.value;
+            shadows.deleteShadow(shadowID);
+            shadows.create([cube], shadowID, world);
+          }}">
+        </bim-number-input> 
+                  
+        <bim-number-input 
+          slider label="Amount" step="1" 
+          value="${shadows.amount}" min="0" max="20"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            shadows.amount = target.value;
+            shadows.deleteShadow(shadowID);
+            shadows.create([cube], shadowID, world);
+          }}">
+        </bim-number-input>    
+                       
+        <bim-number-input 
+          slider label="Shadow offset" step="0.01" 
+          value="${shadows.shadowOffset}" min="0" max="3"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            shadows.shadowOffset = target.value;
+            shadows.deleteShadow(shadowID);
+            shadows.create([cube], shadowID, world);
+          }}">
+        </bim-number-input> 
+
+      </bim-panel-section>
+    </bim-panel>
+    `;
+});
+
+document.body.append(panel);
+
 // Set up stats
 
 const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
-rendererComponent.onBeforeUpdate.add(() => stats.begin());
-rendererComponent.onAfterUpdate.add(() => stats.end());
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());

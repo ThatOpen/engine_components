@@ -46,7 +46,7 @@ BUI.Manager.registerComponents();
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
-    <bim-panel active label="Classifier Tutorial" 
+    <bim-panel active label="Exploder Tutorial" 
       style="position: fixed; top: 5px; right: 5px">
       <bim-panel-section style="padding-top: 10px;">
         <bim-checkbox 

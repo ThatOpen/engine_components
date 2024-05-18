@@ -1,8 +1,7 @@
 /* eslint import/no-extraneous-dependencies: 0 */
 
 import * as WEBIFC from "web-ifc";
-import Stats from "stats.js";
-// @ts-ignore
+º// @ts-ignore
 import * as BUI from "@thatopen/ui";
 import * as OBC from "../..";
 
