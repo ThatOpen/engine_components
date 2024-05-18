@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Component, Hideable, Event, World } from "../../Types";
+import { Hideable, Event, World } from "../../Types";
 import { Components } from "../../Components";
 import { Disposer } from "../../Disposer";
 import { SimpleCamera } from "../../Worlds";
@@ -27,22 +27,22 @@ export class SimpleGrid implements Hideable, Disposable {
 
   /** {@link Hideable.visible} */
   get visible() {
-    return this._grid.visible;
+    return this.three.visible;
   }
 
   /** {@link Hideable.visible} */
   set visible(visible: boolean) {
     if (visible) {
       const scene = this.world.scene.three;
-      scene.add(this._grid);
+      scene.add(this.three);
     } else {
-      this._grid.removeFromParent();
+      this.three.removeFromParent();
     }
   }
 
   /** The material of the grid. */
   get material() {
-    return this._grid.material as THREE.ShaderMaterial;
+    return this.three.material as THREE.ShaderMaterial;
   }
 
   /**
@@ -62,7 +62,7 @@ export class SimpleGrid implements Hideable, Disposable {
     this.material.uniforms.uFade.value = this._fade;
   }
 
-  private readonly _grid: THREE.Mesh;
+  readonly three: THREE.Mesh;
   private _fade = 3;
 
   constructor(components: Components, world: World, config: GridConfig) {
@@ -171,9 +171,9 @@ export class SimpleGrid implements Hideable, Disposable {
       },
     });
 
-    this._grid = new THREE.Mesh(geometry, material);
-    this._grid.frustumCulled = false;
-    world.scene.three.add(this._grid);
+    this.three = new THREE.Mesh(geometry, material);
+    this.three.frustumCulled = false;
+    world.scene.three.add(this.three);
 
     this.setupEvents(true);
   }
@@ -182,16 +182,11 @@ export class SimpleGrid implements Hideable, Disposable {
     throw new Error("Method not implemented.");
   }
 
-  /** {@link Component.get} */
-  get() {
-    return this._grid;
-  }
-
   /** {@link Disposable.dispose} */
   dispose() {
     this.setupEvents(false);
     const disposer = this.components.get(Disposer);
-    disposer.destroy(this._grid);
+    disposer.destroy(this.three);
     this.onDisposed.trigger();
     this.onDisposed.reset();
     this.world = null as any;

@@ -23,7 +23,6 @@ export class PostproductionRenderer extends RendererWith2D {
     parameters?: Partial<THREE.WebGLRendererParameters>,
   ) {
     super(components, container, parameters);
-    this.setPostproductionSize();
     this.onResize.add((size) => this.resizePostproduction(size));
 
     this.onWorldChanged.add(() => {
@@ -36,6 +35,7 @@ export class PostproductionRenderer extends RendererWith2D {
           this.three,
           this.currentWorld,
         );
+        this.setPostproductionSize();
       }
     });
   }

@@ -1,34 +1,38 @@
-// Set up scene (see SimpleScene tutorial)
+/* eslint import/no-extraneous-dependencies: 0 */
 
-import Stats from "stats.js";
 import * as THREE from "three";
-// @ts-ignore
-import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
-import * as OBC from "../..";
+import Stats from "stats.js";
+import * as BUI from "@thatopen/ui";
+import * as OBC from "@thatopen/components";
+import * as OBCF from "../..";
 
-// Set up basic components
+// @ts-ignore
 
 const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
-const sceneComponent = new OBC.SimpleScene(components);
-sceneComponent.setup();
-components.scene = sceneComponent;
 
-// Set up postproduction renderer
-const rendererComponent = new OBC.PostproductionRenderer(components, container);
-components.renderer = rendererComponent;
+const worlds = components.get(OBC.Worlds);
 
-const cameraComponent = new OBC.SimpleCamera(components);
-components.camera = cameraComponent;
+const world = worlds.create<
+  OBC.SimpleScene,
+  OBC.SimpleCamera,
+  OBCF.PostproductionRenderer
+>();
 
-components.raycaster = new OBC.SimpleRaycaster(components);
+world.scene = new OBC.SimpleScene(components);
+world.renderer = new OBCF.PostproductionRenderer(components, container);
+world.camera = new OBC.SimpleCamera(components);
 
 components.init();
 
-const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
+world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
 
-cameraComponent.controls.setLookAt(12, 6, 8, 0, 0, -10);
+world.scene.setup();
+
+const grids = components.get(OBC.Grids);
+grids.config.color.set(0x666666);
+const grid = grids.create(world);
 
 // Set up stats
 
@@ -36,8 +40,8 @@ const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
-rendererComponent.onBeforeUpdate.add(() => stats.begin());
-rendererComponent.onAfterUpdate.add(() => stats.end());
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
 
 /* MD
   ### 🧪 Cool Post-Production Effects
@@ -69,26 +73,27 @@ rendererComponent.onAfterUpdate.add(() => stats.end());
   */
 
 const fragments = new OBC.FragmentsManager(components);
-const file = await fetch("../../../resources/small.frag");
+const file = await fetch("../../../../../resources/small.frag");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
-const model = await fragments.load(buffer);
+const model = fragments.load(buffer);
+world.scene.three.add(model);
 
-const meshes = [];
+// const meshes = [];
 
-const culler = new OBC.ScreenCuller(components);
-culler.setup();
+// const culler = new OBC.ScreenCuller(components);
+// culler.setup();
 
-for (const fragment of model.items) {
-  meshes.push(fragment.mesh);
-  culler.elements.add(fragment.mesh);
-}
-culler.elements.needsUpdate = true;
+// for (const fragment of model.items) {
+//   meshes.push(fragment.mesh);
+//   culler.elements.add(fragment.mesh);
+// }
+// culler.elements.needsUpdate = true;
 
-const controls = cameraComponent.controls;
-controls.addEventListener("controlend", () => {
-  culler.elements.needsUpdate = true;
-});
+// const controls = cameraComponent.controls;
+// controls.addEventListener("controlend", () => {
+//   culler.elements.needsUpdate = true;
+// });
 
 /* MD
   ### 🎬 Activating the Post-Production
@@ -102,90 +107,176 @@ controls.addEventListener("controlend", () => {
 
   */
 
-rendererComponent.postproduction.enabled = true;
-const postproduction = rendererComponent.postproduction;
+const { postproduction } = world.renderer;
+postproduction.enabled = true;
+postproduction.customEffects.excludedMeshes.push(grid.three);
 
-postproduction.customEffects.excludedMeshes.push(grid.get());
+const ao = postproduction.n8ao.configuration;
 
-const gui = new dat.GUI();
+BUI.Manager.registerComponents();
 
-gui.add(postproduction, "enabled");
+const panel = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+    <bim-panel label="Clipper Tutorial" style="position: fixed; top: 5px; right: 5px; max-height: 80vh" active>
+    
+      <bim-panel-section fixed label="Gamma" style="padding-top: 10px">
+        <bim-checkbox checked label="Gamma Correction"
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            postproduction.setPasses({ gamma: target.value });
+          }}">
+        </bim-checkbox>
+      </bim-panel-section>
+      
+      <bim-panel-section fixed label="Custom effects" style="padding-top: 10px">
+        <bim-checkbox checked label="Custom effects"
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            postproduction.setPasses({ custom: target.value });
+          }}">
+        </bim-checkbox>    
+        
+        <bim-checkbox checked label="Gamma Correction"
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            postproduction.customEffects.glossEnabled = target.value;
+          }}">
+        </bim-checkbox>   
+      
+        <bim-number-input 
+          slider step="0.01" label="Opacity" 
+          value="${postproduction.customEffects.opacity}" min="0" max="1"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            postproduction.customEffects.opacity = target.value;
+          }}">
+        </bim-number-input>  
+            
+        <bim-number-input 
+          slider step="0.1" label="Tolerance" 
+          value="${postproduction.customEffects.tolerance}" min="0" max="6"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            postproduction.customEffects.tolerance = target.value;
+          }}">
+        </bim-number-input> 
+                      
+        <bim-color-input label="Line color" 
+          @input="${({ target }: { target: BUI.ColorInput }) => {
+            const color = new THREE.Color(target.value.color);
+            postproduction.customEffects.lineColor = color.getHex();
+          }}">
+        </bim-color-input>  
+      
+        <bim-number-input 
+          slider label="Gloss exponent" step="0.1" 
+          value="${postproduction.customEffects.glossExponent}" min="0" max="5"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            postproduction.customEffects.glossExponent = target.value;
+          }}">
+        </bim-number-input>    
+           
+        <bim-number-input 
+          slider label="Max gloss" step="0.05" 
+          value="${postproduction.customEffects.maxGloss}" min="-2" max="2"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            postproduction.customEffects.maxGloss = target.value;
+          }}">
+        </bim-number-input>  
+                  
+        <bim-number-input 
+          slider label="Min gloss" step="0.05" 
+          value="${postproduction.customEffects.minGloss}" min="-2" max="2"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            postproduction.customEffects.minGloss = target.value;
+          }}">
+        </bim-number-input> 
+        
+      </bim-panel-section>
+      
+      <bim-panel-section fixed label="Ambient Oclussion">
+      
+        <bim-checkbox label="AO enabled"
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            postproduction.setPasses({ ao: target.value });
+          }}">
+        </bim-checkbox>  
+                
+        <bim-checkbox checked label="Half resolution"
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            ao.halfRes = target.value;
+          }}">
+        </bim-checkbox>  
+                      
+        <bim-checkbox label="Screen space radius"
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            ao.screenSpaceRadius = target.value;
+          }}">
+        </bim-checkbox>
+        
+                              
+        <bim-color-input label="AO color" 
+          @input="${({ target }: { target: BUI.ColorInput }) => {
+            const color = new THREE.Color(target.value.color);
+            ao.color.r = color.r;
+            ao.color.g = color.g;
+            ao.color.b = color.b;
+          }}">
+        </bim-color-input>     
+        
+        <bim-number-input 
+          slider label="AO Samples" step="1" 
+          value="${ao.aoSamples}" min="1" max="16"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            ao.aoSamples = target.value;
+          }}">
+        </bim-number-input>    
+            
+        <bim-number-input 
+          slider label="Denoise Samples" step="1" 
+          value="${ao.denoiseSamples}" min="1" max="16"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            ao.denoiseSamples = target.value;
+          }}">
+        </bim-number-input>   
+                  
+        <bim-number-input 
+          slider label="Denoise Radius" step="1" 
+          value="${ao.denoiseRadius}" min="0" max="100"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            ao.denoiseRadius = target.value;
+          }}">
+        </bim-number-input>   
+                       
+        <bim-number-input 
+          slider label="AO Radius" step="1" 
+          value="${ao.aoRadius}" min="0" max="16"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            ao.aoRadius = target.value;
+          }}">
+        </bim-number-input>  
+                              
+        <bim-number-input 
+          slider label="Distance falloff" step="1" 
+          value="${ao.distanceFalloff}" min="0" max="16"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            ao.distanceFalloff = target.value;
+          }}">
+        </bim-number-input> 
+                                      
+        <bim-number-input 
+          slider label="Intensity" step="1" 
+          value="${ao.intensity}" min="0" max="16"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            ao.intensity = target.value;
+          }}">
+        </bim-number-input> 
+        
+      </bim-panel-section>
+      
+    </bim-panel>
+    `;
+});
 
-const guiGamma = gui.addFolder("Gamma");
-guiGamma
-  .add(postproduction.settings, "gamma")
-  .name("Gamma correction")
-  .onChange((value: any) => {
-    postproduction.setPasses({ gamma: value });
-  });
-
-const guiCustomEffects = gui.addFolder("Custom effects");
-guiCustomEffects
-  .add(postproduction.settings, "custom")
-  .name("Custom effects")
-  .onChange((value: any) => {
-    postproduction.setPasses({ custom: value });
-  });
-guiCustomEffects
-  .add(postproduction.customEffects, "opacity")
-  .name("Line opacity")
-  .min(0)
-  .max(1)
-  .step(0.1);
-guiCustomEffects
-  .add(postproduction.customEffects, "tolerance")
-  .name("Line tolerance")
-  .min(0)
-  .max(6)
-  .step(1);
-guiCustomEffects
-  .addColor(postproduction.customEffects, "lineColor")
-  .name("Line color");
-guiCustomEffects
-  .add(postproduction.customEffects, "glossEnabled")
-  .name("Gloss enabled")
-  .min(0)
-  .max(2)
-  .step(0.1);
-guiCustomEffects
-  .add(postproduction.customEffects, "glossExponent")
-  .name("Gloss exponent")
-  .min(0)
-  .max(5)
-  .step(0.1);
-guiCustomEffects
-  .add(postproduction.customEffects, "maxGloss")
-  .name("Max gloss")
-  .min(-2)
-  .max(2)
-  .step(0.05);
-guiCustomEffects
-  .add(postproduction.customEffects, "minGloss")
-  .name("Min gloss")
-  .min(-2)
-  .max(2)
-  .step(0.05);
-
-const guiAO = gui.addFolder("SAO");
-const configuration = postproduction.n8ao.configuration;
-guiAO
-  .add(postproduction.settings, "ao")
-  .name("Ambient occlusion")
-  .onChange((value: any) => {
-    postproduction.setPasses({ ao: value });
-  });
-guiAO.add(configuration, "aoSamples").step(1).min(1).max(16);
-guiAO.add(configuration, "denoiseSamples").step(1).min(0).max(16);
-guiAO.add(configuration, "denoiseRadius").step(1).min(0).max(100);
-guiAO.add(configuration, "aoRadius").step(1).min(0).max(16);
-guiAO.add(configuration, "distanceFalloff").step(1).min(0).max(16);
-guiAO.add(configuration, "intensity").step(1).min(0).max(16);
-guiAO.add(configuration, "halfRes");
-guiAO.add(configuration, "screenSpaceRadius");
-guiAO.addColor(configuration, "color");
+document.body.append(panel);
 
 /* MD
   **Congratulations** 🎉 on completing this tutorial! Now you know how to add cool effects easily using
   Post Production 🖼️
   Let's keep it up and check out another tutorial! 🎓
-  */
+*/
