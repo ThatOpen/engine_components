@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import { ClippingEdges } from "./clipping-edges";
-import { EdgesStyles } from "./edges-styles";
 
 /**
  * A more advanced version of SimpleClipper that also includes
@@ -15,23 +14,18 @@ export class EdgesPlane extends OBC.SimplePlane {
    * To disable this behaviour set this to 0.
    */
   edgesMaxUpdateRate: number = 50;
-  private lastUpdate: number = -1;
-  private updateTimeout: number = -1;
 
-  constructor(
-    components: OBC.Components,
-    world: OBC.World,
-    origin: THREE.Vector3,
-    normal: THREE.Vector3,
-    material: THREE.Material,
-    styles: EdgesStyles,
-  ) {
-    super(components, world, origin, normal, material, 5, false);
-    this.edges = new ClippingEdges(components, world, this.three, styles);
-    this.toggleControls(true);
-    this.edges.setVisible(true);
-    this.onDraggingEnded.add(this.updateFill);
-    this.onDraggingStarted.add(this.hideFills);
+  protected _visible = true;
+
+  protected _edgesVisible = true;
+
+  get visible() {
+    return this._visible;
+  }
+
+  set visible(state: boolean) {
+    super.visible = state;
+    this.toggleControls(state);
   }
 
   set enabled(state: boolean) {
@@ -45,54 +39,36 @@ export class EdgesPlane extends OBC.SimplePlane {
     return super.enabled;
   }
 
+  constructor(
+    components: OBC.Components,
+    world: OBC.World,
+    origin: THREE.Vector3,
+    normal: THREE.Vector3,
+    material: THREE.Material,
+    size = 5,
+    activateControls = true,
+  ) {
+    super(components, world, origin, normal, material, size, activateControls);
+    this.edges = new ClippingEdges(components, world, this.three);
+    this.toggleControls(true);
+    this.edges.visible = true;
+    this.onDraggingEnded.add(() => {
+      this.updateFill();
+    });
+    this.onDraggingStarted.add(() => (this.edges.visible = false));
+  }
+
   dispose() {
     super.dispose();
     this.edges.dispose();
   }
 
-  async setEnabled(state: boolean) {
-    super.enabled = state;
-    if (state) {
-      await this.update();
-    }
-  }
-
-  async setVisible(state: boolean) {
-    super.visible = state;
-    this.toggleControls(state);
-    await this.edges.setVisible(true);
-  }
-
-  updateFill = async () => {
-    this.edges.fillNeedsUpdate = true;
-    await this.edges.update();
-    if (this._visible) {
-      this.edges.fillVisible = true;
-    }
-  };
-
-  update = async () => {
+  updateFill = () => {
     if (!this.enabled) return;
-
-    this.three.setFromNormalAndCoplanarPoint(
-      this.normal,
-      this._helper.position,
-    );
-
-    // Rate limited edges update
-    const now = Date.now();
-    if (this.lastUpdate + this.edgesMaxUpdateRate < now) {
-      this.lastUpdate = now;
-      await this.edges.update();
-    } else if (this.updateTimeout === -1) {
-      this.updateTimeout = window.setTimeout(() => {
-        this.update();
-        this.updateTimeout = -1;
-      }, this.edgesMaxUpdateRate);
+    this.edges.fillNeedsUpdate = true;
+    this.edges.update();
+    if (this._visible) {
+      this.edges.visible = true;
     }
-  };
-
-  private hideFills = () => {
-    this.edges.fillVisible = false;
   };
 }

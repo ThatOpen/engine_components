@@ -4,7 +4,7 @@ import * as WEBIFC from "web-ifc";
 import * as OBC from "@thatopen/components";
 import { PlanView } from "./src";
 
-import { EdgesClipper, EdgesPlane } from "../../core/EdgesClipper";
+import { ClipEdges, EdgesPlane } from "../../core/EdgesClipper";
 
 /**
  * Helper to control the camera and easily define and navigate 2D floor plans.
@@ -185,7 +185,7 @@ export class FragmentPlans extends OBC.Component implements OBC.Disposable {
       clippingPoint.y += config.offset;
     }
 
-    const clipper = this.components.get(EdgesClipper);
+    const clipper = this.components.get(ClipEdges);
 
     const plane = clipper.createFromNormalAndCoplanarPoint(
       this.world,

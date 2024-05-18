@@ -19,20 +19,19 @@ export * from "./src";
  * [clipping planes](https://threejs.org/docs/#api/en/materials/Material.clippingPlanes).
  *
  * @param components - the instance of {@link Components} used.
- * @param planeType - the type of plane to be used by the clipper.
  * E.g. {@link SimplePlane}.
  */
-export class Clipper<T extends SimplePlane>
+export class Clipper
   extends Component
   implements Createable, Disposable, Hideable
 {
   static readonly uuid = "66290bc5-18c4-4cd1-9379-2e17a0617611" as const;
 
   /** {@link Createable.onAfterCreate} */
-  readonly onAfterCreate = new Event<T>();
+  readonly onAfterCreate = new Event<SimplePlane>();
 
   /** {@link Createable.onAfterDelete} */
-  readonly onAfterDelete = new Event<T>();
+  readonly onAfterDelete = new Event<SimplePlane>();
 
   /** Event that fires when the user starts dragging a clipping plane. */
   readonly onBeforeDrag = new Event<void>();
@@ -66,13 +65,13 @@ export class Clipper<T extends SimplePlane>
    */
   toleranceOrthogonalY = 0.7;
 
-  list: T[] = [];
+  Type: new (...args: any) => SimplePlane = SimplePlane;
 
-  protected PlaneType: new (...args: any) => SimplePlane | T;
+  list: SimplePlane[] = [];
 
   /** The material used in all the clipping planes. */
-  protected _material = new THREE.MeshBasicMaterial({
-    color: 0xBB00FF,
+  private _material = new THREE.MeshBasicMaterial({
+    color: 0xbb00ff,
     side: THREE.DoubleSide,
     transparent: true,
     opacity: 0.2,
@@ -80,7 +79,7 @@ export class Clipper<T extends SimplePlane>
 
   private _size = 5;
   private _enabled = false;
-  private _visible = false;
+  private _visible = true;
 
   /** {@link Component.enabled} */
   get enabled() {
@@ -138,11 +137,7 @@ export class Clipper<T extends SimplePlane>
   constructor(components: Components) {
     super(components);
     this.components.add(Clipper.uuid, this);
-    this.PlaneType = SimplePlane;
   }
-
-  endCreation() {}
-  cancelCreation() {}
 
   /** {@link Disposable.dispose} */
   dispose() {
@@ -203,7 +198,7 @@ export class Clipper<T extends SimplePlane>
    * @param plane - the plane to delete. If undefined, the first plane
    * found under the cursor will be deleted.
    */
-  delete(world: World, plane?: T) {
+  delete(world: World, plane?: SimplePlane) {
     if (!this.enabled) return;
     if (!plane) {
       plane = this.pickPlane(world);
@@ -222,7 +217,7 @@ export class Clipper<T extends SimplePlane>
     }
   }
 
-  private deletePlane(plane: T) {
+  private deletePlane(plane: SimplePlane) {
     const index = this.list.indexOf(plane);
     if (index !== -1) {
       this.list.splice(index, 1);
@@ -236,7 +231,7 @@ export class Clipper<T extends SimplePlane>
     }
   }
 
-  private pickPlane(world: World): T | undefined {
+  private pickPlane(world: World): SimplePlane | undefined {
     const casters = this.components.get(Raycasters);
     const caster = casters.get(world);
     const meshes = this.getAllPlaneMeshes();
@@ -269,6 +264,7 @@ export class Clipper<T extends SimplePlane>
 
     const worldNormal = this.getWorldNormal(intersect, normal);
     const plane = this.newPlane(world, intersect.point, worldNormal.negate());
+    plane.visible = this._visible;
     plane.size = this._size;
     world.renderer.setPlane(true, plane.three);
     this.updateMaterialsAndPlanes();
@@ -305,26 +301,18 @@ export class Clipper<T extends SimplePlane>
   }
 
   private newPlane(world: World, point: THREE.Vector3, normal: THREE.Vector3) {
-    const plane = this.newPlaneInstance(world, point, normal);
-    plane.onDraggingStarted.add(this._onStartDragging);
-    plane.onDraggingEnded.add(this._onEndDragging);
-    this.list.push(plane);
-    this.onAfterCreate.trigger(plane);
-    return plane;
-  }
-
-  protected newPlaneInstance(
-    world: World,
-    point: THREE.Vector3,
-    normal: THREE.Vector3,
-  ) {
-    return new this.PlaneType(
+    const plane = new this.Type(
       this.components,
       world,
       point,
       normal,
       this._material,
-    ) as T;
+    );
+    plane.onDraggingStarted.add(this._onStartDragging);
+    plane.onDraggingEnded.add(this._onEndDragging);
+    this.list.push(plane);
+    this.onAfterCreate.trigger(plane);
+    return plane;
   }
 
   private updateMaterialsAndPlanes() {

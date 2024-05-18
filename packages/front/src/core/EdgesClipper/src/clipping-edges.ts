@@ -2,9 +2,10 @@ import * as THREE from "three";
 import { FragmentMesh } from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
 import { ClipStyle, Edge } from "./types";
-import { EdgesStyles, LineStyles } from "./edges-styles";
+import { LineStyles } from "./edges-styles";
 import { ClippingFills } from "./clipping-fills";
 import { PostproductionRenderer } from "../../PostproductionRenderer";
+import { ClipEdges } from "../index";
 
 export type Edges = {
   [name: string]: Edge;
@@ -32,7 +33,6 @@ export class ClippingEdges
   world: OBC.World;
 
   protected _edges: Edges = {};
-  protected _styles: EdgesStyles;
   protected _visible = true;
   protected _inverseMatrix = new THREE.Matrix4();
   protected _localPlane = new THREE.Plane();
@@ -45,19 +45,15 @@ export class ClippingEdges
     return this._visible;
   }
 
-  get fillVisible() {
+  set visible(visible: boolean) {
     for (const name in this._edges) {
       const edges = this._edges[name];
-      if (edges.fill) {
-        return edges.fill.visible;
+      if (visible) {
+        const scene = this.world.scene.three;
+        scene.add(edges.mesh);
+      } else {
+        edges.mesh.removeFromParent();
       }
-    }
-    return false;
-  }
-
-  set fillVisible(visible: boolean) {
-    for (const name in this._edges) {
-      const edges = this._edges[name];
       if (edges.fill) {
         edges.fill.visible = visible;
       }
@@ -68,31 +64,17 @@ export class ClippingEdges
     components: OBC.Components,
     world: OBC.World,
     plane: THREE.Plane,
-    styles: EdgesStyles,
   ) {
     this.components = components;
     this.world = world;
     this._plane = plane;
-    this._styles = styles;
-  }
-
-  async setVisible(visible: boolean) {
-    this._visible = visible;
-
-    const names = Object.keys(this._edges);
-    for (const edgeName of names) {
-      this.updateEdgesVisibility(edgeName, visible);
-    }
-
-    if (visible) {
-      await this.update();
-    }
   }
 
   /** {@link Updateable.update} */
-  async update() {
-    const styles = this._styles.get();
-    await this.updateDeletedEdges(styles);
+  update() {
+    const edges = this.components.get(ClipEdges);
+    const styles = edges.styles.list;
+    this.updateDeletedEdges(styles);
     for (const name in styles) {
       this.drawEdges(name);
     }
@@ -115,7 +97,8 @@ export class ClippingEdges
   }
 
   private newEdgesMesh(styleName: string) {
-    const styles = this._styles.get();
+    const edges = this.components.get(ClipEdges);
+    const styles = edges.styles.list;
     const material = styles[styleName].lineMaterial;
     const edgesGeometry = new THREE.BufferGeometry();
     const buffer = new Float32Array(300000);
@@ -128,7 +111,8 @@ export class ClippingEdges
   }
 
   private newFillMesh(name: string, geometry: THREE.BufferGeometry) {
-    const styles = this._styles.get();
+    const edges = this.components.get(ClipEdges);
+    const styles = edges.styles.list;
     const style = styles[name];
     const fillMaterial = style.fillMaterial;
     if (fillMaterial) {
@@ -163,16 +147,17 @@ export class ClippingEdges
 
   // Source: https://gkjohnson.github.io/three-mesh-bvh/example/bundle/clippedEdges.html
   private drawEdges(styleName: string) {
-    const style = this._styles.get()[styleName];
+    const edges = this.components.get(ClipEdges);
+    const style = edges.styles.list[styleName];
 
     if (!this._edges[styleName]) {
       this.initializeStyle(styleName);
     }
 
-    const edges = this._edges[styleName];
+    const currentEdges = this._edges[styleName];
 
     let index = 0;
-    const posAttr = edges.mesh.geometry.attributes.position;
+    const posAttr = currentEdges.mesh.geometry.attributes.position;
 
     // @ts-ignore
     posAttr.array.fill(0);
@@ -241,22 +226,22 @@ export class ClippingEdges
     }
 
     // set the draw range to only the new segments and offset the lines so they don't intersect with the geometry
-    edges.mesh.geometry.setDrawRange(0, index);
+    currentEdges.mesh.geometry.setDrawRange(0, index);
 
-    edges.mesh.position.copy(this._plane.normal).multiplyScalar(0.0001);
+    currentEdges.mesh.position.copy(this._plane.normal).multiplyScalar(0.0001);
     posAttr.needsUpdate = true;
 
     // Update the edges geometry only if there is no NaN in the output (which means there's been an error)
-    const attributes = edges.mesh.geometry.attributes;
+    const attributes = currentEdges.mesh.geometry.attributes;
     const position = attributes.position as THREE.BufferAttribute;
     if (!Number.isNaN(position.array[0])) {
-      if (!edges.mesh.parent) {
+      if (!currentEdges.mesh.parent) {
         const scene = this.world.scene.three;
-        scene.add(edges.mesh);
+        scene.add(currentEdges.mesh);
       }
-      if (this.fillNeedsUpdate && edges.fill) {
-        edges.fill.geometry = edges.mesh.geometry;
-        edges.fill.update(indexes);
+      if (this.fillNeedsUpdate && currentEdges.fill) {
+        currentEdges.fill.geometry = currentEdges.mesh.geometry;
+        currentEdges.fill.update(indexes);
       }
     }
   }
@@ -317,21 +302,7 @@ export class ClippingEdges
     return index;
   }
 
-  private updateEdgesVisibility(edgeName: string, visible: boolean) {
-    const edges = this._edges[edgeName];
-    if (edges.fill) {
-      edges.fill.visible = visible;
-    }
-    edges.mesh.visible = visible;
-    if (visible) {
-      const scene = this.world.scene.three;
-      scene.add(edges.mesh);
-    } else {
-      edges.mesh.removeFromParent();
-    }
-  }
-
-  private async updateDeletedEdges(styles: LineStyles) {
+  private updateDeletedEdges(styles: LineStyles) {
     const names = Object.keys(this._edges);
     for (const name of names) {
       if (styles[name] === undefined) {

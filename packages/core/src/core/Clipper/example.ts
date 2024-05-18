@@ -162,14 +162,14 @@ BUI.Manager.registerComponents();
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
     <bim-panel label="Clipper Tutorial" style="position: fixed; top: 5px; right: 5px" active>
-          <bim-panel-section label="Commands" style="padding-top: 10px">
+          <bim-panel-section fixed label="Commands" style="padding-top: 10px">
       
         <bim-label label="Double click: Create clipping plane"></bim-label>
         <bim-label label="Delete key: Delete clipping plane"></bim-label>
        
         
       </bim-panel-section>
-      <bim-panel-section label="Others" style="padding-top: 10px">
+      <bim-panel-section fixed label="Others" style="padding-top: 10px">
           
         <bim-checkbox label="Clipper enabled" checked 
           @change="${({ target }: { target: BUI.Checkbox }) => {

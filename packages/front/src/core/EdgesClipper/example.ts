@@ -1,48 +1,35 @@
-// Set up scene (see SimpleScene tutorial)
+/* eslint import/no-extraneous-dependencies: 0 */
 
 import Stats from "stats.js";
+import * as BUI from "@thatopen/ui";
 import * as THREE from "three";
-// @ts-ignore
-import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
-import * as OBC from "../..";
-
-// Set up basic components
+import * as OBC from "@thatopen/components";
+import * as OBCF from "../..";
 
 const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
-const sceneComponent = new OBC.SimpleScene(components);
-sceneComponent.setup();
-components.scene = sceneComponent;
 
-const rendererComponent = new OBC.PostproductionRenderer(components, container);
-components.renderer = rendererComponent;
+const worlds = components.get(OBC.Worlds);
 
-const cameraComponent = new OBC.SimpleCamera(components);
-components.camera = cameraComponent;
-components.raycaster = new OBC.SimpleRaycaster(components);
+const world = worlds.create<
+  OBC.SimpleScene,
+  OBC.SimpleCamera,
+  OBC.SimpleRenderer
+>();
+
+world.scene = new OBC.SimpleScene(components);
+world.renderer = new OBC.SimpleRenderer(components, container);
+world.camera = new OBC.SimpleCamera(components);
+
 components.init();
 
-rendererComponent.postproduction.enabled = true;
-rendererComponent.postproduction.customEffects.outlineEnabled = true;
+world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
 
-cameraComponent.controls.setLookAt(10, 10, 10, 0, 0, 0);
+world.scene.setup();
 
-const scene = components.scene.get();
-
-// Add some lights to the scene
-
-const directionalLight = new THREE.DirectionalLight();
-directionalLight.position.set(5, 10, 3);
-directionalLight.intensity = 0.5;
-scene.add(directionalLight);
-
-const ambientLight = new THREE.AmbientLight();
-ambientLight.intensity = 0.5;
-scene.add(ambientLight);
-
-const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
-rendererComponent.postproduction.customEffects.excludedMeshes.push(grid.get());
+const grids = components.get(OBC.Grids);
+grids.create(world);
 
 /* MD
   ### ⭕️ Aesthetic Clipping Edges
@@ -80,13 +67,13 @@ const cubeGeometry = new THREE.BoxGeometry(3, 3, 3);
 const cubeMaterial = new THREE.MeshStandardMaterial({ color: "#6528D7" });
 const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
 cube.position.set(-2, 1.5, 0);
-scene.add(cube);
-components.meshes.add(cube);
+world.scene.three.add(cube);
+world.meshes.add(cube);
 
 const cube2 = new THREE.Mesh(cubeGeometry, cubeMaterial);
 cube2.position.set(2, 1.5, 0);
-scene.add(cube2);
-components.meshes.add(cube2);
+world.scene.three.add(cube2);
+world.meshes.add(cube2);
 
 /* MD
   
@@ -106,7 +93,14 @@ components.meshes.add(cube2);
 
   */
 
-const clipper = new OBC.EdgesClipper(components);
+const casters = components.get(OBC.Raycasters);
+casters.get(world);
+
+const clipper = components.get(OBC.Clipper);
+clipper.enabled = true;
+
+const edges = components.get(OBCF.ClipEdges);
+clipper.Type = OBCF.EdgesPlane;
 
 /* MD
 
@@ -116,13 +110,6 @@ const clipper = new OBC.EdgesClipper(components);
 
   :::
 
-  */
-
-clipper.enabled = true;
-
-/* MD
-  
-  When we set `clipper.enabled = true`, we will make the clipper functional; otherwise, clipping planes won't be formed.
 
   ### 🖌️ Creating Fine Edges
   ---
@@ -141,14 +128,15 @@ clipper.enabled = true;
 const blueFill = new THREE.MeshBasicMaterial({ color: "lightblue", side: 2 });
 const blueLine = new THREE.LineBasicMaterial({ color: "blue" });
 const blueOutline = new THREE.MeshBasicMaterial({
-  color: "blue",
+  color: "red",
   opacity: 0.2,
   side: 2,
   transparent: true,
 });
-clipper.styles.create(
+edges.styles.create(
   "Red lines",
   new Set([cube]),
+  world,
   blueLine,
   blueFill,
   blueOutline,
@@ -162,9 +150,10 @@ const redOutline = new THREE.MeshBasicMaterial({
   side: 2,
   transparent: true,
 });
-clipper.styles.create(
+edges.styles.create(
   "Blue lines",
   new Set([cube2]),
+  world,
   redLine,
   salmonFill,
   redOutline,
@@ -182,7 +171,7 @@ clipper.styles.create(
 
   */
 
-container.ondblclick = () => clipper.create();
+container.ondblclick = () => clipper.create(world);
 
 /* MD
   
@@ -205,11 +194,7 @@ container.ondblclick = () => clipper.create();
 
 window.onkeydown = (event) => {
   if (event.code === "Delete" || event.code === "Backspace") {
-    clipper.delete();
-  }
-
-  if (event.code === "KeyP") {
-    console.log(clipper);
+    clipper.delete(world);
   }
 };
 
@@ -233,82 +218,85 @@ const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
-rendererComponent.onBeforeUpdate.add(() => stats.begin());
-rendererComponent.onAfterUpdate.add(() => stats.end());
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
 
-// Set up dat.gui menu
+BUI.Manager.registerComponents();
 
-const gui = new dat.GUI();
+const panel = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+    <bim-panel label="Clipper Tutorial" style="position: fixed; top: 5px; right: 5px" active>
+          <bim-panel-section fixed label="Commands" style="padding-top: 10px">
+      
+        <bim-label label="Double click: Create clipping plane"></bim-label>
+        <bim-label label="Delete key: Delete clipping plane"></bim-label>
+       
+        
+      </bim-panel-section>
+      <bim-panel-section fixed label="Others" style="padding-top: 10px">
+          
+        <bim-checkbox label="Clipper enabled" checked 
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            clipper.enabled = target.value;
+            edges.visible = target.value;
+          }}">
+        </bim-checkbox>
+        
+        <bim-checkbox label="Clipper visible" checked 
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            clipper.visible = target.value;
+          }}">
+        </bim-checkbox>   
+      
+        <bim-color-input 
+          label="Planes Color" color="#202932" 
+          @input="${({ target }: { target: BUI.ColorInput }) => {
+            clipper.material.color.set(target.color);
+          }}">
+        </bim-color-input>
+        
+        <bim-number-input 
+          slider step="0.01" label="Planes opacity" value="0.2" min="0.1" max="1"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            clipper.material.opacity = target.value;
+          }}">
+        </bim-number-input>
+        
+        <bim-number-input 
+          slider step="0.1" label="Planes size" value="5" min="2" max="10"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            clipper.size = target.value;
+          }}">
+        </bim-number-input>
+        
+        <bim-button 
+          label="Delete all" 
+          @click="${() => {
+            clipper.deleteAll();
+          }}">  
+        </bim-button>        
+        
+        <bim-button 
+          label="Rotate cubes" 
+          @click="${() => {
+            cube.rotation.x = 2 * Math.PI * Math.random();
+            cube.rotation.y = 2 * Math.PI * Math.random();
+            cube.rotation.z = 2 * Math.PI * Math.random();
+            cube.updateMatrixWorld();
 
-const shortcutsFolder = gui.addFolder("Shortcuts");
+            cube2.rotation.x = 2 * Math.PI * Math.random();
+            cube2.rotation.y = 2 * Math.PI * Math.random();
+            cube2.rotation.z = 2 * Math.PI * Math.random();
+            cube2.updateMatrixWorld();
 
-const shortcuts = {
-  "Create clipping plane": "Double click",
-  "Delete clipping plane": "Delete",
-};
+            edges.update(true);
+          }}">  
+        </bim-button>
+       
+        
+      </bim-panel-section>
+    </bim-panel>
+    `;
+});
 
-shortcutsFolder.add(shortcuts, "Create clipping plane");
-shortcutsFolder.add(shortcuts, "Delete clipping plane");
-
-const actionsFolder = gui.addFolder("Actions");
-
-actionsFolder.add(clipper, "visible").name("Toggle clipping planes visible");
-
-actionsFolder.add(clipper, "enabled").name("Toggle clipping planes enabled");
-
-const color = {
-  value: 0x000000,
-};
-
-const helperColor = new THREE.Color();
-actionsFolder
-  .addColor(color, "value")
-  .name("Plane color")
-  .onChange((value: number) => {
-    helperColor.setHex(value);
-    if ("lineMaterial" in clipper.material)
-      clipper.material.lineMaterial = helperColor;
-  });
-
-actionsFolder.add(clipper, "size").name("Plane Size").min(0).max(15);
-actionsFolder
-  .add(clipper.material, "opacity")
-  .name("Plane Opacity")
-  .min(0)
-  .max(1);
-
-const width = { value: 0.2 };
-actionsFolder
-  .add(width, "value")
-  .name("Lines width")
-  .step(0.1)
-  .min(0.1)
-  .max(1)
-  .onChange(() => {
-    blueOutline.opacity = width.value;
-    redOutline.opacity = width.value;
-  });
-
-const actions = {
-  "Delete all planes": () => {
-    clipper.deleteAll();
-  },
-  "Rotate cube": () => {
-    cube.rotation.x = 2 * Math.PI * Math.random();
-    cube.rotation.y = 2 * Math.PI * Math.random();
-    cube.rotation.z = 2 * Math.PI * Math.random();
-    cube.updateMatrix();
-    cube.updateMatrixWorld();
-
-    cube2.rotation.x = 2 * Math.PI * Math.random();
-    cube2.rotation.y = 2 * Math.PI * Math.random();
-    cube2.rotation.z = 2 * Math.PI * Math.random();
-    cube2.updateMatrix();
-    cube2.updateMatrixWorld();
-
-    clipper.updateEdges();
-  },
-};
-
-actionsFolder.add(actions, "Rotate cube");
-actionsFolder.add(actions, "Delete all planes");
+document.body.append(panel);

@@ -152,7 +152,7 @@ classifier.byEntity(model);
 
 const classifications = classifier.get();
 
-const clipper = components.tools.get(OBC.EdgesClipper);
+const clipper = components.tools.get(OBC.ClipEdges);
 const styles = clipper.styles.get();
 
 for (const category in classifications.entities) {

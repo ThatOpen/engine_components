@@ -12,7 +12,7 @@ export class EdgesStyles implements OBC.Disposable, OBC.Updateable {
 
   enabled = true;
 
-  protected _styles: LineStyles = {};
+  list: LineStyles = {};
 
   protected _defaultLineMaterial = new LineBasicMaterial({
     color: 0x000000,
@@ -22,13 +22,9 @@ export class EdgesStyles implements OBC.Disposable, OBC.Updateable {
   onAfterUpdate = new OBC.Event<LineStyles>();
   onBeforeUpdate = new OBC.Event<LineStyles>();
 
-  get(): LineStyles {
-    return this._styles;
-  }
-
   update(_delta: number) {
-    this.onBeforeUpdate.trigger(this._styles);
-    this.onAfterUpdate.trigger(this._styles);
+    this.onBeforeUpdate.trigger(this.list);
+    this.onAfterUpdate.trigger(this.list);
   }
 
   // Creates a new style that applies to all clipping edges for generic models
@@ -63,22 +59,22 @@ export class EdgesStyles implements OBC.Disposable, OBC.Updateable {
       outlineMaterial,
       fragments: {},
     } as ClipStyle;
-    this._styles[name] = newStyle;
+    this.list[name] = newStyle;
     return newStyle;
   }
 
   dispose() {
-    const styles = Object.keys(this._styles);
+    const styles = Object.keys(this.list);
     for (const style of styles) {
       this.deleteStyle(style);
     }
-    this._styles = {};
+    this.list = {};
     this.onDisposed.trigger();
     this.onDisposed.reset();
   }
 
   deleteStyle(id: string, disposeMaterials = true) {
-    const style = this._styles[id];
+    const style = this.list[id];
     if (style) {
       style.meshes.clear();
       if (disposeMaterials) {
@@ -87,6 +83,6 @@ export class EdgesStyles implements OBC.Disposable, OBC.Updateable {
         style.outlineMaterial?.dispose();
       }
     }
-    delete this._styles[id];
+    delete this.list[id];
   }
 }

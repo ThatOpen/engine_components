@@ -130,10 +130,7 @@ export class SimplePlane implements Disposable, Hideable {
     }
   }
 
-  async setFromNormalAndCoplanarPoint(
-    normal: THREE.Vector3,
-    point: THREE.Vector3,
-  ) {
+  setFromNormalAndCoplanarPoint(normal: THREE.Vector3, point: THREE.Vector3) {
     this.reset();
     if (!this.normal.equals(normal)) {
       this.normal.copy(normal);
@@ -142,11 +139,11 @@ export class SimplePlane implements Disposable, Hideable {
     this.origin.copy(point);
     this._helper.position.copy(point);
     this._helper.updateMatrix();
-    await this.update();
+    this.update();
   }
 
   /** {@link Updateable.update} */
-  update = async () => {
+  update = () => {
     if (!this._enabled) return;
     this.three.setFromNormalAndCoplanarPoint(
       this.normal,
