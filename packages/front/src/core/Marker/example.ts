@@ -22,6 +22,8 @@ components.init();
 
 world.camera.controls.setLookAt(5, 5, 5, 0, 0, 0);
 
+container.appendChild(world.renderer.three2D.domElement);
+
 const grids = components.get(OBC.Grids);
 grids.create(world);
 

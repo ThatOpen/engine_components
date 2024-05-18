@@ -24,7 +24,7 @@ export class SimpleRenderer extends BaseRenderer {
   protected _parameters?: Partial<THREE.WebGLRendererParameters>;
   protected _resizeObserver: ResizeObserver | null = null;
 
-  protected onContainerUpdated = new Event<HTMLElement>();
+  protected onContainerUpdated = new Event();
 
   constructor(
     components: Components,

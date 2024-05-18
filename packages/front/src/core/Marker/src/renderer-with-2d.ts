@@ -36,10 +36,6 @@ export class RendererWith2D extends SimpleRenderer {
       this.three2D.setSize(x, y);
     });
 
-    this.onContainerUpdated.add((parent: HTMLElement) => {
-      parent.appendChild(this.three2D.domElement);
-    });
-
     this.setupHtmlRenderer();
     this.resize();
   }
