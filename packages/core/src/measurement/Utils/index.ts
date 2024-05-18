@@ -1,14 +1,22 @@
 import * as THREE from "three";
+import { Component, Components } from "../../core";
 
 export interface MeasureEdge {
   distance: number;
   points: THREE.Vector3[];
 }
 
-// TODO: Make a component?
+export class MeasurementUtils extends Component {
+  enabled = true;
 
-export class MeasurementUtils {
-  static getFace(
+  static uuid = "267ca032-672f-4cb0-afa9-d24e904f39d6";
+
+  constructor(components: Components) {
+    super(components);
+    components.add(MeasurementUtils.uuid, this);
+  }
+
+  getFace(
     mesh: THREE.InstancedMesh | THREE.Mesh,
     triangleIndex: number,
     instance?: number,
@@ -169,7 +177,7 @@ export class MeasurementUtils {
     return tempPoint.distanceTo(point);
   }
 
-  private static getFaceData(
+  private getFaceData(
     faceIndex: number,
     instance: number | undefined,
     mesh: THREE.Mesh | THREE.InstancedMesh,
@@ -235,7 +243,7 @@ export class MeasurementUtils {
     return { plane, edges };
   }
 
-  static getVerticesAndNormal(
+  getVerticesAndNormal(
     mesh: THREE.Mesh | THREE.InstancedMesh,
     faceIndex: number,
     instance: number | undefined,
@@ -286,7 +294,7 @@ export class MeasurementUtils {
     return { p1, p2, p3, faceNormal };
   }
 
-  private static round(vector: THREE.Vector3) {
+  private round(vector: THREE.Vector3) {
     const factor = 1000;
     vector.x = Math.trunc(vector.x * factor) / factor;
     vector.y = Math.trunc(vector.y * factor) / factor;

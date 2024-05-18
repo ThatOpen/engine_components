@@ -1335,7 +1335,6 @@ __metadata:
     stats.js: ^0.17.0
     three: ^0.160.1
     three-mesh-bvh: 0.7.0
-    top-tool-package-reader: 0.0.3
     ts-jest: ^27.0.3
     ts-node: ^10.0.0
     typescript: 5.4.2
@@ -6709,13 +6708,6 @@ __metadata:
   dependencies:
     is-number: ^7.0.0
   checksum: f76fa01b3d5be85db6a2a143e24df9f60dd047d151062d0ba3df62953f2f697b16fe5dad9b0ac6191c7efc7b1d9dcaa4b768174b7b29da89d4428e64bc0a20ed
-  languageName: node
-  linkType: hard
-
-"top-tool-package-reader@npm:0.0.3":
-  version: 0.0.3
-  resolution: "top-tool-package-reader@npm:0.0.3"
-  checksum: 8b197b0e9f03565c78c807e097d9b1e6a066af7916882bf211269c0d8ef52ce2bb320a87fc39988ff499fd250c97216a2b46a7067b22034ba724ba0e91e887bd
   languageName: node
   linkType: hard
 

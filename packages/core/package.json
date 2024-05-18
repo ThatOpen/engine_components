@@ -62,8 +62,7 @@
   },
   "dependencies": {
     "camera-controls": "2.7.3",
-    "three-mesh-bvh": "0.7.0",
-    "top-tool-package-reader": "0.0.3"
+    "three-mesh-bvh": "0.7.0"
   },
   "peerDependencies": {
     "@thatopen/fragments": "2.0.0-alpha.5",

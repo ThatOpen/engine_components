@@ -51,7 +51,7 @@ export class SimpleRaycaster implements Disposable {
    * {@link Components.meshes}.
    */
   castRay(
-    items: THREE.Mesh[] = Array.from(this.world.meshes),
+    items: THREE.Object3D[] = Array.from(this.world.meshes),
   ): THREE.Intersection | null {
     if (!this.world) {
       throw new Error("A world is needed to cast rays!");
@@ -70,7 +70,7 @@ export class SimpleRaycaster implements Disposable {
     return this.intersect(items);
   }
 
-  private intersect(items: THREE.Mesh[] = Array.from(this.world.meshes)) {
+  private intersect(items: THREE.Object3D[] = Array.from(this.world.meshes)) {
     const result = this.three.intersectObjects(items);
     const filtered = this.filterClippingPlanes(result);
     return filtered.length > 0 ? filtered[0] : null;
