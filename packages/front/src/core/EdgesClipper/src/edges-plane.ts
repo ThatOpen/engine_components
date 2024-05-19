@@ -64,11 +64,8 @@ export class EdgesPlane extends OBC.SimplePlane {
   }
 
   updateFill = () => {
-    if (!this.enabled) return;
     this.edges.fillNeedsUpdate = true;
     this.edges.update();
-    if (this._visible) {
-      this.edges.visible = true;
-    }
+    this.edges.visible = this._visible;
   };
 }

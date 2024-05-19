@@ -39,7 +39,7 @@ world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
 const grids = components.get(OBC.Grids);
 grids.create(world);
 
-const loader = new OBCF.FragmentStreamLoader(components);
+const loader = new OBCF.IfcStreamer(components);
 loader.world = world;
 loader.url = "../../../../../resources/streaming/";
 // const fragments = components.get(OBC.FragmentsManager);

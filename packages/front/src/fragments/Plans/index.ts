@@ -9,7 +9,7 @@ import { EdgesPlane } from "../../core/EdgesClipper";
 /**
  * Helper to control the camera and easily define and navigate 2D floor plans.
  */
-export class FragmentPlans extends OBC.Component implements OBC.Disposable {
+export class Plans extends OBC.Component implements OBC.Disposable {
   static readonly uuid = "a80874aa-1c93-43a4-80f2-df346da086b1" as const;
 
   /** {@link Disposable.onDisposed} */
@@ -30,9 +30,6 @@ export class FragmentPlans extends OBC.Component implements OBC.Disposable {
   /** The offset of the 2D camera to the floor plan elevation. */
   defaultCameraOffset = 30;
 
-  /** The created floor plans. */
-  storeys: { [modelID: number]: any[] } = [];
-
   list: PlanView[] = [];
 
   world?: OBC.World;
@@ -44,14 +41,13 @@ export class FragmentPlans extends OBC.Component implements OBC.Disposable {
 
   constructor(components: OBC.Components) {
     super(components);
-    this.components.add(FragmentPlans.uuid, this);
+    this.components.add(Plans.uuid, this);
   }
 
   /** {@link Disposable.dispose} */
   dispose() {
     this.onExited.reset();
     this.onNavigated.reset();
-    this.storeys = [];
     this.list = [];
     this.onDisposed.trigger();
     this.onDisposed.reset();
@@ -60,7 +56,7 @@ export class FragmentPlans extends OBC.Component implements OBC.Disposable {
   // TODO: Compute georreference matrix when generating fragmentsgroup
   // so that we can correctly add floors in georreferenced models
   // where the IfcSite / IfcBuilding have location information
-  async computeAllPlanViews(model: FRAGS.FragmentsGroup) {
+  async generate(model: FRAGS.FragmentsGroup) {
     if (!model.hasProperties) {
       throw new Error("Properties are needed to compute plan views!");
     }
@@ -82,7 +78,7 @@ export class FragmentPlans extends OBC.Component implements OBC.Disposable {
       this.getAbsoluteFloorHeight(floor.ObjectPlacement, floorHeight);
 
       const height = floorHeight.value * units + coordHeight;
-      await this.create({
+      this.create({
         name: floor.Name.value,
         id: floor.GlobalId.value,
         normal: new THREE.Vector3(0, -1, 0),
@@ -98,14 +94,18 @@ export class FragmentPlans extends OBC.Component implements OBC.Disposable {
    *
    * @param config - Necessary data to initialize the floor plan.
    */
-  async create(config: PlanView) {
+  create(config: PlanView) {
+    if (!this.world) {
+      throw new Error(
+        "You must set a world before creating the clipping planes!",
+      );
+    }
     const previousPlan = this.list.find((plan) => plan.id === config.id);
     if (previousPlan) {
       console.warn(`There's already a plan with the id: ${config.id}`);
       return;
     }
-    const plane = await this.createClippingPlane(config);
-    plane.visible = false;
+    const plane = this.createClippingPlane(config);
     const plan = { ...config, plane };
     this.list.push(plan);
   }
@@ -120,6 +120,7 @@ export class FragmentPlans extends OBC.Component implements OBC.Disposable {
     if (this.currentPlan?.id === id) {
       return;
     }
+
     this.onNavigated.trigger({ id });
 
     this.storeCameraPosition();
@@ -152,6 +153,7 @@ export class FragmentPlans extends OBC.Component implements OBC.Disposable {
     if (this.currentPlan && this.currentPlan.plane) {
       this.currentPlan.plane.enabled = false;
       this.currentPlan.plane.edges.enabled = false;
+      this.currentPlan.plane.edges.visible = false;
     }
 
     this.currentPlan = null;
@@ -174,7 +176,7 @@ export class FragmentPlans extends OBC.Component implements OBC.Disposable {
     }
   }
 
-  private async createClippingPlane(config: PlanView) {
+  private createClippingPlane(config: PlanView) {
     if (!this.world) {
       throw new Error("World is needed to create clipping planes!");
     }
@@ -195,8 +197,11 @@ export class FragmentPlans extends OBC.Component implements OBC.Disposable {
       clippingPoint,
     ) as EdgesPlane;
 
-    plane.enabled = false;
     plane.edges.update();
+
+    plane.visible = false;
+    plane.enabled = false;
+    plane.edges.enabled = false;
     plane.edges.visible = false;
 
     clipper.Type = previousType;

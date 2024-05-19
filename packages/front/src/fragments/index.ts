@@ -1,3 +1,3 @@
-export * from "./FragmentIfcStreamer";
+export * from "./IfcStreamer";
 export * from "./Highlighter";
-export * from "./FragmentPlans";
+export * from "./Plans";

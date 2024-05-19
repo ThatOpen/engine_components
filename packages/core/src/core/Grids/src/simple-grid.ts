@@ -63,6 +63,7 @@ export class SimpleGrid implements Hideable, Disposable {
   }
 
   readonly three: THREE.Mesh;
+
   private _fade = 3;
 
   constructor(components: Components, world: World, config: GridConfig) {

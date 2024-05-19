@@ -2,7 +2,6 @@
 
 /* eslint import/no-extraneous-dependencies: 0 */
 
-import * as WEBIFC from "web-ifc";
 import Stats from "stats.js";
 // @ts-ignore
 import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
@@ -34,29 +33,11 @@ world.scene.setup();
 const grids = components.get(OBC.Grids);
 grids.create(world);
 
-// const fragments = components.get(OBC.FragmentsManager);
-const fragmentIfcLoader = components.get(OBC.IfcLoader);
-
-await fragmentIfcLoader.setup();
-
-const excludedCats = [
-  WEBIFC.IFCTENDONANCHOR,
-  WEBIFC.IFCREINFORCINGBAR,
-  WEBIFC.IFCREINFORCINGELEMENT,
-];
-
-for (const cat of excludedCats) {
-  fragmentIfcLoader.settings.excludedCategories.add(cat);
-}
-
-fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
-fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
-
-const file = await fetch("../../../../../resources/small.ifc");
+const fragments = new OBC.FragmentsManager(components);
+const file = await fetch("../../../../../resources/small.frag");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
-const model = await fragmentIfcLoader.load(buffer);
-model.name = "example";
+const model = fragments.load(buffer);
 world.scene.three.add(model);
 
 const highlighter = components.get(OBCF.Highlighter);

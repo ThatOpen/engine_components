@@ -49,6 +49,8 @@ export class Highlighter
 
   zoomToSelection = false;
 
+  backupColor: THREE.Color | null = null;
+
   selection: {
     [selectionID: string]: FRAGS.FragmentIdMap;
   } = {};
@@ -231,7 +233,11 @@ export class Highlighter
         if (!fragment) continue;
         const ids = selected[fragID];
         if (!ids) continue;
-        fragment.resetColor(ids);
+        if (this.backupColor) {
+          fragment.setColor(this.backupColor);
+        } else {
+          fragment.resetColor(ids);
+        }
       }
 
       this.events[name].onClear.trigger(null);

@@ -1,33 +1,16 @@
 import * as THREE from "three";
 import * as FRAG from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
-import { GeometryCullerRenderer } from "./geometry-culler-renderer";
-import { StreamFileDatabase } from "./streamer-db";
+import {
+  GeometryCullerRenderer,
+  StreamFileDatabase,
+  StreamPropertiesSettings,
+  StreamedInstances,
+  StreamedInstance,
+  StreamLoaderSettings,
+} from "./src";
 
-interface StreamedInstance {
-  id: number;
-  color: number[];
-  transformation: number[];
-}
-
-type StreamedInstances = Map<number, StreamedInstance[]>;
-
-export interface StreamLoaderSettings {
-  assets: OBC.StreamedAsset[];
-  geometries: OBC.StreamedGeometries;
-  globalDataFileId: string;
-}
-
-export interface StreamPropertiesSettings {
-  ids: { [id: number]: number };
-  types: { [type: number]: number[] };
-  indexesFile: string;
-}
-
-export class FragmentStreamLoader
-  extends OBC.Component
-  implements OBC.Disposable
-{
+export class IfcStreamer extends OBC.Component implements OBC.Disposable {
   static readonly uuid = "22437e8d-9dbc-4b99-a04f-d2da280d50c8" as const;
 
   enabled = true;
@@ -129,7 +112,7 @@ export class FragmentStreamLoader
 
   constructor(components: OBC.Components) {
     super(components);
-    this.components.add(FragmentStreamLoader.uuid, this);
+    this.components.add(IfcStreamer.uuid, this);
 
     // const hardlyGeometry = new THREE.BoxGeometry();
     // this._hardlySeenGeometries = new THREE.InstancedMesh();
@@ -153,7 +136,7 @@ export class FragmentStreamLoader
 
     this._culler?.dispose();
 
-    this.onDisposed.trigger(FragmentStreamLoader.uuid);
+    this.onDisposed.trigger(IfcStreamer.uuid);
     this.onDisposed.reset();
     this._isDisposing = false;
   }

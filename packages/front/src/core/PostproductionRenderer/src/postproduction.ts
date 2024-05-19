@@ -18,8 +18,6 @@ export interface PostproductionSettings {
 // source: https://discourse.threejs.org/t/how-to-render-full-outlines-as-a-post-process-tutorial/22674
 
 export class Postproduction {
-  excludedItems = new Set<THREE.Object3D>();
-
   overrideClippingPlanes = false;
 
   readonly composer: EffectComposer;
@@ -117,7 +115,6 @@ export class Postproduction {
     this._customEffects?.dispose();
     this._gammaPass?.dispose();
     this._n8ao?.dispose();
-    this.excludedItems.clear();
   }
 
   setPasses(settings: PostproductionSettings) {

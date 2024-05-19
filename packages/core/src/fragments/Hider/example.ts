@@ -150,7 +150,7 @@ for (const name in storeys) {
 }
 
 for (const name in classes) {
-  const panel = BUI.Component.create<BUI.Checkbox>(() => {
+  const checkbox = BUI.Component.create<BUI.Checkbox>(() => {
     return BUI.html`
       <bim-checkbox checked label="${name}"
         @change="${({ target }: { target: BUI.Checkbox }) => {
@@ -160,7 +160,7 @@ for (const name in classes) {
       </bim-checkbox>
     `;
   });
-  categorySection.append(panel);
+  categorySection.append(checkbox);
 }
 
 /* MD

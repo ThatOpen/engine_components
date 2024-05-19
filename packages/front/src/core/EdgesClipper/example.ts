@@ -15,12 +15,15 @@ const worlds = components.get(OBC.Worlds);
 const world = worlds.create<
   OBC.SimpleScene,
   OBC.SimpleCamera,
-  OBC.SimpleRenderer
+  OBCF.PostproductionRenderer
 >();
 
 world.scene = new OBC.SimpleScene(components);
-world.renderer = new OBC.SimpleRenderer(components, container);
+world.renderer = new OBCF.PostproductionRenderer(components, container);
 world.camera = new OBC.SimpleCamera(components);
+
+world.renderer.postproduction.enabled = true;
+world.renderer.postproduction.customEffects.outlineEnabled = true;
 
 components.init();
 
@@ -29,7 +32,9 @@ world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
 world.scene.setup();
 
 const grids = components.get(OBC.Grids);
-grids.create(world);
+grids.config.color.setHex(0x666666);
+const grid = grids.create(world);
+world.renderer.postproduction.customEffects.excludedMeshes.push(grid.three);
 
 /* MD
   ### ⭕️ Aesthetic Clipping Edges
@@ -128,8 +133,8 @@ clipper.Type = OBCF.EdgesPlane;
 const blueFill = new THREE.MeshBasicMaterial({ color: "lightblue", side: 2 });
 const blueLine = new THREE.LineBasicMaterial({ color: "blue" });
 const blueOutline = new THREE.MeshBasicMaterial({
-  color: "red",
-  opacity: 0.2,
+  color: "blue",
+  opacity: 0.5,
   side: 2,
   transparent: true,
 });
@@ -146,7 +151,7 @@ const salmonFill = new THREE.MeshBasicMaterial({ color: "salmon", side: 2 });
 const redLine = new THREE.LineBasicMaterial({ color: "red" });
 const redOutline = new THREE.MeshBasicMaterial({
   color: "red",
-  opacity: 0.2,
+  opacity: 0.5,
   side: 2,
   transparent: true,
 });
