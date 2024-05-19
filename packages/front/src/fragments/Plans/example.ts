@@ -69,6 +69,18 @@ const edges = components.get(OBCF.ClipEdges);
 const highlighter = components.get(OBCF.Highlighter);
 highlighter.setup({ world });
 
+const cullers = components.get(OBC.Cullers);
+const culler = cullers.create(world);
+for (const fragment of model.items) {
+  culler.add(fragment.mesh);
+}
+
+culler.needsUpdate = true;
+
+world.camera.controls.addEventListener("sleep", () => {
+  culler.needsUpdate = true;
+});
+
 // Create thick style
 
 const grayFill = new THREE.MeshBasicMaterial({ color: "gray", side: 2 });
