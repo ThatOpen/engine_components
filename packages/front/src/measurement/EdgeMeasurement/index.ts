@@ -78,6 +78,7 @@ export class EdgeMeasurement
     if (!this.preview) return;
     if (!this.enabled || !this.preview.visible) return;
     const dims = this.components.get(LengthMeasurement);
+    dims.world = this.world;
     const start = this.preview.startPoint.clone();
     const end = this.preview.endPoint.clone();
     dims.createOnPoints(start, end);
@@ -93,9 +94,9 @@ export class EdgeMeasurement
     dims.enabled = previous;
   }
 
-  async deleteAll() {
+  deleteAll() {
     const dims = this.components.get(LengthMeasurement);
-    await dims.deleteAll();
+    dims.deleteAll();
   }
 
   endCreation() {}
@@ -117,6 +118,7 @@ export class EdgeMeasurement
 
   set(dimensions: number[][]) {
     const dims = this.components.get(LengthMeasurement);
+    dims.world = this.world;
     for (const dim of dimensions) {
       const [x1, y1, z1, x2, y2, z2] = dim;
       const v1 = new THREE.Vector3(x1, y1, z1);

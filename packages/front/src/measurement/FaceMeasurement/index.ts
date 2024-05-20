@@ -284,7 +284,6 @@ export class FaceMeasurement
     }
     const { center } = geometry.boundingSphere;
     const htmlText = document.createElement("div");
-    htmlText.className = DimensionLabelClassName;
     const formattedArea = Math.trunc(area * 100) / 100;
     htmlText.textContent = formattedArea.toString();
     const label = new Mark(this.world, htmlText);

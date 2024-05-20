@@ -1,45 +1,51 @@
-// Set up scene (see SimpleScene tutorial)
+/* eslint import/no-extraneous-dependencies: 0 */
 
-import * as THREE from "three";
 import Stats from "stats.js";
-import * as OBC from "../..";
+import * as THREE from "three";
+import * as OBC from "@thatopen/components";
+import * as OBCF from "../..";
 
 const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
 
-const sceneComponent = new OBC.SimpleScene(components);
-sceneComponent.setup();
-components.scene = sceneComponent;
+const worlds = components.get(OBC.Worlds);
 
-const rendererComponent = new OBC.PostproductionRenderer(components, container);
-components.renderer = rendererComponent;
+const world = worlds.create<
+  OBC.SimpleScene,
+  OBC.SimpleCamera,
+  OBCF.PostproductionRenderer
+>();
 
-const cameraComponent = new OBC.SimpleCamera(components);
-components.camera = cameraComponent;
-
-components.raycaster = new OBC.SimpleRaycaster(components);
+world.scene = new OBC.SimpleScene(components);
+world.renderer = new OBCF.PostproductionRenderer(components, container);
+world.camera = new OBC.SimpleCamera(components);
 
 components.init();
 
-rendererComponent.postproduction.enabled = true;
+world.camera.controls.setLookAt(5, 5, 5, 0, 0, 0);
 
-// @ts-ignore
-const scene = components.scene.get();
+world.scene.setup();
 
-cameraComponent.controls.setLookAt(10, 10, 10, 0, 0, 0);
+const grids = components.get(OBC.Grids);
+grids.create(world);
 
-const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
-const effects = rendererComponent.postproduction.customEffects;
-effects.excludedMeshes.push(grid.get());
-
-const dimensions = new OBC.EdgeMeasurement(components);
+const dimensions = new OBCF.EdgeMeasurement(components);
+dimensions.world = world;
+dimensions.enabled = true;
 
 const fragments = new OBC.FragmentsManager(components);
-const file = await fetch("../../../resources/small.frag");
+const file = await fetch("../../../../../resources/small.frag");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
-fragments.load(buffer);
+const model = fragments.load(buffer);
+world.scene.three.add(model);
+
+for (const child of model.children) {
+  if (child instanceof THREE.Mesh) {
+    world.meshes.add(child);
+  }
+}
 
 let saved: number[][];
 
@@ -54,18 +60,11 @@ window.addEventListener("keydown", (event) => {
   }
 });
 
-const mainToolbar = new OBC.Toolbar(components, {
-  name: "Main Toolbar",
-  position: "bottom",
-});
-mainToolbar.addChild(dimensions.uiElement.get("main"));
-components.ui.addToolbar(mainToolbar);
-
 // Set up stats
 
 const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
-rendererComponent.onBeforeUpdate.add(() => stats.begin());
-rendererComponent.onAfterUpdate.add(() => stats.end());
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());

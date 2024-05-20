@@ -1,6 +1,8 @@
 import * as THREE from "three";
+import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
 import { Mark } from "../../core";
+import { newDimensionMark } from "../utils";
 
 export class VolumeMeasurement
   extends OBC.Component
@@ -8,7 +10,7 @@ export class VolumeMeasurement
 {
   static readonly uuid = "811da532-7af3-4635-b592-1c06ae494af5" as const;
 
-  label: Mark;
+  label: Mark | null = null;
 
   world?: OBC.World;
 
@@ -33,13 +35,11 @@ export class VolumeMeasurement
   constructor(components: OBC.Components) {
     super(components);
     this.components.add(VolumeMeasurement.uuid, this);
-    this.label = this.newLabel();
-    this.label.three.removeFromParent();
   }
 
   async dispose() {
     this.setupEvents(false);
-    this.label.dispose();
+    this.label?.dispose();
     this.onDisposed.trigger();
     this.onDisposed.reset();
     (this.components as any) = null;
@@ -75,9 +75,53 @@ export class VolumeMeasurement
 
   get() {}
 
-  getVolumeFromMeshes(meshes: THREE.InstancedMesh[]) {
+  getVolumeFromFragments(frags: FRAGS.FragmentIdMap) {
+    const fragments = this.components.get(OBC.FragmentsManager);
+    const tempMatrix = new THREE.Matrix4();
+
+    const meshes: THREE.InstancedMesh[] = [];
+    for (const fragID in frags) {
+      const fragment = fragments.list.get(fragID);
+      if (!fragment) continue;
+      const itemIDs = frags[fragID];
+
+      let instanceCount = 0;
+      for (const id of itemIDs) {
+        const instances = fragment.getInstancesIDs(id);
+        if (!instances) continue;
+        instanceCount += instances.size;
+      }
+
+      const mesh = new THREE.InstancedMesh(
+        fragment.mesh.geometry,
+        undefined,
+        instanceCount,
+      );
+
+      let counter = 0;
+      for (const id of itemIDs) {
+        const instances = fragment.getInstancesIDs(id);
+        if (!instances) continue;
+        for (const instance of instances) {
+          fragment.mesh.getMatrixAt(instance, tempMatrix);
+          mesh.setMatrixAt(counter++, tempMatrix);
+        }
+      }
+
+      meshes.push(mesh);
+    }
+
+    return this.getVolumeFromMeshes(meshes);
+  }
+
+  getVolumeFromMeshes(meshes: THREE.InstancedMesh[] | THREE.Mesh[]) {
     if (!this.world) {
       throw new Error("World is needed for Volume Measurement!");
+    }
+
+    if (!this.label) {
+      this.label = this.newLabel();
+      this.label.three.removeFromParent();
     }
 
     let volume = 0;
@@ -110,8 +154,7 @@ export class VolumeMeasurement
     if (!this.world) {
       throw new Error("World is needed for Volume Measurement!");
     }
-    const htmlText = document.createElement("div");
-    htmlText.className = DimensionLabelClassName;
+    const htmlText = newDimensionMark();
     return new Mark(this.world, htmlText);
   }
 

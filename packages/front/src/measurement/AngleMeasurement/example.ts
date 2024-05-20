@@ -1,8 +1,6 @@
 /* eslint import/no-extraneous-dependencies: 0 */
 
 import Stats from "stats.js";
-// @ts-ignore
-import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
 import * as OBC from "@thatopen/components";
 import * as THREE from "three";
 import * as OBCF from "../..";
