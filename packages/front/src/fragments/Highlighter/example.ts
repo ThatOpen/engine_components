@@ -1,5 +1,3 @@
-// Set up scene (see SimpleScene tutorial)
-
 /* eslint import/no-extraneous-dependencies: 0 */
 
 import Stats from "stats.js";

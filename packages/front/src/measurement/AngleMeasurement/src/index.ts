@@ -3,7 +3,6 @@ import * as OBC from "@thatopen/components";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
-import { DimensionLabelClassName } from "../../SimpleDimensionLine";
 import { Mark } from "../../../core";
 
 interface Angle {
@@ -67,9 +66,13 @@ export class AngleMeasureElement implements OBC.Hideable, OBC.Disposable {
     this.world = world;
 
     const htmlText = document.createElement("div");
-    htmlText.className = DimensionLabelClassName;
+    htmlText.style.backgroundColor = "black";
+    htmlText.style.color = "white";
+    htmlText.style.padding = "8px";
+    htmlText.style.borderRadius = "8px";
+    htmlText.style.fontFamily = "sans-serif";
     this._labelMarker = new Mark(world, htmlText);
-    this.labelMarker.visible = false;
+    this.labelMarker.visible = true;
 
     this.onPointAdded.add(() => {
       if (this.points.length === 1) world.scene.three.add(this._line);

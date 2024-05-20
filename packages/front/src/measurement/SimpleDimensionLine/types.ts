@@ -1,8 +1,7 @@
 import * as THREE from "three";
 
 /** The name of the CSS class that styles the dimension label. */
-export const DimensionLabelClassName =
-  "text-white text-sm bg-ifcjs-100 rounded-md px-3 py-1";
+export const DimensionLabelClassName = "that-open-dimension-label";
 
 /** The name of the CSS class that styles the dimension label. */
 export const DimensionPreviewClassName =

@@ -1,12 +1,5 @@
 import * as THREE from "three";
-import {
-  Component,
-  Components,
-  Event,
-  Raycasters,
-  World,
-  Disposable,
-} from "../core";
+import { Component, Components, Event, Raycasters, World } from "../core";
 
 export interface VertexPickerConfig {
   showOnlyVertex: boolean;
@@ -14,7 +7,7 @@ export interface VertexPickerConfig {
   previewElement: HTMLElement;
 }
 
-export class VertexPicker extends Component implements Disposable {
+export class VertexPicker extends Component {
   onVertexFound = new Event<THREE.Vector3>();
   onVertexLost = new Event<THREE.Vector3>();
 
@@ -27,9 +20,6 @@ export class VertexPicker extends Component implements Disposable {
   private _enabled: boolean = false;
 
   private _workingPlane: THREE.Plane | null = null;
-
-  /** {@link Disposable.onDisposed} */
-  readonly onDisposed = new Event();
 
   set enabled(value: boolean) {
     this._enabled = value;
@@ -53,10 +43,6 @@ export class VertexPicker extends Component implements Disposable {
     this.enabled = false;
   }
 
-  [Symbol.dispose](): void {
-    throw new Error("Method not implemented.");
-  }
-
   set workingPlane(plane: THREE.Plane | null) {
     this._workingPlane = plane;
   }
@@ -77,8 +63,6 @@ export class VertexPicker extends Component implements Disposable {
     this.onVertexFound.reset();
     this.onVertexLost.reset();
     (this.components as any) = null;
-    this.onDisposed.trigger();
-    this.onDisposed.reset();
   }
 
   get(world: World) {

@@ -2,6 +2,9 @@ import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { AngleMeasureElement } from "./src";
+import { GraphicVertexPicker } from "../../utils";
+
+// TODO: Make appearance customizable?
 
 export class AngleMeasurement
   extends OBC.Component
@@ -19,7 +22,7 @@ export class AngleMeasurement
 
   private _enabled = false;
 
-  private _vertexPicker: OBC.VertexPicker;
+  private _vertexPicker: GraphicVertexPicker;
 
   private _currentAngleElement: AngleMeasureElement | null = null;
 
@@ -59,7 +62,7 @@ export class AngleMeasurement
   constructor(components: OBC.Components) {
     super(components);
     this.components.add(AngleMeasurement.uuid, this);
-    this._vertexPicker = new OBC.VertexPicker(components);
+    this._vertexPicker = new GraphicVertexPicker(components);
     this._lineMaterial = new LineMaterial({
       color: 0x6528d7,
       linewidth: 2,

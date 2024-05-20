@@ -1,42 +1,36 @@
-// Set up scene (see SimpleScene tutorial)
+/* eslint import/no-extraneous-dependencies: 0 */
 
-import * as THREE from "three";
 import Stats from "stats.js";
-import * as OBC from "../..";
+// @ts-ignore
+import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
+import * as OBC from "@thatopen/components";
+import * as THREE from "three";
+import * as OBCF from "../..";
 
 const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
 
-const sceneComponent = new OBC.SimpleScene(components);
-sceneComponent.setup();
-components.scene = sceneComponent;
+const worlds = components.get(OBC.Worlds);
 
-const rendererComponent = new OBC.PostproductionRenderer(components, container);
-components.renderer = rendererComponent;
+const world = worlds.create<
+  OBC.SimpleScene,
+  OBC.SimpleCamera,
+  OBCF.PostproductionRenderer
+>();
 
-const cameraComponent = new OBC.SimpleCamera(components);
-components.camera = cameraComponent;
-
-components.raycaster = new OBC.SimpleRaycaster(components);
+world.scene = new OBC.SimpleScene(components);
+world.renderer = new OBCF.PostproductionRenderer(components, container);
+world.camera = new OBC.SimpleCamera(components);
 
 components.init();
 
-const scene = components.scene.get();
+world.camera.controls.setLookAt(5, 5, 5, 0, 0, 0);
 
-cameraComponent.controls.setLookAt(10, 10, 10, 0, 0, 0);
+world.scene.setup();
 
-const directionalLight = new THREE.DirectionalLight();
-directionalLight.position.set(5, 10, 3);
-directionalLight.intensity = 0.5;
-scene.add(directionalLight);
-
-const ambientLight = new THREE.AmbientLight();
-ambientLight.intensity = 0.5;
-scene.add(ambientLight);
-
-// @ts-ignore
-const grid = new OBC.SimpleGrid(components);
+const grids = components.get(OBC.Grids);
+grids.create(world);
 
 /* MD
   ### 📏 Dimensions Tool
@@ -70,10 +64,10 @@ cube.position.set(0, 1.5, 0);
 /* MD
   Now, we will add the Cube to the `Scene`. We must also add the **cube** to `components.meshes`,
   which is simply an array of all the meshes in the Scene.🗄️
-    */
+*/
 
-scene.add(cube);
-components.meshes.add(cube);
+world.scene.three.add(cube);
+world.meshes.add(cube);
 
 /* MD
   
@@ -92,7 +86,8 @@ components.meshes.add(cube);
   and you only need to write a few lines for creating the Dimension Tool.💪
   */
 
-const dimensions = new OBC.AngleMeasurement(components);
+const angles = components.get(OBCF.AngleMeasurement);
+angles.world = world;
 
 /* MD
   We will build dimensions by supplying the `components` to **OBC.SimpleDimensions**.
@@ -109,7 +104,7 @@ const dimensions = new OBC.AngleMeasurement(components);
 
   */
 
-dimensions.enabled = true;
+angles.enabled = true;
 
 /* MD
   ### 🖱️ Managing Events
@@ -125,7 +120,7 @@ dimensions.enabled = true;
 
   */
 
-container.ondblclick = () => dimensions.create();
+container.ondblclick = () => angles.create();
 
 /* MD
   
@@ -146,25 +141,16 @@ container.ondblclick = () => dimensions.create();
 
 window.onkeydown = (event) => {
   if (event.code === "Delete" || event.code === "Backspace") {
-    dimensions.delete();
+    angles.delete();
   }
 };
 
-/* MD
-  
-  ### ⏏️ Creating a Toolbar for the Dimensions
-  ---
-  We'll make a **Toolbar Component** and set it at the bottom.
-  In addition, we will have a button that allows you to toggle the dimension tool.
-
-  */
-
-const mainToolbar = new OBC.Toolbar(components, {
-  name: "Main Toolbar",
-  position: "bottom",
-});
-mainToolbar.addChild(dimensions.uiElement.get("main"));
-components.ui.addToolbar(mainToolbar);
+// const mainToolbar = new OBC.Toolbar(components, {
+//   name: "Main Toolbar",
+//   position: "bottom",
+// });
+// mainToolbar.addChild(dimensions.uiElement.get("main"));
+// components.ui.addToolbar(mainToolbar);
 
 /* MD
   
@@ -216,8 +202,8 @@ const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
-rendererComponent.onBeforeUpdate.add(() => stats.begin());
-rendererComponent.onAfterUpdate.add(() => stats.end());
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
 
 // Set up dat.gui menu
 

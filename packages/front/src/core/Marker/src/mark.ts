@@ -31,8 +31,9 @@ export class Mark implements OBC.Hideable, OBC.Disposable {
       marker = element;
     } else {
       marker = document.createElement("div");
-      marker.className =
-        "w-[15px] h-[15px] border-3 border-solid border-red-600";
+      marker.style.width = "15px";
+      marker.style.height = "15px";
+      marker.style.border = "5px solid red";
     }
 
     this.three = new CSS2DObject(marker);
