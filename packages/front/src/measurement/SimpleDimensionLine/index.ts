@@ -1,9 +1,14 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
-import { DimensionData, DimensionLabelClassName } from "./types";
 import { Mark } from "../../core";
+import { newDimensionMark } from "../utils";
 
-export * from "./types";
+export interface DimensionData {
+  start: THREE.Vector3;
+  end: THREE.Vector3;
+  lineMaterial: THREE.Material;
+  endpointElement: HTMLElement;
+}
 
 // TODO: Document + clean up this: way less parameters, clearer logic
 
@@ -169,8 +174,7 @@ export class SimpleDimensionLine {
   }
 
   private newText() {
-    const htmlText = document.createElement("div");
-    htmlText.className = DimensionLabelClassName;
+    const htmlText = newDimensionMark();
     htmlText.textContent = this.getTextContent();
     const label = new Mark(this.world, htmlText);
     label.three.position.copy(this._center);

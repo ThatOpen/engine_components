@@ -1,11 +1,9 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 
-import {
-  DimensionLabelClassName,
-  SimpleDimensionLine,
-} from "../../SimpleDimensionLine";
+import { SimpleDimensionLine } from "../../SimpleDimensionLine";
 import { Mark } from "../../../core";
+import { newDimensionMark } from "../../utils";
 
 interface Area {
   points: THREE.Vector3[];
@@ -51,8 +49,7 @@ export class AreaMeasureElement implements OBC.Hideable, OBC.Disposable {
   ) {
     this.world = world;
     this.components = components;
-    const htmlText = document.createElement("div");
-    htmlText.className = DimensionLabelClassName;
+    const htmlText = newDimensionMark();
     this.labelMarker = new Mark(world, htmlText);
     this.labelMarker.visible = false;
     this.onPointAdded.add((point) => {

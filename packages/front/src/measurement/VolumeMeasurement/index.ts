@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
-import { DimensionLabelClassName } from "../SimpleDimensionLine";
 import { Mark } from "../../core";
 
 export class VolumeMeasurement

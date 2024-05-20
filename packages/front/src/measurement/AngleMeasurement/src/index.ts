@@ -4,6 +4,7 @@ import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { Mark } from "../../../core";
+import { newDimensionMark } from "../../utils";
 
 interface Angle {
   points: THREE.Vector3[];
@@ -65,12 +66,7 @@ export class AngleMeasureElement implements OBC.Hideable, OBC.Disposable {
   constructor(world: OBC.World, points?: THREE.Vector3[]) {
     this.world = world;
 
-    const htmlText = document.createElement("div");
-    htmlText.style.backgroundColor = "black";
-    htmlText.style.color = "white";
-    htmlText.style.padding = "8px";
-    htmlText.style.borderRadius = "8px";
-    htmlText.style.fontFamily = "sans-serif";
+    const htmlText = newDimensionMark();
     this._labelMarker = new Mark(world, htmlText);
     this.labelMarker.visible = true;
 

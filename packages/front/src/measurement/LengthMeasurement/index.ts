@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import { SimpleDimensionLine } from "../SimpleDimensionLine";
+import { newDimensionMark } from "../utils";
+import { GraphicVertexPicker } from "../../utils";
 
 /**
  * A basic dimension tool to measure distances between 2 points in 3D and
@@ -21,11 +23,7 @@ export class LengthMeasurement
   /** The minimum distance to force the dimension cursor to a vertex. */
   snapDistance = 0.25;
 
-  /** The [symbol](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer)
-   * that is displayed where the dimension will be drawn. */
-  previewElement?: HTMLElement;
-
-  private _vertexPicker: OBC.VertexPicker;
+  private _vertexPicker: GraphicVertexPicker;
 
   private _lineMaterial = new THREE.LineBasicMaterial({
     color: "#DC2626",
@@ -59,6 +57,7 @@ export class LengthMeasurement
     }
     this._enabled = value;
     this._vertexPicker.enabled = value;
+    this.setupEvents(value);
   }
 
   get visible() {
@@ -72,6 +71,10 @@ export class LengthMeasurement
     }
   }
 
+  get color() {
+    return this._lineMaterial.color;
+  }
+
   set color(color: THREE.Color) {
     this._lineMaterial.color = color;
   }
@@ -80,8 +83,8 @@ export class LengthMeasurement
     super(components);
     this.components.add(LengthMeasurement.uuid, this);
 
-    this._vertexPicker = new OBC.VertexPicker(components, {
-      previewElement: this.newEndpoint(),
+    this._vertexPicker = new GraphicVertexPicker(components, {
+      previewElement: newDimensionMark(),
       snapDistance: this.snapDistance,
     });
   }
@@ -90,9 +93,6 @@ export class LengthMeasurement
   dispose() {
     this.setupEvents(false);
     this.enabled = false;
-    if (this.previewElement) {
-      this.previewElement.remove();
-    }
     for (const measure of this.list) {
       measure.dispose();
     }
@@ -167,7 +167,7 @@ export class LengthMeasurement
   }
 
   /** Deletes all the dimensions that have been previously created. */
-  async deleteAll() {
+  deleteAll() {
     for (const dim of this.list) {
       dim.dispose();
     }
@@ -233,14 +233,8 @@ export class LengthMeasurement
       start: this._temp.start,
       end: this._temp.end,
       lineMaterial: this._lineMaterial,
-      endpointElement: this.newEndpoint(),
+      endpointElement: newDimensionMark(),
     });
-  }
-
-  private newEndpoint() {
-    const element = document.createElement("div");
-    element.className = "w-2 h-2 bg-red-600 rounded-full";
-    return element;
   }
 
   private getBoundingBoxes() {
@@ -259,23 +253,17 @@ export class LengthMeasurement
     const canvas = this.world.renderer.three.domElement;
     const viewerContainer = canvas.parentElement as HTMLElement;
     if (!viewerContainer) return;
+
+    viewerContainer.removeEventListener("click", this.create);
+
     if (active) {
-      viewerContainer.addEventListener("click", this.create);
-      window.addEventListener("keydown", this.onKeyDown);
-    } else {
-      viewerContainer.removeEventListener("click", this.create);
-      window.removeEventListener("keydown", this.onKeyDown);
+      viewerContainer.addEventListener("mousemove", this.onMouseMove);
     }
   }
 
-  private onKeyDown = (e: KeyboardEvent) => {
-    if (!this.enabled) return;
-    if (e.key === "Escape") {
-      if (this._temp.isDragging) {
-        this.cancelCreation();
-      } else {
-        this.enabled = false;
-      }
+  private onMouseMove = () => {
+    if (this.world) {
+      this._vertexPicker.get(this.world);
     }
   };
 }

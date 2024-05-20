@@ -2,6 +2,7 @@ import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 
 import { AreaMeasureElement } from "./src";
+import { GraphicVertexPicker } from "../../utils";
 
 export class AreaMeasurement
   extends OBC.Component
@@ -17,7 +18,7 @@ export class AreaMeasurement
 
   private _enabled: boolean = false;
 
-  private _vertexPicker: OBC.VertexPicker;
+  private _vertexPicker: GraphicVertexPicker;
 
   private _currentAreaElement: AreaMeasureElement | null = null;
 
@@ -47,7 +48,7 @@ export class AreaMeasurement
   constructor(components: OBC.Components) {
     super(components);
     this.components.add(AreaMeasurement.uuid, this);
-    this._vertexPicker = new OBC.VertexPicker(components);
+    this._vertexPicker = new GraphicVertexPicker(components);
   }
 
   dispose() {

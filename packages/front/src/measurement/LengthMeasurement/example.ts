@@ -1,44 +1,36 @@
-// Set up scene (see SimpleScene tutorial)
+/* eslint import/no-extraneous-dependencies: 0 */
 
-import * as THREE from "three";
 import Stats from "stats.js";
-// @ts-ignore
-import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
-import * as OBC from "../..";
+
+import * as OBC from "@thatopen/components";
+import * as THREE from "three";
+import * as BUI from "@thatopen/ui";
+import * as OBCF from "../..";
 
 const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
 
-const sceneComponent = new OBC.SimpleScene(components);
-sceneComponent.setup();
-components.scene = sceneComponent;
+const worlds = components.get(OBC.Worlds);
 
-const rendererComponent = new OBC.PostproductionRenderer(components, container);
-components.renderer = rendererComponent;
+const world = worlds.create<
+  OBC.SimpleScene,
+  OBC.SimpleCamera,
+  OBCF.PostproductionRenderer
+>();
 
-const cameraComponent = new OBC.SimpleCamera(components);
-components.camera = cameraComponent;
-
-components.raycaster = new OBC.SimpleRaycaster(components);
+world.scene = new OBC.SimpleScene(components);
+world.renderer = new OBCF.PostproductionRenderer(components, container);
+world.camera = new OBC.SimpleCamera(components);
 
 components.init();
 
-const scene = components.scene.get();
+world.camera.controls.setLookAt(5, 5, 5, 0, 0, 0);
 
-cameraComponent.controls.setLookAt(10, 10, 10, 0, 0, 0);
+world.scene.setup();
 
-const directionalLight = new THREE.DirectionalLight();
-directionalLight.position.set(5, 10, 3);
-directionalLight.intensity = 0.5;
-scene.add(directionalLight);
-
-const ambientLight = new THREE.AmbientLight();
-ambientLight.intensity = 0.5;
-scene.add(ambientLight);
-
-// @ts-ignore
-const grid = new OBC.SimpleGrid(components);
+const grids = components.get(OBC.Grids);
+grids.create(world);
 
 /* MD
   ### 📏 Dimensions Tool
@@ -74,8 +66,8 @@ cube.position.set(0, 1.5, 0);
   which is simply an array of all the meshes in the Scene.🗄️
   */
 
-scene.add(cube);
-components.meshes.add(cube);
+world.scene.three.add(cube);
+world.meshes.add(cube);
 
 /* MD
   
@@ -94,7 +86,8 @@ components.meshes.add(cube);
   and you only need to write a few lines for creating the Dimension Tool.💪
   */
 
-const dimensions = new OBC.LengthMeasurement(components);
+const dimensions = new OBCF.LengthMeasurement(components);
+dimensions.world = world;
 
 /* MD
   We will build dimensions by supplying the `components` to **OBC.SimpleDimensions**.
@@ -158,112 +151,59 @@ window.onkeydown = (event) => {
   }
 };
 
-/* MD
-
-  ### ⏏️ Creating a Toolbar for the Dimensions
-  ---
-  We'll make a **Toolbar Component** and set it at the bottom.
-  In addition, we will have a button that allows you to toggle the dimension tool.
-
-  */
-
-const mainToolbar = new OBC.Toolbar(components, {
-  name: "Main Toolbar",
-  position: "bottom",
-});
-
-mainToolbar.addChild(dimensions.uiElement.get("main"));
-components.ui.addToolbar(mainToolbar);
-
-/* MD
-
-  🎛️ Check **[Toolbar and UIManager](./UIManager.mdx)** tutorial if you have any doubts!
-
-  ### 🖌️ Adding Styles
-  ---
-
-  Few final things, we need to add styles for the `labels` which display the measurement information.
-  - **`ifcjs-dimension-label`** - The label which is used to show the metric value after both the tooltips are attached.
-  - **`ifcjs-dimension-label:hover`** - Changing the styling when someone hovers on the dimension label.
-  - **`ifcjs-dimension-preview`** - The label which shows the measurement when the tooltip is not yet attached.
-
-  ```css title="style"
-  .ifcjs-dimension-label {
-    background-color: black;
-    font-family: sans-serif;
-    color: white;
-    padding: 8px;
-    border-radius: 8px;
-    pointer-events: all;
-    transition: background-color 200ms ease-in-out;
-  }
-
-  .ifcjs-dimension-label:hover {
-    background-color: grey;
-  }
-
-  .ifcjs-dimension-preview {
-    background-color: #ffffff;
-    width: 2rem;
-    height: 2rem;
-    opacity: 0.3;
-    padding: 8px;
-    border-radius: 100%;
-  }
-  ```
-
-
-  **Congratulations** 🎉 on completing this tutorial! Now you can measure any BIM Model or any 3D Object easily using
-  **[Simple Dimension Component](../api/classes/components.SimpleDimensions)** 📐
-  Let's keep it up and check out another tutorial! 🎓
-
-  */
-
 // Set up stats
 
 const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
-rendererComponent.onBeforeUpdate.add(() => stats.begin());
-rendererComponent.onAfterUpdate.add(() => stats.end());
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
 
 // Set up dat.gui menu
 
-const gui = new dat.GUI();
+BUI.Manager.registerComponents();
 
-const shortcutsFolder = gui.addFolder("Shortcuts");
+const panel = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+    <bim-panel active label="Exploder Tutorial" 
+      style="position: fixed; top: 5px; right: 5px">
+      
+        <bim-panel-section fixed label="Commands" >
+          <bim-label label="Create dimension: Double click"></bim-label>  
+          <bim-label label="Delete dimension: Delete"></bim-label>  
+        </bim-checkbox>  
 
-const shortcuts = {
-  "Create dimension": "Double click",
-  "Delete dimension": "Delete",
-};
+      </bim-panel-section>
+      
+      <bim-panel-section fixed label="Others">
+        <bim-checkbox checked label="Dimensions enabled" 
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            dimensions.enabled = target.value;
+          }}">  
+        </bim-checkbox>       
+        <bim-checkbox checked label="Dimensions visible" 
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            dimensions.visible = target.value;
+          }}">  
+        </bim-checkbox>  
+        
+        <bim-color-input 
+          label="Dimensions Color" color="#202932" 
+          @input="${({ target }: { target: BUI.ColorInput }) => {
+            dimensions.color.set(target.color);
+          }}">
+        </bim-color-input>
+        
+        <bim-button label="Delete all"
+          @click="${() => {
+            dimensions.deleteAll();
+          }}">
+        </bim-button>
 
-shortcutsFolder.add(shortcuts, "Create dimension");
-shortcutsFolder.add(shortcuts, "Delete dimension");
+      </bim-panel-section>
+    </bim-panel>
+    `;
+});
 
-const actionsFolder = gui.addFolder("Actions");
-
-actionsFolder.add(dimensions, "enabled").name("Dimensions enabled");
-actionsFolder.add(dimensions, "visible").name("Dimensions visible");
-
-const color = {
-  value: 0x000000,
-};
-
-const helperColor = new THREE.Color();
-actionsFolder
-  .addColor(color, "value")
-  .name("Dimensions color")
-  .onChange((value: number) => {
-    helperColor.setHex(value);
-    dimensions.color = helperColor;
-  });
-
-const actions = {
-  "Delete all dimensions": () => {
-    dimensions.deleteAll();
-  },
-};
-
-actionsFolder.add(actions, "Delete all dimensions");
+document.body.append(panel);
