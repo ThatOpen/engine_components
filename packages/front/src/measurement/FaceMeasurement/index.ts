@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import { Mark } from "../../core";
+import { newDimensionMark } from "../utils";
 
 export interface AreaSelection {
   area: number;
@@ -189,14 +190,15 @@ export class FaceMeasurement
     }
     const canvas = this.world.renderer.three.domElement;
     const viewerContainer = canvas.parentElement as HTMLElement;
+
+    viewerContainer.removeEventListener("click", this.create);
+    viewerContainer.removeEventListener("mousemove", this.onMouseMove);
+    window.removeEventListener("keydown", this.onKeydown);
+
     if (active) {
       viewerContainer.addEventListener("click", this.create);
       viewerContainer.addEventListener("mousemove", this.onMouseMove);
       window.addEventListener("keydown", this.onKeydown);
-    } else {
-      viewerContainer.removeEventListener("click", this.create);
-      viewerContainer.removeEventListener("mousemove", this.onMouseMove);
-      window.removeEventListener("keydown", this.onKeydown);
     }
   }
 
@@ -283,7 +285,7 @@ export class FaceMeasurement
       throw new Error("The face measurement needs a world to work!");
     }
     const { center } = geometry.boundingSphere;
-    const htmlText = document.createElement("div");
+    const htmlText = newDimensionMark();
     const formattedArea = Math.trunc(area * 100) / 100;
     htmlText.textContent = formattedArea.toString();
     const label = new Mark(this.world, htmlText);
