@@ -18,13 +18,13 @@ const worlds = components.get(OBC.Worlds);
 
 const world = worlds.create<
   OBC.SimpleScene,
-  OBC.SimpleCamera,
+  OBC.OrthoPerspectiveCamera,
   OBCF.RendererWith2D
 >();
 
 world.scene = new OBC.SimpleScene(components);
 world.renderer = new OBCF.RendererWith2D(components, container);
-world.camera = new OBC.SimpleCamera(components);
+world.camera = new OBC.OrthoPerspectiveCamera(components);
 
 components.init();
 
@@ -78,14 +78,15 @@ if (Array.isArray(hoverPointsMaterial)) {
     adding our civil model to it.
 */
 
-const scene2DHtml = document.getElementById("scene-2d") as BUIC.World2D;
+const world2D = document.getElementById("scene-2d") as BUIC.World2D;
 
 const planNavigator = new OBCF.CivilPlanNavigator(components);
-scene2DHtml.components = components;
-if (!scene2DHtml.world) {
+world2D.components = components;
+if (!world2D.world) {
   throw new Error("World not found!");
 }
-planNavigator.world = scene2DHtml.world;
+planNavigator.world = world2D.world;
+
 await planNavigator.draw(model);
 
 /*

@@ -1,1 +1,31 @@
-import{D,A as g,B as C,b as y,M as L,C as M}from"./web-ifc-api-CmZKgq4q.js";import{S as A}from"./stats.min-GTpOrGrX.js";import{g as k}from"./lil-gui.module.min-Bc0DeA9g.js";import"./import-wrapper-prod-Cl9qVCJR.js";import{P as B}from"./index-CINZ6ccg.js";import{L as F}from"./index-1nXh293I.js";import"./_commonjsHelpers-Cpj98o6Y.js";import"./renderer-with-2d-RJhD6QVJ.js";import"./index-DTvJrBln.js";import"./types-BHr6GdIp.js";import"./mark-B0joXqB1.js";const l=document.getElementById("container"),e=new(void 0),m=new(void 0)(e);m.setup();e.scene=m;const i=new B(e,l);e.renderer=i;const p=new(void 0)(e);e.camera=p;e.raycaster=new(void 0)(e);e.init();const d=e.scene.get();p.controls.setLookAt(10,10,10,0,0,0);const a=new D;a.position.set(5,10,3);a.intensity=.5;d.add(a);const u=new g;u.intensity=.5;d.add(u);new(void 0)(e);const S=new C(3,3,3),v=new y({color:"#6528D7"}),r=new L(S,v);r.position.set(0,1.5,0);d.add(r);e.meshes.add(r);const n=new F(e);n.enabled=!0;n.snapDistance=1;l.ondblclick=()=>n.create();window.onkeydown=t=>{(t.code==="Delete"||t.code==="Backspace")&&n.delete()};const w=new(void 0)(e,{name:"Main Toolbar",position:"bottom"});w.addChild(n.uiElement.get("main"));e.ui.addToolbar(w);const o=new A;o.showPanel(2);document.body.append(o.dom);o.dom.style.left="0px";i.onBeforeUpdate.add(()=>o.begin());i.onAfterUpdate.add(()=>o.end());const b=new k,f=b.addFolder("Shortcuts"),h={"Create dimension":"Double click","Delete dimension":"Delete"};f.add(h,"Create dimension");f.add(h,"Delete dimension");const s=b.addFolder("Actions");s.add(n,"enabled").name("Dimensions enabled");s.add(n,"visible").name("Dimensions visible");const x={value:0},c=new M;s.addColor(x,"value").name("Dimensions color").onChange(t=>{c.setHex(t),n.color=c});const P={"Delete all dimensions":()=>{n.deleteAll()}};s.add(P,"Delete all dimensions");
+import{B as s,b as c,M as r}from"./web-ifc-api-BiYij3qq.js";import{S as m}from"./stats.min-GTpOrGrX.js";import{f as b,p as d,s as p,k as u,N as h}from"./index-B3b_h8A8.js";import{p as w,a as f,m as k}from"./index-DyM33b1I.js";import"./import-wrapper-prod-vMwJRSad.js";import{P as x}from"./index-Cb-lnTew.js";import{L as D}from"./index-Bn2R_Puk.js";import"./_commonjsHelpers-Cpj98o6Y.js";import"./renderer-with-2d-Dwkf_fcQ.js";import"./index-Csb2AJ1X.js";import"./mark-B9TqPH3U.js";import"./dimension-mark-BiAWnjiH.js";import"./graphic-vertex-picker-C182o4t3.js";const l=document.getElementById("container"),t=new b,g=t.get(d),e=g.create();e.scene=new p(t);e.renderer=new x(t,l);e.camera=new u(t);t.init();e.camera.controls.setLookAt(5,5,5,0,0,0);e.scene.setup();const y=t.get(h);y.create(e);const M=new s(3,3,3),B=new c({color:"#6528D7"}),a=new r(M,B);a.position.set(0,1.5,0);e.scene.three.add(a);e.meshes.add(a);const o=new D(t);o.world=e;o.enabled=!0;o.snapDistance=1;l.ondblclick=()=>o.create();window.onkeydown=n=>{(n.code==="Delete"||n.code==="Backspace")&&o.delete()};const i=new m;i.showPanel(2);document.body.append(i.dom);i.dom.style.left="0px";e.renderer.onBeforeUpdate.add(()=>i.begin());e.renderer.onAfterUpdate.add(()=>i.end());w.init();const $=f.create(()=>k`
+    <bim-panel active label="Exploder Tutorial" 
+      style="position: fixed; top: 5px; right: 5px">
+      
+        <bim-panel-section fixed label="Commands" >
+          <bim-label label="Create dimension: Double click"></bim-label>  
+          <bim-label label="Delete dimension: Delete"></bim-label>  
+        </bim-checkbox>  
+
+      </bim-panel-section>
+      
+      <bim-panel-section fixed label="Others">
+        <bim-checkbox checked label="Dimensions enabled" 
+          @change="${({target:n})=>{o.enabled=n.value}}">  
+        </bim-checkbox>       
+        <bim-checkbox checked label="Dimensions visible" 
+          @change="${({target:n})=>{o.visible=n.value}}">  
+        </bim-checkbox>  
+        
+        <bim-color-input 
+          label="Dimensions Color" color="#202932" 
+          @input="${({target:n})=>{o.color.set(n.color)}}">
+        </bim-color-input>
+        
+        <bim-button label="Delete all"
+          @click="${()=>{o.deleteAll()}}">
+        </bim-button>
+
+      </bim-panel-section>
+    </bim-panel>
+    `);document.body.append($);
