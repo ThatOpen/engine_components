@@ -51,7 +51,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
     this.projection = new ProjectionManager(this);
 
     this.onAspectUpdated.add(() => {
-      this.setOrthoCameraAspect();
+      this.setOrthoPerspCameraAspect();
     });
 
     this.projection.onChanged.add(
@@ -172,10 +172,14 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
     );
   }
 
-  private setOrthoCameraAspect() {
+  private setOrthoPerspCameraAspect() {
     if (!this.currentWorld || !this.currentWorld.renderer) {
       return;
     }
+
+    const size = this.currentWorld.renderer.getSize();
+    this.threePersp.aspect = size.width / size.height;
+    this.threePersp.updateProjectionMatrix();
 
     const lineOfSight = new THREE.Vector3();
     this.threePersp.getWorldDirection(lineOfSight);

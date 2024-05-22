@@ -26,6 +26,8 @@ export class SimpleRenderer extends BaseRenderer {
 
   protected onContainerUpdated = new Event();
 
+  private _resizing = false;
+
   constructor(
     components: Components,
     container: HTMLElement,
@@ -92,12 +94,15 @@ export class SimpleRenderer extends BaseRenderer {
 
   /** {@link Resizeable.resize} */
   resize = (size?: THREE.Vector2) => {
+    if (this._resizing) return;
+    this._resizing = true;
     this.onContainerUpdated.trigger();
     const width = size ? size.x : this.container.clientWidth;
     const height = size ? size.y : this.container.clientHeight;
     this.three.setSize(width, height);
     // this._renderer2D.setSize(width, height);
     this.onResize.trigger(new THREE.Vector2(width, height));
+    this._resizing = false;
   };
 
   setupEvents(active: boolean) {
@@ -116,8 +121,6 @@ export class SimpleRenderer extends BaseRenderer {
     if (active) {
       this._resizeObserver = new ResizeObserver(this.resizeEvent);
       this._resizeObserver.observe(dom);
-      this._resizeObserver.observe(document.body);
-
       window.addEventListener("resize", this.resizeEvent);
     }
   }

@@ -87,13 +87,6 @@ if (!world2D.world) {
 }
 planNavigator.world = world2D.world;
 
-world2D.world.camera.controls.setLookAt(0, 0, 1, 0, 0, 0).then(() => {
-  world2D.world.camera.projection.set("Orthographic").then(() => {
-    world2D._grid.regenerate();
-    console.log("kdfkajdfkafjl")
-  });
-});
-
 await planNavigator.draw(model);
 
 /*

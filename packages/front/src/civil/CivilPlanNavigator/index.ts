@@ -11,7 +11,11 @@ export class CivilPlanNavigator extends CivilNavigator {
 
   private planHighlighter?: PlanHighlighter;
 
-  set world(world: OBC.World) {
+  get world() {
+    return this._world;
+  }
+
+  set world(world: OBC.World | null) {
     super.world = world;
     if (!world) return;
     this.planHighlighter?.dispose();

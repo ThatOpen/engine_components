@@ -43,7 +43,7 @@ export abstract class CivilNavigator extends OBC.Component {
 
   private _previousAlignment: FRAGS.Alignment | null = null;
 
-  private _world: OBC.World | null = null;
+  protected _world: OBC.World | null = null;
 
   get world() {
     return this._world;
