@@ -1291,7 +1291,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
-    "@thatopen/components": 2.0.0-alpha.18
+    "@thatopen/components": 2.0.0
     "@thatopen/fragments": 2.0.0-alpha.5
     "@thatopen/ui": 2.0.0-alpha.13
     "@thatopen/ui-obc": 2.0.0-alpha.13
@@ -1311,7 +1311,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@2.0.0-alpha.18, @thatopen/components@workspace:packages/core":
+"@thatopen/components@2.0.0, @thatopen/components@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
@@ -1366,8 +1366,8 @@ __metadata:
     "@thatopen/ui": 2.0.0-alpha.13
     lit: 3.1.2
   peerDependencies:
-    "@thatopen/components": 2.0.0-alpha.18
-    "@thatopen/components-front": 2.0.0-alpha.18
+    "@thatopen/components": 2.0.0
+    "@thatopen/components-front": 2.0.0
     three: 0.160.1
     web-ifc: 0.0.53
   checksum: 7160c33c52be40ac90b34e2a964ba7addc1d47eceddaa2b1aeacd256f1f05a9db5a672b0516cad1551697acb0cf86f73da326042b9df21afe6fba3a4c7b3b0d4
