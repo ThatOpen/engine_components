@@ -10,7 +10,7 @@
   <a href="https://www.npmjs.com/package/openbim-components">npm package</a>
 </p>
 
-![cover](resources/cover.png)
+![cover](https://thatopen.github.io/engine_components/resources/cover.png)
 
 <h1>Open BIM Components <img src="https://thatopen.github.io/engine_components/resources/favicon.ico" width="32"/></h1>
 
