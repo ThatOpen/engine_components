@@ -24,7 +24,6 @@ import * as THREE from "three";
 import * as BUI from "@thatopen/ui";
 import * as OBC from "../..";
 
-
 /* MD
   ### 🌎 Setting up the world AND the camera
   ---
@@ -47,11 +46,14 @@ world.scene = new OBC.SimpleScene(components);
 world.renderer = new OBC.SimpleRenderer(components, container);
 world.camera = new OBC.OrthoPerspectiveCamera(components);
 
-components.init();
-
 world.scene.setup();
 
-world.camera.controls.setLookAt(3, 3, 3, 0, 0, 0);
+await world.camera.controls.setLookAt(3, 3, 3, 0, 0, 0);
+
+// await world.camera.projection.set("Perspective");
+// await world.camera.projection.set("Orthographic");
+
+components.init();
 
 /* MD
 
@@ -75,8 +77,6 @@ world.meshes.add(cube);
 
 const grids = components.get(OBC.Grids);
 const grid = grids.create(world);
-
-
 
 /* MD
   ### 🎟️ Using camera events
@@ -117,7 +117,6 @@ world.camera.projection.onChanged.add(() => {
   The OrthoPerspectiveCamera has a `fit` method that will fit the camera to a list of meshes. This is really useful when you want to bring attention to a specific part of the scene, or for allowing your user to navigate the scene by focusing objects.
     
 */
-
 
 BUI.Manager.init();
 

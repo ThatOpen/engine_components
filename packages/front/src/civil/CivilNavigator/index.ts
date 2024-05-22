@@ -240,6 +240,7 @@ export abstract class CivilNavigator extends OBC.Component {
     const canvas = this._world.renderer.three.domElement;
     const container = canvas.parentElement as HTMLElement;
 
+    this._world.renderer?.onResize.remove(this.updateLinesResolution);
     container.removeEventListener("mousemove", this.onMouseMove);
     container.removeEventListener("click", this.onClick);
     if (this._world.camera.hasCameraControls()) {
@@ -250,12 +251,19 @@ export abstract class CivilNavigator extends OBC.Component {
     if (active) {
       container.addEventListener("mousemove", this.onMouseMove);
       container.addEventListener("click", this.onClick);
+
+      this._world.renderer?.onResize.add(this.updateLinesResolution);
+
       if (this._world.camera.hasCameraControls()) {
         const controls = this._world.camera.controls;
         controls.addEventListener("update", this.onControlsUpdated);
       }
     }
   }
+
+  private updateLinesResolution = (size: THREE.Vector2) => {
+    this.highlighter?.setResolution(size);
+  };
 
   private newMouseMarker(color: string, world: OBC.World) {
     if (!this._world) {

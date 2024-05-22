@@ -102,6 +102,11 @@ export class CurveHighlighter {
     this.hoverPoints.removeFromParent();
   }
 
+  setResolution({ x, y }: THREE.Vector2) {
+    this.selectCurve.material.resolution.set(x / y, 1);
+    this.hoverCurve.material.resolution.set(x / y, 1);
+  }
+
   protected highlight(
     mesh: FRAGS.CurveMesh,
     curve: Line2,

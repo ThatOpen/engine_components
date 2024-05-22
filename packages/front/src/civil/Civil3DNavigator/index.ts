@@ -148,14 +148,20 @@ export class Civil3DNavigator extends OBC.Component {
     }
     const dom = this.world.renderer.three.domElement;
 
+    this.world.renderer?.onResize.remove(this.updateLinesResolution);
+    dom.removeEventListener("click", this.onClick);
+    dom.removeEventListener("mousemove", this.onMouseMove);
+
     if (active) {
       dom.addEventListener("click", this.onClick);
       dom.addEventListener("mousemove", this.onMouseMove);
-    } else {
-      dom.removeEventListener("click", this.onClick);
-      dom.removeEventListener("mousemove", this.onMouseMove);
+      this.world.renderer?.onResize.add(this.updateLinesResolution);
     }
   }
+
+  private updateLinesResolution = (size: THREE.Vector2) => {
+    this.highlighter?.setResolution(size);
+  };
 
   private onClick = (event: MouseEvent) => {
     if (!this.enabled || !this._highlighter) {
