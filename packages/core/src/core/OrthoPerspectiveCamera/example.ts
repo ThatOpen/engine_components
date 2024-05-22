@@ -48,7 +48,12 @@ world.camera = new OBC.OrthoPerspectiveCamera(components);
 
 world.scene.setup();
 
-await world.camera.controls.setLookAt(3, 3, 3, 0, 0, 0);
+async function test() {
+  await world.camera.controls.setLookAt(3, 3, 3, 0, 0, 0);
+  await world.camera.projection.set("Orthographic");
+}
+
+test();
 
 // await world.camera.projection.set("Perspective");
 // await world.camera.projection.set("Orthographic");

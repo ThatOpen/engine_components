@@ -37,6 +37,8 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
 
   protected readonly _navigationModes = new Map<NavModeID, NavigationMode>();
 
+  private previousSize: THREE.Vector2 | null = null;
+
   get mode() {
     if (!this._mode) {
       throw new Error("Mode not found, camera not initialized");
@@ -57,6 +59,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
     this.projection.onChanged.add(
       (camera: THREE.PerspectiveCamera | THREE.OrthographicCamera) => {
         this.three = camera;
+        this.updateAspect();
       },
     );
 
@@ -67,6 +70,9 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
       this._navigationModes.set("Plan", new PlanMode(this));
       this._mode = this._navigationModes.get("Orbit")!;
       this.mode.set(true, { preventTargetAdjustment: true });
+      if (this.currentWorld && this.currentWorld.renderer) {
+        this.previousSize = this.currentWorld.renderer.getSize().clone();
+      }
     });
   }
 
@@ -177,28 +183,25 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
       return;
     }
 
+    if (!this.previousSize) return;
+
     const size = this.currentWorld.renderer.getSize();
-    this.threePersp.aspect = size.width / size.height;
-    this.threePersp.updateProjectionMatrix();
 
-    const lineOfSight = new THREE.Vector3();
-    this.threePersp.getWorldDirection(lineOfSight);
-    const target = new THREE.Vector3();
-    this.controls.getTarget(target);
-    const distance = target.clone().sub(this.threePersp.position);
+    const previousHeight = this.threeOrtho.top;
+    const previousWidth = this.threeOrtho.right;
 
-    const depth = distance.dot(lineOfSight);
-    const dims = this.currentWorld.renderer.getSize();
-    const aspect = dims.x / dims.y;
-    const camera = this.threePersp;
-    const height = depth * 2 * Math.atan((camera.fov * (Math.PI / 180)) / 2);
-    const width = height * aspect;
+    const heightSizeFactor = size.y / this.previousSize.y;
+    const widthSizeFactor = size.x / this.previousSize.x;
 
-    this.threeOrtho.zoom = 1;
-    this.threeOrtho.left = width / -2;
-    this.threeOrtho.right = width / 2;
-    this.threeOrtho.top = height / 2;
-    this.threeOrtho.bottom = height / -2;
+    const newHeight = previousHeight * heightSizeFactor;
+    const newWidth = previousWidth * widthSizeFactor;
+
+    this.threeOrtho.left = -newWidth;
+    this.threeOrtho.right = newWidth;
+    this.threeOrtho.top = newHeight;
+    this.threeOrtho.bottom = -newHeight;
     this.threeOrtho.updateProjectionMatrix();
+
+    this.previousSize.copy(size);
   }
 }
