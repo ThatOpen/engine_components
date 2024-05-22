@@ -1,1 +1,113 @@
-import{C as p,S as f,P as u,a as g,b as x,c as C,e as w,F as E,g as S}from"./index-DOCiYP8C.js";import{S as h}from"./stats.min-B_nWG6JV.js";import{g as y}from"./lil-gui.module.min-Bc0DeA9g.js";const b=document.getElementById("container"),s=new p,l=new f(s);l.setup();s.scene=l;const m=new u(s,b);s.renderer=m;const i=new g(s);s.camera=i;s.raycaster=new x(s);s.init();const G=new C(s,new w(6710886));i.controls.setLookAt(12,6,8,0,0,-10);const d=new h;d.showPanel(2);document.body.append(d.dom);d.dom.style.left="0px";m.onBeforeUpdate.add(()=>d.begin());m.onAfterUpdate.add(()=>d.end());const A=new E(s),F=await fetch("../../../resources/small.frag"),P=await F.arrayBuffer(),R=new Uint8Array(P),L=await A.load(R),U=[],c=new S(s);c.setup();for(const a of L.items)U.push(a.mesh),c.elements.add(a.mesh);c.elements.needsUpdate=!0;const M=i.controls;M.addEventListener("controlend",()=>{c.elements.needsUpdate=!0});m.postproduction.enabled=!0;const e=m.postproduction;e.customEffects.excludedMeshes.push(G.get());const r=new y;r.add(e,"enabled");const B=r.addFolder("Gamma");B.add(e.settings,"gamma").name("Gamma correction").onChange(a=>{e.setPasses({gamma:a})});const o=r.addFolder("Custom effects");o.add(e.settings,"custom").name("Custom effects").onChange(a=>{e.setPasses({custom:a})});o.add(e.customEffects,"opacity").name("Line opacity").min(0).max(1).step(.1);o.add(e.customEffects,"tolerance").name("Line tolerance").min(0).max(6).step(1);o.addColor(e.customEffects,"lineColor").name("Line color");o.add(e.customEffects,"glossEnabled").name("Gloss enabled").min(0).max(2).step(.1);o.add(e.customEffects,"glossExponent").name("Gloss exponent").min(0).max(5).step(.1);o.add(e.customEffects,"maxGloss").name("Max gloss").min(-2).max(2).step(.05);o.add(e.customEffects,"minGloss").name("Min gloss").min(-2).max(2).step(.05);const n=r.addFolder("SAO"),t=e.n8ao.configuration;n.add(e.settings,"ao").name("Ambient occlusion").onChange(a=>{e.setPasses({ao:a})});n.add(t,"aoSamples").step(1).min(1).max(16);n.add(t,"denoiseSamples").step(1).min(0).max(16);n.add(t,"denoiseRadius").step(1).min(0).max(100);n.add(t,"aoRadius").step(1).min(0).max(16);n.add(t,"distanceFalloff").step(1).min(0).max(16);n.add(t,"intensity").step(1).min(0).max(16);n.add(t,"halfRes");n.add(t,"screenSpaceRadius");n.addColor(t,"color");
+import{C as l}from"./web-ifc-api-BiYij3qq.js";import{S as m}from"./stats.min-GTpOrGrX.js";import{p as r,a as u,m as b}from"./index-DyM33b1I.js";import{f as p,p as d,s as f,k as h,N as x,I as g}from"./index-B3b_h8A8.js";import"./import-wrapper-prod-vMwJRSad.js";import{P as v}from"./index-Cb-lnTew.js";import"./_commonjsHelpers-Cpj98o6Y.js";import"./renderer-with-2d-Dwkf_fcQ.js";const $=document.getElementById("container"),s=new p,k=s.get(d),t=k.create();t.scene=new f(s);t.renderer=new v(s,$);t.camera=new h(s);s.init();t.camera.controls.setLookAt(12,6,8,0,0,-10);t.scene.setup();const c=s.get(x);c.config.color.set(6710886);const E=c.create(t),o=new m;o.showPanel(2);document.body.append(o.dom);o.dom.style.left="0px";t.renderer.onBeforeUpdate.add(()=>o.begin());t.renderer.onAfterUpdate.add(()=>o.end());const y=new g(s),w=await fetch("../../../../../resources/small.frag"),S=await w.arrayBuffer(),R=new Uint8Array(S),A=y.load(R);t.scene.three.add(A);const{postproduction:n}=t.renderer;n.enabled=!0;n.customEffects.excludedMeshes.push(E.three);const a=n.n8ao.configuration;r.init();const C=u.create(()=>b`
+    <bim-panel label="Clipper Tutorial" style="position: fixed; top: 5px; right: 5px; max-height: 80vh" active>
+    
+      <bim-panel-section fixed label="Gamma" style="padding-top: 10px">
+        <bim-checkbox checked label="Gamma Correction"
+          @change="${({target:e})=>{n.setPasses({gamma:e.value})}}">
+        </bim-checkbox>
+      </bim-panel-section>
+      
+      <bim-panel-section fixed label="Custom effects" style="padding-top: 10px">
+        <bim-checkbox checked label="Custom effects"
+          @change="${({target:e})=>{n.setPasses({custom:e.value})}}">
+        </bim-checkbox>    
+        
+        <bim-checkbox checked label="Gamma Correction"
+          @change="${({target:e})=>{n.customEffects.glossEnabled=e.value}}">
+        </bim-checkbox>   
+      
+        <bim-number-input 
+          slider step="0.01" label="Opacity" 
+          value="${n.customEffects.opacity}" min="0" max="1"
+          @change="${({target:e})=>{n.customEffects.opacity=e.value}}">
+        </bim-number-input>  
+            
+        <bim-number-input 
+          slider step="0.1" label="Tolerance" 
+          value="${n.customEffects.tolerance}" min="0" max="6"
+          @change="${({target:e})=>{n.customEffects.tolerance=e.value}}">
+        </bim-number-input> 
+                      
+        <bim-color-input label="Line color" 
+          @input="${({target:e})=>{const i=new l(e.value.color);n.customEffects.lineColor=i.getHex()}}">
+        </bim-color-input>  
+      
+        <bim-number-input 
+          slider label="Gloss exponent" step="0.1" 
+          value="${n.customEffects.glossExponent}" min="0" max="5"
+          @change="${({target:e})=>{n.customEffects.glossExponent=e.value}}">
+        </bim-number-input>    
+           
+        <bim-number-input 
+          slider label="Max gloss" step="0.05" 
+          value="${n.customEffects.maxGloss}" min="-2" max="2"
+          @change="${({target:e})=>{n.customEffects.maxGloss=e.value}}">
+        </bim-number-input>  
+                  
+        <bim-number-input 
+          slider label="Min gloss" step="0.05" 
+          value="${n.customEffects.minGloss}" min="-2" max="2"
+          @change="${({target:e})=>{n.customEffects.minGloss=e.value}}">
+        </bim-number-input> 
+        
+      </bim-panel-section>
+      
+      <bim-panel-section fixed label="Ambient Oclussion">
+      
+        <bim-checkbox label="AO enabled"
+          @change="${({target:e})=>{n.setPasses({ao:e.value})}}">
+        </bim-checkbox>  
+                
+        <bim-checkbox checked label="Half resolution"
+          @change="${({target:e})=>{a.halfRes=e.value}}">
+        </bim-checkbox>  
+                      
+        <bim-checkbox label="Screen space radius"
+          @change="${({target:e})=>{a.screenSpaceRadius=e.value}}">
+        </bim-checkbox>
+        
+                              
+        <bim-color-input label="AO color" 
+          @input="${({target:e})=>{const i=new l(e.value.color);a.color.r=i.r,a.color.g=i.g,a.color.b=i.b}}">
+        </bim-color-input>     
+        
+        <bim-number-input 
+          slider label="AO Samples" step="1" 
+          value="${a.aoSamples}" min="1" max="16"
+          @change="${({target:e})=>{a.aoSamples=e.value}}">
+        </bim-number-input>    
+            
+        <bim-number-input 
+          slider label="Denoise Samples" step="1" 
+          value="${a.denoiseSamples}" min="1" max="16"
+          @change="${({target:e})=>{a.denoiseSamples=e.value}}">
+        </bim-number-input>   
+                  
+        <bim-number-input 
+          slider label="Denoise Radius" step="1" 
+          value="${a.denoiseRadius}" min="0" max="100"
+          @change="${({target:e})=>{a.denoiseRadius=e.value}}">
+        </bim-number-input>   
+                       
+        <bim-number-input 
+          slider label="AO Radius" step="1" 
+          value="${a.aoRadius}" min="0" max="16"
+          @change="${({target:e})=>{a.aoRadius=e.value}}">
+        </bim-number-input>  
+                              
+        <bim-number-input 
+          slider label="Distance falloff" step="1" 
+          value="${a.distanceFalloff}" min="0" max="16"
+          @change="${({target:e})=>{a.distanceFalloff=e.value}}">
+        </bim-number-input> 
+                                      
+        <bim-number-input 
+          slider label="Intensity" step="1" 
+          value="${a.intensity}" min="0" max="16"
+          @change="${({target:e})=>{a.intensity=e.value}}">
+        </bim-number-input> 
+        
+      </bim-panel-section>
+      
+    </bim-panel>
+    `);document.body.append(C);

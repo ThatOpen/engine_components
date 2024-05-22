@@ -1,1 +1,48 @@
-import{C as E,S as I,P as v,a as A,b as F,D as k,A as R,c as z,e as u,B as G,M as O,d as h,E as T,i as d,L as w}from"./index-DOCiYP8C.js";import{S as U}from"./stats.min-B_nWG6JV.js";import{g as W}from"./lil-gui.module.min-Bc0DeA9g.js";const g=document.getElementById("container"),e=new E,M=new I(e);M.setup();e.scene=M;const s=new v(e,g);e.renderer=s;const b=new A(e);e.camera=b;e.raycaster=new F(e);e.init();s.postproduction.enabled=!0;s.postproduction.customEffects.outlineEnabled=!0;b.controls.setLookAt(10,10,10,0,0,0);const c=e.scene.get(),p=new k;p.position.set(5,10,3);p.intensity=.5;c.add(p);const y=new R;y.intensity=.5;c.add(y);const H=new z(e,new u(6710886));s.postproduction.customEffects.excludedMeshes.push(H.get());const C=new G(3,3,3),f=new O({color:"#6528D7"}),n=new h(C,f);n.position.set(-2,1.5,0);c.add(n);e.meshes.add(n);const a=new h(C,f);a.position.set(2,1.5,0);c.add(a);e.meshes.add(a);const t=new T(e);t.enabled=!0;const K=new d({color:"lightblue",side:2}),j=new w({color:"blue"}),x=new d({color:"blue",opacity:.2,side:2,transparent:!0});t.styles.create("Red lines",new Set([n]),j,K,x);const q=new d({color:"salmon",side:2}),J=new w({color:"red"}),P=new d({color:"red",opacity:.2,side:2,transparent:!0});t.styles.create("Blue lines",new Set([a]),J,q,P);g.ondblclick=()=>t.create();window.onkeydown=i=>{(i.code==="Delete"||i.code==="Backspace")&&t.delete(),i.code==="KeyP"&&console.log(t)};const l=new U;l.showPanel(2);document.body.append(l.dom);l.dom.style.left="0px";s.onBeforeUpdate.add(()=>l.begin());s.onAfterUpdate.add(()=>l.end());const S=new W,D=S.addFolder("Shortcuts"),L={"Create clipping plane":"Double click","Delete clipping plane":"Delete"};D.add(L,"Create clipping plane");D.add(L,"Delete clipping plane");const o=S.addFolder("Actions");o.add(t,"visible").name("Toggle clipping planes visible");o.add(t,"enabled").name("Toggle clipping planes enabled");const N={value:0},m=new u;o.addColor(N,"value").name("Plane color").onChange(i=>{m.setHex(i),"lineMaterial"in t.material&&(t.material.lineMaterial=m)});o.add(t,"size").name("Plane Size").min(0).max(15);o.add(t.material,"opacity").name("Plane Opacity").min(0).max(1);const r={value:.2};o.add(r,"value").name("Lines width").step(.1).min(.1).max(1).onChange(()=>{x.opacity=r.value,P.opacity=r.value});const B={"Delete all planes":()=>{t.deleteAll()},"Rotate cube":()=>{n.rotation.x=2*Math.PI*Math.random(),n.rotation.y=2*Math.PI*Math.random(),n.rotation.z=2*Math.PI*Math.random(),n.updateMatrix(),n.updateMatrixWorld(),a.rotation.x=2*Math.PI*Math.random(),a.rotation.y=2*Math.PI*Math.random(),a.rotation.z=2*Math.PI*Math.random(),a.updateMatrix(),a.updateMatrixWorld(),t.updateEdges()}};o.add(B,"Rotate cube");o.add(B,"Delete all planes");
+import{B as h,b as g,M as c,d as s,L as d}from"./web-ifc-api-BiYij3qq.js";import{S as w}from"./stats.min-GTpOrGrX.js";import{p as M,a as x,m as f}from"./index-DyM33b1I.js";import{f as y,p as k,s as P,k as v,N as B,H as C,m as $}from"./index-B3b_h8A8.js";import{C as E,E as I}from"./index-1U2emyO2.js";import{P as D}from"./index-Cb-lnTew.js";import"./import-wrapper-prod-vMwJRSad.js";import"./_commonjsHelpers-Cpj98o6Y.js";import"./renderer-with-2d-Dwkf_fcQ.js";const p=document.getElementById("container"),a=new y,L=a.get(k),e=L.create();e.scene=new P(a);e.renderer=new D(a,p);e.camera=new v(a);e.renderer.postproduction.enabled=!0;e.renderer.postproduction.customEffects.outlineEnabled=!0;a.init();e.camera.controls.setLookAt(12,6,8,0,0,-10);e.scene.setup();const b=a.get(B);b.config.color.setHex(6710886);const S=b.create(e);e.renderer.postproduction.customEffects.excludedMeshes.push(S.three);const m=new h(3,3,3),u=new g({color:"#6528D7"}),n=new c(m,u);n.position.set(-2,1.5,0);e.scene.three.add(n);e.meshes.add(n);const l=new c(m,u);l.position.set(2,1.5,0);e.scene.three.add(l);e.meshes.add(l);const z=a.get(C);z.get(e);const o=a.get($);o.enabled=!0;const r=a.get(E);o.Type=I;const A=new s({color:"lightblue",side:2}),H=new d({color:"blue"}),O=new s({color:"blue",opacity:.5,side:2,transparent:!0});r.styles.create("Red lines",new Set([n]),e,H,A,O);const R=new s({color:"salmon",side:2}),F=new d({color:"red"}),G=new s({color:"red",opacity:.5,side:2,transparent:!0});r.styles.create("Blue lines",new Set([l]),e,F,R,G);p.ondblclick=()=>o.create(e);window.onkeydown=t=>{(t.code==="Delete"||t.code==="Backspace")&&o.delete(e)};const i=new w;i.showPanel(2);document.body.append(i.dom);i.dom.style.left="0px";e.renderer.onBeforeUpdate.add(()=>i.begin());e.renderer.onAfterUpdate.add(()=>i.end());M.init();const N=x.create(()=>f`
+    <bim-panel label="Clipper Tutorial" style="position: fixed; top: 5px; right: 5px" active>
+          <bim-panel-section fixed label="Commands" style="padding-top: 10px">
+      
+        <bim-label label="Double click: Create clipping plane"></bim-label>
+        <bim-label label="Delete key: Delete clipping plane"></bim-label>
+       
+        
+      </bim-panel-section>
+      <bim-panel-section fixed label="Others" style="padding-top: 10px">
+          
+        <bim-checkbox label="Clipper enabled" checked 
+          @change="${({target:t})=>{o.enabled=t.value,r.visible=t.value}}">
+        </bim-checkbox>
+        
+        <bim-checkbox label="Clipper visible" checked 
+          @change="${({target:t})=>{o.visible=t.value}}">
+        </bim-checkbox>   
+      
+        <bim-color-input 
+          label="Planes Color" color="#202932" 
+          @input="${({target:t})=>{o.material.color.set(t.color)}}">
+        </bim-color-input>
+        
+        <bim-number-input 
+          slider step="0.01" label="Planes opacity" value="0.2" min="0.1" max="1"
+          @change="${({target:t})=>{o.material.opacity=t.value}}">
+        </bim-number-input>
+        
+        <bim-number-input 
+          slider step="0.1" label="Planes size" value="5" min="2" max="10"
+          @change="${({target:t})=>{o.size=t.value}}">
+        </bim-number-input>
+        
+        <bim-button 
+          label="Delete all" 
+          @click="${()=>{o.deleteAll()}}">  
+        </bim-button>        
+        
+        <bim-button 
+          label="Rotate cubes" 
+          @click="${()=>{n.rotation.x=2*Math.PI*Math.random(),n.rotation.y=2*Math.PI*Math.random(),n.rotation.z=2*Math.PI*Math.random(),n.updateMatrixWorld(),l.rotation.x=2*Math.PI*Math.random(),l.rotation.y=2*Math.PI*Math.random(),l.rotation.z=2*Math.PI*Math.random(),l.updateMatrixWorld(),r.update(!0)}}">  
+        </bim-button>
+       
+        
+      </bim-panel-section>
+    </bim-panel>
+    `);document.body.append(N);

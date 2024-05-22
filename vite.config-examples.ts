@@ -10,8 +10,15 @@ const restructureExamples = () => {
     async writeBundle() {
       const outDir = "examples/packages";
       const files = globSync(`${outDir}/**/example.html`);
+      const paths: string[] = [];
 
       for (const file of files) {
+        const urlPath = file
+          .split("examples")[1]
+          .slice(1)
+          .replace(".html", ".ts")
+          .replace(/\\/g, "/");
+        paths.push(urlPath);
         const directory = path.dirname(file);
         const exampleName = path.basename(directory);
         const rootFolder = directory.split(path.sep)[0];
@@ -27,6 +34,10 @@ const restructureExamples = () => {
       }
 
       if (fs.existsSync(outDir)) fs.rmSync(outDir, { recursive: true });
+      fs.writeFileSync(
+        path.join("examples", "paths.json"),
+        JSON.stringify(paths),
+      );
     },
   };
 };
