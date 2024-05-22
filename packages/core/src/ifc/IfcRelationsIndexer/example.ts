@@ -35,7 +35,7 @@ grids.create(world);
 /* MD
  ## Getting entity relations the easy way 💪
  ---
- If you're aware of the IFC schema, you should know that all the possible information an entity have is not directly inside its attributes. For example, the property sets, classifications, materials, etc, of a wall (or any other element) are not directly in the wall attributes 🤯 but in other entities which are related to the wall using relations. <br><br>
+ If you're aware of the IFC schema, you should know that all the possible information an entity have is not directly inside its attributes. For example, the property sets, classifications, materials, etc, of a wall (or any other element) are not directly in the wall attributes 🤯 but in other entities which are related to the wall using relations.
 
  Now, that is perfect for an schema like the IFC which aims to store all the building data within a single text file in the easiest way possible. However, is not that easy to work just because you need to find the relations you want to get to the element data you're looking for 😪. Luckily for you, the `IfcRelationsIndexer` already gives you an easy way to get the entities which are related with your elements thanks to the inverse attributes! 🔥🔥
 
@@ -44,7 +44,7 @@ grids.create(world);
 
  :::tip
 
- If you're unsure on the details to load a model, just tool at the [FragmentIfcLoader]() tutorial!
+ If you're unsure on the details to load a model, just tool at the [IfcLoader](/Tutorials/Components/Core/IfcLoader) tutorial!
 
  :::
  */
