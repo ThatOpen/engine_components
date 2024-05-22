@@ -7,18 +7,20 @@ import { EdgesPlane } from "../../core";
 export class CivilCrossSectionNavigator extends OBC.Component {
   static readonly uuid = "96b2c87e-d90b-4639-8257-8f01136fe324" as const;
 
-  private _world: OBC.World | null = null;
+  world: OBC.World | null = null;
 
   enabled = true;
 
   plane?: EdgesPlane;
 
-  get world() {
-    return this._world;
+  private _world3D: OBC.World | null = null;
+
+  get world3D() {
+    return this._world3D;
   }
 
-  set world(world: OBC.World | null) {
-    this._world = world;
+  set world3D(world: OBC.World | null) {
+    this._world3D = world;
 
     this.plane?.dispose();
 
@@ -63,7 +65,8 @@ export class CivilCrossSectionNavigator extends OBC.Component {
     direction.subVectors(endPoint, startPoint);
     direction.normalize();
 
-    await this.plane.setFromNormalAndCoplanarPoint(direction, point);
+    this.plane.setFromNormalAndCoplanarPoint(direction, point);
+    this.plane.edges.update();
 
     const transform = this.plane.helper.matrix.clone();
     transform.invert();

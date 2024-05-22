@@ -9,17 +9,21 @@ export class CivilElevationNavigator extends CivilNavigator {
 
   enabled = true;
 
-  set world(world: OBC.World) {
+  get world() {
+    return super.world;
+  }
+
+  set world(world: OBC.World | null) {
     if (this.world === world) return;
     super.world = world;
 
-    if (!this.highlighter) {
+    if (!this._highlighter) {
       return;
     }
 
     // TODO: Can we substitute this by the .onHighlight event?
     //  That way we can put this in the constructor
-    this.highlighter.onSelect.add((mesh) => {
+    this._highlighter.onSelect.add((mesh) => {
       if (!this.world) {
         throw new Error("A world is needed to work with this component!");
       }

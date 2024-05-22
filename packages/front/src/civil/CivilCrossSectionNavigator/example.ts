@@ -18,13 +18,13 @@ const worlds = components.get(OBC.Worlds);
 
 const world = worlds.create<
   OBC.SimpleScene,
-  OBC.SimpleCamera,
+  OBC.OrthoPerspectiveCamera,
   OBCF.RendererWith2D
 >();
 
 world.scene = new OBC.SimpleScene(components);
 world.renderer = new OBCF.RendererWith2D(components, container);
-world.camera = new OBC.SimpleCamera(components);
+world.camera = new OBC.OrthoPerspectiveCamera(components);
 
 components.init();
 
@@ -48,39 +48,39 @@ world.scene.three.add(model);
 const properties = await fetch("../../../../../resources/road.json");
 model.setLocalProperties(await properties.json());
 
-const navigator = new OBCF.CivilPlanNavigator(components);
-navigator.draw(model);
+const world2DLeft = document.getElementById("scene-2d-left") as BUIC.World2D;
+world2DLeft.components = components;
+if (!world2DLeft.world) {
+  throw new Error("World not found!");
+}
 
+const planNavigator = new OBCF.CivilPlanNavigator(components);
+planNavigator.world = world2DLeft.world;
 
-const elevationNavigator = new OBC.CivilElevationNavigator(components);
-const drawer = elevationNavigator.uiElement.get("drawer");
-drawer.visible = true;
+await planNavigator.draw(model);
 
-const navigator3D = new OBC.Civil3DNavigator(components);
+const navigator3D = new OBCF.Civil3DNavigator(components);
+navigator3D.world = world;
 navigator3D.draw(model);
-navigator3D.setup();
 
-navigator3D._highlighter.hoverCurve.material.color.set(1, 1, 1);
-const { material: hoverPointsMaterial } = navigator.highlighter.hoverPoints;
+navigator3D.highlighter.hoverCurve.material.color.set(1, 1, 1);
+const { material: hoverPointsMaterial } = planNavigator.highlighter.hoverPoints;
 if (Array.isArray(hoverPointsMaterial)) {
   const material = hoverPointsMaterial[0];
   if ("color" in material) (material.color as THREE.Color).set(1, 1, 1);
 } else if ("color" in hoverPointsMaterial)
   (hoverPointsMaterial.color as THREE.Color).set(1, 1, 1);
 
-navigator.onHighlight.add(({ mesh }) => {
-  elevationNavigator.clear();
-  elevationNavigator.draw(model, [mesh.curve.alignment]);
-  elevationNavigator.highlighter.select(mesh);
-  navigator3D._highlighter.select(mesh);
+planNavigator.onHighlight.add(({ mesh }) => {
+  navigator3D.highlighter.select(mesh);
 
   const index = mesh.curve.index;
   const curve3d = mesh.curve.alignment.absolute[index];
   curve3d.mesh.geometry.computeBoundingSphere();
-  cameraComponent.controls.fitToSphere(
-    curve3d.mesh.geometry.boundingSphere,
-    true,
-  );
+  const sphere = curve3d.mesh.geometry.boundingSphere;
+  if (sphere) {
+    world.camera.controls.fitToSphere(sphere, true);
+  }
 });
 
 /*
@@ -99,7 +99,15 @@ navigator.onHighlight.add(({ mesh }) => {
     We'll start by setting up the navigator component within our scene.
 */
 
-const crossNavigator = new OBC.CivilCrossSectionNavigator(components);
+const world2DRight = document.getElementById("scene-2d-right") as BUIC.World2D;
+world2DRight.components = components;
+if (!world2DRight.world) {
+  throw new Error("World not found!");
+}
+
+const crossNavigator = new OBCF.CivilCrossSectionNavigator(components);
+crossNavigator.world = world2DRight.world;
+crossNavigator.world3D = world;
 
 /*
 **🌅 Defining the UI for the tool**
@@ -108,17 +116,13 @@ const crossNavigator = new OBC.CivilCrossSectionNavigator(components);
     define it and introduce it to our scene.
 */
 
-const crossWindow = crossNavigator.uiElement.get("floatingWindow");
-crossWindow.visible = true;
-
 /*
   And that's it! You've successfully set up the Civil Cross Section Navigator.
   Go ahead and interact with the Horizontal Alignment Window in any point of an alignment,
   and the cross section of the selected area will be displayed in the Cross Section Window.
 */
 
-navigator.onMarkerChange.add(({ alignment, percentage, type, curve }) => {
-  elevationNavigator.setMarker(alignment, percentage, type);
+planNavigator.onMarkerChange.add(({ alignment, percentage, type, curve }) => {
   navigator3D.setMarker(alignment, percentage, type);
 
   if (type === "select") {
@@ -128,22 +132,17 @@ navigator.onMarkerChange.add(({ alignment, percentage, type, curve }) => {
   }
 });
 
-navigator.onMarkerHidden.add(({ type }) => {
-  elevationNavigator.hideMarker(type);
+planNavigator.onMarkerHidden.add(({ type }) => {
   navigator3D.hideMarker(type);
 });
 
-window.addEventListener("keydown", () => {
-  elevationNavigator.scene.scaleY += 0.1;
-});
-
-const classifier = new OBC.FragmentClassifier(components);
+const classifier = new OBC.Classifier(components);
 classifier.byEntity(model);
 
-const classifications = classifier.get();
+const classifications = classifier.list;
 
-const clipper = components.tools.get(OBC.ClipEdges);
-const styles = clipper.styles.get();
+const clipper = components.get(OBCF.ClipEdges);
+const styles = clipper.styles.list;
 
 for (const category in classifications.entities) {
   const found = classifier.find({ entities: [category] });
@@ -151,10 +150,10 @@ for (const category in classifications.entities) {
   const color = new THREE.Color(Math.random(), Math.random(), Math.random());
 
   const lineMaterial = new THREE.LineBasicMaterial({ color });
-  clipper.styles.create(category, new Set(), lineMaterial);
+  clipper.styles.create(category, new Set(), world2DRight.world, lineMaterial);
 
   for (const fragID in found) {
-    const foundFrag = fragments.list[fragID];
+    const foundFrag = fragments.list.get(fragID);
     if (!foundFrag) {
       continue;
     }
@@ -162,6 +161,8 @@ for (const category in classifications.entities) {
     styles[category].meshes.add(foundFrag.mesh);
   }
 }
+
+clipper.update(true);
 
 const stats = new Stats();
 stats.showPanel(2);

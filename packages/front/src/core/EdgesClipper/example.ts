@@ -138,6 +138,7 @@ const blueOutline = new THREE.MeshBasicMaterial({
   side: 2,
   transparent: true,
 });
+
 edges.styles.create(
   "Red lines",
   new Set([cube]),
@@ -155,6 +156,7 @@ const redOutline = new THREE.MeshBasicMaterial({
   side: 2,
   transparent: true,
 });
+
 edges.styles.create(
   "Blue lines",
   new Set([cube2]),

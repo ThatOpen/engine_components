@@ -12,7 +12,7 @@ export class CivilPlanNavigator extends CivilNavigator {
   private planHighlighter?: PlanHighlighter;
 
   get world() {
-    return this._world;
+    return super.world;
   }
 
   set world(world: OBC.World | null) {
@@ -31,7 +31,7 @@ export class CivilPlanNavigator extends CivilNavigator {
     this.components.add(CivilPlanNavigator.uuid, this);
 
     this.onHighlight.add(({ mesh }) => {
-      if (!this.highlighter || !this.planHighlighter) {
+      if (!this._highlighter || !this.planHighlighter) {
         return;
       }
       this.planHighlighter.showCurveInfo(mesh);

@@ -13,7 +13,7 @@ export abstract class CivilNavigator extends OBC.Component {
 
   enabled = true;
 
-  highlighter?: CurveHighlighter;
+  _highlighter?: CurveHighlighter;
 
   // abstract showKPStations(curveMesh: FRAGS.CurveMesh): void;
   // abstract clearKPStations(): void;
@@ -45,6 +45,15 @@ export abstract class CivilNavigator extends OBC.Component {
 
   protected _world: OBC.World | null = null;
 
+  get highlighter() {
+    if (!this._highlighter) {
+      throw new Error(
+        "Highlighter not initialized. You must set a world first!",
+      );
+    }
+    return this._highlighter;
+  }
+
   get world() {
     return this._world;
   }
@@ -60,7 +69,7 @@ export abstract class CivilNavigator extends OBC.Component {
 
     this._world = world;
 
-    this.highlighter?.dispose();
+    this._highlighter?.dispose();
     this.mouseMarkers?.hover.dispose();
     this.mouseMarkers?.select.dispose();
 
@@ -69,7 +78,7 @@ export abstract class CivilNavigator extends OBC.Component {
     }
 
     const scene = world.scene.three;
-    this.highlighter = new CurveHighlighter(scene, this.view);
+    this._highlighter = new CurveHighlighter(scene, this.view);
 
     this.mouseMarkers = {
       select: this.newMouseMarker("#ffffff", world),
@@ -131,15 +140,15 @@ export abstract class CivilNavigator extends OBC.Component {
   }
 
   async dispose() {
-    this.highlighter?.dispose();
+    this._highlighter?.dispose();
     this.clear();
     this.onHighlight.reset();
     this._curves = [];
   }
 
   clear() {
-    this.highlighter?.unSelect();
-    this.highlighter?.unHover();
+    this._highlighter?.unSelect();
+    this._highlighter?.unHover();
     for (const mesh of this._curves) {
       mesh.removeFromParent();
     }
@@ -262,7 +271,7 @@ export abstract class CivilNavigator extends OBC.Component {
   }
 
   private updateLinesResolution = (size: THREE.Vector2) => {
-    this.highlighter?.setResolution(size);
+    this._highlighter?.setResolution(size);
   };
 
   private newMouseMarker(color: string, world: OBC.World) {
@@ -328,11 +337,11 @@ export abstract class CivilNavigator extends OBC.Component {
     const dom = canvas.parentElement as HTMLElement;
     const camera = this._world.camera.three;
 
-    const result = this.highlighter?.castRay(event, camera, dom, this._curves);
+    const result = this._highlighter?.castRay(event, camera, dom, this._curves);
 
     if (result) {
       const { object } = result;
-      this.highlighter?.hover(object as FRAGS.CurveMesh);
+      this._highlighter?.hover(object as FRAGS.CurveMesh);
       this.updateMarker(result, "hover");
       return;
     }
@@ -340,7 +349,7 @@ export abstract class CivilNavigator extends OBC.Component {
     if (this.mouseMarkers) {
       this.mouseMarkers.hover.visible = false;
     }
-    this.highlighter?.unHover();
+    this._highlighter?.unHover();
     this.onMarkerHidden.trigger({ type: "hover" });
   };
 
@@ -357,12 +366,12 @@ export abstract class CivilNavigator extends OBC.Component {
     const dom = canvas.parentElement as HTMLElement;
     const camera = this._world.camera.three;
 
-    const found = this.highlighter?.castRay(event, camera, dom, this._curves);
+    const found = this._highlighter?.castRay(event, camera, dom, this._curves);
 
     if (found) {
       const result = found;
       const mesh = result.object as FRAGS.CurveMesh;
-      this.highlighter?.select(mesh);
+      this._highlighter?.select(mesh);
       this.updateMarker(result, "select");
 
       if (this._world.camera.hasCameraControls()) {
@@ -399,7 +408,7 @@ export abstract class CivilNavigator extends OBC.Component {
       return;
     }
 
-    if (!this.highlighter) {
+    if (!this._highlighter) {
       return;
     }
 
@@ -409,7 +418,7 @@ export abstract class CivilNavigator extends OBC.Component {
     const screenSize = Math.max(width, height);
     const realScreenSize = screenSize / zoom;
     const range = 40;
-    const { caster } = this.highlighter;
+    const { caster } = this._highlighter;
     caster.params.Line.threshold = realScreenSize / range;
   };
 
