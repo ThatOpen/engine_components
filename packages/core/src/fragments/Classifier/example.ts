@@ -46,7 +46,7 @@ classifier.byEntity(model);
 classifier.byStorey(model);
 classifier.byModel(model.uuid, model);
 
-BUI.Manager.registerComponents();
+BUI.Manager.init();
 
 const walls = classifier.find({
   entities: ["IFCWALLSTANDARDCASE"],

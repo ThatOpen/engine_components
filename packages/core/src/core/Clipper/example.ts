@@ -26,9 +26,6 @@ world.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 
 world.scene.setup();
 
-// @ts-ignore
-// const grid = new OBC.SimpleGrid(components);
-
 /* MD
   ### ✂️ Clipping Tool
   ---
@@ -49,7 +46,7 @@ world.scene.setup();
   Let's start by adding a Cube, which we can dissect.
   We will create a [Cube](https://threejs.org/docs/index.html?q=box#api/en/geometries/BoxGeometry)
   with `3x3x3` dimensions and use red color for the material.
-  */
+*/
 
 const cubeGeometry = new THREE.BoxGeometry(3, 3, 3);
 const cubeMaterial = new THREE.MeshStandardMaterial({ color: "#6528D7" });
@@ -157,7 +154,7 @@ world.renderer.onAfterUpdate.add(() => stats.end());
 
 // Set up UI
 
-BUI.Manager.registerComponents();
+BUI.Manager.init();
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`

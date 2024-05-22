@@ -134,7 +134,7 @@ shadows.create([cube], shadowID, world);
   Let's keep it up and check out another tutorial! 🎓
   */
 
-BUI.Manager.registerComponents();
+BUI.Manager.init();
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`

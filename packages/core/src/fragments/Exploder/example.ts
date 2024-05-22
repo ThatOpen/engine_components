@@ -42,7 +42,7 @@ const classifier = components.get(OBC.Classifier);
 
 classifier.byStorey(model);
 
-BUI.Manager.registerComponents();
+BUI.Manager.init();
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`

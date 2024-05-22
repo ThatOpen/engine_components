@@ -1,66 +1,56 @@
+/* eslint import/no-extraneous-dependencies: 0 */
+
 import * as THREE from "three";
+import * as OBC from "@thatopen/components";
+import * as BUI from "@thatopen/ui";
+import * as BUIC from "@thatopen/ui-obc";
 import Stats from "stats.js";
-import * as OBC from "../..";
+import * as OBCF from "../..";
+
+BUI.Manager.init();
+BUIC.Manager.init();
 
 const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
 
-const sceneComponent = new OBC.SimpleScene(components);
-sceneComponent.setup();
-components.scene = sceneComponent;
+const worlds = components.get(OBC.Worlds);
 
-const rendererComponent = new OBC.PostproductionRenderer(components, container);
-components.renderer = rendererComponent;
+const world = worlds.create<
+  OBC.SimpleScene,
+  OBC.SimpleCamera,
+  OBCF.RendererWith2D
+>();
 
-const cameraComponent = new OBC.SimpleCamera(components);
-components.camera = cameraComponent;
-
-components.raycaster = new OBC.SimpleRaycaster(components);
+world.scene = new OBC.SimpleScene(components);
+world.renderer = new OBCF.RendererWith2D(components, container);
+world.camera = new OBC.SimpleCamera(components);
 
 components.init();
 
-rendererComponent.postproduction.enabled = true;
-rendererComponent.postproduction.customEffects.outlineEnabled = true;
+world.scene.setup();
 
-cameraComponent.controls.setLookAt(12, 6, 8, 0, 0, -10);
+world.camera.controls.setLookAt(5, 5, 5, 0, 0, 0);
 
-const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
-const customEffects = rendererComponent.postproduction.customEffects;
-customEffects.excludedMeshes.push(grid.get());
+container.appendChild(world.renderer.three2D.domElement);
 
-const fragments = new OBC.FragmentsManager(components);
-const fragmentIfcLoader = new OBC.FragmentIfcLoader(components);
+const grids = components.get(OBC.Grids);
+grids.create(world);
 
-fragmentIfcLoader.settings.wasm = {
-  path: "https://unpkg.com/web-ifc@0.0.50/",
-  absolute: true,
-};
+const fragments = components.get(OBC.FragmentsManager);
 
-fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
-fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
-
-const file = await fetch("../../../resources/asdf.frag");
+const file = await fetch("../../../../../resources/road.frag");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
-const model = await fragments.load(buffer);
-const properties = await fetch("../../../resources/asdf.json");
+const model = fragments.load(buffer);
+world.scene.three.add(model);
+
+const properties = await fetch("../../../../../resources/road.json");
 model.setLocalProperties(await properties.json());
 
-const mainToolbar = new OBC.Toolbar(components, {
-  name: "Main Toolbar",
-  position: "bottom",
-});
-components.ui.addToolbar(mainToolbar);
-mainToolbar.addChild(fragmentIfcLoader.uiElement.get("main"));
-
-console.log(model);
-
-const navigator = new OBC.CivilPlanNavigator(components);
-const horizontalWindow = navigator.uiElement.get("floatingWindow");
-horizontalWindow.visible = true;
-
+const navigator = new OBCF.CivilPlanNavigator(components);
 navigator.draw(model);
+
 
 const elevationNavigator = new OBC.CivilElevationNavigator(components);
 const drawer = elevationNavigator.uiElement.get("drawer");
@@ -70,7 +60,7 @@ const navigator3D = new OBC.Civil3DNavigator(components);
 navigator3D.draw(model);
 navigator3D.setup();
 
-navigator3D.highlighter.hoverCurve.material.color.set(1, 1, 1);
+navigator3D._highlighter.hoverCurve.material.color.set(1, 1, 1);
 const { material: hoverPointsMaterial } = navigator.highlighter.hoverPoints;
 if (Array.isArray(hoverPointsMaterial)) {
   const material = hoverPointsMaterial[0];
@@ -82,7 +72,7 @@ navigator.onHighlight.add(({ mesh }) => {
   elevationNavigator.clear();
   elevationNavigator.draw(model, [mesh.curve.alignment]);
   elevationNavigator.highlighter.select(mesh);
-  navigator3D.highlighter.select(mesh);
+  navigator3D._highlighter.select(mesh);
 
   const index = mesh.curve.index;
   const curve3d = mesh.curve.alignment.absolute[index];
@@ -177,5 +167,5 @@ const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
-rendererComponent.onBeforeUpdate.add(() => stats.begin());
-rendererComponent.onAfterUpdate.add(() => stats.end());
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());

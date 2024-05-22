@@ -1,54 +1,40 @@
-/* eslint import/no-extraneous-dependencies: 0 */
+/* MD
+### 📹 How to handle a fancy camera
+---
+
+Sometimes, you need perspective for depth and realism. Other times, you need an orthographic camera to get precise measurements and proportions. Luckily for you, we have a camera that has both of those projections at the same time! It also has some cool functionality for navigation. In this tutorial, you'll learn to use it. 
+
+:::tip Orthographic and Perspective cameras
+
+The difference between Orthographic and Perspective cameras is that Orthographic cameras don't see things smaller when they are further away. This has some implications, like the camera being always "outside" of your scene. You can't see the interior of a room with an orthographic camera. The most common use for orthographic cameras are 2D floor plans and sections, but they can also be used to create cool-looking 3D scenes.
+
+:::
+
+In this tutorial, we will import:
+
+- `Three.js` to get some 3D entities for our app.
+- `@thatopen/components` to set up the barebone of our app.
+- `@thatopen/ui` to add some simple and cool UI menus.
+- `Stats.js` (optional) to measure the performance of our app.
+
+*/
 
 import Stats from "stats.js";
-
 import * as THREE from "three";
 import * as BUI from "@thatopen/ui";
 import * as OBC from "../..";
 
-/* MD
-  ### 📽️ Managing Multiple Views
-  ---
-  Perspective view adds depth and realism, which helps in creating visually compelling representations in 3D scenes.🛤️
-  While, Orthographic view is important for precise measurements and proportions.📐
-
-  :::tip First, let's set up a simple scene!
-
-  👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
-
-  :::
-
-  We'll be using an advanced camera component for this tutorial.
-  OrthoPerspectiveCamera makes it simple to use Orthographic and Perspective projections.
-
-  ### 🎲 Creating a Cube Mesh
-  ---
-  First, let's create a simple Cube, which will render differently depending on the projection you choose.🧊
-  We will create a [Cube](https://threejs.org/docs/index.html?q=box#api/en/geometries/BoxGeometry)
-  with `3x3x3` dimensions and use red color for the material.🖍️
-
-  */
-
-const cubeGeometry = new THREE.BoxGeometry();
-const cubeMaterial = new THREE.MeshStandardMaterial({ color: "#6528D7" });
-const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-cube.position.set(0, 0.5, 0);
 
 /* MD
-  ### 🎞️ Developing an OrthoPerspective Camera
+  ### 🌎 Setting up the world AND the camera
   ---
 
-  We will create OrthoPerspectiveCamera by passing `components` as an argument to it.🗃️
-  The OrthoPerspective Camera extends the SimpleCamera by providing you with extra controls.
+  We will start by creating a simple scene with a camera and a renderer. If you don't know how to set up a scene, you can check the Worlds tutorial. But there's one difference: we will use the OrthoPerspectiveCamera for initializing the world.
 
-  We will then configure the camera location and update the look at target using `setLookAt()` API.👀
-
-  */
+*/
 
 const container = document.getElementById("container")!;
-
 const components = new OBC.Components();
-
 const worlds = components.get(OBC.Worlds);
 
 const world = worlds.create<
@@ -67,41 +53,37 @@ world.scene.setup();
 
 world.camera.controls.setLookAt(3, 3, 3, 0, 0, 0);
 
+/* MD
+
+  Easy, right? Believe it or not, this is all you need to use the OrthoPerspectiveCamera. Now, let's see it in action!
+
+
+  ### 🧊 Creating a cube
+  ---
+
+  We will start by creating a simple cube and a grid that will serve as a reference point for our camera.
+
+*/
+
+const cubeGeometry = new THREE.BoxGeometry();
+const cubeMaterial = new THREE.MeshStandardMaterial({ color: "#6528D7" });
+const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+cube.position.set(0, 0.5, 0);
+
 world.scene.three.add(cube);
 world.meshes.add(cube);
 
 const grids = components.get(OBC.Grids);
 const grid = grids.create(world);
 
+
+
 /* MD
-  
-  :::info Igniting Components!
-
-  🔥 Whenever the components like scene, camera are created, you need to initialize the component library.
-  Check out components.init() for more info!🔖
-
-  :::
-
-  ### 🕹️ Changing Views and Navigation
+  ### 🎟️ Using camera events
   ---
-  Now, that our camera setup is done, we need to manage the camera projection on demand.
 
-  #### Toggling Orthographic View and Perspective View
-
-  Let's create a simple method **`toggleProjection()`** which toggles the Camera View using `camera.toggleProjection`.
-  Alternatively, you can also use `camera.setProjection()` and pass `'Orthographic'` or `'Perspective'` to manage the views.💡
-
-  */
-
-// @ts-ignore
-function toggleProjection() {
-  world.camera.projection.toggle();
-}
-
-/* MD
-    You can also subscribe to an event for when the projection changes. For instance, let's change the grid fading mode
-    when the projection changes. This will make the grid look good in orthographic mode:
-    */
+  The OrthoPerspectiveCamera has a few events that you can use to manage the your scene. We will use the `camera.projection.onChanged` event to update the grid, so that when using the Orthographic camera, the grid will fade out if the camera zooms away a lot.
+*/
 
 world.camera.projection.onChanged.add(() => {
   const projection = world.camera.projection.current;
@@ -109,39 +91,35 @@ world.camera.projection.onChanged.add(() => {
 });
 
 /* MD
-  #### Managing Navigation Modes
-  Along with projection, we can also manage Navigation modes using **OrthoPerspective** camera.
-  To update navigation modes, we will use `camera.setNavigationMode('Orbit' | 'FirstPerson' | 'Plan')`
+  ### 🧩 Building a camera UI
+  ---
 
-  - **Orbit** - Orbit Mode helps us to easily navigate around the 3D Elements.
-  - **FirstPerson** - It helps you to visualize scene from your own perspective.
-  First Person mode is only available for Perspective Projection.
-  - **Plan** - This mode helps you to easily navigate in 2D Projections.
+  Now we will use @thatopen/ui to create a simple UI for the OrthoPerspectiveCamera. It will have 4 elements: 
 
-  */
+  #### 🎛️ Navigation mode
 
-// @ts-ignore
-function setNavigationMode(navMode: OBC.NavModeID) {
-  world.camera.set(navMode);
-}
+  This will control the navigation mode of the OrthoPerspectiveCamera. It will have 3 options: 
+  
+  - `Orbit`: for 3D orbiting around the scene.
+  - `FirstPerson`: for navigating the scene in with the mouse wheel in first person.
+  - `Plan`: for navigating 2d plans (blocking the orbit).
 
-/* MD
-  :::info MORE CONTROLS, MORE POWER
+  #### 📐 Projections
 
-  🧮 OrthoPerspective Camera also provides you an option to adjust your camera to fit the 3D elements.
-  You can simply use fitModelToFrame(mesh)
-  and provide the mesh which you want to fit to your window frame
+  Like its name implies, the OrthoPerspectiveCamera has 2 projections, and it's really easy to toggle between them. The camera position will remain the same, which is really convenient when you switch between different projections!
 
-  :::
+  #### ❌ Toggling user input
 
-  **Congratulations** 🎉 on completing this tutorial!
-  Now you can add Advance Camera System to your web-app in minutes using
-  **OrthoPerspectiveCamera** ⌚📽️
-  Let's keep it up and check out another tutorial! 🎓
+  Sometimes you might want to remove control from the user. For example, imagine you are animating the camera and you don't want the user to move the camera around. You can use the `setUserInput` method to toggle this.
 
-  */
+  #### 🔎 Focusing objects
 
-BUI.Manager.registerComponents();
+  The OrthoPerspectiveCamera has a `fit` method that will fit the camera to a list of meshes. This is really useful when you want to bring attention to a specific part of the scene, or for allowing your user to navigate the scene by focusing objects.
+    
+*/
+
+
+BUI.Manager.init();
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
@@ -163,6 +141,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
               }
               world.camera.set(selected);
             }}">
+
           <bim-option checked label="Orbit"></bim-option>
           <bim-option label="FirstPerson"></bim-option>
           <bim-option label="Plan"></bim-option>
@@ -206,10 +185,25 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
 
 document.body.append(panel);
 
-// Set up stats
+/* MD
+  ### ⏱️ Measuring the performance (optional)
+  ---
+
+  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
+
+*/
+
 const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
+
+/* MD
+  ### 🎉 Wrap up
+  ---
+
+  That's it! We have created an OrthoPerspective camera that can be used to navigate a 3D scene with multiple projections and navigation modes, as well as a neat UI to control it. Great job!
+
+*/

@@ -8,6 +8,8 @@ export class PlanHighlighter {
 
   private _scene: THREE.Object3D;
 
+  private _world: OBC.World;
+
   private offset: number = 10;
 
   private markupLines: THREE.Line[] = [];
@@ -18,9 +20,14 @@ export class PlanHighlighter {
     color: 0x686868,
   });
 
-  constructor(components: OBC.Components, scene: THREE.Object3D) {
+  constructor(
+    components: OBC.Components,
+    scene: THREE.Object3D,
+    world: OBC.World,
+  ) {
     this.components = components;
     this._scene = scene;
+    this._world = world;
   }
 
   showCurveInfo(curveMesh: FRAGS.CurveMesh): void {
@@ -173,6 +180,7 @@ export class PlanHighlighter {
 
   private showLineInfo(curveMesh: FRAGS.CurveMesh, offset: number) {
     const marker = this.components.get(CivilMarker);
+    marker.world = this._world;
     marker.deleteByType(["Length", "Radius"]);
     const positions = curveMesh.geometry.attributes.position.array;
     const parallelCurvePoints = this.calculateParallelCurve(
@@ -222,6 +230,7 @@ export class PlanHighlighter {
 
   private showClothoidInfo(curveMesh: FRAGS.CurveMesh, offset: number) {
     const marker = this.components.get(CivilMarker);
+    marker.world = this._world;
     marker.deleteByType(["Length", "Radius"]);
     const positions = curveMesh.geometry.attributes.position.array;
     const parallelCurvePoints = this.calculateParallelCurve(
@@ -271,6 +280,7 @@ export class PlanHighlighter {
 
   private showCircularArcInfo(curveMesh: FRAGS.CurveMesh, offset: number) {
     const marker = this.components.get(CivilMarker);
+    marker.world = this._world;
     marker.deleteByType(["Length", "Radius"]);
     const radius = curveMesh.curve.data.RADIUS;
     const positions = curveMesh.geometry.attributes.position.array;

@@ -117,6 +117,7 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
   updateAspect = () => {
     if (!this.currentWorld || !this.currentWorld.renderer) return;
     if (this.three instanceof THREE.OrthographicCamera) {
+      this.onAspectUpdated.trigger();
       return;
     }
     if (this.currentWorld.renderer?.isResizeable()) {

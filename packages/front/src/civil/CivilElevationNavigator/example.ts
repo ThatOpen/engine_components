@@ -47,8 +47,8 @@ const model = await fragments.load(buffer);
 const navigator = new OBC.Civil3DNavigator(components);
 navigator.draw(model);
 navigator.setup();
-navigator.highlighter.hoverCurve.material.color.set(1, 1, 1);
-const { material: hoverPointsMaterial } = navigator.highlighter.hoverPoints;
+navigator._highlighter.hoverCurve.material.color.set(1, 1, 1);
+const { material: hoverPointsMaterial } = navigator._highlighter.hoverPoints;
 if (Array.isArray(hoverPointsMaterial)) {
   const material = hoverPointsMaterial[0];
   if ("color" in material) (material.color as THREE.Color).set(1, 1, 1);
@@ -100,7 +100,7 @@ planNavigator.onHighlight.add(({ mesh }) => {
   elevationNavigator.draw(model, [mesh.curve.alignment]);
   elevationNavigator.highlighter.select(mesh);
 
-  navigator.highlighter.select(mesh);
+  navigator._highlighter.select(mesh);
 
   const index = mesh.curve.index;
   const curve3d = mesh.curve.alignment.absolute[index];

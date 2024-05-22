@@ -16,7 +16,7 @@ export class Civil3DNavigator extends OBC.Component {
 
   enabled = true;
 
-  highlighter?: CurveHighlighter;
+  private _highlighter?: CurveHighlighter;
 
   mouseMarkers?: {
     hover: Mark;
@@ -53,7 +53,7 @@ export class Civil3DNavigator extends OBC.Component {
 
     this._world = world;
 
-    this.highlighter?.dispose();
+    this._highlighter?.dispose();
     this.mouseMarkers?.hover.dispose();
     this.mouseMarkers?.select.dispose();
 
@@ -62,7 +62,7 @@ export class Civil3DNavigator extends OBC.Component {
     }
 
     const scene = world.scene.three;
-    this.highlighter = new CurveHighlighter(scene, "absolute");
+    this._highlighter = new CurveHighlighter(scene, "absolute");
 
     this.mouseMarkers = {
       select: this.newMouseMarker("#ffffff", world),
@@ -70,6 +70,13 @@ export class Civil3DNavigator extends OBC.Component {
     };
 
     this.setupEvents(true);
+  }
+
+  get highlighter() {
+    if (!this._highlighter) {
+      throw new Error("Navigator not initialized!");
+    }
+    return this._highlighter;
   }
 
   constructor(components: OBC.Components) {
@@ -151,7 +158,7 @@ export class Civil3DNavigator extends OBC.Component {
   }
 
   private onClick = (event: MouseEvent) => {
-    if (!this.enabled || !this.highlighter) {
+    if (!this.enabled || !this._highlighter) {
       return;
     }
 
@@ -165,10 +172,10 @@ export class Civil3DNavigator extends OBC.Component {
     const dom = this.world.renderer.three.domElement;
 
     const camera = this.world.camera.three;
-    const found = this.highlighter.castRay(event, camera, dom, this._curves);
+    const found = this._highlighter.castRay(event, camera, dom, this._curves);
     if (found) {
       const curve = found.object as FRAGS.CurveMesh;
-      this.highlighter.select(curve);
+      this._highlighter.select(curve);
       this.updateMarker(found, "select");
       const { point, index } = found;
       if (index !== undefined) {
@@ -176,7 +183,7 @@ export class Civil3DNavigator extends OBC.Component {
       }
       return;
     }
-    this.highlighter.unSelect();
+    this._highlighter.unSelect();
     if (this.mouseMarkers) {
       this.mouseMarkers.hover.visible = false;
     }
@@ -184,7 +191,7 @@ export class Civil3DNavigator extends OBC.Component {
   };
 
   private onMouseMove = async (event: MouseEvent) => {
-    if (!this.enabled || !this.highlighter) {
+    if (!this.enabled || !this._highlighter) {
       return;
     }
 
@@ -197,15 +204,15 @@ export class Civil3DNavigator extends OBC.Component {
     const dom = this.world.renderer.three.domElement;
 
     const camera = this.world.camera.three;
-    const found = this.highlighter.castRay(event, camera, dom, this._curves);
+    const found = this._highlighter.castRay(event, camera, dom, this._curves);
 
     if (found) {
-      this.highlighter.hover(found.object as FRAGS.CurveMesh);
+      this._highlighter.hover(found.object as FRAGS.CurveMesh);
       this.updateMarker(found, "hover");
       return;
     }
 
-    this.highlighter.unHover();
+    this._highlighter.unHover();
   };
 
   private updateMarker(intersects: THREE.Intersection, type: CivilMarkerType) {

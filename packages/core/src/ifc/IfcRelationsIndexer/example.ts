@@ -162,7 +162,7 @@ if (buildingStorey && buildingStorey[0]) {
  Congratulations! Now you know how to get an easy way to get the relations of your model. Keep going with more tutorials! 💪
  */
 
-BUI.Manager.registerComponents();
+BUI.Manager.init();
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`

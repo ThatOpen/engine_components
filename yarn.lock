@@ -1291,10 +1291,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
-    "@thatopen/components": 2.0.0-alpha.15
+    "@thatopen/components": 2.0.0-alpha.16
     "@thatopen/fragments": 2.0.0-alpha.5
-    "@thatopen/ui": 2.0.0-alpha.5
-    "@thatopen/ui-obc": 2.0.0-alpha.5
+    "@thatopen/ui": 2.0.0-alpha.12
+    "@thatopen/ui-obc": 2.0.0-alpha.12
     "@types/earcut": ^2.1.4
     "@types/three": ^0.160.0
     camera-controls: 2.7.3
@@ -1311,12 +1311,13 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@2.0.0-alpha.15, @thatopen/components@workspace:packages/core":
+"@thatopen/components@2.0.0-alpha.16, @thatopen/components@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
     "@thatopen/fragments": 2.0.0-alpha.5
-    "@thatopen/ui": 2.0.0-alpha.5
+    "@thatopen/ui": 2.0.0-alpha.12
+    "@thatopen/ui-obc": 2.0.0-alpha.12
     "@types/jest": 27.0.0
     "@types/node": 20.11.30
     "@types/three": 0.160.0
@@ -1358,26 +1359,29 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@thatopen/ui-obc@npm:2.0.0-alpha.5":
-  version: 2.0.0-alpha.5
-  resolution: "@thatopen/ui-obc@npm:2.0.0-alpha.5"
+"@thatopen/ui-obc@npm:2.0.0-alpha.12":
+  version: 2.0.0-alpha.12
+  resolution: "@thatopen/ui-obc@npm:2.0.0-alpha.12"
   dependencies:
-    "@thatopen/ui": 2.0.0-alpha.5
+    "@thatopen/ui": 2.0.0-alpha.12
+    lit: 3.1.2
   peerDependencies:
-    "@thatopen/components": 2.0.0-alpha.7
+    "@thatopen/components": 2.0.0-alpha.16
+    "@thatopen/components-front": 2.0.0-alpha.16
     three: 0.160.1
-  checksum: 8fa3bc052705e53c096cfc438d9fb9fec8b744db6c22d2fb8ee1483b7dd65e3451db887704535aff06f64c89b06919313ee3a051da3a089df8902479db7a63eb
+    web-ifc: 0.0.53
+  checksum: 8ba2af0f344af64362b88f44148babf3ba7a72fd68ced0072dd8b2948c592b8fc73ca8ae4daba8934adae6c6e888432263a47308b00a9bea73f1b703515dbcb3
   languageName: node
   linkType: hard
 
-"@thatopen/ui@npm:2.0.0-alpha.5":
-  version: 2.0.0-alpha.5
-  resolution: "@thatopen/ui@npm:2.0.0-alpha.5"
+"@thatopen/ui@npm:2.0.0-alpha.12":
+  version: 2.0.0-alpha.12
+  resolution: "@thatopen/ui@npm:2.0.0-alpha.12"
   dependencies:
     "@floating-ui/dom": 1.6.3
     iconify-icon: 2.0.0
     lit: 3.1.2
-  checksum: ca6eff3424e85fc530d2be520ef8f67215e6957f92c2b2b4fa237cf45ea71e03c8d2f3ef23835de489aebabcaf4181481432309c2bd8d06e39ea188fb149d5a8
+  checksum: e8c375a5a0d39adbca4164984f1e7d4694202b2d0d0de2d5dbe892c58119564bdfc5cff2e1e062a144754564367b9f2817ebf306ade19afca9a8511ffab686af
   languageName: node
   linkType: hard
 

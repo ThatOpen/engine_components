@@ -176,12 +176,25 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
     if (!this.currentWorld || !this.currentWorld.renderer) {
       return;
     }
-    const size = this.currentWorld.renderer.getSize();
-    const aspect = size.x / size.y;
-    this.threeOrtho.left = (-this._frustumSize * aspect) / 2;
-    this.threeOrtho.right = (this._frustumSize * aspect) / 2;
-    this.threeOrtho.top = this._frustumSize / 2;
-    this.threeOrtho.bottom = -this._frustumSize / 2;
+
+    const lineOfSight = new THREE.Vector3();
+    this.threePersp.getWorldDirection(lineOfSight);
+    const target = new THREE.Vector3();
+    this.controls.getTarget(target);
+    const distance = target.clone().sub(this.threePersp.position);
+
+    const depth = distance.dot(lineOfSight);
+    const dims = this.currentWorld.renderer.getSize();
+    const aspect = dims.x / dims.y;
+    const camera = this.threePersp;
+    const height = depth * 2 * Math.atan((camera.fov * (Math.PI / 180)) / 2);
+    const width = height * aspect;
+
+    this.threeOrtho.zoom = 1;
+    this.threeOrtho.left = width / -2;
+    this.threeOrtho.right = width / 2;
+    this.threeOrtho.top = height / 2;
+    this.threeOrtho.bottom = height / -2;
     this.threeOrtho.updateProjectionMatrix();
   }
 }

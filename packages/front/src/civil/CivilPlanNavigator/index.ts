@@ -18,6 +18,7 @@ export class CivilPlanNavigator extends CivilNavigator {
     this.planHighlighter = new PlanHighlighter(
       this.components,
       world.scene.three,
+      world,
     );
   }
 

@@ -1,60 +1,52 @@
+/* eslint import/no-extraneous-dependencies: 0 */
+
 import * as THREE from "three";
+import * as OBC from "@thatopen/components";
+import * as BUI from "@thatopen/ui";
+import * as BUIC from "@thatopen/ui-obc";
 import Stats from "stats.js";
-import * as OBC from "../..";
+import * as OBCF from "../..";
+
+BUI.Manager.init();
+BUIC.Manager.init();
 
 const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
 
-const sceneComponent = new OBC.SimpleScene(components);
-sceneComponent.setup();
-components.scene = sceneComponent;
+const worlds = components.get(OBC.Worlds);
 
-const rendererComponent = new OBC.PostproductionRenderer(components, container);
-components.renderer = rendererComponent;
+const world = worlds.create<
+  OBC.SimpleScene,
+  OBC.SimpleCamera,
+  OBCF.RendererWith2D
+>();
 
-const cameraComponent = new OBC.SimpleCamera(components);
-components.camera = cameraComponent;
-
-components.raycaster = new OBC.SimpleRaycaster(components);
+world.scene = new OBC.SimpleScene(components);
+world.renderer = new OBCF.RendererWith2D(components, container);
+world.camera = new OBC.SimpleCamera(components);
 
 components.init();
 
-rendererComponent.postproduction.enabled = true;
-rendererComponent.postproduction.customEffects.outlineEnabled = true;
+world.scene.setup();
 
-cameraComponent.controls.setLookAt(12, 6, 8, 0, 0, -10);
+world.camera.controls.setLookAt(5, 5, 5, 0, 0, 0);
 
-const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
-const customEffects = rendererComponent.postproduction.customEffects;
-customEffects.excludedMeshes.push(grid.get());
+container.appendChild(world.renderer.three2D.domElement);
 
-const fragments = new OBC.FragmentsManager(components);
-const fragmentIfcLoader = new OBC.FragmentIfcLoader(components);
+const grids = components.get(OBC.Grids);
+grids.create(world);
 
-fragmentIfcLoader.settings.wasm = {
-  path: "https://unpkg.com/web-ifc@0.0.50/",
-  absolute: true,
-};
+const fragments = components.get(OBC.FragmentsManager);
 
-fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
-fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
-
-const file = await fetch("../../../resources/asdf.frag");
+const file = await fetch("../../../../../resources/road.frag");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = await fragments.load(buffer);
-const properties = await fetch("../../../resources/asdf.json");
+world.scene.three.add(model);
+
+const properties = await fetch("../../../../../resources/road.json");
 model.setLocalProperties(await properties.json());
-
-const mainToolbar = new OBC.Toolbar(components, {
-  name: "Main Toolbar",
-  position: "bottom",
-});
-components.ui.addToolbar(mainToolbar);
-mainToolbar.addChild(fragmentIfcLoader.uiElement.get("main"));
-
-console.log(model);
 
 /*
 ### 🌍 Creating a 3D World with Civil 3D Navigator
@@ -67,9 +59,26 @@ console.log(model);
     us to navigate through our 3D environment and interact with the model.
 */
 
-const navigator = new OBC.Civil3DNavigator(components);
+const navigator = components.get(OBCF.Civil3DNavigator);
+navigator.world = world;
 navigator.draw(model);
-navigator.setup();
+
+const cullers = components.get(OBC.Cullers);
+const culler = cullers.create(world);
+
+culler.threshold = 10;
+
+for (const child of model.children) {
+  if (child instanceof THREE.InstancedMesh) {
+    culler.add(child);
+  }
+}
+
+culler.needsUpdate = true;
+
+world.camera.controls.addEventListener("sleep", () => {
+  culler.needsUpdate = true;
+});
 
 /*
 **🖌️ Configuring Navigator Highlighting**
@@ -99,7 +108,7 @@ const sphere = new THREE.Sphere(undefined, 20);
 
 navigator.onHighlight.add(({ point }) => {
   sphere.center.copy(point);
-  cameraComponent.controls.fitToSphere(sphere, true);
+  world.camera.controls.fitToSphere(sphere, true);
 });
 
 /*
@@ -111,5 +120,5 @@ const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
-rendererComponent.onBeforeUpdate.add(() => stats.begin());
-rendererComponent.onAfterUpdate.add(() => stats.end());
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());

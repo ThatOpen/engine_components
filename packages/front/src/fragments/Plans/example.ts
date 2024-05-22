@@ -54,7 +54,7 @@ const plans = components.get(OBCF.Plans);
 plans.world = world;
 await plans.generate(model);
 
-BUI.Manager.registerComponents();
+BUI.Manager.init();
 
 const classifier = components.get(OBC.Classifier);
 classifier.byModel(model.uuid, model);

@@ -37,6 +37,21 @@ const buffer = new Uint8Array(data);
 const model = fragments.load(buffer);
 world.scene.three.add(model);
 
+const cullers = components.get(OBC.Cullers);
+const culler = cullers.create(world);
+
+for (const child of model.children) {
+  if (child instanceof THREE.Mesh) {
+    culler.add(child);
+  }
+}
+
+culler.needsUpdate = true;
+
+world.camera.controls.addEventListener("sleep", () => {
+  culler.needsUpdate = true;
+});
+
 const measurements = components.get(OBC.MeasurementUtils);
 
 const casters = components.get(OBC.Raycasters);

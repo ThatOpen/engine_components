@@ -1,59 +1,65 @@
+/* eslint import/no-extraneous-dependencies: 0 */
+
 import * as THREE from "three";
+import * as OBC from "@thatopen/components";
+import * as BUI from "@thatopen/ui";
+import * as BUIC from "@thatopen/ui-obc";
 import Stats from "stats.js";
-import * as OBC from "../..";
+import * as OBCF from "../..";
+
+BUI.Manager.init();
+BUIC.Manager.init();
 
 const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
 
-const sceneComponent = new OBC.SimpleScene(components);
-sceneComponent.setup();
-components.scene = sceneComponent;
+const worlds = components.get(OBC.Worlds);
 
-const rendererComponent = new OBC.PostproductionRenderer(components, container);
-components.renderer = rendererComponent;
+const world = worlds.create<
+  OBC.SimpleScene,
+  OBC.SimpleCamera,
+  OBCF.RendererWith2D
+>();
 
-const cameraComponent = new OBC.SimpleCamera(components);
-components.camera = cameraComponent;
-components.raycaster = new OBC.SimpleRaycaster(components);
+world.scene = new OBC.SimpleScene(components);
+world.renderer = new OBCF.RendererWith2D(components, container);
+world.camera = new OBC.SimpleCamera(components);
 
 components.init();
 
-rendererComponent.postproduction.enabled = true;
-rendererComponent.postproduction.customEffects.outlineEnabled = true;
+world.scene.setup();
 
-cameraComponent.controls.setLookAt(12, 6, 8, 0, 0, -10);
+world.camera.controls.setLookAt(5, 5, 5, 0, 0, 0);
 
-const grid = new OBC.SimpleGrid(components, new THREE.Color(0x666666));
-const customEffects = rendererComponent.postproduction.customEffects;
-customEffects.excludedMeshes.push(grid.get());
+container.appendChild(world.renderer.three2D.domElement);
 
-const fragments = new OBC.FragmentsManager(components);
-const fragmentIfcLoader = new OBC.FragmentIfcLoader(components);
+const grids = components.get(OBC.Grids);
+grids.create(world);
 
-fragmentIfcLoader.settings.wasm = {
-  path: "https://unpkg.com/web-ifc@0.0.50/",
-  absolute: true,
-};
+const fragments = components.get(OBC.FragmentsManager);
 
-fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
-fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
-
-const file = await fetch("../../../resources/asdf.frag");
+const file = await fetch("../../../../../resources/asdf.frag");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
-const model = await fragments.load(buffer);
+const model = fragments.load(buffer);
+world.scene.three.add(model);
 
-const navigator = new OBC.Civil3DNavigator(components);
+// const properties = await fetch("../../../../../resources/road.json");
+// model.setLocalProperties(await properties.json());
+
+const navigator = new OBCF.Civil3DNavigator(components);
+navigator.world = world;
 navigator.draw(model);
-navigator.setup();
+
 navigator.highlighter.hoverCurve.material.color.set(1, 1, 1);
 const { material: hoverPointsMaterial } = navigator.highlighter.hoverPoints;
 if (Array.isArray(hoverPointsMaterial)) {
   const material = hoverPointsMaterial[0];
   if ("color" in material) (material.color as THREE.Color).set(1, 1, 1);
-} else if ("color" in hoverPointsMaterial)
+} else if ("color" in hoverPointsMaterial) {
   (hoverPointsMaterial.color as THREE.Color).set(1, 1, 1);
+}
 
 /*
 ### 🌍 Exploring Civil Plan View with Navigators
@@ -72,8 +78,15 @@ if (Array.isArray(hoverPointsMaterial)) {
     adding our civil model to it.
 */
 
-const planNavigator = new OBC.CivilPlanNavigator(components);
-planNavigator.draw(model);
+const scene2DHtml = document.getElementById("scene-2d") as BUIC.World2D;
+
+const planNavigator = new OBCF.CivilPlanNavigator(components);
+scene2DHtml.components = components;
+if (!scene2DHtml.world) {
+  throw new Error("World not found!");
+}
+planNavigator.world = scene2DHtml.world;
+await planNavigator.draw(model);
 
 /*
 **🌅 Defining the UI for the tool**
@@ -81,9 +94,6 @@ planNavigator.draw(model);
     The UI element to be used with this tool is a floating window, so let's
     define it and introduce it to our scene.
 */
-
-const horizontalWindow = planNavigator.uiElement.get("floatingWindow");
-horizontalWindow.visible = true;
 
 /*
 **🖌️ Configuring Navigator Highlighting**
@@ -99,10 +109,10 @@ planNavigator.onHighlight.add(({ mesh }) => {
   const index = mesh.curve.index;
   const curve3d = mesh.curve.alignment.absolute[index];
   curve3d.mesh.geometry.computeBoundingSphere();
-  cameraComponent.controls.fitToSphere(
-    curve3d.mesh.geometry.boundingSphere,
-    true,
-  );
+  const sphere = curve3d.mesh.geometry.boundingSphere;
+  if (sphere) {
+    world.camera.controls.fitToSphere(sphere, true);
+  }
 });
 
 /*
@@ -116,5 +126,5 @@ const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
-rendererComponent.onBeforeUpdate.add(() => stats.begin());
-rendererComponent.onAfterUpdate.add(() => stats.end());
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());

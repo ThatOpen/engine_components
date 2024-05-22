@@ -50,7 +50,7 @@ const modelID = webIfc.OpenModel(ifcBuffer);
 
 const exporter = components.get(OBC.IfcJsonExporter);
 
-BUI.Manager.registerComponents();
+BUI.Manager.init();
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`

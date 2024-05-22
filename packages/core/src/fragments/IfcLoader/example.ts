@@ -1,8 +1,8 @@
 /* eslint import/no-extraneous-dependencies: 0 */
 
 import * as WEBIFC from "web-ifc";
-º// @ts-ignore
 import * as BUI from "@thatopen/ui";
+import Stats from "stats.js";
 import * as OBC from "../..";
 
 const container = document.getElementById("container")!;
@@ -208,7 +208,7 @@ stats.dom.style.left = "0px";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
 
-BUI.Manager.registerComponents();
+BUI.Manager.init();
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`

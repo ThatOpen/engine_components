@@ -113,7 +113,7 @@ postproduction.customEffects.excludedMeshes.push(grid.three);
 
 const ao = postproduction.n8ao.configuration;
 
-BUI.Manager.registerComponents();
+BUI.Manager.init();
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`

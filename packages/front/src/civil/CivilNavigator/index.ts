@@ -69,7 +69,7 @@ export abstract class CivilNavigator extends OBC.Component {
     }
 
     const scene = world.scene.three;
-    this.highlighter = new CurveHighlighter(scene, "absolute");
+    this.highlighter = new CurveHighlighter(scene, this.view);
 
     this.mouseMarkers = {
       select: this.newMouseMarker("#ffffff", world),
@@ -88,14 +88,14 @@ export abstract class CivilNavigator extends OBC.Component {
       throw new Error("The provided model doesn't have civil data!");
     }
 
-    if (!this.world) {
+    if (!this._world) {
       throw new Error("No world was given for this navigator!");
     }
 
     const { alignments } = model.civilData;
     const allAlignments = filter || alignments.values();
 
-    const scene = this.world.scene.three;
+    const scene = this._world.scene.three;
 
     const totalBBox: THREE.Box3 = new THREE.Box3();
     totalBBox.makeEmpty();
@@ -123,17 +123,10 @@ export abstract class CivilNavigator extends OBC.Component {
         }
       }
     }
+    const scaledBbox = this.getScaledBox(totalBBox, 1.2);
 
-    const scaledBbox = new THREE.Box3();
-    const size = new THREE.Vector3();
-    const center = new THREE.Vector3();
-    totalBBox.getCenter(center);
-    totalBBox.getSize(size);
-    size.multiplyScalar(1.2);
-    scaledBbox.setFromCenterAndSize(center, size);
-
-    if (this.world.camera.hasCameraControls()) {
-      await this.world.camera.controls.fitToBox(scaledBbox, false);
+    if (this._world.camera.hasCameraControls()) {
+      await this._world.camera.controls.fitToBox(scaledBbox, false);
     }
   }
 
@@ -236,36 +229,36 @@ export abstract class CivilNavigator extends OBC.Component {
   }
 
   private setupEvents(active: boolean) {
-    if (!this.world) {
+    if (!this._world) {
       throw new Error("No world was given for this navigator!");
     }
 
-    if (!this.world.renderer) {
+    if (!this._world.renderer) {
       return;
     }
 
-    const canvas = this.world.renderer.three.domElement;
+    const canvas = this._world.renderer.three.domElement;
     const container = canvas.parentElement as HTMLElement;
+
+    container.removeEventListener("mousemove", this.onMouseMove);
+    container.removeEventListener("click", this.onClick);
+    if (this._world.camera.hasCameraControls()) {
+      const controls = this._world.camera.controls;
+      controls.removeEventListener("update", this.onControlsUpdated);
+    }
 
     if (active) {
       container.addEventListener("mousemove", this.onMouseMove);
       container.addEventListener("click", this.onClick);
-      if (this.world.camera.hasCameraControls()) {
-        const controls = this.world.camera.controls;
+      if (this._world.camera.hasCameraControls()) {
+        const controls = this._world.camera.controls;
         controls.addEventListener("update", this.onControlsUpdated);
-      }
-    } else {
-      container.removeEventListener("mousemove", this.onMouseMove);
-      container.removeEventListener("click", this.onClick);
-      if (this.world.camera.hasCameraControls()) {
-        const controls = this.world.camera.controls;
-        controls.removeEventListener("update", this.onControlsUpdated);
       }
     }
   }
 
   private newMouseMarker(color: string, world: OBC.World) {
-    if (!this.world) {
+    if (!this._world) {
       throw new Error("No world was given for this navigator!");
     }
     const scene = world.scene.three;
@@ -275,7 +268,7 @@ export abstract class CivilNavigator extends OBC.Component {
     bar.style.backgroundColor = color;
     bar.style.width = "3rem";
     bar.style.height = "3px";
-    const mouseMarker = new Mark(this.world, root, scene);
+    const mouseMarker = new Mark(this._world, root, scene);
     mouseMarker.visible = false;
     return mouseMarker;
   }
@@ -315,17 +308,17 @@ export abstract class CivilNavigator extends OBC.Component {
   }
 
   private onMouseMove = (event: MouseEvent) => {
-    if (!this.world) {
+    if (!this._world) {
       throw new Error("No world was given for this navigator!");
     }
 
-    if (!this.world.renderer) {
+    if (!this._world.renderer) {
       return;
     }
 
-    const canvas = this.world.renderer.three.domElement;
+    const canvas = this._world.renderer.three.domElement;
     const dom = canvas.parentElement as HTMLElement;
-    const camera = this.world.camera.three;
+    const camera = this._world.camera.three;
 
     const result = this.highlighter?.castRay(event, camera, dom, this._curves);
 
@@ -344,17 +337,17 @@ export abstract class CivilNavigator extends OBC.Component {
   };
 
   private onClick = (event: MouseEvent) => {
-    if (!this.world) {
+    if (!this._world) {
       throw new Error("No world was given for this navigator!");
     }
 
-    if (!this.world.renderer) {
+    if (!this._world.renderer) {
       return;
     }
 
-    const canvas = this.world.renderer.three.domElement;
+    const canvas = this._world.renderer.three.domElement;
     const dom = canvas.parentElement as HTMLElement;
-    const camera = this.world.camera.three;
+    const camera = this._world.camera.three;
 
     const found = this.highlighter?.castRay(event, camera, dom, this._curves);
 
@@ -364,15 +357,23 @@ export abstract class CivilNavigator extends OBC.Component {
       this.highlighter?.select(mesh);
       this.updateMarker(result, "select");
 
+      if (this._world.camera.hasCameraControls()) {
+        if (!mesh.geometry.boundingBox) {
+          mesh.geometry.computeBoundingBox();
+        }
+        if (mesh.geometry.boundingBox) {
+          const box = this.getScaledBox(mesh.geometry.boundingBox, 2);
+          this._world.camera.controls.fitToBox(box, true);
+        }
+      }
+
       this.onHighlight.trigger({ mesh, point: result.point });
 
       if (this._previousAlignment !== mesh.curve.alignment) {
         const marker = this.components.get(CivilMarker);
 
-        marker.deleteByType(["KP"]);
-        // this.showKPStations(mesh);
+        marker.deleteByType();
         marker.showKPStations(mesh);
-        // this.kpManager.createKP();
         this._previousAlignment = mesh.curve.alignment;
       }
     }
@@ -382,11 +383,11 @@ export abstract class CivilNavigator extends OBC.Component {
   };
 
   private onControlsUpdated = () => {
-    if (!this.world) {
+    if (!this._world) {
       throw new Error("No world was given for this navigator!");
     }
 
-    if (!(this.world.camera.three instanceof THREE.OrthographicCamera)) {
+    if (!(this._world.camera.three instanceof THREE.OrthographicCamera)) {
       return;
     }
 
@@ -394,7 +395,7 @@ export abstract class CivilNavigator extends OBC.Component {
       return;
     }
 
-    const { zoom, left, right, top, bottom } = this.world.camera.three;
+    const { zoom, left, right, top, bottom } = this._world.camera.three;
     const width = left - right;
     const height = top - bottom;
     const screenSize = Math.max(width, height);
@@ -403,4 +404,15 @@ export abstract class CivilNavigator extends OBC.Component {
     const { caster } = this.highlighter;
     caster.params.Line.threshold = realScreenSize / range;
   };
+
+  private getScaledBox(totalBBox: THREE.Box3, factor: number) {
+    const scaledBbox = new THREE.Box3();
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    totalBBox.getCenter(center);
+    totalBBox.getSize(size);
+    size.multiplyScalar(factor);
+    scaledBbox.setFromCenterAndSize(center, size);
+    return scaledBbox;
+  }
 }
