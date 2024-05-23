@@ -299,7 +299,9 @@ export class CivilMarker extends OBC.Component {
     const middlePoint = points[midpointIndex];
 
     const id = marker.create(this.world, formattedLength, middlePoint, true);
-    this.save(id, "Length");
+    if (id !== undefined) {
+      this.save(id, "Radius");
+    }
   }
 
   showLineLength(line: THREE.Line, length: number) {
@@ -324,7 +326,9 @@ export class CivilMarker extends OBC.Component {
     middlePoint.addVectors(startPoint, endPoint).multiplyScalar(0.5);
 
     const id = marker.create(this.world, formattedLength, middlePoint, true);
-    this.save(id, "Length");
+    if (id !== undefined) {
+      this.save(id, "Radius");
+    }
   }
 
   showCurveRadius(line: THREE.Line, radius: number) {
@@ -349,7 +353,9 @@ export class CivilMarker extends OBC.Component {
     middlePoint.addVectors(startPoint, endPoint).multiplyScalar(0.5);
 
     const id = marker.create(this.world, formattedLength, middlePoint, true);
-    this.save(id, "Radius");
+    if (id !== undefined) {
+      this.save(id, "Radius");
+    }
   }
 
   deleteByType(types: Iterable<CivilLabel> = CivilLabelArray) {

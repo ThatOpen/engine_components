@@ -1,38 +1,38 @@
-var _=Object.defineProperty;var b=(s,e,t)=>e in s?_(s,e,{enumerable:!0,configurable:!0,writable:!0,value:t}):s[e]=t;var r=(s,e,t)=>(b(s,typeof e!="symbol"?e+"":e,t),t);import{l as z,C as u,f as x,V as m,ah as k,o as v,P as y,n as S}from"./web-ifc-api-BiYij3qq.js";import{S as V}from"./stats.min-GTpOrGrX.js";import{p as R,a as C,m as P}from"./index-DyM33b1I.js";import{E as c,C as E,a as T,W as U,S as B,b as M,c as $}from"./index-DsPLPeA6.js";import{G as A}from"./index-GK9dObYT.js";import{F as D}from"./index-Ba8czaZS.js";import"./_commonjsHelpers-Cpj98o6Y.js";class O{constructor(e){r(this,"onDisposed",new c);r(this,"onAfterUpdate",new c);r(this,"onBeforeUpdate",new c);r(this,"onResize",new c);r(this,"frontOffset",0);r(this,"overrideMaterial",new z);r(this,"backgroundColor",new u(395274));r(this,"renderer");r(this,"enabled",!0);r(this,"world");r(this,"_lockRotation",!0);r(this,"_camera");r(this,"_plane");r(this,"_size",new x(320,160));r(this,"_tempVector1",new m);r(this,"_tempVector2",new m);r(this,"_tempTarget",new m);r(this,"down",new m(0,-1,0));r(this,"updatePlanes",()=>{if(!this.world.renderer)throw new Error("The given world must have a renderer!");const e=[],t=this.world.renderer.three;for(const o of t.clippingPlanes)e.push(o);e.push(this._plane),this.renderer.clippingPlanes=e});if(this.world=e,!this.world.renderer)throw new Error("The given world must have a renderer!");this.renderer=new k,this.renderer.setSize(this._size.x,this._size.y);const t=1,o=this._size.x/this._size.y;this._camera=new v(t*o/-2,t*o/2,t/2,t/-2),this.world.renderer.onClippingPlanesUpdated.add(this.updatePlanes),this._camera.position.set(0,200,0),this._camera.zoom=.1,this._camera.rotation.x=-Math.PI/2,this._plane=new y(this.down,200),this.updatePlanes()}get lockRotation(){return this._lockRotation}set lockRotation(e){this._lockRotation=e,e&&(this._camera.rotation.z=0)}get zoom(){return this._camera.zoom}set zoom(e){this._camera.zoom=e,this._camera.updateProjectionMatrix()}dispose(){this.enabled=!1,this.onBeforeUpdate.reset(),this.onAfterUpdate.reset(),this.onResize.reset(),this.overrideMaterial.dispose(),this.renderer.dispose(),this.onDisposed.trigger(),this.onDisposed.reset()}get(){return this._camera}update(){if(!this.enabled)return;this.onBeforeUpdate.trigger();const e=this.world.scene.three,t=this.world.camera;if(!t.hasCameraControls())throw new Error("The given world must use camera controls!");if(!(e instanceof S))throw new Error("The given world must have a THREE.Scene as a root!");const o=t.controls;if(o.getPosition(this._tempVector1),this._camera.position.x=this._tempVector1.x,this._camera.position.z=this._tempVector1.z,this.frontOffset!==0&&(o.getTarget(this._tempVector2),this._tempVector2.sub(this._tempVector1),this._tempVector2.normalize().multiplyScalar(this.frontOffset),this._camera.position.x+=this._tempVector2.x,this._camera.position.z+=this._tempVector2.z),!this._lockRotation){o.getTarget(this._tempTarget);const w=Math.atan2(this._tempTarget.x-this._tempVector1.x,this._tempTarget.z-this._tempVector1.z);this._camera.rotation.z=w+Math.PI}this._plane.set(this.down,this._tempVector1.y);const g=e.background;e.background=this.backgroundColor,this.renderer.render(e,this._camera),e.background=g,this.onAfterUpdate.trigger()}getSize(){return this._size}resize(e){if(e){this._size.copy(e),this.renderer.setSize(e.x,e.y);const t=e.x/e.y,o=1;this._camera.left=o*t/-2,this._camera.right=o*t/2,this._camera.top=o/2,this._camera.bottom=-o/2,this._camera.updateProjectionMatrix(),this.onResize.trigger(e)}}}const d=class d extends E{constructor(t){super(t);r(this,"onAfterUpdate",new c);r(this,"onBeforeUpdate",new c);r(this,"onDisposed",new c);r(this,"enabled",!0);r(this,"list",new Map);this.components.add(d.uuid,this)}create(t){if(this.list.has(t.uuid))throw new Error("This world already has a minimap!");const o=new O(t);return this.list.set(t.uuid,o),o}delete(t){const o=this.list.get(t);o&&o.dispose(),this.list.delete(t)}dispose(){for(const[t,o]of this.list)o.dispose();this.list.clear(),this.onDisposed.trigger()}update(){for(const[t,o]of this.list)o.update()}};r(d,"uuid","39ad6aad-84c8-4adf-a1e0-7f25313a9e7f");let h=d;const I=document.getElementById("container"),n=new T,G=n.get(U),i=G.create();i.scene=new B(n);i.renderer=new M(n,I);i.camera=new $(n);i.scene.setup();n.init();const L=n.get(A);L.create(i);i.camera.controls.setLookAt(1,2,-2,-2,0,-5);const W=new D(n),j=await fetch("../../../../../resources/small.frag"),F=await j.arrayBuffer(),H=new Uint8Array(F),X=W.load(H);i.scene.three.add(X);const Y=new h(n),a=Y.create(i),Z=document.getElementById("minimap"),f=a.renderer.domElement;f.style.borderRadius="12px";Z.append(f);a.lockRotation=!1;a.zoom=.2;const p=new V;p.showPanel(2);document.body.append(p.dom);p.dom.style.left="0px";i.renderer.onBeforeUpdate.add(()=>p.begin());i.renderer.onAfterUpdate.add(()=>p.end());R.init();const l=a.getSize(),q=C.create(()=>P`
+import{C as c}from"./web-ifc-api-BC8YMRiS.js";import{S as m}from"./stats.min-GTpOrGrX.js";import{p as l,a as p,m as d}from"./index-DyM33b1I.js";import{f as b,p as u,s as f,i as g,k as x,N as h,u as w,h as y}from"./index-BmA4XTIx.js";import"./_commonjsHelpers-Cpj98o6Y.js";const k=document.getElementById("container"),a=new b,v=a.get(u),n=v.create();n.scene=new f(a);n.renderer=new g(a,k);n.camera=new x(a);n.scene.setup();a.init();const z=a.get(h);z.create(n);n.camera.controls.setLookAt(1,2,-2,-2,0,-5);const $=new w(a),S=await fetch("../../../../../resources/small.frag"),B=await S.arrayBuffer(),C=new Uint8Array(B),E=$.load(C);n.scene.three.add(E);const A=new y(a),t=A.create(n),R=document.getElementById("minimap"),s=t.renderer.domElement;s.style.borderRadius="12px";R.append(s);l.init();const r=t.getSize(),U=p.create(()=>d`
     <bim-panel label="Minimap Tutorial" style="position: fixed; top: 5px; right: 5px" active>
       <bim-panel-section style="padding-top: 10px">
       
         <bim-checkbox checked="true" label="Enabled" 
-          @change="${({target:s})=>{a.enabled=s.value}}">  
+          @change="${({target:e})=>{t.enabled=e.value}}">  
         </bim-checkbox>
         
         <bim-checkbox label="Lock rotation" 
-          @change="${({target:s})=>{a.lockRotation=s.value}}">  
+          @change="${({target:e})=>{t.lockRotation=e.value}}">  
         </bim-checkbox>
       
         <bim-color-input 
           label="Background Color" color="#202932" 
-          @input="${({target:s})=>{i.scene.three.background=new u(s.color)}}">
+          @input="${({target:e})=>{n.scene.three.background=new c(e.color)}}">
         </bim-color-input>
         
         
         <bim-number-input 
-          slider label="Zoom" value="${a.zoom}" min="0.01" max="0.5" step="0.01" 
-          @change="${({target:s})=>{a.frontOffset=s.value}}">
+          slider label="Zoom" value="${t.zoom}" min="0.01" max="0.5" step="0.01" 
+          @change="${({target:e})=>{t.frontOffset=e.value}}">
         </bim-number-input>
                 
         <div style="display: flex; gap: 12px">
         
-          <bim-number-input slider value="${l.x}" pref="Size X" min="100" max="500" step="10"              
-            @change="${({target:s})=>{const e=a.getSize();e.x=s.value,a.resize(e)}}">
+          <bim-number-input slider value="${r.x}" pref="Size X" min="100" max="500" step="10"              
+            @change="${({target:e})=>{const o=t.getSize();o.x=e.value,t.resize(o)}}">
           </bim-number-input>        
         
-          <bim-number-input slider value="${l.y}" pref="Size Y" min="100" max="500" step="10"            
-            @change="${({target:s})=>{const e=a.getSize();e.y=s.value,a.resize(e)}}">
+          <bim-number-input slider value="${r.y}" pref="Size Y" min="100" max="500" step="10"            
+            @change="${({target:e})=>{const o=t.getSize();o.y=e.value,t.resize(o)}}">
           </bim-number-input>
         </div>
   
         
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(q);
+    `);document.body.append(U);const i=new m;i.showPanel(2);document.body.append(i.dom);i.dom.style.left="0px";n.renderer.onBeforeUpdate.add(()=>i.begin());n.renderer.onAfterUpdate.add(()=>i.end());
