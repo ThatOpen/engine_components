@@ -1291,10 +1291,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
-    "@thatopen/components": 2.0.0
+    "@thatopen/components": 2.0.1
     "@thatopen/fragments": 2.0.0
-    "@thatopen/ui": 2.0.0-alpha.13
-    "@thatopen/ui-obc": 2.0.0-alpha.13
+    "@thatopen/ui": 2.0.0
+    "@thatopen/ui-obc": 2.0.0
     "@types/earcut": ^2.1.4
     "@types/three": ^0.160.0
     camera-controls: 2.7.3
@@ -1311,27 +1311,13 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@npm:2.0.0":
-  version: 2.0.0
-  resolution: "@thatopen/components@npm:2.0.0"
-  dependencies:
-    camera-controls: 2.7.3
-    three-mesh-bvh: 0.7.0
-  peerDependencies:
-    "@thatopen/fragments": 2.0.0-alpha.5
-    three: ^0.160.1
-    web-ifc: 0.0.53
-  checksum: e842d547619db53b17aa8b953b066eb4911ea885d382df5f9abadbc5655be0414fc09558aef6c9e92c3f60d32e12daf4884cad0d3ef3c4b45eab03de7fc2688c
-  languageName: node
-  linkType: hard
-
-"@thatopen/components@workspace:packages/core":
+"@thatopen/components@2.0.1, @thatopen/components@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
     "@thatopen/fragments": 2.0.0
-    "@thatopen/ui": 2.0.0-alpha.13
-    "@thatopen/ui-obc": 2.0.0-alpha.13
+    "@thatopen/ui": 2.0.0
+    "@thatopen/ui-obc": 2.0.0
     "@types/jest": 27.0.0
     "@types/node": 20.11.30
     "@types/three": 0.160.0
@@ -1373,29 +1359,29 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@thatopen/ui-obc@npm:2.0.0-alpha.13":
-  version: 2.0.0-alpha.13
-  resolution: "@thatopen/ui-obc@npm:2.0.0-alpha.13"
+"@thatopen/ui-obc@npm:2.0.0":
+  version: 2.0.0
+  resolution: "@thatopen/ui-obc@npm:2.0.0"
   dependencies:
-    "@thatopen/ui": 2.0.0-alpha.13
+    "@thatopen/ui": 2.0.0
     lit: 3.1.2
   peerDependencies:
-    "@thatopen/components": 2.0.0-alpha.18
-    "@thatopen/components-front": 2.0.0-alpha.18
+    "@thatopen/components": 2.0.1
+    "@thatopen/components-front": 2.0.2
     three: 0.160.1
     web-ifc: 0.0.53
-  checksum: 7160c33c52be40ac90b34e2a964ba7addc1d47eceddaa2b1aeacd256f1f05a9db5a672b0516cad1551697acb0cf86f73da326042b9df21afe6fba3a4c7b3b0d4
+  checksum: d74093d9195a1f2bcc949e422a268489040290de1e422d0950eb13fb02fba27a17cf6bd0059e2acab404aa6eb5d1e13c06ec77dbadc60ef2360770c434889d51
   languageName: node
   linkType: hard
 
-"@thatopen/ui@npm:2.0.0-alpha.13":
-  version: 2.0.0-alpha.13
-  resolution: "@thatopen/ui@npm:2.0.0-alpha.13"
+"@thatopen/ui@npm:2.0.0":
+  version: 2.0.0
+  resolution: "@thatopen/ui@npm:2.0.0"
   dependencies:
     "@floating-ui/dom": 1.6.3
     iconify-icon: 2.0.0
     lit: 3.1.2
-  checksum: 6d77f385845c62e00b782f98daf0a042a70f3ed03956f599fdad5cdc60168d4c01f79d0fd2917a4ba179ad7e95737016d41460eb763601b19652023ecf7b3587
+  checksum: e4db0487fe37b54715795cdba8b7177a626d0d03df11b88f0fa523a060bd769eda559620ab23a1b073fcf5b5d77b229f7fb6c35af7b5d96f141a822561cb0e06
   languageName: node
   linkType: hard
 
@@ -6173,7 +6159,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    stats.js: ^0.17.0
     vite: 5.1.6
     vite-plugin-dts: 3.7.3
   languageName: unknown
