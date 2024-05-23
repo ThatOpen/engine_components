@@ -123,7 +123,6 @@ BUI.Manager.init();
 
 /* MD
   Now we will create a new panel with some inputs to change the background color of the scene and the intensity of the directional and ambient lights. For more information about the UI library, you can check the specific documentation for it!
-
 */
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
