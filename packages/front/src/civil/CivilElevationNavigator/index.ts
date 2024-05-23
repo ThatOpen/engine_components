@@ -30,9 +30,9 @@ export class CivilElevationNavigator extends CivilNavigator {
 
       // Add markers elevation
 
-      const marker = this.components.get(CivilMarker);
+      const civilMarker = this.components.get(CivilMarker);
 
-      marker.deleteByType(["Slope", "Height", "InitialKPV", "FinalKPV"]);
+      civilMarker.deleteByType(["Slope", "Height", "InitialKPV", "FinalKPV"]);
 
       const { alignment } = mesh.curve;
       const positionsVertical = [];
@@ -49,7 +49,7 @@ export class CivilElevationNavigator extends CivilNavigator {
       for (let i = 0; i < alignment.vertical.length; i++) {
         const align = alignment.vertical[i];
 
-        marker.addVerticalMarker(
+        civilMarker.addVerticalMarker(
           this.world,
           `S: ${slope[i].slope}%`,
           align.mesh,
@@ -57,7 +57,7 @@ export class CivilElevationNavigator extends CivilNavigator {
           scene,
         );
 
-        marker.addVerticalMarker(
+        civilMarker.addVerticalMarker(
           this.world,
           `H: ${defSegments[i].end.y.toFixed(2)}`,
           align.mesh,
@@ -66,7 +66,7 @@ export class CivilElevationNavigator extends CivilNavigator {
         );
       }
 
-      marker.addVerticalMarker(
+      civilMarker.addVerticalMarker(
         this.world,
         "KP: 0",
         alignment.vertical[0].mesh,
@@ -74,7 +74,7 @@ export class CivilElevationNavigator extends CivilNavigator {
         scene,
       );
 
-      marker.addVerticalMarker(
+      civilMarker.addVerticalMarker(
         this.world,
         `KP: ${alignment.vertical.length}`,
         alignment.vertical[alignment.vertical.length - 1].mesh,

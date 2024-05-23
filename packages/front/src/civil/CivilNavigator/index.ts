@@ -389,14 +389,11 @@ export abstract class CivilNavigator extends OBC.Component {
       if (this._previousAlignment !== mesh.curve.alignment) {
         const marker = this.components.get(CivilMarker);
 
-        marker.deleteByType();
         marker.showKPStations(mesh);
         this._previousAlignment = mesh.curve.alignment;
       }
     }
 
-    // this.highlighter.unSelect();
-    // this.clearKPStations();
   };
 
   private onControlsUpdated = () => {

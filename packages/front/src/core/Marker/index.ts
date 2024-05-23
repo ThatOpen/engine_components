@@ -28,8 +28,10 @@ export interface IGroupedMarkers {
  * Every marker is a Simple2DMarker
  * For every marker that needs to be added, you can use the Manager to add the marker and change its look and feel
  */
-export class Marker extends OBC.Component {
+export class Marker extends OBC.Component implements OBC.Disposable {
   static readonly uuid = "4079eb91-79b0-4ede-bcf2-15b837129236" as const;
+
+  readonly onDisposed = new OBC.Event();
 
   enabled = true;
 
@@ -37,7 +39,9 @@ export class Marker extends OBC.Component {
 
   autoCluster = true;
 
-  list = new Map<string, IMarker>();
+  list = new Map<string, Map<string, IMarker>>();
+
+  private _worldEvents = new Map<string, () => void>();
 
   protected clusterLabels: Set<IGroupedMarkers> = new Set<IGroupedMarkers>();
 
@@ -49,8 +53,6 @@ export class Marker extends OBC.Component {
   protected _markerKey = 0;
 
   protected _clusterKey = 0;
-
-  protected isNavigating = false;
 
   private _setupWorlds = new Set<string>();
 
@@ -65,8 +67,10 @@ export class Marker extends OBC.Component {
 
   set color(value: string) {
     this._color = value;
-    for (const [_id, marker] of this.list) {
-      marker.label.three.element.style.color = value;
+    for (const [_worldID, markers] of this.list) {
+      for (const [_markerID, marker] of markers) {
+        marker.label.three.element.style.color = value;
+      }
     }
   }
 
@@ -78,16 +82,21 @@ export class Marker extends OBC.Component {
   ) {
     this.setupEvents(world, true);
 
+    const key = this._markerKey.toString();
+
+    const markers = this.getWorldMarkerList(world);
+
+    if (markers.has(key)) {
+      return;
+    }
+
     const span = document.createElement("span");
     span.innerHTML = text;
     span.style.color = this._color;
     const marker = new Mark(world, span);
-
     marker.three.position.copy(point);
 
-    const key = this._markerKey.toString();
-
-    this.list.set(key, {
+    markers.set(key, {
       key,
       label: marker,
       merged: false,
@@ -100,90 +109,96 @@ export class Marker extends OBC.Component {
   }
 
   delete(id: string) {
-    const marker = this.list.get(id);
-    if (marker) {
-      marker.label.dispose();
-    }
-    this.list.delete(id);
-  }
-
-  clear(type?: string) {
-    const ids = [...this.list.keys()];
-    for (const id of ids) {
-      const marker = this.list.get(id) as IMarker;
-      if (type && marker.type !== type) {
-        continue;
+    for (const [_worldID, markers] of this.list) {
+      const marker = markers.get(id);
+      if (marker) {
+        marker.label.dispose();
       }
-      marker.label.dispose();
-      this.list.delete(id);
+      markers.delete(id);
     }
-    this.list.clear();
-    this._markerKey = 0;
   }
 
-  dispose() {
-    for (const [_id, marker] of this.list) {
-      marker.label.dispose();
+  getWorldMarkerList(world: OBC.World) {
+    if (!this.list.has(world.uuid)) {
+      this.list.set(world.uuid, new Map());
     }
 
-    this.list.clear();
-    this._markerKey = 0;
-
-    for (const cluster of this.clusterLabels) {
-      cluster.label.dispose();
-    }
-
-    this.clusterLabels.clear();
-    this._clusterKey = 0;
-
-    this.currentKeys.clear();
+    return this.list.get(world.uuid) as Map<string, IMarker>;
   }
 
-  private setupEvents(world: OBC.World, enabled: boolean) {
-    if (enabled && this._setupWorlds.has(world.uuid)) {
-      return;
+  dispose(type?: string) {
+    for (const [_worldID, markers] of this.list) {
+      const ids = [...markers.keys()];
+      for (const id of ids) {
+        const marker = markers.get(id) as IMarker;
+        if (type && marker.type !== type) {
+          continue;
+        }
+        marker.label.dispose();
+        markers.delete(id);
+      }
     }
-    if (!world.camera.hasCameraControls()) {
-      return;
+    if (!type) {
+      this.list.clear();
+      this._markerKey = 0;
+
+      for (const cluster of this.clusterLabels) {
+        cluster.label.dispose();
+      }
+
+      this.clusterLabels.clear();
+      this._clusterKey = 0;
+
+      this.currentKeys.clear();
     }
+
+    this.onDisposed.trigger();
+  }
+
+  setupEvents(world: OBC.World, enabled: boolean) {
+    if (enabled && this._setupWorlds.has(world.uuid)) return;
+    if (!world.camera.hasCameraControls()) return;
+
+    const event = this.getWorldEvent(world);
+    world.camera.controls.removeEventListener("sleep", event);
+    world.camera.controls.removeEventListener("rest", event);
+
     if (enabled) {
-      world.camera.controls.addEventListener("sleep", () => {
-        this.manageCluster();
-      });
-
-      world.camera.controls.addEventListener("rest", () => {
-        if (this.isNavigating) {
-          this.manageCluster();
-          this.isNavigating = false;
-        }
-      });
-    } else {
-      world.camera.controls.removeEventListener("sleep", () => {
-        this.manageCluster();
-      });
-
-      world.camera.controls.removeEventListener("rest", () => {
-        if (this.isNavigating) {
-          this.manageCluster();
-          this.isNavigating = false;
-        }
-      });
+      world.camera.controls.addEventListener("sleep", event);
+      world.camera.controls.addEventListener("rest", event);
     }
+  }
+
+  private getWorldEvent(world: OBC.World) {
+    if (!this._worldEvents.has(world.uuid)) {
+      const event = () => {
+        this.cluster(world);
+      };
+      this._worldEvents.set(world.uuid, event);
+    }
+    return this._worldEvents.get(world.uuid)!;
   }
 
   private resetMarkers() {
-    for (const [_id, marker] of this.list) {
-      marker.merged = false;
+    for (const [_worldID, markers] of this.list) {
+      for (const [_id, marker] of markers) {
+        marker.merged = false;
+      }
     }
+
     for (const cluster of this.clusterLabels) {
       cluster.label.dispose();
     }
+
     this.clusterLabels.clear();
     this._clusterKey = 0;
   }
 
-  private removeMergeMarkers() {
-    for (const [_id, marker] of this.list) {
+  private removeMergeMarkers(world: OBC.World) {
+    const markers = this.list.get(world.uuid);
+    if (!markers) return;
+
+    for (const [_id, marker] of markers) {
       if (marker.merged) {
         marker.label.dispose();
       } else {
@@ -194,28 +209,32 @@ export class Marker extends OBC.Component {
 
     for (const cluster of this.clusterLabels) {
       if (cluster.markerKeys.length === 1) {
-        const marker = this.list.get(cluster.markerKeys[0]);
+        for (const [_worldID, markers] of this.list) {
+          const marker = markers.get(cluster.markerKeys[0]);
 
-        if (marker) {
+          if (!marker) continue;
+
           const scene = marker.label.world.scene.three;
           scene.add(marker.label.three);
           marker.merged = false;
         }
-
         cluster.label.dispose();
         this.clusterLabels.delete(cluster);
       }
     }
   }
 
-  private manageCluster() {
+  cluster(world: OBC.World) {
     if (!this.autoCluster) return;
     this.resetMarkers();
 
-    for (const [_id, marker] of this.list) {
+    const markers = this.list.get(world.uuid);
+    if (!markers) return;
+
+    for (const [_id, marker] of markers) {
       if (!marker.merged && !marker.static) {
         this.currentKeys.clear();
-        for (const [_id, marker2] of this.list) {
+        for (const [_id, marker2] of markers) {
           if (marker2.static) {
             continue;
           }
@@ -256,15 +275,18 @@ export class Marker extends OBC.Component {
       }
     }
 
-    this.removeMergeMarkers();
+    this.removeMergeMarkers(world);
   }
 
   private getAveragePositionFromLabels(clusterGroup: string[]) {
     const positions = clusterGroup.map((key) => {
-      const marker = this.list.get(key);
-      if (marker) {
-        return marker.label.three.position;
+      for (const [_worldID, markers] of this.list) {
+        const marker = markers.get(key);
+        if (marker) {
+          return marker.label.three.position;
+        }
       }
+
       return new THREE.Vector3();
     });
 
@@ -345,10 +367,12 @@ export class Marker extends OBC.Component {
     }
 
     for (const markerKey of cluster.markerKeys) {
-      const marker = this.list.get(markerKey);
-      if (marker) {
-        const { x, y, z } = marker.label.three.position;
-        boundingRegion.push(x, y, z);
+      for (const [_worldID, markers] of this.list) {
+        const marker = markers.get(markerKey);
+        if (marker) {
+          const { x, y, z } = marker.label.three.position;
+          boundingRegion.push(x, y, z);
+        }
       }
     }
     cluster.label.dispose();
@@ -367,7 +391,6 @@ export class Marker extends OBC.Component {
       camera.controls.fitToSphere(mesh, true);
     }
 
-    this.isNavigating = true;
     geometry.dispose();
     mesh.clear();
 

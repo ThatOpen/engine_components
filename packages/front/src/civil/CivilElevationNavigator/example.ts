@@ -92,7 +92,12 @@ const elevationNavigator = new OBCF.CivilElevationNavigator(components);
 elevationNavigator.world = world2DRight.world;
 elevationNavigator.draw(model);
 
-planNavigator.onHighlight.add(({ mesh }) => {
+planNavigator.onMarkerChange.add(({ alignment, percentage }) => {
+  elevationNavigator.setMarker(alignment, percentage, "hover");
+  navigator.setMarker(alignment, percentage, "hover");
+});
+
+planNavigator.onHighlight.add(({ mesh, point }) => {
   /*
   **🖌️ Configuring Navigator Highlighting**
       ___
@@ -100,13 +105,26 @@ planNavigator.onHighlight.add(({ mesh }) => {
       previously for the Plan Navigator. These lines provide visual objects
       specific to the Elevation Navigator, improving user experience.
   */
-  elevationNavigator.clear();
-  elevationNavigator.draw(model, [mesh.curve.alignment]);
-  elevationNavigator.highlighter.select(mesh);
+
+  const { index, alignment } = mesh.curve;
+
+  const percentage = alignment.getPercentageAt(point, "horizontal");
+  if (percentage === null) return;
+  const { curve } = alignment.getCurveAt(percentage, "vertical");
+  elevationNavigator.highlighter.select(curve.mesh);
+
+  elevationNavigator.setMarker(curve.alignment, percentage, "select");
+
+  if (world2DRight.world) {
+    if (!curve.mesh.geometry.boundingSphere) {
+      curve.mesh.geometry.computeBoundingSphere();
+    }
+    const vertSphere = curve.mesh.geometry.boundingSphere!.clone();
+    vertSphere.radius *= 1.5;
+    world2DRight.world.camera.controls.fitToSphere(vertSphere, true);
+  }
 
   navigator.highlighter.select(mesh);
-
-  const index = mesh.curve.index;
   const curve3d = mesh.curve.alignment.absolute[index];
   curve3d.mesh.geometry.computeBoundingSphere();
   const sphere = curve3d.mesh.geometry.boundingSphere;

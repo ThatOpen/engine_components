@@ -27,7 +27,7 @@ export class CivilMarker extends OBC.Component {
 
   world: OBC.World | null = null;
 
-  list = new Map<CivilLabel, Set<string>>();
+  private _list = new Map<CivilLabel, Set<string>>();
 
   // TODO: Replace with UUID for the marker key
   protected _markerKey = 0;
@@ -100,7 +100,10 @@ export class CivilMarker extends OBC.Component {
 
     const key = this._markerKey.toString();
 
-    marker.list.set(key, {
+    marker.setupEvents(world, true);
+    const markers = marker.getWorldMarkerList(world);
+
+    markers.set(key, {
       label: mark,
       key,
       merged: false,
@@ -176,7 +179,10 @@ export class CivilMarker extends OBC.Component {
 
     const key = this._markerKey.toString();
 
-    marker.list.set(key, {
+    marker.setupEvents(world, true);
+    const markers = marker.getWorldMarkerList(world);
+
+    markers.set(key, {
       label: mark,
       key,
       type,
@@ -245,7 +251,10 @@ export class CivilMarker extends OBC.Component {
 
     const key = this._markerKey.toString();
 
-    marker.list.set(key, {
+    marker.setupEvents(world, true);
+    const markers = marker.getWorldMarkerList(world);
+
+    markers.set(key, {
       label: mark,
       key,
       type,
@@ -346,12 +355,12 @@ export class CivilMarker extends OBC.Component {
   deleteByType(types: Iterable<CivilLabel> = CivilLabelArray) {
     const marker = this.components.get(Marker);
     for (const type of types) {
-      const found = this.list.get(type);
+      const found = this._list.get(type);
       if (!found) continue;
       for (const id of found) {
         marker.delete(id);
       }
-      this.list.delete(type);
+      this._list.delete(type);
     }
   }
 
@@ -555,10 +564,10 @@ export class CivilMarker extends OBC.Component {
   }
 
   private save(id: string, type: CivilLabel) {
-    if (!this.list.has(type)) {
-      this.list.set(type, new Set());
+    if (!this._list.has(type)) {
+      this._list.set(type, new Set());
     }
-    const list = this.list.get(type) as Set<string>;
+    const list = this._list.get(type) as Set<string>;
     list.add(id);
   }
 }
