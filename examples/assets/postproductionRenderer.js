@@ -111,7 +111,7 @@ import{C as c}from"./web-ifc-api-BC8YMRiS.js";import{S as b}from"./stats.min-GTp
       
     </bim-panel>
     `);document.body.append(l);const G=m.create(()=>u`
-      <bim-button class="phone-menu-toggler" icon="brightness-empty-outline"
+      <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{l.classList.contains("options-menu-visible")?l.classList.remove("options-menu-visible"):l.classList.add("options-menu-visible")}}">
       </bim-button>
     `);document.body.append(G);

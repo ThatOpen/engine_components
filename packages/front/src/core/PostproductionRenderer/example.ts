@@ -281,7 +281,7 @@ document.body.append(panel);
 
 const button = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
-      <bim-button class="phone-menu-toggler" icon="brightness-empty-outline"
+      <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${() => {
           if (panel.classList.contains("options-menu-visible")) {
             panel.classList.remove("options-menu-visible");
