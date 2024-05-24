@@ -41,6 +41,7 @@ const grid = grids.create(world);
 const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
+stats.dom.style.zIndex = "unset";
 stats.dom.style.left = "0px";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
@@ -123,7 +124,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
     <bim-panel label="Clipper Tutorial" class="options-menu" active>
     
-      <bim-panel-section collapsed label="Gamma" >
+      <bim-panel-section collapsed label="Gamma">
         <bim-checkbox checked label="Gamma Correction"
           @change="${({ target }: { target: BUI.Checkbox }) => {
             postproduction.setPasses({ gamma: target.value });

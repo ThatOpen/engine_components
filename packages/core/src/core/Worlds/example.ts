@@ -85,6 +85,8 @@ world.camera = new OBC.SimpleCamera(components);
 
 components.init();
 
+world.scene.three.background = null;
+
 /* MD
   ### 💄 Adding things to our scene
   ---
@@ -111,6 +113,22 @@ world.scene.setup();
 world.camera.controls.setLookAt(3, 3, 3, 0, 0, 0);
 
 /* MD
+  ### ⏱️ Measuring the performance (optional)
+  ---
+
+  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
+
+*/
+
+const stats = new Stats();
+stats.showPanel(2);
+document.body.append(stats.dom);
+stats.dom.style.left = "0px";
+stats.dom.style.zIndex = "unset";
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
+
+/* MD
   ### 🧩 Adding some UI
   ---
 
@@ -127,8 +145,8 @@ BUI.Manager.init();
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
-    <bim-panel label="Worlds Tutorial" style="position: fixed; top: 5px; right: 5px" active>
-      <bim-panel-section >
+    <bim-panel label="Worlds Tutorial" class="options-menu" active>
+      <bim-panel-section collapsed label="Controls">
       
         <bim-color-input 
           label="Background Color" color="#202932" 
@@ -166,20 +184,28 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
 
 document.body.append(panel);
 
+
 /* MD
-  ### ⏱️ Measuring the performance (optional)
-  ---
-
-  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
-
+  And we will make some logic that adds a button to the screen when the user is visiting our app from their phone, allowing to show or hide the menu. Otherwise, the menu would make the app unusable.
 */
 
-const stats = new Stats();
-stats.showPanel(2);
-document.body.append(stats.dom);
-stats.dom.style.left = "0px";
-world.renderer.onBeforeUpdate.add(() => stats.begin());
-world.renderer.onAfterUpdate.add(() => stats.end());
+const button = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+      <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
+        @click="${() => {
+          if (panel.classList.contains("options-menu-visible")) {
+            panel.classList.remove("options-menu-visible");
+          } else {
+            panel.classList.add("options-menu-visible");
+          }
+        }}">
+      </bim-button>
+    `;
+});
+
+document.body.append(button);
+
+
 
 /* MD
   ### 🎉 Wrap up
