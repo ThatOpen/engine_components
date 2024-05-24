@@ -1,5 +1,5 @@
-import{C as l}from"./web-ifc-api-BC8YMRiS.js";import{S as m}from"./stats.min-GTpOrGrX.js";import{p as r,a as u,m as b}from"./index-DyM33b1I.js";import{f as p,p as d,s as f,k as h,N as g,u as x}from"./index-BmA4XTIx.js";import"./import-wrapper-prod-LhqN7JJy.js";import{P as v}from"./index-DKqERfnq.js";import"./_commonjsHelpers-Cpj98o6Y.js";import"./renderer-with-2d-k8_K2aYf.js";const $=document.getElementById("container"),t=new p,k=t.get(d),s=k.create();s.scene=new f(t);s.renderer=new v(t,$);s.camera=new h(t);s.scene.three.background=null;t.init();s.camera.controls.setLookAt(12,6,8,0,0,-10);s.scene.setup();const c=t.get(g);c.config.color.set(6710886);const E=c.create(s),i=new m;i.showPanel(2);document.body.append(i.dom);i.dom.style.left="0px";s.renderer.onBeforeUpdate.add(()=>i.begin());s.renderer.onAfterUpdate.add(()=>i.end());const w=new x(t),y=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),S=await y.arrayBuffer(),R=new Uint8Array(S),A=w.load(R);s.scene.three.add(A);const{postproduction:n}=s.renderer;n.enabled=!0;n.customEffects.excludedMeshes.push(E.three);const a=n.n8ao.configuration;r.init();const C=u.create(()=>b`
-    <bim-panel label="Clipper Tutorial" style="position: fixed; top: 5px; right: 5px; max-height: calc(100vh - 10px)" active>
+import{C as c}from"./web-ifc-api-BC8YMRiS.js";import{S as b}from"./stats.min-GTpOrGrX.js";import{p,a as m,m as u}from"./index-DyM33b1I.js";import{f as d,p as f,s as h,k as g,N as v,u as x}from"./index-BmA4XTIx.js";import"./import-wrapper-prod-LhqN7JJy.js";import{P as $}from"./index-DKqERfnq.js";import"./_commonjsHelpers-Cpj98o6Y.js";import"./renderer-with-2d-k8_K2aYf.js";const k=document.getElementById("container"),t=new d,E=t.get(f),a=E.create();a.scene=new h(t);a.renderer=new $(t,k);a.camera=new g(t);a.scene.three.background=null;t.init();a.camera.controls.setLookAt(12,6,8,0,0,-10);a.scene.setup();const r=t.get(v);r.config.color.set(6710886);const w=r.create(a),i=new b;i.showPanel(2);document.body.append(i.dom);i.dom.style.left="0px";a.renderer.onBeforeUpdate.add(()=>i.begin());a.renderer.onAfterUpdate.add(()=>i.end());const y=new x(t),S=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),R=await S.arrayBuffer(),A=new Uint8Array(R),C=y.load(A);a.scene.three.add(C);const{postproduction:n}=a.renderer;n.enabled=!0;n.customEffects.excludedMeshes.push(w.three);const s=n.n8ao.configuration;p.init();const l=m.create(()=>u`
+    <bim-panel label="Clipper Tutorial" class="options-menu" active>
     
       <bim-panel-section collapsed label="Gamma" >
         <bim-checkbox checked label="Gamma Correction"
@@ -29,7 +29,7 @@ import{C as l}from"./web-ifc-api-BC8YMRiS.js";import{S as m}from"./stats.min-GTp
         </bim-number-input> 
                       
         <bim-color-input label="Line color" 
-          @input="${({target:e})=>{const o=new l(e.value.color);n.customEffects.lineColor=o.getHex()}}">
+          @input="${({target:e})=>{const o=new c(e.value.color);n.customEffects.lineColor=o.getHex()}}">
         </bim-color-input>  
       
         <bim-number-input 
@@ -59,55 +59,59 @@ import{C as l}from"./web-ifc-api-BC8YMRiS.js";import{S as m}from"./stats.min-GTp
         </bim-checkbox>  
                 
         <bim-checkbox checked label="Half resolution"
-          @change="${({target:e})=>{a.halfRes=e.value}}">
+          @change="${({target:e})=>{s.halfRes=e.value}}">
         </bim-checkbox>  
                       
         <bim-checkbox label="Screen space radius"
-          @change="${({target:e})=>{a.screenSpaceRadius=e.value}}">
+          @change="${({target:e})=>{s.screenSpaceRadius=e.value}}">
         </bim-checkbox>
         
                               
         <bim-color-input label="AO color" 
-          @input="${({target:e})=>{const o=new l(e.value.color);a.color.r=o.r,a.color.g=o.g,a.color.b=o.b}}">
+          @input="${({target:e})=>{const o=new c(e.value.color);s.color.r=o.r,s.color.g=o.g,s.color.b=o.b}}">
         </bim-color-input>     
         
         <bim-number-input 
           slider label="AO Samples" step="1" 
-          value="${a.aoSamples}" min="1" max="16"
-          @change="${({target:e})=>{a.aoSamples=e.value}}">
+          value="${s.aoSamples}" min="1" max="16"
+          @change="${({target:e})=>{s.aoSamples=e.value}}">
         </bim-number-input>    
             
         <bim-number-input 
           slider label="Denoise Samples" step="1" 
-          value="${a.denoiseSamples}" min="1" max="16"
-          @change="${({target:e})=>{a.denoiseSamples=e.value}}">
+          value="${s.denoiseSamples}" min="1" max="16"
+          @change="${({target:e})=>{s.denoiseSamples=e.value}}">
         </bim-number-input>   
                   
         <bim-number-input 
           slider label="Denoise Radius" step="1" 
-          value="${a.denoiseRadius}" min="0" max="100"
-          @change="${({target:e})=>{a.denoiseRadius=e.value}}">
+          value="${s.denoiseRadius}" min="0" max="100"
+          @change="${({target:e})=>{s.denoiseRadius=e.value}}">
         </bim-number-input>   
                        
         <bim-number-input 
           slider label="AO Radius" step="1" 
-          value="${a.aoRadius}" min="0" max="16"
-          @change="${({target:e})=>{a.aoRadius=e.value}}">
+          value="${s.aoRadius}" min="0" max="16"
+          @change="${({target:e})=>{s.aoRadius=e.value}}">
         </bim-number-input>  
                               
         <bim-number-input 
           slider label="Distance falloff" step="1" 
-          value="${a.distanceFalloff}" min="0" max="16"
-          @change="${({target:e})=>{a.distanceFalloff=e.value}}">
+          value="${s.distanceFalloff}" min="0" max="16"
+          @change="${({target:e})=>{s.distanceFalloff=e.value}}">
         </bim-number-input> 
                                       
         <bim-number-input 
           slider label="Intensity" step="1" 
-          value="${a.intensity}" min="0" max="16"
-          @change="${({target:e})=>{a.intensity=e.value}}">
+          value="${s.intensity}" min="0" max="16"
+          @change="${({target:e})=>{s.intensity=e.value}}">
         </bim-number-input> 
         
       </bim-panel-section>
       
     </bim-panel>
-    `);document.body.append(C);
+    `);document.body.append(l);const G=m.create(()=>u`
+      <bim-button class="phone-menu-toggler" icon="brightness-empty-outline"
+        @click="${()=>{l.classList.contains("options-menu-visible")?l.classList.remove("options-menu-visible"):l.classList.add("options-menu-visible")}}">
+      </bim-button>
+    `);document.body.append(G);

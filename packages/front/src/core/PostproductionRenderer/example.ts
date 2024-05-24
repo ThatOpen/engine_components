@@ -121,7 +121,7 @@ BUI.Manager.init();
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
-    <bim-panel label="Clipper Tutorial" style="position: fixed; top: 5px; right: 5px; max-height: calc(100vh - 10px)" active>
+    <bim-panel label="Clipper Tutorial" class="options-menu" active>
     
       <bim-panel-section collapsed label="Gamma" >
         <bim-checkbox checked label="Gamma Correction"
@@ -278,6 +278,22 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
 });
 
 document.body.append(panel);
+
+const button = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+      <bim-button class="phone-menu-toggler" icon="brightness-empty-outline"
+        @click="${() => {
+          if (panel.classList.contains("options-menu-visible")) {
+            panel.classList.remove("options-menu-visible");
+          } else {
+            panel.classList.add("options-menu-visible");
+          }
+        }}">
+      </bim-button>
+    `;
+});
+
+document.body.append(button);
 
 /* MD
   **Congratulations** 🎉 on completing this tutorial! Now you know how to add cool effects easily using
