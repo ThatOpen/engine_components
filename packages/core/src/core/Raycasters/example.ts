@@ -52,6 +52,14 @@ world.camera.controls.setLookAt(10, 10, 10, 0, 0, 0);
 world.scene.setup();
 
 /* MD
+
+  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
+
+*/
+
+world.scene.three.background = null;
+
+/* MD
   ### 🧊 Adding some cubes to the scene
   ---
 
@@ -135,6 +143,7 @@ const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
+stats.dom.style.zIndex = "unset";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
 

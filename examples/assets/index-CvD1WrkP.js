@@ -1,4 +1,4 @@
-var S=Object.defineProperty;var T=(l,t,e)=>t in l?S(l,t,{enumerable:!0,configurable:!0,writable:!0,value:e}):l[t]=e;var o=(l,t,e)=>(T(l,typeof t!="symbol"?t+"":t,e),e);import{q as h,U as E,f as m,W as v,H as B,t as R,u as M,C as _,n as w,d as y,I as b,v as z,R as k,w as x,x as V}from"./web-ifc-api-BC8YMRiS.js";import{a as L,n as G}from"./index-BmA4XTIx.js";import{P as d,F as P,$ as O}from"./import-wrapper-prod-LhqN7JJy.js";import{R as N}from"./renderer-with-2d-k8_K2aYf.js";const A={name:"CopyShader",uniforms:{tDiffuse:{value:null},opacity:{value:1}},vertexShader:`
+var S=Object.defineProperty;var T=(l,t,e)=>t in l?S(l,t,{enumerable:!0,configurable:!0,writable:!0,value:e}):l[t]=e;var o=(l,t,e)=>(T(l,typeof t!="symbol"?t+"":t,e),e);import{q as h,U as E,f as m,W as v,H as B,t as R,u as M,C as _,n as w,d as y,I as b,v as z,R as k,w as x,x as V}from"./web-ifc-api-BC8YMRiS.js";import{a as L,n as G}from"./index-DQ59awSV.js";import{P as d,F as P,$ as O}from"./import-wrapper-prod-LhqN7JJy.js";import{R as N}from"./renderer-with-2d-BWBYTINn.js";const A={name:"CopyShader",uniforms:{tDiffuse:{value:null},opacity:{value:1}},vertexShader:`
 
 		varying vec2 vUv;
 

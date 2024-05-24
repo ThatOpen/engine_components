@@ -22,7 +22,7 @@ In this tutorial, we will import:
 import Stats from "stats.js";
 import * as THREE from "three";
 import * as BUI from "@thatopen/ui";
-import * as OBC from "../..";
+import * as OBC from "@thatopen/components";
 
 /* MD
   ### 🌎 Setting up the world AND the camera
@@ -48,17 +48,17 @@ world.camera = new OBC.OrthoPerspectiveCamera(components);
 
 world.scene.setup();
 
-async function test() {
-  await world.camera.controls.setLookAt(3, 3, 3, 0, 0, 0);
-  await world.camera.projection.set("Orthographic");
-}
-
-test();
-
-// await world.camera.projection.set("Perspective");
-// await world.camera.projection.set("Orthographic");
+await world.camera.controls.setLookAt(3, 3, 3, 0, 0, 0);
 
 components.init();
+
+/* MD
+
+  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
+
+*/
+
+world.scene.three.background = null;
 
 /* MD
 
@@ -96,6 +96,22 @@ world.camera.projection.onChanged.add(() => {
 });
 
 /* MD
+  ### ⏱️ Measuring the performance (optional)
+  ---
+
+  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
+
+*/
+
+const stats = new Stats();
+stats.showPanel(2);
+document.body.append(stats.dom);
+stats.dom.style.left = "0px";
+stats.dom.style.zIndex = "unset";
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
+
+/* MD
   ### 🧩 Building a camera UI
   ---
 
@@ -127,9 +143,8 @@ BUI.Manager.init();
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
-    <bim-panel active label="Orthoperspective Camera Tutorial" 
-      style="position: fixed; top: 5px; right: 5px">
-      <bim-panel-section style="padding-top: 10px;">
+    <bim-panel active label="Orthoperspective Camera Tutorial" class="options-menu">
+      <bim-panel-section collapsed label="Controls">
          
           <bim-dropdown required label="Navigation mode" 
             @change="${({ target }: { target: BUI.Dropdown }) => {
@@ -190,19 +205,24 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
 document.body.append(panel);
 
 /* MD
-  ### ⏱️ Measuring the performance (optional)
-  ---
-
-  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
-
+  And we will make some logic that adds a button to the screen when the user is visiting our app from their phone, allowing to show or hide the menu. Otherwise, the menu would make the app unusable.
 */
 
-const stats = new Stats();
-stats.showPanel(2);
-document.body.append(stats.dom);
-stats.dom.style.left = "0px";
-world.renderer.onBeforeUpdate.add(() => stats.begin());
-world.renderer.onAfterUpdate.add(() => stats.end());
+const button = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+      <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
+        @click="${() => {
+          if (panel.classList.contains("options-menu-visible")) {
+            panel.classList.remove("options-menu-visible");
+          } else {
+            panel.classList.add("options-menu-visible");
+          }
+        }}">
+      </bim-button>
+    `;
+});
+
+document.body.append(button);
 
 /* MD
   ### 🎉 Wrap up

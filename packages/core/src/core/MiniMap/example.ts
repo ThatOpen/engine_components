@@ -57,6 +57,14 @@ grids.create(world);
 world.camera.controls.setLookAt(1, 2, -2, -2, 0, -5);
 
 /* MD
+
+  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
+
+*/
+
+world.scene.three.background = null;
+
+/* MD
   ### 🏠 Loading a model
   ---
 
@@ -72,7 +80,9 @@ world.camera.controls.setLookAt(1, 2, -2, -2, 0, -5);
 
 const fragments = new OBC.FragmentsManager(components);
 
-const file = await fetch("https://thatopen.github.io/engine_components/resources/small.frag");
+const file = await fetch(
+  "https://thatopen.github.io/engine_components/resources/small.frag",
+);
 const dataBlob = await file.arrayBuffer();
 const buffer = new Uint8Array(dataBlob);
 const model = fragments.load(buffer);
@@ -101,6 +111,23 @@ const mapContainer = document.getElementById("minimap") as HTMLDivElement;
 const canvas = map.renderer.domElement;
 canvas.style.borderRadius = "12px";
 mapContainer.append(canvas);
+map.resize();
+
+/* MD
+  ### ⏱️ Measuring the performance (optional)
+  ---
+
+  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
+
+*/
+
+const stats = new Stats();
+stats.showPanel(2);
+document.body.append(stats.dom);
+stats.dom.style.left = "0px";
+stats.dom.style.zIndex = "unset";
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
 
 /* MD
   ### 🧩 Adding some UI
@@ -109,7 +136,6 @@ mapContainer.append(canvas);
   We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
 
 */
-
 
 BUI.Manager.init();
 
@@ -125,8 +151,8 @@ const mapSize = map.getSize();
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
-    <bim-panel label="Minimap Tutorial" style="position: fixed; top: 5px; right: 5px" active>
-      <bim-panel-section >
+    <bim-panel label="Minimap Tutorial" class="options-menu">
+      <bim-panel-section collapsed label="Controls">
       
         <bim-checkbox checked="true" label="Enabled" 
           @change="${({ target }: { target: BUI.Checkbox }) => {
@@ -134,7 +160,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           }}">  
         </bim-checkbox>
         
-        <bim-checkbox label="Lock rotation" 
+        <bim-checkbox checked label="Lock rotation" 
           @change="${({ target }: { target: BUI.Checkbox }) => {
             map.lockRotation = target.value;
           }}">  
@@ -150,6 +176,13 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         
         <bim-number-input 
           slider label="Zoom" value="${map.zoom}" min="0.01" max="0.5" step="0.01" 
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            map.zoom = target.value;
+          }}">
+        </bim-number-input>
+        
+        <bim-number-input 
+          slider label="Front offset" value="${map.frontOffset}" min="0" max="5" step="1" 
           @change="${({ target }: { target: BUI.NumberInput }) => {
             map.frontOffset = target.value;
           }}">
@@ -183,20 +216,24 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
 document.body.append(panel);
 
 /* MD
-  ### ⏱️ Measuring the performance (optional)
-  ---
-
-  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
-
+  And we will make some logic that adds a button to the screen when the user is visiting our app from their phone, allowing to show or hide the menu. Otherwise, the menu would make the app unusable.
 */
 
-const stats = new Stats();
-stats.showPanel(2);
-document.body.append(stats.dom);
-stats.dom.style.left = "0px";
-world.renderer.onBeforeUpdate.add(() => stats.begin());
-world.renderer.onAfterUpdate.add(() => stats.end());
+const button = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+      <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
+        @click="${() => {
+          if (panel.classList.contains("options-menu-visible")) {
+            panel.classList.remove("options-menu-visible");
+          } else {
+            panel.classList.add("options-menu-visible");
+          }
+        }}">
+      </bim-button>
+    `;
+});
 
+document.body.append(button);
 
 /* MD
   ### 🎉 Wrap up

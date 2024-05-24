@@ -58,7 +58,6 @@ const components = new OBC.Components();
 
 */
 
-
 const worlds = components.get(OBC.Worlds);
 
 /* MD
@@ -84,6 +83,12 @@ world.renderer = new OBC.SimpleRenderer(components, container);
 world.camera = new OBC.SimpleCamera(components);
 
 components.init();
+
+/* MD
+
+  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
+
+*/
 
 world.scene.three.background = null;
 
@@ -136,7 +141,6 @@ world.renderer.onAfterUpdate.add(() => stats.end());
 
 */
 
-
 BUI.Manager.init();
 
 /* MD
@@ -145,7 +149,7 @@ BUI.Manager.init();
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
-    <bim-panel label="Worlds Tutorial" class="options-menu" active>
+    <bim-panel label="Worlds Tutorial" class="options-menu">
       <bim-panel-section collapsed label="Controls">
       
         <bim-color-input 
@@ -184,7 +188,6 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
 
 document.body.append(panel);
 
-
 /* MD
   And we will make some logic that adds a button to the screen when the user is visiting our app from their phone, allowing to show or hide the menu. Otherwise, the menu would make the app unusable.
 */
@@ -204,8 +207,6 @@ const button = BUI.Component.create<BUI.PanelSection>(() => {
 });
 
 document.body.append(button);
-
-
 
 /* MD
   ### 🎉 Wrap up

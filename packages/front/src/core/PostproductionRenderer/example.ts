@@ -122,7 +122,7 @@ BUI.Manager.init();
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
-    <bim-panel label="Clipper Tutorial" class="options-menu" active>
+    <bim-panel label="Clipper Tutorial" class="options-menu">
     
       <bim-panel-section collapsed label="Gamma">
         <bim-checkbox checked label="Gamma Correction"

@@ -146,21 +146,19 @@ export class MiniMap implements Resizeable, Updateable, Disposable {
     return this._size;
   }
 
-  resize(size?: THREE.Vector2) {
-    if (size) {
-      this._size.copy(size);
-      this.renderer.setSize(size.x, size.y);
+  resize(size: THREE.Vector2 = this._size) {
+    this._size.copy(size);
+    this.renderer.setSize(size.x, size.y);
 
-      const aspect = size.x / size.y;
-      const frustumSize = 1;
+    const aspect = size.x / size.y;
+    const frustumSize = 1;
 
-      this._camera.left = (frustumSize * aspect) / -2;
-      this._camera.right = (frustumSize * aspect) / 2;
-      this._camera.top = frustumSize / 2;
-      this._camera.bottom = -frustumSize / 2;
-      this._camera.updateProjectionMatrix();
-      this.onResize.trigger(size);
-    }
+    this._camera.left = (frustumSize * aspect) / -2;
+    this._camera.right = (frustumSize * aspect) / 2;
+    this._camera.top = frustumSize / 2;
+    this._camera.bottom = -frustumSize / 2;
+    this._camera.updateProjectionMatrix();
+    this.onResize.trigger(size);
   }
 
   private updatePlanes = () => {

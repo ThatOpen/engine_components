@@ -18,9 +18,8 @@ In this tutorial, we will import:
 
 */
 
-
 import * as THREE from "three";
-import * as OBC from "../..";
+import * as OBC from "@thatopen/components";
 
 /* MD
   ### 🌎 Setting up a simple scene
@@ -51,6 +50,14 @@ const cube = new THREE.Mesh(new THREE.BoxGeometry());
 world.scene.three.add(cube);
 
 /* MD
+
+  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
+
+*/
+
+world.scene.three.background = null;
+
+/* MD
   ### 🕷️ Adding the grid to the world
   ---
 
@@ -74,6 +81,7 @@ const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
+stats.dom.style.zIndex = "unset";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
 
