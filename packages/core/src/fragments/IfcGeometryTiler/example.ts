@@ -231,7 +231,7 @@ tiler.onProgress.add((progress) => {
   */
 
 async function processFile() {
-  const fetchedIfc = await fetch("../../../../../resources/small.ifc");
+  const fetchedIfc = await fetch("https://thatopen.github.io/engine_components/resources/small.ifc");
   const ifcBuffer = await fetchedIfc.arrayBuffer();
   // We will need this information later to also convert the properties
   const ifcArrayBuffer = new Uint8Array(ifcBuffer);

@@ -129,7 +129,7 @@ fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
 // culler.enabled = true;
 
 async function loadIfc() {
-  const file = await fetch("../../../../../resources/small.ifc");
+  const file = await fetch("https://thatopen.github.io/engine_components/resources/small.ifc");
   const data = await file.arrayBuffer();
   const buffer = new Uint8Array(data);
   const model = await fragmentIfcLoader.load(buffer);

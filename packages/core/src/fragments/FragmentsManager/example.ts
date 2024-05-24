@@ -74,7 +74,7 @@ async function loadFragments() {
   if (fragments.groups.size) {
     return;
   }
-  const file = await fetch("../../../resources/small.frag");
+  const file = await fetch("https://thatopen.github.io/engine_components/resources/small.frag");
   const data = await file.arrayBuffer();
   const buffer = new Uint8Array(data);
   const group = fragments.load(buffer);

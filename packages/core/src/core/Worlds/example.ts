@@ -128,7 +128,7 @@ BUI.Manager.init();
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
     <bim-panel label="Worlds Tutorial" style="position: fixed; top: 5px; right: 5px" active>
-      <bim-panel-section style="padding-top: 10px">
+      <bim-panel-section >
       
         <bim-color-input 
           label="Background Color" color="#202932" 

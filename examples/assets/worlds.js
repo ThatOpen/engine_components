@@ -1,6 +1,6 @@
 import{k as a,B as r,M as s,C as c,a_ as l,a$ as m}from"./web-ifc-api-BC8YMRiS.js";import{p,a as d,m as b}from"./index-DyM33b1I.js";import{f as u,p as f,s as h,i as g,k as w}from"./index-BmA4XTIx.js";import{S as y}from"./stats.min-GTpOrGrX.js";import"./_commonjsHelpers-Cpj98o6Y.js";const x=document.getElementById("container"),o=new u,k=o.get(f),e=k.create();e.scene=new h(o);e.renderer=new g(o,x);e.camera=new w(o);o.init();const v=new a({color:"#6528D7"}),B=new r,$=new s(B,v);e.scene.three.add($);e.scene.setup();e.camera.controls.setLookAt(3,3,3,0,0,0);p.init();const A=d.create(()=>b`
     <bim-panel label="Worlds Tutorial" style="position: fixed; top: 5px; right: 5px" active>
-      <bim-panel-section style="padding-top: 10px">
+      <bim-panel-section >
       
         <bim-color-input 
           label="Background Color" color="#202932" 

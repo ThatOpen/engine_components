@@ -39,13 +39,19 @@ grids.create(world);
 
 const fragments = components.get(OBC.FragmentsManager);
 
-const file = await fetch("../../../../../resources/road.frag");
+const file = await fetch(
+  "https://thatopen.github.io/engine_components/resources/road.frag",
+);
+
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = await fragments.load(buffer);
 world.scene.three.add(model);
 
-const properties = await fetch("../../../../../resources/road.json");
+const properties = await fetch(
+  "https://thatopen.github.io/engine_components/resources/road.json",
+);
+
 model.setLocalProperties(await properties.json());
 
 /*

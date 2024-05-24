@@ -41,7 +41,7 @@ grids.create(world);
 
 const loader = new OBCF.IfcStreamer(components);
 loader.world = world;
-loader.url = "../../../../../resources/streaming/";
+loader.url = "https://thatopen.github.io/engine_components/resources/streaming/";
 // const fragments = components.get(OBC.FragmentsManager);
 
 async function loadModel(geometryURL: string, propertiesURL?: string) {
@@ -61,8 +61,8 @@ async function loadModel(geometryURL: string, propertiesURL?: string) {
 }
 
 await loadModel(
-  "../../../../../resources/streaming/small.ifc-processed.json",
-  "../../../../../resources/streaming/small.ifc-processed-properties.json",
+  "https://thatopen.github.io/engine_components/resources/streaming/small.ifc-processed.json",
+  "https://thatopen.github.io/engine_components/resources/streaming/small.ifc-processed-properties.json",
 );
 
 /* MD
@@ -120,12 +120,12 @@ to handle any model on any device smoothly.
 //         await dispose();
 //     } else if(code === "KeyO") {
 //         await loadModel(
-//             "../../../resources/dm1_ark.ifc-processed.json",
-//             // "../../../resources/small.ifc-processed-properties.json"
+//             "https://thatopen.github.io/engine_components/resources/dm1_ark.ifc-processed.json",
+//             // "https://thatopen.github.io/engine_components/resources/small.ifc-processed-properties.json"
 //         );
 //         await loadModel(
-//             "../../../resources/dm1_riv.ifc-processed.json",
-//             // "../../../resources/small.ifc-processed-properties.json"
+//             "https://thatopen.github.io/engine_components/resources/dm1_riv.ifc-processed.json",
+//             // "https://thatopen.github.io/engine_components/resources/small.ifc-processed-properties.json"
 //         );
 //     }
 // })
@@ -143,8 +143,8 @@ to handle any model on any device smoothly.
 //         await disposeOne();
 //     } else if(code === "KeyO") {
 //         await loadModel(
-//             "../../../resources/dm1_ark.ifc-processed.json",
-//             // "../../../resources/small.ifc-processed-properties.json"
+//             "https://thatopen.github.io/engine_components/resources/dm1_ark.ifc-processed.json",
+//             // "https://thatopen.github.io/engine_components/resources/small.ifc-processed-properties.json"
 //         );
 //     }
 // })

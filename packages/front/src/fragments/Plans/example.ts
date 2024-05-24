@@ -40,13 +40,13 @@ grid.three.position.y -= 1;
 world.renderer.postproduction.customEffects.excludedMeshes.push(grid.three);
 
 const fragments = components.get(OBC.FragmentsManager);
-const file = await fetch("../../../../../resources/small.frag");
+const file = await fetch("https://thatopen.github.io/engine_components/resources/small.frag");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = fragments.load(buffer);
 world.scene.three.add(model);
 
-const propsFile = await fetch("../../../../../resources/small.json");
+const propsFile = await fetch("https://thatopen.github.io/engine_components/resources/small.json");
 const propsData = await propsFile.json();
 model.setLocalProperties(propsData);
 

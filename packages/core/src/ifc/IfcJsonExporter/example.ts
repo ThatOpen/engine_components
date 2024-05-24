@@ -33,7 +33,7 @@ const grids = components.get(OBC.Grids);
 grids.create(world);
 
 const fragments = new OBC.FragmentsManager(components);
-const fragFile = await fetch("../../../../../resources/small.frag");
+const fragFile = await fetch("https://thatopen.github.io/engine_components/resources/small.frag");
 const fragData = await fragFile.arrayBuffer();
 const fragBuffer = new Uint8Array(fragData);
 const model = fragments.load(fragBuffer);
@@ -43,7 +43,7 @@ const webIfc = new WEBIFC.IfcAPI();
 webIfc.SetWasmPath("https://unpkg.com/web-ifc@0.0.53/", true);
 await webIfc.Init();
 
-const ifcFile = await fetch("../../../../../resources/small.ifc");
+const ifcFile = await fetch("https://thatopen.github.io/engine_components/resources/small.ifc");
 const ifcData = await ifcFile.arrayBuffer();
 const ifcBuffer = new Uint8Array(ifcData);
 const modelID = webIfc.OpenModel(ifcBuffer);

@@ -24,6 +24,8 @@ world.scene = new OBC.SimpleScene(components);
 world.renderer = new OBCF.PostproductionRenderer(components, container);
 world.camera = new OBC.SimpleCamera(components);
 
+world.scene.three.background = null;
+
 components.init();
 
 world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
@@ -73,7 +75,9 @@ world.renderer.onAfterUpdate.add(() => stats.end());
   */
 
 const fragments = new OBC.FragmentsManager(components);
-const file = await fetch("../../../../../resources/small.frag");
+const file = await fetch(
+  "https://thatopen.github.io/engine_components/resources/small.frag",
+);
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = fragments.load(buffer);
@@ -117,9 +121,9 @@ BUI.Manager.init();
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
-    <bim-panel label="Clipper Tutorial" style="position: fixed; top: 5px; right: 5px; max-height: 80vh" active>
+    <bim-panel label="Clipper Tutorial" style="position: fixed; top: 5px; right: 5px; max-height: calc(100vh - 10px)" active>
     
-      <bim-panel-section fixed label="Gamma" style="padding-top: 10px">
+      <bim-panel-section collapsed label="Gamma" >
         <bim-checkbox checked label="Gamma Correction"
           @change="${({ target }: { target: BUI.Checkbox }) => {
             postproduction.setPasses({ gamma: target.value });
@@ -127,7 +131,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         </bim-checkbox>
       </bim-panel-section>
       
-      <bim-panel-section fixed label="Custom effects" style="padding-top: 10px">
+      <bim-panel-section collapsed label="Custom effects" >
         <bim-checkbox checked label="Custom effects"
           @change="${({ target }: { target: BUI.Checkbox }) => {
             postproduction.setPasses({ custom: target.value });
@@ -189,7 +193,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         
       </bim-panel-section>
       
-      <bim-panel-section fixed label="Ambient Oclussion">
+      <bim-panel-section collapsed label="Ambient Oclussion">
       
         <bim-checkbox label="AO enabled"
           @change="${({ target }: { target: BUI.Checkbox }) => {

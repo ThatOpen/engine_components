@@ -72,7 +72,7 @@ world.camera.controls.setLookAt(1, 2, -2, -2, 0, -5);
 
 const fragments = new OBC.FragmentsManager(components);
 
-const file = await fetch("../../../../../resources/small.frag");
+const file = await fetch("https://thatopen.github.io/engine_components/resources/small.frag");
 const dataBlob = await file.arrayBuffer();
 const buffer = new Uint8Array(dataBlob);
 const model = fragments.load(buffer);
@@ -126,7 +126,7 @@ const mapSize = map.getSize();
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
     <bim-panel label="Minimap Tutorial" style="position: fixed; top: 5px; right: 5px" active>
-      <bim-panel-section style="padding-top: 10px">
+      <bim-panel-section >
       
         <bim-checkbox checked="true" label="Enabled" 
           @change="${({ target }: { target: BUI.Checkbox }) => {
