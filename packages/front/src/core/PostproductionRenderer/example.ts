@@ -1,4 +1,4 @@
-/* eslint import/no-extraneous-dependencies: 0 */
+
 
 import * as THREE from "three";
 import Stats from "stats.js";

@@ -1,4 +1,4 @@
-/* eslint import/no-extraneous-dependencies: 0 */
+
 
 import Stats from "stats.js";
 import * as BUI from "@thatopen/ui";

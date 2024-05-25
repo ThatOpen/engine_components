@@ -1,4 +1,4 @@
-/* eslint import/no-extraneous-dependencies: 0 */
+
 
 import * as WEBIFC from "web-ifc";
 import * as BUI from "@thatopen/ui";
