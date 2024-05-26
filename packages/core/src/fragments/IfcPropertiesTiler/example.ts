@@ -57,7 +57,7 @@ async function downloadFilesSequentially(
 
 /* MD
   ### 📋 Streaming the properties
-  ___
+  ---
   You can also stream the properties of an IFC file. Why? Because some files can have
   millions of properties, and trying to save them naively in a normal DB is not very
   scalable/affordable. Using this system, you'll be able to store and retrieve the

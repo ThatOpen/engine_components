@@ -56,10 +56,11 @@ export class IfcPropertiesUtils {
       relatedIDs: number[],
     ) => Promise<void>,
   ) {
-    const defaultCallback = () => {};
+    const defaultCallback = async () => {};
     const _onElementsFound = onElementsFound ?? defaultCallback;
     const result: { [relatingID: number]: number[] } = {};
     const ids = model.getAllPropertiesIDs();
+
     for (const expressID of ids) {
       const prop = await model.getProperties(expressID);
 
@@ -89,7 +90,7 @@ export class IfcPropertiesUtils {
         return el.value;
       });
 
-      _onElementsFound(relating.expressID, elements);
+      await _onElementsFound(relating.expressID, elements);
       result[relating.expressID] = elements;
     }
     return result;

@@ -2,7 +2,7 @@ import * as FRAGS from "@thatopen/fragments";
 import { FragmentsManager } from "../FragmentsManager";
 import { Components, Component, Cullers } from "../../core";
 
-export class FragmentHider extends Component {
+export class Hider extends Component {
   static readonly uuid = "dd9ccf2d-8a21-4821-b7f6-2949add16a29" as const;
 
   enabled = true;
@@ -10,7 +10,7 @@ export class FragmentHider extends Component {
   constructor(components: Components) {
     super(components);
 
-    this.components.add(FragmentHider.uuid, this);
+    this.components.add(Hider.uuid, this);
   }
 
   set(visible: boolean, items?: FRAGS.FragmentIdMap) {

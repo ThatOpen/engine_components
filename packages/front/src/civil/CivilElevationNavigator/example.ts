@@ -71,7 +71,7 @@ planNavigator.draw(model);
 ### 🌍 Exploring Civil Elevation View with Navigators
 
 **🔧 Setting up Civil Elevation Navigator**
-    ___
+    ---
     The Elevation Navigator is a tool that allows exploration and visualization of
     the alignments in a civil IFC file, by creating a drawer that shows their
     its elevation view. Let's get into it!
@@ -100,7 +100,7 @@ planNavigator.onMarkerChange.add(({ alignment, percentage }) => {
 planNavigator.onHighlight.add(({ mesh, point }) => {
   /*
   **🖌️ Configuring Navigator Highlighting**
-      ___
+      ---
       Finally, the following lines are added to the highlighter tool defined
       previously for the Plan Navigator. These lines provide visual objects
       specific to the Elevation Navigator, improving user experience.

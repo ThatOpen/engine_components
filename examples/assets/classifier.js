@@ -1,38 +1,41 @@
-import{C as l}from"./web-ifc-api-BC8YMRiS.js";import{S as a}from"./stats.min-GTpOrGrX.js";import{p as c,a as m,m as p}from"./index-DyM33b1I.js";import{a as d,W as u,S as b,b as f,c as C}from"./index-BY1If8xF.js";import{G as w}from"./index-DE4WfR4J.js";import{C as g}from"./index-CsW_rzHW.js";import{F as y}from"./index-CqfCnTh7.js";import"./_commonjsHelpers-Cpj98o6Y.js";const S=document.getElementById("container"),r=new d,F=r.get(u),n=F.create();n.scene=new b(r);n.renderer=new f(r,S);n.camera=new C(r);r.init();n.camera.controls.setLookAt(12,6,8,0,0,-10);n.scene.setup();const A=r.get(w);A.create(n);const E=new y(r),I=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),h=await I.arrayBuffer(),L=new Uint8Array(h),i=E.load(L);n.scene.three.add(i);const o=r.get(g);o.byEntity(i);o.byStorey(i);o.byModel(i.uuid,i);c.init();const R=o.find({entities:["IFCWALLSTANDARDCASE"]}),$=o.find({entities:["IFCSLAB"]}),x=o.find({entities:["IFCMEMBER","IFCPLATE"]}),B=o.find({entities:["IFCFURNISHINGELEMENT"]}),M=o.find({entities:["IFCDOOR"]}),W=o.find({models:[i.uuid]}),e=new l,D=m.create(()=>p`
-    <bim-panel active label="Classifier Tutorial" 
-      style="position: fixed; top: 5px; right: 5px">
-      <bim-panel-section style="padding-top: 10px;">
+import{a7 as u,C as m}from"./web-ifc-api-BC8YMRiS.js";import{S as d}from"./stats.min-GTpOrGrX.js";import{p,a,m as c}from"./index-DyM33b1I.js";import{f as b,p as f,s as C,i as w,k as I,N as g,u as y,R as A}from"./index-CLKLHy3P.js";import"./_commonjsHelpers-Cpj98o6Y.js";const E=document.getElementById("container"),s=new b,L=s.get(f),t=L.create();t.scene=new C(s);t.renderer=new w(s,E);t.camera=new I(s);s.init();t.camera.controls.setLookAt(12,6,8,0,0,-10);t.scene.setup();const R=s.get(g);R.create(t);t.scene.three.background=null;const F=new y(s),N=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),S=await N.arrayBuffer(),h=new Uint8Array(S),i=F.load(h);t.scene.three.add(i);const o=s.get(A);o.byEntity(i);o.byIfcRel(i,u,"storeys");o.byModel(i.uuid,i);const T=o.find({entities:["IFCWALLSTANDARDCASE"]}),$=o.find({entities:["IFCSLAB"]}),k=o.find({entities:["IFCMEMBER","IFCPLATE"]}),U=o.find({entities:["IFCFURNISHINGELEMENT"]}),v=o.find({entities:["IFCDOOR"]}),B=o.find({models:[i.uuid]}),l=new d;l.showPanel(2);document.body.append(l.dom);l.dom.style.left="0px";l.dom.style.zIndex="unset";t.renderer.onBeforeUpdate.add(()=>l.begin());t.renderer.onAfterUpdate.add(()=>l.end());p.init();const e=new m,r=a.create(()=>c`
+    <bim-panel active label="Classifier Tutorial" class="options-menu">
+      <bim-panel-section collapsed label="Controls">
       
         <bim-color-input 
           label="Walls Color" color="#202932" 
-          @input="${({target:t})=>{e.set(t.color),o.setColor(R,e)}}">
+          @input="${({target:n})=>{e.set(n.color),o.setColor(T,e)}}">
         </bim-color-input>
       
         <bim-color-input 
           label="Slabs Color" color="#202932" 
-          @input="${({target:t})=>{e.set(t.color),o.setColor($,e)}}">
+          @input="${({target:n})=>{e.set(n.color),o.setColor($,e)}}">
         </bim-color-input>
       
         <bim-color-input 
           label="Curtain walls Color" color="#202932" 
-          @input="${({target:t})=>{e.set(t.color),o.setColor(x,e)}}">
+          @input="${({target:n})=>{e.set(n.color),o.setColor(k,e)}}">
         </bim-color-input>
       
         <bim-color-input 
           label="Furniture Color" color="#202932" 
-          @input="${({target:t})=>{e.set(t.color),o.setColor(B,e)}}">
+          @input="${({target:n})=>{e.set(n.color),o.setColor(U,e)}}">
         </bim-color-input>
       
         <bim-color-input 
           label="Doors Color" color="#202932" 
-          @input="${({target:t})=>{e.set(t.color),o.setColor(M,e)}}">
+          @input="${({target:n})=>{e.set(n.color),o.setColor(v,e)}}">
         </bim-color-input>
                   
         <bim-button 
           label="Reset walls color" 
-          @click="${()=>{o.resetColor(W)}}">  
+          @click="${()=>{o.resetColor(B)}}">  
         </bim-button>  
 
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(D);const s=new a;s.showPanel(2);document.body.append(s.dom);s.dom.style.left="0px";s.dom.style.right="auto";n.renderer.onBeforeUpdate.add(()=>s.begin());n.renderer.onAfterUpdate.add(()=>s.end());
+    `);document.body.append(r);const D=a.create(()=>c`
+      <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
+        @click="${()=>{r.classList.contains("options-menu-visible")?r.classList.remove("options-menu-visible"):r.classList.add("options-menu-visible")}}">
+      </bim-button>
+    `);document.body.append(D);

@@ -87,7 +87,7 @@ planNavigator.onHighlight.add(({ mesh }) => {
 ### 🌍 Exploring Civil Cross Sections with Navigators
 
 **🔧 Setting up Civil Cross Section Navigator**
-    ___
+    ---
     The Cross Section Navigator is a tool that will allow you to clearly visualize
     the cross section of any civil IFC model, in any point selected in an alignment.
     Let's begin!
@@ -111,7 +111,7 @@ crossNavigator.world3D = world;
 
 /*
 **🌅 Defining the UI for the tool**
-    ___
+    ---
     The UI element to be used with this tool is a floating window, so let's
     define it and introduce it to our scene.
 */

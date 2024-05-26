@@ -120,7 +120,6 @@ fragmentBbox.reset();
   ---
 
   We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
-
 */
 
 const stats = new Stats();
@@ -136,7 +135,6 @@ world.renderer.onAfterUpdate.add(() => stats.end());
   ---
 
   We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
-
 */
 
 BUI.Manager.init();

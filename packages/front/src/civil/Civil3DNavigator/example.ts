@@ -58,7 +58,7 @@ model.setLocalProperties(await properties.json());
 ### 🌍 Creating a 3D World with Civil 3D Navigator
 
 **🔧 Setting up Civil 3D Navigator**
-    ___
+    ---
     Now that we've established our simple scene, let's integrate the
     Civil 3D Navigator to explore our 3D model further. First, we need to
     create an instance of the Civil 3D Navigator component. This will enable
@@ -88,7 +88,7 @@ world.camera.controls.addEventListener("sleep", () => {
 
 /*
 **🖌️ Configuring Navigator Highlighting**
-    ___
+    ---
     To enhance user interaction, we'll configure highlighting for
     civil elements within the navigator. This will provide visual feedback
     when interacting with civil elements, making the experience more intuitive.
@@ -105,7 +105,7 @@ if (Array.isArray(hoverPointsMaterial)) {
 
 /*
 **⚪ Highlight Sphere**
-    ___
+    ---
     A sphere object is defined and introduced to the scene everytime the
     user interacts with the alignments. Try it out!
 */

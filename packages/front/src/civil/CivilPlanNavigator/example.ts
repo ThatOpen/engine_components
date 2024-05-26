@@ -65,7 +65,7 @@ if (Array.isArray(hoverPointsMaterial)) {
 ### 🌍 Exploring Civil Plan View with Navigators
 
 **🔧 Setting up Civil Plan Navigator**
-    ___
+    ---
     The Plan Navigator is a tool that allows exploration and visualization of
     the alignments in a civil IFC file, by creating a window that shows their
     plan view. Let's explore it!
@@ -91,14 +91,14 @@ await planNavigator.draw(model);
 
 /*
 **🌅 Defining the UI for the tool**
-    ___
+    ---
     The UI element to be used with this tool is a floating window, so let's
     define it and introduce it to our scene.
 */
 
 /*
 **🖌️ Configuring Navigator Highlighting**
-    ___
+    ---
     Finally, we configure a highlighter to be able to interact with the
     alignments shown in the navigator. This will provide multiple visual objects
     when navigating through the model, making the experience more intuitive.

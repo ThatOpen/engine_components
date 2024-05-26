@@ -1,1 +1,26 @@
-import{M as u,B as p}from"./web-ifc-api-BC8YMRiS.js";import{g as f}from"./lil-gui.module.min-Bc0DeA9g.js";import{a as g,W as w,S as F,b,c as h}from"./index-BY1If8xF.js";import{F as x}from"./index-CqfCnTh7.js";const y=document.getElementById("container"),a=new g,E=a.get(w),r=E.create();r.scene=new F(a);r.renderer=new b(a,y);r.camera=new h(a);a.init();const B=new u(new p);r.scene.three.add(B);r.camera.controls.setLookAt(12,6,8,0,0,-10);r.scene.setup();const t=new x(a);let m="";async function L(){if(t.groups.size)return;const n=await(await fetch("https://thatopen.github.io/engine_components/resources/small.frag")).arrayBuffer(),s=new Uint8Array(n),o=t.load(s);r.scene.three.add(o),m=o.uuid,console.log(o)}function U(e){const n=document.createElement("a");n.href=URL.createObjectURL(e),n.download=e.name,document.body.appendChild(n),n.click(),n.remove()}function R(){if(!t.groups.size)return;const e=t.groups.get(m);if(!e)return;const n=t.export(e),s=new Blob([n]),o=new File([s],"small.frag");U(o)}function S(){t.dispose()}function k(){if(t.groups.size)return;const e=document.createElement("input");e.type="file",e.onchange=async()=>{if(!(e.files&&e.files[0]))return;const n=e.files[0];if(n.name.includes(".frag")){const s=URL.createObjectURL(n),l=await(await fetch(s)).arrayBuffer(),d=new Uint8Array(l);t.load(d)}e.remove()},e.click()}const c=new f,i={loadFragments:()=>L(),disposeFragments:()=>S(),exportFragments:()=>R(),importExternalFragment:()=>k()};c.add(i,"loadFragments").name("Load Fragments");c.add(i,"disposeFragments").name("Dispose Fragments");c.add(i,"exportFragments").name("Export Fragments");c.add(i,"importExternalFragment").name("Import External Fragment");
+import"./web-ifc-api-BC8YMRiS.js";import{S as u}from"./stats.min-GTpOrGrX.js";import{f as p,p as b,s as f,i as g,k as w,N as h,u as k}from"./index-CLKLHy3P.js";import{p as y,a as l,m}from"./index-DyM33b1I.js";import"./_commonjsHelpers-Cpj98o6Y.js";const L=document.getElementById("container"),n=new p,v=n.get(b),e=v.create();e.scene=new f(n);e.renderer=new g(n,L);e.camera=new w(n);n.init();e.camera.controls.setLookAt(12,6,8,0,0,-10);e.scene.setup();const x=n.get(h);x.create(e);e.scene.three.background=null;const s=n.get(k);let d="";async function F(){if(s.groups.size)return;const t=await(await fetch("https://thatopen.github.io/engine_components/resources/small.frag")).arrayBuffer(),c=new Uint8Array(t),i=s.load(c);e.scene.three.add(i),d=i.uuid}function U(o){const t=document.createElement("a");t.href=URL.createObjectURL(o),t.download=o.name,document.body.appendChild(t),t.click(),t.remove()}function $(){if(!s.groups.size)return;const o=s.groups.get(d);if(!o)return;const t=s.export(o),c=new Blob([t]),i=new File([c],"small.frag");U(i)}function B(){s.dispose()}const a=new u;a.showPanel(2);document.body.append(a.dom);a.dom.style.left="0px";a.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>a.begin());e.renderer.onAfterUpdate.add(()=>a.end());y.init();const r=l.create(()=>m`
+    <bim-panel active label="Fragments Manager Tutorial" class="options-menu">
+      <bim-panel-section collapsed label="Controls">
+      
+        <bim-button 
+          label="Load fragments" 
+          @click="${()=>{F()}}">
+        </bim-button>
+        
+        <bim-button 
+          label="Dispose fragments" 
+          @click="${()=>{B()}}">
+        </bim-button>
+        
+        <bim-button 
+          label="Export fragments" 
+          @click="${()=>{$()}}">
+        </bim-button>
+        
+      </bim-panel-section>
+    </bim-panel>
+    `);document.body.append(r);const z=l.create(()=>m`
+      <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
+        @click="${()=>{r.classList.contains("options-menu-visible")?r.classList.remove("options-menu-visible"):r.classList.add("options-menu-visible")}}">
+      </bim-button>
+    `);document.body.append(z);

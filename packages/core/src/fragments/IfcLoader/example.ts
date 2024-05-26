@@ -32,7 +32,7 @@ grids.create(world);
 
 /* MD
   ### 🏠👉🤖 From IFC to fragment in 1 minute
-  ___
+  ---
   Fragments are great: they are lightweight, they are fast and we
   have tons of tools to work with them. But fragments are not used
   outside our libraries. So how can we convert an IFC file to fragments?
@@ -58,7 +58,7 @@ const fragmentIfcLoader = components.get(OBC.IfcLoader);
 
 
   ### 🔭🔧 Calibrating the converter
-  ___
+  ---
   Now, we need to configure the path of the WASM files. What's WASM?
   It's a technology that lets us run C++ on the browser, which means
   that we can load IFCs super fast! These files are the compilation of
@@ -110,7 +110,7 @@ fragmentIfcLoader.settings.webIfc.OPTIMIZE_PROFILES = true;
 
 /* MD
   ### 🚗🔥 Loading the IFC
-  ___
+  ---
   Next, let's define a function to load the IFC programmatically.
   We have hardcoded the path to one of our IFC files, but feel free
   to do this with any of your own files!
@@ -146,7 +146,7 @@ async function loadIfc() {
 
 /* MD
   ### 🎁 Exporting the result
-  ___
+  ---
   Once you have your precious fragments, you might want to save them
   so that you don't need to open this IFC file each time your user
   gets into your app. Instead, the next time you can load the
@@ -180,7 +180,7 @@ async function exportFragments() {
 
 /* MD
   ### 🧠🧼 Cleaning memory
-  ___
+  ---
   Now, just like in the `FragmentManager` tutorial, you will need
   to dispose the memory if your user wants to reset the state of the
   scene, especially if you are using Single Page Application

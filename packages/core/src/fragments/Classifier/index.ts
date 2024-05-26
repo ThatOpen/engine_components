@@ -210,15 +210,6 @@ export class Classifier extends Component implements Disposable {
     }
   }
 
-  byStorey(group: FRAGS.FragmentsGroup) {
-    for (const [expressID, data] of group.data) {
-      const rels = data[1];
-      const storeyID = rels[0];
-      const storeyName = storeyID.toString();
-      this.saveItem(group, "storeys", storeyName, expressID);
-    }
-  }
-
   async byIfcRel(
     group: FRAGS.FragmentsGroup,
     ifcRel: number,
@@ -265,7 +256,7 @@ export class Classifier extends Component implements Disposable {
     }
   }
 
-  private saveItem(
+  protected saveItem(
     group: FRAGS.FragmentsGroup,
     systemName: string,
     className: string,

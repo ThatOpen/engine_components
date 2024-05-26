@@ -36,7 +36,7 @@ grids.create(world);
 
 /* MD
   ## 💪 Let's go BIG
-  ___
+  ---
   Do you need to open huge big IFC files fast, even on more modest devices? If so, you are in luck! We can open virtually any model on any device in seconds thanks to BIM TILES!
 
   :::info BIM tiles?
@@ -48,7 +48,7 @@ grids.create(world);
   Let's see how to do this step by step!
 
   ### 🧩 Converting the IFC model to tiles
-  ___
+  ---
 
   The first step is to transform the IFC model into BIM tiles. The reason why we have to do this is pretty simple: geometry in IFC is implicit (e.g. a wall is defined as an extrusion). This means that it needs to be computed and converted to explicit geometry (triangles) so that it can be displayed in 3D. 
   

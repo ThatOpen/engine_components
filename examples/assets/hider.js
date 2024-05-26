@@ -1,20 +1,24 @@
-var k=Object.defineProperty;var V=(t,s,e)=>s in t?k(t,s,{enumerable:!0,configurable:!0,writable:!0,value:e}):t[s]=e;var f=(t,s,e)=>(V(t,typeof s!="symbol"?s+"":s,e),e);import"./web-ifc-api-BC8YMRiS.js";import{S as $}from"./stats.min-GTpOrGrX.js";import{p as A,a as b,m as h}from"./index-DyM33b1I.js";import{C as B,a as U,W as j,S as q,b as v,c as E}from"./index-BY1If8xF.js";import{G as F}from"./index-DE4WfR4J.js";import{C as G}from"./index-CsW_rzHW.js";import{F as w}from"./index-CqfCnTh7.js";import{C as I}from"./index-Buo71ORv.js";import"./_commonjsHelpers-Cpj98o6Y.js";import"./async-event-D8tC9awa.js";const m=class m extends B{constructor(e){super(e);f(this,"enabled",!0);this.components.add(m.uuid,this)}set(e,o){const d=this.components.get(w);if(!o){for(const c in d.list){const a=d.list.get(c);a&&(a.setVisibility(e),this.updateCulledVisibility(a))}return}for(const c in o){const a=o[c],p=d.list.get(c);p&&(p.setVisibility(e,a),this.updateCulledVisibility(p))}}isolate(e){this.set(!1),this.set(!0,e)}updateCulledVisibility(e){const o=this.components.get(I);for(const[d,c]of o.list){const a=c.colorMeshes.get(e.id);a&&(a.count=e.mesh.count)}}};f(m,"uuid","dd9ccf2d-8a21-4821-b7f6-2949add16a29");let u=m;const M=document.getElementById("container"),n=new U,N=n.get(j),i=N.create();i.scene=new q(n);i.renderer=new v(n,M);i.camera=new E(n);n.init();i.camera.controls.setLookAt(12,6,8,0,0,-10);i.scene.setup();const O=n.get(F);O.create(i);const W=new w(n),D=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),L=await D.arrayBuffer(),P=new Uint8Array(L),y=W.load(P);i.scene.three.add(y);const x=new u(n),r=new G(n);r.byStorey(y);r.byEntity(y);const C={},R=Object.keys(r.list.storeys);for(const t of R)C[t]=!0;const S={},T=Object.keys(r.list.entities);for(const t of T)S[t]=!0;A.init();const g=b.create(()=>h`
-    <bim-panel active label="Hider Tutorial" 
-      style="position: fixed; top: 5px; right: 5px">
+import{a7 as f}from"./web-ifc-api-BC8YMRiS.js";import{S as h}from"./stats.min-GTpOrGrX.js";import{p as g,a as c,m as i}from"./index-DyM33b1I.js";import{f as y,p as w,s as k,i as S,k as v,N as x,u as I,h as L,R as N}from"./index-CLKLHy3P.js";import"./_commonjsHelpers-Cpj98o6Y.js";const A=document.getElementById("container"),n=new y,C=n.get(w),e=C.create();e.scene=new k(n);e.renderer=new S(n,A);e.camera=new v(n);n.init();e.camera.controls.setLookAt(12,6,8,0,0,-10);e.scene.setup();const R=n.get(x);R.create(e);e.scene.three.background=null;const $=new I(n),E=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),T=await E.arrayBuffer(),U=new Uint8Array(T),r=$.load(U);e.scene.three.add(r);const j=await fetch("https://thatopen.github.io/engine_components/resources/small.json");r.setLocalProperties(await j.json());const d=new L(n),o=new N(n);o.byEntity(r);await o.byIfcRel(r,f,"storeys");const a=new h;a.showPanel(2);document.body.append(a.dom);a.dom.style.left="0px";a.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>a.begin());e.renderer.onAfterUpdate.add(()=>a.end());g.init();const b={},B=Object.keys(o.list.storeys);for(const t of B)b[t]=!0;const u={},F=Object.keys(o.list.entities);for(const t of F)u[t]=!0;const s=c.create(()=>i`
+    <bim-panel active label="Hider Tutorial" class="options-menu">
+      <bim-panel-section collapsed label="Controls">
       
-      <bim-panel-section fixed name="Floors" style="padding-top: 10px;">
+      <bim-panel-section collapsed name="Floors"">
       </bim-panel-section>
       
-      <bim-panel-section fixed name="Categories" style="padding-top: 10px;">
+      <bim-panel-section collapsed name="Categories"">
       </bim-panel-section>
       
     </bim-panel>
-  `);document.body.append(g);const z=g.querySelector("bim-panel-section[name='Floors']"),J=g.querySelector("bim-panel-section[name='Categories']");for(const t in C){const s=b.create(()=>h`
+  `);document.body.append(s);const O=s.querySelector("bim-panel-section[name='Floors']"),P=s.querySelector("bim-panel-section[name='Categories']");for(const t in b){const l=c.create(()=>i`
       <bim-checkbox checked label="${t}"
-        @change="${({target:e})=>{const o=r.find({storeys:[t]});x.set(e.value,o)}}">
+        @change="${({target:m})=>{const p=o.find({storeys:[t]});d.set(m.value,p)}}">
       </bim-checkbox>
-    `);z.append(s)}for(const t in S){const s=b.create(()=>h`
+    `);O.append(l)}for(const t in u){const l=c.create(()=>i`
       <bim-checkbox checked label="${t}"
-        @change="${({target:e})=>{const o=r.find({entities:[t]});x.set(e.value,o)}}">
+        @change="${({target:m})=>{const p=o.find({entities:[t]});d.set(m.value,p)}}">
       </bim-checkbox>
-    `);J.append(s)}const l=new $;l.showPanel(2);document.body.append(l.dom);l.dom.style.left="0px";i.renderer.onBeforeUpdate.add(()=>l.begin());i.renderer.onAfterUpdate.add(()=>l.end());
+    `);P.append(l)}const q=c.create(()=>i`
+      <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
+        @click="${()=>{s.classList.contains("options-menu-visible")?s.classList.remove("options-menu-visible"):s.classList.add("options-menu-visible")}}">
+      </bim-button>
+    `);document.body.append(q);
