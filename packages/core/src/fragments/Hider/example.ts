@@ -18,9 +18,11 @@ In this tutorial, we will import:
 - `Stats.js` (optional) to measure the performance of our app.
 */
 
+// eslint-disable-next-line import/no-extraneous-dependencies
 import Stats from "stats.js";
+// eslint-disable-next-line import/no-extraneous-dependencies
 import * as BUI from "@thatopen/ui";
-import * as WEBIFC from "web-ifc";
+// eslint-disable-next-line import/no-extraneous-dependencies
 import * as OBC from "@thatopen/components";
 
 /* MD
@@ -72,7 +74,7 @@ world.scene.three.background = null;
   for that component yet, do it before going forward!
 */
 
-const fragments = new OBC.FragmentsManager(components);
+const fragments = components.get(OBC.FragmentsManager);
 const file = await fetch(
   "https://thatopen.github.io/engine_components/resources/small.frag",
 );
@@ -81,8 +83,17 @@ const buffer = new Uint8Array(data);
 const model = fragments.load(buffer);
 world.scene.three.add(model);
 
-const properties = await fetch("https://thatopen.github.io/engine_components/resources/small.json");
+const properties = await fetch(
+  "https://thatopen.github.io/engine_components/resources/small.json",
+);
 model.setLocalProperties(await properties.json());
+
+const indexer = components.get(OBC.IfcRelationsIndexer);
+const relationsFile = await fetch(
+  "https://thatopen.github.io/engine_components/resources/small-relations.json",
+);
+const relations = indexer.getRelationsMapFromJSON(await relationsFile.text());
+indexer.setRelationMap(model, relations);
 
 /* MD
   Now that we have our model, let's start the `FragmentHider`. You
@@ -91,7 +102,7 @@ model.setLocalProperties(await properties.json());
   even after closing the browser and opening it again:
 */
 
-const hider = new OBC.Hider(components);
+const hider = components.get(OBC.Hider);
 
 /* MD
   ### 📕📗📘 Setting up simple filters
@@ -99,13 +110,9 @@ const hider = new OBC.Hider(components);
   Next, we will classify data by category and by level using the `Classifier`. This will allow us to create a simple filter for both classifications.
 */
 
-const classifier = new OBC.Classifier(components);
+const classifier = components.get(OBC.Classifier);
 classifier.byEntity(model);
-await classifier.byIfcRel(
-  model,
-  WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE,
-  "storeys",
-);
+await classifier.bySpatialStructure(model);
 
 /* MD
   ### ⏱️ Measuring the performance (optional)
@@ -135,10 +142,10 @@ BUI.Manager.init();
   Next, we will create a simple object that we will use as the base for the floors filter. It will just be an object with the name of each storey as key and a boolean (true/false) as value:
 */
 
-const storeys: Record<string, any> = {};
-const storeyNames = Object.keys(classifier.list.storeys);
-for (const name of storeyNames) {
-  storeys[name] = true;
+const spatialStructures: Record<string, any> = {};
+const structureNames = Object.keys(classifier.list.spatialStructures);
+for (const name of structureNames) {
+  spatialStructures[name] = true;
 }
 
 /* MD
@@ -180,12 +187,12 @@ const categorySection = panel.querySelector(
   "bim-panel-section[name='Categories']",
 ) as BUI.PanelSection;
 
-for (const name in storeys) {
+for (const name in spatialStructures) {
   const panel = BUI.Component.create<BUI.Checkbox>(() => {
     return BUI.html`
       <bim-checkbox checked label="${name}"
         @change="${({ target }: { target: BUI.Checkbox }) => {
-          const found = classifier.find({ storeys: [name] });
+          const found = classifier.find({ spatialStructures: [name] });
           hider.set(target.value, found);
         }}">
       </bim-checkbox>
@@ -229,14 +236,6 @@ const button = BUI.Component.create<BUI.PanelSection>(() => {
 document.body.append(button);
 
 /* MD
-
-:::tip Why is the curtain wall visible when hiding level 1?
-
-Well, the reason is that in IFC, curtain walls elements are not directly associated with the level they belong to. Instead, they are associated with an empty curtain wall object. But don't worry: we will make this easier for you in future versions of the library! 🙏🏻
-
-:::
-
-
 ### 🎉 Wrap up
 ---
 

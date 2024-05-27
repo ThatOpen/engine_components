@@ -2,7 +2,7 @@ import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import { Disposable, Component, Event, Components } from "../../core";
 import { IfcCategoryMap, IfcPropertiesUtils } from "../../ifc";
-
+import { IfcRelationsIndexer } from "../../ifc/IfcRelationsIndexer";
 import { FragmentsManager } from "../FragmentsManager";
 
 // TODO: Clean up and document
@@ -234,6 +234,38 @@ export class Classifier extends Component implements Disposable {
         }
       },
     );
+  }
+
+  async bySpatialStructure(model: FRAGS.FragmentsGroup) {
+    const indexer = this.components.get(IfcRelationsIndexer);
+    const modelRelations = indexer.relationMaps[model.uuid];
+    if (!modelRelations)
+      throw new Error(
+        `Classifier: model relations of ${model.name || model.uuid} have to exists to group by spatial structure.`,
+      );
+    const systemName = "spatialStructures";
+    for (const [expressID] of modelRelations) {
+      const rels = indexer.getEntityRelations(
+        model,
+        expressID,
+        "ContainsElements",
+      );
+      const relAttrs = await model.getProperties(expressID);
+      if (!(rels && relAttrs)) continue;
+      const relName = relAttrs.Name?.value;
+      for (const id of rels) {
+        this.saveItem(model, systemName, relName, id);
+        const decompositionRelations = indexer.getEntityRelations(
+          model,
+          Number(id),
+          "IsDecomposedBy",
+        );
+        if (!decompositionRelations) continue;
+        for (const decomposedID of decompositionRelations) {
+          this.saveItem(model, systemName, relName, decomposedID);
+        }
+      }
+    }
   }
 
   setColor(items: FRAGS.FragmentIdMap, color: THREE.Color, override = false) {
