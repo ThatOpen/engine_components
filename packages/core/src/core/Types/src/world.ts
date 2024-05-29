@@ -10,4 +10,5 @@ export interface World extends Disposable, Updateable {
   camera: BaseCamera;
   renderer: BaseRenderer | null;
   uuid: string;
+  isDisposing: boolean;
 }

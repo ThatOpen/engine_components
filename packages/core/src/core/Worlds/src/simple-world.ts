@@ -28,6 +28,8 @@ export class SimpleWorld<
 
   readonly onBeforeUpdate = new Event();
 
+  isDisposing = false;
+
   enabled = true;
 
   uuid = UUID.create();
@@ -119,6 +121,7 @@ export class SimpleWorld<
 
   dispose(disposeResources = true) {
     this.enabled = false;
+    this.isDisposing = true;
 
     this.scene.onWorldChanged.trigger({ world: this, action: "removed" });
     this.camera.onWorldChanged.trigger({ world: this, action: "removed" });

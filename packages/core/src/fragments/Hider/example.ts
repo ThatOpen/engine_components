@@ -18,11 +18,8 @@ In this tutorial, we will import:
 - `Stats.js` (optional) to measure the performance of our app.
 */
 
-// eslint-disable-next-line import/no-extraneous-dependencies
 import Stats from "stats.js";
-// eslint-disable-next-line import/no-extraneous-dependencies
 import * as BUI from "@thatopen/ui";
-// eslint-disable-next-line import/no-extraneous-dependencies
 import * as OBC from "@thatopen/components";
 
 /* MD

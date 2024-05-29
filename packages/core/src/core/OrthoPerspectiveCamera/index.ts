@@ -63,15 +63,17 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
       },
     );
 
-    this.onWorldChanged.add(() => {
-      this._navigationModes.clear();
-      this._navigationModes.set("Orbit", new OrbitMode(this));
-      this._navigationModes.set("FirstPerson", new FirstPersonMode(this));
-      this._navigationModes.set("Plan", new PlanMode(this));
-      this._mode = this._navigationModes.get("Orbit")!;
-      this.mode.set(true, { preventTargetAdjustment: true });
-      if (this.currentWorld && this.currentWorld.renderer) {
-        this.previousSize = this.currentWorld.renderer.getSize().clone();
+    this.onWorldChanged.add(({ action }) => {
+      if (action === "added") {
+        this._navigationModes.clear();
+        this._navigationModes.set("Orbit", new OrbitMode(this));
+        this._navigationModes.set("FirstPerson", new FirstPersonMode(this));
+        this._navigationModes.set("Plan", new PlanMode(this));
+        this._mode = this._navigationModes.get("Orbit")!;
+        this.mode.set(true, { preventTargetAdjustment: true });
+        if (this.currentWorld && this.currentWorld.renderer) {
+          this.previousSize = this.currentWorld.renderer.getSize().clone();
+        }
       }
     });
   }

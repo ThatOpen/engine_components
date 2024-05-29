@@ -195,6 +195,10 @@ export class SimpleGrid implements Hideable, Disposable {
   }
 
   private setupEvents(active: boolean) {
+    if (this.world.isDisposing) {
+      return;
+    }
+
     if (!(this.world.camera instanceof SimpleCamera)) {
       return;
     }

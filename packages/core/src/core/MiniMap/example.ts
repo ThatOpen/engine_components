@@ -4,7 +4,7 @@
 
 In this tutorial you'll learn how to use the Minimap, which is a small 2D representation of the 3D world.
 
-:::tip Do you mean a floorplans?
+:::tip Do you mean a floorplan?
 
 Not quite. The minimap is a simple 2D representation of the 3D world. It is useful to help your user understand where they are, and to have a simple top view of their surrounding. 
 
@@ -165,14 +165,6 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
             map.lockRotation = target.value;
           }}">  
         </bim-checkbox>
-      
-        <bim-color-input 
-          label="Background Color" color="#202932" 
-          @input="${({ target }: { target: BUI.ColorInput }) => {
-            world.scene.three.background = new THREE.Color(target.color);
-          }}">
-        </bim-color-input>
-        
         
         <bim-number-input 
           slider label="Zoom" value="${map.zoom}" min="0.01" max="0.5" step="0.01" 

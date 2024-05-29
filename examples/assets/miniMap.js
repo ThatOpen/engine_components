@@ -1,46 +1,40 @@
-import{C as p}from"./web-ifc-api-BC8YMRiS.js";import{S as u}from"./stats.min-GTpOrGrX.js";import{p as b,a as c,m as l}from"./index-DyM33b1I.js";import{f as d,p as f,s as g,i as h,k as v,N as k,u as x,h as w}from"./index-b4ozRbQy.js";import"./_commonjsHelpers-Cpj98o6Y.js";const y=document.getElementById("container"),o=new d,z=o.get(f),t=z.create();t.scene=new g(o);t.renderer=new h(o,y);t.camera=new v(o);t.scene.setup();o.init();const $=o.get(k);$.create(t);t.camera.controls.setLookAt(1,2,-2,-2,0,-5);t.scene.three.background=null;const S=new x(o),B=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),C=await B.arrayBuffer(),L=new Uint8Array(C),E=S.load(L);t.scene.three.add(E);const A=new w(o),n=A.create(t),I=document.getElementById("minimap"),m=n.renderer.domElement;m.style.borderRadius="12px";I.append(m);n.resize();const a=new u;a.showPanel(2);document.body.append(a.dom);a.dom.style.left="0px";a.dom.style.zIndex="unset";t.renderer.onBeforeUpdate.add(()=>a.begin());t.renderer.onAfterUpdate.add(()=>a.end());b.init();const r=n.getSize(),i=c.create(()=>l`
+import"./web-ifc-api-BC8YMRiS.js";import{S as p}from"./stats.min-GTpOrGrX.js";import{p as d,a as m,m as c}from"./index-DyM33b1I.js";import{f as b,p as u,s as f,i as g,k as h,N as v,u as x,h as y}from"./index-b4ozRbQy.js";import"./_commonjsHelpers-Cpj98o6Y.js";const z=document.getElementById("container"),a=new b,k=a.get(u),t=k.create();t.scene=new f(a);t.renderer=new g(a,z);t.camera=new h(a);t.scene.setup();a.init();const w=a.get(v);w.create(t);t.camera.controls.setLookAt(1,2,-2,-2,0,-5);t.scene.three.background=null;const $=new x(a),S=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),B=await S.arrayBuffer(),L=new Uint8Array(B),E=$.load(L);t.scene.three.add(E);const A=new y(a),e=A.create(t),I=document.getElementById("minimap"),l=e.renderer.domElement;l.style.borderRadius="12px";I.append(l);e.resize();const o=new p;o.showPanel(2);document.body.append(o.dom);o.dom.style.left="0px";o.dom.style.zIndex="unset";t.renderer.onBeforeUpdate.add(()=>o.begin());t.renderer.onAfterUpdate.add(()=>o.end());d.init();const r=e.getSize(),i=m.create(()=>c`
     <bim-panel label="Minimap Tutorial" class="options-menu">
       <bim-panel-section collapsed label="Controls">
       
         <bim-checkbox checked="true" label="Enabled" 
-          @change="${({target:e})=>{n.enabled=e.value}}">  
+          @change="${({target:n})=>{e.enabled=n.value}}">  
         </bim-checkbox>
         
         <bim-checkbox checked label="Lock rotation" 
-          @change="${({target:e})=>{n.lockRotation=e.value}}">  
+          @change="${({target:n})=>{e.lockRotation=n.value}}">  
         </bim-checkbox>
-      
-        <bim-color-input 
-          label="Background Color" color="#202932" 
-          @input="${({target:e})=>{t.scene.three.background=new p(e.color)}}">
-        </bim-color-input>
-        
         
         <bim-number-input 
-          slider label="Zoom" value="${n.zoom}" min="0.01" max="0.5" step="0.01" 
-          @change="${({target:e})=>{n.zoom=e.value}}">
+          slider label="Zoom" value="${e.zoom}" min="0.01" max="0.5" step="0.01" 
+          @change="${({target:n})=>{e.zoom=n.value}}">
         </bim-number-input>
         
         <bim-number-input 
-          slider label="Front offset" value="${n.frontOffset}" min="0" max="5" step="1" 
-          @change="${({target:e})=>{n.frontOffset=e.value}}">
+          slider label="Front offset" value="${e.frontOffset}" min="0" max="5" step="1" 
+          @change="${({target:n})=>{e.frontOffset=n.value}}">
         </bim-number-input>
                 
         <div style="display: flex; gap: 12px">
         
           <bim-number-input slider value="${r.x}" pref="Size X" min="100" max="500" step="10"              
-            @change="${({target:e})=>{const s=n.getSize();s.x=e.value,n.resize(s)}}">
+            @change="${({target:n})=>{const s=e.getSize();s.x=n.value,e.resize(s)}}">
           </bim-number-input>        
         
           <bim-number-input slider value="${r.y}" pref="Size Y" min="100" max="500" step="10"            
-            @change="${({target:e})=>{const s=n.getSize();s.y=e.value,n.resize(s)}}">
+            @change="${({target:n})=>{const s=e.getSize();s.y=n.value,e.resize(s)}}">
           </bim-number-input>
         </div>
   
         
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(i);const R=c.create(()=>l`
+    `);document.body.append(i);const R=m.create(()=>c`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{i.classList.contains("options-menu-visible")?i.classList.remove("options-menu-visible"):i.classList.add("options-menu-visible")}}">
       </bim-button>

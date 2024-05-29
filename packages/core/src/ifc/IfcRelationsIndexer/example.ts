@@ -140,7 +140,7 @@ indexer.setRelationMap(model, relationsIndex);
 
 /* MD
  Great! Now try to get again the property sets and you will see everything working nice and neat. In fact, lets try to get the building storey of one element in the IFC 👇
- */
+*/
 
 const buildingStorey = indexer.getEntityRelations(
   model,

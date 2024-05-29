@@ -89,7 +89,6 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
   /** {@link Disposable.dispose} */
   dispose() {
     this.setupEvents(false);
-    this.enabled = false;
     this.onAspectUpdated.reset();
     this.onBeforeUpdate.reset();
     this.onAfterUpdate.reset();
