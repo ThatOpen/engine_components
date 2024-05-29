@@ -38,6 +38,9 @@ export class Worlds extends Component implements Updateable, Disposable {
    */
   readonly onDisposed = new Event();
 
+  readonly onWorldCreated = new Event<World>();
+  readonly onWorldDeleted = new Event<string>();
+
   /**
    * A collection of worlds managed by this component.
    * The key is the unique identifier (UUID) of the world, and the value is the World instance.
@@ -56,17 +59,15 @@ export class Worlds extends Component implements Updateable, Disposable {
   }
 
   /**
- * Creates a new instance of a SimpleWorld and adds it to the list of worlds.
- * 
- * @template T - The type of the scene, extending from BaseScene. Defaults to BaseScene.
- * @template U - The type of the camera, extending from BaseCamera. Defaults to BaseCamera.
- * @template S - The type of the renderer, extending from BaseRenderer. Defaults to BaseRenderer.
- * 
- * @returns {SimpleWorld<T, U, S>} - The newly created SimpleWorld instance.
- * 
- * @throws {Error} - Throws an error if a world with the same UUID already exists in the list.
- */
-create<
+   * Creates a new instance of a SimpleWorld and adds it to the list of worlds.
+   *
+   * @template T - The type of the scene, extending from BaseScene. Defaults to BaseScene.
+   * @template U - The type of the camera, extending from BaseCamera. Defaults to BaseCamera.
+   * @template S - The type of the renderer, extending from BaseRenderer. Defaults to BaseRenderer.
+   *
+   * @throws {Error} - Throws an error if a world with the same UUID already exists in the list.
+   */
+  create<
     T extends BaseScene = BaseScene,
     U extends BaseCamera = BaseCamera,
     S extends BaseRenderer = BaseRenderer,
@@ -77,12 +78,15 @@ create<
       throw new Error("There is already a world with this name!");
     }
     this.list.set(id, world);
+    this.onWorldCreated.trigger(world);
     return world;
   }
 
   delete(world: World) {
+    const uuid = world.uuid;
     this.list.delete(world.uuid);
     world.dispose();
+    this.onWorldDeleted.trigger(uuid);
   }
 
   dispose() {

@@ -32,6 +32,8 @@ export class SimpleWorld<
 
   uuid = UUID.create();
 
+  name?: string;
+
   readonly onDisposed = new Event();
 
   private _scene?: T;
