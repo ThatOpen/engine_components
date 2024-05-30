@@ -242,7 +242,7 @@ export abstract class CivilNavigator extends OBC.Component {
       throw new Error("No world was given for this navigator!");
     }
 
-    if (!this._world.renderer) {
+    if (this._world.isDisposing || !this._world.renderer) {
       return;
     }
 

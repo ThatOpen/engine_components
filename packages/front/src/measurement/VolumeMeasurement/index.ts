@@ -162,6 +162,9 @@ export class VolumeMeasurement
     if (!this.world) {
       throw new Error("The volume measurement needs a world to work!");
     }
+    if (this.world.isDisposing) {
+      return;
+    }
     if (!this.world.renderer) {
       throw new Error("The world of the volume measurement needs a renderer!");
     }

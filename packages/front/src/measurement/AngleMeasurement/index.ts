@@ -145,6 +145,11 @@ export class AngleMeasurement
     if (!this.world) {
       throw new Error("No world selected for angle measurement!");
     }
+
+    if(this.world.isDisposing) {
+      return;
+    }
+
     if (!this.world.renderer) {
       throw new Error("The given world doesn't have a renderer!");
     }

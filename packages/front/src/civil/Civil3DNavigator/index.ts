@@ -143,7 +143,7 @@ export class Civil3DNavigator extends OBC.Component {
       throw new Error("No world found!");
     }
 
-    if (!this.world.renderer) {
+    if (this.world.isDisposing || !this.world.renderer) {
       return;
     }
     const dom = this.world.renderer.three.domElement;

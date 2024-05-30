@@ -126,6 +126,11 @@ export class AreaMeasurement
     if (!this.world) {
       throw new Error("The area measurement needs a world to work!");
     }
+
+    if (this.world.isDisposing) {
+      return;
+    }
+
     if (!this.world.renderer) {
       throw new Error("The world of the area measurement needs a renderer!");
     }

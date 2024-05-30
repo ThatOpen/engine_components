@@ -302,6 +302,10 @@ export class Highlighter
       throw new Error("No world found while setting up events!");
     }
 
+    if (this.config.world.isDisposing) {
+      return;
+    }
+
     if (!this.config.world.renderer) {
       throw new Error("The given world doesn't have a renderer!");
     }

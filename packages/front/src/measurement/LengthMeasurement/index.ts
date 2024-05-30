@@ -247,6 +247,9 @@ export class LengthMeasurement
     if (!this.world) {
       throw new Error("The length measurement needs a world to work!");
     }
+    if (this.world.isDisposing) {
+      return;
+    }
     if (!this.world.renderer) {
       throw new Error("The world of the length measurement needs a renderer!");
     }

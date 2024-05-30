@@ -1,13 +1,14 @@
 import * as THREE from "three";
 import { Component, Disposable, World, Event } from "../Types";
 import { GridConfig, SimpleGrid } from "./src";
+import { Components } from "../Components";
 
 export class Grids extends Component implements Disposable {
   static readonly uuid = "d1e814d5-b81c-4452-87a2-f039375e0489" as const;
 
   list = new Map<string, SimpleGrid>();
 
-  onDisposed = new Event();
+  readonly onDisposed = new Event();
 
   config: Required<GridConfig> = {
     color: new THREE.Color(0xbbbbbb),
@@ -18,6 +19,11 @@ export class Grids extends Component implements Disposable {
 
   /** {@link Component.enabled} */
   enabled = true;
+
+  constructor(components: Components) {
+    super(components);
+    components.add(Grids.uuid, this);
+  }
 
   create(world: World) {
     if (this.list.has(world.uuid)) {
@@ -45,5 +51,6 @@ export class Grids extends Component implements Disposable {
     }
     this.list.clear();
     this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 }

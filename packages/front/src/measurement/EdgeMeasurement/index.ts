@@ -131,6 +131,9 @@ export class EdgeMeasurement
     if (!this.world) {
       throw new Error("The edge measurement needs a world to work!");
     }
+    if (this.world.isDisposing) {
+      return;
+    }
     if (!this.world.renderer) {
       throw new Error("The world of the edge measurement needs a renderer!");
     }
