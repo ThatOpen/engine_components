@@ -9,12 +9,13 @@
 
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
   <link rel="icon" type="image/x-icon" href="https://thatopen.github.io/engine_components/resources/favicon.ico">
-  <title>IFC Geometry Tiler</title>
+  <title>IfcGeometryTiler</title>
   <style>
       body {
           margin: 0;
           padding: 0;
           font-family: "Plus Jakarta Sans", sans-serif;
+          overflow: hidden;
       }
 
       .full-screen {
@@ -23,16 +24,45 @@
           position: relative;
           overflow: hidden;
       }
+
+      .options-menu {
+          position: fixed;
+          min-width: unset;
+          top: 5px;
+          right: 5px;
+          max-height: calc(100vh - 10px);
+      }
+
+      .phone-menu-toggler {
+          visibility: hidden;
+      }
+
+      @media (max-width: 480px) {
+          .options-menu {
+              visibility: hidden;
+              bottom: 5px;
+              left: 5px;
+          }
+
+          .options-menu-visible {
+              visibility: visible;
+          }
+
+          .phone-menu-toggler {
+              visibility: visible;
+              position: fixed;
+              top: 5px;
+              right: 5px;
+          }
+      }
+
   </style>
   <script type="module" crossorigin src="../assets/ifcGeometryTiler.js"></script>
-  <link rel="modulepreload" crossorigin href="../assets/web-ifc-api-BC8YMRiS.js">
+  <link rel="modulepreload" crossorigin href="../assets/web-ifc-api-BffFJDIm.js">
   <link rel="modulepreload" crossorigin href="../assets/_commonjsHelpers-Cpj98o6Y.js">
   <link rel="modulepreload" crossorigin href="../assets/stats.min-GTpOrGrX.js">
   <link rel="modulepreload" crossorigin href="../assets/index-DyM33b1I.js">
-  <link rel="modulepreload" crossorigin href="../assets/index-BZiAUaTo.js">
-  <link rel="modulepreload" crossorigin href="../assets/ifc-fragment-settings-CiVry-YT.js">
-  <link rel="modulepreload" crossorigin href="../assets/streaming-settings-CK_tvevt.js">
-  <link rel="modulepreload" crossorigin href="../assets/ifc-metadata-reader-j9dl-lHS.js">
+  <link rel="modulepreload" crossorigin href="../assets/index-DTZynfbV.js">
 </head>
 
 <body>

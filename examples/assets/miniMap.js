@@ -1,4 +1,4 @@
-import"./web-ifc-api-BC8YMRiS.js";import{S as p}from"./stats.min-GTpOrGrX.js";import{p as d,a as m,m as c}from"./index-DyM33b1I.js";import{f as b,p as u,s as f,i as g,k as h,N as v,u as x,h as y}from"./index-C-JPXu_n.js";import"./_commonjsHelpers-Cpj98o6Y.js";const z=document.getElementById("container"),a=new b,k=a.get(u),t=k.create();t.scene=new f(a);t.renderer=new g(a,z);t.camera=new h(a);t.scene.setup();a.init();const w=a.get(v);w.create(t);t.camera.controls.setLookAt(1,2,-2,-2,0,-5);t.scene.three.background=null;const $=new x(a),S=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),B=await S.arrayBuffer(),L=new Uint8Array(B),E=$.load(L);t.scene.three.add(E);const A=new y(a),e=A.create(t),I=document.getElementById("minimap"),l=e.renderer.domElement;l.style.borderRadius="12px";I.append(l);e.resize();const o=new p;o.showPanel(2);document.body.append(o.dom);o.dom.style.left="0px";o.dom.style.zIndex="unset";t.renderer.onBeforeUpdate.add(()=>o.begin());t.renderer.onAfterUpdate.add(()=>o.end());d.init();const r=e.getSize(),i=m.create(()=>c`
+import"./web-ifc-api-BffFJDIm.js";import{S as p}from"./stats.min-GTpOrGrX.js";import{p as d,a as m,m as c}from"./index-DyM33b1I.js";import{p as u,C as b,i as f,n as g,k as h,a as v,u as x,F as y}from"./index-DTZynfbV.js";import"./_commonjsHelpers-Cpj98o6Y.js";const z=document.getElementById("container"),a=new u,k=a.get(b),t=k.create();t.scene=new f(a);t.renderer=new g(a,z);t.camera=new h(a);t.scene.setup();a.init();const w=a.get(v);w.create(t);t.camera.controls.setLookAt(1,2,-2,-2,0,-5);t.scene.three.background=null;const $=new x(a),S=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),B=await S.arrayBuffer(),L=new Uint8Array(B),C=$.load(L);t.scene.three.add(C);const E=new y(a),e=E.create(t),A=document.getElementById("minimap"),l=e.renderer.domElement;l.style.borderRadius="12px";A.append(l);e.resize();const o=new p;o.showPanel(2);document.body.append(o.dom);o.dom.style.left="0px";o.dom.style.zIndex="unset";t.renderer.onBeforeUpdate.add(()=>o.begin());t.renderer.onAfterUpdate.add(()=>o.end());d.init();const r=e.getSize(),i=m.create(()=>c`
     <bim-panel label="Minimap Tutorial" class="options-menu">
       <bim-panel-section collapsed label="Controls">
       
@@ -34,8 +34,8 @@ import"./web-ifc-api-BC8YMRiS.js";import{S as p}from"./stats.min-GTpOrGrX.js";im
         
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(i);const R=m.create(()=>c`
+    `);document.body.append(i);const F=m.create(()=>c`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{i.classList.contains("options-menu-visible")?i.classList.remove("options-menu-visible"):i.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(R);
+    `);document.body.append(F);

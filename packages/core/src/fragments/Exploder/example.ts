@@ -28,7 +28,6 @@ import * as OBC from "@thatopen/components";
   ---
 
   We will start by creating a simple scene with a camera and a renderer. If you don't know how to set up a scene, you can check the Worlds tutorial.
-
 */
 
 const container = document.getElementById("container")!;

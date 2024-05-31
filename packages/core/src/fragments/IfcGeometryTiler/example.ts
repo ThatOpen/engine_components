@@ -1,10 +1,33 @@
+/* MD
+### 🧩 Tiling BIM geometry
+---
 
+Opening big BIM models is hard because of 2 reasons: they have a lot of data and the geometry has to be computed to implicit (e.g. extrusion) to explicit (triangles). Our library allows to tile IFC files, solving both problems. This allows to open quite big IFC models in seconds and consuming minimal resources by just opening the parts of the model that are visible to the user. In this tutorial you'll learn to convert the geometry of an IFC model into tiles.
+
+:::tip Tiles?
+
+Tiles are very simple. We just take a bunch of geometries within the IFC file, convert them into triangles and store them in a binary file. These files are then loaded as a stream into the scen as the user moves around and discovers them.
+
+:::
+
+In this tutorial, we will import:
+
+- `web-ifc` to get some IFC items.
+- `@thatopen/components` to set up the barebone of our app.
+- `Stats.js` (optional) to measure the performance of our app.
+*/
 
 import Stats from "stats.js";
-// @ts-ignore
-import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
 import * as BUI from "@thatopen/ui";
-import * as OBC from "../..";
+import * as OBC from "@thatopen/components";
+
+/* MD
+  ### 🌎 Setting up a simple scene
+  ---
+
+  We will start by creating a simple scene with a camera and a renderer. If you don't know how to set up a scene, you can check the Worlds tutorial.
+
+*/
 
 const container = document.getElementById("container")!;
 
@@ -24,57 +47,74 @@ world.camera = new OBC.SimpleCamera(components);
 
 components.init();
 
-// rendererComponent.postproduction.enabled = true;
-
 world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
+
+world.scene.setup();
 
 const grids = components.get(OBC.Grids);
 grids.create(world);
-// customEffects.excludedMeshes.push(grid.get());
-
-// rendererComponent.postproduction.enabled = true;
 
 /* MD
-  ## 💪 Let's go BIG
+
+  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
+
+*/
+
+world.scene.three.background = null;
+
+
+/* MD
+  ### 🧳 Loading a BIM model
   ---
-  Do you need to open huge big IFC files fast, even on more modest devices? If so, you are in luck! We can open virtually any model on any device in seconds thanks to BIM TILES!
 
-  :::info BIM tiles?
+ We'll start by adding a BIM model to our scene. That model is already converted to fragments, so it will load much faster than if we loaded the IFC file.
 
-  The idea behind BIM tiles is pretty simple! Instead of loading the whole BIM model at once, we just load the explicit geometries that are seen by the user. It's way faster than opening the IFC directly, but for this you'll need a backend (or to rely on the file system of the user if you are building a desktop or mobile app).
+  :::tip Fragments?
+
+    If you are not familiar with fragments, check out the IfcLoader tutorial!
 
   :::
 
-  Let's see how to do this step by step!
+  This is not compulsory, as the data will come from an .ifc file, not from fragments. But at least we'll see the model whose geometry we will be converting to tiles!
+*/
 
-  ### 🧩 Converting the IFC model to tiles
+const fragments = new OBC.FragmentsManager(components);
+const fragFile = await fetch("https://thatopen.github.io/engine_components/resources/small.frag");
+const fragData = await fragFile.arrayBuffer();
+const fragBuffer = new Uint8Array(fragData);
+const model = fragments.load(fragBuffer);
+world.scene.three.add(model);
+
+
+/* MD
+  ### 🔪 Getting the geometry tiler
   ---
 
-  The first step is to transform the IFC model into BIM tiles. The reason why we have to do this is pretty simple: geometry in IFC is implicit (e.g. a wall is defined as an extrusion). This means that it needs to be computed and converted to explicit geometry (triangles) so that it can be displayed in 3D. 
+  The way the streaming works is by fetching files based on the visible things in the viewer. Those files contain pieces of geometry information (geometry chunks) that the engine uses in order to create and display the geometry. But, where do we get those files from? Easy! From the IFC conversion to tiles. So the first step is to transform the IFC model into BIM tiles.
   
   :::note
   
-  As you know, IFC files contains two things: geometries and properties. We need to convert both things if we want to take full advantage of streaming!
+  As you know, IFC files contains two things: geometries and properties. We need to convert both things if we want to take full advantage of streaming! For tiling properties, check out the Property Tiling tutorial.
 
   :::
 
-  The way the streaming works is by fetching files based on the visible things in the viewer. Those files contain pieces of geometry information (geometry chunks) that the engine uses in order to create and display the geometry. But, where do we get those files from? Easy! From the IFC conversion to tiles. So, let's start converting the IFC geometry to tiles and getting those files so the streamer can do its job. In order to do it, we need the first component from the collection of streaming components: `FragmentIfcStreamConverter`:
+  So, let's start converting the IFC geometry to tiles and getting those files so the streamer can do its job:
 
   */
 
-// We need this wasm configuration later to convert properties
+const tiler = components.get(OBC.IfcGeometryTiler);
+
 const wasm = {
   path: "https://unpkg.com/web-ifc@0.0.53/",
   absolute: true,
 };
 
-const tiler = new OBC.IfcGeometryTiler(components);
 tiler.settings.wasm = wasm;
 tiler.settings.minGeometrySize = 20;
 tiler.settings.minAssetsSize = 1000;
 
 /* MD
-  The `FragmentIfcStreamConverter` class takes IFC files and transform their geometry into tiles. 
+  This component takes IFC files and transform their geometry into tiles. 
   
   :::warning
 
@@ -85,7 +125,6 @@ tiler.settings.minAssetsSize = 1000;
   The first file we need is a JSON which is the entry point of the geometries streaming. That JSON must have the following structure:
   */
 
-// @ts-ignore
 interface GeometriesStreaming {
   assets: {
     id: number;
@@ -108,9 +147,12 @@ interface GeometriesStreaming {
 }
 
 /* MD
+  ### 📅 Setting up the events
+  ---
+
   The second file is actually not just a single file, but X number of files (depends on how big is your model) that contains the required information to generate the geometry while streaming.
 
-  In order to create the JSON file and get the information with the geometry, the `FragmentIfcStreamConverter` as well as other components in the collection of streaming components, emits events that let you get the processed data from the conversion process.
+  In order to create the JSON file and get the information with the geometry, these components, emits events that let you get the processed data from the conversion process.
   
   :::important
 
@@ -122,7 +164,6 @@ interface GeometriesStreaming {
 */
 
 let files: { name: string; bits: (Uint8Array | string)[] }[] = [];
-
 let geometriesData: OBC.StreamedGeometries = {};
 let geometryFilesCount = 1;
 
@@ -159,9 +200,9 @@ tiler.onAssetStreamed.add((assets) => {
 /* MD
   This one is easier as the event doesn't produce binary data, but information we need to create the JSON file. 
   
-  :::note Are you familiar with That Open Engine?
+  :::note Are you familiar with Fragments?
   
-  If you're familiar with That Open Engine, you should recall fragments. Fragments are just a fancy word we use to refer to ThreeJS geometry efficiently created from IFC files which are the things you end up see in the viewer... one IFC file is usually composed of many fragments and all of them are grouped in a FragmentsGroup, which is the final processed IFC model.
+  If you're familiar with That Open Engine (our libraries), you should recall fragments. Fragments are just a fancy word we use to refer to ThreeJS geometry efficiently created from IFC files which are the things you end up see in the viewer... one IFC file is usually composed of many fragments and all of them are grouped in a FragmentsGroup, which is the final processed IFC model.
   
   :::
   
@@ -182,8 +223,11 @@ tiler.onIfcLoaded.add((groupBuffer) => {
 
   :::
 
-  This is pretty much it! Now that we've setup the main listeners, the last thing is to download all the data once the conversion has fininshed. To do so, we can use the progress event:
-  */
+  ### ↘️ Downloading the tiles
+  ---
+
+  Now that we've setup the main listeners, the last thing is to download all the data once the conversion has fininshed. To do so, we can use the progress event:
+*/
 
 function downloadFile(name: string, ...bits: (Uint8Array | string)[]) {
   const file = new File(bits, name);
@@ -227,8 +271,11 @@ tiler.onProgress.add((progress) => {
 });
 
 /* MD
+  ### 🔥 Generating the tiles
+  ---
+
   Great! Now that we have everything setup, is time to finally convert the IFC file. In order to trigger the conversion, we can just do the following:
-  */
+*/
 
 async function processFile() {
   const fetchedIfc = await fetch("https://thatopen.github.io/engine_components/resources/small.ifc");
@@ -241,16 +288,38 @@ async function processFile() {
 
 /* MD
   If everything went as expected, you should now be seeing some files being downloaded from your app 🤯 Do not get scary if they're a lot, as big models tend to have many files! All of that is the information the streaming uses in order to display the geometry in the most efficient way possible 💪
+
+  ### ⏱️ Measuring the performance (optional)
+  ---
+
+  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
+*/
+
+const stats = new Stats();
+stats.showPanel(2);
+document.body.append(stats.dom);
+stats.dom.style.left = "0px";
+stats.dom.style.zIndex = "unset";
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
+
+/* MD
+  ### 🧩 Adding some UI
+  ---
+
+  We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
 */
 
 BUI.Manager.init();
 
+/* MD
+  Now we will add some UI to generate and download the tiles to our computer. For more information about the UI library, you can check the specific documentation for it!
+*/
+
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
-    <bim-panel active label="IFC Geometry Tiler Tutorial" 
-      style="position: fixed; top: 5px; right: 5px">
-      
-      <bim-panel-section style="padding-top: 12px;">
+    <bim-panel active label="Geometry tiles Tutorial" class="options-menu">
+      <bim-panel-section collapsed label="Controls">
       
         <bim-button label="Load IFC"
           @click="${() => {
@@ -266,11 +335,29 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
 
 document.body.append(panel);
 
-// Set up stats
+/* MD
+  And we will make some logic that adds a button to the screen when the user is visiting our app from their phone, allowing to show or hide the menu. Otherwise, the menu would make the app unusable.
+*/
 
-const stats = new Stats();
-stats.showPanel(2);
-document.body.append(stats.dom);
-stats.dom.style.left = "0px";
-world.renderer.onBeforeUpdate.add(() => stats.begin());
-world.renderer.onAfterUpdate.add(() => stats.end());
+const button = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+      <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
+        @click="${() => {
+          if (panel.classList.contains("options-menu-visible")) {
+            panel.classList.remove("options-menu-visible");
+          } else {
+            panel.classList.add("options-menu-visible");
+          }
+        }}">
+      </bim-button>
+    `;
+});
+
+document.body.append(button);
+
+/* MD
+  ### 🎉 Wrap up
+  ---
+
+  That's it! You have created an app that can generate the geometry BIM tiles for an IFC and download them to your computer. Now you have the power to process big IFC files! Don't forget to check out the IFC property tiler tutorial. To consume these tiles, check out the IFC streamer tutorial.
+*/

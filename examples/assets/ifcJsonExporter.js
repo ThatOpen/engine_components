@@ -1,12 +1,16 @@
-import{a8 as p}from"./web-ifc-api-BC8YMRiS.js";import{S as m}from"./stats.min-GTpOrGrX.js";import{p as l,a as d,m as f}from"./index-DyM33b1I.js";import{a as w,W as g,S as b,b as u,c as h,G as y}from"./index-BZiAUaTo.js";import{I as x}from"./index-BPt-VIyQ.js";import{F as S}from"./index-CiqD_kld.js";import"./_commonjsHelpers-Cpj98o6Y.js";import"./ifc-geometry-types-C3SKrzrZ.js";const I=document.getElementById("container"),t=new w,U=t.get(g),e=U.create();e.scene=new b(t);e.renderer=new u(t,I);e.camera=new h(t);t.init();e.camera.controls.setLookAt(12,6,8,0,0,-10);e.scene.setup();const B=t.get(y);B.create(e);const k=new S(t),F=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),O=await F.arrayBuffer(),A=new Uint8Array(O),E=k.load(A);e.scene.three.add(E);const r=new p;r.SetWasmPath("https://unpkg.com/web-ifc@0.0.53/",!0);await r.Init();const L=await fetch("https://thatopen.github.io/engine_components/resources/small.ifc"),R=await L.arrayBuffer(),j=new Uint8Array(R),J=r.OpenModel(j),v=t.get(x);l.init();const C=d.create(()=>f`
-    <bim-panel active label="IFC JSON Exporter Tutorial" 
-      style="position: fixed; top: 5px; right: 5px">
+import{a8 as d}from"./web-ifc-api-BffFJDIm.js";import{S as f}from"./stats.min-GTpOrGrX.js";import{p as b,a as i,m as c}from"./index-DyM33b1I.js";import{a as u,W as g,S as w,b as h,c as y,G as S}from"./index-B9uBZcMi.js";import{I}from"./index-C7Ki_D2r.js";import{F as x}from"./index-DK_gFGlj.js";import"./_commonjsHelpers-Cpj98o6Y.js";const k=document.getElementById("container"),t=new u,L=t.get(g),e=L.create();e.scene=new w(t);e.renderer=new h(t,k);e.camera=new y(t);t.init();e.camera.controls.setLookAt(12,6,8,0,0,-10);e.scene.setup();const U=t.get(S);U.create(e);e.scene.three.background=null;const v=new x(t),B=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),F=await B.arrayBuffer(),O=new Uint8Array(F),A=v.load(O);e.scene.three.add(A);const E=t.get(I),a=new d;a.SetWasmPath("https://unpkg.com/web-ifc@0.0.53/",!0);await a.Init();const R=await fetch("https://thatopen.github.io/engine_components/resources/small.ifc"),j=await R.arrayBuffer(),C=new Uint8Array(j),J=a.OpenModel(C),n=new f;n.showPanel(2);document.body.append(n.dom);n.dom.style.left="0px";n.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>n.begin());e.renderer.onAfterUpdate.add(()=>n.end());b.init();const s=i.create(()=>c`
+  <bim-panel active label="IFC-JSON Exporter Tutorial" class="options-menu">
+   <bim-panel-section collapsed label="Controls">
       <bim-panel-section style="padding-top: 10px;">
         <bim-button 
           label="Export properties JSON" 
-          @click="${async()=>{const s=await v.export(r,J),i=JSON.stringify(s),c=new File([new Blob([i])],"properties.json"),a=URL.createObjectURL(c),n=document.createElement("a");n.download="properties.json",n.href=a,n.click(),URL.revokeObjectURL(a),n.remove()}}">  
+          @click="${async()=>{const l=await E.export(a,J),p=JSON.stringify(l),m=new File([new Blob([p])],"properties.json"),r=URL.createObjectURL(m),o=document.createElement("a");o.download="properties.json",o.href=r,o.click(),URL.revokeObjectURL(r),o.remove()}}">  
         </bim-button>  
 
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(C);const o=new m;o.showPanel(2);document.body.append(o.dom);o.dom.style.left="0px";o.dom.style.right="auto";e.renderer.onBeforeUpdate.add(()=>o.begin());e.renderer.onAfterUpdate.add(()=>o.end());
+    `);document.body.append(s);const D=i.create(()=>c`
+      <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
+        @click="${()=>{s.classList.contains("options-menu-visible")?s.classList.remove("options-menu-visible"):s.classList.add("options-menu-visible")}}">
+      </bim-button>
+    `);document.body.append(D);
