@@ -30,7 +30,7 @@ This library contains 2 packages:
 
 ### Usage
 
-You need to be familiar with [Three.js API](https://github.com/mrdoob/three.js/) to be able to use this library effectively. In the following example, we will create a cube in a 3D scene that can be navigated with the mouse or touch events. You can see the full example [here](https://github.com/ThatOpen/engine_components/blob/main/src/core/Worlds/index.html) and the deployed app [here](https://thatopen.github.io/engine_components/packages/core/src/core/Worlds/example.ts).
+You need to be familiar with [Three.js API](https://github.com/mrdoob/three.js/) to be able to use this library effectively. In the following example, we will create a cube in a 3D scene that can be navigated with the mouse or touch events. You can see the full example [here](https://github.com/ThatOpen/engine_components/blob/main/packages/core/src/core/Worlds/example.ts) and the deployed app [here](https://thatopen.github.io/engine_components/examples/Worlds/index.html).
 
 ```js
 /* eslint import/no-extraneous-dependencies: 0 */
