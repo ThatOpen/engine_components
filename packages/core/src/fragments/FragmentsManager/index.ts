@@ -90,18 +90,21 @@ export class FragmentsManager extends Component implements Disposable {
     data: Uint8Array,
     config?: Partial<{
       coordinate: boolean;
+      name: string;
       properties: FRAGS.IfcProperties;
       relationsMap: RelationsMap;
     }>,
   ) {
     const defaultConfig: {
       coordinate: boolean;
+      name?: string;
       properties?: FRAGS.IfcProperties;
       relationsMap?: RelationsMap;
     } = { coordinate: true };
     const _config = { ...defaultConfig, ...config };
-    const { coordinate, properties, relationsMap } = _config;
+    const { coordinate, name, properties, relationsMap } = _config;
     const model = this._loader.import(data);
+    if (name) model.name = name;
     for (const fragment of model.items) {
       fragment.group = model;
       this.list.set(fragment.id, fragment);

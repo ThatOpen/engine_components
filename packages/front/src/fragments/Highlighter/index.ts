@@ -155,32 +155,23 @@ export class Highlighter
 
     const found = group.getFragmentMap([itemID]);
 
-    const filtered: FragmentIdMap = {};
-
-    for (const fragID in found) {
-      const ids = found[fragID];
-      const excludeFrag = exclude[fragID];
-
-      for (const id of ids) {
-        if (!excludeFrag || !excludeFrag.has(id)) {
-          if (!filtered[fragID]) {
-            filtered[fragID] = new Set();
-          }
-          filtered[fragID].add(id);
-        }
-      }
-    }
-
-    await this.highlightByID(name, filtered, removePrevious, zoomToSelection);
+    await this.highlightByID(
+      name,
+      found,
+      removePrevious,
+      zoomToSelection,
+      exclude,
+    );
 
     return { id: itemID, fragments: found };
   }
 
   async highlightByID(
     name: string,
-    ids: FragmentIdMap,
+    fragmentIdMap: FragmentIdMap,
     removePrevious = true,
     zoomToSelection = this.zoomToSelection,
+    exclude: FragmentIdMap = {},
   ) {
     if (!this.enabled) return;
 
@@ -195,7 +186,23 @@ export class Highlighter
       throw new Error("Color for selection not found!");
     }
 
-    for (const fragID in ids) {
+    const filtered: FragmentIdMap = {};
+
+    for (const fragID in fragmentIdMap) {
+      const ids = fragmentIdMap[fragID];
+      const excludeFrag = exclude[fragID];
+
+      for (const id of ids) {
+        if (!excludeFrag || !excludeFrag.has(id)) {
+          if (!filtered[fragID]) {
+            filtered[fragID] = new Set();
+          }
+          filtered[fragID].add(id);
+        }
+      }
+    }
+
+    for (const fragID in filtered) {
       const fragment = fragments.list.get(fragID);
       if (!fragment) {
         continue;
@@ -203,7 +210,7 @@ export class Highlighter
       if (!this.selection[name][fragID]) {
         this.selection[name][fragID] = new Set<number>();
       }
-      const itemIDs = ids[fragID];
+      const itemIDs = fragmentIdMap[fragID];
       for (const itemID of itemIDs) {
         this.selection[name][fragID].add(itemID);
         fragment.setColor(color, [itemID]);
