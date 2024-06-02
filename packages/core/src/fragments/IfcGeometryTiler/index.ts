@@ -136,10 +136,11 @@ export class IfcGeometryTiler extends Component implements Disposable {
 
     const group = new FRAGS.FragmentsGroup();
 
-    const { FILE_NAME, FILE_DESCRIPTION } = WEBIFC;
     group.ifcMetadata = {
-      name: this._metaData.get(this.webIfc, FILE_NAME),
-      description: this._metaData.get(this.webIfc, FILE_DESCRIPTION),
+      name: "",
+      description: "",
+      ...this._metaData.getNameInfo(this.webIfc),
+      ...this._metaData.getDescriptionInfo(this.webIfc),
       schema: (this.webIfc.GetModelSchema(0) as FRAGS.IfcSchema) || "IFC2X3",
       maxExpressID: this.webIfc.GetMaxExpressID(0),
     };
