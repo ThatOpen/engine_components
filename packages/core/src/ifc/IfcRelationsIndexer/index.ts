@@ -354,4 +354,4 @@ export class IfcRelationsIndexer extends Component implements Disposable {
   }
 }
 
-export type { InverseAttribute } from "./src/types";
+export type { InverseAttribute, RelationsMap } from "./src/types";
