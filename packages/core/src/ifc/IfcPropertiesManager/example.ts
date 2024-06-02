@@ -9,6 +9,7 @@ const model = await ifcLoader.load(new Uint8Array(buffer));
 
 const propertiesManager = components.get(OBC.IfcPropertiesManager);
 
+// Add a new pset
 const { pset } = await propertiesManager.newPset(model, "CalculatedQuantities");
 
 const prop = await propertiesManager.newSingleNumericProperty(
@@ -21,14 +22,22 @@ const prop = await propertiesManager.newSingleNumericProperty(
 await propertiesManager.addPropToPset(model, pset.expressID, prop.expressID);
 await propertiesManager.addElementToPset(model, pset.expressID, 186);
 
-// const modifiedBuffer = await propertiesManager.saveToIfc(
-//   model,
-//   new Uint8Array(buffer),
-// );
+// Modify existing entity attributes
+const entityAttributes = await model.getProperties(186);
+if (entityAttributes) {
+  entityAttributes.Name.value = "New Wall Name";
+  await propertiesManager.setData(model, entityAttributes);
+}
 
-// const modifiedFile = new File([modifiedBuffer], "small-modified.ifc");
-// const a = document.createElement("a");
-// a.href = URL.createObjectURL(modifiedFile);
-// a.download = modifiedFile.name;
+// Export modified model
+const modifiedBuffer = await propertiesManager.saveToIfc(
+  model,
+  new Uint8Array(buffer),
+);
+
+const modifiedFile = new File([modifiedBuffer], "small-modified.ifc");
+const a = document.createElement("a");
+a.href = URL.createObjectURL(modifiedFile);
+a.download = modifiedFile.name;
 // a.click();
-// URL.revokeObjectURL(a.href);
+URL.revokeObjectURL(a.href);
