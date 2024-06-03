@@ -96,7 +96,7 @@ const properties = await fetch(
 model.setLocalProperties(await properties.json());
 
 /*
-  ### 🔧 Setting up Civil 3D Navigator
+  ### 🚕 Setting up Civil 3D Navigator
   ---
 
   Now, we need to create an instance of the Civil 3D Navigator component. This will enable us to navigate through our 3D environment and interact with the model.

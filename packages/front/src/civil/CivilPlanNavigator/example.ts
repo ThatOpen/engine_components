@@ -1,14 +1,47 @@
+/* MD
+### 🛣️ Horizontal alignments
+---
 
+In this page, we'll learn how to represent the horizontal alignment of civil models and make it interactive.
+
+:::tip Horizontal alignment?
+
+Civil models include 2D alignments with explicit information about the asset. One of these alignments is horizontal and represents the floor plan of the alignment curves.
+
+:::
+
+In this tutorial, we will import:
+
+- `@thatopen/components` to set up the barebone of our app.
+- `@thatopen/ui` to add some simple and cool UI menus.
+- `@thatopen/ui-obc` to add some cool pre-made UI menus for components.
+- `@thatopen/components-front` to use some frontend-oriented components.
+- `Stats.js` (optional) to measure the performance of our app.
+*/
 
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
+import * as OBCF from "@thatopen/components-front";
 import * as BUI from "@thatopen/ui";
 import * as BUIC from "@thatopen/ui-obc";
 import Stats from "stats.js";
-import * as OBCF from "../..";
+
+/* MD
+  ### 📋 Initializing the UI
+  ---
+
+  The UI Components need to be initialized before we can use them. First, we will do it with both UI libraries:
+*/
 
 BUI.Manager.init();
 BUIC.Manager.init();
+
+/* MD
+  ### 🌎 Setting up a simple scene
+  ---
+
+  We will start by creating a simple scene with a camera and a renderer. If you don't know how to set up a scene, you can check the Worlds tutorial.
+*/
 
 const container = document.getElementById("container")!;
 
@@ -37,76 +70,79 @@ container.appendChild(world.renderer.three2D.domElement);
 const grids = components.get(OBC.Grids);
 grids.create(world);
 
-const fragments = components.get(OBC.FragmentsManager);
+/* MD
 
+  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
+
+*/
+
+world.scene.three.background = null;
+
+/* MD
+  ### 🧳 Loading a BIM model
+  ---
+
+ We'll start by adding a BIM model to our scene. That model is already converted to fragments, so it will load much faster than if we loaded the IFC file.
+
+  :::tip Fragments?
+
+    If you are not familiar with fragments, check out the IfcLoader tutorial!
+
+  :::
+*/
+
+const fragments = components.get(OBC.FragmentsManager);
 const file = await fetch("https://thatopen.github.io/engine_components/resources/road.frag");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = fragments.load(buffer);
 world.scene.three.add(model);
 
-// const properties = await fetch("https://thatopen.github.io/engine_components/resources/road.json");
-// model.setLocalProperties(await properties.json());
+/* MD
+  ### 🚕 Adding the civil 3D navigator
+  ---
 
-const navigator = new OBCF.Civil3DNavigator(components);
+  First we'll add the civil 3D navigator to move the camera when the user interacts with the civil plan navigator, which we will add later.
+
+    :::tip Civil 3D navigator?
+
+    If you are not familiar with the civil 3D navigator, check out that tutorial first!
+
+  :::
+
+  We'll simply get an instance of the civil 3D navigator:
+*/
+
+const navigator = components.get(OBCF.Civil3DNavigator);
 navigator.world = world;
 navigator.draw(model);
 
-navigator.highlighter.hoverCurve.material.color.set(1, 1, 1);
-const { material: hoverPointsMaterial } = navigator.highlighter.hoverPoints;
-if (Array.isArray(hoverPointsMaterial)) {
-  const material = hoverPointsMaterial[0];
-  if ("color" in material) (material.color as THREE.Color).set(1, 1, 1);
-} else if ("color" in hoverPointsMaterial) {
-  (hoverPointsMaterial.color as THREE.Color).set(1, 1, 1);
-}
+/* MD
+  ### 🚗 Adding the civil plan navigator
+  ---
 
-/*
-### 🌍 Exploring Civil Plan View with Navigators
-
-**🔧 Setting up Civil Plan Navigator**
-    ---
-    The Plan Navigator is a tool that allows exploration and visualization of
-    the alignments in a civil IFC file, by creating a window that shows their
-    plan view. Let's explore it!
-
-    **Important**: This tool requires the Civil 3D Navigator tool to be
-    initialized beforehand. Make sure to check out that respective tutorial
-    before proceeding.
-
-    We'll start by setting up the navigator component within our scene and
-    adding our civil model to it.
+ We'll now add the civil plan navigator. The idea of this app is very simple: we will allow the user to click on the plan navigator to navigate across the 3D scene. So first we'll fetch the world-2d HTML element we added to this page (don't forget to check out the HTML file of this example):
 */
 
 const world2D = document.getElementById("scene-2d") as BUIC.World2D;
 
-const planNavigator = new OBCF.CivilPlanNavigator(components);
-world2D.components = components;
-if (!world2D.world) {
-  throw new Error("World not found!");
-}
-planNavigator.world = world2D.world;
-
-await planNavigator.draw(model);
-
-/*
-**🌅 Defining the UI for the tool**
-    ---
-    The UI element to be used with this tool is a floating window, so let's
-    define it and introduce it to our scene.
+/* MD
+  And now we'll get a new instance of the civil plan navigator, assign it to the world-2d that we just fetched and draw the horizontal alignment on it:
 */
 
-/*
-**🖌️ Configuring Navigator Highlighting**
-    ---
-    Finally, we configure a highlighter to be able to interact with the
-    alignments shown in the navigator. This will provide multiple visual objects
-    when navigating through the model, making the experience more intuitive.
+const planNavigator = components.get(OBCF.CivilPlanNavigator);
+world2D.components = components;
+planNavigator.world = world2D.world;
+await planNavigator.draw(model);
+
+/* MD
+  ### 🚗🚕 Binding navigators
+  ---
+  Now we'll bind the elevation navigator with the 3D navigator. We'll use the highlight event for that. When the plan navigator is highlighted, the 3D navigator will be highlighted as well and the camera will travel to the selected point in 3D.
 */
 
 planNavigator.onHighlight.add(({ mesh }) => {
   navigator.highlighter.select(mesh);
-
   const index = mesh.curve.index;
   const curve3d = mesh.curve.alignment.absolute[index];
   curve3d.mesh.geometry.computeBoundingSphere();
@@ -116,16 +152,24 @@ planNavigator.onHighlight.add(({ mesh }) => {
   }
 });
 
-/*
-  And we're done! You've successfully set up the Civil Plan Navigator.
-  Now you can interact with the Horizontal Alignment Window. Now try adding
-  some other compatible tools like the Civil Elevation Navigator and the
-  Civil Cross Section Navigator.🚀
+/* MD
+  ### ⏱️ Measuring the performance (optional)
+  ---
+
+  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
 */
 
 const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
+stats.dom.style.zIndex = "unset";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
+
+/* MD
+  ### 🎉 Wrap up
+  ---
+
+  That's it! You have created an app that can generate the horizontal alignment any civil model and navigate through it smoothly. Congratulations!
+*/
