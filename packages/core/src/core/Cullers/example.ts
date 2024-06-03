@@ -21,7 +21,7 @@ In this tutorial, we will import:
 
 import * as THREE from "three";
 import Stats from "stats.js";
-import * as OBC from "../..";
+import * as OBC from "@thatopen/components";
 
 /* MD
   ### 🌎 Setting up a simple scene

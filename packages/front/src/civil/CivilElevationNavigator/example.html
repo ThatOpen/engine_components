@@ -9,7 +9,7 @@
 
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
   <link rel="icon" type="image/x-icon" href="https://thatopen.github.io/engine_components/resources/favicon.ico">
-  <title>Simple 2D Scene</title>
+  <title>CivilElevationNavigator</title>
   <style>
       body {
           margin: 0;
@@ -20,34 +20,47 @@
 
       .full-screen {
           width: 100vw;
-          height: calc(100vh - 18rem);
-          bottom: 0;
-          position: absolute;
+          height: 100vh;
+          position: relative;
+          overflow: hidden;
       }
 
-      .top-scene-left {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 50%;
-          height: 18rem;
+      .options-menu {
+          position: fixed;
+          min-width: unset;
+          top: 5px;
+          right: 5px;
+          max-height: calc(100vh - 10px);
       }
 
-
-      .top-scene-right {
-          position: absolute;
-          top: 0;
-          right: 0;
-          width: 50%;
-          height: 18rem;
+      .phone-menu-toggler {
+          visibility: hidden;
       }
+
+      @media (max-width: 480px) {
+          .options-menu {
+              visibility: hidden;
+              bottom: 5px;
+              left: 5px;
+          }
+
+          .options-menu-visible {
+              visibility: visible;
+          }
+
+          .phone-menu-toggler {
+              visibility: visible;
+              position: fixed;
+              top: 5px;
+              right: 5px;
+          }
+      }
+
   </style>
 </head>
 
 <body>
 <div class="full-screen" id="container"></div>
-<bim-world-2d id="scene-2d-left" class="top-scene-left" ></bim-world-2d>
-<bim-world-2d id="scene-2d-right" class="top-scene-right" ></bim-world-2d>
 <script type="module" src="./example.ts"></script>
 </body>
 

@@ -9,7 +9,7 @@
 
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
   <link rel="icon" type="image/x-icon" href="https://thatopen.github.io/engine_components/resources/favicon.ico">
-  <title>Simple 2D Scene</title>
+  <title>CivilPlanNavigator</title>
   <style>
       body {
           margin: 0;
@@ -22,20 +22,45 @@
           width: 100vw;
           height: 100vh;
           position: relative;
+          overflow: hidden;
       }
 
-      .top-scene {
-          position: absolute;
-          top: 0;
-          width: 100%;
-          height: 18rem;
+      .options-menu {
+          position: fixed;
+          min-width: unset;
+          top: 5px;
+          right: 5px;
+          max-height: calc(100vh - 10px);
       }
+
+      .phone-menu-toggler {
+          visibility: hidden;
+      }
+
+      @media (max-width: 480px) {
+          .options-menu {
+              visibility: hidden;
+              bottom: 5px;
+              left: 5px;
+          }
+
+          .options-menu-visible {
+              visibility: visible;
+          }
+
+          .phone-menu-toggler {
+              visibility: visible;
+              position: fixed;
+              top: 5px;
+              right: 5px;
+          }
+      }
+
   </style>
 </head>
 
 <body>
 <div class="full-screen" id="container"></div>
-<bim-world-2d id="scene-2d" class="top-scene" ></bim-world-2d>
 <script type="module" src="./example.ts"></script>
 </body>
 

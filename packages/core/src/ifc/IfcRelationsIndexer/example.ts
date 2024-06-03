@@ -20,7 +20,7 @@ In this tutorial, we will import:
 
 import Stats from "stats.js";
 import * as BUI from "@thatopen/ui";
-import * as OBC from "../..";
+import * as OBC from "@thatopen/components";
 
 /* MD
   ### 🌎 Setting up a simple scene

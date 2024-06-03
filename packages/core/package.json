@@ -37,28 +37,12 @@
     "access": "public"
   },
   "devDependencies": {
-    "@thatopen/fragments": "~2.0.0",
+    "@thatopen/fragments": "~2.0.4",
     "@thatopen/ui": "2.0.0",
     "@thatopen/ui-obc": "2.0.0",
-    "@types/jest": "27.0.0",
-    "@types/node": "20.11.30",
     "@types/three": "0.160.0",
-    "@typescript-eslint/eslint-plugin": "7.2.0",
-    "@typescript-eslint/parser": "7.2.0",
-    "eslint": "8.57.0",
-    "eslint-config-airbnb-base": "15.0.0",
-    "eslint-config-prettier": "9.1.0",
-    "eslint-plugin-import": "2.29.1",
-    "eslint-plugin-prettier": "5.1.3",
-    "glob": "latest",
-    "jest": "^27.0.4",
-    "jszip": "^3.10.1",
-    "prettier": "3.2.5",
     "stats.js": "^0.17.0",
     "three": "^0.160.1",
-    "ts-jest": "^27.0.3",
-    "ts-node": "^10.0.0",
-    "typescript": "5.4.2",
     "web-ifc": "0.0.53"
   },
   "dependencies": {
@@ -66,7 +50,7 @@
     "three-mesh-bvh": "0.7.0"
   },
   "peerDependencies": {
-    "@thatopen/fragments": "~2.0.0",
+    "@thatopen/fragments": "~2.0.4",
     "three": "^0.160.1",
     "web-ifc": "0.0.53"
   }

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Hideable, Event, World } from "../../Types";
+import { Hideable, Event, World, Disposable } from "../../Types";
 import { Components } from "../../Components";
 import { Disposer } from "../../Disposer";
 import { SimpleCamera } from "../../Worlds";
@@ -177,10 +177,6 @@ export class SimpleGrid implements Hideable, Disposable {
     world.scene.three.add(this.three);
 
     this.setupEvents(true);
-  }
-
-  [Symbol.dispose](): void {
-    throw new Error("Method not implemented.");
   }
 
   /** {@link Disposable.dispose} */
