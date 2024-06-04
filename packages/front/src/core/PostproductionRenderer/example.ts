@@ -1,12 +1,36 @@
+/* MD
+### 🎥 Great graphics
+---
 
+  Postproduction effects enrich your 3D scenes. There are several post-production effects, such as adding shadows, rendering outlines, adding ambient occlusion and applying bloom, that can enhance and make your scene look cool. In this tutorial, you'll learn how to do it.
+
+:::tip Postproduction?
+
+The simple Three.js renderer isn't bad, but it's pretty basic. Postproduction are a collection of effects you can add to your scene to make it look much better. Of course, this means consuming more resources, but luckily for us, the power of devices is proportional to the size of its screen, so we should be able to enjoy this beauty in most scene even from our smartphones!
+
+:::
+
+In this tutorial, we will import:
+
+- `three` to create some 3D items.
+- `@thatopen/components` to set up the barebone of our app.
+- `@thatopen/ui` to add some simple and cool UI menus.
+- `@thatopen/components-front` to use some frontend-oriented components.
+- `Stats.js` (optional) to measure the performance of our app.
+*/
 
 import * as THREE from "three";
 import Stats from "stats.js";
 import * as BUI from "@thatopen/ui";
 import * as OBC from "@thatopen/components";
-import * as OBCF from "../..";
+import * as OBCF from "@thatopen/components-front";
 
-// @ts-ignore
+/* MD
+  ### 🌎 Setting up a simple scene
+  ---
+
+  We will start by creating a simple scene with a camera and a renderer. If you don't know how to set up a scene, you can check the Worlds tutorial. Notice how we use the PostproductionRenderer in this case.
+*/
 
 const container = document.getElementById("container")!;
 
@@ -21,8 +45,8 @@ const world = worlds.create<
 >();
 
 world.scene = new OBC.SimpleScene(components);
-world.renderer = new OBCF.PostproductionRenderer(components, container);
 world.camera = new OBC.SimpleCamera(components);
+world.renderer = new OBCF.PostproductionRenderer(components, container);
 
 world.scene.three.background = null;
 
@@ -36,44 +60,26 @@ const grids = components.get(OBC.Grids);
 grids.config.color.set(0x666666);
 const grid = grids.create(world);
 
-// Set up stats
+/* MD
 
-const stats = new Stats();
-stats.showPanel(2);
-document.body.append(stats.dom);
-stats.dom.style.zIndex = "unset";
-stats.dom.style.left = "0px";
-world.renderer.onBeforeUpdate.add(() => stats.begin());
-world.renderer.onAfterUpdate.add(() => stats.end());
+  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
+
+*/
+
+world.scene.three.background = null;
 
 /* MD
-  ### 🧪 Cool Post-Production Effects
+  ### 🧳 Loading a BIM model
   ---
-  Post-production effects enrich your 3D scenes. There are several post-production effects, such as
-  adding shadows, rendering outlines, adding ambient occlusion and applying bloom, that can enhance
-  and make your scene look cool.🍹
 
-  :::tip First, let's set up a simple scene!
+ We'll start by adding a BIM model to our scene. That model is already converted to fragments, so it will load much faster than if we loaded the IFC file.
 
-  👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
+  :::tip Fragments?
+
+    If you are not familiar with fragments, check out the IfcLoader tutorial!
 
   :::
-
-  In this tutorial we will use **Post-Production Renderer** to add neat **Outlines** and **Ambient Occlusion** to the 3D Model.🦾
-
-  ### 🏢 Adding Fragments
-  ---
-  We'll start by adding a **Fragment** to our scene using Fragment Manager.
-
-  We'll use a simple fragment for the purposes of this tutorial, but the code is capable of handling big files as well.🏗️
-
-  :::info Using Fragment Manager!
-
-  🏋️ There is a dedicated tutorial on how to use Fragment Manager to load **IFC** files!
-
-  :::
-
-  */
+*/
 
 const fragments = new OBC.FragmentsManager(components);
 const file = await fetch(
@@ -84,46 +90,50 @@ const buffer = new Uint8Array(data);
 const model = fragments.load(buffer);
 world.scene.three.add(model);
 
-// const meshes = [];
-
-// const culler = new OBC.ScreenCuller(components);
-// culler.setup();
-
-// for (const fragment of model.items) {
-//   meshes.push(fragment.mesh);
-//   culler.elements.add(fragment.mesh);
-// }
-// culler.elements.needsUpdate = true;
-
-// const controls = cameraComponent.controls;
-// controls.addEventListener("controlend", () => {
-//   culler.elements.needsUpdate = true;
-// });
-
 /* MD
-  ### 🎬 Activating the Post-Production
+  ### 🎬 Turning on the Postproduction
   ---
 
-  We will activate the post-production effect.
-  Also, we will enable the visibility for post-production layer.
+  Now we will activate the postproduction effect and enable the visibility for postproduction layer.
 
-  - `postproduction.active` - Enable or Disable the active status of the post-processing effect
-  - `postproduction.visible` - Toggle the visibility of post-processing layer that is created to display the effect.
-
-  */
+*/
 
 const { postproduction } = world.renderer;
 postproduction.enabled = true;
 postproduction.customEffects.excludedMeshes.push(grid.three);
-
 const ao = postproduction.n8ao.configuration;
+
+/* MD
+  ### ⏱️ Measuring the performance (optional)
+  ---
+
+  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
+*/
+
+const stats = new Stats();
+stats.showPanel(2);
+document.body.append(stats.dom);
+stats.dom.style.left = "0px";
+stats.dom.style.zIndex = "unset";
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
+
+/* MD
+  ### 🧩 Adding some UI
+  ---
+
+  We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
+*/
 
 BUI.Manager.init();
 
+/* MD
+Now we will add some UI to control some of the most common postproduction parameters. For more information about the UI library, you can check the specific documentation for it!
+*/
+
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
-    <bim-panel label="Clipper Tutorial" class="options-menu">
-    
+  <bim-panel active label="Postproduction Tutorial" class="options-menu">
       <bim-panel-section collapsed label="Gamma">
         <bim-checkbox checked label="Gamma Correction"
           @change="${({ target }: { target: BUI.Checkbox }) => {
@@ -280,6 +290,10 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
 
 document.body.append(panel);
 
+/* MD
+  And we will make some logic that adds a button to the screen when the user is visiting our app from their phone, allowing to show or hide the menu. Otherwise, the menu would make the app unusable.
+*/
+
 const button = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
@@ -297,7 +311,8 @@ const button = BUI.Component.create<BUI.PanelSection>(() => {
 document.body.append(button);
 
 /* MD
-  **Congratulations** 🎉 on completing this tutorial! Now you know how to add cool effects easily using
-  Post Production 🖼️
-  Let's keep it up and check out another tutorial! 🎓
+  ### 🎉 Wrap up
+  ---
+
+  That's it! You have created an app that looks great thanks to postproduction and exposes a menu to allow the user control it in real time.
 */

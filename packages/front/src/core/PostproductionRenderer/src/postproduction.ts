@@ -179,8 +179,9 @@ export class Postproduction {
       throw new Error("The given scene must have a THREE.Scene as core!");
     }
 
-    if (this._world.camera instanceof OBC.OrthoPerspectiveCamera) {
-      this._world.camera.projection.onChanged.add(() => {
+    const cameraManager = this._world.camera as OBC.OrthoPerspectiveCamera;
+    if (cameraManager.projection) {
+      cameraManager.projection.onChanged.add(() => {
         this.updateCamera();
       });
     }

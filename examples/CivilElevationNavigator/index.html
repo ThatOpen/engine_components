@@ -37,6 +37,23 @@
           visibility: hidden;
       }
 
+      .top-scene-left {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 50%;
+          height: 18rem;
+      }
+
+
+      .top-scene-right {
+          position: absolute;
+          top: 0;
+          right: 0;
+          width: 50%;
+          height: 18rem;
+      }
+
       @media (max-width: 480px) {
           .options-menu {
               visibility: hidden;
@@ -58,22 +75,18 @@
 
   </style>
   <script type="module" crossorigin src="../assets/civilElevationNavigator.js"></script>
-  <link rel="modulepreload" crossorigin href="../assets/web-ifc-api-z0lP7pyY.js">
-  <link rel="modulepreload" crossorigin href="../assets/index-CDtayhLQ.js">
-  <link rel="modulepreload" crossorigin href="../assets/index-DyM33b1I.js">
-  <link rel="modulepreload" crossorigin href="../assets/renderer-with-2d-ChbkiKqX.js">
-  <link rel="modulepreload" crossorigin href="../assets/mark-C_hqAPZ-.js">
-  <link rel="modulepreload" crossorigin href="../assets/index-BhKBO6Dw.js">
-  <link rel="modulepreload" crossorigin href="../assets/_commonjsHelpers-Cpj98o6Y.js">
-  <link rel="modulepreload" crossorigin href="../assets/import-wrapper-prod-QYycmO-A.js">
-  <link rel="modulepreload" crossorigin href="../assets/Line2-CLLb6Jgt.js">
-  <link rel="modulepreload" crossorigin href="../assets/index-DVRunJPb.js">
-  <link rel="modulepreload" crossorigin href="../assets/index-D3pLdVAu.js">
-  <link rel="modulepreload" crossorigin href="../assets/stats.min-GTpOrGrX.js">
+  <link rel="modulepreload" crossorigin href="../assets/web-ifc-api-D3oDn2HF.js">
+  <link rel="modulepreload" crossorigin href="../assets/index-DPB0U-mi.js">
+  <link rel="modulepreload" crossorigin href="../assets/index-B7gYOE6O.js">
+  <link rel="modulepreload" crossorigin href="../assets/index-K5IA6oiZ.js">
+  <link rel="modulepreload" crossorigin href="../assets/index-B7WrRpEN.js">
+  <link rel="modulepreload" crossorigin href="../assets/stats.min-DDrWCSVO.js">
 </head>
 
 <body>
-<div class="full-screen" id="container"></div>
+<div class="full-screen" id="container"></div>
+<bim-world-2d id="scene-2d-left" class="top-scene-left" ></bim-world-2d>
+<bim-world-2d id="scene-2d-right" class="top-scene-right" ></bim-world-2d>
 </body>
 
 </html>

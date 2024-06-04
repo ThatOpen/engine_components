@@ -1,48 +1,52 @@
-import{B as h,b as w,M as c,d as s,L as d}from"./web-ifc-api-z0lP7pyY.js";import{S as M}from"./stats.min-GTpOrGrX.js";import{p as g,a as x,m as f}from"./index-DyM33b1I.js";import{p as y,C as k,i as P,k as v,a as C,H as B,A as $}from"./index-CDtayhLQ.js";import{C as E,E as I}from"./index-DhQCkLlE.js";import{P as D}from"./index-B7ETzHmE.js";import"./import-wrapper-prod-QYycmO-A.js";import"./_commonjsHelpers-Cpj98o6Y.js";import"./renderer-with-2d-ChbkiKqX.js";const p=document.getElementById("container"),a=new y,A=a.get(k),e=A.create();e.scene=new P(a);e.renderer=new D(a,p);e.camera=new v(a);e.renderer.postproduction.enabled=!0;e.renderer.postproduction.customEffects.outlineEnabled=!0;a.init();e.camera.controls.setLookAt(12,6,8,0,0,-10);e.scene.setup();const b=a.get(C);b.config.color.setHex(6710886);const L=b.create(e);e.renderer.postproduction.customEffects.excludedMeshes.push(L.three);const m=new h(3,3,3),u=new w({color:"#6528D7"}),n=new c(m,u);n.position.set(-2,1.5,0);e.scene.three.add(n);e.meshes.add(n);const l=new c(m,u);l.position.set(2,1.5,0);e.scene.three.add(l);e.meshes.add(l);const S=a.get(B);S.get(e);const o=a.get($);o.enabled=!0;const r=a.get(E);o.Type=I;const z=new s({color:"lightblue",side:2}),H=new d({color:"blue"}),O=new s({color:"blue",opacity:.5,side:2,transparent:!0});r.styles.create("Red lines",new Set([n]),e,H,z,O);const R=new s({color:"salmon",side:2}),F=new d({color:"red"}),G=new s({color:"red",opacity:.5,side:2,transparent:!0});r.styles.create("Blue lines",new Set([l]),e,F,R,G);p.ondblclick=()=>o.create(e);window.onkeydown=t=>{(t.code==="Delete"||t.code==="Backspace")&&o.delete(e)};const i=new M;i.showPanel(2);document.body.append(i.dom);i.dom.style.left="0px";e.renderer.onBeforeUpdate.add(()=>i.begin());e.renderer.onAfterUpdate.add(()=>i.end());g.init();const T=x.create(()=>f`
-    <bim-panel label="Clipper Tutorial" style="position: fixed; top: 5px; right: 5px" active>
-          <bim-panel-section fixed label="Commands" >
+import{B as M,b as y,M as d,d as c,L as b}from"./web-ifc-api-D3oDn2HF.js";import{S as f}from"./stats.min-DDrWCSVO.js";import{p as k,J as m,m as p}from"./index-K5IA6oiZ.js";import{a as x,W as v,S as P,b as C,G as S,R as B,f as E}from"./index-DPB0U-mi.js";import{P as I,C as L,E as $}from"./index-B7gYOE6O.js";const u=document.getElementById("container"),o=new x,D=o.get(v),e=D.create();e.scene=new P(o);e.renderer=new I(o,u);e.camera=new C(o);e.renderer.postproduction.enabled=!0;e.renderer.postproduction.customEffects.outlineEnabled=!0;o.init();e.camera.controls.setLookAt(12,6,8,0,0,-10);e.scene.setup();const h=o.get(S);h.config.color.setHex(6710886);const z=h.create(e);e.renderer.postproduction.customEffects.excludedMeshes.push(z.three);e.scene.three.background=null;const g=new M(3,3,3),w=new y({color:"#6528D7"}),a=new d(g,w);a.position.set(-2,1.5,0);e.scene.three.add(a);e.meshes.add(a);const l=new d(g,w);l.position.set(2,1.5,0);e.scene.three.add(l);e.meshes.add(l);const R=o.get(B);R.get(e);const n=o.get(E);n.enabled=!0;const r=o.get(L);n.Type=$;const G=new c({color:"lightblue",side:2}),W=new b({color:"blue"}),A=new c({color:"blue",opacity:.5,side:2,transparent:!0});r.styles.create("Red lines",new Set([a]),e,W,G,A);const O=new c({color:"salmon",side:2}),F=new b({color:"red"}),J=new c({color:"red",opacity:.5,side:2,transparent:!0});r.styles.create("Blue lines",new Set([l]),e,F,O,J);u.ondblclick=()=>n.create(e);window.onkeydown=t=>{(t.code==="Delete"||t.code==="Backspace")&&n.delete(e)};const s=new f;s.showPanel(2);document.body.append(s.dom);s.dom.style.left="0px";s.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>s.begin());e.renderer.onAfterUpdate.add(()=>s.end());k.init();const i=m.create(()=>p`
+  <bim-panel active label="Edges Clipper Tutorial" class="options-menu">
+      <bim-panel-section collapsed label="Controls">
       
         <bim-label label="Double click: Create clipping plane"></bim-label>
         <bim-label label="Delete key: Delete clipping plane"></bim-label>
        
         
       </bim-panel-section>
-      <bim-panel-section fixed label="Others" >
+      <bim-panel-section collapsed label="Others">
           
         <bim-checkbox label="Clipper enabled" checked 
-          @change="${({target:t})=>{o.enabled=t.value,r.visible=t.value}}">
+          @change="${({target:t})=>{n.enabled=t.value,r.visible=t.value}}">
         </bim-checkbox>
         
         <bim-checkbox label="Clipper visible" checked 
-          @change="${({target:t})=>{o.visible=t.value}}">
+          @change="${({target:t})=>{n.visible=t.value}}">
         </bim-checkbox>   
       
         <bim-color-input 
           label="Planes Color" color="#202932" 
-          @input="${({target:t})=>{o.material.color.set(t.color)}}">
+          @input="${({target:t})=>{n.material.color.set(t.color)}}">
         </bim-color-input>
         
         <bim-number-input 
           slider step="0.01" label="Planes opacity" value="0.2" min="0.1" max="1"
-          @change="${({target:t})=>{o.material.opacity=t.value}}">
+          @change="${({target:t})=>{n.material.opacity=t.value}}">
         </bim-number-input>
         
         <bim-number-input 
           slider step="0.1" label="Planes size" value="5" min="2" max="10"
-          @change="${({target:t})=>{o.size=t.value}}">
+          @change="${({target:t})=>{n.size=t.value}}">
         </bim-number-input>
         
         <bim-button 
           label="Delete all" 
-          @click="${()=>{o.deleteAll()}}">  
+          @click="${()=>{n.deleteAll()}}">  
         </bim-button>        
         
         <bim-button 
           label="Rotate cubes" 
-          @click="${()=>{n.rotation.x=2*Math.PI*Math.random(),n.rotation.y=2*Math.PI*Math.random(),n.rotation.z=2*Math.PI*Math.random(),n.updateMatrixWorld(),l.rotation.x=2*Math.PI*Math.random(),l.rotation.y=2*Math.PI*Math.random(),l.rotation.z=2*Math.PI*Math.random(),l.updateMatrixWorld(),r.update(!0)}}">  
+          @click="${()=>{a.rotation.x=2*Math.PI*Math.random(),a.rotation.y=2*Math.PI*Math.random(),a.rotation.z=2*Math.PI*Math.random(),a.updateMatrixWorld(),l.rotation.x=2*Math.PI*Math.random(),l.rotation.y=2*Math.PI*Math.random(),l.rotation.z=2*Math.PI*Math.random(),l.updateMatrixWorld(),r.update(!0)}}">  
         </bim-button>
        
         
       </bim-panel-section>
     </bim-panel>
+    `);document.body.append(i);const T=m.create(()=>p`
+      <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
+        @click="${()=>{i.classList.contains("options-menu-visible")?i.classList.remove("options-menu-visible"):i.classList.add("options-menu-visible")}}">
+      </bim-button>
     `);document.body.append(T);

@@ -1,1 +1,0 @@
-function n(){const e=document.createElement("div");return e.style.backgroundColor="black",e.style.color="white",e.style.padding="8px",e.style.borderRadius="8px",e.style.fontFamily="sans-serif",e}export{n};

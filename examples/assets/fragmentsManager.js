@@ -1,10 +1,10 @@
-import"./web-ifc-api-z0lP7pyY.js";import{S as u}from"./stats.min-GTpOrGrX.js";import{p,C as b,i as g,n as f,k as w,a as h,u as k}from"./index-CDtayhLQ.js";import{p as y,a as l,m}from"./index-DyM33b1I.js";import"./_commonjsHelpers-Cpj98o6Y.js";const L=document.getElementById("container"),n=new p,v=n.get(b),e=v.create();e.scene=new g(n);e.renderer=new f(n,L);e.camera=new w(n);n.init();e.camera.controls.setLookAt(12,6,8,0,0,-10);e.scene.setup();const x=n.get(h);x.create(e);e.scene.three.background=null;const s=n.get(k);let d="";async function F(){if(s.groups.size)return;const t=await(await fetch("https://thatopen.github.io/engine_components/resources/small.frag")).arrayBuffer(),c=new Uint8Array(t),i=s.load(c);e.scene.three.add(i),d=i.uuid}function U(o){const t=document.createElement("a");t.href=URL.createObjectURL(o),t.download=o.name,document.body.appendChild(t),t.click(),t.remove()}function $(){if(!s.groups.size)return;const o=s.groups.get(d);if(!o)return;const t=s.export(o),c=new Blob([t]),i=new File([c],"small.frag");U(i)}function B(){s.dispose()}const a=new u;a.showPanel(2);document.body.append(a.dom);a.dom.style.left="0px";a.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>a.begin());e.renderer.onAfterUpdate.add(()=>a.end());y.init();const r=l.create(()=>m`
+import"./web-ifc-api-D3oDn2HF.js";import{S as p}from"./stats.min-DDrWCSVO.js";import{a as u,W as b,S as g,c as f,b as w,G as h,F as y}from"./index-DPB0U-mi.js";import{p as k,J as l,m}from"./index-K5IA6oiZ.js";const F=document.getElementById("container"),t=new u,L=t.get(b),e=L.create();e.scene=new g(t);e.renderer=new f(t,F);e.camera=new w(t);t.init();e.camera.controls.setLookAt(12,6,8,0,0,-10);e.scene.setup();const S=t.get(h);S.create(e);e.scene.three.background=null;const s=t.get(y);let d="";async function v(){if(s.groups.size)return;const n=await(await fetch("https://thatopen.github.io/engine_components/resources/small.frag")).arrayBuffer(),c=new Uint8Array(n),r=s.load(c);e.scene.three.add(r),d=r.uuid}function x(o){const n=document.createElement("a");n.href=URL.createObjectURL(o),n.download=o.name,document.body.appendChild(n),n.click(),n.remove()}function U(){if(!s.groups.size)return;const o=s.groups.get(d);if(!o)return;const n=s.export(o),c=new Blob([n]),r=new File([c],"small.frag");x(r)}function B(){s.dispose()}const a=new p;a.showPanel(2);document.body.append(a.dom);a.dom.style.left="0px";a.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>a.begin());e.renderer.onAfterUpdate.add(()=>a.end());k.init();const i=l.create(()=>m`
     <bim-panel active label="Fragments Manager Tutorial" class="options-menu">
       <bim-panel-section collapsed label="Controls">
       
         <bim-button 
           label="Load fragments" 
-          @click="${()=>{F()}}">
+          @click="${()=>{v()}}">
         </bim-button>
         
         <bim-button 
@@ -14,13 +14,13 @@ import"./web-ifc-api-z0lP7pyY.js";import{S as u}from"./stats.min-GTpOrGrX.js";im
         
         <bim-button 
           label="Export fragments" 
-          @click="${()=>{$()}}">
+          @click="${()=>{U()}}">
         </bim-button>
         
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(r);const C=l.create(()=>m`
+    `);document.body.append(i);const C=l.create(()=>m`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
-        @click="${()=>{r.classList.contains("options-menu-visible")?r.classList.remove("options-menu-visible"):r.classList.add("options-menu-visible")}}">
+        @click="${()=>{i.classList.contains("options-menu-visible")?i.classList.remove("options-menu-visible"):i.classList.add("options-menu-visible")}}">
       </bim-button>
     `);document.body.append(C);

@@ -1,16 +1,32 @@
+/* MD
+### 🐳 Let's go BIG
+---
 
+Opening big BIM models is not easy, especially if we are in a browser or in devices that are not so powerful. In this tutorial, we'll learn how to do it using streaming, which allows to open gigabytes of data in seconds on any device.
+
+:::tip Streaming?
+
+Streaming consists of converting the IFC file to "tiles", and then loading only the data that the user sees. If you haven't heard of streaming before, check out the geometry tiles and property tiles tutorials first!
+
+:::
+
+In this tutorial, we will import:
+
+- `@thatopen/components` to set up the barebone of our app.
+- `@thatopen/components-front` to use some frontend-oriented components.
+- `Stats.js` (optional) to measure the performance of our app.
+*/
 
 import Stats from "stats.js";
-// @ts-ignore
-import * as dat from "three/examples/jsm/libs/lil-gui.module.min";
 import * as OBC from "@thatopen/components";
-import * as OBCF from "../..";
+import * as OBCF from "@thatopen/components-front";
 
-// customEffects.excludedMeshes.push(grid.get());
+/* MD
+  ### 🌎 Setting up a simple scene
+  ---
 
-// rendererComponent.postproduction.enabled = true;
-
-// Set up scene (see SimpleScene tutorial)
+  We will start by creating a simple scene with a camera and a renderer. If you don't know how to set up a scene, you can check the Worlds tutorial. Notice how we use the PostproductionRenderer in this case.
+*/
 
 const container = document.getElementById("container")!;
 
@@ -32,17 +48,44 @@ components.init();
 
 world.scene.setup();
 
-// rendererComponent.postproduction.enabled = true;
-
 world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
 
 const grids = components.get(OBC.Grids);
 grids.create(world);
 
-const loader = new OBCF.IfcStreamer(components);
+/* MD
+
+  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
+
+*/
+
+world.scene.three.background = null;
+
+/* MD
+  ### 🧰 Getting the streamer
+  ---
+
+  Now we are ready to start streaming a BIM model. We have already a bunch of tiles prepared in our repository as example, but you can also convert your own IFC to tiles (check the geometry and property tiles tutorials for more information). First, let's get an instance of the IFC streamer:
+
+*/
+
+const loader = components.get(OBCF.IfcStreamer);
 loader.world = world;
+
+
+/* MD
+Now, we need to set the base URL where the streamer needs to look for the tiles. In our case, we'll use the tiles we have prepared in our repository, but this should also work with your own backend.
+*/
+
 loader.url = "https://thatopen.github.io/engine_components/resources/streaming/";
-// const fragments = components.get(OBC.FragmentsManager);
+
+/* MD
+  ### 📺 Streaming the model
+  ---
+
+  Now we'll create a function that will stream the given model. We will also allow to stream the properties optionally. 
+
+*/
 
 async function loadModel(geometryURL: string, propertiesURL?: string) {
   const rawGeometryData = await fetch(geometryURL);
@@ -54,11 +97,12 @@ async function loadModel(geometryURL: string, propertiesURL?: string) {
   }
 
   const model = await loader.load(geometryData, true, propertiesData);
-
   console.log(model);
-  const props = await model.getProperties(186);
-  console.log(props);
 }
+
+/* MD
+  Next, let's call this function and start streaming our model right away!
+*/
 
 await loadModel(
   "https://thatopen.github.io/engine_components/resources/streaming/small.ifc-processed.json",
@@ -66,9 +110,10 @@ await loadModel(
 );
 
 /* MD
-Now, streaming works by updating the scene depending on the user's perspective
-and getting the necessary geometries from the backend. A simple way to achieve
-this is by updating the scene each time the user stops the camera:
+  ### 🔄️ Updating the streamer
+  ---
+
+  Now, streaming works by updating the scene depending on the user's perspective and getting the necessary geometries from the backend. A simple way to achieve this is by updating the scene each time the user stops the camera:
 */
 
 world.camera.controls.addEventListener("sleep", () => {
@@ -76,12 +121,10 @@ world.camera.controls.addEventListener("sleep", () => {
 });
 
 /* MD
-As you can imagine, downloading the geometries from the server each time can
-take time, especially for heavier geometries. This is why the stream loader
-automatically caches the files locally to get them much faster. This means that
-the loading experience the first time might be a bit slower, but then later
-it will be much better. You can control this using the `useCache` property
-and clear the cache using the `clearCache()` method:
+  ### 🧠 Stream cache
+  ---
+
+As you can imagine, downloading the geometries from the server each time can take time, especially for heavier geometries. This is why the stream loader automatically caches the files locally to get them much faster. This means that the loading experience the first time might be a bit slower, but then later it will be much better. You can control this using the `useCache` property and clear the cache using the `clearCache()` method:
 */
 
 loader.useCache = true;
@@ -92,6 +135,9 @@ async function clearCache() {
 }
 
 /* MD
+  ### ⚙️ Streaming config
+  ---
+
 You can also customize the loader through the `culler` property:
 - Threshold determines how bit an object must be in the screen to stream it.
 - maxHiddenTime determines how long an object must be lost to remove it from the scene.
@@ -103,315 +149,23 @@ loader.culler.maxHiddenTime = 1000;
 loader.culler.maxLostTime = 40000;
 
 /* MD
-This is it! Now you should be able to stream your own IFC models and open them anywhere,
-no matter how big they are! 💪 We will keep improving and making this API more powerful
-to handle any model on any device smoothly.
+  ### ⏱️ Measuring the performance (optional)
+  ---
+
+  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
 */
-
-// DISPOSING ALL - OK
-
-// async function dispose() {
-//     await loader.dispose();
-//     await fragments.dispose();
-// }
-//
-// window.addEventListener("keydown", async ({code}) => {
-//     if(code === "KeyP") {
-//         await dispose();
-//     } else if(code === "KeyO") {
-//         await loadModel(
-//             "https://thatopen.github.io/engine_components/resources/dm1_ark.ifc-processed.json",
-//             // "https://thatopen.github.io/engine_components/resources/small.ifc-processed-properties.json"
-//         );
-//         await loadModel(
-//             "https://thatopen.github.io/engine_components/resources/dm1_riv.ifc-processed.json",
-//             // "https://thatopen.github.io/engine_components/resources/small.ifc-processed-properties.json"
-//         );
-//     }
-// })
-
-// DISPOSING JUST ONE MODEL - OK
-
-// async function disposeOne() {
-//     const first = fragments.groups[0];
-//     await loader.remove(first.uuid);
-//     await fragments.disposeGroup(first);
-// }
-//
-// window.addEventListener("keydown", async ({code}) => {
-//     if(code === "KeyP") {
-//         await disposeOne();
-//     } else if(code === "KeyO") {
-//         await loadModel(
-//             "https://thatopen.github.io/engine_components/resources/dm1_ark.ifc-processed.json",
-//             // "https://thatopen.github.io/engine_components/resources/small.ifc-processed-properties.json"
-//         );
-//     }
-// })
-
-// COORDINATION - OK
-
-// for(const group of fragments.groups) {
-//     console.log(group);
-//     const {uuid, matrix} = group;
-//     loader.culler.setModelTransformation(uuid, matrix);
-// }
-
-// BOUNDINGBOX - OK
-
-// const bbox = components.tools.get(OBC.FragmentBoundingBox);
-//
-// for(const box of loader.culler.boxes.values()) {
-//     bbox.addMesh(box.mesh);
-// }
-//
-// const sphere = bbox.getSphere();
-//
-// window.addEventListener("keydown", () => {
-//     components.camera.controls.fitToSphere(sphere, true);
-// })
-
-// CLIPPING PLANES - OK
-
-// const clipper = new OBC.EdgesClipper(components);
-// clipper.enabled = true;
-//
-// const salmonFill = new THREE.MeshBasicMaterial({color: 'salmon', side: 2});
-// const redLine = new THREE.LineBasicMaterial({ color: 'red' });
-// const redOutline = new THREE.MeshBasicMaterial({color: 'red', opacity: 0.2, side: 2, transparent: true});
-// const style = clipper.styles.create('Blue lines', new Set(), redLine, salmonFill, redOutline);
-//
-// loader.onFragmentsDeleted.add((frags) => {
-//     for(const frag of frags) {
-//         style.meshes.delete(frag.mesh);
-//     }
-//     clipper.fillsNeedUpdate = true;
-// })
-//
-// loader.onFragmentsLoaded.add((frags) => {
-//     for(const frag of frags) {
-//         style.meshes.add(frag.mesh);
-//     }
-//     clipper.fillsNeedUpdate = true;
-// })
-//
-// window.onkeydown = () => {
-//     clipper.create();
-// }
-
-// FRAGMENT HIDER - OK
-
-// const classifier = new OBC.FragmentClassifier(components);
-// for(const model of fragments.groups) {
-//     classifier.byStorey(model);
-//     classifier.byEntity(model);
-// }
-//
-// const classifications = classifier.get();
-//
-// const storeys = {};
-// const storeyNames = Object.keys(classifications.storeys);
-// for (const name of storeyNames) {
-//     storeys[name] = true;
-// }
-//
-// const classes = {};
-// const classNames = Object.keys(classifications.entities);
-// for (const name of classNames) {
-//     classes[name] = true;
-// }
-//
-const gui = new dat.GUI();
-
-const actions = {
-  clearCache,
-};
-
-gui.add(actions, "clearCache");
-
-// const storeysGui = gui.addFolder("Storeys");
-// for (const name in storeys) {
-//     storeysGui.add(storeys, name).onChange(async (visible) => {
-//         const found = await classifier.find({storeys: [name]});
-//         loader.setVisibility(visible, found);
-//     });
-// }
-//
-// const entitiesGui = gui.addFolder("Classes");
-// for (const name in classes) {
-//     entitiesGui.add(classes, name).onChange(async (visible) => {
-//         const found = await classifier.find({entities: [name]});
-//         loader.setVisibility(visible, found);
-//     });
-// }
-
-// FRAGMENT HIGHLIGHTER - OK
-
-// const highlighter = new OBC.FragmentHighlighter(components, fragments);
-// highlighter.setup();
-// components.renderer.postproduction.customEffects.outlineEnabled = true;
-// highlighter.outlinesEnabled = true;
-
-// FRAGMENT PLANS - OK
-
-// const plans = new OBC.FragmentPlans(components);
-// const classifier = new OBC.FragmentClassifier(components);
-//
-// components.renderer.postproduction.customEffects.outlineEnabled = true;
-//
-// const whiteColor = new THREE.Color("white");
-// const whiteMaterial = new THREE.MeshBasicMaterial({color: whiteColor});
-// const materialManager = new OBC.MaterialManager(components);
-// materialManager.addMaterial("white", whiteMaterial);
-//
-// const sectionMaterial = new THREE.LineBasicMaterial({color: 'black'});
-// const fillMaterial = new THREE.MeshBasicMaterial({color: 'gray', side: 2});
-// const fillOutline = new THREE.MeshBasicMaterial({color: 'black', side: 1, opacity: 0.5, transparent: true});
-//
-// const clipper = components.tools.get(OBC.EdgesClipper);
-// clipper.enabled = true;
-// clipper.styles.create("filled", new Set(), sectionMaterial, fillMaterial, fillOutline);
-// clipper.styles.create("projected", new Set(), sectionMaterial);
-// const styles = clipper.styles.get();
-//
-// for (const model of fragments.groups) {
-//     await plans.computeAllPlanViews(model);
-//     classifier.byEntity(model);
-//     classifier.byStorey(model);
-// }
-//
-// const found = classifier.find({entities: ["IFCWALLSTANDARDCASE", "IFCWALL"]});
-// const walls = new Set(Object.keys(found));
-//
-// loader.onFragmentsLoaded.add((frags) => {
-//     for(const frag of frags) {
-//         if(walls.has(frag.id)) {
-//             styles.filled.meshes.add(frag.mesh);
-//         } else {
-//             styles.projected.meshes.add(frag.mesh);
-//         }
-//         materialManager.addMeshes("white", [frag.mesh]);
-//         if(plans.enabled) {
-//             materialManager.set(true, ["white"]);
-//         }
-//         clipper.fillsNeedUpdate = true
-//         clipper.updateEdges(true);
-//     }
-// })
-//
-// loader.onFragmentsDeleted.add((frags) => {
-//     for(const frag of frags) {
-//         if(walls.has(frag.id)) {
-//             styles.filled.meshes.add(frag.mesh);
-//         } else {
-//             styles.projected.meshes.add(frag.mesh);
-//         }
-//         materialManager.removeMeshes("white", [frag.mesh]);
-//     }
-// })
-//
-// plans.updatePlansList();
-//
-// plans.onNavigated.add(() => {
-//     components.renderer.postproduction.customEffects.glossEnabled = false;
-//     materialManager.setBackgroundColor(whiteColor);
-//     materialManager.set(true, ["white"]);
-//     grid.visible = false;
-// });
-//
-// plans.onExited.add(() => {
-//     components.renderer.postproduction.customEffects.glossEnabled = true;
-//     materialManager.resetBackgroundColor();
-//     materialManager.set(false, ["white"]);
-//     grid.visible = true;
-// });
-//
-// const mainToolbar = new OBC.Toolbar(components);
-// mainToolbar.name = "Main Toolbar";
-// components.ui.addToolbar(mainToolbar);
-// mainToolbar.addChild(plans.uiElement.get('main'));
-
-// FRAGMENT CLIP STYLER
-
-// const clipper = new OBC.EdgesClipper(components);
-// clipper.enabled = true;
-// const classifier = new OBC.FragmentClassifier(components);
-// const styler = new OBC.FragmentClipStyler(components);
-// await styler.setup();
-//
-// for(const model of fragments.groups) {
-//     classifier.byEntity(model);
-// }
-//
-// window.onkeydown = () => {
-//     clipper.create();
-// }
-//
-// let stylerNeedsUpdate = false;
-// setInterval(async () => {
-//     if(stylerNeedsUpdate) {
-//         await styler.update();
-//         stylerNeedsUpdate = false;
-//     }
-// }, 10000)
-//
-// loader.onFragmentsDeleted.add((frags) => {
-//     stylerNeedsUpdate = true;
-// })
-//
-// loader.onFragmentsLoaded.add((frags) => {
-//     stylerNeedsUpdate = true;
-// })
-//
-// const postproduction = components.renderer.postproduction;
-// postproduction.customEffects.outlineEnabled = true;
-
-// PROPERTIES PROCESSOR - OK
-
-// const highlighter = new OBC.FragmentHighlighter(components, fragments);
-// highlighter.setup();
-// components.renderer.postproduction.customEffects.outlineEnabled = true;
-// highlighter.outlinesEnabled = true;
-//
-// const propsProcessor = components.tools.get(OBC.IfcPropertiesProcessor);
-// propsProcessor.uiElement.get("propertiesWindow").visible = true
-//
-// const highlighterEvents = highlighter.events;
-// highlighterEvents.select.onClear.add(() => {
-//     propsProcessor.cleanPropertiesList();
-// });
-//
-// highlighterEvents.select.onHighlight.add(
-//     (selection) => {
-//         const fragmentID = Object.keys(selection)[0];
-//         const expressID = [...selection[fragmentID]][0];
-//         let model
-//         for (const group of fragments.groups) {
-//             for(const [_key, value] of group.keyFragments) {
-//                 if(value === fragmentID) {
-//                     model = group;
-//                     break;
-//                 }
-//             }
-//         }
-//         if(model) {
-//             propsProcessor.renderProperties(model, expressID);
-//         }
-//     }
-// );
-
-// loader.culler.renderDebugFrame = true;
-// const debugFrame = loader.culler.renderer.domElement;
-// document.body.appendChild(debugFrame);
-// debugFrame.style.position = "fixed";
-// debugFrame.style.left = "0";
-// debugFrame.style.bottom = "0";
-
-// Set up stats
 
 const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
+stats.dom.style.zIndex = "unset";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
+
+/* MD
+  ### 🎉 Wrap up
+  ---
+
+  This is it! Now you should be able to stream your own IFC models and open them anywhere, no matter how big they are! 💪 We will keep improving and making this API more powerful to handle any model on any device smoothly.
+*/
