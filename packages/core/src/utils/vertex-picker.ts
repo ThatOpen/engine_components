@@ -110,28 +110,56 @@ export class VertexPicker extends Component {
     let vertexFound = false;
     let closestDistance = Number.MAX_SAFE_INTEGER;
     const vertices = this.getVertices(intersects);
-    vertices?.forEach((vertex) => {
-      if (!vertex) return;
+    if (vertices === null) {
+      return null;
+    }
+
+    for (const vertex of vertices) {
+      if (!vertex) {
+        continue;
+      }
       const distance = intersects.point.distanceTo(vertex);
-      if (distance > closestDistance || distance > this._config.snapDistance)
-        return;
+      if (distance > closestDistance || distance > this._config.snapDistance) {
+        continue;
+      }
       vertexFound = true;
       closestVertex = vertex;
       closestDistance = intersects.point.distanceTo(vertex);
-    });
-    if (vertexFound) return closestVertex;
+    }
+
+    if (vertexFound) {
+      return closestVertex;
+    }
+
     return this.config.showOnlyVertex ? null : intersects.point;
   }
 
   private getVertices(intersects: THREE.Intersection) {
-    const mesh = intersects.object as THREE.Mesh;
+    const mesh = intersects.object as THREE.Mesh | THREE.InstancedMesh;
     if (!intersects.face || !mesh) return null;
     const geom = mesh.geometry;
+
+    const instanceTransform = new THREE.Matrix4();
+    const { instanceId } = intersects;
+    const instanceFound = instanceId !== undefined;
+    const isInstance = mesh instanceof THREE.InstancedMesh;
+    if (isInstance && instanceFound) {
+      mesh.getMatrixAt(instanceId, instanceTransform);
+    }
+
     return [
       this.getVertex(intersects.face.a, geom),
       this.getVertex(intersects.face.b, geom),
       this.getVertex(intersects.face.c, geom),
-    ].map((vertex) => vertex?.applyMatrix4(mesh.matrixWorld));
+    ].map((vertex) => {
+      if (vertex) {
+        if (isInstance && instanceFound) {
+          vertex.applyMatrix4(instanceTransform);
+        }
+        vertex.applyMatrix4(mesh.matrixWorld);
+      }
+      return vertex;
+    });
   }
 
   private getVertex(index: number, geom: THREE.BufferGeometry) {

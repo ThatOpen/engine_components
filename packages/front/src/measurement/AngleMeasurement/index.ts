@@ -114,6 +114,8 @@ export class AngleMeasurement
     if (this._clickCount === 3) this.endCreation();
   };
 
+
+  // TODO: Implement this
   delete() {}
 
   /** Deletes all the dimensions that have been previously created. */
@@ -156,11 +158,9 @@ export class AngleMeasurement
     const canvas = this.world.renderer.three.domElement;
     const viewerContainer = canvas.parentElement as HTMLElement;
     if (active) {
-      viewerContainer.addEventListener("click", this.create);
       viewerContainer.addEventListener("mousemove", this.onMouseMove);
       window.addEventListener("keydown", this.onKeyDown);
     } else {
-      viewerContainer.removeEventListener("click", this.create);
       viewerContainer.removeEventListener("mousemove", this.onMouseMove);
       window.removeEventListener("keydown", this.onKeyDown);
     }
@@ -179,15 +179,8 @@ export class AngleMeasurement
 
   private onKeyDown = (e: KeyboardEvent) => {
     if (!this.enabled) return;
-    if (e.key === "z" && e.ctrlKey && this._currentAngleElement) {
-      // this._currentAngleElement.removePoint(this._clickCount - 1);
-    }
     if (e.key === "Escape") {
-      if (this._clickCount === 0 && !this._currentAngleElement) {
-        this.enabled = false;
-      } else {
-        this.cancelCreation();
-      }
+      this.cancelCreation();
     }
   };
 }

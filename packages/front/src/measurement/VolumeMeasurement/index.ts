@@ -129,9 +129,8 @@ export class VolumeMeasurement
       volume += this.getVolumeOfMesh(mesh);
     }
 
-    const scene = this.world.scene.three;
-    const labelObject = this.label.three;
-    scene.add(labelObject);
+    this.label.visible = true;
+    this.world.scene.three.add(this.label.three);
 
     const bbox = this.components.get(OBC.BoundingBoxer);
     for (const mesh of meshes) {
@@ -142,12 +141,18 @@ export class VolumeMeasurement
     const sphere = bbox.getSphere();
     bbox.reset();
 
-    labelObject.position.copy(sphere.center);
+    this.label.three.position.copy(sphere.center);
 
     const formattedVolume = Math.trunc(volume * 100) / 100;
-    labelObject.element.textContent = formattedVolume.toString();
+    this.label.three.element.textContent = formattedVolume.toString();
 
     return volume;
+  }
+
+  clear() {
+    if(this.label) {
+      this.label.visible = false;
+    }
   }
 
   private newLabel() {

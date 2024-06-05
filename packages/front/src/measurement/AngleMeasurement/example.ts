@@ -1,14 +1,31 @@
+/* MD
+### 📐 Measuring angles
+---
 
+Space control is one of the most important elements of BIM applications. In this tutorial, you'll learn how to expose an angle measurement tool to your end users.
 
-import Stats from "stats.js";
-import * as OBC from "@thatopen/components";
+We will import:
+
+- `three` to create some 3D items.
+- `@thatopen/components` to set up the barebone of our app.
+- `@thatopen/components-front` to use some frontend-oriented components.
+- `Stats.js` (optional) to measure the performance of our app.
+*/
+
 import * as THREE from "three";
-import * as OBCF from "../..";
+import * as OBC from "@thatopen/components";
+import * as OBCF from "@thatopen/components-front";
+import Stats from "stats.js";
+
+/* MD
+  ### 🌎 Setting up a simple scene
+  ---
+
+  We will start by creating a simple scene with a camera and a renderer. If you don't know how to set up a scene, you can check the Worlds tutorial.
+*/
 
 const container = document.getElementById("container")!;
-
 const components = new OBC.Components();
-
 const worlds = components.get(OBC.Worlds);
 
 const world = worlds.create<
@@ -31,213 +48,79 @@ const grids = components.get(OBC.Grids);
 grids.create(world);
 
 /* MD
-  ### 📏 Dimensions Tool
-  ---
-  At times, you may need to compute the dimensions of an object or measure the distance between two elements.
-  Elements must be precisely aligned when working on complex models.
-  Dimension Tool allows you to perform measurements effortlessly.
 
-  :::tip First, let's set up a simple scene!
+  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
 
-  👀 If you haven't started there, check out [that tutorial first](SimpleScene.mdx)!
+*/
 
-  :::
+world.scene.three.background = null;
 
-  This tutorial will show you how to add Dimension Tool to your projects,
-  which can be used to acquire accurate dimensions for any 3D Object.🔭
-
-
+/* MD
   ### 🎲 Creating a Cube Mesh
   ---
-  For this tutorial we will use a Cube, you can add any geometry as per your preference.
-  We will create a [Cube](https://threejs.org/docs/index.html?q=box#api/en/geometries/BoxGeometry)
-  with `3x3x3` dimensions and use red color for the material.
-  */
+  For this tutorial we will use a Cube, you can add any geometry as per your preference. We will create a [Cube](https://threejs.org/docs/index.html?q=box#api/en/geometries/BoxGeometry) with `3x3x3` dimensions and use red color for the material.
+*/
 
 const cubeGeometry = new THREE.BoxGeometry(3, 3, 3);
 const cubeMaterial = new THREE.MeshStandardMaterial({ color: "#6528D7" });
 const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
 cube.position.set(0, 1.5, 0);
-
-/* MD
-  Now, we will add the Cube to the `Scene`. We must also add the **cube** to `components.meshes`,
-  which is simply an array of all the meshes in the Scene.🗄️
-*/
-
 world.scene.three.add(cube);
 world.meshes.add(cube);
 
-/* MD
-  
-  :::info Collection of Meshes
-
-  📦 **Components.meshes** keeps all your meshes including IFC Models, Fragments in
-  one place.
-
-  :::
-
-  ### 🛠️ Creating Dimension Tool
+/* MD 
+  ### 🛠️ Getting the angle measurements
   ---
-  A lot of logic is usually needed to compute dimensions for any item, beginning with ray casting,
-  finding the vertices to snap to, and rendering the UI for every line element.🙄
-  This may appear to be a lot of effort, but we are handling all the heavy lifting for you,
-  and you only need to write a few lines for creating the Dimension Tool.💪
-  */
+  
+  First, let's get an instance of the angle measurement component and initialize it:
+*/
 
 const angles = components.get(OBCF.AngleMeasurement);
 angles.world = world;
-
-/* MD
-  We will build dimensions by supplying the `components` to **OBC.SimpleDimensions**.
-
-  :::info DIMENSIONS AND UI
-
-  Read the **[Simple Dimensions](../api/classes/components.SimpleDimensions)** API for more on this.
-  The Simple Dimensions API provides you with a compact UI as well to display the measurements.
-
-  :::
-
-  🎨 **SimpleDimensions** has several properties that help you to customize the behaviour of the `Line Element`.
-  One such property which you can use is **`dimensions.color`** which modifies the color of the Line Element.
-
-  */
-
 angles.enabled = true;
 
 /* MD
-  ### 🖱️ Managing Events
+  ### 🖱️ Setting up mouse events
   ---
-  You can use the Dimension Tool to construct several dimension lines. Let's see how you handle them.
 
-  #### ✍️ Creating the Dimensions
+  Now, we'll define how to create the angle dimensions. In this case, we'll keep it simple and use the double click event of the container HTML element.
 
-  Now that we've generated the dimensions object, we need to attach the line tooltip to a vertex of the 3D object.
-  We'll use the double click event to invoke **`dimensions.create()`**.
-  When this event occurs, a line element is generated,
-  and the distance is calculated in real-time inside the label associated with that line.🏷️
-
-  */
+*/
 
 container.ondblclick = () => angles.create();
 
 /* MD
   
-  #### 🧹 Deleting the Dimensions
+  ### 🧹 Deleting the Dimensions
+  ---
 
-  Now that we know how to make multiple dimension lines, we must also know how to delete them when necessary.
-  Dimensions can be removed using `dimensions.delete()`.
-  **dimensions.delete()** deletes the dimension on which your mouse pointer is now located.
-
-  :::tip Deleting all the Dimensions
-
-  ❎ If you want to safely delete all the **dimensions** that were created you can simply call
-  **`dimensions.deleteAll()`**
-
-  :::
-
-  */
+  Now that we know how to make multiple dimensions, we'll learn how to delete them when necessary. Dimensions can be removed using the `deleteAll()` method, which deletes all the created dimensions. Again, we'll keep it simple and bind this event to the keydown event. Specifically, it will fire when the user presses the `Delete` or `Backspace` key.
+*/
 
 window.onkeydown = (event) => {
   if (event.code === "Delete" || event.code === "Backspace") {
-    angles.delete();
+    angles.deleteAll();
   }
 };
 
-// const mainToolbar = new OBC.Toolbar(components, {
-//   name: "Main Toolbar",
-//   position: "bottom",
-// });
-// mainToolbar.addChild(dimensions.uiElement.get("main"));
-// components.ui.addToolbar(mainToolbar);
-
 /* MD
-  
-  🎛️ Check **[Toolbar and UIManager](./UIManager.mdx)** tutorial if you have any doubts!
-
-  ### 🖌️ Adding Styles
+  ### ⏱️ Measuring the performance (optional)
   ---
 
-  Few final things, we need to add styles for the `labels` which display the measurement information.
-  - **`ifcjs-dimension-label`** - The label which is used to show the metric value after both the tooltips are attached.
-  - **`ifcjs-dimension-label:hover`** - Changing the styling when someone hovers on the dimension label.
-  - **`ifcjs-dimension-preview`** - The label which shows the measurement when the tooltip is not yet attached.
-
-  ```css title="style"
-  .ifcjs-dimension-label {
-      background-color: black;
-      font-family: sans-serif;
-      color: white;
-      padding: 8px;
-      border-radius: 8px;
-      pointer-events: all;
-      transition: background-color 200ms ease-in-out;
-  }
-
-  .ifcjs-dimension-label:hover {
-      background-color: grey;
-  }
-
-  .ifcjs-dimension-preview {
-      background-color: #ffffff;
-      width: 2rem;
-      height: 2rem;
-      opacity: 0.3;
-      padding: 8px;
-      border-radius: 100%;
-  }
-  ```
-
-
-  **Congratulations** 🎉 on completing this tutorial! Now you can measure any BIM Model or any 3D Object easily using
-  **[Simple Dimension Component](../api/classes/components.SimpleDimensions)** 📐
-  Let's keep it up and check out another tutorial! 🎓
-
-  */
-
-// Set up stats
+  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
+*/
 
 const stats = new Stats();
 stats.showPanel(2);
 document.body.append(stats.dom);
 stats.dom.style.left = "0px";
+stats.dom.style.zIndex = "unset";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
 
-// Set up dat.gui menu
+/* MD
+  ### 🎉 Wrap up
+  ---
 
-// const gui = new dat.GUI();
-
-// const shortcutsFolder = gui.addFolder('Shortcuts');
-
-// const shortcuts = {
-// 	'Create dimension': 'Double click',
-// 	'Delete dimension': 'Delete',
-// };
-
-// shortcutsFolder.add(shortcuts, 'Create dimension');
-// shortcutsFolder.add(shortcuts, 'Delete dimension');
-
-// const actionsFolder = gui.addFolder('Actions');
-
-// actionsFolder.add(dimensions, 'enabled').name('Dimensions enabled');
-// actionsFolder.add(dimensions, "visible").name("Dimensions visible");
-
-// const color = {
-// 	value: 0x000000,
-// };
-
-// const helperColor = new THREE.Color();
-// actionsFolder.addColor(color, 'value')
-// 	.name('Dimensions color')
-// 	.onChange((value) => {
-// 		helperColor.setHex(value);
-// 		dimensions.color = helperColor;
-// 	});
-
-// const actions = {
-// 	'Delete all dimensions': () => {
-// 		dimensions.deleteAll();
-// 	},
-// };
-
-// actionsFolder.add(actions, 'Delete all dimensions');
+  That's it! You have created an app that can create and delete angular dimensions on any 3D object. Congratulations!
+*/

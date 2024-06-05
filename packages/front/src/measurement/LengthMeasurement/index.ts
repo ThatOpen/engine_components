@@ -257,7 +257,7 @@ export class LengthMeasurement
     const viewerContainer = canvas.parentElement as HTMLElement;
     if (!viewerContainer) return;
 
-    viewerContainer.removeEventListener("click", this.create);
+    viewerContainer.removeEventListener("mousemove", this.onMouseMove);
 
     if (active) {
       viewerContainer.addEventListener("mousemove", this.onMouseMove);

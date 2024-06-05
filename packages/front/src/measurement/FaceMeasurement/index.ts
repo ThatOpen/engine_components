@@ -194,12 +194,10 @@ export class FaceMeasurement
     const canvas = this.world.renderer.three.domElement;
     const viewerContainer = canvas.parentElement as HTMLElement;
 
-    viewerContainer.removeEventListener("click", this.create);
     viewerContainer.removeEventListener("mousemove", this.onMouseMove);
     window.removeEventListener("keydown", this.onKeydown);
 
     if (active) {
-      viewerContainer.addEventListener("click", this.create);
       viewerContainer.addEventListener("mousemove", this.onMouseMove);
       window.addEventListener("keydown", this.onKeydown);
     }

@@ -220,8 +220,8 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
   <bim-panel active label="Edges Clipper Tutorial" class="options-menu">
       <bim-panel-section collapsed label="Controls">
       
-        <bim-label label="Double click: Create clipping plane"></bim-label>
-        <bim-label label="Delete key: Delete clipping plane"></bim-label>
+        <bim-label>Double click: Create clipping plane</bim-label>
+        <bim-label>Delete key: Delete clipping plane</bim-label>
        
         
       </bim-panel-section>
