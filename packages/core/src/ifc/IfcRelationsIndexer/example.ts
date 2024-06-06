@@ -170,7 +170,7 @@ const allRelationsJSON = indexer.serializeAllRelations();
 
 // Lets first delete the existing model relations
 delete indexer.relationMaps[model.uuid];
-const relationsIndexFile = await fetch("/resources/small-relations.json");
+const relationsIndexFile = await fetch("https://thatopen.github.io/engine_components/resources/small-relations.json");
 const relationsIndex = indexer.getRelationsMapFromJSON(
   await relationsIndexFile.text(),
 );
