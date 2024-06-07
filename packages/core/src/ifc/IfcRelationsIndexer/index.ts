@@ -2,7 +2,6 @@ import * as WEBIFC from "web-ifc";
 import { FragmentsGroup } from "@thatopen/fragments";
 import { Disposable, Event, Component, Components } from "../../core";
 import { FragmentsManager } from "../../fragments/FragmentsManager";
-import { IfcPropertiesUtils } from "../Utils";
 import {
   RelationsMap,
   ModelsRelationMap,
@@ -84,6 +83,40 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     delete this.relationMaps[data.groupID];
   };
 
+  private indexRelations(
+    relationsMap: RelationsMap,
+    relAttrs: any,
+    related: InverseAttribute,
+    relating: InverseAttribute,
+  ) {
+    const relatingKey = Object.keys(relAttrs).find((key) =>
+      key.startsWith("Relating"),
+    );
+    const relatedKey = Object.keys(relAttrs).find((key) =>
+      key.startsWith("Related"),
+    );
+    if (!(relatingKey && relatedKey)) return;
+    const relatingID = relAttrs[relatingKey].value;
+    const relatedIDs = relAttrs[relatedKey].map((el: any) => el.value);
+
+    // forRelating
+    const currentMap =
+      relationsMap.get(relatingID) ?? new Map<number, number[]>();
+    const index = this._inverseAttributes.indexOf(relating);
+    currentMap.set(index, relatedIDs);
+    relationsMap.set(relatingID, currentMap);
+
+    // forRelated
+    for (const id of relatedIDs) {
+      const currentMap = relationsMap.get(id) ?? new Map<number, number[]>();
+      const index = this._inverseAttributes.indexOf(related);
+      const relations = currentMap.get(index) ?? [];
+      relations.push(relatingID);
+      currentMap.set(index, relations);
+      relationsMap.set(id, currentMap);
+    }
+  }
+
   /**
    * Adds a relation map to the model's relations map.
    *
@@ -124,37 +157,20 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     if (relationsMap) {
       return relationsMap;
     }
+
     relationsMap = new Map();
 
-    for (const rel of this._ifcRels) {
-      await IfcPropertiesUtils.getRelationMap(
-        model,
-        rel,
-        async (relatingID, relatedIDs) => {
-          const inverseAttributes = this._relToAttributesMap.get(rel);
-          if (!inverseAttributes) return;
-          const { forRelated: related, forRelating: relating } =
-            inverseAttributes;
-
-          // forRelating
-          const currentMap =
-            relationsMap.get(relatingID) ?? new Map<number, number[]>();
-          const index = this._inverseAttributes.indexOf(relating);
-          currentMap.set(index, relatedIDs);
-          relationsMap.set(relatingID, currentMap);
-
-          // forRelated
-          for (const id of relatedIDs) {
-            const currentMap =
-              relationsMap.get(id) ?? new Map<number, number[]>();
-            const index = this._inverseAttributes.indexOf(related);
-            const relations = currentMap.get(index) ?? [];
-            relations.push(relatingID);
-            currentMap.set(index, relations);
-            relationsMap.set(id, currentMap);
-          }
-        },
-      );
+    for (const relType of this._ifcRels) {
+      const relsAttrs = await model.getAllPropertiesOfType(relType);
+      if (!relsAttrs) continue;
+      const relInverseAttributes = this._relToAttributesMap.get(relType);
+      if (!relInverseAttributes) continue;
+      const { forRelated: related, forRelating: relating } =
+        relInverseAttributes;
+      for (const expressID in relsAttrs) {
+        const relAttrs = relsAttrs[expressID];
+        this.indexRelations(relationsMap, relAttrs, related, relating);
+      }
     }
 
     this.setRelationMap(model, relationsMap);
@@ -183,33 +199,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
           modelID,
           relExpressIDs.get(i),
         );
-        const relatingKey = Object.keys(relAttrs).find((key) =>
-          key.startsWith("Relating"),
-        );
-        const relatedKey = Object.keys(relAttrs).find((key) =>
-          key.startsWith("Related"),
-        );
-        if (!(relatingKey && relatedKey)) continue;
-        const relatingID = relAttrs[relatingKey].value;
-        const relatedIDs = relAttrs[relatedKey].map((el: any) => el.value);
-
-        // forRelating
-        const currentMap =
-          relationsMap.get(relatingID) ?? new Map<number, number[]>();
-        const index = this._inverseAttributes.indexOf(relating);
-        currentMap.set(index, relatedIDs);
-        relationsMap.set(relatingID, currentMap);
-
-        // forRelated
-        for (const id of relatedIDs) {
-          const currentMap =
-            relationsMap.get(id) ?? new Map<number, number[]>();
-          const index = this._inverseAttributes.indexOf(related);
-          const relations = currentMap.get(index) ?? [];
-          relations.push(relatingID);
-          currentMap.set(index, relations);
-          relationsMap.set(id, currentMap);
-        }
+        this.indexRelations(relationsMap, relAttrs, related, relating);
       }
     }
 
