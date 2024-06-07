@@ -71,6 +71,11 @@ export class Highlighter
     moved: false,
   };
 
+  private _colorsBeforeSelect: Record<
+    string,
+    { [modelID: string]: Set<number> }
+  > = {};
+
   constructor(components: OBC.Components) {
     super(components);
     this.components.add(Highlighter.uuid, this);
@@ -304,6 +309,48 @@ export class Highlighter
     await camera.controls.fitToSphere(sphere, true);
   }
 
+  private saveHighlightersBeforeSelect = (
+    fragmentIdMap: FRAGS.FragmentIdMap,
+  ) => {
+    const fragments = this.components.get(OBC.FragmentsManager);
+    for (const fragmentID in fragmentIdMap) {
+      const fragment = fragments.list.get(fragmentID);
+      if (!fragment) continue;
+      const modelID = fragment.group?.uuid;
+      if (!modelID) continue;
+      for (const name in this.selection) {
+        if (name === this.config.selectName || name === this.config.hoverName)
+          continue;
+        const expressIDs = this.selection[name][fragmentID];
+        if (expressIDs) {
+          if (!(name in this._colorsBeforeSelect))
+            this._colorsBeforeSelect[name] = {};
+          if (!(modelID in this._colorsBeforeSelect[name]))
+            this._colorsBeforeSelect[name] = { [modelID]: new Set() };
+          for (const expressID of expressIDs) {
+            this._colorsBeforeSelect[name][modelID].add(expressID);
+          }
+        }
+      }
+    }
+  };
+
+  private restoreHighlightersAfterDeselect = () => {
+    const fragments = this.components.get(OBC.FragmentsManager);
+    for (const name in this._colorsBeforeSelect) {
+      let fragmentIdMap: FRAGS.FragmentIdMap = {};
+      const modelIdMap = this._colorsBeforeSelect[name];
+      for (const modelID in modelIdMap) {
+        const model = fragments.groups.get(modelID);
+        if (!model) continue;
+        const modelFragmentIdMap = model.getFragmentMap(modelIdMap[modelID]);
+        fragmentIdMap = { ...fragmentIdMap, ...modelFragmentIdMap };
+      }
+      this.highlightByID(name, fragmentIdMap, false, false);
+    }
+    this._colorsBeforeSelect = {};
+  };
+
   private setupEvents(active: boolean) {
     if (!this.config.world) {
       throw new Error("No world found while setting up events!");
@@ -321,6 +368,10 @@ export class Highlighter
 
     const onHighlight = this.events[this.config.selectName].onHighlight;
     onHighlight.remove(this.clearHover);
+    onHighlight.remove(this.saveHighlightersBeforeSelect);
+
+    const onSelectClear = this.events[this.config.selectName].onClear;
+    onSelectClear.remove(this.restoreHighlightersAfterDeselect);
 
     container.removeEventListener("mousedown", this.onMouseDown);
     container.removeEventListener("mouseup", this.onMouseUp);
@@ -328,6 +379,8 @@ export class Highlighter
 
     if (active) {
       onHighlight.add(this.clearHover);
+      onHighlight.add(this.saveHighlightersBeforeSelect);
+      onSelectClear.add(this.restoreHighlightersAfterDeselect);
       container.addEventListener("mousedown", this.onMouseDown);
       container.addEventListener("mouseup", this.onMouseUp);
       container.addEventListener("mousemove", this.onMouseMove);
@@ -373,7 +426,18 @@ export class Highlighter
     }
 
     this._mouseState.moved = this._mouseState.down;
-    const excluded = this.selection[this.config.selectName];
+    const excluded: FRAGS.FragmentIdMap = {};
+    for (const name in this.selection) {
+      if (name === this.config.hoverName) continue;
+      const fragmentIdMap = this.selection[name];
+      for (const fragmentID in fragmentIdMap) {
+        if (!(fragmentID in excluded)) excluded[fragmentID] = new Set();
+        const expressIDs = fragmentIdMap[fragmentID];
+        for (const expressID of expressIDs) {
+          excluded[fragmentID].add(expressID);
+        }
+      }
+    }
     await this.highlight(this.config.hoverName, true, false, excluded);
   };
 }
