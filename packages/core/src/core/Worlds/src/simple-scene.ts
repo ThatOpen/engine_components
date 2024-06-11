@@ -2,6 +2,10 @@ import * as THREE from "three";
 import { BaseScene, Configurable, Event } from "../../Types";
 import { Components } from "../../Components";
 
+/**
+ * Configuration interface for the {@link SimpleScene}.
+ * Defines properties for directional and ambient lights.
+ */
 export interface SimpleSceneConfig {
   directionalLight: {
     color: THREE.Color;
@@ -23,11 +27,19 @@ export class SimpleScene extends BaseScene implements Configurable<{}> {
   /** {@link Configurable.isSetup} */
   isSetup = false;
 
+  /**
+   * The underlying Three.js scene object.
+   * It is used to define the 3D space containing objects, lights, and cameras.
+   */
   three: THREE.Scene;
 
   /** {@link Configurable.onSetup} */
   readonly onSetup = new Event<SimpleScene>();
 
+  /**
+ * Configuration interface for the {@link SimpleScene}.
+ * Defines properties for directional and ambient lights.
+ */
   config: Required<SimpleSceneConfig> = {
     directionalLight: {
       color: new THREE.Color("white"),
@@ -46,7 +58,7 @@ export class SimpleScene extends BaseScene implements Configurable<{}> {
     this.three.background = new THREE.Color(0x202932);
   }
 
-  /** Creates a simple and nice default set up for the scene (e.g. lighting). */
+  /** {@link Configurable.setup} */
   setup(config?: Partial<SimpleSceneConfig>) {
     this.config = { ...this.config, ...config };
     const directionalLight = new THREE.DirectionalLight(

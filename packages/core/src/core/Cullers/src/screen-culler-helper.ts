@@ -1,6 +1,5 @@
-//
 // Thanks to the advice here https://github.com/zalo/TetSim/commit/9696c2e1cd6354fb9bd40dbd299c58f4de0341dd
-//
+
 function clientWaitAsync(
   gl: WebGL2RenderingContext,
   sync: WebGLSync,

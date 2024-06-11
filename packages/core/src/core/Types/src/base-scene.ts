@@ -5,10 +5,17 @@ import { Components } from "../../Components";
 import { Disposer } from "../../Disposer";
 import { BaseWorldItem } from "./base-world-item";
 
+/**
+ * Abstract class representing a base scene in the application. All scenes should use this class as a base.
+ */
 export abstract class BaseScene extends BaseWorldItem implements Disposable {
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
 
+   /**
+   * Abstract property representing the three.js object associated with this scene.
+   * It should be implemented by subclasses.
+   */
   abstract three: THREE.Object3D;
 
   protected constructor(components: Components) {

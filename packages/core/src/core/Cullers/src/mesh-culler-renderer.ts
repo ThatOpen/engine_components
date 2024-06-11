@@ -2,28 +2,42 @@ import * as THREE from "three";
 import { CullerRenderer, CullerRendererSettings } from "./culler-renderer";
 import { Components } from "../../Components";
 import { Disposer } from "../../Disposer";
-import { Event, World } from "../../Types";
+import { Event, World, Disposable } from "../../Types";
 import { MaterialsUtils } from "../../../utils";
 
 /**
- * A renderer to determine a mesh visibility on screen
+ * A renderer to determine a mesh visibility on screen.
  */
-export class MeshCullerRenderer extends CullerRenderer {
-  /* Pixels in screen a geometry must occupy to be considered "seen". */
-  threshold = 100;
-
+export class MeshCullerRenderer extends CullerRenderer implements Disposable {
+  /**
+   * Event triggered when the visibility of meshes is updated.
+   * Contains two sets: seen and unseen.
+   */
   readonly onViewUpdated: Event<{
     seen: Set<THREE.Mesh>;
     unseen: Set<THREE.Mesh>;
   }> = new Event();
 
+  /**
+   * Pixels in screen a geometry must occupy to be considered "seen".
+   * Default value is 100.
+   */
+  threshold = 100;
+
+  /**
+   * Map of color code to THREE.InstancedMesh.
+   * Used to keep track of color-coded meshes.
+   */
   colorMeshes = new Map<string, THREE.InstancedMesh>();
 
+  /**
+   * Flag to indicate if the renderer is currently processing.
+   * Used to prevent concurrent processing.
+   */
   isProcessing = false;
 
   private _colorCodeMeshMap = new Map<string, THREE.Mesh>();
   private _meshIDColorCodeMap = new Map<string, string>();
-
   private _currentVisibleMeshes = new Set<THREE.Mesh>();
   private _recentlyHiddenMeshes = new Set<THREE.Mesh>();
   private _intervalID: number | null = null;
@@ -58,6 +72,7 @@ export class MeshCullerRenderer extends CullerRenderer {
     });
   }
 
+  /** {@link Disposable.dispose} */
   dispose() {
     super.dispose();
     if (this._intervalID !== null) {
@@ -80,6 +95,11 @@ export class MeshCullerRenderer extends CullerRenderer {
     this.colorMeshes.clear();
   }
 
+/**
+ * Adds a mesh to the culler. When the mesh is not visibile anymore, it will be removed from the scene. When it's visible again, it will be added to the scene.
+ * @param mesh - The mesh to add. It can be a regular THREE.Mesh or an instance of THREE.InstancedMesh.
+ * @returns {void}
+ */
   add(mesh: THREE.Mesh | THREE.InstancedMesh) {
     if (!this.enabled) return;
 
@@ -154,6 +174,12 @@ export class MeshCullerRenderer extends CullerRenderer {
     this.isProcessing = false;
   }
 
+  /**
+ * Removes a mesh from the culler, so its visibility is not controlled by the culler anymore.
+ * When the mesh is removed, it will be hidden from the scene and its color-coded mesh will be destroyed.
+ * @param mesh - The mesh to remove. It can be a regular THREE.Mesh or an instance of THREE.InstancedMesh.
+ * @returns {void}
+ */
   remove(mesh: THREE.Mesh | THREE.InstancedMesh) {
     if (this.isProcessing) {
       console.log("Culler processing not finished yet.");

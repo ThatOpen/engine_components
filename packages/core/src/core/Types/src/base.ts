@@ -8,7 +8,7 @@ import {
 import { Components } from "../../Components";
 
 /**
- * Base class of the library. Useful for finding out the interfaces it implements.
+ * Base class of the library. Useful for finding out the interfaces something implements.
  */
 export abstract class Base {
   constructor(public components: Components) {}

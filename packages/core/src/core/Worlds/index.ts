@@ -13,6 +13,10 @@ import { SimpleWorld } from "./src";
 
 export * from "./src";
 
+/**
+ * A class representing a collection of worlds within a game engine.
+ * It manages the creation, deletion, and update of worlds.
+ */
 export class Worlds extends Component implements Updateable, Disposable {
   /**
    * A unique identifier for the component.
@@ -20,26 +24,29 @@ export class Worlds extends Component implements Updateable, Disposable {
    */
   static readonly uuid = "fdb61dc4-2ec1-4966-b83d-54ea795fad4a" as const;
 
-  /**
-   * Event triggered after the update process of all worlds.
-   * Subscribers can listen to this event to perform actions post-update.
-   */
+
+  /** {@link Updateable.onAfterUpdate} */
   readonly onAfterUpdate = new Event();
 
-  /**
-   * Event triggered before the update process of all worlds.
-   * Subscribers can listen to this event to perform actions pre-update.
-   */
+
+  /** {@link Updateable.onBeforeUpdate} */
   readonly onBeforeUpdate = new Event();
 
-  /**
-   * Event triggered when the Worlds component is disposed.
-   * Subscribers can listen to this event to perform cleanup actions.
-   */
+
+  /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
 
-  readonly onWorldCreated = new Event<World>();
-  readonly onWorldDeleted = new Event<string>();
+/**
+ * An event that is triggered when a new world is created.
+ * The event passes the newly created world as a parameter.
+ */
+readonly onWorldCreated = new Event<World>();
+
+/**
+ * An event that is triggered when a world is deleted.
+ * The event passes the UUID of the deleted world as a parameter.
+ */
+readonly onWorldDeleted = new Event<string>();
 
   /**
    * A collection of worlds managed by this component.
@@ -47,10 +54,7 @@ export class Worlds extends Component implements Updateable, Disposable {
    */
   list = new Map<string, World>();
 
-  /**
-   * A flag indicating whether the Worlds component is enabled.
-   * If false, the update process will be skipped.
-   */
+  /** {@link Component.enabled} */
   enabled = true;
 
   constructor(components: Components) {
@@ -82,22 +86,43 @@ export class Worlds extends Component implements Updateable, Disposable {
     return world;
   }
 
-  delete(world: World) {
+  /**
+ * Deletes a world from the list of worlds.
+ *
+ * @param {World} world - The world to be deleted.
+ *
+ * @throws {Error} - Throws an error if the provided world is not found in the list.
+ *
+ * @returns {void}
+ */
+delete(world: World) {
+    if (!this.list.has(world.uuid)) {
+        throw new Error("The provided world is not found in the list!");
+    }
+
     const uuid = world.uuid;
     this.list.delete(world.uuid);
     world.dispose();
     this.onWorldDeleted.trigger(uuid);
-  }
+}
 
-  dispose() {
+  /**
+ * Disposes of the Worlds component and all its managed worlds.
+ * This method sets the enabled flag to false, disposes of all worlds, clears the list,
+ * and triggers the onDisposed event.
+ *
+ * @returns {void}
+ */
+dispose() {
     this.enabled = false;
     for (const [_id, world] of this.list) {
       world.dispose();
     }
     this.list.clear();
     this.onDisposed.trigger();
-  }
+}
 
+  /** {@link Updateable.update} */
   update(delta?: number): void | Promise<void> {
     if (!this.enabled) return;
     for (const [_id, world] of this.list) {

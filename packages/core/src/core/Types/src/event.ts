@@ -1,6 +1,5 @@
 /**
- * Simple event handler by
- * [Jason Kleban](https://gist.github.com/JasonKleban/50cee44960c225ac1993c922563aa540).
+ * Simple event handler by [Jason Kleban](https://gist.github.com/JasonKleban/50cee44960c225ac1993c922563aa540).
  * Keep in mind that:
  * - If you want to remove it later, you might want to declare the callback as
  * an object.

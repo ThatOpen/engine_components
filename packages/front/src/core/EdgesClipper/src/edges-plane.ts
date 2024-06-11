@@ -3,8 +3,7 @@ import * as OBC from "@thatopen/components";
 import { ClippingEdges } from "./clipping-edges";
 
 /**
- * A more advanced version of SimpleClipper that also includes
- * {@link ClippingEdges} with customizable lines.
+ * A more advanced version of Clipper planes that also includes edges and fills.
  */
 export class EdgesPlane extends OBC.SimplePlane {
   readonly edges: ClippingEdges;

@@ -10,40 +10,68 @@ import { UUID } from "../../utils";
 /**
  * The entry point of the Components library.
  * It can:
- * - Create and access all the components of the library.
+ * - Create and access all the components of the library globally.
  * - Update all the updatable components automatically.
  * - Dispose all the components, preventing memory leaks.
  */
 export class Components implements Disposable {
-  static readonly release = "1.4.21";
+  /**
+   * The version of the @thatopen/components library.
+   */
+  static readonly release = "2.0.8";
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<void>();
 
-  /** The list of components created in this app. */
+  /**
+   * The list of components created in this app.
+   * The keys are UUIDs and the values are instances of the components.
+   */
   readonly list = new Map<string, Component>();
 
-  /** If disabled, the animation loop will be stopped. */
+  /**
+   * If disabled, the animation loop will be stopped.
+   * Default value is false.
+   */
   enabled = false;
 
   private _clock: THREE.Clock;
 
-  add(uuid: string, instance: Component) {
+  /**
+ * Adds a component to the list of components.
+ * Throws an error if a component with the same UUID already exists.
+ *
+ * @param uuid - The unique identifier of the component.
+ * @param instance - The instance of the component to be added.
+ *
+ * @throws Will throw an error if a component with the same UUID already exists.
+ *
+ * @internal
+ */
+add(uuid: string, instance: Component) {
     if (this.list.has(uuid))
       throw new Error(
-        `You're trying to add a component that already exists in the components intance. Use Components.get() instead.`,
+        `You're trying to add a component that already exists in the components instance. Use Components.get() instead.`,
       );
     UUID.validate(uuid);
     this.list.set(uuid, instance);
   }
 
+
   /**
-   * Retrieves a component. If it already exists in this app, it returns the instance of the component. If it
-   * doesn't exist, it will instance it automatically.
-   *
-   * @param Component - The component to get or create.
-   */
-  get<U extends Component>(Component: new (components: Components) => U): U {
+ * Retrieves a component instance by its constructor function.
+ * If the component does not exist in the list, it will be created and added.
+ *
+ * @template U - The type of the component to retrieve.
+ * @param Component - The constructor function of the component to retrieve.
+ *
+ * @returns The instance of the requested component.
+ *
+ * @throws Will throw an error if a component with the same UUID already exists.
+ *
+ * @internal
+ */
+get<U extends Component>(Component: new (components: Components) => U): U {
     const uuid = (Component as any).uuid;
     if (!this.list.has(uuid)) {
       const toolInstance = new Component(this);
@@ -61,17 +89,19 @@ export class Components implements Disposable {
     Components.setupBVH();
   }
 
-  /**
-   * Initializes the library. It should be called at the start of the app after
-   * initializing the scene, the renderer and the
-   * camera. Additionally, if any component that need a raycaster is
-   * used, the {@link raycaster} will need to be initialized.
-   */
-  init() {
+
+/**
+ * Initializes the Components instance.
+ * This method starts the animation loop, sets the enabled flag to true,
+ * and calls the update method.
+ *
+ * @returns {void}
+ */
+init() {
     this.enabled = true;
     this._clock.start();
     this.update();
-  }
+}
 
   /**
    * Disposes the memory of all the components and tools of this instance of
@@ -81,7 +111,7 @@ export class Components implements Disposable {
    * called. This is especially relevant in Single Page Applications (React,
    * Angular, Vue, etc).
    *
-   * - Any of the objects of this instance (meshes, geometries, etc) is
+   * - Any of the objects of this instance (meshes, geometries,materials, etc) is
    * referenced by a reference type (object or array).
    *
    * You can learn more about how Three.js handles memory leaks

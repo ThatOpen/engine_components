@@ -3,15 +3,37 @@ import { Components } from "../../Components";
 import { readPixelsAsync } from "./screen-culler-helper";
 import { AsyncEvent, Event, World } from "../../Types";
 
+/**
+ * Interface for settings to configure the CullerRenderer.
+ */
 export interface CullerRendererSettings {
+  /**
+   * Interval in milliseconds at which the visibility check should be performed.
+   * Default value is 1000.
+   */
   updateInterval?: number;
+
+  /**
+   * Width of the render target used for visibility checks.
+   * Default value is 512.
+   */
   width?: number;
+
+  /**
+   * Height of the render target used for visibility checks.
+   * Default value is 512.
+   */
   height?: number;
+
+  /**
+   * Whether the visibility check should be performed automatically.
+   * Default value is true.
+   */
   autoUpdate?: boolean;
 }
 
 /**
- * A base renderer to determine visibility on screen
+ * A base renderer to determine visibility on screen.
  */
 export class CullerRenderer {
   /** {@link Disposable.onDisposed} */
@@ -24,7 +46,9 @@ export class CullerRenderer {
    */
   readonly onViewUpdated: Event<any> | AsyncEvent<any> = new AsyncEvent<any>();
 
-  /** {@link Component.enabled} */
+  /**
+   * Whether this renderer is active or not. If not, it won't render anything.
+   */
   enabled = true;
 
   /**
@@ -39,10 +63,13 @@ export class CullerRenderer {
    */
   renderDebugFrame = false;
 
+  /** The components instance to which this renderer belongs. */
   components: Components;
 
+  /** The world instance to which this renderer belongs. */
   readonly world: World;
 
+  /** The THREE.js renderer used to make the visibility test. */
   readonly renderer: THREE.WebGLRenderer;
 
   protected autoUpdate = true;

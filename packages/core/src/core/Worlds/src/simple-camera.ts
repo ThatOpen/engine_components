@@ -1,12 +1,6 @@
 import * as THREE from "three";
 import CameraControls from "camera-controls";
-import {
-  Component,
-  Disposable,
-  Updateable,
-  Event,
-  BaseCamera,
-} from "../../Types";
+import { Disposable, Updateable, Event, BaseCamera } from "../../Types";
 import { Components } from "../../Components";
 
 /**
@@ -22,11 +16,19 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
   /** {@link Updateable.onAfterUpdate} */
   readonly onAfterUpdate = new Event<SimpleCamera>();
 
+  /**
+   * Event that is triggered when the aspect of the camera has been updated.
+   * This event is useful when you need to perform actions after the aspect of the camera has been changed.
+   */
   readonly onAspectUpdated = new Event();
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
 
+  /**
+   * A three.js PerspectiveCamera or OrthographicCamera instance.
+   * This camera is used for rendering the scene.
+   */
   three: THREE.PerspectiveCamera | THREE.OrthographicCamera;
 
   private _allControls = new Map<string, CameraControls>();
@@ -47,8 +49,13 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
     }
     return controls;
   }
-
-  /** {@link Component.enabled} */
+  /**
+   * Getter for the enabled state of the camera controls.
+   * If the current world is null, it returns false.
+   * Otherwise, it returns the enabled state of the camera controls.
+   *
+   * @returns {boolean} The enabled state of the camera controls.
+   */
   get enabled() {
     if (this.currentWorld === null) {
       return false;
@@ -56,9 +63,16 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
     return this.controls.enabled;
   }
 
-  /** {@link Component.enabled} */
+  /**
+   * Setter for the enabled state of the camera controls.
+   * If the current world is not null, it sets the enabled state of the camera controls to the provided value.
+   *
+   * @param {boolean} enabled - The new enabled state of the camera controls.
+   */
   set enabled(enabled: boolean) {
-    this.controls.enabled = enabled;
+    if (this.currentWorld !== null) {
+      this.controls.enabled = enabled;
+    }
   }
 
   constructor(components: Components) {

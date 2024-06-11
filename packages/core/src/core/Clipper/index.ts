@@ -25,13 +25,11 @@ export class Clipper
   extends Component
   implements Createable, Disposable, Hideable
 {
+    /**
+   * A unique identifier for the component.
+   * This UUID is used to register the component within the Components system.
+   */
   static readonly uuid = "66290bc5-18c4-4cd1-9379-2e17a0617611" as const;
-
-  /** {@link Createable.onAfterCreate} */
-  readonly onAfterCreate = new Event<SimplePlane>();
-
-  /** {@link Createable.onAfterDelete} */
-  readonly onAfterDelete = new Event<SimplePlane>();
 
   /** Event that fires when the user starts dragging a clipping plane. */
   readonly onBeforeDrag = new Event<void>();
@@ -39,13 +37,37 @@ export class Clipper
   /** Event that fires when the user stops dragging a clipping plane. */
   readonly onAfterDrag = new Event<void>();
 
-  readonly onBeforeCreate = new Event();
+/**
+ * Event that fires when the user starts creating a clipping plane.
+ */
+readonly onBeforeCreate = new Event();
 
-  readonly onBeforeCancel = new Event();
+/**
+ * Event that fires when the user cancels the creation of a clipping plane.
+ */
+readonly onBeforeCancel = new Event();
 
-  readonly onAfterCancel = new Event();
+/**
+ * Event that fires after the user cancels the creation of a clipping plane.
+ */
+readonly onAfterCancel = new Event();
 
-  readonly onBeforeDelete = new Event();
+/**
+ * Event that fires when the user starts deleting a clipping plane.
+ */
+readonly onBeforeDelete = new Event();
+
+/**
+ * Event that fires after a clipping plane has been created.
+ * @param plane - The newly created clipping plane.
+ */
+readonly onAfterCreate = new Event<SimplePlane>();
+
+/**
+ * Event that fires after a clipping plane has been deleted.
+ * @param plane - The deleted clipping plane.
+ */
+readonly onAfterDelete = new Event<SimplePlane>();
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
@@ -65,8 +87,15 @@ export class Clipper
    */
   toleranceOrthogonalY = 0.7;
 
+  /**
+   * The type of clipping plane to be created.
+   * Default is {@link SimplePlane}.
+   */
   Type: new (...args: any) => SimplePlane = SimplePlane;
 
+  /**
+   * A list of all the clipping planes created by this component.
+   */
   list: SimplePlane[] = [];
 
   /** The material used in all the clipping planes. */

@@ -183,11 +183,6 @@ window.onkeydown = (event) => {
 
   :::
 
-  Great job! 🎉 Using the **[Clipper Component](../api/classes/components.SimpleClipper)**,
-  you can now effortlessly check BIM models or any other 3D objects with stunning edges.🧐
-
-  Let's keep it up and check out another tutorial! 🎓
-
   ### ⏱️ Measuring the performance (optional)
   ---
 

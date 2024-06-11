@@ -15,16 +15,24 @@ export class ProjectionManager {
     THREE.PerspectiveCamera | THREE.OrthographicCamera
   >();
 
+  /**
+   * Current projection mode of the camera.
+   * Default is "Perspective".
+   */
   current: CameraProjection = "Perspective";
 
+  /**
+   * The camera controlled by this ProjectionManager.
+   * It can be either a PerspectiveCamera or an OrthographicCamera.
+   */
   camera: THREE.PerspectiveCamera | THREE.OrthographicCamera;
+
+  /** Match Ortho zoom with Perspective distance when changing projection mode */
+  matchOrthoDistanceEnabled = false;
 
   private _component: OrthoPerspectiveCamera;
 
   private _previousDistance = -1;
-
-  /** Match Ortho zoom with Perspective distance when changing projection mode */
-  matchOrthoDistanceEnabled = false;
 
   constructor(camera: OrthoPerspectiveCamera) {
     this._component = camera;

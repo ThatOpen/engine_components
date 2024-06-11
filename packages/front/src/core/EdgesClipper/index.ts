@@ -5,8 +5,7 @@ import { EdgesStyles } from "./src/edges-styles";
 export * from "./src/edges-plane";
 
 /**
- * A more advanced version of SimpleClipper that also supports
- * {@link ClippingEdges} with customizable lines.
+ * A component that can add fills and outlines to the Clipper.
  */
 export class ClipEdges extends OBC.Component implements OBC.Disposable {
   static readonly uuid = "24dfc306-a3c4-410f-8071-babc4afa5e4d" as const;

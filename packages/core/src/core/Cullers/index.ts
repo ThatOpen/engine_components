@@ -5,19 +5,21 @@ import { Component, Event, Disposable, World } from "../Types";
 export * from "./src";
 
 /**
- * A tool to handle big scenes efficiently by automatically hiding the objects
- * that are not visible to the camera.
+ * A component that manages and provides culling functionality for meshes in a 3D scene.
  */
 export class Cullers extends Component implements Disposable {
 
   /**
-   * A unique identifier for the Cullers component.
+   * A unique identifier for the component.
+   * This UUID is used to register the component within the Components system.
    */
   static readonly uuid = "69f2a50d-c266-44fc-b1bd-fa4d34be89e6" as const;
 
-  /**
-   * Indicates whether the Cullers component is enabled.
+    /**
+   * An event that is triggered when the Cullers component is disposed.
    */
+  readonly onDisposed = new Event();
+
   private _enabled = true;
 
   /**
@@ -25,26 +27,12 @@ export class Cullers extends Component implements Disposable {
    */
   list = new Map<string, MeshCullerRenderer>();
 
-  /**
-   * An event that is triggered when the Cullers component is disposed.
-   */
-  readonly onDisposed = new Event();
-
-  /**
-   * Gets the enabled state of the Cullers component.
-   *
-   * @returns The current enabled state.
-   */
+  /** {@link Component.enabled} */
   get enabled() {
     return this._enabled;
   }
 
-  /**
-   * Sets the enabled state of the Cullers component.
-   * Also sets the enabled state of all MeshCullerRenderer instances.
-   *
-   * @param value - The new enabled state.
-   */
+  /** {@link Component.enabled} */
   set enabled(value: boolean) {
     this._enabled = value;
     for (const [_id, renderer] of this.list) {
@@ -57,7 +45,7 @@ export class Cullers extends Component implements Disposable {
     components.add(Cullers.uuid, this);
   }
 
-  /**
+/**
  * Creates a new MeshCullerRenderer for the given world.
  * If a MeshCullerRenderer already exists for the world, it will return the existing one.
  *
@@ -75,13 +63,21 @@ create(world: World, config?: Partial<CullerRendererSettings>): MeshCullerRender
   return culler;
 }
 
-  delete(world: World) {
+/**
+ * Deletes the MeshCullerRenderer associated with the given world.
+ * If a MeshCullerRenderer exists for the given world, it will be disposed and removed from the list.
+ *
+ * @param world - The world for which to delete the MeshCullerRenderer.
+ *
+ * @returns {void}
+ */
+delete(world: World): void {
     const culler = this.list.get(world.uuid);
     if (culler) {
-      culler.dispose();
+      culler.dispose(); // Dispose the MeshCullerRenderer before removing it from the list
     }
-    this.list.delete(world.uuid);
-  }
+    this.list.delete(world.uuid); // Remove the MeshCullerRenderer from the list
+}
 
   /** {@link Disposable.dispose} */
   dispose() {

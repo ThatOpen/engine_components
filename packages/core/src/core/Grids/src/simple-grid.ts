@@ -21,8 +21,10 @@ export class SimpleGrid implements Hideable, Disposable {
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
 
+  /** The world instance to which this Raycaster belongs. */
   world: World;
 
+  /** The components instance to which this grid belongs. */
   components: Components;
 
   /** {@link Hideable.visible} */
@@ -62,6 +64,7 @@ export class SimpleGrid implements Hideable, Disposable {
     this.material.uniforms.uFade.value = this._fade;
   }
 
+  /** The Three.js mesh that contains the infinite grid. */
   readonly three: THREE.Mesh;
 
   private _fade = 3;

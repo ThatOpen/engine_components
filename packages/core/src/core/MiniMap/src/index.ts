@@ -1,42 +1,82 @@
 import * as THREE from "three";
 import { Resizeable, Updateable, World, Event, Disposable } from "../../Types";
 
+/**
+ * A class representing a 2D minimap in a 3D world.
+ */
 export class MiniMap implements Resizeable, Updateable, Disposable {
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
 
+  /** {@link Updateable.onAfterUpdate} */
   readonly onAfterUpdate = new Event();
+
+  /** {@link Updateable.onBeforeUpdate} */
   readonly onBeforeUpdate = new Event();
+
+  /** {@link Resizeable.onResize} */
   readonly onResize = new Event<THREE.Vector2>();
 
-  // By pushing the map to the front, what the user sees on screen corresponds with what they see on the map
+  /**
+   * The front offset of the minimap.
+   * It determines how much the minimap's view is offset from the camera's view.
+   * By pushing the map to the front, what the user sees on screen corresponds with what they see on the map
+   */
   frontOffset = 0;
 
+  /**
+   * The override material for the minimap.
+   * It is used to render the depth information of the world onto the minimap.
+   */
   overrideMaterial = new THREE.MeshDepthMaterial();
 
+  /**
+   * The background color of the minimap.
+   * It is used to set the background color of the minimap's renderer.
+   */
   backgroundColor = new THREE.Color(0x06080a);
 
+  /**
+   * The WebGL renderer for the minimap.
+   * It is used to render the minimap onto the screen.
+   */
   renderer: THREE.WebGLRenderer;
 
+  /**
+   * A flag indicating whether the minimap is enabled.
+   * If disabled, the minimap will not update or render.
+   */
   enabled = true;
 
+  /**
+   * The world in which the minimap is displayed.
+   * It provides access to the 3D scene, camera, and other relevant world elements.
+   */
   world: World;
 
   private _lockRotation = true;
   private _camera: THREE.OrthographicCamera;
   private _plane: THREE.Plane;
   private _size = new THREE.Vector2(320, 160);
-
   private _tempVector1 = new THREE.Vector3();
   private _tempVector2 = new THREE.Vector3();
   private _tempTarget = new THREE.Vector3();
 
   private readonly down = new THREE.Vector3(0, -1, 0);
 
+  /**
+ * Gets or sets whether the minimap rotation is locked.
+ * When rotation is locked, the minimap will always face the same direction as the camera.
+ */
   get lockRotation() {
     return this._lockRotation;
   }
 
+  /**
+ * Sets whether the minimap rotation is locked.
+ * When rotation is locked, the minimap will always face the same direction as the camera.
+ * @param active - If `true`, rotation is locked. If `false`, rotation is not locked.
+ */
   set lockRotation(active: boolean) {
     this._lockRotation = active;
     if (active) {
@@ -44,10 +84,20 @@ export class MiniMap implements Resizeable, Updateable, Disposable {
     }
   }
 
+  /**
+ * Gets the current zoom level of the minimap.
+ * The zoom level determines how much of the world is visible on the minimap.
+ * @returns The current zoom level of the minimap.
+ */
   get zoom() {
     return this._camera.zoom;
   }
 
+  /**
+ * Sets the zoom level of the minimap.
+ * The zoom level determines how much of the world is visible on the minimap.
+ * @param value - The new zoom level of the minimap.
+ */
   set zoom(value: number) {
     this._camera.zoom = value;
     this._camera.updateProjectionMatrix();
@@ -82,6 +132,7 @@ export class MiniMap implements Resizeable, Updateable, Disposable {
     this.updatePlanes();
   }
 
+  /** {@link Disposable.dispose} */
   dispose() {
     this.enabled = false;
     this.onBeforeUpdate.reset();
@@ -93,10 +144,12 @@ export class MiniMap implements Resizeable, Updateable, Disposable {
     this.onDisposed.reset();
   }
 
+  /** Returns the camera used by the MiniMap */
   get() {
     return this._camera;
   }
 
+  /** {@link Updateable.update} */
   update() {
     if (!this.enabled) return;
     this.onBeforeUpdate.trigger();
@@ -142,10 +195,12 @@ export class MiniMap implements Resizeable, Updateable, Disposable {
     this.onAfterUpdate.trigger();
   }
 
+  /** {@link Resizeable.getSize} */
   getSize() {
     return this._size;
   }
 
+  /** {@link Resizeable.resize} */
   resize(size: THREE.Vector2 = this._size) {
     this._size.copy(size);
     this.renderer.setSize(size.x, size.y);

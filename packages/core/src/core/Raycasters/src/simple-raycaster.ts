@@ -12,6 +12,7 @@ export class SimpleRaycaster implements Disposable {
   /** {@link Component.enabled} */
   enabled = true;
 
+  /** The components instance to which this Raycaster belongs. */
   components: Components;
 
   /** {@link Disposable.onDisposed} */
@@ -20,8 +21,16 @@ export class SimpleRaycaster implements Disposable {
   /** The position of the mouse in the screen. */
   readonly mouse: Mouse;
 
+  /**
+   * A reference to the Three.js Raycaster instance.
+   * This is used for raycasting operations.
+   */
   readonly three = new THREE.Raycaster();
 
+  /**
+   * A reference to the world instance to which this Raycaster belongs.
+   * This is used to access the camera and meshes.
+   */
   world: World;
 
   constructor(components: Components, world: World) {
@@ -61,14 +70,23 @@ export class SimpleRaycaster implements Disposable {
     return this.intersect(items);
   }
 
-  castRayFromVector(
-    origin: THREE.Vector3,
-    direction: THREE.Vector3,
-    items = Array.from(this.world.meshes),
-  ) {
-    this.three.set(origin, direction);
-    return this.intersect(items);
-  }
+  /**
+ * Casts a ray from a given origin in a given direction and returns the first item found.
+ * This method also takes into account the clipping planes used by the renderer.
+ *
+ * @param origin - The origin of the ray.
+ * @param direction - The direction of the ray.
+ * @param items - The meshes to query. If not provided, it will query all the meshes stored in {@link World.meshes}.
+ * @returns The first intersection found or `null` if no intersection was found.
+ */
+castRayFromVector(
+  origin: THREE.Vector3,
+  direction: THREE.Vector3,
+  items = Array.from(this.world.meshes),
+) {
+  this.three.set(origin, direction);
+  return this.intersect(items);
+}
 
   private intersect(items: THREE.Object3D[] = Array.from(this.world.meshes)) {
     const result = this.three.intersectObjects(items);

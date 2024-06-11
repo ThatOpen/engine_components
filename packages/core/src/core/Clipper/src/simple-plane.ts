@@ -4,7 +4,7 @@ import { Hideable, Disposable, Event, World } from "../../Types";
 import { Components } from "../../Components";
 
 /**
- * Each of the planes created by {@link SimpleClipper}.
+ * Each of the planes created by the clipper.
  */
 export class SimplePlane implements Disposable, Hideable {
   /** Event that fires when the user starts dragging a clipping plane. */
@@ -16,21 +16,32 @@ export class SimplePlane implements Disposable, Hideable {
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
 
+  /**
+   * The normal vector of the clipping plane.
+   */
   readonly normal: THREE.Vector3;
 
+  /**
+   * The origin point of the clipping plane.
+   */
   readonly origin: THREE.Vector3;
 
+  /**
+   * The THREE.js Plane object representing the clipping plane.
+   */
   readonly three = new THREE.Plane();
+
+  /** The components instance to which this plane belongs. */
+  components: Components;
+
+  /** The world instance to which this plane belongs. */
+  world: World;
 
   protected readonly _helper: THREE.Object3D;
 
   protected _visible = true;
 
   protected _enabled = true;
-
-  components: Components;
-
-  world: World;
 
   private _controlsActive = false;
 
@@ -44,18 +55,26 @@ export class SimplePlane implements Disposable, Hideable {
     visible: false,
   });
 
-  get enabled() {
-    return this._enabled;
-  }
+/**
+ * Getter for the enabled state of the clipping plane.
+ * @returns {boolean} The current enabled state.
+ */
+get enabled() {
+  return this._enabled;
+}
 
-  /** {@link Component.enabled} */
-  set enabled(state: boolean) {
-    if (!this.world.renderer) {
-      throw new Error("No renderer found for clipping plane!");
-    }
-    this._enabled = state;
-    this.world.renderer.setPlane(state, this.three);
+/**
+ * Setter for the enabled state of the clipping plane.
+ * Updates the clipping plane state in the renderer and throws an error if no renderer is found.
+ * @param {boolean} state - The new enabled state.
+ */
+set enabled(state: boolean) {
+  if (!this.world.renderer) {
+    throw new Error("No renderer found for clipping plane!");
   }
+  this._enabled = state;
+  this.world.renderer.setPlane(state, this.three);
+}
 
   /** {@link Hideable.visible } */
   get visible() {
@@ -95,6 +114,13 @@ export class SimplePlane implements Disposable, Hideable {
     this._planeMesh.scale.set(size, size, size);
   }
 
+  /**
+ * Getter for the helper object of the clipping plane.
+ * The helper object is a THREE.Object3D that contains the clipping plane mesh and other related objects.
+ * It is used for positioning, rotating, and scaling the clipping plane in the 3D scene.
+ *
+ * @returns {THREE.Object3D} The helper object of the clipping plane.
+ */
   get helper() {
     return this._helper;
   }
@@ -130,7 +156,17 @@ export class SimplePlane implements Disposable, Hideable {
     }
   }
 
-  setFromNormalAndCoplanarPoint(normal: THREE.Vector3, point: THREE.Vector3) {
+  /**
+ * Sets the clipping plane's normal and origin from the given normal and point.
+ * This method resets the clipping plane's state, updates the normal and origin,
+ * and positions the helper object accordingly.
+ *
+ * @param normal - The new normal vector for the clipping plane.
+ * @param point - The new origin point for the clipping plane.
+ *
+ * @returns {void}
+ */
+setFromNormalAndCoplanarPoint(normal: THREE.Vector3, point: THREE.Vector3) {
     this.reset();
     if (!this.normal.equals(normal)) {
       this.normal.copy(normal);
@@ -140,7 +176,7 @@ export class SimplePlane implements Disposable, Hideable {
     this._helper.position.copy(point);
     this._helper.updateMatrix();
     this.update();
-  }
+}
 
   /** {@link Updateable.update} */
   update = () => {

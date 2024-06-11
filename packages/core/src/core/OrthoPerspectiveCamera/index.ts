@@ -18,27 +18,44 @@ export * from "./src";
  * [yomotsu's cameracontrols](https://github.com/yomotsu/camera-controls) to
  * easily control the camera in 2D and 3D. It supports multiple navigation
  * modes, such as 2D floor plan navigation, first person and 3D orbit.
+ *
+ * This class extends the SimpleCamera class and adds additional functionality
+ * for managing different camera projections and navigation modes.
  */
 export class OrthoPerspectiveCamera extends SimpleCamera {
-  /**
-   * The current {@link NavigationMode}.
-   */
-  _mode: NavigationMode | null = null;
 
+  /**
+   * A ProjectionManager instance that manages the projection modes of the camera.
+   */
   readonly projection: ProjectionManager;
 
+  /**
+   * A THREE.OrthographicCamera instance that represents the orthographic camera.
+   * This camera is used when the projection mode is set to orthographic.
+   */
   readonly threeOrtho: THREE.OrthographicCamera;
 
+  /**
+   * A THREE.PerspectiveCamera instance that represents the perspective camera.
+   * This camera is used when the projection mode is set to perspective.
+   */
   readonly threePersp: THREE.PerspectiveCamera;
 
   protected readonly _userInputButtons: any = {};
-
   protected readonly _frustumSize = 50;
-
   protected readonly _navigationModes = new Map<NavModeID, NavigationMode>();
+  protected _mode: NavigationMode | null = null;
 
   private previousSize: THREE.Vector2 | null = null;
 
+  /**
+ * Getter for the current navigation mode.
+ * Throws an error if the mode is not found or the camera is not initialized.
+ *
+ * @returns {NavigationMode} The current navigation mode.
+ *
+ * @throws {Error} Throws an error if the mode is not found or the camera is not initialized.
+ */
   get mode() {
     if (!this._mode) {
       throw new Error("Mode not found, camera not initialized");

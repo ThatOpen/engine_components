@@ -4,8 +4,7 @@ import { Event } from "./event";
 
 /**
  * Whether this component has to be manually destroyed once you are done with
- * it to prevent
- * [memory leaks](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
+ * it to prevent [memory leaks](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
  * This also ensures that the DOM events created by that component will be
  * cleaned up.
  */
@@ -16,7 +15,7 @@ export interface Disposable {
    */
   dispose: () => void | Promise<void>;
 
-  /** Fired after the tool has been {@link Disposable.dispose()}  */
+  /** Fired after the tool has been disposed.  */
   readonly onDisposed: Event<any>;
 }
 
@@ -129,16 +128,12 @@ export interface Configurable<T extends Record<string, any>> {
 }
 
 /**
- * An interface to make [three-mesh-bvh](https://github.com/gkjohnson/three-mesh-bvh) compatible with typescript.
- */
-export interface BVHGeometry extends THREE.BufferGeometry {
-  boundsTree: Object | undefined;
-  disposeBoundsTree: () => void;
-}
-
-/**
  * Whether a camera uses the Camera Controls library.
  */
 export interface CameraControllable {
+  /**
+   * An instance of CameraControls that provides camera control functionalities.
+   * This instance is used to manipulate the camera.
+   */
   controls: CameraControls;
 }

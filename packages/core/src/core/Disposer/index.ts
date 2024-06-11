@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Components } from "../Components";
-import { BVHGeometry, Component } from "../Types";
+import { Component } from "../Types";
 
 /**
  * A tool to safely remove meshes and geometries from memory to
@@ -12,6 +12,10 @@ export class Disposer extends Component {
   /** {@link Component.enabled} */
   enabled = true;
 
+  /**
+   * A unique identifier for the component.
+   * This UUID is used to register the component within the Components system.
+   */
   static readonly uuid = "76e9cd8e-ad8f-4753-9ef6-cbc60f7247fe" as const;
 
   constructor(components: Components) {
@@ -20,8 +24,7 @@ export class Disposer extends Component {
   }
 
   /**
-   * {@link Component.uuid}.
-   * @return the list of UUIDs of deleted components.
+   * Return the UUIDs of all disposed components.
    */
   get() {
     return this._disposedComponents;
@@ -61,9 +64,10 @@ export class Disposer extends Component {
    * to remove.
    */
   disposeGeometry(geometry: THREE.BufferGeometry) {
-    const bvhGeom = geometry as BVHGeometry;
-    if (bvhGeom.boundsTree) {
-      bvhGeom.disposeBoundsTree();
+    // @ts-ignore
+    if (geometry.boundsTree && geometry.disposeBoundsTree) {
+      // @ts-ignore
+      geometry.disposeBoundsTree();
     }
     geometry.dispose();
   }
