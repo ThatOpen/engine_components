@@ -14,8 +14,7 @@ import { SimpleWorld } from "./src";
 export * from "./src";
 
 /**
- * A class representing a collection of worlds within a game engine.
- * It manages the creation, deletion, and update of worlds.
+ * A class representing a collection of worlds within a game engine. It manages the creation, deletion, and update of worlds.
  */
 export class Worlds extends Component implements Updateable, Disposable {
   /**

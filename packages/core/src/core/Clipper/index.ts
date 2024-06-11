@@ -15,8 +15,7 @@ import { Worlds } from "../Worlds";
 export * from "./src";
 
 /**
- * A lightweight component to easily create and handle
- * [clipping planes](https://threejs.org/docs/#api/en/materials/Material.clippingPlanes).
+ * A lightweight component to easily create and handle [clipping planes](https://threejs.org/docs/#api/en/materials/Material.clippingPlanes).
  *
  * @param components - the instance of {@link Components} used.
  * E.g. {@link SimplePlane}.
@@ -25,7 +24,7 @@ export class Clipper
   extends Component
   implements Createable, Disposable, Hideable
 {
-    /**
+  /**
    * A unique identifier for the component.
    * This UUID is used to register the component within the Components system.
    */
@@ -37,37 +36,37 @@ export class Clipper
   /** Event that fires when the user stops dragging a clipping plane. */
   readonly onAfterDrag = new Event<void>();
 
-/**
- * Event that fires when the user starts creating a clipping plane.
- */
-readonly onBeforeCreate = new Event();
+  /**
+   * Event that fires when the user starts creating a clipping plane.
+   */
+  readonly onBeforeCreate = new Event();
 
-/**
- * Event that fires when the user cancels the creation of a clipping plane.
- */
-readonly onBeforeCancel = new Event();
+  /**
+   * Event that fires when the user cancels the creation of a clipping plane.
+   */
+  readonly onBeforeCancel = new Event();
 
-/**
- * Event that fires after the user cancels the creation of a clipping plane.
- */
-readonly onAfterCancel = new Event();
+  /**
+   * Event that fires after the user cancels the creation of a clipping plane.
+   */
+  readonly onAfterCancel = new Event();
 
-/**
- * Event that fires when the user starts deleting a clipping plane.
- */
-readonly onBeforeDelete = new Event();
+  /**
+   * Event that fires when the user starts deleting a clipping plane.
+   */
+  readonly onBeforeDelete = new Event();
 
-/**
- * Event that fires after a clipping plane has been created.
- * @param plane - The newly created clipping plane.
- */
-readonly onAfterCreate = new Event<SimplePlane>();
+  /**
+   * Event that fires after a clipping plane has been created.
+   * @param plane - The newly created clipping plane.
+   */
+  readonly onAfterCreate = new Event<SimplePlane>();
 
-/**
- * Event that fires after a clipping plane has been deleted.
- * @param plane - The deleted clipping plane.
- */
-readonly onAfterDelete = new Event<SimplePlane>();
+  /**
+   * Event that fires after a clipping plane has been deleted.
+   * @param plane - The deleted clipping plane.
+   */
+  readonly onAfterDelete = new Event<SimplePlane>();
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();

@@ -3,10 +3,7 @@ import CameraControls from "camera-controls";
 import { Event } from "./event";
 
 /**
- * Whether this component has to be manually destroyed once you are done with
- * it to prevent [memory leaks](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
- * This also ensures that the DOM events created by that component will be
- * cleaned up.
+ * Whether this component has to be manually destroyed once you are done with it to prevent [memory leaks](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects). This also ensures that the DOM events created by that component will be cleaned up.
  */
 export interface Disposable {
   /**
@@ -20,9 +17,7 @@ export interface Disposable {
 }
 
 /**
- * Whether the geometric representation of this component can be
- * hidden or shown in the
- * [Three.js scene](https://threejs.org/docs/#api/en/scenes/Scene).
+ * Whether the geometric representation of this component can be hidden or shown in the [Three.js scene](https://threejs.org/docs/#api/en/scenes/Scene).
  */
 export interface Hideable {
   /**
@@ -34,11 +29,7 @@ export interface Hideable {
 }
 
 /**
- * Whether this component can be resized. The meaning of this can vary depending
- * on the component: resizing a
- * [Renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
- * component could mean changing its resolution, whereas resizing a
- * [Mesh](https://threejs.org/docs/#api/en/objects/Mesh) would change its scale.
+ * Whether this component can be resized. The meaning of this can vary depending on the component: resizing a [Renderer](https://threejs.org/docs/#api/en/renderers/WebGLRenderer) component could mean changing its resolution, whereas resizing a [Mesh](https://threejs.org/docs/#api/en/objects/Mesh) would change its scale.
  */
 export interface Resizeable {
   /**
@@ -84,9 +75,7 @@ export interface Progress {
 }
 
 /**
- * Whether this component supports create and destroy operations. This generally
- * applies for components that work with instances, such as clipping planes or
- * dimensions.
+ * Whether this component supports create and destroy operations. This generally applies for components that work with instances, such as clipping planes or dimensions.
  */
 export interface Createable {
   /** Creates a new instance of an element (e.g. a new Dimension). */

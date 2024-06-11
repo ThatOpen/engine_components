@@ -13,8 +13,7 @@ import { relToAttributesMap } from "./src/relToAttributesMap";
 // TODO: Refactor to combine logic from process and processFromWebIfc
 
 /**
- * Indexer for IFC entities, facilitating the indexing and retrieval of IFC entity relationships.
- * It is designed to process models properties by indexing their IFC entities' relations based on predefined inverse attributes, and provides methods to query these relations.
+ * Indexer for IFC entities, facilitating the indexing and retrieval of IFC entity relationships. It is designed to process models properties by indexing their IFC entities' relations based on predefined inverse attributes, and provides methods to query these relations.
  */
 export class IfcRelationsIndexer extends Component implements Disposable {
   static readonly uuid = "23a889ab-83b3-44a4-8bee-ead83438370b" as const;

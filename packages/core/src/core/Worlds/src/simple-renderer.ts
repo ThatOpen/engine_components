@@ -9,8 +9,7 @@ import {
 import { Components } from "../../Components";
 
 /**
- * A basic renderer capable of rendering
- * ([Objec3Ds](https://threejs.org/docs/#api/en/core/Object3D).
+ * A basic renderer capable of rendering [Objec3Ds](https://threejs.org/docs/#api/en/core/Object3D).
  */
 export class SimpleRenderer extends BaseRenderer {
   /**

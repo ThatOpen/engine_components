@@ -8,11 +8,7 @@ import { Component, Disposable, Event } from "../Types";
 import { UUID } from "../../utils";
 
 /**
- * The entry point of the Components library.
- * It can:
- * - Create and access all the components of the library globally.
- * - Update all the updatable components automatically.
- * - Dispose all the components, preventing memory leaks.
+ * The entry point of the Components library. It can create and access all the components of the library globally, update all the updatable components automatically and dispose all the components, preventing memory leaks.
  */
 export class Components implements Disposable {
   /**

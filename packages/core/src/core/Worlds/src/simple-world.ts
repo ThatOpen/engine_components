@@ -13,8 +13,7 @@ import {
 import { Disposer } from "../../Disposer";
 
 /**
- * A class representing a simple world in a 3D environment.
- * It extends the Base class and implements the World interface.
+ * A class representing a simple world in a 3D environment. It extends the Base class and implements the World interface.
  *
  * @template T - The type of the scene. Default is BaseScene.
  * @template U - The type of the camera. Default is BaseCamera.

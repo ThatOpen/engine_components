@@ -2,12 +2,7 @@ import { Components } from "../../Components";
 import { Base } from "./base";
 
 /**
- * Components are the building blocks of this library. Components are singleton
- * elements that contain specific functionality. For instance, the Clipper
- * Component can create, delete and handle 3D clipping planes. Components must be
- * unique (they can't be instanced more than once per Components instance), 
- * and have a static UUID that identifies them uniquely. The can be accessed 
- * globally using the {@link Components} instance.
+ * Components are the building blocks of this library. Components are singleton elements that contain specific functionality. For instance, the Clipper Component can create, delete and handle 3D clipping planes. Components must be unique (they can't be instanced more than once per Components instance), and have a static UUID that identifies them uniquely. The can be accessed globally using the {@link Components} instance.
  */
 export abstract class Component extends Base {
   /**

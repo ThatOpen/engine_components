@@ -9,8 +9,7 @@ export type CameraProjection = "Perspective" | "Orthographic";
 export type NavModeID = "Orbit" | "FirstPerson" | "Plan";
 
 /**
- * An object that determines the behavior of the camera controls
- * and the user input (e.g. 2D floor plan mode, first person mode, etc).
+ * An object that determines the behavior of the camera controls and the user input (e.g. 2D floor plan mode, first person mode, etc).
  */
 export interface NavigationMode {
   /** The unique ID of this navigation mode. */

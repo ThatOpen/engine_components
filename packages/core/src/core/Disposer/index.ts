@@ -3,8 +3,7 @@ import { Components } from "../Components";
 import { Component } from "../Types";
 
 /**
- * A tool to safely remove meshes and geometries from memory to
- * [prevent memory leaks](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
+ * A tool to safely remove meshes and geometries from memory to [prevent memory leaks](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects).
  */
 export class Disposer extends Component {
   private _disposedComponents = new Set<string>();

@@ -4,8 +4,7 @@ import { FragmentsGroup } from "@thatopen/fragments";
 import { Component, Components, Disposer, Disposable, Event } from "../../core";
 
 /**
- * A simple implementation of bounding box that works for fragments. The resulting bbox is not 100% precise, but
- * it's fast, and should suffice for general use cases such as camera zooming or general boundary determination.
+ * A simple implementation of bounding box that works for fragments. The resulting bbox is not 100% precise, but it's fast, and should suffice for general use cases such as camera zooming or general boundary determination.
  */
 export class BoundingBoxer extends Component implements Disposable {
   static readonly uuid = "d1444724-dba6-4cdd-a0c7-68ee1450d166" as const;

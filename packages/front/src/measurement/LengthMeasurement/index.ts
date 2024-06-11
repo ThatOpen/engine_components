@@ -5,8 +5,7 @@ import { newDimensionMark } from "../utils";
 import { GraphicVertexPicker } from "../../utils";
 
 /**
- * A basic dimension tool to measure distances between 2 points in 3D and
- * display a 3D symbol displaying the numeric value.
+ * A basic dimension tool to measure distances between 2 points in 3D and display a 3D symbol displaying the numeric value.
  */
 export class LengthMeasurement
   extends OBC.Component

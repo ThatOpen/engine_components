@@ -3,8 +3,7 @@ import { NavigationMode } from "./types";
 import { OrthoPerspectiveCamera } from "../index";
 
 /**
- * A {@link NavigationMode} that allows to navigate floorplans in 2D,
- * like many BIM tools.
+ * A {@link NavigationMode} that allows to navigate floorplans in 2D, like many BIM tools.
  */
 export class PlanMode implements NavigationMode {
   /** {@link NavigationMode.enabled} */

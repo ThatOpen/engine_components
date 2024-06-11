@@ -3,8 +3,7 @@ import { NavigationMode } from "./types";
 import { OrthoPerspectiveCamera } from "../index";
 
 /**
- * A {@link NavigationMode} that allows 3D navigation and panning
- * like in many 3D and CAD softwares.
+ * A {@link NavigationMode} that allows 3D navigation and panning like in many 3D and CAD softwares.
  */
 export class OrbitMode implements NavigationMode {
   /** {@link NavigationMode.enabled} */

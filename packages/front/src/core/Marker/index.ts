@@ -24,9 +24,7 @@ export interface IGroupedMarkers {
 }
 
 /**
- * Class for Managing Markers along with creating different types of markers
- * Every marker is a Simple2DMarker
- * For every marker that needs to be added, you can use the Manager to add the marker and change its look and feel
+ * Class for Managing Markers along with creating different types of markers. Every marker is a Simple2DMarker. For every marker that needs to be added, you can use the Manager to add the marker and change its look and feel
  */
 export class Marker extends OBC.Component implements OBC.Disposable {
   static readonly uuid = "4079eb91-79b0-4ede-bcf2-15b837129236" as const;

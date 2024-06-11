@@ -3,8 +3,7 @@ import { BaseScene, Configurable, Event } from "../../Types";
 import { Components } from "../../Components";
 
 /**
- * Configuration interface for the {@link SimpleScene}.
- * Defines properties for directional and ambient lights.
+ * Configuration interface for the {@link SimpleScene}. Defines properties for directional and ambient lights.
  */
 export interface SimpleSceneConfig {
   directionalLight: {
@@ -19,9 +18,7 @@ export interface SimpleSceneConfig {
 }
 
 /**
- * A basic 3D [scene](https://threejs.org/docs/#api/en/scenes/Scene) to add
- * objects hierarchically, and easily dispose them when you are finished with it.
- * @noInheritDoc
+ * A basic 3D [scene](https://threejs.org/docs/#api/en/scenes/Scene) to add objects hierarchically, and easily dispose them when you are finished with it.
  */
 export class SimpleScene extends BaseScene implements Configurable<{}> {
   /** {@link Configurable.isSetup} */

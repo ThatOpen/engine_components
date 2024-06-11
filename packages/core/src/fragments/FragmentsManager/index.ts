@@ -6,8 +6,7 @@ import { RelationsMap } from "../../ifc/IfcRelationsIndexer/src/types";
 import { IfcRelationsIndexer } from "../../ifc/IfcRelationsIndexer";
 
 /**
- * Object that can efficiently load binary files that contain
- * [fragment geometry](https://github.com/ThatOpen/engine_fragment).
+ * Object that can efficiently load binary files that contain [fragment geometry](https://github.com/ThatOpen/engine_fragment).
  */
 export class FragmentsManager extends Component implements Disposable {
   static readonly uuid = "fef46874-46a3-461b-8c44-2922ab77c806" as const;

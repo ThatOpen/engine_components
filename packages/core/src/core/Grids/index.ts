@@ -4,8 +4,7 @@ import { GridConfig, SimpleGrid } from "./src";
 import { Components } from "../Components";
 
 /**
- * A component that manages and provides access to multiple grid instances.
- * Each grid is associated with a unique world.
+ * A component that manages and provides access to multiple grid instances. Each grid is associated with a unique world.
  */
 export class Grids extends Component implements Disposable {
   /**

@@ -1,10 +1,5 @@
 /**
- * Simple event handler by [Jason Kleban](https://gist.github.com/JasonKleban/50cee44960c225ac1993c922563aa540).
- * Keep in mind that:
- * - If you want to remove it later, you might want to declare the callback as
- * an object.
- * - If you want to maintain the reference to `this`, you will need to declare
- * the callback as an arrow function.
+ * Simple event handler by [Jason Kleban](https://gist.github.com/JasonKleban/50cee44960c225ac1993c922563aa540). Keep in mind that if you want to remove it later, you might want to declare the callback as an object. If you want to maintain the reference to `this`, you will need to declare the callback as an arrow function.
  */
 export class Event<T> {
   /**

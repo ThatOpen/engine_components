@@ -4,8 +4,7 @@ import { NavigationMode } from "./types";
 import { OrthoPerspectiveCamera } from "../index";
 
 /**
- * A {@link NavigationMode} that allows first person navigation,
- * simulating FPS video games.
+ * A {@link NavigationMode} that allows first person navigation, simulating FPS video games.
  */
 export class FirstPersonMode implements NavigationMode {
   /** {@link NavigationMode.enabled} */
