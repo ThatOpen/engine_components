@@ -132,6 +132,48 @@ export class FragmentsManager extends Component implements Disposable {
     return this._loader.export(group);
   }
 
+  /**
+   * Gets a map of model IDs to sets of express IDs for the given fragment ID map.
+   * @param fragmentIdMap - A map of fragment IDs to their corresponding express IDs.
+   * @returns A map of model IDs to sets of express IDs.
+   */
+  getModelIdMap(fragmentIdMap: FRAGS.FragmentIdMap) {
+    const map: { [modelID: string]: Set<number> } = {};
+    for (const fragmentID in fragmentIdMap) {
+      const fragment = this.list.get(fragmentID);
+      if (!(fragment && fragment.group)) continue;
+      const model = fragment.group;
+      if (!(model.uuid in map)) map[model.uuid] = new Set();
+      const expressIDs = fragmentIdMap[fragmentID];
+      for (const expressID of expressIDs) {
+        map[model.uuid].add(expressID);
+      }
+    }
+    return map;
+  }
+
+  /**
+   * Converts a map of model IDs to sets of express IDs to a fragment ID map.
+   * @param modelIdMap - A map of model IDs to their corresponding express IDs.
+   * @returns A fragment ID map.
+   * @remarks
+   * This method iterates through the provided model ID map, retrieves the corresponding model from the `groups` map,
+   * and then calls the `getFragmentMap` method of the model to obtain a fragment ID map for the given express IDs.
+   * The fragment ID maps are then merged into a single map and returned.
+   * If a model with a given ID is not found in the `groups` map, the method skips that model and continues with the next one.
+   */
+  modelIdToFragmentIdMap(modelIdMap: { [modelID: string]: Set<number> }) {
+    let fragmentIdMap: FRAGS.FragmentIdMap = {};
+    for (const modelID in modelIdMap) {
+      const model = this.groups.get(modelID);
+      if (!model) continue;
+      const expressIDs = modelIdMap[modelID];
+      const map = model.getFragmentMap(expressIDs);
+      fragmentIdMap = { ...fragmentIdMap, ...map };
+    }
+    return fragmentIdMap;
+  }
+
   coordinate(models = Array.from(this.groups.values())) {
     const isFirstModel = this.baseCoordinationModel.length === 0;
     if (isFirstModel) {
