@@ -14,7 +14,7 @@ export class Components implements Disposable {
   /**
    * The version of the @thatopen/components library.
    */
-  static readonly release = "2.0.8";
+  static readonly release = "2.0.11";
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<void>();
@@ -34,17 +34,17 @@ export class Components implements Disposable {
   private _clock: THREE.Clock;
 
   /**
- * Adds a component to the list of components.
- * Throws an error if a component with the same UUID already exists.
- *
- * @param uuid - The unique identifier of the component.
- * @param instance - The instance of the component to be added.
- *
- * @throws Will throw an error if a component with the same UUID already exists.
- *
- * @internal
- */
-add(uuid: string, instance: Component) {
+   * Adds a component to the list of components.
+   * Throws an error if a component with the same UUID already exists.
+   *
+   * @param uuid - The unique identifier of the component.
+   * @param instance - The instance of the component to be added.
+   *
+   * @throws Will throw an error if a component with the same UUID already exists.
+   *
+   * @internal
+   */
+  add(uuid: string, instance: Component) {
     if (this.list.has(uuid))
       throw new Error(
         `You're trying to add a component that already exists in the components instance. Use Components.get() instead.`,
@@ -53,21 +53,20 @@ add(uuid: string, instance: Component) {
     this.list.set(uuid, instance);
   }
 
-
   /**
- * Retrieves a component instance by its constructor function.
- * If the component does not exist in the list, it will be created and added.
- *
- * @template U - The type of the component to retrieve.
- * @param Component - The constructor function of the component to retrieve.
- *
- * @returns The instance of the requested component.
- *
- * @throws Will throw an error if a component with the same UUID already exists.
- *
- * @internal
- */
-get<U extends Component>(Component: new (components: Components) => U): U {
+   * Retrieves a component instance by its constructor function.
+   * If the component does not exist in the list, it will be created and added.
+   *
+   * @template U - The type of the component to retrieve.
+   * @param Component - The constructor function of the component to retrieve.
+   *
+   * @returns The instance of the requested component.
+   *
+   * @throws Will throw an error if a component with the same UUID already exists.
+   *
+   * @internal
+   */
+  get<U extends Component>(Component: new (components: Components) => U): U {
     const uuid = (Component as any).uuid;
     if (!this.list.has(uuid)) {
       const toolInstance = new Component(this);
@@ -85,19 +84,18 @@ get<U extends Component>(Component: new (components: Components) => U): U {
     Components.setupBVH();
   }
 
-
-/**
- * Initializes the Components instance.
- * This method starts the animation loop, sets the enabled flag to true,
- * and calls the update method.
- *
- * @returns {void}
- */
-init() {
+  /**
+   * Initializes the Components instance.
+   * This method starts the animation loop, sets the enabled flag to true,
+   * and calls the update method.
+   *
+   * @returns {void}
+   */
+  init() {
     this.enabled = true;
     this._clock.start();
     this.update();
-}
+  }
 
   /**
    * Disposes the memory of all the components and tools of this instance of
