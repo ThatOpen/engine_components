@@ -285,7 +285,7 @@ export class IfcLoader extends Component implements Disposable {
 
   private async autoSetWasm() {
     const componentsPackage = await fetch(
-      `https://unpkg.com/openbim-components@${Components.release}/package.json`,
+      `https://unpkg.com/@thatopen/components@${Components.release}/package.json`,
     );
     if (!componentsPackage.ok) {
       console.warn(
