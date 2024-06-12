@@ -619,7 +619,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
-    "@thatopen/components": ~2.0.0
+    "@thatopen/components": 2.0.10
     "@thatopen/fragments": ~2.0.0
     "@thatopen/ui": ~2.0.0
     "@thatopen/ui-obc": ~2.0.0
@@ -639,7 +639,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@workspace:packages/core, @thatopen/components@~2.0.0":
+"@thatopen/components@2.0.10, @thatopen/components@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
