@@ -1,4 +1,4 @@
 export * from "./Marker";
-export * from "./EdgesClipper";
+export * from "./ClipEdges";
 export * from "./ShadowDropper";
 export * from "./PostproductionRenderer";

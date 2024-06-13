@@ -18,15 +18,29 @@ export class EdgesPlane extends OBC.SimplePlane {
 
   protected _edgesVisible = true;
 
+  /**
+   * Getter for the visibility state of the plane.
+   * @returns {boolean} The current visibility state.
+   */
   get visible() {
     return this._visible;
   }
 
+  /**
+   * Setter for the visibility state of the plane.
+   * Also toggles the visibility of the controls.
+   * @param {boolean} state - The new visibility state.
+   */
   set visible(state: boolean) {
     super.visible = state;
     this.toggleControls(state);
   }
 
+  /**
+   * Setter for the enabled state of the plane.
+   * Also sets the enabled state in the renderer.
+   * @param {boolean} state - The new enabled state.
+   */
   set enabled(state: boolean) {
     this._enabled = state;
     if (this.world.renderer) {
@@ -34,6 +48,10 @@ export class EdgesPlane extends OBC.SimplePlane {
     }
   }
 
+  /**
+   * Getter for the enabled state of the plane.
+   * @returns {boolean} The current enabled state.
+   */
   get enabled() {
     return super.enabled;
   }
@@ -57,11 +75,23 @@ export class EdgesPlane extends OBC.SimplePlane {
     this.onDraggingStarted.add(() => (this.edges.visible = false));
   }
 
+  /**
+   * Disposes of the EdgesPlane and its associated ClippingEdges.
+   * This method should be called when the EdgesPlane is no longer needed to free up resources.
+   * After calling this method, the EdgesPlane and its ClippingEdges should not be used anymore.
+   */
   dispose() {
     super.dispose();
     this.edges.dispose();
   }
 
+  /**
+   * Updates the fill of the edges.
+   * This method sets the `fillNeedsUpdate` flag to true, triggers the `update` method of the `edges`,
+   * and sets the visibility of the `edges` to the current value of `_visible`.
+   *
+   * @returns {void}
+   */
   updateFill = () => {
     this.edges.fillNeedsUpdate = true;
     this.edges.update();

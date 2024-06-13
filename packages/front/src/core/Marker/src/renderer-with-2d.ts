@@ -6,6 +6,9 @@ import { Components, SimpleRenderer } from "@thatopen/components";
  * A basic renderer capable of rendering 3D and 2D objects ([Objec3Ds](https://threejs.org/docs/#api/en/core/Object3D) and [CSS2DObjects](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) respectively).
  */
 export class RendererWith2D extends SimpleRenderer {
+  /**
+   * This renderer is used to render 2D objects (CSS2DObjects) in a 3D scene.
+   */
   three2D = new CSS2DRenderer();
 
   constructor(

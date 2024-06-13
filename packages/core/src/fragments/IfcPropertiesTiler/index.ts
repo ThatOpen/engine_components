@@ -1,33 +1,61 @@
 import * as WEBIFC from "web-ifc";
 import { AsyncEvent, Component, Disposable, Event } from "../../core";
-import { PropertiesStreamingSettings } from "../IfcGeometryTiler";
+import { PropertiesStreamingSettings } from "./src";
 import { GeometryTypes } from "../../ifc/IfcJsonExporter/src/ifc-geometry-types";
 import { IfcRelationsIndexer } from "../../ifc";
 
-// TODO: Deduplicate with IFC stream converter
-// TODO: Use flatbuffers instead of JSON?
+export * from "./src";
 
+/**
+ * A component that converts the properties of an IFC file to tiles. It uses the Web-IFC library to read and process the IFC data. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/IfcPropertiesTiler). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/IfcPropertiesTiler).
+ */
 export class IfcPropertiesTiler extends Component implements Disposable {
+  /**
+   * A unique identifier for the component.
+   * This UUID is used to register the component within the Components system.
+   */
   static readonly uuid = "88d2c89c-ce32-47d7-8cb6-d51e4b311a0b" as const;
 
-  onPropertiesStreamed = new AsyncEvent<{
+  /**
+   * An event that is triggered when properties are streamed from the IFC file.
+   * The event provides the type of the IFC entity and the corresponding data.
+   */
+  readonly onPropertiesStreamed = new AsyncEvent<{
     type: number;
     data: { [id: number]: any };
   }>();
 
-  onProgress = new AsyncEvent<number>();
+  /**
+   * An event that is triggered to indicate the progress of the streaming process.
+   * The event provides a number between 0 and 1 representing the progress percentage.
+   */
+  readonly onProgress = new AsyncEvent<number>();
 
-  onIndicesStreamed = new AsyncEvent<Map<number, Map<number, number[]>>>();
+  /**
+   * An event that is triggered when indices are streamed from the IFC file.
+   * The event provides a map of indices, where the key is the entity type and the value is another map of indices.
+   */
+  readonly onIndicesStreamed = new AsyncEvent<
+    Map<number, Map<number, number[]>>
+  >();
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
 
+  /** {@link Component.enabled} */
   enabled: boolean = true;
 
+  /**
+   * An instance of the PropertiesStreamingSettings class, which holds the settings for the streaming process.
+   */
   settings = new PropertiesStreamingSettings();
 
+  /**
+   * An instance of the IfcAPI class from the Web-IFC library, which provides methods for reading and processing IFC data.
+   */
   webIfc = new WEBIFC.IfcAPI();
 
+  /** {@link Disposable.dispose} */
   async dispose() {
     this.onIndicesStreamed.reset();
     this.onPropertiesStreamed.reset();
@@ -35,24 +63,36 @@ export class IfcPropertiesTiler extends Component implements Disposable {
     this.onDisposed.reset();
   }
 
+  /**
+   * This method converts properties from an IFC file to tiles given its data as a Uint8Array.
+   *
+   * @param data - The Uint8Array containing the IFC file data.
+   * @returns A Promise that resolves when the streaming process is complete.
+   */
   async streamFromBuffer(data: Uint8Array) {
-    const before = performance.now();
+    // const before = performance.now();
     await this.readIfcFile(data);
 
     await this.streamAllProperties();
     this.cleanUp();
 
-    console.log(`Streaming the IFC took ${performance.now() - before} ms!`);
+    // console.log(`Streaming the IFC took ${performance.now() - before} ms!`);
   }
 
+  /**
+   * This method converts properties from an IFC file to tiles using a given callback function to read the file.
+   *
+   * @param loadCallback - A callback function that loads the IFC file data.
+   * @returns A Promise that resolves when the streaming process is complete.
+   */
   async streamFromCallBack(loadCallback: WEBIFC.ModelLoadCallback) {
-    const before = performance.now();
+    // const before = performance.now();
     await this.streamIfcFile(loadCallback);
 
     await this.streamAllProperties();
     this.cleanUp();
 
-    console.log(`Streaming the IFC took ${performance.now() - before} ms!`);
+    // console.log(`Streaming the IFC took ${performance.now() - before} ms!`);
   }
 
   private async readIfcFile(data: Uint8Array) {

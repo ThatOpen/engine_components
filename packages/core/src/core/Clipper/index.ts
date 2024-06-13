@@ -15,7 +15,7 @@ import { Worlds } from "../Worlds";
 export * from "./src";
 
 /**
- * A lightweight component to easily create and handle [clipping planes](https://threejs.org/docs/#api/en/materials/Material.clippingPlanes).
+ * A lightweight component to easily create, delete and handle [clipping planes](https://threejs.org/docs/#api/en/materials/Material.clippingPlanes). 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/Clipper). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/Clipper).
  *
  * @param components - the instance of {@link Components} used.
  * E.g. {@link SimplePlane}.

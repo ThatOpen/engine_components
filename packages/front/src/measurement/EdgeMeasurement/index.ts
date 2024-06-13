@@ -3,19 +3,38 @@ import * as OBC from "@thatopen/components";
 import { SimpleDimensionLine } from "../SimpleDimensionLine";
 import { LengthMeasurement } from "../LengthMeasurement";
 
+/**
+ * This component allows users to measure geometry edges in a 3D scene. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/EdgeMeasurement). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/EdgeMeasurement).
+ */
 export class EdgeMeasurement
   extends OBC.Component
   implements OBC.Createable, OBC.Disposable
 {
+  /**
+   * A unique identifier for the component.
+   * This UUID is used to register the component within the Components system.
+   */
   static readonly uuid = "e7be5749-89df-4514-8d25-83aa38ce12d8" as const;
 
+  /** {@link OBC.Disposable.onDisposed} */
+  readonly onDisposed = new OBC.Event();
+
+  /**
+   * A reference to the preview dimension line.
+   * This line is used to visualize the measurement while creating it.
+   */
   preview?: SimpleDimensionLine;
 
+  /**
+   * The tolerance value for edge selection.
+   * This value determines the maximum distance from the mouse cursor to an edge for it to be selected.
+   */
   tolerance = 0.3;
 
+  /**
+   * The world in which the measurements are performed.
+   */
   world?: OBC.World;
-
-  readonly onDisposed = new OBC.Event();
 
   private _enabled: boolean = false;
 
@@ -26,6 +45,7 @@ export class EdgeMeasurement
     transparent: true,
   });
 
+  /** {@link OBC.Component.enabled} */
   set enabled(value: boolean) {
     this._enabled = value;
 
@@ -54,6 +74,7 @@ export class EdgeMeasurement
     // this.setVisibility(value);
   }
 
+  /** {@link OBC.Component.enabled} */
   get enabled() {
     return this._enabled;
   }
@@ -63,6 +84,7 @@ export class EdgeMeasurement
     this.components.add(EdgeMeasurement.uuid, this);
   }
 
+  /** {@link OBC.Disposable.dispose} */
   dispose() {
     if (this.preview) {
       this.preview.dispose();
@@ -74,6 +96,7 @@ export class EdgeMeasurement
     (this.components as any) = null;
   }
 
+  /** {@link OBC.Createable.create} */
   create = async () => {
     if (!this.preview) return;
     if (!this.enabled || !this.preview.visible) return;
@@ -85,6 +108,7 @@ export class EdgeMeasurement
   };
 
   // TODO: this could be better. Fusion this class with lengthmeasurement?
+  /** {@link OBC.Createable.delete} */
   delete() {
     if (!this.enabled) return;
     const dims = this.components.get(LengthMeasurement);
@@ -94,15 +118,25 @@ export class EdgeMeasurement
     dims.enabled = previous;
   }
 
+  /**
+   * Deletes all the measurements created by the EdgeMeasurement component.
+   */
   deleteAll() {
     const dims = this.components.get(LengthMeasurement);
     dims.deleteAll();
   }
 
+  /** {@link OBC.Createable.endCreation} */
   endCreation() {}
 
+  /** {@link OBC.Createable.cancelCreation} */
   cancelCreation() {}
 
+  /**
+   * Retrieves the current state of the measurements created by the EdgeMeasurement component.
+   * The state is serialized as an array of arrays, where each inner array represents a line measurement.
+   * Each line measurement is represented by six numbers: the x, y, and z coordinates of the start and end points.
+   */
   get() {
     const dims = this.components.get(LengthMeasurement);
     const lines = dims.list;
@@ -116,6 +150,15 @@ export class EdgeMeasurement
     return serialized;
   }
 
+  /**
+   * Sets the state of the measurements created by the EdgeMeasurement component.
+   * The state is serialized as an array of arrays, where each inner array represents a line measurement.
+   * Each line measurement is represented by six numbers: the x, y, and z coordinates of the start and end points.
+   *
+   * @param dimensions - The serialized state of the measurements.
+   * Each inner array should contain six numbers representing the x, y, and z coordinates of the start and end points of a line measurement.
+   *
+   */
   set(dimensions: number[][]) {
     const dims = this.components.get(LengthMeasurement);
     dims.world = this.world;

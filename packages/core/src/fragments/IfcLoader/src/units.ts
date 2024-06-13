@@ -33,7 +33,7 @@ export class Units {
     try {
       const allUnitsAssigns = webIfc.GetLineIDsWithType(
         0,
-        WEBIFC.IFCUNITASSIGNMENT
+        WEBIFC.IFCUNITASSIGNMENT,
       );
       const unitsAssign = allUnitsAssigns.get(0);
       const unitsAssignProps = webIfc.GetLine(0, unitsAssign);

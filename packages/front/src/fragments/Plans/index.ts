@@ -4,21 +4,35 @@ import * as WEBIFC from "web-ifc";
 import * as OBC from "@thatopen/components";
 import { PlanView } from "./src";
 
-import { EdgesPlane } from "../../core/EdgesClipper";
+import { EdgesPlane } from "../../core/ClipEdges";
+
+export * from "./src";
 
 /**
- * Helper to control the camera and easily define and navigate 2D floor plans.
+ * Component to easily define and navigate 2D floor plans. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Plans). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Plans).
  */
 export class Plans extends OBC.Component implements OBC.Disposable {
+  /**
+   * A unique identifier for the component.
+   * This UUID is used to register the component within the Components system.
+   */
   static readonly uuid = "a80874aa-1c93-43a4-80f2-df346da086b1" as const;
 
-  /** {@link Disposable.onDisposed} */
+  /** {@link OBC.Disposable.onDisposed} */
   readonly onDisposed = new OBC.Event();
 
+  /**
+   * Event triggered when the user navigates to a different floor plan.
+   * The event provides the id of the floor plan the user navigated to.
+   */
   readonly onNavigated = new OBC.Event<{ id: string }>();
 
+  /**
+   * Event triggered when the user exits the floor plan view.
+   */
   readonly onExited = new OBC.Event();
 
+  /** {@link OBC.Component.enabled} */
   enabled = false;
 
   /** The floorplan that is currently selected. */
@@ -30,8 +44,16 @@ export class Plans extends OBC.Component implements OBC.Disposable {
   /** The offset of the 2D camera to the floor plan elevation. */
   defaultCameraOffset = 30;
 
+  /**
+   * A list of all the floor plans created.
+   * Each floor plan is represented by a {@link PlanView} object.
+   */
   list: PlanView[] = [];
 
+  /**
+   * A reference to the world in which the floor plans are displayed.
+   * This is used to access the camera and other relevant components.
+   */
   world?: OBC.World;
 
   private _floorPlanViewCached = false;
@@ -44,7 +66,7 @@ export class Plans extends OBC.Component implements OBC.Disposable {
     this.components.add(Plans.uuid, this);
   }
 
-  /** {@link Disposable.dispose} */
+  /** {@link OBC.Disposable.dispose} */
   dispose() {
     this.onExited.reset();
     this.onNavigated.reset();
@@ -53,9 +75,11 @@ export class Plans extends OBC.Component implements OBC.Disposable {
     this.onDisposed.reset();
   }
 
-  // TODO: Compute georreference matrix when generating fragmentsgroup
-  // so that we can correctly add floors in georreferenced models
-  // where the IfcSite / IfcBuilding have location information
+  /**
+   * Generates floor plans from the provided IFC model.
+   * @param model - The IFC model from which to generate floor plans.
+   * @throws Will throw an error if the model does not have properties or if floor plans are not found.
+   */
   async generate(model: FRAGS.FragmentsGroup) {
     if (!model.hasProperties) {
       throw new Error("Properties are needed to compute plan views!");
@@ -90,9 +114,11 @@ export class Plans extends OBC.Component implements OBC.Disposable {
   }
 
   /**
-   * Creates a new floor plan in the navigator.
+   * Creates a new floor plan based on the provided configuration.
    *
-   * @param config - Necessary data to initialize the floor plan.
+   * @param config - The configuration object for the new floor plan.
+   * @throws Will throw an error if the world is not set before creating the clipping planes.
+   * @throws Will throw a warning if a floor plan with the same id already exists.
    */
   create(config: PlanView) {
     if (!this.world) {
@@ -111,10 +137,10 @@ export class Plans extends OBC.Component implements OBC.Disposable {
   }
 
   /**
-   * Make the navigator go to the specified floor plan.
+   * Navigates to the floor plan with the specified id.
    *
-   * @param id - Floor plan to go to.
-   * @param animate - Whether to animate the camera transition.
+   * @param id - The id of the floor plan to navigate to.
+   * @param animate - Whether to animate the camera movement. Default is false.
    */
   async goTo(id: string, animate = false) {
     if (this.currentPlan?.id === id) {
@@ -134,9 +160,10 @@ export class Plans extends OBC.Component implements OBC.Disposable {
   }
 
   /**
-   * Deactivate navigator and go back to the previous view.
+   * Exits the floor plan view and returns to the 3D view.
    *
-   * @param animate - Whether to animate the camera transition.
+   * @param animate - Whether to animate the camera movement. Default is false.
+   * @returns {Promise<void>}
    */
   async exitPlanView(animate = false) {
     if (!this.enabled) return;

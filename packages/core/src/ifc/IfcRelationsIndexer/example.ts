@@ -62,7 +62,6 @@ grids.create(world);
 
 world.scene.three.background = null;
 
-
 /* MD
   ### 🧳 Loading a BIM model
   ---
@@ -76,10 +75,11 @@ world.scene.three.background = null;
   :::
 */
 
-
 const ifcLoader = components.get(OBC.IfcLoader);
 await ifcLoader.setup();
-const file = await fetch("https://thatopen.github.io/engine_components/resources/small.ifc");
+const file = await fetch(
+  "https://thatopen.github.io/engine_components/resources/small.ifc",
+);
 const buffer = await file.arrayBuffer();
 const typedArray = new Uint8Array(buffer);
 const model = await ifcLoader.load(typedArray);
@@ -170,7 +170,9 @@ const allRelationsJSON = indexer.serializeAllRelations();
 
 // Lets first delete the existing model relations
 delete indexer.relationMaps[model.uuid];
-const relationsIndexFile = await fetch("https://thatopen.github.io/engine_components/resources/small-relations.json");
+const relationsIndexFile = await fetch(
+  "https://thatopen.github.io/engine_components/resources/small-relations.json",
+);
 const relationsIndex = indexer.getRelationsMapFromJSON(
   await relationsIndexFile.text(),
 );
@@ -246,7 +248,6 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
 });
 
 document.body.append(panel);
-
 
 /* MD
   And we will make some logic that adds a button to the screen when the user is visiting our app from their phone, allowing to show or hide the menu. Otherwise, the menu would make the app unusable.

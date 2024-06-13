@@ -6,23 +6,37 @@ import { CurveHighlighter } from "./src/curve-highlighter";
 import { CivilMarker } from "../CivilMarker";
 import { Mark } from "../../core";
 
+/**
+ * Represents the type of markers used in the CivilMarkerType class.
+ */
 export type CivilMarkerType = "hover" | "select";
 
-export abstract class CivilNavigator extends OBC.Component {
+/**
+ * Abstract class representing a Civil Navigator. It provides functionality to navigate and interact with civil engineering data.
+ */
+export abstract class CivilNavigator
+  extends OBC.Component
+  implements OBC.Disposable
+{
+  /**
+   * The view mode for the navigator.
+   * Can be either "horizontal" or "vertical".
+   */
   abstract view: "horizontal" | "vertical";
 
-  enabled = true;
-
-  _highlighter?: CurveHighlighter;
-
-  // abstract showKPStations(curveMesh: FRAGS.CurveMesh): void;
-  // abstract clearKPStations(): void;
-
+  /**
+   * Event triggered when a curve is highlighted.
+   * Provides the point of intersection and the corresponding curve mesh.
+   */
   readonly onHighlight = new OBC.Event<{
     point: THREE.Vector3;
     mesh: FRAGS.CurveMesh;
   }>();
 
+  /**
+   * Event triggered when a marker (hover or select) is placed on a curve.
+   * Provides the alignment, percentage, type of marker, and the corresponding curve.
+   */
   readonly onMarkerChange = new OBC.Event<{
     alignment: FRAGS.Alignment;
     percentage: number;
@@ -30,21 +44,43 @@ export abstract class CivilNavigator extends OBC.Component {
     curve: FRAGS.CivilCurve;
   }>();
 
+  /**
+   * Event triggered when a marker (hover or select) is hidden.
+   * Provides the type of marker.
+   */
+  readonly onMarkerHidden = new OBC.Event<{
+    type: CivilMarkerType;
+  }>();
+
+  /** {@link OBC.Disposable.onDisposed} */
+  readonly onDisposed = new OBC.Event();
+
+  /** {@link OBC.Component.enabled} */
+  enabled = true;
+
+  /**
+   * Mouse markers for hover and select actions.
+   * They are of type Mark and are optional.
+   */
   mouseMarkers?: {
     hover: Mark;
     select: Mark;
   };
 
-  readonly onMarkerHidden = new OBC.Event<{
-    type: CivilMarkerType;
-  }>();
-
   private _curves: FRAGS.CurveMesh[] = [];
 
   private _previousAlignment: FRAGS.Alignment | null = null;
 
+  protected _highlighter?: CurveHighlighter;
+
   protected _world: OBC.World | null = null;
 
+  /**
+   * Getter for the highlighter instance.
+   * Throws an error if the highlighter is not initialized.
+   *
+   * @returns {CurveHighlighter} The initialized highlighter instance.
+   */
   get highlighter() {
     if (!this._highlighter) {
       throw new Error(
@@ -54,10 +90,23 @@ export abstract class CivilNavigator extends OBC.Component {
     return this._highlighter;
   }
 
+  /**
+   * Getter for the world instance.
+   *
+   * @returns {OBC.World | null} The current world instance or null if not set.
+   */
   get world() {
     return this._world;
   }
 
+  /**
+   * Setter for the world instance.
+   * If the new world is the same as the current one, it does nothing.
+   * If the current world is set, it removes the event listeners.
+   * If the new world is not set, it does nothing.
+   *
+   * @param {OBC.World | null} world - The new world instance or null to unset.
+   */
   set world(world: OBC.World | null) {
     if (world === this._world) {
       return;
@@ -92,6 +141,16 @@ export abstract class CivilNavigator extends OBC.Component {
     super(components);
   }
 
+  /**
+   * Draws the civil curves from the provided model onto the scene.
+   *
+   * @param model - The FragmentsGroup containing the civil data to be drawn.
+   * @param filter - An optional Iterable of alignments to filter the curves to be drawn.
+   *
+   * @throws Will throw an error if the provided model doesn't have civil data or if no world was given for this navigator.
+   *
+   * @returns {Promise<void>} - A promise that resolves when the curves have been drawn onto the scene.
+   */
   async draw(model: FragmentsGroup, filter?: Iterable<FRAGS.Alignment>) {
     if (!model.civilData) {
       throw new Error("The provided model doesn't have civil data!");
@@ -139,13 +198,21 @@ export abstract class CivilNavigator extends OBC.Component {
     }
   }
 
+  /** {@link OBC.Disposable.dispose} */
   async dispose() {
     this._highlighter?.dispose();
     this.clear();
     this.onHighlight.reset();
     this._curves = [];
+    this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
+  /**
+   * Clears the civil curves from the scene.
+   * Removes all the curve meshes from the scene and clears the internal array of curve meshes.
+   * Also unselects and unhovers the highlighter.
+   */
   clear() {
     this._highlighter?.unSelect();
     this._highlighter?.unHover();
@@ -155,6 +222,15 @@ export abstract class CivilNavigator extends OBC.Component {
     this._curves = [];
   }
 
+  /**
+   * Sets a marker on a specific curve at a given percentage.
+   *
+   * @param alignment - The alignment where the marker should be placed.
+   * @param percentage - The percentage along the alignment where the marker should be placed.
+   * @param type - The type of marker to be placed (hover or select).
+   *
+   * @throws Will throw an error if there are no curves to place the marker on.
+   */
   setMarker(alignment: Alignment, percentage: number, type: CivilMarkerType) {
     if (!this._curves.length) {
       return;
@@ -165,6 +241,15 @@ export abstract class CivilNavigator extends OBC.Component {
     this.setMouseMarker(point, found.curve.mesh, index, type);
   }
 
+  /**
+   * Sets the definition segments and slope from the provided segments array.
+   *
+   * @param segmentsArray - An array of segments, where each segment is an array of numbers representing points.
+   *
+   * @returns An object containing the definition segments and slope.
+   *
+   * @throws Will throw an error if the segments array is empty or if the points in the segments array are not in the expected format.
+   */
   setDefSegments(segmentsArray: any[]) {
     const defSegments: any = [];
     const slope: any = [];
@@ -231,6 +316,13 @@ export abstract class CivilNavigator extends OBC.Component {
     return { defSegments, slope };
   }
 
+  /**
+   * Hides the marker of the specified type.
+   *
+   * @param type - The type of marker to hide. It can be either "hover" or "select".
+   *
+   * @throws Will throw an error if the mouse markers are not initialized.
+   */
   hideMarker(type: CivilMarkerType) {
     if (this.mouseMarkers) {
       this.mouseMarkers[type].visible = false;
@@ -393,7 +485,6 @@ export abstract class CivilNavigator extends OBC.Component {
         this._previousAlignment = mesh.curve.alignment;
       }
     }
-
   };
 
   private onControlsUpdated = () => {

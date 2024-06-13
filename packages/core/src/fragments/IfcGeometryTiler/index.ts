@@ -2,6 +2,7 @@ import * as WEBIFC from "web-ifc";
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import { Components, Disposable, Event, Component } from "../../core";
+import { isPointInFrontOfPlane, obbFromPoints } from "../../utils";
 import { IfcStreamingSettings, StreamedGeometries, StreamedAsset } from "./src";
 import {
   SpatialStructure,
@@ -9,33 +10,59 @@ import {
   IfcMetadataReader,
 } from "../IfcLoader/src";
 
-import { isPointInFrontOfPlane, obbFromPoints } from "../../utils";
-
 export * from "./src";
 
-// TODO: Deduplicate with IfcFragmentLoader
-
+/**
+ * A component that handles the tiling of IFC geometries for efficient streaming. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/IfcGeometryTiler). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/IfcGeometryTiler).
+ */
 export class IfcGeometryTiler extends Component implements Disposable {
+  /**
+   * A unique identifier for the component.
+   * This UUID is used to register the component within the Components system.
+   */
   static readonly uuid = "d9999a00-e1f5-4d3f-8cfe-c56e08609764" as const;
 
-  onGeometryStreamed = new Event<{
+  /**
+   * Event triggered when geometry is streamed.
+   * Contains the streamed geometry data and its buffer.
+   */
+  readonly onGeometryStreamed = new Event<{
     buffer: Uint8Array;
     data: StreamedGeometries;
   }>();
 
-  onAssetStreamed = new Event<StreamedAsset[]>();
+  /**
+   * Event triggered when assets are streamed.
+   * Contains the streamed assets.
+   */
+  readonly onAssetStreamed = new Event<StreamedAsset[]>();
 
-  onProgress = new Event<number>();
+  /**
+   * Event triggered to indicate the progress of the streaming process.
+   * Contains the progress percentage.
+   */
+  readonly onProgress = new Event<number>();
 
-  onIfcLoaded = new Event<Uint8Array>();
+  /**
+   * Event triggered when the IFC file is loaded.
+   * Contains the loaded IFC file data.
+   */
+  readonly onIfcLoaded = new Event<Uint8Array>();
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
 
+  /**
+   * Settings for the IfcGeometryTiler.
+   */
   settings = new IfcStreamingSettings();
 
+  /** {@link Component.enabled} */
   enabled: boolean = true;
 
+  /**
+   * The WebIFC API instance used for IFC file processing.
+   */
   webIfc = new WEBIFC.IfcAPI();
 
   private _spatialTree = new SpatialStructure();
@@ -74,6 +101,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
     this.settings.excludedCategories.add(WEBIFC.IFCOPENINGELEMENT);
   }
 
+  /** {@link Disposable.dispose} */
   dispose() {
     this.onIfcLoaded.reset();
     this.onGeometryStreamed.reset();
@@ -83,24 +111,51 @@ export class IfcGeometryTiler extends Component implements Disposable {
     this.onDisposed.reset();
   }
 
+  /**
+   * This method streams the IFC file from a given buffer.
+   *
+   * @param data - The Uint8Array containing the IFC file data.
+   * @returns A Promise that resolves when the streaming process is complete.
+   *
+   * @remarks
+   * This method cleans up any resources after the streaming process is complete.
+   *
+   * @example
+   * ```typescript
+   * const ifcData = await fetch('path/to/ifc/file.ifc');
+   * const rawBuffer = await response.arrayBuffer();
+   * const ifcBuffer = new Uint8Array(rawBuffer);
+   * await ifcGeometryTiler.streamFromBuffer(ifcBuffer);
+   * ```
+   */
   async streamFromBuffer(data: Uint8Array) {
-    const before = performance.now();
+    // const before = performance.now();
     await this.readIfcFile(data);
 
     await this.streamAllGeometries();
     this.cleanUp();
 
-    console.log(`Streaming the IFC took ${performance.now() - before} ms!`);
+    // console.log(`Streaming the IFC took ${performance.now() - before} ms!`);
   }
 
+  /**
+   * This method streams the IFC file from a given callback.
+   *
+   * @param loadCallback - The callback function that will be used to load the IFC file.
+   * @returns A Promise that resolves when the streaming process is complete.
+   *
+   * @remarks
+   * This method cleans up any resources after the streaming process is complete.
+   *
+   */
   async streamFromCallBack(loadCallback: WEBIFC.ModelLoadCallback) {
-    const before = performance.now();
+    // const before = performance.now();
     await this.streamIfcFile(loadCallback);
 
     await this.streamAllGeometries();
     this.cleanUp();
 
-    console.log(`Streaming the IFC took ${performance.now() - before} ms!`);
+    // console.log(`Streaming the IFC took ${performance.now() - before} ms!`);
   }
 
   private async readIfcFile(data: Uint8Array) {

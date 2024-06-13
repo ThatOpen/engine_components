@@ -4,18 +4,33 @@ import { Components } from "../../Components";
 import { Disposer } from "../../Disposer";
 import { SimpleCamera } from "../../Worlds";
 
+/**
+ * Configuration interface for the {@link SimpleGrid} class.
+ */
 export interface GridConfig {
+  /**
+   * The color of the grid lines.
+   */
   color: THREE.Color;
+
+  /**
+   * The size of the primary grid lines.
+   */
   size1: number;
+
+  /**
+   * The size of the secondary grid lines.
+   */
   size2: number;
+
+  /**
+   * The distance at which the grid lines start to fade away.
+   */
   distance: number;
 }
 
 /**
- * An infinite grid. Created by
- * [fyrestar](https://github.com/Fyrestar/THREE.InfiniteGridHelper)
- * and translated to typescript by
- * [dkaraush](https://github.com/dkaraush/THREE.InfiniteGridHelper/blob/master/InfiniteGridHelper.ts).
+ * An infinite grid. Created by [fyrestar](https://github.com/Fyrestar/THREE.InfiniteGridHelper) and translated to typescript by [dkaraush](https://github.com/dkaraush/THREE.InfiniteGridHelper/blob/master/InfiniteGridHelper.ts).
  */
 export class SimpleGrid implements Hideable, Disposable {
   /** {@link Disposable.onDisposed} */

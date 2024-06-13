@@ -79,7 +79,9 @@ world.scene.three.background = null;
 */
 
 const fragments = new OBC.FragmentsManager(components);
-const fragFile = await fetch("https://thatopen.github.io/engine_components/resources/small.frag");
+const fragFile = await fetch(
+  "https://thatopen.github.io/engine_components/resources/small.frag",
+);
 const fragData = await fragFile.arrayBuffer();
 const fragBuffer = new Uint8Array(fragData);
 const model = fragments.load(fragBuffer);
@@ -105,7 +107,9 @@ await webIfc.Init();
  Now we can load the IFC file data using web-ifc. This can be done in a bunch of lines:
 */
 
-const ifcFile = await fetch("https://thatopen.github.io/engine_components/resources/small.ifc");
+const ifcFile = await fetch(
+  "https://thatopen.github.io/engine_components/resources/small.ifc",
+);
 const ifcData = await ifcFile.arrayBuffer();
 const ifcBuffer = new Uint8Array(ifcData);
 const modelID = webIfc.OpenModel(ifcBuffer);
@@ -124,7 +128,6 @@ stats.dom.style.left = "0px";
 stats.dom.style.zIndex = "unset";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
-
 
 /* MD
   ### 🧩 Adding some UI

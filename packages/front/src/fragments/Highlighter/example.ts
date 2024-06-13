@@ -75,7 +75,9 @@ world.scene.three.background = null;
 */
 
 const fragments = new OBC.FragmentsManager(components);
-const file = await fetch("https://thatopen.github.io/engine_components/resources/small.frag");
+const file = await fetch(
+  "https://thatopen.github.io/engine_components/resources/small.frag",
+);
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = fragments.load(buffer);
@@ -115,4 +117,3 @@ world.renderer.onAfterUpdate.add(() => stats.end());
 
   That's it! You have created an app that can highlight items on hover and on selection. Congratulations!
 */
-

@@ -76,7 +76,9 @@ world.scene.three.background = null;
 */
 
 const fragments = new OBC.FragmentsManager(components);
-const file = await fetch("https://thatopen.github.io/engine_components/resources/small.frag");
+const file = await fetch(
+  "https://thatopen.github.io/engine_components/resources/small.frag",
+);
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = fragments.load(buffer);
@@ -97,7 +99,6 @@ const material = new THREE.LineBasicMaterial({
 const line = new THREE.LineSegments(edges, material);
 world.scene.three.add(line);
 
-
 /* MD
   ### 📐 Setting up the measurements
   ---
@@ -109,14 +110,12 @@ const measurements = components.get(OBC.MeasurementUtils);
 const casters = components.get(OBC.Raycasters);
 const caster = casters.get(world);
 
-
 /* MD
   And now we are going to add an event to the current renderer. The idea is quite simple: 
   1. Use the raycaster to get the face under the mouse of the user (if any). 
   2. Use the measurement utils to get the face data.
   3. Update the 3D object with the face data.
 */
-
 
 if (world.renderer) {
   const canvas = world.renderer.three.domElement;

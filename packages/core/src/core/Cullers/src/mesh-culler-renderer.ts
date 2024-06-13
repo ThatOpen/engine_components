@@ -6,7 +6,7 @@ import { Event, World, Disposable } from "../../Types";
 import { MaterialsUtils } from "../../../utils";
 
 /**
- * A renderer to determine a mesh visibility on screen.
+ * A renderer to hide/show meshes depending on their visibility from the user's point of view.
  */
 export class MeshCullerRenderer extends CullerRenderer implements Disposable {
   /**
@@ -95,11 +95,11 @@ export class MeshCullerRenderer extends CullerRenderer implements Disposable {
     this.colorMeshes.clear();
   }
 
-/**
- * Adds a mesh to the culler. When the mesh is not visibile anymore, it will be removed from the scene. When it's visible again, it will be added to the scene.
- * @param mesh - The mesh to add. It can be a regular THREE.Mesh or an instance of THREE.InstancedMesh.
- * @returns {void}
- */
+  /**
+   * Adds a mesh to the culler. When the mesh is not visibile anymore, it will be removed from the scene. When it's visible again, it will be added to the scene.
+   * @param mesh - The mesh to add. It can be a regular THREE.Mesh or an instance of THREE.InstancedMesh.
+   * @returns {void}
+   */
   add(mesh: THREE.Mesh | THREE.InstancedMesh) {
     if (!this.enabled) return;
 
@@ -175,11 +175,11 @@ export class MeshCullerRenderer extends CullerRenderer implements Disposable {
   }
 
   /**
- * Removes a mesh from the culler, so its visibility is not controlled by the culler anymore.
- * When the mesh is removed, it will be hidden from the scene and its color-coded mesh will be destroyed.
- * @param mesh - The mesh to remove. It can be a regular THREE.Mesh or an instance of THREE.InstancedMesh.
- * @returns {void}
- */
+   * Removes a mesh from the culler, so its visibility is not controlled by the culler anymore.
+   * When the mesh is removed, it will be hidden from the scene and its color-coded mesh will be destroyed.
+   * @param mesh - The mesh to remove. It can be a regular THREE.Mesh or an instance of THREE.InstancedMesh.
+   * @returns {void}
+   */
   remove(mesh: THREE.Mesh | THREE.InstancedMesh) {
     if (this.isProcessing) {
       console.log("Culler processing not finished yet.");

@@ -5,22 +5,40 @@ import { newDimensionMark } from "../utils";
 import { GraphicVertexPicker } from "../../utils";
 
 /**
- * A basic dimension tool to measure distances between 2 points in 3D and display a 3D symbol displaying the numeric value.
+ * A basic dimension tool to measure distances between 2 points in 3D and display a 3D symbol displaying the numeric value. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/LengthMeasurement). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/LengthMeasurement).
  */
 export class LengthMeasurement
   extends OBC.Component
   implements OBC.Createable, OBC.Hideable, OBC.Disposable, OBC.Updateable
 {
+  /**
+   * A unique identifier for the component.
+   * This UUID is used to register the component within the Components system.
+   */
   static readonly uuid = "2f9bcacf-18a9-4be6-a293-e898eae64ea1" as const;
 
+  /** {@link OBC.Disposable.onDisposed} */
   readonly onDisposed = new OBC.Event();
 
+  /** {@link OBC.Updateable.onBeforeUpdate} */
   readonly onBeforeUpdate = new OBC.Event<LengthMeasurement>();
 
+  /** {@link OBC.Updateable.onAfterUpdate} */
   readonly onAfterUpdate = new OBC.Event<LengthMeasurement>();
 
   /** The minimum distance to force the dimension cursor to a vertex. */
   snapDistance = 0.25;
+
+  /**
+   * A list of all the measurement elements created by this component.
+   */
+  list: SimpleDimensionLine[] = [];
+
+  /**
+   * The world in which the angle measurements are performed.
+   * This property is optional and can be set to null if no world is available.
+   */
+  world?: OBC.World;
 
   private _vertexPicker: GraphicVertexPicker;
 
@@ -29,10 +47,6 @@ export class LengthMeasurement
     linewidth: 2,
     depthTest: false,
   });
-
-  list: SimpleDimensionLine[] = [];
-
-  world?: OBC.World;
 
   private _visible = true;
 
@@ -46,10 +60,12 @@ export class LengthMeasurement
     dimension: undefined as SimpleDimensionLine | undefined,
   };
 
+  /** {@link OBC.Component.enabled} */
   get enabled() {
     return this._enabled;
   }
 
+  /** {@link OBC.Component.enabled} */
   set enabled(value: boolean) {
     if (!value) {
       this.cancelCreation();
@@ -59,10 +75,12 @@ export class LengthMeasurement
     this.setupEvents(value);
   }
 
+  /** {@link OBC.Hideable.visible} */
   get visible() {
     return this._visible;
   }
 
+  /** {@link OBC.Hideable.visible} */
   set visible(value: boolean) {
     this._visible = value;
     for (const dimension of this.list) {
@@ -70,10 +88,20 @@ export class LengthMeasurement
     }
   }
 
+  /**
+   * Getter for the color of the dimension lines.
+   * Returns the color of the line material used for the dimension lines.
+   *
+   */
   get color() {
     return this._lineMaterial.color;
   }
 
+  /**
+   * Setter for the color of the dimension lines.
+   * Sets the color of the line material used for the dimension lines.
+   *
+   */
   set color(color: THREE.Color) {
     this._lineMaterial.color = color;
   }
@@ -88,7 +116,7 @@ export class LengthMeasurement
     });
   }
 
-  /** {@link Disposable.dispose} */
+  /** {@link OBC.Disposable.dispose} */
   dispose() {
     this.setupEvents(false);
     this.enabled = false;
@@ -102,6 +130,7 @@ export class LengthMeasurement
     this.onDisposed.reset();
   }
 
+  /** {@link OBC.Updateable.update} */
   async update(_delta: number) {
     if (this._enabled && this._temp.isDragging) {
       this.drawInProcess();
@@ -125,6 +154,13 @@ export class LengthMeasurement
     this.endCreation();
   };
 
+  /**
+   * Creates a new dimension line between two given points.
+   *
+   * @param p1 - The start point of the dimension line.
+   * @param p2 - The end point of the dimension line.
+   *
+   */
   createOnPoints(p1: THREE.Vector3, p2: THREE.Vector3) {
     const dimension = this.drawDimension();
     dimension.startPoint = p1;
@@ -133,7 +169,7 @@ export class LengthMeasurement
     this.list.push(dimension);
   }
 
-  /** Deletes the dimension that the user is hovering over with the mouse or touch event. */
+  /** {@link OBC.Createable.delete} */
   delete() {
     if (!this.world) {
       throw new Error("World is needed for Length Measurement!");
@@ -157,6 +193,15 @@ export class LengthMeasurement
     }
   }
 
+  /**
+   * Deletes a specific measurement from the list.
+   *
+   * @param measurement - The measurement to be deleted.
+   *
+   * @remarks
+   * If the measurement does not exist in the list, no action is taken.
+   *
+   */
   async deleteMeasurement(measurement: SimpleDimensionLine) {
     if (measurement) {
       const index = this.list.indexOf(measurement);
@@ -173,12 +218,21 @@ export class LengthMeasurement
     this.list = [];
   }
 
-  /** Cancels the drawing of the current dimension. */
+  /** {@link OBC.Createable.cancelCreation} */
   cancelCreation() {
     if (!this._temp.dimension) return;
     this._temp.isDragging = false;
     this._temp.dimension?.dispose();
     this._temp.dimension = undefined;
+  }
+
+  /** {@link OBC.Createable.endCreation} */
+  endCreation() {
+    if (!this._temp.dimension) return;
+    this._temp.dimension.createBoundingBox();
+    this.list.push(this._temp.dimension);
+    this._temp.dimension = undefined;
+    this._temp.isDragging = false;
   }
 
   private drawStart(plane?: THREE.Object3D) {
@@ -214,14 +268,6 @@ export class LengthMeasurement
       this._temp.dimension = this.drawDimension();
     }
     this._temp.dimension.endPoint = this._temp.end;
-  }
-
-  endCreation() {
-    if (!this._temp.dimension) return;
-    this._temp.dimension.createBoundingBox();
-    this.list.push(this._temp.dimension);
-    this._temp.dimension = undefined;
-    this._temp.isDragging = false;
   }
 
   private drawDimension() {

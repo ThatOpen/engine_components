@@ -14,7 +14,7 @@ import { SimpleWorld } from "./src";
 export * from "./src";
 
 /**
- * A class representing a collection of worlds within a game engine. It manages the creation, deletion, and update of worlds.
+ * A class representing a collection of worlds within a game engine. It manages the creation, deletion, and update of worlds. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/Worlds). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/Worlds).
  */
 export class Worlds extends Component implements Updateable, Disposable {
   /**
@@ -23,29 +23,26 @@ export class Worlds extends Component implements Updateable, Disposable {
    */
   static readonly uuid = "fdb61dc4-2ec1-4966-b83d-54ea795fad4a" as const;
 
-
   /** {@link Updateable.onAfterUpdate} */
   readonly onAfterUpdate = new Event();
-
 
   /** {@link Updateable.onBeforeUpdate} */
   readonly onBeforeUpdate = new Event();
 
-
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
 
-/**
- * An event that is triggered when a new world is created.
- * The event passes the newly created world as a parameter.
- */
-readonly onWorldCreated = new Event<World>();
+  /**
+   * An event that is triggered when a new world is created.
+   * The event passes the newly created world as a parameter.
+   */
+  readonly onWorldCreated = new Event<World>();
 
-/**
- * An event that is triggered when a world is deleted.
- * The event passes the UUID of the deleted world as a parameter.
- */
-readonly onWorldDeleted = new Event<string>();
+  /**
+   * An event that is triggered when a world is deleted.
+   * The event passes the UUID of the deleted world as a parameter.
+   */
+  readonly onWorldDeleted = new Event<string>();
 
   /**
    * A collection of worlds managed by this component.
@@ -86,40 +83,40 @@ readonly onWorldDeleted = new Event<string>();
   }
 
   /**
- * Deletes a world from the list of worlds.
- *
- * @param {World} world - The world to be deleted.
- *
- * @throws {Error} - Throws an error if the provided world is not found in the list.
- *
- * @returns {void}
- */
-delete(world: World) {
+   * Deletes a world from the list of worlds.
+   *
+   * @param {World} world - The world to be deleted.
+   *
+   * @throws {Error} - Throws an error if the provided world is not found in the list.
+   *
+   * @returns {void}
+   */
+  delete(world: World) {
     if (!this.list.has(world.uuid)) {
-        throw new Error("The provided world is not found in the list!");
+      throw new Error("The provided world is not found in the list!");
     }
 
     const uuid = world.uuid;
     this.list.delete(world.uuid);
     world.dispose();
     this.onWorldDeleted.trigger(uuid);
-}
+  }
 
   /**
- * Disposes of the Worlds component and all its managed worlds.
- * This method sets the enabled flag to false, disposes of all worlds, clears the list,
- * and triggers the onDisposed event.
- *
- * @returns {void}
- */
-dispose() {
+   * Disposes of the Worlds component and all its managed worlds.
+   * This method sets the enabled flag to false, disposes of all worlds, clears the list,
+   * and triggers the onDisposed event.
+   *
+   * @returns {void}
+   */
+  dispose() {
     this.enabled = false;
     for (const [_id, world] of this.list) {
       world.dispose();
     }
     this.list.clear();
     this.onDisposed.trigger();
-}
+  }
 
   /** {@link Updateable.update} */
   update(delta?: number): void | Promise<void> {

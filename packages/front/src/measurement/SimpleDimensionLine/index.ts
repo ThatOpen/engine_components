@@ -3,26 +3,65 @@ import * as OBC from "@thatopen/components";
 import { Mark } from "../../core";
 import { newDimensionMark } from "../utils";
 
+/**
+ * Interface representing the data required to create a dimension line.
+ */
 export interface DimensionData {
+  /**
+   * The starting point of the dimension line in 3D space.
+   */
   start: THREE.Vector3;
+
+  /**
+   * The ending point of the dimension line in 3D space.
+   */
   end: THREE.Vector3;
+
+  /**
+   * The material to be used for the line of the dimension.
+   */
   lineMaterial: THREE.Material;
+
+  /**
+   * The HTML element to be used as the endpoint marker for the dimension line.
+   */
   endpointElement: HTMLElement;
 }
 
-// TODO: Document + clean up this: way less parameters, clearer logic
+// TODO: Clean up this: way less parameters, clearer logic
 
+/**
+ * A class representing a simple dimension line in a 3D space.
+ */
 export class SimpleDimensionLine {
+  /**
+   * The label for the dimension line.
+   */
   label: Mark;
 
+  /**
+   * The bounding box for the dimension line.
+   */
   boundingBox = new THREE.Mesh();
 
+  /**
+   * The world in which the dimension line exists.
+   */
   world: OBC.World;
 
+  /**
+   * The components used by the dimension line.
+   */
   components: OBC.Components;
 
+  /**
+   * The scale factor for the dimension line.
+   */
   static scale = 1;
 
+  /**
+   * The units used for the dimension line.
+   */
   static units = "m";
 
   private _length: number;
@@ -39,10 +78,18 @@ export class SimpleDimensionLine {
 
   private readonly _line: THREE.Line;
 
+  /**
+   * Getter for the visibility of the dimension line.
+   * @returns {boolean} The current visibility state.
+   */
   get visible() {
     return this._visible;
   }
 
+  /**
+   * Setter for the visibility of the dimension line.
+   * @param {boolean} value - The new visibility state.
+   */
   set visible(value: boolean) {
     this._visible = value;
     this.label.visible = value;
@@ -65,10 +112,19 @@ export class SimpleDimensionLine {
     }
   }
 
+  /**
+   * Getter for the end point of the dimension line.
+   * @returns {THREE.Vector3} The current end point.
+   */
   get endPoint() {
     return this._end;
   }
 
+  /**
+   * Setter for the end point of the dimension line.
+   * Updates the line geometry and position of the end point marker.
+   * @param {THREE.Vector3} point - The new end point.
+   */
   set endPoint(point: THREE.Vector3) {
     this._end = point;
     const position = this._line.geometry.attributes
@@ -79,10 +135,19 @@ export class SimpleDimensionLine {
     this.updateLabel();
   }
 
+  /**
+   * Getter for the start point of the dimension line.
+   * @returns {THREE.Vector3} The current start point.
+   */
   get startPoint() {
     return this._start;
   }
 
+  /**
+   * Setter for the start point of the dimension line.
+   * Updates the line geometry and position of the start point marker.
+   * @param {THREE.Vector3} point - The new start point.
+   */
   set startPoint(point: THREE.Vector3) {
     this._start = point;
     const position = this._line.geometry.attributes
@@ -121,6 +186,11 @@ export class SimpleDimensionLine {
     this.world.scene.three.add(this._root);
   }
 
+  /**
+   * Disposes of the dimension line and its associated resources.
+   * This method should be called when the dimension line is no longer needed.
+   * It removes the dimension line from the world, destroys its components, and frees up memory.
+   */
   dispose() {
     const disposer = this.components.get(OBC.Disposer);
     this.visible = false;
@@ -137,6 +207,12 @@ export class SimpleDimensionLine {
     (this.components as any) = null;
   }
 
+  /**
+   * Creates a bounding box for the dimension line.
+   * The bounding box is a 3D box that encloses the dimension line.
+   * It is used for collision detection and visibility culling.
+   * The bounding box is initially invisible and can be toggled using the `toggleBoundingBox` method.
+   */
   createBoundingBox() {
     this.boundingBox.geometry = new THREE.BoxGeometry(1, 1, this._length);
     this.boundingBox.position.copy(this._center);
@@ -145,6 +221,11 @@ export class SimpleDimensionLine {
     this._root.add(this.boundingBox);
   }
 
+  /**
+   * Toggles the visibility of the dimension line's label.
+   * The label is a text element that displays the length of the dimension line.
+   * This method is used to show or hide the label when needed.
+   */
   toggleLabel() {
     this.label.toggleVisibility();
   }

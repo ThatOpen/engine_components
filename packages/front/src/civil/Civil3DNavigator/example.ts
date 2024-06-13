@@ -113,7 +113,6 @@ navigator.draw(model);
   For perfomance reasons, we will use a culler to only render the parts of the model that the camera can see. We will create a new culler for this world, add the previously loaded model to it and configure the update logic to refresh the culler every time the user stops moving the camera.
 */
 
-
 const cullers = components.get(OBC.Cullers);
 const culler = cullers.create(world);
 culler.threshold = 10;
@@ -129,7 +128,6 @@ culler.needsUpdate = true;
 world.camera.controls.addEventListener("sleep", () => {
   culler.needsUpdate = true;
 });
-
 
 /*
   ### ⚾ Navigating to the selected point

@@ -1,3 +1,6 @@
+/**
+ * A Set of unique numbers representing different types of IFC geometries.
+ */
 export const GeometryTypes = new Set<number>([
   1123145078, 574549367, 1675464909, 2059837836, 3798115385, 32440307,
   3125803723, 3207858831, 2740243338, 2624227202, 4240577450, 3615266464,

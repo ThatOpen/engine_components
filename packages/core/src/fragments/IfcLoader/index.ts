@@ -7,21 +7,44 @@ import { FragmentsManager } from "../FragmentsManager";
 import { Component, Components, Event, Disposable } from "../../core";
 import { IfcJsonExporter } from "../../ifc/IfcJsonExporter";
 
+export * from "./src/ifc-fragment-settings";
+
+/**
+ * The IfcLoader component is responsible for loading and processing IFC files. It utilizes the Web-IFC library to handle the IFC data and the Three.js library for 3D rendering. The class provides methods for setting up, loading, and cleaning up IFC files. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/IfcLoader). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/IfcLoader).
+ */
 export class IfcLoader extends Component implements Disposable {
+  /**
+   * A unique identifier for the component.
+   * This UUID is used to register the component within the Components system.
+   */
   static readonly uuid = "a659add7-1418-4771-a0d6-7d4d438e4624" as const;
-
-  readonly onIfcStartedLoading = new Event<void>();
-
-  readonly onSetup = new Event<void>();
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
 
+  /**
+   * An event triggered when the IFC file starts loading.
+   */
+  readonly onIfcStartedLoading = new Event<void>();
+
+  /**
+   * An event triggered when the setup process is completed.
+   */
+  readonly onSetup = new Event<void>();
+
+  /**
+   * The settings for the IfcLoader.
+   * It includes options for excluding categories, setting WASM paths, and more.
+   */
   settings = new IfcFragmentSettings();
 
-  enabled: boolean = true;
-
+  /**
+   * The instance of the Web-IFC library used for handling IFC data.
+   */
   webIfc = new WEBIFC.IfcAPI();
+
+  /** {@link Component.enabled} */
+  enabled: boolean = true;
 
   private _material = new THREE.MeshLambertMaterial();
   private _spatialTree = new SpatialStructure();
@@ -45,12 +68,31 @@ export class IfcLoader extends Component implements Disposable {
     this.settings.excludedCategories.add(WEBIFC.IFCOPENINGELEMENT);
   }
 
+  /** {@link Disposable.dispose} */
   dispose() {
     (this.webIfc as any) = null;
     this.onDisposed.trigger(IfcLoader.uuid);
     this.onDisposed.reset();
   }
 
+  /**
+   * Sets up the IfcLoader component with the provided configuration.
+   *
+   * @param config - Optional configuration settings for the IfcLoader.
+   * If not provided, the existing settings will be used.
+   *
+   * @returns A Promise that resolves when the setup process is completed.
+   *
+   * @remarks
+   * If the `autoSetWasm` option is enabled in the configuration,
+   * the method will automatically set the WASM paths for the Web-IFC library.
+   *
+   * @example
+   * ```typescript
+   * const ifcLoader = new IfcLoader(components);
+   * await ifcLoader.setup({ autoSetWasm: true });
+   * ```
+   */
   async setup(config?: Partial<IfcFragmentSettings>) {
     this.settings = { ...this.settings, ...config };
     if (this.settings.autoSetWasm) {
@@ -59,6 +101,20 @@ export class IfcLoader extends Component implements Disposable {
     this.onSetup.trigger();
   }
 
+  /**
+   * Loads an IFC file and processes it for 3D visualization.
+   *
+   * @param data - The Uint8Array containing the IFC file data.
+   * @param coordinate - Optional boolean indicating whether to coordinate the loaded IFC data. Default is true.
+   *
+   * @returns A Promise that resolves to the FragmentsGroup containing the loaded and processed IFC data.
+   *
+   * @example
+   * ```typescript
+   * const ifcLoader = components.get(IfcLoader);
+   * const group = await ifcLoader.load(ifcData);
+   * ```
+   */
   async load(data: Uint8Array, coordinate = true) {
     const before = performance.now();
     this.onIfcStartedLoading.trigger();
@@ -89,6 +145,23 @@ export class IfcLoader extends Component implements Disposable {
     return group;
   }
 
+  /**
+   * Reads an IFC file and initializes the Web-IFC library.
+   *
+   * @param data - The Uint8Array containing the IFC file data.
+   *
+   * @returns A Promise that resolves when the IFC file is opened and initialized.
+   *
+   * @remarks
+   * This method sets the WASM path and initializes the Web-IFC library based on the provided settings.
+   * It also opens the IFC model using the provided data and settings.
+   *
+   * @example
+   * ```typescript
+   * const ifcLoader = components.get(IfcLoader);
+   * await ifcLoader.readIfcFile(ifcData);
+   * ```
+   */
   async readIfcFile(data: Uint8Array) {
     const { path, absolute, logLevel } = this.settings.wasm;
     this.webIfc.SetWasmPath(path, absolute);
@@ -97,6 +170,26 @@ export class IfcLoader extends Component implements Disposable {
       this.webIfc.SetLogLevel(logLevel);
     }
     return this.webIfc.OpenModel(data, this.settings.webIfc);
+  }
+
+  /**
+   * Cleans up the IfcLoader component by resetting the Web-IFC library,
+   * clearing the visited fragments and fragment instances maps, and creating a new instance of the Web-IFC library.
+   *
+   * @remarks
+   * This method is called automatically after using the .load() method, so usually you don't need to use it manually.
+   *
+   * @example
+   * ```typescript
+   * const ifcLoader = components.get(IfcLoader);
+   * ifcLoader.cleanUp();
+   * ```
+   */
+  cleanUp() {
+    (this.webIfc as any) = null; // Clear the reference to the Web-IFC library
+    this.webIfc = new WEBIFC.IfcAPI(); // Create a new instance of the Web-IFC library
+    this._visitedFragments.clear(); // Clear the map of visited fragments
+    this._fragmentInstances.clear(); // Clear the map of fragment instances
   }
 
   private async getAllGeometries() {
@@ -163,13 +256,6 @@ export class IfcLoader extends Component implements Disposable {
     group.civilData = this._civil.read(this.webIfc);
 
     return group;
-  }
-
-  cleanUp() {
-    (this.webIfc as any) = null;
-    this.webIfc = new WEBIFC.IfcAPI();
-    this._visitedFragments.clear();
-    this._fragmentInstances.clear();
   }
 
   private getMesh(mesh: WEBIFC.FlatMesh, group: FRAGS.FragmentsGroup) {

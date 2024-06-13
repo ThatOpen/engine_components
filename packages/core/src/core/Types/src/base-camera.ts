@@ -4,7 +4,7 @@ import { BaseWorldItem } from "./base-world-item";
 import { CameraControllable } from "./interfaces";
 
 /**
- * Abstract class representing a camera in the 3D world. All cameras should use this class as a base.
+ * Abstract class representing a camera in a 3D world. All cameras should use this class as a base.
  */
 export abstract class BaseCamera extends BaseWorldItem {
   /**

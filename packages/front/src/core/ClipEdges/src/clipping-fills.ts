@@ -3,13 +3,23 @@ import * as OBC from "@thatopen/components";
 import earcut from "earcut";
 import { PostproductionRenderer } from "../../PostproductionRenderer";
 
+/**
+ * Class for managing and rendering the fills of a clipping plane.
+ */
 export class ClippingFills {
-  // readonly worker: Worker;
-
+  /**
+   * The THREE.js mesh representing the fills.
+   */
   mesh = new THREE.Mesh(new THREE.BufferGeometry());
 
+  /**
+   * The world in which the clipping plane and fills exist.
+   */
   world: OBC.World;
 
+  /**
+   * The name of the style associated with this clipping fills.
+   */
   styleName?: string;
 
   private _precission = 10000;
@@ -23,10 +33,18 @@ export class ClippingFills {
   // Used if the plane is orthogonal to the cartesian planes
   private _planeAxis?: "x" | "y" | "z";
 
+  /**
+   * Gets the visibility of the clipping fills mesh.
+   * @returns {boolean} Returns true if the mesh is visible, false otherwise.
+   */
   get visible() {
     return this.mesh.parent !== null;
   }
 
+  /**
+   * Sets the visibility of the clipping fills mesh.
+   * @param {boolean} value - The new visibility state. If true, the mesh will be added to the scene and the style's meshes set. If false, the mesh will be removed from the scene and the style's meshes set.
+   */
   set visible(value: boolean) {
     const style = this.getStyle();
     if (value) {
@@ -43,6 +61,10 @@ export class ClippingFills {
     }
   }
 
+  /**
+   * Sets the geometry of the clipping fills mesh.
+   * @param {THREE.BufferGeometry} geometry - The new geometry for the mesh. The position attribute of the geometry will be assigned to the mesh's geometry.
+   */
   set geometry(geometry: THREE.BufferGeometry) {
     this._geometry = geometry;
     this.mesh.geometry.attributes.position = geometry.attributes.position;
@@ -79,6 +101,10 @@ export class ClippingFills {
     this.visible = true;
   }
 
+  /**
+   * Disposes of the clipping fills mesh and its associated resources.
+   * This method should be called when the clipping fills are no longer needed to free up memory.
+   */
   dispose() {
     const style = this.getStyle();
     if (style) {
@@ -92,6 +118,12 @@ export class ClippingFills {
     (this._geometry as any) = null;
   }
 
+  /**
+   * Updates the clipping fills mesh with new indices.
+   *
+   * @param trianglesIndices - An array of indices representing triangles in the geometry.
+   *
+   */
   update(trianglesIndices: number[]) {
     const buffer = this._geometry.attributes.position.array as Float32Array;
     if (!buffer) return;

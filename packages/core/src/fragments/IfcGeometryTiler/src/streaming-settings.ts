@@ -1,13 +1,18 @@
-// eslint-disable-next-line max-classes-per-file
 import { IfcFragmentSettings } from "../../IfcLoader/src";
 
-/** Configuration of the IFC-fragment streaming. */
+/**
+ * Settings for streaming IFC geometry and assets. Extends {@link IfcFragmentSettings} to inherit common settings.
+ */
 export class IfcStreamingSettings extends IfcFragmentSettings {
+  /**
+   * Minimum number of geometries to be streamed.
+   * Defaults to 10 geometries.
+   */
   minGeometrySize = 10;
-  minAssetsSize = 1000;
-}
 
-/** Configuration of the IFC-fragment streaming. */
-export class PropertiesStreamingSettings extends IfcFragmentSettings {
-  propertiesSize = 100;
+  /**
+   * Minimum amount of assets to be streamed.
+   * Defaults to 1000 assets.
+   */
+  minAssetsSize = 1000;
 }

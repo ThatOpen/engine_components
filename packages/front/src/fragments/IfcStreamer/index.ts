@@ -10,15 +10,35 @@ import {
   StreamLoaderSettings,
 } from "./src";
 
+/**
+ * The IfcStreamer component is responsible for managing and streaming tiled IFC data. It provides methods for loading, removing, and managing IFC models, as well as handling visibility and caching. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/IfcStreamer). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/IfcStreamer).
+ */
 export class IfcStreamer extends OBC.Component implements OBC.Disposable {
+  /**
+   * A unique identifier for the component.
+   * This UUID is used to register the component within the Components system.
+   */
   static readonly uuid = "22437e8d-9dbc-4b99-a04f-d2da280d50c8" as const;
 
+  /** {@link OBC.Component.enabled} */
   enabled = true;
 
+  /**
+   * Event triggered when fragments are deleted.
+   */
   readonly onFragmentsDeleted = new OBC.Event<FRAG.Fragment[]>();
 
+  /**
+   * Event triggered when fragments are loaded.
+   */
   readonly onFragmentsLoaded = new OBC.Event<FRAG.Fragment[]>();
+
+  /** {@link OBC.Disposable.onDisposed} */
   readonly onDisposed = new OBC.Event();
+
+  /**
+   * The data of the streamed models. It defines the geometries, their instances, its bounding box (OBB) and the assets to which they belong.
+   */
   models: {
     [modelID: string]: {
       assets: OBC.StreamedAsset[];
@@ -26,10 +46,19 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     };
   } = {};
 
+  /**
+   * Importer of binary IFC data previously converted to fragment tiles.
+   */
   serializer = new FRAG.StreamSerializer();
 
+  /**
+   * Maximum time in milliseconds for a geometry to stay in the RAM cache.
+   */
   maxRamTime = 5000;
 
+  /**
+   * Flag indicating whether to use the local cache for storing geometry files.
+   */
   useCache = true;
 
   private _culler: GeometryCullerRenderer | null = null;
@@ -47,8 +76,6 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
 
   private _isDisposing = false;
 
-  // private _hardlySeenGeometries: THREE.InstancedMesh;
-
   private _geometryInstances: {
     [modelID: string]: StreamedInstances;
   } = {};
@@ -57,7 +84,6 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     [modelID: string]: { [geometryID: number]: FRAG.Fragment[] };
   } = {};
 
-  // FragID, [model, geometryID, hiddenItems]
   private fragIDData = new Map<
     string,
     [FRAG.FragmentsGroup, number, Set<number>]
@@ -70,6 +96,11 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     opacity: 0.5,
   });
 
+  /**
+   * The URL of the data source for the streaming service.
+   * It must be set before using the streaming service.
+   * If not set, an error will be thrown when trying to access the URL.
+   */
   get url() {
     if (!this._url) {
       throw new Error("url must be set before using the streaming service!");
@@ -77,10 +108,19 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     return this._url;
   }
 
+  /**
+   * Sets the URL of the data source for the streaming service.
+   * @param value - The new URL to be set.
+   */
   set url(value: string) {
     this._url = value;
   }
 
+  /**
+   * The world in which the fragments will be displayed.
+   * It must be set before using the streaming service.
+   * If not set, an error will be thrown when trying to access the world.
+   */
   get world() {
     if (!this._world) {
       throw new Error("You must set a world before using the streamer!");
@@ -88,6 +128,10 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     return this._world;
   }
 
+  /**
+   * Sets the world in which the fragments will be displayed.
+   * @param world - The new world to be set.
+   */
   set world(world: OBC.World) {
     this._world = world;
     this._culler?.dispose();
@@ -103,6 +147,10 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     );
   }
 
+  /**
+   * The culler used for managing and rendering the fragments.
+   * It is automatically created when the world is set.
+   */
   get culler() {
     if (!this._culler) {
       throw new Error("You must set a world before using the streamer!");
@@ -118,6 +166,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     // this._hardlySeenGeometries = new THREE.InstancedMesh();
   }
 
+  /** {@link OBC.Disposable.dispose} */
   dispose() {
     this._isDisposing = true;
     this.onFragmentsLoaded.reset();
@@ -141,6 +190,14 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     this._isDisposing = false;
   }
 
+  /**
+   * Loads a new fragment group into the scene using streaming.
+   *
+   * @param settings - The settings for the new fragment group.
+   * @param coordinate - Whether to federate this model with the rest.
+   * @param properties - Optional properties for the new fragment group.
+   * @returns The newly loaded fragment group.
+   */
   async load(
     settings: StreamLoaderSettings,
     coordinate: boolean,
@@ -233,6 +290,11 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     return group;
   }
 
+  /**
+   * Removes a fragment group from the scene.
+   *
+   * @param modelID - The unique identifier of the fragment group to remove.
+   */
   remove(modelID: string) {
     this._isDisposing = true;
 
@@ -257,6 +319,13 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     this._isDisposing = false;
   }
 
+  /**
+   * Sets the visibility of items in fragments based on the provided filter.
+   *
+   * @param visible - The visibility state to set.
+   * @param filter - A map of fragment IDs to arrays of item IDs.
+   *                  Only items with IDs present in the arrays will be visible.
+   */
   setVisibility(visible: boolean, filter: FRAG.FragmentIdMap) {
     const modelGeomsAssets = new Map<string, Map<number, Set<number>>>();
     for (const fragID in filter) {
@@ -311,13 +380,14 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     this.culler.needsUpdate = true;
   }
 
+  /**
+   * Clears the local cache used for storing downloaded fragment files.
+   *
+   * @returns A Promise that resolves when the cache is cleared.
+   */
   async clearCache() {
     await this._fileCache.delete();
   }
-
-  get() {}
-
-  update() {}
 
   private async loadFoundGeometries(seen: {
     [modelID: string]: Map<number, Set<number>>;

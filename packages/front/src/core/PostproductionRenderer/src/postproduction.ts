@@ -7,29 +7,58 @@ import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader.js";
 import { CustomEffectsPass } from "./custom-effects-pass";
 
-// TODO: Clean up and document this
-
+/**
+ * Interface defining the settings for the post-processing effects.
+ */
 export interface PostproductionSettings {
+  /**
+   * Flag indicating whether to apply gamma correction.
+   * Default: true
+   */
   gamma?: boolean;
+
+  /**
+   * Flag indicating whether to apply custom effects.
+   * Default: true
+   */
   custom?: boolean;
+
+  /**
+   * Flag indicating whether to apply Ambient Occlusion (AO) effect.
+   * Default: false
+   */
   ao?: boolean;
 }
 
-// source: https://discourse.threejs.org/t/how-to-render-full-outlines-as-a-post-process-tutorial/22674
+//
 
+/**
+ * Class representing a post-processing effect manager for a 3D scene. It uses the EffectComposer from three.js to apply various post-processing effects. Thanks to [this](https://discourse.threejs.org/t/how-to-render-full-outlines-as-a-post-process-tutorial/22674).
+ */
 export class Postproduction {
+  /**
+   * The EffectComposer instance used for managing the post-processing effects.
+   */
+  readonly composer: EffectComposer;
+
+  /**
+   * Flag indicating whether to override the clipping planes of the renderer.
+   * Default: false
+   */
   overrideClippingPlanes = false;
 
-  readonly composer: EffectComposer;
+  private readonly _components: OBC.Components;
+  private readonly _world: OBC.World;
+  private readonly _renderTarget: THREE.WebGLRenderTarget;
 
   private _enabled = false;
   private _initialized = false;
-
   private _n8ao?: any;
   private _customEffects?: CustomEffectsPass;
   private _basePass?: RenderPass;
   private _gammaPass?: ShaderPass;
   private _depthTexture?: THREE.DepthTexture;
+  private _renderer: THREE.WebGLRenderer;
 
   private _settings: PostproductionSettings = {
     gamma: true,
@@ -37,12 +66,9 @@ export class Postproduction {
     ao: false,
   };
 
-  private _renderer: THREE.WebGLRenderer;
-  private readonly _components: OBC.Components;
-  private readonly _world: OBC.World;
-
-  private readonly _renderTarget: THREE.WebGLRenderTarget;
-
+  /**
+   * Getter for the base pass. Throws an error if the custom effects are not initialized.
+   */
   get basePass() {
     if (!this._basePass) {
       throw new Error("Custom effects not initialized!");
@@ -50,6 +76,9 @@ export class Postproduction {
     return this._basePass;
   }
 
+  /**
+   * Getter for the gamma pass. Throws an error if the custom effects are not initialized.
+   */
   get gammaPass() {
     if (!this._gammaPass) {
       throw new Error("Custom effects not initialized!");
@@ -57,6 +86,9 @@ export class Postproduction {
     return this._gammaPass;
   }
 
+  /**
+   * Getter for the custom effects pass. Throws an error if the custom effects are not initialized.
+   */
   get customEffects() {
     if (!this._customEffects) {
       throw new Error("Custom effects not initialized!");
@@ -64,6 +96,9 @@ export class Postproduction {
     return this._customEffects;
   }
 
+  /**
+   * Getter for the N8AO pass. Throws an error if the custom effects are not initialized.
+   */
   get n8ao() {
     if (!this._n8ao) {
       throw new Error("Custom effects not initialized!");
@@ -71,10 +106,18 @@ export class Postproduction {
     return this._n8ao;
   }
 
+  /**
+   * Getter for the enabled state of the post-processing effects.
+   */
   get enabled() {
     return this._enabled;
   }
 
+  /**
+   * Setter for the enabled state of the post-processing effects.
+   * If the custom effects are not initialized, it calls the initialize method.
+   * @param {boolean} active - The new enabled state.
+   */
   set enabled(active: boolean) {
     if (!this._initialized) {
       this.initialize();
@@ -82,6 +125,9 @@ export class Postproduction {
     this._enabled = active;
   }
 
+  /**
+   * Getter for the current post-processing settings.
+   */
   get settings() {
     return { ...this._settings };
   }
@@ -109,6 +155,11 @@ export class Postproduction {
     this.composer.setSize(window.innerWidth, window.innerHeight);
   }
 
+  /**
+   * Disposes of the resources held by the post-processing manager.
+   * This method should be called when the post-processing manager is no longer needed.
+   * It releases the memory occupied by the render target, depth texture, custom effects pass, gamma pass, and N8AO pass.
+   */
   dispose() {
     this._renderTarget.dispose();
     this._depthTexture?.dispose();
@@ -117,6 +168,13 @@ export class Postproduction {
     this._n8ao?.dispose();
   }
 
+  /**
+   * Sets the post-processing settings and updates the passes accordingly.
+   * This method checks if the settings have changed before updating the passes.
+   *
+   * @param settings - The new post-processing settings.
+   * @returns {void}
+   */
   setPasses(settings: PostproductionSettings) {
     // This check can prevent some bugs
     let settingsChanged = false;
@@ -139,6 +197,14 @@ export class Postproduction {
     this.updatePasses();
   }
 
+  /**
+   * Sets the size of the render target and all related passes.
+   * This method should be called when the window size changes to ensure that the post-processing effects are rendered correctly.
+   *
+   * @param width - The new width of the render target.
+   * @param height - The new height of the render target.
+   * @returns {void}
+   */
   setSize(width: number, height: number) {
     if (this._initialized) {
       this.composer.setSize(width, height);
@@ -149,11 +215,21 @@ export class Postproduction {
     }
   }
 
+  /**
+   * Updates the post-processing effects.
+   * This method checks if the post-processing effects are enabled before rendering.
+   * If the effects are enabled, it calls the `composer.render()` method to apply the effects.
+   */
   update() {
     if (!this._enabled) return;
     this.composer.render();
   }
 
+  /**
+   * Updates the camera settings for the post-processing effects.
+   * This method is called whenever the camera settings change.
+   * It updates the camera settings for the N8AO pass, custom effects pass, and base pass.
+   */
   updateCamera() {
     const camera = this._world.camera.three;
     if (this._n8ao) {
@@ -165,6 +241,22 @@ export class Postproduction {
     if (this._basePass) {
       this._basePass.camera = camera;
     }
+  }
+
+  /**
+   * Updates the projection of the camera for the post-processing effects.
+   * This method iterates over all passes in the EffectComposer and updates the camera property of each pass.
+   * After updating the camera, it calls the update method to apply the changes.
+   *
+   * @param camera - The new camera to use for the post-processing effects.
+   * @returns {void}
+   */
+  updateProjection(camera: THREE.Camera) {
+    this.composer.passes.forEach((pass) => {
+      // @ts-ignore
+      pass.camera = camera;
+    });
+    this.update();
   }
 
   private initialize() {
@@ -200,14 +292,6 @@ export class Postproduction {
 
     this._initialized = true;
     this.updatePasses();
-  }
-
-  updateProjection(camera: THREE.Camera) {
-    this.composer.passes.forEach((pass) => {
-      // @ts-ignore
-      pass.camera = camera;
-    });
-    this.update();
   }
 
   private updatePasses() {

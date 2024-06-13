@@ -1,7 +1,7 @@
 export function isPointInFrontOfPlane(
   point: number[],
   planePoint: number[],
-  planeNormal: number[]
+  planeNormal: number[],
 ) {
   // Calculate the vector from the plane to the point
   const vectorToPlane = [

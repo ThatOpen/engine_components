@@ -28,7 +28,7 @@ export abstract class BaseRenderer
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<undefined>();
 
-    /** {@link Resizeable.onResize} */
+  /** {@link Resizeable.onResize} */
   readonly onResize = new Event<THREE.Vector2>();
 
   /**
@@ -54,32 +54,31 @@ export abstract class BaseRenderer
    */
   clippingPlanes: THREE.Plane[] = [];
 
-
   /**
- * Updates the clipping planes and triggers the `onClippingPlanesUpdated` event.
- *
- * @remarks
- * This method is typically called when there is a change to the list of clipping planes
- * used by the active renderer.
- */
-updateClippingPlanes() {
+   * Updates the clipping planes and triggers the `onClippingPlanesUpdated` event.
+   *
+   * @remarks
+   * This method is typically called when there is a change to the list of clipping planes
+   * used by the active renderer.
+   */
+  updateClippingPlanes() {
     this.onClippingPlanesUpdated.trigger();
-}
+  }
 
   /**
- * Sets or removes a clipping plane from the renderer.
- *
- * @param active - A boolean indicating whether the clipping plane should be active or not.
- * @param plane - The clipping plane to be added or removed.
- * @param isLocal - An optional boolean indicating whether the clipping plane is local to the object. If not provided, it defaults to `false`.
- *
- * @remarks
- * This method adds or removes a clipping plane from the `clippingPlanes` array.
- * If `active` is `true` and the plane is not already in the array, it is added.
- * If `active` is `false` and the plane is in the array, it is removed.
- * The `three.clippingPlanes` property is then updated to reflect the current state of the `clippingPlanes` array,
- * excluding any planes marked as local.
- */
+   * Sets or removes a clipping plane from the renderer.
+   *
+   * @param active - A boolean indicating whether the clipping plane should be active or not.
+   * @param plane - The clipping plane to be added or removed.
+   * @param isLocal - An optional boolean indicating whether the clipping plane is local to the object. If not provided, it defaults to `false`.
+   *
+   * @remarks
+   * This method adds or removes a clipping plane from the `clippingPlanes` array.
+   * If `active` is `true` and the plane is not already in the array, it is added.
+   * If `active` is `false` and the plane is in the array, it is removed.
+   * The `three.clippingPlanes` property is then updated to reflect the current state of the `clippingPlanes` array,
+   * excluding any planes marked as local.
+   */
   setPlane(active: boolean, plane: THREE.Plane, isLocal?: boolean) {
     (plane as any).isLocal = isLocal;
 

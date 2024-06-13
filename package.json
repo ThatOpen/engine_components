@@ -1,5 +1,6 @@
 {
   "description": "Collection of tools to author BIM apps.",
+  "version": "2.0.10",
   "author": "That Open Company",
   "contributors": [
     "Antonio Gonzalez Viegas (https://github.com/agviegas)",

@@ -68,74 +68,74 @@ export class SimpleWorld<
 
   private _renderer: S | null = null;
 
-/**
- * Getter for the scene. If no scene is initialized, it throws an error.
- * @returns The current scene.
- */
-get scene(): T {
-  if (!this._scene) {
-    throw new Error("No scene initialized!");
+  /**
+   * Getter for the scene. If no scene is initialized, it throws an error.
+   * @returns The current scene.
+   */
+  get scene(): T {
+    if (!this._scene) {
+      throw new Error("No scene initialized!");
+    }
+    return this._scene;
   }
-  return this._scene;
-}
 
-/**
- * Setter for the scene. It sets the current scene, adds the world to the scene's worlds set,
- * sets the current world in the scene, and triggers the scene's onWorldChanged event with the added action.
- * @param scene - The new scene to be set.
- */
-set scene(scene: T) {
-  this._scene = scene;
-  scene.worlds.set(this.uuid, this);
-  scene.currentWorld = this;
-  scene.onWorldChanged.trigger({ world: this, action: "added" });
-}
-
-/**
- * Getter for the camera. If no camera is initialized, it throws an error.
- * @returns The current camera.
- */
-get camera(): U {
-  if (!this._camera) {
-    throw new Error("No camera initialized!");
+  /**
+   * Setter for the scene. It sets the current scene, adds the world to the scene's worlds set,
+   * sets the current world in the scene, and triggers the scene's onWorldChanged event with the added action.
+   * @param scene - The new scene to be set.
+   */
+  set scene(scene: T) {
+    this._scene = scene;
+    scene.worlds.set(this.uuid, this);
+    scene.currentWorld = this;
+    scene.onWorldChanged.trigger({ world: this, action: "added" });
   }
-  return this._camera;
-}
 
-/**
- * Setter for the camera. It sets the current camera, adds the world to the camera's worlds set,
- * sets the current world in the camera, and triggers the camera's onWorldChanged event with the added action.
- * @param camera - The new camera to be set.
- */
-set camera(camera: U) {
-  this._camera = camera;
-  camera.worlds.set(this.uuid, this);
-  camera.currentWorld = this;
-  camera.onWorldChanged.trigger({ world: this, action: "added" });
-}
-
-/**
- * Getter for the renderer.
- * @returns The current renderer or null if no renderer is set. Some worlds don't need a renderer to work (when your mail goal is not to display a 3D viewport to the user).
- */
-get renderer(): S | null {
-  return this._renderer;
-}
-
-/**
- * Setter for the renderer. It sets the current renderer, adds the world to the renderer's worlds set,
- * sets the current world in the renderer, and triggers the renderer's onWorldChanged event with the added action.
- * If a new renderer is set, it also triggers the onWorldChanged event with the removed action for the old renderer.
- * @param renderer - The new renderer to be set or null to remove the current renderer.
- */
-set renderer(renderer: S | null) {
-  this._renderer = renderer;
-  if (renderer) {
-    renderer.worlds.set(this.uuid, this);
-    renderer.currentWorld = this;
-    renderer.onWorldChanged.trigger({ world: this, action: "added" });
+  /**
+   * Getter for the camera. If no camera is initialized, it throws an error.
+   * @returns The current camera.
+   */
+  get camera(): U {
+    if (!this._camera) {
+      throw new Error("No camera initialized!");
+    }
+    return this._camera;
   }
-}
+
+  /**
+   * Setter for the camera. It sets the current camera, adds the world to the camera's worlds set,
+   * sets the current world in the camera, and triggers the camera's onWorldChanged event with the added action.
+   * @param camera - The new camera to be set.
+   */
+  set camera(camera: U) {
+    this._camera = camera;
+    camera.worlds.set(this.uuid, this);
+    camera.currentWorld = this;
+    camera.onWorldChanged.trigger({ world: this, action: "added" });
+  }
+
+  /**
+   * Getter for the renderer.
+   * @returns The current renderer or null if no renderer is set. Some worlds don't need a renderer to work (when your mail goal is not to display a 3D viewport to the user).
+   */
+  get renderer(): S | null {
+    return this._renderer;
+  }
+
+  /**
+   * Setter for the renderer. It sets the current renderer, adds the world to the renderer's worlds set,
+   * sets the current world in the renderer, and triggers the renderer's onWorldChanged event with the added action.
+   * If a new renderer is set, it also triggers the onWorldChanged event with the removed action for the old renderer.
+   * @param renderer - The new renderer to be set or null to remove the current renderer.
+   */
+  set renderer(renderer: S | null) {
+    this._renderer = renderer;
+    if (renderer) {
+      renderer.worlds.set(this.uuid, this);
+      renderer.currentWorld = this;
+      renderer.onWorldChanged.trigger({ world: this, action: "added" });
+    }
+  }
 
   /** {@link Updateable.update} */
   update(delta?: number) {
@@ -168,7 +168,6 @@ set renderer(renderer: S | null) {
     this.onAfterUpdate.trigger();
   }
 
-  
   /** {@link Disposable.dispose} */
   dispose(disposeResources = true) {
     this.enabled = false;

@@ -3,13 +3,20 @@ import * as OBC from "@thatopen/components";
 import { Postproduction } from "./src/postproduction";
 import { RendererWith2D } from "../Marker";
 
+export * from "./src/postproduction";
+
 /**
- * Renderer that uses efficient postproduction effects (e.g. Ambient Occlusion).
+ * A class that extends RendererWith2D and adds post-processing capabilities. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/PostproductionRenderer). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/PostproductionRenderer).
  */
 export class PostproductionRenderer extends RendererWith2D {
   private _postproduction?: Postproduction;
 
-  /** Helper object to handle the postproduction effects applied. */
+  /**
+   * Getter for the postproduction instance.
+   * Throws an error if the postproduction instance is not yet initialized.
+   *
+   * @returns The initialized Postproduction instance.
+   */
   get postproduction() {
     if (!this._postproduction) {
       throw new Error("Renderer not initialized yet with a world!");
@@ -40,6 +47,7 @@ export class PostproductionRenderer extends RendererWith2D {
     });
   }
 
+  /** {@link Updateable.update} */
   update() {
     if (!this.enabled) return;
 
@@ -63,7 +71,7 @@ export class PostproductionRenderer extends RendererWith2D {
     this.onAfterUpdate.trigger();
   }
 
-  /** {@link Disposable.dispose}. */
+  /** {@link OBC.Disposable.dispose}. */
   dispose() {
     super.dispose();
     this.postproduction.dispose();

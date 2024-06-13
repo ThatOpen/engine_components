@@ -2,10 +2,7 @@ import * as THREE from "three";
 import { Disposable, Event } from "../../Types";
 
 /**
- * A helper to easily get the real position of the mouse in the Three.js canvas
- * to work with tools like the
- * [raycaster](https://threejs.org/docs/#api/en/core/Raycaster), even if it has
- * been transformed through CSS or doesn't occupy the whole screen.
+ * A helper to easily get the real position of the mouse in the Three.js canvas to work with tools like the [raycaster](https://threejs.org/docs/#api/en/core/Raycaster), even if it has been transformed through CSS or doesn't occupy the whole screen.
  */
 export class Mouse implements Disposable {
   private _event?: MouseEvent;

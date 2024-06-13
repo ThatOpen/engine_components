@@ -12,7 +12,7 @@ export abstract class BaseScene extends BaseWorldItem implements Disposable {
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
 
-   /**
+  /**
    * Abstract property representing the three.js object associated with this scene.
    * It should be implemented by subclasses.
    */

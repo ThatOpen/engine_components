@@ -5,15 +5,32 @@ import { IfcPropertiesUtils } from "../Utils";
 import { IfcLoader } from "../../fragments/IfcLoader";
 import { UUID } from "../../utils";
 
-type BooleanPropTypes = "IfcBoolean" | "IfcLogical";
-type StringPropTypes = "IfcText" | "IfcLabel" | "IfcIdentifier";
-type NumericPropTypes = "IfcInteger" | "IfcReal";
+/**
+ * Types for boolean properties in IFC schema.
+ */
+export type BooleanPropTypes = "IfcBoolean" | "IfcLogical";
 
-interface ChangeMap {
+/**
+ * Types for string properties in IFC schema.
+ */
+export type StringPropTypes = "IfcText" | "IfcLabel" | "IfcIdentifier";
+
+/**
+ * Types for numeric properties in IFC schema.
+ */
+export type NumericPropTypes = "IfcInteger" | "IfcReal";
+
+/**
+ * Interface representing a map of changed entities in a model. The keys are model UUIDs, and the values are sets of express IDs of changed entities.
+ */
+export interface ChangeMap {
   [modelID: string]: Set<number>;
 }
 
-interface AttributeListener {
+/**
+ * Interface representing a map of attribute listeners. The keys are model UUIDs, and the values are objects with express IDs as keys, and objects with attribute names as keys, and Event objects as values.
+ */
+export interface AttributeListener {
   [modelID: string]: {
     [expressID: number]: {
       [attributeName: string]: Event<String | Boolean | Number>;
@@ -21,48 +38,87 @@ interface AttributeListener {
   };
 }
 
+/**
+ * Component to manage and edit properties and Psets in IFC files.
+ */
 export class IfcPropertiesManager extends Component implements Disposable {
+  /**
+   * A unique identifier for the component.
+   * This UUID is used to register the component within the Components system.
+   */
   static readonly uuid = "58c2d9f0-183c-48d6-a402-dfcf5b9a34df" as const;
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
 
+  /**
+   * Event triggered when a file is requested for export.
+   */
   readonly onRequestFile = new Event();
+
+  /**
+   * ArrayBuffer containing the IFC data to be exported.
+   */
   ifcToExport: ArrayBuffer | null = null;
 
+  /**
+   * Event triggered when an element is added to a Pset.
+   */
   readonly onElementToPset = new Event<{
     model: FragmentsGroup;
     psetID: number;
     elementID: number;
   }>();
 
+  /**
+   * Event triggered when a property is added to a Pset.
+   */
   readonly onPropToPset = new Event<{
     model: FragmentsGroup;
     psetID: number;
     propID: number;
   }>();
 
+  /**
+   * Event triggered when a Pset is removed.
+   */
   readonly onPsetRemoved = new Event<{
     model: FragmentsGroup;
     psetID: number;
   }>();
 
+  /**
+   * Event triggered when data in the model changes.
+   */
   readonly onDataChanged = new Event<{
     model: FragmentsGroup;
     expressID: number;
   }>();
 
+  /**
+   * Configuration for the WebAssembly module.
+   */
   wasm = {
     path: "/",
     absolute: false,
   };
 
+  /** {@link Component.enabled} */
   enabled = true;
 
+  /**
+   * Map of attribute listeners.
+   */
   attributeListeners: AttributeListener = {};
 
+  /**
+   * The currently selected model.
+   */
   selectedModel?: FragmentsGroup;
 
+  /**
+   * Map of changed entities in the model.
+   */
   changeMap: ChangeMap = {};
 
   constructor(components: Components) {
@@ -70,6 +126,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
     this.components.add(IfcPropertiesManager.uuid, this);
   }
 
+  /** {@link Disposable.dispose} */
   dispose() {
     this.selectedModel = undefined;
     this.attributeListeners = {};
@@ -82,11 +139,13 @@ export class IfcPropertiesManager extends Component implements Disposable {
     this.onDisposed.reset();
   }
 
-  private increaseMaxID(model: FragmentsGroup) {
-    model.ifcMetadata.maxExpressID++;
-    return model.ifcMetadata.maxExpressID;
-  }
-
+  /**
+   * Static method to retrieve the IFC schema from a given model.
+   *
+   * @param model - The FragmentsGroup model from which to retrieve the IFC schema.
+   * @throws Will throw an error if the IFC schema is not found in the model.
+   * @returns The IFC schema associated with the given model.
+   */
   static getIFCSchema(model: FragmentsGroup) {
     const schema = model.ifcMetadata.schema;
     if (!schema) {
@@ -95,34 +154,18 @@ export class IfcPropertiesManager extends Component implements Disposable {
     return schema;
   }
 
-  private newGUID(model: FragmentsGroup) {
-    const schema = IfcPropertiesManager.getIFCSchema(model);
-    return new WEBIFC[schema].IfcGloballyUniqueId(UUID.create());
-  }
-
-  private async getOwnerHistory(model: FragmentsGroup) {
-    const ownerHistories = await model.getAllPropertiesOfType(
-      WEBIFC.IFCOWNERHISTORY,
-    );
-    if (!ownerHistories) {
-      throw new Error("No OwnerHistory was found.");
-    }
-    const keys = Object.keys(ownerHistories).map((key) => parseInt(key, 10));
-    const ownerHistory = ownerHistories[keys[0]];
-    const ownerHistoryHandle = new WEBIFC.Handle(ownerHistory.expressID);
-    return { ownerHistory, ownerHistoryHandle };
-  }
-
-  private registerChange(model: FragmentsGroup, ...expressID: number[]) {
-    if (!this.changeMap[model.uuid]) {
-      this.changeMap[model.uuid] = new Set();
-    }
-    for (const id of expressID) {
-      this.changeMap[model.uuid].add(id);
-      this.onDataChanged.trigger({ model, expressID: id });
-    }
-  }
-
+  /**
+   * Method to set properties data in the model.
+   *
+   * @param model - The FragmentsGroup model in which to set the properties.
+   * @param dataToSave - An array of objects representing the properties to be saved.
+   * Each object must have an `expressID` property, which is the express ID of the entity in the model.
+   * The rest of the properties will be set as the properties of the entity.
+   *
+   * @returns {Promise<void>} A promise that resolves when all the properties have been set.
+   *
+   * @throws Will throw an error if any of the `expressID` properties are missing in the `dataToSave` array.
+   */
   async setData(model: FragmentsGroup, ...dataToSave: Record<string, any>[]) {
     for (const data of dataToSave) {
       const expressID = data.expressID;
@@ -132,6 +175,18 @@ export class IfcPropertiesManager extends Component implements Disposable {
     }
   }
 
+  /**
+   * Creates a new Property Set (Pset) in the given model.
+   *
+   * @param model - The FragmentsGroup model in which to create the Pset.
+   * @param name - The name of the Pset.
+   * @param description - (Optional) The description of the Pset.
+   *
+   * @returns A promise that resolves with an object containing the newly created Pset and its relation.
+   *
+   * @throws Will throw an error if the IFC schema is not found in the model.
+   * @throws Will throw an error if no OwnerHistory is found in the model.
+   */
   async newPset(model: FragmentsGroup, name: string, description?: string) {
     const schema = IfcPropertiesManager.getIFCSchema(model);
     const { ownerHistoryHandle } = await this.getOwnerHistory(model);
@@ -168,6 +223,18 @@ export class IfcPropertiesManager extends Component implements Disposable {
     return { pset, rel };
   }
 
+  /**
+   * Removes a Property Set (Pset) from the given model.
+   *
+   * @param model - The FragmentsGroup model from which to remove the Pset.
+   * @param psetID - The express IDs of the Psets to be removed.
+   *
+   * @returns {Promise<void>} A promise that resolves when all the Psets have been removed.
+   *
+   * @throws Will throw an error if any of the `expressID` properties are missing in the `psetID` array.
+   * @throws Will throw an error if the Pset to be removed is not of type `IFCPROPERTYSET`.
+   * @throws Will throw an error if no relation is found between the Pset and the model.
+   */
   async removePset(model: FragmentsGroup, ...psetID: number[]) {
     for (const expressID of psetID) {
       const pset = await model.getProperties(expressID);
@@ -188,27 +255,19 @@ export class IfcPropertiesManager extends Component implements Disposable {
     }
   }
 
-  private async newSingleProperty(
-    model: FragmentsGroup,
-    type: string,
-    name: string,
-    value: string | number | boolean,
-  ) {
-    const schema = IfcPropertiesManager.getIFCSchema(model);
-    const propName = new WEBIFC[schema].IfcIdentifier(name);
-    // @ts-ignore
-    const propValue = new WEBIFC[schema][type](value);
-    const prop = new WEBIFC[schema].IfcPropertySingleValue(
-      propName,
-      null,
-      propValue,
-      null,
-    );
-    prop.expressID = this.increaseMaxID(model);
-    await this.setData(model, prop);
-    return prop;
-  }
-
+  /**
+   * Creates a new single-value property of type string in the given model.
+   *
+   * @param model - The FragmentsGroup model in which to create the property.
+   * @param type - The type of the property value. Must be a string property type.
+   * @param name - The name of the property.
+   * @param value - The value of the property. Must be a string.
+   *
+   * @returns The newly created single-value property.
+   *
+   * @throws Will throw an error if the IFC schema is not found in the model.
+   * @throws Will throw an error if no OwnerHistory is found in the model.
+   */
   newSingleStringProperty(
     model: FragmentsGroup,
     type: StringPropTypes,
@@ -218,6 +277,19 @@ export class IfcPropertiesManager extends Component implements Disposable {
     return this.newSingleProperty(model, type, name, value);
   }
 
+  /**
+   * Creates a new single-value property of type numeric in the given model.
+   *
+   * @param model - The FragmentsGroup model in which to create the property.
+   * @param type - The type of the property value. Must be a numeric property type.
+   * @param name - The name of the property.
+   * @param value - The value of the property. Must be a number.
+   *
+   * @returns The newly created single-value property.
+   *
+   * @throws Will throw an error if the IFC schema is not found in the model.
+   * @throws Will throw an error if no OwnerHistory is found in the model.
+   */
   newSingleNumericProperty(
     model: FragmentsGroup,
     type: NumericPropTypes,
@@ -227,6 +299,19 @@ export class IfcPropertiesManager extends Component implements Disposable {
     return this.newSingleProperty(model, type, name, value);
   }
 
+  /**
+   * Creates a new single-value property of type boolean in the given model.
+   *
+   * @param model - The FragmentsGroup model in which to create the property.
+   * @param type - The type of the property value. Must be a boolean property type.
+   * @param name - The name of the property.
+   * @param value - The value of the property. Must be a boolean.
+   *
+   * @returns The newly created single-value property.
+   *
+   * @throws Will throw an error if the IFC schema is not found in the model.
+   * @throws Will throw an error if no OwnerHistory is found in the model.
+   */
   newSingleBooleanProperty(
     model: FragmentsGroup,
     type: BooleanPropTypes,
@@ -236,6 +321,18 @@ export class IfcPropertiesManager extends Component implements Disposable {
     return this.newSingleProperty(model, type, name, value);
   }
 
+  /**
+   * Removes a property from a Property Set (Pset) in the given model.
+   *
+   * @param model - The FragmentsGroup model from which to remove the property.
+   * @param psetID - The express ID of the Pset from which to remove the property.
+   * @param propID - The express ID of the property to be removed.
+   *
+   * @returns {Promise<void>} A promise that resolves when the property has been removed.
+   *
+   * @throws Will throw an error if the Pset or the property to be removed are not found in the model.
+   * @throws Will throw an error if the Pset to be removed is not of type `IFCPROPERTYSET`.
+   */
   async removePsetProp(model: FragmentsGroup, psetID: number, propID: number) {
     const pset = await model.getProperties(psetID);
     const prop = await model.getProperties(propID);
@@ -269,6 +366,19 @@ export class IfcPropertiesManager extends Component implements Disposable {
     this.registerChange(model, psetID);
   }
 
+  /**
+   * Adds elements to a Property Set (Pset) in the given model.
+   *
+   * @param model - The FragmentsGroup model in which to add the elements.
+   * @param psetID - The express ID of the Pset to which to add the elements.
+   * @param elementID - The express IDs of the elements to be added.
+   *
+   * @returns {Promise<void>} A promise that resolves when all the elements have been added.
+   *
+   * @throws Will throw an error if the Pset or the elements to be added are not found in the model.
+   * @throws Will throw an error if the Pset to be added to is not of type `IFCPROPERTYSET`.
+   * @throws Will throw an error if no relation is found between the Pset and the model.
+   */
   async addPropToPset(
     model: FragmentsGroup,
     psetID: number,
@@ -287,6 +397,16 @@ export class IfcPropertiesManager extends Component implements Disposable {
     this.registerChange(model, psetID);
   }
 
+  /**
+   * Saves the changes made to the model to a new IFC file.
+   *
+   * @param model - The FragmentsGroup model from which to save the changes.
+   * @param ifcToSaveOn - The Uint8Array representing the original IFC file.
+   *
+   * @returns A promise that resolves with the modified IFC data as a Uint8Array.
+   *
+   * @throws Will throw an error if any issues occur during the saving process.
+   */
   async saveToIfc(model: FragmentsGroup, ifcToSaveOn: Uint8Array) {
     const ifcLoader = this.components.get(IfcLoader);
     const ifcApi = ifcLoader.webIfc;
@@ -315,6 +435,20 @@ export class IfcPropertiesManager extends Component implements Disposable {
     return modifiedIFC;
   }
 
+  /**
+   * Sets an attribute listener for a specific attribute of an entity in the model.
+   * The listener will trigger an event whenever the attribute's value changes.
+   *
+   * @param model - The FragmentsGroup model in which to set the attribute listener.
+   * @param expressID - The express ID of the entity for which to set the listener.
+   * @param attributeName - The name of the attribute for which to set the listener.
+   *
+   * @returns The event that will be triggered when the attribute's value changes.
+   *
+   * @throws Will throw an error if the entity with the given expressID doesn't exist.
+   * @throws Will throw an error if the attribute is an array or null, and it can't have a listener.
+   * @throws Will throw an error if the attribute has a badly defined handle.
+   */
   async setAttributeListener(
     model: FragmentsGroup,
     expressID: number,
@@ -364,5 +498,59 @@ export class IfcPropertiesManager extends Component implements Disposable {
     this.attributeListeners[model.uuid][expressID][attributeName] = event;
 
     return event;
+  }
+
+  private increaseMaxID(model: FragmentsGroup) {
+    model.ifcMetadata.maxExpressID++;
+    return model.ifcMetadata.maxExpressID;
+  }
+
+  private newGUID(model: FragmentsGroup) {
+    const schema = IfcPropertiesManager.getIFCSchema(model);
+    return new WEBIFC[schema].IfcGloballyUniqueId(UUID.create());
+  }
+
+  private async getOwnerHistory(model: FragmentsGroup) {
+    const ownerHistories = await model.getAllPropertiesOfType(
+      WEBIFC.IFCOWNERHISTORY,
+    );
+    if (!ownerHistories) {
+      throw new Error("No OwnerHistory was found.");
+    }
+    const keys = Object.keys(ownerHistories).map((key) => parseInt(key, 10));
+    const ownerHistory = ownerHistories[keys[0]];
+    const ownerHistoryHandle = new WEBIFC.Handle(ownerHistory.expressID);
+    return { ownerHistory, ownerHistoryHandle };
+  }
+
+  private registerChange(model: FragmentsGroup, ...expressID: number[]) {
+    if (!this.changeMap[model.uuid]) {
+      this.changeMap[model.uuid] = new Set();
+    }
+    for (const id of expressID) {
+      this.changeMap[model.uuid].add(id);
+      this.onDataChanged.trigger({ model, expressID: id });
+    }
+  }
+
+  private async newSingleProperty(
+    model: FragmentsGroup,
+    type: string,
+    name: string,
+    value: string | number | boolean,
+  ) {
+    const schema = IfcPropertiesManager.getIFCSchema(model);
+    const propName = new WEBIFC[schema].IfcIdentifier(name);
+    // @ts-ignore
+    const propValue = new WEBIFC[schema][type](value);
+    const prop = new WEBIFC[schema].IfcPropertySingleValue(
+      propName,
+      null,
+      propValue,
+      null,
+    );
+    prop.expressID = this.increaseMaxID(model);
+    await this.setData(model, prop);
+    return prop;
   }
 }

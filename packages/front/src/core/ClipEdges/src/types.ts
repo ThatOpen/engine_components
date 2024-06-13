@@ -4,8 +4,7 @@ import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeome
 import { ClippingFills } from "./clipping-fills";
 
 /**
- * A style defines the appearance of the lines of the {@link ClippingEdges} for
- * a set of meshes.
+ * A style defines the appearance of the lines of the {@link ClippingEdges} for a set of meshes.
  */
 export interface ClipStyle {
   /** The name of the style. */
@@ -38,8 +37,7 @@ export interface ClipStyle {
 }
 
 /**
- * The lines that are drawn when the clipping plane cuts the geometry specified
- * by the {@link ClipStyle}.
+ * The lines that are drawn when the clipping plane cuts the geometry specified by the {@link ClipStyle}.
  */
 export interface Edge {
   /** The name of the style to which this Edges belong. */
@@ -53,8 +51,7 @@ export interface Edge {
 }
 
 /**
- * A line segments geometry whose
- * [BVH](https://github.com/gkjohnson/three-mesh-bvh) has been computed.
+ * A line segments geometry whose [BVH](https://github.com/gkjohnson/three-mesh-bvh) has been computed.
  */
 export interface BvhLineSegmentsGeometry extends LineSegmentsGeometry {
   /** The computed BVH. */

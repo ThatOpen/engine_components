@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { Resizeable, Updateable, World, Event, Disposable } from "../../Types";
 
 /**
- * A class representing a 2D minimap in a 3D world.
+ * A class representing a 2D minimap of a 3D world.
  */
 export class MiniMap implements Resizeable, Updateable, Disposable {
   /** {@link Disposable.onDisposed} */
@@ -65,18 +65,18 @@ export class MiniMap implements Resizeable, Updateable, Disposable {
   private readonly down = new THREE.Vector3(0, -1, 0);
 
   /**
- * Gets or sets whether the minimap rotation is locked.
- * When rotation is locked, the minimap will always face the same direction as the camera.
- */
+   * Gets or sets whether the minimap rotation is locked.
+   * When rotation is locked, the minimap will always face the same direction as the camera.
+   */
   get lockRotation() {
     return this._lockRotation;
   }
 
   /**
- * Sets whether the minimap rotation is locked.
- * When rotation is locked, the minimap will always face the same direction as the camera.
- * @param active - If `true`, rotation is locked. If `false`, rotation is not locked.
- */
+   * Sets whether the minimap rotation is locked.
+   * When rotation is locked, the minimap will always face the same direction as the camera.
+   * @param active - If `true`, rotation is locked. If `false`, rotation is not locked.
+   */
   set lockRotation(active: boolean) {
     this._lockRotation = active;
     if (active) {
@@ -85,19 +85,19 @@ export class MiniMap implements Resizeable, Updateable, Disposable {
   }
 
   /**
- * Gets the current zoom level of the minimap.
- * The zoom level determines how much of the world is visible on the minimap.
- * @returns The current zoom level of the minimap.
- */
+   * Gets the current zoom level of the minimap.
+   * The zoom level determines how much of the world is visible on the minimap.
+   * @returns The current zoom level of the minimap.
+   */
   get zoom() {
     return this._camera.zoom;
   }
 
   /**
- * Sets the zoom level of the minimap.
- * The zoom level determines how much of the world is visible on the minimap.
- * @param value - The new zoom level of the minimap.
- */
+   * Sets the zoom level of the minimap.
+   * The zoom level determines how much of the world is visible on the minimap.
+   * @param value - The new zoom level of the minimap.
+   */
   set zoom(value: number) {
     this._camera.zoom = value;
     this._camera.updateProjectionMatrix();

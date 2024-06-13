@@ -47,7 +47,6 @@ world.scene.setup();
 const grids = components.get(OBC.Grids);
 grids.create(world);
 
-
 /* MD
 
   We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
@@ -70,7 +69,9 @@ world.scene.three.background = null;
 */
 
 const fragments = new OBC.FragmentsManager(components);
-const file = await fetch("https://thatopen.github.io/engine_components/resources/small.frag");
+const file = await fetch(
+  "https://thatopen.github.io/engine_components/resources/small.frag",
+);
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = fragments.load(buffer);
@@ -115,8 +116,6 @@ highlighter.events.select.onHighlight.add((event) => {
 highlighter.events.select.onClear.add(() => {
   dimensions.clear();
 });
-
-
 
 /* MD
   ### ⏱️ Measuring the performance (optional)

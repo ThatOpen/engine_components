@@ -92,7 +92,9 @@ world.scene.three.background = null;
 */
 
 const fragments = components.get(OBC.FragmentsManager);
-const file = await fetch("https://thatopen.github.io/engine_components/resources/road.frag");
+const file = await fetch(
+  "https://thatopen.github.io/engine_components/resources/road.frag",
+);
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = fragments.load(buffer);

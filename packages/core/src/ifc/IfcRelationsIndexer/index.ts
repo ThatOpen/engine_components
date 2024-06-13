@@ -12,20 +12,46 @@ import { relToAttributesMap } from "./src/relToAttributesMap";
 
 // TODO: Refactor to combine logic from process and processFromWebIfc
 
+export type { InverseAttribute, RelationsMap } from "./src/types";
+
 /**
- * Indexer for IFC entities, facilitating the indexing and retrieval of IFC entity relationships. It is designed to process models properties by indexing their IFC entities' relations based on predefined inverse attributes, and provides methods to query these relations.
+ * Indexer component for IFC entities, facilitating the indexing and retrieval of IFC entity relationships. It is designed to process models properties by indexing their IFC entities' relations based on predefined inverse attributes, and provides methods to query these relations. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/IfcRelationsIndexer). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/IfcRelationsIndexer).
  */
 export class IfcRelationsIndexer extends Component implements Disposable {
+  /**
+   * A unique identifier for the component.
+   * This UUID is used to register the component within the Components system.
+   */
   static readonly uuid = "23a889ab-83b3-44a4-8bee-ead83438370b" as const;
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
-  enabled: boolean = true;
 
+  /**
+   * Event triggered when relations for a model have been indexed.
+   * This event provides the model's UUID and the relations map generated for that model.
+   *
+   * @property {string} modelID - The UUID of the model for which relations have been indexed.
+   * @property {RelationsMap} relationsMap - The relations map generated for the specified model.
+   * The map keys are expressIDs of entities, and the values are maps where each key is a relation type ID and its value is an array of expressIDs of entities related through that relation type.
+   */
   readonly onRelationsIndexed = new Event<{
     modelID: string;
     relationsMap: RelationsMap;
   }>();
+
+  /**
+   * Holds the relationship mappings for each model processed by the indexer.
+   * The structure is a map where each key is a model's UUID, and the value is another map.
+   * This inner map's keys are entity expressIDs, and its values are maps where each key is an index
+   * representing a specific relation type, and the value is an array of expressIDs of entities
+   * that are related through that relation type. This structure allows for efficient querying
+   * of entity relationships within a model.
+   */
+  readonly relationMaps: ModelsRelationMap = {};
+
+  /** {@link Component.enabled} */
+  enabled: boolean = true;
 
   private _relToAttributesMap = relToAttributesMap;
 
@@ -56,16 +82,6 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     WEBIFC.IFCRELDEFINESBYTEMPLATE,
     WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE,
   ] as const;
-
-  /**
-   * Holds the relationship mappings for each model processed by the indexer.
-   * The structure is a map where each key is a model's UUID, and the value is another map.
-   * This inner map's keys are entity expressIDs, and its values are maps where each key is an index
-   * representing a specific relation type, and the value is an array of expressIDs of entities
-   * that are related through that relation type. This structure allows for efficient querying
-   * of entity relationships within a model.
-   */
-  readonly relationMaps: ModelsRelationMap = {};
 
   constructor(components: Components) {
     super(components);
@@ -329,11 +345,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     return indexMap;
   }
 
-  /**
-   * Disposes the component, cleaning up resources and detaching event listeners.
-   * This ensures that the component is properly cleaned up and does not leave behind any
-   * references that could prevent garbage collection.
-   */
+  /** {@link Disposable.dispose} */
   dispose() {
     (this.relationMaps as any) = {};
     const fragmentManager = this.components.get(FragmentsManager);
@@ -342,5 +354,3 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     this.onDisposed.reset();
   }
 }
-
-export type { InverseAttribute, RelationsMap } from "./src/types";

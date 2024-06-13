@@ -65,7 +65,6 @@ grids.create(world);
 
 world.scene.three.background = null;
 
-
 /* MD
   ### 🧳 Loading a BIM model
   ---
@@ -82,7 +81,9 @@ world.scene.three.background = null;
 */
 
 const fragments = new OBC.FragmentsManager(components);
-const fragFile = await fetch("https://thatopen.github.io/engine_components/resources/small.frag");
+const fragFile = await fetch(
+  "https://thatopen.github.io/engine_components/resources/small.frag",
+);
 const fragData = await fragFile.arrayBuffer();
 const fragBuffer = new Uint8Array(fragData);
 const model = fragments.load(fragBuffer);
@@ -214,7 +215,9 @@ propsStreamer.onIndicesStreamed.add(async (props) => {
 */
 
 async function processFile() {
-  const fetchedIfc = await fetch("https://thatopen.github.io/engine_components/resources/small.ifc");
+  const fetchedIfc = await fetch(
+    "https://thatopen.github.io/engine_components/resources/small.ifc",
+  );
   const ifcBuffer = await fetchedIfc.arrayBuffer();
   // We will need this information later to also convert the properties
   const ifcArrayBuffer = new Uint8Array(ifcBuffer);

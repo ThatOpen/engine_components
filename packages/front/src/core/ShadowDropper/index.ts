@@ -3,41 +3,114 @@ import * as OBC from "@thatopen/components";
 import { HorizontalBlurShader } from "three/examples/jsm/shaders/HorizontalBlurShader.js";
 import { VerticalBlurShader } from "three/examples/jsm/shaders/VerticalBlurShader.js";
 
-// TODO: Clean up and document this
-
+/**
+ * Represents a shadow object used in the application.
+ */
 export interface Shadow {
+  /**
+   * The root group of the shadow.
+   */
   root: THREE.Group;
+
+  /**
+   * The render target for the shadow texture.
+   */
   rt: THREE.WebGLRenderTarget;
+
+  /**
+   * The render target for the blurred shadow texture.
+   */
   rtBlur: THREE.WebGLRenderTarget;
+
+  /**
+   * The mesh used for blurring the shadow.
+   */
   blurPlane: THREE.Mesh;
+
+  /**
+   * The camera used to render the shadow.
+   */
   camera: THREE.Camera;
+
+  /**
+   * The world in which the shadow is rendered.
+   */
   world: OBC.World;
 }
 
+/**
+ * Represents a collection of shadows, where each shadow is identified by a unique ID. The keys of the object are the IDs, and the values are the corresponding {@link Shadow} objects.
+ */
 export interface Shadows {
   [id: string]: Shadow;
 }
 
+/**
+ * This component drops shadows on meshes in a 3D scene. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/ShadowDropper). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/ShadowDropper).
+ */
 export class ShadowDropper extends OBC.Component implements OBC.Disposable {
+  /**
+   * A unique identifier for the component.
+   * This UUID is used to register the component within the Components system.
+   */
   static readonly uuid = "f833a09a-a3ab-4c58-b03e-da5298c7a1b6" as const;
 
-  /** {@link Disposable.onDisposed} */
+  /** {@link OBC.Disposable.onDisposed} */
   readonly onDisposed = new OBC.Event();
 
+  /** {@link OBC.Component.enabled} */
   enabled = true;
 
-  // Controls how far away the shadow is computed
+  /**
+   * Controls how far away the shadow is computed
+   */
   cameraHeight = 10;
 
+  /**
+   * The darkness of the shadow.
+   * A higher value makes the shadow darker.
+   */
   darkness = 1.2;
+
+  /**
+   * The opacity of the shadow.
+   * A higher value makes the shadow more opaque.
+   */
   opacity = 1;
+
+  /**
+   * The resolution of the shadow texture.
+   * A higher value results in a higher-quality shadow.
+   */
   resolution = 512;
+
+  /**
+   * The amount of blur applied to the shadow.
+   * A higher value makes the shadow more blurred.
+   */
   amount = 3.5;
+
+  /**
+   * The color of the shadow plane.
+   * This color is used when the ground color plane is enabled.
+   */
   planeColor = 0xffffff;
+
+  /**
+   * The offset of the shadow from the ground.
+   * A positive value moves the shadow upwards.
+   */
   shadowOffset = 0;
 
+  /**
+   * The extra scale factor applied to the shadow size.
+   * A higher value makes the shadow larger.
+   */
   shadowExtraScaleFactor = 1.5;
 
+  /**
+   * A collection of shadows, where each shadow is identified by a unique ID.
+   */
   list: Shadows = {};
 
   private tempMaterial = new THREE.MeshBasicMaterial({ visible: false });
@@ -51,7 +124,7 @@ export class ShadowDropper extends OBC.Component implements OBC.Disposable {
     this.initializeDepthMaterial();
   }
 
-  /** {@link Disposable.dispose} */
+  /** {@link OBC.Disposable.dispose} */
   dispose() {
     for (const id in this.list) {
       this.deleteShadow(id);

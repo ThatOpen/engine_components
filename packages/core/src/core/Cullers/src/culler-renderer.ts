@@ -4,7 +4,7 @@ import { readPixelsAsync } from "./screen-culler-helper";
 import { AsyncEvent, Event, World } from "../../Types";
 
 /**
- * Interface for settings to configure the CullerRenderer.
+ * Settings to configure the CullerRenderer.
  */
 export interface CullerRendererSettings {
   /**

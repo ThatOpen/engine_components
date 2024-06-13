@@ -1,21 +1,70 @@
 import * as THREE from "three";
 import { Component, Components } from "../../core";
 
+/**
+ * Represents an edge measurement result.
+ */
 export interface MeasureEdge {
+  /**
+   * The distance between the two points of the edge.
+   */
   distance: number;
+
+  /**
+   * The two points that define the edge.
+   */
   points: THREE.Vector3[];
 }
 
+/**
+ * Utility component for performing measurements on 3D meshes by providing methods for measuring distances between edges and faces. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/MeasurementUtils). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/MeasurementUtils).
+ */
 export class MeasurementUtils extends Component {
-  enabled = true;
-
+  /**
+   * A unique identifier for the component.
+   * This UUID is used to register the component within the Components system.
+   */
   static uuid = "267ca032-672f-4cb0-afa9-d24e904f39d6";
+
+  /** {@link Component.enabled} */
+  enabled = true;
 
   constructor(components: Components) {
     super(components);
     components.add(MeasurementUtils.uuid, this);
   }
 
+  /**
+   * Utility method to calculate the distance from a point to a line segment.
+   *
+   * @param point - The point from which to calculate the distance.
+   * @param lineStart - The start point of the line segment.
+   * @param lineEnd - The end point of the line segment.
+   * @param clamp - If true, the distance will be clamped to the line segment's length.
+   * @returns The distance from the point to the line segment.
+   */
+  static distanceFromPointToLine(
+    point: THREE.Vector3,
+    lineStart: THREE.Vector3,
+    lineEnd: THREE.Vector3,
+    clamp = false,
+  ) {
+    const tempLine = new THREE.Line3();
+    const tempPoint = new THREE.Vector3();
+    tempLine.set(lineStart, lineEnd);
+    tempLine.closestPointToPoint(point, clamp, tempPoint);
+    return tempPoint.distanceTo(point);
+  }
+
+  /**
+   * Method to get the face of a mesh that contains a given triangle index.
+   * It also returns the edges of the found face and their indices.
+   *
+   * @param mesh - The mesh to get the face from. It must be indexed.
+   * @param triangleIndex - The index of the triangle within the mesh.
+   * @param instance - The instance of the mesh (optional).
+   * @returns An object containing the edges of the found face and their indices, or null if no face was found.
+   */
   getFace(
     mesh: THREE.InstancedMesh | THREE.Mesh,
     triangleIndex: number,
@@ -164,17 +213,75 @@ export class MeasurementUtils extends Component {
     return null;
   }
 
-  static distanceFromPointToLine(
-    point: THREE.Vector3,
-    lineStart: THREE.Vector3,
-    lineEnd: THREE.Vector3,
-    clamp = false,
+  /**
+   * Method to get the vertices and normal of a mesh face at a given index.
+   * It also applies instance transformation if provided.
+   *
+   * @param mesh - The mesh to get the face from. It must be indexed.
+   * @param faceIndex - The index of the face within the mesh.
+   * @param instance - The instance of the mesh (optional).
+   * @returns An object containing the vertices and normal of the face.
+   * @throws Will throw an error if the geometry is not indexed.
+   */
+  getVerticesAndNormal(
+    mesh: THREE.Mesh | THREE.InstancedMesh,
+    faceIndex: number,
+    instance: number | undefined,
   ) {
-    const tempLine = new THREE.Line3();
-    const tempPoint = new THREE.Vector3();
-    tempLine.set(lineStart, lineEnd);
-    tempLine.closestPointToPoint(point, clamp, tempPoint);
-    return tempPoint.distanceTo(point);
+    if (!mesh.geometry.index) {
+      throw new Error("Geometry must be indexed!");
+    }
+
+    const indices = mesh.geometry.index.array;
+
+    const pos = mesh.geometry.attributes.position.array;
+    const nor = mesh.geometry.attributes.normal.array;
+
+    const i1 = indices[faceIndex * 3] * 3;
+    const i2 = indices[faceIndex * 3 + 1] * 3;
+    const i3 = indices[faceIndex * 3 + 2] * 3;
+
+    const p1 = new THREE.Vector3(pos[i1], pos[i1 + 1], pos[i1 + 2]);
+    const p2 = new THREE.Vector3(pos[i2], pos[i2 + 1], pos[i2 + 2]);
+    const p3 = new THREE.Vector3(pos[i3], pos[i3 + 1], pos[i3 + 2]);
+
+    const n1 = new THREE.Vector3(nor[i1], nor[i1 + 1], nor[i1 + 2]);
+    const n2 = new THREE.Vector3(nor[i2], nor[i2 + 1], nor[i2 + 2]);
+    const n3 = new THREE.Vector3(nor[i3], nor[i3 + 1], nor[i3 + 2]);
+
+    const averageNx = (n1.x + n2.x + n3.x) / 3;
+    const averageNy = (n1.y + n2.y + n3.y) / 3;
+    const averageNz = (n1.z + n2.z + n3.z) / 3;
+    const faceNormal = new THREE.Vector3(averageNx, averageNy, averageNz);
+
+    // Apply instance transformation to vertex and normal
+
+    if (instance !== undefined && mesh instanceof THREE.InstancedMesh) {
+      const transform = new THREE.Matrix4();
+      mesh.getMatrixAt(instance, transform);
+      const rotation = new THREE.Matrix4();
+      rotation.extractRotation(transform);
+      faceNormal.applyMatrix4(rotation);
+      p1.applyMatrix4(transform);
+      p2.applyMatrix4(transform);
+      p3.applyMatrix4(transform);
+    }
+
+    return { p1, p2, p3, faceNormal };
+  }
+
+  /**
+   * Method to round the vector's components to a specified number of decimal places.
+   * This is used to ensure numerical precision in edge detection.
+   *
+   * @param vector - The vector to round.
+   * @returns The vector with rounded components.
+   */
+  round(vector: THREE.Vector3) {
+    const factor = 1000;
+    vector.x = Math.trunc(vector.x * factor) / factor;
+    vector.y = Math.trunc(vector.y * factor) / factor;
+    vector.z = Math.trunc(vector.z * factor) / factor;
   }
 
   private getFaceData(
@@ -241,59 +348,5 @@ export class MeasurementUtils extends Component {
     plane.setFromNormalAndCoplanarPoint(faceNormal, p1);
     plane.constant = Math.round(plane.constant * 10) / 10;
     return { plane, edges };
-  }
-
-  getVerticesAndNormal(
-    mesh: THREE.Mesh | THREE.InstancedMesh,
-    faceIndex: number,
-    instance: number | undefined,
-  ) {
-    if (!mesh.geometry.index) {
-      throw new Error("Geometry must be indexed!");
-    }
-
-    const indices = mesh.geometry.index.array;
-
-    const pos = mesh.geometry.attributes.position.array;
-    const nor = mesh.geometry.attributes.normal.array;
-
-    const i1 = indices[faceIndex * 3] * 3;
-    const i2 = indices[faceIndex * 3 + 1] * 3;
-    const i3 = indices[faceIndex * 3 + 2] * 3;
-
-    const p1 = new THREE.Vector3(pos[i1], pos[i1 + 1], pos[i1 + 2]);
-    const p2 = new THREE.Vector3(pos[i2], pos[i2 + 1], pos[i2 + 2]);
-    const p3 = new THREE.Vector3(pos[i3], pos[i3 + 1], pos[i3 + 2]);
-
-    const n1 = new THREE.Vector3(nor[i1], nor[i1 + 1], nor[i1 + 2]);
-    const n2 = new THREE.Vector3(nor[i2], nor[i2 + 1], nor[i2 + 2]);
-    const n3 = new THREE.Vector3(nor[i3], nor[i3 + 1], nor[i3 + 2]);
-
-    const averageNx = (n1.x + n2.x + n3.x) / 3;
-    const averageNy = (n1.y + n2.y + n3.y) / 3;
-    const averageNz = (n1.z + n2.z + n3.z) / 3;
-    const faceNormal = new THREE.Vector3(averageNx, averageNy, averageNz);
-
-    // Apply instance transformation to vertex and normal
-
-    if (instance !== undefined && mesh instanceof THREE.InstancedMesh) {
-      const transform = new THREE.Matrix4();
-      mesh.getMatrixAt(instance, transform);
-      const rotation = new THREE.Matrix4();
-      rotation.extractRotation(transform);
-      faceNormal.applyMatrix4(rotation);
-      p1.applyMatrix4(transform);
-      p2.applyMatrix4(transform);
-      p3.applyMatrix4(transform);
-    }
-
-    return { p1, p2, p3, faceNormal };
-  }
-
-  private round(vector: THREE.Vector3) {
-    const factor = 1000;
-    vector.x = Math.trunc(vector.x * factor) / factor;
-    vector.y = Math.trunc(vector.y * factor) / factor;
-    vector.z = Math.trunc(vector.z * factor) / factor;
   }
 }

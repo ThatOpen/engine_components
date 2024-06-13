@@ -19,7 +19,6 @@ In this tutorial, we will import:
 - `Stats.js` (optional) to measure the performance of our app.
 */
 
-
 import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
 import * as BUI from "@thatopen/ui";
@@ -35,7 +34,6 @@ import Stats from "stats.js";
 
 BUI.Manager.init();
 BUIC.Manager.init();
-
 
 /* MD
   ### 🌎 Setting up a simple scene
@@ -93,7 +91,9 @@ world.scene.three.background = null;
 */
 
 const fragments = components.get(OBC.FragmentsManager);
-const file = await fetch("https://thatopen.github.io/engine_components/resources/road.frag");
+const file = await fetch(
+  "https://thatopen.github.io/engine_components/resources/road.frag",
+);
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = fragments.load(buffer);

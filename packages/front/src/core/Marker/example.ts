@@ -63,7 +63,6 @@ grids.create(world);
 
 world.scene.three.background = null;
 
-
 /* MD
   ### 🖌️ Creating the marker
   ---
@@ -86,9 +85,8 @@ for (let i = 0; i < 20; i++) {
   const x = Math.random() * 5;
   const y = Math.random() * 5;
   const z = Math.random() * 5;
-  marker.create(world, "🚀", new THREE.Vector3(x, y, z),);
+  marker.create(world, "🚀", new THREE.Vector3(x, y, z));
 }
-
 
 /* MD 
   ### ⏱️ Measuring the performance (optional)
@@ -105,11 +103,9 @@ stats.dom.style.zIndex = "unset";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
 
-
 /* MD
   ### 🎉 Wrap up
   ---
 
   That's it! You have created an app that can display 2D elements inside the 3D scene. Congratulations!
 */
-

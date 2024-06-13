@@ -7,29 +7,38 @@ import { ClippingFills } from "./clipping-fills";
 import { PostproductionRenderer } from "../../PostproductionRenderer";
 import { ClipEdges } from "../index";
 
+/**
+ * Type definition for the Edges object. The Edges object is a dictionary where the keys are strings and the values are of type {@link Edge}. It is used to store and manage multiple {@link Edge} instances, each identified by a unique name.
+ */
 export type Edges = {
   [name: string]: Edge;
 };
 
 /**
- * The edges that are drawn when the {@link EdgesPlane} sections a mesh.
+ * Class representing the ClippingEdges component. This is responsible for managing and rendering the edges of clipped objects.
  */
 export class ClippingEdges
   implements OBC.Hideable, OBC.Disposable, OBC.Updateable
 {
+  /** {@link OBC.Disposable.onDisposed} */
   readonly onDisposed = new OBC.Event();
 
+  /** {@link OBC.Updateable.onAfterUpdate} */
   onAfterUpdate = new OBC.Event<Edge[]>();
 
+  /** {@link OBC.Updateable.onBeforeUpdate} */
   onBeforeUpdate = new OBC.Event<Edge[]>();
 
-  /** {@link Component.enabled}. */
+  /** Indicates whether the component is enabled. */
   enabled = true;
 
+  /** Indicates whether the fill needs to be updated. */
   fillNeedsUpdate = false;
 
+  /** Reference to the components manager. */
   components: OBC.Components;
 
+  /** Reference to the world. */
   world: OBC.World;
 
   protected _edges: Edges = {};
@@ -40,11 +49,12 @@ export class ClippingEdges
   protected _tempVector = new THREE.Vector3();
   protected _plane: THREE.Plane;
 
-  /** {@link Hideable.visible} */
+  /** {@link OBC.Hideable.visible} */
   get visible() {
     return this._visible;
   }
 
+  /** {@link OBC.Hideable.visible} */
   set visible(visible: boolean) {
     for (const name in this._edges) {
       const edges = this._edges[name];
@@ -70,7 +80,7 @@ export class ClippingEdges
     this._plane = plane;
   }
 
-  /** {@link Updateable.update} */
+  /** {@link OBC.Updateable.update} */
   update() {
     const edges = this.components.get(ClipEdges);
     const styles = edges.styles.list;
@@ -81,12 +91,12 @@ export class ClippingEdges
     this.fillNeedsUpdate = false;
   }
 
-  /** {@link Component.get} */
+  // TODO: Remove?
   get(): Edges {
     return this._edges;
   }
 
-  /** {@link Disposable.dispose} */
+  /** {@link OBC.Disposable.dispose} */
   dispose() {
     const names = Object.keys(this._edges);
     for (const name of names) {

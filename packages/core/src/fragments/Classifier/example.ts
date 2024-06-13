@@ -55,7 +55,6 @@ world.scene.setup();
 const grids = components.get(OBC.Grids);
 grids.create(world);
 
-
 /* MD
 
   We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
@@ -78,7 +77,9 @@ world.scene.three.background = null;
 */
 
 const fragments = new OBC.FragmentsManager(components);
-const file = await fetch("https://thatopen.github.io/engine_components/resources/small.frag");
+const file = await fetch(
+  "https://thatopen.github.io/engine_components/resources/small.frag",
+);
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = fragments.load(buffer);
@@ -99,7 +100,6 @@ Now we can classify the BIM model. The classifier includes 3 methods:
 - `byIfcrel`: classifies the model by an indirect relationship. In this case, we'll classify the model by its spatial structure (project, site, storey an space).
 - `byModel`: classifies the model by model. This might seem redundant, but it's useful if you have multiple BIM models in the same scene and want to quickly select all the objects of one of them.
 */
-
 
 classifier.byEntity(model);
 classifier.byIfcRel(model, WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE, "storeys");
@@ -158,7 +158,6 @@ world.renderer.onAfterUpdate.add(() => stats.end());
 
   We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
 */
-
 
 BUI.Manager.init();
 

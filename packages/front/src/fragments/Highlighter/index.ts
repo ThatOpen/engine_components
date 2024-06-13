@@ -2,59 +2,91 @@ import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
 import { FragmentIdMap, FragmentMesh } from "@thatopen/fragments";
-// import { FragmentManager, World } from "@thatopen/components";
-// import { PostproductionRenderer } from "../../core";
 
 // TODO: Clean up and document
 
-interface HighlightEvents {
+/**
+ * Interface defining the events that the Highlighter class can trigger. Each highlighter has its own set of events, identified by the highlighter name.
+ */
+export interface HighlightEvents {
   [highlighterName: string]: {
+    /** Event triggered when a fragment is highlighted. */
     onHighlight: OBC.Event<FRAGS.FragmentIdMap>;
+    /** Event triggered when a fragment is cleared. */
     onClear: OBC.Event<null>;
   };
 }
 
+/**
+ * Interface defining the configuration options for the Highlighter class.
+ */
 export interface HighlighterConfig {
+  /** Name of the selection event. */
   selectName: string;
+  /** Name of the hover event. */
   hoverName: string;
+  /** Color used for selection. */
   selectionColor: THREE.Color;
+  /** Color used for hover. */
   hoverColor: THREE.Color;
+  /** Whether to automatically highlight fragments on click. */
   autoHighlightOnClick: boolean;
+  /** The world in which the highlighter operates. */
   world: OBC.World | null;
 }
 
+/**
+ * This component allows highlighting and selecting fragments in a 3D scene. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Highlighter). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Highlighter).
+ */
 export class Highlighter
   extends OBC.Component
   implements OBC.Disposable, OBC.Configurable<HighlighterConfig>
 {
+  /**
+   * A unique identifier for the component.
+   * This UUID is used to register the component within the Components system.
+   */
   static readonly uuid = "cb8a76f2-654a-4b50-80c6-66fd83cafd77" as const;
 
+  /** {@link OBC.Disposable.onDisposed} */
   readonly onDisposed = new OBC.Event();
 
+  /** {@link OBC.Updateable.onBeforeUpdate} */
   readonly onBeforeUpdate = new OBC.Event<Highlighter>();
 
+  /** {@link OBC.Updateable.onAfterUpdate} */
   readonly onAfterUpdate = new OBC.Event<Highlighter>();
 
+  /** Event triggered when the Highlighter is setup. */
   readonly onSetup = new OBC.Event<Highlighter>();
 
+  /** Indicates whether the Highlighter is setup. */
   isSetup = false;
 
+  /** {@link OBC.Component.enabled} */
   enabled = true;
 
+  /** Stores the events triggered by the Highlighter. */
   events: HighlightEvents = {};
 
+  /** Determines the multiple selection behavior. */
   multiple: "none" | "shiftKey" | "ctrlKey" = "ctrlKey";
 
+  /** Zoom factor applied when zooming to selection. */
   zoomFactor = 1.5;
 
+  /** Indicates whether to zoom to the selection when highlighting. */
   zoomToSelection = false;
 
+  /** Stores the backup color before selection. */
   backupColor: THREE.Color | null = null;
 
+  /** Stores the current selection. */
   selection: {
     [selectionID: string]: FRAGS.FragmentIdMap;
   } = {};
 
+  /** Stores the configuration options for the Highlighter. */
   config: Required<HighlighterConfig> = {
     selectName: "select",
     hoverName: "hover",
@@ -64,6 +96,7 @@ export class Highlighter
     world: null,
   };
 
+  /** Stores the colors used for highlighting selections. */
   colors = new Map<string, THREE.Color>();
 
   private _mouseState = {
@@ -81,6 +114,7 @@ export class Highlighter
     this.components.add(Highlighter.uuid, this);
   }
 
+  /** {@link Disposable.dispose} */
   async dispose() {
     this.setupEvents(false);
     this.onBeforeUpdate.reset();
@@ -97,6 +131,15 @@ export class Highlighter
     this.onDisposed.reset();
   }
 
+  /**
+   * Adds a new selection with the given name and color.
+   * Throws an error if a selection with the same name already exists.
+   *
+   * @param name - The name of the new selection.
+   * @param color - The color to be used for highlighting the selection.
+   *
+   * @throws Will throw an error if a selection with the same name already exists.
+   */
   add(name: string, color: THREE.Color) {
     if (this.selection[name] || this.colors.has(name)) {
       throw new Error("A selection with that name already exists!");
@@ -109,6 +152,22 @@ export class Highlighter
     };
   }
 
+  /**
+   * Highlights a fragment based on a raycast from the mouse position.
+   *
+   * @param name - The name of the selection.
+   * @param removePrevious - Whether to remove previous highlights.
+   * @param zoomToSelection - Whether to zoom to the highlighted selection.
+   * @param exclude - Fragments to exclude from the highlight.
+   *
+   * @returns The highlighted fragment and its ID, or null if no fragment was highlighted.
+   *
+   * @throws Will throw an error if the world or a required component is not found.
+   * @throws Will throw an error if the selection does not exist.
+   * @throws Will throw an error if the fragment or its geometry is not found.
+   * @throws Will throw an error if the item ID is not found.
+   * @throws Will throw an error if the fragment does not belong to a FragmentsGroup.
+   */
   async highlight(
     name: string,
     removePrevious = true,
@@ -171,6 +230,22 @@ export class Highlighter
     return { id: itemID, fragments: found };
   }
 
+  /**
+   * Highlights a fragment based on a given fragment ID map.
+   *
+   * @param name - The name of the selection.
+   * @param fragmentIdMap - The fragment ID map to highlight.
+   * @param removePrevious - Whether to remove previous highlights.
+   * @param zoomToSelection - Whether to zoom to the highlighted selection.
+   * @param exclude - Fragments to exclude from the highlight.
+   *
+   * @returns Promise that resolves when the highlighting is complete.
+   *
+   * @throws Will throw an error if the selection does not exist.
+   * @throws Will throw an error if the fragment or its geometry is not found.
+   * @throws Will throw an error if the item ID is not found.
+   * @throws Will throw an error if the fragment does not belong to a FragmentsGroup.
+   */
   async highlightByID(
     name: string,
     fragmentIdMap: FragmentIdMap,
@@ -230,7 +305,14 @@ export class Highlighter
   }
 
   /**
-   * Clears any selection previously made by calling {@link highlight}.
+   * Clears the selection for the given name or all selections if no name is provided.
+   *
+   * @param name - The name of the selection to clear. If not provided, clears all selections.
+   *
+   * @throws Will throw an error if the FragmentsManager is not found.
+   * @throws Will throw an error if the fragment or its geometry is not found.
+   * @throws Will throw an error if the item ID is not found.
+   * @throws Will throw an error if the fragment does not belong to a FragmentsGroup.
    */
   clear(name?: string) {
     const names = name ? [name] : Object.keys(this.selection);
@@ -257,6 +339,18 @@ export class Highlighter
     }
   }
 
+  /**
+   * Sets up the Highlighter with the provided configuration.
+   *
+   * @param config - Optional configuration for the Highlighter.
+   * If not provided, the Highlighter will use the default configuration.
+   *
+   * @throws Will throw an error if the world or a required component is not found.
+   * @throws Will throw an error if the selection already exists.
+   * @throws Will throw an error if the fragment or its geometry is not found.
+   * @throws Will throw an error if the item ID is not found.
+   * @throws Will throw an error if the fragment does not belong to a FragmentsGroup.
+   */
   setup(config?: Partial<HighlighterConfig>) {
     this.config = { ...this.config, ...config };
     this.add(this.config.selectName, this.config.selectionColor);

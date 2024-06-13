@@ -120,13 +120,13 @@ export class SimpleRenderer extends BaseRenderer {
     this._resizing = false;
   };
 
-/**
- * Sets up and manages the event listeners for the renderer.
- *
- * @param active - A boolean indicating whether to activate or deactivate the event listeners.
- *
- * @throws Will throw an error if the renderer does not have an HTML container.
- */
+  /**
+   * Sets up and manages the event listeners for the renderer.
+   *
+   * @param active - A boolean indicating whether to activate or deactivate the event listeners.
+   *
+   * @throws Will throw an error if the renderer does not have an HTML container.
+   */
   setupEvents(active: boolean) {
     const dom = this.three.domElement.parentElement;
     if (!dom) {

@@ -1,19 +1,33 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
-
 import { AreaMeasureElement } from "./src";
 import { GraphicVertexPicker } from "../../utils";
 
+/**
+ * This component allows users to measure areas in a 3D scene. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/AreaMeasurement). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/AreaMeasurement).
+ */
 export class AreaMeasurement
   extends OBC.Component
   implements OBC.Createable, OBC.Disposable
 {
+  /**
+   * A unique identifier for the component.
+   * This UUID is used to register the component within the Components system.
+   */
   static readonly uuid = "c453a99e-f054-4781-9060-33df617db4a5" as const;
 
+  /** {@link OBC.Disposable.onDisposed} */
   readonly onDisposed = new OBC.Event();
 
+  /**
+   * A list of all the area measurement elements created by this component.
+   */
   list: AreaMeasureElement[] = [];
 
+  /**
+   * The world in which the area measurements are performed.
+   * This property is optional and can be set to null if no world is available.
+   */
   world?: OBC.World;
 
   private _enabled: boolean = false;
@@ -24,6 +38,7 @@ export class AreaMeasurement
 
   private _clickCount: number = 0;
 
+  /** {@link OBC.Component.enabled} */
   set enabled(value: boolean) {
     this._enabled = value;
     this._vertexPicker.enabled = value;
@@ -33,14 +48,24 @@ export class AreaMeasurement
     }
   }
 
+  /** {@link OBC.Component.enabled} */
   get enabled() {
     return this._enabled;
   }
 
+  /**
+   * Setter for the working plane for the area measurement.
+   * Sets the working plane for the vertex picker.
+   * @param plane - The new working plane or null if no plane is to be used.
+   */
   set workingPlane(plane: THREE.Plane | null) {
     this._vertexPicker.workingPlane = plane;
   }
 
+  /**
+   * Getter for the working plane for the area measurement.
+   * @returns The current working plane or null if no plane is being used.
+   */
   get workingPlane() {
     return this._vertexPicker.workingPlane;
   }
@@ -51,6 +76,7 @@ export class AreaMeasurement
     this._vertexPicker = new GraphicVertexPicker(components);
   }
 
+  /** {@link OBC.Disposable.dispose} */
   dispose() {
     this.setupEvents(false);
 
@@ -66,6 +92,7 @@ export class AreaMeasurement
     this.onDisposed.reset();
   }
 
+  /** {@link OBC.Createable.create} */
   create = () => {
     if (!this.enabled) return;
     if (!this.world) {
@@ -92,6 +119,7 @@ export class AreaMeasurement
   };
 
   // TODO: Implement this
+  /** {@link OBC.Createable.delete} */
   delete() {}
 
   /** Deletes all the dimensions that have been previously created. */
@@ -102,6 +130,7 @@ export class AreaMeasurement
     this.list = [];
   }
 
+  /** {@link OBC.Createable.endCreation} */
   endCreation() {
     if (this._currentAreaElement) {
       this.list.push(this._currentAreaElement);
@@ -114,6 +143,7 @@ export class AreaMeasurement
     this._clickCount = 0;
   }
 
+  /** {@link OBC.Createable.cancelCreation} */
   cancelCreation() {
     if (this._currentAreaElement) {
       this._currentAreaElement.dispose();

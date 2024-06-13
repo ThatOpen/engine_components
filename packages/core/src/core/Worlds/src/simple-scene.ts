@@ -34,9 +34,9 @@ export class SimpleScene extends BaseScene implements Configurable<{}> {
   readonly onSetup = new Event<SimpleScene>();
 
   /**
- * Configuration interface for the {@link SimpleScene}.
- * Defines properties for directional and ambient lights.
- */
+   * Configuration interface for the {@link SimpleScene}.
+   * Defines properties for directional and ambient lights.
+   */
   config: Required<SimpleSceneConfig> = {
     directionalLight: {
       color: new THREE.Color("white"),

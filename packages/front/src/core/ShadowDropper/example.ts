@@ -60,7 +60,6 @@ const grids = components.get(OBC.Grids);
 grids.config.color.setHex(0xdddddd);
 grids.create(world);
 
-
 /* MD
   ### 🎲 Creating a Cube Mesh
   ---
@@ -79,7 +78,6 @@ world.meshes.add(cube);
 */
 
 world.scene.three.background = new THREE.Color("white");
-
 
 /* MD
   ### 🌚 Adding Beautiful Shadow
@@ -171,7 +169,6 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
 });
 
 document.body.append(panel);
-
 
 /* MD
   And we will make some logic that adds a button to the screen when the user is visiting our app from their phone, allowing to show or hide the menu. Otherwise, the menu would make the app unusable.

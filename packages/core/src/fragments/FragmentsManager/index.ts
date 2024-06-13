@@ -6,34 +6,55 @@ import { RelationsMap } from "../../ifc/IfcRelationsIndexer/src/types";
 import { IfcRelationsIndexer } from "../../ifc/IfcRelationsIndexer";
 
 /**
- * Object that can efficiently load binary files that contain [fragment geometry](https://github.com/ThatOpen/engine_fragment).
+ * Component to load, delete and manage [fragments](https://github.com/ThatOpen/engine_fragment) efficiently. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/FragmentsManager). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/FragmentsManager).
  */
 export class FragmentsManager extends Component implements Disposable {
+  /**
+   * A unique identifier for the component.
+   * This UUID is used to register the component within the Components system.
+   */
   static readonly uuid = "fef46874-46a3-461b-8c44-2922ab77c806" as const;
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
 
+  /**
+   * Event triggered when fragments are loaded.
+   */
   readonly onFragmentsLoaded = new Event<FragmentsGroup>();
 
+  /**
+   * Event triggered when fragments are disposed.
+   */
   readonly onFragmentsDisposed = new Event<{
     groupID: string;
     fragmentIDs: string[];
   }>();
 
-  /** All the created [fragments](https://github.com/ThatOpen/engine_fragment). */
+  /**
+   * Map containing all loaded fragments.
+   * The key is the fragment's unique identifier, and the value is the fragment itself.
+   */
   readonly list = new Map<string, Fragment>();
 
+  /**
+   * Map containing all loaded fragment groups.
+   * The key is the group's unique identifier, and the value is the group itself.
+   */
   readonly groups = new Map<string, FragmentsGroup>();
+
+  baseCoordinationModel = "";
 
   /** {@link Component.enabled} */
   enabled = true;
 
-  baseCoordinationModel = "";
-
   private _loader = new Serializer();
 
-  /** The list of meshes of the created fragments. */
+  /**
+   * Getter for the meshes of all fragments in the FragmentsManager.
+   * It iterates over the fragments in the list and pushes their meshes into an array.
+   * @returns {THREE.Mesh[]} An array of THREE.Mesh objects representing the fragments.
+   */
   get meshes() {
     const meshes: THREE.Mesh[] = [];
     for (const [_id, fragment] of this.list) {
@@ -62,6 +83,13 @@ export class FragmentsManager extends Component implements Disposable {
     this.onDisposed.reset();
   }
 
+  /**
+   * Dispose of a specific fragment group.
+   * This method removes the group from the groups map, deletes all fragments within the group from the list,
+   * disposes of the group, and triggers the onFragmentsDisposed event.
+   *
+   * @param group - The fragment group to be disposed.
+   */
   disposeGroup(group: FragmentsGroup) {
     const { uuid: groupID } = group;
     const fragmentIDs: string[] = [];
@@ -78,7 +106,7 @@ export class FragmentsManager extends Component implements Disposable {
   }
 
   /**
-   * Loads a binar file that contain fragment geometry.
+   * Loads a binary file that contain fragment geometry.
    * @param data - The binary data to load.
    * @param config - Optional configuration for loading.
    * @param config.coordinate - Whether to apply coordinate transformation. Default is true.
@@ -124,7 +152,7 @@ export class FragmentsManager extends Component implements Disposable {
   }
 
   /**
-   * Export the specified fragments.
+   * Export the specified fragmentsgroup to binary data.
    * @param group - the fragments group to be exported.
    * @returns the exported data as binary buffer.
    */
@@ -174,6 +202,17 @@ export class FragmentsManager extends Component implements Disposable {
     return fragmentIdMap;
   }
 
+  /**
+   * Applies coordinate transformation to the provided models.
+   * If no models are provided, all groups are used.
+   * The first model in the list becomes the base model for coordinate transformation.
+   * All other models are then transformed to match the base model's coordinate system.
+   *
+   * @param models - The models to apply coordinate transformation to.
+   * If not provided, all groups are used.
+   *
+   * @returns {void}
+   */
   coordinate(models = Array.from(this.groups.values())) {
     const isFirstModel = this.baseCoordinationModel.length === 0;
     if (isFirstModel) {

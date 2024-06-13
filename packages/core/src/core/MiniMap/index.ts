@@ -2,11 +2,13 @@ import { MiniMap } from "./src";
 import { Component, Updateable, World, Event, Disposable } from "../Types";
 import { Components } from "../Components";
 
+export * from "./src";
+
 /**
- * A component that manages multiple {@link MiniMap} instances, each associated with a unique world ID.
+ * A component that manages multiple {@link MiniMap} instances, each associated with a unique world ID. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/MiniMap). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/MiniMaps).
  */
 export class MiniMaps extends Component implements Updateable, Disposable {
-    /**
+  /**
    * A unique identifier for the component.
    * This UUID is used to register the component within the Components system.
    */
@@ -25,8 +27,8 @@ export class MiniMaps extends Component implements Updateable, Disposable {
   enabled = true;
 
   /**
- * A collection of {@link MiniMap} instances, each associated with a unique world ID.
- */
+   * A collection of {@link MiniMap} instances, each associated with a unique world ID.
+   */
   list = new Map<string, MiniMap>();
 
   constructor(components: Components) {
@@ -35,36 +37,36 @@ export class MiniMaps extends Component implements Updateable, Disposable {
   }
 
   /**
- * Creates a new {@link MiniMap} instance associated with the given world.
- * If a {@link MiniMap} instance already exists for the given world, an error will be thrown.
- *
- * @param world - The {@link World} for which to create a {@link MiniMap} instance.
- * @returns The newly created {@link MiniMap} instance.
- * @throws Will throw an error if a {@link MiniMap} instance already exists for the given world.
- */
-create(world: World): MiniMap {
+   * Creates a new {@link MiniMap} instance associated with the given world.
+   * If a {@link MiniMap} instance already exists for the given world, an error will be thrown.
+   *
+   * @param world - The {@link World} for which to create a {@link MiniMap} instance.
+   * @returns The newly created {@link MiniMap} instance.
+   * @throws Will throw an error if a {@link MiniMap} instance already exists for the given world.
+   */
+  create(world: World): MiniMap {
     if (this.list.has(world.uuid)) {
       throw new Error("This world already has a minimap!");
     }
     const map = new MiniMap(world);
     this.list.set(world.uuid, map);
     return map;
-}
+  }
 
   /**
- * Deletes a {@link MiniMap} instance associated with the given world ID.
- * If a {@link MiniMap} instance does not exist for the given ID, nothing happens.
- *
- * @param id - The unique identifier of the world for which to delete the {@link MiniMap} instance.
- * @returns {void}
- */
-delete(id: string) {
+   * Deletes a {@link MiniMap} instance associated with the given world ID.
+   * If a {@link MiniMap} instance does not exist for the given ID, nothing happens.
+   *
+   * @param id - The unique identifier of the world for which to delete the {@link MiniMap} instance.
+   * @returns {void}
+   */
+  delete(id: string) {
     const map = this.list.get(id);
     if (map) {
       map.dispose(); // Dispose the minimap before deleting it
     }
     this.list.delete(id); // Remove the minimap from the list
-}
+  }
 
   /** {@link Disposable.dispose} */
   dispose() {

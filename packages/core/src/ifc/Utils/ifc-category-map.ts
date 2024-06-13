@@ -1,3 +1,6 @@
+/**
+ * A map that associates each unique integer identifier (IFC Entity ID) with its corresponding category name. This map is used to map IFC entities to their respective categories for easier identification and processing.
+ */
 export const IfcCategoryMap: { [key: number]: string } = {
   950732822: "IFCURIREFERENCE",
   4075327185: "IFCTIME",
