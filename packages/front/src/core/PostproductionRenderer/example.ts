@@ -45,8 +45,8 @@ const world = worlds.create<
 >();
 
 world.scene = new OBC.SimpleScene(components);
-world.camera = new OBC.SimpleCamera(components);
 world.renderer = new OBCF.PostproductionRenderer(components, container);
+world.camera = new OBC.SimpleCamera(components);
 
 world.scene.three.background = null;
 
