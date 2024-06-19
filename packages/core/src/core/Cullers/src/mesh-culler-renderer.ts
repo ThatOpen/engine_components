@@ -163,7 +163,8 @@ export class MeshCullerRenderer extends CullerRenderer implements Disposable {
 
     mesh.visible = false;
 
-    colorMesh.applyMatrix4(mesh.matrix);
+    mesh.updateWorldMatrix(true, false);
+    colorMesh.applyMatrix4(mesh.matrixWorld);
     colorMesh.updateMatrix();
 
     this.scene.add(colorMesh);
