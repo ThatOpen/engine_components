@@ -169,6 +169,7 @@ export class CustomEffectsPass extends Pass {
     this.outlineBuffer.dispose();
     this.normalOverrideMaterial.dispose();
     this.glossOverrideMaterial.dispose();
+    this.fsQuad.material.dispose();
     this.fsQuad.dispose();
 
     this.excludedMeshes = [];
@@ -198,6 +199,7 @@ export class CustomEffectsPass extends Pass {
       1 / this.resolution.x,
       1 / this.resolution.y,
     );
+    material.uniformsNeedUpdate = true;
   }
 
   render(renderer: THREE.WebGLRenderer, writeBuffer: any, readBuffer: any) {

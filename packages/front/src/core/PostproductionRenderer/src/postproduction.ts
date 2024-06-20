@@ -207,11 +207,21 @@ export class Postproduction {
    */
   setSize(width: number, height: number) {
     if (this._initialized) {
+      const customEnabled = this._settings.custom;
+      if (customEnabled) {
+        // For some reason, the custom pass quality degrades if it's resized while being active
+        // Maybe we should investigate this at some point
+        this.setPasses({ custom: false });
+      }
+      this.setPasses({ custom: false });
       this.composer.setSize(width, height);
       this.basePass.setSize(width, height);
       this.n8ao.setSize(width, height);
       this.customEffects.setSize(width, height);
       this.gammaPass.setSize(width, height);
+      if (customEnabled) {
+        this.setPasses({ custom: true });
+      }
     }
   }
 
