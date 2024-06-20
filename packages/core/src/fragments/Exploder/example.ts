@@ -91,6 +91,20 @@ const properties = await fetch(
 model.setLocalProperties(await properties.json());
 
 /* MD
+  ### 🤝 Setting up the relations
+  ---
+
+  We will need to set up the IFC relations in order to use the exploder effectively. You can check the relations indexer tutorial for more details about this!
+*/
+
+const indexer = components.get(OBC.IfcRelationsIndexer);
+const relationsFile = await fetch(
+  "https://thatopen.github.io/engine_components/resources/small-relations.json",
+);
+const relations = indexer.getRelationsMapFromJSON(await relationsFile.text());
+indexer.setRelationMap(model, relations);
+
+/* MD
   ### 🤯 Boom!
   ---
 
@@ -110,7 +124,7 @@ Before being able to use it, we will need to get the classifier to classify the 
 */
 
 const classifier = components.get(OBC.Classifier);
-classifier.byIfcRel(model, WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE, "storeys");
+await classifier.bySpatialStructure(model);
 
 /* MD
   ### ⏱️ Measuring the performance (optional)

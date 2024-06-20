@@ -346,10 +346,11 @@ export class Classifier extends Component implements Disposable {
   async bySpatialStructure(model: FRAGS.FragmentsGroup) {
     const indexer = this.components.get(IfcRelationsIndexer);
     const modelRelations = indexer.relationMaps[model.uuid];
-    if (!modelRelations)
+    if (!modelRelations) {
       throw new Error(
-        `Classifier: model relations of ${model.name || model.uuid} have to exists to group by spatial structure.`,
+        `Classifier: model relations of ${model.name || model.uuid} have to exists to group by spatial structure.`
       );
+    }
     const systemName = "spatialStructures";
     for (const [expressID] of modelRelations) {
       const rels = indexer.getEntityRelations(

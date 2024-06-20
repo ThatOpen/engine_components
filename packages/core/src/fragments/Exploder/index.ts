@@ -31,7 +31,7 @@ export class Exploder extends Component implements Disposable {
    * This property specifies the group of fragments that will be affected by the explosion.
    * Default value is "storeys".
    */
-  groupName = "storeys";
+  groupName = "spatialStructures";
 
   /**
    * A set of strings representing the exploded items.
