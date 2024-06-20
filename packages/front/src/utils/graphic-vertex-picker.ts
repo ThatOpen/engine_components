@@ -4,23 +4,34 @@ import { Mark } from "../core";
 
 // TODO: Make a component?
 
+/**
+ * A class that extends {@link OBC.VertexPicker} to provide a graphical marker for picking vertices in a 3D scene.
+ */
 export class GraphicVertexPicker
   extends OBC.VertexPicker
   implements OBC.Disposable
 {
-  /** {@link Disposable.onDisposed} */
+  /** {@link OBC.Disposable.onDisposed} */
   readonly onDisposed = new OBC.Event();
 
+  /** The marker used to indicate the picked vertex. */
   marker: Mark | null = null;
 
+  /** {@link OBC.Disposable.onDisposed} */
   dispose() {
     if (this.marker) {
       this.marker.dispose();
     }
-    this.onDisposed.trigger();
-    this.onDisposed.reset();
+    super.dispose();
   }
 
+  /**
+   * Retrieves the picked vertex from the world and updates the marker's position.
+   * If no vertex is picked, the marker is hidden.
+   *
+   * @param world - The world in which to pick the vertex.
+   * @returns The picked vertex, or null if no vertex was picked.
+   */
   get(world: OBC.World) {
     const found = super.get(world) as THREE.Vector3 | null;
 

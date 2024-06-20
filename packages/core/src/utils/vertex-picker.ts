@@ -1,17 +1,65 @@
 import * as THREE from "three";
-import { Component, Components, Event, Raycasters, World } from "../core";
+import {
+  Component,
+  Components,
+  Disposable,
+  Event,
+  Raycasters,
+  World,
+} from "../core";
 
+// TODO: Make a component?
+
+/**
+ * Configuration interface for the VertexPicker component.
+ */
 export interface VertexPickerConfig {
+  /**
+   * If true, only vertices will be picked, not the closest point on the face.
+   */
   showOnlyVertex: boolean;
+
+  /**
+   * The maximum distance for snapping to a vertex.
+   */
   snapDistance: number;
+
+  /**
+   * The HTML element to use for previewing the picked vertex.
+   */
   previewElement: HTMLElement;
 }
 
-export class VertexPicker extends Component {
-  onVertexFound = new Event<THREE.Vector3>();
-  onVertexLost = new Event<THREE.Vector3>();
+/**
+ * A class that provides functionality for picking vertices in a 3D scene.
+ */
+export class VertexPicker extends Component implements Disposable {
+  /** {@link Disposable.onDisposed} */
+  readonly onDisposed = new Event();
 
+  /**
+   * An event that is triggered when a vertex is found.
+   * The event passes a THREE.Vector3 representing the position of the found vertex.
+   */
+  readonly onVertexFound = new Event<THREE.Vector3>();
+
+  /**
+   * An event that is triggered when a vertex is lost.
+   * The event passes a THREE.Vector3 representing the position of the lost vertex.
+   */
+  readonly onVertexLost = new Event<THREE.Vector3>();
+
+  /**
+   * A reference to the Components instance associated with this VertexPicker.
+   */
   components: Components;
+
+  /**
+   * A reference to the working plane used for vertex picking.
+   * This plane is used to determine which vertices are considered valid for picking.
+   * If this value is null, all vertices are considered valid.
+   */
+  workingPlane: THREE.Plane | null = null;
 
   private _pickedPoint: THREE.Vector3 | null = null;
 
@@ -19,8 +67,13 @@ export class VertexPicker extends Component {
 
   private _enabled: boolean = false;
 
-  private _workingPlane: THREE.Plane | null = null;
-
+  /**
+   * Sets the enabled state of the VertexPicker.
+   * When enabled, the VertexPicker will actively search for vertices in the 3D scene.
+   * When disabled, the VertexPicker will stop searching for vertices and reset the picked point.
+   *
+   * @param value - The new enabled state.
+   */
   set enabled(value: boolean) {
     this._enabled = value;
     if (!value) {
@@ -28,8 +81,46 @@ export class VertexPicker extends Component {
     }
   }
 
+  /**
+   * Gets the current enabled state of the VertexPicker.
+   *
+   * @returns The current enabled state.
+   */
   get enabled() {
     return this._enabled;
+  }
+
+  /**
+   * Sets the configuration for the VertexPicker component.
+   *
+   * @param value - A Partial object containing the configuration properties to update.
+   * The properties not provided in the value object will retain their current values.
+   *
+   * @example
+   * ```typescript
+   * vertexPicker.config = {
+   *   snapDistance: 0.5,
+   *   showOnlyVertex: true,
+   * };
+   * ```
+   */
+  set config(value: Partial<VertexPickerConfig>) {
+    this._config = { ...this._config, ...value };
+  }
+
+  /**
+   * Gets the current configuration for the VertexPicker component.
+   *
+   * @returns A copy of the current VertexPickerConfig object.
+   *
+   * @example
+   * ```typescript
+   * const currentConfig = vertexPicker.config;
+   * console.log(currentConfig.snapDistance); // Output: 0.25
+   * ```
+   */
+  get config() {
+    return this._config;
   }
 
   constructor(components: Components, config?: Partial<VertexPickerConfig>) {
@@ -43,28 +134,30 @@ export class VertexPicker extends Component {
     this.enabled = false;
   }
 
-  set workingPlane(plane: THREE.Plane | null) {
-    this._workingPlane = plane;
-  }
-
-  get workingPlane() {
-    return this._workingPlane;
-  }
-
-  set config(value: Partial<VertexPickerConfig>) {
-    this._config = { ...this._config, ...value };
-  }
-
-  get config() {
-    return this._config;
-  }
-
+  /** {@link Disposable.dispose} */
   dispose() {
     this.onVertexFound.reset();
     this.onVertexLost.reset();
     (this.components as any) = null;
+    this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 
+  /**
+   * Performs the vertex picking operation based on the current state of the VertexPicker.
+   *
+   * @param world - The World instance to use for raycasting.
+   *
+   * @returns The current picked point, or null if no point is picked.
+   *
+   * @remarks
+   * This method checks if the VertexPicker is enabled. If not, it returns the current picked point.
+   * If enabled, it performs raycasting to find the closest intersecting object.
+   * It then determines the closest vertex or point on the face, based on the configuration settings.
+   * If the picked point is on the working plane (if defined), it triggers the `onVertexFound` event and updates the `pickedPoint`.
+   * If the picked point is not on the working plane, it resets the `pickedPoint`.
+   * If no intersecting object is found, it triggers the `onVertexLost` event and resets the `pickedPoint`.
+   */
   get(world: World) {
     if (!this.enabled) return this._pickedPoint;
 
