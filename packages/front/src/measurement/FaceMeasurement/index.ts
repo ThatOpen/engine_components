@@ -290,6 +290,9 @@ export class FaceMeasurement
     if (!this.world) {
       throw new Error("The face measurement needs a world to work!");
     }
+    if (this.world.isDisposing) {
+      return;
+    }
     const scene = this.world.scene.three;
     for (const item of this.selection) {
       const label = item.label.three;
