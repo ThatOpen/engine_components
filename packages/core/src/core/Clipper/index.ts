@@ -189,8 +189,6 @@ export class Clipper
 
   /** {@link Createable.create} */
   create(world: World) {
-    if (!this.enabled) return;
-
     const casters = this.components.get(Raycasters);
     const caster = casters.get(world);
 
@@ -227,7 +225,6 @@ export class Clipper
    * found under the cursor will be deleted.
    */
   delete(world: World, plane?: SimplePlane) {
-    if (!this.enabled) return;
     if (!plane) {
       plane = this.pickPlane(world);
     }
