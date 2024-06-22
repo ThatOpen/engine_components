@@ -2,6 +2,8 @@ import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
 import { FragmentIdMap, FragmentMesh } from "@thatopen/fragments";
+import { EdgesPlane, IndexFragmentMap } from "../../core";
+import { FillHighlighter } from "./src";
 
 // TODO: Clean up and document
 
@@ -99,6 +101,9 @@ export class Highlighter
   /** Stores the colors used for highlighting selections. */
   colors = new Map<string, THREE.Color>();
 
+  // Highlights the clipping fills of the fragments, if any
+  private _fills = new FillHighlighter();
+
   private _mouseState = {
     down: false,
     moved: false,
@@ -117,6 +122,7 @@ export class Highlighter
   /** {@link Disposable.dispose} */
   async dispose() {
     this.setupEvents(false);
+    this._fills.dispose();
     this.onBeforeUpdate.reset();
     this.onAfterUpdate.reset();
 
@@ -173,7 +179,7 @@ export class Highlighter
     removePrevious = true,
     zoomToSelection = this.zoomToSelection,
     exclude: FragmentIdMap = {},
-  ) {
+  ): Promise<{ id: number; fragments: FRAGS.FragmentIdMap } | null> {
     if (!this.enabled) {
       return null;
     }
@@ -188,12 +194,30 @@ export class Highlighter
       throw new Error(`Selection ${name} does not exist.`);
     }
 
+    const allMeshes: THREE.Mesh[] = [];
+
     const fragments = this.components.get(OBC.FragmentsManager);
-    const meshes = fragments.meshes;
+    const fragMeshes = fragments.meshes;
+    for (const mesh of fragMeshes) {
+      allMeshes.push(mesh);
+    }
+
+    // If a clipping fill is found when raycasting, add it to raycast test
+    // so that clipped things can be selected in floorplan / section views
+    const clipper = this.components.get(OBC.Clipper);
+    for (const plane of clipper.list) {
+      const edgesPlane = plane as EdgesPlane;
+      if (edgesPlane.edges) {
+        const fillMeshes = edgesPlane.edges.fillMeshes;
+        for (const mesh of fillMeshes) {
+          allMeshes.push(mesh);
+        }
+      }
+    }
 
     const casters = this.components.get(OBC.Raycasters);
     const caster = casters.get(world);
-    const result = caster.castRay(meshes);
+    const result = caster.castRay(allMeshes);
 
     if (!result || !result.face) {
       this.clear(name);
@@ -201,12 +225,40 @@ export class Highlighter
     }
 
     const mesh = result.object as FragmentMesh;
+
+    // If found mesh is a clipping fill, highlight corresponding frag mesh
+    if (!mesh.fragment && mesh.userData.indexFragmentMap) {
+      if (result.faceIndex === undefined || !mesh.geometry.index) {
+        return null;
+      }
+
+      const { userData } = mesh;
+      const fragMap = userData.indexFragmentMap as IndexFragmentMap;
+      const itemFoundInFillMesh = fragMap.get(result.faceIndex);
+
+      if (itemFoundInFillMesh) {
+        await this.highlightByID(
+          name,
+          itemFoundInFillMesh,
+          removePrevious,
+          zoomToSelection,
+          exclude,
+          mesh,
+        );
+
+        const fragID = Object.keys(itemFoundInFillMesh)[0];
+        const itemID = Array.from(itemFoundInFillMesh[fragID])[0];
+        return { id: itemID, fragments: itemFoundInFillMesh };
+      }
+
+      return null;
+    }
+
     const geometry = mesh.geometry;
     const instanceID = result.instanceId;
     if (!geometry || instanceID === undefined) {
       return null;
     }
-
     const itemID = mesh.fragment.getItemID(instanceID);
     if (itemID === null) {
       throw new Error("Item ID not found!");
@@ -238,6 +290,7 @@ export class Highlighter
    * @param removePrevious - Whether to remove previous highlights.
    * @param zoomToSelection - Whether to zoom to the highlighted selection.
    * @param exclude - Fragments to exclude from the highlight.
+   * @param fillMesh - The fill mesh to also highlight, if any.
    *
    * @returns Promise that resolves when the highlighting is complete.
    *
@@ -252,6 +305,7 @@ export class Highlighter
     removePrevious = true,
     zoomToSelection = this.zoomToSelection,
     exclude: FragmentIdMap = {},
+    fillMesh: THREE.Mesh | undefined = undefined,
   ) {
     if (!this.enabled) return;
 
@@ -295,9 +349,21 @@ export class Highlighter
         this.selection[name][fragID].add(itemID);
         fragment.setColor(color, [itemID]);
       }
+
+      // Highlight all the clipping fills of the fragment, if any
+      if (fragment.mesh.userData.fills) {
+        for (const fill of fragment.mesh.userData.fills) {
+          this._fills.highlight(name, fill, color, fragmentIdMap);
+        }
+      }
     }
 
     this.events[name].onHighlight.trigger(this.selection[name]);
+
+    // Highlight the given fill mesh (e.g. when selecting a clipped element in floorplan)
+    if (fillMesh) {
+      this._fills.highlight(name, fillMesh, color, fragmentIdMap);
+    }
 
     if (zoomToSelection) {
       await this.zoomSelection(name);
@@ -316,7 +382,10 @@ export class Highlighter
    */
   clear(name?: string) {
     const names = name ? [name] : Object.keys(this.selection);
+
     for (const name of names) {
+      this._fills.clear(name);
+
       const fragments = this.components.get(OBC.FragmentsManager);
 
       const selected = this.selection[name];

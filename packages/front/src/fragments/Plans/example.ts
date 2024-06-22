@@ -321,6 +321,7 @@ const exitButton = BUI.Component.create<BUI.Checkbox>(() => {
       <bim-button checked label="Exit"
         @click="${() => {
           highlighter.backupColor = null;
+          highlighter.clear();
           world.renderer!.postproduction.customEffects.minGloss = minGloss;
           classifier.resetColor(modelItems);
           world.scene.three.background = defaultBackground;
