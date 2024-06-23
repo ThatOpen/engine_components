@@ -427,9 +427,9 @@ export class IfcGeometryTiler extends Component implements Disposable {
   }
 
   private async streamGeometries() {
-    let buffer = this._streamSerializer.export(this._geometries) as Uint8Array;
+    const buffer = this._streamSerializer.export(this._geometries);
 
-    let data: StreamedGeometries = {};
+    const data: StreamedGeometries = {};
 
     for (const [id, { boundingBox, hasHoles }] of this._geometries) {
       data[id] = { boundingBox, hasHoles };
@@ -437,10 +437,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
 
     this.onGeometryStreamed.trigger({ data, buffer });
 
-    // Force memory disposal of all created items
-    data = null as any;
-    buffer = null as any;
-    this._geometries.clear();
+        this._geometries.clear();
     this._geometryCount = 0;
   }
 }
