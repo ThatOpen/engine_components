@@ -13,7 +13,9 @@ import {
 export * from "./src";
 
 /**
- * A component that handles the tiling of IFC geometries for efficient streaming. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/IfcGeometryTiler). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/IfcGeometryTiler).
+ * A component that handles the tiling of IFC geometries for efficient streaming.
+ *
+ * {@link https://docs.thatopen.com/Tutorials/Components/Core/IfcGeometryTiler|📕 Tutorial} | {@link https://docs.thatopen.com/api/@thatopen/components/classes/IfcGeometryTiler|📘 API}
  */
 export class IfcGeometryTiler extends Component implements Disposable {
   /**
@@ -299,7 +301,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
   private getMesh(
     webIfc: WEBIFC.IfcAPI,
     mesh: WEBIFC.FlatMesh,
-    group: FRAGS.FragmentsGroup,
+    group: FRAGS.FragmentsGroup
   ) {
     const size = mesh.geometries.size();
 
@@ -353,12 +355,12 @@ export class IfcGeometryTiler extends Component implements Disposable {
 
     const index = webIfc.GetIndexArray(
       geometry.GetIndexData(),
-      geometry.GetIndexDataSize(),
+      geometry.GetIndexDataSize()
     ) as Uint32Array;
 
     const vertexData = webIfc.GetVertexArray(
       geometry.GetVertexData(),
-      geometry.GetVertexDataSize(),
+      geometry.GetVertexDataSize()
     ) as Float32Array;
 
     const position = new Float32Array(vertexData.length / 2);
