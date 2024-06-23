@@ -631,11 +631,11 @@ __metadata:
     n8ao: 1.5.1
     postprocessing: 6.34.2
     three: ^0.160.1
-    web-ifc: 0.0.53
+    web-ifc: 0.0.54
   peerDependencies:
     "@thatopen/fragments": ~2.0.0
     three: ^0.160.1
-    web-ifc: 0.0.53
+    web-ifc: 0.0.54
   languageName: unknown
   linkType: soft
 
@@ -650,11 +650,11 @@ __metadata:
     stats.js: ^0.17.0
     three: ^0.160.1
     three-mesh-bvh: 0.7.0
-    web-ifc: 0.0.53
+    web-ifc: 0.0.54
   peerDependencies:
     "@thatopen/fragments": ~2.0.0
     three: ^0.160.1
-    web-ifc: 0.0.53
+    web-ifc: 0.0.54
   languageName: unknown
   linkType: soft
 
@@ -4227,10 +4227,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"web-ifc@npm:0.0.53":
-  version: 0.0.53
-  resolution: "web-ifc@npm:0.0.53"
-  checksum: 26f86094083173ada19b4e75f6d6b777ee93c4192be415bdd8ef6565494434288cf80e6f78a856654c6663f88db43ccf297f111a62d008aef3f78e2e40276a44
+"web-ifc@npm:0.0.54":
+  version: 0.0.54
+  resolution: "web-ifc@npm:0.0.54"
+  checksum: 6d1751ce24bf4b5f42fe518a448d3e55e18a655e3822847b95629106fe10a555438a5d0793ef73363e0a0a88c997147c06dd93c454f728e0a0cb5ad5e1c10d36
   languageName: node
   linkType: hard
 

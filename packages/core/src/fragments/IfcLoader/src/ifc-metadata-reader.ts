@@ -42,7 +42,9 @@ export class IfcMetadataReader {
     const [description, implementationLevel] = dataArguments;
     if (description[0]?.value) {
       const viewDefinition = description[0].value.match(/\[([^\]]+)\]/);
-      if (viewDefinition[1]) data.viewDefinition = viewDefinition[1];
+      if (viewDefinition && viewDefinition[1]) {
+        data.viewDefinition = viewDefinition[1];
+      }
     }
     if (implementationLevel?.value)
       data.implementationLevel = implementationLevel.value;
