@@ -1,4 +1,4 @@
-export interface GeometrySettings {
+interface GeometrySettings {
   /** The bounding box of the geometry as a Float32Array. */
   boundingBox: Float32Array;
   /** A boolean indicating whether the geometry has holes. */
@@ -23,17 +23,17 @@ export interface StreamedAsset {
   }>;
 }
 
-export type GeometryFileName = `${string}-${number}`;
-export type GlobalGeometryFileName = `${string}-global`;
+export type GeometryTileFileName = `${string}-${number}`;
+export type GlobalDataFileName = `${string}-global`;
 
 export interface GeometryTilesJson {
   assets: Array<StreamedAsset>;
   geometries: {
     [id: number]: GeometrySettings & {
       /** path to the geometry data file. Must have the index of the file as suffix. `-0` */
-      geometryFile: GeometryFileName;
+      geometryFile: GeometryTileFileName;
     };
   };
   /** path to the global data file. must have `-global` suffix. */
-  globalDataFileId: GlobalGeometryFileName;
+  globalDataFileId: GlobalDataFileName;
 }
