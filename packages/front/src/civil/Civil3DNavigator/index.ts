@@ -235,11 +235,11 @@ export class Civil3DNavigator extends OBC.Component {
 
     this.world.renderer?.onResize.remove(this.updateLinesResolution);
     dom.removeEventListener("click", this.onClick);
-    dom.removeEventListener("mousemove", this.onMouseMove);
+    dom.removeEventListener("pointermove", this.onMouseMove);
 
     if (active) {
       dom.addEventListener("click", this.onClick);
-      dom.addEventListener("mousemove", this.onMouseMove);
+      dom.addEventListener("pointermove", this.onMouseMove);
       this.world.renderer?.onResize.add(this.updateLinesResolution);
     }
   }

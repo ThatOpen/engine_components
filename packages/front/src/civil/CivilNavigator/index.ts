@@ -342,7 +342,7 @@ export abstract class CivilNavigator
     const container = canvas.parentElement as HTMLElement;
 
     this._world.renderer?.onResize.remove(this.updateLinesResolution);
-    container.removeEventListener("mousemove", this.onMouseMove);
+    container.removeEventListener("pointermove", this.onMouseMove);
     container.removeEventListener("click", this.onClick);
     if (this._world.camera.hasCameraControls()) {
       const controls = this._world.camera.controls;
@@ -350,7 +350,7 @@ export abstract class CivilNavigator
     }
 
     if (active) {
-      container.addEventListener("mousemove", this.onMouseMove);
+      container.addEventListener("pointermove", this.onMouseMove);
       container.addEventListener("click", this.onClick);
 
       this._world.renderer?.onResize.add(this.updateLinesResolution);

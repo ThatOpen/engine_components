@@ -538,7 +538,7 @@ export class Highlighter
 
     container.removeEventListener("mousedown", this.onMouseDown);
     container.removeEventListener("mouseup", this.onMouseUp);
-    container.removeEventListener("mousemove", this.onMouseMove);
+    container.removeEventListener("pointermove", this.onMouseMove);
 
     if (active) {
       onHighlight.add(this.clearHover);
@@ -546,7 +546,7 @@ export class Highlighter
       onSelectClear.add(this.restoreHighlightersAfterDeselect);
       container.addEventListener("mousedown", this.onMouseDown);
       container.addEventListener("mouseup", this.onMouseUp);
-      container.addEventListener("mousemove", this.onMouseMove);
+      container.addEventListener("pointermove", this.onMouseMove);
     }
   }
 

@@ -242,11 +242,11 @@ export class VolumeMeasurement
     const viewerContainer = canvas.parentElement as HTMLElement;
     if (active) {
       viewerContainer.addEventListener("click", this.create);
-      viewerContainer.addEventListener("mousemove", this.onMouseMove);
+      viewerContainer.addEventListener("pointermove", this.onMouseMove);
       window.addEventListener("keydown", this.onKeydown);
     } else {
       viewerContainer.removeEventListener("click", this.create);
-      viewerContainer.removeEventListener("mousemove", this.onMouseMove);
+      viewerContainer.removeEventListener("pointermove", this.onMouseMove);
       window.removeEventListener("keydown", this.onKeydown);
     }
   }

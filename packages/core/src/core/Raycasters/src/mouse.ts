@@ -48,9 +48,9 @@ export class Mouse implements Disposable {
 
   private setupEvents(active: boolean) {
     if (active) {
-      this.dom.addEventListener("mousemove", this.updateMouseInfo);
+      this.dom.addEventListener("pointermove", this.updateMouseInfo);
     } else {
-      this.dom.removeEventListener("mousemove", this.updateMouseInfo);
+      this.dom.removeEventListener("pointermove", this.updateMouseInfo);
     }
   }
 }

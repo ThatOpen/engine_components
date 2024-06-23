@@ -197,10 +197,10 @@ export class AngleMeasurement
     const canvas = this.world.renderer.three.domElement;
     const viewerContainer = canvas.parentElement as HTMLElement;
     if (active) {
-      viewerContainer.addEventListener("mousemove", this.onMouseMove);
+      viewerContainer.addEventListener("pointermove", this.onMouseMove);
       window.addEventListener("keydown", this.onKeyDown);
     } else {
-      viewerContainer.removeEventListener("mousemove", this.onMouseMove);
+      viewerContainer.removeEventListener("pointermove", this.onMouseMove);
       window.removeEventListener("keydown", this.onKeyDown);
     }
   }

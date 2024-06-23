@@ -302,10 +302,10 @@ export class LengthMeasurement
     const viewerContainer = canvas.parentElement as HTMLElement;
     if (!viewerContainer) return;
 
-    viewerContainer.removeEventListener("mousemove", this.onMouseMove);
+    viewerContainer.removeEventListener("pointermove", this.onMouseMove);
 
     if (active) {
-      viewerContainer.addEventListener("mousemove", this.onMouseMove);
+      viewerContainer.addEventListener("pointermove", this.onMouseMove);
     }
   }
 
