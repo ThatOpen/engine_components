@@ -15,7 +15,7 @@ export * from "./src";
 /**
  * A component that handles the tiling of IFC geometries for efficient streaming.
  *
- * {@link https://docs.thatopen.com/Tutorials/Components/Core/IfcGeometryTiler|📕 Tutorial} | {@link https://docs.thatopen.com/api/@thatopen/components/classes/IfcGeometryTiler|📘 API}
+ * @see {@link https://docs.thatopen.com/Tutorials/Components/Core/IfcGeometryTiler|📕 Tutorial} | {@link https://docs.thatopen.com/api/@thatopen/components/classes/IfcGeometryTiler|📘 API}
  */
 export class IfcGeometryTiler extends Component implements Disposable {
   /**
