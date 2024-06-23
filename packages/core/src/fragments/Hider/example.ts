@@ -164,10 +164,10 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
     <bim-panel active label="Hider Tutorial" class="options-menu">
       <bim-panel-section collapsed label="Controls">
       
-      <bim-panel-section collapsed name="Floors"">
+      <bim-panel-section collapsed label="Floors" name="Floors"">
       </bim-panel-section>
       
-      <bim-panel-section collapsed name="Categories"">
+      <bim-panel-section collapsed label="Categories" name="Categories"">
       </bim-panel-section>
       
     </bim-panel>

@@ -35,8 +35,7 @@ export class Hider extends Component {
   set(visible: boolean, items?: FRAGS.FragmentIdMap) {
     const fragments = this.components.get(FragmentsManager);
     if (!items) {
-      for (const id in fragments.list) {
-        const fragment = fragments.list.get(id);
+      for (const [_id, fragment] of fragments.list) {
         if (fragment) {
           fragment.setVisibility(visible);
           this.updateCulledVisibility(fragment);
