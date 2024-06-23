@@ -6,7 +6,7 @@ Opening big BIM models is hard because of 2 reasons: they have a lot of data and
 
 :::tip Tiles?
 
-Tiles are very simple. We just take a bunch of geometries within the IFC file, convert them into triangles and store them in a binary file. These files are then loaded as a stream into the scen as the user moves around and discovers them.
+Tiles are very simple. We just take a bunch of geometries within the IFC file, convert them into triangles and store them in a binary file. These files are then loaded as a stream into the scene as the user moves around and discovers them.
 
 :::
 
@@ -79,7 +79,7 @@ world.scene.three.background = null;
 
 const fragments = new OBC.FragmentsManager(components);
 const fragFile = await fetch(
-  "https://thatopen.github.io/engine_components/resources/small.frag",
+  "https://thatopen.github.io/engine_components/resources/small.frag"
 );
 const fragData = await fragFile.arrayBuffer();
 const fragBuffer = new Uint8Array(fragData);
@@ -240,7 +240,7 @@ function downloadFile(name: string, ...bits: (Uint8Array | string)[]) {
 }
 
 async function downloadFilesSequentially(
-  fileList: { name: string; bits: (Uint8Array | string)[] }[],
+  fileList: { name: string; bits: (Uint8Array | string)[] }[]
 ) {
   for (const { name, bits } of fileList) {
     downloadFile(name, ...bits);
@@ -279,7 +279,7 @@ tiler.onProgress.add((progress) => {
 
 async function processFile() {
   const fetchedIfc = await fetch(
-    "https://thatopen.github.io/engine_components/resources/small.ifc",
+    "https://thatopen.github.io/engine_components/resources/small.ifc"
   );
   const ifcBuffer = await fetchedIfc.arrayBuffer();
   // We will need this information later to also convert the properties
