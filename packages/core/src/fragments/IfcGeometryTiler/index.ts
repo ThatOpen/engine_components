@@ -421,7 +421,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
   }
 
   private async streamAssets() {
-    await this.onAssetStreamed.trigger(this._assets);
+    this.onAssetStreamed.trigger(this._assets);
     this._assets = null as any;
     this._assets = [];
   }
