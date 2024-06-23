@@ -8,229 +8,129 @@ Opening big BIM models is hard because of 2 reasons: they have a lot of data and
 
 Tiles are very simple. We just take a bunch of geometries within the IFC file, convert them into triangles and store them in a binary file. These files are then loaded as a stream into the scene as the user moves around and discovers them.
 
-:::
-
-In this tutorial, we will import:
-
-- `web-ifc` to get some IFC items.
-- `@thatopen/components` to set up the barebone of our app.
-- `Stats.js` (optional) to measure the performance of our app.
 */
-
-import Stats from "stats.js";
-import * as BUI from "@thatopen/ui";
-import * as OBC from "@thatopen/components";
 
 /* MD
-  ### 🌎 Setting up a simple scene
-  ---
+Like always, lets import our dependencies and start with the components instance
 
-  We will start by creating a simple scene with a camera and a renderer. If you don't know how to set up a scene, you can check the Worlds tutorial.
+In this tutorial, we will need the following dependencies:
 
+- `@thatopen/components` to set up the barebone of our app.
+- `@thatopen/ui` for some helper ui.
+- `web-ifc` to get some IFC items.
+- `Stats.js` is optional, if we want to measure the performance of our app.
 */
 
-const container = document.getElementById("container")!;
+import * as OBC from "@thatopen/components";
+import * as BUI from "@thatopen/ui";
+import Stats from "stats.js";
 
 const components = new OBC.Components();
 
-const worlds = components.get(OBC.Worlds);
-
-const world = worlds.create<
-  OBC.SimpleScene,
-  OBC.SimpleCamera,
-  OBC.SimpleRenderer
->();
-
-world.scene = new OBC.SimpleScene(components);
-world.renderer = new OBC.SimpleRenderer(components, container);
-world.camera = new OBC.SimpleCamera(components);
-
-components.init();
-
-world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
-
-world.scene.setup();
-
-const grids = components.get(OBC.Grids);
-grids.create(world);
-
 /* MD
-
-  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
-
-*/
-
-world.scene.three.background = null;
-
-/* MD
-  ### 🧳 Loading a BIM model
+  ### 🔪 Generating tiles from an IFC file
   ---
 
- We'll start by adding a BIM model to our scene. That model is already converted to fragments, so it will load much faster than if we loaded the IFC file.
+  Tiles can be created either directly in the browser or on a server. These files contain geometry chunks that can be streamed into the viewer.
 
-  :::tip Fragments?
-
-    If you are not familiar with fragments, check out the IfcLoader tutorial!
-
-  :::
-
-  This is not compulsory, as the data will come from an .ifc file, not from fragments. But at least we'll see the model whose geometry we will be converting to tiles!
+  The tiler does not generate files for you. It only provides the necessary data. That way you have full control over where and how to store those files.
 */
 
-const fragments = new OBC.FragmentsManager(components);
-const fragFile = await fetch(
-  "https://thatopen.github.io/engine_components/resources/small.frag"
-);
-const fragData = await fragFile.arrayBuffer();
-const fragBuffer = new Uint8Array(fragData);
-const model = fragments.load(fragBuffer);
-world.scene.three.add(model);
+const tiler = new OBC.IfcGeometryTiler(components);
 
-/* MD
-  ### 🔪 Getting the geometry tiler
-  ---
-
-  The way the streaming works is by fetching files based on the visible things in the viewer. Those files contain pieces of geometry information (geometry chunks) that the engine uses in order to create and display the geometry. But, where do we get those files from? Easy! From the IFC conversion to tiles. So the first step is to transform the IFC model into BIM tiles.
-  
-  :::note
-  
-  As you know, IFC files contains two things: geometries and properties. We need to convert both things if we want to take full advantage of streaming! For tiling properties, check out the Property Tiling tutorial.
-
-  :::
-
-  So, let's start converting the IFC geometry to tiles and getting those files so the streamer can do its job:
-
-  */
-
-const tiler = components.get(OBC.IfcGeometryTiler);
-
-const wasm = {
-  path: "https://unpkg.com/web-ifc@0.0.53/",
-  absolute: true,
-};
-
-tiler.settings.wasm = wasm;
 tiler.settings.minGeometrySize = 20;
 tiler.settings.minAssetsSize = 1000;
 
 /* MD
-  This component takes IFC files and transform their geometry into tiles. 
-  
-  :::warning
-
-  The converter doesn't give you the files needed to streaming right away, just the data that must be contained in those files. Is your job to create the files! Why? Because then you can have full control over when, where and how to create them.
-
-  :::
-
-  The first file we need is a JSON which is the entry point of the geometries streaming. That JSON must have the following structure:
-  */
-
-interface GeometriesStreaming {
-  assets: {
-    id: number;
-    geometries: {
-      color: number[];
-      geometryID: number;
-      transformation: number[];
-    }[];
-  }[];
-
-  geometries: {
-    [id: number]: {
-      boundingBox: { [id: number]: number };
-      hasHoles: boolean;
-      geometryFile: "url-to-geometry-file-in-your-backend";
-    };
-  };
-
-  globalDataFileId: "url-to-fragments-group-file-in-your-backend";
-}
-
-/* MD
-  ### 📅 Setting up the events
-  ---
-
-  The second file is actually not just a single file, but X number of files (depends on how big is your model) that contains the required information to generate the geometry while streaming.
-
-  In order to create the JSON file and get the information with the geometry, these components, emits events that let you get the processed data from the conversion process.
-  
-  :::important
-
-  Nedless to say, you need to set up your event listeners before triggering the conversion!
-
-  :::
-  
-  Let's start with the first event:
+  We need to create a json, that serves as entry point for streaming the geometry tiles. It is empty and will be filled with data from the tiler events. Note that the `globalDataFileId` must have a "-global" suffix.
 */
 
-let files: { name: string; bits: (Uint8Array | string)[] }[] = [];
-let geometriesData: OBC.StreamedGeometries = {};
-let geometryFilesCount = 1;
+const json: OBC.GeometryTilesJson = {
+  assets: [],
+  geometries: {},
+  globalDataFileId: "ifc_processed-global",
+};
 
-tiler.onGeometryStreamed.add((geometry) => {
-  const { buffer, data } = geometry;
-  const bufferFileName = `small.ifc-processed-geometries-${geometryFilesCount}`;
-  for (const expressID in data) {
-    const value = data[expressID];
-    value.geometryFile = bufferFileName;
-    geometriesData[expressID] = value;
+/* MD
+  We have to index the files, and store them with a suffix like "-0". When streaming tiles to the viewer, it implicity expects this suffix.
+*/
+
+let fileIndex = 0;
+
+/* MD
+  We now have to pick how we want to store our files. In order for this example to work within a browser we can create the files in memory. 
+  
+  ::
+  For larger files, this might overwhelm your clients memory capacity and freeze your browser, so it probably makes sense to do this on a server with `node:fs` or similar.
+*/
+
+const files: Array<{ name: string; data: Uint8Array | string }> = [];
+
+/* MD
+  The tiler exposes events that allow us to store the generated data.
+  We write the binary data (buffer) to disk and add the `data` information to the json.
+*/
+
+tiler.onGeometryStreamed.add(async ({ buffer, data }) => {
+  const fileName: OBC.GeometryTileFileName = `ifc_processed_geometries-${fileIndex}`;
+
+  for (const id in data) {
+    json.geometries[id] = { ...data[id], geometryFile: fileName };
   }
-  files.push({ name: bufferFileName, bits: [buffer] });
-  geometryFilesCount++;
-});
 
-/* MD
-  One of the most important things to keep in mind is that the event we just setup will get fired as many times as per the "chunk" data generated by the converted. Simply put, the event will get fired several times ⏲ and per each time we will produce one file data that is stored in the `geometryFiles` array. Later on, we will download the geometry files ⏬.
-
-  :::note
-
-  As you see, `geometriesData` is not being stored as a file to be downloaded. The reason is because that is part of the information we need to create the entry JSON file 🚀.
-
-  :::
-
-  Nice! Let's go with the second event that will give us more information to create the required files:
-  */
-
-let assetsData: OBC.StreamedAsset[] = [];
-
-tiler.onAssetStreamed.add((assets) => {
-  assetsData = [...assetsData, ...assets];
-});
-
-/* MD
-  This one is easier as the event doesn't produce binary data, but information we need to create the JSON file. 
-  
-  :::note Are you familiar with Fragments?
-  
-  If you're familiar with That Open Engine (our libraries), you should recall fragments. Fragments are just a fancy word we use to refer to ThreeJS geometry efficiently created from IFC files which are the things you end up see in the viewer... one IFC file is usually composed of many fragments and all of them are grouped in a FragmentsGroup, which is the final processed IFC model.
-  
-  :::
-  
-  Why do we remind you about FragmentsGroup? Because streaming also works with them! So yes, when you convert an IFC to tiles, the converter also creates a FragmentsGroup in the background, and that information is extremely important for the streamer in order to display the streamed file as everything gets grouped there. So, there is another event that gives you the FragmentsGroup binary data and we also need to create a file with that information.
-  */
-
-tiler.onIfcLoaded.add((groupBuffer) => {
   files.push({
-    name: "small.ifc-processed-global",
-    bits: [groupBuffer],
+    name: fileName,
+    data: buffer,
+  });
+
+  fileIndex++;
+});
+
+/* MD
+  We can optionally also act on the progress. It contains a value between 0 and 1. We come back to this a bit later.
+*/
+
+tiler.onProgress.add(async (v) => {
+  console.log(`Progress: ${v}`);
+});
+
+/* MD
+  Asset data is only written to the json.
+*/
+
+tiler.onAssetStreamed.add(async (assets) => {
+  json.assets.push(...assets);
+});
+
+/* MD
+  Once all of the geometry chunks have been streamed, the `onIfcLoaded` event will fire.
+  
+  This event provides FragmentsGroups data as a parameter. This information is extremely important for the streamer as everything gets grouped there, so we also write it do disk.
+
+  Since we're done, we can also write the json file to disk.
+*/
+
+tiler.onIfcLoaded.add(async (globalData) => {
+  files.push({
+    name: json.globalDataFileId,
+    data: globalData,
+  });
+
+  files.push({
+    name: "ifc_processed.json",
+    data: JSON.stringify(json),
   });
 });
 
 /* MD
-  :::warning
-
-  You can name the file whatever you want, but is *extremely important* you finish the file name with `-global`!
-
-  :::
-
   ### ↘️ Downloading the tiles
   ---
 
   Now that we've setup the main listeners, the last thing is to download all the data once the conversion has fininshed. To do so, we can use the progress event:
 */
 
-function downloadFile(name: string, ...bits: (Uint8Array | string)[]) {
-  const file = new File(bits, name);
+function downloadFile(name: string, data: Uint8Array | string) {
+  const file = new File([data], name);
   const anchor = document.createElement("a");
   const url = URL.createObjectURL(file);
   anchor.href = url;
@@ -240,35 +140,15 @@ function downloadFile(name: string, ...bits: (Uint8Array | string)[]) {
 }
 
 async function downloadFilesSequentially(
-  fileList: { name: string; bits: (Uint8Array | string)[] }[]
+  files: { name: string; data: Uint8Array | string }[]
 ) {
-  for (const { name, bits } of fileList) {
-    downloadFile(name, ...bits);
+  for (const { name, data } of files) {
+    downloadFile(name, data);
     await new Promise((resolve) => {
       setTimeout(resolve, 100);
     });
   }
 }
-
-tiler.onProgress.add((progress) => {
-  if (progress !== 1) return;
-  setTimeout(async () => {
-    const processedData = {
-      geometries: geometriesData,
-      assets: assetsData,
-      globalDataFileId: "small.ifc-processed-global",
-    };
-    files.push({
-      name: "small.ifc-processed.json",
-      bits: [JSON.stringify(processedData)],
-    });
-    await downloadFilesSequentially(files);
-    assetsData = [];
-    geometriesData = {};
-    files = [];
-    geometryFilesCount = 1;
-  });
-});
 
 /* MD
   ### 🔥 Generating the tiles
