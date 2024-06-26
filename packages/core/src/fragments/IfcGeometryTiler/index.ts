@@ -13,7 +13,9 @@ import {
 export * from "./src";
 
 /**
- * A component that handles the tiling of IFC geometries for efficient streaming. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/IfcGeometryTiler). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/IfcGeometryTiler).
+ * A component that handles the tiling of IFC geometries for efficient streaming.
+ *
+ * @see {@link https://docs.thatopen.com/Tutorials/Components/Core/IfcGeometryTiler|📕 Tutorial} | {@link https://docs.thatopen.com/api/@thatopen/components/classes/IfcGeometryTiler|📘 API}
  */
 export class IfcGeometryTiler extends Component implements Disposable {
   /**
@@ -419,15 +421,15 @@ export class IfcGeometryTiler extends Component implements Disposable {
   }
 
   private async streamAssets() {
-    await this.onAssetStreamed.trigger(this._assets);
+    this.onAssetStreamed.trigger(this._assets);
     this._assets = null as any;
     this._assets = [];
   }
 
   private async streamGeometries() {
-    let buffer = this._streamSerializer.export(this._geometries) as Uint8Array;
+    const buffer = this._streamSerializer.export(this._geometries);
 
-    let data: StreamedGeometries = {};
+    const data: StreamedGeometries = {};
 
     for (const [id, { boundingBox, hasHoles }] of this._geometries) {
       data[id] = { boundingBox, hasHoles };
@@ -435,9 +437,6 @@ export class IfcGeometryTiler extends Component implements Disposable {
 
     this.onGeometryStreamed.trigger({ data, buffer });
 
-    // Force memory disposal of all created items
-    data = null as any;
-    buffer = null as any;
     this._geometries.clear();
     this._geometryCount = 0;
   }
