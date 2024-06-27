@@ -1,5 +1,32 @@
 # Changelog
 
+## [2.1.0](https://github.com/ThatOpen/engine_components/compare/v2.0.1...v2.1.0) (2024-06-25)
+
+
+### Features
+
+* clipping fills highlight ([09b464d](https://github.com/ThatOpen/engine_components/commit/09b464db1ffdcbc60bdf4b4c838af5d403f10e5f))
+* **core:** adds ModelIdMap and its conversion to/from FragmentIdMap ([55258be](https://github.com/ThatOpen/engine_components/commit/55258be95f92ec4e05d97425d9c7f81056fd6590))
+* **core:** adds name to SimpleWorld and creation events to Worlds ([9c39280](https://github.com/ThatOpen/engine_components/commit/9c392804d4260b2ae5a9f4a87f1e77562a7e2a68))
+* **core:** updates classifier to allow spatial structure grouping ([038629e](https://github.com/ThatOpen/engine_components/commit/038629eac49d0188bca8337fd75dcdce12c705ea))
+* **core:** updates IfcMetadataReader ([704f45b](https://github.com/ThatOpen/engine_components/commit/704f45b8c89f59b2ef35be668bf15f31f5de7cd5))
+* expose streamer objects ([988f92e](https://github.com/ThatOpen/engine_components/commit/988f92efd787c496707071ded182ceeddcd97995))
+* improves some methods ([55b802a](https://github.com/ThatOpen/engine_components/commit/55b802a443553b5a00a31f812ad1100b155005e1))
+
+
+### Bug Fixes
+
+* **core:** updates package to auto get wasm on IfcLoader ([b187466](https://github.com/ThatOpen/engine_components/commit/b187466d8dfd79984098589374405d83140910dc))
+* correct camera and grid disposal logic ([fead481](https://github.com/ThatOpen/engine_components/commit/fead481f02f39c3ea1779c267cf4b30d6c9437b6))
+* correct culler when displaying coordinated models ([471e8f2](https://github.com/ThatOpen/engine_components/commit/471e8f2f189e098c7026c621d3bebd176cb01063))
+* correct hider hide all / show all logic ([782a0b3](https://github.com/ThatOpen/engine_components/commit/782a0b32273edbe8186eb8a4ce40568cd621260f))
+* correct marker bug for working with multiple worlds ([54834e8](https://github.com/ThatOpen/engine_components/commit/54834e8a433a97ebff310206798eebe29696f886))
+* correct world event disposal logic ([ee5c0fb](https://github.com/ThatOpen/engine_components/commit/ee5c0fba3698568d354836eae14ebd26baef8080))
+* **front:** custom highlighter colors were overwritten by select and hover ([d95e168](https://github.com/ThatOpen/engine_components/commit/d95e1680d1d869abef3078801b34a57dc242b048))
+* solve clip planes deletAll infinite loop ([8e40173](https://github.com/ThatOpen/engine_components/commit/8e40173689279757731c207db70b5ea113c75c3d))
+* solve postproduction custom pass quality degradation when resizing ([2506de6](https://github.com/ThatOpen/engine_components/commit/2506de6ebd2292e6350487278e5578509d7a333a))
+* substitute "pointermove" by "cursormove" for touchscreens ([9e4a126](https://github.com/ThatOpen/engine_components/commit/9e4a126945aae305e1907d9c4d6af926e0ad0f91))
+
 ## [2.0.1](https://github.com/ThatOpen/engine_components/compare/v1.5.0...v2.0.1) (2024-05-22)
 
 
