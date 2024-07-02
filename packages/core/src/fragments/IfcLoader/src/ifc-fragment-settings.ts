@@ -53,5 +53,5 @@ export class IfcFragmentSettings {
    * @param url - The URL of the file to locate.
    * @returns The absolute path of the file.
    */
-  customLocateFileHandler: WEBIFC.LocateFileHandlerFn | null = null;
+  customLocateFileHandler: WEBIFC.LocateFileHandlerFn | undefined;
 }
