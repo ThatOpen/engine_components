@@ -620,7 +620,7 @@ __metadata:
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
     "@thatopen/components": ~2.0.0
-    "@thatopen/fragments": 2.0.9
+    "@thatopen/fragments": ~2.0.0
     "@thatopen/ui": ~2.0.0
     "@thatopen/ui-obc": ~2.0.0
     "@types/earcut": ^2.1.4
@@ -643,7 +643,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
-    "@thatopen/fragments": 2.0.9
+    "@thatopen/fragments": ~2.0.0
     "@thatopen/ui": ~2.0.0
     "@types/three": 0.160.0
     camera-controls: 2.7.3
@@ -658,7 +658,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@thatopen/fragments@npm:2.0.9":
+"@thatopen/fragments@npm:~2.0.0":
   version: 2.0.9
   resolution: "@thatopen/fragments@npm:2.0.9"
   dependencies:
