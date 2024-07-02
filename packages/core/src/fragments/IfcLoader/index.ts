@@ -140,6 +140,13 @@ export class IfcLoader extends Component implements Disposable {
 
     if (coordinate) fragments.coordinate([group]);
 
+    for (const [expressID] of group.data) {
+      const props = properties[expressID];
+      if (!props || !props.GlobalId) continue;
+      const globalID = props.GlobalId.value || props.GlobalId;
+      group.globalToExpressIDs.set(globalID, expressID);
+    }
+
     console.log(`Streaming the IFC took ${performance.now() - before} ms!`);
 
     return group;

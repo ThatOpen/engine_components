@@ -128,7 +128,7 @@ async function downloadFilesSequentially(
 const propsStreamer = components.get(OBC.IfcPropertiesTiler);
 
 propsStreamer.settings.wasm = {
-  path: "https://unpkg.com/web-ifc@0.0.53/",
+  path: "https://unpkg.com/web-ifc@0.0.55/",
   absolute: true,
 };
 

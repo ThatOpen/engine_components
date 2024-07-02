@@ -219,6 +219,13 @@ export class IfcGeometryTiler extends Component implements Disposable {
         }
         const itemID = result.get(i);
         chunks[index].push(itemID);
+
+        const props = this.webIfc.GetLine(0, itemID);
+        if (props.GlobalId) {
+          const globalID = props?.GlobalId.value || props?.GlobalId;
+          group.globalToExpressIDs.set(globalID, itemID);
+        }
+
         const level = this._spatialTree.itemsByFloor[itemID] || 0;
         group.data.set(itemID, [[], [level, type]]);
         counter++;
