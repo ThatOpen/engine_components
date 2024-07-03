@@ -427,6 +427,7 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     const now = performance.now();
     let viewWasUpdated = false;
 
+    // We can only lose geometries that were previously found
     const lostGeometries = new Set(this._foundGeometries);
 
     for (const [color, number] of colors) {
@@ -434,19 +435,20 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
       if (!geometry) {
         continue;
       }
-      const isFound = number > this.threshold;
-      const { exists } = geometry;
 
-      if (!isFound && !exists) {
-        // Geometry doesn't exist and is not visible
+      const isGeometryBigEnough = number > this.threshold;
+      if (!isGeometryBigEnough) {
         continue;
       }
 
-      const modelID = this._indexModelID.get(geometry.modelIndex) as string;
-
+      // The geometry is big enough to be considered seen, so remove it
+      // from the geometries to be considered lost
       lostGeometries.delete(color);
 
-      if (isFound && exists) {
+      const { exists } = geometry;
+      const modelID = this._indexModelID.get(geometry.modelIndex) as string;
+
+      if (exists) {
         // Geometry was visible, and still is
         geometry.time = now;
         if (!toShow[modelID]) {
@@ -455,7 +457,7 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
         toShow[modelID].add(geometry.geometryID);
         this._foundGeometries.add(color);
         viewWasUpdated = true;
-      } else if (isFound && !exists) {
+      } else {
         // New geometry found
         if (!toLoad[modelID]) {
           toLoad[modelID] = new Map();
@@ -470,14 +472,15 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
         set.add(geometry.geometryID);
         this._foundGeometries.add(color);
         viewWasUpdated = true;
-      } else if (!isFound && exists) {
-        // Geometry is hardly seen, so it can be considered lost
-        // if (bboxAmount < this.bboxThreshold) {
-        // When too many bounding boxes on sight
-        // don't hide / destroy geometry to prevent flickering
+      }
+    }
+
+    // Handle geometries that were lost
+    for (const color of lostGeometries) {
+      const geometry = this._geometries.get(color);
+      if (geometry) {
         this.handleLostGeometries(now, color, geometry, toRemove, toHide);
         viewWasUpdated = true;
-        // }
       }
     }
 

@@ -8,6 +8,7 @@ import {
   StreamedInstances,
   StreamedInstance,
   StreamLoaderSettings,
+  StreamerDbCleaner,
 } from "./src";
 
 export * from "./src";
@@ -62,6 +63,8 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
    * Flag indicating whether to use the local cache for storing geometry files.
    */
   useCache = true;
+
+  dbCleaner: StreamerDbCleaner;
 
   private _culler: GeometryCullerRenderer | null = null;
 
@@ -163,6 +166,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
   constructor(components: OBC.Components) {
     super(components);
     this.components.add(IfcStreamer.uuid, this);
+    this.dbCleaner = new StreamerDbCleaner(this._fileCache);
 
     // const hardlyGeometry = new THREE.BoxGeometry();
     // this._hardlySeenGeometries = new THREE.InstancedMesh();
@@ -438,6 +442,9 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
 
           // If this file is in the local cache, get it
           if (this.useCache) {
+            // Add or update this file to clean it up from indexedDB automatically later
+            this.dbCleaner.update(url);
+
             const found = await this._fileCache.files.get(url);
 
             if (found) {
