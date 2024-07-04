@@ -349,6 +349,9 @@ export class Clipper
       world.renderer.updateClippingPlanes();
       const { clippingPlanes } = world.renderer;
       for (const model of world.meshes) {
+        if (!model.material) {
+          continue;
+        }
         if (Array.isArray(model.material)) {
           for (const mat of model.material) {
             mat.clippingPlanes = clippingPlanes;
