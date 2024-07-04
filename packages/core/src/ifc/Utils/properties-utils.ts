@@ -35,7 +35,7 @@ export class IfcPropertiesUtils {
       } else if (unit.Prefix?.value === "CENTI") {
         factor = 0.01;
       } else if (unit.Prefix?.value === "DECI") {
-        factor = 0.01;
+        factor = 0.1;
       }
       return unitValue * factor;
     }
