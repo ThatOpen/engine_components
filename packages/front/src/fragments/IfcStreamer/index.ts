@@ -291,6 +291,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
       indexer.setRelationMap(group, indexer.getRelationsMapFromJSON(rels));
     }
 
+    this.culler.updateTransformations(group.uuid);
     this.culler.needsUpdate = true;
 
     return group;

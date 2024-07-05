@@ -345,6 +345,7 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     }
   }
 
+  // TODO: Is this neccesary anymore?
   setModelTransformation(modelID: string, transform: THREE.Matrix4) {
     const modelIndex = this._modelIDIndex.get(modelID);
     if (modelIndex === undefined) {
@@ -387,6 +388,36 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
       }
       geometry.hidden = !visible;
       this.setGeometryVisibility(geometry, visible, true, assets);
+    }
+  }
+
+  updateTransformations(modelID: string) {
+    const key = this._modelIDIndex.get(modelID);
+    if (key === undefined) return;
+    const fragments = this.components.get(OBC.FragmentsManager);
+    const originalModel = fragments.groups.get(modelID);
+    if (originalModel) {
+      originalModel.updateWorldMatrix(true, false);
+      originalModel.updateMatrix();
+      const bboxes = this.boxes.get(key);
+      if (bboxes) {
+        bboxes.mesh.position.set(0, 0, 0);
+        bboxes.mesh.rotation.set(0, 0, 0);
+        bboxes.mesh.scale.set(1, 1, 1);
+        bboxes.mesh.updateMatrix();
+        bboxes.mesh.applyMatrix4(originalModel.matrixWorld);
+        bboxes.mesh.updateMatrix();
+      }
+
+      const group = this._geometriesGroups.get(key);
+      if (group) {
+        group.position.set(0, 0, 0);
+        group.rotation.set(0, 0, 0);
+        group.scale.set(1, 1, 1);
+        group.updateMatrix();
+        group.applyMatrix4(originalModel.matrixWorld);
+        group.updateMatrix();
+      }
     }
   }
 
