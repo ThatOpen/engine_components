@@ -1,5 +1,7 @@
 import * as THREE from "three";
+import * as FRAGS from "@thatopen/fragments";
 import { Component, Components } from "../../core";
+import { BoundingBoxer, FragmentsManager } from "../../fragments";
 
 /**
  * Represents an edge measurement result.
@@ -284,6 +286,95 @@ export class MeasurementUtils extends Component {
     vector.z = Math.trunc(vector.z * factor) / factor;
   }
 
+  /**
+   * Calculates the volume of a set of fragments.
+   *
+   * @param frags - A map of fragment IDs to their corresponding item IDs.
+   * @returns The total volume of the fragments and the bounding sphere.
+   *
+   * @remarks
+   * This method creates a set of instanced meshes from the given fragments and item IDs.
+   * It then calculates the volume of each mesh and returns the total volume and its bounding sphere.
+   *
+   * @throws Will throw an error if the geometry of the meshes is not indexed.
+   * @throws Will throw an error if the fragment manager is not available.
+   */
+  getVolumeFromFragments(frags: FRAGS.FragmentIdMap) {
+    const fragments = this.components.get(FragmentsManager);
+    const tempMatrix = new THREE.Matrix4();
+
+    const meshes: THREE.InstancedMesh[] = [];
+    for (const fragID in frags) {
+      const fragment = fragments.list.get(fragID);
+      if (!fragment) continue;
+      const itemIDs = frags[fragID];
+
+      let instanceCount = 0;
+      for (const id of itemIDs) {
+        const instances = fragment.getInstancesIDs(id);
+        if (!instances) continue;
+        instanceCount += instances.size;
+      }
+
+      const mesh = new THREE.InstancedMesh(
+        fragment.mesh.geometry,
+        undefined,
+        instanceCount,
+      );
+
+      let counter = 0;
+      for (const id of itemIDs) {
+        const instances = fragment.getInstancesIDs(id);
+        if (!instances) continue;
+        for (const instance of instances) {
+          fragment.mesh.getMatrixAt(instance, tempMatrix);
+          mesh.setMatrixAt(counter++, tempMatrix);
+        }
+      }
+
+      meshes.push(mesh);
+    }
+
+    const result = this.getVolumeFromMeshes(meshes);
+
+    for (const mesh of meshes) {
+      mesh.geometry = null as any;
+      mesh.material = [];
+      mesh.dispose();
+    }
+
+    return result;
+  }
+
+  /**
+   * Calculates the total volume of a set of meshes.
+   *
+   * @param meshes - An array of meshes or instanced meshes to calculate the volume from.
+   * @returns The total volume of the meshes and the bounding sphere.
+   *
+   * @remarks
+   * This method calculates the volume of each mesh in the provided array and returns the total volume
+   * and its bounding sphere.
+   *
+   */
+  getVolumeFromMeshes(meshes: THREE.InstancedMesh[] | THREE.Mesh[]) {
+    let volume = 0;
+    for (const mesh of meshes) {
+      volume += this.getVolumeOfMesh(mesh);
+    }
+
+    const bbox = this.components.get(BoundingBoxer);
+    for (const mesh of meshes) {
+      mesh.geometry.computeBoundingSphere();
+      bbox.addMesh(mesh);
+    }
+
+    const sphere = bbox.getSphere();
+    bbox.reset();
+
+    return { volume, sphere };
+  }
+
   private getFaceData(
     faceIndex: number,
     instance: number | undefined,
@@ -348,5 +439,58 @@ export class MeasurementUtils extends Component {
     plane.setFromNormalAndCoplanarPoint(faceNormal, p1);
     plane.constant = Math.round(plane.constant * 10) / 10;
     return { plane, edges };
+  }
+
+  // https://stackoverflow.com/a/1568551
+  private getVolumeOfMesh(mesh: THREE.Mesh | THREE.InstancedMesh) {
+    let volume = 0;
+    const p1 = new THREE.Vector3();
+    const p2 = new THREE.Vector3();
+    const p3 = new THREE.Vector3();
+    const { index } = mesh.geometry;
+    const pos = mesh.geometry.attributes.position.array;
+    if (!index) {
+      console.warn("Geometry must be indexed to compute its volume!");
+      return 0;
+    }
+    // prettier-ignore
+    const instances: THREE.Matrix4[] = [];
+    if (mesh instanceof THREE.InstancedMesh) {
+      for (let i = 0; i < mesh.count; i++) {
+        const matrix = new THREE.Matrix4();
+        mesh.getMatrixAt(i, matrix);
+        instances.push(matrix);
+      }
+    } else {
+      instances.push(new THREE.Matrix4().identity());
+    }
+    const { matrixWorld } = mesh;
+    for (let i = 0; i < index.array.length - 2; i += 3) {
+      for (const instance of instances) {
+        const transform = instance.multiply(matrixWorld);
+        const i1 = index.array[i] * 3;
+        const i2 = index.array[i + 1] * 3;
+        const i3 = index.array[i + 2] * 3;
+        p1.set(pos[i1], pos[i1 + 1], pos[i1 + 2]).applyMatrix4(transform);
+        p2.set(pos[i2], pos[i2 + 1], pos[i2 + 2]).applyMatrix4(transform);
+        p3.set(pos[i3], pos[i3 + 1], pos[i3 + 2]).applyMatrix4(transform);
+        volume += this.getSignedVolumeOfTriangle(p1, p2, p3);
+      }
+    }
+    return Math.abs(volume);
+  }
+
+  private getSignedVolumeOfTriangle(
+    p1: THREE.Vector3,
+    p2: THREE.Vector3,
+    p3: THREE.Vector3,
+  ) {
+    const v321 = p3.x * p2.y * p1.z;
+    const v231 = p2.x * p3.y * p1.z;
+    const v312 = p3.x * p1.y * p2.z;
+    const v132 = p1.x * p3.y * p2.z;
+    const v213 = p2.x * p1.y * p3.z;
+    const v123 = p1.x * p2.y * p3.z;
+    return (1.0 / 6.0) * (-v321 + v231 + v312 - v132 - v213 + v123);
   }
 }
