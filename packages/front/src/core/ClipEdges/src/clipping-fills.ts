@@ -2,7 +2,7 @@ import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import earcut from "earcut";
 import { PostproductionRenderer } from "../../PostproductionRenderer";
-import { IndexFragmentMap } from "./types.ts";
+import { IndexFragmentMap } from "./types";
 
 /**
  * Class for managing and rendering the fills of a clipping plane.
