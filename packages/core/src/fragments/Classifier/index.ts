@@ -348,27 +348,57 @@ export class Classifier extends Component implements Disposable {
     const modelRelations = indexer.relationMaps[model.uuid];
     if (!modelRelations) {
       throw new Error(
-        `Classifier: model relations of ${model.name || model.uuid} have to exists to group by spatial structure.`
+        `Classifier: model relations of ${model.name || model.uuid} have to exists to group by spatial structure.`,
       );
     }
     const systemName = "spatialStructures";
     for (const [expressID] of modelRelations) {
+      const spatialRels = indexer.getEntityRelations(
+        model,
+        expressID,
+        "Decomposes",
+      );
+
+      // For spatial items like IFCSPACE
+      if (spatialRels) {
+        for (const id of spatialRels) {
+          const spatialRelAttrs = await model.getProperties(id);
+          if (!spatialRelAttrs) {
+            continue;
+          }
+          const relName = spatialRelAttrs.Name?.value;
+
+          this.saveItem(model, systemName, relName, expressID);
+        }
+      }
+
       const rels = indexer.getEntityRelations(
         model,
         expressID,
         "ContainsElements",
       );
+
+      if (!rels) {
+        continue;
+      }
+
       const relAttrs = await model.getProperties(expressID);
-      if (!(rels && relAttrs)) continue;
+      if (!relAttrs) {
+        continue;
+      }
       const relName = relAttrs.Name?.value;
+
       for (const id of rels) {
         this.saveItem(model, systemName, relName, id);
+        // For nested elements like curtain walls
         const decompositionRelations = indexer.getEntityRelations(
           model,
           Number(id),
           "IsDecomposedBy",
         );
-        if (!decompositionRelations) continue;
+        if (!decompositionRelations) {
+          continue;
+        }
         for (const decomposedID of decompositionRelations) {
           this.saveItem(model, systemName, relName, decomposedID);
         }

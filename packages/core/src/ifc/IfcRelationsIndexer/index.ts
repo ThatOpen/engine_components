@@ -243,12 +243,18 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     relationName: InverseAttribute,
   ) {
     const indexMap = this.relationMaps[model.uuid];
-    if (!indexMap) return null;
+    if (!indexMap) {
+      return null;
+    }
     const entityRelations = indexMap.get(expressID);
     const attributeIndex = this._inverseAttributes.indexOf(relationName);
-    if (!entityRelations || attributeIndex === -1) return null;
+    if (!entityRelations || attributeIndex === -1) {
+      return null;
+    }
     const relations = entityRelations.get(attributeIndex);
-    if (!relations) return null;
+    if (!relations) {
+      return null;
+    }
     return relations;
   }
 
