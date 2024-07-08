@@ -84,7 +84,7 @@ export class VolumeMeasurement
     if (!result || !result.object) return;
     const { object } = result;
     if (object instanceof THREE.Mesh) {
-      const { volume } = utils.getVolumeFromMeshes([object]);
+      const volume = utils.getVolumeFromMeshes([object]);
       this.onVolumeFound.trigger(volume);
     }
   };
@@ -121,7 +121,11 @@ export class VolumeMeasurement
    */
   getVolumeFromFragments(frags: FRAGS.FragmentIdMap) {
     const utils = this.components.get(OBC.MeasurementUtils);
-    const { sphere, volume } = utils.getVolumeFromFragments(frags);
+    const volume = utils.getVolumeFromFragments(frags);
+    const bb = this.components.get(OBC.BoundingBoxer);
+    bb.reset();
+    bb.addFragmentIdMap(frags);
+    const sphere = bb.getSphere();
     this.setLabel(sphere, volume);
     return volume;
   }
@@ -143,7 +147,11 @@ export class VolumeMeasurement
    */
   getVolumeFromMeshes(meshes: THREE.InstancedMesh[] | THREE.Mesh[]) {
     const utils = this.components.get(OBC.MeasurementUtils);
-    const { volume, sphere } = utils.getVolumeFromMeshes(meshes);
+    const bb = this.components.get(OBC.BoundingBoxer);
+    bb.reset();
+    for (const mesh of meshes) bb.addMesh(mesh);
+    const sphere = bb.getSphere();
+    const volume = utils.getVolumeFromMeshes(meshes);
     this.setLabel(sphere, volume);
     return volume;
   }

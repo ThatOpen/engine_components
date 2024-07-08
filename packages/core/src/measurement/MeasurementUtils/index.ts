@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import { Component, Components } from "../../core";
-import { BoundingBoxer, FragmentsManager } from "../../fragments";
+import { FragmentsManager } from "../../fragments";
 
 /**
  * Represents an edge measurement result.
@@ -362,17 +362,7 @@ export class MeasurementUtils extends Component {
     for (const mesh of meshes) {
       volume += this.getVolumeOfMesh(mesh);
     }
-
-    const bbox = this.components.get(BoundingBoxer);
-    for (const mesh of meshes) {
-      mesh.geometry.computeBoundingSphere();
-      bbox.addMesh(mesh);
-    }
-
-    const sphere = bbox.getSphere();
-    bbox.reset();
-
-    return { volume, sphere };
+    return volume;
   }
 
   private getFaceData(
