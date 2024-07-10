@@ -619,8 +619,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
-    "@thatopen/components": ~2.0.0
-    "@thatopen/fragments": ~2.0.0
+    "@thatopen/components": ~2.1.0
+    "@thatopen/fragments": ~2.1.0
     "@thatopen/ui": ~2.0.0
     "@thatopen/ui-obc": ~2.0.0
     "@types/earcut": ^2.1.4
@@ -633,17 +633,17 @@ __metadata:
     three: ^0.160.1
     web-ifc: 0.0.55
   peerDependencies:
-    "@thatopen/fragments": ~2.0.0
+    "@thatopen/fragments": ~2.1.0
     three: ^0.160.1
     web-ifc: 0.0.55
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@workspace:packages/core, @thatopen/components@~2.0.0":
+"@thatopen/components@workspace:packages/core, @thatopen/components@~2.1.0":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
-    "@thatopen/fragments": ~2.0.0
+    "@thatopen/fragments": ~2.1.0
     "@thatopen/ui": ~2.0.0
     "@types/three": 0.160.0
     camera-controls: 2.7.3
@@ -652,21 +652,21 @@ __metadata:
     three-mesh-bvh: 0.7.0
     web-ifc: 0.0.55
   peerDependencies:
-    "@thatopen/fragments": ~2.0.0
+    "@thatopen/fragments": ~2.1.0
     three: ^0.160.1
     web-ifc: 0.0.55
   languageName: unknown
   linkType: soft
 
-"@thatopen/fragments@npm:~2.0.0":
-  version: 2.0.9
-  resolution: "@thatopen/fragments@npm:2.0.9"
+"@thatopen/fragments@npm:~2.1.0":
+  version: 2.1.0
+  resolution: "@thatopen/fragments@npm:2.1.0"
   dependencies:
     flatbuffers: 23.3.3
     three-mesh-bvh: 0.7.0
   peerDependencies:
     three: ^0.160.1
-  checksum: b1fbb24ed7f2d71653d8514f2511cf9232a3785c7561e2c9840056385205cca5198fb298d732dd114c829bd578ca5a9e00062e833b78e6d539df4346e0aa0de4
+  checksum: 0cb27833c4e09d45ceadd3d73f31ab91f9f9344ff4577e8d6d7aa3da5612f7214820532549ed7d3856a28ace29f299f779b931fc87b189cdc438d9bd5d30bce4
   languageName: node
   linkType: hard
 
