@@ -42,5 +42,6 @@
     "typescript": "5.4.2",
     "vite": "5.1.6",
     "vite-plugin-dts": "3.7.3"
-  }
+  },
+  "version": "2.1.0"
 }
