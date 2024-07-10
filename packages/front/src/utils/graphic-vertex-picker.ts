@@ -17,6 +17,18 @@ export class GraphicVertexPicker
   /** The marker used to indicate the picked vertex. */
   marker: Mark | null = null;
 
+  constructor(
+    components: OBC.Components,
+    config?: Partial<OBC.VertexPickerConfig>,
+  ) {
+    super(components, config);
+    this.onEnabled.add((value: boolean) => {
+      if (this.marker) {
+        this.marker.visible = value;
+      }
+    });
+  }
+
   /** {@link OBC.Disposable.onDisposed} */
   dispose() {
     if (this.marker) {

@@ -50,6 +50,11 @@ export class VertexPicker extends Component implements Disposable {
   readonly onVertexLost = new Event<THREE.Vector3>();
 
   /**
+   * An event that is triggered when the picker is enabled or disabled
+   */
+  readonly onEnabled = new Event<boolean>();
+
+  /**
    * A reference to the Components instance associated with this VertexPicker.
    */
   components: Components;
@@ -79,6 +84,7 @@ export class VertexPicker extends Component implements Disposable {
     if (!value) {
       this._pickedPoint = null;
     }
+    this.onEnabled.trigger(value);
   }
 
   /**
