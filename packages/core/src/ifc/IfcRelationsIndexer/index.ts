@@ -359,4 +359,46 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     this.onDisposed.trigger(IfcRelationsIndexer.uuid);
     this.onDisposed.reset();
   }
+
+  /**
+   * Gets the children of the given element recursively. E.g. in a model with project - site - building - storeys - rooms, passing a storey will include all its children and the children of the rooms contained in it.
+   *
+   * @param model The BIM model whose children to get.
+   * @param id The expressID of the item whose children to get.
+   * @param found An optional parameter that includes a set of expressIDs where the found element IDs will be added.
+   *
+   * @returns A `Set` with the expressIDs of the found items.
+   */
+  getElementsChildren(
+    model: FragmentsGroup,
+    id: number,
+    found = new Set<number>(),
+  ) {
+    found.add(id);
+
+    const modelRelations = this.relationMaps[model.uuid];
+    if (modelRelations === undefined) {
+      throw new Error(
+        "The provided model has no indices. You have to generate them first.",
+      );
+    }
+
+    // Spatial structure elements contained in this item
+    const spatialRels = this.getEntityRelations(model, id, "IsDecomposedBy");
+    if (spatialRels) {
+      for (const id of spatialRels) {
+        this.getElementsChildren(model, id, found);
+      }
+    }
+
+    // Elements contained in this item
+    const rels = this.getEntityRelations(model, id, "ContainsElements");
+    if (rels) {
+      for (const id of rels) {
+        this.getElementsChildren(model, id, found);
+      }
+    }
+
+    return found;
+  }
 }

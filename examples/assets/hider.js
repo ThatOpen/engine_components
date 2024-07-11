@@ -1,4 +1,4 @@
-import"./web-ifc-api-BN6RNDnz.js";import{S as g}from"./stats.min-BpIepu9J.js";import{p as h,J as i,m as r}from"./index-K5IA6oiZ.js";import{p as w,C as y,s as k,i as S,H as x,d as v,h as C,k as $,_ as j,A}from"./index-BBrF7fmJ.js";const F=document.getElementById("container"),e=new w,L=e.get(y),t=L.create();t.scene=new k(e);t.renderer=new S(e,F);t.camera=new x(e);e.init();t.camera.controls.setLookAt(12,6,8,0,0,-10);t.scene.setup();const _=e.get(v);_.create(t);t.scene.three.background=null;const B=e.get(C),H=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),J=await H.arrayBuffer(),N=new Uint8Array(J),c=B.load(N);t.scene.three.add(c);const O=await fetch("https://thatopen.github.io/engine_components/resources/small.json");c.setLocalProperties(await O.json());const d=e.get($),U=await fetch("https://thatopen.github.io/engine_components/resources/small-relations.json"),q=d.getRelationsMapFromJSON(await U.text());d.setRelationMap(c,q);const u=e.get(j),o=e.get(A);o.byEntity(c);await o.bySpatialStructure(c);const a=new g;a.showPanel(2);document.body.append(a.dom);a.dom.style.left="0px";a.dom.style.zIndex="unset";t.renderer.onBeforeUpdate.add(()=>a.begin());t.renderer.onAfterUpdate.add(()=>a.end());h.init();const b={},E=Object.keys(o.list.spatialStructures);for(const n of E)b[n]=!0;const f={},I=Object.keys(o.list.entities);for(const n of I)f[n]=!0;const s=i.create(()=>r`
+import"./web-ifc-api-BN6RNDnz.js";import{S as k}from"./stats.min-BpIepu9J.js";import{m as S,t as r,a as l}from"./index-tywNknxv.js";import{p as x,C as v,s as C,i as F,H as _,d as j,h as A,k as L,_ as $,A as M}from"./index-CS0wgiza.js";const B=document.getElementById("container"),e=new x,E=e.get(v),t=E.create();t.scene=new C(e);t.renderer=new F(e,B);t.camera=new _(e);e.init();t.camera.controls.setLookAt(12,6,8,0,0,-10);t.scene.setup();const H=e.get(j);H.create(t);t.scene.three.background=null;const b=e.get(A),I=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),N=await I.arrayBuffer(),O=new Uint8Array(N),i=b.load(O);t.scene.three.add(i);const U=await fetch("https://thatopen.github.io/engine_components/resources/small.json");i.setLocalProperties(await U.json());const d=e.get(L),q=await fetch("https://thatopen.github.io/engine_components/resources/small-relations.json"),P=d.getRelationsMapFromJSON(await q.text());d.setRelationMap(i,P);const f=e.get($),o=e.get(M);o.byEntity(i);await o.bySpatialStructure(i);const a=new k;a.showPanel(2);document.body.append(a.dom);a.dom.style.left="0px";a.dom.style.zIndex="unset";t.renderer.onBeforeUpdate.add(()=>a.begin());t.renderer.onAfterUpdate.add(()=>a.end());S.init();const g={},R=Object.keys(o.list.spatialStructures);for(const n of R)g[n]=!0;const h={},z=Object.keys(o.list.entities);for(const n of z)h[n]=!0;const s=r.create(()=>l`
     <bim-panel active label="Hider Tutorial" class="options-menu">
       <bim-panel-section collapsed label="Controls">
       
@@ -9,16 +9,16 @@ import"./web-ifc-api-BN6RNDnz.js";import{S as g}from"./stats.min-BpIepu9J.js";im
       </bim-panel-section>
       
     </bim-panel>
-  `);document.body.append(s);const M=s.querySelector("bim-panel-section[name='Floors']"),P=s.querySelector("bim-panel-section[name='Categories']");for(const n in b){const l=i.create(()=>r`
+  `);document.body.append(s);const D=s.querySelector("bim-panel-section[name='Floors']"),J=s.querySelector("bim-panel-section[name='Categories']");for(const n in g){const m=r.create(()=>l`
       <bim-checkbox checked label="${n}"
-        @change="${({target:p})=>{const m=o.find({spatialStructures:[n]});u.set(p.value,m)}}">
+        @change="${({target:p})=>{const c=o.list.spatialStructures[n];if(c&&c.id!==null)for(const[G,u]of b.groups){const w=d.getElementsChildren(u,c.id),y=u.getFragmentMap(w);f.set(p.value,y)}}}">
       </bim-checkbox>
-    `);M.append(l)}for(const n in f){const l=i.create(()=>r`
+    `);D.append(m)}for(const n in h){const m=r.create(()=>l`
       <bim-checkbox checked label="${n}"
-        @change="${({target:p})=>{const m=o.find({entities:[n]});u.set(p.value,m)}}">
+        @change="${({target:p})=>{const c=o.find({entities:[n]});f.set(p.value,c)}}">
       </bim-checkbox>
-    `);P.append(l)}const R=i.create(()=>r`
+    `);J.append(m)}const T=r.create(()=>l`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{s.classList.contains("options-menu-visible")?s.classList.remove("options-menu-visible"):s.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(R);
+    `);document.body.append(T);

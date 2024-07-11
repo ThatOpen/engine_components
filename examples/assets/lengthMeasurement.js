@@ -1,4 +1,4 @@
-import{B as b,M as d,a as m}from"./web-ifc-api-BN6RNDnz.js";import{S as p}from"./stats.min-BpIepu9J.js";import{p as u,C as h,s as w,H as k,d as g}from"./index-BBrF7fmJ.js";import{p as f,J as i,m as c}from"./index-K5IA6oiZ.js";import{S as D,_ as y}from"./index-BBPzgtWS.js";const r=document.getElementById("container"),t=new u,v=t.get(h),e=v.create();e.scene=new w(t);e.renderer=new D(t,r);e.camera=new k(t);t.init();e.camera.controls.setLookAt(5,5,5,0,0,0);e.scene.setup();const x=t.get(g);x.create(e);e.scene.three.background=null;const M=new b(3,3,3),$=new d({color:"#6528D7"}),l=new m(M,$);l.position.set(0,1.5,0);e.scene.three.add(l);e.meshes.add(l);const n=t.get(y);n.world=e;n.enabled=!0;n.snapDistance=1;r.ondblclick=()=>n.create();window.onkeydown=o=>{(o.code==="Delete"||o.code==="Backspace")&&n.delete()};const s=new p;s.showPanel(2);document.body.append(s.dom);s.dom.style.left="0px";s.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>s.begin());e.renderer.onAfterUpdate.add(()=>s.end());f.init();const a=i.create(()=>c`
+import{B as m,M as b,a as d}from"./web-ifc-api-BN6RNDnz.js";import{S as p}from"./stats.min-BpIepu9J.js";import{p as u,C as h,s as w,H as k,d as g}from"./index-CS0wgiza.js";import{m as f,t as i,a as c}from"./index-tywNknxv.js";import{S as D,_ as y}from"./index-ClK13k65.js";const r=document.getElementById("container"),t=new u,v=t.get(h),e=v.create();e.scene=new w(t);e.renderer=new D(t,r);e.camera=new k(t);t.init();e.camera.controls.setLookAt(5,5,5,0,0,0);e.scene.setup();const x=t.get(g);x.create(e);e.scene.three.background=null;const M=new m(3,3,3),B=new b({color:"#6528D7"}),l=new d(M,B);l.position.set(0,1.5,0);e.scene.three.add(l);e.meshes.add(l);const n=t.get(y);n.world=e;n.enabled=!0;n.snapDistance=1;r.ondblclick=()=>n.create();window.onkeydown=o=>{(o.code==="Delete"||o.code==="Backspace")&&n.delete()};const s=new p;s.showPanel(2);document.body.append(s.dom);s.dom.style.left="0px";s.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>s.begin());e.renderer.onAfterUpdate.add(()=>s.end());f.init();const a=i.create(()=>c`
   <bim-panel active label="Length Measurement Tutorial" class="options-menu">
       <bim-panel-section collapsed label="Controls">
           <bim-label>Create dimension: Double click</bim-label>  
@@ -24,8 +24,8 @@ import{B as b,M as d,a as m}from"./web-ifc-api-BN6RNDnz.js";import{S as p}from".
 
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(a);const B=i.create(()=>c`
+    `);document.body.append(a);const C=i.create(()=>c`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{a.classList.contains("options-menu-visible")?a.classList.remove("options-menu-visible"):a.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(B);
+    `);document.body.append(C);

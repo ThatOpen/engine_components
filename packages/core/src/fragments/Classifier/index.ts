@@ -6,7 +6,7 @@ import { IfcRelationsIndexer } from "../../ifc/IfcRelationsIndexer";
 import { FragmentsManager } from "../FragmentsManager";
 
 /**
- * Interface representing a classification system. The classification is organized by system and class name, and each class contains a map of fragment IDs to their respective express IDs.
+ * Interface representing a classification system. The classification is organized by system and class name, and each class contains a map of fragment IDs with extra information.
  */
 export interface Classification {
   /**
@@ -16,9 +16,13 @@ export interface Classification {
   [system: string]: {
     /**
      * A class within the system.
-     * The key is the class name, and the value is a map of fragment IDs to their respective express IDs.
+     * The key is the class name, and the value is an object containing a map of fragment IDs with extra information.
      */
-    [className: string]: FRAGS.FragmentIdMap;
+    [className: string]: {
+      map: FRAGS.FragmentIdMap;
+      name: string;
+      id: number | null;
+    };
   };
 }
 
@@ -68,7 +72,7 @@ export class Classifier extends Component implements Disposable {
         for (const groupName of groupNames) {
           const group = system[groupName];
           for (const fragmentID of fragmentIDs) {
-            delete group[fragmentID];
+            delete group.map[fragmentID];
           }
           if (Object.values(group).length === 0) {
             delete system[groupName];
@@ -98,7 +102,7 @@ export class Classifier extends Component implements Disposable {
       const system = this.list[systemName];
       for (const groupName in system) {
         const group = system[groupName];
-        delete group[guid];
+        delete group.map[guid];
       }
     }
   }
@@ -142,11 +146,11 @@ export class Classifier extends Component implements Disposable {
       for (const value of values) {
         const found = this.list[name][value];
         if (found) {
-          for (const guid in found) {
+          for (const guid in found.map) {
             if (!models[guid]) {
               models[guid] = new Map();
             }
-            for (const id of found[guid]) {
+            for (const id of found.map[guid]) {
               const matchCount = models[guid].get(id);
               if (matchCount === undefined) {
                 models[guid].set(id, 1);
@@ -197,7 +201,7 @@ export class Classifier extends Component implements Disposable {
     }
     const modelsClassification = this.list.models;
     if (!modelsClassification[modelID]) {
-      modelsClassification[modelID] = {};
+      modelsClassification[modelID] = { map: {}, id: null, name: modelID };
     }
     const currentModel = modelsClassification[modelID];
     for (const [expressID, data] of group.data) {
@@ -205,10 +209,10 @@ export class Classifier extends Component implements Disposable {
       for (const key of keys) {
         const fragID = group.keyFragments.get(key);
         if (!fragID) continue;
-        if (!currentModel[fragID]) {
-          currentModel[fragID] = new Set<number>();
+        if (!currentModel.map[fragID]) {
+          currentModel.map[fragID] = new Set<number>();
         }
-        currentModel[fragID].add(expressID);
+        currentModel.map[fragID].add(expressID);
       }
     }
   }
@@ -242,7 +246,11 @@ export class Classifier extends Component implements Disposable {
       const predefinedType = String(entity.PredefinedType?.value).toUpperCase();
 
       if (!currentTypes[predefinedType]) {
-        currentTypes[predefinedType] = {};
+        currentTypes[predefinedType] = {
+          map: {},
+          id: null,
+          name: predefinedType,
+        };
       }
       const currentType = currentTypes[predefinedType];
 
@@ -253,10 +261,10 @@ export class Classifier extends Component implements Disposable {
           if (!fragmentID) {
             throw new Error("Fragment ID not found!");
           }
-          if (!currentType[fragmentID]) {
-            currentType[fragmentID] = new Set<number>();
+          if (!currentType.map[fragmentID]) {
+            currentType.map[fragmentID] = new Set<number>();
           }
-          const currentFragment = currentType[fragmentID];
+          const currentFragment = currentType.map[fragmentID];
           currentFragment.add(entity.expressID);
         }
       }
@@ -334,6 +342,7 @@ export class Classifier extends Component implements Disposable {
    * Classifies fragments based on their spatial structure in the IFC model.
    *
    * @param model - The FragmentsGroup containing the fragments to be classified.
+   * @param config - The configuration for the classifier. It includes "useProperties" (if false, the classification will use the expressIDs instead of the names)
    *
    * @remarks
    * This method iterates through the relations of the fragments in the provided group,
@@ -343,7 +352,10 @@ export class Classifier extends Component implements Disposable {
    *
    * @throws Will throw an error if the fragment ID is not found or if the model relations do not exist.
    */
-  async bySpatialStructure(model: FRAGS.FragmentsGroup) {
+  async bySpatialStructure(
+    model: FRAGS.FragmentsGroup,
+    config: { useProperties: boolean } = { useProperties: true },
+  ) {
     const indexer = this.components.get(IfcRelationsIndexer);
     const modelRelations = indexer.relationMaps[model.uuid];
     if (!modelRelations) {
@@ -362,13 +374,16 @@ export class Classifier extends Component implements Disposable {
       // For spatial items like IFCSPACE
       if (spatialRels) {
         for (const id of spatialRels) {
-          const spatialRelAttrs = await model.getProperties(id);
-          if (!spatialRelAttrs) {
-            continue;
+          let relName = id.toString();
+          if (config.useProperties) {
+            const spatialRelAttrs = await model.getProperties(id);
+            if (!spatialRelAttrs) {
+              continue;
+            }
+            relName = spatialRelAttrs.Name?.value;
           }
-          const relName = spatialRelAttrs.Name?.value;
 
-          this.saveItem(model, systemName, relName, expressID);
+          this.saveItem(model, systemName, relName, expressID, id);
         }
       }
 
@@ -382,14 +397,17 @@ export class Classifier extends Component implements Disposable {
         continue;
       }
 
-      const relAttrs = await model.getProperties(expressID);
-      if (!relAttrs) {
-        continue;
+      let relName = expressID.toString();
+      if (config.useProperties) {
+        const relAttrs = await model.getProperties(expressID);
+        if (!relAttrs) {
+          continue;
+        }
+        relName = relAttrs.Name?.value;
       }
-      const relName = relAttrs.Name?.value;
 
       for (const id of rels) {
-        this.saveItem(model, systemName, relName, id);
+        this.saveItem(model, systemName, relName, id, expressID);
         // For nested elements like curtain walls
         const decompositionRelations = indexer.getEntityRelations(
           model,
@@ -400,7 +418,7 @@ export class Classifier extends Component implements Disposable {
           continue;
         }
         for (const decomposedID of decompositionRelations) {
-          this.saveItem(model, systemName, relName, decomposedID);
+          this.saveItem(model, systemName, relName, decomposedID, expressID);
         }
       }
     }
@@ -455,6 +473,7 @@ export class Classifier extends Component implements Disposable {
     systemName: string,
     className: string,
     expressID: number,
+    parentID: number | null = null,
   ) {
     if (!this.list[systemName]) {
       this.list[systemName] = {};
@@ -466,12 +485,12 @@ export class Classifier extends Component implements Disposable {
       if (fragmentID) {
         const system = this.list[systemName];
         if (!system[className]) {
-          system[className] = {};
+          system[className] = { map: {}, id: parentID, name: className };
         }
-        if (!system[className][fragmentID]) {
-          system[className][fragmentID] = new Set<number>();
+        if (!system[className].map[fragmentID]) {
+          system[className].map[fragmentID] = new Set<number>();
         }
-        system[className][fragmentID].add(expressID);
+        system[className].map[fragmentID].add(expressID);
       }
     }
   }

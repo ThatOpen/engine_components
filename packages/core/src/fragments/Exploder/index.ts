@@ -96,7 +96,7 @@ export class Exploder extends Component implements Disposable {
           this.list.delete(itemsID);
         }
 
-        const ids = groups[groupName][fragID];
+        const ids = groups[groupName].map[fragID];
         fragment.applyTransform(ids, yTransform);
       }
       i++;
