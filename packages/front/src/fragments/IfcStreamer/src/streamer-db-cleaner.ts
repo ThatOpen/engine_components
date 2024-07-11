@@ -29,7 +29,7 @@ export class StreamerDbCleaner {
       this._intervalId = null;
       return;
     }
-    this._intervalId = setInterval(() => {
+    this._intervalId = window.setInterval(() => {
       const now = performance.now();
       for (const [id, time] of this.list) {
         const age = now - time;
