@@ -79,7 +79,7 @@ export class Exploder extends Component implements Disposable {
 
     for (const groupName in groups) {
       yTransform.elements[13] = i * factor * this.height;
-      for (const fragID in groups[groupName]) {
+      for (const fragID in groups[groupName].map) {
         const fragment = fragments.list.get(fragID);
         const itemsID = groupName + fragID;
         const areItemsExploded = this.list.has(itemsID);
@@ -98,6 +98,8 @@ export class Exploder extends Component implements Disposable {
 
         const ids = groups[groupName].map[fragID];
         fragment.applyTransform(ids, yTransform);
+        fragment.mesh.computeBoundingSphere();
+        fragment.mesh.computeBoundingBox();
       }
       i++;
     }
