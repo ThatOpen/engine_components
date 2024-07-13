@@ -194,11 +194,13 @@ export class IfcPropertiesTiler extends Component implements Disposable {
 
       const currentProgress = typeCounter / allIfcEntities.size;
       if (currentProgress > nextProgress) {
+        nextProgress = Math.round(nextProgress * 100) / 100;
+        await this.onProgress.trigger(nextProgress);
         nextProgress += 0.01;
-        nextProgress = Math.max(nextProgress, currentProgress);
-        await this.onProgress.trigger(Math.round(nextProgress * 100) / 100);
       }
     }
+
+    await this.onProgress.trigger(1);
 
     // Stream indices
 

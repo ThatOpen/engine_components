@@ -199,7 +199,6 @@ export class MeshCullerRenderer extends CullerRenderer implements Disposable {
 
     if (!colorMesh || !code) {
       this.isProcessing = false;
-      console.log(mesh.visible);
       return;
     }
 
