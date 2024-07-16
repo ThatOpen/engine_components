@@ -59,6 +59,7 @@ export class IfcPropertiesTiler extends Component implements Disposable {
   async dispose() {
     this.onIndicesStreamed.reset();
     this.onPropertiesStreamed.reset();
+    this.webIfc.Dispose();
     (this.webIfc as any) = null;
     this.onDisposed.reset();
   }
@@ -212,6 +213,7 @@ export class IfcPropertiesTiler extends Component implements Disposable {
   }
 
   private cleanUp() {
+    this.webIfc.Dispose();
     (this.webIfc as any) = null;
     this.webIfc = new WEBIFC.IfcAPI();
   }

@@ -35,7 +35,7 @@
   "peerDependencies": {
     "@thatopen/fragments": "~2.1.0",
     "three": "^0.160.1",
-    "web-ifc": "0.0.55"
+    "web-ifc": "0.0.56"
   },
   "devDependencies": {
     "@thatopen/fragments": "~2.1.0",
@@ -44,7 +44,7 @@
     "@types/earcut": "^2.1.4",
     "@types/three": "^0.160.0",
     "three": "^0.160.1",
-    "web-ifc": "0.0.55"
+    "web-ifc": "0.0.56"
   },
   "dependencies": {
     "@thatopen/components": "~2.1.0",

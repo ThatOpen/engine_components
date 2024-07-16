@@ -106,6 +106,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
     this.onIfcLoaded.reset();
     this.onGeometryStreamed.reset();
     this.onAssetStreamed.reset();
+    this.webIfc.Dispose();
     (this.webIfc as any) = null;
     this.onDisposed.trigger();
     this.onDisposed.reset();
@@ -295,6 +296,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
   }
 
   private cleanUp() {
+    this.webIfc.Dispose();
     (this.webIfc as any) = null;
     this.webIfc = new WEBIFC.IfcAPI();
     this._visitedGeometries.clear();
