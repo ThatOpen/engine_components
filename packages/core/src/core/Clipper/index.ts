@@ -194,8 +194,9 @@ export class Clipper
 
     const intersects = caster.castRay();
     if (intersects) {
-      this.createPlaneFromIntersection(world, intersects);
+      return this.createPlaneFromIntersection(world, intersects);
     }
+    return null;
   }
 
   /**
@@ -234,11 +235,21 @@ export class Clipper
     this.deletePlane(plane);
   }
 
-  /** Deletes all the existing clipping planes. */
-  deleteAll() {
-    while (this.list.length > 0) {
-      const plane = this.list[0];
-      this.delete(plane.world, plane);
+  /**
+   * Deletes all the existing clipping planes.
+   *
+   * @param types - the types of planes to be deleted. If not provided, all planes will be deleted.
+   */
+  deleteAll(types?: Set<string>) {
+    const planes = [...this.list];
+    for (const plane of planes) {
+      if (!types || types.has(plane.type)) {
+        this.delete(plane.world, plane);
+        const index = this.list.indexOf(plane);
+        if (index !== -1) {
+          this.list.splice(index, 1);
+        }
+      }
     }
   }
 
@@ -285,14 +296,16 @@ export class Clipper
     }
     const constant = intersect.point.distanceTo(new THREE.Vector3(0, 0, 0));
     const normal = intersect.face?.normal;
-    if (!constant || !normal) return;
-
+    if (!constant || !normal) {
+      return null;
+    }
     const worldNormal = this.getWorldNormal(intersect, normal);
     const plane = this.newPlane(world, intersect.point, worldNormal.negate());
     plane.visible = this._visible;
     plane.size = this._size;
     world.renderer.setPlane(true, plane.three);
     this.updateMaterialsAndPlanes();
+    return plane;
   }
 
   private getWorldNormal(intersect: THREE.Intersection, normal: THREE.Vector3) {
