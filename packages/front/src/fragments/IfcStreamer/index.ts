@@ -66,6 +66,10 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
 
   dbCleaner: StreamerDbCleaner;
 
+  fetchFunction = async (url: string) => {
+    return fetch(url);
+  };
+
   private _culler: GeometryCullerRenderer | null = null;
 
   private _world: OBC.World | null = null;
@@ -212,7 +216,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     const { assets, geometries, globalDataFileId } = settings;
 
     const groupUrl = this.url + globalDataFileId;
-    const groupData = await fetch(groupUrl);
+    const groupData = await this.fetchFunction(groupUrl);
     const groupArrayBuffer = await groupData.arrayBuffer();
     const groupBuffer = new Uint8Array(groupArrayBuffer);
     const fragments = this.components.get(OBC.FragmentsManager);
@@ -285,7 +289,8 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
       };
 
       const { indexesFile } = properties;
-      const fetched = await fetch(this.url + indexesFile);
+      const indexURL = this.url + indexesFile;
+      const fetched = await this.fetchFunction(indexURL);
       const rels = await fetched.text();
       const indexer = this.components.get(OBC.IfcRelationsIndexer);
       indexer.setRelationMap(group, indexer.getRelationsMapFromJSON(rels));
@@ -451,14 +456,14 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
             if (found) {
               bytes = found.file;
             } else {
-              const fetched = await fetch(url);
+              const fetched = await this.fetchFunction(url);
               const buffer = await fetched.arrayBuffer();
               bytes = new Uint8Array(buffer);
               // await this._fileCache.files.delete(url);
               this._fileCache.files.add({ file: bytes, id: url });
             }
           } else {
-            const fetched = await fetch(url);
+            const fetched = await this.fetchFunction(url);
             const buffer = await fetched.arrayBuffer();
             bytes = new Uint8Array(buffer);
           }
