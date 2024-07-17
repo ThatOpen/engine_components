@@ -12,7 +12,7 @@
     "build-front": "yarn workspace @thatopen/components-front build",
     "build-libraries": "yarn build-core && yarn build-front",
     "build-examples": "vite build --config ./vite.config-examples.ts",
-    "build": "yarn build-examples && yarn build-libraries",
+    "build": "yarn build-libraries && yarn build-examples",
     "test": "echo 'test to be implemented!'",
     "publish-repo": "yarn workspace @thatopen/components publish-repo && yarn workspace @thatopen/components-front publish-repo",
     "reset-release-please": "git commit --allow-empty -m \"chore: release 2.0.0\" -m \"Release-As: 2.0.0\""
