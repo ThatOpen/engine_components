@@ -44,6 +44,7 @@ export class FragmentsManager extends Component implements Disposable {
   readonly groups = new Map<string, FragmentsGroup>();
 
   baseCoordinationModel = "";
+  baseCoordinationMatrix = new THREE.Matrix4();
 
   /** {@link Component.enabled} */
   enabled = true;
@@ -209,9 +210,7 @@ export class FragmentsManager extends Component implements Disposable {
    * All other models are then transformed to match the base model's coordinate system.
    *
    * @param models - The models to apply coordinate transformation to.
-   * If not provided, all groups are used.
-   *
-   * @returns {void}
+   * If not provided, all models are used.
    */
   coordinate(models = Array.from(this.groups.values())) {
     const isFirstModel = this.baseCoordinationModel.length === 0;
@@ -221,21 +220,15 @@ export class FragmentsManager extends Component implements Disposable {
         return;
       }
       this.baseCoordinationModel = first.uuid;
+      this.baseCoordinationMatrix = first.coordinationMatrix.clone();
     }
 
     if (!models.length) {
       return;
     }
 
-    const baseModel = this.groups.get(this.baseCoordinationModel);
-
-    if (!baseModel) {
-      console.log("No base model found for coordination!");
-      return;
-    }
-
     for (const model of models) {
-      if (model === baseModel) {
+      if (model.coordinationMatrix.equals(this.baseCoordinationMatrix)) {
         continue;
       }
       model.position.set(0, 0, 0);
@@ -243,7 +236,7 @@ export class FragmentsManager extends Component implements Disposable {
       model.scale.set(1, 1, 1);
       model.updateMatrix();
       model.applyMatrix4(model.coordinationMatrix.clone().invert());
-      model.applyMatrix4(baseModel.coordinationMatrix);
+      model.applyMatrix4(this.baseCoordinationMatrix);
     }
   }
 }
