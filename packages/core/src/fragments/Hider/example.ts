@@ -192,7 +192,7 @@ for (const name in spatialStructures) {
           const found = classifier.list.spatialStructures[name];
           if (found && found.id !== null) {
             for (const [_id, model] of fragments.groups) {
-              const foundIDs = indexer.getElementsChildren(model, found.id);
+              const foundIDs = indexer.getEntityChildren(model, found.id);
               const fragMap = model.getFragmentMap(foundIDs);
               hider.set(target.value, fragMap);
             }
