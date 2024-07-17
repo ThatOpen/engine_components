@@ -235,8 +235,29 @@ export class FragmentsManager extends Component implements Disposable {
       model.rotation.set(0, 0, 0);
       model.scale.set(1, 1, 1);
       model.updateMatrix();
-      model.applyMatrix4(model.coordinationMatrix.clone().invert());
-      model.applyMatrix4(this.baseCoordinationMatrix);
+      this.applyBaseCoordinateSystem(model, model.coordinationMatrix);
     }
+  }
+
+  /**
+   * Applies the base coordinate system to the provided object.
+   *
+   * This function takes an object and its original coordinate system as input.
+   * It then inverts the original coordinate system and applies the base coordinate system
+   * to the object. This ensures that the object's position, rotation, and scale are
+   * transformed to match the base coordinate system (which is taken from the first model loaded).
+   *
+   * @param object - The object to which the base coordinate system will be applied.
+   * This should be an instance of THREE.Object3D.
+   *
+   * @param originalCoordinateSystem - The original coordinate system of the object.
+   * This should be a THREE.Matrix4 representing the object's transformation matrix.
+   */
+  applyBaseCoordinateSystem(
+    object: THREE.Object3D,
+    originalCoordinateSystem: THREE.Matrix4,
+  ) {
+    object.applyMatrix4(originalCoordinateSystem.clone().invert());
+    object.applyMatrix4(this.baseCoordinationMatrix);
   }
 }
