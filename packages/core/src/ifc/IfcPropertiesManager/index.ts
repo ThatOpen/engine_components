@@ -151,6 +151,15 @@ export class IfcPropertiesManager extends Component implements Disposable {
     if (!schema) {
       throw new Error("IFC Schema not found");
     }
+    if (schema.startsWith("IFC2X3")) {
+      return "IFC2X3";
+    }
+    if (schema.startsWith("IFC4") && schema.replace("IFC4", "") === "") {
+      return "IFC4";
+    }
+    if (schema.startsWith("IFC4X3")) {
+      return "IFC4X3";
+    }
     return schema;
   }
 
