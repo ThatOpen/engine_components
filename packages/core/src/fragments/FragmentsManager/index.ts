@@ -254,7 +254,7 @@ export class FragmentsManager extends Component implements Disposable {
    * This should be a THREE.Matrix4 representing the object's transformation matrix.
    */
   applyBaseCoordinateSystem(
-    object: THREE.Object3D,
+    object: THREE.Object3D | THREE.Vector3,
     originalCoordinateSystem: THREE.Matrix4,
   ) {
     object.applyMatrix4(originalCoordinateSystem.clone().invert());
