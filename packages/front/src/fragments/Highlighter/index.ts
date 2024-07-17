@@ -25,8 +25,12 @@ export interface HighlightEvents {
 export interface HighlighterConfig {
   /** Name of the selection event. */
   selectName: string;
+  /** Toggles the select functionality. */
+  selectEnabled: boolean;
   /** Name of the hover event. */
   hoverName: string;
+  /** Toggles the hover functionality. */
+  hoverEnabled: boolean;
   /** Color used for selection. */
   selectionColor: THREE.Color;
   /** Color used for hover. */
@@ -96,6 +100,8 @@ export class Highlighter
     hoverColor: new THREE.Color("#6528D7"),
     autoHighlightOnClick: true,
     world: null,
+    selectEnabled: true,
+    hoverEnabled: true,
   };
 
   /** Stores the colors used for highlighting selections. */
@@ -561,14 +567,14 @@ export class Highlighter
   };
 
   private onMouseUp = async (event: MouseEvent) => {
-    const world = this.config.world;
+    if (!this.enabled) return;
+    const { world, autoHighlightOnClick, selectEnabled } = this.config;
     if (!world) {
       throw new Error("No world found!");
     }
     if (!world.renderer) {
       throw new Error("This world doesn't have a renderer!");
     }
-    if (!this.enabled) return;
     if (event.target !== world.renderer.three.domElement) return;
     this._mouseState.down = false;
     if (this._mouseState.moved || event.button !== 0) {
@@ -576,7 +582,7 @@ export class Highlighter
       return;
     }
     this._mouseState.moved = false;
-    if (this.config.autoHighlightOnClick) {
+    if (autoHighlightOnClick && selectEnabled) {
       const mult = this.multiple === "none" ? true : !event[this.multiple];
       await this.highlight(this.config.selectName, mult, this.zoomToSelection);
     }
@@ -584,15 +590,16 @@ export class Highlighter
 
   private onMouseMove = async () => {
     if (!this.enabled) return;
+    const { hoverName, hoverEnabled } = this.config;
     if (this._mouseState.moved) {
-      this.clear(this.config.hoverName);
+      this.clear(hoverName);
       return;
     }
 
     this._mouseState.moved = this._mouseState.down;
     const excluded: FRAGS.FragmentIdMap = {};
     for (const name in this.selection) {
-      if (name === this.config.hoverName) continue;
+      if (name === hoverName) continue;
       const fragmentIdMap = this.selection[name];
       for (const fragmentID in fragmentIdMap) {
         if (!(fragmentID in excluded)) excluded[fragmentID] = new Set();
@@ -602,6 +609,8 @@ export class Highlighter
         }
       }
     }
-    await this.highlight(this.config.hoverName, true, false, excluded);
+    if (hoverEnabled) {
+      await this.highlight(this.config.hoverName, true, false, excluded);
+    }
   };
 }
