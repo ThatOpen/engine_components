@@ -345,6 +345,7 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     }
   }
 
+  // TODO: Is this neccesary anymore?
   setModelTransformation(modelID: string, transform: THREE.Matrix4) {
     const modelIndex = this._modelIDIndex.get(modelID);
     if (modelIndex === undefined) {
@@ -390,6 +391,36 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     }
   }
 
+  updateTransformations(modelID: string) {
+    const key = this._modelIDIndex.get(modelID);
+    if (key === undefined) return;
+    const fragments = this.components.get(OBC.FragmentsManager);
+    const originalModel = fragments.groups.get(modelID);
+    if (originalModel) {
+      originalModel.updateWorldMatrix(true, false);
+      originalModel.updateMatrix();
+      const bboxes = this.boxes.get(key);
+      if (bboxes) {
+        bboxes.mesh.position.set(0, 0, 0);
+        bboxes.mesh.rotation.set(0, 0, 0);
+        bboxes.mesh.scale.set(1, 1, 1);
+        bboxes.mesh.updateMatrix();
+        bboxes.mesh.applyMatrix4(originalModel.matrixWorld);
+        bboxes.mesh.updateMatrix();
+      }
+
+      const group = this._geometriesGroups.get(key);
+      if (group) {
+        group.position.set(0, 0, 0);
+        group.rotation.set(0, 0, 0);
+        group.scale.set(1, 1, 1);
+        group.updateMatrix();
+        group.applyMatrix4(originalModel.matrixWorld);
+        group.updateMatrix();
+      }
+    }
+  }
+
   private setGeometryVisibility(
     geometry: CullerBoundingBox,
     visible: boolean,
@@ -427,6 +458,7 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     const now = performance.now();
     let viewWasUpdated = false;
 
+    // We can only lose geometries that were previously found
     const lostGeometries = new Set(this._foundGeometries);
 
     for (const [color, number] of colors) {
@@ -434,19 +466,20 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
       if (!geometry) {
         continue;
       }
-      const isFound = number > this.threshold;
-      const { exists } = geometry;
 
-      if (!isFound && !exists) {
-        // Geometry doesn't exist and is not visible
+      const isGeometryBigEnough = number > this.threshold;
+      if (!isGeometryBigEnough) {
         continue;
       }
 
-      const modelID = this._indexModelID.get(geometry.modelIndex) as string;
-
+      // The geometry is big enough to be considered seen, so remove it
+      // from the geometries to be considered lost
       lostGeometries.delete(color);
 
-      if (isFound && exists) {
+      const { exists } = geometry;
+      const modelID = this._indexModelID.get(geometry.modelIndex) as string;
+
+      if (exists) {
         // Geometry was visible, and still is
         geometry.time = now;
         if (!toShow[modelID]) {
@@ -455,7 +488,7 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
         toShow[modelID].add(geometry.geometryID);
         this._foundGeometries.add(color);
         viewWasUpdated = true;
-      } else if (isFound && !exists) {
+      } else {
         // New geometry found
         if (!toLoad[modelID]) {
           toLoad[modelID] = new Map();
@@ -470,14 +503,15 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
         set.add(geometry.geometryID);
         this._foundGeometries.add(color);
         viewWasUpdated = true;
-      } else if (!isFound && exists) {
-        // Geometry is hardly seen, so it can be considered lost
-        // if (bboxAmount < this.bboxThreshold) {
-        // When too many bounding boxes on sight
-        // don't hide / destroy geometry to prevent flickering
+      }
+    }
+
+    // Handle geometries that were lost
+    for (const color of lostGeometries) {
+      const geometry = this._geometries.get(color);
+      if (geometry) {
         this.handleLostGeometries(now, color, geometry, toRemove, toHide);
         viewWasUpdated = true;
-        // }
       }
     }
 

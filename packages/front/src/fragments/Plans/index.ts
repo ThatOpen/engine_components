@@ -21,6 +21,9 @@ export class Plans extends OBC.Component implements OBC.Disposable {
   /** {@link OBC.Disposable.onDisposed} */
   readonly onDisposed = new OBC.Event();
 
+  /** The plane type for the clipping planes created by this component. */
+  readonly planeType = "floorplan";
+
   /**
    * Event triggered when the user navigates to a different floor plan.
    * The event provides the id of the floor plan the user navigated to.
@@ -223,6 +226,8 @@ export class Plans extends OBC.Component implements OBC.Disposable {
       normal,
       clippingPoint,
     ) as EdgesPlane;
+
+    plane.type = this.planeType;
 
     plane.edges.update();
 

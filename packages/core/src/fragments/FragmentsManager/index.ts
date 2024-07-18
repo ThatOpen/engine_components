@@ -44,6 +44,7 @@ export class FragmentsManager extends Component implements Disposable {
   readonly groups = new Map<string, FragmentsGroup>();
 
   baseCoordinationModel = "";
+  baseCoordinationMatrix = new THREE.Matrix4();
 
   /** {@link Component.enabled} */
   enabled = true;
@@ -209,9 +210,7 @@ export class FragmentsManager extends Component implements Disposable {
    * All other models are then transformed to match the base model's coordinate system.
    *
    * @param models - The models to apply coordinate transformation to.
-   * If not provided, all groups are used.
-   *
-   * @returns {void}
+   * If not provided, all models are used.
    */
   coordinate(models = Array.from(this.groups.values())) {
     const isFirstModel = this.baseCoordinationModel.length === 0;
@@ -221,29 +220,44 @@ export class FragmentsManager extends Component implements Disposable {
         return;
       }
       this.baseCoordinationModel = first.uuid;
+      this.baseCoordinationMatrix = first.coordinationMatrix.clone();
     }
 
     if (!models.length) {
       return;
     }
 
-    const baseModel = this.groups.get(this.baseCoordinationModel);
-
-    if (!baseModel) {
-      console.log("No base model found for coordination!");
-      return;
-    }
-
     for (const model of models) {
-      if (model === baseModel) {
+      if (model.coordinationMatrix.equals(this.baseCoordinationMatrix)) {
         continue;
       }
       model.position.set(0, 0, 0);
       model.rotation.set(0, 0, 0);
       model.scale.set(1, 1, 1);
       model.updateMatrix();
-      model.applyMatrix4(model.coordinationMatrix.clone().invert());
-      model.applyMatrix4(baseModel.coordinationMatrix);
+      this.applyBaseCoordinateSystem(model, model.coordinationMatrix);
     }
+  }
+
+  /**
+   * Applies the base coordinate system to the provided object.
+   *
+   * This function takes an object and its original coordinate system as input.
+   * It then inverts the original coordinate system and applies the base coordinate system
+   * to the object. This ensures that the object's position, rotation, and scale are
+   * transformed to match the base coordinate system (which is taken from the first model loaded).
+   *
+   * @param object - The object to which the base coordinate system will be applied.
+   * This should be an instance of THREE.Object3D.
+   *
+   * @param originalCoordinateSystem - The original coordinate system of the object.
+   * This should be a THREE.Matrix4 representing the object's transformation matrix.
+   */
+  applyBaseCoordinateSystem(
+    object: THREE.Object3D | THREE.Vector3,
+    originalCoordinateSystem: THREE.Matrix4,
+  ) {
+    object.applyMatrix4(originalCoordinateSystem.clone().invert());
+    object.applyMatrix4(this.baseCoordinationMatrix);
   }
 }

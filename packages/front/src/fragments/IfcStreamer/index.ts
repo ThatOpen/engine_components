@@ -8,7 +8,10 @@ import {
   StreamedInstances,
   StreamedInstance,
   StreamLoaderSettings,
+  StreamerDbCleaner,
 } from "./src";
+
+export * from "./src";
 
 /**
  * The IfcStreamer component is responsible for managing and streaming tiled IFC data. It provides methods for loading, removing, and managing IFC models, as well as handling visibility and caching. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/IfcStreamer). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/IfcStreamer).
@@ -60,6 +63,12 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
    * Flag indicating whether to use the local cache for storing geometry files.
    */
   useCache = true;
+
+  dbCleaner: StreamerDbCleaner;
+
+  fetch = async (url: string) => {
+    return fetch(url);
+  };
 
   private _culler: GeometryCullerRenderer | null = null;
 
@@ -161,6 +170,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
   constructor(components: OBC.Components) {
     super(components);
     this.components.add(IfcStreamer.uuid, this);
+    this.dbCleaner = new StreamerDbCleaner(this._fileCache);
 
     // const hardlyGeometry = new THREE.BoxGeometry();
     // this._hardlySeenGeometries = new THREE.InstancedMesh();
@@ -206,7 +216,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     const { assets, geometries, globalDataFileId } = settings;
 
     const groupUrl = this.url + globalDataFileId;
-    const groupData = await fetch(groupUrl);
+    const groupData = await this.fetch(groupUrl);
     const groupArrayBuffer = await groupData.arrayBuffer();
     const groupBuffer = new Uint8Array(groupArrayBuffer);
     const fragments = this.components.get(OBC.FragmentsManager);
@@ -279,12 +289,14 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
       };
 
       const { indexesFile } = properties;
-      const fetched = await fetch(this.url + indexesFile);
+      const indexURL = this.url + indexesFile;
+      const fetched = await this.fetch(indexURL);
       const rels = await fetched.text();
       const indexer = this.components.get(OBC.IfcRelationsIndexer);
       indexer.setRelationMap(group, indexer.getRelationsMapFromJSON(rels));
     }
 
+    this.culler.updateTransformations(group.uuid);
     this.culler.needsUpdate = true;
 
     return group;
@@ -436,19 +448,22 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
 
           // If this file is in the local cache, get it
           if (this.useCache) {
+            // Add or update this file to clean it up from indexedDB automatically later
+            this.dbCleaner.update(url);
+
             const found = await this._fileCache.files.get(url);
 
             if (found) {
               bytes = found.file;
             } else {
-              const fetched = await fetch(url);
+              const fetched = await this.fetch(url);
               const buffer = await fetched.arrayBuffer();
               bytes = new Uint8Array(buffer);
               // await this._fileCache.files.delete(url);
               this._fileCache.files.add({ file: bytes, id: url });
             }
           } else {
-            const fetched = await fetch(url);
+            const fetched = await this.fetch(url);
             const buffer = await fetched.arrayBuffer();
             bytes = new Uint8Array(buffer);
           }

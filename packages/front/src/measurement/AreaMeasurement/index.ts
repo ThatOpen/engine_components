@@ -101,11 +101,13 @@ export class AreaMeasurement
 
     const point = this._vertexPicker.get(this.world);
 
-    if (!point) return;
+    if (!point) {
+      return;
+    }
     if (!this._currentAreaElement) {
       const areaShape = new AreaMeasureElement(this.components, this.world);
       areaShape.onPointAdded.add(() => {
-        if (this._clickCount === 3 && !areaShape.workingPlane) {
+        if (this._clickCount === 2 && !areaShape.workingPlane) {
           areaShape.computeWorkingPlane();
           this._vertexPicker.workingPlane = areaShape.workingPlane;
         }
@@ -132,6 +134,12 @@ export class AreaMeasurement
 
   /** {@link OBC.Createable.endCreation} */
   endCreation() {
+    if (!this._currentAreaElement) {
+      return;
+    }
+    if (this._currentAreaElement.points.length < 3) {
+      return;
+    }
     if (this._currentAreaElement) {
       this.list.push(this._currentAreaElement);
       this._currentAreaElement.removePoint(this._clickCount);
@@ -168,10 +176,10 @@ export class AreaMeasurement
     const canvas = this.world.renderer.three.domElement;
     const viewerContainer = canvas.parentElement as HTMLElement;
     if (active) {
-      viewerContainer.addEventListener("mousemove", this.onMouseMove);
+      viewerContainer.addEventListener("pointermove", this.onMouseMove);
       window.addEventListener("keydown", this.onKeydown);
     } else {
-      viewerContainer.removeEventListener("mousemove", this.onMouseMove);
+      viewerContainer.removeEventListener("pointermove", this.onMouseMove);
       window.removeEventListener("keydown", this.onKeydown);
     }
   }
@@ -182,7 +190,9 @@ export class AreaMeasurement
       return;
     }
     const point = this._vertexPicker.get(this.world);
-    if (!(point && this._currentAreaElement)) return;
+    if (!(point && this._currentAreaElement)) {
+      return;
+    }
     this._currentAreaElement.setPoint(point, this._clickCount);
     this._currentAreaElement.computeArea();
   };

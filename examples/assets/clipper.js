@@ -1,4 +1,4 @@
-import{B as r,M as m,a as p}from"./web-ifc-api-CwSt8Jc1.js";import{S as d}from"./stats.min-BpIepu9J.js";import{p as u,J as s,m as c}from"./index-K5IA6oiZ.js";import{p as h,C as g,s as k,i as w,H as y,z as v,R as M}from"./index-BVLgAR8-.js";const b=document.getElementById("container"),a=new h,x=a.get(g),e=x.create();e.scene=new k(a);e.renderer=new w(a,b);e.camera=new y(a);a.init();e.camera.controls.setLookAt(10,10,10,0,0,0);e.scene.setup();e.scene.three.background=null;const f=new r(3,3,3),$=new m({color:"#6528D7"}),o=new p(f,$);o.position.set(0,1.5,0);e.scene.three.add(o);e.meshes.add(o);const C=a.get(v);C.get(e);const n=a.get(M);n.enabled=!0;b.ondblclick=()=>n.create(e);window.onkeydown=t=>{(t.code==="Delete"||t.code==="Backspace")&&n.delete(e)};const l=new d;l.showPanel(2);document.body.append(l.dom);l.dom.style.left="0px";l.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>l.begin());e.renderer.onAfterUpdate.add(()=>l.end());u.init();const i=s.create(()=>c`
+import{B as r,M as m,a as d}from"./web-ifc-api-CfQNUy7g.js";import{S as p}from"./stats.min-BpIepu9J.js";import{m as u,t as s,a as c}from"./index-tywNknxv.js";import{p as h,C as g,i as k,n as w,W as y,H as f,R as v}from"./index-D2xchnNe.js";const b=document.getElementById("container"),a=new h,M=a.get(g),e=M.create();e.scene=new k(a);e.renderer=new w(a,b);e.camera=new y(a);a.init();e.camera.controls.setLookAt(10,10,10,0,0,0);e.scene.setup();e.scene.three.background=null;const x=new r(3,3,3),C=new m({color:"#6528D7"}),l=new d(x,C);l.position.set(0,1.5,0);e.scene.three.add(l);e.meshes.add(l);const $=a.get(f);$.get(e);const t=a.get(v);t.enabled=!0;b.ondblclick=()=>{t.enabled&&t.create(e)};window.onkeydown=n=>{(n.code==="Delete"||n.code==="Backspace")&&t.enabled&&t.delete(e)};const o=new p;o.showPanel(2);document.body.append(o.dom);o.dom.style.left="0px";o.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>o.begin());e.renderer.onAfterUpdate.add(()=>o.end());u.init();const i=s.create(()=>c`
     <bim-panel label="Clipper Tutorial" class="options-menu">
           <bim-panel-section collapsed label="Commands">
       
@@ -10,36 +10,36 @@ import{B as r,M as m,a as p}from"./web-ifc-api-CwSt8Jc1.js";import{S as d}from".
       <bim-panel-section collapsed label="Others"">
           
         <bim-checkbox label="Clipper enabled" checked 
-          @change="${({target:t})=>{n.enabled=t.value}}">
+          @change="${({target:n})=>{t.enabled=n.value}}">
         </bim-checkbox>
         
         <bim-checkbox label="Clipper visible" checked 
-          @change="${({target:t})=>{n.visible=t.value}}">
+          @change="${({target:n})=>{t.visible=n.value}}">
         </bim-checkbox>
       
         <bim-color-input 
           label="Planes Color" color="#202932" 
-          @input="${({target:t})=>{n.material.color.set(t.color)}}">
+          @input="${({target:n})=>{t.material.color.set(n.color)}}">
         </bim-color-input>
         
         <bim-number-input 
           slider step="0.01" label="Planes opacity" value="0.2" min="0.1" max="1"
-          @change="${({target:t})=>{n.material.opacity=t.value}}">
+          @change="${({target:n})=>{t.material.opacity=n.value}}">
         </bim-number-input>
         
         <bim-number-input 
           slider step="0.1" label="Planes size" value="5" min="2" max="10"
-          @change="${({target:t})=>{n.size=t.value}}">
+          @change="${({target:n})=>{t.size=n.value}}">
         </bim-number-input>
         
         <bim-button 
           label="Delete all" 
-          @click="${()=>{n.deleteAll()}}">  
+          @click="${()=>{t.deleteAll()}}">  
         </bim-button>        
         
         <bim-button 
           label="Rotate cube" 
-          @click="${()=>{o.rotation.x=2*Math.PI*Math.random(),o.rotation.y=2*Math.PI*Math.random(),o.rotation.z=2*Math.PI*Math.random()}}">  
+          @click="${()=>{l.rotation.x=2*Math.PI*Math.random(),l.rotation.y=2*Math.PI*Math.random(),l.rotation.z=2*Math.PI*Math.random()}}">  
         </bim-button>
        
         

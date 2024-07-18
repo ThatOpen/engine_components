@@ -4,6 +4,7 @@ import { Component, Disposable, Event, Components } from "../../core";
 import { IfcPropertiesUtils } from "../Utils";
 import { IfcLoader } from "../../fragments/IfcLoader";
 import { UUID } from "../../utils";
+import { IfcRelationsIndexer } from "../IfcRelationsIndexer";
 
 /**
  * Types for boolean properties in IFC schema.
@@ -151,6 +152,15 @@ export class IfcPropertiesManager extends Component implements Disposable {
     if (!schema) {
       throw new Error("IFC Schema not found");
     }
+    if (schema.startsWith("IFC2X3")) {
+      return "IFC2X3";
+    }
+    if (schema.startsWith("IFC4") && schema.replace("IFC4", "") === "") {
+      return "IFC4";
+    }
+    if (schema.startsWith("IFC4X3")) {
+      return "IFC4X3";
+    }
     return schema;
   }
 
@@ -162,7 +172,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
    * Each object must have an `expressID` property, which is the express ID of the entity in the model.
    * The rest of the properties will be set as the properties of the entity.
    *
-   * @returns {Promise<void>} A promise that resolves when all the properties have been set.
+   * @returns A promise that resolves when all the properties have been set.
    *
    * @throws Will throw an error if any of the `expressID` properties are missing in the `dataToSave` array.
    */
@@ -229,7 +239,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
    * @param model - The FragmentsGroup model from which to remove the Pset.
    * @param psetID - The express IDs of the Psets to be removed.
    *
-   * @returns {Promise<void>} A promise that resolves when all the Psets have been removed.
+   * @returns A promise that resolves when all the Psets have been removed.
    *
    * @throws Will throw an error if any of the `expressID` properties are missing in the `psetID` array.
    * @throws Will throw an error if the Pset to be removed is not of type `IFCPROPERTYSET`.
@@ -328,7 +338,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
    * @param psetID - The express ID of the Pset from which to remove the property.
    * @param propID - The express ID of the property to be removed.
    *
-   * @returns {Promise<void>} A promise that resolves when the property has been removed.
+   * @returns A promise that resolves when the property has been removed.
    *
    * @throws Will throw an error if the Pset or the property to be removed are not found in the model.
    * @throws Will throw an error if the Pset to be removed is not of type `IFCPROPERTYSET`.
@@ -348,13 +358,13 @@ export class IfcPropertiesManager extends Component implements Disposable {
   async addElementToPset(
     model: FragmentsGroup,
     psetID: number,
-    ...elementID: number[]
+    ...expressIDs: number[]
   ) {
     const relID = await IfcPropertiesUtils.getPsetRel(model, psetID);
     if (!relID) return;
     const rel = await model.getProperties(relID);
     if (!rel) return;
-    for (const expressID of elementID) {
+    for (const expressID of expressIDs) {
       const elementHandle = new WEBIFC.Handle(expressID);
       rel.RelatedObjects.push(elementHandle);
       this.onElementToPset.trigger({
@@ -364,6 +374,10 @@ export class IfcPropertiesManager extends Component implements Disposable {
       });
     }
     this.registerChange(model, psetID);
+    const indexer = this.components.get(IfcRelationsIndexer);
+    for (const expressID of expressIDs) {
+      indexer.addEntityRelations(model, expressID, "IsDefinedBy", psetID);
+    }
   }
 
   /**
@@ -373,7 +387,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
    * @param psetID - The express ID of the Pset to which to add the elements.
    * @param elementID - The express IDs of the elements to be added.
    *
-   * @returns {Promise<void>} A promise that resolves when all the elements have been added.
+   * @returns A promise that resolves when all the elements have been added.
    *
    * @throws Will throw an error if the Pset or the elements to be added are not found in the model.
    * @throws Will throw an error if the Pset to be added to is not of type `IFCPROPERTYSET`.

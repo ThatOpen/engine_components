@@ -110,7 +110,11 @@ clipper.enabled = true;
 
   */
 
-container.ondblclick = () => clipper.create(world);
+container.ondblclick = () => {
+  if (clipper.enabled) {
+    clipper.create(world);
+  }
+};
 
 /* MD
 
@@ -128,7 +132,9 @@ container.ondblclick = () => clipper.create(world);
 
 window.onkeydown = (event) => {
   if (event.code === "Delete" || event.code === "Backspace") {
-    clipper.delete(world);
+    if (clipper.enabled) {
+      clipper.delete(world);
+    }
   }
 };
 

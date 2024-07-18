@@ -37,6 +37,9 @@ export class SimplePlane implements Disposable, Hideable {
   /** The world instance to which this plane belongs. */
   world: World;
 
+  /** A custom string to identify what this plane is used for. */
+  type = "default";
+
   protected readonly _helper: THREE.Object3D;
 
   protected _visible = true;

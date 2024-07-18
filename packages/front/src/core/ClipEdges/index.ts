@@ -78,7 +78,9 @@ export class ClipEdges extends OBC.Component implements OBC.Disposable {
    * This method iterates through all the {@link EdgesPlane} instances associated with the {@link Clipper} component.
    */
   async update(updateFills = false) {
-    if (!this.enabled) return;
+    if (!this.enabled) {
+      return;
+    }
     const clipper = this.components.get(OBC.Clipper);
     for (const plane of clipper.list) {
       if (!(plane instanceof EdgesPlane)) {

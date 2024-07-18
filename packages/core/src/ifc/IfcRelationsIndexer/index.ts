@@ -117,19 +117,28 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     // forRelating
     const currentMap =
       relationsMap.get(relatingID) ?? new Map<number, number[]>();
-    const index = this._inverseAttributes.indexOf(relating);
-    currentMap.set(index, relatedIDs);
-    relationsMap.set(relatingID, currentMap);
+    const index = this.getAttributeIndex(relating);
+    if (index) {
+      currentMap.set(index, relatedIDs);
+      relationsMap.set(relatingID, currentMap);
+    }
 
     // forRelated
     for (const id of relatedIDs) {
       const currentMap = relationsMap.get(id) ?? new Map<number, number[]>();
-      const index = this._inverseAttributes.indexOf(related);
+      const index = this.getAttributeIndex(related);
+      if (!index) continue;
       const relations = currentMap.get(index) ?? [];
       relations.push(relatingID);
       currentMap.set(index, relations);
       relationsMap.set(id, currentMap);
     }
+  }
+
+  private getAttributeIndex(inverseAttribute: InverseAttribute) {
+    const index = this._inverseAttributes.indexOf(inverseAttribute);
+    if (index === -1) return null;
+    return index;
   }
 
   /**
@@ -243,12 +252,20 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     relationName: InverseAttribute,
   ) {
     const indexMap = this.relationMaps[model.uuid];
-    if (!indexMap) return null;
+    if (!indexMap) {
+      throw new Error(
+        `IfcRelationsIndexer: model ${model.uuid} has no relations indexed.`,
+      );
+    }
     const entityRelations = indexMap.get(expressID);
-    const attributeIndex = this._inverseAttributes.indexOf(relationName);
-    if (!entityRelations || attributeIndex === -1) return null;
+    const attributeIndex = this.getAttributeIndex(relationName);
+    if (!(entityRelations && attributeIndex)) {
+      return null;
+    }
     const relations = entityRelations.get(attributeIndex);
-    if (!relations) return null;
+    if (!relations) {
+      return null;
+    }
     return relations;
   }
 
@@ -352,5 +369,86 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     fragmentManager.onFragmentsDisposed.remove(this.onFragmentsDisposed);
     this.onDisposed.trigger(IfcRelationsIndexer.uuid);
     this.onDisposed.reset();
+  }
+
+  /**
+   * Adds relations between an entity and other entities in a BIM model.
+   *
+   * @param model - The BIM model to which the relations will be added.
+   * @param expressID - The expressID of the entity within the model.
+   * @param relationName - The IFC schema inverse attribute of the relation to add (e.g., "IsDefinedBy", "ContainsElements").
+   * @param relIDs - The expressIDs of the related entities within the model.
+   *
+   * @throws An error if the relation name is not a valid relation name.
+   */
+  addEntityRelations(
+    model: FragmentsGroup,
+    expressID: number,
+    relationName: InverseAttribute,
+    ...relIDs: number[]
+  ) {
+    const existingRelations = this.getEntityRelations(
+      model,
+      expressID,
+      relationName,
+    );
+    if (!existingRelations) {
+      const attributeIndex = this.getAttributeIndex(relationName);
+      if (!attributeIndex) {
+        throw new Error(
+          `IfcRelationsIndexer: ${relationName} is not a valid relation name.`,
+        );
+      }
+      const entityRelations = this.relationMaps[model.uuid].get(expressID);
+      entityRelations?.set(attributeIndex, relIDs);
+    } else {
+      existingRelations.push(...relIDs);
+    }
+  }
+
+  /**
+   * Gets the children of the given element recursively. E.g. in a model with project - site - building - storeys - rooms, passing a storey will include all its children and the children of the rooms contained in it.
+   *
+   * @param model The BIM model whose children to get.
+   * @param expressID The expressID of the item whose children to get.
+   * @param found An optional parameter that includes a set of expressIDs where the found element IDs will be added.
+   *
+   * @returns A `Set` with the expressIDs of the found items.
+   */
+  getEntityChildren(
+    model: FragmentsGroup,
+    expressID: number,
+    found = new Set<number>(),
+  ) {
+    found.add(expressID);
+
+    const modelRelations = this.relationMaps[model.uuid];
+    if (modelRelations === undefined) {
+      throw new Error(
+        "The provided model has no indices. You have to generate them first.",
+      );
+    }
+
+    // Spatial structure elements contained in this item
+    const spatialRels = this.getEntityRelations(
+      model,
+      expressID,
+      "IsDecomposedBy",
+    );
+    if (spatialRels) {
+      for (const id of spatialRels) {
+        this.getEntityChildren(model, id, found);
+      }
+    }
+
+    // Elements contained in this item
+    const rels = this.getEntityRelations(model, expressID, "ContainsElements");
+    if (rels) {
+      for (const id of rels) {
+        this.getEntityChildren(model, id, found);
+      }
+    }
+
+    return found;
   }
 }

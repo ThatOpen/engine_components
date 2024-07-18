@@ -164,10 +164,10 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
     <bim-panel active label="Hider Tutorial" class="options-menu">
       <bim-panel-section collapsed label="Controls">
       
-      <bim-panel-section collapsed name="Floors"">
+      <bim-panel-section collapsed label="Floors" name="Floors"">
       </bim-panel-section>
       
-      <bim-panel-section collapsed name="Categories"">
+      <bim-panel-section collapsed label="Categories" name="Categories"">
       </bim-panel-section>
       
     </bim-panel>
@@ -189,8 +189,14 @@ for (const name in spatialStructures) {
     return BUI.html`
       <bim-checkbox checked label="${name}"
         @change="${({ target }: { target: BUI.Checkbox }) => {
-          const found = classifier.find({ spatialStructures: [name] });
-          hider.set(target.value, found);
+          const found = classifier.list.spatialStructures[name];
+          if (found && found.id !== null) {
+            for (const [_id, model] of fragments.groups) {
+              const foundIDs = indexer.getEntityChildren(model, found.id);
+              const fragMap = model.getFragmentMap(foundIDs);
+              hider.set(target.value, fragMap);
+            }
+          }
         }}">
       </bim-checkbox>
     `;

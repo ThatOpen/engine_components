@@ -119,7 +119,7 @@ const caster = casters.get(world);
 
 if (world.renderer) {
   const canvas = world.renderer.three.domElement;
-  canvas.addEventListener("mousemove", () => {
+  canvas.addEventListener("pointermove", () => {
     const result = caster.castRay([model]);
 
     if (!result) return;

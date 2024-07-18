@@ -1,5 +1,43 @@
 # Changelog
 
+## [2.1.0](https://github.com/ThatOpen/engine_components/compare/v2.0.1...v2.1.0) (2024-07-10)
+
+
+### Features
+
+* add indexedDB cleaner, fix lost geometries in streamer ([30e8ef0](https://github.com/ThatOpen/engine_components/commit/30e8ef0dc1a87daab555847ea0e4e48ebfcd46dc))
+* clipping fills highlight ([09b464d](https://github.com/ThatOpen/engine_components/commit/09b464db1ffdcbc60bdf4b4c838af5d403f10e5f))
+* **core:** adds ModelIdMap and its conversion to/from FragmentIdMap ([55258be](https://github.com/ThatOpen/engine_components/commit/55258be95f92ec4e05d97425d9c7f81056fd6590))
+* **core:** adds name to SimpleWorld and creation events to Worlds ([9c39280](https://github.com/ThatOpen/engine_components/commit/9c392804d4260b2ae5a9f4a87f1e77562a7e2a68))
+* **core:** updates classifier to allow spatial structure grouping ([038629e](https://github.com/ThatOpen/engine_components/commit/038629eac49d0188bca8337fd75dcdce12c705ea))
+* **core:** updates IfcMetadataReader ([704f45b](https://github.com/ThatOpen/engine_components/commit/704f45b8c89f59b2ef35be668bf15f31f5de7cd5))
+* expose streamer objects ([988f92e](https://github.com/ThatOpen/engine_components/commit/988f92efd787c496707071ded182ceeddcd97995))
+* improves some methods ([55b802a](https://github.com/ThatOpen/engine_components/commit/55b802a443553b5a00a31f812ad1100b155005e1))
+* move volume computation logic to core ([d2a4ed3](https://github.com/ThatOpen/engine_components/commit/d2a4ed3399faae95e35c9f803ec2289728dc6f5f))
+* update fragments to support globalId ([3401fb2](https://github.com/ThatOpen/engine_components/commit/3401fb20ec9066a937b3bba8e997661b2c2c38aa))
+
+
+### Bug Fixes
+
+* add guard check for clipping planes object materials ([8edc0cc](https://github.com/ThatOpen/engine_components/commit/8edc0cc04a3f6fa2a4fc6eb409dac9782aa3d7d9))
+* add support for decimeters and centimeters ([722e8cb](https://github.com/ThatOpen/engine_components/commit/722e8cb3518a52b47c58d563c99f1eb7eb5af627))
+* **core:** updates package to auto get wasm on IfcLoader ([b187466](https://github.com/ThatOpen/engine_components/commit/b187466d8dfd79984098589374405d83140910dc))
+* correct camera and grid disposal logic ([fead481](https://github.com/ThatOpen/engine_components/commit/fead481f02f39c3ea1779c267cf4b30d6c9437b6))
+* correct culler when displaying coordinated models ([471e8f2](https://github.com/ThatOpen/engine_components/commit/471e8f2f189e098c7026c621d3bebd176cb01063))
+* correct hider hide all / show all logic ([782a0b3](https://github.com/ThatOpen/engine_components/commit/782a0b32273edbe8186eb8a4ce40568cd621260f))
+* correct marker bug for working with multiple worlds ([54834e8](https://github.com/ThatOpen/engine_components/commit/54834e8a433a97ebff310206798eebe29696f886))
+* correct multiple streamed model coordination ([a5220a7](https://github.com/ThatOpen/engine_components/commit/a5220a714e2f8c8cfcd7da3b0f16bb0e88b714ba))
+* correct world event disposal logic ([ee5c0fb](https://github.com/ThatOpen/engine_components/commit/ee5c0fba3698568d354836eae14ebd26baef8080))
+* **FaceMeasurement:** handle world.isDisposing when setting visibility ([#416](https://github.com/ThatOpen/engine_components/issues/416)) ([68b40c1](https://github.com/ThatOpen/engine_components/commit/68b40c1f433dad22852fa0fbbcf346b569d5428a))
+* **front:** custom highlighter colors were overwritten by select and hover ([d95e168](https://github.com/ThatOpen/engine_components/commit/d95e1680d1d869abef3078801b34a57dc242b048))
+* make classifier take ifc spaces into account for spatial structure ([e54e13b](https://github.com/ThatOpen/engine_components/commit/e54e13ba53eef49e23d96f4b328e7370008ad73f))
+* **properties-utils:** fix decimiter units ([#440](https://github.com/ThatOpen/engine_components/issues/440)) ([3c83e02](https://github.com/ThatOpen/engine_components/commit/3c83e028ac028023d3c4c0bf797627efd172097d))
+* remove incorrect import extension ([682a325](https://github.com/ThatOpen/engine_components/commit/682a3251f658c19a23bb81c35ec3630fa850a65f))
+* solve clip planes deletAll infinite loop ([8e40173](https://github.com/ThatOpen/engine_components/commit/8e40173689279757731c207db70b5ea113c75c3d))
+* solve postproduction custom pass quality degradation when resizing ([2506de6](https://github.com/ThatOpen/engine_components/commit/2506de6ebd2292e6350487278e5578509d7a333a))
+* substitute "pointermove" by "cursormove" for touchscreens ([9e4a126](https://github.com/ThatOpen/engine_components/commit/9e4a126945aae305e1907d9c4d6af926e0ad0f91))
+* updates MeasurementUtils to only return volume ([79b252c](https://github.com/ThatOpen/engine_components/commit/79b252c3d5b5fb242d0d996603dc02849e09b1bf))
+
 ## [2.0.1](https://github.com/ThatOpen/engine_components/compare/v1.5.0...v2.0.1) (2024-05-22)
 
 

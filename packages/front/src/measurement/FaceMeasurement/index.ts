@@ -277,11 +277,11 @@ export class FaceMeasurement
     const canvas = this.world.renderer.three.domElement;
     const viewerContainer = canvas.parentElement as HTMLElement;
 
-    viewerContainer.removeEventListener("mousemove", this.onMouseMove);
+    viewerContainer.removeEventListener("pointermove", this.onMouseMove);
     window.removeEventListener("keydown", this.onKeydown);
 
     if (active) {
-      viewerContainer.addEventListener("mousemove", this.onMouseMove);
+      viewerContainer.addEventListener("pointermove", this.onMouseMove);
       window.addEventListener("keydown", this.onKeydown);
     }
   }
@@ -289,6 +289,9 @@ export class FaceMeasurement
   private setVisibility(active: boolean) {
     if (!this.world) {
       throw new Error("The face measurement needs a world to work!");
+    }
+    if (this.world.isDisposing) {
+      return;
     }
     const scene = this.world.scene.three;
     for (const item of this.selection) {

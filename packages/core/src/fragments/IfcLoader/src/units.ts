@@ -24,8 +24,14 @@ export class Units {
     }
     if (length.Name.value === "FOOT") {
       this.factor = 0.3048;
-    } else if (length.Prefix?.value === "MILLI") {
+    }
+
+    if (length.Prefix?.value === "MILLI") {
       this.complement = 0.001;
+    } else if (length.Prefix?.value === "CENTI") {
+      this.complement = 0.01;
+    } else if (length.Prefix?.value === "DECI") {
+      this.complement = 0.01;
     }
   }
 

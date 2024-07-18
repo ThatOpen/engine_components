@@ -2,6 +2,7 @@ import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import earcut from "earcut";
 import { PostproductionRenderer } from "../../PostproductionRenderer";
+import { IndexFragmentMap } from "./types";
 
 /**
  * Class for managing and rendering the fills of a clipping plane.
@@ -11,6 +12,11 @@ export class ClippingFills {
    * The THREE.js mesh representing the fills.
    */
   mesh = new THREE.Mesh(new THREE.BufferGeometry());
+
+  /**
+   * The components instance associated with the clipping fills.
+   */
+  components: OBC.Components;
 
   /**
    * The world in which the clipping plane and fills exist.
@@ -71,14 +77,19 @@ export class ClippingFills {
   }
 
   constructor(
+    components: OBC.Components,
     world: OBC.World,
     plane: THREE.Plane,
     geometry: THREE.BufferGeometry,
     material: THREE.Material,
   ) {
+    this.components = components;
     this.world = world;
     this.mesh.material = material;
     this.mesh.frustumCulled = false;
+
+    // TODO: Add this to the mesh definition instead of using userData?
+    this.mesh.userData.indexFragmentMap = new Map() as IndexFragmentMap;
 
     this._plane = plane;
 
@@ -110,28 +121,53 @@ export class ClippingFills {
     if (style) {
       style.meshes.delete(this.mesh);
     }
+    this.mesh.userData.indexFragmentMap.clear();
+    this.mesh.userData = {};
     this.mesh.geometry.dispose();
     this.mesh.removeFromParent();
     (this.mesh.geometry as any) = null;
     (this.mesh as any) = null;
     (this._plane as any) = null;
     (this._geometry as any) = null;
+    (this.components as any) = null;
   }
 
   /**
    * Updates the clipping fills mesh with new indices.
    *
    * @param trianglesIndices - An array of indices representing triangles in the geometry.
+   * @param indexFragMap - A map that allows to trace back the original fragment and id from each triangle of the fill mesh.
    *
    */
-  update(trianglesIndices: number[]) {
+  update(trianglesIndices: number[], indexFragMap: IndexFragmentMap) {
     const buffer = this._geometry.attributes.position.array as Float32Array;
     if (!buffer) return;
 
     this.updatePlane2DCoordinateSystem();
 
+    const { userData } = this.mesh;
+    const currentFragMap = userData.indexFragmentMap as IndexFragmentMap;
+    currentFragMap.clear();
+    let faceIndex = 0;
+
     const allIndices: number[] = [];
     let currentTriangle = 0;
+
+    // TODO: Add fills to the FragmentMesh definition instead of userData?
+    // Add a reference to this fill to the frag mesh, to be able to trace all
+    // fills from a given fragment mesh (e.g. for highlighting)
+    const fragments = this.components.get(OBC.FragmentsManager);
+    for (const [_index, fragmentIdMap] of indexFragMap) {
+      for (const fragID in fragmentIdMap) {
+        const frag = fragments.list.get(fragID);
+        if (!frag) continue;
+        if (!frag.mesh.userData.fills) {
+          frag.mesh.userData.fills = new Set();
+        }
+        frag.mesh.userData.fills.add(this.mesh);
+      }
+    }
+
     for (let i = 0; i < trianglesIndices.length; i++) {
       const nextTriangle = trianglesIndices[i];
 
@@ -142,8 +178,18 @@ export class ClippingFills {
       }
 
       const indices = this.computeFill(vertices, buffer);
+
+      const fragments = indexFragMap.get(nextTriangle);
+      let indexCounter = 0;
+
       for (const index of indices) {
         allIndices.push(index);
+        // Save the reference faceIndex->fragmentIdMap, so that when raycasting
+        // the fill we can now to which element it belongs (e.g. for highlighting)
+        if (fragments && indexCounter % 3 === 0) {
+          currentFragMap.set(faceIndex++, fragments);
+        }
+        indexCounter++;
       }
 
       currentTriangle = nextTriangle;

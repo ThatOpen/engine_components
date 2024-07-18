@@ -2,6 +2,7 @@ import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import { FragmentsGroup } from "@thatopen/fragments";
 import { Component, Components, Disposer, Disposable, Event } from "../../core";
+import { FragmentsManager } from "../FragmentsManager";
 
 /**
  * A simple implementation of bounding box that works for fragments. The resulting bbox is not 100% precise, but it's fast, and should suffice for general use cases such as camera zooming or general boundary determination. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/BoundingBoxer). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/BoundingBoxer).
@@ -327,6 +328,38 @@ export class BoundingBoxer extends Component implements Disposable {
       if (max.x < this._absoluteMin.x) this._absoluteMin.x = max.x;
       if (max.y < this._absoluteMin.y) this._absoluteMin.y = max.y;
       if (max.z < this._absoluteMin.z) this._absoluteMin.z = max.z;
+    }
+  }
+
+  /**
+   * Uses a FragmentIdMap to add its meshes to the bb calculation.
+   *
+   * This method iterates through the provided `fragmentIdMap`, retrieves the corresponding fragment from the `FragmentsManager`,
+   * and then calls the `addMesh` method for each fragment's mesh, passing the expression IDs as the second parameter.
+   *
+   * @param fragmentIdMap - A mapping of fragment IDs to their corresponding expression IDs.
+   *
+   * @remarks
+   * This method is used to add a mapping of fragment IDs to their corresponding expression IDs.
+   * It ensures that the bounding box calculations are accurate and up-to-date by updating the internal minimum and maximum vectors.
+   *
+   * @example
+   * ```typescript
+   * const boundingBoxer = components.get(BoundingBoxer);
+   * const fragmentIdMap: FRAGS.FragmentIdMap = {
+   *   '5991fa75-2eef-4825-90b3-85177f51a9c9': [123, 245, 389],
+   *   '3469077e-39bf-4fc9-b3e6-4a1d78ad52b0': [454, 587, 612],
+   * };
+   * boundingBoxer.addFragmentIdMap(fragmentIdMap);
+   * ```
+   */
+  addFragmentIdMap(fragmentIdMap: FRAGS.FragmentIdMap) {
+    const fragments = this.components.get(FragmentsManager);
+    for (const fragmentID in fragmentIdMap) {
+      const fragment = fragments.list.get(fragmentID);
+      if (!fragment) continue;
+      const expressIDs = fragmentIdMap[fragmentID];
+      this.addMesh(fragment.mesh, expressIDs);
     }
   }
 

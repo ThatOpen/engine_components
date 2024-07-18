@@ -34,7 +34,7 @@ export class IfcFragmentSettings {
   /** Loader settings for [web-ifc](https://github.com/ThatOpen/engine_web-ifc). */
   webIfc: WEBIFC.LoaderSettings = {
     COORDINATE_TO_ORIGIN: true,
-    OPTIMIZE_PROFILES: true,
+    // OPTIMIZE_PROFILES: true,
   };
 
   /**

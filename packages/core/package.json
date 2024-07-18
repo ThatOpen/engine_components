@@ -1,7 +1,7 @@
 {
   "name": "@thatopen/components",
   "description": "Collection of core functionalities to author BIM apps.",
-  "version": "2.0.14",
+  "version": "2.1.9",
   "author": "That Open Company",
   "contributors": [
     "Antonio Gonzalez Viegas (https://github.com/agviegas)",
@@ -29,7 +29,7 @@
     "dev": "vite --host",
     "test": "jest",
     "build": "tsc --p ./tsconfig-build.json && vite build",
-    "prepublishOnly": "yarn build",
+    "prepublishOnly": "node ./resources/updateComponentsVersion.mjs && yarn build",
     "publish-repo": "npm publish",
     "publish-alpha": "npm publish --tag alpha"
   },
@@ -37,20 +37,20 @@
     "access": "public"
   },
   "devDependencies": {
-    "@thatopen/fragments": "~2.0.0",
-    "@thatopen/ui": "~2.0.0",
+    "@thatopen/fragments": "~2.1.0",
+    "@thatopen/ui": "~2.1.0",
     "@types/three": "0.160.0",
     "stats.js": "^0.17.0",
     "three": "^0.160.1",
-    "web-ifc": "0.0.53"
+    "web-ifc": "0.0.56"
   },
   "dependencies": {
     "camera-controls": "2.7.3",
     "three-mesh-bvh": "0.7.0"
   },
   "peerDependencies": {
-    "@thatopen/fragments": "~2.0.0",
+    "@thatopen/fragments": "~2.1.0",
     "three": "^0.160.1",
-    "web-ifc": "0.0.53"
+    "web-ifc": "0.0.56"
   }
 }

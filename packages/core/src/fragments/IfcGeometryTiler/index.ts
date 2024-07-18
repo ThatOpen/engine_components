@@ -8,6 +8,7 @@ import {
   SpatialStructure,
   CivilReader,
   IfcMetadataReader,
+  SpatialIdsFinder,
 } from "../IfcLoader/src";
 
 export * from "./src";
@@ -106,6 +107,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
     this.onIfcLoaded.reset();
     this.onGeometryStreamed.reset();
     this.onAssetStreamed.reset();
+    this.webIfc.Dispose();
     (this.webIfc as any) = null;
     this.onDisposed.trigger();
     this.onDisposed.reset();
@@ -219,6 +221,13 @@ export class IfcGeometryTiler extends Component implements Disposable {
         }
         const itemID = result.get(i);
         chunks[index].push(itemID);
+
+        const props = this.webIfc.GetLine(0, itemID);
+        if (props.GlobalId) {
+          const globalID = props?.GlobalId.value || props?.GlobalId;
+          group.globalToExpressIDs.set(globalID, itemID);
+        }
+
         const level = this._spatialTree.itemsByFloor[itemID] || 0;
         group.data.set(itemID, [[], [level, type]]);
         counter++;
@@ -270,13 +279,15 @@ export class IfcGeometryTiler extends Component implements Disposable {
     }
 
     // Delete assets that have no geometric representation
-    const ids = group.data.keys();
-    for (const id of ids) {
-      const [keys] = group.data.get(id)!;
-      if (!keys.length) {
-        group.data.delete(id);
-      }
-    }
+    // const ids = group.data.keys();
+    // for (const id of ids) {
+    //   const [keys] = group.data.get(id)!;
+    //   if (!keys.length) {
+    //     group.data.delete(id);
+    //   }
+    // }
+
+    SpatialIdsFinder.get(group, this.webIfc);
 
     const matrix = this.webIfc.GetCoordinationMatrix(0);
     group.coordinationMatrix.fromArray(matrix);
@@ -288,6 +299,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
   }
 
   private cleanUp() {
+    this.webIfc.Dispose();
     (this.webIfc as any) = null;
     this.webIfc = new WEBIFC.IfcAPI();
     this._visitedGeometries.clear();

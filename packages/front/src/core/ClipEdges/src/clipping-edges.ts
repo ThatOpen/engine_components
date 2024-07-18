@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { FragmentMesh } from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
-import { ClipStyle, Edge } from "./types";
+import { ClipStyle, Edge, IndexFragmentMap } from "./types";
 import { LineStyles } from "./edges-styles";
 import { ClippingFills } from "./clipping-fills";
 import { PostproductionRenderer } from "../../PostproductionRenderer";
@@ -56,6 +56,7 @@ export class ClippingEdges
 
   /** {@link OBC.Hideable.visible} */
   set visible(visible: boolean) {
+    this._visible = visible;
     for (const name in this._edges) {
       const edges = this._edges[name];
       if (visible) {
@@ -68,6 +69,22 @@ export class ClippingEdges
         edges.fill.visible = visible;
       }
     }
+  }
+
+  /**
+   * Getter that returns an array of THREE.Mesh instances representing the fills of the edges.
+   *
+   * @returns An array of THREE.Mesh instances representing the fills of the edges.
+   */
+  get fillMeshes() {
+    const fills: THREE.Mesh[] = [];
+    for (const name in this._edges) {
+      const edge = this._edges[name];
+      if (edge.fill) {
+        fills.push(edge.fill.mesh);
+      }
+    }
+    return fills;
   }
 
   constructor(
@@ -127,6 +144,7 @@ export class ClippingEdges
     const fillMaterial = style.fillMaterial;
     if (fillMaterial) {
       const fills = new ClippingFills(
+        this.components,
         this.world,
         this._plane,
         geometry,
@@ -176,6 +194,8 @@ export class ClippingEdges
     const indexes: number[] = [];
     let lastIndex = 0;
 
+    const indexFragMap: IndexFragmentMap = new Map();
+
     for (const mesh of style.meshes) {
       if (!mesh.geometry) {
         continue;
@@ -218,6 +238,17 @@ export class ClippingEdges
           index = this.shapecast(tempMesh, posAttr, index);
 
           if (index !== lastIndex) {
+            // Store a reference to the original fragment so that we can trace it back
+            // from the fill mesh
+            if (isFragment && ids) {
+              const itemID = fMesh.fragment.getItemID(i);
+              if (itemID !== null) {
+                indexFragMap.set(index, {
+                  [fMesh.fragment.id]: new Set([itemID]),
+                });
+              }
+            }
+
             indexes.push(index);
             lastIndex = index;
           }
@@ -245,13 +276,10 @@ export class ClippingEdges
     const attributes = currentEdges.mesh.geometry.attributes;
     const position = attributes.position as THREE.BufferAttribute;
     if (!Number.isNaN(position.array[0])) {
-      if (!currentEdges.mesh.parent) {
-        const scene = this.world.scene.three;
-        scene.add(currentEdges.mesh);
-      }
       if (this.fillNeedsUpdate && currentEdges.fill) {
         currentEdges.fill.geometry = currentEdges.mesh.geometry;
-        currentEdges.fill.update(indexes);
+        currentEdges.fill.update(indexes, indexFragMap);
+        currentEdges.fill.visible = this._visible;
       }
     }
   }
