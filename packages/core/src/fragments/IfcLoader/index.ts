@@ -6,6 +6,7 @@ import { CivilReader, IfcFragmentSettings, IfcMetadataReader } from "./src";
 import { FragmentsManager } from "../FragmentsManager";
 import { Component, Components, Event, Disposable } from "../../core";
 import { IfcJsonExporter } from "../../ifc/IfcJsonExporter";
+import { SpatialIdsFinder } from "./src/spatial-ids-finder.ts";
 
 export * from "./src/ifc-fragment-settings";
 
@@ -126,8 +127,6 @@ export class IfcLoader extends Component implements Disposable {
     const properties = await jsonExporter.export(this.webIfc, 0);
     group.setLocalProperties(properties);
 
-    this.cleanUp();
-
     const fragments = this.components.get(FragmentsManager);
     fragments.groups.set(group.uuid, group);
 
@@ -139,7 +138,9 @@ export class IfcLoader extends Component implements Disposable {
 
     fragments.onFragmentsLoaded.trigger(group);
 
-    if (coordinate) fragments.coordinate([group]);
+    if (coordinate) {
+      fragments.coordinate([group]);
+    }
 
     for (const [expressID] of group.data) {
       const props = properties[expressID];
@@ -147,6 +148,10 @@ export class IfcLoader extends Component implements Disposable {
       const globalID = props.GlobalId.value || props.GlobalId;
       group.globalToExpressIDs.set(globalID, expressID);
     }
+
+    SpatialIdsFinder.get(group, this.webIfc);
+
+    this.cleanUp();
 
     console.log(`Streaming the IFC took ${performance.now() - before} ms!`);
 

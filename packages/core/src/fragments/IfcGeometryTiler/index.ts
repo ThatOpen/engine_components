@@ -8,6 +8,7 @@ import {
   SpatialStructure,
   CivilReader,
   IfcMetadataReader,
+  SpatialIdsFinder,
 } from "../IfcLoader/src";
 
 export * from "./src";
@@ -278,13 +279,15 @@ export class IfcGeometryTiler extends Component implements Disposable {
     }
 
     // Delete assets that have no geometric representation
-    const ids = group.data.keys();
-    for (const id of ids) {
-      const [keys] = group.data.get(id)!;
-      if (!keys.length) {
-        group.data.delete(id);
-      }
-    }
+    // const ids = group.data.keys();
+    // for (const id of ids) {
+    //   const [keys] = group.data.get(id)!;
+    //   if (!keys.length) {
+    //     group.data.delete(id);
+    //   }
+    // }
+
+    SpatialIdsFinder.get(group, this.webIfc);
 
     const matrix = this.webIfc.GetCoordinationMatrix(0);
     group.coordinationMatrix.fromArray(matrix);

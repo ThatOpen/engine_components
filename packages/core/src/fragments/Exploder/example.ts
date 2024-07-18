@@ -124,7 +124,9 @@ Before being able to use it, we will need to get the classifier to classify the 
 */
 
 const classifier = components.get(OBC.Classifier);
-await classifier.bySpatialStructure(model);
+await classifier.bySpatialStructure(model, {
+  isolate: new Set([WEBIFC.IFCBUILDINGSTOREY]),
+});
 
 /* MD
   ### ⏱️ Measuring the performance (optional)

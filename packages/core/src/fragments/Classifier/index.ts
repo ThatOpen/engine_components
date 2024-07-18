@@ -342,7 +342,9 @@ export class Classifier extends Component implements Disposable {
    * Classifies fragments based on their spatial structure in the IFC model.
    *
    * @param model - The FragmentsGroup containing the fragments to be classified.
-   * @param config - The configuration for the classifier. It includes "useProperties" (if false, the classification will use the expressIDs instead of the names)
+   * @param config - The configuration for the classifier. It includes "useProperties", which is true by default
+   * (if false, the classification will use the expressIDs instead of the names), and "isolate", which will make
+   * the classifier just pick the WEBIFC categories provided.
    *
    * @remarks
    * This method iterates through the relations of the fragments in the provided group,
@@ -354,7 +356,7 @@ export class Classifier extends Component implements Disposable {
    */
   async bySpatialStructure(
     model: FRAGS.FragmentsGroup,
-    config: { useProperties: boolean } = { useProperties: true },
+    config: { useProperties?: boolean; isolate?: Set<number> },
   ) {
     const indexer = this.components.get(IfcRelationsIndexer);
     const modelRelations = indexer.relationMaps[model.uuid];
@@ -364,7 +366,22 @@ export class Classifier extends Component implements Disposable {
       );
     }
     const systemName = "spatialStructures";
+
+    // If useProperties is undefined, use properties by default
+    const propsUndefined = config.useProperties === undefined;
+    const useProperties = propsUndefined || config.useProperties;
+
     for (const [expressID] of modelRelations) {
+      // E.g. if the user just wants the building storeys
+      if (config.isolate) {
+        const data = model.data.get(expressID);
+        if (!data) continue;
+        const category = data[1][1];
+        if (category === undefined || !config.isolate.has(category)) {
+          continue;
+        }
+      }
+
       const spatialRels = indexer.getEntityRelations(
         model,
         expressID,
@@ -375,7 +392,7 @@ export class Classifier extends Component implements Disposable {
       if (spatialRels) {
         for (const id of spatialRels) {
           let relName = id.toString();
-          if (config.useProperties) {
+          if (useProperties) {
             const spatialRelAttrs = await model.getProperties(id);
             if (!spatialRelAttrs) {
               continue;
@@ -398,7 +415,7 @@ export class Classifier extends Component implements Disposable {
       }
 
       let relName = expressID.toString();
-      if (config.useProperties) {
+      if (useProperties) {
         const relAttrs = await model.getProperties(expressID);
         if (!relAttrs) {
           continue;
