@@ -1,3 +1,3 @@
 export * from "./Topic";
-export * from "./Viewpoint";
+export * from "./Viewpoints";
 export * from "./types";

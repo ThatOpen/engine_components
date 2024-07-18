@@ -4,19 +4,27 @@ import {
   BCFViewpoint,
   ViewpointOrthographicCamera,
   ViewpointPerspectiveCamera,
-} from "./types";
-import { UUID } from "../../../utils";
-import { Components } from "../../../core/Components";
-import { World } from "../../../core/Types/src/world";
-import { FragmentsManager } from "../../../fragments/FragmentsManager";
+} from "./src";
+import { UUID } from "../../utils";
+import { World, Component } from "../Types";
+import { Components } from "../Components";
+import { FragmentsManager } from "../../fragments/FragmentsManager";
 import {
   CameraProjection,
   OrthoPerspectiveCamera,
-} from "../../../core/OrthoPerspectiveCamera";
+} from "../OrthoPerspectiveCamera";
 
-export class Viewpoint implements BCFViewpoint {
+export class Viewpoints extends Component implements BCFViewpoint {
+  static readonly uuid = "ee867824-a796-408d-8aa0-4e5962a83c66" as const;
+  enabled = true;
+
+  readonly list = new Map<string, any>();
+
   guid = UUID.create();
+
+  // The transformation matrix used at the time of creation
   coordinationMatrix = new THREE.Matrix4();
+
   camera: ViewpointPerspectiveCamera | ViewpointOrthographicCamera = {
     aspect: 0,
     fov: 0,
@@ -29,6 +37,8 @@ export class Viewpoint implements BCFViewpoint {
   spaceBoundariesVisible = false;
   openingsVisible = false;
   defaultVisibility = true;
+
+  create(world: World) {}
 
   get cameraProjection(): CameraProjection {
     if ("fov" in this.camera) {
@@ -63,10 +73,9 @@ export class Viewpoint implements BCFViewpoint {
     if (world) this.update();
   }
 
-  private _components: Components;
-
   constructor(components: Components) {
-    this._components = components;
+    super(components);
+    components.add(Viewpoints.uuid, this);
   }
 
   set(data: Partial<BCFViewpoint>) {
@@ -115,7 +124,7 @@ export class Viewpoint implements BCFViewpoint {
     const controls = camera.controls;
     const position = this.cameraPosition;
 
-    const fragments = this._components.get(FragmentsManager);
+    const fragments = this.components.get(FragmentsManager);
     const baseModel = fragments.groups.get(fragments.baseCoordinationModel);
     if (baseModel) {
       position.applyMatrix4(baseModel.coordinationMatrix.clone().invert());
@@ -163,7 +172,7 @@ export class Viewpoint implements BCFViewpoint {
     // If the renderer exists but there is no HTMLElement, then aspect will be 0 / 0. In that case, use 1 as a fallback.
     if (Number.isNaN(aspect)) aspect = 1;
 
-    const fragments = this._components.get(FragmentsManager);
+    const fragments = this.components.get(FragmentsManager);
     const baseModel = fragments.groups.get(fragments.baseCoordinationModel);
     if (baseModel) position.applyMatrix4(baseModel.coordinationMatrix);
 
@@ -187,7 +196,7 @@ export class Viewpoint implements BCFViewpoint {
   }
 
   async getXML() {
-    const fragmentManager = this._components.get(FragmentsManager);
+    const fragmentManager = this.components.get(FragmentsManager);
 
     let componentSelection = "";
     for (const fragmentID in this.selectionComponents) {
@@ -270,3 +279,5 @@ export class Viewpoint implements BCFViewpoint {
     </VisualizationInfo>`;
   }
 }
+
+export * from "./src";

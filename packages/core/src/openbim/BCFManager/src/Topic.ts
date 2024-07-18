@@ -1,5 +1,6 @@
 import { UUID } from "../../../utils";
-import { BCFTopic, BCFTopicComment, BCFViewpoint } from "./types";
+import { BCFTopic, BCFTopicComment } from "./types";
+import { BCFViewpoint } from "../../../core";
 
 export class Topic implements BCFTopic {
   guid = UUID.create();
@@ -11,13 +12,13 @@ export class Topic implements BCFTopic {
   comments: BCFTopicComment[] = [];
   viewpoints: BCFViewpoint[] = [];
   customData: Record<string, any> = {};
-  description?: string | undefined;
-  serverAssignedId?: string | undefined;
-  priority?: string | undefined;
-  stage?: string | undefined;
-  labels?: string[] | undefined;
-  assignedTo?: string | undefined;
-  dueDate?: Date | undefined;
-  modifiedAuthor?: string | undefined;
-  modifiedDate?: Date | undefined;
+  description?: string;
+  serverAssignedId?: string;
+  priority?: string;
+  stage?: string;
+  labels?: string[];
+  assignedTo?: string;
+  dueDate?: Date;
+  modifiedAuthor?: string;
+  modifiedDate?: Date;
 }
