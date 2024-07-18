@@ -95,6 +95,5 @@ export class EdgesPlane extends OBC.SimplePlane {
   updateFill = () => {
     this.edges.fillNeedsUpdate = true;
     this.edges.update();
-    this.edges.visible = this._visible;
   };
 }

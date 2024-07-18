@@ -121,7 +121,7 @@ world.renderer.onAfterUpdate.add(() => stats.end());
   ### 🖼️ Getting the plans
   ---
 
- Now, we will get an instance of the plans component and automatically generate the all the floor plans of the BIM model we just loaded. 
+ Now, we will get an instance of the plans component and automatically generate the all the floor plans of the BIM model we just loaded.
 */
 
 const plans = components.get(OBCF.Plans);
@@ -133,7 +133,7 @@ await plans.generate(model);
   ---
 
  Now, let's set up highlighting so that the user can hover and select items on the BIM model.
- 
+
   :::tip Highlighter?
 
     If you are not familiar with highlighter, check out its specific tutorial!
@@ -149,7 +149,7 @@ highlighter.setup({ world });
   ---
 
  Now, let's set up culling so that our scene becomes even more efficient.
- 
+
   :::tip Culling?
 
     If you are not familiar with culling, check out its specific tutorial!
@@ -173,7 +173,7 @@ world.camera.controls.addEventListener("sleep", () => {
   ### 🖌️ Defining styles
   ---
 
- Next, we need to define how we want the floorplans to look like. For that, we'll need to create a bunch of clipping styles, so that the walls and slabs have a thick section line and a filling, whereas the doors and windows have a thin section line. Of course, we also need to classifier to split the model to categories. 
+ Next, we need to define how we want the floorplans to look like. For that, we'll need to create a bunch of clipping styles, so that the walls and slabs have a thick section line and a filling, whereas the doors and windows have a thin section line. Of course, we also need to classifier to split the model to categories.
 
    :::tip Clipping? Classifier?
 
@@ -303,6 +303,7 @@ for (const plan of plans.list) {
           classifier.setColor(modelItems, whiteColor);
           world.scene.three.background = whiteColor;
           plans.goTo(plan.id);
+          culler.needsUpdate = true;
         }}">
       </bim-button>
     `;
@@ -326,6 +327,7 @@ const exitButton = BUI.Component.create<BUI.Checkbox>(() => {
           classifier.resetColor(modelItems);
           world.scene.three.background = defaultBackground;
           plans.exitPlanView();
+          culler.needsUpdate = true;
         }}">
       </bim-button>
     `;

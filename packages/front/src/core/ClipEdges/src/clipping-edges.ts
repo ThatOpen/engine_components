@@ -56,6 +56,7 @@ export class ClippingEdges
 
   /** {@link OBC.Hideable.visible} */
   set visible(visible: boolean) {
+    this._visible = visible;
     for (const name in this._edges) {
       const edges = this._edges[name];
       if (visible) {
@@ -275,13 +276,10 @@ export class ClippingEdges
     const attributes = currentEdges.mesh.geometry.attributes;
     const position = attributes.position as THREE.BufferAttribute;
     if (!Number.isNaN(position.array[0])) {
-      if (!currentEdges.mesh.parent) {
-        const scene = this.world.scene.three;
-        scene.add(currentEdges.mesh);
-      }
       if (this.fillNeedsUpdate && currentEdges.fill) {
         currentEdges.fill.geometry = currentEdges.mesh.geometry;
         currentEdges.fill.update(indexes, indexFragMap);
+        currentEdges.fill.visible = this._visible;
       }
     }
   }
