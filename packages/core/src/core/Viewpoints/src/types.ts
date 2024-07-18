@@ -1,5 +1,3 @@
-import * as FRAGS from "@thatopen/fragments";
-
 export interface ViewpointPerspectiveCamera {
   aspect: number;
   fov: number;
@@ -17,10 +15,7 @@ export interface ViewpointOrthographicCamera {
 export interface BCFViewpoint {
   guid: string;
   camera: ViewpointPerspectiveCamera | ViewpointOrthographicCamera;
-  selectionComponents:
-    | FRAGS.FragmentIdMap
-    | Record<string, number[]>
-    | Record<string, string[]>;
+  selectionComponents: Iterable<string>;
   spacesVisible: boolean;
   spaceBoundariesVisible: boolean;
   openingsVisible: boolean;

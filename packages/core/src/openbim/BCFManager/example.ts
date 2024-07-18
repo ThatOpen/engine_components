@@ -46,13 +46,20 @@ const file = await fetch(
 );
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
-await ifcLoader.load(buffer);
+const model = await ifcLoader.load(buffer);
+const selection = model.getFragmentMap([186]);
+
+// Viewpoints
+const viewpoints = components.get(OBC.Viewpoints);
+const viewpoint = viewpoints.create(world);
+viewpoint.addComponentsFromMap(selection);
+viewpoint.selectionComponents.add("2idC0G3ezCdhA9WVjWemcy");
+// viewpoint.selection gives the fragmentIdMap to select elements with the highlighter from @thatopen/components-front
 
 // BCF Manager
-const viewpoint = new OBC.Viewpoint(components);
-viewpoint.world = world;
-
-console.log(viewpoint);
+const bcfManager = components.get(OBC.BCFManager);
+const topic = bcfManager.createTopic();
+topic.viewpoints.add(viewpoint);
 
 const panel = BUI.Component.create(() => {
   const onUpdateViewpoint = () => {

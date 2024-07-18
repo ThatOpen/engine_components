@@ -1,11 +1,11 @@
 import { BCFViewpoint } from "../../../core/Viewpoints";
 
 export interface BCFTopicComment extends Record<string, any> {
+  date: Date;
   author: string;
   guid: string;
   comment: string;
-  date: Date;
-  viewpoint: string;
+  viewpoint?: string;
   modifiedAuthor?: string;
   modifiedDate?: Date;
 }
@@ -30,3 +30,5 @@ export interface BCFTopic extends Record<string, any> {
   modifiedAuthor?: string;
   modifiedDate?: Date;
 }
+
+export type BCFVersion = "2.1" | "3.0";

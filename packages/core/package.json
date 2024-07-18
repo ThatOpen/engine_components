@@ -46,6 +46,8 @@
   },
   "dependencies": {
     "camera-controls": "2.7.3",
+    "fast-xml-parser": "latest",
+    "jszip": "latest",
     "three-mesh-bvh": "0.7.0"
   },
   "peerDependencies": {
