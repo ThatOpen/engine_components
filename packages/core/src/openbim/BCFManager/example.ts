@@ -47,19 +47,35 @@ const file = await fetch(
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = await ifcLoader.load(buffer);
-const selection = model.getFragmentMap([186]);
 
-// Viewpoints
+const bcfManager = components.get(OBC.BCFManager);
+bcfManager.config.types = new Set([
+  "Clash, Inquiry, Information, Coordination",
+]);
+bcfManager.config.statuses = new Set([
+  "Active",
+  "In Progress",
+  "Completed",
+  "In Review",
+  "Closed",
+]);
+bcfManager.config.priorities = new Set(["Low", "Normal", "High", "Critical"]);
+bcfManager.config.stages = new Set(["Planning", "Design", "Construction"]);
+
+const topic = bcfManager.createTopic();
+topic.description = "It seems these elements are badly defined.";
+topic.type = "Information";
+topic.priority = "High";
+topic.stage = "Design";
+
 const viewpoints = components.get(OBC.Viewpoints);
 const viewpoint = viewpoints.create(world);
-viewpoint.addComponentsFromMap(selection);
-viewpoint.selectionComponents.add("2idC0G3ezCdhA9WVjWemcy");
+viewpoint.addComponentsFromMap(model.getFragmentMap([186])); // You can provide a FragmentIdMap to the viewpoint selection
+viewpoint.selectionComponents.add("2idC0G3ezCdhA9WVjWemcy"); // You can provide a GlobalId to the viewpoint selection
 // viewpoint.selection gives the fragmentIdMap to select elements with the highlighter from @thatopen/components-front
 
-// BCF Manager
-const bcfManager = components.get(OBC.BCFManager);
-const topic = bcfManager.createTopic();
 topic.viewpoints.add(viewpoint);
+topic.createComment("Hi there! I agree.");
 
 const panel = BUI.Component.create(() => {
   const onUpdateViewpoint = () => {
@@ -68,11 +84,24 @@ const panel = BUI.Component.create(() => {
     console.log({ ...viewpoint.camera });
   };
 
+  const onBcfDownload = async () => {
+    const bcf = await bcfManager.export(new Set([topic]));
+    const bcfFile = new File([bcf], "topics.bcf");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(bcfFile);
+    a.download = bcfFile.name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   return BUI.html`
    <bim-panel label="BCF Manager">
     <bim-panel-section label="Viewpoints">
      <bim-button label="Update Viewpoint" @click=${onUpdateViewpoint}></bim-button> 
      <bim-button label="Go" @click=${() => viewpoint.go()}></bim-button> 
+    </bim-panel-section>
+    <bim-panel-section label="Topics">
+     <bim-button label="Download" @click=${onBcfDownload}></bim-button> 
     </bim-panel-section>
    </bim-panel> 
   `;

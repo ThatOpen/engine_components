@@ -53,10 +53,6 @@ export class Comment {
     this.author = manager.config.author;
   }
 
-  /**
-   * Serializes the Comment instance to an XML string.
-   * @returns The serialized XML string.
-   */
   serialize(version = this._managerVersion) {
     let viewpointTag: string | null = null;
     if (this.viewpoint) {

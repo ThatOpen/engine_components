@@ -7,23 +7,126 @@ import { BCFManager } from "..";
 export class Topic {
   guid = UUID.create();
   title = "BCF Topic";
-  type = "Issue";
-  creationAuthor = "jhon.doe@example.com";
   creationDate = new Date();
-  status = "Active";
   readonly comments = new Set<Comment>();
   readonly viewpoints = new Set<Viewpoint>();
   customData: Record<string, any> = {};
   description?: string;
   serverAssignedId?: string;
-  priority?: string;
-  stage?: string;
-  labels = new Set<string>();
-  assignedTo?: string;
   dueDate?: Date;
   modifiedAuthor?: string;
   modifiedDate?: Date;
   index?: number;
+
+  get creationAuthor() {
+    const manager = this._components.get(BCFManager);
+    const author = manager.config.author;
+    return author;
+  }
+
+  private _type = "Issue";
+
+  set type(value: string) {
+    const manager = this._components.get(BCFManager);
+    const { strict, types } = manager.config;
+    const valid = strict ? types.has(value) : true;
+    if (!valid) return;
+    this._type = value;
+  }
+
+  get type() {
+    return this._type;
+  }
+
+  private _status = "Active";
+
+  set status(value: string) {
+    const manager = this._components.get(BCFManager);
+    const { strict, statuses } = manager.config;
+    const valid = strict ? statuses.has(value) : true;
+    if (!valid) return;
+    this._status = value;
+  }
+
+  get status() {
+    return this._status;
+  }
+
+  private _priority?: string;
+
+  set priority(value: string | undefined) {
+    const manager = this._components.get(BCFManager);
+    if (value) {
+      const { strict, priorities } = manager.config;
+      const valid = strict ? priorities.has(value) : true;
+      if (!valid) return;
+      this._priority = value;
+    } else {
+      this._priority = value;
+    }
+  }
+
+  get priority() {
+    return this._priority;
+  }
+
+  private _stage?: string;
+
+  set stage(value: string | undefined) {
+    const manager = this._components.get(BCFManager);
+    if (value) {
+      const { strict, stages } = manager.config;
+      const valid = strict ? stages.has(value) : true;
+      if (!valid) return;
+      this._stage = value;
+    } else {
+      this._stage = value;
+    }
+  }
+
+  get stage() {
+    return this._stage;
+  }
+
+  private _assignedTo?: string;
+
+  set assignedTo(value: string | undefined) {
+    const manager = this._components.get(BCFManager);
+    if (value) {
+      const { strict, users } = manager.config;
+      const valid = strict ? users.has(value) : true;
+      if (!valid) return;
+      this._assignedTo = value;
+    } else {
+      this._assignedTo = value;
+    }
+  }
+
+  get assignedTo() {
+    return this._assignedTo;
+  }
+
+  private _labels = new Set<string>();
+
+  set labels(value: Set<string>) {
+    const manager = this._components.get(BCFManager);
+    const { strict, labels } = manager.config;
+    if (strict) {
+      const _value = new Set<string>();
+      for (const label of value) {
+        const valid = strict ? labels.has(label) : true;
+        if (!valid) continue;
+        _value.add(label);
+      }
+      this._labels = _value;
+    } else {
+      this._labels = value;
+    }
+  }
+
+  get labels() {
+    return this._labels;
+  }
 
   private _components: Components;
 

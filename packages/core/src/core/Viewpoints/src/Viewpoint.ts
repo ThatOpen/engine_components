@@ -217,10 +217,6 @@ export class Viewpoint {
 
     let componentSelection = "";
     if (manager.config.includeSelectionTag) {
-      componentSelection = [...this.selectionComponents]
-        .map((globalId) => `<Component IfcGuid="${globalId}" />`)
-        .join(`\n`);
-    } else {
       const modelIdMap = this._modelIdMap;
       for (const modelID in modelIdMap) {
         const model = fragments.groups.get(modelID);
@@ -233,10 +229,14 @@ export class Viewpoint {
           if (!globalID) continue;
           const tag = attrs.Tag?.value;
           let tagAttribute: string | null = null;
-          if (tag) tagAttribute = `AuthoringToolId="${tag}`;
+          if (tag) tagAttribute = `AuthoringToolId="${tag}"`;
           componentSelection += `\n<Component IfcGuid="${globalID}" ${tagAttribute ?? ""} />`;
         }
       }
+    } else {
+      componentSelection = [...this.selectionComponents]
+        .map((globalId) => `<Component IfcGuid="${globalId}" />`)
+        .join(`\n`);
     }
 
     const coordinationMatrix = new THREE.Matrix4();

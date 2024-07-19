@@ -1,18 +1,6 @@
 import JSZip from "jszip";
 import { Component, Configurable, Disposable, Event } from "../../core/Types";
-import { Topic } from "./src";
-
-interface BCFManagerConfig {
-  version: "2.1" | "3.0";
-  author: string;
-  types: Set<string>;
-  statuses: Set<string>;
-  priorities: Set<string>;
-  labels: Set<string>;
-  stages: Set<string>;
-  users: Set<string>;
-  includeSelectionTag: boolean;
-}
+import { BCFManagerConfig, Topic } from "./src";
 
 export class BCFManager
   extends Component
@@ -24,13 +12,16 @@ export class BCFManager
   config: Required<BCFManagerConfig> = {
     author: "jhon.doe@example.com",
     version: "2.1",
-    types: new Set(),
-    statuses: new Set(),
+    types: new Set(["Issue"]),
+    statuses: new Set(["Active"]),
     priorities: new Set(),
     labels: new Set(),
     stages: new Set(),
     users: new Set(),
     includeSelectionTag: false,
+    updateExtensionsOnImport: true,
+    strict: false,
+    includeMissingExtensionsOnExport: true,
   };
 
   readonly list = new Set<Topic>();
@@ -107,7 +98,7 @@ export class BCFManager
     `;
   }
 
-  async export(topics = this.list, fileName = "topics") {
+  async export(topics = this.list) {
     const zip = new JSZip();
     zip.file(
       "bcf.version",
@@ -128,13 +119,8 @@ export class BCFManager
         topicFolder.file(`${viewpoint.guid}.bcfv`, await viewpoint.serialize());
       }
     }
-    const a = document.createElement("a");
     const content = await zip.generateAsync({ type: "blob" });
-    a.href = URL.createObjectURL(content);
-    a.download = `${fileName}.bcf`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-    a.remove();
+    return content;
   }
 }
 
