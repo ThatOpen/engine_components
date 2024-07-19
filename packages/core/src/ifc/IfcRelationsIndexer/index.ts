@@ -259,7 +259,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     }
     const entityRelations = indexMap.get(expressID);
     const attributeIndex = this.getAttributeIndex(relationName);
-    if (!(entityRelations && attributeIndex)) {
+    if (entityRelations === undefined || attributeIndex === null) {
       return null;
     }
     const relations = entityRelations.get(attributeIndex);
