@@ -1,1 +1,1 @@
-export * from "./BCFManager";
+export * from "./BCFTopics";

@@ -2,7 +2,7 @@ import { UUID } from "../../../utils";
 import { Components } from "../../../core/Components";
 import { Viewpoint } from "../../../core/Viewpoints";
 import { Comment } from "./Comment";
-import { BCFManager } from "..";
+import { BCFTopics } from "..";
 
 export class Topic {
   guid = UUID.create();
@@ -19,7 +19,7 @@ export class Topic {
   index?: number;
 
   get creationAuthor() {
-    const manager = this._components.get(BCFManager);
+    const manager = this._components.get(BCFTopics);
     const author = manager.config.author;
     return author;
   }
@@ -27,7 +27,7 @@ export class Topic {
   private _type = "Issue";
 
   set type(value: string) {
-    const manager = this._components.get(BCFManager);
+    const manager = this._components.get(BCFTopics);
     const { strict, types } = manager.config;
     const valid = strict ? types.has(value) : true;
     if (!valid) return;
@@ -41,7 +41,7 @@ export class Topic {
   private _status = "Active";
 
   set status(value: string) {
-    const manager = this._components.get(BCFManager);
+    const manager = this._components.get(BCFTopics);
     const { strict, statuses } = manager.config;
     const valid = strict ? statuses.has(value) : true;
     if (!valid) return;
@@ -55,7 +55,7 @@ export class Topic {
   private _priority?: string;
 
   set priority(value: string | undefined) {
-    const manager = this._components.get(BCFManager);
+    const manager = this._components.get(BCFTopics);
     if (value) {
       const { strict, priorities } = manager.config;
       const valid = strict ? priorities.has(value) : true;
@@ -73,7 +73,7 @@ export class Topic {
   private _stage?: string;
 
   set stage(value: string | undefined) {
-    const manager = this._components.get(BCFManager);
+    const manager = this._components.get(BCFTopics);
     if (value) {
       const { strict, stages } = manager.config;
       const valid = strict ? stages.has(value) : true;
@@ -91,7 +91,7 @@ export class Topic {
   private _assignedTo?: string;
 
   set assignedTo(value: string | undefined) {
-    const manager = this._components.get(BCFManager);
+    const manager = this._components.get(BCFTopics);
     if (value) {
       const { strict, users } = manager.config;
       const valid = strict ? users.has(value) : true;
@@ -109,7 +109,7 @@ export class Topic {
   private _labels = new Set<string>();
 
   set labels(value: Set<string>) {
-    const manager = this._components.get(BCFManager);
+    const manager = this._components.get(BCFTopics);
     const { strict, labels } = manager.config;
     if (strict) {
       const _value = new Set<string>();
@@ -131,7 +131,7 @@ export class Topic {
   private _components: Components;
 
   private get _managerVersion() {
-    const manager = this._components.get(BCFManager);
+    const manager = this._components.get(BCFTopics);
     return manager.config.version;
   }
 

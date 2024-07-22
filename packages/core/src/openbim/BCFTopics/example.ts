@@ -48,21 +48,19 @@ const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = await ifcLoader.load(buffer);
 
-const bcfManager = components.get(OBC.BCFManager);
-bcfManager.config.types = new Set([
-  "Clash, Inquiry, Information, Coordination",
-]);
-bcfManager.config.statuses = new Set([
+const bcfTopics = components.get(OBC.BCFTopics);
+bcfTopics.config.types = new Set(["Clash, Inquiry, Information, Coordination"]);
+bcfTopics.config.statuses = new Set([
   "Active",
   "In Progress",
   "Completed",
   "In Review",
   "Closed",
 ]);
-bcfManager.config.priorities = new Set(["Low", "Normal", "High", "Critical"]);
-bcfManager.config.stages = new Set(["Planning", "Design", "Construction"]);
+bcfTopics.config.priorities = new Set(["Low", "Normal", "High", "Critical"]);
+bcfTopics.config.stages = new Set(["Planning", "Design", "Construction"]);
 
-const topic = bcfManager.createTopic();
+const topic = bcfTopics.createTopic();
 topic.description = "It seems these elements are badly defined.";
 topic.type = "Information";
 topic.priority = "High";
@@ -85,7 +83,7 @@ const panel = BUI.Component.create(() => {
   };
 
   const onBcfDownload = async () => {
-    const bcf = await bcfManager.export(new Set([topic]));
+    const bcf = await bcfTopics.export(new Set([topic]));
     const bcfFile = new File([bcf], "topics.bcf");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(bcfFile);

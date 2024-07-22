@@ -1,15 +1,15 @@
 import JSZip from "jszip";
 import { Component, Configurable, Disposable, Event } from "../../core/Types";
-import { BCFManagerConfig, Topic } from "./src";
+import { BCFTopicsConfig, Topic } from "./src";
 
-export class BCFManager
+export class BCFTopics
   extends Component
-  implements Disposable, Configurable<BCFManagerConfig>
+  implements Disposable, Configurable<BCFTopicsConfig>
 {
   static uuid = "de977976-e4f6-4e4f-a01a-204727839802" as const;
   enabled = false;
 
-  config: Required<BCFManagerConfig> = {
+  config: Required<BCFTopicsConfig> = {
     author: "jhon.doe@example.com",
     version: "2.1",
     types: new Set(["Issue"]),
@@ -28,7 +28,7 @@ export class BCFManager
 
   readonly onSetup = new Event();
   isSetup = false;
-  setup(config?: Partial<BCFManagerConfig>) {
+  setup(config?: Partial<BCFTopicsConfig>) {
     if (this.isSetup) return;
     this.config = { ...this.config, ...config };
     this.isSetup = true;

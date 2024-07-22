@@ -13,7 +13,7 @@ import {
 import { Components } from "../../Components";
 import { World } from "../../Types";
 import { FragmentsManager } from "../../../fragments/FragmentsManager";
-import { BCFManager } from "../../../openbim/BCFManager";
+import { BCFTopics } from "../../../openbim/BCFTopics";
 
 export class Viewpoint {
   guid = UUID.create();
@@ -76,7 +76,7 @@ export class Viewpoint {
   readonly world: World;
 
   private get _managerVersion() {
-    const manager = this._components.get(BCFManager);
+    const manager = this._components.get(BCFTopics);
     return manager.config.version;
   }
 
@@ -213,7 +213,7 @@ export class Viewpoint {
 
   async serialize(version = this._managerVersion) {
     const fragments = this._components.get(FragmentsManager);
-    const manager = this._components.get(BCFManager);
+    const manager = this._components.get(BCFTopics);
 
     let componentSelection = "";
     if (manager.config.includeSelectionTag) {

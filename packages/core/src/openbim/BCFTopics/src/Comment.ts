@@ -1,4 +1,4 @@
-import { BCFManager } from "..";
+import { BCFTopics } from "..";
 import { Viewpoint } from "../../../core/Viewpoints";
 import { Components } from "../../../core/Components";
 import { UUID } from "../../../utils";
@@ -15,7 +15,7 @@ export class Comment {
   modifiedDate?: Date;
 
   private get _managerVersion() {
-    const manager = this._components.get(BCFManager);
+    const manager = this._components.get(BCFTopics);
     return manager.config.version;
   }
 
@@ -27,7 +27,7 @@ export class Comment {
    * @param value - The new comment text.
    */
   set comment(value: string) {
-    const manager = this._components.get(BCFManager);
+    const manager = this._components.get(BCFTopics);
     this._comment = value;
     this.modifiedDate = new Date();
     this.modifiedAuthor = manager.config.author;
@@ -49,7 +49,7 @@ export class Comment {
   constructor(components: Components, text: string) {
     this._components = components;
     this._comment = text; // Set the comment to the private property to prevent setting a modifiedDate and author
-    const manager = this._components.get(BCFManager);
+    const manager = this._components.get(BCFTopics);
     this.author = manager.config.author;
   }
 

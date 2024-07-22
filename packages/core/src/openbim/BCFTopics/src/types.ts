@@ -33,7 +33,7 @@ export interface BCFTopic extends Record<string, any> {
 
 export type BCFVersion = "2.1" | "3.0";
 
-export interface BCFManagerConfig {
+export interface BCFTopicsConfig {
   // The BCF version used during export
   version: "2.1" | "3.0";
   // The user (usually an email) creating topics using this manager
