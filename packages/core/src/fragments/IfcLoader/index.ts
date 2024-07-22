@@ -71,7 +71,6 @@ export class IfcLoader extends Component implements Disposable {
 
   /** {@link Disposable.dispose} */
   dispose() {
-    this.webIfc.Dispose();
     (this.webIfc as any) = null;
     this.onDisposed.trigger(IfcLoader.uuid);
     this.onDisposed.reset();
