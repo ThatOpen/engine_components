@@ -5,8 +5,8 @@ export class DataMap<K, V> extends Map<K, V> {
   readonly onItemDeleted = new Event();
   readonly onCleared = new Event();
 
-  constructor() {
-    super();
+  constructor(iterable?: Iterable<readonly [K, V]> | null | undefined) {
+    super(iterable);
   }
 
   clear() {
