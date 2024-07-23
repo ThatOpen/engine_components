@@ -8,3 +8,5 @@ export * from "./base-camera";
 export * from "./base-renderer";
 export * from "./base-scene";
 export * from "./world";
+export * from "./data-set";
+export * from "./data-map";
