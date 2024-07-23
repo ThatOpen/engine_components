@@ -20,6 +20,7 @@ In this tutorial, we will import:
 
 import Stats from "stats.js";
 import * as BUI from "@thatopen/ui";
+import * as WEBIFC from "web-ifc";
 import * as OBC from "@thatopen/components";
 
 /* MD
@@ -109,7 +110,9 @@ const hider = components.get(OBC.Hider);
 
 const classifier = components.get(OBC.Classifier);
 classifier.byEntity(model);
-await classifier.bySpatialStructure(model);
+await classifier.bySpatialStructure(model, {
+  isolate: new Set([WEBIFC.IFCBUILDINGSTOREY]),
+});
 
 /* MD
   ### ⏱️ Measuring the performance (optional)

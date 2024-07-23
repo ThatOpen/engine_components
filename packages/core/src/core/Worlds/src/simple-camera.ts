@@ -159,6 +159,7 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
     controls.smoothTime = 0.2;
     controls.dollyToCursor = true;
     controls.infinityDolly = true;
+    controls.minDistance = 6;
     return controls;
   }
 

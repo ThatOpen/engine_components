@@ -356,7 +356,7 @@ export class Classifier extends Component implements Disposable {
    */
   async bySpatialStructure(
     model: FRAGS.FragmentsGroup,
-    config: { useProperties?: boolean; isolate?: Set<number> },
+    config: { useProperties?: boolean; isolate?: Set<number> } = {},
   ) {
     const indexer = this.components.get(IfcRelationsIndexer);
     const modelRelations = indexer.relationMaps[model.uuid];
@@ -368,8 +368,8 @@ export class Classifier extends Component implements Disposable {
     const systemName = "spatialStructures";
 
     // If useProperties is undefined, use properties by default
-    const propsUndefined = config.useProperties === undefined;
-    const useProperties = propsUndefined || config.useProperties;
+    const noProps = config.useProperties === undefined;
+    const useProperties = noProps || config.useProperties;
 
     for (const [expressID] of modelRelations) {
       // E.g. if the user just wants the building storeys
