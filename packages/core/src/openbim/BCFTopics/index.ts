@@ -6,8 +6,10 @@ import {
   Disposable,
   Event,
   World,
+  DataMap,
+  DataSet,
 } from "../../core/Types";
-import { BCFTopicsConfig, BCFVersion, Topic } from "./src";
+import { BCFTopic, BCFTopicsConfig, BCFVersion, Topic } from "./src";
 import { Viewpoints } from "../../core/Viewpoints";
 import { Comment } from "./src/Comment";
 
@@ -35,12 +37,12 @@ export class BCFTopics
   config: Required<BCFTopicsConfig> = {
     author: "jhon.doe@example.com",
     version: "2.1",
-    types: new Set(["Issue"]),
-    statuses: new Set(["Active"]),
-    priorities: new Set(),
-    labels: new Set(),
-    stages: new Set(),
-    users: new Set(),
+    types: new DataSet(["Issue"]),
+    statuses: new DataSet(["Active"]),
+    priorities: new DataSet(),
+    labels: new DataSet(),
+    stages: new DataSet(),
+    users: new DataSet(),
     includeSelectionTag: false,
     updateExtensionsOnImport: true,
     strict: false,
@@ -49,7 +51,7 @@ export class BCFTopics
     ignoreIncompleteTopicsOnImport: false,
   };
 
-  readonly list = new Map<string, Topic>();
+  readonly list = new DataMap<string, Topic>();
 
   readonly onSetup = new Event();
   isSetup = false;
@@ -63,17 +65,19 @@ export class BCFTopics
 
   readonly onBCFImported = new Event<Topic[]>();
 
-  create(data?: any) {
+  create(data?: Partial<BCFTopic>) {
     const topic = new Topic(this.components);
-    if (data) topic.set(data);
+    if (data) {
+      topic.guid = data.guid ?? topic.guid;
+      topic.set(data);
+    }
     this.list.set(topic.guid, topic);
     return topic;
   }
 
   readonly onDisposed = new Event();
   dispose() {
-    // this.list.dispose();
-    (this.list as any) = [];
+    this.list.dispose();
     this.onDisposed.trigger();
     this.onDisposed.reset();
   }

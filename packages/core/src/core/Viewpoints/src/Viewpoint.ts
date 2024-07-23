@@ -112,24 +112,13 @@ export class Viewpoint {
   }
 
   set(data: Partial<BCFViewpoint>) {
-    const {
-      guid,
-      camera,
-      selectionComponents,
-      spacesVisible,
-      spaceBoundariesVisible,
-      openingsVisible,
-      defaultVisibility,
-    } = data;
-    if (guid) this.guid = guid;
-    if (camera) this.camera = camera;
-    if (selectionComponents)
-      (this.selectionComponents as any) = selectionComponents;
-    if (spacesVisible) this.spacesVisible = spacesVisible;
-    if (spaceBoundariesVisible)
-      this.spaceBoundariesVisible = spaceBoundariesVisible;
-    if (openingsVisible) this.openingsVisible = openingsVisible;
-    if (defaultVisibility) this.defaultVisibility = defaultVisibility;
+    const _data = data as any;
+    const _this = this as any;
+    for (const key in data) {
+      if (key === "guid") continue;
+      const value = _data[key];
+      if (key in this) _this[key] = value;
+    }
   }
 
   async go(transition = true) {

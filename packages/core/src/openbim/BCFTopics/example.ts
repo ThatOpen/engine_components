@@ -63,7 +63,7 @@ bcfTopics.setup({
   priorities: new Set(["Low", "Normal", "High", "Critical"]),
 });
 
-bcfTopics.list.onEntrySet.add(({ value: topic }) => console.log(topic));
+bcfTopics.list.onItemSet.add(({ value: topic }) => console.log(topic));
 
 const viewpoints = components.get(OBC.Viewpoints);
 

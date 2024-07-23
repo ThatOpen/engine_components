@@ -3,14 +3,17 @@ import { Components } from "../../../core/Components";
 import { Viewpoint } from "../../../core/Viewpoints";
 import { Comment } from "./Comment";
 import { BCFTopics } from "..";
+import { BCFTopic } from "./types";
+import { DataSet } from "../../../core/Types";
 
-export class Topic {
+export class Topic implements BCFTopic {
+  // By no means a Topic guid must be changed after it has been created
   guid = UUID.create();
   title = "BCF Topic";
   creationDate = new Date();
   creationAuthor = "";
-  readonly comments = new Set<Comment>();
-  readonly viewpoints = new Set<Viewpoint>();
+  readonly comments = new DataSet<Comment>();
+  readonly viewpoints = new DataSet<Viewpoint>();
   customData: Record<string, any> = {};
   description?: string;
   serverAssignedId?: string;
@@ -101,13 +104,13 @@ export class Topic {
     return this._assignedTo;
   }
 
-  private _labels = new Set<string>();
+  private _labels = new DataSet<string>();
 
-  set labels(value: Set<string>) {
+  set labels(value: DataSet<string>) {
     const manager = this._components.get(BCFTopics);
     const { strict, labels } = manager.config;
     if (strict) {
-      const _value = new Set<string>();
+      const _value = new DataSet<string>();
       for (const label of value) {
         const valid = strict ? labels.has(label) : true;
         if (!valid) continue;
@@ -136,7 +139,15 @@ export class Topic {
     this.creationAuthor = manager.config.author;
   }
 
-  set(data: any) {}
+  set(data: Partial<BCFTopic>) {
+    const _data = data as any;
+    const _this = this as any;
+    for (const key in data) {
+      if (key === "guid") continue;
+      const value = _data[key];
+      if (key in this) _this[key] = value;
+    }
+  }
 
   createComment(text: string) {
     const comment = new Comment(this._components, text);
