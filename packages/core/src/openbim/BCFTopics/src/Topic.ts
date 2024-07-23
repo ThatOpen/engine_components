@@ -136,6 +136,8 @@ export class Topic {
     this.creationAuthor = manager.config.author;
   }
 
+  set(data: any) {}
+
   createComment(text: string) {
     const comment = new Comment(this._components, text);
     this.comments.add(comment);

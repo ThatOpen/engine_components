@@ -1,6 +1,12 @@
 import JSZip from "jszip";
 import { XMLParser } from "fast-xml-parser";
-import { Component, Configurable, Disposable, Event } from "../../core/Types";
+import {
+  Component,
+  Configurable,
+  Disposable,
+  Event,
+  World,
+} from "../../core/Types";
 import { BCFTopicsConfig, BCFVersion, Topic } from "./src";
 import { Viewpoints } from "../../core/Viewpoints";
 import { Comment } from "./src/Comment";
@@ -55,25 +61,18 @@ export class BCFTopics
     this.onSetup.trigger();
   }
 
-  readonly onTopicCreated = new Event<Topic>();
-  readonly onTopicDeleted = new Event<string>();
+  readonly onBCFImported = new Event<Topic[]>();
 
-  createTopic() {
+  create(data?: any) {
     const topic = new Topic(this.components);
+    if (data) topic.set(data);
     this.list.set(topic.guid, topic);
-    this.onTopicCreated.trigger(topic);
     return topic;
-  }
-
-  deleteTopic(topic: Topic) {
-    const { guid } = topic;
-    const deleted = this.list.delete(guid);
-    this.onTopicDeleted.trigger(guid);
-    return deleted;
   }
 
   readonly onDisposed = new Event();
   dispose() {
+    // this.list.dispose();
     (this.list as any) = [];
     this.onDisposed.trigger();
     this.onDisposed.reset();
@@ -184,23 +183,23 @@ export class BCFTopics
       .join("\n");
 
     const statuses = [...this.config.statuses]
-      .map((status) => `<TopicStatuses>${status}</TopicStatuses>`)
+      .map((status) => `<TopicStatus>${status}</TopicStatus>`)
       .join("\n");
 
     const priorities = [...this.config.priorities]
-      .map((priority) => `<Priorities>${priority}</Priorities>`)
+      .map((priority) => `<Priority>${priority}</Priority>`)
       .join("\n");
 
     const labels = [...this.config.labels]
-      .map((label) => `<TopicLabels>${label}</TopicLabels>`)
+      .map((label) => `<TopicLabel>${label}</TopicLabel>`)
       .join("\n");
 
     const stages = [...this.config.stages]
-      .map((stage) => `<Stages>${stage}</Stages>`)
+      .map((stage) => `<Stage>${stage}</Stage>`)
       .join("\n");
 
     const users = [...this.config.users]
-      .map((user) => `<Users>${user}</Users>`)
+      .map((user) => `<User>${user}</User>`)
       .join("\n");
 
     return `
@@ -241,13 +240,19 @@ export class BCFTopics
     return content;
   }
 
-  private processComment(markupComment: any) {
-    const { Guid, Date, Author, Comment, Viewpoint } = markupComment;
-    if (!(Guid && Date && Author && (Comment || Viewpoint))) return null;
+  private processMarkupComment(markupComment: any) {
+    const {
+      Guid,
+      Date: CommentDate,
+      Author,
+      Comment: CommentText,
+      Viewpoint,
+    } = markupComment;
+    if (!(Guid && CommentDate && Author && (Comment || Viewpoint))) return null;
     const viewpoints = this.components.get(Viewpoints);
-    const comment = new Comment(this.components, Comment ?? "") as Comment;
+    const comment = new Comment(this.components, CommentText ?? "") as Comment;
     comment.guid = Guid;
-    comment.date = Date;
+    comment.date = new Date(CommentDate);
     comment.author = Author;
     comment.viewpoint = viewpoints.list.get(Viewpoint);
     comment.modifiedAuthor = markupComment.ModifiedAuthor;
@@ -257,14 +262,14 @@ export class BCFTopics
     return comment;
   }
 
-  private getCommentsFromXML(markup: any, version: BCFVersion) {
+  private getMarkupComments(markup: any, version: BCFVersion) {
     let data: any;
     if (version === "2.1") data = markup.Comment;
     if (version === "3") data = markup.Topic.Comments?.Comment;
     if (!data) return [];
     data = Array.isArray(data) ? data : [data];
     const comments = data
-      .map((comment: any) => this.processComment(comment))
+      .map((comment: any) => this.processMarkupComment(comment))
       .filter((comment: any) => comment) as Comment[];
     const array = Array.isArray(comments) ? comments : [comments];
     return array;
@@ -279,7 +284,8 @@ export class BCFTopics
     return labels;
   }
 
-  async import(data: Uint8Array) {
+  // world: the default world where the viewpoints are going to be created
+  async import(world: World, data: Uint8Array) {
     const { fallbackVersionOnImport, ignoreIncompleteTopicsOnImport } =
       this.config;
     const zip = new JSZip();
@@ -296,47 +302,78 @@ export class BCFTopics
       bcfVersion = String(version) as BCFVersion;
     }
 
-    // Viewpoints need to be processed first as they don't care about the topic, but the topic comments care about them
-    // const viewpointFiles = files.filter( file => file.name.endsWith(".bcfv") )
-    // for (const viewpointFile of viewpointFiles) {
-    //   const xml = await viewpointFile.async("string")
-    //   const viewpointObject = BCFManager.xmlParser.parse(xml).VisualizationInfo
-    //   const camera = viewpointObject.PerspectiveCamera?? viewpointObject.OrthogonalCamera
-    //   const viewpoint: Partial<Viewpoint> = {
-    //     guid: viewpointObject.Guid,
-    //     perspectiveCamera: true,
-    //     camera: {
-    //       fov: 45,
-    //       aspect: camera.AspectRatio?? 1,
-    //       direction: {
-    //         x: isNaN(camera.CameraDirection.X)? camera.CameraDirection.X : Number(camera.CameraDirection.X),
-    //         y: isNaN(camera.CameraDirection.Z)? camera.CameraDirection.Z : Number(camera.CameraDirection.Z),
-    //         z: isNaN(-camera.CameraDirection.Y)? -camera.CameraDirection.Y : Number(-camera.CameraDirection.Y),
-    //       },
-    //       position: {
-    //         x: isNaN(camera.CameraViewPoint.X)? -camera.CameraViewPoint.X : Number(-camera.CameraViewPoint.X),
-    //         y: isNaN(-camera.CameraViewPoint.Z)? camera.CameraViewPoint.Z : Number(-camera.CameraViewPoint.Z),
-    //         z: isNaN(camera.CameraViewPoint.Y)? -camera.CameraViewPoint.Y : Number(camera.CameraViewPoint.Y),
-    //       }
-    //     }
-    //   }
+    // Viewpoints must be processed first as they don't care about the topic, but the topic and comments care about them
+    const viewpoints = this.components.get(Viewpoints);
+    const viewpointFiles = files.filter((file) => file.name.endsWith(".bcfv"));
+    for (const viewpointFile of viewpointFiles) {
+      const xml = await viewpointFile.async("string");
+      const viewpointObject = this._xmlParser.parse(xml).VisualizationInfo;
+      const camera =
+        viewpointObject.PerspectiveCamera ?? viewpointObject.OrthogonalCamera;
+      const viewpoint = viewpoints.create(world, {
+        guid: viewpointObject.Guid,
+      });
+      // const viewpoint: any = {
+      //   guid: viewpointObject.Guid,
+      //   perspectiveCamera: true,
+      //   camera: {
+      //     fov: 45,
+      //     aspect: camera.AspectRatio ?? 1,
+      //     direction: {
+      //       x: Number.isNaN(camera.CameraDirection.X)
+      //         ? camera.CameraDirection.X
+      //         : Number(camera.CameraDirection.X),
+      //       y: Number.isNaN(camera.CameraDirection.Z)
+      //         ? camera.CameraDirection.Z
+      //         : Number(camera.CameraDirection.Z),
+      //       z: Number.isNaN(-camera.CameraDirection.Y)
+      //         ? -camera.CameraDirection.Y
+      //         : Number(-camera.CameraDirection.Y),
+      //     },
+      //     position: {
+      //       x: Number.isNaN(camera.CameraViewPoint.X)
+      //         ? -camera.CameraViewPoint.X
+      //         : Number(-camera.CameraViewPoint.X),
+      //       y: Number.isNaN(-camera.CameraViewPoint.Z)
+      //         ? camera.CameraViewPoint.Z
+      //         : Number(-camera.CameraViewPoint.Z),
+      //       z: Number.isNaN(camera.CameraViewPoint.Y)
+      //         ? -camera.CameraViewPoint.Y
+      //         : Number(camera.CameraViewPoint.Y),
+      //     },
+      //   },
+      // };
 
-    //   viewpointObject.Components?.Visibility?.DefaultVisibility && ( viewpoint.defaultVisibility =  viewpointObject.Components.Visibility.DefaultVisibility)
-    //   viewpointObject.Components?.ViewSetupHints?.OpeningsVisible && ( viewpoint.openingsVisible =  viewpointObject.Components.ViewSetupHints.OpeningsVisible)
-    //   viewpointObject.Components?.ViewSetupHints?.SpaceBoundariesVisible && ( viewpoint.spaceBoundariesVisible =  viewpointObject.Components.ViewSetupHints.SpaceBoundariesVisible)
-    //   viewpointObject.Components?.ViewSetupHints?.SpacesVisible && ( viewpoint.spacesVisible =  viewpointObject.Components.ViewSetupHints.SpacesVisible)
+      // viewpointObject.Components?.Visibility?.DefaultVisibility &&
+      //   (viewpoint.defaultVisibility =
+      //     viewpointObject.Components.Visibility.DefaultVisibility);
+      // viewpointObject.Components?.ViewSetupHints?.OpeningsVisible &&
+      //   (viewpoint.openingsVisible =
+      //     viewpointObject.Components.ViewSetupHints.OpeningsVisible);
+      // viewpointObject.Components?.ViewSetupHints?.SpaceBoundariesVisible &&
+      //   (viewpoint.spaceBoundariesVisible =
+      //     viewpointObject.Components.ViewSetupHints.SpaceBoundariesVisible);
+      // viewpointObject.Components?.ViewSetupHints?.SpacesVisible &&
+      //   (viewpoint.spacesVisible =
+      //     viewpointObject.Components.ViewSetupHints.SpacesVisible);
 
-    //   if (viewpointObject.Components?.Selection?.Component) {
-    //     viewpoint.selectionComponents = convertToArray<{IfcGuid: string}>(viewpointObject.Components.Selection.Component).map( component => {return component.IfcGuid} )
-    //   }
+      // if (viewpointObject.Components?.Selection?.Component) {
+      //   viewpoint.selectionComponents = convertToArray<{ IfcGuid: string }>(
+      //     viewpointObject.Components.Selection.Component,
+      //   ).map((component) => {
+      //     return component.IfcGuid;
+      //   });
+      // }
 
-    //   const topic = topics.find( t => t.guid === file.name.split("/")[0] ) as ITopic
-    //   const position = (viewpoint as Viewpoint).camera.position
-    //   topic.viewpoints.push(viewpoint as Viewpoint)
-    // }
-    // for (const topic of topics) this.createTopic(topic);
+      // const topic = topics.find(
+      //   (t) => t.guid === file.name.split("/")[0],
+      // ) as ITopic;
+      // const position = (viewpoint as Viewpoint).camera.position;
+      // topic.viewpoints.push(viewpoint as Viewpoint);
+    }
 
     // Process markup files
+    const topics: Topic[] = [];
     const markupFiles = files.filter((file) => file.name.endsWith(".bcf"));
     for (const markupFile of markupFiles) {
       const xml = await markupFile.async("string");
@@ -378,11 +415,25 @@ export class BCFTopics
       topic.stage = markupTopic.Stage;
       const labels = this.getLabelsFromXML(markup, bcfVersion);
       for (const label of labels) topic.labels.add(label);
-      const comments = this.getCommentsFromXML(markup, bcfVersion);
+
+      // Comments
+      const comments = this.getMarkupComments(markup, bcfVersion);
       for (const comment of comments) topic.comments.add(comment);
+
+      // Viewpoints
+      const markupViewpoints = Array.isArray(markup.Viewpoints)
+        ? markup.Viewpoints
+        : [markup.Viewpoints];
+      for (const markupViewpoint of markupViewpoints) {
+        if (!(markupViewpoint && markupViewpoint.Guid)) continue;
+        const viewpoint = viewpoints.list.get(markupViewpoint.Guid);
+        if (viewpoint) topic.viewpoints.add(viewpoint);
+      }
+
       this.list.set(topic.guid, topic);
-      this.onTopicCreated.trigger(topic);
+      topics.push(topic);
     }
+    this.onBCFImported.trigger(topics);
   }
 }
 

@@ -51,28 +51,35 @@ const model = await ifcLoader.load(buffer);
 for (const fragment of model.items) world.meshes.add(fragment.mesh);
 
 const bcfTopics = components.get(OBC.BCFTopics);
-bcfTopics.config.types = new Set(["Clash, Inquiry, Information, Coordination"]);
-bcfTopics.config.statuses = new Set([
-  "Active",
-  "In Progress",
-  "Completed",
-  "In Review",
-  "Closed",
-]);
-bcfTopics.config.priorities = new Set(["Low", "Normal", "High", "Critical"]);
-bcfTopics.config.stages = new Set(["Planning", "Design", "Construction"]);
+bcfTopics.setup({
+  types: new Set(["Clash, Inquiry, Information, Coordination"]),
+  statuses: new Set([
+    "Active",
+    "In Progress",
+    "Completed",
+    "In Review",
+    "Closed",
+  ]),
+  priorities: new Set(["Low", "Normal", "High", "Critical"]),
+});
 
+bcfTopics.list.onEntrySet.add(({ value: topic }) => console.log(topic));
+
+const viewpoints = components.get(OBC.Viewpoints);
+
+// Importing an external BCF (topics and viewpoints are going to be created)
 const bcfFile = await fetch("/resources/topics.bcf");
 const bcfData = await bcfFile.arrayBuffer();
-await bcfTopics.import(new Uint8Array(bcfData));
+await bcfTopics.import(world, new Uint8Array(bcfData));
 
-const topic = bcfTopics.createTopic();
+// Creating a custom BCF
+const topic = bcfTopics.create();
 topic.description = "It seems these elements are badly defined.";
 topic.type = "Information";
 topic.priority = "High";
 topic.stage = "Design";
 
-const viewpoints = components.get(OBC.Viewpoints);
+// Creating a custom viewpoint
 const viewpoint = viewpoints.create(world);
 viewpoint.addComponentsFromMap(model.getFragmentMap([186])); // You can provide a FragmentIdMap to the viewpoint selection
 viewpoint.selectionComponents.add("2idC0G3ezCdhA9WVjWemcy"); // You can provide a GlobalId to the viewpoint selection
@@ -82,12 +89,6 @@ topic.viewpoints.add(viewpoint);
 topic.createComment("Hi there! I agree.");
 
 const panel = BUI.Component.create(() => {
-  const onUpdateViewpoint = () => {
-    console.log({ ...viewpoint.camera });
-    viewpoint.update();
-    console.log({ ...viewpoint.camera });
-  };
-
   const onBcfDownload = async () => {
     const bcf = await bcfTopics.export();
     const bcfFile = new File([bcf], "topics.bcf");
@@ -101,7 +102,7 @@ const panel = BUI.Component.create(() => {
   return BUI.html`
    <bim-panel label="BCF Manager">
     <bim-panel-section label="Viewpoints">
-     <bim-button label="Update Viewpoint" @click=${onUpdateViewpoint}></bim-button> 
+     <bim-button label="Update Viewpoint" @click=${() => viewpoint.update()}></bim-button> 
      <bim-button label="Go" @click=${() => viewpoint.go()}></bim-button> 
     </bim-panel-section>
     <bim-panel-section label="Topics">
