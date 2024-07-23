@@ -5,8 +5,8 @@ export class DataSet<T> extends Set<T> {
   readonly onItemDeleted = new Event();
   readonly onCleared = new Event();
 
-  constructor() {
-    super();
+  constructor(iterable?: Iterable<T> | null) {
+    super(iterable);
   }
 
   clear() {
