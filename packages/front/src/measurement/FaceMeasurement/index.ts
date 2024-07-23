@@ -412,6 +412,13 @@ export class FaceMeasurement
       counter += 3;
     }
 
+    this.preview.position.set(0, 0, 0);
+    this.preview.rotation.set(0, 0, 0);
+    this.preview.scale.set(1, 1, 1);
+    this.preview.updateMatrix();
+
+    this.preview.applyMatrix4(mesh.matrixWorld);
+
     const buffer = new Float32Array(position);
     const attr = new THREE.BufferAttribute(buffer, 3);
     this.preview.geometry.setAttribute("position", attr);
