@@ -118,7 +118,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     const currentMap =
       relationsMap.get(relatingID) ?? new Map<number, number[]>();
     const index = this.getAttributeIndex(relating);
-    if (index) {
+    if (index !== null) {
       currentMap.set(index, relatedIDs);
       relationsMap.set(relatingID, currentMap);
     }
@@ -186,11 +186,18 @@ export class IfcRelationsIndexer extends Component implements Disposable {
 
     for (const relType of this._ifcRels) {
       const relsAttrs = await model.getAllPropertiesOfType(relType);
-      if (!relsAttrs) continue;
+      if (!relsAttrs) {
+        continue;
+      }
+
       const relInverseAttributes = this._relToAttributesMap.get(relType);
-      if (!relInverseAttributes) continue;
+      if (!relInverseAttributes) {
+        continue;
+      }
+
       const { forRelated: related, forRelating: relating } =
         relInverseAttributes;
+
       for (const expressID in relsAttrs) {
         const relAttrs = relsAttrs[expressID];
         this.indexRelations(relationsMap, relAttrs, related, relating);
