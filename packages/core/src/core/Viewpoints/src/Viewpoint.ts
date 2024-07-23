@@ -14,6 +14,8 @@ import { Components } from "../../Components";
 import { World } from "../../Types";
 import { FragmentsManager } from "../../../fragments/FragmentsManager";
 import { BCFTopics } from "../../../openbim/BCFTopics";
+import { Raycasters } from "../../Raycasters";
+import { BoundingBoxer } from "../../../fragments/BoundingBoxer";
 
 export class Viewpoint {
   guid = UUID.create();
@@ -80,6 +82,13 @@ export class Viewpoint {
     return manager.config.version;
   }
 
+  get topics() {
+    const manager = this._components.get(BCFTopics);
+    const topicsList = [...manager.list.values()];
+    const topics = topicsList.filter((topic) => topic.viewpoints.has(this));
+    return topics;
+  }
+
   constructor(components: Components, world: World) {
     this._components = components;
     this.world = world;
@@ -144,11 +153,28 @@ export class Viewpoint {
       this.coordinationMatrix,
     );
 
-    const target = {
-      x: position.x + this.direction.x,
-      y: position.y + this.direction.y,
-      z: position.z + this.direction.z,
+    // Default target based on the viewpoint information
+    let target = {
+      x: position.x + this.direction.x * 80,
+      y: position.y + this.direction.y * 80,
+      z: position.z + this.direction.z * 80,
     };
+
+    const selection = this.selection;
+    if (Object.keys(selection).length !== 0) {
+      // In case there are selection components, use their center as the target
+      const bb = this._components.get(BoundingBoxer);
+      bb.reset();
+      bb.addFragmentIdMap(this.selection);
+      target = bb.getSphere().center;
+      bb.reset();
+    } else {
+      // In case there are not selection components, use the raycaster to calculate one
+      const raycasters = this._components.get(Raycasters);
+      const raycaster = raycasters.get(this.world);
+      const result = raycaster.castRayFromVector(position, this.direction);
+      if (result) target = result.point;
+    }
 
     await controls.setLookAt(
       position.x,

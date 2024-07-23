@@ -1,55 +1,29 @@
-import { BCFViewpoint } from "../../../core/Viewpoints";
-
-export interface BCFTopicComment extends Record<string, any> {
-  date: Date;
-  author: string;
-  guid: string;
-  comment: string;
-  viewpoint?: string;
-  modifiedAuthor?: string;
-  modifiedDate?: Date;
-}
-
-export interface BCFTopic extends Record<string, any> {
-  guid: string;
-  title: string;
-  type: string;
-  creationAuthor: string;
-  creationDate: Date;
-  status: string;
-  comments: BCFTopicComment[];
-  viewpoints: BCFViewpoint[];
-  customData: Record<string, any>;
-  description?: string;
-  serverAssignedId?: string;
-  priority?: string;
-  stage?: string;
-  labels?: string[];
-  assignedTo?: string;
-  dueDate?: Date;
-  modifiedAuthor?: string;
-  modifiedDate?: Date;
-}
-
-export type BCFVersion = "2.1" | "3.0";
+export type BCFVersion = "2.1" | "3";
 
 export interface BCFTopicsConfig {
   // The BCF version used during export
-  version: "2.1" | "3.0";
-  // The user (usually an email) creating topics using this manager
+  version: BCFVersion;
+  // The user (usually an email) creating topics using this component
   author: string;
+  // The set of allowed topic types. This is exported inside the [bcf.extensions](https://github.com/buildingSMART/BCF-XML/tree/release_3_0/Documentation#bcf-file-structure). The default values are the ones from the most widely used BCF plugin in BIM apps: BCF Manager from BIM Collab.
   types: Set<string>;
+  // The set of allowed topic statuses. This is exported inside the [bcf.extensions](https://github.com/buildingSMART/BCF-XML/tree/release_3_0/Documentation#bcf-file-structure).
   statuses: Set<string>;
+  // The set of allowed topic priorities. This is exported inside the [bcf.extensions](https://github.com/buildingSMART/BCF-XML/tree/release_3_0/Documentation#bcf-file-structure). The default values are the ones from the most widely used BCF plugin in BIM apps: BCF Manager from BIM Collab.
   priorities: Set<string>;
   labels: Set<string>;
   stages: Set<string>;
   users: Set<string>;
-  // Wether or not to include the AuthoringSoftwareId in the viewpoint components during export
+  // Wether or not to include the AuthoringSoftwareId in the viewpoint components during export.
   includeSelectionTag: boolean;
-  // Updates the types, statuses, users, etc., after importing an external BCF
+  // Updates the types, statuses, users, etc., after importing an external BCF.
   updateExtensionsOnImport: boolean;
-  // Only allow to use the extensions (types, statuses, etc.) defined in the manager
+  // Only allow to use the extensions (types, statuses, etc.) defined in the config when setting the corresponding data in a topic.
   strict: boolean;
-  // If true, updates the extensions (types, status, etc.) based on Topics data
-  includeMissingExtensionsOnExport: boolean;
+  // If true, export the extensions (types, status, etc.) based on topics data. This doesn't update the extensions in the config. If false, only export the extensions defined in each collection of possibilities set in the config. In all cases, all the values from each collection of extensions defined in the config are going to be exported.
+  includeAllExtensionsOnExport: boolean;
+  // Version to be used when importing if no bcf.version file is present in the incomming data
+  fallbackVersionOnImport: BCFVersion;
+  // If true, do not import a topic with missing information (guid, type, status, title, creationDate or creationAuthor). If false, use default values for missing data.
+  ignoreIncompleteTopicsOnImport: boolean;
 }

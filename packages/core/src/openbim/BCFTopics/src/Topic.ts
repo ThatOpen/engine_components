@@ -8,6 +8,7 @@ export class Topic {
   guid = UUID.create();
   title = "BCF Topic";
   creationDate = new Date();
+  creationAuthor = "";
   readonly comments = new Set<Comment>();
   readonly viewpoints = new Set<Viewpoint>();
   customData: Record<string, any> = {};
@@ -17,12 +18,6 @@ export class Topic {
   modifiedAuthor?: string;
   modifiedDate?: Date;
   index?: number;
-
-  get creationAuthor() {
-    const manager = this._components.get(BCFTopics);
-    const author = manager.config.author;
-    return author;
-  }
 
   private _type = "Issue";
 
@@ -137,6 +132,8 @@ export class Topic {
 
   constructor(components: Components) {
     this._components = components;
+    const manager = components.get(BCFTopics);
+    this.creationAuthor = manager.config.author;
   }
 
   createComment(text: string) {
