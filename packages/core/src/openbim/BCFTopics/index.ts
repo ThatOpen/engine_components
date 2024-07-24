@@ -1,4 +1,5 @@
 import JSZip from "jszip";
+import * as THREE from "three";
 import { XMLParser } from "fast-xml-parser";
 import {
   Component,
@@ -7,11 +8,15 @@ import {
   Event,
   World,
   DataMap,
-  DataSet,
 } from "../../core/Types";
 import { BCFTopic, BCFTopicsConfig, BCFVersion, Topic } from "./src";
-import { Viewpoints } from "../../core/Viewpoints";
+import {
+  BCFViewpoint,
+  ViewpointCamera,
+  Viewpoints,
+} from "../../core/Viewpoints";
 import { Comment } from "./src/Comment";
+import { Clipper } from "../../core/Clipper";
 
 export class BCFTopics
   extends Component
@@ -37,12 +42,12 @@ export class BCFTopics
   config: Required<BCFTopicsConfig> = {
     author: "jhon.doe@example.com",
     version: "2.1",
-    types: new DataSet(["Issue"]),
-    statuses: new DataSet(["Active"]),
-    priorities: new DataSet(),
-    labels: new DataSet(),
-    stages: new DataSet(),
-    users: new DataSet(),
+    types: new Set(["Issue"]),
+    statuses: new Set(["Active"]),
+    priorities: new Set(),
+    labels: new Set(),
+    stages: new Set(),
+    users: new Set(),
     includeSelectionTag: false,
     updateExtensionsOnImport: true,
     strict: false,
@@ -258,7 +263,7 @@ export class BCFTopics
     comment.guid = Guid;
     comment.date = new Date(CommentDate);
     comment.author = Author;
-    comment.viewpoint = viewpoints.list.get(Viewpoint);
+    comment.viewpoint = viewpoints.list.get(Viewpoint.Guid);
     comment.modifiedAuthor = markupComment.ModifiedAuthor;
     comment.modifiedDate = markupComment.ModifiedDate
       ? new Date(markupComment.ModifiedDate)
@@ -298,12 +303,12 @@ export class BCFTopics
     const files = Object.values(zip.files);
 
     // Get BCF Version from incomming data
-    let bcfVersion = fallbackVersionOnImport;
+    let version = fallbackVersionOnImport;
     const versionFile = files.find((file) => file.name.endsWith(".version"));
     if (versionFile) {
       const versionXML = await versionFile.async("string");
-      const version = this._xmlParser.parse(versionXML).Version.VersionId;
-      bcfVersion = String(version) as BCFVersion;
+      const bcfVersion = this._xmlParser.parse(versionXML).Version.VersionId;
+      version = String(bcfVersion) as BCFVersion;
     }
 
     // Viewpoints must be processed first as they don't care about the topic, but the topic and comments care about them
@@ -311,69 +316,141 @@ export class BCFTopics
     const viewpointFiles = files.filter((file) => file.name.endsWith(".bcfv"));
     for (const viewpointFile of viewpointFiles) {
       const xml = await viewpointFile.async("string");
-      const viewpointObject = this._xmlParser.parse(xml).VisualizationInfo;
-      const camera =
-        viewpointObject.PerspectiveCamera ?? viewpointObject.OrthogonalCamera;
-      const viewpoint = viewpoints.create(world, {
-        guid: viewpointObject.Guid,
-      });
-      // const viewpoint: any = {
-      //   guid: viewpointObject.Guid,
-      //   perspectiveCamera: true,
-      //   camera: {
-      //     fov: 45,
-      //     aspect: camera.AspectRatio ?? 1,
-      //     direction: {
-      //       x: Number.isNaN(camera.CameraDirection.X)
-      //         ? camera.CameraDirection.X
-      //         : Number(camera.CameraDirection.X),
-      //       y: Number.isNaN(camera.CameraDirection.Z)
-      //         ? camera.CameraDirection.Z
-      //         : Number(camera.CameraDirection.Z),
-      //       z: Number.isNaN(-camera.CameraDirection.Y)
-      //         ? -camera.CameraDirection.Y
-      //         : Number(-camera.CameraDirection.Y),
-      //     },
-      //     position: {
-      //       x: Number.isNaN(camera.CameraViewPoint.X)
-      //         ? -camera.CameraViewPoint.X
-      //         : Number(-camera.CameraViewPoint.X),
-      //       y: Number.isNaN(-camera.CameraViewPoint.Z)
-      //         ? camera.CameraViewPoint.Z
-      //         : Number(-camera.CameraViewPoint.Z),
-      //       z: Number.isNaN(camera.CameraViewPoint.Y)
-      //         ? -camera.CameraViewPoint.Y
-      //         : Number(camera.CameraViewPoint.Y),
-      //     },
-      //   },
-      // };
+      const visualizationInfo = this._xmlParser.parse(xml).VisualizationInfo;
+      if (!visualizationInfo) {
+        console.warn("Missing VisualizationInfo in Viewpoint");
+        continue;
+      }
 
-      // viewpointObject.Components?.Visibility?.DefaultVisibility &&
-      //   (viewpoint.defaultVisibility =
-      //     viewpointObject.Components.Visibility.DefaultVisibility);
-      // viewpointObject.Components?.ViewSetupHints?.OpeningsVisible &&
-      //   (viewpoint.openingsVisible =
-      //     viewpointObject.Components.ViewSetupHints.OpeningsVisible);
-      // viewpointObject.Components?.ViewSetupHints?.SpaceBoundariesVisible &&
-      //   (viewpoint.spaceBoundariesVisible =
-      //     viewpointObject.Components.ViewSetupHints.SpaceBoundariesVisible);
-      // viewpointObject.Components?.ViewSetupHints?.SpacesVisible &&
-      //   (viewpoint.spacesVisible =
-      //     viewpointObject.Components.ViewSetupHints.SpacesVisible);
+      const bcfViewpoint: Partial<BCFViewpoint> = {};
 
-      // if (viewpointObject.Components?.Selection?.Component) {
-      //   viewpoint.selectionComponents = convertToArray<{ IfcGuid: string }>(
-      //     viewpointObject.Components.Selection.Component,
-      //   ).map((component) => {
-      //     return component.IfcGuid;
-      //   });
-      // }
+      const {
+        Guid,
+        ClippingPlanes,
+        Components,
+        OrthogonalCamera,
+        PerspectiveCamera,
+      } = visualizationInfo;
 
-      // const topic = topics.find(
-      //   (t) => t.guid === file.name.split("/")[0],
-      // ) as ITopic;
-      // const position = (viewpoint as Viewpoint).camera.position;
-      // topic.viewpoints.push(viewpoint as Viewpoint);
+      if (Guid) bcfViewpoint.guid = Guid;
+
+      if (Components) {
+        const { Selection, Visibility } = Components;
+        if (Selection && Selection.Component) {
+          const components = Array.isArray(Selection.Component)
+            ? Selection.Component
+            : [Selection.Component];
+          bcfViewpoint.selectionComponents = components
+            .map((component: any) => component.IfcGuid)
+            .filter((guid: any) => guid);
+        }
+        if (Visibility && "DefaultVisibility" in Visibility) {
+          bcfViewpoint.defaultVisibility = Visibility.DefaultVisibility;
+        }
+        if (Visibility && Visibility.Exceptions) {
+          const components = Array.isArray(Visibility.Exceptions)
+            ? Visibility.Exceptions
+            : [Visibility.Exceptions];
+          bcfViewpoint.exceptionComponents = components
+            .map((component: any) => component.IfcGuid)
+            .filter((guid: any) => guid);
+        }
+        let ViewSetupHints;
+        if (version === "2.1") {
+          ViewSetupHints = Components.ViewSetupHints;
+        }
+        if (version === "3") {
+          ViewSetupHints = Components.Visibility?.ViewSetupHints;
+        }
+        if (ViewSetupHints) {
+          if ("OpeningsVisible" in ViewSetupHints) {
+            bcfViewpoint.openingsVisible = ViewSetupHints.OpeningsVisible;
+          }
+          if ("SpacesVisible" in ViewSetupHints) {
+            bcfViewpoint.spacesVisible = ViewSetupHints.SpacesVisible;
+          }
+          if ("SpaceBoundariesVisible" in ViewSetupHints) {
+            bcfViewpoint.spaceBoundariesVisible =
+              ViewSetupHints.SpaceBoundariesVisible;
+          }
+        }
+      }
+
+      if (OrthogonalCamera || PerspectiveCamera) {
+        const camera =
+          visualizationInfo.PerspectiveCamera ??
+          visualizationInfo.OrthogonalCamera;
+        const position = {
+          x: Number.isNaN(camera.CameraViewPoint.X)
+            ? -camera.CameraViewPoint.X
+            : Number(-camera.CameraViewPoint.X),
+          y: Number.isNaN(-camera.CameraViewPoint.Z)
+            ? camera.CameraViewPoint.Z
+            : Number(-camera.CameraViewPoint.Z),
+          z: Number.isNaN(camera.CameraViewPoint.Y)
+            ? -camera.CameraViewPoint.Y
+            : Number(camera.CameraViewPoint.Y),
+        };
+        const direction = {
+          x: Number.isNaN(camera.CameraDirection.X)
+            ? camera.CameraDirection.X
+            : Number(camera.CameraDirection.X),
+          y: Number.isNaN(camera.CameraDirection.Z)
+            ? camera.CameraDirection.Z
+            : Number(camera.CameraDirection.Z),
+          z: Number.isNaN(-camera.CameraDirection.Y)
+            ? -camera.CameraDirection.Y
+            : Number(-camera.CameraDirection.Y),
+        };
+        const viewpointCamera: ViewpointCamera = {
+          position,
+          direction,
+          aspectRatio: "AspectRatio" in camera ? camera.AspectRatio : 1, // Temporal simplification
+        };
+        if ("ViewToWorldScale" in camera) {
+          bcfViewpoint.camera = {
+            ...viewpointCamera,
+            viewToWorldScale: camera.ViewToWorldScale,
+          };
+        }
+        if ("FieldOfView" in camera) {
+          bcfViewpoint.camera = {
+            ...viewpointCamera,
+            fov: camera.FieldOfView,
+          };
+        }
+      }
+
+      const viewpoint = viewpoints.create(world, bcfViewpoint);
+
+      if (ClippingPlanes) {
+        const clipper = this.components.get(Clipper);
+        const planes = Array.isArray(ClippingPlanes.ClippingPlane)
+          ? ClippingPlanes.ClippingPlane
+          : [ClippingPlanes.ClippingPlane];
+        for (const plane of planes) {
+          const { Location, Direction } = plane;
+          if (!(Location && Direction)) continue;
+          const location = new THREE.Vector3(
+            Location.X,
+            Location.Z,
+            -Location.Y,
+          );
+          const direction = new THREE.Vector3(
+            Direction.X,
+            -Direction.Z,
+            Direction.Y,
+          );
+          const clippingPlane = clipper.createFromNormalAndCoplanarPoint(
+            world,
+            direction,
+            location,
+          );
+          clippingPlane.visible = false;
+          clippingPlane.enabled = false;
+          viewpoint.clippingPlanes.add(clippingPlane);
+        }
+      }
     }
 
     // Process markup files
@@ -417,11 +494,11 @@ export class BCFTopics
       topic.assignedTo = markupTopic.AssignedTo;
       topic.description = markupTopic.Description;
       topic.stage = markupTopic.Stage;
-      const labels = this.getLabelsFromXML(markup, bcfVersion);
+      const labels = this.getLabelsFromXML(markup, version);
       for (const label of labels) topic.labels.add(label);
 
       // Comments
-      const comments = this.getMarkupComments(markup, bcfVersion);
+      const comments = this.getMarkupComments(markup, version);
       for (const comment of comments) topic.comments.add(comment);
 
       // Viewpoints
@@ -431,7 +508,10 @@ export class BCFTopics
       for (const markupViewpoint of markupViewpoints) {
         if (!(markupViewpoint && markupViewpoint.Guid)) continue;
         const viewpoint = viewpoints.list.get(markupViewpoint.Guid);
-        if (viewpoint) topic.viewpoints.add(viewpoint);
+        if (viewpoint) {
+          viewpoint.name = topic.title;
+          topic.viewpoints.add(viewpoint);
+        }
       }
 
       this.list.set(topic.guid, topic);

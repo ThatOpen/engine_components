@@ -104,13 +104,13 @@ export class Topic implements BCFTopic {
     return this._assignedTo;
   }
 
-  private _labels = new DataSet<string>();
+  private _labels = new Set<string>();
 
-  set labels(value: DataSet<string>) {
+  set labels(value: Set<string>) {
     const manager = this._components.get(BCFTopics);
     const { strict, labels } = manager.config;
     if (strict) {
-      const _value = new DataSet<string>();
+      const _value = new Set<string>();
       for (const label of value) {
         const valid = strict ? labels.has(label) : true;
         if (!valid) continue;

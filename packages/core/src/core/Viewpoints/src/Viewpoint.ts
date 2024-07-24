@@ -3,6 +3,7 @@ import * as FRAGS from "@thatopen/fragments";
 import { UUID } from "../../../utils";
 import {
   BCFViewpoint,
+  ViewpointCamera,
   ViewpointOrthographicCamera,
   ViewpointPerspectiveCamera,
 } from "./types";
@@ -11,32 +12,37 @@ import {
   OrthoPerspectiveCamera,
 } from "../../OrthoPerspectiveCamera";
 import { Components } from "../../Components";
-import { World } from "../../Types";
+import { DataSet, World } from "../../Types";
 import { FragmentsManager } from "../../../fragments/FragmentsManager";
 import { BCFTopics } from "../../../openbim/BCFTopics";
 import { Raycasters } from "../../Raycasters";
 import { BoundingBoxer } from "../../../fragments/BoundingBoxer";
+import { Hider } from "../../../fragments";
+import { SimplePlane } from "../../Clipper";
 
-export class Viewpoint {
+export class Viewpoint implements BCFViewpoint {
+  name = "Viewpoint";
   guid = UUID.create();
 
   // The transformation matrix used at the time of creation
   coordinationMatrix = new THREE.Matrix4();
+  clippingPlanes = new DataSet<SimplePlane>();
 
   camera: ViewpointPerspectiveCamera | ViewpointOrthographicCamera = {
-    aspect: 0,
+    aspectRatio: 0,
     fov: 0,
     direction: { x: 0, y: 0, z: 0 },
     position: { x: 0, y: 0, z: 0 },
   };
 
-  readonly selectionComponents = new Set<string>();
+  readonly exceptionComponents = new DataSet<string>();
+  readonly selectionComponents = new DataSet<string>();
   spacesVisible = false;
   spaceBoundariesVisible = false;
   openingsVisible = false;
   defaultVisibility = true;
 
-  private get _modelIdMap() {
+  private get _selectionModelIdMap() {
     const fragments = this._components.get(FragmentsManager);
     const modelIdMap: { [modelID: string]: Set<number> } = {};
     for (const [id, model] of fragments.groups) {
@@ -49,29 +55,56 @@ export class Viewpoint {
     return modelIdMap;
   }
 
+  private get _exceptionModelIdMap() {
+    const fragments = this._components.get(FragmentsManager);
+    const modelIdMap: { [modelID: string]: Set<number> } = {};
+    for (const [id, model] of fragments.groups) {
+      if (!(id in modelIdMap)) modelIdMap[id] = new Set();
+      for (const globalId of this.exceptionComponents) {
+        const expressID = model.globalToExpressIDs.get(globalId);
+        if (expressID) modelIdMap[id].add(expressID);
+      }
+    }
+    return modelIdMap;
+  }
+
   get selection() {
     const fragments = this._components.get(FragmentsManager);
-    const fragmentIdMap = fragments.modelIdToFragmentIdMap(this._modelIdMap);
+    const fragmentIdMap = fragments.modelIdToFragmentIdMap(
+      this._selectionModelIdMap,
+    );
+    return fragmentIdMap;
+  }
+
+  get exception() {
+    const fragments = this._components.get(FragmentsManager);
+    const fragmentIdMap = fragments.modelIdToFragmentIdMap(
+      this._exceptionModelIdMap,
+    );
     return fragmentIdMap;
   }
 
   get projection(): CameraProjection {
-    if ("fov" in this.camera) {
-      return "Perspective";
-    }
+    if ("fov" in this.camera) return "Perspective";
     return "Orthographic";
   }
 
   get position() {
+    const fragments = this._components.get(FragmentsManager);
     const { position } = this.camera;
     const { x, y, z } = position;
-    return new THREE.Vector3(x, y, z);
+    const vector = new THREE.Vector3(x, y, z);
+    fragments.applyBaseCoordinateSystem(vector, this.coordinationMatrix);
+    return vector;
   }
 
   get direction() {
+    const fragments = this._components.get(FragmentsManager);
     const { direction } = this.camera;
     const { x, y, z } = direction;
-    return new THREE.Vector3(x, y, z);
+    const vector = new THREE.Vector3(x, y, z);
+    fragments.applyBaseCoordinateSystem(vector, this.coordinationMatrix);
+    return vector;
   }
 
   private _components: Components;
@@ -133,20 +166,14 @@ export class Viewpoint {
       camera.projection.set(this.projection);
     }
 
-    const controls = camera.controls;
     const position = this.position;
-
-    const fragments = this._components.get(FragmentsManager);
-    fragments.applyBaseCoordinateSystem(
-      position.clone(),
-      this.coordinationMatrix,
-    );
+    const direction = this.direction;
 
     // Default target based on the viewpoint information
     let target = {
-      x: position.x + this.direction.x * 80,
-      y: position.y + this.direction.y * 80,
-      z: position.z + this.direction.z * 80,
+      x: position.x + direction.x * 80,
+      y: position.y + direction.y * 80,
+      z: position.z + direction.z * 80,
     };
 
     const selection = this.selection;
@@ -165,7 +192,13 @@ export class Viewpoint {
       if (result) target = result.point;
     }
 
-    await controls.setLookAt(
+    // Sets the viewpoint components visibility
+    const hider = this._components.get(Hider);
+    hider.set(this.defaultVisibility);
+    hider.set(!this.defaultVisibility, this.exception);
+    hider.set(true, this.selection); // Always make sure the selection is visible
+
+    await camera.controls.setLookAt(
       position.x,
       position.y,
       position.z,
@@ -196,17 +229,17 @@ export class Viewpoint {
     );
 
     const { width, height } = renderer.getSize();
-    let aspect = width / height;
+    let aspectRatio = width / height;
 
     // If the renderer exists but there is no HTMLElement, then aspect will be 0 / 0. In that case, use 1 as a fallback.
-    if (Number.isNaN(aspect)) aspect = 1;
+    if (Number.isNaN(aspectRatio)) aspectRatio = 1;
 
     const fragments = this._components.get(FragmentsManager);
     const baseModel = fragments.groups.get(fragments.baseCoordinationModel);
     if (baseModel) position.applyMatrix4(baseModel.coordinationMatrix);
 
-    const partialCamera = {
-      aspect,
+    const partialCamera: ViewpointCamera = {
+      aspectRatio,
       position: { x: position.x, y: position.y, z: position.z },
       direction: { x: direction.x, y: direction.y, z: direction.z },
     };
@@ -219,20 +252,22 @@ export class Viewpoint {
     } else if (threeCamera instanceof THREE.OrthographicCamera) {
       this.camera = {
         ...partialCamera,
-        viewtoWorld: threeCamera.top - threeCamera.bottom,
+        viewToWorldScale: threeCamera.top - threeCamera.bottom,
       };
     }
 
     this.coordinationMatrix = fragments.baseCoordinationMatrix;
   }
 
-  async serialize(version = this._managerVersion) {
+  private async createComponentTags(from: "selection" | "exception") {
     const fragments = this._components.get(FragmentsManager);
     const manager = this._components.get(BCFTopics);
-
-    let componentSelection = "";
+    let tags = "";
     if (manager.config.includeSelectionTag) {
-      const modelIdMap = this._modelIdMap;
+      const modelIdMap =
+        from === "selection"
+          ? this._selectionModelIdMap
+          : this._exceptionModelIdMap;
       for (const modelID in modelIdMap) {
         const model = fragments.groups.get(modelID);
         if (!model) continue;
@@ -245,24 +280,35 @@ export class Viewpoint {
           const tag = attrs.Tag?.value;
           let tagAttribute: string | null = null;
           if (tag) tagAttribute = `AuthoringToolId="${tag}"`;
-          componentSelection += `\n<Component IfcGuid="${globalID}" ${tagAttribute ?? ""} />`;
+          tags += `\n<Component IfcGuid="${globalID}" ${tagAttribute ?? ""} />`;
         }
       }
     } else {
-      componentSelection = [...this.selectionComponents]
+      tags = [...this.selectionComponents]
         .map((globalId) => `<Component IfcGuid="${globalId}" />`)
         .join(`\n`);
     }
+    return tags;
+  }
+
+  async serialize(version = this._managerVersion) {
+    const fragments = this._components.get(FragmentsManager);
 
     const coordinationMatrix = new THREE.Matrix4();
     const baseModel = fragments.groups.get(fragments.baseCoordinationModel);
-    if (baseModel) {
-      coordinationMatrix.copy(baseModel.coordinationMatrix);
-    }
-    const position = this.position
-      .clone()
-      .applyMatrix4(this.coordinationMatrix.clone().invert());
+    if (baseModel) coordinationMatrix.copy(baseModel.coordinationMatrix);
+
+    // Set the position back to the original transformation for exporting purposes
+    const position = this.position.applyMatrix4(
+      this.coordinationMatrix.clone().invert(),
+    );
     position.applyMatrix4(coordinationMatrix);
+
+    // Set the direction back to the original transformation for exporting purposes
+    const direction = this.direction.applyMatrix4(
+      this.coordinationMatrix.clone().invert(),
+    );
+    direction.applyMatrix4(coordinationMatrix);
 
     const cameraViewpointXML = `<CameraViewPoint>
       <X>${position.x}</X>
@@ -271,9 +317,9 @@ export class Viewpoint {
     </CameraViewPoint>`;
 
     const cameraDirectionXML = `<CameraDirection>
-      <X>${this.camera.direction.x}</X>
-      <Y>${-this.camera.direction.z}</Y>
-      <Z>${this.camera.direction.y}</Z>
+      <X>${direction.x}</X>
+      <Y>${-direction.z}</Y>
+      <Z>${direction.y}</Z>
     </CameraDirection>`;
 
     const cameraUpVectorXML = `<CameraUpVector>
@@ -282,7 +328,7 @@ export class Viewpoint {
       <Z>1</Z>
     </CameraUpVector>`;
 
-    const cameraRatioXML = `<AspectRatio>${this.camera.aspect}</AspectRatio>`;
+    const cameraRatioXML = `<AspectRatio>${this.camera.aspectRatio}</AspectRatio>`;
 
     let cameraXML = "";
     if ("viewToWorld" in this.camera) {
@@ -303,14 +349,21 @@ export class Viewpoint {
       </PerspectiveCamera>`;
     }
 
+    const viewSetupHints = `<ViewSetupHints SpacesVisible="${this.spacesVisible ?? false}" SpaceBoundariesVisible="${this.spaceBoundariesVisible ?? false}" OpeningsVisible="${this.openingsVisible ?? false}" />`;
+
     return `<?xml version="1.0" encoding="UTF-8"?>
     <VisualizationInfo Guid="${this.guid}">
       <Components>
-        <ViewSetupHints SpacesVisible="${this.spacesVisible ?? false}" SpaceBoundariesVisible="${this.spaceBoundariesVisible ?? false}" OpeningsVisible="${this.openingsVisible ?? false}" />
+        ${version === "2.1" ? viewSetupHints : ""}
         <Selection>
-          ${componentSelection}
+          ${this.createComponentTags("selection")}
         </Selection>
-        <Visibility DefaultVisibility="${this.defaultVisibility ?? true}" />
+        <Visibility DefaultVisibility="${this.defaultVisibility}">
+          ${version === "3" ? viewSetupHints : ""}
+          <Exceptions>
+            ${this.createComponentTags("exception")}
+          </Exceptions>
+        </Visibility>
       </Components>
       ${cameraXML}
     </VisualizationInfo>`;

@@ -63,8 +63,6 @@ bcfTopics.setup({
   priorities: new Set(["Low", "Normal", "High", "Critical"]),
 });
 
-bcfTopics.list.onItemSet.add(({ value: topic }) => console.log(topic));
-
 const viewpoints = components.get(OBC.Viewpoints);
 
 // Importing an external BCF (topics and viewpoints are going to be created)
@@ -72,15 +70,108 @@ const bcfFile = await fetch("/resources/topics.bcf");
 const bcfData = await bcfFile.arrayBuffer();
 await bcfTopics.import(world, new Uint8Array(bcfData));
 
-// Creating a custom BCF
-const topic = bcfTopics.create();
-topic.description = "It seems these elements are badly defined.";
-topic.type = "Information";
-topic.priority = "High";
-topic.stage = "Design";
+// Creating a custom Topic
+const topicsTable = document.createElement("bim-table");
+topicsTable.hiddenColumns = ["Guid"];
+topicsTable.columns = ["Title"];
+topicsTable.dataTransform = {
+  Actions: (_, rowData) => {
+    const { Guid } = rowData;
+    if (!(Guid && typeof Guid === "string")) return Guid;
+    const viewpoints = components.get(OBC.Viewpoints);
+    const viewpoint = viewpoints.list.get(Guid);
+    if (!viewpoint) return Guid;
+    return BUI.html`
+      <bim-button @click=${() => viewpoint.go()} icon="ph:eye-fill"></bim-button> 
+      <bim-button @click=${() => console.log(viewpoint.selection)} icon="ph:cursor-fill"></bim-button> 
+      <bim-button @click=${() => viewpoint.update()} icon="jam:refresh"></bim-button> 
+      <bim-button @click=${() => viewpoints.list.delete(viewpoint.guid)} icon="tabler:trash-filled"></bim-button>
+    `;
+  },
+};
+
+const [topicsList, updatetopicsList] = BUI.Component.create(
+  (state: { components: OBC.Components }) => {
+    const { components } = state;
+    const topics = components.get(OBC.BCFTopics);
+    topicsTable.data = [...topics.list.values()].map((topic) => {
+      return {
+        data: {
+          Guid: topic.guid,
+          Title: topic.title,
+          Description: topic.description ?? "",
+          Author: topic.creationAuthor,
+          Date: topic.creationDate.toDateString(),
+          Type: topic.type,
+          Status: topic.status,
+          Priority: topic.priority ?? "",
+          Labels: [...topic.labels].join(", "),
+        },
+      };
+    });
+    return BUI.html`${topicsTable}`;
+  },
+  { components },
+);
+
+bcfTopics.list.onItemSet.add(() => updatetopicsList());
+bcfTopics.list.onCleared.add(() => updatetopicsList());
+bcfTopics.list.onItemDeleted.add(() => updatetopicsList());
+
+const topic = bcfTopics.create({
+  description: "It seems these elements are badly defined.",
+  type: "Information",
+  priority: "High",
+  stage: "Design",
+  labels: new Set(["Architecture", "Cost Estimation"]),
+});
 
 // Creating a custom viewpoint
-const viewpoint = viewpoints.create(world);
+const viewpointsTable = document.createElement("bim-table");
+viewpointsTable.headersHidden = true;
+viewpointsTable.hiddenColumns = ["Guid"];
+viewpointsTable.columns = ["Name", { name: "Actions", width: "auto" }];
+viewpointsTable.dataTransform = {
+  Actions: (_, rowData) => {
+    const { Guid } = rowData;
+    if (!(Guid && typeof Guid === "string")) return Guid;
+    const viewpoints = components.get(OBC.Viewpoints);
+    const viewpoint = viewpoints.list.get(Guid);
+    if (!viewpoint) return Guid;
+    return BUI.html`
+      <bim-button @click=${() => viewpoint.go()} icon="ph:eye-fill"></bim-button> 
+      <bim-button @click=${() => console.log(viewpoint.selection)} icon="ph:cursor-fill"></bim-button> 
+      <bim-button @click=${() => viewpoint.update()} icon="jam:refresh"></bim-button> 
+      <bim-button @click=${() => viewpoints.list.delete(viewpoint.guid)} icon="tabler:trash-filled"></bim-button>
+    `;
+  },
+};
+
+const [viewpointsList, updateViewpointsList] = BUI.Component.create(
+  (state: { components: OBC.Components }) => {
+    const { components } = state;
+    const viewpoints = components.get(OBC.Viewpoints);
+    viewpointsTable.data = [...viewpoints.list.values()].map((viewpoint) => {
+      return {
+        data: {
+          Guid: viewpoint.guid,
+          Name: viewpoint.name,
+          Actions: "",
+        },
+      };
+    });
+    return BUI.html`${viewpointsTable}`;
+  },
+  {
+    components,
+  },
+);
+
+viewpoints.list.onItemSet.add(() => updateViewpointsList());
+viewpoints.list.onItemDeleted.add(() => updateViewpointsList());
+viewpoints.list.onCleared.add(() => updateViewpointsList());
+
+const viewpoint = viewpoints.create(world, { name: "Custom Viewpoint" });
 viewpoint.addComponentsFromMap(model.getFragmentMap([186])); // You can provide a FragmentIdMap to the viewpoint selection
 viewpoint.selectionComponents.add("2idC0G3ezCdhA9WVjWemcy"); // You can provide a GlobalId to the viewpoint selection
 // viewpoint.selection gives the fragmentIdMap to select elements with the highlighter from @thatopen/components-front
@@ -88,7 +179,17 @@ viewpoint.selectionComponents.add("2idC0G3ezCdhA9WVjWemcy"); // You can provide 
 topic.viewpoints.add(viewpoint);
 topic.createComment("Hi there! I agree.");
 
-const panel = BUI.Component.create(() => {
+const leftPanel = BUI.Component.create(() => {
+  return BUI.html`
+   <bim-panel>
+    <bim-panel-section label="Viewpoints">
+      ${viewpointsList}
+    </bim-panel-section>
+   </bim-panel> 
+  `;
+});
+
+const bottomPanel = BUI.Component.create(() => {
   const onBcfDownload = async () => {
     const bcf = await bcfTopics.export();
     const bcfFile = new File([bcf], "topics.bcf");
@@ -100,13 +201,10 @@ const panel = BUI.Component.create(() => {
   };
 
   return BUI.html`
-   <bim-panel label="BCF Manager">
-    <bim-panel-section label="Viewpoints">
-     <bim-button label="Update Viewpoint" @click=${() => viewpoint.update()}></bim-button> 
-     <bim-button label="Go" @click=${() => viewpoint.go()}></bim-button> 
-    </bim-panel-section>
+   <bim-panel>
     <bim-panel-section label="Topics">
-     <bim-button label="Download" @click=${onBcfDownload}></bim-button> 
+      <bim-button label="Download" @click=${onBcfDownload}></bim-button> 
+      ${topicsList}
     </bim-panel-section>
    </bim-panel> 
   `;
@@ -116,10 +214,11 @@ const app = document.getElementById("app") as BUI.Grid;
 app.layouts = {
   main: {
     template: `
-      "panel viewport"
-      / 30rem 1fr
+      "leftPanel viewport" 2fr
+      "leftPanel bottomPanel" 1fr
+      / 25rem 1fr
     `,
-    elements: { panel, viewport },
+    elements: { leftPanel, viewport, bottomPanel },
   },
 };
 
