@@ -1,5 +1,6 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import * as BUI from "@thatopen/ui";
+import * as THREE from "three";
 import * as OBC from "../..";
 
 BUI.Manager.init();
@@ -12,6 +13,8 @@ const world = worlds.create();
 const sceneComponent = new OBC.SimpleScene(components);
 sceneComponent.setup();
 world.scene = sceneComponent;
+
+world.scene.three.add(new THREE.AxesHelper(10));
 
 const viewport = document.createElement("bim-viewport");
 const rendererComponent = new OBC.SimpleRenderer(components, viewport);
@@ -41,9 +44,10 @@ fragmentsManager.onFragmentsLoaded.add(async (model) => {
   if (model.hasProperties) await indexer.process(model);
 });
 
-const file = await fetch(
-  "https://thatopen.github.io/engine_components/resources/small.ifc",
-);
+// const file = await fetch(
+//   "https://thatopen.github.io/engine_components/resources/small.ifc",
+// );
+const file = await fetch("/resources/testing.ifc");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = await ifcLoader.load(buffer);
@@ -64,6 +68,9 @@ bcfTopics.setup({
 });
 
 const viewpoints = components.get(OBC.Viewpoints);
+viewpoints.list.onItemSet.add(({ value: viewpoint }) => {
+  // viewpoint.coordinationMatrix = model.coordinationMatrix;
+});
 
 // Importing an external BCF (topics and viewpoints are going to be created)
 const bcfFile = await fetch("/resources/topics.bcf");

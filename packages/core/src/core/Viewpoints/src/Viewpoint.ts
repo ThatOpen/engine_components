@@ -21,6 +21,25 @@ import { Hider } from "../../../fragments";
 import { SimplePlane } from "../../Clipper";
 
 export class Viewpoint implements BCFViewpoint {
+  private _threeToBcfTransformMatrix = new THREE.Matrix4().set(
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+  );
+
   name = "Viewpoint";
   guid = UUID.create();
 
@@ -170,33 +189,33 @@ export class Viewpoint implements BCFViewpoint {
     const direction = this.direction;
 
     // Default target based on the viewpoint information
-    let target = {
+    const target = {
       x: position.x + direction.x * 80,
       y: position.y + direction.y * 80,
       z: position.z + direction.z * 80,
     };
 
     const selection = this.selection;
-    if (Object.keys(selection).length !== 0) {
-      // In case there are selection components, use their center as the target
-      const bb = this._components.get(BoundingBoxer);
-      bb.reset();
-      bb.addFragmentIdMap(this.selection);
-      target = bb.getSphere().center;
-      bb.reset();
-    } else {
-      // In case there are not selection components, use the raycaster to calculate one
-      const raycasters = this._components.get(Raycasters);
-      const raycaster = raycasters.get(this.world);
-      const result = raycaster.castRayFromVector(position, this.direction);
-      if (result) target = result.point;
-    }
+    // if (Object.keys(selection).length !== 0) {
+    //   // In case there are selection components, use their center as the target
+    //   const bb = this._components.get(BoundingBoxer);
+    //   bb.reset();
+    //   bb.addFragmentIdMap(selection);
+    //   target = bb.getSphere().center;
+    //   bb.reset();
+    // } else {
+    //   // In case there are not selection components, use the raycaster to calculate one
+    //   const raycasters = this._components.get(Raycasters);
+    //   const raycaster = raycasters.get(this.world);
+    //   const result = raycaster.castRayFromVector(position, this.direction);
+    //   if (result) target = result.point;
+    // }
 
     // Sets the viewpoint components visibility
     const hider = this._components.get(Hider);
     hider.set(this.defaultVisibility);
     hider.set(!this.defaultVisibility, this.exception);
-    hider.set(true, this.selection); // Always make sure the selection is visible
+    hider.set(true, selection); // Always make sure the selection is visible
 
     await camera.controls.setLookAt(
       position.x,
@@ -300,26 +319,28 @@ export class Viewpoint implements BCFViewpoint {
 
     // Set the position back to the original transformation for exporting purposes
     const position = this.position.applyMatrix4(
-      this.coordinationMatrix.clone().invert(),
+      this._threeToBcfTransformMatrix,
     );
+    position.applyMatrix4(this.coordinationMatrix.clone().invert());
     position.applyMatrix4(coordinationMatrix);
 
     // Set the direction back to the original transformation for exporting purposes
     const direction = this.direction.applyMatrix4(
-      this.coordinationMatrix.clone().invert(),
+      this._threeToBcfTransformMatrix,
     );
+    direction.applyMatrix4(this.coordinationMatrix.clone().invert());
     direction.applyMatrix4(coordinationMatrix);
 
     const cameraViewpointXML = `<CameraViewPoint>
       <X>${position.x}</X>
-      <Y>${-position.z}</Y>
-      <Z>${position.y}</Z>
+      <Y>${position.y}</Y>
+      <Z>${position.z}</Z>
     </CameraViewPoint>`;
 
     const cameraDirectionXML = `<CameraDirection>
       <X>${direction.x}</X>
-      <Y>${-direction.z}</Y>
-      <Z>${direction.y}</Z>
+      <Y>${direction.y}</Y>
+      <Z>${direction.z}</Z>
     </CameraDirection>`;
 
     const cameraUpVectorXML = `<CameraUpVector>

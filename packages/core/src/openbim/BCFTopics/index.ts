@@ -25,6 +25,25 @@ export class BCFTopics
   static uuid = "de977976-e4f6-4e4f-a01a-204727839802" as const;
   enabled = false;
 
+  private _bcfToThreeTransformMatrix = new THREE.Matrix4().set(
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    -1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+  );
+
   private _xmlParser = new XMLParser({
     allowBooleanAttributes: true,
     attributeNamePrefix: "",
@@ -42,9 +61,17 @@ export class BCFTopics
   config: Required<BCFTopicsConfig> = {
     author: "jhon.doe@example.com",
     version: "2.1",
-    types: new Set(["Issue"]),
-    statuses: new Set(["Active"]),
-    priorities: new Set(),
+    types: new Set([
+      "Clash",
+      "Failure",
+      "Fault",
+      "Inquiry",
+      "Issue",
+      "Remark",
+      "Request",
+    ]),
+    statuses: new Set(["Active", "Done", "Closed"]),
+    priorities: new Set(["Critical", "Major", "Normal", "Minor", "On hold"]),
     labels: new Set(),
     stages: new Set(),
     users: new Set(),
@@ -347,10 +374,13 @@ export class BCFTopics
         if (Visibility && "DefaultVisibility" in Visibility) {
           bcfViewpoint.defaultVisibility = Visibility.DefaultVisibility;
         }
-        if (Visibility && Visibility.Exceptions) {
-          const components = Array.isArray(Visibility.Exceptions)
-            ? Visibility.Exceptions
-            : [Visibility.Exceptions];
+        if (
+          Visibility &&
+          Visibility.Exceptions &&
+          "Component" in Visibility.Exceptions
+        ) {
+          const { Component } = Visibility.Exceptions;
+          const components = Array.isArray(Component) ? Component : [Component];
           bcfViewpoint.exceptionComponents = components
             .map((component: any) => component.IfcGuid)
             .filter((guid: any) => guid);
@@ -380,39 +410,33 @@ export class BCFTopics
         const camera =
           visualizationInfo.PerspectiveCamera ??
           visualizationInfo.OrthogonalCamera;
-        const position = {
-          x: Number.isNaN(camera.CameraViewPoint.X)
-            ? -camera.CameraViewPoint.X
-            : Number(-camera.CameraViewPoint.X),
-          y: Number.isNaN(-camera.CameraViewPoint.Z)
-            ? camera.CameraViewPoint.Z
-            : Number(-camera.CameraViewPoint.Z),
-          z: Number.isNaN(camera.CameraViewPoint.Y)
-            ? -camera.CameraViewPoint.Y
-            : Number(camera.CameraViewPoint.Y),
-        };
-        const direction = {
-          x: Number.isNaN(camera.CameraDirection.X)
-            ? camera.CameraDirection.X
-            : Number(camera.CameraDirection.X),
-          y: Number.isNaN(camera.CameraDirection.Z)
-            ? camera.CameraDirection.Z
-            : Number(camera.CameraDirection.Z),
-          z: Number.isNaN(-camera.CameraDirection.Y)
-            ? -camera.CameraDirection.Y
-            : Number(-camera.CameraDirection.Y),
-        };
+        const { CameraViewPoint, CameraDirection } = camera;
+
+        const pos = new THREE.Vector3(
+          CameraViewPoint.X,
+          CameraViewPoint.Y,
+          CameraViewPoint.Z,
+        ).applyMatrix4(this._bcfToThreeTransformMatrix);
+
+        const dir = new THREE.Vector3(
+          CameraDirection.X,
+          CameraDirection.Y,
+          CameraDirection.Z,
+        ).applyMatrix4(this._bcfToThreeTransformMatrix);
+
         const viewpointCamera: ViewpointCamera = {
-          position,
-          direction,
+          position: { x: pos.x, y: pos.y, z: pos.z },
+          direction: { x: dir.x, y: dir.y, z: dir.z },
           aspectRatio: "AspectRatio" in camera ? camera.AspectRatio : 1, // Temporal simplification
         };
+
         if ("ViewToWorldScale" in camera) {
           bcfViewpoint.camera = {
             ...viewpointCamera,
             viewToWorldScale: camera.ViewToWorldScale,
           };
         }
+
         if ("FieldOfView" in camera) {
           bcfViewpoint.camera = {
             ...viewpointCamera,
