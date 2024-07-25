@@ -38,21 +38,30 @@ await ifcLoader.setup();
 
 const indexer = components.get(OBC.IfcRelationsIndexer);
 
-const fragmentsManager = components.get(OBC.FragmentsManager);
-fragmentsManager.onFragmentsLoaded.add(async (model) => {
+const fragments = components.get(OBC.FragmentsManager);
+fragments.onFragmentsLoaded.add(async (model) => {
   world.scene.three.add(model);
   if (model.hasProperties) await indexer.process(model);
+  for (const fragment of model.items) world.meshes.add(fragment.mesh);
 });
 
-// const file = await fetch(
-//   "https://thatopen.github.io/engine_components/resources/small.ifc",
-// );
-const file = await fetch("/resources/testing.ifc");
-const data = await file.arrayBuffer();
-const buffer = new Uint8Array(data);
-const model = await ifcLoader.load(buffer);
+const loadModels = async (urls: string[]) => {
+  for (const url of urls) {
+    const file = await fetch(url);
+    const data = await file.arrayBuffer();
+    const buffer = new Uint8Array(data);
+    await ifcLoader.load(buffer);
+  }
+};
 
-for (const fragment of model.items) world.meshes.add(fragment.mesh);
+// await loadModels([
+//   "https://thatopen.github.io/engine_components/resources/small.ifc",
+// ]);
+
+await loadModels([
+  "/resources/NAV-IPI-ET1_E03-ZZZ-M3D-EST.ifc",
+  "/resources/NAV-IPI-ET1_E07-ZZZ-M3D-EST.ifc",
+]);
 
 const bcfTopics = components.get(OBC.BCFTopics);
 bcfTopics.setup({
@@ -68,9 +77,7 @@ bcfTopics.setup({
 });
 
 const viewpoints = components.get(OBC.Viewpoints);
-viewpoints.list.onItemSet.add(({ value: viewpoint }) => {
-  // viewpoint.coordinationMatrix = model.coordinationMatrix;
-});
+viewpoints.list.onItemSet.add(({ value: viewpoint }) => console.log(viewpoint));
 
 // Importing an external BCF (topics and viewpoints are going to be created)
 const bcfFile = await fetch("/resources/topics.bcf");
@@ -179,8 +186,8 @@ viewpoints.list.onItemDeleted.add(() => updateViewpointsList());
 viewpoints.list.onCleared.add(() => updateViewpointsList());
 
 const viewpoint = viewpoints.create(world, { name: "Custom Viewpoint" });
-viewpoint.addComponentsFromMap(model.getFragmentMap([186])); // You can provide a FragmentIdMap to the viewpoint selection
-viewpoint.selectionComponents.add("2idC0G3ezCdhA9WVjWemcy"); // You can provide a GlobalId to the viewpoint selection
+// viewpoint.addComponentsFromMap(model.getFragmentMap([186])); // You can provide a FragmentIdMap to the viewpoint selection
+// viewpoint.selectionComponents.add("2idC0G3ezCdhA9WVjWemcy"); // You can provide a GlobalId to the viewpoint selection
 // viewpoint.selection gives the fragmentIdMap to select elements with the highlighter from @thatopen/components-front
 
 topic.viewpoints.add(viewpoint);

@@ -25,25 +25,6 @@ export class BCFTopics
   static uuid = "de977976-e4f6-4e4f-a01a-204727839802" as const;
   enabled = false;
 
-  private _bcfToThreeTransformMatrix = new THREE.Matrix4().set(
-    1,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1,
-    0,
-    0,
-    -1,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1,
-  );
-
   private _xmlParser = new XMLParser({
     allowBooleanAttributes: true,
     attributeNamePrefix: "",
@@ -261,12 +242,15 @@ export class BCFTopics
     </Version>`,
     );
     zip.file("bcf.extensions", this.serializeExtensions());
+    const image = await fetch(
+      "https://thatopen.github.io/engine_components/resources/favicon.ico",
+    );
+    const imgBlob = await image.blob();
     for (const [_, topic] of topics) {
       const topicFolder = zip.folder(topic.guid) as JSZip;
       topicFolder.file("markup.bcf", topic.serialize());
       for (const viewpoint of topic.viewpoints) {
-        const image = await fetch("/topic-viewpoint-snapshot.jpeg");
-        topicFolder.file(`${viewpoint.guid}.jpeg`, image.blob(), {
+        topicFolder.file(`${viewpoint.guid}.jpeg`, imgBlob, {
           binary: true,
         });
         topicFolder.file(`${viewpoint.guid}.bcfv`, await viewpoint.serialize());
@@ -412,21 +396,21 @@ export class BCFTopics
           visualizationInfo.OrthogonalCamera;
         const { CameraViewPoint, CameraDirection } = camera;
 
-        const pos = new THREE.Vector3(
-          CameraViewPoint.X,
-          CameraViewPoint.Y,
-          CameraViewPoint.Z,
-        ).applyMatrix4(this._bcfToThreeTransformMatrix);
+        const position = new THREE.Vector3(
+          Number(CameraViewPoint.X),
+          Number(CameraViewPoint.Z),
+          Number(-CameraViewPoint.Y),
+        );
 
-        const dir = new THREE.Vector3(
-          CameraDirection.X,
-          CameraDirection.Y,
-          CameraDirection.Z,
-        ).applyMatrix4(this._bcfToThreeTransformMatrix);
+        const direction = new THREE.Vector3(
+          Number(CameraDirection.X),
+          Number(CameraDirection.Z),
+          Number(-CameraDirection.Y),
+        );
 
         const viewpointCamera: ViewpointCamera = {
-          position: { x: pos.x, y: pos.y, z: pos.z },
-          direction: { x: dir.x, y: dir.y, z: dir.z },
+          position: { x: position.x, y: position.y, z: position.z },
+          direction: { x: direction.x, y: direction.y, z: direction.z },
           aspectRatio: "AspectRatio" in camera ? camera.AspectRatio : 1, // Temporal simplification
         };
 

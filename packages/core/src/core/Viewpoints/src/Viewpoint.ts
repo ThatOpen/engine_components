@@ -21,30 +21,9 @@ import { Hider } from "../../../fragments";
 import { SimplePlane } from "../../Clipper";
 
 export class Viewpoint implements BCFViewpoint {
-  private _threeToBcfTransformMatrix = new THREE.Matrix4().set(
-    1,
-    0,
-    0,
-    0,
-    0,
-    0,
-    -1,
-    0,
-    0,
-    1,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1,
-  );
-
   name = "Viewpoint";
   guid = UUID.create();
 
-  // The transformation matrix used at the time of creation
-  coordinationMatrix = new THREE.Matrix4();
   clippingPlanes = new DataSet<SimplePlane>();
 
   camera: ViewpointPerspectiveCamera | ViewpointOrthographicCamera = {
@@ -113,16 +92,14 @@ export class Viewpoint implements BCFViewpoint {
     const { position } = this.camera;
     const { x, y, z } = position;
     const vector = new THREE.Vector3(x, y, z);
-    fragments.applyBaseCoordinateSystem(vector, this.coordinationMatrix);
+    fragments.applyBaseCoordinateSystem(vector, new THREE.Matrix4());
     return vector;
   }
 
   get direction() {
-    const fragments = this._components.get(FragmentsManager);
     const { direction } = this.camera;
     const { x, y, z } = direction;
     const vector = new THREE.Vector3(x, y, z);
-    fragments.applyBaseCoordinateSystem(vector, this.coordinationMatrix);
     return vector;
   }
 
@@ -254,8 +231,8 @@ export class Viewpoint implements BCFViewpoint {
     if (Number.isNaN(aspectRatio)) aspectRatio = 1;
 
     const fragments = this._components.get(FragmentsManager);
-    const baseModel = fragments.groups.get(fragments.baseCoordinationModel);
-    if (baseModel) position.applyMatrix4(baseModel.coordinationMatrix);
+    position.applyMatrix4(fragments.baseCoordinationMatrix.clone().invert());
+    // fragments.applyBaseCoordinateSystem(position, new THREE.Matrix4());
 
     const partialCamera: ViewpointCamera = {
       aspectRatio,
@@ -274,8 +251,6 @@ export class Viewpoint implements BCFViewpoint {
         viewToWorldScale: threeCamera.top - threeCamera.bottom,
       };
     }
-
-    this.coordinationMatrix = fragments.baseCoordinationMatrix;
   }
 
   private async createComponentTags(from: "selection" | "exception") {
@@ -313,40 +288,34 @@ export class Viewpoint implements BCFViewpoint {
   async serialize(version = this._managerVersion) {
     const fragments = this._components.get(FragmentsManager);
 
-    const coordinationMatrix = new THREE.Matrix4();
-    const baseModel = fragments.groups.get(fragments.baseCoordinationModel);
-    if (baseModel) coordinationMatrix.copy(baseModel.coordinationMatrix);
-
     // Set the position back to the original transformation for exporting purposes
-    const position = this.position.applyMatrix4(
-      this._threeToBcfTransformMatrix,
-    );
-    position.applyMatrix4(this.coordinationMatrix.clone().invert());
-    position.applyMatrix4(coordinationMatrix);
+    const position = this.position;
+    fragments.applyBaseCoordinateSystem(position, new THREE.Matrix4());
 
     // Set the direction back to the original transformation for exporting purposes
-    const direction = this.direction.applyMatrix4(
-      this._threeToBcfTransformMatrix,
-    );
-    direction.applyMatrix4(this.coordinationMatrix.clone().invert());
-    direction.applyMatrix4(coordinationMatrix);
+    const direction = this.direction;
+    direction.normalize();
+
+    const rotationMatrix = new THREE.Matrix4().makeRotationX(Math.PI / 2);
+    const upVector = direction.clone().applyMatrix4(rotationMatrix);
+    upVector.normalize();
 
     const cameraViewpointXML = `<CameraViewPoint>
-      <X>${position.x}</X>
-      <Y>${position.y}</Y>
-      <Z>${position.z}</Z>
+      <X>${-position.x}</X>
+      <Y>${position.z}</Y>
+      <Z>${-position.y}</Z>
     </CameraViewPoint>`;
 
     const cameraDirectionXML = `<CameraDirection>
       <X>${direction.x}</X>
-      <Y>${direction.y}</Y>
-      <Z>${direction.z}</Z>
+      <Y>${-direction.z}</Y>
+      <Z>${direction.y}</Z>
     </CameraDirection>`;
 
     const cameraUpVectorXML = `<CameraUpVector>
-      <X>0</X>
-      <Y>0</Y>
-      <Z>1</Z>
+      <X>${upVector.x}</X>
+      <Y>${-upVector.z}</Y>
+      <Z>${upVector.y}</Z>
     </CameraUpVector>`;
 
     const cameraRatioXML = `<AspectRatio>${this.camera.aspectRatio}</AspectRatio>`;
@@ -372,18 +341,18 @@ export class Viewpoint implements BCFViewpoint {
 
     const viewSetupHints = `<ViewSetupHints SpacesVisible="${this.spacesVisible ?? false}" SpaceBoundariesVisible="${this.spaceBoundariesVisible ?? false}" OpeningsVisible="${this.openingsVisible ?? false}" />`;
 
+    const selectionTags = (await this.createComponentTags("selection")).trim();
+    console.log(selectionTags, this);
+    const exceptionTags = (await this.createComponentTags("exception")).trim();
+
     return `<?xml version="1.0" encoding="UTF-8"?>
     <VisualizationInfo Guid="${this.guid}">
       <Components>
         ${version === "2.1" ? viewSetupHints : ""}
-        <Selection>
-          ${this.createComponentTags("selection")}
-        </Selection>
+        ${selectionTags.length !== 0 ? `<Selection>${selectionTags}</Selection>` : ""}
         <Visibility DefaultVisibility="${this.defaultVisibility}">
           ${version === "3" ? viewSetupHints : ""}
-          <Exceptions>
-            ${this.createComponentTags("exception")}
-          </Exceptions>
+          ${exceptionTags.length !== 0 ? `<Exceptions>${exceptionTags}</Exceptions>` : ""}
         </Visibility>
       </Components>
       ${cameraXML}
