@@ -84,7 +84,9 @@ export class PostproductionRenderer extends RendererWith2D {
   }
 
   private setPostproductionSize(size?: THREE.Vector2) {
-    if (!this.container) return;
+    if (!this.container) {
+      return;
+    }
     const width = size ? size.x : this.container.clientWidth;
     const height = size ? size.y : this.container.clientHeight;
     this.postproduction.setSize(width, height);
