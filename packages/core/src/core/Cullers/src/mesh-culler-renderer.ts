@@ -215,6 +215,23 @@ export class MeshCullerRenderer extends CullerRenderer implements Disposable {
     this.isProcessing = false;
   }
 
+  /**
+   * Updates the given instanced meshes inside the culler. You should use this if you change the count property, e.g. when changing the visibility of fragments.
+   *
+   * @param meshes - The meshes to update.
+   *
+   * @returns {void}
+   */
+  updateInstanced(meshes: Iterable<THREE.InstancedMesh>) {
+    for (const mesh of meshes) {
+      const colorMesh = this.colorMeshes.get(mesh.uuid);
+      if (!colorMesh) {
+        continue;
+      }
+      colorMesh.count = mesh.count;
+    }
+  }
+
   private handleWorkerMessage = async (event: MessageEvent) => {
     if (this.isProcessing) {
       return;
