@@ -206,6 +206,9 @@ export class Postproduction {
    * @returns {void}
    */
   setSize(width: number, height: number) {
+    if (width === 0 || height === 0) {
+      return;
+    }
     if (this._initialized) {
       const customEnabled = this._settings.custom;
       if (customEnabled) {

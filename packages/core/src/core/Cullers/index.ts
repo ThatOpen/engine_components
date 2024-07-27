@@ -1,3 +1,4 @@
+import * as THREE from "three";
 import { Components } from "../Components";
 import { MeshCullerRenderer, CullerRendererSettings } from "./src";
 import { Component, Event, Disposable, World } from "../Types";
@@ -90,5 +91,18 @@ export class Cullers extends Component implements Disposable {
       culler.dispose();
     }
     this.list.clear();
+  }
+
+  /**
+   * Updates the given instanced meshes inside the all the cullers. You should use this if you change the count property, e.g. when changing the visibility of fragments.
+   *
+   * @param meshes - The meshes to update.
+   *
+   * @returns {void}
+   */
+  updateInstanced(meshes: Iterable<THREE.InstancedMesh>) {
+    for (const [, culler] of this.list) {
+      culler.updateInstanced(meshes);
+    }
   }
 }
