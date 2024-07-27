@@ -70,6 +70,10 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     "Defines",
     "ContainedInStructure",
     "ContainsElements",
+    "HasControlElements",
+    "AssignedToFlowElement",
+    "ConnectedTo",
+    "ConnectedFrom",
   ];
 
   private _ifcRels = [

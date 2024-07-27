@@ -62,4 +62,18 @@ export const relToAttributesMap = new Map<
       forRelating: "ContainsElements",
     },
   ],
+  [
+    WEBIFC.IFCRELFLOWCONTROLELEMENTS,
+    {
+      forRelated: "AssignedToFlowElement",
+      forRelating: "HasControlElements",
+    },
+  ],
+  [
+    WEBIFC.IFCRELCONNECTSELEMENTS,
+    {
+      forRelated: "ConnectedFrom",
+      forRelating: "ConnectedTo",
+    },
+  ],
 ]);

@@ -22,6 +22,10 @@ export type InverseAttributes = [
   "Defines",
   "ContainedInStructure",
   "ContainsElements",
+  "HasControlElements",
+  "AssignedToFlowElement",
+  "ConnectedTo",
+  "ConnectedFrom",
 ];
 
 export type InverseAttribute = InverseAttributes[number];
