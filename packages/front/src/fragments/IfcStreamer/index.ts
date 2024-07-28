@@ -172,6 +172,9 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     this.components.add(IfcStreamer.uuid, this);
     this.dbCleaner = new StreamerDbCleaner(this._fileCache);
 
+    const fragments = this.components.get(OBC.FragmentsManager);
+    fragments.onFragmentsDisposed.add(this.disposeStreamedGroup);
+
     // const hardlyGeometry = new THREE.BoxGeometry();
     // this._hardlySeenGeometries = new THREE.InstancedMesh();
   }
@@ -183,6 +186,9 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     this.onFragmentsDeleted.reset();
 
     this._ramCache.clear();
+
+    const fragments = this.components.get(OBC.FragmentsManager);
+    fragments.onFragmentsDisposed.remove(this.disposeStreamedGroup);
 
     this.models = {};
     this._geometryInstances = {};
@@ -221,6 +227,10 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     const groupBuffer = new Uint8Array(groupArrayBuffer);
     const fragments = this.components.get(OBC.FragmentsManager);
     const group = fragments.load(groupBuffer, { coordinate });
+
+    group.name = globalDataFileId.replace("-processed-global", "");
+
+    group.isStreamed = true;
     this.world.scene.three.add(group);
 
     const { opaque, transparent } = group.geometryIDs;
@@ -306,29 +316,15 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
    * Removes a fragment group from the scene.
    *
    * @param modelID - The unique identifier of the fragment group to remove.
+   *
+   * @deprecated use OBC.FragmentsManager.disposeGroup instead.
    */
   remove(modelID: string) {
-    this._isDisposing = true;
-
     const fragments = this.components.get(OBC.FragmentsManager);
     const group = fragments.groups.get(modelID);
-    if (group === undefined) {
-      console.log("Group to delete not found.");
-      return;
+    if (group) {
+      fragments.disposeGroup(group);
     }
-
-    delete this.models[modelID];
-    delete this._geometryInstances[modelID];
-    delete this._loadedFragments[modelID];
-
-    const ids = group.keyFragments.values();
-    for (const id of ids) {
-      this.fragIDData.delete(id);
-    }
-
-    this.culler.remove(modelID);
-
-    this._isDisposing = false;
   }
 
   /**
@@ -698,4 +694,25 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
 
     result.push(fragment);
   }
+
+  private disposeStreamedGroup = (data: {
+    groupID: string;
+    fragmentIDs: string[];
+  }) => {
+    this._isDisposing = true;
+
+    const { groupID, fragmentIDs } = data;
+
+    delete this.models[groupID];
+    delete this._geometryInstances[groupID];
+    delete this._loadedFragments[groupID];
+
+    for (const id of fragmentIDs) {
+      this.fragIDData.delete(id);
+    }
+
+    this.culler.remove(groupID);
+
+    this._isDisposing = false;
+  };
 }
