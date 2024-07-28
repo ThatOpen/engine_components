@@ -71,6 +71,7 @@ export class EdgesPlane extends OBC.SimplePlane {
     this.edges.visible = true;
     this.onDraggingEnded.add(() => {
       this.updateFill();
+      this.edges.visible = true;
     });
     this.onDraggingStarted.add(() => (this.edges.visible = false));
   }
