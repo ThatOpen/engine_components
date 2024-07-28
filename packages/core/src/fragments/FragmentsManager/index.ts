@@ -110,6 +110,7 @@ export class FragmentsManager extends Component implements Disposable {
    * Loads a binary file that contain fragment geometry.
    * @param data - The binary data to load.
    * @param config - Optional configuration for loading.
+   * @param config.isStreamed - Optional setting to determine whether this model is streamed or not.
    * @param config.coordinate - Whether to apply coordinate transformation. Default is true.
    * @param config.properties - Ifc properties to set on the loaded fragments. Not to be used when streaming.
    * @returns The loaded FragmentsGroup.
@@ -121,6 +122,7 @@ export class FragmentsManager extends Component implements Disposable {
       name: string;
       properties: FRAGS.IfcProperties;
       relationsMap: RelationsMap;
+      isStreamed?: boolean;
     }>,
   ) {
     const defaultConfig: {
@@ -132,6 +134,9 @@ export class FragmentsManager extends Component implements Disposable {
     const _config = { ...defaultConfig, ...config };
     const { coordinate, name, properties, relationsMap } = _config;
     const model = this._loader.import(data);
+    if (config) {
+      model.isStreamed = config.isStreamed || false;
+    }
     if (name) model.name = name;
     for (const fragment of model.items) {
       fragment.group = model;

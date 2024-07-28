@@ -226,11 +226,10 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     const groupArrayBuffer = await groupData.arrayBuffer();
     const groupBuffer = new Uint8Array(groupArrayBuffer);
     const fragments = this.components.get(OBC.FragmentsManager);
-    const group = fragments.load(groupBuffer, { coordinate });
+    const group = fragments.load(groupBuffer, { coordinate, isStreamed: true });
 
     group.name = globalDataFileId.replace("-processed-global", "");
 
-    group.isStreamed = true;
     this.world.scene.three.add(group);
 
     const { opaque, transparent } = group.geometryIDs;

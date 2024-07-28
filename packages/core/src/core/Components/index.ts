@@ -14,7 +14,7 @@ export class Components implements Disposable {
   /**
    * The version of the @thatopen/components library.
    */
-  static readonly release = "2.1.15";
+  static readonly release = "2.1.16";
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<void>();
