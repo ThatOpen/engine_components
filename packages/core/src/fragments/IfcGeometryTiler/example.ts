@@ -105,7 +105,7 @@ world.scene.three.add(model);
 const tiler = components.get(OBC.IfcGeometryTiler);
 
 const wasm = {
-  path: "https://unpkg.com/web-ifc@0.0.55/",
+  path: "https://unpkg.com/web-ifc@0.0.56/",
   absolute: true,
 };
 
