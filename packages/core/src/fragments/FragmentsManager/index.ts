@@ -1,7 +1,7 @@
 import { Fragment, FragmentsGroup, Serializer } from "@thatopen/fragments";
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
-import { Component, Components, Event, Disposable } from "../../core";
+import { Component, Components, Event, Disposable, DataMap } from "../../core";
 import { RelationsMap } from "../../ifc/IfcRelationsIndexer/src/types";
 import { IfcRelationsIndexer } from "../../ifc/IfcRelationsIndexer";
 
@@ -32,16 +32,16 @@ export class FragmentsManager extends Component implements Disposable {
   }>();
 
   /**
-   * Map containing all loaded fragments.
+   * DataMap containing all loaded fragments.
    * The key is the fragment's unique identifier, and the value is the fragment itself.
    */
-  readonly list = new Map<string, Fragment>();
+  readonly list = new DataMap<string, Fragment>();
 
   /**
-   * Map containing all loaded fragment groups.
+   * DataMap containing all loaded fragment groups.
    * The key is the group's unique identifier, and the value is the group itself.
    */
-  readonly groups = new Map<string, FragmentsGroup>();
+  readonly groups = new DataMap<string, FragmentsGroup>();
 
   baseCoordinationModel = "";
   baseCoordinationMatrix = new THREE.Matrix4();
