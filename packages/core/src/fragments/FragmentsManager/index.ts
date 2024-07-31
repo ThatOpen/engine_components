@@ -265,4 +265,20 @@ export class FragmentsManager extends Component implements Disposable {
     object.applyMatrix4(originalCoordinateSystem.clone().invert());
     object.applyMatrix4(this.baseCoordinationMatrix);
   }
+
+  /**
+   * Creates a copy of the whole model or a part of it.
+   *
+   * @param model - The model to clone.
+   * @param items - Optional - The part of the model to be cloned. If not given, the whole group is cloned.
+   *
+   */
+  clone(model: FRAGS.FragmentsGroup, items?: FRAGS.FragmentIdMap) {
+    const clone = model.cloneGroup(items);
+    this.groups.set(clone.uuid, clone);
+    for (const frag of clone.items) {
+      this.list.set(frag.id, frag);
+    }
+    return clone;
+  }
 }
