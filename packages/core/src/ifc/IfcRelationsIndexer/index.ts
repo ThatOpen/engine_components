@@ -7,6 +7,7 @@ import {
   ModelsRelationMap,
   InverseAttributes,
   InverseAttribute,
+  IfcRelations,
 } from "./src/types";
 import { relToAttributesMap } from "./src/relToAttributesMap";
 
@@ -76,7 +77,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     "ConnectedFrom",
   ];
 
-  private _ifcRels = [
+  private _ifcRels: IfcRelations = [
     WEBIFC.IFCRELAGGREGATES,
     WEBIFC.IFCRELASSOCIATESMATERIAL,
     WEBIFC.IFCRELASSOCIATESCLASSIFICATION,
@@ -85,14 +86,15 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     WEBIFC.IFCRELDEFINESBYTYPE,
     WEBIFC.IFCRELDEFINESBYTEMPLATE,
     WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE,
-  ] as const;
+    WEBIFC.IFCRELFLOWCONTROLELEMENTS,
+    WEBIFC.IFCRELCONNECTSELEMENTS,
+  ];
 
   constructor(components: Components) {
     super(components);
     this.components.add(IfcRelationsIndexer.uuid, this);
     const fragmentManager = components.get(FragmentsManager);
     fragmentManager.onFragmentsDisposed.add(this.onFragmentsDisposed);
-    // this.setRelMap();
   }
 
   private onFragmentsDisposed = (data: {
