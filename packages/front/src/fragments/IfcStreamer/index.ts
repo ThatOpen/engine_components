@@ -702,6 +702,10 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
 
     const { groupID, fragmentIDs } = data;
 
+    if (!this.models[groupID]) {
+      return;
+    }
+
     delete this.models[groupID];
     delete this._geometryInstances[groupID];
     delete this._loadedFragments[groupID];
