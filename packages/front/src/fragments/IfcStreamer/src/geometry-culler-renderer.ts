@@ -26,6 +26,11 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
 
   boxes = new Map<number, FRAGS.Fragment>();
 
+  private _staticGeometries: {
+    culled: { [modelID: string]: Set<number> };
+    unculled: { [modelID: string]: Set<number> };
+  } = { culled: {}, unculled: {} };
+
   private readonly _geometry: THREE.BufferGeometry;
 
   private _material = new THREE.MeshBasicMaterial({
@@ -47,7 +52,7 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
 
   private _geometries = new Map<string, CullerBoundingBox>();
   private _geometriesGroups = new Map<number, THREE.Group>();
-  private _foundGeometries = new Set<string>();
+  private _geometriesInMemory = new Set<string>();
   private _intervalID: number | null = null;
 
   private codes = new Map<number, Map<number, string>>();
@@ -109,6 +114,8 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
       }
     }
     this._geometries.clear();
+
+    this._staticGeometries = { culled: {}, unculled: {} };
 
     this._geometry.dispose();
     this._material.dispose();
@@ -274,7 +281,7 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
 
     this._modelIDIndex.delete(modelID);
     this._indexModelID.delete(index);
-    this._foundGeometries.clear();
+    this._geometriesInMemory.clear();
   }
 
   addFragment(modelID: string, geometryID: number, frag: FRAGS.Fragment) {
@@ -421,6 +428,94 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     }
   }
 
+  async addStaticGeometries(
+    geometries: { [modelID: string]: Set<number> },
+    culled = true,
+  ) {
+    const event = {
+      data: {
+        colors: new Map<string, number>(),
+      },
+    };
+    const dummyPixelValue = this.threshold + 1000;
+
+    for (const modelID in geometries) {
+      const modelKey = this._modelIDIndex.get(modelID);
+      if (modelKey === undefined) {
+        continue;
+      }
+      const map = this.codes.get(modelKey);
+      if (!map) {
+        continue;
+      }
+
+      const geometryIDs = geometries[modelID];
+
+      for (const geometryID of geometryIDs) {
+        const colorCode = map.get(geometryID);
+        if (!colorCode) {
+          continue;
+        }
+
+        const geometry = this._geometries.get(colorCode);
+        if (!geometry) {
+          continue;
+        }
+
+        geometry.exists = true;
+        if (!culled) {
+          // Static unculled geometries are always visible
+          geometry.hidden = false;
+          geometry.time = performance.now();
+          event.data.colors.set(colorCode, dummyPixelValue);
+        }
+
+        this._geometriesInMemory.add(colorCode);
+
+        const statics = culled
+          ? this._staticGeometries.culled
+          : this._staticGeometries.unculled;
+
+        if (!statics[modelID]) {
+          statics[modelID] = new Set();
+        }
+
+        statics[modelID].add(geometryID);
+      }
+    }
+
+    if (!culled) {
+      // If unculled, we'll make these geometries visible by forcing its discovery
+      await this.handleWorkerMessage(event as any);
+    }
+  }
+
+  removeStaticGeometries(
+    geometries: { [modelID: string]: Set<number> },
+    culled?: boolean,
+  ) {
+    const options: ("culled" | "unculled")[] = [];
+    if (culled === undefined) {
+      options.push("culled", "unculled");
+    } else if (culled === true) {
+      options.push("culled");
+    } else {
+      options.push("unculled");
+    }
+
+    for (const modelID in geometries) {
+      const geometryIDs = geometries[modelID];
+      for (const option of options) {
+        const set = this._staticGeometries[option][modelID];
+        if (set) {
+          for (const geometryID of geometryIDs) {
+            set.delete(geometryID);
+          }
+        }
+      }
+    }
+  }
+
   private setGeometryVisibility(
     geometry: CullerBoundingBox,
     visible: boolean,
@@ -459,7 +554,7 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     let viewWasUpdated = false;
 
     // We can only lose geometries that were previously found
-    const lostGeometries = new Set(this._foundGeometries);
+    const lostGeometries = new Set(this._geometriesInMemory);
 
     for (const [color, number] of colors) {
       const geometry = this._geometries.get(color);
@@ -480,16 +575,16 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
       const modelID = this._indexModelID.get(geometry.modelIndex) as string;
 
       if (exists) {
-        // Geometry was visible, and still is
+        // Geometry was present in memory, and still is, so show it
         geometry.time = now;
         if (!toShow[modelID]) {
           toShow[modelID] = new Set();
         }
         toShow[modelID].add(geometry.geometryID);
-        this._foundGeometries.add(color);
+        this._geometriesInMemory.add(color);
         viewWasUpdated = true;
       } else {
-        // New geometry found
+        // New geometry found that is not in memory
         if (!toLoad[modelID]) {
           toLoad[modelID] = new Map();
         }
@@ -501,7 +596,7 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
         }
         const set = toLoad[modelID].get(number) as Set<number>;
         set.add(geometry.geometryID);
-        this._foundGeometries.add(color);
+        this._geometriesInMemory.add(color);
         viewWasUpdated = true;
       }
     }
@@ -533,15 +628,32 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
   ) {
     const modelID = this._indexModelID.get(geometry.modelIndex) as string;
     const lostTime = now - geometry.time;
+
+    const { culled, unculled } = this._staticGeometries;
+
     if (lostTime > this.maxLostTime) {
       // This geometry was lost too long - delete it
+
+      // If it's any kind of static geometry, skip it
+      if (
+        culled[modelID]?.has(geometry.geometryID) ||
+        unculled[modelID]?.has(geometry.geometryID)
+      ) {
+        return;
+      }
+
       if (!toRemove[modelID]) {
         toRemove[modelID] = new Set();
       }
       geometry.exists = false;
       toRemove[modelID].add(geometry.geometryID);
-      this._foundGeometries.delete(color);
+      this._geometriesInMemory.delete(color);
     } else if (lostTime > this.maxHiddenTime) {
+      // If it's an unculled static geometry, skip it
+      if (unculled[modelID]?.has(geometry.geometryID)) {
+        return;
+      }
+
       // This geometry was lost for a while - hide it
       if (!toHide[modelID]) {
         toHide[modelID] = new Set();

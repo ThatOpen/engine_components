@@ -343,16 +343,21 @@ export class Highlighter
     }
 
     for (const fragID in filtered) {
-      const fragment = fragments.list.get(fragID);
-      if (!fragment) {
-        continue;
-      }
       if (!this.selection[name][fragID]) {
         this.selection[name][fragID] = new Set<number>();
       }
       const itemIDs = fragmentIdMap[fragID];
+
       for (const itemID of itemIDs) {
         this.selection[name][fragID].add(itemID);
+      }
+
+      const fragment = fragments.list.get(fragID);
+      if (!fragment) {
+        continue;
+      }
+
+      for (const itemID of itemIDs) {
         fragment.setColor(color, [itemID]);
       }
 
@@ -434,6 +439,24 @@ export class Highlighter
     this.enabled = true;
     this.isSetup = true;
     this.onSetup.trigger(this);
+  }
+
+  /**
+   * Applies all the existing styles to the given fragments. Useful when combining the highlighter with streaming.
+   *
+   * @param fragments - The list of fragment to update.
+   */
+  updateFragments(fragments: Iterable<FRAGS.Fragment>) {
+    for (const frag of fragments) {
+      for (const name in this.selection) {
+        const map = this.selection[name];
+        const ids = map[frag.id];
+        const color = this.colors.get(name);
+        if (ids && color) {
+          frag.setColor(color, ids);
+        }
+      }
+    }
   }
 
   private async zoomSelection(name: string) {

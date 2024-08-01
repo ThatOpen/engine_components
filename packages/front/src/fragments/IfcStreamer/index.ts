@@ -396,9 +396,54 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     await this._fileCache.delete();
   }
 
-  private async loadFoundGeometries(seen: {
-    [modelID: string]: Map<number, Set<number>>;
-  }) {
+  /**
+   * Sets or unsets the specified fragments as static. Static fragments are streamed once and then kept in memory.
+   *
+   * @param ids - The list of fragment IDs to make static.
+   * @param active - Whether these items should be static or not.
+   * @param culled - Whether these items should be culled or not. If undefined: active=true will set items as culled, while active=false will remove items from both the culled and unculled list.
+   */
+  async setStatic(ids: Iterable<string>, active: boolean, culled?: boolean) {
+    const staticGeometries: { [modelID: string]: Set<number> } = {};
+
+    for (const id of ids) {
+      const found = this.fragIDData.get(id);
+      if (!found) {
+        console.log(`Item not found: ${id}.`);
+        continue;
+      }
+
+      const [group, geometryID] = found;
+      const modelID = group.uuid;
+
+      if (!staticGeometries[modelID]) {
+        staticGeometries[modelID] = new Set<number>();
+      }
+
+      staticGeometries[modelID].add(geometryID);
+    }
+
+    if (active) {
+      const seen: { [modelID: string]: Map<number, Set<number>> } = {};
+      for (const modelID in staticGeometries) {
+        const map = new Map<number, Set<number>>();
+        map.set(1, staticGeometries[modelID]);
+        seen[modelID] = map;
+      }
+      // Load the static geometries, but don't show them
+      await this.loadFoundGeometries(seen, false);
+      await this.culler.addStaticGeometries(staticGeometries, culled);
+    } else {
+      this.culler.removeStaticGeometries(staticGeometries, culled);
+    }
+  }
+
+  private async loadFoundGeometries(
+    seen: {
+      [modelID: string]: Map<number, Set<number>>;
+    },
+    visible = true,
+  ) {
     for (const modelID in seen) {
       if (this._isDisposing) return;
 
@@ -518,8 +563,25 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
               }
             }
 
-            this.newFragment(group, geometryID, geom, transp, true, loaded);
-            this.newFragment(group, geometryID, geom, opaque, false, loaded);
+            this.newFragment(
+              group,
+              geometryID,
+              geom,
+              transp,
+              true,
+              loaded,
+              visible,
+            );
+
+            this.newFragment(
+              group,
+              geometryID,
+              geom,
+              opaque,
+              false,
+              loaded,
+              visible,
+            );
           }
         }
 
@@ -555,7 +617,10 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
         throw new Error("Fragment group not found!");
       }
 
-      if (!this._loadedFragments[modelID]) continue;
+      if (!this._loadedFragments[modelID]) {
+        continue;
+      }
+
       const loadedFrags = this._loadedFragments[modelID];
       const geometries = unseen[modelID];
 
@@ -608,6 +673,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     instances: StreamedInstance[],
     transparent: boolean,
     result: FRAG.Fragment[],
+    visible: boolean,
   ) {
     if (instances.length === 0) return;
     if (this._isDisposing) return;
@@ -635,6 +701,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
 
     const material = transparent ? this._baseMaterialT : this._baseMaterial;
     const fragment = new FRAG.Fragment(geometry, material, instances.length);
+    fragment.mesh.visible = visible;
 
     fragment.id = fragID;
     fragment.mesh.uuid = fragID;
