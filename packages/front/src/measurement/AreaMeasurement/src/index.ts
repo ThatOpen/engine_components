@@ -14,8 +14,6 @@ interface Area {
 export class AreaMeasureElement implements OBC.Hideable, OBC.Disposable {
   enabled: boolean = true;
 
-  visible: boolean = true;
-
   points: THREE.Vector3[] = [];
 
   workingPlane: THREE.Plane | null = null;
@@ -28,12 +26,6 @@ export class AreaMeasureElement implements OBC.Hideable, OBC.Disposable {
 
   readonly onDisposed = new OBC.Event();
 
-  private _rotationMatrix: THREE.Matrix4 | null = null;
-
-  private _dimensionLines: SimpleDimensionLine[] = [];
-
-  private _defaultLineMaterial = new THREE.LineBasicMaterial({ color: "red" });
-
   readonly onAreaComputed = new OBC.Event<number>();
 
   readonly onWorkingPlaneComputed = new OBC.Event<THREE.Plane>();
@@ -41,6 +33,29 @@ export class AreaMeasureElement implements OBC.Hideable, OBC.Disposable {
   readonly onPointAdded = new OBC.Event<THREE.Vector3>();
 
   readonly onPointRemoved = new OBC.Event<THREE.Vector3>();
+
+  private _visible = true;
+
+  private _rotationMatrix: THREE.Matrix4 | null = null;
+
+  private _dimensionLines: SimpleDimensionLine[] = [];
+
+  private _defaultLineMaterial = new THREE.LineBasicMaterial({ color: "red" });
+
+  /** {@link OBC.Hideable.visible} */
+  get visible() {
+    return this._visible;
+  }
+
+  /** {@link OBC.Hideable.visible} */
+  set visible(value: boolean) {
+    this._visible = value;
+    for (const dim of this._dimensionLines) {
+      dim.visible = value;
+      dim.label.visible = false;
+    }
+    this.labelMarker.visible = value;
+  }
 
   constructor(
     components: OBC.Components,
@@ -99,14 +114,11 @@ export class AreaMeasureElement implements OBC.Hideable, OBC.Disposable {
   }
 
   private addDimensionLine(start: THREE.Vector3, end: THREE.Vector3) {
-    const element = document.createElement("div");
-    element.className = "w-2 h-2 bg-red-600 rounded-full";
-
     const dimensionLine = new SimpleDimensionLine(this.components, this.world, {
       start,
       end,
       lineMaterial: this._defaultLineMaterial,
-      endpointElement: element,
+      endpointElement: newDimensionMark(),
     });
 
     dimensionLine.toggleLabel();
