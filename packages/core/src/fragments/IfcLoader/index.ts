@@ -228,9 +228,14 @@ export class IfcLoader extends Component implements Disposable {
       if (!this.webIfc.IsIfcElement(type) && type !== WEBIFC.IFCSPACE) {
         continue;
       }
-      if (this.settings.excludedCategories.has(type)) {
+
+      const included = this.settings.includedCategories;
+      if (included.size > 0 && !included.has(type)) {
+        continue;
+      } else if (this.settings.excludedCategories.has(type)) {
         continue;
       }
+
       const result = this.webIfc.GetLineIDsWithType(0, type);
       const size = result.size();
       for (let i = 0; i < size; i++) {
