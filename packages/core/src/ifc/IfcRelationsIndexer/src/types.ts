@@ -28,6 +28,7 @@ export type InverseAttributes = [
   "AssignedToFlowElement",
   "ConnectedTo",
   "ConnectedFrom",
+  "ReferencedBy",
 ];
 
 export type InverseAttribute = InverseAttributes[number];
@@ -46,6 +47,7 @@ export type IfcRelations = [
   typeof WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE,
   typeof WEBIFC.IFCRELFLOWCONTROLELEMENTS,
   typeof WEBIFC.IFCRELCONNECTSELEMENTS,
+  typeof WEBIFC.IFCRELASSIGNSTOPRODUCT,
 ];
 
 export type IfcRelation = IfcRelations[number];

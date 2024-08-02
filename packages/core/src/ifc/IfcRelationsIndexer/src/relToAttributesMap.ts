@@ -9,29 +9,29 @@ export const relToAttributesMap = new Map<
   [
     WEBIFC.IFCRELAGGREGATES,
     {
-      forRelating: "IsDecomposedBy",
       forRelated: "Decomposes",
+      forRelating: "IsDecomposedBy",
     },
   ],
   [
     WEBIFC.IFCRELASSOCIATESMATERIAL,
     {
-      forRelating: "AssociatedTo",
       forRelated: "HasAssociations",
+      forRelating: "AssociatedTo",
     },
   ],
   [
     WEBIFC.IFCRELASSOCIATESCLASSIFICATION,
     {
-      forRelating: "ClassificationForObjects",
       forRelated: "HasAssociations",
+      forRelating: "ClassificationForObjects",
     },
   ],
   [
     WEBIFC.IFCRELASSIGNSTOGROUP,
     {
-      forRelating: "IsGroupedBy",
       forRelated: "HasAssignments",
+      forRelating: "IsGroupedBy",
     },
   ],
   [
@@ -74,6 +74,13 @@ export const relToAttributesMap = new Map<
     {
       forRelated: "ConnectedFrom",
       forRelating: "ConnectedTo",
+    },
+  ],
+  [
+    WEBIFC.IFCRELASSIGNSTOPRODUCT,
+    {
+      forRelated: "HasAssignments",
+      forRelating: "ReferencedBy",
     },
   ],
 ]);

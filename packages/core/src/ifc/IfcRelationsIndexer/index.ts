@@ -75,6 +75,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     "AssignedToFlowElement",
     "ConnectedTo",
     "ConnectedFrom",
+    "ReferencedBy",
   ];
 
   private _ifcRels: IfcRelations = [
@@ -88,6 +89,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE,
     WEBIFC.IFCRELFLOWCONTROLELEMENTS,
     WEBIFC.IFCRELCONNECTSELEMENTS,
+    WEBIFC.IFCRELASSIGNSTOPRODUCT,
   ];
 
   constructor(components: Components) {
