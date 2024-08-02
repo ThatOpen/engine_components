@@ -228,7 +228,7 @@ export class ClippingEdges
           const tempMatrix = new THREE.Matrix4();
           instanced.getMatrixAt(i, tempMatrix);
           tempMesh.applyMatrix4(tempMatrix);
-          tempMesh.applyMatrix4(mesh.matrix);
+          tempMesh.applyMatrix4(mesh.matrixWorld);
           tempMesh.updateMatrix();
           tempMesh.updateMatrixWorld();
 
