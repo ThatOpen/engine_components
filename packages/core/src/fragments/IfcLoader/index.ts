@@ -177,7 +177,7 @@ export class IfcLoader extends Component implements Disposable {
   async readIfcFile(data: Uint8Array) {
     const { path, absolute, logLevel } = this.settings.wasm;
     this.webIfc.SetWasmPath(path, absolute);
-    await this.webIfc.Init();
+    await this.webIfc.Init(this.settings.customLocateFileHandler || undefined);
     if (logLevel) {
       this.webIfc.SetLogLevel(logLevel);
     }
