@@ -107,6 +107,9 @@ export class Highlighter
   /** Stores the colors used for highlighting selections. */
   colors = new Map<string, THREE.Color>();
 
+  /** Styles with auto toggle will be unselected when selected twice. */
+  autoToggle = new Set<string>();
+
   // Highlights the clipping fills of the fragments, if any
   private _fills = new FillHighlighter();
 
@@ -346,10 +349,20 @@ export class Highlighter
       if (!this.selection[name][fragID]) {
         this.selection[name][fragID] = new Set<number>();
       }
-      const itemIDs = fragmentIdMap[fragID];
+      const itemIDs = filtered[fragID];
+
+      const deselectedIDs = new Set<number>();
+      const selectedIDs = new Set<number>();
 
       for (const itemID of itemIDs) {
-        this.selection[name][fragID].add(itemID);
+        const set = this.selection[name][fragID];
+        if (this.autoToggle.has(name) && set.has(itemID)) {
+          deselectedIDs.add(itemID);
+          set.delete(itemID);
+        } else {
+          set.add(itemID);
+          selectedIDs.add(itemID);
+        }
       }
 
       const fragment = fragments.list.get(fragID);
@@ -357,8 +370,16 @@ export class Highlighter
         continue;
       }
 
-      for (const itemID of itemIDs) {
-        fragment.setColor(color, [itemID]);
+      if (deselectedIDs.size) {
+        if (this.backupColor) {
+          fragment.setColor(this.backupColor, deselectedIDs);
+        } else {
+          fragment.resetColor(deselectedIDs);
+        }
+      }
+
+      if (selectedIDs.size) {
+        fragment.setColor(color, selectedIDs);
       }
 
       // Highlight all the clipping fills of the fragment, if any
@@ -434,6 +455,7 @@ export class Highlighter
   setup(config?: Partial<HighlighterConfig>) {
     this.config = { ...this.config, ...config };
     this.add(this.config.selectName, this.config.selectionColor);
+    this.autoToggle.add(this.config.selectName);
     this.add(this.config.hoverName, this.config.hoverColor);
     this.setupEvents(true);
     this.enabled = true;
