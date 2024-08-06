@@ -342,7 +342,6 @@ export class Viewpoint implements BCFViewpoint {
     const viewSetupHints = `<ViewSetupHints SpacesVisible="${this.spacesVisible ?? false}" SpaceBoundariesVisible="${this.spaceBoundariesVisible ?? false}" OpeningsVisible="${this.openingsVisible ?? false}" />`;
 
     const selectionTags = (await this.createComponentTags("selection")).trim();
-    console.log(selectionTags, this);
     const exceptionTags = (await this.createComponentTags("exception")).trim();
 
     return `<?xml version="1.0" encoding="UTF-8"?>

@@ -54,7 +54,6 @@ export class Comment {
   }
 
   serialize(version = this._managerVersion) {
-    console.log(version);
     let viewpointTag: string | null = null;
     if (this.viewpoint) {
       viewpointTag = `<Viewpoint Guid="${this.viewpoint.guid}"/>`;

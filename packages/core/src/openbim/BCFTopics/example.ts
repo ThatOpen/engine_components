@@ -65,7 +65,7 @@ await loadModels([
 
 const bcfTopics = components.get(OBC.BCFTopics);
 bcfTopics.setup({
-  types: new Set(["Clash, Inquiry, Information, Coordination"]),
+  types: new Set(["Clash", "Inquiry", "Information", "Coordination"]),
   statuses: new Set([
     "Active",
     "In Progress",
@@ -206,12 +206,12 @@ const leftPanel = BUI.Component.create(() => {
 const bottomPanel = BUI.Component.create(() => {
   const onBcfDownload = async () => {
     const bcf = await bcfTopics.export();
-    const bcfFile = new File([bcf], "topics.bcf");
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(bcfFile);
-    a.download = bcfFile.name;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    // const bcfFile = new File([bcf], "topics.bcf");
+    // const a = document.createElement("a");
+    // a.href = URL.createObjectURL(bcfFile);
+    // a.download = bcfFile.name;
+    // a.click();
+    // URL.revokeObjectURL(a.href);
   };
 
   return BUI.html`
