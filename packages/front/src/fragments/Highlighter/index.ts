@@ -425,11 +425,15 @@ export class Highlighter
       for (const fragID in this.selection[name]) {
         const fragment = fragments.list.get(fragID);
 
-        if (!fragment) continue;
+        if (!fragment) {
+          continue;
+        }
         const ids = selected[fragID];
-        if (!ids) continue;
+        if (!ids) {
+          continue;
+        }
         if (this.backupColor) {
-          fragment.setColor(this.backupColor);
+          fragment.setColor(this.backupColor, ids);
         } else {
           fragment.resetColor(ids);
         }

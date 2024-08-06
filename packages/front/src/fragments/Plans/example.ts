@@ -48,9 +48,6 @@ world.scene = new OBC.SimpleScene(components);
 world.renderer = new OBCF.PostproductionRenderer(components, container);
 world.camera = new OBC.OrthoPerspectiveCamera(components);
 
-// @ts-ignore
-world.camera._aaaaa = "heyyyy";
-
 world.renderer.postproduction.enabled = true;
 world.renderer.postproduction.customEffects.outlineEnabled = true;
 
