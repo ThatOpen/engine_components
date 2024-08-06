@@ -1,7 +1,7 @@
 import { Fragment, FragmentsGroup, Serializer } from "@thatopen/fragments";
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
-import { Component, Components, Event, Disposable } from "../../core";
+import { Component, Components, Event, Disposable, DataMap } from "../../core";
 import { RelationsMap } from "../../ifc/IfcRelationsIndexer/src/types";
 import { IfcRelationsIndexer } from "../../ifc/IfcRelationsIndexer";
 
@@ -32,16 +32,16 @@ export class FragmentsManager extends Component implements Disposable {
   }>();
 
   /**
-   * Map containing all loaded fragments.
+   * DataMap containing all loaded fragments.
    * The key is the fragment's unique identifier, and the value is the fragment itself.
    */
-  readonly list = new Map<string, Fragment>();
+  readonly list = new DataMap<string, Fragment>();
 
   /**
-   * Map containing all loaded fragment groups.
+   * DataMap containing all loaded fragment groups.
    * The key is the group's unique identifier, and the value is the group itself.
    */
-  readonly groups = new Map<string, FragmentsGroup>();
+  readonly groups = new DataMap<string, FragmentsGroup>();
 
   baseCoordinationModel = "";
   baseCoordinationMatrix = new THREE.Matrix4();
@@ -110,6 +110,7 @@ export class FragmentsManager extends Component implements Disposable {
    * Loads a binary file that contain fragment geometry.
    * @param data - The binary data to load.
    * @param config - Optional configuration for loading.
+   * @param config.isStreamed - Optional setting to determine whether this model is streamed or not.
    * @param config.coordinate - Whether to apply coordinate transformation. Default is true.
    * @param config.properties - Ifc properties to set on the loaded fragments. Not to be used when streaming.
    * @returns The loaded FragmentsGroup.
@@ -121,6 +122,7 @@ export class FragmentsManager extends Component implements Disposable {
       name: string;
       properties: FRAGS.IfcProperties;
       relationsMap: RelationsMap;
+      isStreamed?: boolean;
     }>,
   ) {
     const defaultConfig: {
@@ -132,6 +134,9 @@ export class FragmentsManager extends Component implements Disposable {
     const _config = { ...defaultConfig, ...config };
     const { coordinate, name, properties, relationsMap } = _config;
     const model = this._loader.import(data);
+    if (config) {
+      model.isStreamed = config.isStreamed || false;
+    }
     if (name) model.name = name;
     for (const fragment of model.items) {
       fragment.group = model;
@@ -259,5 +264,21 @@ export class FragmentsManager extends Component implements Disposable {
   ) {
     object.applyMatrix4(originalCoordinateSystem.clone().invert());
     object.applyMatrix4(this.baseCoordinationMatrix);
+  }
+
+  /**
+   * Creates a copy of the whole model or a part of it.
+   *
+   * @param model - The model to clone.
+   * @param items - Optional - The part of the model to be cloned. If not given, the whole group is cloned.
+   *
+   */
+  clone(model: FRAGS.FragmentsGroup, items?: FRAGS.FragmentIdMap) {
+    const clone = model.cloneGroup(items);
+    this.groups.set(clone.uuid, clone);
+    for (const frag of clone.items) {
+      this.list.set(frag.id, frag);
+    }
+    return clone;
   }
 }

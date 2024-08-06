@@ -8,7 +8,7 @@ import { GraphicVertexPicker } from "../../utils";
  */
 export class AreaMeasurement
   extends OBC.Component
-  implements OBC.Createable, OBC.Disposable
+  implements OBC.Createable, OBC.Disposable, OBC.Hideable
 {
   /**
    * A unique identifier for the component.
@@ -30,7 +30,9 @@ export class AreaMeasurement
    */
   world?: OBC.World;
 
-  private _enabled: boolean = false;
+  private _enabled = false;
+
+  private _visible = true;
 
   private _vertexPicker: GraphicVertexPicker;
 
@@ -68,6 +70,19 @@ export class AreaMeasurement
    */
   get workingPlane() {
     return this._vertexPicker.workingPlane;
+  }
+
+  /** {@link OBC.Hideable.visible} */
+  get visible() {
+    return this._visible;
+  }
+
+  /** {@link OBC.Hideable.visible} */
+  set visible(value: boolean) {
+    this._visible = value;
+    for (const dim of this.list) {
+      dim.visible = value;
+    }
   }
 
   constructor(components: OBC.Components) {

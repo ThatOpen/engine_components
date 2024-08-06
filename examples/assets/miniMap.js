@@ -1,4 +1,4 @@
-import"./web-ifc-api-CfQNUy7g.js";import{S as d}from"./stats.min-BpIepu9J.js";import{m as p,t as m,a as c}from"./index-tywNknxv.js";import{p as b,C as u,i as f,n as g,W as h,d as v,h as x,c as y}from"./index-CrrO1BJs.js";const z=document.getElementById("container"),a=new b,w=a.get(u),t=w.create();t.scene=new f(a);t.renderer=new g(a,z);t.camera=new h(a);t.scene.setup();a.init();const k=a.get(v);k.create(t);t.camera.controls.setLookAt(1,2,-2,-2,0,-5);t.scene.three.background=null;const $=new x(a),S=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),B=await S.arrayBuffer(),L=new Uint8Array(B),A=$.load(L);t.scene.three.add(A);const C=new y(a),e=C.create(t),E=document.getElementById("minimap"),l=e.renderer.domElement;l.style.borderRadius="12px";E.append(l);e.resize();const o=new d;o.showPanel(2);document.body.append(o.dom);o.dom.style.left="0px";o.dom.style.zIndex="unset";t.renderer.onBeforeUpdate.add(()=>o.begin());t.renderer.onAfterUpdate.add(()=>o.end());p.init();const r=e.getSize(),i=m.create(()=>c`
+import"./web-ifc-api-56EJvEs4.js";import{S as p}from"./stats.min-BpIepu9J.js";import{m as d,t as m,a as c}from"./index-TmOv0r_5.js";import{p as b,C as u,o as f,r as g,W as h,u as v,h as x,F as y}from"./index-BcIWfMQD.js";const z=document.getElementById("container"),a=new b,w=a.get(u),t=w.create();t.scene=new f(a);t.renderer=new g(a,z);t.camera=new h(a);t.scene.setup();a.init();const k=a.get(v);k.create(t);t.camera.controls.setLookAt(1,2,-2,-2,0,-5);t.scene.three.background=null;const $=new x(a),S=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),B=await S.arrayBuffer(),L=new Uint8Array(B),C=$.load(L);t.scene.three.add(C);const E=new y(a),e=E.create(t),A=document.getElementById("minimap"),l=e.renderer.domElement;l.style.borderRadius="12px";A.append(l);e.resize();const o=new p;o.showPanel(2);document.body.append(o.dom);o.dom.style.left="0px";o.dom.style.zIndex="unset";t.renderer.onBeforeUpdate.add(()=>o.begin());t.renderer.onAfterUpdate.add(()=>o.end());d.init();const r=e.getSize(),i=m.create(()=>c`
     <bim-panel label="Minimap Tutorial" class="options-menu">
       <bim-panel-section collapsed label="Controls">
       
@@ -34,8 +34,8 @@ import"./web-ifc-api-CfQNUy7g.js";import{S as d}from"./stats.min-BpIepu9J.js";im
         
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(i);const I=m.create(()=>c`
+    `);document.body.append(i);const F=m.create(()=>c`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{i.classList.contains("options-menu-visible")?i.classList.remove("options-menu-visible"):i.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(I);
+    `);document.body.append(F);

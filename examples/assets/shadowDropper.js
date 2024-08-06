@@ -1,4 +1,4 @@
-import{B as p,M as u,a as b,C as h}from"./web-ifc-api-CfQNUy7g.js";import{p as w,C as f,i as g,W as x,d as v}from"./index-CrrO1BJs.js";import{S}from"./stats.min-BpIepu9J.js";import{m as y,t as c,a as d}from"./index-tywNknxv.js";import{B as $,p as B}from"./index-BREiuDZQ.js";const l=document.getElementById("container"),o=new w,C=o.get(f),e=C.create();e.scene=new g(o);e.renderer=new $(o,l);e.camera=new x(o);e.scene.setup();o.init();e.camera.controls.setLookAt(5,5,5,0,0,0);l.appendChild(e.renderer.three2D.domElement);const m=o.get(v);m.config.color.setHex(14540253);m.create(e);const E=new p(3,3,3),M=new u({color:"#6528D7"}),n=new b(E,M);n.position.set(0,1.5,0);e.scene.three.add(n);e.meshes.add(n);e.scene.three.background=new h("white");const t=o.get(B);t.shadowExtraScaleFactor=15;t.shadowOffset=.1;const a="example";t.create([n],a,e);const s=new S;s.showPanel(2);document.body.append(s.dom);s.dom.style.left="0px";s.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>s.begin());e.renderer.onAfterUpdate.add(()=>s.end());y.init();const i=c.create(()=>d`
+import{B as p,M as u,a as b,C as h}from"./web-ifc-api-56EJvEs4.js";import{p as w,C as f,o as g,W as x,u as v}from"./index-BcIWfMQD.js";import{S}from"./stats.min-BpIepu9J.js";import{m as y,t as c,a as l}from"./index-TmOv0r_5.js";import{k as $,a as C}from"./index-mpk8FhA9.js";const m=document.getElementById("container"),o=new w,E=o.get(f),e=E.create();e.scene=new g(o);e.renderer=new $(o,m);e.camera=new x(o);e.scene.setup();o.init();e.camera.controls.setLookAt(5,5,5,0,0,0);m.appendChild(e.renderer.three2D.domElement);const d=o.get(v);d.config.color.setHex(14540253);d.create(e);const k=new p(3,3,3),M=new u({color:"#6528D7"}),n=new b(k,M);n.position.set(0,1.5,0);e.scene.three.add(n);e.meshes.add(n);e.scene.three.background=new h("white");const t=o.get(C);t.shadowExtraScaleFactor=15;t.shadowOffset=.1;const a="example";t.create([n],a,e);const s=new S;s.showPanel(2);document.body.append(s.dom);s.dom.style.left="0px";s.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>s.begin());e.renderer.onAfterUpdate.add(()=>s.end());y.init();const i=c.create(()=>l`
   <bim-panel active label="Shadow dropper Tutorial" class="options-menu">
     <bim-panel-section collapsed label="Controls">
           
@@ -22,8 +22,8 @@ import{B as p,M as u,a as b,C as h}from"./web-ifc-api-CfQNUy7g.js";import{p as w
 
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(i);const L=c.create(()=>d`
+    `);document.body.append(i);const B=c.create(()=>l`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{i.classList.contains("options-menu-visible")?i.classList.remove("options-menu-visible"):i.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(L);
+    `);document.body.append(B);

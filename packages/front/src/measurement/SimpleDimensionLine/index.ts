@@ -64,6 +64,11 @@ export class SimpleDimensionLine {
    */
   static units = "m";
 
+  /**
+   * The number of decimals to show in the label.
+   */
+  static rounding = 2;
+
   private _length: number;
 
   private _visible = true;
@@ -264,12 +269,12 @@ export class SimpleDimensionLine {
   }
 
   private getTextContent() {
-    return `${this._length / SimpleDimensionLine.scale} ${
-      SimpleDimensionLine.units
-    }`;
+    const calcedValue = this._length / SimpleDimensionLine.scale;
+    const roundedValue = calcedValue.toFixed(SimpleDimensionLine.rounding);
+    return `${roundedValue} ${SimpleDimensionLine.units}`;
   }
 
   private getLength() {
-    return parseFloat(this._start.distanceTo(this._end).toFixed(2));
+    return this._start.distanceTo(this._end);
   }
 }

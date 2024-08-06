@@ -107,6 +107,9 @@ export class Highlighter
   /** Stores the colors used for highlighting selections. */
   colors = new Map<string, THREE.Color>();
 
+  /** Styles with auto toggle will be unselected when selected twice. */
+  autoToggle = new Set<string>();
+
   // Highlights the clipping fills of the fragments, if any
   private _fills = new FillHighlighter();
 
@@ -343,17 +346,40 @@ export class Highlighter
     }
 
     for (const fragID in filtered) {
+      if (!this.selection[name][fragID]) {
+        this.selection[name][fragID] = new Set<number>();
+      }
+      const itemIDs = filtered[fragID];
+
+      const deselectedIDs = new Set<number>();
+      const selectedIDs = new Set<number>();
+
+      for (const itemID of itemIDs) {
+        const set = this.selection[name][fragID];
+        if (this.autoToggle.has(name) && set.has(itemID)) {
+          deselectedIDs.add(itemID);
+          set.delete(itemID);
+        } else {
+          set.add(itemID);
+          selectedIDs.add(itemID);
+        }
+      }
+
       const fragment = fragments.list.get(fragID);
       if (!fragment) {
         continue;
       }
-      if (!this.selection[name][fragID]) {
-        this.selection[name][fragID] = new Set<number>();
+
+      if (deselectedIDs.size) {
+        if (this.backupColor) {
+          fragment.setColor(this.backupColor, deselectedIDs);
+        } else {
+          fragment.resetColor(deselectedIDs);
+        }
       }
-      const itemIDs = fragmentIdMap[fragID];
-      for (const itemID of itemIDs) {
-        this.selection[name][fragID].add(itemID);
-        fragment.setColor(color, [itemID]);
+
+      if (selectedIDs.size) {
+        fragment.setColor(color, selectedIDs);
       }
 
       // Highlight all the clipping fills of the fragment, if any
@@ -399,11 +425,15 @@ export class Highlighter
       for (const fragID in this.selection[name]) {
         const fragment = fragments.list.get(fragID);
 
-        if (!fragment) continue;
+        if (!fragment) {
+          continue;
+        }
         const ids = selected[fragID];
-        if (!ids) continue;
+        if (!ids) {
+          continue;
+        }
         if (this.backupColor) {
-          fragment.setColor(this.backupColor);
+          fragment.setColor(this.backupColor, ids);
         } else {
           fragment.resetColor(ids);
         }
@@ -429,11 +459,30 @@ export class Highlighter
   setup(config?: Partial<HighlighterConfig>) {
     this.config = { ...this.config, ...config };
     this.add(this.config.selectName, this.config.selectionColor);
+    this.autoToggle.add(this.config.selectName);
     this.add(this.config.hoverName, this.config.hoverColor);
     this.setupEvents(true);
     this.enabled = true;
     this.isSetup = true;
     this.onSetup.trigger(this);
+  }
+
+  /**
+   * Applies all the existing styles to the given fragments. Useful when combining the highlighter with streaming.
+   *
+   * @param fragments - The list of fragment to update.
+   */
+  updateFragments(fragments: Iterable<FRAGS.Fragment>) {
+    for (const frag of fragments) {
+      for (const name in this.selection) {
+        const map = this.selection[name];
+        const ids = map[frag.id];
+        const color = this.colors.get(name);
+        if (ids && color) {
+          frag.setColor(color, ids);
+        }
+      }
+    }
   }
 
   private async zoomSelection(name: string) {

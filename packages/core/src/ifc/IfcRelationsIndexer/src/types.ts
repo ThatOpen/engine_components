@@ -1,3 +1,5 @@
+import * as WEBIFC from "web-ifc";
+
 export type RelationsMap = Map<number, Map<number, number[]>>;
 
 export interface ModelsRelationMap {
@@ -22,6 +24,30 @@ export type InverseAttributes = [
   "Defines",
   "ContainedInStructure",
   "ContainsElements",
+  "HasControlElements",
+  "AssignedToFlowElement",
+  "ConnectedTo",
+  "ConnectedFrom",
+  "ReferencedBy",
 ];
 
 export type InverseAttribute = InverseAttributes[number];
+
+/**
+ * Type alias for an array of IfcRelation types from WebIfc.
+ */
+export type IfcRelations = [
+  typeof WEBIFC.IFCRELAGGREGATES,
+  typeof WEBIFC.IFCRELASSOCIATESMATERIAL,
+  typeof WEBIFC.IFCRELASSOCIATESCLASSIFICATION,
+  typeof WEBIFC.IFCRELASSIGNSTOGROUP,
+  typeof WEBIFC.IFCRELDEFINESBYPROPERTIES,
+  typeof WEBIFC.IFCRELDEFINESBYTYPE,
+  typeof WEBIFC.IFCRELDEFINESBYTEMPLATE,
+  typeof WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE,
+  typeof WEBIFC.IFCRELFLOWCONTROLELEMENTS,
+  typeof WEBIFC.IFCRELCONNECTSELEMENTS,
+  typeof WEBIFC.IFCRELASSIGNSTOPRODUCT,
+];
+
+export type IfcRelation = IfcRelations[number];

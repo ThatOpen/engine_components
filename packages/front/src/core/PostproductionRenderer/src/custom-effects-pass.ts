@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
 import {
   Pass,
@@ -27,12 +28,13 @@ export class CustomEffectsPass extends Pass {
 
   outlinedMeshes: {
     [name: string]: {
-      meshes: Set<THREE.InstancedMesh | THREE.Mesh>;
+      meshes: Set<THREE.InstancedMesh | THREE.Mesh | FRAGS.FragmentMesh>;
       material: THREE.MeshBasicMaterial;
     };
   } = {};
 
-  private _outlineScene = new THREE.Scene();
+  outlineScene = new THREE.Scene();
+
   private _outlineEnabled = false;
 
   private _lineColor = 0x999999;
@@ -43,8 +45,6 @@ export class CustomEffectsPass extends Pass {
   private _glossExponent = 1.9;
   private _minGloss = -0.1;
   private _maxGloss = 0.1;
-
-  private _outlinesNeedsUpdate = false;
 
   get lineColor() {
     return this._lineColor;
@@ -173,7 +173,7 @@ export class CustomEffectsPass extends Pass {
     this.fsQuad.dispose();
 
     this.excludedMeshes = [];
-    this._outlineScene.children = [];
+    this.outlineScene.children = [];
 
     const disposer = this.components.get(OBC.Disposer);
 
@@ -181,6 +181,10 @@ export class CustomEffectsPass extends Pass {
       const style = this.outlinedMeshes[name];
       for (const mesh of style.meshes) {
         disposer.destroy(mesh, true, true);
+        const fragMesh = mesh as FRAGS.FragmentMesh;
+        if (fragMesh.fragment) {
+          fragMesh.fragment.dispose(true);
+        }
       }
       style.material.dispose();
     }
@@ -239,46 +243,16 @@ export class CustomEffectsPass extends Pass {
     if (this._outlineEnabled) {
       let outlinedMeshesFound = false;
       for (const name in this.outlinedMeshes) {
-        const style = this.outlinedMeshes[name];
-        for (const mesh of style.meshes) {
+        if (this.outlinedMeshes[name].meshes.size) {
           outlinedMeshesFound = true;
-          mesh.userData.materialPreOutline = mesh.material;
-          mesh.material = style.material;
-          mesh.userData.groupsPreOutline = mesh.geometry.groups;
-          mesh.geometry.groups = [];
-          if (mesh instanceof THREE.InstancedMesh) {
-            mesh.userData.colorPreOutline = mesh.instanceColor;
-            mesh.instanceColor = null;
-          }
-          mesh.userData.parentPreOutline = mesh.parent;
-          this._outlineScene.add(mesh);
+          break;
         }
       }
 
-      // This way, when there are no outlines meshes, it clears the outlines buffer only once
-      // and then skips this render
-      if (outlinedMeshesFound || this._outlinesNeedsUpdate) {
+      // This way, when there are no outlines meshes, it skips this render
+      if (outlinedMeshesFound) {
         renderer.setRenderTarget(this.outlineBuffer);
-        renderer.render(this._outlineScene, this.renderCamera);
-        this._outlinesNeedsUpdate = outlinedMeshesFound;
-      }
-
-      for (const name in this.outlinedMeshes) {
-        const style = this.outlinedMeshes[name];
-        for (const mesh of style.meshes) {
-          mesh.material = mesh.userData.materialPreOutline;
-          mesh.geometry.groups = mesh.userData.groupsPreOutline;
-          if (mesh instanceof THREE.InstancedMesh) {
-            mesh.instanceColor = mesh.userData.colorPreOutline;
-          }
-          if (mesh.userData.parentPreOutline) {
-            mesh.userData.parentPreOutline.add(mesh);
-          }
-          mesh.userData.materialPreOutline = undefined;
-          mesh.userData.groupsPreOutline = undefined;
-          mesh.userData.colorPreOutline = undefined;
-          mesh.userData.parentPreOutline = undefined;
-        }
+        renderer.render(this.outlineScene, this.renderCamera);
       }
     }
 

@@ -1,37 +1,37 @@
 import * as WEBIFC from "web-ifc";
-import { InverseAttribute } from "./types";
+import { IfcRelation, InverseAttribute } from "./types";
 
 // TODO: Construct this based on the IFC EXPRESS long form schema?
 export const relToAttributesMap = new Map<
-  number,
+  IfcRelation,
   { forRelating: InverseAttribute; forRelated: InverseAttribute }
 >([
   [
     WEBIFC.IFCRELAGGREGATES,
     {
-      forRelating: "IsDecomposedBy",
       forRelated: "Decomposes",
+      forRelating: "IsDecomposedBy",
     },
   ],
   [
     WEBIFC.IFCRELASSOCIATESMATERIAL,
     {
-      forRelating: "AssociatedTo",
       forRelated: "HasAssociations",
+      forRelating: "AssociatedTo",
     },
   ],
   [
     WEBIFC.IFCRELASSOCIATESCLASSIFICATION,
     {
-      forRelating: "ClassificationForObjects",
       forRelated: "HasAssociations",
+      forRelating: "ClassificationForObjects",
     },
   ],
   [
     WEBIFC.IFCRELASSIGNSTOGROUP,
     {
-      forRelating: "IsGroupedBy",
       forRelated: "HasAssignments",
+      forRelating: "IsGroupedBy",
     },
   ],
   [
@@ -60,6 +60,27 @@ export const relToAttributesMap = new Map<
     {
       forRelated: "ContainedInStructure",
       forRelating: "ContainsElements",
+    },
+  ],
+  [
+    WEBIFC.IFCRELFLOWCONTROLELEMENTS,
+    {
+      forRelated: "AssignedToFlowElement",
+      forRelating: "HasControlElements",
+    },
+  ],
+  [
+    WEBIFC.IFCRELCONNECTSELEMENTS,
+    {
+      forRelated: "ConnectedFrom",
+      forRelating: "ConnectedTo",
+    },
+  ],
+  [
+    WEBIFC.IFCRELASSIGNSTOPRODUCT,
+    {
+      forRelated: "HasAssignments",
+      forRelating: "ReferencedBy",
     },
   ],
 ]);

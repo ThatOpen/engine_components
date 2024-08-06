@@ -20,6 +20,7 @@ In this tutorial, we will import:
 import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
 import Stats from "stats.js";
+import * as THREE from "three";
 
 /* MD
   ### 🌎 Setting up a simple scene
@@ -37,21 +38,24 @@ const worlds = components.get(OBC.Worlds);
 const world = worlds.create<
   OBC.SimpleScene,
   OBC.SimpleCamera,
-  OBC.SimpleRenderer
+  OBCF.PostproductionRenderer
 >();
 
 world.scene = new OBC.SimpleScene(components);
-world.renderer = new OBC.SimpleRenderer(components, container);
+world.renderer = new OBCF.PostproductionRenderer(components, container);
 world.camera = new OBC.SimpleCamera(components);
 
 components.init();
+
+world.renderer.postproduction.enabled = true;
 
 world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
 
 world.scene.setup();
 
 const grids = components.get(OBC.Grids);
-grids.create(world);
+const grid = grids.create(world);
+world.renderer.postproduction.customEffects.excludedMeshes.push(grid.three);
 
 /* MD
 
@@ -95,6 +99,31 @@ world.scene.three.add(model);
 const highlighter = components.get(OBCF.Highlighter);
 highlighter.setup({ world });
 highlighter.zoomToSelection = true;
+
+/* MD
+  ### 🖊️ Adding some outlines
+  ---
+
+ Next, we will use the outliner to add some colored outlines to the selection. We just need to get it, create a new style and bind it to the highlighter selection event. You can control the width of the outline with the opacity of the material.
+*/
+
+const outliner = components.get(OBCF.Outliner);
+outliner.world = world;
+outliner.enabled = true;
+
+outliner.create(
+  "example",
+  new THREE.MeshBasicMaterial({
+    color: 0xbcf124,
+    transparent: true,
+    opacity: 0.5,
+  }),
+);
+
+highlighter.events.select.onHighlight.add((data) => {
+  outliner.clear("example");
+  outliner.add("example", data);
+});
 
 /* MD
   ### ⏱️ Measuring the performance (optional)
