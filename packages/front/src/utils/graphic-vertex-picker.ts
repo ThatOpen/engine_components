@@ -17,6 +17,19 @@ export class GraphicVertexPicker
   /** The marker used to indicate the picked vertex. */
   marker: Mark | null = null;
 
+  private _className = "default-vertex-picker";
+
+  get className() {
+    return this._className;
+  }
+
+  set className(name: string) {
+    this._className = name;
+    if (this.marker) {
+      this.marker.three.element.className = name;
+    }
+  }
+
   constructor(
     components: OBC.Components,
     config?: Partial<OBC.VertexPickerConfig>,
@@ -50,6 +63,7 @@ export class GraphicVertexPicker
     if (found) {
       if (!this.marker) {
         this.marker = new Mark(world);
+        this.marker.three.element.className = this._className;
       }
       if (this.marker.world !== world) {
         this.marker.world = world;
