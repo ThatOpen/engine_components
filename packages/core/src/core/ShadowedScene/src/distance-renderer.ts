@@ -20,6 +20,11 @@ export class DistanceRenderer {
   readonly onDistanceComputed = new Event<number>();
 
   /**
+   * Objects that won't be taken into account in the distance check.
+   */
+  excludedObjects = new Set<THREE.Object3D>();
+
+  /**
    * Whether this renderer is active or not. If not, it won't render anything.
    */
   enabled = true;
@@ -60,8 +65,7 @@ export class DistanceRenderer {
 
   private _height = 512;
 
-  private _postQuad: THREE.Mesh;
-
+  private readonly _postQuad: THREE.Mesh;
   private readonly tempRT: THREE.WebGLRenderTarget;
   private readonly resultRT: THREE.WebGLRenderTarget;
 
@@ -181,6 +185,7 @@ void main() {
     this.tempRT.dispose();
     this.resultRT.dispose();
     const children = [...this.scene.children];
+    this.excludedObjects.clear();
     for (const child of children) {
       child.removeFromParent();
     }
@@ -212,7 +217,20 @@ void main() {
     this.renderer.setSize(this._width, this._height);
     this.renderer.setRenderTarget(this.tempRT);
 
+    const tempVariableName = "visibilityBeforeDistanceCheck";
+
+    for (const object of this.excludedObjects) {
+      object.userData[tempVariableName] = object.visible;
+      object.visible = false;
+    }
+
     this.renderer.render(this.world.scene.three, this.world.camera.three);
+
+    for (const object of this.excludedObjects) {
+      if (object.userData[tempVariableName] !== undefined) {
+        object.visible = object.userData[tempVariableName];
+      }
+    }
 
     this.depthMaterial.uniforms.tDiffuse.value = this.tempRT.texture;
     this.depthMaterial.uniforms.tDepth.value = this.tempRT.depthTexture;

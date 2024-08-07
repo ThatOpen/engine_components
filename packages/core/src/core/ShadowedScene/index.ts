@@ -4,21 +4,33 @@ import { DistanceRenderer } from "./src";
 import { Disposable } from "../Types";
 
 /**
- * Configuration interface for the {@link SimpleScene}. Defines properties for directional and ambient lights.
+ * Configuration interface for the {@link ShadowedScene}. Defines properties for directional and ambient lights,
+ * as well as shadows.
  */
 export interface ShadowedSceneConfig extends SimpleSceneConfig {
   shadows: {
     cascade: number;
-    enabled: boolean;
     resolution: number;
   };
 }
 
-// TODO: Implement multiple shadow maps (the main problem to solve is the shadow camera rotation)
+// TODO: Implement multiple cascade shadow maps (the main problem to solve is the shadow camera rotation)
 
+/**
+ * A scene that supports efficient cast shadows.
+ */
 export class ShadowedScene extends SimpleScene implements Disposable {
-  distanceRenderer?: DistanceRenderer;
+  private _distanceRenderer?: DistanceRenderer;
 
+  /**
+   * Whether the bias property should be set automatically depending on the shadow distance.
+   */
+  autoBias = true;
+
+  /**
+   * Configuration interface for the {@link ShadowedScene}.
+   * Defines properties for directional and ambient lights, as well as shadows.
+   */
   config: Required<ShadowedSceneConfig> = {
     directionalLight: {
       color: new THREE.Color("white"),
@@ -31,21 +43,48 @@ export class ShadowedScene extends SimpleScene implements Disposable {
     },
     shadows: {
       cascade: 1,
-      enabled: true,
       resolution: 512,
     },
   };
 
-  private _shadows = new Map<number, string>();
+  private _lightsWithShadow = new Map<number, string>();
 
   private _isComputingShadows = false;
 
   private _shadowsEnabled = true;
 
+  private _bias = 0;
+
+  /**
+   * The getter for the bias to prevent artifacts (stripes). It usually ranges between 0 and -0.005.
+   */
+  get bias() {
+    return this._bias;
+  }
+
+  /**
+   * The setter for the bias to prevent artifacts (stripes). It usually ranges between 0 and -0.005.
+   */
+  set bias(value: number) {
+    this._bias = value;
+    for (const [, id] of this._lightsWithShadow) {
+      const light = this.directionalLights.get(id);
+      if (light) {
+        light.shadow.bias = value;
+      }
+    }
+  }
+
+  /**
+   * Getter to see whether the shadows are enabled or not in this scene instance.
+   */
   get shadowsEnabled() {
     return this._shadowsEnabled;
   }
 
+  /**
+   * Setter to control whether the shadows are enabled or not in this scene instance.
+   */
   set shadowsEnabled(value: boolean) {
     this._shadowsEnabled = value;
     for (const [, light] of this.directionalLights) {
@@ -53,6 +92,19 @@ export class ShadowedScene extends SimpleScene implements Disposable {
     }
   }
 
+  /**
+   * Getter to get the renderer used to determine the farthest distance from the camera.
+   */
+  get distanceRenderer() {
+    if (!this._distanceRenderer) {
+      throw new Error(
+        "You must set up this component before accessing the distance renderer!",
+      );
+    }
+    return this._distanceRenderer;
+  }
+
+  /** {@link Configurable.setup} */
   setup(config?: Partial<ShadowedSceneConfig>) {
     super.setup(config);
 
@@ -82,15 +134,15 @@ export class ShadowedScene extends SimpleScene implements Disposable {
     }
     this.directionalLights.clear();
 
-    if (!this.distanceRenderer) {
-      this.distanceRenderer = new DistanceRenderer(
+    if (!this._distanceRenderer) {
+      this._distanceRenderer = new DistanceRenderer(
         this.components,
         this.currentWorld,
       );
-      this.distanceRenderer.onDistanceComputed.add(this.recomputeShadows);
+      this._distanceRenderer.onDistanceComputed.add(this.recomputeShadows);
     }
 
-    this._shadows.clear();
+    this._lightsWithShadow.clear();
 
     // Create a light per shadow map
     for (let i = 0; i < this.config.shadows.cascade; i++) {
@@ -102,26 +154,27 @@ export class ShadowedScene extends SimpleScene implements Disposable {
       light.shadow.mapSize.height = this.config.shadows.resolution;
       this.three.add(light, light.target);
       this.directionalLights.set(light.uuid, light);
-      this._shadows.set(i, light.uuid);
+      this._lightsWithShadow.set(i, light.uuid);
       light.castShadow = true;
+      light.shadow.bias = this._bias;
     }
   }
 
+  /** {@link Disposable.dispose} */
   dispose() {
-    if (this.distanceRenderer) {
-      this.distanceRenderer.dispose();
+    super.dispose();
+    if (this._distanceRenderer) {
+      this._distanceRenderer.dispose();
     }
-    this._shadows.clear();
+    this._lightsWithShadow.clear();
   }
 
+  /** Update all the shadows of the scene. */
   async updateShadows() {
     if (this._isComputingShadows || !this._shadowsEnabled) {
       return;
     }
     this._isComputingShadows = true;
-    if (!this.distanceRenderer) {
-      throw new Error("Component not initialized!");
-    }
     await this.distanceRenderer.compute();
   }
 
@@ -130,8 +183,13 @@ export class ShadowedScene extends SimpleScene implements Disposable {
       return;
     }
 
-    const factor = 2;
-    farthestDistance += factor;
+    if (this.autoBias) {
+      // src: https://discourse.threejs.org/t/hello-i-am-facing-the-problem-with-shadow-stripes-on-model/18065/10
+      this.bias = farthestDistance / -100000;
+    }
+
+    const factor = 1.5;
+    farthestDistance *= factor;
 
     if (!this.currentWorld) {
       throw new Error(
@@ -139,7 +197,7 @@ export class ShadowedScene extends SimpleScene implements Disposable {
       );
     }
 
-    if (!this._shadows.size) {
+    if (!this._lightsWithShadow.size) {
       throw new Error("No shadows found!");
     }
 
@@ -171,7 +229,7 @@ export class ShadowedScene extends SimpleScene implements Disposable {
     lightDirection.copy(this.config.directionalLight.position);
     lightDirection.normalize();
 
-    for (const [index, id] of this._shadows) {
+    for (const [index, id] of this._lightsWithShadow) {
       const light = this.directionalLights.get(id);
       if (!light) {
         throw new Error("Light not found.");
@@ -181,7 +239,7 @@ export class ShadowedScene extends SimpleScene implements Disposable {
       const shadowCenter = new THREE.Vector3();
       shadowCenter.copy(camDirection);
 
-      const isLastShadow = index === this._shadows.size - 1;
+      const isLastShadow = index === this._lightsWithShadow.size - 1;
       const shadowOffset = isLastShadow
         ? currentDistance / 2
         : (currentDistance * 2) / 3;
@@ -204,7 +262,6 @@ export class ShadowedScene extends SimpleScene implements Disposable {
       light.shadow.camera.left = -shadowRadius;
       light.shadow.camera.top = shadowRadius;
       light.shadow.camera.bottom = -shadowRadius;
-
       // Double this to make sure the shadow covers all
       light.shadow.camera.far = shadowRadius * 2;
 
