@@ -1,6 +1,6 @@
 export * from "./Components";
 export * from "./Disposer";
-export * from "./Distances";
+export * from "./ShadowedScene";
 export * from "./Raycasters";
 export * from "./Types";
 export * from "./Worlds";

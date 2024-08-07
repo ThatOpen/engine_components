@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import { Event, World } from "../Types";
-import { Components } from "../Components";
-import { readPixelsAsync } from "../Cullers";
+import { Event, World } from "../../Types";
+import { Components } from "../../Components";
+import { readPixelsAsync } from "../../Cullers";
 
 // Source: https://threejs.org/examples/?q=depth#webgl_depth_texture
 
@@ -33,10 +33,19 @@ export class DistanceRenderer {
   /** The components instance to which this renderer belongs. */
   components: Components;
 
+  /**
+   * The scene where the distance is computed.
+   */
   scene = new THREE.Scene();
 
+  /**
+   * The camera used to compute the distance.
+   */
   camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
+  /**
+   * The material used to compute the distance.
+   */
   depthMaterial: THREE.ShaderMaterial;
 
   /** The world instance to which this renderer belongs. */
@@ -50,6 +59,8 @@ export class DistanceRenderer {
   private _width = 512;
 
   private _height = 512;
+
+  private _postQuad: THREE.Mesh;
 
   private readonly tempRT: THREE.WebGLRenderTarget;
   private readonly resultRT: THREE.WebGLRenderTarget;
@@ -138,8 +149,8 @@ void main() {
     });
 
     const postPlane = new THREE.PlaneGeometry(2, 2);
-    const postQuad = new THREE.Mesh(postPlane, this.depthMaterial);
-    this.scene.add(postQuad);
+    this._postQuad = new THREE.Mesh(postPlane, this.depthMaterial);
+    this.scene.add(this._postQuad);
 
     this.renderer.clippingPlanes = world.renderer.clippingPlanes;
 
@@ -168,6 +179,13 @@ void main() {
     this.worker.terminate();
     this.renderer.dispose();
     this.tempRT.dispose();
+    this.resultRT.dispose();
+    const children = [...this.scene.children];
+    for (const child of children) {
+      child.removeFromParent();
+    }
+    this._postQuad.geometry.dispose();
+    this._postQuad.removeFromParent();
     (this._buffer as any) = null;
     this.onDisposed.reset();
   }
@@ -179,7 +197,9 @@ void main() {
    * not true.
    */
   compute = async () => {
-    if (!this.enabled) return;
+    if (!this.enabled || this.world.isDisposing) {
+      return;
+    }
 
     if (this._isWorkerBusy) {
       return;
@@ -224,6 +244,10 @@ void main() {
   };
 
   private handleWorkerMessage = (event: MessageEvent) => {
+    if (!this.enabled || this.world.isDisposing) {
+      return;
+    }
+
     const colors = event.data.colors as Set<number>;
 
     let min = Number.MAX_VALUE;
@@ -246,8 +270,6 @@ void main() {
     const maxFoundDistance = (normalized - 1) * -1 * (camera.far - camera.near);
     // We won't see anything beyond camera far, so use it as a limit
     const maxValidDistance = Math.min(maxFoundDistance, camera.far);
-
-    console.log(maxValidDistance);
 
     this.onDistanceComputed.trigger(maxValidDistance);
 
