@@ -7,13 +7,35 @@ import { BCFTopic } from "./types";
 import { DataSet } from "../../../core/Types";
 
 export class Topic implements BCFTopic {
-  // By no means a Topic guid must be changed after it has been created
+  /**
+   * Default values for a BCF Topic, excluding `guid`, `creationDate`, and `creationAuthor`.
+   */
+  static default: Omit<BCFTopic, "guid" | "creationDate" | "creationAuthor"> = {
+    title: "BCF Topic",
+    type: "Issue",
+    status: "Active",
+    labels: new Set(),
+  };
+
+  /**
+   * A unique identifier for the topic.
+   *
+   * @remarks
+   * The `guid` is automatically generated upon topic creation and by no means it should change.
+   *
+   * @example
+   * ```typescript
+   * const topic = new Topic(components);
+   * console.log(topic.guid); // Output: "123e4567-e89b-12d3-a456-426614174000"
+   * ```
+   */
   guid = UUID.create();
-  title = "BCF Topic";
+  title = Topic.default.title;
   creationDate = new Date();
   creationAuthor = "";
   readonly comments = new DataSet<Comment>();
   readonly viewpoints = new DataSet<Viewpoint>();
+  readonly relatedTopics = new DataSet<Topic>();
   customData: Record<string, any> = {};
   description?: string;
   serverAssignedId?: string;
@@ -22,7 +44,7 @@ export class Topic implements BCFTopic {
   modifiedDate?: Date;
   index?: number;
 
-  private _type = "Issue";
+  private _type = Topic.default.type;
 
   set type(value: string) {
     const manager = this._components.get(BCFTopics);
@@ -36,7 +58,7 @@ export class Topic implements BCFTopic {
     return this._type;
   }
 
-  private _status = "Active";
+  private _status = Topic.default.status;
 
   set status(value: string) {
     const manager = this._components.get(BCFTopics);
@@ -50,7 +72,7 @@ export class Topic implements BCFTopic {
     return this._status;
   }
 
-  private _priority?: string;
+  private _priority? = Topic.default.priority;
 
   set priority(value: string | undefined) {
     const manager = this._components.get(BCFTopics);
@@ -68,7 +90,7 @@ export class Topic implements BCFTopic {
     return this._priority;
   }
 
-  private _stage?: string;
+  private _stage? = Topic.default.priority;
 
   set stage(value: string | undefined) {
     const manager = this._components.get(BCFTopics);
@@ -86,7 +108,7 @@ export class Topic implements BCFTopic {
     return this._stage;
   }
 
-  private _assignedTo?: string;
+  private _assignedTo? = Topic.default.assignedTo;
 
   set assignedTo(value: string | undefined) {
     const manager = this._components.get(BCFTopics);
@@ -104,7 +126,7 @@ export class Topic implements BCFTopic {
     return this._assignedTo;
   }
 
-  private _labels = new Set<string>();
+  private _labels = Topic.default.labels;
 
   set labels(value: Set<string>) {
     const manager = this._components.get(BCFTopics);
@@ -133,12 +155,42 @@ export class Topic implements BCFTopic {
     return manager.config.version;
   }
 
+  /**
+   * Initializes a new instance of the `Topic` class representing a BCF (BIM Collaboration Format) topic.
+   * It provides methods and properties to manage and serialize BCF topics.
+   *
+   * @remarks
+   * The default creationUser is the one set in BCFTopics.config.author
+   * It should not be created manually. Better use BCFTopics.create().
+   *
+   * @param components - The `Components` instance that provides access to other components and services.
+   */
   constructor(components: Components) {
     this._components = components;
     const manager = components.get(BCFTopics);
     this.creationAuthor = manager.config.author;
   }
 
+  /**
+   * Sets properties of the BCF Topic based on the provided data.
+   *
+   * @remarks
+   * This method iterates over the provided `data` object and updates the corresponding properties of the BCF Topic.
+   * It skips the `guid` property as it should not be modified.
+   *
+   * @param data - An object containing the properties to be updated.
+   * @returns The topic
+   *
+   * @example
+   * ```typescript
+   * const topic = new Topic(components);
+   * topic.set({
+   *   title: "New BCF Topic Title",
+   *   description: "This is a new description.",
+   *   status: "Resolved",
+   * });
+   * ```
+   */
   set(data: Partial<BCFTopic>) {
     const _data = data as any;
     const _this = this as any;
@@ -147,15 +199,133 @@ export class Topic implements BCFTopic {
       const value = _data[key];
       if (key in this) _this[key] = value;
     }
+    return this;
   }
 
-  createComment(text: string) {
+  /**
+   * Creates a new comment associated with the current topic.
+   *
+   * @param text - The text content of the comment.
+   * @param viewpoint - (Optional) The viewpoint associated with the comment.
+   *
+   * @returns The newly created comment.
+   *
+   * @example
+   * ```typescript
+   * const viewpoint = viewpoints.create(world); // Created with an instance of Viewpoints
+   * const topic = topics.create(); // Created with an instance of BCFTopics
+   * topic.viewpoints.add(viewpoint);
+   * const comment = topic.createComment("This is a new comment", viewpoint);
+   * ```
+   */
+  createComment(text: string, viewpoint?: Viewpoint) {
     const comment = new Comment(this._components, text);
+    comment.viewpoint = viewpoint;
     this.comments.add(comment);
     return comment;
   }
 
-  serialize(version = this._managerVersion) {
+  private createLabelTags(version = this._managerVersion) {
+    let tag = "Labels";
+    if (version === "2.1") tag = "Labels";
+    if (version === "3") tag = "Label";
+
+    let tags = [...this.labels]
+      .map((label) => `<${tag}>${label}</${tag}>`)
+      .join("\n");
+
+    for (const key in this.customData) {
+      const value = this.customData[key];
+      if (typeof value !== "string") continue;
+      tags += `\n<${tag}>${value}</${tag}>`;
+    }
+
+    if (version === "2.1") return tags;
+    if (version === "3") {
+      if (tags.length !== 0) return `<Labels>\n${tags}\n</Labels>`;
+      return "<Labels/>";
+    }
+
+    return tags;
+  }
+
+  private createCommentTags(version = this._managerVersion) {
+    const tags = [...this.comments]
+      .map((comment) => comment.serialize())
+      .join("\n");
+
+    if (version === "2.1") return tags;
+    if (version === "3") {
+      if (tags.length !== 0) return `<Comments>\n${tags}\n</Comments>`;
+      return "<Comments/>";
+    }
+
+    return tags;
+  }
+
+  private createViewpointTags(version = this._managerVersion) {
+    let tag = "Viewpoints";
+    if (version === "2.1") tag = "Viewpoints";
+    if (version === "3") tag = "ViewPoint";
+
+    const tags = [...this.viewpoints]
+      .map(
+        (viewpoint) => `<${tag} Guid="${viewpoint.guid}">
+          <Viewpoint>${viewpoint.guid}.bcfv</Viewpoint>
+          <Snapshot>${viewpoint.guid}.jpeg</Snapshot>
+        </${tag}>
+      `,
+      )
+      .join("\n");
+
+    if (version === "2.1") return tags;
+    if (version === "3") {
+      if (tags.length !== 0) return `<Viewpoints>\n${tags}\n</Viewpoints>`;
+      return "<Viewpoints />";
+    }
+
+    return tags;
+  }
+
+  private createRelatedTopicTags(version = this._managerVersion) {
+    const tags = [...this.relatedTopics]
+      .map(
+        (topic) => `<RelatedTopic Guid="${topic.guid}"></RelatedTopic>
+      `,
+      )
+      .join("\n");
+
+    if (version === "2.1") return tags;
+    if (version === "3") {
+      if (tags.length !== 0)
+        return `<RelatedTopics>\n${tags}\n</RelatedTopics>`;
+      return "<RelatedTopics />";
+    }
+
+    return tags;
+  }
+
+  /**
+   * Serializes the BCF Topic instance into an XML string representation based on the official schema.
+   *
+   * @remarks
+   * This method constructs an XML string based on the properties of the BCF Topic instance.
+   * It includes the topic's guid, type, status, creation date, creation author, priority, index,
+   * modified date, modified author, due date, assigned to, description, stage, labels, related topics,
+   * comments, and viewpoints.
+   *
+   * @returns A string representing the XML serialization of the BCF Topic.
+   *
+   * @example
+   * ```typescript
+   * const topic = bcfTopics.create(); // Created with an instance of BCFTopics
+   * const xml = topic.serialize();
+   * console.log(xml);
+   * ```
+   */
+  serialize() {
+    const version = this._managerVersion;
+
     let serverAssignedIdAttribute: string | null = null;
     if (this.serverAssignedId) {
       serverAssignedIdAttribute = `ServerAssignedId="${this.serverAssignedId}"`;
@@ -163,22 +333,12 @@ export class Topic implements BCFTopic {
 
     let priorityTag: string | null = null;
     if (this.priority) {
-      priorityTag = `<ModifiedAuthor>${this.modifiedAuthor}</ModifiedAuthor>`;
+      priorityTag = `<Priority>${this.priority}</Priority>`;
     }
 
     let indexTag: string | null = null;
-    if (this.index) {
-      indexTag = `<ModifiedAuthor>${this.index}</ModifiedAuthor>`;
-    }
-
-    let labelTags = [...this.labels]
-      .map((label) => `<Labels>${label}</Labels>`)
-      .join("\n");
-
-    for (const key in this.customData) {
-      const value = this.customData[key];
-      if (typeof value !== "string") continue;
-      labelTags += `\n<Labels>${value}</Labels>`;
+    if (this.index && version === "2.1") {
+      indexTag = `<Index>${this.index}</Index>`;
     }
 
     let modifiedDateTag: string | null = null;
@@ -211,20 +371,10 @@ export class Topic implements BCFTopic {
       stageTag = `<Stage>${this.stage}</Stage>`;
     }
 
-    const commentTags = [...this.comments]
-      .map((comment) => comment.serialize(version))
-      .join("\n");
-
-    const viewpointTags = [...this.viewpoints]
-      .map(
-        (viewpoint) =>
-          `<Viewpoints Guid="${viewpoint.guid}">
-          <Viewpoint>${viewpoint.guid}.bcfv</Viewpoint>
-          <Snapshot>${viewpoint.guid}.jpeg</Snapshot>
-        </Viewpoints>
-      `,
-      )
-      .join("\n");
+    const commentTags = this.createCommentTags(version);
+    const viewpointTags = this.createViewpointTags(version);
+    const labelTags = this.createLabelTags(version);
+    const relatedTopicTags = this.createRelatedTopicTags(version);
 
     return `
       <?xml version="1.0" encoding="UTF-8"?>
@@ -242,9 +392,12 @@ export class Topic implements BCFTopic {
           ${descriptionTag ?? ""}
           ${stageTag ?? ""}
           ${labelTags}
+          ${relatedTopicTags}
+          ${version === "3" ? commentTags : ""}
+          ${version === "3" ? viewpointTags : ""}
         </Topic>
-        ${commentTags}
-        ${viewpointTags}
+        ${version === "2.1" ? commentTags : ""}
+        ${version === "2.1" ? viewpointTags : ""}
       </Markup>
     `;
   }

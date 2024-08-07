@@ -12,6 +12,7 @@ import {
 import { BCFTopic, BCFTopicsConfig, BCFVersion, Topic } from "./src";
 import {
   BCFViewpoint,
+  Viewpoint,
   ViewpointCamera,
   Viewpoints,
 } from "../../core/Viewpoints";
@@ -78,6 +79,13 @@ export class BCFTopics
 
   readonly onBCFImported = new Event<Topic[]>();
 
+  /**
+   * Creates a new BCFTopic instance and adds it to the list.
+   *
+   * @param data - Optional partial BCFTopic object to initialize the new topic with.
+   * If not provided, default values will be used.
+   * @returns The newly created BCFTopic instance.
+   */
   create(data?: Partial<BCFTopic>) {
     const topic = new Topic(this.components);
     if (data) {
@@ -89,6 +97,7 @@ export class BCFTopics
   }
 
   readonly onDisposed = new Event();
+
   dispose() {
     this.list.dispose();
     this.onDisposed.trigger();
@@ -194,6 +203,40 @@ export class BCFTopics
     }
   }
 
+  /**
+   * Exports the given topics to a BCF (Building Collaboration Format) zip file.
+   *
+   * @param topics - The topics to export. Defaults to all topics in the list.
+   * @returns A promise that resolves to a Blob containing the exported BCF zip file.
+   */
+  async export(topics = this.list) {
+    const zip = new JSZip();
+    zip.file(
+      "bcf.version",
+      `<?xml version="1.0" encoding="UTF-8"?>
+    <Version VersionId="${this.config.version}" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/buildingSMART/BCF-XML/release_3_0/Schemas/version.xsd"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    </Version>`,
+    );
+    zip.file("bcf.extensions", this.serializeExtensions());
+    const image = await fetch(
+      "https://thatopen.github.io/engine_components/resources/favicon.ico",
+    );
+    const imgBlob = await image.blob();
+    for (const [_, topic] of topics) {
+      const topicFolder = zip.folder(topic.guid) as JSZip;
+      topicFolder.file("markup.bcf", topic.serialize());
+      for (const viewpoint of topic.viewpoints) {
+        topicFolder.file(`${viewpoint.guid}.jpeg`, imgBlob, {
+          binary: true,
+        });
+        topicFolder.file(`${viewpoint.guid}.bcfv`, await viewpoint.serialize());
+      }
+    }
+    const content = await zip.generateAsync({ type: "blob" });
+    return content;
+  }
+
   private serializeExtensions() {
     const types = [...this.config.types]
       .map((type) => `<TopicType>${type}</TopicType>`)
@@ -230,34 +273,6 @@ export class BCFTopics
         ${users.length !== 0 ? `<Users>\n${users}\n</Users>` : ""}
       </Extensions>
     `;
-  }
-
-  async export(topics = this.list) {
-    const zip = new JSZip();
-    zip.file(
-      "bcf.version",
-      `<?xml version="1.0" encoding="UTF-8"?>
-    <Version VersionId="${this.config.version}" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/buildingSMART/BCF-XML/release_3_0/Schemas/version.xsd"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    </Version>`,
-    );
-    zip.file("bcf.extensions", this.serializeExtensions());
-    const image = await fetch(
-      "https://thatopen.github.io/engine_components/resources/favicon.ico",
-    );
-    const imgBlob = await image.blob();
-    for (const [_, topic] of topics) {
-      const topicFolder = zip.folder(topic.guid) as JSZip;
-      topicFolder.file("markup.bcf", topic.serialize());
-      for (const viewpoint of topic.viewpoints) {
-        topicFolder.file(`${viewpoint.guid}.jpeg`, imgBlob, {
-          binary: true,
-        });
-        topicFolder.file(`${viewpoint.guid}.bcfv`, await viewpoint.serialize());
-      }
-    }
-    const content = await zip.generateAsync({ type: "blob" });
-    return content;
   }
 
   private processMarkupComment(markupComment: any) {
@@ -297,7 +312,7 @@ export class BCFTopics
     return array;
   }
 
-  private getLabelsFromXML(markup: any, version: BCFVersion) {
+  private getMarkupLabels(markup: any, version: BCFVersion) {
     let data: any;
     if (version === "2.1") data = markup.Topic.Labels;
     if (version === "3") data = markup.Topic.Labels?.Label;
@@ -306,8 +321,26 @@ export class BCFTopics
     return labels;
   }
 
+  private getMarkupViewpoints(markup: any, version: BCFVersion) {
+    let data: any;
+    if (version === "2.1") data = markup.Viewpoints;
+    if (version === "3") data = markup.Topic.Viewpoints?.ViewPoint;
+    if (!data) return [];
+    data = Array.isArray(data) ? data : [data];
+    return data;
+  }
+
+  private getMarkupRelatedTopics(markup: any, version: BCFVersion) {
+    let data: any;
+    if (version === "2.1") data = markup.Topic.RelatedTopic;
+    if (version === "3") data = markup.Topic.RelatedTopics?.RelatedTopic;
+    if (!data) return [];
+    const topics: { Guid: string }[] = Array.isArray(data) ? data : [data];
+    return topics.map((topic) => topic.Guid);
+  }
+
   // world: the default world where the viewpoints are going to be created
-  async import(world: World, data: Uint8Array) {
+  async load(world: World, data: Uint8Array) {
     const { fallbackVersionOnImport, ignoreIncompleteTopicsOnImport } =
       this.config;
     const zip = new JSZip();
@@ -324,7 +357,12 @@ export class BCFTopics
       version = String(bcfVersion) as BCFVersion;
     }
 
+    if (!(version && (version === "2.1" || version === "3"))) {
+      throw new Error(`BCFTopics: ${version} is not supported.`);
+    }
+
     // Viewpoints must be processed first as they don't care about the topic, but the topic and comments care about them
+    const createdViewpoints: Viewpoint[] = [];
     const viewpoints = this.components.get(Viewpoints);
     const viewpointFiles = files.filter((file) => file.name.endsWith(".bcfv"));
     for (const viewpointFile of viewpointFiles) {
@@ -432,6 +470,7 @@ export class BCFTopics
       }
 
       const viewpoint = viewpoints.create(world, bcfViewpoint);
+      createdViewpoints.push(viewpoint);
 
       if (ClippingPlanes) {
         const clipper = this.components.get(Clipper);
@@ -464,6 +503,7 @@ export class BCFTopics
     }
 
     // Process markup files
+    const topicRelations: { [guid: string]: Set<string> } = {};
     const topics: Topic[] = [];
     const markupFiles = files.filter((file) => file.name.endsWith(".bcf"));
     for (const markupFile of markupFiles) {
@@ -480,8 +520,11 @@ export class BCFTopics
         )
           continue;
       }
+
       const topic = new Topic(this.components);
       topic.guid = Guid ?? topic.guid;
+      const relatedTopics = this.getMarkupRelatedTopics(markup, version);
+      topicRelations[topic.guid] = new Set(relatedTopics);
       topic.type = Type ?? topic.type;
       topic.status = Status ?? topic.status;
       topic.title = Title ?? topic.title;
@@ -504,7 +547,7 @@ export class BCFTopics
       topic.assignedTo = markupTopic.AssignedTo;
       topic.description = markupTopic.Description;
       topic.stage = markupTopic.Stage;
-      const labels = this.getLabelsFromXML(markup, version);
+      const labels = this.getMarkupLabels(markup, version);
       for (const label of labels) topic.labels.add(label);
 
       // Comments
@@ -512,9 +555,7 @@ export class BCFTopics
       for (const comment of comments) topic.comments.add(comment);
 
       // Viewpoints
-      const markupViewpoints = Array.isArray(markup.Viewpoints)
-        ? markup.Viewpoints
-        : [markup.Viewpoints];
+      const markupViewpoints = this.getMarkupViewpoints(markup, version);
       for (const markupViewpoint of markupViewpoints) {
         if (!(markupViewpoint && markupViewpoint.Guid)) continue;
         const viewpoint = viewpoints.list.get(markupViewpoint.Guid);
@@ -527,7 +568,20 @@ export class BCFTopics
       this.list.set(topic.guid, topic);
       topics.push(topic);
     }
+
+    for (const topicID in topicRelations) {
+      const topic = this.list.get(topicID);
+      if (!topic) continue;
+      const relations = topicRelations[topicID];
+      for (const ID of relations) {
+        const relatedTopic = this.list.get(ID);
+        if (!relatedTopic) continue;
+        topic.relatedTopics.add(relatedTopic);
+      }
+    }
+
     this.onBCFImported.trigger(topics);
+    return { viewpoints: createdViewpoints, topics };
   }
 }
 

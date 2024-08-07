@@ -24,6 +24,7 @@ export class Comment {
 
   /**
    * Sets the comment text and updates the modified date and author.
+   * The author will be the one defined in BCFTopics.config.author
    * @param value - The new comment text.
    */
   set comment(value: string) {
@@ -53,7 +54,7 @@ export class Comment {
     this.author = manager.config.author;
   }
 
-  serialize(version = this._managerVersion) {
+  serialize() {
     let viewpointTag: string | null = null;
     if (this.viewpoint) {
       viewpointTag = `<Viewpoint Guid="${this.viewpoint.guid}"/>`;

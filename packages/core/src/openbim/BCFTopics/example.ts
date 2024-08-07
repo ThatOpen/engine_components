@@ -84,11 +84,6 @@ bcfTopics.setup({
 
 const viewpoints = components.get(OBC.Viewpoints);
 
-// Importing an external BCF (topics and viewpoints are going to be created)
-const bcfFile = await fetch("/resources/topics.bcf");
-const bcfData = await bcfFile.arrayBuffer();
-await bcfTopics.import(world, new Uint8Array(bcfData));
-
 // Creating a custom Topic
 const topicsTable = document.createElement("bim-table");
 topicsTable.hiddenColumns = ["Guid"];
@@ -133,17 +128,47 @@ const [topicsList, updatetopicsList] = BUI.Component.create(
   { components },
 );
 
-bcfTopics.list.onItemSet.add(() => updatetopicsList());
+bcfTopics.list.onItemSet.add(({ value: topic }) => {
+  updatetopicsList();
+  console.log(topic);
+});
 bcfTopics.list.onCleared.add(() => updatetopicsList());
 bcfTopics.list.onItemDeleted.add(() => updatetopicsList());
 
-const topic = bcfTopics.create({
-  description: "It seems these elements are badly defined.",
-  type: "Information",
-  priority: "High",
-  stage: "Design",
-  labels: new Set(["Architecture", "Cost Estimation"]),
-});
+// Importing an external BCF (topics and viewpoints are going to be created)
+const loadBCFs = async (urls: string[]) => {
+  const data: { viewpoints: OBC.Viewpoint[]; topics: OBC.Topic[] } = {
+    viewpoints: [],
+    topics: [],
+  };
+
+  for (const url of urls) {
+    const bcfFile = await fetch(url);
+    const bcfData = await bcfFile.arrayBuffer();
+    const { viewpoints, topics } = await bcfTopics.load(
+      world,
+      new Uint8Array(bcfData),
+    );
+    data.viewpoints.push(...viewpoints);
+    data.topics.push(...topics);
+  }
+
+  return data;
+};
+
+await loadBCFs([
+  "/resources/topics.bcf",
+  // "/resources/MaximumInformation_2.1.bcf",
+  // "/resources/MaximumInformation_3.0.bcf",
+]);
+
+// const topic = bcfTopics.create({
+//   description: "It seems these elements are badly defined.",
+//   type: "Information",
+//   priority: "High",
+//   stage: "Design",
+//   labels: new Set(["Architecture", "Cost Estimation"]),
+// });
 
 // Creating a custom viewpoint
 const viewpointsTable = document.createElement("bim-table");
@@ -190,15 +215,15 @@ viewpoints.list.onItemSet.add(() => updateViewpointsList());
 viewpoints.list.onItemDeleted.add(() => updateViewpointsList());
 viewpoints.list.onCleared.add(() => updateViewpointsList());
 
-const viewpoint = viewpoints.create(world, { name: "Custom Viewpoint" });
-viewpoint.addComponentsFromMap(model.getFragmentMap([186])); // You can provide a FragmentIdMap to the viewpoint selection
-viewpoint.selectionComponents.add("2idC0G3ezCdhA9WVjWemcy"); // You can provide a GlobalId to the viewpoint selection
+// const viewpoint = viewpoints.create(world, { name: "Custom Viewpoint" });
+// viewpoint.addComponentsFromMap(model.getFragmentMap([186])); // You can provide a FragmentIdMap to the viewpoint selection
+// viewpoint.selectionComponents.add("2idC0G3ezCdhA9WVjWemcy"); // You can provide a GlobalId to the viewpoint selection
 // viewpoint.selection gives the fragmentIdMap to select elements with the highlighter from @thatopen/components-front
 // you can also use the viewpoint.selection fragmentIdMap to query elements data using FragmentsGroup.getProperty()
 
-topic.viewpoints.add(viewpoint);
-const comment = topic.createComment("Hi there! I agree.");
-comment.viewpoint = viewpoint;
+// topic.viewpoints.add(viewpoint);
+// const comment = topic.createComment("Hi there! I agree.");
+// comment.viewpoint = viewpoint;
 
 const leftPanel = BUI.Component.create(() => {
   return BUI.html`
