@@ -253,6 +253,7 @@ export class Highlighter
           zoomToSelection,
           exclude,
           mesh,
+          true,
         );
 
         const fragID = Object.keys(itemFoundInFillMesh)[0];
@@ -286,10 +287,14 @@ export class Highlighter
       removePrevious,
       zoomToSelection,
       exclude,
+      undefined,
+      true,
     );
 
     return { id: itemID, fragments: found };
   }
+
+  // TODO: Make parameters an object?
 
   /**
    * Highlights a fragment based on a given fragment ID map.
@@ -300,6 +305,7 @@ export class Highlighter
    * @param zoomToSelection - Whether to zoom to the highlighted selection.
    * @param exclude - Fragments to exclude from the highlight.
    * @param fillMesh - The fill mesh to also highlight, if any.
+   * @param isPicking - Whether this function is called when picking with the mouse.
    *
    * @returns Promise that resolves when the highlighting is complete.
    *
@@ -315,6 +321,7 @@ export class Highlighter
     zoomToSelection = this.zoomToSelection,
     exclude: FragmentIdMap = {},
     fillMesh: THREE.Mesh | undefined = undefined,
+    isPicking = false,
   ) {
     if (!this.enabled) return;
 
@@ -356,7 +363,8 @@ export class Highlighter
 
       for (const itemID of itemIDs) {
         const set = this.selection[name][fragID];
-        if (this.autoToggle.has(name) && set.has(itemID)) {
+        // Only apply autotoggle when picking with the mouse
+        if (isPicking && this.autoToggle.has(name) && set.has(itemID)) {
           deselectedIDs.add(itemID);
           set.delete(itemID);
         } else {
