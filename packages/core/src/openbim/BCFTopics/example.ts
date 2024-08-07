@@ -1,6 +1,7 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import * as BUI from "@thatopen/ui";
 import * as THREE from "three";
+import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "../..";
 
 BUI.Manager.init();
@@ -46,22 +47,27 @@ fragments.onFragmentsLoaded.add(async (model) => {
 });
 
 const loadModels = async (urls: string[]) => {
+  const models: FRAGS.FragmentsGroup[] = [];
   for (const url of urls) {
     const file = await fetch(url);
     const data = await file.arrayBuffer();
     const buffer = new Uint8Array(data);
-    await ifcLoader.load(buffer);
+    const model = await ifcLoader.load(buffer);
+    models.push(model);
   }
+  return models;
 };
 
-// await loadModels([
-//   "https://thatopen.github.io/engine_components/resources/small.ifc",
+const models = await loadModels([
+  "https://thatopen.github.io/engine_components/resources/small.ifc",
+]);
+
+// const models = await loadModels([
+//   "/resources/NAV-IPI-ET1_E03-ZZZ-M3D-EST.ifc",
+//   "/resources/NAV-IPI-ET1_E07-ZZZ-M3D-EST.ifc",
 // ]);
 
-await loadModels([
-  "/resources/NAV-IPI-ET1_E03-ZZZ-M3D-EST.ifc",
-  "/resources/NAV-IPI-ET1_E07-ZZZ-M3D-EST.ifc",
-]);
+const model = models[0];
 
 const bcfTopics = components.get(OBC.BCFTopics);
 bcfTopics.setup({
@@ -77,7 +83,6 @@ bcfTopics.setup({
 });
 
 const viewpoints = components.get(OBC.Viewpoints);
-viewpoints.list.onItemSet.add(({ value: viewpoint }) => console.log(viewpoint));
 
 // Importing an external BCF (topics and viewpoints are going to be created)
 const bcfFile = await fetch("/resources/topics.bcf");
@@ -98,7 +103,7 @@ topicsTable.dataTransform = {
     return BUI.html`
       <bim-button @click=${() => viewpoint.go()} icon="ph:eye-fill"></bim-button> 
       <bim-button @click=${() => console.log(viewpoint.selection)} icon="ph:cursor-fill"></bim-button> 
-      <bim-button @click=${() => viewpoint.update()} icon="jam:refresh"></bim-button> 
+      <bim-button @click=${() => viewpoint.updateCamera()} icon="jam:refresh"></bim-button> 
       <bim-button @click=${() => viewpoints.list.delete(viewpoint.guid)} icon="tabler:trash-filled"></bim-button>
     `;
   },
@@ -155,7 +160,7 @@ viewpointsTable.dataTransform = {
     return BUI.html`
       <bim-button @click=${() => viewpoint.go()} icon="ph:eye-fill"></bim-button> 
       <bim-button @click=${() => console.log(viewpoint.selection)} icon="ph:cursor-fill"></bim-button> 
-      <bim-button @click=${() => viewpoint.update()} icon="jam:refresh"></bim-button> 
+      <bim-button @click=${() => viewpoint.updateCamera()} icon="jam:refresh"></bim-button> 
       <bim-button @click=${() => viewpoints.list.delete(viewpoint.guid)} icon="tabler:trash-filled"></bim-button>
     `;
   },
@@ -186,12 +191,14 @@ viewpoints.list.onItemDeleted.add(() => updateViewpointsList());
 viewpoints.list.onCleared.add(() => updateViewpointsList());
 
 const viewpoint = viewpoints.create(world, { name: "Custom Viewpoint" });
-// viewpoint.addComponentsFromMap(model.getFragmentMap([186])); // You can provide a FragmentIdMap to the viewpoint selection
-// viewpoint.selectionComponents.add("2idC0G3ezCdhA9WVjWemcy"); // You can provide a GlobalId to the viewpoint selection
+viewpoint.addComponentsFromMap(model.getFragmentMap([186])); // You can provide a FragmentIdMap to the viewpoint selection
+viewpoint.selectionComponents.add("2idC0G3ezCdhA9WVjWemcy"); // You can provide a GlobalId to the viewpoint selection
 // viewpoint.selection gives the fragmentIdMap to select elements with the highlighter from @thatopen/components-front
+// you can also use the viewpoint.selection fragmentIdMap to query elements data using FragmentsGroup.getProperty()
 
 topic.viewpoints.add(viewpoint);
-topic.createComment("Hi there! I agree.");
+const comment = topic.createComment("Hi there! I agree.");
+comment.viewpoint = viewpoint;
 
 const leftPanel = BUI.Component.create(() => {
   return BUI.html`
@@ -206,12 +213,12 @@ const leftPanel = BUI.Component.create(() => {
 const bottomPanel = BUI.Component.create(() => {
   const onBcfDownload = async () => {
     const bcf = await bcfTopics.export();
-    // const bcfFile = new File([bcf], "topics.bcf");
-    // const a = document.createElement("a");
-    // a.href = URL.createObjectURL(bcfFile);
-    // a.download = bcfFile.name;
-    // a.click();
-    // URL.revokeObjectURL(a.href);
+    const bcfFile = new File([bcf], "topics.bcf");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(bcfFile);
+    a.download = bcfFile.name;
+    a.click();
+    URL.revokeObjectURL(a.href);
   };
 
   return BUI.html`

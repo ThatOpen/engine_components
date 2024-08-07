@@ -274,7 +274,9 @@ export class BCFTopics
     comment.guid = Guid;
     comment.date = new Date(CommentDate);
     comment.author = Author;
-    comment.viewpoint = viewpoints.list.get(Viewpoint.Guid);
+    comment.viewpoint = Viewpoint?.Guid
+      ? viewpoints.list.get(Viewpoint.Guid)
+      : undefined;
     comment.modifiedAuthor = markupComment.ModifiedAuthor;
     comment.modifiedDate = markupComment.ModifiedDate
       ? new Date(markupComment.ModifiedDate)

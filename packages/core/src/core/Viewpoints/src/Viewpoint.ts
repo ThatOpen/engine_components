@@ -121,7 +121,7 @@ export class Viewpoint implements BCFViewpoint {
   constructor(components: Components, world: World) {
     this._components = components;
     this.world = world;
-    this.update();
+    this.updateCamera();
   }
 
   async addComponentsFromMap(fragmentIdMap: FRAGS.FragmentIdMap) {
@@ -205,7 +205,7 @@ export class Viewpoint implements BCFViewpoint {
     );
   }
 
-  update() {
+  updateCamera() {
     const { camera, renderer } = this.world;
     if (!renderer) {
       throw new Error("Viewpoint: the world needs to have a renderer!");
@@ -232,7 +232,6 @@ export class Viewpoint implements BCFViewpoint {
 
     const fragments = this._components.get(FragmentsManager);
     position.applyMatrix4(fragments.baseCoordinationMatrix.clone().invert());
-    // fragments.applyBaseCoordinateSystem(position, new THREE.Matrix4());
 
     const partialCamera: ViewpointCamera = {
       aspectRatio,
@@ -290,20 +289,21 @@ export class Viewpoint implements BCFViewpoint {
 
     // Set the position back to the original transformation for exporting purposes
     const position = this.position;
-    fragments.applyBaseCoordinateSystem(position, new THREE.Matrix4());
+    position.applyMatrix4(fragments.baseCoordinationMatrix.clone().invert());
 
     // Set the direction back to the original transformation for exporting purposes
     const direction = this.direction;
     direction.normalize();
 
+    // The up vector doesn't seem to do anything in other software
     const rotationMatrix = new THREE.Matrix4().makeRotationX(Math.PI / 2);
     const upVector = direction.clone().applyMatrix4(rotationMatrix);
     upVector.normalize();
 
     const cameraViewpointXML = `<CameraViewPoint>
-      <X>${-position.x}</X>
-      <Y>${position.z}</Y>
-      <Z>${-position.y}</Z>
+      <X>${position.x}</X>
+      <Y>${-position.z}</Y>
+      <Z>${position.y}</Z>
     </CameraViewPoint>`;
 
     const cameraDirectionXML = `<CameraDirection>

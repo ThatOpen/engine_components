@@ -163,7 +163,7 @@ export class Topic implements BCFTopic {
 
     let priorityTag: string | null = null;
     if (this.priority) {
-      priorityTag = `<ModifiedAuthor>${this.priority}</ModifiedAuthor>`;
+      priorityTag = `<ModifiedAuthor>${this.modifiedAuthor}</ModifiedAuthor>`;
     }
 
     let indexTag: string | null = null;
