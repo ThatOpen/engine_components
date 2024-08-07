@@ -18,6 +18,12 @@ export abstract class BaseScene extends BaseWorldItem implements Disposable {
    */
   abstract three: THREE.Object3D;
 
+  /** The set of directional lights managed by this scene component. */
+  directionalLights = new Map<string, THREE.DirectionalLight>();
+
+  /** The set of ambient lights managed by this scene component. */
+  ambientLights = new Map<string, THREE.AmbientLight>();
+
   protected constructor(components: Components) {
     super(components);
   }
@@ -30,6 +36,15 @@ export abstract class BaseScene extends BaseWorldItem implements Disposable {
       if (mesh.geometry) {
         disposer.destroy(mesh);
       }
+    }
+    for (const [, light] of this.directionalLights) {
+      light.removeFromParent();
+      light.target.removeFromParent();
+      light.dispose();
+    }
+    for (const [, light] of this.ambientLights) {
+      light.removeFromParent();
+      light.dispose();
     }
     this.three.children = [];
     this.onDisposed.trigger();
