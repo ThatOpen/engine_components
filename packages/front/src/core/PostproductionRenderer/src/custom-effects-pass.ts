@@ -240,20 +240,11 @@ export class CustomEffectsPass extends Pass {
 
     // Render outline pass
 
+    renderer.setRenderTarget(this.outlineBuffer);
     if (this._outlineEnabled) {
-      let outlinedMeshesFound = false;
-      for (const name in this.outlinedMeshes) {
-        if (this.outlinedMeshes[name].meshes.size) {
-          outlinedMeshesFound = true;
-          break;
-        }
-      }
-
-      // This way, when there are no outlines meshes, it skips this render
-      if (outlinedMeshesFound) {
-        renderer.setRenderTarget(this.outlineBuffer);
-        renderer.render(this.outlineScene, this.renderCamera);
-      }
+      renderer.render(this.outlineScene, this.renderCamera);
+    } else {
+      renderer.clear();
     }
 
     for (const mesh of this.excludedMeshes) {
