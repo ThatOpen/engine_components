@@ -53,7 +53,7 @@ export class BCFTopics
       "Request",
     ]),
     statuses: new Set(["Active", "Done", "Closed"]),
-    priorities: new Set(["Critical", "Major", "Normal", "Minor", "On hold"]),
+    priorities: new Set(["On hold", "Minor", "Normal", "Major", "Critical"]),
     labels: new Set(),
     stages: new Set(),
     users: new Set(),

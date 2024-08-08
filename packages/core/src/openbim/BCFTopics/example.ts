@@ -3,6 +3,7 @@ import * as BUI from "@thatopen/ui";
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "../..";
+import { bcfTopicsList } from "./src/TopicsList";
 
 BUI.Manager.init();
 
@@ -85,55 +86,23 @@ bcfTopics.setup({
 const viewpoints = components.get(OBC.Viewpoints);
 
 // Creating a custom Topic
-const topicsTable = document.createElement("bim-table");
-topicsTable.hiddenColumns = ["Guid"];
-topicsTable.columns = ["Title"];
-topicsTable.dataTransform = {
-  Actions: (_, rowData) => {
-    const { Guid } = rowData;
-    if (!(Guid && typeof Guid === "string")) return Guid;
-    const viewpoints = components.get(OBC.Viewpoints);
-    const viewpoint = viewpoints.list.get(Guid);
-    if (!viewpoint) return Guid;
-    return BUI.html`
-      <bim-button @click=${() => viewpoint.go()} icon="ph:eye-fill"></bim-button> 
-      <bim-button @click=${() => console.log(viewpoint.selection)} icon="ph:cursor-fill"></bim-button> 
-      <bim-button @click=${() => viewpoint.updateCamera()} icon="jam:refresh"></bim-button> 
-      <bim-button @click=${() => viewpoints.list.delete(viewpoint.guid)} icon="tabler:trash-filled"></bim-button>
-    `;
+const [topicsList] = bcfTopicsList({
+  components,
+  styles: {
+    users: {
+      "jhon.doe@example.com": {
+        name: "Jhon Doe",
+        picture:
+          "https://www.profilebakery.com/wp-content/uploads/2023/04/Profile-Image-AI.jpg",
+      },
+      "juan.hoyos4@gmail.com": {
+        name: "Juan Hoyos",
+        picture:
+          "https://media.licdn.com/dms/image/D4E03AQEo2otgxQ8Y3A/profile-displayphoto-shrink_200_200/0/1718545012590?e=1728518400&v=beta&t=6s2ULNJHPjbWBTZt_S35e-BN2LHUavVXa2vEljGM2TM",
+      },
+    },
   },
-};
-
-const [topicsList, updatetopicsList] = BUI.Component.create(
-  (state: { components: OBC.Components }) => {
-    const { components } = state;
-    const topics = components.get(OBC.BCFTopics);
-    topicsTable.data = [...topics.list.values()].map((topic) => {
-      return {
-        data: {
-          Guid: topic.guid,
-          Title: topic.title,
-          Description: topic.description ?? "",
-          Author: topic.creationAuthor,
-          Date: topic.creationDate.toDateString(),
-          Type: topic.type,
-          Status: topic.status,
-          Priority: topic.priority ?? "",
-          Labels: [...topic.labels].join(", "),
-        },
-      };
-    });
-    return BUI.html`${topicsTable}`;
-  },
-  { components },
-);
-
-bcfTopics.list.onItemSet.add(({ value: topic }) => {
-  updatetopicsList();
-  console.log(topic);
 });
-bcfTopics.list.onCleared.add(() => updatetopicsList());
-bcfTopics.list.onItemDeleted.add(() => updatetopicsList());
 
 // Importing an external BCF (topics and viewpoints are going to be created)
 const loadBCFs = async (urls: string[]) => {
@@ -162,13 +131,13 @@ await loadBCFs([
   // "/resources/MaximumInformation_3.0.bcf",
 ]);
 
-// const topic = bcfTopics.create({
-//   description: "It seems these elements are badly defined.",
-//   type: "Information",
-//   priority: "High",
-//   stage: "Design",
-//   labels: new Set(["Architecture", "Cost Estimation"]),
-// });
+const topic = bcfTopics.create({
+  description: "It seems these elements are badly defined.",
+  type: "Information",
+  priority: "High",
+  stage: "Design",
+  labels: new Set(["Architecture", "Cost Estimation"]),
+});
 
 // Creating a custom viewpoint
 const viewpointsTable = document.createElement("bim-table");

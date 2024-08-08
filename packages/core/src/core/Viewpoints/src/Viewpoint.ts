@@ -29,7 +29,7 @@ export class Viewpoint implements BCFViewpoint {
   camera: ViewpointPerspectiveCamera | ViewpointOrthographicCamera = {
     aspectRatio: 0,
     fov: 0,
-    direction: { x: 0, y: 0, z: 0 },
+    direction: { x: 0, y: 0, z: 80 },
     position: { x: 0, y: 0, z: 0 },
   };
 
@@ -166,27 +166,27 @@ export class Viewpoint implements BCFViewpoint {
     const direction = this.direction;
 
     // Default target based on the viewpoint information
-    const target = {
+    let target = {
       x: position.x + direction.x * 80,
       y: position.y + direction.y * 80,
       z: position.z + direction.z * 80,
     };
 
     const selection = this.selection;
-    // if (Object.keys(selection).length !== 0) {
-    //   // In case there are selection components, use their center as the target
-    //   const bb = this._components.get(BoundingBoxer);
-    //   bb.reset();
-    //   bb.addFragmentIdMap(selection);
-    //   target = bb.getSphere().center;
-    //   bb.reset();
-    // } else {
-    //   // In case there are not selection components, use the raycaster to calculate one
-    //   const raycasters = this._components.get(Raycasters);
-    //   const raycaster = raycasters.get(this.world);
-    //   const result = raycaster.castRayFromVector(position, this.direction);
-    //   if (result) target = result.point;
-    // }
+    if (Object.keys(selection).length === 0) {
+      // In case there are not selection components, use the raycaster to calculate one
+      const raycasters = this._components.get(Raycasters);
+      const raycaster = raycasters.get(this.world);
+      const result = raycaster.castRayFromVector(position, this.direction);
+      if (result) target = result.point;
+    } else {
+      // In case there are selection components, use their center as the target
+      const bb = this._components.get(BoundingBoxer);
+      bb.reset();
+      bb.addFragmentIdMap(selection);
+      target = bb.getSphere().center;
+      bb.reset();
+    }
 
     // Sets the viewpoint components visibility
     const hider = this._components.get(Hider);
