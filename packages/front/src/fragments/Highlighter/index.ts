@@ -110,6 +110,12 @@ export class Highlighter
   /** Styles with auto toggle will be unselected when selected twice. */
   autoToggle = new Set<string>();
 
+  /** Position of the mouse on mouseDown. */
+  private mouseDownPosition = {x: 0, y: 0};
+
+  /** Threshhold on how much the mouse have to move until its considered movement */
+  mouseMoveThreshold = 5
+
   // Highlights the clipping fills of the fragments, if any
   private _fills = new FillHighlighter();
 
@@ -618,9 +624,11 @@ export class Highlighter
     this.selection[this.config.hoverName] = {};
   };
 
-  private onMouseDown = () => {
+  private onMouseDown = (e: MouseEvent) => {
     if (!this.enabled) return;
+    this.mouseDownPosition = {x: e.clientX, y: e.clientY}
     this._mouseState.down = true;
+
   };
 
   private onMouseUp = async (event: MouseEvent) => {
@@ -645,29 +653,38 @@ export class Highlighter
     }
   };
 
-  private onMouseMove = async () => {
+  private onMouseMove = async (e: MouseEvent) => {
     if (!this.enabled) return;
+
+    // Calculate the distance the mouse has moved since mouse down
+    const dx = e.clientX - this.mouseDownPosition.x;
+    const dy = e.clientY - this.mouseDownPosition.y;
+    const moveDistance = Math.sqrt(dx * dx + dy * dy);
+
     const { hoverName, hoverEnabled } = this.config;
     if (this._mouseState.moved) {
       this.clear(hoverName);
       return;
     }
-
-    this._mouseState.moved = this._mouseState.down;
-    const excluded: FRAGS.FragmentIdMap = {};
-    for (const name in this.selection) {
-      if (name === hoverName) continue;
-      const fragmentIdMap = this.selection[name];
-      for (const fragmentID in fragmentIdMap) {
-        if (!(fragmentID in excluded)) excluded[fragmentID] = new Set();
-        const expressIDs = fragmentIdMap[fragmentID];
-        for (const expressID of expressIDs) {
-          excluded[fragmentID].add(expressID);
+    
+    // If the distance is greater than the threshold, set dragging to true
+    if (moveDistance > this.mouseMoveThreshold) {
+      this._mouseState.moved = this._mouseState.down;
+      const excluded: FRAGS.FragmentIdMap = {};
+      for (const name in this.selection) {
+        if (name === hoverName) continue;
+        const fragmentIdMap = this.selection[name];
+        for (const fragmentID in fragmentIdMap) {
+          if (!(fragmentID in excluded)) excluded[fragmentID] = new Set();
+          const expressIDs = fragmentIdMap[fragmentID];
+          for (const expressID of expressIDs) {
+            excluded[fragmentID].add(expressID);
+          }
         }
       }
-    }
-    if (hoverEnabled) {
-      await this.highlight(this.config.hoverName, true, false, excluded);
+      if (hoverEnabled) {
+        await this.highlight(this.config.hoverName, true, false, excluded);
+      }
     }
   };
 }
