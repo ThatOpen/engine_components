@@ -303,15 +303,24 @@ export class LengthMeasurement
     if (!viewerContainer) return;
 
     viewerContainer.removeEventListener("pointermove", this.onMouseMove);
+    window.removeEventListener("keydown", this.onKeydown);
 
     if (active) {
       viewerContainer.addEventListener("pointermove", this.onMouseMove);
+      window.addEventListener("keydown", this.onKeydown);
     }
   }
 
   private onMouseMove = () => {
     if (this.world) {
       this._vertexPicker.get(this.world);
+    }
+  };
+
+  private onKeydown = (e: KeyboardEvent) => {
+    if (!this.enabled) return;
+    if (e.key === "Escape") {
+        this.cancelCreation();
     }
   };
 }
