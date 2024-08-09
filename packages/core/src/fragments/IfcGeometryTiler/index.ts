@@ -298,7 +298,11 @@ export class IfcGeometryTiler extends Component implements Disposable {
   }
 
   private cleanUp() {
-    this.webIfc.Dispose();
+    try {
+      this.webIfc.Dispose();
+    } catch (e) {
+      // Problem disposing memory (maybe already disposed?)
+    }
     (this.webIfc as any) = null;
     this.webIfc = new WEBIFC.IfcAPI();
     this._visitedGeometries.clear();
