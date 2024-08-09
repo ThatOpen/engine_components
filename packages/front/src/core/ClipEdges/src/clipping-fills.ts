@@ -32,6 +32,7 @@ export class ClippingFills {
   private _tempVector = new THREE.Vector3();
   private _plane: THREE.Plane;
   private _geometry: THREE.BufferGeometry;
+  private _outlinedMesh: THREE.Mesh;
 
   // Used to work in the 2D coordinate system of the plane
   private _plane2DCoordinateSystem = new THREE.Matrix4();
@@ -52,17 +53,22 @@ export class ClippingFills {
    * @param {boolean} value - The new visibility state. If true, the mesh will be added to the scene and the style's meshes set. If false, the mesh will be removed from the scene and the style's meshes set.
    */
   set visible(value: boolean) {
-    const style = this.getStyle();
+    const styleAndScene = this.getStyleAndScene();
     if (value) {
       const scene = this.world.scene.three;
       scene.add(this.mesh);
-      if (style) {
-        style.meshes.add(this.mesh);
+      if (styleAndScene) {
+        const { style, outlineScene } = styleAndScene;
+        this._outlinedMesh.material = style.material;
+        style.meshes.add(this._outlinedMesh);
+        outlineScene.add(this._outlinedMesh);
       }
     } else {
       this.mesh.removeFromParent();
-      if (style) {
-        style.meshes.delete(this.mesh);
+      if (styleAndScene) {
+        const { style } = styleAndScene;
+        style.meshes.delete(this._outlinedMesh);
+        this._outlinedMesh.removeFromParent();
       }
     }
   }
@@ -107,7 +113,10 @@ export class ClippingFills {
 
     // To prevent clipping plane overlapping the filling mesh
     const offset = plane.normal.clone().multiplyScalar(0.01);
+    this._outlinedMesh = new THREE.Mesh(this.mesh.geometry);
+
     this.mesh.position.copy(offset);
+    this._outlinedMesh.position.copy(offset);
 
     this.visible = true;
   }
@@ -117,15 +126,20 @@ export class ClippingFills {
    * This method should be called when the clipping fills are no longer needed to free up memory.
    */
   dispose() {
-    const style = this.getStyle();
-    if (style) {
-      style.meshes.delete(this.mesh);
+    const styleAndScene = this.getStyleAndScene();
+    if (styleAndScene) {
+      const { style } = styleAndScene;
+      style.meshes.delete(this._outlinedMesh);
+      this._outlinedMesh.removeFromParent();
     }
+    this.mesh.material = [];
+    this._outlinedMesh.material = [];
     this.mesh.userData.indexFragmentMap.clear();
     this.mesh.userData = {};
     this.mesh.geometry.dispose();
     this.mesh.removeFromParent();
     (this.mesh.geometry as any) = null;
+    (this._outlinedMesh.geometry as any) = null;
     (this.mesh as any) = null;
     (this._plane as any) = null;
     (this._geometry as any) = null;
@@ -476,14 +490,16 @@ export class ClippingFills {
     this._plane2DCoordinateSystem.invert();
   }
 
-  private getStyle() {
+  private getStyleAndScene() {
     if (!this.world.renderer) return null;
     const postProduction =
       this.world.renderer instanceof PostproductionRenderer;
     if (this.styleName && postProduction) {
       const renderer = this.world.renderer as PostproductionRenderer;
       const effects = renderer.postproduction.customEffects;
-      return effects.outlinedMeshes[this.styleName];
+      const style = effects.outlinedMeshes[this.styleName];
+      const outlineScene = renderer.postproduction.customEffects.outlineScene;
+      return { style, outlineScene };
     }
     return null;
   }

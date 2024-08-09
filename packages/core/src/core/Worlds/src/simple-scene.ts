@@ -58,16 +58,22 @@ export class SimpleScene extends BaseScene implements Configurable<{}> {
   /** {@link Configurable.setup} */
   setup(config?: Partial<SimpleSceneConfig>) {
     this.config = { ...this.config, ...config };
+
     const directionalLight = new THREE.DirectionalLight(
       this.config.directionalLight.color,
       this.config.directionalLight.intensity,
     );
     directionalLight.position.copy(this.config.directionalLight.position);
+
     const ambientLight = new THREE.AmbientLight(
       this.config.ambientLight.color,
       this.config.ambientLight.intensity,
     );
+
     this.three.add(directionalLight, ambientLight);
+    this.directionalLights.set(directionalLight.uuid, directionalLight);
+    this.ambientLights.set(ambientLight.uuid, ambientLight);
+
     this.isSetup = true;
     this.onSetup.trigger(this);
   }
