@@ -76,6 +76,11 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     "ConnectedTo",
     "ConnectedFrom",
     "ReferencedBy",
+    "Declares",
+    "HasContext",
+    "Controls",
+    "IsNestedBy",
+    "Nests",
   ];
 
   private _ifcRels: IfcRelations = [
@@ -90,6 +95,9 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     WEBIFC.IFCRELFLOWCONTROLELEMENTS,
     WEBIFC.IFCRELCONNECTSELEMENTS,
     WEBIFC.IFCRELASSIGNSTOPRODUCT,
+    WEBIFC.IFCRELDECLARES,
+    WEBIFC.IFCRELASSIGNSTOCONTROL,
+    WEBIFC.IFCRELNESTS,
   ];
 
   constructor(components: Components) {

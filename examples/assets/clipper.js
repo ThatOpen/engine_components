@@ -1,4 +1,4 @@
-import{B as r,M as m,a as d}from"./web-ifc-api-56EJvEs4.js";import{S as p}from"./stats.min-BpIepu9J.js";import{m as u,t as s,a as c}from"./index-TmOv0r_5.js";import{p as h,C as g,o as k,r as w,W as y,H as f,b as v}from"./index-BcIWfMQD.js";const b=document.getElementById("container"),a=new h,M=a.get(g),e=M.create();e.scene=new k(a);e.renderer=new w(a,b);e.camera=new y(a);a.init();e.camera.controls.setLookAt(10,10,10,0,0,0);e.scene.setup();e.scene.three.background=null;const x=new r(3,3,3),C=new m({color:"#6528D7"}),o=new d(x,C);o.position.set(0,1.5,0);e.scene.three.add(o);e.meshes.add(o);const $=a.get(f);$.get(e);const n=a.get(v);n.enabled=!0;b.ondblclick=()=>{n.enabled&&n.create(e)};window.onkeydown=t=>{(t.code==="Delete"||t.code==="Backspace")&&n.enabled&&n.delete(e)};const l=new p;l.showPanel(2);document.body.append(l.dom);l.dom.style.left="0px";l.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>l.begin());e.renderer.onAfterUpdate.add(()=>l.end());u.init();const i=s.create(()=>c`
+import{B as r,M as m,a as d}from"./web-ifc-api-cV7FPlIA.js";import{S as p}from"./stats.min-BpIepu9J.js";import{m as u,t as s,a as c}from"./index-TmOv0r_5.js";import{p as h,C as g,O as k,a as w,H as y,W as f,b as v}from"./index-BkOJFY0w.js";const b=document.getElementById("container"),a=new h,M=a.get(g),e=M.create();e.scene=new k(a);e.renderer=new w(a,b);e.camera=new y(a);a.init();e.camera.controls.setLookAt(10,10,10,0,0,0);e.scene.setup();e.scene.three.background=null;const x=new r(3,3,3),C=new m({color:"#6528D7"}),l=new d(x,C);l.position.set(0,1.5,0);e.scene.three.add(l);e.meshes.add(l);const $=a.get(f);$.get(e);const n=a.get(v);n.enabled=!0;b.ondblclick=()=>{n.enabled&&n.create(e)};window.onkeydown=t=>{(t.code==="Delete"||t.code==="Backspace")&&n.enabled&&n.delete(e)};const o=new p;o.showPanel(2);document.body.append(o.dom);o.dom.style.left="0px";o.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>o.begin());e.renderer.onAfterUpdate.add(()=>o.end());u.init();const i=s.create(()=>c`
     <bim-panel label="Clipper Tutorial" class="options-menu">
           <bim-panel-section collapsed label="Commands">
       
@@ -39,7 +39,7 @@ import{B as r,M as m,a as d}from"./web-ifc-api-56EJvEs4.js";import{S as p}from".
         
         <bim-button 
           label="Rotate cube" 
-          @click="${()=>{o.rotation.x=2*Math.PI*Math.random(),o.rotation.y=2*Math.PI*Math.random(),o.rotation.z=2*Math.PI*Math.random()}}">  
+          @click="${()=>{l.rotation.x=2*Math.PI*Math.random(),l.rotation.y=2*Math.PI*Math.random(),l.rotation.z=2*Math.PI*Math.random()}}">  
         </bim-button>
        
         

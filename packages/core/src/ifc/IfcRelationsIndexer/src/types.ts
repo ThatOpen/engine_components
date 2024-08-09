@@ -29,6 +29,11 @@ export type InverseAttributes = [
   "ConnectedTo",
   "ConnectedFrom",
   "ReferencedBy",
+  "Declares",
+  "HasContext",
+  "Controls",
+  "IsNestedBy",
+  "Nests",
 ];
 
 export type InverseAttribute = InverseAttributes[number];
@@ -48,6 +53,9 @@ export type IfcRelations = [
   typeof WEBIFC.IFCRELFLOWCONTROLELEMENTS,
   typeof WEBIFC.IFCRELCONNECTSELEMENTS,
   typeof WEBIFC.IFCRELASSIGNSTOPRODUCT,
+  typeof WEBIFC.IFCRELDECLARES,
+  typeof WEBIFC.IFCRELASSIGNSTOCONTROL,
+  typeof WEBIFC.IFCRELNESTS,
 ];
 
 export type IfcRelation = IfcRelations[number];
