@@ -30,7 +30,7 @@ export class StreamerDbCleaner {
       return;
     }
     this._intervalId = window.setInterval(() => {
-      const now = performance.now();
+      const now = new Date().getTime();
       for (const [id, time] of this.list) {
         const age = now - time;
         if (age > this.maxTime) {
@@ -43,7 +43,7 @@ export class StreamerDbCleaner {
   update(id: string) {
     if (!this.enabled) return;
     // console.log(`Added to indexedDB: ${id}`);
-    this.list.set(id, performance.now());
+    this.list.set(id, new Date().getTime());
   }
 
   async clear() {
