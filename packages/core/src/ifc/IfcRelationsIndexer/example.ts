@@ -201,6 +201,47 @@ if (buildingStorey && buildingStorey[0]) {
 
  :::
 
+ ### 🤏 Getting entities related with another
+ There are situations in which you need to know elements related to another based on a specific inverse attribute. For example, to know all the elements that has a specific IfcPropertySet, all elements inside a known IfcBuildingStorey, all elements sharing a common IfcClassificationReference, etc. Let's take the following as examples of this feature!
+ */
+
+// This is the equivalent to say: All entities in the model that are contained in structure 138
+const storeyElements = indexer.getEntitiesWithRelation(
+  model,
+  "ContainedInStructure",
+  138,
+);
+
+console.log(
+  `IfcBuildingStorey 138 has the following IfcElement: ${[...storeyElements]}`,
+);
+
+// This is the equivalent to say: All entities in the model that contains entity 138
+const elementStorey = indexer.getEntitiesWithRelation(
+  model,
+  "ContainsElements",
+  186,
+);
+
+console.log(
+  `IfcElement 186 is located inside IfcBuildingStorey ${[...elementStorey][0]}`,
+);
+
+// This is the equivalent to say: All entities in the model that are defined by entity 303
+const psetDefinitions = indexer.getEntitiesWithRelation(
+  model,
+  "IsDefinedBy",
+  303,
+);
+
+console.log(`${[...psetDefinitions]} are defined by IfcPropertySet 303`);
+
+/* MD
+ :::tip
+
+ Needless to say, you must know the expressID of the entity you want to find its relations with (138 is the expressID of the IfcBuildingStorey named "Nivel 1" in the example model).
+
+ :::
 
   ### ⏱️ Measuring the performance (optional)
   ---

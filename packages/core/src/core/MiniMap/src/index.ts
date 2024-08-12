@@ -139,6 +139,7 @@ export class MiniMap implements Resizeable, Updateable, Disposable {
     this.onAfterUpdate.reset();
     this.onResize.reset();
     this.overrideMaterial.dispose();
+    this.renderer.forceContextLoss();
     this.renderer.dispose();
     this.onDisposed.trigger();
     this.onDisposed.reset();

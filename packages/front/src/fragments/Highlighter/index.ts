@@ -110,6 +110,9 @@ export class Highlighter
   /** Styles with auto toggle will be unselected when selected twice. */
   autoToggle = new Set<string>();
 
+  /** If defined, only the specified elements will be selected by the specified style. */
+  selectable: { [name: string]: FragmentIdMap } = {};
+
   // Highlights the clipping fills of the fragments, if any
   private _fills = new FillHighlighter();
 
@@ -343,12 +346,23 @@ export class Highlighter
       const excludeFrag = exclude[fragID];
 
       for (const id of ids) {
-        if (!excludeFrag || !excludeFrag.has(id)) {
-          if (!filtered[fragID]) {
-            filtered[fragID] = new Set();
-          }
-          filtered[fragID].add(id);
+        // Is filtered by the parameter
+        if (excludeFrag && excludeFrag.has(id)) {
+          continue;
         }
+
+        // Is filtered by the selectable property
+        if (this.selectable[name]) {
+          const map = this.selectable[name];
+          if (!map[fragID] || !map[fragID].has(id)) {
+            continue;
+          }
+        }
+
+        if (!filtered[fragID]) {
+          filtered[fragID] = new Set();
+        }
+        filtered[fragID].add(id);
       }
     }
 

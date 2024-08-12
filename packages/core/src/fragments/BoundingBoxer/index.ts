@@ -288,7 +288,10 @@ export class BoundingBoxer extends Component implements Disposable {
 
     const instances = new Set<number>();
 
-    if (itemIDs && mesh instanceof FRAGS.FragmentMesh) {
+    if (mesh instanceof FRAGS.FragmentMesh) {
+      if (!itemIDs) {
+        itemIDs = mesh.fragment.ids;
+      }
       for (const itemID of itemIDs) {
         const ids = mesh.fragment.getInstancesIDs(itemID);
         if (!ids) continue;

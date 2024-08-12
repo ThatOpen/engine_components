@@ -90,6 +90,7 @@ export class SimpleRenderer extends BaseRenderer {
     this.enabled = false;
     this.setupEvents(false);
     this.three.domElement.remove();
+    this.three.forceContextLoss();
     this.three.dispose();
     // this._renderer2D.domElement.remove();
     this.onResize.reset();

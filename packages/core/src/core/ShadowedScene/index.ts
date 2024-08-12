@@ -15,6 +15,10 @@ export interface ShadowedSceneConfig extends SimpleSceneConfig {
 }
 
 // TODO: Implement multiple cascade shadow maps (the main problem to solve is the shadow camera rotation)
+// A trick to do this is that the camera direction vector is one of the axis of the camera shadow frustum
+// when projected to the near frustum plane. So now we have 2 vectors (the vector of the light direction
+// and this vector), so the third vector is known (cross product) and the frustum direction can be built
+// as a matrix
 
 /**
  * A scene that supports efficient cast shadows.
