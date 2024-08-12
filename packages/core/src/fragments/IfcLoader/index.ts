@@ -71,11 +71,6 @@ export class IfcLoader extends Component implements Disposable {
 
   /** {@link Disposable.dispose} */
   dispose() {
-    try {
-      this.webIfc.Dispose();
-    } catch (e) {
-      // web-ifc couldn't be disposed
-    }
     (this.webIfc as any) = null;
     this.onDisposed.trigger(IfcLoader.uuid);
     this.onDisposed.reset();
@@ -206,7 +201,7 @@ export class IfcLoader extends Component implements Disposable {
     try {
       this.webIfc.Dispose();
     } catch (e) {
-      // web-ifc couldn't be disposed
+      console.log("Web-ifc wasn't disposed.");
     }
     (this.webIfc as any) = null; // Clear the reference to the Web-IFC library
     this.webIfc = new WEBIFC.IfcAPI(); // Create a new instance of the Web-IFC library
