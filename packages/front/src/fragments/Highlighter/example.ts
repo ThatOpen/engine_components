@@ -125,6 +125,10 @@ highlighter.events.select.onHighlight.add((data) => {
   outliner.add("example", data);
 });
 
+highlighter.events.select.onClear.add(() => {
+  outliner.clear("example");
+});
+
 /* MD
   ### ⏱️ Measuring the performance (optional)
   ---
