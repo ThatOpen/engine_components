@@ -147,6 +147,7 @@ export class CullerRenderer {
     }
     this.onViewUpdated.reset();
     this.worker.terminate();
+    this.renderer.forceContextLoss();
     this.renderer.dispose();
     this.renderTarget.dispose();
     (this._buffer as any) = null;

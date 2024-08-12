@@ -181,6 +181,7 @@ void main() {
     this.enabled = false;
     this.onDistanceComputed.reset();
     this.worker.terminate();
+    this.renderer.forceContextLoss();
     this.renderer.dispose();
     this.tempRT.dispose();
     this.resultRT.dispose();
