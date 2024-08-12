@@ -328,11 +328,6 @@ export class Highlighter
   ) {
     if (!this.enabled) return;
 
-    let previousSelection: FRAGS.FragmentIdMap = {};
-    if (this.selection[name]) {
-      previousSelection = { ...this.selection[name] };
-    }
-
     if (removePrevious) {
       this.clear(name);
     }
