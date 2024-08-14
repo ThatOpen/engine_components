@@ -125,7 +125,7 @@ const loadBCFs = async (urls: string[]) => {
 };
 
 await loadBCFs([
-  // "/resources/topics.bcf",
+  "/resources/topics.bcf",
   // "/resources/MaximumInformation_2.1.bcf",
   // "/resources/MaximumInformation_3.0.bcf",
 ]);
@@ -206,9 +206,43 @@ const leftPanel = BUI.Component.create(() => {
   `;
 });
 
+const [topicPopup] = BUI.Component.create<
+  HTMLDialogElement,
+  { topic?: OBC.Topic }
+>(
+  (state: { topic?: OBC.Topic }) => {
+    const { topic } = state;
+    const dialog = createRef<HTMLDialogElement>();
+
+    const [form] = topicForm({
+      components,
+      topic,
+      styles: { users: topicsUIStyles.users },
+      onSubmit() {
+        dialog.value?.close();
+      },
+      onCancel() {
+        dialog.value?.close();
+      },
+    });
+
+    return BUI.html`<dialog ${BUI.ref(dialog)}>${form}</dialog> `;
+  },
+  { topic: [...bcfTopics.list.values()][0] },
+);
+
 const bottomPanel = BUI.Component.create(() => {
   const onBcfDownload = async () => {
-    const bcf = await bcfTopics.export();
+    const topics = [...topicsList.selection]
+      .map(({ Guid }) => {
+        if (typeof Guid !== "string") return null;
+        return bcfTopics.list.get(Guid);
+      })
+      .filter((topic) => topic) as OBC.Topic[];
+
+    const bcf = await bcfTopics.export(
+      topics.length !== 0 ? topics : undefined,
+    );
     const bcfFile = new File([bcf], "topics.bcf");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(bcfFile);
@@ -217,33 +251,13 @@ const bottomPanel = BUI.Component.create(() => {
     URL.revokeObjectURL(a.href);
   };
 
-  const dialog = createRef<HTMLDialogElement>();
-
-  const onBcfAdd = () => {
-    const { value: dialogElement } = dialog;
-    if (!dialogElement) return;
-    dialogElement.showModal();
-  };
-
-  const [form] = topicForm({
-    components,
-    topic: [...bcfTopics.list.values()][0],
-    styles: { users: topicsUIStyles.users },
-    onSubmit(topic) {
-      dialog.value?.close();
-    },
-    onCancel() {
-      dialog.value?.close();
-    },
-  });
-
   return BUI.html`
    <bim-panel>
     <bim-panel-section label="Topics">
       <div style="display: flex; gap: 0.25rem">
-        <dialog ${BUI.ref(dialog)}>${form}</dialog> 
-        <bim-button label="Download" @click=${onBcfDownload}></bim-button> 
-        <bim-button style="flex: 0;" label="New Topic" icon="mi:add" @click=${onBcfAdd}></bim-button> 
+        ${topicPopup}
+        <bim-button label="Download" icon="tabler:download" @click=${onBcfDownload}></bim-button> 
+        <bim-button style="flex: 0;" label="New Topic" icon="mi:add" @click=${() => topicPopup.showModal()}></bim-button> 
       </div> 
       ${topicsList}
     </bim-panel-section>

@@ -90,7 +90,7 @@ export class BCFTopics
     const topic = new Topic(this.components);
     if (data) {
       topic.guid = data.guid ?? topic.guid;
-      topic.set(data, false);
+      topic.set(data);
     }
     this.list.set(topic.guid, topic);
     return topic;
@@ -209,7 +209,7 @@ export class BCFTopics
    * @param topics - The topics to export. Defaults to all topics in the list.
    * @returns A promise that resolves to a Blob containing the exported BCF zip file.
    */
-  async export(topics = this.list) {
+  async export(topics: Iterable<Topic> = this.list.values()) {
     const zip = new JSZip();
     zip.file(
       "bcf.version",
@@ -223,7 +223,7 @@ export class BCFTopics
       "https://thatopen.github.io/engine_components/resources/favicon.ico",
     );
     const imgBlob = await image.blob();
-    for (const [_, topic] of topics) {
+    for (const topic of topics) {
       const topicFolder = zip.folder(topic.guid) as JSZip;
       topicFolder.file("markup.bcf", topic.serialize());
       for (const viewpoint of topic.viewpoints) {

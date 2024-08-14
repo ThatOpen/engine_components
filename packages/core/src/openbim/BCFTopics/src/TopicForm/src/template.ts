@@ -61,24 +61,25 @@ export const topicFormTemplate = (state: TopicFormUI) => {
     if (!form) return;
     if (Object.values(form.valueTransform).length === 0) {
       form.valueTransform = {
-        dueDate: (value: string) => {
-          if (value.trim() === "") return undefined;
+        dueDate: (value) => {
+          if (!(typeof value === "string" && value.trim() !== ""))
+            return undefined;
           return new Date(value);
         },
-        status: (value: string[]) => {
-          if (value.length !== 0) return value[0];
+        status: (value) => {
+          if (Array.isArray(value) && value.length !== 0) return value[0];
           return undefined;
         },
-        type: (value: string[]) => {
-          if (value.length !== 0) return value[0];
+        type: (value) => {
+          if (Array.isArray(value) && value.length !== 0) return value[0];
           return undefined;
         },
-        priority: (value: string[]) => {
-          if (value.length !== 0) return value[0];
+        priority: (value) => {
+          if (Array.isArray(value) && value.length !== 0) return value[0];
           return undefined;
         },
-        assignedTo: (value: string[]) => {
-          if (value.length !== 0) return value[0];
+        assignedTo: (value) => {
+          if (Array.isArray(value) && value.length !== 0) return value[0];
           return undefined;
         },
       };
@@ -135,7 +136,7 @@ export const topicFormTemplate = (state: TopicFormUI) => {
             ${[...stages].map((s) => BUI.html`<bim-option label=${s} .checked=${stage === s}></bim-option>`)}
           </bim-dropdown>
         </div>
-        <bim-text-input vertical label="Description" name="description" type="area" .value=${description}></bim-text-input>
+        <bim-text-input vertical label="Description" name="description" type="area" .value=${description ?? null}></bim-text-input>
         <div style="justify-content: right; display: flex; gap: 0.375rem">
           <style>
             #A7T9K {

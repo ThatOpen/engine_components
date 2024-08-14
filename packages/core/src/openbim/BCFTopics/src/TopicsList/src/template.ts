@@ -25,8 +25,6 @@ export interface BCFTopicsUI {
   styles?: Partial<DataStyles>;
 }
 
-let table: BUI.Table;
-
 const defaultStyles: Required<DataStyles> = {
   users: {
     "jhon.doe@example.com": { name: "Jhon Doe" },
@@ -202,6 +200,8 @@ const createAuthorTag = (value: string, styles?: Partial<DataStyles>) => {
 `;
 };
 
+let table: BUI.Table;
+
 export const bcfTopicsListTemplate = (state: BCFTopicsUI) => {
   const { components, styles } = state;
   const bcfTopics = components.get(BCFTopics);
@@ -210,6 +210,7 @@ export const bcfTopicsListTemplate = (state: BCFTopicsUI) => {
     table = document.createElement("bim-table");
     table.hiddenColumns = ["Guid"];
     table.columns = ["Title"];
+    table.selectableRows = true;
   }
   table.dataTransform = {
     // Title: (value) => {
