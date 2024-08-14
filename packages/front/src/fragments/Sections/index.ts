@@ -21,10 +21,7 @@ export interface Section {
     position: THREE.Vector3;
     target: THREE.Vector3;
     zoom: number;
-    top: number;
-    bottom: number;
-    left: number;
-    right: number;
+    size: number;
   };
 }
 
@@ -101,11 +98,9 @@ export class Sections extends OBC.Component implements OBC.Disposable {
     const position = normal.clone().multiplyScalar(-offset).add(point);
     const target = point.clone();
     const zoom = 1;
-    const top = 10;
-    const bottom = -10;
-    const right = 10;
-    const left = -10;
-    const cached = { position, target, zoom, top, bottom, right, left };
+    const size = 10;
+
+    const cached = { position, target, zoom, size };
 
     const section: Section = { id, name, plane, offset, cached };
     this.list.set(id, section);
@@ -155,10 +150,14 @@ export class Sections extends OBC.Component implements OBC.Disposable {
 
     await camera.controls.setLookAt(p.x, p.y, p.z, t.x, t.y, t.z, animate);
 
-    camera.threeOrtho.top = found.cached.top;
-    camera.threeOrtho.bottom = found.cached.bottom;
-    camera.threeOrtho.left = found.cached.left;
-    camera.threeOrtho.right = found.cached.right;
+    const size = found.cached.size;
+    const aspect = camera.threePersp.aspect;
+
+    camera.threeOrtho.top = size;
+    camera.threeOrtho.bottom = -size;
+    camera.threeOrtho.left = -size * aspect;
+    camera.threeOrtho.right = size * aspect;
+
     camera.threeOrtho.updateProjectionMatrix();
     await camera.controls.zoomTo(cached.zoom, false);
 
@@ -258,11 +257,7 @@ export class Sections extends OBC.Component implements OBC.Disposable {
       camera.controls.getPosition(position);
       camera.controls.getTarget(target);
       cached.zoom = camera.threeOrtho.zoom;
-      const { top, bottom, left, right } = camera.threeOrtho;
-      cached.top = top;
-      cached.bottom = bottom;
-      cached.left = left;
-      cached.right = right;
+      cached.size = camera.threeOrtho.top;
     } else {
       // We are in a 3D view
       camera.three.getWorldPosition(this.cached3DCamera.position);
