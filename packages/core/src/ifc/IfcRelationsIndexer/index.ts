@@ -395,6 +395,38 @@ export class IfcRelationsIndexer extends Component implements Disposable {
   }
 
   /**
+   * Retrieves the entities within a given model that have a specific relation with a given entity.
+   *
+   * @param model - The BIM model to search for related entities.
+   * @param inv - The IFC schema inverse attribute of the relation to search for (e.g., "IsDefinedBy", "ContainsElements").
+   * @param expressID - The expressID of the entity within the model.
+   *
+   * @returns A `Set` with the expressIDs of the entities that have the specified relation with the given entity.
+   *
+   * @throws An error if the model relations are not indexed or if the inverse attribute name is invalid.
+   */
+  getEntitiesWithRelation(
+    model: FragmentsGroup,
+    inv: InverseAttribute,
+    expressID: number,
+  ) {
+    const relations = this.relationMaps[model.uuid];
+    if (!relations)
+      throw new Error(
+        "IfcRelationsIndexer: the model relations are not indexed!",
+      );
+    const set: Set<number> = new Set();
+    for (const [id, map] of relations) {
+      const index = this.getAttributeIndex(inv);
+      if (index === null)
+        throw new Error("IfcRelationsIndexer: invalid inverse attribute name");
+      const rels = map.get(index);
+      if (rels && rels.includes(expressID)) set.add(id);
+    }
+    return set;
+  }
+
+  /**
    * Adds relations between an entity and other entities in a BIM model.
    *
    * @param model - The BIM model to which the relations will be added.
