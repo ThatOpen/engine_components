@@ -2,8 +2,12 @@
 import * as BUI from "@thatopen/ui";
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { createRef } from "lit/directives/ref.js";
 import * as OBC from "../..";
 import { bcfTopicsList } from "./src/TopicsList";
+import { topicForm } from "./src/TopicForm";
+import { topicPanel } from "./src/TopicPanel";
 
 BUI.Manager.init();
 
@@ -72,36 +76,31 @@ const model = models[0];
 
 const bcfTopics = components.get(OBC.BCFTopics);
 bcfTopics.setup({
-  types: new Set(["Clash", "Inquiry", "Information", "Coordination"]),
-  statuses: new Set([
-    "Active",
-    "In Progress",
-    "Completed",
-    "In Review",
-    "Closed",
-  ]),
-  priorities: new Set(["Low", "Normal", "High", "Critical"]),
+  types: new Set([...bcfTopics.config.types, "Information", "Coordination"]),
+  statuses: new Set(["Active", "In Progress", "Done", "In Review", "Closed"]),
+  users: new Set(["juan.hoyos4@gmail.com"]),
 });
 
 const viewpoints = components.get(OBC.Viewpoints);
 
 // Creating a custom Topic
-const [topicsList] = bcfTopicsList({
-  components,
-  styles: {
-    users: {
-      "jhon.doe@example.com": {
-        name: "Jhon Doe",
-        picture:
-          "https://www.profilebakery.com/wp-content/uploads/2023/04/Profile-Image-AI.jpg",
-      },
-      "juan.hoyos4@gmail.com": {
-        name: "Juan Hoyos",
-        picture:
-          "https://media.licdn.com/dms/image/D4E03AQEo2otgxQ8Y3A/profile-displayphoto-shrink_200_200/0/1718545012590?e=1728518400&v=beta&t=6s2ULNJHPjbWBTZt_S35e-BN2LHUavVXa2vEljGM2TM",
-      },
+const topicsUIStyles = {
+  users: {
+    "jhon.doe@example.com": {
+      name: "Jhon Doe",
+      picture:
+        "https://www.profilebakery.com/wp-content/uploads/2023/04/Profile-Image-AI.jpg",
+    },
+    "juan.hoyos4@gmail.com": {
+      name: "Juan Hoyos",
+      picture:
+        "https://media.licdn.com/dms/image/D4E03AQEo2otgxQ8Y3A/profile-displayphoto-shrink_200_200/0/1718545012590?e=1728518400&v=beta&t=6s2ULNJHPjbWBTZt_S35e-BN2LHUavVXa2vEljGM2TM",
     },
   },
+};
+const [topicsList] = bcfTopicsList({
+  components,
+  styles: topicsUIStyles,
 });
 
 // Importing an external BCF (topics and viewpoints are going to be created)
@@ -126,17 +125,20 @@ const loadBCFs = async (urls: string[]) => {
 };
 
 await loadBCFs([
-  "/resources/topics.bcf",
+  // "/resources/topics.bcf",
   // "/resources/MaximumInformation_2.1.bcf",
   // "/resources/MaximumInformation_3.0.bcf",
 ]);
 
 const topic = bcfTopics.create({
+  title: "Missing information",
   description: "It seems these elements are badly defined.",
-  type: "Information",
-  priority: "High",
+  dueDate: new Date("08-01-2020"),
+  type: "Clash",
+  priority: "Major",
   stage: "Design",
   labels: new Set(["Architecture", "Cost Estimation"]),
+  assignedTo: "juan.hoyos4@gmail.com",
 });
 
 // Creating a custom viewpoint
@@ -191,7 +193,7 @@ viewpoints.list.onCleared.add(() => updateViewpointsList());
 // you can also use the viewpoint.selection fragmentIdMap to query elements data using FragmentsGroup.getProperty()
 
 // topic.viewpoints.add(viewpoint);
-// const comment = topic.createComment("Hi there! I agree.");
+const comment = topic.createComment("Hi there! I agree.");
 // comment.viewpoint = viewpoint;
 
 const leftPanel = BUI.Component.create(() => {
@@ -215,14 +217,44 @@ const bottomPanel = BUI.Component.create(() => {
     URL.revokeObjectURL(a.href);
   };
 
+  const dialog = createRef<HTMLDialogElement>();
+
+  const onBcfAdd = () => {
+    const { value: dialogElement } = dialog;
+    if (!dialogElement) return;
+    dialogElement.showModal();
+  };
+
+  const [form] = topicForm({
+    components,
+    topic: [...bcfTopics.list.values()][0],
+    styles: { users: topicsUIStyles.users },
+    onSubmit(topic) {
+      dialog.value?.close();
+    },
+    onCancel() {
+      dialog.value?.close();
+    },
+  });
+
   return BUI.html`
    <bim-panel>
     <bim-panel-section label="Topics">
-      <bim-button label="Download" @click=${onBcfDownload}></bim-button> 
+      <div style="display: flex; gap: 0.25rem">
+        <dialog ${BUI.ref(dialog)}>${form}</dialog> 
+        <bim-button label="Download" @click=${onBcfDownload}></bim-button> 
+        <bim-button style="flex: 0;" label="New Topic" icon="mi:add" @click=${onBcfAdd}></bim-button> 
+      </div> 
       ${topicsList}
     </bim-panel-section>
    </bim-panel> 
   `;
+});
+
+const [topicUI] = topicPanel({
+  components,
+  topic: [...bcfTopics.list.values()][0],
+  styles: topicsUIStyles,
 });
 
 const app = document.getElementById("app") as BUI.Grid;
@@ -238,3 +270,17 @@ app.layouts = {
 };
 
 app.layout = "main";
+
+const viewportGrid = document.createElement("bim-grid");
+viewportGrid.floating = true;
+viewportGrid.layouts = {
+  main: {
+    template: `
+      "empty topicPanel" 1fr
+      /1fr 22rem
+    `,
+    elements: { topicPanel: topicUI },
+  },
+};
+viewportGrid.layout = "main";
+viewport.append(viewportGrid);

@@ -1,8 +1,7 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
+/* eslint-disable import/no-extraneous-dependencies */
 import * as BUI from "@thatopen/ui";
-import { Components } from "../../../../../core";
+import { Components, Viewpoints } from "../../../../../core";
 import { Topic } from "../../Topic";
-import { BCFTopics } from "../../..";
 
 interface DataStyles {
   priorities: {
@@ -19,13 +18,11 @@ interface DataStyles {
   };
 }
 
-export interface BCFTopicsUI {
+export interface TopicPanelUI {
   components: Components;
-  topics?: Iterable<Topic>;
+  topic: Topic;
   styles?: Partial<DataStyles>;
 }
-
-let table: BUI.Table;
 
 const defaultStyles: Required<DataStyles> = {
   users: {
@@ -72,7 +69,7 @@ const defaultStyles: Required<DataStyles> = {
     Active: {
       icon: "prime:circle-fill",
       style: {
-        backgroundColor: "#414141",
+        backgroundColor: "#2E2E2E",
       },
     },
     "In Progress": {
@@ -102,7 +99,7 @@ const defaultStyles: Required<DataStyles> = {
     Closed: {
       icon: "prime:circle-fill",
       style: {
-        backgroundColor: "#414141",
+        backgroundColor: "#2E2E2E",
         "--bim-label--c": "#727272",
         "--bim-icon--c": "#727272",
       },
@@ -202,83 +199,115 @@ const createAuthorTag = (value: string, styles?: Partial<DataStyles>) => {
 `;
 };
 
-export const bcfTopicsListTemplate = (state: BCFTopicsUI) => {
-  const { components, styles } = state;
-  const bcfTopics = components.get(BCFTopics);
-  const topics = state.topics ?? bcfTopics.list.values();
-  if (!table) {
-    table = document.createElement("bim-table");
-    table.hiddenColumns = ["Guid"];
-    table.columns = ["Title"];
+export const topicPanelTemplate = (state: TopicPanelUI) => {
+  const { components, topic, styles } = state;
+
+  const viewpoints = components.get(Viewpoints);
+
+  const priorityStyles = styles?.priorities ?? defaultStyles.priorities;
+  const statusStyles = styles?.statuses ?? defaultStyles.statuses;
+  const typesStyles = styles?.types ?? defaultStyles.types;
+
+  let priorityStyle;
+  if (topic.priority) {
+    priorityStyle = priorityStyles[topic.priority];
   }
-  table.dataTransform = {
-    // Title: (value) => {
-    //   return BUI.html`
-    //   <div style="display: flex; gap: 0.25rem; overflow: hidden;">
-    //     <bim-button icon="iconamoon:enter-duotone"></bim-button>
-    //     <bim-label>${value}</bim-label>
-    //   </div>`;
-    // },
-    Priority: (value) => {
-      if (typeof value !== "string") return value;
-      const priorityStyles = styles?.priorities ?? defaultStyles.priorities;
-      const labelStyles = priorityStyles[value];
-      return BUI.html`
-        <bim-label
-          .icon=${labelStyles?.icon}
-          style=${BUI.styleMap({ ...baseTagStyle, ...labelStyles?.style })}
-        >${value}
-        </bim-label>
-      `;
-    },
-    Status: (value) => {
-      if (typeof value !== "string") return value;
-      const statusStyles = styles?.statuses ?? defaultStyles.statuses;
-      const labelStyle = statusStyles[value];
-      return BUI.html`
-        <bim-label
-          .icon=${labelStyle?.icon}
-          style=${BUI.styleMap({ ...baseTagStyle, ...labelStyle?.style })}
-        >${value}
-        </bim-label>
-      `;
-    },
-    Type: (value) => {
-      if (typeof value !== "string") return value;
-      const typesStyles = styles?.types ?? defaultStyles.types;
-      const labelStyles = typesStyles[value];
-      return BUI.html`
-        <bim-label
-          .icon=${labelStyles?.icon}
-          style=${BUI.styleMap({ ...baseTagStyle, ...labelStyles?.style })}
-        >${value}
-        </bim-label>
-      `;
-    },
-    Author: (value) => {
-      if (typeof value !== "string") return value;
-      return createAuthorTag(value, styles);
-    },
-    Assignee: (value) => {
-      if (typeof value !== "string") return value;
-      return createAuthorTag(value, styles);
-    },
-  };
-  table.data = [...topics].map((topic) => {
-    return {
-      data: {
-        Guid: topic.guid,
-        Title: topic.title,
-        Status: topic.status,
-        Description: topic.description ?? "",
-        Author: topic.creationAuthor,
-        Assignee: topic.assignedTo ?? "",
-        Date: topic.creationDate.toDateString(),
-        DueDate: topic.dueDate?.toDateString() ?? "",
-        Type: topic.type,
-        Priority: topic.priority ?? "",
-      },
-    };
+
+  const typeStyle = typesStyles[topic.type];
+  const statusStyle = statusStyles[topic.status];
+
+  const commentsTable = document.createElement("bim-table");
+  commentsTable.headersHidden = true;
+  commentsTable.hiddenColumns = ["Author"];
+  commentsTable.data = [...topic.comments].map((comment) => {
+    return { data: { Comment: comment.comment, Author: comment.author } };
   });
-  return BUI.html`${table}`;
+  return BUI.html`
+   <bim-panel>
+    <bim-panel-section label="Information" icon="ph:info-bold">
+      <div>
+        <bim-label>Title</bim-label> 
+        <bim-label style="--bim-label--c: var(--bim-ui_bg-contrast-100)">${topic.title}</bim-label> 
+      </div>
+      <div>
+        <bim-label>Description</bim-label> 
+        <bim-label style="--bim-label--c: var(--bim-ui_bg-contrast-100)">${topic.description}</bim-label> 
+      </div>
+      <div style="display: flex; gap: 0.375rem">
+        <bim-label>Status</bim-label> 
+        <bim-label .icon=${statusStyle?.icon} style=${BUI.styleMap({ ...baseTagStyle, ...statusStyle?.style })}
+        >${topic.status}
+        </bim-label>
+      </div>
+      <div style="display: flex; gap: 0.375rem">
+        <bim-label>Type</bim-label> 
+        <bim-label .icon=${typeStyle?.icon} style=${BUI.styleMap({ ...baseTagStyle, ...typeStyle?.style })}
+        >${topic.type}
+        </bim-label>
+      </div>
+      ${
+        topic.priority
+          ? BUI.html`
+            <div style="display: flex; gap: 0.375rem">
+              <bim-label>Priority</bim-label> 
+              <bim-label .icon=${priorityStyle?.icon} style=${BUI.styleMap({ ...baseTagStyle, ...priorityStyle?.style })}
+              >${topic.priority}
+              </bim-label>
+            </div>`
+          : null
+      }
+      <div style="display: flex; gap: 0.375rem">
+        <bim-label>Author</bim-label> 
+        ${createAuthorTag(topic.creationAuthor, styles)}
+      </div>
+      ${
+        topic.assignedTo
+          ? BUI.html`
+          <div style="display: flex; gap: 0.375rem">
+            <bim-label>Assignee</bim-label> 
+            ${createAuthorTag(topic.assignedTo, styles)}
+          </div>`
+          : null
+      }
+      ${
+        topic.dueDate
+          ? BUI.html`
+          <div style="display: flex; gap: 0.375rem">
+            <bim-label>Due Date</bim-label> 
+            <bim-label style="--bim-label--c: var(--bim-ui_bg-contrast-100)">${topic.dueDate.toDateString()}</bim-label>
+          </div>`
+          : null
+      }
+      ${
+        topic.modifiedAuthor
+          ? BUI.html`
+          <div style="display: flex; gap: 0.375rem">
+            <bim-label>Modified By</bim-label> 
+            ${createAuthorTag(topic.modifiedAuthor, styles)}
+          </div>`
+          : null
+      }
+      ${
+        topic.modifiedDate
+          ? BUI.html`
+            <div style="display: flex; gap: 0.375rem">
+              <bim-label>Modified Date</bim-label> 
+              <bim-label style="--bim-label--c: var(--bim-ui_bg-contrast-100)">${topic.modifiedDate.toDateString()}</bim-label>
+            </div>`
+          : null
+      }
+      ${
+        topic.labels.size !== 0
+          ? BUI.html`
+          <div style="display: flex; gap: 0.375rem">
+            <bim-label>Labels</bim-label> 
+            <bim-label style="--bim-label--c: var(--bim-ui_bg-contrast-100)">${[...topic.labels].join(", ")}</bim-label>
+          </div>`
+          : null
+      }
+    </bim-panel-section>
+    <bim-panel-section label="Comments" icon="mdi:comments-outline">${commentsTable}</bim-panel-section>
+    <bim-panel-section label="Viewpoints" icon="tabler:camera"></bim-panel-section>
+   </bim-panel> 
+  `;
 };

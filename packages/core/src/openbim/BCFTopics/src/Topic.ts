@@ -4,7 +4,7 @@ import { Viewpoint } from "../../../core/Viewpoints";
 import { Comment } from "./Comment";
 import { BCFTopics } from "..";
 import { BCFTopic } from "./types";
-import { DataSet } from "../../../core/Types";
+import { DataSet, Event } from "../../../core/Types";
 
 export class Topic implements BCFTopic {
   /**
@@ -199,6 +199,8 @@ export class Topic implements BCFTopic {
       const value = _data[key];
       if (key in this) _this[key] = value;
     }
+    const manager = this._components.get(BCFTopics);
+    manager.list.set(this.guid, this);
     return this;
   }
 

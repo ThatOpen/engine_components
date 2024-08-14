@@ -52,7 +52,7 @@ export class BCFTopics
       "Remark",
       "Request",
     ]),
-    statuses: new Set(["Active", "Done", "Closed"]),
+    statuses: new Set(["Active", "In Progress", "Done", "In Review", "Closed"]),
     priorities: new Set(["On hold", "Minor", "Normal", "Major", "Critical"]),
     labels: new Set(),
     stages: new Set(),
@@ -90,7 +90,7 @@ export class BCFTopics
     const topic = new Topic(this.components);
     if (data) {
       topic.guid = data.guid ?? topic.guid;
-      topic.set(data);
+      topic.set(data, false);
     }
     this.list.set(topic.guid, topic);
     return topic;

@@ -21,6 +21,23 @@
     bim-panel {
       border-radius: 0;
     }
+
+    dialog {
+      background-color: transparent;
+      border: none;
+      margin: auto;
+      outline: none;
+      overflow: visible;
+    }
+
+    dialog::backdrop {
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(3px);
+    }
+
+    bim-grid[floating]>bim-panel {
+      border-radius: 1rem;
+    }
   </style>
 </head>
 
