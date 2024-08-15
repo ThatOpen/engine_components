@@ -690,13 +690,13 @@ __metadata:
   linkType: hard
 
 "@thatopen/ui@npm:~2.1.0":
-  version: 2.1.8
-  resolution: "@thatopen/ui@npm:2.1.8"
+  version: 2.1.9
+  resolution: "@thatopen/ui@npm:2.1.9"
   dependencies:
     "@floating-ui/dom": 1.6.3
     iconify-icon: 2.0.0
     lit: 3.1.2
-  checksum: fc1ba7438dc115117fd74540b444bea66487ad4d01c20a7c7e96f781dd60df5be43ad1cbddcbe4051918b986a8224de2e07008d3d7a8498b9e72d897073ec66f
+  checksum: 395a5c08467ac4317c9cc2bad6ec117e54298fd70f55244e8d983d0a7dc927a3cee193096b1911d6e7eb8a4464824137530e007a9d740145efd290ff71c97237
   languageName: node
   linkType: hard
 
