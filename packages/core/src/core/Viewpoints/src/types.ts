@@ -16,7 +16,7 @@ export interface ViewpointOrthographicCamera extends ViewpointCamera {
 }
 
 export interface BCFViewpoint {
-  title: string;
+  title?: string;
   guid: string;
   camera: ViewpointPerspectiveCamera | ViewpointOrthographicCamera;
   selectionComponents: Iterable<string>;

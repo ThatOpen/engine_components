@@ -22,7 +22,7 @@ import { SimplePlane } from "../../Clipper";
 import { Viewpoints } from "..";
 
 export class Viewpoint implements BCFViewpoint {
-  title = "Viewpoint";
+  title?: string;
   guid = UUID.create();
 
   clippingPlanes = new DataSet<SimplePlane>();

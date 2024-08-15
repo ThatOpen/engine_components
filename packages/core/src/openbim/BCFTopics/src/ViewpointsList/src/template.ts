@@ -39,11 +39,11 @@ export const viewpointsListTemplate = (state: ViewpointsUI) => {
       },
     };
 
-    table.data = [...viewpoints].map((viewpoint) => {
+    table.data = [...viewpoints].map((viewpoint, index) => {
       return {
         data: {
           Guid: viewpoint.guid,
-          Title: viewpoint.title,
+          Title: viewpoint.title ?? `Viewpoint ${index}`,
           Actions: "",
         },
       };
