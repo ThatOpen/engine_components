@@ -4,10 +4,9 @@ import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createRef } from "lit/directives/ref.js";
+// eslint-disable-next-line import/no-extraneous-dependencies
 import * as OBC from "../..";
-import { bcfTopicsList } from "./src/TopicsList";
-import { topicForm } from "./src/TopicForm";
-import { topicPanel } from "./src/TopicPanel";
+import { bcfTopicsList, topicForm, topicPanel, viewpointsList } from "./src";
 
 BUI.Manager.init();
 
@@ -33,6 +32,10 @@ viewport.addEventListener("resize", () => {
   rendererComponent.resize();
   cameraComponent.updateAspect();
 });
+
+const viewportGrid = document.createElement("bim-grid");
+viewportGrid.floating = true;
+viewport.append(viewportGrid);
 
 const viewerGrids = components.get(OBC.Grids);
 viewerGrids.create(world);
@@ -98,9 +101,58 @@ const topicsUIStyles = {
     },
   },
 };
-const [topicsList] = bcfTopicsList({
+
+const [topicPopup, updateTopicPopup] = BUI.Component.create<
+  HTMLDialogElement,
+  { topic?: OBC.Topic }
+>((state: { topic?: OBC.Topic }) => {
+  const { topic } = state;
+  const dialog = createRef<HTMLDialogElement>();
+
+  const [form] = topicForm({
+    components,
+    topic,
+    styles: { users: topicsUIStyles.users },
+    onSubmit() {
+      dialog.value?.close();
+    },
+    onCancel() {
+      dialog.value?.close();
+    },
+  });
+
+  return BUI.html`<dialog ${BUI.ref(dialog)}>${form}</dialog> `;
+}, {});
+
+document.body.append(topicPopup);
+
+const [topicUI, updateTopicUI] = topicPanel({
   components,
   styles: topicsUIStyles,
+  world,
+  onUpdateInformation(topic) {
+    updateTopicPopup({ topic });
+    topicPopup.showModal();
+  },
+});
+
+viewportGrid.layouts = {
+  main: {
+    template: `
+      "empty topicPanel" 1fr
+      /1fr 22rem
+    `,
+    elements: { topicPanel: topicUI },
+  },
+};
+
+const [topicsList] = bcfTopicsList({
+  components,
+  dataStyles: topicsUIStyles,
+  onTopicEnter(topic) {
+    updateTopicUI({ topic });
+    viewportGrid.layout = "main";
+  },
 });
 
 // Importing an external BCF (topics and viewpoints are going to be created)
@@ -142,94 +194,29 @@ const topic = bcfTopics.create({
 });
 
 // Creating a custom viewpoint
-const viewpointsTable = document.createElement("bim-table");
-viewpointsTable.headersHidden = true;
-viewpointsTable.hiddenColumns = ["Guid"];
-viewpointsTable.columns = ["Name", { name: "Actions", width: "auto" }];
-viewpointsTable.dataTransform = {
-  Actions: (_, rowData) => {
-    const { Guid } = rowData;
-    if (!(Guid && typeof Guid === "string")) return Guid;
-    const viewpoints = components.get(OBC.Viewpoints);
-    const viewpoint = viewpoints.list.get(Guid);
-    if (!viewpoint) return Guid;
-    return BUI.html`
-      <bim-button @click=${() => viewpoint.go()} icon="ph:eye-fill"></bim-button> 
-      <bim-button @click=${() => console.log(viewpoint.selection)} icon="ph:cursor-fill"></bim-button> 
-      <bim-button @click=${() => viewpoint.updateCamera()} icon="jam:refresh"></bim-button> 
-      <bim-button @click=${() => viewpoints.list.delete(viewpoint.guid)} icon="tabler:trash-filled"></bim-button>
-    `;
-  },
-};
-
-const [viewpointsList, updateViewpointsList] = BUI.Component.create(
-  (state: { components: OBC.Components }) => {
-    const { components } = state;
-    const viewpoints = components.get(OBC.Viewpoints);
-    viewpointsTable.data = [...viewpoints.list.values()].map((viewpoint) => {
-      return {
-        data: {
-          Guid: viewpoint.guid,
-          Name: viewpoint.name,
-          Actions: "",
-        },
-      };
-    });
-    return BUI.html`${viewpointsTable}`;
-  },
-  {
-    components,
-  },
-);
-
-viewpoints.list.onItemSet.add(() => updateViewpointsList());
-viewpoints.list.onItemDeleted.add(() => updateViewpointsList());
-viewpoints.list.onCleared.add(() => updateViewpointsList());
-
-// const viewpoint = viewpoints.create(world, { name: "Custom Viewpoint" });
-// viewpoint.addComponentsFromMap(model.getFragmentMap([186])); // You can provide a FragmentIdMap to the viewpoint selection
+const viewpoint = viewpoints.create(world, { title: "Custom Viewpoint" });
+viewpoint.addComponentsFromMap(model.getFragmentMap([186])); // You can provide a FragmentIdMap to the viewpoint selection
 // viewpoint.selectionComponents.add("2idC0G3ezCdhA9WVjWemcy"); // You can provide a GlobalId to the viewpoint selection
 // viewpoint.selection gives the fragmentIdMap to select elements with the highlighter from @thatopen/components-front
 // you can also use the viewpoint.selection fragmentIdMap to query elements data using FragmentsGroup.getProperty()
 
-// topic.viewpoints.add(viewpoint);
-const comment = topic.createComment("Hi there! I agree.");
-// comment.viewpoint = viewpoint;
+topic.viewpoints.add(viewpoint);
+const comment = topic.createComment("What if we talk about this next meeting?");
+comment.author = "juan.hoyos4@gmail.com";
+topic.createComment("Hi there! I agree.");
+comment.viewpoint = viewpoint;
+
+const [viewpointsListElement] = viewpointsList({ components });
 
 const leftPanel = BUI.Component.create(() => {
   return BUI.html`
    <bim-panel>
     <bim-panel-section label="Viewpoints">
-      ${viewpointsList}
+      ${viewpointsListElement}
     </bim-panel-section>
    </bim-panel> 
   `;
 });
-
-const [topicPopup] = BUI.Component.create<
-  HTMLDialogElement,
-  { topic?: OBC.Topic }
->(
-  (state: { topic?: OBC.Topic }) => {
-    const { topic } = state;
-    const dialog = createRef<HTMLDialogElement>();
-
-    const [form] = topicForm({
-      components,
-      topic,
-      styles: { users: topicsUIStyles.users },
-      onSubmit() {
-        dialog.value?.close();
-      },
-      onCancel() {
-        dialog.value?.close();
-      },
-    });
-
-    return BUI.html`<dialog ${BUI.ref(dialog)}>${form}</dialog> `;
-  },
-  { topic: [...bcfTopics.list.values()][0] },
-);
 
 const bottomPanel = BUI.Component.create(() => {
   const onBcfDownload = async () => {
@@ -255,20 +242,13 @@ const bottomPanel = BUI.Component.create(() => {
    <bim-panel>
     <bim-panel-section label="Topics">
       <div style="display: flex; gap: 0.25rem">
-        ${topicPopup}
         <bim-button label="Download" icon="tabler:download" @click=${onBcfDownload}></bim-button> 
         <bim-button style="flex: 0;" label="New Topic" icon="mi:add" @click=${() => topicPopup.showModal()}></bim-button> 
-      </div> 
+      </div>
       ${topicsList}
     </bim-panel-section>
    </bim-panel> 
   `;
-});
-
-const [topicUI] = topicPanel({
-  components,
-  topic: [...bcfTopics.list.values()][0],
-  styles: topicsUIStyles,
 });
 
 const app = document.getElementById("app") as BUI.Grid;
@@ -284,17 +264,3 @@ app.layouts = {
 };
 
 app.layout = "main";
-
-const viewportGrid = document.createElement("bim-grid");
-viewportGrid.floating = true;
-viewportGrid.layouts = {
-  main: {
-    template: `
-      "empty topicPanel" 1fr
-      /1fr 22rem
-    `,
-    elements: { topicPanel: topicUI },
-  },
-};
-viewportGrid.layout = "main";
-viewport.append(viewportGrid);

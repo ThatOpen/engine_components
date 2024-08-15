@@ -19,9 +19,10 @@ import { Raycasters } from "../../Raycasters";
 import { BoundingBoxer } from "../../../fragments/BoundingBoxer";
 import { Hider } from "../../../fragments";
 import { SimplePlane } from "../../Clipper";
+import { Viewpoints } from "..";
 
 export class Viewpoint implements BCFViewpoint {
-  name = "Viewpoint";
+  title = "Viewpoint";
   guid = UUID.create();
 
   clippingPlanes = new DataSet<SimplePlane>();
@@ -118,10 +119,23 @@ export class Viewpoint implements BCFViewpoint {
     return topics;
   }
 
-  constructor(components: Components, world: World) {
+  constructor(
+    components: Components,
+    world: World,
+    _config?: {
+      data?: Partial<BCFViewpoint>;
+      setCamera?: boolean;
+    },
+  ) {
+    const config = { setCamera: true, ..._config };
+    const { data, setCamera } = config;
     this._components = components;
     this.world = world;
-    this.updateCamera();
+    if (data) {
+      this.guid = data.guid ?? this.guid;
+      this.set(data);
+    }
+    if (setCamera) this.updateCamera();
   }
 
   async addComponentsFromMap(fragmentIdMap: FRAGS.FragmentIdMap) {
@@ -138,6 +152,8 @@ export class Viewpoint implements BCFViewpoint {
         if (globalId) this.selectionComponents.add(globalId);
       }
     }
+    const manager = this._components.get(Viewpoints);
+    manager.list.set(this.guid, this);
   }
 
   set(data: Partial<BCFViewpoint>) {
@@ -148,6 +164,9 @@ export class Viewpoint implements BCFViewpoint {
       const value = _data[key];
       if (key in this) _this[key] = value;
     }
+    const manager = this._components.get(Viewpoints);
+    manager.list.set(this.guid, this);
+    return this;
   }
 
   async go(transition = true) {
@@ -250,6 +269,9 @@ export class Viewpoint implements BCFViewpoint {
         viewToWorldScale: threeCamera.top - threeCamera.bottom,
       };
     }
+
+    const manager = this._components.get(Viewpoints);
+    manager.list.set(this.guid, this);
   }
 
   private async createComponentTags(from: "selection" | "exception") {

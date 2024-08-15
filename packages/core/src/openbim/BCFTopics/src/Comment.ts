@@ -1,4 +1,4 @@
-import { BCFTopics } from "..";
+import { BCFTopics, Topic } from "..";
 import { Viewpoint } from "../../../core/Viewpoints";
 import { Components } from "../../../core/Components";
 import { UUID } from "../../../utils";
@@ -13,11 +13,7 @@ export class Comment {
   viewpoint?: Viewpoint;
   modifiedAuthor?: string;
   modifiedDate?: Date;
-
-  private get _managerVersion() {
-    const manager = this._components.get(BCFTopics);
-    return manager.config.version;
-  }
+  topic?: Topic;
 
   private _components: Components;
   private _comment: string = "";
@@ -32,6 +28,7 @@ export class Comment {
     this._comment = value;
     this.modifiedDate = new Date();
     this.modifiedAuthor = manager.config.author;
+    this.topic?.comments.set(this.guid, this);
   }
 
   /**

@@ -1,7 +1,9 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import * as BUI from "@thatopen/ui";
-import { Components, Viewpoints } from "../../../../../core";
+import { Components, Viewpoints, World } from "../../../../../core";
 import { Topic } from "../../Topic";
+import { viewpointsList } from "../../ViewpointsList";
+import { topicComments } from "../../TopicComments";
 
 interface DataStyles {
   priorities: {
@@ -18,10 +20,21 @@ interface DataStyles {
   };
 }
 
+interface TopicPanelActions {
+  update: boolean;
+  addComments: boolean;
+  addViewpoints: boolean;
+  linkViewpoints: boolean;
+  linkTopics: boolean;
+}
+
 export interface TopicPanelUI {
   components: Components;
-  topic: Topic;
+  topic?: Topic;
   styles?: Partial<DataStyles>;
+  onUpdateInformation?: (topic: Topic) => void | Promise<void>;
+  actions?: Partial<TopicPanelActions>;
+  world?: World;
 }
 
 const defaultStyles: Required<DataStyles> = {
@@ -200,31 +213,69 @@ const createAuthorTag = (value: string, styles?: Partial<DataStyles>) => {
 };
 
 export const topicPanelTemplate = (state: TopicPanelUI) => {
-  const { components, topic, styles } = state;
+  const {
+    components,
+    topic,
+    styles,
+    onUpdateInformation,
+    actions: _actions,
+    world,
+  } = state;
 
-  const viewpoints = components.get(Viewpoints);
+  const actions: TopicPanelActions = {
+    update: true,
+    addComments: true,
+    linkViewpoints: true,
+    addViewpoints: true,
+    linkTopics: true,
+    ..._actions,
+  };
 
   const priorityStyles = styles?.priorities ?? defaultStyles.priorities;
   const statusStyles = styles?.statuses ?? defaultStyles.statuses;
   const typesStyles = styles?.types ?? defaultStyles.types;
 
   let priorityStyle;
-  if (topic.priority) {
+  if (topic?.priority) {
     priorityStyle = priorityStyles[topic.priority];
   }
 
-  const typeStyle = typesStyles[topic.type];
-  const statusStyle = statusStyles[topic.status];
+  let typeStyle;
+  if (topic?.type) {
+    typeStyle = typesStyles[topic.type];
+  }
 
-  const commentsTable = document.createElement("bim-table");
-  commentsTable.headersHidden = true;
-  commentsTable.hiddenColumns = ["Author"];
-  commentsTable.data = [...topic.comments].map((comment) => {
-    return { data: { Comment: comment.comment, Author: comment.author } };
-  });
+  let statusStyle;
+  if (topic?.type) {
+    statusStyle = statusStyles[topic.status];
+  }
+
+  let topicCommentsList;
+  let viewpoints;
+  if (topic) {
+    topicCommentsList = topicComments({
+      topic,
+      styles: styles?.users,
+    })[0];
+    viewpoints = viewpointsList({
+      components,
+      topic,
+    })[0];
+  }
+
+  const onAddViewpoint = () => {
+    if (!(topic && world)) return;
+    const viewpoints = components.get(Viewpoints);
+    const viewpoint = viewpoints.create(world);
+    topic.viewpoints.add(viewpoint);
+  };
+
   return BUI.html`
    <bim-panel>
-    <bim-panel-section label="Information" icon="ph:info-bold">
+    ${
+      topic
+        ? BUI.html`
+      <bim-panel-section label="Information" icon="ph:info-bold" collapsed>
       <div>
         <bim-label>Title</bim-label> 
         <bim-label style="--bim-label--c: var(--bim-ui_bg-contrast-100)">${topic.title}</bim-label> 
@@ -305,9 +356,51 @@ export const topicPanelTemplate = (state: TopicPanelUI) => {
           </div>`
           : null
       }
+      ${
+        actions.update
+          ? BUI.html`
+            <bim-button @click=${() => {
+              if (onUpdateInformation) onUpdateInformation(topic);
+            }} label="Update Information" icon="tabler:refresh"></bim-button> 
+          `
+          : null
+      }
     </bim-panel-section>
-    <bim-panel-section label="Comments" icon="mdi:comments-outline">${commentsTable}</bim-panel-section>
-    <bim-panel-section label="Viewpoints" icon="tabler:camera"></bim-panel-section>
+    <bim-panel-section label="Comments" icon="majesticons:comment-line">
+      ${topicCommentsList}
+      ${
+        actions.addComments
+          ? BUI.html`
+            <bim-button label="Add Comment" icon="majesticons:comment-line"></bim-button>
+          `
+          : null
+      }
+    </bim-panel-section>
+    <bim-panel-section label="Viewpoints" icon="tabler:camera">
+      ${viewpoints}
+      ${
+        actions.linkViewpoints || actions.addViewpoints
+          ? BUI.html`
+          <div style="display: flex; gap: 0.375rem">
+            ${actions.addViewpoints ? BUI.html`<bim-button @click=${onAddViewpoint} .disabled=${!world} label="Add Viewpoint" icon="mi:add"></bim-button> ` : null}
+            ${actions.linkViewpoints ? BUI.html`<bim-button label="Link Viewpoint" icon="tabler:camera"></bim-button>` : null}
+          </div>
+          `
+          : null
+      }
+    </bim-panel-section>
+    <bim-panel-section label="Related Topics" icon="material-symbols:topic-outline">
+      ${
+        actions.linkViewpoints
+          ? BUI.html`
+            <bim-button label="Link Topic" icon="material-symbols:topic-outline"></bim-button> 
+          `
+          : null
+      }
+    </bim-panel-section>
+    `
+        : BUI.html`<bim-label>No topic selected!</bim-label>`
+    }
    </bim-panel> 
   `;
 };

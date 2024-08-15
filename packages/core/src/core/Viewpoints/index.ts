@@ -9,12 +9,8 @@ export class Viewpoints extends Component implements Disposable {
   readonly list = new DataMap<string, Viewpoint>();
 
   create(world: World, data?: Partial<BCFViewpoint>) {
-    const viewpoint = new Viewpoint(this.components, world);
-    if (data) {
-      viewpoint.guid = data.guid ?? viewpoint.guid;
-      viewpoint.set(data);
-    }
-    this.list.set(viewpoint.guid, viewpoint);
+    const viewpoint = new Viewpoint(this.components, world, { data });
+    if (!data) this.list.set(viewpoint.guid, viewpoint);
     return viewpoint;
   }
 

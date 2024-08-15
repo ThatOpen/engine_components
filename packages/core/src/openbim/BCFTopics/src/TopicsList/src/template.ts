@@ -5,27 +5,28 @@ import { Topic } from "../../Topic";
 import { BCFTopics } from "../../..";
 
 interface DataStyles {
-  priorities: {
-    [name: string]: { icon?: string; style?: Record<string, string> };
-  };
-  statuses: {
-    [name: string]: { icon?: string; style?: Record<string, string> };
-  };
-  types: {
-    [name: string]: { icon?: string; style?: Record<string, string> };
-  };
-  users: {
-    [email: string]: { name: string; picture?: string };
-  };
+  [name: string]: { icon?: string; style?: Record<string, string> };
+}
+
+interface UserStyles {
+  [email: string]: { name: string; picture?: string };
+}
+
+interface TopicDataStyles {
+  priorities?: DataStyles;
+  statuses?: DataStyles;
+  types?: DataStyles;
+  users?: UserStyles;
 }
 
 export interface BCFTopicsUI {
   components: Components;
   topics?: Iterable<Topic>;
-  styles?: Partial<DataStyles>;
+  dataStyles?: TopicDataStyles;
+  onTopicEnter?: (topic: Topic) => void | Promise<void>;
 }
 
-const defaultStyles: Required<DataStyles> = {
+const defaultStyles: Required<TopicDataStyles> = {
   users: {
     "jhon.doe@example.com": { name: "Jhon Doe" },
   },
@@ -165,7 +166,7 @@ const baseTagStyle = {
   "--bim-label--c": "white",
 };
 
-const createAuthorTag = (value: string, styles?: Partial<DataStyles>) => {
+const createAuthorTag = (value: string, styles?: Partial<TopicDataStyles>) => {
   const userStyles = styles?.users ?? defaultStyles.users;
   const labelStyles = userStyles[value];
   const name = labelStyles?.name ?? value;
@@ -200,86 +201,102 @@ const createAuthorTag = (value: string, styles?: Partial<DataStyles>) => {
 `;
 };
 
-let table: BUI.Table;
-
 export const bcfTopicsListTemplate = (state: BCFTopicsUI) => {
-  const { components, styles } = state;
+  const { components, dataStyles: styles, onTopicEnter } = state;
   const bcfTopics = components.get(BCFTopics);
   const topics = state.topics ?? bcfTopics.list.values();
-  if (!table) {
-    table = document.createElement("bim-table");
+  const onTableCreated = (e?: Element) => {
+    if (!e) return;
+    const table = e as BUI.Table;
     table.hiddenColumns = ["Guid"];
     table.columns = ["Title"];
     table.selectableRows = true;
-  }
-  table.dataTransform = {
-    // Title: (value) => {
-    //   return BUI.html`
-    //   <div style="display: flex; gap: 0.25rem; overflow: hidden;">
-    //     <bim-button icon="iconamoon:enter-duotone"></bim-button>
-    //     <bim-label>${value}</bim-label>
-    //   </div>`;
-    // },
-    Priority: (value) => {
-      if (typeof value !== "string") return value;
-      const priorityStyles = styles?.priorities ?? defaultStyles.priorities;
-      const labelStyles = priorityStyles[value];
-      return BUI.html`
-        <bim-label
-          .icon=${labelStyles?.icon}
-          style=${BUI.styleMap({ ...baseTagStyle, ...labelStyles?.style })}
-        >${value}
-        </bim-label>
-      `;
-    },
-    Status: (value) => {
-      if (typeof value !== "string") return value;
-      const statusStyles = styles?.statuses ?? defaultStyles.statuses;
-      const labelStyle = statusStyles[value];
-      return BUI.html`
-        <bim-label
-          .icon=${labelStyle?.icon}
-          style=${BUI.styleMap({ ...baseTagStyle, ...labelStyle?.style })}
-        >${value}
-        </bim-label>
-      `;
-    },
-    Type: (value) => {
-      if (typeof value !== "string") return value;
-      const typesStyles = styles?.types ?? defaultStyles.types;
-      const labelStyles = typesStyles[value];
-      return BUI.html`
-        <bim-label
-          .icon=${labelStyles?.icon}
-          style=${BUI.styleMap({ ...baseTagStyle, ...labelStyles?.style })}
-        >${value}
-        </bim-label>
-      `;
-    },
-    Author: (value) => {
-      if (typeof value !== "string") return value;
-      return createAuthorTag(value, styles);
-    },
-    Assignee: (value) => {
-      if (typeof value !== "string") return value;
-      return createAuthorTag(value, styles);
-    },
-  };
-  table.data = [...topics].map((topic) => {
-    return {
-      data: {
-        Guid: topic.guid,
-        Title: topic.title,
-        Status: topic.status,
-        Description: topic.description ?? "",
-        Author: topic.creationAuthor,
-        Assignee: topic.assignedTo ?? "",
-        Date: topic.creationDate.toDateString(),
-        DueDate: topic.dueDate?.toDateString() ?? "",
-        Type: topic.type,
-        Priority: topic.priority ?? "",
+    table.dataTransform = {
+      Title: (value, rowData) => {
+        const { Guid } = rowData;
+        if (typeof Guid !== "string") return value;
+        const topic = bcfTopics.list.get(Guid);
+        if (!topic) return value;
+        return BUI.html`
+        <div style="display: flex; overflow: hidden;">
+          <style>
+            #BBETO {
+              background-color: transparent
+            }
+  
+            #BBETO:hover {
+              --bim-label--c: var(--bim-ui_accent-base)
+            }
+          </style> 
+          <bim-button @click=${() => {
+            if (onTopicEnter) onTopicEnter(topic);
+          }} id="BBETO" icon="iconamoon:enter-duotone"></bim-button>
+          <bim-label>${value}</bim-label>
+        </div>`;
+      },
+      Priority: (value) => {
+        if (typeof value !== "string") return value;
+        const priorityStyles = styles?.priorities ?? defaultStyles.priorities;
+        const labelStyles = priorityStyles[value];
+        return BUI.html`
+          <bim-label
+            .icon=${labelStyles?.icon}
+            style=${BUI.styleMap({ ...baseTagStyle, ...labelStyles?.style })}
+          >${value}
+          </bim-label>
+        `;
+      },
+      Status: (value) => {
+        if (typeof value !== "string") return value;
+        const statusStyles = styles?.statuses ?? defaultStyles.statuses;
+        const labelStyle = statusStyles[value];
+        return BUI.html`
+          <bim-label
+            .icon=${labelStyle?.icon}
+            style=${BUI.styleMap({ ...baseTagStyle, ...labelStyle?.style })}
+          >${value}
+          </bim-label>
+        `;
+      },
+      Type: (value) => {
+        if (typeof value !== "string") return value;
+        const typesStyles = styles?.types ?? defaultStyles.types;
+        const labelStyles = typesStyles[value];
+        return BUI.html`
+          <bim-label
+            .icon=${labelStyles?.icon}
+            style=${BUI.styleMap({ ...baseTagStyle, ...labelStyles?.style })}
+          >${value}
+          </bim-label>
+        `;
+      },
+      Author: (value) => {
+        if (typeof value !== "string") return value;
+        return createAuthorTag(value, styles);
+      },
+      Assignee: (value) => {
+        if (typeof value !== "string") return value;
+        return createAuthorTag(value, styles);
       },
     };
-  });
-  return BUI.html`${table}`;
+
+    table.data = [...topics].map((topic) => {
+      return {
+        data: {
+          Guid: topic.guid,
+          Title: topic.title,
+          Status: topic.status,
+          Description: topic.description ?? "",
+          Author: topic.creationAuthor,
+          Assignee: topic.assignedTo ?? "",
+          Date: topic.creationDate.toDateString(),
+          DueDate: topic.dueDate?.toDateString() ?? "",
+          Type: topic.type,
+          Priority: topic.priority ?? "",
+        },
+      };
+    });
+  };
+
+  return BUI.html`<bim-table ${BUI.ref(onTableCreated)}><bim-label slot="missing-data" icon="ph:warning-fill" style="--bim-icon--c: gold;">There are no topics created</bim-label></bim-table>`;
 };

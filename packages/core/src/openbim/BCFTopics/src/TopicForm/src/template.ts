@@ -24,15 +24,17 @@ export const topicFormTemplate = (state: TopicFormUI) => {
   const onSubmit = _onSubmit ?? (() => {});
   const bcfTopics = components.get(BCFTopics);
 
-  const title = topic ? topic.title : null;
-  const status = topic ? topic.status : null;
-  const type = topic ? topic.type : null;
-  const priority = topic ? topic.priority : null;
-  const assignedTo = topic ? topic.assignedTo : null;
-  const labels = topic ? topic.labels : null;
-  const stage = topic ? topic.stage : null;
-  const description = topic ? topic.description : null;
-  const dueDate = topic ? topic.dueDate?.toISOString().split("T")[0] : null;
+  const title = topic?.title ?? null;
+  const status = topic?.status ?? null;
+  const type = topic?.type ?? null;
+  const priority = topic?.priority ?? null;
+  const assignedTo = topic?.assignedTo ?? null;
+  const labels = topic?.labels ?? null;
+  const stage = topic?.stage ?? null;
+  const description = topic?.description ?? null;
+  const dueDate = topic?.dueDate
+    ? topic.dueDate.toISOString().split("T")[0]
+    : null;
 
   const statuses = new Set([...bcfTopics.config.statuses]);
   if (status) statuses.add(status);

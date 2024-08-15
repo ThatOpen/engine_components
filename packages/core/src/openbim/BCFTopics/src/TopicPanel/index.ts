@@ -19,12 +19,13 @@ export const topicPanel = (state: TopicPanelUI, autoUpdate = true) => {
   );
 
   if (autoUpdate) {
-    const { components, topic } = state;
+    const { components } = state;
     const [_, updateElement] = element;
     const bcfTopics = components.get(BCFTopics);
     bcfTopics.list.onItemUpdated.add(({ value: topicSet }) => {
+      const { topic } = updateElement();
       const { guid } = topicSet;
-      if (guid === topic.guid) updateElement();
+      if (guid === topic?.guid) updateElement();
     });
   }
 

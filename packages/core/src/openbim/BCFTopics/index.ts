@@ -162,7 +162,7 @@ export class BCFTopics
       users.push(topic.creationAuthor);
       if (topic.assignedTo) users.push(topic.assignedTo);
       if (topic.modifiedAuthor) users.push(topic.modifiedAuthor);
-      for (const comment of topic.comments) {
+      for (const [_, comment] of topic.comments) {
         users.push(comment.author);
         if (comment.modifiedAuthor) users.push(comment.modifiedAuthor);
       }
@@ -195,7 +195,7 @@ export class BCFTopics
       this.config.users.add(topic.creationAuthor);
       if (topic.assignedTo) this.config.users.add(topic.assignedTo);
       if (topic.modifiedAuthor) this.config.users.add(topic.modifiedAuthor);
-      for (const comment of topic.comments) {
+      for (const [_, comment] of topic.comments) {
         this.config.users.add(comment.author);
         if (comment.modifiedAuthor)
           this.config.users.add(comment.modifiedAuthor);
@@ -469,7 +469,11 @@ export class BCFTopics
         }
       }
 
-      const viewpoint = viewpoints.create(world, bcfViewpoint);
+      const viewpoint = new Viewpoint(this.components, world, {
+        data: bcfViewpoint,
+        setCamera: false,
+      });
+
       createdViewpoints.push(viewpoint);
 
       if (ClippingPlanes) {
@@ -552,7 +556,7 @@ export class BCFTopics
 
       // Comments
       const comments = this.getMarkupComments(markup, version);
-      for (const comment of comments) topic.comments.add(comment);
+      for (const comment of comments) topic.comments.set(comment.guid, comment);
 
       // Viewpoints
       const markupViewpoints = this.getMarkupViewpoints(markup, version);
@@ -560,7 +564,7 @@ export class BCFTopics
         if (!(markupViewpoint && markupViewpoint.Guid)) continue;
         const viewpoint = viewpoints.list.get(markupViewpoint.Guid);
         if (viewpoint) {
-          viewpoint.name = topic.title;
+          viewpoint.title = topic.title;
           topic.viewpoints.add(viewpoint);
         }
       }

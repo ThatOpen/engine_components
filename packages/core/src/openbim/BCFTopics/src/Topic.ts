@@ -4,7 +4,7 @@ import { Viewpoint } from "../../../core/Viewpoints";
 import { Comment } from "./Comment";
 import { BCFTopics } from "..";
 import { BCFTopic } from "./types";
-import { DataSet, Event } from "../../../core/Types";
+import { DataMap, DataSet } from "../../../core/Types";
 
 export class Topic implements BCFTopic {
   /**
@@ -33,7 +33,7 @@ export class Topic implements BCFTopic {
   title = Topic.default.title;
   creationDate = new Date();
   creationAuthor = "";
-  readonly comments = new DataSet<Comment>();
+  readonly comments = new DataMap<string, Comment>();
   readonly viewpoints = new DataSet<Viewpoint>();
   readonly relatedTopics = new DataSet<Topic>();
   customData: Record<string, any> = {};
@@ -223,7 +223,8 @@ export class Topic implements BCFTopic {
   createComment(text: string, viewpoint?: Viewpoint) {
     const comment = new Comment(this._components, text);
     comment.viewpoint = viewpoint;
-    this.comments.add(comment);
+    comment.topic = this;
+    this.comments.set(comment.guid, comment);
     return comment;
   }
 
@@ -252,7 +253,7 @@ export class Topic implements BCFTopic {
   }
 
   private createCommentTags(version = this._managerVersion) {
-    const tags = [...this.comments]
+    const tags = [...this.comments.values()]
       .map((comment) => comment.serialize())
       .join("\n");
 
