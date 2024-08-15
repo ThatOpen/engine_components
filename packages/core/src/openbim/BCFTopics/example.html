@@ -22,7 +22,7 @@
       border-radius: 0;
     }
 
-    dialog {
+    dialog:not([data-context-dialog]) {
       background-color: transparent;
       border: none;
       margin: auto;
@@ -30,7 +30,7 @@
       overflow: visible;
     }
 
-    dialog::backdrop {
+    dialog:not([data-context-dialog])::backdrop {
       background-color: rgba(0, 0, 0, 0.5);
       backdrop-filter: blur(3px);
     }

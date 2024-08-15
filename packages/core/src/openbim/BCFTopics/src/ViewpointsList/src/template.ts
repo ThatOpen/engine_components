@@ -31,10 +31,14 @@ export const viewpointsListTemplate = (state: ViewpointsUI) => {
         const viewpoint = viewpoints.list.get(Guid);
         if (!viewpoint) return Guid;
         return BUI.html`
-          <bim-button @click=${() => viewpoint.go()} icon="ph:eye-fill"></bim-button> 
-          <bim-button @click=${() => console.log(viewpoint.selection)} icon="ph:cursor-fill"></bim-button> 
-          <bim-button @click=${() => viewpoint.updateCamera()} icon="jam:refresh"></bim-button> 
-          <bim-button @click=${() => viewpoints.list.delete(viewpoint.guid)} icon="tabler:trash-filled"></bim-button>
+          <bim-button icon="ph:eye-fill" @click=${() => viewpoint.go()}></bim-button> 
+          <bim-button icon="prime:ellipsis-v">
+            <bim-context-menu>
+              <bim-button label="Select Components" @click=${() => console.log(viewpoint.selection)}></bim-button> 
+              <bim-button label="Update Camera" @click=${() => viewpoint.updateCamera()}></bim-button> 
+              <bim-button label="Delete" @click=${() => viewpoints.list.delete(viewpoint.guid)}></bim-button>
+            </bim-context-menu>
+          </bim-button>
         `;
       },
     };

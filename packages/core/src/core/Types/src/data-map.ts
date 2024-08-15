@@ -20,7 +20,7 @@ export class DataMap<K, V> extends Map<K, V> {
   /**
    * An event triggered when an item is deleted from the map.
    */
-  readonly onItemDeleted = new Event();
+  readonly onItemDeleted = new Event<K>();
 
   /**
    * An event triggered when the map is cleared.
@@ -76,7 +76,7 @@ export class DataMap<K, V> extends Map<K, V> {
    */
   delete(key: K) {
     const deleted = super.delete(key);
-    if (deleted) this.onItemDeleted.trigger();
+    if (deleted) this.onItemDeleted.trigger(key);
     return deleted;
   }
 

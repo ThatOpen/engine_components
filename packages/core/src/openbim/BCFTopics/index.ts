@@ -204,6 +204,21 @@ export class BCFTopics
   }
 
   /**
+   * Updates the references to viewpoints in the topics.
+   * This function iterates through each topic and checks if the viewpoints exist in the viewpoints list.
+   * If a viewpoint does not exist, it is removed from the topic's viewpoints.
+   */
+  updateViewpointReferences() {
+    const viewpoints = this.components.get(Viewpoints);
+    for (const [_, topic] of this.list) {
+      for (const viewpoint of topic.viewpoints) {
+        const exists = viewpoints.list.has(viewpoint.guid);
+        if (!exists) topic.viewpoints.delete(viewpoint);
+      }
+    }
+  }
+
+  /**
    * Exports the given topics to a BCF (Building Collaboration Format) zip file.
    *
    * @param topics - The topics to export. Defaults to all topics in the list.

@@ -1,6 +1,7 @@
 import { World, Component, Disposable, Event, DataMap } from "../Types";
 import { Components } from "../Components";
 import { BCFViewpoint, Viewpoint } from "./src";
+import { BCFTopics } from "../..";
 
 export class Viewpoints extends Component implements Disposable {
   static readonly uuid = "ee867824-a796-408d-8aa0-4e5962a83c66" as const;
@@ -17,6 +18,10 @@ export class Viewpoints extends Component implements Disposable {
   constructor(components: Components) {
     super(components);
     components.add(Viewpoints.uuid, this);
+    this.list.onItemDeleted.add(() => {
+      const bcfTopics = components.get(BCFTopics);
+      bcfTopics.updateViewpointReferences();
+    });
   }
 
   readonly onDisposed = new Event();
