@@ -1,6 +1,6 @@
 import { UUID } from "../../../utils";
 import { Components } from "../../../core/Components";
-import { Viewpoint } from "../../../core/Viewpoints";
+import { Viewpoint, Viewpoints } from "../../../core/Viewpoints";
 import { Comment } from "./Comment";
 import { BCFTopics } from "..";
 import { BCFTopic } from "./types";
@@ -33,9 +33,12 @@ export class Topic implements BCFTopic {
   title = Topic.default.title;
   creationDate = new Date();
   creationAuthor = "";
+  // Store viewpoint guids instead of the actual Viewpoint to prevent a possible memory leak
+  readonly viewpoints = new DataSet<string>();
+  // Store topic guids instead of the actual Topic to prevent a possible memory leak
+  readonly relatedTopics = new DataSet<string>();
+  // There is no problem to store the comment it-self as it is not referenced anywhere else
   readonly comments = new DataMap<string, Comment>();
-  readonly viewpoints = new DataSet<Viewpoint>();
-  readonly relatedTopics = new DataSet<Topic>();
   customData: Record<string, any> = {};
   description?: string;
   serverAssignedId?: string;
@@ -169,6 +172,8 @@ export class Topic implements BCFTopic {
     this._components = components;
     const manager = components.get(BCFTopics);
     this.creationAuthor = manager.config.author;
+    // Prevent the topic to reference it-self
+    this.relatedTopics.guard = (guid) => guid !== this.guid;
   }
 
   /**
@@ -271,14 +276,20 @@ export class Topic implements BCFTopic {
     if (version === "2.1") tag = "Viewpoints";
     if (version === "3") tag = "ViewPoint";
 
-    const tags = [...this.viewpoints]
-      .map(
-        (viewpoint) => `<${tag} Guid="${viewpoint.guid}">
+    // Make sure to only associate existing viewpoints
+    const manager = this._components.get(Viewpoints);
+    const viewpoints = [...this.viewpoints]
+      .map((viewpointID) => manager.list.get(viewpointID))
+      .filter((viewpoint) => viewpoint) as Viewpoint[];
+
+    const tags = viewpoints
+      .map((viewpoint) => {
+        return `<${tag} Guid="${viewpoint.guid}">
           <Viewpoint>${viewpoint.guid}.bcfv</Viewpoint>
           <Snapshot>${viewpoint.guid}.jpeg</Snapshot>
         </${tag}>
-      `,
-      )
+      `;
+      })
       .join("\n");
 
     if (version === "2.1") return tags;
@@ -293,7 +304,7 @@ export class Topic implements BCFTopic {
   private createRelatedTopicTags(version = this._managerVersion) {
     const tags = [...this.relatedTopics]
       .map(
-        (topic) => `<RelatedTopic Guid="${topic.guid}"></RelatedTopic>
+        (guid) => `<RelatedTopic Guid="${guid}"></RelatedTopic>
       `,
       )
       .join("\n");

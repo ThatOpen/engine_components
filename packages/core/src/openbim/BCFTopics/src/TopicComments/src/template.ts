@@ -70,10 +70,6 @@ export const topicCommentsTemplate = (state: TopicCommentsUI) => {
   const onTableCreated = (e?: Element) => {
     if (!e) return;
     const table = e as BUI.Table;
-    table.addEventListener("cellcreated", ({ detail }) => {
-      const { cell } = detail;
-      cell.style.padding = "0.25rem 0";
-    });
     table.headersHidden = true;
     table.hiddenColumns = ["guid", "author"];
     table.dataTransform = {
@@ -136,5 +132,8 @@ export const topicCommentsTemplate = (state: TopicCommentsUI) => {
     });
   };
 
-  return BUI.html`<bim-table ${BUI.ref(onTableCreated)}><bim-label slot="missing-data" icon="ph:warning-fill" style="--bim-icon--c: gold;">This topic has no comments</bim-label></bim-table>`;
+  return BUI.html`<bim-table @cellcreated=${({ detail }: any) => {
+    const { cell } = detail;
+    cell.style.marginLeft = "0";
+  }} ${BUI.ref(onTableCreated)}><bim-label slot="missing-data" icon="ph:warning-fill" style="--bim-icon--c: gold;">This topic has no comments</bim-label></bim-table>`;
 };

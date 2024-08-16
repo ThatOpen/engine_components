@@ -71,7 +71,7 @@ const defaultStyles: Required<TopicDataStyles> = {
     Active: {
       icon: "prime:circle-fill",
       style: {
-        backgroundColor: "#414141",
+        backgroundColor: "var(--bim-ui_bg-contrast-20)",
       },
     },
     "In Progress": {
@@ -163,7 +163,7 @@ const defaultStyles: Required<TopicDataStyles> = {
 const baseTagStyle = {
   padding: "0.25rem 0.5rem",
   borderRadius: "999px",
-  "--bim-label--c": "white",
+  "--bim-label--c": "var(--bim-ui_bg-contrast-100)",
 };
 
 const createAuthorTag = (value: string, styles?: Partial<TopicDataStyles>) => {
@@ -298,5 +298,11 @@ export const bcfTopicsListTemplate = (state: BCFTopicsUI) => {
     });
   };
 
-  return BUI.html`<bim-table ${BUI.ref(onTableCreated)}><bim-label slot="missing-data" icon="ph:warning-fill" style="--bim-icon--c: gold;">There are no topics created</bim-label></bim-table>`;
+  return BUI.html`
+    <bim-table @cellcreated=${({ detail }: any) => {
+      const { cell } = detail;
+      cell.style.marginLeft = "0";
+    }} ${BUI.ref(onTableCreated)}>
+      <bim-label slot="missing-data" icon="ph:warning-fill" style="--bim-icon--c: gold;">There are no topics to display</bim-label>
+    </bim-table>`;
 };

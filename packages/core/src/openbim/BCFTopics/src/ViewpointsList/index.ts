@@ -21,15 +21,16 @@ export const viewpointsList = (state: ViewpointsUI, autoUpdate = true) => {
   const { components, topic } = state;
   if (autoUpdate) {
     const [, updateElement] = element;
+    const manager = components.get(Viewpoints);
+    manager.list.onItemUpdated.add(() => updateElement());
+    manager.list.onItemDeleted.add(() => updateElement());
+    manager.list.onCleared.add(() => updateElement());
     if (topic) {
       topic.viewpoints.onItemAdded.add(() => updateElement());
       topic.viewpoints.onItemDeleted.add(() => updateElement());
       topic.viewpoints.onCleared.add(() => updateElement());
     } else {
-      const manager = components.get(Viewpoints);
       manager.list.onItemSet.add(() => updateElement());
-      manager.list.onItemDeleted.add(() => updateElement());
-      manager.list.onItemUpdated.add(() => updateElement());
     }
   }
 

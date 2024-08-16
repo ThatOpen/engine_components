@@ -19,12 +19,20 @@ export const bcfTopicsList = (state: BCFTopicsUI, autoUpdate = true) => {
   );
 
   if (autoUpdate) {
-    const { components } = state;
-    const bcfTopics = components.get(BCFTopics);
+    const { components, topics } = state;
     const [, updateElement] = element;
-    bcfTopics.list.onItemSet.add(() => updateElement());
-    bcfTopics.list.onItemDeleted.add(() => updateElement());
+    const bcfTopics = components.get(BCFTopics);
     bcfTopics.list.onItemUpdated.add(() => updateElement());
+    bcfTopics.list.onItemDeleted.add(() => updateElement());
+    if (topics) {
+      for (const topic of topics) {
+        topic.relatedTopics.onItemAdded.add(() => updateElement());
+        topic.relatedTopics.onItemDeleted.add(() => updateElement());
+        topic.relatedTopics.onCleared.add(() => updateElement());
+      }
+    } else {
+      bcfTopics.list.onItemSet.add(() => updateElement());
+    }
   }
 
   return element;

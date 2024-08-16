@@ -4,6 +4,8 @@ import { Components, Viewpoints, World } from "../../../../../core";
 import { Topic } from "../../Topic";
 import { viewpointsList } from "../../ViewpointsList";
 import { topicComments } from "../../TopicComments";
+import { bcfTopicsList } from "../../TopicsList";
+import { BCFTopics } from "../../..";
 
 interface DataStyles {
   priorities: {
@@ -212,6 +214,201 @@ const createAuthorTag = (value: string, styles?: Partial<DataStyles>) => {
 `;
 };
 
+interface NewCommentUI {
+  components?: Components;
+  topic?: Topic;
+}
+
+const [newCommentPopup, updateCommentPopup] = BUI.Component.create<
+  HTMLDialogElement,
+  NewCommentUI
+>((state: NewCommentUI) => {
+  const { topic } = state;
+  const input = document.createElement("bim-text-input");
+  input.type = "area";
+
+  const removeDialog = () => {
+    input.value = "";
+    newCommentPopup.close();
+    newCommentPopup.remove();
+  };
+
+  const onAddComment = () => {
+    const comment = input.value;
+    if (!topic || comment.trim() === "") return;
+    topic.createComment(comment);
+    removeDialog();
+  };
+
+  return BUI.html`
+     <dialog>
+      ${
+        topic
+          ? BUI.html`
+            <bim-panel style="border-radius: var(--bim-ui_size-base); outline: 2px solid var(--bim-ui_bg-contrast-20); width: 20rem;">
+              <bim-panel-section label="New Comment" fixed>
+                ${input}
+                <div style="justify-content: right; display: flex; gap: 0.375rem">
+                  <style>
+                    #PAISD {
+                      background-color: transparent;
+                    }
+
+                    #PAISD:hover {
+                      --bim-label--c: #FF5252;
+                    }
+
+                    #MDOG9:hover {
+                      background-color: #329936;
+                    }
+                  </style>
+                  <bim-button @click=${removeDialog} style="flex: 0" id="PAISD" label="Cancel"></bim-button>
+                  <bim-button @click=${onAddComment} style="flex: 0" id="MDOG9" label="Add Comment"} icon="mi:add"}></bim-button>
+                </div>
+              </bim-panel-section>
+            </bim-panel> 
+          `
+          : BUI.html`<bim-label>No topic refereced</bim-label>`
+      }
+     </dialog> 
+    `;
+}, {});
+
+const [linkViewpointPopup, updateLinkViewpoint] = BUI.Component.create<
+  HTMLDialogElement,
+  NewCommentUI
+>((state: NewCommentUI) => {
+  const { components, topic } = state;
+
+  let viewpoints: BUI.Table | undefined;
+  if (components) {
+    viewpoints = viewpointsList({
+      components,
+      actions: {
+        delete: false,
+        updateCamera: false,
+        colorizeComponent: false,
+        resetColors: false,
+        selectComponents: false,
+      },
+    })[0];
+    viewpoints.selectableRows = true;
+  }
+
+  const removeDialog = () => {
+    linkViewpointPopup.close();
+    linkViewpointPopup.remove();
+    viewpoints?.remove();
+  };
+
+  const onLinkTopics = () => {
+    if (!(viewpoints && topic)) return;
+    const selection = viewpoints.selection;
+    for (const entry of selection) {
+      const { Guid } = entry;
+      if (typeof Guid !== "string") continue;
+      topic.viewpoints.add(Guid);
+    }
+    removeDialog();
+  };
+
+  return BUI.html`
+     <dialog>
+      ${
+        topic
+          ? BUI.html`
+            <bim-panel style="border-radius: var(--bim-ui_size-base); outline: 2px solid var(--bim-ui_bg-contrast-20); width: 20rem;">
+              <bim-panel-section label="Link Viewpoints" fixed>
+                ${viewpoints}
+                <div style="justify-content: right; display: flex; gap: 0.375rem">
+                  <style>
+                    #PAISD {
+                      background-color: transparent;
+                    }
+
+                    #PAISD:hover {
+                      --bim-label--c: #FF5252;
+                    }
+
+                    #MDOG9:hover {
+                      background-color: #329936;
+                    }
+                  </style>
+                  <bim-button @click=${removeDialog} style="flex: 0" id="PAISD" label="Cancel"></bim-button>
+                  <bim-button @click=${onLinkTopics} style="flex: 0" id="MDOG9" label="Link Viewpoints"} icon="mi:add"}></bim-button>
+                </div>
+              </bim-panel-section>
+            </bim-panel> 
+          `
+          : BUI.html`<bim-label>No topic refereced</bim-label>`
+      }
+     </dialog> 
+    `;
+}, {});
+
+const [linkTopicPopup, updateLinkTopic] = BUI.Component.create<
+  HTMLDialogElement,
+  NewCommentUI
+>((state: NewCommentUI) => {
+  const { components, topic } = state;
+
+  let topics: BUI.Table | undefined;
+  if (components) {
+    const bcfTopics = components.get(BCFTopics);
+    const topicsList = [...bcfTopics.list.values()].filter((t) => t !== topic);
+    topics = bcfTopicsList({
+      components,
+      topics: topicsList,
+    })[0];
+    topics.selectableRows = true;
+    topics.hiddenColumns = ["Guid", "Author", "Assignee", "Date", "DueDate"];
+  }
+
+  const removeDialog = () => {
+    linkTopicPopup.close();
+    linkTopicPopup.remove();
+    topics?.remove();
+  };
+
+  const onLinkTopics = () => {
+    if (!(topics && topic)) return;
+    const selection = topics.selection;
+    for (const entry of selection) {
+      const { Guid } = entry;
+      if (typeof Guid !== "string") continue;
+      topic.relatedTopics.add(Guid);
+    }
+    removeDialog();
+  };
+
+  return BUI.html`
+     <dialog>
+        <bim-panel style="border-radius: var(--bim-ui_size-base); outline: 2px solid var(--bim-ui_bg-contrast-20); width: 50rem;">
+          <bim-panel-section label="Link Viewpoints" fixed>
+            ${topics}
+            <div style="justify-content: right; display: flex; gap: 0.375rem">
+              <style>
+                #PAISD {
+                  background-color: transparent;
+                }
+
+                #PAISD:hover {
+                  --bim-label--c: #FF5252;
+                }
+
+                #MDOG9:hover {
+                  background-color: #329936;
+                }
+              </style>
+              <bim-button @click=${removeDialog} style="flex: 0" id="PAISD" label="Cancel"></bim-button>
+              <bim-button @click=${onLinkTopics} style="flex: 0" id="MDOG9" label="Link Topics"} icon="mi:add"}></bim-button>
+            </div>
+          </bim-panel-section>
+        </bim-panel> 
+     </dialog> 
+    `;
+}, {});
+
 export const topicPanelTemplate = (state: TopicPanelUI) => {
   const {
     components,
@@ -221,6 +418,8 @@ export const topicPanelTemplate = (state: TopicPanelUI) => {
     actions: _actions,
     world,
   } = state;
+
+  // const bcfTopics = components.get(BCFTopics);
 
   const actions: TopicPanelActions = {
     update: true,
@@ -252,6 +451,7 @@ export const topicPanelTemplate = (state: TopicPanelUI) => {
 
   let topicCommentsList;
   let viewpoints;
+  let relatedTopicsList;
   if (topic) {
     topicCommentsList = topicComments({
       topic,
@@ -261,13 +461,55 @@ export const topicPanelTemplate = (state: TopicPanelUI) => {
       components,
       topic,
     })[0];
+    // const relatedTopics = [...bcfTopics.list.values()].filter((t) =>
+    //   topic.relatedTopics.has(t.guid),
+    // );
+    // const [topicsList, updateTopicsList] = bcfTopicsList({
+    //   components,
+    //   topics: relatedTopics,
+    // });
+    // topic.relatedTopics.onItemAdded.add(() => updateTopicsList());
+    // topic.relatedTopics.onItemDeleted.add(() => updateTopicsList());
+    // topic.relatedTopics.onCleared.add(() => updateTopicsList());
+    // relatedTopicsList = topicsList;
+    // relatedTopicsList.selectableRows = false;
+    // relatedTopicsList.headersHidden = true;
+    // relatedTopicsList.hiddenColumns = [
+    //   "Guid",
+    //   "Status",
+    //   "Description",
+    //   "Author",
+    //   "Assignee",
+    //   "Date",
+    //   "DueDate",
+    //   "Type",
+    //   "Priority",
+    // ];
   }
 
   const onAddViewpoint = () => {
     if (!(topic && world)) return;
     const viewpoints = components.get(Viewpoints);
     const viewpoint = viewpoints.create(world);
-    topic.viewpoints.add(viewpoint);
+    topic.viewpoints.add(viewpoint.guid);
+  };
+
+  const onAddComment = () => {
+    updateCommentPopup({ topic });
+    document.body.append(newCommentPopup);
+    newCommentPopup.showModal();
+  };
+
+  const onLinkViewpoint = () => {
+    updateLinkViewpoint({ components, topic });
+    document.body.append(linkViewpointPopup);
+    linkViewpointPopup.showModal();
+  };
+
+  const onLinkTopic = () => {
+    updateLinkTopic({ components, topic });
+    document.body.append(linkTopicPopup);
+    linkTopicPopup.showModal();
   };
 
   return BUI.html`
@@ -371,7 +613,7 @@ export const topicPanelTemplate = (state: TopicPanelUI) => {
       ${
         actions.addComments
           ? BUI.html`
-            <bim-button label="Add Comment" icon="majesticons:comment-line"></bim-button>
+            <bim-button @click=${onAddComment} label="Add Comment" icon="majesticons:comment-line"></bim-button>
           `
           : null
       }
@@ -383,21 +625,22 @@ export const topicPanelTemplate = (state: TopicPanelUI) => {
           ? BUI.html`
           <div style="display: flex; gap: 0.375rem">
             ${actions.addViewpoints ? BUI.html`<bim-button @click=${onAddViewpoint} .disabled=${!world} label="Add Viewpoint" icon="mi:add"></bim-button> ` : null}
-            ${actions.linkViewpoints ? BUI.html`<bim-button label="Link Viewpoint" icon="tabler:camera"></bim-button>` : null}
+            ${actions.linkViewpoints ? BUI.html`<bim-button @click=${onLinkViewpoint} label="Link Viewpoint" icon="tabler:camera"></bim-button>` : null}
           </div>
           `
           : null
       }
     </bim-panel-section>
-    <bim-panel-section label="Related Topics" icon="material-symbols:topic-outline">
+    <!-- <bim-panel-section label="Related Topics" icon="material-symbols:topic-outline">
+      ${relatedTopicsList}
       ${
         actions.linkViewpoints
           ? BUI.html`
-            <bim-button label="Link Topic" icon="material-symbols:topic-outline"></bim-button> 
+            <bim-button @click=${onLinkTopic} label="Link Topic" icon="material-symbols:topic-outline"></bim-button> 
           `
           : null
       }
-    </bim-panel-section>
+    </bim-panel-section> -->
     `
         : BUI.html`<bim-label>No topic selected!</bim-label>`
     }

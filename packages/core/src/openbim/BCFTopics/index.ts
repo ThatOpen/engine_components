@@ -211,9 +211,9 @@ export class BCFTopics
   updateViewpointReferences() {
     const viewpoints = this.components.get(Viewpoints);
     for (const [_, topic] of this.list) {
-      for (const viewpoint of topic.viewpoints) {
-        const exists = viewpoints.list.has(viewpoint.guid);
-        if (!exists) topic.viewpoints.delete(viewpoint);
+      for (const viewpointID of topic.viewpoints) {
+        const exists = viewpoints.list.has(viewpointID);
+        if (!exists) topic.viewpoints.delete(viewpointID);
       }
     }
   }
@@ -238,14 +238,17 @@ export class BCFTopics
       "https://thatopen.github.io/engine_components/resources/favicon.ico",
     );
     const imgBlob = await image.blob();
+    const viewpoints = this.components.get(Viewpoints);
     for (const topic of topics) {
       const topicFolder = zip.folder(topic.guid) as JSZip;
       topicFolder.file("markup.bcf", topic.serialize());
-      for (const viewpoint of topic.viewpoints) {
-        topicFolder.file(`${viewpoint.guid}.jpeg`, imgBlob, {
+      for (const viewpointID of topic.viewpoints) {
+        const viewpoint = viewpoints.list.get(viewpointID);
+        if (!viewpoint) continue;
+        topicFolder.file(`${viewpointID}.jpeg`, imgBlob, {
           binary: true,
         });
-        topicFolder.file(`${viewpoint.guid}.bcfv`, await viewpoint.serialize());
+        topicFolder.file(`${viewpointID}.bcfv`, await viewpoint.serialize());
       }
     }
     const content = await zip.generateAsync({ type: "blob" });
@@ -489,6 +492,23 @@ export class BCFTopics
         setCamera: false,
       });
 
+      if (Components) {
+        const { Coloring } = Components;
+        if (Coloring && Coloring.Color) {
+          const colors = Array.isArray(Coloring.Color)
+            ? Coloring.Color
+            : [Coloring.Color];
+          for (const colorData of colors) {
+            const { Color, Component } = colorData;
+            const components = Array.isArray(Component)
+              ? Component
+              : [Component];
+            const guids = components.map((component) => component.IfcGuid);
+            viewpoint.componentColors.set(Color, guids);
+          }
+        }
+      }
+
       createdViewpoints.push(viewpoint);
 
       if (ClippingPlanes) {
@@ -578,10 +598,7 @@ export class BCFTopics
       for (const markupViewpoint of markupViewpoints) {
         if (!(markupViewpoint && markupViewpoint.Guid)) continue;
         const viewpoint = viewpoints.list.get(markupViewpoint.Guid);
-        if (viewpoint) {
-          viewpoint.title = topic.title;
-          topic.viewpoints.add(viewpoint);
-        }
+        if (viewpoint) topic.viewpoints.add(viewpoint.guid);
       }
 
       this.list.set(topic.guid, topic);
@@ -592,10 +609,8 @@ export class BCFTopics
       const topic = this.list.get(topicID);
       if (!topic) continue;
       const relations = topicRelations[topicID];
-      for (const ID of relations) {
-        const relatedTopic = this.list.get(ID);
-        if (!relatedTopic) continue;
-        topic.relatedTopics.add(relatedTopic);
+      for (const guid of relations) {
+        topic.relatedTopics.add(guid);
       }
     }
 

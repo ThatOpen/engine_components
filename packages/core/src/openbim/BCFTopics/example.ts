@@ -193,6 +193,9 @@ const topic = bcfTopics.create({
   assignedTo: "juan.hoyos4@gmail.com",
 });
 
+const [topicAGuid] = [...bcfTopics.list][0];
+topic.relatedTopics.add(topicAGuid);
+
 // Creating a custom viewpoint
 const viewpoint = viewpoints.create(world, { title: "Custom Viewpoint" });
 viewpoint.addComponentsFromMap(model.getFragmentMap([186])); // You can provide a FragmentIdMap to the viewpoint selection
@@ -200,7 +203,7 @@ viewpoint.addComponentsFromMap(model.getFragmentMap([186])); // You can provide 
 // viewpoint.selection gives the fragmentIdMap to select elements with the highlighter from @thatopen/components-front
 // you can also use the viewpoint.selection fragmentIdMap to query elements data using FragmentsGroup.getProperty()
 
-topic.viewpoints.add(viewpoint);
+topic.viewpoints.add(viewpoint.guid);
 const comment = topic.createComment("What if we talk about this next meeting?");
 comment.author = "juan.hoyos4@gmail.com";
 topic.createComment("Hi there! I agree.");

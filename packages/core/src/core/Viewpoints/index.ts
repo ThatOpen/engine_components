@@ -1,9 +1,29 @@
-import { World, Component, Disposable, Event, DataMap } from "../Types";
+import {
+  World,
+  Component,
+  Disposable,
+  Event,
+  DataMap,
+  Configurable,
+} from "../Types";
 import { Components } from "../Components";
 import { BCFViewpoint, Viewpoint } from "./src";
-import { BCFTopics } from "../..";
 
-export class Viewpoints extends Component implements Disposable {
+/**
+ * Configuration interface for the Viewpoints general behavior.
+ */
+interface ViewpointsConfig {
+  /**
+   * Indicates whether to overwrite the fragments colors when applying viewpoints.
+   * @default false
+   */
+  overwriteColors: boolean;
+}
+
+export class Viewpoints
+  extends Component
+  implements Disposable, Configurable<ViewpointsConfig>
+{
   static readonly uuid = "ee867824-a796-408d-8aa0-4e5962a83c66" as const;
   enabled = true;
 
@@ -18,11 +38,12 @@ export class Viewpoints extends Component implements Disposable {
   constructor(components: Components) {
     super(components);
     components.add(Viewpoints.uuid, this);
-    this.list.onItemDeleted.add(() => {
-      const bcfTopics = components.get(BCFTopics);
-      bcfTopics.updateViewpointReferences();
-    });
   }
+
+  isSetup = false;
+  setup() {}
+  onSetup = new Event();
+  config: Required<ViewpointsConfig> = { overwriteColors: false };
 
   readonly onDisposed = new Event();
 

@@ -12,12 +12,12 @@ import {
   OrthoPerspectiveCamera,
 } from "../../OrthoPerspectiveCamera";
 import { Components } from "../../Components";
-import { DataSet, World } from "../../Types";
+import { DataMap, DataSet, World } from "../../Types";
 import { FragmentsManager } from "../../../fragments/FragmentsManager";
 import { BCFTopics } from "../../../openbim/BCFTopics";
 import { Raycasters } from "../../Raycasters";
 import { BoundingBoxer } from "../../../fragments/BoundingBoxer";
-import { Hider } from "../../../fragments";
+import { Classifier, Hider } from "../../../fragments";
 import { SimplePlane } from "../../Clipper";
 import { Viewpoints } from "..";
 
@@ -36,6 +36,7 @@ export class Viewpoint implements BCFViewpoint {
 
   readonly exceptionComponents = new DataSet<string>();
   readonly selectionComponents = new DataSet<string>();
+  readonly componentColors = new DataMap<string, string[]>();
   spacesVisible = false;
   spaceBoundariesVisible = false;
   openingsVisible = false;
@@ -115,7 +116,9 @@ export class Viewpoint implements BCFViewpoint {
   get topics() {
     const manager = this._components.get(BCFTopics);
     const topicsList = [...manager.list.values()];
-    const topics = topicsList.filter((topic) => topic.viewpoints.has(this));
+    const topics = topicsList.filter((topic) =>
+      topic.viewpoints.has(this.guid),
+    );
     return topics;
   }
 
@@ -272,6 +275,30 @@ export class Viewpoint implements BCFViewpoint {
 
     const manager = this._components.get(Viewpoints);
     manager.list.set(this.guid, this);
+  }
+
+  colorize() {
+    const manager = this._components.get(Viewpoints);
+    const fragments = this._components.get(FragmentsManager);
+    const classifier = this._components.get(Classifier);
+    for (const [color, guids] of this.componentColors) {
+      const fragmentIdMap = fragments.guidToFragmentIdMap(guids);
+      const threeColor = new THREE.Color(`#${color}`);
+      classifier.setColor(
+        fragmentIdMap,
+        threeColor,
+        manager.config.overwriteColors,
+      );
+    }
+  }
+
+  resetColors() {
+    const fragments = this._components.get(FragmentsManager);
+    const classifier = this._components.get(Classifier);
+    for (const [_, guids] of this.componentColors) {
+      const fragmentIdMap = fragments.guidToFragmentIdMap(guids);
+      classifier.resetColor(fragmentIdMap);
+    }
   }
 
   private async createComponentTags(from: "selection" | "exception") {
