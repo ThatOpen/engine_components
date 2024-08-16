@@ -25,6 +25,11 @@ export class Viewpoint implements BCFViewpoint {
   title?: string;
   guid = UUID.create();
 
+  /**
+   * ClippingPlanes can be used to define a subsection of a building model that is related to the topic.
+   * Each clipping plane is defined by Location and Direction.
+   * The Direction vector points in the invisible direction meaning the half-space that is clipped.
+   */
   clippingPlanes = new DataSet<SimplePlane>();
 
   camera: ViewpointPerspectiveCamera | ViewpointOrthographicCamera = {
@@ -34,12 +39,47 @@ export class Viewpoint implements BCFViewpoint {
     position: { x: 0, y: 0, z: 0 },
   };
 
+  /**
+   * A list of components GUIDs to hide when defaultVisibility = true or to show when defaultVisibility = false
+   */
   readonly exceptionComponents = new DataSet<string>();
+
+  /**
+   * A list of components GUIDs that should be selected (highlighted) when displaying a viewpoint.
+   */
   readonly selectionComponents = new DataSet<string>();
+
+  /**
+   * A map of colors and components GUIDs that should be colorized when displaying a viewpoint.
+   * For this to work, call viewpoint.colorize()
+   */
   readonly componentColors = new DataMap<string, string[]>();
+
+  /**
+   * Boolean flags to allow fine control over the visibility of spaces.
+   * A typical use of these flags is when DefaultVisibility=true but spaces should remain hidden.
+   * @default false
+   */
   spacesVisible = false;
+
+  /**
+   * Boolean flags to allow fine control over the visibility of space boundaries.
+   * A typical use of these flags is when DefaultVisibility=true but space boundaries should remain hidden.
+   * @default false
+   */
   spaceBoundariesVisible = false;
+
+  /**
+   * Boolean flags to allow fine control over the visibility of openings.
+   * A typical use of these flags is when DefaultVisibility=true but openings should remain hidden.
+   * @default false
+   */
   openingsVisible = false;
+
+  /**
+   * When true, all components should be visible unless listed in the exceptions
+   * When false all components should be invisible unless listed in the exceptions
+   */
   defaultVisibility = true;
 
   private get _selectionModelIdMap() {
@@ -68,6 +108,10 @@ export class Viewpoint implements BCFViewpoint {
     return modelIdMap;
   }
 
+  /**
+   * A list of components that should be selected (highlighted) when displaying a viewpoint.
+   * @returns The fragmentIdMap for components marked as selections.
+   */
   get selection() {
     const fragments = this._components.get(FragmentsManager);
     const fragmentIdMap = fragments.modelIdToFragmentIdMap(
@@ -76,6 +120,10 @@ export class Viewpoint implements BCFViewpoint {
     return fragmentIdMap;
   }
 
+  /**
+   * A list of components to hide when defaultVisibility = true or to show when defaultVisibility = false
+   * @returns The fragmentIdMap for components marked as exceptions.
+   */
   get exception() {
     const fragments = this._components.get(FragmentsManager);
     const fragmentIdMap = fragments.modelIdToFragmentIdMap(
@@ -84,11 +132,26 @@ export class Viewpoint implements BCFViewpoint {
     return fragmentIdMap;
   }
 
+  /**
+   * Retrieves the projection type of the viewpoint's camera.
+   *
+   * @returns A string representing the projection type of the viewpoint's camera.
+   *          It can be either 'Perspective' or 'Orthographic'.
+   */
   get projection(): CameraProjection {
     if ("fov" in this.camera) return "Perspective";
     return "Orthographic";
   }
 
+  /**
+   * Retrieves the position vector of the viewpoint's camera.
+   *
+   * @remarks
+   * The position vector represents the camera's position in the world coordinate system.
+   * The function applies the base coordinate system transformation to the position vector.
+   *
+   * @returns A THREE.Vector3 representing the position of the viewpoint's camera.
+   */
   get position() {
     const fragments = this._components.get(FragmentsManager);
     const { position } = this.camera;
@@ -97,7 +160,15 @@ export class Viewpoint implements BCFViewpoint {
     fragments.applyBaseCoordinateSystem(vector, new THREE.Matrix4());
     return vector;
   }
-
+  /**
+   * Retrieves the direction vector of the viewpoint's camera.
+   *
+   * @remarks
+   * The direction vector represents the direction in which the camera is pointing.
+   * It is calculated by extracting the x, y, and z components from the camera's direction property.
+   *
+   * @returns A THREE.Vector3 representing the direction of the viewpoint's camera.
+   */
   get direction() {
     const { direction } = this.camera;
     const { x, y, z } = direction;
@@ -106,6 +177,10 @@ export class Viewpoint implements BCFViewpoint {
   }
 
   private _components: Components;
+
+  /**
+   * Represents the world in which the viewpoints are created and managed.
+   */
   readonly world: World;
 
   private get _managerVersion() {
@@ -113,6 +188,15 @@ export class Viewpoint implements BCFViewpoint {
     return manager.config.version;
   }
 
+  /**
+   * Retrieves the list of BCF topics associated with the current viewpoint.
+   *
+   * @remarks
+   * This function retrieves the BCFTopics manager from the components,
+   * then filters the list of topics to find those associated with the current viewpoint.
+   *
+   * @returns An array of BCF topics associated with the current viewpoint.
+   */
   get topics() {
     const manager = this._components.get(BCFTopics);
     const topicsList = [...manager.list.values()];
@@ -141,6 +225,13 @@ export class Viewpoint implements BCFViewpoint {
     if (setCamera) this.updateCamera();
   }
 
+  /**
+   * Adds components to the viewpoint based on the provided fragment ID map.
+   *
+   * @param fragmentIdMap - A map containing fragment IDs as keys and arrays of express IDs as values.
+   *
+   * @returns A Promise that resolves when the components have been added to the viewpoint.
+   */
   async addComponentsFromMap(fragmentIdMap: FRAGS.FragmentIdMap) {
     const fragments = this._components.get(FragmentsManager);
     for (const fragmentID in fragmentIdMap) {
@@ -159,6 +250,16 @@ export class Viewpoint implements BCFViewpoint {
     manager.list.set(this.guid, this);
   }
 
+  /**
+   * Sets the properties of the viewpoint with the provided data.
+   *
+   * @remarks The guid will be ommited as it shouldn't change after it has been initially set.
+   *
+   * @param data - An object containing the properties to be set.
+   *               The properties not included in the object will remain unchanged.
+   *
+   * @returns The viewpoint instance with the updated properties.
+   */
   set(data: Partial<BCFViewpoint>) {
     const _data = data as any;
     const _this = this as any;
@@ -172,6 +273,20 @@ export class Viewpoint implements BCFViewpoint {
     return this;
   }
 
+  /**
+   * Sets the viewpoint of the camera in the world.
+   *
+   * @remarks
+   * This function calculates the target position based on the viewpoint information.
+   * It sets the visibility of the viewpoint components and then applies the viewpoint using the camera's controls.
+   *
+   * @param transition - Indicates whether the camera movement should have a transition effect.
+   *                      Default value is `true`.
+   *
+   * @throws An error if the world's camera does not have camera controls.
+   *
+   * @returns A Promise that resolves when the camera has been set.
+   */
   async go(transition = true) {
     const { camera } = this.world;
     if (!camera.hasCameraControls()) {
@@ -227,6 +342,17 @@ export class Viewpoint implements BCFViewpoint {
     );
   }
 
+  /**
+   * Updates the camera settings of the viewpoint based on the current world's camera and renderer.
+   *
+   * @remarks
+   * This function retrieves the camera's position, direction, and aspect ratio from the world's camera and renderer.
+   * It then calculates the camera's perspective or orthographic settings based on the camera type.
+   * Finally, it updates the viewpoint's camera settings and updates the viewpoint to the Viewpoints manager.
+   *
+   * @throws An error if the world's camera does not have camera controls.
+   * @throws An error if the world's renderer is not available.
+   */
   updateCamera() {
     const { camera, renderer } = this.world;
     if (!renderer) {
@@ -277,6 +403,16 @@ export class Viewpoint implements BCFViewpoint {
     manager.list.set(this.guid, this);
   }
 
+  /**
+   * Applies color to the components in the viewpoint based on their GUIDs.
+   *
+   * This function iterates through the `componentColors` map, retrieves the fragment IDs
+   * corresponding to each color, and then uses the `Classifier` to apply the color to those fragments.
+   *
+   * @remarks
+   * The color is applied using the `Classifier.setColor` method, which sets the color of the specified fragments.
+   * The color is provided as a hexadecimal string, prefixed with a '#'.
+   */
   colorize() {
     const manager = this._components.get(Viewpoints);
     const fragments = this._components.get(FragmentsManager);
@@ -292,6 +428,11 @@ export class Viewpoint implements BCFViewpoint {
     }
   }
 
+  /**
+   * Resets the colors of all components in the viewpoint to their original color.
+   * This method iterates through the `componentColors` map, retrieves the fragment IDs
+   * corresponding to each color, and then uses the `Classifier` to reset the color of those fragments.
+   */
   resetColors() {
     const fragments = this._components.get(FragmentsManager);
     const classifier = this._components.get(Classifier);
@@ -333,6 +474,18 @@ export class Viewpoint implements BCFViewpoint {
     return tags;
   }
 
+  /**
+   * Serializes the viewpoint into a buildingSMART compliant XML string for export.
+   *
+   * @param version - The version of the BCF Manager to use for serialization.
+   *                   If not provided, the current version of the manager will be used.
+   *
+   * @returns A Promise that resolves to an XML string representing the viewpoint.
+   *          The XML string follows the BCF VisualizationInfo schema.
+   *
+   * @throws An error if the world's camera does not have camera controls.
+   * @throws An error if the world's renderer is not available.
+   */
   async serialize(version = this._managerVersion) {
     const fragments = this._components.get(FragmentsManager);
 

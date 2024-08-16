@@ -641,7 +641,21 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@workspace:packages/core, @thatopen/components@~2.1.0":
+"@thatopen/components@npm:~2.1.0":
+  version: 2.1.27
+  resolution: "@thatopen/components@npm:2.1.27"
+  dependencies:
+    camera-controls: 2.7.3
+    three-mesh-bvh: 0.7.0
+  peerDependencies:
+    "@thatopen/fragments": ~2.1.0
+    three: ^0.160.1
+    web-ifc: 0.0.57
+  checksum: 8bcd18411046ba253253ff3716d078ff549e1e6bc7754772c475da4bcc99d0c5d57f4e129d2f71b36c82a97c8ac911fadfe96cddc3613b7706076fd48339e410
+  languageName: node
+  linkType: hard
+
+"@thatopen/components@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
@@ -649,8 +663,8 @@ __metadata:
     "@thatopen/ui": ~2.1.0
     "@types/three": 0.160.0
     camera-controls: 2.7.3
-    fast-xml-parser: latest
-    jszip: latest
+    fast-xml-parser: 4.4.1
+    jszip: 3.10.1
     stats.js: ^0.17.0
     three: ^0.160.1
     three-mesh-bvh: 0.7.0
@@ -2005,7 +2019,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fast-xml-parser@npm:latest":
+"fast-xml-parser@npm:4.4.1":
   version: 4.4.1
   resolution: "fast-xml-parser@npm:4.4.1"
   dependencies:
@@ -2822,7 +2836,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jszip@npm:latest":
+"jszip@npm:3.10.1":
   version: 3.10.1
   resolution: "jszip@npm:3.10.1"
   dependencies:

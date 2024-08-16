@@ -22,12 +22,6 @@ export class Topic implements BCFTopic {
    *
    * @remarks
    * The `guid` is automatically generated upon topic creation and by no means it should change.
-   *
-   * @example
-   * ```typescript
-   * const topic = new Topic(components);
-   * console.log(topic.guid); // Output: "123e4567-e89b-12d3-a456-426614174000"
-   * ```
    */
   guid = UUID.create();
   title = Topic.default.title;

@@ -9,7 +9,13 @@ import {
   World,
   DataMap,
 } from "../../core/Types";
-import { BCFTopic, BCFTopicsConfig, BCFVersion, Topic } from "./src";
+import {
+  BCFTopic,
+  BCFTopicsConfig,
+  BCFVersion,
+  Topic,
+  extensionsImporter,
+} from "./src";
 import {
   BCFViewpoint,
   Viewpoint,
@@ -19,6 +25,8 @@ import {
 import { Comment } from "./src/Comment";
 import { Clipper } from "../../core/Clipper";
 
+// TODO: Extract import/export logic in its own class for better maintenance.
+
 export class BCFTopics
   extends Component
   implements Disposable, Configurable<BCFTopicsConfig>
@@ -26,7 +34,7 @@ export class BCFTopics
   static uuid = "de977976-e4f6-4e4f-a01a-204727839802" as const;
   enabled = false;
 
-  private _xmlParser = new XMLParser({
+  static xmlParser = new XMLParser({
     allowBooleanAttributes: true,
     attributeNamePrefix: "",
     ignoreAttributes: false,
@@ -98,6 +106,13 @@ export class BCFTopics
 
   readonly onDisposed = new Event();
 
+  /**
+   * Disposes of the BCFTopics component and triggers the onDisposed event.
+   *
+   * @remarks
+   * This method clears the list of topics and triggers the onDisposed event.
+   * It also resets the onDisposed event listener.
+   */
   dispose() {
     this.list.dispose();
     this.onDisposed.trigger();
@@ -357,10 +372,22 @@ export class BCFTopics
     return topics.map((topic) => topic.Guid);
   }
 
-  // world: the default world where the viewpoints are going to be created
-  async load(world: World, data: Uint8Array) {
-    const { fallbackVersionOnImport, ignoreIncompleteTopicsOnImport } =
-      this.config;
+  /**
+   * Loads BCF (Building Collaboration Format) data into the engine.
+   *
+   * @param world - The default world where the viewpoints are going to be created.
+   * @param data - The BCF data to load.
+   *
+   * @returns A promise that resolves to an object containing the created viewpoints and topics.
+   *
+   * @throws An error if the BCF version is not supported.
+   */
+  async load(data: Uint8Array, world: World) {
+    const {
+      fallbackVersionOnImport,
+      ignoreIncompleteTopicsOnImport,
+      updateExtensionsOnImport,
+    } = this.config;
     const zip = new JSZip();
     await zip.loadAsync(data);
 
@@ -371,12 +398,23 @@ export class BCFTopics
     const versionFile = files.find((file) => file.name.endsWith(".version"));
     if (versionFile) {
       const versionXML = await versionFile.async("string");
-      const bcfVersion = this._xmlParser.parse(versionXML).Version.VersionId;
+      const bcfVersion =
+        BCFTopics.xmlParser.parse(versionXML).Version.VersionId;
       version = String(bcfVersion) as BCFVersion;
     }
 
     if (!(version && (version === "2.1" || version === "3"))) {
       throw new Error(`BCFTopics: ${version} is not supported.`);
+    }
+
+    // Get BCF Extensions file
+    const extensionsFile = files.find((file) =>
+      file.name.endsWith(".extensions"),
+    );
+
+    if (updateExtensionsOnImport && extensionsFile) {
+      const extensionsXML = await extensionsFile.async("string");
+      extensionsImporter(this, extensionsXML);
     }
 
     // Viewpoints must be processed first as they don't care about the topic, but the topic and comments care about them
@@ -385,7 +423,8 @@ export class BCFTopics
     const viewpointFiles = files.filter((file) => file.name.endsWith(".bcfv"));
     for (const viewpointFile of viewpointFiles) {
       const xml = await viewpointFile.async("string");
-      const visualizationInfo = this._xmlParser.parse(xml).VisualizationInfo;
+      const visualizationInfo =
+        BCFTopics.xmlParser.parse(xml).VisualizationInfo;
       if (!visualizationInfo) {
         console.warn("Missing VisualizationInfo in Viewpoint");
         continue;
@@ -547,7 +586,7 @@ export class BCFTopics
     const markupFiles = files.filter((file) => file.name.endsWith(".bcf"));
     for (const markupFile of markupFiles) {
       const xml = await markupFile.async("string");
-      const markup = this._xmlParser.parse(xml).Markup;
+      const markup = BCFTopics.xmlParser.parse(xml).Markup;
       const markupTopic = markup.Topic;
       const { Guid, Type, Status, Title, CreationDate, CreationAuthor } =
         markupTopic;

@@ -51,6 +51,11 @@ export class Comment {
     this.author = manager.config.author;
   }
 
+  /**
+   * Serializes the Comment instance into a BCF compliant XML string.
+   *
+   * @returns A string representing the Comment in BCFv2 XML format.
+   */
   serialize() {
     let viewpointTag: string | null = null;
     if (this.viewpoint) {
