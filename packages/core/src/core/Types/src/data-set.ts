@@ -40,19 +40,34 @@ export class DataSet<T> extends Set<T> {
   }
 
   /**
-   * Adds a value to the set and triggers the onItemAdded event.
+   * Adds one or multiple values to the set and triggers the onItemAdded event per each.
    *
    * @param value - The value to add to the set.
    * @returns - The set instance.
    */
-  add(value: T) {
-    const existing = this.has(value);
-    if (existing) return this;
-    const result = super.add(value);
-    if (!this.onItemAdded) (this.onItemAdded as any) = new Event<T>();
-    this.onItemAdded.trigger(value);
-    return result;
+  add(...value: T[]) {
+    for (const item of value) {
+      const existing = this.has(item);
+      if (existing) continue;
+      const isValid = this.guard(item);
+      if (!isValid) continue;
+      super.add(item);
+      if (!this.onItemAdded) (this.onItemAdded as any) = new Event<T>();
+      this.onItemAdded.trigger(item);
+    }
+    return this;
   }
+
+  /**
+   * A function that acts as a guard for adding items to the set.
+   * It determines whether a given value should be allowed to be added to the set.
+   *
+   * @param value - The value to be checked against the guard.
+   * @returns A boolean indicating whether the value should be allowed to be added to the set.
+   *          By default, this function always returns true, allowing all values to be added.
+   *          You can override this behavior by providing a custom implementation.
+   */
+  guard: (value: T) => boolean = () => true;
 
   /**
    * Deletes a value from the set and triggers the onItemDeleted event.

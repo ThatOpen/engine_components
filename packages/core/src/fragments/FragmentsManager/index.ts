@@ -280,9 +280,11 @@ export class FragmentsManager extends Component implements Disposable {
    */
   applyBaseCoordinateSystem(
     object: THREE.Object3D | THREE.Vector3,
-    originalCoordinateSystem: THREE.Matrix4,
+    originalCoordinateSystem?: THREE.Matrix4,
   ) {
-    object.applyMatrix4(originalCoordinateSystem.clone().invert());
+    if (originalCoordinateSystem) {
+      object.applyMatrix4(originalCoordinateSystem.clone().invert());
+    }
     object.applyMatrix4(this.baseCoordinationMatrix);
   }
 

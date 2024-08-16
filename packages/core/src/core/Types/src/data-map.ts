@@ -20,7 +20,7 @@ export class DataMap<K, V> extends Map<K, V> {
   /**
    * An event triggered when an item is deleted from the map.
    */
-  readonly onItemDeleted = new Event();
+  readonly onItemDeleted = new Event<K>();
 
   /**
    * An event triggered when the map is cleared.
@@ -53,6 +53,8 @@ export class DataMap<K, V> extends Map<K, V> {
    */
   set(key: K, value: V) {
     const triggerUpdate = this.has(key);
+    const isValid = this.guard(key, value);
+    if (!isValid) return this;
     const result = super.set(key, value);
     if (triggerUpdate) {
       if (!this.onItemUpdated) {
@@ -69,6 +71,18 @@ export class DataMap<K, V> extends Map<K, V> {
   }
 
   /**
+   * A function that acts as a guard for adding items to the set.
+   * It determines whether a given value should be allowed to be added to the set.
+   *
+   * @param key - The key of the entry to be checked against the guard.
+   * @param value - The value of the entry to be checked against the guard.
+   * @returns A boolean indicating whether the value should be allowed to be added to the set.
+   *          By default, this function always returns true, allowing all values to be added.
+   *          You can override this behavior by providing a custom implementation.
+   */
+  guard: (key: K, value: V) => boolean = () => true;
+
+  /**
    * Deletes the specified key from the map and triggers the onItemDeleted event if the key was found.
    *
    * @param key - The key of the item to delete.
@@ -76,7 +90,7 @@ export class DataMap<K, V> extends Map<K, V> {
    */
   delete(key: K) {
     const deleted = super.delete(key);
-    if (deleted) this.onItemDeleted.trigger();
+    if (deleted) this.onItemDeleted.trigger(key);
     return deleted;
   }
 
