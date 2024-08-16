@@ -1,9 +1,9 @@
-import{B as u,M as h,a as w}from"./web-ifc-api-CBCWqdvz.js";import{S as C}from"./stats.min-BpIepu9J.js";import{m as $,t as g,a as v}from"./index-TmOv0r_5.js";import{p as f,C as k,O as P,a as j,l as O,u as y}from"./index-B7_GRGdn.js";const F=document.getElementById("container");let t=new f,c=t.get(k),e=c.create();e.scene=new P(t);e.renderer=new j(t,F);e.camera=new O(t);e.scene.setup();await e.camera.controls.setLookAt(3,3,3,0,0,0);t.init();e.scene.three.background=null;let l=new u,m=new h({color:"#6528D7"}),n=new w(l,m);n.position.set(0,.5,0);e.scene.three.add(n);e.meshes.add(n);let d=t.get(y),p=d.create(e);e.camera.projection.onChanged.add(()=>{const o=e.camera.projection.current;p.fade=o==="Perspective"});const r=new C;r.showPanel(2);document.body.append(r.dom);r.dom.style.left="0px";r.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>r.begin());e.renderer.onAfterUpdate.add(()=>r.end());$.init();const i=g.create(()=>v`
+import{B as u,M as h,a as w}from"./web-ifc-api-BXZoUgQp.js";import{S as L}from"./stats.min-GTpOrGrX.js";import{d as M,R as g,m as v}from"./index-CqPyogbW.js";import{o as f,a as k,L as P,M as j,i as y,l as F}from"./index-CbQqmTVP.js";import"./_commonjsHelpers-Cpj98o6Y.js";const O=document.getElementById("container");let t=new f,c=t.get(k),e=c.create();e.scene=new P(t);e.renderer=new j(t,O);e.camera=new y(t);e.scene.setup();await e.camera.controls.setLookAt(3,3,3,0,0,0);t.init();e.scene.three.background=null;let l=new u,d=new h({color:"#6528D7"}),n=new w(l,d);n.position.set(0,.5,0);e.scene.three.add(n);e.meshes.add(n);let m=t.get(F),p=m.create(e);e.camera.projection.onChanged.add(()=>{const o=e.camera.projection.current;p.fade=o==="Perspective"});const r=new L;r.showPanel(2);document.body.append(r.dom);r.dom.style.left="0px";r.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>r.begin());e.renderer.onAfterUpdate.add(()=>r.end());M.init();const a=g.create(()=>v`
     <bim-panel active label="Orthoperspective Camera Tutorial" class="options-menu">
       <bim-panel-section collapsed label="Controls">
          
           <bim-dropdown required label="Navigation mode" 
-            @change="${({target:o})=>{const a=o.value[0],{current:s}=e.camera.projection;if(s==="Orthographic"&&a==="FirstPerson"){alert("First person is not compatible with ortho!"),o.value[0]=e.camera.mode.id;return}e.camera.set(a)}}">
+            @change="${({target:o})=>{const i=o.value[0],{current:s}=e.camera.projection;if(s==="Orthographic"&&i==="FirstPerson"){alert("First person is not compatible with ortho!"),o.value[0]=e.camera.mode.id;return}e.camera.set(i)}}">
 
           <bim-option checked label="Orbit"></bim-option>
           <bim-option label="FirstPerson"></bim-option>
@@ -12,7 +12,7 @@ import{B as u,M as h,a as w}from"./web-ifc-api-CBCWqdvz.js";import{S as C}from".
          
       
         <bim-dropdown required label="Camera projection" 
-            @change="${({target:o})=>{const a=o.value[0],s=a==="Orthographic",b=e.camera.mode.id==="FirstPerson";if(s&&b){alert("First person is not compatible with ortho!"),o.value[0]=e.camera.projection.current;return}e.camera.projection.set(a)}}">
+            @change="${({target:o})=>{const i=o.value[0],s=i==="Orthographic",b=e.camera.mode.id==="FirstPerson";if(s&&b){alert("First person is not compatible with ortho!"),o.value[0]=e.camera.projection.current;return}e.camera.projection.set(i)}}">
           <bim-option checked label="Perspective"></bim-option>
           <bim-option label="Orthographic"></bim-option>
         </bim-dropdown>
@@ -29,13 +29,13 @@ import{B as u,M as h,a as w}from"./web-ifc-api-CBCWqdvz.js";import{S as C}from".
         
         <bim-button 
           label="Reset scene" 
-          @click="${async()=>{t.dispose(),t=new f,c=t.get(k),e=c.create(),e.scene=new P(t),e.renderer=new j(t,F),e.camera=new O(t),e.scene.setup(),await e.camera.controls.setLookAt(3,3,3,0,0,0),t.init(),e.scene.three.background=null,l=new u,m=new h({color:"#6528D7"}),n=new w(l,m),n.position.set(0,.5,0),e.scene.three.add(n),e.meshes.add(n),d=t.get(y),p=d.create(e),e.camera.projection.onChanged.add(()=>{const o=e.camera.projection.current;p.fade=o==="Perspective"})}}">  
+          @click="${async()=>{t.dispose(),t=new f,c=t.get(k),e=c.create(),e.scene=new P(t),e.renderer=new j(t,O),e.camera=new y(t),e.scene.setup(),await e.camera.controls.setLookAt(3,3,3,0,0,0),t.init(),e.scene.three.background=null,l=new u,d=new h({color:"#6528D7"}),n=new w(l,d),n.position.set(0,.5,0),e.scene.three.add(n),e.meshes.add(n),m=t.get(F),p=m.create(e),e.camera.projection.onChanged.add(()=>{const o=e.camera.projection.current;p.fade=o==="Perspective"})}}">  
         </bim-button>  
 
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(i);const x=g.create(()=>v`
+    `);document.body.append(a);const $=g.create(()=>v`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
-        @click="${()=>{i.classList.contains("options-menu-visible")?i.classList.remove("options-menu-visible"):i.classList.add("options-menu-visible")}}">
+        @click="${()=>{a.classList.contains("options-menu-visible")?a.classList.remove("options-menu-visible"):a.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(x);
+    `);document.body.append($);
