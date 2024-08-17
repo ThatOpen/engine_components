@@ -1,3 +1,4 @@
+import * as WEBIFC from "web-ifc";
 import * as OBC from "../..";
 
 const components = new OBC.Components();
@@ -30,6 +31,25 @@ if (entityAttributes) {
   entityAttributes.Name.value = "New Wall Name";
   await propertiesManager.setData(model, entityAttributes);
 }
+
+// Create a new random entity
+const ifcTask = new WEBIFC.IFC4X3.IfcTask(
+  new WEBIFC.IFC4X3.IfcGloballyUniqueId(OBC.UUID.create()),
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  new WEBIFC.IFC4X3.IfcBoolean(false),
+  null,
+  null,
+  null,
+);
+
+await propertiesManager.setData(model, ifcTask);
 
 // Export modified model
 const modifiedBuffer = await propertiesManager.saveToIfc(

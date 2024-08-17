@@ -165,7 +165,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
   }
 
   /**
-   * Method to set properties data in the model.
+   * Method to add or update entity attributes in the model.
    *
    * @param model - The FragmentsGroup model in which to set the properties.
    * @param dataToSave - An array of objects representing the properties to be saved.
@@ -178,8 +178,10 @@ export class IfcPropertiesManager extends Component implements Disposable {
    */
   async setData(model: FragmentsGroup, ...dataToSave: Record<string, any>[]) {
     for (const data of dataToSave) {
-      const expressID = data.expressID;
-      if (!expressID) continue;
+      const { expressID } = data;
+      if (!expressID || expressID === -1) {
+        data.expressID = this.increaseMaxID(model);
+      }
       await model.setProperties(expressID, data);
       this.registerChange(model, expressID);
     }
@@ -376,7 +378,11 @@ export class IfcPropertiesManager extends Component implements Disposable {
     this.registerChange(model, psetID);
     const indexer = this.components.get(IfcRelationsIndexer);
     for (const expressID of expressIDs) {
-      indexer.addEntityRelations(model, expressID, "IsDefinedBy", psetID);
+      try {
+        indexer.addEntityRelations(model, expressID, "IsDefinedBy", psetID);
+      } catch (error: any) {
+        //
+      }
     }
   }
 
@@ -447,6 +453,28 @@ export class IfcPropertiesManager extends Component implements Disposable {
     ifcLoader.cleanUp();
 
     return modifiedIFC;
+  }
+
+  /**
+   * Retrieves all the entities of a specific type from the model and returns their express IDs wrapped in Handles.
+   * This is used to make references of an entity inside another entity attributes.
+   *
+   * @param model - The FragmentsGroup model from which to retrieve the entities.
+   * @param type - The type of the entities to retrieve. This should be the express ID of the IFC type.
+   *
+   * @returns A promise that resolves with an array of Handles, each containing the express ID of an entity of the specified type.
+   * @returns null if the model doesn't have any entity of that type
+   */
+  async getEntityRef(model: FragmentsGroup, type: number) {
+    // This can be done very quickly if we add the expressID to IfcType map in FragmentsGroup
+    const entities = await model.getAllPropertiesOfType(type);
+    if (!entities) return null;
+    const handles: WEBIFC.Handle<unknown>[] = [];
+    for (const id in entities) {
+      const handle = new WEBIFC.Handle(Number(id));
+      handles.push(handle);
+    }
+    return handles;
   }
 
   /**
