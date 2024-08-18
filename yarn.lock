@@ -621,8 +621,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
-    "@thatopen/components": ~2.1.0
-    "@thatopen/fragments": ~2.1.0
+    "@thatopen/components": ~2.2.0
+    "@thatopen/fragments": ~2.2.0
     "@thatopen/ui": ~2.1.0
     "@thatopen/ui-obc": ~2.1.0
     "@types/earcut": ^2.1.4
@@ -635,31 +635,17 @@ __metadata:
     three: ^0.160.1
     web-ifc: 0.0.57
   peerDependencies:
-    "@thatopen/fragments": ~2.1.0
+    "@thatopen/fragments": ~2.2.0
     three: ^0.160.1
     web-ifc: 0.0.57
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@npm:~2.1.0":
-  version: 2.1.27
-  resolution: "@thatopen/components@npm:2.1.27"
-  dependencies:
-    camera-controls: 2.7.3
-    three-mesh-bvh: 0.7.0
-  peerDependencies:
-    "@thatopen/fragments": ~2.1.0
-    three: ^0.160.1
-    web-ifc: 0.0.57
-  checksum: 8bcd18411046ba253253ff3716d078ff549e1e6bc7754772c475da4bcc99d0c5d57f4e129d2f71b36c82a97c8ac911fadfe96cddc3613b7706076fd48339e410
-  languageName: node
-  linkType: hard
-
-"@thatopen/components@workspace:packages/core":
+"@thatopen/components@workspace:packages/core, @thatopen/components@~2.2.0":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
-    "@thatopen/fragments": ~2.1.0
+    "@thatopen/fragments": ~2.2.0
     "@thatopen/ui": ~2.1.0
     "@types/three": 0.160.0
     camera-controls: 2.7.3
@@ -670,21 +656,21 @@ __metadata:
     three-mesh-bvh: 0.7.0
     web-ifc: 0.0.57
   peerDependencies:
-    "@thatopen/fragments": ~2.1.0
+    "@thatopen/fragments": ~2.2.0
     three: ^0.160.1
     web-ifc: 0.0.57
   languageName: unknown
   linkType: soft
 
-"@thatopen/fragments@npm:~2.1.0":
-  version: 2.1.6
-  resolution: "@thatopen/fragments@npm:2.1.6"
+"@thatopen/fragments@npm:~2.2.0":
+  version: 2.2.0
+  resolution: "@thatopen/fragments@npm:2.2.0"
   dependencies:
     flatbuffers: 23.3.3
     three-mesh-bvh: 0.7.0
   peerDependencies:
     three: ^0.160.1
-  checksum: 1721e80f90148646ac3f161ab8238da0ae089970b59fec2c963ba3688d1093558bb3bc26fb08249eabcc5129f6915b73d4ae97ca98f369be0d7d60cec13dc724
+  checksum: 06447122b22c460bda4b598be8b2c933ca894e400c9da568b2f1d9adc25907825743fa646f69030ce8c19a043432b75ce619d88557488a18a5eb4dbf5a498922
   languageName: node
   linkType: hard
 
