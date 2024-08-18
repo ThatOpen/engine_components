@@ -1,10 +1,10 @@
 /* MD
-### 📐 Navigating floorplans
+### 📐 Navigating sections
 ---
 
-Floorplans are one of the most common ways of navigating BIM models, as they have been the most commonly used document before the digital era. In this tutorial, you'll learn how to do it with our libraries.
+Sections are one of the most common ways of navigating BIM models, as they have been the most commonly used document before the digital era. In this tutorial, you'll learn how to do it with our libraries.
 
-:::tip Floorplans?
+:::tip Sections?
 
 Even though the BIM model defines the building perfectly, architects and engineers are still used to the clipped 2D representation that we have used for decades.
 
@@ -115,10 +115,10 @@ world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
 
 /* MD
-  ### 🖼️ Getting the plans
+  ### 🖼️ Creating a section
   ---
 
- Now, we will get an instance of the plans component and automatically generate the all the floor plans of the BIM model we just loaded.
+ Now, we will get an instance of the sections component and create a section of the BIM model we just loaded.
 */
 
 const sections = components.get(OBCF.Sections);
@@ -175,7 +175,7 @@ world.camera.controls.addEventListener("sleep", () => {
   ### 🖌️ Defining styles
   ---
 
- Next, we need to define how we want the floorplans to look like. For that, we'll need to create a bunch of clipping styles, so that the walls and slabs have a thick section line and a filling, whereas the doors and windows have a thin section line. Of course, we also need to classifier to split the model to categories.
+ Next, we need to define how we want the sections to look like. For that, we'll need to create a bunch of clipping styles, so that the walls and slabs have a thick section line and a filling, whereas the doors and windows have a thin section line. Of course, we also need to classifier to split the model to categories.
 
    :::tip Clipping? Classifier?
 
@@ -269,7 +269,7 @@ await edges.update(true);
 BUI.Manager.init();
 
 /* MD
-Now we will add some UI to control the navigation across floor plans. For more information about the UI library, you can check the specific documentation for it!
+Now we will add some UI to control the navigation across sections. For more information about the UI library, you can check the specific documentation for it!
 */
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
@@ -284,7 +284,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
 document.body.append(panel);
 
 /* MD
-  Next, we will add a button for each floor plan, so that when clicking on that button, we navigate to it and the look of the model becomes more "floorplan-like" (black and white with outlines):
+  Next, we will add a button for each section, so that when clicking on that button, we navigate to it and the look of the model becomes more "section-like" (black and white with outlines):
 */
 
 const minGloss = world.renderer!.postproduction.customEffects.minGloss;
@@ -295,7 +295,7 @@ const panelSection = panel.querySelector(
   "bim-panel-section[name='sections']",
 ) as BUI.PanelSection;
 
-const planButton = BUI.Component.create<BUI.Checkbox>(() => {
+const sectionButton = BUI.Component.create<BUI.Checkbox>(() => {
   return BUI.html`
       <bim-button checked label="${section.name}"
         @click="${() => {
@@ -309,10 +309,10 @@ const planButton = BUI.Component.create<BUI.Checkbox>(() => {
       </bim-button>
     `;
 });
-panelSection.append(planButton);
+panelSection.append(sectionButton);
 
 /* MD
-  Finally, we will add a last button to exit the floor plan mode, going back to the 3D view and making the appearance of the scene go back to normal. 
+  Finally, we will add a last button to exit the section mode, going back to the 3D view and making the appearance of the scene go back to normal.
 */
 
 const defaultBackground = world.scene.three.background;
@@ -339,5 +339,5 @@ panelSection.append(exitButton);
   ### 🎉 Wrap up
   ---
 
-  That's it! You have created an app that can generate all the floorplans of a BIM model and navigate across them in 2D mode with a nice black and white look. Congratulations!
+  That's it! You have created an app that can generate sections of a BIM model and navigate across them in 2D mode with a nice black and white look. Congratulations!
 */

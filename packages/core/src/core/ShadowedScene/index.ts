@@ -21,7 +21,7 @@ export interface ShadowedSceneConfig extends SimpleSceneConfig {
 // as a matrix
 
 /**
- * A scene that supports efficient cast shadows.
+ * A scene that supports efficient cast shadows. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/ShadowedScene). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/ShadowedScene).
  */
 export class ShadowedScene extends SimpleScene implements Disposable {
   private _distanceRenderer?: DistanceRenderer;

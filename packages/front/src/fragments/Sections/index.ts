@@ -25,6 +25,9 @@ export interface Section {
   };
 }
 
+/**
+ * A component to create and manage arbitrary sections for BIM models.
+ */
 export class Sections extends OBC.Component implements OBC.Disposable {
   enabled = false;
 
@@ -37,18 +40,25 @@ export class Sections extends OBC.Component implements OBC.Disposable {
   /** {@link OBC.Disposable.onDisposed} */
   readonly onDisposed = new OBC.Event();
 
+  /** Event that fires after navigating to ta section. */
   readonly onNavigated = new OBC.Event<{ id: string }>();
+
+  /** Event that fires after exiting the section navigation mode. */
   readonly onExited = new OBC.Event<void>();
 
   /** The plane type for the clipping planes created by this component. */
   readonly planeType = "section";
 
+  /** The default offset of the camera to the clipping plane. */
   offset = 100;
 
+  /** All the created sections. */
   list = new Map<string, Section>();
 
+  /** The current world where the sections are being created. */
   world?: OBC.World;
 
+  /** The current section that is being navigated. */
   current: Section | null = null;
 
   private cached3DCamera = {
@@ -62,6 +72,16 @@ export class Sections extends OBC.Component implements OBC.Disposable {
     left: -10,
   };
 
+  /**
+   * Generates a section with the given data.
+   * @param data - The required data to create a section.
+   * @param data.id - The unique identifier of the section.
+   * @param data.name - The human-readable name of the section.
+   * @param data.point - The 3D point where the section plane lies.
+   * @param data.normal - The unit vector that describes the orientation of the clipping plane.
+   * @param data.type - The type to apply to the created clipping plane.
+   * @param data.offset - The offset of the camera to the section.
+   */
   create(data: {
     id: string;
     name?: string;
@@ -110,6 +130,10 @@ export class Sections extends OBC.Component implements OBC.Disposable {
     return section;
   }
 
+  /**
+   * Deletes the section with the given ID.
+   * @param id - The identifier whose section to delete.
+   */
   delete(id: string) {
     const found = this.list.get(id);
     if (!found) {
@@ -119,6 +143,11 @@ export class Sections extends OBC.Component implements OBC.Disposable {
     this.list.delete(id);
   }
 
+  /**
+   * Goes to the section with the given ID.
+   * @param id - The identifier whose section to delete.
+   * @param animate - Whether to animate the transition.
+   */
   async goTo(id: string, animate = false) {
     const camera = this.getCamera();
 
@@ -174,6 +203,10 @@ export class Sections extends OBC.Component implements OBC.Disposable {
     this.onNavigated.trigger({ id });
   }
 
+  /**
+   * Exits the section view mode.
+   * @param animate - Whether to animate the transition.
+   */
   async exit(animate = false) {
     if (!this.enabled || !this.world) {
       return;
@@ -212,8 +245,7 @@ export class Sections extends OBC.Component implements OBC.Disposable {
     this.onExited.trigger();
   }
 
-  setVisibility() {}
-
+  /** {@link OBC.Disposable.onDisposed} */
   dispose() {
     for (const [, { plane }] of this.list) {
       plane.dispose();
