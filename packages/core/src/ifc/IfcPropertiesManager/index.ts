@@ -180,9 +180,9 @@ export class IfcPropertiesManager extends Component implements Disposable {
     for (const data of dataToSave) {
       const { expressID } = data;
       if (!expressID || expressID === -1) {
-        data.expressID = this.increaseMaxID(model);
+        data.expressID = this.getNewExpressID(model);
       }
-      await model.setProperties(expressID, data);
+      await model.setProperties(data.expressID, data);
       this.registerChange(model, expressID);
     }
   }
@@ -216,7 +216,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
       psetDescription,
       [],
     );
-    pset.expressID = this.increaseMaxID(model);
+    pset.expressID = this.getNewExpressID(model);
 
     // Create the Pset relation
     const relGlobalId = this.newGUID(model);
@@ -228,7 +228,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
       [],
       new WEBIFC.Handle(pset.expressID),
     );
-    rel.expressID = this.increaseMaxID(model);
+    rel.expressID = this.getNewExpressID(model);
 
     await this.setData(model, pset, rel);
 
@@ -542,7 +542,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
     return event;
   }
 
-  private increaseMaxID(model: FragmentsGroup) {
+  private getNewExpressID(model: FragmentsGroup) {
     model.ifcMetadata.maxExpressID++;
     return model.ifcMetadata.maxExpressID;
   }
@@ -591,7 +591,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
       propValue,
       null,
     );
-    prop.expressID = this.increaseMaxID(model);
+    prop.expressID = this.getNewExpressID(model);
     await this.setData(model, prop);
     return prop;
   }
