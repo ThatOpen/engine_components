@@ -1,7 +1,7 @@
 {
   "name": "@thatopen/components",
   "description": "Collection of core functionalities to author BIM apps.",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "author": "That Open Company",
   "contributors": [
     "Antonio Gonzalez Viegas (https://github.com/agviegas)",
@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "@thatopen/fragments": "~2.2.0",
-    "@thatopen/ui": "~2.1.0",
+    "@thatopen/ui": "~2.2.0",
     "@types/three": "0.160.0",
     "stats.js": "^0.17.0",
     "three": "^0.160.1",

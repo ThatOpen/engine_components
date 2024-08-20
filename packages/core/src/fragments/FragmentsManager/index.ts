@@ -100,6 +100,10 @@ export class FragmentsManager extends Component implements Disposable {
     }
     group.dispose(true);
     this.groups.delete(group.uuid);
+    if (this.groups.size === 0) {
+      this.baseCoordinationModel = "";
+      this.baseCoordinationMatrix = new THREE.Matrix4();
+    }
     this.onFragmentsDisposed.trigger({
       groupID,
       fragmentIDs,
