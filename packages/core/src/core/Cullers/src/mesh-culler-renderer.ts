@@ -36,6 +36,8 @@ export class MeshCullerRenderer extends CullerRenderer implements Disposable {
    */
   isProcessing = false;
 
+  private _interval: number | null = null;
+
   private _colorCodeMeshMap = new Map<string, THREE.Mesh>();
   private _meshIDColorCodeMap = new Map<string, string>();
   private _currentVisibleMeshes = new Set<THREE.Mesh>();
@@ -55,7 +57,7 @@ export class MeshCullerRenderer extends CullerRenderer implements Disposable {
     super(components, world, settings);
     this.worker.addEventListener("message", this.handleWorkerMessage);
     if (this.autoUpdate) {
-      window.setInterval(async () => {
+      this._interval = window.setInterval(async () => {
         if (!this.isProcessing) {
           await this.updateVisibility();
         }
@@ -77,6 +79,10 @@ export class MeshCullerRenderer extends CullerRenderer implements Disposable {
     super.dispose();
     if (this._intervalID !== null) {
       window.clearInterval(this._intervalID);
+      this._intervalID = null;
+    }
+    if (this._interval !== null) {
+      window.clearInterval(this._interval);
       this._intervalID = null;
     }
     this._currentVisibleMeshes.clear();
