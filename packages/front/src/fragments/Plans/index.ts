@@ -179,6 +179,10 @@ export class Plans extends OBC.Component implements OBC.Disposable {
     const sections = this.components.get(Sections);
     await sections.goTo(id, animate);
     await this.applyCachedPlanCamera();
+    const foundPlan = this.list.find((plan) => plan.id === id);
+    if (foundPlan) {
+      this.currentPlan = foundPlan;
+    }
     this.enabled = true;
   }
 
@@ -195,6 +199,7 @@ export class Plans extends OBC.Component implements OBC.Disposable {
     this.cachePlanCamera();
     const sections = this.components.get(Sections);
     await sections.exit(animate);
+    this.currentPlan = null;
     this.enabled = false;
     this.onExited.trigger();
   }
