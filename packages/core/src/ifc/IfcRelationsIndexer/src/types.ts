@@ -34,6 +34,7 @@ export type InverseAttributes = [
   "Controls",
   "IsNestedBy",
   "Nests",
+  "DocumentRefForObjects",
 ];
 
 export type InverseAttribute = InverseAttributes[number];
@@ -56,6 +57,7 @@ export type IfcRelations = [
   typeof WEBIFC.IFCRELDECLARES,
   typeof WEBIFC.IFCRELASSIGNSTOCONTROL,
   typeof WEBIFC.IFCRELNESTS,
+  typeof WEBIFC.IFCRELASSOCIATESDOCUMENT,
 ];
 
 export type IfcRelation = IfcRelations[number];

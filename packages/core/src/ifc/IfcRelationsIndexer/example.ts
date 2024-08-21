@@ -20,7 +20,8 @@ In this tutorial, we will import:
 
 import Stats from "stats.js";
 import * as BUI from "@thatopen/ui";
-import * as OBC from "@thatopen/components";
+import * as WEBIFC from "web-ifc";
+import * as OBC from "../..";
 
 /* MD
   ### 🌎 Setting up a simple scene
@@ -237,11 +238,85 @@ const psetDefinitions = indexer.getEntitiesWithRelation(
 console.log(`${[...psetDefinitions]} are defined by IfcPropertySet 303`);
 
 /* MD
- :::tip
+  :::tip
 
- Needless to say, you must know the expressID of the entity you want to find its relations with (138 is the expressID of the IfcBuildingStorey named "Nivel 1" in the example model).
+ Needless to say, you must know the expressID of the entity you want to find its relations (138 is the expressID of the IfcBuildingStorey named "Nivel 1" in the example model).
 
  :::
+
+ ### 🆕 Creating relations between entities
+ Getting the relations between entities is great, but making them is what really takes your BIM apps to the next level. We really care about information in the IFC file (because it is database it-self) and the indexer makes possible (and also really easy!) to start building relations between elements to then save them into the file. Let's take a look how this works to create an assign a new IfcPropertySet!
+
+ The first thing we need is to create at least one IfcPropertySingleValue and one IfcPropertySet using the web-ifc API:
+ */
+
+const propsManager = components.get(OBC.IfcPropertiesManager);
+const ownerHistory = await propsManager.getEntityRef(
+  model,
+  WEBIFC.IFCOWNERHISTORY,
+);
+
+const property = new WEBIFC.IFC4X3.IfcPropertySingleValue(
+  new WEBIFC.IFC4X3.IfcIdentifier("Property Name"),
+  null,
+  new WEBIFC.IFC4X3.IfcLabel("Property Value"),
+  null,
+);
+
+// Is important to use the IfcPropertiesManager to register the change
+await propsManager.setData(model, property);
+
+const pset = new WEBIFC.IFC4X3.IfcPropertySet(
+  new WEBIFC.IFC4X3.IfcGloballyUniqueId(OBC.UUID.create()),
+  ownerHistory ? ownerHistory[0] : null,
+  new WEBIFC.IFC4X3.IfcLabel("My New Pset!"),
+  null,
+  [new WEBIFC.Handle(property.expressID)],
+);
+
+await propsManager.setData(model, pset);
+
+/* MD
+ Once the IfcPropertySingleValue and IfcPropertySet have been created and properly registered, let's assign the IfcPropertySet to all IfcWallStandardCase in the model using the IfcRelationsIndexer component 👇
+ */
+
+const walls = (await model.getAllPropertiesOfType(WEBIFC.IFCWALLSTANDARDCASE))!;
+const expressIDs = Object.values(walls).map(
+  (wall) => wall.expressID,
+) as number[];
+
+// This is what makes the magic.
+// You need to know the name of the IfcRelationship that defines a relation between an IfcObject and an IfcPropertySet
+// Also, you need to know the name of the inverse attribute to specify how they related to each other
+indexer.addEntitiesRelation(
+  model,
+  pset.expressID,
+  {
+    type: WEBIFC.IFCRELDEFINESBYPROPERTIES,
+    inv: "DefinesOcurrence",
+  },
+  ...expressIDs,
+);
+
+/* MD
+ The following is another way of doing the same thing (you can choose which to use based on your needs), just that we iterate each IfcWallStandardCase and tell it is defined by the IfcPropertySet created earlier. Despite it produce the same result, the relation will only be stablish once.
+ */
+
+for (const wallID in walls) {
+  indexer.addEntitiesRelation(
+    model,
+    Number(wallID),
+    { type: WEBIFC.IFCRELDEFINESBYPROPERTIES, inv: "IsDefinedBy" },
+    pset.expressID,
+  );
+}
+
+/* MD
+  :::tip
+
+  You need to have a little understanding of the IfcRelationship in the IFC schema to effectively use this IfcRelationsIndexer feature. You can start by taking a look at the [corresponding documentation](https://standards.buildingsmart.org/IFC/RELEASE/IFC4_3/HTML/lexical/IfcRelationship.htm).
+
+  :::
 
   ### ⏱️ Measuring the performance (optional)
   ---
@@ -280,6 +355,24 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           label="Download relations" 
           @click="${async () => {
             downloadJSON(allRelationsJSON, "relations-index-all.json");
+          }}">  
+        </bim-button>        
+
+        <bim-button 
+          label="Download Model" 
+          @click="${async () => {
+            const propsManager = components.get(OBC.IfcPropertiesManager);
+            try {
+              const newIfc = await propsManager.saveToIfc(model, typedArray);
+              const ifcFile = new File([newIfc], "new.ifc");
+              const a = document.createElement("a");
+              a.href = URL.createObjectURL(ifcFile);
+              a.download = ifcFile.name;
+              a.click();
+              URL.revokeObjectURL(a.href);
+            } catch (error) {
+              alert(error);
+            }
           }}">  
         </bim-button>        
 
