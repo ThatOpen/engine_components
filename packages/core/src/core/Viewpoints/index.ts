@@ -8,24 +8,19 @@ import {
 } from "../Types";
 import { Components } from "../Components";
 import { BCFViewpoint, Viewpoint } from "./src";
+import {
+  ViewpointsConfigManger,
+  ViewpointsConfig,
+} from "./src/viewpoints-config";
 
-/**
- * Configuration interface for the Viewpoints general behavior.
- */
-interface ViewpointsConfig {
-  /**
-   * Indicates whether to overwrite the fragments colors when applying viewpoints.
-   * @remarks BCF Viewpoints comes with information to indicate the colors to be applied to components, if any.
-   * @default false
-   */
-  overwriteColors: boolean;
-}
+export * from "./src";
 
 export class Viewpoints
   extends Component
-  implements Disposable, Configurable<ViewpointsConfig>
+  implements Disposable, Configurable<ViewpointsConfigManger, ViewpointsConfig>
 {
   static readonly uuid = "ee867824-a796-408d-8aa0-4e5962a83c66" as const;
+
   enabled = true;
 
   /**
@@ -54,9 +49,12 @@ export class Viewpoints
   }
 
   isSetup = false;
+
   setup() {}
+
   onSetup = new Event();
-  config: Required<ViewpointsConfig> = { overwriteColors: false };
+
+  config = new ViewpointsConfigManger(this);
 
   readonly onDisposed = new Event();
 
@@ -73,5 +71,3 @@ export class Viewpoints
     this.onDisposed.reset();
   }
 }
-
-export * from "./src";

@@ -1,3 +1,5 @@
+import * as THREE from "three";
+
 export interface BooleanSettingsControl {
   type: "Boolean";
   value: boolean;
@@ -6,7 +8,7 @@ export interface BooleanSettingsControl {
 export interface ColorSettingsControl {
   type: "Color";
   opacity: number;
-  value: number;
+  value: THREE.Color;
 }
 
 export interface TextSettingsControl {
@@ -24,13 +26,24 @@ export interface NumberSettingControl {
 
 export interface SelectSettingControl {
   type: "Select";
-  options?: string[];
+  options: Set<string>;
   value: string;
 }
 
-export interface VectorSettingControl {
+export interface MultiSelectSettingControl {
+  type: "MultiSelect";
+  options: Set<string>;
+  value: Set<string>;
+}
+
+export interface Vector3SettingControl {
   type: "Vector";
-  value: number[];
+  value: THREE.Vector3;
+}
+
+export interface TextSetSettingControl {
+  type: "TextSet";
+  value: Set<string>;
 }
 
 type ControlEntry =
@@ -39,7 +52,9 @@ type ControlEntry =
   | TextSettingsControl
   | NumberSettingControl
   | SelectSettingControl
-  | VectorSettingControl;
+  | Vector3SettingControl
+  | TextSetSettingControl
+  | MultiSelectSettingControl;
 
 interface ControlsSchema {
   [name: string]: ControlEntry | ControlsSchema;

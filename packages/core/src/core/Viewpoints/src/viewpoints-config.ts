@@ -1,0 +1,39 @@
+import { BooleanSettingsControl, ConfigManager } from "../../Types";
+import { Viewpoints } from "../index";
+
+/**
+ * Configuration interface for the Viewpoints general behavior.
+ */
+export interface ViewpointsConfig {
+  /**
+   * Indicates whether to overwrite the fragments colors when applying viewpoints.
+   * @remarks BCF Viewpoints comes with information to indicate the colors to be applied to components, if any.
+   * @default false
+   */
+  overwriteColors: boolean;
+}
+
+type ViewpointsConfigType = {
+  overwriteColors: BooleanSettingsControl;
+};
+
+export class ViewpointsConfigManger extends ConfigManager<
+  Viewpoints,
+  ViewpointsConfigType
+> {
+  protected _list = {
+    overwriteColors: {
+      value: false,
+      opacity: 1,
+      type: "Boolean" as const,
+    },
+  };
+
+  get overwriteColors() {
+    return this._list.overwriteColors.value;
+  }
+
+  set overwriteColors(value: boolean) {
+    this._list.overwriteColors.value = value;
+  }
+}

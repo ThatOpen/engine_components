@@ -28,6 +28,19 @@ export class SimpleScene
   /** {@link Configurable.config} */
   config = new SimpleSceneConfigManager(this);
 
+  protected _defaultConfig: SimpleSceneConfig = {
+    backgroundColor: new THREE.Color(0x202932),
+    directionalLight: {
+      color: new THREE.Color("white"),
+      intensity: 1.5,
+      position: new THREE.Vector3(5, 10, 3),
+    },
+    ambientLight: {
+      color: new THREE.Color("white"),
+      intensity: 1,
+    },
+  };
+
   constructor(components: Components) {
     super(components);
     this.three = new THREE.Scene();
@@ -36,38 +49,24 @@ export class SimpleScene
 
   /** {@link Configurable.setup} */
   setup(config?: Partial<SimpleSceneConfig>) {
-    const defaultConfig = {
-      backgroundColor: new THREE.Color(0x202932),
-      directionalLight: {
-        color: new THREE.Color("white"),
-        intensity: 1.5,
-        position: new THREE.Vector3(5, 10, 3),
-      },
-      ambientLight: {
-        color: new THREE.Color("white"),
-        intensity: 1,
-      },
-    };
+    const fullConfig = { ...this._defaultConfig, ...config };
 
-    const fullConfig = { ...defaultConfig, ...config };
+    this.config.backgroundColor = fullConfig.backgroundColor;
 
-    this.config.backgroundColor = fullConfig.backgroundColor.getHex();
+    const ambLightData = fullConfig.ambientLight;
+    this.config.ambientLight.color = ambLightData.color;
+    this.config.ambientLight.intensity = ambLightData.intensity;
 
-    const ambLight = fullConfig.ambientLight;
-    this.config.ambientLight.color = ambLight.color.getHex();
-    this.config.ambientLight.intensity = ambLight.intensity;
-
-    const dirLight = fullConfig.directionalLight;
-    this.config.directionalLight.color = dirLight.color.getHex();
-    this.config.directionalLight.intensity = dirLight.intensity;
-    const { x, y, z } = dirLight.position;
-    this.config.directionalLight.position = [x, y, z];
+    const dirLightData = fullConfig.directionalLight;
+    this.config.directionalLight.color = dirLightData.color;
+    this.config.directionalLight.intensity = dirLightData.intensity;
+    this.config.directionalLight.position = dirLightData.position;
 
     this.deleteAllLights();
 
     const { color: dc, intensity: di } = this.config.directionalLight;
     const directionalLight = new THREE.DirectionalLight(dc, di);
-    directionalLight.position.set(x, y, z);
+    directionalLight.position.copy(dirLightData.position);
 
     const { color: ac, intensity: ai } = this.config.directionalLight;
     const ambientLight = new THREE.AmbientLight(ac, ai);

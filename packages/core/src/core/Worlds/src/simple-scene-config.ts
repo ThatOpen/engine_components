@@ -5,7 +5,7 @@ import {
   ColorSettingsControl,
   ConfigManager,
   NumberSettingControl,
-  VectorSettingControl,
+  Vector3SettingControl,
 } from "../../Types";
 
 type SimpleSceneConfigType = {
@@ -17,7 +17,7 @@ type SimpleSceneConfigType = {
   directionalLight: {
     color: ColorSettingsControl;
     intensity: NumberSettingControl;
-    position: VectorSettingControl;
+    position: Vector3SettingControl;
   };
 };
 
@@ -34,10 +34,10 @@ class DirectionalLightConfig {
     return this._list.directionalLight.color.value;
   }
 
-  set color(value: number) {
+  set color(value: THREE.Color) {
     this._list.directionalLight.color.value = value;
     for (const [, light] of this._scene.directionalLights) {
-      light.color = new THREE.Color(value);
+      light.color.copy(value);
     }
   }
 
@@ -53,14 +53,13 @@ class DirectionalLightConfig {
   }
 
   get position() {
-    return this._list.directionalLight.position.value;
+    return this._list.directionalLight.position.value.clone();
   }
 
-  set position(value: number[]) {
+  set position(value: THREE.Vector3) {
     this._list.directionalLight.position.value = value;
-    const [x, y, z] = value;
     for (const [, light] of this._scene.directionalLights) {
-      light.position.set(x, y, z);
+      light.position.copy(value);
     }
   }
 }
@@ -78,10 +77,10 @@ class AmbientLightConfig {
     return this._list.ambientLight.color.value;
   }
 
-  set color(value: number) {
+  set color(value: THREE.Color) {
     this._list.ambientLight.color.value = value;
     for (const [, light] of this._scene.ambientLights) {
-      light.color = new THREE.Color(value);
+      light.color.copy(value);
     }
   }
 
@@ -101,6 +100,7 @@ class AmbientLightConfig {
  * Configuration interface for the {@link SimpleScene}.
  */
 export interface SimpleSceneConfig {
+  backgroundColor: THREE.Color;
   directionalLight: {
     color: THREE.Color;
     intensity: number;
@@ -118,7 +118,7 @@ export class SimpleSceneConfigManager extends ConfigManager<
 > {
   protected _list = {
     backgroundColor: {
-      value: 0,
+      value: new THREE.Color() as THREE.Color,
       opacity: 1,
       type: "Color" as const,
     },
@@ -126,7 +126,7 @@ export class SimpleSceneConfigManager extends ConfigManager<
       color: {
         type: "Color" as const,
         opacity: 1,
-        value: 1,
+        value: new THREE.Color(),
       },
       intensity: {
         type: "Number" as const,
@@ -138,7 +138,7 @@ export class SimpleSceneConfigManager extends ConfigManager<
       color: {
         type: "Color" as const,
         opacity: 1,
-        value: 1,
+        value: new THREE.Color(),
       },
       intensity: {
         type: "Number" as const,
@@ -147,7 +147,7 @@ export class SimpleSceneConfigManager extends ConfigManager<
       },
       position: {
         type: "Vector" as const,
-        value: [],
+        value: new THREE.Vector3(),
       },
     },
   };
@@ -160,8 +160,8 @@ export class SimpleSceneConfigManager extends ConfigManager<
     return this._list.backgroundColor.value;
   }
 
-  set backgroundColor(value: number) {
+  set backgroundColor(value: THREE.Color) {
     this._list.backgroundColor.value = value;
-    this._component.three.background = new THREE.Color(value);
+    this._component.three.background = value;
   }
 }

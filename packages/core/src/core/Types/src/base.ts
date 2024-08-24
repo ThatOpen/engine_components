@@ -36,7 +36,7 @@ export abstract class Base {
   };
 
   /** Whether is component is {@link Configurable}. */
-  isConfigurable = (): this is Configurable<any> => {
+  isConfigurable = (): this is Configurable<any, any> => {
     return "setup" in this && "config" in this && "onSetup" in this;
   };
 }
