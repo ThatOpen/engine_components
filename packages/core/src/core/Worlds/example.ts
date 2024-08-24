@@ -23,7 +23,7 @@ In this tutorial, we will import:
 import * as THREE from "three";
 import * as BUI from "@thatopen/ui";
 import Stats from "stats.js";
-import * as OBC from "../..";
+import * as OBC from "@thatopen/components";
 
 /* MD
   ### 🖼️ Getting the container
