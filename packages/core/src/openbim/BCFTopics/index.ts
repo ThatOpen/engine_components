@@ -588,13 +588,26 @@ export class BCFTopics
       const xml = await markupFile.async("string");
       const markup = BCFTopics.xmlParser.parse(xml).Markup;
       const markupTopic = markup.Topic;
-      const { Guid, Type, Status, Title, CreationDate, CreationAuthor } =
-        markupTopic;
+      const {
+        Guid,
+        TopicType,
+        TopicStatus,
+        Title,
+        CreationDate,
+        CreationAuthor,
+      } = markupTopic;
 
       // Required Data
       if (ignoreIncompleteTopicsOnImport) {
         if (
-          !(Guid && Type && Status && Title && CreationDate && CreationAuthor)
+          !(
+            Guid &&
+            TopicType &&
+            TopicStatus &&
+            Title &&
+            CreationDate &&
+            CreationAuthor
+          )
         )
           continue;
       }
@@ -603,8 +616,8 @@ export class BCFTopics
       topic.guid = Guid ?? topic.guid;
       const relatedTopics = this.getMarkupRelatedTopics(markup, version);
       topicRelations[topic.guid] = new Set(relatedTopics);
-      topic.type = Type ?? topic.type;
-      topic.status = Status ?? topic.status;
+      topic.type = TopicType ?? topic.type;
+      topic.status = TopicStatus ?? topic.status;
       topic.title = Title ?? topic.title;
       topic.creationDate = CreationDate
         ? new Date(CreationDate)
