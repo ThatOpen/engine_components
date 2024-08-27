@@ -3,12 +3,13 @@ import * as FRAG from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
 import {
   GeometryCullerRenderer,
-  StreamFileDatabase,
+  // StreamFileDatabase,
   StreamPropertiesSettings,
   StreamedInstances,
   StreamedInstance,
   StreamLoaderSettings,
-  StreamerDbCleaner,
+  // StreamerDbCleaner,
+  StreamerFileDb,
 } from "./src";
 
 export * from "./src";
@@ -64,8 +65,6 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
    */
   useCache = true;
 
-  dbCleaner: StreamerDbCleaner;
-
   fetch = async (url: string) => {
     return fetch(url);
   };
@@ -79,7 +78,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     { data: FRAG.StreamedGeometries; time: number }
   >();
 
-  private _fileCache = new StreamFileDatabase();
+  private _fileDB = new StreamerFileDb();
 
   private _url: string | null = null;
 
@@ -170,13 +169,9 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
   constructor(components: OBC.Components) {
     super(components);
     this.components.add(IfcStreamer.uuid, this);
-    this.dbCleaner = new StreamerDbCleaner(this._fileCache);
 
     const fragments = this.components.get(OBC.FragmentsManager);
     fragments.onFragmentsDisposed.add(this.disposeStreamedGroup);
-
-    // const hardlyGeometry = new THREE.BoxGeometry();
-    // this._hardlySeenGeometries = new THREE.InstancedMesh();
   }
 
   /** {@link OBC.Disposable.dispose} */
@@ -393,7 +388,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
    * @returns A Promise that resolves when the cache is cleared.
    */
   async clearCache() {
-    await this._fileCache.delete();
+    await this._fileDB.clear();
   }
 
   /**
@@ -489,18 +484,17 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
           // If this file is in the local cache, get it
           if (this.useCache) {
             // Add or update this file to clean it up from indexedDB automatically later
-            this.dbCleaner.update(url);
+            // this.dbCleaner.update(url);
 
-            const found = await this._fileCache.files.get(url);
+            const found = await this._fileDB.get(url);
 
             if (found) {
-              bytes = found.file;
+              bytes = found;
             } else {
               const fetched = await this.fetch(url);
               const buffer = await fetched.arrayBuffer();
               bytes = new Uint8Array(buffer);
-              // await this._fileCache.files.delete(url);
-              this._fileCache.files.add({ file: bytes, id: url });
+              await this._fileDB.add(url, bytes);
             }
           } else {
             const fetched = await this.fetch(url);

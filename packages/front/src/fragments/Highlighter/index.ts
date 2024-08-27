@@ -44,10 +44,7 @@ export interface HighlighterConfig {
 /**
  * This component allows highlighting and selecting fragments in a 3D scene. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Highlighter). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Highlighter).
  */
-export class Highlighter
-  extends OBC.Component
-  implements OBC.Disposable, OBC.Configurable<HighlighterConfig>
-{
+export class Highlighter extends OBC.Component implements OBC.Disposable {
   /**
    * A unique identifier for the component.
    * This UUID is used to register the component within the Components system.
