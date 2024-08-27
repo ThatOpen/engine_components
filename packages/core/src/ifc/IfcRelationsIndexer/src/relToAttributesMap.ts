@@ -104,4 +104,11 @@ export const relToAttributesMap = new Map<
       forRelating: "IsNestedBy",
     },
   ],
+  [
+    WEBIFC.IFCRELASSOCIATESDOCUMENT,
+    {
+      forRelated: "HasAssociations",
+      forRelating: "DocumentRefForObjects",
+    },
+  ],
 ]);

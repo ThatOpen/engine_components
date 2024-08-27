@@ -53,7 +53,8 @@ export class DataMap<K, V> extends Map<K, V> {
    */
   set(key: K, value: V) {
     const triggerUpdate = this.has(key);
-    const isValid = this.guard(key, value);
+    const guard = this.guard ?? (() => true);
+    const isValid = guard(key, value);
     if (!isValid) return this;
     const result = super.set(key, value);
     if (triggerUpdate) {
