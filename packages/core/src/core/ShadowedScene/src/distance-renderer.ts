@@ -240,16 +240,23 @@ void main() {
     this.renderer.render(this.scene, this.camera);
 
     const context = this.renderer.getContext() as WebGL2RenderingContext;
-    await readPixelsAsync(
-      context,
-      0,
-      0,
-      this._width,
-      this._height,
-      context.RGBA,
-      context.UNSIGNED_BYTE,
-      this._buffer,
-    );
+
+    try {
+      await readPixelsAsync(
+        context,
+        0,
+        0,
+        this._width,
+        this._height,
+        context.RGBA,
+        context.UNSIGNED_BYTE,
+        this._buffer,
+      );
+    } catch (e) {
+      // Pixels couldn't be read, possibly because culler was disposed
+      this.renderer.setRenderTarget(null);
+      return;
+    }
 
     this.renderer.setRenderTarget(null);
 
