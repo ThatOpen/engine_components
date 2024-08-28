@@ -621,8 +621,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
-    "@thatopen/components": ~2.2.0
-    "@thatopen/fragments": ~2.2.0
+    "@thatopen/components": 2.3.0-alpha.1
+    "@thatopen/fragments": 2.3.0-alpha.1
     "@thatopen/ui": ~2.2.0
     "@thatopen/ui-obc": ~2.2.0
     "@types/earcut": ^2.1.4
@@ -635,17 +635,33 @@ __metadata:
     three: ^0.160.1
     web-ifc: 0.0.57
   peerDependencies:
-    "@thatopen/fragments": ~2.2.0
+    "@thatopen/fragments": 2.3.0-alpha.1
     three: ^0.160.1
     web-ifc: 0.0.57
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@workspace:packages/core, @thatopen/components@~2.2.0":
+"@thatopen/components@npm:2.3.0-alpha.1":
+  version: 2.3.0-alpha.1
+  resolution: "@thatopen/components@npm:2.3.0-alpha.1"
+  dependencies:
+    camera-controls: 2.7.3
+    fast-xml-parser: 4.4.1
+    jszip: 3.10.1
+    three-mesh-bvh: 0.7.0
+  peerDependencies:
+    "@thatopen/fragments": ~2.2.0
+    three: ^0.160.1
+    web-ifc: 0.0.57
+  checksum: 00faa025507aacf82be2f9388bb6f65abc3d57565b4d540d4ee7e9a621b3e7bb9983798f83b041d46f59dedadd25627f1a58be112316333f33edc53e329f90b3
+  languageName: node
+  linkType: hard
+
+"@thatopen/components@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
-    "@thatopen/fragments": ~2.2.0
+    "@thatopen/fragments": 2.3.0-alpha.1
     "@thatopen/ui": ~2.2.0
     "@types/three": 0.160.0
     camera-controls: 2.7.3
@@ -656,21 +672,21 @@ __metadata:
     three-mesh-bvh: 0.7.0
     web-ifc: 0.0.57
   peerDependencies:
-    "@thatopen/fragments": ~2.2.0
+    "@thatopen/fragments": 2.3.0-alpha.1
     three: ^0.160.1
     web-ifc: 0.0.57
   languageName: unknown
   linkType: soft
 
-"@thatopen/fragments@npm:~2.2.0":
-  version: 2.2.0
-  resolution: "@thatopen/fragments@npm:2.2.0"
+"@thatopen/fragments@npm:2.3.0-alpha.1":
+  version: 2.3.0-alpha.1
+  resolution: "@thatopen/fragments@npm:2.3.0-alpha.1"
   dependencies:
     flatbuffers: 23.3.3
     three-mesh-bvh: 0.7.0
   peerDependencies:
     three: ^0.160.1
-  checksum: 06447122b22c460bda4b598be8b2c933ca894e400c9da568b2f1d9adc25907825743fa646f69030ce8c19a043432b75ce619d88557488a18a5eb4dbf5a498922
+  checksum: a2263a03cfee1800372e733983417978c344677382574549898a402efa1a40c0387b2d756d40accd2e2bfbd4449d91e314e11791511734344cf380bdf86457a1
   languageName: node
   linkType: hard
 
