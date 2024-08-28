@@ -97,7 +97,6 @@ export class StreamerFileDb {
     }
 
     for (const name of filesToDelete) {
-      console.log(`deleted: ${name}`);
       rootDir.removeEntry(name);
     }
 

@@ -65,8 +65,8 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
    */
   useCache = true;
 
-  fetch = async (url: string) => {
-    return fetch(url);
+  fetch = async (fileName: string) => {
+    return fetch(this.url + fileName);
   };
 
   private _culler: GeometryCullerRenderer | null = null;
@@ -216,8 +216,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
   ) {
     const { assets, geometries, globalDataFileId } = settings;
 
-    const groupUrl = this.url + globalDataFileId;
-    const groupData = await this.fetch(groupUrl);
+    const groupData = await this.fetch(globalDataFileId);
     const groupArrayBuffer = await groupData.arrayBuffer();
     const groupBuffer = new Uint8Array(groupArrayBuffer);
     const fragments = this.components.get(OBC.FragmentsManager);
@@ -285,16 +284,16 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
         "-properties",
       );
 
+      FRAG.FragmentsGroup.url = this.url;
+
       group.streamSettings = {
-        baseUrl: this.url,
         baseFileName: propertiesFileID,
         ids,
         types,
       };
 
       const { indexesFile } = properties;
-      const indexURL = this.url + indexesFile;
-      const fetched = await this.fetch(indexURL);
+      const fetched = await this.fetch(indexesFile);
       const rels = await fetched.text();
       const indexer = this.components.get(OBC.IfcRelationsIndexer);
       indexer.setRelationMap(group, indexer.getRelationsMapFromJSON(rels));
@@ -473,40 +472,37 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
 
       const sortedFiles = Array.from(files).sort((a, b) => b[1] - a[1]);
 
-      for (const [file] of sortedFiles) {
-        const url = this.url + file;
-
+      for (const [fileName] of sortedFiles) {
         // If this file is still in the ram, get it
 
-        if (!this._ramCache.has(url)) {
+        if (!this._ramCache.has(fileName)) {
           let bytes = new Uint8Array();
 
           // If this file is in the local cache, get it
           if (this.useCache) {
             // Add or update this file to clean it up from indexedDB automatically later
-            // this.dbCleaner.update(url);
 
-            const found = await this._fileDB.get(url);
+            const found = await this._fileDB.get(fileName);
 
             if (found) {
               bytes = found;
             } else {
-              const fetched = await this.fetch(url);
+              const fetched = await this.fetch(fileName);
               const buffer = await fetched.arrayBuffer();
               bytes = new Uint8Array(buffer);
-              await this._fileDB.add(url, bytes);
+              await this._fileDB.add(fileName, bytes);
             }
           } else {
-            const fetched = await this.fetch(url);
+            const fetched = await this.fetch(fileName);
             const buffer = await fetched.arrayBuffer();
             bytes = new Uint8Array(buffer);
           }
 
           const data = this.serializer.import(bytes);
-          this._ramCache.set(url, { data, time: performance.now() });
+          this._ramCache.set(fileName, { data, time: performance.now() });
         }
 
-        const result = this._ramCache.get(url);
+        const result = this._ramCache.get(fileName);
         if (!result) {
           continue;
         }
