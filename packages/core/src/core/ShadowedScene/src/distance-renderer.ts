@@ -255,6 +255,7 @@ void main() {
     } catch (e) {
       // Pixels couldn't be read, possibly because culler was disposed
       this.renderer.setRenderTarget(null);
+      this._isWorkerBusy = false;
       return;
     }
 

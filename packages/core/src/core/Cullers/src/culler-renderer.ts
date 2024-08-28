@@ -189,6 +189,8 @@ export class CullerRenderer {
       );
     } catch (e) {
       // Pixels couldn't be read, possibly because culler was disposed
+      this.needsUpdate = false;
+      this._isWorkerBusy = false;
       this.renderer.setRenderTarget(null);
       return;
     }
