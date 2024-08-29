@@ -80,7 +80,11 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
 
   private _fileDB = new StreamerFileDb();
 
-  private _url: string = "";
+  /**
+   * The URL of the data source for the streaming service.
+   * It should be set before using the streaming service. Alternatively, you can use a custom fetch function.
+   */
+  private url: string = "";
 
   private _isDisposing = false;
 
@@ -103,26 +107,6 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     transparent: true,
     opacity: 0.5,
   });
-
-  /**
-   * The URL of the data source for the streaming service.
-   * It must be set before using the streaming service.
-   * If not set, an error will be thrown when trying to access the URL.
-   */
-  get url() {
-    if (!this._url) {
-      throw new Error("url must be set before using the streaming service!");
-    }
-    return this._url;
-  }
-
-  /**
-   * Sets the URL of the data source for the streaming service.
-   * @param value - The new URL to be set.
-   */
-  set url(value: string) {
-    this._url = value;
-  }
 
   /**
    * The world in which the fragments will be displayed.
