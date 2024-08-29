@@ -80,7 +80,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
 
   private _fileDB = new StreamerFileDb();
 
-  private _url: string | null = null;
+  private _url: string = "";
 
   private _isDisposing = false;
 
