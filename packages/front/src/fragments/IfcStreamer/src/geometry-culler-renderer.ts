@@ -516,6 +516,31 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     }
   }
 
+  cancel(items: { [modelID: string]: Set<number> }) {
+    for (const modelID in items) {
+      const modelIndex = this._modelIDIndex.get(modelID);
+      if (modelIndex === undefined) {
+        throw new Error("Model not found.");
+      }
+      const map = this.codes.get(modelIndex);
+      if (map === undefined) {
+        throw new Error("Codes not found.");
+      }
+      for (const id of items[modelID]) {
+        const colorCode = map.get(id);
+        if (colorCode === undefined) {
+          throw new Error("Color code not found.");
+        }
+        this._geometriesInMemory.delete(colorCode);
+        const found = this._geometries.get(colorCode);
+        if (!found) {
+          throw new Error("Geometry not found.");
+        }
+        found.exists = false;
+      }
+    }
+  }
+
   private setGeometryVisibility(
     geometry: CullerBoundingBox,
     visible: boolean,
@@ -545,7 +570,6 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     const colors = event.data.colors as Map<string, number>;
 
     const toLoad: { [modelID: string]: Map<number, Set<number>> } = {};
-
     const toRemove: { [modelID: string]: Set<number> } = {};
     const toHide: { [modelID: string]: Set<number> } = {};
     const toShow: { [modelID: string]: Set<number> } = {};

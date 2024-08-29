@@ -65,6 +65,11 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
    */
   useCache = true;
 
+  /**
+   * Flag to cancel the files that are being currently loaded.
+   */
+  cancel = false;
+
   fetch = async (fileName: string): Promise<Response | File> => {
     return fetch(this.url + fileName);
   };
@@ -422,8 +427,28 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     },
     visible = true,
   ) {
+    this.cancel = false;
+
+    const cancelled: { [modelID: string]: Set<number> } = {};
     for (const modelID in seen) {
-      if (this._isDisposing) return;
+      const idsOfModel = new Set<number>();
+      for (const [, ids] of seen[modelID]) {
+        for (const id of ids) {
+          idsOfModel.add(id);
+        }
+      }
+      cancelled[modelID] = idsOfModel;
+    }
+
+    for (const modelID in seen) {
+      if (this._isDisposing) {
+        return;
+      }
+
+      if (this.cancel) {
+        this.cancelLoading(cancelled);
+        return;
+      }
 
       const fragments = this.components.get(OBC.FragmentsManager);
       const group = fragments.groups.get(modelID);
@@ -441,6 +466,11 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
 
       for (const [priority, ids] of seen[modelID]) {
         for (const id of ids) {
+          if (this.cancel) {
+            this.cancelLoading(cancelled);
+            return;
+          }
+
           allIDs.add(id);
           const geometry = geometries[id];
           if (!geometry) {
@@ -449,6 +479,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
           if (geometry.geometryFile) {
             const file = geometry.geometryFile;
             const value = files.get(file) || 0;
+            // This adds up the pixels of all fragments in a file to determine its priority
             files.set(file, value + priority);
           }
         }
@@ -497,7 +528,17 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
 
         if (result) {
           for (const [geometryID, { position, index, normal }] of result.data) {
-            if (this._isDisposing) return;
+            if (this._isDisposing) {
+              return;
+            }
+
+            if (this.cancel) {
+              this.cancelLoading(cancelled);
+              return;
+            }
+
+            // This fragment can be cancelled, it will be loaded
+            cancelled[modelID].delete(geometryID);
 
             if (!allIDs.has(geometryID)) continue;
 
@@ -759,4 +800,9 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
 
     this._isDisposing = false;
   };
+
+  private cancelLoading(items: { [modelID: string]: Set<number> }) {
+    this.cancel = false;
+    this.culler.cancel(items);
+  }
 }
