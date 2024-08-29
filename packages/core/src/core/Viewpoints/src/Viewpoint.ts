@@ -232,20 +232,10 @@ export class Viewpoint implements BCFViewpoint {
    *
    * @returns A Promise that resolves when the components have been added to the viewpoint.
    */
-  async addComponentsFromMap(fragmentIdMap: FRAGS.FragmentIdMap) {
+  addComponentsFromMap(fragmentIdMap: FRAGS.FragmentIdMap) {
     const fragments = this._components.get(FragmentsManager);
-    for (const fragmentID in fragmentIdMap) {
-      const fragment = fragments.list.get(fragmentID);
-      if (!(fragment && fragment.group)) continue;
-      const model = fragment.group;
-      const expressIDs = fragmentIdMap[fragmentID];
-      for (const expressID of expressIDs) {
-        const attrs = await model.getProperties(expressID);
-        if (!attrs) continue;
-        const globalId = attrs.GlobalId?.value;
-        if (globalId) this.selectionComponents.add(globalId);
-      }
-    }
+    const guids = fragments.fragmentIdMapToGuids(fragmentIdMap);
+    this.selectionComponents.add(...guids);
     const manager = this._components.get(Viewpoints);
     manager.list.set(this.guid, this);
   }

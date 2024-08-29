@@ -233,6 +233,32 @@ export class FragmentsManager extends Component implements Disposable {
   }
 
   /**
+   * Converts a fragment ID map to a collection of IFC GUIDs.
+   *
+   * @param fragmentIdMap - A fragment ID map to be converted to a collection of IFC GUIDs.
+   *
+   * @returns An array of IFC GUIDs.
+   */
+  fragmentIdMapToGuids(fragmentIdMap: FRAGS.FragmentIdMap) {
+    const guids: string[] = [];
+    const modelIdMap = this.getModelIdMap(fragmentIdMap);
+    for (const modelID in modelIdMap) {
+      const model = this.groups.get(modelID);
+      if (!model) continue;
+      const expressIDs = modelIdMap[modelID];
+      for (const expressID of expressIDs) {
+        for (const [guid, id] of model.globalToExpressIDs.entries()) {
+          if (id === expressID) {
+            guids.push(guid);
+            break;
+          }
+        }
+      }
+    }
+    return guids;
+  }
+
+  /**
    * Applies coordinate transformation to the provided models.
    * If no models are provided, all groups are used.
    * The first model in the list becomes the base model for coordinate transformation.
