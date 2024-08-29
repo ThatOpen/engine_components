@@ -65,7 +65,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
    */
   useCache = true;
 
-  fetch = async (fileName: string) => {
+  fetch = async (fileName: string): Promise<Response | File> => {
     return fetch(this.url + fileName);
   };
 
