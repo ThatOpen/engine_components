@@ -15,6 +15,9 @@ export interface ViewpointOrthographicCamera extends ViewpointCamera {
   viewToWorldScale: number;
 }
 
+/**
+ * Represents a viewpoint in a BCF file.
+ */
 export interface BCFViewpoint {
   title?: string;
   guid: string;

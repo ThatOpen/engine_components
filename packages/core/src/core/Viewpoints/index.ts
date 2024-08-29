@@ -21,6 +21,9 @@ interface ViewpointsConfig {
   overwriteColors: boolean;
 }
 
+/*
+ * The viewpoints component manages and applies BCF compliant viewpoint to a world.
+ */
 export class Viewpoints
   extends Component
   implements Disposable, Configurable<ViewpointsConfig>
@@ -58,6 +61,7 @@ export class Viewpoints
   onSetup = new Event();
   config: Required<ViewpointsConfig> = { overwriteColors: false };
 
+  /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
 
   /**
