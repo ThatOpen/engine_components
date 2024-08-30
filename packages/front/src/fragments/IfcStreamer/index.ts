@@ -76,9 +76,18 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
    */
   url: string = "";
 
+  /**
+   * Function used to retrieve tiles. Can be overriden to work with specific backends.
+   */
   fetch = async (fileName: string): Promise<Response | File> => {
     return fetch(this.url + fileName);
   };
+
+
+  /**
+   * Cache system that uses the File System API.
+   */
+  fileDB = new StreamerFileDb();
 
   private _culler: GeometryCullerRenderer | null = null;
 
@@ -89,7 +98,6 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     { data: FRAG.StreamedGeometries; time: number }
   >();
 
-  private _fileDB = new StreamerFileDb();
 
   private _isDisposing = false;
 
@@ -376,7 +384,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
    * @returns A Promise that resolves when the cache is cleared.
    */
   async clearCache() {
-    await this._fileDB.clear();
+    await this.fileDB.clear();
   }
 
   /**
@@ -497,7 +505,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
           if (this.useCache) {
             // Add or update this file to clean it up from indexedDB automatically later
 
-            const found = await this._fileDB.get(fileName);
+            const found = await this.fileDB.get(fileName);
 
             if (found) {
               bytes = found;
@@ -505,7 +513,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
               const fetched = await this.fetch(fileName);
               const buffer = await fetched.arrayBuffer();
               bytes = new Uint8Array(buffer);
-              await this._fileDB.add(fileName, bytes);
+              await this.fileDB.add(fileName, bytes);
             }
           } else {
             const fetched = await this.fetch(fileName);
