@@ -70,6 +70,12 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
    */
   cancel = false;
 
+  /**
+   * The URL of the data source for the streaming service.
+   * It should be set before using the streaming service. Alternatively, you can use a custom fetch function.
+   */
+  url: string = "";
+
   fetch = async (fileName: string): Promise<Response | File> => {
     return fetch(this.url + fileName);
   };
@@ -84,12 +90,6 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
   >();
 
   private _fileDB = new StreamerFileDb();
-
-  /**
-   * The URL of the data source for the streaming service.
-   * It should be set before using the streaming service. Alternatively, you can use a custom fetch function.
-   */
-  private url: string = "";
 
   private _isDisposing = false;
 
