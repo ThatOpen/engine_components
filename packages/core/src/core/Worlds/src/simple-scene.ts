@@ -5,6 +5,7 @@ import {
   SimpleSceneConfig,
   SimpleSceneConfigManager,
 } from "./simple-scene-config";
+import { ConfigManager } from "../../ConfigManager";
 
 /**
  * A basic 3D [scene](https://threejs.org/docs/#api/en/scenes/Scene) to add objects hierarchically, and easily dispose them when you are finished with it.
@@ -45,6 +46,9 @@ export class SimpleScene
     super(components);
     this.three = new THREE.Scene();
     this.three.background = new THREE.Color(0x202932);
+
+    const configs = this.components.get(ConfigManager);
+    configs.list.add(this.config);
   }
 
   /** {@link Configurable.setup} */
@@ -77,5 +81,11 @@ export class SimpleScene
 
     this.isSetup = true;
     this.onSetup.trigger();
+  }
+
+  dispose() {
+    super.dispose();
+    const configs = this.components.get(ConfigManager);
+    configs.list.delete(this.config);
   }
 }

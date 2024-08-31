@@ -13,6 +13,7 @@ import { Components } from "../Components";
 import { Raycasters } from "../Raycasters";
 import { Worlds } from "../Worlds";
 import { ClipperConfig, ClipperConfigManager } from "./src/clipper-config";
+import { ConfigManager } from "../ConfigManager";
 
 export * from "./src";
 
@@ -186,11 +187,18 @@ export class Clipper
   constructor(components: Components) {
     super(components);
     this.components.add(Clipper.uuid, this);
+
+    const configs = components.get(ConfigManager);
+    configs.list.add(this.config);
   }
 
   /** {@link Disposable.dispose} */
   dispose() {
     this._enabled = false;
+
+    const configs = this.components.get(ConfigManager);
+    configs.list.delete(this.config);
+
     for (const plane of this.list) {
       plane.dispose();
     }

@@ -6,6 +6,7 @@ import {
   CullerRendererConfig,
   CullerRendererConfigManager,
 } from "./culler-renderer-config";
+import { ConfigManager } from "../../ConfigManager";
 
 /**
  * A base renderer to determine visibility on screen.
@@ -102,6 +103,9 @@ export class CullerRenderer
       "Culler renderer",
     );
 
+    const configs = this.components.get(ConfigManager);
+    configs.list.add(this.config);
+
     this.world = world;
     this.renderer = new THREE.WebGLRenderer();
 
@@ -136,6 +140,10 @@ export class CullerRenderer
   dispose() {
     this.enabled = false;
     this.config.autoUpdate = false;
+
+    const configs = this.components.get(ConfigManager);
+    configs.list.delete(this.config);
+
     for (const child of this.scene.children) {
       child.removeFromParent();
     }

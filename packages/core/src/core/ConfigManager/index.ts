@@ -1,4 +1,4 @@
-import { Component } from "../Types";
+import { Component, DataSet } from "../Types";
 import { Components } from "../Components";
 import { Configurator } from "./src";
 
@@ -8,7 +8,10 @@ export * from "./src";
  * A tool to manage all the configuration from the app centrally.
  */
 export class ConfigManager extends Component {
-  list = new Set<Configurator<any, any>>();
+  /**
+   * The list of all configurations of this app.
+   */
+  list = new DataSet<Configurator<any, any>>();
 
   /** {@link Component.enabled} */
   enabled = true;
