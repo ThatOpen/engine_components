@@ -114,10 +114,11 @@ export class BCFTopicsConfigManager extends ConfigManager<
   BCFTopics,
   BCFTopicsConfigType
 > {
-  protected _list = {
+  protected _config = {
     version: {
       type: "Select" as const,
       options: new Set<string>(),
+      multiple: false,
       value: "",
     },
     author: {
@@ -166,6 +167,7 @@ export class BCFTopicsConfigManager extends ConfigManager<
     },
     fallbackVersionOnImport: {
       type: "Select" as const,
+      multiple: false,
       options: new Set<string>(),
       value: "",
     },
@@ -176,113 +178,113 @@ export class BCFTopicsConfigManager extends ConfigManager<
   };
 
   get version() {
-    return this._list.version.value;
+    return this._config.version.value;
   }
   set version(value) {
-    this._list.version.value = value;
+    this._config.version.value = value;
   }
 
   get author() {
-    return this._list.author.value;
+    return this._config.author.value;
   }
 
   set author(value) {
-    this._list.author.value = value;
+    this._config.author.value = value;
   }
 
   get types() {
-    return this._list.types.value;
+    return this._config.types.value;
   }
 
   set types(value) {
-    this._list.types.value = value;
+    this._config.types.value = value;
   }
 
   get statuses() {
-    return this._list.statuses.value;
+    return this._config.statuses.value;
   }
 
   set statuses(value) {
-    this._list.statuses.value = value;
+    this._config.statuses.value = value;
   }
 
   get priorities() {
-    return this._list.priorities.value;
+    return this._config.priorities.value;
   }
 
   set priorities(value) {
-    this._list.priorities.value = value;
+    this._config.priorities.value = value;
   }
 
   get labels() {
-    return this._list.labels.value;
+    return this._config.labels.value;
   }
 
   set labels(value) {
-    this._list.labels.value = value;
+    this._config.labels.value = value;
   }
 
   get stages() {
-    return this._list.stages.value;
+    return this._config.stages.value;
   }
 
   set stages(value) {
-    this._list.stages.value = value;
+    this._config.stages.value = value;
   }
 
   get users() {
-    return this._list.users.value;
+    return this._config.users.value;
   }
 
   set users(value) {
-    this._list.users.value = value;
+    this._config.users.value = value;
   }
 
   get includeSelectionTag() {
-    return this._list.includeSelectionTag.value;
+    return this._config.includeSelectionTag.value;
   }
 
   set includeSelectionTag(value) {
-    this._list.includeSelectionTag.value = value;
+    this._config.includeSelectionTag.value = value;
   }
 
   get updateExtensionsOnImport() {
-    return this._list.updateExtensionsOnImport.value;
+    return this._config.updateExtensionsOnImport.value;
   }
 
   set updateExtensionsOnImport(value) {
-    this._list.updateExtensionsOnImport.value = value;
+    this._config.updateExtensionsOnImport.value = value;
   }
 
   get strict() {
-    return this._list.strict.value;
+    return this._config.strict.value;
   }
 
   set strict(value) {
-    this._list.strict.value = value;
+    this._config.strict.value = value;
   }
 
   get includeAllExtensionsOnExport() {
-    return this._list.includeAllExtensionsOnExport.value;
+    return this._config.includeAllExtensionsOnExport.value;
   }
 
   set includeAllExtensionsOnExport(value) {
-    this._list.includeAllExtensionsOnExport.value = value;
+    this._config.includeAllExtensionsOnExport.value = value;
   }
 
   get fallbackVersionOnImport() {
-    return this._list.fallbackVersionOnImport.value;
+    return this._config.fallbackVersionOnImport.value;
   }
 
   set fallbackVersionOnImport(value) {
-    this._list.fallbackVersionOnImport.value = value;
+    this._config.fallbackVersionOnImport.value = value;
   }
 
   get ignoreIncompleteTopicsOnImport() {
-    return this._list.ignoreIncompleteTopicsOnImport.value;
+    return this._config.ignoreIncompleteTopicsOnImport.value;
   }
 
   set ignoreIncompleteTopicsOnImport(value) {
-    this._list.ignoreIncompleteTopicsOnImport.value = value;
+    this._config.ignoreIncompleteTopicsOnImport.value = value;
   }
 }

@@ -21,7 +21,7 @@ export class ViewpointsConfigManger extends ConfigManager<
   Viewpoints,
   ViewpointsConfigType
 > {
-  protected _list = {
+  protected _config = {
     overwriteColors: {
       value: false,
       opacity: 1,
@@ -30,10 +30,10 @@ export class ViewpointsConfigManger extends ConfigManager<
   };
 
   get overwriteColors() {
-    return this._list.overwriteColors.value;
+    return this._config.overwriteColors.value;
   }
 
   set overwriteColors(value: boolean) {
-    this._list.overwriteColors.value = value;
+    this._config.overwriteColors.value = value;
   }
 }

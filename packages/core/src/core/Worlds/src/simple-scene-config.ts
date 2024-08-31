@@ -116,7 +116,7 @@ export class SimpleSceneConfigManager extends ConfigManager<
   SimpleScene,
   SimpleSceneConfigType
 > {
-  protected _list = {
+  protected _config = {
     backgroundColor: {
       value: new THREE.Color() as THREE.Color,
       opacity: 1,
@@ -146,22 +146,22 @@ export class SimpleSceneConfigManager extends ConfigManager<
         value: 2,
       },
       position: {
-        type: "Vector" as const,
+        type: "Vector3" as const,
         value: new THREE.Vector3(),
       },
     },
   };
 
-  ambientLight = new AmbientLightConfig(this._list, this._component);
+  ambientLight = new AmbientLightConfig(this._config, this._component);
 
-  directionalLight = new DirectionalLightConfig(this._list, this._component);
+  directionalLight = new DirectionalLightConfig(this._config, this._component);
 
   get backgroundColor() {
-    return this._list.backgroundColor.value;
+    return this._config.backgroundColor.value;
   }
 
   set backgroundColor(value: THREE.Color) {
-    this._list.backgroundColor.value = value;
+    this._config.backgroundColor.value = value;
     this._component.three.background = value;
   }
 }
