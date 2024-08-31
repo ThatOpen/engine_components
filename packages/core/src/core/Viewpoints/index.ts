@@ -9,7 +9,7 @@ import {
 import { Components } from "../Components";
 import { BCFViewpoint, Viewpoint } from "./src";
 import {
-  ViewpointsConfigManger,
+  ViewpointsConfigManager,
   ViewpointsConfig,
 } from "./src/viewpoints-config";
 
@@ -17,7 +17,9 @@ export * from "./src";
 
 export class Viewpoints
   extends Component
-  implements Disposable, Configurable<ViewpointsConfigManger, ViewpointsConfig>
+  implements
+    Disposable,
+    Configurable<ViewpointsConfigManager, ViewpointsConfig>
 {
   static readonly uuid = "ee867824-a796-408d-8aa0-4e5962a83c66" as const;
 
@@ -54,7 +56,7 @@ export class Viewpoints
 
   onSetup = new Event();
 
-  config = new ViewpointsConfigManger(this);
+  config = new ViewpointsConfigManager(this, this.components, "Viewpoints");
 
   readonly onDisposed = new Event();
 

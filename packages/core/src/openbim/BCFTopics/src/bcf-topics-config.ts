@@ -1,7 +1,7 @@
 import { BCFTopics, BCFVersion } from "../index";
 import {
   BooleanSettingsControl,
-  ConfigManager,
+  Configurator,
   SelectSettingControl,
   TextSetSettingControl,
   TextSettingsControl,
@@ -110,7 +110,7 @@ type BCFTopicsConfigType = {
   ignoreIncompleteTopicsOnImport: BooleanSettingsControl;
 };
 
-export class BCFTopicsConfigManager extends ConfigManager<
+export class BCFTopicsConfigManager extends Configurator<
   BCFTopics,
   BCFTopicsConfigType
 > {

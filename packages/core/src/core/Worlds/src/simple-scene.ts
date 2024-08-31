@@ -26,7 +26,7 @@ export class SimpleScene
   readonly onSetup = new Event<SimpleScene>();
 
   /** {@link Configurable.config} */
-  config = new SimpleSceneConfigManager(this);
+  config = new SimpleSceneConfigManager(this, this.components, "Scene");
 
   protected _defaultConfig: SimpleSceneConfig = {
     backgroundColor: new THREE.Color(0x202932),

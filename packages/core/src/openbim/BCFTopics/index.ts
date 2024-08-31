@@ -77,7 +77,7 @@ export class BCFTopics
     ignoreIncompleteTopicsOnImport: false,
   };
 
-  config = new BCFTopicsConfigManager(this);
+  config = new BCFTopicsConfigManager(this, this.components, "BCF Topics");
 
   readonly list = new DataMap<string, Topic>();
 

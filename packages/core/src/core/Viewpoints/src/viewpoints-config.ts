@@ -1,5 +1,6 @@
-import { BooleanSettingsControl, ConfigManager } from "../../Types";
+import { BooleanSettingsControl } from "../../Types";
 import { Viewpoints } from "../index";
+import { Configurator } from "../../ConfigManager";
 
 /**
  * Configuration interface for the Viewpoints general behavior.
@@ -17,7 +18,7 @@ type ViewpointsConfigType = {
   overwriteColors: BooleanSettingsControl;
 };
 
-export class ViewpointsConfigManger extends ConfigManager<
+export class ViewpointsConfigManager extends Configurator<
   Viewpoints,
   ViewpointsConfigType
 > {

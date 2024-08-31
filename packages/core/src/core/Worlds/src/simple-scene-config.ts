@@ -3,10 +3,10 @@ import * as THREE from "three";
 import { SimpleScene } from "./simple-scene";
 import {
   ColorSettingsControl,
-  ConfigManager,
   NumberSettingControl,
   Vector3SettingControl,
 } from "../../Types";
+import { Configurator } from "../../ConfigManager";
 
 type SimpleSceneConfigType = {
   backgroundColor: ColorSettingsControl;
@@ -112,7 +112,7 @@ export interface SimpleSceneConfig {
   };
 }
 
-export class SimpleSceneConfigManager extends ConfigManager<
+export class SimpleSceneConfigManager extends Configurator<
   SimpleScene,
   SimpleSceneConfigType
 > {

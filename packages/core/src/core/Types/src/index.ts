@@ -11,4 +11,4 @@ export * from "./world";
 export * from "./data-set";
 export * from "./data-map";
 export * from "./component-with-ui";
-export * from "./config-manager";
+export * from "./config-types";
