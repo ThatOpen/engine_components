@@ -116,16 +116,14 @@ export class SimpleSceneConfigManager extends Configurator<
   SimpleScene,
   SimpleSceneConfigType
 > {
-  protected _config = {
+  protected _config: SimpleSceneConfigType = {
     backgroundColor: {
       value: new THREE.Color() as THREE.Color,
-      opacity: 1,
       type: "Color" as const,
     },
     ambientLight: {
       color: {
         type: "Color" as const,
-        opacity: 1,
         value: new THREE.Color(),
       },
       intensity: {
@@ -139,7 +137,6 @@ export class SimpleSceneConfigManager extends Configurator<
     directionalLight: {
       color: {
         type: "Color" as const,
-        opacity: 1,
         value: new THREE.Color(),
       },
       intensity: {

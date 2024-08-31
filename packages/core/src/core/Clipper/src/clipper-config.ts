@@ -29,7 +29,7 @@ export class ClipperConfigManager extends Configurator<
   Clipper,
   ClipperConfigType
 > {
-  protected _config = {
+  protected _config: ClipperConfigType = {
     enabled: {
       value: true,
       type: "Boolean" as const,

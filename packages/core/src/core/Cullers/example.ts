@@ -84,7 +84,7 @@ culler.threshold = 200;
   Additionally, we will activate the `culler.renderDebugFrame` so that we can see the 2D screen of the elements that are not occluded. We will get the **domElement** and attach it to the body so that we can see this frame in real-time. To see it in your app, just comment out the `debugFrame.style.visibility = "collapse";` line.
 */
 
-culler.renderDebugFrame = true;
+culler.config.renderDebugFrame = true;
 const debugFrame = culler.renderer.domElement;
 document.body.appendChild(debugFrame);
 debugFrame.style.position = "fixed";

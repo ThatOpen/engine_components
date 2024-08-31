@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Components } from "../Components";
-import { MeshCullerRenderer, CullerRendererSettings } from "./src";
+import { MeshCullerRenderer } from "./src";
 import { Component, Event, Disposable, World } from "../Types";
 
 export * from "./src";
@@ -50,18 +50,14 @@ export class Cullers extends Component implements Disposable {
    * If a MeshCullerRenderer already exists for the world, it will return the existing one.
    *
    * @param world - The world for which to create the MeshCullerRenderer.
-   * @param config - Optional configuration settings for the MeshCullerRenderer.
    *
    * @returns The newly created or existing MeshCullerRenderer for the given world.
    */
-  create(
-    world: World,
-    config?: Partial<CullerRendererSettings>,
-  ): MeshCullerRenderer {
+  create(world: World): MeshCullerRenderer {
     if (this.list.has(world.uuid)) {
       return this.list.get(world.uuid) as MeshCullerRenderer;
     }
-    const culler = new MeshCullerRenderer(this.components, world, config);
+    const culler = new MeshCullerRenderer(this.components, world);
     this.list.set(world.uuid, culler);
     return culler;
   }
@@ -98,7 +94,6 @@ export class Cullers extends Component implements Disposable {
    *
    * @param meshes - The meshes to update.
    *
-   * @returns {void}
    */
   updateInstanced(meshes: Iterable<THREE.InstancedMesh>) {
     for (const [, culler] of this.list) {

@@ -22,10 +22,9 @@ export class ViewpointsConfigManager extends Configurator<
   Viewpoints,
   ViewpointsConfigType
 > {
-  protected _config = {
+  protected _config: ViewpointsConfigType = {
     overwriteColors: {
       value: false,
-      opacity: 1,
       type: "Boolean" as const,
     },
   };

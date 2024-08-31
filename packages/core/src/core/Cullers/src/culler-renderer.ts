@@ -1,41 +1,21 @@
 import * as THREE from "three";
 import { Components } from "../../Components";
 import { readPixelsAsync } from "./screen-culler-helper";
-import { AsyncEvent, Event, World } from "../../Types";
-
-/**
- * Settings to configure the CullerRenderer.
- */
-export interface CullerRendererSettings {
-  /**
-   * Interval in milliseconds at which the visibility check should be performed.
-   * Default value is 1000.
-   */
-  updateInterval?: number;
-
-  /**
-   * Width of the render target used for visibility checks.
-   * Default value is 512.
-   */
-  width?: number;
-
-  /**
-   * Height of the render target used for visibility checks.
-   * Default value is 512.
-   */
-  height?: number;
-
-  /**
-   * Whether the visibility check should be performed automatically.
-   * Default value is true.
-   */
-  autoUpdate?: boolean;
-}
+import { AsyncEvent, Configurable, Event, World } from "../../Types";
+import {
+  CullerRendererConfig,
+  CullerRendererConfigManager,
+} from "./culler-renderer-config";
 
 /**
  * A base renderer to determine visibility on screen.
  */
-export class CullerRenderer {
+export class CullerRenderer
+  implements Configurable<CullerRendererConfigManager, CullerRendererConfig>
+{
+  /** {@link Configurable.onSetup} */
+  readonly onSetup = new Event();
+
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
 
@@ -57,14 +37,32 @@ export class CullerRenderer {
    */
   needsUpdate = false;
 
-  /**
-   * Render the internal scene used to determine the object visibility. Used
-   * for debugging purposes.
-   */
-  renderDebugFrame = false;
-
   /** The components instance to which this renderer belongs. */
   components: Components;
+
+  /** The render target used to render the visibility scene. */
+  renderTarget = new THREE.WebGLRenderTarget();
+
+  /**
+   * The size of the buffer where the result of the visibility check is stored.
+   */
+  bufferSize = 1;
+
+  /**
+   * The buffer when the result of the visibility check is stored.
+   */
+  buffer = new Uint8Array();
+
+  /**
+   * Flag to indicate if the renderer shouldn't update the visibility.
+   */
+  preventUpdate = false;
+
+  /** {@link Configurable.config} */
+  config: CullerRendererConfigManager;
+
+  /** {@link Configurable.isSetup} */
+  isSetup = false;
 
   /** The world instance to which this renderer belongs. */
   readonly world: World;
@@ -72,47 +70,40 @@ export class CullerRenderer {
   /** The THREE.js renderer used to make the visibility test. */
   readonly renderer: THREE.WebGLRenderer;
 
-  protected autoUpdate = true;
-
-  protected updateInterval = 1000;
+  protected _defaultConfig: CullerRendererConfig = {
+    enabled: true,
+    height: 512,
+    width: 512,
+    updateInterval: 1000,
+    autoUpdate: true,
+    renderDebugFrame: false,
+    threshold: 100,
+  };
 
   protected readonly worker: Worker;
 
   protected readonly scene = new THREE.Scene();
 
-  private _width = 512;
-
-  private _height = 512;
-
   private _availableColor = 1;
-
-  private readonly renderTarget: THREE.WebGLRenderTarget;
-
-  private readonly bufferSize: number;
-
-  private readonly _buffer: Uint8Array;
 
   // Prevents worker being fired multiple times
   protected _isWorkerBusy = false;
 
-  constructor(
-    components: Components,
-    world: World,
-    settings?: CullerRendererSettings,
-  ) {
+  constructor(components: Components, world: World) {
     if (!world.renderer) {
       throw new Error("The given world must have a renderer!");
     }
 
     this.components = components;
-    this.applySettings(settings);
+
+    this.config = new CullerRendererConfigManager(
+      this,
+      this.components,
+      "Culler renderer",
+    );
 
     this.world = world;
     this.renderer = new THREE.WebGLRenderer();
-
-    this.renderTarget = new THREE.WebGLRenderTarget(this._width, this._height);
-    this.bufferSize = this._width * this._height * 4;
-    this._buffer = new Uint8Array(this.bufferSize);
 
     this.renderer.clippingPlanes = world.renderer.clippingPlanes;
 
@@ -137,11 +128,14 @@ export class CullerRenderer {
 
     const blob = new Blob([code], { type: "application/javascript" });
     this.worker = new Worker(URL.createObjectURL(blob));
+
+    this.setup();
   }
 
   /** {@link Disposable.dispose} */
   dispose() {
     this.enabled = false;
+    this.config.autoUpdate = false;
     for (const child of this.scene.children) {
       child.removeFromParent();
     }
@@ -150,7 +144,7 @@ export class CullerRenderer {
     this.renderer.forceContextLoss();
     this.renderer.dispose();
     this.renderTarget.dispose();
-    (this._buffer as any) = null;
+    (this.buffer as any) = null;
     this.onDisposed.reset();
   }
 
@@ -170,7 +164,8 @@ export class CullerRenderer {
     const camera = this.world.camera.three;
     camera.updateMatrix();
 
-    this.renderer.setSize(this._width, this._height);
+    const { width, height } = this.config;
+    this.renderer.setSize(width, height);
     this.renderer.setRenderTarget(this.renderTarget);
     this.renderer.render(this.scene, camera);
 
@@ -179,25 +174,40 @@ export class CullerRenderer {
       context,
       0,
       0,
-      this._width,
-      this._height,
+      width,
+      height,
       context.RGBA,
       context.UNSIGNED_BYTE,
-      this._buffer,
+      this.buffer,
     );
 
     this.renderer.setRenderTarget(null);
 
-    if (this.renderDebugFrame) {
+    if (this.config.renderDebugFrame) {
       this.renderer.render(this.scene, camera);
     }
 
     this.worker.postMessage({
-      buffer: this._buffer,
+      buffer: this.buffer,
     });
 
     this.needsUpdate = false;
   };
+
+  setup(config?: Partial<CullerRendererConfig>) {
+    const fullConfig = { ...this._defaultConfig, ...config };
+
+    const { width, height } = fullConfig;
+    this.config.setWidthHeight(width, height);
+
+    const { updateInterval, autoUpdate } = fullConfig;
+    this.config.setAutoAndInterval(autoUpdate, updateInterval);
+
+    this.config.threshold = fullConfig.threshold;
+
+    this.isSetup = true;
+    this.onSetup.trigger();
+  }
 
   protected getAvailableColor() {
     // src: https://stackoverflow.com/a/67579485
@@ -233,22 +243,5 @@ export class CullerRenderer {
       return;
     }
     this._availableColor--;
-  }
-
-  private applySettings(settings?: CullerRendererSettings) {
-    if (settings) {
-      if (settings.updateInterval !== undefined) {
-        this.updateInterval = settings.updateInterval;
-      }
-      if (settings.height !== undefined) {
-        this._height = settings.height;
-      }
-      if (settings.width !== undefined) {
-        this._width = settings.width;
-      }
-      if (settings.autoUpdate !== undefined) {
-        this.autoUpdate = settings.autoUpdate;
-      }
-    }
   }
 }

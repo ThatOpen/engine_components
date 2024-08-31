@@ -114,7 +114,7 @@ export class BCFTopicsConfigManager extends Configurator<
   BCFTopics,
   BCFTopicsConfigType
 > {
-  protected _config = {
+  protected _config: BCFTopicsConfigType = {
     version: {
       type: "Select" as const,
       options: new Set<string>(),
