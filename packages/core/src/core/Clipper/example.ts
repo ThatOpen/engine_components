@@ -187,34 +187,34 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           
         <bim-checkbox label="Clipper enabled" checked 
           @change="${({ target }: { target: BUI.Checkbox }) => {
-            clipper.enabled = target.value;
+            clipper.config.enabled = target.value;
           }}">
         </bim-checkbox>
         
         <bim-checkbox label="Clipper visible" checked 
           @change="${({ target }: { target: BUI.Checkbox }) => {
-            clipper.visible = target.value;
+            clipper.config.visible = target.value;
           }}">
         </bim-checkbox>
       
         <bim-color-input 
           label="Planes Color" color="#202932" 
           @input="${({ target }: { target: BUI.ColorInput }) => {
-            clipper.material.color.set(target.color);
+            clipper.config.color = new THREE.Color(target.color);
           }}">
         </bim-color-input>
         
         <bim-number-input 
           slider step="0.01" label="Planes opacity" value="0.2" min="0.1" max="1"
           @change="${({ target }: { target: BUI.NumberInput }) => {
-            clipper.material.opacity = target.value;
+            clipper.config.opacity = target.value;
           }}">
         </bim-number-input>
         
         <bim-number-input 
           slider step="0.1" label="Planes size" value="5" min="2" max="10"
           @change="${({ target }: { target: BUI.NumberInput }) => {
-            clipper.size = target.value;
+            clipper.config.size = target.value;
           }}">
         </bim-number-input>
         

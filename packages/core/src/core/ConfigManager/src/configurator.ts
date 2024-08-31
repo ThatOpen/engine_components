@@ -48,7 +48,6 @@ export abstract class Configurator<T, U extends ControlsSchema> {
       const entry = controlEntry as ColorSettingsControl;
       return {
         type: entry.type,
-        opacity: entry.opacity,
         value: entry.value.clone(),
       };
     }

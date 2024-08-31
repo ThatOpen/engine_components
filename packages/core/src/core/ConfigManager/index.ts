@@ -17,7 +17,7 @@ export class ConfigManager extends Component {
    * A unique identifier for the component.
    * This UUID is used to register the component within the Components system.
    */
-  static readonly uuid = "dc86e7e9-a8fd-5473-9ef6-724c67fecb0f" as const;
+  static readonly uuid = "b8c764e0-6b24-4e77-9a32-35fa728ee5b4" as const;
 
   constructor(components: Components) {
     super(components);

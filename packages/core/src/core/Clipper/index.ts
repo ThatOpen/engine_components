@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import {
   Component,
+  Configurable,
   Createable,
   Disposable,
   Event,
@@ -11,6 +12,7 @@ import { SimplePlane } from "./src";
 import { Components } from "../Components";
 import { Raycasters } from "../Raycasters";
 import { Worlds } from "../Worlds";
+import { ClipperConfig, ClipperConfigManager } from "./src/clipper-config";
 
 export * from "./src";
 
@@ -22,13 +24,20 @@ export * from "./src";
  */
 export class Clipper
   extends Component
-  implements Createable, Disposable, Hideable
+  implements
+    Createable,
+    Disposable,
+    Hideable,
+    Configurable<ClipperConfigManager, ClipperConfig>
 {
   /**
    * A unique identifier for the component.
    * This UUID is used to register the component within the Components system.
    */
   static readonly uuid = "66290bc5-18c4-4cd1-9379-2e17a0617611" as const;
+
+  /** {@link Configurable.onSetup} */
+  readonly onSetup = new Event();
 
   /** Event that fires when the user starts dragging a clipping plane. */
   readonly onBeforeDrag = new Event<void>();
@@ -71,6 +80,9 @@ export class Clipper
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<string>();
 
+  /** {@link Configurable.isSetup} */
+  isSetup = false;
+
   /**
    * Whether to force the clipping plane to be orthogonal in the Y direction
    * (up). This is desirable when clipping a building horizontally and a
@@ -96,6 +108,15 @@ export class Clipper
    * A list of all the clipping planes created by this component.
    */
   list: SimplePlane[] = [];
+
+  /** {@link Configurable.config} */
+  config = new ClipperConfigManager(this, this.components, "Clipper");
+
+  protected _defaultConfig: ClipperConfig = {
+    color: new THREE.Color(0xbb00ff),
+    opacity: 0.2,
+    size: 2,
+  };
 
   /** The material used in all the clipping planes. */
   private _material = new THREE.MeshBasicMaterial({
@@ -251,6 +272,18 @@ export class Clipper
         }
       }
     }
+  }
+
+  /** {@link Configurable.setup} */
+  setup(config?: Partial<ClipperConfig>) {
+    const fullConfig = { ...this._defaultConfig, ...config };
+
+    this.config.color = fullConfig.color;
+    this.config.opacity = fullConfig.opacity;
+    this.config.size = fullConfig.size;
+
+    this.isSetup = true;
+    this.onSetup.trigger();
   }
 
   private deletePlane(plane: SimplePlane) {

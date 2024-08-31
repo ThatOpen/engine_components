@@ -7,7 +7,6 @@ export interface BooleanSettingsControl {
 
 export interface ColorSettingsControl {
   type: "Color";
-  opacity: number;
   value: THREE.Color;
 }
 

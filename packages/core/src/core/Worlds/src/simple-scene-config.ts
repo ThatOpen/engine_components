@@ -130,7 +130,9 @@ export class SimpleSceneConfigManager extends Configurator<
       },
       intensity: {
         type: "Number" as const,
-        interpolable: false,
+        interpolable: true,
+        min: 0,
+        max: 10,
         value: 2,
       },
     },
@@ -142,7 +144,9 @@ export class SimpleSceneConfigManager extends Configurator<
       },
       intensity: {
         type: "Number" as const,
-        interpolable: false,
+        interpolable: true,
+        min: 0,
+        max: 10,
         value: 2,
       },
       position: {

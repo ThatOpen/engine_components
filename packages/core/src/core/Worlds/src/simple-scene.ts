@@ -13,6 +13,9 @@ export class SimpleScene
   extends BaseScene
   implements Configurable<SimpleSceneConfigManager, SimpleSceneConfig>
 {
+  /** {@link Configurable.onSetup} */
+  readonly onSetup = new Event();
+
   /** {@link Configurable.isSetup} */
   isSetup = false;
 
@@ -21,9 +24,6 @@ export class SimpleScene
    * It is used to define the 3D space containing objects, lights, and cameras.
    */
   three: THREE.Scene;
-
-  /** {@link Configurable.onSetup} */
-  readonly onSetup = new Event<SimpleScene>();
 
   /** {@link Configurable.config} */
   config = new SimpleSceneConfigManager(this, this.components, "Scene");
