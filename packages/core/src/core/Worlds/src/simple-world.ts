@@ -11,6 +11,7 @@ import {
   Updateable,
 } from "../../Types";
 import { Disposer } from "../../Disposer";
+import { Worlds } from "..";
 
 /**
  * A class representing a simple world in a 3D environment. It extends the Base class and implements the World interface.
@@ -53,9 +54,9 @@ export class SimpleWorld<
   enabled = true;
 
   /**
-   * A unique identifier for the world.
+   * A unique identifier for the world. Is not meant to be changed at any moment.
    */
-  uuid = UUID.create();
+  readonly uuid = UUID.create();
 
   /**
    * An optional name for the world.
@@ -200,6 +201,10 @@ export class SimpleWorld<
     this._camera = null as any;
     this._renderer = null as any;
 
+    const worlds = this.components.get(Worlds);
+    worlds.list.delete(this.uuid);
+
     this.onDisposed.trigger();
+    this.onDisposed.reset();
   }
 }
