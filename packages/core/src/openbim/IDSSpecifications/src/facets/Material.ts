@@ -1,21 +1,22 @@
-import { IDSFacet, IDSFacetParameter } from "../types";
+import * as FRAGS from "@thatopen/fragments";
+import { IDSCheckResult, IDSFacet, IDSFacetParameter } from "../types";
 
-// https://github.com/buildingSMART/IDS/blob/master/Documentation/material-facet.md
-interface IIdsMaterialFacet {
-  value?: IDSFacetParameter;
-  uri?: string;
-}
+// https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/material-facet.md
 
-export class IdsMaterialFacet implements IIdsMaterialFacet, IDSFacet {
+export class IdsMaterialFacet extends IDSFacet {
   value?: IDSFacetParameter;
   uri?: string;
 
-  constructor(parameters: IIdsMaterialFacet) {
-    this.value = parameters.value;
-    this.uri = parameters.uri;
+  async getEntities(
+    model: FRAGS.FragmentsGroup,
+    collector: FRAGS.IfcProperties = {},
+  ) {
+    const result: number[] = [];
+    return result;
   }
 
-  getEntities() {}
-
-  test() {}
+  async test(entities: FRAGS.IfcProperties) {
+    const result: IDSCheckResult = { pass: [], fail: [] };
+    return result;
+  }
 }

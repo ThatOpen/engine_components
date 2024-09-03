@@ -1,9 +1,10 @@
 import * as FRAGS from "@thatopen/fragments";
-import { IDSCheckResult, IDSFacet } from "../types";
+import { IDSFacet } from "../types";
+import { Components } from "../../../../core/Components";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/entity-facet.md
 
-export class IDSEntityFacet {
+export class IDSEntityFacet extends IDSFacet {
   type: number;
   private _predefinedType?: string;
 
@@ -14,7 +15,8 @@ export class IDSEntityFacet {
     return this._predefinedType;
   }
 
-  constructor(type: number) {
+  constructor(components: Components, type: number) {
+    super(components);
     this.type = type;
   }
 
@@ -28,9 +30,9 @@ export class IDSEntityFacet {
       for (const expressID in entities) {
         collector[expressID] = entities[expressID];
       }
-      return Object.keys(entities) as unknown as number[];
+      return Object.keys(entities).map(Number);
     }
-    const validEntities: number[] = [];
+    const result: number[] = [];
     for (const _expressID in entities) {
       const expressID = Number(_expressID);
       if (expressID in collector) continue;
@@ -39,14 +41,14 @@ export class IDSEntityFacet {
         attrs.PredefinedType?.value === this.predefinedType;
       if (validPredefinedType) {
         collector[expressID] = attrs;
-        validEntities.push(expressID);
+        result.push(expressID);
       }
     }
-    return validEntities;
+    return result;
   }
 
-  test(entities: FRAGS.IfcProperties) {
-    const result: IDSCheckResult = { pass: [], fail: [] };
+  async test(entities: FRAGS.IfcProperties) {
+    this.testResult = { pass: [], fail: [] };
     for (const expressID in entities) {
       const attrs = entities[expressID];
       if (!attrs.GlobalId?.value) continue;
@@ -61,12 +63,9 @@ export class IDSEntityFacet {
           attrs.PredefinedType?.value === this.predefinedType;
       }
 
-      if (typeMatches && predefinedTypeMatches) {
-        result.pass.push(attrs.GlobalId.value);
-      } else {
-        result.fail.push(attrs.GlobalId.value);
-      }
+      this.saveResult(attrs, typeMatches && predefinedTypeMatches);
     }
-    return result;
+
+    return this.testResult;
   }
 }

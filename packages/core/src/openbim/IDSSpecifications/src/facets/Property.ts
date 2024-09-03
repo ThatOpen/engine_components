@@ -1,50 +1,116 @@
 import * as FRAGS from "@thatopen/fragments";
 import * as WEBIFC from "web-ifc";
-import { IDSCheckResult, IDSFacet, IDSFacetParameter } from "../types";
+import { IDSFacet, IDSFacetParameter } from "../types";
 import { Components } from "../../../../core/Components";
 import { IfcRelationsIndexer } from "../../../../ifc";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/property-facet.md
-export class IDSPropertyFacet {
-  propertySet: IDSFacetParameter; // This is the name of the property set, like Pset_WallCommon, Qto_WallBaseQuantities or any other custom one.
-  name: IDSFacetParameter; // This is the name of the property like LoadBearing, IsExternal or any other custom one.
-  dataType?: string;
+
+export class IDSPropertyFacet extends IDSFacet {
+  propertySet: IDSFacetParameter;
+  baseName: IDSFacetParameter;
+  dataType?: number;
   value?: IDSFacetParameter;
   uri?: string;
-
-  private _components: Components;
 
   constructor(
     components: Components,
     propertySet: IDSFacetParameter,
     name: IDSFacetParameter,
   ) {
-    this._components = components;
+    super(components);
     this.propertySet = propertySet;
-    this.name = name;
+    this.baseName = name;
   }
 
   async getEntities(
     model: FRAGS.FragmentsGroup,
-    collector: { [expressID: string]: Record<string, any> } = {},
-  ) {}
+    collector: FRAGS.IfcProperties = {},
+  ) {
+    let sets: FRAGS.IfcProperties = {};
+    const psets = await model.getAllPropertiesOfType(WEBIFC.IFCPROPERTYSET);
+    sets = { ...sets, ...psets };
+    const qsets = await model.getAllPropertiesOfType(WEBIFC.IFCELEMENTQUANTITY);
+    sets = { ...sets, ...qsets };
+    if (Object.keys(sets).length === 0) return [];
+
+    const matchingSets: number[] = [];
+
+    for (const _setID in sets) {
+      const setID = Number(_setID);
+      const attrs = await model.getProperties(setID);
+      if (!attrs) continue;
+
+      const nameMatches = attrs.Name?.value === this.propertySet.value;
+      if (!nameMatches) continue;
+
+      let propsListName: string | undefined;
+      if (attrs.type === WEBIFC.IFCPROPERTYSET) propsListName = "HasProperties";
+      if (attrs.type === WEBIFC.IFCELEMENTQUANTITY)
+        propsListName = "Quantities";
+      if (!propsListName) continue;
+
+      for (const handle of attrs[propsListName]) {
+        const propAttrs = await model.getProperties(handle.value);
+        if (!propAttrs) continue;
+
+        const propNameMatches = propAttrs.Name?.value === this.baseName.value;
+        if (!propNameMatches) continue;
+
+        if (this.value) {
+          const valueKey = Object.keys(propAttrs).find((name) =>
+            name.endsWith("Value"),
+          );
+          if (!valueKey) continue;
+          const valueMatches = propAttrs[valueKey].value === this.value.value;
+          if (!valueMatches) continue;
+        }
+
+        matchingSets.push(setID);
+      }
+    }
+
+    const result: number[] = [];
+    const indexer = this.components.get(IfcRelationsIndexer);
+
+    for (const setID of matchingSets) {
+      const expressIDs = indexer.getEntitiesWithRelation(
+        model,
+        "IsDefinedBy",
+        setID,
+      );
+
+      for (const expressID of expressIDs) {
+        if (expressID in collector) continue;
+        const attrs = await model.getProperties(expressID);
+        if (!attrs) continue;
+        collector[expressID] = attrs;
+        result.push(expressID);
+      }
+    }
+
+    return [];
+  }
 
   async test(entities: FRAGS.IfcProperties, model: FRAGS.FragmentsGroup) {
-    const result: IDSCheckResult = { pass: [], fail: [] };
-    const indexer = this._components.get(IfcRelationsIndexer);
+    this.testResult = { pass: [], fail: [] };
+    const indexer = this.components.get(IfcRelationsIndexer);
     for (const _expressID in entities) {
       const expressID = Number(_expressID);
       const attrs = entities[expressID];
       if (!attrs.GlobalId?.value) continue;
+
+      let matches = false;
 
       const definitions = indexer.getEntityRelations(
         model,
         expressID,
         "IsDefinedBy",
       );
-      if (!definitions) continue;
-
-      let matches = false;
+      if (!definitions) {
+        this.saveResult(attrs, matches);
+        continue;
+      }
 
       for (const definitionID of definitions) {
         const definitionAttrs = await model.getProperties(definitionID);
@@ -65,7 +131,7 @@ export class IDSPropertyFacet {
           const propAttrs = await model.getProperties(handle.value);
           if (!propAttrs) continue;
 
-          const propNameMatches = propAttrs.Name?.value === this.name.value;
+          const propNameMatches = propAttrs.Name?.value === this.baseName.value;
           if (!propNameMatches) continue;
 
           if (this.value) {
@@ -82,12 +148,9 @@ export class IDSPropertyFacet {
         }
       }
 
-      if (matches) {
-        result.pass.push(attrs.GlobalId.value);
-      } else {
-        result.fail.push(attrs.GlobalId.value);
-      }
+      this.saveResult(attrs, matches);
     }
-    return result;
+
+    return this.testResult;
   }
 }

@@ -175,7 +175,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     }
   }
 
-  private getAttributeIndex(inverseAttribute: InverseAttribute) {
+  getAttributeIndex(inverseAttribute: InverseAttribute) {
     const index = this._inverseAttributes.indexOf(inverseAttribute);
     if (index === -1) return null;
     return index;

@@ -1,36 +1,44 @@
+import * as FRAGS from "@thatopen/fragments";
 import { IDSSpecification } from "./Specification";
-
-export type IDSFacetParameterType = "simpleValue" | "restriction";
+import { Components } from "../../../core/Components";
 
 export interface IDSFacetParameter {
-  type: IDSFacetParameterType;
+  type: "simpleValue" | "restriction";
   value?: string | boolean | number;
   enumeration?: string[] | number[];
 }
 
-// export interface IDSCheckResult {
-//   pass: { [expressID: string]: Record<string, any> };
-//   fail: { [expressID: string]: Record<string, any> };
-// }
-
+/**
+ * Represents the result of a check performed by an IDS facet.
+ * This interface contains two arrays: `pass` and `fail`. Each array contains IfcGUIDs of the entities that passed or failed the check, respectively.
+ */
 export interface IDSCheckResult {
-  pass: string[]; // IfcGUIDs
+  pass: string[];
   fail: string[];
 }
 
-export interface IDSFacet {
-  instructions?: string;
-  getEntities: (
-    ifcRawProperties: Record<string, any>,
-    collector: { [expressID: string]: Record<string, any> },
-  ) => void;
-  test: (
-    ifcRawProperties: Record<string, any>,
-    entities: Record<string, any>[],
-  ) => IDSCheckResult;
-}
+export abstract class IDSFacet {
+  constructor(protected components: Components) {}
 
-export type IfcVersion = "IFC2X3" | "IFC4" | "IFC4X3";
+  protected testResult: IDSCheckResult = { pass: [], fail: [] };
+  protected saveResult(attrs: any, matches: boolean) {
+    if (matches) {
+      this.testResult.pass.push(attrs.GlobalId.value);
+    } else {
+      this.testResult.fail.push(attrs.GlobalId.value);
+    }
+  }
+
+  abstract getEntities(
+    model: FRAGS.FragmentsGroup,
+    collector: FRAGS.IfcProperties,
+  ): Promise<number[]>;
+
+  abstract test(
+    entities: FRAGS.IfcProperties,
+    model?: FRAGS.FragmentsGroup,
+  ): Promise<IDSCheckResult>;
+}
 
 export interface IDS {
   title: string;

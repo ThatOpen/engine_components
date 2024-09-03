@@ -1,0 +1,1 @@
+import { IDSFacetParameter } from "./types";
