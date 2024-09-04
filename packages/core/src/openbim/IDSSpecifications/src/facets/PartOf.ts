@@ -5,11 +5,11 @@ import {
   IfcRelationsIndexer,
   relToAttributesMap,
 } from "../../../../ifc";
-import { IDSFacet } from "../types";
+import { IDSFacet } from "./Facet";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/partof-facet.md
 
-export class IDSPartOfFacet extends IDSFacet {
+export class IDSPartOf extends IDSFacet {
   entity: number;
 
   // Performance should be better if you provide the type of relation
@@ -73,7 +73,7 @@ export class IDSPartOfFacet extends IDSFacet {
   }
 
   async test(entities: FRAGS.IfcProperties, model: FRAGS.FragmentsGroup) {
-    this.testResult = { pass: [], fail: [] };
+    this.testResult = [];
     const indexer = this.components.get(IfcRelationsIndexer);
     for (const _expressID in entities) {
       const expressID = Number(_expressID);

@@ -1,8 +1,9 @@
 import * as FRAGS from "@thatopen/fragments";
 import { Components } from "../../../core/Components";
 import { DataSet } from "../../../core/Types";
-import { IDSCheckResult, IDSFacet } from "./types";
+import { IDSCheckResult } from "./types";
 import { UUID } from "../../../utils";
+import { IDSFacet } from "./facets";
 
 export class IDSSpecification {
   name: string;
@@ -28,7 +29,7 @@ export class IDSSpecification {
   }
 
   async check(model: FRAGS.FragmentsGroup) {
-    const result: IDSCheckResult = { pass: [], fail: [] };
+    const result: IDSCheckResult[] = [];
 
     // Get applicable elements
     const entities: FRAGS.IfcProperties = {};

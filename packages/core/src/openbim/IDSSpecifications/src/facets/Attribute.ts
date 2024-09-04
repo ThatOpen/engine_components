@@ -1,10 +1,11 @@
 import * as FRAGS from "@thatopen/fragments";
-import { IDSFacet, IDSFacetParameter } from "../types";
+import { IDSFacetParameter } from "../types";
 import { Components } from "../../../../core/Components";
+import { IDSFacet } from "./Facet";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/attribute-facet.md
 
-export class IDSAttributeFacet extends IDSFacet {
+export class IDSAttribute extends IDSFacet {
   name: string;
   value?: IDSFacetParameter;
 
@@ -46,7 +47,7 @@ export class IDSAttributeFacet extends IDSFacet {
   }
 
   async test(entities: FRAGS.IfcProperties) {
-    this.testResult = { pass: [], fail: [] };
+    this.testResult = [];
     for (const expressID in entities) {
       const attrs = entities[expressID];
       if (!attrs.GlobalId?.value) continue;
@@ -57,12 +58,12 @@ export class IDSAttributeFacet extends IDSFacet {
 
       // Check if the attribute value matches
       let valueMatches = true;
-      if (attributeExists && this.value && this.value.value) {
-        if (this.value.type === "simpleValue") {
-          valueMatches = attribute.value === this.value.value;
+      if (attributeExists && this.value && this.value.parameter) {
+        if (this.value.type === "simple") {
+          valueMatches = attribute.value === this.value.parameter;
         }
-        if (this.value.value && this.value.type === "restriction") {
-          const regex = new RegExp(String(this.value.value));
+        if (this.value.parameter && this.value.type === "pattern") {
+          const regex = new RegExp(String(this.value.parameter));
           valueMatches = regex.test(attribute.value);
         }
       }

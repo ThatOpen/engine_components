@@ -1,5 +1,6 @@
 import * as FRAGS from "@thatopen/fragments";
-import { IDSCheckResult, IDSFacet, IDSFacetParameter } from "../types";
+import { IDSFacetParameter } from "../types";
+import { IDSFacet } from "./Facet";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/material-facet.md
 
@@ -16,7 +17,7 @@ export class IdsMaterialFacet extends IDSFacet {
   }
 
   async test(entities: FRAGS.IfcProperties) {
-    const result: IDSCheckResult = { pass: [], fail: [] };
-    return result;
+    this.testResult = [];
+    return this.testResult;
   }
 }

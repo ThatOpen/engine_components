@@ -1,12 +1,13 @@
 import * as FRAGS from "@thatopen/fragments";
 import * as WEBIFC from "web-ifc";
 import { Components } from "../../../../core/Components";
-import { IDSFacet, IDSFacetParameter } from "../types";
+import { IDSCheck, IDSCheckResult, IDSFacetParameter } from "../types";
 import { IfcRelationsIndexer } from "../../../../ifc/IfcRelationsIndexer";
+import { IDSFacet } from "./Facet";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/classification-facet.md
 
-export class IDSClassificationFacet extends IDSFacet {
+export class IDSClassification extends IDSFacet {
   system: IDSFacetParameter;
   value?: IDSFacetParameter;
   uri?: string;
@@ -44,11 +45,11 @@ export class IDSClassificationFacet extends IDSFacet {
       let valueMatches = true;
       let uriMatches = true;
 
-      systemMatches = classificationAttrs.Name?.value === this.system.value;
+      systemMatches = classificationAttrs.Name?.value === this.system.parameter;
       if (!systemMatches) continue;
 
       if (this.value) {
-        valueMatches = attrs.Identification?.value === this.value.value;
+        valueMatches = attrs.Identification?.value === this.value.parameter;
         if (!valueMatches) continue;
       }
       if (this.uri) {
@@ -80,14 +81,21 @@ export class IDSClassificationFacet extends IDSFacet {
   }
 
   async test(entities: FRAGS.IfcProperties, model: FRAGS.FragmentsGroup) {
-    this.testResult = { pass: [], fail: [] };
+    this.testResult = [];
     const indexer = this.components.get(IfcRelationsIndexer);
     for (const _expressID in entities) {
       const expressID = Number(_expressID);
       const attrs = entities[expressID];
       if (!attrs.GlobalId?.value) continue;
 
-      let matches = false;
+      const checks: IDSCheck[] = [];
+      const result: IDSCheckResult = {
+        guid: attrs.GlobalId.value,
+        pass: false,
+        checks,
+      };
+
+      this.testResult.push(result);
 
       const associations = indexer.getEntityRelations(
         model,
@@ -95,44 +103,98 @@ export class IDSClassificationFacet extends IDSFacet {
         "HasAssociations",
       );
       if (!associations) {
-        this.saveResult(attrs, matches);
+        checks.push({
+          parameter: "System",
+          currentValue: null,
+          requiredValue: this.system,
+          pass: false,
+        });
         continue;
       }
 
       for (const associationID of associations) {
         const associationAttrs = await model.getProperties(associationID);
-        if (!associationAttrs) continue;
-        if (associationAttrs.type !== WEBIFC.IFCCLASSIFICATIONREFERENCE)
+        if (!associationAttrs) {
+          checks.push({
+            parameter: "System",
+            currentValue: null,
+            requiredValue: this.system,
+            pass: false,
+          });
           continue;
+        }
+
+        if (associationAttrs.type !== WEBIFC.IFCCLASSIFICATIONREFERENCE) {
+          checks.push({
+            parameter: "System",
+            currentValue: null,
+            requiredValue: this.system,
+            pass: false,
+          });
+          continue;
+        }
 
         const referencedSourceID = associationAttrs.ReferencedSource?.value;
-        if (!referencedSourceID) continue;
+        if (!referencedSourceID) {
+          checks.push({
+            parameter: "System",
+            currentValue: null,
+            requiredValue: this.system,
+            pass: false,
+          });
+          continue;
+        }
 
         const classificationAttrs =
           await model.getProperties(referencedSourceID);
-        if (!classificationAttrs) continue;
+        if (!classificationAttrs) {
+          checks.push({
+            parameter: "System",
+            currentValue: null,
+            requiredValue: this.system,
+            pass: false,
+          });
+          continue;
+        }
 
         let systemMatches = true;
         let valueMatches = true;
         let uriMatches = true;
 
-        systemMatches = classificationAttrs.Name?.value === this.system.value;
-        if (!systemMatches) continue;
+        systemMatches = this.evalRequirement(
+          "System",
+          classificationAttrs.Name?.value,
+          this.system,
+          checks,
+        );
 
         if (this.value) {
-          valueMatches = attrs.Identification?.value === this.value.value;
-          if (!valueMatches) continue;
-        }
-        if (this.uri) {
-          uriMatches = attrs.Location?.value === this.uri;
-          if (!uriMatches) continue;
+          const currentValue = attrs.Identification?.value;
+          valueMatches = this.evalRequirement(
+            "System",
+            currentValue,
+            this.value,
+            checks,
+          );
         }
 
-        matches = true;
-        break;
+        if (this.uri) {
+          const currentValue = attrs.Location?.value;
+          uriMatches = this.evalRequirement(
+            "System",
+            currentValue,
+            {
+              type: "simple",
+              parameter: this.uri,
+            },
+            checks,
+          );
+        }
+
+        if (systemMatches && valueMatches && uriMatches) break;
       }
 
-      this.saveResult(attrs, matches);
+      result.pass = checks.every(({ pass }) => pass);
     }
 
     return this.testResult;

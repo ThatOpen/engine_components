@@ -1,10 +1,10 @@
 import * as FRAGS from "@thatopen/fragments";
-import { IDSFacet } from "../types";
 import { Components } from "../../../../core/Components";
+import { IDSFacet } from "./Facet";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/entity-facet.md
 
-export class IDSEntityFacet extends IDSFacet {
+export class IDSEntity extends IDSFacet {
   type: number;
   private _predefinedType?: string;
 
@@ -48,7 +48,7 @@ export class IDSEntityFacet extends IDSFacet {
   }
 
   async test(entities: FRAGS.IfcProperties) {
-    this.testResult = { pass: [], fail: [] };
+    this.testResult = [];
     for (const expressID in entities) {
       const attrs = entities[expressID];
       if (!attrs.GlobalId?.value) continue;

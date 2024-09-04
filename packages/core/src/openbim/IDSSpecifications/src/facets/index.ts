@@ -4,3 +4,4 @@ export * from "./Entity";
 export * from "./Material";
 export * from "./PartOf";
 export * from "./Property";
+export * from "./Facet";

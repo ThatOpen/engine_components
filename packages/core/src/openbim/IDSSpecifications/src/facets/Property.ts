@@ -1,12 +1,13 @@
 import * as FRAGS from "@thatopen/fragments";
 import * as WEBIFC from "web-ifc";
-import { IDSFacet, IDSFacetParameter } from "../types";
+import { IDSFacetParameter } from "../types";
 import { Components } from "../../../../core/Components";
 import { IfcRelationsIndexer } from "../../../../ifc";
+import { IDSFacet } from "./Facet";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/property-facet.md
 
-export class IDSPropertyFacet extends IDSFacet {
+export class IDSProperty extends IDSFacet {
   propertySet: IDSFacetParameter;
   baseName: IDSFacetParameter;
   dataType?: number;
@@ -41,7 +42,7 @@ export class IDSPropertyFacet extends IDSFacet {
       const attrs = await model.getProperties(setID);
       if (!attrs) continue;
 
-      const nameMatches = attrs.Name?.value === this.propertySet.value;
+      const nameMatches = attrs.Name?.value === this.propertySet.parameter;
       if (!nameMatches) continue;
 
       let propsListName: string | undefined;
@@ -54,7 +55,8 @@ export class IDSPropertyFacet extends IDSFacet {
         const propAttrs = await model.getProperties(handle.value);
         if (!propAttrs) continue;
 
-        const propNameMatches = propAttrs.Name?.value === this.baseName.value;
+        const propNameMatches =
+          propAttrs.Name?.value === this.baseName.parameter;
         if (!propNameMatches) continue;
 
         if (this.value) {
@@ -62,7 +64,8 @@ export class IDSPropertyFacet extends IDSFacet {
             name.endsWith("Value"),
           );
           if (!valueKey) continue;
-          const valueMatches = propAttrs[valueKey].value === this.value.value;
+          const valueMatches =
+            propAttrs[valueKey].value === this.value.parameter;
           if (!valueMatches) continue;
         }
 
@@ -93,7 +96,7 @@ export class IDSPropertyFacet extends IDSFacet {
   }
 
   async test(entities: FRAGS.IfcProperties, model: FRAGS.FragmentsGroup) {
-    this.testResult = { pass: [], fail: [] };
+    this.testResult = [];
     const indexer = this.components.get(IfcRelationsIndexer);
     for (const _expressID in entities) {
       const expressID = Number(_expressID);
@@ -117,7 +120,7 @@ export class IDSPropertyFacet extends IDSFacet {
         if (!definitionAttrs) continue;
 
         const nameMatches =
-          definitionAttrs.Name?.value === this.propertySet.value;
+          definitionAttrs.Name?.value === this.propertySet.parameter;
         if (!nameMatches) continue;
 
         let propsListName: string | undefined;
@@ -131,7 +134,8 @@ export class IDSPropertyFacet extends IDSFacet {
           const propAttrs = await model.getProperties(handle.value);
           if (!propAttrs) continue;
 
-          const propNameMatches = propAttrs.Name?.value === this.baseName.value;
+          const propNameMatches =
+            propAttrs.Name?.value === this.baseName.parameter;
           if (!propNameMatches) continue;
 
           if (this.value) {
@@ -139,7 +143,8 @@ export class IDSPropertyFacet extends IDSFacet {
               name.endsWith("Value"),
             );
             if (!valueKey) continue;
-            const valueMatches = propAttrs[valueKey].value === this.value.value;
+            const valueMatches =
+              propAttrs[valueKey].value === this.value.parameter;
             if (!valueMatches) continue;
           }
 
