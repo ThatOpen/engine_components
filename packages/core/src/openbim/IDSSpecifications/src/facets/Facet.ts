@@ -10,16 +10,25 @@ import {
   IDSLengthParameter,
   IDSBoundsParameter,
   IDSCheck,
+  IDSConditionalCardinaltiy,
+  IDSSimpleCardinality,
 } from "../types";
 
 export abstract class IDSFacet {
+  // Used when the facet is a requirement
+  // On IDSEntity is always required
+  cardinality: IDSSimpleCardinality | IDSConditionalCardinaltiy = "required";
+
+  // When using this facet as a requirement, instructions can be given for the authors of the IFC.
+  instructions?: string;
+
   constructor(protected components: Components) {}
 
   protected evalRequirement = (
-    parameter: IDSFacetParameterName,
-    value: string | number | boolean,
+    value: string | number | boolean | null,
     facetParameter: IDSFacetParameter,
-    checks: IDSCheck[],
+    parameter: IDSFacetParameterName,
+    checks?: IDSCheck[],
   ) => {
     const checkLog: IDSCheck = {
       parameter,
@@ -28,61 +37,72 @@ export abstract class IDSFacet {
       pass: false,
     };
 
-    const index = checks.findIndex(
-      ({ parameter }) => parameter === checkLog.parameter,
-    );
+    if (checks) {
+      const index = checks.findIndex(
+        ({ parameter }) => parameter === checkLog.parameter,
+      );
 
-    if (index !== -1) {
-      checks[index] = checkLog;
-    } else {
-      checks.push(checkLog);
+      if (index !== -1) {
+        checks[index] = checkLog;
+      } else {
+        checks.push(checkLog);
+      }
     }
+
+    let pass = false;
 
     if (facetParameter.type === "simple") {
       const parameter = facetParameter.parameter as IDSSimpleParameter;
-      checkLog.pass = value === parameter;
+      pass = value === parameter;
     }
 
     if (facetParameter.type === "enumeration") {
       const parameter = facetParameter.parameter as IDSEnumerationParameter;
-      checkLog.pass = parameter.includes(value as never);
+      pass = parameter.includes(value as never);
     }
 
     if (facetParameter.type === "pattern") {
       const parameter = facetParameter.parameter as IDSPatternParameter;
       const regex = new RegExp(String(parameter));
-      checkLog.pass = regex.test(String(value));
+      pass = regex.test(String(value));
     }
 
     if (facetParameter.type === "length") {
       const parameter = facetParameter.parameter as IDSLengthParameter;
       const { min, length, max } = parameter;
-      if (length !== undefined) checkLog.pass = String(value).length === length;
-      if (min !== undefined) checkLog.pass = String(value).length >= min;
-      if (max !== undefined) checkLog.pass = String(value).length <= max;
+      if (length !== undefined) {
+        pass = String(value).length === length;
+      }
+      if (min !== undefined) {
+        pass = String(value).length >= min;
+      }
+      if (max !== undefined) {
+        pass = String(value).length <= max;
+      }
     }
 
     if (facetParameter.type === "bounds" && typeof value === "number") {
       const { min, minInclusive, max, maxInclusive } =
         facetParameter.parameter as IDSBoundsParameter;
 
+      let minPass = true;
+      let maxPass = true;
+
       if (min !== undefined) {
-        if (minInclusive) {
-          if (value < min) checkLog.pass = false;
-        } else if (value <= min) {
-          checkLog.pass = false;
-        }
+        minPass = minInclusive ? value <= min : value < min;
       }
 
       if (max !== undefined) {
-        if (maxInclusive) {
-          if (value > max) checkLog.pass = false;
-        } else if (value >= max) {
-          checkLog.pass = false;
-        }
+        maxPass = maxInclusive ? value >= max : value > max;
       }
+
+      pass = minPass && maxPass;
     }
 
+    if (this.cardinality === "prohibited") pass = !pass;
+    if (this.cardinality === "optional" && value === null) pass = true;
+
+    checkLog.pass = pass;
     return checkLog.pass;
   };
 
@@ -91,15 +111,7 @@ export abstract class IDSFacet {
     const { GlobalId } = attrs;
     if (!GlobalId) return;
     const { value: guid } = GlobalId;
-    const result: IDSCheckResult = { guid, pass, checks: [] };
-    // if (data && !pass) {
-    //   const { currentValue, requiredValue, parameter } = data;
-    //   result.reason = {
-    //     currentValue,
-    //     requiredValue,
-    //     parameter,
-    //   };
-    // }
+    const result: IDSCheckResult = { expressID: guid, pass, checks: [] };
     this.testResult.push(result);
   }
 

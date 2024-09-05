@@ -1,37 +1,42 @@
 import * as FRAGS from "@thatopen/fragments";
 import { Components } from "../../../../core/Components";
 import { IDSFacet } from "./Facet";
+import { IDSFacetParameter } from "../types";
+import { IfcCategoryMap } from "../../../../ifc";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/entity-facet.md
 
 export class IDSEntity extends IDSFacet {
-  type: number;
-  private _predefinedType?: string;
+  name: IDSFacetParameter;
+  predefinedType?: IDSFacetParameter;
 
-  set predefinedType(predefinedType: string | undefined) {
-    this._predefinedType = predefinedType?.toUpperCase();
-  }
-  get predefinedType() {
-    return this._predefinedType;
-  }
-
-  constructor(components: Components, type: number) {
+  constructor(components: Components, name: IDSFacetParameter) {
     super(components);
-    this.type = type;
+    this.name = name;
   }
 
   async getEntities(
     model: FRAGS.FragmentsGroup,
     collector: FRAGS.IfcProperties = {},
   ) {
-    const entities = await model.getAllPropertiesOfType(this.type);
-    if (!entities) return [];
+    const types = Object.entries(IfcCategoryMap);
+    const typeIDs = types
+      .filter(([, type]) => this.evalRequirement(type, this.name, "Name"))
+      .map(([id]) => id);
+
+    let entities: FRAGS.IfcProperties = {};
+    for (const id of typeIDs) {
+      const elements = await model.getAllPropertiesOfType(Number(id));
+      if (elements) entities = { ...entities, ...elements };
+    }
+
     if (!this.predefinedType) {
       for (const expressID in entities) {
         collector[expressID] = entities[expressID];
       }
       return Object.keys(entities).map(Number);
     }
+
     const result: number[] = [];
     for (const _expressID in entities) {
       const expressID = Number(_expressID);
@@ -44,6 +49,7 @@ export class IDSEntity extends IDSFacet {
         result.push(expressID);
       }
     }
+
     return result;
   }
 
@@ -54,7 +60,7 @@ export class IDSEntity extends IDSFacet {
       if (!attrs.GlobalId?.value) continue;
 
       // Check if entity type matches
-      const typeMatches = attrs.type === this.type;
+      const typeMatches = attrs.type === this.name;
 
       // Check if the predefined type matches
       let predefinedTypeMatches = true;

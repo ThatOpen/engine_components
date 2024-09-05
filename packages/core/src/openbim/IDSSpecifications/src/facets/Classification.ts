@@ -86,11 +86,10 @@ export class IDSClassification extends IDSFacet {
     for (const _expressID in entities) {
       const expressID = Number(_expressID);
       const attrs = entities[expressID];
-      if (!attrs.GlobalId?.value) continue;
 
       const checks: IDSCheck[] = [];
       const result: IDSCheckResult = {
-        guid: attrs.GlobalId.value,
+        expressID,
         pass: false,
         checks,
       };
@@ -162,18 +161,18 @@ export class IDSClassification extends IDSFacet {
         let uriMatches = true;
 
         systemMatches = this.evalRequirement(
-          "System",
           classificationAttrs.Name?.value,
           this.system,
+          "System",
           checks,
         );
 
         if (this.value) {
           const currentValue = attrs.Identification?.value;
           valueMatches = this.evalRequirement(
-            "System",
             currentValue,
             this.value,
+            "System",
             checks,
           );
         }
@@ -181,12 +180,12 @@ export class IDSClassification extends IDSFacet {
         if (this.uri) {
           const currentValue = attrs.Location?.value;
           uriMatches = this.evalRequirement(
-            "System",
             currentValue,
             {
               type: "simple",
               parameter: this.uri,
             },
+            "System",
             checks,
           );
         }
@@ -197,6 +196,8 @@ export class IDSClassification extends IDSFacet {
       result.pass = checks.every(({ pass }) => pass);
     }
 
-    return this.testResult;
+    const result = [...this.testResult];
+    this.testResult = [];
+    return result;
   }
 }

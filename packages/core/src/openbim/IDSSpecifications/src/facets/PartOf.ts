@@ -6,18 +6,46 @@ import {
   relToAttributesMap,
 } from "../../../../ifc";
 import { IDSFacet } from "./Facet";
+import { IDSFacetParameter, IDSSimpleCardinality } from "../types";
+import { IDSEntity } from "./Entity";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/partof-facet.md
 
 export class IDSPartOf extends IDSFacet {
-  entity: number;
+  private _entityFacet: IDSEntity;
 
-  // Performance should be better if you provide the type of relation
+  private _entity: {
+    name: IDSFacetParameter;
+    predefinedType?: IDSFacetParameter;
+  };
+
+  set entity(value: {
+    name: IDSFacetParameter;
+    predefinedType?: IDSFacetParameter;
+  }) {
+    this._entity = value;
+    const { name, predefinedType } = value;
+    this._entityFacet = new IDSEntity(this.components, name);
+    this._entityFacet.predefinedType = predefinedType;
+  }
+
+  get entity() {
+    return this._entity;
+  }
+
+  // Performance is better when provided
   relation?: number;
 
-  constructor(components: Components, entity: number) {
+  cardinality: IDSSimpleCardinality = "required";
+
+  constructor(
+    components: Components,
+    entity: { name: IDSFacetParameter; predefinedType?: IDSFacetParameter },
+  ) {
     super(components);
-    this.entity = entity;
+    this._entity = entity;
+    this._entityFacet = new IDSEntity(components, entity.name);
+    this._entityFacet.predefinedType = entity.predefinedType;
   }
 
   async getEntities(
@@ -25,8 +53,8 @@ export class IDSPartOf extends IDSFacet {
     collector: FRAGS.IfcProperties = {},
   ) {
     const result: number[] = [];
-    const entities = await model.getAllPropertiesOfType(this.entity);
-    if (!entities) return result;
+    const entities: FRAGS.IfcProperties = {};
+    await this._entityFacet.getEntities(model, entities);
 
     const indexer = this.components.get(IfcRelationsIndexer);
 

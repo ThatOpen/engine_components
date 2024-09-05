@@ -7,35 +7,38 @@ import { IDSFacet } from "./facets";
 
 export class IDSSpecification {
   name: string;
-  ifcVersion: FRAGS.IfcSchema;
-  identifier?: string | number;
+  ifcVersion = new Set<FRAGS.IfcSchema>();
+  identifier? = UUID.create();
   description?: string;
   instructions?: string;
+  requirementsDescription?: string;
   applicability = new DataSet<IDSFacet>();
   requirements = new DataSet<IDSFacet>();
-
-  readonly guid = UUID.create();
 
   protected components: Components;
 
   constructor(
     components: Components,
     name: string,
-    ifcVersion: FRAGS.IfcSchema,
+    ifcVersion: FRAGS.IfcSchema[],
   ) {
     this.components = components;
     this.name = name;
-    this.ifcVersion = ifcVersion;
+    for (const version of ifcVersion) {
+      this.ifcVersion.add(version);
+    }
   }
 
-  async check(model: FRAGS.FragmentsGroup) {
+  async test(model: FRAGS.FragmentsGroup) {
     const result: IDSCheckResult[] = [];
 
     // Get applicable elements
     const entities: FRAGS.IfcProperties = {};
-    for (const app of this.applicability) {
-      await app.getEntities(model, entities);
+    for (const facet of this.applicability) {
+      await facet.getEntities(model, entities);
     }
+
+    console.log(entities);
 
     // Test applicable elements against requirements
     const requirementsResult: { [expressId: string]: boolean } = {};

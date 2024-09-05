@@ -1,5 +1,3 @@
-import { IDSSpecification } from "./Specification";
-
 export type IDSFacetParameterName =
   | "Name"
   | "Predefined Type"
@@ -12,6 +10,12 @@ export type IDSFacetParameterName =
   | "Value"
   | "Entity"
   | "Relation";
+
+// required must match
+// prohibited mustn't match
+// optional passes for matches and nulls
+export type IDSSimpleCardinality = "required" | "prohibited";
+export type IDSConditionalCardinaltiy = IDSSimpleCardinality | "optional";
 
 export type IDSSimpleParameter = string | number | boolean;
 export type IDSEnumerationParameter = string[] | number[] | boolean[];
@@ -30,8 +34,15 @@ export type IDSLengthParameter = {
 
 export interface IDSRestrictionParameter {}
 
+export type IDSFacetParameterType =
+  | "simple"
+  | "enumeration"
+  | "pattern"
+  | "bounds"
+  | "length";
+
 export interface IDSFacetParameter {
-  type: "simple" | "enumeration" | "pattern" | "bounds" | "length";
+  type: IDSFacetParameterType;
   parameter:
     | IDSSimpleParameter
     | IDSEnumerationParameter
@@ -51,12 +62,12 @@ export interface IDSCheck {
  * Represents the result of a check performed by an IDSFacet test.
  */
 export interface IDSCheckResult {
-  guid: string;
+  expressID: number;
   pass: boolean;
   checks: IDSCheck[];
 }
 
-export interface IDS {
+export interface IDSInfo {
   title: string;
   description?: string;
   copyright?: string;
@@ -65,5 +76,4 @@ export interface IDS {
   date?: Date;
   purpose?: string;
   milestone?: string;
-  specifications: IDSSpecification[];
 }
