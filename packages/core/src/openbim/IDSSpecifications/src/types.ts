@@ -62,6 +62,7 @@ export interface IDSCheck {
  * Represents the result of a check performed by an IDSFacet test.
  */
 export interface IDSCheckResult {
+  guid?: string;
   expressID: number;
   pass: boolean;
   checks: IDSCheck[];

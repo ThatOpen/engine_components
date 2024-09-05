@@ -63,7 +63,7 @@ export abstract class IDSFacet {
 
     if (facetParameter.type === "pattern") {
       const parameter = facetParameter.parameter as IDSPatternParameter;
-      const regex = new RegExp(String(parameter));
+      const regex = new RegExp(parameter);
       pass = regex.test(String(value));
     }
 
@@ -115,6 +115,15 @@ export abstract class IDSFacet {
     this.testResult.push(result);
   }
 
+  /**
+   * Returns the list of expressIDs that pass the criteria of this facet.
+   * @param model - The IFC model to retrieve entities from.
+   * @param collector - An optional object to collect the retrieved entities.
+   * @remarks
+   * If the collector already includes the entity, it won't get processed any further.
+   *
+   * @returns An array of express IDs of the retrieved entities.
+   */
   abstract getEntities(
     model: FRAGS.FragmentsGroup,
     collector: FRAGS.IfcProperties,

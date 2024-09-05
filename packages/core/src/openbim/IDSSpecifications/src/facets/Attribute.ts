@@ -46,6 +46,10 @@ export class IDSAttribute extends IDSFacet {
     // }
   }
 
+  // https://github.com/buildingSMART/IDS/tree/development/Documentation/ImplementersDocumentation/TestCases/attribute
+  // Test cases from buildingSMART repo have been tested and they all match with the expected result
+  // All invalid cases have been treated as failures
+  // FragmentsGroup do not hold some of the entities used in the tests
   async test(entities: FRAGS.IfcProperties) {
     this.testResult = [];
     for (const _expressID in entities) {
@@ -54,6 +58,7 @@ export class IDSAttribute extends IDSFacet {
 
       const checks: IDSCheck[] = [];
       const result: IDSCheckResult = {
+        guid: attrs.GlobalId?.value,
         expressID,
         pass: false,
         checks,
@@ -64,8 +69,10 @@ export class IDSAttribute extends IDSFacet {
       // Check if the attribute exists
       const attrNames = Object.keys(attrs);
       const matchingAttributes = attrNames.filter((name) => {
-        const value = attrs[name];
-        if (value === null) {
+        const nameMatches = this.evalRequirement(name, this.name, "Name");
+        const attrValue = attrs[name];
+        // IDSDocs: Attributes with null values always fail
+        if (nameMatches && attrValue === null) {
           if (
             this.cardinality === "optional" ||
             this.cardinality === "prohibited"
@@ -74,7 +81,23 @@ export class IDSAttribute extends IDSFacet {
           }
           return false;
         }
-        return this.evalRequirement(name, this.name, "Name");
+        // IDSDocs: Attributes with a logical unknown always fail
+        if (nameMatches && attrValue?.type === 3 && attrValue.value === 2) {
+          return false;
+        }
+        // IDSDocs: Attributes with an empty list always fail
+        if (nameMatches && Array.isArray(attrValue) && attrValue.length === 0) {
+          return false;
+        }
+        // IDSDocs: Attributes with empty strings always fail
+        if (
+          nameMatches &&
+          attrValue?.type === 1 &&
+          attrValue.value.trim() === ""
+        ) {
+          return false;
+        }
+        return nameMatches;
       });
 
       const attributeMatches = matchingAttributes.length > 0;
@@ -90,13 +113,12 @@ export class IDSAttribute extends IDSFacet {
       });
 
       // Check if the attribute value matches
-      let valueMatches = true;
       if (this.value) {
         if (matchingAttributes[0]) {
           const attribute = attrs[matchingAttributes[0]];
+          // Value checks always fail for objects
           const isRef = attribute?.type === 5;
           if (isRef) {
-            valueMatches = false;
             checks.push({
               parameter: "Value",
               currentValue: null,
@@ -104,7 +126,7 @@ export class IDSAttribute extends IDSFacet {
               pass: this.cardinality === "prohibited",
             });
           } else {
-            valueMatches = this.evalRequirement(
+            this.evalRequirement(
               attribute ? attribute.value : null,
               this.value,
               "Value",
@@ -112,7 +134,6 @@ export class IDSAttribute extends IDSFacet {
             );
           }
         } else {
-          valueMatches = false;
           checks.push({
             parameter: "Value",
             currentValue: null,

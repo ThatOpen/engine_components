@@ -1,8 +1,8 @@
 import * as FRAGS from "@thatopen/fragments";
 import { Components } from "../../../../core/Components";
 import { IDSFacet } from "./Facet";
-import { IDSFacetParameter } from "../types";
-import { IfcCategoryMap } from "../../../../ifc";
+import { IDSCheck, IDSCheckResult, IDSFacetParameter } from "../types";
+import { IfcCategoryMap, IfcRelationsIndexer } from "../../../../ifc";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/entity-facet.md
 
@@ -15,23 +15,29 @@ export class IDSEntity extends IDSFacet {
     this.name = name;
   }
 
+  // IFCSURFACESTYLEREFRACTION is not present in the FragmentsGroup
+  // IFCSURFACESTYLERENDERING is not present in the FragmentsGroup
   async getEntities(
     model: FRAGS.FragmentsGroup,
     collector: FRAGS.IfcProperties = {},
   ) {
     const types = Object.entries(IfcCategoryMap);
-    const typeIDs = types
-      .filter(([, type]) => this.evalRequirement(type, this.name, "Name"))
-      .map(([id]) => id);
+    const typeIDs: number[] = [];
+    for (const [type] of types) {
+      const validName = await this.evalName({ type });
+      if (!validName) continue;
+      typeIDs.push(Number(type));
+    }
 
     let entities: FRAGS.IfcProperties = {};
     for (const id of typeIDs) {
-      const elements = await model.getAllPropertiesOfType(Number(id));
+      const elements = await model.getAllPropertiesOfType(id);
       if (elements) entities = { ...entities, ...elements };
     }
 
     if (!this.predefinedType) {
       for (const expressID in entities) {
+        if (expressID in collector) continue;
         collector[expressID] = entities[expressID];
       }
       return Object.keys(entities).map(Number);
@@ -42,8 +48,7 @@ export class IDSEntity extends IDSFacet {
       const expressID = Number(_expressID);
       if (expressID in collector) continue;
       const attrs = entities[expressID];
-      const validPredefinedType =
-        attrs.PredefinedType?.value === this.predefinedType;
+      const validPredefinedType = await this.evalPredefinedType(model, attrs);
       if (validPredefinedType) {
         collector[expressID] = attrs;
         result.push(expressID);
@@ -53,25 +58,85 @@ export class IDSEntity extends IDSFacet {
     return result;
   }
 
-  async test(entities: FRAGS.IfcProperties) {
+  async test(entities: FRAGS.IfcProperties, model: FRAGS.FragmentsGroup) {
     this.testResult = [];
-    for (const expressID in entities) {
+    for (const _expressID in entities) {
+      const expressID = Number(_expressID);
       const attrs = entities[expressID];
-      if (!attrs.GlobalId?.value) continue;
 
-      // Check if entity type matches
-      const typeMatches = attrs.type === this.name;
+      const checks: IDSCheck[] = [];
+      const result: IDSCheckResult = {
+        guid: attrs.GlobalId?.value,
+        expressID,
+        pass: false,
+        checks,
+      };
 
-      // Check if the predefined type matches
-      let predefinedTypeMatches = true;
-      if (typeMatches && this.predefinedType) {
-        predefinedTypeMatches =
-          attrs.PredefinedType?.value === this.predefinedType;
-      }
+      this.testResult.push(result);
 
-      this.saveResult(attrs, typeMatches && predefinedTypeMatches);
+      await this.evalName(attrs, checks);
+      await this.evalPredefinedType(model, attrs, checks);
+
+      result.pass = checks.every(({ pass }) => pass);
     }
 
     return this.testResult;
+  }
+
+  protected async evalName(attrs: any, checks?: IDSCheck[]) {
+    const entityName = IfcCategoryMap[attrs.type];
+    const result = this.evalRequirement(entityName, this.name, "Name", checks);
+    return result;
+  }
+
+  protected async evalPredefinedType(
+    model: FRAGS.FragmentsGroup,
+    attrs: any,
+    checks?: IDSCheck[],
+  ) {
+    if (!this.predefinedType) return null;
+    const indexer = this.components.get(IfcRelationsIndexer);
+    const isRequirementUserDefined =
+      typeof this.predefinedType.parameter === "string" &&
+      this.predefinedType.parameter === "USERDEFINED";
+    let value = attrs.PredefinedType?.value;
+
+    if (value === "USERDEFINED" && !isRequirementUserDefined) {
+      const attrNames = Object.keys(attrs);
+      const result = attrNames.find((str) =>
+        /^((?!Predefined).)*Type$/.test(str),
+      );
+      value = result ? attrs[result]?.value : "USERDEFINED";
+    }
+
+    if (!value) {
+      const types = indexer.getEntityRelations(
+        model,
+        attrs.expressID,
+        "IsTypedBy",
+      );
+      if (types && types[0]) {
+        const typeAttrs = await model.getProperties(types[0]);
+        if (typeAttrs) {
+          value = typeAttrs.PredefinedType?.value;
+          if (value === "USERDEFINED" && !isRequirementUserDefined) {
+            const attrNames = Object.keys(typeAttrs);
+            const result = attrNames.find((str) =>
+              /^((?!Predefined).)*Type$/.test(str),
+            );
+            value = result ? typeAttrs[result]?.value : "USERDEFINED";
+          }
+        }
+      }
+    }
+
+    const result = this.evalRequirement(
+      value,
+      this.predefinedType,
+      "Predefined Type",
+      checks,
+    );
+
+    return result;
   }
 }

@@ -2,30 +2,19 @@ import * as WEBIFC from "web-ifc";
 import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "../..";
 
-const logResult = (result: OBC.IDSCheckResult[]) => {
-  console.log(
-    "Pass:",
-    result.filter(({ pass }) => pass),
-  );
-  console.log(
-    "Fail:",
-    result.filter(({ pass }) => !pass),
-  );
-};
-
 const components = new OBC.Components();
 const ifcLoader = components.get(OBC.IfcLoader);
 await ifcLoader.setup();
 // const file = await fetch("/resources/structure.ifc");
-const file = await fetch(
-  "https://raw.githubusercontent.com/buildingSMART/IDS/development/Documentation/ImplementersDocumentation/TestCases/attribute/fail-a_prohibited_facet_returns_the_opposite_of_a_required_facet.ifc",
-);
-const data = await file.arrayBuffer();
-const buffer = new Uint8Array(data);
-const model = await ifcLoader.load(buffer);
+// const file = await fetch(
+//   "https://raw.githubusercontent.com/buildingSMART/IDS/development/Documentation/ImplementersDocumentation/TestCases/attribute/fail-a_prohibited_facet_returns_the_opposite_of_a_required_facet.ifc",
+// );
+// const data = await file.arrayBuffer();
+// const buffer = new Uint8Array(data);
+// const model = await ifcLoader.load(buffer);
 
 const indexer = components.get(OBC.IfcRelationsIndexer);
-await indexer.process(model);
+// await indexer.process(model);
 
 const ids = components.get(OBC.IDSSpecifications);
 // const specifications = ids.create("My First IDS!", "IFC4X3");
@@ -91,26 +80,26 @@ partOfFacet.relation = WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE;
 // logResult(resultF);
 
 // Importing
-const idsFile = await fetch(
-  "https://raw.githubusercontent.com/buildingSMART/IDS/development/Documentation/ImplementersDocumentation/TestCases/attribute/fail-a_prohibited_facet_returns_the_opposite_of_a_required_facet.ids",
-);
+// const idsFile = await fetch(
+//   "https://raw.githubusercontent.com/buildingSMART/IDS/development/Documentation/ImplementersDocumentation/TestCases/attribute/fail-a_prohibited_facet_returns_the_opposite_of_a_required_facet.ids",
+// );
 // const idsFile = await fetch("/resources/ids.ids");
 
-const idsData = await idsFile.text();
-const imports = ids.load(idsData);
-for (const spec of imports) {
-  const app = [...spec.applicability][0];
-  const req = [...spec.requirements][0];
-  const entities: FRAGS.IfcProperties = {};
-  await app.getEntities(model, entities);
-  const result = await req.test(entities, model);
-  logResult(result);
-}
+// const idsData = await idsFile.text();
+// const imports = ids.load(idsData);
+// for (const spec of imports) {
+//   const app = [...spec.applicability][0];
+//   const req = [...spec.requirements][0];
+//   const entities: FRAGS.IfcProperties = {};
+//   await app.getEntities(model, entities);
+//   const result = await req.test(entities, model);
+//   logResult(result);
+// }
 
 // Load test cases from GitHub
 // Define the URL for fetching the files list
 const apiURL =
-  "https://api.github.com/repos/buildingSMART/IDS/contents/Documentation/ImplementersDocumentation/TestCases/attribute?ref=development";
+  "https://api.github.com/repos/buildingSMART/IDS/contents/Documentation/ImplementersDocumentation/TestCases/entity?ref=development";
 
 // Function to process each pair of IFC and IDS files
 async function processPair(ifcUrl: string, idsUrl: string) {
@@ -132,6 +121,7 @@ async function processPair(ifcUrl: string, idsUrl: string) {
     const idsContent = await idsResponse.text();
 
     const model = await ifcLoader.load(new Uint8Array(ifcContent));
+    await indexer.process(model);
 
     const imports = ids.load(idsContent);
     for (const spec of imports) {
@@ -202,3 +192,8 @@ async function fetchFileListAndProcessPairs() {
 
 // Call the function to fetch and process file pairs
 fetchFileListAndProcessPairs();
+
+// const baseURL =
+//   "https://raw.githubusercontent.com/buildingSMART/IDS/development/Documentation/ImplementersDocumentation/TestCases";
+// const url = `${baseURL}/entity/pass-inherited_predefined_types_should_pass`;
+// processPair(`${url}.ifc`, `${url}.ids`);
