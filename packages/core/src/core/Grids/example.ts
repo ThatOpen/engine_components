@@ -19,7 +19,9 @@ In this tutorial, we will import:
 */
 
 import * as THREE from "three";
+import Stats from "stats.js";
 import * as OBC from "@thatopen/components";
+import * as BUI from "@thatopen/ui";
 
 /* MD
   ### 🌎 Setting up a simple scene
@@ -46,7 +48,10 @@ world.camera = new OBC.SimpleCamera(components);
 
 components.init();
 
-const cube = new THREE.Mesh(new THREE.BoxGeometry());
+const cube = new THREE.Mesh(
+  new THREE.BoxGeometry(),
+  new THREE.MeshBasicMaterial({ color: "red" }),
+);
 world.scene.three.add(cube);
 
 /* MD
@@ -68,6 +73,80 @@ world.scene.three.background = null;
 const grids = components.get(OBC.Grids);
 const grid = grids.create(world);
 console.log(grid);
+
+/* MD
+  ### 🧩 Adding some UI
+  ---
+
+  We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
+
+*/
+
+BUI.Manager.init();
+
+/* MD
+  Now we will create some UI elements and bind them to some of the controls of the clipper, like activation, visibility, size, color, etc. For more information about the UI library, you can check the specific documentation for it!
+*/
+
+const panel = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+    <bim-panel label="Grids Tutorial" class="options-menu">
+
+      <bim-panel-section collapsed label="Controls"">
+          
+        <bim-checkbox label="Grid visible" checked 
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            grid.config.visible = target.value;
+          }}">
+        </bim-checkbox>
+      
+        <bim-color-input 
+          label="Grid Color" color="#bbbbbb" 
+          @input="${({ target }: { target: BUI.ColorInput }) => {
+            grid.config.color = new THREE.Color(target.color);
+          }}">
+        </bim-color-input>
+        
+        <bim-number-input 
+          slider step="0.1" label="Grid primary size" value="1" min="0" max="10"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            grid.config.primarySize = target.value;
+          }}">
+        </bim-number-input>
+        
+        <bim-number-input 
+          slider step="0.1" label="Grid secondary size" value="10" min="0" max="20"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            grid.config.secondarySize = target.value;
+          }}">
+        </bim-number-input>
+        
+      </bim-panel-section>
+    </bim-panel>
+    `;
+});
+
+document.body.append(panel);
+
+/* MD
+  And we will make some logic that adds a button to the screen when the user is visiting our app from their phone, allowing to show or hide the menu. Otherwise, the menu would make the app unusable.
+*/
+
+const button = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+      <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
+        @click="${() => {
+          if (panel.classList.contains("options-menu-visible")) {
+            panel.classList.remove("options-menu-visible");
+          } else {
+            panel.classList.add("options-menu-visible");
+          }
+        }}">
+      </bim-button>
+    `;
+});
+
+document.body.append(button);
 
 /* MD
   ### ⏱️ Measuring the performance (optional)

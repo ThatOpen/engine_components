@@ -1,6 +1,5 @@
-import * as THREE from "three";
 import { Component, Disposable, World, Event } from "../Types";
-import { GridConfig, SimpleGrid } from "./src";
+import { SimpleGrid } from "./src";
 import { Components } from "../Components";
 
 export * from "./src";
@@ -19,16 +18,6 @@ export class Grids extends Component implements Disposable {
    * A map of world UUIDs to their corresponding grid instances.
    */
   list = new Map<string, SimpleGrid>();
-
-  /**
-   * The default configuration for grid creation.
-   */
-  config: Required<GridConfig> = {
-    color: new THREE.Color(0xbbbbbb),
-    size1: 1,
-    size2: 10,
-    distance: 500,
-  };
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
@@ -54,7 +43,7 @@ export class Grids extends Component implements Disposable {
     if (this.list.has(world.uuid)) {
       throw new Error("This world already has a grid!");
     }
-    const grid = new SimpleGrid(this.components, world, this.config);
+    const grid = new SimpleGrid(this.components, world);
     this.list.set(world.uuid, grid);
     world.onDisposed.add(() => {
       this.delete(world);
