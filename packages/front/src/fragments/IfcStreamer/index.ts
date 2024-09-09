@@ -9,7 +9,6 @@ import {
   StreamedInstance,
   StreamLoaderSettings,
   // StreamerDbCleaner,
-  StreamerFileDb,
 } from "./src";
 
 export * from "./src";
@@ -83,11 +82,10 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     return fetch(this.url + fileName);
   };
 
-
   /**
    * Cache system that uses the File System API.
    */
-  fileDB = new StreamerFileDb();
+  fileDB = new FRAG.StreamerFileDb("that-open-company-streaming");
 
   private _culler: GeometryCullerRenderer | null = null;
 
@@ -97,7 +95,6 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     string,
     { data: FRAG.StreamedGeometries; time: number }
   >();
-
 
   private _isDisposing = false;
 
@@ -508,7 +505,8 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
             const found = await this.fileDB.get(fileName);
 
             if (found) {
-              bytes = found;
+              const arrayBuffer = await found.arrayBuffer();
+              bytes = new Uint8Array(arrayBuffer);
             } else {
               const fetched = await this.fetch(fileName);
               const buffer = await fetched.arrayBuffer();

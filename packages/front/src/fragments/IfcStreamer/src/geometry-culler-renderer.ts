@@ -57,14 +57,10 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
 
   private codes = new Map<number, Map<number, string>>();
 
-  constructor(
-    components: OBC.Components,
-    world: OBC.World,
-    settings?: OBC.CullerRendererSettings,
-  ) {
-    super(components, world, settings);
+  constructor(components: OBC.Components, world: OBC.World) {
+    super(components, world);
 
-    this.updateInterval = 500;
+    this.config.updateInterval = 500;
 
     this._geometry = new THREE.BoxGeometry(1, 1, 1);
     this._geometry.groups = [];
@@ -76,12 +72,6 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     this._geometry.attributes.position.needsUpdate = true;
 
     this.worker.addEventListener("message", this.handleWorkerMessage);
-    if (this.autoUpdate) {
-      this._intervalID = window.setInterval(
-        this.updateVisibility,
-        this.updateInterval,
-      );
-    }
   }
 
   dispose() {
