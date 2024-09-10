@@ -116,11 +116,12 @@ export class IfcLoader extends Component implements Disposable {
    * const group = await ifcLoader.load(ifcData);
    * ```
    */
-  async load(data: Uint8Array, coordinate = true) {
+  async load(data: Uint8Array, coordinate = true, name = "") {
     const before = performance.now();
     this.onIfcStartedLoading.trigger();
     await this.readIfcFile(data);
     const group = await this.getAllGeometries();
+    group.name = name;
 
     const jsonExporter = this.components.get(IfcJsonExporter);
     const properties = await jsonExporter.export(this.webIfc, 0);
