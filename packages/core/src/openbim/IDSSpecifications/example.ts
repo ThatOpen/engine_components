@@ -99,7 +99,7 @@ partOfFacet.relation = WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE;
 // Load test cases from GitHub
 // Define the URL for fetching the files list
 const apiURL =
-  "https://api.github.com/repos/buildingSMART/IDS/contents/Documentation/ImplementersDocumentation/TestCases/entity?ref=development";
+  "https://api.github.com/repos/buildingSMART/IDS/contents/Documentation/ImplementersDocumentation/TestCases/classification?ref=development";
 
 // Function to process each pair of IFC and IDS files
 async function processPair(ifcUrl: string, idsUrl: string) {
@@ -191,9 +191,9 @@ async function fetchFileListAndProcessPairs() {
 }
 
 // Call the function to fetch and process file pairs
-fetchFileListAndProcessPairs();
+// fetchFileListAndProcessPairs();
 
 // const baseURL =
 //   "https://raw.githubusercontent.com/buildingSMART/IDS/development/Documentation/ImplementersDocumentation/TestCases";
-// const url = `${baseURL}/entity/pass-inherited_predefined_types_should_pass`;
+// const url = `${baseURL}/classification/pass-occurrences_override_the_type_classification_per_system_1_3`;
 // processPair(`${url}.ifc`, `${url}.ids`);

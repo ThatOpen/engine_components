@@ -66,6 +66,7 @@ export interface IDSCheckResult {
   expressID: number;
   pass: boolean;
   checks: IDSCheck[];
+  cardinality: IDSConditionalCardinaltiy;
 }
 
 export interface IDSInfo {

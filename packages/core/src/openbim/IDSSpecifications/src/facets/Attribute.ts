@@ -62,6 +62,7 @@ export class IDSAttribute extends IDSFacet {
         expressID,
         pass: false,
         checks,
+        cardinality: this.cardinality,
       };
 
       this.testResult.push(result);

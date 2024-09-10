@@ -24,6 +24,18 @@ export abstract class IDSFacet {
 
   constructor(protected components: Components) {}
 
+  protected addCheckResult(check: IDSCheck, checks: IDSCheck[]) {
+    const index = checks.findIndex(
+      ({ parameter }) => parameter === check.parameter,
+    );
+
+    if (index !== -1) {
+      checks[index] = check;
+    } else {
+      checks.push(check);
+    }
+  }
+
   protected evalRequirement = (
     value: string | number | boolean | null,
     facetParameter: IDSFacetParameter,
@@ -37,17 +49,7 @@ export abstract class IDSFacet {
       pass: false,
     };
 
-    if (checks) {
-      const index = checks.findIndex(
-        ({ parameter }) => parameter === checkLog.parameter,
-      );
-
-      if (index !== -1) {
-        checks[index] = checkLog;
-      } else {
-        checks.push(checkLog);
-      }
-    }
+    if (checks) this.addCheckResult(checkLog, checks);
 
     let pass = false;
 
@@ -111,7 +113,12 @@ export abstract class IDSFacet {
     const { GlobalId } = attrs;
     if (!GlobalId) return;
     const { value: guid } = GlobalId;
-    const result: IDSCheckResult = { expressID: guid, pass, checks: [] };
+    const result: IDSCheckResult = {
+      expressID: guid,
+      pass,
+      checks: [],
+      cardinality: this.cardinality,
+    };
     this.testResult.push(result);
   }
 

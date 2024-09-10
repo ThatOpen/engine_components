@@ -70,6 +70,7 @@ export class IDSEntity extends IDSFacet {
         expressID,
         pass: false,
         checks,
+        cardinality: this.cardinality,
       };
 
       this.testResult.push(result);

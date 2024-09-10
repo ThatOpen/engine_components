@@ -13,7 +13,14 @@ export const createClassificationFacets = (
     if (!system) continue;
     const facet = new IDSClassification(components, system);
     if (element.cardinality) facet.cardinality = element.cardinality;
-    facet.value = getParameterValue(element.value);
+    const value = getParameterValue(element.value);
+    if (value?.type === "simple") {
+      value.parameter = String(value.parameter);
+    }
+    if (value?.type === "enumeration" && Array.isArray(value.parameter)) {
+      value.parameter = value.parameter.map(String);
+    }
+    facet.value = value;
     facets.push(facet);
   }
   return facets;
