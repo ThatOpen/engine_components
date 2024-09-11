@@ -166,6 +166,8 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
 
     const fragments = this.components.get(OBC.FragmentsManager);
     fragments.onFragmentsDisposed.add(this.disposeStreamedGroup);
+
+    FRAG.FragmentsGroup.setPropertiesDB(true);
   }
 
   /** {@link OBC.Disposable.dispose} */
@@ -193,6 +195,8 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     this.onDisposed.trigger(IfcStreamer.uuid);
     this.onDisposed.reset();
     this._isDisposing = false;
+
+    FRAG.FragmentsGroup.setPropertiesDB(false);
   }
 
   /**
