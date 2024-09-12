@@ -214,6 +214,80 @@ stats.dom.style.zIndex = "unset";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
 
+window.addEventListener("keydown", async (e) => {
+  if (e.code !== "KeyP") {
+    return;
+  }
+
+  const [fileHandle] = await window.showOpenFilePicker();
+  // console.log(fileHandle);
+  const file = await fileHandle.getFile();
+
+  const reader = new FileReader();
+  const decoder = new TextDecoder("utf-8");
+
+  // src: https://joji.me/en-us/blog/processing-huge-files-using-filereader-readasarraybuffer-in-web-browser/
+  const chunkSize = 10000 * 1024; // 10mb
+  const offset = 1000; // To avoid IFC lines that are split
+  let start = 0;
+
+  const endLineToken = /;/;
+
+  const textFilters = new Set<RegExp>([/wall/]);
+
+  const resultItems = new Set<{
+    id: number;
+    category: string;
+    position: number;
+  }>();
+
+  const readTextPart = () => {
+    if (start >= file.size) {
+      return;
+    }
+    const end = Math.min(start + chunkSize + offset, file.size);
+    const slice = file.slice(start, end);
+    reader.readAsArrayBuffer(slice);
+  };
+
+  reader.onload = () => {
+    if (!(reader.result instanceof ArrayBuffer)) {
+      return;
+    }
+    const buffer = new Uint8Array(reader.result);
+
+    const snippet = decoder.decode(buffer);
+
+    // Get individual IFC lines
+    const lines = snippet.split(endLineToken);
+
+    // Test all filters against each line
+    for (const line of lines) {
+      let filtersPass = true;
+      for (const filter of textFilters) {
+        if (!filter.test(line)) {
+          filtersPass = false;
+          break;
+        }
+      }
+      if (!filtersPass) {
+        continue;
+      }
+
+      console.log(line);
+    }
+
+    console.log(start / file.size);
+
+    start += chunkSize;
+    readTextPart();
+  };
+
+  readTextPart();
+
+  // console.log(file);
+});
+
 /* MD
   ### 🧩 Adding some UI
   ---
