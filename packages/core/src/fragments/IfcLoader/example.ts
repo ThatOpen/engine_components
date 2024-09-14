@@ -214,33 +214,75 @@ stats.dom.style.zIndex = "unset";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
 
+const queries: OBC.IfcFinderQueries = [
+  {
+    name: "walls",
+    result: [],
+    needsUpdate: true,
+    rules: [
+      {
+        type: "category",
+        value: /IfcWallStandardCase/,
+        exclusive: false,
+      },
+    ],
+  },
+];
+
+// Aripa
+
+let file: File | null = null;
+
 window.addEventListener("keydown", async (e) => {
-  if (e.code !== "KeyP") {
-    return;
+  if (e.code === "KeyP") {
+    if (!file) {
+      const [fileHandle] = await window.showOpenFilePicker();
+      // console.log(fileHandle);
+      file = await fileHandle.getFile();
+    }
+
+    const start = performance.now();
+
+    const finder = components.get(OBC.IfcFinder);
+
+    const result = await finder.find(file, queries);
+
+    console.log(result);
+    console.log(queries);
+    console.log(`Time: ${performance.now() - start}`);
   }
 
-  const [fileHandle] = await window.showOpenFilePicker();
-  // console.log(fileHandle);
-  const file = await fileHandle.getFile();
+  if (e.code === "KeyO") {
+    queries.push({
+      name: "aripa",
+      needsUpdate: true,
+      result: [],
+      rules: [
+        {
+          type: "property",
+          exclusive: false,
+          name: /.*/,
+          value: /Aripa/,
+        },
+      ],
+    });
 
-  const start = performance.now();
+    if (!file) {
+      const [fileHandle] = await window.showOpenFilePicker();
+      // console.log(fileHandle);
+      file = await fileHandle.getFile();
+    }
 
-  const finder = components.get(OBC.IfcFinder);
-  const result = await finder.find(file, [
-    {
-      type: "category",
-      value: /IfcWallStandardCase/,
-    },
-    // {
-    //   type: "property",
-    //   name: /.*/,
-    //   value: /Aripa/,
-    // },
-  ]);
+    const start = performance.now();
 
-  console.log(result);
+    const finder = components.get(OBC.IfcFinder);
 
-  console.log(`Time: ${performance.now() - start}`);
+    const result = await finder.find(file, queries);
+
+    console.log(result);
+    console.log(queries);
+    console.log(`Time: ${performance.now() - start}`);
+  }
 });
 
 /* MD
