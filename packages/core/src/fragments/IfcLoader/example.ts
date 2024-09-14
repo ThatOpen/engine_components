@@ -21,7 +21,7 @@ In this tutorial, we will import:
 import * as WEBIFC from "web-ifc";
 import * as BUI from "@thatopen/ui";
 import Stats from "stats.js";
-import * as OBC from "@thatopen/components";
+import * as OBC from "../..";
 
 /* MD
   ### 🌎 Setting up a simple scene
@@ -223,69 +223,24 @@ window.addEventListener("keydown", async (e) => {
   // console.log(fileHandle);
   const file = await fileHandle.getFile();
 
-  const reader = new FileReader();
-  const decoder = new TextDecoder("utf-8");
+  const start = performance.now();
 
-  // src: https://joji.me/en-us/blog/processing-huge-files-using-filereader-readasarraybuffer-in-web-browser/
-  const chunkSize = 10000 * 1024; // 10mb
-  const offset = 1000; // To avoid IFC lines that are split
-  let start = 0;
+  const finder = components.get(OBC.IfcFinder);
+  const result = await finder.find(file, [
+    {
+      type: "category",
+      value: /IfcWallStandardCase/,
+    },
+    // {
+    //   type: "property",
+    //   name: /.*/,
+    //   value: /Aripa/,
+    // },
+  ]);
 
-  const endLineToken = /;/;
+  console.log(result);
 
-  const textFilters = new Set<RegExp>([/wall/]);
-
-  const resultItems = new Set<{
-    id: number;
-    category: string;
-    position: number;
-  }>();
-
-  const readTextPart = () => {
-    if (start >= file.size) {
-      return;
-    }
-    const end = Math.min(start + chunkSize + offset, file.size);
-    const slice = file.slice(start, end);
-    reader.readAsArrayBuffer(slice);
-  };
-
-  reader.onload = () => {
-    if (!(reader.result instanceof ArrayBuffer)) {
-      return;
-    }
-    const buffer = new Uint8Array(reader.result);
-
-    const snippet = decoder.decode(buffer);
-
-    // Get individual IFC lines
-    const lines = snippet.split(endLineToken);
-
-    // Test all filters against each line
-    for (const line of lines) {
-      let filtersPass = true;
-      for (const filter of textFilters) {
-        if (!filter.test(line)) {
-          filtersPass = false;
-          break;
-        }
-      }
-      if (!filtersPass) {
-        continue;
-      }
-
-      console.log(line);
-    }
-
-    console.log(start / file.size);
-
-    start += chunkSize;
-    readTextPart();
-  };
-
-  readTextPart();
-
-  // console.log(file);
+  console.log(`Time: ${performance.now() - start}`);
 });
 
 /* MD
