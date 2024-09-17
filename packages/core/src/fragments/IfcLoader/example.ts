@@ -215,21 +215,18 @@ world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
 
 const queries: OBC.IfcFinderQuery[] = [
-  {
+  new OBC.IfcFinderQuery({
     name: "walls",
-    result: [],
-    needsUpdate: true,
     inclusive: false,
     rules: [
       {
-        type: "category",
-        value: /IfcWallStandardCase/,
+        type: "property",
+        name: /.*/,
+        value: /FireResistanceRating/,
       },
     ],
-  },
+  }),
 ];
-
-// Aripa
 
 let file: File | null = null;
 
@@ -253,19 +250,19 @@ window.addEventListener("keydown", async (e) => {
   }
 
   if (e.code === "KeyO") {
-    queries.push({
-      name: "guid",
-      needsUpdate: true,
-      inclusive: false,
-      result: [],
-      rules: [
-        {
-          type: "property",
-          name: /.*/,
-          value: /2idC0G3ezCdhA9WVjWemc\$/,
-        },
-      ],
-    });
+    // queries.push({
+    //   name: "guid",
+    //   needsUpdate: true,
+    //   inclusive: false,
+    //   lines: [],
+    //   rules: [
+    //     {
+    //       type: "property",
+    //       name: /.*/,
+    //       value: /2idC0G3ezCdhA9WVjWemc\$/,
+    //     },
+    //   ],
+    // });
 
     if (!file) {
       const [fileHandle] = await window.showOpenFilePicker();
