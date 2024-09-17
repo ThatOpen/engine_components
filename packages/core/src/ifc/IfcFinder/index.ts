@@ -4,25 +4,24 @@ import { ifcCategoryCase } from "../Utils";
 
 export interface IfcCategoryRule {
   type: "category";
-  exclusive: boolean;
   value: RegExp;
 }
 
 export interface IfcPropertyRule {
   type: "property";
-  exclusive: boolean;
   name: RegExp;
   value: RegExp;
 }
 
 export type IfcFinderRule = IfcCategoryRule | IfcPropertyRule;
 
-export type IfcFinderQueries = {
+export type IfcFinderQuery = {
   name: string;
+  inclusive: boolean;
   rules: IfcFinderRule[];
   result: string[];
   needsUpdate: boolean;
-}[];
+};
 
 /**
  * Component to make text queries in the IFC.
@@ -43,38 +42,39 @@ export class IfcFinder extends Component {
     super(components);
   }
 
-  async find(file: File, queries: IfcFinderQueries) {
+  async find(file: File, queries: IfcFinderQuery[]) {
     let found = new Set<number>();
 
     // Handle the rest of query parts
     for (let i = 0; i < queries.length; i++) {
       found = new Set<number>();
-      const { rules, result, needsUpdate } = queries[i];
+      const query = queries[i];
+      const previousQuery = queries[i - 1];
 
-      if (!needsUpdate) {
+      if (!query.needsUpdate) {
         // This query is up to date, so let's use its data directly
-        this.findInLines(result, rules, found);
+        this.findInLines(query.result, query, found);
         continue;
       }
 
-      queries[i].result = [];
+      query.result = [];
 
-      if (!queries[i - 1]) {
+      if (!previousQuery) {
         // There's no previous result, so let's read the file
-        queries[i].result = await this.findInFile(file, rules, found);
-        queries[i].needsUpdate = false;
+        query.result = await this.findInFile(file, query, found);
+        query.needsUpdate = false;
         continue;
       }
 
       // There's previous data, so let's use it
-      this.findInLines(queries[i - 1].result, rules, found, queries[i].result);
-      queries[i].needsUpdate = false;
+      this.findInLines(previousQuery.result, query, found, query.result);
+      query.needsUpdate = false;
     }
 
     return found;
   }
 
-  findInFile(file: File, rules: IfcFinderRule[], found: Set<number>) {
+  findInFile(file: File, query: IfcFinderQuery, found: Set<number>) {
     return new Promise<string[]>((resolve) => {
       const reader = new FileReader();
       const decoder = new TextDecoder("utf-8");
@@ -112,7 +112,7 @@ export class IfcFinder extends Component {
         // Remove first line, which is cut
         lines.shift();
 
-        this.findInLines(lines, rules, found, resultLines);
+        this.findInLines(lines, query, found, resultLines);
 
         console.log(start / file.size);
 
@@ -126,10 +126,11 @@ export class IfcFinder extends Component {
 
   private findInLines(
     lines: string[],
-    rules: IfcFinderRule[],
+    query: IfcFinderQuery,
     found: Set<number>,
     resultLines?: string[],
   ) {
+    const { rules } = query;
     for (const line of lines) {
       let category: string | null = null;
       let attrValues: string[] | null = null;
@@ -142,7 +143,7 @@ export class IfcFinder extends Component {
           if (category === null) {
             category = this.getCategoryFromLine(line);
             if (category === null) {
-              if (rule.exclusive) {
+              if (!query.inclusive) {
                 break;
               } else {
                 continue;
@@ -151,7 +152,7 @@ export class IfcFinder extends Component {
           }
 
           if (!rule.value.test(category)) {
-            if (rule.exclusive) {
+            if (!query.inclusive) {
               filtersPass = false;
               break;
             } else {
@@ -168,7 +169,7 @@ export class IfcFinder extends Component {
 
           // Quick test to see if this line contains what we are looking for
           if (!value.test(line)) {
-            if (rule.exclusive) {
+            if (!query.inclusive) {
               filtersPass = false;
               break;
             } else {
@@ -179,7 +180,7 @@ export class IfcFinder extends Component {
           if (attrValues === null) {
             attrValues = this.getAttributesFromLine(line);
             if (attrValues === null) {
-              if (rule.exclusive) {
+              if (!query.inclusive) {
                 filtersPass = false;
                 break;
               } else {
@@ -191,7 +192,7 @@ export class IfcFinder extends Component {
           if (category === null) {
             category = this.getCategoryFromLine(line);
             if (category === null) {
-              if (rule.exclusive) {
+              if (!query.inclusive) {
                 filtersPass = false;
                 break;
               } else {
@@ -203,8 +204,11 @@ export class IfcFinder extends Component {
           if (attrNames === null) {
             // @ts-ignore
             attrNames = Object.keys(new WEBIFC.IFC4[category]());
+            // Remove attributes expressID and type, given by web-ifc
+            attrNames = attrNames.slice(2);
+
             if (attrNames === null) {
-              if (rule.exclusive) {
+              if (!query.inclusive) {
                 filtersPass = false;
                 break;
               } else {
@@ -227,7 +231,7 @@ export class IfcFinder extends Component {
           }
 
           if (!someNameValueMatch) {
-            if (rule.exclusive) {
+            if (!query.inclusive) {
               filtersPass = false;
               break;
             }

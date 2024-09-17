@@ -214,16 +214,16 @@ stats.dom.style.zIndex = "unset";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
 
-const queries: OBC.IfcFinderQueries = [
+const queries: OBC.IfcFinderQuery[] = [
   {
     name: "walls",
     result: [],
     needsUpdate: true,
+    inclusive: false,
     rules: [
       {
         type: "category",
         value: /IfcWallStandardCase/,
-        exclusive: false,
       },
     ],
   },
@@ -254,15 +254,15 @@ window.addEventListener("keydown", async (e) => {
 
   if (e.code === "KeyO") {
     queries.push({
-      name: "aripa",
+      name: "guid",
       needsUpdate: true,
+      inclusive: false,
       result: [],
       rules: [
         {
           type: "property",
-          exclusive: false,
           name: /.*/,
-          value: /Aripa/,
+          value: /2idC0G3ezCdhA9WVjWemc\$/,
         },
       ],
     });
