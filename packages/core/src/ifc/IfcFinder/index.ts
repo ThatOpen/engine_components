@@ -35,8 +35,8 @@ export class IfcFinder extends Component {
         continue;
       }
 
-      const queryInput = previousQuery?.lines || file;
-      await query.update(queryInput);
+      const queryInput = previousQuery?.lines || undefined;
+      await query.update(file, queryInput);
       wasPreviousQueryUpdated = true;
     }
 

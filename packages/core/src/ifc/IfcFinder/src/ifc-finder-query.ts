@@ -20,17 +20,23 @@ export class IfcFinderQuery {
     this.inclusive = data.inclusive || false;
   }
 
-  async update(data: File | string[]) {
-    if (data instanceof File) {
-      await this.findInFile(data);
-    } else {
+  async update(file: File, data?: string[]) {
+    // If previous data exists, use it. Otherwise, read whole file
+    if (data) {
       this.findInLines(data);
+    } else {
+      await this.findInFile(file);
     }
 
     this.needsUpdate = false;
   }
 
-  private findInFile(file: File) {
+  protected getIdFromLine(line: string) {
+    const idString = line.slice(line.indexOf("#") + 1, line.indexOf("="));
+    return parseInt(idString, 10);
+  }
+
+  protected findInFile(file: File) {
     return new Promise<void>((resolve) => {
       const reader = new FileReader();
       const decoder = new TextDecoder("utf-8");
@@ -78,7 +84,7 @@ export class IfcFinderQuery {
     });
   }
 
-  private findInLines(lines: string[]) {
+  protected findInLines(lines: string[]) {
     for (const line of lines) {
       let category: string | null = null;
       let attrValues: string[] | null = null;
@@ -190,15 +196,14 @@ export class IfcFinderQuery {
       }
 
       if (filtersPass) {
-        const idString = line.slice(line.indexOf("#") + 1, line.indexOf("="));
-        const id = parseInt(idString, 10);
         this.lines.push(line);
+        const id = this.getIdFromLine(line);
         this.ids.add(id);
       }
     }
   }
 
-  private getCategoryFromLine(line: string) {
+  protected getCategoryFromLine(line: string) {
     const start = line.indexOf("=") + 1;
     const end = line.indexOf("(");
     const category = line.slice(start, end).trim();
@@ -209,7 +214,7 @@ export class IfcFinderQuery {
     return name;
   }
 
-  private getAttributesFromLine(line: string) {
+  protected getAttributesFromLine(line: string) {
     const matchRegex = /\((.*)\)/;
     const match = line.match(matchRegex);
     if (!(match && match[1])) {
@@ -217,11 +222,13 @@ export class IfcFinderQuery {
     }
     const splitRegex = /,(?![^()]*\))/g;
     const attrs = match[1].split(splitRegex).map((part) => part.trim());
-    const validAttrs = attrs.map((attr) => {
-      if (attr.startsWith("(") && attr.endsWith(")")) return "$";
-      if (attr.startsWith("'") && attr.endsWith("'")) return attr.slice(1, -1);
-      return attr;
-    });
-    return validAttrs;
+    // console.log(attrs);
+    // const validAttrs = attrs.map((attr) => {
+    //   if (attr.startsWith("(") && attr.endsWith(")")) return "$";
+    //   if (attr.startsWith("'") && attr.endsWith("'")) return attr.slice(1, -1);
+    //   return attr;
+    // });
+    // return validAttrs;
+    return attrs;
   }
 }

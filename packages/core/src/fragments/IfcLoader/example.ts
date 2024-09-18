@@ -215,14 +215,13 @@ world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
 
 const queries: OBC.IfcFinderQuery[] = [
-  new OBC.IfcFinderQuery({
+  new OBC.PropertyToElementsQuery({
     name: "walls",
-    inclusive: false,
     rules: [
       {
         type: "property",
         name: /.*/,
-        value: /FireResistanceRating/,
+        value: /FireRating/,
       },
     ],
   }),
@@ -249,37 +248,23 @@ window.addEventListener("keydown", async (e) => {
     console.log(`Time: ${performance.now() - start}`);
   }
 
-  if (e.code === "KeyO") {
-    // queries.push({
-    //   name: "guid",
-    //   needsUpdate: true,
-    //   inclusive: false,
-    //   lines: [],
-    //   rules: [
-    //     {
-    //       type: "property",
-    //       name: /.*/,
-    //       value: /2idC0G3ezCdhA9WVjWemc\$/,
-    //     },
-    //   ],
-    // });
-
-    if (!file) {
-      const [fileHandle] = await window.showOpenFilePicker();
-      // console.log(fileHandle);
-      file = await fileHandle.getFile();
-    }
-
-    const start = performance.now();
-
-    const finder = components.get(OBC.IfcFinder);
-
-    const result = await finder.find(file, queries);
-
-    console.log(result);
-    console.log(queries);
-    console.log(`Time: ${performance.now() - start}`);
-  }
+  // if (e.code === "KeyO") {
+  //   queries.push(new OBC.PropertyToElementsQuery());
+  //
+  //   const [fileHandle] = await window.showOpenFilePicker();
+  //   // console.log(fileHandle);
+  //   file = await fileHandle.getFile();
+  //
+  //   const start = performance.now();
+  //
+  //   const finder = components.get(OBC.IfcFinder);
+  //
+  //   const result = await finder.find(file, queries);
+  //
+  //   console.log(result);
+  //   console.log(queries);
+  //   console.log(`Time: ${performance.now() - start}`);
+  // }
 });
 
 /* MD
