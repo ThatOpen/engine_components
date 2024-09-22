@@ -263,21 +263,22 @@ export class IfcRelationsIndexer extends Component implements Disposable {
    * This method searches the indexed relation maps for the specified model and entity,
    * returning the IDs of related entities if a match is found.
    *
-   * @param model The `FragmentsGroup` model containing the entity.
+   * @param model The `FragmentsGroup` model containing the entity, or its UUID.
    * @param expressID The unique identifier of the entity within the model.
    * @param relationName The IFC schema inverse attribute of the relation to search for (e.g., "IsDefinedBy", "ContainsElements").
    * @returns An array of express IDs representing the related entities, or `null` if no relations are found
    * or the specified relation name is not indexed.
    */
   getEntityRelations(
-    model: FragmentsGroup,
+    model: FragmentsGroup | string,
     expressID: number,
     relationName: InverseAttribute,
   ) {
-    const indexMap = this.relationMaps[model.uuid];
+    const id = model instanceof FragmentsGroup ? model.uuid : model;
+    const indexMap = this.relationMaps[id];
     if (!indexMap) {
       throw new Error(
-        `IfcRelationsIndexer: model ${model.uuid} has no relations indexed.`,
+        `IfcRelationsIndexer: model ${id} has no relations indexed.`,
       );
     }
     const entityRelations = indexMap.get(expressID);

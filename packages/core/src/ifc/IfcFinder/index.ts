@@ -1,4 +1,5 @@
 import { Component, Components, Event } from "../../core";
+import { IfcQueryGroup } from "./src/ifc-query-group";
 import { IfcFinderQuery } from "./src";
 
 export * from "./src";
@@ -18,29 +19,30 @@ export class IfcFinder extends Component {
   /** {@link Component.enabled} */
   enabled = true;
 
+  list = new Map<string, IfcQueryGroup>();
+
+  get queries() {
+    // return list of all queries traversing all groups
+    const queries = new Set<IfcFinderQuery>();
+    for (const [, group] of this.list) {
+      for (const query of group.queries) {
+        queries.add(query);
+      }
+    }
+    return queries;
+  }
+
   constructor(components: Components) {
     super(components);
   }
 
-  async find(file: File, queries: IfcFinderQuery[]) {
-    let wasPreviousQueryUpdated = false;
+  create() {
+    const group = new IfcQueryGroup();
+    this.list.set(group.uuid, group);
+    return group;
+  }
 
-    // Handle the rest of query parts
-    for (let i = 0; i < queries.length; i++) {
-      const query = queries[i];
-      const previousQuery = queries[i - 1];
-
-      if (!query.needsUpdate && !wasPreviousQueryUpdated) {
-        // This query is up to date and previous queries were not updated, so let's skip it
-        continue;
-      }
-
-      const queryInput = previousQuery?.lines || undefined;
-      await query.update(file, queryInput);
-      wasPreviousQueryUpdated = true;
-    }
-
-    const lastQuery = queries[queries.length - 1];
-    return new Set(lastQuery.ids);
+  delete(id: string) {
+    this.list.delete(id);
   }
 }

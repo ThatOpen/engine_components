@@ -21,6 +21,7 @@ In this tutorial, we will import:
 import * as WEBIFC from "web-ifc";
 import * as BUI from "@thatopen/ui";
 import Stats from "stats.js";
+import * as OBCF from "@thatopen/components-front/src";
 import * as OBC from "../..";
 
 /* MD
@@ -214,37 +215,56 @@ stats.dom.style.zIndex = "unset";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
 
-const queries: OBC.IfcFinderQuery[] = [
-  new OBC.PropertyToElementsQuery({
-    name: "walls",
-    rules: [
-      {
-        type: "property",
-        name: /.*/,
-        value: /FireRating/,
-      },
-    ],
-  }),
-];
-
-let file: File | null = null;
+const highlighter = components.get(OBCF.Highlighter) as OBCF.Highlighter;
+highlighter.setup({ world });
 
 window.addEventListener("keydown", async (e) => {
   if (e.code === "KeyP") {
-    if (!file) {
-      const [fileHandle] = await window.showOpenFilePicker();
-      // console.log(fileHandle);
-      file = await fileHandle.getFile();
-    }
+    const [fileHandle] = await window.showOpenFilePicker();
+    // console.log(fileHandle);
+    const file = await fileHandle.getFile();
+
+    const model = await fragmentIfcLoader.load(
+      new Uint8Array(await file.arrayBuffer()),
+    );
+
+    const indexer = components.get(OBC.IfcRelationsIndexer);
+    await indexer.process(model);
+
+    model.name = "example";
+    world.scene.three.add(model);
 
     const start = performance.now();
-
     const finder = components.get(OBC.IfcFinder);
 
-    const result = await finder.find(file, queries);
+    const queryGroup = finder.create();
 
-    console.log(result);
-    console.log(queries);
+    queryGroup.add(
+      new OBC.IfcPropertyQuery(components, {
+        name: "pset",
+        inclusive: false,
+        rules: [
+          {
+            type: "property",
+            name: /.*/,
+            value: /Unconnected Height/,
+          },
+          {
+            type: "operator",
+            value: 3,
+            operator: ">",
+            name: /.*/,
+          },
+        ],
+      }),
+    );
+
+    await queryGroup.update(model.uuid, file);
+
+    const items = queryGroup.items;
+    console.log(items);
+    highlighter.highlightByID("select", items, true, true);
+
     console.log(`Time: ${performance.now() - start}`);
   }
 

@@ -9,4 +9,11 @@ export interface IfcPropertyRule {
   value: RegExp;
 }
 
-export type IfcFinderRule = IfcCategoryRule | IfcPropertyRule;
+export interface IfcOperatorRule {
+  type: "operator";
+  name: RegExp;
+  value: number;
+  operator: "<" | ">" | "=" | "<=" | ">=";
+}
+
+export type IfcFinderRule = IfcCategoryRule | IfcPropertyRule | IfcOperatorRule;

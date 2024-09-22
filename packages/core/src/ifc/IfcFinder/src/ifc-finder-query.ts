@@ -1,42 +1,45 @@
+import * as FRAGS from "@thatopen/fragments";
 import * as WEBIFC from "web-ifc";
-import { IfcFinderRule } from "./types";
 import { ifcCategoryCase } from "../../Utils";
+import { IfcFinderRule } from "./types";
+import { Components } from "../../../core";
 
-export class IfcFinderQuery {
-  rules: IfcFinderRule[];
-  inclusive: boolean;
-  name: string;
-  lines: string[] = [];
-  ids = new Set<number>();
-  needsUpdate = true;
+export abstract class IfcFinderQuery {
+  abstract name: string;
 
-  constructor(data: {
-    name: string;
-    rules: IfcFinderRule[];
-    inclusive: boolean;
-  }) {
-    this.name = data.name;
-    this.rules = data.rules;
-    this.inclusive = data.inclusive || false;
+  abstract items: FRAGS.FragmentIdMap;
+
+  inclusive = false;
+
+  rules: IfcFinderRule[] = [];
+
+  ids: { [modelID: string]: Set<number> } = {};
+
+  needsUpdate = new Map<string, boolean>();
+
+  components: Components;
+
+  abstract update(modelID: string, file: File): Promise<void>;
+
+  protected abstract findInLines(modelID: string, lines: string[]): void;
+
+  protected constructor(components: Components) {
+    this.components = components;
   }
 
-  async update(file: File, data?: string[]) {
-    // If previous data exists, use it. Otherwise, read whole file
-    if (data) {
-      this.findInLines(data);
-    } else {
-      await this.findInFile(file);
+  clear(modelID: string) {
+    delete this.ids[modelID];
+    this.needsUpdate.delete(modelID);
+  }
+
+  protected addID(modelID: string, id: number) {
+    if (!this.ids[modelID]) {
+      this.ids[modelID] = new Set<number>();
     }
-
-    this.needsUpdate = false;
+    this.ids[modelID].add(id);
   }
 
-  protected getIdFromLine(line: string) {
-    const idString = line.slice(line.indexOf("#") + 1, line.indexOf("="));
-    return parseInt(idString, 10);
-  }
-
-  protected findInFile(file: File) {
+  protected findInFile(modelID: string, file: File) {
     return new Promise<void>((resolve) => {
       const reader = new FileReader();
       const decoder = new TextDecoder("utf-8");
@@ -72,7 +75,7 @@ export class IfcFinderQuery {
         // Remove first line, which is cut
         lines.shift();
 
-        this.findInLines(lines);
+        this.findInLines(modelID, lines);
 
         console.log(start / file.size);
 
@@ -84,123 +87,166 @@ export class IfcFinderQuery {
     });
   }
 
-  protected findInLines(lines: string[]) {
-    for (const line of lines) {
-      let category: string | null = null;
-      let attrValues: string[] | null = null;
-      let attrNames: string[] | null = null;
+  protected getIdFromLine(line: string) {
+    const idString = line.slice(line.indexOf("#") + 1, line.indexOf("="));
+    return parseInt(idString, 10);
+  }
 
-      let filtersPass = false;
+  protected testRules(line: string) {
+    let category: string | null = null;
+    let attrValues: string[] | null = null;
+    let attrNames: string[] | null = null;
 
-      for (const rule of this.rules) {
-        if (rule.type === "category") {
+    let filtersPass = false;
+
+    for (const rule of this.rules) {
+      // Test categories
+      if (rule.type === "category") {
+        if (category === null) {
+          category = this.getCategoryFromLine(line);
           if (category === null) {
-            category = this.getCategoryFromLine(line);
-            if (category === null) {
-              if (!this.inclusive) {
-                break;
-              } else {
-                continue;
-              }
-            }
-          }
-
-          if (!rule.value.test(category)) {
             if (!this.inclusive) {
-              filtersPass = false;
               break;
             } else {
               continue;
             }
           }
-
-          filtersPass = true;
-          continue;
         }
 
-        if (rule.type === "property") {
-          const { name, value } = rule;
+        if (!rule.value.test(category)) {
+          if (!this.inclusive) {
+            filtersPass = false;
+            break;
+          } else {
+            continue;
+          }
+        }
 
-          // Quick test to see if this line contains what we are looking for
-          if (!value.test(line)) {
-            if (!this.inclusive) {
-              filtersPass = false;
+        filtersPass = true;
+        continue;
+      }
+
+      if (attrValues === null) {
+        attrValues = this.getAttributesFromLine(line);
+        if (attrValues === null) {
+          if (!this.inclusive) {
+            filtersPass = false;
+            break;
+          } else {
+            continue;
+          }
+        }
+      }
+
+      if (category === null) {
+        category = this.getCategoryFromLine(line);
+        if (category === null) {
+          if (!this.inclusive) {
+            filtersPass = false;
+            break;
+          } else {
+            continue;
+          }
+        }
+      }
+
+      if (attrNames === null) {
+        // @ts-ignore
+        attrNames = Object.keys(new WEBIFC.IFC4[category]());
+        // Remove attributes expressID and type, given by web-ifc
+        attrNames = attrNames.slice(2);
+
+        if (attrNames === null) {
+          if (!this.inclusive) {
+            filtersPass = false;
+            break;
+          } else {
+            continue;
+          }
+        }
+      }
+
+      // Test properties
+      if (rule.type === "property") {
+        const { name, value } = rule;
+
+        // Quick test to see if this line contains what we are looking for
+        if (!value.test(line)) {
+          if (!this.inclusive) {
+            filtersPass = false;
+            break;
+          } else {
+            continue;
+          }
+        }
+
+        // Slow test to detect if
+
+        let someNameValueMatch = false;
+        for (let i = 0; i < attrValues.length; i++) {
+          const attrValue = attrValues[i];
+          const attrName = attrNames[i];
+          // Check that both name and value match
+          if (value.test(attrValue) && name.test(attrName)) {
+            someNameValueMatch = true;
+            break;
+          }
+        }
+
+        if (!someNameValueMatch) {
+          if (!this.inclusive) {
+            filtersPass = false;
+            break;
+          }
+        } else {
+          filtersPass = true;
+        }
+      }
+
+      // Test operators
+      if (rule.type === "operator") {
+        const { name, value, operator } = rule;
+
+        let someNameValueMatch = false;
+        for (let i = 0; i < attrValues.length; i++) {
+          const attrName = attrNames[i];
+          const attrValue = attrValues[i].replace(
+            /IFCLENGTHMEASURE\(|IFCVOLUMEMEASURE\(|\)/g,
+            "",
+          );
+          // Check that name matches and operator applies
+          if (name.test(attrName)) {
+            if (operator === "=" && parseFloat(attrValue) === value) {
+              someNameValueMatch = true;
               break;
-            } else {
-              continue;
-            }
-          }
-
-          if (attrValues === null) {
-            attrValues = this.getAttributesFromLine(line);
-            if (attrValues === null) {
-              if (!this.inclusive) {
-                filtersPass = false;
-                break;
-              } else {
-                continue;
-              }
-            }
-          }
-
-          if (category === null) {
-            category = this.getCategoryFromLine(line);
-            if (category === null) {
-              if (!this.inclusive) {
-                filtersPass = false;
-                break;
-              } else {
-                continue;
-              }
-            }
-          }
-
-          if (attrNames === null) {
-            // @ts-ignore
-            attrNames = Object.keys(new WEBIFC.IFC4[category]());
-            // Remove attributes expressID and type, given by web-ifc
-            attrNames = attrNames.slice(2);
-
-            if (attrNames === null) {
-              if (!this.inclusive) {
-                filtersPass = false;
-                break;
-              } else {
-                continue;
-              }
-            }
-          }
-
-          // Slow test to detect if
-
-          let someNameValueMatch = false;
-          for (let i = 0; i < attrValues.length; i++) {
-            const attrValue = attrValues[i];
-            const attrName = attrNames[i];
-            // Check that both name and value match
-            if (value.test(attrValue) && name.test(attrName)) {
+            } else if (operator === "<" && parseFloat(attrValue) < value) {
+              someNameValueMatch = true;
+              break;
+            } else if (operator === ">" && parseFloat(attrValue) > value) {
+              someNameValueMatch = true;
+              break;
+            } else if (operator === ">=" && parseFloat(attrValue) >= value) {
+              someNameValueMatch = true;
+              break;
+            } else if (operator === "<=" && parseFloat(attrValue) <= value) {
               someNameValueMatch = true;
               break;
             }
           }
+        }
 
-          if (!someNameValueMatch) {
-            if (!this.inclusive) {
-              filtersPass = false;
-              break;
-            }
-          } else {
-            filtersPass = true;
+        if (!someNameValueMatch) {
+          if (!this.inclusive) {
+            filtersPass = false;
+            break;
           }
+        } else {
+          filtersPass = true;
         }
       }
-
-      if (filtersPass) {
-        this.lines.push(line);
-        const id = this.getIdFromLine(line);
-        this.ids.add(id);
-      }
     }
+
+    return filtersPass;
   }
 
   protected getCategoryFromLine(line: string) {
