@@ -9,6 +9,7 @@ export const createEntityFacets = (components: Components, elements: any) => {
     const name = getParameterValue(nameParameter);
     if (!name) continue;
     const facet = new IDSEntity(components, name);
+    if (element.cardinality) facet.cardinality = element.cardinality;
     facet.predefinedType = getParameterValue(element.predefinedType);
     facets.push(facet);
   }

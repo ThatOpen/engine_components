@@ -30,11 +30,20 @@ export class IDSProperty extends IDSFacet {
     this.baseName = baseName;
   }
 
-  serialize() {
+  serialize(type: "applicability" | "requirement") {
     const propertySetXML = getParameterXML("PropertySet", this.propertySet);
     const baseNameXML = getParameterXML("BaseName", this.baseName);
     const valueXML = getParameterXML("Value", this.value);
-    return `<ids:property cardinality="${this.cardinality}" ${this.dataType ? `dataType=${this.dataType}` : ""}>
+    const dataTypeXML = this.dataType ? `dataType=${this.dataType}` : "";
+    let attributes = "";
+    if (type === "requirement") {
+      attributes += `cardinality="${this.cardinality}"`;
+      attributes += this.uri ? `uri=${this.uri}` : "";
+      attributes += this.instructions
+        ? `instructions="${this.instructions}"`
+        : "";
+    }
+    return `<ids:property ${dataTypeXML} ${attributes}>
   ${propertySetXML}
   ${baseNameXML}
   ${valueXML}

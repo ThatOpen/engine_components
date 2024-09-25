@@ -15,10 +15,17 @@ export class IDSAttribute extends IDSFacet {
     this.name = name;
   }
 
-  serialize() {
+  serialize(type: "applicability" | "requirement") {
     const nameXML = getParameterXML("Name", this.name);
     const valueXML = getParameterXML("Value", this.value);
-    return `<ids:attribute>
+    let attributes = "";
+    if (type === "requirement") {
+      attributes += `cardinality="${this.cardinality}"`;
+      attributes += this.instructions
+        ? `instructions="${this.instructions}"`
+        : "";
+    }
+    return `<ids:attribute ${attributes}>
   ${nameXML}
   ${valueXML}
 </ids:attribute>`;

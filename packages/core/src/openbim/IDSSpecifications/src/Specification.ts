@@ -5,9 +5,11 @@ import { IDSCheckResult } from "./types";
 import { UUID } from "../../../utils";
 import { IDSFacet } from "./facets";
 
+type IfcVersion = "IFC2X3" | "IFC4" | "IFC4X3_ADD2";
+
 export class IDSSpecification {
   name: string;
-  ifcVersion = new Set<FRAGS.IfcSchema>();
+  ifcVersion = new Set<IfcVersion>();
   identifier? = UUID.create();
   description?: string;
   instructions?: string;
@@ -17,11 +19,7 @@ export class IDSSpecification {
 
   protected components: Components;
 
-  constructor(
-    components: Components,
-    name: string,
-    ifcVersion: FRAGS.IfcSchema[],
-  ) {
+  constructor(components: Components, name: string, ifcVersion: IfcVersion[]) {
     this.components = components;
     this.name = name;
     for (const version of ifcVersion) {
@@ -85,10 +83,10 @@ export class IDSSpecification {
 
     const xml = `<ids:specification ifcVersion="${[...this.ifcVersion].join(" ")}" ${name} ${identifier} ${description} ${instructions}>
       <ids:applicability minOccurs="1" maxOccurs="unbounded">
-        ${[...this.applicability].map((applicability) => applicability.serialize())}
+        ${[...this.applicability].map((facet) => facet.serialize("applicability"))}
       </ids:applicability>
       <ids:requirements>
-        ${[...this.requirements].map((requirement) => requirement.serialize())}
+        ${[...this.requirements].map((facet) => facet.serialize("requirement"))}
       </ids:requirements>
     </ids:specification>`;
     return xml;

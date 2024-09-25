@@ -16,10 +16,17 @@ export class IDSEntity extends IDSFacet {
     this.name = name;
   }
 
-  serialize() {
+  serialize(type: "applicability" | "requirement") {
     const nameXML = getParameterXML("Name", this.name);
     const predefinedTypeXML = getParameterXML("Name", this.predefinedType);
-    return `<ids:entity>
+    let attributes = "";
+    if (type === "requirement") {
+      attributes += `cardinality="${this.cardinality}"`;
+      attributes += this.instructions
+        ? `instructions="${this.instructions}"`
+        : "";
+    }
+    return `<ids:entity ${attributes}>
   ${nameXML}
   ${predefinedTypeXML}
 </ids:entity>`;

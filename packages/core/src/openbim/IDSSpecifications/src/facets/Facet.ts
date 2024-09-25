@@ -141,5 +141,5 @@ export abstract class IDSFacet {
     model?: FRAGS.FragmentsGroup,
   ): Promise<IDSCheckResult[]>;
 
-  abstract serialize(): string;
+  abstract serialize(type: "applicability" | "requirement"): string;
 }

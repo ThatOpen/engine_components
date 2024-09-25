@@ -18,10 +18,18 @@ export class IDSClassification extends IDSFacet {
     this.system = system;
   }
 
-  serialize() {
+  serialize(type: "applicability" | "requirement") {
     const systemXML = getParameterXML("System", this.system);
     const valueXML = getParameterXML("Value", this.value);
-    return `<ids:classification>
+    let attributes = "";
+    if (type === "requirement") {
+      attributes += `cardinality="${this.cardinality}"`;
+      attributes += this.uri ? `uri=${this.uri}` : "";
+      attributes += this.instructions
+        ? `instructions="${this.instructions}"`
+        : "";
+    }
+    return `<ids:classification ${attributes}>
   ${systemXML}
   ${valueXML}
 </ids:classification>`;
