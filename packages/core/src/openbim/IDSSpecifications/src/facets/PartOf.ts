@@ -48,6 +48,10 @@ export class IDSPartOf extends IDSFacet {
     this._entityFacet.predefinedType = entity.predefinedType;
   }
 
+  serialize() {
+    return "";
+  }
+
   async getEntities(
     model: FRAGS.FragmentsGroup,
     collector: FRAGS.IfcProperties = {},

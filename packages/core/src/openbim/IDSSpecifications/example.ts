@@ -17,13 +17,18 @@ const indexer = components.get(OBC.IfcRelationsIndexer);
 // await indexer.process(model);
 
 const ids = components.get(OBC.IDSSpecifications);
-// const specifications = ids.create("My First IDS!", "IFC4X3");
+const specification = ids.create("My First IDS!", ["IFC4X3"]);
+specification.description = "Description";
+specification.instructions = "Instructions";
 
 // Define some facets to be used in specifications
 const entityFacet = new OBC.IDSEntity(components, {
-  type: "simple",
-  parameter: "IFCSLAB",
+  type: "enumeration",
+  parameter: ["IFCSLAB", "IFCWALL"],
 });
+
+specification.applicability.add(entityFacet);
+
 const propertyFacet = new OBC.IDSProperty(
   components,
   { type: "simple", parameter: "Pset_SlabCommon" },
@@ -32,16 +37,27 @@ const propertyFacet = new OBC.IDSProperty(
 
 propertyFacet.value = { type: "simple", parameter: false };
 
-const classificationFacet = new OBC.IDSClassification(components, {
-  type: "simple",
-  parameter: "Uniformat",
-});
+specification.requirements.add(propertyFacet);
 
-const partOfFacet = new OBC.IDSPartOf(components, {
-  name: { type: "simple", parameter: "IFCBUILDINGSTOREY" },
-});
+const idsTitle = "My Custom IDS";
+const idsExport = ids.export({ title: idsTitle });
+const file = new File([idsExport], "idsTitle.ids");
+const a = document.createElement("a");
+a.href = URL.createObjectURL(file);
+a.download = file.name;
+// a.click();
+// URL.revokeObjectURL(a.href);
 
-partOfFacet.relation = WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE;
+// const classificationFacet = new OBC.IDSClassification(components, {
+//   type: "simple",
+//   parameter: "Uniformat",
+// });
+
+// const partOfFacet = new OBC.IDSPartOf(components, {
+//   name: { type: "simple", parameter: "IFCBUILDINGSTOREY" },
+// });
+
+// partOfFacet.relation = WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE;
 
 // // IfcSlab entities must have a Pset_SlabCommon with an IsExternal property set to false
 // const entitiesA: FRAGS.IfcProperties = {};
@@ -99,7 +115,7 @@ partOfFacet.relation = WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE;
 // Load test cases from GitHub
 // Define the URL for fetching the files list
 const apiURL =
-  "https://api.github.com/repos/buildingSMART/IDS/contents/Documentation/ImplementersDocumentation/TestCases/classification?ref=development";
+  "https://api.github.com/repos/buildingSMART/IDS/contents/Documentation/ImplementersDocumentation/TestCases/property?ref=development";
 
 // Function to process each pair of IFC and IDS files
 async function processPair(ifcUrl: string, idsUrl: string) {
@@ -195,5 +211,5 @@ async function fetchFileListAndProcessPairs() {
 
 // const baseURL =
 //   "https://raw.githubusercontent.com/buildingSMART/IDS/development/Documentation/ImplementersDocumentation/TestCases";
-// const url = `${baseURL}/classification/pass-occurrences_override_the_type_classification_per_system_1_3`;
+// const url = `${baseURL}/property/pass-a_number_specified_as_a_string_is_treated_as_a_string`;
 // processPair(`${url}.ifc`, `${url}.ids`);

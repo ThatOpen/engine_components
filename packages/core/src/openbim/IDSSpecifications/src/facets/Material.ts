@@ -1,4 +1,3 @@
-import * as FRAGS from "@thatopen/fragments";
 import { IDSFacetParameter } from "../types";
 import { IDSFacet } from "./Facet";
 
@@ -8,15 +7,16 @@ export class IdsMaterialFacet extends IDSFacet {
   value?: IDSFacetParameter;
   uri?: string;
 
-  async getEntities(
-    model: FRAGS.FragmentsGroup,
-    collector: FRAGS.IfcProperties = {},
-  ) {
+  serialize() {
+    return "";
+  }
+
+  async getEntities() {
     const result: number[] = [];
     return result;
   }
 
-  async test(entities: FRAGS.IfcProperties) {
+  async test() {
     this.testResult = [];
     return this.testResult;
   }

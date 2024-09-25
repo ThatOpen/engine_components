@@ -1,27 +1,31 @@
 import { Components } from "../../../../core/Components";
-import { IDSClassification, IDSFacet } from "../facets";
+import { IDSFacet, IDSProperty } from "../facets";
 import { getParameterValue } from "./parameter";
 
-export const createClassificationFacets = (
-  components: Components,
-  elements: any,
-) => {
+export const createPropertyFacets = (components: Components, elements: any) => {
   const facets: IDSFacet[] = [];
   for (const element of elements) {
-    const systemParameter = element.system;
-    const system = getParameterValue(systemParameter);
-    if (!system) continue;
-    const facet = new IDSClassification(components, system);
+    const psetParameter = element.propertySet;
+    const baseNameParameter = element.baseName;
+    const pset = getParameterValue(psetParameter);
+    const baseName = getParameterValue(baseNameParameter);
+    if (!(baseName && pset)) continue;
+    const facet = new IDSProperty(components, pset, baseName);
     if (element.cardinality) facet.cardinality = element.cardinality;
+
+    // Value
     const value = getParameterValue(element.value);
-    if (value?.type === "simple") {
-      value.parameter = String(value.parameter);
-    }
     if (value?.type === "enumeration" && Array.isArray(value.parameter)) {
       value.parameter = value.parameter.map(String);
     }
     facet.value = value;
+
+    // DataType
+    facet.dataType = element.dataType;
+
+    // URI
     facet.uri = element.uri;
+
     facets.push(facet);
   }
   return facets;

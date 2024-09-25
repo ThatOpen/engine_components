@@ -4,6 +4,7 @@ import { Components } from "../../../../core/Components";
 import { IDSCheck, IDSCheckResult, IDSFacetParameter } from "../types";
 import { IfcRelationsIndexer } from "../../../../ifc/IfcRelationsIndexer";
 import { IDSFacet } from "./Facet";
+import { getParameterXML } from "../exporters/parameter";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/classification-facet.md
 
@@ -15,6 +16,15 @@ export class IDSClassification extends IDSFacet {
   constructor(components: Components, system: IDSFacetParameter) {
     super(components);
     this.system = system;
+  }
+
+  serialize() {
+    const systemXML = getParameterXML("System", this.system);
+    const valueXML = getParameterXML("Value", this.value);
+    return `<ids:classification>
+  ${systemXML}
+  ${valueXML}
+</ids:classification>`;
   }
 
   async getEntities(

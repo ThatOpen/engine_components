@@ -3,6 +3,7 @@ import { Components } from "../../../../core/Components";
 import { IDSFacet } from "./Facet";
 import { IDSCheck, IDSCheckResult, IDSFacetParameter } from "../types";
 import { IfcCategoryMap, IfcRelationsIndexer } from "../../../../ifc";
+import { getParameterXML } from "../exporters/parameter";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/entity-facet.md
 
@@ -13,6 +14,15 @@ export class IDSEntity extends IDSFacet {
   constructor(components: Components, name: IDSFacetParameter) {
     super(components);
     this.name = name;
+  }
+
+  serialize() {
+    const nameXML = getParameterXML("Name", this.name);
+    const predefinedTypeXML = getParameterXML("Name", this.predefinedType);
+    return `<ids:entity>
+  ${nameXML}
+  ${predefinedTypeXML}
+</ids:entity>`;
   }
 
   // IFCSURFACESTYLEREFRACTION is not present in the FragmentsGroup
@@ -134,7 +144,7 @@ export class IDSEntity extends IDSFacet {
     const result = this.evalRequirement(
       value,
       this.predefinedType,
-      "Predefined Type",
+      "PredefinedType",
       checks,
     );
 

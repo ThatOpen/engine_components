@@ -1,12 +1,12 @@
 export type IDSFacetParameterName =
   | "Name"
-  | "Predefined Type"
+  | "PredefinedType"
   | "Value"
   | "System"
   | "URI"
-  | "Property Set"
-  | "Base Name"
-  | "Data Type"
+  | "PropertySet"
+  | "BaseName"
+  | "DataType"
   | "Value"
   | "Entity"
   | "Relation";

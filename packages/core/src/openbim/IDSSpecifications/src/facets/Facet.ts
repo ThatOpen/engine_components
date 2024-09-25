@@ -102,7 +102,7 @@ export abstract class IDSFacet {
     }
 
     if (this.cardinality === "prohibited") pass = !pass;
-    if (this.cardinality === "optional" && value === null) pass = true;
+    if (this.cardinality === "optional") pass = true;
 
     checkLog.pass = pass;
     return checkLog.pass;
@@ -140,4 +140,6 @@ export abstract class IDSFacet {
     entities: FRAGS.IfcProperties,
     model?: FRAGS.FragmentsGroup,
   ): Promise<IDSCheckResult[]>;
+
+  abstract serialize(): string;
 }

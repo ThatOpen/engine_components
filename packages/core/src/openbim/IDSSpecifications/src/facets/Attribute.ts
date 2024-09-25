@@ -2,6 +2,7 @@ import * as FRAGS from "@thatopen/fragments";
 import { IDSCheck, IDSCheckResult, IDSFacetParameter } from "../types";
 import { Components } from "../../../../core/Components";
 import { IDSFacet } from "./Facet";
+import { getParameterXML } from "../exporters/parameter";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/attribute-facet.md
 
@@ -14,37 +15,49 @@ export class IDSAttribute extends IDSFacet {
     this.name = name;
   }
 
+  serialize() {
+    const nameXML = getParameterXML("Name", this.name);
+    const valueXML = getParameterXML("Value", this.value);
+    return `<ids:attribute>
+  ${nameXML}
+  ${valueXML}
+</ids:attribute>`;
+  }
+
   // This can be very ineficcient as we do not have an easy way to get an entity based on an attribute
   // Right now, all entities must be iterated.
   // When the new IfcEntitiesFinder comes, this can become easier.
   // This may be greatly increase in performance if the applicability has any of the other facets and this is applied the latest
-  async getEntities(
-    model: FRAGS.FragmentsGroup,
-    collector: FRAGS.IfcProperties = {},
-  ) {
+  async getEntities() {
     return [];
-    // for (const expressID in model) {
-    //   if (collector[expressID]) continue;
-    //   const entity = model[expressID];
-    //   // Check if the attribute exists
-    //   const attribute = entity[this.name];
-    //   const attributeExists = !!attribute;
-    //   // Check if the attribute value matches
-    //   let valueMatches = true;
-    //   if (attributeExists && this.value && this.value.value) {
-    //     if (this.value.type === "simpleValue") {
-    //       valueMatches = attribute.value === this.value.value;
-    //     }
-    //     if (this.value.type === "restriction") {
-    //       const regex = new RegExp(this.value.value);
-    //       valueMatches = regex.test(attribute.value);
-    //     }
-    //   }
-    //   if (attributeExists && valueMatches) {
-    //     collector[entity.expressID] = entity;
-    //   }
-    // }
   }
+  // async getEntities(
+  //   model: FRAGS.FragmentsGroup,
+  //   collector: FRAGS.IfcProperties = {},
+  // ) {
+  //   return [];
+  //   // for (const expressID in model) {
+  //   //   if (collector[expressID]) continue;
+  //   //   const entity = model[expressID];
+  //   //   // Check if the attribute exists
+  //   //   const attribute = entity[this.name];
+  //   //   const attributeExists = !!attribute;
+  //   //   // Check if the attribute value matches
+  //   //   let valueMatches = true;
+  //   //   if (attributeExists && this.value && this.value.value) {
+  //   //     if (this.value.type === "simpleValue") {
+  //   //       valueMatches = attribute.value === this.value.value;
+  //   //     }
+  //   //     if (this.value.type === "restriction") {
+  //   //       const regex = new RegExp(this.value.value);
+  //   //       valueMatches = regex.test(attribute.value);
+  //   //     }
+  //   //   }
+  //   //   if (attributeExists && valueMatches) {
+  //   //     collector[entity.expressID] = entity;
+  //   //   }
+  //   // }
+  // }
 
   // https://github.com/buildingSMART/IDS/tree/development/Documentation/ImplementersDocumentation/TestCases/attribute
   // Test cases from buildingSMART repo have been tested and they all match with the expected result

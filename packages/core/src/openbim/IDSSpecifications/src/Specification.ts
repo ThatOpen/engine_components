@@ -30,7 +30,9 @@ export class IDSSpecification {
   }
 
   async test(model: FRAGS.FragmentsGroup) {
-    const result: IDSCheckResult[] = [];
+    let result: IDSCheckResult[] = [];
+
+    if (this.requirements.size === 0) return result;
 
     // Get applicable elements
     const entities: FRAGS.IfcProperties = {};
@@ -38,13 +40,14 @@ export class IDSSpecification {
       await facet.getEntities(model, entities);
     }
 
-    console.log(entities);
-
     // Test applicable elements against requirements
-    const requirementsResult: { [expressId: string]: boolean } = {};
-    for (const expressID in entities) {
-      requirementsResult[expressID] = true;
-    }
+    const requirement = [...this.requirements][0];
+    result = await requirement.test(entities, model);
+    return result;
+    // const requirementsResult: { [expressId: string]: boolean } = {};
+    // for (const expressID in entities) {
+    //   requirementsResult[expressID] = true;
+    // }
 
     // for (const requirement of this.requirements) {
     //   const arrayEntities = Object.values(entities);
@@ -66,7 +69,28 @@ export class IDSSpecification {
     //     result.fail[expressID] = entity;
     //   }
     // }
+  }
 
-    return result;
+  serialize() {
+    const name = `name="${this.name}"`;
+    const identifier = this.identifier ? `identifier="${this.identifier}"` : "";
+
+    const description = this.description
+      ? `description="${this.description}"`
+      : "";
+
+    const instructions = this.instructions
+      ? `instructions="${this.instructions}"`
+      : "";
+
+    const xml = `<ids:specification ifcVersion="${[...this.ifcVersion].join(" ")}" ${name} ${identifier} ${description} ${instructions}>
+      <ids:applicability minOccurs="1" maxOccurs="unbounded">
+        ${[...this.applicability].map((applicability) => applicability.serialize())}
+      </ids:applicability>
+      <ids:requirements>
+        ${[...this.requirements].map((requirement) => requirement.serialize())}
+      </ids:requirements>
+    </ids:specification>`;
+    return xml;
   }
 }
