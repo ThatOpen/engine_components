@@ -1,11 +1,9 @@
 import * as FRAGS from "@thatopen/fragments";
 import { Components } from "../../../core/Components";
 import { DataSet } from "../../../core/Types";
-import { IDSCheckResult } from "./types";
+import { IDSCheckResult, IfcVersion } from "./types";
 import { UUID } from "../../../utils";
 import { IDSFacet } from "./facets";
-
-type IfcVersion = "IFC2X3" | "IFC4" | "IFC4X3_ADD2";
 
 export class IDSSpecification {
   name: string;

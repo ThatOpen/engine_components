@@ -1,7 +1,13 @@
 import * as FRAGS from "@thatopen/fragments";
 import { XMLParser } from "fast-xml-parser";
 import { Component, DataMap } from "../../core/Types";
-import { IDSCheckResult, IDSFacet, IDSInfo, IDSSpecification } from "./src";
+import {
+  IDSCheckResult,
+  IDSFacet,
+  IDSInfo,
+  IDSSpecification,
+  IfcVersion,
+} from "./src";
 import { Components } from "../../core";
 import {
   createEntityFacets,
@@ -46,7 +52,7 @@ export class IDSSpecifications extends Component {
     return { pass, fail };
   }
 
-  create(name: string, ifcVersion: FRAGS.IfcSchema[]) {
+  create(name: string, ifcVersion: IfcVersion[]) {
     const specification = new IDSSpecification(
       this.components,
       name,

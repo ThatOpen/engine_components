@@ -1,3 +1,5 @@
+export type IfcVersion = "IFC2X3" | "IFC4" | "IFC4X3_ADD2";
+
 export type IDSFacetParameterName =
   | "Name"
   | "PredefinedType"
