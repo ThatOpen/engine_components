@@ -5,6 +5,14 @@ import { IfcCategoryMap, IfcPropertiesUtils } from "../../ifc";
 import { IfcRelationsIndexer } from "../../ifc/IfcRelationsIndexer";
 import { FragmentsManager } from "../FragmentsManager";
 
+// TODO: SMART GROUPS Static vs dynamic classifications
+// static: has fragmentIdMap
+// dynamic: use the finder to find the result from a querygroup
+// for dynamic, we just need to add a queryGroup as shown below
+
+// TODO: Make the groups a class to have a getter that gets the combined FragmentIdMap
+// combined from the cherry picked elements and the elements found in the group
+
 /**
  * Interface representing a classification system. The classification is organized by system and class name, and each class contains a map of fragment IDs with extra information.
  */
@@ -18,10 +26,11 @@ export interface Classification {
      * A class within the system.
      * The key is the class name, and the value is an object containing a map of fragment IDs with extra information.
      */
-    [className: string]: {
+    [groupName: string]: {
       map: FRAGS.FragmentIdMap;
       name: string;
       id: number | null;
+      // rules?: QueryGroup;
     };
   };
 }
