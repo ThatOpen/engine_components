@@ -36,9 +36,25 @@ export class IfcFinder extends Component {
     super(components);
   }
 
+  import(data: { [groupID: string]: any }) {
+    for (const id in data) {
+      const group = new IfcQueryGroup(this.components);
+      group.import(data[id]);
+      this.list.set(id, group);
+    }
+  }
+
+  export() {
+    const result: { [groupID: string]: any } = {};
+    for (const [id, group] of this.list) {
+      result[id] = group.export();
+    }
+    return result;
+  }
+
   create() {
-    const group = new IfcQueryGroup();
-    this.list.set(group.uuid, group);
+    const group = new IfcQueryGroup(this.components);
+    this.list.set(group.id, group);
     return group;
   }
 

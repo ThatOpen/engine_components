@@ -17,3 +17,11 @@ export interface IfcOperatorRule {
 }
 
 export type IfcFinderRule = IfcCategoryRule | IfcPropertyRule | IfcOperatorRule;
+
+export type SerializedQuery = {
+  name: string;
+  inclusive: boolean;
+  type: string;
+  ids: { [modelID: string]: number[] };
+  rules: { [key: string]: any }[];
+};

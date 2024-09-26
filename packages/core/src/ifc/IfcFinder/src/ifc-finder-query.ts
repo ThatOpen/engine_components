@@ -1,7 +1,7 @@
 import * as FRAGS from "@thatopen/fragments";
 import * as WEBIFC from "web-ifc";
 import { ifcCategoryCase } from "../../Utils";
-import { IfcFinderRule } from "./types";
+import { IfcFinderRule, SerializedQuery } from "./types";
 import { Components } from "../../../core";
 
 export abstract class IfcFinderQuery {
@@ -19,12 +19,53 @@ export abstract class IfcFinderQuery {
 
   components: Components;
 
+  static importers = new Map<
+    string,
+    (components: Components, data: any) => IfcFinderQuery
+  >();
+
+  abstract export(): { [key: string]: any };
+
   abstract update(modelID: string, file: File): Promise<void>;
 
   protected abstract findInLines(modelID: string, lines: string[]): void;
 
   protected constructor(components: Components) {
     this.components = components;
+  }
+
+  static import(components: Components, data: { [id: string]: any }) {
+    const newQuery = IfcFinderQuery.importers.get(data.type);
+    if (!newQuery) {
+      console.warn(`Invalid query data:.`, data);
+      return null;
+    }
+    return newQuery(components, data);
+  }
+
+  static importRules(serializedRules: { [key: string]: any }[]) {
+    const rules: IfcFinderRule[] = [];
+    for (const serializedRule of serializedRules) {
+      const rule: Partial<IfcFinderRule> = {};
+      for (const id in serializedRule) {
+        const item = serializedRule[id];
+        if (item.regexp) {
+          rule[id as keyof IfcFinderRule] = new RegExp(item.value) as any;
+        } else {
+          rule[id as keyof IfcFinderRule] = item;
+        }
+      }
+      rules.push(rule as IfcFinderRule);
+    }
+    return rules;
+  }
+
+  static importIds(data: SerializedQuery) {
+    const ids: { [modelID: string]: Set<number> } = {};
+    for (const modelID in data.ids) {
+      ids[modelID] = new Set(data.ids[modelID]);
+    }
+    return ids;
   }
 
   clear(modelID: string) {
@@ -37,6 +78,40 @@ export abstract class IfcFinderQuery {
       this.ids[modelID] = new Set<number>();
     }
     this.ids[modelID].add(id);
+  }
+
+  protected getData() {
+    const ids: { [modelID: string]: number[] } = {};
+    for (const modelID in this.ids) {
+      ids[modelID] = Array.from(this.ids[modelID]);
+    }
+
+    const rules = this.exportRules();
+
+    return {
+      name: this.name,
+      inclusive: this.inclusive,
+      type: "IfcFinderQuery",
+      ids,
+      rules,
+    } as SerializedQuery;
+  }
+
+  protected exportRules(): { [key: string]: any }[] {
+    const rules: { [key: string]: any }[] = [];
+    for (const rule of this.rules) {
+      const serializedRule: { [key: string]: any } = {};
+      for (const id in rule) {
+        const item = rule[id as keyof IfcFinderRule];
+        if (item instanceof RegExp) {
+          serializedRule[id] = { regexp: true, value: item.source };
+        } else {
+          serializedRule[id] = item;
+        }
+      }
+      rules.push(serializedRule);
+    }
+    return rules;
   }
 
   protected findInFile(modelID: string, file: File) {

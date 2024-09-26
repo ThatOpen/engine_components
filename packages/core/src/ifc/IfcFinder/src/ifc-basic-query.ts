@@ -1,11 +1,13 @@
 import * as FRAGS from "@thatopen/fragments";
-import { IfcFinderRule } from "./types";
+import { IfcFinderRule, SerializedQuery } from "./types";
 import { IfcFinderQuery } from "./ifc-finder-query";
 import { Components } from "../../../core";
 import { FragmentsManager } from "../../../fragments";
 
 export class IfcBasicQuery extends IfcFinderQuery {
   name: string;
+
+  static type = "IfcBasicQuery" as const;
 
   get items() {
     const fragments = this.components.get(FragmentsManager);
@@ -43,6 +45,12 @@ export class IfcBasicQuery extends IfcFinderQuery {
     this.needsUpdate.set(modelID, false);
   }
 
+  export() {
+    const data = this.getData();
+    data.type = IfcBasicQuery.type;
+    return data;
+  }
+
   protected findInLines(modelID: string, lines: string[]) {
     for (const line of lines) {
       const filtersPass = this.testRules(line);
@@ -53,3 +61,16 @@ export class IfcBasicQuery extends IfcFinderQuery {
     }
   }
 }
+
+IfcFinderQuery.importers.set(
+  IfcBasicQuery.type,
+  (components: Components, data: SerializedQuery) => {
+    const query = new IfcBasicQuery(components, {
+      name: data.name,
+      rules: IfcFinderQuery.importRules(data.rules),
+      inclusive: data.inclusive,
+    });
+    query.ids = IfcFinderQuery.importIds(data);
+    return query;
+  },
+);

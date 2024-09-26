@@ -1,12 +1,14 @@
 import * as FRAGS from "@thatopen/fragments";
 import { IfcFinderQuery } from "./ifc-finder-query";
-import { IfcOperatorRule, IfcPropertyRule } from "./types";
+import { IfcOperatorRule, IfcPropertyRule, SerializedQuery } from "./types";
 import { Components } from "../../../core";
 import { IfcRelationsIndexer } from "../../IfcRelationsIndexer";
 import { FragmentsManager } from "../../../fragments";
 
 export class IfcPropertyQuery extends IfcFinderQuery {
   name: string;
+
+  static type = "IfcPropertyQuery" as const;
 
   private psets: string[] = [];
 
@@ -49,6 +51,12 @@ export class IfcPropertyQuery extends IfcFinderQuery {
     this.name = data.name;
     this.rules = data.rules;
     this.inclusive = data.inclusive;
+  }
+
+  export() {
+    const data = this.getData();
+    data.type = IfcPropertyQuery.type;
+    return data;
   }
 
   async update(modelID: string, file: File) {
@@ -112,3 +120,17 @@ export class IfcPropertyQuery extends IfcFinderQuery {
     }
   }
 }
+
+IfcFinderQuery.importers.set(
+  IfcPropertyQuery.type,
+  (components: Components, data: SerializedQuery) => {
+    type PropRules = (IfcPropertyRule | IfcOperatorRule)[];
+    const query = new IfcPropertyQuery(components, {
+      name: data.name,
+      inclusive: data.inclusive,
+      rules: IfcFinderQuery.importRules(data.rules) as PropRules,
+    });
+    query.ids = IfcFinderQuery.importIds(data);
+    return query;
+  },
+);
