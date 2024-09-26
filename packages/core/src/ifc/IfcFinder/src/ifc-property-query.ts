@@ -5,13 +5,25 @@ import { Components } from "../../../core";
 import { IfcRelationsIndexer } from "../../IfcRelationsIndexer";
 import { FragmentsManager } from "../../../fragments";
 
+/**
+ * A query that checks the properties in the property sets assigned to IFC items.
+ */
 export class IfcPropertyQuery extends IfcFinderQuery {
+  /**
+   * {@link IfcFinderQuery.name}
+   */
   name: string;
 
+  /**
+   * The type of this query.
+   */
   static type = "IfcPropertyQuery" as const;
 
   private psets: string[] = [];
 
+  /**
+   * {@link IfcFinderQuery.items}
+   */
   get items() {
     // Use the indexer to get all items related to the found psets
     const indexer = this.components.get(IfcRelationsIndexer);
@@ -53,12 +65,18 @@ export class IfcPropertyQuery extends IfcFinderQuery {
     this.inclusive = data.inclusive;
   }
 
+  /**
+   * {@link IfcFinderQuery.export}
+   */
   export() {
     const data = this.getData();
     data.type = IfcPropertyQuery.type;
     return data;
   }
 
+  /**
+   * {@link IfcFinderQuery.update}
+   */
   async update(modelID: string, file: File) {
     // 1. Gather all propertysinglevalues that match the filters
     // also gather all ifcpropertysets and save them in this.psets

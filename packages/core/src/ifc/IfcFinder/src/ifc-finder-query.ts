@@ -2,31 +2,66 @@ import * as FRAGS from "@thatopen/fragments";
 import * as WEBIFC from "web-ifc";
 import { ifcCategoryCase } from "../../Utils";
 import { IfcFinderRule, SerializedQuery } from "./types";
-import { Components } from "../../../core";
+import { Components, Event } from "../../../core";
 
+/**
+ * The base class for all queries used by the {@link IfcFinder}.
+ */
 export abstract class IfcFinderQuery {
-  abstract name: string;
-
-  abstract items: FRAGS.FragmentIdMap;
-
-  inclusive = false;
-
-  rules: IfcFinderRule[] = [];
-
-  ids: { [modelID: string]: Set<number> } = {};
-
-  needsUpdate = new Map<string, boolean>();
-
-  components: Components;
-
+  /**
+   * The list of functions to import the queries. If you create your own custom query, you should add its importer here. See the other queries provided by the library for reference.
+   */
   static importers = new Map<
     string,
     (components: Components, data: any) => IfcFinderQuery
   >();
 
+  /**
+   * Event used to notify the progress when performing a query on an IFC file.
+   */
+  readonly onProgress = new Event<number>();
+
+  /**
+   * A name given to the instance of the query to identify it.
+   */
+  abstract name: string;
+
+  /**
+   * The list of IFC items that this query found across all models.
+   */
+  abstract items: FRAGS.FragmentIdMap;
+
+  /**
+   * If false, ALL rules of the query must comply to make a match. If true, ANY rule will be enough to make a match.
+   */
+  inclusive = false;
+
+  /**
+   * The list of rules to be applied by this query.
+   */
+  rules: IfcFinderRule[] = [];
+
+  /**
+   * The IDs of the match items per model.
+   */
+  ids: { [modelID: string]: Set<number> } = {};
+
+  /**
+   * Whether this query is up to date or not per file. If not, when updating the group where it belongs, it will re-process the given file.
+   */
+  needsUpdate = new Map<string, boolean>();
+
+  /**
+   * Export the current data of this query in a serializable object to persist it over time.
+   */
   abstract export(): { [key: string]: any };
 
+  /**
+   * Perform the search in the given file and save the result.
+   */
   abstract update(modelID: string, file: File): Promise<void>;
+
+  protected components: Components;
 
   protected abstract findInLines(modelID: string, lines: string[]): void;
 
@@ -34,6 +69,12 @@ export abstract class IfcFinderQuery {
     this.components = components;
   }
 
+  /**
+   * Imports a query given its data. This data can be generating using its {@link IfcFinderQuery.export} method.
+   *
+   * @param components the instance of {@link Components} used by this app.
+   * @param data the data of the query to import as a serializable object.
+   */
   static import(components: Components, data: { [id: string]: any }) {
     const newQuery = IfcFinderQuery.importers.get(data.type);
     if (!newQuery) {
@@ -43,6 +84,11 @@ export abstract class IfcFinderQuery {
     return newQuery(components, data);
   }
 
+  /**
+   * Imports the given serialized rules. Only use this when writing your own custom query. See the other queries provided by the library for reference.
+   *
+   * @param serializedRules the rules to be parsed.
+   */
   static importRules(serializedRules: { [key: string]: any }[]) {
     const rules: IfcFinderRule[] = [];
     for (const serializedRule of serializedRules) {
@@ -60,6 +106,11 @@ export abstract class IfcFinderQuery {
     return rules;
   }
 
+  /**
+   * Imports the given IDs. Only use this when writing your own custom query. See the other queries provided by the library for reference.
+   *
+   * @param data the serialized object representing the query whose IDs to parse.
+   */
   static importIds(data: SerializedQuery) {
     const ids: { [modelID: string]: Set<number> } = {};
     for (const modelID in data.ids) {
@@ -68,6 +119,11 @@ export abstract class IfcFinderQuery {
     return ids;
   }
 
+  /**
+   * Clears the data of the given model. If not specified, clears all the data.
+   *
+   * @param modelID ID of the model whose data to clear.
+   */
   clear(modelID?: string) {
     if (modelID === undefined) {
       this.ids = {};
@@ -157,7 +213,7 @@ export abstract class IfcFinderQuery {
 
         this.findInLines(modelID, lines);
 
-        console.log(start / file.size);
+        this.onProgress.trigger(start / file.size);
 
         start += chunkSize;
         readTextPart();

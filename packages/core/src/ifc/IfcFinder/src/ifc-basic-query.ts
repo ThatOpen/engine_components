@@ -4,11 +4,23 @@ import { IfcFinderQuery } from "./ifc-finder-query";
 import { Components } from "../../../core";
 import { FragmentsManager } from "../../../fragments";
 
+/**
+ * A query that checks the direct attributes of IFC items.
+ */
 export class IfcBasicQuery extends IfcFinderQuery {
+  /**
+   * {@link IfcFinderQuery.name}
+   */
   name: string;
 
+  /**
+   * The type of this query.
+   */
   static type = "IfcBasicQuery" as const;
 
+  /**
+   * {@link IfcFinderQuery.items}
+   */
   get items() {
     const fragments = this.components.get(FragmentsManager);
     const maps: FRAGS.FragmentIdMap[] = [];
@@ -39,16 +51,22 @@ export class IfcBasicQuery extends IfcFinderQuery {
     this.inclusive = data.inclusive;
   }
 
-  async update(modelID: string, file: File) {
-    this.ids[modelID] = new Set<number>();
-    await this.findInFile(modelID, file);
-    this.needsUpdate.set(modelID, false);
-  }
-
+  /**
+   * {@link IfcFinderQuery.export}
+   */
   export() {
     const data = this.getData();
     data.type = IfcBasicQuery.type;
     return data;
+  }
+
+  /**
+   * {@link IfcFinderQuery.update}
+   */
+  async update(modelID: string, file: File) {
+    this.ids[modelID] = new Set<number>();
+    await this.findInFile(modelID, file);
+    this.needsUpdate.set(modelID, false);
   }
 
   protected findInLines(modelID: string, lines: string[]) {

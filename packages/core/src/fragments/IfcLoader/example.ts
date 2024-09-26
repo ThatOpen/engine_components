@@ -21,8 +21,7 @@ In this tutorial, we will import:
 import * as WEBIFC from "web-ifc";
 import * as BUI from "@thatopen/ui";
 import Stats from "stats.js";
-import * as OBCF from "@thatopen/components-front/src";
-import * as OBC from "../..";
+import * as OBC from "@thatopen/components";
 
 /* MD
   ### 🌎 Setting up a simple scene
@@ -76,11 +75,11 @@ const fragmentIfcLoader = components.get(OBC.IfcLoader);
 /* MD
   :::info Why not just IFC?
 
-  IFC is nice because it lets us exchange data with many tools in the AECO industry. But your graphics card doesn't understand IFC. It only understands one thing: triangles. So we must convert IFC to triangles. There are many ways to do it, some more efficient than others. And that's exactly what Fragments are: a very efficient way to display the triangles coming from IFC files. 
+  IFC is nice because it lets us exchange data with many tools in the AECO industry. But your graphics card doesn't understand IFC. It only understands one thing: triangles. So we must convert IFC to triangles. There are many ways to do it, some more efficient than others. And that's exactly what Fragments are: a very efficient way to display the triangles coming from IFC files.
 
   :::
 
-  Once Fragments have been generated, you can export them and then load them back directly, without needing the original IFC file. Why would you do that? Well, because fragments can load +10 times faster than IFC. And the reason is very simple.   When reading an IFC, we must parse the file, read the implicit geometry, convert it to triangles (Fragments) and send it to the GPU. When reading fragments, we just take the triangles and send them, so it's super fast. 
+  Once Fragments have been generated, you can export them and then load them back directly, without needing the original IFC file. Why would you do that? Well, because fragments can load +10 times faster than IFC. And the reason is very simple.   When reading an IFC, we must parse the file, read the implicit geometry, convert it to triangles (Fragments) and send it to the GPU. When reading fragments, we just take the triangles and send them, so it's super fast.
 
   :::danger How to use Fragments?
 
@@ -215,104 +214,6 @@ stats.dom.style.zIndex = "unset";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
 
-const highlighter = components.get(OBCF.Highlighter) as OBCF.Highlighter;
-highlighter.setup({ world });
-
-window.addEventListener("keydown", async (e) => {
-  if (e.code === "KeyP") {
-    const [fileHandle] = await window.showOpenFilePicker();
-    // console.log(fileHandle);
-    const file = await fileHandle.getFile();
-
-    const model = await fragmentIfcLoader.load(
-      new Uint8Array(await file.arrayBuffer()),
-    );
-
-    const indexer = components.get(OBC.IfcRelationsIndexer);
-    await indexer.process(model);
-
-    model.name = "example";
-    world.scene.three.add(model);
-
-    const start = performance.now();
-
-    const finder = components.get(OBC.IfcFinder);
-
-    const queryGroup = finder.create();
-
-    queryGroup.add(
-      new OBC.IfcPropertyQuery(components, {
-        name: "external",
-        inclusive: false,
-        rules: [
-          {
-            type: "property",
-            name: /.*/,
-            value: /IsExternal/,
-          },
-          {
-            type: "property",
-            name: /.*/,
-            value: /\.T\./,
-          },
-        ],
-      }),
-    );
-
-    // queryGroup.add(
-    //   new OBC.IfcPropertyQuery(components, {
-    //     name: "height",
-    //     inclusive: false,
-    //     rules: [
-    //       {
-    //         type: "property",
-    //         name: /.*/,
-    //         value: /Unconnected Height/,
-    //       },
-    //       {
-    //         type: "operator",
-    //         value: 3,
-    //         operator: ">",
-    //         name: /.*/,
-    //       },
-    //     ],
-    //   }),
-    // );
-
-    await queryGroup.update(model.uuid, file);
-
-    const exported = queryGroup.export();
-
-    finder.delete(queryGroup.id);
-    const newGroup = finder.create();
-    newGroup.import(exported);
-
-    const items = newGroup.items;
-    console.log(items);
-    highlighter.highlightByID("select", items, true, true);
-
-    console.log(`Time: ${performance.now() - start}`);
-  }
-
-  // if (e.code === "KeyO") {
-  //   queries.push(new OBC.PropertyToElementsQuery());
-  //
-  //   const [fileHandle] = await window.showOpenFilePicker();
-  //   // console.log(fileHandle);
-  //   file = await fileHandle.getFile();
-  //
-  //   const start = performance.now();
-  //
-  //   const finder = components.get(OBC.IfcFinder);
-  //
-  //   const result = await finder.find(file, queries);
-  //
-  //   console.log(result);
-  //   console.log(queries);
-  //   console.log(`Time: ${performance.now() - start}`);
-  // }
-});
-
 /* MD
   ### 🧩 Adding some UI
   ---
@@ -323,7 +224,7 @@ window.addEventListener("keydown", async (e) => {
 BUI.Manager.init();
 
 /* MD
-Now we will add some UI to explode and restore our BIM model, which can be easily done with a checkbox that determines whether a model is exploded or not. For more information about the UI library, you can check the specific documentation for it!
+Now we will add some UI to load and unload our BIM model. For more information about the UI library, you can check the specific documentation for it!
 */
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
