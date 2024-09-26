@@ -37,6 +37,7 @@ export class SimpleGrid
   config: SimpleGridConfigManager;
 
   protected _defaultConfig: SimpleGridConfig = {
+    visible: true,
     color: new THREE.Color(0xbbbbbb),
     primarySize: 1,
     secondarySize: 10,

@@ -20,6 +20,11 @@ type SimpleGridConfigType = {
  */
 export interface SimpleGridConfig {
   /**
+   * Whether the grid is visible or not.
+   */
+  visible: boolean;
+
+  /**
    * The color of the grid lines.
    */
   color: THREE.Color;
@@ -76,49 +81,79 @@ export class SimpleGridConfigManager extends Configurator<
     },
   };
 
+  /**
+   * Whether the grid is visible or not.
+   */
   get visible() {
     return this._config.visible.value;
   }
 
+  /**
+   * Whether the grid is visible or not.
+   */
   set visible(value: boolean) {
     this._config.visible.value = value;
     this._component.visible = value;
   }
 
+  /**
+   * The color of the grid lines.
+   */
   get color() {
     return this._config.color.value;
   }
 
+  /**
+   * The color of the grid lines.
+   */
   set color(value: THREE.Color) {
     this._config.color.value = value;
     this._component.material.uniforms.uColor.value = value;
     this._component.material.uniformsNeedUpdate = true;
   }
 
+  /**
+   * The size of the primary grid lines.
+   */
   get primarySize() {
     return this._config.primarySize.value;
   }
 
+  /**
+   * The size of the primary grid lines.
+   */
   set primarySize(value: number) {
     this._config.primarySize.value = value;
     this._component.material.uniforms.uSize1.value = value;
     this._component.material.uniformsNeedUpdate = true;
   }
 
+  /**
+   * The size of the secondary grid lines.
+   */
   get secondarySize() {
     return this._config.secondarySize.value;
   }
 
+  /**
+   * The size of the secondary grid lines.
+   */
   set secondarySize(value: number) {
     this._config.secondarySize.value = value;
     this._component.material.uniforms.uSize2.value = value;
     this._component.material.uniformsNeedUpdate = true;
   }
 
+  /**
+   * The distance at which the grid lines start to fade away.
+   */
   get distance() {
     return this._config.distance.value;
   }
 
+  /**
+   * The distance at which the grid lines start to fade away.
+   */
   set distance(value: number) {
     this._config.distance.value = value;
     this._component.material.uniforms.uDistance.value = value;
