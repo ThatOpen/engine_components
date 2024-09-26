@@ -68,7 +68,12 @@ export abstract class IfcFinderQuery {
     return ids;
   }
 
-  clear(modelID: string) {
+  clear(modelID?: string) {
+    if (modelID === undefined) {
+      this.ids = {};
+      this.needsUpdate.clear();
+      return;
+    }
     delete this.ids[modelID];
     this.needsUpdate.delete(modelID);
   }
