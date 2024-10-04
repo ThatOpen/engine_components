@@ -1,26 +1,26 @@
-import{ad as l,B as c,a as m,C as d,D as b,A as u}from"./web-ifc-api-CgBULNZm.js";import{d as p,R as a,m as r}from"./index-CqPyogbW.js";import{o as h,a as f,L as g,M as w,N as y}from"./index-Cbq44wZW.js";import{S as L}from"./stats.min-GTpOrGrX.js";import"./_commonjsHelpers-Cpj98o6Y.js";const v=document.getElementById("container"),s=new h,k=s.get(f),e=k.create();e.scene=new g(s);e.renderer=new w(s,v);e.camera=new y(s);s.init();e.scene.three.background=null;const x=new l({color:"#6528D7"}),A=new c,B=new m(A,x);e.scene.three.add(B);e.scene.setup();e.camera.controls.setLookAt(3,3,3,0,0,0);const n=new L;n.showPanel(2);document.body.append(n.dom);n.dom.style.left="0px";n.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>n.begin());e.renderer.onAfterUpdate.add(()=>n.end());p.init();const i=a.create(()=>r`
+import{Z as r,B as l,a as c,C as m}from"./web-ifc-api-Dlf_dxms.js";import{T as d,z as i,m as a}from"./index-DtbylpTq.js";import{S as b}from"./stats.min-bmkVNhZk.js";import{p,A as u,e as g,m as h,v as w}from"./index-6e07lNWw.js";const y=document.getElementById("container"),o=new p,f=o.get(u),e=f.create();e.scene=new g(o);e.renderer=new h(o,y);e.camera=new w(o);o.init();e.scene.setup();e.scene.three.background=null;const v=new r({color:"#6528D7"}),L=new l,k=new c(L,v);e.scene.three.add(k);e.camera.controls.setLookAt(3,3,3,0,0,0);const n=new b;n.showPanel(2);document.body.append(n.dom);n.dom.style.left="0px";n.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>n.begin());e.renderer.onAfterUpdate.add(()=>n.end());d.init();const s=i.create(()=>a`
     <bim-panel label="Worlds Tutorial" class="options-menu">
       <bim-panel-section collapsed label="Controls">
       
         <bim-color-input 
           label="Background Color" color="#202932" 
-          @input="${({target:t})=>{e.scene.three.background=new d(t.color)}}">
+          @input="${({target:t})=>{e.scene.config.backgroundColor=new m(t.color)}}">
         </bim-color-input>
         
         <bim-number-input 
           slider step="0.1" label="Directional lights intensity" value="1.5" min="0.1" max="10"
-          @change="${({target:t})=>{for(const o of e.scene.three.children)o instanceof b&&(o.intensity=t.value)}}">
+          @change="${({target:t})=>{e.scene.config.directionalLight.intensity=t.value}}">
         </bim-number-input>
         
         <bim-number-input 
           slider step="0.1" label="Ambient light intensity" value="1" min="0.1" max="5"
-          @change="${({target:t})=>{for(const o of e.scene.three.children)o instanceof u&&(o.intensity=t.value)}}">
+          @change="${({target:t})=>{e.scene.config.ambientLight.intensity=t.value}}">
         </bim-number-input>
         
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(i);const M=a.create(()=>r`
+    `);document.body.append(s);const x=i.create(()=>a`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
-        @click="${()=>{i.classList.contains("options-menu-visible")?i.classList.remove("options-menu-visible"):i.classList.add("options-menu-visible")}}">
+        @click="${()=>{s.classList.contains("options-menu-visible")?s.classList.remove("options-menu-visible"):s.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(M);
+    `);document.body.append(x);
