@@ -1,5 +1,4 @@
-import * as WEBIFC from "web-ifc";
-import * as FRAGS from "@thatopen/fragments";
+// import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "../..";
 
 const components = new OBC.Components();
@@ -13,11 +12,11 @@ await ifcLoader.setup();
 // const buffer = new Uint8Array(data);
 // const model = await ifcLoader.load(buffer);
 
-const indexer = components.get(OBC.IfcRelationsIndexer);
+// const indexer = components.get(OBC.IfcRelationsIndexer);
 // await indexer.process(model);
 
 const ids = components.get(OBC.IDSSpecifications);
-const specification = ids.create("My First IDS!", ["IFC4X3"]);
+const specification = ids.create("My First IDS!", ["IFC4X3_ADD2"]);
 specification.description = "Description";
 specification.instructions = "Instructions";
 
@@ -114,97 +113,97 @@ a.download = file.name;
 
 // Load test cases from GitHub
 // Define the URL for fetching the files list
-const apiURL =
-  "https://api.github.com/repos/buildingSMART/IDS/contents/Documentation/ImplementersDocumentation/TestCases/property?ref=development";
+// const apiURL =
+//   "https://api.github.com/repos/buildingSMART/IDS/contents/Documentation/ImplementersDocumentation/TestCases/property?ref=development";
 
 // Function to process each pair of IFC and IDS files
-async function processPair(ifcUrl: string, idsUrl: string) {
-  try {
-    const routes = ifcUrl.split("/");
-    const name = routes[routes.length - 1];
-    const pieces = name.split("-");
-    const bsResult = pieces[0] === "pass";
+// async function processPair(ifcUrl: string, idsUrl: string) {
+//   try {
+//     const routes = ifcUrl.split("/");
+//     const name = routes[routes.length - 1];
+//     const pieces = name.split("-");
+//     const bsResult = pieces[0] === "pass";
 
-    // Fetch the IFC and IDS content
-    const ifcResponse = await fetch(ifcUrl);
-    const idsResponse = await fetch(idsUrl);
+//     // Fetch the IFC and IDS content
+//     const ifcResponse = await fetch(ifcUrl);
+//     const idsResponse = await fetch(idsUrl);
 
-    if (!ifcResponse.ok || !idsResponse.ok) {
-      throw new Error("Error fetching IFC or IDS file");
-    }
+//     if (!ifcResponse.ok || !idsResponse.ok) {
+//       throw new Error("Error fetching IFC or IDS file");
+//     }
 
-    const ifcContent = await ifcResponse.arrayBuffer();
-    const idsContent = await idsResponse.text();
+//     const ifcContent = await ifcResponse.arrayBuffer();
+//     const idsContent = await idsResponse.text();
 
-    const model = await ifcLoader.load(new Uint8Array(ifcContent));
-    await indexer.process(model);
+//     const model = await ifcLoader.load(new Uint8Array(ifcContent));
+//     await indexer.process(model);
 
-    const imports = ids.load(idsContent);
-    for (const spec of imports) {
-      const app = [...spec.applicability][0];
-      const req = [...spec.requirements][0];
-      const entities: FRAGS.IfcProperties = {};
-      await app.getEntities(model, entities);
-      const result = await req.test(entities, model);
-      const passes = result.filter(({ pass }) => pass);
-      const fails = result.filter(({ pass }) => !pass);
-      console.log(bsResult, passes, fails, ifcUrl, idsUrl);
-    }
+//     const imports = ids.load(idsContent);
+//     for (const spec of imports) {
+//       const app = [...spec.applicability][0];
+//       const req = [...spec.requirements][0];
+//       const entities: FRAGS.IfcProperties = {};
+//       await app.getEntities(model, entities);
+//       const result = await req.test(entities, model);
+//       const passes = result.filter(({ pass }) => pass);
+//       const fails = result.filter(({ pass }) => !pass);
+//       console.log(bsResult, passes, fails, ifcUrl, idsUrl);
+//     }
 
-    // Use your custom loaders for IFC and IDS
-    // customIfcLoader(ifcContent);
-    // customIdsLoader(idsContent);
+//     // Use your custom loaders for IFC and IDS
+//     // customIfcLoader(ifcContent);
+//     // customIdsLoader(idsContent);
 
-    // console.log(`Successfully processed pair: ${ifcUrl}, ${idsUrl}`);
-  } catch (error) {
-    // console.error(`Error processing pair: ${ifcUrl}, ${idsUrl}`, error);
-  }
-}
+//     // console.log(`Successfully processed pair: ${ifcUrl}, ${idsUrl}`);
+//   } catch (error) {
+//     // console.error(`Error processing pair: ${ifcUrl}, ${idsUrl}`, error);
+//   }
+// }
 
 // Function to fetch the list of files and group them by pairs (IFC + IDS)
-async function fetchFileListAndProcessPairs() {
-  try {
-    const response = await fetch(apiURL);
+// async function fetchFileListAndProcessPairs() {
+//   try {
+//     const response = await fetch(apiURL);
 
-    if (!response.ok) {
-      throw new Error(`Error fetching files list: ${response.statusText}`);
-    }
+//     if (!response.ok) {
+//       throw new Error(`Error fetching files list: ${response.statusText}`);
+//     }
 
-    const files = await response.json();
-    const filePairs: { [key: string]: { ifc?: string; ids?: string } } = {};
+//     const files = await response.json();
+//     const filePairs: { [key: string]: { ifc?: string; ids?: string } } = {};
 
-    // Group files by their base names
-    for (const file of files) {
-      const fileName = file.name;
+//     // Group files by their base names
+//     for (const file of files) {
+//       const fileName = file.name;
 
-      // Extract the base name (everything before the file extension)
-      const baseName = fileName.split(".").slice(0, -1).join(".");
+//       // Extract the base name (everything before the file extension)
+//       const baseName = fileName.split(".").slice(0, -1).join(".");
 
-      // Check if the file is an .ifc or .ids and group them
-      if (fileName.endsWith(".ifc")) {
-        if (!filePairs[baseName]) filePairs[baseName] = {};
-        filePairs[baseName].ifc = file.download_url;
-      } else if (fileName.endsWith(".ids")) {
-        if (!filePairs[baseName]) filePairs[baseName] = {};
-        filePairs[baseName].ids = file.download_url;
-      }
-    }
+//       // Check if the file is an .ifc or .ids and group them
+//       if (fileName.endsWith(".ifc")) {
+//         if (!filePairs[baseName]) filePairs[baseName] = {};
+//         filePairs[baseName].ifc = file.download_url;
+//       } else if (fileName.endsWith(".ids")) {
+//         if (!filePairs[baseName]) filePairs[baseName] = {};
+//         filePairs[baseName].ids = file.download_url;
+//       }
+//     }
 
-    // Now process each pair using the custom loaders
-    for (const baseName in filePairs) {
-      const { ifc, ids } = filePairs[baseName];
+//     // Now process each pair using the custom loaders
+//     for (const baseName in filePairs) {
+//       const { ifc, ids } = filePairs[baseName];
 
-      if (ifc && ids) {
-        // console.log(`Processing pair: ${baseName}`);
-        await processPair(ifc, ids);
-      } else {
-        // console.warn(`Pair incomplete for ${baseName}`);
-      }
-    }
-  } catch (error) {
-    console.error(error);
-  }
-}
+//       if (ifc && ids) {
+//         // console.log(`Processing pair: ${baseName}`);
+//         await processPair(ifc, ids);
+//       } else {
+//         // console.warn(`Pair incomplete for ${baseName}`);
+//       }
+//     }
+//   } catch (error) {
+//     console.error(error);
+//   }
+// }
 
 // Call the function to fetch and process file pairs
 // fetchFileListAndProcessPairs();

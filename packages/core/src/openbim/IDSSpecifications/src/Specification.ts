@@ -5,10 +5,16 @@ import { IDSCheckResult, IfcVersion } from "./types";
 import { UUID } from "../../../utils";
 import { IDSFacet } from "./facets";
 
+/**
+ * Represents a single specification from the Information Delivery Specification (IDS) standard.
+ *
+ * @remarks This class provides methods for testing a model against the specification,
+ * as well as serializing the specification into XML format.
+ */
 export class IDSSpecification {
   name: string;
   ifcVersion = new Set<IfcVersion>();
-  identifier? = UUID.create();
+  identifier = UUID.create();
   description?: string;
   instructions?: string;
   requirementsDescription?: string;
@@ -25,6 +31,13 @@ export class IDSSpecification {
     }
   }
 
+  /**
+   * Tests the model to test against the specification's requirements.
+   *
+   * @param model - The model to be tested.
+   * @returns An array representing the test results.
+   * If no requirements are defined for the specification, an empty array is returned.
+   */
   async test(model: FRAGS.FragmentsGroup) {
     let result: IDSCheckResult[] = [];
 
@@ -67,6 +80,13 @@ export class IDSSpecification {
     // }
   }
 
+  /**
+   * Serializes the IDSSpecification instance into XML format.
+   *
+   * @remarks This method is not meant to be used directly. It is used by the IDSSpecifications component.
+   *
+   * @returns The XML representation of the IDSSpecification.
+   */
   serialize() {
     const name = `name="${this.name}"`;
     const identifier = this.identifier ? `identifier="${this.identifier}"` : "";
