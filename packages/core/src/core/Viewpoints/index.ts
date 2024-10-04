@@ -15,6 +15,9 @@ import {
 
 export * from "./src";
 
+/*
+ * The viewpoints component manages and applies BCF compliant viewpoint to a world.
+ */
 export class Viewpoints
   extends Component
   implements
@@ -58,6 +61,7 @@ export class Viewpoints
 
   config = new ViewpointsConfigManager(this, this.components, "Viewpoints");
 
+  /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
 
   /**

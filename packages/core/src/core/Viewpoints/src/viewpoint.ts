@@ -21,14 +21,22 @@ import { Classifier, Hider } from "../../../fragments";
 import { SimplePlane } from "../../Clipper";
 import { Viewpoints } from "..";
 
+/**
+ * Represents a BCF compliant viewpoint from BuildingSMART.
+ *
+ * The Viewpoint class provides methods for managing and interacting with viewpoints.
+ * It includes functionality for setting viewpoint properties, updating the camera,
+ * applying color to components, and serializing the viewpoint for export.
+ */
 export class Viewpoint implements BCFViewpoint {
   title?: string;
-  guid = UUID.create();
+  readonly guid = UUID.create();
 
   /**
    * ClippingPlanes can be used to define a subsection of a building model that is related to the topic.
    * Each clipping plane is defined by Location and Direction.
    * The Direction vector points in the invisible direction meaning the half-space that is clipped.
+   * @experimental
    */
   clippingPlanes = new DataSet<SimplePlane>();
 
@@ -229,31 +237,20 @@ export class Viewpoint implements BCFViewpoint {
    * Adds components to the viewpoint based on the provided fragment ID map.
    *
    * @param fragmentIdMap - A map containing fragment IDs as keys and arrays of express IDs as values.
-   *
-   * @returns A Promise that resolves when the components have been added to the viewpoint.
    */
-  async addComponentsFromMap(fragmentIdMap: FRAGS.FragmentIdMap) {
+  addComponentsFromMap(fragmentIdMap: FRAGS.FragmentIdMap) {
     const fragments = this._components.get(FragmentsManager);
-    for (const fragmentID in fragmentIdMap) {
-      const fragment = fragments.list.get(fragmentID);
-      if (!(fragment && fragment.group)) continue;
-      const model = fragment.group;
-      const expressIDs = fragmentIdMap[fragmentID];
-      for (const expressID of expressIDs) {
-        const attrs = await model.getProperties(expressID);
-        if (!attrs) continue;
-        const globalId = attrs.GlobalId?.value;
-        if (globalId) this.selectionComponents.add(globalId);
-      }
-    }
+    const guids = fragments.fragmentIdMapToGuids(fragmentIdMap);
+    this.selectionComponents.add(...guids);
     const manager = this._components.get(Viewpoints);
     manager.list.set(this.guid, this);
   }
 
   /**
-   * Sets the properties of the viewpoint with the provided data.
+   * Replace the properties of the viewpoint with the provided data.
    *
    * @remarks The guid will be ommited as it shouldn't change after it has been initially set.
+   * @remarks The existing selection and exception components will be fully replaced in case new ones are provided.
    *
    * @param data - An object containing the properties to be set.
    *               The properties not included in the object will remain unchanged.
@@ -266,6 +263,16 @@ export class Viewpoint implements BCFViewpoint {
     for (const key in data) {
       if (key === "guid") continue;
       const value = _data[key];
+      if (key === "selectionComponents") {
+        this.selectionComponents.clear();
+        this.selectionComponents.add(...value);
+        continue;
+      }
+      if (key === "exceptionComponents") {
+        this.exceptionComponents.clear();
+        this.exceptionComponents.add(...value);
+        continue;
+      }
       if (key in this) _this[key] = value;
     }
     const manager = this._components.get(Viewpoints);
