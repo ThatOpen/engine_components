@@ -14,7 +14,7 @@ export class Components implements Disposable {
   /**
    * The version of the @thatopen/components library.
    */
-  static readonly release = "2.2.11";
+  static readonly release = "2.2.12";
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<void>();
@@ -32,6 +32,26 @@ export class Components implements Disposable {
   enabled = false;
 
   private _clock: THREE.Clock;
+
+  /**
+   * Event that triggers the Components instance is initialized.
+   *
+   * @remarks
+   * This event is triggered once when the {@link Components.init} method has been called and finish processing.
+   * This is useful to set configuration placeholders that need to be executed when the components instance is initialized.
+   * For example, enabling and configuring custom effects in a post-production renderer.
+   *
+   * @example
+   * ```typescript
+   * const components = new Components();
+   * components.onInit.add(() => {
+   *   // Enable custom effects in the post-production renderer
+   *   // or any other operation dependant on the component initialization
+   * });
+   * components.init();
+   * ```
+   */
+  readonly onInit = new Event<undefined>();
 
   /**
    * Adds a component to the list of components.
@@ -88,13 +108,12 @@ export class Components implements Disposable {
    * Initializes the Components instance.
    * This method starts the animation loop, sets the enabled flag to true,
    * and calls the update method.
-   *
-   * @returns {void}
    */
   init() {
     this.enabled = true;
     this._clock.start();
     this.update();
+    this.onInit.trigger();
   }
 
   /**
