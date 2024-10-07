@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "@thatopen/fragments": "~2.3.0",
-    "@thatopen/ui": "~2.2.0",
+    "@thatopen/ui": "~2.3.0",
     "@types/three": "0.160.0",
     "stats.js": "^0.17.0",
     "three": "^0.160.1",
