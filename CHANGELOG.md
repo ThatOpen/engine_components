@@ -1,5 +1,43 @@
 # Changelog
 
+## [2.3.0](https://github.com/ThatOpen/engine_components/compare/v2.2.0...v2.3.0) (2024-10-07)
+
+
+### Features
+
+* **core:** add clipper config ([288cb3d](https://github.com/ThatOpen/engine_components/commit/288cb3def42af773a1d9bba8ac8e4013d4047623))
+* **core:** add grids config ([f99e137](https://github.com/ThatOpen/engine_components/commit/f99e13730f31776e3f0f525057ceb6db3377cce9))
+* **core:** add minimap config ([47f95a3](https://github.com/ThatOpen/engine_components/commit/47f95a38e095388ee7477ae6344d7d2ba5088242))
+* **core:** adds argument to specify the name of the ifc loaded ([2a23a2f](https://github.com/ThatOpen/engine_components/commit/2a23a2f16da67bc2607dba57f42da71c02e2b57b))
+* **core:** adds the ability to get IfcGuids from a FragmentIdMap ([dff9d2f](https://github.com/ThatOpen/engine_components/commit/dff9d2f14f1a64c85da90249cea684df8224470c))
+* **core:** centralize configuration in component ([df3350d](https://github.com/ThatOpen/engine_components/commit/df3350d5a1bd6e05c662179e9af4d68e8e8a7bce))
+* **core:** clean up config manager ([468d425](https://github.com/ThatOpen/engine_components/commit/468d42528d77f77ca01ddfe7b3953cb029a063f5))
+* **core:** connect all existing configs with manager ([fde9faa](https://github.com/ThatOpen/engine_components/commit/fde9faa16ded3f8d0ff17c2d2f83afc31e589c15))
+* **core:** improve configurable behavior ([292300c](https://github.com/ThatOpen/engine_components/commit/292300c82e058a98ead658898f4480117463472e))
+* **front:** add streamed properties caching ([331bd69](https://github.com/ThatOpen/engine_components/commit/331bd6916e8a6f601516d3e66b372500f927c8af))
+* **front:** implement fragment geometry splitting ([9fb76dc](https://github.com/ThatOpen/engine_components/commit/9fb76dcca1f602228bff8bcc936a9c50ee738946))
+* **front:** implement fragment load cancel ([f9b8b4e](https://github.com/ThatOpen/engine_components/commit/f9b8b4e351da462eb76243a4037393a8463d8adc))
+* **front:** make streamer file cacher public ([a523c01](https://github.com/ThatOpen/engine_components/commit/a523c0142a746d189736fd750717289b43f4254a))
+* **front:** make streaming url more flexible ([75ffbfa](https://github.com/ThatOpen/engine_components/commit/75ffbfa0ddc09e84c6992a3f0bbb40f9e3202392))
+* **front:** support file as tile response type ([7b24223](https://github.com/ThatOpen/engine_components/commit/7b24223a55172eea7221bc2c8e3dfb346516e109))
+* **front:** use file system api for tiles caching ([07bdbd3](https://github.com/ThatOpen/engine_components/commit/07bdbd3e0dacc8e9a8c985f3777d6c9a5c86b7be))
+
+
+### Bug Fixes
+
+* **chore:** fix type problems ([2beaffe](https://github.com/ThatOpen/engine_components/commit/2beaffe6b87af38f6f1766fa39ab2aced01c7ac6))
+* **core:** add guard for cullers pixel reading ([fdacb77](https://github.com/ThatOpen/engine_components/commit/fdacb77a35f3deb801b3e15ede922ea54f82e340))
+* **core:** add guard when getting all properties ([3048618](https://github.com/ThatOpen/engine_components/commit/3048618600c112e4fe4cedc5026165e442871ed3))
+* **core:** dispose mesh culler interval ([d702cd7](https://github.com/ThatOpen/engine_components/commit/d702cd7683364e0678a24264816806f51c80a531))
+* **core:** IfcPropertiesManager.setData properly assigns the entity in the model properties ([ed779b4](https://github.com/ThatOpen/engine_components/commit/ed779b4f9d5017d48a0a44fd44e034cd7b7b425e))
+* **core:** incorrect topic type and status on loading ([cb961a9](https://github.com/ThatOpen/engine_components/commit/cb961a99b6e7afafd5bedcba482377c4c05bf666))
+* **core:** reset culler state after read pixels failed ([bded3c3](https://github.com/ThatOpen/engine_components/commit/bded3c375f80d5ae00c0015b9eb92af51e4437b1))
+* **core:** world deletes it-self from the worlds list to prevent unused references ([d8598f9](https://github.com/ThatOpen/engine_components/commit/d8598f9771c13732299248abfeba0dbf74cbaab2))
+* **front:** make streamer url public ([2796114](https://github.com/ThatOpen/engine_components/commit/2796114aa35a425a045f6a2253c682943fbfc634))
+* **front:** prevent URL from being null ([5bed53b](https://github.com/ThatOpen/engine_components/commit/5bed53b7a947b39765b77b7020fbfdd96f2d7d81))
+* **front:** remove url setter and getter ([8be541e](https://github.com/ThatOpen/engine_components/commit/8be541e5707b4bb7ea463fd780afa8b94b7a43e0))
+* **front:** Update currentPlan of Plans component so it is not always null ([#480](https://github.com/ThatOpen/engine_components/issues/480)) ([62f9d25](https://github.com/ThatOpen/engine_components/commit/62f9d251f492ef0940c70af9259968ed78324b75))
+
 ## [2.2.0](https://github.com/ThatOpen/engine_components/compare/v2.1.0...v2.2.0) (2024-08-18)
 
 
