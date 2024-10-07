@@ -1,4 +1,4 @@
-import{Z as r,B as l,a as c,C as m}from"./web-ifc-api-Dlf_dxms.js";import{T as d,z as i,m as a}from"./index-DtbylpTq.js";import{S as b}from"./stats.min-bmkVNhZk.js";import{p,A as u,e as g,m as h,v as w}from"./index-6e07lNWw.js";const y=document.getElementById("container"),o=new p,f=o.get(u),e=f.create();e.scene=new g(o);e.renderer=new h(o,y);e.camera=new w(o);o.init();e.scene.setup();e.scene.three.background=null;const v=new r({color:"#6528D7"}),L=new l,k=new c(L,v);e.scene.three.add(k);e.camera.controls.setLookAt(3,3,3,0,0,0);const n=new b;n.showPanel(2);document.body.append(n.dom);n.dom.style.left="0px";n.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>n.begin());e.renderer.onAfterUpdate.add(()=>n.end());d.init();const s=i.create(()=>a`
+import{Z as r,B as l,a as c,C as m}from"./web-ifc-api-Dxv4iFj4.js";import{T as d,z as i,m as a}from"./index-DtbylpTq.js";import{S as b}from"./stats.min-DYv0AsOH.js";import{p,C as u,e as g,m as h,v as w}from"./index-Go5pwCUJ.js";const y=document.getElementById("container"),o=new p,f=o.get(u),e=f.create();e.scene=new g(o);e.renderer=new h(o,y);e.camera=new w(o);o.init();e.scene.setup();e.scene.three.background=null;const v=new r({color:"#6528D7"}),C=new l,L=new c(C,v);e.scene.three.add(L);e.camera.controls.setLookAt(3,3,3,0,0,0);const n=new b;n.showPanel(2);document.body.append(n.dom);n.dom.style.left="0px";n.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>n.begin());e.renderer.onAfterUpdate.add(()=>n.end());d.init();const s=i.create(()=>a`
     <bim-panel label="Worlds Tutorial" class="options-menu">
       <bim-panel-section collapsed label="Controls">
       
@@ -19,8 +19,8 @@ import{Z as r,B as l,a as c,C as m}from"./web-ifc-api-Dlf_dxms.js";import{T as d
         
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(s);const x=i.create(()=>a`
+    `);document.body.append(s);const k=i.create(()=>a`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{s.classList.contains("options-menu-visible")?s.classList.remove("options-menu-visible"):s.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(x);
+    `);document.body.append(k);

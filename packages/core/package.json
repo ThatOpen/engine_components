@@ -42,7 +42,7 @@
     "@types/three": "0.160.0",
     "stats.js": "^0.17.0",
     "three": "^0.160.1",
-    "web-ifc": "0.0.57"
+    "web-ifc": "0.0.59"
   },
   "dependencies": {
     "camera-controls": "2.7.3",
@@ -53,6 +53,6 @@
   "peerDependencies": {
     "@thatopen/fragments": "~2.3.0",
     "three": "^0.160.1",
-    "web-ifc": "0.0.57"
+    "web-ifc": "0.0.59"
   }
 }

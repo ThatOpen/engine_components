@@ -1,4 +1,4 @@
-import{a as c,B as l,b as m,C as b}from"./web-ifc-api-Dlf_dxms.js";import{S as d}from"./stats.min-bmkVNhZk.js";import{p,A as u,e as g,m as h,v,O as f}from"./index-6e07lNWw.js";import{T as w,z as a,m as r}from"./index-DtbylpTq.js";const y=document.getElementById("container"),o=new p,x=o.get(u),e=x.create();e.scene=new g(o);e.renderer=new h(o,y);e.camera=new v(o);o.init();const z=new c(new l,new m({color:"red"}));e.scene.three.add(z);e.scene.three.background=null;const G=o.get(f),i=G.create(e);console.log(i);w.init();const t=a.create(()=>r`
+import{a as c,B as l,b as m,C as b}from"./web-ifc-api-Dxv4iFj4.js";import{S as d}from"./stats.min-DYv0AsOH.js";import{p,C as u,e as g,m as h,v,O as f}from"./index-Go5pwCUJ.js";import{T as w,z as a,m as r}from"./index-DtbylpTq.js";const y=document.getElementById("container"),o=new p,x=o.get(u),e=x.create();e.scene=new g(o);e.renderer=new h(o,y);e.camera=new v(o);o.init();const z=new c(new l,new m({color:"red"}));e.scene.three.add(z);e.scene.three.background=null;const C=o.get(f),i=C.create(e);console.log(i);w.init();const t=a.create(()=>r`
     <bim-panel label="Grids Tutorial" class="options-menu">
 
       <bim-panel-section collapsed label="Controls"">
@@ -24,8 +24,8 @@ import{a as c,B as l,b as m,C as b}from"./web-ifc-api-Dlf_dxms.js";import{S as d
         
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(t);const k=a.create(()=>r`
+    `);document.body.append(t);const G=a.create(()=>r`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{t.classList.contains("options-menu-visible")?t.classList.remove("options-menu-visible"):t.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(k);const s=new d;s.showPanel(2);document.body.append(s.dom);s.dom.style.left="0px";s.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>s.begin());e.renderer.onAfterUpdate.add(()=>s.end());
+    `);document.body.append(G);const s=new d;s.showPanel(2);document.body.append(s.dom);s.dom.style.left="0px";s.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>s.begin());e.renderer.onAfterUpdate.add(()=>s.end());
