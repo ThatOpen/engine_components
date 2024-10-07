@@ -12,7 +12,6 @@ Not quite. The minimap is a simple 2D representation of the 3D world. It is usef
 
 In this tutorial, we will import:
 
-- `Three.js` to get some 3D entities for our app.
 - `@thatopen/components` to set up the barebone of our app.
 - `@thatopen/ui` to add some simple and cool UI menus.
 - `Stats.js` (optional) to measure the performance of our app.
@@ -21,7 +20,6 @@ In this tutorial, we will import:
 
 import Stats from "stats.js";
 import * as BUI from "@thatopen/ui";
-import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 
 /* MD
@@ -160,23 +158,29 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           }}">  
         </bim-checkbox>
         
+        <bim-checkbox checked="true" label="Visible" 
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            map.config.visible = target.value;
+          }}">  
+        </bim-checkbox>
+        
         <bim-checkbox checked label="Lock rotation" 
           @change="${({ target }: { target: BUI.Checkbox }) => {
-            map.lockRotation = target.value;
+            map.config.lockRotation = target.value;
           }}">  
         </bim-checkbox>
         
         <bim-number-input 
           slider label="Zoom" value="${map.zoom}" min="0.01" max="0.5" step="0.01" 
           @change="${({ target }: { target: BUI.NumberInput }) => {
-            map.zoom = target.value;
+            map.config.zoom = target.value;
           }}">
         </bim-number-input>
         
         <bim-number-input 
           slider label="Front offset" value="${map.frontOffset}" min="0" max="5" step="1" 
           @change="${({ target }: { target: BUI.NumberInput }) => {
-            map.frontOffset = target.value;
+            map.config.frontOffset = target.value;
           }}">
         </bim-number-input>
                 
@@ -184,17 +188,13 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         
           <bim-number-input slider value="${mapSize.x}" pref="Size X" min="100" max="500" step="10"              
             @change="${({ target }: { target: BUI.NumberInput }) => {
-              const size = map.getSize();
-              size.x = target.value;
-              map.resize(size);
+              map.config.sizeX = target.value;
             }}">
           </bim-number-input>        
         
           <bim-number-input slider value="${mapSize.y}" pref="Size Y" min="100" max="500" step="10"            
             @change="${({ target }: { target: BUI.NumberInput }) => {
-              const size = map.getSize();
-              size.y = target.value;
-              map.resize(size);
+              map.config.sizeY = target.value;
             }}">
           </bim-number-input>
         </div>

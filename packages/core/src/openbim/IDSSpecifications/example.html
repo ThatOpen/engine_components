@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" class="bim-ui-dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDS Specifications</title>
+  <style>
+    * {
+      margin: 0;
+    }
+
+    html {
+      font-family: sans-serif;
+    }
+
+    body {
+      height: 100vh;
+    }
+
+    bim-panel {
+      border-radius: 0;
+    }
+
+    dialog:not([data-context-dialog]) {
+      background-color: transparent;
+      border: none;
+      margin: auto;
+      outline: none;
+      overflow: visible;
+    }
+
+    dialog:not([data-context-dialog])::backdrop {
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(3px);
+    }
+
+    bim-grid[floating]>bim-panel {
+      border-radius: 1rem;
+    }
+  </style>
+</head>
+
+<body>
+  <bim-grid id="app"></bim-grid>
+  <script type="module" src="./example.ts"></script>
+</body>
+
+</html>

@@ -57,14 +57,10 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
 
   private codes = new Map<number, Map<number, string>>();
 
-  constructor(
-    components: OBC.Components,
-    world: OBC.World,
-    settings?: OBC.CullerRendererSettings,
-  ) {
-    super(components, world, settings);
+  constructor(components: OBC.Components, world: OBC.World) {
+    super(components, world);
 
-    this.updateInterval = 500;
+    this.config.updateInterval = 500;
 
     this._geometry = new THREE.BoxGeometry(1, 1, 1);
     this._geometry.groups = [];
@@ -76,12 +72,6 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     this._geometry.attributes.position.needsUpdate = true;
 
     this.worker.addEventListener("message", this.handleWorkerMessage);
-    if (this.autoUpdate) {
-      this._intervalID = window.setInterval(
-        this.updateVisibility,
-        this.updateInterval,
-      );
-    }
   }
 
   dispose() {
@@ -516,6 +506,31 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     }
   }
 
+  cancel(items: { [modelID: string]: Set<number> }) {
+    for (const modelID in items) {
+      const modelIndex = this._modelIDIndex.get(modelID);
+      if (modelIndex === undefined) {
+        throw new Error("Model not found.");
+      }
+      const map = this.codes.get(modelIndex);
+      if (map === undefined) {
+        throw new Error("Codes not found.");
+      }
+      for (const id of items[modelID]) {
+        const colorCode = map.get(id);
+        if (colorCode === undefined) {
+          throw new Error("Color code not found.");
+        }
+        this._geometriesInMemory.delete(colorCode);
+        const found = this._geometries.get(colorCode);
+        if (!found) {
+          throw new Error("Geometry not found.");
+        }
+        found.exists = false;
+      }
+    }
+  }
+
   private setGeometryVisibility(
     geometry: CullerBoundingBox,
     visible: boolean,
@@ -545,7 +560,6 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     const colors = event.data.colors as Map<string, number>;
 
     const toLoad: { [modelID: string]: Map<number, Set<number>> } = {};
-
     const toRemove: { [modelID: string]: Set<number> } = {};
     const toHide: { [modelID: string]: Set<number> } = {};
     const toShow: { [modelID: string]: Set<number> } = {};

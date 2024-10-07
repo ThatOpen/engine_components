@@ -1,46 +1,48 @@
 import * as THREE from "three";
-import { Hideable, Event, World, Disposable } from "../../Types";
+import { Hideable, Event, World, Disposable, Configurable } from "../../Types";
 import { Components } from "../../Components";
 import { Disposer } from "../../Disposer";
 import { SimpleCamera } from "../../Worlds";
-
-/**
- * Configuration interface for the {@link SimpleGrid} class.
- */
-export interface GridConfig {
-  /**
-   * The color of the grid lines.
-   */
-  color: THREE.Color;
-
-  /**
-   * The size of the primary grid lines.
-   */
-  size1: number;
-
-  /**
-   * The size of the secondary grid lines.
-   */
-  size2: number;
-
-  /**
-   * The distance at which the grid lines start to fade away.
-   */
-  distance: number;
-}
+import {
+  SimpleGridConfig,
+  SimpleGridConfigManager,
+} from "./simple-grid-config";
+import { ConfigManager } from "../../ConfigManager";
 
 /**
  * An infinite grid. Created by [fyrestar](https://github.com/Fyrestar/THREE.InfiniteGridHelper) and translated to typescript by [dkaraush](https://github.com/dkaraush/THREE.InfiniteGridHelper/blob/master/InfiniteGridHelper.ts).
  */
-export class SimpleGrid implements Hideable, Disposable {
+export class SimpleGrid
+  implements
+    Hideable,
+    Disposable,
+    Configurable<SimpleGridConfigManager, SimpleGridConfig>
+{
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
+
+  /** {@link Configurable.onSetup} */
+  readonly onSetup = new Event();
+
+  /** {@link Configurable.isSetup} */
+  isSetup = false;
 
   /** The world instance to which this Raycaster belongs. */
   world: World;
 
   /** The components instance to which this grid belongs. */
   components: Components;
+
+  /** {@link Configurable.config} */
+  config: SimpleGridConfigManager;
+
+  protected _defaultConfig: SimpleGridConfig = {
+    visible: true,
+    color: new THREE.Color(0xbbbbbb),
+    primarySize: 1,
+    secondarySize: 10,
+    distance: 500,
+  };
 
   /** {@link Hideable.visible} */
   get visible() {
@@ -84,15 +86,19 @@ export class SimpleGrid implements Hideable, Disposable {
 
   private _fade = 3;
 
-  constructor(components: Components, world: World, config: GridConfig) {
+  constructor(components: Components, world: World) {
     // Source: https://github.com/dkaraush/THREE.InfiniteGridHelper/blob/master/InfiniteGridHelper.ts
     // Author: Fyrestar https://mevedia.com (https://github.com/Fyrestar/THREE.InfiniteGridHelper)
 
     this.world = world;
 
-    const { color, size1, size2, distance } = config;
+    const { color, primarySize, secondarySize, distance } = this._defaultConfig;
 
     this.components = components;
+
+    this.config = new SimpleGridConfigManager(this, this.components, "Grid");
+    const configs = components.get(ConfigManager);
+    configs.list.add(this.config);
 
     const geometry = new THREE.PlaneGeometry(2, 2, 1, 1);
 
@@ -101,10 +107,10 @@ export class SimpleGrid implements Hideable, Disposable {
 
       uniforms: {
         uSize1: {
-          value: size1,
+          value: primarySize,
         },
         uSize2: {
-          value: size2,
+          value: secondarySize,
         },
         uColor: {
           value: color,
@@ -197,9 +203,27 @@ export class SimpleGrid implements Hideable, Disposable {
     this.setupEvents(true);
   }
 
+  /** {@link Configurable.setup} */
+  setup(config?: Partial<SimpleGridConfig>) {
+    const fullConfig = { ...this._defaultConfig, ...config };
+
+    this.config.visible = true;
+    this.config.color = fullConfig.color;
+    this.config.primarySize = fullConfig.primarySize;
+    this.config.secondarySize = fullConfig.secondarySize;
+    this.config.distance = fullConfig.distance;
+
+    this.isSetup = true;
+    this.onSetup.trigger();
+  }
+
   /** {@link Disposable.dispose} */
   dispose() {
     this.setupEvents(false);
+
+    const configs = this.components.get(ConfigManager);
+    configs.list.delete(this.config);
+
     const disposer = this.components.get(Disposer);
     disposer.destroy(this.three);
     this.onDisposed.trigger();

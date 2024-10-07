@@ -53,14 +53,6 @@ const grid = grids.create(world);
 world.camera.controls.setLookAt(1, 2, -2, -2, 0, -5);
 
 /* MD
-
-  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
-
-*/
-
-world.scene.three.background = null;
-
-/* MD
   ### 🏠 Loading a model
   ---
 
@@ -160,6 +152,14 @@ await world.scene.updateShadows();
 world.camera.controls.addEventListener("update", async () => {
   await world.scene.updateShadows();
 });
+
+/* MD
+
+  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
+
+*/
+
+world.scene.three.background = null;
 
 /* MD
   ### ⏱️ Measuring the performance (optional)

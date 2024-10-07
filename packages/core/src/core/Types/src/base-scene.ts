@@ -37,17 +37,25 @@ export abstract class BaseScene extends BaseWorldItem implements Disposable {
         disposer.destroy(mesh);
       }
     }
+
+    this.deleteAllLights();
+
+    this.three.children = [];
+    this.onDisposed.trigger();
+    this.onDisposed.reset();
+  }
+
+  deleteAllLights() {
     for (const [, light] of this.directionalLights) {
       light.removeFromParent();
       light.target.removeFromParent();
       light.dispose();
     }
+    this.directionalLights.clear();
     for (const [, light] of this.ambientLights) {
       light.removeFromParent();
       light.dispose();
     }
-    this.three.children = [];
-    this.onDisposed.trigger();
-    this.onDisposed.reset();
+    this.ambientLights.clear();
   }
 }

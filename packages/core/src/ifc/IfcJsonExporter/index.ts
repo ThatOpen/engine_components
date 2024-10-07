@@ -68,8 +68,14 @@ export class IfcJsonExporter extends Component {
 
       // const allIDs = this._webIfc.GetAllLines(0);
       for (const id of ids) {
-        const property = webIfc.GetLine(0, id, recursive, indirect);
-        properties[property.expressID] = property;
+        try {
+          const property = webIfc.GetLine(0, id, recursive, indirect);
+          properties[property.expressID] = property;
+        } catch (e) {
+          console.log(
+            `Could not get property ${id}, with recursive ${recursive} and indirect ${indirect}.`,
+          );
+        }
       }
     }
 
