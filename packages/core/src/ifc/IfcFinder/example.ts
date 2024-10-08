@@ -2,11 +2,11 @@
 ### 🏢 Loading IFC files
 ---
 
-IFC is complex, and sometimes we want to look for items using complex filters. For instance, imagine we want to target all items in a file that have a property called "FireProtection". This is due to the indirection present in most IFC files. Luckily for you, we have a component to easily perform complex queries on any IFC: the IfcFinder. In this tutorial, you'll learn how to use it.
+IFC is complex, and sometimes we want to look for items using complex filters. For instance, imagine we want to target all items in a file that have a property called FireProtection. This is due to the indirection present in most IFC files. Luckily for you, we have a component to easily perform complex queries on any IFC: the IfcFinder. In this tutorial, you'll learn how to use it.
 
 :::tip What does the finder do?
 
-The finder is a powerful text scanner that can make complex queries in one or multiple IFC files. You can use regular expressions, operators like ">", "<", combine multiple filters, etc.
+The finder is a powerful text scanner that can make complex queries in one or multiple IFC files. You can use regular expressions, operators like > <, combine multiple filters, etc.
 
 :::
 
@@ -94,7 +94,7 @@ indexer.setRelationMap(model, relations);
   ### 🔎 Setting up the finder
   ---
 
- Now, let's get the finder component and create a new queryGroup. A query group is a set of "questions" we can apply to one or many models.
+ Now, let's get the finder component and create a new queryGroup. A query group is a set of questions we can apply to one or many models.
 */
 
 const finder = components.get(OBC.IfcFinder);
@@ -133,7 +133,7 @@ const categoryRule: OBC.IfcCategoryRule = {
 basicQuery.rules.push(categoryRule);
 
 /* MD
- Awesome! Now, our library has better ways to filter by category, so what's the point of the finder? Well, let's make something a bit more complex. Imagine we want to look for any object that has any property (in a pset) with the word "yeso" (plaster in spanish). We can do this easily with the finder using another type of query: a property query.
+ Awesome! Now, our library has better ways to filter by category, so what's the point of the finder? Well, let's make something a bit more complex. Imagine we want to look for any object that has any property (in a pset) with the word yeso (plaster in spanish). We can do this easily with the finder using another type of query: a property query.
 */
 
 const propertyRule: OBC.IfcPropertyRule = {
