@@ -6,7 +6,7 @@ IFC is complex, and sometimes we want to look for items using complex filters. F
 
 :::tip What does the finder do?
 
-The finder is a powerful text scanner that can make complex queries in one or multiple IFC files. You can use regular expressions, operators like > <, combine multiple filters, etc.
+The finder is a powerful text scanner that can make complex queries in one or multiple IFC files. You can use regular expressions, operators, combine multiple filters, etc.
 
 :::
 
