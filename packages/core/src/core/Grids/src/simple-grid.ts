@@ -97,8 +97,6 @@ export class SimpleGrid
     this.components = components;
 
     this.config = new SimpleGridConfigManager(this, this.components, "Grid");
-    const configs = components.get(ConfigManager);
-    configs.list.add(this.config);
 
     const geometry = new THREE.PlaneGeometry(2, 2, 1, 1);
 
@@ -222,7 +220,7 @@ export class SimpleGrid
     this.setupEvents(false);
 
     const configs = this.components.get(ConfigManager);
-    configs.list.delete(this.config);
+    configs.list.delete(this.config.uuid);
 
     const disposer = this.components.get(Disposer);
     disposer.destroy(this.three);

@@ -59,7 +59,12 @@ export class Viewpoints
 
   onSetup = new Event();
 
-  config = new ViewpointsConfigManager(this, this.components, "Viewpoints");
+  config = new ViewpointsConfigManager(
+    this,
+    this.components,
+    "Viewpoints",
+    Viewpoints.uuid,
+  );
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();

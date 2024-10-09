@@ -1,4 +1,4 @@
-import { Component, DataSet } from "../Types";
+import { Component, DataMap } from "../Types";
 import { Components } from "../Components";
 import { Configurator } from "./src";
 
@@ -11,7 +11,7 @@ export class ConfigManager extends Component {
   /**
    * The list of all configurations of this app.
    */
-  list = new DataSet<Configurator<any, any>>();
+  list = new DataMap<string, Configurator<any, any>>();
 
   /** {@link Component.enabled} */
   enabled = true;

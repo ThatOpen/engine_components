@@ -103,9 +103,6 @@ export class CullerRenderer
       "Culler renderer",
     );
 
-    const configs = this.components.get(ConfigManager);
-    configs.list.add(this.config);
-
     this.world = world;
     this.renderer = new THREE.WebGLRenderer();
 
@@ -142,7 +139,7 @@ export class CullerRenderer
     this.config.autoUpdate = false;
 
     const configs = this.components.get(ConfigManager);
-    configs.list.delete(this.config);
+    configs.list.delete(this.config.uuid);
 
     for (const child of this.scene.children) {
       child.removeFromParent();

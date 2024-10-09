@@ -46,9 +46,6 @@ export class SimpleScene
     super(components);
     this.three = new THREE.Scene();
     this.three.background = new THREE.Color(0x202932);
-
-    const configs = this.components.get(ConfigManager);
-    configs.list.add(this.config);
   }
 
   /** {@link Configurable.setup} */
@@ -86,6 +83,6 @@ export class SimpleScene
   dispose() {
     super.dispose();
     const configs = this.components.get(ConfigManager);
-    configs.list.delete(this.config);
+    configs.list.delete(this.config.uuid);
   }
 }

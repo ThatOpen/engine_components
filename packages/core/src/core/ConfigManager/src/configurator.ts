@@ -12,6 +12,7 @@ import {
 } from "../../Types";
 import { Components } from "../../Components";
 import { ConfigManager } from "../index";
+import { UUID } from "../../../utils";
 
 export abstract class Configurator<T, U extends ControlsSchema> {
   protected abstract _config: U;
@@ -19,6 +20,8 @@ export abstract class Configurator<T, U extends ControlsSchema> {
   protected _component: T;
 
   name: string;
+
+  uuid: string;
 
   get controls(): U {
     const copy: any = {};
@@ -29,11 +32,17 @@ export abstract class Configurator<T, U extends ControlsSchema> {
     return copy as U;
   }
 
-  constructor(component: T, components: Components, name: string) {
+  constructor(
+    component: T,
+    components: Components,
+    name: string,
+    uuid?: string,
+  ) {
     this._component = component;
     this.name = name;
+    this.uuid = uuid ?? UUID.create();
     const configManager = components.get(ConfigManager);
-    configManager.list.add(this);
+    configManager.list.set(this.uuid, this);
   }
 
   copyEntry(controlEntry: ControlEntry): ControlEntry {

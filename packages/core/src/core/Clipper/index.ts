@@ -111,7 +111,12 @@ export class Clipper
   list: SimplePlane[] = [];
 
   /** {@link Configurable.config} */
-  config = new ClipperConfigManager(this, this.components, "Clipper");
+  config = new ClipperConfigManager(
+    this,
+    this.components,
+    "Clipper",
+    Clipper.uuid,
+  );
 
   protected _defaultConfig: ClipperConfig = {
     color: new THREE.Color(0xbb00ff),
@@ -187,9 +192,6 @@ export class Clipper
   constructor(components: Components) {
     super(components);
     this.components.add(Clipper.uuid, this);
-
-    const configs = components.get(ConfigManager);
-    configs.list.add(this.config);
   }
 
   /** {@link Disposable.dispose} */
@@ -197,7 +199,7 @@ export class Clipper
     this._enabled = false;
 
     const configs = this.components.get(ConfigManager);
-    configs.list.delete(this.config);
+    configs.list.delete(this.config.uuid);
 
     for (const plane of this.list) {
       plane.dispose();

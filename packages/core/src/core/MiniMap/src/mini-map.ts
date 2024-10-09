@@ -8,7 +8,6 @@ import {
   Configurable,
 } from "../../Types";
 import { MiniMapConfig, MiniMapConfigManager } from "./mini-map-config";
-import { ConfigManager } from "../../ConfigManager";
 import { Components } from "../../Components";
 
 /**
@@ -168,8 +167,6 @@ export class MiniMap
     this.updatePlanes();
 
     this.config = new MiniMapConfigManager(this, components, "MiniMap");
-    const configs = components.get(ConfigManager);
-    configs.list.add(this.config);
   }
 
   /** {@link Disposable.dispose} */
