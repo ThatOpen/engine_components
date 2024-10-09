@@ -1,4 +1,4 @@
-import{B as r,M as m,a as d,C as p}from"./web-ifc-api-Dxv4iFj4.js";import{S as u}from"./stats.min-DYv0AsOH.js";import{T as h,z as s,m as c}from"./index-DtbylpTq.js";import{p as g,C as f,e as k,m as w,v,o as y,S as M}from"./index-Go5pwCUJ.js";const b=document.getElementById("container"),t=new g,x=t.get(f),e=x.create();e.scene=new k(t);e.renderer=new w(t,b);e.camera=new v(t);t.init();e.camera.controls.setLookAt(10,10,10,0,0,0);e.scene.setup();e.scene.three.background=null;const C=new r(3,3,3),$=new m({color:"#6528D7"}),a=new d(C,$);a.position.set(0,1.5,0);e.scene.three.add(a);e.meshes.add(a);const P=t.get(y);P.get(e);const o=t.get(M);o.enabled=!0;b.ondblclick=()=>{o.enabled&&o.create(e)};window.onkeydown=n=>{(n.code==="Delete"||n.code==="Backspace")&&o.enabled&&o.delete(e)};const l=new u;l.showPanel(2);document.body.append(l.dom);l.dom.style.left="0px";l.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>l.begin());e.renderer.onAfterUpdate.add(()=>l.end());h.init();const i=s.create(()=>c`
+import{B as r,M as m,a as d,C as p}from"./web-ifc-api-Dxv4iFj4.js";import{S as u}from"./stats.min-DYv0AsOH.js";import{T as h,z as s,m as c}from"./index-DtbylpTq.js";import{C as g,T as f,e as k,m as w,U as y,b as v,S as M}from"./index-2dtfnFEV.js";const b=document.getElementById("container"),o=new g,x=o.get(f),e=x.create();e.scene=new k(o);e.renderer=new w(o,b);e.camera=new y(o);o.init();e.camera.controls.setLookAt(10,10,10,0,0,0);e.scene.setup();e.scene.three.background=null;const C=new r(3,3,3),$=new m({color:"#6528D7"}),a=new d(C,$);a.position.set(0,1.5,0);e.scene.three.add(a);e.meshes.add(a);const P=o.get(v);P.get(e);const t=o.get(M);t.enabled=!0;b.ondblclick=()=>{t.enabled&&t.create(e)};window.onkeydown=n=>{(n.code==="Delete"||n.code==="Backspace")&&t.enabled&&t.delete(e)};const l=new u;l.showPanel(2);document.body.append(l.dom);l.dom.style.left="0px";l.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>l.begin());e.renderer.onAfterUpdate.add(()=>l.end());h.init();const i=s.create(()=>c`
     <bim-panel label="Clipper Tutorial" class="options-menu">
           <bim-panel-section collapsed label="Commands">
       
@@ -10,31 +10,31 @@ import{B as r,M as m,a as d,C as p}from"./web-ifc-api-Dxv4iFj4.js";import{S as u
       <bim-panel-section collapsed label="Others"">
           
         <bim-checkbox label="Clipper enabled" checked 
-          @change="${({target:n})=>{o.config.enabled=n.value}}">
+          @change="${({target:n})=>{t.config.enabled=n.value}}">
         </bim-checkbox>
         
         <bim-checkbox label="Clipper visible" checked 
-          @change="${({target:n})=>{o.config.visible=n.value}}">
+          @change="${({target:n})=>{t.config.visible=n.value}}">
         </bim-checkbox>
       
         <bim-color-input 
           label="Planes Color" color="#202932" 
-          @input="${({target:n})=>{o.config.color=new p(n.color)}}">
+          @input="${({target:n})=>{t.config.color=new p(n.color)}}">
         </bim-color-input>
         
         <bim-number-input 
           slider step="0.01" label="Planes opacity" value="0.2" min="0.1" max="1"
-          @change="${({target:n})=>{o.config.opacity=n.value}}">
+          @change="${({target:n})=>{t.config.opacity=n.value}}">
         </bim-number-input>
         
         <bim-number-input 
           slider step="0.1" label="Planes size" value="5" min="2" max="10"
-          @change="${({target:n})=>{o.config.size=n.value}}">
+          @change="${({target:n})=>{t.config.size=n.value}}">
         </bim-number-input>
         
         <bim-button 
           label="Delete all" 
-          @click="${()=>{o.deleteAll()}}">  
+          @click="${()=>{t.deleteAll()}}">  
         </bim-button>        
         
         <bim-button 
