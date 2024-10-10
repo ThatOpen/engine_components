@@ -117,7 +117,7 @@ export class BCFTopicsConfigManager extends Configurator<
   protected _config: BCFTopicsConfigType = {
     version: {
       type: "Select" as const,
-      options: new Set<string>(),
+      options: new Set<string>(["2.1", "3"]),
       multiple: false,
       value: "",
     },
@@ -168,7 +168,7 @@ export class BCFTopicsConfigManager extends Configurator<
     fallbackVersionOnImport: {
       type: "Select" as const,
       multiple: false,
-      options: new Set<string>(),
+      options: new Set<string>(["2.1", "3"]),
       value: "",
     },
     ignoreIncompleteTopicsOnImport: {
