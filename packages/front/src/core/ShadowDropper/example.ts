@@ -57,8 +57,8 @@ world.camera.controls.setLookAt(5, 5, 5, 0, 0, 0);
 container.appendChild(world.renderer.three2D.domElement);
 
 const grids = components.get(OBC.Grids);
-grids.config.color.setHex(0xdddddd);
-grids.create(world);
+const grid = grids.create(world);
+grid.config.color.setHex(0xdddddd);
 
 /* MD
   ### 🎲 Creating a Cube Mesh

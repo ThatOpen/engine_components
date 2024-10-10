@@ -57,8 +57,8 @@ world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
 world.scene.setup();
 
 const grids = components.get(OBC.Grids);
-grids.config.color.set(0x666666);
 const grid = grids.create(world);
+grid.config.color.set(0x666666);
 
 /* MD
 
