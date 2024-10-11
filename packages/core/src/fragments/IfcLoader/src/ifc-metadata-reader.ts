@@ -40,7 +40,7 @@ export class IfcMetadataReader {
       webIfc.GetHeaderLine(0, WEBIFC.FILE_DESCRIPTION) || {};
     if (!dataArguments) return data;
     const [description, implementationLevel] = dataArguments;
-    if (description[0]?.value) {
+    if (Array.isArray(description) && description[0]?.value) {
       const viewDefinition = description[0].value.match(/\[([^\]]+)\]/);
       if (viewDefinition && viewDefinition[1]) {
         data.viewDefinition = viewDefinition[1];
