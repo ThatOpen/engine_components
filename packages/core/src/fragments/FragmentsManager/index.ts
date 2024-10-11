@@ -100,6 +100,10 @@ export class FragmentsManager extends Component implements Disposable {
     }
     group.dispose(true);
     this.groups.delete(group.uuid);
+    if (this.groups.size === 0) {
+      this.baseCoordinationModel = "";
+      this.baseCoordinationMatrix = new THREE.Matrix4();
+    }
     this.onFragmentsDisposed.trigger({
       groupID,
       fragmentIDs,
@@ -209,6 +213,52 @@ export class FragmentsManager extends Component implements Disposable {
   }
 
   /**
+   * Converts a collection of IFC GUIDs to a fragmentIdMap.
+   *
+   * @param guids - An iterable collection of global IDs to be converted to a fragment ID map.
+   *
+   * @returns A fragment ID map, where the keys are fragment IDs and the values are the corresponding express IDs.
+   */
+  guidToFragmentIdMap(guids: Iterable<string>) {
+    const modelIdMap: { [modelID: string]: Set<number> } = {};
+    for (const [id, model] of this.groups) {
+      if (!(id in modelIdMap)) modelIdMap[id] = new Set();
+      for (const globalId of guids) {
+        const expressID = model.globalToExpressIDs.get(globalId);
+        if (expressID) modelIdMap[id].add(expressID);
+      }
+    }
+    const fragmentIdMap = this.modelIdToFragmentIdMap(modelIdMap);
+    return fragmentIdMap;
+  }
+
+  /**
+   * Converts a fragment ID map to a collection of IFC GUIDs.
+   *
+   * @param fragmentIdMap - A fragment ID map to be converted to a collection of IFC GUIDs.
+   *
+   * @returns An array of IFC GUIDs.
+   */
+  fragmentIdMapToGuids(fragmentIdMap: FRAGS.FragmentIdMap) {
+    const guids: string[] = [];
+    const modelIdMap = this.getModelIdMap(fragmentIdMap);
+    for (const modelID in modelIdMap) {
+      const model = this.groups.get(modelID);
+      if (!model) continue;
+      const expressIDs = modelIdMap[modelID];
+      for (const expressID of expressIDs) {
+        for (const [guid, id] of model.globalToExpressIDs.entries()) {
+          if (id === expressID) {
+            guids.push(guid);
+            break;
+          }
+        }
+      }
+    }
+    return guids;
+  }
+
+  /**
    * Applies coordinate transformation to the provided models.
    * If no models are provided, all groups are used.
    * The first model in the list becomes the base model for coordinate transformation.
@@ -260,9 +310,11 @@ export class FragmentsManager extends Component implements Disposable {
    */
   applyBaseCoordinateSystem(
     object: THREE.Object3D | THREE.Vector3,
-    originalCoordinateSystem: THREE.Matrix4,
+    originalCoordinateSystem?: THREE.Matrix4,
   ) {
-    object.applyMatrix4(originalCoordinateSystem.clone().invert());
+    if (originalCoordinateSystem) {
+      object.applyMatrix4(originalCoordinateSystem.clone().invert());
+    }
     object.applyMatrix4(this.baseCoordinationMatrix);
   }
 

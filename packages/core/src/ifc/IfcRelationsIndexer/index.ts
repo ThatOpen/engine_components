@@ -1,6 +1,13 @@
 import * as WEBIFC from "web-ifc";
 import { FragmentsGroup } from "@thatopen/fragments";
-import { Disposable, Event, Component, Components } from "../../core";
+import {
+  Disposable,
+  Event,
+  Component,
+  Components,
+  DataMap,
+  DataSet,
+} from "../../core";
 import { FragmentsManager } from "../../fragments/FragmentsManager";
 import {
   RelationsMap,
@@ -8,12 +15,14 @@ import {
   InverseAttributes,
   InverseAttribute,
   IfcRelations,
-} from "./src/types";
+  IfcRelation,
+} from "./src";
 import { relToAttributesMap } from "./src/relToAttributesMap";
+import { IfcPropertiesManager } from "../IfcPropertiesManager";
 
 // TODO: Refactor to combine logic from process and processFromWebIfc
 
-export type { InverseAttribute, RelationsMap } from "./src/types";
+// export type { InverseAttribute, RelationsMap } from "./src/types";
 
 /**
  * Indexer component for IFC entities, facilitating the indexing and retrieval of IFC entity relationships. It is designed to process models properties by indexing their IFC entities' relations based on predefined inverse attributes, and provides methods to query these relations. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/IfcRelationsIndexer). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/IfcRelationsIndexer).
@@ -76,6 +85,12 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     "ConnectedTo",
     "ConnectedFrom",
     "ReferencedBy",
+    "Declares",
+    "HasContext",
+    "Controls",
+    "IsNestedBy",
+    "Nests",
+    "DocumentRefForObjects",
   ];
 
   private _ifcRels: IfcRelations = [
@@ -90,6 +105,10 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     WEBIFC.IFCRELFLOWCONTROLELEMENTS,
     WEBIFC.IFCRELCONNECTSELEMENTS,
     WEBIFC.IFCRELASSIGNSTOPRODUCT,
+    WEBIFC.IFCRELDECLARES,
+    WEBIFC.IFCRELASSIGNSTOCONTROL,
+    WEBIFC.IFCRELNESTS,
+    WEBIFC.IFCRELASSOCIATESDOCUMENT,
   ];
 
   constructor(components: Components) {
@@ -123,27 +142,40 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     const relatedIDs = relAttrs[relatedKey].map((el: any) => el.value);
 
     // forRelating
-    const currentMap =
-      relationsMap.get(relatingID) ?? new Map<number, number[]>();
     const index = this.getAttributeIndex(relating);
     if (index !== null) {
-      currentMap.set(index, relatedIDs);
-      relationsMap.set(relatingID, currentMap);
+      let currentMap = relationsMap.get(relatingID);
+      if (!currentMap) {
+        currentMap = new Map();
+        relationsMap.set(relatingID, currentMap);
+      }
+      let indexMap = currentMap.get(index);
+      if (!indexMap) {
+        indexMap = [];
+        currentMap.set(index, indexMap);
+      }
+      indexMap.push(...relatedIDs);
     }
 
     // forRelated
     for (const id of relatedIDs) {
-      const currentMap = relationsMap.get(id) ?? new Map<number, number[]>();
       const index = this.getAttributeIndex(related);
-      if (!index) continue;
-      const relations = currentMap.get(index) ?? [];
+      if (index === null) continue;
+      let currentMap = relationsMap.get(id);
+      if (!currentMap) {
+        currentMap = new Map();
+        relationsMap.set(id, currentMap);
+      }
+      let relations = currentMap.get(index);
+      if (!relations) {
+        relations = [];
+        currentMap.set(index, relations);
+      }
       relations.push(relatingID);
-      currentMap.set(index, relations);
-      relationsMap.set(id, currentMap);
     }
   }
 
-  private getAttributeIndex(inverseAttribute: InverseAttribute) {
+  getAttributeIndex(inverseAttribute: InverseAttribute) {
     const index = this._inverseAttributes.indexOf(inverseAttribute);
     if (index === -1) return null;
     return index;
@@ -255,21 +287,22 @@ export class IfcRelationsIndexer extends Component implements Disposable {
    * This method searches the indexed relation maps for the specified model and entity,
    * returning the IDs of related entities if a match is found.
    *
-   * @param model The `FragmentsGroup` model containing the entity.
+   * @param model The `FragmentsGroup` model containing the entity, or its UUID.
    * @param expressID The unique identifier of the entity within the model.
    * @param relationName The IFC schema inverse attribute of the relation to search for (e.g., "IsDefinedBy", "ContainsElements").
    * @returns An array of express IDs representing the related entities, or `null` if no relations are found
    * or the specified relation name is not indexed.
    */
   getEntityRelations(
-    model: FragmentsGroup,
+    model: FragmentsGroup | string,
     expressID: number,
     relationName: InverseAttribute,
   ) {
-    const indexMap = this.relationMaps[model.uuid];
+    const id = model instanceof FragmentsGroup ? model.uuid : model;
+    const indexMap = this.relationMaps[id];
     if (!indexMap) {
       throw new Error(
-        `IfcRelationsIndexer: model ${model.uuid} has no relations indexed.`,
+        `IfcRelationsIndexer: model ${id} has no relations indexed.`,
       );
     }
     const entityRelations = indexMap.get(expressID);
@@ -387,12 +420,45 @@ export class IfcRelationsIndexer extends Component implements Disposable {
   }
 
   /**
+   * Retrieves the entities within a model that have a specific relation with a given entity.
+   *
+   * @param model - The BIM model to search for related entities.
+   * @param inv - The IFC schema inverse attribute of the relation to search for (e.g., "IsDefinedBy", "ContainsElements").
+   * @param expressID - The expressID of the entity within the model.
+   *
+   * @returns A `Set` with the expressIDs of the entities that have the specified relation with the given entity.
+   *
+   * @throws An error if the model relations are not indexed or if the inverse attribute name is invalid.
+   */
+  getEntitiesWithRelation(
+    model: FragmentsGroup,
+    inv: InverseAttribute,
+    expressID: number,
+  ) {
+    const relations = this.relationMaps[model.uuid];
+    if (!relations)
+      throw new Error(
+        "IfcRelationsIndexer: the model relations are not indexed!",
+      );
+    const set: Set<number> = new Set();
+    for (const [id, map] of relations) {
+      const index = this.getAttributeIndex(inv);
+      if (index === null)
+        throw new Error("IfcRelationsIndexer: invalid inverse attribute name");
+      const rels = map.get(index);
+      if (rels && rels.includes(expressID)) set.add(id);
+    }
+    return set;
+  }
+
+  /**
    * Adds relations between an entity and other entities in a BIM model.
    *
    * @param model - The BIM model to which the relations will be added.
    * @param expressID - The expressID of the entity within the model.
    * @param relationName - The IFC schema inverse attribute of the relation to add (e.g., "IsDefinedBy", "ContainsElements").
    * @param relIDs - The expressIDs of the related entities within the model.
+   * @deprecated Use addEntitiesRelation instead. This will be removed in future versions.
    *
    * @throws An error if the relation name is not a valid relation name.
    */
@@ -418,6 +484,174 @@ export class IfcRelationsIndexer extends Component implements Disposable {
       entityRelations?.set(attributeIndex, relIDs);
     } else {
       existingRelations.push(...relIDs);
+    }
+  }
+
+  // removeEntitiesRelation(
+  //   model: FragmentsGroup,
+  //   relatingID: number,
+  //   relationName: InverseAttribute,
+  //   ...relatedIDs: number[]
+  // ) {}
+
+  /**
+   * Converts the relations made into actual IFC data.
+   *
+   * @remarks This function iterates through the changes made to the relations and applies them to the corresponding BIM model.
+   * It only make sense to use if the relations need to be write in the IFC file.
+   *
+   * @returns A promise that resolves when all the relation changes have been applied.
+   */
+  async applyRelationChanges() {
+    const fragments = this.components.get(FragmentsManager);
+    const propsManager = this.components.get(IfcPropertiesManager);
+    for (const modelID in this._changeMap) {
+      const model = fragments.groups.get(modelID);
+      if (!model) continue;
+      const relations = this._changeMap[modelID];
+      for (const [relType, data] of relations) {
+        for (const [relatingID, relationInfo] of data) {
+          const { related, relID } = relationInfo;
+          if (relID) {
+            const rel = await model.getProperties(relID);
+            if (!rel) continue;
+            const keys = Object.keys(rel);
+            const relatedKey = keys.find((key) => key.startsWith("Related"));
+            const relatingKey = keys.find((key) => key.startsWith("Relating"));
+            if (!(relatedKey && relatingKey)) continue;
+            rel[relatedKey] = [...related].map((id) => new WEBIFC.Handle(id));
+            rel[relatingKey] = new WEBIFC.Handle(relatingID);
+            await propsManager.setData(model, rel);
+          } else {
+            const rel = await propsManager.createIfcRel(
+              model,
+              relType,
+              relatingID,
+              [...related],
+            );
+            if (!rel) continue;
+            relationInfo.relID = rel.expressID;
+          }
+        }
+      }
+    }
+  }
+
+  // Use to create the corresponding IfcRelationship
+  private readonly _changeMap: {
+    [modelID: string]: DataMap<
+      IfcRelation,
+      DataMap<number, { related: DataSet<number>; relID?: number }>
+    >;
+  } = {};
+
+  /**
+   * An event that is triggered when entities are related in a BIM model.
+   * The event provides information about the type of relation, the inverse attribute,
+   * the IDs of the entities related, and the IDs of the entities that are being related.
+   */
+  readonly onEntitiesRelated = new Event<{
+    /** The type of the IFC relation. */
+    relType: IfcRelation;
+    /** The inverse attribute of the relation. */
+    invAttribute: InverseAttribute;
+    /** The IDs of the entities that are relating. */
+    relatingIDs: number[];
+    /** The IDs of the entities that are being related. */
+    relatedIDs: number[];
+  }>();
+
+  addEntitiesRelation(
+    model: FragmentsGroup,
+    relatingID: number,
+    rel: { type: IfcRelation; inv: InverseAttribute },
+    ...relatedIDs: number[]
+  ) {
+    const { type, inv } = rel;
+    const relationsMap = this.relationMaps[model.uuid];
+    if (!relationsMap) return;
+
+    if (!this._ifcRels.includes(type)) return;
+
+    const relInvAttrs = relToAttributesMap.get(type);
+    if (!relInvAttrs) return;
+
+    const { forRelated: related, forRelating: relating } = relInvAttrs;
+    if (!(related === inv || relating === inv)) return;
+
+    let modelChangeMap = this._changeMap[model.uuid];
+    if (!modelChangeMap) {
+      modelChangeMap = new DataMap();
+      this._changeMap[model.uuid] = modelChangeMap;
+    }
+
+    const relatingExpressID = relating === inv ? [relatingID] : relatedIDs;
+    const relatedExpressID = related === inv ? [relatingID] : relatedIDs;
+
+    let typeChangeMap = modelChangeMap.get(type);
+    if (!typeChangeMap) {
+      typeChangeMap = new DataMap();
+      typeChangeMap.onItemSet.add(() =>
+        this.onEntitiesRelated.trigger({
+          invAttribute: inv,
+          relType: type,
+          relatingIDs: relatingExpressID,
+          relatedIDs: relatedExpressID,
+        }),
+      );
+      typeChangeMap.onItemUpdated.add(() =>
+        this.onEntitiesRelated.trigger({
+          invAttribute: inv,
+          relType: type,
+          relatingIDs: relatingExpressID,
+          relatedIDs: relatedExpressID,
+        }),
+      );
+      modelChangeMap.set(type, typeChangeMap);
+    }
+
+    for (const relating of relatingExpressID) {
+      let relatingData = typeChangeMap.get(relating);
+      if (!relatingData) {
+        relatingData = { related: new DataSet() };
+        typeChangeMap.set(relating, relatingData);
+      }
+      relatingData.related.add(...relatedExpressID);
+    }
+
+    // forRelating
+    for (const id of relatingExpressID) {
+      let currentMap = relationsMap.get(id);
+      if (!currentMap) {
+        currentMap = new Map();
+        relationsMap.set(id, currentMap);
+      }
+      const index = this.getAttributeIndex(relating);
+      if (index !== null) {
+        let indexMap = currentMap.get(index);
+        if (!indexMap) {
+          indexMap = [];
+          currentMap.set(index, indexMap);
+        }
+        indexMap.push(...relatedExpressID);
+      }
+    }
+
+    // forRelated
+    for (const id of relatedExpressID) {
+      let currentMap = relationsMap.get(id);
+      if (!currentMap) {
+        currentMap = new Map();
+        relationsMap.set(id, currentMap);
+      }
+      const index = this.getAttributeIndex(related);
+      if (index === null) continue;
+      let relations = currentMap.get(index);
+      if (!relations) {
+        relations = [];
+        currentMap.set(index, relations);
+      }
+      relations.push(...relatingExpressID);
     }
   }
 
@@ -467,3 +701,5 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     return found;
   }
 }
+
+export * from "./src";

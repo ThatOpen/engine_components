@@ -71,7 +71,6 @@ world.scene.three.background = null;
 
 const loader = components.get(OBCF.IfcStreamer);
 loader.world = world;
-loader.dbCleaner.enabled = true;
 
 /* MD
 Now, we need to set the base URL where the streamer needs to look for the tiles. In our case, we'll use the tiles we have prepared in our repository, but this should also work with your own backend.

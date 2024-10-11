@@ -161,6 +161,7 @@ export class Postproduction {
    * It releases the memory occupied by the render target, depth texture, custom effects pass, gamma pass, and N8AO pass.
    */
   dispose() {
+    this.composer.dispose();
     this._renderTarget.dispose();
     this._depthTexture?.dispose();
     this._customEffects?.dispose();

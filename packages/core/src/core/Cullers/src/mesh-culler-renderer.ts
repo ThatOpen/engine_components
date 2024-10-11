@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { CullerRenderer, CullerRendererSettings } from "./culler-renderer";
+import { CullerRenderer } from "./culler-renderer";
 import { Components } from "../../Components";
 import { Disposer } from "../../Disposer";
 import { Event, World, Disposable } from "../../Types";
@@ -19,48 +19,38 @@ export class MeshCullerRenderer extends CullerRenderer implements Disposable {
   }> = new Event();
 
   /**
-   * Pixels in screen a geometry must occupy to be considered "seen".
-   * Default value is 100.
-   */
-  threshold = 100;
-
-  /**
    * Map of color code to THREE.InstancedMesh.
    * Used to keep track of color-coded meshes.
    */
   colorMeshes = new Map<string, THREE.InstancedMesh>();
 
   /**
-   * Flag to indicate if the renderer is currently processing.
-   * Used to prevent concurrent processing.
+   * @deprecated use config.threshold instead.
    */
-  isProcessing = false;
+  get threshold() {
+    return this.config.threshold;
+  }
+
+  /**
+   * @deprecated use config.threshold instead.
+   */
+  set threshold(value: number) {
+    this.config.threshold = value;
+  }
 
   private _colorCodeMeshMap = new Map<string, THREE.Mesh>();
   private _meshIDColorCodeMap = new Map<string, string>();
   private _currentVisibleMeshes = new Set<THREE.Mesh>();
   private _recentlyHiddenMeshes = new Set<THREE.Mesh>();
-  private _intervalID: number | null = null;
 
   private readonly _transparentMat = new THREE.MeshBasicMaterial({
     transparent: true,
     opacity: 0,
   });
 
-  constructor(
-    components: Components,
-    world: World,
-    settings?: CullerRendererSettings,
-  ) {
-    super(components, world, settings);
+  constructor(components: Components, world: World) {
+    super(components, world);
     this.worker.addEventListener("message", this.handleWorkerMessage);
-    if (this.autoUpdate) {
-      window.setInterval(async () => {
-        if (!this.isProcessing) {
-          await this.updateVisibility();
-        }
-      }, this.updateInterval);
-    }
 
     this.onViewUpdated.add(({ seen, unseen }) => {
       for (const mesh of seen) {
@@ -75,10 +65,6 @@ export class MeshCullerRenderer extends CullerRenderer implements Disposable {
   /** {@link Disposable.dispose} */
   dispose() {
     super.dispose();
-    if (this._intervalID !== null) {
-      window.clearInterval(this._intervalID);
-      this._intervalID = null;
-    }
     this._currentVisibleMeshes.clear();
     this._recentlyHiddenMeshes.clear();
 
@@ -98,17 +84,16 @@ export class MeshCullerRenderer extends CullerRenderer implements Disposable {
   /**
    * Adds a mesh to the culler. When the mesh is not visibile anymore, it will be removed from the scene. When it's visible again, it will be added to the scene.
    * @param mesh - The mesh to add. It can be a regular THREE.Mesh or an instance of THREE.InstancedMesh.
-   * @returns {void}
    */
   add(mesh: THREE.Mesh | THREE.InstancedMesh) {
     if (!this.enabled) return;
 
-    if (this.isProcessing) {
+    if (this.preventUpdate) {
       console.log("Culler processing not finished yet.");
       return;
     }
 
-    this.isProcessing = true;
+    this.preventUpdate = true;
 
     const isInstanced = mesh instanceof THREE.InstancedMesh;
 
@@ -134,7 +119,7 @@ export class MeshCullerRenderer extends CullerRenderer implements Disposable {
       // If we find that all the materials are transparent then we must remove this from analysis
       if (transparentOnly) {
         colorMaterial.dispose();
-        this.isProcessing = false;
+        this.preventUpdate = false;
         return;
       }
 
@@ -143,7 +128,7 @@ export class MeshCullerRenderer extends CullerRenderer implements Disposable {
       // This material is transparent, so we must remove it from analysis
       // TODO: Make transparent meshes blink like in the memory culler?
       colorMaterial.dispose();
-      this.isProcessing = false;
+      this.preventUpdate = false;
       return;
     } else {
       newMaterial = colorMaterial;
@@ -172,22 +157,21 @@ export class MeshCullerRenderer extends CullerRenderer implements Disposable {
 
     this.increaseColor();
 
-    this.isProcessing = false;
+    this.preventUpdate = false;
   }
 
   /**
    * Removes a mesh from the culler, so its visibility is not controlled by the culler anymore.
    * When the mesh is removed, it will be hidden from the scene and its color-coded mesh will be destroyed.
    * @param mesh - The mesh to remove. It can be a regular THREE.Mesh or an instance of THREE.InstancedMesh.
-   * @returns {void}
    */
   remove(mesh: THREE.Mesh | THREE.InstancedMesh) {
-    if (this.isProcessing) {
+    if (this.preventUpdate) {
       console.log("Culler processing not finished yet.");
       return;
     }
 
-    this.isProcessing = true;
+    this.preventUpdate = true;
 
     const disposer = this.components.get(Disposer);
 
@@ -198,7 +182,7 @@ export class MeshCullerRenderer extends CullerRenderer implements Disposable {
     const code = this._meshIDColorCodeMap.get(mesh.uuid);
 
     if (!colorMesh || !code) {
-      this.isProcessing = false;
+      this.preventUpdate = false;
       return;
     }
 
@@ -212,7 +196,7 @@ export class MeshCullerRenderer extends CullerRenderer implements Disposable {
     this._recentlyHiddenMeshes.delete(mesh);
     this._currentVisibleMeshes.delete(mesh);
 
-    this.isProcessing = false;
+    this.preventUpdate = false;
   }
 
   /**
@@ -233,7 +217,7 @@ export class MeshCullerRenderer extends CullerRenderer implements Disposable {
   }
 
   private handleWorkerMessage = async (event: MessageEvent) => {
-    if (this.isProcessing) {
+    if (this.preventUpdate) {
       return;
     }
 
@@ -243,7 +227,7 @@ export class MeshCullerRenderer extends CullerRenderer implements Disposable {
     this._currentVisibleMeshes.clear();
 
     for (const [code, pixels] of colors) {
-      if (pixels < this.threshold) {
+      if (pixels < this.config.threshold) {
         continue;
       }
       const mesh = this._colorCodeMeshMap.get(code);

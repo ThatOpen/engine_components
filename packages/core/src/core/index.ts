@@ -7,5 +7,7 @@ export * from "./Worlds";
 export * from "./Grids";
 export * from "./Clipper";
 export * from "./Cullers";
+export * from "./Viewpoints";
 export * from "./MiniMap";
 export * from "./OrthoPerspectiveCamera";
+export * from "./ConfigManager";

@@ -1,4 +1,4 @@
-import{C as c}from"./web-ifc-api-56EJvEs4.js";import{S as b}from"./stats.min-BpIepu9J.js";import{m as p,t as m,a as u}from"./index-TmOv0r_5.js";import{p as d,C as f,o as h,W as g,u as v,h as x}from"./index-BcIWfMQD.js";import{x as $}from"./index-mpk8FhA9.js";const k=document.getElementById("container"),t=new d,E=t.get(f),a=E.create();a.scene=new h(t);a.renderer=new $(t,k);a.camera=new g(t);a.scene.three.background=null;t.init();a.camera.controls.setLookAt(12,6,8,0,0,-10);a.scene.setup();const r=t.get(v);r.config.color.set(6710886);const w=r.create(a);a.scene.three.background=null;const y=new x(t),S=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),C=await S.arrayBuffer(),A=new Uint8Array(C),G=y.load(A);a.scene.three.add(G);const{postproduction:n}=a.renderer;n.enabled=!0;n.customEffects.excludedMeshes.push(w.three);const s=n.n8ao.configuration,o=new b;o.showPanel(2);document.body.append(o.dom);o.dom.style.left="0px";o.dom.style.zIndex="unset";a.renderer.onBeforeUpdate.add(()=>o.begin());a.renderer.onAfterUpdate.add(()=>o.end());p.init();const l=m.create(()=>u`
+import{C as c}from"./web-ifc-api-Dxv4iFj4.js";import{S as b}from"./stats.min-DYv0AsOH.js";import{T as p,z as m,m as u}from"./index-DtbylpTq.js";import{C as d,T as f,e as h,U as g,O as v,a as x}from"./index-BRzxhLMM.js";import{L as $}from"./index-CnRcHl0y.js";const k=document.getElementById("container"),t=new d,E=t.get(f),a=E.create();a.scene=new h(t);a.renderer=new $(t,k);a.camera=new g(t);a.scene.three.background=null;t.init();a.camera.controls.setLookAt(12,6,8,0,0,-10);a.scene.setup();const w=t.get(v),r=w.create(a);r.config.color.set(6710886);a.scene.three.background=null;const y=new x(t),S=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),C=await S.arrayBuffer(),A=new Uint8Array(C),G=y.load(A);a.scene.three.add(G);const{postproduction:n}=a.renderer;n.enabled=!0;n.customEffects.excludedMeshes.push(r.three);const s=n.n8ao.configuration,o=new b;o.showPanel(2);document.body.append(o.dom);o.dom.style.left="0px";o.dom.style.zIndex="unset";a.renderer.onBeforeUpdate.add(()=>o.begin());a.renderer.onAfterUpdate.add(()=>o.end());p.init();const l=m.create(()=>u`
   <bim-panel active label="Postproduction Tutorial" class="options-menu">
       <bim-panel-section collapsed label="Gamma">
         <bim-checkbox checked label="Gamma Correction"
@@ -109,8 +109,8 @@ import{C as c}from"./web-ifc-api-56EJvEs4.js";import{S as b}from"./stats.min-BpI
       </bim-panel-section>
       
     </bim-panel>
-    `);document.body.append(l);const R=m.create(()=>u`
+    `);document.body.append(l);const O=m.create(()=>u`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{l.classList.contains("options-menu-visible")?l.classList.remove("options-menu-visible"):l.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(R);
+    `);document.body.append(O);

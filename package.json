@@ -30,6 +30,7 @@
     "./packages/*"
   ],
   "devDependencies": {
+    "@types/node": "latest",
     "@typescript-eslint/eslint-plugin": "7.2.0",
     "@typescript-eslint/parser": "7.2.0",
     "eslint": "8.57.0",
@@ -43,5 +44,5 @@
     "vite": "5.1.6",
     "vite-plugin-dts": "3.7.3"
   },
-  "version": "2.1.0"
+  "version": "2.3.0"
 }

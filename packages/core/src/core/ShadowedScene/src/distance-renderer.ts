@@ -181,6 +181,7 @@ void main() {
     this.enabled = false;
     this.onDistanceComputed.reset();
     this.worker.terminate();
+    this.renderer.forceContextLoss();
     this.renderer.dispose();
     this.tempRT.dispose();
     this.resultRT.dispose();
@@ -239,16 +240,24 @@ void main() {
     this.renderer.render(this.scene, this.camera);
 
     const context = this.renderer.getContext() as WebGL2RenderingContext;
-    await readPixelsAsync(
-      context,
-      0,
-      0,
-      this._width,
-      this._height,
-      context.RGBA,
-      context.UNSIGNED_BYTE,
-      this._buffer,
-    );
+
+    try {
+      await readPixelsAsync(
+        context,
+        0,
+        0,
+        this._width,
+        this._height,
+        context.RGBA,
+        context.UNSIGNED_BYTE,
+        this._buffer,
+      );
+    } catch (e) {
+      // Pixels couldn't be read, possibly because culler was disposed
+      this.renderer.setRenderTarget(null);
+      this._isWorkerBusy = false;
+      return;
+    }
 
     this.renderer.setRenderTarget(null);
 

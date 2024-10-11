@@ -1,12 +1,12 @@
 /* MD
-### 🗺️ Orientating your user in the scene
+### ⛱️ Lights and shadows
 ---
 
-In this tutorial you'll learn how to use the Minimap, which is a small 2D representation of the 3D world.
+In this tutorial you'll learn how to create cool and efficient cast shadows in your app.
 
-:::tip Do you mean a floorplan?
+:::tip Shadows?
 
-Not quite. The minimap is a simple 2D representation of the 3D world. It is useful to help your user understand where they are, and to have a simple top view of their surrounding. 
+Shadows can be computationally expensive, but we've got some tricks that make them fast, beautiful and easy to use!
 
 :::
 
@@ -23,7 +23,7 @@ import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 
 /* MD
-  ### 🌎 Setting up a simple scene
+  ### 🌎 Setting up a shadow scene
   ---
 
   We will start by creating a shadow scene with a camera and a renderer. If you don't know how to set up a scene, you can check the Worlds tutorial.
@@ -51,14 +51,6 @@ const grids = components.get(OBC.Grids);
 const grid = grids.create(world);
 
 world.camera.controls.setLookAt(1, 2, -2, -2, 0, -5);
-
-/* MD
-
-  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
-
-*/
-
-world.scene.three.background = null;
 
 /* MD
   ### 🏠 Loading a model
@@ -160,6 +152,14 @@ await world.scene.updateShadows();
 world.camera.controls.addEventListener("update", async () => {
   await world.scene.updateShadows();
 });
+
+/* MD
+
+  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
+
+*/
+
+world.scene.three.background = null;
 
 /* MD
   ### ⏱️ Measuring the performance (optional)

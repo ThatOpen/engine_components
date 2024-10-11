@@ -44,10 +44,7 @@ export interface HighlighterConfig {
 /**
  * This component allows highlighting and selecting fragments in a 3D scene. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Highlighter). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Highlighter).
  */
-export class Highlighter
-  extends OBC.Component
-  implements OBC.Disposable, OBC.Configurable<HighlighterConfig>
-{
+export class Highlighter extends OBC.Component implements OBC.Disposable {
   /**
    * A unique identifier for the component.
    * This UUID is used to register the component within the Components system.
@@ -115,6 +112,9 @@ export class Highlighter
 
   /** Threshhold on how much the mouse have to move until its considered movement */
   mouseMoveThreshold = 5
+
+  /** If defined, only the specified elements will be selected by the specified style. */
+  selectable: { [name: string]: FragmentIdMap } = {};
 
   // Highlights the clipping fills of the fragments, if any
   private _fills = new FillHighlighter();
@@ -349,12 +349,23 @@ export class Highlighter
       const excludeFrag = exclude[fragID];
 
       for (const id of ids) {
-        if (!excludeFrag || !excludeFrag.has(id)) {
-          if (!filtered[fragID]) {
-            filtered[fragID] = new Set();
-          }
-          filtered[fragID].add(id);
+        // Is filtered by the parameter
+        if (excludeFrag && excludeFrag.has(id)) {
+          continue;
         }
+
+        // Is filtered by the selectable property
+        if (this.selectable[name]) {
+          const map = this.selectable[name];
+          if (!map[fragID] || !map[fragID].has(id)) {
+            continue;
+          }
+        }
+
+        if (!filtered[fragID]) {
+          filtered[fragID] = new Set();
+        }
+        filtered[fragID].add(id);
       }
     }
 

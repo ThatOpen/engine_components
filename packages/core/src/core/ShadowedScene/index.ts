@@ -1,7 +1,11 @@
 import * as THREE from "three";
-import { SimpleScene, SimpleSceneConfig } from "../Worlds";
+import {
+  SimpleScene,
+  SimpleSceneConfig,
+  SimpleSceneConfigManager,
+} from "../Worlds";
 import { DistanceRenderer } from "./src";
-import { Disposable } from "../Types";
+import { Configurable, Disposable } from "../Types";
 
 /**
  * Configuration interface for the {@link ShadowedScene}. Defines properties for directional and ambient lights,
@@ -15,11 +19,20 @@ export interface ShadowedSceneConfig extends SimpleSceneConfig {
 }
 
 // TODO: Implement multiple cascade shadow maps (the main problem to solve is the shadow camera rotation)
+// A trick to do this is that the camera direction vector is one of the axis of the camera shadow frustum
+// when projected to the near frustum plane. So now we have 2 vectors (the vector of the light direction
+// and this vector), so the third vector is known (cross product) and the frustum direction can be built
+// as a matrix
 
 /**
- * A scene that supports efficient cast shadows.
+ * A scene that supports efficient cast shadows. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/ShadowedScene). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/ShadowedScene).
  */
-export class ShadowedScene extends SimpleScene implements Disposable {
+export class ShadowedScene
+  extends SimpleScene
+  implements
+    Disposable,
+    Configurable<SimpleSceneConfigManager, ShadowedSceneConfig>
+{
   private _distanceRenderer?: DistanceRenderer;
 
   /**
@@ -27,24 +40,9 @@ export class ShadowedScene extends SimpleScene implements Disposable {
    */
   autoBias = true;
 
-  /**
-   * Configuration interface for the {@link ShadowedScene}.
-   * Defines properties for directional and ambient lights, as well as shadows.
-   */
-  config: Required<ShadowedSceneConfig> = {
-    directionalLight: {
-      color: new THREE.Color("white"),
-      intensity: 1.5,
-      position: new THREE.Vector3(5, 10, 3),
-    },
-    ambientLight: {
-      color: new THREE.Color("white"),
-      intensity: 1,
-    },
-    shadows: {
-      cascade: 1,
-      resolution: 512,
-    },
+  protected _defaultShadowConfig = {
+    cascade: 1,
+    resolution: 512,
   };
 
   private _lightsWithShadow = new Map<number, string>();
@@ -108,15 +106,19 @@ export class ShadowedScene extends SimpleScene implements Disposable {
   setup(config?: Partial<ShadowedSceneConfig>) {
     super.setup(config);
 
-    this.config = { ...this.config, ...config };
+    const fullConfig = {
+      ...this._defaultConfig,
+      ...this._defaultShadowConfig,
+      ...config,
+    };
 
-    if (this.config.shadows.cascade <= 0) {
+    if (fullConfig.cascade <= 0) {
       throw new Error(
         "Config.shadows.cascade must be a natural number greater than 0!",
       );
     }
 
-    if (this.config.shadows.cascade > 1) {
+    if (fullConfig.cascade > 1) {
       throw new Error("Multiple shadows not supported yet!");
     }
 
@@ -145,13 +147,13 @@ export class ShadowedScene extends SimpleScene implements Disposable {
     this._lightsWithShadow.clear();
 
     // Create a light per shadow map
-    for (let i = 0; i < this.config.shadows.cascade; i++) {
+    for (let i = 0; i < fullConfig.cascade; i++) {
       const light = new THREE.DirectionalLight();
       light.intensity = this.config.directionalLight.intensity;
       light.color = this.config.directionalLight.color;
       light.position.copy(this.config.directionalLight.position);
-      light.shadow.mapSize.width = this.config.shadows.resolution;
-      light.shadow.mapSize.height = this.config.shadows.resolution;
+      light.shadow.mapSize.width = fullConfig.resolution;
+      light.shadow.mapSize.height = fullConfig.resolution;
       this.three.add(light, light.target);
       this.directionalLights.set(light.uuid, light);
       this._lightsWithShadow.set(i, light.uuid);

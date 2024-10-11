@@ -7,6 +7,7 @@ import {
   BaseScene,
   BaseCamera,
   BaseRenderer,
+  DataMap,
 } from "../Types";
 import { Components } from "../Components";
 import { SimpleWorld } from "./src";
@@ -33,22 +34,10 @@ export class Worlds extends Component implements Updateable, Disposable {
   readonly onDisposed = new Event();
 
   /**
-   * An event that is triggered when a new world is created.
-   * The event passes the newly created world as a parameter.
-   */
-  readonly onWorldCreated = new Event<World>();
-
-  /**
-   * An event that is triggered when a world is deleted.
-   * The event passes the UUID of the deleted world as a parameter.
-   */
-  readonly onWorldDeleted = new Event<string>();
-
-  /**
    * A collection of worlds managed by this component.
    * The key is the unique identifier (UUID) of the world, and the value is the World instance.
    */
-  list = new Map<string, World>();
+  list = new DataMap<string, World>();
 
   /** {@link Component.enabled} */
   enabled = true;
@@ -78,7 +67,6 @@ export class Worlds extends Component implements Updateable, Disposable {
       throw new Error("There is already a world with this name!");
     }
     this.list.set(id, world);
-    this.onWorldCreated.trigger(world);
     return world;
   }
 
@@ -88,26 +76,19 @@ export class Worlds extends Component implements Updateable, Disposable {
    * @param {World} world - The world to be deleted.
    *
    * @throws {Error} - Throws an error if the provided world is not found in the list.
-   *
-   * @returns {void}
    */
   delete(world: World) {
     if (!this.list.has(world.uuid)) {
       throw new Error("The provided world is not found in the list!");
     }
-
-    const uuid = world.uuid;
     this.list.delete(world.uuid);
     world.dispose();
-    this.onWorldDeleted.trigger(uuid);
   }
 
   /**
    * Disposes of the Worlds component and all its managed worlds.
    * This method sets the enabled flag to false, disposes of all worlds, clears the list,
    * and triggers the onDisposed event.
-   *
-   * @returns {void}
    */
   dispose() {
     this.enabled = false;

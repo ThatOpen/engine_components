@@ -2,11 +2,13 @@ import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import * as WEBIFC from "web-ifc";
 import * as OBC from "@thatopen/components";
-import { PlanView } from "./src";
+import { Section, Sections } from "../Sections";
 
-import { EdgesPlane } from "../../core/ClipEdges";
-
-export * from "./src";
+/** The data that describes a plan view. */
+export interface PlanView extends Section {
+  /** The offset of the clipping plane to the plan height. */
+  planOffset: number;
+}
 
 /**
  * Component to easily define and navigate 2D floor plans. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Plans). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Plans).
@@ -42,10 +44,7 @@ export class Plans extends OBC.Component implements OBC.Disposable {
   currentPlan: PlanView | null = null;
 
   /** The offset from the clipping planes to their respective floor plan elevation. */
-  defaultSectionOffset = 1.5;
-
-  /** The offset of the 2D camera to the floor plan elevation. */
-  defaultCameraOffset = 30;
+  offset = 1.5;
 
   /**
    * A list of all the floor plans created.
@@ -53,16 +52,45 @@ export class Plans extends OBC.Component implements OBC.Disposable {
    */
   list: PlanView[] = [];
 
+  private _cachedPlanCamera: {
+    position: THREE.Vector3;
+    target: THREE.Vector3;
+    zoom: number;
+    top: number;
+    bottom: number;
+    right: number;
+    left: number;
+  } | null = null;
+
   /**
    * A reference to the world in which the floor plans are displayed.
    * This is used to access the camera and other relevant components.
    */
-  world?: OBC.World;
+  get world() {
+    const sections = this.components.get(Sections);
+    return sections.world;
+  }
 
-  private _floorPlanViewCached = false;
-  private _previousCamera = new THREE.Vector3();
-  private _previousTarget = new THREE.Vector3();
-  private _previousProjection: OBC.CameraProjection = "Perspective";
+  /**
+   * A reference to the world in which the floor plans are displayed.
+   * This is used to access the camera and other relevant components.
+   */
+  set world(world: OBC.World | undefined) {
+    const sections = this.components.get(Sections);
+    sections.world = world;
+  }
+
+  /** The offset of the 2D camera to the floor plan elevation. */
+  get defaultCameraOffset() {
+    const sections = this.components.get(Sections);
+    return sections.offset;
+  }
+
+  /** The offset of the 2D camera to the floor plan elevation. */
+  set defaultCameraOffset(value: number) {
+    const sections = this.components.get(Sections);
+    sections.offset = value;
+  }
 
   constructor(components: OBC.Components) {
     super(components);
@@ -73,6 +101,10 @@ export class Plans extends OBC.Component implements OBC.Disposable {
   dispose() {
     this.onExited.reset();
     this.onNavigated.reset();
+    const sections = this.components.get(Sections);
+    for (const plan of this.list) {
+      sections.delete(plan.id);
+    }
     this.list = [];
     this.onDisposed.trigger();
     this.onDisposed.reset();
@@ -104,14 +136,13 @@ export class Plans extends OBC.Component implements OBC.Disposable {
 
       this.getAbsoluteFloorHeight(floor.ObjectPlacement, floorHeight);
 
-      const height = floorHeight.value * units + coordHeight;
+      const height = floorHeight.value * units + coordHeight + this.offset;
+
       this.create({
         name: floor.Name.value,
         id: floor.GlobalId.value,
         normal: new THREE.Vector3(0, -1, 0),
         point: new THREE.Vector3(0, height, 0),
-        ortho: true,
-        offset: this.defaultSectionOffset,
       });
     }
   }
@@ -120,23 +151,19 @@ export class Plans extends OBC.Component implements OBC.Disposable {
    * Creates a new floor plan based on the provided configuration.
    *
    * @param config - The configuration object for the new floor plan.
-   * @throws Will throw an error if the world is not set before creating the clipping planes.
-   * @throws Will throw a warning if a floor plan with the same id already exists.
    */
-  create(config: PlanView) {
-    if (!this.world) {
-      throw new Error(
-        "You must set a world before creating the clipping planes!",
-      );
-    }
-    const previousPlan = this.list.find((plan) => plan.id === config.id);
-    if (previousPlan) {
-      console.warn(`There's already a plan with the id: ${config.id}`);
-      return;
-    }
-    const plane = this.createClippingPlane(config);
-    const plan = { ...config, plane };
-    this.list.push(plan);
+  create(config: {
+    id: string;
+    name?: string;
+    point: THREE.Vector3;
+    normal: THREE.Vector3;
+    type?: string;
+  }) {
+    const sections = this.components.get(Sections);
+    config.type = config.type || this.planeType;
+    const section = sections.create(config);
+    const planView = { ...section, planOffset: this.offset };
+    this.list.push(planView);
   }
 
   /**
@@ -146,166 +173,78 @@ export class Plans extends OBC.Component implements OBC.Disposable {
    * @param animate - Whether to animate the camera movement. Default is false.
    */
   async goTo(id: string, animate = false) {
-    if (this.currentPlan?.id === id) {
-      return;
+    if (this.enabled) {
+      this.cachePlanCamera();
     }
-
-    this.onNavigated.trigger({ id });
-
-    this.storeCameraPosition();
-    await this.hidePreviousClippingPlane();
-    this.updateCurrentPlan(id);
-    await this.activateCurrentPlan();
-    if (!this.enabled) {
-      await this.moveCameraTo2DPlanPosition(animate);
-      this.enabled = true;
+    const sections = this.components.get(Sections);
+    await sections.goTo(id, animate);
+    await this.applyCachedPlanCamera();
+    const foundPlan = this.list.find((plan) => plan.id === id);
+    if (foundPlan) {
+      this.currentPlan = foundPlan;
     }
+    this.enabled = true;
   }
 
   /**
    * Exits the floor plan view and returns to the 3D view.
    *
    * @param animate - Whether to animate the camera movement. Default is false.
-   * @returns {Promise<void>}
    */
   async exitPlanView(animate = false) {
-    if (!this.enabled) return;
-    if (!this.world) return;
+    if (!this.enabled) {
+      return;
+    }
+
+    this.cachePlanCamera();
+    const sections = this.components.get(Sections);
+    await sections.exit(animate);
+    this.currentPlan = null;
     this.enabled = false;
     this.onExited.trigger();
-
-    this.cacheFloorplanView();
-
-    const camera = this.world.camera as OBC.OrthoPerspectiveCamera;
-    camera.set("Orbit");
-
-    await camera.projection.set(this._previousProjection);
-    if (this.currentPlan && this.currentPlan.plane) {
-      this.currentPlan.plane.enabled = false;
-      this.currentPlan.plane.edges.enabled = false;
-      this.currentPlan.plane.edges.visible = false;
-    }
-
-    this.currentPlan = null;
-    await camera.controls.setLookAt(
-      this._previousCamera.x,
-      this._previousCamera.y,
-      this._previousCamera.z,
-      this._previousTarget.x,
-      this._previousTarget.y,
-      this._previousTarget.z,
-      animate,
-    );
   }
 
-  private storeCameraPosition() {
-    if (this.enabled) {
-      this.cacheFloorplanView();
-    } else {
-      this.store3dCameraPosition();
-    }
+  private cachePlanCamera() {
+    // We cache the plan position separately because we want that when switching floorplans
+    // we maintain the camera position
+    const camera = this.world?.camera as OBC.OrthoPerspectiveCamera;
+    const target = new THREE.Vector3();
+    const position = new THREE.Vector3();
+    camera.controls.getTarget(target);
+    camera.controls.getPosition(position);
+    this._cachedPlanCamera = {
+      target,
+      position,
+      zoom: camera.threeOrtho.zoom,
+      top: camera.threeOrtho.top,
+      right: camera.threeOrtho.right,
+      bottom: camera.threeOrtho.bottom,
+      left: camera.threeOrtho.left,
+    };
   }
 
-  private createClippingPlane(config: PlanView) {
-    if (!this.world) {
-      throw new Error("World is needed to create clipping planes!");
+  private async applyCachedPlanCamera() {
+    if (!this._cachedPlanCamera) {
+      return;
     }
+    const camera = this.world?.camera as OBC.OrthoPerspectiveCamera;
+    const { position: p, target: t } = this._cachedPlanCamera;
 
-    const { normal, point } = config;
-    const clippingPoint = point.clone();
-    if (config.offset) {
-      clippingPoint.y += config.offset;
-    }
+    const currentPosition = new THREE.Vector3();
+    const currentTarget = new THREE.Vector3();
+    camera.controls.getPosition(currentPosition);
+    camera.controls.getTarget(currentTarget);
+    const cpy = currentPosition.y;
+    const cty = currentTarget.y;
 
-    const clipper = this.components.get(OBC.Clipper);
-    const previousType = clipper.Type;
-    clipper.Type = EdgesPlane;
+    await camera.controls.setLookAt(p.x, cpy, p.z, t.x, cty, t.z);
+    await camera.controls.zoomTo(this._cachedPlanCamera.zoom);
 
-    const plane = clipper.createFromNormalAndCoplanarPoint(
-      this.world,
-      normal,
-      clippingPoint,
-    ) as EdgesPlane;
-
-    plane.type = this.planeType;
-
-    plane.edges.update();
-
-    plane.visible = false;
-    plane.enabled = false;
-    plane.edges.enabled = false;
-    plane.edges.visible = false;
-
-    clipper.Type = previousType;
-
-    return plane;
-  }
-
-  private cacheFloorplanView() {
-    if (!this.world) {
-      throw new Error("World is needed to create clipping planes!");
-    }
-    this._floorPlanViewCached = true;
-    const camera = this.world.camera as OBC.OrthoPerspectiveCamera;
-    camera.controls.saveState();
-  }
-
-  private async moveCameraTo2DPlanPosition(animate: boolean) {
-    if (!this.world) {
-      throw new Error("World is needed to create clipping planes!");
-    }
-    const camera = this.world.camera as OBC.OrthoPerspectiveCamera;
-    if (this._floorPlanViewCached) {
-      await camera.controls.reset(animate);
-    } else {
-      await camera.controls.setLookAt(0, 100, 0, 0, 0, 0, animate);
-    }
-  }
-
-  private async activateCurrentPlan() {
-    if (!this.world) {
-      throw new Error("World is needed to create clipping planes!");
-    }
-    if (!this.currentPlan) throw new Error("Current plan is not defined.");
-    const camera = this.world.camera as OBC.OrthoPerspectiveCamera;
-    if (this.currentPlan.plane) {
-      this.currentPlan.plane.enabled = true;
-      this.currentPlan.plane.edges.fillNeedsUpdate = true;
-      this.currentPlan.plane.edges.visible = true;
-    }
-    camera.set("Plan");
-    const projection = this.currentPlan.ortho ? "Orthographic" : "Perspective";
-    await camera.projection.set(projection);
-  }
-
-  private store3dCameraPosition() {
-    if (!this.world) {
-      throw new Error("World is needed to create clipping planes!");
-    }
-    const camera = this.world.camera as OBC.OrthoPerspectiveCamera;
-    camera.three.getWorldPosition(this._previousCamera);
-    camera.controls.getTarget(this._previousTarget);
-    this._previousProjection = camera.projection.current;
-  }
-
-  private updateCurrentPlan(id: string) {
-    const foundPlan = this.list.find((plan) => plan.id === id);
-    if (!foundPlan) {
-      throw new Error("The specified plan is undefined!");
-    }
-    this.currentPlan = foundPlan;
-  }
-
-  private async hidePreviousClippingPlane() {
-    if (this.currentPlan) {
-      const plane = this.currentPlan.plane;
-      if (plane) {
-        plane.enabled = false;
-      }
-      if (this.currentPlan.plane instanceof EdgesPlane) {
-        this.currentPlan.plane.edges.visible = false;
-      }
-    }
+    camera.threeOrtho.top = this._cachedPlanCamera.top;
+    camera.threeOrtho.bottom = this._cachedPlanCamera.bottom;
+    camera.threeOrtho.left = this._cachedPlanCamera.left;
+    camera.threeOrtho.right = this._cachedPlanCamera.right;
+    camera.threeOrtho.updateProjectionMatrix();
   }
 
   private getAbsoluteFloorHeight(placement: any, height: { value: number }) {

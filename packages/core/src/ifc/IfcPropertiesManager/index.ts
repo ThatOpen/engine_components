@@ -4,7 +4,8 @@ import { Component, Disposable, Event, Components } from "../../core";
 import { IfcPropertiesUtils } from "../Utils";
 import { IfcLoader } from "../../fragments/IfcLoader";
 import { UUID } from "../../utils";
-import { IfcRelationsIndexer } from "../IfcRelationsIndexer";
+import { IfcRelation, IfcRelationsIndexer } from "../IfcRelationsIndexer";
+import { ifcRelAttrsPosition, ifcRelClassNames } from "./src";
 
 /**
  * Types for boolean properties in IFC schema.
@@ -165,7 +166,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
   }
 
   /**
-   * Method to set properties data in the model.
+   * Method to add or update entity attributes in the model.
    *
    * @param model - The FragmentsGroup model in which to set the properties.
    * @param dataToSave - An array of objects representing the properties to be saved.
@@ -178,10 +179,12 @@ export class IfcPropertiesManager extends Component implements Disposable {
    */
   async setData(model: FragmentsGroup, ...dataToSave: Record<string, any>[]) {
     for (const data of dataToSave) {
-      const expressID = data.expressID;
-      if (!expressID) continue;
-      await model.setProperties(expressID, data);
-      this.registerChange(model, expressID);
+      const { expressID } = data;
+      if (!expressID || expressID === -1) {
+        data.expressID = this.getNewExpressID(model);
+      }
+      await model.setProperties(data.expressID, data);
+      this.registerChange(model, data.expressID);
     }
   }
 
@@ -214,7 +217,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
       psetDescription,
       [],
     );
-    pset.expressID = this.increaseMaxID(model);
+    pset.expressID = this.getNewExpressID(model);
 
     // Create the Pset relation
     const relGlobalId = this.newGUID(model);
@@ -226,7 +229,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
       [],
       new WEBIFC.Handle(pset.expressID),
     );
-    rel.expressID = this.increaseMaxID(model);
+    rel.expressID = this.getNewExpressID(model);
 
     await this.setData(model, pset, rel);
 
@@ -355,29 +358,21 @@ export class IfcPropertiesManager extends Component implements Disposable {
     this.registerChange(model, psetID, propID);
   }
 
-  async addElementToPset(
+  /**
+   * @deprecated Use indexer.addEntitiesRelation instead. This will be removed in future releases.
+   */
+  addElementToPset(
     model: FragmentsGroup,
     psetID: number,
     ...expressIDs: number[]
   ) {
-    const relID = await IfcPropertiesUtils.getPsetRel(model, psetID);
-    if (!relID) return;
-    const rel = await model.getProperties(relID);
-    if (!rel) return;
-    for (const expressID of expressIDs) {
-      const elementHandle = new WEBIFC.Handle(expressID);
-      rel.RelatedObjects.push(elementHandle);
-      this.onElementToPset.trigger({
-        model,
-        psetID,
-        elementID: expressID,
-      });
-    }
-    this.registerChange(model, psetID);
     const indexer = this.components.get(IfcRelationsIndexer);
-    for (const expressID of expressIDs) {
-      indexer.addEntityRelations(model, expressID, "IsDefinedBy", psetID);
-    }
+    indexer.addEntitiesRelation(
+      model,
+      psetID,
+      { type: WEBIFC.IFCRELDEFINESBYPROPERTIES, inv: "IsDefinedBy" },
+      ...expressIDs,
+    );
   }
 
   /**
@@ -412,6 +407,91 @@ export class IfcPropertiesManager extends Component implements Disposable {
   }
 
   /**
+   * Creates a new instance of a relationship between entities in the IFC model.
+   *
+   * @param model - The FragmentsGroup model in which to create the relationship.
+   * @param type - The type of the relationship to create.
+   * @param relatingID - The express ID of the entity that is related to the other entities.
+   * @param relatedIDs - The express IDs of the entities that are related to the relating entity.
+   *
+   * @returns A promise that resolves with the newly created relationship.
+   *
+   * @throws Will throw an error if the relationship type is unsupported.
+   */
+  async createIfcRel(
+    model: FragmentsGroup,
+    type: IfcRelation,
+    relatingID: number,
+    relatedIDs: number[],
+  ) {
+    const relName = ifcRelClassNames[type];
+    if (!relName) {
+      throw new Error(`IfcPropertiesManager: ${relName} is unsoported.`);
+    }
+
+    const schema = model.ifcMetadata.schema;
+    const attributePositions = ifcRelAttrsPosition[relName];
+    // @ts-ignore safe to use ts-ignore as we are checking in the following line if the class exists.
+    const RelClass = WEBIFC[schema][relName];
+    if (!(attributePositions && RelClass)) {
+      throw new Error(`IfcPropertiesManager: ${relName} is unsoported.`);
+    }
+
+    const args: any[] = [new WEBIFC[schema].IfcGloballyUniqueId(UUID.create())];
+
+    // const { related, relating } = attributePositions;
+
+    // if (related < relating) {
+    //   for (let i = 1; i < related - 1; i++) args.push(null);
+    //   const relatedIDsSet = new Set(relatedIDs);
+    //   const relatingHandles = [...relatedIDsSet].map(
+    //     (expressID) => new WEBIFC.Handle(expressID),
+    //   );
+    //   args.push(relatingHandles);
+
+    //   for (let i = related; i < relating - 1; i++) args.push(null);
+    //   args.push(new WEBIFC.Handle(relatingID));
+    // } else {
+    //   for (let i = 1; i < relating - 1; i++) args.push(null);
+    //   for (let i = relating; i < related - 1; i++) args.push(null);
+    //   args.push(new WEBIFC.Handle(relatingID));
+
+    //   const relatedIDsSet = new Set(relatedIDs);
+    //   const relatingHandles = [...relatedIDsSet].map(
+    //     (expressID) => new WEBIFC.Handle(expressID),
+    //   );
+    //   args.push(relatingHandles);
+    // }
+
+    const { related, relating } = attributePositions;
+    const relatedIDsSet = new Set(relatedIDs);
+    const relatingHandles = [...relatedIDsSet].map(
+      (expressID) => new WEBIFC.Handle(expressID),
+    );
+
+    const addNulls = (start: number, end: number) => {
+      for (let i = start; i < end - 1; i++) args.push(null);
+    };
+
+    if (related < relating) {
+      addNulls(1, related);
+      args.push(relatingHandles);
+      addNulls(related, relating);
+      args.push(new WEBIFC.Handle(relatingID));
+    } else {
+      addNulls(1, relating);
+      addNulls(relating, related);
+      args.push(new WEBIFC.Handle(relatingID));
+      args.push(relatingHandles);
+    }
+
+    // @ts-ignore
+    const ifcRel = new RelClass(...args);
+    await this.setData(model, ifcRel);
+    return ifcRel;
+  }
+
+  /**
    * Saves the changes made to the model to a new IFC file.
    *
    * @param model - The FragmentsGroup model from which to save the changes.
@@ -425,21 +505,15 @@ export class IfcPropertiesManager extends Component implements Disposable {
     const ifcLoader = this.components.get(IfcLoader);
     const ifcApi = ifcLoader.webIfc;
     const modelID = await ifcLoader.readIfcFile(ifcToSaveOn);
+    const indexer = this.components.get(IfcRelationsIndexer);
+    await indexer.applyRelationChanges();
     const changes = this.changeMap[model.uuid] ?? [];
     for (const expressID of changes) {
       const data = (await model.getProperties(expressID)) as any;
       if (!data) {
-        try {
-          ifcApi.DeleteLine(modelID, expressID);
-        } catch (err) {
-          // Nothing here...
-        }
+        ifcApi.DeleteLine(modelID, expressID);
       } else {
-        try {
-          ifcApi.WriteLine(modelID, data);
-        } catch (err) {
-          // Nothing here...
-        }
+        ifcApi.WriteLine(modelID, data);
       }
     }
     const modifiedIFC = ifcApi.SaveModel(modelID);
@@ -447,6 +521,28 @@ export class IfcPropertiesManager extends Component implements Disposable {
     ifcLoader.cleanUp();
 
     return modifiedIFC;
+  }
+
+  /**
+   * Retrieves all the entities of a specific type from the model and returns their express IDs wrapped in Handles.
+   * This is used to make references of an entity inside another entity attributes.
+   *
+   * @param model - The FragmentsGroup model from which to retrieve the entities.
+   * @param type - The type of the entities to retrieve. This should be the express ID of the IFC type.
+   *
+   * @returns A promise that resolves with an array of Handles, each containing the express ID of an entity of the specified type.
+   * @returns null if the model doesn't have any entity of that type
+   */
+  async getEntityRef(model: FragmentsGroup, type: number) {
+    // This can be done very quickly if we add the expressID to IfcType map in FragmentsGroup
+    const entities = await model.getAllPropertiesOfType(type);
+    if (!entities) return null;
+    const handles: WEBIFC.Handle<unknown>[] = [];
+    for (const id in entities) {
+      const handle = new WEBIFC.Handle(Number(id));
+      handles.push(handle);
+    }
+    return handles;
   }
 
   /**
@@ -514,7 +610,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
     return event;
   }
 
-  private increaseMaxID(model: FragmentsGroup) {
+  private getNewExpressID(model: FragmentsGroup) {
     model.ifcMetadata.maxExpressID++;
     return model.ifcMetadata.maxExpressID;
   }
@@ -563,8 +659,10 @@ export class IfcPropertiesManager extends Component implements Disposable {
       propValue,
       null,
     );
-    prop.expressID = this.increaseMaxID(model);
+    prop.expressID = this.getNewExpressID(model);
     await this.setData(model, prop);
     return prop;
   }
 }
+
+export * from "./src";

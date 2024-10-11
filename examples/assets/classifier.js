@@ -1,20 +1,20 @@
-import{a2 as u,C as m}from"./web-ifc-api-56EJvEs4.js";import{S as d}from"./stats.min-BpIepu9J.js";import{m as b,t as a,a as c}from"./index-TmOv0r_5.js";import{p,C,o as f,r as w,W as I,u as g,h as A,A as y}from"./index-BcIWfMQD.js";const E=document.getElementById("container"),s=new p,L=s.get(C),t=L.create();t.scene=new f(s);t.renderer=new w(s,E);t.camera=new I(s);s.init();t.camera.controls.setLookAt(12,6,8,0,0,-10);t.scene.setup();const h=s.get(g);h.create(t);t.scene.three.background=null;const F=new A(s),R=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),S=await R.arrayBuffer(),T=new Uint8Array(S),l=F.load(T);t.scene.three.add(l);const o=s.get(y);o.byEntity(l);o.byIfcRel(l,u,"storeys");o.byModel(l.uuid,l);const N=o.find({entities:["IFCWALLSTANDARDCASE"]}),$=o.find({entities:["IFCSLAB"]}),U=o.find({entities:["IFCMEMBER","IFCPLATE"]}),v=o.find({entities:["IFCFURNISHINGELEMENT"]}),B=o.find({entities:["IFCDOOR"]}),D=o.find({models:[l.uuid]}),i=new d;i.showPanel(2);document.body.append(i.dom);i.dom.style.left="0px";i.dom.style.zIndex="unset";t.renderer.onBeforeUpdate.add(()=>i.begin());t.renderer.onAfterUpdate.add(()=>i.end());b.init();const e=new m,r=a.create(()=>c`
+import{ac as m,C as u}from"./web-ifc-api-Dxv4iFj4.js";import{S as d}from"./stats.min-DYv0AsOH.js";import{T as b,z as a,m as c}from"./index-DtbylpTq.js";import{C as p,T as C,e as f,m as w,U as I,O as g,a as y,x as T}from"./index-BRzxhLMM.js";const A=document.getElementById("container"),s=new p,E=s.get(C),t=E.create();t.scene=new f(s);t.renderer=new w(s,A);t.camera=new I(s);s.init();t.camera.controls.setLookAt(12,6,8,0,0,-10);t.scene.setup();const L=s.get(g);L.create(t);t.scene.three.background=null;const h=new y(s),F=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),R=await F.arrayBuffer(),S=new Uint8Array(R),l=h.load(S);t.scene.three.add(l);const o=s.get(T);o.byEntity(l);o.byIfcRel(l,m,"storeys");o.byModel(l.uuid,l);const U=o.find({entities:["IFCWALLSTANDARDCASE"]}),N=o.find({entities:["IFCSLAB"]}),$=o.find({entities:["IFCMEMBER","IFCPLATE"]}),v=o.find({entities:["IFCFURNISHINGELEMENT"]}),B=o.find({entities:["IFCDOOR"]}),D=o.find({models:[l.uuid]}),i=new d;i.showPanel(2);document.body.append(i.dom);i.dom.style.left="0px";i.dom.style.zIndex="unset";t.renderer.onBeforeUpdate.add(()=>i.begin());t.renderer.onAfterUpdate.add(()=>i.end());b.init();const e=new u,r=a.create(()=>c`
     <bim-panel active label="Classifier Tutorial" class="options-menu">
       <bim-panel-section collapsed label="Controls">
       
         <bim-color-input 
           label="Walls Color" color="#202932" 
-          @input="${({target:n})=>{e.set(n.color),o.setColor(N,e)}}">
+          @input="${({target:n})=>{e.set(n.color),o.setColor(U,e)}}">
         </bim-color-input>
       
         <bim-color-input 
           label="Slabs Color" color="#202932" 
-          @input="${({target:n})=>{e.set(n.color),o.setColor($,e)}}">
+          @input="${({target:n})=>{e.set(n.color),o.setColor(N,e)}}">
         </bim-color-input>
       
         <bim-color-input 
           label="Curtain walls Color" color="#202932" 
-          @input="${({target:n})=>{e.set(n.color),o.setColor(U,e)}}">
+          @input="${({target:n})=>{e.set(n.color),o.setColor($,e)}}">
         </bim-color-input>
       
         <bim-color-input 
@@ -34,8 +34,8 @@ import{a2 as u,C as m}from"./web-ifc-api-56EJvEs4.js";import{S as d}from"./stats
 
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(r);const W=a.create(()=>c`
+    `);document.body.append(r);const O=a.create(()=>c`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{r.classList.contains("options-menu-visible")?r.classList.remove("options-menu-visible"):r.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(W);
+    `);document.body.append(O);

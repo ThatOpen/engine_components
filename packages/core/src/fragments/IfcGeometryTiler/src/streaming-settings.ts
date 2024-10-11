@@ -15,4 +15,9 @@ export class IfcStreamingSettings extends IfcFragmentSettings {
    * Defaults to 1000 assets.
    */
   minAssetsSize = 1000;
+
+  /**
+   * Maximum amount of triangles per fragment. Useful for controlling the maximum size of fragment files.
+   */
+  maxTriangles: number | null = null;
 }

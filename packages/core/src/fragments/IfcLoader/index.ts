@@ -116,11 +116,12 @@ export class IfcLoader extends Component implements Disposable {
    * const group = await ifcLoader.load(ifcData);
    * ```
    */
-  async load(data: Uint8Array, coordinate = true) {
+  async load(data: Uint8Array, coordinate = true, name = "") {
     const before = performance.now();
     this.onIfcStartedLoading.trigger();
     await this.readIfcFile(data);
     const group = await this.getAllGeometries();
+    group.name = name;
 
     const jsonExporter = this.components.get(IfcJsonExporter);
     const properties = await jsonExporter.export(this.webIfc, 0);
@@ -198,7 +199,11 @@ export class IfcLoader extends Component implements Disposable {
    * ```
    */
   cleanUp() {
-    this.webIfc.Dispose();
+    try {
+      this.webIfc.Dispose();
+    } catch (e) {
+      console.log("Web-ifc wasn't disposed.");
+    }
     (this.webIfc as any) = null; // Clear the reference to the Web-IFC library
     this.webIfc = new WEBIFC.IfcAPI(); // Create a new instance of the Web-IFC library
     this._visitedFragments.clear(); // Clear the map of visited fragments

@@ -1,5 +1,109 @@
 # Changelog
 
+## [2.3.0](https://github.com/ThatOpen/engine_components/compare/v2.2.0...v2.3.0) (2024-10-07)
+
+
+### Features
+
+* **core:** add clipper config ([288cb3d](https://github.com/ThatOpen/engine_components/commit/288cb3def42af773a1d9bba8ac8e4013d4047623))
+* **core:** add grids config ([f99e137](https://github.com/ThatOpen/engine_components/commit/f99e13730f31776e3f0f525057ceb6db3377cce9))
+* **core:** add minimap config ([47f95a3](https://github.com/ThatOpen/engine_components/commit/47f95a38e095388ee7477ae6344d7d2ba5088242))
+* **core:** adds argument to specify the name of the ifc loaded ([2a23a2f](https://github.com/ThatOpen/engine_components/commit/2a23a2f16da67bc2607dba57f42da71c02e2b57b))
+* **core:** adds the ability to get IfcGuids from a FragmentIdMap ([dff9d2f](https://github.com/ThatOpen/engine_components/commit/dff9d2f14f1a64c85da90249cea684df8224470c))
+* **core:** centralize configuration in component ([df3350d](https://github.com/ThatOpen/engine_components/commit/df3350d5a1bd6e05c662179e9af4d68e8e8a7bce))
+* **core:** clean up config manager ([468d425](https://github.com/ThatOpen/engine_components/commit/468d42528d77f77ca01ddfe7b3953cb029a063f5))
+* **core:** connect all existing configs with manager ([fde9faa](https://github.com/ThatOpen/engine_components/commit/fde9faa16ded3f8d0ff17c2d2f83afc31e589c15))
+* **core:** improve configurable behavior ([292300c](https://github.com/ThatOpen/engine_components/commit/292300c82e058a98ead658898f4480117463472e))
+* **front:** add streamed properties caching ([331bd69](https://github.com/ThatOpen/engine_components/commit/331bd6916e8a6f601516d3e66b372500f927c8af))
+* **front:** implement fragment geometry splitting ([9fb76dc](https://github.com/ThatOpen/engine_components/commit/9fb76dcca1f602228bff8bcc936a9c50ee738946))
+* **front:** implement fragment load cancel ([f9b8b4e](https://github.com/ThatOpen/engine_components/commit/f9b8b4e351da462eb76243a4037393a8463d8adc))
+* **front:** make streamer file cacher public ([a523c01](https://github.com/ThatOpen/engine_components/commit/a523c0142a746d189736fd750717289b43f4254a))
+* **front:** make streaming url more flexible ([75ffbfa](https://github.com/ThatOpen/engine_components/commit/75ffbfa0ddc09e84c6992a3f0bbb40f9e3202392))
+* **front:** support file as tile response type ([7b24223](https://github.com/ThatOpen/engine_components/commit/7b24223a55172eea7221bc2c8e3dfb346516e109))
+* **front:** use file system api for tiles caching ([07bdbd3](https://github.com/ThatOpen/engine_components/commit/07bdbd3e0dacc8e9a8c985f3777d6c9a5c86b7be))
+
+
+### Bug Fixes
+
+* **chore:** fix type problems ([2beaffe](https://github.com/ThatOpen/engine_components/commit/2beaffe6b87af38f6f1766fa39ab2aced01c7ac6))
+* **core:** add guard for cullers pixel reading ([fdacb77](https://github.com/ThatOpen/engine_components/commit/fdacb77a35f3deb801b3e15ede922ea54f82e340))
+* **core:** add guard when getting all properties ([3048618](https://github.com/ThatOpen/engine_components/commit/3048618600c112e4fe4cedc5026165e442871ed3))
+* **core:** dispose mesh culler interval ([d702cd7](https://github.com/ThatOpen/engine_components/commit/d702cd7683364e0678a24264816806f51c80a531))
+* **core:** IfcPropertiesManager.setData properly assigns the entity in the model properties ([ed779b4](https://github.com/ThatOpen/engine_components/commit/ed779b4f9d5017d48a0a44fd44e034cd7b7b425e))
+* **core:** incorrect topic type and status on loading ([cb961a9](https://github.com/ThatOpen/engine_components/commit/cb961a99b6e7afafd5bedcba482377c4c05bf666))
+* **core:** reset culler state after read pixels failed ([bded3c3](https://github.com/ThatOpen/engine_components/commit/bded3c375f80d5ae00c0015b9eb92af51e4437b1))
+* **core:** world deletes it-self from the worlds list to prevent unused references ([d8598f9](https://github.com/ThatOpen/engine_components/commit/d8598f9771c13732299248abfeba0dbf74cbaab2))
+* **front:** make streamer url public ([2796114](https://github.com/ThatOpen/engine_components/commit/2796114aa35a425a045f6a2253c682943fbfc634))
+* **front:** prevent URL from being null ([5bed53b](https://github.com/ThatOpen/engine_components/commit/5bed53b7a947b39765b77b7020fbfdd96f2d7d81))
+* **front:** remove url setter and getter ([8be541e](https://github.com/ThatOpen/engine_components/commit/8be541e5707b4bb7ea463fd780afa8b94b7a43e0))
+* **front:** Update currentPlan of Plans component so it is not always null ([#480](https://github.com/ThatOpen/engine_components/issues/480)) ([62f9d25](https://github.com/ThatOpen/engine_components/commit/62f9d251f492ef0940c70af9259968ed78324b75))
+
+## [2.2.0](https://github.com/ThatOpen/engine_components/compare/v2.1.0...v2.2.0) (2024-08-18)
+
+
+### Features
+
+* allow custom fetch function ([e5764ff](https://github.com/ThatOpen/engine_components/commit/e5764ffcf047ae1d65844aae0eb32979f18338ad))
+* **core:** add includedCategories option to IFCLoader ([771c8ee](https://github.com/ThatOpen/engine_components/commit/771c8ee31840146d899c37629129221d80f90ff4))
+* **core:** adds 4 more types of relations in the IfcRelationsIndexer ([0b8e98f](https://github.com/ThatOpen/engine_components/commit/0b8e98f360cf6617eb409460db5179431c91897e))
+* **core:** adds a new created pset with the IfcPropertiesManager to the relations index ([000bc06](https://github.com/ThatOpen/engine_components/commit/000bc060a82338febf9f7e21db4da4ac06c82824))
+* **core:** adds a way to find related entites based on inverse attributes to IfcRelationsIndexer ([86c5cc0](https://github.com/ThatOpen/engine_components/commit/86c5cc0f51d7a2e9551efafa8051e7efe16db137))
+* **core:** adds Declares, HasContext, Controls, IsNestedBy and Nests to IfcRelationsIndexer ([65db4fb](https://github.com/ThatOpen/engine_components/commit/65db4fb3389fc8a25c27d21c7f6f4a60102351a0))
+* **core:** adds GUID to FragmentIdMap functionality to FragmentsManager ([5de15cc](https://github.com/ThatOpen/engine_components/commit/5de15ccf03bb0495025b56b15d7c8c7fb94b9787))
+* **core:** adds new relation in IfcRelationsIndexer ([23c99ee](https://github.com/ThatOpen/engine_components/commit/23c99ee54aa30046e84bda902d45b171ceb504bf))
+* **core:** allow the mesh culler to update instanced meshes count ([961d03d](https://github.com/ThatOpen/engine_components/commit/961d03d97972ed2d4ed38d4861d82aec68761d17))
+* **core:** allows the FragmentsManager to transform objects into the base coordinate system ([c0d160b](https://github.com/ThatOpen/engine_components/commit/c0d160b7df0fd1fee15b02a7ab850da89bd0ae30))
+* **core:** BCF Integration ([#474](https://github.com/ThatOpen/engine_components/issues/474)) ([27f3e30](https://github.com/ThatOpen/engine_components/commit/27f3e3038703a1b7b007476a5856c5de16b733ee))
+* **core:** fast cast shadows ([f726fc3](https://github.com/ThatOpen/engine_components/commit/f726fc3aa03057680ab0e8e5aa2459739a8c2f47))
+* **core:** implement model cloning and subsets ([4aba42e](https://github.com/ThatOpen/engine_components/commit/4aba42ef51c3ecd911d9a3eb917885df0ceffdfc))
+* **front:** add highlight autotoggle feature ([845e695](https://github.com/ThatOpen/engine_components/commit/845e695f4fe0d57a0c5576ac2878485f8af8b44b))
+* **front:** add sections ([0fab35c](https://github.com/ThatOpen/engine_components/commit/0fab35c6de2667863e99015f019d4b376cf8e647))
+* **front:** add selectable items to highlighter ([68a0440](https://github.com/ThatOpen/engine_components/commit/68a044060939759ab01e9f5e88ccb46663414f88))
+* **front:** allow decimal control in simple dimension line ([169dc01](https://github.com/ThatOpen/engine_components/commit/169dc016699b0be82a3f5bf87a02a5bc98fe94c7))
+* **front:** allow static elements when streaming ([974e254](https://github.com/ThatOpen/engine_components/commit/974e2546052a7f7b43568253c053bdf72bb87675))
+* **front:** allow to customize vertex picker preview ([18e0042](https://github.com/ThatOpen/engine_components/commit/18e0042d88055fb96ebd124bce73d685ff5b2805))
+* **front:** allows to specify when select and hover are enabled in the highlighter ([24b4280](https://github.com/ThatOpen/engine_components/commit/24b42801223b416ca2b73dd25e5a69271b178ec4))
+* **front:** implement visibility for area measurements ([5633e42](https://github.com/ThatOpen/engine_components/commit/5633e42764ecdb3bd1eaa4971deee75881fe8eb0))
+* **front:** misc improvements to streamer ([4abff07](https://github.com/ThatOpen/engine_components/commit/4abff07731ad83ed269fadb181beea725f4fe154))
+* **front:** outliner component ([edcfbca](https://github.com/ThatOpen/engine_components/commit/edcfbcaf0dabc5b41e8a3eb234e216857a000db5))
+* store spatial elements within fragment group ([6ec2e7b](https://github.com/ThatOpen/engine_components/commit/6ec2e7b27c5234f39dc37876201915e7d6b0c6a5))
+
+
+### Bug Fixes
+
+* add window to setInterval to avoid typescript complains ([bb43eef](https://github.com/ThatOpen/engine_components/commit/bb43eefbd5a178828944c6725451e88e9d46fb27))
+* allow to delete all clipping planes without destroying floor plans ([80c72af](https://github.com/ThatOpen/engine_components/commit/80c72af10394e9d143371d77a52aee338dd0cd86))
+* **core:** accepts Vector3 to apply the base coordinate system in FragmentsManager ([498df6d](https://github.com/ThatOpen/engine_components/commit/498df6db422df487a5c550e14229ae48c52a989a))
+* **core:** camera felt heavy on close distances ([5ceb4e6](https://github.com/ThatOpen/engine_components/commit/5ceb4e6ecdaafcd703e6b5f4ab2abec5f1612fdc))
+* **core:** correct bounding boxer behavior for fragment meshes ([17a0fba](https://github.com/ThatOpen/engine_components/commit/17a0fba6590776a361354ac0deac2563f2385248))
+* **core:** correct indexer bug skipping nested spatial elements ([13c92dd](https://github.com/ThatOpen/engine_components/commit/13c92dd2b299b95a10062a6ffb2c6eb8247f74bf))
+* **core:** IfcPropertiesManager not working for IFC4X3_ADD2 schema ([e2ac2fe](https://github.com/ThatOpen/engine_components/commit/e2ac2feab35389627d211f88157ef4b3a13f8b1b))
+* **core:** IfcRelationsIndexer wasn't processing all relations ([54ef882](https://github.com/ThatOpen/engine_components/commit/54ef8825b8232e2e95953706822f6c5769b053c6))
+* **core:** improve ifc memory clean logic ([8d3099c](https://github.com/ThatOpen/engine_components/commit/8d3099cd9fd634fded495e78752700197e199e2c))
+* **core:** updates base coordination matrix from FragmentsManager ([6fe6a82](https://github.com/ThatOpen/engine_components/commit/6fe6a8257ee3faa5489d5a46c4840e4e62eaf2fa))
+* **core:** use customLocateHandler in IfcLoader ([9e8cb41](https://github.com/ThatOpen/engine_components/commit/9e8cb41da8917a79a8ae559394203e397b96fb41))
+* correct highlighter not working with exploded items ([882e872](https://github.com/ThatOpen/engine_components/commit/882e872053e7b0062315e043627bdedd0d5167e2))
+* correct ifcloader disposing bug ([35bfd05](https://github.com/ThatOpen/engine_components/commit/35bfd0543744418f5ded9114181d1eaf41489de9))
+* correct IfcPropertiesTiler progress event ([fe7c112](https://github.com/ThatOpen/engine_components/commit/fe7c112d7968a24cb6c5ed0cbb793f79f70c06ff))
+* correct indexer check bug ([b4cab8e](https://github.com/ThatOpen/engine_components/commit/b4cab8ea75313c8833553287e9370916b135265c))
+* correct visibility issue when updating edges planes ([db352b7](https://github.com/ThatOpen/engine_components/commit/db352b77bc9a1d15a59120d7dc25cdf659ef1a3d))
+* correct web-ifc memory leak when disposing ([4f56f19](https://github.com/ThatOpen/engine_components/commit/4f56f1919f770ba972e0afe5ecf2668b5c6ff4dd))
+* force context release when disposing renderers ([11e0860](https://github.com/ThatOpen/engine_components/commit/11e0860e2efe815fc0bd868a90b84ffe1ce8ddd6))
+* **front:** apply model coordination to edges ([44a8b60](https://github.com/ThatOpen/engine_components/commit/44a8b60c5b28540d0b2c58d573534387255b6865))
+* **front:** correct face measurement position when model has transform ([086855d](https://github.com/ThatOpen/engine_components/commit/086855d1bf93c2e1a555c3ee2b9b754e66913919))
+* **front:** correct sections camera dimensioning ([9df0679](https://github.com/ThatOpen/engine_components/commit/9df067914f0728d82826e4445ed137fb05db6019))
+* **front:** correct streamer error when deleted non-streamed model ([863d24b](https://github.com/ThatOpen/engine_components/commit/863d24b2ffa2d35660105224b4f7d813440ae992))
+* **front:** correct tiles clean cache time computation ([90a4fdd](https://github.com/ThatOpen/engine_components/commit/90a4fdd262178fbb8a27aead3aa920813305d40c))
+* **front:** fix edges clipping plane visibiility ([d94d9d4](https://github.com/ThatOpen/engine_components/commit/d94d9d41f0360f7837622d2d462f8e703286b517))
+* **front:** fix highlighter color reset logic with backup color ([5ae34a0](https://github.com/ThatOpen/engine_components/commit/5ae34a0cfca6e15b28d6d475ccb7d0bd226b67d1))
+* **front:** make highlightByID toggle only when picking ([e5b8790](https://github.com/ThatOpen/engine_components/commit/e5b87904414268ffd3edcc5e860781f4c9f2b942))
+* **front:** solve outline rendertarget clear ([b1bb30a](https://github.com/ThatOpen/engine_components/commit/b1bb30a478358703299b8eb608afd01adaf85048))
+* hide vertex picker preview when disabling it ([bed797f](https://github.com/ThatOpen/engine_components/commit/bed797f8b353061a2ff5fde19c7ea178542224fa))
+* **main:** make isStreamed property available in fragment load event ([9ca135e](https://github.com/ThatOpen/engine_components/commit/9ca135eb3c3c8eb17fcdf45fbd3764a31a01ece3))
+* **main:** prevent postprocess renderer from being resized to 0 ([eea990c](https://github.com/ThatOpen/engine_components/commit/eea990cc8523225dff8d786da39a23195538f203))
+* solve area measurement breaking when hitting "enter" with 1 point ([5b21744](https://github.com/ThatOpen/engine_components/commit/5b21744f135d28bf811588b0101437ff635ec04f))
+* solve clipping fills outline bug ([2070c08](https://github.com/ThatOpen/engine_components/commit/2070c08254a77e5a7270ab6f565691b00b847356))
+
 ## [2.1.0](https://github.com/ThatOpen/engine_components/compare/v2.0.1...v2.1.0) (2024-07-10)
 
 

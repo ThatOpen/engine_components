@@ -3,12 +3,12 @@ import * as FRAG from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
 import {
   GeometryCullerRenderer,
-  StreamFileDatabase,
+  // StreamFileDatabase,
   StreamPropertiesSettings,
   StreamedInstances,
   StreamedInstance,
   StreamLoaderSettings,
-  StreamerDbCleaner,
+  // StreamerDbCleaner,
 } from "./src";
 
 export * from "./src";
@@ -64,11 +64,28 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
    */
   useCache = true;
 
-  dbCleaner: StreamerDbCleaner;
+  /**
+   * Flag to cancel the files that are being currently loaded.
+   */
+  cancel = false;
 
-  fetch = async (url: string) => {
-    return fetch(url);
+  /**
+   * The URL of the data source for the streaming service.
+   * It should be set before using the streaming service. Alternatively, you can use a custom fetch function.
+   */
+  url: string = "";
+
+  /**
+   * Function used to retrieve tiles. Can be overriden to work with specific backends.
+   */
+  fetch = async (fileName: string): Promise<Response | File> => {
+    return fetch(this.url + fileName);
   };
+
+  /**
+   * Cache system that uses the File System API.
+   */
+  fileDB = new FRAG.StreamerFileDb("that-open-company-streaming");
 
   private _culler: GeometryCullerRenderer | null = null;
 
@@ -78,10 +95,6 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     string,
     { data: FRAG.StreamedGeometries; time: number }
   >();
-
-  private _fileCache = new StreamFileDatabase();
-
-  private _url: string | null = null;
 
   private _isDisposing = false;
 
@@ -104,26 +117,6 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     transparent: true,
     opacity: 0.5,
   });
-
-  /**
-   * The URL of the data source for the streaming service.
-   * It must be set before using the streaming service.
-   * If not set, an error will be thrown when trying to access the URL.
-   */
-  get url() {
-    if (!this._url) {
-      throw new Error("url must be set before using the streaming service!");
-    }
-    return this._url;
-  }
-
-  /**
-   * Sets the URL of the data source for the streaming service.
-   * @param value - The new URL to be set.
-   */
-  set url(value: string) {
-    this._url = value;
-  }
 
   /**
    * The world in which the fragments will be displayed.
@@ -170,13 +163,11 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
   constructor(components: OBC.Components) {
     super(components);
     this.components.add(IfcStreamer.uuid, this);
-    this.dbCleaner = new StreamerDbCleaner(this._fileCache);
 
     const fragments = this.components.get(OBC.FragmentsManager);
     fragments.onFragmentsDisposed.add(this.disposeStreamedGroup);
 
-    // const hardlyGeometry = new THREE.BoxGeometry();
-    // this._hardlySeenGeometries = new THREE.InstancedMesh();
+    FRAG.FragmentsGroup.setPropertiesDB(true);
   }
 
   /** {@link OBC.Disposable.dispose} */
@@ -204,6 +195,8 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     this.onDisposed.trigger(IfcStreamer.uuid);
     this.onDisposed.reset();
     this._isDisposing = false;
+
+    FRAG.FragmentsGroup.setPropertiesDB(false);
   }
 
   /**
@@ -221,8 +214,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
   ) {
     const { assets, geometries, globalDataFileId } = settings;
 
-    const groupUrl = this.url + globalDataFileId;
-    const groupData = await this.fetch(groupUrl);
+    const groupData = await this.fetch(globalDataFileId);
     const groupArrayBuffer = await groupData.arrayBuffer();
     const groupBuffer = new Uint8Array(groupArrayBuffer);
     const fragments = this.components.get(OBC.FragmentsManager);
@@ -290,16 +282,16 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
         "-properties",
       );
 
+      FRAG.FragmentsGroup.url = this.url;
+
       group.streamSettings = {
-        baseUrl: this.url,
         baseFileName: propertiesFileID,
         ids,
         types,
       };
 
       const { indexesFile } = properties;
-      const indexURL = this.url + indexesFile;
-      const fetched = await this.fetch(indexURL);
+      const fetched = await this.fetch(indexesFile);
       const rels = await fetched.text();
       const indexer = this.components.get(OBC.IfcRelationsIndexer);
       indexer.setRelationMap(group, indexer.getRelationsMapFromJSON(rels));
@@ -393,7 +385,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
    * @returns A Promise that resolves when the cache is cleared.
    */
   async clearCache() {
-    await this._fileCache.delete();
+    await this.fileDB.clear();
   }
 
   /**
@@ -444,8 +436,28 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     },
     visible = true,
   ) {
+    this.cancel = false;
+
+    const cancelled: { [modelID: string]: Set<number> } = {};
     for (const modelID in seen) {
-      if (this._isDisposing) return;
+      const idsOfModel = new Set<number>();
+      for (const [, ids] of seen[modelID]) {
+        for (const id of ids) {
+          idsOfModel.add(id);
+        }
+      }
+      cancelled[modelID] = idsOfModel;
+    }
+
+    for (const modelID in seen) {
+      if (this._isDisposing) {
+        return;
+      }
+
+      if (this.cancel) {
+        this.cancelLoading(cancelled);
+        return;
+      }
 
       const fragments = this.components.get(OBC.FragmentsManager);
       const group = fragments.groups.get(modelID);
@@ -463,6 +475,11 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
 
       for (const [priority, ids] of seen[modelID]) {
         for (const id of ids) {
+          if (this.cancel) {
+            this.cancelLoading(cancelled);
+            return;
+          }
+
           allIDs.add(id);
           const geometry = geometries[id];
           if (!geometry) {
@@ -471,6 +488,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
           if (geometry.geometryFile) {
             const file = geometry.geometryFile;
             const value = files.get(file) || 0;
+            // This adds up the pixels of all fragments in a file to determine its priority
             files.set(file, value + priority);
           }
         }
@@ -478,41 +496,38 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
 
       const sortedFiles = Array.from(files).sort((a, b) => b[1] - a[1]);
 
-      for (const [file] of sortedFiles) {
-        const url = this.url + file;
-
+      for (const [fileName] of sortedFiles) {
         // If this file is still in the ram, get it
 
-        if (!this._ramCache.has(url)) {
+        if (!this._ramCache.has(fileName)) {
           let bytes = new Uint8Array();
 
           // If this file is in the local cache, get it
           if (this.useCache) {
             // Add or update this file to clean it up from indexedDB automatically later
-            this.dbCleaner.update(url);
 
-            const found = await this._fileCache.files.get(url);
+            const found = await this.fileDB.get(fileName);
 
             if (found) {
-              bytes = found.file;
+              const arrayBuffer = await found.arrayBuffer();
+              bytes = new Uint8Array(arrayBuffer);
             } else {
-              const fetched = await this.fetch(url);
+              const fetched = await this.fetch(fileName);
               const buffer = await fetched.arrayBuffer();
               bytes = new Uint8Array(buffer);
-              // await this._fileCache.files.delete(url);
-              this._fileCache.files.add({ file: bytes, id: url });
+              await this.fileDB.add(fileName, bytes);
             }
           } else {
-            const fetched = await this.fetch(url);
+            const fetched = await this.fetch(fileName);
             const buffer = await fetched.arrayBuffer();
             bytes = new Uint8Array(buffer);
           }
 
           const data = this.serializer.import(bytes);
-          this._ramCache.set(url, { data, time: performance.now() });
+          this._ramCache.set(fileName, { data, time: performance.now() });
         }
 
-        const result = this._ramCache.get(url);
+        const result = this._ramCache.get(fileName);
         if (!result) {
           continue;
         }
@@ -523,7 +538,17 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
 
         if (result) {
           for (const [geometryID, { position, index, normal }] of result.data) {
-            if (this._isDisposing) return;
+            if (this._isDisposing) {
+              return;
+            }
+
+            if (this.cancel) {
+              this.cancelLoading(cancelled);
+              return;
+            }
+
+            // This fragment can be cancelled, it will be loaded
+            cancelled[modelID].delete(geometryID);
 
             if (!allIDs.has(geometryID)) continue;
 
@@ -785,4 +810,9 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
 
     this._isDisposing = false;
   };
+
+  private cancelLoading(items: { [modelID: string]: Set<number> }) {
+    this.cancel = false;
+    this.culler.cancel(items);
+  }
 }

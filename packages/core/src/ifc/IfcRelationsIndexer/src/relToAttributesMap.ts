@@ -83,4 +83,32 @@ export const relToAttributesMap = new Map<
       forRelating: "ReferencedBy",
     },
   ],
+  [
+    WEBIFC.IFCRELDECLARES,
+    {
+      forRelated: "HasContext",
+      forRelating: "Declares",
+    },
+  ],
+  [
+    WEBIFC.IFCRELASSIGNSTOCONTROL,
+    {
+      forRelated: "HasAssignments",
+      forRelating: "Controls",
+    },
+  ],
+  [
+    WEBIFC.IFCRELNESTS,
+    {
+      forRelated: "Nests",
+      forRelating: "IsNestedBy",
+    },
+  ],
+  [
+    WEBIFC.IFCRELASSOCIATESDOCUMENT,
+    {
+      forRelated: "HasAssociations",
+      forRelating: "DocumentRefForObjects",
+    },
+  ],
 ]);

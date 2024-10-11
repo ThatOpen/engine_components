@@ -75,11 +75,11 @@ const fragmentIfcLoader = components.get(OBC.IfcLoader);
 /* MD
   :::info Why not just IFC?
 
-  IFC is nice because it lets us exchange data with many tools in the AECO industry. But your graphics card doesn't understand IFC. It only understands one thing: triangles. So we must convert IFC to triangles. There are many ways to do it, some more efficient than others. And that's exactly what Fragments are: a very efficient way to display the triangles coming from IFC files. 
+  IFC is nice because it lets us exchange data with many tools in the AECO industry. But your graphics card doesn't understand IFC. It only understands one thing: triangles. So we must convert IFC to triangles. There are many ways to do it, some more efficient than others. And that's exactly what Fragments are: a very efficient way to display the triangles coming from IFC files.
 
   :::
 
-  Once Fragments have been generated, you can export them and then load them back directly, without needing the original IFC file. Why would you do that? Well, because fragments can load +10 times faster than IFC. And the reason is very simple.   When reading an IFC, we must parse the file, read the implicit geometry, convert it to triangles (Fragments) and send it to the GPU. When reading fragments, we just take the triangles and send them, so it's super fast. 
+  Once Fragments have been generated, you can export them and then load them back directly, without needing the original IFC file. Why would you do that? Well, because fragments can load +10 times faster than IFC. And the reason is very simple.   When reading an IFC, we must parse the file, read the implicit geometry, convert it to triangles (Fragments) and send it to the GPU. When reading fragments, we just take the triangles and send them, so it's super fast.
 
   :::danger How to use Fragments?
 
@@ -103,7 +103,7 @@ await fragmentIfcLoader.setup();
 // If you want to the path to unpkg manually, then you can skip the line
 // above and set them manually as below:
 // fragmentIfcLoader.settings.wasm = {
-//   path: "https://unpkg.com/web-ifc@0.0.56/",
+//   path: "https://unpkg.com/web-ifc@0.0.57/",
 //   absolute: true,
 // };
 
@@ -224,7 +224,7 @@ world.renderer.onAfterUpdate.add(() => stats.end());
 BUI.Manager.init();
 
 /* MD
-Now we will add some UI to explode and restore our BIM model, which can be easily done with a checkbox that determines whether a model is exploded or not. For more information about the UI library, you can check the specific documentation for it!
+Now we will add some UI to load and unload our BIM model. For more information about the UI library, you can check the specific documentation for it!
 */
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {

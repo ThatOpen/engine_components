@@ -22,8 +22,8 @@ In this tutorial, we will import:
 
 import * as THREE from "three";
 import * as BUI from "@thatopen/ui";
-import * as OBC from "@thatopen/components";
 import Stats from "stats.js";
+import * as OBC from "@thatopen/components";
 
 /* MD
   ### 🖼️ Getting the container
@@ -85,6 +85,12 @@ world.camera = new OBC.SimpleCamera(components);
 components.init();
 
 /* MD
+  We could add some lights, but the SimpleScene class can do that easier for us using its `setup` method:
+*/
+
+world.scene.setup();
+
+/* MD
 
   We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
 
@@ -104,12 +110,6 @@ const material = new THREE.MeshLambertMaterial({ color: "#6528D7" });
 const geometry = new THREE.BoxGeometry();
 const cube = new THREE.Mesh(geometry, material);
 world.scene.three.add(cube);
-
-/* MD
-  We could also add some lights, but the SimpleScene class can do that easier for us using its `setup` method:
-*/
-
-world.scene.setup();
 
 /* MD
   Finally, we will make the camera look at the cube:
@@ -155,29 +155,21 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         <bim-color-input 
           label="Background Color" color="#202932" 
           @input="${({ target }: { target: BUI.ColorInput }) => {
-            world.scene.three.background = new THREE.Color(target.color);
+            world.scene.config.backgroundColor = new THREE.Color(target.color);
           }}">
         </bim-color-input>
         
         <bim-number-input 
           slider step="0.1" label="Directional lights intensity" value="1.5" min="0.1" max="10"
           @change="${({ target }: { target: BUI.NumberInput }) => {
-            for (const child of world.scene.three.children) {
-              if (child instanceof THREE.DirectionalLight) {
-                child.intensity = target.value;
-              }
-            }
+            world.scene.config.directionalLight.intensity = target.value;
           }}">
         </bim-number-input>
         
         <bim-number-input 
           slider step="0.1" label="Ambient light intensity" value="1" min="0.1" max="5"
           @change="${({ target }: { target: BUI.NumberInput }) => {
-            for (const child of world.scene.three.children) {
-              if (child instanceof THREE.AmbientLight) {
-                child.intensity = target.value;
-              }
-            }
+            world.scene.config.ambientLight.intensity = target.value;
           }}">
         </bim-number-input>
         

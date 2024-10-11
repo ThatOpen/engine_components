@@ -1,26 +1,22 @@
 import * as THREE from "three";
 import { BaseScene, Configurable, Event } from "../../Types";
 import { Components } from "../../Components";
-
-/**
- * Configuration interface for the {@link SimpleScene}. Defines properties for directional and ambient lights.
- */
-export interface SimpleSceneConfig {
-  directionalLight: {
-    color: THREE.Color;
-    intensity: number;
-    position: THREE.Vector3;
-  };
-  ambientLight: {
-    color: THREE.Color;
-    intensity: number;
-  };
-}
+import {
+  SimpleSceneConfig,
+  SimpleSceneConfigManager,
+} from "./simple-scene-config";
+import { ConfigManager } from "../../ConfigManager";
 
 /**
  * A basic 3D [scene](https://threejs.org/docs/#api/en/scenes/Scene) to add objects hierarchically, and easily dispose them when you are finished with it.
  */
-export class SimpleScene extends BaseScene implements Configurable<{}> {
+export class SimpleScene
+  extends BaseScene
+  implements Configurable<SimpleSceneConfigManager, SimpleSceneConfig>
+{
+  /** {@link Configurable.onSetup} */
+  readonly onSetup = new Event();
+
   /** {@link Configurable.isSetup} */
   isSetup = false;
 
@@ -30,14 +26,11 @@ export class SimpleScene extends BaseScene implements Configurable<{}> {
    */
   three: THREE.Scene;
 
-  /** {@link Configurable.onSetup} */
-  readonly onSetup = new Event<SimpleScene>();
+  /** {@link Configurable.config} */
+  config = new SimpleSceneConfigManager(this, this.components, "Scene");
 
-  /**
-   * Configuration interface for the {@link SimpleScene}.
-   * Defines properties for directional and ambient lights.
-   */
-  config: Required<SimpleSceneConfig> = {
+  protected _defaultConfig: SimpleSceneConfig = {
+    backgroundColor: new THREE.Color(0x202932),
     directionalLight: {
       color: new THREE.Color("white"),
       intensity: 1.5,
@@ -57,24 +50,39 @@ export class SimpleScene extends BaseScene implements Configurable<{}> {
 
   /** {@link Configurable.setup} */
   setup(config?: Partial<SimpleSceneConfig>) {
-    this.config = { ...this.config, ...config };
+    const fullConfig = { ...this._defaultConfig, ...config };
 
-    const directionalLight = new THREE.DirectionalLight(
-      this.config.directionalLight.color,
-      this.config.directionalLight.intensity,
-    );
-    directionalLight.position.copy(this.config.directionalLight.position);
+    this.config.backgroundColor = fullConfig.backgroundColor;
 
-    const ambientLight = new THREE.AmbientLight(
-      this.config.ambientLight.color,
-      this.config.ambientLight.intensity,
-    );
+    const ambLightData = fullConfig.ambientLight;
+    this.config.ambientLight.color = ambLightData.color;
+    this.config.ambientLight.intensity = ambLightData.intensity;
+
+    const dirLightData = fullConfig.directionalLight;
+    this.config.directionalLight.color = dirLightData.color;
+    this.config.directionalLight.intensity = dirLightData.intensity;
+    this.config.directionalLight.position = dirLightData.position;
+
+    this.deleteAllLights();
+
+    const { color: dc, intensity: di } = this.config.directionalLight;
+    const directionalLight = new THREE.DirectionalLight(dc, di);
+    directionalLight.position.copy(dirLightData.position);
+
+    const { color: ac, intensity: ai } = this.config.directionalLight;
+    const ambientLight = new THREE.AmbientLight(ac, ai);
 
     this.three.add(directionalLight, ambientLight);
     this.directionalLights.set(directionalLight.uuid, directionalLight);
     this.ambientLights.set(ambientLight.uuid, ambientLight);
 
     this.isSetup = true;
-    this.onSetup.trigger(this);
+    this.onSetup.trigger();
+  }
+
+  dispose() {
+    super.dispose();
+    const configs = this.components.get(ConfigManager);
+    configs.list.delete(this.config.uuid);
   }
 }

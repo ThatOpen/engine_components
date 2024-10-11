@@ -1,5 +1,12 @@
 import { MiniMap } from "./src";
-import { Component, Updateable, World, Event, Disposable } from "../Types";
+import {
+  Component,
+  Updateable,
+  World,
+  Event,
+  Disposable,
+  Configurable,
+} from "../Types";
 import { Components } from "../Components";
 
 export * from "./src";
@@ -22,6 +29,9 @@ export class MiniMaps extends Component implements Updateable, Disposable {
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
+
+  /** {@link Configurable.onSetup} */
+  readonly onSetup = new Event();
 
   /** {@link Component.enabled} */
   enabled = true;
@@ -48,7 +58,7 @@ export class MiniMaps extends Component implements Updateable, Disposable {
     if (this.list.has(world.uuid)) {
       throw new Error("This world already has a minimap!");
     }
-    const map = new MiniMap(world);
+    const map = new MiniMap(world, this.components);
     this.list.set(world.uuid, map);
     return map;
   }
