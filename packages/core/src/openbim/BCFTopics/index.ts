@@ -289,7 +289,7 @@ export class BCFTopics
     const image = await fetch(
       "https://thatopen.github.io/engine_components/resources/favicon.ico",
     );
-    const imgBlob = await image.blob();
+    const imgBlob = await image.arrayBuffer();
     const viewpoints = this.components.get(Viewpoints);
     for (const topic of topics) {
       const topicFolder = zip.folder(topic.guid) as JSZip;
