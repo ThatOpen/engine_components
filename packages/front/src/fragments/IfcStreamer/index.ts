@@ -494,126 +494,31 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
         }
       }
 
-      const sortedFiles = Array.from(files).sort((a, b) => b[1] - a[1]);
-
-      for (const [fileName] of sortedFiles) {
-        // If this file is still in the ram, get it
-
-        if (!this._ramCache.has(fileName)) {
-          let bytes = new Uint8Array();
-
-          // If this file is in the local cache, get it
-          if (this.useCache) {
-            // Add or update this file to clean it up from indexedDB automatically later
-
-            const found = await this.fileDB.get(fileName);
-
-            if (found) {
-              const arrayBuffer = await found.arrayBuffer();
-              bytes = new Uint8Array(arrayBuffer);
-            } else {
-              const fetched = await this.fetch(fileName);
-              const buffer = await fetched.arrayBuffer();
-              bytes = new Uint8Array(buffer);
-              await this.fileDB.add(fileName, bytes);
-            }
-          } else {
-            const fetched = await this.fetch(fileName);
-            const buffer = await fetched.arrayBuffer();
-            bytes = new Uint8Array(buffer);
+      // Give more priority to the files that are already cached
+      if (this.useCache) {
+        const cachedPriority = 99999;
+        const entries = files.entries();
+        for (const [name, value] of entries) {
+          if (this.fileDB.isCached(name)) {
+            files.set(name, value + cachedPriority);
           }
-
-          const data = this.serializer.import(bytes);
-          this._ramCache.set(fileName, { data, time: performance.now() });
-        }
-
-        const result = this._ramCache.get(fileName);
-        if (!result) {
-          continue;
-        }
-
-        result.time = performance.now();
-
-        const loaded: FRAG.Fragment[] = [];
-
-        if (result) {
-          for (const [geometryID, { position, index, normal }] of result.data) {
-            if (this._isDisposing) {
-              return;
-            }
-
-            if (this.cancel) {
-              this.cancelLoading(cancelled);
-              return;
-            }
-
-            // This fragment can be cancelled, it will be loaded
-            cancelled[modelID].delete(geometryID);
-
-            if (!allIDs.has(geometryID)) continue;
-
-            if (
-              !this._geometryInstances[modelID] ||
-              !this._geometryInstances[modelID].has(geometryID)
-            ) {
-              continue;
-            }
-
-            const geoms = this._geometryInstances[modelID];
-            const instances = geoms.get(geometryID);
-
-            if (!instances) {
-              throw new Error("Instances not found!");
-            }
-
-            const geom = new THREE.BufferGeometry();
-
-            const posAttr = new THREE.BufferAttribute(position, 3);
-            const norAttr = new THREE.BufferAttribute(normal, 3);
-
-            geom.setAttribute("position", posAttr);
-            geom.setAttribute("normal", norAttr);
-
-            geom.setIndex(Array.from(index));
-
-            // Separating opaque and transparent items is neccesary for Three.js
-
-            const transp: StreamedInstance[] = [];
-            const opaque: StreamedInstance[] = [];
-            for (const instance of instances) {
-              if (instance.color[3] === 1) {
-                opaque.push(instance);
-              } else {
-                transp.push(instance);
-              }
-            }
-
-            this.newFragment(
-              group,
-              geometryID,
-              geom,
-              transp,
-              true,
-              loaded,
-              visible,
-            );
-
-            this.newFragment(
-              group,
-              geometryID,
-              geom,
-              opaque,
-              false,
-              loaded,
-              visible,
-            );
-          }
-        }
-
-        if (loaded.length && !this._isDisposing) {
-          this.onFragmentsLoaded.trigger(loaded);
         }
       }
+
+      const sortedFiles = Array.from(files).sort((a, b) => b[1] - a[1]);
+      const loadProcesses: Promise<void>[] = [];
+      for (const [fileName] of sortedFiles) {
+        const loadProcess = this.loadFragmentFile(
+          modelID,
+          group,
+          visible,
+          fileName,
+          allIDs,
+          cancelled,
+        );
+        loadProcesses.push(loadProcess);
+      }
+      await Promise.all(loadProcesses);
 
       const expiredIDs = new Set<string>();
       const now = performance.now();
@@ -814,5 +719,131 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
   private cancelLoading(items: { [modelID: string]: Set<number> }) {
     this.cancel = false;
     this.culler.cancel(items);
+  }
+
+  private async loadFragmentFile(
+    modelID: string,
+    group: FRAG.FragmentsGroup,
+    visible: boolean,
+    fileName: string,
+    allIDs: Set<number>,
+    cancelled: { [modelID: string]: Set<number> },
+  ) {
+    // If this file is still in the ram, get it
+
+    if (!this._ramCache.has(fileName)) {
+      let bytes = new Uint8Array();
+
+      // If this file is in the local cache, get it
+      if (this.useCache) {
+        // Add or update this file to clean it up from indexedDB automatically later
+
+        const found = await this.fileDB.get(fileName);
+
+        if (found) {
+          const arrayBuffer = await found.arrayBuffer();
+          bytes = new Uint8Array(arrayBuffer);
+        } else {
+          const fetched = await this.fetch(fileName);
+          const buffer = await fetched.arrayBuffer();
+          bytes = new Uint8Array(buffer);
+          await this.fileDB.add(fileName, bytes);
+        }
+      } else {
+        const fetched = await this.fetch(fileName);
+        const buffer = await fetched.arrayBuffer();
+        bytes = new Uint8Array(buffer);
+      }
+
+      const data = this.serializer.import(bytes);
+      this._ramCache.set(fileName, { data, time: performance.now() });
+    }
+
+    const result = this._ramCache.get(fileName);
+    if (!result) {
+      return;
+    }
+
+    result.time = performance.now();
+
+    const loaded: FRAG.Fragment[] = [];
+
+    if (result) {
+      for (const [geometryID, { position, index, normal }] of result.data) {
+        if (this._isDisposing) {
+          return;
+        }
+
+        if (this.cancel) {
+          this.cancelLoading(cancelled);
+          return;
+        }
+
+        // This fragment can be cancelled, it will be loaded
+        cancelled[modelID].delete(geometryID);
+
+        if (!allIDs.has(geometryID)) continue;
+
+        if (
+          !this._geometryInstances[modelID] ||
+          !this._geometryInstances[modelID].has(geometryID)
+        ) {
+          continue;
+        }
+
+        const geoms = this._geometryInstances[modelID];
+        const instances = geoms.get(geometryID);
+
+        if (!instances) {
+          throw new Error("Instances not found!");
+        }
+
+        const geom = new THREE.BufferGeometry();
+
+        const posAttr = new THREE.BufferAttribute(position, 3);
+        const norAttr = new THREE.BufferAttribute(normal, 3);
+
+        geom.setAttribute("position", posAttr);
+        geom.setAttribute("normal", norAttr);
+
+        geom.setIndex(Array.from(index));
+
+        // Separating opaque and transparent items is neccesary for Three.js
+
+        const transp: StreamedInstance[] = [];
+        const opaque: StreamedInstance[] = [];
+        for (const instance of instances) {
+          if (instance.color[3] === 1) {
+            opaque.push(instance);
+          } else {
+            transp.push(instance);
+          }
+        }
+
+        this.newFragment(
+          group,
+          geometryID,
+          geom,
+          transp,
+          true,
+          loaded,
+          visible,
+        );
+
+        this.newFragment(
+          group,
+          geometryID,
+          geom,
+          opaque,
+          false,
+          loaded,
+          visible,
+        );
+      }
+    }
+
+    if (loaded.length && !this._isDisposing) {
+      this.onFragmentsLoaded.trigger(loaded);
+    }
   }
 }
