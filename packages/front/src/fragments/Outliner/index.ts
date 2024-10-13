@@ -87,6 +87,11 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
       }
       const ids = items[fragID];
       const clonedFrag = found.clone(ids);
+
+      clonedFrag.mesh.position.set(0, 0, 0);
+      clonedFrag.mesh.rotation.set(0, 0, 0);
+      clonedFrag.mesh.applyMatrix4(found.mesh.matrixWorld);
+
       clonedFrag.mesh.instanceColor = null;
       clonedFrag.mesh.material = [style.material];
       style.meshes.add(clonedFrag.mesh);
