@@ -17,7 +17,7 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
 
   /** {@link OBC.Component.enabled} */
   get enabled() {
-    if (!this.world) {
+    if (!this.world || this.world.isDisposing) {
       return false;
     }
 
