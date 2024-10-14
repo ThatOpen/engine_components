@@ -27,8 +27,8 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
 
   /** {@link OBC.Component.enabled} */
   set enabled(value: boolean) {
-    if (!this.world) {
-      throw new Error("Before enabling the outliner, provide a world!");
+    if (!this.world || this.world.isDisposing) {
+      return;
     }
 
     const renderer = this.getRenderer();
@@ -123,10 +123,12 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
   /** {@link OBC.Disposable.dispose} */
 
   dispose() {
-    const styles = this.getStyles();
-    const styleNames = Object.keys(styles);
-    for (const name of styleNames) {
-      this.clearStyle(name, true);
+    if (this.world && !this.world.isDisposing) {
+      const styles = this.getStyles();
+      const styleNames = Object.keys(styles);
+      for (const name of styleNames) {
+        this.clearStyle(name, true);
+      }
     }
     this.onDisposed.trigger();
     this.onDisposed.reset();
