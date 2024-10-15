@@ -17,7 +17,7 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
 
   /** {@link OBC.Component.enabled} */
   get enabled() {
-    if (!this.world) {
+    if (!this.world || this.world.isDisposing) {
       return false;
     }
 
@@ -27,8 +27,8 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
 
   /** {@link OBC.Component.enabled} */
   set enabled(value: boolean) {
-    if (!this.world) {
-      throw new Error("Before enabling the outliner, provide a world!");
+    if (!this.world || this.world.isDisposing) {
+      return;
     }
 
     const renderer = this.getRenderer();
@@ -87,6 +87,11 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
       }
       const ids = items[fragID];
       const clonedFrag = found.clone(ids);
+
+      clonedFrag.mesh.position.set(0, 0, 0);
+      clonedFrag.mesh.rotation.set(0, 0, 0);
+      clonedFrag.mesh.applyMatrix4(found.mesh.matrixWorld);
+
       clonedFrag.mesh.instanceColor = null;
       clonedFrag.mesh.material = [style.material];
       style.meshes.add(clonedFrag.mesh);
@@ -118,10 +123,12 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
   /** {@link OBC.Disposable.dispose} */
 
   dispose() {
-    const styles = this.getStyles();
-    const styleNames = Object.keys(styles);
-    for (const name of styleNames) {
-      this.clearStyle(name, true);
+    if (this.world && !this.world.isDisposing) {
+      const styles = this.getStyles();
+      const styleNames = Object.keys(styles);
+      for (const name of styleNames) {
+        this.clearStyle(name, true);
+      }
     }
     this.onDisposed.trigger();
     this.onDisposed.reset();

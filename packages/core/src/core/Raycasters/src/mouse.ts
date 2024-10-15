@@ -5,7 +5,7 @@ import { Disposable, Event } from "../../Types";
  * A helper to easily get the real position of the mouse in the Three.js canvas to work with tools like the [raycaster](https://threejs.org/docs/#api/en/core/Raycaster), even if it has been transformed through CSS or doesn't occupy the whole screen.
  */
 export class Mouse implements Disposable {
-  private _event?: MouseEvent;
+  private _event?: MouseEvent | TouchEvent;
   private _position = new THREE.Vector2();
 
   /** {@link Disposable.onDisposed} */
@@ -34,23 +34,31 @@ export class Mouse implements Disposable {
     this.onDisposed.reset();
   }
 
-  private getPositionY(bound: DOMRect, event: MouseEvent) {
-    return -((event.clientY - bound.top) / (bound.bottom - bound.top)) * 2 + 1;
+  private getPositionY(bound: DOMRect, event: MouseEvent | TouchEvent) {
+    const data = this.getDataObject(event);
+    return -((data.clientY - bound.top) / (bound.bottom - bound.top)) * 2 + 1;
   }
 
-  private getPositionX(bound: DOMRect, event: MouseEvent) {
-    return ((event.clientX - bound.left) / (bound.right - bound.left)) * 2 - 1;
+  private getPositionX(bound: DOMRect, event: MouseEvent | TouchEvent) {
+    const data = this.getDataObject(event);
+    return ((data.clientX - bound.left) / (bound.right - bound.left)) * 2 - 1;
   }
 
-  private updateMouseInfo = (event: MouseEvent) => {
+  private updateMouseInfo = (event: MouseEvent | TouchEvent) => {
     this._event = event;
   };
+
+  private getDataObject(event: MouseEvent | TouchEvent) {
+    return event instanceof MouseEvent ? event : event.touches[0];
+  }
 
   private setupEvents(active: boolean) {
     if (active) {
       this.dom.addEventListener("pointermove", this.updateMouseInfo);
+      this.dom.addEventListener("touchstart", this.updateMouseInfo);
     } else {
       this.dom.removeEventListener("pointermove", this.updateMouseInfo);
+      this.dom.removeEventListener("touchstart", this.updateMouseInfo);
     }
   }
 }

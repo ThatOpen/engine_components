@@ -11,9 +11,6 @@ export class IfcFragmentSettings {
    */
   optionalCategories: number[] = [WEBIFC.IFCSPACE];
 
-  /** Whether to use the coordination data coming from the IFC files. */
-  coordinate = true;
-
   /** Path of the WASM for [web-ifc](https://github.com/ThatOpen/engine_web-ifc). */
   wasm: {
     path: string;
