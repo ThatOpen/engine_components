@@ -44,8 +44,10 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
    */
   models: {
     [modelID: string]: {
-      assets: OBC.StreamedAsset[];
+      assetsMap: Map<number, OBC.StreamedAsset>;
       geometries: OBC.StreamedGeometries;
+      /** @deprecated use assetsMap instead */
+      assets: OBC.StreamedAsset[];
     };
   } = {};
 
@@ -241,7 +243,25 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     }
 
     this.culler.add(group.uuid, assets, geometries);
-    this.models[group.uuid] = { assets, geometries };
+
+    const assetsMap = new Map<number, OBC.StreamedAsset>();
+    for (const asset of assets) {
+      assetsMap.set(asset.id, asset);
+    }
+
+    const object = { assetsMap, geometries };
+    Object.defineProperty(object, "assets", {
+      get: () => {
+        return Array.from(object.assetsMap.values());
+      },
+    });
+
+    this.models[group.uuid] = object as {
+      assetsMap: Map<number, OBC.StreamedAsset>;
+      geometries: OBC.StreamedGeometries;
+      assets: OBC.StreamedAsset[];
+    };
+
     const instances: StreamedInstances = new Map();
 
     for (const asset of assets) {
@@ -428,6 +448,52 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
     } else {
       this.culler.removeStaticGeometries(staticGeometries, culled);
     }
+  }
+
+  /**
+   * Gets a FragmentsGroup with the OBB of the specified items. Keep in mind that you will need to dispose this group yourself using the dispoe() method.
+   *
+   * @param items - The items whose bounding boxes to get.
+   */
+  getBoundingBoxes(items: FRAG.FragmentIdMap) {
+    const data: { [modelID: string]: Set<number> } = {};
+
+    const fragments = this.components.get(OBC.FragmentsManager);
+
+    const groupsOfFragments = new Map<string, string>();
+
+    for (const [groupID, group] of fragments.groups) {
+      for (const [, fragID] of group.keyFragments) {
+        groupsOfFragments.set(fragID, groupID);
+      }
+    }
+
+    const visitedModels = new Set<string>();
+
+    for (const fragID in items) {
+      const modelID = groupsOfFragments.get(fragID);
+      if (modelID === undefined) {
+        console.log("Fragment group not found!");
+        continue;
+      }
+      const assetsIDs = items[fragID];
+      if (!visitedModels.has(modelID)) {
+        data[modelID] = new Set<number>();
+        visitedModels.add(modelID);
+      }
+
+      for (const assetID of assetsIDs) {
+        const found = this.models[modelID].assetsMap.get(assetID);
+        if (!found) continue;
+        for (const geom of found.geometries) {
+          const geomID = geom.geometryID;
+          const instanceID = this.culler.getInstanceID(assetID, geomID);
+          data[modelID].add(instanceID);
+        }
+      }
+    }
+
+    return this.culler.getBoundingBoxes(data);
   }
 
   private async loadFoundGeometries(
