@@ -154,7 +154,9 @@ export class IfcRelationsIndexer extends Component implements Disposable {
         indexMap = [];
         currentMap.set(index, indexMap);
       }
-      indexMap.push(...relatedIDs);
+      for (const id of relatedIDs) {
+        indexMap.push(id);
+      }
     }
 
     // forRelated
