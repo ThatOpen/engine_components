@@ -37,7 +37,6 @@
     "access": "public"
   },
   "devDependencies": {
-    "@rollup/plugin-terser": "^0.4.4",
     "@thatopen/fragments": ">=2.4.0-alpha.1",
     "@thatopen/ui": "~2.3.0",
     "@types/three": "0.160.0",

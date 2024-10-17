@@ -3,6 +3,7 @@ import dts from "vite-plugin-dts";
 import { defineConfig } from "vite";
 import * as path from "path";
 import * as fs from "fs";
+import pluginTerser from "@rollup/plugin-terser";
 import * as packageJson from "./package.json";
 
 const clonePackageJSON = () => {
@@ -38,18 +39,30 @@ export default defineConfig({
   build: {
     lib: {
       entry: path.resolve(__dirname, "./src/index.ts"),
-      formats: ["es"],
-      fileName: "index",
     },
     rollupOptions: {
       external: Object.keys(packageJson.peerDependencies),
-      output: {
-        globals: {
-          three: "THREE",
-          "@thatopen/fragments": "FRAGS",
-          "web-ifc": "WEB-IFC",
+      output: [
+        {
+          entryFileNames: `index.js`,
+          format: "es",
+          globals: {
+            three: "THREE",
+            "@thatopen/fragments": "FRAGS",
+            "web-ifc": "WEB-IFC",
+          },
         },
-      },
+        {
+          entryFileNames: `index.min.js`,
+          plugins: [pluginTerser()],
+          format: "es",
+          globals: {
+            three: "THREE",
+            "@thatopen/fragments": "FRAGS",
+            "web-ifc": "WEB-IFC",
+          },
+        },
+      ],
     },
   },
   plugins: [
