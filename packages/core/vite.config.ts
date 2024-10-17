@@ -3,6 +3,7 @@ import dts from "vite-plugin-dts";
 import { defineConfig } from "vite";
 import * as path from "path";
 import * as fs from "fs";
+import pluginTerser from "@rollup/plugin-terser";
 import * as packageJson from "./package.json";
 
 const generateTSNamespace = (dts: Map<string, string>) => {
@@ -25,26 +26,52 @@ const generateTSNamespace = (dts: Map<string, string>) => {
 export default defineConfig({
   build: {
     outDir: "./dist",
+    minify: false,
     lib: {
       entry: path.resolve(__dirname, "./src/index.ts"),
-      formats: ["es", "cjs"],
-      fileName: (format) => {
-        const map = {
-          cjs: "cjs",
-          es: "mjs",
-        };
-        return `index.${map[format]}`;
-      },
     },
     rollupOptions: {
       external: Object.keys(packageJson.peerDependencies),
-      output: {
-        globals: {
-          three: "THREE",
-          "@thatopen/fragments": "FRAGS",
-          "web-ifc": "WEB-IFC",
+      output: [
+        {
+          entryFileNames: `index.mjs`,
+          format: "es",
+          globals: {
+            three: "THREE",
+            "@thatopen/fragments": "FRAGS",
+            "web-ifc": "WEB-IFC",
+          },
         },
-      },
+        {
+          entryFileNames: `index.cjs`,
+          format: "cjs",
+          globals: {
+            three: "THREE",
+            "@thatopen/fragments": "FRAGS",
+            "web-ifc": "WEB-IFC",
+          },
+        },
+        {
+          entryFileNames: `index.min.mjs`,
+          plugins: [pluginTerser()],
+          format: "es",
+          globals: {
+            three: "THREE",
+            "@thatopen/fragments": "FRAGS",
+            "web-ifc": "WEB-IFC",
+          },
+        },
+        {
+          entryFileNames: `index.min.cjs`,
+          plugins: [pluginTerser()],
+          format: "cjs",
+          globals: {
+            three: "THREE",
+            "@thatopen/fragments": "FRAGS",
+            "web-ifc": "WEB-IFC",
+          },
+        },
+      ],
     },
   },
   plugins: [
