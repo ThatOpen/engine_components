@@ -1,7 +1,13 @@
 import * as WEBIFC from "web-ifc";
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
-import { Components, Disposable, Event, Component } from "../../core";
+import {
+  Components,
+  Disposable,
+  Event,
+  Component,
+  AsyncEvent,
+} from "../../core";
 import { obbFromPoints } from "../../utils";
 import { IfcStreamingSettings, StreamedGeometries, StreamedAsset } from "./src";
 import {
@@ -27,7 +33,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
    * Event triggered when geometry is streamed.
    * Contains the streamed geometry data and its buffer.
    */
-  readonly onGeometryStreamed = new Event<{
+  readonly onGeometryStreamed = new AsyncEvent<{
     buffer: Uint8Array;
     data: StreamedGeometries;
   }>();
@@ -36,19 +42,19 @@ export class IfcGeometryTiler extends Component implements Disposable {
    * Event triggered when assets are streamed.
    * Contains the streamed assets.
    */
-  readonly onAssetStreamed = new Event<StreamedAsset[]>();
+  readonly onAssetStreamed = new AsyncEvent<StreamedAsset[]>();
 
   /**
    * Event triggered to indicate the progress of the streaming process.
    * Contains the progress percentage.
    */
-  readonly onProgress = new Event<number>();
+  readonly onProgress = new AsyncEvent<number>();
 
   /**
    * Event triggered when the IFC file is loaded.
    * Contains the loaded IFC file data.
    */
-  readonly onIfcLoaded = new Event<Uint8Array>();
+  readonly onIfcLoaded = new AsyncEvent<Uint8Array>();
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
@@ -250,6 +256,10 @@ export class IfcGeometryTiler extends Component implements Disposable {
         this.getMesh(this.webIfc, mesh, group);
       });
 
+      if (this._geometryCount > this.settings.minGeometrySize) {
+        await this.streamGeometries();
+      }
+
       if (this._assets.length > minAssetsSize) {
         await this.streamAssets();
       }
@@ -258,7 +268,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
       if (currentProgress > nextProgress) {
         nextProgress += 0.01;
         nextProgress = Math.max(nextProgress, currentProgress);
-        this.onProgress.trigger(Math.round(nextProgress * 100) / 100);
+        await this.onProgress.trigger(Math.round(nextProgress * 100) / 100);
       }
     }
 
@@ -285,7 +295,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
     group.civilData = this._civil.read(this.webIfc);
 
     const buffer = this._groupSerializer.export(group);
-    this.onIfcLoaded.trigger(buffer);
+    await this.onIfcLoaded.trigger(buffer);
     group.dispose(true);
   }
 
@@ -325,7 +335,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
 
       if (!this._visitedGeometries.has(transpGeometryID)) {
         // This is the first time we see this geometry
-        this.getGeometry(webIfc, geometryID, isOpaque);
+        this.getGeometry(webIfc, geometryID, transpGeometryID);
       }
 
       this.registerGeometryData(
@@ -349,7 +359,11 @@ export class IfcGeometryTiler extends Component implements Disposable {
     this._assets.push(asset);
   }
 
-  private getGeometry(webIfc: WEBIFC.IfcAPI, id: number, isOpaque: boolean) {
+  private getGeometry(
+    webIfc: WEBIFC.IfcAPI,
+    id: number,
+    transpGeometryID: number,
+  ) {
     const geometry = webIfc.GetGeometry(0, id);
 
     // Get the full index, position and normal data
@@ -375,6 +389,32 @@ export class IfcGeometryTiler extends Component implements Disposable {
       normal[i / 2] = vertexData[i + 3];
       normal[i / 2 + 1] = vertexData[i + 4];
       normal[i / 2 + 2] = vertexData[i + 5];
+    }
+
+    // Empty geometry
+    if (index.length === 0) {
+      // prettier-ignore
+      const boundingBox = new Float32Array([
+          0, 0, 0, 0,
+          0, 0, 0, 0,
+          0, 0, 0, 0,
+          0, 0, 0, 1
+      ]);
+
+      this._geometries.set(id, {
+        position,
+        normal,
+        index,
+        boundingBox,
+        hasHoles: false,
+      });
+
+      const geomIndex = this._visitedGeometries.size;
+      const uuid = THREE.MathUtils.generateUUID();
+      this._visitedGeometries.set(transpGeometryID, { uuid, index: geomIndex });
+      this._geometryCount++;
+      geometry.delete();
+      return;
     }
 
     const maxTris = this.settings.maxTriangles || index.length / 3;
@@ -438,20 +478,13 @@ export class IfcGeometryTiler extends Component implements Disposable {
         splits.add(geometryID);
       }
 
-      // Distinguish between opaque and transparent geometries
-      const factor = isOpaque ? 1 : -1;
-      const transpGeometryID = geometryID * factor;
+      // Register visited geometry, distinguishing between transparent and opaque
 
       const geomIndex = this._visitedGeometries.size;
       const uuid = THREE.MathUtils.generateUUID();
       this._visitedGeometries.set(transpGeometryID, { uuid, index: geomIndex });
-
       this._geometryCount++;
       firstSplit = false;
-
-      if (this._geometryCount > this.settings.minGeometrySize) {
-        this.streamGeometries();
-      }
     }
 
     geometry.delete();
@@ -463,7 +496,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
     this._assets = [];
   }
 
-  private streamGeometries() {
+  private async streamGeometries() {
     let buffer = this._streamSerializer.export(this._geometries) as Uint8Array;
 
     let data: StreamedGeometries = {};
@@ -472,7 +505,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
       data[id] = { boundingBox, hasHoles };
     }
 
-    this.onGeometryStreamed.trigger({ data, buffer });
+    await this.onGeometryStreamed.trigger({ data, buffer });
 
     // Force memory disposal of all created items
     data = null as any;

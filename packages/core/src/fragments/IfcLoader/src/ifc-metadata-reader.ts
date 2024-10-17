@@ -25,12 +25,18 @@ export class IfcMetadataReader {
       if (authorName?.value) data.author.name = authorName.value;
       if (authorEmail?.value) data.author.email = authorEmail.value;
     }
-    if (organization[0]?.value) data.organization = organization[0].value;
-    if (preprocessorVersion?.value)
+    if (organization && organization[0]?.value) {
+      data.organization = organization[0].value;
+    }
+    if (preprocessorVersion?.value) {
       data.preprocessorVersion = preprocessorVersion?.value;
-    if (originatingSystem?.value)
+    }
+    if (originatingSystem?.value) {
       data.originatingSystem = originatingSystem?.value;
-    if (authorization?.value) data.authorization = authorization?.value;
+    }
+    if (authorization?.value) {
+      data.authorization = authorization?.value;
+    }
     return data;
   }
 
