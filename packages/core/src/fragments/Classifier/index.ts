@@ -35,6 +35,16 @@ export interface Classification {
   };
 }
 
+interface ExportedClassification {
+  [system: string]: {
+    [groupName: string]: {
+      map: string;
+      name: string;
+      id: number | null;
+    };
+  };
+}
+
 /**
  * The Classifier component is responsible for classifying and categorizing fragments based on various criteria. It provides methods to add, remove, find, and filter fragments based on their classification. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/Classifier). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/Classifier).
  */
@@ -491,6 +501,52 @@ export class Classifier extends Component implements Disposable {
       if (!found) continue;
       const ids = items[fragID];
       found.resetColor(ids);
+    }
+  }
+
+  /**
+   * Exports the computed classification to persists them and import them back
+   * later for faster loading.
+   */
+  export() {
+    const exported: ExportedClassification = {};
+
+    for (const systemName in this.list) {
+      exported[systemName] = {};
+      const system = this.list[systemName];
+      for (const groupName in system) {
+        const group = system[groupName];
+        exported[systemName][groupName] = {
+          map: FRAGS.FragmentUtils.export(group.map),
+          name: group.name,
+          id: group.id,
+        };
+      }
+    }
+
+    return JSON.stringify(exported);
+  }
+
+  /**
+   * Imports a classification previously exported with .export().
+   * @param data the serialized classification to import.
+   */
+  import(data: string) {
+    const imported = JSON.parse(data) as ExportedClassification;
+
+    for (const systemName in imported) {
+      if (!this.list[systemName]) {
+        this.list[systemName] = {};
+      }
+      const system = imported[systemName];
+      for (const groupName in system) {
+        const group = system[groupName];
+        this.list[systemName][groupName] = {
+          map: FRAGS.FragmentUtils.import(group.map),
+          name: group.name,
+          id: group.id,
+        };
+      }
     }
   }
 
