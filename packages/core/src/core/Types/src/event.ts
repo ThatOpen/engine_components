@@ -3,6 +3,11 @@
  */
 export class Event<T> {
   /**
+   * Whether this event is active or not. If not, it won't trigger.
+   */
+  enabled = true;
+
+  /**
    * Add a callback to this event instance.
    * @param handler - the callback to be added to this event.
    */
@@ -20,6 +25,9 @@ export class Event<T> {
 
   /** Triggers all the callbacks assigned to this event. */
   trigger = (data?: T) => {
+    if (!this.enabled) {
+      return;
+    }
     const handlers = this.handlers.slice(0);
     for (const handler of handlers) {
       handler(data as any);

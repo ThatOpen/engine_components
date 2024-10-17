@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import CameraControls from "camera-controls";
 import { Event } from "./event";
+import { EventManager } from "./event-manager";
 
 /**
  * Whether this component has to be manually destroyed once you are done with it to prevent [memory leaks](https://threejs.org/docs/#manual/en/introduction/How-to-dispose-of-objects). This also ensures that the DOM events created by that component will be cleaned up.
@@ -124,4 +125,14 @@ export interface CameraControllable {
    * This instance is used to manipulate the camera.
    */
   controls: CameraControls;
+}
+
+/**
+ * Whether it has events or not.
+ */
+export interface Eventable {
+  /**
+   * The object in charge of managing all the events.
+   */
+  eventManager: EventManager;
 }
