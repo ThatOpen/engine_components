@@ -5,13 +5,13 @@ import { FragmentIdMap, FragmentMesh } from "@thatopen/fragments";
 import { EdgesPlane, IndexFragmentMap } from "../../core";
 import { FillHighlighter } from "./src";
 
-// TODO: Clean up and document
-
 /**
  * Interface defining the events that the Highlighter class can trigger. Each highlighter has its own set of events, identified by the highlighter name.
  */
 export interface HighlightEvents {
   [highlighterName: string]: {
+    /** Event triggered before a fragment is highlighted, giving the last selection. */
+    onBeforeHighlight: OBC.Event<FRAGS.FragmentIdMap>;
     /** Event triggered when a fragment is highlighted. */
     onHighlight: OBC.Event<FRAGS.FragmentIdMap>;
     /** Event triggered when a fragment is cleared. */
@@ -44,7 +44,10 @@ export interface HighlighterConfig {
 /**
  * This component allows highlighting and selecting fragments in a 3D scene. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Highlighter). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Highlighter).
  */
-export class Highlighter extends OBC.Component implements OBC.Disposable {
+export class Highlighter
+  extends OBC.Component
+  implements OBC.Disposable, OBC.Eventable
+{
   /**
    * A unique identifier for the component.
    * This UUID is used to register the component within the Components system.
@@ -108,13 +111,16 @@ export class Highlighter extends OBC.Component implements OBC.Disposable {
   autoToggle = new Set<string>();
 
   /** Position of the mouse on mouseDown. */
-  private mouseDownPosition = {x: 0, y: 0};
+  private mouseDownPosition = { x: 0, y: 0 };
 
   /** Threshhold on how much the mouse have to move until its considered movement */
-  mouseMoveThreshold = 5
+  mouseMoveThreshold = 5;
 
   /** If defined, only the specified elements will be selected by the specified style. */
   selectable: { [name: string]: FragmentIdMap } = {};
+
+  /** Manager to easily toggle and reset all events. */
+  eventManager = new OBC.EventManager();
 
   // Highlights the clipping fills of the fragments, if any
   private _fills = new FillHighlighter();
@@ -132,6 +138,8 @@ export class Highlighter extends OBC.Component implements OBC.Disposable {
   constructor(components: OBC.Components) {
     super(components);
     this.components.add(Highlighter.uuid, this);
+    this.eventManager.list.add(this.onSetup);
+    this.eventManager.list.add(this.onDisposed);
   }
 
   /** {@link Disposable.dispose} */
@@ -143,13 +151,13 @@ export class Highlighter extends OBC.Component implements OBC.Disposable {
 
     this.selection = {};
     for (const name in this.events) {
-      this.events[name].onClear.reset();
-      this.events[name].onHighlight.reset();
+      const { onClear, onHighlight } = this.events[name];
+      this.eventManager.list.delete(onClear);
+      this.eventManager.list.delete(onHighlight);
     }
-    this.onSetup.reset();
-    this.events = {};
+
     this.onDisposed.trigger(Highlighter.uuid);
-    this.onDisposed.reset();
+    this.eventManager.reset();
   }
 
   /**
@@ -167,10 +175,15 @@ export class Highlighter extends OBC.Component implements OBC.Disposable {
     }
     this.colors.set(name, color);
     this.selection[name] = {};
+    const onHighlight = new OBC.Event();
+    const onBeforeHighlight = new OBC.Event();
+    const onClear = new OBC.Event();
     this.events[name] = {
-      onHighlight: new OBC.Event(),
-      onClear: new OBC.Event(),
+      onHighlight,
+      onClear,
+      onBeforeHighlight,
     };
+    this.eventManager.add([onClear, onHighlight]);
   }
 
   /**
@@ -330,6 +343,8 @@ export class Highlighter extends OBC.Component implements OBC.Disposable {
     isPicking = false,
   ) {
     if (!this.enabled) return;
+
+    this.events[name].onBeforeHighlight.trigger(this.selection[name]);
 
     if (removePrevious) {
       this.clear(name);
@@ -637,9 +652,8 @@ export class Highlighter extends OBC.Component implements OBC.Disposable {
 
   private onMouseDown = (e: MouseEvent) => {
     if (!this.enabled) return;
-    this.mouseDownPosition = {x: e.clientX, y: e.clientY}
+    this.mouseDownPosition = { x: e.clientX, y: e.clientY };
     this._mouseState.down = true;
-
   };
 
   private onMouseUp = async (event: MouseEvent) => {
@@ -677,7 +691,7 @@ export class Highlighter extends OBC.Component implements OBC.Disposable {
       this.clear(hoverName);
       return;
     }
-    
+
     // If the distance is greater than the threshold, set dragging to true
     if (moveDistance > this.mouseMoveThreshold) {
       this._mouseState.moved = this._mouseState.down;
