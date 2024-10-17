@@ -85,6 +85,11 @@ const buffer = new Uint8Array(data);
 const model = fragments.load(buffer);
 world.scene.three.add(model);
 
+const properties = await fetch(
+  "https://thatopen.github.io/engine_components/resources/small.json",
+);
+model.setLocalProperties(await properties.json());
+
 /* MD
   ### 🗃️ Classifiying the BIM model
   ---
