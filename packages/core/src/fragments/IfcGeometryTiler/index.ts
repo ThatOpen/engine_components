@@ -191,6 +191,8 @@ export class IfcGeometryTiler extends Component implements Disposable {
   }
 
   private async streamAllGeometries() {
+    console.log("Converting geometries to tiles...");
+
     const { minGeometrySize, minAssetsSize } = this.settings;
 
     // Precompute the level to which each item belongs
