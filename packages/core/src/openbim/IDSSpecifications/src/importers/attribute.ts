@@ -14,6 +14,7 @@ export const createAttributeFacets = (
     const facet = new IDSAttribute(components, name);
     if (element.cardinality) facet.cardinality = element.cardinality;
     facet.value = getParameterValue(element.value);
+    facet.instructions = element.instructions;
     facets.push(facet);
   }
   return facets;

@@ -75,15 +75,15 @@ export class IDSSpecifications extends Component {
    *
    * @returns The newly created IDSSpecification instance.
    */
-  create(name: string, ifcVersion: IfcVersion[]) {
+  create(name: string, ifcVersion: IfcVersion[], identifier?: string) {
     const specification = new IDSSpecification(
       this.components,
       name,
       ifcVersion,
     );
 
+    if (identifier) specification.identifier = identifier;
     this.list.set(specification.identifier, specification);
-
     return specification;
   }
 
@@ -106,7 +106,8 @@ export class IDSSpecifications extends Component {
         : [specifications.specification];
 
       for (const spec of specs) {
-        const { name, ifcVersion } = spec;
+        const { name, ifcVersion, description, instructions, identifier } =
+          spec;
         if (!(name && ifcVersion)) continue;
 
         const applicabilities: IDSFacet[] = [];
@@ -130,8 +131,11 @@ export class IDSSpecifications extends Component {
           }
         }
 
+        let requirementsDescription: string | undefined;
+
         if (requirements) {
           const { maxOccurs, ...rest } = requirements;
+          requirementsDescription = requirements.description;
           const facets = Array.isArray(rest) ? rest : [rest];
           for (const facet of facets) {
             for (const facetName in facet) {
@@ -162,7 +166,14 @@ export class IDSSpecifications extends Component {
         }
 
         if (applicabilities.length > 0 && reqs.length > 0) {
-          const specification = this.create(name, ifcVersion.split(/\s+/));
+          const specification = this.create(
+            name,
+            ifcVersion.split(/\s+/),
+            identifier,
+          );
+          specification.description = description;
+          specification.instructions = instructions;
+          specification.requirementsDescription = requirementsDescription;
           specification.applicability.add(...applicabilities);
           specification.requirements.add(...reqs);
           result.push(specification);

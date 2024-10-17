@@ -16,9 +16,14 @@ await ifcLoader.setup();
 // await indexer.process(model);
 
 const ids = components.get(OBC.IDSSpecifications);
-const specification = ids.create("My First IDS!", ["IFC4X3_ADD2"]);
-specification.description = "Description";
-specification.instructions = "Instructions";
+const idsFile = await fetch("/resources/specs.ids");
+const idsContent = await idsFile.text();
+const specs = ids.load(idsContent);
+console.log(ids, specs);
+
+// const specification = ids.create("My First IDS!", ["IFC4X3_ADD2"]);
+// specification.description = "Description";
+// specification.instructions = "Instructions";
 
 // Define some facets to be used in specifications
 const entityFacet = new OBC.IDSEntity(components, {
@@ -26,7 +31,7 @@ const entityFacet = new OBC.IDSEntity(components, {
   parameter: ["IFCSLAB", "IFCWALL"],
 });
 
-specification.applicability.add(entityFacet);
+// specification.applicability.add(entityFacet);
 
 const propertyFacet = new OBC.IDSProperty(
   components,
@@ -36,14 +41,14 @@ const propertyFacet = new OBC.IDSProperty(
 
 propertyFacet.value = { type: "simple", parameter: false };
 
-specification.requirements.add(propertyFacet);
+// specification.requirements.add(propertyFacet);
 
-const idsTitle = "My Custom IDS";
-const idsExport = ids.export({ title: idsTitle });
-const file = new File([idsExport], "idsTitle.ids");
-const a = document.createElement("a");
-a.href = URL.createObjectURL(file);
-a.download = file.name;
+// const idsTitle = "My Custom IDS";
+// const idsExport = ids.export({ title: idsTitle });
+// const file = new File([idsExport], "idsTitle.ids");
+// const a = document.createElement("a");
+// a.href = URL.createObjectURL(file);
+// a.download = file.name;
 // a.click();
 // URL.revokeObjectURL(a.href);
 
