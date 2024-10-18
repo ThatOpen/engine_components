@@ -22,6 +22,7 @@ export const createClassificationFacets = (
     }
     facet.value = value;
     facet.uri = element.uri;
+    facet.instructions = element.instructions;
     facets.push(facet);
   }
   return facets;

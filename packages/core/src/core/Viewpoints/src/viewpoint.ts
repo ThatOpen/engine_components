@@ -41,9 +41,9 @@ export class Viewpoint implements BCFViewpoint {
   clippingPlanes = new DataSet<SimplePlane>();
 
   camera: ViewpointPerspectiveCamera | ViewpointOrthographicCamera = {
-    aspectRatio: 0,
-    fov: 0,
-    direction: { x: 0, y: 0, z: 80 },
+    aspectRatio: 1,
+    fov: 60,
+    direction: { x: 0, y: 0, z: 0 },
     position: { x: 0, y: 0, z: 0 },
   };
 
@@ -61,7 +61,7 @@ export class Viewpoint implements BCFViewpoint {
    * A map of colors and components GUIDs that should be colorized when displaying a viewpoint.
    * For this to work, call viewpoint.colorize()
    */
-  readonly componentColors = new DataMap<string, string[]>();
+  readonly componentColors = new DataMap<THREE.Color, string[]>();
 
   /**
    * Boolean flags to allow fine control over the visibility of spaces.
@@ -306,6 +306,25 @@ export class Viewpoint implements BCFViewpoint {
       camera.projection.set(this.projection);
     }
 
+    const basePosition = new THREE.Vector3(
+      this.camera.position.x,
+      this.camera.position.y,
+      this.camera.position.z,
+    );
+
+    const baseTarget = new THREE.Vector3(
+      this.camera.direction.x,
+      this.camera.direction.y,
+      this.camera.direction.z,
+    );
+
+    if (
+      basePosition.equals(new THREE.Vector3()) &&
+      baseTarget.equals(new THREE.Vector3())
+    ) {
+      return;
+    }
+
     const position = this.position;
     const direction = this.direction;
 
@@ -322,7 +341,7 @@ export class Viewpoint implements BCFViewpoint {
       const raycasters = this._components.get(Raycasters);
       const raycaster = raycasters.get(this.world);
       const result = raycaster.castRayFromVector(position, this.direction);
-      if (result) target = result.point;
+      if (result) target = result.point; // If there is no result, the default calculated target will be used
     } else {
       // In case there are selection components, use their center as the target
       const bb = this._components.get(BoundingBoxer);
@@ -331,12 +350,6 @@ export class Viewpoint implements BCFViewpoint {
       target = bb.getSphere().center;
       bb.reset();
     }
-
-    // Sets the viewpoint components visibility
-    const hider = this._components.get(Hider);
-    hider.set(this.defaultVisibility);
-    hider.set(!this.defaultVisibility, this.exception);
-    hider.set(true, selection); // Always make sure the selection is visible
 
     await camera.controls.setLookAt(
       position.x,
@@ -410,6 +423,13 @@ export class Viewpoint implements BCFViewpoint {
     manager.list.set(this.guid, this);
   }
 
+  applyVisibility() {
+    const hider = this._components.get(Hider);
+    hider.set(this.defaultVisibility);
+    hider.set(!this.defaultVisibility, this.exception);
+    hider.set(true, this.selection); // Always make sure the selection is visible
+  }
+
   /**
    * Applies color to the components in the viewpoint based on their GUIDs.
    *
@@ -420,25 +440,18 @@ export class Viewpoint implements BCFViewpoint {
    * The color is applied using the `Classifier.setColor` method, which sets the color of the specified fragments.
    * The color is provided as a hexadecimal string, prefixed with a '#'.
    */
-  colorize() {
+  applyColors() {
     const manager = this._components.get(Viewpoints);
     const fragments = this._components.get(FragmentsManager);
     const classifier = this._components.get(Classifier);
     for (const [color, guids] of this.componentColors) {
       const fragmentIdMap = fragments.guidToFragmentIdMap(guids);
-      const threeColor = new THREE.Color(`#${color}`);
-      classifier.setColor(
-        fragmentIdMap,
-        threeColor,
-        manager.config.overwriteColors,
-      );
+      classifier.setColor(fragmentIdMap, color, manager.config.overwriteColors);
     }
   }
 
   /**
    * Resets the colors of all components in the viewpoint to their original color.
-   * This method iterates through the `componentColors` map, retrieves the fragment IDs
-   * corresponding to each color, and then uses the `Classifier` to reset the color of those fragments.
    */
   resetColors() {
     const fragments = this._components.get(FragmentsManager);
@@ -479,6 +492,23 @@ export class Viewpoint implements BCFViewpoint {
         .join(`\n`);
     }
     return tags;
+  }
+
+  private createColorTags() {
+    let colorTags = "";
+    for (const [color, components] of this.componentColors.entries()) {
+      const hex = `#${color.getHexString()}`;
+      const tags = components
+        .map((globalId) => `\n<Component IfcGuid="${globalId}" />`)
+        .join("\n");
+      colorTags += `<Color Color="${hex}">\n${tags}\n</Color>`;
+    }
+
+    if (colorTags.length !== 0) {
+      return `<Coloring>\n${colorTags}\n</Coloring>`;
+    }
+
+    return `<Coloring />`;
   }
 
   /**
@@ -552,6 +582,7 @@ export class Viewpoint implements BCFViewpoint {
 
     const selectionTags = (await this.createComponentTags("selection")).trim();
     const exceptionTags = (await this.createComponentTags("exception")).trim();
+    const colorTags = this.createColorTags();
 
     return `<?xml version="1.0" encoding="UTF-8"?>
     <VisualizationInfo Guid="${this.guid}">
@@ -562,6 +593,7 @@ export class Viewpoint implements BCFViewpoint {
           ${version === "3" ? viewSetupHints : ""}
           ${exceptionTags.length !== 0 ? `<Exceptions>${exceptionTags}</Exceptions>` : ""}
         </Visibility>
+        ${colorTags}
       </Components>
       ${cameraXML}
     </VisualizationInfo>`;
