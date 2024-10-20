@@ -144,12 +144,6 @@ stats.dom.style.zIndex = "unset";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
 
-window.addEventListener("keydown", (e) => {
-  if(e.code === "KeyP") {
-    components.dispose();
-  }
-})
-
 /* MD
   ### 🎉 Wrap up
   ---

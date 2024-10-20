@@ -56,15 +56,18 @@ export class SimpleRaycaster implements Disposable {
    * @param items - the [meshes](https://threejs.org/docs/#api/en/objects/Mesh)
    * to query. If not provided, it will query all the meshes stored in
    * {@link Components.meshes}.
+   * @param position - the screen position to use for raycasting. If not provided,
+   * the last pointer (mouse/touch) position will be used.
    */
   castRay(
     items: THREE.Object3D[] = Array.from(this.world.meshes),
+    position = this.mouse.position,
   ): THREE.Intersection | null {
     if (!this.world) {
       throw new Error("A world is needed to cast rays!");
     }
     const camera = this.world.camera.three;
-    this.three.setFromCamera(this.mouse.position, camera);
+    this.three.setFromCamera(position, camera);
     return this.intersect(items);
   }
 
