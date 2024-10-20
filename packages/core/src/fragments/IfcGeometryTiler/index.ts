@@ -188,6 +188,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
       this.webIfc.SetLogLevel(logLevel);
     }
     this.webIfc.OpenModelFromCallback(loadCallback, this.settings.webIfc);
+    this._nextAvailableID = this.webIfc.GetMaxExpressID(0);
   }
 
   private async streamAllGeometries() {
@@ -337,7 +338,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
 
       if (!this._visitedGeometries.has(transpGeometryID)) {
         // This is the first time we see this geometry
-        this.getGeometry(webIfc, geometryID, transpGeometryID);
+        this.getGeometry(webIfc, geometryID, isOpaque);
       }
 
       this.registerGeometryData(
@@ -361,11 +362,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
     this._assets.push(asset);
   }
 
-  private getGeometry(
-    webIfc: WEBIFC.IfcAPI,
-    id: number,
-    transpGeometryID: number,
-  ) {
+  private getGeometry(webIfc: WEBIFC.IfcAPI, id: number, isOpaque: boolean) {
     const geometry = webIfc.GetGeometry(0, id);
 
     // Get the full index, position and normal data
@@ -393,6 +390,9 @@ export class IfcGeometryTiler extends Component implements Disposable {
       normal[i / 2 + 2] = vertexData[i + 5];
     }
 
+    // Take transparency into account
+    const factor = isOpaque ? 1 : -1;
+
     // Empty geometry
     if (index.length === 0) {
       // prettier-ignore
@@ -413,6 +413,8 @@ export class IfcGeometryTiler extends Component implements Disposable {
 
       const geomIndex = this._visitedGeometries.size;
       const uuid = THREE.MathUtils.generateUUID();
+
+      const transpGeometryID = id * factor;
       this._visitedGeometries.set(transpGeometryID, { uuid, index: geomIndex });
       this._geometryCount++;
       geometry.delete();
@@ -484,6 +486,7 @@ export class IfcGeometryTiler extends Component implements Disposable {
 
       const geomIndex = this._visitedGeometries.size;
       const uuid = THREE.MathUtils.generateUUID();
+      const transpGeometryID = geometryID * factor;
       this._visitedGeometries.set(transpGeometryID, { uuid, index: geomIndex });
       this._geometryCount++;
       firstSplit = false;
