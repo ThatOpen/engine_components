@@ -11,6 +11,7 @@ export const createEntityFacets = (components: Components, elements: any) => {
     const facet = new IDSEntity(components, name);
     if (element.cardinality) facet.cardinality = element.cardinality;
     facet.predefinedType = getParameterValue(element.predefinedType);
+    facet.instructions = element.instructions;
     facets.push(facet);
   }
   return facets;

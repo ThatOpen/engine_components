@@ -1,0 +1,36 @@
+<ids:ids xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd" xmlns:ids="http://standards.buildingsmart.org/IDS">
+  <ids:info>
+    <ids:title>New IDS File</ids:title>
+  </ids:info>
+  <ids:specifications>
+    <ids:specification 
+      ifcVersion="IFC4 IFC4X3_ADD2" 
+      name="New Specification" 
+      description="All partitioning walls must comply with a specific naming convention" 
+      instructions="General Specification Instructions"
+    >
+      <ids:applicability minOccurs="1" maxOccurs="unbounded">
+        <ids:entity>
+          <ids:name>
+            <ids:simpleValue>IFCWALL</ids:simpleValue>
+          </ids:name>
+          <ids:predefinedType>
+            <ids:simpleValue>PARTITIONING</ids:simpleValue>
+          </ids:predefinedType>
+        </ids:entity>
+      </ids:applicability>
+      <ids:requirements description="This is the requirement description">
+        <ids:attribute cardinality="required" instructions="Here goes the facet instructions">
+          <ids:name>
+            <ids:simpleValue>Name</ids:simpleValue>
+          </ids:name>
+          <ids:value>
+            <xs:restriction base="xs:string">
+              <xs:pattern value="MuroDivisorio_[a-zA-Z]+_\d{2}cm" />
+            </xs:restriction>
+          </ids:value>
+        </ids:attribute>
+      </ids:requirements>
+    </ids:specification>
+  </ids:specifications>
+</ids:ids>

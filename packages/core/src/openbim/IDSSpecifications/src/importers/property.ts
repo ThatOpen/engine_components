@@ -26,6 +26,8 @@ export const createPropertyFacets = (components: Components, elements: any) => {
     // URI
     facet.uri = element.uri;
 
+    facet.instructions = element.instructions;
+
     facets.push(facet);
   }
   return facets;
