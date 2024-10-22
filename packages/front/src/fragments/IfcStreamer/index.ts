@@ -344,9 +344,23 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
    * @param visible - The visibility state to set.
    * @param filter - A map of fragment IDs to arrays of item IDs.
    *                  Only items with IDs present in the arrays will be visible.
+   *                  If not provided, it will take all loaded models as filter.
    */
-  setVisibility(visible: boolean, filter: FRAG.FragmentIdMap) {
+  setVisibility(visible: boolean, filter?: FRAG.FragmentIdMap) {
     const modelGeomsAssets = new Map<string, Map<number, Set<number>>>();
+
+    if (!filter) {
+      const fragments = this.components.get(OBC.FragmentsManager);
+      const allFragmentMaps: FRAG.FragmentIdMap = {};
+      for (const [, group] of fragments.groups) {
+        const map = group.getFragmentMap();
+        for (const id in map) {
+          allFragmentMaps[id] = map[id];
+        }
+      }
+      filter = allFragmentMaps;
+    }
+
     for (const fragID in filter) {
       const found = this.fragIDData.get(fragID);
       if (found === undefined) {
@@ -379,6 +393,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
         assetGroup.add(asset);
       }
     }
+
     for (const [modelID, geometriesAssets] of modelGeomsAssets) {
       // Set visibility of stream culler
       this.culler.setVisibility(visible, modelID, geometriesAssets);
@@ -451,7 +466,7 @@ export class IfcStreamer extends OBC.Component implements OBC.Disposable {
   }
 
   /**
-   * Gets a FragmentsGroup with the OBB of the specified items. Keep in mind that you will need to dispose this group yourself using the dispoe() method.
+   * Gets a FragmentsGroup with the OBB of the specified items. Keep in mind that you will need to dispose this group yourself using the dispose(false) method (geometry is shared with bounding boxes used for visibility check).
    *
    * @param items - The items whose bounding boxes to get.
    */
