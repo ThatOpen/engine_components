@@ -524,21 +524,19 @@ export class Classifier extends Component implements Disposable {
       }
     }
 
-    return JSON.stringify(exported);
+    return exported;
   }
 
   /**
    * Imports a classification previously exported with .export().
    * @param data the serialized classification to import.
    */
-  import(data: string) {
-    const imported = JSON.parse(data) as ExportedClassification;
-
-    for (const systemName in imported) {
+  import(data: ExportedClassification) {
+    for (const systemName in data) {
       if (!this.list[systemName]) {
         this.list[systemName] = {};
       }
-      const system = imported[systemName];
+      const system = data[systemName];
       for (const groupName in system) {
         const group = system[groupName];
         this.list[systemName][groupName] = {
