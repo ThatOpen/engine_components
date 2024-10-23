@@ -446,13 +446,10 @@ export class Highlighter
    * Clears the selection for the given name or all selections if no name is provided.
    *
    * @param name - The name of the selection to clear. If not provided, clears all selections.
+   * @param filter - The only items to unselect. If not provided, all items will be unselected.
    *
-   * @throws Will throw an error if the FragmentsManager is not found.
-   * @throws Will throw an error if the fragment or its geometry is not found.
-   * @throws Will throw an error if the item ID is not found.
-   * @throws Will throw an error if the fragment does not belong to a FragmentsGroup.
    */
-  clear(name?: string) {
+  clear(name?: string, filter?: FRAGS.FragmentIdMap) {
     const names = name ? [name] : Object.keys(this.selection);
 
     for (const name of names) {
@@ -464,14 +461,29 @@ export class Highlighter
 
       for (const fragID in this.selection[name]) {
         const fragment = fragments.list.get(fragID);
-
         if (!fragment) {
           continue;
         }
-        const ids = selected[fragID];
+
+        let ids = selected[fragID];
         if (!ids) {
           continue;
         }
+
+        if (filter) {
+          const selected = filter[fragID];
+          if (!selected) {
+            continue;
+          }
+          const filtered = new Set<number>();
+          for (const id of ids) {
+            if (selected.has(id)) {
+              filtered.add(id);
+            }
+          }
+          ids = filtered;
+        }
+
         if (this.backupColor) {
           fragment.setColor(this.backupColor, ids);
         } else {
