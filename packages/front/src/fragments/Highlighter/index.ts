@@ -489,10 +489,15 @@ export class Highlighter
         } else {
           fragment.resetColor(ids);
         }
+
+        if (this.selection[name][fragID]) {
+          for (const id of ids) {
+            this.selection[name][fragID].delete(id);
+          }
+        }
       }
 
       this.events[name].onClear.trigger(null);
-      this.selection[name] = {};
     }
   }
 
