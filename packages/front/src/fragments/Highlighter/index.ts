@@ -473,7 +473,7 @@ export class Highlighter
         if (filter) {
           // Only clear the IDs specified in the filter
           const filteredSelection = filter[fragID];
-          if (!selected) {
+          if (!filteredSelection) {
             // If the filter doesn't match this, skip it (don't clear it)
             continue;
           }
