@@ -459,42 +459,49 @@ export class Highlighter
 
       const selected = this.selection[name];
 
-      for (const fragID in this.selection[name]) {
+      for (const fragID in selected) {
         const fragment = fragments.list.get(fragID);
         if (!fragment) {
           continue;
         }
 
-        let ids = selected[fragID];
-        if (!ids) {
+        const idsToClear = selected[fragID];
+        if (!idsToClear) {
           continue;
         }
 
         if (filter) {
-          const selected = filter[fragID];
+          // Only clear the IDs specified in the filter
+          const filteredSelection = filter[fragID];
           if (!selected) {
+            // If the filter doesn't match this, skip it (don't clear it)
             continue;
           }
-          const filtered = new Set<number>();
-          for (const id of ids) {
-            if (selected.has(id)) {
-              filtered.add(id);
+          const toClear = new Set<number>();
+          const remaining = new Set<number>();
+          for (const id of idsToClear) {
+            if (filteredSelection.has(id)) {
+              toClear.add(id);
+            } else {
+              remaining.add(id);
             }
           }
-          ids = filtered;
+          if (remaining.size) {
+            selected[fragID] = remaining;
+          } else {
+            delete selected[fragID];
+          }
         }
 
         if (this.backupColor) {
-          fragment.setColor(this.backupColor, ids);
+          fragment.setColor(this.backupColor, idsToClear);
         } else {
-          fragment.resetColor(ids);
+          fragment.resetColor(idsToClear);
         }
+      }
 
-        if (this.selection[name][fragID]) {
-          for (const id of ids) {
-            this.selection[name][fragID].delete(id);
-          }
-        }
+      if (!filter) {
+        this.selection[name] = {};
       }
 
       this.events[name].onClear.trigger(null);
