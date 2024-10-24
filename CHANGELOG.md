@@ -1,5 +1,35 @@
 # Changelog
 
+## [2.4.0](https://github.com/ThatOpen/engine_components/compare/v2.3.0...v2.4.0) (2024-10-24)
+
+
+### Features
+
+* **core:** remove unused coordinate property from ifc settings ([2b23f80](https://github.com/ThatOpen/engine_components/commit/2b23f80e3d617aa7fddf66ff3cb696334f101ce5))
+* **front:** Add keydown event for Lengthmeasurement ([#466](https://github.com/ThatOpen/engine_components/issues/466)) ([3bfdcbf](https://github.com/ThatOpen/engine_components/commit/3bfdcbf77d19185855a329f15edf181bb267b5db))
+* **front:** Add Threashold to onMouseMove to supress small movements ([#467](https://github.com/ThatOpen/engine_components/issues/467)) ([b5c8365](https://github.com/ThatOpen/engine_components/commit/b5c836587cac41d6b922c7c2bfac5dcd9201884a))
+
+
+### Bug Fixes
+
+* **core:** add guard check for disposing simple planes ([ca1ef1f](https://github.com/ThatOpen/engine_components/commit/ca1ef1fb3a15fff9566c6cbb7173608938ed36f2))
+* **core:** add guard when reading ifc organization ([55494b5](https://github.com/ThatOpen/engine_components/commit/55494b55c683f2aacb1870bce34367d8d75291c2))
+* **core:** also load properties on classifier tutorial ([e47d497](https://github.com/ThatOpen/engine_components/commit/e47d49740f0fac2d1bc7bbcc8b932bc0c764f038))
+* **core:** blob wasn't allowing to generate viewpoint screenshot in NodeJS ([1b94642](https://github.com/ThatOpen/engine_components/commit/1b9464223c6f27f9069eb5f63fb19c2a47e114aa))
+* **core:** deletes extension in ifc-property-query export ([0b8cd48](https://github.com/ThatOpen/engine_components/commit/0b8cd482625e970bcecefcd439f89e9797ef4b45))
+* **core:** IFC file containing "$" in header fails to load ([#510](https://github.com/ThatOpen/engine_components/issues/510)) ([c882d13](https://github.com/ThatOpen/engine_components/commit/c882d13612649d2ccf5923a953552460a5be8666))
+* **core:** make raycaster compatible with thouch screens ([4e6676b](https://github.com/ThatOpen/engine_components/commit/4e6676b385fccb0c98f07aa8ae247eee20c86841))
+* **core:** make streamer events async, various streaming fixes ([fd4304f](https://github.com/ThatOpen/engine_components/commit/fd4304fb8855270dfdf70d68ddecf6b57fbbe78e))
+* **core:** missing information when importing IDS files ([a40a3cc](https://github.com/ThatOpen/engine_components/commit/a40a3cce1a0995b8fcc4ca0c187a6934b25f8fe0))
+* **front:** correct another outliner disposal bug ([e1a1c72](https://github.com/ThatOpen/engine_components/commit/e1a1c72cdb43afd0195bee18c0e5c5ebcb1bd672))
+* **front:** correct outliner disposal ([7c57c46](https://github.com/ThatOpen/engine_components/commit/7c57c467f0fe52d64518584d4105c5fee70c5d9f))
+* **front:** correct outliner position in moved models ([20d2c59](https://github.com/ThatOpen/engine_components/commit/20d2c5956b688da83717cfd86faa2f4a25a2631c))
+
+
+### Miscellaneous Chores
+
+* release 2.4.0 ([b2e8cf8](https://github.com/ThatOpen/engine_components/commit/b2e8cf89f72b6b1055e2c56e0a35375fa7353846))
+
 ## [2.3.0](https://github.com/ThatOpen/engine_components/compare/v2.2.0...v2.3.0) (2024-10-07)
 
 
