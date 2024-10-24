@@ -18,17 +18,21 @@ export class PlatformComponents extends OBC.Component {
       const script = document.createElement("script");
 
       const src = `
-        const { OBC, BUI } = window.ThatOpenCompany;
-      
-        ${componentSource}
-      
-        const onComponentRequested = () => {
-          window.removeEventListener("${this._requestEventID}", onComponentRequested);
-          const event = new CustomEvent("${this._createEventID}", { detail: main });
-          window.dispatchEvent(event);
-        };
+        function main() {
+          const { OBC, BUI } = window.ThatOpenCompany;
         
-        window.addEventListener("${this._requestEventID}", onComponentRequested);
+          ${componentSource}
+        
+          const onComponentRequested = () => {
+            window.removeEventListener("${this._requestEventID}", onComponentRequested);
+            const event = new CustomEvent("${this._createEventID}", { detail: main });
+            window.dispatchEvent(event);
+          };
+          
+          window.addEventListener("${this._requestEventID}", onComponentRequested);
+        }
+        
+        main();
       `;
 
       const onCreated = (event: any) => {

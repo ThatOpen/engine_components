@@ -43,8 +43,13 @@ world.renderer.onAfterUpdate.add(() => stats.end());
 (window as any).ThatOpenCompany = { OBC, BUI };
 
 const cloudComponents = components.get(OBCF.PlatformComponents);
-const fetched = await fetch("../../../../../resources/mock-cloud-component.js");
-const componentData = await fetched.text();
-const test = await cloudComponents.import(componentData);
-const ui = test.getUI();
-document.body.appendChild(ui[0].get());
+
+async function importComponent(url: string) {
+  const fetched = await fetch(url);
+  const componentData = await fetched.text();
+  const test = await cloudComponents.import(componentData);
+  console.log(test);
+}
+
+await importComponent("../../../../../resources/mock-cloud-component.js");
+await importComponent("../../../../../resources/mock-cloud-component-2.js");
