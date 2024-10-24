@@ -72,6 +72,9 @@ export class SimplePlane implements Disposable, Hideable {
    * @param {boolean} state - The new enabled state.
    */
   set enabled(state: boolean) {
+    if (this.world.isDisposing) {
+      return;
+    }
     if (!this.world.renderer) {
       throw new Error("No renderer found for clipping plane!");
     }
