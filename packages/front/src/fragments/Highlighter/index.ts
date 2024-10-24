@@ -452,12 +452,12 @@ export class Highlighter
   clear(name?: string, filter?: FRAGS.FragmentIdMap) {
     const names = name ? [name] : Object.keys(this.selection);
 
-    for (const name of names) {
-      this._fills.clear(name);
+    for (const selectionName of names) {
+      this._fills.clear(selectionName);
 
       const fragments = this.components.get(OBC.FragmentsManager);
 
-      const selected = this.selection[name];
+      const selected = this.selection[selectionName];
 
       for (const fragID in selected) {
         const fragment = fragments.list.get(fragID);
@@ -465,7 +465,7 @@ export class Highlighter
           continue;
         }
 
-        const idsToClear = selected[fragID];
+        let idsToClear = selected[fragID];
         if (!idsToClear) {
           continue;
         }
@@ -486,6 +486,8 @@ export class Highlighter
               remaining.add(id);
             }
           }
+
+          idsToClear = toClear;
           if (remaining.size) {
             selected[fragID] = remaining;
           } else {
@@ -501,10 +503,10 @@ export class Highlighter
       }
 
       if (!filter) {
-        this.selection[name] = {};
+        this.selection[selectionName] = {};
       }
 
-      this.events[name].onClear.trigger(null);
+      this.events[selectionName].onClear.trigger(null);
     }
   }
 
