@@ -13,6 +13,11 @@ export class PlatformComponents extends OBC.Component {
 
   private readonly _createEventID = "thatOpenCompanyComponentCreated";
 
+  constructor(components: OBC.Components) {
+    super(components);
+    components.add(PlatformComponents.uuid, this);
+  }
+
   async import(componentSource: string) {
     return new Promise<OBC.ComponentWithUI>((resolve) => {
       const script = document.createElement("script");
