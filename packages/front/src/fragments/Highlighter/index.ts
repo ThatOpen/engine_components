@@ -183,7 +183,26 @@ export class Highlighter
       onClear,
       onBeforeHighlight,
     };
-    this.eventManager.add([onClear, onHighlight]);
+    this.eventManager.add([onClear, onHighlight, onBeforeHighlight]);
+  }
+
+  /**
+   * Removes the specified selection.
+   *
+   * @param name - The name of the new selection.
+   */
+  remove(name: string) {
+    this.clear(name);
+    delete this.selection[name];
+    this.colors.delete(name);
+    if (this.selection[name] || this.colors.has(name)) {
+      throw new Error("A selection with that name already exists!");
+    }
+    if (this.events[name]) {
+      const { onHighlight, onClear, onBeforeHighlight } = this.events[name];
+      this.eventManager.remove([onClear, onHighlight, onBeforeHighlight]);
+      delete this.events[name];
+    }
   }
 
   /**
