@@ -9,6 +9,8 @@ export class PlatformComponents extends OBC.Component {
 
   enabled = true;
 
+  inputs = ["OBC", "BUI"];
+
   private readonly _requestEventID = "thatOpenCompanyComponentRequested";
 
   private readonly _createEventID = "thatOpenCompanyComponentCreated";
@@ -24,7 +26,7 @@ export class PlatformComponents extends OBC.Component {
 
       const src = `
         function main() {
-          const { OBC, BUI } = window.ThatOpenCompany;
+          const { ${this.inputs} } = window.ThatOpenCompany;
         
           ${componentSource}
         
