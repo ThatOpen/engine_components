@@ -15,6 +15,7 @@ export class IDSProperty extends IDSFacet {
   dataType?: string;
   uri?: string;
 
+  // These are defined by the IDS specification
   private _unsupportedTypes = [
     WEBIFC.IFCCOMPLEXPROPERTY,
     WEBIFC.IFCPHYSICALCOMPLEXQUANTITY,
@@ -271,7 +272,7 @@ export class IDSProperty extends IDSFacet {
   }
 
   private getItemsAttrName(type: number) {
-    let propsListName: string | undefined;
+    let propsListName: "HasProperties" | "Quantities" | undefined;
     if (type === WEBIFC.IFCPROPERTYSET) propsListName = "HasProperties";
     if (type === WEBIFC.IFCELEMENTQUANTITY) propsListName = "Quantities";
     return propsListName;
@@ -283,9 +284,62 @@ export class IDSProperty extends IDSFacet {
     );
   }
 
-  // IFCPROPERTYSET from type must be get as well
-  private async getPsets(model: FRAGS.FragmentsGroup, expressID: number) {
+  private async getPsetProps(
+    model: FRAGS.FragmentsGroup,
+    attrs: Record<string, any>,
+    propsListName: "HasProperties" | "Quantities",
+  ) {
+    const attrsClone = structuredClone(attrs);
+    const props: Record<string, any>[] = [];
+    const list = attrsClone[propsListName];
+    if (!list) return props;
+    for (const { value } of list) {
+      const propAttrs = await model.getProperties(value);
+      if (propAttrs) props.push(propAttrs);
+    }
+    attrsClone[propsListName] = props;
+    return attrsClone;
+  }
+
+  private async getTypePsets(model: FRAGS.FragmentsGroup, expressID: number) {
     const sets: Record<string, any>[] = [];
+
+    const indexer = this.components.get(IfcRelationsIndexer);
+    const types = indexer.getEntityRelations(model, expressID, "IsTypedBy");
+    if (!(types && types[0])) return sets;
+
+    const typeAttrs = await model.getProperties(types[0]);
+    if (
+      !(
+        typeAttrs &&
+        "HasPropertySets" in typeAttrs &&
+        Array.isArray(typeAttrs.HasPropertySets)
+      )
+    ) {
+      return sets;
+    }
+
+    for (const { value } of typeAttrs.HasPropertySets) {
+      const psetAttrs = await model.getProperties(value);
+      if (
+        !(
+          psetAttrs &&
+          "HasProperties" in psetAttrs &&
+          Array.isArray(psetAttrs.HasProperties)
+        )
+      ) {
+        continue;
+      }
+
+      const pset = await this.getPsetProps(model, psetAttrs, "HasProperties");
+      sets.push(pset);
+    }
+
+    return sets;
+  }
+
+  private async getPsets(model: FRAGS.FragmentsGroup, expressID: number) {
+    const sets = await this.getTypePsets(model, expressID);
 
     const indexer = this.components.get(IfcRelationsIndexer);
     const definitions = indexer.getEntityRelations(
@@ -293,6 +347,7 @@ export class IDSProperty extends IDSFacet {
       expressID,
       "IsDefinedBy",
     );
+
     if (!definitions) return sets;
 
     for (const definitionID of definitions) {
@@ -302,15 +357,8 @@ export class IDSProperty extends IDSFacet {
       const propsListName = this.getItemsAttrName(attrs.type);
       if (!propsListName) continue;
 
-      const attrsClone = structuredClone(attrs);
-      const props: Record<string, any>[] = [];
-      for (const { value } of attrsClone[propsListName]) {
-        const propAttrs = await model.getProperties(value);
-        if (propAttrs) props.push(propAttrs);
-      }
-      attrsClone[propsListName] = props;
-
-      sets.push(attrsClone);
+      const pset = await this.getPsetProps(model, attrs, propsListName);
+      sets.push(pset);
     }
 
     return sets;
