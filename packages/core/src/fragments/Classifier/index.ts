@@ -11,7 +11,7 @@ import { FragmentsManager } from "../FragmentsManager";
 // for dynamic, we just need to add a queryGroup as shown below
 
 // TODO: Make the groups a class to have a getter that gets the combined FragmentIdMap
-// combined from the cherry picked elements and the elements found in the group
+// combined from the cherry p<icked elements and the elements found in the group
 
 /**
  * Interface representing a classification system. The classification is organized by system and class name, and each class contains a map of fragment IDs with extra information.
@@ -38,7 +38,7 @@ export interface Classification {
 interface ExportedClassification {
   [system: string]: {
     [groupName: string]: {
-      map: string;
+      map: { [name: string]: number[] };
       name: string;
       id: number | null;
     };
