@@ -1,7 +1,7 @@
 {
   "name": "@thatopen/components",
   "description": "Collection of core functionalities to author BIM apps.",
-  "version": "2.4.0-alpha.14",
+  "version": "2.4.0-alpha.15",
   "author": "That Open Company",
   "contributors": [
     "Antonio Gonzalez Viegas (https://github.com/agviegas)",
@@ -37,7 +37,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@thatopen/fragments": ">=2.4.0-alpha.8",
+    "@thatopen/fragments": ">=2.4.0-alpha.9",
     "@thatopen/ui": "~2.3.0",
     "@types/three": "0.160.0",
     "stats.js": "^0.17.0",
@@ -51,7 +51,7 @@
     "three-mesh-bvh": "0.7.0"
   },
   "peerDependencies": {
-    "@thatopen/fragments": ">=2.4.0-alpha.8",
+    "@thatopen/fragments": ">=2.4.0-alpha.9",
     "three": "^0.160.1",
     "web-ifc": "0.0.61"
   }

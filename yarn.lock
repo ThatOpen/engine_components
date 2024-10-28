@@ -689,8 +689,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
-    "@thatopen/components": ">=2.4.0-alpha.13"
-    "@thatopen/fragments": ">=2.4.0-alpha.8"
+    "@thatopen/components": ">=2.4.0-alpha.14"
+    "@thatopen/fragments": ">=2.4.0-alpha.9"
     "@thatopen/ui": ~2.3.0
     "@thatopen/ui-obc": ~2.3.0
     "@types/earcut": ^2.1.4
@@ -703,17 +703,17 @@ __metadata:
     three: ^0.160.1
     web-ifc: 0.0.61
   peerDependencies:
-    "@thatopen/fragments": ">=2.4.0-alpha.8"
+    "@thatopen/fragments": ">=2.4.0-alpha.9"
     three: ^0.160.1
     web-ifc: 0.0.61
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@>=2.4.0-alpha.13, @thatopen/components@workspace:packages/core":
+"@thatopen/components@>=2.4.0-alpha.14, @thatopen/components@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
-    "@thatopen/fragments": ">=2.4.0-alpha.8"
+    "@thatopen/fragments": ">=2.4.0-alpha.9"
     "@thatopen/ui": ~2.3.0
     "@types/three": 0.160.0
     camera-controls: 2.7.3
@@ -724,21 +724,21 @@ __metadata:
     three-mesh-bvh: 0.7.0
     web-ifc: 0.0.61
   peerDependencies:
-    "@thatopen/fragments": ">=2.4.0-alpha.8"
+    "@thatopen/fragments": ">=2.4.0-alpha.9"
     three: ^0.160.1
     web-ifc: 0.0.61
   languageName: unknown
   linkType: soft
 
-"@thatopen/fragments@npm:>=2.4.0-alpha.8":
-  version: 2.4.0-alpha.8
-  resolution: "@thatopen/fragments@npm:2.4.0-alpha.8"
+"@thatopen/fragments@npm:>=2.4.0-alpha.9":
+  version: 2.4.0-alpha.9
+  resolution: "@thatopen/fragments@npm:2.4.0-alpha.9"
   dependencies:
     flatbuffers: 23.3.3
     three-mesh-bvh: 0.7.0
   peerDependencies:
     three: ^0.160.1
-  checksum: d4be85ef5f96d892be594675192ba037550135f8ba1243a2875dd5c8b9eb72059b7e110a2f8bbbdc6f8d1c696a986c688c7fd70bf410ffadea1dd7b09fc8cb35
+  checksum: 260ee1be9268412b9b810fac5300c0cd600797c885c51c6812eaef2ad2a234b3e34f874348e02dc88c505872cbdabfb47f2be2593cfb138e55d1b70861a7e6c9
   languageName: node
   linkType: hard
 
