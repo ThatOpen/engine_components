@@ -204,7 +204,6 @@ export class IfcPropertiesManager extends Component implements Disposable {
     const schema = IfcPropertiesManager.getIFCSchema(model);
     const { ownerHistoryHandle } = await this.getOwnerHistory(model);
 
-    // Create the Pset
     const psetGlobalId = this.newGUID(model);
     const psetName = new WEBIFC[schema].IfcLabel(name);
     const psetDescription = description
@@ -217,23 +216,11 @@ export class IfcPropertiesManager extends Component implements Disposable {
       psetDescription,
       [],
     );
+
     pset.expressID = this.getNewExpressID(model);
+    await this.setData(model, pset);
 
-    // Create the Pset relation
-    const relGlobalId = this.newGUID(model);
-    const rel = new WEBIFC[schema].IfcRelDefinesByProperties(
-      relGlobalId,
-      ownerHistoryHandle,
-      null,
-      null,
-      [],
-      new WEBIFC.Handle(pset.expressID),
-    );
-    rel.expressID = this.getNewExpressID(model);
-
-    await this.setData(model, pset, rel);
-
-    return { pset, rel };
+    return { pset };
   }
 
   /**
@@ -370,7 +357,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
     indexer.addEntitiesRelation(
       model,
       psetID,
-      { type: WEBIFC.IFCRELDEFINESBYPROPERTIES, inv: "IsDefinedBy" },
+      { type: WEBIFC.IFCRELDEFINESBYPROPERTIES, inv: "DefinesOcurrence" },
       ...expressIDs,
     );
   }
@@ -429,7 +416,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
       throw new Error(`IfcPropertiesManager: ${relName} is unsoported.`);
     }
 
-    const schema = model.ifcMetadata.schema;
+    const schema = IfcPropertiesManager.getIFCSchema(model);
     const attributePositions = ifcRelAttrsPosition[relName];
     // @ts-ignore safe to use ts-ignore as we are checking in the following line if the class exists.
     const RelClass = WEBIFC[schema][relName];

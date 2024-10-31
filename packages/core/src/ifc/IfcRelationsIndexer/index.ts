@@ -570,6 +570,8 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     ...relatedIDs: number[]
   ) {
     const { type, inv } = rel;
+
+    // TODO: Allow to create the relation even if the model wasn't previously processed
     const relationsMap = this.relationMaps[model.uuid];
     if (!relationsMap) return;
 

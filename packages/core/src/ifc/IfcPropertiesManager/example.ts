@@ -10,6 +10,11 @@ const file = await fetch(
 const buffer = await file.arrayBuffer();
 const model = await ifcLoader.load(new Uint8Array(buffer));
 
+const indexer = components.get(OBC.IfcRelationsIndexer);
+
+// By the time beign, the model relations must be processed to see the new relations when downloading the IFC
+await indexer.process(model);
+
 const propertiesManager = components.get(OBC.IfcPropertiesManager);
 
 // Add a new pset
@@ -23,7 +28,12 @@ const prop = await propertiesManager.newSingleNumericProperty(
 );
 
 await propertiesManager.addPropToPset(model, pset.expressID, prop.expressID);
-await propertiesManager.addElementToPset(model, pset.expressID, 186);
+indexer.addEntitiesRelation(
+  model,
+  pset.expressID,
+  { type: WEBIFC.IFCRELDEFINESBYPROPERTIES, inv: "DefinesOcurrence" },
+  186,
+);
 
 // Modify existing entity attributes
 const entityAttributes = await model.getProperties(186);
@@ -52,14 +62,17 @@ const ifcTask = new WEBIFC.IFC4X3.IfcTask(
 await propertiesManager.setData(model, ifcTask);
 
 // Export modified model
-const modifiedBuffer = await propertiesManager.saveToIfc(
-  model,
-  new Uint8Array(buffer),
-);
+const downloadBtn = document.getElementById("download-btn")!;
+downloadBtn.addEventListener("click", async () => {
+  const modifiedBuffer = await propertiesManager.saveToIfc(
+    model,
+    new Uint8Array(buffer),
+  );
 
-const modifiedFile = new File([modifiedBuffer], "small-modified.ifc");
-const a = document.createElement("a");
-a.href = URL.createObjectURL(modifiedFile);
-a.download = modifiedFile.name;
-// a.click();
-URL.revokeObjectURL(a.href);
+  const modifiedFile = new File([modifiedBuffer], "small-modified.ifc");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(modifiedFile);
+  a.download = modifiedFile.name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
