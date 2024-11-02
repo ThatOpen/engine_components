@@ -16,6 +16,8 @@ import {
   InverseAttribute,
   IfcRelations,
   IfcRelation,
+  RelationsProcessingConfig,
+  EntitiesRelatedEvent,
 } from "./src";
 import { relToAttributesMap } from "./src/relToAttributesMap";
 import { IfcPropertiesManager } from "../IfcPropertiesManager";
@@ -127,7 +129,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
 
   private indexRelations(
     relationsMap: RelationsMap,
-    relAttrs: any,
+    relAttrs: Record<string, any>,
     related: InverseAttribute,
     relating: InverseAttribute,
   ) {
@@ -142,44 +144,29 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     const relatedIDs = relAttrs[relatedKey].map((el: any) => el.value);
 
     // forRelating
-    const index = this.getAttributeIndex(relating);
-    if (index !== null) {
-      let currentMap = relationsMap.get(relatingID);
-      if (!currentMap) {
-        currentMap = new Map();
-        relationsMap.set(relatingID, currentMap);
-      }
-      let indexMap = currentMap.get(index);
-      if (!indexMap) {
-        indexMap = [];
-        currentMap.set(index, indexMap);
-      }
-      for (const id of relatedIDs) {
-        indexMap.push(id);
-      }
+    const indexMap = this.getEntityRelations(
+      relationsMap,
+      relatingID,
+      relating,
+    );
+    for (const id of relatedIDs) {
+      indexMap.push(id);
     }
 
     // forRelated
     for (const id of relatedIDs) {
-      const index = this.getAttributeIndex(related);
-      if (index === null) continue;
-      let currentMap = relationsMap.get(id);
-      if (!currentMap) {
-        currentMap = new Map();
-        relationsMap.set(id, currentMap);
-      }
-      let relations = currentMap.get(index);
-      if (!relations) {
-        relations = [];
-        currentMap.set(index, relations);
-      }
+      const relations = this.getEntityRelations(relationsMap, id, related);
       relations.push(relatingID);
     }
   }
 
   getAttributeIndex(inverseAttribute: InverseAttribute) {
     const index = this._inverseAttributes.indexOf(inverseAttribute);
-    if (index === -1) return null;
+    if (index === -1) {
+      throw new Error(
+        `IfcRelationsIndexer: ${inverseAttribute} is not a valid IFC Inverse Attribute name or its not supported yet by this component.`,
+      );
+    }
     return index;
   }
 
@@ -215,24 +202,27 @@ export class IfcRelationsIndexer extends Component implements Disposable {
    * representation of the relations indexed by entity expressIDs and relation types.
    * @throws An error if the model does not have properties loaded.
    */
-  async process(model: FragmentsGroup) {
+  async process(
+    model: FragmentsGroup,
+    config?: Partial<RelationsProcessingConfig>,
+  ) {
     if (!model.hasProperties)
       throw new Error("FragmentsGroup properties not found");
 
     let relationsMap = this.relationMaps[model.uuid];
-    if (relationsMap) {
-      return relationsMap;
+    if (!relationsMap) {
+      relationsMap = new Map();
+      this.relationMaps[model.uuid] = relationsMap;
     }
 
-    relationsMap = new Map();
+    const entities = model.getLocalProperties();
+    if (!entities) return relationsMap;
 
-    for (const relType of this._ifcRels) {
-      const relsAttrs = await model.getAllPropertiesOfType(relType);
-      if (!relsAttrs) {
-        continue;
-      }
+    const relationsToProcess = config?.relationsToProcess ?? this._ifcRels;
 
-      const relInverseAttributes = this._relToAttributesMap.get(relType);
+    for (const [_, entity] of Object.entries(entities)) {
+      if (!relationsToProcess.includes(entity.type)) continue;
+      const relInverseAttributes = this._relToAttributesMap.get(entity.type);
       if (!relInverseAttributes) {
         continue;
       }
@@ -240,10 +230,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
       const { forRelated: related, forRelating: relating } =
         relInverseAttributes;
 
-      for (const expressID in relsAttrs) {
-        const relAttrs = relsAttrs[expressID];
-        this.indexRelations(relationsMap, relAttrs, related, relating);
-      }
+      this.indexRelations(relationsMap, entity, related, relating);
     }
 
     this.setRelationMap(model, relationsMap);
@@ -291,31 +278,46 @@ export class IfcRelationsIndexer extends Component implements Disposable {
    *
    * @param model The `FragmentsGroup` model containing the entity, or its UUID.
    * @param expressID The unique identifier of the entity within the model.
-   * @param relationName The IFC schema inverse attribute of the relation to search for (e.g., "IsDefinedBy", "ContainsElements").
-   * @returns An array of express IDs representing the related entities, or `null` if no relations are found
-   * or the specified relation name is not indexed.
+   * @param attribute The IFC schema inverse attribute of the relation to search for (e.g., "IsDefinedBy", "ContainsElements").
+   * @returns An array of express IDs representing the related entities. If the array is empty, no relations were found.
    */
   getEntityRelations(
-    model: FragmentsGroup | string,
+    model: FragmentsGroup | string | RelationsMap,
     expressID: number,
-    relationName: InverseAttribute,
+    attribute: InverseAttribute,
   ) {
-    const id = model instanceof FragmentsGroup ? model.uuid : model;
-    const indexMap = this.relationMaps[id];
-    if (!indexMap) {
-      throw new Error(
-        `IfcRelationsIndexer: model ${id} has no relations indexed.`,
-      );
+    const index = this.getAttributeIndex(attribute);
+    let relationsMap: RelationsMap;
+
+    if (model instanceof FragmentsGroup) {
+      relationsMap = this.relationMaps[model.uuid];
+    } else if (typeof model === "string") {
+      relationsMap = this.relationMaps[model];
+    } else {
+      relationsMap = model;
     }
-    const entityRelations = indexMap.get(expressID);
-    const attributeIndex = this.getAttributeIndex(relationName);
-    if (entityRelations === undefined || attributeIndex === null) {
-      return null;
+
+    if (
+      !relationsMap &&
+      (model instanceof FragmentsGroup || typeof model === "string")
+    ) {
+      relationsMap = new Map();
+      const id = model instanceof FragmentsGroup ? model.uuid : model;
+      this.relationMaps[id] = relationsMap;
     }
-    const relations = entityRelations.get(attributeIndex);
+
+    let entityRelations = relationsMap.get(expressID);
+    if (!entityRelations) {
+      entityRelations = new Map();
+      relationsMap.set(expressID, entityRelations);
+    }
+
+    let relations = entityRelations.get(index);
     if (!relations) {
-      return null;
+      relations = [];
+      entityRelations.set(index, relations);
     }
+
     return relations;
   }
 
@@ -445,8 +447,6 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     const set: Set<number> = new Set();
     for (const [id, map] of relations) {
       const index = this.getAttributeIndex(inv);
-      if (index === null)
-        throw new Error("IfcRelationsIndexer: invalid inverse attribute name");
       const rels = map.get(index);
       if (rels && rels.includes(expressID)) set.add(id);
     }
@@ -477,11 +477,6 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     );
     if (!existingRelations) {
       const attributeIndex = this.getAttributeIndex(relationName);
-      if (!attributeIndex) {
-        throw new Error(
-          `IfcRelationsIndexer: ${relationName} is not a valid relation name.`,
-        );
-      }
       const entityRelations = this.relationMaps[model.uuid].get(expressID);
       entityRelations?.set(attributeIndex, relIDs);
     } else {
@@ -489,18 +484,11 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     }
   }
 
-  // removeEntitiesRelation(
-  //   model: FragmentsGroup,
-  //   relatingID: number,
-  //   relationName: InverseAttribute,
-  //   ...relatedIDs: number[]
-  // ) {}
-
   /**
    * Converts the relations made into actual IFC data.
    *
    * @remarks This function iterates through the changes made to the relations and applies them to the corresponding BIM model.
-   * It only make sense to use if the relations need to be write in the IFC file.
+   * It only make sense to use it if the relations need to be write in the IFC file.
    *
    * @returns A promise that resolves when all the relation changes have been applied.
    */
@@ -539,7 +527,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
     }
   }
 
-  // Use to create the corresponding IfcRelationship
+  // Used to create the corresponding IfcRelationship with the IfcPropertiesManager
   private readonly _changeMap: {
     [modelID: string]: DataMap<
       IfcRelation,
@@ -552,16 +540,7 @@ export class IfcRelationsIndexer extends Component implements Disposable {
    * The event provides information about the type of relation, the inverse attribute,
    * the IDs of the entities related, and the IDs of the entities that are being related.
    */
-  readonly onEntitiesRelated = new Event<{
-    /** The type of the IFC relation. */
-    relType: IfcRelation;
-    /** The inverse attribute of the relation. */
-    invAttribute: InverseAttribute;
-    /** The IDs of the entities that are relating. */
-    relatingIDs: number[];
-    /** The IDs of the entities that are being related. */
-    relatedIDs: number[];
-  }>();
+  readonly onEntitiesRelated = new Event<EntitiesRelatedEvent>();
 
   addEntitiesRelation(
     model: FragmentsGroup,
@@ -571,9 +550,11 @@ export class IfcRelationsIndexer extends Component implements Disposable {
   ) {
     const { type, inv } = rel;
 
-    // TODO: Allow to create the relation even if the model wasn't previously processed
-    const relationsMap = this.relationMaps[model.uuid];
-    if (!relationsMap) return;
+    let relationsMap = this.relationMaps[model.uuid];
+    if (!relationsMap) {
+      relationsMap = new Map() as RelationsMap;
+      this.relationMaps[model.uuid] = relationsMap;
+    }
 
     if (!this._ifcRels.includes(type)) return;
 
@@ -625,36 +606,13 @@ export class IfcRelationsIndexer extends Component implements Disposable {
 
     // forRelating
     for (const id of relatingExpressID) {
-      let currentMap = relationsMap.get(id);
-      if (!currentMap) {
-        currentMap = new Map();
-        relationsMap.set(id, currentMap);
-      }
-      const index = this.getAttributeIndex(relating);
-      if (index !== null) {
-        let indexMap = currentMap.get(index);
-        if (!indexMap) {
-          indexMap = [];
-          currentMap.set(index, indexMap);
-        }
-        indexMap.push(...relatedExpressID);
-      }
+      const indexMap = this.getEntityRelations(model, id, relating);
+      indexMap.push(...relatedExpressID);
     }
 
     // forRelated
     for (const id of relatedExpressID) {
-      let currentMap = relationsMap.get(id);
-      if (!currentMap) {
-        currentMap = new Map();
-        relationsMap.set(id, currentMap);
-      }
-      const index = this.getAttributeIndex(related);
-      if (index === null) continue;
-      let relations = currentMap.get(index);
-      if (!relations) {
-        relations = [];
-        currentMap.set(index, relations);
-      }
+      const relations = this.getEntityRelations(model, id, related);
       relations.push(...relatingExpressID);
     }
   }

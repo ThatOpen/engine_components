@@ -61,3 +61,22 @@ export type IfcRelations = [
 ];
 
 export type IfcRelation = IfcRelations[number];
+
+export interface RelationsProcessingConfig {
+  relationsToProcess: IfcRelation[];
+}
+
+/**
+ * Interface definition of an Entities Related Event from the IfcRelationsIndexer.
+ * This event gets triggered when two or more entities has been related with each other.
+ */
+export interface EntitiesRelatedEvent {
+  /** The type of the IFC relation. */
+  relType: IfcRelation;
+  /** The inverse attribute of the relation. */
+  invAttribute: InverseAttribute;
+  /** The IDs of the entities that are relating. */
+  relatingIDs: number[];
+  /** The IDs of the entities that are being related. */
+  relatedIDs: number[];
+}
