@@ -3,6 +3,7 @@ import { Component } from "./component";
 export type ComponentUIElement = {
   name: string;
   id: string;
+  icon: string;
   componentID: string;
   attributes: { [name: string]: string };
   get: () => HTMLElement;
