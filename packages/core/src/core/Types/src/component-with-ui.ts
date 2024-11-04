@@ -2,10 +2,10 @@ import { Component } from "./component";
 
 export type ComponentUIElement = {
   name: string;
+  id: string;
   componentID: string;
   attributes: { [name: string]: string };
   get: () => HTMLElement;
-  disabled?: boolean;
 };
 
 export abstract class ComponentWithUI extends Component {
