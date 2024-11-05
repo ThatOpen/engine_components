@@ -48,6 +48,15 @@ export abstract class Configurator<
     configManager.list.set(this.uuid, this);
   }
 
+  set(data: Partial<U>) {
+    for (const name in data) {
+      if (name in this) {
+        const key = name as keyof this;
+        this[key] = (data[name] as any).value;
+      }
+    }
+  }
+
   copyEntry(controlEntry: ControlEntry): ControlEntry {
     if (controlEntry.type === "Boolean") {
       const entry = controlEntry as BooleanSettingsControl;
