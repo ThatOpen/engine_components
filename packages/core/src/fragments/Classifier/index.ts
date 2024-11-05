@@ -365,7 +365,11 @@ export class Classifier extends Component implements Disposable {
    */
   async bySpatialStructure(
     model: FRAGS.FragmentsGroup,
-    config: { useProperties?: boolean; isolate?: Set<number> } = {},
+    config: {
+      useProperties?: boolean;
+      isolate?: Set<number>;
+      systemName?: string;
+    } = {},
   ) {
     const indexer = this.components.get(IfcRelationsIndexer);
     const modelRelations = indexer.relationMaps[model.uuid];
@@ -374,7 +378,7 @@ export class Classifier extends Component implements Disposable {
         `Classifier: model relations of ${model.name || model.uuid} have to exists to group by spatial structure.`,
       );
     }
-    const systemName = "spatialStructures";
+    const systemName = config.systemName ?? "spatialStructures";
 
     // If useProperties is undefined, use properties by default
     const noProps = config.useProperties === undefined;
