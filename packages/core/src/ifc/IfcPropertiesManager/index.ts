@@ -498,7 +498,10 @@ export class IfcPropertiesManager extends Component implements Disposable {
     for (const expressID of changes) {
       const data = (await model.getProperties(expressID)) as any;
       if (!data) {
-        ifcApi.DeleteLine(modelID, expressID);
+        // If the expressID doesn't exist in the original file, then do nothing.
+        // This prevents a memory access out of bounds error from WebIfc.
+        const existed = ifcApi.GetLine(modelID, expressID);
+        if (existed) ifcApi.DeleteLine(modelID, expressID);
       } else {
         ifcApi.WriteLine(modelID, data);
       }
