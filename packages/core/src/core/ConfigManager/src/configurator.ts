@@ -14,7 +14,7 @@ import { Components } from "../../Components";
 import { ConfigManager } from "../index";
 import { UUID } from "../../../utils";
 
-export abstract class Configurator<T, U extends ControlsSchema> {
+export abstract class Configurator<T = any, U extends ControlsSchema = any> {
   protected abstract _config: U;
 
   protected _component: T;
