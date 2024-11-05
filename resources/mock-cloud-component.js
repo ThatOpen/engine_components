@@ -19,18 +19,17 @@ class PlatformComponent extends OBC.ComponentWithUI {
     return [
       {
         name: "Panel",
+        id: "panel",
+        icon: "",
         componentID: PlatformComponent.uuid,
-        attributes: {
-          label: "Hello"
-        },
         get: () => {
           const panel = BUI.Component.create(() => {
             return BUI.html`
-          <bim-panel></bim-panel> 
-        `;
+              <bim-panel></bim-panel> 
+            `;
           });
           this._uiElements.add(panel);
-          return panel;
+          return { element: panel };
         }
       }
     ];

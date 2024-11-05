@@ -1,12 +1,12 @@
 import { Component } from "./component";
+import { Configurator } from "../../ConfigManager";
 
 export type ComponentUIElement = {
   name: string;
   id: string;
   icon: string;
   componentID: string;
-  attributes: { [name: string]: string };
-  get: () => HTMLElement;
+  get: () => { element: HTMLElement; config?: Configurator<any, any> };
 };
 
 export abstract class ComponentWithUI extends Component {
