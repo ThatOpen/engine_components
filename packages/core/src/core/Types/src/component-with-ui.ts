@@ -10,6 +10,7 @@ export type ComponentUIElement = {
   get: (components: Components) => {
     element: HTMLElement;
     config?: Configurator;
+    dispose?: () => void;
   };
 };
 
