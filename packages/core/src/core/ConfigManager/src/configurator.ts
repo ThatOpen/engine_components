@@ -1,3 +1,4 @@
+import * as THREE from "three";
 import {
   ControlsSchema,
   ControlEntry,
@@ -55,6 +56,49 @@ export abstract class Configurator<
         this[key] = (data[name] as any).value;
       }
     }
+  }
+
+  export() {
+    const serializedData: any = {};
+    for (const id in this._config) {
+      const control = this._config[id];
+
+      if (control.type === "Color") {
+        const { r, g, b } = control.value;
+        serializedData[id] = { ...control, value: { r, g, b } };
+      } else if (control.type === "Vector3") {
+        const { x, y, z } = control.value;
+        serializedData[id] = { ...control, value: { x, y, z } };
+      } else if (control.type === "Select" || control.type === "TextSet") {
+        const value = Array.from(control.value);
+        serializedData[id] = { ...control, value };
+      } else {
+        serializedData[id] = { ...control };
+      }
+    }
+
+    return serializedData;
+  }
+
+  import(serializedData: any) {
+    const imported: any = {};
+
+    for (const id in serializedData) {
+      const control = serializedData[id];
+      if (control.type === "Color") {
+        const { r, g, b } = control.value;
+        imported[id] = { ...control, value: new THREE.Color(r, g, b) };
+      } else if (control.type === "Vector3") {
+        const { x, y, z } = control.value;
+        imported[id] = { ...control, value: new THREE.Vector3(x, y, z) };
+      } else if (control.type === "Select" || control.type === "TextSet") {
+        imported[id] = { ...control, value: new Set(control.value) };
+      } else {
+        imported[id] = { ...control };
+      }
+    }
+
+    this.set(imported);
   }
 
   copyEntry(controlEntry: ControlEntry): ControlEntry {
