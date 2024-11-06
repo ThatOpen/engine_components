@@ -32,9 +32,9 @@ export interface HighlighterConfig {
   /** Toggles the hover functionality. */
   hoverEnabled: boolean;
   /** Color used for selection. */
-  selectionColor: THREE.Color;
+  selectionColor: THREE.Color | null;
   /** Color used for hover. */
-  hoverColor: THREE.Color;
+  hoverColor: THREE.Color | null;
   /** Whether to automatically highlight fragments on click. */
   autoHighlightOnClick: boolean;
   /** The world in which the highlighter operates. */
@@ -104,8 +104,8 @@ export class Highlighter
     hoverEnabled: true,
   };
 
-  /** Stores the colors used for highlighting selections. */
-  colors = new Map<string, THREE.Color>();
+  /** Stores the colors used for highlighting selections. If null, the highlighter won't color geometries (useful for selection without coloring). */
+  colors = new Map<string, THREE.Color | null>();
 
   /** Styles with auto toggle will be unselected when selected twice. */
   autoToggle = new Set<string>();
@@ -169,7 +169,7 @@ export class Highlighter
    *
    * @throws Will throw an error if a selection with the same name already exists.
    */
-  add(name: string, color: THREE.Color) {
+  add(name: string, color: THREE.Color | null) {
     if (this.selection[name] || this.colors.has(name)) {
       throw new Error("A selection with that name already exists!");
     }
@@ -372,7 +372,7 @@ export class Highlighter
     const fragments = this.components.get(OBC.FragmentsManager);
 
     const color = this.colors.get(name);
-    if (!color) {
+    if (color === undefined) {
       throw new Error("Color for selection not found!");
     }
 
@@ -437,12 +437,12 @@ export class Highlighter
         }
       }
 
-      if (selectedIDs.size) {
+      if (selectedIDs.size && color !== null) {
         fragment.setColor(color, selectedIDs);
       }
 
       // Highlight all the clipping fills of the fragment, if any
-      if (fragment.mesh.userData.fills) {
+      if (fragment.mesh.userData.fills && color !== null) {
         for (const fill of fragment.mesh.userData.fills) {
           this._fills.highlight(name, fill, color, fragmentIdMap);
         }
@@ -452,7 +452,7 @@ export class Highlighter
     this.events[name].onHighlight.trigger(this.selection[name]);
 
     // Highlight the given fill mesh (e.g. when selecting a clipped element in floorplan)
-    if (fillMesh) {
+    if (fillMesh && color !== null) {
       this._fills.highlight(name, fillMesh, color, fragmentIdMap);
     }
 
