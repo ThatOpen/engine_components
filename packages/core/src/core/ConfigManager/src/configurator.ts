@@ -69,9 +69,12 @@ export abstract class Configurator<
       } else if (control.type === "Vector3") {
         const { x, y, z } = control.value;
         serializedData[id] = { ...control, value: { x, y, z } };
-      } else if (control.type === "Select" || control.type === "TextSet") {
+      } else if (control.type === "TextSet") {
         const value = Array.from(control.value);
         serializedData[id] = { ...control, value };
+      } else if (control.type === "Select") {
+        const options = Array.from(control.options);
+        serializedData[id] = { ...control, options };
       } else {
         serializedData[id] = { ...control };
       }
@@ -91,8 +94,10 @@ export abstract class Configurator<
       } else if (control.type === "Vector3") {
         const { x, y, z } = control.value;
         imported[id] = { ...control, value: new THREE.Vector3(x, y, z) };
-      } else if (control.type === "Select" || control.type === "TextSet") {
+      } else if (control.type === "TextSet") {
         imported[id] = { ...control, value: new Set(control.value) };
+      } else if (control.type === "Select") {
+        imported[id] = { ...control, options: new Set(control.options) };
       } else {
         imported[id] = { ...control };
       }
