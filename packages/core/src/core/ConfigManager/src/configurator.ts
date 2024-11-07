@@ -1,16 +1,5 @@
 import * as THREE from "three";
-import {
-  ControlsSchema,
-  ControlEntry,
-  BooleanSettingsControl,
-  ColorSettingsControl,
-  TextSettingsControl,
-  NumberSettingControl,
-  SelectSettingControl,
-  Vector3SettingControl,
-  TextSetSettingControl,
-  NoControl,
-} from "../../Types";
+import { ControlsSchema, ControlsUtils } from "../../Types";
 import { Components } from "../../Components";
 import { ConfigManager } from "../index";
 import { UUID } from "../../../utils";
@@ -28,12 +17,7 @@ export abstract class Configurator<
   uuid: string;
 
   get controls(): U {
-    const copy: any = {};
-    for (const name in this._config) {
-      const entry = this._config[name] as ControlEntry;
-      copy[name] = this.copyEntry(entry);
-    }
-    return copy as U;
+    return ControlsUtils.copySchema(this._config);
   }
 
   constructor(
@@ -58,116 +42,61 @@ export abstract class Configurator<
     }
   }
 
-  export() {
-    const serializedData: any = {};
-    for (const id in this._config) {
-      const control = this._config[id];
-
-      if (control.type === "Color") {
-        const { r, g, b } = control.value;
-        serializedData[id] = { ...control, value: { r, g, b } };
-      } else if (control.type === "Vector3") {
-        const { x, y, z } = control.value;
-        serializedData[id] = { ...control, value: { x, y, z } };
-      } else if (control.type === "TextSet") {
-        const value = Array.from(control.value);
-        serializedData[id] = { ...control, value };
-      } else if (control.type === "Select") {
-        const options = Array.from(control.options);
-        serializedData[id] = { ...control, options };
+  export(controls = this._config as ControlsSchema, exported: any = {}) {
+    for (const id in controls) {
+      const control = controls[id];
+      const isControl = ControlsUtils.isEntry(control);
+      if (isControl) {
+        if (control.type === "Color") {
+          const { r, g, b } = control.value;
+          exported[id] = { ...control, value: { r, g, b } };
+        } else if (control.type === "Vector3") {
+          const { x, y, z } = control.value;
+          exported[id] = { ...control, value: { x, y, z } };
+        } else if (control.type === "TextSet") {
+          const value = Array.from(control.value);
+          exported[id] = { ...control, value };
+        } else if (control.type === "Select") {
+          const options = Array.from(control.options);
+          exported[id] = { ...control, options };
+        } else {
+          exported[id] = { ...control };
+        }
       } else {
-        serializedData[id] = { ...control };
+        exported[id] = {};
+        this.export(control as ControlsSchema, exported[id]);
       }
     }
 
-    return serializedData;
+    return exported;
   }
 
-  import(serializedData: any) {
-    const imported: any = {};
-
-    for (const id in serializedData) {
-      const control = serializedData[id];
-      if (control.type === "Color") {
-        const { r, g, b } = control.value;
-        imported[id] = { ...control, value: new THREE.Color(r, g, b) };
-      } else if (control.type === "Vector3") {
-        const { x, y, z } = control.value;
-        imported[id] = { ...control, value: new THREE.Vector3(x, y, z) };
-      } else if (control.type === "TextSet") {
-        imported[id] = { ...control, value: new Set(control.value) };
-      } else if (control.type === "Select") {
-        imported[id] = { ...control, options: new Set(control.options) };
+  import(exported: any, imported: any = {}, first = true) {
+    for (const id in exported) {
+      const control = exported[id];
+      const isControl = ControlsUtils.isEntry(control);
+      if (isControl) {
+        if (control.type === "Color") {
+          const { r, g, b } = control.value;
+          imported[id] = { ...control, value: new THREE.Color(r, g, b) };
+        } else if (control.type === "Vector3") {
+          const { x, y, z } = control.value;
+          imported[id] = { ...control, value: new THREE.Vector3(x, y, z) };
+        } else if (control.type === "TextSet") {
+          imported[id] = { ...control, value: new Set(control.value) };
+        } else if (control.type === "Select") {
+          imported[id] = { ...control, options: new Set(control.options) };
+        } else {
+          imported[id] = { ...control };
+        }
       } else {
-        imported[id] = { ...control };
+        imported[id] = {};
+        this.import(control, imported[id], false);
       }
     }
 
-    this.set(imported);
-  }
-
-  copyEntry(controlEntry: ControlEntry): ControlEntry {
-    if (controlEntry.type === "Boolean") {
-      const entry = controlEntry as BooleanSettingsControl;
-      return {
-        type: entry.type,
-        value: entry.value,
-      };
+    if (first) {
+      this.set(imported);
     }
-    if (controlEntry.type === "Color") {
-      const entry = controlEntry as ColorSettingsControl;
-      return {
-        type: entry.type,
-        value: entry.value.clone(),
-      };
-    }
-    if (controlEntry.type === "Text") {
-      const entry = controlEntry as TextSettingsControl;
-      return {
-        type: entry.type,
-        value: entry.value,
-      };
-    }
-    if (controlEntry.type === "Number") {
-      const entry = controlEntry as NumberSettingControl;
-      return {
-        type: entry.type,
-        value: entry.value,
-        min: entry.min,
-        max: entry.max,
-        interpolable: entry.interpolable,
-      };
-    }
-    if (controlEntry.type === "Select") {
-      const entry = controlEntry as SelectSettingControl;
-      return {
-        type: entry.type,
-        value: entry.value,
-        multiple: entry.multiple,
-        options: new Set(entry.options),
-      };
-    }
-    if (controlEntry.type === "Vector3") {
-      const entry = controlEntry as Vector3SettingControl;
-      return {
-        type: entry.type,
-        value: entry.value.clone(),
-      };
-    }
-    if (controlEntry.type === "TextSet") {
-      const entry = controlEntry as TextSetSettingControl;
-      return {
-        type: entry.type,
-        value: new Set(entry.value),
-      };
-    }
-    if (controlEntry.type === "None") {
-      const entry = controlEntry as NoControl;
-      return {
-        type: entry.type,
-        value: entry.value,
-      };
-    }
-    throw new Error("Invalid entry!");
   }
 }
