@@ -202,7 +202,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
    */
   async newPset(model: FragmentsGroup, name: string, description?: string) {
     const schema = IfcPropertiesManager.getIFCSchema(model);
-    const { ownerHistoryHandle } = await this.getOwnerHistory(model);
+    const { handle: ownerHistoryHandle } = await this.getOwnerHistory(model);
 
     const psetGlobalId = this.newGUID(model);
     const psetName = new WEBIFC[schema].IfcLabel(name);
@@ -610,7 +610,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
     return new WEBIFC[schema].IfcGloballyUniqueId(UUID.create());
   }
 
-  private async getOwnerHistory(model: FragmentsGroup) {
+  async getOwnerHistory(model: FragmentsGroup) {
     const ownerHistories = await model.getAllPropertiesOfType(
       WEBIFC.IFCOWNERHISTORY,
     );
@@ -618,12 +618,12 @@ export class IfcPropertiesManager extends Component implements Disposable {
       throw new Error("No OwnerHistory was found.");
     }
     const keys = Object.keys(ownerHistories).map((key) => parseInt(key, 10));
-    const ownerHistory = ownerHistories[keys[0]];
-    const ownerHistoryHandle = new WEBIFC.Handle(ownerHistory.expressID);
-    return { ownerHistory, ownerHistoryHandle };
+    const entity = ownerHistories[keys[0]];
+    const handle = new WEBIFC.Handle(entity.expressID);
+    return { entity, handle };
   }
 
-  private registerChange(model: FragmentsGroup, ...expressID: number[]) {
+  registerChange(model: FragmentsGroup, ...expressID: number[]) {
     if (!this.changeMap[model.uuid]) {
       this.changeMap[model.uuid] = new Set();
     }
