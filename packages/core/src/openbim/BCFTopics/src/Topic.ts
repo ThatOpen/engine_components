@@ -87,7 +87,7 @@ export class Topic implements BCFTopic {
     return this._priority;
   }
 
-  private _stage? = Topic.default.priority;
+  private _stage? = Topic.default.stage;
 
   set stage(value: string | undefined) {
     const manager = this._components.get(BCFTopics);
