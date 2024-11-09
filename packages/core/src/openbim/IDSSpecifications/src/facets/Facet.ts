@@ -4,17 +4,15 @@ import {
   IDSFacetParameter,
   IDSCheckResult,
   IDSFacetParameterName,
-  IDSSimpleParameter,
-  IDSEnumerationParameter,
-  IDSPatternParameter,
-  IDSLengthParameter,
-  IDSBoundsParameter,
   IDSCheck,
   IDSConditionalCardinaltiy,
   IDSSimpleCardinality,
+  IDSFacetType,
 } from "../types";
 
 export abstract class IDSFacet {
+  abstract facetType: IDSFacetType;
+
   // Used when the facet is a requirement
   // On IDSEntity is always required
   cardinality: IDSSimpleCardinality | IDSConditionalCardinaltiy = "required";
@@ -54,24 +52,20 @@ export abstract class IDSFacet {
     let pass = false;
 
     if (facetParameter.type === "simple") {
-      const parameter = facetParameter.parameter as IDSSimpleParameter;
-      pass = value === parameter;
+      pass = value === facetParameter.parameter;
     }
 
     if (facetParameter.type === "enumeration") {
-      const parameter = facetParameter.parameter as IDSEnumerationParameter;
-      pass = parameter.includes(value as never);
+      pass = facetParameter.parameter.includes(value as never);
     }
 
     if (facetParameter.type === "pattern") {
-      const parameter = facetParameter.parameter as IDSPatternParameter;
-      const regex = new RegExp(parameter);
+      const regex = new RegExp(facetParameter.parameter);
       pass = regex.test(String(value));
     }
 
     if (facetParameter.type === "length") {
-      const parameter = facetParameter.parameter as IDSLengthParameter;
-      const { min, length, max } = parameter;
+      const { min, length, max } = facetParameter.parameter;
       if (length !== undefined) {
         pass = String(value).length === length;
       }
@@ -84,8 +78,7 @@ export abstract class IDSFacet {
     }
 
     if (facetParameter.type === "bounds" && typeof value === "number") {
-      const { min, minInclusive, max, maxInclusive } =
-        facetParameter.parameter as IDSBoundsParameter;
+      const { min, minInclusive, max, maxInclusive } = facetParameter.parameter;
 
       let minPass = true;
       let maxPass = true;

@@ -1,9 +1,4 @@
-import {
-  IDSFacetParameterName,
-  IDSFacetParameter,
-  IDSEnumerationParameter,
-  IDSPatternParameter,
-} from "../types";
+import { IDSFacetParameterName, IDSFacetParameter } from "../types";
 
 export const getParameterXML = (
   name: IDSFacetParameterName,
@@ -16,14 +11,14 @@ export const getParameterXML = (
   }
 
   if (parameter.type === "enumeration") {
-    const value = parameter.parameter as IDSEnumerationParameter;
+    const value = parameter.parameter;
     parameterXML = `<xs:restriction base="xs:string">
     ${value.map((v) => `<xs:enumeration value="${v}" />`).join("\r\n")}
     </xs:restriction>`;
   }
 
   if (parameter.type === "pattern") {
-    const value = parameter.parameter as IDSPatternParameter;
+    const value = parameter.parameter;
     parameterXML = `<xs:restriction base="xs:string">
       <xs:pattern value="${value}" />
     </xs:restriction>`;

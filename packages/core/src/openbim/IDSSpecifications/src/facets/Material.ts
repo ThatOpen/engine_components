@@ -5,6 +5,7 @@ import { IDSFacet } from "./Facet";
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/material-facet.md
 
 export class IdsMaterialFacet extends IDSFacet {
+  facetType = "Material" as const;
   value?: IDSFacetParameter;
   uri?: string;
 

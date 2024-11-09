@@ -12,6 +12,8 @@ import { IDSEntity } from "./Entity";
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/partof-facet.md
 
 export class IDSPartOf extends IDSFacet {
+  facetType = "PartOf" as const;
+
   private _entityFacet: IDSEntity;
 
   private _entity: {

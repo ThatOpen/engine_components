@@ -82,7 +82,7 @@ export class IDSSpecifications extends Component {
       ifcVersion,
     );
 
-    if (identifier) specification.identifier = identifier;
+    if (identifier) (specification.identifier as any) = identifier;
     this.list.set(specification.identifier, specification);
     return specification;
   }

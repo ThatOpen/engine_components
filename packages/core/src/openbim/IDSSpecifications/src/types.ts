@@ -13,45 +13,61 @@ export type IDSFacetParameterName =
   | "Entity"
   | "Relation";
 
+export type IDSFacetType =
+  | "Entity"
+  | "Attribute"
+  | "Property"
+  | "Classification"
+  | "Material"
+  | "PartOf";
+
 // required must match
 // prohibited mustn't match
 // optional passes for matches and nulls
 export type IDSSimpleCardinality = "required" | "prohibited";
 export type IDSConditionalCardinaltiy = IDSSimpleCardinality | "optional";
 
-export type IDSSimpleParameter = string | number | boolean;
-export type IDSEnumerationParameter = string[] | number[] | boolean[];
-export type IDSPatternParameter = string;
-export type IDSBoundsParameter = {
-  min?: number;
-  minInclusive?: boolean;
-  max?: number;
-  maxInclusive?: boolean;
-};
-export type IDSLengthParameter = {
-  min?: number;
-  length?: number;
-  max?: number;
-};
-
-export interface IDSRestrictionParameter {}
-
-export type IDSFacetParameterType =
-  | "simple"
-  | "enumeration"
-  | "pattern"
-  | "bounds"
-  | "length";
-
-export interface IDSFacetParameter {
-  type: IDSFacetParameterType;
-  parameter:
-    | IDSSimpleParameter
-    | IDSEnumerationParameter
-    | IDSPatternParameter
-    | IDSBoundsParameter
-    | IDSLengthParameter;
+export interface IDSSimpleParameter {
+  type: "simple";
+  parameter: string | number | boolean;
 }
+
+export interface IDSEnumerationParameter {
+  type: "enumeration";
+  parameter: string[] | number[] | boolean[];
+}
+
+export interface IDSPatternParameter {
+  type: "pattern";
+  parameter: string;
+}
+
+export interface IDSBoundsParameter {
+  type: "bounds";
+  parameter: {
+    min?: number;
+    minInclusive?: boolean;
+    max?: number;
+    maxInclusive?: boolean;
+  };
+}
+
+export interface IDSLengthParameter {
+  type: "length";
+  parameter: {
+    min?: number;
+    length?: number;
+    max?: number;
+  };
+}
+
+export type IDSRestrictionParameter =
+  | IDSEnumerationParameter
+  | IDSPatternParameter
+  | IDSBoundsParameter
+  | IDSLengthParameter;
+
+export type IDSFacetParameter = IDSSimpleParameter | IDSRestrictionParameter;
 
 export interface IDSCheck {
   parameter: IDSFacetParameterName;
@@ -80,4 +96,13 @@ export interface IDSInfo {
   date?: Date;
   purpose?: string;
   milestone?: string;
+}
+
+export interface IDSSpecificationData {
+  name: string;
+  ifcVersion: Set<IfcVersion>;
+  identifier: string;
+  description?: string;
+  instructions?: string;
+  requirementsDescription?: string;
 }
