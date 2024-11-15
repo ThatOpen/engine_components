@@ -10,11 +10,17 @@ export class Topic implements BCFTopic {
   /**
    * Default values for a BCF Topic, excluding `guid`, `creationDate`, and `creationAuthor`.
    */
-  static default: Omit<BCFTopic, "guid" | "creationDate" | "creationAuthor"> = {
+  static default: Omit<
+    Partial<BCFTopic> & {
+      title: string;
+      type: string;
+      status: string;
+    },
+    "guid" | "creationDate" | "creationAuthor"
+  > = {
     title: "BCF Topic",
     type: "Issue",
     status: "Active",
-    labels: new Set(),
   };
 
   /**
@@ -123,7 +129,7 @@ export class Topic implements BCFTopic {
     return this._assignedTo;
   }
 
-  private _labels = Topic.default.labels;
+  private _labels = Topic.default.labels ?? new Set();
 
   set labels(value: Set<string>) {
     const manager = this._components.get(BCFTopics);

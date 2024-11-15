@@ -136,8 +136,9 @@ export class BCFTopics
     if (data) {
       topic.guid = data.guid ?? topic.guid;
       topic.set(data);
+    } else {
+      this.list.set(topic.guid, topic);
     }
-    this.list.set(topic.guid, topic);
     return topic;
   }
 
