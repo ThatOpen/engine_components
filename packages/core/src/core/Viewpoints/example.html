@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" class="bim-ui-dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Viewpoints</title>
+  <style>
+    * {
+      margin: 0;
+    }
+
+    html {
+      font-family: sans-serif;
+    }
+
+    body {
+      height: 100vh;
+    }
+
+    bim-panel {
+      border-radius: 0;
+    }
+
+    bim-grid[floating]>bim-panel {
+      border-radius: 1rem;
+    }
+
+    .options-menu {
+      position: fixed;
+      min-width: unset;
+      top: 5px;
+      right: 5px;
+      max-height: calc(100vh - 10px);
+    }
+
+    .phone-menu-toggler {
+      visibility: hidden;
+    }
+
+    @media (max-width: 480px) {
+      .options-menu {
+        visibility: hidden;
+        bottom: 5px;
+        left: 5px;
+      }
+
+      .options-menu-visible {
+        visibility: visible;
+      }
+
+      .phone-menu-toggler {
+        visibility: visible;
+        position: fixed;
+        top: 5px;
+        right: 5px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <bim-grid id="app"></bim-grid>
+  <script type="module" src="./example.ts"></script>
+</body>
+
+</html>

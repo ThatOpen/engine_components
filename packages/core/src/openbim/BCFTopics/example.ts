@@ -73,6 +73,7 @@ world.scene.three.add(model);
 
 const bcfTopics = components.get(OBC.BCFTopics);
 bcfTopics.setup({
+  author: "signed.user@mail.com", // This will be the mail used in all topics created
   types: new Set([...bcfTopics.config.types, "Information", "Coordination"]),
   statuses: new Set(["Active", "In Progress", "Done", "In Review", "Closed"]),
   users: new Set(["juan.hoyos4@gmail.com"]),
@@ -89,6 +90,12 @@ bcfTopics.list.onItemSet.add(({ value: topic }) => {
   // The reference is made using the viewpoint GUID instead of the whole viewpoint object.
   // This prevents having possible memory leaks.
   topic.viewpoints.add(viewpoint.guid);
+
+  // Comments can be optionally related to viewpoints.
+  // In this case, each time a comment is added the default viewpoint is used on it.
+  topic.comments.onItemSet.add(({ value: comment }) => {
+    comment.viewpoint = viewpoint;
+  });
 });
 
 /* MD

@@ -294,8 +294,8 @@ export class Viewpoint implements BCFViewpoint {
    *
    * @returns A Promise that resolves when the camera has been set.
    */
-  async go(transition = true) {
-    const { camera } = this.world;
+  async go(world?: World, transition = true) {
+    const { camera } = world ?? this.world;
     if (!camera.hasCameraControls()) {
       throw new Error(
         "Viewpoint: the world's camera need controls to set the viewpoint.",
@@ -373,8 +373,8 @@ export class Viewpoint implements BCFViewpoint {
    * @throws An error if the world's camera does not have camera controls.
    * @throws An error if the world's renderer is not available.
    */
-  updateCamera() {
-    const { camera, renderer } = this.world;
+  updateCamera(world?: World) {
+    const { camera, renderer } = world ?? this.world;
     if (!renderer) {
       throw new Error("Viewpoint: the world needs to have a renderer!");
     }
