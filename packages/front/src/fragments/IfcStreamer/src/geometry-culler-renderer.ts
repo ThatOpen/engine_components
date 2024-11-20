@@ -34,10 +34,12 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
   private readonly _geometry: THREE.BufferGeometry;
 
   private _material = new THREE.MeshBasicMaterial({
-    transparent: true,
+    transparent: false,
     side: 2,
     opacity: 1,
   });
+
+  private _materialT = new THREE.RawShaderMaterial();
 
   readonly onViewUpdated = new OBC.AsyncEvent<{
     toLoad: { [modelID: string]: Map<number, Set<number>> };
@@ -290,9 +292,10 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     // Substitute it by fragment with same color
 
     if (!geometry.fragment) {
+      const material = frag.mesh.instanceColor?.array?.[4] !== undefined && frag.mesh.instanceColor.array[4] < 0.9 ? this._materialT : this._material;  
       geometry.fragment = new FRAGS.Fragment(
         frag.mesh.geometry,
-        this._material,
+        material,
         frag.capacity,
       );
 
