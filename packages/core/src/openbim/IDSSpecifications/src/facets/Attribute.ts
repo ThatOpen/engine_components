@@ -7,6 +7,7 @@ import { getParameterXML } from "../exporters/parameter";
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/attribute-facet.md
 
 export class IDSAttribute extends IDSFacet {
+  facetType = "Attribute" as const;
   name: IDSFacetParameter;
   value?: IDSFacetParameter;
 

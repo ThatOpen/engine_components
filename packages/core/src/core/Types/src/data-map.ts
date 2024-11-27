@@ -45,7 +45,9 @@ export class DataMap<K, V> extends Map<K, V> {
   }
 
   /**
-   * Sets the value for the specified key in the map and triggers the appropriate event (onItemSet or onItemUpdated).
+   * Sets the value for the specified key in the map.
+   * If the item is new, then onItemSet is triggered.
+   * If the item is already in the map, then onItemUpdated is triggered.
    *
    * @param key - The key of the item to set.
    * @param value - The value of the item to set.

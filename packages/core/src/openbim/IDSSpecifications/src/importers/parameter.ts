@@ -2,8 +2,9 @@ import { IDSFacetParameter } from "../types";
 
 export const getParameterValue = (property: any) => {
   if (!property) return undefined;
-  const result: Partial<IDSFacetParameter> = { type: "simple" };
+  const result: Partial<IDSFacetParameter> = {};
   if ("simpleValue" in property) {
+    result.type = "simple";
     result.parameter = property.simpleValue;
   }
   if ("restriction" in property) {

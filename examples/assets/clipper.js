@@ -1,4 +1,4 @@
-import{B as r,M as m,a as d,C as p}from"./web-ifc-api-DyW6VqW2.js";import{S as u}from"./stats.min-Bv-3LaW7.js";import{T as h,z as c,m as s}from"./index-DtbylpTq.js";import{C as g,T as f,e as k,m as w,x as y,c as x,O as v}from"./index-DYQXApaH.js";const b=document.getElementById("container"),o=new g,M=o.get(f),e=M.create();e.scene=new k(o);e.renderer=new w(o,b);e.camera=new y(o);o.init();e.camera.controls.setLookAt(10,10,10,0,0,0);e.scene.setup();e.scene.three.background=null;const C=new r(3,3,3),$=new m({color:"#6528D7"}),a=new d(C,$);a.position.set(0,1.5,0);e.scene.three.add(a);e.meshes.add(a);const P=o.get(x);P.get(e);const t=o.get(v);t.enabled=!0;b.ondblclick=()=>{t.enabled&&t.create(e)};window.onkeydown=n=>{(n.code==="Delete"||n.code==="Backspace")&&t.enabled&&t.delete(e)};const l=new u;l.showPanel(2);document.body.append(l.dom);l.dom.style.left="0px";l.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>l.begin());e.renderer.onAfterUpdate.add(()=>l.end());h.init();const i=c.create(()=>s`
+import{B as r,M as m,a as d,C as p}from"./web-ifc-api-CpQ3aV8c.js";import{S as u}from"./stats.min-GTpOrGrX.js";import{T as h,z as s,m as c}from"./index-BEvRfOoQ.js";import{C as g,T as f,s as k,g as w,x as y,c as x,N as v}from"./index-B03kGVBW.js";import"./_commonjsHelpers-Cpj98o6Y.js";const b=document.getElementById("container"),o=new g,M=o.get(f),e=M.create();e.scene=new k(o);e.renderer=new w(o,b);e.camera=new y(o);o.init();e.camera.controls.setLookAt(10,10,10,0,0,0);e.scene.setup();e.scene.three.background=null;const C=new r(3,3,3),$=new m({color:"#6528D7"}),a=new d(C,$);a.position.set(0,1.5,0);e.scene.three.add(a);e.meshes.add(a);const P=o.get(x);P.get(e);const t=o.get(v);t.enabled=!0;b.ondblclick=()=>{t.enabled&&t.create(e)};window.onkeydown=n=>{(n.code==="Delete"||n.code==="Backspace")&&t.enabled&&t.delete(e)};const l=new u;l.showPanel(2);document.body.append(l.dom);l.dom.style.left="0px";l.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>l.begin());e.renderer.onAfterUpdate.add(()=>l.end());h.init();const i=s.create(()=>c`
     <bim-panel label="Clipper Tutorial" class="options-menu">
           <bim-panel-section collapsed label="Commands">
       
@@ -45,7 +45,7 @@ import{B as r,M as m,a as d,C as p}from"./web-ifc-api-DyW6VqW2.js";import{S as u
         
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(i);const z=c.create(()=>s`
+    `);document.body.append(i);const z=s.create(()=>c`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{i.classList.contains("options-menu-visible")?i.classList.remove("options-menu-visible"):i.classList.add("options-menu-visible")}}">
       </bim-button>

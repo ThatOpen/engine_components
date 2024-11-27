@@ -8,6 +8,7 @@ import { getParameterXML } from "../exporters/parameter";
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/entity-facet.md
 
 export class IDSEntity extends IDSFacet {
+  facetType = "Entity" as const;
   name: IDSFacetParameter;
   predefinedType?: IDSFacetParameter;
 

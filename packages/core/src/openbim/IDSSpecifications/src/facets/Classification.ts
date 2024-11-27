@@ -9,6 +9,7 @@ import { getParameterXML } from "../exporters/parameter";
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/classification-facet.md
 
 export class IDSClassification extends IDSFacet {
+  facetType = "Classification" as const;
   system: IDSFacetParameter;
   value?: IDSFacetParameter;
   uri?: string;

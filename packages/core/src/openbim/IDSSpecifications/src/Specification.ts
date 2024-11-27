@@ -1,9 +1,10 @@
 import * as FRAGS from "@thatopen/fragments";
 import { Components } from "../../../core/Components";
 import { DataSet } from "../../../core/Types";
-import { IDSCheckResult, IfcVersion } from "./types";
+import { IDSCheckResult, IDSSpecificationData, IfcVersion } from "./types";
 import { UUID } from "../../../utils";
 import { IDSFacet } from "./facets";
+import { IDSSpecifications } from "..";
 
 /**
  * Represents a single specification from the Information Delivery Specification (IDS) standard.
@@ -11,10 +12,10 @@ import { IDSFacet } from "./facets";
  * @remarks This class provides methods for testing a model against the specification,
  * as well as serializing the specification into XML format.
  */
-export class IDSSpecification {
+export class IDSSpecification implements IDSSpecificationData {
   name: string;
   ifcVersion = new Set<IfcVersion>();
-  identifier = UUID.create();
+  readonly identifier = UUID.create();
   description?: string;
   instructions?: string;
   requirementsDescription?: string;
@@ -29,6 +30,19 @@ export class IDSSpecification {
     for (const version of ifcVersion) {
       this.ifcVersion.add(version);
     }
+  }
+
+  set(data: Partial<IDSSpecificationData>) {
+    const _data = data as any;
+    const _this = this as any;
+    for (const key in data) {
+      if (key === "identifier") continue;
+      const value = _data[key];
+      if (key in this) _this[key] = value;
+    }
+    const manager = this.components.get(IDSSpecifications);
+    manager.list.set(this.identifier, this);
+    return this;
   }
 
   /**

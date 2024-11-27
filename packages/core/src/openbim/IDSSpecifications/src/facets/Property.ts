@@ -9,6 +9,7 @@ import { getParameterXML } from "../exporters/parameter";
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/property-facet.md
 
 export class IDSProperty extends IDSFacet {
+  facetType = "Property" as const;
   propertySet: IDSFacetParameter;
   baseName: IDSFacetParameter;
   value?: IDSFacetParameter;
@@ -368,9 +369,10 @@ export class IDSProperty extends IDSFacet {
   // IFCPROPERTYTABLEVALUE are not supported yet
   // Work must to be done to convert numerical value units to IDS-nominated standard units https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/units.md
   private evalValue(attrs: Record<string, any>, checks?: IDSCheck[]) {
-    const valueKey = this.getValueKey(attrs);
+    const valueKey = this.getValueKey(attrs) as any;
+    const valueAttr = attrs[valueKey];
     if (this.value) {
-      if (!valueKey) {
+      if (!valueAttr) {
         checks?.push({
           parameter: "Value",
           currentValue: null,
@@ -380,7 +382,6 @@ export class IDSProperty extends IDSFacet {
         return false;
       }
 
-      const valueAttr = attrs[valueKey];
       const facetValue = structuredClone(this.value);
       if (valueAttr.name === "IFCLABEL" && facetValue.type === "simple") {
         facetValue.parameter = String(facetValue.parameter);
@@ -415,10 +416,9 @@ export class IDSProperty extends IDSFacet {
     }
 
     if (!valueKey) return true;
-    const value = attrs[valueKey];
 
     // IDSDocs: Values with a logical unknown always fail
-    if (value.type === 3 && value.value === 2) {
+    if (valueAttr.type === 3 && valueAttr.value === 2) {
       checks?.push({
         parameter: "Value",
         currentValue: null,
@@ -429,7 +429,7 @@ export class IDSProperty extends IDSFacet {
     }
 
     // IDSDocs: An empty string is considered false
-    if (value.type === 1 && value.value.trim() === "") {
+    if (valueAttr.type === 1 && valueAttr.value.trim() === "") {
       checks?.push({
         parameter: "Value",
         currentValue: "",
@@ -444,8 +444,18 @@ export class IDSProperty extends IDSFacet {
 
   private evalDataType(attrs: Record<string, any>, checks?: IDSCheck[]) {
     if (!this.dataType) return true;
-    const valueKey = this.getValueKey(attrs);
-    const valueAttr = attrs[valueKey as any];
+    const valueKey = this.getValueKey(attrs) as any;
+    const valueAttr = attrs[valueKey];
+
+    if (!valueAttr) {
+      checks?.push({
+        parameter: "DataType",
+        currentValue: null,
+        pass: false,
+        requiredValue: this.dataType,
+      });
+      return false;
+    }
 
     if (
       (attrs.type === WEBIFC.IFCPROPERTYLISTVALUE ||
