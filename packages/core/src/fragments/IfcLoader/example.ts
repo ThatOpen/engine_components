@@ -103,7 +103,7 @@ await fragmentIfcLoader.setup();
 // If you want to the path to unpkg manually, then you can skip the line
 // above and set them manually as below:
 // fragmentIfcLoader.settings.wasm = {
-//   path: "https://unpkg.com/web-ifc@0.0.65/",
+//   path: "https://unpkg.com/web-ifc@0.0.61/",
 //   absolute: true,
 // };
 
