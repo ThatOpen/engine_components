@@ -8,8 +8,7 @@ import { DistanceRenderer } from "./src";
 import { Configurable, Disposable } from "../Types";
 
 /**
- * Configuration interface for the {@link ShadowedScene}. Defines properties for directional and ambient lights,
- * as well as shadows.
+ * Configuration interface for the {@link ShadowedScene}. Defines properties for directional and ambient lights, as well as shadows.
  */
 export interface ShadowedSceneConfig extends SimpleSceneConfig {
   shadows: {

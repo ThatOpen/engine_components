@@ -32,8 +32,7 @@ import { Clipper } from "../../core/Clipper";
 // TODO: Extract import/export logic in its own class for better maintenance.
 
 /**
- * BCFTopics manages Building Collaboration Format (BCF) data the engine.
- * It provides functionality for importing, exporting, and manipulating BCF data.
+ * BCFTopics manages Building Collaboration Format (BCF) data the engine. It provides functionality for importing, exporting, and manipulating BCF data.
  */
 export class BCFTopics
   extends Component

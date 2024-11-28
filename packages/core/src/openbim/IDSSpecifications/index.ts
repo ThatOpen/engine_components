@@ -17,8 +17,7 @@ import {
 import { createPropertyFacets } from "./src/importers/property";
 
 /**
- * Component that manages Information Delivery Specification (IDS) data.
- * It provides functionality for importing, exporting, and manipulating IDS data.
+ * Component that manages Information Delivery Specification (IDS) data. It provides functionality for importing, exporting, and manipulating IDS data.
  */
 export class IDSSpecifications extends Component {
   static uuid = "9f0b9f78-9b2e-481a-b766-2fbfd01f342c" as const;

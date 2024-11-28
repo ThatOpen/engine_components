@@ -1,8 +1,7 @@
 import { Event } from "./event";
 
 /**
- * A class that extends the built-in Set class and provides additional functionality.
- * It triggers events when items are added, deleted, or the set is cleared.
+ * A class that extends the built-in Set class and provides additional functionality. It triggers events when items are added, deleted, or the set is cleared.
  *
  * @template T - The type of elements in the set.
  */
