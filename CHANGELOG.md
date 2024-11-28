@@ -1,5 +1,77 @@
 # Changelog
 
+## [2.4.0](https://github.com/ThatOpen/engine_components/compare/v2.3.0...v2.4.0) (2024-11-28)
+
+
+### Features
+
+* adds BCFTopics tutorial ([474c725](https://github.com/ThatOpen/engine_components/commit/474c725d6175f0bde50483bf1b6d02dd203b73a8))
+* **core:** add enabled state to components with ui ([0a56f67](https://github.com/ThatOpen/engine_components/commit/0a56f67e32fead76fa0af0447055ccca5ba98a0a))
+* **core:** add export-import features to config ([e1b84e6](https://github.com/ThatOpen/engine_components/commit/e1b84e6d3e2ff149573d54af426ed7fa7a56888c))
+* **core:** add non-min and min bundle to build ([4dfd344](https://github.com/ThatOpen/engine_components/commit/4dfd344451aa1e09e977ba9b8f580c5b52f9f0a2))
+* **core:** add optional disabled state to components with ui ([c0f5916](https://github.com/ThatOpen/engine_components/commit/c0f5916bc5f3e32f054687e36102108f472020bf))
+* **core:** add set method to configurator ([f2ae396](https://github.com/ThatOpen/engine_components/commit/f2ae39674cd2c68e10af232911b9b43808317b90))
+* **core:** adds better typing for IDS facets ([6995f7a](https://github.com/ThatOpen/engine_components/commit/6995f7a0e881b9b295e311719a3f4b60fe94a0c0))
+* **core:** adds IfcPropertiesManager tutorial ([f01c475](https://github.com/ThatOpen/engine_components/commit/f01c47518fa0557218d9349e5b9fa8641c00f08e))
+* **core:** adds viewpoints example and tutorial ([153c21b](https://github.com/ThatOpen/engine_components/commit/153c21b70f8593d9dbbbe2056197128a2cb18c49))
+* **core:** allow to export / import classifications ([3346a39](https://github.com/ThatOpen/engine_components/commit/3346a3962024fac981a11500fba06a0c0f8f4e8b))
+* **core:** allow to override raycaster mouse position ([59916b4](https://github.com/ThatOpen/engine_components/commit/59916b431593b9dfe3ae2559911dece3ef49b05d))
+* **core:** allows to define a custom name to Classifier.bySpatialStructure ([a5d806a](https://github.com/ThatOpen/engine_components/commit/a5d806a1503850a3a5f370c53137cb861cbff325))
+* **core:** create event manager ([4bf8ff2](https://github.com/ThatOpen/engine_components/commit/4bf8ff26157bcdb38410bb714d632c1b5ca268a1))
+* **core:** IfcRelationsIndexer is between 2 and 5 times faster when processing a model ([3894a5c](https://github.com/ThatOpen/engine_components/commit/3894a5c7f132f1d7b81e13f20261cc8aa215260e))
+* **core:** improve configurator second type ([19cc299](https://github.com/ThatOpen/engine_components/commit/19cc299d4ef4b4fef148bcc6a62f72569d8aac17))
+* **core:** improve UIElement type ([cc6253b](https://github.com/ThatOpen/engine_components/commit/cc6253bc199e102079cedd5b6e0bb13869a4d13c))
+* **core:** make configurator types optional ([b76522e](https://github.com/ThatOpen/engine_components/commit/b76522e539c464454e16dd265e38311f44905482))
+* **core:** remove unused coordinate property from ifc settings ([2b23f80](https://github.com/ThatOpen/engine_components/commit/2b23f80e3d617aa7fddf66ff3cb696334f101ce5))
+* **front:** Add keydown event for Lengthmeasurement ([#466](https://github.com/ThatOpen/engine_components/issues/466)) ([3bfdcbf](https://github.com/ThatOpen/engine_components/commit/3bfdcbf77d19185855a329f15edf181bb267b5db))
+* **front:** add non-min and min bundle to build ([2048aac](https://github.com/ThatOpen/engine_components/commit/2048aac10cba7742d14588e372c9b8eead3743de))
+* **front:** add remove method to highlighter ([1ff19a5](https://github.com/ThatOpen/engine_components/commit/1ff19a50c8c992a0a37ee8f0f539b41b8b04d34a))
+* **front:** Add Threashold to onMouseMove to supress small movements ([#467](https://github.com/ThatOpen/engine_components/issues/467)) ([b5c8365](https://github.com/ThatOpen/engine_components/commit/b5c836587cac41d6b922c7c2bfac5dcd9201884a))
+* **front:** allow to apply filter to highlight clear ([23bd49f](https://github.com/ThatOpen/engine_components/commit/23bd49f3d701a9cacda6760da062d372c7382970))
+* **front:** allow to get bounding boxes of unstreamed items ([ba8a389](https://github.com/ThatOpen/engine_components/commit/ba8a389ae11673ab216d615cabe55a13b066810f))
+* **front:** allow to use highlighter without color ([006b4a1](https://github.com/ThatOpen/engine_components/commit/006b4a1c51a241e3451c8eb488440624222189ed))
+* **front:** improve highlighter event handling ([4ddf977](https://github.com/ThatOpen/engine_components/commit/4ddf977b909282cb77e2b0a492544acc8b205d35))
+* **front:** improve ifc streamer setvisibiility logic ([25ee0aa](https://github.com/ThatOpen/engine_components/commit/25ee0aa398cf91543aca20211ababf897f841b5c))
+* **front:** parallelize fragment file streaming ([c80748f](https://github.com/ThatOpen/engine_components/commit/c80748f863c6568925428606665dcd6d0a361ba4))
+* **front:** support multiple test platform components ([bd31da8](https://github.com/ThatOpen/engine_components/commit/bd31da8b91b310ef4dcd00960717b31864d7e4a8))
+* **front:** test platform component ([12b8e93](https://github.com/ThatOpen/engine_components/commit/12b8e93e6475e34ce2d9a9c79a434fbf6d1a3df0))
+
+
+### Bug Fixes
+
+* **core:** add guard check for disposing simple planes ([ca1ef1f](https://github.com/ThatOpen/engine_components/commit/ca1ef1fb3a15fff9566c6cbb7173608938ed36f2))
+* **core:** add guard when reading ifc organization ([55494b5](https://github.com/ThatOpen/engine_components/commit/55494b55c683f2aacb1870bce34367d8d75291c2))
+* **core:** also load properties on classifier tutorial ([e47d497](https://github.com/ThatOpen/engine_components/commit/e47d49740f0fac2d1bc7bbcc8b932bc0c764f038))
+* **core:** blob wasn't allowing to generate viewpoint screenshot in NodeJS ([1b94642](https://github.com/ThatOpen/engine_components/commit/1b9464223c6f27f9069eb5f63fb19c2a47e114aa))
+* **core:** correct geometry splits tiling bug ([ac32b51](https://github.com/ThatOpen/engine_components/commit/ac32b51e21d3ee57212208c751e4c0332b2e382d))
+* **core:** default topic stage was set to the default priority ([196da1a](https://github.com/ThatOpen/engine_components/commit/196da1a042665b85fef8a4757b9beb65eb16b512))
+* **core:** deletes extension in ifc-property-query export ([0b8cd48](https://github.com/ThatOpen/engine_components/commit/0b8cd482625e970bcecefcd439f89e9797ef4b45))
+* **core:** error thrown when deleting an entity after its creation ([eb9e0cd](https://github.com/ThatOpen/engine_components/commit/eb9e0cd1e15a9be8b00de90e085e22038ee489dd))
+* **core:** IFC file containing "$" in header fails to load ([#510](https://github.com/ThatOpen/engine_components/issues/510)) ([c882d13](https://github.com/ThatOpen/engine_components/commit/c882d13612649d2ccf5923a953552460a5be8666))
+* **core:** make geometry tiler split geometries according to limit ([ed12267](https://github.com/ThatOpen/engine_components/commit/ed12267bfef13941d354b34939e178417f0fadd1))
+* **core:** make raycaster compatible with thouch screens ([4e6676b](https://github.com/ThatOpen/engine_components/commit/4e6676b385fccb0c98f07aa8ae247eee20c86841))
+* **core:** make streamer events async, various streaming fixes ([fd4304f](https://github.com/ThatOpen/engine_components/commit/fd4304fb8855270dfdf70d68ddecf6b57fbbe78e))
+* **core:** missing information when importing IDS files ([a40a3cc](https://github.com/ThatOpen/engine_components/commit/a40a3cce1a0995b8fcc4ca0c187a6934b25f8fe0))
+* **core:** missing relation between IfcPropertySet and other entities in new definitions ([938d6a8](https://github.com/ThatOpen/engine_components/commit/938d6a80c6e3abe745509c0f7b7140777da03c15))
+* **core:** prevent json stringify limit when exporting classifications ([5c2eaa5](https://github.com/ThatOpen/engine_components/commit/5c2eaa52c6f7d7f8f73afa162aa08589a55dc521))
+* **core:** Property Facet in IDS throwing error when NominalValue is null ([d8d2cdc](https://github.com/ThatOpen/engine_components/commit/d8d2cdc9d598533867e64c55401e930f1dc5c1ab))
+* **core:** solve bug when using nested configs ([695b226](https://github.com/ThatOpen/engine_components/commit/695b2260412d12acc8dd6d22da87c8ceebc80a95))
+* **core:** solve configurator export bug ([4d4df75](https://github.com/ThatOpen/engine_components/commit/4d4df75cb33b9e10ed4df0199e7faee51728d58e))
+* **core:** stream remaining geometries ([b61d3a7](https://github.com/ThatOpen/engine_components/commit/b61d3a7ceea2884fb842758e652cb4a7ad35b550))
+* **core:** type psets not reviewed on IDS PropertyFacet ([4aff276](https://github.com/ThatOpen/engine_components/commit/4aff2763713c08a8112b349199785e440727383a))
+* **front:** correct another outliner disposal bug ([e1a1c72](https://github.com/ThatOpen/engine_components/commit/e1a1c72cdb43afd0195bee18c0e5c5ebcb1bd672))
+* **front:** correct outliner disposal ([7c57c46](https://github.com/ThatOpen/engine_components/commit/7c57c467f0fe52d64518584d4105c5fee70c5d9f))
+* **front:** correct outliner position in moved models ([20d2c59](https://github.com/ThatOpen/engine_components/commit/20d2c5956b688da83717cfd86faa2f4a25a2631c))
+* **front:** correct small bug with filter highlight logic ([0b01f71](https://github.com/ThatOpen/engine_components/commit/0b01f71aea188561000fa6eaf4436ebe32d2238f))
+* **front:** more fixes to filter highlight logic ([1b20e73](https://github.com/ThatOpen/engine_components/commit/1b20e73531f1671c2d3f5dd497da947e28949645))
+* **front:** more fixes to highlight logic ([f5694d1](https://github.com/ThatOpen/engine_components/commit/f5694d1bf1b5205f07557b2c52122a6206b6c870))
+* **front:** more fixes to highlight logic ([27e4bc2](https://github.com/ThatOpen/engine_components/commit/27e4bc2a890631cb7c9a2d8a30dec02cfe3a5201))
+
+
+### Miscellaneous Chores
+
+* release 2.4.0 ([b2e8cf8](https://github.com/ThatOpen/engine_components/commit/b2e8cf89f72b6b1055e2c56e0a35375fa7353846))
+
 ## [2.3.0](https://github.com/ThatOpen/engine_components/compare/v2.2.0...v2.3.0) (2024-10-07)
 
 
