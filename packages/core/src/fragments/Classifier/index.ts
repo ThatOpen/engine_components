@@ -11,7 +11,7 @@ import { FragmentsManager } from "../FragmentsManager";
 // for dynamic, we just need to add a queryGroup as shown below
 
 // TODO: Make the groups a class to have a getter that gets the combined FragmentIdMap
-// combined from the cherry picked elements and the elements found in the group
+// combined from the cherry p<icked elements and the elements found in the group
 
 /**
  * Interface representing a classification system. The classification is organized by system and class name, and each class contains a map of fragment IDs with extra information.
@@ -31,6 +31,16 @@ export interface Classification {
       name: string;
       id: number | null;
       // rules?: QueryGroup;
+    };
+  };
+}
+
+interface ExportedClassification {
+  [system: string]: {
+    [groupName: string]: {
+      map: { [name: string]: number[] };
+      name: string;
+      id: number | null;
     };
   };
 }
@@ -495,6 +505,50 @@ export class Classifier extends Component implements Disposable {
       if (!found) continue;
       const ids = items[fragID];
       found.resetColor(ids);
+    }
+  }
+
+  /**
+   * Exports the computed classification to persists them and import them back
+   * later for faster loading.
+   */
+  export() {
+    const exported: ExportedClassification = {};
+
+    for (const systemName in this.list) {
+      exported[systemName] = {};
+      const system = this.list[systemName];
+      for (const groupName in system) {
+        const group = system[groupName];
+        exported[systemName][groupName] = {
+          map: FRAGS.FragmentUtils.export(group.map),
+          name: group.name,
+          id: group.id,
+        };
+      }
+    }
+
+    return exported;
+  }
+
+  /**
+   * Imports a classification previously exported with .export().
+   * @param data the serialized classification to import.
+   */
+  import(data: ExportedClassification) {
+    for (const systemName in data) {
+      if (!this.list[systemName]) {
+        this.list[systemName] = {};
+      }
+      const system = data[systemName];
+      for (const groupName in system) {
+        const group = system[groupName];
+        this.list[systemName][groupName] = {
+          map: FRAGS.FragmentUtils.import(group.map),
+          name: group.name,
+          id: group.id,
+        };
+      }
     }
   }
 

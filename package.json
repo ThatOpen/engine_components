@@ -30,6 +30,7 @@
     "./packages/*"
   ],
   "devDependencies": {
+    "@rollup/plugin-terser": "^0.4.4",
     "@types/node": "latest",
     "@typescript-eslint/eslint-plugin": "7.2.0",
     "@typescript-eslint/parser": "7.2.0",

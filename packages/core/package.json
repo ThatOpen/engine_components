@@ -37,12 +37,12 @@
     "access": "public"
   },
   "devDependencies": {
-    "@thatopen/fragments": "~2.3.0",
+    "@thatopen/fragments": ">=2.4.0-alpha.9",
     "@thatopen/ui": "~2.3.0",
     "@types/three": "0.160.0",
     "stats.js": "^0.17.0",
     "three": "^0.160.1",
-    "web-ifc": "0.0.59"
+    "web-ifc": "0.0.61"
   },
   "dependencies": {
     "camera-controls": "2.7.3",
@@ -51,8 +51,8 @@
     "three-mesh-bvh": "0.7.0"
   },
   "peerDependencies": {
-    "@thatopen/fragments": "~2.3.0",
+    "@thatopen/fragments": ">=2.4.0-alpha.9",
     "three": "^0.160.1",
-    "web-ifc": "0.0.59"
+    "web-ifc": "0.0.61"
   }
 }

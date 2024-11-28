@@ -1,20 +1,13 @@
-import {
-  ControlsSchema,
-  ControlEntry,
-  BooleanSettingsControl,
-  ColorSettingsControl,
-  TextSettingsControl,
-  NumberSettingControl,
-  SelectSettingControl,
-  Vector3SettingControl,
-  TextSetSettingControl,
-  NoControl,
-} from "../../Types";
+import * as THREE from "three";
+import { ControlsSchema, ControlsUtils } from "../../Types";
 import { Components } from "../../Components";
 import { ConfigManager } from "../index";
 import { UUID } from "../../../utils";
 
-export abstract class Configurator<T, U extends ControlsSchema> {
+export abstract class Configurator<
+  T = any,
+  U extends ControlsSchema = ControlsSchema,
+> {
   protected abstract _config: U;
 
   protected _component: T;
@@ -24,12 +17,7 @@ export abstract class Configurator<T, U extends ControlsSchema> {
   uuid: string;
 
   get controls(): U {
-    const copy: any = {};
-    for (const name in this._config) {
-      const entry = this._config[name] as ControlEntry;
-      copy[name] = this.copyEntry(entry);
-    }
-    return copy as U;
+    return ControlsUtils.copySchema(this._config);
   }
 
   constructor(
@@ -45,68 +33,70 @@ export abstract class Configurator<T, U extends ControlsSchema> {
     configManager.list.set(this.uuid, this);
   }
 
-  copyEntry(controlEntry: ControlEntry): ControlEntry {
-    if (controlEntry.type === "Boolean") {
-      const entry = controlEntry as BooleanSettingsControl;
-      return {
-        type: entry.type,
-        value: entry.value,
-      };
+  set(data: Partial<U>) {
+    for (const name in data) {
+      if (name in this) {
+        const key = name as keyof this;
+        this[key] = (data[name] as any).value;
+      }
     }
-    if (controlEntry.type === "Color") {
-      const entry = controlEntry as ColorSettingsControl;
-      return {
-        type: entry.type,
-        value: entry.value.clone(),
-      };
+  }
+
+  export(controls = this._config as ControlsSchema, exported: any = {}) {
+    for (const id in controls) {
+      const control = controls[id];
+      const isControl = ControlsUtils.isEntry(control);
+      if (isControl) {
+        if (control.type === "Color") {
+          const { r, g, b } = control.value;
+          exported[id] = { ...control, value: { r, g, b } };
+        } else if (control.type === "Vector3") {
+          const { x, y, z } = control.value;
+          exported[id] = { ...control, value: { x, y, z } };
+        } else if (control.type === "TextSet") {
+          const value = Array.from(control.value);
+          exported[id] = { ...control, value };
+        } else if (control.type === "Select") {
+          const options = Array.from(control.options);
+          exported[id] = { ...control, options };
+        } else {
+          exported[id] = { ...control };
+        }
+      } else {
+        exported[id] = {};
+        this.export(control as ControlsSchema, exported[id]);
+      }
     }
-    if (controlEntry.type === "Text") {
-      const entry = controlEntry as TextSettingsControl;
-      return {
-        type: entry.type,
-        value: entry.value,
-      };
+
+    return exported;
+  }
+
+  import(exported: any, imported: any = {}, first = true) {
+    for (const id in exported) {
+      const control = exported[id];
+      const isControl = ControlsUtils.isEntry(control);
+      if (isControl) {
+        if (control.type === "Color") {
+          const { r, g, b } = control.value;
+          imported[id] = { ...control, value: new THREE.Color(r, g, b) };
+        } else if (control.type === "Vector3") {
+          const { x, y, z } = control.value;
+          imported[id] = { ...control, value: new THREE.Vector3(x, y, z) };
+        } else if (control.type === "TextSet") {
+          imported[id] = { ...control, value: new Set(control.value) };
+        } else if (control.type === "Select") {
+          imported[id] = { ...control, options: new Set(control.options) };
+        } else {
+          imported[id] = { ...control };
+        }
+      } else {
+        imported[id] = {};
+        this.import(control, imported[id], false);
+      }
     }
-    if (controlEntry.type === "Number") {
-      const entry = controlEntry as NumberSettingControl;
-      return {
-        type: entry.type,
-        value: entry.value,
-        min: entry.min,
-        max: entry.max,
-        interpolable: entry.interpolable,
-      };
+
+    if (first) {
+      this.set(imported);
     }
-    if (controlEntry.type === "Select") {
-      const entry = controlEntry as SelectSettingControl;
-      return {
-        type: entry.type,
-        value: entry.value,
-        multiple: entry.multiple,
-        options: new Set(entry.options),
-      };
-    }
-    if (controlEntry.type === "Vector3") {
-      const entry = controlEntry as Vector3SettingControl;
-      return {
-        type: entry.type,
-        value: entry.value.clone(),
-      };
-    }
-    if (controlEntry.type === "TextSet") {
-      const entry = controlEntry as TextSetSettingControl;
-      return {
-        type: entry.type,
-        value: new Set(entry.value),
-      };
-    }
-    if (controlEntry.type === "None") {
-      const entry = controlEntry as NoControl;
-      return {
-        type: entry.type,
-        value: entry.value,
-      };
-    }
-    throw new Error("Invalid entry!");
   }
 }

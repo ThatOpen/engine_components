@@ -145,7 +145,6 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     >();
 
     for (const asset of assets) {
-      // if (asset.id !== 9056429) continue;
       for (const geometryData of asset.geometries) {
         const { geometryID, transformation, color } = geometryData;
 
@@ -534,6 +533,33 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     }
   }
 
+  getBoundingBoxes(items: { [modelID: number]: Iterable<number> }) {
+    const boxGroup = new FRAGS.FragmentsGroup();
+    for (const modelID in items) {
+      const ids = items[modelID];
+      const modelIndex = this._modelIDIndex.get(modelID);
+      if (modelIndex === undefined) {
+        continue;
+      }
+      const bboxes = this.boxes.get(modelIndex);
+      if (!bboxes) {
+        continue;
+      }
+      const clone = bboxes.clone(ids);
+      boxGroup.add(clone.mesh);
+      boxGroup.items.push(clone);
+    }
+    return boxGroup;
+  }
+
+  getInstanceID(assetID: number, geometryID: number) {
+    // src: https://stackoverflow.com/questions/14879691/get-number-of-digits-with-javascript
+    // eslint-disable-next-line no-bitwise
+    const size = (Math.log(geometryID) * Math.LOG10E + 1) | 0;
+    const factor = 10 ** size;
+    return assetID + geometryID / factor;
+  }
+
   private setGeometryVisibility(
     geometry: CullerBoundingBox,
     visible: boolean,
@@ -688,13 +714,5 @@ export class GeometryCullerRenderer extends OBC.CullerRenderer {
     this._modelIDIndex.set(modelID, count);
     this._indexModelID.set(count, modelID);
     return count;
-  }
-
-  private getInstanceID(assetID: number, geometryID: number) {
-    // src: https://stackoverflow.com/questions/14879691/get-number-of-digits-with-javascript
-    // eslint-disable-next-line no-bitwise
-    const size = (Math.log(geometryID) * Math.LOG10E + 1) | 0;
-    const factor = 10 ** size;
-    return assetID + geometryID / factor;
   }
 }

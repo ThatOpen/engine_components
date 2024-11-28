@@ -5,13 +5,13 @@ import { FragmentIdMap, FragmentMesh } from "@thatopen/fragments";
 import { EdgesPlane, IndexFragmentMap } from "../../core";
 import { FillHighlighter } from "./src";
 
-// TODO: Clean up and document
-
 /**
  * Interface defining the events that the Highlighter class can trigger. Each highlighter has its own set of events, identified by the highlighter name.
  */
 export interface HighlightEvents {
   [highlighterName: string]: {
+    /** Event triggered before a fragment is highlighted, giving the last selection. */
+    onBeforeHighlight: OBC.Event<FRAGS.FragmentIdMap>;
     /** Event triggered when a fragment is highlighted. */
     onHighlight: OBC.Event<FRAGS.FragmentIdMap>;
     /** Event triggered when a fragment is cleared. */
@@ -32,9 +32,9 @@ export interface HighlighterConfig {
   /** Toggles the hover functionality. */
   hoverEnabled: boolean;
   /** Color used for selection. */
-  selectionColor: THREE.Color;
+  selectionColor: THREE.Color | null;
   /** Color used for hover. */
-  hoverColor: THREE.Color;
+  hoverColor: THREE.Color | null;
   /** Whether to automatically highlight fragments on click. */
   autoHighlightOnClick: boolean;
   /** The world in which the highlighter operates. */
@@ -44,7 +44,10 @@ export interface HighlighterConfig {
 /**
  * This component allows highlighting and selecting fragments in a 3D scene. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Highlighter). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Highlighter).
  */
-export class Highlighter extends OBC.Component implements OBC.Disposable {
+export class Highlighter
+  extends OBC.Component
+  implements OBC.Disposable, OBC.Eventable
+{
   /**
    * A unique identifier for the component.
    * This UUID is used to register the component within the Components system.
@@ -101,20 +104,23 @@ export class Highlighter extends OBC.Component implements OBC.Disposable {
     hoverEnabled: true,
   };
 
-  /** Stores the colors used for highlighting selections. */
-  colors = new Map<string, THREE.Color>();
+  /** Stores the colors used for highlighting selections. If null, the highlighter won't color geometries (useful for selection without coloring). */
+  colors = new Map<string, THREE.Color | null>();
 
   /** Styles with auto toggle will be unselected when selected twice. */
   autoToggle = new Set<string>();
 
   /** Position of the mouse on mouseDown. */
-  private mouseDownPosition = {x: 0, y: 0};
+  private mouseDownPosition = { x: 0, y: 0 };
 
   /** Threshhold on how much the mouse have to move until its considered movement */
-  mouseMoveThreshold = 5
+  mouseMoveThreshold = 5;
 
   /** If defined, only the specified elements will be selected by the specified style. */
   selectable: { [name: string]: FragmentIdMap } = {};
+
+  /** Manager to easily toggle and reset all events. */
+  eventManager = new OBC.EventManager();
 
   // Highlights the clipping fills of the fragments, if any
   private _fills = new FillHighlighter();
@@ -132,6 +138,8 @@ export class Highlighter extends OBC.Component implements OBC.Disposable {
   constructor(components: OBC.Components) {
     super(components);
     this.components.add(Highlighter.uuid, this);
+    this.eventManager.list.add(this.onSetup);
+    this.eventManager.list.add(this.onDisposed);
   }
 
   /** {@link Disposable.dispose} */
@@ -143,13 +151,13 @@ export class Highlighter extends OBC.Component implements OBC.Disposable {
 
     this.selection = {};
     for (const name in this.events) {
-      this.events[name].onClear.reset();
-      this.events[name].onHighlight.reset();
+      const { onClear, onHighlight } = this.events[name];
+      this.eventManager.list.delete(onClear);
+      this.eventManager.list.delete(onHighlight);
     }
-    this.onSetup.reset();
-    this.events = {};
+
     this.onDisposed.trigger(Highlighter.uuid);
-    this.onDisposed.reset();
+    this.eventManager.reset();
   }
 
   /**
@@ -161,16 +169,40 @@ export class Highlighter extends OBC.Component implements OBC.Disposable {
    *
    * @throws Will throw an error if a selection with the same name already exists.
    */
-  add(name: string, color: THREE.Color) {
+  add(name: string, color: THREE.Color | null) {
     if (this.selection[name] || this.colors.has(name)) {
       throw new Error("A selection with that name already exists!");
     }
     this.colors.set(name, color);
     this.selection[name] = {};
+    const onHighlight = new OBC.Event();
+    const onBeforeHighlight = new OBC.Event();
+    const onClear = new OBC.Event();
     this.events[name] = {
-      onHighlight: new OBC.Event(),
-      onClear: new OBC.Event(),
+      onHighlight,
+      onClear,
+      onBeforeHighlight,
     };
+    this.eventManager.add([onClear, onHighlight, onBeforeHighlight]);
+  }
+
+  /**
+   * Removes the specified selection.
+   *
+   * @param name - The name of the new selection.
+   */
+  remove(name: string) {
+    this.clear(name);
+    delete this.selection[name];
+    this.colors.delete(name);
+    if (this.selection[name] || this.colors.has(name)) {
+      throw new Error("A selection with that name already exists!");
+    }
+    if (this.events[name]) {
+      const { onHighlight, onClear, onBeforeHighlight } = this.events[name];
+      this.eventManager.remove([onClear, onHighlight, onBeforeHighlight]);
+      delete this.events[name];
+    }
   }
 
   /**
@@ -331,6 +363,8 @@ export class Highlighter extends OBC.Component implements OBC.Disposable {
   ) {
     if (!this.enabled) return;
 
+    this.events[name].onBeforeHighlight.trigger(this.selection[name]);
+
     if (removePrevious) {
       this.clear(name);
     }
@@ -338,7 +372,7 @@ export class Highlighter extends OBC.Component implements OBC.Disposable {
     const fragments = this.components.get(OBC.FragmentsManager);
 
     const color = this.colors.get(name);
-    if (!color) {
+    if (color === undefined) {
       throw new Error("Color for selection not found!");
     }
 
@@ -403,12 +437,12 @@ export class Highlighter extends OBC.Component implements OBC.Disposable {
         }
       }
 
-      if (selectedIDs.size) {
+      if (selectedIDs.size && color !== null) {
         fragment.setColor(color, selectedIDs);
       }
 
       // Highlight all the clipping fills of the fragment, if any
-      if (fragment.mesh.userData.fills) {
+      if (fragment.mesh.userData.fills && color !== null) {
         for (const fill of fragment.mesh.userData.fills) {
           this._fills.highlight(name, fill, color, fragmentIdMap);
         }
@@ -418,7 +452,7 @@ export class Highlighter extends OBC.Component implements OBC.Disposable {
     this.events[name].onHighlight.trigger(this.selection[name]);
 
     // Highlight the given fill mesh (e.g. when selecting a clipped element in floorplan)
-    if (fillMesh) {
+    if (fillMesh && color !== null) {
       this._fills.highlight(name, fillMesh, color, fragmentIdMap);
     }
 
@@ -431,41 +465,67 @@ export class Highlighter extends OBC.Component implements OBC.Disposable {
    * Clears the selection for the given name or all selections if no name is provided.
    *
    * @param name - The name of the selection to clear. If not provided, clears all selections.
+   * @param filter - The only items to unselect. If not provided, all items will be unselected.
    *
-   * @throws Will throw an error if the FragmentsManager is not found.
-   * @throws Will throw an error if the fragment or its geometry is not found.
-   * @throws Will throw an error if the item ID is not found.
-   * @throws Will throw an error if the fragment does not belong to a FragmentsGroup.
    */
-  clear(name?: string) {
+  clear(name?: string, filter?: FRAGS.FragmentIdMap) {
     const names = name ? [name] : Object.keys(this.selection);
 
-    for (const name of names) {
-      this._fills.clear(name);
+    for (const selectionName of names) {
+      this._fills.clear(selectionName);
 
       const fragments = this.components.get(OBC.FragmentsManager);
 
-      const selected = this.selection[name];
+      const selected = this.selection[selectionName];
 
-      for (const fragID in this.selection[name]) {
+      for (const fragID in selected) {
         const fragment = fragments.list.get(fragID);
-
         if (!fragment) {
           continue;
         }
-        const ids = selected[fragID];
-        if (!ids) {
+
+        let idsToClear = selected[fragID];
+        if (!idsToClear) {
           continue;
         }
+
+        if (filter) {
+          // Only clear the IDs specified in the filter
+          const filteredSelection = filter[fragID];
+          if (!filteredSelection) {
+            // If the filter doesn't match this, skip it (don't clear it)
+            continue;
+          }
+          const toClear = new Set<number>();
+          const remaining = new Set<number>();
+          for (const id of idsToClear) {
+            if (filteredSelection.has(id)) {
+              toClear.add(id);
+            } else {
+              remaining.add(id);
+            }
+          }
+
+          idsToClear = toClear;
+          if (remaining.size) {
+            selected[fragID] = remaining;
+          } else {
+            delete selected[fragID];
+          }
+        }
+
         if (this.backupColor) {
-          fragment.setColor(this.backupColor, ids);
+          fragment.setColor(this.backupColor, idsToClear);
         } else {
-          fragment.resetColor(ids);
+          fragment.resetColor(idsToClear);
         }
       }
 
-      this.events[name].onClear.trigger(null);
-      this.selection[name] = {};
+      if (!filter) {
+        this.selection[selectionName] = {};
+      }
+
+      this.events[selectionName].onClear.trigger(null);
     }
   }
 
@@ -637,9 +697,8 @@ export class Highlighter extends OBC.Component implements OBC.Disposable {
 
   private onMouseDown = (e: MouseEvent) => {
     if (!this.enabled) return;
-    this.mouseDownPosition = {x: e.clientX, y: e.clientY}
+    this.mouseDownPosition = { x: e.clientX, y: e.clientY };
     this._mouseState.down = true;
-
   };
 
   private onMouseUp = async (event: MouseEvent) => {
@@ -677,7 +736,7 @@ export class Highlighter extends OBC.Component implements OBC.Disposable {
       this.clear(hoverName);
       return;
     }
-    
+
     // If the distance is greater than the threshold, set dragging to true
     if (moveDistance > this.mouseMoveThreshold) {
       this._mouseState.moved = this._mouseState.down;

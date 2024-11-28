@@ -33,21 +33,21 @@
     "publish-alpha": "npm publish --tag alpha"
   },
   "peerDependencies": {
-    "@thatopen/fragments": ">=2.3.0-alpha",
+    "@thatopen/fragments": ">=2.4.0-alpha.9",
     "three": "^0.160.1",
-    "web-ifc": "0.0.59"
+    "web-ifc": "0.0.61"
   },
   "devDependencies": {
-    "@thatopen/fragments": "~2.3.0",
+    "@thatopen/fragments": ">=2.4.0-alpha.9",
     "@thatopen/ui": "~2.3.0",
     "@thatopen/ui-obc": "~2.3.0",
     "@types/earcut": "^2.1.4",
     "@types/three": "^0.160.0",
     "three": "^0.160.1",
-    "web-ifc": "0.0.59"
+    "web-ifc": "0.0.61"
   },
   "dependencies": {
-    "@thatopen/components": ">=2.3.0",
+    "@thatopen/components": ">=2.4.0-alpha.32",
     "camera-controls": "2.7.3",
     "dexie": "^4.0.4",
     "earcut": "^2.2.4",
