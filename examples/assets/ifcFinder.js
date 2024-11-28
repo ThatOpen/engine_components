@@ -1,8 +1,8 @@
-import"./web-ifc-api-CpQ3aV8c.js";import{T as w,z as r,m as i}from"./index-BEvRfOoQ.js";import{S as h}from"./stats.min-GTpOrGrX.js";import{C as v,T as x,s as F,g as R,x as C,L as I,a as L,G as T,W as $,e as k,A,d as B}from"./index-B03kGVBW.js";import"./_commonjsHelpers-Cpj98o6Y.js";const S=document.getElementById("container"),e=new v,U=e.get(x),t=U.create();t.scene=new F(e);t.renderer=new R(e,S);t.camera=new C(e);e.init();t.camera.controls.setLookAt(12,6,8,0,0,-10);t.scene.setup();const z=e.get(I);z.create(t);t.scene.three.background=null;const E=new L(e),G=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),W=await G.arrayBuffer(),_=new Uint8Array(W),c=E.load(_);t.scene.three.add(c);const m=e.get(T),j=await fetch("https://thatopen.github.io/engine_components/resources/small-relations.json"),M=m.getRelationsMapFromJSON(await j.text());m.setRelationMap(c,M);const N=e.get($),n=N.create(),O=await fetch("https://thatopen.github.io/engine_components/resources/small.ifc"),b=new File([await O.arrayBuffer()],"example"),u=new k(e,{name:"category",inclusive:!1,rules:[]});n.add(u);const p={type:"category",value:/IfcWallStandardCase/};u.rules.push(p);const d={type:"property",name:/.*/,value:/yeso/},g=new A(e,{name:"property",inclusive:!1,rules:[d]});n.add(g);await n.update(c.uuid,b);const P=n.items,o=e.get(B);o.set(!1);o.set(!0,P);const s=new h;s.showPanel(2);document.body.append(s.dom);s.dom.style.left="0px";s.dom.style.zIndex="unset";t.renderer.onBeforeUpdate.add(()=>s.begin());t.renderer.onAfterUpdate.add(()=>s.end());w.init();const f=r.create(()=>i`
-  <bim-text-input label="Category" value="${p.value.source}"></bim-text-input>
+import"./web-ifc-api-nU1-R_1k.js";import{T as w,z as r,m as i}from"./index-BEvRfOoQ.js";import{S as h}from"./stats.min-GTpOrGrX.js";import{C as v,W as x,S as F,d as I,a as R,G as S,F as C,g as $,l as k,m as B,n as L,H as Q}from"./index-C8rcJyf0.js";import"./_commonjsHelpers-Cpj98o6Y.js";const U=document.getElementById("container"),e=new v,z=e.get(x),t=z.create();t.scene=new F(e);t.renderer=new I(e,U);t.camera=new R(e);e.init();t.camera.controls.setLookAt(12,6,8,0,0,-10);t.scene.setup();const A=e.get(S);A.create(t);t.scene.three.background=null;const E=new C(e),G=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),M=await G.arrayBuffer(),P=new Uint8Array(M),c=E.load(P);t.scene.three.add(c);const m=e.get($),T=await fetch("https://thatopen.github.io/engine_components/resources/small-relations.json"),W=m.getRelationsMapFromJSON(await T.text());m.setRelationMap(c,W);const _=e.get(k),n=_.create(),j=await fetch("https://thatopen.github.io/engine_components/resources/small.ifc"),b=new File([await j.arrayBuffer()],"example"),p=new B(e,{name:"category",inclusive:!1,rules:[]});n.add(p);const u={type:"category",value:/IfcWallStandardCase/};p.rules.push(u);const d={type:"property",name:/.*/,value:/yeso/},g=new L(e,{name:"property",inclusive:!1,rules:[d]});n.add(g);await n.update(c.uuid,b);const H=n.items,o=e.get(Q);o.set(!1);o.set(!0,H);const a=new h;a.showPanel(2);document.body.append(a.dom);a.dom.style.left="0px";a.dom.style.zIndex="unset";t.renderer.onBeforeUpdate.add(()=>a.begin());t.renderer.onAfterUpdate.add(()=>a.end());w.init();const f=r.create(()=>i`
+  <bim-text-input label="Category" value="${u.value.source}"></bim-text-input>
   `),y=r.create(()=>i`
   <bim-text-input label="Property" value="${d.value.source}"></bim-text-input>
-  `),Q=async()=>{u.clear(),g.clear(),p.value=new RegExp(f.value),d.value=new RegExp(y.value),await n.update(c.uuid,b);const l=n.items;if(console.log(l),Object.keys(l).length===0){alert("No items found!");return}o.set(!1),o.set(!0,l)},a=r.create(()=>i`
+  `),N=async()=>{p.clear(),g.clear(),u.value=new RegExp(f.value),d.value=new RegExp(y.value),await n.update(c.uuid,b);const l=n.items;if(console.log(l),Object.keys(l).length===0){alert("No items found!");return}o.set(!1),o.set(!0,l)},s=r.create(()=>i`
   <bim-panel active label="IFC Finder Tutorial" class="options-menu">
     <bim-panel-section collapsed label="Controls">
       <bim-panel-section style="padding-top: 12px;">
@@ -11,14 +11,14 @@ import"./web-ifc-api-CpQ3aV8c.js";import{T as w,z as r,m as i}from"./index-BEvRf
         ${y}
       
         <bim-button label="Update"
-          @click="${async()=>{await Q()}}">
+          @click="${async()=>{await N()}}">
         </bim-button>  
       
       </bim-panel-section>
       
     </bim-panel>
-  `);document.body.append(a);const q=r.create(()=>i`
+  `);document.body.append(s);const O=r.create(()=>i`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
-        @click="${()=>{a.classList.contains("options-menu-visible")?a.classList.remove("options-menu-visible"):a.classList.add("options-menu-visible")}}">
+        @click="${()=>{s.classList.contains("options-menu-visible")?s.classList.remove("options-menu-visible"):s.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(q);
+    `);document.body.append(O);

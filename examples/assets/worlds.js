@@ -1,4 +1,4 @@
-import{af as r,B as l,a as c,C as m}from"./web-ifc-api-CpQ3aV8c.js";import{T as d,z as i,m as a}from"./index-BEvRfOoQ.js";import{S as b}from"./stats.min-GTpOrGrX.js";import{C as u,T as p,s as g,g as h,x as f}from"./index-B03kGVBW.js";import"./_commonjsHelpers-Cpj98o6Y.js";const w=document.getElementById("container"),o=new u,y=o.get(p),e=y.create();e.scene=new g(o);e.renderer=new h(o,w);e.camera=new f(o);o.init();e.scene.setup();e.scene.three.background=null;const v=new r({color:"#6528D7"}),x=new l,C=new c(x,v);e.scene.three.add(C);e.camera.controls.setLookAt(3,3,3,0,0,0);const n=new b;n.showPanel(2);document.body.append(n.dom);n.dom.style.left="0px";n.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>n.begin());e.renderer.onAfterUpdate.add(()=>n.end());d.init();const s=i.create(()=>a`
+import{af as r,B as l,a as c,C as m}from"./web-ifc-api-nU1-R_1k.js";import{T as d,z as i,m as a}from"./index-BEvRfOoQ.js";import{S as p}from"./stats.min-GTpOrGrX.js";import{C as b,W as u,S as g,d as f,a as h}from"./index-C8rcJyf0.js";import"./_commonjsHelpers-Cpj98o6Y.js";const w=document.getElementById("container"),o=new b,y=o.get(u),e=y.create();e.scene=new g(o);e.renderer=new f(o,w);e.camera=new h(o);o.init();e.scene.setup();e.scene.three.background=null;const v=new r({color:"#6528D7"}),C=new l,L=new c(C,v);e.scene.three.add(L);e.camera.controls.setLookAt(3,3,3,0,0,0);const n=new p;n.showPanel(2);document.body.append(n.dom);n.dom.style.left="0px";n.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>n.begin());e.renderer.onAfterUpdate.add(()=>n.end());d.init();const s=i.create(()=>a`
     <bim-panel label="Worlds Tutorial" class="options-menu">
       <bim-panel-section collapsed label="Controls">
       
@@ -19,8 +19,8 @@ import{af as r,B as l,a as c,C as m}from"./web-ifc-api-CpQ3aV8c.js";import{T as 
         
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(s);const L=i.create(()=>a`
+    `);document.body.append(s);const S=i.create(()=>a`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{s.classList.contains("options-menu-visible")?s.classList.remove("options-menu-visible"):s.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(L);
+    `);document.body.append(S);
