@@ -1,7 +1,7 @@
 {
   "name": "@thatopen/components",
   "description": "Collection of core functionalities to author BIM apps.",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "author": "That Open Company",
   "contributors": [
     "Antonio Gonzalez Viegas (https://github.com/agviegas)",
@@ -42,7 +42,7 @@
     "@types/three": "0.160.0",
     "stats.js": "^0.17.0",
     "three": "^0.160.1",
-    "web-ifc": "0.0.61"
+    "web-ifc": "0.0.66"
   },
   "dependencies": {
     "camera-controls": "2.7.3",
@@ -53,6 +53,6 @@
   "peerDependencies": {
     "@thatopen/fragments": "~2.4.0",
     "three": "^0.160.1",
-    "web-ifc": "0.0.61"
+    "web-ifc": "0.0.66"
   }
 }
