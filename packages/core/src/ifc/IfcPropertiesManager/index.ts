@@ -633,7 +633,7 @@ export class IfcPropertiesManager extends Component implements Disposable {
     }
   }
 
-  private async newSingleProperty(
+  async newSingleProperty(
     model: FragmentsGroup,
     type: string,
     name: string,
