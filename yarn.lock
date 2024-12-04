@@ -728,8 +728,10 @@ __metadata:
   dependencies:
     "@thatopen/fragments": ~2.4.0
     "@thatopen/ui": ~2.4.0
+    "@types/earcut": 2.1.4
     "@types/three": 0.160.0
     camera-controls: 2.7.3
+    earcut: 2.2.4
     fast-xml-parser: 4.4.1
     jszip: 3.10.1
     stats.js: ^0.17.0
@@ -788,7 +790,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/earcut@npm:^2.1.4":
+"@types/earcut@npm:2.1.4, @types/earcut@npm:^2.1.4":
   version: 2.1.4
   resolution: "@types/earcut@npm:2.1.4"
   checksum: 167e1c6d60e9d964d0f496c11b5065b9d155b4c1df04fb9abcec88af2c16213999ea8ed7cddeec9475620152e7e9e99a0f118e1c8070e1396cf0f299642beb6b
@@ -1595,7 +1597,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"earcut@npm:^2.2.4":
+"earcut@npm:2.2.4, earcut@npm:^2.2.4":
   version: 2.2.4
   resolution: "earcut@npm:2.2.4"
   checksum: aea0466cb2f24e0c3c57148d8d28ac9846f53c4f43ee66780826474303ac851b305ef988152d0bdeb31e8f7ca939dc0df737e7505cfb1c1bdf2ff9d7f9ea2faa
