@@ -120,36 +120,6 @@ cube.rotation.y += Math.PI / 4.2;
 cube.rotation.z += Math.PI / 4.2;
 cube.updateMatrixWorld();
 
-const buffer = new Float32Array(300000);
-const posAttr = new THREE.BufferAttribute(buffer, 3, false);
-posAttr.setUsage(THREE.DynamicDrawUsage);
-
-const edgesGeometry = new THREE.BufferGeometry();
-edgesGeometry.setAttribute("position", posAttr);
-
-const edges = new THREE.LineSegments(
-  edgesGeometry,
-  new THREE.LineBasicMaterial({ color: "red", linewidth: 0.001 }),
-);
-
-edges.frustumCulled = false;
-
-world.scene.three.add(edges);
-
-const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-const edgeGenerator = components.get(OBC.EdgeGenerator);
-edgeGenerator.plane = plane;
-
-const { index } = edgeGenerator.generate({
-  meshes: [cube],
-  posAttr,
-});
-
-edges.geometry.setDrawRange(0, index);
-posAttr.needsUpdate = true;
-console.log(edges);
-
-
 
 /* MD
   Finally, we will make the camera look at the cube:
