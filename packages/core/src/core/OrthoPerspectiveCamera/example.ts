@@ -23,7 +23,6 @@ import Stats from "stats.js";
 import * as THREE from "three";
 import * as BUI from "@thatopen/ui";
 import * as OBC from "@thatopen/components";
-import CameraControls from "camera-controls"; // Add camera-controls package to enable extended action to the Orthographic camera
 
 /* MD
   ### 🌎 Setting up the world AND the camera
@@ -177,18 +176,6 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
                 alert("First person is not compatible with ortho!");
                 target.value[0] = world.camera.projection.current;
                 return;
-              }
-              // The issue happens on mobile so we need to check on which device we are working on
-              const isMobile = /iPhone|iPad|iPod|Android/i.test(
-                navigator.userAgent,
-              );
-              // If it is mobile then we need to directly tell the camera controls to perform an action when a touch happens & we need to update the zoom speed
-              if (isMobile) {
-                world.camera.controls.touches.two =
-                  CameraControls.ACTION.TOUCH_ZOOM_TRUCK;
-                world.camera.controls.touches.three =
-                  CameraControls.ACTION.TOUCH_ZOOM_TRUCK;
-                world.camera.controls.dollySpeed = 5;
               }
               world.camera.projection.set(selected);
             }}">
