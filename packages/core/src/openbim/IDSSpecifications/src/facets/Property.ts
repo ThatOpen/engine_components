@@ -143,13 +143,13 @@ export class IDSProperty extends IDSFacet {
       const sets = await this.getPsets(model, expressID);
       const matchingSets = sets.filter((set) => {
         const result = this.evalRequirement(
-          set.Name?.value ?? null,
+          set.Name ?? null,
           this.propertySet,
           "PropertySet",
         );
         if (!result) return false;
         checks.push({
-          currentValue: set.Name.value,
+          currentValue: set.Name,
           parameter: "PropertySet",
           pass: true,
           requiredValue: this.propertySet.parameter,
@@ -168,8 +168,7 @@ export class IDSProperty extends IDSFacet {
       }
 
       for (const set of matchingSets) {
-        const itemsAttrName = this.getItemsAttrName(set.type);
-        if (!itemsAttrName) {
+        if (!("Properties" in set)) {
           checks.push({
             currentValue: null,
             parameter: "BaseName",
@@ -179,7 +178,7 @@ export class IDSProperty extends IDSFacet {
           continue;
         }
 
-        const items = set[itemsAttrName];
+        const items = set.Properties;
         const matchingItems = items.filter((item: any) => {
           if (this._unsupportedTypes.includes(item.type)) {
             return false;
@@ -216,54 +215,6 @@ export class IDSProperty extends IDSFacet {
         }
       }
 
-      // for (const definitionID of definitions) {
-      //   const definitionAttrs = await model.getProperties(definitionID);
-      //   if (!definitionAttrs) continue;
-
-      //   const psetNameMatches = this.evalRequirement(
-      //     definitionAttrs.Name?.value ?? null,
-      //     this.propertySet,
-      //     "Property Set",
-      //   );
-      //   if (!psetNameMatches) continue;
-
-      //   checks.push({
-      //     currentValue: definitionAttrs.Name.value,
-      //     parameter: "Property Set",
-      //     pass: true,
-      //     requiredValue: this.propertySet.parameter,
-      //   });
-
-      //   let propsListName: string | undefined;
-      //   if (definitionAttrs.type === WEBIFC.IFCPROPERTYSET)
-      //     propsListName = "HasProperties";
-      //   if (definitionAttrs.type === WEBIFC.IFCELEMENTQUANTITY)
-      //     propsListName = "Quantities";
-      //   if (!propsListName) continue;
-
-      //   for (const handle of definitionAttrs[propsListName]) {
-      //     const propAttrs = await model.getProperties(handle.value);
-      //     if (!propAttrs) continue;
-
-      //     const baseNameMatches = this.evalRequirement(
-      //       propAttrs.Name?.value ?? null,
-      //       this.baseName,
-      //       "Base Name",
-      //     );
-
-      //     if (!baseNameMatches) continue;
-
-      //     checks.push({
-      //       currentValue: propAttrs.Name.value,
-      //       parameter: "Base Name",
-      //       pass: true,
-      //       requiredValue: this.baseName.parameter,
-      //     });
-
-      //     this.evalValue(propAttrs, checks);
-      //   }
-      // }
-
       result.pass = checks.every(({ pass }) => pass);
     }
 
@@ -285,20 +236,23 @@ export class IDSProperty extends IDSFacet {
     );
   }
 
-  private async getPsetProps(
+  private async simplifyPset(
     model: FRAGS.FragmentsGroup,
     attrs: Record<string, any>,
     propsListName: "HasProperties" | "Quantities",
   ) {
-    const attrsClone = structuredClone(attrs);
     const props: Record<string, any>[] = [];
-    const list = attrsClone[propsListName];
-    if (!list) return props;
+    const list = attrs[propsListName];
+    if (!list) return attrs;
     for (const { value } of list) {
       const propAttrs = await model.getProperties(value);
       if (propAttrs) props.push(propAttrs);
     }
-    attrsClone[propsListName] = props;
+    const attrsClone = {
+      Name: attrs.Name?.value,
+      Properties: props,
+      type: attrs.type,
+    };
     return attrsClone;
   }
 
@@ -332,7 +286,7 @@ export class IDSProperty extends IDSFacet {
         continue;
       }
 
-      const pset = await this.getPsetProps(model, psetAttrs, "HasProperties");
+      const pset = await this.simplifyPset(model, psetAttrs, "HasProperties");
       sets.push(pset);
     }
 
@@ -340,7 +294,7 @@ export class IDSProperty extends IDSFacet {
   }
 
   private async getPsets(model: FRAGS.FragmentsGroup, expressID: number) {
-    const sets = await this.getTypePsets(model, expressID);
+    const typePsets = await this.getTypePsets(model, expressID);
 
     const indexer = this.components.get(IfcRelationsIndexer);
     const definitions = indexer.getEntityRelations(
@@ -349,7 +303,9 @@ export class IDSProperty extends IDSFacet {
       "IsDefinedBy",
     );
 
-    if (!definitions) return sets;
+    if (!definitions) return typePsets;
+
+    const sets: Record<string, any>[] = [];
 
     for (const definitionID of definitions) {
       const attrs = await model.getProperties(definitionID);
@@ -358,8 +314,27 @@ export class IDSProperty extends IDSFacet {
       const propsListName = this.getItemsAttrName(attrs.type);
       if (!propsListName) continue;
 
-      const pset = await this.getPsetProps(model, attrs, propsListName);
-      sets.push(pset);
+      const occurencePset = await this.simplifyPset(
+        model,
+        attrs,
+        propsListName,
+      );
+
+      const typePset = typePsets.find(
+        ({ Name }) => Name === occurencePset.Name,
+      );
+
+      if (typePset) {
+        for (const prop of typePset.Properties) {
+          const name = prop.Name?.value;
+          const existingProp = occurencePset.Properties.find(
+            ({ Name }: { Name: { value: string } }) => Name.value === name,
+          );
+          if (!existingProp) occurencePset.Properties.push(prop);
+        }
+      }
+
+      sets.push(occurencePset);
     }
 
     return sets;
