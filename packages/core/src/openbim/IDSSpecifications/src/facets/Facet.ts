@@ -84,11 +84,11 @@ export abstract class IDSFacet {
       let maxPass = true;
 
       if (min !== undefined) {
-        minPass = minInclusive ? value <= min : value < min;
+        minPass = minInclusive ? value >= min : value > min;
       }
 
       if (max !== undefined) {
-        maxPass = maxInclusive ? value >= max : value > max;
+        maxPass = maxInclusive ? value <= max : value < max;
       }
 
       pass = minPass && maxPass;
