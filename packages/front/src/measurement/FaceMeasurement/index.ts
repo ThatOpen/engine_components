@@ -166,6 +166,7 @@ export class FaceMeasurement
       "position",
       this.preview.geometry.attributes.position,
     );
+    mesh.position.copy(this.preview.position);
     scene.add(mesh);
 
     geometry.computeBoundingSphere();
