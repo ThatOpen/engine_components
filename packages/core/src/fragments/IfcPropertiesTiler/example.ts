@@ -262,7 +262,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
       
       <bim-panel-section style="padding-top: 12px;">
       
-        <bim-button label="Load IFC"
+        <bim-button label="Export IFC Property Tiles"
           @click="${() => {
             processFile();
           }}">

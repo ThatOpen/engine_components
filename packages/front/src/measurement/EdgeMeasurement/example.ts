@@ -15,6 +15,7 @@ We will import:
 import Stats from "stats.js";
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
+import * as BUI from "@thatopen/ui";
 import * as OBCF from "@thatopen/components-front";
 
 /* MD
@@ -143,6 +144,49 @@ stats.dom.style.left = "0px";
 stats.dom.style.zIndex = "unset";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
+
+/* MD
+  ### 🧩 Adding some UI
+  ---
+
+  We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
+*/
+
+BUI.Manager.init();
+
+/* MD
+Now we will add some UI to have some control over the dimensions we create. For more information about the UI library, you can check the specific documentation for it!
+*/
+
+const panel = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+  <bim-panel active label="Edge Measurement Tutorial" class="options-menu">
+      <bim-panel-section collapsed label="Controls">
+          <bim-label>Create dimension: Double click</bim-label>  
+          <bim-label>Delete dimension: Press O</bim-label> 
+          <bim-label>Delete all dimensions: Press S</bim-label> 
+          <bim-label>Set/Show saved dimensions: Press L</bim-label>   
+      </bim-panel-section>
+      
+      <bim-panel-section collapsed label="Others">
+        <bim-checkbox checked label="Dimensions enabled" 
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            dimensions.enabled = target.value;
+          }}">  
+        </bim-checkbox>       
+        
+        <bim-button label="Delete all"
+          @click="${() => {
+            dimensions.deleteAll();
+          }}">
+        </bim-button>
+
+      </bim-panel-section>
+    </bim-panel>
+    `;
+});
+
+document.body.append(panel);
 
 /* MD
   ### 🎉 Wrap up
