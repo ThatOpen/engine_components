@@ -323,7 +323,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
     <bim-panel active label="Geometry tiles Tutorial" class="options-menu">
       <bim-panel-section collapsed label="Controls">
       
-        <bim-button label="Load IFC"
+        <bim-button label="Export IFC Geometry Tiles"
           @click="${() => {
             processFile();
           }}">

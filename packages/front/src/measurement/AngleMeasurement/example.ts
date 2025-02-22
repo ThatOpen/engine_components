@@ -14,6 +14,7 @@ We will import:
 
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
+import * as BUI from "@thatopen/ui";
 import * as OBCF from "@thatopen/components-front";
 import Stats from "stats.js";
 
@@ -94,7 +95,7 @@ container.ondblclick = () => angles.create();
   ### 🧹 Deleting the Dimensions
   ---
 
-  Now that we know how to make multiple dimensions, we'll learn how to delete them when necessary. Dimensions can be removed using the `deleteAll()` method, which deletes all the created dimensions. Again, we'll keep it simple and bind this event to the keydown event. Specifically, it will fire when the user presses the `Delete` or `Backspace` key.
+  Now that we know how to make multiple angle, we'll learn how to delete them when necessary. angle can be removed using the `deleteAll()` method, which deletes all the created angle. Again, we'll keep it simple and bind this event to the keydown event. Specifically, it will fire when the user presses the `Delete` or `Backspace` key.
 */
 
 window.onkeydown = (event) => {
@@ -117,6 +118,67 @@ stats.dom.style.left = "0px";
 stats.dom.style.zIndex = "unset";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
+
+/* MD
+  ### 🧩 Adding some UI
+  ---
+
+  We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
+*/
+
+BUI.Manager.init();
+
+/* MD
+Now we will add some UI to have some control over the angles we create. For more information about the UI library, you can check the specific documentation for it!
+*/
+
+const panel = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+  <bim-panel active label="Angle Measurement Tutorial" class="options-menu">
+      <bim-panel-section collapsed label="Controls">
+          <bim-label>Create angle: Double click</bim-label>  
+          <bim-label>Delete angle: Delete</bim-label>  
+      </bim-panel-section>
+      
+      <bim-panel-section collapsed label="Others">
+        <bim-checkbox checked label="angles enabled" 
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            angles.enabled = target.value;
+          }}">  
+        </bim-checkbox>       
+        
+        <bim-button label="Delete all"
+          @click="${() => {
+            angles.deleteAll();
+          }}">
+        </bim-button>
+
+      </bim-panel-section>
+    </bim-panel>
+    `;
+});
+
+document.body.append(panel);
+
+/* MD
+  And we will make some logic that adds a button to the screen when the user is visiting our app from their phone, allowing to show or hide the menu. Otherwise, the menu would make the app unusable.
+*/
+
+const button = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+      <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
+        @click="${() => {
+          if (panel.classList.contains("options-menu-visible")) {
+            panel.classList.remove("options-menu-visible");
+          } else {
+            panel.classList.add("options-menu-visible");
+          }
+        }}">
+      </bim-button>
+    `;
+});
+
+document.body.append(button);
 
 /* MD
   ### 🎉 Wrap up
