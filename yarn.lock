@@ -729,7 +729,7 @@ __metadata:
     earcut: ^2.2.4
     n8ao: 1.5.1
     postprocessing: 6.34.2
-    three: ^0.160.1
+    three: 0.170.0
     web-ifc: 0.0.66
   peerDependencies:
     "@thatopen/fragments": ~2.4.0
@@ -751,7 +751,7 @@ __metadata:
     fast-xml-parser: 4.4.1
     jszip: 3.10.1
     stats.js: ^0.17.0
-    three: ^0.160.1
+    three: 0.170.0
     three-mesh-bvh: 0.7.0
     web-ifc: 0.0.66
   peerDependencies:
@@ -4482,10 +4482,10 @@ glob@latest:
   languageName: node
   linkType: hard
 
-"three@npm:^0.160.1":
-  version: 0.160.1
-  resolution: "three@npm:0.160.1"
-  checksum: 5f4be21df6ee5abf63a21513e9650a4956e3699d59f16b4545b27e1c421405d452c132253381e8f5cca3f609d41c4e29dad24fddab526156017ec215ab244ad1
+"three@npm:0.170.0":
+  version: 0.170.0
+  resolution: "three@npm:0.170.0"
+  checksum: 774d8091e51f784cf4f5a5326e11e2be947ab7cc5f1056de59f13d4682310937615b264d7161357b09bd16e6648719c49e568d5cc595f14637477ecadeec71e2
   languageName: node
   linkType: hard
 

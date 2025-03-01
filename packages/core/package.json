@@ -42,7 +42,7 @@
     "@types/earcut": "2.1.4",
     "@types/three": "0.160.0",
     "stats.js": "^0.17.0",
-    "three": "^0.160.1",
+    "three": "0.170.0",
     "web-ifc": "0.0.66"
   },
   "dependencies": {
