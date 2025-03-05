@@ -169,7 +169,7 @@ export class IDSAttribute extends IDSFacet {
     }
 
     const result = [...this.testResult];
-    this.testResult = [];
+    // this.testResult = [];
     return result;
   }
 }
