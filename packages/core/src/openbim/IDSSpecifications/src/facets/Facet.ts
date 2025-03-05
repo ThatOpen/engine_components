@@ -20,6 +20,9 @@ export abstract class IDSFacet {
   // When using this facet as a requirement, instructions can be given for the authors of the IFC.
   instructions?: string;
 
+  // Property to store the entities that pass the applicability of this facet.
+  entities: FRAGS.IfcProperties = {};
+
   constructor(protected components: Components) {}
 
   protected addCheckResult(check: IDSCheck, checks: IDSCheck[]) {
