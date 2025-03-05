@@ -53,19 +53,23 @@ export class IDSSpecification implements IDSSpecificationData {
    * If no requirements are defined for the specification, an empty array is returned.
    */
   async test(model: FRAGS.FragmentsGroup) {
-    let result: IDSCheckResult[] = [];
+    const result: IDSCheckResult[] = [];
 
     if (this.requirements.size === 0) return result;
-
-    // Get applicable elements
     const entities: FRAGS.IfcProperties = {};
     for (const facet of this.applicability) {
       await facet.getEntities(model, entities);
     }
 
-    // Test applicable elements against requirements
-    const requirement = [...this.requirements][0];
-    result = await requirement.test(entities, model);
+    const mergedEntities = this.mergeFacetsEntities();
+
+    const requirements = [...this.requirements];
+    for (const requirement of requirements) {
+      const test = await requirement.test(mergedEntities, model);
+      result.push(...test);
+    }
+    // result = await requirement.test(entities, model);
+
     return result;
     // const requirementsResult: { [expressId: string]: boolean } = {};
     // for (const expressID in entities) {
@@ -92,6 +96,28 @@ export class IDSSpecification implements IDSSpecificationData {
     //     result.fail[expressID] = entity;
     //   }
     // }
+  }
+
+  mergeFacetsEntities() {
+    if (this.applicability.size === 0) return {};
+
+    const facetsEntities = [...this.applicability].map((facet) =>
+      Object.keys(facet.entities),
+    );
+
+    const commonExpressIDs = facetsEntities.reduce((acc, ids) =>
+      acc.filter((id) => ids.includes(id)),
+    );
+
+    const firstFacet = [...this.applicability][0];
+    const mergedEntities: FRAGS.IfcProperties = {};
+
+    for (const _expressID of commonExpressIDs) {
+      const expressID = Number(_expressID);
+      mergedEntities[Number(expressID)] = firstFacet.entities[expressID];
+    }
+
+    return mergedEntities;
   }
 
   /**
