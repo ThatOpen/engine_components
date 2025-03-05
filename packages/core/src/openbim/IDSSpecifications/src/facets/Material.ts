@@ -26,8 +26,35 @@ export class IDSMaterial extends IDSFacet {
       if (!materialAttrs) return null;
       return this.getMaterialDefinition[WEBIFC.IFCMATERIAL](materialAttrs);
     },
-    [WEBIFC.IFCMATERIALLAYERSET]: () => {},
-    [WEBIFC.IFCMATERIALLAYERSETUSAGE]: () => {},
+    [WEBIFC.IFCMATERIALLAYERSET]: async (
+      model: FRAGS.FragmentsGroup,
+      attr: any,
+    ): Promise<string[] | string | null> => {
+      const materialLayers = attr.MaterialLayers;
+      const layerSetAttrs = await Promise.all(
+        materialLayers.map(async ({ value }: any) => {
+          const materialProfile = await model.getProperties(value);
+          return this.getMaterialDefinition[WEBIFC.IFCMATERIALLAYER](
+            model,
+            materialProfile,
+          );
+        }),
+      );
+      if (!layerSetAttrs || layerSetAttrs.length === 0) return null;
+      return layerSetAttrs.length === 1 ? layerSetAttrs[0] : layerSetAttrs;
+    },
+    [WEBIFC.IFCMATERIALLAYERSETUSAGE]: async (
+      model: FRAGS.FragmentsGroup,
+      attr: any,
+    ): Promise<string[] | string | null> => {
+      const layerSet = attr.ForLayerSet;
+      const layerSetAttrs = await model.getProperties(layerSet.value);
+      const materialDefinition = this.getMaterialDefinition[
+        WEBIFC.IFCMATERIALLAYERSET
+      ](model, layerSetAttrs);
+      if (!materialDefinition) return null;
+      return materialDefinition;
+    },
     [WEBIFC.IFCMATERIALPROFILE]: async (
       model: FRAGS.FragmentsGroup,
       attr: any,
@@ -67,8 +94,33 @@ export class IDSMaterial extends IDSFacet {
       if (!materialDefinition) return null;
       return materialDefinition;
     },
-    [WEBIFC.IFCMATERIALCONSTITUENT]: () => {},
-    [WEBIFC.IFCMATERIALCONSTITUENTSET]: () => {},
+    [WEBIFC.IFCMATERIALCONSTITUENT]: async (
+      model: FRAGS.FragmentsGroup,
+      attr: any,
+    ): Promise<string | null> => {
+      const materialAttrs = await model.getProperties(attr.Material?.value);
+      if (!materialAttrs) return null;
+      return this.getMaterialDefinition[WEBIFC.IFCMATERIAL](materialAttrs);
+    },
+    [WEBIFC.IFCMATERIALCONSTITUENTSET]: async (
+      model: FRAGS.FragmentsGroup,
+      attr: any,
+    ): Promise<string[] | string | null> => {
+      const materialConstituents = attr.MaterialConstituents;
+      const constituentSetAttrs = await Promise.all(
+        materialConstituents.map(async ({ value }: any) => {
+          const materialProfile = await model.getProperties(value);
+          return this.getMaterialDefinition[WEBIFC.IFCMATERIALCONSTITUENT](
+            model,
+            materialProfile,
+          );
+        }),
+      );
+      if (!constituentSetAttrs || constituentSetAttrs.length === 0) return null;
+      return constituentSetAttrs.length === 1
+        ? constituentSetAttrs[0]
+        : constituentSetAttrs;
+    },
   };
 
   constructor(components: Components, value?: IDSFacetParameter) {
