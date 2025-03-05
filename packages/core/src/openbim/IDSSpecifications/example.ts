@@ -5,21 +5,24 @@ const components = new OBC.Components();
 const ifcLoader = components.get(OBC.IfcLoader);
 await ifcLoader.setup();
 // const file = await fetch("/resources/structure.ifc");
-// const file = await fetch(
-//   "https://raw.githubusercontent.com/buildingSMART/IDS/development/Documentation/ImplementersDocumentation/TestCases/attribute/fail-a_prohibited_facet_returns_the_opposite_of_a_required_facet.ifc",
-// );
-// const data = await file.arrayBuffer();
-// const buffer = new Uint8Array(data);
-// const model = await ifcLoader.load(buffer);
+const file = await fetch("/resources/specs.ifc");
+const data = await file.arrayBuffer();
+const buffer = new Uint8Array(data);
+const model = await ifcLoader.load(buffer);
 
-// const indexer = components.get(OBC.IfcRelationsIndexer);
-// await indexer.process(model);
+const indexer = components.get(OBC.IfcRelationsIndexer);
+await indexer.process(model);
 
 const ids = components.get(OBC.IDSSpecifications);
 const idsFile = await fetch("/resources/specs.ids");
 const idsContent = await idsFile.text();
 const specs = ids.load(idsContent);
-console.log(ids, specs);
+
+specs.forEach((spec) => {
+  spec.test(model);
+});
+
+console.log({ specs });
 
 // const specification = ids.create("My First IDS!", ["IFC4X3_ADD2"]);
 // specification.description = "Description";
