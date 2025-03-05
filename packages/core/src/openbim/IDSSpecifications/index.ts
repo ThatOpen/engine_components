@@ -13,6 +13,8 @@ import {
   createEntityFacets,
   createAttributeFacets,
   createClassificationFacets,
+  createMaterialFacets,
+  createPartOfFacet,
 } from "./src/importers";
 import { createPropertyFacets } from "./src/importers/property";
 
@@ -86,6 +88,19 @@ export class IDSSpecifications extends Component {
     return specification;
   }
 
+  createFacet = {
+    attribute: (elements: any[]) =>
+      createAttributeFacets(this.components, elements),
+    classification: (elements: any[]) =>
+      createClassificationFacets(this.components, elements),
+    entity: (elements: any[]) => createEntityFacets(this.components, elements),
+    material: (elements: any[]) =>
+      createMaterialFacets(this.components, elements),
+    partOf: (elements: any[]) => createPartOfFacet(this.components, elements),
+    property: (elements: any[]) =>
+      createPropertyFacets(this.components, elements),
+  };
+
   /**
    * Parses and processes an XML string containing Information Delivery Specification (IDS) data.
    * It creates IDSSpecification instances based on the parsed data and returns them in an array.
@@ -122,8 +137,11 @@ export class IDSSpecifications extends Component {
               const elements = Array.isArray(facet[facetName])
                 ? facet[facetName]
                 : [facet[facetName]];
-              if (facetName === "entity") {
-                const facets = createEntityFacets(this.components, elements);
+              if (Object.keys(this.createFacet).includes(facetName)) {
+                const facets =
+                  this.createFacet[facetName as keyof typeof this.createFacet](
+                    elements,
+                  );
                 applicabilities.push(...facets);
               }
             }
@@ -141,23 +159,11 @@ export class IDSSpecifications extends Component {
               const elements = Array.isArray(facet[facetName])
                 ? facet[facetName]
                 : [facet[facetName]];
-              if (facetName === "entity") {
-                const facets = createEntityFacets(this.components, elements);
-                reqs.push(...facets);
-              }
-              if (facetName === "attribute") {
-                const facets = createAttributeFacets(this.components, elements);
-                reqs.push(...facets);
-              }
-              if (facetName === "classification") {
-                const facets = createClassificationFacets(
-                  this.components,
-                  elements,
-                );
-                reqs.push(...facets);
-              }
-              if (facetName === "property") {
-                const facets = createPropertyFacets(this.components, elements);
+              if (Object.keys(this.createFacet).includes(facetName)) {
+                const facets =
+                  this.createFacet[facetName as keyof typeof this.createFacet](
+                    elements,
+                  );
                 reqs.push(...facets);
               }
             }
