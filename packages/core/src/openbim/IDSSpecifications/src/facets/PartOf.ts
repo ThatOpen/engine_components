@@ -82,6 +82,7 @@ export class IDSPartOf extends IDSFacet {
           if (relID in collector) continue;
           const relAttrs = await model.getProperties(relID);
           if (!relAttrs) continue;
+          this.entities[expressID] = relAttrs;
           collector[relID] = relAttrs;
           result.push(relID);
         }
@@ -95,9 +96,14 @@ export class IDSPartOf extends IDSFacet {
           if (!relAttrs) continue;
           // Check if any of the relations with the entity includes this.entity
           for (const [_, relIDs] of rels) {
-            if (!relIDs.includes(expressID)) continue;
-            collector[entityID] = relAttrs;
-            result.push(entityID);
+            if (entityID !== expressID) continue;
+            for (const id of relIDs) {
+              const attrs = await model.getProperties(id);
+              if (!attrs) continue;
+              this.entities[id] = attrs;
+              collector[id] = attrs;
+              result.push(id);
+            }
           }
         }
       }
