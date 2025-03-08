@@ -1,4 +1,4 @@
-import{a as l,B as c,b as m,C as d}from"./web-ifc-api-r1ed24cU.js";import{S as b}from"./stats.min-GTpOrGrX.js";import{C as p,W as u,S as g,d as f,a as h,G as w}from"./index-4oEgnBmA.js";import{T as v,L as r,m as a}from"./index-ByMLC5eT.js";import"./_commonjsHelpers-Cpj98o6Y.js";const y=document.getElementById("container"),o=new p,S=o.get(u),e=S.create();e.scene=new g(o);e.renderer=new f(o,y);e.camera=new h(o);o.init();const G=new l(new c,new m({color:"red"}));e.scene.three.add(G);e.scene.three.background=null;const x=o.get(w),s=x.create(e);console.log(s);v.init();const t=r.create(()=>a`
+import{$ as l,aJ as c,aB as m,ad as d}from"./web-ifc-api-CuDRTh9k.js";import{S as b}from"./stats.min-GTpOrGrX.js";import{C as p,W as u,S as g,d as f,a as h,G as w}from"./index-MG2l5tzA.js";import{T as v,L as a,m as r}from"./index-C8nqhRYO.js";import"./_commonjsHelpers-Cpj98o6Y.js";const y=document.getElementById("container"),o=new p,S=o.get(u),e=S.create();e.scene=new g(o);e.renderer=new f(o,y);e.camera=new h(o);o.init();const G=new l(new c,new m({color:"red"}));e.scene.three.add(G);e.scene.three.background=null;const x=o.get(w),s=x.create(e);console.log(s);v.init();const t=a.create(()=>r`
     <bim-panel label="Grids Tutorial" class="options-menu">
 
       <bim-panel-section collapsed label="Controls"">
@@ -24,7 +24,7 @@ import{a as l,B as c,b as m,C as d}from"./web-ifc-api-r1ed24cU.js";import{S as b
         
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(t);const C=r.create(()=>a`
+    `);document.body.append(t);const C=a.create(()=>r`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{t.classList.contains("options-menu-visible")?t.classList.remove("options-menu-visible"):t.classList.add("options-menu-visible")}}">
       </bim-button>
