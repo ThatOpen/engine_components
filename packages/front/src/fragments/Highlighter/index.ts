@@ -148,6 +148,7 @@ export class Highlighter
     this._fills.dispose();
     this.onBeforeUpdate.reset();
     this.onAfterUpdate.reset();
+    this.isSetup = false;
 
     this.selection = {};
     for (const name in this.events) {
