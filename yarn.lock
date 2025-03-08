@@ -751,12 +751,12 @@ __metadata:
     fast-xml-parser: 4.4.1
     jszip: 3.10.1
     stats.js: ^0.17.0
-    three: ^0.160.1
+    three: 0.165.0
     three-mesh-bvh: 0.7.0
     web-ifc: 0.0.66
   peerDependencies:
     "@thatopen/fragments": ~2.4.0
-    three: ^0.160.1
+    three: 0.165.0
     web-ifc: 0.0.66
   languageName: unknown
   linkType: soft
@@ -4479,6 +4479,13 @@ glob@latest:
   peerDependencies:
     three: ">= 0.151.0"
   checksum: 888259676dfc975d184a8536fd42a870d02704309348677fbcd94a8b710e16749af8806a9e52801992bd00f39feb971863165cdcab4853fa6a3b67447443dfba
+  languageName: node
+  linkType: hard
+
+"three@npm:0.165.0":
+  version: 0.165.0
+  resolution: "three@npm:0.165.0"
+  checksum: 1dcfe9ef046a49036e527cf0f72e07475546a16ede694f24630330ece7635ab8ee5c3a3422d43c65c2d267a255e4859820ddb35381defadbd3515d91e2c2bd2e
   languageName: node
   linkType: hard
 
