@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.5.0](https://github.com/ThatOpen/engine_components/compare/v2.4.0...v2.5.0) (2025-03-14)
+
+
+### Features
+
+* **core:** add section mesh generation component ([46ee63e](https://github.com/ThatOpen/engine_components/commit/46ee63e17253c9b1501ce47391164a101ed0e862))
+* **front:** adds event on length measurements deletion ([554e3a6](https://github.com/ThatOpen/engine_components/commit/554e3a6a9e2d67d8338dcec7f1757f80651824e0))
+
+
+### Bug Fixes
+
+* **core:** ids facet bounds checking was inverted ([2c7461f](https://github.com/ThatOpen/engine_components/commit/2c7461ff5a4d1d783548391e0415a83e937f0474))
+* **core:** ids property facet was failing when it doesn't have to ([5786e57](https://github.com/ThatOpen/engine_components/commit/5786e5727c3d4250519e97849690397c86aaddf5))
+* **core:** incorrect ids export ([cb9848a](https://github.com/ThatOpen/engine_components/commit/cb9848acb474149b2bfef3e23817b4315ea50057))
+* Documentation Updates engine-components [#459](https://github.com/ThatOpen/engine_components/issues/459) ([#566](https://github.com/ThatOpen/engine_components/issues/566)) ([dd9f0d4](https://github.com/ThatOpen/engine_components/commit/dd9f0d490aaafd8ec8ceb40701949f52ba2cbfe2))
+* FaceMeasurement for Multiple Models [#533](https://github.com/ThatOpen/engine_components/issues/533) ([#565](https://github.com/ThatOpen/engine_components/issues/565)) ([914b449](https://github.com/ThatOpen/engine_components/commit/914b4497604db2cd4129ddca5a4daec938a28906))
+* **front:** Revert "Use RawShaderMaterial for transparent objects to improve culling ([#532](https://github.com/ThatOpen/engine_components/issues/532))" ([4930288](https://github.com/ThatOpen/engine_components/commit/4930288c12d45a9f6a75603fe5601b223fefc293))
+* mobile device orthographic camera zoom ([#558](https://github.com/ThatOpen/engine_components/issues/558)) ([29ebd0d](https://github.com/ThatOpen/engine_components/commit/29ebd0de11fc5fb53260b95a9e22ca77955e513a))
+
 ## [2.4.0](https://github.com/ThatOpen/engine_components/compare/v2.3.0...v2.4.0) (2024-11-28)
 
 
