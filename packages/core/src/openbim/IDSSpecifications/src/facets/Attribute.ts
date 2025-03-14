@@ -26,10 +26,10 @@ export class IDSAttribute extends IDSFacet {
         ? `instructions="${this.instructions}"`
         : "";
     }
-    return `<ids:attribute ${attributes}>
+    return `<attribute ${attributes}>
   ${nameXML}
   ${valueXML}
-</ids:attribute>`;
+</attribute>`;
   }
 
   // This can be very ineficcient as we do not have an easy way to get an entity based on an attribute

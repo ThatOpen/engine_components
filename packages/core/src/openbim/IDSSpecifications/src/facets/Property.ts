@@ -45,11 +45,11 @@ export class IDSProperty extends IDSFacet {
         ? `instructions="${this.instructions}"`
         : "";
     }
-    return `<ids:property ${dataTypeXML} ${attributes}>
+    return `<property ${dataTypeXML} ${attributes}>
   ${propertySetXML}
   ${baseNameXML}
   ${valueXML}
-</ids:property>`;
+</property>`;
   }
 
   async getEntities(

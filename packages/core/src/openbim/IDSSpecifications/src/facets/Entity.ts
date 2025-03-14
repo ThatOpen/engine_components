@@ -27,10 +27,10 @@ export class IDSEntity extends IDSFacet {
         ? `instructions="${this.instructions}"`
         : "";
     }
-    return `<ids:entity ${attributes}>
+    return `<entity ${attributes}>
   ${nameXML}
   ${predefinedTypeXML}
-</ids:entity>`;
+</entity>`;
   }
 
   // IFCSURFACESTYLEREFRACTION is not present in the FragmentsGroup

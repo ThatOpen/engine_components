@@ -113,14 +113,14 @@ export class IDSSpecification implements IDSSpecificationData {
       ? `instructions="${this.instructions}"`
       : "";
 
-    const xml = `<ids:specification ifcVersion="${[...this.ifcVersion].join(" ")}" ${name} ${identifier} ${description} ${instructions}>
-      <ids:applicability minOccurs="1" maxOccurs="unbounded">
-        ${[...this.applicability].map((facet) => facet.serialize("applicability"))}
-      </ids:applicability>
-      <ids:requirements>
-        ${[...this.requirements].map((facet) => facet.serialize("requirement"))}
-      </ids:requirements>
-    </ids:specification>`;
+    const xml = `<specification ifcVersion="${[...this.ifcVersion].join(" ")}" ${name} ${identifier} ${description} ${instructions}>
+      <applicability minOccurs="1" maxOccurs="unbounded">
+        ${[...this.applicability].map((facet) => facet.serialize("applicability")).join("\n")}
+      </applicability>
+      <requirements>
+        ${[...this.requirements].map((facet) => facet.serialize("requirement")).join("\n")}
+      </requirements>
+    </specification>`;
     return xml;
   }
 }

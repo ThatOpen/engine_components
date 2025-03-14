@@ -10,7 +10,7 @@ export class IdsMaterialFacet extends IDSFacet {
   uri?: string;
 
   serialize(type: "applicability" | "requirement") {
-    if (!(this.value && this.uri)) return "<ids:material />";
+    if (!(this.value && this.uri)) return "<material />";
     const valueXML = getParameterXML("Value", this.value);
     let attributes = "";
     if (type === "requirement") {
@@ -20,9 +20,9 @@ export class IdsMaterialFacet extends IDSFacet {
         ? `instructions="${this.instructions}"`
         : "";
     }
-    return `<ids:material ${attributes}>
+    return `<material ${attributes}>
   ${valueXML}
-</ids:material>`;
+</material>`;
   }
 
   async getEntities() {

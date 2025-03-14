@@ -30,10 +30,10 @@ export class IDSClassification extends IDSFacet {
         ? `instructions="${this.instructions}"`
         : "";
     }
-    return `<ids:classification ${attributes}>
+    return `<classification ${attributes}>
   ${systemXML}
   ${valueXML}
-</ids:classification>`;
+</classification>`;
   }
 
   async getEntities(

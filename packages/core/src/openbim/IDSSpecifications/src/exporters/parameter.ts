@@ -6,14 +6,15 @@ export const getParameterXML = (
 ) => {
   let parameterXML = "";
   if (!parameter) return parameterXML;
+
   if (parameter.type === "simple") {
-    parameterXML = `<ids:simpleValue>${parameter.parameter}</ids:simpleValue>`;
+    parameterXML = `<simpleValue>${parameter.parameter}</simpleValue>`;
   }
 
   if (parameter.type === "enumeration") {
     const value = parameter.parameter;
     parameterXML = `<xs:restriction base="xs:string">
-    ${value.map((v) => `<xs:enumeration value="${v}" />`).join("\r\n")}
+    ${value.map((v) => `<xs:enumeration value="${v}" />`).join("\n")}
     </xs:restriction>`;
   }
 
@@ -24,9 +25,51 @@ export const getParameterXML = (
     </xs:restriction>`;
   }
 
-  const xml = `<ids:${name[0].toLowerCase() + name.slice(1)}>
+  if (parameter.type === "bounds") {
+    const { min, minInclusive, max, maxInclusive } = parameter.parameter;
+    let minTag = "";
+    if (min !== undefined) {
+      minTag = `<xs:min${minInclusive ? "Inclusive" : "Exclusive"} value="${min}">`;
+    }
+
+    let maxTag = "";
+    if (max !== undefined) {
+      maxTag = `<xs:max${maxInclusive ? "Inclusive" : "Exclusive"} value="${max}">`;
+    }
+
+    parameterXML = `<xs:restriction base="xs:double">
+      ${minTag}
+      ${maxTag}
+    </xs:restriction>`;
+  }
+
+  if (parameter.type === "length") {
+    const { length, min, max } = parameter.parameter;
+    let lengthTag = "";
+    if (length !== undefined && min === undefined && max === undefined) {
+      lengthTag = `<xs:length value="${length}" />`;
+    }
+
+    let minTag = "";
+    if (min !== undefined && length === undefined) {
+      minTag = `<xs:minLength value="${min}" />`;
+    }
+
+    let maxTag = "";
+    if (max !== undefined && length === undefined) {
+      maxTag = `<xs:maxLength value="${max}" />`;
+    }
+
+    parameterXML = `<xs:restriction base="xs:string">
+      ${lengthTag}
+      ${minTag}
+      ${maxTag}
+    </xs:restriction>`;
+  }
+
+  const xml = `<${name[0].toLowerCase() + name.slice(1)}>
     ${parameterXML}
-  </ids:${name[0].toLowerCase() + name.slice(1)}>`;
+  </${name[0].toLowerCase() + name.slice(1)}>`;
 
   return xml;
 };
