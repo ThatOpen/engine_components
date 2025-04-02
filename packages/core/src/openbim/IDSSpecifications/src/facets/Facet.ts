@@ -97,8 +97,9 @@ export abstract class IDSFacet {
       pass = minPass && maxPass;
     }
 
-    if (this.cardinality === "prohibited") pass = !pass;
-    if (this.cardinality === "optional") pass = true;
+    if (this.cardinality === "prohibited") pass = false;
+
+    // if (this.cardinality === "optional") pass = true;
 
     checkLog.pass = pass;
     return checkLog.pass;
