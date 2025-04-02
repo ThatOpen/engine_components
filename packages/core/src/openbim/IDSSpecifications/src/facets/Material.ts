@@ -14,22 +14,47 @@ export class IDSMaterial extends IDSFacet {
   uri?: string;
 
   protected getMaterialDefinition = {
-    [WEBIFC.IFCMATERIAL]: (attr: any) => {
-      if (!attr.Name) return null;
-      return attr.Name.value;
+    [WEBIFC.IFCMATERIAL]: (
+      model: FRAGS.FragmentsGroup,
+      attr: any,
+    ): string[] | null => {
+      const values: string[] = [];
+      if (attr.Name) values.push(attr.Name.value);
+      if (attr.Category) values.push(attr.Category.value);
+      return values.length > 0 ? values : null;
+    },
+    [WEBIFC.IFCMATERIALLIST]: async (
+      model: FRAGS.FragmentsGroup,
+      attr: any,
+    ): Promise<string[] | null> => {
+      const materials = attr.Materials;
+      if (!materials) return null;
+      const materialValues = await Promise.all(
+        materials.map(async (material: any) => {
+          const materialAttrs = await model.getProperties(material.value);
+          return this.getMaterialDefinition[WEBIFC.IFCMATERIAL](
+            model,
+            materialAttrs,
+          );
+        }),
+      );
+      return materialValues.length > 0 ? materialValues.flat() : null;
     },
     [WEBIFC.IFCMATERIALLAYER]: async (
       model: FRAGS.FragmentsGroup,
       attr: any,
-    ): Promise<string | null> => {
+    ): Promise<string[] | null> => {
       const materialAttrs = await model.getProperties(attr.Material?.value);
       if (!materialAttrs) return null;
-      return this.getMaterialDefinition[WEBIFC.IFCMATERIAL](materialAttrs);
+      return this.getMaterialDefinition[WEBIFC.IFCMATERIAL](
+        model,
+        materialAttrs,
+      );
     },
     [WEBIFC.IFCMATERIALLAYERSET]: async (
       model: FRAGS.FragmentsGroup,
       attr: any,
-    ): Promise<string[] | string | null> => {
+    ): Promise<string[] | null> => {
       const materialLayers = attr.MaterialLayers;
       const layerSetAttrs = await Promise.all(
         materialLayers.map(async ({ value }: any) => {
@@ -46,7 +71,7 @@ export class IDSMaterial extends IDSFacet {
     [WEBIFC.IFCMATERIALLAYERSETUSAGE]: async (
       model: FRAGS.FragmentsGroup,
       attr: any,
-    ): Promise<string[] | string | null> => {
+    ): Promise<string[] | null> => {
       const layerSet = attr.ForLayerSet;
       const layerSetAttrs = await model.getProperties(layerSet.value);
       const materialDefinition = this.getMaterialDefinition[
@@ -58,15 +83,18 @@ export class IDSMaterial extends IDSFacet {
     [WEBIFC.IFCMATERIALPROFILE]: async (
       model: FRAGS.FragmentsGroup,
       attr: any,
-    ): Promise<string | null> => {
+    ): Promise<string[] | null> => {
       const materialAttrs = await model.getProperties(attr.Material?.value);
       if (!materialAttrs) return null;
-      return this.getMaterialDefinition[WEBIFC.IFCMATERIAL](materialAttrs);
+      return this.getMaterialDefinition[WEBIFC.IFCMATERIAL](
+        model,
+        materialAttrs,
+      );
     },
     [WEBIFC.IFCMATERIALPROFILESET]: async (
       model: FRAGS.FragmentsGroup,
       attr: any,
-    ): Promise<string[] | string | null> => {
+    ): Promise<string[] | null> => {
       const materialProfiles = attr.MaterialProfiles;
       const profileSetAttrs = await Promise.all(
         materialProfiles.map(async ({ value }: any) => {
@@ -85,7 +113,7 @@ export class IDSMaterial extends IDSFacet {
     [WEBIFC.IFCMATERIALPROFILESETUSAGE]: async (
       model: FRAGS.FragmentsGroup,
       attr: any,
-    ): Promise<string[] | string | null> => {
+    ): Promise<string[] | null> => {
       const profileSet = attr.ForProfileSet;
       const profileSetAttrs = await model.getProperties(profileSet.value);
       const materialDefinition = this.getMaterialDefinition[
@@ -97,16 +125,28 @@ export class IDSMaterial extends IDSFacet {
     [WEBIFC.IFCMATERIALCONSTITUENT]: async (
       model: FRAGS.FragmentsGroup,
       attr: any,
-    ): Promise<string | null> => {
+    ): Promise<string[] | null> => {
       const materialAttrs = await model.getProperties(attr.Material?.value);
+      const values: string[] = [];
+      if (attr.Name) values.push(attr.Name.value);
+      if (attr.Category) values.push(attr.Category.value);
       if (!materialAttrs) return null;
-      return this.getMaterialDefinition[WEBIFC.IFCMATERIAL](materialAttrs);
+      const materialValue = this.getMaterialDefinition[WEBIFC.IFCMATERIAL](
+        model,
+        materialAttrs,
+      );
+      if (materialValue) values.push(...materialValue);
+      return values.length > 0 ? values : null;
     },
     [WEBIFC.IFCMATERIALCONSTITUENTSET]: async (
       model: FRAGS.FragmentsGroup,
       attr: any,
-    ): Promise<string[] | string | null> => {
+    ): Promise<string[] | null> => {
       const materialConstituents = attr.MaterialConstituents;
+      const values: string[] = [];
+      if (attr.Name) values.push(attr.Name.value);
+      if (attr.Category) values.push(attr.Category.value);
+      if (!materialConstituents) return null;
       const constituentSetAttrs = await Promise.all(
         materialConstituents.map(async ({ value }: any) => {
           const materialProfile = await model.getProperties(value);
@@ -116,10 +156,12 @@ export class IDSMaterial extends IDSFacet {
           );
         }),
       );
-      if (!constituentSetAttrs || constituentSetAttrs.length === 0) return null;
-      return constituentSetAttrs.length === 1
-        ? constituentSetAttrs[0]
-        : constituentSetAttrs;
+      if (constituentSetAttrs) {
+        constituentSetAttrs.flat().forEach((constituentSet) => {
+          if (!values.includes(constituentSet)) values.push(constituentSet);
+        });
+      }
+      return values.length > 0 ? values : null;
     },
   };
 
@@ -210,11 +252,16 @@ export class IDSMaterial extends IDSFacet {
 
       const indexer = this.components.get(IfcRelationsIndexer);
 
-      const materialExpressIds = await indexer.getEntityRelations(
+      const materialExpressIds = indexer.getEntityRelations(
         model,
         expressID,
         "HasAssociations",
       );
+      if (
+        materialExpressIds.length === 0 &&
+        (this.cardinality === "prohibited" || this.cardinality === "optional")
+      )
+        result.pass = true;
 
       for (const materialExpressId of materialExpressIds) {
         const materialAttrs = await model.getProperties(materialExpressId);
@@ -231,19 +278,21 @@ export class IDSMaterial extends IDSFacet {
           model,
           materialAttrs,
         );
-        if (!materialDefinition || !this.value) continue;
-        const pass = this.evalRequirement(
-          materialDefinition ?? null,
-          this.value,
-          "Value",
-        );
-        checks.push({
-          currentValue: materialDefinition,
-          parameter: "Value",
-          pass,
-          requiredValue: this.value.parameter,
+        if (!materialDefinition) continue;
+        materialDefinition.forEach((materialValue) => {
+          const pass = this.value
+            ? this.evalRequirement(materialValue ?? null, this.value, "Value")
+            : this.cardinality !== "prohibited";
+
+          checks.push({
+            currentValue: materialValue,
+            parameter: "Value",
+            pass,
+            requiredValue: this.value ? this.value.parameter : undefined,
+          });
+          if (pass)
+            result.pass = this.cardinality === "prohibited" ? false : pass;
         });
-        if (pass) result.pass = true;
       }
     }
     return this.testResult;
