@@ -10,7 +10,6 @@ export const createMaterialFacets = (components: Components, elements: any) => {
   for (const element of elements) {
     const materialName = element.value;
     const name = getParameterValue(materialName);
-    if (!name) continue;
     const facet = new IDSMaterial(components, name);
     if (element.cardinality) facet.cardinality = element.cardinality;
     facet.value = getParameterValue(element.value);
