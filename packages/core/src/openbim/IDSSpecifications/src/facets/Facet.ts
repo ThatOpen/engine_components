@@ -20,6 +20,9 @@ export abstract class IDSFacet {
   // When using this facet as a requirement, instructions can be given for the authors of the IFC.
   instructions?: string;
 
+  // Property to store the entities that pass the applicability of this facet.
+  entities: FRAGS.IfcProperties = {};
+
   constructor(protected components: Components) {}
 
   protected addCheckResult(check: IDSCheck, checks: IDSCheck[]) {
@@ -94,8 +97,9 @@ export abstract class IDSFacet {
       pass = minPass && maxPass;
     }
 
-    if (this.cardinality === "prohibited") pass = !pass;
-    if (this.cardinality === "optional") pass = true;
+    if (this.cardinality === "prohibited") pass = false;
+
+    // if (this.cardinality === "optional") pass = true;
 
     checkLog.pass = pass;
     return checkLog.pass;
