@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
-import { Alignment, FragmentsGroup } from "@thatopen/fragments";
+import { FragmentsGroup } from "@thatopen/fragments";
 import { CurveHighlighter } from "./src/curve-highlighter";
 import { CivilMarker } from "../CivilMarker";
 import { Mark } from "../../core";
@@ -38,7 +38,7 @@ export abstract class CivilNavigator
    * Provides the alignment, percentage, type of marker, and the corresponding curve.
    */
   readonly onMarkerChange = new OBC.Event<{
-    alignment: FRAGS.Alignment;
+    alignment: FRAGS.AlignmentObject;
     percentage: number;
     type: CivilMarkerType;
     curve: FRAGS.CivilCurve;
@@ -69,7 +69,7 @@ export abstract class CivilNavigator
 
   private _curves: FRAGS.CurveMesh[] = [];
 
-  private _previousAlignment: FRAGS.Alignment | null = null;
+  private _previousAlignment: FRAGS.AlignmentObject | null = null;
 
   protected _highlighter?: CurveHighlighter;
 
@@ -151,7 +151,7 @@ export abstract class CivilNavigator
    *
    * @returns {Promise<void>} - A promise that resolves when the curves have been drawn onto the scene.
    */
-  async draw(model: FragmentsGroup, filter?: Iterable<FRAGS.Alignment>) {
+  async draw(model: FragmentsGroup, filter?: Iterable<FRAGS.AlignmentObject>) {
     if (!model.civilData) {
       throw new Error("The provided model doesn't have civil data!");
     }
@@ -231,7 +231,11 @@ export abstract class CivilNavigator
    *
    * @throws Will throw an error if there are no curves to place the marker on.
    */
-  setMarker(alignment: Alignment, percentage: number, type: CivilMarkerType) {
+  setMarker(
+    alignment: FRAGS.AlignmentObject,
+    percentage: number,
+    type: CivilMarkerType,
+  ) {
     if (!this._curves.length) {
       return;
     }

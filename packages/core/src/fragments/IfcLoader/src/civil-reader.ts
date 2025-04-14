@@ -21,10 +21,10 @@ export class CivilReader {
 
   get(civilItems: any) {
     if (civilItems.IfcAlignment) {
-      const alignments = new Map<number, FRAGS.Alignment>();
+      const alignments = new Map<number, FRAGS.AlignmentObject>();
 
       for (const ifcAlign of civilItems.IfcAlignment) {
-        const alignment = new FRAGS.Alignment();
+        const alignment = new FRAGS.AlignmentObject();
         alignment.absolute = this.getCurves(ifcAlign.curve3D, alignment);
         alignment.horizontal = this.getCurves(ifcAlign.horizontal, alignment);
         alignment.vertical = this.getCurves(ifcAlign.vertical, alignment);
@@ -36,7 +36,7 @@ export class CivilReader {
     return undefined;
   }
 
-  private getCurves(ifcAlignData: any, alignment: FRAGS.Alignment) {
+  private getCurves(ifcAlignData: any, alignment: FRAGS.AlignmentObject) {
     const curves: FRAGS.CivilCurve[] = [];
     let index = 0;
     for (const curve of ifcAlignData) {

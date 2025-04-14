@@ -719,7 +719,7 @@ __metadata:
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
     "@thatopen/components": ~2.4.0
-    "@thatopen/fragments": ~2.4.0
+    "@thatopen/fragments": ~3.0.0
     "@thatopen/ui": ~2.4.0
     "@thatopen/ui-obc": ~2.4.0
     "@types/earcut": ^2.1.4
@@ -732,7 +732,7 @@ __metadata:
     three: ^0.160.1
     web-ifc: 0.0.66
   peerDependencies:
-    "@thatopen/fragments": ~2.4.0
+    "@thatopen/fragments": ~3.0.0
     three: ^0.160.1
     web-ifc: 0.0.66
   languageName: unknown
@@ -742,7 +742,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
-    "@thatopen/fragments": ~2.4.0
+    "@thatopen/fragments": ~3.0.0
     "@thatopen/ui": ~2.4.0
     "@types/earcut": 2.1.4
     "@types/three": 0.160.0
@@ -755,21 +755,23 @@ __metadata:
     three-mesh-bvh: 0.7.0
     web-ifc: 0.0.66
   peerDependencies:
-    "@thatopen/fragments": ~2.4.0
+    "@thatopen/fragments": ~3.0.0
     three: ^0.160.1
     web-ifc: 0.0.66
   languageName: unknown
   linkType: soft
 
-"@thatopen/fragments@npm:~2.4.0":
-  version: 2.4.0
-  resolution: "@thatopen/fragments@npm:2.4.0"
+"@thatopen/fragments@npm:~3.0.0":
+  version: 3.0.1
+  resolution: "@thatopen/fragments@npm:3.0.1"
   dependencies:
-    flatbuffers: 23.3.3
-    three-mesh-bvh: 0.7.0
+    flatbuffers: 25.2.10
+    lru-cache: 11.1.0
+    pako: 2.1.0
   peerDependencies:
-    three: ^0.160.1
-  checksum: 4bbdfb22955b874ceb7669952413fd18f2fc8ebad8a57dc31581871c3b521082608f2f5c5a0a3e0ede507cab04849aeceae947a38673c0937fc1cf702a7031b3
+    three: 0.175.0
+    web-ifc: 0.0.68
+  checksum: 1c8d097a1a616877e5cf8c8c907e707e5002f7305e0194cd1e967fd542d6ded044c7032f0b34f9d3db3cb89372151ec5e3427ced34ff4a207015a9060ad3b2d0
   languageName: node
   linkType: hard
 
@@ -2214,10 +2216,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"flatbuffers@npm:23.3.3":
-  version: 23.3.3
-  resolution: "flatbuffers@npm:23.3.3"
-  checksum: 7d8352e233cc81942e36b2ccfd7f3baf5d9a5e9614ebd83e9f4bc4accaebd43cb824788bd76334f5a61a8c2a74ddfd8f87ca7ac01cc522ad2774ae66c276dff1
+"flatbuffers@npm:25.2.10":
+  version: 25.2.10
+  resolution: "flatbuffers@npm:25.2.10"
+  checksum: 2db4322315b7edcd76452a9a95a6cd23225b3510f66caac4035470b461f0dfef6b75a31a0511be1d214d53a0d55e8d5bf5fb056f8d6a92b7d4ca7c54c3bc0dc9
   languageName: node
   linkType: hard
 
@@ -3138,6 +3140,13 @@ glob@latest:
   languageName: node
   linkType: hard
 
+"lru-cache@npm:11.1.0":
+  version: 11.1.0
+  resolution: "lru-cache@npm:11.1.0"
+  checksum: 6274e90b5fdff87570fe26fe971467a5ae1f25f132bebe187e71c5627c7cd2abb94b47addd0ecdad034107667726ebde1abcef083d80f2126e83476b2c4e7c82
+  languageName: node
+  linkType: hard
+
 "lru-cache@npm:^10.0.1, lru-cache@npm:^10.2.0":
   version: 10.4.3
   resolution: "lru-cache@npm:10.4.3"
@@ -3555,6 +3564,13 @@ glob@latest:
   version: 1.0.1
   resolution: "package-json-from-dist@npm:1.0.1"
   checksum: 58ee9538f2f762988433da00e26acc788036914d57c71c246bf0be1b60cdbd77dd60b6a3e1a30465f0b248aeb80079e0b34cb6050b1dfa18c06953bb1cbc7602
+  languageName: node
+  linkType: hard
+
+"pako@npm:2.1.0":
+  version: 2.1.0
+  resolution: "pako@npm:2.1.0"
+  checksum: 71666548644c9a4d056bcaba849ca6fd7242c6cf1af0646d3346f3079a1c7f4a66ffec6f7369ee0dc88f61926c10d6ab05da3e1fca44b83551839e89edd75a3e
   languageName: node
   linkType: hard
 

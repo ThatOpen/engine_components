@@ -572,7 +572,7 @@ export class CivilMarker extends OBC.Component {
   }
 
   // TODO: Move Generation of Points to Previous Method Call
-  private getNormal(curve: FRAGS.Alignment, point: THREE.Vector3) {
+  private getNormal(curve: FRAGS.AlignmentObject, point: THREE.Vector3) {
     const pointsInCurve = [];
     const normalPoints = {
       start: new THREE.Vector3(),

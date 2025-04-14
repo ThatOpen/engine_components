@@ -31,7 +31,7 @@ export class Civil3DNavigator extends OBC.Component {
    * Provides information about the alignment, percentage, type of marker, and the curve.
    */
   readonly onMarkerChange = new OBC.Event<{
-    alignment: FRAGS.Alignment;
+    alignment: FRAGS.AlignmentObject;
     percentage: number;
     type: CivilMarkerType;
     curve: FRAGS.CivilCurve;
@@ -168,7 +168,7 @@ export class Civil3DNavigator extends OBC.Component {
    * ```
    */
   setMarker(
-    alignment: FRAGS.Alignment,
+    alignment: FRAGS.AlignmentObject,
     percentage: number,
     type: CivilMarkerType,
   ) {
