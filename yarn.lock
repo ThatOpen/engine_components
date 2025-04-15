@@ -724,17 +724,17 @@ __metadata:
     "@thatopen/ui-obc": ~2.4.0
     "@types/earcut": ^2.1.4
     "@types/three": ^0.175.0
-    camera-controls: 2.7.3
+    camera-controls: 2.10.1
     dexie: ^4.0.4
     earcut: ^2.2.4
     n8ao: 1.9.4
     postprocessing: 6.37.2
     three: ^0.175.0
-    web-ifc: 0.0.66
+    web-ifc: 0.0.68
   peerDependencies:
     "@thatopen/fragments": ~3.0.0
     three: ^0.175.0
-    web-ifc: 0.0.66
+    web-ifc: 0.0.68
   languageName: unknown
   linkType: soft
 
@@ -746,18 +746,18 @@ __metadata:
     "@thatopen/ui": ~2.4.0
     "@types/earcut": 2.1.4
     "@types/three": 0.175.0
-    camera-controls: 2.7.3
+    camera-controls: 2.10.1
     earcut: 2.2.4
     fast-xml-parser: 4.4.1
     jszip: 3.10.1
     stats.js: ^0.17.0
     three: ^0.175.0
     three-mesh-bvh: 0.7.0
-    web-ifc: 0.0.66
+    web-ifc: 0.0.68
   peerDependencies:
     "@thatopen/fragments": ~3.0.0
     three: ^0.175.0
-    web-ifc: 0.0.66
+    web-ifc: 0.0.68
   languageName: unknown
   linkType: soft
 
@@ -1402,12 +1402,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"camera-controls@npm:2.7.3":
-  version: 2.7.3
-  resolution: "camera-controls@npm:2.7.3"
+"camera-controls@npm:2.10.1":
+  version: 2.10.1
+  resolution: "camera-controls@npm:2.10.1"
   peerDependencies:
     three: ">=0.126.1"
-  checksum: 33d5429459e44adfab3d79f6ede984b5b7a56764a62d105178ff5f8ef45dc383a1f03b1038d77349eb23deb66838515970d4a96e85bdd2a3e44c02c801452f1a
+  checksum: f5ed5e335327e88e51897cefa70741246b20c5be44e9b463dc21f33dbf2984764aa0d37b34f7361240d67ccef7c77ece8cede1504b7663cfdf4102d04446bb40
   languageName: node
   linkType: hard
 
@@ -2375,6 +2375,13 @@ __metadata:
     es-errors: ^1.3.0
     get-intrinsic: ^1.2.6
   checksum: 655ed04db48ee65ef2ddbe096540d4405e79ba0a7f54225775fef43a7e2afcb93a77d141c5f05fdef0afce2eb93bcbfb3597142189d562ac167ff183582683cd
+  languageName: node
+  linkType: hard
+
+"glm@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "glm@npm:1.0.0"
+  checksum: 270a5167e3bde5c09d2ef46a3239fb83556df05b31a3cc47de4d99b38701aaaae32ec1d8e9dcd8fb389f79289cb860b74842464d1f940752eb58e6b813ef8fc3
   languageName: node
   linkType: hard
 
@@ -4819,10 +4826,12 @@ glob@latest:
   languageName: node
   linkType: hard
 
-"web-ifc@npm:0.0.66":
-  version: 0.0.66
-  resolution: "web-ifc@npm:0.0.66"
-  checksum: 45d34b9510a5eb1db2d260a4ef5850fb9acc74c058167e7c0cadbf340c46c4bbe93c9496a282058b93409d6bfcd45c33a50e8ba2a30c86aab4c7df33b5cb7d7f
+"web-ifc@npm:0.0.68":
+  version: 0.0.68
+  resolution: "web-ifc@npm:0.0.68"
+  dependencies:
+    glm: ^1.0.0
+  checksum: 5ba014d457a9eccb8a0196fa0ced59feee1033a2aeb3842cdfaee57df2dfc7eec983ce7488bc48c0c4c71e07dff7e724acfdd58fe240de5d69adfcc468a11ae8
   languageName: node
   linkType: hard
 

@@ -97,7 +97,7 @@ To convert IFC to JSON we need 2 things: `web-ifc` an the JSON exporter. The for
 const exporter = components.get(OBC.IfcJsonExporter);
 
 const webIfc = new WEBIFC.IfcAPI();
-webIfc.SetWasmPath("https://unpkg.com/web-ifc@0.0.66/", true);
+webIfc.SetWasmPath("https://unpkg.com/web-ifc@0.0.68/", true);
 await webIfc.Init();
 
 /* MD
