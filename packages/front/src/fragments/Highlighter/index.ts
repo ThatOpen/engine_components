@@ -282,7 +282,7 @@ export class Highlighter
 
       const { userData } = mesh;
       const fragMap = userData.indexFragmentMap as IndexFragmentMap;
-      const itemFoundInFillMesh = fragMap.get(result.faceIndex);
+      const itemFoundInFillMesh = fragMap.get(result.faceIndex!);
 
       if (itemFoundInFillMesh) {
         await this.highlightByID(

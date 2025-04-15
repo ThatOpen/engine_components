@@ -324,7 +324,7 @@ export class FaceMeasurement
     }
     const { object, faceIndex } = result;
     if (object instanceof THREE.Mesh || object instanceof THREE.InstancedMesh) {
-      this.updateSelection(object, faceIndex, result.instanceId);
+      this.updateSelection(object, faceIndex!, result.instanceId);
     } else {
       this.unselect();
     }

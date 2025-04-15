@@ -213,7 +213,7 @@ export class EdgeMeasurement
       return;
     }
     if (object instanceof THREE.Mesh || object instanceof THREE.InstancedMesh) {
-      this.updateSelection(object, point, faceIndex, result.instanceId);
+      this.updateSelection(object, point, faceIndex!, result.instanceId);
     } else {
       this.preview.visible = false;
     }

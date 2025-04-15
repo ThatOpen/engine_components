@@ -190,7 +190,7 @@ export class SimpleGrid
             `,
 
       extensions: {
-        derivatives: true,
+        // derivatives: true,
       },
     });
 

@@ -90,7 +90,7 @@ export class SimplePlane implements Disposable, Hideable {
   /** {@link Hideable.visible } */
   set visible(state: boolean) {
     this._visible = state;
-    this._controls.visible = state;
+    this._controls.object.visible = state;
     this._helper.visible = state;
     this.toggleControls(state);
   }
@@ -207,7 +207,7 @@ export class SimplePlane implements Disposable, Hideable {
     this._arrowBoundBox.removeFromParent();
     this._arrowBoundBox.geometry.dispose();
     this._planeMesh.geometry.dispose();
-    this._controls.removeFromParent();
+    this._controls.object.removeFromParent();
     this._controls.dispose();
     this.onDisposed.trigger();
     this.onDisposed.reset();
@@ -245,7 +245,7 @@ export class SimplePlane implements Disposable, Hideable {
     const container = this.world.renderer.three.domElement;
     const controls = new TransformControls(camera, container);
     this.initializeControls(controls);
-    this.world.scene.three.add(controls);
+    this.world.scene.three.add(controls.object);
     return controls;
   }
 
@@ -255,7 +255,7 @@ export class SimplePlane implements Disposable, Hideable {
     controls.showY = false;
     controls.setSpace("local");
     this.createArrowBoundingBox();
-    controls.children[0].children[0].add(this._arrowBoundBox);
+    controls.object.children[0].children[0].add(this._arrowBoundBox);
   }
 
   private createArrowBoundingBox() {
