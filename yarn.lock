@@ -733,7 +733,7 @@ __metadata:
     web-ifc: 0.0.68
   peerDependencies:
     "@thatopen/fragments": ~3.0.0
-    three: ^0.175.0
+    three: ">=0.175.0"
     web-ifc: 0.0.68
   languageName: unknown
   linkType: soft
@@ -746,7 +746,7 @@ __metadata:
     "@thatopen/ui": ~2.4.0
     "@types/earcut": 2.1.4
     "@types/three": 0.175.0
-    camera-controls: 2.10.1
+    camera-controls: 2.9.0
     earcut: 2.2.4
     fast-xml-parser: 4.4.1
     jszip: 3.10.1
@@ -756,7 +756,7 @@ __metadata:
     web-ifc: 0.0.68
   peerDependencies:
     "@thatopen/fragments": ~3.0.0
-    three: ^0.175.0
+    three: ">=0.175.0"
     web-ifc: 0.0.68
   languageName: unknown
   linkType: soft
@@ -1411,7 +1411,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"camera-controls@npm:^2.9.0":
+"camera-controls@npm:2.9.0, camera-controls@npm:^2.9.0":
   version: 2.9.0
   resolution: "camera-controls@npm:2.9.0"
   peerDependencies:
