@@ -90,6 +90,7 @@ export class IDSClassification extends IDSFacet {
         if (expressID in collector) continue;
         const attrs = await model.getProperties(expressID);
         if (!attrs) continue;
+        this.entities[expressID] = attrs;
         collector[expressID] = attrs;
         result.push(expressID);
       }
@@ -158,7 +159,7 @@ export class IDSClassification extends IDSFacet {
     }
 
     const result = [...this.testResult];
-    this.testResult = [];
+    // this.testResult = [];
     return result;
   }
 

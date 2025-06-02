@@ -55,6 +55,7 @@ export class IDSEntity extends IDSFacet {
 
     if (!this.predefinedType) {
       for (const expressID in entities) {
+        this.entities[expressID] = entities[expressID];
         if (expressID in collector) continue;
         collector[expressID] = entities[expressID];
       }
@@ -69,6 +70,7 @@ export class IDSEntity extends IDSFacet {
       const validPredefinedType = await this.evalPredefinedType(model, attrs);
       if (validPredefinedType) {
         collector[expressID] = attrs;
+        this.entities[expressID] = attrs;
         result.push(expressID);
       }
     }
