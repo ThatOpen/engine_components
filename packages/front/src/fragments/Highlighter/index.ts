@@ -267,7 +267,7 @@ export class Highlighter
     const caster = casters.get(world);
     const result = caster.castRay(allMeshes);
 
-    if (!result || !result.face) {
+    if ((!result || !result.face) && removePrevious) {
       this.clear(name);
       return null;
     }
