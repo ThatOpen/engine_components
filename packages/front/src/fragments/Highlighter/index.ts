@@ -46,8 +46,7 @@ export interface HighlighterConfig {
  */
 export class Highlighter
   extends OBC.Component
-  implements OBC.Disposable, OBC.Eventable
-{
+  implements OBC.Disposable, OBC.Eventable {
   /**
    * A unique identifier for the component.
    * This UUID is used to register the component within the Components system.
@@ -267,8 +266,10 @@ export class Highlighter
     const caster = casters.get(world);
     const result = caster.castRay(allMeshes);
 
-    if ((!result || !result.face) && removePrevious) {
-      this.clear(name);
+    if (!result || !result.face) {
+      if (removePrevious) {
+        this.clear(name);
+      }
       return null;
     }
 
