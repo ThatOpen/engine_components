@@ -1,19 +1,59 @@
 import * as OBC from "@thatopen/components";
 import * as THREE from "three";
-import * as FRAGS from "@thatopen/fragments";
+import { DataSet } from "@thatopen/fragments";
+import { Highlighter } from "../Highlighter";
 import { PostproductionRenderer } from "../../core";
+import { Mesher } from "../Mesher";
 
 /**
- * This component allows adding a colored outline with thickness to fragments in a 3D scene. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Highlighter). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Outliner).
+ * This component allows adding a colored outline with thickness to fragments in a 3D scene. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Outliner). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Outliner).
  */
 export class Outliner extends OBC.Component implements OBC.Disposable {
-  /** {@link OBC.Disposable.onDisposed} */
-  readonly onDisposed = new OBC.Event();
+  private _world?: OBC.World;
 
   /**
    * The world where the outliner operates.
    */
-  world?: OBC.World;
+  set world(value: OBC.World | undefined) {
+    this._world = value;
+    if (!value) return;
+    const renderer = this.getRenderer();
+    renderer.postproduction.excludedObjectsPass.addExcludedMaterial(
+      this._points.material,
+    );
+  }
+
+  get world() {
+    return this._world;
+  }
+
+  /**
+   * A set of Highlighter styles to be linked with the outliner.
+   * @remarks Use this or addItems directly but avoid using both at the same time to prevent unwanted results
+   */
+  styles = new DataSet<string>();
+
+  // display a point for very far elements
+  outlinePositions = false;
+
+  private _mesh: THREE.Points<
+    THREE.BufferGeometry,
+    THREE.PointsMaterial
+  > | null = null;
+
+  private get _points() {
+    if (!this._mesh) {
+      this._mesh = new THREE.Points(
+        new THREE.BufferGeometry(),
+        new THREE.PointsMaterial({
+          size: 10,
+          sizeAttenuation: false,
+          depthTest: false,
+        }),
+      );
+    }
+    return this._mesh;
+  }
 
   /** {@link OBC.Component.enabled} */
   get enabled() {
@@ -22,7 +62,7 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
     }
 
     const renderer = this.getRenderer();
-    return renderer.postproduction.customEffects.outlineEnabled;
+    return renderer.postproduction.outlinesEnabled;
   }
 
   /** {@link OBC.Component.enabled} */
@@ -32,136 +72,229 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
     }
 
     const renderer = this.getRenderer();
-    renderer.postproduction.customEffects.outlineEnabled = value;
+    renderer.postproduction.outlinesEnabled = value;
+
+    if (this.outlinePositions) {
+      this._points.material.color = this.color;
+      this.world.scene.three.add(this._points);
+    }
+  }
+
+  get color() {
+    return this.getRenderer().postproduction.outlinePass.outlineColor;
   }
 
   /**
+   * Sets the color for the outline.
+   */
+  set color(value: THREE.Color) {
+    const postproduction = this.getRenderer().postproduction;
+    postproduction.outlinePass.outlineColor.copy(value);
+    this._points.material.color.copy(value);
+  }
+
+  get thickness() {
+    return this.getRenderer().postproduction.outlinePass.thickness;
+  }
+
+  /**
+   * Sets the thickness of the outline effect in the post-production renderer.
+   */
+  set thickness(value: number) {
+    this.getRenderer().postproduction.outlinePass.thickness = value;
+  }
+
+  get fillColor() {
+    return this.getRenderer().postproduction.outlinePass.fillColor;
+  }
+
+  /**
+   * Sets the fill color for the outline effect in the postproduction pipeline.
+   */
+  set fillColor(value: THREE.Color) {
+    const postproduction = this.getRenderer().postproduction;
+    postproduction.outlinePass.fillColor.copy(value);
+  }
+
+  get fillOpacity() {
+    return this.getRenderer().postproduction.outlinePass.fillOpacity;
+  }
+
+  /**
+   * Sets the fill opacity for the outline pass in the postproduction renderer.
+   */
+  set fillOpacity(value: number) {
+    const postproduction = this.getRenderer().postproduction;
+    postproduction.outlinePass.fillOpacity = value;
+  }
+
+  readonly onDisposed = new OBC.Event();
+
+  /**
    * A unique identifier for the component.
+
    * This UUID is used to register the component within the Components system.
    */
   static readonly uuid = "2fd3bcc5-b3b6-4ded-9f64-f47a02854a10" as const;
 
-  /**
-   * Creates a new outlining style.
-   *
-   * @param name - The name of the style.
-   * @param material - The material to use for the style. The color controls the line color and the opacity controls the line thickness.
-   *
-   */
-  create(name: string, material: THREE.MeshBasicMaterial) {
-    const renderer = this.getRenderer();
+  private _meshes: THREE.Mesh[] = [];
 
-    const styles = renderer.postproduction.customEffects.outlinedMeshes;
-    if (styles[name] !== undefined) {
-      throw new Error(`There's already a style with the name ${name}.`);
-    }
+  private _map: OBC.ModelIdMap = {};
 
-    renderer.postproduction.customEffects.outlinedMeshes[name] = {
-      material,
-      meshes: new Set(),
+  private _activeStyles = new Set<string>();
+  private _styleCallbacks: {
+    [style: string]: {
+      onHighlight: () => void;
+      onClear: (map: OBC.ModelIdMap) => void;
     };
+  } = {};
+
+  constructor(components: OBC.Components) {
+    super(components);
+    components.add(Outliner.uuid, this);
+    this.setupEvents();
+  }
+
+  private setupEvents() {
+    const highlighter = this.components.get(Highlighter);
+
+    // Only add the style if it exist in the highlighter
+    this.styles.guard = (style) => {
+      return highlighter.styles.has(style);
+    };
+
+    this.styles.onItemAdded.add((style) => {
+      const highlighter = this.components.get(Highlighter);
+      const onHighlight = () => {
+        this._activeStyles.add(style);
+        this.updateFromStyles();
+      };
+      const onClear = () => {
+        this._activeStyles.delete(style);
+        this.updateFromStyles();
+      };
+      this._styleCallbacks[style] = { onHighlight, onClear };
+      highlighter.events[style].onHighlight.add(onHighlight);
+      highlighter.events[style].onClear.add(onClear);
+    });
+
+    this.styles.onBeforeDelete.add((style) => {
+      const { onHighlight, onClear } = this._styleCallbacks[style];
+      highlighter.events[style].onHighlight.remove(onHighlight);
+      highlighter.events[style].onClear.remove(onClear);
+      this._activeStyles.delete(style);
+      delete this._styleCallbacks[style];
+    });
+
+    highlighter.styles.onItemDeleted.add((style) => this.styles.delete(style));
+  }
+
+  private async updateFromStyles() {
+    const highlighter = this.components.get(Highlighter);
+    const maps: OBC.ModelIdMap[] = [];
+    for (const style of this._activeStyles) {
+      const map = highlighter.selection[style];
+      if (!map) continue;
+      maps.push(map);
+    }
+    const map = OBC.ModelIdMapUtils.join(maps);
+    this._map = map;
+    await this.update();
   }
 
   /**
-   * Adds fragments to the specified outlining style.
-   *
-   * @param name - The name of the style.
-   * @param items - The fragments to add to the style.
-   *
+   * Updates the outline effect with the current meshes from the mesher component.
    */
-  add(name: string, items: FRAGS.FragmentIdMap) {
+  async update(modelIdMap = this._map) {
+    if (modelIdMap === this._map) this.cleanMeshes();
+    if (this.outlinePositions) this.updatePoints();
+    if (Object.keys(modelIdMap).length === 0) return;
     const renderer = this.getRenderer();
-    const styles = this.getStyles();
-    const style = styles[name];
-    if (!style) {
-      throw new Error(`The style ${name} does not exist`);
+    const outlinePass = renderer.postproduction.outlinePass;
+    const mesher = this.components.get(Mesher);
+    const meshes = await mesher.get(modelIdMap);
+    for (const [_, data] of meshes.entries()) {
+      const meshes = [...data.values()].flat();
+      for (const mesh of meshes) {
+        this._meshes.push(mesh);
+        outlinePass.scene.add(mesh);
+      }
+    }
+  }
+
+  /**
+   * Adds items to be outlined.
+   *
+   * @param modelIdMap - An object representing the model ID map to be added.
+   * @returns A promise that resolves once the outliner has been updated with the new model ID map.
+   */
+  async addItems(modelIdMap: OBC.ModelIdMap) {
+    OBC.ModelIdMapUtils.add(this._map, modelIdMap);
+    await this.update(modelIdMap);
+  }
+
+  /**
+   * Removes items from the current outlines.
+   *
+   * @param modelIdMap - An object representing the mapping of model IDs to be removed.
+   * @returns A promise that resolves once the update operation is complete.
+   */
+  async removeItems(modelIdMap: OBC.ModelIdMap) {
+    OBC.ModelIdMapUtils.remove(this._map, modelIdMap);
+    await this.update();
+  }
+
+  /**
+   * Cleans up the outlines.
+   */
+  clean() {
+    this._map = {};
+    this._activeStyles.clear();
+    this.cleanMeshes();
+    if (this._mesh) {
+      const disposer = this.components.get(OBC.Disposer);
+      disposer.destroy(this._mesh, true, true);
+    }
+    this._mesh = null;
+  }
+
+  /** {@link Disposable.dispose} */
+  dispose() {
+    this.styles.clear();
+    this.clean();
+    this.onDisposed.trigger(Outliner.uuid);
+  }
+
+  private cleanMeshes() {
+    for (const mesh of this._meshes) {
+      mesh.removeFromParent();
+    }
+    this._meshes = [];
+  }
+
+  private async updatePoints() {
+    let items = 0;
+
+    for (const [_, localIds] of Object.entries(this._map)) {
+      items += localIds.size;
     }
 
-    const scene = renderer.postproduction.customEffects.outlineScene;
+    this._points.geometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(new Float32Array(items * 3), 3),
+    );
 
     const fragments = this.components.get(OBC.FragmentsManager);
-    for (const fragID in items) {
-      const found = fragments.list.get(fragID);
-      if (!found) {
-        continue;
-      }
-      const ids = items[fragID];
-      const clonedFrag = found.clone(ids);
+    const positions = await fragments.getPositions(this._map);
 
-      clonedFrag.mesh.position.set(0, 0, 0);
-      clonedFrag.mesh.rotation.set(0, 0, 0);
-      clonedFrag.mesh.applyMatrix4(found.mesh.matrixWorld);
-
-      clonedFrag.mesh.instanceColor = null;
-      clonedFrag.mesh.material = [style.material];
-      style.meshes.add(clonedFrag.mesh);
-      scene.add(clonedFrag.mesh);
-    }
-  }
-
-  /**
-   * Clears the specified style. If no style is specified, clear all styles.
-   *
-   * @param name - Optional: the style to clear.
-   *
-   */
-  clear(name?: string) {
-    if (name) {
-      this.clearStyle(name, false);
-      return;
+    for (let i = 0; i < positions.length; i++) {
+      const { x, y, z } = positions[i];
+      this._points.geometry.attributes.position.array[i * 3] = x;
+      this._points.geometry.attributes.position.array[i * 3 + 1] = y;
+      this._points.geometry.attributes.position.array[i * 3 + 2] = z;
     }
 
-    const styles = this.getStyles();
-    const styleNames = Object.keys(styles);
-    for (const name of styleNames) {
-      this.clearStyle(name, false);
-    }
-
-    this.world = undefined;
-  }
-
-  /** {@link OBC.Disposable.dispose} */
-
-  dispose() {
-    if (this.world && !this.world.isDisposing) {
-      const styles = this.getStyles();
-      const styleNames = Object.keys(styles);
-      for (const name of styleNames) {
-        this.clearStyle(name, true);
-      }
-    }
-    this.onDisposed.trigger();
-    this.onDisposed.reset();
-  }
-
-  private clearStyle(name: string, dispose: boolean) {
-    const styles = this.getStyles();
-    const style = styles[name];
-    if (!style) {
-      return;
-    }
-
-    const disposer = this.components.get(OBC.Disposer);
-
-    for (const mesh of style.meshes) {
-      const fragMesh = mesh as FRAGS.FragmentMesh;
-      if (fragMesh.fragment) {
-        fragMesh.fragment.dispose(false);
-      }
-      disposer.destroy(mesh);
-    }
-
-    style.meshes.clear();
-
-    if (dispose) {
-      style.material.dispose();
-      delete styles[name];
-    }
-  }
-
-  private getStyles() {
-    const renderer = this.getRenderer();
-    return renderer.postproduction.customEffects.outlinedMeshes;
+    this._points.geometry.attributes.position.needsUpdate = true;
   }
 
   private getRenderer() {

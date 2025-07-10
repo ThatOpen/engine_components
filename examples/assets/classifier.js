@@ -1,41 +1,17 @@
-import{ac as m,C as p}from"./web-ifc-api-BlmMr04K.js";import{S as d}from"./stats.min-GTpOrGrX.js";import{T as u,L as a,m as c}from"./index-C8nqhRYO.js";import{C as b,W as C,S as f,d as g,a as w,G as I,F as L,c as S}from"./index-7tDlUpW2.js";import"./_commonjsHelpers-Cpj98o6Y.js";const y=document.getElementById("container"),s=new b,h=s.get(C),t=h.create();t.scene=new f(s);t.renderer=new g(s,y);t.camera=new w(s);s.init();t.camera.controls.setLookAt(12,6,8,0,0,-10);t.scene.setup();const A=s.get(I);A.create(t);t.scene.three.background=null;const E=new L(s),F=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),R=await F.arrayBuffer(),T=new Uint8Array(R),i=E.load(T);t.scene.three.add(i);const N=await fetch("https://thatopen.github.io/engine_components/resources/small.json");i.setLocalProperties(await N.json());const o=s.get(S);o.byEntity(i);o.byIfcRel(i,m,"storeys");o.byModel(i.uuid,i);const $=o.find({entities:["IFCWALLSTANDARDCASE"]}),U=o.find({entities:["IFCSLAB"]}),v=o.find({entities:["IFCMEMBER","IFCPLATE"]}),B=o.find({entities:["IFCFURNISHINGELEMENT"]}),D=o.find({entities:["IFCDOOR"]}),M=o.find({models:[i.uuid]}),l=new d;l.showPanel(2);document.body.append(l.dom);l.dom.style.left="0px";l.dom.style.zIndex="unset";t.renderer.onBeforeUpdate.add(()=>l.begin());t.renderer.onAfterUpdate.add(()=>l.end());u.init();const e=new p,r=a.create(()=>c`
+var W=Object.defineProperty;var H=(n,r,e)=>r in n?W(n,r,{enumerable:!0,configurable:!0,writable:!0,value:e}):n[r]=e;var h=(n,r,e)=>(H(n,typeof r!="symbol"?r+"":r,e),e);import{Y as F,T as $,L as k,m as M,a as x,H as P}from"./index-BR15nMAM.js";import{d as U,E as Y,F as C,M as y,C as Q,W as V,S as _,a as z,O as J,H as B}from"./index-DQoMA9YT.js";import{I as v}from"./index-PJMzNvVv.js";const G=class G extends U{constructor(e){super(e);h(this,"enabled",!0);h(this,"onDisposed",new Y);h(this,"list",new F);h(this,"defaultSaveFunction",e=>"value"in e.Name?e.Name.value:null);h(this,"onBeforeFragmentsDispose",async e=>{const{key:s,value:t}=e,a=await t.getLocalIds(),o={[s]:new Set(a)};this.removeItems(o)});e.add(G.uuid,this),this.setupEvents(),e.get(C).list.onBeforeDelete.add(this.onBeforeFragmentsDispose)}setupEvents(){this.list.onBeforeDelete.add(({value:e})=>e.dispose())}getClassificationGroups(e){let s=this.list.get(e);return s||(s=new F,this.list.set(e,s)),s}getModelItems(e,s,t){const{map:a}=this.getGroupData(e,s);let o=a[t];return o||(o=new Set,a[t]=o),o}getGroupData(e,s){const t=this.components.get(v),a=this.getClassificationGroups(e);let o=a.get(s);return o||(o={map:{},get(){return new Promise(i=>{if(!o){i({});return}if(o.query){const{name:l,config:d}=o.query,m=t.list.get(l);if(!m)throw new Error("Classifier: the query name associated with the group doesn't exist in the ItemsFinder component");m.test(d).then(p=>{if(!o){i({});return}const f=y.join([p,o.map]);i(f)})}else i(o.map)})}},a.set(s,o)),o}async aggregateItems(e,s,t){const a=(t==null?void 0:t.data)??void 0,o=(t==null?void 0:t.aggregationCallback)??this.defaultSaveFunction,i=this.components.get(C),d=await this.components.get(v).getItems([s],{modelIds:t==null?void 0:t.modelIds});for(const[m,p]of Object.entries(d)){const f=i.list.get(m);if(!f)continue;const E=(S,...O)=>{const R=this.getModelItems(e,S,m);for(const j of O)R.add(j)},q=await f.getItemsData([...p],a);for(const S of q)o(S,E)}}addGroupItems(e,s,t){const{map:a}=this.getGroupData(e,s);y.add(a,t)}setGroupQuery(e,s,t){const a=this.getGroupData(e,s);a.query=t}async find(e){const s=[];for(const[a,o]of Object.entries(e)){const i=[],l=this.list.get(a);if(!l)continue;for(const m of o){const p=l.get(m);if(!p)continue;const f=await p.get();i.push(f)}const d=y.join(i);s.push(d)}return y.intersect(s)}async aggregateItemRelations(e,s,t,a){const o=(a==null?void 0:a.attribute)??"Name",i={relations:{[t]:{attributes:!0,relations:!1}}};await this.aggregateItems(e,s,{modelIds:a==null?void 0:a.modelIds,data:i,aggregationCallback:(l,d)=>{if(!(l!=null&&l[o]))return;const m=l[o];if(!("value"in m))return;const p=l[t];if(Array.isArray(p))for(const f of p)"value"in f._localId&&d(m.value,f._localId.value)}})}async byIfcBuildingStorey(e){await this.aggregateItemRelations((e==null?void 0:e.classificationName)??"Storeys",{categories:[/BUILDINGSTOREY/]},"ContainsElements",{modelIds:e==null?void 0:e.modelIds})}async byCategory(e){const t=await this.components.get(v).addFromCategories(e==null?void 0:e.modelIds);for(const a of t)this.setGroupQuery((e==null?void 0:e.classificationName)??"Categories",a,{name:a})}dispose(){this.list.clear(),this.components.get(C).list.onBeforeDelete.remove(this.onBeforeFragmentsDispose),this.onDisposed.trigger()}removeItems(e,s){if(s&&s.classificationName){const t=this.list.get(s.classificationName);if(!t||s.groupName&&!t.get(s.groupName))return;for(const[,a]of t)y.remove(a.map,e);return}for(const[,t]of this.list.entries())for(const[,a]of t)y.remove(a.map,e)}async byModel(e){const s=this.components.get(C),t=(e==null?void 0:e.classificationName)??"Models";for(const[a,o]of s.list){if(e&&e.modelIds&&!e.modelIds.some(d=>d.test(a)))continue;const i=await o.getItemsIdsWithGeometry(),l={[a]:new Set(i)};this.getGroupData(t,a),this.addGroupItems(t,a,l)}}};h(G,"uuid","e25a7f3c-46c4-4a14-9d3d-5115f24ebeb7");let N=G;const u=new Q,K=u.get(V),c=K.create();c.scene=new _(u);c.scene.setup();c.scene.three.background=null;const X=document.getElementById("container");c.renderer=new z(u,X);c.camera=new J(u);await c.camera.controls.setLookAt(78,20,-2.2,26,-4,25);u.init();const Z="/node_modules/@thatopen/fragments/dist/Worker/worker.mjs",g=u.get(C);g.init(Z);c.camera.controls.addEventListener("rest",()=>g.core.update(!0));c.onCameraChanged.add(n=>{for(const[,r]of g.list)r.useCamera(n.three);g.core.update(!0)});g.list.onItemSet.add(({value:n})=>{n.useCamera(c.camera.three),c.scene.three.add(n.object),g.core.update(!0)});const ee=["/resources/frags/school_arq.frag","/resources/frags/school_str.frag"];await Promise.all(ee.map(async n=>{var t;const r=(t=n.split("/").pop())==null?void 0:t.split(".").shift();if(!r)return null;const s=await(await fetch(n)).arrayBuffer();return g.core.load(s,{modelId:r})}));const b=u.get(N),L="Custom Classification",A="My Group";b.getGroupData("Custom Classification","My Group");const T={};for(const[n,r]of g.list){const e=await r.getItemsOfCategories([/SLAB/]),s=Object.values(e).flat().slice(0,2);T[n]=new Set(s)}b.addGroupItems(L,A,T);const te=u.get(v),se="First Floor Walls";te.create("First Floor Walls",[{categories:[/WALL/],relation:{name:"ContainedInStructure",query:{categories:[/STOREY/],attributes:{queries:[{name:/Name/,value:/01/}]}}}}]);b.setGroupQuery(L,A,{name:se});const ae=async()=>{await b.byCategory(),await b.byIfcBuildingStorey({classificationName:"Levels"})};$.init();const oe=n=>M`
+    <bim-table ${P(e=>{if(!e)return;const s=e;s.loadFunction=async()=>{const t=[];for(const[a,o]of b.list)for(const[i]of o)t.push({data:{Name:i,Classification:a,Actions:""}});return t},s.loadData(!0)})}></bim-table>
+  `,[I,ne]=k.create(oe,{components:u});I.style.maxHeight="25rem";I.hiddenColumns=["Classification"];I.columns=["Name",{name:"Actions",width:"auto"}];I.noIndentation=!0;I.headersHidden=!0;I.dataTransform={Actions:(n,r)=>{const{Name:e,Classification:s}=r;if(!(e&&s))return n;const t=b.list.get(s);if(!t)return n;const a=t.get(e);if(!a)return n;const o=u.get(B);return M`<bim-button icon="solar:cursor-bold" @click=${async({target:l})=>{l.loading=!0;const d=await a.get();await o.isolate(d),l.loading=!1}}></bim-button>`}};b.list.onItemSet.add(()=>setTimeout(()=>ne()));const D=k.create(()=>M`
     <bim-panel active label="Classifier Tutorial" class="options-menu">
-      <bim-panel-section collapsed label="Controls">
-      
-        <bim-color-input 
-          label="Walls Color" color="#202932" 
-          @input="${({target:n})=>{e.set(n.color),o.setColor($,e)}}">
-        </bim-color-input>
-      
-        <bim-color-input 
-          label="Slabs Color" color="#202932" 
-          @input="${({target:n})=>{e.set(n.color),o.setColor(U,e)}}">
-        </bim-color-input>
-      
-        <bim-color-input 
-          label="Curtain walls Color" color="#202932" 
-          @input="${({target:n})=>{e.set(n.color),o.setColor(v,e)}}">
-        </bim-color-input>
-      
-        <bim-color-input 
-          label="Furniture Color" color="#202932" 
-          @input="${({target:n})=>{e.set(n.color),o.setColor(B,e)}}">
-        </bim-color-input>
-      
-        <bim-color-input 
-          label="Doors Color" color="#202932" 
-          @input="${({target:n})=>{e.set(n.color),o.setColor(D,e)}}">
-        </bim-color-input>
-                  
-        <bim-button 
-          label="Reset walls color" 
-          @click="${()=>{o.resetColor(M)}}">  
-        </bim-button>  
-
+      <bim-panel-section style="min-width: 14rem" label="General">
+        <bim-button label="Reset Visibility" @click=${async({target:e})=>{e.loading=!0,await u.get(B).set(!0),e.loading=!1}}></bim-button>
+      </bim-panel-section>
+      <bim-panel-section label="Groupings">
+        <bim-button label="Add Defaults" @click=${async()=>{await ae()}}></bim-button>
+        ${I}
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(r);const W=a.create(()=>c`
+  `);document.body.append(D);const re=k.create(()=>M`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
-        @click="${()=>{r.classList.contains("options-menu-visible")?r.classList.remove("options-menu-visible"):r.classList.add("options-menu-visible")}}">
+        @click="${()=>{D.classList.contains("options-menu-visible")?D.classList.remove("options-menu-visible"):D.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(W);
+    `);document.body.append(re);const w=new x;w.showPanel(2);document.body.append(w.dom);w.dom.style.left="0px";w.dom.style.zIndex="unset";c.renderer.onBeforeUpdate.add(()=>w.begin());c.renderer.onAfterUpdate.add(()=>w.end());

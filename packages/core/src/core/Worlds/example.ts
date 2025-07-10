@@ -21,8 +21,9 @@ In this tutorial, we will import:
 */
 
 import * as THREE from "three";
-import * as BUI from "@thatopen/ui";
 import Stats from "stats.js";
+import * as BUI from "@thatopen/ui";
+// You have to import * as OBC from "@thatopen/components"
 import * as OBC from "../..";
 
 /* MD
@@ -102,46 +103,42 @@ world.scene.three.background = null;
   ### 💄 Adding things to our scene
   ---
 
-  Now we are ready to start adding some 3D entities to our scene. We will add a simple cube:
+  Now we are ready to start adding some 3D entities to our scene. We will load a Fragments model:
 
 */
 
-const material = new THREE.MeshLambertMaterial({
-  color: "#6528D7",
-  transparent: true,
-  opacity: 0.2,
+const workerUrl =
+  "/node_modules/@thatopen/fragments/dist/Worker/worker.mjs";
+const fragments = components.get(OBC.FragmentsManager);
+fragments.init(workerUrl);
+
+world.camera.controls.addEventListener("rest", () =>
+  fragments.core.update(true),
+);
+
+fragments.list.onItemSet.add(({ value: model }) => {
+  model.useCamera(world.camera.three);
+  world.scene.three.add(model.object);
+  fragments.core.update(true);
 });
-const geometry = new THREE.BoxGeometry();
-const cube = new THREE.Mesh(geometry, material);
-world.scene.three.add(cube);
 
-cube.rotation.x += Math.PI / 4.2;
-cube.rotation.y += Math.PI / 4.2;
-cube.rotation.z += Math.PI / 4.2;
-cube.updateMatrixWorld();
-
-
-/* MD
-  Finally, we will make the camera look at the cube:
-*/
-
-world.camera.controls.setLookAt(3, 3, 3, 0, 0, 0);
+const fragPaths = ["/resources/frags/school_arq.frag"];
+await Promise.all(
+  fragPaths.map(async (path) => {
+    const modelId = path.split("/").pop()?.split(".").shift();
+    if (!modelId) return null;
+    const file = await fetch(path);
+    const buffer = await file.arrayBuffer();
+    return fragments.core.load(buffer, { modelId });
+  }),
+);
 
 /* MD
-  ### ⏱️ Measuring the performance (optional)
-  ---
-
-  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
-
+  Finally, we will make the camera look at the model:
 */
 
-const stats = new Stats();
-stats.showPanel(2);
-document.body.append(stats.dom);
-stats.dom.style.left = "0px";
-stats.dom.style.zIndex = "unset";
-world.renderer.onBeforeUpdate.add(() => stats.begin());
-world.renderer.onAfterUpdate.add(() => stats.end());
+await world.camera.controls.setLookAt(68, 23, -8.5, 21.5, -5.5, 23);
+await fragments.core.update(true);
 
 /* MD
   ### 🧩 Adding some UI
@@ -160,7 +157,7 @@ BUI.Manager.init();
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
     <bim-panel label="Worlds Tutorial" class="options-menu">
-      <bim-panel-section collapsed label="Controls">
+      <bim-panel-section label="Controls">
       
         <bim-color-input 
           label="Background Color" color="#202932" 
@@ -211,9 +208,23 @@ const button = BUI.Component.create<BUI.PanelSection>(() => {
 document.body.append(button);
 
 /* MD
-  ### 🎉 Wrap up
+  ### ⏱️ Measuring the performance (optional)
   ---
 
+  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
+
+*/
+
+const stats = new Stats();
+stats.showPanel(2);
+document.body.append(stats.dom);
+stats.dom.style.left = "0px";
+stats.dom.style.zIndex = "unset";
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
+
+/* MD
+  ### 🎉 Wrap up
   That's it! You have created your first 3D world and added some UI elements to it. You can now play with the inputs to see how the scene changes.
 
 */

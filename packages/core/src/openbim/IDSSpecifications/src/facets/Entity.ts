@@ -1,9 +1,14 @@
 import * as FRAGS from "@thatopen/fragments";
 import { Components } from "../../../../core/Components";
 import { IDSFacet } from "./Facet";
-import { IDSCheck, IDSCheckResult, IDSFacetParameter } from "../types";
-import { IfcCategoryMap, IfcRelationsIndexer } from "../../../../ifc";
+import { IDSCheck, IDSFacetParameter, IDSItemCheckResult } from "../types";
 import { getParameterXML } from "../exporters/parameter";
+import {
+  FragmentsManager,
+  ModelIdDataMap,
+  ModelIdMap,
+} from "../../../../fragments";
+import { ModelIdMapUtils } from "../../../../utils";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/entity-facet.md
 
@@ -33,117 +38,141 @@ export class IDSEntity extends IDSFacet {
 </entity>`;
   }
 
-  // IFCSURFACESTYLEREFRACTION is not present in the FragmentsGroup
-  // IFCSURFACESTYLERENDERING is not present in the FragmentsGroup
-  async getEntities(
-    model: FRAGS.FragmentsGroup,
-    collector: FRAGS.IfcProperties = {},
-  ) {
-    const types = Object.entries(IfcCategoryMap);
-    const typeIDs: number[] = [];
-    for (const [type] of types) {
-      const validName = await this.evalName({ type });
-      if (!validName) continue;
-      typeIDs.push(Number(type));
+  async getEntities(modelIds: RegExp[], collector: ModelIdMap) {
+    const fragments = this._components.get(FragmentsManager);
+    const modelCategories = new Map<string, string[]>();
+
+    // Check the categories from each model to see
+    // which of them matches the facet parameter this.name
+    for (const [modelId, model] of fragments.list) {
+      const isValidModel = modelIds.find((regex) => regex.test(modelId));
+      if (!isValidModel) continue;
+      const categories = await model.getCategories();
+      for (const category of categories) {
+        const isValidCategory = await this.evalName(category);
+        if (!isValidCategory) continue;
+        let validCategories = modelCategories.get(modelId);
+        if (!validCategories) {
+          validCategories = [];
+          modelCategories.set(modelId, validCategories);
+        }
+        validCategories.push(category);
+      }
     }
 
-    let entities: FRAGS.IfcProperties = {};
-    for (const id of typeIDs) {
-      const elements = await model.getAllPropertiesOfType(id);
-      if (elements) entities = { ...entities, ...elements };
-    }
+    // Get all the localIds from the categories passing
+    // the conditions above
+    const items: ModelIdMap = {};
+    await Promise.all(
+      Array.from(modelCategories.entries()).map(
+        async ([modelId, categories]) => {
+          const model = fragments.list.get(modelId);
+          if (!model) return;
+          const regexCategories = categories.map(
+            (cat) => new RegExp(`^${cat}$`),
+          );
+          const categoryItemIds =
+            await model.getItemsOfCategories(regexCategories);
+          const localIds = Object.values(categoryItemIds).flat();
+          items[modelId] = new Set(localIds);
+        },
+      ),
+    );
 
     if (!this.predefinedType) {
-      for (const expressID in entities) {
-        if (expressID in collector) continue;
-        collector[expressID] = entities[expressID];
-      }
-      return Object.keys(entities).map(Number);
+      ModelIdMapUtils.add(collector, items);
+      return;
     }
 
-    const result: number[] = [];
-    for (const _expressID in entities) {
-      const expressID = Number(_expressID);
-      if (expressID in collector) continue;
-      const attrs = entities[expressID];
-      const validPredefinedType = await this.evalPredefinedType(model, attrs);
-      if (validPredefinedType) {
-        collector[expressID] = attrs;
-        result.push(expressID);
+    // Check the predefinedType conditions
+    for (const [modelId, localIds] of Object.entries(items)) {
+      const model = fragments.list.get(modelId);
+      if (!model) continue;
+      const itemsData = await model.getItemsData([...localIds]);
+      for (const attribute of itemsData) {
+        if (!("value" in attribute._localId)) continue;
+        const isValidPredefinedType = await this.evalPredefinedType(
+          modelId,
+          attribute,
+        );
+        if (isValidPredefinedType) {
+          ModelIdMapUtils.append(collector, modelId, attribute._localId.value);
+        }
       }
     }
-
-    return result;
   }
 
-  async test(entities: FRAGS.IfcProperties, model: FRAGS.FragmentsGroup) {
-    this.testResult = [];
-    for (const _expressID in entities) {
-      const expressID = Number(_expressID);
-      const attrs = entities[expressID];
+  async test(items: ModelIdMap, collector: ModelIdDataMap<IDSItemCheckResult>) {
+    const fragments = this._components.get(FragmentsManager);
+    for (const [modelId, localIds] of Object.entries(items)) {
+      const model = fragments.list.get(modelId);
+      if (!model) continue;
 
-      const checks: IDSCheck[] = [];
-      const result: IDSCheckResult = {
-        guid: attrs.GlobalId?.value,
-        expressID,
-        pass: false,
-        checks,
-        cardinality: this.cardinality,
-      };
-
-      this.testResult.push(result);
-
-      await this.evalName(attrs, checks);
-      await this.evalPredefinedType(model, attrs, checks);
-
-      result.pass = checks.every(({ pass }) => pass);
+      const data = await model.getItemsData([...localIds]);
+      for (const item of data) {
+        if (!("value" in item._category)) continue;
+        const checks = this.getItemChecks(collector, modelId, item);
+        if (!checks) continue;
+        await this.evalName(item._category.value, checks);
+        await this.evalPredefinedType(modelId, item, checks);
+      }
     }
-
-    return this.testResult;
   }
 
-  protected async evalName(attrs: any, checks?: IDSCheck[]) {
-    const entityName = IfcCategoryMap[attrs.type];
-    const result = this.evalRequirement(entityName, this.name, "Name", checks);
+  protected async evalName(category: string, checks?: IDSCheck[]) {
+    const result = this.evalRequirement(category, this.name, "Name", checks);
     return result;
   }
 
   protected async evalPredefinedType(
-    model: FRAGS.FragmentsGroup,
-    attrs: any,
+    modelId: string,
+    itemData: FRAGS.ItemData,
     checks?: IDSCheck[],
   ) {
     if (!this.predefinedType) return null;
-    const indexer = this.components.get(IfcRelationsIndexer);
+    if (!("value" in itemData.PredefinedType)) return null;
+
     const isRequirementUserDefined =
       typeof this.predefinedType.parameter === "string" &&
       this.predefinedType.parameter === "USERDEFINED";
-    let value = attrs.PredefinedType?.value;
 
+    let value = itemData.PredefinedType.value;
+
+    // TODO: Do not remember what is this for
     if (value === "USERDEFINED" && !isRequirementUserDefined) {
-      const attrNames = Object.keys(attrs);
-      const result = attrNames.find((str) =>
-        /^((?!Predefined).)*Type$/.test(str),
-      );
-      value = result ? attrs[result]?.value : "USERDEFINED";
+      const attrNames = Object.keys(itemData);
+      const key = attrNames.find((str) => /^((?!Predefined).)*Type$/.test(str));
+      if (key) {
+        const keyValue = itemData[key];
+        if ("value" in keyValue) value = keyValue.value;
+      } else {
+        value = "USERDEFINED";
+      }
     }
 
     if (!value) {
-      const types = indexer.getEntityRelations(
-        model,
-        attrs.expressID,
-        "IsTypedBy",
-      );
-      if (types && types[0]) {
-        const typeAttrs = await model.getProperties(types[0]);
-        if (typeAttrs) {
-          value = typeAttrs.PredefinedType?.value;
-          if (value === "USERDEFINED" && !isRequirementUserDefined) {
-            const attrNames = Object.keys(typeAttrs);
-            const result = attrNames.find((str) =>
-              /^((?!Predefined).)*Type$/.test(str),
-            );
-            value = result ? typeAttrs[result]?.value : "USERDEFINED";
+      const fragments = this._components.get(FragmentsManager);
+      const model = fragments.list.get(modelId);
+      if (model && "value" in itemData._localId) {
+        const [data] = await model.getItemsData([itemData._localId.value], {
+          relations: { IsTypedBy: { attributes: true, relations: false } },
+        });
+        if (Array.isArray(data.IsTypedBy)) {
+          const typeAttrs = data.IsTypedBy[0];
+          if (typeAttrs && "value" in typeAttrs.PredefinedType) {
+            value = typeAttrs.PredefinedType.value;
+            if (value === "USERDEFINED" && !isRequirementUserDefined) {
+              const attrNames = Object.keys(typeAttrs);
+              const key = attrNames.find((str) =>
+                /^((?!Predefined).)*Type$/.test(str),
+              );
+              if (key) {
+                const keyValue = typeAttrs[key];
+                if ("value" in keyValue) value = keyValue.value;
+              } else {
+                value = "USERDEFINED";
+              }
+            }
           }
         }
       }

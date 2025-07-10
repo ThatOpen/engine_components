@@ -42,9 +42,13 @@ export class Mark implements OBC.Hideable, OBC.Disposable {
       marker = element;
     } else {
       marker = document.createElement("div");
-      marker.style.width = "15px";
-      marker.style.height = "15px";
-      marker.style.border = "5px solid red";
+      const size = "6px";
+      marker.style.color = "white";
+      marker.style.height = size;
+      marker.style.width = size;
+      marker.style.borderRadius = "50%";
+      marker.style.border = "2px solid rgb(122, 75, 209)";
+      marker.style.zIndex = "-20";
     }
 
     this.three = new CSS2DObject(marker);
@@ -60,11 +64,19 @@ export class Mark implements OBC.Hideable, OBC.Disposable {
    *
    * This method changes the `visible` property of the marker to its opposite value.
    * If the marker is currently visible, it will be hidden, and vice versa.
-   *
-   * @returns {void}
    */
   toggleVisibility() {
     this.visible = !this.visible;
+  }
+
+  /**
+   * Never Display marker.
+   *
+   * This method changes the `visible` property of the marker to its false value.
+   * Marker will never displayed.
+   */
+  notDisplay() {
+    this.visible = false;
   }
 
   /** {@link OBC.Disposable.dispose} */

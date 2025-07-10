@@ -12,6 +12,9 @@ import {
 } from "../../Types";
 import { Disposer } from "../../Disposer";
 import { Worlds } from "..";
+import { Raycasters } from "../../Raycasters";
+
+// TODO: Fix dyanmic anchoring
 
 /**
  * A class representing a simple world in a 3D environment. It extends the Base class and implements the World interface.
@@ -28,6 +31,8 @@ export class SimpleWorld<
   extends Base
   implements World, Disposable, Updateable
 {
+  readonly onCameraChanged = new Event<U>();
+
   /**
    * All the loaded [meshes](https://threejs.org/docs/#api/en/objects/Mesh). These meshes will be taken into account in operations like raycasting.
    */
@@ -53,6 +58,27 @@ export class SimpleWorld<
    */
   enabled = true;
 
+  private _dynamicAnchor = false;
+
+  set dynamicAnchor(value: boolean) {
+    const container = this.renderer?.three.domElement.parentElement;
+    if (!container) {
+      throw new Error(
+        "World: the renderer must have a parentElement to set dynamic anchoring.",
+      );
+    }
+    if (value) {
+      if (this.camera.controls) this.camera.controls.minDistance = 0.01;
+      container.addEventListener("pointerdown", this.onPointerDown);
+    } else {
+      container.removeEventListener("pointerdown", this.onPointerDown);
+    }
+  }
+
+  get dynamicAnchor() {
+    return this._dynamicAnchor;
+  }
+
   /**
    * A unique identifier for the world. Is not meant to be changed at any moment.
    */
@@ -68,6 +94,36 @@ export class SimpleWorld<
   private _camera?: U;
 
   private _renderer: S | null = null;
+
+  private onPointerDown = async (event: PointerEvent) => {
+    if (!this.camera.hasCameraControls()) {
+      throw new Error(
+        "World: can't set dynamic anchor if the camera doesn't have controls.",
+      );
+    }
+    const caster = this.components.get(Raycasters).get(this);
+    const result = await caster.castRay();
+    if (result && result.point && event.button === 0) {
+      this.camera.controls.setOrbitPoint(
+        result.point.x,
+        result.point.y,
+        result.point.z,
+      );
+    }
+  };
+
+  private _defaultCamera?: U;
+
+  get defaultCamera() {
+    if (!this._defaultCamera) {
+      throw new Error("World: there is no default camera defined.");
+    }
+    return this._defaultCamera;
+  }
+
+  set defaultCamera(value: U) {
+    this._defaultCamera = value;
+  }
 
   /**
    * Getter for the scene. If no scene is initialized, it throws an error.
@@ -109,10 +165,10 @@ export class SimpleWorld<
    * @param camera - The new camera to be set.
    */
   set camera(camera: U) {
+    if (!this._camera) this.defaultCamera = camera;
     this._camera = camera;
-    camera.worlds.set(this.uuid, this);
     camera.currentWorld = this;
-    camera.onWorldChanged.trigger({ world: this, action: "added" });
+    this.onCameraChanged.trigger(camera);
   }
 
   /**
@@ -136,6 +192,10 @@ export class SimpleWorld<
       renderer.currentWorld = this;
       renderer.onWorldChanged.trigger({ world: this, action: "added" });
     }
+  }
+
+  useDefaultCamera() {
+    this.camera = this.defaultCamera;
   }
 
   /** {@link Updateable.update} */

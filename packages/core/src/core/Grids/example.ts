@@ -1,99 +1,160 @@
 /* MD
+  ## 📄 Adding Fancy Grids
+  ---
+  In this tutorial you'll learn how to add a fancy grid to your scene. It's super easy and will make your app look much more professional!
 
-### 🕸️ Adding a fancy grid to our scene 
----
+  :::tip Why a grid?
 
-In this tutorial you'll learn how to add a fancy grid to your scene. It's super easy and will make your app look much more professional!
+  Grids are very common in 3D apps, and it's a great way to have a reference point for your users to navigate around, even when there are no visible objects around.
 
-:::tip Why a grid?
+  :::
 
-Grids are very common in 3D apps, and it's a great way to have a reference point for your users to navigate around, even when there are no visible objects around.
-
-:::
-
-In this tutorial, we will import:
-
-- `Three.js` to get some 3D entities for our app.
-- `@thatopen/components` to set up the barebone of our app.
-
+  ### 🖖 Importing our Libraries
+  First things first, let's install all necessary dependencies to make this example work:
 */
 
 import * as THREE from "three";
 import Stats from "stats.js";
-import * as OBC from "@thatopen/components";
 import * as BUI from "@thatopen/ui";
+// You have to import * as OBC from "@thatopen/components"
+import * as OBC from "../..";
 
 /* MD
-  ### 🌎 Setting up a simple scene
-  ---
-
-  We will start by creating a simple scene with a camera and a renderer. If you don't know how to set up a scene, you can check the Worlds tutorial.
-
+  ### 🌎 Setting up a Simple Scene
+  To get started, let's set up a basic ThreeJS scene. This will serve as the foundation for our application and allow us to visualize the 3D models effectively:
 */
-
-const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
 
 const worlds = components.get(OBC.Worlds);
 const world = worlds.create<
   OBC.SimpleScene,
-  OBC.SimpleCamera,
+  OBC.OrthoPerspectiveCamera,
   OBC.SimpleRenderer
 >();
 
 world.scene = new OBC.SimpleScene(components);
+world.scene.setup();
+world.scene.three.background = null;
+
+const container = document.getElementById("container")!;
 world.renderer = new OBC.SimpleRenderer(components, container);
-world.camera = new OBC.SimpleCamera(components);
+world.camera = new OBC.OrthoPerspectiveCamera(components);
+await world.camera.controls.setLookAt(68, 23, -8.5, 21.5, -5.5, 23);
 
 components.init();
 
-const cube = new THREE.Mesh(
-  new THREE.BoxGeometry(),
-  new THREE.MeshBasicMaterial({ color: "red" }),
-);
-world.scene.three.add(cube);
-
 /* MD
-
-  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
-
+  ### 🛠️ Setting Up Fragments
+  Now, let's configure the FragmentsManager. This will allow us to load models effortlessly and start manipulating them with ease:
 */
 
-world.scene.three.background = null;
+const workerUrl =
+  "/node_modules/@thatopen/fragments/dist/Worker/worker.mjs";
+const fragments = components.get(OBC.FragmentsManager);
+fragments.init(workerUrl);
+
+world.camera.controls.addEventListener("rest", () =>
+  fragments.core.update(true),
+);
+
+world.onCameraChanged.add((camera) => {
+  for (const [, model] of fragments.list) {
+    model.useCamera(camera.three);
+  }
+  fragments.core.update(true);
+});
+
+fragments.list.onItemSet.add(({ value: model }) => {
+  model.useCamera(world.camera.three);
+  world.scene.three.add(model.object);
+  fragments.core.update(true);
+});
 
 /* MD
-  ### 🕷️ Adding the grid to the world
-  ---
+  ### 📂 Loading Fragments Models
+  With the core setup complete, it's time to load a Fragments model into our scene. Fragments are optimized for fast loading and rendering, making them ideal for large-scale 3D models.
 
-  To add the grid to the world, we will use the `Grids` component. Instead of instantiating it, we will get it directly from the `components` object. Remember that all components are meant to be singletons. Then, we will call the `create` method to add a grid to the scene.
+  :::info Where can I find Fragment files?
 
+  You can use the sample Fragment files available in our repository for testing. If you have an IFC model you'd like to convert to Fragments, check out the IfcImporter tutorial for detailed instructions.
+
+  :::
+*/
+
+const fragPaths = ["/resources/frags/school_arq.frag"];
+const [model] = await Promise.all(
+  fragPaths.map(async (path) => {
+    const modelId = path.split("/").pop()?.split(".").shift();
+    if (!modelId) return null;
+    const file = await fetch(path);
+    const buffer = await file.arrayBuffer();
+    return fragments.core.load(buffer, { modelId });
+  }),
+);
+
+/* MD
+  ### ✨ Using The Grids Component
+  The Grids component is straightforward to use. It allows you to create an infinite grid for any world in your application. Here's how you can proceed:
 */
 
 const grids = components.get(OBC.Grids);
+// create the grid for the world we set
 const grid = grids.create(world);
-console.log(grid);
 
 /* MD
-  ### 🧩 Adding some UI
-  ---
+  Now, something convenient to do is set the grid at some height based on your model levels. For it, you need to know the levels (storeys if using IFC schema) of your model and get it's computed elevation from the attributes. First, let's get the model levels and it's attributes:
+*/
 
+const storeys = await model!.getItemsOfCategories([/BUILDINGSTOREY/]);
+const localIds = Object.values(storeys).flat();
+const data = await model!.getItemsData(localIds);
+
+/* MD
+  Then, we can create a very simple helper function that returns the storey elevation based on it's name:
+*/
+
+const getStoreyElevation = async (name: string) => {
+  const storey = data.find((attributes) => {
+    if (!("Name" in attributes && "value" in attributes.Name)) return false;
+    return attributes.Name.value === name;
+  });
+  if (!storey) return 0;
+  if (!("Elevation" in storey && "value" in storey.Elevation)) return 0;
+  const [, coordHeight] = await model!.getCoordinates();
+  return storey.Elevation.value + coordHeight;
+};
+
+/* MD
+  ### 🧩 Adding some UI (optional but recommended)
   We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
-
 */
 
 BUI.Manager.init();
 
 /* MD
-  Now we will create some UI elements and bind them to some of the controls of the clipper, like activation, visibility, size, color, etc. For more information about the UI library, you can check the specific documentation for it!
+Now we will add some UI to play around with the actions in this tutorial. For more information about the UI library, you can check the specific documentation for it!
 */
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
-  return BUI.html`
-    <bim-panel label="Grids Tutorial" class="options-menu">
+  const onGridLevelChange = async ({ target }: { target: BUI.Dropdown }) => {
+    const [level] = target.value;
+    if (!level) return;
+    const elevation = await getStoreyElevation(level);
+    grid.three.position.y = elevation;
+  };
 
-      <bim-panel-section collapsed label="Controls"">
-          
+  return BUI.html`
+    <bim-panel active label="Grids Tutorial" class="options-menu">
+      <bim-panel-section label="Section">
+        <bim-dropdown @change=${onGridLevelChange} placeholder="Select a grid level">
+          ${data.map((attributes) => {
+            if (!("Name" in attributes && "value" in attributes.Name)) {
+              return null;
+            }
+            return BUI.html`<bim-option label=${attributes.Name.value}></bim-option>`;
+          })}
+        </bim-dropdown>
         <bim-checkbox label="Grid visible" checked 
           @change="${({ target }: { target: BUI.Checkbox }) => {
             grid.config.visible = target.value;
@@ -120,10 +181,9 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
             grid.config.secondarySize = target.value;
           }}">
         </bim-number-input>
-        
       </bim-panel-section>
     </bim-panel>
-    `;
+  `;
 });
 
 document.body.append(panel);
@@ -150,10 +210,7 @@ document.body.append(button);
 
 /* MD
   ### ⏱️ Measuring the performance (optional)
-  ---
-
   We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
-
 */
 
 const stats = new Stats();
@@ -166,8 +223,5 @@ world.renderer.onAfterUpdate.add(() => stats.end());
 
 /* MD
   ### 🎉 Wrap up
-  ---
-
-  Congratulations! You have created your first infinite grid in your 3D app. As you can see, it's super easy and it looks great!
-
+  That's it! Now you're able to [insert here the learnings]. Congratulations! Keep going with more tutorials in the documentation.
 */

@@ -1,27 +1,52 @@
-import{B as m,M as d,a as b}from"./web-ifc-api-BlmMr04K.js";import{S as p}from"./stats.min-GTpOrGrX.js";import{C as u,W as h,S as w,a as k,G as g}from"./index-7tDlUpW2.js";import{T as f,L as c,m as r}from"./index-C8nqhRYO.js";import{W as y,w as v}from"./index-JIMkY7x4.js";import"./_commonjsHelpers-Cpj98o6Y.js";const l=document.getElementById("container"),t=new u,x=t.get(h),e=x.create();e.scene=new w(t);e.renderer=new y(t,l);e.camera=new k(t);t.init();e.camera.controls.setLookAt(5,5,5,0,0,0);e.scene.setup();const A=t.get(g);A.create(e);e.scene.three.background=null;const C=new m(3,3,3),D=new d({color:"#6528D7"}),i=new b(C,D);i.position.set(0,1.5,0);e.scene.three.add(i);e.meshes.add(i);const n=t.get(v);n.world=e;n.enabled=!0;l.ondblclick=()=>n.create();l.oncontextmenu=()=>n.endCreation();window.onkeydown=o=>{(o.code==="Delete"||o.code==="Backspace")&&n.deleteAll()};const a=new p;a.showPanel(2);document.body.append(a.dom);a.dom.style.left="0px";a.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>a.begin());e.renderer.onAfterUpdate.add(()=>a.end());f.init();const s=c.create(()=>r`
-  <bim-panel active label="Area Measurement Tutorial" class="options-menu">
-      <bim-panel-section collapsed label="Controls">
-          <bim-label>Create area dimension: Double click</bim-label>  
-          <bim-label>Calculate selected area: Right click</bim-label>  
-          <bim-label>Delete  dimension: Delete</bim-label>  
+var $=Object.defineProperty;var x=(i,t,e)=>t in i?$(i,t,{enumerable:!0,configurable:!0,writable:!0,value:e}):i[t]=e;var r=(i,t,e)=>(x(i,typeof t!="symbol"?t+"":t,e),e);import{V as _,W as E,C as k,S as P,T as B,L as y,m as f,a as S}from"./index-BR15nMAM.js";import{R as M,D as A,C as I,W as V,S as T,O as j,F as q}from"./graphic-vertex-picker-WQ6fDD2d.js";import{P as z}from"./index-BYTOCRNk.js";import{M as F,A as W,L as R}from"./index-Bm81zWIP.js";const w=class w extends F{constructor(e){super(e,"area");r(this,"pickTolerance",.1);r(this,"tolerance",.005);r(this,"modes",["free","square"]);r(this,"_mode","free");r(this,"_temp",{isDragging:!1,area:new W,lines:new E,point:new _});r(this,"computeLineElements",()=>{this._temp.lines.clear();const e=[...this._temp.area.points];if(this._temp.area.isPointInPlane(this._temp.point)&&e.push(this._temp.point),!(e.length<2||!this.world))for(let n=0;n<e.length;n++){const s=e[n],l=e[(n+1)%e.length],c=new R(s,l),b=this.createLineElement(c);this._temp.lines.add(b)}});r(this,"create",async()=>{if(!this.enabled)return;if(!this.world)throw new Error("Area Measurement: world is not defined!");const e=await this._vertexPicker.get({snappingClasses:this.snappings});if(!(e&&e.point))return;const{area:n,point:s}=this._temp;if(this._temp.isDragging||(n.tolerance=this.tolerance,n.points.clear(),this._temp.isDragging=!0),n.points.size===0&&s.copy(e.point),n.points.add(s.clone()),this.mode==="square"&&n.points.size===2&&e.normal){const[l,c]=n.points,b=new _().subVectors(c,l),h=b.clone(),d=b.clone().negate();Math.abs(b.y)>=.1?(h.y=0,d.y=0):(h.x=0,d.x=0);const D=l.clone().add(h),L=c.clone().add(d);n.points.clear(),n.points.add(l,D,c,L),this.endCreation()}});r(this,"endCreation",()=>{this.enabled&&(this._temp.isDragging=!1,this._temp.area.points.size>=3&&this.list.add(this._temp.area.clone()),this._temp.area.points.clear(),this._temp.lines.clear())});r(this,"cancelCreation",()=>{this.enabled&&(this._temp.isDragging=!1,this._temp.area.points.clear(),this._temp.lines.clear())});r(this,"delete",()=>{if(!this.enabled||this.list.size===0||!this.world)return;const e=this.getFillBoxes(),l=this.components.get(M).get(this.world).castRayToObjects(e),c=this.components.get(A);for(const d of e)c.destroy(d);if(!l)return;const h=[...this.fills].find(d=>d.three===l.object);h&&(this.list.delete(h.area),this.lines.clear())});e.add(w.uuid,this),this.initHandlers(),this.color=new k("#6528d7")}get mode(){return this._mode}set mode(e){this._mode=e,this.cancelCreation(),this.onStateChanged.trigger(["mode"])}initHandlers(){this.onVisibilityChange.add(()=>{for(const e of this.lines)e.label.visible=!1}),this.list.onItemAdded.add(e=>{if(!this.world)return;const n=this.createFillElement(e);n.color=this.color,this.fills.add(n),this.addLineElementsFromPoints([...e.points])}),this.list.onBeforeDelete.add(e=>{const n=[...this.fills].find(s=>s.area===e);n&&this.fills.delete(n)}),this.onPointerStop.add(()=>this.updatePreview()),this._temp.lines.onItemAdded.add(e=>e.label.visible=!1),this._temp.lines.onBeforeDelete.add(e=>e.dispose()),this._temp.area.points.onItemAdded.add(()=>{this.computeLineElements()}),this._temp.area.points.onItemDeleted.add(()=>{this._temp.lines.clear()})}async updatePreview(){if(!this.enabled||!this.world)throw new Error("Measurement is not enabled or world is not defined!");const e=await this._vertexPicker.get({snappingClasses:this.snappings});if(!(e&&e.point&&this._temp.isDragging))return;const n=e.point.clone(),{plane:s}=this._temp.area;if(s){const l=s.distanceToPoint(n);if(Math.abs(l)<.1){const c=new _;s.projectPoint(n,c),n.copy(c)}}this._temp.point.copy(n),this.computeLineElements()}};r(w,"uuid","09b78c1f-0ff1-4630-a818-ceda3d878c75");let v=w;const m=new I,U=m.get(V),a=U.create();a.scene=new T(m);a.scene.setup();a.scene.three.background=null;const C=document.getElementById("container");a.renderer=new z(m,C);a.camera=new j(m);await a.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);m.init();const H="/node_modules/@thatopen/fragments/dist/Worker/worker.mjs",p=m.get(q);p.init(H);a.camera.controls.addEventListener("rest",()=>p.core.update(!0));a.onCameraChanged.add(i=>{for(const[,t]of p.list)t.useCamera(i.three);p.core.update(!0)});p.list.onItemSet.add(({value:i})=>{i.useCamera(a.camera.three),a.scene.three.add(i.object),p.core.update(!0)});const O=["/resources/frags/school_arq.frag"];await Promise.all(O.map(async i=>{var s;const t=(s=i.split("/").pop())==null?void 0:s.split(".").shift();if(!t)return null;const n=await(await fetch(i)).arrayBuffer();return p.core.load(n,{modelId:t})}));const o=m.get(v);o.world=a;o.color=new k("#494cb6");o.enabled=!0;C.ondblclick=()=>o.create();window.addEventListener("keydown",i=>{(i.code==="Enter"||i.code==="NumpadEnter")&&o.endCreation()});const N=()=>{o.list.clear()},G=()=>{const i=[];for(const t of o.list)i.push(t.value);return i};window.onkeydown=i=>{(i.code==="Delete"||i.code==="Backspace")&&o.delete()};o.list.onItemAdded.add(i=>{if(!i.boundingBox)return;const t=new P;i.boundingBox.getBoundingSphere(t),a.camera.controls.fitToSphere(t,!0)});B.init();const g=y.create(()=>{const i=()=>{const t=G();console.log(t)};return f`
+    <bim-panel active label="Area Measurement Tutorial" class="options-menu">
+      <bim-panel-section label="Controls">
+          <bim-label>Create dimension: Double click</bim-label>  
+          <bim-label>Delete dimension: Delete</bim-label>  
       </bim-panel-section>
       
-      <bim-panel-section collapsed label="Others">
-        <bim-checkbox checked label="Area dimensions enabled" 
-          @change="${({target:o})=>{n.enabled=o.value}}">  
+      <bim-panel-section label="Measurer">
+        <bim-checkbox checked label="Enabled" 
+          @change="${({target:t})=>{o.enabled=t.value}}">  
         </bim-checkbox>       
-        <bim-checkbox checked label="Area dimensions visible" 
-          @change="${({target:o})=>{n.visible=o.value}}">  
+        <bim-checkbox checked label="Measurements Visible" 
+          @change="${({target:t})=>{o.visible=t.value}}">  
         </bim-checkbox>  
         
-        <bim-button label="Delete all"
-          @click="${()=>{n.deleteAll()}}">
-        </bim-button>
+        <bim-color-input 
+          label="Color" color=#${o.linesMaterial.color.getHexString()}
+          @input="${({target:t})=>{o.color=new k(t.color)}}">
+        </bim-color-input>
+        
+        <bim-dropdown 
+          label="Measure Mode" required
+          @change="${({target:t})=>{const[e]=t.value;o.mode=e}}"> ${o.modes.map(t=>f`<bim-option label=${t} value=${t} ?checked=${t===o.mode}></bim-option>`)}
+        </bim-dropdown>
 
+        <bim-dropdown 
+          label="Units" required
+          @change="${({target:t})=>{const[e]=t.value;o.units=e}}">
+          ${o.unitsList.map(t=>f`<bim-option label=${t} value=${t} ?checked=${t===o.units}></bim-option>`)}
+        </bim-dropdown>
+
+        <bim-dropdown 
+          label="Pricision" required
+          @change="${({target:t})=>{const[e]=t.value;o.rounding=e}}">
+          <bim-option label="0" value=0></bim-option>
+          <bim-option label="1" value=1></bim-option>
+          <bim-option label="2" value=2 checked></bim-option>
+          <bim-option label="3" value=3></bim-option>
+          <bim-option label="4" value=4></bim-option>
+          <bim-option label="5" value=5></bim-option>
+        </bim-dropdown>
+
+        <bim-button label="Delete all" @click=${()=>N()}></bim-button>
+        
+        <bim-button label="Log Values" @click=${i}></bim-button>
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(s);const S=c.create(()=>r`
+  `});document.body.append(g);const J=y.create(()=>f`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
-        @click="${()=>{s.classList.contains("options-menu-visible")?s.classList.remove("options-menu-visible"):s.classList.add("options-menu-visible")}}">
+        @click="${()=>{g.classList.contains("options-menu-visible")?g.classList.remove("options-menu-visible"):g.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(S);
+    `);document.body.append(J);const u=new S;u.showPanel(2);document.body.append(u.dom);u.dom.style.left="0px";u.dom.style.zIndex="unset";a.renderer.onBeforeUpdate.add(()=>u.begin());a.renderer.onAfterUpdate.add(()=>u.end());

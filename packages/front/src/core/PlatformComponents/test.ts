@@ -14,18 +14,18 @@ const worlds = components.get(OBC.Worlds);
 const world = worlds.create<
   OBC.SimpleScene,
   OBC.SimpleCamera,
-  OBCF.RendererWith2D
+  OBC.SimpleRenderer
 >();
 
 world.scene = new OBC.SimpleScene(components);
-world.renderer = new OBCF.RendererWith2D(components, container);
+world.renderer = new OBC.SimpleRenderer(components, container);
 world.camera = new OBC.SimpleCamera(components);
 
 components.init();
 
 world.camera.controls.setLookAt(5, 5, 5, 0, 0, 0);
 
-container.appendChild(world.renderer.three2D.domElement);
+container.appendChild(world.renderer.three.domElement);
 
 const grids = components.get(OBC.Grids);
 grids.create(world);
@@ -52,4 +52,3 @@ async function importComponent(url: string) {
 }
 
 await importComponent("../../../../../resources/mock-cloud-component.js");
-await importComponent("../../../../../resources/mock-cloud-component-2.js");

@@ -1,8 +1,12 @@
-import * as FRAGS from "@thatopen/fragments";
-import { IDSCheck, IDSCheckResult, IDSFacetParameter } from "../types";
+import { IDSFacetParameter, IDSItemCheckResult } from "../types";
 import { Components } from "../../../../core/Components";
 import { IDSFacet } from "./Facet";
 import { getParameterXML } from "../exporters/parameter";
+import {
+  FragmentsManager,
+  ModelIdDataMap,
+  ModelIdMap,
+} from "../../../../fragments";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/attribute-facet.md
 
@@ -36,9 +40,7 @@ export class IDSAttribute extends IDSFacet {
   // Right now, all entities must be iterated.
   // When the new IfcEntitiesFinder comes, this can become easier.
   // This may be greatly increase in performance if the applicability has any of the other facets and this is applied the latest
-  async getEntities() {
-    return [];
-  }
+  async getEntities() {}
   // async getEntities(
   //   model: FRAGS.FragmentsGroup,
   //   collector: FRAGS.IfcProperties = {},
@@ -71,105 +73,110 @@ export class IDSAttribute extends IDSFacet {
   // Test cases from buildingSMART repo have been tested and they all match with the expected result
   // All invalid cases have been treated as failures
   // FragmentsGroup do not hold some of the entities used in the tests
-  async test(entities: FRAGS.IfcProperties) {
-    this.testResult = [];
-    for (const _expressID in entities) {
-      const expressID = Number(_expressID);
-      const attrs = entities[expressID];
+  async test(items: ModelIdMap, collector: ModelIdDataMap<IDSItemCheckResult>) {
+    const fragments = this._components.get(FragmentsManager);
+    for (const [modelId, localIds] of Object.entries(items)) {
+      const model = fragments.list.get(modelId);
+      if (!model) continue;
+      const data = await model.getItemsData([...localIds]);
+      for (const item of data) {
+        const checks = this.getItemChecks(collector, modelId, item);
+        if (!checks) continue;
 
-      const checks: IDSCheck[] = [];
-      const result: IDSCheckResult = {
-        guid: attrs.GlobalId?.value,
-        expressID,
-        pass: false,
-        checks,
-        cardinality: this.cardinality,
-      };
+        const attrNames = Object.keys(item);
+        const matchingAttributes = attrNames.filter((name) => {
+          const nameMatches = this.evalRequirement(name, this.name, "Name");
+          if (!nameMatches) return false;
 
-      this.testResult.push(result);
+          const attribute = item[name];
+          if (Array.isArray(attribute)) return true;
 
-      // Check if the attribute exists
-      const attrNames = Object.keys(attrs);
-      const matchingAttributes = attrNames.filter((name) => {
-        const nameMatches = this.evalRequirement(name, this.name, "Name");
-        const attrValue = attrs[name];
-        // IDSDocs: Attributes with null values always fail
-        if (nameMatches && attrValue === null) {
-          if (
-            this.cardinality === "optional" ||
-            this.cardinality === "prohibited"
-          ) {
-            return true;
+          // IDSDocs: Attributes with null values always fail
+          if (attribute === null || attribute.value === null) {
+            if (
+              this.cardinality === "optional" ||
+              this.cardinality === "prohibited"
+            ) {
+              return true;
+            }
+            return false;
           }
-          return false;
-        }
-        // IDSDocs: Attributes with a logical unknown always fail
-        if (nameMatches && attrValue?.type === 3 && attrValue.value === 2) {
-          return false;
-        }
-        // IDSDocs: Attributes with an empty list always fail
-        if (nameMatches && Array.isArray(attrValue) && attrValue.length === 0) {
-          return false;
-        }
-        // IDSDocs: Attributes with empty strings always fail
-        if (
-          nameMatches &&
-          attrValue?.type === 1 &&
-          attrValue.value.trim() === ""
-        ) {
-          return false;
-        }
-        return nameMatches;
-      });
 
-      const attributeMatches = matchingAttributes.length > 0;
+          // IDSDocs: Attributes with a logical unknown always fail
+          // TODO: Can this be replicated with Fragments 2.0?
+          // if (nameMatches && attribute?.type === 3 && attribute.value === 2) {
+          //   return false;
+          // }
 
-      checks.push({
-        parameter: "Name",
-        currentValue: attributeMatches ? matchingAttributes[0] : null,
-        requiredValue: this.name.parameter,
-        pass:
-          this.cardinality === "prohibited"
-            ? !attributeMatches
-            : attributeMatches,
-      });
+          // IDSDocs: Attributes with an empty list always fail
+          // TODO: How to know for sure if the attribute value is an array
+          if (Array.isArray(attribute.value) && attribute.value.length === 0) {
+            return false;
+          }
 
-      // Check if the attribute value matches
-      if (this.value) {
-        if (matchingAttributes[0]) {
-          const attribute = attrs[matchingAttributes[0]];
-          // Value checks always fail for objects
-          const isRef = attribute?.type === 5;
-          if (isRef) {
+          // IDSDocs: Attributes with empty strings always fail
+          if (
+            typeof attribute.value === "string" &&
+            attribute.value.trim() === ""
+          ) {
+            return false;
+          }
+
+          return nameMatches;
+        });
+
+        const attributeMatches = matchingAttributes.length > 0;
+
+        checks.push({
+          parameter: "Name",
+          currentValue: attributeMatches ? matchingAttributes[0] : null,
+          requiredValue: this.name,
+          pass:
+            this.cardinality === "prohibited"
+              ? !attributeMatches
+              : attributeMatches,
+        });
+
+        // Check if the attribute value matches
+        if (this.value) {
+          if (matchingAttributes[0]) {
+            const attribute = item[matchingAttributes[0]];
+            if (Array.isArray(attribute)) {
+              checks.push({
+                parameter: "Value",
+                currentValue: null,
+                requiredValue: this.value,
+                pass: this.cardinality === "prohibited",
+              });
+            } else {
+              // IDSDocs: Value checks always fail for objects
+              const isRef = Array.isArray(attribute.value);
+              if (isRef) {
+                checks.push({
+                  parameter: "Value",
+                  currentValue: null,
+                  requiredValue: this.value,
+                  pass: this.cardinality === "prohibited",
+                });
+              } else {
+                this.evalRequirement(
+                  attribute.value,
+                  this.value,
+                  "Value",
+                  checks,
+                );
+              }
+            }
+          } else {
             checks.push({
               parameter: "Value",
               currentValue: null,
-              requiredValue: this.value.parameter,
+              requiredValue: this.value,
               pass: this.cardinality === "prohibited",
             });
-          } else {
-            this.evalRequirement(
-              attribute ? attribute.value : null,
-              this.value,
-              "Value",
-              checks,
-            );
           }
-        } else {
-          checks.push({
-            parameter: "Value",
-            currentValue: null,
-            requiredValue: this.value.parameter,
-            pass: this.cardinality === "prohibited",
-          });
         }
       }
-
-      result.pass = checks.every(({ pass }) => pass);
     }
-
-    const result = [...this.testResult];
-    this.testResult = [];
-    return result;
   }
 }

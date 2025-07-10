@@ -51,6 +51,7 @@ export class SimpleGrid
 
   /** {@link Hideable.visible} */
   set visible(visible: boolean) {
+    this.three.visible = visible;
     if (visible) {
       const scene = this.world.scene.three;
       scene.add(this.three);
@@ -190,8 +191,8 @@ export class SimpleGrid
             `,
 
       extensions: {
-        // derivatives: true,
-      },
+        derivatives: true,
+      } as any,
     });
 
     this.three = new THREE.Mesh(geometry, material);

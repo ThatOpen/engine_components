@@ -1,9 +1,9 @@
-import { UUID } from "../../../utils";
+import { UUID, XML } from "../../../utils";
 import { Components } from "../../../core/Components";
 import { Viewpoint, Viewpoints } from "../../../core/Viewpoints";
 import { Comment } from "./Comment";
 import { BCFTopics } from "..";
-import { BCFTopic } from "./types";
+import { BCFApiTopic, BCFTopic } from "./types";
 import { DataMap, DataSet } from "../../../core/Types";
 
 export class Topic implements BCFTopic {
@@ -39,6 +39,8 @@ export class Topic implements BCFTopic {
   readonly relatedTopics = new DataSet<string>();
   // There is no problem to store the comment it-self as it is not referenced anywhere else
   readonly comments = new DataMap<string, Comment>();
+  // Store document reference guids instead of the actual thing to prevent a possible memory leak
+  readonly documentReferences = new DataSet<string>();
   customData: Record<string, any> = {};
   description?: string;
   serverAssignedId?: string;
@@ -46,6 +48,9 @@ export class Topic implements BCFTopic {
   modifiedAuthor?: string;
   modifiedDate?: Date;
   index?: number;
+
+  // Based on the BCF API documentation, the files associated with a topic are the models that should be loaded when displaying the topic's viewpoints.
+  // files: any
 
   private _type = Topic.default.type;
 
@@ -225,7 +230,7 @@ export class Topic implements BCFTopic {
    * const comment = topic.createComment("This is a new comment", viewpoint);
    * ```
    */
-  createComment(text: string, viewpoint?: Viewpoint) {
+  createComment(text: string, viewpoint?: string) {
     const comment = new Comment(this._components, text);
     comment.viewpoint = viewpoint;
     comment.topic = this;
@@ -233,90 +238,154 @@ export class Topic implements BCFTopic {
     return comment;
   }
 
-  private createLabelTags(version = this._managerVersion) {
-    let tag = "Labels";
-    if (version === "2.1") tag = "Labels";
-    if (version === "3") tag = "Label";
+  private createLabelTags() {
+    const labels = [...this.labels];
 
-    let tags = [...this.labels]
-      .map((label) => `<${tag}>${label}</${tag}>`)
-      .join("\n");
-
-    for (const key in this.customData) {
-      const value = this.customData[key];
-      if (typeof value !== "string") continue;
-      tags += `\n<${tag}>${value}</${tag}>`;
+    const manager = this._components.get(BCFTopics);
+    if (manager.config.exportCustomDataAsLabels) {
+      for (const key in this.customData) {
+        const value = this.customData[key];
+        if (typeof value !== "string") continue;
+        labels.push(value);
+      }
     }
 
-    if (version === "2.1") return tags;
-    if (version === "3") {
-      if (tags.length !== 0) return `<Labels>\n${tags}\n</Labels>`;
-      return "<Labels/>";
-    }
-
-    return tags;
+    return labels;
   }
 
-  private createCommentTags(version = this._managerVersion) {
-    const tags = [...this.comments.values()]
-      .map((comment) => comment.serialize())
-      .join("\n");
-
-    if (version === "2.1") return tags;
-    if (version === "3") {
-      if (tags.length !== 0) return `<Comments>\n${tags}\n</Comments>`;
-      return "<Comments/>";
-    }
-
-    return tags;
+  private createCommentTags() {
+    return [...this.comments.values()].map((comment) => {
+      return {
+        $Guid: comment.guid,
+        Date: comment.date.toISOString(),
+        Author: comment.author,
+        Comment: comment.comment,
+        ModifiedAuthor: comment.modifiedAuthor,
+        ModifiedDate: comment.modifiedDate?.toISOString(),
+        Viewpoint: comment.viewpoint ? { $Guid: comment.viewpoint } : undefined,
+      };
+    });
   }
 
-  private createViewpointTags(version = this._managerVersion) {
-    let tag = "Viewpoints";
-    if (version === "2.1") tag = "Viewpoints";
-    if (version === "3") tag = "ViewPoint";
-
+  private createViewpointTags() {
     // Make sure to only associate existing viewpoints
     const manager = this._components.get(Viewpoints);
     const viewpoints = [...this.viewpoints]
       .map((viewpointID) => manager.list.get(viewpointID))
       .filter((viewpoint) => viewpoint) as Viewpoint[];
 
-    const tags = viewpoints
-      .map((viewpoint) => {
-        return `<${tag} Guid="${viewpoint.guid}">
-          <Viewpoint>${viewpoint.guid}.bcfv</Viewpoint>
-          <Snapshot>${viewpoint.guid}.jpeg</Snapshot>
-        </${tag}>
-      `;
-      })
-      .join("\n");
-
-    if (version === "2.1") return tags;
-    if (version === "3") {
-      if (tags.length !== 0) return `<Viewpoints>\n${tags}\n</Viewpoints>`;
-      return "<Viewpoints />";
-    }
-
-    return tags;
+    return viewpoints.map((viewpoint) => {
+      const xmlData: Record<string, string> = {
+        $Guid: viewpoint.guid,
+        Viewpoint: `${viewpoint.title ?? viewpoint.guid}.bcfv`,
+      };
+      const snapshotData = manager.snapshots.get(viewpoint.snapshot);
+      if (snapshotData) {
+        const snapshotExtension = manager.getSnapshotExtension(
+          viewpoint.snapshot,
+        );
+        xmlData.Snapshot = `${viewpoint.snapshot}.${snapshotExtension}`;
+      }
+      return xmlData;
+    });
   }
 
-  private createRelatedTopicTags(version = this._managerVersion) {
-    const tags = [...this.relatedTopics]
-      .map(
-        (guid) => `<RelatedTopic Guid="${guid}"></RelatedTopic>
-      `,
-      )
-      .join("\n");
+  private createRelatedTopicTags() {
+    return [...this.relatedTopics].map((guid) => {
+      return { $Guid: guid };
+    });
+  }
 
-    if (version === "2.1") return tags;
-    if (version === "3") {
-      if (tags.length !== 0)
-        return `<RelatedTopics>\n${tags}\n</RelatedTopics>`;
-      return "<RelatedTopics />";
+  private createDocumentReferencesTag(version = this._managerVersion) {
+    const references: Record<string, any>[] = [];
+    if (!(version === "3" || version === "2.1")) return references;
+    const manager = this._components.get(BCFTopics);
+    for (const guid of this.documentReferences) {
+      const doc = manager.documents.get(guid);
+      if (!doc) continue;
+      let reference: Record<string, any> = {
+        $Guid: UUID.create(),
+        Description: doc.description,
+      };
+      if (version === "2.1") {
+        reference = {
+          ...reference,
+          $isExternal: doc.type === "external" ? true : undefined,
+          ReferencedDocument:
+            doc.type === "external" ? doc.url : `../${doc.fileName}`,
+        };
+      }
+      if (version === "3") {
+        reference = {
+          ...reference,
+          DocumentGuid: doc.type === "internal" ? guid : undefined,
+          Url: doc.type === "external" ? doc.url : undefined,
+        };
+      }
+      if (Object.keys(reference).length > 0) references.push(reference);
+    }
+    return references;
+  }
+
+  toJSON() {
+    const result: BCFApiTopic = {
+      guid: this.guid,
+      server_assigned_id: this.serverAssignedId,
+      topic_type: this.type,
+      topic_status: this.status,
+      title: this.title,
+      priority: this.priority,
+      index: this.index,
+      labels: [...this.labels],
+      creation_date: this.creationDate.toISOString(),
+      creation_author: this.creationAuthor,
+      modified_date: this.modifiedDate?.toISOString(),
+      modified_author: this.modifiedAuthor,
+      assigned_to: this.assignedTo,
+      stage: this.stage,
+      description: this.description,
+      due_date: this.dueDate?.toISOString(),
+      comments: [...this.comments].map(([_, comment]) => comment.toJSON()),
+      relatedTopics: [...this.relatedTopics].map((guid) => {
+        return { related_topic_guid: guid };
+      }),
+    };
+
+    const viewpointsManager = this._components.get(Viewpoints);
+    for (const guid of this.viewpoints) {
+      const viewpoint = viewpointsManager.list.get(guid);
+      if (!viewpoint) continue;
+      if (!result.viewpoints) result.viewpoints = [];
+      result.viewpoints.push(viewpoint.toJSON());
     }
 
-    return tags;
+    const topicsManager = this._components.get(BCFTopics);
+    for (const guid of this.documentReferences) {
+      const reference = topicsManager.documents.get(guid);
+      if (!reference) continue;
+      if (!result.document_references) result.document_references = [];
+      if (reference.type === "external") {
+        result.document_references.push({
+          guid: UUID.create(), // TODO: this is for sure incorrect!
+          description: reference.description,
+          url: reference.url,
+        });
+      } else {
+        result.document_references.push({
+          guid: UUID.create(), // TODO: this is for sure incorrect!
+          description: reference.description,
+          document_guid: guid,
+        });
+      }
+    }
+
+    for (const [key, value] of Object.entries(result)) {
+      if (value === undefined || (Array.isArray(value) && value.length === 0)) {
+        delete (result as any)[key];
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -340,79 +409,54 @@ export class Topic implements BCFTopic {
   serialize() {
     const version = this._managerVersion;
 
-    let serverAssignedIdAttribute: string | null = null;
-    if (this.serverAssignedId) {
-      serverAssignedIdAttribute = `ServerAssignedId="${this.serverAssignedId}"`;
+    const topic: Record<string, any> = {
+      $Guid: this.guid,
+      $TopicType: this.type,
+      $TopicStatus: this.status,
+      $ServerAssignedId: this.serverAssignedId,
+      Title: this.title,
+      CreationAuthor: this.creationAuthor,
+      CreationDate: this.creationDate.toISOString(),
+      Priority: this.priority,
+      Index: version === "2.1" ? this.index : undefined,
+      ModifiedDate: this.modifiedDate?.toISOString(),
+      ModifiedAuthor: this.modifiedAuthor,
+      DueDate: this.dueDate?.toISOString(),
+      AssignedTo: this.assignedTo,
+      Description: this.description,
+      Stage: this.stage,
+      DocumentReferences:
+        version === "3"
+          ? { DocumentReference: this.createDocumentReferencesTag(version) }
+          : undefined,
+      RelatedTopics:
+        version === "3"
+          ? { RelatedTopic: this.createRelatedTopicTags() }
+          : undefined,
+      RelatedTopic:
+        version === "2.1" ? this.createRelatedTopicTags() : undefined,
+      Labels: version === "3" ? { Label: this.createLabelTags() } : undefined,
+      Viewpoints:
+        version === "3" ? { ViewPoint: this.createViewpointTags() } : undefined,
+      Comments:
+        version === "3" ? { Comment: this.createCommentTags() } : undefined,
+    };
+
+    if (version === "2.1") {
+      topic.Labels = this.createLabelTags();
+      topic.DocumentReference = this.createDocumentReferencesTag(version);
     }
 
-    let priorityTag: string | null = null;
-    if (this.priority) {
-      priorityTag = `<Priority>${this.priority}</Priority>`;
+    const markup: Record<string, any> = {
+      Markup: { Topic: topic },
+    };
+
+    if (version === "2.1") {
+      markup.Markup.Viewpoints = this.createViewpointTags();
+      markup.Markup.Comment = this.createCommentTags();
     }
 
-    let indexTag: string | null = null;
-    if (this.index && version === "2.1") {
-      indexTag = `<Index>${this.index}</Index>`;
-    }
-
-    let modifiedDateTag: string | null = null;
-    if (this.modifiedDate) {
-      modifiedDateTag = `<ModifiedDate>${this.modifiedDate.toISOString()}</ModifiedDate>`;
-    }
-
-    let modifiedAuthorTag: string | null = null;
-    if (this.modifiedAuthor) {
-      modifiedAuthorTag = `<ModifiedAuthor>${this.modifiedAuthor}</ModifiedAuthor>`;
-    }
-
-    let dueDateTag: string | null = null;
-    if (this.dueDate) {
-      dueDateTag = `<DueDate>${this.dueDate.toISOString()}</DueDate>`;
-    }
-
-    let assignedToTag: string | null = null;
-    if (this.assignedTo) {
-      assignedToTag = `<AssignedTo>${this.assignedTo}</AssignedTo>`;
-    }
-
-    let descriptionTag: string | null = null;
-    if (this.description) {
-      descriptionTag = `<Description>${this.description}</Description>`;
-    }
-
-    let stageTag: string | null = null;
-    if (this.stage) {
-      stageTag = `<Stage>${this.stage}</Stage>`;
-    }
-
-    const commentTags = this.createCommentTags(version);
-    const viewpointTags = this.createViewpointTags(version);
-    const labelTags = this.createLabelTags(version);
-    const relatedTopicTags = this.createRelatedTopicTags(version);
-
-    return `
-      <?xml version="1.0" encoding="UTF-8"?>
-      <Markup>
-        <Topic Guid="${this.guid}" TopicType="${this.type}" TopicStatus="${this.status}" ${serverAssignedIdAttribute ?? ""}>
-          <Title>${this.title}</Title>
-          <CreationDate>${this.creationDate.toISOString()}</CreationDate>
-          <CreationAuthor>${this.creationAuthor}</CreationAuthor>
-          ${priorityTag ?? ""}
-          ${indexTag ?? ""}
-          ${modifiedDateTag ?? ""}
-          ${modifiedAuthorTag ?? ""}
-          ${dueDateTag ?? ""}
-          ${assignedToTag ?? ""}
-          ${descriptionTag ?? ""}
-          ${stageTag ?? ""}
-          ${labelTags}
-          ${relatedTopicTags}
-          ${version === "3" ? commentTags : ""}
-          ${version === "3" ? viewpointTags : ""}
-        </Topic>
-        ${version === "2.1" ? commentTags : ""}
-        ${version === "2.1" ? viewpointTags : ""}
-      </Markup>
-    `;
+    return `<?xml version="1.0" encoding="UTF-8"?>
+    ${XML.builder.build(markup)}`;
   }
 }

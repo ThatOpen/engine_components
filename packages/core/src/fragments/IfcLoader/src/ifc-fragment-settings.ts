@@ -2,15 +2,6 @@ import * as WEBIFC from "web-ifc";
 
 /** Configuration of the IFC-fragment conversion. */
 export class IfcFragmentSettings {
-  /** Whether to extract the IFC properties into a JSON. */
-  includeProperties = true;
-
-  /**
-   * Generate the geometry for categories that are not included by default,
-   * like IFCSPACE.
-   */
-  optionalCategories: number[] = [WEBIFC.IFCSPACE];
-
   /** Path of the WASM for [web-ifc](https://github.com/ThatOpen/engine_web-ifc). */
   wasm: {
     path: string;
@@ -21,15 +12,6 @@ export class IfcFragmentSettings {
     absolute: false,
     logLevel: WEBIFC.LogLevel.LOG_LEVEL_OFF,
   };
-
-  /** List of categories that won't be converted to fragments. */
-  excludedCategories = new Set<number>();
-
-  /** Exclusive list of categories that will be converted to fragments. If this contains any category, any other categories will be ignored. */
-  includedCategories = new Set<number>();
-
-  /** Whether to save the absolute location of all IFC items. */
-  saveLocations = false;
 
   /** Loader settings for [web-ifc](https://github.com/ThatOpen/engine_web-ifc). */
   webIfc: WEBIFC.LoaderSettings = {

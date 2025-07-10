@@ -1,7 +1,7 @@
 {
   "name": "@thatopen/components-front",
   "description": "Collection of frontend tools to author BIM apps.",
-  "version": "2.4.12",
+  "version": "3.1.0",
   "author": "That Open Company",
   "contributors": [
     "Antonio Gonzalez Viegas (https://github.com/agviegas)",
@@ -24,7 +24,6 @@
     "type": "git",
     "url": "git+https://github.com/ThatOpen/engine_components/tree/main/packages/components-front.git"
   },
-  "packageManager": "yarn@3.2.1",
   "scripts": {
     "dev": "vite --host",
     "test": "jest",
@@ -33,25 +32,20 @@
     "publish-repo": "npm publish"
   },
   "peerDependencies": {
-    "@thatopen/fragments": "~3.0.0",
+    "@thatopen/fragments": "~3.1.0",
     "three": ">=0.175.0",
-    "web-ifc": "0.0.68"
+    "web-ifc": "0.0.69"
   },
   "devDependencies": {
-    "@thatopen/fragments": "~3.0.0",
+    "@thatopen/fragments": "~3.1.0",
     "@thatopen/ui": "~2.4.0",
-    "@thatopen/ui-obc": "~2.4.0",
+    "@types/convert-units": "2.3.11",
     "@types/earcut": "^2.1.4",
     "@types/three": "^0.175.0",
     "three": "^0.175.0",
-    "web-ifc": "0.0.68"
+    "web-ifc": "0.0.69"
   },
   "dependencies": {
-    "@thatopen/components": "~2.4.10",
-    "camera-controls": "2.10.1",
-    "dexie": "^4.0.4",
-    "earcut": "^2.2.4",
-    "n8ao": "1.9.4",
-    "postprocessing": "6.37.2"
+    "@thatopen/components": "~3.1.0"
   }
 }

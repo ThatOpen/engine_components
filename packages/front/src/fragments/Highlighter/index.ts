@@ -1,45 +1,9 @@
+/* eslint-disable no-dupe-class-members */
 import * as THREE from "three";
-import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
-import { FragmentIdMap, FragmentMesh } from "@thatopen/fragments";
-import { EdgesPlane, IndexFragmentMap } from "../../core";
-import { FillHighlighter } from "./src";
-
-/**
- * Interface defining the events that the Highlighter class can trigger. Each highlighter has its own set of events, identified by the highlighter name.
- */
-export interface HighlightEvents {
-  [highlighterName: string]: {
-    /** Event triggered before a fragment is highlighted, giving the last selection. */
-    onBeforeHighlight: OBC.Event<FRAGS.FragmentIdMap>;
-    /** Event triggered when a fragment is highlighted. */
-    onHighlight: OBC.Event<FRAGS.FragmentIdMap>;
-    /** Event triggered when a fragment is cleared. */
-    onClear: OBC.Event<null>;
-  };
-}
-
-/**
- * Interface defining the configuration options for the Highlighter class.
- */
-export interface HighlighterConfig {
-  /** Name of the selection event. */
-  selectName: string;
-  /** Toggles the select functionality. */
-  selectEnabled: boolean;
-  /** Name of the hover event. */
-  hoverName: string;
-  /** Toggles the hover functionality. */
-  hoverEnabled: boolean;
-  /** Color used for selection. */
-  selectionColor: THREE.Color | null;
-  /** Color used for hover. */
-  hoverColor: THREE.Color | null;
-  /** Whether to automatically highlight fragments on click. */
-  autoHighlightOnClick: boolean;
-  /** The world in which the highlighter operates. */
-  world: OBC.World | null;
-}
+import { DataMap } from "@thatopen/fragments";
+import * as FRAGS from "@thatopen/fragments";
+import { HighlighterConfig, HighlightEvents } from "./src";
 
 /**
  * This component allows highlighting and selecting fragments in a 3D scene. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Highlighter). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Highlighter).
@@ -89,23 +53,29 @@ export class Highlighter
 
   /** Stores the current selection. */
   selection: {
-    [selectionID: string]: FRAGS.FragmentIdMap;
+    [selectionID: string]: OBC.ModelIdMap;
   } = {};
 
   /** Stores the configuration options for the Highlighter. */
   config: Required<HighlighterConfig> = {
     selectName: "select",
-    hoverName: "hover",
-    selectionColor: new THREE.Color("#BCF124"),
-    hoverColor: new THREE.Color("#6528D7"),
+    selectionColor: null,
     autoHighlightOnClick: true,
     world: null,
     selectEnabled: true,
-    hoverEnabled: true,
+    selectMaterialDefinition: {
+      color: new THREE.Color("#BCF124"),
+      renderedFaces: FRAGS.RenderedFaces.ONE,
+      opacity: 1,
+      transparent: false,
+    },
   };
 
-  /** Stores the colors used for highlighting selections. If null, the highlighter won't color geometries (useful for selection without coloring). */
-  colors = new Map<string, THREE.Color | null>();
+  /** Stores the styles used for highlighting selections. If null, the highlighter won't color geometries (useful for selection without coloring). */
+  readonly styles = new DataMap<
+    string,
+    Omit<FRAGS.MaterialDefinition, "customId"> | null
+  >();
 
   /** Styles with auto toggle will be unselected when selected twice. */
   autoToggle = new Set<string>();
@@ -117,50 +87,63 @@ export class Highlighter
   mouseMoveThreshold = 5;
 
   /** If defined, only the specified elements will be selected by the specified style. */
-  selectable: { [name: string]: FragmentIdMap } = {};
+  selectable: { [name: string]: OBC.ModelIdMap } = {};
 
   /** Manager to easily toggle and reset all events. */
   eventManager = new OBC.EventManager();
-
-  // Highlights the clipping fills of the fragments, if any
-  private _fills = new FillHighlighter();
 
   private _mouseState = {
     down: false,
     moved: false,
   };
 
-  private _colorsBeforeSelect: Record<
-    string,
-    { [modelID: string]: Set<number> }
-  > = {};
-
   constructor(components: OBC.Components) {
     super(components);
     this.components.add(Highlighter.uuid, this);
     this.eventManager.list.add(this.onSetup);
     this.eventManager.list.add(this.onDisposed);
+    this.setStyleEvents();
+  }
+
+  private setStyleEvents() {
+    this.styles.onBeforeDelete.add(async ({ key: style }) => {
+      await this.clear(style);
+      delete this.selection[style];
+      if (!(style in this.events)) return;
+      const { onClear, onHighlight, onBeforeHighlight } = this.events[style];
+      this.eventManager.list.delete(onClear);
+      this.eventManager.list.delete(onHighlight);
+      this.eventManager.list.delete(onBeforeHighlight);
+      delete this.events[style];
+    });
+
+    this.styles.onItemSet.add(({ key: style }) => {
+      this.selection[style] = {};
+      const onHighlight = new OBC.Event();
+      const onBeforeHighlight = new OBC.Event();
+      const onClear = new OBC.Event();
+      this.events[style] = {
+        onHighlight,
+        onClear,
+        onBeforeHighlight,
+      };
+      this.eventManager.add([onClear, onHighlight, onBeforeHighlight]);
+    });
   }
 
   /** {@link Disposable.dispose} */
   async dispose() {
     this.setupEvents(false);
-    this._fills.dispose();
     this.onBeforeUpdate.reset();
     this.onAfterUpdate.reset();
-    this.isSetup = false;
 
     this.selection = {};
-    for (const name in this.events) {
-      const { onClear, onHighlight } = this.events[name];
-      this.eventManager.list.delete(onClear);
-      this.eventManager.list.delete(onHighlight);
-    }
+    this.styles.clear();
 
     this.onDisposed.trigger(Highlighter.uuid);
     this.eventManager.reset();
+    this.isSetup = false;
   }
-
   /**
    * Adds a new selection with the given name and color.
    * Throws an error if a selection with the same name already exists.
@@ -169,41 +152,33 @@ export class Highlighter
    * @param color - The color to be used for highlighting the selection.
    *
    * @throws Will throw an error if a selection with the same name already exists.
+   * @deprecated Use highlighter.styles.set() instead
    */
-  add(name: string, color: THREE.Color | null) {
-    if (this.selection[name] || this.colors.has(name)) {
-      throw new Error("A selection with that name already exists!");
+  add(style: FRAGS.MaterialDefinition & { customId: string }): void;
+  add(customId: string): void;
+  add(arg: (FRAGS.MaterialDefinition & { customId: string }) | string): void {
+    console.warn(
+      "highlighter.add() is deprecated, use highlighter.styles.set() instead",
+    );
+    if (typeof arg === "string") {
+      this.styles.set(arg, null);
+    } else {
+      const { customId } = arg;
+      this.styles.set(customId, arg);
     }
-    this.colors.set(name, color);
-    this.selection[name] = {};
-    const onHighlight = new OBC.Event();
-    const onBeforeHighlight = new OBC.Event();
-    const onClear = new OBC.Event();
-    this.events[name] = {
-      onHighlight,
-      onClear,
-      onBeforeHighlight,
-    };
-    this.eventManager.add([onClear, onHighlight, onBeforeHighlight]);
   }
 
   /**
    * Removes the specified selection.
    *
    * @param name - The name of the new selection.
+   * @deprecated use highlighter.styles.delete
    */
-  remove(name: string) {
-    this.clear(name);
-    delete this.selection[name];
-    this.colors.delete(name);
-    if (this.selection[name] || this.colors.has(name)) {
-      throw new Error("A selection with that name already exists!");
-    }
-    if (this.events[name]) {
-      const { onHighlight, onClear, onBeforeHighlight } = this.events[name];
-      this.eventManager.remove([onClear, onHighlight, onBeforeHighlight]);
-      delete this.events[name];
-    }
+  async remove(name: string) {
+    console.warn(
+      "highlighter.remove() is deprecated, use highlighter.styles.delete() instead",
+    );
+    this.styles.delete(name);
   }
 
   /**
@@ -226,11 +201,9 @@ export class Highlighter
     name: string,
     removePrevious = true,
     zoomToSelection = this.zoomToSelection,
-    exclude: FragmentIdMap = {},
-  ): Promise<{ id: number; fragments: FRAGS.FragmentIdMap } | null> {
-    if (!this.enabled) {
-      return null;
-    }
+    exclude: OBC.ModelIdMap | null = null,
+  ) {
+    if (!this.enabled) return;
 
     if (!this.config.world) {
       throw new Error("No world found in config!");
@@ -242,85 +215,26 @@ export class Highlighter
       throw new Error(`Selection ${name} does not exist.`);
     }
 
-    const allMeshes: THREE.Mesh[] = [];
-
-    const fragments = this.components.get(OBC.FragmentsManager);
-    const fragMeshes = fragments.meshes;
-    for (const mesh of fragMeshes) {
-      allMeshes.push(mesh);
-    }
-
-    // If a clipping fill is found when raycasting, add it to raycast test
-    // so that clipped things can be selected in floorplan / section views
-    const clipper = this.components.get(OBC.Clipper);
-    for (const plane of clipper.list) {
-      const edgesPlane = plane as EdgesPlane;
-      if (edgesPlane.edges) {
-        const fillMeshes = edgesPlane.edges.fillMeshes;
-        for (const mesh of fillMeshes) {
-          allMeshes.push(mesh);
-        }
-      }
-    }
-
+    // TODO: Adapt clip mesh higlight to new 3D system
+    // Make clip mesh inside fragments? E.g. add the clipped face to the fragment mesh
     const casters = this.components.get(OBC.Raycasters);
     const caster = casters.get(world);
-    const result = caster.castRay(allMeshes);
+    // TODO: Fix type error
+    const result = (await caster.castRay()) as any;
 
-    if (!result || !result.face) {
-      if (removePrevious) {
-        this.clear(name);
-      }
-      return null;
+    // const mesh = result.object as FragmentMesh;
+
+    if (!result || result.localId === undefined || result.localId === null) {
+      if (removePrevious) this.clear(name);
+      return;
     }
 
-    const mesh = result.object as FragmentMesh;
+    const {
+      localId,
+      fragments: { modelId },
+    } = result;
 
-    // If found mesh is a clipping fill, highlight corresponding frag mesh
-    if (!mesh.fragment && mesh.userData.indexFragmentMap) {
-      if (result.faceIndex === undefined || !mesh.geometry.index) {
-        return null;
-      }
-
-      const { userData } = mesh;
-      const fragMap = userData.indexFragmentMap as IndexFragmentMap;
-      const itemFoundInFillMesh = fragMap.get(result.faceIndex!);
-
-      if (itemFoundInFillMesh) {
-        await this.highlightByID(
-          name,
-          itemFoundInFillMesh,
-          removePrevious,
-          zoomToSelection,
-          exclude,
-          mesh,
-          true,
-        );
-
-        const fragID = Object.keys(itemFoundInFillMesh)[0];
-        const itemID = Array.from(itemFoundInFillMesh[fragID])[0];
-        return { id: itemID, fragments: itemFoundInFillMesh };
-      }
-
-      return null;
-    }
-
-    const geometry = mesh.geometry;
-    const instanceID = result.instanceId;
-    if (!geometry || instanceID === undefined) {
-      return null;
-    }
-    const itemID = mesh.fragment.getItemID(instanceID);
-    if (itemID === null) {
-      throw new Error("Item ID not found!");
-    }
-
-    const group = mesh.fragment.group;
-    if (!group) {
-      throw new Error("Fragment must belong to a FragmentsGroup!");
-    }
-
-    const found = group.getFragmentMap([itemID]);
+    const found: OBC.ModelIdMap = { [modelId]: new Set([localId]) };
 
     await this.highlightByID(
       name,
@@ -328,12 +242,11 @@ export class Highlighter
       removePrevious,
       zoomToSelection,
       exclude,
-      undefined,
       true,
     );
-
-    return { id: itemID, fragments: found };
   }
+
+  private _fromHighlight = false;
 
   // TODO: Make parameters an object?
 
@@ -341,7 +254,7 @@ export class Highlighter
    * Highlights a fragment based on a given fragment ID map.
    *
    * @param name - The name of the selection.
-   * @param fragmentIdMap - The fragment ID map to highlight.
+   * @param modelIdMap - The fragment ID map to highlight.
    * @param removePrevious - Whether to remove previous highlights.
    * @param zoomToSelection - Whether to zoom to the highlighted selection.
    * @param exclude - Fragments to exclude from the highlight.
@@ -357,111 +270,195 @@ export class Highlighter
    */
   async highlightByID(
     name: string,
-    fragmentIdMap: FragmentIdMap,
+    modelIdMap: OBC.ModelIdMap,
     removePrevious = true,
     zoomToSelection = this.zoomToSelection,
-    exclude: FragmentIdMap = {},
-    fillMesh: THREE.Mesh | undefined = undefined,
+    exclude: OBC.ModelIdMap | null = null,
     isPicking = false,
   ) {
     if (!this.enabled) return;
+    this._fromHighlight = true;
 
     this.events[name].onBeforeHighlight.trigger(this.selection[name]);
 
     if (removePrevious) {
-      this.clear(name);
+      await this.clear(name);
     }
 
-    const fragments = this.components.get(OBC.FragmentsManager);
+    let filtered: OBC.ModelIdMap = {};
 
-    const color = this.colors.get(name);
-    if (color === undefined) {
-      throw new Error("Color for selection not found!");
-    }
+    // Filter out non-selectable items if any
+    if (Object.keys(this.selectable).length !== 0 || exclude !== null) {
+      for (const modelId in modelIdMap) {
+        const ids = new Set(modelIdMap[modelId]);
 
-    const filtered: FragmentIdMap = {};
+        const selectables = this.selectable?.[name];
+        const selectable = selectables ? selectables[modelId] : undefined;
+        const selectableSet = selectable ? new Set(selectable) : undefined;
 
-    for (const fragID in fragmentIdMap) {
-      const ids = fragmentIdMap[fragID];
-      const excludeFrag = exclude[fragID];
+        const excludeIds = exclude?.[modelId];
+        const excludeSet = excludeIds ? new Set(excludeIds) : undefined;
 
-      for (const id of ids) {
-        // Is filtered by the parameter
-        if (excludeFrag && excludeFrag.has(id)) {
-          continue;
-        }
-
-        // Is filtered by the selectable property
-        if (this.selectable[name]) {
-          const map = this.selectable[name];
-          if (!map[fragID] || !map[fragID].has(id)) {
-            continue;
+        if (excludeSet || selectableSet) {
+          for (const id of ids) {
+            // Is filtered by the parameter
+            if (excludeSet && excludeSet.has(id)) {
+              continue;
+            }
+            // Is filtered by the selectable property
+            if (selectableSet && !selectableSet.has(id)) {
+              continue;
+            }
+            let items = filtered[modelId];
+            if (!items) {
+              items = new Set();
+              filtered[modelId] = items;
+            }
+            items.add(id);
           }
         }
-
-        if (!filtered[fragID]) {
-          filtered[fragID] = new Set();
-        }
-        filtered[fragID].add(id);
       }
+    } else {
+      filtered = modelIdMap;
     }
 
-    for (const fragID in filtered) {
-      if (!this.selection[name][fragID]) {
-        this.selection[name][fragID] = new Set<number>();
-      }
-      const itemIDs = filtered[fragID];
+    // Apply autotoggle when picking with the mouse
+    if (isPicking && this.autoToggle.has(name)) {
+      const clearedItems: { [key: string]: Set<number> } = {};
+      let clearedItemsFound = false;
 
-      const deselectedIDs = new Set<number>();
-      const selectedIDs = new Set<number>();
-
-      for (const itemID of itemIDs) {
-        const set = this.selection[name][fragID];
-        // Only apply autotoggle when picking with the mouse
-        if (isPicking && this.autoToggle.has(name) && set.has(itemID)) {
-          deselectedIDs.add(itemID);
-          set.delete(itemID);
-        } else {
-          set.add(itemID);
-          selectedIDs.add(itemID);
+      for (const modelId in filtered) {
+        const selected = this.selection[name][modelId];
+        if (!selected) continue;
+        const ids = filtered[modelId];
+        for (const id of ids) {
+          if (selected.has(id)) {
+            selected.delete(id);
+            let items = clearedItems[modelId];
+            if (!items) {
+              items = new Set();
+              clearedItems[modelId] = items;
+            }
+            items.add(id);
+            clearedItemsFound = true;
+          } else {
+            selected.add(id);
+          }
         }
+        filtered[modelId] = selected;
       }
-
-      const fragment = fragments.list.get(fragID);
-      if (!fragment) {
-        continue;
-      }
-
-      if (deselectedIDs.size) {
-        if (this.backupColor) {
-          fragment.setColor(this.backupColor, deselectedIDs);
-        } else {
-          fragment.resetColor(deselectedIDs);
-        }
-      }
-
-      if (selectedIDs.size && color !== null) {
-        fragment.setColor(color, selectedIDs);
-      }
-
-      // Highlight all the clipping fills of the fragment, if any
-      if (fragment.mesh.userData.fills && color !== null) {
-        for (const fill of fragment.mesh.userData.fills) {
-          this._fills.highlight(name, fill, color, fragmentIdMap);
+      if (clearedItemsFound) {
+        this.events[name].onClear.trigger(clearedItems);
+        if (name === this.config.selectName) {
+          this.restorePreviousColors(clearedItems);
         }
       }
     }
 
+    this.updateStyleMap(name, filtered);
     this.events[name].onHighlight.trigger(this.selection[name]);
 
-    // Highlight the given fill mesh (e.g. when selecting a clipped element in floorplan)
-    if (fillMesh && color !== null) {
-      this._fills.highlight(name, fillMesh, color, fragmentIdMap);
+    // TODO: Adapt clip mesh higlight to new 3D system
+    // Make clip mesh inside fragments? E.g. add the clipped face to the fragment mesh
+
+    this._fromHighlight = false;
+    await this.updateColors();
+    if (zoomToSelection) await this.zoomSelection(filtered);
+  }
+
+  /**
+   * Updates the colors of highlighted fragments based on the current selection and styles.
+   * @returns Resolves when all highlight updates and core state updates are completed.
+   */
+  async updateColors() {
+    const fragments = this.components.get(OBC.FragmentsManager);
+    const promises = [fragments.resetHighlight()];
+    for (const [style, modelIdMap] of Object.entries(this.selection)) {
+      const definition = this.styles.get(style);
+      if (!definition) continue;
+      const map =
+        style === "select" || !this.styles.get(this.config.selectName)
+          ? modelIdMap
+          : this.getMapWithoutSelection(style);
+      if (!map) continue;
+      promises.push(
+        fragments.highlight({ ...definition, customId: style }, map),
+      );
+    }
+    promises.push(fragments.core.update(true));
+    await Promise.allSettled(promises);
+  }
+
+  private updateStyleMap(name: string, selection: OBC.ModelIdMap) {
+    const modelIdMap = this.selection[name];
+
+    // Update the style selection based
+    for (const modelId in selection) {
+      let items = modelIdMap[modelId];
+      if (!items) {
+        items = new Set();
+        modelIdMap[modelId] = items;
+      }
+      const ids = selection[modelId];
+      for (const id of ids) {
+        items.add(id);
+      }
     }
 
-    if (zoomToSelection) {
-      await this.zoomSelection(name);
+    // Removes the style selection from all other styles, except the select style
+    if (name === this.config.selectName) return;
+    for (const [style, selectionMap] of Object.entries(this.selection)) {
+      if (style === this.config.selectName || style === name) continue;
+
+      const styleSelection = selectionMap;
+      for (const [modelId, ids] of Object.entries(modelIdMap)) {
+        const styleIds = styleSelection[modelId];
+        if (!styleIds) continue;
+
+        for (const id of ids) {
+          styleIds.delete(id);
+        }
+      }
     }
+  }
+
+  /**
+   * Retrieves a map of model IDs to element IDs, excluding elements that are also present in the selection map
+   * specified by `this.config.selectName`. Optionally filters the results based on a provided filter map.
+   *
+   * @param style - The style name to retrieve the selection from.
+   * @param filter - An optional map of model IDs to element IDs used to further filter the results. If provided,
+   *                 only elements present in this filter will be included in the result.
+   * @returns A map of model IDs to element IDs, excluding selected elements and optionally filtered elements.
+   *          Returns `null` if the resulting map is empty.
+   * @throws Error - If the specified style does not exist in the selection.
+   */
+  private getMapWithoutSelection(style: string, filter?: OBC.ModelIdMap) {
+    const styleSelection = this.selection[style];
+    if (!styleSelection) {
+      throw new Error(`Style ${style} does not exist.`);
+    }
+
+    const selectSelection = this.selection[this.config.selectName] ?? {};
+    const result: OBC.ModelIdMap = {};
+
+    for (const modelId in styleSelection) {
+      const styleIds = styleSelection[modelId];
+      const selectIds =
+        style === this.config.selectName
+          ? new Set<number>() // If the style is "select", don't remove elements from itself
+          : selectSelection[modelId] ?? new Set<number>();
+
+      const filteredIds = Array.from(styleIds).filter(
+        (id) => !selectIds.has(id) && (!filter || filter[modelId]?.has(id)),
+      );
+
+      if (filteredIds.length > 0) {
+        result[modelId] = new Set(filteredIds);
+      }
+    }
+
+    return Object.keys(result).length > 0 ? result : null;
   }
 
   /**
@@ -471,64 +468,36 @@ export class Highlighter
    * @param filter - The only items to unselect. If not provided, all items will be unselected.
    *
    */
-  clear(name?: string, filter?: FRAGS.FragmentIdMap) {
-    const names = name ? [name] : Object.keys(this.selection);
+  async clear(name?: string, _filter?: OBC.ModelIdMap) {
+    const styles = name ? [name] : Object.keys(this.selection);
+    const filter = _filter ?? undefined;
 
-    for (const selectionName of names) {
-      this._fills.clear(selectionName);
-
-      const fragments = this.components.get(OBC.FragmentsManager);
-
-      const selected = this.selection[selectionName];
-
-      for (const fragID in selected) {
-        const fragment = fragments.list.get(fragID);
-        if (!fragment) {
-          continue;
-        }
-
-        let idsToClear = selected[fragID];
-        if (!idsToClear) {
-          continue;
-        }
-
-        if (filter) {
-          // Only clear the IDs specified in the filter
-          const filteredSelection = filter[fragID];
-          if (!filteredSelection) {
-            // If the filter doesn't match this, skip it (don't clear it)
-            continue;
+    for (const style of styles) {
+      const modelIdMap = this.selection[style] ?? {};
+      const map = filter ?? modelIdMap;
+      if (style === this.config.selectName) this.restorePreviousColors();
+      const clearedItems: Record<string, Set<number>> = {};
+      for (const [modelId, localIds] of Object.entries(map)) {
+        const ids = modelIdMap[modelId];
+        if (!ids) continue;
+        for (const id of localIds) {
+          const wasDeleted = ids.delete(id);
+          if (!wasDeleted) continue;
+          let items = clearedItems[modelId];
+          if (!items) {
+            items = new Set();
+            clearedItems[modelId] = items;
           }
-          const toClear = new Set<number>();
-          const remaining = new Set<number>();
-          for (const id of idsToClear) {
-            if (filteredSelection.has(id)) {
-              toClear.add(id);
-            } else {
-              remaining.add(id);
-            }
-          }
-
-          idsToClear = toClear;
-          if (remaining.size) {
-            selected[fragID] = remaining;
-          } else {
-            delete selected[fragID];
-          }
-        }
-
-        if (this.backupColor) {
-          fragment.setColor(this.backupColor, idsToClear);
-        } else {
-          fragment.resetColor(idsToClear);
+          items.add(id);
         }
       }
-
-      if (!filter) {
-        this.selection[selectionName] = {};
+      if (Object.keys(clearedItems).length > 0) {
+        this.events[style].onClear.trigger(clearedItems);
       }
+    }
 
-      this.events[selectionName].onClear.trigger(null);
+    if (!this._fromHighlight) {
+      await this.updateColors();
     }
   }
 
@@ -545,61 +514,62 @@ export class Highlighter
    * @throws Will throw an error if the fragment does not belong to a FragmentsGroup.
    */
   setup(config?: Partial<HighlighterConfig>) {
+    if (this.isSetup) return;
     this.config = { ...this.config, ...config };
-    this.add(this.config.selectName, this.config.selectionColor);
+    const { selectName, selectionColor, selectMaterialDefinition } =
+      this.config;
+
+    if (selectMaterialDefinition) {
+      if (selectionColor) {
+        console.warn(
+          "highlighter.config.selectionColor is deprecated, use selectMaterialDefinition instead",
+        );
+        selectMaterialDefinition.color = selectionColor;
+      }
+      this.styles.set(selectName, selectMaterialDefinition);
+    } else {
+      this.styles.set(selectName, null);
+    }
+
     this.autoToggle.add(this.config.selectName);
-    this.add(this.config.hoverName, this.config.hoverColor);
     this.setupEvents(true);
     this.enabled = true;
     this.isSetup = true;
     this.onSetup.trigger(this);
   }
 
-  /**
-   * Applies all the existing styles to the given fragments. Useful when combining the highlighter with streaming.
-   *
-   * @param fragments - The list of fragment to update.
-   */
-  updateFragments(fragments: Iterable<FRAGS.Fragment>) {
-    for (const frag of fragments) {
-      for (const name in this.selection) {
-        const map = this.selection[name];
-        const ids = map[frag.id];
-        const color = this.colors.get(name);
-        if (ids && color) {
-          frag.setColor(color, ids);
-        }
-      }
-    }
-  }
-
-  private async zoomSelection(name: string) {
+  private async zoomSelection(items: OBC.ModelIdMap) {
     if (!this.config.world) {
       throw new Error("No world found in config!");
     }
     const world = this.config.world;
 
+    let hasObjects = false;
+    for (const modelId in items) {
+      if (items[modelId].size > 0) {
+        hasObjects = true;
+        break;
+      }
+    }
+
+    if (!hasObjects) {
+      return;
+    }
+
     if (!world.camera.hasCameraControls()) {
       return;
     }
 
-    const bbox = this.components.get(OBC.BoundingBoxer);
     const fragments = this.components.get(OBC.FragmentsManager);
-    bbox.reset();
+    const bboxes = (await fragments.getBBoxes(items)) as THREE.Box3[];
 
-    const selected = this.selection[name];
-    if (!Object.keys(selected).length) {
-      return;
+    const sphere = new THREE.Sphere();
+    const bbox = new THREE.Box3();
+    for (const box of bboxes) {
+      bbox.union(box);
     }
+    bbox.getBoundingSphere(sphere);
 
-    for (const fragID in selected) {
-      const fragment = fragments.list.get(fragID);
-      if (!fragment) continue;
-      const ids = selected[fragID];
-      bbox.addMesh(fragment.mesh, ids);
-    }
-
-    const sphere = bbox.getSphere();
     const i = Infinity;
     const mi = -Infinity;
     const { x, y, z } = sphere.center;
@@ -615,46 +585,22 @@ export class Highlighter
     await camera.controls.fitToSphere(sphere, true);
   }
 
-  private saveHighlightersBeforeSelect = (
-    fragmentIdMap: FRAGS.FragmentIdMap,
-  ) => {
-    const fragments = this.components.get(OBC.FragmentsManager);
-    for (const fragmentID in fragmentIdMap) {
-      const fragment = fragments.list.get(fragmentID);
-      if (!fragment) continue;
-      const modelID = fragment.group?.uuid;
-      if (!modelID) continue;
-      for (const name in this.selection) {
-        if (name === this.config.selectName || name === this.config.hoverName)
-          continue;
-        const expressIDs = this.selection[name][fragmentID];
-        if (expressIDs) {
-          if (!(name in this._colorsBeforeSelect))
-            this._colorsBeforeSelect[name] = {};
-          if (!(modelID in this._colorsBeforeSelect[name]))
-            this._colorsBeforeSelect[name] = { [modelID]: new Set() };
-          for (const expressID of expressIDs) {
-            this._colorsBeforeSelect[name][modelID].add(expressID);
-          }
-        }
+  private restorePreviousColors = (modelIdMap = this.selection.select) => {
+    for (const [style, selectionMap] of Object.entries(this.selection)) {
+      if (style === this.config.selectName) continue;
+      const definition = this.styles.get(style);
+      if (!definition) continue;
+      const styleSelection: OBC.ModelIdMap = {};
+      for (const [modelId, localIds] of Object.entries(modelIdMap)) {
+        const highlightedIds = selectionMap[modelId]; // currently highligthed items
+        if (!highlightedIds) continue;
+        const filteredItems = [...localIds].filter((id) =>
+          highlightedIds.has(id),
+        );
+        if (filteredItems.length === 0) continue;
+        styleSelection[modelId] = new Set(filteredItems);
       }
     }
-  };
-
-  private restoreHighlightersAfterDeselect = () => {
-    const fragments = this.components.get(OBC.FragmentsManager);
-    for (const name in this._colorsBeforeSelect) {
-      let fragmentIdMap: FRAGS.FragmentIdMap = {};
-      const modelIdMap = this._colorsBeforeSelect[name];
-      for (const modelID in modelIdMap) {
-        const model = fragments.groups.get(modelID);
-        if (!model) continue;
-        const modelFragmentIdMap = model.getFragmentMap(modelIdMap[modelID]);
-        fragmentIdMap = { ...fragmentIdMap, ...modelFragmentIdMap };
-      }
-      this.highlightByID(name, fragmentIdMap, false, false);
-    }
-    this._colorsBeforeSelect = {};
   };
 
   private setupEvents(active: boolean) {
@@ -673,39 +619,29 @@ export class Highlighter
 
     const container = this.config.world.renderer.three.domElement;
 
-    const onHighlight = this.events[this.config.selectName].onHighlight;
-    onHighlight.remove(this.clearHover);
-    onHighlight.remove(this.saveHighlightersBeforeSelect);
-
-    const onSelectClear = this.events[this.config.selectName].onClear;
-    onSelectClear.remove(this.restoreHighlightersAfterDeselect);
-
     container.removeEventListener("mousedown", this.onMouseDown);
     container.removeEventListener("mouseup", this.onMouseUp);
     container.removeEventListener("pointermove", this.onMouseMove);
 
     if (active) {
-      onHighlight.add(this.clearHover);
-      onHighlight.add(this.saveHighlightersBeforeSelect);
-      onSelectClear.add(this.restoreHighlightersAfterDeselect);
       container.addEventListener("mousedown", this.onMouseDown);
       container.addEventListener("mouseup", this.onMouseUp);
       container.addEventListener("pointermove", this.onMouseMove);
     }
   }
 
-  private clearHover = () => {
-    this.selection[this.config.hoverName] = {};
-  };
-
   private onMouseDown = (e: MouseEvent) => {
     if (!this.enabled) return;
+    if (this.debounceTimeout) clearTimeout(this.debounceTimeout);
     this.mouseDownPosition = { x: e.clientX, y: e.clientY };
     this._mouseState.down = true;
   };
 
+  private debounceTimeout: number | null = null;
+
   private onMouseUp = async (event: MouseEvent) => {
     if (!this.enabled) return;
+
     const { world, autoHighlightOnClick, selectEnabled } = this.config;
     if (!world) {
       throw new Error("No world found!");
@@ -734,30 +670,15 @@ export class Highlighter
     const dy = e.clientY - this.mouseDownPosition.y;
     const moveDistance = Math.sqrt(dx * dx + dy * dy);
 
-    const { hoverName, hoverEnabled } = this.config;
     if (this._mouseState.moved) {
-      this.clear(hoverName);
       return;
     }
 
     // If the distance is greater than the threshold, set dragging to true
     if (moveDistance > this.mouseMoveThreshold) {
       this._mouseState.moved = this._mouseState.down;
-      const excluded: FRAGS.FragmentIdMap = {};
-      for (const name in this.selection) {
-        if (name === hoverName) continue;
-        const fragmentIdMap = this.selection[name];
-        for (const fragmentID in fragmentIdMap) {
-          if (!(fragmentID in excluded)) excluded[fragmentID] = new Set();
-          const expressIDs = fragmentIdMap[fragmentID];
-          for (const expressID of expressIDs) {
-            excluded[fragmentID].add(expressID);
-          }
-        }
-      }
-      if (hoverEnabled) {
-        await this.highlight(this.config.hoverName, true, false, excluded);
-      }
     }
   };
 }
+
+export * from "./src";

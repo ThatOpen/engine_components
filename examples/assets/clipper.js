@@ -1,52 +1,47 @@
-import{B as b,M as m,a as p,C as d}from"./web-ifc-api-BlmMr04K.js";import{S as u}from"./stats.min-GTpOrGrX.js";import{T as h,L as s,m as c}from"./index-C8nqhRYO.js";import{C as g,W as f,S as k,d as w,a as y,R as C,e as v}from"./index-7tDlUpW2.js";import"./_commonjsHelpers-Cpj98o6Y.js";const r=document.getElementById("container"),t=new g,M=t.get(f),e=M.create();e.scene=new k(t);e.renderer=new w(t,r);e.camera=new y(t);t.init();e.camera.controls.setLookAt(10,10,10,0,0,0);e.scene.setup();e.scene.three.background=null;const x=new b(3,3,3),S=new m({color:"#6528D7"}),a=new p(x,S);a.position.set(0,1.5,0);e.scene.three.add(a);e.meshes.add(a);const $=t.get(C);$.get(e);const o=t.get(v);o.enabled=!0;r.ondblclick=()=>{o.enabled&&o.create(e)};window.onkeydown=n=>{(n.code==="Delete"||n.code==="Backspace")&&o.enabled&&o.delete(e)};const l=new u;l.showPanel(2);document.body.append(l.dom);l.dom.style.left="0px";l.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>l.begin());e.renderer.onAfterUpdate.add(()=>l.end());h.init();const i=s.create(()=>c`
-    <bim-panel label="Clipper Tutorial" class="options-menu">
-          <bim-panel-section collapsed label="Commands">
-      
+import{T as p,L as r,C as u,m as b,a as g}from"./index-BR15nMAM.js";import{C as f,W as h,S as k,a as C,O as w,F as v,R as y,i as x}from"./index-DQoMA9YT.js";const a=new f,$=a.get(h),n=$.create();n.scene=new k(a);n.scene.setup();n.scene.three.background=null;const m=document.getElementById("container");n.renderer=new C(a,m);n.camera=new w(a);await n.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);a.init();const L="/node_modules/@thatopen/fragments/dist/Worker/worker.mjs",o=a.get(v);o.init(L);n.camera.controls.addEventListener("rest",()=>o.core.update(!0));n.onCameraChanged.add(e=>{for(const[,i]of o.list)i.useCamera(e.three);o.core.update(!0)});o.list.onItemSet.add(({value:e})=>{e.useCamera(n.camera.three),n.scene.three.add(e.object),o.core.update(!0)});const P=["/resources/frags/school_arq.frag"];await Promise.all(P.map(async e=>{var c;const i=(c=e.split("/").pop())==null?void 0:c.split(".").shift();if(!i)return null;const d=await(await fetch(e)).arrayBuffer();return o.core.load(d,{modelId:i})}));const S=a.get(y);S.get(n);const t=a.get(x);t.enabled=!0;m.ondblclick=()=>{t.enabled&&t.create(n)};const D=()=>{for(const[,e]of t.list)e.enabled=!e.enabled};window.onkeydown=e=>{(e.code==="Delete"||e.code==="Backspace")&&t.enabled&&t.delete(n)};p.init();const s=r.create(()=>b`
+    <bim-panel active label="Clipper Tutorial" class="options-menu">
+      <bim-panel-section label="Commands">
         <bim-label>Double click: Create clipping plane</bim-label>
         <bim-label>Delete key: Delete clipping plane</bim-label>
-       
-        
       </bim-panel-section>
-      <bim-panel-section collapsed label="Others"">
-          
-        <bim-checkbox label="Clipper enabled" checked 
-          @change="${({target:n})=>{o.config.enabled=n.value}}">
+      <bim-panel-section label="Controls">
+        <bim-checkbox label="Component Enabled" checked 
+          @change="${({target:e})=>{t.config.enabled=e.value}}">
         </bim-checkbox>
         
-        <bim-checkbox label="Clipper visible" checked 
-          @change="${({target:n})=>{o.config.visible=n.value}}">
+        <bim-checkbox label="Clipper Visible" checked 
+          @change="${({target:e})=>{t.config.visible=e.value}}">
         </bim-checkbox>
       
         <bim-color-input 
           label="Planes Color" color="#202932" 
-          @input="${({target:n})=>{o.config.color=new d(n.color)}}">
+          @input="${({target:e})=>{t.config.color=new u(e.color)}}">
         </bim-color-input>
         
         <bim-number-input 
-          slider step="0.01" label="Planes opacity" value="0.2" min="0.1" max="1"
-          @change="${({target:n})=>{o.config.opacity=n.value}}">
+          slider step="0.01" label="Planes Opacity" value="0.2" min="0.1" max="1"
+          @change="${({target:e})=>{t.config.opacity=e.value}}">
         </bim-number-input>
         
         <bim-number-input 
-          slider step="0.1" label="Planes size" value="5" min="2" max="10"
-          @change="${({target:n})=>{o.config.size=n.value}}">
+          slider step="0.1" label="Planes Size" value="5" min="2" max="10"
+          @change="${({target:e})=>{t.config.size=e.value}}">
         </bim-number-input>
         
         <bim-button 
-          label="Delete all" 
-          @click="${()=>{o.deleteAll()}}">  
-        </bim-button>        
+          label="Toggle Clippings" 
+          @click=${D}>  
+        </bim-button>       
         
         <bim-button 
-          label="Rotate cube" 
-          @click="${()=>{a.rotation.x=2*Math.PI*Math.random(),a.rotation.y=2*Math.PI*Math.random(),a.rotation.z=2*Math.PI*Math.random()}}">  
-        </bim-button>
-       
+          label="Delete All" 
+          @click="${()=>{t.deleteAll()}}">  
+        </bim-button>       
         
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(i);const P=s.create(()=>c`
+  `);document.body.append(s);const A=r.create(()=>b`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
-        @click="${()=>{i.classList.contains("options-menu-visible")?i.classList.remove("options-menu-visible"):i.classList.add("options-menu-visible")}}">
+        @click="${()=>{s.classList.contains("options-menu-visible")?s.classList.remove("options-menu-visible"):s.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(P);
+    `);document.body.append(A);const l=new g;l.showPanel(2);document.body.append(l.dom);l.dom.style.left="0px";l.dom.style.zIndex="unset";n.renderer.onBeforeUpdate.add(()=>l.begin());n.renderer.onAfterUpdate.add(()=>l.end());

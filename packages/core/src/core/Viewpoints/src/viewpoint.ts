@@ -1,10 +1,12 @@
+/* eslint-disable camelcase */
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import { UUID } from "../../../utils";
 import {
+  ViewpointVector,
   BCFViewpoint,
   ViewpointCamera,
-  ViewpointOrthographicCamera,
+  ViewpointOrthogonalCamera,
   ViewpointPerspectiveCamera,
 } from "./types";
 import {
@@ -12,14 +14,12 @@ import {
   OrthoPerspectiveCamera,
 } from "../../OrthoPerspectiveCamera";
 import { Components } from "../../Components";
-import { DataMap, DataSet, World } from "../../Types";
+import { World } from "../../Types";
 import { FragmentsManager } from "../../../fragments/FragmentsManager";
 import { BCFTopics } from "../../../openbim/BCFTopics";
-import { Raycasters } from "../../Raycasters";
-import { BoundingBoxer } from "../../../fragments/BoundingBoxer";
-import { Classifier, Hider } from "../../../fragments";
-import { SimplePlane } from "../../Clipper";
+import { Clipper } from "../../Clipper";
 import { Viewpoints } from "..";
+import { Hider } from "../../../fragments";
 
 /**
  * Represents a BCF compliant viewpoint from BuildingSMART.
@@ -28,7 +28,7 @@ import { Viewpoints } from "..";
  * It includes functionality for setting viewpoint properties, updating the camera,
  * applying color to components, and serializing the viewpoint for export.
  */
-export class Viewpoint implements BCFViewpoint {
+export class Viewpoint {
   title?: string;
   readonly guid = UUID.create();
 
@@ -36,32 +36,32 @@ export class Viewpoint implements BCFViewpoint {
    * ClippingPlanes can be used to define a subsection of a building model that is related to the topic.
    * Each clipping plane is defined by Location and Direction.
    * The Direction vector points in the invisible direction meaning the half-space that is clipped.
-   * @experimental
    */
-  clippingPlanes = new DataSet<SimplePlane>();
+  readonly clippingPlanes = new FRAGS.DataSet<string>();
 
-  camera: ViewpointPerspectiveCamera | ViewpointOrthographicCamera = {
-    aspectRatio: 1,
-    fov: 60,
-    direction: { x: 0, y: 0, z: 0 },
-    position: { x: 0, y: 0, z: 0 },
+  camera: ViewpointPerspectiveCamera | ViewpointOrthogonalCamera = {
+    aspect_ratio: 1,
+    field_of_view: 60,
+    camera_direction: { x: 0, y: 0, z: 0 },
+    camera_view_point: { x: 0, y: 0, z: 0 },
+    camera_up_vector: { x: 0, y: 1, z: 0 },
   };
 
   /**
    * A list of components GUIDs to hide when defaultVisibility = true or to show when defaultVisibility = false
    */
-  readonly exceptionComponents = new DataSet<string>();
+  readonly exceptionComponents = new FRAGS.DataSet<string>();
 
   /**
    * A list of components GUIDs that should be selected (highlighted) when displaying a viewpoint.
    */
-  readonly selectionComponents = new DataSet<string>();
+  readonly selectionComponents = new FRAGS.DataSet<string>(); // this is not directly a ModelIdMap because a viewpoint should be able to reference elements from models that are not loaded, usually from information comming externally
 
   /**
    * A map of colors and components GUIDs that should be colorized when displaying a viewpoint.
    * For this to work, call viewpoint.colorize()
    */
-  readonly componentColors = new DataMap<THREE.Color, string[]>();
+  readonly componentColors = new FRAGS.DataMap<string, string[]>();
 
   /**
    * Boolean flags to allow fine control over the visibility of spaces.
@@ -90,54 +90,25 @@ export class Viewpoint implements BCFViewpoint {
    */
   defaultVisibility = true;
 
-  private get _selectionModelIdMap() {
+  /**
+   * The snapshotID that will be used for this viewpoint when exported.
+   */
+  snapshot = this.guid;
+
+  async getSelectionMap() {
     const fragments = this._components.get(FragmentsManager);
-    const modelIdMap: { [modelID: string]: Set<number> } = {};
-    for (const [id, model] of fragments.groups) {
-      if (!(id in modelIdMap)) modelIdMap[id] = new Set();
-      for (const globalId of this.selectionComponents) {
-        const expressID = model.globalToExpressIDs.get(globalId);
-        if (expressID) modelIdMap[id].add(expressID);
-      }
-    }
+    const modelIdMap = await fragments.guidsToModelIdMap([
+      ...this.selectionComponents,
+    ]);
     return modelIdMap;
   }
 
-  private get _exceptionModelIdMap() {
+  async getExceptionMap() {
     const fragments = this._components.get(FragmentsManager);
-    const modelIdMap: { [modelID: string]: Set<number> } = {};
-    for (const [id, model] of fragments.groups) {
-      if (!(id in modelIdMap)) modelIdMap[id] = new Set();
-      for (const globalId of this.exceptionComponents) {
-        const expressID = model.globalToExpressIDs.get(globalId);
-        if (expressID) modelIdMap[id].add(expressID);
-      }
-    }
+    const modelIdMap = await fragments.guidsToModelIdMap([
+      ...this.exceptionComponents,
+    ]);
     return modelIdMap;
-  }
-
-  /**
-   * A list of components that should be selected (highlighted) when displaying a viewpoint.
-   * @returns The fragmentIdMap for components marked as selections.
-   */
-  get selection() {
-    const fragments = this._components.get(FragmentsManager);
-    const fragmentIdMap = fragments.modelIdToFragmentIdMap(
-      this._selectionModelIdMap,
-    );
-    return fragmentIdMap;
-  }
-
-  /**
-   * A list of components to hide when defaultVisibility = true or to show when defaultVisibility = false
-   * @returns The fragmentIdMap for components marked as exceptions.
-   */
-  get exception() {
-    const fragments = this._components.get(FragmentsManager);
-    const fragmentIdMap = fragments.modelIdToFragmentIdMap(
-      this._exceptionModelIdMap,
-    );
-    return fragmentIdMap;
   }
 
   /**
@@ -147,49 +118,68 @@ export class Viewpoint implements BCFViewpoint {
    *          It can be either 'Perspective' or 'Orthographic'.
    */
   get projection(): CameraProjection {
-    if ("fov" in this.camera) return "Perspective";
+    if ("field_of_view" in this.camera) return "Perspective";
     return "Orthographic";
   }
 
   /**
    * Retrieves the position vector of the viewpoint's camera.
    *
-   * @remarks
-   * The position vector represents the camera's position in the world coordinate system.
-   * The function applies the base coordinate system transformation to the position vector.
-   *
    * @returns A THREE.Vector3 representing the position of the viewpoint's camera.
    */
   get position() {
     const fragments = this._components.get(FragmentsManager);
-    const { position } = this.camera;
-    const { x, y, z } = position;
+    const { camera_view_point } = this.camera;
+    const { x, y, z } = camera_view_point;
     const vector = new THREE.Vector3(x, y, z);
     fragments.applyBaseCoordinateSystem(vector, new THREE.Matrix4());
     return vector;
   }
+
+  /**
+   * Sets the position of the viewpoint's camera.
+   * @param value - The new position for the viewpoint's camera.
+   */
+  set position(value: THREE.Vector3) {
+    const position = value.clone();
+
+    const fragments = this._components.get(FragmentsManager);
+    value
+      .clone()
+      .applyMatrix4(fragments.baseCoordinationMatrix.clone().invert());
+
+    this.camera.camera_view_point = {
+      x: position.x,
+      y: position.y,
+      z: position.z,
+    };
+  }
+
   /**
    * Retrieves the direction vector of the viewpoint's camera.
-   *
-   * @remarks
-   * The direction vector represents the direction in which the camera is pointing.
-   * It is calculated by extracting the x, y, and z components from the camera's direction property.
-   *
    * @returns A THREE.Vector3 representing the direction of the viewpoint's camera.
    */
   get direction() {
-    const { direction } = this.camera;
-    const { x, y, z } = direction;
+    const { camera_direction } = this.camera;
+    const { x, y, z } = camera_direction;
     const vector = new THREE.Vector3(x, y, z);
     return vector;
   }
 
   private _components: Components;
 
+  private _world: World | null = null;
+
   /**
-   * Represents the world in which the viewpoints are created and managed.
+   * Represents the world in which the viewpoint will take effect.
    */
-  readonly world: World;
+  set world(value: World | null) {
+    this._world = value;
+  }
+
+  get world() {
+    return this._world;
+  }
 
   private get _managerVersion() {
     const manager = this._components.get(BCFTopics);
@@ -216,68 +206,136 @@ export class Viewpoint implements BCFViewpoint {
 
   constructor(
     components: Components,
-    world: World,
-    _config?: {
-      data?: Partial<BCFViewpoint>;
-      setCamera?: boolean;
-    },
+    data?: Partial<BCFViewpoint & { title: string }>,
   ) {
-    const config = { setCamera: true, ..._config };
-    const { data, setCamera } = config;
     this._components = components;
-    this.world = world;
     if (data) {
       this.guid = data.guid ?? this.guid;
       this.set(data);
     }
-    if (setCamera) this.updateCamera();
+    this.setEvents();
   }
 
-  /**
-   * Adds components to the viewpoint based on the provided fragment ID map.
-   *
-   * @param fragmentIdMap - A map containing fragment IDs as keys and arrays of express IDs as values.
-   */
-  addComponentsFromMap(fragmentIdMap: FRAGS.FragmentIdMap) {
-    const fragments = this._components.get(FragmentsManager);
-    const guids = fragments.fragmentIdMapToGuids(fragmentIdMap);
-    this.selectionComponents.add(...guids);
+  private notifyUpdate = () => {
     const manager = this._components.get(Viewpoints);
     manager.list.set(this.guid, this);
+  };
+
+  // TODO: Remove the notifyUpdate when needed
+  private setEvents() {
+    this.selectionComponents.onUpdated.add(this.notifyUpdate);
+    this.exceptionComponents.onUpdated.add(this.notifyUpdate);
+    this.clippingPlanes.onUpdated.add(this.notifyUpdate);
+    this.componentColors.onItemSet.add(this.notifyUpdate);
+    this.componentColors.onItemDeleted.add(this.notifyUpdate);
+    this.componentColors.onItemUpdated.add(this.notifyUpdate);
+    this.componentColors.onCleared.add(this.notifyUpdate);
   }
 
   /**
-   * Replace the properties of the viewpoint with the provided data.
+   * Fully replace the properties of the viewpoint with the provided data.
+   * The properties not included will remain unchanged.
    *
    * @remarks The guid will be ommited as it shouldn't change after it has been initially set.
-   * @remarks The existing selection and exception components will be fully replaced in case new ones are provided.
    *
    * @param data - An object containing the properties to be set.
-   *               The properties not included in the object will remain unchanged.
-   *
-   * @returns The viewpoint instance with the updated properties.
    */
   set(data: Partial<BCFViewpoint>) {
-    const _data = data as any;
-    const _this = this as any;
-    for (const key in data) {
-      if (key === "guid") continue;
-      const value = _data[key];
-      if (key === "selectionComponents") {
+    this.title = data.title;
+
+    const {
+      components,
+      perspective_camera,
+      orthogonal_camera,
+      clipping_planes,
+    } = data;
+
+    if (components) {
+      const { selection, visibility, coloring } = components;
+
+      if (selection) {
         this.selectionComponents.clear();
-        this.selectionComponents.add(...value);
-        continue;
+        for (const { ifc_guid } of selection) {
+          if (!ifc_guid) continue;
+          this.selectionComponents.add(ifc_guid);
+        }
       }
-      if (key === "exceptionComponents") {
-        this.exceptionComponents.clear();
-        this.exceptionComponents.add(...value);
-        continue;
+
+      if (visibility) {
+        const { default_visibility, exceptions, view_setup_hints } = visibility;
+
+        if (default_visibility !== undefined) {
+          this.defaultVisibility = default_visibility;
+        }
+
+        if (exceptions) {
+          this.exceptionComponents.clear();
+          for (const { ifc_guid } of exceptions) {
+            if (!ifc_guid) continue;
+            this.exceptionComponents.add(ifc_guid);
+          }
+        }
+
+        if (view_setup_hints) {
+          const { spaces_visible, space_boundaries_visible, openings_visible } =
+            view_setup_hints;
+
+          if (spaces_visible !== undefined) {
+            this.spacesVisible = spaces_visible;
+          }
+
+          if (space_boundaries_visible !== undefined) {
+            this.spaceBoundariesVisible = space_boundaries_visible;
+          }
+
+          if (openings_visible !== undefined) {
+            this.openingsVisible = openings_visible;
+          }
+        }
       }
-      if (key in this) _this[key] = value;
+
+      if (coloring) {
+        this.componentColors.clear();
+        for (const description of coloring) {
+          const { color, components } = description;
+          const guids = components
+            .map((component) => component.ifc_guid)
+            .filter((guid) => guid !== null) as string[];
+          this.componentColors.set(color, guids);
+        }
+      }
     }
-    const manager = this._components.get(Viewpoints);
-    manager.list.set(this.guid, this);
-    return this;
+
+    if (perspective_camera || orthogonal_camera) {
+      this.camera = perspective_camera ?? orthogonal_camera!;
+    }
+
+    if (clipping_planes && this.world) {
+      const clipper = this._components.get(Clipper);
+      for (const data of clipping_planes) {
+        const { location, direction } = data;
+        const locationVector = new THREE.Vector3(
+          location.x,
+          location.z,
+          -location.y,
+        );
+        const directionVector = new THREE.Vector3(
+          direction.x,
+          direction.z,
+          -direction.y,
+        );
+        const id = clipper.createFromNormalAndCoplanarPoint(
+          this.world,
+          directionVector,
+          locationVector,
+        );
+        this.clippingPlanes.add(id);
+        clipper.list.get(id)!.enabled = false;
+        clipper.list.get(id)!.visible = false;
+      }
+    }
+
+    this.notifyUpdate();
   }
 
   /**
@@ -294,28 +352,42 @@ export class Viewpoint implements BCFViewpoint {
    *
    * @returns A Promise that resolves when the camera has been set.
    */
-  async go(world?: World, transition = true) {
-    const { camera } = world ?? this.world;
-    if (!camera.hasCameraControls()) {
+  async go(_config?: {
+    transition?: boolean;
+    applyClippings?: boolean;
+    clippingsVisibility?: boolean;
+    applyVisibility?: boolean;
+  }) {
+    if (!this.world) return;
+
+    const { camera } = this.world;
+    if (!(camera instanceof OrthoPerspectiveCamera)) {
       throw new Error(
-        "Viewpoint: the world's camera need controls to set the viewpoint.",
+        "Viewpoint: the world's camera component must be of type OrthoPerspectiveCamera to switch between perspective and orthographic projections.",
       );
     }
 
-    if (camera instanceof OrthoPerspectiveCamera) {
-      camera.projection.set(this.projection);
-    }
+    const { transition, applyClippings, applyVisibility, clippingsVisibility } =
+      {
+        transition: true,
+        applyClippings: true,
+        applyVisibility: true,
+        clippingsVisibility: true,
+        ..._config,
+      };
+
+    camera.projection.set(this.projection);
 
     const basePosition = new THREE.Vector3(
-      this.camera.position.x,
-      this.camera.position.y,
-      this.camera.position.z,
+      this.camera.camera_view_point.x,
+      this.camera.camera_view_point.y,
+      this.camera.camera_view_point.z,
     );
 
     const baseTarget = new THREE.Vector3(
-      this.camera.direction.x,
-      this.camera.direction.y,
-      this.camera.direction.z,
+      this.camera.camera_direction.x,
+      this.camera.camera_direction.y,
+      this.camera.camera_direction.z,
     );
 
     if (
@@ -329,136 +401,239 @@ export class Viewpoint implements BCFViewpoint {
     const direction = this.direction;
 
     // Default target based on the viewpoint information
-    let target = {
-      x: position.x + direction.x * 80,
-      y: position.y + direction.y * 80,
-      z: position.z + direction.z * 80,
+    const factor = 80;
+    const target = {
+      x: position.x + direction.x * factor,
+      y: position.y + direction.y * factor,
+      z: position.z + direction.z * factor,
     };
 
-    const selection = this.selection;
-    if (Object.keys(selection).length === 0) {
-      // In case there are not selection components, use the raycaster to calculate one
-      const raycasters = this._components.get(Raycasters);
-      const raycaster = raycasters.get(this.world);
-      const result = raycaster.castRayFromVector(position, this.direction);
-      if (result) target = result.point; // If there is no result, the default calculated target will be used
-    } else {
-      // In case there are selection components, use their center as the target
-      const bb = this._components.get(BoundingBoxer);
-      bb.reset();
-      bb.addFragmentIdMap(selection);
-      target = bb.getSphere().center;
-      bb.reset();
-    }
+    const promises = [];
 
-    await camera.controls.setLookAt(
-      position.x,
-      position.y,
-      position.z,
-      target.x,
-      target.y,
-      target.z,
-      transition,
+    if (applyClippings) this.setClippingState(true);
+    if (applyVisibility) promises.push(this.applyVisibility());
+    this.setClippingVisibility(clippingsVisibility);
+
+    promises.push(
+      camera.controls.setLookAt(
+        position.x,
+        position.y,
+        position.z,
+        target.x,
+        target.y,
+        target.z,
+        transition,
+      ),
     );
+
+    await Promise.all(promises);
   }
 
   /**
    * Updates the camera settings of the viewpoint based on the current world's camera and renderer.
-   *
-   * @remarks
-   * This function retrieves the camera's position, direction, and aspect ratio from the world's camera and renderer.
-   * It then calculates the camera's perspective or orthographic settings based on the camera type.
-   * Finally, it updates the viewpoint's camera settings and updates the viewpoint to the Viewpoints manager.
-   *
-   * @throws An error if the world's camera does not have camera controls.
-   * @throws An error if the world's renderer is not available.
+   * @returns A boolean indicating if the camera data was updated or not.
    */
-  updateCamera(world?: World) {
-    const { camera, renderer } = world ?? this.world;
-    if (!renderer) {
-      throw new Error("Viewpoint: the world needs to have a renderer!");
-    }
+  async updateCamera(takeSnapshot = true) {
+    return new Promise<boolean>((resolve) => {
+      if (!this.world) {
+        resolve(false);
+        return;
+      }
 
-    if (!camera.hasCameraControls()) {
-      throw new Error("Viewpoint: world's camera need camera controls!");
-    }
+      const { camera, renderer } = this.world;
+      if (!renderer) {
+        throw new Error("Viewpoint: the world needs to have a renderer!");
+      }
 
-    const position = new THREE.Vector3();
-    camera.controls.getPosition(position);
+      if (!camera.hasCameraControls()) {
+        throw new Error("Viewpoint: world's camera need camera controls!");
+      }
 
-    const threeCamera = camera.three;
+      const position = new THREE.Vector3();
+      camera.controls.getPosition(position);
 
-    const direction = new THREE.Vector3(0, 0, -1).applyEuler(
-      threeCamera.rotation,
-    );
+      const threeCamera = camera.three;
 
-    const { width, height } = renderer.getSize();
-    let aspectRatio = width / height;
+      const direction = new THREE.Vector3(0, 0, -1).applyEuler(
+        threeCamera.rotation,
+      );
 
-    // If the renderer exists but there is no HTMLElement, then aspect will be 0 / 0. In that case, use 1 as a fallback.
-    if (Number.isNaN(aspectRatio)) aspectRatio = 1;
+      const { width, height } = renderer.getSize();
+      let aspect_ratio = width / height;
 
-    const fragments = this._components.get(FragmentsManager);
-    position.applyMatrix4(fragments.baseCoordinationMatrix.clone().invert());
+      // If the renderer exists but there is no HTMLElement, then aspect will be 0 / 0. In that case, use 1 as a fallback.
+      if (Number.isNaN(aspect_ratio)) aspect_ratio = 1;
 
-    const partialCamera: ViewpointCamera = {
-      aspectRatio,
-      position: { x: position.x, y: position.y, z: position.z },
-      direction: { x: direction.x, y: direction.y, z: direction.z },
-    };
+      const fragments = this._components.get(FragmentsManager);
+      position.applyMatrix4(fragments.baseCoordinationMatrix.clone().invert());
 
-    if (threeCamera instanceof THREE.PerspectiveCamera) {
-      this.camera = {
-        ...partialCamera,
-        fov: threeCamera.fov,
+      const partialCamera: ViewpointCamera = {
+        aspect_ratio,
+        camera_view_point: { x: position.x, y: position.y, z: position.z },
+        camera_direction: { x: direction.x, y: direction.y, z: direction.z },
+        camera_up_vector: { x: 0, y: 1, z: 0 },
       };
-    } else if (threeCamera instanceof THREE.OrthographicCamera) {
-      this.camera = {
-        ...partialCamera,
-        viewToWorldScale: threeCamera.top - threeCamera.bottom,
-      };
-    }
 
-    const manager = this._components.get(Viewpoints);
-    manager.list.set(this.guid, this);
+      if (threeCamera instanceof THREE.PerspectiveCamera) {
+        this.camera = {
+          ...partialCamera,
+          field_of_view: threeCamera.fov,
+        };
+      } else if (threeCamera instanceof THREE.OrthographicCamera) {
+        this.camera = {
+          ...partialCamera,
+          view_to_world_scale: threeCamera.top - threeCamera.bottom,
+        };
+      }
+
+      if (takeSnapshot) {
+        const manager = this._components.get(Viewpoints);
+        const canvas = renderer.three.domElement;
+        renderer.three.render(this.world!.scene.three, camera.three);
+        canvas.toBlob(async (blob) => {
+          if (blob) {
+            const data = await blob.arrayBuffer();
+            const buffer = new Uint8Array(data);
+            manager.snapshots.set(this.guid, buffer);
+          }
+          this.notifyUpdate();
+          resolve(true);
+        });
+      } else {
+        this.notifyUpdate();
+        resolve(true);
+      }
+    });
   }
 
-  applyVisibility() {
+  /**
+   * Captures a snapshot of the current viewpoint and stores it in the snapshots manager.
+   */
+  takeSnapshot() {
+    return new Promise<boolean>((resolve) => {
+      if (!this.world) {
+        resolve(false);
+        return;
+      }
+
+      const { camera, renderer } = this.world;
+      if (!renderer) {
+        throw new Error("Viewpoint: the world needs to have a renderer!");
+      }
+
+      const manager = this._components.get(Viewpoints);
+      const canvas = renderer.three.domElement;
+      renderer.three.render(this.world!.scene.three, camera.three);
+      canvas.toBlob(async (blob) => {
+        if (blob) {
+          const data = await blob.arrayBuffer();
+          const buffer = new Uint8Array(data);
+          manager.snapshots.set(this.guid, buffer);
+        }
+        this.notifyUpdate();
+        resolve(true);
+      });
+    });
+  }
+
+  /**
+   * Updates the collection of clipping planes by clearing the current set and adding enabled planes
+   * from the associated `Clipper` component.
+   */
+  updateClippingPlanes() {
+    this.clippingPlanes.clear();
+    const clipper = this._components.get(Clipper);
+    for (const [id, plane] of clipper.list) {
+      if (!plane.enabled) continue;
+      this.clippingPlanes.add(id);
+    }
+  }
+
+  /**
+   * Applies visibility settings to components based on default visibility, exceptions, and selections.
+   *
+   * This method adjusts the visibility of components using the `Hider` instance. It ensures that:
+   * - The default visibility is applied to all components.
+   * - Exceptions are handled to override the default visibility.
+   * - Selected components are always visible.
+   */
+  async applyVisibility() {
     const hider = this._components.get(Hider);
     hider.set(this.defaultVisibility);
-    hider.set(!this.defaultVisibility, this.exception);
-    hider.set(true, this.selection); // Always make sure the selection is visible
+    const exception = await this.getExceptionMap();
+    hider.set(!this.defaultVisibility, exception);
+    const selection = await this.getSelectionMap();
+    hider.set(true, selection); // Always make sure the selection is visible
+  }
+
+  // TODO: Analyze how this works along with the Highlighter
+  /**
+   * Asynchronously sets the colorization state for the viewpoint's components.
+   * When the state is true, it applies the defined component colors to the corresponding fragments.
+   * When the state is false, it resets the highlight for the corresponding fragments.
+   *
+   * @param state - A boolean indicating whether to apply or reset the colorization.
+   *                If true, the components will be colorized. If false, the colorization will be reset.
+   * @returns A Promise that resolves when all colorization or reset operations are complete.
+   * @remarks Be careful when using this method along with the Highlighter as it can cause unwanted results
+   */
+  async setColorizationState(state: boolean) {
+    const fragments = this._components.get(FragmentsManager);
+    const promises = [];
+    if (state) {
+      for (const [color, guids] of this.componentColors) {
+        const hexColorString = `#${color}`;
+        const modelIdMap = await fragments.guidsToModelIdMap(guids);
+        for (const [modelId, localIds] of Object.entries(modelIdMap)) {
+          const model = fragments.list.get(modelId);
+          if (!model) continue;
+          promises.push(
+            model.highlight([...localIds], {
+              customId: hexColorString,
+              color: new THREE.Color(hexColorString),
+              renderedFaces: FRAGS.RenderedFaces.ONE,
+              opacity: 1,
+              transparent: false,
+            }),
+          );
+        }
+      }
+    } else {
+      for (const [_, guids] of this.componentColors) {
+        const modelIdMap = await fragments.guidsToModelIdMap(guids);
+        for (const [modelId, localIds] of Object.entries(modelIdMap)) {
+          const model = fragments.list.get(modelId);
+          if (!model) continue;
+          promises.push(model.resetHighlight([...localIds]));
+        }
+      }
+    }
+    promises.push(fragments.core.update(true));
+    await Promise.all(promises);
   }
 
   /**
-   * Applies color to the components in the viewpoint based on their GUIDs.
-   *
-   * This function iterates through the `componentColors` map, retrieves the fragment IDs
-   * corresponding to each color, and then uses the `Classifier` to apply the color to those fragments.
-   *
-   * @remarks
-   * The color is applied using the `Classifier.setColor` method, which sets the color of the specified fragments.
-   * The color is provided as a hexadecimal string, prefixed with a '#'.
+   * Sets the enabled state of all clipping planes associated with this viewpoint.
+   * @param state A boolean indicating whether the clipping planes should be enabled or disabled.
    */
-  applyColors() {
-    const manager = this._components.get(Viewpoints);
-    const fragments = this._components.get(FragmentsManager);
-    const classifier = this._components.get(Classifier);
-    for (const [color, guids] of this.componentColors) {
-      const fragmentIdMap = fragments.guidToFragmentIdMap(guids);
-      classifier.setColor(fragmentIdMap, color, manager.config.overwriteColors);
+  setClippingState(state: boolean) {
+    const clipper = this._components.get(Clipper);
+    for (const [id, plane] of clipper.list) {
+      plane.enabled = state && this.clippingPlanes.has(id);
     }
   }
 
   /**
-   * Resets the colors of all components in the viewpoint to their original color.
+   * Sets the visibility of all clipping planes associated with this viewpoint.
+   *
+   * @param visibility - A boolean indicating whether the clipping planes should be visible (`true`) or hidden (`false`).
    */
-  resetColors() {
-    const fragments = this._components.get(FragmentsManager);
-    const classifier = this._components.get(Classifier);
-    for (const [_, guids] of this.componentColors) {
-      const fragmentIdMap = fragments.guidToFragmentIdMap(guids);
-      classifier.resetColor(fragmentIdMap);
+  setClippingVisibility(visibility: boolean) {
+    const clipper = this._components.get(Clipper);
+    for (const id of this.clippingPlanes) {
+      const plane = clipper.list.get(id);
+      if (!plane) continue;
+      plane.visible = visibility;
     }
   }
 
@@ -469,18 +644,17 @@ export class Viewpoint implements BCFViewpoint {
     if (manager.config.includeSelectionTag) {
       const modelIdMap =
         from === "selection"
-          ? this._selectionModelIdMap
-          : this._exceptionModelIdMap;
+          ? await this.getSelectionMap()
+          : await this.getExceptionMap();
       for (const modelID in modelIdMap) {
-        const model = fragments.groups.get(modelID);
+        const model = fragments.list.get(modelID);
         if (!model) continue;
-        const expressIDs = modelIdMap[modelID];
-        for (const expressID of expressIDs) {
-          const attrs = await model.getProperties(expressID);
-          if (!attrs) continue;
-          const globalID = attrs.GlobalId?.value;
+        const localIds = modelIdMap[modelID];
+        for (const localId of localIds) {
+          const item = model.getItem(localId);
+          const globalID = await item.getGuid();
           if (!globalID) continue;
-          const tag = attrs.Tag?.value;
+          const tag = (await item.getAttributes())?.getValue("Tag");
           let tagAttribute: string | null = null;
           if (tag) tagAttribute = `AuthoringToolId="${tag}"`;
           tags += `\n<Component IfcGuid="${globalID}" ${tagAttribute ?? ""} />`;
@@ -497,11 +671,10 @@ export class Viewpoint implements BCFViewpoint {
   private createColorTags() {
     let colorTags = "";
     for (const [color, components] of this.componentColors.entries()) {
-      const hex = `#${color.getHexString()}`;
       const tags = components
         .map((globalId) => `\n<Component IfcGuid="${globalId}" />`)
         .join("\n");
-      colorTags += `<Color Color="${hex}">\n${tags}\n</Color>`;
+      colorTags += `<Color Color="${color}">\n${tags}\n</Color>`;
     }
 
     if (colorTags.length !== 0) {
@@ -509,6 +682,79 @@ export class Viewpoint implements BCFViewpoint {
     }
 
     return `<Coloring />`;
+  }
+
+  /**
+   * Converts the current viewpoint instance into a JSON representation compliant with the BCFViewpoint format.
+   *
+   * @returns A BCF API JSON complaint object representing the viewpoint, including its GUID, components,
+   * visibility settings, clipping planes, camera configuration, and snapshot data.
+   */
+  toJSON() {
+    const clipper = this._components.get(Clipper);
+
+    const result: BCFViewpoint = {
+      guid: this.guid,
+      components: {
+        selection: [...this.selectionComponents].map((guid) => {
+          return { ifc_guid: guid, authoring_tool_id: null };
+        }),
+        coloring: [...this.componentColors].map(([color, guids]) => {
+          return {
+            color,
+            components: guids.map((guid) => {
+              return { ifc_guid: guid, authoring_tool_id: null };
+            }),
+          };
+        }),
+        visibility: {
+          default_visibility: this.defaultVisibility,
+          exceptions: [...this.exceptionComponents].map((guid) => {
+            return { ifc_guid: guid, authoring_tool_id: null };
+          }),
+          view_setup_hints: {
+            spaces_visible: this.spacesVisible,
+            space_boundaries_visible: this.spaceBoundariesVisible,
+            openings_visible: this.openingsVisible,
+          },
+        },
+      },
+      clipping_planes: [...this.clippingPlanes]
+        .map((id) => {
+          const plane = clipper.list.get(id);
+          if (!plane) return null;
+          // @ts-ignore TODO: Replace this!
+          const origin = plane._controls.worldPosition ?? plane.origin;
+          const { normal } = plane;
+          return {
+            location: { x: origin.x, y: -origin.z, z: origin.y },
+            direction: { x: normal.x, y: -normal.z, z: normal.y },
+          };
+        })
+        .filter((plane) => plane !== null) as {
+        location: ViewpointVector;
+        direction: ViewpointVector;
+      }[],
+    };
+
+    if ("field_of_view" in this.camera) {
+      result.perspective_camera = this.camera as ViewpointPerspectiveCamera;
+    } else {
+      result.orthogonal_camera = this.camera as ViewpointOrthogonalCamera;
+    }
+
+    const manager = this._components.get(Viewpoints);
+    const snapshot = manager.snapshots.get(this.snapshot);
+    if (snapshot) {
+      const str = snapshot.toString();
+      const base64Data = btoa(str);
+      const extension = manager.getSnapshotExtension(this.snapshot) as
+        | "png"
+        | "jpg";
+      result.snapshot = { snapshot_type: extension, snapshot_data: base64Data };
+    }
+
+    return result;
   }
 
   /**
@@ -557,7 +803,7 @@ export class Viewpoint implements BCFViewpoint {
       <Z>${upVector.y}</Z>
     </CameraUpVector>`;
 
-    const cameraRatioXML = `<AspectRatio>${this.camera.aspectRatio}</AspectRatio>`;
+    const cameraRatioXML = `<AspectRatio>${this.camera.aspect_ratio}</AspectRatio>`;
 
     let cameraXML = "";
     if ("viewToWorld" in this.camera) {

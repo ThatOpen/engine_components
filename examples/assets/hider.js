@@ -1,24 +1,21 @@
-import{aB as y}from"./web-ifc-api-BlmMr04K.js";import{S as k}from"./stats.min-GTpOrGrX.js";import{T as x,L as r,m as l}from"./index-C8nqhRYO.js";import{C,W as F,S as I,d as L,a as v,G as j,F as B,I as M,H as R,c as $}from"./index-7tDlUpW2.js";import"./_commonjsHelpers-Cpj98o6Y.js";const E=document.getElementById("container"),e=new C,N=e.get(F),t=N.create();t.scene=new I(e);t.renderer=new L(e,E);t.camera=new v(e);e.init();t.camera.controls.setLookAt(12,6,8,0,0,-10);t.scene.setup();const O=e.get(j);O.create(t);t.scene.three.background=null;const b=e.get(B),T=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),U=await T.arrayBuffer(),_=new Uint8Array(U),i=b.load(_);t.scene.three.add(i);const A=await fetch("https://thatopen.github.io/engine_components/resources/small.json");i.setLocalProperties(await A.json());const d=e.get(M),G=await fetch("https://thatopen.github.io/engine_components/resources/small-relations.json"),H=d.getRelationsMapFromJSON(await G.text());d.setRelationMap(i,H);const f=e.get(R),o=e.get($);o.byEntity(i);await o.bySpatialStructure(i,{isolate:new Set([y])});const a=new k;a.showPanel(2);document.body.append(a.dom);a.dom.style.left="0px";a.dom.style.zIndex="unset";t.renderer.onBeforeUpdate.add(()=>a.begin());t.renderer.onAfterUpdate.add(()=>a.end());x.init();const g={},q=Object.keys(o.list.spatialStructures);for(const n of q)g[n]=!0;const h={},D=Object.keys(o.list.entities);for(const n of D)h[n]=!0;const s=r.create(()=>l`
+import{T as f,L as m,m as u,a as w,H as y}from"./index-BR15nMAM.js";import{C,W as h,S as I,a as v,O as $,F as k,H}from"./index-DQoMA9YT.js";const l=new C,S=l.get(h),a=S.create();a.scene=new I(l);a.scene.setup();a.scene.three.background=null;const R=document.getElementById("container");a.renderer=new v(l,R);a.camera=new $(l);await a.camera.controls.setLookAt(78,20,-2.2,26,-4,25);l.init();const L="/node_modules/@thatopen/fragments/dist/Worker/worker.mjs",i=l.get(k);i.init(L);a.camera.controls.addEventListener("rest",()=>i.core.update(!0));a.onCameraChanged.add(t=>{for(const[,e]of i.list)e.useCamera(t.three);i.core.update(!0)});i.list.onItemSet.add(({value:t})=>{t.useCamera(a.camera.three),a.scene.three.add(t.object),i.core.update(!0)});const x=["/resources/frags/school_arq.frag","/resources/frags/school_str.frag"];await Promise.all(x.map(async t=>{var s;const e=(s=t.split("/").pop())==null?void 0:s.split(".").shift();if(!e)return null;const n=await(await fetch(t)).arrayBuffer();return i.core.load(n,{modelId:e})}));const b=l.get(H),B=async t=>{const e={},c=t.map(n=>new RegExp(`^${n}$`));for(const[,n]of i.list){const s=await n.getItemsOfCategories(c),o=Object.values(s).flat();e[n.modelId]=new Set(o)}await b.isolate(e)},O=async t=>{const e={},c=t.map(n=>new RegExp(`^${n}$`));for(const[,n]of i.list){const s=await n.getItemsOfCategories(c),o=Object.values(s).flat();e[n.modelId]=new Set(o)}await b.set(!1,e)},j=async()=>{await b.set(!0)};f.init();const g=()=>u`
+    <bim-dropdown multiple ${y(async e=>{if(!e)return;const c=e,n=new Set;for(const[,s]of i.list){const o=await s.getItemsWithGeometryCategories();for(const r of o)r&&n.add(r)}for(const s of n){const o=m.create(()=>u`<bim-option label=${s}></bim-option>`);c.append(o)}})}></bim-dropdown>
+  `,p=m.create(()=>{const t=m.create(g),e=m.create(g);return u`
     <bim-panel active label="Hider Tutorial" class="options-menu">
-      <bim-panel-section collapsed label="Controls">
-      
-      <bim-panel-section collapsed label="Floors" name="Floors"">
+      <bim-panel-section style="width: 14rem" label="General">
+        <bim-button label="Reset Visibility" @click=${async({target:o})=>{o.loading=!0,await j(),o.loading=!1}}></bim-button>
       </bim-panel-section>
-      
-      <bim-panel-section collapsed label="Categories" name="Categories"">
+      <bim-panel-section label="Isolation">
+        ${t}
+        <bim-button label="Isolate Category" @click=${async({target:o})=>{if(!t)return;const r=t.value;r.length!==0&&(o.loading=!0,await B(r),o.loading=!1)}}></bim-button>
       </bim-panel-section>
-      
+      <bim-panel-section label="Hiding">
+        ${e}
+        <bim-button label="Hide Category" @click=${async({target:o})=>{if(!e)return;const r=e.value;r.length!==0&&(o.loading=!0,await O(r),o.loading=!1)}}></bim-button>
+      </bim-panel-section>
     </bim-panel>
-  `);document.body.append(s);const P=s.querySelector("bim-panel-section[name='Floors']"),W=s.querySelector("bim-panel-section[name='Categories']");for(const n in g){const m=r.create(()=>l`
-      <bim-checkbox checked label="${n}"
-        @change="${({target:p})=>{const c=o.list.spatialStructures[n];if(c&&c.id!==null)for(const[J,u]of b.groups){const S=d.getEntityChildren(u,c.id),w=u.getFragmentMap(S);f.set(p.value,w)}}}">
-      </bim-checkbox>
-    `);P.append(m)}for(const n in h){const m=r.create(()=>l`
-      <bim-checkbox checked label="${n}"
-        @change="${({target:p})=>{const c=o.find({entities:[n]});f.set(p.value,c)}}">
-      </bim-checkbox>
-    `);W.append(m)}const z=r.create(()=>l`
+  `});document.body.append(p);const E=m.create(()=>u`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
-        @click="${()=>{s.classList.contains("options-menu-visible")?s.classList.remove("options-menu-visible"):s.classList.add("options-menu-visible")}}">
+        @click="${()=>{p.classList.contains("options-menu-visible")?p.classList.remove("options-menu-visible"):p.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(z);
+    `);document.body.append(E);const d=new w;d.showPanel(2);document.body.append(d.dom);d.dom.style.left="0px";d.dom.style.zIndex="unset";a.renderer.onBeforeUpdate.add(()=>d.begin());a.renderer.onAfterUpdate.add(()=>d.end());

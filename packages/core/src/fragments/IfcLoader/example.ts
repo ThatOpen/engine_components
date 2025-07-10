@@ -1,263 +1,196 @@
 /* MD
-### 🏢 Loading IFC files
----
+  ## 📄 Loading IFC Models
+  ---
+  IFC is the most common format to share BIM data openly. Our libraries are able to load, navigate and even create and edit them directly. In this tutorial, you'll learn how to open an IFC model in the 3D scene.
 
-IFC is the most common format to share BIM data openly. Our libraries are able to load, navigate and even create and edit them directly. In this tutorial, you'll learn how to open an IFC model in the 3D scene.
+  :::tip IFC?
 
-:::tip IFC?
+  If you are not famliar with the construction industry, this might be the first time you come across this term. It stands for Industry Foundation Classes, and it's the most widespread standard for sharing BIM data freely, without depending on specific software manufacturers and their propietary formats.
 
-If you are not famliar with the construction industry, this might be the first time you come across this term. It stands for Industry Foundation Classes, and it's the most widespread standard for sharing BIM data freely, without depending on specific software manufacturers and their propietary formats.
+  :::
 
-:::
-
-In this tutorial, we will import:
-
-- `web-ifc` to get some IFC items.
-- `@thatopen/ui` to add some simple and cool UI menus.
-- `@thatopen/components` to set up the barebone of our app.
-- `Stats.js` (optional) to measure the performance of our app.
+  ### 🖖 Importing our Libraries
+  First things first, let's install all necessary dependencies to make this example work:
 */
 
-import * as WEBIFC from "web-ifc";
-import * as BUI from "@thatopen/ui";
 import Stats from "stats.js";
-import * as OBC from "@thatopen/components";
+import * as BUI from "@thatopen/ui";
+// You have to import * as OBC from "@thatopen/components"
+import * as OBC from "../..";
 
 /* MD
-  ### 🌎 Setting up a simple scene
-  ---
-
-  We will start by creating a simple scene with a camera and a renderer. If you don't know how to set up a scene, you can check the Worlds tutorial.
+  ### 🌎 Setting up a Simple Scene
+  To get started, let's set up a basic ThreeJS scene. This will serve as the foundation for our application and allow us to visualize the 3D models effectively:
 */
-
-const container = document.getElementById("container")!;
 
 const components = new OBC.Components();
 
 const worlds = components.get(OBC.Worlds);
-
 const world = worlds.create<
   OBC.SimpleScene,
-  OBC.SimpleCamera,
+  OBC.OrthoPerspectiveCamera,
   OBC.SimpleRenderer
 >();
 
 world.scene = new OBC.SimpleScene(components);
+world.scene.setup();
+world.scene.three.background = null;
+
+const container = document.getElementById("container")!;
 world.renderer = new OBC.SimpleRenderer(components, container);
-world.camera = new OBC.SimpleCamera(components);
+world.camera = new OBC.OrthoPerspectiveCamera(components);
+await world.camera.controls.setLookAt(78, 20, -2.2, 26, -4, 25);
 
 components.init();
 
-world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
-
-world.scene.setup();
-
-const grids = components.get(OBC.Grids);
-grids.create(world);
+components.get(OBC.Grids).create(world);
 
 /* MD
+  ### ✨ Using The IfcLoader Component
+  With the basic world already set up, it's now time to bring it to life by loading some IFC files. That Open Engine does not directly load IFC files. When an IFC file is "loaded", the engine first converts it into something called Fragments and then loads it into the scene. The model you see is the result of this process.
 
-  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
+  :::info Fragments?
 
-*/
-
-world.scene.three.background = null;
-
-/* MD
-  ### 🚗🏎️ Getting IFC and fragments
-  ---
-  When we read an IFC file, we convert it to a geometry called Fragments. Fragments are a lightweight representation of geometry built on top of THREE.js `InstancedMesh` to make it easy to work with BIM data efficiently. All the BIM geometry you see in our libraries are Fragments, and they are great: they are lightweight, they are fast and we have tons of tools to work with them. But fragments are not used outside our libraries. So how can we convert an IFC file to fragments? Let's check out how:
-  */
-
-const fragments = components.get(OBC.FragmentsManager);
-const fragmentIfcLoader = components.get(OBC.IfcLoader);
-
-/* MD
-  :::info Why not just IFC?
-
-  IFC is nice because it lets us exchange data with many tools in the AECO industry. But your graphics card doesn't understand IFC. It only understands one thing: triangles. So we must convert IFC to triangles. There are many ways to do it, some more efficient than others. And that's exactly what Fragments are: a very efficient way to display the triangles coming from IFC files.
+  Fragments are That Open Company's open-source binary format for storing BIM models. They are built on top of Flatbuffers from Google, making them lightweight and highly efficient for storing vast amounts of BIM data.
 
   :::
 
-  Once Fragments have been generated, you can export them and then load them back directly, without needing the original IFC file. Why would you do that? Well, because fragments can load +10 times faster than IFC. And the reason is very simple.   When reading an IFC, we must parse the file, read the implicit geometry, convert it to triangles (Fragments) and send it to the GPU. When reading fragments, we just take the triangles and send them, so it's super fast.
-
-  :::danger How to use Fragments?
-
-  If you want to find out more about Fragments, check out the Fragments Manager tutorial.
-
-  :::
-
-
-  ### 🔭🔧 Calibrating the converter
-  ---
-  Now, we need to configure the path of the WASM files. What's WASM? It's a technology that lets us run C++ on the browser, which means that we can load IFCs super fast! These files are the compilation of our `web-ifc` library. You can find them in the github repo and in NPM. These files need to be available to our app, so you have 2 options:
-
-  - Download them and serve them statically.
-  - Get them from a remote server.
-
-  The easiest way is getting them from unpkg, and the cool thing is that you don't need to do it manually! It can be done directly by the tool just by writing the following:
-  */
-
-await fragmentIfcLoader.setup();
-
-// If you want to the path to unpkg manually, then you can skip the line
-// above and set them manually as below:
-// fragmentIfcLoader.settings.wasm = {
-//   path: "https://unpkg.com/web-ifc@0.0.68/",
-//   absolute: true,
-// };
-
-/* MD
-  Awesome! Optionally, we can exclude categories that we don't want to convert to fragments like very easily:
+  All That Open Engine works on top of Fragments, and that's why the conversion process must take place. So, let's start by getting the component instance:
 */
 
-const excludedCats = [
-  WEBIFC.IFCTENDONANCHOR,
-  WEBIFC.IFCREINFORCINGBAR,
-  WEBIFC.IFCREINFORCINGELEMENT,
-];
-
-for (const cat of excludedCats) {
-  fragmentIfcLoader.settings.excludedCategories.add(cat);
-}
+const ifcLoader = components.get(OBC.IfcLoader);
 
 /* MD
-  We can further configure the conversion using the `webIfc` object. In this example, we will make the IFC model go to the origin of the scene (don't worry, this supports model federation):
-  */
-
-fragmentIfcLoader.settings.webIfc.COORDINATE_TO_ORIGIN = true;
-
-/* MD
-  ### 🚗🔥 Loading the IFC
-  ---
-  Next, let's define a function to load the IFC programmatically. We have hardcoded the path to one of our IFC files, but feel free to do this with any of your own files!
-
- :::info Opening local IFCs
-
-  Keep in mind that the browser can't access the file of your computer directly, so you will need to use the Open File API to open local files.
-
-  :::
+  With the loader in place, it needs to be properly configured. This involves setting up web-ifc (the core library responsible for reading IFC files) to ensure it is ready to convert IFC files into Fragments:
 */
 
-async function loadIfc() {
-  const file = await fetch(
-    "https://thatopen.github.io/engine_components/resources/small.ifc",
-  );
-  const data = await file.arrayBuffer();
-  const buffer = new Uint8Array(data);
-  const model = await fragmentIfcLoader.load(buffer);
-  model.name = "example";
-  world.scene.three.add(model);
-}
-
-/* MD
-  If you want to get the resulted model every time a new model is loaded, you can subscribe to the following event anywhere in your app:
-*/
-
-fragments.onFragmentsLoaded.add((model) => {
-  console.log(model);
+await ifcLoader.setup({
+  autoSetWasm: false,
+  wasm: {
+    path: "https://unpkg.com/web-ifc@0.0.69/",
+    absolute: true,
+  },
 });
 
 /* MD
-  ### 🎁 Exporting the result to fragments
-  ---
-  Once you have your precious fragments, you might want to save them so that you don't need to open this IFC file each time your user gets into your app. Instead, the next time you can load the fragments directly. Defining a function to export fragments is as easy as this:
+  When an IFC file is converted to Fragments, another component handles the converted file: the FragmentsManager. Therefore, it is essential to configure this component first before attempting to "load" any IFC file:
 */
 
-function download(file: File) {
+const workerUrl =
+  "/node_modules/@thatopen/fragments/dist/Worker/worker.mjs";
+const fragments = components.get(OBC.FragmentsManager);
+fragments.init(workerUrl);
+
+world.camera.controls.addEventListener("rest", () =>
+  fragments.core.update(true),
+);
+
+// Ensures that once the Fragments model is loaded
+// (converted from the IFC in this case),
+// it utilizes the world camera for updates
+// and is added to the scene.
+fragments.list.onItemSet.add(({ value: model }) => {
+  model.useCamera(world.camera.three);
+  world.scene.three.add(model.object);
+  fragments.core.update(true);
+});
+
+/* MD
+  :::info Need more details?
+
+  For additional information about the FragmentsManager, refer to the corresponding component tutorial available in the documentation.
+
+  :::
+
+  Great! With everything configured, let's proceed to create a function that will load an IFC model into the viewer:
+*/
+
+const loadIfc = async (path: string) => {
+  const file = await fetch(path);
+  const data = await file.arrayBuffer();
+  const buffer = new Uint8Array(data);
+  await ifcLoader.load(buffer, false, "example", {
+    processData: {
+      progressCallback: (progress) => console.log(progress),
+    },
+  });
+};
+
+/* MD
+  :::info Personalized Conversion
+
+  The IfcLoader component provides a quick and convenient way to convert IFC files into Fragments and load them into the engine. However, for greater control over the conversion process, it is recommended to use the Fragments library directly. The conversion mechanism is the same, but the core library offers a less abstracted approach.
+
+  :::
+
+  Once the file is loaded, you can leverage any of the engine's components to interact with it. Each component is a specialized tool designed for specific tasks with Fragment Models. There are components for measurements, model classification, visibility operations, plan generation, and much more. Check out the full documentation to learn more!
+
+  ### 🎁 Exporting the Fragments Model
+  The primary goal of this process is to load the Fragments Model instead of the IFC file. This approach is more efficient because the time-consuming part is the conversion process, not the actual loading of the model into the scene. So, how can you obtain the Fragments Model resulting from the conversion? It's simple! Here's how:
+*/
+
+const downloadFragments = async () => {
+  // fragments.list holds all the fragments loaded
+  const [model] = fragments.list.values();
+  if (!model) return;
+  const fragsBuffer = await model.getBuffer(false);
+  const file = new File([fragsBuffer], "school_str.frag");
   const link = document.createElement("a");
   link.href = URL.createObjectURL(file);
   link.download = file.name;
-  document.body.appendChild(link);
   link.click();
-  link.remove();
-}
-
-async function exportFragments() {
-  if (!fragments.groups.size) {
-    return;
-  }
-  const group = Array.from(fragments.groups.values())[0];
-  const data = fragments.export(group);
-  download(new File([new Blob([data])], "small.frag"));
-
-  const properties = group.getLocalProperties();
-  if (properties) {
-    download(new File([JSON.stringify(properties)], "small.json"));
-  }
-}
+  URL.revokeObjectURL(link.href);
+};
 
 /* MD
-  ### 🧠🧼 Cleaning memory
-  ---
-  Now, just like in the `FragmentManager` tutorial, you will need to dispose the memory if your user wants to reset the state of the scene, especially if you are using Single Page Application technologies like React, Angular, Vue, etc. To do that, you can simply call the `dispose` method:
-*/
+  Now that you can download the Fragments Model, what's next? You should continue loading this file instead of the original IFC file. To learn how to consistently load Fragments Models instead of the original IFC file, refer to the FragmentsManager tutorial.
 
-function disposeFragments() {
-  fragments.dispose();
-}
-
-/* MD
-  That's it! Congrats, now you can load IFC files into your app, generate the 3D geometry and property data for them and navigate them in 3D. In other tutorials, you'll find tons of tools to work with them and create amazing BIM apps! See you there. 💪
-
-  ### ⏱️ Measuring the performance (optional)
-  ---
-
-  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
-*/
-
-const stats = new Stats();
-stats.showPanel(2);
-document.body.append(stats.dom);
-stats.dom.style.left = "0px";
-stats.dom.style.zIndex = "unset";
-world.renderer.onBeforeUpdate.add(() => stats.begin());
-world.renderer.onAfterUpdate.add(() => stats.end());
-
-/* MD
-  ### 🧩 Adding some UI
-  ---
-
+  ### 🧩 Adding some UI (optional but recommended)
   We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
 */
 
 BUI.Manager.init();
 
 /* MD
-Now we will add some UI to load and unload our BIM model. For more information about the UI library, you can check the specific documentation for it!
+Now we will add some UI to play around with the actions in this tutorial. For more information about the UI library, you can check the specific documentation for it!
 */
 
-const panel = BUI.Component.create<BUI.PanelSection>(() => {
+const [panel, updatePanel] = BUI.Component.create<BUI.PanelSection, {}>((_) => {
+  let downloadBtn: BUI.TemplateResult | undefined;
+  if (fragments.list.size > 0) {
+    downloadBtn = BUI.html`
+      <bim-button label="Download Fragments" @click=${downloadFragments}></bim-button>
+    `;
+  }
+
+  let loadBtn: BUI.TemplateResult | undefined;
+  if (fragments.list.size === 0) {
+    const onLoadIfc = async ({ target }: { target: BUI.Button }) => {
+      target.label = "Conversion in progress...";
+      target.loading = true;
+      await loadIfc("/resources/ifc/school_str.ifc");
+      target.loading = false;
+      target.label = "Load IFC";
+    };
+
+    loadBtn = BUI.html`
+      <bim-button label="Load IFC" @click=${onLoadIfc}></bim-button>
+      <bim-label>Open the console to see the progress!</bim-label>
+    `;
+  }
+
   return BUI.html`
-  <bim-panel active label="IFC Loader Tutorial" class="options-menu">
-    <bim-panel-section collapsed label="Controls">
-      <bim-panel-section style="padding-top: 12px;">
-      
-        <bim-button label="Load IFC"
-          @click="${() => {
-            loadIfc();
-          }}">
-        </bim-button>  
-            
-        <bim-button label="Export fragments"
-          @click="${() => {
-            exportFragments();
-          }}">
-        </bim-button>  
-            
-        <bim-button label="Dispose fragments"
-          @click="${() => {
-            disposeFragments();
-          }}">
-        </bim-button>
-      
+    <bim-panel active label="IfcLoader Tutorial" class="options-menu">
+      <bim-panel-section label="Controls">
+        ${loadBtn}
+        ${downloadBtn}
       </bim-panel-section>
-      
     </bim-panel>
   `;
-});
+}, {});
 
 document.body.append(panel);
+fragments.list.onItemSet.add(() => updatePanel());
 
 /* MD
   And we will make some logic that adds a button to the screen when the user is visiting our app from their phone, allowing to show or hide the menu. Otherwise, the menu would make the app unusable.
@@ -280,8 +213,19 @@ const button = BUI.Component.create<BUI.PanelSection>(() => {
 document.body.append(button);
 
 /* MD
-  ### 🎉 Wrap up
-  ---
+  ### ⏱️ Measuring the performance (optional)
+  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
+*/
 
-  That's it! You have created an app that can load IFC files, convert them to 3D fragments and navigate them in 3D. Fantastic job! For bigger IFC files, instead of reading them directly every time, you can store the fragments and properties and load them instead of the original IFC. For even bigger files, you can use streaming, which we also cover in other tutorials!
+const stats = new Stats();
+stats.showPanel(2);
+document.body.append(stats.dom);
+stats.dom.style.left = "0px";
+stats.dom.style.zIndex = "unset";
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
+
+/* MD
+  ### 🎉 Wrap up
+  That's it! Now you're able to load IFC models, convert them to Fragments, and interact with them in a 3D scene. Congratulations! Keep going with more tutorials in the documentation.
 */

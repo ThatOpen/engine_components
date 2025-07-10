@@ -186,7 +186,7 @@ export class ShadowedScene
 
     if (this.autoBias) {
       // src: https://discourse.threejs.org/t/hello-i-am-facing-the-problem-with-shadow-stripes-on-model/18065/10
-      this.bias = farthestDistance / -100000;
+      this.bias = -0.005;
     }
 
     const factor = 1.5;

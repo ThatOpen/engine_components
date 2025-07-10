@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="icon" type="image/x-icon" href="https://thatopen.github.io/engine_components/resources/favicon.ico">
+  <title>MeasurementUtils</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Plus Jakarta Sans", sans-serif;
+      overflow: hidden;
+    }
+
+    .full-screen {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .options-menu {
+      position: fixed;
+      min-width: unset;
+      top: 5px;
+      right: 5px;
+      max-height: calc(100vh - 10px);
+    }
+
+    .phone-menu-toggler {
+      visibility: hidden;
+    }
+
+    @media (max-width: 480px) {
+      .options-menu {
+        visibility: hidden;
+        bottom: 5px;
+        left: 5px;
+      }
+
+      .options-menu-visible {
+        visibility: visible;
+      }
+
+      .phone-menu-toggler {
+        visibility: visible;
+        position: fixed;
+        top: 5px;
+        right: 5px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="full-screen" id="container"></div>
+  <script type="module" src="./test.ts"></script>
+</body>
+
+</html>

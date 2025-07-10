@@ -1,116 +1,172 @@
-import{C as c}from"./web-ifc-api-BlmMr04K.js";import{S as b}from"./stats.min-GTpOrGrX.js";import{T as p,L as m,m as u}from"./index-C8nqhRYO.js";import{C as d,W as f,S as h,a as g,G as v,F as x}from"./index-7tDlUpW2.js";import{W as $}from"./index-JIMkY7x4.js";import"./_commonjsHelpers-Cpj98o6Y.js";const k=document.getElementById("container"),o=new d,E=o.get(f),a=E.create();a.scene=new h(o);a.renderer=new $(o,k);a.camera=new g(o);a.scene.three.background=null;o.init();a.camera.controls.setLookAt(12,6,8,0,0,-10);a.scene.setup();const w=o.get(v),r=w.create(a);r.config.color.set(6710886);a.scene.three.background=null;const y=new x(o),S=await fetch("https://thatopen.github.io/engine_components/resources/small.frag"),C=await S.arrayBuffer(),G=new Uint8Array(C),A=y.load(G);a.scene.three.add(A);const{postproduction:n}=a.renderer;n.enabled=!0;n.customEffects.excludedMeshes.push(r.three);const s=n.n8ao.configuration,t=new b;t.showPanel(2);document.body.append(t.dom);t.dom.style.left="0px";t.dom.style.zIndex="unset";a.renderer.onBeforeUpdate.add(()=>t.begin());a.renderer.onAfterUpdate.add(()=>t.end());p.init();const l=m.create(()=>u`
+import{a as x,T as f,M as w,B as k,i as O,L as h,m as g}from"./index-BR15nMAM.js";import{C as S,W as M,S as L,O as C,d as E,F as y}from"./graphic-vertex-picker-WQ6fDD2d.js";import{P as D,a as u}from"./index-BYTOCRNk.js";import{O as I}from"./index-CNYwfzTe.js";import"./index-CGLMC8u3.js";const s=new S,R=s.get(M),a=R.create();a.scene=new L(s);a.scene.setup();a.scene.three.background=null;const G=document.getElementById("container");a.renderer=new D(s,G);a.camera=new C(s);await a.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);s.init();const A=s.get(E),F=A.create(a);F.config.color.set(6710886);a.scene.three.background=null;const W="/node_modules/@thatopen/fragments/dist/Worker/worker.mjs",l=s.get(y);l.init(W);a.camera.controls.addEventListener("rest",()=>l.core.update(!0));a.onCameraChanged.add(e=>{for(const[,r]of l.list)r.useCamera(e.three);l.core.update(!0)});l.list.onItemSet.add(({value:e})=>{e.useCamera(a.camera.three),a.scene.three.add(e.object),l.core.update(!0)});const B=["/resources/frags/school_arq.frag"];await Promise.all(B.map(async e=>{var p;const r=(p=e.split("/").pop())==null?void 0:p.split(".").shift();if(!r)return null;const P=await(await fetch(e)).arrayBuffer();return l.core.load(P,{modelId:r})}));a.renderer.postproduction.enabled=!0;a.dynamicAnchor=!1;l.core.models.materials.list.onItemSet.add(({value:e})=>{"isLodMaterial"in e&&e.isLodMaterial&&a.renderer.postproduction.basePass.isolatedMaterials.push(e)});const v=l.list.values().next().value,$=s.get(I);$.world=a;const _=await v.getItemsOfCategories([/IFCWALL/]),j=_.IFCWALL,[H,N]=j;$.addItems({[v.modelId]:new Set([H,N])});const c=new x;c.showPanel(2);document.body.append(c.dom);c.dom.style.left="0px";c.dom.style.zIndex="unset";a.renderer.onBeforeUpdate.add(()=>c.begin());a.renderer.onAfterUpdate.add(()=>c.end());f.init();const{aoPass:i,outlinePass:o,edgesPass:b}=a.renderer.postproduction,n={radius:.25,distanceExponent:1,thickness:1,scale:1,samples:16,distanceFallOff:1,screenSpaceRadius:!0},t={lumaPhi:10,depthPhi:2,normalPhi:3,radius:4,radiusExponent:1,rings:2,samples:16};i.updateGtaoMaterial(n);i.updatePdMaterial(t);const m=new w(new k(1,1,1),new O({color:65280}));m.position.set(10,0,0);a.scene.three.add(m);a.renderer.postproduction.excludedObjectsPass.addExcludedMaterial(m.material);const d=h.create(()=>g`
   <bim-panel active label="Postproduction Tutorial" class="options-menu">
-      <bim-panel-section collapsed label="Gamma">
-        <bim-checkbox checked label="Gamma Correction"
-          @change="${({target:e})=>{n.setPasses({gamma:e.value})}}">
+
+    <bim-panel-section label="General">
+
+      <bim-checkbox checked label="Postproduction enabled"
+        @change="${({target:e})=>{a.renderer.postproduction.enabled=e.value}}">
+      </bim-checkbox>
+
+      <bim-checkbox checked label="Outlines enabled"
+        ?checked=${a.renderer.postproduction.outlinesEnabled}
+        @change="${({target:e})=>{a.renderer.postproduction.outlinesEnabled=e.value}}">
+      </bim-checkbox>
+
+      <bim-checkbox checked label="Excluded objects enabled"
+        ?checked=${a.renderer.postproduction.excludedObjectsEnabled}
+        @change="${({target:e})=>{a.renderer.postproduction.excludedObjectsEnabled=e.value}}">
+      </bim-checkbox>
+
+      <bim-dropdown required label="Postproduction style"
+        @change="${({target:e})=>{const r=e.value[0];a.renderer.postproduction.style=r}}">
+
+        <bim-option checked label="Basic" value="${u.COLOR}"></bim-option>
+        <bim-option label="Pen" value="${u.PEN}"></bim-option>
+        <bim-option label="Shadowed Pen" value="${u.PEN_SHADOWS}"></bim-option>
+        <bim-option label="Color Pen" value="${u.COLOR_PEN}"></bim-option>
+        <bim-option label="Color Shadows" value="${u.COLOR_SHADOWS}"></bim-option>
+        <bim-option label="Color Pen Shadows" value="${u.COLOR_PEN_SHADOWS}"></bim-option>
+      </bim-dropdown>
+
+    </bim-panel-section>
+
+      <bim-panel-section label="Edges">
+
+      <bim-number-input
+          slider step="0.1" label="Width"
+          value="${a.renderer.postproduction.edgesPass.width}" min="1" max="3"
+          @change="${({target:e})=>{a.renderer.postproduction.edgesPass.width=e.value}}">
+      </bim-number-input>
+
+      <bim-color-input label="Edges color"
+        color="#${b.color.getHexString()}"
+        @input="${({target:e})=>{b.color.set(e.value.color)}}">
+      </bim-color-input>
+
+    </bim-panel-section>
+
+    <bim-panel-section label="Outline">
+
+      <bim-number-input
+          slider step="0.1" label="Outline thickness"
+          value="${o.thickness}" min="1" max="10"
+          @change="${({target:e})=>{o.thickness=e.value}}">
+      </bim-number-input>
+
+      <bim-number-input
+          slider step="0.01" label="Fill opacity"
+          value="${o.fillOpacity}" min="0" max="1"
+          @change="${({target:e})=>{o.fillOpacity=e.value}}">
+      </bim-number-input>
+
+      <bim-color-input label="Line color"
+        color="#${o.outlineColor.getHexString()}"
+        @input="${({target:e})=>{o.outlineColor.set(e.value.color)}}">
+      </bim-color-input>
+
+      <bim-color-input label="Fill color"
+        color="#${o.fillColor.getHexString()}"
+        @input="${({target:e})=>{o.fillColor.set(e.value.color)}}">
+      </bim-color-input>
+
+    </bim-panel-section>
+
+    <bim-panel-section label="Ambient Occlusion">
+
+        <bim-checkbox checked label="Screen Space Radius"
+          ?checked=${n.screenSpaceRadius}
+          @change="${({target:e})=>{n.screenSpaceRadius=e.value,i.updateGtaoMaterial(n)}}">
         </bim-checkbox>
+
+        <bim-number-input
+          slider step="0.01" label="Blend intensity"
+          value="${i.blendIntensity}" min="0" max="1"
+          @change="${({target:e})=>{i.blendIntensity=e.value}}">
+        </bim-number-input>
+
+        <bim-number-input
+          slider step="0.01" label="Radius"
+          value="${n.radius}" min="0.01" max="1"
+          @change="${({target:e})=>{n.radius=e.value,i.updateGtaoMaterial(n)}}">
+        </bim-number-input>
+
+        <bim-number-input
+          slider step="0.01" label="Distance exponent"
+          value="${n.distanceExponent}" min="1" max="4"
+          @change="${({target:e})=>{n.distanceExponent=e.value,i.updateGtaoMaterial(n)}}">
+        </bim-number-input>
+
+        <bim-number-input
+          slider step="0.01" label="Thickness"
+          value="${n.thickness}" min="0.01" max="10"
+          @change="${({target:e})=>{n.thickness=e.value,i.updateGtaoMaterial(n)}}">
+        </bim-number-input>
+
+        <bim-number-input
+          slider step="0.01" label="Distance falloff"
+          value="${n.distanceFallOff}" min="0" max="1"
+          @change="${({target:e})=>{n.distanceFallOff=e.value,i.updateGtaoMaterial(n)}}">
+        </bim-number-input>
+
+        <bim-number-input
+          slider step="0.01" label="Scale"
+          value="${n.scale}" min="0.01" max="2"
+          @change="${({target:e})=>{n.scale=e.value,i.updateGtaoMaterial(n)}}">
+        </bim-number-input>
+
+        <bim-number-input
+          slider step="1" label="Samples"
+          value="${n.samples}" min="2" max="32"
+          @change="${({target:e})=>{n.samples=e.value,i.updateGtaoMaterial(n)}}">
+        </bim-number-input>
+
+        <bim-number-input
+          slider step="0.1" label="PD Luma Phi"
+          value="${t.lumaPhi}" min="0" max="20"
+          @change="${({target:e})=>{t.lumaPhi=e.value,i.updatePdMaterial(t)}}">
+        </bim-number-input>
+
+        <bim-number-input
+          slider step="0.1" label="PD Depth Phi"
+          value="${t.depthPhi}" min="0.01" max="20"
+          @change="${({target:e})=>{t.depthPhi=e.value,i.updatePdMaterial(t)}}">
+        </bim-number-input>
+
+        <bim-number-input
+          slider step="0.1" label="PD Normal Phi"
+          value="${t.normalPhi}" min="0.01" max="20"
+          @change="${({target:e})=>{t.normalPhi=e.value,i.updatePdMaterial(t)}}">
+        </bim-number-input>
+
+        <bim-number-input
+          slider step="1" label="PD Radius"
+          value="${t.radius}" min="0" max="32"
+          @change="${({target:e})=>{t.radius=e.value,i.updatePdMaterial(t)}}">
+        </bim-number-input>
+
+        <bim-number-input
+          slider step="0.1" label="PD Radius Exponent"
+          value="${t.radiusExponent}" min="0.1" max="4"
+          @change="${({target:e})=>{t.radiusExponent=e.value,i.updatePdMaterial(t)}}">
+        </bim-number-input>
+
+        <bim-number-input
+          slider step="0.125" label="PD Rings"
+          value="${t.rings}" min="1" max="16"
+          @change="${({target:e})=>{t.rings=e.value,i.updatePdMaterial(t)}}">
+        </bim-number-input>
+
+        <bim-number-input
+          slider step="1" label="PD Samples"
+          value="${t.samples}" min="2" max="32"
+          @change="${({target:e})=>{t.samples=e.value,i.updatePdMaterial(t)}}">
+        </bim-number-input>
+
       </bim-panel-section>
-      
-      <bim-panel-section collapsed label="Custom effects" >
-        <bim-checkbox checked label="Custom effects"
-          @change="${({target:e})=>{n.setPasses({custom:e.value})}}">
-        </bim-checkbox>    
-        
-        <bim-checkbox checked label="Gamma Correction"
-          @change="${({target:e})=>{n.customEffects.glossEnabled=e.value}}">
-        </bim-checkbox>   
-      
-        <bim-number-input 
-          slider step="0.01" label="Opacity" 
-          value="${n.customEffects.opacity}" min="0" max="1"
-          @change="${({target:e})=>{n.customEffects.opacity=e.value}}">
-        </bim-number-input>  
-            
-        <bim-number-input 
-          slider step="0.1" label="Tolerance" 
-          value="${n.customEffects.tolerance}" min="0" max="6"
-          @change="${({target:e})=>{n.customEffects.tolerance=e.value}}">
-        </bim-number-input> 
-                      
-        <bim-color-input label="Line color" 
-          @input="${({target:e})=>{const i=new c(e.value.color);n.customEffects.lineColor=i.getHex()}}">
-        </bim-color-input>  
-      
-        <bim-number-input 
-          slider label="Gloss exponent" step="0.1" 
-          value="${n.customEffects.glossExponent}" min="0" max="5"
-          @change="${({target:e})=>{n.customEffects.glossExponent=e.value}}">
-        </bim-number-input>    
-           
-        <bim-number-input 
-          slider label="Max gloss" step="0.05" 
-          value="${n.customEffects.maxGloss}" min="-2" max="2"
-          @change="${({target:e})=>{n.customEffects.maxGloss=e.value}}">
-        </bim-number-input>  
-                  
-        <bim-number-input 
-          slider label="Min gloss" step="0.05" 
-          value="${n.customEffects.minGloss}" min="-2" max="2"
-          @change="${({target:e})=>{n.customEffects.minGloss=e.value}}">
-        </bim-number-input> 
-        
-      </bim-panel-section>
-      
-      <bim-panel-section collapsed label="Ambient Oclussion">
-      
-        <bim-checkbox label="AO enabled"
-          @change="${({target:e})=>{n.setPasses({ao:e.value})}}">
-        </bim-checkbox>  
-                
-        <bim-checkbox checked label="Half resolution"
-          @change="${({target:e})=>{s.halfRes=e.value}}">
-        </bim-checkbox>  
-                      
-        <bim-checkbox label="Screen space radius"
-          @change="${({target:e})=>{s.screenSpaceRadius=e.value}}">
-        </bim-checkbox>
-        
-                              
-        <bim-color-input label="AO color" 
-          @input="${({target:e})=>{const i=new c(e.value.color);s.color.r=i.r,s.color.g=i.g,s.color.b=i.b}}">
-        </bim-color-input>     
-        
-        <bim-number-input 
-          slider label="AO Samples" step="1" 
-          value="${s.aoSamples}" min="1" max="16"
-          @change="${({target:e})=>{s.aoSamples=e.value}}">
-        </bim-number-input>    
-            
-        <bim-number-input 
-          slider label="Denoise Samples" step="1" 
-          value="${s.denoiseSamples}" min="1" max="16"
-          @change="${({target:e})=>{s.denoiseSamples=e.value}}">
-        </bim-number-input>   
-                  
-        <bim-number-input 
-          slider label="Denoise Radius" step="1" 
-          value="${s.denoiseRadius}" min="0" max="100"
-          @change="${({target:e})=>{s.denoiseRadius=e.value}}">
-        </bim-number-input>   
-                       
-        <bim-number-input 
-          slider label="AO Radius" step="1" 
-          value="${s.aoRadius}" min="0" max="16"
-          @change="${({target:e})=>{s.aoRadius=e.value}}">
-        </bim-number-input>  
-                              
-        <bim-number-input 
-          slider label="Distance falloff" step="1" 
-          value="${s.distanceFalloff}" min="0" max="16"
-          @change="${({target:e})=>{s.distanceFalloff=e.value}}">
-        </bim-number-input> 
-                                      
-        <bim-number-input 
-          slider label="Intensity" step="1" 
-          value="${s.intensity}" min="0" max="16"
-          @change="${({target:e})=>{s.intensity=e.value}}">
-        </bim-number-input> 
-        
-      </bim-panel-section>
-      
+
     </bim-panel>
-    `);document.body.append(l);const R=m.create(()=>u`
+    `);document.body.append(d);const T=h.create(()=>g`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
-        @click="${()=>{l.classList.contains("options-menu-visible")?l.classList.remove("options-menu-visible"):l.classList.add("options-menu-visible")}}">
+        @click="${()=>{d.classList.contains("options-menu-visible")?d.classList.remove("options-menu-visible"):d.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(R);
+    `);document.body.append(T);

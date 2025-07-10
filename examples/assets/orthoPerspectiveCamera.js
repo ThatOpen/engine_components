@@ -1,41 +1,34 @@
-import{B as u,M as h,a as w}from"./web-ifc-api-BlmMr04K.js";import{S as C}from"./stats.min-GTpOrGrX.js";import{T as L,L as g,m as v}from"./index-C8nqhRYO.js";import{C as f,W as k,S as P,d as j,O,G as y}from"./index-7tDlUpW2.js";import"./_commonjsHelpers-Cpj98o6Y.js";const F=document.getElementById("container");let t=new f,c=t.get(k),e=c.create();e.scene=new P(t);e.renderer=new j(t,F);e.camera=new O(t);e.scene.setup();await e.camera.controls.setLookAt(3,3,3,0,0,0);t.init();e.scene.three.background=null;let l=new u,m=new h({color:"#6528D7"}),n=new w(l,m);n.position.set(0,.5,0);e.scene.three.add(n);e.meshes.add(n);let d=t.get(y),p=d.create(e);e.camera.projection.onChanged.add(()=>{const o=e.camera.projection.current;p.fade=o==="Perspective"});const r=new C;r.showPanel(2);document.body.append(r.dom);r.dom.style.left="0px";r.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>r.begin());e.renderer.onAfterUpdate.add(()=>r.end());L.init();const a=g.create(()=>v`
-    <bim-panel active label="Orthoperspective Camera Tutorial" class="options-menu">
-      <bim-panel-section collapsed label="Controls">
-         
-          <bim-dropdown required label="Navigation mode" 
-            @change="${({target:o})=>{const i=o.value[0],{current:s}=e.camera.projection;if(s==="Orthographic"&&i==="FirstPerson"){alert("First person is not compatible with ortho!"),o.value[0]=e.camera.mode.id;return}e.camera.set(i)}}">
+import{T as p,L as m,m as d,a as b}from"./index-BR15nMAM.js";import{C as u,W as h,S as f,a as g,O as w,F as v}from"./index-DQoMA9YT.js";import{G as P}from"./index-Q4q2MoOf.js";const n=new u,k=n.get(h),e=k.create();e.scene=new f(n);e.scene.setup();e.scene.three.background=null;const F=document.getElementById("container");e.renderer=new g(n,F);e.camera=new w(n);await e.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);n.init();const O=n.get(P).create(e),j="/node_modules/@thatopen/fragments/dist/Worker/worker.mjs",r=n.get(v);r.init(j);e.camera.controls.addEventListener("rest",()=>r.core.update(!0));e.onCameraChanged.add(t=>{for(const[,o]of r.list)o.useCamera(t.three);r.core.update(!0)});r.list.onItemSet.add(({value:t})=>{t.useCamera(e.camera.three),e.scene.three.add(t.object),r.core.update(!0)});const C=["/resources/frags/school_arq.frag"];await Promise.all(C.map(async t=>{var l;const o=(l=t.split("/").pop())==null?void 0:l.split(".").shift();if(!o)return null;const i=await(await fetch(t)).arrayBuffer();return r.core.load(i,{modelId:o})}));e.camera.projection.onChanged.add(()=>{const t=e.camera.projection.current;O.fade=t==="Perspective"});p.init();const c=m.create(()=>d`
+    <bim-panel active label="OrthoPerspectiveCamera Tutorial" class="options-menu">
+      <bim-panel-section label="Section">
+        <bim-dropdown required label="Navigation Mode" 
+            @change="${({target:t})=>{const o=t.value[0],{current:s}=e.camera.projection;if(s==="Orthographic"&&o==="FirstPerson"){alert("First person is not compatible with ortho!"),t.value[0]=e.camera.mode.id;return}e.camera.set(o)}}">
 
           <bim-option checked label="Orbit"></bim-option>
           <bim-option label="FirstPerson"></bim-option>
           <bim-option label="Plan"></bim-option>
         </bim-dropdown>
-         
+          
       
-        <bim-dropdown required label="Camera projection" 
-            @change="${({target:o})=>{const i=o.value[0],s=i==="Orthographic",b=e.camera.mode.id==="FirstPerson";if(s&&b){alert("First person is not compatible with ortho!"),o.value[0]=e.camera.projection.current;return}e.camera.projection.set(i)}}">
+        <bim-dropdown required label="Projection" 
+            @change="${({target:t})=>{const o=t.value[0],s=o==="Orthographic",i=e.camera.mode.id==="FirstPerson";if(s&&i){alert("First person is not compatible with ortho!"),t.value[0]=e.camera.projection.current;return}e.camera.projection.set(o)}}">
           <bim-option checked label="Perspective"></bim-option>
           <bim-option label="Orthographic"></bim-option>
         </bim-dropdown>
 
         <bim-checkbox 
-          label="Allow user input" checked 
-          @change="${({target:o})=>{e.camera.setUserInput(o.checked)}}">  
+          label="Allow User Input" checked 
+          @change="${({target:t})=>{e.camera.setUserInput(t.checked)}}">  
         </bim-checkbox>  
         
         <bim-button 
-          label="Fit cube" 
-          @click="${()=>{e.camera.fit([n])}}">  
+          label="Fit Model" 
+          @click=${()=>e.camera.fitToItems()}>
         </bim-button>
-        
-        <bim-button 
-          label="Reset scene" 
-          @click="${async()=>{t.dispose(),t=new f,c=t.get(k),e=c.create(),e.scene=new P(t),e.renderer=new j(t,F),e.camera=new O(t),e.scene.setup(),await e.camera.controls.setLookAt(3,3,3,0,0,0),t.init(),e.scene.three.background=null,l=new u,m=new h({color:"#6528D7"}),n=new w(l,m),n.position.set(0,.5,0),e.scene.three.add(n),e.meshes.add(n),d=t.get(y),p=d.create(e),e.camera.projection.onChanged.add(()=>{const o=e.camera.projection.current;p.fade=o==="Perspective"})}}">  
-        </bim-button>  
-
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(a);const S=g.create(()=>v`
+  `);document.body.append(c);const y=m.create(()=>d`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
-        @click="${()=>{a.classList.contains("options-menu-visible")?a.classList.remove("options-menu-visible"):a.classList.add("options-menu-visible")}}">
+        @click="${()=>{c.classList.contains("options-menu-visible")?c.classList.remove("options-menu-visible"):c.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(S);
+    `);document.body.append(y);const a=new b;a.showPanel(2);document.body.append(a.dom);a.dom.style.left="0px";a.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>a.begin());e.renderer.onAfterUpdate.add(()=>a.end());

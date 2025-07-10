@@ -1,93 +1,102 @@
 /* MD
-### 📹 How to handle a fancy camera
----
+  ## 📄 Handling Fancy Cameras
+  ---
+  Sometimes, you need perspective for depth and realism. Other times, you need an orthographic camera to get precise measurements and proportions. Luckily for you, we have a camera that has both of those projections at the same time! It also has some cool functionality for navigation. In this tutorial, you'll learn to use it. 
 
-Sometimes, you need perspective for depth and realism. Other times, you need an orthographic camera to get precise measurements and proportions. Luckily for you, we have a camera that has both of those projections at the same time! It also has some cool functionality for navigation. In this tutorial, you'll learn to use it. 
+  :::tip Orthographic and Perspective cameras
 
-:::tip Orthographic and Perspective cameras
+  The difference between Orthographic and Perspective cameras is that Orthographic cameras don't see things smaller when they are further away. This has some implications, like the camera being always "outside" of your scene. You can't see the interior of a room with an orthographic camera. The most common use for orthographic cameras are 2D floor plans and sections, but they can also be used to create cool-looking 3D scenes.
 
-The difference between Orthographic and Perspective cameras is that Orthographic cameras don't see things smaller when they are further away. This has some implications, like the camera being always "outside" of your scene. You can't see the interior of a room with an orthographic camera. The most common use for orthographic cameras are 2D floor plans and sections, but they can also be used to create cool-looking 3D scenes.
+  :::
 
-:::
-
-In this tutorial, we will import:
-
-- `Three.js` to get some 3D entities for our app.
-- `@thatopen/components` to set up the barebone of our app.
-- `@thatopen/ui` to add some simple and cool UI menus.
-- `Stats.js` (optional) to measure the performance of our app.
-
+  ### 🖖 Importing our Libraries
+  First things first, let's install all necessary dependencies to make this example work:
 */
 
 import Stats from "stats.js";
-import * as THREE from "three";
 import * as BUI from "@thatopen/ui";
-import * as OBC from "@thatopen/components";
+// You have to import * as OBC from "@thatopen/components"
+import * as OBC from "../..";
 
 /* MD
-  ### 🌎 Setting up the world AND the camera
-  ---
-
-  We will start by creating a simple scene with a camera and a renderer. If you don't know how to set up a scene, you can check the Worlds tutorial. But there's one difference: we will use the OrthoPerspectiveCamera for initializing the world.
-
+  ### 🌎 Setting up a Simple Scene
+  To get started, let's set up a basic ThreeJS scene. This will serve as the foundation for our application and allow us to visualize the 3D models effectively:
 */
 
-const container = document.getElementById("container")!;
-let components = new OBC.Components();
-let worlds = components.get(OBC.Worlds);
+const components = new OBC.Components();
 
-let world = worlds.create<
+const worlds = components.get(OBC.Worlds);
+const world = worlds.create<
   OBC.SimpleScene,
   OBC.OrthoPerspectiveCamera,
   OBC.SimpleRenderer
 >();
 
 world.scene = new OBC.SimpleScene(components);
+world.scene.setup();
+world.scene.three.background = null;
+
+const container = document.getElementById("container")!;
 world.renderer = new OBC.SimpleRenderer(components, container);
 world.camera = new OBC.OrthoPerspectiveCamera(components);
-
-world.scene.setup();
-
-await world.camera.controls.setLookAt(3, 3, 3, 0, 0, 0);
+await world.camera.controls.setLookAt(68, 23, -8.5, 21.5, -5.5, 23);
 
 components.init();
 
+const grid = components.get(OBC.Grids).create(world);
+
 /* MD
-
-  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
-
+  ### 🛠️ Setting Up Fragments
+  Now, let's configure the FragmentsManager. This will allow us to load models effortlessly and start manipulating them with ease:
 */
 
-world.scene.three.background = null;
+const workerUrl =
+  "/node_modules/@thatopen/fragments/dist/Worker/worker.mjs";
+const fragments = components.get(OBC.FragmentsManager);
+fragments.init(workerUrl);
+
+world.camera.controls.addEventListener("rest", () =>
+  fragments.core.update(true),
+);
+
+world.onCameraChanged.add((camera) => {
+  for (const [, model] of fragments.list) {
+    model.useCamera(camera.three);
+  }
+  fragments.core.update(true);
+});
+
+fragments.list.onItemSet.add(({ value: model }) => {
+  model.useCamera(world.camera.three);
+  world.scene.three.add(model.object);
+  fragments.core.update(true);
+});
 
 /* MD
+  ### 📂 Loading Fragments Models
+  With the core setup complete, it's time to load a Fragments model into our scene. Fragments are optimized for fast loading and rendering, making them ideal for large-scale 3D models.
 
-  Easy, right? Believe it or not, this is all you need to use the OrthoPerspectiveCamera. Now, let's see it in action!
+  :::info Where can I find Fragment files?
 
+  You can use the sample Fragment files available in our repository for testing. If you have an IFC model you'd like to convert to Fragments, check out the IfcImporter tutorial for detailed instructions.
 
-  ### 🧊 Creating a cube
-  ---
-
-  We will start by creating a simple cube and a grid that will serve as a reference point for our camera.
-
+  :::
 */
 
-let cubeGeometry = new THREE.BoxGeometry();
-let cubeMaterial = new THREE.MeshStandardMaterial({ color: "#6528D7" });
-let cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-cube.position.set(0, 0.5, 0);
-
-world.scene.three.add(cube);
-world.meshes.add(cube);
-
-let grids = components.get(OBC.Grids);
-let grid = grids.create(world);
+const fragPaths = ["/resources/frags/school_arq.frag"];
+await Promise.all(
+  fragPaths.map(async (path) => {
+    const modelId = path.split("/").pop()?.split(".").shift();
+    if (!modelId) return null;
+    const file = await fetch(path);
+    const buffer = await file.arrayBuffer();
+    return fragments.core.load(buffer, { modelId });
+  }),
+);
 
 /* MD
-  ### 🎟️ Using camera events
-  ---
-
-  The OrthoPerspectiveCamera has a few events that you can use to manage the your scene. We will use the `camera.projection.onChanged` event to update the grid, so that when using the Orthographic camera, the grid will fade out if the camera zooms away a lot.
+  ### ✨ Using The OrthoPerspectiveCamera Component
+  We have already created the camera while setting up the world, making it incredibly simple. However, the camera itself comes with some exciting features that can be triggered through the UI in this tutorial. Since the camera can switch between different projections, the world's grid needs to be updated accordingly:
 */
 
 world.camera.projection.onChanged.add(() => {
@@ -96,26 +105,14 @@ world.camera.projection.onChanged.add(() => {
 });
 
 /* MD
-  ### ⏱️ Measuring the performance (optional)
-  ---
-
-  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
-
+  ### 🧩 Adding some UI (optional but recommended)
+  We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
 */
 
-const stats = new Stats();
-stats.showPanel(2);
-document.body.append(stats.dom);
-stats.dom.style.left = "0px";
-stats.dom.style.zIndex = "unset";
-world.renderer.onBeforeUpdate.add(() => stats.begin());
-world.renderer.onAfterUpdate.add(() => stats.end());
+BUI.Manager.init();
 
 /* MD
-  ### 🧩 Building a camera UI
-  ---
-
-  Now we will use @thatopen/ui to create a simple UI for the OrthoPerspectiveCamera. It will have 4 elements: 
+  Now we will create a simple UI for the OrthoPerspectiveCamera. It will have 4 elements: 
 
   #### 🎛️ Navigation mode
 
@@ -139,14 +136,11 @@ world.renderer.onAfterUpdate.add(() => stats.end());
     
 */
 
-BUI.Manager.init();
-
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
-    <bim-panel active label="Orthoperspective Camera Tutorial" class="options-menu">
-      <bim-panel-section collapsed label="Controls">
-         
-          <bim-dropdown required label="Navigation mode" 
+    <bim-panel active label="OrthoPerspectiveCamera Tutorial" class="options-menu">
+      <bim-panel-section label="Section">
+        <bim-dropdown required label="Navigation Mode" 
             @change="${({ target }: { target: BUI.Dropdown }) => {
               const selected = target.value[0] as OBC.NavModeID;
 
@@ -165,9 +159,9 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           <bim-option label="FirstPerson"></bim-option>
           <bim-option label="Plan"></bim-option>
         </bim-dropdown>
-         
+          
       
-        <bim-dropdown required label="Camera projection" 
+        <bim-dropdown required label="Projection" 
             @change="${({ target }: { target: BUI.Dropdown }) => {
               const selected = target.value[0] as OBC.CameraProjection;
               const isOrtho = selected === "Orthographic";
@@ -184,66 +178,19 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         </bim-dropdown>
 
         <bim-checkbox 
-          label="Allow user input" checked 
+          label="Allow User Input" checked 
           @change="${({ target }: { target: BUI.Checkbox }) => {
             world.camera.setUserInput(target.checked);
           }}">  
         </bim-checkbox>  
         
         <bim-button 
-          label="Fit cube" 
-          @click="${() => {
-            world.camera.fit([cube]);
-          }}">  
+          label="Fit Model" 
+          @click=${() => world.camera.fitToItems()}>
         </bim-button>
-        
-        <bim-button 
-          label="Reset scene" 
-          @click="${async () => {
-            components.dispose();
-
-            components = new OBC.Components();
-            worlds = components.get(OBC.Worlds);
-
-            world = worlds.create<
-              OBC.SimpleScene,
-              OBC.OrthoPerspectiveCamera,
-              OBC.SimpleRenderer
-            >();
-
-            world.scene = new OBC.SimpleScene(components);
-            world.renderer = new OBC.SimpleRenderer(components, container);
-            world.camera = new OBC.OrthoPerspectiveCamera(components);
-
-            world.scene.setup();
-
-            await world.camera.controls.setLookAt(3, 3, 3, 0, 0, 0);
-
-            components.init();
-
-            world.scene.three.background = null;
-
-            cubeGeometry = new THREE.BoxGeometry();
-            cubeMaterial = new THREE.MeshStandardMaterial({ color: "#6528D7" });
-            cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-            cube.position.set(0, 0.5, 0);
-
-            world.scene.three.add(cube);
-            world.meshes.add(cube);
-
-            grids = components.get(OBC.Grids);
-            grid = grids.create(world);
-
-            world.camera.projection.onChanged.add(() => {
-              const projection = world.camera.projection.current;
-              grid.fade = projection === "Perspective";
-            });
-          }}">  
-        </bim-button>  
-
       </bim-panel-section>
     </bim-panel>
-    `;
+  `;
 });
 
 document.body.append(panel);
@@ -269,9 +216,19 @@ const button = BUI.Component.create<BUI.PanelSection>(() => {
 document.body.append(button);
 
 /* MD
+  ### ⏱️ Measuring the performance (optional)
+  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
+*/
+
+const stats = new Stats();
+stats.showPanel(2);
+document.body.append(stats.dom);
+stats.dom.style.left = "0px";
+stats.dom.style.zIndex = "unset";
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
+
+/* MD
   ### 🎉 Wrap up
-  ---
-
-  That's it! We have created an OrthoPerspective camera that can be used to navigate a 3D scene with multiple projections and navigation modes, as well as a neat UI to control it. Great job!
-
+  That's it! Now you're able to use the OrthoPerspectiveCamera component effectively, toggle between projections, navigate your scene, and even fit the camera to the models. Congratulations! Keep exploring more tutorials in the documentation to enhance your skills further.
 */

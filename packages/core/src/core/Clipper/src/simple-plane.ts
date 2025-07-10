@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import { Hideable, Disposable, Event, World } from "../../Types";
 import { Components } from "../../Components";
+import { Clipper } from "..";
 
 /**
  * Each of the clipping planes created by the clipper.
@@ -39,6 +40,16 @@ export class SimplePlane implements Disposable, Hideable {
 
   /** A custom string to identify what this plane is used for. */
   type = "default";
+
+  private _title: string = "Clipping Plane";
+  set title(value: string) {
+    this._title = value;
+    this.notifyManager();
+  }
+
+  get title() {
+    return this._title;
+  }
 
   protected readonly _helper: THREE.Object3D;
 
@@ -78,9 +89,21 @@ export class SimplePlane implements Disposable, Hideable {
     if (!this.world.renderer) {
       throw new Error("No renderer found for clipping plane!");
     }
+
     this._enabled = state;
+
+    if (state) {
+      this.visible = this._visibilityBeforeDisabled;
+    } else {
+      this._visibilityBeforeDisabled = this.visible;
+      this.visible = false;
+    }
+
     this.world.renderer.setPlane(state, this.three);
+    this.notifyManager();
   }
+
+  private _visibilityBeforeDisabled = true;
 
   /** {@link Hideable.visible } */
   get visible() {
@@ -90,9 +113,10 @@ export class SimplePlane implements Disposable, Hideable {
   /** {@link Hideable.visible } */
   set visible(state: boolean) {
     this._visible = state;
-    this._controls.object.visible = state;
+    this._controls.getHelper().visible = state;
     this._helper.visible = state;
     this.toggleControls(state);
+    this.notifyManager();
   }
 
   /** The meshes used for raycasting */
@@ -162,6 +186,12 @@ export class SimplePlane implements Disposable, Hideable {
     }
   }
 
+  private notifyManager = () => {
+    const clipper = this.components.get(Clipper);
+    const id = clipper.list.getKey(this);
+    if (id) clipper.list.set(id, this);
+  };
+
   /**
    * Sets the clipping plane's normal and origin from the given normal and point.
    * This method resets the clipping plane's state, updates the normal and origin,
@@ -207,7 +237,7 @@ export class SimplePlane implements Disposable, Hideable {
     this._arrowBoundBox.removeFromParent();
     this._arrowBoundBox.geometry.dispose();
     this._planeMesh.geometry.dispose();
-    this._controls.object.removeFromParent();
+    this._controls.getHelper().removeFromParent();
     this._controls.dispose();
     this.onDisposed.trigger();
     this.onDisposed.reset();
@@ -245,7 +275,7 @@ export class SimplePlane implements Disposable, Hideable {
     const container = this.world.renderer.three.domElement;
     const controls = new TransformControls(camera, container);
     this.initializeControls(controls);
-    this.world.scene.three.add(controls.object);
+    this.world.scene.three.add(controls.getHelper());
     return controls;
   }
 
@@ -255,7 +285,7 @@ export class SimplePlane implements Disposable, Hideable {
     controls.showY = false;
     controls.setSpace("local");
     this.createArrowBoundingBox();
-    controls.object.children[0].children[0].add(this._arrowBoundBox);
+    controls.getHelper().children[0].children[0].add(this._arrowBoundBox);
   }
 
   private createArrowBoundingBox() {

@@ -2,13 +2,15 @@ import * as FRAGS from "@thatopen/fragments";
 import { Components } from "../../../../core/Components";
 import {
   IDSFacetParameter,
-  IDSCheckResult,
   IDSFacetParameterName,
   IDSCheck,
   IDSConditionalCardinaltiy,
   IDSSimpleCardinality,
   IDSFacetType,
+  IDSItemCheckResult,
+  IDSItemFacetCheck,
 } from "../types";
+import { ModelIdDataMap, ModelIdMap } from "../../../../fragments";
 
 export abstract class IDSFacet {
   abstract facetType: IDSFacetType;
@@ -20,7 +22,7 @@ export abstract class IDSFacet {
   // When using this facet as a requirement, instructions can be given for the authors of the IFC.
   instructions?: string;
 
-  constructor(protected components: Components) {}
+  constructor(protected _components: Components) {}
 
   protected addCheckResult(check: IDSCheck, checks: IDSCheck[]) {
     const index = checks.findIndex(
@@ -43,7 +45,7 @@ export abstract class IDSFacet {
     const checkLog: IDSCheck = {
       parameter,
       currentValue: value,
-      requiredValue: facetParameter.parameter,
+      requiredValue: facetParameter,
       pass: false,
     };
 
@@ -101,18 +103,60 @@ export abstract class IDSFacet {
     return checkLog.pass;
   };
 
-  protected testResult: IDSCheckResult[] = [];
-  protected saveResult(attrs: any, pass: boolean) {
-    const { GlobalId } = attrs;
-    if (!GlobalId) return;
-    const { value: guid } = GlobalId;
-    const result: IDSCheckResult = {
-      expressID: guid,
-      pass,
-      checks: [],
+  protected getItemChecks(
+    collector: ModelIdDataMap<IDSItemCheckResult>,
+    modelId: string,
+    item: FRAGS.ItemData,
+  ) {
+    if (
+      !("value" in item._localId && typeof item._localId.value === "number")
+    ) {
+      return null;
+    }
+
+    let modelItemResults = collector.get(modelId);
+    if (!modelItemResults) {
+      modelItemResults = new FRAGS.DataMap();
+      collector.set(modelId, modelItemResults);
+    }
+
+    let result = modelItemResults.get(item._localId.value);
+    if (result) {
+      // If there are results already and the item didn't pass
+      // return null to skip further checks
+      if (!result.pass) return null;
+    } else {
+      const checks: IDSItemFacetCheck[] = [];
+
+      result = {
+        guid: Array.isArray(item._guid) ? undefined : item._guid.value,
+        pass: false,
+        checks,
+      };
+
+      Object.defineProperty(result, "pass", {
+        get: () => checks.every(({ pass }) => pass),
+      });
+
+      modelItemResults.set(item._localId.value, result);
+    }
+
+    const checks: IDSCheck[] = [];
+
+    const check: IDSItemFacetCheck = {
+      facetType: this.facetType,
       cardinality: this.cardinality,
+      checks,
+      pass: false,
     };
-    this.testResult.push(result);
+
+    Object.defineProperty(check, "pass", {
+      get: () => checks.every(({ pass }) => pass),
+    });
+
+    result.checks.push(check);
+
+    return check.checks;
   }
 
   /**
@@ -125,14 +169,14 @@ export abstract class IDSFacet {
    * @returns An array of express IDs of the retrieved entities.
    */
   abstract getEntities(
-    model: FRAGS.FragmentsGroup,
-    collector: FRAGS.IfcProperties,
-  ): Promise<number[]>;
+    modelIds: RegExp[],
+    collector: ModelIdMap,
+  ): Promise<void>;
 
   abstract test(
-    entities: FRAGS.IfcProperties,
-    model?: FRAGS.FragmentsGroup,
-  ): Promise<IDSCheckResult[]>;
+    items: ModelIdMap,
+    collector: ModelIdDataMap<IDSItemCheckResult>,
+  ): Promise<void>;
 
   abstract serialize(type: "applicability" | "requirement"): string;
 }

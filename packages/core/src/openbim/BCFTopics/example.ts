@@ -1,75 +1,103 @@
 /* MD
-  ### Communicating The Right Way 👌
+  ## 👌 Communicating The Right Way
   ---
-  If there is something key in all projects (construction or not) is communication. Having not also a way to easily communicate between different project members but also to track communications is a must. For construction projects, the BuildingSMART created the BIM Collaboration Format (BCF) to standardize once and for all the way stakeholders communicate about on-going topics in the project. That Open Engine includes an integration with BCF, so you can read, create and update any BCF file you want. Let's learn how it works!
+  Effective communication is essential for all projects, whether in construction or other industries. It is crucial to have a reliable method for project members to communicate and track discussions. In construction projects, BuildingSMART introduced the BIM Collaboration Format (BCF) to standardize communication about ongoing topics among stakeholders. That Open Engine includes integration with BCF, enabling you to read, create, and update any BCF file seamlessly. Let's explore how it works!
 
-  ### 🚧 Scaffolding The Project
-  ---
-  Before we dive in, let's create a very simple app with the engine. Start by including the dependencies:
-  */
+  ### 🖖 Importing our Libraries
+  First things first, let's install all necessary dependencies to make this example work:
+*/
 
-// eslint-disable-next-line import/no-extraneous-dependencies
+import Stats from "stats.js";
 import * as BUI from "@thatopen/ui";
-// You have to import from @thatopen/components
+// You have to import * as OBC from "@thatopen/components"
 import * as OBC from "../..";
 
 /* MD
-  Then, initialize components:
-  */
-
-// To have the possibility to use some plug n play UI, initialize the user interface library
-BUI.Manager.init();
-const viewport = document.createElement("bim-viewport");
+  ### 🌎 Setting up a Simple Scene
+  To get started, let's set up a basic ThreeJS scene. This will serve as the foundation for our application and allow us to visualize the 3D models effectively:
+*/
 
 const components = new OBC.Components();
 
 const worlds = components.get(OBC.Worlds);
 const world = worlds.create<
   OBC.SimpleScene,
-  OBC.SimpleCamera,
+  OBC.OrthoPerspectiveCamera,
   OBC.SimpleRenderer
 >();
 
 world.scene = new OBC.SimpleScene(components);
 world.scene.setup();
+world.scene.three.background = null;
 
-world.renderer = new OBC.SimpleRenderer(components, viewport);
-world.camera = new OBC.SimpleCamera(components);
-
-const viewerGrids = components.get(OBC.Grids);
-viewerGrids.create(world);
+const container = document.getElementById("container")!;
+world.renderer = new OBC.SimpleRenderer(components, container);
+world.camera = new OBC.OrthoPerspectiveCamera(components);
+await world.camera.controls.setLookAt(68, 23, -8.5, 21.5, -5.5, 23);
 
 components.init();
 
-world.camera.controls.setLookAt(12, 6, 8, 0, 2, -2);
-
 /* MD
-  Depite BCFs can be used without any model, it is more convenient when you use it in conjuction with IFC files. So, let's load a pretty basic IFC model from a remote repository:
-  */
+  ### 🛠️ Setting Up Fragments
+  Now, let's configure the FragmentsManager. This will allow us to load models effortlessly and start manipulating them with ease:
+*/
 
-const ifcLoader = components.get(OBC.IfcLoader);
-await ifcLoader.setup();
-const file = await fetch(
-  "https://thatopen.github.io/engine_components/resources/small.ifc",
+const workerUrl =
+  "/node_modules/@thatopen/fragments/dist/Worker/worker.mjs";
+const fragments = components.get(OBC.FragmentsManager);
+fragments.init(workerUrl);
+
+world.camera.controls.addEventListener("rest", () =>
+  fragments.core.update(true),
 );
-const data = await file.arrayBuffer();
-const buffer = new Uint8Array(data);
-const model = await ifcLoader.load(buffer);
-world.scene.three.add(model);
+
+world.onCameraChanged.add((camera) => {
+  for (const [, model] of fragments.list) {
+    model.useCamera(camera.three);
+  }
+  fragments.core.update(true);
+});
+
+fragments.list.onItemSet.add(({ value: model }) => {
+  model.useCamera(world.camera.three);
+  world.scene.three.add(model.object);
+  fragments.core.update(true);
+});
 
 /* MD
-  ### Integrating With BCF 📃
-  ---
-  Now the fun part! Allowing your app to accept and generate BCF files is extremely simple, and it can be done in very few lines of code. Before going further, you should be aware of the BCF files structure:
+  ### 📂 Loading Fragments Models
+  With the core setup complete, it's time to load a Fragments model into our scene. Fragments are optimized for fast loading and rendering, making them ideal for large-scale 3D models.
 
-  :::info[BCF 101]
+  :::info Where can I find Fragment files?
 
-  In a nutshell, BCF files are just compressed files (zip). In the compressed file you find one or more folders. Each folder represents what is known as a topic. A topic is a particular communication made in the same project; it can be a design issue, a construction progress, an information request, etc. The topics by themselves can hold information like the title, description, status, assignee, stage, comments, etc. Apart from the topics, the BCF can also hold viewpoints. Viewpoints include information such as camera position and target, while also containing reference to entities in the IFC model through its GUID. Finally, topics and viewpoints can be related to each other; however, in a BCF file a viewpoint shouldn't exist without a topic, but a topic can exist without a viewpoint.
+  You can use the sample Fragment files available in our repository for testing. If you have an IFC model you'd like to convert to Fragments, check out the IfcImporter tutorial for detailed instructions.
+
+  :::
+*/
+
+const fragPaths = ["/resources/frags/school_arq.frag"];
+await Promise.all(
+  fragPaths.map(async (path) => {
+    const modelId = path.split("/").pop()?.split(".").shift();
+    if (!modelId) return null;
+    const file = await fetch(path);
+    const buffer = await file.arrayBuffer();
+    return fragments.core.load(buffer, { modelId });
+  }),
+);
+
+/* MD
+  ### ✨ Using The BCFTopics Component
+  Let's enable your app to handle BCF files effortlessly. BCF files are compressed archives (zip) containing folders, each representing a topic. Topics are communications within a project, such as design issues, progress updates, or information requests. They include metadata like title, description, status, assignee, stage, comments, and some more.
+
+  :::info[BCF Basics]
+
+  BCF files also contain viewpoints, which store camera positions, targets, and references to IFC model entities via GUIDs. Viewpoints are linked to topics, but a topic can exist without a viewpoint, while a viewpoint must belong to a topic.
 
   :::
 
-  The approach took in That Open Engine is you can create topics and viewpoints appart. Then, you decide which viewpoints and topics to relate. This tutorial will be focused in topics, but you can see the corresponding viewpoints tutorial to know more about them! So, let's simply create an instance of the topics component: 
-  */
+  In That Open Engine, you can create topics and viewpoints independently, then link them as needed. This tutorial focuses on topics. To get started, create an instance of the topics component:
+*/
 
 const bcfTopics = components.get(OBC.BCFTopics);
 bcfTopics.setup({
@@ -77,15 +105,18 @@ bcfTopics.setup({
   types: new Set([...bcfTopics.config.types, "Information", "Coordination"]),
   statuses: new Set(["Active", "In Progress", "Done", "In Review", "Closed"]),
   users: new Set(["juan.hoyos4@gmail.com"]),
+  version: "3",
 });
 
 /* MD
-  One cool thing about the component is you can add callbacks each time a topic is created, deleted or updated. In this case, and for demostration purposes, let's create a new viewpoint whenever a topic is created.
-  */
+  The component supports callbacks for topic creation, deletion, and updates. Here's an example of creating a new viewpoint whenever a topic is created:
+*/
 
 const viewpoints = components.get(OBC.Viewpoints);
-bcfTopics.list.onItemSet.add(({ value: topic }) => {
-  const viewpoint = viewpoints.create(world, { title: topic.title });
+bcfTopics.list.onItemSet.add(async ({ value: topic }) => {
+  const viewpoint = viewpoints.create();
+  viewpoint.world = world;
+
   // Topics include references to the viewpoints.
   // The reference is made using the viewpoint GUID instead of the whole viewpoint object.
   // This prevents having possible memory leaks.
@@ -94,21 +125,20 @@ bcfTopics.list.onItemSet.add(({ value: topic }) => {
   // Comments can be optionally related to viewpoints.
   // In this case, each time a comment is added the default viewpoint is used on it.
   topic.comments.onItemSet.add(({ value: comment }) => {
-    comment.viewpoint = viewpoint;
+    comment.viewpoint = viewpoint.guid;
   });
 });
 
 /* MD
   :::info
 
-  If you want to know more about viewpoints, please refer to the corresponding tutorial.
+  For more details on viewpoints, check the dedicated tutorial.
 
   :::
 
-  ### Creating Topics 📡
-  ---
-  As the component is already setup, let's create a topic. Despite you can create instances of a Topic by yourslef, the best practice is to always make them through the BCFTopics component it-self as it always holds a reference to the created topic, so you can access it later. Also, by default some of the UI components in `@thatopen/ui-obc` listen to changes in `BCFTopics.list` to know when the UI has to be updated. Let's create the topic as follows:
-  */
+  ### 📡 Creating Topics
+  With the component set up, let's create a topic. While you can instantiate a Topic directly, it's best to use the BCFTopics component. This ensures the topic is tracked and accessible later. Here's how to create a topic:
+*/
 
 const topic = bcfTopics.create({
   title: "Missing information",
@@ -122,17 +152,8 @@ const topic = bcfTopics.create({
 });
 
 /* MD
-  Based on the BCF standard, all topics must have at least the following information:
-
-  - guid
-  - type
-  - status
-  - title
-  - creationDate
-  - creationAuthor
-
-  However, you will notice when creating a topic all parameters are optional. The reason is because, to simplify everything, the topics already comes with defaults for those. The great news is you can modify the defaults when creating topics (not only for the values above, but for other topic properties), so you adapt it to your app! You can do it as follows:
-  */
+  By BCF standards, topics must include a guid, type, status, title, creationDate, and creationAuthor. However, when creating a topic, all parameters are optional because default values are preconfigured. You can customize these defaults, including additional properties, to better suit your app. Here's how:
+*/
 
 // Only topics creater after this will be affected.
 // creationDate is excluded as is taken from the current date.
@@ -158,14 +179,13 @@ const secondComment = topic.createComment("Hi there! I agree.");
 /* MD
   :::tip
 
-  In comments, the author and the creationDate are set automatically based on BCFTopics.config.author and the current date, respectively.
+  Comments automatically set the author and creationDate based on BCFTopics.config.author and the current date.
 
   :::
 
-  ### Editing Topics 🔄
-  ---
-  Topics are just classes, and that means you can edit any information accessing its properties like any other regular class. However, you should be aware when you need the update to trigger an event or not. By default, when you set the topic property replacing its current value no updates will be triggered, but using the corresponding method does. Let's implement a listener on topics update, and see when it triggers and when it does not:
-  */
+  ### 🔄 Editing Topics
+  Topics are editable like regular classes. Direct property updates won't trigger events, but using the `set` method will. Here's an example of listening for topic updates:
+*/
 
 bcfTopics.list.onItemUpdated.add(({ value: topic }) => {
   console.log(`Topic ${topic.title} was updated!`);
@@ -188,10 +208,9 @@ firstComment.comment =
 secondComment.comment = "Will tell you tomorrow when is more convenient!";
 
 /* MD
-  ### Exporting BCF Files ⏬
-  ---
-  What is the purpose of having a great BCF system in your app if you can't let users download the files to bring them into other BIM apps? Well, luckily is very easy to export as many BCFs as you want from your topics! Let's create a very simple general function to export the BCFs, like this:
-  */
+  ### ⏬ Exporting BCF Files
+  A robust BCF system is incomplete without the ability to export files for use in other BIM applications. Here's a simple function to export BCF files:
+*/
 
 const exportBCF = async () => {
   // You can indicate which topics to export. All are exported by default
@@ -206,9 +225,8 @@ const exportBCF = async () => {
 };
 
 /* MD
-  ### Loading BCF Files ⏫
-  ---
-  The BCFTopics component gives not only the possibility to export, but also to import any valid 2.1/3.0 BCF file you got. Just as before, let's implement a really simple functionality to load BCFs:
+  ### ⏫ Importing BCF Files
+  The BCFTopics component allows importing valid BCF files (versions 2.1/3.0). Here's a simple implementation:
   */
 
 const loadBCF = () => {
@@ -221,7 +239,8 @@ const loadBCF = () => {
     const file = input.files?.[0];
     if (!file) return;
     const buffer = await file.arrayBuffer();
-    bcfTopics.load(new Uint8Array(buffer), world);
+    const { topics, viewpoints } = await bcfTopics.load(new Uint8Array(buffer));
+    console.log(topics, viewpoints);
   });
 
   input.click();
@@ -230,44 +249,70 @@ const loadBCF = () => {
 /* MD
   :::tip
 
-  When a BCF is uploaded, it not only creates the corresponding topics but also all the associated viewpoints. To know more about the viewpoints, check out the corresponding tutorial.
+  Uploading a BCF file creates corresponding topics and their associated viewpoints. For more details on viewpoints, refer to the dedicated tutorial.
 
   :::
 
-  ### Wrapping Up ✅
-  ---
-  To complete this tutorial, let's create a very simple panel to include buttons that triggers the import and export funcionalities, and also setup the app content like this:
-  */
+  ### 🧩 Adding some UI (optional but recommended)
+  We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
+*/
+
+BUI.Manager.init();
+
+/* MD
+Now we will add some UI to play around with the actions in this tutorial. For more information about the UI library, you can check the specific documentation for it!
+*/
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
     <bim-panel active label="BCFTopics Tutorial" class="options-menu">
-      <bim-panel-section collapsed label="Controls">
+      <bim-panel-section label="Info">
+        <bim-label style="width: 14rem; white-space: normal;">💡 To fully experience this tutorial, open your browser console!</bim-label> 
+      </bim-panel-section>
+      <bim-panel-section label="Controls">
         <bim-button @click=${exportBCF} label="Export BCF"></bim-button> 
         <bim-button @click=${loadBCF} label="Load BCF"></bim-button>
       </bim-panel-section>
     </bim-panel>
-    `;
+  `;
 });
 
 document.body.append(panel);
 
-const app = document.getElementById("app") as BUI.Grid;
-app.layouts = {
-  main: {
-    template: `"viewport"`,
-    elements: { viewport },
-  },
-};
+/* MD
+  And we will make some logic that adds a button to the screen when the user is visiting our app from their phone, allowing to show or hide the menu. Otherwise, the menu would make the app unusable.
+*/
 
-app.layout = "main";
+const button = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+      <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
+        @click="${() => {
+          if (panel.classList.contains("options-menu-visible")) {
+            panel.classList.remove("options-menu-visible");
+          } else {
+            panel.classList.add("options-menu-visible");
+          }
+        }}">
+      </bim-button>
+    `;
+});
+
+document.body.append(button);
 
 /* MD
-  :::info
+  ### ⏱️ Measuring the performance (optional)
+  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
+*/
 
-  `@thatopen/ui` comes with cool UI components you can use with topics to create BIM apps with BCF integration in no time. We recommend you taking a look at the corresponding tutorial for topics UI in Tutorials/UserInterface/OBC/TopicsUI 😉
+const stats = new Stats();
+stats.showPanel(2);
+document.body.append(stats.dom);
+stats.dom.style.left = "0px";
+stats.dom.style.zIndex = "unset";
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
 
-  :::
-
-  Congratulations! You already have the tools you need to create BCF integrations in your next BIM app. Let's continue with more tutorials!
-  */
+/* MD
+  ### 🎉 Wrap up
+  That's it! Now you're able to create, edit, import, and export BCF files, as well as manage topics effectively. Congratulations! Keep going with more tutorials in the documentation.
+*/

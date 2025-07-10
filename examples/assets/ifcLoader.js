@@ -1,25 +1,17 @@
-import{bo as b,bp as u,bq as f}from"./web-ifc-api-BlmMr04K.js";import{T as g,L as m,m as p}from"./index-C8nqhRYO.js";import{S as w}from"./stats.min-GTpOrGrX.js";import{C as I,W as C,S as L,d as y,a as F,G as N,F as R,f as h}from"./index-7tDlUpW2.js";import"./_commonjsHelpers-Cpj98o6Y.js";const E=document.getElementById("container"),o=new I,O=o.get(C),t=O.create();t.scene=new L(o);t.renderer=new y(o,E);t.camera=new F(o);o.init();t.camera.controls.setLookAt(12,6,8,0,0,-10);t.scene.setup();const x=o.get(N);x.create(t);t.scene.three.background=null;const a=o.get(R),c=o.get(h);await c.setup();const k=[b,u,f];for(const e of k)c.settings.excludedCategories.add(e);c.settings.webIfc.COORDINATE_TO_ORIGIN=!0;async function S(){const n=await(await fetch("https://thatopen.github.io/engine_components/resources/small.ifc")).arrayBuffer(),r=new Uint8Array(n),l=await c.load(r);l.name="example",t.scene.three.add(l)}a.onFragmentsLoaded.add(e=>{console.log(e)});function d(e){const n=document.createElement("a");n.href=URL.createObjectURL(e),n.download=e.name,document.body.appendChild(n),n.click(),n.remove()}async function v(){if(!a.groups.size)return;const e=Array.from(a.groups.values())[0],n=a.export(e);d(new File([new Blob([n])],"small.frag"));const r=e.getLocalProperties();r&&d(new File([JSON.stringify(r)],"small.json"))}function A(){a.dispose()}const s=new w;s.showPanel(2);document.body.append(s.dom);s.dom.style.left="0px";s.dom.style.zIndex="unset";t.renderer.onBeforeUpdate.add(()=>s.begin());t.renderer.onAfterUpdate.add(()=>s.end());g.init();const i=m.create(()=>p`
-  <bim-panel active label="IFC Loader Tutorial" class="options-menu">
-    <bim-panel-section collapsed label="Controls">
-      <bim-panel-section style="padding-top: 12px;">
-      
-        <bim-button label="Load IFC"
-          @click="${()=>{S()}}">
-        </bim-button>  
-            
-        <bim-button label="Export fragments"
-          @click="${()=>{v()}}">
-        </bim-button>  
-            
-        <bim-button label="Dispose fragments"
-          @click="${()=>{A()}}">
-        </bim-button>
-      
+var v=Object.defineProperty;var C=(t,s,e)=>s in t?v(t,s,{enumerable:!0,configurable:!0,writable:!0,value:e}):t[s]=e;var i=(t,s,e)=>(C(t,typeof s!="symbol"?s+"":s,e),e);import{aO as O,aL as g,aM as F,T as D,L as I,m as p,a as W}from"./index-BR15nMAM.js";import{d as E,E as f,F as L,C as S,W as U,S as j,a as B,O as P}from"./index-DQoMA9YT.js";import{G as R}from"./index-Q4q2MoOf.js";class ${constructor(){i(this,"wasm",{path:"",absolute:!1,logLevel:O.LOG_LEVEL_OFF});i(this,"webIfc",{COORDINATE_TO_ORIGIN:!0});i(this,"autoSetWasm",!0);i(this,"customLocateFileHandler",null)}}const m=class m extends E{constructor(e){super(e);i(this,"onDisposed",new f);i(this,"onIfcStartedLoading",new f);i(this,"onSetup",new f);i(this,"settings",new $);i(this,"webIfc",new g);i(this,"enabled",!0);this.components.add(m.uuid,this)}dispose(){this.webIfc=null,this.onDisposed.trigger(m.uuid),this.onDisposed.reset()}async setup(e){this.settings={...this.settings,...e},this.settings.autoSetWasm&&await this.autoSetWasm(),this.onSetup.trigger()}async load(e,a,o,n){const w=this.components.get(L);if(!w.initialized)throw new Error("You need to initialize fragments first.");this.settings.autoSetWasm&&await this.autoSetWasm(),w.core.settings.autoCoordinate=a;const u=new F;u.wasm.path=this.settings.wasm.path,u.wasm.absolute=this.settings.wasm.absolute,n!=null&&n.instanceCallback&&n.instanceCallback(u);const y=await u.process({...n==null?void 0:n.processData,bytes:e});return await w.core.load(y,{modelId:o,userData:n==null?void 0:n.userData})}async readIfcFile(e){const{path:a,absolute:o,logLevel:n}=this.settings.wasm;return this.webIfc.SetWasmPath(a,o),await this.webIfc.Init(this.settings.customLocateFileHandler||void 0),n&&this.webIfc.SetLogLevel(n),this.webIfc.OpenModel(e,this.settings.webIfc)}cleanUp(){try{this.webIfc.Dispose()}catch{console.log("Web-ifc wasn't disposed.")}this.webIfc=null,this.webIfc=new g}async autoSetWasm(){const e=await fetch(`https://unpkg.com/@thatopen/components@${S.release}/package.json`);if(!e.ok){console.warn("Couldn't get openbim-components package.json. Set wasm settings manually.");return}const a=await e.json();if(!("web-ifc"in a.peerDependencies))console.warn("Couldn't get web-ifc from peer dependencies in openbim-components. Set wasm settings manually.");else{const o=a.peerDependencies["web-ifc"];this.settings.wasm.path=`https://unpkg.com/web-ifc@${o}/`,this.settings.wasm.absolute=!0}}};i(m,"uuid","a659add7-1418-4771-a0d6-7d4d438e4624");let h=m;const l=new S,z=l.get(U),r=z.create();r.scene=new j(l);r.scene.setup();r.scene.three.background=null;const A=document.getElementById("container");r.renderer=new B(l,A);r.camera=new P(l);await r.camera.controls.setLookAt(78,20,-2.2,26,-4,25);l.init();l.get(R).create(r);const k=l.get(h);await k.setup({autoSetWasm:!1,wasm:{path:"https://unpkg.com/web-ifc@0.0.69/",absolute:!0}});const T="/node_modules/@thatopen/fragments/dist/Worker/worker.mjs",c=l.get(L);c.init(T);r.camera.controls.addEventListener("rest",()=>c.core.update(!0));c.list.onItemSet.add(({value:t})=>{t.useCamera(r.camera.three),r.scene.three.add(t.object),c.core.update(!0)});const _=async t=>{const e=await(await fetch(t)).arrayBuffer(),a=new Uint8Array(e);await k.load(a,!1,"example",{processData:{progressCallback:o=>console.log(o)}})},x=async()=>{const[t]=c.list.values();if(!t)return;const s=await t.getBuffer(!1),e=new File([s],"school_str.frag"),a=document.createElement("a");a.href=URL.createObjectURL(e),a.download=e.name,a.click(),URL.revokeObjectURL(a.href)};D.init();const[b,G]=I.create(t=>{let s;c.list.size>0&&(s=p`
+      <bim-button label="Download Fragments" @click=${x}></bim-button>
+    `);let e;return c.list.size===0&&(e=p`
+      <bim-button label="Load IFC" @click=${async({target:o})=>{o.label="Conversion in progress...",o.loading=!0,await _("/resources/ifc/school_str.ifc"),o.loading=!1,o.label="Load IFC"}}></bim-button>
+      <bim-label>Open the console to see the progress!</bim-label>
+    `),p`
+    <bim-panel active label="IfcLoader Tutorial" class="options-menu">
+      <bim-panel-section label="Controls">
+        ${e}
+        ${s}
       </bim-panel-section>
-      
     </bim-panel>
-  `);document.body.append(i);const T=m.create(()=>p`
+  `},{});document.body.append(b);c.list.onItemSet.add(()=>G());const M=I.create(()=>p`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
-        @click="${()=>{i.classList.contains("options-menu-visible")?i.classList.remove("options-menu-visible"):i.classList.add("options-menu-visible")}}">
+        @click="${()=>{b.classList.contains("options-menu-visible")?b.classList.remove("options-menu-visible"):b.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(T);
+    `);document.body.append(M);const d=new W;d.showPanel(2);document.body.append(d.dom);d.dom.style.left="0px";d.dom.style.zIndex="unset";r.renderer.onBeforeUpdate.add(()=>d.begin());r.renderer.onAfterUpdate.add(()=>d.end());

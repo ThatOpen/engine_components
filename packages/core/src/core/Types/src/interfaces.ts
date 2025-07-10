@@ -136,3 +136,31 @@ export interface Eventable {
    */
   eventManager: EventManager;
 }
+
+/**
+ * Whether it has a UI or not.
+ */
+export interface WithUi {
+  /**
+   * The UI of the component.
+   */
+  ui: {
+    [key: string]: () => HTMLElement;
+  };
+}
+
+export interface SerializationResult<
+  D extends Record<string, any> = Record<string, any>,
+  S extends Record<string, any> = Record<string, any>,
+> {
+  data?: D[];
+  settings?: S;
+}
+
+export interface Serializable<
+  D extends Record<string, any> = Record<string, any>,
+  S extends Record<string, any> = Record<string, any>,
+> {
+  import: (result: SerializationResult<D, S>, ...args: any) => any;
+  export: (...args: any) => SerializationResult<D, S>;
+}

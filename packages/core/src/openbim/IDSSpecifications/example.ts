@@ -1,219 +1,313 @@
-// import * as FRAGS from "@thatopen/fragments";
+/* MD
+  ## 🧐 Reviewing Your IFC Files
+  ---
+  The buildingSMART has been creating nice standards for the AEC just like IFC for BIM models and BCF for communication. The two of them are great, but when it comes to review if an IFC file complies with some requirements there is the perfect standard for it: IDS. In That Open Engine is possibile not only to create IDS files, but also to import and export then; in this tutorial you will learn everything you need to know to get started!
+
+  ### 🖖 Importing our Libraries
+  First things first, let's install all necessary dependencies to make this example work:
+*/
+
+import * as THREE from "three";
+import * as FRAGS from "@thatopen/fragments";
+import Stats from "stats.js";
+import * as BUI from "@thatopen/ui";
+// You have to import * as OBC from "@thatopen/components"
 import * as OBC from "../..";
 
+/* MD
+  ### 🌎 Setting up a Simple Scene
+  To get started, let's set up a basic ThreeJS scene. This will serve as the foundation for our application and allow us to visualize the 3D models effectively:
+*/
+
 const components = new OBC.Components();
-const ifcLoader = components.get(OBC.IfcLoader);
-await ifcLoader.setup();
-// const file = await fetch("/resources/structure.ifc");
-// const file = await fetch(
-//   "https://raw.githubusercontent.com/buildingSMART/IDS/development/Documentation/ImplementersDocumentation/TestCases/attribute/fail-a_prohibited_facet_returns_the_opposite_of_a_required_facet.ifc",
-// );
-// const data = await file.arrayBuffer();
-// const buffer = new Uint8Array(data);
-// const model = await ifcLoader.load(buffer);
 
-// const indexer = components.get(OBC.IfcRelationsIndexer);
-// await indexer.process(model);
+const worlds = components.get(OBC.Worlds);
+const world = worlds.create<
+  OBC.SimpleScene,
+  OBC.OrthoPerspectiveCamera,
+  OBC.SimpleRenderer
+>();
 
-const ids = components.get(OBC.IDSSpecifications);
-const idsFile = await fetch("/resources/specs.ids");
-const idsContent = await idsFile.text();
-const specs = ids.load(idsContent);
-console.log(ids, specs);
+world.scene = new OBC.SimpleScene(components);
+world.scene.setup();
+world.scene.three.background = null;
 
-// const specification = ids.create("My First IDS!", ["IFC4X3_ADD2"]);
-// specification.description = "Description";
-// specification.instructions = "Instructions";
+const container = document.getElementById("container")!;
+world.renderer = new OBC.SimpleRenderer(components, container);
+world.camera = new OBC.OrthoPerspectiveCamera(components);
+await world.camera.controls.setLookAt(78, 20, -2.2, 26, -4, 25);
 
-// Define some facets to be used in specifications
-const entityFacet = new OBC.IDSEntity(components, {
-  type: "enumeration",
-  parameter: ["IFCSLAB", "IFCWALL"],
-});
+components.init();
 
-// specification.applicability.add(entityFacet);
+/* MD
+  ### 🛠️ Setting Up Fragments
+  Now, let's configure the FragmentsManager. This will allow us to load models effortlessly and start manipulating them with ease:
+*/
 
-const propertyFacet = new OBC.IDSProperty(
-  components,
-  { type: "simple", parameter: "Pset_SlabCommon" },
-  { type: "simple", parameter: "IsExternal" },
+const workerUrl =
+  "/node_modules/@thatopen/fragments/dist/Worker/worker.mjs";
+const fragments = components.get(OBC.FragmentsManager);
+fragments.init(workerUrl);
+
+world.camera.controls.addEventListener("rest", () =>
+  fragments.core.update(true),
 );
 
-propertyFacet.value = { type: "simple", parameter: false };
+world.onCameraChanged.add((camera) => {
+  for (const [, model] of fragments.list) {
+    model.useCamera(camera.three);
+  }
+  fragments.core.update(true);
+});
 
-// specification.requirements.add(propertyFacet);
+fragments.list.onItemSet.add(({ value: model }) => {
+  model.useCamera(world.camera.three);
+  world.scene.three.add(model.object);
+  fragments.core.update(true);
+});
 
-// const idsTitle = "My Custom IDS";
-// const idsExport = ids.export({ title: idsTitle });
-// const file = new File([idsExport], "idsTitle.ids");
-// const a = document.createElement("a");
-// a.href = URL.createObjectURL(file);
-// a.download = file.name;
-// a.click();
-// URL.revokeObjectURL(a.href);
+/* MD
+  ### 📂 Loading Fragments Models
+  With the core setup complete, it's time to load a Fragments model into our scene. Fragments are optimized for fast loading and rendering, making them ideal for large-scale 3D models.
 
-// const classificationFacet = new OBC.IDSClassification(components, {
-//   type: "simple",
-//   parameter: "Uniformat",
-// });
+  :::info Where can I find Fragment files?
 
-// const partOfFacet = new OBC.IDSPartOf(components, {
-//   name: { type: "simple", parameter: "IFCBUILDINGSTOREY" },
-// });
+  You can use the sample Fragment files available in our repository for testing. If you have an IFC model you'd like to convert to Fragments, check out the IfcImporter tutorial for detailed instructions.
 
-// partOfFacet.relation = WEBIFC.IFCRELCONTAINEDINSPATIALSTRUCTURE;
+  :::
+*/
 
-// // IfcSlab entities must have a Pset_SlabCommon with an IsExternal property set to false
-// const entitiesA: FRAGS.IfcProperties = {};
-// await entityFacet.getEntities(model, entitiesA);
-// const resultA = await propertyFacet.test(entitiesA, model);
-// logResult(resultA);
+const fragPaths = ["/resources/frags/school_arq.frag"];
+await Promise.all(
+  fragPaths.map(async (path) => {
+    const modelId = path.split("/").pop()?.split(".").shift();
+    if (!modelId) return null;
+    const file = await fetch(path);
+    const buffer = await file.arrayBuffer();
+    return fragments.core.load(buffer, { modelId });
+  }),
+);
 
-// // Entities with a Pset_SlabCommon including an IsExternal property set to false, must be IfcSlab
-// const entitiesB: FRAGS.IfcProperties = {};
-// await propertyFacet.getEntities(model, entitiesB);
-// const resultB = await entityFacet.test(entitiesB);
-// logResult(resultB);
+/* MD
+  ### ✨ Using the IDS Specifications Component
+  Leveraging this component in That Open Engine is straightforward. The process revolves around creating specifications based on facets from the IDS schema. Let's begin by obtaining the component instance:
+*/
 
-// // Entities with Uniformat IfcClassification must be IfcSlab
-// const entitiesC: FRAGS.IfcProperties = {};
-// await classificationFacet.getEntities(model, entitiesC);
-// const resultC = await entityFacet.test(entitiesC);
-// logResult(resultC);
+const ids = components.get(OBC.IDSSpecifications);
 
-// // IfcSlab entities must have IfcClassification as Uniformat
-// const entitiesD: FRAGS.IfcProperties = {};
-// await entityFacet.getEntities(model, entitiesD);
-// const resultD = await classificationFacet.test(entitiesD, model);
-// logResult(resultD);
+/* MD
+  Next, let's create a new specification. In this example, the specification will require that all doors must have the FireRating property defined.
+*/
 
-// // IfcSlab entities must be related with IfcBuildingStorey
-// const entitiesE: FRAGS.IfcProperties = {};
-// await entityFacet.getEntities(model, entitiesE);
-// const resultE = await partOfFacet.test(entitiesE, model);
-// logResult(resultE);
+const spec = ids.create("Sample", ["IFC4"]);
+spec.description =
+  "All doors must have FireRating specified in Pset_DoorCommon";
 
-// // Entities related with any IfcBuildingStorey must have a Pset_SlabCommon with an IsExternal property set to false
-// const entitiesF: FRAGS.IfcProperties = {};
-// await partOfFacet.getEntities(model, entitiesF);
-// const resultF = await propertyFacet.test(entitiesF, model);
-// logResult(resultF);
+/* MD
+  IDS schema uses "facets" to define conditions for elements. Facets identify elements (applicability) and specify requirements. Common types include entity, attribute, property, material, classification, and partOf. Learn more in the [IDS schema GitHub repository](https://github.com/buildingSMART/IDS). In this example, we use two facets: one to match IfcDoor items (entity facet for applicability) and another to verify the FireRating property (property facet for requirements).
+*/
 
-// Importing
-// const idsFile = await fetch(
-//   "https://raw.githubusercontent.com/buildingSMART/IDS/development/Documentation/ImplementersDocumentation/TestCases/attribute/fail-a_prohibited_facet_returns_the_opposite_of_a_required_facet.ids",
-// );
-// const idsFile = await fetch("/resources/ids.ids");
+const entity = new OBC.IDSEntity(components, {
+  type: "simple",
+  parameter: "IFCDOOR",
+});
 
-// const idsData = await idsFile.text();
-// const imports = ids.load(idsData);
-// for (const spec of imports) {
-//   const app = [...spec.applicability][0];
-//   const req = [...spec.requirements][0];
-//   const entities: FRAGS.IfcProperties = {};
-//   await app.getEntities(model, entities);
-//   const result = await req.test(entities, model);
-//   logResult(result);
-// }
+const property = new OBC.IDSProperty(
+  components,
+  {
+    type: "simple",
+    parameter: "Pset_DoorCommon",
+  },
+  { type: "simple", parameter: "FireRating" },
+);
 
-// Load test cases from GitHub
-// Define the URL for fetching the files list
-// const apiURL =
-//   "https://api.github.com/repos/buildingSMART/IDS/contents/Documentation/ImplementersDocumentation/TestCases/property?ref=development";
+/* MD
+  Next, simply provide the facets to the specification:
+*/
 
-// Function to process each pair of IFC and IDS files
-// async function processPair(ifcUrl: string, idsUrl: string) {
-//   try {
-//     const routes = ifcUrl.split("/");
-//     const name = routes[routes.length - 1];
-//     const pieces = name.split("-");
-//     const bsResult = pieces[0] === "pass";
+spec.applicability.add(entity);
+spec.requirements.add(property);
 
-//     // Fetch the IFC and IDS content
-//     const ifcResponse = await fetch(ifcUrl);
-//     const idsResponse = await fetch(idsUrl);
+/* MD
+  ### 👻 Ghost Mode for Easy Inspection (optional)
+  For demonstration purposes, let's create functions that make it easier to review the test results:
+*/
 
-//     if (!ifcResponse.ok || !idsResponse.ok) {
-//       throw new Error("Error fetching IFC or IDS file");
-//     }
+const originalColors = new Map<
+  FRAGS.BIMMaterial,
+  { color: number; transparent: boolean; opacity: number }
+>();
 
-//     const ifcContent = await ifcResponse.arrayBuffer();
-//     const idsContent = await idsResponse.text();
+const setModelTransparent = (components: OBC.Components) => {
+  const fragments = components.get(OBC.FragmentsManager);
 
-//     const model = await ifcLoader.load(new Uint8Array(ifcContent));
-//     await indexer.process(model);
+  const materials = [...fragments.core.models.materials.list.values()];
+  for (const material of materials) {
+    if (material.userData.customId) continue;
+    // save colors
+    let color: number | undefined;
+    if ("color" in material) {
+      color = material.color.getHex();
+    } else {
+      color = material.lodColor.getHex();
+    }
 
-//     const imports = ids.load(idsContent);
-//     for (const spec of imports) {
-//       const app = [...spec.applicability][0];
-//       const req = [...spec.requirements][0];
-//       const entities: FRAGS.IfcProperties = {};
-//       await app.getEntities(model, entities);
-//       const result = await req.test(entities, model);
-//       const passes = result.filter(({ pass }) => pass);
-//       const fails = result.filter(({ pass }) => !pass);
-//       console.log(bsResult, passes, fails, ifcUrl, idsUrl);
-//     }
+    originalColors.set(material, {
+      color,
+      transparent: material.transparent,
+      opacity: material.opacity,
+    });
 
-//     // Use your custom loaders for IFC and IDS
-//     // customIfcLoader(ifcContent);
-//     // customIdsLoader(idsContent);
+    // set color
+    material.transparent = true;
+    material.opacity = 0.05;
+    material.needsUpdate = true;
+    if ("color" in material) {
+      material.color.setColorName("white");
+    } else {
+      material.lodColor.setColorName("white");
+    }
+  }
+};
 
-//     // console.log(`Successfully processed pair: ${ifcUrl}, ${idsUrl}`);
-//   } catch (error) {
-//     // console.error(`Error processing pair: ${ifcUrl}, ${idsUrl}`, error);
-//   }
-// }
+const restoreModelMaterials = () => {
+  for (const [material, data] of originalColors) {
+    const { color, transparent, opacity } = data;
+    material.transparent = transparent;
+    material.opacity = opacity;
+    if ("color" in material) {
+      material.color.setHex(color);
+    } else {
+      material.lodColor.setHex(color);
+    }
+    material.needsUpdate = true;
+  }
+  originalColors.clear();
+};
 
-// Function to fetch the list of files and group them by pairs (IFC + IDS)
-// async function fetchFileListAndProcessPairs() {
-//   try {
-//     const response = await fetch(apiURL);
+const toggleGhost = () => {
+  if (originalColors.size) {
+    restoreModelMaterials();
+  } else {
+    setModelTransparent(components);
+  }
+};
 
-//     if (!response.ok) {
-//       throw new Error(`Error fetching files list: ${response.statusText}`);
-//     }
+/* MD
+  ### ✨ Testing a Specification
+  Testing a specification is straightforward. Use the class method to test it and convert the result into a ModelIdMap for easy integration with other engine components. Below is a function that tests the specification and highlights passing and failing elements in green and red, respectively.
 
-//     const files = await response.json();
-//     const filePairs: { [key: string]: { ifc?: string; ids?: string } } = {};
+  :::warning Colorizing
 
-//     // Group files by their base names
-//     for (const file of files) {
-//       const fileName = file.name;
+  The colorizing method below is for demonstration purposes only. For real-world applications, use the Highlighter component. Refer to its tutorial for detailed usage.
 
-//       // Extract the base name (everything before the file extension)
-//       const baseName = fileName.split(".").slice(0, -1).join(".");
+  :::
+*/
 
-//       // Check if the file is an .ifc or .ids and group them
-//       if (fileName.endsWith(".ifc")) {
-//         if (!filePairs[baseName]) filePairs[baseName] = {};
-//         filePairs[baseName].ifc = file.download_url;
-//       } else if (fileName.endsWith(".ids")) {
-//         if (!filePairs[baseName]) filePairs[baseName] = {};
-//         filePairs[baseName].ids = file.download_url;
-//       }
-//     }
+const testSpec = async () => {
+  const result = await spec.test([/arq/]);
+  const { fail, pass } = ids.getModelIdMap(result);
 
-//     // Now process each pair using the custom loaders
-//     for (const baseName in filePairs) {
-//       const { ifc, ids } = filePairs[baseName];
+  const highlightPromises = [fragments.resetHighlight()];
 
-//       if (ifc && ids) {
-//         // console.log(`Processing pair: ${baseName}`);
-//         await processPair(ifc, ids);
-//       } else {
-//         // console.warn(`Pair incomplete for ${baseName}`);
-//       }
-//     }
-//   } catch (error) {
-//     console.error(error);
-//   }
-// }
+  highlightPromises.push(
+    fragments.highlight(
+      {
+        customId: "green",
+        color: new THREE.Color("green"),
+        renderedFaces: FRAGS.RenderedFaces.ONE,
+        opacity: 1,
+        transparent: false,
+      },
+      pass,
+    ),
+  );
 
-// Call the function to fetch and process file pairs
-// fetchFileListAndProcessPairs();
+  highlightPromises.push(
+    fragments.highlight(
+      {
+        customId: "red",
+        color: new THREE.Color("red"),
+        renderedFaces: FRAGS.RenderedFaces.ONE,
+        opacity: 1,
+        transparent: false,
+      },
+      fail,
+    ),
+  );
 
-// const baseURL =
-//   "https://raw.githubusercontent.com/buildingSMART/IDS/development/Documentation/ImplementersDocumentation/TestCases";
-// const url = `${baseURL}/property/pass-a_number_specified_as_a_string_is_treated_as_a_string`;
-// processPair(`${url}.ifc`, `${url}.ids`);
+  highlightPromises.push(fragments.core.update(true));
+
+  await Promise.all(highlightPromises);
+  toggleGhost();
+};
+
+/* MD
+  ### 🧩 Adding some UI (optional but recommended)
+  We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
+*/
+
+BUI.Manager.init();
+
+/* MD
+Now we will add some UI to play around with the actions in this tutorial. For more information about the UI library, you can check the specific documentation for it!
+*/
+
+const panel = BUI.Component.create<BUI.PanelSection>(() => {
+  const onReviewModel = async ({ target }: { target: BUI.Button }) => {
+    target.loading = true;
+    await testSpec();
+    target.loading = false;
+  };
+
+  return BUI.html`
+    <bim-panel active label="IDS Specifications Tutorial" class="options-menu">
+      <bim-panel-section label="General">
+        <bim-button label="Toogle Ghost" @click=${toggleGhost}></bim-button>
+      </bim-panel-section>
+      <bim-panel-section label="Specification">
+        <bim-button label="Review Model" @click=${onReviewModel}></bim-button>
+      </bim-panel-section>
+    </bim-panel>
+  `;
+});
+
+document.body.append(panel);
+
+/* MD
+  And we will make some logic that adds a button to the screen when the user is visiting our app from their phone, allowing to show or hide the menu. Otherwise, the menu would make the app unusable.
+*/
+
+const button = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+      <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
+        @click="${() => {
+          if (panel.classList.contains("options-menu-visible")) {
+            panel.classList.remove("options-menu-visible");
+          } else {
+            panel.classList.add("options-menu-visible");
+          }
+        }}">
+      </bim-button>
+    `;
+});
+
+document.body.append(button);
+
+/* MD
+  ### ⏱️ Measuring the performance (optional)
+  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
+*/
+
+const stats = new Stats();
+stats.showPanel(2);
+document.body.append(stats.dom);
+stats.dom.style.left = "0px";
+stats.dom.style.zIndex = "unset";
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
+
+/* MD
+  ### 🎉 Wrap up
+  That's it! Now you're able to create IDS specifications, test them, and visualize the results in a 3D scene. Congratulations! Keep exploring more tutorials in the documentation to enhance your skills further.
+*/

@@ -151,7 +151,7 @@ export class Marker extends OBC.Component implements OBC.Disposable {
    */
   create(
     world: OBC.World,
-    text: string,
+    element: HTMLElement,
     point: THREE.Vector3,
     isStatic = false,
   ) {
@@ -162,12 +162,13 @@ export class Marker extends OBC.Component implements OBC.Disposable {
     const markers = this.getWorldMarkerList(world);
 
     if (markers.has(key)) {
-      return;
+      return null;
     }
 
     const span = document.createElement("span");
-    span.innerHTML = text;
-    span.style.color = this._color;
+    span.append(element);
+    // span.innerHTML = text;
+    // span.style.color = this._color;
     const marker = new Mark(world, span);
     marker.three.position.copy(point);
 
