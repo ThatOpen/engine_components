@@ -43,7 +43,7 @@ components.init();
 */
 
 const workerUrl =
-  "/node_modules/@thatopen/fragments/dist/Worker/worker.mjs";
+  "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 
@@ -76,8 +76,8 @@ fragments.list.onItemSet.add(({ value: model }) => {
 */
 
 const fragPaths = [
-  "/resources/frags/school_arq.frag",
-  "/resources/frags/school_str.frag",
+  "https://thatopen.github.io/engine_components/resources/frags/school_arq.frag",
+  "https://thatopen.github.io/engine_components/resources/frags/school_str.frag",
 ];
 await Promise.all(
   fragPaths.map(async (path) => {

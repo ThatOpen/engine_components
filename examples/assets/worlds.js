@@ -1,10 +1,10 @@
-import{T as d,L as l,C as u,m as c,a as p}from"./index-BR15nMAM.js";import{C as b,W as g,S as f,a as w,f as h,F as y}from"./index-DQoMA9YT.js";const v=document.getElementById("container"),o=new b,C=o.get(g),e=C.create();e.scene=new f(o);e.renderer=new w(o,v);e.camera=new h(o);o.init();e.scene.setup();e.scene.three.background=null;const L="/node_modules/@thatopen/fragments/dist/Worker/worker.mjs",t=o.get(y);t.init(L);e.camera.controls.addEventListener("rest",()=>t.core.update(!0));t.list.onItemSet.add(({value:n})=>{n.useCamera(e.camera.three),e.scene.three.add(n.object),t.core.update(!0)});const k=["/resources/frags/school_arq.frag"];await Promise.all(k.map(async n=>{var i;const r=(i=n.split("/").pop())==null?void 0:i.split(".").shift();if(!r)return null;const m=await(await fetch(n)).arrayBuffer();return t.core.load(m,{modelId:r})}));await e.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);await t.core.update(!0);d.init();const s=l.create(()=>c`
+import{a as u,R as l,C as d,m as c,b as p}from"./index-CZukAoYd.js";import{C as b,W as g,S as f,a as h,f as w,F as y}from"./index-C2IU-BFV.js";const v=document.getElementById("container"),o=new b,C=o.get(g),e=C.create();e.scene=new f(o);e.renderer=new h(o,v);e.camera=new w(o);o.init();e.scene.setup();e.scene.three.background=null;const k="https://thatopen.github.io/engine_fragment/resources/worker.mjs",t=o.get(y);t.init(k);e.camera.controls.addEventListener("rest",()=>t.core.update(!0));t.list.onItemSet.add(({value:n})=>{n.useCamera(e.camera.three),e.scene.three.add(n.object),t.core.update(!0)});const L=["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];await Promise.all(L.map(async n=>{var r;const i=(r=n.split("/").pop())==null?void 0:r.split(".").shift();if(!i)return null;const m=await(await fetch(n)).arrayBuffer();return t.core.load(m,{modelId:i})}));await e.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);await t.core.update(!0);u.init();const s=l.create(()=>c`
     <bim-panel label="Worlds Tutorial" class="options-menu">
       <bim-panel-section label="Controls">
       
         <bim-color-input 
           label="Background Color" color="#202932" 
-          @input="${({target:n})=>{e.scene.config.backgroundColor=new u(n.color)}}">
+          @input="${({target:n})=>{e.scene.config.backgroundColor=new d(n.color)}}">
         </bim-color-input>
         
         <bim-number-input 

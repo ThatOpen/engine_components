@@ -59,7 +59,7 @@ const grid = grids.create(world);
 
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(
-  "/node_modules/@thatopen/fragments/dist/Worker/worker.mjs",
+  "https://thatopen.github.io/engine_fragment/resources/worker.mjs",
 );
 
 world.camera.controls.addEventListener("control", () =>
@@ -68,7 +68,7 @@ world.camera.controls.addEventListener("control", () =>
 
 const modelId = "example";
 
-const file = await fetch("/resources/frags/school_arq.frag");
+const file = await fetch("https://thatopen.github.io/engine_components/resources/frags/school_arq.frag");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = await fragments.core.load(buffer, {
