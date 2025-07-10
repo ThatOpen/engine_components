@@ -735,7 +735,7 @@ __metadata:
   dependencies:
     "@thatopen/components": ~3.1.0
     "@thatopen/fragments": ~3.1.0
-    "@thatopen/ui": ~2.4.0
+    "@thatopen/ui": ~3.1.0
     "@types/convert-units": 2.3.11
     "@types/earcut": ^2.1.4
     "@types/three": ^0.175.0
@@ -753,7 +753,7 @@ __metadata:
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
     "@thatopen/fragments": ~3.1.0
-    "@thatopen/ui": ~2.4.0
+    "@thatopen/ui": ~3.1.0
     "@types/convert-units": 2.3.11
     "@types/three": 0.175.0
     camera-controls: ^2.9.0
@@ -785,14 +785,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@thatopen/ui@npm:~2.4.0":
-  version: 2.4.5
-  resolution: "@thatopen/ui@npm:2.4.5"
+"@thatopen/ui@npm:~3.1.0":
+  version: 3.1.0
+  resolution: "@thatopen/ui@npm:3.1.0"
   dependencies:
     "@floating-ui/dom": 1.6.3
     iconify-icon: 2.0.0
     lit: 3.1.2
-  checksum: 46bda4b6ef92795ab4d92d2da654a125b7e409e0fa32a013d877c1ac9a91ea5e6dd134df72302c6aed37fded00dbbed4aaf4d03fccab8557250bfd4308fb6e14
+  checksum: bec671619b78cd70312b0320bc5daec9803ceebe678c6bfde902669e383399e1032fff0d7d3d0ae4714537e643b48e8065d4e642eb5eb764220dbefa03ebda15
   languageName: node
   linkType: hard
 
