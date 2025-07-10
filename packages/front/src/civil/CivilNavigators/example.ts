@@ -2,25 +2,16 @@
 ### 🛣️ Navigating 3D infrastructures
 ---
 
-Infra models are awesome, but they are usually very, very long and thin. This makes it a bit hard to navigate through them. Luckily for you, the alignment data that comes in IFC models is processed by our libraries and generated in 3D, so you can use it for navigation!
+Infra models are awesome, but they are usually very, very long and thin. This makes it a bit hard to navigate through them. Luckily for you, the alignment data that comes in IFC models is processed by our libraries and generated in 2D and 3D, so you can use it for navigation!
 
-:::tip 3D alignment?
 
-The alignment data in IFC usually comes in 2D (floor plan and elevation). We use that data to regenerate the 3D curve from those 2D representations. You'll see the result in just a moment!
-
-:::
-
-In this tutorial, we will import:
-
-- `three` to create some 3D items.
-- `@thatopen/components` to set up the barebone of our app.
-- `@thatopen/components-front` to use some frontend-oriented components.
-- `Stats.js` (optional) to measure the performance of our app.
+  ### 🖖 Importing our Libraries
+  First things first, let's install all necessary dependencies to make this example work:
 */
 
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
-// import * as CUI from "@thatopen/ui-obc";
+import * as CUI from "@thatopen/ui-obc";
 import Stats from "stats.js";
 import * as BUI from "@thatopen/ui";
 // You have to import * as OBF from "@thatopen/components-front"
@@ -52,7 +43,7 @@ world.camera = new OBC.SimpleCamera(components);
 components.init();
 
 BUI.Manager.init();
-// CUI.Manager.init();
+CUI.Manager.init();
 
 world.scene.setup();
 
@@ -88,11 +79,9 @@ world.scene.three.background = null;
 */
 
 const fragments = components.get(OBC.FragmentsManager);
-fragments.init(
-  "https://thatopen.github.io/engine_fragment/resources/worker.mjs",
-);
+fragments.init("/node_modules/@thatopen/fragments/dist/Worker/worker.mjs");
 
-const url = "https://thatopen.github.io/engine_components/resources/frags/small_road.frag";
+const url = "/resources/frags/small_road.frag";
 const file = await fetch(url);
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
@@ -116,13 +105,11 @@ const alignments = await model.getAlignments();
 world.scene.three.add(alignments);
 
 /*
-  ### 🚕 Setting up Civil 3D Navigator
+  ### 🚕 Setting up a Civil Navigator
   ---
 
   Now, we need to create an instance of the Civil 3D Navigator component. This will enable us to navigate through our 3D environment and interact with the model.
 */
-
-// Absolute alignment
 
 const navigators = components.get(OBF.CivilNavigators);
 
@@ -147,85 +134,75 @@ navigator.onMarkerChange.add(({ point }) => {
 const crossSectionNavigator = components.get(OBF.CivilCrossSectionNavigator);
 crossSectionNavigator.world = world;
 
-// Horizontal alignment
-
-// const horizontalMenu = document.getElementById("horizontal-menu")!;
-
-// const horizontalWorld = document.createElement("bim-world-2d") as CUI.World2D;
-// horizontalWorld.components = components;
-// if (!horizontalWorld.world) {
-//   throw new Error("World not found!");
-// }
-
-// horizontalMenu.appendChild(horizontalWorld);
-
-// const horizontalNavigator = navigators.create("horizontal");
-// // horizontalNavigator.world = horizontalWorld.world;
-// const horizontalAlignments = await model.getHorizontalAlignments();
-// for (const alignment of horizontalAlignments.children) {
-//   alignment.rotation.x = Math.PI / 2;
-//   alignment.rotation.y = Math.PI / 2;
-// }
-// horizontalNavigator.alignments.push(horizontalAlignments);
-// horizontalNavigator.updateAlignments();
-// const horizontalScene = horizontalWorld.world.scene.three;
-// horizontalScene.background = null;
-// horizontalScene.add(horizontalAlignments);
-
-// for (const alignment of horizontalAlignments.children) {
-//   alignment.userData.initialStation = 1925;
-// }
-
-// navigator.onMarkerChange.add((civilPoint) => {
-//   console.log(civilPoint);
-//   const percentage = OBF.CivilUtils.curvePointToAlignmentPercentage(
-//     civilPoint.alignment,
-//     civilPoint.point,
-//     civilPoint.curve,
-//   );
-//   if (percentage === null) {
-//     return;
-//   }
-//   const point = OBF.CivilUtils.alignmentPercentageToPoint(
-//     horizontalAlignments.children[0] as THREE.Group,
-//     percentage,
-//   );
-//   if (point === null) {
-//     return;
-//   }
-//   horizontalNavigator.setMarkerAtPoint(point, "select");
-//   horizontalNavigator.setCursorValue(navigator.getCursorValue(), "select");
-// });
-
-const casters = components.get(OBC.Raycasters);
-// const horizontalCaster = casters.get(horizontalWorld.world);
-// horizontalCaster.three.params.Line.threshold = 10;
-
-// await horizontalWorld.world.camera.controls.setLookAt(
-//   0,
-//   0,
-//   10000,
-//   0,
-//   0,
-//   0,
-//   false,
-// );
-
-// navigator.draw(model);
-
 /*
-  ### ⚾ Navigating to the selected point
-  ---
-
-  There are many ways to navigate to the selected point in an alignment. We will make it simple: subscribing to the highlight event, we can get some information about the highlight, such as the point that was clicked in the alignment. We will use that point to set the position of an invisible sphere that will use to move the camera with a nice animation:
+  We will also create another navigator for the horizontal alignments, so that we can navigate the road both in 2D and 3D.
 */
 
-// const sphere = new THREE.Sphere(undefined, 20);
+const horizontalMenu = document.getElementById("horizontal-menu")!;
 
-// navigator.onHighlight.add(({ point }) => {
-//   sphere.center.copy(point);
-//   world.camera.controls.fitToSphere(sphere, true);
-// });
+const horizontalWorld = document.createElement("bim-world-2d") as CUI.World2D;
+horizontalWorld.components = components;
+if (!horizontalWorld.world) {
+  throw new Error("World not found!");
+}
+
+horizontalMenu.appendChild(horizontalWorld);
+
+const horizontalNavigator = navigators.create("horizontal");
+horizontalNavigator.world = horizontalWorld.world;
+const horizontalAlignments = await model.getHorizontalAlignments();
+for (const alignment of horizontalAlignments.children) {
+  alignment.rotation.x = Math.PI / 2;
+  alignment.rotation.y = Math.PI / 2;
+}
+horizontalNavigator.alignments.push(horizontalAlignments);
+horizontalNavigator.updateAlignments();
+const horizontalScene = horizontalWorld.world.scene.three;
+horizontalScene.background = null;
+horizontalScene.add(horizontalAlignments);
+
+/*
+  Now it's time to synchronize both alignments. We can do this using the events provided by each alignment we created:
+*/
+
+for (const alignment of horizontalAlignments.children) {
+  alignment.userData.initialStation = 1925;
+}
+
+navigator.onMarkerChange.add((civilPoint) => {
+  console.log(civilPoint);
+  const percentage = OBF.CivilUtils.curvePointToAlignmentPercentage(
+    civilPoint.alignment,
+    civilPoint.point,
+    civilPoint.curve,
+  );
+  if (percentage === null) {
+    return;
+  }
+  const point = OBF.CivilUtils.alignmentPercentageToPoint(
+    horizontalAlignments.children[0] as THREE.Group,
+    percentage,
+  );
+  if (point === null) {
+    return;
+  }
+  horizontalNavigator.setMarkerAtPoint(point, "select");
+  horizontalNavigator.setCursorValue(navigator.getCursorValue(), "select");
+});
+
+const casters = components.get(OBC.Raycasters);
+const horizontalCaster = casters.get(horizontalWorld.world);
+horizontalCaster.three.params.Line.threshold = 10;
+
+await horizontalWorld.world.camera.controls.setLookAt(
+  0,
+  0,
+  10000,
+  0,
+  0,
+  0,
+  false,
+);
 
 /* MD
   ### ⏱️ Measuring the performance (optional)
@@ -246,7 +223,7 @@ world.renderer.onAfterUpdate.add(() => stats.end());
   ### 🧩 Adding some UI
   ---
 
-  We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. Now we will create a new panel with some inputs to change the background color of the scene and the intensity of the directional and ambient lights. For more information about the UI library, you can check the specific documentation for it!
+  We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app:
 
 */
 
@@ -258,15 +235,15 @@ let showStations = false;
 
 function updateHighlight() {
   const selected = alignments.children[selectedAlignment] as THREE.Group;
-  // const horizontalSelected = horizontalAlignments.children[
-  //   selectedAlignment
-  // ] as THREE.Group;
+  const horizontalSelected = horizontalAlignments.children[
+    selectedAlignment
+  ] as THREE.Group;
   if (highlightSelected) {
     navigator.highlight(selected);
-    // horizontalNavigator.highlight(horizontalSelected);
+    horizontalNavigator.highlight(horizontalSelected);
   } else {
     navigator.clearHighlight();
-    // horizontalNavigator.clearHighlight();
+    horizontalNavigator.clearHighlight();
   }
 }
 updateHighlight();
@@ -311,14 +288,14 @@ function moveToPercentage(percentage: number) {
     }
   }
 
-  // const horizontalPoint = OBF.CivilUtils.alignmentPercentageToPoint(
-  //   horizontalAlignments.children[selectedAlignment] as THREE.Group,
-  //   percentage,
-  // );
-  // if (horizontalPoint) {
-  //   horizontalNavigator.setMarkerAtPoint(horizontalPoint, "select");
-  //   horizontalNavigator.setCursorValue(navigator.getCursorValue(), "select");
-  // }
+  const horizontalPoint = OBF.CivilUtils.alignmentPercentageToPoint(
+    horizontalAlignments.children[selectedAlignment] as THREE.Group,
+    percentage,
+  );
+  if (horizontalPoint) {
+    horizontalNavigator.setMarkerAtPoint(horizontalPoint, "select");
+    horizontalNavigator.setCursorValue(navigator.getCursorValue(), "select");
+  }
 }
 
 const debounce = 1000;

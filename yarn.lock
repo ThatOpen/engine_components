@@ -736,6 +736,7 @@ __metadata:
     "@thatopen/components": ~3.1.0
     "@thatopen/fragments": ~3.1.0
     "@thatopen/ui": ~3.1.0
+    "@thatopen/ui-obc": ^3.1.0
     "@types/convert-units": 2.3.11
     "@types/earcut": ^2.1.4
     "@types/three": ^0.175.0
@@ -782,6 +783,22 @@ __metadata:
     three: ">=0.175"
     web-ifc: 0.0.69
   checksum: 4feff6296ccc17c722e71786ac5ac769317ed02783634de1890334ced1e6ec4bc02165651c8fb3fea7868ccfebc909cebec49ea89923f77213ffe03efb126e2c
+  languageName: node
+  linkType: hard
+
+"@thatopen/ui-obc@npm:^3.1.0":
+  version: 3.1.0
+  resolution: "@thatopen/ui-obc@npm:3.1.0"
+  dependencies:
+    "@thatopen/ui": ~3.1.0
+    lit: 3.1.2
+  peerDependencies:
+    "@thatopen-platform/components-beta": ~3.0.0
+    "@thatopen-platform/components-front-beta": ~3.0.0
+    "@thatopen-platform/fragments-beta": ~3.0.0
+    three: ">=0.175.0"
+    web-ifc: 0.0.69
+  checksum: 4198150789fd8b2d6adb50f79bddb53055fc04de992eed97829b69221a1639a45f08b051885d57045dd6e8b06c4f8979d6dce18cfb9fae275f9080bbb4949a5a
   languageName: node
   linkType: hard
 

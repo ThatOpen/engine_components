@@ -17,7 +17,6 @@ In this tutorial, we will import:
 - `@thatopen/ui` to add some simple and cool UI menus.
 - `@thatopen/components-front` to use some frontend-oriented components.
 - `Stats.js` (optional) to measure the performance of our app.
-- `GTAOPass` (optional) to control the ambient occlusion parameters.
 */
 
 import * as THREE from "three";
@@ -478,9 +477,9 @@ const button = BUI.Component.create<BUI.PanelSection>(() => {
 
 document.body.append(button);
 
-// /* MD
-//   ### 🎉 Wrap up
-//   ---
+/* MD
+  ### 🎉 Wrap up
+  ---
 
-//   That's it! You have created an app that looks great thanks to postproduction and exposes a menu to allow the user control it in real time.
-// */
+  That's it! You have created an app that looks great thanks to postproduction and exposes a menu to allow the user control it in real time.
+*/
