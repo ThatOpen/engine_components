@@ -22,11 +22,7 @@ import { Viewpoints } from "..";
 import { Hider } from "../../../fragments";
 
 /**
- * Represents a BCF compliant viewpoint from BuildingSMART.
- *
- * The Viewpoint class provides methods for managing and interacting with viewpoints.
- * It includes functionality for setting viewpoint properties, updating the camera,
- * applying color to components, and serializing the viewpoint for export.
+ * Represents a BCF compliant viewpoint from BuildingSMART. The Viewpoint class provides methods for managing and interacting with viewpoints. It includes functionality for setting viewpoint properties, updating the camera, applying color to components, and serializing the viewpoint for export.
  */
 export class Viewpoint {
   title?: string;

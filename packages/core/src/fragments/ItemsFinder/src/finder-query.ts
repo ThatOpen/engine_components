@@ -11,8 +11,7 @@ import {
 } from "./types";
 
 /**
- * Represents a finder query for retrieving items based on specified parameters.
- * This class encapsulates the query logic, caching mechanism, and result management.
+ * Represents a finder query for retrieving items based on specified parameters. This class encapsulates the query logic, caching mechanism, and result management.
  */
 export class FinderQuery {
   description?: string;

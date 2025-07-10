@@ -168,7 +168,9 @@ const [panel, updatePanel] = BUI.Component.create<BUI.PanelSection, {}>((_) => {
     const onLoadIfc = async ({ target }: { target: BUI.Button }) => {
       target.label = "Conversion in progress...";
       target.loading = true;
-      await loadIfc("/resources/ifc/school_str.ifc");
+      await loadIfc(
+        "https://thatopen.github.io/engine_components/resources/ifc/school_str.ifc",
+      );
       target.loading = false;
       target.label = "Load IFC";
     };

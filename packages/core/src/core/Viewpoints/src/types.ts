@@ -1,6 +1,5 @@
 /**
- * Represents the properties of a camera viewpoint in a 3D space.
- * This interface is compliant with the BCF API specifications.
+ * Represents the properties of a camera viewpoint in a 3D space. This interface is compliant with the BCF API specifications.
  */
 export interface ViewpointCamera {
   /**
@@ -145,8 +144,7 @@ export interface ViewpointComponents {
 
 // https://github.com/buildingSMART/BCF-API/blob/release_3_0/Schemas/Collaboration/Viewpoint/bitmap_GET.json
 /**
- * Represents a bitmap image associated with a viewpoint.
- * This interface is compliant with the BCF API specifications.
+ * Represents a bitmap image associated with a viewpoint. This interface is compliant with the BCF API specifications.
  */
 export interface ViewpointBitmap {
   /**
