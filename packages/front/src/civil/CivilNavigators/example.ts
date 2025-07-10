@@ -107,11 +107,12 @@ model.getClippingPlanesEvent = () => {
 const alignments = await model.getAlignments();
 world.scene.three.add(alignments);
 
-/*
+/* MD
   ### 🚕 Setting up a Civil Navigator
   ---
 
-  Now, we need to create an instance of the Civil 3D Navigator component. This will enable us to navigate through our 3D environment and interact with the model.
+ Now, we need to create an instance of the Civil 3D Navigator component. This will enable us to navigate through our 3D environment and interact with the model.
+
 */
 
 const navigators = components.get(OBF.CivilNavigators);
@@ -137,7 +138,7 @@ navigator.onMarkerChange.add(({ point }) => {
 const crossSectionNavigator = components.get(OBF.CivilCrossSectionNavigator);
 crossSectionNavigator.world = world;
 
-/*
+/* MD
   We will also create another navigator for the horizontal alignments, so that we can navigate the road both in 2D and 3D.
 */
 
@@ -164,7 +165,7 @@ const horizontalScene = horizontalWorld.world.scene.three;
 horizontalScene.background = null;
 horizontalScene.add(horizontalAlignments);
 
-/*
+/* MD
   Now it's time to synchronize both alignments. We can do this using the events provided by each alignment we created:
 */
 
