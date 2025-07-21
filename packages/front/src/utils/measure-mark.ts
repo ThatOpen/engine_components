@@ -7,6 +7,7 @@ export class MeasureMark extends Mark {
 
   set value(value: number) {
     this._value = value;
+    this.three.element.textContent = this.formattedValue;
   }
 
   get value() {
