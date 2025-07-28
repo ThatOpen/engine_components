@@ -155,6 +155,22 @@ const [wall1, wall2] = wallsIds;
 outliner.addItems({ [model.modelId]: new Set([wall1, wall2]) });
 
 /* MD
+  ### 📹 Switching the camera
+  ---
+
+  If you are using an orthoperspective camera, you need to update the postproduction renderer camera:
+
+*/
+
+// To update the camera
+
+// window.addEventListener("dblclick", () => {
+//   world.camera.projection.toggle();
+//   model.useCamera(world.camera.three);
+//   world.renderer.postproduction.updateCamera();
+// });
+
+/* MD
   ### ⏱️ Measuring the performance (optional)
   ---
 
@@ -168,14 +184,6 @@ stats.dom.style.left = "0px";
 stats.dom.style.zIndex = "unset";
 world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
-
-// To update the camera
-
-// window.addEventListener("dblclick", () => {
-//   world.camera.projection.toggle();
-//   model.useCamera(world.camera.three);
-//   world.renderer.postproduction.updateCamera();
-// });
 
 /* MD
   ### 🧩 Adding some UI
