@@ -2,6 +2,7 @@ import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import * as FRAGS from "@thatopen/fragments";
 import { DataSet } from "@thatopen/fragments";
+import { Mesher } from "../Mesher";
 
 /**
  * The `Hoverer` class is responsible for managing hover effects on 3D objects within a scene. It supports animations for fading in and out hover effects and manages the lifecycle of associated 3D meshes. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Hoverer). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Hoverer).
@@ -171,36 +172,20 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
     this._localId = localId;
 
     this._hoverTimeout = window.setTimeout(async () => {
-      const item = model.getItem(localId);
-      const geometry = await item.getGeometry();
-      if (!geometry) return;
-      const meshData = await geometry.get();
+      const modelIdMap = { [model.modelId]: new Set([localId]) };
+      const mesher = this.components.get(Mesher);
+      const meshes = await mesher.get(modelIdMap);
 
-      for (const data of meshData) {
-        const { positions, normals, indices, transform } = data;
-        if (!(positions && normals && indices && transform)) continue;
-        const bufferGeometry = new THREE.BufferGeometry();
-
-        bufferGeometry.setAttribute(
-          "position",
-          new THREE.Float32BufferAttribute(positions, 3),
-        );
-
-        bufferGeometry.setAttribute(
-          "normal",
-          new THREE.Float32BufferAttribute(normals, 3),
-        );
-
-        bufferGeometry.setIndex(new THREE.Uint16BufferAttribute(indices, 1));
-
-        if (data.transform) {
-          bufferGeometry.applyMatrix4(data.transform);
+      for (const [_, data] of meshes.entries()) {
+        const meshes = [...data.values()].flat();
+        for (const mesh of meshes) {
+          mesh.material = this.material;
+          mesh.position.set(0, 0, 0);
+          mesh.rotation.set(0, 0, 0);
+          mesh.scale.set(1, 1, 1);
+          mesh.applyMatrix4(model.object.matrixWorld);
+          this._meshes.add(mesh);
         }
-
-        bufferGeometry.computeVertexNormals();
-
-        const mesh = new THREE.Mesh(bufferGeometry, this.material);
-        this._meshes.add(mesh);
       }
 
       this._fadeAnimation = {

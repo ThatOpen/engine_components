@@ -55,8 +55,8 @@ export class Mesher extends OBC.Component implements OBC.Disposable {
         let itemGeometries = modelGeometries.get(localId);
         if (itemGeometries && itemGeometries.length > 0) {
           const meshes: THREE.Mesh[] = [];
-          for (const [_, { geometry, transform }] of itemGeometries.entries()) {
-            const mesh = await this.createMesh(model, geometry, transform, {
+          for (const [_, { geometry }] of itemGeometries.entries()) {
+            const mesh = await this.createMesh(model, geometry, {
               material,
               applyTransformation,
               coordinate,
@@ -75,9 +75,9 @@ export class Mesher extends OBC.Component implements OBC.Disposable {
         for (const data of meshData) {
           const geometryData = this.createGeometry(data);
           if (!geometryData) continue;
-          const { geometry, transform } = geometryData;
+          const { geometry } = geometryData;
           itemGeometries.push(geometryData);
-          const mesh = await this.createMesh(model, geometry, transform, {
+          const mesh = await this.createMesh(model, geometry, {
             material,
             applyTransformation,
             coordinate,
@@ -146,13 +146,13 @@ export class Mesher extends OBC.Component implements OBC.Disposable {
       new THREE.BufferAttribute(normals, 3, true),
     );
     geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+    geometry.applyMatrix4(transform);
     return { geometry, transform };
   }
 
   private async createMesh(
     model: FRAGS.FragmentsModel,
     geometry: THREE.BufferGeometry,
-    transform: THREE.Matrix4,
     _config?: {
       material?: THREE.Material;
       applyTransformation?: boolean;
@@ -166,7 +166,7 @@ export class Mesher extends OBC.Component implements OBC.Disposable {
     };
     const fragments = this.components.get(OBC.FragmentsManager);
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.applyMatrix4(transform);
+    mesh.applyMatrix4(model.object.matrixWorld);
     if (!applyTransformation) mesh.position.set(0, 0, 0);
     if (coordinate && fragments.baseCoordinationModel !== model.modelId) {
       const matrix = await model.getCoordinationMatrix();
