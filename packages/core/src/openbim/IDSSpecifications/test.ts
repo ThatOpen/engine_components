@@ -239,7 +239,7 @@ console.log(result);
 //     const importer = new FRAGS.IfcImporter();
 //     importer.wasm = {
 //       absolute: true,
-//       path: "https://unpkg.com/web-ifc@0.0.69/",
+//       path: "https://unpkg.com/web-ifc@0.0.70/",
 //     };
 
 //     const asd = await fetch("/resources/ifc/test/generic/school_str.ifc");

@@ -1,7 +1,7 @@
 {
   "name": "@thatopen/components-front",
   "description": "Collection of frontend tools to author BIM apps.",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "author": "That Open Company",
   "contributors": [
     "Antonio Gonzalez Viegas (https://github.com/agviegas)",
@@ -34,7 +34,7 @@
   "peerDependencies": {
     "@thatopen/fragments": "~3.1.0",
     "three": ">=0.175.0",
-    "web-ifc": "0.0.69"
+    "web-ifc": "0.0.70"
   },
   "devDependencies": {
     "@thatopen/fragments": "~3.1.0",
@@ -44,7 +44,7 @@
     "@types/earcut": "^2.1.4",
     "@types/three": "^0.175.0",
     "three": "^0.175.0",
-    "web-ifc": "0.0.69"
+    "web-ifc": "0.0.70"
   },
   "dependencies": {
     "@thatopen/components": "~3.1.0"
