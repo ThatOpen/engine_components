@@ -55,6 +55,11 @@ export class Postproduction {
     if (value && !this._initialized) {
       this.initialize();
     }
+    if (!value) {
+      for (const material of this.basePass.isolatedMaterials) {
+        material.visible = true;
+      }
+    }
   }
 
   get aoPass() {
