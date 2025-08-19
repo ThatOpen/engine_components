@@ -180,10 +180,6 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
         const meshes = [...data.values()].flat();
         for (const mesh of meshes) {
           mesh.material = this.material;
-          mesh.position.set(0, 0, 0);
-          mesh.rotation.set(0, 0, 0);
-          mesh.scale.set(1, 1, 1);
-          mesh.applyMatrix4(model.object.matrixWorld);
           this._meshes.add(mesh);
         }
       }

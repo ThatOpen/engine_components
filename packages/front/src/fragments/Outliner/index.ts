@@ -220,10 +220,6 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
       for (const [_, data] of meshes.entries()) {
         const meshes = [...data.values()].flat();
         for (const mesh of meshes) {
-          mesh.position.set(0, 0, 0);
-          mesh.rotation.set(0, 0, 0);
-          mesh.scale.set(1, 1, 1);
-          mesh.applyMatrix4(model.object.matrixWorld);
           this._meshes.push(mesh);
           outlinePass.scene.add(mesh);
         }

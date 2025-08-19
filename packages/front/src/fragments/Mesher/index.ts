@@ -23,7 +23,6 @@ export class Mesher extends OBC.Component implements OBC.Disposable {
    * @param modelIdMap - A map of model IDs to an array of local IDs, specifying which items to retrieve meshes for.
    * @param _config - Optional configuration object.
    * @param _config.material - Optional material to apply to the meshes. If not provided, the default material is used.
-   * @param _config.coordinate - Whether to apply coordinate system transformation. Defaults to `true`.
    * @param _config.applyTransformation - Whether to bring the mesh to its original position or leave it at 0,0,0. Defaults to `true`.
    * @returns A map of model IDs to a map of local IDs to an array of THREE.Mesh objects.
    */
@@ -35,13 +34,15 @@ export class Mesher extends OBC.Component implements OBC.Disposable {
       applyTransformation?: boolean;
     },
   ) {
-    const { material, coordinate, applyTransformation } = {
-      coordinate: true,
+    // Get options
+    const { material, applyTransformation } = {
       applyTransformation: true,
       ..._config,
     };
+
     const fragments = this.components.get(OBC.FragmentsManager);
     const result: OBC.ModelIdDataMap<THREE.Mesh[]> = new FRAGS.DataMap();
+
     for (const [modelId, localIds] of Object.entries(modelIdMap)) {
       const model = fragments.list.get(modelId);
       if (!model) continue;
@@ -55,11 +56,10 @@ export class Mesher extends OBC.Component implements OBC.Disposable {
         let itemGeometries = modelGeometries.get(localId);
         if (itemGeometries && itemGeometries.length > 0) {
           const meshes: THREE.Mesh[] = [];
-          for (const [_, { geometry }] of itemGeometries.entries()) {
-            const mesh = await this.createMesh(model, geometry, {
+          for (const [_, { geometry, transform }] of itemGeometries.entries()) {
+            const mesh = await this.createMesh(model, geometry, transform, {
               material,
               applyTransformation,
-              coordinate,
             });
             meshes.push(mesh);
           }
@@ -75,12 +75,11 @@ export class Mesher extends OBC.Component implements OBC.Disposable {
         for (const data of meshData) {
           const geometryData = this.createGeometry(data);
           if (!geometryData) continue;
-          const { geometry } = geometryData;
+          const { geometry, transform } = geometryData;
           itemGeometries.push(geometryData);
-          const mesh = await this.createMesh(model, geometry, {
+          const mesh = await this.createMesh(model, geometry, transform, {
             material,
             applyTransformation,
-            coordinate,
           });
           itemMeshes.push(mesh);
         }
@@ -146,31 +145,29 @@ export class Mesher extends OBC.Component implements OBC.Disposable {
       new THREE.BufferAttribute(normals, 3, true),
     );
     geometry.setIndex(new THREE.BufferAttribute(indices, 1));
-    geometry.applyMatrix4(transform);
+    // geometry.applyMatrix4(transform);
     return { geometry, transform };
   }
 
   private async createMesh(
     model: FRAGS.FragmentsModel,
     geometry: THREE.BufferGeometry,
+    transform: THREE.Matrix4,
     _config?: {
       material?: THREE.Material;
       applyTransformation?: boolean;
-      coordinate?: boolean;
     },
   ) {
-    const { material, applyTransformation, coordinate } = {
+    const { material, applyTransformation } = {
       applyTransformation: true,
-      coordinate: true,
       ..._config,
     };
-    const fragments = this.components.get(OBC.FragmentsManager);
     const mesh = new THREE.Mesh(geometry, material);
+    mesh.applyMatrix4(transform);
     mesh.applyMatrix4(model.object.matrixWorld);
-    if (!applyTransformation) mesh.position.set(0, 0, 0);
-    if (coordinate && fragments.baseCoordinationModel !== model.modelId) {
-      const matrix = await model.getCoordinationMatrix();
-      fragments.applyBaseCoordinateSystem(mesh, matrix);
+    if (!applyTransformation) {
+      mesh.position.set(0, 0, 0);
+      mesh.rotation.set(0, 0, 0);
     }
     return mesh;
   }
