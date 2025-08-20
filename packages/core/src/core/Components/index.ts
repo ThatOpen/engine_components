@@ -7,6 +7,7 @@ import {
 import { Component, Disposable, Event } from "../Types";
 import { UUID } from "../../utils";
 import { FragmentsManager } from "../../fragments";
+import { DataMap } from "@thatopen/fragments";
 
 /**
  * The entry point of the Components library. It can create, delete and access all the components of the library globally, update all the updatable components automatically and dispose all the components, preventing memory leaks.
@@ -24,7 +25,7 @@ export class Components implements Disposable {
    * The list of components created in this app.
    * The keys are UUIDs and the values are instances of the components.
    */
-  readonly list = new Map<string, Component>();
+  readonly list = new DataMap<string, Component>();
 
   /**
    * If disabled, the animation loop will be stopped.
