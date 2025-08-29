@@ -741,11 +741,11 @@ __metadata:
     "@types/earcut": ^2.1.4
     "@types/three": ^0.175.0
     three: ^0.175.0
-    web-ifc: 0.0.70
+    web-ifc: 0.0.71
   peerDependencies:
     "@thatopen/fragments": ~3.1.0
     three: ">=0.175.0"
-    web-ifc: 0.0.70
+    web-ifc: ">=0.0.71"
   languageName: unknown
   linkType: soft
 
@@ -763,11 +763,11 @@ __metadata:
     stats.js: ^0.17.0
     three: ^0.175.0
     three-mesh-bvh: 0.7.0
-    web-ifc: 0.0.70
+    web-ifc: 0.0.71
   peerDependencies:
     "@thatopen/fragments": ~3.1.0
     three: ">=0.175.0"
-    web-ifc: 0.0.70
+    web-ifc: ">=0.0.71"
   languageName: unknown
   linkType: soft
 
@@ -4833,10 +4833,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"web-ifc@npm:0.0.70":
-  version: 0.0.70
-  resolution: "web-ifc@npm:0.0.70"
-  checksum: 23c453f1bbb2fb5b5411ceb0cef7261bbd4af7c2ddcdd256a158ff7f354afc864e834ab7d48463ae4e628b779da80e2eadd1bfb48fd700091831ed6a10b57547
+"web-ifc@npm:0.0.71":
+  version: 0.0.71
+  resolution: "web-ifc@npm:0.0.71"
+  checksum: 6bdb6138007bc77f0fa1a01cfd53db2f8dafab8fcbb68e66d7b9c5f141b6d65b21db41fa4ffea99a6bd88ce403b4b57c7f6c1dee8d4b59edac5d1696764f53b8
   languageName: node
   linkType: hard
 
