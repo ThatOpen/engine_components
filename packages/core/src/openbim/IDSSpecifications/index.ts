@@ -40,6 +40,8 @@ export class IDSSpecifications extends Component {
     trimValues: true,
   });
 
+  IDSInfo?: IDSInfo;
+
   constructor(components: Components) {
     super(components);
     components.add(IDSSpecifications.uuid, this);
@@ -104,7 +106,11 @@ export class IDSSpecifications extends Component {
   load(data: string) {
     const result: IDSSpecification[] = [];
     const ids = IDSSpecifications.xmlParser.parse(data).ids;
-    const { specifications } = ids;
+    const { specifications, info } = ids;
+    if (info) {
+      const { info } = ids;
+      this.IDSInfo = { ...info };
+    }
     if (specifications && specifications.specification) {
       const specs = Array.isArray(specifications.specification)
         ? specifications.specification
