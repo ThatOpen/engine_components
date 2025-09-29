@@ -122,6 +122,7 @@ export class IfcLoader extends Component implements Disposable {
     const serializer = new FRAGS.IfcImporter();
     serializer.wasm.path = this.settings.wasm.path;
     serializer.wasm.absolute = this.settings.wasm.absolute;
+    serializer.webIfcSettings = this.settings.webIfc;
 
     if (config?.instanceCallback) config.instanceCallback(serializer);
 
@@ -130,7 +131,7 @@ export class IfcLoader extends Component implements Disposable {
       bytes: data,
     });
 
-    const model = await fragments.core.load(bytes, {
+    const model = await fragments.core.load(bytes as any, {
       modelId: name,
       userData: config?.userData,
     });
