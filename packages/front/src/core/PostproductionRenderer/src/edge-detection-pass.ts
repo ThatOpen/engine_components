@@ -16,6 +16,7 @@ export class EdgeDetectionPass extends Pass {
   private _renderer: OBC.BaseRenderer;
   private _overrideMaterial = new THREE.MeshBasicMaterial({
     vertexColors: true,
+    side: THREE.DoubleSide,
   });
 
   get width() {
