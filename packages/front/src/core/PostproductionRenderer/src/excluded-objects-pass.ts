@@ -6,8 +6,10 @@ import {
 import * as OBC from "@thatopen/components";
 
 export class ExcludedObjectsPass extends Pass {
+  // All items of this color will be excluded from postproduction
+  materialToExclude = new THREE.MeshBasicMaterial({ color: 0x000000 });
+
   private _excludedMaterials = new Set<THREE.Material>();
-  private _blackMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
   private _originalMaterials = new Map<THREE.Mesh, THREE.Material>();
   // @ts-ignore
   private _renderer: OBC.BaseRenderer;
@@ -155,7 +157,7 @@ export class ExcludedObjectsPass extends Pass {
       if (!this._excludedMaterials.has(material)) {
         // Store original material and substitute with black material
         this._originalMaterials.set(object, material);
-        object.material = this._blackMaterial;
+        object.material = this.materialToExclude;
       }
     }
 
@@ -174,7 +176,7 @@ export class ExcludedObjectsPass extends Pass {
   }
 
   dispose() {
-    this._blackMaterial.dispose();
+    this.materialToExclude.dispose();
     this._combineMaterial.dispose();
     this._fsQuad.dispose();
     this._excludedRenderTarget.dispose();
