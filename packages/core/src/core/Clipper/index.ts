@@ -202,6 +202,8 @@ export class Clipper
       plane.world.renderer.setPlane(false, plane.three);
       plane.dispose();
       this.updateMaterialsAndPlanes();
+
+      this.onAfterDelete.trigger(plane);
     });
   }
 
