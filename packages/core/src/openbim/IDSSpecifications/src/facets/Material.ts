@@ -89,7 +89,11 @@ export class IDSMaterial extends IDSFacet {
     }
   }
 
-  async test(items: ModelIdMap, collector: ModelIdDataMap<IDSItemCheckResult>) {
+  async test(
+    items: ModelIdMap,
+    collector: ModelIdDataMap<IDSItemCheckResult>,
+    config: { skipIfFails: boolean } = { skipIfFails: true },
+  ) {
     const fragments = this._components.get(FragmentsManager);
     for (const [modelId, localIds] of Object.entries(items)) {
       const model = fragments.list.get(modelId);
@@ -107,7 +111,12 @@ export class IDSMaterial extends IDSFacet {
       });
 
       for (const item of data) {
-        const checks = this.getItemChecks(collector, modelId, item);
+        const checks = this.getItemChecks(
+          collector,
+          modelId,
+          item,
+          config.skipIfFails,
+        );
         if (!checks) continue;
 
         // If it doesn't have associations

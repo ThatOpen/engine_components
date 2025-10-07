@@ -107,6 +107,7 @@ export abstract class IDSFacet {
     collector: ModelIdDataMap<IDSItemCheckResult>,
     modelId: string,
     item: FRAGS.ItemData,
+    skipIfFails: boolean,
   ) {
     if (
       !("value" in item._localId && typeof item._localId.value === "number")
@@ -121,7 +122,7 @@ export abstract class IDSFacet {
     }
 
     let result = modelItemResults.get(item._localId.value);
-    if (result) {
+    if (result && skipIfFails) {
       // If there are results already and the item didn't pass
       // return null to skip further checks
       if (!result.pass) return null;
@@ -176,6 +177,7 @@ export abstract class IDSFacet {
   abstract test(
     items: ModelIdMap,
     collector: ModelIdDataMap<IDSItemCheckResult>,
+    config: { skipIfFails: boolean },
   ): Promise<void>;
 
   abstract serialize(type: "applicability" | "requirement"): string;

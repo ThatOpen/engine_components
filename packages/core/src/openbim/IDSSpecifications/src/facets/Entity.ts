@@ -102,7 +102,11 @@ export class IDSEntity extends IDSFacet {
     }
   }
 
-  async test(items: ModelIdMap, collector: ModelIdDataMap<IDSItemCheckResult>) {
+  async test(
+    items: ModelIdMap,
+    collector: ModelIdDataMap<IDSItemCheckResult>,
+    config: { skipIfFails: boolean },
+  ) {
     const fragments = this._components.get(FragmentsManager);
     for (const [modelId, localIds] of Object.entries(items)) {
       const model = fragments.list.get(modelId);
@@ -111,7 +115,12 @@ export class IDSEntity extends IDSFacet {
       const data = await model.getItemsData([...localIds]);
       for (const item of data) {
         if (!("value" in item._category)) continue;
-        const checks = this.getItemChecks(collector, modelId, item);
+        const checks = this.getItemChecks(
+          collector,
+          modelId,
+          item,
+          config.skipIfFails,
+        );
         if (!checks) continue;
         await this.evalName(item._category.value, checks);
         await this.evalPredefinedType(modelId, item, checks);
