@@ -52,7 +52,10 @@ export class IDSSpecification implements IDSSpecificationData {
    * @returns An array representing the test results.
    * If no requirements are defined for the specification, an empty array is returned.
    */
-  async test(modelIds: RegExp[]) {
+  async test(
+    modelIds: RegExp[],
+    config: { skipIfFails: boolean } = { skipIfFails: true },
+  ) {
     const result: IDSCheckResult = new FRAGS.DataMap();
 
     if (this.requirements.size === 0) return result;
@@ -69,7 +72,7 @@ export class IDSSpecification implements IDSSpecificationData {
     // Test applicable elements against requirements
     const requirementPromises = [];
     for (const requirement of this.requirements) {
-      requirementPromises.push(requirement.test(entities, result));
+      requirementPromises.push(requirement.test(entities, result, config));
     }
 
     await Promise.all(requirementPromises);
