@@ -4,7 +4,8 @@
   "contributors": [
     "Antonio Gonzalez Viegas (https://github.com/agviegas)",
     "Juan Hoyos (https://github.com/HoyosJuan)",
-    "Harry Collin (https://github.com/harrycollin)"
+    "Harry Collin (https://github.com/harrycollin)",
+    "Pablo Aguilar (https://github.com/pabloaguilarv"
   ],
   "scripts": {
     "dev": "vite --host",
