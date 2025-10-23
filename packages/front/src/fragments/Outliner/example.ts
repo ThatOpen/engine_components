@@ -78,7 +78,7 @@ fragments.list.onItemSet.add(({ value: model }) => {
 */
 
 const fragPaths = [
-  "https://thatopen.github.io https://thatopen.github.io/engine_components/resources/frags/school_arq.frag",
+  "https://thatopen.github.io/engine_components/resources/frags/school_arq.frag",
 ];
 await Promise.all(
   fragPaths.map(async (path) => {
