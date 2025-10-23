@@ -108,7 +108,7 @@ world.scene.three.background = null;
 */
 
 const workerUrl =
-  "/node_modules/"https://thatopen.github.io/engine_fragment/resources/worker.mjs"/fragments-beta/dist/Worker/worker.mjs";
+  "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 

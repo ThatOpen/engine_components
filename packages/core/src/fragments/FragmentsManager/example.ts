@@ -55,7 +55,7 @@ components.get(OBC.Grids).create(world);
 // This ensures the worker file is bundled with your app during the build process,
 // and you can provide the corresponding path to it.
 const workerUrl =
-  "/node_modules/"https://thatopen.github.io/engine_fragment/resources/worker.mjs"/fragments-beta/dist/Worker/worker.mjs";
+  "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
 
 /* MD
   Once initialization is complete, you can safely retrieve the component instance and proceed with its setup:
