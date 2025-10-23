@@ -122,7 +122,7 @@ fragments.list.onItemSet.add(({ value: model }) => {
   fragments.core.update(true);
 });
 
-const fragPaths = ["/resources/frags/school_arq.frag"];
+const fragPaths = ["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];
 await Promise.all(
   fragPaths.map(async (path) => {
     const modelId = path.split("/").pop()?.split(".").shift();

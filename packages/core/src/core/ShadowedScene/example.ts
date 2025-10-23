@@ -68,7 +68,7 @@ world.camera.controls.addEventListener("control", () =>
 
 const modelId = "example";
 
-const file = await fetch("/resources/frags/school_arq.frag");
+const file = await fetch("https://thatopen.github.io/engine_components/resources/frags/school_arq.frag");
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = await fragments.core.load(buffer, {
