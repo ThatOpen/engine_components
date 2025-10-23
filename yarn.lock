@@ -736,7 +736,7 @@ __metadata:
     "@thatopen/components": ~3.2.0
     "@thatopen/fragments": ~3.2.0
     "@thatopen/ui": ~3.2.0
-    "@thatopen/ui-obc": ^3.1.0
+    "@thatopen/ui-obc": ~3.2.0
     "@types/convert-units": 2.3.11
     "@types/earcut": ^2.1.4
     "@types/three": ^0.175.0
@@ -786,30 +786,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@thatopen/ui-obc@npm:^3.1.0":
-  version: 3.1.0
-  resolution: "@thatopen/ui-obc@npm:3.1.0"
+"@thatopen/ui-obc@npm:~3.2.0":
+  version: 3.2.1
+  resolution: "@thatopen/ui-obc@npm:3.2.1"
   dependencies:
-    "@thatopen/ui": ~3.1.0
+    "@thatopen/ui": ~3.2.0
     lit: 3.1.2
   peerDependencies:
-    "@thatopen-platform/components-beta": ~3.0.0
-    "@thatopen-platform/components-front-beta": ~3.0.0
-    "@thatopen-platform/fragments-beta": ~3.0.0
+    "@thatopen/components": ~3.2.0
+    "@thatopen/components-front": ~3.2.0
+    "@thatopen/fragments": ~3.2.0
     three: ">=0.175.0"
-    web-ifc: 0.0.69
-  checksum: 4198150789fd8b2d6adb50f79bddb53055fc04de992eed97829b69221a1639a45f08b051885d57045dd6e8b06c4f8979d6dce18cfb9fae275f9080bbb4949a5a
-  languageName: node
-  linkType: hard
-
-"@thatopen/ui@npm:~3.1.0":
-  version: 3.1.0
-  resolution: "@thatopen/ui@npm:3.1.0"
-  dependencies:
-    "@floating-ui/dom": 1.6.3
-    iconify-icon: 2.0.0
-    lit: 3.1.2
-  checksum: bec671619b78cd70312b0320bc5daec9803ceebe678c6bfde902669e383399e1032fff0d7d3d0ae4714537e643b48e8065d4e642eb5eb764220dbefa03ebda15
+    web-ifc: ">=0.0.72"
+  checksum: 78a343bca30883df0581edf7eb42bd69e50a05b0383d16b6c182bfa05f51d558801face518f178124af3c60d352afcc3a452bf59b7c47cdd17eddbc869ad787b
   languageName: node
   linkType: hard
 
