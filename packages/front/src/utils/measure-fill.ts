@@ -123,7 +123,7 @@ export class MeasureFill {
     if (this.area.value === 0) {
       this.label.visible = false;
     } else {
-      this.label.value = this.area.value;
+      this.label.value = this.area.rawValue;
       this.label.visible = true;
       const center = this.area.center;
       if (center) this.label.three.position.copy(center);

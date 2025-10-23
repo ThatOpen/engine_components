@@ -17,6 +17,7 @@ In this tutorial, we will import:
 - `@thatopen/ui` to add some simple and cool UI menus.
 - `@thatopen/components-front` to use some frontend-oriented components.
 - `Stats.js` (optional) to measure the performance of our app.
+- `GTAOPass` (optional) to control the ambient occlusion parameters.
 */
 
 import * as THREE from "three";
@@ -74,14 +75,8 @@ world.scene.three.background = null;
   Now, let's configure the FragmentsManager. This will allow us to load models effortlessly and start manipulating them with ease:
 */
 
-const githubUrl =
-  "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
-const fetchedUrl = await fetch(githubUrl);
-const workerBlob = await fetchedUrl.blob();
-const workerFile = new File([workerBlob], "worker.mjs", {
-  type: "text/javascript",
-});
-const workerUrl = URL.createObjectURL(workerFile);
+const workerUrl =
+  "/node_modules/@thatopen-platform/fragments-beta/dist/Worker/worker.mjs";
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 
@@ -102,6 +97,15 @@ fragments.list.onItemSet.add(({ value: model }) => {
   fragments.core.update(true);
 });
 
+// Remove z fighting
+fragments.core.models.materials.list.onItemSet.add(({ value: material }) => {
+  if (!("isLodMaterial" in material && material.isLodMaterial)) {
+    material.polygonOffset = true;
+    material.polygonOffsetUnits = 1;
+    material.polygonOffsetFactor = Math.random();
+  }
+});
+
 /* MD
   ### 📂 Loading Fragments Models
   With the core setup complete, it's time to load a Fragments model into our scene. Fragments are optimized for fast loading and rendering, making them ideal for large-scale 3D models.
@@ -113,7 +117,7 @@ fragments.list.onItemSet.add(({ value: model }) => {
   :::
 */
 
-const fragPaths = ["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];
+const fragPaths = ["/resources/frags/school_arq.frag"];
 await Promise.all(
   fragPaths.map(async (path) => {
     const modelId = path.split("/").pop()?.split(".").shift();
@@ -491,9 +495,9 @@ const button = BUI.Component.create<BUI.PanelSection>(() => {
 
 document.body.append(button);
 
-/* MD
-  ### 🎉 Wrap up
-  ---
+// /* MD
+//   ### 🎉 Wrap up
+//   ---
 
-  That's it! You have created an app that looks great thanks to postproduction and exposes a menu to allow the user control it in real time.
-*/
+//   That's it! You have created an app that looks great thanks to postproduction and exposes a menu to allow the user control it in real time.
+// */

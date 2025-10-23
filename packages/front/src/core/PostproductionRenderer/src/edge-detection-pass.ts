@@ -68,16 +68,11 @@ export class EdgeDetectionPass extends Pass {
           
           vec4 center = texture2D(tDiffuse, vUv);
           vec4 right = texture2D(tDiffuse, vUv + vec2(offset.x, 0.0));
-          vec4 left = texture2D(tDiffuse, vUv - vec2(offset.x, 0.0));
           vec4 up = texture2D(tDiffuse, vUv + vec2(0.0, offset.y));
-          vec4 down = texture2D(tDiffuse, vUv - vec2(0.0, offset.y));
           
           float diff = 0.0;
           diff += distance(center.rgb, right.rgb);
-          diff += distance(center.rgb, left.rgb);
           diff += distance(center.rgb, up.rgb);
-          diff += distance(center.rgb, down.rgb);
-          
           gl_FragColor = vec4(vec3(step(0.0001, diff)), 1.0);
         }
       `,
@@ -141,16 +136,22 @@ export class EdgeDetectionPass extends Pass {
     writeBuffer: THREE.WebGLRenderTarget,
     readBuffer: THREE.WebGLRenderTarget,
   ) {
-    const currentWorld = this._renderer.currentWorld;
+    const currentWorld = this._renderer.currentWorld as OBC.World;
     const scene = currentWorld!.scene.three as THREE.Scene;
 
     // Render vertex colors
+
+    const currentScene = currentWorld.scene.three as THREE.Scene;
+    const prevFog = currentScene.fog;
+    currentScene.fog = null;
 
     const previousOverrideMaterial = scene.overrideMaterial;
     scene.overrideMaterial = this._overrideMaterial;
     renderer.setRenderTarget(this._vertexColorRenderTarget);
     renderer.render(scene, currentWorld!.camera.three);
     scene.overrideMaterial = previousOverrideMaterial;
+
+    currentScene.fog = prevFog;
 
     // Render edges
     this._edgeMaterial.uniforms.tDiffuse.value =

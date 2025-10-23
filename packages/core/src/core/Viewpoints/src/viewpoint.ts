@@ -802,21 +802,21 @@ export class Viewpoint {
     const cameraRatioXML = `<AspectRatio>${this.camera.aspect_ratio}</AspectRatio>`;
 
     let cameraXML = "";
-    if ("viewToWorld" in this.camera) {
+    if ("view_to_world_scale" in this.camera) {
       cameraXML = `<OrthogonalCamera>
         ${cameraViewpointXML}
         ${cameraDirectionXML}
         ${cameraUpVectorXML}
         ${cameraRatioXML}
-        <ViewToWorldScale>${this.camera.viewToWorld}</ViewToWorldScale>
+        <ViewToWorldScale>${this.camera.view_to_world_scale}</ViewToWorldScale>
       </OrthogonalCamera>`;
-    } else if ("fov" in this.camera) {
+    } else if ("field_of_view" in this.camera) {
       cameraXML = `<PerspectiveCamera>
         ${cameraViewpointXML}
         ${cameraDirectionXML}
         ${cameraUpVectorXML}
         ${cameraRatioXML}
-        <FieldOfView>${this.camera.fov}</FieldOfView>
+        <FieldOfView>${this.camera.field_of_view}</FieldOfView>
       </PerspectiveCamera>`;
     }
 

@@ -54,14 +54,8 @@ components.get(OBC.Grids).create(world);
 // is to copy the worker file into your project's public directory.
 // This ensures the worker file is bundled with your app during the build process,
 // and you can provide the corresponding path to it.
-const githubUrl =
-  "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
-const fetchedUrl = await fetch(githubUrl);
-const workerBlob = await fetchedUrl.blob();
-const workerFile = new File([workerBlob], "worker.mjs", {
-  type: "text/javascript",
-});
-const workerUrl = URL.createObjectURL(workerFile);
+const workerUrl =
+  "/node_modules/"https://thatopen.github.io/engine_fragment/resources/worker.mjs"/fragments-beta/dist/Worker/worker.mjs";
 
 /* MD
   Once initialization is complete, you can safely retrieve the component instance and proceed with its setup:
@@ -109,8 +103,8 @@ fragments.list.onItemSet.add(({ value: model }) => {
 const loadFragments = async () => {
   // you can provide as many files as you need
   const fragPaths = [
-    "https://thatopen.github.io/engine_components/resources/frags/school_arq.frag",
-    "https://thatopen.github.io/engine_components/resources/frags/school_str.frag",
+    "/resources/frags/school_arq.frag",
+    "/resources/frags/school_str.frag",
   ];
 
   // Promise.all loads models concurrently for faster execution.

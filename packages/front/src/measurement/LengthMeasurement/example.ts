@@ -12,6 +12,7 @@ import * as THREE from "three";
 import Stats from "stats.js";
 import * as OBC from "@thatopen/components";
 import * as BUI from "@thatopen/ui";
+import * as FRAGS from "@thatopen/fragments";
 // You have to import * as OBF from "@thatopen/components-front"
 import * as OBF from "../..";
 
@@ -45,14 +46,8 @@ components.init();
   Now, let's configure the FragmentsManager. This will allow us to load models effortlessly and start manipulating them with ease:
 */
 
-const githubUrl =
-  "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
-const fetchedUrl = await fetch(githubUrl);
-const workerBlob = await fetchedUrl.blob();
-const workerFile = new File([workerBlob], "worker.mjs", {
-  type: "text/javascript",
-});
-const workerUrl = URL.createObjectURL(workerFile);
+const workerUrl =
+  "/node_modules/@thatopen-platform/fragments-beta/dist/Worker/worker.mjs";
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 
@@ -84,7 +79,7 @@ fragments.list.onItemSet.add(({ value: model }) => {
   :::
 */
 
-const fragPaths = ["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];
+const fragPaths = ["/resources/frags/school_arq.frag"];
 await Promise.all(
   fragPaths.map(async (path) => {
     const modelId = path.split("/").pop()?.split(".").shift();
@@ -106,6 +101,7 @@ measurer.world = world;
 measurer.color = new THREE.Color("#494cb6");
 // As a best practice, always set the enabled state after the initial config
 measurer.enabled = true;
+measurer.snappings = [FRAGS.SnappingClass.POINT];
 
 /* MD 
   You can create dimensions both programatically or by user interaction. The most common way is by user interaction, so let's configure an event listener to create them when the user double clicks on the viewer container:

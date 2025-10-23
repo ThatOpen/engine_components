@@ -19,7 +19,7 @@ import * as OBC from "../..";
 const components = new OBC.Components();
 
 const workerUrl =
-  "/node_modules/@thatopen/fragments/dist/Worker/worker.mjs";
+  "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 

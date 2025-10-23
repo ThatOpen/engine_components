@@ -4,6 +4,7 @@ import { DataSet } from "@thatopen/fragments";
 import { Mark } from "../core";
 import { newDimensionMark, newEndPoint } from "../measurement/utils";
 import { Line } from "./line";
+import { Measurement } from "../measurement";
 
 /**
  * Interface representing the data required to create a dimension line.
@@ -387,7 +388,7 @@ export class DimensionLine {
     }
   }
 
-  private updateLabel() {
+  updateLabel() {
     this.label.three.element.textContent = this.getTextContent();
     const center = new THREE.Vector3();
     this.line.getCenter(center);
@@ -448,6 +449,8 @@ export class DimensionLine {
     return label;
   }
 
+  valueFormatter: ((value: number) => string) | null = null;
+
   private getTextContent(value = this.line.distance()) {
     // Convert the length from the world unit to the display unit
     // const utils = this._components.get(OBC.MeasurementUtils);
@@ -458,8 +461,12 @@ export class DimensionLine {
       this.rounding,
     );
 
+    const formattedValue = Measurement.valueFormatter
+      ? Measurement.valueFormatter(convertedValue)
+      : convertedValue.toFixed(this.rounding);
+
     // Format the converted value with the display unit
-    return `${convertedValue} ${this._units}`;
+    return `${formattedValue} ${this._units}`;
   }
 
   set color(color: THREE.Color) {

@@ -37,9 +37,14 @@ export class Volume {
     return this._rounding;
   }
 
-  async getValue() {
+  async getRawValue() {
     const utils = this._components.get(OBC.MeasurementUtils);
     const volume = await utils.getItemsVolume(this.items);
+    return volume
+  }
+
+  async getValue() {
+    const volume = await this.getRawValue()
     const convertedValue = OBC.MeasurementUtils.convertUnits(
       volume,
       "m3",

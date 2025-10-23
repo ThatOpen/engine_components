@@ -27,6 +27,10 @@ export class GraphicVertexPicker implements OBC.Disposable {
 
   private _components: OBC.Components;
 
+  private _preview = document.createElement("div");
+  private _pointerVisible = false;
+  private _intersectionFound = false;
+
   static baseSnappingStyle: Partial<CSSStyleDeclaration> = {
     height: "6px",
     width: "6px",
@@ -56,6 +60,15 @@ export class GraphicVertexPicker implements OBC.Disposable {
 
   constructor(components: OBC.Components) {
     this._components = components;
+    for (const key in GraphicVertexPicker.baseSnappingStyle) {
+      const value = GraphicVertexPicker.baseSnappingStyle[key];
+      this._preview.style[key] = value as string;
+    }
+    this._preview.style.zIndex = "999";
+    this._preview.style.pointerEvents = "none";
+    this._preview.style.position = "fixed";
+    this._preview.style.top = "0";
+    this._preview.style.left = "0";
   }
 
   /** {@link OBC.Disposable.onDisposed} */
@@ -89,6 +102,8 @@ export class GraphicVertexPicker implements OBC.Disposable {
       snappingClasses: config?.snappingClasses,
     });
 
+    this._intersectionFound = Boolean(intersects);
+
     if (intersects) {
       const { point } = intersects;
       if (!this.marker) {
@@ -101,6 +116,8 @@ export class GraphicVertexPicker implements OBC.Disposable {
         this.marker.three.removeFromParent();
         world.scene.three.add(this.marker.three);
       }
+
+      this.hidePointer();
 
       this.marker.visible = true;
       this.marker.three.position.copy(point);
@@ -128,5 +145,38 @@ export class GraphicVertexPicker implements OBC.Disposable {
     }
 
     return intersects;
+  }
+
+  updatePointer() {
+    if (!this.world) return;
+    if (!this.marker) return;
+    if (!this._intersectionFound) {
+      this.hidePointer();
+      return;
+    }
+    this.showPointer();
+    if (this.marker.visible) {
+      this.marker.visible = false;
+    }
+    const casters = this._components.get(OBC.Raycasters);
+    const caster = casters.get(this.world);
+    const mousePosition = caster.mouse.rawPosition;
+    this._preview.style.transform = `translate(-50%, -50%) translate(${mousePosition.x}px, ${mousePosition.y}px)`;
+  }
+
+  private showPointer() {
+    if (!this.world) return;
+    if (this._pointerVisible) return;
+    this._pointerVisible = true;
+    const domElement = this.world.renderer!.three.domElement;
+    domElement.parentElement?.appendChild(this._preview);
+  }
+
+  private hidePointer() {
+    if (!this.world) return;
+    if (!this._pointerVisible) return;
+    this._pointerVisible = false;
+    const domElement = this.world.renderer!.three.domElement;
+    domElement.parentElement?.removeChild(this._preview);
   }
 }
