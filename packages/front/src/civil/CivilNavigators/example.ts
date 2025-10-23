@@ -89,7 +89,7 @@ world.scene.three.background = null;
 
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(
-  "/node_modules/@thatopen-platform/fragments-beta/dist/Worker/worker.mjs",
+  "https://thatopen.github.io/engine_fragment/resources/worker.mjs",
 );
 
 const url = "https://thatopen.github.io/engine_components/resources/test/small-civil-q2.frag";

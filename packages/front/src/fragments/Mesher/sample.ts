@@ -49,7 +49,7 @@ components.init();
 // and provide the relative path in `workerUrl`
 // We use here the internal route of the worker in the library for simplicity purposes
 const workerUrl =
-  "/node_modules/@thatopen-platform/fragments-beta/dist/Worker/worker.mjs";
+  "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 world.camera.controls.addEventListener("rest", () =>
