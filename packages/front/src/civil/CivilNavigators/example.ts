@@ -92,7 +92,7 @@ fragments.init(
   "/node_modules/@thatopen-platform/fragments-beta/dist/Worker/worker.mjs",
 );
 
-const url = "/resources/test/small-civil-q2.frag";
+const url = "https://thatopen.github.io/engine_components/resources/test/small-civil-q2.frag";
 const file = await fetch(url);
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
