@@ -85,9 +85,9 @@ export interface SerializedFinderQuery {
    */
   name: string;
   /**
-   * An optional description of the query.
+   * An object to define custom data.
    */
-  description?: string;
+  customData: Record<string, any>;
   /**
    * An array of serialized query parameters.
    */

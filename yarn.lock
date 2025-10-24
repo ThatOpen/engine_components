@@ -733,28 +733,28 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
-    "@thatopen/components": ~3.1.0
-    "@thatopen/fragments": ~3.1.0
-    "@thatopen/ui": ~3.1.0
-    "@thatopen/ui-obc": ^3.1.0
+    "@thatopen/components": ~3.2.0
+    "@thatopen/fragments": ~3.2.0
+    "@thatopen/ui": ~3.2.0
+    "@thatopen/ui-obc": ~3.2.0
     "@types/convert-units": 2.3.11
     "@types/earcut": ^2.1.4
     "@types/three": ^0.175.0
     three: ^0.175.0
-    web-ifc: 0.0.71
+    web-ifc: 0.0.72
   peerDependencies:
-    "@thatopen/fragments": ~3.1.0
+    "@thatopen/fragments": ~3.2.0
     three: ">=0.175.0"
-    web-ifc: ">=0.0.71"
+    web-ifc: ">=0.0.72"
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@workspace:packages/core, @thatopen/components@~3.1.0":
+"@thatopen/components@workspace:packages/core, @thatopen/components@~3.2.0":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
-    "@thatopen/fragments": ~3.1.0
-    "@thatopen/ui": ~3.1.0
+    "@thatopen/fragments": ~3.2.0
+    "@thatopen/ui": ~3.2.0
     "@types/convert-units": 2.3.11
     "@types/three": 0.175.0
     camera-controls: ^2.9.0
@@ -763,17 +763,17 @@ __metadata:
     stats.js: ^0.17.0
     three: ^0.175.0
     three-mesh-bvh: 0.7.0
-    web-ifc: 0.0.71
+    web-ifc: 0.0.72
   peerDependencies:
-    "@thatopen/fragments": ~3.1.0
+    "@thatopen/fragments": ~3.2.0
     three: ">=0.175.0"
-    web-ifc: ">=0.0.71"
+    web-ifc: ">=0.0.72"
   languageName: unknown
   linkType: soft
 
-"@thatopen/fragments@npm:~3.1.0":
-  version: 3.1.0
-  resolution: "@thatopen/fragments@npm:3.1.0"
+"@thatopen/fragments@npm:~3.2.0":
+  version: 3.2.0
+  resolution: "@thatopen/fragments@npm:3.2.0"
   dependencies:
     earcut: ^3.0.1
     flatbuffers: 25.2.10
@@ -781,35 +781,35 @@ __metadata:
     pako: 2.1.0
   peerDependencies:
     three: ">=0.175"
-    web-ifc: 0.0.69
-  checksum: 4feff6296ccc17c722e71786ac5ac769317ed02783634de1890334ced1e6ec4bc02165651c8fb3fea7868ccfebc909cebec49ea89923f77213ffe03efb126e2c
+    web-ifc: ">=0.0.72"
+  checksum: 606b7b05422fa2ee5083b0622e026cc5604fc9c9b185d391b27b0461979177f32d4f184affee856e4d3ba73a456b903b731c006e304637cef8aa7b314c0a2453
   languageName: node
   linkType: hard
 
-"@thatopen/ui-obc@npm:^3.1.0":
-  version: 3.1.0
-  resolution: "@thatopen/ui-obc@npm:3.1.0"
+"@thatopen/ui-obc@npm:~3.2.0":
+  version: 3.2.1
+  resolution: "@thatopen/ui-obc@npm:3.2.1"
   dependencies:
-    "@thatopen/ui": ~3.1.0
+    "@thatopen/ui": ~3.2.0
     lit: 3.1.2
   peerDependencies:
-    "@thatopen-platform/components-beta": ~3.0.0
-    "@thatopen-platform/components-front-beta": ~3.0.0
-    "@thatopen-platform/fragments-beta": ~3.0.0
+    "@thatopen/components": ~3.2.0
+    "@thatopen/components-front": ~3.2.0
+    "@thatopen/fragments": ~3.2.0
     three: ">=0.175.0"
-    web-ifc: 0.0.69
-  checksum: 4198150789fd8b2d6adb50f79bddb53055fc04de992eed97829b69221a1639a45f08b051885d57045dd6e8b06c4f8979d6dce18cfb9fae275f9080bbb4949a5a
+    web-ifc: ">=0.0.72"
+  checksum: 78a343bca30883df0581edf7eb42bd69e50a05b0383d16b6c182bfa05f51d558801face518f178124af3c60d352afcc3a452bf59b7c47cdd17eddbc869ad787b
   languageName: node
   linkType: hard
 
-"@thatopen/ui@npm:~3.1.0":
-  version: 3.1.0
-  resolution: "@thatopen/ui@npm:3.1.0"
+"@thatopen/ui@npm:~3.2.0":
+  version: 3.2.0
+  resolution: "@thatopen/ui@npm:3.2.0"
   dependencies:
     "@floating-ui/dom": 1.6.3
     iconify-icon: 2.0.0
     lit: 3.1.2
-  checksum: bec671619b78cd70312b0320bc5daec9803ceebe678c6bfde902669e383399e1032fff0d7d3d0ae4714537e643b48e8065d4e642eb5eb764220dbefa03ebda15
+  checksum: d6d96b0fde21f3aad98f7eeb4093c2f06c5680f7ef616b8c2f24bd23d17d1e0729eadc9125e6b630da2a5d1b71765093e315da9652a7340285000f243c421430
   languageName: node
   linkType: hard
 
@@ -4833,10 +4833,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"web-ifc@npm:0.0.71":
-  version: 0.0.71
-  resolution: "web-ifc@npm:0.0.71"
-  checksum: 6bdb6138007bc77f0fa1a01cfd53db2f8dafab8fcbb68e66d7b9c5f141b6d65b21db41fa4ffea99a6bd88ce403b4b57c7f6c1dee8d4b59edac5d1696764f53b8
+"web-ifc@npm:0.0.72":
+  version: 0.0.72
+  resolution: "web-ifc@npm:0.0.72"
+  checksum: cdc5cc682c4fb9597bf99dc1bd88abeee91523eb17a0b3840ed143cc1cddf6d75d42c65274b842ec3f3a33bb9374ae2dbfb8580848d951ab8eee4a35028f5af1
   languageName: node
   linkType: hard
 

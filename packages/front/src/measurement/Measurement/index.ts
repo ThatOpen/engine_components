@@ -40,6 +40,8 @@ export abstract class Measurement<
   labels = new DataSet<Mark>();
   volumes = new DataSet<MeasureVolume>();
 
+  delay = 300;
+
   // The measurement modes
   abstract modes: string[];
   abstract mode: string;
@@ -76,13 +78,16 @@ export abstract class Measurement<
   private onMove = () => {
     if (!this.enabled) return;
 
+    this._vertexPicker.updatePointer();
+
     if (this.pointerStopTimeout !== null) {
       clearTimeout(this.pointerStopTimeout);
     }
 
+    // TODO: Make this configurable?
     this.pointerStopTimeout = window.setTimeout(() => {
       this.onPointerStop.trigger();
-    }, 50);
+    }, this.delay);
 
     this.onPointerMove.trigger();
   };
@@ -130,6 +135,8 @@ export abstract class Measurement<
   get enabled() {
     return this._enabled;
   }
+
+  static valueFormatter: ((value: number) => string) | null = null;
 
   readonly onVisibilityChange = new OBC.Event<Boolean>();
 
@@ -196,9 +203,9 @@ export abstract class Measurement<
   set rounding(value: number) {
     this._rounding = value;
     for (const measure of this.list) {
-      if (measure instanceof Line || measure instanceof Area) {
-        measure.rounding = value;
-      }
+      if (!("rounding" in measure && typeof measure.rounding === "number"))
+        continue;
+      (measure as any).rounding = value;
     }
     for (const line of this.lines) line.rounding = value;
     for (const fill of this.fills) fill.rounding = value;

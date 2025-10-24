@@ -109,7 +109,7 @@ export class MeasureVolume {
 
   async update() {
     this.updateMesh();
-    const value = await this.volume.getValue();
+    const value = await this.volume.getRawValue();
     this.label.visible = value !== 0;
     this.label.value = value;
     const center = await this.volume.getCenter();

@@ -700,26 +700,6 @@ export class BCFTopics
       createdViewpoints.push(viewpoint);
     }
 
-    // Snapshots processing
-    // png and jpeg are supposed to be the only types allowed for snapshots in the BCF specification
-    const getNameWithoutExtension = (name: string) => {
-      const partsBySlash = name.split("/");
-      const partsByDot = partsBySlash[partsBySlash.length - 1].split(".");
-      partsByDot.pop();
-      return partsByDot.join(".");
-    };
-
-    const snapshotFiles = files.filter(
-      (file) => file.name.endsWith(".png") || file.name.endsWith(".jpeg"),
-    );
-
-    for (const file of snapshotFiles) {
-      const name = getNameWithoutExtension(file.name);
-      const buffer = await file.async("arraybuffer");
-      const bytes = new Uint8Array(buffer);
-      viewpoints.snapshots.set(name, bytes);
-    }
-
     // Process markup files
     const topicRelations: { [guid: string]: Set<string> } = {};
     const topics: Topic[] = [];
@@ -790,12 +770,20 @@ export class BCFTopics
       for (const markupViewpoint of markupViewpoints) {
         if (!(markupViewpoint && markupViewpoint.Guid)) continue;
         const viewpoint = viewpoints.list.get(markupViewpoint.Guid);
-        if (viewpoint) {
-          topic.viewpoints.add(viewpoint.guid);
-          const snapshotName = getNameWithoutExtension(
-            markupViewpoint.Snapshot,
-          );
-          viewpoint.snapshot = snapshotName ?? null;
+
+        if (!viewpoint) continue;
+        topic.viewpoints.add(viewpoint.guid);
+
+        // Snapshot processing
+        const snapshotName = `${topic.guid}/${markupViewpoint.Snapshot}`;
+        const snapshotFile = files.find(({ name }) => name === snapshotName);
+        if (snapshotFile) {
+          const buffer = await snapshotFile.async("arraybuffer");
+          const bytes = new Uint8Array(buffer);
+          // Use viewpoint GUID as the snapshot key since snapshot file names are often identical.
+          // A viewpoint can only have one snapshot, so using its GUID as the key is sufficient.
+          viewpoints.snapshots.set(viewpoint.guid, bytes);
+          viewpoint.snapshot = viewpoint.guid ?? null;
         }
       }
 

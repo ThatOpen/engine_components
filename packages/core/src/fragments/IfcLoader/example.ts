@@ -67,7 +67,7 @@ const ifcLoader = components.get(OBC.IfcLoader);
 await ifcLoader.setup({
   autoSetWasm: false,
   wasm: {
-    path: "https://unpkg.com/web-ifc@0.0.71/",
+    path: "https://unpkg.com/web-ifc@0.0.72/",
     absolute: true,
   },
 });
@@ -76,14 +76,8 @@ await ifcLoader.setup({
   When an IFC file is converted to Fragments, another component handles the converted file: the FragmentsManager. Therefore, it is essential to configure this component first before attempting to "load" any IFC file:
 */
 
-const githubUrl =
+const workerUrl =
   "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
-const fetchedUrl = await fetch(githubUrl);
-const workerBlob = await fetchedUrl.blob();
-const workerFile = new File([workerBlob], "worker.mjs", {
-  type: "text/javascript",
-});
-const workerUrl = URL.createObjectURL(workerFile);
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 
@@ -174,9 +168,7 @@ const [panel, updatePanel] = BUI.Component.create<BUI.PanelSection, {}>((_) => {
     const onLoadIfc = async ({ target }: { target: BUI.Button }) => {
       target.label = "Conversion in progress...";
       target.loading = true;
-      await loadIfc(
-        "https://thatopen.github.io/engine_components/resources/ifc/school_str.ifc",
-      );
+      await loadIfc("https://thatopen.github.io/engine_components/resources/ifc/school_str.ifc");
       target.loading = false;
       target.label = "Load IFC";
     };
