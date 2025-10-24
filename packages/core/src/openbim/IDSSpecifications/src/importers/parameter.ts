@@ -1,6 +1,9 @@
 import { IDSFacetParameter } from "../types";
 
-export const getParameterValue = (property: any) => {
+export const getParameterValue = (
+  property: any,
+  parseNumericString: boolean,
+) => {
   if (!property) return undefined;
   const result: Partial<IDSFacetParameter> = {};
 
@@ -20,7 +23,8 @@ export const getParameterValue = (property: any) => {
     if ("enumeration" in restriction) {
       result.type = "enumeration";
       const enumeration = restriction.enumeration.map(
-        ({ value }: { value: string }) => value,
+        ({ value }: { value: string }) =>
+          parseNumericString ? value : String(value),
       );
       result.parameter = enumeration;
     }

@@ -101,7 +101,10 @@ export class IDSSpecifications extends Component {
    *
    * @returns An array of IDSSpecification instances created from the parsed data.
    */
-  load(data: string) {
+  load(
+    data: string,
+    config: { parseNumericString: boolean } = { parseNumericString: true },
+  ) {
     const result: IDSSpecification[] = [];
     const ids = IDSSpecifications.xmlParser.parse(data).ids;
     const { specifications } = ids;
@@ -148,7 +151,11 @@ export class IDSSpecifications extends Component {
                 applicabilities.push(...facets);
               }
               if (facetName === "property") {
-                const facets = createPropertyFacets(this.components, elements);
+                const facets = createPropertyFacets(
+                  this.components,
+                  elements,
+                  config.parseNumericString,
+                );
                 applicabilities.push(...facets);
               }
               if (facetName === "partOf") {
@@ -190,7 +197,11 @@ export class IDSSpecifications extends Component {
                 reqs.push(...facets);
               }
               if (facetName === "property") {
-                const facets = createPropertyFacets(this.components, elements);
+                const facets = createPropertyFacets(
+                  this.components,
+                  elements,
+                  config.parseNumericString,
+                );
                 reqs.push(...facets);
               }
               if (facetName === "partOf") {
