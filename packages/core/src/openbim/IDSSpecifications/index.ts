@@ -40,6 +40,8 @@ export class IDSSpecifications extends Component {
     trimValues: true,
   });
 
+  IDSInfo?: IDSInfo;
+
   constructor(components: Components) {
     super(components);
     components.add(IDSSpecifications.uuid, this);
