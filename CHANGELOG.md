@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.3.0](https://github.com/ThatOpen/engine_components/compare/v3.2.0...v3.3.0) (2025-10-29)
+
+
+### Features
+
+* Adds IDSInfo as an accessible attribute ([720f1ce](https://github.com/ThatOpen/engine_components/commit/720f1ceca819f1b33ad6d58613726d01c741e548))
+* Makes IDSInfo accessible by adding the attribute. ([3abab49](https://github.com/ThatOpen/engine_components/commit/3abab4916d3983b51828df3b62a13937262f65f2))
+
+
+### Bug Fixes
+
+* incorrect positioning of clip edges and fills in models loaded after the first ([61e0055](https://github.com/ThatOpen/engine_components/commit/61e0055b00d3654b10a282fa24832fc367fb6424))
+
 ## [3.2.0](https://github.com/ThatOpen/engine_components/compare/v3.1.0...v3.2.0) (2025-10-23)
 
 
