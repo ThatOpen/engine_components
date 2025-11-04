@@ -232,6 +232,10 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           @change="${({ target }: { target: BUI.Dropdown }) => {
             const [mode] = target.value;
             measurer.mode = mode;
+            measurer.snappings =
+              mode === "edge"
+                ? [FRAGS.SnappingClass.LINE]
+                : [FRAGS.SnappingClass.POINT];
           }}"> ${measurer.modes.map(
             (mode) =>
               BUI.html`<bim-option label=${mode} value=${mode} ?checked=${mode === measurer.mode}></bim-option>`,
