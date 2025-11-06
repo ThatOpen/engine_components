@@ -26,6 +26,11 @@ export class IfcLoader extends Component implements Disposable {
   readonly onIfcStartedLoading = new Event<void>();
 
   /**
+   * An event triggered when the IFC importer is initialized.
+   */
+  readonly onIfcImporterInitialized = new Event<FRAGS.IfcImporter>();
+
+  /**
    * An event triggered when the setup process is completed.
    */
   readonly onSetup = new Event<void>();
@@ -123,6 +128,8 @@ export class IfcLoader extends Component implements Disposable {
     serializer.wasm.path = this.settings.wasm.path;
     serializer.wasm.absolute = this.settings.wasm.absolute;
     serializer.webIfcSettings = this.settings.webIfc;
+
+    this.onIfcImporterInitialized.trigger(serializer);
 
     if (config?.instanceCallback) config.instanceCallback(serializer);
 
