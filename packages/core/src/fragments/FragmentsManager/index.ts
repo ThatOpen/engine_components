@@ -32,7 +32,7 @@ export class FragmentsManager extends Component implements Disposable {
   enabled = true;
 
   get initialized() {
-    return !!this._core
+    return !!this._core;
   }
 
   private _core?: FRAGS.FragmentsModels;
@@ -63,7 +63,7 @@ export class FragmentsManager extends Component implements Disposable {
 
   /** {@link Disposable.dispose} */
   dispose() {
-    this.onBeforeDispose.trigger()
+    this.onBeforeDispose.trigger();
     if (this._core) {
       this.core.dispose();
       this._core = undefined;
@@ -77,9 +77,9 @@ export class FragmentsManager extends Component implements Disposable {
   init(workerURL: string) {
     this._core = new FragmentsModels(workerURL);
     this.core.onModelLoaded.add(async () => {
-      if (this._hasCoordinationModel) return
-      const firstModel = [...this.list.values()][0]
-      if (!firstModel) return
+      if (this._hasCoordinationModel) return;
+      const firstModel = [...this.list.values()][0];
+      if (!firstModel) return;
       this.baseCoordinationModel = firstModel.modelId;
       this.baseCoordinationMatrix = await firstModel.getCoordinationMatrix();
     });
@@ -199,6 +199,12 @@ export class FragmentsManager extends Component implements Disposable {
     for (const [modelId, localIds] of Object.entries(items)) {
       const model = this.list.get(modelId);
       if (!model) continue;
+
+      if (localIds.size === 0) {
+        result[modelId] = [];
+        continue;
+      }
+
       const data = await model.getItemsData([...localIds], config);
       result[modelId] = data;
     }
