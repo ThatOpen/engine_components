@@ -229,10 +229,12 @@ export class Highlighter
       return;
     }
 
-    const {
-      localId,
-      fragments: { modelId },
-    } = result;
+    let modelId = result.fragments.modelId;
+    const { localId } = result;
+
+    if (result.fragments.isDeltaModel) {
+      modelId = result.fragments.parentModelId;
+    }
 
     const found: OBC.ModelIdMap = { [modelId]: new Set([localId]) };
 
@@ -286,38 +288,38 @@ export class Highlighter
     }
 
     let map = OBC.ModelIdMapUtils.clone(modelIdMap);
-    const fragments = this.components.get(OBC.FragmentsManager)
+    const fragments = this.components.get(OBC.FragmentsManager);
 
     // Include the delta model ids in the parent modelIdMap
     for (const [modelId, ids] of Object.entries(modelIdMap)) {
-      const model = fragments.list.get(modelId)
-      if (!(model?.isDeltaModel && model.parentModelId)) continue
-      OBC.ModelIdMapUtils.add(map, {[model.parentModelId]: ids})
+      const model = fragments.list.get(modelId);
+      if (!(model?.isDeltaModel && model.parentModelId)) continue;
+      OBC.ModelIdMapUtils.add(map, { [model.parentModelId]: ids });
     }
 
     const selectables = this.selectable?.[name];
     if (selectables) {
       // Include the parent modelIds in the delta modelIdMap from selectables
-      const selectable = OBC.ModelIdMapUtils.clone(selectables)
+      const selectable = OBC.ModelIdMapUtils.clone(selectables);
       for (const [modelId, ids] of Object.entries(selectable)) {
-        const model = fragments.list.get(modelId)
-        if (!model?.deltaModelId) continue
-        OBC.ModelIdMapUtils.add(selectable, {[model.deltaModelId]: ids})
-      }
-      
-      map = OBC.ModelIdMapUtils.intersect([map, selectable])
-    }
-    
-    if (exclude) {
-      // Include the parent modelIds in the exclusion modelIdMap from exclude
-      const exclusion = OBC.ModelIdMapUtils.clone(exclude)
-      for (const [modelId, ids] of Object.entries(exclusion)) {
-        const model = fragments.list.get(modelId)
-        if (!model?.deltaModelId) continue
-        OBC.ModelIdMapUtils.add(exclusion, {[model.deltaModelId]: ids})
+        const model = fragments.list.get(modelId);
+        if (!model?.deltaModelId) continue;
+        OBC.ModelIdMapUtils.add(selectable, { [model.deltaModelId]: ids });
       }
 
-      map = OBC.ModelIdMapUtils.intersect([map, exclude])
+      map = OBC.ModelIdMapUtils.intersect([map, selectable]);
+    }
+
+    if (exclude) {
+      // Include the parent modelIds in the exclusion modelIdMap from exclude
+      const exclusion = OBC.ModelIdMapUtils.clone(exclude);
+      for (const [modelId, ids] of Object.entries(exclusion)) {
+        const model = fragments.list.get(modelId);
+        if (!model?.deltaModelId) continue;
+        OBC.ModelIdMapUtils.add(exclusion, { [model.deltaModelId]: ids });
+      }
+
+      map = OBC.ModelIdMapUtils.intersect([map, exclude]);
     }
 
     // Apply autotoggle when picking with the mouse
