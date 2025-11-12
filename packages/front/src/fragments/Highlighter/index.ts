@@ -297,19 +297,6 @@ export class Highlighter
       OBC.ModelIdMapUtils.add(map, { [model.parentModelId]: ids });
     }
 
-    const selectables = this.selectable?.[name];
-    if (selectables) {
-      // Include the parent modelIds in the delta modelIdMap from selectables
-      const selectable = OBC.ModelIdMapUtils.clone(selectables);
-      for (const [modelId, ids] of Object.entries(selectable)) {
-        const model = fragments.list.get(modelId);
-        if (!model?.deltaModelId) continue;
-        OBC.ModelIdMapUtils.add(selectable, { [model.deltaModelId]: ids });
-      }
-
-      map = OBC.ModelIdMapUtils.intersect([map, selectable]);
-    }
-
     if (exclude) {
       // Include the parent modelIds in the exclusion modelIdMap from exclude
       const exclusion = OBC.ModelIdMapUtils.clone(exclude);
@@ -381,6 +368,14 @@ export class Highlighter
           ? modelIdMap
           : this.getMapWithoutSelection(style);
       if (!map) continue;
+
+      // Add delta models to model id map
+      for (const [modelId, ids] of Object.entries(map)) {
+        const model = fragments.list.get(modelId);
+        if (!model?.deltaModelId) continue;
+        OBC.ModelIdMapUtils.add(map, { [model.deltaModelId]: ids });
+      }
+
       promises.push(
         fragments.highlight({ ...definition, customId: style }, map),
       );
