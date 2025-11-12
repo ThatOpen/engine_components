@@ -14,10 +14,8 @@ export class EdgeDetectionPass extends Pass {
   // @ts-ignore
   private _fragments: OBC.FragmentsManager;
   private _renderer: OBC.BaseRenderer;
-  private _overrideMaterial = new THREE.MeshBasicMaterial({
-    vertexColors: true,
-    side: THREE.DoubleSide,
-  });
+  private _overrideMaterial: THREE.ShaderMaterial;
+  private _depthBiasStrength = 0.001; // Adjustable depth bias strength
 
   get width() {
     return this._edgeMaterial.uniforms.width.value;
@@ -35,6 +33,17 @@ export class EdgeDetectionPass extends Pass {
     this._combineMaterial.uniforms.edgeColor.value = value;
   }
 
+  get depthBiasStrength() {
+    return this._depthBiasStrength;
+  }
+
+  set depthBiasStrength(value: number) {
+    this._depthBiasStrength = value;
+    if (this._overrideMaterial) {
+      this._overrideMaterial.uniforms.depthBiasStrength.value = value;
+    }
+  }
+
   constructor(
     renderer: OBC.BaseRenderer,
     fragments: OBC.FragmentsManager,
@@ -44,6 +53,51 @@ export class EdgeDetectionPass extends Pass {
 
     this._renderer = renderer;
     this._fragments = fragments;
+
+    // Create override material with depth bias based on vertex colors
+    // Higher vertex colors will render on top (closer to camera)
+    this._overrideMaterial = new THREE.ShaderMaterial({
+      clipping: true,
+      vertexColors: true,
+      side: THREE.DoubleSide,
+      uniforms: {
+        depthBiasStrength: { value: this._depthBiasStrength },
+      },
+      vertexShader: `
+        #include <common>
+        #include <color_pars_vertex>
+        #include <clipping_planes_pars_vertex>
+        
+        uniform float depthBiasStrength;
+        
+        void main() {
+          #include <color_vertex>
+          vColor = color;
+          
+          #include <begin_vertex>
+          #include <project_vertex>
+          
+          // Compute priority from vertex color (using luminance)
+          // Higher values = higher priority = render on top
+          float priority = dot(color, vec3(0.299, 0.587, 0.114)); // Luminance
+          
+          // Apply depth bias: subtract from z to bring higher priority faces closer
+          // In clip space, smaller z values are closer to camera
+          gl_Position.z -= priority * depthBiasStrength;
+
+          #include <clipping_planes_vertex>
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        #include <clipping_planes_pars_fragment>
+        
+        void main() {
+          #include <clipping_planes_fragment>
+          gl_FragColor = vec4(vColor, 1.0);
+        }
+      `,
+    });
 
     this._edgeMaterial = new THREE.ShaderMaterial({
       uniforms: {
@@ -178,6 +232,7 @@ export class EdgeDetectionPass extends Pass {
   dispose() {
     this._edgeMaterial.dispose();
     this._combineMaterial.dispose();
+    this._overrideMaterial.dispose();
     this._fsQuad.dispose();
     this._edgeRenderTarget.dispose();
     this._vertexColorRenderTarget.dispose();

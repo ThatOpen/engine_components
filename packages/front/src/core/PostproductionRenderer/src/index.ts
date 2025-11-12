@@ -9,6 +9,7 @@ import { SimpleOutlinePass } from "./simple-outline-pass";
 import { ExcludedObjectsPass } from "./excluded-objects-pass";
 import { PostproductionRenderer } from "..";
 import { BasePass } from "./base-pass";
+import { GlossPass } from "./gloss-pass";
 
 export enum PostproductionAspect {
   COLOR = 0,
@@ -22,6 +23,8 @@ export enum PostproductionAspect {
 export class Postproduction {
   invisibleMaterials = new Set<THREE.Material>();
 
+  readonly onStyleChanged = new OBC.Event<PostproductionAspect>();
+
   private _enabled = false;
   private _initialized = false;
 
@@ -33,11 +36,23 @@ export class Postproduction {
   private _smaaPass?: SMAAPass;
   private _simpleOutlinePass?: SimpleOutlinePass;
   private _excludedObjectsPass?: ExcludedObjectsPass;
+  private _glossPass?: GlossPass;
   private _style = PostproductionAspect.COLOR;
   private _outlinesEnabled = false;
+  private _glossEnabled = false;
   private _excludedObjectsEnabled = false;
   private _components: OBC.Components;
   private _renderer: PostproductionRenderer;
+
+  defaultAoParameters = {
+    radius: 0.25,
+    distanceExponent: 5.7,
+    thickness: 10,
+    scale: 2,
+    samples: 16,
+    distanceFallOff: 1,
+    screenSpaceRadius: true,
+  };
 
   get basePass() {
     if (!this._basePass) {
@@ -90,6 +105,13 @@ export class Postproduction {
     return this._excludedObjectsPass;
   }
 
+  get glossPass() {
+    if (!this._glossPass) {
+      throw new Error("Gloss pass not initialized");
+    }
+    return this._glossPass;
+  }
+
   get outlinesEnabled() {
     return this._outlinesEnabled;
   }
@@ -108,6 +130,15 @@ export class Postproduction {
     this.style = this._style;
   }
 
+  get glossEnabled() {
+    return this._glossEnabled;
+  }
+
+  set glossEnabled(value: boolean) {
+    this._glossEnabled = value;
+    this.style = this._style;
+  }
+
   get style() {
     return this._style;
   }
@@ -122,9 +153,14 @@ export class Postproduction {
       !this._aoPass ||
       !this._edgeDetectionPass ||
       !this._simpleOutlinePass ||
-      !this._excludedObjectsPass
+      !this._excludedObjectsPass ||
+      !this._glossPass
     ) {
       return;
+    }
+
+    if (this._style === PostproductionAspect.PEN_SHADOWS) {
+      this._aoPass.updateGtaoMaterial(this.defaultAoParameters);
     }
 
     this._style = value;
@@ -133,6 +169,9 @@ export class Postproduction {
 
     if (value === PostproductionAspect.COLOR) {
       this._composer.addPass(this._basePass);
+      if (this._glossEnabled) {
+        this._composer.addPass(this._glossPass);
+      }
       if (this._outlinesEnabled) {
         this._composer.addPass(this._simpleOutlinePass);
       }
@@ -168,6 +207,9 @@ export class Postproduction {
 
     if (value === PostproductionAspect.COLOR_PEN) {
       this._composer.addPass(this._basePass);
+      if (this._glossEnabled) {
+        this._composer.addPass(this._glossPass);
+      }
       this._composer.addPass(this._edgeDetectionPass);
       if (this._outlinesEnabled) {
         this._composer.addPass(this._simpleOutlinePass);
@@ -180,6 +222,9 @@ export class Postproduction {
 
     if (value === PostproductionAspect.COLOR_SHADOWS) {
       this._composer.addPass(this._basePass);
+      if (this._glossEnabled) {
+        this._composer.addPass(this._glossPass);
+      }
       this._composer.addPass(this._aoPass);
       this._aoPass.output = GTAOPass.OUTPUT.Default;
       if (this._outlinesEnabled) {
@@ -193,6 +238,9 @@ export class Postproduction {
 
     if (value === PostproductionAspect.COLOR_PEN_SHADOWS) {
       this._composer.addPass(this._basePass);
+      if (this._glossEnabled) {
+        this._composer.addPass(this._glossPass);
+      }
       this._composer.addPass(this._aoPass);
       this._aoPass.output = GTAOPass.OUTPUT.Default;
       this._composer.addPass(this._edgeDetectionPass);
@@ -204,6 +252,8 @@ export class Postproduction {
       }
       this._composer.addPass(this._outputPass);
     }
+
+    this.onStyleChanged.trigger(value);
   }
 
   constructor(components: OBC.Components, renderer: PostproductionRenderer) {
@@ -231,6 +281,7 @@ export class Postproduction {
     this._smaaPass?.dispose();
     this._simpleOutlinePass?.dispose();
     this._excludedObjectsPass?.dispose();
+    this._glossPass?.dispose();
   }
 
   setSize(width: number, height: number) {
@@ -245,6 +296,9 @@ export class Postproduction {
     }
     if (this._excludedObjectsPass) {
       this._excludedObjectsPass.setSize(width, height);
+    }
+    if (this._glossPass) {
+      this._glossPass.setSize(width, height);
     }
   }
 
@@ -319,6 +373,17 @@ export class Postproduction {
       this._renderer.currentWorld!,
     );
 
+    this._glossPass = new GlossPass(
+      new THREE.Vector2(
+        this._renderer.three.domElement.width,
+        this._renderer.three.domElement.height,
+      ),
+      this._renderer.currentWorld!,
+    );
+
     this.style = PostproductionAspect.COLOR;
   }
 }
+
+// Export the GlossPass for external use
+export { GlossPass };
