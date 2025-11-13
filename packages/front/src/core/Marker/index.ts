@@ -89,7 +89,9 @@ export class Marker extends OBC.Component implements OBC.Disposable {
    */
   autoCluster = true;
 
-  private static readonly DEFAULT_CLUSTER_STYLES = {
+  private static readonly DEFAULT_CLUSTER_STYLES: {
+    [key: string]: string | undefined;
+  } = {
     backgroundColor: "#FFFFFF",
     textColor: "#000000",
     fontSize: "1.2rem",
@@ -103,7 +105,7 @@ export class Marker extends OBC.Component implements OBC.Disposable {
   };
 
   // Customizable cluster element styles
-  clusterElementStyles: Partial<typeof Marker.DEFAULT_CLUSTER_STYLES> = {
+  clusterElementStyles: Partial<{ [key: string]: string | undefined }> = {
     ...Marker.DEFAULT_CLUSTER_STYLES,
   };
 
@@ -443,10 +445,12 @@ export class Marker extends OBC.Component implements OBC.Disposable {
     div.style.padding = "5px 11px";
     div.style.textAlign = "center";
     div.addEventListener("pointerover", () => {
-      div.style.background = hoverBackgroundColor;
+      div.style.background =
+        this.clusterElementStyles.hoverBackgroundColor || "#BCF124";
     });
     div.addEventListener("pointerout", () => {
-      div.style.background = backgroundColor;
+      div.style.background =
+        this.clusterElementStyles.backgroundColor || "#FFFFFF";
     });
     return div;
   };
