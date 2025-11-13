@@ -95,7 +95,7 @@ export class Area {
     const points = this.points2D;
     if (!points) return 0;
     const area = Math.abs(THREE.ShapeUtils.area(points));
-    return area
+    return area;
   }
 
   get boundingBox() {
@@ -184,9 +184,9 @@ export class Area {
   // Create an exact copy of this area
   clone() {
     const area = new Area([...this.points]);
-    area.units = this.units
-    area.rounding = this.rounding
-    area.tolerance = this.tolerance
+    area.units = this.units;
+    area.rounding = this.rounding;
+    area.tolerance = this.tolerance;
     return area;
   }
 

@@ -253,6 +253,36 @@ export class DimensionLine {
     (this._components as any) = null;
   }
 
+  applyPlanesVisibility(planes: THREE.Plane[]) {
+    // Using wasVisible prevents showing labels that were hidden before
+
+    for (const endpoint of this._endpoints) {
+      if (!endpoint.wasVisible) continue;
+      let isBehind = false;
+      for (const plane of planes) {
+        if (plane.distanceToPoint(endpoint.three.position) < 0) {
+          isBehind = true;
+          break;
+        }
+      }
+      endpoint.three.visible = !isBehind;
+    }
+
+    // Check if label (measurement mark) is behind any plane
+
+    if (this.label.wasVisible) {
+      let labelIsBehind = false;
+      const labelPos = this.label.three.position;
+      for (const plane of planes) {
+        if (plane.distanceToPoint(labelPos) < 0) {
+          labelIsBehind = true;
+          break;
+        }
+      }
+      this.label.three.visible = !labelIsBehind;
+    }
+  }
+
   /**
    * Creates a bounding box for the dimension line.
    * The bounding box is a 3D box that encloses the dimension line.

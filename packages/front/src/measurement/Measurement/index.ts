@@ -75,6 +75,18 @@ export abstract class Measurement<
 
   private pointerStopTimeout: number | null = null;
 
+  applyPlanesVisibility(planes: THREE.Plane[]) {
+    for (const line of this.lines) {
+      line.applyPlanesVisibility(planes);
+    }
+    for (const fill of this.fills) {
+      fill.applyPlanesVisibility(planes);
+    }
+    for (const volume of this.volumes) {
+      volume.applyPlanesVisibility(planes);
+    }
+  }
+
   private onMove = () => {
     if (!this.enabled) return;
 
