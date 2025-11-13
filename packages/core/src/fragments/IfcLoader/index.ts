@@ -91,8 +91,8 @@ export class IfcLoader extends Component implements Disposable {
    * Loads an IFC file and processes it for 3D visualization.
    *
    * @param data - The Uint8Array containing the IFC file data.
-   * @param coordinate - Optional boolean indicating whether to coordinate the loaded IFC data. Default is true.
-   * @param name - Optional name for the fragments model.
+   * @param coordinate - Boolean indicating whether to coordinate the loaded IFC data. Default is true.
+   * @param name - Name for the fragments model.
    * @param config - Optional extra data for loading the IFC.
    *
    * @returns A Promise that resolves to the FragmentsModel containing the loaded and processed IFC data.
