@@ -17,6 +17,7 @@ In this tutorial, we will import:
 - `@thatopen/ui` to add some simple and cool UI menus.
 - `@thatopen/components-front` to use some frontend-oriented components.
 - `Stats.js` (optional) to measure the performance of our app.
+- `GTAOPass` (optional) to control the ambient occlusion parameters.
 */
 
 import * as THREE from "three";
@@ -70,6 +71,19 @@ grid.config.color.set(0x666666);
 world.scene.three.background = null;
 
 /* MD
+  We'll also set up the update logic for the renderer in manual mode (if enabled).
+*/
+
+const updateIfManualMode = () => {
+  if (world.renderer!.mode === OBC.RendererMode.MANUAL) {
+    world.renderer!.needsUpdate = true;
+  }
+};
+
+world.camera.controls.addEventListener("update", updateIfManualMode);
+world.renderer.onResize.add(updateIfManualMode);
+
+/* MD
   ### 🛠️ Setting Up Fragments
   Now, let's configure the FragmentsManager. This will allow us to load models effortlessly and start manipulating them with ease:
 */
@@ -100,6 +114,15 @@ fragments.list.onItemSet.add(({ value: model }) => {
   model.useCamera(world.camera.three);
   world.scene.three.add(model.object);
   fragments.core.update(true);
+});
+
+// Remove z fighting
+fragments.core.models.materials.list.onItemSet.add(({ value: material }) => {
+  if (!("isLodMaterial" in material && material.isLodMaterial)) {
+    material.polygonOffset = true;
+    material.polygonOffsetUnits = 1;
+    material.polygonOffsetFactor = Math.random();
+  }
 });
 
 /* MD
@@ -198,17 +221,8 @@ BUI.Manager.init();
 Now we will add some UI to control some of the most common postproduction parameters. For more information about the UI library, you can check the specific documentation for it!
 */
 
-const { aoPass, outlinePass, edgesPass } = world.renderer.postproduction;
-
-const aoParameters = {
-  radius: 0.25,
-  distanceExponent: 1,
-  thickness: 1,
-  scale: 1,
-  samples: 16,
-  distanceFallOff: 1,
-  screenSpaceRadius: true,
-};
+const { aoPass, outlinePass, edgesPass, defaultAoParameters } =
+  world.renderer.postproduction;
 
 const pdParameters = {
   lumaPhi: 10,
@@ -220,7 +234,7 @@ const pdParameters = {
   samples: 16,
 };
 
-aoPass.updateGtaoMaterial(aoParameters);
+aoPass.updateGtaoMaterial(defaultAoParameters);
 aoPass.updatePdMaterial(pdParameters);
 
 const cube = new THREE.Mesh(
@@ -242,6 +256,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
       <bim-checkbox checked label="Postproduction enabled"
         @change="${({ target }: { target: BUI.Checkbox }) => {
           world.renderer!.postproduction.enabled = target.value;
+          updateIfManualMode();
         }}">
       </bim-checkbox>
 
@@ -249,6 +264,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         ?checked=${world.renderer!.postproduction.outlinesEnabled}
         @change="${({ target }: { target: BUI.Checkbox }) => {
           world.renderer!.postproduction.outlinesEnabled = target.value;
+          updateIfManualMode();
         }}">
       </bim-checkbox>
 
@@ -256,6 +272,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         ?checked=${world.renderer!.postproduction.excludedObjectsEnabled}
         @change="${({ target }: { target: BUI.Checkbox }) => {
           world.renderer!.postproduction.excludedObjectsEnabled = target.value;
+          updateIfManualMode();
         }}">
       </bim-checkbox>
 
@@ -263,6 +280,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         @change="${({ target }: { target: BUI.Dropdown }) => {
           const result = target.value[0] as OBF.PostproductionAspect;
           world.renderer!.postproduction.style = result;
+          updateIfManualMode();
         }}">
 
         <bim-option checked label="Basic" value="${OBF.PostproductionAspect.COLOR}"></bim-option>
@@ -282,6 +300,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           value="${world.renderer!.postproduction.edgesPass.width}" min="1" max="3"
           @change="${({ target }: { target: BUI.NumberInput }) => {
             world.renderer!.postproduction.edgesPass.width = target.value;
+            updateIfManualMode();
           }}">
       </bim-number-input>
 
@@ -289,6 +308,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         color="#${edgesPass.color.getHexString()}"
         @input="${({ target }: { target: BUI.ColorInput }) => {
           edgesPass.color.set(target.value.color);
+          updateIfManualMode();
         }}">
       </bim-color-input>
 
@@ -301,6 +321,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           value="${outlinePass.thickness}" min="1" max="10"
           @change="${({ target }: { target: BUI.NumberInput }) => {
             outlinePass.thickness = target.value;
+            updateIfManualMode();
           }}">
       </bim-number-input>
 
@@ -309,6 +330,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           value="${outlinePass.fillOpacity}" min="0" max="1"
           @change="${({ target }: { target: BUI.NumberInput }) => {
             outlinePass.fillOpacity = target.value;
+            updateIfManualMode();
           }}">
       </bim-number-input>
 
@@ -316,6 +338,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         color="#${outlinePass.outlineColor.getHexString()}"
         @input="${({ target }: { target: BUI.ColorInput }) => {
           outlinePass.outlineColor.set(target.value.color);
+          updateIfManualMode();
         }}">
       </bim-color-input>
 
@@ -323,18 +346,131 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         color="#${outlinePass.fillColor.getHexString()}"
         @input="${({ target }: { target: BUI.ColorInput }) => {
           outlinePass.fillColor.set(target.value.color);
+          updateIfManualMode();
         }}">
       </bim-color-input>
+
+    </bim-panel-section>
+
+  
+    <bim-panel-section label="Gloss">
+
+      <bim-checkbox label="Enabled"
+        ?checked=${world.renderer!.postproduction.glossEnabled}
+        @change="${({ target }: { target: BUI.Checkbox }) => {
+          world.renderer!.postproduction.glossEnabled = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-checkbox>
+
+      <bim-number-input
+        slider step="0.01" label="Min gloss"
+        value="${world.renderer!.postproduction.glossPass.minGloss}" min="-1" max="1"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          world.renderer!.postproduction.glossPass.minGloss = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.01" label="Max gloss"
+        value="${world.renderer!.postproduction.glossPass.maxGloss}" min="-1" max="1"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          world.renderer!.postproduction.glossPass.maxGloss = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.01" label="Gloss exponent"
+        value="${world.renderer!.postproduction.glossPass.glossExponent}" min="0.1" max="20"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          world.renderer!.postproduction.glossPass.glossExponent = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.01" label="Fresnel exponent"
+        value="${world.renderer!.postproduction.glossPass.fresnelExponent}" min="0.1" max="50"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          world.renderer!.postproduction.glossPass.fresnelExponent =
+            target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.01" label="Gloss factor"
+        value="${world.renderer!.postproduction.glossPass.glossFactor}" min="0" max="1"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          world.renderer!.postproduction.glossPass.glossFactor = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.01" label="Fresnel factor"
+        value="${world.renderer!.postproduction.glossPass.fresnelFactor}" min="0" max="10"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          world.renderer!.postproduction.glossPass.fresnelFactor = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+    </bim-panel-section>
+
+    <bim-panel-section label="Manual mode">
+      <bim-checkbox label="Enabled"
+        ?checked=${world.renderer!.mode === OBC.RendererMode.MANUAL}
+        @change="${({ target }: { target: BUI.Checkbox }) => {
+          world.renderer!.mode = target.value
+            ? OBC.RendererMode.MANUAL
+            : OBC.RendererMode.AUTO;
+        }}">
+      </bim-checkbox>
+
+      <bim-number-input label="Delay"
+        value="${world.renderer!.manualModeDelay}" min="10" max="1000"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          world.renderer!.manualModeDelay = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-checkbox label="Turn off on manual mode"
+        ?checked=${world.renderer!.turnOffOnManualMode}
+        @change="${({ target }: { target: BUI.Checkbox }) => {
+          world.renderer!.turnOffOnManualMode = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-checkbox>
+
+      <bim-dropdown label="Default style"
+        @change="${({ target }: { target: BUI.Dropdown }) => {
+          const result = target.value[0] as OBF.PostproductionAspect;
+          world.renderer!.manualDefaultStyle = result;
+          updateIfManualMode();
+        }}">
+        <bim-option label="Basic" value="${OBF.PostproductionAspect.COLOR}"></bim-option>
+        <bim-option label="Pen" value="${OBF.PostproductionAspect.PEN}"></bim-option>
+        <bim-option label="Pen Shadows" value="${OBF.PostproductionAspect.PEN_SHADOWS}"></bim-option>
+        <bim-option label="Color Pen" value="${OBF.PostproductionAspect.COLOR_PEN}"></bim-option>
+        <bim-option label="Color Shadows" value="${OBF.PostproductionAspect.COLOR_SHADOWS}"></bim-option>
+        <bim-option label="Color Pen Shadows" value="${OBF.PostproductionAspect.COLOR_PEN_SHADOWS}"></bim-option>
+      </bim-dropdown>
+
 
     </bim-panel-section>
 
     <bim-panel-section label="Ambient Occlusion">
 
         <bim-checkbox checked label="Screen Space Radius"
-          ?checked=${aoParameters.screenSpaceRadius}
+          ?checked=${defaultAoParameters.screenSpaceRadius}
           @change="${({ target }: { target: BUI.Checkbox }) => {
-            aoParameters.screenSpaceRadius = target.value;
-            aoPass.updateGtaoMaterial(aoParameters);
+            defaultAoParameters.screenSpaceRadius = target.value;
+            aoPass.updateGtaoMaterial(defaultAoParameters);
+            updateIfManualMode();
           }}">
         </bim-checkbox>
 
@@ -343,60 +479,67 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           value="${aoPass.blendIntensity}" min="0" max="1"
           @change="${({ target }: { target: BUI.NumberInput }) => {
             aoPass.blendIntensity = target.value;
+            updateIfManualMode();
           }}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.01" label="Radius"
-          value="${aoParameters.radius}" min="0.01" max="1"
+          value="${defaultAoParameters.radius}" min="0.01" max="1"
           @change="${({ target }: { target: BUI.NumberInput }) => {
-            aoParameters.radius = target.value;
-            aoPass.updateGtaoMaterial(aoParameters);
+            defaultAoParameters.radius = target.value;
+            aoPass.updateGtaoMaterial(defaultAoParameters);
+            updateIfManualMode();
           }}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.01" label="Distance exponent"
-          value="${aoParameters.distanceExponent}" min="1" max="4"
+          value="${defaultAoParameters.distanceExponent}" min="1" max="10"
           @change="${({ target }: { target: BUI.NumberInput }) => {
-            aoParameters.distanceExponent = target.value;
-            aoPass.updateGtaoMaterial(aoParameters);
+            defaultAoParameters.distanceExponent = target.value;
+            aoPass.updateGtaoMaterial(defaultAoParameters);
+            updateIfManualMode();
           }}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.01" label="Thickness"
-          value="${aoParameters.thickness}" min="0.01" max="10"
+          value="${defaultAoParameters.thickness}" min="0.01" max="10"
           @change="${({ target }: { target: BUI.NumberInput }) => {
-            aoParameters.thickness = target.value;
-            aoPass.updateGtaoMaterial(aoParameters);
+            defaultAoParameters.thickness = target.value;
+            aoPass.updateGtaoMaterial(defaultAoParameters);
+            updateIfManualMode();
           }}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.01" label="Distance falloff"
-          value="${aoParameters.distanceFallOff}" min="0" max="1"
+          value="${defaultAoParameters.distanceFallOff}" min="0" max="1"
           @change="${({ target }: { target: BUI.NumberInput }) => {
-            aoParameters.distanceFallOff = target.value;
-            aoPass.updateGtaoMaterial(aoParameters);
+            defaultAoParameters.distanceFallOff = target.value;
+            aoPass.updateGtaoMaterial(defaultAoParameters);
+            updateIfManualMode();
           }}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.01" label="Scale"
-          value="${aoParameters.scale}" min="0.01" max="2"
+          value="${defaultAoParameters.scale}" min="0.01" max="10"
           @change="${({ target }: { target: BUI.NumberInput }) => {
-            aoParameters.scale = target.value;
-            aoPass.updateGtaoMaterial(aoParameters);
+            defaultAoParameters.scale = target.value;
+            aoPass.updateGtaoMaterial(defaultAoParameters);
+            updateIfManualMode();
           }}">
         </bim-number-input>
 
         <bim-number-input
           slider step="1" label="Samples"
-          value="${aoParameters.samples}" min="2" max="32"
+          value="${defaultAoParameters.samples}" min="2" max="32"
           @change="${({ target }: { target: BUI.NumberInput }) => {
-            aoParameters.samples = target.value;
-            aoPass.updateGtaoMaterial(aoParameters);
+            defaultAoParameters.samples = target.value;
+            aoPass.updateGtaoMaterial(defaultAoParameters);
+            updateIfManualMode();
           }}">
         </bim-number-input>
 
@@ -406,6 +549,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           @change="${({ target }: { target: BUI.NumberInput }) => {
             pdParameters.lumaPhi = target.value;
             aoPass.updatePdMaterial(pdParameters);
+            updateIfManualMode();
           }}">
         </bim-number-input>
 
@@ -415,6 +559,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           @change="${({ target }: { target: BUI.NumberInput }) => {
             pdParameters.depthPhi = target.value;
             aoPass.updatePdMaterial(pdParameters);
+            updateIfManualMode();
           }}">
         </bim-number-input>
 
@@ -424,6 +569,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           @change="${({ target }: { target: BUI.NumberInput }) => {
             pdParameters.normalPhi = target.value;
             aoPass.updatePdMaterial(pdParameters);
+            updateIfManualMode();
           }}">
         </bim-number-input>
 
@@ -433,6 +579,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           @change="${({ target }: { target: BUI.NumberInput }) => {
             pdParameters.radius = target.value;
             aoPass.updatePdMaterial(pdParameters);
+            updateIfManualMode();
           }}">
         </bim-number-input>
 
@@ -442,6 +589,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           @change="${({ target }: { target: BUI.NumberInput }) => {
             pdParameters.radiusExponent = target.value;
             aoPass.updatePdMaterial(pdParameters);
+            updateIfManualMode();
           }}">
         </bim-number-input>
 
@@ -451,6 +599,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           @change="${({ target }: { target: BUI.NumberInput }) => {
             pdParameters.rings = target.value;
             aoPass.updatePdMaterial(pdParameters);
+            updateIfManualMode();
           }}">
         </bim-number-input>
 
@@ -460,10 +609,12 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           @change="${({ target }: { target: BUI.NumberInput }) => {
             pdParameters.samples = target.value;
             aoPass.updatePdMaterial(pdParameters);
+            updateIfManualMode();
           }}">
         </bim-number-input>
 
       </bim-panel-section>
+
 
     </bim-panel>
     `;
@@ -491,9 +642,9 @@ const button = BUI.Component.create<BUI.PanelSection>(() => {
 
 document.body.append(button);
 
-/* MD
-  ### 🎉 Wrap up
-  ---
+// /* MD
+//   ### 🎉 Wrap up
+//   ---
 
-  That's it! You have created an app that looks great thanks to postproduction and exposes a menu to allow the user control it in real time.
-*/
+//   That's it! You have created an app that looks great thanks to postproduction and exposes a menu to allow the user control it in real time.
+// */

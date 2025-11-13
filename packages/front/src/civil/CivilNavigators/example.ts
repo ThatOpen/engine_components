@@ -2,11 +2,20 @@
 ### 🛣️ Navigating 3D infrastructures
 ---
 
-Infra models are awesome, but they are usually very, very long and thin. This makes it a bit hard to navigate through them. Luckily for you, the alignment data that comes in IFC models is processed by our libraries and generated in 2D and 3D, so you can use it for navigation!
+Infra models are awesome, but they are usually very, very long and thin. This makes it a bit hard to navigate through them. Luckily for you, the alignment data that comes in IFC models is processed by our libraries and generated in 3D, so you can use it for navigation!
 
+:::tip 3D alignment?
 
-  ### 🖖 Importing our Libraries
-  First things first, let's install all necessary dependencies to make this example work:
+The alignment data in IFC usually comes in 2D (floor plan and elevation). We use that data to regenerate the 3D curve from those 2D representations. You'll see the result in just a moment!
+
+:::
+
+In this tutorial, we will import:
+
+- `three` to create some 3D items.
+- `@thatopen/components` to set up the barebone of our app.
+- `@thatopen/components-front` to use some frontend-oriented components.
+- `Stats.js` (optional) to measure the performance of our app.
 */
 
 import * as THREE from "three";
@@ -79,18 +88,11 @@ world.scene.three.background = null;
 */
 
 const fragments = components.get(OBC.FragmentsManager);
-const githubUrl =
-  "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
-const fetchedUrl = await fetch(githubUrl);
-const workerBlob = await fetchedUrl.blob();
-const workerFile = new File([workerBlob], "worker.mjs", {
-  type: "text/javascript",
-});
-const workerUrl = URL.createObjectURL(workerFile);
-fragments.init(workerUrl);
+fragments.init(
+  "https://thatopen.github.io/engine_fragment/resources/worker.mjs",
+);
 
-const url =
-  "https://thatopen.github.io/engine_components/resources/frags/small_road.frag";
+const url = "https://thatopen.github.io/engine_components/resources/frags/small_road.frag";
 const file = await fetch(url);
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
@@ -114,15 +116,14 @@ const alignments = await model.getAlignments();
 world.scene.three.add(alignments);
 
 /* MD
-  ### 🚕 Setting up a Civil Navigator
+  ### 🚕 Setting up Civil 3D Navigator
   ---
 
- Now, we need to create an instance of the Civil 3D Navigator component. This will enable us to navigate through our 3D environment and interact with the model.
+  Now, we need to create an instance of the Civil 3D Navigator component. This will enable us to navigate through our 3D environment and interact with the model.
 
 */
 
 const navigators = components.get(OBF.CivilNavigators);
-
 const navigator = navigators.create("absolute");
 navigator.world = world;
 
@@ -144,9 +145,7 @@ navigator.onMarkerChange.add(({ point }) => {
 const crossSectionNavigator = components.get(OBF.CivilCrossSectionNavigator);
 crossSectionNavigator.world = world;
 
-/* MD
-  We will also create another navigator for the horizontal alignments, so that we can navigate the road both in 2D and 3D.
-*/
+// Horizontal alignment
 
 const horizontalMenu = document.getElementById("horizontal-menu")!;
 
@@ -170,10 +169,6 @@ horizontalNavigator.updateAlignments();
 const horizontalScene = horizontalWorld.world.scene.three;
 horizontalScene.background = null;
 horizontalScene.add(horizontalAlignments);
-
-/* MD
-  Now it's time to synchronize both alignments. We can do this using the events provided by each alignment we created:
-*/
 
 for (const alignment of horizontalAlignments.children) {
   alignment.userData.initialStation = 1925;
@@ -233,7 +228,7 @@ world.renderer.onAfterUpdate.add(() => stats.end());
   ### 🧩 Adding some UI
   ---
 
-  We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app:
+  We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. Now we will create a new panel with some inputs to change the background color of the scene and the intensity of the directional and ambient lights. For more information about the UI library, you can check the specific documentation for it!
 
 */
 

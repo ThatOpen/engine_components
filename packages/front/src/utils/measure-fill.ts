@@ -93,6 +93,24 @@ export class MeasureFill {
     area.points.onCleared.add(this._triggerUpdate);
   }
 
+  applyPlanesVisibility(planes: THREE.Plane[]) {
+    // Using wasVisible prevents showing labels that were hidden before
+    if (!this.label.wasVisible) {
+      return;
+    }
+    let isHidden = false;
+    const center = this.area.center;
+    if (center) {
+      for (const plane of planes) {
+        if (plane.distanceToPoint(center) < 0) {
+          isHidden = true;
+          break;
+        }
+      }
+    }
+    this.label.three.visible = !isHidden;
+  }
+
   private _triggerUpdate = () => this.update();
 
   private updateMesh() {
@@ -123,7 +141,7 @@ export class MeasureFill {
     if (this.area.value === 0) {
       this.label.visible = false;
     } else {
-      this.label.value = this.area.value;
+      this.label.value = this.area.rawValue;
       this.label.visible = true;
       const center = this.area.center;
       if (center) this.label.three.position.copy(center);

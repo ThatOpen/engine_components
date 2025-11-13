@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import { Mark } from "../core";
+import { Measurement } from "../measurement";
 
 export class MeasureMark extends Mark {
   private _value = 0;
@@ -79,7 +80,11 @@ export class MeasureMark extends Mark {
       this.rounding,
     );
 
-    return `${convertedValue} ${this.units}`;
+    const formattedValue = Measurement.valueFormatter
+      ? Measurement.valueFormatter(convertedValue)
+      : convertedValue.toFixed(this.rounding);
+
+    return `${formattedValue} ${this.units}`;
   }
 
   constructor(world: OBC.World) {

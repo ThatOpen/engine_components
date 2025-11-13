@@ -1,5 +1,24 @@
 # Changelog
 
+## [3.2.0](https://github.com/ThatOpen/engine_components/compare/v3.1.0...v3.2.0) (2025-10-23)
+
+
+### Features
+
+* add VolumeMeasurement component in front package ([9382008](https://github.com/ThatOpen/engine_components/commit/93820081a3870c1af8d02d4015069b6679e4cf7f))
+* Adds option to not skip other tests if one fails ([3cf1c1c](https://github.com/ThatOpen/engine_components/commit/3cf1c1c09bf0834351e25482ddb9c3266a42a9a8))
+* allow to customize color to exclude from postproduction ([5c7c6ac](https://github.com/ThatOpen/engine_components/commit/5c7c6ac2b0e0964924710177b1d83d5593625eb6))
+* release ([f31d9ae](https://github.com/ThatOpen/engine_components/commit/f31d9ae4b13d965ecfdcb1947ad729352bbeae05))
+
+
+### Bug Fixes
+
+* apply ifc loader config ([6c7e205](https://github.com/ThatOpen/engine_components/commit/6c7e2057393e9a1eabfe2de8abc8785312f53d96))
+* correct lod material visibility when disabling postproduction ([16c279d](https://github.com/ThatOpen/engine_components/commit/16c279da054d82608c112505c71e0c6a4dafa82b))
+* correct mesher bugs ([d4fab7c](https://github.com/ThatOpen/engine_components/commit/d4fab7c0817e64cbc1652df513eb7f07d2d662d1))
+* hoverer and outliner correctly place meshes when 2 or more models are loaded. ([fbd2d1f](https://github.com/ThatOpen/engine_components/commit/fbd2d1fd6174d1e5b86e7457abf8f1a54cd5a8db))
+* make edge postprocessing pass material double side ([9631418](https://github.com/ThatOpen/engine_components/commit/9631418a12f47ea09a610337438611de14e99adc))
+
 ## [3.1.0](https://github.com/ThatOpen/engine_components/compare/v2.4.0...v3.1.0) (2025-07-10)
 
 

@@ -19,7 +19,7 @@ import * as OBC from "../..";
 const components = new OBC.Components();
 
 const workerUrl =
-  "/node_modules/@thatopen/fragments/dist/Worker/worker.mjs";
+  "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 
@@ -239,7 +239,7 @@ console.log(result);
 //     const importer = new FRAGS.IfcImporter();
 //     importer.wasm = {
 //       absolute: true,
-//       path: "https://unpkg.com/web-ifc@0.0.70/",
+//       path: "https://unpkg.com/web-ifc@0.0.72/",
 //     };
 
 //     const asd = await fetch("/resources/ifc/test/generic/school_str.ifc");

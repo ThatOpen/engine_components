@@ -17,7 +17,8 @@ export class FragmentsManager extends Component implements Disposable {
   static readonly uuid = "fef46874-46a3-461b-8c44-2922ab77c806" as const;
 
   /** {@link Disposable.onDisposed} */
-  readonly onDisposed = new Event();
+  readonly onDisposed = new Event<undefined>();
+  readonly onBeforeDispose = new Event<undefined>();
 
   /**
    * Event triggered when fragments are loaded.
@@ -30,7 +31,9 @@ export class FragmentsManager extends Component implements Disposable {
   /** {@link Component.enabled} */
   enabled = true;
 
-  initialized = false;
+  get initialized() {
+    return !!this._core;
+  }
 
   private _core?: FRAGS.FragmentsModels;
 
@@ -49,6 +52,10 @@ export class FragmentsManager extends Component implements Disposable {
     return this._core;
   }
 
+  private get _hasCoordinationModel() {
+    return this.baseCoordinationModel !== "";
+  }
+
   constructor(components: Components) {
     super(components);
     this.components.add(FragmentsManager.uuid, this);
@@ -56,6 +63,7 @@ export class FragmentsManager extends Component implements Disposable {
 
   /** {@link Disposable.dispose} */
   dispose() {
+    this.onBeforeDispose.trigger();
     if (this._core) {
       this.core.dispose();
       this._core = undefined;
@@ -68,11 +76,12 @@ export class FragmentsManager extends Component implements Disposable {
 
   init(workerURL: string) {
     this._core = new FragmentsModels(workerURL);
-    this.initialized = true;
-    this.core.onModelLoaded.add(async (model) => {
-      if (this.list.size !== 1) return;
-      this.baseCoordinationModel = model.modelId;
-      this.baseCoordinationMatrix = await model.getCoordinationMatrix();
+    this.core.onModelLoaded.add(async () => {
+      if (this._hasCoordinationModel) return;
+      const firstModel = [...this.list.values()][0];
+      if (!firstModel) return;
+      this.baseCoordinationModel = firstModel.modelId;
+      this.baseCoordinationMatrix = await firstModel.getCoordinationMatrix();
     });
     this.list.onItemDeleted.add(() => {
       if (this.list.size > 0) return;
@@ -190,6 +199,12 @@ export class FragmentsManager extends Component implements Disposable {
     for (const [modelId, localIds] of Object.entries(items)) {
       const model = this.list.get(modelId);
       if (!model) continue;
+
+      if (localIds.size === 0) {
+        result[modelId] = [];
+        continue;
+      }
+
       const data = await model.getItemsData([...localIds], config);
       result[modelId] = data;
     }

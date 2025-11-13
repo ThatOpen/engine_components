@@ -229,10 +229,12 @@ export class Highlighter
       return;
     }
 
-    const {
-      localId,
-      fragments: { modelId },
-    } = result;
+    let modelId = result.fragments.modelId;
+    const { localId } = result;
+
+    if (result.fragments.isDeltaModel) {
+      modelId = result.fragments.parentModelId;
+    }
 
     const found: OBC.ModelIdMap = { [modelId]: new Set([localId]) };
 
@@ -285,41 +287,26 @@ export class Highlighter
       await this.clear(name);
     }
 
-    let filtered: OBC.ModelIdMap = {};
+    let map = OBC.ModelIdMapUtils.clone(modelIdMap);
+    const fragments = this.components.get(OBC.FragmentsManager);
 
-    // Filter out non-selectable items if any
-    if (Object.keys(this.selectable).length !== 0 || exclude !== null) {
-      for (const modelId in modelIdMap) {
-        const ids = new Set(modelIdMap[modelId]);
+    // Include the delta model ids in the parent modelIdMap
+    for (const [modelId, ids] of Object.entries(modelIdMap)) {
+      const model = fragments.list.get(modelId);
+      if (!(model?.isDeltaModel && model.parentModelId)) continue;
+      OBC.ModelIdMapUtils.add(map, { [model.parentModelId]: ids });
+    }
 
-        const selectables = this.selectable?.[name];
-        const selectable = selectables ? selectables[modelId] : undefined;
-        const selectableSet = selectable ? new Set(selectable) : undefined;
-
-        const excludeIds = exclude?.[modelId];
-        const excludeSet = excludeIds ? new Set(excludeIds) : undefined;
-
-        if (excludeSet || selectableSet) {
-          for (const id of ids) {
-            // Is filtered by the parameter
-            if (excludeSet && excludeSet.has(id)) {
-              continue;
-            }
-            // Is filtered by the selectable property
-            if (selectableSet && !selectableSet.has(id)) {
-              continue;
-            }
-            let items = filtered[modelId];
-            if (!items) {
-              items = new Set();
-              filtered[modelId] = items;
-            }
-            items.add(id);
-          }
-        }
+    if (exclude) {
+      // Include the parent modelIds in the exclusion modelIdMap from exclude
+      const exclusion = OBC.ModelIdMapUtils.clone(exclude);
+      for (const [modelId, ids] of Object.entries(exclusion)) {
+        const model = fragments.list.get(modelId);
+        if (!model?.deltaModelId) continue;
+        OBC.ModelIdMapUtils.add(exclusion, { [model.deltaModelId]: ids });
       }
-    } else {
-      filtered = modelIdMap;
+
+      map = OBC.ModelIdMapUtils.intersect([map, exclude]);
     }
 
     // Apply autotoggle when picking with the mouse
@@ -327,10 +314,10 @@ export class Highlighter
       const clearedItems: { [key: string]: Set<number> } = {};
       let clearedItemsFound = false;
 
-      for (const modelId in filtered) {
+      for (const modelId in map) {
         const selected = this.selection[name][modelId];
         if (!selected) continue;
-        const ids = filtered[modelId];
+        const ids = map[modelId];
         for (const id of ids) {
           if (selected.has(id)) {
             selected.delete(id);
@@ -345,7 +332,7 @@ export class Highlighter
             selected.add(id);
           }
         }
-        filtered[modelId] = selected;
+        map[modelId] = selected;
       }
       if (clearedItemsFound) {
         this.events[name].onClear.trigger(clearedItems);
@@ -355,7 +342,7 @@ export class Highlighter
       }
     }
 
-    this.updateStyleMap(name, filtered);
+    this.updateStyleMap(name, map);
     this.events[name].onHighlight.trigger(this.selection[name]);
 
     // TODO: Adapt clip mesh higlight to new 3D system
@@ -363,7 +350,7 @@ export class Highlighter
 
     this._fromHighlight = false;
     await this.updateColors();
-    if (zoomToSelection) await this.zoomSelection(filtered);
+    if (zoomToSelection) await this.zoomSelection(map);
   }
 
   /**
@@ -381,6 +368,14 @@ export class Highlighter
           ? modelIdMap
           : this.getMapWithoutSelection(style);
       if (!map) continue;
+
+      // Add delta models to model id map
+      for (const [modelId, ids] of Object.entries(map)) {
+        const model = fragments.list.get(modelId);
+        if (!model?.deltaModelId) continue;
+        OBC.ModelIdMapUtils.add(map, { [model.deltaModelId]: ids });
+      }
+
       promises.push(
         fragments.highlight({ ...definition, customId: style }, map),
       );
@@ -494,6 +489,9 @@ export class Highlighter
       if (Object.keys(clearedItems).length > 0) {
         this.events[style].onClear.trigger(clearedItems);
       }
+
+      // Clean up selection map for this style
+      this.selection[style] = {};
     }
 
     if (!this._fromHighlight) {
@@ -518,6 +516,10 @@ export class Highlighter
     this.config = { ...this.config, ...config };
     const { selectName, selectionColor, selectMaterialDefinition } =
       this.config;
+
+    if (this.config.world) {
+      this.components.get(OBC.Raycasters).get(this.config.world);
+    }
 
     if (selectMaterialDefinition) {
       if (selectionColor) {

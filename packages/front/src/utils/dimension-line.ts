@@ -4,6 +4,7 @@ import { DataSet } from "@thatopen/fragments";
 import { Mark } from "../core";
 import { newDimensionMark, newEndPoint } from "../measurement/utils";
 import { Line } from "./line";
+import { Measurement } from "../measurement";
 
 /**
  * Interface representing the data required to create a dimension line.
@@ -252,6 +253,36 @@ export class DimensionLine {
     (this._components as any) = null;
   }
 
+  applyPlanesVisibility(planes: THREE.Plane[]) {
+    // Using wasVisible prevents showing labels that were hidden before
+
+    for (const endpoint of this._endpoints) {
+      if (!endpoint.wasVisible) continue;
+      let isBehind = false;
+      for (const plane of planes) {
+        if (plane.distanceToPoint(endpoint.three.position) < 0) {
+          isBehind = true;
+          break;
+        }
+      }
+      endpoint.three.visible = !isBehind;
+    }
+
+    // Check if label (measurement mark) is behind any plane
+
+    if (this.label.wasVisible) {
+      let labelIsBehind = false;
+      const labelPos = this.label.three.position;
+      for (const plane of planes) {
+        if (plane.distanceToPoint(labelPos) < 0) {
+          labelIsBehind = true;
+          break;
+        }
+      }
+      this.label.three.visible = !labelIsBehind;
+    }
+  }
+
   /**
    * Creates a bounding box for the dimension line.
    * The bounding box is a 3D box that encloses the dimension line.
@@ -387,7 +418,7 @@ export class DimensionLine {
     }
   }
 
-  private updateLabel() {
+  updateLabel() {
     this.label.three.element.textContent = this.getTextContent();
     const center = new THREE.Vector3();
     this.line.getCenter(center);
@@ -448,6 +479,8 @@ export class DimensionLine {
     return label;
   }
 
+  valueFormatter: ((value: number) => string) | null = null;
+
   private getTextContent(value = this.line.distance()) {
     // Convert the length from the world unit to the display unit
     // const utils = this._components.get(OBC.MeasurementUtils);
@@ -458,8 +491,12 @@ export class DimensionLine {
       this.rounding,
     );
 
+    const formattedValue = Measurement.valueFormatter
+      ? Measurement.valueFormatter(convertedValue)
+      : convertedValue.toFixed(this.rounding);
+
     // Format the converted value with the display unit
-    return `${convertedValue} ${this._units}`;
+    return `${formattedValue} ${this._units}`;
   }
 
   set color(color: THREE.Color) {

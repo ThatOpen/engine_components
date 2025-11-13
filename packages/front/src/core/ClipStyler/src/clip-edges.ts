@@ -80,7 +80,7 @@ export class ClipEdges implements OBC.Disposable {
     });
   }
 
-  private getStyleMeshes(modelId: string, styleName: string) {
+  private async getStyleMeshes(modelId: string, styleName: string) {
     const clipStyler = this._components.get(ClipStyler);
     const style = clipStyler.styles.get(styleName);
     if (!style) {
@@ -107,14 +107,18 @@ export class ClipEdges implements OBC.Disposable {
       if (linesMaterial) {
         edges = new LineSegments2(new LineSegmentsGeometry(), linesMaterial);
         edges.frustumCulled = false;
-        if (model) edges.applyMatrix4(model.object.matrixWorld);
+        if (model) {
+          fragments.applyBaseCoordinateSystem(edges, await model.getCoordinationMatrix())
+        }
         this.three.add(edges);
       }
-
+      
       let fills: THREE.Mesh | undefined;
       if (fillsMaterial) {
         fills = new THREE.Mesh(new THREE.BufferGeometry(), fillsMaterial);
-        if (model) fills.applyMatrix4(model.object.matrixWorld);
+        if (model) {
+          fragments.applyBaseCoordinateSystem(fills, await model.getCoordinationMatrix())
+        }
         this.three.add(fills);
       }
 
@@ -137,12 +141,19 @@ export class ClipEdges implements OBC.Disposable {
     const disposer = this._components.get(OBC.Disposer);
 
     const plane = this.plane.clone();
-    plane.constant -= 0.01;
+
+    const planeTransform = (await model.getCoordinationMatrix())
+      .clone()
+      .multiply(fragments.baseCoordinationMatrix.clone().invert());
+    
+    plane.applyMatrix4(planeTransform)
+
+    plane.constant -= 0.01; // little offset to avoid z-fighting
 
     const section = await model.getSection(plane, localIds);
     const { buffer, index, fillsIndices } = section;
 
-    const meshes = this.getStyleMeshes(modelId, styleName);
+    const meshes = await this.getStyleMeshes(modelId, styleName);
     const { edges, fills } = meshes;
 
     const posAttr = new THREE.BufferAttribute(buffer, 3, false);
@@ -157,7 +168,7 @@ export class ClipEdges implements OBC.Disposable {
       edges.geometry.fromLineSegments(temp);
       disposer.destroy(temp);
     }
-
+    
     // Update fills
     if (fills) {
       fills.geometry.attributes.position = posAttr;

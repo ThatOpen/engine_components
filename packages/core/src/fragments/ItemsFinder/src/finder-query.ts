@@ -14,7 +14,7 @@ import {
  * Represents a finder query for retrieving items based on specified parameters. This class encapsulates the query logic, caching mechanism, and result management.
  */
 export class FinderQuery {
-  description?: string;
+  customData: Record<string, any> = {}
 
   private _components: Components;
 
@@ -140,9 +140,11 @@ export class FinderQuery {
    * @returns A `SerializedFinderQuery` object representing the serialized query.
    */
   toJSON() {
+    const manager = this._components.get(ItemsFinder)
+    const name = manager.list.getKey(this) ?? "Finder Query"
     const result: SerializedFinderQuery = {
-      name: "Finder Query",
-      description: this.description,
+      name,
+      customData: this.customData,
       queries: this.queries.map(this.serializeQueryParameters),
       aggregation: this.aggregation,
       cache: this.cache,
@@ -203,7 +205,7 @@ export class FinderQuery {
    * @returns A `FinderQuery` instance.
    */
   fromJSON(data: Omit<SerializedFinderQuery, "name">) {
-    this.description = data.description;
+    this.customData = data.customData;
     this.aggregation = data.aggregation;
     this.cache = data.cache;
     this.queries = data.queries.map(this.deserializeQueryParameters);

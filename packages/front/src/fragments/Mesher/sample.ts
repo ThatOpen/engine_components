@@ -49,7 +49,7 @@ components.init();
 // and provide the relative path in `workerUrl`
 // We use here the internal route of the worker in the library for simplicity purposes
 const workerUrl =
-  "/node_modules/@thatopen/fragments/dist/Worker/worker.mjs";
+  "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 world.camera.controls.addEventListener("rest", () =>
@@ -78,7 +78,7 @@ fragments.list.onItemSet.add(({ value: model }) => {
   :::
 */
 
-const file = await fetch("/resources/frags/school_arq.frag");
+const file = await fetch("https://thatopen.github.io/engine_components/resources/frags/school_arq.frag");
 const buffer = await file.arrayBuffer();
 await fragments.core.load(buffer, { modelId: "example" });
 

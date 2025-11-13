@@ -82,19 +82,20 @@ export class Area {
   }
 
   get value() {
-    const points = this.points2D;
-    if (!points) return 0;
-    const area = Math.abs(THREE.ShapeUtils.area(points));
     const convertedValue = OBC.MeasurementUtils.convertUnits(
-      area,
+      this.rawValue,
       "m2",
       this.units,
       this.rounding,
     );
-    // const factor = 10 ** this.rounding;
-    // return Math.round(convertedValue * factor) / factor;
     return convertedValue;
-    // return area;
+  }
+
+  get rawValue() {
+    const points = this.points2D;
+    if (!points) return 0;
+    const area = Math.abs(THREE.ShapeUtils.area(points));
+    return area;
   }
 
   get boundingBox() {
@@ -182,8 +183,11 @@ export class Area {
 
   // Create an exact copy of this area
   clone() {
-    const newArea = new Area([...this.points]);
-    return newArea;
+    const area = new Area([...this.points]);
+    area.units = this.units;
+    area.rounding = this.rounding;
+    area.tolerance = this.tolerance;
+    return area;
   }
 
   // Computes the plane that defines this area based on the first three points

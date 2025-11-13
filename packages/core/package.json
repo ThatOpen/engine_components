@@ -1,12 +1,13 @@
 {
   "name": "@thatopen/components",
   "description": "Collection of core functionalities to author BIM apps.",
-  "version": "3.1.3",
+  "version": "3.2.5",
   "author": "That Open Company",
   "contributors": [
     "Antonio Gonzalez Viegas (https://github.com/agviegas)",
     "Juan Hoyos (https://github.com/HoyosJuan)",
-    "Harry Collin (https://github.com/harrycollin)"
+    "Harry Collin (https://github.com/harrycollin)",
+    "Pablo Aguilar (https://github.com/pabloaguilarv"
   ],
   "license": "MIT",
   "homepage": "https://github.com/ThatOpen/engine_components/tree/main/packages/components#readme",
@@ -36,13 +37,13 @@
     "access": "public"
   },
   "devDependencies": {
-    "@thatopen/fragments": "~3.1.0",
-    "@thatopen/ui": "~3.1.0",
+    "@thatopen/fragments": "~3.2.0",
+    "@thatopen/ui": "~3.2.0",
     "@types/convert-units": "2.3.11",
     "@types/three": "0.175.0",
     "stats.js": "^0.17.0",
     "three": "^0.175.0",
-    "web-ifc": "0.0.71"
+    "web-ifc": "0.0.72"
   },
   "dependencies": {
     "camera-controls": "^2.9.0",
@@ -51,8 +52,8 @@
     "three-mesh-bvh": "0.7.0"
   },
   "peerDependencies": {
-    "@thatopen/fragments": "~3.1.0",
+    "@thatopen/fragments": "~3.2.0",
     "three": ">=0.175.0",
-    "web-ifc": ">=0.0.71"
+    "web-ifc": ">=0.0.72"
   }
 }

@@ -16,12 +16,18 @@ export class Mark implements OBC.Hideable, OBC.Disposable {
    */
   world: OBC.World;
 
+  /**
+   * The visibility state of the marker, used for culling (e.g. clipping planes).
+   */
+  wasVisible = true;
+
   /** {@link OBC.Disposable.onDisposed} */
   readonly onDisposed = new OBC.Event();
 
   /** {@link OBC.Hideable.visible} */
   set visible(value: boolean) {
     this.three.visible = value;
+    this.wasVisible = value;
   }
 
   /** {@link OBC.Hideable.visible} */

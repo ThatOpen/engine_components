@@ -4,6 +4,7 @@ import {
   Resizeable,
   Updateable,
   Configurable,
+  Serializable,
 } from "./interfaces";
 import { Components } from "../../Components";
 
@@ -39,4 +40,9 @@ export abstract class Base {
   isConfigurable = (): this is Configurable<any, any> => {
     return "setup" in this && "config" in this && "onSetup" in this;
   };
+
+  /** Whether is component is {@link Serializable}. */
+  isSerializable = (): this is Serializable<any> => {
+    return "import" in this && "export" in this
+  }
 }

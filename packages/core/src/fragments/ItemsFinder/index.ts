@@ -133,9 +133,9 @@ export class ItemsFinder
     const instances: FinderQuery[] = [];
     if (!data) return instances;
     for (const value of data) {
-      const { name, description, queries, aggregation, cache } = value;
+      const { name, customData, queries, aggregation, cache } = value;
       const finderQuery = this.create(name, []);
-      finderQuery.fromJSON({ description, queries, aggregation, cache });
+      finderQuery.fromJSON({ customData, queries, aggregation, cache });
       instances.push(finderQuery);
     }
     return instances;

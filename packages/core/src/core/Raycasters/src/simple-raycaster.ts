@@ -128,24 +128,24 @@ export class SimpleRaycaster implements Disposable {
     return fragResult;
   }
 
-  // /**
-  //  * Casts a ray from a given origin in a given direction and returns the first item found.
-  //  * This method also takes into account the clipping planes used by the renderer.
-  //  *
-  //  * @param origin - The origin of the ray.
-  //  * @param direction - The direction of the ray.
-  //  * @param items - The meshes to query. If not provided, it will query all the meshes stored in {@link World.meshes}.
-  //  * @returns The first intersection found or `null` if no intersection was found.
-  //  */
-  // castRayFromVector(
-  //   origin: THREE.Vector3,
-  //   direction: THREE.Vector3,
-  //   items = Array.from(this.world.meshes),
-  // ) {
-  //   // TODO: Implement for fragmentsmodel
-  //   this.three.set(origin, direction);
-  //   return this.intersect(items);
-  // }
+  /**
+   * Casts a ray from a given origin in a given direction and returns the first item found.
+   * This method also takes into account the clipping planes used by the renderer.
+   *
+   * @param origin - The origin of the ray.
+   * @param direction - The direction of the ray.
+   * @param items - The meshes to query. If not provided, it will query all the meshes stored in {@link World.meshes}.
+   * @returns The first intersection found or `null` if no intersection was found.
+   */
+  castRayFromVector(
+    origin: THREE.Vector3,
+    direction: THREE.Vector3,
+    items = Array.from(this.world.meshes),
+  ) {
+    // TODO: Implement for fragmentsmodel
+    this.three.set(origin, direction);
+    return this.intersect(items);
+  }
 
   private intersect(items: THREE.Object3D[] = Array.from(this.world.meshes)) {
     const result = this.three.intersectObjects(items);

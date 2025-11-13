@@ -94,6 +94,24 @@ export class MeasureVolume {
     this.volume.onItemsChanged.add(() => this.update());
   }
 
+  applyPlanesVisibility(planes: THREE.Plane[]) {
+    // Using wasVisible prevents showing labels that were hidden before
+    if (!this.label.wasVisible) {
+      return;
+    }
+    let isBehind = false;
+    for (const mesh of this.meshes) {
+      for (const plane of planes) {
+        if (plane.distanceToPoint(mesh.position) < 0) {
+          isBehind = true;
+          break;
+        }
+      }
+
+      this.label.three.visible = !isBehind;
+    }
+  }
+
   private async updateMesh() {
     this.cleanMeshes();
     const mesher = this._components.get(Mesher);
@@ -109,7 +127,7 @@ export class MeasureVolume {
 
   async update() {
     this.updateMesh();
-    const value = await this.volume.getValue();
+    const value = await this.volume.getRawValue();
     this.label.visible = value !== 0;
     this.label.value = value;
     const center = await this.volume.getCenter();

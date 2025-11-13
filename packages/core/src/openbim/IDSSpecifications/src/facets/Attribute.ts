@@ -73,14 +73,23 @@ export class IDSAttribute extends IDSFacet {
   // Test cases from buildingSMART repo have been tested and they all match with the expected result
   // All invalid cases have been treated as failures
   // FragmentsGroup do not hold some of the entities used in the tests
-  async test(items: ModelIdMap, collector: ModelIdDataMap<IDSItemCheckResult>) {
+  async test(
+    items: ModelIdMap,
+    collector: ModelIdDataMap<IDSItemCheckResult>,
+    config: { skipIfFails: boolean } = { skipIfFails: true },
+  ) {
     const fragments = this._components.get(FragmentsManager);
     for (const [modelId, localIds] of Object.entries(items)) {
       const model = fragments.list.get(modelId);
       if (!model) continue;
       const data = await model.getItemsData([...localIds]);
       for (const item of data) {
-        const checks = this.getItemChecks(collector, modelId, item);
+        const checks = this.getItemChecks(
+          collector,
+          modelId,
+          item,
+          config.skipIfFails,
+        );
         if (!checks) continue;
 
         const attrNames = Object.keys(item);

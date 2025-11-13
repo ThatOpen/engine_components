@@ -4,7 +4,8 @@
   "contributors": [
     "Antonio Gonzalez Viegas (https://github.com/agviegas)",
     "Juan Hoyos (https://github.com/HoyosJuan)",
-    "Harry Collin (https://github.com/harrycollin)"
+    "Harry Collin (https://github.com/harrycollin)",
+    "Pablo Aguilar (https://github.com/pabloaguilarv"
   ],
   "scripts": {
     "dev": "vite --host",
@@ -46,7 +47,7 @@
     "vite": "5.1.6",
     "vite-plugin-dts": "3.7.3"
   },
-  "version": "3.1.0",
+  "version": "3.2.0",
   "dependencies": {
     "camera-controls": "^2.9.0"
   }

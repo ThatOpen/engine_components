@@ -107,6 +107,7 @@ export abstract class IDSFacet {
     collector: ModelIdDataMap<IDSItemCheckResult>,
     modelId: string,
     item: FRAGS.ItemData,
+    skipIfFails: boolean,
   ) {
     if (
       !("value" in item._localId && typeof item._localId.value === "number")
@@ -121,11 +122,14 @@ export abstract class IDSFacet {
     }
 
     let result = modelItemResults.get(item._localId.value);
-    if (result) {
-      // If there are results already and the item didn't pass
-      // return null to skip further checks
-      if (!result.pass) return null;
-    } else {
+
+    // If there are results already and the item didn't pass, skip further checks
+    if (result && skipIfFails && !result.pass) {
+      return null;
+    }
+
+    // If there are no results for this item, create them
+    if (!result) {
       const checks: IDSItemFacetCheck[] = [];
 
       result = {
@@ -141,6 +145,7 @@ export abstract class IDSFacet {
       modelItemResults.set(item._localId.value, result);
     }
 
+    // Create the checks for the current facet
     const checks: IDSCheck[] = [];
 
     const check: IDSItemFacetCheck = {
@@ -154,6 +159,7 @@ export abstract class IDSFacet {
       get: () => checks.every(({ pass }) => pass),
     });
 
+    // Add the current facet check to the item's result
     result.checks.push(check);
 
     return check.checks;
@@ -176,6 +182,7 @@ export abstract class IDSFacet {
   abstract test(
     items: ModelIdMap,
     collector: ModelIdDataMap<IDSItemCheckResult>,
+    config: { skipIfFails: boolean },
   ): Promise<void>;
 
   abstract serialize(type: "applicability" | "requirement"): string;

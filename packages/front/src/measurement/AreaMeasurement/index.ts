@@ -96,6 +96,16 @@ export class AreaMeasurement extends Measurement<Area, "area"> {
     this._temp.area.points.onItemDeleted.add(() => {
       this._temp.lines.clear();
     });
+
+    this.onStateChanged.add(state => {
+      if (state.includes("rounding")) {
+        this._temp.area.rounding = this.rounding
+      }
+
+      if (state.includes("units")) {
+        this._temp.area.units = this.units
+      }
+    })
   }
 
   private computeLineElements = () => {

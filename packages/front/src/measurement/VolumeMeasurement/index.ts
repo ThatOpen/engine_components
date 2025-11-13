@@ -61,6 +61,16 @@ export class VolumeMeasurement extends Measurement<Volume, "volume"> {
         if (!this._temp.preview) return;
         this._temp.preview.color = this.color;
       }
+      
+      if (states.includes("units")) {
+        if (!this._temp.preview) return;
+        this._temp.preview.units = this.units;
+      }
+      
+      if (states.includes("rounding")) {
+        if (!this._temp.preview) return;
+        this._temp.preview.rounding = this.rounding;
+      }
 
       if (states.includes("enabled")) {
         const hoverer = this.components.get(Hoverer);
