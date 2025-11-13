@@ -120,12 +120,10 @@ world.scene.three.add(alignments);
   ---
 
   Now, we need to create an instance of the Civil 3D Navigator component. This will enable us to navigate through our 3D environment and interact with the model.
+
 */
 
-// Absolute alignment
-
 const navigators = components.get(OBF.CivilNavigators);
-
 const navigator = navigators.create("absolute");
 navigator.world = world;
 
