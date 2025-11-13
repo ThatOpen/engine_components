@@ -1,9 +1,6 @@
 import { IDSFacetParameter } from "../types";
 
-export const getParameterValue = (
-  property: any,
-  parseNumericString: boolean = true,
-) => {
+export const getParameterValue = (property: any) => {
   if (!property) return undefined;
   const result: Partial<IDSFacetParameter> = {};
 
