@@ -738,8 +738,9 @@ __metadata:
     "@thatopen/ui": ~3.2.0
     "@thatopen/ui-obc": ~3.2.0
     "@types/convert-units": 2.3.11
-    "@types/earcut": ^2.1.4
+    "@types/earcut": 3.0.0
     "@types/three": ^0.175.0
+    earcut: 3.0.1
     three: ^0.175.0
     web-ifc: 0.0.72
   peerDependencies:
@@ -834,10 +835,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/earcut@npm:^2.1.4":
-  version: 2.1.4
-  resolution: "@types/earcut@npm:2.1.4"
-  checksum: 167e1c6d60e9d964d0f496c11b5065b9d155b4c1df04fb9abcec88af2c16213999ea8ed7cddeec9475620152e7e9e99a0f118e1c8070e1396cf0f299642beb6b
+"@types/earcut@npm:3.0.0":
+  version: 3.0.0
+  resolution: "@types/earcut@npm:3.0.0"
+  checksum: f36a07fe004b38116078a8548e43cf56b56d92e61af4c20cd7f95952ed18313eca9035ddf86bdce2945d8b58c4969182e47ae2196cac5ac4b5d752d094370060
   languageName: node
   linkType: hard
 
@@ -1654,7 +1655,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"earcut@npm:^3.0.1":
+"earcut@npm:3.0.1, earcut@npm:^3.0.1":
   version: 3.0.1
   resolution: "earcut@npm:3.0.1"
   checksum: ed1cc8fc10829ad41b30c574e233333a6ff1b4ad548e342491efd6a54d8e7ad5042bda029ae7c7c41c711cda9b38c1a733e7baf79569ccc43ce36450a549c415
