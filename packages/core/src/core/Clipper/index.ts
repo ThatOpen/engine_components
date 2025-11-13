@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import * as FRAGS from "@thatopen/fragments";
 import {
   Component,
   Configurable,
@@ -14,14 +15,12 @@ import { Raycasters } from "../Raycasters";
 import { Worlds } from "../Worlds";
 import { ClipperConfig, ClipperConfigManager } from "./src/clipper-config";
 import { ConfigManager } from "../ConfigManager";
+import { UUID } from "../../utils";
 
 export * from "./src";
 
 /**
  * A lightweight component to easily create, delete and handle [clipping planes](https://threejs.org/docs/#api/en/materials/Material.clippingPlanes). 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/Clipper). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/Clipper).
- *
- * @param components - the instance of {@link Components} used.
- * E.g. {@link SimplePlane}.
  */
 export class Clipper
   extends Component
@@ -108,7 +107,7 @@ export class Clipper
   /**
    * A list of all the clipping planes created by this component.
    */
-  list: SimplePlane[] = [];
+  readonly list = new FRAGS.DataMap<string, SimplePlane>();
 
   /** {@link Configurable.config} */
   config = new ClipperConfigManager(
@@ -144,10 +143,10 @@ export class Clipper
   /** {@link Component.enabled} */
   set enabled(state: boolean) {
     this._enabled = state;
-    for (const plane of this.list) {
-      plane.enabled = state;
-    }
-    this.updateMaterialsAndPlanes();
+    // for (const [_, plane] of this.list) {
+    //   plane.enabled = state;
+    // }
+    // this.updateMaterialsAndPlanes();
   }
 
   /** {@link Hideable.visible } */
@@ -158,7 +157,7 @@ export class Clipper
   /** {@link Hideable.visible } */
   set visible(state: boolean) {
     this._visible = state;
-    for (const plane of this.list) {
+    for (const [_, plane] of this.list) {
       plane.visible = state;
     }
   }
@@ -171,7 +170,7 @@ export class Clipper
   /** The material of the clipping plane representation. */
   set material(material: THREE.MeshBasicMaterial) {
     this._material = material;
-    for (const plane of this.list) {
+    for (const [_, plane] of this.list) {
       plane.planeMaterial = material;
     }
   }
@@ -184,7 +183,7 @@ export class Clipper
   /** The size of the geometric representation of the clippings planes. */
   set size(size: number) {
     this._size = size;
-    for (const plane of this.list) {
+    for (const [_, plane] of this.list) {
       plane.size = size;
     }
   }
@@ -192,6 +191,20 @@ export class Clipper
   constructor(components: Components) {
     super(components);
     this.components.add(Clipper.uuid, this);
+    this.setEvents();
+  }
+
+  private setEvents() {
+    this.list.onBeforeDelete.add(({ value: plane }) => {
+      if (!plane.world.renderer) {
+        throw new Error("Renderer not found for this plane's world!");
+      }
+      plane.world.renderer.setPlane(false, plane.three);
+      plane.dispose();
+      this.updateMaterialsAndPlanes();
+
+      this.onAfterDelete.trigger(plane);
+    });
   }
 
   /** {@link Disposable.dispose} */
@@ -200,11 +213,7 @@ export class Clipper
 
     const configs = this.components.get(ConfigManager);
     configs.list.delete(this.config.uuid);
-
-    for (const plane of this.list) {
-      plane.dispose();
-    }
-    this.list.length = 0;
+    this.list.clear();
     this._material.dispose();
     this.onBeforeCreate.reset();
     this.onBeforeCancel.reset();
@@ -219,11 +228,11 @@ export class Clipper
   }
 
   /** {@link Createable.create} */
-  create(world: World) {
+  async create(world: World) {
     const casters = this.components.get(Raycasters);
     const caster = casters.get(world);
 
-    const intersects = caster.castRay();
+    const intersects = await caster.castRay();
     if (intersects) {
       return this.createPlaneFromIntersection(world, intersects);
     }
@@ -244,26 +253,28 @@ export class Clipper
     normal: THREE.Vector3,
     point: THREE.Vector3,
   ) {
-    const plane = this.newPlane(world, point, normal);
+    const id = this.newPlane(world, point, normal);
     this.updateMaterialsAndPlanes();
-    return plane;
+    return id;
   }
 
   /**
    * {@link Createable.delete}
    *
    * @param world - the world where the plane to delete is.
-   * @param plane - the plane to delete. If undefined, the first plane
+   * @param planeId - the plane to delete. If undefined, the first plane
    * found under the cursor will be deleted.
    */
-  delete(world: World, plane?: SimplePlane) {
-    if (!plane) {
-      plane = this.pickPlane(world);
+  async delete(world: World, planeId?: string) {
+    if (!planeId) {
+      const plane = await this.pickPlane(world);
+      if (!plane) return;
+      planeId = this.list.getKey(plane);
     }
-    if (!plane) {
+    if (!planeId) {
       return;
     }
-    this.deletePlane(plane);
+    this.list.delete(planeId);
   }
 
   /**
@@ -272,14 +283,9 @@ export class Clipper
    * @param types - the types of planes to be deleted. If not provided, all planes will be deleted.
    */
   deleteAll(types?: Set<string>) {
-    const planes = [...this.list];
-    for (const plane of planes) {
+    for (const [id, plane] of this.list) {
       if (!types || types.has(plane.type)) {
-        this.delete(plane.world, plane);
-        const index = this.list.indexOf(plane);
-        if (index !== -1) {
-          this.list.splice(index, 1);
-        }
+        this.list.delete(id);
       }
     }
   }
@@ -296,35 +302,35 @@ export class Clipper
     this.onSetup.trigger();
   }
 
-  private deletePlane(plane: SimplePlane) {
-    const index = this.list.indexOf(plane);
-    if (index !== -1) {
-      this.list.splice(index, 1);
-      if (!plane.world.renderer) {
-        throw new Error("Renderer not found for this plane's world!");
-      }
-      plane.world.renderer.setPlane(false, plane.three);
-      plane.dispose();
-      this.updateMaterialsAndPlanes();
-      this.onAfterDelete.trigger(plane);
-    }
-  }
+  // private deletePlane(plane: SimplePlane) {
+  //   const index = this.list.indexOf(plane);
+  //   if (index !== -1) {
+  //     this.list.splice(index, 1);
+  //     if (!plane.world.renderer) {
+  //       throw new Error("Renderer not found for this plane's world!");
+  //     }
+  //     plane.world.renderer.setPlane(false, plane.three);
+  //     plane.dispose();
+  //     this.updateMaterialsAndPlanes();
+  //     this.onAfterDelete.trigger(plane);
+  //   }
+  // }
 
-  private pickPlane(world: World): SimplePlane | undefined {
+  private async pickPlane(world: World): Promise<SimplePlane | undefined> {
     const casters = this.components.get(Raycasters);
     const caster = casters.get(world);
-    const meshes = this.getAllPlaneMeshes();
-    const intersects = caster.castRay(meshes);
+    const items = this.getAllPlaneMeshes();
+    const intersects = await caster.castRay({ items });
     if (intersects) {
       const found = intersects.object as THREE.Mesh;
-      return this.list.find((p) => p.meshes.includes(found));
+      return [...this.list.values()].find((p) => p.meshes.includes(found));
     }
     return undefined;
   }
 
   private getAllPlaneMeshes() {
     const meshes: THREE.Mesh[] = [];
-    for (const plane of this.list) {
+    for (const [_, plane] of this.list) {
       meshes.push(...plane.meshes);
     }
     return meshes;
@@ -338,12 +344,13 @@ export class Clipper
       throw new Error("The given world must have a renderer!");
     }
     const constant = intersect.point.distanceTo(new THREE.Vector3(0, 0, 0));
-    const normal = intersect.face?.normal;
+    const normal = intersect.normal || intersect.face?.normal;
     if (!constant || !normal) {
       return null;
     }
     const worldNormal = this.getWorldNormal(intersect, normal);
-    const plane = this.newPlane(world, intersect.point, worldNormal.negate());
+    const id = this.newPlane(world, intersect.point, worldNormal.negate());
+    const plane = this.list.get(id)!;
     plane.visible = this._visible;
     plane.size = this._size;
     world.renderer.setPlane(true, plane.three);
@@ -391,9 +398,10 @@ export class Clipper
     );
     plane.onDraggingStarted.add(this._onStartDragging);
     plane.onDraggingEnded.add(this._onEndDragging);
-    this.list.push(plane);
+    const id = UUID.create();
+    this.list.set(id, plane);
     this.onAfterCreate.trigger(plane);
-    return plane;
+    return id;
   }
 
   private updateMaterialsAndPlanes() {

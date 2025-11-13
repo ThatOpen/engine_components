@@ -1,3 +1,4 @@
+import { UUID } from "../../../utils";
 import { Event } from "./event";
 
 /**
@@ -71,6 +72,19 @@ export class DataMap<K, V> extends Map<K, V> {
       this.onItemSet.trigger({ key, value });
     }
     return result;
+  }
+
+  /**
+   * Sets the value in the map with a randomly generated uuidv4 key.
+   * Only use this if your keys are strings
+   *
+   * @param value - The value of the item to set.
+   * @returns The key used.
+   */
+  add(value: V) {
+    const key = UUID.create() as K;
+    this.set(key, value);
+    return key;
   }
 
   /**

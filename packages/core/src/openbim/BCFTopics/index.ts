@@ -6,7 +6,6 @@ import {
   Configurable,
   Disposable,
   Event,
-  World,
   DataMap,
 } from "../../core";
 
@@ -18,21 +17,26 @@ import {
   BCFTopicsConfigManager,
   BCFTopicsConfig,
   Comment,
+  InternalDocumentReference,
+  ExternalDocumentReference,
 } from "./src";
 
 import {
+  ViewpointComponents,
   BCFViewpoint,
+  ViewpointComponent,
   Viewpoint,
-  ViewpointCamera,
   Viewpoints,
+  ViewpointCamera,
+  ViewpointClippingPlane,
 } from "../../core/Viewpoints";
 
-import { Clipper } from "../../core/Clipper";
+import { XML } from "../../utils";
 
 // TODO: Extract import/export logic in its own class for better maintenance.
 
 /**
- * BCFTopics manages Building Collaboration Format (BCF) data the engine. It provides functionality for importing, exporting, and manipulating BCF data.
+ * BCFTopics manages Building Collaboration Format (BCF) data the engine. It provides functionality for importing, exporting, and manipulating BCF data. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/BCFTopics). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/BCFTopics).
  */
 export class BCFTopics
   extends Component
@@ -78,6 +82,7 @@ export class BCFTopics
     includeAllExtensionsOnExport: true,
     fallbackVersionOnImport: "2.1",
     ignoreIncompleteTopicsOnImport: false,
+    exportCustomDataAsLabels: false,
   };
 
   config = new BCFTopicsConfigManager(
@@ -88,6 +93,10 @@ export class BCFTopics
   );
 
   readonly list = new DataMap<string, Topic>();
+  readonly documents = new DataMap<
+    string,
+    InternalDocumentReference | ExternalDocumentReference
+  >();
 
   readonly onSetup = new Event();
   isSetup = false;
@@ -285,11 +294,41 @@ export class BCFTopics
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     </Version>`,
     );
+
+    for (const [guid, doc] of this.documents.entries()) {
+      if (doc.type === "external") continue;
+      zip.file(
+        this.config.version === "2.1" ? doc.fileName : `documents/${guid}`,
+        doc.data,
+      );
+    }
+
+    if (this.config.version === "3") {
+      const docTags: string[] = [];
+      for (const [guid, doc] of this.documents.entries()) {
+        const { type, description } = doc;
+        if (type === "external") continue;
+        docTags.push(`<Document Guid="${guid}">
+        <Filename>${doc.fileName}</Filename>
+        ${description ? `<Description>${description}</Description>` : ""}
+      </Document>`);
+        // zip.file(`documents/${guid}`, doc.data);
+      }
+
+      if (docTags.length > 0) {
+        zip.file(
+          "documents.xml",
+          `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  <DocumentInfo xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="documents.xsd">
+    <Documents>
+      ${docTags.join("\n")}
+    </Documents>
+  </DocumentInfo>`,
+        );
+      }
+    }
+
     zip.file("bcf.extensions", this.serializeExtensions());
-    const image = await fetch(
-      "https://thatopen.github.io/engine_components/resources/favicon.ico",
-    );
-    const imgBlob = await image.arrayBuffer();
     const viewpoints = this.components.get(Viewpoints);
     for (const topic of topics) {
       const topicFolder = zip.folder(topic.guid) as JSZip;
@@ -297,10 +336,27 @@ export class BCFTopics
       for (const viewpointID of topic.viewpoints) {
         const viewpoint = viewpoints.list.get(viewpointID);
         if (!viewpoint) continue;
-        topicFolder.file(`${viewpointID}.jpeg`, imgBlob, {
-          binary: true,
-        });
-        topicFolder.file(`${viewpointID}.bcfv`, await viewpoint.serialize());
+        const viewpointFileName = viewpoint.title ?? viewpoint.guid;
+        topicFolder.file(
+          `${viewpointFileName}.bcfv`,
+          await viewpoint.serialize(),
+        );
+
+        const snapshotData = viewpoints.snapshots.get(viewpoint.snapshot);
+        if (!snapshotData) continue;
+        const snapshotFileName = snapshotData
+          ? viewpoint.snapshot
+          : viewpoint.guid;
+        const snapshotExtension = viewpoints.getSnapshotExtension(
+          viewpoint.snapshot,
+        );
+        topicFolder.file(
+          `${snapshotFileName}.${snapshotExtension}`,
+          snapshotData,
+          {
+            binary: true,
+          },
+        );
       }
     }
     const content = await zip.generateAsync({ type: "blob" });
@@ -354,14 +410,11 @@ export class BCFTopics
       Viewpoint,
     } = markupComment;
     if (!(Guid && CommentDate && Author && (Comment || Viewpoint))) return null;
-    const viewpoints = this.components.get(Viewpoints);
     const comment = new Comment(this.components, CommentText ?? "") as Comment;
     comment.guid = Guid;
     comment.date = new Date(CommentDate);
     comment.author = Author;
-    comment.viewpoint = Viewpoint?.Guid
-      ? viewpoints.list.get(Viewpoint.Guid)
-      : undefined;
+    comment.viewpoint = Viewpoint?.Guid;
     comment.modifiedAuthor = markupComment.ModifiedAuthor;
     comment.modifiedDate = markupComment.ModifiedDate
       ? new Date(markupComment.ModifiedDate)
@@ -409,6 +462,16 @@ export class BCFTopics
     return topics.map((topic) => topic.Guid);
   }
 
+  private getMarkupDocumentReferences(markup: any, version: BCFVersion) {
+    let data: any;
+    if (version === "2.1") data = markup.Topic.DocumentReference;
+    if (version === "3")
+      data = markup.Topic.DocumentReferences?.DocumentReference;
+    if (!data) return [];
+    const references: any[] = Array.isArray(data) ? data : [data];
+    return references;
+  }
+
   /**
    * Loads BCF (Building Collaboration Format) data into the engine.
    *
@@ -419,7 +482,7 @@ export class BCFTopics
    *
    * @throws An error if the BCF version is not supported.
    */
-  async load(data: Uint8Array, world: World) {
+  async load(data: Uint8Array) {
     const {
       fallbackVersionOnImport,
       ignoreIncompleteTopicsOnImport,
@@ -480,17 +543,35 @@ export class BCFTopics
       if (Guid) bcfViewpoint.guid = Guid;
 
       if (Components) {
+        const components: ViewpointComponents = {
+          selection: [],
+          coloring: [],
+          visibility: {
+            default_visibility: false,
+            exceptions: [],
+            view_setup_hints: {
+              spaces_visible: false,
+              space_boundaries_visible: false,
+              openings_visible: false,
+            },
+          },
+        };
+        bcfViewpoint.components = components;
         const { Selection, Visibility } = Components;
         if (Selection && Selection.Component) {
-          const components = Array.isArray(Selection.Component)
+          const selectionComponents = Array.isArray(Selection.Component)
             ? Selection.Component
             : [Selection.Component];
-          bcfViewpoint.selectionComponents = components
-            .map((component: any) => component.IfcGuid)
-            .filter((guid: any) => guid);
+          components.selection = selectionComponents
+            .map((component: any) => {
+              if (!component.IfcGuid) return null;
+              return { ifc_guid: component.IfcGuid };
+            })
+            .filter((data: any) => data !== null);
         }
         if (Visibility && "DefaultVisibility" in Visibility) {
-          bcfViewpoint.defaultVisibility = Visibility.DefaultVisibility;
+          components.visibility.default_visibility =
+            Visibility.DefaultVisibility;
         }
         if (
           Visibility &&
@@ -498,10 +579,15 @@ export class BCFTopics
           "Component" in Visibility.Exceptions
         ) {
           const { Component } = Visibility.Exceptions;
-          const components = Array.isArray(Component) ? Component : [Component];
-          bcfViewpoint.exceptionComponents = components
-            .map((component: any) => component.IfcGuid)
-            .filter((guid: any) => guid);
+          const exceptionComponents = Array.isArray(Component)
+            ? Component
+            : [Component];
+          components.visibility.exceptions = exceptionComponents
+            .map((component: any) => {
+              if (!component.IfcGuid) return null;
+              return { ifc_guid: component.IfcGuid };
+            })
+            .filter((data: any) => data !== null) as ViewpointComponent[];
         }
         let ViewSetupHints;
         if (version === "2.1") {
@@ -512,14 +598,40 @@ export class BCFTopics
         }
         if (ViewSetupHints) {
           if ("OpeningsVisible" in ViewSetupHints) {
-            bcfViewpoint.openingsVisible = ViewSetupHints.OpeningsVisible;
+            components.visibility.view_setup_hints.openings_visible =
+              ViewSetupHints.OpeningsVisible;
           }
           if ("SpacesVisible" in ViewSetupHints) {
-            bcfViewpoint.spacesVisible = ViewSetupHints.SpacesVisible;
+            components.visibility.view_setup_hints.spaces_visible =
+              ViewSetupHints.SpacesVisible;
           }
           if ("SpaceBoundariesVisible" in ViewSetupHints) {
-            bcfViewpoint.spaceBoundariesVisible =
+            components.visibility.view_setup_hints.space_boundaries_visible =
               ViewSetupHints.SpaceBoundariesVisible;
+          }
+        }
+        const { Coloring } = Components;
+        if (Coloring && Coloring.Color) {
+          const colors = Array.isArray(Coloring.Color)
+            ? Coloring.Color
+            : [Coloring.Color];
+          for (const colorData of colors) {
+            const { Color, Component } = colorData;
+            if (!(Color.length === 6 || Color.length === 8)) continue;
+            const color = Color.length === 6 ? Color : Color.slice(2);
+            const colorComponents = Array.isArray(Component)
+              ? Component
+              : [Component];
+            const guids = colorComponents
+              .map((component: any) => {
+                if (!component.IfcGuid) return null;
+                return { ifc_guid: component.IfcGuid };
+              })
+              .filter((data: any) => data !== null) as ViewpointComponent[];
+            components.coloring.push({
+              color,
+              components: guids,
+            });
           }
         }
       }
@@ -543,78 +655,49 @@ export class BCFTopics
         );
 
         const viewpointCamera: ViewpointCamera = {
-          position: { x: position.x, y: position.y, z: position.z },
-          direction: { x: direction.x, y: direction.y, z: direction.z },
-          aspectRatio: "AspectRatio" in camera ? camera.AspectRatio : 1, // Temporal simplification
+          camera_view_point: { x: position.x, y: position.y, z: position.z },
+          camera_direction: { x: direction.x, y: direction.y, z: direction.z },
+          aspect_ratio: "AspectRatio" in camera ? camera.AspectRatio : 1,
+          // TODO: Better define camera_up_vector
+          camera_up_vector: {
+            x: 0,
+            y: 0,
+            z: 0,
+          },
         };
 
         if ("ViewToWorldScale" in camera) {
-          bcfViewpoint.camera = {
+          bcfViewpoint.orthogonal_camera = {
             ...viewpointCamera,
-            viewToWorldScale: camera.ViewToWorldScale,
+            view_to_world_scale: camera.ViewToWorldScale,
           };
         }
 
         if ("FieldOfView" in camera) {
-          bcfViewpoint.camera = {
+          bcfViewpoint.perspective_camera = {
             ...viewpointCamera,
-            fov: camera.FieldOfView,
+            field_of_view: camera.FieldOfView,
           };
         }
       }
 
-      const viewpoint = new Viewpoint(this.components, world, {
-        data: bcfViewpoint,
-        setCamera: false,
-      });
-
-      if (Components) {
-        const { Coloring } = Components;
-        if (Coloring && Coloring.Color) {
-          const colors = Array.isArray(Coloring.Color)
-            ? Coloring.Color
-            : [Coloring.Color];
-          for (const colorData of colors) {
-            const { Color, Component } = colorData;
-            const components = Array.isArray(Component)
-              ? Component
-              : [Component];
-            const guids = components.map((component) => component.IfcGuid);
-            viewpoint.componentColors.set(Color, guids);
-          }
-        }
-      }
-
-      createdViewpoints.push(viewpoint);
-
       if (ClippingPlanes) {
-        const clipper = this.components.get(Clipper);
-        const planes = Array.isArray(ClippingPlanes.ClippingPlane)
+        const planes: any[] = Array.isArray(ClippingPlanes.ClippingPlane)
           ? ClippingPlanes.ClippingPlane
           : [ClippingPlanes.ClippingPlane];
-        for (const plane of planes) {
-          const { Location, Direction } = plane;
-          if (!(Location && Direction)) continue;
-          const location = new THREE.Vector3(
-            Location.X,
-            Location.Z,
-            -Location.Y,
-          );
-          const direction = new THREE.Vector3(
-            Direction.X,
-            -Direction.Z,
-            Direction.Y,
-          );
-          const clippingPlane = clipper.createFromNormalAndCoplanarPoint(
-            world,
-            direction,
-            location,
-          );
-          clippingPlane.visible = false;
-          clippingPlane.enabled = false;
-          viewpoint.clippingPlanes.add(clippingPlane);
-        }
+        const clippingPlanes: ViewpointClippingPlane[] = planes.map(
+          ({ Location, Direction }) => {
+            return {
+              location: { x: Location.x, y: Location.y, z: Location.z },
+              direction: { x: Direction.x, y: Direction.y, z: Direction.z },
+            };
+          },
+        );
+        bcfViewpoint.clipping_planes = clippingPlanes;
       }
+
+      const viewpoint = new Viewpoint(this.components, bcfViewpoint);
+      createdViewpoints.push(viewpoint);
     }
 
     // Process markup files
@@ -687,7 +770,98 @@ export class BCFTopics
       for (const markupViewpoint of markupViewpoints) {
         if (!(markupViewpoint && markupViewpoint.Guid)) continue;
         const viewpoint = viewpoints.list.get(markupViewpoint.Guid);
-        if (viewpoint) topic.viewpoints.add(viewpoint.guid);
+
+        if (!viewpoint) continue;
+        topic.viewpoints.add(viewpoint.guid);
+
+        // Snapshot processing
+        const snapshotName = `${topic.guid}/${markupViewpoint.Snapshot}`;
+        const snapshotFile = files.find(({ name }) => name === snapshotName);
+        if (snapshotFile) {
+          const buffer = await snapshotFile.async("arraybuffer");
+          const bytes = new Uint8Array(buffer);
+          // Use viewpoint GUID as the snapshot key since snapshot file names are often identical.
+          // A viewpoint can only have one snapshot, so using its GUID as the key is sufficient.
+          viewpoints.snapshots.set(viewpoint.guid, bytes);
+          viewpoint.snapshot = viewpoint.guid ?? null;
+        }
+      }
+
+      // Document references
+      const markupDocReferences = this.getMarkupDocumentReferences(
+        markup,
+        version,
+      );
+
+      // Get Documents list file. Only for version 3.0
+      const documentsFile = files.find((file) => file.name === "documents.xml");
+      let documentsData: any[] = [];
+      const documentsListXML = await documentsFile?.async("string");
+      if (documentsListXML) {
+        const data =
+          XML.parser.parse(documentsListXML).DocumentInfo?.Documents?.Document;
+        documentsData = Array.isArray(data) ? data : [data];
+      }
+
+      for (const reference of markupDocReferences) {
+        const {
+          Description: description,
+          // From 3.0
+          DocumentGuid,
+          Url: url,
+          // From 2.1
+          isExternal,
+          ReferencedDocument,
+        } = reference;
+        if (DocumentGuid && documentsData.length > 0) {
+          const docInfo = documentsData.find(
+            ({ Guid }) => Guid === DocumentGuid,
+          );
+          const docFile = files.find((file) =>
+            file.name.endsWith(DocumentGuid),
+          );
+          const data = await docFile?.async("uint8array");
+          if (!(docInfo && data)) continue;
+          const { Description: description, Filename: fileName } = docInfo;
+          this.documents.set(DocumentGuid, {
+            type: "internal",
+            fileName,
+            description,
+            data,
+          });
+          topic.documentReferences.add(DocumentGuid);
+        }
+        if (url) {
+          const docGuid = this.documents.add({
+            type: "external",
+            url,
+            description,
+          });
+          topic.documentReferences.add(docGuid);
+        }
+        if (ReferencedDocument) {
+          let docGuid: string | null = null;
+          if (isExternal) {
+            docGuid = this.documents.add({
+              type: "external",
+              url: ReferencedDocument,
+              description,
+            });
+          } else {
+            const splitPath = ReferencedDocument.split("/");
+            const fileName = splitPath[splitPath.length - 1];
+            const docFile = files.find((file) => file.name.endsWith(fileName));
+            const data = await docFile?.async("uint8array");
+            if (!data) continue;
+            docGuid = this.documents.add({
+              type: "internal",
+              fileName,
+              data,
+              description,
+            });
+          }
+          topic.documentReferences.add(docGuid);
+        }
       }
 
       this.list.set(topic.guid, topic);

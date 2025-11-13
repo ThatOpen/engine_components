@@ -1,4 +1,3 @@
-import * as FRAGS from "@thatopen/fragments";
 import { XMLParser } from "fast-xml-parser";
 import { Component, DataMap } from "../../core/Types";
 import {
@@ -12,12 +11,17 @@ import { Components } from "../../core";
 import {
   createEntityFacets,
   createAttributeFacets,
+  createMaterialFacets,
+  createPropertyFacets,
   createClassificationFacets,
+  createPartOfFacets,
 } from "./src/importers";
-import { createPropertyFacets } from "./src/importers/property";
+import { ModelIdMap } from "../../fragments";
+import { ModelIdMapUtils } from "../../utils";
+// import { createPropertyFacets } from "./src/importers/property";
 
 /**
- * Component that manages Information Delivery Specification (IDS) data. It provides functionality for importing, exporting, and manipulating IDS data.
+ * Component that manages Information Delivery Specification (IDS) data. It provides functionality for importing, exporting, and manipulating IDS data. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/IDSSpecifications). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/IDSSpecifications).
  */
 export class IDSSpecifications extends Component {
   static uuid = "9f0b9f78-9b2e-481a-b766-2fbfd01f342c" as const;
@@ -36,6 +40,8 @@ export class IDSSpecifications extends Component {
     trimValues: true,
   });
 
+  IDSInfo?: IDSInfo;
+
   constructor(components: Components) {
     super(components);
     components.add(IDSSpecifications.uuid, this);
@@ -44,24 +50,26 @@ export class IDSSpecifications extends Component {
   readonly list = new DataMap<string, IDSSpecification>();
 
   /**
-   * Retrieves a FragmentIdMap based on the given IDSCheckResult array.
-   * The map separates the IDs into two categories: pass and fail.
+   * Processes the results of an IDS check and categorizes the items into passing and failing.
    *
-   * @param model - The FragmentsGroup model from which to retrieve the fragment map.
-   * @param result - An array of IDSCheckResult objects, each representing a check result.
-   *
-   * @returns An object containing two properties:
-   * - `pass`: A FragmentIdMap that passed the checks.
-   * - `fail`: A FragmentIdMap that failed the checks.
+   * @param result - An `IDSCheckResult` object containing the check results for various model IDs.
+   * @returns An object containing two `ModelIdMap` objects:
+   *          - `pass`: A ModelIdMap representing items that passed the check.
+   *          - `fail`: A ModelIdMap representing items that failed the check.
    */
-  getFragmentIdMap(model: FRAGS.FragmentsGroup, result: IDSCheckResult[]) {
-    const passResults = result.filter((check) => check.pass);
-    const passIDs = passResults.map((check) => check.expressID);
-    const pass = model.getFragmentMap(passIDs);
+  getModelIdMap(result: IDSCheckResult) {
+    const pass: ModelIdMap = {};
+    const fail: ModelIdMap = {};
 
-    const failResults = result.filter((check) => !check.pass);
-    const failIDs = failResults.map((check) => check.expressID);
-    const fail = model.getFragmentMap(failIDs);
+    for (const [modelId, items] of result) {
+      const passingResults = [...items].filter(([, result]) => result.pass);
+      const passingIds = passingResults.map(([localId]) => localId);
+      ModelIdMapUtils.append(pass, modelId, ...passingIds);
+
+      const failingResults = [...items].filter(([, result]) => !result.pass);
+      const failingIds = failingResults.map(([localId]) => localId);
+      ModelIdMapUtils.append(fail, modelId, ...failingIds);
+    }
 
     return { pass, fail };
   }
@@ -95,10 +103,16 @@ export class IDSSpecifications extends Component {
    *
    * @returns An array of IDSSpecification instances created from the parsed data.
    */
-  load(data: string) {
+  load(
+    data: string,
+    config: { parseNumericString: boolean } = { parseNumericString: true },
+  ) {
     const result: IDSSpecification[] = [];
     const ids = IDSSpecifications.xmlParser.parse(data).ids;
-    const { specifications } = ids;
+    const { specifications, info } = ids;
+
+    this.IDSInfo = { ...info };
+
     if (specifications && specifications.specification) {
       const specs = Array.isArray(specifications.specification)
         ? specifications.specification
@@ -126,6 +140,33 @@ export class IDSSpecifications extends Component {
                 const facets = createEntityFacets(this.components, elements);
                 applicabilities.push(...facets);
               }
+              if (facetName === "attribute") {
+                const facets = createAttributeFacets(this.components, elements);
+                applicabilities.push(...facets);
+              }
+              if (facetName === "material") {
+                const facets = createMaterialFacets(this.components, elements);
+                applicabilities.push(...facets);
+              }
+              if (facetName === "classification") {
+                const facets = createClassificationFacets(
+                  this.components,
+                  elements,
+                );
+                applicabilities.push(...facets);
+              }
+              if (facetName === "property") {
+                const facets = createPropertyFacets(
+                  this.components,
+                  elements,
+                  config.parseNumericString,
+                );
+                applicabilities.push(...facets);
+              }
+              if (facetName === "partOf") {
+                const facets = createPartOfFacets(this.components, elements);
+                applicabilities.push(...facets);
+              }
             }
           }
         }
@@ -149,6 +190,10 @@ export class IDSSpecifications extends Component {
                 const facets = createAttributeFacets(this.components, elements);
                 reqs.push(...facets);
               }
+              if (facetName === "material") {
+                const facets = createMaterialFacets(this.components, elements);
+                reqs.push(...facets);
+              }
               if (facetName === "classification") {
                 const facets = createClassificationFacets(
                   this.components,
@@ -157,26 +202,32 @@ export class IDSSpecifications extends Component {
                 reqs.push(...facets);
               }
               if (facetName === "property") {
-                const facets = createPropertyFacets(this.components, elements);
+                const facets = createPropertyFacets(
+                  this.components,
+                  elements,
+                  config.parseNumericString,
+                );
+                reqs.push(...facets);
+              }
+              if (facetName === "partOf") {
+                const facets = createPartOfFacets(this.components, elements);
                 reqs.push(...facets);
               }
             }
           }
         }
 
-        if (applicabilities.length > 0 && reqs.length > 0) {
-          const specification = this.create(
-            name,
-            ifcVersion.split(/\s+/),
-            identifier,
-          );
-          specification.description = description;
-          specification.instructions = instructions;
-          specification.requirementsDescription = requirementsDescription;
-          specification.applicability.add(...applicabilities);
-          specification.requirements.add(...reqs);
-          result.push(specification);
-        }
+        const specification = this.create(
+          name,
+          ifcVersion.split(/\s+/),
+          identifier,
+        );
+        specification.description = description;
+        specification.instructions = instructions;
+        specification.requirementsDescription = requirementsDescription;
+        specification.applicability.add(...applicabilities);
+        specification.requirements.add(...reqs);
+        result.push(specification);
       }
     }
     return result;

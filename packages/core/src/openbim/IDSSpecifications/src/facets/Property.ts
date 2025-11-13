@@ -1,10 +1,14 @@
 import * as FRAGS from "@thatopen/fragments";
-import * as WEBIFC from "web-ifc";
-import { IDSCheck, IDSCheckResult, IDSFacetParameter } from "../types";
+import { IDSCheck, IDSFacetParameter, IDSItemCheckResult } from "../types";
 import { Components } from "../../../../core/Components";
-import { IfcRelationsIndexer } from "../../../../ifc";
 import { IDSFacet } from "./Facet";
 import { getParameterXML } from "../exporters/parameter";
+import {
+  FragmentsManager,
+  ModelIdDataMap,
+  ModelIdMap,
+} from "../../../../fragments";
+import { ModelIdMapUtils } from "../../../../utils";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/property-facet.md
 
@@ -18,8 +22,8 @@ export class IDSProperty extends IDSFacet {
 
   // These are defined by the IDS specification
   private _unsupportedTypes = [
-    WEBIFC.IFCCOMPLEXPROPERTY,
-    WEBIFC.IFCPHYSICALCOMPLEXQUANTITY,
+    "IFCCOMPLEXPROPERTY",
+    "IFCPHYSICALCOMPLEXQUANTITY",
   ];
 
   constructor(
@@ -52,289 +56,279 @@ export class IDSProperty extends IDSFacet {
 </property>`;
   }
 
-  async getEntities(
-    model: FRAGS.FragmentsGroup,
-    collector: FRAGS.IfcProperties = {},
-  ) {
-    let sets: FRAGS.IfcProperties = {};
-    const psets = await model.getAllPropertiesOfType(WEBIFC.IFCPROPERTYSET);
-    sets = { ...sets, ...psets };
-    const qsets = await model.getAllPropertiesOfType(WEBIFC.IFCELEMENTQUANTITY);
-    sets = { ...sets, ...qsets };
-    if (Object.keys(sets).length === 0) return [];
+  async getEntities(modelIds: RegExp[], collector: ModelIdMap) {
+    const fragments = this._components.get(FragmentsManager);
 
-    const matchingSets: number[] = [];
-
-    for (const _setID in sets) {
-      const setID = Number(_setID);
-      const attrs = await model.getProperties(setID);
-      if (!attrs) continue;
-
-      const nameMatches = attrs.Name?.value === this.propertySet.parameter;
-      if (!nameMatches) continue;
-
-      let propsListName: string | undefined;
-      if (attrs.type === WEBIFC.IFCPROPERTYSET) propsListName = "HasProperties";
-      if (attrs.type === WEBIFC.IFCELEMENTQUANTITY)
-        propsListName = "Quantities";
-      if (!propsListName) continue;
-
-      for (const handle of attrs[propsListName]) {
-        const propAttrs = await model.getProperties(handle.value);
-        if (!propAttrs) continue;
-
-        const propNameMatches =
-          propAttrs.Name?.value === this.baseName.parameter;
-        if (!propNameMatches) continue;
-
-        if (this.value) {
-          const valueKey = Object.keys(propAttrs).find((name) =>
-            name.endsWith("Value"),
-          );
-          if (!valueKey) continue;
-          const valueMatches =
-            propAttrs[valueKey].value === this.value.parameter;
-          if (!valueMatches) continue;
-        }
-
-        matchingSets.push(setID);
-      }
-    }
-
-    const result: number[] = [];
-    const indexer = this.components.get(IfcRelationsIndexer);
-
-    for (const setID of matchingSets) {
-      const expressIDs = indexer.getEntitiesWithRelation(
-        model,
-        "IsDefinedBy",
-        setID,
-      );
-
-      for (const expressID of expressIDs) {
-        if (expressID in collector) continue;
-        const attrs = await model.getProperties(expressID);
-        if (!attrs) continue;
-        collector[expressID] = attrs;
-        result.push(expressID);
-      }
-    }
-
-    return [];
-  }
-
-  async test(entities: FRAGS.IfcProperties, model: FRAGS.FragmentsGroup) {
-    this.testResult = [];
-    for (const _expressID in entities) {
-      const expressID = Number(_expressID);
-      const attrs = entities[expressID];
-
-      const checks: IDSCheck[] = [];
-      const result: IDSCheckResult = {
-        guid: attrs.GlobalId?.value,
-        expressID,
-        pass: false,
-        checks,
-        cardinality: this.cardinality,
-      };
-
-      this.testResult.push(result);
-
-      const sets = await this.getPsets(model, expressID);
-      const matchingSets = sets.filter((set) => {
-        const result = this.evalRequirement(
-          set.Name ?? null,
-          this.propertySet,
-          "PropertySet",
-        );
-        if (!result) return false;
-        checks.push({
-          currentValue: set.Name,
-          parameter: "PropertySet",
-          pass: true,
-          requiredValue: this.propertySet.parameter,
-        });
-        return true;
+    for (const [modelId, model] of fragments.list) {
+      const isValidModel = modelIds.find((regex) => regex.test(modelId));
+      if (!isValidModel) continue;
+      const items = await model.getItemsOfCategories([
+        /PROPERTYSET/,
+        /ELEMENTQUANTITY/,
+      ]);
+      const localIds = Object.values(items).flat();
+      if (localIds.length === 0) continue;
+      const data = await model.getItemsData(localIds, {
+        relations: {
+          HasProperties: { attributes: true, relations: false },
+          DefinesOcurrence: { attributes: true, relations: false },
+        },
       });
 
-      if (matchingSets.length === 0) {
-        checks.push({
-          currentValue: null,
-          parameter: "PropertySet",
-          pass: false,
-          requiredValue: this.propertySet.parameter,
-        });
-        continue;
-      }
-
-      for (const set of matchingSets) {
-        if (!("Properties" in set)) {
-          checks.push({
-            currentValue: null,
-            parameter: "BaseName",
-            pass: false,
-            requiredValue: this.baseName.parameter,
-          });
+      for (const set of data) {
+        if (
+          !(
+            "value" in set._localId &&
+            "value" in set._category &&
+            "value" in set.Name &&
+            Array.isArray(set.DefinesOcurrence)
+          )
+        ) {
           continue;
         }
 
-        const items = set.Properties;
-        const matchingItems = items.filter((item: any) => {
-          if (this._unsupportedTypes.includes(item.type)) {
-            return false;
-          }
-          const result = this.evalRequirement(
-            item.Name?.value ?? null,
+        const nameMatches = this.evalRequirement(
+          set.Name.value,
+          this.propertySet,
+          "PropertySet",
+        );
+
+        if (!nameMatches) continue;
+
+        let propsListName: string | undefined;
+        if (set._category.value === "IFCPROPERTYSET")
+          propsListName = "HasProperties";
+        if (set._category.value === "IFCELEMENTQUANTITY")
+          propsListName = "Quantities";
+
+        if (!propsListName) continue;
+        const props = set[propsListName];
+        if (!Array.isArray(props)) continue;
+
+        for (const prop of props) {
+          const keys = Object.keys(prop);
+          const nameKey = keys.find((key) => /Name/.test(key));
+          if (!(nameKey && "value" in prop[nameKey])) continue;
+          const attribute = prop[nameKey];
+          if (!("value" in attribute)) continue;
+
+          const propNameMatches = this.evalRequirement(
+            attribute.value,
             this.baseName,
             "BaseName",
           );
+
+          if (!propNameMatches) continue;
+
+          if (this.value) {
+            const valueKey = keys.find((key) => /Value/.test(key));
+            if (!valueKey) continue;
+            const attribute = prop[valueKey];
+            if (!("value" in attribute)) continue;
+
+            const valueMatches = this.evalRequirement(
+              attribute.value,
+              this.value,
+              "Value",
+            );
+            if (!valueMatches) continue;
+          }
+
+          const items = set.DefinesOcurrence.map((ocurrence) => {
+            if (
+              !(
+                "value" in ocurrence._localId &&
+                typeof ocurrence._localId.value === "number"
+              )
+            ) {
+              return null;
+            }
+
+            return ocurrence._localId.value;
+          }).filter((id) => id !== null) as number[];
+
+          ModelIdMapUtils.append(collector, modelId, ...items);
+        }
+      }
+    }
+  }
+
+  async test(
+    items: ModelIdMap,
+    collector: ModelIdDataMap<IDSItemCheckResult>,
+    config: { skipIfFails: boolean } = { skipIfFails: true },
+  ) {
+    const fragments = this._components.get(FragmentsManager);
+    for (const [modelId, localIds] of Object.entries(items)) {
+      const model = fragments.list.get(modelId);
+      if (!model) continue;
+      const data = await model.getItemsData([...localIds], {
+        relations: {
+          IsDefinedBy: { attributes: true, relations: true },
+          IsTypedBy: { attributes: true, relations: false },
+          HasPropertySets: { attributes: true, relations: true },
+          DefinesOcurrence: { attributes: false, relations: false },
+        },
+      });
+
+      for (const item of data) {
+        const checks = this.getItemChecks(
+          collector,
+          modelId,
+          item,
+          config.skipIfFails,
+        );
+        if (!checks) continue;
+
+        const sets = await this.getPsets(item);
+        const matchingSets = sets.filter((set) => {
+          if (!("value" in set.Name)) return false;
+          const result = this.evalRequirement(
+            set.Name.value,
+            this.propertySet,
+            "PropertySet",
+          );
           if (!result) return false;
           checks.push({
-            currentValue: item.Name.value,
-            parameter: "BaseName",
+            currentValue: set.Name.value,
+            parameter: "PropertySet",
             pass: true,
-            requiredValue: this.baseName.parameter,
+            requiredValue: this.propertySet,
           });
           return true;
         });
 
-        if (matchingItems.length === 0) {
+        if (matchingSets.length === 0) {
           checks.push({
             currentValue: null,
-            parameter: "BaseName",
+            parameter: "PropertySet",
             pass: false,
-            requiredValue: this.baseName.parameter,
+            requiredValue: this.propertySet,
           });
           continue;
         }
 
-        for (const item of matchingItems) {
-          this.evalValue(item, checks);
-          this.evalDataType(item, checks);
-          this.evalURI();
+        for (const set of matchingSets) {
+          const propsListName = this.getPropertyListName(set);
+          if (!propsListName) continue;
+
+          const props = set[propsListName];
+          if (!Array.isArray(props)) {
+            checks.push({
+              currentValue: null,
+              parameter: "BaseName",
+              pass: false,
+              requiredValue: this.baseName,
+            });
+            continue;
+          }
+
+          const matchingProps = props.filter((item) => {
+            if (!("value" in item._category && "value" in item.Name))
+              return false;
+            if (this._unsupportedTypes.includes(item._category.value)) {
+              return false;
+            }
+
+            const result = this.evalRequirement(
+              item.Name.value,
+              this.baseName,
+              "BaseName",
+            );
+            if (!result) return false;
+
+            checks.push({
+              currentValue: item.Name.value,
+              parameter: "BaseName",
+              pass: true,
+              requiredValue: this.baseName,
+            });
+            return true;
+          });
+
+          if (matchingProps.length === 0) {
+            checks.push({
+              currentValue: null,
+              parameter: "BaseName",
+              pass: false,
+              requiredValue: this.baseName,
+            });
+            continue;
+          }
+
+          for (const item of matchingProps) {
+            this.evalValue(item, checks);
+            this.evalDataType(item, checks);
+            this.evalURI();
+          }
         }
       }
-
-      result.pass = checks.every(({ pass }) => pass);
     }
-
-    const result = [...this.testResult];
-    this.testResult = [];
-    return result;
   }
 
-  private getItemsAttrName(type: number) {
+  private getPropertyListName(item: FRAGS.ItemData) {
     let propsListName: "HasProperties" | "Quantities" | undefined;
-    if (type === WEBIFC.IFCPROPERTYSET) propsListName = "HasProperties";
-    if (type === WEBIFC.IFCELEMENTQUANTITY) propsListName = "Quantities";
+    if (!("value" in item._category)) return propsListName;
+
+    if (item._category.value === "IFCPROPERTYSET")
+      propsListName = "HasProperties";
+    if (item._category.value === "IFCELEMENTQUANTITY")
+      propsListName = "Quantities";
+
     return propsListName;
   }
 
-  private getValueKey(attrs: Record<string, any>) {
-    return Object.keys(attrs).find(
-      (name) => name.endsWith("Value") || name.endsWith("Values"),
+  private getValueKey(item: FRAGS.ItemData) {
+    return Object.keys(item).find(
+      (name) => /Value/.test(name) || /Values/.test(name),
     );
   }
 
-  private async simplifyPset(
-    model: FRAGS.FragmentsGroup,
-    attrs: Record<string, any>,
-    propsListName: "HasProperties" | "Quantities",
-  ) {
-    const props: Record<string, any>[] = [];
-    const list = attrs[propsListName];
-    if (!list) return attrs;
-    for (const { value } of list) {
-      const propAttrs = await model.getProperties(value);
-      if (propAttrs) props.push(propAttrs);
+  private getTypePsets(item: FRAGS.ItemData) {
+    if (!Array.isArray(item.IsTypedBy)) return [];
+
+    const [type] = item.IsTypedBy;
+    if (!(type && Array.isArray(type.HasPropertySets))) {
+      return [];
     }
-    const attrsClone = {
-      Name: attrs.Name?.value,
-      Properties: props,
-      type: attrs.type,
-    };
-    return attrsClone;
+
+    return type.HasPropertySets;
   }
 
-  private async getTypePsets(model: FRAGS.FragmentsGroup, expressID: number) {
-    const sets: Record<string, any>[] = [];
+  private async getPsets(item: FRAGS.ItemData) {
+    const typeSets = this.getTypePsets(item);
+    if (!Array.isArray(item.IsDefinedBy)) return typeSets;
 
-    const indexer = this.components.get(IfcRelationsIndexer);
-    const types = indexer.getEntityRelations(model, expressID, "IsTypedBy");
-    if (!(types && types[0])) return sets;
+    const sets: FRAGS.ItemData[] = [];
 
-    const typeAttrs = await model.getProperties(types[0]);
-    if (
-      !(
-        typeAttrs &&
-        "HasPropertySets" in typeAttrs &&
-        Array.isArray(typeAttrs.HasPropertySets)
-      )
-    ) {
-      return sets;
-    }
+    for (const definition of item.IsDefinedBy) {
+      if (!("value" in definition.Name)) continue;
+      const definitionName = definition.Name.value;
+      const propsListName = this.getPropertyListName(definition);
+      if (!(definitionName && propsListName)) continue;
 
-    for (const { value } of typeAttrs.HasPropertySets) {
-      const psetAttrs = await model.getProperties(value);
+      const typeSet = typeSets.find((set) => {
+        if (!("value" in set.Name)) return false;
+        return set.Name.value === definitionName;
+      });
+
       if (
-        !(
-          psetAttrs &&
-          "HasProperties" in psetAttrs &&
-          Array.isArray(psetAttrs.HasProperties)
-        )
+        typeSet &&
+        Array.isArray(typeSet.HasProperties) &&
+        Array.isArray(definition.HasProperties)
       ) {
-        continue;
-      }
-
-      const pset = await this.simplifyPset(model, psetAttrs, "HasProperties");
-      sets.push(pset);
-    }
-
-    return sets;
-  }
-
-  private async getPsets(model: FRAGS.FragmentsGroup, expressID: number) {
-    const typePsets = await this.getTypePsets(model, expressID);
-
-    const indexer = this.components.get(IfcRelationsIndexer);
-    const definitions = indexer.getEntityRelations(
-      model,
-      expressID,
-      "IsDefinedBy",
-    );
-
-    if (!definitions) return typePsets;
-
-    const sets: Record<string, any>[] = [];
-
-    for (const definitionID of definitions) {
-      const attrs = await model.getProperties(definitionID);
-      if (!attrs) continue;
-
-      const propsListName = this.getItemsAttrName(attrs.type);
-      if (!propsListName) continue;
-
-      const occurencePset = await this.simplifyPset(
-        model,
-        attrs,
-        propsListName,
-      );
-
-      const typePset = typePsets.find(
-        ({ Name }) => Name === occurencePset.Name,
-      );
-
-      if (typePset) {
-        for (const prop of typePset.Properties) {
-          const name = prop.Name?.value;
-          const existingProp = occurencePset.Properties.find(
-            ({ Name }: { Name: { value: string } }) => Name.value === name,
-          );
-          if (!existingProp) occurencePset.Properties.push(prop);
+        for (const prop of typeSet.HasProperties) {
+          if (!("value" in prop.Name)) continue;
+          const name = prop.Name.value;
+          const existingProp = definition.HasProperties.find((p) => {
+            if (!("value" in p.Name)) return false;
+            return p.Name.value === name;
+          });
+          if (!existingProp) definition.HasProperties.push(prop);
         }
       }
 
-      sets.push(occurencePset);
+      sets.push(definition);
     }
 
     return sets;
@@ -342,44 +336,48 @@ export class IDSProperty extends IDSFacet {
 
   // IFCPROPERTYBOUNDEDVALUE are not supported yet
   // IFCPROPERTYTABLEVALUE are not supported yet
-  // Work must to be done to convert numerical value units to IDS-nominated standard units https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/units.md
-  private evalValue(attrs: Record<string, any>, checks?: IDSCheck[]) {
-    const valueKey = this.getValueKey(attrs) as any;
-    const valueAttr = attrs[valueKey];
+  // TODO: Work must to be done to convert numerical value units to IDS-nominated standard units https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/units.md
+  private evalValue(item: FRAGS.ItemData, checks?: IDSCheck[]) {
+    const valueKey = this.getValueKey(item) as any;
+    const valueAttr = item[valueKey];
+    if (!("value" in valueAttr)) return false;
+
     if (this.value) {
-      if (!valueAttr) {
+      if (!valueKey) {
         checks?.push({
           parameter: "Value",
           currentValue: null,
           pass: false,
-          requiredValue: this.value.parameter,
+          requiredValue: this.value,
         });
         return false;
       }
 
       const facetValue = structuredClone(this.value);
-      if (valueAttr.name === "IFCLABEL" && facetValue.type === "simple") {
+      if (valueAttr.type === "IFCLABEL" && facetValue.type === "simple") {
         facetValue.parameter = String(facetValue.parameter);
       }
 
-      if (
-        (attrs.type === WEBIFC.IFCPROPERTYLISTVALUE ||
-          attrs.type === WEBIFC.IFCPROPERTYENUMERATEDVALUE) &&
-        Array.isArray(valueAttr)
-      ) {
-        const values = valueAttr.map((value) => value.value);
-        const matchingValue = valueAttr.find((value) => {
-          if (!facetValue) return false;
-          return this.evalRequirement(value.value, facetValue, "Value");
-        });
-        checks?.push({
-          currentValue: values as any,
-          pass: !!matchingValue,
-          parameter: "Value",
-          requiredValue: facetValue.parameter,
-        });
-        return !!matchingValue;
-      }
+      // if (
+      //   (item.type === WEBIFC.IFCPROPERTYLISTVALUE ||
+      //     item.type === WEBIFC.IFCPROPERTYENUMERATEDVALUE) &&
+      //   Array.isArray(valueAttr)
+      // ) {
+      //   const values = valueAttr.map((value) => value.value);
+      //   const matchingValue = valueAttr.find((value) => {
+      //     if (!facetValue) return false;
+      //     return this.evalRequirement(value.value, facetValue, "Value");
+      //   });
+
+      //   checks?.push({
+      //     currentValue: values as any,
+      //     pass: !!matchingValue,
+      //     parameter: "Value",
+      //     requiredValue: facetValue.parameter,
+      //   });
+
+      //   return !!matchingValue;
+      // }
 
       const result = this.evalRequirement(
         valueAttr.value,
@@ -387,29 +385,30 @@ export class IDSProperty extends IDSFacet {
         "Value",
         checks,
       );
+
       return result;
     }
 
     if (!valueKey) return true;
 
     // IDSDocs: Values with a logical unknown always fail
-    if (valueAttr.type === 3 && valueAttr.value === 2) {
-      checks?.push({
-        parameter: "Value",
-        currentValue: null,
-        pass: false,
-        requiredValue: null,
-      });
-      return false;
-    }
+    // if (valueAttr.type === 3 && valueAttr.value === 2) {
+    //   checks?.push({
+    //     parameter: "Value",
+    //     currentValue: null,
+    //     pass: false,
+    //     requiredValue: null,
+    //   });
+    //   return false;
+    // }
 
     // IDSDocs: An empty string is considered false
-    if (valueAttr.type === 1 && valueAttr.value.trim() === "") {
+    if (typeof valueAttr.value === "string" && valueAttr.value.trim() === "") {
       checks?.push({
         parameter: "Value",
         currentValue: "",
         pass: false,
-        requiredValue: null,
+        requiredValue: this.value,
       });
       return false;
     }
@@ -417,12 +416,11 @@ export class IDSProperty extends IDSFacet {
     return true;
   }
 
-  private evalDataType(attrs: Record<string, any>, checks?: IDSCheck[]) {
+  private evalDataType(item: FRAGS.ItemData, checks?: IDSCheck[]) {
     if (!this.dataType) return true;
-    const valueKey = this.getValueKey(attrs) as any;
-    const valueAttr = attrs[valueKey];
+    const valueKey = this.getValueKey(item);
 
-    if (!valueAttr) {
+    if (!(valueKey && "value" in item[valueKey])) {
       checks?.push({
         parameter: "DataType",
         currentValue: null,
@@ -432,27 +430,30 @@ export class IDSProperty extends IDSFacet {
       return false;
     }
 
-    if (
-      (attrs.type === WEBIFC.IFCPROPERTYLISTVALUE ||
-        attrs.type === WEBIFC.IFCPROPERTYENUMERATEDVALUE) &&
-      Array.isArray(valueAttr) &&
-      valueAttr[0]
-    ) {
-      const valueType = valueAttr[0].name;
-      const result = this.evalRequirement(
-        valueType,
-        {
-          type: "simple",
-          parameter: this.dataType,
-        },
-        "DataType",
-        checks,
-      );
-      return result;
-    }
+    const valueAttr = item[valueKey];
+
+    // TODO: Redo this
+    // if (
+    //   (item.type === WEBIFC.IFCPROPERTYLISTVALUE ||
+    //     item.type === WEBIFC.IFCPROPERTYENUMERATEDVALUE) &&
+    //   Array.isArray(valueAttr) &&
+    //   valueAttr[0]
+    // ) {
+    //   const valueType = valueAttr[0].name;
+    //   const result = this.evalRequirement(
+    //     valueType,
+    //     {
+    //       type: "simple",
+    //       parameter: this.dataType,
+    //     },
+    //     "DataType",
+    //     checks,
+    //   );
+    //   return result;
+    // }
 
     const result = this.evalRequirement(
-      valueAttr.name,
+      (valueAttr as any).type ?? null,
       {
         type: "simple",
         parameter: this.dataType,
@@ -460,6 +461,7 @@ export class IDSProperty extends IDSFacet {
       "DataType",
       checks,
     );
+
     return result;
   }
 

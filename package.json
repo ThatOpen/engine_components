@@ -4,7 +4,8 @@
   "contributors": [
     "Antonio Gonzalez Viegas (https://github.com/agviegas)",
     "Juan Hoyos (https://github.com/HoyosJuan)",
-    "Harry Collin (https://github.com/harrycollin)"
+    "Harry Collin (https://github.com/harrycollin)",
+    "Pablo Aguilar (https://github.com/pabloaguilarv"
   ],
   "scripts": {
     "dev": "vite --host",
@@ -12,7 +13,8 @@
     "build-front": "yarn workspace @thatopen/components-front build",
     "build-libraries": "yarn build-core && yarn build-front",
     "build-examples": "vite build --config ./vite.config-examples.ts",
-    "build": "yarn build-libraries && yarn build-examples",
+    "build": "yarn copy-readme && yarn build-libraries && yarn build-examples",
+    "copy-readme": "node resources/readme-copier.mjs",
     "test": "echo 'test to be implemented!'",
     "publish-repo": "yarn workspace @thatopen/components publish-repo && yarn workspace @thatopen/components-front publish-repo",
     "reset-release-please": "git commit --allow-empty -m \"chore: release 2.0.0\" -m \"Release-As: 2.0.0\""
@@ -45,7 +47,7 @@
     "vite": "5.1.6",
     "vite-plugin-dts": "3.7.3"
   },
-  "version": "2.4.0",
+  "version": "3.2.0",
   "dependencies": {
     "camera-controls": "^2.9.0"
   }

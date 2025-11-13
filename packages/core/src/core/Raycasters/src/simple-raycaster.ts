@@ -1,7 +1,9 @@
 import * as THREE from "three";
+import * as FRAGS from "@thatopen/fragments";
 import { Components } from "../../Components";
 import { Component, Event, World, Disposable } from "../../Types";
 import { Mouse } from "./mouse";
+import { FragmentsManager } from "../../../fragments";
 
 /**
  * A simple [raycaster](https://threejs.org/docs/#api/en/core/Raycaster) that allows to easily get items from the scene using the mouse and touch events.
@@ -48,6 +50,22 @@ export class SimpleRaycaster implements Disposable {
     this.onDisposed.reset();
   }
 
+  castRayToObjects(
+    items: THREE.Object3D[] = Array.from(this.world.meshes),
+    position = this.mouse.position,
+  ): THREE.Intersection | null {
+    if (!this.world) {
+      throw new Error("A world is needed to cast rays!");
+    }
+
+    const camera = this.world.camera.three as
+      | THREE.PerspectiveCamera
+      | THREE.OrthographicCamera;
+
+    this.three.setFromCamera(position, camera);
+    return this.intersect(items);
+  }
+
   /**
    * Throws a ray from the camera to the mouse or touch event point and returns
    * the first item found. This also takes into account the clipping planes
@@ -59,16 +77,55 @@ export class SimpleRaycaster implements Disposable {
    * @param position - the screen position to use for raycasting. If not provided,
    * the last pointer (mouse/touch) position will be used.
    */
-  castRay(
-    items: THREE.Object3D[] = Array.from(this.world.meshes),
-    position = this.mouse.position,
-  ): THREE.Intersection | null {
+  async castRay(data?: {
+    snappingClasses?: FRAGS.SnappingClass[];
+    items?: THREE.Object3D[];
+    position?: THREE.Vector2;
+  }): Promise<THREE.Intersection | null> {
+    const snappingClasses = data?.snappingClasses;
+    const items = data?.items ?? Array.from(this.world.meshes);
+    const position = data?.position ?? this.mouse.position;
+
     if (!this.world) {
       throw new Error("A world is needed to cast rays!");
     }
-    const camera = this.world.camera.three;
+    const camera = this.world.camera.three as
+      | THREE.PerspectiveCamera
+      | THREE.OrthographicCamera;
+
+    // Raycast the BIM models
+
+    const fragments = this.components.get(FragmentsManager);
+    const dom = this.world.renderer!.three.domElement;
+    const mouse = this.mouse.rawPosition;
+    let fragResult: any = null;
+
+    if (fragments.initialized) {
+      fragResult = await fragments.raycast({
+        camera,
+        dom,
+        mouse,
+        snappingClasses,
+      });
+      if (items.length === 0) {
+        return fragResult;
+      }
+    }
+
+    // Raycast the items
+
     this.three.setFromCamera(position, camera);
-    return this.intersect(items);
+    const itemsResult = this.intersect(items);
+    if (!fragResult) {
+      return itemsResult;
+    }
+    if (!itemsResult) {
+      return fragResult;
+    }
+    if (itemsResult.distance < fragResult.distance) {
+      return itemsResult;
+    }
+    return fragResult;
   }
 
   /**
@@ -85,6 +142,7 @@ export class SimpleRaycaster implements Disposable {
     direction: THREE.Vector3,
     items = Array.from(this.world.meshes),
   ) {
+    // TODO: Implement for fragmentsmodel
     this.three.set(origin, direction);
     return this.intersect(items);
   }

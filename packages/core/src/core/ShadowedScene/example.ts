@@ -1,32 +1,34 @@
 /* MD
-### ⛱️ Lights and shadows
+### 🚀 Handling BIM models like a boss
 ---
 
-In this tutorial you'll learn how to create cool and efficient cast shadows in your app.
+In this tutorial, you'll learn how to load your BIM models in Fragment format. Fragment is an [open source geometry system](https://github.com/ThatOpen/engine_fragment/) that we created on top of [Three.js](https://threejs.org/) to display BIM models fast, while keeping control over the individual items of the model. The idea is simple: a BIM model is a FragmentsGroup, which is (like the name implies) a collection of fragments. A fragment is a set of identical geometries instantiated around the scene.
 
-:::tip Shadows?
+:::tip How do I get a BIM model in Fragment format?
 
-Shadows can be computationally expensive, but we've got some tricks that make them fast, beautiful and easy to use!
+The IfcLoader component does exactly that! It converts IFC models to Fragments. Check out that tutorial if you are starting out with IFC files. Of course, you can just use the IfcLoader in your app, but loading fragments is more than x10 faster than loading IFC files. Our recommendation is to convert your IFC files to fragments just once, store the fragment somewhere (frontent of backend) and then load the fragments instead of teh IFC models directly.
 
 :::
 
 In this tutorial, we will import:
 
 - `Three.js` to get some 3D entities for our app.
+- `@thatopen/ui` to add some simple and cool UI menus.
 - `@thatopen/components` to set up the barebone of our app.
 - `Stats.js` (optional) to measure the performance of our app.
-
 */
 
-import Stats from "stats.js";
 import * as THREE from "three";
-import * as OBC from "@thatopen/components";
+import Stats from "stats.js";
+import * as BUI from "@thatopen/ui";
+// You have to import * as OBC from "@thatopen/components"
+import * as OBC from "../..";
 
 /* MD
-  ### 🌎 Setting up a shadow scene
+  ### 🌎 Setting up a simple scene
   ---
 
-  We will start by creating a shadow scene with a camera and a renderer. If you don't know how to set up a scene, you can check the Worlds tutorial.
+  We will start by creating a simple scene with a camera and a renderer. If you don't know how to set up a scene, you can check the Worlds tutorial.
 
 */
 
@@ -35,139 +37,47 @@ const container = document.getElementById("container")!;
 const components = new OBC.Components();
 
 const worlds = components.get(OBC.Worlds);
+
 const world = worlds.create<
   OBC.ShadowedScene,
-  OBC.SimpleCamera,
+  OBC.OrthoPerspectiveCamera,
   OBC.SimpleRenderer
 >();
 
 world.scene = new OBC.ShadowedScene(components);
 world.renderer = new OBC.SimpleRenderer(components, container);
-world.camera = new OBC.SimpleCamera(components);
+world.camera = new OBC.OrthoPerspectiveCamera(components);
 
 components.init();
+
+world.camera.controls.setLookAt(12, 6, 8, 0, 0, -10);
 
 const grids = components.get(OBC.Grids);
 const grid = grids.create(world);
 
-world.camera.controls.setLookAt(1, 2, -2, -2, 0, -5);
+// Set up fragments
 
-/* MD
-  ### 🏠 Loading a model
-  ---
-
- Now that we have a scene, let's load a model. We will use the Fragment Manager for it. 
- 
-   :::info Showing Fragments in the Scene
-
-  🏔️ There is a dedicated tutorial on how to use Fragment Manager to load **IFC files**, check it out if you haven't already!
-
-  :::
-
-*/
-
-const fragments = new OBC.FragmentsManager(components);
-
-const file = await fetch(
-  "https://thatopen.github.io/engine_components/resources/small.frag",
+const fragments = components.get(OBC.FragmentsManager);
+fragments.init(
+  "https://thatopen.github.io/engine_fragment/resources/worker.mjs",
 );
-const dataBlob = await file.arrayBuffer();
-const buffer = new Uint8Array(dataBlob);
-const model = fragments.load(buffer);
-world.scene.three.add(model);
 
-const plane = new THREE.Mesh(
-  new THREE.PlaneGeometry(15, 25, 1),
-  new THREE.MeshLambertMaterial({ color: "white" }),
+world.camera.controls.addEventListener("control", () =>
+  fragments.core.update(),
 );
-plane.position.set(-2, -1, -7);
-plane.rotation.x = -Math.PI / 2;
-plane.receiveShadow = true;
-world.scene.three.add(plane);
 
-/* MD
+const modelId = "example";
 
-  ### 🗺 Adding shadows
-  ---
-
-  Now we are ready to set up the shadows. First, we need to enable shadows in the THREE.js renderer.
-  Also, we'll use soft shadows because they look better:
-
-*/
-
-world.renderer.three.shadowMap.enabled = true;
-world.renderer.three.shadowMap.type = THREE.PCFSoftShadowMap;
-
-/* MD
-
-  Now, let's set up the shadow scene:
-
-*/
-
-world.scene.setup({
-  shadows: {
-    cascade: 1,
-    resolution: 1024,
-  },
+const file = await fetch("https://thatopen.github.io/engine_components/resources/frags/school_arq.frag");
+const data = await file.arrayBuffer();
+const buffer = new Uint8Array(data);
+const model = await fragments.core.load(buffer, {
+  modelId,
+  camera: world.camera.three,
 });
+world.scene.three.add(model.object);
 
-/* MD
-
-  Great! Now need to specify which items we want to cast/receive shadow. A good rule of thumb is to
-  ignore translucent items. We can do it like this:
-
-*/
-
-type iMesh = THREE.InstancedMesh<
-  THREE.BufferGeometry,
-  THREE.MeshLambertMaterial[]
->;
-
-for (const child of model.children) {
-  const mesh = child as iMesh;
-  if (mesh.material[0].opacity === 1) {
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-  }
-}
-
-/* MD
-
-  This shadow system is based on computing the distance to the farthest objects. Some objects (like the base grid)
-  shouldn't be taken into account in this computation. We can exclude it like this:
-
-*/
-
-world.scene.distanceRenderer.excludedObjects.add(grid.three);
-
-/* MD
-
-  Finally, we need to set the shadow update logic. We'll update shadows each time the camera moves, but you can
-  decide any logic that suits your app!
-
-*/
-
-await world.scene.updateShadows();
-
-world.camera.controls.addEventListener("update", async () => {
-  await world.scene.updateShadows();
-});
-
-/* MD
-
-  We'll make the background of the scene transparent so that it looks good in our docs page, but you don't have to do that in your app!
-
-*/
-
-world.scene.three.background = null;
-
-/* MD
-  ### ⏱️ Measuring the performance (optional)
-  ---
-
-  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
-
-*/
+// Set up stats
 
 const stats = new Stats();
 stats.showPanel(2);
@@ -178,9 +88,94 @@ world.renderer.onBeforeUpdate.add(() => stats.begin());
 world.renderer.onAfterUpdate.add(() => stats.end());
 
 /* MD
+  ### 🧩 Adding some UI
+  ---
+
+  We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
+
+*/
+
+BUI.Manager.init();
+
+/* MD
+  Now we will create a simple panel with a set of buttons that call the previously defined functions. For more information about the UI library, you can check the specific documentation for it!
+*/
+
+const panel = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+    <bim-panel active label="Shadowed Scene Tutorial" class="options-menu">
+      <bim-panel-section>
+        <bim-button icon="solar:sun-bold" label="Toggle Shadows" @click="${() => {
+          world.scene.shadowsEnabled = !world.scene.shadowsEnabled;
+        }}">
+        </bim-button>
+      </bim-panel-section>
+    </bim-panel>
+    `;
+});
+
+document.body.append(panel);
+
+/* MD
+  And we will make some logic that adds a button to the screen when the user is visiting our app from their phone, allowing to show or hide the menu. Otherwise, the menu would make the app unusable.
+*/
+
+const button = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+      <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
+        @click="${() => {
+          if (panel.classList.contains("options-menu-visible")) {
+            panel.classList.remove("options-menu-visible");
+          } else {
+            panel.classList.add("options-menu-visible");
+          }
+        }}">
+      </bim-button>
+    `;
+});
+
+document.body.append(button);
+
+/* MD
   ### 🎉 Wrap up
   ---
 
-  That's it! Now you know how to set up a scene with cool shadows and make your BIM applications shine!
-
+  That's it! Now you know how to load, export and dispose Fragments in your app. Fragments are much faster than raw IFC models, so you should definitely store them in your app if you want your users to have a fast loading experience. For bigger models you can use streaming, but that's another tutorial!
 */
+
+// Adding shadows
+
+world.renderer.three.shadowMap.enabled = true;
+world.renderer.three.shadowMap.type = THREE.PCFSoftShadowMap;
+
+world.scene.setup({
+  shadows: {
+    cascade: 1,
+    resolution: 1024,
+  },
+});
+
+world.scene.distanceRenderer.excludedObjects.add(grid.three);
+
+model.tiles.onItemSet.add(({ value: mesh }) => {
+  if ("isMesh" in mesh) {
+    const mat = mesh.material as THREE.MeshStandardMaterial[];
+    if (mat[0].opacity === 1) {
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+    }
+  }
+});
+
+for (const child of model.object.children) {
+  child.castShadow = true;
+  child.receiveShadow = true;
+}
+
+await world.scene.updateShadows();
+
+world.camera.controls.addEventListener("rest", async () => {
+  await world.scene.updateShadows();
+});
+
+world.scene.three.background = null;

@@ -6,22 +6,22 @@ import * as fs from "fs";
 import pluginTerser from "@rollup/plugin-terser";
 import * as packageJson from "./package.json";
 
-const generateTSNamespace = (dts: Map<string, string>) => {
-  if (!fs.existsSync("./dist")) return;
-  console.log("Generating namespace!");
-  let types = "";
-  dts.forEach((declaration) => {
-    const cleanedType = declaration
-      .replace(/export\s+\*?\s+from\s+"[^"]+";/g, "")
-      .replace(/^\s*[\r\n]/gm, "")
-      .replace(/`/g, "'");
-    types += cleanedType;
-  });
-  fs.writeFileSync(
-    "./dist/namespace.d.ts",
-    `declare namespace OBC {\n${types}\n}`,
-  );
-};
+// const generateTSNamespace = (dts: Map<string, string>) => {
+//   if (!fs.existsSync("./dist")) return;
+//   console.log("Generating namespace!");
+//   let types = "";
+//   dts.forEach((declaration) => {
+//     const cleanedType = declaration
+//       .replace(/export\s+\*?\s+from\s+"[^"]+";/g, "")
+//       .replace(/^\s*[\r\n]/gm, "")
+//       .replace(/`/g, "'");
+//     types += cleanedType;
+//   });
+//   fs.writeFileSync(
+//     "./dist/namespace.d.ts",
+//     `declare namespace OBC {\n${types}\n}`,
+//   );
+// };
 
 export default defineConfig({
   build: {
@@ -76,9 +76,7 @@ export default defineConfig({
   },
   plugins: [
     dts({
-      include: ["./src"],
-      exclude: ["./src/**/example.ts", "./src/**/*.test.ts"],
-      afterBuild: generateTSNamespace,
+      rollupTypes: true,
     }),
   ],
 });

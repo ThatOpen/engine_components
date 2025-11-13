@@ -1,9 +1,10 @@
-import { Fragment, FragmentsGroup, Serializer } from "@thatopen/fragments";
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
-import { Component, Components, Event, Disposable, DataMap } from "../../core";
-import { RelationsMap } from "../../ifc/IfcRelationsIndexer/src/types";
-import { IfcRelationsIndexer } from "../../ifc/IfcRelationsIndexer";
+
+// @ts-ignore
+import { FragmentsModels } from "@thatopen/fragments";
+import { Component, Components, Event, Disposable } from "../../core";
+import { ModelIdMap } from "./src";
 
 /**
  * Component to load, delete and manage [fragments](https://github.com/ThatOpen/engine_fragment) efficiently. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/FragmentsManager). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/FragmentsManager).
@@ -16,32 +17,13 @@ export class FragmentsManager extends Component implements Disposable {
   static readonly uuid = "fef46874-46a3-461b-8c44-2922ab77c806" as const;
 
   /** {@link Disposable.onDisposed} */
-  readonly onDisposed = new Event();
+  readonly onDisposed = new Event<undefined>();
+  readonly onBeforeDispose = new Event<undefined>();
 
   /**
    * Event triggered when fragments are loaded.
    */
-  readonly onFragmentsLoaded = new Event<FragmentsGroup>();
-
-  /**
-   * Event triggered when fragments are disposed.
-   */
-  readonly onFragmentsDisposed = new Event<{
-    groupID: string;
-    fragmentIDs: string[];
-  }>();
-
-  /**
-   * DataMap containing all loaded fragments.
-   * The key is the fragment's unique identifier, and the value is the fragment itself.
-   */
-  readonly list = new DataMap<string, Fragment>();
-
-  /**
-   * DataMap containing all loaded fragment groups.
-   * The key is the group's unique identifier, and the value is the group itself.
-   */
-  readonly groups = new DataMap<string, FragmentsGroup>();
+  readonly onFragmentsLoaded = new Event<any>();
 
   baseCoordinationModel = "";
   baseCoordinationMatrix = new THREE.Matrix4();
@@ -49,19 +31,29 @@ export class FragmentsManager extends Component implements Disposable {
   /** {@link Component.enabled} */
   enabled = true;
 
-  private _loader = new Serializer();
+  get initialized() {
+    return !!this._core;
+  }
+
+  private _core?: FRAGS.FragmentsModels;
 
   /**
-   * Getter for the meshes of all fragments in the FragmentsManager.
-   * It iterates over the fragments in the list and pushes their meshes into an array.
-   * @returns {THREE.Mesh[]} An array of THREE.Mesh objects representing the fragments.
+   * Map containing all loaded fragment models.
+   * The key is the group's unique identifier, and the value is the model itself.
    */
-  get meshes() {
-    const meshes: THREE.Mesh[] = [];
-    for (const [_id, fragment] of this.list) {
-      meshes.push(fragment.mesh);
+  get list() {
+    return this.core.models.list;
+  }
+
+  get core() {
+    if (!this._core) {
+      throw new Error("FragmentsManager not initialized. Call init() first.");
     }
-    return meshes;
+    return this._core;
+  }
+
+  private get _hasCoordinationModel() {
+    return this.baseCoordinationModel !== "";
   }
 
   constructor(components: Components) {
@@ -71,145 +63,186 @@ export class FragmentsManager extends Component implements Disposable {
 
   /** {@link Disposable.dispose} */
   dispose() {
-    for (const [_id, group] of this.groups) {
-      group.dispose(true);
+    this.onBeforeDispose.trigger();
+    if (this._core) {
+      this.core.dispose();
+      this._core = undefined;
     }
-
     this.baseCoordinationModel = "";
-    this.groups.clear();
-    this.list.clear();
     this.onFragmentsLoaded.reset();
-    this.onFragmentsDisposed.reset();
     this.onDisposed.trigger();
     this.onDisposed.reset();
   }
 
-  /**
-   * Dispose of a specific fragment group.
-   * This method removes the group from the groups map, deletes all fragments within the group from the list,
-   * disposes of the group, and triggers the onFragmentsDisposed event.
-   *
-   * @param group - The fragment group to be disposed.
-   */
-  disposeGroup(group: FragmentsGroup) {
-    const { uuid: groupID } = group;
-    const fragmentIDs: string[] = [];
-    for (const fragment of group.items) {
-      fragmentIDs.push(fragment.id);
-      this.list.delete(fragment.id);
-    }
-    group.dispose(true);
-    this.groups.delete(group.uuid);
-    if (this.groups.size === 0) {
+  init(workerURL: string) {
+    this._core = new FragmentsModels(workerURL);
+    this.core.onModelLoaded.add(async () => {
+      if (this._hasCoordinationModel) return;
+      const firstModel = [...this.list.values()][0];
+      if (!firstModel) return;
+      this.baseCoordinationModel = firstModel.modelId;
+      this.baseCoordinationMatrix = await firstModel.getCoordinationMatrix();
+    });
+    this.list.onItemDeleted.add(() => {
+      if (this.list.size > 0) return;
       this.baseCoordinationModel = "";
       this.baseCoordinationMatrix = new THREE.Matrix4();
-    }
-    this.onFragmentsDisposed.trigger({
-      groupID,
-      fragmentIDs,
     });
   }
 
-  /**
-   * Loads a binary file that contain fragment geometry.
-   * @param data - The binary data to load.
-   * @param config - Optional configuration for loading.
-   * @param config.isStreamed - Optional setting to determine whether this model is streamed or not.
-   * @param config.coordinate - Whether to apply coordinate transformation. Default is true.
-   * @param config.properties - Ifc properties to set on the loaded fragments. Not to be used when streaming.
-   * @returns The loaded FragmentsGroup.
-   */
-  load(
-    data: Uint8Array,
-    config?: Partial<{
-      coordinate: boolean;
-      name: string;
-      properties: FRAGS.IfcProperties;
-      relationsMap: RelationsMap;
-      isStreamed?: boolean;
-    }>,
-  ) {
-    const defaultConfig: {
-      coordinate: boolean;
-      name?: string;
-      properties?: FRAGS.IfcProperties;
-      relationsMap?: RelationsMap;
-    } = { coordinate: true };
-    const _config = { ...defaultConfig, ...config };
-    const { coordinate, name, properties, relationsMap } = _config;
-    const model = this._loader.import(data);
-    if (config) {
-      model.isStreamed = config.isStreamed || false;
-    }
-    if (name) model.name = name;
-    for (const fragment of model.items) {
-      fragment.group = model;
-      this.list.set(fragment.id, fragment);
-    }
-    if (coordinate) {
-      this.coordinate([model]);
-    }
-    this.groups.set(model.uuid, model);
-    if (properties) {
-      model.setLocalProperties(properties);
-    }
-    if (relationsMap) {
-      const indexer = this.components.get(IfcRelationsIndexer);
-      indexer.setRelationMap(model, relationsMap);
-    }
-    this.onFragmentsLoaded.trigger(model);
-    return model;
-  }
-
-  /**
-   * Export the specified fragmentsgroup to binary data.
-   * @param group - the fragments group to be exported.
-   * @returns the exported data as binary buffer.
-   */
-  export(group: FragmentsGroup) {
-    return this._loader.export(group);
-  }
-
-  /**
-   * Gets a map of model IDs to sets of express IDs for the given fragment ID map.
-   * @param fragmentIdMap - A map of fragment IDs to their corresponding express IDs.
-   * @returns A map of model IDs to sets of express IDs.
-   */
-  getModelIdMap(fragmentIdMap: FRAGS.FragmentIdMap) {
-    const map: { [modelID: string]: Set<number> } = {};
-    for (const fragmentID in fragmentIdMap) {
-      const fragment = this.list.get(fragmentID);
-      if (!(fragment && fragment.group)) continue;
-      const model = fragment.group;
-      if (!(model.uuid in map)) map[model.uuid] = new Set();
-      const expressIDs = fragmentIdMap[fragmentID];
-      for (const expressID of expressIDs) {
-        map[model.uuid].add(expressID);
+  async raycast(data: {
+    camera: THREE.PerspectiveCamera | THREE.OrthographicCamera;
+    mouse: THREE.Vector2;
+    dom: HTMLCanvasElement;
+    snappingClasses?: FRAGS.SnappingClass[];
+  }) {
+    const results = [];
+    for (const model of this.core.models.list.values()) {
+      if (data.snappingClasses && data.snappingClasses.length > 0) {
+        const snappingRaycast = await model.raycastWithSnapping(
+          data as FRAGS.SnappingRaycastData,
+        );
+        if (snappingRaycast && snappingRaycast.length > 0) {
+          results.push(snappingRaycast[0]);
+        } else {
+          const simpleRaycast = await model.raycast(data);
+          if (simpleRaycast) results.push(simpleRaycast);
+        }
+      } else {
+        const simpleRaycast = await model.raycast(data);
+        if (simpleRaycast) results.push(simpleRaycast);
       }
     }
-    return map;
+    await Promise.all(results);
+    if (results.length === 0) return undefined;
+
+    // Find result with smallest distance
+    let closestResult = results[0];
+    let minDistance = closestResult.distance;
+
+    for (let i = 1; i < results.length; i++) {
+      if (results[i].distance < minDistance) {
+        minDistance = results[i].distance;
+        closestResult = results[i];
+      }
+    }
+
+    return closestResult;
+  }
+
+  async getPositions(items: ModelIdMap): Promise<THREE.Vector3[]> {
+    const results: THREE.Vector3[] = [];
+
+    const getModelPositions = async (
+      model: FRAGS.FragmentsModel,
+      localIds: number[] | undefined,
+    ) => {
+      const positions = await model.getPositions(localIds);
+      for (const position of positions) {
+        results.push(position);
+      }
+    };
+
+    const promises: Promise<void>[] = [];
+    for (const modelId in items) {
+      const model = this.core.models.list.get(modelId);
+      if (model) {
+        promises.push(getModelPositions(model, Array.from(items[modelId])));
+      }
+    }
+
+    await Promise.all(promises);
+
+    return results;
+  }
+
+  async getBBoxes(items: ModelIdMap): Promise<THREE.Box3[]> {
+    const results: THREE.Box3[] = [];
+
+    const getBoxes = async (
+      model: FRAGS.FragmentsModel,
+      localIds: number[] | undefined,
+    ) => {
+      const boxes = await model.getBoxes(localIds);
+      if (boxes) {
+        for (const box of boxes) {
+          results.push(box);
+        }
+      }
+    };
+
+    const promises = [];
+    for (const itemID in items) {
+      const model = this.core.models.list.get(itemID);
+      if (model) {
+        promises.push(getBoxes(model, Array.from(items[itemID])));
+      }
+    }
+
+    await Promise.all(promises);
+    return results;
+  }
+
+  async highlight(style: FRAGS.MaterialDefinition, items?: ModelIdMap) {
+    await this.forEachModel(items, "highlight", style);
   }
 
   /**
-   * Converts a map of model IDs to sets of express IDs to a fragment ID map.
-   * @param modelIdMap - A map of model IDs to their corresponding express IDs.
-   * @returns A fragment ID map.
-   * @remarks
-   * This method iterates through the provided model ID map, retrieves the corresponding model from the `groups` map,
-   * and then calls the `getFragmentMap` method of the model to obtain a fragment ID map for the given express IDs.
-   * The fragment ID maps are then merged into a single map and returned.
-   * If a model with a given ID is not found in the `groups` map, the method skips that model and continues with the next one.
+   * Retrieves data for specified items from multiple models.
+   *
+   * @param items A map of model IDs to an array of local IDs, specifying which items to retrieve data for.
+   * @param config Optional configuration for data retrieval.
+   * @returns A record mapping model IDs to an array of item data.
    */
-  modelIdToFragmentIdMap(modelIdMap: { [modelID: string]: Set<number> }) {
-    let fragmentIdMap: FRAGS.FragmentIdMap = {};
-    for (const modelID in modelIdMap) {
-      const model = this.groups.get(modelID);
+  async getData(items: ModelIdMap, config?: Partial<FRAGS.ItemsDataConfig>) {
+    const result: Record<string, FRAGS.ItemData[]> = {};
+    for (const [modelId, localIds] of Object.entries(items)) {
+      const model = this.list.get(modelId);
       if (!model) continue;
-      const expressIDs = modelIdMap[modelID];
-      const map = model.getFragmentMap(expressIDs);
-      fragmentIdMap = { ...fragmentIdMap, ...map };
+
+      if (localIds.size === 0) {
+        result[modelId] = [];
+        continue;
+      }
+
+      const data = await model.getItemsData([...localIds], config);
+      result[modelId] = data;
     }
-    return fragmentIdMap;
+    return result;
+  }
+
+  async resetHighlight(items?: ModelIdMap) {
+    await this.forEachModel(items, "resetHighlight");
+  }
+
+  private async forEachModel(
+    items: ModelIdMap | undefined,
+    method: string,
+    ...args: any
+  ) {
+    const _items: Record<string, number[] | undefined> = {};
+    if (items) {
+      for (const modelId in items) {
+        const ids = items[modelId];
+        _items[modelId] = Array.from(ids);
+      }
+    } else {
+      // When items are not provided, apply to all models
+      for (const name of this.core.models.list.keys()) {
+        _items[name] = undefined;
+      }
+    }
+    const promises = [];
+    for (const modelId in _items) {
+      const model = this.core.models.list.get(modelId);
+      if (model) {
+        const ids = _items[modelId];
+        // @ts-ignore
+        const promise = model[method](ids, ...args);
+        promises.push(promise);
+      }
+    }
+    await Promise.all(promises);
   }
 
   /**
@@ -219,80 +252,72 @@ export class FragmentsManager extends Component implements Disposable {
    *
    * @returns A fragment ID map, where the keys are fragment IDs and the values are the corresponding express IDs.
    */
-  guidToFragmentIdMap(guids: Iterable<string>) {
-    const modelIdMap: { [modelID: string]: Set<number> } = {};
-    for (const [id, model] of this.groups) {
-      if (!(id in modelIdMap)) modelIdMap[id] = new Set();
-      for (const globalId of guids) {
-        const expressID = model.globalToExpressIDs.get(globalId);
-        if (expressID) modelIdMap[id].add(expressID);
-      }
+  async guidsToModelIdMap(guids: Iterable<string>) {
+    const modelIdMap: ModelIdMap = {};
+    for (const [id, model] of this.list) {
+      const localIds = (await model.getLocalIdsByGuids([...guids])).filter(
+        (localId) => localId !== null,
+      ) as number[];
+      modelIdMap[id] = new Set(localIds);
     }
-    const fragmentIdMap = this.modelIdToFragmentIdMap(modelIdMap);
-    return fragmentIdMap;
+    return modelIdMap;
   }
 
   /**
-   * Converts a fragment ID map to a collection of IFC GUIDs.
+   * Converts a fragment ID map to a collection of GUIDs.
    *
-   * @param fragmentIdMap - A fragment ID map to be converted to a collection of IFC GUIDs.
+   * @param modelIdMap - A ModelIdMap to be converted to a collection of GUIDs.
    *
-   * @returns An array of IFC GUIDs.
+   * @returns An array of GUIDs.
    */
-  fragmentIdMapToGuids(fragmentIdMap: FRAGS.FragmentIdMap) {
+  async modelIdMapToGuids(modelIdMap: ModelIdMap) {
     const guids: string[] = [];
-    const modelIdMap = this.getModelIdMap(fragmentIdMap);
-    for (const modelID in modelIdMap) {
-      const model = this.groups.get(modelID);
+    for (const [modelId, localIds] of Object.entries(modelIdMap)) {
+      const model = this.list.get(modelId);
       if (!model) continue;
-      const expressIDs = modelIdMap[modelID];
-      for (const expressID of expressIDs) {
-        for (const [guid, id] of model.globalToExpressIDs.entries()) {
-          if (id === expressID) {
-            guids.push(guid);
-            break;
-          }
-        }
-      }
+      const modelGuids = (await model.getGuidsByLocalIds([...localIds])).filter(
+        (guid) => guid !== null,
+      ) as string[];
+      guids.push(...modelGuids);
     }
     return guids;
   }
 
-  /**
-   * Applies coordinate transformation to the provided models.
-   * If no models are provided, all groups are used.
-   * The first model in the list becomes the base model for coordinate transformation.
-   * All other models are then transformed to match the base model's coordinate system.
-   *
-   * @param models - The models to apply coordinate transformation to.
-   * If not provided, all models are used.
-   */
-  coordinate(models = Array.from(this.groups.values())) {
-    const isFirstModel = this.baseCoordinationModel.length === 0;
-    if (isFirstModel) {
-      const first = models.pop();
-      if (!first) {
-        return;
-      }
-      this.baseCoordinationModel = first.uuid;
-      this.baseCoordinationMatrix = first.coordinationMatrix.clone();
-    }
+  // /**
+  //  * Applies coordinate transformation to the provided models.
+  //  * If no models are provided, all groups are used.
+  //  * The first model in the list becomes the base model for coordinate transformation.
+  //  * All other models are then transformed to match the base model's coordinate system.
+  //  *
+  //  * @param models - The models to apply coordinate transformation to.
+  //  * If not provided, all models are used.
+  //  */
+  // coordinate(models = Array.from(this.groups.values())) {
+  //   const isFirstModel = this.baseCoordinationModel.length === 0;
+  //   if (isFirstModel) {
+  //     const first = models.pop();
+  //     if (!first) {
+  //       return;
+  //     }
+  //     this.baseCoordinationModel = first.uuid;
+  //     this.baseCoordinationMatrix = first.coordinationMatrix.clone();
+  //   }
 
-    if (!models.length) {
-      return;
-    }
+  //   if (!models.length) {
+  //     return;
+  //   }
 
-    for (const model of models) {
-      if (model.coordinationMatrix.equals(this.baseCoordinationMatrix)) {
-        continue;
-      }
-      model.position.set(0, 0, 0);
-      model.rotation.set(0, 0, 0);
-      model.scale.set(1, 1, 1);
-      model.updateMatrix();
-      this.applyBaseCoordinateSystem(model, model.coordinationMatrix);
-    }
-  }
+  //   for (const model of models) {
+  //     if (model.coordinationMatrix.equals(this.baseCoordinationMatrix)) {
+  //       continue;
+  //     }
+  //     model.position.set(0, 0, 0);
+  //     model.rotation.set(0, 0, 0);
+  //     model.scale.set(1, 1, 1);
+  //     model.updateMatrix();
+  //     this.applyBaseCoordinateSystem(model, model.coordinationMatrix);
+  //   }
+  // }
 
   /**
    * Applies the base coordinate system to the provided object.
@@ -312,25 +337,14 @@ export class FragmentsManager extends Component implements Disposable {
     object: THREE.Object3D | THREE.Vector3,
     originalCoordinateSystem?: THREE.Matrix4,
   ) {
+    const transformMatrix = new THREE.Matrix4();
     if (originalCoordinateSystem) {
-      object.applyMatrix4(originalCoordinateSystem.clone().invert());
+      transformMatrix.copy(originalCoordinateSystem.clone()).invert();
     }
-    object.applyMatrix4(this.baseCoordinationMatrix);
-  }
-
-  /**
-   * Creates a copy of the whole model or a part of it.
-   *
-   * @param model - The model to clone.
-   * @param items - Optional - The part of the model to be cloned. If not given, the whole group is cloned.
-   *
-   */
-  clone(model: FRAGS.FragmentsGroup, items?: FRAGS.FragmentIdMap) {
-    const clone = model.cloneGroup(items);
-    this.groups.set(clone.uuid, clone);
-    for (const frag of clone.items) {
-      this.list.set(frag.id, frag);
-    }
-    return clone;
+    transformMatrix.multiply(this.baseCoordinationMatrix);
+    object.applyMatrix4(transformMatrix);
+    return transformMatrix;
   }
 }
+
+export * from "./src";

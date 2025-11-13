@@ -164,13 +164,13 @@ export class VertexPicker extends Component implements Disposable {
    * If the picked point is not on the working plane, it resets the `pickedPoint`.
    * If no intersecting object is found, it triggers the `onVertexLost` event and resets the `pickedPoint`.
    */
-  get(world: World) {
+  async get(world: World) {
     if (!this.enabled) return this._pickedPoint;
 
     const casters = this.components.get(Raycasters);
     const caster = casters.get(world);
 
-    const intersects = caster.castRay();
+    const intersects = await caster.castRay();
     if (!intersects) {
       if (this._pickedPoint !== null) {
         this.onVertexLost.trigger();
@@ -179,22 +179,26 @@ export class VertexPicker extends Component implements Disposable {
       return this._pickedPoint;
     }
 
-    const point = this.getClosestVertex(intersects);
-    if (!point) {
-      if (this._pickedPoint !== null) {
-        this.onVertexLost.trigger();
-        this._pickedPoint = null;
-      }
-      return this._pickedPoint;
-    }
+    const point = intersects.point;
 
-    const isOnPlane = !this.workingPlane
-      ? true
-      : Math.abs(this.workingPlane.distanceToPoint(point)) < 0.001;
-    if (!isOnPlane) {
-      this._pickedPoint = null;
-      return this._pickedPoint;
-    }
+    // TODO: Review from here closest vertex on Fragments 2.0
+
+    // const point = this.getClosestVertex(intersects);
+    // if (!point) {
+    //   if (this._pickedPoint !== null) {
+    //     this.onVertexLost.trigger();
+    //     this._pickedPoint = null;
+    //   }
+    //   return this._pickedPoint;
+    // }
+
+    // const isOnPlane = !this.workingPlane
+    //   ? true
+    //   : Math.abs(this.workingPlane.distanceToPoint(point)) < 0.001;
+    // if (!isOnPlane) {
+    //   this._pickedPoint = null;
+    //   return this._pickedPoint;
+    // }
 
     if (this._pickedPoint === null || !this._pickedPoint.equals(point)) {
       this._pickedPoint = point.clone();
@@ -204,70 +208,70 @@ export class VertexPicker extends Component implements Disposable {
     return this._pickedPoint;
   }
 
-  private getClosestVertex(intersects: THREE.Intersection) {
-    let closestVertex = new THREE.Vector3();
-    let vertexFound = false;
-    let closestDistance = Number.MAX_SAFE_INTEGER;
-    const vertices = this.getVertices(intersects);
-    if (vertices === null) {
-      return null;
-    }
+  // private getClosestVertex(intersects: THREE.Intersection) {
+  //   let closestVertex = new THREE.Vector3();
+  //   let vertexFound = false;
+  //   let closestDistance = Number.MAX_SAFE_INTEGER;
+  //   const vertices = this.getVertices(intersects);
+  //   if (vertices === null) {
+  //     return null;
+  //   }
 
-    for (const vertex of vertices) {
-      if (!vertex) {
-        continue;
-      }
-      const distance = intersects.point.distanceTo(vertex);
-      if (distance > closestDistance || distance > this._config.snapDistance) {
-        continue;
-      }
-      vertexFound = true;
-      closestVertex = vertex;
-      closestDistance = intersects.point.distanceTo(vertex);
-    }
+  //   for (const vertex of vertices) {
+  //     if (!vertex) {
+  //       continue;
+  //     }
+  //     const distance = intersects.point.distanceTo(vertex);
+  //     if (distance > closestDistance || distance > this._config.snapDistance) {
+  //       continue;
+  //     }
+  //     vertexFound = true;
+  //     closestVertex = vertex;
+  //     closestDistance = intersects.point.distanceTo(vertex);
+  //   }
 
-    if (vertexFound) {
-      return closestVertex;
-    }
+  //   if (vertexFound) {
+  //     return closestVertex;
+  //   }
 
-    return this.config.showOnlyVertex ? null : intersects.point;
-  }
+  //   return this.config.showOnlyVertex ? null : intersects.point;
+  // }
 
-  private getVertices(intersects: THREE.Intersection) {
-    const mesh = intersects.object as THREE.Mesh | THREE.InstancedMesh;
-    if (!intersects.face || !mesh) return null;
-    const geom = mesh.geometry;
+  // private getVertices(intersects: THREE.Intersection) {
+  //   const mesh = intersects.object as THREE.Mesh | THREE.InstancedMesh;
+  //   if (!intersects.face || !mesh) return null;
+  //   const geom = mesh.geometry;
 
-    const instanceTransform = new THREE.Matrix4();
-    const { instanceId } = intersects;
-    const instanceFound = instanceId !== undefined;
-    const isInstance = mesh instanceof THREE.InstancedMesh;
-    if (isInstance && instanceFound) {
-      mesh.getMatrixAt(instanceId, instanceTransform);
-    }
+  //   const instanceTransform = new THREE.Matrix4();
+  //   const { instanceId } = intersects;
+  //   const instanceFound = instanceId !== undefined;
+  //   const isInstance = mesh instanceof THREE.InstancedMesh;
+  //   if (isInstance && instanceFound) {
+  //     mesh.getMatrixAt(instanceId, instanceTransform);
+  //   }
 
-    return [
-      this.getVertex(intersects.face.a, geom),
-      this.getVertex(intersects.face.b, geom),
-      this.getVertex(intersects.face.c, geom),
-    ].map((vertex) => {
-      if (vertex) {
-        if (isInstance && instanceFound) {
-          vertex.applyMatrix4(instanceTransform);
-        }
-        vertex.applyMatrix4(mesh.matrixWorld);
-      }
-      return vertex;
-    });
-  }
+  //   return [
+  //     this.getVertex(intersects.face.a, geom),
+  //     this.getVertex(intersects.face.b, geom),
+  //     this.getVertex(intersects.face.c, geom),
+  //   ].map((vertex) => {
+  //     if (vertex) {
+  //       if (isInstance && instanceFound) {
+  //         vertex.applyMatrix4(instanceTransform);
+  //       }
+  //       vertex.applyMatrix4(mesh.matrixWorld);
+  //     }
+  //     return vertex;
+  //   });
+  // }
 
-  private getVertex(index: number, geom: THREE.BufferGeometry) {
-    if (index === undefined) return null;
-    const vertices = geom.attributes.position as THREE.BufferAttribute;
-    return new THREE.Vector3(
-      vertices.getX(index),
-      vertices.getY(index),
-      vertices.getZ(index),
-    );
-  }
+  // private getVertex(index: number, geom: THREE.BufferGeometry) {
+  //   if (index === undefined) return null;
+  //   const vertices = geom.attributes.position as THREE.BufferAttribute;
+  //   return new THREE.Vector3(
+  //     vertices.getX(index),
+  //     vertices.getY(index),
+  //     vertices.getZ(index),
+  //   );
+  // }
 }

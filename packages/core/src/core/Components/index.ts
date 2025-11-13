@@ -6,6 +6,8 @@ import {
 } from "three-mesh-bvh";
 import { Component, Disposable, Event } from "../Types";
 import { UUID } from "../../utils";
+import { FragmentsManager } from "../../fragments";
+import { DataMap } from "@thatopen/fragments";
 
 /**
  * The entry point of the Components library. It can create, delete and access all the components of the library globally, update all the updatable components automatically and dispose all the components, preventing memory leaks.
@@ -14,7 +16,7 @@ export class Components implements Disposable {
   /**
    * The version of the @thatopen/components library.
    */
-  static readonly release = "2.4.5";
+  static readonly release = "2.4.3";
 
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event<void>();
@@ -23,7 +25,7 @@ export class Components implements Disposable {
    * The list of components created in this app.
    * The keys are UUIDs and the values are instances of the components.
    */
-  readonly list = new Map<string, Component>();
+  readonly list = new DataMap<string, Component>();
 
   /**
    * If disabled, the animation loop will be stopped.
@@ -61,8 +63,6 @@ export class Components implements Disposable {
    * @param instance - The instance of the component to be added.
    *
    * @throws Will throw an error if a component with the same UUID already exists.
-   *
-   * @internal
    */
   add(uuid: string, instance: Component) {
     if (this.list.has(uuid))
@@ -83,13 +83,14 @@ export class Components implements Disposable {
    * @returns The instance of the requested component.
    *
    * @throws Will throw an error if a component with the same UUID already exists.
-   *
-   * @internal
    */
   get<U extends Component>(Component: new (components: Components) => U): U {
     const uuid = (Component as any).uuid;
     if (!this.list.has(uuid)) {
       const toolInstance = new Component(this);
+      if (toolInstance.isDisposeable()) {
+        toolInstance.onDisposed.add(() => this.list.delete(uuid));
+      }
       if (!this.list.has(uuid)) {
         // In case the component is not auto-registered.
         this.add(uuid, toolInstance);
@@ -111,6 +112,9 @@ export class Components implements Disposable {
    */
   init() {
     this.enabled = true;
+    for (const [_, component] of this.list.entries()) {
+      component.enabled = true;
+    }
     this._clock.start();
     this.update();
     this.onInit.trigger();
@@ -134,17 +138,25 @@ export class Components implements Disposable {
   dispose() {
     this.enabled = false;
 
+    let fragments: FragmentsManager | undefined;
+
     for (const [_id, component] of this.list) {
       component.enabled = false;
+      if (_id === FragmentsManager.uuid) {
+        fragments = component as FragmentsManager;
+        continue;
+      }
       if (component.isDisposeable()) {
         component.dispose();
       }
     }
 
+    // Make sure fragments is disposed last
+    fragments?.dispose();
+
     this._clock.stop();
 
     this.onDisposed.trigger();
-    this.onDisposed.reset();
   }
 
   private update = () => {

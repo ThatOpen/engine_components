@@ -1,3 +1,5 @@
+import { ModelIdDataMap } from "../../../fragments";
+
 export type IfcVersion = "IFC2X3" | "IFC4" | "IFC4X3_ADD2";
 
 export type IDSFacetParameterName =
@@ -20,6 +22,14 @@ export type IDSFacetType =
   | "Classification"
   | "Material"
   | "PartOf";
+
+export type IDSPartOfRelations =
+  | "IFCRELAGGREGATES"
+  | "IFCRELASSIGNSTOGROUP"
+  | "IFCRELCONTAINEDINSPATIALSTRUCTURE"
+  | "IFCRELNESTS"
+  | "IFCRELVOIDSELEMENT"
+  | "IFCRELFILLSELEMENT";
 
 // required must match
 // prohibited mustn't match
@@ -69,23 +79,31 @@ export type IDSRestrictionParameter =
 
 export type IDSFacetParameter = IDSSimpleParameter | IDSRestrictionParameter;
 
+// TODO: This check result need more standarization
 export interface IDSCheck {
-  parameter: IDSFacetParameterName;
-  currentValue: string | number | boolean | null;
-  requiredValue: any;
+  parameter: IDSFacetParameterName | null;
+  currentValue: any;
+  requiredValue?: IDSFacetParameter | string;
   pass: boolean;
 }
 
-/**
- * Represents the result of a check performed by an IDSFacet test.
- */
-export interface IDSCheckResult {
-  guid?: string;
-  expressID: number;
-  pass: boolean;
-  checks: IDSCheck[];
+export interface IDSItemFacetCheck {
+  facetType: IDSFacetType;
   cardinality: IDSConditionalCardinaltiy;
+  checks: IDSCheck[];
+  pass: boolean;
 }
+
+export interface IDSItemCheckResult {
+  guid?: string;
+  pass: boolean;
+  checks: IDSItemFacetCheck[];
+}
+
+/**
+ * The result of a check performed by an IDSFacet test.
+ */
+export type IDSCheckResult = ModelIdDataMap<IDSItemCheckResult>;
 
 export interface IDSInfo {
   title: string;

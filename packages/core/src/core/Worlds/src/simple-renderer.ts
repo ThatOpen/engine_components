@@ -9,6 +9,14 @@ import {
 import { Components } from "../../Components";
 
 /**
+ * The mode of the renderer. If MANUAL, the renderer will be updated on command. If AUTO, the renderer will render on every update tick.
+ */
+export enum RendererMode {
+  MANUAL,
+  AUTO,
+}
+
+/**
  * A basic renderer capable of rendering [Objec3Ds](https://threejs.org/docs/#api/en/core/Object3D).
  */
 export class SimpleRenderer extends BaseRenderer {
@@ -27,6 +35,16 @@ export class SimpleRenderer extends BaseRenderer {
    * The THREE.js WebGLRenderer instance.
    */
   three: THREE.WebGLRenderer;
+
+  /**
+   * The mode of the renderer. If MANUAL, the renderer will be updated manually. If AUTO, the renderer will render on every update tick.
+   */
+  mode = RendererMode.AUTO;
+
+  /**
+   * Whether the renderer needs to be updated. If true, the renderer will be updated on the next frame.
+   */
+  needsUpdate = false;
 
   protected _canvas: HTMLCanvasElement;
   protected _parameters?: Partial<THREE.WebGLRendererParameters>;
@@ -75,6 +93,12 @@ export class SimpleRenderer extends BaseRenderer {
   /** {@link Updateable.update} */
   update() {
     if (!this.enabled || !this.currentWorld) return;
+
+    if (this.mode === RendererMode.MANUAL && !this.needsUpdate) {
+      return;
+    }
+    this.needsUpdate = false;
+
     this.onBeforeUpdate.trigger(this);
     const scene = this.currentWorld.scene.three;
     const camera = this.currentWorld.camera.three;

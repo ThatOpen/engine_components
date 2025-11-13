@@ -1,5 +1,4 @@
-import { BCFTopics, Topic } from "..";
-import { Viewpoint } from "../../../core/Viewpoints";
+import { BCFApiComment, BCFTopics, Topic } from "..";
 import { Components } from "../../../core/Components";
 import { UUID } from "../../../utils";
 
@@ -10,7 +9,7 @@ export class Comment {
   date = new Date();
   author: string;
   guid = UUID.create();
-  viewpoint?: Viewpoint;
+  viewpoint?: string;
   modifiedAuthor?: string;
   modifiedDate?: Date;
   topic?: Topic;
@@ -51,36 +50,22 @@ export class Comment {
     this.author = manager.config.author;
   }
 
-  /**
-   * Serializes the Comment instance into a BCF compliant XML string.
-   *
-   * @returns A string representing the Comment in BCFv2 XML format.
-   */
-  serialize() {
-    let viewpointTag: string | null = null;
-    if (this.viewpoint) {
-      viewpointTag = `<Viewpoint Guid="${this.viewpoint.guid}"/>`;
+  toJSON() {
+    const result: BCFApiComment = {
+      guid: this.guid,
+      date: this.date.toISOString(),
+      author: this.author,
+      comment: this.comment,
+      topic_guid: this.topic?.guid,
+      viewpoint_guid: this.viewpoint,
+      modified_date: this.modifiedDate?.toISOString(),
+      modified_author: this.modifiedAuthor,
+    };
+
+    for (const [key, value] of Object.entries(result)) {
+      if (value === undefined) delete (result as any)[key];
     }
 
-    let modifiedDateTag: string | null = null;
-    if (this.modifiedDate) {
-      modifiedDateTag = `<ModifiedDate>${this.modifiedDate.toISOString()}</ModifiedDate>`;
-    }
-
-    let modifiedAuthorTag: string | null = null;
-    if (this.modifiedAuthor) {
-      modifiedAuthorTag = `<ModifiedAuthor>${this.modifiedAuthor}</ModifiedAuthor>`;
-    }
-
-    return `
-      <Comment Guid="${this.guid}">
-        <Date>${this.date.toISOString()}</Date>
-        <Author>${this.author}</Author>
-        <Comment>${this.comment}</Comment>
-        ${viewpointTag ?? ""}
-        ${modifiedAuthorTag ?? ""}
-        ${modifiedDateTag ?? ""}
-      </Comment>
-    `;
+    return result;
   }
 }

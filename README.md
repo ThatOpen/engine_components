@@ -19,7 +19,12 @@
 
 This library is a collection of BIM tools based on [Three.js](https://github.com/mrdoob/three.js/) and other libraries. It includes pre-made features to easily build browser-based 3D BIM applications, such as postproduction, dimensions, floorplan navigation, DXF export and much more. 
 
-### Packages
+
+## 🤝 Want our help?
+Are you developing a project with our technology and would like our help?
+Apply now to join [That Open Accelerator Program](https://thatopen.com/accelerator)!
+
+## Packages
 
 This library contains 2 packages:
 
@@ -27,7 +32,7 @@ This library contains 2 packages:
 
 `@thatopen/components-front` - Features exclusive for browser environments.
 
-### Usage
+## Usage
 
 You need to be familiar with [Three.js API](https://github.com/mrdoob/three.js/) to be able to use this library effectively. In the following example, we will create a cube in a 3D scene that can be navigated with the mouse or touch events. You can see the full example [here](https://github.com/ThatOpen/engine_components/blob/main/packages/core/src/core/Worlds/example.ts) and the deployed app [here](https://thatopen.github.io/engine_components/examples/Worlds/index.html).
 

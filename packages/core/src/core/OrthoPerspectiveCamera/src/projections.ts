@@ -108,11 +108,6 @@ export class ProjectionManager {
   private setupOrthoCamera(height: number, width: number) {
     this._component.controls.mouseButtons.wheel = CameraControls.ACTION.ZOOM;
     this._component.controls.mouseButtons.middle = CameraControls.ACTION.ZOOM;
-    this._component.controls.touches.two =
-      CameraControls.ACTION.TOUCH_ZOOM_TRUCK;
-    this._component.controls.touches.three =
-      CameraControls.ACTION.TOUCH_ZOOM_TRUCK;
-    this._component.controls.dollySpeed = 5;
 
     const pCamera = this._component.threePersp;
     const oCamera = this._component.threeOrtho;
@@ -154,11 +149,6 @@ export class ProjectionManager {
     pCamera.position.copy(oCamera.position);
     pCamera.quaternion.copy(oCamera.quaternion);
     this._component.controls.mouseButtons.wheel = CameraControls.ACTION.DOLLY;
-    this._component.controls.touches.two =
-      CameraControls.ACTION.TOUCH_DOLLY_TRUCK;
-    this._component.controls.touches.three =
-      CameraControls.ACTION.TOUCH_DOLLY_TRUCK;
-    this._component.controls.dollySpeed = 5;
 
     if (this.matchOrthoDistanceEnabled) {
       this._component.controls.distance = this.getDistance();

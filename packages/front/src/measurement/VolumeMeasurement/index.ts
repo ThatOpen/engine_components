@@ -1,224 +1,152 @@
-import * as THREE from "three";
-import * as FRAGS from "@thatopen/fragments";
 import * as OBC from "@thatopen/components";
-import { Mark } from "../../core";
-import { newDimensionMark } from "../utils";
+import { Volume } from "../../utils";
+import { Measurement } from "../Measurement";
+import { VolumeMeasurerModes, VolumeMeasurerTempData } from "./src";
+import { Hoverer } from "../../fragments";
+import { MeasureVolume } from "../../utils/measure-volume";
 
 /**
- * This component allows users to measure geometry volumes in a 3D scene. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/VolumeMeasurement). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/VolumeMeasurement).
+ * A basic dimension tool to measure volumes and display a 3D symbol with the numeric value. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/VolumeMeasurement). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/VolumeMeasurement).
  */
-export class VolumeMeasurement
-  extends OBC.Component
-  implements OBC.Createable, OBC.Disposable
-{
-  /**
-   * A unique identifier for the component.
-   * This UUID is used to register the component within the Components system.
-   */
-  static readonly uuid = "811da532-7af3-4635-b592-1c06ae494af5" as const;
+export class VolumeMeasurement extends Measurement<Volume, "volume"> {
+  static uuid = "01f885ab-ec4e-4e6c-a853-9dfc0d6766ed" as const;
 
-  /** {@link OBC.Disposable.onDisposed} */
-  readonly onDisposed = new OBC.Event();
+  private _temp: VolumeMeasurerTempData = {};
 
   /**
-   * Event triggered when a volume is found.
-   * The event passes the calculated volume as a parameter.
+   * The possible modes in which a measurement of this type may be created.
    */
-  readonly onVolumeFound = new OBC.Event<number>();
+  modes: VolumeMeasurerModes[number][] = ["free"];
 
-  /**
-   * Label used to display the calculated volume.
-   * It is initially set to null and will be created when needed.
-   */
-  label: Mark | null = null;
+  private _mode: VolumeMeasurerModes[number] = "free";
 
-  /**
-   * The world in which the measurements are performed.
-   */
-  world?: OBC.World;
-
-  private _enabled: boolean = false;
-
-  /** {@link OBC.Component.enabled} */
-  set enabled(value: boolean) {
-    this._enabled = value;
-    this.setupEvents(value);
-    if (!value) {
-      this.cancelCreation();
-    }
+  get mode(): VolumeMeasurerModes[number] {
+    return this._mode;
   }
 
-  /** {@link OBC.Component.enabled} */
-  get enabled() {
-    return this._enabled;
+  /**
+   * Represents the current measurement mode being used.
+   */
+  set mode(value: VolumeMeasurerModes[number]) {
+    this._mode = value;
+    this.cancelCreation();
+    this.onStateChanged.trigger(["mode"]);
   }
 
   constructor(components: OBC.Components) {
-    super(components);
-    this.components.add(VolumeMeasurement.uuid, this);
+    super(components, "volume");
+    components.add(VolumeMeasurement.uuid, this);
+    this.initHandlers();
   }
 
-  /** {@link OBC.Disposable.dispose} */
-  async dispose() {
-    this.setupEvents(false);
-    this.label?.dispose();
-    this.onDisposed.trigger();
-    this.onDisposed.reset();
-    (this.components as any) = null;
+  private initHandlers() {
+    this.list.onItemAdded.add((volume) => {
+      const element = this.createVolumeElement(volume);
+      element.color = this.color;
+      element.rounding = this.rounding;
+      element.units = this.units;
+      this.volumes.add(element);
+    });
+
+    this.list.onBeforeDelete.add((volume) => {
+      const volumeElements = [...this.volumes];
+      const volumeElement = volumeElements.find(
+        (element) => element.volume === volume,
+      );
+      if (volumeElement) this.volumes.delete(volumeElement);
+    });
+
+    this.onStateChanged.add((states) => {
+      if (states.includes("color")) {
+        if (!this._temp.preview) return;
+        this._temp.preview.color = this.color;
+      }
+      
+      if (states.includes("units")) {
+        if (!this._temp.preview) return;
+        this._temp.preview.units = this.units;
+      }
+      
+      if (states.includes("rounding")) {
+        if (!this._temp.preview) return;
+        this._temp.preview.rounding = this.rounding;
+      }
+
+      if (states.includes("enabled")) {
+        const hoverer = this.components.get(Hoverer);
+        hoverer.world = this.world;
+        if (this.enabled) {
+          this._previousHovererState = hoverer.enabled;
+          hoverer.enabled = true;
+        } else {
+          hoverer.clear();
+          hoverer.enabled = this._previousHovererState;
+        }
+        hoverer.hover();
+      }
+    });
   }
 
-  /** {@link OBC.Createable.create} */
-  create = () => {
+  private _previousHovererState = false;
+
+  private async initPreview() {
+    if (!this.enabled) return;
+    if (!this.world) {
+      throw new Error("Measurement: world is need!");
+    }
+
+    this._temp.preview = new MeasureVolume(this.components, this.world);
+    this._temp.preview.color = this.color;
+    this._temp.preview.rounding = this.rounding;
+    this._temp.preview.units = this.units;
+  }
+
+  create = async () => {
     if (!this.enabled) return;
 
-    if (!this.world) {
-      throw new Error("World is needed for Volume Measurement!");
-    }
+    const pickResult = (await this._vertexPicker.get()) as any;
+    if (!pickResult) return;
+
+    if (!this._temp.preview) this.initPreview();
+
+    this._temp.preview!.volume.items = OBC.ModelIdMapUtils.join([
+      this._temp.preview!.volume.items,
+      {
+        [pickResult.fragments.modelId]: new Set([pickResult.localId]),
+      },
+    ]);
+  };
+
+  endCreation = () => {
+    if (!this._temp.preview) return;
+    if (OBC.ModelIdMapUtils.isEmpty(this._temp.preview.volume.items)) return;
+    const volume = this._temp.preview.volume.clone();
+    this.list.add(volume);
+    this._temp.preview.dispose();
+    delete this._temp.preview;
+  };
+
+  cancelCreation = () => {
+    this._temp.preview?.dispose();
+    delete this._temp.preview;
+  };
+
+  delete = async () => {
+    if (this.list.size === 0 || !this.world) return;
+    const meshes = await this.getVolumeBoxes();
 
     const casters = this.components.get(OBC.Raycasters);
     const caster = casters.get(this.world);
-    const result = caster.castRay();
 
-    const utils = this.components.get(OBC.MeasurementUtils);
-
-    if (!result || !result.object) return;
-    const { object } = result;
-    if (object instanceof THREE.Mesh) {
-      const volume = utils.getVolumeFromMeshes([object]);
-      this.onVolumeFound.trigger(volume);
+    for (const group of meshes) {
+      const intersect = caster.castRayToObjects(group);
+      if (!intersect) continue;
+      const volumeElements = [...this.volumes];
+      const volumeElement = volumeElements.find((element) =>
+        element.meshes.some((item) => item === intersect.object),
+      );
+      if (!volumeElement) return;
+      this.list.delete(volumeElement.volume);
     }
   };
-
-  /** {@link OBC.Createable.delete} */
-  delete() {}
-
-  /**
-   * Deletes all the measurements created by this component.
-   */
-  async deleteAll() {}
-
-  /** {@link OBC.Createable.endCreation} */
-  endCreation() {}
-
-  /** {@link OBC.Createable.cancelCreation} */
-  cancelCreation() {}
-
-  /**
-   * Calculates the volume of a set of fragments.
-   *
-   * @param frags - A map of fragment IDs to their corresponding item IDs.
-   * @returns The total volume of the fragments.
-   *
-   * @remarks
-   * This method creates a set of instanced meshes from the given fragments and item IDs.
-   * It then calculates the volume of each mesh and returns the total volume.
-   *
-   * @throws Will throw an error if the world is not set.
-   * @throws Will throw an error if the label is not created.
-   * @throws Will throw an error if the world's renderer is not set.
-   * @throws Will throw an error if the geometry of the meshes is not indexed.
-   * @throws Will throw an error if the fragment manager is not available.
-   */
-  getVolumeFromFragments(frags: FRAGS.FragmentIdMap) {
-    const utils = this.components.get(OBC.MeasurementUtils);
-    const volume = utils.getVolumeFromFragments(frags);
-    const bb = this.components.get(OBC.BoundingBoxer);
-    bb.reset();
-    bb.addFragmentIdMap(frags);
-    const sphere = bb.getSphere();
-    this.setLabel(sphere, volume);
-    return volume;
-  }
-
-  /**
-   * Calculates the total volume of a set of meshes.
-   *
-   * @param meshes - An array of meshes or instanced meshes to calculate the volume from.
-   * @returns The total volume of the meshes.
-   *
-   * @throws Will throw an error if the world is not set.
-   * @throws Will throw an error if the label is not created.
-   *
-   * @remarks
-   * This method calculates the volume of each mesh in the provided array and returns the total volume.
-   * It also handles the creation of a label if it doesn't exist, adds the label to the world's scene,
-   * and positions the label at the center of the bounding sphere of the meshes.
-   *
-   */
-  getVolumeFromMeshes(meshes: THREE.InstancedMesh[] | THREE.Mesh[]) {
-    const utils = this.components.get(OBC.MeasurementUtils);
-    const bb = this.components.get(OBC.BoundingBoxer);
-    bb.reset();
-    for (const mesh of meshes) bb.addMesh(mesh);
-    const sphere = bb.getSphere();
-    const volume = utils.getVolumeFromMeshes(meshes);
-    this.setLabel(sphere, volume);
-    return volume;
-  }
-
-  /**
-   * Clears the label associated with the volume measurement.
-   *
-   * @remarks
-   * This method is used to hide the label when the volume measurement is no longer needed.
-   * If the label exists, it sets its visibility to false.
-   *
-   */
-  clear() {
-    if (this.label) {
-      this.label.visible = false;
-    }
-  }
-
-  private newLabel() {
-    if (!this.world) {
-      throw new Error("World is needed for Volume Measurement!");
-    }
-    const htmlText = newDimensionMark();
-    return new Mark(this.world, htmlText);
-  }
-
-  private setupEvents(active: boolean) {
-    if (!this.world) {
-      throw new Error("The volume measurement needs a world to work!");
-    }
-    if (this.world.isDisposing) {
-      return;
-    }
-    if (!this.world.renderer) {
-      throw new Error("The world of the volume measurement needs a renderer!");
-    }
-    const canvas = this.world.renderer.three.domElement;
-    const viewerContainer = canvas.parentElement as HTMLElement;
-    if (active) {
-      viewerContainer.addEventListener("click", this.create);
-      viewerContainer.addEventListener("pointermove", this.onMouseMove);
-      window.addEventListener("keydown", this.onKeydown);
-    } else {
-      viewerContainer.removeEventListener("click", this.create);
-      viewerContainer.removeEventListener("pointermove", this.onMouseMove);
-      window.removeEventListener("keydown", this.onKeydown);
-    }
-  }
-
-  private setLabel(sphere: THREE.Sphere, volume: number) {
-    if (!this.world) {
-      throw new Error("World is needed for Volume Measurement!");
-    }
-
-    if (!this.label) {
-      this.label = this.newLabel();
-      this.label.three.removeFromParent();
-    }
-
-    this.label.visible = true;
-    this.world.scene.three.add(this.label.three);
-    this.label.three.position.copy(sphere.center);
-    const formattedVolume = Math.trunc(volume * 100) / 100;
-    this.label.three.element.textContent = formattedVolume.toString();
-  }
-
-  private onMouseMove = () => {};
-
-  private onKeydown = (_e: KeyboardEvent) => {};
 }

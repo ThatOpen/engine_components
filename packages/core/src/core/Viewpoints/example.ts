@@ -1,106 +1,153 @@
 /* MD
-  ### Storing View Information 👁‍🗨
+  ## 📄 Storing View Information
   ---
-  Something that is pretty common in pretty much all 3D applications is to store the camera position to easily retrieve it later. When it comes to BIM apps, an important addition is not only to store the camera position but also the selected elements and filtered elements. Currently, there is not an isolated standard to define those things; however, the BCF schema (which is an standard for communication between different BIM apps) includes both topics and viewpoints.
-  
+  Most 3D applications commonly store camera positions for easy retrieval. In BIM apps, it's also useful to store selected and filtered elements. While there isn't a universal standard for this, the BCF schema (used for communication between BIM apps) includes topics and viewpoints.
+
   :::info
 
-  In a nutshell, topics stores information about the communication (such as title, type, status, assignee, comments, etc) and the viewpoint stores the camera location, target, selected elements, isolations, etc.
+  Topics store communication details like title, type, status, assignee, and comments. Viewpoints define camera positions, targets, selected elements, and isolations.
 
   :::
-  
-  Despite there is not an isolated schema to define camera position and related elements, viewpoints in the BCF schema describes that! In That Open Engine we made a Viewpoints component, which is pretty much an extraction of the BCF viewpoints and you will learn how to use them right now!
 
-  ### 🚧 Scaffolding a BIM App
-  ---
-  Before we dive in, let's create a very simple app with the engine. Start by including the dependencies:
-  */
+  The Viewpoints component in That Open Engine extracts BCF viewpoints, enabling you to manage camera positions and related elements effectively. Let's explore how to use it!
+*/
 
-// eslint-disable-next-line import/no-extraneous-dependencies
-import * as BUI from "@thatopen/ui";
 import * as THREE from "three";
-import * as WEBIFC from "web-ifc";
-// You have to import from @thatopen/components
+import Stats from "stats.js";
+import * as BUI from "@thatopen/ui";
+// You have to import * as OBC from "@thatopen/components"
 import * as OBC from "../..";
 
 /* MD
-  Then, initialize components:
-  */
-
-// To have the possibility to use some plug n play UI, initialize the user interface library
-BUI.Manager.init();
-const viewport = document.createElement("bim-viewport");
+  ### 🌎 Setting up a Simple Scene
+  To get started, let's set up a basic ThreeJS scene. This will serve as the foundation for our application and allow us to visualize the 3D models effectively:
+*/
 
 const components = new OBC.Components();
 
 const worlds = components.get(OBC.Worlds);
 const world = worlds.create<
   OBC.SimpleScene,
-  OBC.SimpleCamera,
+  OBC.OrthoPerspectiveCamera,
   OBC.SimpleRenderer
 >();
 
 world.scene = new OBC.SimpleScene(components);
 world.scene.setup();
+world.scene.three.background = null;
 
-world.renderer = new OBC.SimpleRenderer(components, viewport);
-world.camera = new OBC.SimpleCamera(components);
-
-const viewerGrids = components.get(OBC.Grids);
-viewerGrids.create(world);
+const container = document.getElementById("container")!;
+world.renderer = new OBC.SimpleRenderer(components, container);
+world.camera = new OBC.OrthoPerspectiveCamera(components);
+await world.camera.controls.setLookAt(78, 20, -2.2, 26, -4, 25);
 
 components.init();
 
-await world.camera.controls.setLookAt(12, 6, 8, 0, 2, -2);
-
 /* MD
-  Believe it or not, viewpoints can be used without any model. However, it is way more convenient when you use it in conjuction with IFC files. So, let's load a pretty basic IFC model from a remote repository to get started:
-  */
+  ### 🛠️ Setting Up Fragments
+  Now, let's configure the FragmentsManager. This will allow us to load models effortlessly and start manipulating them with ease:
+*/
 
-const ifcLoader = components.get(OBC.IfcLoader);
-await ifcLoader.setup();
-const file = await fetch(
-  "https://thatopen.github.io/engine_components/resources/small.ifc",
+const workerUrl =
+  "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
+const fragments = components.get(OBC.FragmentsManager);
+fragments.init(workerUrl);
+
+world.camera.controls.addEventListener("rest", () =>
+  fragments.core.update(true),
 );
-const data = await file.arrayBuffer();
-const buffer = new Uint8Array(data);
-const model = await ifcLoader.load(buffer);
-world.scene.three.add(model);
+
+world.onCameraChanged.add((camera) => {
+  for (const [, model] of fragments.list) {
+    model.useCamera(camera.three);
+  }
+  fragments.core.update(true);
+});
+
+fragments.list.onItemSet.add(({ value: model }) => {
+  model.useCamera(world.camera.three);
+  world.scene.three.add(model.object);
+  fragments.core.update(true);
+});
 
 /* MD
-  ### 👀 Creating Viewpoints
-  ---
-  Creating viewpoints is extremely simple, and it can be done is just these few lines of code:
-  */
+  ### 📂 Loading Fragments Models
+  With the core setup complete, it's time to load a Fragments model into our scene. Fragments are optimized for fast loading and rendering, making them ideal for large-scale 3D models.
+
+  :::info Where can I find Fragment files?
+
+  You can use the sample Fragment files available in our repository for testing. If you have an IFC model you'd like to convert to Fragments, check out the IfcImporter tutorial for detailed instructions.
+
+  :::
+*/
+
+const fragPaths = [
+  "https://thatopen.github.io/engine_components/resources/frags/school_arq.frag",
+  "https://thatopen.github.io/engine_components/resources/frags/school_str.frag",
+];
+
+await Promise.all(
+  fragPaths.map(async (path) => {
+    const modelId = path.split("/").pop()?.split(".").shift();
+    if (!modelId) return null;
+    const file = await fetch(path);
+    const buffer = await file.arrayBuffer();
+    return fragments.core.load(buffer, { modelId });
+  }),
+);
+
+/* MD
+  ### ✨ Using The Viewpoints Component
+  Creating viewpoints is extremely simple. Let's start by getting the component's instance to use it along the example:
+*/
 
 const viewpoints = components.get(OBC.Viewpoints);
-const viewpoint = viewpoints.create(world, { title: "My Viewpoint" }); // You can set an optional title for UI purposes
+viewpoints.world = world;
 
 /* MD
-  By default the viewpoint position will be set based on the world's camera. In case you need to update it, then you can change the camera position and trigger the corresponding method. For demostration purposes, let's create a general function that we can trigger later using a button:
+  Once completed, creating the viewpoint is straightforward. Let's define a helper function to streamline the process, allowing us to maintain the flow of the example and execute the function from the UI.
+*/
+
+let viewpoint: OBC.Viewpoint | undefined;
+const createViewpoint = async () => {
+  viewpoint = viewpoints.create();
+  // You can set an optional title for UI purposes
+  viewpoint.title = "My Viewpoint";
+
+  // Update the viewpoint to capture the current camera data, as this is the most common use case:
+  await viewpoint.updateCamera();
+};
+
+/* MD
+  By default, the method used to update the viewpoint camera captures a snapshot of the current world's camera view. This snapshot is included when the viewpoint is exported as part of a BCF topic. You can update the snapshot at any time:
+*/
+
+const updateSnapshot = () => {
+  if (!viewpoint) return;
+  viewpoint.takeSnapshot();
+};
+
+/* MD
+  The viewpoint position is automatically set based on the world's camera by default. If you need to update it, you can adjust the camera position and trigger the corresponding method. For demonstration purposes, let's create a general function that can be triggered later using a button:
 */
 
 const updateViewpointCamera = async () => {
+  if (!viewpoint) return;
   console.log("Position before updating", viewpoint.position);
-  viewpoint.updateCamera();
+  await viewpoint.updateCamera();
   console.log("Position after updating", viewpoint.position);
 };
 
 /* MD
-  :::tip
-
-  Of course, you don't have to create a function to trigger the update method in the viewpoint. You can just trigger it right away. We wrap it in a function to log the position before and after.
-
-  :::
-
-  Also, set the camera back to the viewpoint position is really easy. Once again, let's create a very simple function to trigger from the UI:
-  */
+  Setting the camera back to the viewpoint position is straightforward. Let's create a simple function that can be triggered from the UI:
+*/
 
 const setWorldCamera = async () => {
+  if (!viewpoint) return;
   const initialPosition = new THREE.Vector3();
   world.camera.controls.getPosition(initialPosition);
   console.log("Camera position before updating", initialPosition);
-  await viewpoint.go(world);
+  await viewpoint.go();
   const finalPosition = new THREE.Vector3();
   world.camera.controls.getPosition(finalPosition);
   console.log("Camera position before updating", finalPosition);
@@ -109,99 +156,189 @@ const setWorldCamera = async () => {
 /* MD
   ### 🧱 Adding and Retrieving Model Elements
   ---
-  What is a good viewpoint if you can't store and get back selections? Well, luckily it is extremely simple with viewpoints! There are mainly two ways in which you can store elements in a viewpoint: using a FragmentIdMap or GUIDs. The method you choice depends on your app needs. To start easy, let's suppose you already know some GUIDs of your model and want to add then to your viewpoint, in that case you can do it like this: 
+  Viewpoints make it easy to store and retrieve selected elements. You can add elements using GUIDs obtained from ModelIdMaps. For instance, if you already have some GUIDs, you can add them to a viewpoint. Since the viewpoint will be created dynamically using the UI in this example, let's listen for the creation of a new viewpoint and add some default items to it:
   */
 
-viewpoint.selectionComponents.add(
-  "2idC0G3ezCdhA9WVjWe",
-  "2idC0G3ezCdhA9WVjWe$Pp",
-);
+viewpoints.list.onItemSet.add(({ value: viewpoint }) => {
+  viewpoint.selectionComponents.add(
+    "3V$FMCDUfCoPwUaHMPfteW",
+    "1fIVuvFffDJRV_SJESOtCZ",
+  );
+});
 
 /* MD
-  That method is fine if you are transfering selections between different BIM apps as the main way to do it is through GUIDs. However, using solely That Open Engine the most common way to get selections is through the use of FragmentIdMaps. Most of them comes from the Highlighter (see the related tutorial!) as it reports model selections. In this case, for simplicity purposes, let's programatically generate a FragmentIdMap for all walls in the model and add it to the viewpoint:
-  */
+  While GUIDs are ideal for transferring selections between BIM apps, within That Open Engine, ModelIdMaps are more commonly used for selections. For example, the Highlighter component generates these maps based on model selections. Here's how to programmatically create a ModelIdMap for all doors in the model and add it to the viewpoint:
+*/
 
-const walls = await model.getAllPropertiesOfType(WEBIFC.IFCWALLSTANDARDCASE);
-if (walls) {
-  const expressIDs = Object.values(walls).map((attrs) => attrs.expressID);
-  const fragmentIdMap = model.getFragmentMap(expressIDs);
-  viewpoint.addComponentsFromMap(fragmentIdMap);
-}
+// Once again, as the viewpoint will be created on demand
+// let's listen for the creation event to assing the doors to it
+viewpoints.list.onItemSet.add(async ({ value: viewpoint }) => {
+  const finder = components.get(OBC.ItemsFinder);
+  const doors = await finder.getItems([{ categories: [/DOOR/] }]);
+  const guids = await fragments.modelIdMapToGuids(doors);
+  viewpoint.selectionComponents.add(...guids);
+});
 
 /* MD
   :::info
 
-  In BCF, the elements related to a viewpoint are called components.
+  In BCF, the elements associated with a viewpoint are referred to as components. If you're unsure how to use the ItemsFinder to retrieve the elements you need, check out the corresponding component tutorial for guidance.
 
   :::
 
-  If you inspect the viewpoint components (elements it includes) you will notice not only the two GUIDs we added before, but also new GUIDs representing the walls we added previously based on the FragmentIdMap. Let's create a pretty basic function to print into console the selection components both as GUIDs and as a FragmentIdMap you can use with components like the Highlighter or the Hider:
-  */
+  Viewpoint components include the GUIDs added earlier and new ones from the FragmentIdMap. Here's a simple function to log selection components as GUIDs and a FragmentIdMap for use with Highlighter or Hider:
+*/
 
-const reportComponents = () => {
+const reportComponents = async () => {
+  if (!viewpoint) return;
   const selectionGuids = viewpoint.selectionComponents;
-  const selectionFragmentIdMap = viewpoint.selection;
-  console.log(selectionGuids, selectionFragmentIdMap);
+  const selectionMap = await viewpoint.getSelectionMap();
+  console.log(selectionGuids, selectionMap);
 };
 
 /* MD
-  ### 🔗 Relating Viewpoints and Topics
-  ---
-  One of the most common uses of a viewpoint is to relate it with a topic to further describe a communication. Topics and viewpoints are always created separately, but then you can decide which viewpoints belongs to which topics (not the other way around). The relation is defined by adding one or several viewpoint GUID to the topic, and it can be done as follows:
-  */
+  To make things more engaging, let's isolate the elements associated with the viewpoint as follows:
+*/
 
-const bcfTopics = components.get(OBC.BCFTopics);
-const topic = bcfTopics.create();
-topic.viewpoints.add(viewpoint.guid);
-
-/* MD
-  As simple as that! A couple of things to consider are:
-
-  - If you're using the plug n play topics UI from `@thatopen/ui-obc`, right after you add a viewpoint the topic the corresponding UI will be updated. Check the TopicsUI tutorial to know more!
-
-  - When you export the topic to a BCF file, the viewpoint will be also serialized and exported following the standard.
-
-  Now, you may be wondering why using the GUID and not the whole viewpoint? Easy, to prevent possible memory leaks when deleting viewpoints using the component. This means, if you need to get the actual viewpoint object from a topic, you can do the following:
-  */
-
-const reportTopicViewpoints = () => {
-  const topicViewpoints = [...topic.viewpoints].map((guid) =>
-    viewpoints.list.get(guid),
-  );
-  console.log(topicViewpoints);
+const isolateComponents = async () => {
+  if (!viewpoint) return;
+  const items = await viewpoint.getSelectionMap();
+  const hider = components.get(OBC.Hider);
+  hider.isolate(items);
 };
 
 /* MD
-  ### Wrapping Up ✅
-  ---
-  To complete this tutorial, let's create a very simple panel to include buttons that triggers the import and export funcionalities, and also setup the app content like this:
+  ### 🔗 Linking Viewpoints to Topics
+  Viewpoints can be linked to topics to enhance communication. While topics and viewpoints are created independently, you can associate one or more viewpoint GUIDs with a topic as follows:
   */
 
-const panel = BUI.Component.create<BUI.PanelSection>(() => {
-  return BUI.html`
-    <bim-panel active label="Viewpoints Tutorial" class="options-menu">
-      <bim-panel-section collapsed label="Controls">
-        <bim-button @click=${updateViewpointCamera} label="Update Viewpoint Camera"></bim-button> 
+// Once again, as the viewpoint will be created on demand
+// let's listen for the creation event to assing the doors to it
+viewpoints.list.onItemSet.add(({ value: viewpoint }) => {
+  const bcfTopics = components.get(OBC.BCFTopics);
+  const topic = bcfTopics.create();
+  topic.viewpoints.add(viewpoint.guid);
+});
+
+/* MD
+  Simple as that! Using GUIDs instead of full viewpoint objects helps avoid memory leaks when deleting viewpoints. Finally, just for fun, let's get the data from the viewpoint snapshot so it can be displayed in the UI
+  */
+
+const getViewpointSnapshotData = () => {
+  if (!viewpoint) return null;
+  const data = viewpoints.snapshots.get(viewpoint.snapshot);
+  if (!data) return null;
+  return data;
+};
+
+/* MD
+  ### 🧩 Adding some UI (optional but recommended)
+  We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
+*/
+
+BUI.Manager.init();
+
+/* MD
+Now we will add some UI to play around with the actions in this tutorial. For more information about the UI library, you can check the specific documentation for it!
+*/
+
+const [panel, updatePanel] = BUI.Component.create<BUI.PanelSection, {}>((_) => {
+  const onResetVisibility = async ({ target }: { target: BUI.Button }) => {
+    target.loading = true;
+    const hider = components.get(OBC.Hider);
+    await hider.set(true);
+    target.loading = false;
+  };
+
+  let controls = BUI.html`
+    <bim-panel-section label="Viewpoint Creation">
+      <bim-label>To start, hit the button below to create a new viewpoint</bim-label>
+      <bim-button label="Create Viewpoint" @click=${createViewpoint}></bim-button>
+    </bim-panel-section>
+  `;
+
+  if (viewpoint) {
+    const snapshotData = getViewpointSnapshotData();
+
+    let snapshotElement: BUI.TemplateResult | undefined;
+    if (snapshotData) {
+      const blob = new Blob([snapshotData], { type: "image/png" });
+      const url = URL.createObjectURL(blob);
+      snapshotElement = BUI.html`
+        <img src="${url}" alt="Viewpoint Snapshot" style="max-width: 20rem;"/>
+      `;
+    }
+
+    const onDeleteViewpoint = () => {
+      if (!viewpoint) return;
+      const { guid } = viewpoint;
+      viewpoint = undefined;
+      viewpoints.list.delete(guid);
+    };
+
+    controls = BUI.html`
+      <bim-panel-section label="Controls">
+        <bim-button @click=${updateSnapshot} label="Update Snapshot"></bim-button>
+        ${snapshotElement}
+        <bim-button @click=${updateViewpointCamera} label="Update Viewpoint Camera"></bim-button>
         <bim-button @click=${setWorldCamera} label="Set World Camera"></bim-button>
         <bim-button @click=${reportComponents} label="Report Selection Components"></bim-button>
-        <bim-button @click=${reportTopicViewpoints} label="Report Topic Viewpoints"></bim-button>
+        <bim-button @click=${isolateComponents} label="Isolate Components"></bim-button>
+        <bim-button @click=${onDeleteViewpoint} label="Delete Viewpoint"></bim-button>
       </bim-panel-section>
-    </bim-panel>
     `;
-});
+  }
+
+  return BUI.html`
+    <bim-panel active label="Viewpoints Tutorial" class="options-menu">
+      <bim-panel-section label="Information">
+        <bim-label style="white-space: normal; width: 18rem;">To better experience this tutorial, open the developer tool's console in your browser to see some logs.</bim-label>
+        <bim-button label="Reset Visibility" @click=${onResetVisibility}></bim-button>
+      </bim-panel-section>
+      ${controls}
+    </bim-panel>
+  `;
+}, {});
+
+viewpoints.list.onItemDeleted.add(() => updatePanel());
+viewpoints.list.onItemUpdated.add(() => updatePanel());
 
 document.body.append(panel);
 
-const app = document.getElementById("app") as BUI.Grid;
-app.layouts = {
-  main: {
-    template: `"viewport"`,
-    elements: { viewport },
-  },
-};
+/* MD
+  And we will make some logic that adds a button to the screen when the user is visiting our app from their phone, allowing to show or hide the menu. Otherwise, the menu would make the app unusable.
+*/
 
-app.layout = "main";
+const button = BUI.Component.create<BUI.PanelSection>(() => {
+  return BUI.html`
+      <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
+        @click="${() => {
+          if (panel.classList.contains("options-menu-visible")) {
+            panel.classList.remove("options-menu-visible");
+          } else {
+            panel.classList.add("options-menu-visible");
+          }
+        }}">
+      </bim-button>
+    `;
+});
+
+document.body.append(button);
 
 /* MD
-  Congratulations! You already have the tools you need to create viewpoints in your app. Let's continue with more tutorials!
-  */
+  ### ⏱️ Measuring the performance (optional)
+  We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
+*/
+
+const stats = new Stats();
+stats.showPanel(2);
+document.body.append(stats.dom);
+stats.dom.style.left = "0px";
+stats.dom.style.zIndex = "unset";
+world.renderer.onBeforeUpdate.add(() => stats.begin());
+world.renderer.onAfterUpdate.add(() => stats.end());
+
+/* MD
+  ### 🎉 Wrap up
+  That's it! Now you're able to create, update, and manage viewpoints effectively using That Open Engine. Congratulations! Keep exploring more tutorials in the documentation to enhance your skills further.
+*/

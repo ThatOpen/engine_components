@@ -21,7 +21,7 @@ export class PlatformComponents extends OBC.Component {
   }
 
   async import(componentSource: string) {
-    return new Promise<OBC.ComponentWithUI>((resolve) => {
+    return new Promise<OBC.Component>((resolve) => {
       const script = document.createElement("script");
 
       const src = `
@@ -47,7 +47,7 @@ export class PlatformComponents extends OBC.Component {
 
         const ComponentClass = event.detail as new (
           components: OBC.Components,
-        ) => OBC.ComponentWithUI;
+        ) => OBC.Component;
 
         const component = this.components.get(ComponentClass);
         script.remove();

@@ -1,10 +1,10 @@
 import * as FRAGS from "@thatopen/fragments";
 import { Components } from "../../../core/Components";
-import { DataSet } from "../../../core/Types";
 import { IDSCheckResult, IDSSpecificationData, IfcVersion } from "./types";
 import { UUID } from "../../../utils";
 import { IDSFacet } from "./facets";
 import { IDSSpecifications } from "..";
+import { ModelIdMap } from "../../../fragments";
 
 /**
  * Represents a single specification from the Information Delivery Specification (IDS) standard.
@@ -19,8 +19,8 @@ export class IDSSpecification implements IDSSpecificationData {
   description?: string;
   instructions?: string;
   requirementsDescription?: string;
-  applicability = new DataSet<IDSFacet>();
-  requirements = new DataSet<IDSFacet>();
+  applicability = new FRAGS.DataSet<IDSFacet>();
+  requirements = new FRAGS.DataSet<IDSFacet>();
 
   protected components: Components;
 
@@ -48,50 +48,35 @@ export class IDSSpecification implements IDSSpecificationData {
   /**
    * Tests the model to test against the specification's requirements.
    *
-   * @param model - The model to be tested.
+   * @param modelId - The modelId of the model to be tested.
    * @returns An array representing the test results.
    * If no requirements are defined for the specification, an empty array is returned.
    */
-  async test(model: FRAGS.FragmentsGroup) {
-    let result: IDSCheckResult[] = [];
+  async test(
+    modelIds: RegExp[],
+    config: { skipIfFails: boolean } = { skipIfFails: true },
+  ) {
+    const result: IDSCheckResult = new FRAGS.DataMap();
 
     if (this.requirements.size === 0) return result;
 
     // Get applicable elements
-    const entities: FRAGS.IfcProperties = {};
+    const entities: ModelIdMap = {};
+    const applicabilityPromises = [];
     for (const facet of this.applicability) {
-      await facet.getEntities(model, entities);
+      applicabilityPromises.push(facet.getEntities(modelIds, entities));
     }
 
+    await Promise.all(applicabilityPromises);
+
     // Test applicable elements against requirements
-    const requirement = [...this.requirements][0];
-    result = await requirement.test(entities, model);
+    const requirementPromises = [];
+    for (const requirement of this.requirements) {
+      requirementPromises.push(requirement.test(entities, result, config));
+    }
+
+    await Promise.all(requirementPromises);
     return result;
-    // const requirementsResult: { [expressId: string]: boolean } = {};
-    // for (const expressID in entities) {
-    //   requirementsResult[expressID] = true;
-    // }
-
-    // for (const requirement of this.requirements) {
-    //   const arrayEntities = Object.values(entities);
-    //   const checkingElements = arrayEntities.filter(
-    //     (entity) => requirementsResult[entity.expressID],
-    //   );
-    //   const test = await requirement.test(checkingElements, model);
-    //   for (const expressID in test.fail) {
-    //     requirementsResult[expressID] = false;
-    //   }
-    // }
-
-    // for (const expressID in requirementsResult) {
-    //   const entity = entities[expressID];
-    //   if (!entity) continue;
-    //   if (requirementsResult[expressID]) {
-    //     result.pass[expressID] = entity;
-    //   } else {
-    //     result.fail[expressID] = entity;
-    //   }
-    // }
   }
 
   /**

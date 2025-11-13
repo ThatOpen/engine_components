@@ -10,6 +10,7 @@ import {
   FirstPersonMode,
   PlanMode,
 } from "./src";
+import { FragmentsManager } from "../../fragments";
 
 export * from "./src";
 
@@ -73,18 +74,20 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
       },
     );
 
-    this.onWorldChanged.add(({ action }) => {
-      if (action === "added") {
-        this._navigationModes.clear();
-        this._navigationModes.set("Orbit", new OrbitMode(this));
-        this._navigationModes.set("FirstPerson", new FirstPersonMode(this));
-        this._navigationModes.set("Plan", new PlanMode(this));
-        this._mode = this._navigationModes.get("Orbit")!;
-        this.mode.set(true, { preventTargetAdjustment: true });
-        if (this.currentWorld && this.currentWorld.renderer) {
-          this.previousSize = this.currentWorld.renderer.getSize().clone();
-        }
+    this.worlds.onItemSet.add(() => {
+      this._navigationModes.clear();
+      this._navigationModes.set("Orbit", new OrbitMode(this));
+      this._navigationModes.set("FirstPerson", new FirstPersonMode(this));
+      this._navigationModes.set("Plan", new PlanMode(this));
+      this._mode = this._navigationModes.get("Orbit")!;
+      this.mode.set(true, { preventTargetAdjustment: true });
+      if (this.currentWorld && this.currentWorld.renderer) {
+        this.previousSize = this.currentWorld.renderer.getSize().clone();
       }
+    });
+
+    this.worlds.onItemDeleted.add(() => {
+      this._navigationModes.clear();
     });
   }
 
@@ -136,6 +139,19 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
     }
 
     const box = new THREE.Box3(min, max);
+
+    const fragments = this.components.get(FragmentsManager);
+    if (fragments.initialized) {
+      for (const [, model] of fragments.list) {
+        const aabb = model.box;
+        if (aabb.min.x < min.x) min.x = aabb.min.x;
+        if (aabb.min.y < min.y) min.y = aabb.min.y;
+        if (aabb.min.z < min.z) min.z = aabb.min.z;
+        if (aabb.max.x > max.x) max.x = aabb.max.x;
+        if (aabb.max.y > max.y) max.y = aabb.max.y;
+        if (aabb.max.z > max.z) max.z = aabb.max.z;
+      }
+    }
 
     const sceneSize = new THREE.Vector3();
     box.getSize(sceneSize);

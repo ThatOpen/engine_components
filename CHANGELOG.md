@@ -1,5 +1,52 @@
 # Changelog
 
+## [3.2.0](https://github.com/ThatOpen/engine_components/compare/v3.1.0...v3.2.0) (2025-10-23)
+
+
+### Features
+
+* add VolumeMeasurement component in front package ([9382008](https://github.com/ThatOpen/engine_components/commit/93820081a3870c1af8d02d4015069b6679e4cf7f))
+* Adds option to not skip other tests if one fails ([3cf1c1c](https://github.com/ThatOpen/engine_components/commit/3cf1c1c09bf0834351e25482ddb9c3266a42a9a8))
+* allow to customize color to exclude from postproduction ([5c7c6ac](https://github.com/ThatOpen/engine_components/commit/5c7c6ac2b0e0964924710177b1d83d5593625eb6))
+* release ([f31d9ae](https://github.com/ThatOpen/engine_components/commit/f31d9ae4b13d965ecfdcb1947ad729352bbeae05))
+
+
+### Bug Fixes
+
+* apply ifc loader config ([6c7e205](https://github.com/ThatOpen/engine_components/commit/6c7e2057393e9a1eabfe2de8abc8785312f53d96))
+* correct lod material visibility when disabling postproduction ([16c279d](https://github.com/ThatOpen/engine_components/commit/16c279da054d82608c112505c71e0c6a4dafa82b))
+* correct mesher bugs ([d4fab7c](https://github.com/ThatOpen/engine_components/commit/d4fab7c0817e64cbc1652df513eb7f07d2d662d1))
+* hoverer and outliner correctly place meshes when 2 or more models are loaded. ([fbd2d1f](https://github.com/ThatOpen/engine_components/commit/fbd2d1fd6174d1e5b86e7457abf8f1a54cd5a8db))
+* make edge postprocessing pass material double side ([9631418](https://github.com/ThatOpen/engine_components/commit/9631418a12f47ea09a610337438611de14e99adc))
+
+## [3.1.0](https://github.com/ThatOpen/engine_components/compare/v2.4.0...v3.1.0) (2025-07-10)
+
+
+### Features
+
+* adapt components to fragments 2.0 and improve all components ([ecedeb6](https://github.com/ThatOpen/engine_components/commit/ecedeb613b08d624c0b545e39477c5ca9ce4f4e1))
+* **core:** add section mesh generation component ([46ee63e](https://github.com/ThatOpen/engine_components/commit/46ee63e17253c9b1501ce47391164a101ed0e862))
+* **front:** adds event on length measurements deletion ([554e3a6](https://github.com/ThatOpen/engine_components/commit/554e3a6a9e2d67d8338dcec7f1757f80651824e0))
+
+
+### Bug Fixes
+
+* **core:** ids facet bounds checking was inverted ([2c7461f](https://github.com/ThatOpen/engine_components/commit/2c7461ff5a4d1d783548391e0415a83e937f0474))
+* **core:** ids property facet was failing when it doesn't have to ([5786e57](https://github.com/ThatOpen/engine_components/commit/5786e5727c3d4250519e97849690397c86aaddf5))
+* **core:** incorrect ids export ([cb9848a](https://github.com/ThatOpen/engine_components/commit/cb9848acb474149b2bfef3e23817b4315ea50057))
+* Documentation Updates engine-components [#459](https://github.com/ThatOpen/engine_components/issues/459) ([#566](https://github.com/ThatOpen/engine_components/issues/566)) ([dd9f0d4](https://github.com/ThatOpen/engine_components/commit/dd9f0d490aaafd8ec8ceb40701949f52ba2cbfe2))
+* FaceMeasurement for Multiple Models [#533](https://github.com/ThatOpen/engine_components/issues/533) ([#565](https://github.com/ThatOpen/engine_components/issues/565)) ([914b449](https://github.com/ThatOpen/engine_components/commit/914b4497604db2cd4129ddca5a4daec938a28906))
+* **front:** Revert "Use RawShaderMaterial for transparent objects to improve culling ([#532](https://github.com/ThatOpen/engine_components/issues/532))" ([4930288](https://github.com/ThatOpen/engine_components/commit/4930288c12d45a9f6a75603fe5601b223fefc293))
+* Highlighter isSetup # 556 ([#579](https://github.com/ThatOpen/engine_components/issues/579)) ([6780230](https://github.com/ThatOpen/engine_components/commit/6780230b83f703a5737a55aa7d5715aaa9c37efa)), closes [#556](https://github.com/ThatOpen/engine_components/issues/556)
+* mobile device orthographic camera zoom ([#558](https://github.com/ThatOpen/engine_components/issues/558)) ([29ebd0d](https://github.com/ThatOpen/engine_components/commit/29ebd0de11fc5fb53260b95a9e22ca77955e513a))
+* solve small highlight guard logic flaw ([e444737](https://github.com/ThatOpen/engine_components/commit/e444737d33d6823121001fd63a06bdcf80cf5ddd))
+* update fragments dependency version ([d3bcb9b](https://github.com/ThatOpen/engine_components/commit/d3bcb9be3590695fea962458b24f6357701b575b))
+
+
+### Miscellaneous Chores
+
+* release 3.1.0 ([df2218d](https://github.com/ThatOpen/engine_components/commit/df2218d4916c420a45aedb9a5b7f797c7762f0ce))
+
 ## [2.4.0](https://github.com/ThatOpen/engine_components/compare/v2.3.0...v2.4.0) (2024-11-28)
 
 

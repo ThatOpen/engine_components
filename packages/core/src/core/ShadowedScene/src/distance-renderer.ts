@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Event, World } from "../../Types";
 import { Components } from "../../Components";
-import { readPixelsAsync } from "../../Cullers";
+import { readPixelsAsync } from "./pixel-reader";
 
 // Source: https://threejs.org/examples/?q=depth#webgl_depth_texture
 
@@ -56,9 +56,6 @@ export class DistanceRenderer {
   /** The world instance to which this renderer belongs. */
   readonly world: World;
 
-  /** The THREE.js renderer used to make the visibility test. */
-  readonly renderer: THREE.WebGLRenderer;
-
   protected readonly worker: Worker;
 
   private _width = 512;
@@ -88,8 +85,6 @@ export class DistanceRenderer {
     const camera = world.camera.three as
       | THREE.PerspectiveCamera
       | THREE.OrthographicCamera;
-
-    this.renderer = new THREE.WebGLRenderer();
 
     this.tempRT = new THREE.WebGLRenderTarget(this._width, this._height);
     this.bufferSize = this._width * this._height * 4;
@@ -156,8 +151,6 @@ void main() {
     this._postQuad = new THREE.Mesh(postPlane, this.depthMaterial);
     this.scene.add(this._postQuad);
 
-    this.renderer.clippingPlanes = world.renderer.clippingPlanes;
-
     const code = `
       addEventListener("message", (event) => {
         const { buffer } = event.data;
@@ -181,8 +174,6 @@ void main() {
     this.enabled = false;
     this.onDistanceComputed.reset();
     this.worker.terminate();
-    this.renderer.forceContextLoss();
-    this.renderer.dispose();
     this.tempRT.dispose();
     this.resultRT.dispose();
     const children = [...this.scene.children];
@@ -215,8 +206,10 @@ void main() {
 
     this.world.camera.three.updateMatrix();
 
-    this.renderer.setSize(this._width, this._height);
-    this.renderer.setRenderTarget(this.tempRT);
+    const renderer = this.world.renderer!.three;
+
+    // renderer.setSize(this._width, this._height);
+    renderer.setRenderTarget(this.tempRT);
 
     const tempVariableName = "visibilityBeforeDistanceCheck";
 
@@ -225,7 +218,7 @@ void main() {
       object.visible = false;
     }
 
-    this.renderer.render(this.world.scene.three, this.world.camera.three);
+    renderer.render(this.world.scene.three, this.world.camera.three);
 
     for (const object of this.excludedObjects) {
       if (object.userData[tempVariableName] !== undefined) {
@@ -236,10 +229,10 @@ void main() {
     this.depthMaterial.uniforms.tDiffuse.value = this.tempRT.texture;
     this.depthMaterial.uniforms.tDepth.value = this.tempRT.depthTexture;
 
-    this.renderer.setRenderTarget(this.resultRT);
-    this.renderer.render(this.scene, this.camera);
+    renderer.setRenderTarget(this.resultRT);
+    renderer.render(this.scene, this.camera);
 
-    const context = this.renderer.getContext() as WebGL2RenderingContext;
+    const context = renderer.getContext() as WebGL2RenderingContext;
 
     try {
       await readPixelsAsync(
@@ -254,15 +247,15 @@ void main() {
       );
     } catch (e) {
       // Pixels couldn't be read, possibly because culler was disposed
-      this.renderer.setRenderTarget(null);
+      renderer.setRenderTarget(null);
       this._isWorkerBusy = false;
       return;
     }
 
-    this.renderer.setRenderTarget(null);
+    renderer.setRenderTarget(null);
 
     if (this.renderDebugFrame) {
-      this.renderer.render(this.scene, this.camera);
+      renderer.render(this.scene, this.camera);
     }
 
     this.worker.postMessage({

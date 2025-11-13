@@ -90,6 +90,8 @@ export interface BCFTopicsConfig {
    * If false, use default values for missing data.
    */
   ignoreIncompleteTopicsOnImport: boolean;
+
+  exportCustomDataAsLabels: boolean;
 }
 
 type BCFTopicsConfigType = {
@@ -107,6 +109,7 @@ type BCFTopicsConfigType = {
   includeAllExtensionsOnExport: BooleanSettingsControl;
   fallbackVersionOnImport: SelectSettingControl;
   ignoreIncompleteTopicsOnImport: BooleanSettingsControl;
+  exportCustomDataAsLabels: BooleanSettingsControl;
 };
 
 export class BCFTopicsConfigManager extends Configurator<
@@ -171,6 +174,10 @@ export class BCFTopicsConfigManager extends Configurator<
       value: "",
     },
     ignoreIncompleteTopicsOnImport: {
+      type: "Boolean" as const,
+      value: false,
+    },
+    exportCustomDataAsLabels: {
       type: "Boolean" as const,
       value: false,
     },
@@ -285,5 +292,13 @@ export class BCFTopicsConfigManager extends Configurator<
 
   set ignoreIncompleteTopicsOnImport(value) {
     this._config.ignoreIncompleteTopicsOnImport.value = value;
+  }
+
+  get exportCustomDataAsLabels() {
+    return this._config.exportCustomDataAsLabels.value;
+  }
+
+  set exportCustomDataAsLabels(value) {
+    this._config.exportCustomDataAsLabels.value = value;
   }
 }

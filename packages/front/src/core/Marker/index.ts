@@ -60,7 +60,7 @@ export interface IGroupedMarkers {
 }
 
 /**
- * Component for Managing Markers along with creating different types of markers. Every marker is a Simple2DMarker. For every marker that needs to be added, you can use the Manager to add the marker and change its look and feel. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Marker). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Marker).
+ * Component for Managing Markers along with creating different types of markers. Every marker is a Simple2DMarker. For every marker that needs to be added, you can use the Manager to add the marker and change its look and feel. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Marker). 📘 [API](https://docs.thatopen.com/api/@thatopen-platform/components-beta-front/classes/Marker).
  */
 export class Marker extends OBC.Component implements OBC.Disposable {
   /**
@@ -169,7 +169,7 @@ export class Marker extends OBC.Component implements OBC.Disposable {
    */
   create(
     world: OBC.World,
-    text: string,
+    element: HTMLElement,
     point: THREE.Vector3,
     isStatic = false,
   ) {
@@ -180,12 +180,12 @@ export class Marker extends OBC.Component implements OBC.Disposable {
     const markers = this.getWorldMarkerList(world);
 
     if (markers.has(key)) {
-      return;
+      return null;
     }
 
     const span = document.createElement("span");
-    span.innerHTML = text;
-    span.style.color = this._color;
+    span.append(element);
+
     const marker = new Mark(world, span);
     marker.three.position.copy(point);
 
@@ -343,7 +343,7 @@ export class Marker extends OBC.Component implements OBC.Disposable {
           );
 
           const { element } = clusterLabel.three;
-          element.textContent = clusterGroup.length.toString();
+          element.firstChild!.textContent = clusterGroup.length.toString();
 
           clusterLabel.three.position.copy(averagePosition);
 
@@ -433,38 +433,15 @@ export class Marker extends OBC.Component implements OBC.Disposable {
       .divideScalar(positions.length);
   }
 
-  private createClusterElement(key: string) {
+  clusterElementFactory: () => HTMLElement = () => {
     const div = document.createElement("div");
-    div.textContent = key;
-
-    const {
-      backgroundColor,
-      textColor,
-      fontSize,
-      fontWeight,
-      borderRadius,
-      padding,
-      textAlign,
-      cursor,
-      hoverBackgroundColor,
-      transition,
-    } = { ...Marker.DEFAULT_CLUSTER_STYLES, ...this.clusterElementStyles };
-
-    Object.assign(div.style, {
-      background: backgroundColor,
-      color: textColor,
-      fontSize,
-      fontWeight,
-      borderRadius,
-      padding,
-      textAlign,
-      cursor,
-      ...(transition && { transition }),
-    });
-
-    div.addEventListener("pointerdown", () => {
-      this.navigateToCluster(key);
-    });
+    div.style.color = "#000000";
+    div.style.background = "#FFFFFF";
+    div.style.fontSize = "1.2rem";
+    div.style.fontWeight = "500";
+    div.style.borderRadius = "50%";
+    div.style.padding = "5px 11px";
+    div.style.textAlign = "center";
     div.addEventListener("pointerover", () => {
       div.style.background = hoverBackgroundColor;
     });
@@ -472,6 +449,22 @@ export class Marker extends OBC.Component implements OBC.Disposable {
       div.style.background = backgroundColor;
     });
     return div;
+  };
+
+  private createClusterElement(key: string) {
+    const element = this.clusterElementFactory();
+    element.textContent = key;
+
+    const span = document.createElement("span");
+    span.append(element);
+
+    span.style.pointerEvents = "auto";
+    span.style.cursor = "pointer";
+    span.addEventListener("pointerdown", () => {
+      this.navigateToCluster(key);
+    });
+
+    return span;
   }
 
   private getScreenPosition(label: Mark) {

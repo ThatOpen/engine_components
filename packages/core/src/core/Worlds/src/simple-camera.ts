@@ -1,7 +1,12 @@
 import * as THREE from "three";
 import CameraControls from "camera-controls";
-import { Disposable, Updateable, Event, BaseCamera } from "../../Types";
+import { Disposable, Updateable, Event, BaseCamera, World } from "../../Types";
 import { Components } from "../../Components";
+import {
+  BoundingBoxer,
+  FragmentsManager,
+  ModelIdMap,
+} from "../../../fragments";
 
 /**
  * A basic camera that uses [yomotsu's cameracontrols](https://github.com/yomotsu/camera-controls) to control the camera in 2D and 3D. Check out it's API to find out what features it offers.
@@ -72,29 +77,53 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
     }
   }
 
+  set currentWorld(value: World | null) {
+    super.currentWorld = value;
+    if (!value) return;
+    const existingWorld = this.worlds.get(value.uuid);
+    if (!existingWorld) this.worlds.set(value.uuid, value);
+  }
+
+  get currentWorld() {
+    return this._currentWorld;
+  }
+
   constructor(components: Components) {
     super(components);
     this.three = this.setupCamera();
 
     this.setupEvents(true);
 
-    this.onWorldChanged.add(({ action, world }) => {
-      // This makes sure the DOM element of the camera
-      // controls matches the one of the renderer for
-      // a specific world
-      if (action === "added") {
-        const controls = this.newCameraControls();
-        this._allControls.set(world.uuid, controls);
-      }
+    this.worlds.onItemSet.add(({ value: world }) => {
+      const controls = this.newCameraControls();
+      this._allControls.set(world.uuid, controls);
+    });
 
-      if (action === "removed") {
-        const controls = this._allControls.get(world.uuid);
-        if (controls) {
-          controls.dispose();
-          this._allControls.delete(world.uuid);
-        }
+    this.worlds.onBeforeDelete.add(({ value: world }) => {
+      const controls = this._allControls.get(world.uuid);
+      if (controls) {
+        controls.dispose();
+        this._allControls.delete(world.uuid);
       }
     });
+
+    // this.onWorldChanged.add(({ action, world }) => {
+    //   // This makes sure the DOM element of the camera
+    //   // controls matches the one of the renderer for
+    //   // a specific world
+    //   if (action === "added" && !this._allControls.get(world.uuid)) {
+    //     const controls = this.newCameraControls();
+    //     this._allControls.set(world.uuid, controls);
+    //   }
+
+    //   if (action === "removed") {
+    //     const controls = this._allControls.get(world.uuid);
+    //     if (controls) {
+    //       controls.dispose();
+    //       this._allControls.delete(world.uuid);
+    //     }
+    //   }
+    // });
   }
 
   /** {@link Disposable.dispose} */
@@ -109,6 +138,21 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
     for (const [_id, controls] of this._allControls) {
       controls.dispose();
     }
+    this.worlds.clear();
+  }
+
+  async fitToItems(items?: ModelIdMap) {
+    const sphere = await this.getItemsBounding(items);
+    await this.controls.fitToSphere(sphere, true);
+  }
+
+  async setOrbitToItems(items?: ModelIdMap) {
+    const sphere = await this.getItemsBounding(items);
+    this.controls.setOrbitPoint(
+      sphere.center.x,
+      sphere.center.y,
+      sphere.center.z,
+    );
   }
 
   /** {@link Updateable.update} */
@@ -137,6 +181,23 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
       this.onAspectUpdated.trigger();
     }
   };
+
+  private async getItemsBounding(items?: ModelIdMap) {
+    const fragments = this.components.get(FragmentsManager);
+    const boxer = this.components.get(BoundingBoxer);
+    boxer.list.clear();
+    const sphere = new THREE.Sphere();
+    if (items) {
+      await boxer.addFromModelIdMap(items);
+    } else {
+      for (const [, model] of fragments.list) {
+        boxer.list.add(model.box);
+      }
+    }
+    boxer.get().getBoundingSphere(sphere);
+    boxer.list.clear();
+    return sphere;
+  }
 
   private setupCamera() {
     const aspect = window.innerWidth / window.innerHeight;

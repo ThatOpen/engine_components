@@ -1,0 +1,11 @@
+import{l as p,u,V as l,f as m,a as b,C as f}from"./index-b0R13blq.js";import{C as g,W as h,S as w,O as C,F as v}from"./graphic-vertex-picker-DjytwMNw.js";import{P as y}from"./index-BMGFic9y.js";import{H as P}from"./index-DB1oElq1.js";import"./index-BOl1U6wY.js";const n=new g,S=n.get(h),e=S.create();e.scene=new w(n);e.scene.setup();e.scene.three.background=null;const k=document.getElementById("container");e.renderer=new y(n,k);e.camera=new C(n);await e.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);n.init();const L="https://thatopen.github.io/engine_fragment/resources/worker.mjs",r=n.get(v);r.init(L);e.camera.controls.addEventListener("rest",()=>r.core.update(!0));e.onCameraChanged.add(t=>{for(const[,a]of r.list)a.useCamera(t.three);r.core.update(!0)});r.list.onItemSet.add(({value:t})=>{t.useCamera(e.camera.three),e.scene.three.add(t.object),r.core.update(!0)});const B=["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];await Promise.all(B.map(async t=>{var c;const a=(c=t.split("/").pop())==null?void 0:c.split(".").shift();if(!a)return null;const d=await(await fetch(t)).arrayBuffer();return r.core.load(d,{modelId:a})}));const o=n.get(P);o.world=e;o.enabled=!0;o.material=new p({color:6629591,transparent:!0,opacity:.5,depthTest:!1});u.init();const i=l.create(()=>{const t=({target:a})=>{"color"in o.material&&o.material.color instanceof f&&o.material.color.set(a.color)};return m`
+    <bim-panel active label="Hoverer Tutorial" class="options-menu">
+      <bim-panel-section label="Controls">
+        <bim-color-input color="#${o.material.color.getHexString()}" label="Color" @input=${t}></bim-color-input>
+      </bim-panel-section>
+    </bim-panel>
+  `});document.body.append(i);const H=l.create(()=>m`
+      <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
+        @click="${()=>{i.classList.contains("options-menu-visible")?i.classList.remove("options-menu-visible"):i.classList.add("options-menu-visible")}}">
+      </bim-button>
+    `);document.body.append(H);const s=new b;s.showPanel(2);document.body.append(s.dom);s.dom.style.left="0px";s.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>s.begin());e.renderer.onAfterUpdate.add(()=>s.end());

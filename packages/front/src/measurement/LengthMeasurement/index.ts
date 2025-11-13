@@ -1,330 +1,181 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
-import { SimpleDimensionLine } from "../SimpleDimensionLine";
-import { newDimensionMark } from "../utils";
-import { GraphicVertexPicker } from "../../utils";
+import { Line } from "../../utils";
+import { Measurement } from "../Measurement";
+import { LengthMeasurerModes, LengthMeasurerTempData } from "./src";
 
 /**
  * A basic dimension tool to measure distances between 2 points in 3D and display a 3D symbol displaying the numeric value. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/LengthMeasurement). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/LengthMeasurement).
  */
-export class LengthMeasurement
-  extends OBC.Component
-  implements OBC.Createable, OBC.Hideable, OBC.Disposable, OBC.Updateable
-{
-  /**
-   * A unique identifier for the component.
-   * This UUID is used to register the component within the Components system.
-   */
-  static readonly uuid = "2f9bcacf-18a9-4be6-a293-e898eae64ea1" as const;
+export class LengthMeasurement extends Measurement<Line, "length"> {
+  static uuid = "2f9bcacf-18a9-4be6-a293-e898eae64ea1" as const;
 
-  /** {@link OBC.Disposable.onDisposed} */
-  readonly onDisposed = new OBC.Event();
-
-  /** {@link OBC.Updateable.onBeforeUpdate} */
-  readonly onBeforeUpdate = new OBC.Event<LengthMeasurement>();
-
-  /** {@link OBC.Updateable.onAfterUpdate} */
-  readonly onAfterUpdate = new OBC.Event<LengthMeasurement>();
-
-  readonly onCleaned = new OBC.Event<null>();
-
-  /** The minimum distance to force the dimension cursor to a vertex. */
-  snapDistance = 0.25;
-
-  /**
-   * A list of all the measurement elements created by this component.
-   */
-  list: SimpleDimensionLine[] = [];
-
-  /**
-   * The world in which the angle measurements are performed.
-   * This property is optional and can be set to null if no world is available.
-   */
-  world?: OBC.World;
-
-  private _vertexPicker: GraphicVertexPicker;
-
-  private _lineMaterial = new THREE.LineBasicMaterial({
-    color: "#DC2626",
-    linewidth: 2,
-    depthTest: false,
-  });
-
-  private _visible = true;
-
-  private _enabled = false;
-
-  /** Temporary variables for internal operations */
-  private _temp = {
+  private _temp: LengthMeasurerTempData = {
     isDragging: false,
-    start: new THREE.Vector3(),
-    end: new THREE.Vector3(),
-    dimension: undefined as SimpleDimensionLine | undefined,
+    line: new Line(),
   };
 
-  /** {@link OBC.Component.enabled} */
-  get enabled() {
-    return this._enabled;
-  }
+  /**
+   * The possible modes in which a measurement of this type may be created.
+   */
+  modes: LengthMeasurerModes[number][] = ["free", "edge"];
 
-  /** {@link OBC.Component.enabled} */
-  set enabled(value: boolean) {
-    if (!value) {
-      this.cancelCreation();
-    }
-    this._enabled = value;
-    this._vertexPicker.enabled = value;
-    this.setupEvents(value);
-  }
+  private _mode: LengthMeasurerModes[number] = "free";
 
-  /** {@link OBC.Hideable.visible} */
-  get visible() {
-    return this._visible;
-  }
-
-  /** {@link OBC.Hideable.visible} */
-  set visible(value: boolean) {
-    this._visible = value;
-    for (const dimension of this.list) {
-      dimension.visible = value;
-    }
+  get mode(): LengthMeasurerModes[number] {
+    return this._mode;
   }
 
   /**
-   * Getter for the color of the dimension lines.
-   * Returns the color of the line material used for the dimension lines.
-   *
+   * Represents the current measurement mode being used.
    */
-  get color() {
-    return this._lineMaterial.color;
-  }
-
-  /**
-   * Setter for the color of the dimension lines.
-   * Sets the color of the line material used for the dimension lines.
-   *
-   */
-  set color(color: THREE.Color) {
-    this._lineMaterial.color = color;
+  set mode(value: LengthMeasurerModes[number]) {
+    this._mode = value;
+    this.cancelCreation();
+    if (value === "edge") this.initPreview();
+    this.onStateChanged.trigger(["mode"]);
   }
 
   constructor(components: OBC.Components) {
-    super(components);
-    this.components.add(LengthMeasurement.uuid, this);
+    super(components, "length");
+    components.add(LengthMeasurement.uuid, this);
+    this.initHandlers();
+  }
 
-    this._vertexPicker = new GraphicVertexPicker(components, {
-      previewElement: newDimensionMark(),
-      snapDistance: this.snapDistance,
+  private initHandlers() {
+    this.list.onItemAdded.add((line) => {
+      const element = this.createLineElement(line, this._temp.startNormal);
+      element.createBoundingBox();
+      this.lines.add(element);
+    });
+
+    this.list.onBeforeDelete.add((line) => {
+      const lineElements = [...this.lines];
+      const lineElement = lineElements.find((element) => element.line === line);
+      if (lineElement) this.lines.delete(lineElement);
+    });
+
+    this.onPointerStop.add(() => this.updatePreviewLine());
+    this.onEnabledChange.add((enabled) => {
+      if (!enabled) return;
+      if (this.mode === "edge") {
+        this.initPreview();
+      }
     });
   }
 
-  /** {@link OBC.Disposable.dispose} */
-  dispose() {
-    this.setupEvents(false);
-    this.enabled = false;
-    for (const measure of this.list) {
-      measure.dispose();
+  private async initPreview() {
+    if (!this.world) {
+      throw new Error("Measurement: world is need!");
     }
-    this._lineMaterial.dispose();
-    this.list = [];
-    this._vertexPicker.dispose();
-    this.onDisposed.trigger(LengthMeasurement.uuid);
-    this.onDisposed.reset();
+
+    const pickResult = await this._vertexPicker.get({
+      snappingClasses: this.snappings,
+    });
+
+    if (this.mode === "free") {
+      if (!pickResult?.point) return;
+      const start = pickResult.point;
+      this._temp.line.set(start, start.clone());
+      this._temp.isDragging = true;
+      this._temp.dimension = this.createLineElement(this._temp.line);
+      this._temp.startNormal = pickResult.normal ?? undefined;
+    } else if (this.mode === "edge") {
+      const p1 = (pickResult as any)?.snappedEdgeP1 as
+        | THREE.Vector3
+        | undefined;
+
+      const p2 = (pickResult as any)?.snappedEdgeP2 as
+        | THREE.Vector3
+        | undefined;
+
+      const start = p1 || new THREE.Vector3();
+      const end = start || p2;
+      this._temp.line.set(start, end);
+      this._temp.isDragging = true;
+      this._temp.dimension = this.createLineElement(this._temp.line);
+      this._temp.dimension.visible = !!(p1 && p2);
+    }
   }
 
-  /** {@link OBC.Updateable.update} */
-  async update(_delta: number) {
-    if (this._enabled && this._temp.isDragging) {
-      this.drawInProcess();
+  private async updatePreviewLine() {
+    if (!this.world) {
+      throw new Error("Measurement: world is need!");
+    }
+
+    const pickResult = await this._vertexPicker.get({
+      snappingClasses: this.snappings,
+    });
+
+    if (this.mode === "free") {
+      if (!pickResult?.point) return;
+      this._temp.line.end.copy(pickResult.point);
+      if (!this._temp.dimension) return;
+      this._temp.dimension.end = this._temp.line.end;
+    } else if (this.mode === "edge") {
+      const p1 = (pickResult as any)?.snappedEdgeP1 as
+        | THREE.Vector3
+        | undefined;
+
+      const p2 = (pickResult as any)?.snappedEdgeP2 as
+        | THREE.Vector3
+        | undefined;
+
+      if (this._temp.dimension) this._temp.dimension.visible = !!(p1 && p2);
+      if (!(p1 && p2)) return;
+      this._temp.line.start.copy(p1);
+      this._temp.line.end.copy(p2);
+      if (!this._temp.dimension) return;
+      this._temp.dimension.start = this._temp.line.start;
+      this._temp.dimension.end = this._temp.line.end;
     }
   }
 
-  // TODO: The data arg needs to be better defined
-  /**
-   * Starts or finishes drawing a new dimension line.
-   *
-   * @param data - forces the dimension to be drawn on a plane. Use this if you are drawing
-   * dimensions in floor plan navigation.
-   */
-  create = (data?: any) => {
-    const plane = data instanceof THREE.Object3D ? data : undefined;
-    if (!this._enabled) return;
+  create = () => {
+    if (!this.enabled) return;
     if (!this._temp.isDragging) {
-      this.drawStart(plane);
+      this.initPreview();
       return;
     }
     this.endCreation();
   };
 
-  /**
-   * Creates a new dimension line between two given points.
-   *
-   * @param p1 - The start point of the dimension line.
-   * @param p2 - The end point of the dimension line.
-   *
-   */
-  createOnPoints(p1: THREE.Vector3, p2: THREE.Vector3) {
-    const dimension = this.drawDimension();
-    dimension.startPoint = p1;
-    dimension.endPoint = p2;
-    dimension.createBoundingBox();
-    this.list.push(dimension);
-    return dimension;
-  }
-
-  /** {@link OBC.Createable.delete} */
-  delete() {
-    if (!this.world) {
-      throw new Error("World is needed for Length Measurement!");
-    }
-    if (!this._enabled || this.list.length === 0) return;
-    const boundingBoxes = this.getBoundingBoxes();
-
-    const casters = this.components.get(OBC.Raycasters);
-    const caster = casters.get(this.world);
-    const intersect = caster.castRay(boundingBoxes);
-
-    if (!intersect) return;
-    const dimension = this.list.find(
-      (dim) => dim.boundingBox === intersect.object,
-    );
-
-    if (dimension) {
-      const index = this.list.indexOf(dimension);
-      this.list.splice(index, 1);
-      dimension.dispose();
-    }
-  }
-
-  /**
-   * Deletes a specific measurement from the list.
-   *
-   * @param measurement - The measurement to be deleted.
-   *
-   * @remarks
-   * If the measurement does not exist in the list, no action is taken.
-   *
-   */
-  async deleteMeasurement(measurement: SimpleDimensionLine) {
-    if (measurement) {
-      const index = this.list.indexOf(measurement);
-      this.list.splice(index, 1);
-      measurement.dispose();
-    }
-  }
-
-  /** Deletes all the dimensions that have been previously created. */
-  deleteAll() {
-    for (const dim of this.list) {
-      dim.dispose();
-    }
-    this.list = [];
-    this.onCleaned.trigger(null);
-  }
-
-  /** {@link OBC.Createable.cancelCreation} */
-  cancelCreation() {
+  endCreation = () => {
+    if (!this.enabled) return;
     if (!this._temp.dimension) return;
-    this._temp.isDragging = false;
-    this._temp.dimension?.dispose();
-    this._temp.dimension = undefined;
-  }
-
-  /** {@link OBC.Createable.endCreation} */
-  endCreation() {
-    if (!this._temp.dimension) return;
-    this._temp.dimension.createBoundingBox();
-    this.list.push(this._temp.dimension);
-    this._temp.dimension = undefined;
-    this._temp.isDragging = false;
-  }
-
-  private drawStart(plane?: THREE.Object3D) {
-    if (!this.world) {
-      throw new Error("The length measurement needs a world to work!");
-    }
-    const items = plane ? [plane as THREE.Mesh] : undefined;
-    const casters = this.components.get(OBC.Raycasters);
-    const caster = casters.get(this.world);
-    const intersects = caster.castRay(items);
-    const point = this._vertexPicker.get(this.world);
-    if (!(intersects && point)) {
-      return;
-    }
-    this._temp.isDragging = true;
-    this._temp.start = plane ? intersects.point : point;
-  }
-
-  private drawInProcess() {
-    if (!this.world) {
-      throw new Error("The length measurement needs a world to work!");
-    }
-    const casters = this.components.get(OBC.Raycasters);
-    const caster = casters.get(this.world);
-    const intersects = caster.castRay();
-    if (!intersects) return;
-    const found = this._vertexPicker.get(this.world);
-    if (!found) {
-      return;
-    }
-    this._temp.end = found;
-    if (!this._temp.dimension) {
-      this._temp.dimension = this.drawDimension();
-    }
-    this._temp.dimension.endPoint = this._temp.end;
-  }
-
-  private drawDimension() {
-    if (!this.world) {
-      throw new Error("The length measurement needs a world to work!");
-    }
-    return new SimpleDimensionLine(this.components, this.world, {
-      start: this._temp.start,
-      end: this._temp.end,
-      lineMaterial: this._lineMaterial,
-      endpointElement: newDimensionMark(),
-    });
-  }
-
-  private getBoundingBoxes() {
-    return this.list
-      .map((dim) => dim.boundingBox)
-      .filter((box) => box !== undefined) as THREE.Mesh[];
-  }
-
-  private setupEvents(active: boolean) {
-    if (!this.world) {
-      throw new Error("The length measurement needs a world to work!");
-    }
-    if (this.world.isDisposing) {
-      return;
-    }
-    if (!this.world.renderer) {
-      throw new Error("The world of the length measurement needs a renderer!");
-    }
-    const canvas = this.world.renderer.three.domElement;
-    const viewerContainer = canvas.parentElement as HTMLElement;
-    if (!viewerContainer) return;
-
-    viewerContainer.removeEventListener("pointermove", this.onMouseMove);
-    window.removeEventListener("keydown", this.onKeydown);
-
-    if (active) {
-      viewerContainer.addEventListener("pointermove", this.onMouseMove);
-      window.addEventListener("keydown", this.onKeydown);
-    }
-  }
-
-  private onMouseMove = () => {
-    if (this.world) {
-      this._vertexPicker.get(this.world);
+    this.list.add(this._temp.line.clone());
+    if (this.mode === "free") {
+      this._temp.dimension.dispose();
+      this._temp.dimension = undefined;
+      this._temp.isDragging = false;
+      this._temp.startNormal = undefined;
     }
   };
 
-  private onKeydown = (e: KeyboardEvent) => {
+  cancelCreation = () => {
     if (!this.enabled) return;
-    if (e.key === "Escape") {
-      this.cancelCreation();
-    }
+    this._temp.isDragging = false;
+    if (!this._temp.dimension) return;
+    this._temp.dimension?.dispose();
+    this._temp.dimension = undefined;
+  };
+
+  delete = () => {
+    if (!this.enabled) return;
+    if (this.list.size === 0 || !this.world) return;
+    const boundingBoxes = this.getLineBoxes();
+
+    const casters = this.components.get(OBC.Raycasters);
+    const caster = casters.get(this.world);
+    const intersect = caster.castRayToObjects(boundingBoxes);
+
+    if (!intersect) return;
+
+    const lineElements = [...this.lines];
+    const lineElement = lineElements.find(
+      (element) => element.boundingBox === intersect.object,
+    );
+    if (!lineElement) return;
+    this.list.delete(lineElement.line);
   };
 }
