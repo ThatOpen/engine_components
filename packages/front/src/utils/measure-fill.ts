@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
+// eslint-disable-next-line import/no-extraneous-dependencies
+import earcut from "earcut";
 import { Area } from "./area";
 import { MeasureMark } from "./measure-mark";
 
@@ -116,23 +118,34 @@ export class MeasureFill {
   private updateMesh() {
     if (this.area.points.size < 3) return;
 
-    const points = [...this.area.points];
+    const points2D = this.area.points2D;
+    if (!points2D || points2D.length < 3) return;
 
-    const vertices = points.flatMap((point) => [point.x, point.y, point.z]);
+    // Flatten 2D points for earcut triangulation
+    const flatPoints = points2D.flatMap((point) => [point.x, point.y]);
 
-    // Generate indices for the triangles (assuming the points are coplanar and ordered)
-    const indices: number[] = [];
-    for (let i = 1; i < points.length - 1; i++) {
-      indices.push(0, i, i + 1); // Create triangles from the first point and subsequent pairs
+    // Triangulate using earcut
+    const indices = earcut(flatPoints);
+
+    // Convert 2D points back to 3D for the geometry
+    const vertices: number[] = [];
+    for (const point2D of points2D) {
+      const point3D = this.area.convertPointTo3D(point2D);
+      if (point3D) {
+        vertices.push(point3D.x, point3D.y, point3D.z);
+      }
     }
 
-    this.three.geometry.dispose();
+    // Dispose old geometry if it exists
+    if (this.three.geometry) {
+      this.three.geometry.dispose();
+    }
 
+    // Create new geometry with triangulated indices
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
     geo.setIndex(indices);
     this.three.geometry = geo;
-
     this.three.material = this.material;
   }
 
