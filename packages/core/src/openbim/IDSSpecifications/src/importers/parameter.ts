@@ -23,8 +23,15 @@ export const getParameterValue = (
     if ("enumeration" in restriction) {
       result.type = "enumeration";
       const enumeration = restriction.enumeration.map(
-        ({ value }: { value: string }) =>
-          parseNumericString ? value : String(value),
+        ({ value }: { value: string }) => {
+          if (restriction.base.includes("string")) return String(value);
+          if (
+            restriction.base.includes("integer") ||
+            restriction.base.includes("double")
+          )
+            return Number(value);
+          return value;
+        },
       );
       result.parameter = enumeration;
     }
