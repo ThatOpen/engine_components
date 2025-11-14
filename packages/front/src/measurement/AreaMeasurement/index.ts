@@ -33,7 +33,7 @@ export class AreaMeasurement extends Measurement<Area, "area"> {
   /**
    * The possible modes in which a measurement of this type may be created.
    */
-  modes: AreaMeasurerModes[number][] = ["free", "square"];
+  modes: AreaMeasurerModes[number][] = ["free", "square", "face"];
 
   private _mode: AreaMeasurerModes[number] = "free";
 
@@ -165,6 +165,21 @@ export class AreaMeasurement extends Measurement<Area, "area"> {
     });
 
     if (!(pickerData && pickerData.point)) return;
+
+    if (this.mode === "face") {
+      const facePoints = pickerData.facePoints;
+      if (!facePoints) return;
+      const points: THREE.Vector3[] = [];
+      for (let i = 0; i < facePoints.length - 2; i += 3) {
+        const x = facePoints[i];
+        const y = facePoints[i + 1];
+        const z = facePoints[i + 2];
+        points.push(new THREE.Vector3(x, y, z));
+      }
+      this._temp.area.points.add(...points);
+      this.endCreation();
+      return;
+    }
 
     const { area, point } = this._temp;
 

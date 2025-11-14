@@ -14,4 +14,4 @@ export interface AreaMeasurerTempData {
 /**
  * Represents the modes available for measuring areas. `free`: Allows freeform area measurement without constraints. `square`: Restricts area measurement to square shapes.
  */
-export type AreaMeasurerModes = ["free", "square"];
+export type AreaMeasurerModes = ["free", "square", "face"];
