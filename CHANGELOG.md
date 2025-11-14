@@ -1,5 +1,33 @@
 # Changelog
 
+## [3.3.0](https://github.com/ThatOpen/engine_components/compare/v3.2.0...v3.3.0) (2025-11-14)
+
+
+### Features
+
+* Adds IDSInfo as an accessible attribute ([720f1ce](https://github.com/ThatOpen/engine_components/commit/720f1ceca819f1b33ad6d58613726d01c741e548))
+* allow to control highlighter fragment update ([226721b](https://github.com/ThatOpen/engine_components/commit/226721b68f1fe866169f2c1ce2274940178aee55))
+* **core:** implement manual mode in renderer ([4032f29](https://github.com/ThatOpen/engine_components/commit/4032f29497ac1c46d1bfced93aa7e46aac81fa88))
+* **core:** restore raycast from vector ([6ee9880](https://github.com/ThatOpen/engine_components/commit/6ee98804bafd8b3fea312d8421ae335d1203a55a))
+* **front:** add manual mode, gloss and better ao to postproduction renderer ([62e2de9](https://github.com/ThatOpen/engine_components/commit/62e2de914fcc71f3af7e56ec868a11d90322ab5e))
+* **front:** Make cluster element customizable ([#578](https://github.com/ThatOpen/engine_components/issues/578)) ([5c79467](https://github.com/ThatOpen/engine_components/commit/5c79467a1ecc5d67ebdf3457f734ce7b45286b20))
+* make ifc importer accessible in ifc loader ([2827dd8](https://github.com/ThatOpen/engine_components/commit/2827dd8de527fd9df5f4e72f430cbd86d2790294))
+* Makes IDSInfo accessible by adding the attribute. ([3abab49](https://github.com/ThatOpen/engine_components/commit/3abab4916d3983b51828df3b62a13937262f65f2))
+
+
+### Bug Fixes
+
+* allow to use measurement tools with clipping planes ([62f736c](https://github.com/ThatOpen/engine_components/commit/62f736c73c87512b1e8f4827811c9eee04fbd0c5))
+* clipper onAfterDelete method ([#633](https://github.com/ThatOpen/engine_components/issues/633)) ([a58020a](https://github.com/ThatOpen/engine_components/commit/a58020ae76f373bbb3481545b03c01cf9add2c2b))
+* correct documentation error in ifc loader ([312b8a9](https://github.com/ThatOpen/engine_components/commit/312b8a9dae70cdc809f0154772da692bfff45764))
+* correct edge measure mode example error ([c0dd98f](https://github.com/ThatOpen/engine_components/commit/c0dd98f4d664c07a106f4e8fed68edf0b161fd84))
+* correct fragments manager returning all ids with empty arrays ([211bbe0](https://github.com/ThatOpen/engine_components/commit/211bbe09367eac7806b6473498c9d19d80f550ca))
+* correct highlighter coloring with edited models ([0ffcd87](https://github.com/ThatOpen/engine_components/commit/0ffcd871804ba3744c0f10b8888389cf748b1547))
+* correct highlighter result with edited models ([a6c4452](https://github.com/ThatOpen/engine_components/commit/a6c4452c18bb9b710fc1d985355c04e525af8c11))
+* enhance parameter value handling in getParameterValue function ([#631](https://github.com/ThatOpen/engine_components/issues/631)) ([3f7041f](https://github.com/ThatOpen/engine_components/commit/3f7041f5fc41dbb085b61da363018c1ccd2264b3))
+* improve measure fill generation logic ([0fa7f17](https://github.com/ThatOpen/engine_components/commit/0fa7f17138a4fea6e77d9e8e14dd839d8f6be05b))
+* incorrect positioning of clip edges and fills in models loaded after the first ([61e0055](https://github.com/ThatOpen/engine_components/commit/61e0055b00d3654b10a282fa24832fc367fb6424))
+
 ## [3.2.0](https://github.com/ThatOpen/engine_components/compare/v3.1.0...v3.2.0) (2025-10-23)
 
 
