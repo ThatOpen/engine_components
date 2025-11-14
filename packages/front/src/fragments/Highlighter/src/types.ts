@@ -34,4 +34,6 @@ export interface HighlighterConfig {
   /** The world in which the highlighter operates. */
   world: OBC.World | null;
   selectMaterialDefinition: Omit<FRAGS.MaterialDefinition, "customId"> | null;
+  /** Whether to automatically update fragments when highlighting. */
+  autoUpdateFragments: boolean;
 }

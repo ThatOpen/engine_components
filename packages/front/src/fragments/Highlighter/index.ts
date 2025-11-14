@@ -63,6 +63,7 @@ export class Highlighter
     autoHighlightOnClick: true,
     world: null,
     selectEnabled: true,
+    autoUpdateFragments: true,
     selectMaterialDefinition: {
       color: new THREE.Color("#BCF124"),
       renderedFaces: FRAGS.RenderedFaces.ONE,
@@ -297,6 +298,12 @@ export class Highlighter
       OBC.ModelIdMapUtils.add(map, { [model.parentModelId]: ids });
     }
 
+    const selectables = this.selectable?.[name];
+    if (selectables) {
+      const selectable = OBC.ModelIdMapUtils.clone(selectables);
+      map = OBC.ModelIdMapUtils.intersect([map, selectable]);
+    }
+
     if (exclude) {
       // Include the parent modelIds in the exclusion modelIdMap from exclude
       const exclusion = OBC.ModelIdMapUtils.clone(exclude);
@@ -380,7 +387,9 @@ export class Highlighter
         fragments.highlight({ ...definition, customId: style }, map),
       );
     }
-    promises.push(fragments.core.update(true));
+    if (this.config.autoUpdateFragments) {
+      promises.push(fragments.core.update(true));
+    }
     await Promise.allSettled(promises);
   }
 
