@@ -185,13 +185,17 @@ export class GlossPass extends Pass {
         vec4 sceneColor = getValue(sceneColorBuffer, 0, 0);
         
         // Apply gloss effect
-        vec3 gloss = getValue(glossBuffer, 0, 0).xyz;        
+        vec3 gloss = getValue(glossBuffer, 0, 0).xyz;
+        // Prevent the gloss from being zero, which would break normalize() later
+        gloss = max(gloss, vec3(0.001));
         
         vec3 glossEffect = gloss * glossEnabled;
 
         // Map glossEffect to range [minGloss, maxGloss]
         // All dimensions of the glossEffect are the same, so we can use the x dimension.
         float mappedGloss = minGloss + (maxGloss - minGloss) * glossEffect.x;
+
+
         glossEffect = normalize(glossEffect) * mappedGloss;
 
         vec4 glossedColor = sceneColor + vec4(glossEffect, 0.0);
