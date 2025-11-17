@@ -167,7 +167,7 @@ export class AreaMeasurement extends Measurement<Area, "area"> {
     if (!(pickerData && pickerData.point)) return;
 
     if (this.mode === "face") {
-      const facePoints = pickerData.facePoints;
+      const facePoints = (pickerData as any).facePoints;
       if (!facePoints) return;
       const points: THREE.Vector3[] = [];
       for (let i = 0; i < facePoints.length - 2; i += 3) {
