@@ -276,6 +276,14 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         }}">
       </bim-checkbox>
 
+      <bim-checkbox checked label="SMAA enabled"
+        ?checked=${world.renderer!.postproduction.smaaEnabled}
+        @change="${({ target }: { target: BUI.Checkbox }) => {
+          world.renderer!.postproduction.smaaEnabled = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-checkbox>
+
       <bim-dropdown required label="Postproduction style"
         @change="${({ target }: { target: BUI.Dropdown }) => {
           const result = target.value[0] as OBF.PostproductionAspect;

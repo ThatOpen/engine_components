@@ -40,6 +40,7 @@ export class Postproduction {
   private _style = PostproductionAspect.COLOR;
   private _outlinesEnabled = false;
   private _glossEnabled = false;
+  private _smaaEnabled = false;
   private _excludedObjectsEnabled = false;
   private _components: OBC.Components;
   private _renderer: PostproductionRenderer;
@@ -139,6 +140,15 @@ export class Postproduction {
     this.style = this._style;
   }
 
+  get smaaEnabled() {
+    return this._smaaEnabled;
+  }
+
+  set smaaEnabled(value: boolean) {
+    this._smaaEnabled = value;
+    this.style = this._style;
+  }
+
   get style() {
     return this._style;
   }
@@ -178,6 +188,9 @@ export class Postproduction {
       if (this._excludedObjectsEnabled) {
         this._composer.addPass(this._excludedObjectsPass);
       }
+      if (this._smaaEnabled) {
+        this._composer.addPass(this._smaaPass);
+      }
       this._composer.addPass(this._outputPass);
     }
 
@@ -188,6 +201,9 @@ export class Postproduction {
       }
       if (this._excludedObjectsEnabled) {
         this._composer.addPass(this._excludedObjectsPass);
+      }
+      if (this._smaaEnabled) {
+        this._composer.addPass(this._smaaPass);
       }
     }
 
@@ -201,6 +217,9 @@ export class Postproduction {
       }
       if (this._excludedObjectsEnabled) {
         this._composer.addPass(this._excludedObjectsPass);
+      }
+      if (this._smaaEnabled) {
+        this._composer.addPass(this._smaaPass);
       }
       this._composer.addPass(this._outputPass);
     }
@@ -216,6 +235,9 @@ export class Postproduction {
       }
       if (this._excludedObjectsEnabled) {
         this._composer.addPass(this._excludedObjectsPass);
+      }
+      if (this._smaaEnabled) {
+        this._composer.addPass(this._smaaPass);
       }
       this._composer.addPass(this._outputPass);
     }
@@ -233,6 +255,9 @@ export class Postproduction {
       if (this._excludedObjectsEnabled) {
         this._composer.addPass(this._excludedObjectsPass);
       }
+      if (this._smaaEnabled) {
+        this._composer.addPass(this._smaaPass);
+      }
       this._composer.addPass(this._outputPass);
     }
 
@@ -249,6 +274,9 @@ export class Postproduction {
       }
       if (this._excludedObjectsEnabled) {
         this._composer.addPass(this._excludedObjectsPass);
+      }
+      if (this._smaaEnabled) {
+        this._composer.addPass(this._smaaPass);
       }
       this._composer.addPass(this._outputPass);
     }
