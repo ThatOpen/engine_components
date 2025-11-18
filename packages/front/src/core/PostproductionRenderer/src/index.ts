@@ -22,13 +22,13 @@ export enum PostproductionAspect {
 
 export class Postproduction {
   invisibleMaterials = new Set<THREE.Material>();
+  composer?: EffectComposer;
 
   readonly onStyleChanged = new OBC.Event<PostproductionAspect>();
 
   private _enabled = false;
   private _initialized = false;
 
-  private _composer?: EffectComposer;
   private _basePass?: BasePass;
   private _aoPass?: GTAOPass;
   private _outputPass?: OutputPass;
@@ -154,9 +154,9 @@ export class Postproduction {
   }
 
   set style(value: PostproductionAspect) {
-    if (!this._composer) return;
+    if (!this.composer) return;
     if (
-      !this._composer ||
+      !this.composer ||
       !this._basePass ||
       !this._smaaPass ||
       !this._outputPass ||
@@ -174,111 +174,110 @@ export class Postproduction {
     }
 
     this._style = value;
-    this.clearPasses();
-    this.clearComposer();
+    this.clear();
 
     if (value === PostproductionAspect.COLOR) {
-      this._composer.addPass(this._basePass);
+      this.composer.addPass(this._basePass);
       if (this._glossEnabled) {
-        this._composer.addPass(this._glossPass);
+        this.composer.addPass(this._glossPass);
       }
       if (this._outlinesEnabled) {
-        this._composer.addPass(this._simpleOutlinePass);
+        this.composer.addPass(this._simpleOutlinePass);
       }
       if (this._excludedObjectsEnabled) {
-        this._composer.addPass(this._excludedObjectsPass);
+        this.composer.addPass(this._excludedObjectsPass);
       }
       if (this._smaaEnabled) {
-        this._composer.addPass(this._smaaPass);
+        this.composer.addPass(this._smaaPass);
       }
-      this._composer.addPass(this._outputPass);
+      this.composer.addPass(this._outputPass);
     }
 
     if (value === PostproductionAspect.PEN) {
-      this._composer.addPass(this._edgeDetectionPass);
+      this.composer.addPass(this._edgeDetectionPass);
       if (this._outlinesEnabled) {
-        this._composer.addPass(this._simpleOutlinePass);
+        this.composer.addPass(this._simpleOutlinePass);
       }
       if (this._excludedObjectsEnabled) {
-        this._composer.addPass(this._excludedObjectsPass);
+        this.composer.addPass(this._excludedObjectsPass);
       }
       if (this._smaaEnabled) {
-        this._composer.addPass(this._smaaPass);
+        this.composer.addPass(this._smaaPass);
       }
     }
 
     if (value === PostproductionAspect.PEN_SHADOWS) {
-      this._composer.addPass(this._basePass);
-      this._composer.addPass(this._aoPass);
+      this.composer.addPass(this._basePass);
+      this.composer.addPass(this._aoPass);
       this._aoPass.output = GTAOPass.OUTPUT.AO;
-      this._composer.addPass(this._edgeDetectionPass);
+      this.composer.addPass(this._edgeDetectionPass);
       if (this._outlinesEnabled) {
-        this._composer.addPass(this._simpleOutlinePass);
+        this.composer.addPass(this._simpleOutlinePass);
       }
       if (this._excludedObjectsEnabled) {
-        this._composer.addPass(this._excludedObjectsPass);
+        this.composer.addPass(this._excludedObjectsPass);
       }
       if (this._smaaEnabled) {
-        this._composer.addPass(this._smaaPass);
+        this.composer.addPass(this._smaaPass);
       }
-      this._composer.addPass(this._outputPass);
+      this.composer.addPass(this._outputPass);
     }
 
     if (value === PostproductionAspect.COLOR_PEN) {
-      this._composer.addPass(this._basePass);
+      this.composer.addPass(this._basePass);
       if (this._glossEnabled) {
-        this._composer.addPass(this._glossPass);
+        this.composer.addPass(this._glossPass);
       }
-      this._composer.addPass(this._edgeDetectionPass);
+      this.composer.addPass(this._edgeDetectionPass);
       if (this._outlinesEnabled) {
-        this._composer.addPass(this._simpleOutlinePass);
+        this.composer.addPass(this._simpleOutlinePass);
       }
       if (this._excludedObjectsEnabled) {
-        this._composer.addPass(this._excludedObjectsPass);
+        this.composer.addPass(this._excludedObjectsPass);
       }
       if (this._smaaEnabled) {
-        this._composer.addPass(this._smaaPass);
+        this.composer.addPass(this._smaaPass);
       }
-      this._composer.addPass(this._outputPass);
+      this.composer.addPass(this._outputPass);
     }
 
     if (value === PostproductionAspect.COLOR_SHADOWS) {
-      this._composer.addPass(this._basePass);
+      this.composer.addPass(this._basePass);
       if (this._glossEnabled) {
-        this._composer.addPass(this._glossPass);
+        this.composer.addPass(this._glossPass);
       }
-      this._composer.addPass(this._aoPass);
+      this.composer.addPass(this._aoPass);
       this._aoPass.output = GTAOPass.OUTPUT.Default;
       if (this._outlinesEnabled) {
-        this._composer.addPass(this._simpleOutlinePass);
+        this.composer.addPass(this._simpleOutlinePass);
       }
       if (this._excludedObjectsEnabled) {
-        this._composer.addPass(this._excludedObjectsPass);
+        this.composer.addPass(this._excludedObjectsPass);
       }
       if (this._smaaEnabled) {
-        this._composer.addPass(this._smaaPass);
+        this.composer.addPass(this._smaaPass);
       }
-      this._composer.addPass(this._outputPass);
+      this.composer.addPass(this._outputPass);
     }
 
     if (value === PostproductionAspect.COLOR_PEN_SHADOWS) {
-      this._composer.addPass(this._basePass);
+      this.composer.addPass(this._basePass);
       if (this._glossEnabled) {
-        this._composer.addPass(this._glossPass);
+        this.composer.addPass(this._glossPass);
       }
-      this._composer.addPass(this._aoPass);
+      this.composer.addPass(this._aoPass);
       this._aoPass.output = GTAOPass.OUTPUT.Default;
-      this._composer.addPass(this._edgeDetectionPass);
+      this.composer.addPass(this._edgeDetectionPass);
       if (this._outlinesEnabled) {
-        this._composer.addPass(this._simpleOutlinePass);
+        this.composer.addPass(this._simpleOutlinePass);
       }
       if (this._excludedObjectsEnabled) {
-        this._composer.addPass(this._excludedObjectsPass);
+        this.composer.addPass(this._excludedObjectsPass);
       }
       if (this._smaaEnabled) {
-        this._composer.addPass(this._smaaPass);
+        this.composer.addPass(this._smaaPass);
       }
-      this._composer.addPass(this._outputPass);
+      this.composer.addPass(this._outputPass);
     }
 
     this.onStyleChanged.trigger(value);
@@ -290,19 +289,19 @@ export class Postproduction {
   }
 
   update() {
-    if (!this._composer) return;
+    if (!this.composer) return;
     for (const material of this.invisibleMaterials) {
       material.userData.wasVisibleForPostproduction = material.visible;
       material.visible = false;
     }
-    this._composer.render();
+    this.composer.render();
     for (const material of this.invisibleMaterials) {
       material.visible = material.userData.wasVisibleForPostproduction;
     }
   }
 
   dispose() {
-    this._composer?.dispose();
+    this.composer?.dispose();
     this._aoPass?.dispose();
     this._outputPass?.dispose();
     this._edgeDetectionPass?.dispose();
@@ -316,8 +315,8 @@ export class Postproduction {
     if (width === 0 || height === 0) {
       return;
     }
-    if (this._composer) {
-      this._composer.setSize(width, height);
+    if (this.composer) {
+      this.composer.setSize(width, height);
     }
     if (this._simpleOutlinePass) {
       this._simpleOutlinePass.setSize(width, height);
@@ -340,20 +339,16 @@ export class Postproduction {
     }
   }
 
-  private clearPasses() {
-    if (!this._composer) return;
-    const passes = [...this._composer.passes];
+  clear() {
+    if (!this.composer) return;
+    const passes = [...this.composer.passes];
     for (const pass of passes) {
-      this._composer.removePass(pass);
+      this.composer.removePass(pass);
     }
-  }
-
-  private clearComposer() {
-    if (!this._composer) return;
     this._renderer.three.setClearColor(0x000000, 0);
-    this._renderer.three.setRenderTarget(this._composer.renderTarget1);
+    this._renderer.three.setRenderTarget(this.composer.renderTarget1);
     this._renderer.three.clear();
-    this._renderer.three.setRenderTarget(this._composer.renderTarget2);
+    this._renderer.three.setRenderTarget(this.composer.renderTarget2);
     this._renderer.three.clear();
     this._renderer.three.setRenderTarget(null);
   }
@@ -367,7 +362,7 @@ export class Postproduction {
     // Configure renderer for transparency
     this._renderer.three.setClearColor(0x000000, 0);
 
-    this._composer = new EffectComposer(this._renderer.three);
+    this.composer = new EffectComposer(this._renderer.three);
 
     const basePass = new BasePass(scene, camera);
     this._basePass = basePass;
