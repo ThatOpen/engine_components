@@ -197,7 +197,9 @@ export class EdgeDetectionPass extends Pass {
 
     const currentScene = currentWorld.scene.three as THREE.Scene;
     const prevFog = currentScene.fog;
+    const prevBackground = currentScene.background;
     currentScene.fog = null;
+    currentScene.background = null;
 
     const previousOverrideMaterial = scene.overrideMaterial;
     scene.overrideMaterial = this._overrideMaterial;
@@ -206,6 +208,7 @@ export class EdgeDetectionPass extends Pass {
     scene.overrideMaterial = previousOverrideMaterial;
 
     currentScene.fog = prevFog;
+    currentScene.background = prevBackground;
 
     // Render edges
     this._edgeMaterial.uniforms.tDiffuse.value =
