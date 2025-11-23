@@ -14,8 +14,10 @@
 
 <h1>Open BIM Components <img src="https://thatopen.github.io/engine_components/resources/favicon.ico" width="32"/></h1>
 
-[![NPM Package][npm]][npm-url]
-[![NPM Package][npm-downloads]][npm-url]
+[![Components NPM Package][npm]][npm-url]
+[![Components NPM Package][npm-downloads]][npm-url]
+[![Components Front NPM Package][npm-front]][npm-url-front]
+[![Components Front NPM Package][npm-downloads-front]][npm-url-front]
 
 This library is a collection of BIM tools based on [Three.js](https://github.com/mrdoob/three.js/) and other libraries. It includes pre-made features to easily build browser-based 3D BIM applications, such as postproduction, dimensions, floorplan navigation, DXF export and much more. 
 
@@ -74,3 +76,6 @@ world.camera.controls.setLookAt(3, 3, 3, 0, 0, 0);
 [npm]: https://img.shields.io/npm/v/@thatopen/components
 [npm-url]: https://www.npmjs.com/package/@thatopen/components
 [npm-downloads]: https://img.shields.io/npm/dw/@thatopen/components
+[npm-front]: https://img.shields.io/npm/v/@thatopen/components-front
+[npm-url-front]: https://www.npmjs.com/package/@thatopen/components-front
+[npm-downloads-front]: https://img.shields.io/npm/dw/@thatopen/components-front
