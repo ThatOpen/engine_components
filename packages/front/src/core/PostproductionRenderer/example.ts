@@ -320,6 +320,15 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         }}">
       </bim-color-input>
 
+      <bim-dropdown label="Edges Mode"
+        @change="${({ target }: { target: BUI.Dropdown }) => {
+          edgesPass.mode = target.value[0] as OBF.EdgeDetectionPassMode;
+          updateIfManualMode();
+        }}">
+        <bim-option checked label="Default" value="${OBF.EdgeDetectionPassMode.DEFAULT}"></bim-option>
+        <bim-option label="Global" value="${OBF.EdgeDetectionPassMode.GLOBAL}"></bim-option>
+      </bim-dropdown>
+
     </bim-panel-section>
 
     <bim-panel-section label="Outline">

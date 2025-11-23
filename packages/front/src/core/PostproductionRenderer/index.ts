@@ -3,7 +3,7 @@ import * as OBC from "@thatopen/components";
 import { RendererWith2D } from "../Marker";
 import { Postproduction, PostproductionAspect } from "./src";
 
-export { PostproductionAspect, GlossPass } from "./src";
+export { PostproductionAspect, GlossPass, EdgeDetectionPassMode } from "./src";
 
 /**
  * A class that extends RendererWith2D and adds post-processing capabilities. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/PostproductionRenderer). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/PostproductionRenderer).

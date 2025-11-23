@@ -5,6 +5,20 @@ import {
 } from "three/examples/jsm/postprocessing/Pass.js";
 import * as OBC from "@thatopen/components";
 
+/**
+ * The mode of the edge detection pass.
+ */
+export enum EdgeDetectionPassMode {
+  /**
+   * Looks good, including LODs, but less performant.
+   */
+  DEFAULT,
+  /**
+   * Doesn't include LODs, but much more performant.
+   */
+  GLOBAL,
+}
+
 export class EdgeDetectionPass extends Pass {
   private _edgeMaterial: THREE.ShaderMaterial;
   private _combineMaterial: THREE.ShaderMaterial;
@@ -16,6 +30,19 @@ export class EdgeDetectionPass extends Pass {
   private _renderer: OBC.BaseRenderer;
   private _overrideMaterial: THREE.ShaderMaterial;
   private _depthBiasStrength = 0.001; // Adjustable depth bias strength
+
+  private _mode = EdgeDetectionPassMode.DEFAULT;
+
+  get mode() {
+    return this._mode;
+  }
+
+  set mode(value: EdgeDetectionPassMode) {
+    this._mode = value;
+    const currentWorld = this._renderer.currentWorld as OBC.World;
+    const scene = currentWorld!.scene.three as THREE.Scene;
+    scene.traverse((child) => this.setMaterialToMesh(child, false));
+  }
 
   get width() {
     return this._edgeMaterial.uniforms.width.value;
@@ -201,11 +228,18 @@ export class EdgeDetectionPass extends Pass {
     currentScene.fog = null;
     currentScene.background = null;
 
-    const previousOverrideMaterial = scene.overrideMaterial;
-    scene.overrideMaterial = this._overrideMaterial;
-    renderer.setRenderTarget(this._vertexColorRenderTarget);
-    renderer.render(scene, currentWorld!.camera.three);
-    scene.overrideMaterial = previousOverrideMaterial;
+    if (this._mode === EdgeDetectionPassMode.DEFAULT) {
+      scene.traverse((child) => this.setMaterialToMesh(child, true));
+      renderer.setRenderTarget(this._vertexColorRenderTarget);
+      renderer.render(scene, currentWorld!.camera.three);
+      scene.traverse((child) => this.setMaterialToMesh(child, false));
+    } else if (this._mode === EdgeDetectionPassMode.GLOBAL) {
+      const previousOverrideMaterial = scene.overrideMaterial;
+      scene.overrideMaterial = this._overrideMaterial;
+      renderer.setRenderTarget(this._vertexColorRenderTarget);
+      renderer.render(scene, currentWorld!.camera.three);
+      scene.overrideMaterial = previousOverrideMaterial;
+    }
 
     currentScene.fog = prevFog;
     currentScene.background = prevBackground;
@@ -239,5 +273,28 @@ export class EdgeDetectionPass extends Pass {
     this._fsQuad.dispose();
     this._edgeRenderTarget.dispose();
     this._vertexColorRenderTarget.dispose();
+  }
+
+  private setMaterialToMesh(object: THREE.Object3D, apply: boolean) {
+    if (!("isMesh" in object)) {
+      return;
+    }
+
+    const mesh = object as THREE.Mesh;
+
+    if (!("geometry" in mesh)) {
+      return;
+    }
+
+    if ("isLODGeometry" in mesh.geometry) {
+      return;
+    }
+
+    if (apply) {
+      mesh.userData.edgePassPreviousMaterial = mesh.material;
+      mesh.material = this._overrideMaterial;
+    } else if ("edgePassPreviousMaterial" in mesh.userData) {
+      mesh.material = mesh.userData.edgePassPreviousMaterial;
+    }
   }
 }

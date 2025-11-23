@@ -11,6 +11,10 @@ import { PostproductionRenderer } from "..";
 import { BasePass } from "./base-pass";
 import { GlossPass } from "./gloss-pass";
 
+// Export the GlossPass for external use
+export { GlossPass };
+export { EdgeDetectionPassMode } from "./edge-detection-pass";
+
 export enum PostproductionAspect {
   COLOR = 0,
   PEN = 1,
@@ -407,6 +411,3 @@ export class Postproduction {
     this.style = PostproductionAspect.COLOR;
   }
 }
-
-// Export the GlossPass for external use
-export { GlossPass };
