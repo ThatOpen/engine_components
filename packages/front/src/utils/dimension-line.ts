@@ -281,6 +281,13 @@ export class DimensionLine {
       }
       this.label.three.visible = !labelIsBehind;
     }
+
+    for (const dimension of this.rectangleDimensions) {
+      dimension.applyPlanesVisibility(planes);
+    }
+    for (const dimension of this.projectionDimensions) {
+      dimension.applyPlanesVisibility(planes);
+    }
   }
 
   /**
