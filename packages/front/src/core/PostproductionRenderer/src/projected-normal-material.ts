@@ -57,17 +57,21 @@ export function getProjectedNormalMaterial() {
       #include <clipping_planes_fragment>
       vec3 cameraPixelVec = normalize(vCameraPosition - vPosition);
       float dotProduct = dot(vNormal, cameraPixelVec);
-      float gloss = abs(dotProduct);
 
-      float fresnel = pow(1.0 - dotProduct, fresnelExponent) * fresnelFactor;
+      // Use abs() for both gloss and fresnel to handle DoubleSide materials
+      // On back faces, dotProduct is negative, which breaks the fresnel calculation
+
+      float absDotProduct = abs(dotProduct);
+      float gloss = absDotProduct;
+
+      // Use absDotProduct instead of dotProduct to prevent values > 1.0
       
-      // Apply a power function to create smoother transitions
-      // Lower gamma values (e.g., 0.3-0.5) create smoother, more gradual transitions
-      // Higher values (0.6-1.0) keep it closer to linear
+      float fresnel = pow(1.0 - absDotProduct, fresnelExponent) * fresnelFactor;
+
       gloss = pow(gloss, glossExponent) * glossFactor;
 
       float result = gloss + fresnel;
-      
+
       gl_FragColor = vec4(result, result, result, 1.);
     }
     `,
