@@ -39,9 +39,7 @@ export class EdgeDetectionPass extends Pass {
 
   set mode(value: EdgeDetectionPassMode) {
     this._mode = value;
-    const currentWorld = this._renderer.currentWorld as OBC.World;
-    const scene = currentWorld!.scene.three as THREE.Scene;
-    scene.traverse((child) => this.setMaterialToMesh(child, false));
+    this.setMaterialToMesh(false);
   }
 
   get width() {
@@ -229,10 +227,10 @@ export class EdgeDetectionPass extends Pass {
     currentScene.background = null;
 
     if (this._mode === EdgeDetectionPassMode.DEFAULT) {
-      scene.traverse((child) => this.setMaterialToMesh(child, true));
+      this.setMaterialToMesh(true);
       renderer.setRenderTarget(this._vertexColorRenderTarget);
       renderer.render(scene, currentWorld!.camera.three);
-      scene.traverse((child) => this.setMaterialToMesh(child, false));
+      this.setMaterialToMesh(false);
     } else if (this._mode === EdgeDetectionPassMode.GLOBAL) {
       const previousOverrideMaterial = scene.overrideMaterial;
       scene.overrideMaterial = this._overrideMaterial;
@@ -275,32 +273,26 @@ export class EdgeDetectionPass extends Pass {
     this._vertexColorRenderTarget.dispose();
   }
 
-  private setMaterialToMesh(object: THREE.Object3D, apply: boolean) {
-    if (!("isMesh" in object)) {
-      return;
-    }
+  private setMaterialToMesh(apply: boolean) {
+    for (const [, model] of this._fragments.core.models.list) {
+      for (const [, mesh] of model.tiles) {
+        if ("isLODGeometry" in mesh.geometry) {
+          continue;
+        }
 
-    const mesh = object as THREE.Mesh;
+        // This might break for objects with multiple materials
+        // but to prevent overengineering, let's leave it for now
+        if (!Array.isArray(mesh.material) && mesh.material.visible === false) {
+          continue;
+        }
 
-    if (!("geometry" in mesh)) {
-      return;
-    }
-
-    if ("isLODGeometry" in mesh.geometry) {
-      return;
-    }
-
-    // This might break for objects with multiple materials
-    // but to prevent overengineering, let's leave it for now
-    if (!Array.isArray(mesh.material) && mesh.material.visible === false) {
-      return;
-    }
-
-    if (apply) {
-      mesh.userData.edgePassPreviousMaterial = mesh.material;
-      mesh.material = this._overrideMaterial;
-    } else if ("edgePassPreviousMaterial" in mesh.userData) {
-      mesh.material = mesh.userData.edgePassPreviousMaterial;
+        if (apply) {
+          mesh.userData.edgePassPreviousMaterial = mesh.material;
+          mesh.material = this._overrideMaterial;
+        } else if ("edgePassPreviousMaterial" in mesh.userData) {
+          mesh.material = mesh.userData.edgePassPreviousMaterial;
+        }
+      }
     }
   }
 }
