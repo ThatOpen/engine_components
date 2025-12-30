@@ -305,7 +305,7 @@ export class Highlighter
     }
 
     if (exclude) {
-      // Include the parent modelIds in the exclusion modelIdMap from exclude
+      // Include the delta models
       const exclusion = OBC.ModelIdMapUtils.clone(exclude);
       for (const [modelId, ids] of Object.entries(exclusion)) {
         const model = fragments.list.get(modelId);
@@ -313,7 +313,7 @@ export class Highlighter
         OBC.ModelIdMapUtils.add(exclusion, { [model.deltaModelId]: ids });
       }
 
-      map = OBC.ModelIdMapUtils.intersect([map, exclude]);
+      OBC.ModelIdMapUtils.remove(map, exclude);
     }
 
     // Apply autotoggle when picking with the mouse
