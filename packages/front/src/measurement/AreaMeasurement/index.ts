@@ -57,6 +57,9 @@ export class AreaMeasurement extends Measurement<Area, "area"> {
     point: new THREE.Vector3(),
   };
 
+  // WeakMap to track which area each line belongs to
+  private _lineToAreaMap = new WeakMap<DimensionLine, Area>();
+
   constructor(components: OBC.Components) {
     super(components, "area");
     components.add(AreaMeasurement.uuid, this);
@@ -76,12 +79,26 @@ export class AreaMeasurement extends Measurement<Area, "area"> {
       const fill = this.createFillElement(area);
       fill.color = this.color;
       this.fills.add(fill);
-      this.addLineElementsFromPoints([...area.points]);
+      this.addLineElementsFromPointsForArea([...area.points], area);
     });
 
     this.list.onBeforeDelete.add((area) => {
       const fill = [...this.fills].find((fill) => fill.area === area);
       if (fill) this.fills.delete(fill);
+
+      // Remove lines associated with this area using the WeakMap
+      const linesToDelete: DimensionLine[] = [];
+      for (const dimensionLine of this.lines) {
+        const associatedArea = this._lineToAreaMap.get(dimensionLine);
+        if (associatedArea === area) {
+          linesToDelete.push(dimensionLine);
+        }
+      }
+
+      for (const line of linesToDelete) {
+        this.lines.delete(line);
+        this._lineToAreaMap.delete(line);
+      }
     });
 
     this.onPointerStop.add(() => this.updatePreview());
@@ -238,6 +255,21 @@ export class AreaMeasurement extends Measurement<Area, "area"> {
     this._temp.lines.clear();
   };
 
+  private addLineElementsFromPointsForArea(
+    points: THREE.Vector3[],
+    area: Area,
+  ) {
+    for (let i = 0; i < points.length; i++) {
+      const start = points[i];
+      const end = points[(i + 1) % points.length];
+      const line = new Line(start, end);
+      const dimensionLine = this.createLineElement(line);
+      dimensionLine.label.visible = false;
+      this.lines.add(dimensionLine);
+      this._lineToAreaMap.set(dimensionLine, area);
+    }
+  }
+
   delete = () => {
     if (!this.enabled) return;
     if (this.list.size === 0 || !this.world) return;
@@ -245,17 +277,18 @@ export class AreaMeasurement extends Measurement<Area, "area"> {
     const casters = this.components.get(OBC.Raycasters);
     const caster = casters.get(this.world);
     const intersect = caster.castRayToObjects(boundingBoxes);
-    const disposer = this.components.get(OBC.Disposer);
-    for (const box of boundingBoxes) {
-      disposer.destroy(box);
-    }
     if (!intersect) return;
     const fillElements = [...this.fills];
     const element = fillElements.find(
       (element) => element.three === intersect.object,
     );
     if (!element) return;
-    this.list.delete(element.area);
-    this.lines.clear();
+
+    const areaToDelete = element.area;
+    this.fills.delete(element);
+    this.list.delete(areaToDelete);
+
+    const disposer = this.components.get(OBC.Disposer);
+    disposer.destroy(intersect.object);
   };
 }
