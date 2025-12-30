@@ -10,6 +10,9 @@ import { Mesher } from "../Mesher";
 export class Hoverer extends OBC.Component implements OBC.Disposable {
   static uuid = "26fbd870-b1b2-4b71-b747-4063d484de1b" as const;
 
+  readonly onHoverStarted = new OBC.Event<Hoverer>();
+  readonly onHoverEnded = new OBC.Event<Hoverer>();
+
   private HOVERER_OPACITY_KEY = "_maxHoverOpacity";
   private _hoverTimeout: number | null = null;
   private _meshes = new DataSet<THREE.Mesh>();
@@ -146,6 +149,7 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
     } else {
       if (!fadeIn) this._meshes.clear();
       this._fadeAnimation = null;
+      this.onHoverEnded.trigger(this);
     }
   };
 
@@ -190,6 +194,7 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
         fadeIn: true,
       };
 
+      this.onHoverStarted.trigger(this);
       this.animate();
     }, 100);
   }
@@ -203,6 +208,8 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
     this._meshes.clear();
     this._fadeAnimation = null;
     this._hoverTimeout = null;
+    this.onHoverStarted.reset();
+    this.onHoverEnded.reset();
     this.onDisposed.trigger();
   }
 }
