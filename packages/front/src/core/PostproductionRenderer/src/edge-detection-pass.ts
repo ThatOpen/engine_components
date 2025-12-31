@@ -279,16 +279,9 @@ export class EdgeDetectionPass extends Pass {
         if ("isLODGeometry" in mesh.geometry) {
           continue;
         }
-
-        // This might break for objects with multiple materials
-        // but to prevent overengineering, let's leave it for now
-        if (!Array.isArray(mesh.material) && mesh.material.visible === false) {
-          continue;
-        }
-
         if (apply) {
           mesh.userData.edgePassPreviousMaterial = mesh.material;
-          mesh.material = this._overrideMaterial;
+          mesh.material = [this._overrideMaterial];
         } else if ("edgePassPreviousMaterial" in mesh.userData) {
           mesh.material = mesh.userData.edgePassPreviousMaterial;
         }
