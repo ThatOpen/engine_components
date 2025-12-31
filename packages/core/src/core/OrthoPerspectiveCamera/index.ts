@@ -4,7 +4,6 @@ import { SimpleCamera } from "..";
 
 import {
   NavigationMode,
-  NavModeID,
   ProjectionManager,
   OrbitMode,
   FirstPersonMode,
