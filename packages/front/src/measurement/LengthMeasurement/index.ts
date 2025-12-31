@@ -36,6 +36,10 @@ export class LengthMeasurement extends Measurement<Line, "length"> {
     this.onStateChanged.trigger(["mode"]);
   }
 
+  get isDragging(): boolean {
+    return this._temp.isDragging;
+  }
+
   constructor(components: OBC.Components) {
     super(components, "length");
     components.add(LengthMeasurement.uuid, this);
@@ -131,10 +135,10 @@ export class LengthMeasurement extends Measurement<Line, "length"> {
     }
   }
 
-  create = () => {
+  create = async () => {
     if (!this.enabled) return;
     if (!this._temp.isDragging) {
-      this.initPreview();
+      await this.initPreview();
       return;
     }
     this.endCreation();
