@@ -37,7 +37,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
 
   protected readonly _userInputButtons: any = {};
   protected readonly _frustumSize = 50;
-  protected readonly _navigationModes = new Map<NavModeID, NavigationMode>();
+  protected readonly _navigationModes = new Map<string, NavigationMode>();
   protected _mode: NavigationMode | null = null;
 
   private previousSize: THREE.Vector2 | null = null;
@@ -102,7 +102,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
    *
    * @param mode - The {@link NavigationMode} to set.
    */
-  set(mode: NavModeID) {
+  set(mode: string) {
     if (this.mode === null) return;
     if (this.mode.id === mode) return;
     this.mode.set(false);
@@ -173,6 +173,15 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
     } else {
       this.disableUserInput();
     }
+  }
+
+  /**
+   * Adds a custom {@link NavigationMode} to the camera that can be used using the {@link OrthoPerspectiveCamera.set} method.
+   *
+   * @param mode - The custom {@link NavigationMode} to add.
+   */
+  addCustomNavigationMode(mode: NavigationMode) {
+    this._navigationModes.set(mode.id, mode);
   }
 
   private disableUserInput() {
