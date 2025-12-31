@@ -107,7 +107,9 @@ export class VolumeMeasurement extends Measurement<Volume, "volume"> {
     const pickResult = (await this._vertexPicker.get()) as any;
     if (!pickResult) return;
 
-    if (!this._temp.preview) this.initPreview();
+    if (!this._temp.preview) {
+      await this.initPreview();
+    }
 
     this._temp.preview!.volume.items = OBC.ModelIdMapUtils.join([
       this._temp.preview!.volume.items,
