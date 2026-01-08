@@ -48,6 +48,10 @@ components.get(OBC.Grids).create(world);
 /* MD
   ### ✨ Utilizing the FragmentsManager Component
   Great! With the base viewer setup complete, let's dive into using the FragmentsManager component. This component serves as a convenient wrapper around the core FragmentsModels class from the `@thatopen/fragments` library. One of the key advantages of using Fragments in That Open Engine is its worker-based architecture, which offloads most operations (data retrieval, visibility management, color adjustments, etc.) to a separate thread. This ensures that the app remains responsive during processing. To get started, the first step is to specify the URL of the Fragments worker:
+
+  :::info Which Fragments Class Should You Use?
+  When using the Components libraries, you should not use FragmentsModels directly. Instead, always use FragmentsManager. FragmentsManager is designed to integrate Fragments with the Components ecosystem, ensuring compatibility with pre-built features (such as Highlighter, Measurement, and more). Using FragmentsModels directly when Components are involved may cause these features to not work correctly with the loaded fragments!
+  :::
 */
 
 // One option, if you prefer not to rely on an external worker file,
