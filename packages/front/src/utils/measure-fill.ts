@@ -151,7 +151,7 @@ export class MeasureFill {
 
   update() {
     this.updateMesh();
-    if (this.area.value === 0) {
+    if (this.area.rawValue === 0) {
       this.label.visible = false;
     } else {
       this.label.value = this.area.rawValue;

@@ -50,7 +50,7 @@ export class MeasurementUtils extends Component {
     point: THREE.Vector3,
     lineStart: THREE.Vector3,
     lineEnd: THREE.Vector3,
-    clamp = false,
+    clamp = false
   ) {
     const tempLine = new THREE.Line3();
     const tempPoint = new THREE.Vector3();
@@ -294,7 +294,7 @@ export class MeasurementUtils extends Component {
    */
   async getVolumeFromFragments(modelIdMap: ModelIdMap) {
     console.warn(
-      "getVolumeFromFragments is deprecated. Use getItemsVolume instead.",
+      "getVolumeFromFragments is deprecated. Use getItemsVolume instead."
     );
     return this.getItemsVolume(modelIdMap);
   }
@@ -395,7 +395,7 @@ export class MeasurementUtils extends Component {
     value: number,
     fromUnit: string,
     toUnit: string,
-    precision = 2,
+    precision = 2
   ): number {
     const unitFactors: Record<string, number> = {
       // Length
@@ -424,13 +424,6 @@ export class MeasurementUtils extends Component {
     }
 
     let factor = unitFactors[fromUnit] / unitFactors[toUnit];
-
-    // Adjust factor for area or volume conversions
-    if (fromUnit.endsWith("2") && toUnit.endsWith("2")) {
-      factor **= 2;
-    } else if (fromUnit.endsWith("3") && toUnit.endsWith("3")) {
-      factor **= 3;
-    }
 
     const convertedValue = value * factor;
     const roundingFactor = 10 ** precision;
