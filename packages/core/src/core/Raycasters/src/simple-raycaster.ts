@@ -4,6 +4,7 @@ import { Components } from "../../Components";
 import { Component, Event, World, Disposable } from "../../Types";
 import { Mouse } from "./mouse";
 import { FragmentsManager } from "../../../fragments";
+import { FastModelPickers } from "../../FastModelPicker";
 
 /**
  * A simple [raycaster](https://threejs.org/docs/#api/en/core/Raycaster) that allows to easily get items from the scene using the mouse and touch events.
@@ -32,6 +33,14 @@ export class SimpleRaycaster implements Disposable {
    * This is used to access the camera and meshes.
    */
   world: World;
+
+  /**
+   * Whether to use fast model picking to optimize raycasting.
+   * When enabled, the raycaster will first use FastModelPicker to identify
+   * which model is under the mouse, then only raycast that specific model.
+   * This can significantly improve performance when there are many models.
+   */
+  useFastModelPicking = false;
 
   constructor(components: Components, world: World) {
     const renderer = world.renderer;
@@ -94,19 +103,57 @@ export class SimpleRaycaster implements Disposable {
       | THREE.OrthographicCamera;
 
     // Raycast the BIM models
-
     const fragments = this.components.get(FragmentsManager);
     const dom = this.world.renderer!.three.domElement;
     const mouse = this.mouse.rawPosition;
     let fragResult: any = null;
 
     if (fragments.initialized) {
-      fragResult = await fragments.raycast({
-        camera,
-        dom,
-        mouse,
-        snappingClasses,
-      });
+      // Use fast model picking if enabled
+      if (this.useFastModelPicking) {
+        const fastPickers = this.components.get(FastModelPickers);
+        const fastPicker = fastPickers.get(this.world);
+        const modelId = await fastPicker.getModelAt(position);
+
+        if (modelId) {
+          // Only raycast the specific model identified by fast picking
+          const model = fragments.list.get(modelId);
+          if (model) {
+            if (snappingClasses && snappingClasses.length > 0) {
+              const snappingRaycast = await model.raycastWithSnapping({
+                camera,
+                dom,
+                mouse,
+                snappingClasses,
+              } as FRAGS.SnappingRaycastData);
+              if (snappingRaycast && snappingRaycast.length > 0) {
+                fragResult = snappingRaycast[0];
+              } else {
+                fragResult = await model.raycast({
+                  camera,
+                  dom,
+                  mouse,
+                });
+              }
+            } else {
+              fragResult = await model.raycast({
+                camera,
+                dom,
+                mouse,
+              });
+            }
+          }
+        }
+        // If fast picking didn't find a model, fragResult remains null
+      } else {
+        // Original behavior: raycast all models
+        fragResult = await fragments.raycast({
+          camera,
+          dom,
+          mouse,
+          snappingClasses,
+        });
+      }
       if (items.length === 0) {
         return fragResult;
       }
