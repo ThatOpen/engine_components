@@ -155,6 +155,16 @@ export class SimplePlane implements Disposable, Hideable {
     return this._helper;
   }
 
+  /**
+   * Getter for the transform controls of the clipping plane.
+   * The controls allow interactive manipulation (translation, rotation, etc.) of the clipping plane.
+   *
+   * @returns {TransformControls} The transform controls of the clipping plane.
+   */
+  get controls() {
+    return this._controls;
+  }
+
   constructor(
     components: Components,
     world: World,

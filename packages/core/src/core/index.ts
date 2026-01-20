@@ -10,3 +10,4 @@ export * from "./Viewpoints";
 export * from "./Clipper";
 export * from "./Views";
 export * from "./ShadowedScene";
+export * from "./FastModelPicker";
