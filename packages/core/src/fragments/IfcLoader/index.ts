@@ -90,6 +90,25 @@ export class IfcLoader extends Component implements Disposable {
   /**
    * Loads an IFC file and processes it for 3D visualization.
    *
+   * By default, the loader imports a minimal set of attributes and relations
+   * needed for typical visualization workflows.
+   *
+   * **Default attributes**
+   * - Base entities: Project, Site, Building, BuildingStorey
+   * - Materials: IFC material definitions and layers
+   * - Properties: Property Sets, quantities (area, volume, length, etc.)
+   *
+   * **Default relations**
+   * - DefinesByProperties (IsDefinedBy / DefinesOccurrence)
+   * - AssociatesMaterial (HasAssociations / AssociatedTo)
+   * - Aggregates (IsDecomposedBy / Decomposes)
+   * - ContainedInSpatialStructure (ContainsElements / ContainedInStructure)
+   *
+   * If you need *all* attributes or relations to be loaded, you can enable them
+   * via the config options:
+   * - `addAllAttributes`: include all attributes
+   * - `addAllRelations`: include all relations
+   *
    * @param data - The Uint8Array containing the IFC file data.
    * @param coordinate - Boolean indicating whether to coordinate the loaded IFC data. Default is true.
    * @param name - Name for the fragments model.
