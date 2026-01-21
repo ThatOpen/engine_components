@@ -111,6 +111,8 @@ export class IfcLoader extends Component implements Disposable {
       userData?: Record<string, any>;
       processData?: Omit<FRAGS.ProcessData, "bytes">;
       instanceCallback?: (importer: FRAGS.IfcImporter) => void;
+      addAllAttributes?: boolean;
+      addAllRelations?: boolean;
     },
   ) {
     const fragments = this.components.get(FragmentsManager);
@@ -128,6 +130,9 @@ export class IfcLoader extends Component implements Disposable {
     serializer.wasm.path = this.settings.wasm.path;
     serializer.wasm.absolute = this.settings.wasm.absolute;
     serializer.webIfcSettings = this.settings.webIfc;
+
+    if (config?.addAllAttributes) serializer.addAllAttributes();
+    if (config?.addAllRelations) serializer.addAllRelations();
 
     this.onIfcImporterInitialized.trigger(serializer);
 
