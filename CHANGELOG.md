@@ -1,5 +1,54 @@
 # Changelog
 
+## [3.3.0](https://github.com/ThatOpen/engine_components/compare/v3.2.0...v3.3.0) (2026-01-22)
+
+
+### Features
+
+* add events for before and after hover ([73bb498](https://github.com/ThatOpen/engine_components/commit/73bb4985d7992cd69cfa8bbaa93131f2e8aecd60))
+* add smaa pass to postproduction ([eabadad](https://github.com/ThatOpen/engine_components/commit/eabadadd83b7cfac28c6396b1708464e9ae4c60d))
+* Adds IDSInfo as an accessible attribute ([720f1ce](https://github.com/ThatOpen/engine_components/commit/720f1ceca819f1b33ad6d58613726d01c741e548))
+* allow to add new navigation modes ([7dadb10](https://github.com/ThatOpen/engine_components/commit/7dadb10211c289af26118385e3b54aa68010508b))
+* allow to control highlighter fragment update ([226721b](https://github.com/ThatOpen/engine_components/commit/226721b68f1fe866169f2c1ce2274940178aee55))
+* **core:** implement manual mode in renderer ([4032f29](https://github.com/ThatOpen/engine_components/commit/4032f29497ac1c46d1bfced93aa7e46aac81fa88))
+* **core:** restore raycast from vector ([6ee9880](https://github.com/ThatOpen/engine_components/commit/6ee98804bafd8b3fea312d8421ae335d1203a55a))
+* expose clipping plane control object ([31bda79](https://github.com/ThatOpen/engine_components/commit/31bda791fa924251e3dc1b45e8720954a104af4b))
+* expose postproduction composer ([ad45d28](https://github.com/ThatOpen/engine_components/commit/ad45d28adad24297301ed076aeb6fa76d45ef86f))
+* **front:** add manual mode, gloss and better ao to postproduction renderer ([62e2de9](https://github.com/ThatOpen/engine_components/commit/62e2de914fcc71f3af7e56ec868a11d90322ab5e))
+* **front:** Make cluster element customizable ([#578](https://github.com/ThatOpen/engine_components/issues/578)) ([5c79467](https://github.com/ThatOpen/engine_components/commit/5c79467a1ecc5d67ebdf3457f734ce7b45286b20))
+* implement face mode ([bade6cc](https://github.com/ThatOpen/engine_components/commit/bade6ccc59457fb20cba4394260629d7bee1ed2f))
+* implement fast model picker ([cf73533](https://github.com/ThatOpen/engine_components/commit/cf73533f1b0d54d08837833b652b0d0fb7659f55))
+* implement lod edges ([95fff62](https://github.com/ThatOpen/engine_components/commit/95fff62456897673e42690f2fa593688b828b344))
+* make gloss work with double sided materials ([ca57d69](https://github.com/ThatOpen/engine_components/commit/ca57d69f0e666f906c7a1bd6f230a19416667066))
+* make ifc importer accessible in ifc loader ([2827dd8](https://github.com/ThatOpen/engine_components/commit/2827dd8de527fd9df5f4e72f430cbd86d2790294))
+* Makes IDSInfo accessible by adding the attribute. ([3abab49](https://github.com/ThatOpen/engine_components/commit/3abab4916d3983b51828df3b62a13937262f65f2))
+* misc release updates ([39f1418](https://github.com/ThatOpen/engine_components/commit/39f14189c9ffeae2b00951eea8fc19601a588c96))
+
+
+### Bug Fixes
+
+* add missing await in volume measurer ([e6d4d12](https://github.com/ThatOpen/engine_components/commit/e6d4d124fc21cc6805b83e90f399da3a37ad826b))
+* allow to use measurement tools with clipping planes ([62f736c](https://github.com/ThatOpen/engine_components/commit/62f736c73c87512b1e8f4827811c9eee04fbd0c5))
+* apply clipping planes to rectangular dimensions ([0c7e478](https://github.com/ThatOpen/engine_components/commit/0c7e47836b98dce689824f8d30e45099c48a612b))
+* Area Measurement units and MeasureMark visibility ([#673](https://github.com/ThatOpen/engine_components/issues/673)) ([434996a](https://github.com/ThatOpen/engine_components/commit/434996a70dee22d8c2d54e3871530d44227de8ea))
+* clipper onAfterDelete method ([#633](https://github.com/ThatOpen/engine_components/issues/633)) ([a58020a](https://github.com/ThatOpen/engine_components/commit/a58020ae76f373bbb3481545b03c01cf9add2c2b))
+* correct documentation error in ifc loader ([312b8a9](https://github.com/ThatOpen/engine_components/commit/312b8a9dae70cdc809f0154772da692bfff45764))
+* correct edge measure mode example error ([c0dd98f](https://github.com/ThatOpen/engine_components/commit/c0dd98f4d664c07a106f4e8fed68edf0b161fd84))
+* correct edge style breaking with control gizmos ([cb4c5ab](https://github.com/ThatOpen/engine_components/commit/cb4c5ab2132462d0718a81b4acda1d0009c69bc2))
+* correct fragments manager returning all ids with empty arrays ([211bbe0](https://github.com/ThatOpen/engine_components/commit/211bbe09367eac7806b6473498c9d19d80f550ca))
+* correct highlighter coloring with edited models ([0ffcd87](https://github.com/ThatOpen/engine_components/commit/0ffcd871804ba3744c0f10b8888389cf748b1547))
+* correct highlighter result with edited models ([a6c4452](https://github.com/ThatOpen/engine_components/commit/a6c4452c18bb9b710fc1d985355c04e525af8c11))
+* correct highlighting exclude logic ([4b07750](https://github.com/ThatOpen/engine_components/commit/4b077502ff62801836148e3d28df60c96e2d261b))
+* correct visibility issue in edge pass ([35cfee0](https://github.com/ThatOpen/engine_components/commit/35cfee04ccb7da810f9a7ec3c8a54be2678e177f))
+* enhance parameter value handling in getParameterValue function ([#631](https://github.com/ThatOpen/engine_components/issues/631)) ([3f7041f](https://github.com/ThatOpen/engine_components/commit/3f7041f5fc41dbb085b61da363018c1ccd2264b3))
+* fix async create method in length measurements ([392906b](https://github.com/ThatOpen/engine_components/commit/392906b5931d4aed1d626cacf4c6b9ed76e21d48))
+* improve measure fill generation logic ([0fa7f17](https://github.com/ThatOpen/engine_components/commit/0fa7f17138a4fea6e77d9e8e14dd839d8f6be05b))
+* incorrect positioning of clip edges and fills in models loaded after the first ([61e0055](https://github.com/ThatOpen/engine_components/commit/61e0055b00d3654b10a282fa24832fc367fb6424))
+* prevent zero gloss bug ([0ee8209](https://github.com/ThatOpen/engine_components/commit/0ee8209da1384d9201078ba9abc06cba28840e70))
+* remove background from edge pass ([3838e00](https://github.com/ThatOpen/engine_components/commit/3838e00bc539c33be775f317e3d4795c7f687ba4))
+* solve error when deleting area measurements ([630c8a5](https://github.com/ThatOpen/engine_components/commit/630c8a52b619714a1e939602d38313dee055afe8))
+* take invisible materials out of edges ([29be7d6](https://github.com/ThatOpen/engine_components/commit/29be7d6e6f894d9788c65a628f509951533c9244))
+
 ## [3.2.0](https://github.com/ThatOpen/engine_components/compare/v3.1.0...v3.2.0) (2025-10-23)
 
 
