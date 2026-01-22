@@ -150,6 +150,70 @@ measurer.list.onItemAdded.add((area) => {
 });
 
 /* MD
+  ### 🧹 Synchronous Picking
+  ---
+  By default, the picking is asynchronous, which means that the picking result is not available immediately. This saves some memory. However, you can enable synchronous picking by setting the `pickerMode` property to `GraphicVertexPickerMode.SYNCHRONOUS`. This will make the picking result available a lot faster. To do that, you'll need to generate the geometries of the models and add them to the world.meshes collection.
+*/
+
+const meshes: THREE.Mesh[] = [];
+
+// Add picking meshes (deduplicating geometries to save memory)
+const model = fragments.list.values().next().value!;
+const idsWithGeometry = await model.getItemsIdsWithGeometry();
+const allMeshesData = await model.getItemsGeometry(idsWithGeometry);
+
+const geometries = new Map<number, THREE.BufferGeometry>();
+
+for (const itemId in allMeshesData) {
+  const meshData = allMeshesData[itemId];
+  for (const geomData of meshData) {
+    if (
+      !geomData.positions ||
+      !geomData.indices ||
+      !geomData.transform ||
+      !geomData.representationId
+    ) {
+      continue;
+    }
+
+    const representationId = geomData.representationId;
+    if (!geometries.has(representationId)) {
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(geomData.positions, 3),
+      );
+      geometry.setIndex(Array.from(geomData.indices));
+      geometries.set(representationId, geometry);
+    }
+
+    const geometry = geometries.get(representationId)!;
+
+    const mesh = new THREE.Mesh(geometry);
+    mesh.applyMatrix4(geomData.transform);
+    mesh.updateWorldMatrix(true, true);
+    meshes.push(mesh);
+  }
+}
+
+const pastDelay = measurer.delay;
+const makeSynchronous = async (value: boolean) => {
+  if (value) {
+    measurer.pickerMode = OBF.GraphicVertexPickerMode.SYNCHRONOUS;
+    measurer.delay = 0;
+    for (const mesh of meshes) {
+      world.meshes.add(mesh);
+    }
+    return;
+  }
+  measurer.pickerMode = OBF.GraphicVertexPickerMode.DEFAULT;
+  measurer.delay = pastDelay;
+  for (const mesh of meshes) {
+    world.meshes.delete(mesh);
+  }
+};
+
+/* MD
   ### 🧩 Adding some UI (optional but recommended)
   We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
 */
@@ -185,6 +249,12 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           }}">  
         </bim-checkbox>  
         
+        <bim-checkbox label="Synchronous Picking" 
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            makeSynchronous(target.value);
+          }}">  
+        </bim-checkbox>  
+        
         <bim-color-input 
           label="Color" color=#${measurer.linesMaterial.color.getHexString()}
           @input="${({ target }: { target: BUI.ColorInput }) => {
@@ -216,7 +286,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         </bim-dropdown>
 
         <bim-dropdown 
-          label="Pricision" required
+          label="Precision" required
           @change="${({ target }: { target: BUI.Dropdown }) => {
             const [rounding] = target.value;
             measurer.rounding = rounding;
