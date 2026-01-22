@@ -118,14 +118,20 @@ export class IfcLoader extends Component implements Disposable {
    * @returns A Promise that resolves to the FragmentsModel containing the loaded and processed IFC data.
    *
    * @example
-   * ```typescript
-   * const ifcLoader = components.get(IfcLoader);
-   * const model = await ifcLoader.load(ifcData, true, "modelName",{
+   * // Load all attributes and relations using the instanceCallback
+   * ```ts
+   * const model = await ifcLoader.load(ifcData, true, "modelName", {
    *   instanceCallback: (importer) => {
    *     importer.addAllAttributes();
    *     importer.addAllRelations();
    *   },
    * });
+   * ```
+   * @example
+   * // Default loading (built-in attributes and relations only)
+   * ```typescript
+   * const ifcLoader = components.get(IfcLoader);
+   * const model = await ifcLoader.load(ifcData);
    * ```
    */
   async load(
