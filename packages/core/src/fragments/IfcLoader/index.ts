@@ -105,9 +105,10 @@ export class IfcLoader extends Component implements Disposable {
    * - ContainedInSpatialStructure (ContainsElements / ContainedInStructure)
    *
    * If you need *all* attributes or relations to be loaded, you can enable them
-   * via the config options:
-   * - `addAllAttributes`: include all attributes
-   * - `addAllRelations`: include all relations
+   * via the `instanceCallback`.
+   *
+   * The callback provides direct access to the underlying `IfcImporter`,
+   * allowing advanced configuration before processing begins.
    *
    * @param data - The Uint8Array containing the IFC file data.
    * @param coordinate - Boolean indicating whether to coordinate the loaded IFC data. Default is true.
@@ -119,7 +120,12 @@ export class IfcLoader extends Component implements Disposable {
    * @example
    * ```typescript
    * const ifcLoader = components.get(IfcLoader);
-   * const model = await ifcLoader.load(ifcData);
+   * const model = await ifcLoader.load(ifcData, true, "modelName",{
+   *   instanceCallback: (importer) => {
+   *     importer.addAllAttributes();
+   *     importer.addAllRelations();
+   *   },
+   * });
    * ```
    */
   async load(
@@ -130,8 +136,6 @@ export class IfcLoader extends Component implements Disposable {
       userData?: Record<string, any>;
       processData?: Omit<FRAGS.ProcessData, "bytes">;
       instanceCallback?: (importer: FRAGS.IfcImporter) => void;
-      addAllAttributes?: boolean;
-      addAllRelations?: boolean;
     },
   ) {
     const fragments = this.components.get(FragmentsManager);
@@ -149,9 +153,6 @@ export class IfcLoader extends Component implements Disposable {
     serializer.wasm.path = this.settings.wasm.path;
     serializer.wasm.absolute = this.settings.wasm.absolute;
     serializer.webIfcSettings = this.settings.webIfc;
-
-    if (config?.addAllAttributes) serializer.addAllAttributes();
-    if (config?.addAllRelations) serializer.addAllRelations();
 
     this.onIfcImporterInitialized.trigger(serializer);
 
