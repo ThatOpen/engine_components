@@ -384,6 +384,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@kurkle/color@npm:^0.3.0":
+  version: 0.3.4
+  resolution: "@kurkle/color@npm:0.3.4"
+  checksum: b95c6abe0241ba1745b3c84de3b464296b95ce577110b54f46e6c6dcc9a0966491533df43812bd6c66f92cf818e385d1390b280cd5851d4afb52fc37f8a6c0b9
+  languageName: node
+  linkType: hard
+
 "@lit-labs/ssr-dom-shim@npm:^1.2.0":
   version: 1.3.0
   resolution: "@lit-labs/ssr-dom-shim@npm:1.3.0"
@@ -391,7 +398,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lit/reactive-element@npm:^2.0.4, @lit/reactive-element@npm:^2.1.0":
+"@lit-labs/ssr-dom-shim@npm:^1.5.0":
+  version: 1.5.1
+  resolution: "@lit-labs/ssr-dom-shim@npm:1.5.1"
+  checksum: 22c404c4813bceccaba2b6ee533251b58a2f4e9669507fcbd021120c66fbc2ae1daea4d1e31a76e450fa6a16942471579c4d1e256aa65ec1172d5aac0c0197e1
+  languageName: node
+  linkType: hard
+
+"@lit/reactive-element@npm:^2.1.0":
   version: 2.1.0
   resolution: "@lit/reactive-element@npm:2.1.0"
   dependencies:
@@ -735,8 +749,8 @@ __metadata:
   dependencies:
     "@thatopen/components": ~3.3.0
     "@thatopen/fragments": ~3.3.0
-    "@thatopen/ui": ~3.2.0
-    "@thatopen/ui-obc": ~3.2.0
+    "@thatopen/ui": ~3.3.0
+    "@thatopen/ui-obc": ~3.3.0
     "@types/convert-units": 2.3.11
     "@types/earcut": 3.0.0
     "@types/three": ^0.175.0
@@ -755,7 +769,7 @@ __metadata:
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
     "@thatopen/fragments": ~3.3.0
-    "@thatopen/ui": ~3.2.0
+    "@thatopen/ui": ~3.3.0
     "@types/convert-units": 2.3.11
     "@types/three": 0.175.0
     camera-controls: ^2.9.0
@@ -787,30 +801,32 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@thatopen/ui-obc@npm:~3.2.0":
-  version: 3.2.1
-  resolution: "@thatopen/ui-obc@npm:3.2.1"
+"@thatopen/ui-obc@npm:~3.3.0":
+  version: 3.3.0
+  resolution: "@thatopen/ui-obc@npm:3.3.0"
   dependencies:
-    "@thatopen/ui": ~3.2.0
-    lit: 3.1.2
+    "@thatopen/ui": ~3.3.0
+    lit: 3.3.1
   peerDependencies:
-    "@thatopen/components": ~3.2.0
-    "@thatopen/components-front": ~3.2.0
-    "@thatopen/fragments": ~3.2.0
+    "@thatopen/components": ~3.3.0
+    "@thatopen/components-front": ~3.3.0
+    "@thatopen/fragments": ~3.3.0
     three: ">=0.175.0"
-    web-ifc: ">=0.0.72"
-  checksum: 78a343bca30883df0581edf7eb42bd69e50a05b0383d16b6c182bfa05f51d558801face518f178124af3c60d352afcc3a452bf59b7c47cdd17eddbc869ad787b
+    web-ifc: ">=0.0.74"
+  checksum: 8082e73fc27d586a94db47817839176fe3a8c09254341d44aee3d6b619ecf46aca98ab78623a3a63b06d3980ab9862247df0a64cbd0ab9df5ea17a0b866b7c92
   languageName: node
   linkType: hard
 
-"@thatopen/ui@npm:~3.2.0":
-  version: 3.2.0
-  resolution: "@thatopen/ui@npm:3.2.0"
+"@thatopen/ui@npm:~3.3.0":
+  version: 3.3.0
+  resolution: "@thatopen/ui@npm:3.3.0"
   dependencies:
     "@floating-ui/dom": 1.6.3
-    iconify-icon: 2.0.0
-    lit: 3.1.2
-  checksum: d6d96b0fde21f3aad98f7eeb4093c2f06c5680f7ef616b8c2f24bd23d17d1e0729eadc9125e6b630da2a5d1b71765093e315da9652a7340285000f243c421430
+    chart.js: ^4.5.0
+    chartjs-plugin-datalabels: ^2.2.0
+    iconify-icon: 3.0.1
+    lit: 3.3.1
+  checksum: b68b03ebb7640a383ddb3b5a321bbc825b780ca664f37fa74dc457d2755f4474f6bf37f25eb0f46fc75cf134ddc26d83f119dbf69da693c2a2a15aac78207f0b
   languageName: node
   linkType: hard
 
@@ -1441,6 +1457,24 @@ __metadata:
     ansi-styles: ^4.1.0
     supports-color: ^7.1.0
   checksum: fe75c9d5c76a7a98d45495b91b2172fa3b7a09e0cc9370e5c8feb1c567b85c4288e2b3fded7cfdd7359ac28d6b3844feb8b82b8686842e93d23c827c417e83fc
+  languageName: node
+  linkType: hard
+
+"chart.js@npm:^4.5.0":
+  version: 4.5.1
+  resolution: "chart.js@npm:4.5.1"
+  dependencies:
+    "@kurkle/color": ^0.3.0
+  checksum: 34b35b373642994b2adac197e91363625930530e29fc1baa6dbb411b5e1295f9f6572922003a0224a21a3019aec916567c1ed00c33b1373081f189fc188e5a7b
+  languageName: node
+  linkType: hard
+
+"chartjs-plugin-datalabels@npm:^2.2.0":
+  version: 2.2.0
+  resolution: "chartjs-plugin-datalabels@npm:2.2.0"
+  peerDependencies:
+    chart.js: ">=3.0.0"
+  checksum: 26086a908a8e88507959b7aaf798b2d9794ea95f7a5889b8bb9f6b9f3437a7e2fdf18952d3ba403b2ff78e5b70452439fb323bd0dfe76e9d7d1dae1328dacb99
   languageName: node
   linkType: hard
 
@@ -2611,12 +2645,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"iconify-icon@npm:2.0.0":
-  version: 2.0.0
-  resolution: "iconify-icon@npm:2.0.0"
+"iconify-icon@npm:3.0.1":
+  version: 3.0.1
+  resolution: "iconify-icon@npm:3.0.1"
   dependencies:
     "@iconify/types": ^2.0.0
-  checksum: 9da96aadcd21cc1fbf2b95a00b8446aeced2406b8f7d13796e9931fc92863d2dec8304d75c2b53d0fa052bf43ea8fffa995d87f16028291f00e29638131ef61b
+  checksum: 6951b87f50bc0966f33af74bea1e2160217a0a58def5e36e08c76561930173e9ddbde05a522ad5a4b3e51b3076e23b0580803ae48bab20267483b9ffcad3e7aa
   languageName: node
   linkType: hard
 
@@ -3117,18 +3151,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lit-element@npm:^4.0.4":
-  version: 4.2.0
-  resolution: "lit-element@npm:4.2.0"
+"lit-element@npm:^4.2.0":
+  version: 4.2.2
+  resolution: "lit-element@npm:4.2.2"
   dependencies:
-    "@lit-labs/ssr-dom-shim": ^1.2.0
+    "@lit-labs/ssr-dom-shim": ^1.5.0
     "@lit/reactive-element": ^2.1.0
     lit-html: ^3.3.0
-  checksum: 84bfa51608c6efbf4991032f1ff64b3ae38007fb06eda93e5a2625277c8fc515ad930d4aee8069d92a8f0a969c58808af41f3025f0f5d175dfcc23d4839553f7
+  checksum: 554254b87c7a5b486351a4aecb78919f3665d91de0466c85041572e37f94dd4887f7a4765a90a59e3933f1a54fcf68c20a411319bf06c3e8dce6cfac8de4ca30
   languageName: node
   linkType: hard
 
-"lit-html@npm:^3.1.2, lit-html@npm:^3.3.0":
+"lit-html@npm:^3.3.0":
   version: 3.3.0
   resolution: "lit-html@npm:3.3.0"
   dependencies:
@@ -3137,14 +3171,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lit@npm:3.1.2":
-  version: 3.1.2
-  resolution: "lit@npm:3.1.2"
+"lit@npm:3.3.1":
+  version: 3.3.1
+  resolution: "lit@npm:3.3.1"
   dependencies:
-    "@lit/reactive-element": ^2.0.4
-    lit-element: ^4.0.4
-    lit-html: ^3.1.2
-  checksum: 7776fc5f17a093aafa8d2194725692be2e233d893909722e2fc86ef0bd167f60846fa24054bbca40028bb71262dfa12947e39cb46ad1d0f949dbf0298c7754d1
+    "@lit/reactive-element": ^2.1.0
+    lit-element: ^4.2.0
+    lit-html: ^3.3.0
+  checksum: fb88f1ff8016cc7d722f3f350c626eb40b9a43f6ac6a9cc5e5a28cb9f9a2d79ed6ed5c0e92d41bd3a5bfc00442196f2f76030f59542d8b1a6a26d35bad63ccf9
   languageName: node
   linkType: hard
 
