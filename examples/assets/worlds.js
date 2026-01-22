@@ -1,26 +1,26 @@
-import{l as u,c as l,C as d,a as c,b as p}from"./index-D_lOu8Cy.js";import{C as b,W as g,S as f,a as h,f as w,F as y}from"./index-BXecBxnk.js";const v=document.getElementById("container"),o=new b,C=o.get(g),e=C.create();e.scene=new f(o);e.renderer=new h(o,v);e.camera=new w(o);o.init();e.scene.setup();e.scene.three.background=null;const k="https://thatopen.github.io/engine_fragment/resources/worker.mjs",t=o.get(y);t.init(k);e.camera.controls.addEventListener("rest",()=>t.core.update(!0));t.list.onItemSet.add(({value:n})=>{n.useCamera(e.camera.three),e.scene.three.add(n.object),t.core.update(!0)});const L=["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];await Promise.all(L.map(async n=>{var r;const i=(r=n.split("/").pop())==null?void 0:r.split(".").shift();if(!i)return null;const m=await(await fetch(n)).arrayBuffer();return t.core.load(m,{modelId:i})}));await e.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);await t.core.update(!0);u.init();const s=l.create(()=>c`
+import{l as u,c as l,C as p,a as c,b}from"./index-D_lOu8Cy.js";import{C as g,W as f,S as h,a as w,f as y,F as v}from"./index-BXecBxnk.js";const L=document.getElementById("container"),o=new g,k=o.get(f),t=k.create();t.scene=new h(o);t.renderer=new w(o,L);t.camera=new y(o);o.init();t.scene.setup();t.scene.three.background=null;const C="https://thatopen.github.io/engine_fragment/resources/worker.mjs",S=await fetch(C),U=await S.blob(),j=new File([U],"worker.mjs",{type:"text/javascript"}),m=URL.createObjectURL(j),n=o.get(v);n.init(m);n.init(m);t.camera.controls.addEventListener("update",()=>n.core.update());n.core.models.materials.list.onItemSet.add(({value:e})=>{"isLodMaterial"in e&&e.isLodMaterial||(e.polygonOffset=!0,e.polygonOffsetUnits=1,e.polygonOffsetFactor=Math.random())});n.list.onItemSet.add(({value:e})=>{e.useCamera(t.camera.three),t.scene.three.add(e.object),n.core.update(!0)});const x=["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];await Promise.all(x.map(async e=>{var r;const i=(r=e.split("/").pop())==null?void 0:r.split(".").shift();if(!i)return null;const d=await(await fetch(e)).arrayBuffer();return n.core.load(d,{modelId:i})}));await t.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);await n.core.update(!0);u.init();const a=l.create(()=>c`
     <bim-panel label="Worlds Tutorial" class="options-menu">
       <bim-panel-section label="Controls">
       
         <bim-color-input 
           label="Background Color" color="#202932" 
-          @input="${({target:n})=>{e.scene.config.backgroundColor=new d(n.color)}}">
+          @input="${({target:e})=>{t.scene.config.backgroundColor=new p(e.color)}}">
         </bim-color-input>
         
         <bim-number-input 
           slider step="0.1" label="Directional lights intensity" value="1.5" min="0.1" max="10"
-          @change="${({target:n})=>{e.scene.config.directionalLight.intensity=n.value}}">
+          @change="${({target:e})=>{t.scene.config.directionalLight.intensity=e.value}}">
         </bim-number-input>
         
         <bim-number-input 
           slider step="0.1" label="Ambient light intensity" value="1" min="0.1" max="5"
-          @change="${({target:n})=>{e.scene.config.ambientLight.intensity=n.value}}">
+          @change="${({target:e})=>{t.scene.config.ambientLight.intensity=e.value}}">
         </bim-number-input>
         
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(s);const S=l.create(()=>c`
+    `);document.body.append(a);const B=l.create(()=>c`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
-        @click="${()=>{s.classList.contains("options-menu-visible")?s.classList.remove("options-menu-visible"):s.classList.add("options-menu-visible")}}">
+        @click="${()=>{a.classList.contains("options-menu-visible")?a.classList.remove("options-menu-visible"):a.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(S);const a=new p;a.showPanel(2);document.body.append(a.dom);a.dom.style.left="0px";a.dom.style.zIndex="unset";e.renderer.onBeforeUpdate.add(()=>a.begin());e.renderer.onAfterUpdate.add(()=>a.end());
+    `);document.body.append(B);const s=new b;s.showPanel(2);document.body.append(s.dom);s.dom.style.left="0px";s.dom.style.zIndex="unset";t.renderer.onBeforeUpdate.add(()=>s.begin());t.renderer.onAfterUpdate.add(()=>s.end());
