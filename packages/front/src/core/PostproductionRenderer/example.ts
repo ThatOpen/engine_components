@@ -99,9 +99,7 @@ const workerUrl = URL.createObjectURL(workerFile);
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 
-world.camera.controls.addEventListener("rest", () =>
-  fragments.core.update(true),
-);
+world.camera.controls.addEventListener("update", () => fragments.core.update());
 
 world.onCameraChanged.add((camera) => {
   for (const [, model] of fragments.list) {
@@ -158,14 +156,7 @@ await Promise.all(
 world.renderer.postproduction.enabled = true;
 world.dynamicAnchor = false;
 
-// We will exclude LOD objects from all the passes except the base pass:
-
-fragments.core.models.materials.list.onItemSet.add(({ value: material }) => {
-  const isLod = "isLodMaterial" in material && material.isLodMaterial;
-  if (isLod) {
-    world.renderer!.postproduction.basePass.isolatedMaterials.push(material);
-  }
-});
+world.renderer!.postproduction.basePass.isolatedMaterials.push(grid.material);
 
 // Outline
 

@@ -58,8 +58,14 @@ components.get(OBC.Grids).create(world);
 // is to copy the worker file into your project's public directory.
 // This ensures the worker file is bundled with your app during the build process,
 // and you can provide the corresponding path to it.
-const workerUrl =
+const githubUrl =
   "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
+const fetchedUrl = await fetch(githubUrl);
+const workerBlob = await fetchedUrl.blob();
+const workerFile = new File([workerBlob], "worker.mjs", {
+  type: "text/javascript",
+});
+const workerUrl = URL.createObjectURL(workerFile);
 
 /* MD
   Once initialization is complete, you can safely retrieve the component instance and proceed with its setup:
@@ -78,9 +84,7 @@ fragments.init(workerUrl);
   Since the manager has already been initialized, we can proceed with its configuration. Fragments utilize culling and LOD (Level of Detail in 3D graphics, not LOD from BIM) to optimize geometry rendering by offloading parts that are not visible to the user. A common approach is to apply culling and LOD based on camera movements. By leveraging the world's camera controls, we can detect when the camera is about to stop moving (rest) and instruct the manager to update the visual state of all models accordingly:
 */
 
-world.camera.controls.addEventListener("rest", () =>
-  fragments.core.update(true),
-);
+world.camera.controls.addEventListener("update", () => fragments.core.update());
 
 /* MD
   ### 🗂️ Fragments List
@@ -91,6 +95,19 @@ fragments.list.onItemSet.add(({ value: model }) => {
   model.useCamera(world.camera.three);
   world.scene.three.add(model.object);
   fragments.core.update(true);
+});
+
+/* MD
+  ### 🗂️ Fragments Materials List
+  Coplanar geometries produce z-fighting. To avoid this, we will add a polygon offset to the materials as they are loaded in fragments.
+*/
+
+fragments.core.models.materials.list.onItemSet.add(({ value: material }) => {
+  if (!("isLodMaterial" in material && material.isLodMaterial)) {
+    material.polygonOffset = true;
+    material.polygonOffsetUnits = 1;
+    material.polygonOffsetFactor = Math.random();
+  }
 });
 
 /* MD

@@ -57,18 +57,33 @@ const grid = grids.create(world);
 
 // Set up fragments
 
+const githubUrl =
+  "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
+const fetchedUrl = await fetch(githubUrl);
+const workerBlob = await fetchedUrl.blob();
+const workerFile = new File([workerBlob], "worker.mjs", {
+  type: "text/javascript",
+});
+const workerUrl = URL.createObjectURL(workerFile);
 const fragments = components.get(OBC.FragmentsManager);
-fragments.init(
-  "https://thatopen.github.io/engine_fragment/resources/worker.mjs",
-);
+fragments.init(workerUrl);
 
-world.camera.controls.addEventListener("control", () =>
-  fragments.core.update(),
-);
+world.camera.controls.addEventListener("update", () => fragments.core.update());
+
+// Remove z fighting
+fragments.core.models.materials.list.onItemSet.add(({ value: material }) => {
+  if (!("isLodMaterial" in material && material.isLodMaterial)) {
+    material.polygonOffset = true;
+    material.polygonOffsetUnits = 1;
+    material.polygonOffsetFactor = Math.random();
+  }
+});
 
 const modelId = "example";
 
-const file = await fetch("https://thatopen.github.io/engine_components/resources/frags/school_arq.frag");
+const file = await fetch(
+  "https://thatopen.github.io/engine_components/resources/frags/school_arq.frag",
+);
 const data = await file.arrayBuffer();
 const buffer = new Uint8Array(data);
 const model = await fragments.core.load(buffer, {

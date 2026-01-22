@@ -87,14 +87,18 @@ await ifcLoader.setup({
   When an IFC file is converted to Fragments, another component handles the converted file: the FragmentsManager. Therefore, it is essential to configure this component first before attempting to "load" any IFC file:
 */
 
-const workerUrl =
+const githubUrl =
   "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
+const fetchedUrl = await fetch(githubUrl);
+const workerBlob = await fetchedUrl.blob();
+const workerFile = new File([workerBlob], "worker.mjs", {
+  type: "text/javascript",
+});
+const workerUrl = URL.createObjectURL(workerFile);
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 
-world.camera.controls.addEventListener("rest", () =>
-  fragments.core.update(true),
-);
+world.camera.controls.addEventListener("update", () => fragments.core.update());
 
 // Ensures that once the Fragments model is loaded
 // (converted from the IFC in this case),
@@ -104,6 +108,15 @@ fragments.list.onItemSet.add(({ value: model }) => {
   model.useCamera(world.camera.three);
   world.scene.three.add(model.object);
   fragments.core.update(true);
+});
+
+// Remove z fighting
+fragments.core.models.materials.list.onItemSet.add(({ value: material }) => {
+  if (!("isLodMaterial" in material && material.isLodMaterial)) {
+    material.polygonOffset = true;
+    material.polygonOffsetUnits = 1;
+    material.polygonOffsetFactor = Math.random();
+  }
 });
 
 /* MD
@@ -179,7 +192,9 @@ const [panel, updatePanel] = BUI.Component.create<BUI.PanelSection, {}>((_) => {
     const onLoadIfc = async ({ target }: { target: BUI.Button }) => {
       target.label = "Conversion in progress...";
       target.loading = true;
-      await loadIfc("https://thatopen.github.io/engine_components/resources/ifc/school_str.ifc");
+      await loadIfc(
+        "https://thatopen.github.io/engine_components/resources/ifc/school_str.ifc",
+      );
       target.loading = false;
       target.label = "Load IFC";
     };

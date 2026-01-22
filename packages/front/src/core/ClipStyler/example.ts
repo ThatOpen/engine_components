@@ -51,14 +51,18 @@ components.init();
   Now, let's configure the FragmentsManager. This will allow us to load models effortlessly and start manipulating them with ease:
 */
 
-const workerUrl =
+const githubUrl =
   "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
+const fetchedUrl = await fetch(githubUrl);
+const workerBlob = await fetchedUrl.blob();
+const workerFile = new File([workerBlob], "worker.mjs", {
+  type: "text/javascript",
+});
+const workerUrl = URL.createObjectURL(workerFile);
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 
-world.camera.controls.addEventListener("rest", () =>
-  fragments.core.update(true),
-);
+world.camera.controls.addEventListener("update", () => fragments.core.update());
 
 world.onCameraChanged.add((camera) => {
   for (const [, model] of fragments.list) {
@@ -74,6 +78,15 @@ fragments.list.onItemSet.add(({ value: model }) => {
   fragments.core.update(true);
 });
 
+// Remove z fighting
+fragments.core.models.materials.list.onItemSet.add(({ value: material }) => {
+  if (!("isLodMaterial" in material && material.isLodMaterial)) {
+    material.polygonOffset = true;
+    material.polygonOffsetUnits = 1;
+    material.polygonOffsetFactor = Math.random();
+  }
+});
+
 /* MD
   ### 📂 Loading Fragments Models
   With the core setup complete, it's time to load a Fragments model into our scene. Fragments are optimized for fast loading and rendering, making them ideal for large-scale 3D models.
@@ -85,7 +98,9 @@ fragments.list.onItemSet.add(({ value: model }) => {
   :::
 */
 
-const fragPaths = ["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];
+const fragPaths = [
+  "https://thatopen.github.io/engine_components/resources/frags/school_arq.frag",
+];
 await Promise.all(
   fragPaths.map(async (path) => {
     const modelId = path.split("/").pop()?.split(".").shift();
@@ -236,7 +251,7 @@ clipper.list.onItemSet.add(({ key }) => {
 clipper.createFromNormalAndCoplanarPoint(
   world,
   new THREE.Vector3(0, -1, 0),
-  new THREE.Vector3(0, 3, 0),
+  new THREE.Vector3(0, 4, 0),
 );
 
 /* MD
