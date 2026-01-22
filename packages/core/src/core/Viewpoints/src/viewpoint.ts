@@ -43,6 +43,8 @@ export class Viewpoint {
     camera_up_vector: { x: 0, y: 1, z: 0 },
   };
 
+  customData: Record<string, any> = {}
+
   /**
    * A list of components GUIDs to hide when defaultVisibility = true or to show when defaultVisibility = false
    */

@@ -1,12 +1,12 @@
 import JSZip from "jszip";
 import * as THREE from "three";
 import { XMLParser } from "fast-xml-parser";
+import { DataMap } from "@thatopen/fragments";
 import {
   Component,
   Configurable,
   Disposable,
   Event,
-  DataMap,
 } from "../../core";
 
 import {

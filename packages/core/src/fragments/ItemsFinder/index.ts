@@ -58,9 +58,19 @@ export class ItemsFinder
    */
   async getItems(
     queries: FRAGS.ItemsQueryParams[],
-    config?: { modelIds?: RegExp[]; aggregation?: QueryResultAggregation },
+    config?: { modelIds?: RegExp[]; aggregation?: QueryResultAggregation; items?: ModelIdMap },
   ) {
-    const { modelIds } = config ?? {};
+    let modelsToCheck: RegExp[] | undefined
+    if (config) {
+      const { modelIds, items } = config
+      if (items) {
+        const itemsModels = Object.keys(items)
+        if (itemsModels.length > 0) modelsToCheck = itemsModels.map(entry => new RegExp(`^${entry}$`))
+      } else if (modelIds) {
+        modelsToCheck = modelIds
+      }
+    }
+    
     const aggregation = config?.aggregation ?? "exclusive";
     const fragments = this.components.get(FragmentsManager);
 
@@ -69,8 +79,9 @@ export class ItemsFinder
         const result: ModelIdMap = {};
         await Promise.all(
           Array.from(fragments.list).map(async ([id, model]) => {
-            if (modelIds && !modelIds.some((regex) => regex.test(id))) return;
-            const items = await model.getItemsByQuery(query);
+            if (modelsToCheck && !modelsToCheck.some((regex) => regex.test(id))) return;
+            const localIds = config?.items?.[id]
+            const items = await model.getItemsByQuery(query, { localIds: localIds ? [...localIds] : undefined });
             result[id] = new Set(items);
           }),
         );
@@ -133,9 +144,8 @@ export class ItemsFinder
     const instances: FinderQuery[] = [];
     if (!data) return instances;
     for (const value of data) {
-      const { name, customData, queries, aggregation, cache } = value;
-      const finderQuery = this.create(name, []);
-      finderQuery.fromJSON({ customData, queries, aggregation, cache });
+      const finderQuery = this.create(value.guid, []);
+      finderQuery.fromJSON(value);
       instances.push(finderQuery);
     }
     return instances;

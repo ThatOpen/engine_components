@@ -9,11 +9,13 @@ import {
   SerializedQueryAttribute,
   SerializedQueryParameters,
 } from "./types";
+import { UUID } from "../../../utils";
 
 /**
  * Represents a finder query for retrieving items based on specified parameters. This class encapsulates the query logic, caching mechanism, and result management.
  */
 export class FinderQuery {
+  name = "Query"
   customData: Record<string, any> = {}
 
   private _components: Components;
@@ -141,9 +143,10 @@ export class FinderQuery {
    */
   toJSON() {
     const manager = this._components.get(ItemsFinder)
-    const name = manager.list.getKey(this) ?? "Finder Query"
+    const guid = manager.list.getKey(this) ?? UUID.create()
     const result: SerializedFinderQuery = {
-      name,
+      guid,
+      name: this.name,
       customData: this.customData,
       queries: this.queries.map(this.serializeQueryParameters),
       aggregation: this.aggregation,
@@ -204,7 +207,8 @@ export class FinderQuery {
    * @param data - A `SerializedFinderQuery` object representing the serialized query.
    * @returns A `FinderQuery` instance.
    */
-  fromJSON(data: Omit<SerializedFinderQuery, "name">) {
+  fromJSON(data: SerializedFinderQuery) {
+    this.name = data.name
     this.customData = data.customData;
     this.aggregation = data.aggregation;
     this.cache = data.cache;

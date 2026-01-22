@@ -1,5 +1,6 @@
 import { XMLParser } from "fast-xml-parser";
-import { Component, DataMap } from "../../core/Types";
+import { DataMap } from "@thatopen/fragments";
+import { Component } from "../../core/Types";
 import {
   IDSCheckResult,
   IDSFacet,

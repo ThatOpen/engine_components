@@ -134,6 +134,7 @@ export class Clipper
   private _size = 5;
   private _enabled = false;
   private _visible = true;
+  readonly onStateChanged = new Event<("enabled" | "visibility" | "material" | "size")[]>()
 
   /** {@link Component.enabled} */
   get enabled() {
@@ -143,6 +144,7 @@ export class Clipper
   /** {@link Component.enabled} */
   set enabled(state: boolean) {
     this._enabled = state;
+    this.onStateChanged.trigger(["enabled"])
     // for (const [_, plane] of this.list) {
     //   plane.enabled = state;
     // }
@@ -160,6 +162,7 @@ export class Clipper
     for (const [_, plane] of this.list) {
       plane.visible = state;
     }
+    this.onStateChanged.trigger(["visibility"])
   }
 
   /** The material of the clipping plane representation. */
@@ -173,6 +176,7 @@ export class Clipper
     for (const [_, plane] of this.list) {
       plane.planeMaterial = material;
     }
+    this.onStateChanged.trigger(["material"])
   }
 
   /** The size of the geometric representation of the clippings planes. */
@@ -186,6 +190,7 @@ export class Clipper
     for (const [_, plane] of this.list) {
       plane.size = size;
     }
+    this.onStateChanged.trigger(["size"])
   }
 
   constructor(components: Components) {

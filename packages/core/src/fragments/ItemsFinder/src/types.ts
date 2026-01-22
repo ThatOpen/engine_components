@@ -81,6 +81,10 @@ export interface SerializedQueryParameters {
  */
 export interface SerializedFinderQuery {
   /**
+   * The ID of the query.
+   */
+  guid: string;
+  /**
    * The name of the query.
    */
   name: string;

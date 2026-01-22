@@ -7,8 +7,8 @@ import {
   BaseScene,
   BaseCamera,
   BaseRenderer,
-  DataMap,
 } from "../Types";
+import { DataMap } from "@thatopen/fragments";
 import { Components } from "../Components";
 import { SimpleWorld } from "./src";
 

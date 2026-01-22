@@ -1,7 +1,6 @@
 import * as THREE from "three";
-import * as OBC from "@thatopen/components";
-// eslint-disable-next-line import/no-extraneous-dependencies
 import earcut from "earcut";
+import * as OBC from "@thatopen/components";
 import { Area } from "./area";
 import { MeasureMark } from "./measure-mark";
 

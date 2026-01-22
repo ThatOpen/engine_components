@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import * as FRAGS from "@thatopen-platform/fragments-beta";
 import { Components } from "../../Components";
 import { Component, Event, World, Disposable } from "../../Types";
 import { Mouse } from "../../Raycasters/src/mouse";

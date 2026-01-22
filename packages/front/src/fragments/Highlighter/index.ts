@@ -230,12 +230,10 @@ export class Highlighter
       return;
     }
 
-    let modelId = result.fragments.modelId;
-    const { localId } = result;
-
-    if (result.fragments.isDeltaModel) {
-      modelId = result.fragments.parentModelId;
-    }
+    const {
+      localId,
+      fragments: { modelId },
+    } = result;
 
     const found: OBC.ModelIdMap = { [modelId]: new Set([localId]) };
 
@@ -375,14 +373,6 @@ export class Highlighter
           ? modelIdMap
           : this.getMapWithoutSelection(style);
       if (!map) continue;
-
-      // Add delta models to model id map
-      for (const [modelId, ids] of Object.entries(map)) {
-        const model = fragments.list.get(modelId);
-        if (!model?.deltaModelId) continue;
-        OBC.ModelIdMapUtils.add(map, { [model.deltaModelId]: ids });
-      }
-
       promises.push(
         fragments.highlight({ ...definition, customId: style }, map),
       );

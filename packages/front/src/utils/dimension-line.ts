@@ -223,36 +223,6 @@ export class DimensionLine {
     this.setupEvents();
   }
 
-  private setupEvents() {
-    this.rectangleDimensions.onBeforeDelete.add((dimension) =>
-      dimension.dispose(),
-    );
-
-    this.projectionDimensions.onBeforeDelete.add((dimension) =>
-      dimension.dispose(),
-    );
-  }
-
-  /**
-   * Disposes of the dimension line and its associated resources.
-   * This method should be called when the dimension line is no longer needed.
-   * It removes the dimension line from the world, destroys its components, and frees up memory.
-   */
-  dispose() {
-    this.visible = false;
-    const disposer = this._components.get(OBC.Disposer);
-    disposer.destroy(this._root);
-    disposer.destroy(this.lineElement);
-    this._endpoints.clear();
-    this.label.dispose();
-    if (this.boundingBox) {
-      disposer.destroy(this.boundingBox);
-    }
-    this.rectangleDimensions.clear();
-    this.projectionDimensions.clear();
-    (this._components as any) = null;
-  }
-
   applyPlanesVisibility(planes: THREE.Plane[]) {
     // Using wasVisible prevents showing labels that were hidden before
 
@@ -288,6 +258,36 @@ export class DimensionLine {
     for (const dimension of this.projectionDimensions) {
       dimension.applyPlanesVisibility(planes);
     }
+  }
+
+  private setupEvents() {
+    this.rectangleDimensions.onBeforeDelete.add((dimension) =>
+      dimension.dispose(),
+    );
+
+    this.projectionDimensions.onBeforeDelete.add((dimension) =>
+      dimension.dispose(),
+    );
+  }
+
+  /**
+   * Disposes of the dimension line and its associated resources.
+   * This method should be called when the dimension line is no longer needed.
+   * It removes the dimension line from the world, destroys its components, and frees up memory.
+   */
+  dispose() {
+    this.visible = false;
+    const disposer = this._components.get(OBC.Disposer);
+    disposer.destroy(this._root);
+    disposer.destroy(this.lineElement);
+    this._endpoints.clear();
+    this.label.dispose();
+    if (this.boundingBox) {
+      disposer.destroy(this.boundingBox);
+    }
+    this.rectangleDimensions.clear();
+    this.projectionDimensions.clear();
+    (this._components as any) = null;
   }
 
   /**

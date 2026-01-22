@@ -1,6 +1,7 @@
-import { Component, DataMap } from "../Types";
+import { Component } from "../Types";
 import { Components } from "../Components";
 import { Configurator } from "./src";
+import { DataMap } from "@thatopen/fragments";
 
 export * from "./src";
 

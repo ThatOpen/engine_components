@@ -4,7 +4,7 @@ import { Viewpoint, Viewpoints } from "../../../core/Viewpoints";
 import { Comment } from "./Comment";
 import { BCFTopics } from "..";
 import { BCFApiTopic, BCFTopic } from "./types";
-import { DataMap, DataSet } from "../../../core/Types";
+import { DataMap, DataSet } from "@thatopen/fragments";
 
 export class Topic implements BCFTopic {
   /**

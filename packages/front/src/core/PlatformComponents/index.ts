@@ -20,12 +20,12 @@ export class PlatformComponents extends OBC.Component {
     components.add(PlatformComponents.uuid, this);
   }
 
-  async import(componentSource: string) {
-    return new Promise<OBC.Component>((resolve) => {
+  async import<T extends OBC.Component = OBC.Component>(componentSource: string) {
+    return new Promise<T | null>((resolve) => {
       const script = document.createElement("script");
 
       const src = `
-        function main() {
+        function loader() {
           const { ${this.inputs} } = window.ThatOpenCompany;
         
           ${componentSource}
@@ -39,17 +39,23 @@ export class PlatformComponents extends OBC.Component {
           window.addEventListener("${this._requestEventID}", onComponentRequested);
         }
         
-        main();
+        loader();
       `;
 
       const onCreated = (event: any) => {
         window.removeEventListener(this._createEventID, onCreated);
 
-        const ComponentClass = event.detail as new (
-          components: OBC.Components,
-        ) => OBC.Component;
+        const { componentDefinition } = event.detail
+        
+        let component: T | null = null
+        if (componentDefinition) {
+          const ComponentClass = componentDefinition as new (
+            components: OBC.Components,
+          ) => T;
+          
+          component = this.components.get(ComponentClass);
+        }
 
-        const component = this.components.get(ComponentClass);
         script.remove();
         resolve(component);
       };

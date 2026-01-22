@@ -88,7 +88,7 @@ export class Components implements Disposable {
     const uuid = (Component as any).uuid;
     if (!this.list.has(uuid)) {
       const toolInstance = new Component(this);
-      if (toolInstance.isDisposeable()) {
+      if (toolInstance.isDisposeable?.()) {
         toolInstance.onDisposed.add(() => this.list.delete(uuid));
       }
       if (!this.list.has(uuid)) {

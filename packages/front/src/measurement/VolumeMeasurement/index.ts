@@ -13,6 +13,8 @@ export class VolumeMeasurement extends Measurement<Volume, "volume"> {
 
   private _temp: VolumeMeasurerTempData = {};
 
+  readonly onPreviewInitialized = new OBC.Event<MeasureVolume>();
+
   /**
    * The possible modes in which a measurement of this type may be created.
    */
@@ -61,12 +63,12 @@ export class VolumeMeasurement extends Measurement<Volume, "volume"> {
         if (!this._temp.preview) return;
         this._temp.preview.color = this.color;
       }
-      
+
       if (states.includes("units")) {
         if (!this._temp.preview) return;
         this._temp.preview.units = this.units;
       }
-      
+
       if (states.includes("rounding")) {
         if (!this._temp.preview) return;
         this._temp.preview.rounding = this.rounding;
@@ -99,6 +101,7 @@ export class VolumeMeasurement extends Measurement<Volume, "volume"> {
     this._temp.preview.color = this.color;
     this._temp.preview.rounding = this.rounding;
     this._temp.preview.units = this.units;
+    this.onPreviewInitialized.trigger(this._temp.preview);
   }
 
   create = async () => {

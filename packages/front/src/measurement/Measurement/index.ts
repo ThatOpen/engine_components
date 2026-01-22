@@ -6,6 +6,7 @@ import {
   Area,
   DimensionLine,
   GraphicVertexPicker,
+  GraphicVertexPickerMode,
   Line,
   MeasureFill,
   Volume,
@@ -74,18 +75,6 @@ export abstract class Measurement<
   readonly onStateChanged = new OBC.Event<MeasurementStateChange[]>();
 
   private pointerStopTimeout: number | null = null;
-
-  applyPlanesVisibility(planes: THREE.Plane[]) {
-    for (const line of this.lines) {
-      line.applyPlanesVisibility(planes);
-    }
-    for (const fill of this.fills) {
-      fill.applyPlanesVisibility(planes);
-    }
-    for (const volume of this.volumes) {
-      volume.applyPlanesVisibility(planes);
-    }
-  }
 
   private onMove = () => {
     if (!this.enabled) return;
@@ -315,6 +304,22 @@ export abstract class Measurement<
     return this._color;
   }
 
+  get pickerMode() {
+    return this._vertexPicker.mode;
+  }
+
+  set pickerMode(value: GraphicVertexPickerMode) {
+    this._vertexPicker.mode = value;
+  }
+
+  get snapDistance() {
+    return this._vertexPicker.maxDistance;
+  }
+
+  set snapDistance(value: number) {
+    this._vertexPicker.maxDistance = value;
+  }
+
   protected _vertexPicker = new GraphicVertexPicker(this.components);
 
   constructor(components: OBC.Components, measureType: U) {
@@ -345,6 +350,18 @@ export abstract class Measurement<
     this.fillsMaterial.dispose();
     this.volumesMaterial.dispose();
     this.onDisposed.trigger();
+  }
+
+  applyPlanesVisibility(planes: THREE.Plane[]) {
+    for (const line of this.lines) {
+      line.applyPlanesVisibility(planes);
+    }
+    for (const fill of this.fills) {
+      fill.applyPlanesVisibility(planes);
+    }
+    for (const volume of this.volumes) {
+      volume.applyPlanesVisibility(planes);
+    }
   }
 
   protected createLineElement(
