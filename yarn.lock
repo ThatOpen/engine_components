@@ -733,28 +733,28 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
-    "@thatopen/components": ~3.2.0
-    "@thatopen/fragments": ~3.2.0
+    "@thatopen/components": ~3.3.0
+    "@thatopen/fragments": ~3.3.0
     "@thatopen/ui": ~3.2.0
     "@thatopen/ui-obc": ~3.2.0
     "@types/convert-units": 2.3.11
     "@types/earcut": 3.0.0
     "@types/three": ^0.175.0
-    earcut: 3.0.1
+    earcut: ^3.0.1
     three: ^0.175.0
-    web-ifc: 0.0.72
+    web-ifc: 0.0.74
   peerDependencies:
-    "@thatopen/fragments": ~3.2.0
+    "@thatopen/fragments": ~3.3.0
     three: ">=0.175.0"
-    web-ifc: ">=0.0.72"
+    web-ifc: ">=0.0.74"
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@workspace:packages/core, @thatopen/components@~3.2.0":
+"@thatopen/components@workspace:packages/core, @thatopen/components@~3.3.0":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
-    "@thatopen/fragments": ~3.2.0
+    "@thatopen/fragments": ~3.3.0
     "@thatopen/ui": ~3.2.0
     "@types/convert-units": 2.3.11
     "@types/three": 0.175.0
@@ -764,17 +764,17 @@ __metadata:
     stats.js: ^0.17.0
     three: ^0.175.0
     three-mesh-bvh: 0.7.0
-    web-ifc: 0.0.72
+    web-ifc: 0.0.74
   peerDependencies:
-    "@thatopen/fragments": ~3.2.0
+    "@thatopen/fragments": ~3.3.0
     three: ">=0.175.0"
-    web-ifc: ">=0.0.72"
+    web-ifc: ">=0.0.74"
   languageName: unknown
   linkType: soft
 
-"@thatopen/fragments@npm:~3.2.0":
-  version: 3.2.0
-  resolution: "@thatopen/fragments@npm:3.2.0"
+"@thatopen/fragments@npm:~3.3.0":
+  version: 3.3.1
+  resolution: "@thatopen/fragments@npm:3.3.1"
   dependencies:
     earcut: ^3.0.1
     flatbuffers: 25.2.10
@@ -782,8 +782,8 @@ __metadata:
     pako: 2.1.0
   peerDependencies:
     three: ">=0.175"
-    web-ifc: ">=0.0.72"
-  checksum: 606b7b05422fa2ee5083b0622e026cc5604fc9c9b185d391b27b0461979177f32d4f184affee856e4d3ba73a456b903b731c006e304637cef8aa7b314c0a2453
+    web-ifc: ">=0.0.74"
+  checksum: 75156455888a391fa734a576f4dccc9f1b2385c96868b4aaba90e9da4ee8fcec6ff3f1ada97fe84fe1071c0b4e90678b6cefb532b62a8873d03774461a2d648e
   languageName: node
   linkType: hard
 
@@ -1655,7 +1655,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"earcut@npm:3.0.1, earcut@npm:^3.0.1":
+"earcut@npm:^3.0.1":
   version: 3.0.1
   resolution: "earcut@npm:3.0.1"
   checksum: ed1cc8fc10829ad41b30c574e233333a6ff1b4ad548e342491efd6a54d8e7ad5042bda029ae7c7c41c711cda9b38c1a733e7baf79569ccc43ce36450a549c415
@@ -4834,10 +4834,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"web-ifc@npm:0.0.72":
-  version: 0.0.72
-  resolution: "web-ifc@npm:0.0.72"
-  checksum: cdc5cc682c4fb9597bf99dc1bd88abeee91523eb17a0b3840ed143cc1cddf6d75d42c65274b842ec3f3a33bb9374ae2dbfb8580848d951ab8eee4a35028f5af1
+"web-ifc@npm:0.0.74":
+  version: 0.0.74
+  resolution: "web-ifc@npm:0.0.74"
+  checksum: 9ee3a72dc7ce62128be13cf3ecce57db2967736765ef2695d31b11cf2d42ab8a836ed698b12f2f21f8dfa8429738ce75a3238dac473ec2654fb829519cd326d5
   languageName: node
   linkType: hard
 
