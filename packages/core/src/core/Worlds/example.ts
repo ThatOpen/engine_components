@@ -107,14 +107,29 @@ world.scene.three.background = null;
 
 */
 
-const workerUrl =
+const githubUrl =
   "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
+const fetchedUrl = await fetch(githubUrl);
+const workerBlob = await fetchedUrl.blob();
+const workerFile = new File([workerBlob], "worker.mjs", {
+  type: "text/javascript",
+});
+const workerUrl = URL.createObjectURL(workerFile);
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 
-world.camera.controls.addEventListener("rest", () =>
-  fragments.core.update(true),
-);
+fragments.init(workerUrl);
+
+world.camera.controls.addEventListener("update", () => fragments.core.update());
+
+// Remove z fighting
+fragments.core.models.materials.list.onItemSet.add(({ value: material }) => {
+  if (!("isLodMaterial" in material && material.isLodMaterial)) {
+    material.polygonOffset = true;
+    material.polygonOffsetUnits = 1;
+    material.polygonOffsetFactor = Math.random();
+  }
+});
 
 fragments.list.onItemSet.add(({ value: model }) => {
   model.useCamera(world.camera.three);
@@ -122,7 +137,9 @@ fragments.list.onItemSet.add(({ value: model }) => {
   fragments.core.update(true);
 });
 
-const fragPaths = ["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];
+const fragPaths = [
+  "https://thatopen.github.io/engine_components/resources/frags/school_arq.frag",
+];
 await Promise.all(
   fragPaths.map(async (path) => {
     const modelId = path.split("/").pop()?.split(".").shift();
