@@ -7,9 +7,7 @@ import * as OBC from "@thatopen/components";
 import { getProjectedNormalMaterial } from "./projected-normal-material";
 
 /**
- * A postprocessing pass that applies a gloss effect to the rendered scene.
- * The gloss effect makes surfaces appear more reflective based on their
- * angle relative to the camera view.
+ * A postprocessing pass that applies a gloss effect to the rendered scene. The gloss effect makes surfaces appear more reflective based on their angle relative to the camera view.
  */
 export class GlossPass extends Pass {
   resolution: THREE.Vector2;

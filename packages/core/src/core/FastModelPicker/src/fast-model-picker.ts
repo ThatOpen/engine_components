@@ -5,8 +5,7 @@ import { Mouse } from "../../Raycasters/src/mouse";
 import { FragmentsManager } from "../../../fragments";
 
 /**
- * A fast model picker that uses color coding to identify fragment models under the mouse cursor.
- * This is much faster than raycasting for simple model identification.
+ * A fast model picker that uses color coding to identify fragment models under the mouse cursor. This is much faster than raycasting for simple model identification.
  */
 export class FastModelPicker implements Disposable {
   /** {@link Component.enabled} */
