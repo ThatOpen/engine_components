@@ -274,6 +274,7 @@ export class EdgeDetectionPass extends Pass {
   }
 
   private setMaterialToMesh(apply: boolean) {
+    if (!this._fragments.initialized) return;
     for (const [, model] of this._fragments.core.models.list) {
       for (const [, mesh] of model.tiles) {
         if ("isLODGeometry" in mesh.geometry) {
