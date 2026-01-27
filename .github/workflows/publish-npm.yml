@@ -1,21 +1,11 @@
 # .github/workflows/publish-npm.yml
-# This workflow pushes new published releases to https://www.npmjs.com using
-# the Yarn Package Manager.
-name: Publish packages to npmjs (OIDC)
-
-on:
-  workflow_call:
-    inputs:
-      publish_core:
-        required: true
-        type: boolean
-      publish_front:
-        required: true
-        type: boolean
+name: Publish package to npmjs (OIDC)
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+
+    # Required for npm Trusted Publishing (OIDC)
     permissions:
       contents: read
       id-token: write
@@ -23,29 +13,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Use a modern Node that can run npm 11+, and/or install npm 11.5.1+ explicitly
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Ensure npm supports Trusted Publishing
+      # Ensure the npm version meets the Trusted Publishing requirement
+      - name: Ensure npm >= 11.5.1
         run: |
-          npm --version
-          # Trusted publishing requires npm CLI 11.5.1+ :contentReference[oaicite:4]{index=4}
           npm i -g npm@^11.5.1
           npm --version
 
-      - name: Install dependencies (root)
+      # If you use Yarn (you do), keep it for install/build
+      - name: Install deps
         run: |
           corepack enable
           yarn install --immutable
 
-      - name: Publish core
-        if: ${{ inputs.publish_core }}
+      # Publish via npm CLI (OIDC happens automatically; no NODE_AUTH_TOKEN)
+      - name: Publish Core
+        run: npm publish --access public
         working-directory: packages/core
-        run: npm publish --access public
 
-      - name: Publish front
-        if: ${{ inputs.publish_front }}
-        working-directory: packages/front
+      - name: Publish Front
         run: npm publish --access public
+        working-directory: packages/front
