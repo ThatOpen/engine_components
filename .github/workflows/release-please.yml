@@ -16,18 +16,16 @@ jobs:
       front_release_created: ${{ steps.rp_front.outputs['packages/front--release_created'] }}
 
     steps:
-      # Release for packages/core
       - name: Release Please (core)
-      - uses: googleapis/release-please-action@v4
+        uses: googleapis/release-please-action@v4
         id: rp_core
         with:
           release-type: node
           path: packages/core
           include-component-in-tag: true
 
-      # Release for packages/front
       - name: Release Please (front)
-      - uses: googleapis/release-please-action@v4
+        uses: googleapis/release-please-action@v4
         id: rp_front
         with:
           release-type: node
