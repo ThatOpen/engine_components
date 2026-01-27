@@ -1,44 +1,36 @@
+# .github/workflows/release-please.yml
+# This workflow handles the release-please system that manages releasing new versions.
+# It also calls `publish-npm.yml`, which then handles publishing to npmjs.
+# See: https://github.com/googleapis/release-please
 name: release-please
-
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
-permissions:
-  contents: write
-  pull-requests: write
+# Default to least privilege; grant per-job below
+permissions: {}
 
 jobs:
-  release:
+  release-please:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     outputs:
-      core_release_created: ${{ steps.rp_core.outputs['packages/core--release_created'] }}
-      front_release_created: ${{ steps.rp_front.outputs['packages/front--release_created'] }}
-
+      release_created: ${{ steps.release.outputs.release_created }}
     steps:
-      - name: Release Please (core)
-        uses: googleapis/release-please-action@v4
-        id: rp_core
+      - uses: google-github-actions/release-please-action@v3
+        id: release
         with:
           release-type: node
-          path: packages/core
-          include-component-in-tag: true
+          package-name: "@thatopen/components"
 
-      - name: Release Please (front)
-        uses: googleapis/release-please-action@v4
-        id: rp_front
-        with:
-          release-type: node
-          path: packages/front
-          include-component-in-tag: true
-
-  publish:
-    needs: release
-    if: ${{ needs.release.outputs.core_release_created == 'true' || needs.release.outputs.front_release_created == 'true' }}
+  publish-npm:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
     permissions:
       contents: read
       id-token: write
     uses: ./.github/workflows/publish-npm.yml
-    with:
-      publish_core: ${{ needs.release.outputs.core_release_created == 'true' }}
-      publish_front: ${{ needs.release.outputs.front_release_created == 'true' }}
+    # no secrets needed for OIDC
