@@ -1,5 +1,24 @@
 # Changelog
 
+## [3.3.2](https://github.com/ThatOpen/engine_components/compare/v3.3.0...v3.3.2) (2026-01-27)
+
+
+### Features
+
+* remove z fighting and improve update logic in examples ([de64ab4](https://github.com/ThatOpen/engine_components/commit/de64ab4ee21e4213b54b15d493f10a5e31a825ac))
+
+
+### Bug Fixes
+
+* prevent edges pass from failing when fragments are not initialized ([239944e](https://github.com/ThatOpen/engine_components/commit/239944e245ee59cc6d0bfdb7ff03951e481d785b))
+
+
+### Miscellaneous Chores
+
+* release 3.3.1 ([b8ce375](https://github.com/ThatOpen/engine_components/commit/b8ce3757bbf7708c54664fa8a81a63b7b36068c9))
+* release 3.3.1 ([8dc5f3d](https://github.com/ThatOpen/engine_components/commit/8dc5f3d20f3dad54ee7a84e231cd4aa92e923fad))
+* release 3.3.2 ([82f3425](https://github.com/ThatOpen/engine_components/commit/82f34257db1d214655eeed0337bb401c131b885f))
+
 ## [3.3.0](https://github.com/ThatOpen/engine_components/compare/v3.2.0...v3.3.0) (2026-01-22)
 
 
