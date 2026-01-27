@@ -3,28 +3,48 @@
 # It also calls `publish-npm.yml`, which then handles publishing to npmjs.
 # See: https://github.com/googleapis/release-please
 name: release-please
+
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+
 permissions:
   contents: write
   pull-requests: write
+
 jobs:
-  release-please:
+  release:
     runs-on: ubuntu-latest
     outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
+      core_release_created: ${{ steps.rp_core.outputs['packages/core--release_created'] }}
+      front_release_created: ${{ steps.rp_front.outputs['packages/front--release_created'] }}
+
     steps:
-      - uses: google-github-actions/release-please-action@v3 # Handle local releases
-        id: release
+      # Release for packages/core
+      - name: Release Please (core)
+      - uses: googleapis/release-please-action@v4
+        id: rp_core
         with:
           release-type: node
-          package-name: openbim-components
-  publish-npm:
-    needs: release-please
-    if: ${{ needs.release-please.outputs.release_created }}
-    uses: ./.github/workflows/publish-npm.yml # Publish to npmjs
-    secrets:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }} 
-    # Publish only if release-please creates a published release
+          path: packages/core
+          include-component-in-tag: true
+
+      # Release for packages/front
+      - name: Release Please (front)
+      - uses: googleapis/release-please-action@v4
+        id: rp_front
+        with:
+          release-type: node
+          path: packages/front
+          include-component-in-tag: true
+
+  publish:
+    needs: release
+    if: ${{ needs.release.outputs.core_release_created == 'true' || needs.release.outputs.front_release_created == 'true' }}
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/publish-npm.yml
+    with:
+      publish_core: ${{ needs.release.outputs.core_release_created == 'true' }}
+      publish_front: ${{ needs.release.outputs.front_release_created == 'true' }}
