@@ -142,3 +142,5 @@ resources/umdasch/
 
 app
 node-app
+
+.DS_Store
