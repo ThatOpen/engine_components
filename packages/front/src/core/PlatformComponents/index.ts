@@ -11,62 +11,32 @@ export class PlatformComponents extends OBC.Component {
 
   inputs = ["OBC", "BUI"];
 
-  private readonly _requestEventID = "thatOpenCompanyComponentRequested";
-
-  private readonly _createEventID = "thatOpenCompanyComponentCreated";
-
   constructor(components: OBC.Components) {
     super(components);
     components.add(PlatformComponents.uuid, this);
   }
 
-  async import<T extends OBC.Component = OBC.Component>(componentSource: string) {
-    return new Promise<T | null>((resolve) => {
-      const script = document.createElement("script");
+  import<T extends OBC.Component = OBC.Component>(
+    componentSource: string,
+  ): T | null {
+    const globals = (window as any).ThatOpenCompany ?? {};
+    const keys = this.inputs;
+    const values = keys.map((k) => globals[k]);
 
-      const src = `
-        function loader() {
-          const { ${this.inputs} } = window.ThatOpenCompany;
-        
-          ${componentSource}
-        
-          const onComponentRequested = () => {
-            window.removeEventListener("${this._requestEventID}", onComponentRequested);
-            const event = new CustomEvent("${this._createEventID}", { detail: main });
-            window.dispatchEvent(event);
-          };
-          
-          window.addEventListener("${this._requestEventID}", onComponentRequested);
-        }
-        
-        loader();
-      `;
+    // Execute the component source with the required globals in scope.
+    // The source is expected to declare a `main` variable with a
+    // `componentDefinition` property pointing to the OBC.Component class.
+    // eslint-disable-next-line no-new-func
+    const factory = new Function(...keys, `${componentSource}\nreturn main;`);
+    const main = factory(...values);
 
-      const onCreated = (event: any) => {
-        window.removeEventListener(this._createEventID, onCreated);
+    const componentDefinition = main?.componentDefinition ?? main;
+    if (!componentDefinition) return null;
 
-        const { componentDefinition } = event.detail
-        
-        let component: T | null = null
-        if (componentDefinition) {
-          const ComponentClass = componentDefinition as new (
-            components: OBC.Components,
-          ) => T;
-          
-          component = this.components.get(ComponentClass);
-        }
+    const ComponentClass = componentDefinition as new (
+      components: OBC.Components,
+    ) => T;
 
-        script.remove();
-        resolve(component);
-      };
-
-      script.addEventListener("load", () => {
-        window.addEventListener(this._createEventID, onCreated);
-        window.dispatchEvent(new Event(this._requestEventID));
-      });
-
-      script.src = URL.createObjectURL(new File([src], "temp.js"));
-      document.head.appendChild(script);
-    });
+    return this.components.get(ComponentClass);
   }
 }

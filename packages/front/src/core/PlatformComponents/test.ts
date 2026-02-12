@@ -47,7 +47,7 @@ const cloudComponents = components.get(OBCF.PlatformComponents);
 async function importComponent(url: string) {
   const fetched = await fetch(url);
   const componentData = await fetched.text();
-  const test = await cloudComponents.import(componentData);
+  const test = cloudComponents.import(componentData);
   console.log(test);
 }
 
