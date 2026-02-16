@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.4.0](https://github.com/ThatOpen/engine_components/compare/v3.3.2...v3.4.0) (2026-02-16)
+
+
+### Features
+
+* implement optional traditional workers ([c2a742a](https://github.com/ThatOpen/engine_components/commit/c2a742aecd99ae32c2ac0398cf6b2b0a1227c7d4))
+
 ## [3.3.2](https://github.com/ThatOpen/engine_components/compare/v3.3.0...v3.3.2) (2026-01-27)
 
 
