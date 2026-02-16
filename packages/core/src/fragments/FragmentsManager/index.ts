@@ -74,8 +74,8 @@ export class FragmentsManager extends Component implements Disposable {
     this.onDisposed.reset();
   }
 
-  init(workerURL: string) {
-    this._core = new FragmentsModels(workerURL);
+  init(workerURL: string, options?: { classicWorker?: boolean }) {
+    this._core = new FragmentsModels(workerURL, options);
     this.core.onModelLoaded.add(async () => {
       if (this._hasCoordinationModel) return
       const firstModel = [...this.list.values()][0]
