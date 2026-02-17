@@ -33,6 +33,8 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
    */
   three: THREE.PerspectiveCamera | THREE.OrthographicCamera;
 
+  protected _resizeObserver: ResizeObserver | null = null;
+
   private _allControls = new Map<string, CameraControls>();
 
   /**
@@ -92,10 +94,9 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
     super(components);
     this.three = this.setupCamera();
 
-    this.setupEvents(true);
-
     this.worlds.onItemSet.add(({ value: world }) => {
       const controls = this.newCameraControls();
+      this.setupEvents(true);
       this._allControls.set(world.uuid, controls);
     });
 
@@ -105,6 +106,7 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
         controls.dispose();
         this._allControls.delete(world.uuid);
       }
+      this._resizeObserver?.disconnect();
     });
 
     // this.onWorldChanged.add(({ action, world }) => {
@@ -225,10 +227,22 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
   }
 
   private setupEvents(active: boolean) {
+    if (this._resizeObserver) {
+      this._resizeObserver.disconnect();
+      this._resizeObserver = null;
+    }
+
     if (active) {
-      window.addEventListener("resize", this.updateAspect);
-    } else {
-      window.removeEventListener("resize", this.updateAspect);
+      if (!this.currentWorld) {
+        throw new Error("This camera needs a world to work!");
+      }
+      if (!this.currentWorld.renderer) {
+        throw new Error("This camera needs a renderer to work!");
+      }
+
+      const { domElement } = this.currentWorld.renderer.three;
+      this._resizeObserver = new ResizeObserver(this.updateAspect);
+      this._resizeObserver.observe(domElement);
     }
   }
 
