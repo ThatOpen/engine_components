@@ -282,10 +282,6 @@ export class Highlighter
 
     this.events[name].onBeforeHighlight.trigger(this.selection[name]);
 
-    if (removePrevious) {
-      await this.clear(name);
-    }
-
     let map = OBC.ModelIdMapUtils.clone(modelIdMap);
     const fragments = this.components.get(OBC.FragmentsManager);
 
@@ -314,8 +310,16 @@ export class Highlighter
       OBC.ModelIdMapUtils.remove(map, exclude);
     }
 
+    const autoTogglePicking = isPicking && this.autoToggle.has(name);
+    const toggleFullSelection = autoTogglePicking && OBC.ModelIdMapUtils.isEqual(this.selection[name], map);
+
+    // If the full selection is toggled on click (like a single item clicked twice), clear must be prevented to let the auto toggle picking logic handle this special use case
+    if (removePrevious && !toggleFullSelection) {
+      await this.clear(name);
+    }
+
     // Apply autotoggle when picking with the mouse
-    if (isPicking && this.autoToggle.has(name)) {
+    if (autoTogglePicking) {
       const clearedItems: { [key: string]: Set<number> } = {};
       let clearedItemsFound = false;
 
