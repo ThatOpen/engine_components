@@ -90,6 +90,26 @@ export class IfcLoader extends Component implements Disposable {
   /**
    * Loads an IFC file and processes it for 3D visualization.
    *
+   * By default, the loader imports a minimal set of attributes and relations
+   * needed for typical visualization workflows.
+   *
+   * **Default attributes**
+   * - Base entities: Project, Site, Building, BuildingStorey
+   * - Materials: IFC material definitions and layers
+   * - Properties: Property Sets, quantities (area, volume, length, etc.)
+   *
+   * **Default relations**
+   * - DefinesByProperties (IsDefinedBy / DefinesOccurrence)
+   * - AssociatesMaterial (HasAssociations / AssociatedTo)
+   * - Aggregates (IsDecomposedBy / Decomposes)
+   * - ContainedInSpatialStructure (ContainsElements / ContainedInStructure)
+   *
+   * If you need *all* attributes or relations to be loaded, you can enable them
+   * via the `instanceCallback`.
+   *
+   * The callback provides direct access to the underlying `IfcImporter`,
+   * allowing advanced configuration before processing begins.
+   *
    * @param data - The Uint8Array containing the IFC file data.
    * @param coordinate - Boolean indicating whether to coordinate the loaded IFC data. Default is true.
    * @param name - Name for the fragments model.
@@ -98,6 +118,17 @@ export class IfcLoader extends Component implements Disposable {
    * @returns A Promise that resolves to the FragmentsModel containing the loaded and processed IFC data.
    *
    * @example
+   * // Load all attributes and relations using the instanceCallback
+   * ```ts
+   * const model = await ifcLoader.load(ifcData, true, "modelName", {
+   *   instanceCallback: (importer) => {
+   *     importer.addAllAttributes();
+   *     importer.addAllRelations();
+   *   },
+   * });
+   * ```
+   * @example
+   * // Default loading (built-in attributes and relations only)
    * ```typescript
    * const ifcLoader = components.get(IfcLoader);
    * const model = await ifcLoader.load(ifcData);
