@@ -79,6 +79,7 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
   readonly onDisposed = new OBC.Event();
   duration = 200;
   animation = true;
+  delay = 100;
 
   constructor(components: OBC.Components) {
     super(components);
@@ -125,7 +126,7 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
       clearTimeout(this.mouseStopTimeout);
     }
 
-    this.mouseStopTimeout = window.setTimeout(() => this.hover(), 50);
+    this.mouseStopTimeout = window.setTimeout(() => this.hover(), this.delay / 2);
   };
 
   private onMouseLeave = () => {
@@ -196,7 +197,7 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
 
       this.onHoverStarted.trigger(this);
       this.animate();
-    }, 100);
+    }, this.delay);
   }
 
   clear() {
