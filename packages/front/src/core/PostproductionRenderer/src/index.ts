@@ -2,6 +2,7 @@ import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
+import { AOPass } from "./ao-pass";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass.js";
 import { EdgeDetectionPass } from "./edge-detection-pass";
@@ -13,6 +14,7 @@ import { GlossPass } from "./gloss-pass";
 
 // Export the GlossPass for external use
 export { GlossPass };
+export { AOPass } from "./ao-pass";
 export { EdgeDetectionPassMode } from "./edge-detection-pass";
 
 export enum PostproductionAspect {
@@ -34,7 +36,7 @@ export class Postproduction {
   private _initialized = false;
 
   private _basePass?: BasePass;
-  private _aoPass?: GTAOPass;
+  private _aoPass?: AOPass;
   private _outputPass?: OutputPass;
   private _edgeDetectionPass?: EdgeDetectionPass;
   private _smaaPass?: SMAAPass;
@@ -373,15 +375,16 @@ export class Postproduction {
 
     this._smaaPass = new SMAAPass();
 
-    this._aoPass = new GTAOPass(
+    const fragmentsManager = this._components.get(OBC.FragmentsManager);
+
+    this._aoPass = new AOPass(
+      fragmentsManager,
       scene,
       camera,
       this._renderer.three.domElement.width,
       this._renderer.three.domElement.height,
     );
     this._aoPass.output = GTAOPass.OUTPUT.Default;
-
-    const fragmentsManager = this._components.get(OBC.FragmentsManager);
     this._edgeDetectionPass = new EdgeDetectionPass(
       this._renderer,
       fragmentsManager,
