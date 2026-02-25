@@ -142,9 +142,7 @@ export class AreaMeasurement extends Measurement<Area, "area"> {
   };
 
   private async updatePreview() {
-    if (!this.enabled || !this.world) {
-      throw new Error("Measurement is not enabled or world is not defined!");
-    }
+    if (!this.enabled || !this.world) return;
 
     const pickerData = await this._vertexPicker.get({
       snappingClasses: this.snappings,
