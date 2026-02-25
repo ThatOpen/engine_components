@@ -70,6 +70,23 @@ export class AngleMeasurement extends Measurement<Angle, "angle"> {
       this._visuals.clear();
     });
 
+    this.onStateChanged.add((changes) => {
+      if (changes.includes("color")) {
+        const colorHex = `#${this.linesMaterial.color.getHexString()}`;
+        for (const [, visual] of this._visuals) {
+          visual.label.three.element.style.backgroundColor = colorHex;
+          for (const ep of visual.endpoints) {
+            ep.three.element.style.border = `2px solid ${colorHex}`;
+          }
+        }
+      }
+      if (changes.includes("units") || changes.includes("rounding")) {
+        for (const [angle, visual] of this._visuals) {
+          visual.label.three.element.textContent = this.formatAngle(angle);
+        }
+      }
+    });
+
     this.onPointerStop.add(() => this.updatePreview());
 
     this.onVisibilityChange.add((value) => {
