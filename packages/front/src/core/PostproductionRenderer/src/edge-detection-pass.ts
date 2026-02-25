@@ -33,6 +33,12 @@ export class EdgeDetectionPass extends Pass {
 
   private _mode = EdgeDetectionPassMode.DEFAULT;
 
+  /**
+   * When enabled, invisible materials still produce edges,
+   * giving an X-ray effect where hidden geometry is shown as outlines.
+   */
+  xray = false;
+
   get mode() {
     return this._mode;
   }
@@ -280,9 +286,15 @@ export class EdgeDetectionPass extends Pass {
         if ("isLODGeometry" in mesh.geometry) {
           continue;
         }
+
         if (apply) {
           mesh.userData.edgePassPreviousMaterial = mesh.material;
-          mesh.material = [this._overrideMaterial];
+          // Single material bypasses geometry groups, so all triangles
+          // produce edges (xray). Array respects groups, so only
+          // visible groups produce edges (normal).
+          mesh.material = this.xray
+            ? this._overrideMaterial
+            : [this._overrideMaterial];
         } else if ("edgePassPreviousMaterial" in mesh.userData) {
           mesh.material = mesh.userData.edgePassPreviousMaterial;
         }
