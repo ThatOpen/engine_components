@@ -40,10 +40,10 @@ export class Clipper
   readonly onSetup = new Event();
 
   /** Event that fires when the user starts dragging a clipping plane. */
-  readonly onBeforeDrag = new Event<void>();
+  readonly onBeforeDrag = new Event<SimplePlane>();
 
   /** Event that fires when the user stops dragging a clipping plane. */
-  readonly onAfterDrag = new Event<void>();
+  readonly onAfterDrag = new Event<SimplePlane>();
 
   /**
    * Event that fires when the user starts creating a clipping plane.
@@ -409,8 +409,8 @@ export class Clipper
       this._material,
     );
     plane.autoScale = this.autoScalePlanes;
-    plane.onDraggingStarted.add(this._onStartDragging);
-    plane.onDraggingEnded.add(this._onEndDragging);
+    plane.onDraggingStarted.add(() => this.onBeforeDrag.trigger(plane));
+    plane.onDraggingEnded.add(() => this.onAfterDrag.trigger(plane));
     const id = UUID.create();
     this.list.set(id, plane);
     this.onAfterCreate.trigger(plane);
@@ -440,11 +440,4 @@ export class Clipper
     }
   }
 
-  private _onStartDragging = () => {
-    this.onBeforeDrag.trigger();
-  };
-
-  private _onEndDragging = () => {
-    this.onAfterDrag.trigger();
-  };
 }
