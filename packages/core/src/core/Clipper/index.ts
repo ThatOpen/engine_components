@@ -321,11 +321,11 @@ export class Clipper
   //   }
   // }
 
-  private async pickPlane(world: World): Promise<SimplePlane | undefined> {
+  private pickPlane(world: World): SimplePlane | undefined {
     const casters = this.components.get(Raycasters);
     const caster = casters.get(world);
     const items = this.getAllPlaneMeshes();
-    const intersects = await caster.castRay({ items });
+    const intersects = caster.castRayToObjects(items);
     if (intersects) {
       const found = intersects.object as THREE.Mesh;
       return [...this.list.values()].find((p) => p.meshes.includes(found));
