@@ -209,22 +209,15 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
     if (modelIdMap === this._map) this.cleanMeshes();
     if (this.outlinePositions) this.updatePoints();
     if (Object.keys(modelIdMap).length === 0) return;
-    const fragments = this.components.get(OBC.FragmentsManager);
     const renderer = this.getRenderer();
     const outlinePass = renderer.postproduction.outlinePass;
     const mesher = this.components.get(Mesher);
     const meshes = await mesher.get(modelIdMap);
-    for (const modelId of Object.keys(modelIdMap)) {
-      const model = fragments.list.get(modelId);
-      const invisibleItems = new Set(await model?.getItemsByVisibility(false));
-      if (!model) continue;
-      for (const [_, data] of meshes.entries()) {
-        for (const [localId, meshes] of data) {
-          if (invisibleItems.has(localId)) continue;
-          for (const mesh of meshes) {
-            this._meshes.push(mesh);
-            outlinePass.scene.add(mesh);
-          }
+    for (const [_, data] of meshes.entries()) {
+      for (const [, meshes] of data) {
+        for (const mesh of meshes) {
+          this._meshes.push(mesh);
+          outlinePass.scene.add(mesh);
         }
       }
     }
