@@ -3,6 +3,7 @@ import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import { DataSet } from "@thatopen/fragments";
 import {
+  Angle,
   Area,
   DimensionLine,
   GraphicVertexPicker,
@@ -64,6 +65,8 @@ export abstract class Measurement<
       list = ["mm", "cm", "m", "km"];
     } else if (this.measureType === "area") {
       list = ["mm2", "cm2", "m2", "km2"];
+    } else if (this.measureType === "angle") {
+      list = ["deg", "rad"];
     } else {
       list = ["mm3", "cm3", "m3", "km3"];
     }
@@ -160,8 +163,10 @@ export abstract class Measurement<
   set units(value: MeasureToUnitMap[U]) {
     this._units = value;
 
-    let valueMeasureType: "length" | "area" | "volume" | undefined;
-    if (value.endsWith("2")) {
+    let valueMeasureType: "length" | "area" | "volume" | "angle" | undefined;
+    if (value === "deg" || value === "rad") {
+      valueMeasureType = "angle";
+    } else if (value.endsWith("2")) {
       valueMeasureType = "area";
     } else if (value.endsWith("3")) {
       valueMeasureType = "volume";
@@ -176,6 +181,8 @@ export abstract class Measurement<
         measure.units = value as "mm2" | "cm2" | "m2" | "km2";
       } else if (measure instanceof Volume) {
         measure.units = value as "mm3" | "cm3" | "m3" | "km3";
+      } else if (measure instanceof Angle) {
+        measure.units = value as "deg" | "rad";
       }
     }
 

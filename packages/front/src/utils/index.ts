@@ -1,5 +1,6 @@
 export * from "./graphic-vertex-picker";
 export * from "./dimension-line";
+export * from "./angle";
 export * from "./area";
 export * from "./line";
 export * from "./volume";

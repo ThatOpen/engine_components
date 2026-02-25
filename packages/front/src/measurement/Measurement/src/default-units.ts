@@ -7,4 +7,5 @@ export const defaultUnits: Record<
   length: "m",
   area: "m2",
   volume: "m3",
+  angle: "deg",
 };

@@ -1,8 +1,8 @@
 /* MD
-  ## 📐 Measuring Lengths
+  ## 📐 Measuring Angles
   ---
 
-  Accurate length measurement is a cornerstone of Building Information Modeling (BIM) applications. Whether you're designing, analyzing, or collaborating, providing users with intuitive tools to measure distances in 3D space is essential. In this tutorial, you will learn how to integrate a measuring tool in your BIM app; let's go ahead!
+  Measuring angles between surfaces, edges, or arbitrary points is essential in many BIM workflows. In this tutorial, you'll learn how to expose an angle measurement tool to your end users.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:
@@ -104,11 +104,11 @@ await Promise.all(
 );
 
 /* MD
-  ### ✨ Using The Length Measurement Component
-  Now, let's go with the tutorial core: measuring lengths. First, let's get an instance of the component:
+  ### ✨ Using The Angle Measurement Component
+  Measuring angles with That Open Engine is straightforward. First, retrieve the corresponding component and configure it. The angle measurement requires 3 clicks: the first point, the vertex (center of the angle), and the end point:
 */
 
-const measurer = components.get(OBF.LengthMeasurement);
+const measurer = components.get(OBF.AngleMeasurement);
 // Provide a world to create dimensions inside
 measurer.world = world;
 measurer.color = new THREE.Color("#494cb6");
@@ -116,84 +116,36 @@ measurer.color = new THREE.Color("#494cb6");
 measurer.enabled = true;
 measurer.snappings = [FRAGS.SnappingClass.POINT];
 
-/* MD 
-  You can create dimensions both programatically or by user interaction. The most common way is by user interaction, so let's configure an event listener to create them when the user double clicks on the viewer container:
+/* MD
+  You can create angle measurements by user interaction. Let's configure an event listener to create them when the user double clicks on the viewer container. Each angle measurement needs 3 double-clicks: start point, vertex, and end point:
 */
 
 container.ondblclick = () => measurer.create();
 
-/* MD 
+/* MD
   ### 📄 The Measurements List
-  Whenever you create a dimension using the component, it is automatically added to a list that keeps track of all dimensions. This centralized list allows you to perform various operations, such as deleting dimensions, calculating their centers, reporting all lengths, and more. To illustrate this functionality, let's implement some useful methods:
+  Whenever you create a measurement using the component, it is automatically added to a list that keeps track of all measurements. This centralized list allows you to perform various operations, such as deleting measurements, reporting all angles, and more:
 */
 
-const deleteDimensions = () => {
+const deleteMeasurements = () => {
   measurer.list.clear();
 };
 
 const getAllValues = () => {
-  const lengths: number[] = [];
-  for (const line of measurer.list) {
-    lengths.push(line.value);
+  const angles: number[] = [];
+  for (const angle of measurer.list) {
+    angles.push(angle.value);
   }
-  return lengths;
+  return angles;
 };
 
-/* MD 
-  Now, when a dimension gets added to the list a couple of things happen. Among them, is the calculation of a bounding box that can be used to know when the cursor is on top of the graphical display of the measurement. That is used internally by the component to allow delete a dimension that is just beneath the mouse. We'll keep it simple and bind this functionality to the keydown event, specifically it will fire when the user presses the `Delete` or `Backspace` key.
+/* MD
+  We'll also allow deleting individual measurements by pressing the `Delete` or `Backspace` key when hovering over them:
 */
 
 window.onkeydown = (event) => {
   if (event.code === "Delete" || event.code === "Backspace") {
     measurer.delete();
-  }
-};
-
-/* MD 
-  ### 🔗 Measurement Events
-  You already know anytime you create a dimension the result will get added to the list. When something happens to the list (a dimension has been added or deleted, for example) you can perform side actions by just listening to the corresponding events. Just for fun, let's zoom into the dimension once it has been created:
-*/
-
-measurer.list.onItemAdded.add((line) => {
-  const center = new THREE.Vector3();
-  line.getCenter(center);
-  const radius = line.distance() / 3;
-  const sphere = new THREE.Sphere(center, radius);
-  world.camera.controls.fitToSphere(sphere, true);
-});
-
-/* MD
-  ### 🧹 Displaying Dimension Components
-  ---
-  When you create a new length measurement, only the linear dimension is displayed by default. However, additional components, such as rectangular dimensions, are also calculated in the background. These components provide more detailed measurements and can be displayed if needed. Here's how you can enable and work with these additional dimension components:
-*/
-
-// Rectangular dimensions represent measurements aligned to the X and Y axes when viewed in 2D.
-// These dimensions complete the triangle formed by the linear dimension.
-const displayRectangleDimensions = () => {
-  for (const dimension of measurer.lines) {
-    dimension.displayRectangularDimensions();
-  }
-};
-
-const invertRectangleDimensions = () => {
-  for (const dimension of measurer.lines) {
-    dimension.invertRectangularDimensions();
-  }
-};
-
-// Projection dimensions represent the measurements projected onto the planes defined by the normal direction of each click used to create the initial measurement.
-const displayProjectionDimensions = () => {
-  for (const dimension of measurer.lines) {
-    dimension.displayProjectionDimensions();
-  }
-};
-
-// You can just clear the complementary dimensions at any time
-const removeComplementaryDimensions = () => {
-  for (const dimension of measurer.lines) {
-    dimension.rectangleDimensions.clear();
-    dimension.projectionDimensions.clear();
   }
 };
 
@@ -281,51 +233,36 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
   };
 
   return BUI.html`
-    <bim-panel active label="Length Measurement Tutorial" class="options-menu">
+    <bim-panel active label="Angle Measurement Tutorial" class="options-menu">
       <bim-panel-section label="Controls">
-          <bim-label>Create dimension: Double click</bim-label>  
-          <bim-label>Delete dimension: Delete</bim-label>  
+          <bim-label>Create angle: Double click 3 points</bim-label>
+          <bim-label>Delete measurement: Delete</bim-label>
       </bim-panel-section>
-      
+
       <bim-panel-section label="Measurer">
-        <bim-checkbox checked label="Enabled" 
+        <bim-checkbox checked label="Enabled"
           @change="${({ target }: { target: BUI.Checkbox }) => {
             measurer.enabled = target.value;
-          }}">  
-        </bim-checkbox>       
-        <bim-checkbox checked label="Measurements Visible" 
+          }}">
+        </bim-checkbox>
+        <bim-checkbox checked label="Measurements Visible"
           @change="${({ target }: { target: BUI.Checkbox }) => {
             measurer.visible = target.value;
-          }}">  
-        </bim-checkbox>  
-        
+          }}">
+        </bim-checkbox>
+
         <bim-checkbox checked label="Synchronous Picking"
           @change="${({ target }: { target: BUI.Checkbox }) => {
             makeSynchronous(target.value);
           }}">
-        </bim-checkbox>  
-        
-        <bim-color-input 
+        </bim-checkbox>
+
+        <bim-color-input
           label="Color" color=#${measurer.linesMaterial.color.getHexString()}
           @input="${({ target }: { target: BUI.ColorInput }) => {
             measurer.color = new THREE.Color(target.color);
           }}">
         </bim-color-input>
-        
-        <bim-dropdown 
-          label="Measure Mode" required
-          @change="${({ target }: { target: BUI.Dropdown }) => {
-            const [mode] = target.value;
-            measurer.mode = mode;
-            measurer.snappings =
-              mode === "edge"
-                ? [FRAGS.SnappingClass.LINE]
-                : [FRAGS.SnappingClass.POINT];
-          }}"> ${measurer.modes.map(
-            (mode) =>
-              BUI.html`<bim-option label=${mode} value=${mode} ?checked=${mode === measurer.mode}></bim-option>`,
-          )}
-        </bim-dropdown>
 
         <bim-dropdown
           label="Units" required
@@ -339,7 +276,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           )}
         </bim-dropdown>
 
-        <bim-dropdown 
+        <bim-dropdown
           label="Precision" required
           @change="${({ target }: { target: BUI.Dropdown }) => {
             const [rounding] = target.value;
@@ -353,16 +290,8 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           <bim-option label="5" value=5></bim-option>
         </bim-dropdown>
 
-        <bim-button label="Display Rectangle Dimensions" @click=${displayRectangleDimensions}></bim-button>
+        <bim-button label="Delete all" @click=${() => deleteMeasurements()}></bim-button>
 
-        <bim-button label="Invert Rectangle Dimensions" @click=${invertRectangleDimensions}></bim-button>
-
-        <bim-button label="Display Projection Dimensions" @click=${displayProjectionDimensions}></bim-button>
-
-        <bim-button label="Remove Complementary Dimensions" @click=${removeComplementaryDimensions}></bim-button>
-
-        <bim-button label="Delete all" @click=${() => deleteDimensions()}></bim-button>
-        
         <bim-button label="Log Values" @click=${onLogValues}></bim-button>
       </bim-panel-section>
     </bim-panel>
@@ -406,5 +335,5 @@ world.renderer.onAfterUpdate.add(() => stats.end());
 
 /* MD
   ### 🎉 Wrap up
-  That's it! Now you're able to measure lengths in your BIM application using the LengthMeasurement component. Congratulations! Keep going with more tutorials in the documentation.
+  That's it! Now you're able to measure angles in your BIM application using the AngleMeasurement component. Congratulations! Keep going with more tutorials in the documentation.
 */

@@ -226,6 +226,8 @@ const makeSynchronous = async (value: boolean) => {
   }
 };
 
+await makeSynchronous(true);
+
 /* MD
   ### 🧩 Adding some UI (optional but recommended)
   We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
@@ -262,10 +264,10 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           }}">  
         </bim-checkbox>  
         
-        <bim-checkbox label="Synchronous Picking" 
+        <bim-checkbox checked label="Synchronous Picking"
           @change="${({ target }: { target: BUI.Checkbox }) => {
             makeSynchronous(target.value);
-          }}">  
+          }}">
         </bim-checkbox>  
         
         <bim-color-input 
