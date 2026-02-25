@@ -24,6 +24,23 @@ export class GraphicVertexPicker implements OBC.Disposable {
 
   maxDistance = 1;
 
+  private _pickerSize = 6;
+
+  get pickerSize() {
+    return this._pickerSize;
+  }
+
+  set pickerSize(value: number) {
+    this._pickerSize = value;
+    const size = `${value}px`;
+    this._preview.style.width = size;
+    this._preview.style.height = size;
+    if (this.marker) {
+      this.marker.three.element.style.width = size;
+      this.marker.three.element.style.height = size;
+    }
+  }
+
   private _enabled = false;
   set enabled(value: boolean) {
     this._enabled = value;
@@ -186,12 +203,14 @@ export class GraphicVertexPicker implements OBC.Disposable {
           // Apply marker position
         }
 
+        this.applyMarkerSize();
         this.marker.three.position.copy(point);
       } else {
         Object.assign(
           this.marker.three.element.style,
           GraphicVertexPicker.baseSnappingStyle,
         );
+        this.applyMarkerSize();
       }
     } else if (this.marker) {
       this.marker.visible = false;
@@ -255,6 +274,7 @@ export class GraphicVertexPicker implements OBC.Disposable {
           GraphicVertexPicker.baseSnappingStyle,
         );
       }
+      this.applyMarkerSize();
     } else if (this.marker) {
       this.marker.visible = false;
     }
@@ -296,6 +316,13 @@ export class GraphicVertexPicker implements OBC.Disposable {
     this._pointerVisible = false;
     const domElement = this.world.renderer!.three.domElement;
     domElement.parentElement?.removeChild(this._preview);
+  }
+
+  private applyMarkerSize() {
+    if (!this.marker) return;
+    const size = `${this._pickerSize}px`;
+    this.marker.three.element.style.width = size;
+    this.marker.three.element.style.height = size;
   }
 
   private applySnapping(

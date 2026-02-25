@@ -327,6 +327,14 @@ export abstract class Measurement<
     this._vertexPicker.maxDistance = value;
   }
 
+  get pickerSize() {
+    return this._vertexPicker.pickerSize;
+  }
+
+  set pickerSize(value: number) {
+    this._vertexPicker.pickerSize = value;
+  }
+
   protected _vertexPicker = new GraphicVertexPicker(this.components);
 
   constructor(components: OBC.Components, measureType: U) {

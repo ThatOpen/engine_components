@@ -259,6 +259,13 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           }}">
         </bim-checkbox>
 
+        <bim-number-input
+          slider step="1" label="Picker Size" value="${measurer.pickerSize}" min="2" max="20"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            measurer.pickerSize = target.value;
+          }}">
+        </bim-number-input>
+
         <bim-color-input
           label="Color" color=#${measurer.linesMaterial.color.getHexString()}
           @input="${({ target }: { target: BUI.ColorInput }) => {
