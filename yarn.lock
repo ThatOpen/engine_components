@@ -772,8 +772,8 @@ __metadata:
     "@thatopen/ui": ~3.3.0
     "@types/convert-units": 2.3.11
     "@types/three": 0.175.0
-    camera-controls: ^2.9.0
-    fast-xml-parser: 4.4.1
+    camera-controls: ^3.1.2
+    fast-xml-parser: 5.3.7
     jszip: 3.10.1
     stats.js: ^0.17.0
     three: ^0.175.0
@@ -781,6 +781,7 @@ __metadata:
     web-ifc: 0.0.74
   peerDependencies:
     "@thatopen/fragments": ~3.3.0
+    camera-controls: ">=2.9.0"
     three: ">=0.175.0"
     web-ifc: ">=0.0.74"
   languageName: unknown
@@ -1441,12 +1442,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"camera-controls@npm:^2.9.0":
-  version: 2.10.1
-  resolution: "camera-controls@npm:2.10.1"
+"camera-controls@npm:^3.1.2":
+  version: 3.1.2
+  resolution: "camera-controls@npm:3.1.2"
   peerDependencies:
     three: ">=0.126.1"
-  checksum: f5ed5e335327e88e51897cefa70741246b20c5be44e9b463dc21f33dbf2984764aa0d37b34f7361240d67ccef7c77ece8cede1504b7663cfdf4102d04446bb40
+  checksum: 4171e86accddf540dc0e87b5106fa419c091b1da38416da6fee72d9c758606be5111174e688c49f05450c34871877535e4c297529eefa7b003a4d89afcac760f
   languageName: node
   linkType: hard
 
@@ -2210,14 +2211,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fast-xml-parser@npm:4.4.1":
-  version: 4.4.1
-  resolution: "fast-xml-parser@npm:4.4.1"
+"fast-xml-parser@npm:5.3.7":
+  version: 5.3.7
+  resolution: "fast-xml-parser@npm:5.3.7"
   dependencies:
-    strnum: ^1.0.5
+    strnum: ^2.1.2
   bin:
     fxparser: src/cli/cli.js
-  checksum: f440c01cd141b98789ae777503bcb6727393296094cc82924ae9f88a5b971baa4eec7e65306c7e07746534caa661fc83694ff437d9012dc84dee39dfbfaab947
+  checksum: 0bb307bc63a01c079ae28b6b62eeea0007d787e6ab47dfca493f40305f78aeedea2906b2632bf0eb9d4d868e748c77c70393a808441fb5949c9d2e6f8f2825f0
   languageName: node
   linkType: hard
 
@@ -4031,7 +4032,7 @@ __metadata:
     "@types/node": latest
     "@typescript-eslint/eslint-plugin": 7.2.0
     "@typescript-eslint/parser": 7.2.0
-    camera-controls: ^2.9.0
+    camera-controls: ^3.1.2
     eslint: 8.57.0
     eslint-config-airbnb-base: 15.0.0
     eslint-config-prettier: 9.1.0
@@ -4476,10 +4477,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"strnum@npm:^1.0.5":
-  version: 1.1.2
-  resolution: "strnum@npm:1.1.2"
-  checksum: a85219eda13e97151c95e343a9e5960eacfb0a0ff98104b4c9cb7a212e3008bddf0c9714c9c37c2e508be78e741a04afc80027c2dc18509d1b5ffd4c37191fc2
+"strnum@npm:^2.1.2":
+  version: 2.1.2
+  resolution: "strnum@npm:2.1.2"
+  checksum: 755e8327ee68201d700169ceee097ea52da7b675f4521442a8dbd1517021f89a91399213c446d1bf3d1123ca1896a76f0ff076d04c88ffe6056e78828ce6f60a
   languageName: node
   linkType: hard
 

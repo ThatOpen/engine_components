@@ -49,6 +49,6 @@
   },
   "version": "3.3.2",
   "dependencies": {
-    "camera-controls": "^2.9.0"
+    "camera-controls": "^3.1.2"
   }
 }
