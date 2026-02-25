@@ -145,3 +145,5 @@ node-app
 
 .DS_Store
 .claude/
+
+resources/frags/test/

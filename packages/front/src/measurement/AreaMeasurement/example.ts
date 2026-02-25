@@ -90,7 +90,9 @@ fragments.core.models.materials.list.onItemSet.add(({ value: material }) => {
   :::
 */
 
-const fragPaths = ["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];
+const fragPaths = [
+  "https://thatopen.github.io/engine_components/resources/frags/school_arq.frag",
+];
 await Promise.all(
   fragPaths.map(async (path) => {
     const modelId = path.split("/").pop()?.split(".").shift();
@@ -171,41 +173,43 @@ measurer.list.onItemAdded.add((area) => {
 const meshes: THREE.Mesh[] = [];
 
 // Add picking meshes (deduplicating geometries to save memory)
-const model = fragments.list.values().next().value!;
-const idsWithGeometry = await model.getItemsIdsWithGeometry();
-const allMeshesData = await model.getItemsGeometry(idsWithGeometry);
+for (const [, model] of fragments.list) {
+  const idsWithGeometry = await model.getItemsIdsWithGeometry();
+  const allMeshesData = await model.getItemsGeometry(idsWithGeometry);
 
-const geometries = new Map<number, THREE.BufferGeometry>();
+  const geometries = new Map<number, THREE.BufferGeometry>();
 
-for (const itemId in allMeshesData) {
-  const meshData = allMeshesData[itemId];
-  for (const geomData of meshData) {
-    if (
-      !geomData.positions ||
-      !geomData.indices ||
-      !geomData.transform ||
-      !geomData.representationId
-    ) {
-      continue;
+  for (const itemId in allMeshesData) {
+    const meshData = allMeshesData[itemId];
+    for (const geomData of meshData) {
+      if (
+        !geomData.positions ||
+        !geomData.indices ||
+        !geomData.transform ||
+        !geomData.representationId
+      ) {
+        continue;
+      }
+
+      const representationId = geomData.representationId;
+      if (!geometries.has(representationId)) {
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute(geomData.positions, 3),
+        );
+        geometry.setIndex(Array.from(geomData.indices));
+        geometries.set(representationId, geometry);
+      }
+
+      const geometry = geometries.get(representationId)!;
+
+      const mesh = new THREE.Mesh(geometry);
+      mesh.applyMatrix4(geomData.transform);
+      mesh.applyMatrix4(model.object.matrixWorld);
+      mesh.updateWorldMatrix(true, true);
+      meshes.push(mesh);
     }
-
-    const representationId = geomData.representationId;
-    if (!geometries.has(representationId)) {
-      const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute(
-        "position",
-        new THREE.Float32BufferAttribute(geomData.positions, 3),
-      );
-      geometry.setIndex(Array.from(geomData.indices));
-      geometries.set(representationId, geometry);
-    }
-
-    const geometry = geometries.get(representationId)!;
-
-    const mesh = new THREE.Mesh(geometry);
-    mesh.applyMatrix4(geomData.transform);
-    mesh.updateWorldMatrix(true, true);
-    meshes.push(mesh);
   }
 }
 
