@@ -201,6 +201,8 @@ export class Views extends Component {
       boxes.push({ id, box: model.box });
     }
 
+    if (boxes.length === 0) return result;
+
     if (combine) {
       const boxer = this.components.get(BoundingBoxer);
       boxer.list.clear();
