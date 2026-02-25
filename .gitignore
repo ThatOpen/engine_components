@@ -144,3 +144,4 @@ app
 node-app
 
 .DS_Store
+.claude/

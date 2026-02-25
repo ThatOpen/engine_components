@@ -28,7 +28,11 @@ export class GraphicVertexPicker implements OBC.Disposable {
   set enabled(value: boolean) {
     this._enabled = value;
     if (this.marker) this.marker.visible = value;
-    if (value) this.get();
+    if (value) {
+      this.get();
+    } else {
+      this.hidePointer();
+    }
   }
 
   get enabled() {
@@ -83,6 +87,7 @@ export class GraphicVertexPicker implements OBC.Disposable {
 
   /** {@link OBC.Disposable.onDisposed} */
   dispose() {
+    this.hidePointer();
     if (this.marker) {
       this.marker.dispose();
     }
