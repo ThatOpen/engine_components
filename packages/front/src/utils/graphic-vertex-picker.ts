@@ -97,7 +97,7 @@ export class GraphicVertexPicker implements OBC.Disposable {
     }
     this._preview.style.zIndex = "999";
     this._preview.style.pointerEvents = "none";
-    this._preview.style.position = "fixed";
+    this._preview.style.position = "absolute";
     this._preview.style.top = "0";
     this._preview.style.left = "0";
   }
@@ -299,7 +299,11 @@ export class GraphicVertexPicker implements OBC.Disposable {
     const casters = this._components.get(OBC.Raycasters);
     const caster = casters.get(this.world);
     const mousePosition = caster.mouse.rawPosition;
-    this._preview.style.transform = `translate(-50%, -50%) translate(${mousePosition.x}px, ${mousePosition.y}px)`;
+    const domElement = this.world.renderer!.three.domElement;
+    const rect = domElement.getBoundingClientRect();
+    const x = mousePosition.x - rect.left;
+    const y = mousePosition.y - rect.top;
+    this._preview.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
   }
 
   private showPointer() {
@@ -307,7 +311,13 @@ export class GraphicVertexPicker implements OBC.Disposable {
     if (this._pointerVisible) return;
     this._pointerVisible = true;
     const domElement = this.world.renderer!.three.domElement;
-    domElement.parentElement?.appendChild(this._preview);
+    const parent = domElement.parentElement;
+    if (!parent) return;
+    const style = getComputedStyle(parent);
+    if (style.position === "static") {
+      parent.style.position = "relative";
+    }
+    parent.appendChild(this._preview);
   }
 
   private hidePointer() {
