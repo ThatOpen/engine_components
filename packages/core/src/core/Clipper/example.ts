@@ -201,13 +201,25 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           }}">
         </bim-number-input>
         
-        <bim-number-input 
+        <bim-number-input
           slider step="0.1" label="Planes Size" value="5" min="2" max="10"
           @change="${({ target }: { target: BUI.NumberInput }) => {
             clipper.config.size = target.value;
           }}">
         </bim-number-input>
-        
+
+        <bim-checkbox label="Auto Scale Planes" checked
+          @change="${({ target }: { target: BUI.Checkbox }) => {
+            clipper.autoScalePlanes = target.value;
+            for (const [, plane] of clipper.list) {
+              plane.autoScale = target.value;
+              if (!target.value) {
+                plane.size = clipper.size;
+              }
+            }
+          }}">
+        </bim-checkbox>
+
         <bim-button 
           label="Toggle Clippings" 
           @click=${toggleClippings}>  

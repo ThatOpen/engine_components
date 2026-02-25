@@ -69,6 +69,21 @@ export class SimplePlane implements Disposable, Hideable {
     visible: false,
   });
 
+  private _sizeMultiplier = 5;
+
+  private _autoScale = true;
+
+  get autoScale() {
+    return this._autoScale;
+  }
+
+  set autoScale(value: boolean) {
+    this._autoScale = value;
+    if (value) {
+      this.updateScale();
+    }
+  }
+
   /**
    * Getter for the enabled state of the clipping plane.
    * @returns {boolean} The current enabled state.
@@ -136,12 +151,17 @@ export class SimplePlane implements Disposable, Hideable {
 
   /** The size of the clipping plane representation. */
   get size() {
-    return this._planeMesh.scale.x;
+    return this._sizeMultiplier;
   }
 
   /** Sets the size of the clipping plane representation. */
   set size(size: number) {
-    this._planeMesh.scale.set(size, size, size);
+    this._sizeMultiplier = size;
+    if (this.autoScale) {
+      this.updateScale();
+    } else {
+      this._planeMesh.scale.set(size, size, size);
+    }
   }
 
   /**
@@ -183,6 +203,7 @@ export class SimplePlane implements Disposable, Hideable {
 
     this.normal = normal;
     this.origin = origin;
+    this._sizeMultiplier = size;
 
     world.renderer.setPlane(true, this.three);
 
@@ -193,6 +214,11 @@ export class SimplePlane implements Disposable, Hideable {
     this.three.setFromNormalAndCoplanarPoint(normal, origin);
     if (activateControls) {
       this.toggleControls(true);
+    }
+
+    this.updateScale();
+    if (world.camera?.controls) {
+      world.camera.controls.addEventListener("update", this.updateScale);
     }
   }
 
@@ -231,11 +257,32 @@ export class SimplePlane implements Disposable, Hideable {
       this.normal,
       this._helper.position,
     );
+    this.updateScale();
+  };
+
+  private updateScale = () => {
+    if (!this.autoScale) return;
+    const camera = this.world.camera?.three;
+    if (!camera) return;
+    if (!(camera instanceof THREE.PerspectiveCamera)) return;
+    const cameraPosition = new THREE.Vector3();
+    camera.getWorldPosition(cameraPosition);
+    const distance = cameraPosition.distanceTo(this._helper.position);
+    const scale = (distance / 7) * this._sizeMultiplier;
+    this._planeMesh.scale.set(scale, scale, scale);
   };
 
   /** {@link Disposable.dispose} */
   dispose() {
     this._enabled = false;
+
+    if (this.world.camera?.controls) {
+      this.world.camera.controls.removeEventListener(
+        "update",
+        this.updateScale,
+      );
+    }
+
     this.onDraggingStarted.reset();
     this.onDraggingEnded.reset();
     this._helper.removeFromParent();

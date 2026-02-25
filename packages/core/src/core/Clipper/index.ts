@@ -99,6 +99,13 @@ export class Clipper
   toleranceOrthogonalY = 0.7;
 
   /**
+   * Whether clipping planes should automatically scale based on
+   * camera distance. When true, the plane surface stays proportional
+   * to the arrow gizmo as you zoom in/out. Default is true.
+   */
+  autoScalePlanes = true;
+
+  /**
    * The type of clipping plane to be created.
    * Default is {@link SimplePlane}.
    */
@@ -401,6 +408,7 @@ export class Clipper
       normal,
       this._material,
     );
+    plane.autoScale = this.autoScalePlanes;
     plane.onDraggingStarted.add(this._onStartDragging);
     plane.onDraggingEnded.add(this._onEndDragging);
     const id = UUID.create();
