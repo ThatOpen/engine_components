@@ -50,6 +50,7 @@ export class Postproduction {
   private _excludedObjectsEnabled = false;
   private _components: OBC.Components;
   private _renderer: PostproductionRenderer;
+  private _clearColor = new THREE.Color();
 
   defaultAoParameters = {
     radius: 0.25,
@@ -300,6 +301,16 @@ export class Postproduction {
       material.userData.wasVisibleForPostproduction = material.visible;
       material.visible = false;
     }
+    const renderer = this._renderer.three;
+    renderer.getClearColor(this._clearColor);
+    const prevClearAlpha = renderer.getClearAlpha();
+    renderer.setClearColor(0xffffff, 1);
+    renderer.setRenderTarget(this.composer.renderTarget1);
+    renderer.clear();
+    renderer.setRenderTarget(this.composer.renderTarget2);
+    renderer.clear();
+    renderer.setRenderTarget(null);
+    renderer.setClearColor(this._clearColor, prevClearAlpha);
     this.composer.render();
     for (const material of this.invisibleMaterials) {
       material.visible = material.userData.wasVisibleForPostproduction;
