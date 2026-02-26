@@ -1,5 +1,39 @@
 # Changelog
 
+## [3.4.0](https://github.com/ThatOpen/engine_components/compare/v3.3.2...v3.4.0) (2026-02-26)
+
+
+### Features
+
+* add picker size ([f294f04](https://github.com/ThatOpen/engine_components/commit/f294f04b56feca6bac722949df0fc683d76f9166))
+* automatically hide lod materials from AO ([d7665f6](https://github.com/ThatOpen/engine_components/commit/d7665f6e68eb4582ab191e394acb16396bef75c7))
+* clipping plane autoscale ([640fb62](https://github.com/ThatOpen/engine_components/commit/640fb6217be4f9ab6d1ab074dfd9fb301466f469))
+* **Hoverer:** add delay property and remove hardcoded timeouts ([#690](https://github.com/ThatOpen/engine_components/issues/690)) ([f965f74](https://github.com/ThatOpen/engine_components/commit/f965f7446921948b4539856a4dbf23a3275f2f39))
+* **IfcLoader:** add options to include all attributes and relations ([#680](https://github.com/ThatOpen/engine_components/issues/680)) ([ca81605](https://github.com/ThatOpen/engine_components/commit/ca8160515a192bc9430fb0b580c1495c612615ab))
+* implement angle measure ([fac8a0d](https://github.com/ThatOpen/engine_components/commit/fac8a0d5ac11b6714493b9ac9bf882a8a15b0dcb))
+* implement optional traditional workers ([c2a742a](https://github.com/ThatOpen/engine_components/commit/c2a742aecd99ae32c2ac0398cf6b2b0a1227c7d4))
+* implement xray in edges pass ([9eca87c](https://github.com/ThatOpen/engine_components/commit/9eca87cabe8c770ab84631ad766c2b104ac596f7))
+* pass plane to Clipper events ([af8404d](https://github.com/ThatOpen/engine_components/commit/af8404d1aa25f80d4d441273344f069f0d7ebe35))
+* remove visibility check from outliner ([4315853](https://github.com/ThatOpen/engine_components/commit/431585336aefb7d355424be9b557dae28752365e))
+* upgrade camera controls and make it flexible ([c093322](https://github.com/ThatOpen/engine_components/commit/c093322d781c1f0845554bdd33ca9c54a69788f2))
+
+
+### Bug Fixes
+
+* correct graphic vertex position in nested html structures ([71cd92a](https://github.com/ThatOpen/engine_components/commit/71cd92ac650e552af6d5b404ee0b85baf2f31708))
+* correct picking raycasting failing when not in front ([2d96042](https://github.com/ThatOpen/engine_components/commit/2d96042107fe6382e6b4742bdf67b7de6b6be6b6))
+* correct sync measures example bug when loading multiple models ([6edfa7c](https://github.com/ThatOpen/engine_components/commit/6edfa7cc88ae404bb0d95587951d5166a53241db))
+* hide vertex picker preview when disabling it ([7705aa6](https://github.com/ThatOpen/engine_components/commit/7705aa6b9394c5bbbad1ed599214c948f38d847d))
+* **Highlighter:** auto toggle single item ([#693](https://github.com/ThatOpen/engine_components/issues/693)) ([134829b](https://github.com/ThatOpen/engine_components/commit/134829bc3e292cc371c10ed4e4464d8bd226aeef))
+* resolve cross-platform path resolution in vite.config.ts ([28f43b1](https://github.com/ThatOpen/engine_components/commit/28f43b1e2d36b577611f8f0eb859694837af3b10))
+* return in views when no boxes found ([3ec7d7f](https://github.com/ThatOpen/engine_components/commit/3ec7d7ff0364272d4638f3115c7b53227758b7ca))
+* **simple camera:** listen resize change on container element instead of window ([#694](https://github.com/ThatOpen/engine_components/issues/694)) ([8b1d75d](https://github.com/ThatOpen/engine_components/commit/8b1d75d4adc44454e25869fd74669232a43a0d32))
+* solve app breaking when hitting esc + moving mouse (areas) ([8c01045](https://github.com/ThatOpen/engine_components/commit/8c010450f5d3e9d5bcbd0d4d62bc292b646e0444))
+* solve PEN style smears when SMAA and Outlines are enabled ([4f87aae](https://github.com/ThatOpen/engine_components/commit/4f87aaea55a6832293105b9269774d16abc6c17f))
+* update endpoint and label color in angle measurements ([e100e7d](https://github.com/ThatOpen/engine_components/commit/e100e7d55331b81c4bdd487725ca999a05104b17))
+* Vulnerability in fast-xml-parser &lt;5.3.4 ([#687](https://github.com/ThatOpen/engine_components/issues/687)) ([24a06f1](https://github.com/ThatOpen/engine_components/commit/24a06f10b73898eea19fc0e9770215be28b3bd64))
+* Vulnerability in fast-xml-parser &lt;5.3.6 and updated to latest ([#704](https://github.com/ThatOpen/engine_components/issues/704)) ([0c5cc09](https://github.com/ThatOpen/engine_components/commit/0c5cc09003b674729c46b9346354421ac1161da9))
+
 ## [3.3.2](https://github.com/ThatOpen/engine_components/compare/v3.3.0...v3.3.2) (2026-01-27)
 
 
