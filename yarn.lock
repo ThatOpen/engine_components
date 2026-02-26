@@ -781,7 +781,7 @@ __metadata:
     web-ifc: 0.0.74
   peerDependencies:
     "@thatopen/fragments": ~3.3.0
-    camera-controls: ">=2.9.0"
+    camera-controls: ">=3.1.2"
     three: ">=0.175.0"
     web-ifc: ">=0.0.74"
   languageName: unknown
