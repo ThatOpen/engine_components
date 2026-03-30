@@ -494,7 +494,7 @@ export class Highlighter
       }
 
       // Clean up selection map for this style
-      this.selection[style] = {};
+      OBC.ModelIdMapUtils.remove(this.selection[style], clearedItems);
     }
 
     if (!this._fromHighlight) {
