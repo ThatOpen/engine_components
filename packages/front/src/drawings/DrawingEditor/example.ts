@@ -98,17 +98,21 @@ const techDrawings = components.get(OBC.TechnicalDrawings);
 // The drawing is created in the hidden world so the SheetBoard can render it
 // through its own WebGL renderer. The main world stays clean for the BIM model.
 const drawing = techDrawings.create(world);
-drawing.three.position.set(15.4589, 11.4270, 1.0167);
-drawing.three.quaternion.set(0.000000, -0.707107, 0.707107, 0.000000);
+// Orient the drawing as a top-down floor plan: local -Y points toward world -Y
+// so the drawing projects straight down onto its horizontal XZ plane.
+drawing.orientTo(new THREE.Vector3(0, -1, 0));
+// Place the drawing plane at the cut elevation (~1.2 m above the floor) and
+// capture everything within the next 4 m below it (one-floor depth).
+drawing.three.position.set(0, 1.2, 0);
 
-drawing.far = 3;
+drawing.far = 4;
 
 drawing.layers.create("Visible",     { material: new THREE.LineBasicMaterial({ color: 0x000000 }) });
 drawing.layers.create("Hidden",      { material: new THREE.LineDashedMaterial({ color: 0x888888, dashSize: 0.2, gapSize: 0.1 }), visible: false });
 drawing.layers.create("Annotations", { material: new THREE.LineBasicMaterial({ color: 0x000000 }) });
 drawing.activeLayer = "Annotations";
 
-const viewport = drawing.viewports.create({ left: -22, right: 16, top: 2, bottom: -14, scale: 50, name: "Detail Section" });
+const viewport = drawing.viewports.create({ left: -25, right: 25, top: 15, bottom: -15, scale: 100, name: "Floor Plan" });
 
 /* MD
   ### 🔭 Projecting model edges onto the drawing
