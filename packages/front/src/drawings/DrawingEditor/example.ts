@@ -184,7 +184,7 @@ async function projectFromModel(button: BUI.Button) {
 */
 
 const editor = components.get(OBF.DrawingEditor);
-await editor.fonts.load("/resources/fonts/PlusJakartaSans-Medium.ttf");
+await editor.fonts.load("https://thatopen.github.io/engine_components/resources/fonts/PlusJakartaSans-Medium.ttf");
 
 editor.onStateChanged.add((key) => {
   if (key.includes("activeDrawing")) updatePanel();

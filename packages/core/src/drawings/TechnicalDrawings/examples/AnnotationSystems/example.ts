@@ -131,7 +131,7 @@ const angleDims = techDrawings.use(OBC.AngleAnnotations);
 
 let font: Font | null = null;
 const ttfLoader = new TTFLoader();
-ttfLoader.load("/resources/fonts/PlusJakartaSans-Medium.ttf", (ttf: any) => {
+ttfLoader.load("https://thatopen.github.io/engine_components/resources/fonts/PlusJakartaSans-Medium.ttf", (ttf: any) => {
   font = new Font(ttf);
 });
 

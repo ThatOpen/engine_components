@@ -100,7 +100,7 @@ export class DrawingEditor extends OBC.Component {
    *
    * ```ts
    * const editor = components.get(DrawingEditor);
-   * await editor.fonts.load("/resources/fonts/PlusJakartaSans-Medium.ttf");
+   * await editor.fonts.load("https://thatopen.github.io/engine_components/resources/fonts/PlusJakartaSans-Medium.ttf");
    *
    * editor.activeDrawing = drawing;
    * editor.setSource(world);

@@ -209,7 +209,7 @@ let updatePanel = () => {};
 
 const ttfLoader = new TTFLoader();
 const font: Font = await new Promise((resolve) => {
-  ttfLoader.load("/resources/fonts/PlusJakartaSans-Medium.ttf", (ttf: any) => {
+  ttfLoader.load("https://thatopen.github.io/engine_components/resources/fonts/PlusJakartaSans-Medium.ttf", (ttf: any) => {
     resolve(new Font(ttf));
   });
 });
