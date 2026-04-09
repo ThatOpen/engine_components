@@ -1,1 +1,150 @@
-["packages/front/src/measurement/VolumeMeasurement/example.ts","packages/front/src/measurement/LengthMeasurement/example.ts","packages/front/src/measurement/AreaMeasurement/example.ts","packages/front/src/measurement/AngleMeasurement/example.ts","packages/front/src/fragments/Outliner/example.ts","packages/front/src/fragments/Hoverer/example.ts","packages/front/src/fragments/Highlighter/example.ts","packages/front/src/drawings/DrawingEditor/example.ts","packages/front/src/core/PostproductionRenderer/example.ts","packages/front/src/core/Marker/example.ts","packages/front/src/core/ClipStyler/example.ts","packages/front/src/civil/CivilNavigators/example.ts","packages/core/src/openbim/IDSSpecifications/example.ts","packages/core/src/openbim/BCFTopics/example.ts","packages/core/src/fragments/ItemsFinder/example.ts","packages/core/src/fragments/IfcLoader/example.ts","packages/core/src/fragments/Hider/example.ts","packages/core/src/fragments/FragmentsManager/example.ts","packages/core/src/fragments/EdgeProjector/example.ts","packages/core/src/fragments/Classifier/example.ts","packages/core/src/fragments/BoundingBoxer/example.ts","packages/core/src/drawings/TechnicalDrawings/example.ts","packages/core/src/drawings/TechnicalDrawings/","packages/core/src/drawings/TechnicalDrawings/","packages/core/src/drawings/TechnicalDrawings/","packages/core/src/drawings/TechnicalDrawings/","packages/core/src/drawings/TechnicalDrawings/","packages/core/src/drawings/TechnicalDrawings/","packages/core/src/drawings/TechnicalDrawings/","packages/core/src/core/Worlds/example.ts","packages/core/src/core/Views/example.ts","packages/core/src/core/Viewpoints/example.ts","packages/core/src/core/ShadowedScene/example.ts","packages/core/src/core/Raycasters/example.ts","packages/core/src/core/OrthoPerspectiveCamera/example.ts","packages/core/src/core/Grids/example.ts","packages/core/src/core/Clipper/example.ts"]
+[
+  {
+    "path": "packages/front/src/measurement/VolumeMeasurement/example.ts",
+    "description": "Accurate volume measurement is a critical feature in Building Information Modeling (BIM) applications. Whether you're estimating material quantities, analyzing spatial properties, or collaborating on designs, providing users with intuitive tools to measure volumes in 3D space is essential. In this tutorial, you will learn how to integrate a volume measuring tool in your BIM app; let's dive in!"
+  },
+  {
+    "path": "packages/front/src/measurement/LengthMeasurement/example.ts",
+    "description": "Accurate length measurement is a cornerstone of Building Information Modeling (BIM) applications. Whether you're designing, analyzing, or collaborating, providing users with intuitive tools to measure distances in 3D space is essential. In this tutorial, you will learn how to integrate a measuring tool in your BIM app; let's go ahead!"
+  },
+  {
+    "path": "packages/front/src/measurement/AreaMeasurement/example.ts",
+    "description": "Space control is one of the most important elements of BIM applications. In this tutorial, you'll learn how to expose an area measurement tool to your end users."
+  },
+  {
+    "path": "packages/front/src/measurement/AngleMeasurement/example.ts",
+    "description": "Measuring angles between surfaces, edges, or arbitrary points is essential in many BIM workflows. In this tutorial, you'll learn how to expose an angle measurement tool to your end users."
+  },
+  {
+    "path": "packages/front/src/fragments/Outliner/example.ts",
+    "description": ""
+  },
+  {
+    "path": "packages/front/src/fragments/Hoverer/example.ts",
+    "description": "Hovering is a key interaction in 3D applications, offering visual feedback as users explore a scene. When hovering over an object, its appearance changes—often through color or shading—highlighting it and enhancing usability.  In this tutorial, you'll learn how to implement hovering effectively.  :::tip Why Hovering Matters?  Hovering isn't just aesthetic; it communicates interactivity and focus, making your app feel dynamic and responsive.  :::"
+  },
+  {
+    "path": "packages/front/src/fragments/Highlighter/example.ts",
+    "description": "In 3D apps, users get some feedback when they hover or click on an object. Generally, it changes its color or shading. In this tutorial, you'll learn how to do that with the highlighter.  :::tip Highlighting?  Highlighting means changing the color of one or many objects to make them stand out. This can be used for hovering, for selection, for bringing the attention of the user to certain items, etc.  :::"
+  },
+  {
+    "path": "packages/front/src/drawings/DrawingEditor/example.ts",
+    "description": "In the core `TechnicalDrawings` tutorial, the interaction layer — converting mouse positions to drawing-space coordinates, keeping a hover highlight in sync, and forwarding events to the annotation state machine step by step — took nearly as much code as the feature itself. In `components-front`, an editor component absorbs all of that plumbing so you can focus on what your annotations mean rather than on the mechanics of placing them."
+  },
+  {
+    "path": "packages/front/src/core/PostproductionRenderer/example.ts",
+    "description": "Postproduction effects enrich your 3D scenes. There are several post-production effects, such as adding shadows, rendering outlines, adding ambient occlusion and applying bloom, that can enhance and make your scene look cool. In this tutorial, you'll learn how to do it.  :::tip Postproduction?  The simple Three.js renderer isn't bad, but it's pretty basic. Postproduction are a collection of effects you can add to your scene to make it look much better. Of course, this means consuming more resources, but luckily for us, the power of devices is proportional to the size of its screen, so we should be able to enjoy this beauty in most scene even from our smartphones!  :::  In this tutorial, we will import:  - `three` to create some 3D items. - `@thatopen/components` to set up the barebone of our app. - `@thatopen/ui` to add some simple and cool UI menus. - `@thatopen/components-front` to use some frontend-oriented components. - `Stats.js` (optional) to measure the performance of our app. - `GTAOPass` (optional) to control the ambient occlusion parameters."
+  },
+  {
+    "path": "packages/front/src/core/Marker/example.ts",
+    "description": "Sometimes we need to see a 2D element inside our 3D world. For instance, imagine a Digital Twin application that has some icons representing a set of measurement devices inside a building. In this tutorial, we'll learn to use the Marker, which will allow us to easily create and cluster 2D elements inside the 3D scene.  :::tip 2D inside 3D?  We will achieve this using Three.js CSS2DElements. They allow you to \"embed\" any HTML element in your 3D scene, automatically adjusting it's position to the 3D camera.  :::"
+  },
+  {
+    "path": "packages/front/src/core/ClipStyler/example.ts",
+    "description": "Clipping planes are very common in BIM applications. They are used for floor plans, sections, looking inside a 3D model, etc. But simple clipping planes are not enough: they don't have fills or outlines, which are common in BIM software. That Open Engine can do them, and in this tutorial you'll learn how!  :::tip Fills and outlines?  Traditionally, architects created plans with a certain style. For instance, thick lines with solid fill for cutted walls and structure, thin lines for cutted doors and windows, etc. These same conventions are still common in BIM software.  :::"
+  },
+  {
+    "path": "packages/front/src/civil/CivilNavigators/example.ts",
+    "description": "Infra models are awesome, but they are usually very, very long and thin. This makes it a bit hard to navigate through them. Luckily for you, the alignment data that comes in IFC models is processed by our libraries and generated in 3D, so you can use it for navigation!  :::tip 3D alignment?  The alignment data in IFC usually comes in 2D (floor plan and elevation). We use that data to regenerate the 3D curve from those 2D representations. You'll see the result in just a moment!  :::  In this tutorial, we will import:  - `three` to create some 3D items. - `@thatopen/components` to set up the barebone of our app. - `@thatopen/components-front` to use some frontend-oriented components. - `Stats.js` (optional) to measure the performance of our app."
+  },
+  {
+    "path": "packages/core/src/openbim/IDSSpecifications/example.ts",
+    "description": "The buildingSMART has been creating nice standards for the AEC just like IFC for BIM models and BCF for communication. The two of them are great, but when it comes to review if an IFC file complies with some requirements there is the perfect standard for it: IDS. In That Open Engine is possibile not only to create IDS files, but also to import and export then; in this tutorial you will learn everything you need to know to get started!"
+  },
+  {
+    "path": "packages/core/src/openbim/BCFTopics/example.ts",
+    "description": "Effective communication is essential for all projects, whether in construction or other industries. It is crucial to have a reliable method for project members to communicate and track discussions. In construction projects, BuildingSMART introduced the BIM Collaboration Format (BCF) to standardize communication about ongoing topics among stakeholders. That Open Engine includes integration with BCF, enabling you to read, create, and update any BCF file seamlessly. Let's explore how it works!"
+  },
+  {
+    "path": "packages/core/src/fragments/ItemsFinder/example.ts",
+    "description": "In the world of 3D modeling, finding the right information quickly is crucial for efficiency and productivity. The Items Finder component empowers you to locate specific elements in your models with ease, using powerful queries based on categories, attributes, and relationships. Let's dive in and see how it works!"
+  },
+  {
+    "path": "packages/core/src/fragments/IfcLoader/example.ts",
+    "description": "IFC is the most common format to share BIM data openly. Our libraries are able to load, navigate and even create and edit them directly. In this tutorial, you'll learn how to open an IFC model in the 3D scene.  :::tip IFC?  If you are not famliar with the construction industry, this might be the first time you come across this term. It stands for Industry Foundation Classes, and it's the most widespread standard for sharing BIM data freely, without depending on specific software manufacturers and their propietary formats.  :::"
+  },
+  {
+    "path": "packages/core/src/fragments/Hider/example.ts",
+    "description": "Many times, we just want to look at a specific part of a BIM model, without seeing the rest of it. BIM models are complex, and finding what we are looking for is not always easy. Luckily, the components library has tools to make it easier!"
+  },
+  {
+    "path": "packages/core/src/fragments/FragmentsManager/example.ts",
+    "description": "In this tutorial, you'll learn how to load your BIM models in Fragment format. Fragment is an [open source geometry system](https://github.com/ThatOpen/engine_fragment/) that we created on top of [Three.js](https://threejs.org/) to display BIM models fast, while keeping control over the individual items of the model. The idea is simple: a BIM model is a FragmentsGroup, which is (like the name implies) a collection of fragments. A fragment is a set of identical geometries instantiated around the scene.  :::tip How do I get a BIM model in Fragment format?  The IfcLoader component does exactly that! It converts IFC models to Fragments. Check out that tutorial if you are starting out with IFC files. Of course, you can just use the IfcLoader in your app, but loading fragments is more than x10 faster than loading IFC files. Our recommendation is to convert your IFC files to fragments just once, store the fragment somewhere (frontent of backend) and then load the fragments instead of teh IFC models directly.  :::"
+  },
+  {
+    "path": "packages/core/src/fragments/EdgeProjector/example.ts",
+    "description": "In this tutorial, you'll learn how to generate 2D edge projections from BIM model items. This is useful for creating technical drawings, floor plans, and elevation views from 3D models. Let's get started!"
+  },
+  {
+    "path": "packages/core/src/fragments/Classifier/example.ts",
+    "description": "Classifications are a powerful way to organize your BIM models. They allow you to group them according to different parameters. For example: getting all the walls, or all the items that belong to a specific floor or room. In this tutorial, you'll learn how to classify your BIM models by different criterias, and how to get the list of items that belong to a specific category. Let's go!"
+  },
+  {
+    "path": "packages/core/src/fragments/BoundingBoxer/example.ts",
+    "description": "In this tutorial, you'll learn to easily create the bounding boxes of a Fragments Model. This can be useful for knowing the overall position and dimension of your models, which can be used, for instance, to make the camera fit a whole BIM model in the screen. Let's get started!  :::tip Bounding boxes?  Bounding boxes (AABB or Axis-Aligned Bounding Boxes) are the boxes aligned with the X, Y and Z axes of a 3D model that contain one or many objects. They are very common in 3D applications to make fast computations that require to know the whole dimension or position of one or many objects.  :::"
+  },
+  {
+    "path": "packages/core/src/drawings/TechnicalDrawings/example.ts",
+    "description": "Technical drawings are 2D annotations anchored in 3D space, used in architecture, engineering, and construction to communicate design intent precisely. In That Open Engine, a drawing is a container you place anywhere in your 3D scene — move it, rotate it, or scale it and everything inside follows. Annotation systems plug into it, and all data can be exported to DXF for use in any CAD application. Let's see how it works!"
+  },
+  {
+    "path": "packages/core/src/drawings/TechnicalDrawings/examples/MultiDrawingViewports/example.ts",
+    "description": "A technical drawing is just a group in 3D space that you can move, rotate, and scale freely. The interesting part is that you can define multiple *views* into the same drawing, each one an independent rectangle with its own scale and bounds.  In this tutorial we'll create two viewports on a single drawing and render them into a dedicated paper-space canvas. The canvas never re-renders every frame; it only updates when annotation data actually changes. We'll also wire up direct dimensioning from the paper-space canvas itself, so you can place measurements without ever touching the 3D view. Let's see how it all fits together!"
+  },
+  {
+    "path": "packages/core/src/drawings/TechnicalDrawings/examples/ModelDrivenAnnotations/example.ts",
+    "description": "Not all annotations are placed by hand. When you're documenting roof geometry, site grading, or structural slopes, the annotation data should come directly from the model — click a surface, read the face normal, derive the slope, and let the system record it. This is what `SlopeAnnotations` is designed for.  Unlike the interactive dimension systems — which expose a multi-step state machine for click-by-click placement — slope annotations have no state machine at all. There is nothing to \"place\" interactively: the slope is already in the geometry, waiting to be measured and documented."
+  },
+  {
+    "path": "packages/core/src/drawings/TechnicalDrawings/examples/DrawingLayers/example.ts",
+    "description": "A real technical drawing rarely contains a single type of geometry. Wall outlines, structural elements, furniture, and annotations each belong to a different *discipline*, and keeping them visually distinct — or temporarily hiding one while you work on another — is one of the first things a drafter needs to control.  In this tutorial we'll organise a drawing's projection lines into named layers, then control their colour and visibility from a live panel. Along the way we'll see that annotation systems sit *above* the layer system — their colours come from their own styles and are never overridden by the layer they happen to live on."
+  },
+  {
+    "path": "packages/core/src/drawings/TechnicalDrawings/examples/DrawingBlocks/example.ts",
+    "description": "A block is a named, reusable geometry definition. You register it once on the system — a column symbol, a door swing, a stair pattern — and then stamp it anywhere across any drawing, each instance carrying its own position, rotation, and scale. All insertions of the same block share a single `BufferGeometry`, so adding a hundred columns is no heavier than adding one."
+  },
+  {
+    "path": "packages/core/src/drawings/TechnicalDrawings/examples/CustomAnnotationSystems/example.ts",
+    "description": "Every built-in annotation system in That Open Engine is just a subclass of the same abstract base. There is no privileged API for built-ins: if you follow the same structural contract, your custom system integrates with the drawing manager, the DXF exporter, and every other utility exactly like the ones that ship with the library.  In this tutorial we build `CrossMarkers` — a system that places a cross-shaped marker at any point in the drawing. Along the way we cover the structural contract, a minimal state machine for interactive placement, and DXF export registration."
+  },
+  {
+    "path": "packages/core/src/drawings/TechnicalDrawings/examples/AnnotationSystems/example.ts",
+    "description": "A drawing can host as many annotation systems simultaneously as you need. In this tutorial we work with the three interactive built-in systems — each exposes a step-by-step state machine for placement, and all three share the same drawing canvas. One set of DOM event listeners routes input to whichever system is active at the time, so switching tools is a matter of changing one variable."
+  },
+  {
+    "path": "packages/core/src/drawings/TechnicalDrawings/examples/AnnotationStyles/example.ts",
+    "description": "Every annotation system in That Open Engine renders its geometry using a named style. A style is a plain object that controls colours, line sizes, text properties — and, most importantly, the **tick mark** at the endpoints of a dimension. In this tutorial we'll register styles using the built-in tick builders, then write a custom mesh builder and register a fully custom style."
+  },
+  {
+    "path": "packages/core/src/core/Worlds/example.ts",
+    "description": "In this tutorial you'll learn how to create a simple scene using `@thatopen/components`.  :::tip Hello world!  A world represents a 3D environment in your application. It consists of a scene, a camera and (optionally) a renderer. You can create multiple worlds and show them in multiple viewports at the same time.  :::  In this tutorial, we will import:  - `Three.js` to get some 3D entities for our app. - `@thatopen/components` to set up the barebone of our app. - `@thatopen/ui` to add some simple and cool UI menus. - `Stats.js` (optional) to measure the performance of our app."
+  },
+  {
+    "path": "packages/core/src/core/Views/example.ts",
+    "description": "In the construction industry, 2D views such as plans, elevations, and sections are essential for understanding and communicating project details effectively. With That Open Engine, you can create and manage these views seamlessly, leveraging its powerful and efficient handling of BIM data to streamline workflows and enhance visualization. Let's see how is done!"
+  },
+  {
+    "path": "packages/core/src/core/Viewpoints/example.ts",
+    "description": "Most 3D applications commonly store camera positions for easy retrieval. In BIM apps, it's also useful to store selected and filtered elements. While there isn't a universal standard for this, the BCF schema (used for communication between BIM apps) includes topics and viewpoints.  :::info  Topics store communication details like title, type, status, assignee, and comments. Viewpoints define camera positions, targets, selected elements, and isolations.  :::  The Viewpoints component in That Open Engine extracts BCF viewpoints, enabling you to manage camera positions and related elements effectively. Let's explore how to use it!"
+  },
+  {
+    "path": "packages/core/src/core/ShadowedScene/example.ts",
+    "description": "In this tutorial, you'll learn how to load your BIM models in Fragment format. Fragment is an [open source geometry system](https://github.com/ThatOpen/engine_fragment/) that we created on top of [Three.js](https://threejs.org/) to display BIM models fast, while keeping control over the individual items of the model. The idea is simple: a BIM model is a FragmentsGroup, which is (like the name implies) a collection of fragments. A fragment is a set of identical geometries instantiated around the scene.  :::tip How do I get a BIM model in Fragment format?  The IfcLoader component does exactly that! It converts IFC models to Fragments. Check out that tutorial if you are starting out with IFC files. Of course, you can just use the IfcLoader in your app, but loading fragments is more than x10 faster than loading IFC files. Our recommendation is to convert your IFC files to fragments just once, store the fragment somewhere (frontent of backend) and then load the fragments instead of teh IFC models directly.  :::  In this tutorial, we will import:  - `Three.js` to get some 3D entities for our app. - `@thatopen/ui` to add some simple and cool UI menus. - `@thatopen/components` to set up the barebone of our app. - `Stats.js` (optional) to measure the performance of our app."
+  },
+  {
+    "path": "packages/core/src/core/Raycasters/example.ts",
+    "description": "Ray casting is the process of casting a ray from a point in space to another point in space. We will cast a ray from the mouse position to the 3D world and check if there is an object in its way. That way, when you hover or click on an object, we can know which one it is and do something with it. In this tutorial you'll learn how to use the Raycaster to pick objects in the scene with the mouse."
+  },
+  {
+    "path": "packages/core/src/core/OrthoPerspectiveCamera/example.ts",
+    "description": "Sometimes, you need perspective for depth and realism. Other times, you need an orthographic camera to get precise measurements and proportions. Luckily for you, we have a camera that has both of those projections at the same time! It also has some cool functionality for navigation. In this tutorial, you'll learn to use it.  :::tip Orthographic and Perspective cameras  The difference between Orthographic and Perspective cameras is that Orthographic cameras don't see things smaller when they are further away. This has some implications, like the camera being always \"outside\" of your scene. You can't see the interior of a room with an orthographic camera. The most common use for orthographic cameras are 2D floor plans and sections, but they can also be used to create cool-looking 3D scenes.  :::"
+  },
+  {
+    "path": "packages/core/src/core/Grids/example.ts",
+    "description": "In this tutorial you'll learn how to add a fancy grid to your scene. It's super easy and will make your app look much more professional!  :::tip Why a grid?  Grids are very common in 3D apps, and it's a great way to have a reference point for your users to navigate around, even when there are no visible objects around.  :::"
+  },
+  {
+    "path": "packages/core/src/core/Clipper/example.ts",
+    "description": "The Clipping Tool is a powerful feature in 3D modelling that helps you dissect 3D objects. Clipping Tool is useful for inspecting and analyzing objects in detail.💪  :::tip Clipping?  Clipping is the process of \"cutting\" a 3D object by creating a plane. That way, we can have a bird view of the inside of a BIM model.  :::"
+  }
+]
