@@ -1,10 +1,7 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 
-/**
- * Represents an angle defined by three points in 3D space: a start point, a vertex (center), and an end point.
- * The angle is computed as the angle between the vectors (vertex -> start) and (vertex -> end).
- */
+/** Represents an angle defined by three points in 3D space: a start point, a vertex (center), and an end point. */
 export class Angle {
   /** Unique identifier for this angle instance. */
   id = OBC.UUID.create();
@@ -40,6 +37,9 @@ export class Angle {
     return this._rounding;
   }
 
+  /**
+   * The angle is computed as the angle between the vectors (vertex -> start) and (vertex -> end).
+   */
   constructor(
     start?: THREE.Vector3,
     vertex?: THREE.Vector3,

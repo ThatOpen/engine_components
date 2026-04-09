@@ -15,32 +15,7 @@ interface BlockAnnotationsSystem {
   handle: "position" | "rotation" | "scale";
 }
 
-/**
- * Global drawing system that manages block insertions across all
- * {@link TechnicalDrawing} instances.
- *
- * A **block** is a named, reusable geometry definition (e.g. a furniture symbol
- * or a detail imported from a DXF). Multiple insertions of the same block share
- * the same `THREE.BufferGeometry`, so only the transform (position, rotation,
- * scale) differs per instance.
- *
- * Register via {@link TechnicalDrawings.use}:
- * ```ts
- * const blocks = techDrawings.use(BlockAnnotations);
- * ```
- *
- * Typical workflow:
- * ```ts
- * // 1. Project external geometry to drawing space
- * const projected = TechnicalDrawing.toDrawingSpace(ifcLines, drawing);
- *
- * // 2. Register the block definition (global — do this once)
- * blocks.define("CHAIR", { lines: projected.geometry });
- *
- * // 3. Insert on any drawing
- * blocks.add(drawing, { blockName: "CHAIR", position, rotation: 0, scale: 1, style: "default" });
- * ```
- */
+/** Global drawing system that manages block insertions across all {@link TechnicalDrawing} instances. */
 export class BlockAnnotations
   extends AnnotationSystem<BlockAnnotationsSystem>
   implements Disposable
@@ -57,6 +32,29 @@ export class BlockAnnotations
    */
   readonly definitions = new FRAGS.DataMap<string, BlockDefinition>();
 
+  /**
+   * A **block** is a named, reusable geometry definition (e.g. a furniture symbol
+   * or a detail imported from a DXF). Multiple insertions of the same block share
+   * the same `THREE.BufferGeometry`, so only the transform (position, rotation,
+   * scale) differs per instance.
+   *
+   * Register via {@link TechnicalDrawings.use}:
+   * ```ts
+   * const blocks = techDrawings.use(BlockAnnotations);
+   * ```
+   *
+   * Typical workflow:
+   * ```ts
+   * // 1. Project external geometry to drawing space
+   * const projected = TechnicalDrawing.toDrawingSpace(ifcLines, drawing);
+   *
+   * // 2. Register the block definition (global — do this once)
+   * blocks.define("CHAIR", { lines: projected.geometry });
+   *
+   * // 3. Insert on any drawing
+   * blocks.add(drawing, { blockName: "CHAIR", position, rotation: 0, scale: 1, style: "default" });
+   * ```
+   */
   constructor(components: Components) {
     super(components);
 

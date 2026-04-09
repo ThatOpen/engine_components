@@ -1,11 +1,7 @@
 import * as THREE from "three";
 import { AngleAnnotation, AngleAnnotationStyle } from "./types";
 
-/**
- * Returns the tip position and inward tangent direction for each tick endpoint
- * of an angle dimension arc. Used by {@link AngleDimensions} to build
- * `meshTick` geometry.
- */
+/** Returns the tip position and inward tangent direction for each tick endpoint of an angle dimension arc. */
 export function getAngleTickEndpoints(
   dim: AngleAnnotation,
 ): Array<{ tip: THREE.Vector3; dir: THREE.Vector3 }> {
@@ -41,10 +37,7 @@ export function getAngleTickEndpoints(
 
 // ─── Public helpers ───────────────────────────────────────────────────────────
 
-/**
- * Returns the angle in radians between the two rays defined by the dimension.
- * Result is in [0, π].
- */
+/** Returns the angle in radians between the two rays defined by the dimension. */
 export function computeAngle(dim: AngleAnnotation): number {
   const rayA = new THREE.Vector3().subVectors(dim.pointA, dim.vertex).normalize();
   const rayB = new THREE.Vector3().subVectors(dim.pointB, dim.vertex).normalize();
@@ -52,10 +45,7 @@ export function computeAngle(dim: AngleAnnotation): number {
   return dim.flipped ? 2 * Math.PI - interior : interior;
 }
 
-/**
- * Returns the angle (in radians, in the XZ plane) of the bisector ray between
- * the two measured rays. Useful for positioning the text label.
- */
+/** Returns the angle (in radians, in the XZ plane) of the bisector ray between the two measured rays. */
 export function computeBisectorAngle(dim: AngleAnnotation): number {
   const rayA = new THREE.Vector3().subVectors(dim.pointA, dim.vertex).normalize();
   const rayB = new THREE.Vector3().subVectors(dim.pointB, dim.vertex).normalize();
@@ -149,10 +139,7 @@ export function buildAnglePositions(
   return buildArcPositions(dim.vertex, rayA, rayB, dim.arcRadius, style, dim.flipped ?? false);
 }
 
-/**
- * Builds vertex positions for the live preview during `positioningArc`.
- * Uses the cursor distance from the vertex as the arc radius.
- */
+/** Builds vertex positions for the live preview during `positioningArc`. */
 export function buildAnglePreviewPositions(
   pointA: THREE.Vector3,
   vertex: THREE.Vector3,

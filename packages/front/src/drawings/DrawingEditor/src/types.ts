@@ -3,11 +3,7 @@ import { DataMap } from "@thatopen/components";
 import type { Components, TechnicalDrawing } from "@thatopen/components";
 import type { FontManager } from "./FontManager";
 
-/**
- * A single placement strategy for a {@link DrawingTool}.
- * Receives a typed context on every click and decides which message(s) to send
- * to the underlying annotation state machine.
- */
+/** A single placement strategy for a {@link DrawingTool}. */
 export interface PlacementMode<TCtx> {
   onClick(ctx: TCtx): void;
 }
@@ -21,10 +17,7 @@ export interface SnapResult {
   line: THREE.Line3;
 }
 
-/**
- * A processed pointer event in drawing local space.
- * Produced internally by {@link DrawingEditor} on mousemove and forwarded to the active tool.
- */
+/** A processed pointer event in drawing local space. */
 export interface DrawingPointerEvent {
   /** Drawing-local position — snapped if a snap candidate was found. */
   point: THREE.Vector3;
@@ -39,21 +32,20 @@ export interface DrawingPointerEvent {
  */
 export type DrawingCursor = DrawingPointerEvent;
 
-/**
- * Base class for all drawing tools.
- *
- * Provides built-in selection tracking: stores original materials, applies a
- * highlight on selection, and restores them on deselect or geometry rebuild.
- * Subclasses call `_applySelection(group)`, `_restoreSelection()`, and
- * `_disposeSelection()` — they do not manage the underlying material state directly.
- *
- * Lifecycle:
- * - **Label subscription** (`attachToDrawing` / `detachFromDrawing`): always active.
- * - **Pointer routing** (`onActivate` / `onDeactivate` / `onPointerMove`): only the active tool.
- */
+/** Base class for all drawing tools. */
 export abstract class DrawingTool<TCtx = unknown> {
   protected readonly _components: Components;
 
+  /**
+   * Provides built-in selection tracking: stores original materials, applies a
+   * highlight on selection, and restores them on deselect or geometry rebuild.
+   * Subclasses call `_applySelection(group)`, `_restoreSelection()`, and
+   * `_disposeSelection()` — they do not manage the underlying material state directly.
+   *
+   * Lifecycle:
+   * - **Label subscription** (`attachToDrawing` / `detachFromDrawing`): always active.
+   * - **Pointer routing** (`onActivate` / `onDeactivate` / `onPointerMove`): only the active tool.
+   */
   constructor(components: Components) {
     this._components = components;
   }

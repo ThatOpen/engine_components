@@ -23,44 +23,7 @@ interface MoveDragState {
   bottom0: number;
 }
 
-/**
- * Visualises the bounds of a `DrawingViewport` as a rectangle in the 3D scene.
- *
- * Works exactly like the built-in Three.js helpers (e.g. `THREE.CameraHelper`):
- * the result is a plain `THREE.Group` you can add wherever you like in the scene
- * graph.  It renders on **layer 0**, so it is visible to the perspective camera
- * but invisible to the viewport's own orthographic camera (which only renders
- * layer 1).
- *
- * Typically you do not construct this directly — use
- * `DrawingViewport.helperVisible = true` instead, which attaches the helper to
- * the drawing container automatically.
- *
- * When {@link editable} is `true`, two kinds of interaction are enabled:
- *
- * - **Resize** — hover one of the eight handle spheres (corners + edge midpoints)
- *   and drag to resize the viewport in that direction.
- * - **Move** — hover the border rectangle itself and drag to translate the
- *   entire viewport while keeping its width and height constant.
- *
- * In both cases the border and the hovered element turn orange as visual
- * feedback, and {@link isDragging} becomes `true` for the duration of the drag.
- *
- * The class contains no browser API references and is safe in Node.js
- * environments; the consumer forwards events:
- *
- * ```ts
- * container.addEventListener("mousemove", (e) => {
- *   raycaster.setFromCamera(getNDC(e), camera);
- *   viewport.helper.onPointerMove(raycaster.ray);
- * });
- * container.addEventListener("mousedown", (e) => {
- *   raycaster.setFromCamera(getNDC(e), camera);
- *   viewport.helper.onPointerDown(raycaster.ray);
- * });
- * container.addEventListener("mouseup", () => viewport.helper.onPointerUp());
- * ```
- */
+/** Visualises the bounds of a `DrawingViewport` as a rectangle in the 3D scene. */
 export class DrawingViewportHelper extends THREE.Group {
   private readonly _viewport: ViewportBoundsController;
   private readonly _border: THREE.LineSegments;
@@ -143,6 +106,42 @@ export class DrawingViewportHelper extends THREE.Group {
     return this._dragHandle !== null || this._moveDrag !== null;
   }
 
+  /**
+   * Works exactly like the built-in Three.js helpers (e.g. `THREE.CameraHelper`):
+   * the result is a plain `THREE.Group` you can add wherever you like in the scene
+   * graph.  It renders on **layer 0**, so it is visible to the perspective camera
+   * but invisible to the viewport's own orthographic camera (which only renders
+   * layer 1).
+   *
+   * Typically you do not construct this directly — use
+   * `DrawingViewport.helperVisible = true` instead, which attaches the helper to
+   * the drawing container automatically.
+   *
+   * When {@link editable} is `true`, two kinds of interaction are enabled:
+   *
+   * - **Resize** — hover one of the eight handle spheres (corners + edge midpoints)
+   *   and drag to resize the viewport in that direction.
+   * - **Move** — hover the border rectangle itself and drag to translate the
+   *   entire viewport while keeping its width and height constant.
+   *
+   * In both cases the border and the hovered element turn orange as visual
+   * feedback, and {@link isDragging} becomes `true` for the duration of the drag.
+   *
+   * The class contains no browser API references and is safe in Node.js
+   * environments; the consumer forwards events:
+   *
+   * ```ts
+   * container.addEventListener("mousemove", (e) => {
+   *   raycaster.setFromCamera(getNDC(e), camera);
+   *   viewport.helper.onPointerMove(raycaster.ray);
+   * });
+   * container.addEventListener("mousedown", (e) => {
+   *   raycaster.setFromCamera(getNDC(e), camera);
+   *   viewport.helper.onPointerDown(raycaster.ray);
+   * });
+   * container.addEventListener("mouseup", () => viewport.helper.onPointerUp());
+   * ```
+   */
   constructor(viewport: ViewportBoundsController) {
     super();
     this._viewport = viewport;

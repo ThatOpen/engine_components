@@ -20,16 +20,7 @@ interface SlopeAnnotationSystem {
   handle: string;
 }
 
-/**
- * Global drawing system that manages slope annotations across all
- * {@link TechnicalDrawing} instances.
- *
- * Because slope data comes from the 3D model, there is no state machine.
- * Call {@link add} directly with the computed slope values:
- * ```ts
- * slopes.add(drawing, { position, direction, slope, style: "default" });
- * ```
- */
+/** Global drawing system that manages slope annotations across all {@link TechnicalDrawing} instances. */
 export class SlopeAnnotations
   extends AnnotationSystem<SlopeAnnotationSystem>
   implements Disposable
@@ -37,6 +28,13 @@ export class SlopeAnnotations
   enabled = true;
   declare readonly _item: SlopeAnnotation;
 
+  /**
+   * Because slope data comes from the 3D model, there is no state machine.
+   * Call {@link add} directly with the computed slope values:
+   * ```ts
+   * slopes.add(drawing, { position, direction, slope, style: "default" });
+   * ```
+   */
   constructor(components: Components) {
     super(components);
 

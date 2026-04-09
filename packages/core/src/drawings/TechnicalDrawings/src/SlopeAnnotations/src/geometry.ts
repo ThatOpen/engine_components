@@ -3,11 +3,6 @@ import { SlopeAnnotation, SlopeAnnotationStyle } from "./types";
 
 /**
  * Builds the `LineSegments` position array for a committed slope annotation.
- *
- * The geometry consists of:
- * - **Shaft**: tail → tip
- * - **Tick**: geometry produced by `style.tick` at the downhill tip
- *
  * @returns A flat `Float32Array` of XYZ triplets (vertex pairs for `LineSegments`).
  */
 export function buildSlopePositions(

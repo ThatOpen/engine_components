@@ -15,10 +15,7 @@ function _snapToCardinal(origin: THREE.Vector3, cursor: THREE.Vector3): THREE.Ve
   );
 }
 
-/**
- * Pure state transition function for the leader annotation tool.
- * Returns the **same state reference** when no transition applies.
- */
+/** Pure state transition function for the leader annotation tool. */
 export function leaderAnnotationMachine(
   state: LeaderAnnotationState,
   event: LeaderAnnotationEvent,

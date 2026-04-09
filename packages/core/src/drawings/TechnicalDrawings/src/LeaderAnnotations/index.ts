@@ -23,10 +23,7 @@ interface LeaderAnnotationSystem {
   handle: "elbow" | "extensionEnd";
 }
 
-/**
- * Global drawing system that manages leader (arrow + text) annotations across
- * all {@link TechnicalDrawing} instances.
- */
+/** Global drawing system that manages leader (arrow + text) annotations across all {@link TechnicalDrawing} instances. */
 export class LeaderAnnotations
   extends AnnotationSystem<LeaderAnnotationSystem>
   implements Transitionable<LeaderAnnotationState, LeaderAnnotationEvent>, Disposable

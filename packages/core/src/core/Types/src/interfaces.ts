@@ -167,9 +167,6 @@ export interface Serializable<
 
 /**
  * Whether this component manages its interaction through an explicit state machine.
- * The machine is the single source of truth: the system can only be in one state at
- * a time, and every transition is deterministic given the current state and the event.
- *
  * @template TState - Discriminated union of all valid states (each with a `kind` string).
  * @template TEvent - Discriminated union of all accepted events (each with a `type` string).
  */

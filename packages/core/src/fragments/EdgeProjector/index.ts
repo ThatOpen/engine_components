@@ -5,10 +5,7 @@ import { FragmentsManager, ModelIdMap } from "../FragmentsManager";
 // @ts-ignore
 import { EdgeProjectorProjectionGenerator, EdgeProjectorVisibilityCuller } from "./projection/index.js";
 
-/**
- * Result of an edge projection, containing visible/hidden geometries
- * and a mapping from group indices to model item identifiers.
- */
+/** Result of an edge projection, containing visible/hidden geometries and a mapping from group indices to model item identifiers. */
 export interface EdgeProjectionResult {
   /** Line segment geometry for visible edges. Has a `group` vertex attribute with group indices. */
   visible: THREE.BufferGeometry;
@@ -18,11 +15,7 @@ export interface EdgeProjectionResult {
   groups: Record<number, { modelId: string; localId: number }>;
 }
 
-/**
- * Component that generates 2D edge projections from fragment model items.
- * It takes a ModelIdMap, converts items to meshes, and runs them through
- * the three-edge-projection library to produce visible/hidden line segment geometries.
- */
+/** Component that generates 2D edge projections from fragment model items. */
 export class EdgeProjector extends Component implements Disposable {
   static readonly uuid = "f2e76c3a-8b1d-4d5e-9a3f-7c6b2d4e8f1a" as const;
 

@@ -36,10 +36,7 @@ export interface LeaderAnnotationStyle extends BaseAnnotationStyle {
 
 // ─── Persisted data ───────────────────────────────────────────────────────────
 
-/**
- * The committed data for a single leader annotation.
- * Stored in drawing local space (XZ plane, Y = 0).
- */
+/** The committed data for a single leader annotation. */
 export interface LeaderAnnotation {
   /** Unique identifier. */
   uuid: string;

@@ -28,10 +28,7 @@ export interface SlopeAnnotationStyle extends BaseAnnotationStyle {
 
 // ─── Persisted data ───────────────────────────────────────────────────────────
 
-/**
- * A single committed slope annotation.
- * All coordinates are in drawing local space (XZ plane, Y = 0).
- */
+/** A single committed slope annotation. */
 export interface SlopeAnnotation {
   /** Unique identifier. */
   uuid: string;

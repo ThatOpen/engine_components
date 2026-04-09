@@ -3,11 +3,7 @@ import { LineTickBuilder, MeshTickBuilder } from "./types";
 
 // ─── Line ticks ───────────────────────────────────────────────────────────────
 
-/**
- * Diagonal slash tick (architectural style).
- * A single line crossing the dimension endpoint at 45° relative to the
- * dimension line direction.
- */
+/** Diagonal slash tick (architectural style). */
 export const DiagonalTick: LineTickBuilder = (tip, lineDir, size) => {
   const perp = new THREE.Vector3(-lineDir.z, 0, lineDir.x);
   // 45° between lineDir and perp, normalised
@@ -20,10 +16,7 @@ export const DiagonalTick: LineTickBuilder = (tip, lineDir, size) => {
   ];
 };
 
-/**
- * Closed arrowhead tick — two wing lines plus a base line connecting them,
- * forming a triangle outline (tip → wing1, tip → wing2, wing1 → wing2).
- */
+/** Closed arrowhead tick — two wing lines plus a base line connecting them. */
 export const ArrowTick: LineTickBuilder = (tip, lineDir, size) => {
   const perp = new THREE.Vector3(-lineDir.z, 0, lineDir.x);
   const wing1x = tip.x - lineDir.x * size + perp.x * size * 0.4;
@@ -52,16 +45,10 @@ export const OpenArrowTick: LineTickBuilder = (tip, lineDir, size) => {
   ];
 };
 
-/**
- * No tick — dimension line ends cleanly at the extension lines.
- */
+/** No tick — dimension line ends cleanly at the extension lines. */
 export const NoTick: LineTickBuilder = () => [];
 
-/**
- * Dot tick — a small circle drawn with line segments at the endpoint.
- * Standard ISO tick for radius and diameter dimensions.
- * The circle is centred on the endpoint and independent of line direction.
- */
+/** Dot tick — a small circle drawn with line segments at the endpoint. */
 export const DotTick: LineTickBuilder = (tip, _lineDir, size) => {
   const r        = size * 0.4;
   const segments = 12;
@@ -80,10 +67,7 @@ export const DotTick: LineTickBuilder = (tip, _lineDir, size) => {
 
 // ─── Mesh ticks ───────────────────────────────────────────────────────────────
 
-/**
- * Filled circle tick (solid disc, requires a `THREE.Mesh`).
- * The disc is centred on the endpoint and approximated with 16 triangles.
- */
+/** Filled circle tick (solid disc, requires a `THREE.Mesh`). */
 export const FilledCircleTick: MeshTickBuilder = (tip, _lineDir, size) => {
   const r        = size * 0.4;
   const segments = 16;
@@ -101,11 +85,7 @@ export const FilledCircleTick: MeshTickBuilder = (tip, _lineDir, size) => {
   return coords;
 };
 
-/**
- * Filled square tick (solid square, requires a `THREE.Mesh`).
- * The square is centred on the endpoint and oriented along the dimension line.
- * Common in structural and steel drawings.
- */
+/** Filled square tick (solid square, requires a `THREE.Mesh`). */
 export const FilledSquareTick: MeshTickBuilder = (tip, lineDir, size) => {
   const perp = new THREE.Vector3(-lineDir.z, 0, lineDir.x);
   const half = size * 0.4;
@@ -119,11 +99,7 @@ export const FilledSquareTick: MeshTickBuilder = (tip, lineDir, size) => {
   ];
 };
 
-/**
- * Filled arrowhead tick (solid triangle, requires a `THREE.Mesh`).
- * Use this as `meshTick` on a style — pair with `NoTick` as `tick` if you
- * want only the filled shape and no line arrowhead.
- */
+/** Filled arrowhead tick (solid triangle, requires a `THREE.Mesh`). */
 export const FilledArrowTick: MeshTickBuilder = (tip, lineDir, size) => {
   const perp = new THREE.Vector3(-lineDir.z, 0, lineDir.x);
   const base = tip.clone().addScaledVector(lineDir, -size);

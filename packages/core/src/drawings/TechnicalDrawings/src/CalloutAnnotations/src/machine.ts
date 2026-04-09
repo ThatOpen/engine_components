@@ -22,10 +22,7 @@ function _snapToCardinal(
   );
 }
 
-/**
- * Pure state transition function for the callout annotation tool.
- * Returns the **same state reference** when no transition applies.
- */
+/** Pure state transition function for the callout annotation tool. */
 export function calloutAnnotationMachine(
   state: CalloutAnnotationState,
   event: CalloutAnnotationEvent,

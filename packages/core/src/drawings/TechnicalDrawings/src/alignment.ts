@@ -1,21 +1,9 @@
 import * as THREE from "three";
 
 /**
- * Computes a local-to-world transformation matrix that maps a technical
- * drawing's local coordinate system onto a target plane in 3D world space.
- *
- * Given three point pairs — each pair being a point on the drawing (local
- * space) and its corresponding point in the 3D world — the function returns
- * the `THREE.Matrix4` that, when applied to the drawing's container, will
- * align the drawing to the target plane.
- *
- * The transformation encodes **translation**, **rotation**, and **uniform
- * scale** (derived from the ratio of world vs drawing distances between the
- * first pair of points, which handles unit mismatches such as mm vs m).
- *
+ * Computes a local-to-world transformation matrix that maps a technical drawing's local coordinate system onto a target plane in 3D world space.
  * @throws If either set of points is collinear (cannot define a plane).
  * @throws If either set contains a degenerate first pair (zero distance).
- *
  * @param drawingPoints - Three non-collinear points in drawing local space.
  * @param worldPoints   - Three corresponding non-collinear points in world space.
  */

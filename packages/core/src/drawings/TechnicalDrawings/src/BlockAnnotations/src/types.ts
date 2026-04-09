@@ -3,23 +3,12 @@ import { BaseAnnotationStyle } from "../../DrawingSystem";
 
 // ─── Block style ───────────────────────────────────────────────────────────────
 
-/**
- * Style for a {@link BlockAnnotations} system.
- * `textOffset` and `fontSize` are unused for blocks but required by
- * {@link BaseAnnotationStyle} — set them to `0` in the default style.
- */
+/** Style for a {@link BlockAnnotations} system. */
 export interface BlockStyle extends BaseAnnotationStyle {}
 
 // ─── Block definition ──────────────────────────────────────────────────────────
 
-/**
- * The geometry content of a named block.
- * At least one of `lines` or `mesh` must be provided.
- *
- * - `lines` — `BufferGeometry` rendered as `LineSegments` (wire outlines).
- * - `mesh`  — `BufferGeometry` rendered as a filled `THREE.Mesh` (e.g. hatches
- *              or solid fills imported from DXF `SOLID`/`HATCH` entities).
- */
+/** The geometry content of a named block. At least one of `lines` or `mesh` must be provided. */
 export interface BlockDefinition {
   /** Line geometry for `LineSegments`. */
   lines?: THREE.BufferGeometry;
@@ -29,10 +18,7 @@ export interface BlockDefinition {
 
 // ─── Block insertion ───────────────────────────────────────────────────────────
 
-/**
- * A single placed instance of a named block definition.
- * All coordinates are in drawing local space (XZ plane, Y = 0).
- */
+/** A single placed instance of a named block definition. */
 export interface BlockInsertion {
   /** Unique identifier for this insertion. */
   uuid: string;

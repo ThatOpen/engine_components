@@ -5,14 +5,7 @@ import type { TechnicalDrawing } from "../../TechnicalDrawing";
 
 // ─── Enclosure builder ────────────────────────────────────────────────────────
 
-/**
- * Defines a closed shape (cloud, rectangle, circle, etc.) that forms the
- * body of a callout annotation.
- *
- * `buildGeometry` returns flat XYZ triplet pairs suitable for `THREE.LineSegments`.
- * `getAttachmentPoint` returns the point on the enclosure boundary in the
- * given direction — needed because non-circular shapes have non-radial boundaries.
- */
+/** Defines a closed shape (cloud, rectangle, circle, etc.) that forms the body of a callout annotation. */
 export type EnclosureBuilder = {
   /** Returns flat XYZ line-segment pairs forming the enclosure outline. */
   buildGeometry: (center: THREE.Vector3, halfW: number, halfH: number) => number[];
@@ -50,10 +43,7 @@ export interface CalloutAnnotationStyle extends BaseAnnotationStyle {
 
 // ─── Persisted data ───────────────────────────────────────────────────────────
 
-/**
- * The committed data for a single callout annotation.
- * All coordinates are in drawing local space (XZ plane, Y = 0).
- */
+/** The committed data for a single callout annotation. */
 export interface CalloutAnnotation {
   /** Unique identifier. */
   uuid: string;

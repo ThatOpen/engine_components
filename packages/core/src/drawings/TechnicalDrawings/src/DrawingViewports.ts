@@ -2,20 +2,19 @@ import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import { DrawingViewport, DrawingViewportConfig } from "./DrawingViewport";
 
-/**
- * Manages the viewports of a {@link TechnicalDrawing}.
- *
- * Accessible via `drawing.viewports`. Extends `DataMap` so consumers get
- * reactive events (`onItemSet`, `onBeforeDelete`, …) for free.
- *
- * ```ts
- * const vp = drawing.viewports.create({ left: -1, right: 5, top: 1, bottom: -4 });
- * drawing.viewports.delete(vp.uuid); // disposes and removes
- * ```
- */
+/** Manages the viewports of a {@link TechnicalDrawing}. */
 export class DrawingViewports extends FRAGS.DataMap<string, DrawingViewport> {
   private readonly _container: THREE.Group;
 
+  /**
+   * Accessible via `drawing.viewports`. Extends `DataMap` so consumers get
+   * reactive events (`onItemSet`, `onBeforeDelete`, …) for free.
+   *
+   * ```ts
+   * const vp = drawing.viewports.create({ left: -1, right: 5, top: 1, bottom: -4 });
+   * drawing.viewports.delete(vp.uuid); // disposes and removes
+   * ```
+   */
   constructor(container: THREE.Group) {
     super();
     this._container = container;

@@ -5,10 +5,7 @@ import type { LinearAnnotationsTool } from "../index";
 
 type LinearDimMsg = Parameters<OBC.LinearAnnotations["sendMachineEvent"]>[0];
 
-/**
- * Context passed to every {@link PlacementMode} registered on {@link LinearAnnotationsTool}.
- * Contains the information needed to decide which message(s) to send to the state machine.
- */
+/** Context passed to every {@link PlacementMode} registered on {@link LinearAnnotationsTool}. */
 export interface LinearPlacementContext {
   /** Current state of the LinearDimensions state machine. */
   state: LinearAnnotationsTool["state"];

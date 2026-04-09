@@ -12,47 +12,7 @@ import { computeAlignmentMatrix } from "./alignment";
 import { DrawingLayers } from "./DrawingLayers";
 import { DrawingAnnotations } from "./DrawingAnnotations";
 
-/**
- * A single technical drawing — the core spatial aggregate.
- *
- * Brings together:
- * - A {@link three} (`THREE.Group`) that anchors the drawing in world space.
- *   All 2D geometry (projection lines, dimensions) must be added as children of
- *   this group so they inherit its world transform.
- * - A collection of {@link viewports}, each defining an orthographic framing
- *   window and owning a camera that is itself a child of the container.
- *
- * Moving or rotating the container repositions the entire drawing — including
- * all its viewport cameras — in the 3D world without affecting any local
- * coordinates.
- *
- * ---
- *
- * ### Rotation convention
- *
- * The drawing projects geometry along its **local −Y axis**. The drawing
- * plane is the local **XZ plane** (Y = 0).
- *
- * When rotating `drawing.three`, two constraints must hold at the same time:
- *
- * 1. **Projection direction** — local −Y must point toward the surface you
- *    want to capture.
- * 2. **Text orientation** — local +X must point toward the right side of the
- *    screen when the drawing is viewed from the projection direction.
- *    Violating this causes annotations and dimension text to appear mirrored.
- *
- * For the six standard orthographic views, use {@link orientTo} — it enforces
- * both constraints with a single call:
- *
- * ```ts
- * drawing.orientTo(new THREE.Vector3(0, -1, 0)); // top / plan
- * drawing.orientTo(new THREE.Vector3(0,  0, -1)); // front elevation
- * ```
- *
- * ---
- *
- * Typically created via {@link TechnicalDrawings.create}.
- */
+/** A single technical drawing — the core spatial aggregate. */
 export class TechnicalDrawing {
   /** Unique identifier for this drawing instance. */
   readonly uuid = THREE.MathUtils.generateUUID();
@@ -60,6 +20,45 @@ export class TechnicalDrawing {
   private readonly _raycaster = new THREE.Raycaster();
   private readonly _components: Components;
 
+  /**
+   * Brings together:
+   * - A {@link three} (`THREE.Group`) that anchors the drawing in world space.
+   *   All 2D geometry (projection lines, dimensions) must be added as children of
+   *   this group so they inherit its world transform.
+   * - A collection of {@link viewports}, each defining an orthographic framing
+   *   window and owning a camera that is itself a child of the container.
+   *
+   * Moving or rotating the container repositions the entire drawing — including
+   * all its viewport cameras — in the 3D world without affecting any local
+   * coordinates.
+   *
+   * ---
+   *
+   * ### Rotation convention
+   *
+   * The drawing projects geometry along its **local −Y axis**. The drawing
+   * plane is the local **XZ plane** (Y = 0).
+   *
+   * When rotating `drawing.three`, two constraints must hold at the same time:
+   *
+   * 1. **Projection direction** — local −Y must point toward the surface you
+   *    want to capture.
+   * 2. **Text orientation** — local +X must point toward the right side of the
+   *    screen when the drawing is viewed from the projection direction.
+   *    Violating this causes annotations and dimension text to appear mirrored.
+   *
+   * For the six standard orthographic views, use {@link orientTo} — it enforces
+   * both constraints with a single call:
+   *
+   * ```ts
+   * drawing.orientTo(new THREE.Vector3(0, -1, 0)); // top / plan
+   * drawing.orientTo(new THREE.Vector3(0,  0, -1)); // front elevation
+   * ```
+   *
+   * ---
+   *
+   * Typically created via {@link TechnicalDrawings.create}.
+   */
   constructor(components: Components) {
     this._components = components;
   }

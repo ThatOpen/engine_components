@@ -27,10 +27,7 @@ interface CalloutAnnotationSystem {
   handle: string;
 }
 
-/**
- * Global drawing system that manages callout annotations across all
- * {@link TechnicalDrawing} instances.
- */
+/** Global drawing system that manages callout annotations across all {@link TechnicalDrawing} instances. */
 export class CalloutAnnotations
   extends AnnotationSystem<CalloutAnnotationSystem>
   implements Transitionable<CalloutAnnotationState, CalloutAnnotationEvent>, Disposable

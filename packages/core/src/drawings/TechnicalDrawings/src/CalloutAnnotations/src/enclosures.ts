@@ -3,10 +3,7 @@ import { EnclosureBuilder } from "./types";
 
 const CLOUD_ARC_SEGMENTS = 8;
 
-/**
- * Revision-cloud enclosure — a bumpy rectangle centred on `center`.
- * Width = 2 × halfW, height = 2 × halfH.
- */
+/** Revision-cloud enclosure — a bumpy rectangle centred on `center`. */
 export const CloudEnclosure: EnclosureBuilder = {
   buildGeometry(center: THREE.Vector3, halfW: number, halfH: number): number[] {
     const arcRadius = Math.min(halfW, halfH) * 0.25;
@@ -64,10 +61,7 @@ export const CloudEnclosure: EnclosureBuilder = {
   },
 };
 
-/**
- * Rectangular enclosure — a plain axis-aligned rectangle centred on `center`.
- * Width = 2 × halfW, height = 2 × halfH.
- */
+/** Rectangular enclosure — a plain axis-aligned rectangle centred on `center`. */
 export const RectEnclosure: EnclosureBuilder = {
   buildGeometry(center: THREE.Vector3, halfW: number, halfH: number): number[] {
     const TL = new THREE.Vector3(center.x - halfW, 0, center.z - halfH);
@@ -95,11 +89,7 @@ export const RectEnclosure: EnclosureBuilder = {
   },
 };
 
-/**
- * Elliptical enclosure — an ellipse approximated with line segments centred on
- * `center`, with semi-axis `halfW` on X and `halfH` on Z.
- * When `halfW === halfH` the result is a circle.
- */
+/** Elliptical enclosure — an ellipse approximated with line segments centred on `center`. */
 export const CircleEnclosure: EnclosureBuilder = {
   buildGeometry(center: THREE.Vector3, halfW: number, halfH: number): number[] {
     const segments = 32;

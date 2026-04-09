@@ -83,7 +83,7 @@ fragments.core.models.materials.list.onItemSet.add(({ value: material }) => {
   }
 });
 
-const arqFile = await fetch("/resources/frags/school_arq.frag");
+const arqFile = await fetch("https://thatopen.github.io/engine_components/resources/frags/school_arq.frag");
 const arqBuffer = await arqFile.arrayBuffer();
 await fragments.core.load(arqBuffer, { modelId: "school_arq" });
 

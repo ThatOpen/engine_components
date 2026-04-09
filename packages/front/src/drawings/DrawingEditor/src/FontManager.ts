@@ -3,12 +3,14 @@ import { TTFLoader } from "three/examples/jsm/loaders/TTFLoader.js";
 import { Font } from "three/examples/jsm/loaders/FontLoader.js";
 import * as THREE from "three";
 
-/**
- * Manages font loading and creates Three.js text meshes for annotation labels.
- * Owned by {@link DrawingEditor} and shared across all built-in tools.
- */
+/** Manages font loading and creates Three.js text meshes for annotation labels. */
 export class FontManager {
   font: Font | null = null;
+
+  /**
+   * Owned by {@link DrawingEditor} and shared across all built-in tools.
+   */
+  constructor() {}
 
   load(url: string): Promise<void> {
     return new Promise((resolve) => {

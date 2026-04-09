@@ -4,10 +4,7 @@ import { DrawingViewport } from "./DrawingViewport";
 // ─── Tick builders ────────────────────────────────────────────────────────────
 
 /**
- * A function that produces tick mark geometry at one endpoint of a dimension
- * or leader line. Returns a flat array of XYZ triplets (vertex pairs for
- * `LineSegments`).
- *
+ * A function that produces tick mark geometry at one endpoint of a dimension or leader line.
  * @param tip     - The endpoint of the line (drawing local space).
  * @param lineDir - Normalised direction FROM `tip` TOWARD the other endpoint.
  * @param size    - Tick size in drawing local units.
@@ -19,12 +16,7 @@ export type LineTickBuilder = (
 ) => number[];
 
 /**
- * A function that produces filled tick mark geometry (triangles) at one
- * endpoint. Returns a flat array of XYZ triplets forming non-indexed triangles
- * for a `THREE.Mesh`.
- *
- * Same signature as {@link LineTickBuilder} — swap one for the other freely.
- *
+ * A function that produces filled tick mark geometry (triangles) at one endpoint.
  * @param tip     - The endpoint of the dimension or leader line.
  * @param lineDir - Normalised direction FROM `tip` TOWARD the other endpoint.
  * @param size    - Tick/arrow size in drawing local units.
@@ -35,10 +27,7 @@ export type MeshTickBuilder = (
   size: number,
 ) => number[];
 
-/**
- * A named organizational layer on a {@link TechnicalDrawing}.
- * Mirrors the layer concept in CAD applications (AutoCAD, DXF, etc.).
- */
+/** A named organizational layer on a {@link TechnicalDrawing}. */
 export interface DrawingLayer {
   /** Unique name identifying this layer. */
   name: string;
@@ -57,10 +46,7 @@ export interface DrawingLayer {
   material: THREE.LineBasicMaterial;
 }
 
-/**
- * Result of a successful raycast against a {@link TechnicalDrawing}.
- * The `point` is in the drawing's **local coordinate space** (XZ plane, Y = 0).
- */
+/** Result of a successful raycast against a {@link TechnicalDrawing}. */
 export interface DrawingIntersection {
   /** Hit position in drawing local space (X right, Z down-screen, Y = 0). */
   point: THREE.Vector3;

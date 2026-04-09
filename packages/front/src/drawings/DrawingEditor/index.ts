@@ -15,29 +15,7 @@ interface SourceEntry {
 
 const SNAP_THRESHOLD_PX = 15;
 
-/**
- * Front component that centralises all interaction for {@link OBC.TechnicalDrawing}.
- *
- * Responsibilities:
- * - **Coordinate pipeline** — converts mousemove to drawing-local space + snap internally.
- * - **Tool routing** — forwards pointer move and click events to the active {@link DrawingTool}.
- * - **Labels** — creates and positions text meshes for all built-in systems.
- * - **Snap / hover visuals** — snap marker and hover highlight managed internally.
- *
- * ```ts
- * const editor = components.get(DrawingEditor);
- * await editor.fonts.load("/resources/fonts/PlusJakartaSans-Medium.ttf");
- *
- * editor.activeDrawing = drawing;
- * editor.setSource(world);
- *
- * editor.activeTool = LinearAnnotationsTool;
- * const dimTool = editor.use(LinearAnnotationsTool);
- *
- * canvas.addEventListener("click", () => editor.step());
- * document.addEventListener("keydown", (e) => { if (e.key === "Escape") editor.cancel(); });
- * ```
- */
+/** Front component that centralises all interaction for {@link OBC.TechnicalDrawing}. */
 export class DrawingEditor extends OBC.Component {
   static readonly uuid = "b3e5c7a9-1f2d-4e8b-9c0a-5d7f3b1e2c4a" as const;
 
@@ -113,6 +91,27 @@ export class DrawingEditor extends OBC.Component {
 
   private readonly _onMouseLeave = () => { this.clearHover(); };
 
+  /**
+   * Responsibilities:
+   * - **Coordinate pipeline** — converts mousemove to drawing-local space + snap internally.
+   * - **Tool routing** — forwards pointer move and click events to the active {@link DrawingTool}.
+   * - **Labels** — creates and positions text meshes for all built-in systems.
+   * - **Snap / hover visuals** — snap marker and hover highlight managed internally.
+   *
+   * ```ts
+   * const editor = components.get(DrawingEditor);
+   * await editor.fonts.load("/resources/fonts/PlusJakartaSans-Medium.ttf");
+   *
+   * editor.activeDrawing = drawing;
+   * editor.setSource(world);
+   *
+   * editor.activeTool = LinearAnnotationsTool;
+   * const dimTool = editor.use(LinearAnnotationsTool);
+   *
+   * canvas.addEventListener("click", () => editor.step());
+   * document.addEventListener("keydown", (e) => { if (e.key === "Escape") editor.cancel(); });
+   * ```
+   */
   constructor(components: OBC.Components) {
     super(components);
     components.add(DrawingEditor.uuid, this);

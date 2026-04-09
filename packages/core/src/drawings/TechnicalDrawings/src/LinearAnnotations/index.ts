@@ -27,10 +27,7 @@ interface LinearAnnotationSystem {
   handle: "pointA" | "pointB" | "offset";
 }
 
-/**
- * Global drawing system that manages linear dimension annotations across all
- * {@link TechnicalDrawing} instances.
- */
+/** Global drawing system that manages linear dimension annotations across all {@link TechnicalDrawing} instances. */
 export class LinearAnnotations
   extends AnnotationSystem<LinearAnnotationSystem>
   implements Transitionable<LinearAnnotationState, LinearAnnotationEvent>, Disposable

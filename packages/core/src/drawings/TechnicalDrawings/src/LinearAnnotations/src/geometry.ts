@@ -2,10 +2,7 @@ import * as THREE from "three";
 import { LinearAnnotationStyle, LinearAnnotation } from "./types";
 import { computeOffset } from "./machine";
 
-/**
- * Returns the tip position and inward direction for each tick endpoint of a
- * linear dimension. Used by {@link LinearDimensions} to build `meshTick` geometry.
- */
+/** Returns the tip position and inward direction for each tick endpoint of a linear dimension. */
 export function getDimensionTickEndpoints(
   dim: LinearAnnotation,
 ): Array<{ tip: THREE.Vector3; dir: THREE.Vector3 }> {
@@ -21,17 +18,7 @@ export function getDimensionTickEndpoints(
   ];
 }
 
-/**
- * Builds the flat vertex positions (x,y,z triplets) for a single committed
- * linear dimension. The result can be passed directly to a
- * `THREE.BufferAttribute`.
- *
- * The geometry lives in drawing local space (XZ plane, Y = 0) and consists of:
- * - Extension line from pointA
- * - Extension line from pointB
- * - Dimension line connecting both extension line ends
- * - Tick geometry at each end of the dimension line (from `style.tick`)
- */
+/** Builds the flat vertex positions (x,y,z triplets) for a single committed linear dimension. */
 export function buildDimensionPositions(
   dim: LinearAnnotation,
   style: LinearAnnotationStyle,
@@ -74,14 +61,7 @@ export function buildDimensionPositions(
   ];
 }
 
-/**
- * Builds the flat vertex positions for a live dimension preview.
- *
- * During `placingPoints`: lines connecting all placed points plus a line
- * to the cursor.
- * During `positioningOffset`: a full dimension preview using the cursor as
- * the offset reference, rendered with the active style's tick.
- */
+/** Builds the flat vertex positions for a live dimension preview. */
 export function buildPreviewPositions(
   kind: "placingPoints" | "positioningOffset",
   points: THREE.Vector3[],

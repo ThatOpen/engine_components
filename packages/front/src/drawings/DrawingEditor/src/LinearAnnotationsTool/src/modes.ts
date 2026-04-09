@@ -1,10 +1,7 @@
 import type { PlacementMode } from "../../types";
 import type { LinearPlacementContext } from "./types";
 
-/**
- * One click → one dimension. Auto-confirms once both endpoints are set.
- * Best for placing isolated dimensions quickly.
- */
+/** One click → one dimension. Auto-confirms once both endpoints are set. */
 export const IndividualMode: PlacementMode<LinearPlacementContext> = {
   onClick({ point, line, pointsPlaced, send }) {
     send({ type: "CLICK", point, line });
@@ -14,11 +11,7 @@ export const IndividualMode: PlacementMode<LinearPlacementContext> = {
   },
 };
 
-/**
- * Keeps the session open after each confirmation so points can be chained.
- * Clicking on empty space (no snap) closes the current dimension.
- * Best for annotating a run of aligned measurements.
- */
+/** Keeps the session open after each confirmation so points can be chained. */
 export const SequentialMode: PlacementMode<LinearPlacementContext> = {
   onClick({ state, snap, point, line, send }) {
     if (state.kind === "placingPoints" && !snap) {
@@ -29,11 +22,7 @@ export const SequentialMode: PlacementMode<LinearPlacementContext> = {
   },
 };
 
-/**
- * Clicking a projection line locks onto both its endpoints at once,
- * then a second click sets the offset distance.
- * Best for annotating geometry that already exists in the drawing.
- */
+/** Clicking a projection line locks onto both its endpoints at once, then a second click sets the offset distance. */
 export const LineMode: PlacementMode<LinearPlacementContext> = {
   onClick({ state, snap, isHandleHovered, point, line, send }) {
     if (snap?.line && state.kind === "awaitingFirstPoint" && !isHandleHovered) {

@@ -29,21 +29,7 @@ export interface DrawingViewportConfig {
   name?: string;
 }
 
-/**
- * Represents a framed orthographic window into a {@link TechnicalDrawing}.
- *
- * The viewport lives in the drawing's local coordinate system (XZ plane, Y = 0).
- * Its {@link camera} must be added as a child of the drawing's container so that
- * any world-space transform applied to the container automatically moves the camera.
- *
- * The camera uses **layer 1** exclusively, so only geometry explicitly assigned
- * to layer 1 (projection lines, dimensions) is visible in paper-space renders.
- *
- * Local coordinate convention:
- * - X right → world +X
- * - Y up (screen) → world -Z
- * - Normal (out of plane) → world +Y
- */
+/** Represents a framed orthographic window into a {@link TechnicalDrawing}. */
 export class DrawingViewport {
   /** Unique identifier for this viewport instance. */
   readonly uuid = THREE.MathUtils.generateUUID();
@@ -189,6 +175,19 @@ export class DrawingViewport {
     return new THREE.Vector3(0, 1, 0);
   }
 
+  /**
+   * The viewport lives in the drawing's local coordinate system (XZ plane, Y = 0).
+   * Its {@link camera} must be added as a child of the drawing's container so that
+   * any world-space transform applied to the container automatically moves the camera.
+   *
+   * The camera uses **layer 1** exclusively, so only geometry explicitly assigned
+   * to layer 1 (projection lines, dimensions) is visible in paper-space renders.
+   *
+   * Local coordinate convention:
+   * - X right → world +X
+   * - Y up (screen) → world -Z
+   * - Normal (out of plane) → world +Y
+   */
   constructor(config: DrawingViewportConfig) {
     this._left = config.left;
     this._right = config.right;

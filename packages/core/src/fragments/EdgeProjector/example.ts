@@ -83,7 +83,7 @@ fragments.core.models.materials.list.onItemSet.add(({ value: material }) => {
   With the core setup complete, it's time to load a Fragments model into our scene:
 */
 
-const fragPaths = ["/resources/frags/school_arq.frag"];
+const fragPaths = ["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];
 
 await Promise.all(
   fragPaths.map(async (path) => {

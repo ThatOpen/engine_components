@@ -27,10 +27,7 @@ interface AngleAnnotationSystem {
   handle: "pointA" | "vertex" | "pointB";
 }
 
-/**
- * Global drawing system that manages angle dimension annotations across all
- * {@link TechnicalDrawing} instances.
- */
+/** Global drawing system that manages angle dimension annotations across all {@link TechnicalDrawing} instances. */
 export class AngleAnnotations
   extends AnnotationSystem<AngleAnnotationSystem>
   implements Transitionable<AngleAnnotationState, AngleAnnotationEvent>, Disposable

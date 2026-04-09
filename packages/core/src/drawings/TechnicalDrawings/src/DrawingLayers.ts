@@ -2,29 +2,28 @@ import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import { DrawingLayer } from "./types";
 
-/**
- * Manages the named layers of a {@link TechnicalDrawing}.
- *
- * Accessible via `drawing.layers`. Each layer owns a `THREE.LineBasicMaterial`
- * that is shared across all projection `LineSegments` assigned to it —
- * mutating the material (e.g. via {@link setColor}) is reflected on every line
- * immediately without any scene traversal. Annotation systems always use their
- * own style material and are not affected by layer materials.
- *
- * Extends `DataMap<string, DrawingLayer>` so consumers get reactive events
- * (`onItemSet`, `onItemDeleted`, …) directly on `drawing.layers`.
- *
- * Layer `"0"` always exists and cannot be removed.
- *
- * ```ts
- * drawing.layers.create("walls", { material: new THREE.LineBasicMaterial({ color: 0x333333 }) });
- * drawing.layers.setColor("walls", 0x888888);
- * drawing.layers.setVisibility("walls", false);
- * ```
- */
+/** Manages the named layers of a {@link TechnicalDrawing}. */
 export class DrawingLayers extends FRAGS.DataMap<string, DrawingLayer> {
   private readonly _container: THREE.Group;
 
+  /**
+   * Accessible via `drawing.layers`. Each layer owns a `THREE.LineBasicMaterial`
+   * that is shared across all projection `LineSegments` assigned to it —
+   * mutating the material (e.g. via {@link setColor}) is reflected on every line
+   * immediately without any scene traversal. Annotation systems always use their
+   * own style material and are not affected by layer materials.
+   *
+   * Extends `DataMap<string, DrawingLayer>` so consumers get reactive events
+   * (`onItemSet`, `onItemDeleted`, …) directly on `drawing.layers`.
+   *
+   * Layer `"0"` always exists and cannot be removed.
+   *
+   * ```ts
+   * drawing.layers.create("walls", { material: new THREE.LineBasicMaterial({ color: 0x333333 }) });
+   * drawing.layers.setColor("walls", 0x888888);
+   * drawing.layers.setVisibility("walls", false);
+   * ```
+   */
   constructor(container: THREE.Group) {
     super();
     this._container = container;

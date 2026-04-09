@@ -3,11 +3,7 @@ import { CalloutAnnotation, CalloutAnnotationStyle } from "./types";
 
 // ─── Committed annotation geometry ────────────────────────────────────────────
 
-/**
- * Builds the flat vertex positions for a committed callout annotation:
- * enclosure outline + attachment-to-elbow line + elbow-to-extensionEnd line
- * + optional tick at `extensionEnd`.
- */
+/** Builds the flat vertex positions for a committed callout annotation. */
 export function buildCalloutPositions(
   ann: CalloutAnnotation,
   style: CalloutAnnotationStyle,
@@ -46,11 +42,7 @@ export function buildCalloutPositions(
 
 // ─── Preview geometry ─────────────────────────────────────────────────────────
 
-/**
- * Builds vertex positions for the live preview during interactive placement.
- * During `awaitingRadius`, `cursor` is treated as the SE corner of the enclosure
- * so halfW/halfH are derived live from the delta to `center`.
- */
+/** Builds vertex positions for the live preview during interactive placement. */
 export function buildCalloutPreviewPositions(
   kind: "awaitingRadius" | "awaitingElbow" | "awaitingExtension",
   center: THREE.Vector3,

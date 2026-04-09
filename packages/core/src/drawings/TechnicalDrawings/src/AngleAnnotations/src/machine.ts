@@ -60,10 +60,7 @@ function _isFlipped(
 
 // ─── Machine ─────────────────────────────────────────────────────────────────
 
-/**
- * Pure state transition function for the angle dimension tool.
- * Returns the **same state reference** when no transition applies.
- */
+/** Pure state transition function for the angle dimension tool. */
 export function angleDimensionMachine(
   state: AngleAnnotationState,
   event: AngleAnnotationEvent,

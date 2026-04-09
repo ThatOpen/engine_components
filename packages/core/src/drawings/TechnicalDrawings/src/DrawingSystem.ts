@@ -5,14 +5,7 @@ import type { Components } from "../../../core/Components";
 import type { TechnicalDrawing } from "./TechnicalDrawing";
 import { TechnicalDrawings } from "../../..";
 
-/**
- * Defines how a measured value (in drawing-space metres) is converted to a
- * display string. Pass one of the {@link Units} presets or build your own.
- *
- * ```ts
- * dims.styles.get("default")!.unit = OBC.Units.cm;
- * ```
- */
+/** Defines how a measured value (in drawing-space metres) is converted to a display string. */
 export interface DimensionUnit {
   /** Multiplier applied to the raw metre value before display. */
   factor: number;
@@ -20,13 +13,7 @@ export interface DimensionUnit {
   suffix: string;
 }
 
-/**
- * Built-in {@link DimensionUnit} presets.
- *
- * ```ts
- * style.unit = OBC.Units.mm;
- * ```
- */
+/** Built-in {@link DimensionUnit} presets. */
 export const Units = {
   m:  { factor: 1,         suffix: "m"  },
   cm: { factor: 100,       suffix: "cm" },
@@ -35,10 +22,7 @@ export const Units = {
   in: { factor: 39.3701,   suffix: "in" },
 } as const satisfies Record<string, DimensionUnit>;
 
-/**
- * Minimum style contract shared by every annotation system.
- * All per-system style interfaces must extend this.
- */
+/** Minimum style contract shared by every annotation system. */
 export interface BaseAnnotationStyle {
   /** Line and text color as a hex number (e.g. `0xff0000`). */
   color: number;
@@ -53,20 +37,7 @@ export interface BaseAnnotationStyle {
   unit?: DimensionUnit;
 }
 
-/**
- * "Type bag" descriptor that fully parameterises an annotation system.
- * Each system declares a concrete interface extending this.
- *
- * ```ts
- * interface LinearAnnotationSystem extends DrawingSystemDescriptor {
- *   item:   LinearAnnotation;
- *   data:   LinearAnnotationData;
- *   style:  LinearAnnotationStyle;
- *   handle: "pointA" | "pointB" | "offset";
- * }
- * class LinearAnnotations extends AnnotationSystem<LinearAnnotationSystem> { ... }
- * ```
- */
+/** "Type bag" descriptor that fully parameterises an annotation system. */
 export interface DrawingSystemDescriptor {
   item:   { uuid: string; style: string };
   data:   object;
@@ -75,13 +46,8 @@ export interface DrawingSystemDescriptor {
 }
 
 /**
- * Abstract base for all annotation sub-systems operating on a
- * {@link TechnicalDrawing}. Provides the full CRUD lifecycle, material caches,
- * preview geometry, and automatic style-reactivity so subclasses only need to
- * implement geometry construction and handle-picking.
- *
- * @typeParam TSystem - A {@link DrawingSystemDescriptor} that declares the item,
- *   data, style, and handle types for this specific system.
+ * Abstract base for all annotation sub-systems operating on a {@link TechnicalDrawing}.
+ * @typeParam TSystem - A {@link DrawingSystemDescriptor} that declares the item, data, style, and handle types for this specific system.
  */
 export abstract class AnnotationSystem<TSystem extends DrawingSystemDescriptor> {
   /**

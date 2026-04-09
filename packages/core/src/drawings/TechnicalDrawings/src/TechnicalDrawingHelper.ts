@@ -8,13 +8,7 @@ interface DrawingProjectionSource {
   far: number;
 }
 
-/**
- * Minimal interface for a translate-only gizmo that can be configured and
- * attached to one of the helper's control handles.
- *
- * Satisfied by `THREE.TransformControls` without a direct import, keeping
- * this class free of DOM dependencies.
- */
+/** Minimal interface for a translate-only gizmo that can be configured and attached to one of the helper's control handles. */
 export interface AxisGizmoLike {
   attach(object: THREE.Object3D): void;
   setSpace(space: "world" | "local"): void;
@@ -25,67 +19,7 @@ export interface AxisGizmoLike {
   addEventListener(type: string, listener: () => void): void;
 }
 
-/**
- * Visualises a {@link TechnicalDrawing}'s projection volume in the 3D scene
- * and exposes three gizmo anchors for interactive control.
- *
- * Works exactly like the built-in Three.js helpers (e.g. `THREE.CameraHelper`):
- * add it as a child of `drawing.three` so it inherits the drawing's world
- * transform automatically.
- *
- * It renders on **layer 0** — visible to the perspective camera, invisible to
- * the drawing's orthographic cameras (which only render layer 1).
- *
- * The helper draws three things:
- * - A rectangular frame on the drawing plane (Y = 0 in drawing local space).
- * - Four pillar lines dropping from each corner along the projection direction
- *   (local −Y) to the far boundary.
- * - A matching rectangle at the far boundary.
- *
- * ### Interactive control via gizmos
- *
- * Three `THREE.Object3D` anchors are exposed for `TransformControls`:
- *
- * | Anchor | Controls | Constrained axis |
- * |---|---|---|
- * | {@link farHandle} | `drawing.far` | local Y |
- * | {@link widthHandle} | {@link width} (symmetric) | local X |
- * | {@link heightHandle} | {@link height} (symmetric) | local Z |
- *
- * Use the corresponding `attach*Gizmo` methods instead of configuring the
- * gizmos manually — they enforce the correct axis constraints, local space,
- * and change listeners automatically:
- *
- * ```ts
- * const helper = new TechnicalDrawingHelper(drawing);
- * helper.width = 20;
- * helper.height = 15;
- * drawing.three.add(helper);
- *
- * // Main gizmo — full translate + rotate on drawing.three
- * const mainGizmo = new TransformControls(camera, domElement);
- * mainGizmo.attach(drawing.three);
- * scene.add(mainGizmo);
- *
- * // Depth gizmo — controls drawing.far
- * const farGizmo = new TransformControls(camera, domElement);
- * scene.add(farGizmo);
- * helper.attachFarGizmo(farGizmo);
- *
- * // Width gizmo
- * const widthGizmo = new TransformControls(camera, domElement);
- * scene.add(widthGizmo);
- * helper.attachWidthGizmo(widthGizmo);
- *
- * // Height gizmo
- * const heightGizmo = new TransformControls(camera, domElement);
- * scene.add(heightGizmo);
- * helper.attachHeightGizmo(heightGizmo);
- * ```
- *
- * Call {@link update} after changing {@link width}, {@link height}, or
- * `drawing.far` programmatically to rebuild the geometry.
- */
+/** Visualises a {@link TechnicalDrawing}'s projection volume in the 3D scene and exposes three gizmo anchors for interactive control. */
 export class TechnicalDrawingHelper extends THREE.Group {
   private readonly _drawing: DrawingProjectionSource;
 
@@ -136,6 +70,64 @@ export class TechnicalDrawingHelper extends THREE.Group {
    */
   readonly heightHandle = new THREE.Object3D();
 
+  /**
+   * Works exactly like the built-in Three.js helpers (e.g. `THREE.CameraHelper`):
+   * add it as a child of `drawing.three` so it inherits the drawing's world
+   * transform automatically.
+   *
+   * It renders on **layer 0** — visible to the perspective camera, invisible to
+   * the drawing's orthographic cameras (which only render layer 1).
+   *
+   * The helper draws three things:
+   * - A rectangular frame on the drawing plane (Y = 0 in drawing local space).
+   * - Four pillar lines dropping from each corner along the projection direction
+   *   (local −Y) to the far boundary.
+   * - A matching rectangle at the far boundary.
+   *
+   * ### Interactive control via gizmos
+   *
+   * Three `THREE.Object3D` anchors are exposed for `TransformControls`:
+   *
+   * | Anchor | Controls | Constrained axis |
+   * |---|---|---|
+   * | {@link farHandle} | `drawing.far` | local Y |
+   * | {@link widthHandle} | {@link width} (symmetric) | local X |
+   * | {@link heightHandle} | {@link height} (symmetric) | local Z |
+   *
+   * Use the corresponding `attach*Gizmo` methods instead of configuring the
+   * gizmos manually — they enforce the correct axis constraints, local space,
+   * and change listeners automatically:
+   *
+   * ```ts
+   * const helper = new TechnicalDrawingHelper(drawing);
+   * helper.width = 20;
+   * helper.height = 15;
+   * drawing.three.add(helper);
+   *
+   * // Main gizmo — full translate + rotate on drawing.three
+   * const mainGizmo = new TransformControls(camera, domElement);
+   * mainGizmo.attach(drawing.three);
+   * scene.add(mainGizmo);
+   *
+   * // Depth gizmo — controls drawing.far
+   * const farGizmo = new TransformControls(camera, domElement);
+   * scene.add(farGizmo);
+   * helper.attachFarGizmo(farGizmo);
+   *
+   * // Width gizmo
+   * const widthGizmo = new TransformControls(camera, domElement);
+   * scene.add(widthGizmo);
+   * helper.attachWidthGizmo(widthGizmo);
+   *
+   * // Height gizmo
+   * const heightGizmo = new TransformControls(camera, domElement);
+   * scene.add(heightGizmo);
+   * helper.attachHeightGizmo(heightGizmo);
+   * ```
+   *
+   * Call {@link update} after changing {@link width}, {@link height}, or
+   * `drawing.far` programmatically to rebuild the geometry.
+   */
   constructor(drawing: DrawingProjectionSource) {
     super();
     this._drawing = drawing;

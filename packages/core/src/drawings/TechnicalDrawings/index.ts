@@ -6,30 +6,7 @@ import { TechnicalDrawing, AnnotationSystem } from "./src";
 
 export * from "./src";
 
-/**
- * OBC Component that creates and manages {@link TechnicalDrawing} instances.
- *
- * A TechnicalDrawing is a 2D drawing plane that lives in 3D world space.
- * It contains projection lines and dimension annotations (layer 1 geometry)
- * framed by one or more orthographic {@link DrawingViewport}s.
- *
- * The drawing's `container` (a `THREE.Group`) can be freely transformed in the
- * 3D world — all viewports and geometry move together as a single unit.
- *
- * @example
- * ```ts
- * const techDrawings = components.get(TechnicalDrawings);
- * const drawing = techDrawings.create(world);
- *
- * // Add layer-1 geometry to the drawing
- * const lines = new THREE.LineSegments(geometry, material);
- * lines.layers.set(1);
- * drawing.three.add(lines);
- *
- * // Add viewports
- * const vp = drawing.viewports.create({ left: -1, right: 5, top: 1, bottom: -4 });
- * ```
- */
+/** OBC Component that creates and manages {@link TechnicalDrawing} instances. */
 export class TechnicalDrawings extends Component implements Disposable {
   /**
    * A unique identifier for the component.
@@ -52,6 +29,28 @@ export class TechnicalDrawings extends Component implements Disposable {
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
 
+  /**
+   * A TechnicalDrawing is a 2D drawing plane that lives in 3D world space.
+   * It contains projection lines and dimension annotations (layer 1 geometry)
+   * framed by one or more orthographic {@link DrawingViewport}s.
+   *
+   * The drawing's `container` (a `THREE.Group`) can be freely transformed in the
+   * 3D world — all viewports and geometry move together as a single unit.
+   *
+   * @example
+   * ```ts
+   * const techDrawings = components.get(TechnicalDrawings);
+   * const drawing = techDrawings.create(world);
+   *
+   * // Add layer-1 geometry to the drawing
+   * const lines = new THREE.LineSegments(geometry, material);
+   * lines.layers.set(1);
+   * drawing.three.add(lines);
+   *
+   * // Add viewports
+   * const vp = drawing.viewports.create({ left: -1, right: 5, top: 1, bottom: -4 });
+   * ```
+   */
   constructor(components: Components) {
     super(components);
     components.add(TechnicalDrawings.uuid, this);

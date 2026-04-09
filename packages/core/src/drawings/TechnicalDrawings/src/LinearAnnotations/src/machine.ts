@@ -44,13 +44,7 @@ function isSameLine(a: THREE.Line3, b: THREE.Line3): boolean {
 
 // ─── Public helpers (used by geometry.ts) ────────────────────────────────────
 
-/**
- * Computes the signed offset from a cursor position to the measurement axis
- * defined by the first and last points.
- *
- * The offset is measured perpendicular to the `(points[0] → points[last])`
- * direction, which is the direction along the measured lines (lineDir).
- */
+/** Computes the signed offset from a cursor position to the measurement axis defined by the first and last points. */
 export function computeOffset(
   points: THREE.Vector3[],
   cursor: THREE.Vector3,
@@ -65,10 +59,7 @@ export function computeOffset(
   return cursor.clone().sub(first).dot(lineDirApprox);
 }
 
-/**
- * Builds an array of {@link LinearAnnotation}s from consecutive point pairs,
- * all sharing the same perpendicular offset.
- */
+/** Builds an array of {@link LinearAnnotation}s from consecutive point pairs, all sharing the same perpendicular offset. */
 export function buildDimensions(
   points: THREE.Vector3[],
   offset: number,
@@ -88,13 +79,7 @@ export function buildDimensions(
 
 // ─── Machine ─────────────────────────────────────────────────────────────────
 
-/**
- * Pure state transition function for the linear dimension tool.
- *
- * Given the current state and an incoming event, returns the next state.
- * Returns the **same state reference** when no transition applies (caller can
- * skip re-renders with a `===` check).
- */
+/** Pure state transition function for the linear dimension tool. */
 export function linearDimensionMachine(
   state: LinearAnnotationState,
   event: LinearAnnotationEvent,

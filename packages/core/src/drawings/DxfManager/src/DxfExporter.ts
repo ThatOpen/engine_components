@@ -134,16 +134,7 @@ export interface DxfPaperOptions {
 
 // ─── DxfExporter ──────────────────────────────────────────────────────────────
 
-/**
- * Serializes {@link TechnicalDrawing} content to DXF format (AC1015 / AutoCAD R2000).
- *
- * Used through {@link DxfManager}:
- * ```ts
- * const dxf = components.get(OBC.DxfManager).exporter.export([
- *   { drawing, viewports: [{ viewport, x: 10, y: 10 }] },
- * ], { widthMm: 420, heightMm: 297, margin: 10 });
- * ```
- */
+/** Serializes {@link TechnicalDrawing} content to DXF format (AC1015 / AutoCAD R2000). */
 export class DxfExporter {
   /** Decimal places used when formatting measurement text in DXF. */
   precision = 2;
@@ -169,6 +160,14 @@ export class DxfExporter {
     (sys: DrawingSystem<any>, ctx: DxfWriteContext) => void
   >();
 
+  /**
+   * Used through {@link DxfManager}:
+   * ```ts
+   * const dxf = components.get(OBC.DxfManager).exporter.export([
+   *   { drawing, viewports: [{ viewport, x: 10, y: 10 }] },
+   * ], { widthMm: 420, heightMm: 297, margin: 10 });
+   * ```
+   */
   constructor(private readonly _components: Components) {}
 
   /**

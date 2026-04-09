@@ -33,10 +33,7 @@ export interface LinearAnnotationStyle extends BaseAnnotationStyle {
 
 // ─── Persisted data ───────────────────────────────────────────────────────────
 
-/**
- * The committed data for a single linear annotation.
- * Stored in drawing local space (XZ plane, Y = 0).
- */
+/** The committed data for a single linear annotation. */
 export interface LinearAnnotation {
   /** Unique identifier. */
   uuid: string;
