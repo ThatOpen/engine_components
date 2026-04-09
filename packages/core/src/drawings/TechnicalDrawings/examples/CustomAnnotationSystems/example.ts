@@ -99,7 +99,7 @@ const techDrawings = components.get(OBC.TechnicalDrawings);
 const drawing = techDrawings.create(world);
 drawing.three.position.y = 11.427046;
 
-const projData = await fetch("/resources/projections/projection.json").then((r) =>
+const projData = await fetch("https://thatopen.github.io/engine_components/resources/projections/projection.json").then((r) =>
   r.json(),
 ) as { positions: number[] };
 const projGeo = new THREE.BufferGeometry();
