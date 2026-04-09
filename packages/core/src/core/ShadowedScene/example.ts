@@ -161,12 +161,12 @@ document.body.append(button);
 // Adding shadows
 
 world.renderer.three.shadowMap.enabled = true;
-world.renderer.three.shadowMap.type = THREE.PCFSoftShadowMap;
+world.renderer.three.shadowMap.type = THREE.VSMShadowMap;
 
 world.scene.setup({
   shadows: {
     cascade: 1,
-    resolution: 1024,
+    resolution: 2048,
   },
 });
 
