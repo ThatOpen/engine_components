@@ -756,8 +756,8 @@ __metadata:
   dependencies:
     "@thatopen/components": ~3.4.0
     "@thatopen/fragments": ~3.4.0
-    "@thatopen/ui": ~3.3.0
-    "@thatopen/ui-obc": ~3.3.0
+    "@thatopen/ui": ~3.4.0
+    "@thatopen/ui-obc": ~3.4.0
     "@types/convert-units": 2.3.11
     "@types/earcut": 3.0.0
     "@types/three": 0.183.1
@@ -776,7 +776,7 @@ __metadata:
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
     "@thatopen/fragments": ~3.4.0
-    "@thatopen/ui": ~3.3.0
+    "@thatopen/ui": ~3.4.0
     "@types/convert-units": 2.3.11
     "@types/three": 0.183.1
     camera-controls: ^3.1.2
@@ -809,32 +809,32 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@thatopen/ui-obc@npm:~3.3.0":
-  version: 3.3.0
-  resolution: "@thatopen/ui-obc@npm:3.3.0"
+"@thatopen/ui-obc@npm:~3.4.0":
+  version: 3.4.0
+  resolution: "@thatopen/ui-obc@npm:3.4.0"
   dependencies:
-    "@thatopen/ui": ~3.3.0
+    "@thatopen/ui": ~3.4.0
     lit: 3.3.1
   peerDependencies:
-    "@thatopen/components": ~3.3.0
-    "@thatopen/components-front": ~3.3.0
-    "@thatopen/fragments": ~3.3.0
-    three: ">=0.175.0"
-    web-ifc: ">=0.0.74"
-  checksum: 8082e73fc27d586a94db47817839176fe3a8c09254341d44aee3d6b619ecf46aca98ab78623a3a63b06d3980ab9862247df0a64cbd0ab9df5ea17a0b866b7c92
+    "@thatopen/components": ~3.4.0
+    "@thatopen/components-front": ~3.4.0
+    "@thatopen/fragments": ~3.4.0
+    three: ">=0.182.0"
+    web-ifc: ">=0.0.77"
+  checksum: 5f4fd5e941ab52790dd2e7afd78a4aeeb5479de05ecd95d26e5176c26e9339ba48d4b8df5ee9f511d577c68726882c88465805d7c541dc1ae7293a34882106f3
   languageName: node
   linkType: hard
 
-"@thatopen/ui@npm:~3.3.0":
-  version: 3.3.0
-  resolution: "@thatopen/ui@npm:3.3.0"
+"@thatopen/ui@npm:~3.4.0":
+  version: 3.4.0
+  resolution: "@thatopen/ui@npm:3.4.0"
   dependencies:
     "@floating-ui/dom": 1.6.3
     chart.js: ^4.5.0
     chartjs-plugin-datalabels: ^2.2.0
     iconify-icon: 3.0.1
     lit: 3.3.1
-  checksum: b68b03ebb7640a383ddb3b5a321bbc825b780ca664f37fa74dc457d2755f4474f6bf37f25eb0f46fc75cf134ddc26d83f119dbf69da693c2a2a15aac78207f0b
+  checksum: 3ff7eb2d27d1168c6b0cd8cb17390e12c29c121472208ee4dc39bce78bffc3564dc55e175284a2a480175c3c0fc4a60d8855d33cfc5001e51da6c38c56c2f9be
   languageName: node
   linkType: hard
 

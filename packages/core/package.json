@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "@thatopen/fragments": "~3.4.0",
-    "@thatopen/ui": "~3.3.0",
+    "@thatopen/ui": "~3.4.0",
     "@types/convert-units": "2.3.11",
     "@types/three": "0.183.1",
     "camera-controls": "^3.1.2",
