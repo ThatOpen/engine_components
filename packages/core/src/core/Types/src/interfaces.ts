@@ -164,3 +164,28 @@ export interface Serializable<
   import: (result: SerializationResult<D, S>, ...args: any) => any;
   export: (...args: any) => SerializationResult<D, S>;
 }
+
+/**
+ * Whether this component manages its interaction through an explicit state machine.
+ * The machine is the single source of truth: the system can only be in one state at
+ * a time, and every transition is deterministic given the current state and the event.
+ *
+ * @template TState - Discriminated union of all valid states (each with a `kind` string).
+ * @template TEvent - Discriminated union of all accepted events (each with a `type` string).
+ */
+export interface Transitionable<
+  TState extends { kind: string },
+  TEvent extends { type: string },
+> {
+  /** The current state. TypeScript guarantees it is always a valid, well-typed state. */
+  readonly machineState: TState;
+
+  /**
+   * Dispatches an event to the machine, producing a deterministic state transition.
+   * Events that do not apply to the current state are silently ignored.
+   */
+  sendMachineEvent(event: TEvent): void;
+
+  /** Fired synchronously after every state transition with the new state as payload. */
+  readonly onMachineStateChanged: Event<TState>;
+}

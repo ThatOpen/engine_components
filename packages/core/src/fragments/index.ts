@@ -1,3 +1,4 @@
+export * from "./EdgeProjector";
 export * from "./FragmentsManager";
 export * from "./IfcLoader";
 export * from "./Hider";

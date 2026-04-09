@@ -179,5 +179,6 @@ export class Components implements Disposable {
     // @ts-ignore
     THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
     THREE.Mesh.prototype.raycast = acceleratedRaycast;
+    THREE.LineSegments.prototype.raycast = acceleratedRaycast;
   }
 }
