@@ -1,7 +1,9 @@
 /* MD
   ## 📄 Making Items Groupings
   ---
-  Classifications are a powerful way to organize your BIM models. They allow you to group them according to different parameters. For example: getting all the walls, or all the items that belong to a specific floor or room. In this tutorial, you'll learn how to classify your BIM models by different criterias, and how to get the list of items that belong to a specific category. Let's go!
+  Isolating all walls on a specific floor, highlighting every element in a room, or letting users browse the model by discipline all require grouping elements by some criteria. Without a classification system, that means writing custom queries and managing element sets manually for every feature. The `Classifier` centralizes that logic into named groups that can combine fixed element lists with live queries — and update automatically when new models load.
+
+  This tutorial covers creating a custom classification group with static elements (specific slabs added programmatically), adding a dynamic query to that same group (first floor walls), using the built-in classifiers to group all elements by category and by building storey, and isolating any group's elements with one click from a UI panel. By the end, you'll have a flexible classification system ready to drive visibility, selection, and filtering features in any BIM application.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

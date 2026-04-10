@@ -1,13 +1,9 @@
 /* MD
   ## 📄 Adding Fancy Grids
   ---
-  In this tutorial you'll learn how to add a fancy grid to your scene. It's super easy and will make your app look much more professional!
+  Without a spatial reference, users navigating an empty or partially loaded 3D scene have no sense of scale or orientation. An infinite grid provides that grounding — a neutral plane that adapts to the model's coordinate system and stays out of the way.
 
-  :::tip Why a grid?
-
-  Grids are very common in 3D apps, and it's a great way to have a reference point for your users to navigate around, even when there are no visible objects around.
-
-  :::
+  This tutorial covers creating a grid for a world, snapping it to a specific building storey elevation read directly from the model, and controlling its visibility, color, and primary and secondary cell sizes through a UI panel. By the end, you'll have a configurable grid ready to orient your users in any BIM scene.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

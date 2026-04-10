@@ -2,20 +2,9 @@
 ### 🚀 Handling BIM models like a boss
 ---
 
-In this tutorial, you'll learn how to load your BIM models in Fragment format. Fragment is an [open source geometry system](https://github.com/ThatOpen/engine_fragment/) that we created on top of [Three.js](https://threejs.org/) to display BIM models fast, while keeping control over the individual items of the model. The idea is simple: a BIM model is a FragmentsGroup, which is (like the name implies) a collection of fragments. A fragment is a set of identical geometries instantiated around the scene.
+Flat-lit 3D scenes feel disconnected and hard to read — without shadows, users lose depth cues and the model looks like a technical diagram rather than a real building. The `ShadowedScene` adds ground shadows that follow the model geometry, making the scene immediately more readable and visually grounded.
 
-:::tip How do I get a BIM model in Fragment format?
-
-The IfcLoader component does exactly that! It converts IFC models to Fragments. Check out that tutorial if you are starting out with IFC files. Of course, you can just use the IfcLoader in your app, but loading fragments is more than x10 faster than loading IFC files. Our recommendation is to convert your IFC files to fragments just once, store the fragment somewhere (frontent of backend) and then load the fragments instead of teh IFC models directly.
-
-:::
-
-In this tutorial, we will import:
-
-- `Three.js` to get some 3D entities for our app.
-- `@thatopen/ui` to add some simple and cool UI menus.
-- `@thatopen/components` to set up the barebone of our app.
-- `Stats.js` (optional) to measure the performance of our app.
+This tutorial covers setting up a `ShadowedScene` in place of the standard scene, configuring shadow cascade and resolution, enabling cast and receive shadows per mesh, and toggling shadows on and off at runtime. By the end, you'll have a BIM scene with live shadows that update as the camera comes to rest.
 */
 
 import * as THREE from "three";

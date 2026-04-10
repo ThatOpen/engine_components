@@ -3,20 +3,9 @@
 ### 🌎 Creating our 3D world
 ---
 
-In this tutorial you'll learn how to create a simple scene using `@thatopen/components`.
+Every BIM application needs a 3D environment to display models — a scene, a camera, and a renderer wired together and running. Setting this up from scratch with raw Three.js requires boilerplate that distracts from the actual app logic. The `Worlds` component gives you that foundation in a few lines, with sensible defaults and singleton management built in.
 
-:::tip Hello world!
-
-A world represents a 3D environment in your application. It consists of a scene, a camera and (optionally) a renderer. You can create multiple worlds and show them in multiple viewports at the same time.
-
-:::
-
-In this tutorial, we will import:
-
-- `Three.js` to get some 3D entities for our app.
-- `@thatopen/components` to set up the barebone of our app.
-- `@thatopen/ui` to add some simple and cool UI menus.
-- `Stats.js` (optional) to measure the performance of our app.
+This tutorial covers creating a world with a scene, camera, and renderer, loading a BIM model into it, and controlling background color and light intensities through a UI panel. By the end, you'll have the minimal working scene that every other tutorial in the library builds on.
 
 */
 

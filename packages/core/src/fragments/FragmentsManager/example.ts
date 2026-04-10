@@ -1,13 +1,9 @@
 /* MD
   ## 📄 Managing Fragments Models
   ---
-  In this tutorial, you'll learn how to load your BIM models in Fragment format. Fragment is an [open source geometry system](https://github.com/ThatOpen/engine_fragment/) that we created on top of [Three.js](https://threejs.org/) to display BIM models fast, while keeping control over the individual items of the model. The idea is simple: a BIM model is a FragmentsGroup, which is (like the name implies) a collection of fragments. A fragment is a set of identical geometries instantiated around the scene.
+  Loading large BIM models directly as IFC files on every session is slow — IFC parsing is expensive and blocks the main thread. Fragments solve this by converting IFC geometry into a compact, worker-based format that loads over 10x faster and keeps the app responsive during processing. The `FragmentsManager` is the entry point for working with this format inside the Components ecosystem.
 
-  :::tip How do I get a BIM model in Fragment format?
-
-  The IfcLoader component does exactly that! It converts IFC models to Fragments. Check out that tutorial if you are starting out with IFC files. Of course, you can just use the IfcLoader in your app, but loading fragments is more than x10 faster than loading IFC files. Our recommendation is to convert your IFC files to fragments just once, store the fragment somewhere (frontent of backend) and then load the fragments instead of teh IFC models directly.
-
-  :::
+  This tutorial covers initializing the FragmentsManager with its worker, loading multiple Fragment models concurrently, reacting to model load and removal events to wire them into the scene, exporting loaded models back to `.frag` files, and disposing individual or all models to free memory. By the end, you'll have the foundational model management setup that every other tutorial in the library depends on.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

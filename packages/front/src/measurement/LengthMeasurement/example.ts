@@ -2,7 +2,13 @@
   ## 📐 Measuring Lengths
   ---
 
-  Accurate length measurement is a cornerstone of Building Information Modeling (BIM) applications. Whether you're designing, analyzing, or collaborating, providing users with intuitive tools to measure distances in 3D space is essential. In this tutorial, you will learn how to integrate a measuring tool in your BIM app; let's go ahead!
+  Measuring distances between two points in a 3D BIM model — wall length, ceiling height, door clearance — is one of the most common user requests, but building it from scratch means wiring raycasting, label rendering, and persistent display manually.
+
+  The length measurement tool lets users click two points in the scene and displays the distance persistently with a labeled dimension line.
+
+  This tutorial covers configuring the tool with a color and snap mode; placing measurements with two double-clicks; auto-fitting the camera to each new measurement on creation; deleting individual measurements by hovering and pressing Delete; reading all length values from the measurements list; displaying rectangular (X/Y axis-aligned) and projection dimensions that complete the measurement triangle; inverting rectangular dimension orientation; and enabling synchronous vertex picking for faster snapping.
+
+  By the end, you'll have a fully working length measurement tool with persistent labeled dimensions, complementary rectangular and projection components, and configurable picking performance.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

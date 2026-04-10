@@ -1,13 +1,9 @@
 /* MD
   ## ✂️ Cutting Models
   ---
-  The Clipping Tool is a powerful feature in 3D modelling that helps you dissect 3D objects. Clipping Tool is useful for inspecting and analyzing objects in detail.💪
+  Inspecting the interior of a BIM model — checking wall thicknesses, MEP routing, or structural connections — is impossible when geometry blocks the view. Clipping planes solve this by cutting through the model along any surface, revealing exactly what's inside.
 
-  :::tip Clipping?
-
-  Clipping is the process of "cutting" a 3D object by creating a plane. That way, we can have a bird view of the inside of a BIM model.
-
-  :::
+  This tutorial covers creating clipping planes on double click, deleting them individually or all at once, toggling them on and off, and customizing their color, opacity and size. By the end, you'll have a fully working clipping tool ready to drop into any BIM application.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

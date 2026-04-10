@@ -1,12 +1,13 @@
 /* MD
   ## 🖊️ Drawing Editor
   ---
-  In the core `TechnicalDrawings` tutorial, the interaction layer — converting
-  mouse positions to drawing-space coordinates, keeping a hover highlight in sync,
-  and forwarding events to the annotation state machine step by step — took nearly
-  as much code as the feature itself. In `components-front`, an editor component
-  absorbs all of that plumbing so you can focus on what your annotations mean
-  rather than on the mechanics of placing them.
+  The core TechnicalDrawings setup requires writing coordinate plumbing by hand — converting mouse positions to drawing-space, maintaining a hover highlight, forwarding events to state machines step by step. That code says nothing about annotations; it's just infrastructure to make clicks land in the right place.
+
+  The DrawingEditor absorbs that entire interaction pipeline. You register a world, pick a tool, and click — snapping, hover feedback, and coordinate conversion are handled automatically.
+
+  This tutorial covers projecting BIM model edges onto a drawing with visible and hidden layers; loading a font and setting up the editor with a 3D world as input source; activating linear dimension, angle dimension, and callout annotation tools with a single setter; configuring annotation styles (color, font size, tick shapes — diagonal, arrow, dot, filled arrow, filled circle — and callout enclosures — cloud, rectangle, circle); setting up a SheetBoard with a PaperSpace element for paper-space rendering; entering paper-space edit mode by double-clicking a viewport so input routes through the viewport camera; advancing placement state with a single `editor.step()` call; handling Escape to cancel, exit paper space, or deactivate the tool; toggling layer visibility; and exporting individual viewports or the full sheet to DXF.
+
+  By the end, you'll have a fully interactive annotation setup — snapping, hover, label rendering, configurable styles, paper-space editing, and DXF export — in a fraction of the code the core tutorial requires.
 
   ### 🖖 Importing our Libraries
   First, let's install all necessary dependencies to make this example work:

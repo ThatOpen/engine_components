@@ -1,12 +1,9 @@
 /* MD
   ## 📐 Technical Drawings
   ---
-  Technical drawings are 2D annotations anchored in 3D space, used in architecture,
-  engineering, and construction to communicate design intent precisely. In That Open
-  Engine, a drawing is a container you place anywhere in your 3D scene — move it,
-  rotate it, or scale it and everything inside follows. Annotation systems plug into
-  it, and all data can be exported to DXF for use in any CAD application. Let's see
-  how it works!
+  BIM models communicate design intent in 3D, but construction documentation still relies on 2D drawings with precise annotations — wall lengths, clearances, structural spans. Adding those annotations manually to a screenshot loses the connection to the model data and can't be exported to CAD. Technical drawings solve this by anchoring 2D annotation geometry directly in 3D space, on top of projection lines derived from the model, and exporting everything to DXF.
+
+  This tutorial covers creating a drawing container in the 3D scene, loading projection lines from a model, registering a linear dimensions system, placing dimensions interactively by clicking projection line segments, rendering text labels on commit, and exporting the result to DXF. By the end, you'll understand the core architecture of the technical drawing system that all the other drawing tutorials build on.
 
   ### 🖖 Importing our Libraries
   First, let's install all necessary dependencies to make this example work:

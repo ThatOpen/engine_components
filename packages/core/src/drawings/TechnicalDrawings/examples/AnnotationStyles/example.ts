@@ -1,11 +1,9 @@
 /* MD
   ## 🎨 Annotation Styles
   ---
-  Every annotation system in That Open Engine renders its geometry using a named
-  style. A style is a plain object that controls colours, line sizes, text
-  properties — and, most importantly, the **tick mark** at the endpoints of a
-  dimension. In this tutorial we'll register styles using the built-in tick
-  builders, then write a custom mesh builder and register a fully custom style.
+  Dimensions that all look the same make drawings harder to read — architects, structural engineers, and MEP teams each have their own visual conventions for tick marks, colors, and units. Annotation styles let you define those conventions once by name and apply them consistently across every dimension in the drawing.
+
+  This tutorial covers registering named styles using all built-in line and mesh tick builders, implementing a fully custom mesh tick builder from scratch, setting per-style measurement units, and switching styles live from a UI dropdown. By the end, you'll have a catalogue of dimension styles — including a custom one — ready to apply to any annotation system.
 
   ### 🖖 Importing our Libraries
   First, let's install all necessary dependencies to make this example work:

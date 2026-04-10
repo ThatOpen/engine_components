@@ -1,11 +1,9 @@
 /* MD
   ## 🧱 Drawing Blocks
   ---
-  A block is a named, reusable geometry definition. You register it once on the
-  system — a column symbol, a door swing, a stair pattern — and then stamp it
-  anywhere across any drawing, each instance carrying its own position, rotation,
-  and scale. All insertions of the same block share a single `BufferGeometry`,
-  so adding a hundred columns is no heavier than adding one.
+  Placing recurring symbols — column circles, door swings, stair patterns — one by one as raw geometry means duplicating data for every instance and losing any connection between them. Blocks solve this by defining the geometry once and stamping lightweight references across the drawing, each with its own position, rotation, and scale but sharing a single `BufferGeometry` in memory.
+
+  This tutorial covers defining reusable block geometries for a column symbol and a door swing, inserting them on click at any position on the drawing, and updating an insertion's rotation after placement. By the end, you'll have a working block system ready to populate a floor plan with repeated symbols at no extra memory cost per instance.
 
   ### 🖖 Importing our Libraries
   First, let's install all necessary dependencies to make this example work:

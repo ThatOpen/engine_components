@@ -1,7 +1,9 @@
 /* MD
 ## 📄 Adding 2D Views
 ---
-  In the construction industry, 2D views such as plans, elevations, and sections are essential for understanding and communicating project details effectively. With That Open Engine, you can create and manage these views seamlessly, leveraging its powerful and efficient handling of BIM data to streamline workflows and enhance visualization. Let's see how is done!
+  Reviewing a BIM model in 3D is great for spatial understanding, but design communication still relies on 2D — floor plans to check room layouts, elevations to read façade heights, sections to inspect wall and slab assemblies. Switching to these views manually is tedious; generating them programmatically from the model data is the right approach.
+
+  This tutorial covers generating floor plan views automatically from IFC storeys, creating elevation views from the model's bounding box, and placing arbitrary section views interactively with a double click on any surface. By the end, you'll have a fully working 2D views system with plans, elevations, and on-demand sections navigable from a UI panel.
   
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

@@ -2,7 +2,13 @@
   ## 📐 Measuring Angles
   ---
 
-  Measuring angles between surfaces, edges, or arbitrary points is essential in many BIM workflows. In this tutorial, you'll learn how to expose an angle measurement tool to your end users.
+  Checking that a ramp meets accessibility requirements, verifying a roof pitch, or confirming a structural connection angle all require measuring angles between arbitrary points in a 3D model — and doing that by hand from a screenshot is inaccurate and slow.
+
+  The angle measurement tool lets users place three points in the scene to define an angle and displays the result persistently as part of the 3D view.
+
+  This tutorial covers configuring the tool with a color and snap mode; placing angle measurements with three double-clicks (start, vertex, end); deleting individual measurements by hovering and pressing Delete; reading all angle values from the measurements list; clearing all measurements at once; and switching between asynchronous (memory-efficient) and synchronous (faster) vertex picking modes by pre-generating mesh geometry.
+
+  By the end, you'll have a fully working angle measurement tool with persistent results, keyboard deletion, and configurable picking performance.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

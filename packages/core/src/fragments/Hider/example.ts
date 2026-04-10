@@ -1,7 +1,9 @@
 /* MD
 ## 📄 Managing Items Visibility
 ---
-Many times, we just want to look at a specific part of a BIM model, without seeing the rest of it. BIM models are complex, and finding what we are looking for is not always easy. Luckily, the components library has tools to make it easier!
+  When reviewing a BIM model, seeing everything at once makes it hard to focus — walls block structure, MEP clutters architecture, and the floor you care about is buried under every other storey. Without a visibility system, controlling what's shown means manipulating Three.js objects directly for every feature that needs it.
+
+  This tutorial covers isolating all elements of a given category (showing only those, hiding everything else), hiding a specific category while keeping the rest visible, and resetting all elements back to fully visible in one call. By the end, you'll have a reusable visibility control that any other component — classifier, finder, selection — can drive by passing a ModelIdMap.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

@@ -1,7 +1,13 @@
 /* MD
   ## 👌 Communicating The Right Way
   ---
-  Effective communication is essential for all projects, whether in construction or other industries. It is crucial to have a reliable method for project members to communicate and track discussions. In construction projects, BuildingSMART introduced the BIM Collaboration Format (BCF) to standardize communication about ongoing topics among stakeholders. That Open Engine includes integration with BCF, enabling you to read, create, and update any BCF file seamlessly. Let's explore how it works!
+  BIM teams need to communicate issues, clashes, and design questions in a way that other tools can read and respond to — emails and PDFs break that chain because they're disconnected from the model.
+
+  BCF is the open standard for this: a topic bundles an issue's metadata, comments, and links to viewpoints so any BCF-compatible tool can open and continue the conversation.
+
+  This tutorial covers configuring the component with a signed-in author, custom topic types, statuses, and users; creating a topic with full metadata (title, description, due date, type, priority, stage, labels, assignee); auto-creating a viewpoint and linking it to every new topic via an event; adding and editing comments; updating topic properties with the `set()` method to trigger reactive UI events; exporting topics to a `.bcf` file; and importing an existing `.bcf` file (versions 2.1 and 3.0).
+
+  By the end, you'll have a complete BCF issue management pipeline that can exchange files with any BCF-compatible BIM tool.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

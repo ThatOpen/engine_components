@@ -1,13 +1,9 @@
 /* MD
   ## 📄 Handling Fancy Cameras
   ---
-  Sometimes, you need perspective for depth and realism. Other times, you need an orthographic camera to get precise measurements and proportions. Luckily for you, we have a camera that has both of those projections at the same time! It also has some cool functionality for navigation. In this tutorial, you'll learn to use it. 
+  BIM applications need two navigation modes: perspective for exploring the 3D model naturally, and orthographic for reading plans and sections with accurate proportions. Switching between them mid-session — without losing the camera position — is what the `OrthoPerspectiveCamera` is built for.
 
-  :::tip Orthographic and Perspective cameras
-
-  The difference between Orthographic and Perspective cameras is that Orthographic cameras don't see things smaller when they are further away. This has some implications, like the camera being always "outside" of your scene. You can't see the interior of a room with an orthographic camera. The most common use for orthographic cameras are 2D floor plans and sections, but they can also be used to create cool-looking 3D scenes.
-
-  :::
+  This tutorial covers switching between perspective and orthographic projections, changing navigation modes (Orbit, First Person, and Plan), locking user input, and fitting the camera to the loaded model. By the end, you'll have a fully controllable camera ready for both 3D exploration and 2D plan navigation.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

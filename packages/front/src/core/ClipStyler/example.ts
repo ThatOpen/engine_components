@@ -1,13 +1,13 @@
 /* MD
   ## ✂️ Fancy Clippings
   ---
-  Clipping planes are very common in BIM applications. They are used for floor plans, sections, looking inside a 3D model, etc. But simple clipping planes are not enough: they don't have fills or outlines, which are common in BIM software. That Open Engine can do them, and in this tutorial you'll learn how!
+  Basic clipping planes cut through the model but show raw geometry — no fills, no styled outlines. Architecture and engineering drawings rely on fill colors and line weights to tell walls, columns, and doors apart at a glance.
 
-  :::tip Fills and outlines?
+  The ClipStyler generates styled fills and outlines at any section cut, driven by classifier groups so different element categories automatically get different visual treatment.
 
-  Traditionally, architects created plans with a certain style. For instance, thick lines with solid fill for cutted walls and structure, thin lines for cutted doors and windows, etc. These same conventions are still common in BIM software.
+  This tutorial covers defining named styles with line thickness and fill color (including fill-only styles); creating classifier groups for walls, slabs, columns, doors, curtains, and windows via finder queries; linking the styler to clipping planes so every new cut auto-applies a fill; linking it to an arbitrary section view with per-group styles; linking it to a floor plan view generated from an IFC storey with different styles per category; and adding new styled item groups to an existing view after creation.
 
-  :::
+  By the end, you'll have section cuts and floor plans with architect-style fills and outlines that update automatically as you create or move clipping planes.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

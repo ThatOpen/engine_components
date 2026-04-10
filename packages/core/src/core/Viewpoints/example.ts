@@ -1,15 +1,9 @@
 /* MD
   ## 📄 Storing View Information
   ---
-  Most 3D applications commonly store camera positions for easy retrieval. In BIM apps, it's also useful to store selected and filtered elements. While there isn't a universal standard for this, the BCF schema (used for communication between BIM apps) includes topics and viewpoints.
+  In collaborative BIM workflows, teams need to point each other to specific locations in the model — a clashing duct, a problematic wall, a structural element to review. Without a standard way to save and restore camera positions alongside element selections, that context is lost between sessions and tools. Viewpoints, part of the BCF standard, solve this by bundling camera position, selected elements, and a snapshot into a single reusable reference.
 
-  :::info
-
-  Topics store communication details like title, type, status, assignee, and comments. Viewpoints define camera positions, targets, selected elements, and isolations.
-
-  :::
-
-  The Viewpoints component in That Open Engine extracts BCF viewpoints, enabling you to manage camera positions and related elements effectively. Let's explore how to use it!
+  This tutorial covers creating a viewpoint from the current camera, updating its snapshot and position, associating model elements by GUID and by category query, restoring the camera from a saved viewpoint, isolating its elements in the scene, and linking it to a BCF topic. By the end, you'll have a complete viewpoint workflow ready to integrate into any BIM coordination feature.
 */
 
 import * as THREE from "three";

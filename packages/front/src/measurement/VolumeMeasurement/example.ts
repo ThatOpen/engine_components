@@ -1,7 +1,13 @@
 /* MD
   ## 📐 Measuring Volumes
   ---
-  Accurate volume measurement is a critical feature in Building Information Modeling (BIM) applications. Whether you're estimating material quantities, analyzing spatial properties, or collaborating on designs, providing users with intuitive tools to measure volumes in 3D space is essential. In this tutorial, you will learn how to integrate a volume measuring tool in your BIM app; let's dive in!
+  Estimating concrete volume for a slab, calculating the space inside an enclosure, or verifying that a duct fits within an available volume all require measuring 3D volumes from arbitrary polygons — not just distances or areas.
+
+  The volume measurement tool lets users define a polygon base in the scene and computes the enclosed volume, displaying it persistently in the 3D view.
+
+  This tutorial covers configuring the tool with a color; placing volume measurements by double-clicking boundary points and pressing Enter to close the shape; auto-fitting the camera to each new measurement on creation; retrieving volume values asynchronously from the measurements list; deleting individual measurements by hovering and pressing Delete; and clearing all measurements at once.
+
+  By the end, you'll have a fully working volume measurement tool with persistent 3D results and camera fit on creation.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

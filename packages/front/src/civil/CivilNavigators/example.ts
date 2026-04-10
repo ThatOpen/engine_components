@@ -2,20 +2,13 @@
 ### 🛣️ Navigating 3D infrastructures
 ---
 
-Infra models are awesome, but they are usually very, very long and thin. This makes it a bit hard to navigate through them. Luckily for you, the alignment data that comes in IFC models is processed by our libraries and generated in 3D, so you can use it for navigation!
+  Infrastructure models — roads, tunnels, bridges — are long and thin, making standard orbit navigation nearly useless. You need a way to travel along the route and inspect any cross-section without losing your bearings.
 
-:::tip 3D alignment?
+  Civil navigators use the IFC alignment data reconstructed in 3D to let you scrub along the route, sync multiple views, and cut a live cross-section at any station.
 
-The alignment data in IFC usually comes in 2D (floor plan and elevation). We use that data to regenerate the 3D curve from those 2D representations. You'll see the result in just a moment!
+  This tutorial covers loading a road Fragment model and extracting its 3D absolute and horizontal plan alignments; creating an absolute 3D navigator and a horizontal 2D navigator in a secondary world; syncing the marker position between both views as you move along the route; adding a cross-section clipping plane that updates perpendicular to the alignment at the marker; displaying KP station labels with configurable colors and screen-distance culling; highlighting a selected alignment; and navigating by percentage slider or by KP value.
 
-:::
-
-In this tutorial, we will import:
-
-- `three` to create some 3D items.
-- `@thatopen/components` to set up the barebone of our app.
-- `@thatopen/components-front` to use some frontend-oriented components.
-- `Stats.js` (optional) to measure the performance of our app.
+  By the end, you'll have a synchronized 3D and plan-view navigation setup for infrastructure models with live cross-section cutting at any station.
 */
 
 import * as THREE from "three";

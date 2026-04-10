@@ -1,7 +1,9 @@
 /* MD
   ## 📄 Finding the Items you Need
   ---
-  In the world of 3D modeling, finding the right information quickly is crucial for efficiency and productivity. The Items Finder component empowers you to locate specific elements in your models with ease, using powerful queries based on categories, attributes, and relationships. Let's dive in and see how it works!
+  Filtering "all walls on the first floor" or "all masonry walls named X" by hand means traversing element trees and writing custom queries per use case. As models get larger and features multiply, that becomes unmanageable. A declarative query system lets you define the selection criteria once and run it across any number of loaded models automatically.
+
+  This tutorial covers creating queries by category (walls and slabs), by category combined with attribute matching (masonry walls by name regex), and by category combined with a relational constraint (columns contained in a specific building storey). By the end, you'll have named, reusable queries that return a ModelIdMap — ready to feed directly into visibility, highlighting, or classification operations.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

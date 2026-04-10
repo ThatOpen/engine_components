@@ -1,11 +1,9 @@
 /* MD
   ## 🔖 Annotation Systems
   ---
-  A drawing can host as many annotation systems simultaneously as you need. In this
-  tutorial we work with the three interactive built-in systems — each exposes a
-  step-by-step state machine for placement, and all three share the same drawing
-  canvas. One set of DOM event listeners routes input to whichever system is active
-  at the time, so switching tools is a matter of changing one variable.
+  A technical drawing typically needs more than one type of annotation — wall lengths require linear dimensions, corners need angle dimensions, and specific elements need callout leaders. Managing multiple annotation tools at once, each with its own interaction flow, can quickly turn into a tangle of event handlers and state. Annotation systems solve this by encapsulating each tool's state machine independently, so they can coexist on the same drawing with a single shared input dispatcher.
+
+  This tutorial covers registering linear, leader, and angle annotation systems on the same drawing, wiring a single set of mouse and keyboard events to route input to whichever tool is active, rendering text labels on commit for each system, and switching between tools from a UI dropdown. By the end, you'll have a multi-tool annotation setup ready to place dimensions, leaders, and angles on any technical drawing.
 
   ### 🖖 Importing our Libraries
   First, let's install all necessary dependencies to make this example work:

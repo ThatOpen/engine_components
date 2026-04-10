@@ -1,7 +1,13 @@
 /* MD
   ## Generating Meshes from Fragments ⚙️
   ---
-  The Fragments Models from That Open Engine removes the ThreeJS geometry buffer data in order to save as much memory as possible. While this is perfect in most cases, there are certain situations where you need to access this information. In this tutorial you will learn how to use the Mesher component to create single ThreeJS meshes of your model items. Let's go ahead!
+  Fragment models deliberately strip out Three.js geometry buffer data to save memory — which is ideal for rendering but breaks any workflow that needs actual mesh geometry, such as physics simulation, custom raycasting, boolean operations, or geometry export.
+
+  The Mesher reconstructs standard Three.js meshes from any selection of Fragment items on demand, without permanently bloating the scene.
+
+  This tutorial covers selecting elements via the Highlighter, generating Three.js meshes from that selection with a custom material, adding them to the scene and fitting the camera to them, logging meshing time, managing the geometry pool, and removing all generated meshes to reset the scene.
+
+  By the end, you'll have an on-demand meshing pipeline that converts any Fragment selection into real Three.js geometry ready for physics, export, or any operation that requires raw buffer data.
   
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

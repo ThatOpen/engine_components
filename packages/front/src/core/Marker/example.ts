@@ -1,13 +1,13 @@
 /* MD
   ## 📄 2D Inside 3D
   ---
-  Sometimes we need to see a 2D element inside our 3D world. For instance, imagine a Digital Twin application that has some icons representing a set of measurement devices inside a building. In this tutorial, we'll learn to use the Marker, which will allow us to easily create and cluster 2D elements inside the 3D scene.
+  Placing HTML labels, icons, or tooltips at fixed 3D positions is needed for digital twins, annotations, and sensor overlays — but wiring CSS2D elements to a Three.js scene manually, and collapsing overlapping ones into clusters as the camera moves, requires significant boilerplate.
 
-  :::tip 2D inside 3D?
+  The Marker component handles this: it anchors any HTML element to a 3D position and automatically groups nearby markers into clusters based on a screen-distance threshold.
 
-  We will achieve this using Three.js CSS2DElements. They allow you to "embed" any HTML element in your 3D scene, automatically adjusting it's position to the 3D camera.
+  This tutorial covers setting a clustering threshold, creating multiple HTML markers at arbitrary 3D positions, and controlling whether individual markers participate in clustering or remain static.
 
-  :::
+  By the end, you'll have a working 2D-in-3D marker system with automatic clustering ready to display icons, labels, or any HTML content anchored to model positions.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

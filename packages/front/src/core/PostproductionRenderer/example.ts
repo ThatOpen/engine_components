@@ -2,22 +2,13 @@
 ### 🎥 Great graphics
 ---
 
-  Postproduction effects enrich your 3D scenes. There are several post-production effects, such as adding shadows, rendering outlines, adding ambient occlusion and applying bloom, that can enhance and make your scene look cool. In this tutorial, you'll learn how to do it.
+  The default Three.js renderer produces flat geometry that looks raw in production BIM apps — no edge definition, no depth cues, no polish. Adding those effects manually means wiring multiple render passes and managing their interactions.
 
-:::tip Postproduction?
+  The PostproductionRenderer stacks GPU passes on top of the base render — ambient occlusion, edge detection, outlines, anti-aliasing, and preset visual styles — as a single drop-in renderer replacement.
 
-The simple Three.js renderer isn't bad, but it's pretty basic. Postproduction are a collection of effects you can add to your scene to make it look much better. Of course, this means consuming more resources, but luckily for us, the power of devices is proportional to the size of its screen, so we should be able to enjoy this beauty in most scene even from our smartphones!
+  This tutorial covers enabling postproduction on a loaded BIM model; outlining specific elements via the Outliner; switching between visual style presets (Basic, Pen, Shadowed Pen, Color Pen, Color Shadows, Color Pen Shadows); configuring edge detection width, color, and mode; adjusting outline thickness and fill opacity; tuning ambient occlusion parameters (GTAO and PD); toggling SMAA anti-aliasing; and excluding specific objects from postproduction effects.
 
-:::
-
-In this tutorial, we will import:
-
-- `three` to create some 3D items.
-- `@thatopen/components` to set up the barebone of our app.
-- `@thatopen/ui` to add some simple and cool UI menus.
-- `@thatopen/components-front` to use some frontend-oriented components.
-- `Stats.js` (optional) to measure the performance of our app.
-- `GTAOPass` (optional) to control the ambient occlusion parameters.
+  By the end, you'll have a fully configurable postproduction pipeline with live controls for every visual pass.
 */
 
 import * as THREE from "three";

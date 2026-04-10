@@ -1,7 +1,13 @@
 /* MD
   ## 🔦 Making Items Pop
   ---
-  
+  Color-changing highlights communicate selection but lose the element's original appearance. An outline effect keeps the element fully visible while adding a crisp border and fill — a convention common in game engines and CAD tools that works equally well in BIM viewers.
+
+  The Outliner is a postproduction shader pass that draws a configurable outline and fill overlay on any set of elements passed as a ModelIdMap, without modifying their materials.
+
+  This tutorial covers enabling postproduction and wiring the Outliner to the world; configuring outline color, fill color, fill opacity, and thickness; adding elements by query (all doors); combining the Outliner with the Highlighter so selected elements get outlined and outlines are removed on deselect; and clearing all outlines at once.
+
+  By the end, you'll have an outline effect driven by both programmatic queries and interactive selection, with live controls for every visual parameter.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

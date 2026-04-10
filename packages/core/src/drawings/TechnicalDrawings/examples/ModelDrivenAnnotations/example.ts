@@ -1,15 +1,9 @@
 /* MD
   ## 🏔️ Model-Driven Annotations
   ---
-  Not all annotations are placed by hand. When you're documenting roof geometry,
-  site grading, or structural slopes, the annotation data should come directly from
-  the model — click a surface, read the face normal, derive the slope, and let the
-  system record it. This is what `SlopeAnnotations` is designed for.
+  Documenting slopes on roofs, ramps, or site grading by hand is error-prone — the data is already encoded in the model geometry as face normals, so measuring it manually introduces unnecessary risk. Model-driven annotations extract that data directly from a surface click, bypassing the multi-step placement workflow entirely.
 
-  Unlike the interactive dimension systems — which expose a multi-step state machine
-  for click-by-click placement — slope annotations have no state machine at all.
-  There is nothing to "place" interactively: the slope is already in the geometry,
-  waiting to be measured and documented.
+  This tutorial covers clicking any surface to read its face normal, deriving the slope ratio and downhill direction from it, and recording the result as a `SlopeAnnotations` entry on the drawing — in either percentage or degrees format. By the end, you'll have a one-click slope annotation tool that reads geometry directly from the model with no manual input required.
 
   ### 🖖 Importing our Libraries
   First, let's install all necessary dependencies to make this example work:

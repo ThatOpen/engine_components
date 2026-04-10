@@ -1,15 +1,13 @@
 /* MD
   ## 📄 Hovering Items
   ---
-  Hovering is a key interaction in 3D applications, offering visual feedback as users explore a scene. When hovering over an object, its appearance changes—often through color or shading—highlighting it and enhancing usability.
+  Without dedicated hover feedback, users can't tell what they're about to click — especially in dense BIM models where elements overlap. Wiring mousemove raycasting and animated material overlays manually is boilerplate that every app would have to repeat.
 
-  In this tutorial, you'll learn how to implement hovering effectively.
+  The Hoverer tracks the cursor automatically and applies an animated color overlay to whichever element is under the pointer, with no per-frame wiring required.
 
-  :::tip Why Hovering Matters?
+  This tutorial covers enabling the Hoverer on a world, assigning a material with color, transparency, and opacity (which drives the animation peak), and changing the hover color at runtime from a UI control.
 
-  Hovering isn't just aesthetic; it communicates interactivity and focus, making your app feel dynamic and responsive.
-
-  :::
+  By the end, you'll have an animated hover highlight that follows the cursor across any loaded BIM model with a single component setup.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

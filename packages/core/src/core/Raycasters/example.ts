@@ -1,7 +1,9 @@
 /* MD
   ## 📄 Picking With the Mouse
   ---
-  Ray casting is the process of casting a ray from a point in space to another point in space. We will cast a ray from the mouse position to the 3D world and check if there is an object in its way. That way, when you hover or click on an object, we can know which one it is and do something with it. In this tutorial you'll learn how to use the Raycaster to pick objects in the scene with the mouse.
+  Knowing which element the user is pointing at is the foundation of almost every interaction in a BIM app — selecting, highlighting, inspecting, placing tools. Without it, clicks and hovers have no context. The Raycaster bridges the mouse position and the 3D scene, identifying exactly which model element is underneath the cursor.
+
+  This tutorial covers casting a ray on double click, resolving the hit to a specific model element, changing its color, and displaying its name in a UI panel. By the end, you'll have a working element picker that you can build any selection-driven feature on top of.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

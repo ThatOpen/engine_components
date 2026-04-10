@@ -1,13 +1,13 @@
 /* MD
   ## 🔦 Highlighting Items
   ---
-  In 3D apps, users get some feedback when they hover or click on an object. Generally, it changes its color or shading. In this tutorial, you'll learn how to do that with the highlighter.
+  Every interactive BIM app needs hover feedback and click selection, but wiring raycasting, material overrides, multi-selection with Ctrl, and clear-on-click manually for every feature is repetitive and error-prone.
 
-  :::tip Highlighting?
+  The Highlighter manages named highlight styles — each with its own color and opacity — and handles click selection, multi-selection, and programmatic highlighting through a unified API.
 
-  Highlighting means changing the color of one or many objects to make them stand out. This can be used for hovering, for selection, for bringing the attention of the user to certain items, etc.
+  This tutorial covers configuring the built-in "select" style (color, opacity, rendered faces) with click and Ctrl+click multi-selection; listening to selection and deselection events to retrieve element attributes; creating a custom named highlight style applied programmatically to the current selection; observing style precedence (select overrides custom until deselected); and clearing a custom highlight for selected items or all items at once.
 
-  :::
+  By the end, you'll have a reusable highlight system with click selection, custom color overlays, and event hooks ready to drive any feature that needs to react to what the user points at.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

@@ -1,15 +1,9 @@
 /* MD
   ## 🔧 Custom Annotation Systems
   ---
-  Every built-in annotation system in That Open Engine is just a subclass of the
-  same abstract base. There is no privileged API for built-ins: if you follow the
-  same structural contract, your custom system integrates with the drawing manager,
-  the DXF exporter, and every other utility exactly like the ones that ship with
-  the library.
+  The built-in annotation systems cover the most common cases, but every project eventually needs something specific — a custom symbol, a domain marker, a notation type that doesn't exist in the library. Without a clear extension point, that means working around the system instead of with it. The annotation system abstract base provides exactly that: a structural contract that makes custom systems first-class citizens, fully integrated with the drawing manager, the DXF exporter, and the interactive state machine.
 
-  In this tutorial we build `CrossMarkers` — a system that places a cross-shaped
-  marker at any point in the drawing. Along the way we cover the structural contract,
-  a minimal state machine for interactive placement, and DXF export registration.
+  This tutorial covers implementing a custom `CrossMarkers` annotation system from scratch — defining its data types, state machine, geometry builder, handle picker, live preview, and DXF exporter registration. By the end, you'll have a template for building any custom annotation type that plugs into the engine exactly like the built-in ones.
 
   ### 🖖 Importing our Libraries
   First, let's install all necessary dependencies to make this example work:

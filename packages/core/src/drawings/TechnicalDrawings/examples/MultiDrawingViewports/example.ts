@@ -1,16 +1,9 @@
 /* MD
   ## 🗂️ Multiple Drawing Viewports
   ---
-  A technical drawing is just a group in 3D space that you can move, rotate,
-  and scale freely. The interesting part is that you can define multiple *views*
-  into the same drawing, each one an independent rectangle with its own scale
-  and bounds.
+  A single viewport showing the full floor plan is rarely enough — construction drawings typically combine a general view with one or more detail areas at different scales on the same sheet. Setting this up manually means managing multiple cameras, canvases, and coordinate systems. The viewport system handles all of that: each viewport is an independent window into the same drawing, with its own bounds and scale, rendered together into a paper-space canvas that only updates when annotation data changes.
 
-  In this tutorial we'll create two viewports on a single drawing and render them into a
-  dedicated paper-space canvas. The canvas never re-renders every frame; it only
-  updates when annotation data actually changes. We'll also wire up direct
-  dimensioning from the paper-space canvas itself, so you can place measurements
-  without ever touching the 3D view. Let's see how it all fits together!
+  This tutorial covers creating two viewports on a single drawing framing different areas of the same floor plan, rendering them into a floating paper-space canvas, making viewport boundaries resizable and movable directly in the 3D view, and placing linear dimensions from the paper-space canvas without touching the 3D viewport. By the end, you'll have a multi-viewport sheet layout with interactive bounds and direct paper-space annotation.
 
   ### 🖖 Importing our Libraries
   First, let's install all necessary dependencies to make this example work:

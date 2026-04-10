@@ -1,7 +1,9 @@
 /* MD
   ## 📐 2D Edge Projections
   ---
-  In this tutorial, you'll learn how to generate 2D edge projections from BIM model items. This is useful for creating technical drawings, floor plans, and elevation views from 3D models. Let's get started!
+  Technical drawings and floor plans require 2D line work derived from 3D model geometry — but extracting clean edges from a BIM model manually is complex and slow. The `EdgeProjector` automates this by computing visible and hidden edge projections from any direction, turning 3D model geometry into the line segments needed for plans, sections, and elevations.
+
+  This tutorial covers projecting all model items from any standard orientation (top, front, left, etc.), projecting only a filtered subset by category, controlling near and far clipping planes to isolate specific floors or sections, adjusting the angle threshold for edge detection, and toggling hidden line visibility. By the end, you'll have a configurable 2D projection tool ready to feed technical drawings with accurate line work from any BIM model.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

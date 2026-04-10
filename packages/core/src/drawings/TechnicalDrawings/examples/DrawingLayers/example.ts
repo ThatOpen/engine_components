@@ -1,15 +1,9 @@
 /* MD
   ## 🗂️ Drawing Layers
   ---
-  A real technical drawing rarely contains a single type of geometry. Wall outlines,
-  structural elements, furniture, and annotations each belong to a different
-  *discipline*, and keeping them visually distinct — or temporarily hiding one while
-  you work on another — is one of the first things a drafter needs to control.
+  A floor plan with wall outlines, reference baselines, and dimensions all sharing the same color and visibility is impossible to read and edit efficiently. Layers solve this by grouping geometry into named channels — each with its own color, line style, and visibility toggle — so disciplines can be managed independently without touching each other's geometry.
 
-  In this tutorial we'll organise a drawing's projection lines into named layers,
-  then control their colour and visibility from a live panel. Along the way we'll see
-  that annotation systems sit *above* the layer system — their colours come from
-  their own styles and are never overridden by the layer they happen to live on.
+  This tutorial covers creating named layers for projection lines, reference geometry, and dimensions, assigning geometry and annotation groups to their respective layers, and controlling each layer's visibility, color, and line style (solid vs. dashed) from a live UI panel. By the end, you'll have a layered drawing where each discipline can be shown, hidden, or restyled in one action.
 
   ### 🖖 Importing our Libraries
   First, let's install all necessary dependencies to make this example work:

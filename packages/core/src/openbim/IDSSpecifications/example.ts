@@ -1,7 +1,13 @@
 /* MD
   ## 🧐 Reviewing Your IFC Files
   ---
-  The buildingSMART has been creating nice standards for the AEC just like IFC for BIM models and BCF for communication. The two of them are great, but when it comes to review if an IFC file complies with some requirements there is the perfect standard for it: IDS. In That Open Engine is possibile not only to create IDS files, but also to import and export then; in this tutorial you will learn everything you need to know to get started!
+  Project owners and BIM managers need to verify that IFC models meet data requirements before they're used downstream — but checking whether every door has a fire rating, or every wall has a load-bearing classification, element by element is impractical at model scale.
+
+  IDS (Information Delivery Specification) is the open standard for this: a specification declares which elements are in scope (applicability facets) and what data they must carry (requirement facets), then tests the model and reports which elements pass or fail.
+
+  This tutorial covers creating a specification with a name and target IFC version, defining an entity facet to select all doors as the applicable scope, defining a property facet to require FireRating in Pset_DoorCommon, running the test against a loaded model, converting the results into a ModelIdMap, and visualizing passing and failing elements with color highlighting and a ghost mode for easier inspection.
+
+  By the end, you'll have a working IDS compliance checker that colorizes which elements meet or violate a data requirement.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

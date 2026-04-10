@@ -1,13 +1,9 @@
 /* MD
   ## 📄 Playing with Boxes
   ---
-  In this tutorial, you'll learn to easily create the bounding boxes of a Fragments Model. This can be useful for knowing the overall position and dimension of your models, which can be used, for instance, to make the camera fit a whole BIM model in the screen. Let's get started!
+  Fitting the camera to a model, centering a view on a category of elements, or computing the overall extent of a scene all require knowing where objects are in 3D space. Doing that geometry by hand for large BIM models is impractical. The `BoundingBoxer` computes axis-aligned bounding boxes for any set of elements in one call, whether that's all loaded models or a filtered selection.
 
-  :::tip Bounding boxes?
-
-  Bounding boxes (AABB or Axis-Aligned Bounding Boxes) are the boxes aligned with the X, Y and Z axes of a 3D model that contain one or many objects. They are very common in 3D applications to make fast computations that require to know the whole dimension or position of one or many objects.
-
-  :::
+  This tutorial covers computing the merged bounding box of all loaded models, computing a bounding box for elements filtered by category, fitting the camera to either result, setting the camera to standard orientations (top, front, left, etc.), and visualizing bounding boxes with Three.js helpers. By the end, you'll have a set of spatial utilities ready to power camera fitting and element focusing in any BIM application.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

@@ -1,13 +1,9 @@
 /* MD
   ## 📄 Loading IFC Models
   ---
-  IFC is the most common format to share BIM data openly. Our libraries are able to load, navigate and even create and edit them directly. In this tutorial, you'll learn how to open an IFC model in the 3D scene.
+  Loading IFC models at runtime is too slow for production — the engine must parse and convert it to Fragments before anything can render. The recommended workflow is to do that conversion once, save the resulting `.frag` file, and load that on every subsequent session.
 
-  :::tip IFC?
-
-  If you are not famliar with the construction industry, this might be the first time you come across this term. It stands for Industry Foundation Classes, and it's the most widespread standard for sharing BIM data freely, without depending on specific software manufacturers and their propietary formats.
-
-  :::
+  This tutorial covers configuring the IFC loader with the web-ifc WASM binary, wiring the FragmentsManager to receive the converted result, loading an IFC file with a progress callback, and downloading the generated Fragments file so it can be reused directly. By the end, you'll have a complete IFC import pipeline that produces a reusable Fragment asset.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:

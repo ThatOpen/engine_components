@@ -1,7 +1,13 @@
 /* MD
   ## 📐 Measuring Areas
   ---
-  Space control is one of the most important elements of BIM applications. In this tutorial, you'll learn how to expose an area measurement tool to your end users.
+  Calculating the area of an irregular space — a room, a floor plate, a site boundary — from a 3D model requires clicking a polygon boundary and computing the enclosed area accurately. Doing this by hand from coordinates is tedious and error-prone.
+
+  The area measurement tool lets users define a polygon by clicking points in the scene, closes it on Enter, and displays the computed area persistently in the 3D view.
+
+  This tutorial covers configuring the tool with a color; placing area measurements by double-clicking boundary points and pressing Enter to close the polygon; auto-fitting the camera to each new measurement on creation; deleting individual measurements by hovering and pressing Delete; reading all area values from the measurements list; clearing all measurements at once; and enabling synchronous vertex picking for faster snapping by pre-generating mesh geometry.
+
+  By the end, you'll have a fully working polygon area measurement tool with persistent results, camera fit on creation, and configurable picking performance.
 
   ### 🖖 Importing our Libraries
   First things first, let's install all necessary dependencies to make this example work:
