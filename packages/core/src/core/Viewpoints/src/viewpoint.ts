@@ -447,14 +447,9 @@ export class Viewpoint {
         throw new Error("Viewpoint: world's camera need camera controls!");
       }
 
-      const position = new THREE.Vector3();
-      camera.controls.getPosition(position);
-
       const threeCamera = camera.three;
-
-      const direction = new THREE.Vector3(0, 0, -1).applyEuler(
-        threeCamera.rotation,
-      );
+      const position = threeCamera.getWorldPosition(new THREE.Vector3());
+      const direction = threeCamera.getWorldDirection(new THREE.Vector3());
 
       const { width, height } = renderer.getSize();
       let aspect_ratio = width / height;
