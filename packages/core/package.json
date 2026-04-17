@@ -37,7 +37,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@thatopen/fragments": "~3.4.0",
+    "@thatopen/fragments": "~3.4.2",
     "@thatopen/ui": "~3.4.0",
     "@types/convert-units": "2.3.11",
     "@types/three": "0.183.1",

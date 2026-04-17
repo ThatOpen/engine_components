@@ -18,8 +18,7 @@ import * as OBC from "../..";
 
 const components = new OBC.Components();
 
-const workerUrl =
-  "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
+const workerUrl = await OBC.FragmentsManager.getWorker();
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 

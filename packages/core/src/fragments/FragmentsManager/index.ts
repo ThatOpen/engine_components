@@ -7,9 +7,24 @@ import { Component, Components, Event, Disposable } from "../../core";
 import { ModelIdMap } from "./src";
 
 /**
- * Component to load, delete and manage [fragments](https://github.com/ThatOpen/engine_fragment) efficiently. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/FragmentsManager). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/FragmentsManager).
+ * Component to load, delete and manage [fragments](https://github.com/ThatOpen/engine_fragment) efficiently. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/FragmentsManager). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/FragmentsManager). Before calling {@link FragmentsManager.init}, you need a URL for the fragments worker. The recommended way to get it is {@link FragmentsManager.getWorker}, which fetches the version-matched worker from unpkg.
  */
 export class FragmentsManager extends Component implements Disposable {
+  /**
+   * Returns a blob URL for the fragments worker matching the installed
+   * `@thatopen/fragments` version. Delegates to {@link FRAGS.FragmentsModels.getWorker}.
+   * This is the recommended way to obtain the URL passed to {@link FragmentsManager.init}.
+   *
+   * @example
+   * ```ts
+   * const fragments = components.get(OBC.FragmentsManager);
+   * fragments.init(await OBC.FragmentsManager.getWorker());
+   * ```
+   */
+  static getWorker(): Promise<string> {
+    return FragmentsModels.getWorker();
+  }
+
   /**
    * A unique identifier for the component.
    * This UUID is used to register the component within the Components system.
@@ -74,6 +89,13 @@ export class FragmentsManager extends Component implements Disposable {
     this.onDisposed.reset();
   }
 
+  /**
+   * Initializes the fragments core with the given worker URL.
+   * The recommended way to obtain the URL is {@link FragmentsManager.getWorker}:
+   * ```ts
+   * fragments.init(await OBC.FragmentsManager.getWorker());
+   * ```
+   */
   init(workerURL: string, options?: { classicWorker?: boolean }) {
     this._core = new FragmentsModels(workerURL, options);
     this.core.onModelLoaded.add(async () => {
