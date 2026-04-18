@@ -46,14 +46,9 @@ const grid = grids.create(world);
 
 // Set up fragments
 
-const githubUrl =
-  "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
-const fetchedUrl = await fetch(githubUrl);
-const workerBlob = await fetchedUrl.blob();
-const workerFile = new File([workerBlob], "worker.mjs", {
-  type: "text/javascript",
-});
-const workerUrl = URL.createObjectURL(workerFile);
+// `FragmentsManager.getWorker()` fetches the matching worker for this library version from unpkg and returns a blob URL.
+// You can also pass your own URL to `fragments.init(...)` if you'd rather host the worker yourself.
+const workerUrl = await OBC.FragmentsManager.getWorker();
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 

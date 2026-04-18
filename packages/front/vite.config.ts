@@ -11,7 +11,10 @@ export default defineConfig({
       entry: path.resolve(__dirname, "./src/index.ts"),
     },
     rollupOptions: {
-      external: Object.keys(packageJson.peerDependencies),
+      external: (id) => {
+        const peers = Object.keys(packageJson.peerDependencies);
+        return peers.some((p) => id === p || id.startsWith(`${p}/`));
+      },
       output: [
         {
           entryFileNames: `index.js`,

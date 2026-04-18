@@ -83,14 +83,9 @@ await ifcLoader.setup({
   When an IFC file is converted to Fragments, another component handles the converted file: the FragmentsManager. Therefore, it is essential to configure this component first before attempting to "load" any IFC file:
 */
 
-const githubUrl =
-  "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
-const fetchedUrl = await fetch(githubUrl);
-const workerBlob = await fetchedUrl.blob();
-const workerFile = new File([workerBlob], "worker.mjs", {
-  type: "text/javascript",
-});
-const workerUrl = URL.createObjectURL(workerFile);
+// `FragmentsManager.getWorker()` fetches the matching worker for this library version from unpkg and returns a blob URL.
+// You can also pass your own URL to `fragments.init(...)` if you'd rather host the worker yourself.
+const workerUrl = await OBC.FragmentsManager.getWorker();
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 
