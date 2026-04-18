@@ -57,6 +57,8 @@ function hexToAci(hex: number): number {
 
 // ─── DXF string builder ───────────────────────────────────────────────────────
 
+const HANDSEED_PLACEHOLDER = "\x00HANDSEED\x00";
+
 class DxfWriter {
   private readonly _lines: string[] = [];
   private _handleCounter = 1;
@@ -75,8 +77,49 @@ class DxfWriter {
     return (this._handleCounter++).toString(16).toUpperCase();
   }
 
+  /** Emits `0/kind 5/handle 100/AcDbEntity 8/layer 62/color` — the common entity prelude. */
+  entityHeader(kind: string, layer: string, color: number): this {
+    this._lines.push(
+      "0", kind,
+      "5", this.handle(),
+      "100", "AcDbEntity",
+      "8", layer,
+      "62", String(color),
+    );
+    return this;
+  }
+
+  /** Emits `0/TABLE 2/name 5/handle 100/AcDbSymbolTable 70/count`. */
+  symbolTable(name: string, count: number): this {
+    this._lines.push(
+      "0", "TABLE",
+      "2", name,
+      "5", this.handle(),
+      "100", "AcDbSymbolTable",
+      "70", String(count),
+    );
+    return this;
+  }
+
+  /** Emits `0/kind 5/handle 100/AcDbSymbolTableRecord 100/recordSubclass`. */
+  symbolRecord(kind: string, recordSubclass: string): this {
+    this._lines.push(
+      "0", kind,
+      "5", this.handle(),
+      "100", "AcDbSymbolTableRecord",
+      "100", recordSubclass,
+    );
+    return this;
+  }
+
+  writeHandSeed(): this {
+    this._lines.push("9", "$HANDSEED", "5", HANDSEED_PLACEHOLDER);
+    return this;
+  }
+
   build(): string {
-    return this._lines.join("\n") + "\n";
+    const out = this._lines.join("\n") + "\n";
+    return out.replace(HANDSEED_PLACEHOLDER, this._handleCounter.toString(16).toUpperCase());
   }
 }
 
@@ -273,45 +316,49 @@ export class DxfExporter {
   private _writeHeader(w: DxfWriter, paperSpace: boolean): void {
     w.p(0, "SECTION").p(2, "HEADER");
     w.p(9, "$ACADVER").p(1, this.config.trueColor ? "AC1018" : "AC1015");
+    w.p(9, "$DWGCODEPAGE").p(3, "ANSI_1252");
     // 4 = millimetres (paper-space output), 6 = metres (world-unit output).
     w.p(9, "$INSUNITS").p(70, paperSpace ? 4 : 6);
+    w.writeHandSeed();
     w.p(0, "ENDSEC");
   }
 
   private _writeTables(w: DxfWriter, layers: DrawingLayer[], blockNames: string[]): void {
     w.p(0, "SECTION").p(2, "TABLES");
 
-    w.p(0, "TABLE").p(2, "VPORT").p(70, 0).p(0, "ENDTAB");
+    w.symbolTable("VPORT", 0).p(0, "ENDTAB");
 
-    w.p(0, "TABLE").p(2, "LTYPE").p(70, 1);
-    w.p(0, "LTYPE").p(2, "CONTINUOUS").p(70, 0)
-      .p(3, "Solid line").p(72, 65).p(73, 0).n(40, 0.0);
+    w.symbolTable("LTYPE", 1);
+    w.symbolRecord("LTYPE", "AcDbLinetypeTableRecord")
+      .p(2, "CONTINUOUS").p(70, 0).p(3, "Solid line").p(72, 65).p(73, 0).n(40, 0.0);
     w.p(0, "ENDTAB");
 
-    w.p(0, "TABLE").p(2, "LAYER").p(70, layers.length);
+    w.symbolTable("LAYER", layers.length);
     for (const layer of layers) {
       const aci = hexToAci(layer.material.color.getHex());
-      w.p(0, "LAYER").p(2, layer.name).p(70, 0).p(62, aci).p(6, "CONTINUOUS");
+      w.symbolRecord("LAYER", "AcDbLayerTableRecord")
+        .p(2, layer.name).p(70, 0).p(62, aci).p(6, "CONTINUOUS");
     }
     w.p(0, "ENDTAB");
 
-    w.p(0, "TABLE").p(2, "STYLE").p(70, 1);
-    w.p(0, "STYLE").p(2, "STANDARD").p(70, 0)
+    w.symbolTable("STYLE", 1);
+    w.symbolRecord("STYLE", "AcDbTextStyleTableRecord")
+      .p(2, "STANDARD").p(70, 0)
       .n(40, 0.0).n(41, 1.0).n(50, 0.0).p(71, 0).n(42, 0.2)
       .p(3, "txt").p(4, "");
     w.p(0, "ENDTAB");
 
-    w.p(0, "TABLE").p(2, "VIEW").p(70, 0).p(0, "ENDTAB");
-    w.p(0, "TABLE").p(2, "UCS").p(70, 0).p(0, "ENDTAB");
-    w.p(0, "TABLE").p(2, "APPID").p(70, 1);
-    w.p(0, "APPID").p(2, "ACAD").p(70, 0);
+    w.symbolTable("VIEW", 0).p(0, "ENDTAB");
+    w.symbolTable("UCS", 0).p(0, "ENDTAB");
+    w.symbolTable("APPID", 1);
+    w.symbolRecord("APPID", "AcDbRegAppTableRecord").p(2, "ACAD").p(70, 0);
     w.p(0, "ENDTAB");
-    w.p(0, "TABLE").p(2, "DIMSTYLE").p(70, 0).p(0, "ENDTAB");
+    w.symbolTable("DIMSTYLE", 0).p(0, "ENDTAB");
 
     const records = ["*Model_Space", "*Paper_Space", ...blockNames];
-    w.p(0, "TABLE").p(2, "BLOCK_RECORD").p(70, records.length);
+    w.symbolTable("BLOCK_RECORD", records.length);
     for (const name of records) {
-      w.p(0, "BLOCK_RECORD").p(5, w.handle()).p(2, name);
+      w.symbolRecord("BLOCK_RECORD", "AcDbBlockTableRecord").p(2, name);
     }
     w.p(0, "ENDTAB");
 
@@ -331,7 +378,7 @@ export class DxfExporter {
   }
 
   private _writeBlock(w: DxfWriter, name: string, geo: THREE.BufferGeometry | null): void {
-    w.p(0, "BLOCK").p(5, w.handle()).p(8, "0")
+    w.p(0, "BLOCK").p(5, w.handle()).p(100, "AcDbEntity").p(8, "0").p(100, "AcDbBlockBegin")
       .p(2, name).p(70, 0).n(10, 0.0).n(20, 0.0).n(30, 0.0)
       .p(3, name).p(1, "");
     if (geo) {
@@ -344,7 +391,7 @@ export class DxfExporter {
       this._viewport = savedVp;
       this._paperSlot = savedPs;
     }
-    w.p(0, "ENDBLK").p(5, w.handle()).p(8, "0");
+    w.p(0, "ENDBLK").p(5, w.handle()).p(100, "AcDbEntity").p(8, "0").p(100, "AcDbBlockEnd");
   }
 
   /** Writes a rectangular border for the active viewport (no-op when no viewport is set). */
@@ -385,7 +432,7 @@ export class DxfExporter {
 
   private _writeObjects(w: DxfWriter): void {
     w.p(0, "SECTION").p(2, "OBJECTS");
-    w.p(0, "DICTIONARY").p(5, w.handle()).p(330, 0).p(100, "AcDbRootDictionary");
+    w.p(0, "DICTIONARY").p(5, w.handle()).p(330, 0).p(100, "AcDbDictionary").p(281, 1);
     w.p(0, "ENDSEC");
   }
 
@@ -570,12 +617,9 @@ export class DxfExporter {
       // In paper-space the INSERT position is transformed to mm; the scale must
       // also be multiplied so block geometry renders at the correct paper size.
       const scale = ins.scale * this._scale();
-      w.p(0, "INSERT")
-        .p(5, w.handle())
-        .p(8, "0")
-        .p(62, color);
+      w.entityHeader("INSERT", "0", color);
       this._emitTrueColor(w, insStyle.color);
-      w
+      w.p(100, "AcDbBlockReference")
         .p(2, ins.blockName)
         .n(10, this._tx(ins.position.x))
         .n(20, this._ty(ins.position.z))
@@ -618,15 +662,16 @@ export class DxfExporter {
   }
 
   private _writeLine(w: DxfWriter, x1: number, y1: number, x2: number, y2: number, layer: string, color: number, hex?: number): void {
-    w.p(0, "LINE").p(5, w.handle()).p(8, layer).p(62, color);
+    w.entityHeader("LINE", layer, color);
     this._emitTrueColor(w, hex);
-    w.n(10, this._tx(x1)).n(20, this._ty(y1)).n(30, 0.0)
+    w.p(100, "AcDbLine")
+      .n(10, this._tx(x1)).n(20, this._ty(y1)).n(30, 0.0)
       .n(11, this._tx(x2)).n(21, this._ty(y2)).n(31, 0.0);
   }
 
   /** Writes a LINE entity with coordinates already in DXF space (no transform applied). */
   private _writeRawLine(w: DxfWriter, x1: number, y1: number, x2: number, y2: number, layer: string, color: number): void {
-    w.p(0, "LINE").p(5, w.handle()).p(8, layer).p(62, color)
+    w.entityHeader("LINE", layer, color).p(100, "AcDbLine")
       .n(10, x1).n(20, y1).n(30, 0.0)
       .n(11, x2).n(21, y2).n(31, 0.0);
   }
@@ -643,9 +688,10 @@ export class DxfExporter {
     x3: number, z3: number,
     layer: string, color: number, hex?: number,
   ): void {
-    w.p(0, "SOLID").p(5, w.handle()).p(8, layer).p(62, color);
+    w.entityHeader("SOLID", layer, color);
     this._emitTrueColor(w, hex);
-    w.n(10, this._tx(x1)).n(20, this._ty(z1)).n(30, 0.0)
+    w.p(100, "AcDbTrace")
+      .n(10, this._tx(x1)).n(20, this._ty(z1)).n(30, 0.0)
       .n(11, this._tx(x2)).n(21, this._ty(z2)).n(31, 0.0)
       .n(12, this._tx(x3)).n(22, this._ty(z3)).n(32, 0.0)
       .n(13, this._tx(x3)).n(23, this._ty(z3)).n(33, 0.0);
@@ -673,9 +719,10 @@ export class DxfExporter {
     const dx = this._tx(x);
     const dy = this._ty(y);
     // Scale text height to match the coordinate units (mm in paper-space, world units otherwise).
-    w.p(0, "TEXT").p(5, w.handle()).p(8, layer).p(62, color);
+    w.entityHeader("TEXT", layer, color);
     this._emitTrueColor(w, hex);
-    w.n(10, dx).n(20, dy).n(30, 0.0)
+    w.p(100, "AcDbText")
+      .n(10, dx).n(20, dy).n(30, 0.0)
       .n(40, height * this._scale())
       .n(50, rotDeg)
       .p(1, text);
