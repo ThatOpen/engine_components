@@ -1,6 +1,6 @@
 // Inlined SVG of the That Open Company wordmark. Kept as a string so
 // SimpleRenderer never needs a network fetch or a bundler asset loader.
-// The clipPath/clip-path from the source SVG was removed — it only clipped
+// The clipPath/clip-path from the source SVG was removed: it only clipped
 // to the viewBox, so it had no visual effect but would have produced global
 // id collisions if multiple renderers mounted on the same page.
 const THAT_OPEN_LOGO_SVG = `

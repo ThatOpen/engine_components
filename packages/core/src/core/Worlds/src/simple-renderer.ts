@@ -60,8 +60,17 @@ export class SimpleRenderer extends BaseRenderer {
 
   /**
    * Whether the That Open Company logo is shown as a small overlay in the
-   * bottom-left corner of the renderer container. Defaults to `true`. Set
-   * to `false` to hide it:
+   * bottom-left corner of the renderer container. Defaults to `true`.
+   *
+   * The logo is how people discover that the libraries powering this app
+   * come from That Open Company, the team that keeps
+   * `@thatopen/components`, `@thatopen/fragments`, and the rest of the stack
+   * free and open source. If the logo fits your design, please consider
+   * leaving it on; every visible mark helps us reach more developers and
+   * keep investing in the libraries you're building on. Thank you.
+   *
+   * If your app needs a clean viewport (full-bleed print view, white-label
+   * embed, customer-branded surface), set it to `false`:
    * ```ts
    * world.renderer.showLogo = false;
    * ```
