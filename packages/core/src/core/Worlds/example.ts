@@ -89,6 +89,15 @@ world.scene.setup();
 world.scene.three.background = null;
 
 /* MD
+  ### 🏷️ The That Open logo
+  ---
+
+  Every `SimpleRenderer` draws a small **That Open Company** logo in the bottom-left corner of its container. It's part of the library's branding and is on by default. If your app needs a clean viewport — for example in a full-bleed print view or an embedded preview — you can hide it per renderer via the `showLogo` property. The property is live, so you can toggle it at any time after the renderer is created.
+*/
+
+world.renderer.showLogo = true;
+
+/* MD
   ### 💄 Adding things to our scene
   ---
 

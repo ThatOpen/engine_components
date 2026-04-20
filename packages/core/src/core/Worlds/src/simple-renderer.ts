@@ -7,6 +7,7 @@ import {
   Event,
 } from "../../Types";
 import { Components } from "../../Components";
+import { createThatOpenLogo } from "./logo";
 
 /**
  * The mode of the renderer. If MANUAL, the renderer will be updated on command. If AUTO, the renderer will render on every update tick.
@@ -53,6 +54,26 @@ export class SimpleRenderer extends BaseRenderer {
   protected onContainerUpdated = new Event();
 
   private _resizing = false;
+
+  private _logo: HTMLElement | null = null;
+  private _showLogo = true;
+
+  /**
+   * Whether the That Open Company logo is shown as a small overlay in the
+   * bottom-left corner of the renderer container. Defaults to `true`. Set
+   * to `false` to hide it:
+   * ```ts
+   * world.renderer.showLogo = false;
+   * ```
+   */
+  get showLogo(): boolean {
+    return this._showLogo;
+  }
+
+  set showLogo(value: boolean) {
+    this._showLogo = value;
+    if (this._logo) this._logo.style.display = value ? "" : "none";
+  }
 
   /**
    * Constructor for the SimpleRenderer class.
@@ -114,6 +135,10 @@ export class SimpleRenderer extends BaseRenderer {
     this.enabled = false;
     this.setupEvents(false);
     this.three.domElement.remove();
+    if (this._logo) {
+      this._logo.remove();
+      this._logo = null;
+    }
     this.three.forceContextLoss();
     this.three.dispose();
     // this._renderer2D.domElement.remove();
@@ -180,8 +205,23 @@ export class SimpleRenderer extends BaseRenderer {
     this.three.localClippingEnabled = true;
     if (this.container) {
       this.container.appendChild(this.three.domElement);
+      this.setupLogo();
     }
     this.onContainerUpdated.trigger();
+  }
+
+  private setupLogo() {
+    if (this._logo || !this.container) return;
+    // The logo is absolutely positioned, so make sure the container
+    // establishes a positioning context. Only set it when the container
+    // has no explicit position yet, to avoid clobbering app layout.
+    const computed = window.getComputedStyle(this.container);
+    if (computed.position === "static") {
+      this.container.style.position = "relative";
+    }
+    this._logo = createThatOpenLogo();
+    this._logo.style.display = this._showLogo ? "" : "none";
+    this.container.appendChild(this._logo);
   }
 
   private onContextLost = (event: any) => {
