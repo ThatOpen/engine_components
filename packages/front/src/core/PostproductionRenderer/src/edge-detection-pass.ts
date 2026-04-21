@@ -289,12 +289,39 @@ export class EdgeDetectionPass extends Pass {
 
         if (apply) {
           mesh.userData.edgePassPreviousMaterial = mesh.material;
-          // Single material bypasses geometry groups, so all triangles
-          // produce edges (xray). Array respects groups, so only
-          // visible groups produce edges (normal).
-          mesh.material = this.xray
-            ? this._overrideMaterial
-            : [this._overrideMaterial];
+          // Fragments meshes are batched: each mesh has a material array
+          // indexed by group `materialIndex`. Highlighted samples live in
+          // groups whose materialIndex > 0 (pointing to the highlight
+          // material slot). Replacing `mesh.material` with a length-1 array
+          // leaves those groups resolving to `undefined`, so Three.js
+          // silently skips them and they produce no edges — which is the
+          // root of issue #707 (highlighted items look see-through under
+          // outline styles).
+          //
+          // Mirror the original material array length so every group maps
+          // to the override material. The override array is cached on the
+          // mesh and only rebuilt when the source array length changes
+          // (e.g. when the highlight system adds or removes a material
+          // slot), so we don't pay an allocation per mesh per frame. For
+          // non-array materials (xray, or non-fragments meshes), keep the
+          // single-material path which bypasses groups entirely.
+          const prev = mesh.material;
+          if (this.xray) {
+            mesh.material = this._overrideMaterial;
+          } else if (Array.isArray(prev)) {
+            let overrideArr = mesh.userData.edgePassOverrideArray as
+              | THREE.Material[]
+              | undefined;
+            if (!overrideArr || overrideArr.length !== prev.length) {
+              overrideArr = new Array<THREE.Material>(prev.length).fill(
+                this._overrideMaterial,
+              );
+              mesh.userData.edgePassOverrideArray = overrideArr;
+            }
+            mesh.material = overrideArr;
+          } else {
+            mesh.material = [this._overrideMaterial];
+          }
         } else if ("edgePassPreviousMaterial" in mesh.userData) {
           mesh.material = mesh.userData.edgePassPreviousMaterial;
         }
