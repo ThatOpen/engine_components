@@ -113,7 +113,7 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
 
     const container = this.world.renderer.three.domElement;
     container.removeEventListener("mousemove", this.onMouseMove);
-    container.removeEventListener("mouseleave", this.onMouseMove);
+    container.removeEventListener("mouseleave", this.onMouseLeave);
     if (!active) return;
     container.addEventListener("mousemove", this.onMouseMove);
     container.addEventListener("mouseleave", this.onMouseLeave);
@@ -130,6 +130,14 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
   };
 
   private onMouseLeave = () => {
+    // Without this, a pending mouseStopTimeout can still fire after the
+    // pointer has left the canvas, running hover() with the stale cached
+    // mouse position and making a mesh appear for an element the pointer
+    // is no longer over (issue #712).
+    if (this.mouseStopTimeout !== null) {
+      clearTimeout(this.mouseStopTimeout);
+      this.mouseStopTimeout = null;
+    }
     this._meshes.clear();
   };
 
