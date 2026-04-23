@@ -40,10 +40,10 @@
     "@thatopen/fragments": "~3.4.3",
     "@thatopen/ui": "~3.4.0",
     "@types/convert-units": "2.3.11",
-    "@types/three": "0.183.1",
+    "@types/three": "0.184.0",
     "camera-controls": "^3.1.2",
     "stats.js": "^0.17.0",
-    "three": "0.182.0",
+    "three": "0.184.0",
     "web-ifc": "0.0.77"
   },
   "dependencies": {

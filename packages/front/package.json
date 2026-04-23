@@ -43,8 +43,8 @@
     "@thatopen/ui-obc": "~3.4.0",
     "@types/convert-units": "2.3.11",
     "@types/earcut": "3.0.0",
-    "@types/three": "0.183.1",
-    "three": "0.182.0",
+    "@types/three": "0.184.0",
+    "three": "0.184.0",
     "web-ifc": "0.0.77"
   },
   "dependencies": {
