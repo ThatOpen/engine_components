@@ -118,6 +118,66 @@ hoverer.material = new THREE.MeshBasicMaterial({
 });
 
 /* MD
+  ### 🎯 Combining hover with other transparent highlights
+  When you combine the Hoverer with other Highlighter styles that are also transparent (for example a "status" overlay mixed with ghost mode), the hover highlight can look inconsistent at some camera angles: sometimes the hover color shows through a ghost element, other times the underlying status color does. That's three.js's transparent sort resolving ties differently per angle.
+
+  The canonical fix is to tag each custom highlight style with a `customId` and tweak the material's depth settings when fragments creates it. Because fragments materials fire `materials.list.onItemSet` with the tag already in `material.userData.customId`, one hook can normalize all user-added highlight styles at once. First pick a stable id for the style:
+*/
+
+const STATUS_STYLE = "status";
+
+/* MD
+  Then react in the same material hook we used earlier for the random polygon offset. Keep depth-testing on so the overlay follows real 3D occlusion, but turn `depthWrite` off so it doesn't step on the Hoverer's `depthTest:false` draw at coplanar pixels:
+*/
+
+fragments.core.models.materials.list.onItemSet.add(({ value: material }) => {
+  if (material.userData?.customId === STATUS_STYLE) {
+    material.depthWrite = false;
+    material.needsUpdate = true;
+  }
+});
+
+/* MD
+  Finally, register the style with the matching `customId` so the tag lands in the material's userData when fragments instantiates it:
+*/
+
+const highlighter = components.get(OBF.Highlighter);
+highlighter.setup({ world });
+highlighter.styles.set(STATUS_STYLE, {
+  color: new THREE.Color(0xffaa00),
+  opacity: 0.3,
+  transparent: true,
+  renderedFaces: 0,
+});
+
+/* MD
+  This is the same pattern used in the Outliner / SimpleOutlinePass and in the IFCSPACE color workaround; whenever a fragments highlight needs material properties that `MaterialDefinition` does not expose directly, the `materials.list.onItemSet` hook is where you apply them.
+
+  To verify it end to end, let's wire a double-click that applies the status style to the picked element. Hover over that element afterwards and the hover highlight should stay consistent no matter how you orbit the camera, instead of flipping to the status color at some angles.
+*/
+
+components.get(OBC.Raycasters).get(world);
+
+window.addEventListener("dblclick", async (event) => {
+  const [firstModel] = fragments.list.values();
+  if (!firstModel) return;
+
+  const mouse = new THREE.Vector2(event.clientX, event.clientY);
+  const result = await firstModel.raycast({
+    camera: world.camera.three,
+    mouse,
+    dom: world.renderer!.three.domElement,
+  });
+  if (!result || result.localId === undefined) return;
+
+  await highlighter.highlightByID(
+    STATUS_STYLE,
+    { [firstModel.modelId]: new Set([result.localId]) },
+    false,
+  );
+});
+
+/* MD
   ### 🧩 Adding some UI (optional but recommended)
   We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
 */
