@@ -33,7 +33,7 @@ export class Components implements Disposable {
    */
   enabled = false;
 
-  private _clock: THREE.Clock;
+  private _timer: THREE.Timer;
 
   /**
    * Event that triggers the Components instance is initialized.
@@ -101,7 +101,7 @@ export class Components implements Disposable {
   }
 
   constructor() {
-    this._clock = new THREE.Clock();
+    this._timer = new THREE.Timer();
     Components.setupBVH();
   }
 
@@ -115,7 +115,9 @@ export class Components implements Disposable {
     for (const [_, component] of this.list.entries()) {
       component.enabled = true;
     }
-    this._clock.start();
+    // THREE.Timer starts ticking on its own; a manual reset() gives a
+    // clean zero-delta for the first frame, mirroring old Clock.start().
+    this._timer.reset();
     this.update();
     this.onInit.trigger();
   }
@@ -154,7 +156,9 @@ export class Components implements Disposable {
     // Make sure fragments is disposed last
     fragments?.dispose();
 
-    this._clock.stop();
+    // Timer has no stop(); we just stop calling update() by flipping
+    // `enabled`, which short-circuits the rAF loop above.
+    this._timer.dispose();
 
     this.onDisposed.trigger();
   }
@@ -162,7 +166,8 @@ export class Components implements Disposable {
   private update = () => {
     if (!this.enabled) return;
 
-    const delta = this._clock.getDelta();
+    this._timer.update();
+    const delta = this._timer.getDelta();
 
     for (const [_id, component] of this.list) {
       if (component.enabled && component.isUpdateable()) {
