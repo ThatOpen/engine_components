@@ -60,4 +60,10 @@ const createIndex = () => ({
 
 export default defineConfig({
   plugins: [createIndex()],
+  resolve: {
+    // Workspaces install their own copy of three; without dedupe the dev
+    // server serves two or three instances and three.js prints the
+    // "Multiple instances of Three.js being imported" warning.
+    dedupe: ["three"],
+  },
 });
