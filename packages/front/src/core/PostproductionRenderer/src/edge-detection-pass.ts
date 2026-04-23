@@ -89,31 +89,35 @@ export class EdgeDetectionPass extends Pass {
     // Higher vertex colors will render on top (closer to camera)
     this._overrideMaterial = new THREE.ShaderMaterial({
       clipping: true,
-      vertexColors: true,
       side: THREE.DoubleSide,
       uniforms: {
         depthBiasStrength: { value: this._depthBiasStrength },
       },
+      // Note: we don't use `vertexColors: true` or the three.js color_pars
+      // / color_vertex includes here. In recent three.js versions those
+      // includes declare `vColor` as vec4 when the geometry has a 4-channel
+      // color attribute, which breaks the vec3 assignment below. Strict
+      // GLSL validators (WebView2 / ANGLE) reject the implicit
+      // vec3→vec4 conversion even though Chrome's validator tolerates it.
+      // See engine_components#728. Declaring `color` and `vColor` manually
+      // keeps types consistent across vertex and fragment shaders.
       vertexShader: `
         #include <common>
-        #include <color_pars_vertex>
         #include <clipping_planes_pars_vertex>
-        
+
+        attribute vec3 color;
+        varying vec3 vColor;
         uniform float depthBiasStrength;
-        
+
         void main() {
-          #include <color_vertex>
           vColor = color;
-          
+
           #include <begin_vertex>
           #include <project_vertex>
-          
-          // Compute priority from vertex color (using luminance)
-          // Higher values = higher priority = render on top
-          float priority = dot(color, vec3(0.299, 0.587, 0.114)); // Luminance
-          
-          // Apply depth bias: subtract from z to bring higher priority faces closer
-          // In clip space, smaller z values are closer to camera
+
+          // Priority from vertex color luminance. Higher = render on top.
+          float priority = dot(color, vec3(0.299, 0.587, 0.114));
+          // Clip space: smaller z = closer to camera.
           gl_Position.z -= priority * depthBiasStrength;
 
           #include <clipping_planes_vertex>
@@ -122,7 +126,7 @@ export class EdgeDetectionPass extends Pass {
       fragmentShader: `
         varying vec3 vColor;
         #include <clipping_planes_pars_fragment>
-        
+
         void main() {
           #include <clipping_planes_fragment>
           gl_FragColor = vec4(vColor, 1.0);
