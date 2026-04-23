@@ -146,6 +146,44 @@ const addDoorItems = async () => {
 
   :::
 
+  ### 🎨 Multiple Outline Groups
+  You can define additional named groups, each with its own color, fill and thickness, and route different selections to each one. There's no hard limit on concurrent groups, and each group renders with its own material so everything still resolves in a single draw pass.
+
+  Groups use real 3D depth to decide who wins overlapping pixels: the closer outlined item always shows through. If two groups share a coplanar surface and you want one to always win the tie, give it a higher `priority` (optional, defaults to 0).
+
+  Let's create two additional groups, one for walls and one for slabs:
+*/
+
+outliner.create("walls", {
+  color: new THREE.Color("#00ffff"),
+  fillColor: new THREE.Color("#00ffff"),
+  fillOpacity: 0.15,
+  thickness: 3,
+});
+
+outliner.create("slabs", {
+  color: new THREE.Color("#ff7a00"),
+  fillColor: new THREE.Color("#ff7a00"),
+  fillOpacity: 0.2,
+  thickness: 3,
+});
+
+const addWallItems = async () => {
+  const finder = components.get(OBC.ItemsFinder);
+  const walls = await finder.getItems([{ categories: [/WALL/] }]);
+  await outliner.addItems(walls, "walls");
+};
+
+const addSlabItems = async () => {
+  const finder = components.get(OBC.ItemsFinder);
+  const slabs = await finder.getItems([{ categories: [/SLAB/] }]);
+  await outliner.addItems(slabs, "slabs");
+};
+
+const clearWalls = () => outliner.clean("walls");
+const clearSlabs = () => outliner.clean("slabs");
+
+/* MD
   A common approach to using the outliner is to combine it with the highlighter, allowing you to outline the selected elements. The setup can be implemented as follows:
 */
 
@@ -216,8 +254,16 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         <bim-number-input vertical value=${outliner.fillOpacity} min=0 max=1 step=0.01 slider label="Opacity" @change=${onOpacityChange}></bim-number-input>
         <bim-number-input vertical value=${outliner.thickness} min=1 max=5 step=0.1 slider label="Thickness" @change=${onThicknessChange}></bim-number-input>
       </bim-panel-section>
-      <bim-panel-section label="Actions">
-        <bim-button @click=${addDoorItems} label="Outline Items"></bim-button>
+      <bim-panel-section label="Default group">
+        <bim-button @click=${addDoorItems} label="Outline Doors"></bim-button>
+      </bim-panel-section>
+      <bim-panel-section label="Walls group (cyan)">
+        <bim-button @click=${addWallItems} label="Outline Walls"></bim-button>
+        <bim-button @click=${clearWalls} label="Clear Walls"></bim-button>
+      </bim-panel-section>
+      <bim-panel-section label="Slabs group (orange)">
+        <bim-button @click=${addSlabItems} label="Outline Slabs"></bim-button>
+        <bim-button @click=${clearSlabs} label="Clear Slabs"></bim-button>
       </bim-panel-section>
     </bim-panel>
   `;
