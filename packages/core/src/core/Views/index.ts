@@ -39,6 +39,27 @@ export class Views extends Component {
   };
 
   /**
+   * When true, opening a view snapshots the active camera's controls state
+   * (via `controls.toJSON()`) and closing the view restores that snapshot
+   * (via `controls.fromJSON(json, true)`), so exiting a view returns the
+   * camera to the same pose the user had before entering it. Default true.
+   *
+   * Set to `false` to keep the legacy behavior, where the default camera
+   * lands at whatever pose its controls drifted to during the view session.
+   */
+  restoreCameraOnClose = true;
+
+  // Snapshot of the active camera's pose right before the most recent
+  // `default → view` transition. Cleared on close. Stays a single field
+  // (not a stack) because Views enforces "one open view per world": a
+  // view-to-view switch is internally a close + open, which consumes the
+  // snapshot then re-captures the (now default) one.
+  private _restoreState: {
+    camera: import("../Types").BaseCamera;
+    json: string;
+  } | null = null;
+
+  /**
    * Determines whether there are any open views in this component's list.
    */
   get hasOpenViews() {
@@ -301,8 +322,31 @@ export class Views extends Component {
       this.close(existingView.id);
     }
 
+    // Snapshot the active camera before swapping. Guarded so a view-to-view
+    // transition (close-then-open under the hood) doesn't overwrite the
+    // pre-default snapshot with the freshly-restored one.
+    if (
+      this.restoreCameraOnClose &&
+      world.camera !== view.camera &&
+      !this._restoreState &&
+      world.camera.controls
+    ) {
+      this._restoreState = {
+        camera: world.camera,
+        json: world.camera.controls.toJSON(),
+      };
+    }
+
     renderer.setPlane(true, view.plane);
     renderer.setPlane(true, view.farPlane);
+
+    // Each camera in the world owns its own CameraControls instance bound
+    // to the renderer's DOM element. They all receive input events in
+    // parallel, so without disabling the inactive ones they keep updating
+    // their cameras while the user is driving the active view. This is the
+    // root cause of "moving in section also moves the floor plan camera".
+    // We toggle controls.enabled so only the active camera responds.
+    this.setOnlyEnabledControls(world, view);
 
     view.camera.controls.addEventListener("rest", this._fragmentsUpdateEvent);
     world.camera = view.camera;
@@ -353,6 +397,46 @@ export class Views extends Component {
 
     world.useDefaultCamera();
     view.open = false;
+
+    // Re-enable only the now-active camera's controls (the default), and
+    // disable every view camera so navigation in subsequent view sessions
+    // doesn't bleed into the closed view's pose.
+    this.setOnlyEnabledControls(world, null);
+
+    // Restore the camera pose captured at open() time. Smooth-transitioned
+    // (true) so the user sees the camera glide back to where it was, rather
+    // than a hard cut.
+    if (this.restoreCameraOnClose && this._restoreState) {
+      const { camera, json } = this._restoreState;
+      if (camera === world.camera && camera.controls) {
+        // false = no smooth transition. Instant snap to the saved pose.
+        camera.controls.fromJSON(json, false);
+      }
+      this._restoreState = null;
+    }
+  }
+
+  /**
+   * Routes input to a single camera by toggling `controls.enabled`. Every
+   * camera in the world owns its own CameraControls instance bound to the
+   * renderer's DOM element; without this, all of them would react to the
+   * same wheel/pointer events in parallel, so navigating one view would
+   * drift every other camera at the same time.
+   */
+  private setOnlyEnabledControls(world: World, activeView: View | null) {
+    const activeCamera = activeView ? activeView.camera : world.defaultCamera;
+    const enable = (cam: import("../Types").BaseCamera, on: boolean) => {
+      if (cam.controls) cam.controls.enabled = on;
+    };
+    enable(activeCamera, true);
+    if (activeCamera !== world.defaultCamera) {
+      enable(world.defaultCamera, false);
+    }
+    for (const [, otherView] of this.list) {
+      if (otherView.world !== world) continue;
+      if (otherView.camera === activeCamera) continue;
+      enable(otherView.camera, false);
+    }
   }
 }
 
