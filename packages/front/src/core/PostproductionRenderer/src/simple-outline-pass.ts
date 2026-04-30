@@ -26,6 +26,25 @@ interface OutlineGroup {
   priority: number;
 }
 
+/**
+ * A proxy mesh attached to the pass via {@link SimpleOutlinePass.attachOutlinedTile}.
+ *
+ * The proxy carries its own `BufferGeometry` whose `attributes` and `index`
+ * are aliased from the source tile (no GPU duplication) and whose
+ * `groups` cover only the index chunks for outlined items in that tile.
+ * Drawing the proxy with the group's mask material paints those chunks
+ * into the mask buffer; everything else in the tile is invisible.
+ *
+ * Per-frame the proxy's `matrixWorld` is synced from the source so the
+ * outline tracks the tile through camera moves and any model-level
+ * transforms.
+ */
+interface OutlinedTileProxy {
+  source: THREE.Mesh;
+  proxy: THREE.Mesh;
+  groupName: string;
+}
+
 const GHOST_VERT = `
   void main() {
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
@@ -65,6 +84,13 @@ export class SimpleOutlinePass extends Pass {
 
   private _groups = new Map<string, OutlineGroup>();
   private _groupsById = new Map<number, OutlineGroup>();
+  /**
+   * Outlined-tile proxies, keyed by source tile mesh. The pass owns the
+   * proxy meshes (and their lightweight `BufferGeometry` wrappers); the
+   * source meshes, their `attributes`, and their `index` belong to
+   * fragments and are never mutated here.
+   */
+  private _outlinedTiles = new Map<THREE.Mesh, OutlinedTileProxy>();
   private _nextId = 1;
   private _maxThickness = 2;
 
@@ -331,6 +357,100 @@ export class SimpleOutlinePass extends Pass {
     group.container.add(mesh);
   }
 
+  // ---------------------------------------------------------------------------
+  // Outlined-tile API
+  //
+  // The mainstream way to outline geometry through this pass: hand it a
+  // source tile mesh and the index chunks within that tile that should be
+  // outlined. The pass clones the mesh sharing `geometry.attributes` /
+  // `index` (no GPU duplication), adds `geometry.groups` for the chunks,
+  // and keeps it in the named group's container.
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Attach a tile mesh as an outline target. Creates a proxy mesh that
+   * shares the source's `geometry.attributes` and `index` and draws only
+   * the slices specified by `position[i] / size[i]` (parallel arrays of
+   * index-buffer offsets).
+   *
+   * Calling again with the same tile rebuilds the proxy's groups from
+   * the new chunks; calling with a different `groupName` reparents the
+   * proxy and reassigns its mask material.
+   */
+  attachOutlinedTile(
+    tile: THREE.Mesh,
+    chunks: { position: ArrayLike<number>; size: ArrayLike<number> },
+    groupName: string = DEFAULT_GROUP,
+  ) {
+    let group = this._groups.get(groupName);
+    if (!group) group = this.addGroup(groupName);
+
+    const existing = this._outlinedTiles.get(tile);
+    if (existing) {
+      // Reuse the proxy shell; rebuild geometry groups against the new
+      // chunks, and re-home it if the group changed.
+      const proxy = existing.proxy;
+      const proxyGeom = proxy.geometry;
+      proxyGeom.clearGroups();
+      this.fillProxyGroups(proxyGeom, chunks);
+      if (existing.groupName !== groupName) {
+        proxy.removeFromParent();
+        // Material must stay as a single-element array; see comment below.
+        proxy.material = [group.material];
+        group.container.add(proxy);
+        existing.groupName = groupName;
+      }
+      return;
+    }
+
+    const sourceGeom = tile.geometry;
+    const proxyGeom = new THREE.BufferGeometry();
+    proxyGeom.attributes = sourceGeom.attributes;
+    if (sourceGeom.index) proxyGeom.setIndex(sourceGeom.index);
+    proxyGeom.boundingBox = sourceGeom.boundingBox;
+    proxyGeom.boundingSphere = sourceGeom.boundingSphere;
+    this.fillProxyGroups(proxyGeom, chunks);
+
+    // Material assigned as `Material[]`, not a single `Material`. Three's
+    // `WebGLRenderer.renderObject` only honors `geometry.groups` when the
+    // mesh's material is an array; with a single material it draws the
+    // entire indexed geometry and ignores the groups, which would render
+    // the whole tile silhouette instead of just the outlined slices.
+    const proxy = new THREE.Mesh(proxyGeom, [group.material]);
+    proxy.matrixAutoUpdate = false;
+    proxy.matrixWorldAutoUpdate = false;
+    proxy.frustumCulled = false; // matrix is owned by source; trust it
+    proxy.matrixWorld.copy(tile.matrixWorld);
+
+    group.container.add(proxy);
+    this._outlinedTiles.set(tile, { source: tile, proxy, groupName });
+  }
+
+  /**
+   * Stop outlining a tile. Removes the proxy from its container and
+   * drops our reference to it. We deliberately do NOT call
+   * `proxy.geometry.dispose()`: the proxy's `attributes` and `index`
+   * are aliased from the source, and `BufferGeometry.dispose()`
+   * dispatches a `dispose` event that tells `WebGLAttributes` to free
+   * the GPU buffers of every attached attribute. That would yank the
+   * source tile's GPU buffers too, after which the next source render
+   * tries to re-upload from `attribute.array` and crashes because
+   * fragments deletes the array on first upload to save memory.
+   *
+   * The proxy's tiny BufferGeometry wrapper (just metadata) is left to
+   * GC. Attributes and index belong to fragments.
+   */
+  detachOutlinedTile(tile: THREE.Mesh) {
+    const target = this._outlinedTiles.get(tile);
+    if (!target) return;
+    target.proxy.removeFromParent();
+    this._outlinedTiles.delete(tile);
+  }
+
+  hasOutlinedTile(tile: THREE.Mesh) {
+    return this._outlinedTiles.has(tile);
+  }
+
   /**
    * Container (THREE.Group) where a group's ghost meshes live. Creates the
    * group on demand. Use {@link addMeshToGroup} when adding ghosts so the
@@ -419,6 +539,15 @@ export class SimpleOutlinePass extends Pass {
     renderer.setRenderTarget(this._maskTarget);
     renderer.clear(true, true, false);
 
+    // Sync proxy matrices from their source tiles. Cheap: bounded by the
+    // number of currently-outlined tiles, not items. The source's
+    // `matrixWorld` is updated by three when the model gets transformed.
+    if (this._outlinedTiles.size > 0) {
+      for (const target of this._outlinedTiles.values()) {
+        target.proxy.matrixWorld.copy(target.source.matrixWorld);
+      }
+    }
+
     // Single draw of all groups. Each ghost mesh already holds its group's
     // material with the right id baked in; three.js sorts and batches the
     // draws, and the shared depth buffer gives "closer outlined item wins"
@@ -458,6 +587,14 @@ export class SimpleOutlinePass extends Pass {
     this._maskTarget.dispose();
     this._paletteTexture.dispose();
 
+    // Drop proxies but never call `proxy.geometry.dispose()`: see the
+    // comment on `detachOutlinedTile` — disposing would cascade to the
+    // aliased source attributes and crash the next source render.
+    for (const target of this._outlinedTiles.values()) {
+      target.proxy.removeFromParent();
+    }
+    this._outlinedTiles.clear();
+
     for (const group of this._groups.values()) {
       while (group.container.children.length) {
         group.container.children[0].removeFromParent();
@@ -467,6 +604,26 @@ export class SimpleOutlinePass extends Pass {
     }
     this._groups.clear();
     this._groupsById.clear();
+  }
+
+  /**
+   * Push the given index chunks into the proxy's `geometry.groups`.
+   * `Infinity` and `0xffffffff` are both treated as "to end of buffer";
+   * three.js accepts `Infinity` natively, which we pass through.
+   */
+  private fillProxyGroups(
+    proxyGeom: THREE.BufferGeometry,
+    chunks: { position: ArrayLike<number>; size: ArrayLike<number> },
+  ) {
+    const positions = chunks.position;
+    const sizes = chunks.size;
+    const n = Math.min(positions.length, sizes.length);
+    for (let i = 0; i < n; i++) {
+      const start = positions[i];
+      const raw = sizes[i];
+      const count = raw === 0xffffffff ? Infinity : raw;
+      proxyGeom.addGroup(start, count, 0);
+    }
   }
 
   // ---------------------------------------------------------------------------

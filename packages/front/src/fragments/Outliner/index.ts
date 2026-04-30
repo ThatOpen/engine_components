@@ -3,7 +3,6 @@ import * as THREE from "three";
 import { DataSet } from "@thatopen/fragments";
 import { Highlighter } from "../Highlighter";
 import { PostproductionRenderer } from "../../core";
-import { Mesher } from "../Mesher";
 
 const DEFAULT_GROUP = "default";
 
@@ -25,7 +24,12 @@ export interface OutlineGroupConfig {
 
 interface OutlineGroupState {
   map: OBC.ModelIdMap;
-  meshes: THREE.Mesh[];
+  /**
+   * Tile meshes currently attached as outline proxies for this group,
+   * grouped by model id. Used to diff against subsequent chunk queries
+   * so we can detach tiles that no longer belong to the group.
+   */
+  attached: Map<string, Set<THREE.Mesh>>;
   activeStyles: Set<string>;
   styleCallbacks: {
     [style: string]: {
@@ -165,6 +169,12 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
   static readonly uuid = "2fd3bcc5-b3b6-4ded-9f64-f47a02854a10" as const;
 
   private _groups = new Map<string, OutlineGroupState>();
+  /**
+   * Per-model unsubscribe handles for the tile lifecycle listeners
+   * registered in {@link bindModelTileEvents}. Run on dispose so we
+   * don't leak references after the Outliner goes away.
+   */
+  private _tileListeners = new Map<string, () => void>();
 
   constructor(components: OBC.Components) {
     super(components);
@@ -224,7 +234,7 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
       }
     }
 
-    for (const mesh of group.meshes) mesh.removeFromParent();
+    this.detachAll(group);
     this._groups.delete(name);
 
     if (this.world) {
@@ -301,8 +311,7 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
       if (!state) return;
       state.map = {};
       state.activeStyles.clear();
-      for (const mesh of state.meshes) mesh.removeFromParent();
-      state.meshes = [];
+      this.detachAll(state);
       if (group === DEFAULT_GROUP) this.cleanPoints();
       return;
     }
@@ -310,8 +319,7 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
     for (const [, state] of this._groups) {
       state.map = {};
       state.activeStyles.clear();
-      for (const mesh of state.meshes) mesh.removeFromParent();
-      state.meshes = [];
+      this.detachAll(state);
     }
     this.cleanPoints();
   }
@@ -319,6 +327,8 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
   /** {@link Disposable.dispose} */
   dispose() {
     this.styles.clear();
+    for (const [, unbind] of this._tileListeners) unbind();
+    this._tileListeners.clear();
     for (const name of [...this._groups.keys()]) {
       if (name === DEFAULT_GROUP) continue;
       this.remove(name);
@@ -346,7 +356,7 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
     if (state) return state;
     state = {
       map: {},
-      meshes: [],
+      attached: new Map(),
       activeStyles: new Set(),
       styleCallbacks: {},
     };
@@ -428,11 +438,21 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
   }
 
   /**
-   * Adds ghost meshes to the pass scene for the group. If `delta` is not
-   * provided, rebuilds meshes for the entire group map. If provided, only
-   * meshes for the delta are appended to the existing group meshes.
+   * Resolves the group's current selection into per-tile index chunks
+   * via {@link FragmentsModel.getItemDrawChunks}, then asks the pass to
+   * attach a proxy per affected tile. Tiles that previously had a proxy
+   * but no longer match the selection are detached.
+   *
+   * Cost is bounded by the number of affected tiles (not selected items)
+   * and by one worker round-trip per model in the selection. Adding
+   * thousands of items costs the same as adding one if they all live in
+   * the same tile, and a few thousand items spread across the model
+   * still hits at most a few hundred tiles.
+   *
+   * Outline color, fill, and thickness come from the pass's group config.
+   * The Outliner only feeds it the geometry slices.
    */
-  private async updateGroup(name: string, delta?: OBC.ModelIdMap) {
+  private async updateGroup(name: string, _delta?: OBC.ModelIdMap) {
     const state = this.ensureGroup(name);
     if (!this.world) return;
     const renderer = this.getRenderer();
@@ -442,42 +462,130 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
     // container). The Outliner's ensureGroup only tracks selection state.
     if (!pass.hasGroup(name)) pass.addGroup(name);
 
-    if (!delta) {
-      // Full rebuild.
-      for (const mesh of state.meshes) mesh.removeFromParent();
-      state.meshes = [];
-      if (name === DEFAULT_GROUP && this.outlinePositions) {
-        await this.updatePoints();
-      }
-      if (Object.keys(state.map).length === 0) return;
-      const mesher = this.components.get(Mesher);
-      const meshes = await mesher.get(state.map);
-      for (const [, data] of meshes.entries()) {
-        for (const [, list] of data) {
-          for (const mesh of list) {
-            state.meshes.push(mesh);
-            pass.addMeshToGroup(mesh, name);
-          }
-        }
-      }
-      return;
-    }
-
-    // Delta append.
     if (name === DEFAULT_GROUP && this.outlinePositions) {
       await this.updatePoints();
     }
-    if (Object.keys(delta).length === 0) return;
-    const mesher = this.components.get(Mesher);
-    const meshes = await mesher.get(delta);
-    for (const [, data] of meshes.entries()) {
-      for (const [, list] of data) {
-        for (const mesh of list) {
-          state.meshes.push(mesh);
-          pass.addMeshToGroup(mesh, name);
-        }
+
+    const fragments = this.components.get(OBC.FragmentsManager);
+    const map = state.map;
+
+    // Snapshot current attachments so we can diff after the queries.
+    const previouslyAttached = new Map<string, Set<THREE.Mesh>>();
+    for (const [modelId, tiles] of state.attached) {
+      previouslyAttached.set(modelId, new Set(tiles));
+    }
+    const nextAttached = new Map<string, Set<THREE.Mesh>>();
+
+    // Run the chunk query per model in parallel. Each query returns one
+    // entry per affected tile with parallel `position` / `size` arrays.
+    const queries: Array<
+      Promise<{
+        modelId: string;
+        chunks: Array<{
+          tileId: number;
+          position: Uint32Array;
+          size: Uint32Array;
+        }>;
+      }>
+    > = [];
+    for (const [modelId, localIds] of Object.entries(map)) {
+      if (localIds.size === 0) continue;
+      const model = fragments.list.get(modelId);
+      if (!model) continue;
+      this.bindModelTileEvents(modelId);
+      queries.push(
+        (async () => {
+          // `getItemDrawChunks` accepts an iterable; we pass the Set
+          // straight through to avoid materializing an array for very
+          // large selections.
+          const chunks = (await (model as any).getItemDrawChunks(
+            localIds,
+          )) as Array<{
+            tileId: number;
+            position: Uint32Array;
+            size: Uint32Array;
+          }>;
+          return { modelId, chunks };
+        })(),
+      );
+    }
+
+    const results = await Promise.all(queries);
+
+    // Attach (or refresh) every tile that came back; track attachments
+    // for next-time diffs.
+    for (const { modelId, chunks } of results) {
+      const model = fragments.list.get(modelId);
+      if (!model) continue;
+      const attached = new Set<THREE.Mesh>();
+      for (const entry of chunks) {
+        const tile = model.tiles.get(entry.tileId);
+        if (!tile) continue;
+        pass.attachOutlinedTile(
+          tile,
+          { position: entry.position, size: entry.size },
+          name,
+        );
+        attached.add(tile);
+      }
+      nextAttached.set(modelId, attached);
+    }
+
+    // Detach proxies that were attached before but aren't in the new
+    // result. Covers item removal and items that moved to a different
+    // group.
+    for (const [modelId, prev] of previouslyAttached) {
+      const next = nextAttached.get(modelId) ?? new Set<THREE.Mesh>();
+      for (const tile of prev) {
+        if (!next.has(tile)) pass.detachOutlinedTile(tile);
       }
     }
+
+    state.attached = nextAttached;
+  }
+
+  /**
+   * Detach every proxy this group has attached and clear the tracking
+   * map. Used by `clean` and `remove`.
+   */
+  private detachAll(state: OutlineGroupState) {
+    if (!this.world) {
+      state.attached = new Map();
+      return;
+    }
+    const pass = this.getRenderer().postproduction.outlinePass;
+    for (const [, tiles] of state.attached) {
+      for (const tile of tiles) pass.detachOutlinedTile(tile);
+    }
+    state.attached = new Map();
+  }
+
+  /**
+   * Subscribe to a model's tile lifecycle events so we can refresh
+   * outline proxies when tiles load (LOD swap, viewport change, etc.)
+   * or unload. Idempotent per model id.
+   */
+  private bindModelTileEvents(modelId: string) {
+    if (this._tileListeners.has(modelId)) return;
+    const fragments = this.components.get(OBC.FragmentsManager);
+    const model = fragments.list.get(modelId);
+    if (!model) return;
+    const refresh = () => {
+      // Re-sync any group whose selection still references this model.
+      // Cheap for groups that don't.
+      for (const [groupName, state] of this._groups) {
+        const localIds = state.map[modelId];
+        if (localIds && localIds.size > 0) {
+          void this.updateGroup(groupName);
+        }
+      }
+    };
+    model.tiles.onItemSet.add(refresh);
+    model.tiles.onItemDeleted.add(refresh);
+    this._tileListeners.set(modelId, () => {
+      model.tiles.onItemSet.remove(refresh);
+      model.tiles.onItemDeleted.remove(refresh);
+    });
   }
 
   private cleanPoints() {
