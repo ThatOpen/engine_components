@@ -124,14 +124,17 @@ container.addEventListener("pointermove", async (event) => {
   const y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
   const position = new THREE.Vector2(x, y);
 
-  // Get model ID at mouse position
-  const modelId = await picker.getModelAt(position);
+  // The same picker now exposes both granularities. `getItemAt` reads
+  // the same id render and additionally resolves the per-item localId
+  // via a cached worker call. First hover on a new item pays one
+  // round-trip; everything after is main-thread only.
+  const item = await picker.getItemAt(position);
 
-  if (modelId) {
-    infoPanel.innerHTML = `Model ID: <strong>${modelId}</strong>`;
+  if (item) {
+    infoPanel.innerHTML = `Model: <strong>${item.modelId}</strong><br/>Item: <strong>${item.localId}</strong>`;
     infoPanel.style.color = "lime";
   } else {
-    infoPanel.innerHTML = "No model detected";
+    infoPanel.innerHTML = "No item detected";
     infoPanel.style.color = "white";
   }
 });
