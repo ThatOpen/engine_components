@@ -85,6 +85,30 @@ export class SimpleRenderer extends BaseRenderer {
   }
 
   /**
+   * The DOM element rendering the That Open Company wordmark, or `null`
+   * before the renderer is set up. Mutate its `style` to restyle or move
+   * the overlay without forking the source. Common adjustments:
+   *
+   * ```ts
+   * const logo = world.renderer.logo;
+   * if (logo) {
+   *   logo.style.left = "auto";
+   *   logo.style.right = "0.75rem";   // move to bottom-right
+   *   logo.style.bottom = "auto";
+   *   logo.style.top = "0.75rem";     // or to the top edge
+   * }
+   * ```
+   *
+   * The element also carries a `data-thatopen-logo` attribute, so app-wide
+   * CSS can target it (`[data-thatopen-logo] { ... }`). External rules
+   * need `!important` (or higher specificity) to win against the inline
+   * defaults.
+   */
+  get logo(): HTMLElement | null {
+    return this._logo;
+  }
+
+  /**
    * Constructor for the SimpleRenderer class.
    *
    * @param components - The components instance.
