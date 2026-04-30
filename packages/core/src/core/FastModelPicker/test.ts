@@ -157,6 +157,28 @@ container.addEventListener("click", async (event) => {
 });
 
 /* MD
+  ### 🎥 Orbit-Center on Right-Click
+  The picker can also recover the world-space point under the cursor via `getPointAt`. One render pass + one 4-byte readback, no worker round-trip — fast enough to call on every input event. Here we use it to set the camera's orbit target wherever the user right-clicks:
+*/
+
+container.addEventListener("contextmenu", async (event) => {
+  event.preventDefault();
+  const bounds = container.getBoundingClientRect();
+  const x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+  const y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
+  const position = new THREE.Vector2(x, y);
+
+  const point = await picker.getPointAt(position);
+  if (!point) return;
+  // OrthoPerspectiveCamera exposes `controls` from camera-controls.
+  // `setTarget` re-orbits around the new point.
+  if ("controls" in world.camera) {
+    const controls = (world.camera as OBC.OrthoPerspectiveCamera).controls;
+    await controls.setTarget(point.x, point.y, point.z, true);
+  }
+});
+
+/* MD
   ### 📊 Performance Stats
   Let's add performance monitoring to see how fast the picker is:
 */

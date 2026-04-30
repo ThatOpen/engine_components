@@ -75,6 +75,15 @@ export class FastModelPicker implements Disposable {
   private _idMaterial: THREE.ShaderMaterial;
 
   /**
+   * Depth-encoding shader used by {@link getPointAt}. Written via
+   * `scene.overrideMaterial` for one render of the BIM scene, packs
+   * `gl_FragCoord.z` into the four bytes of the color attachment using
+   * three's `packing` chunk. The packed value is robust to round-trip
+   * through an `UNSIGNED_BYTE` target.
+   */
+  private _depthMaterial: THREE.ShaderMaterial;
+
+  /**
    * Cached original materials for the swap-render-restore pass.
    * Populated in {@link applyIdMaterial}, drained in
    * {@link restoreOriginalMaterials} after the render.
@@ -106,6 +115,7 @@ export class FastModelPicker implements Disposable {
     this.mouse = new Mouse(world.renderer.three.domElement);
     this.components = components;
     this._idMaterial = this.buildIdMaterial();
+    this._depthMaterial = this.buildDepthMaterial();
     this.setupRenderTarget();
     this.setupFragmentListeners();
   }
@@ -149,6 +159,56 @@ export class FastModelPicker implements Disposable {
   }
 
   /**
+   * Returns the world-space point under the given screen position, or
+   * `null` if the cursor is over empty space.
+   *
+   * Renders the BIM scene with a depth-encoding override material that
+   * packs `gl_FragCoord.z` into the color buffer, reads four bytes at
+   * the cursor pixel, and unprojects through the camera matrices to a
+   * world point. One render pass, one 4-byte readback, no worker
+   * round-trip. Useful for things like "set camera orbit center to
+   * what the user just clicked on".
+   *
+   * Cheaper than {@link getItemAt} because we don't differentiate
+   * models — one render covers the whole BIM scene at once. We don't
+   * resolve any item id either.
+   *
+   * @param position - Normalized device coords. Defaults to the
+   *   picker's last known mouse position.
+   */
+  async getPointAt(
+    position?: THREE.Vector2,
+  ): Promise<THREE.Vector3 | null> {
+    if (!this.enabled) return null;
+    if (!this._renderTarget || !this.world.renderer) return null;
+
+    const fragments = this.components.get(FragmentsManager);
+    if (!fragments.initialized || fragments.list.size === 0) return null;
+
+    this.renderDepthPass();
+
+    const pos = position ?? this.mouse.position;
+    const pixel = this.readPixelAt(pos);
+    if (!pixel) return null;
+    if (
+      pixel[0] === 0 &&
+      pixel[1] === 0 &&
+      pixel[2] === 0 &&
+      pixel[3] === 0
+    ) {
+      return null; // cleared / void — nothing was drawn here
+    }
+
+    const depth = unpackDepthFromRGBA(pixel);
+    // depth ≈ 1 means the far plane: nothing in front of the camera at
+    // that pixel. Treat as void rather than returning a point on the
+    // far plane.
+    if (depth >= 1.0 - 1e-6) return null;
+
+    return unprojectToWorld(pos, depth, this.world.camera.three);
+  }
+
+  /**
    * Toggle the debug overlay. When enabled the picker mirrors its id
    * render to a small canvas pinned in the top-right corner so you can
    * see what the readback sees.
@@ -164,6 +224,7 @@ export class FastModelPicker implements Disposable {
     this.mouse.dispose();
     this.removeDebugCanvas();
     this._idMaterial.dispose();
+    this._depthMaterial.dispose();
     if (this._renderTarget) this._renderTarget.dispose();
     this._renderTarget = undefined;
     this._localIdCache.clear();
@@ -308,6 +369,75 @@ export class FastModelPicker implements Disposable {
     renderer.setClearColor(prevClearColor, prevClearAlpha);
   }
 
+  /**
+   * Single-pass render of every BIM model into the picker's color
+   * target with the depth-encoding shader as `scene.overrideMaterial`.
+   *
+   * Non-BIM scene contents (lights, helpers, the user's own meshes)
+   * are skipped by hiding the world scene's children except each
+   * model's `model.object` for the duration of the render. Same
+   * visibility-toggle pattern as {@link renderIdPass}; here we only
+   * need one render call because we don't differentiate models.
+   *
+   * Honours the renderer's clipping planes so the picked depth matches
+   * what's actually visible after clipping.
+   */
+  private renderDepthPass() {
+    const renderer = this.world.renderer!.three;
+    // `world.scene.three` is typed as `Object3D` in the abstraction
+    // layer, but in practice it is always a `THREE.Scene` and we need
+    // its `overrideMaterial` slot for the depth pass.
+    const scene = this.world.scene.three as THREE.Scene;
+    const camera = this.world.camera.three;
+    const fragments = this.components.get(FragmentsManager);
+
+    // Sync clipping planes onto the override material so geometry that
+    // would be clipped by the main render is also clipped here. Without
+    // this the picked depth could come from a fragment the user can't
+    // actually see.
+    const planes = renderer.clippingPlanes ?? [];
+    this._depthMaterial.clippingPlanes = planes;
+    this._depthMaterial.clipping = planes.length > 0;
+
+    const prevTarget = renderer.getRenderTarget();
+    const prevAutoClear = renderer.autoClear;
+    const prevOverride = scene.overrideMaterial;
+    const prevClearColor = renderer.getClearColor(new THREE.Color());
+    const prevClearAlpha = renderer.getClearAlpha();
+
+    // Hide every direct child of the world scene that isn't a BIM
+    // model object. Lights and most helpers are non-mesh and won't
+    // render anyway, but any user-added Mesh would otherwise pollute
+    // the depth buffer.
+    const bimObjects = new Set<THREE.Object3D>();
+    for (const [, model] of fragments.list) bimObjects.add(model.object);
+    const visibilityBefore = new Map<THREE.Object3D, boolean>();
+    scene.traverse((child) => {
+      if (child === scene) return;
+      if (bimObjects.has(child)) return;
+      // Only stash + hide children that are renderable; preserves the
+      // hierarchy without disturbing transform-only nodes.
+      if ((child as THREE.Mesh).isMesh) {
+        visibilityBefore.set(child, child.visible);
+        child.visible = false;
+      }
+    });
+
+    renderer.setRenderTarget(this._renderTarget!);
+    renderer.setClearColor(0x000000, 0);
+    renderer.autoClear = false;
+    renderer.clear(true, true, false);
+    scene.overrideMaterial = this._depthMaterial;
+    renderer.render(scene, camera);
+
+    scene.overrideMaterial = prevOverride;
+    for (const [obj, was] of visibilityBefore) obj.visible = was;
+
+    renderer.setRenderTarget(prevTarget);
+    renderer.autoClear = prevAutoClear;
+    renderer.setClearColor(prevClearColor, prevClearAlpha);
+  }
+
   private restoreOriginalMaterials() {
     for (const [mesh, mat] of this._originalMaterials) {
       mesh.material = mat;
@@ -396,6 +526,33 @@ export class FastModelPicker implements Disposable {
             b2 / 255.0,
             b3 / 255.0
           );
+        }
+      `,
+      side: THREE.DoubleSide,
+    });
+  }
+
+  /**
+   * Builds the depth-encoding override material used by
+   * {@link renderDepthPass}. Includes three's `packing` chunk to reuse
+   * the standard `packDepthToRGBA` helper, which is robust to the
+   * round-trip through an `UNSIGNED_BYTE` color attachment (the chunk
+   * pre-multiplies by `256/255` so `depth = 1.0` decodes back exactly
+   * to `1.0`). Decode side mirrors this with the same scaling factors;
+   * see {@link unpackDepthFromRGBA} below.
+   */
+  private buildDepthMaterial(): THREE.ShaderMaterial {
+    return new THREE.ShaderMaterial({
+      uniforms: {},
+      vertexShader: `
+        void main() {
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        #include <packing>
+        void main() {
+          gl_FragColor = packDepthToRGBA(gl_FragCoord.z);
         }
       `,
       side: THREE.DoubleSide,
@@ -502,3 +659,41 @@ export class FastModelPicker implements Disposable {
     ctx.putImageData(imageData, 0, 0);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Depth helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Inverse of three's `packDepthToRGBA` GLSL helper. The shader chunk
+ * pre-multiplies its packed bytes by `256/255` (so `depth = 1.0` round-
+ * trips to `(255, 255, 255, 255)`); we mirror that with `255/256` here
+ * and the reciprocals of the chunk's `PackFactors`.
+ */
+function unpackDepthFromRGBA(pixels: Uint8Array): number {
+  const r = pixels[0] / 255;
+  const g = pixels[1] / 255;
+  const b = pixels[2] / 255;
+  const a = pixels[3] / 255;
+  const downscale = 255 / 256;
+  return (
+    downscale *
+    (r / (256 * 256 * 256) + g / (256 * 256) + b / 256 + a)
+  );
+}
+
+/**
+ * Convert a cursor `ndc` and a `[0..1]` depth-buffer sample to a
+ * world-space point. NDC z lives in `[-1..1]` so we expand the depth
+ * sample before unprojecting through the camera's matrices.
+ */
+function unprojectToWorld(
+  ndc: THREE.Vector2,
+  depth: number,
+  camera: THREE.Camera,
+): THREE.Vector3 {
+  const v = new THREE.Vector3(ndc.x, ndc.y, depth * 2 - 1);
+  v.unproject(camera);
+  return v;
+}
+
