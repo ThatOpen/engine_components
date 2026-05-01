@@ -309,6 +309,13 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
       this.detachAll();
       this._current = result;
       this._hoverGen += 1;
+      // Warm the snap cache so a subsequent click with snap classes
+      // resolves synchronously off cache rather than paying the
+      // `_getElements` round-trip on demand.
+      this.components
+        .get(OBC.SnapResolvers)
+        .get()
+        .prefetch(result.modelId, result.localId);
       await this.attachForCurrent(this._hoverGen);
     } finally {
       this._moveInflight = false;

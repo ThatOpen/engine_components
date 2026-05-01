@@ -61,7 +61,6 @@ type ItemSnapData = {
   vertices: Float32Array;
 };
 
-const DEFAULT_IDLE_MS = 30_000;
 const VERTEX_QUANT = 1_000; // 1mm grid
 
 /**
@@ -69,25 +68,41 @@ const VERTEX_QUANT = 1_000; // 1mm grid
  * picked item, returns the closest face / line / point of that item
  * for any requested snap classes. The heavy work (fetching the item's
  * shell geometry through the fragments edit API and composing
- * world-space polygons) runs once per item and is cached; subsequent
- * calls for the same item are pure CPU geometry.
- *
- * Caching strategy: per `(modelId, localId)` key, with an idle timer
- * that evicts after {@link idleMs} of no `resolve()` / `touch()`
- * call. Tools that drive `castRay` from hover (Hoverer, Highlighter)
- * naturally warm the cache before a click, so snap-aware clicks feel
- * instant.
+ * world-space polygons) runs once per item; subsequent calls for the
+ * same item are pure CPU geometry against the LRU-bounded cache.
+ * Call {@link invalidate} when an item changes (e.g. via the
+ * fragments edit API) so the cached snap data gets refreshed on the
+ * next request.
  */
 export class SnapResolver implements Disposable {
   /** {@link Disposable.onDisposed} */
   readonly onDisposed = new Event();
 
-  /** Eviction window for cached item geometry. */
-  idleMs = DEFAULT_IDLE_MS;
+  /**
+   * Maximum world-space distance for a snap candidate to be
+   * considered valid. Vertices, edges or face planes beyond this
+   * range are rejected. Set this in the same units as your model
+   * (typical BIM scenes are metres, so the default of 1 means
+   * "snap only when within 1 m of the cursor"). Tools that want a
+   * different feel can override per-instance.
+   */
+  maxDistance = 1;
+
+  /**
+   * Maximum number of items to keep in the snap cache. Beyond this,
+   * the least-recently-used item is dropped on the next insertion.
+   * Each cached item is on the order of a few KB (per-shell faces +
+   * deduped edges + deduped vertices), so the default of 1000 caps
+   * memory at a few MB even on huge models. Bump it for workflows
+   * that revisit thousands of distinct items in a single session.
+   */
+  maxCacheSize = 1000;
 
   private readonly components: Components;
+  // Map insertion order is recency order (LRU). On every read we
+  // delete + re-set the entry to bump it to most-recent; on every
+  // write we drop oldest entries until size <= maxCacheSize.
   private readonly cache = new Map<string, ItemSnapData>();
-  private readonly idleTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   constructor(components: Components) {
     this.components = components;
@@ -95,8 +110,6 @@ export class SnapResolver implements Disposable {
 
   /** {@link Disposable.dispose} */
   dispose() {
-    for (const t of this.idleTimers.values()) clearTimeout(t);
-    this.idleTimers.clear();
     this.cache.clear();
     this.onDisposed.trigger();
     this.onDisposed.reset();
@@ -123,40 +136,82 @@ export class SnapResolver implements Disposable {
   ): Promise<SnapResult | null> {
     const key = SnapResolver.keyOf(modelId, localId);
     let data: ItemSnapData | null | undefined = this.cache.get(key);
-    if (!data) {
+    if (data) {
+      // Bump recency: delete + re-insert moves to end of iteration
+      // order (newest), where Map insertion order = LRU recency.
+      this.cache.delete(key);
+      this.cache.set(key, data);
+    } else {
       data = await this.fetchItemSnapData(modelId, localId);
       if (!data) return null;
-      this.cache.set(key, data);
+      this.storeWithLRU(key, data);
     }
-    this.bumpIdleTimer(key);
 
-    let best: { result: SnapResult; distance: number } | null = null;
-    for (const cls of classes) {
+    // Always compute the closest face — we attach its polygon to
+    // every result regardless of which class wins, so consumers
+    // that need the surface (e.g. AreaMeasurement's `face` and
+    // `square` modes) can always reach it.
+    const faceCandidate = this.snap(point, data, SnapClass.FACE);
+
+    // Priority order matches CAD tool conventions: POINT beats LINE
+    // beats FACE. The first class with a candidate inside
+    // {@link maxDistance} wins. Candidates beyond `maxDistance` are
+    // rejected so the caller falls through to the next class.
+    const requested = new Set(classes);
+    const priority = [SnapClass.POINT, SnapClass.LINE, SnapClass.FACE];
+    let winner: SnapResult | null = null;
+    for (const cls of priority) {
+      if (!requested.has(cls)) continue;
       const candidate = this.snap(point, data, cls);
-      if (!candidate) continue;
-      const d = candidate.result.point.distanceTo(point);
-      if (!best || d < best.distance) best = { result: candidate.result, distance: d };
+      if (candidate) {
+        winner = candidate.result;
+        break;
+      }
     }
-    return best?.result ?? null;
+    // If no snap class qualified but we have a face, surface the
+    // face metadata anyway — `face` / `square` measurement modes
+    // need it even when the cursor isn't near a snappable vertex
+    // or edge. In that case the result's `point` falls back to the
+    // GPU pick's surface point (caller-provided).
+    if (!winner) {
+      if (!faceCandidate) return null;
+      return faceCandidate.result;
+    }
+    if (faceCandidate && winner.snappingClass !== SnapClass.FACE) {
+      const f = faceCandidate.result;
+      if (!winner.normal && f.normal) winner.normal = f.normal;
+      if (!winner.facePoints && f.facePoints) winner.facePoints = f.facePoints;
+      if (!winner.faceIndices && f.faceIndices) winner.faceIndices = f.faceIndices;
+    }
+    return winner;
   }
 
   /**
-   * Bump the idle timer for an item without doing snap work. Hoverer
-   * can call this on each hover tick to keep the geometry warm so
-   * the user's eventual click is instant.
+   * Fire-and-forget prefetch of an item's snap geometry. Hoverer calls
+   * this on lock-onto-new-item so by the time the user clicks, the
+   * worker round-trip is already paid and `resolve` resolves
+   * synchronously off the cache.
+   *
+   * Returns a Promise so callers who *do* want to await can; most
+   * won't.
    */
-  touch(modelId: string, localId: number) {
+  async prefetch(modelId: string, localId: number) {
     const key = SnapResolver.keyOf(modelId, localId);
-    if (this.cache.has(key)) this.bumpIdleTimer(key);
+    if (this.cache.has(key)) return;
+    const data = await this.fetchItemSnapData(modelId, localId);
+    if (!data) return;
+    this.storeWithLRU(key, data);
   }
 
   /** Drop a specific item from the cache (e.g. after an edit). */
   invalidate(modelId: string, localId: number) {
     const key = SnapResolver.keyOf(modelId, localId);
     this.cache.delete(key);
-    const t = this.idleTimers.get(key);
-    if (t) clearTimeout(t);
-    this.idleTimers.delete(key);
+  }
+
+  /** Drop the entire cache. Useful when many items have changed. */
+  clear() {
+    this.cache.clear();
   }
 
   // ---------------------------------------------------------------------------
@@ -167,14 +222,13 @@ export class SnapResolver implements Disposable {
     return `${modelId}:${localId}`;
   }
 
-  private bumpIdleTimer(key: string) {
-    const prev = this.idleTimers.get(key);
-    if (prev) clearTimeout(prev);
-    const t = setTimeout(() => {
-      this.cache.delete(key);
-      this.idleTimers.delete(key);
-    }, this.idleMs);
-    this.idleTimers.set(key, t);
+  private storeWithLRU(key: string, data: ItemSnapData) {
+    this.cache.set(key, data);
+    while (this.cache.size > this.maxCacheSize) {
+      const oldest = this.cache.keys().next().value;
+      if (oldest === undefined) break;
+      this.cache.delete(oldest);
+    }
   }
 
   private async fetchItemSnapData(
@@ -269,18 +323,20 @@ export class SnapResolver implements Disposable {
   private snapToPoint(point: THREE.Vector3, data: ItemSnapData) {
     const v = data.vertices;
     if (v.length === 0) return null;
-    let bestIdx = 0;
+    const maxSq = this.maxDistance * this.maxDistance;
+    let bestIdx = -1;
     let bestSq = Infinity;
     for (let i = 0; i < v.length; i += 3) {
       const dx = v[i] - point.x;
       const dy = v[i + 1] - point.y;
       const dz = v[i + 2] - point.z;
       const sq = dx * dx + dy * dy + dz * dz;
-      if (sq < bestSq) {
+      if (sq <= maxSq && sq < bestSq) {
         bestSq = sq;
         bestIdx = i;
       }
     }
+    if (bestIdx < 0) return null;
     return {
       result: {
         point: new THREE.Vector3(v[bestIdx], v[bestIdx + 1], v[bestIdx + 2]),
@@ -292,10 +348,11 @@ export class SnapResolver implements Disposable {
   private snapToLine(point: THREE.Vector3, data: ItemSnapData) {
     const e = data.edges;
     if (e.length === 0) return null;
+    const maxSq = this.maxDistance * this.maxDistance;
     const closest = new THREE.Vector3();
     const tmp = new THREE.Vector3();
     let bestSq = Infinity;
-    let bestIdx = 0;
+    let bestIdx = -1;
     for (let i = 0; i < e.length; i += 6) {
       const sq = pointToSegmentSq(
         point,
@@ -303,12 +360,13 @@ export class SnapResolver implements Disposable {
         e[i + 3], e[i + 4], e[i + 5],
         tmp,
       );
-      if (sq < bestSq) {
+      if (sq <= maxSq && sq < bestSq) {
         bestSq = sq;
         bestIdx = i;
         closest.copy(tmp);
       }
     }
+    if (bestIdx < 0) return null;
     return {
       result: {
         point: closest.clone(),
@@ -335,7 +393,7 @@ export class SnapResolver implements Disposable {
         f.normal.z * point.z -
         f.d;
       const abs = Math.abs(signed);
-      if (abs < bestAbs) {
+      if (abs <= this.maxDistance && abs < bestAbs) {
         bestAbs = abs;
         best = f;
       }
