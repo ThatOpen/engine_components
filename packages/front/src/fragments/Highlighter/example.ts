@@ -17,6 +17,9 @@ import * as THREE from "three";
 import Stats from "stats.js";
 import * as OBC from "@thatopen/components";
 import * as BUI from "@thatopen/ui";
+// Local worker bundle so changes to engine_fragment are exercised. Swap
+// to `OBC.FragmentsManager.getWorker()` for the unpkg-hosted bundle.
+import workerUrl from "@thatopen/fragments/worker?url";
 // You have to import * as OBF from "@thatopen/components-front"
 import * as OBF from "../..";
 
@@ -50,9 +53,6 @@ components.init();
   Now, let's configure the FragmentsManager. This will allow us to load models effortlessly and start manipulating them with ease:
 */
 
-// `FragmentsManager.getWorker()` fetches the matching worker for this library version from unpkg and returns a blob URL.
-// You can also pass your own URL to `fragments.init(...)` if you'd rather host the worker yourself.
-const workerUrl = await OBC.FragmentsManager.getWorker();
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 
@@ -107,7 +107,14 @@ await Promise.all(
   Next, we'll configure the highlighter component. The setup process is straightforward and can be done as follows:
 */
 
-components.get(OBC.Raycasters).get(world);
+// The Raycaster has a `useFastItemPicking` flag that resolves the
+// pick entirely on the GPU (one render + 4-byte readback) and skips
+// the worker raycast for click selection. The Highlighter sits on top
+// of this, so flipping the flag here makes click-select feel instant
+// even on large models. Snap-aware tools can still call `castRay`
+// with `snappingClasses` and they'll fall back to the worker path.
+const raycaster = components.get(OBC.Raycasters).get(world);
+raycaster.useFastItemPicking = true;
 
 const highlighter = components.get(OBF.Highlighter);
 highlighter.setup({

@@ -266,6 +266,10 @@ export class FastModelPicker implements Disposable {
 
     // eslint-disable-next-line no-bitwise
     const itemId = (pixel[1] << 16) | (pixel[2] << 8) | pixel[3];
+    // 0 is the sentinel fragments writes for samples whose two-step
+    // localId lookup misses (no `meshes_items` entry, or `local_ids`
+    // returns null). Treat decoded 0 as void rather than a real pick.
+    if (itemId === 0) return null;
     return { modelId, itemId };
   }
 

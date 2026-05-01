@@ -17,6 +17,11 @@ import * as THREE from "three";
 import Stats from "stats.js";
 import * as OBC from "@thatopen/components";
 import * as BUI from "@thatopen/ui";
+// While iterating on local fragments changes, import the worker via vite's
+// `?url` so it resolves against `node_modules/@thatopen/fragments`. Once
+// the matching @thatopen/fragments version is published this can go back
+// to `OBC.FragmentsManager.getWorker()` for the unpkg-hosted bundle.
+import workerUrl from "@thatopen/fragments/worker?url";
 // You have to import * as OBF from "@thatopen/components-front"
 import * as OBF from "../..";
 
@@ -50,9 +55,6 @@ components.init();
   Now, let's configure the FragmentsManager. This will allow us to load models effortlessly and start manipulating them with ease:
 */
 
-// `FragmentsManager.getWorker()` fetches the matching worker for this library version from unpkg and returns a blob URL.
-// You can also pass your own URL to `fragments.init(...)` if you'd rather host the worker yourself.
-const workerUrl = await OBC.FragmentsManager.getWorker();
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 

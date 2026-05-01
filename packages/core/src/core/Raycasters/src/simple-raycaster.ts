@@ -42,6 +42,25 @@ export class SimpleRaycaster implements Disposable {
    */
   useFastModelPicking = false;
 
+  /**
+   * Whether to resolve picks entirely on the GPU when no extra data is
+   * needed. When enabled and the call has no `snappingClasses` and no
+   * extra `items` to intersect, `castRay` returns directly from the
+   * GPU-readback {@link FastModelPicker}'s `getItemAt` — one render pass
+   * plus one 4-byte readback, no worker round-trip.
+   *
+   * Trade-off: the synthesised result only carries `localId` and the
+   * model reference (matching what fragments raycast returns at minimum).
+   * Fields like `point`, `normal`, `distance`, snap candidates etc. are
+   * **not** populated. Tools that need any of those should leave this
+   * flag off.
+   *
+   * Snap-aware calls (`snappingClasses` non-empty) and calls that pass
+   * `items` to intersect always fall through to the existing worker
+   * path, regardless of this flag.
+   */
+  useFastItemPicking = false;
+
   constructor(components: Components, world: World) {
     const renderer = world.renderer;
     if (!renderer) {
@@ -109,6 +128,30 @@ export class SimpleRaycaster implements Disposable {
     let fragResult: any = null;
 
     if (fragments.initialized) {
+      // Fastest path: GPU-readback item pick. No worker call. Limited
+      // to the `localId` + model — see `useFastItemPicking`'s docs.
+      // Skipped when the caller asks for snapping (the pick can't
+      // produce snap candidates) or supplies its own `items` (those
+      // need a full ray test, which only the worker path runs).
+      const hasSnap = !!(snappingClasses && snappingClasses.length > 0);
+      const hasItems = items.length > 0;
+      if (this.useFastItemPicking && !hasSnap && !hasItems) {
+        const fastPickers = this.components.get(FastModelPickers);
+        const fastPicker = fastPickers.get(this.world);
+        const hit = await fastPicker.getItemAt(position);
+        if (hit) {
+          const model = fragments.list.get(hit.modelId);
+          // Match the shape consumers expect: fragments raycast
+          // returns the model in `fragments`. We attach it here so
+          // existing code paths (`result.fragments.modelId`,
+          // `result.localId`) keep working unchanged.
+          fragResult = {
+            localId: hit.localId,
+            fragments: model,
+          };
+        }
+        return fragResult;
+      }
       // Use fast model picking if enabled
       if (this.useFastModelPicking) {
         const fastPickers = this.components.get(FastModelPickers);
