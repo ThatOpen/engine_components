@@ -5,6 +5,7 @@ import { Component, Event, World, Disposable } from "../../Types";
 import { Mouse } from "./mouse";
 import { FragmentsManager } from "../../../fragments";
 import { FastModelPickers } from "../../FastModelPicker";
+import { SnapResolvers, SnapClass } from "../../SnapResolver";
 
 /**
  * A simple [raycaster](https://threejs.org/docs/#api/en/core/Raycaster) that allows to easily get items from the scene using the mouse and touch events.
@@ -35,10 +36,9 @@ export class SimpleRaycaster implements Disposable {
   world: World;
 
   /**
-   * Whether to use fast model picking to optimize raycasting.
-   * When enabled, the raycaster will first use FastModelPicker to identify
-   * which model is under the mouse, then only raycast that specific model.
-   * This can significantly improve performance when there are many models.
+   * @deprecated Has no effect — `castRay` always GPU-picks first now.
+   * Kept as a no-op for one minor version so existing callers that
+   * still set the flag don't error; will be removed thereafter.
    */
   useFastModelPicking = false;
 
@@ -102,86 +102,56 @@ export class SimpleRaycaster implements Disposable {
       | THREE.PerspectiveCamera
       | THREE.OrthographicCamera;
 
-    // Raycast the BIM models
+    // BIM pick: single linear flow.
+    //   1. GPU pick → `{localId, point, normal, distance, fragments, object}`.
+    //   2. If snap classes were requested AND we got a hit, run the
+    //      main-thread snap resolver against the picked item to fill
+    //      in `facePoints` / `snappedEdgeP1P2` / `snappingClass`. The
+    //      resolver caches per-item shell geometry so subsequent snaps
+    //      against the same item are pure CPU.
     const fragments = this.components.get(FragmentsManager);
-    const dom = this.world.renderer!.three.domElement;
-    const mouse = this.mouse.rawPosition;
     let fragResult: any = null;
 
     if (fragments.initialized) {
-      // Default path: full GPU pick. Composes id + depth + normal
-      // passes into a result that matches what most consumers read
-      // from a worker raycast (`localId`, `point`, `normal`, `distance`,
-      // `fragments`, `object`). No worker round-trip. The `useFastModelPicking`
-      // / native worker-raycast paths below stay only for snap-aware
-      // calls — fragments already does triangle-level work for snap
-      // candidates that the GPU pick can't synthesize.
-      const hasSnap = !!(snappingClasses && snappingClasses.length > 0);
-      if (!hasSnap) {
-        const fastPickers = this.components.get(FastModelPickers);
-        const fastPicker = fastPickers.get(this.world);
-        const hit = await fastPicker.getFullPick(position);
-        if (hit) {
-          const model = fragments.list.get(hit.modelId);
-          // Match the shape consumers expect from `fragments.raycast`.
-          // `itemId` and `representationClass` aren't reachable from the
-          // GPU pick alone; left undefined. No consumer in this repo
-          // reads them on a non-snap call (audited).
-          fragResult = {
-            localId: hit.localId,
-            point: hit.point,
-            normal: hit.normal,
-            distance: hit.distance,
-            fragments: model,
-            object: model?.object,
-            ray: undefined,
-            frustum: undefined,
-          };
-        }
-        // Items intersect, if any, runs in the shared block below.
-      } else if (this.useFastModelPicking) {
-        const fastPickers = this.components.get(FastModelPickers);
-        const fastPicker = fastPickers.get(this.world);
-        const modelId = await fastPicker.getModelAt(position);
-
-        if (modelId) {
-          // Only raycast the specific model identified by fast picking
-          const model = fragments.list.get(modelId);
-          if (model) {
-            if (snappingClasses && snappingClasses.length > 0) {
-              const snappingRaycast = await model.raycastWithSnapping({
-                camera,
-                dom,
-                mouse,
-                snappingClasses,
-              } as FRAGS.SnappingRaycastData);
-              if (snappingRaycast && snappingRaycast.length > 0) {
-                fragResult = snappingRaycast[0];
-              } else {
-                fragResult = await model.raycast({
-                  camera,
-                  dom,
-                  mouse,
-                });
-              }
-            } else {
-              fragResult = await model.raycast({
-                camera,
-                dom,
-                mouse,
-              });
-            }
+      const fastPickers = this.components.get(FastModelPickers);
+      const fastPicker = fastPickers.get(this.world);
+      const hit = await fastPicker.getFullPick(position);
+      if (hit) {
+        const model = fragments.list.get(hit.modelId);
+        fragResult = {
+          localId: hit.localId,
+          point: hit.point,
+          normal: hit.normal,
+          distance: hit.distance,
+          fragments: model,
+          object: model?.object,
+          ray: undefined,
+          frustum: undefined,
+        };
+        if (snappingClasses && snappingClasses.length > 0) {
+          const snap = await this.components
+            .get(SnapResolvers)
+            .get()
+            .resolve(
+              hit.point,
+              hit.modelId,
+              hit.localId,
+              snappingClasses as unknown as SnapClass[],
+            );
+          if (snap) {
+            fragResult.point = snap.point;
+            if (snap.normal) fragResult.normal = snap.normal;
+            fragResult.snappingClass = snap.snappingClass;
+            if (snap.facePoints) fragResult.facePoints = snap.facePoints;
+            if (snap.faceIndices) fragResult.faceIndices = snap.faceIndices;
+            if (snap.snappedEdgeP1)
+              fragResult.snappedEdgeP1 = snap.snappedEdgeP1;
+            if (snap.snappedEdgeP2)
+              fragResult.snappedEdgeP2 = snap.snappedEdgeP2;
+            // Recompute distance against the (now-snapped) point.
+            fragResult.distance = snap.point.distanceTo(camera.position);
           }
         }
-        // If fast picking didn't find a model, fragResult remains null
-      } else {
-        // Original behavior: raycast all models
-        fragResult = await fragments.raycast({
-          camera,
-          dom,
-          mouse,
-          snappingClasses,
-        });
       }
       if (items.length === 0) {
         return fragResult;

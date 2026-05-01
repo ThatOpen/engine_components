@@ -19,6 +19,11 @@ import Stats from "stats.js";
 import * as OBC from "@thatopen/components";
 import * as BUI from "@thatopen/ui";
 import * as FRAGS from "@thatopen/fragments";
+// Local worker bundle so the GPU picker decodes localId from tile.ids
+// correctly (only the local fragments build encodes localIds rather
+// than raw itemIds). Swap to `OBC.FragmentsManager.getWorker()` for
+// the unpkg-hosted bundle once published.
+import workerUrl from "@thatopen/fragments/worker?url";
 // You have to import * as OBF from "@thatopen/components-front"
 import * as OBF from "../..";
 
@@ -52,9 +57,8 @@ components.init();
   Now, let's configure the FragmentsManager. This will allow us to load models effortlessly and start manipulating them with ease:
 */
 
-// `FragmentsManager.getWorker()` fetches the matching worker for this library version from unpkg and returns a blob URL.
-// You can also pass your own URL to `fragments.init(...)` if you'd rather host the worker yourself.
-const workerUrl = await OBC.FragmentsManager.getWorker();
+// Local worker imported above. To fall back to unpkg, replace the
+// import with `const workerUrl = await OBC.FragmentsManager.getWorker();`.
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 

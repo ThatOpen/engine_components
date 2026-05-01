@@ -11,3 +11,4 @@ export * from "./Clipper";
 export * from "./Views";
 export * from "./ShadowedScene";
 export * from "./FastModelPicker";
+export * from "./SnapResolver";
