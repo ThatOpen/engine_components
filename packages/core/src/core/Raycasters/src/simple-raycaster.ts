@@ -35,13 +35,6 @@ export class SimpleRaycaster implements Disposable {
    */
   world: World;
 
-  /**
-   * @deprecated Has no effect — `castRay` always GPU-picks first now.
-   * Kept as a no-op for one minor version so existing callers that
-   * still set the flag don't error; will be removed thereafter.
-   */
-  useFastModelPicking = false;
-
   constructor(components: Components, world: World) {
     const renderer = world.renderer;
     if (!renderer) {
