@@ -17,6 +17,11 @@ import * as THREE from "three";
 import Stats from "stats.js";
 import * as OBC from "@thatopen/components";
 import * as BUI from "@thatopen/ui";
+// While iterating on local fragments changes, import the worker via vite's
+// `?url` so it resolves against `node_modules/@thatopen/fragments`. Once
+// the matching @thatopen/fragments version is published this can go back
+// to `OBC.FragmentsManager.getWorker()` for the unpkg-hosted bundle.
+import workerUrl from "@thatopen/fragments/worker?url";
 // You have to import * as OBF from "@thatopen/components-front"
 import * as OBF from "../..";
 
@@ -50,9 +55,6 @@ components.init();
   Now, let's configure the FragmentsManager. This will allow us to load models effortlessly and start manipulating them with ease:
 */
 
-// `FragmentsManager.getWorker()` fetches the matching worker for this library version from unpkg and returns a blob URL.
-// You can also pass your own URL to `fragments.init(...)` if you'd rather host the worker yourself.
-const workerUrl = await OBC.FragmentsManager.getWorker();
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 
@@ -189,7 +191,7 @@ Now we will add some UI to play around with the actions in this tutorial. For mo
 */
 
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
-  const onChange = ({ target }: { target: BUI.ColorInput }) => {
+  const onColorChange = ({ target }: { target: BUI.ColorInput }) => {
     if (
       !(
         "color" in hoverer.material &&
@@ -198,14 +200,33 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
     ) {
       return;
     }
-
     hoverer.material.color.set(target.color);
+  };
+
+  const onModeChange = ({ target }: { target: BUI.Dropdown }) => {
+    const value = (target.value as unknown as string[])[0];
+    if (value === "mousestop") hoverer.mode = OBF.HovererMode.MOUSE_STOP;
+    else hoverer.mode = OBF.HovererMode.MOUSE_MOVE;
+  };
+
+  const onFadeChange = ({ target }: { target: BUI.Checkbox }) => {
+    hoverer.fade = target.checked;
+  };
+
+  const onFadeDurationChange = ({ target }: { target: BUI.NumberInput }) => {
+    hoverer.fadeDuration = target.value;
   };
 
   return BUI.html`
     <bim-panel active label="Hoverer Tutorial" class="options-menu">
       <bim-panel-section label="Controls">
-        <bim-color-input color="#${((hoverer.material as any).color as THREE.Color).getHexString()}" label="Color" @input=${onChange}></bim-color-input>
+        <bim-color-input color="#${((hoverer.material as any).color as THREE.Color).getHexString()}" label="Color" @input=${onColorChange}></bim-color-input>
+        <bim-dropdown label="Mode" @change=${onModeChange}>
+          <bim-option label="Mouse move" value="mousemove" ?checked=${hoverer.mode === OBF.HovererMode.MOUSE_MOVE}></bim-option>
+          <bim-option label="Mouse stop" value="mousestop" ?checked=${hoverer.mode === OBF.HovererMode.MOUSE_STOP}></bim-option>
+        </bim-dropdown>
+        <bim-checkbox label="Fade" ?checked=${hoverer.fade} @change=${onFadeChange}></bim-checkbox>
+        <bim-number-input vertical label="Fade duration (ms)" min=0 max=2000 step=10 value=${hoverer.fadeDuration} slider @change=${onFadeDurationChange}></bim-number-input>
       </bim-panel-section>
     </bim-panel>
   `;

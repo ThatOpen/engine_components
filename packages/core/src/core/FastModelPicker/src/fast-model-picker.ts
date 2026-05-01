@@ -101,11 +101,6 @@ export class FastModelPicker implements Disposable {
    */
   private _hiddenLods: THREE.Object3D[] = [];
 
-  /**
-   * `itemId → localId` cache keyed by model id. Populated lazily on
-   * first resolve; cleared when a model is disposed.
-   */
-  private _localIdCache = new Map<string, Map<number, number>>();
 
   constructor(components: Components, world: World) {
     if (!world.renderer) {
@@ -117,7 +112,6 @@ export class FastModelPicker implements Disposable {
     this._idMaterial = this.buildIdMaterial();
     this._depthMaterial = this.buildDepthMaterial();
     this.setupRenderTarget();
-    this.setupFragmentListeners();
   }
 
   /**
@@ -140,10 +134,10 @@ export class FastModelPicker implements Disposable {
    * Returns `{ modelId, localId }` for the item under the given screen
    * position, or `null` if the cursor is over empty space.
    *
-   * The first time a given `(modelId, itemId)` pair is hit the picker
-   * calls into the fragments worker to resolve `itemId → localId` and
-   * caches the result. Subsequent hits on the same item are
-   * worker-free.
+   * Pure main-thread resolution: fragments now stores the user-facing
+   * `localId` directly in each tile's per-vertex `id` attribute, so
+   * the encoded RGBA pixel decodes straight to the localId. No worker
+   * round-trip, no cache.
    *
    * @param position - Normalized device coords. Defaults to the
    *   picker's last known mouse position.
@@ -153,9 +147,7 @@ export class FastModelPicker implements Disposable {
   ): Promise<{ modelId: string; localId: number } | null> {
     const result = await this.runIdPass(position);
     if (!result) return null;
-    const localId = await this.resolveLocalId(result.modelId, result.itemId);
-    if (localId === null) return null;
-    return { modelId: result.modelId, localId };
+    return { modelId: result.modelId, localId: result.itemId };
   }
 
   /**
@@ -227,7 +219,6 @@ export class FastModelPicker implements Disposable {
     this._depthMaterial.dispose();
     if (this._renderTarget) this._renderTarget.dispose();
     this._renderTarget = undefined;
-    this._localIdCache.clear();
     this._originalMaterials.clear();
     this._hiddenLods.length = 0;
     this.onDisposed.trigger();
@@ -326,6 +317,12 @@ export class FastModelPicker implements Disposable {
    * flipping the `modelByte` uniform between renders. The depth buffer
    * is shared across the per-model passes so the front-most item still
    * wins each pixel regardless of which model it belongs to.
+   *
+   * Non-BIM meshes in the world scene (the user's own helpers, ground
+   * planes, hover proxies, anything else) are hidden for the duration
+   * of the render. Without this, their normal materials write whatever
+   * colour they happen to produce into the id target, which decodes as
+   * a bogus `(modelByte, itemId)` pair when the cursor lands on one.
    */
   private renderIdPass(byteToModel: Map<number, string>) {
     const renderer = this.world.renderer!.three;
@@ -343,13 +340,38 @@ export class FastModelPicker implements Disposable {
     renderer.autoClear = false;
     renderer.clear(true, true, false);
 
+    // Collect every BIM model's root object so we can (a) toggle them
+    // individually during the per-model passes and (b) recognise them
+    // when filtering non-BIM meshes below.
     const objectsByModel = new Map<string, THREE.Object3D>();
     for (const [modelId, model] of fragments.list) {
       objectsByModel.set(modelId, model.object);
     }
-    const visibilityBefore = new Map<THREE.Object3D, boolean>();
+    const bimRoots = new Set<THREE.Object3D>(objectsByModel.values());
+
+    // Hide every non-BIM mesh in the world scene for the duration of
+    // the id render. Anything below a BIM root is left alone (the BIM
+    // roots themselves are toggled per pass below).
+    const nonBimVisibility = new Map<THREE.Object3D, boolean>();
+    const inBimSubtree = (obj: THREE.Object3D) => {
+      let p: THREE.Object3D | null = obj;
+      while (p) {
+        if (bimRoots.has(p)) return true;
+        p = p.parent;
+      }
+      return false;
+    };
+    scene.traverse((child) => {
+      if (child === scene) return;
+      if (!(child as THREE.Mesh).isMesh) return;
+      if (inBimSubtree(child)) return;
+      nonBimVisibility.set(child, child.visible);
+      child.visible = false;
+    });
+
+    const bimVisibilityBefore = new Map<THREE.Object3D, boolean>();
     for (const obj of objectsByModel.values()) {
-      visibilityBefore.set(obj, obj.visible);
+      bimVisibilityBefore.set(obj, obj.visible);
       obj.visible = false;
     }
 
@@ -362,7 +384,8 @@ export class FastModelPicker implements Disposable {
       obj.visible = false;
     }
 
-    for (const [obj, was] of visibilityBefore) obj.visible = was;
+    for (const [obj, was] of bimVisibilityBefore) obj.visible = was;
+    for (const [obj, was] of nonBimVisibility) obj.visible = was;
 
     renderer.setRenderTarget(prevTarget);
     renderer.autoClear = prevAutoClear;
@@ -468,33 +491,6 @@ export class FastModelPicker implements Disposable {
     return pixels;
   }
 
-  private async resolveLocalId(
-    modelId: string,
-    itemId: number,
-  ): Promise<number | null> {
-    let cache = this._localIdCache.get(modelId);
-    if (cache?.has(itemId)) return cache.get(itemId)!;
-
-    const fragments = this.components.get(FragmentsManager);
-    const model = fragments.list.get(modelId);
-    if (!model) return null;
-
-    // `getLocalIdsFromItemIds` is a fragments worker call returning a
-    // parallel array. One round-trip per first-time hit per item;
-    // afterwards the cache covers it.
-    const localIds = await model.getLocalIdsFromItemIds([itemId]);
-    if (!localIds || localIds.length === 0) return null;
-    const localId = localIds[0];
-    if (typeof localId !== "number") return null;
-
-    if (!cache) {
-      cache = new Map();
-      this._localIdCache.set(modelId, cache);
-    }
-    cache.set(itemId, localId);
-    return localId;
-  }
-
   // ---------------------------------------------------------------------------
   // Setup / teardown
   // ---------------------------------------------------------------------------
@@ -581,13 +577,6 @@ export class FastModelPicker implements Disposable {
         this._debugCanvas.width = newSize.x;
         this._debugCanvas.height = newSize.y;
       }
-    });
-  }
-
-  private setupFragmentListeners() {
-    const fragments = this.components.get(FragmentsManager);
-    fragments.list.onItemDeleted.add((modelId) => {
-      this._localIdCache.delete(modelId);
     });
   }
 
