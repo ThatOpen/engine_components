@@ -70,6 +70,11 @@ world.onCameraChanged.add((camera) => {
 fragments.list.onItemSet.add(({ value: model }) => {
   model.useCamera(world.camera.three);
   world.scene.three.add(model.object);
+  // Tell fragments which clipping planes are active for this model
+  // so the worker skips processing of clipped items entirely.
+  model.getClippingPlanesEvent = () => {
+    return Array.from(world.renderer!.three.clippingPlanes) || [];
+  };
   fragments.core.update(true);
 });
 
