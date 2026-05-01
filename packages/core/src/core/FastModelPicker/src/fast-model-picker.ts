@@ -84,6 +84,17 @@ export class FastModelPicker implements Disposable {
   private _depthMaterial: THREE.ShaderMaterial;
 
   /**
+   * World-space normal-encoding shader used by {@link getNormalAt}.
+   * Writes `(normal * 0.5 + 0.5)` into RGB, alpha = 1. Decode side maps
+   * `(rgb * 2 - 1)` and renormalizes. Naive packing wastes alpha and
+   * gives ~1° precision per axis, which is plenty for surface
+   * alignment, orbit-around-clicked-point, and snapping. Octahedral
+   * packing would buy us another bit per axis but isn't worth the
+   * complexity until a consumer actually needs sub-degree accuracy.
+   */
+  private _normalMaterial: THREE.ShaderMaterial;
+
+  /**
    * Cached original materials for the swap-render-restore pass.
    * Populated in {@link applyIdMaterial}, drained in
    * {@link restoreOriginalMaterials} after the render.
@@ -111,6 +122,7 @@ export class FastModelPicker implements Disposable {
     this.components = components;
     this._idMaterial = this.buildIdMaterial();
     this._depthMaterial = this.buildDepthMaterial();
+    this._normalMaterial = this.buildNormalMaterial();
     this.setupRenderTarget();
   }
 
@@ -201,6 +213,63 @@ export class FastModelPicker implements Disposable {
   }
 
   /**
+   * Returns the world-space surface normal under the cursor, or `null`
+   * if the cursor is over empty space.
+   *
+   * Mirrors {@link getPointAt}'s structure: one `scene.overrideMaterial`
+   * render with the normal-encoding shader, one 4-byte readback,
+   * decode and renormalize.
+   */
+  async getNormalAt(
+    position?: THREE.Vector2,
+  ): Promise<THREE.Vector3 | null> {
+    if (!this.enabled) return null;
+    if (!this._renderTarget || !this.world.renderer) return null;
+    const fragments = this.components.get(FragmentsManager);
+    if (!fragments.initialized || fragments.list.size === 0) return null;
+
+    this.renderNormalPass();
+
+    const pos = position ?? this.mouse.position;
+    const pixel = this.readPixelAt(pos);
+    if (!pixel) return null;
+    if (pixel[3] === 0) return null; // void pixel — nothing rendered here
+
+    const x = (pixel[0] / 255) * 2 - 1;
+    const y = (pixel[1] / 255) * 2 - 1;
+    const z = (pixel[2] / 255) * 2 - 1;
+    const n = new THREE.Vector3(x, y, z);
+    if (n.lengthSq() < 1e-8) return null;
+    return n.normalize();
+  }
+
+  /**
+   * One-shot pick that produces the full result shape consumers need:
+   * `{ modelId, localId, point, normal, distance }`. Routes through the
+   * three GPU passes (id, depth, normal) and composes the output. No
+   * worker round-trip.
+   *
+   * Returns `null` if the cursor is over empty space, the id pass
+   * decodes to the void sentinel, or the depth round-trip yields the
+   * far plane.
+   */
+  async getFullPick(position?: THREE.Vector2): Promise<{
+    modelId: string;
+    localId: number;
+    point: THREE.Vector3;
+    normal: THREE.Vector3 | null;
+    distance: number;
+  } | null> {
+    const item = await this.getItemAt(position);
+    if (!item) return null;
+    const point = await this.getPointAt(position);
+    if (!point) return null;
+    const normal = await this.getNormalAt(position);
+    const distance = point.distanceTo(this.world.camera.three.position);
+    return { ...item, point, normal, distance };
+  }
+
+  /**
    * Toggle the debug overlay. When enabled the picker mirrors its id
    * render to a small canvas pinned in the top-right corner so you can
    * see what the readback sees.
@@ -217,6 +286,7 @@ export class FastModelPicker implements Disposable {
     this.removeDebugCanvas();
     this._idMaterial.dispose();
     this._depthMaterial.dispose();
+    this._normalMaterial.dispose();
     if (this._renderTarget) this._renderTarget.dispose();
     this._renderTarget = undefined;
     this._originalMaterials.clear();
@@ -334,6 +404,13 @@ export class FastModelPicker implements Disposable {
     const camera = this.world.camera.three;
     const fragments = this.components.get(FragmentsManager);
 
+    // Sync clipping planes onto the id shader so it discards clipped
+    // geometry — without this the picker would happily return items
+    // that are hidden by an active section plane.
+    const planes = renderer.clippingPlanes ?? [];
+    this._idMaterial.clippingPlanes = planes;
+    this._idMaterial.clipping = planes.length > 0;
+
     const prevTarget = renderer.getRenderTarget();
     const prevAutoClear = renderer.autoClear;
     const prevClearColor = renderer.getClearColor(new THREE.Color());
@@ -397,72 +474,115 @@ export class FastModelPicker implements Disposable {
   }
 
   /**
-   * Single-pass render of every BIM model into the picker's color
-   * target with the depth-encoding shader as `scene.overrideMaterial`.
+   * Renders the picker's color target with the BIM tile shells using
+   * the given override-style material, swapped in **per-mesh** rather
+   * than via `scene.overrideMaterial`.
    *
-   * Non-BIM scene contents (lights, helpers, the user's own meshes)
-   * are skipped by hiding the world scene's children except each
-   * model's `model.object` for the duration of the render. Same
-   * visibility-toggle pattern as {@link renderIdPass}; here we only
-   * need one render call because we don't differentiate models.
+   * Why per-mesh swap and not `scene.overrideMaterial`: fragments runs
+   * its own LOD/visibility logic on tile shells (`mesh.visible`
+   * toggled internally based on current LOD stage and frustum). At
+   * the moment we render, most tile shells are flagged invisible —
+   * `overrideMaterial` then renders nothing and we read back a
+   * cleared pixel. Per-mesh swap mirrors what {@link renderIdPass}
+   * does; we also force each shell visible for the duration of the
+   * render so fragments' culling decisions don't blank our output.
    *
-   * Honours the renderer's clipping planes so the picked depth matches
-   * what's actually visible after clipping.
+   * Honours the renderer's clipping planes so picked depth/normal
+   * match what's actually rendered on screen.
    */
-  private renderDepthPass() {
+  private renderWithTileMaterial(material: THREE.ShaderMaterial) {
     const renderer = this.world.renderer!.three;
-    // `world.scene.three` is typed as `Object3D` in the abstraction
-    // layer, but in practice it is always a `THREE.Scene` and we need
-    // its `overrideMaterial` slot for the depth pass.
-    const scene = this.world.scene.three as THREE.Scene;
+    const scene = this.world.scene.three;
     const camera = this.world.camera.three;
     const fragments = this.components.get(FragmentsManager);
 
-    // Sync clipping planes onto the override material so geometry that
-    // would be clipped by the main render is also clipped here. Without
-    // this the picked depth could come from a fragment the user can't
-    // actually see.
+    // Sync clipping planes onto the swap material.
     const planes = renderer.clippingPlanes ?? [];
-    this._depthMaterial.clippingPlanes = planes;
-    this._depthMaterial.clipping = planes.length > 0;
+    material.clippingPlanes = planes;
+    material.clipping = planes.length > 0;
 
     const prevTarget = renderer.getRenderTarget();
     const prevAutoClear = renderer.autoClear;
-    const prevOverride = scene.overrideMaterial;
     const prevClearColor = renderer.getClearColor(new THREE.Color());
     const prevClearAlpha = renderer.getClearAlpha();
 
-    // Hide every direct child of the world scene that isn't a BIM
-    // model object. Lights and most helpers are non-mesh and won't
-    // render anyway, but any user-added Mesh would otherwise pollute
-    // the depth buffer.
-    const bimObjects = new Set<THREE.Object3D>();
-    for (const [, model] of fragments.list) bimObjects.add(model.object);
-    const visibilityBefore = new Map<THREE.Object3D, boolean>();
+    // Per-mesh material + visibility swap. We only touch shells that
+    // carry the `id` attribute — those are the BIM tile shells.
+    // LOD-stage line meshes (no `id`) are hidden so they don't write
+    // into our pick buffer.
+    // Only touch shells that fragments currently has visible. Forcing
+    // hidden tiles visible leaks stale LOD-stage geometry into the
+    // pick — those tiles sit at slightly different depths than the
+    // active ones and would dominate `gl_FragCoord.z` at the cursor.
+    const matSwap = new Map<
+      THREE.Mesh,
+      THREE.Material | THREE.Material[]
+    >();
+    const hiddenLines: THREE.Object3D[] = [];
+    for (const [, model] of fragments.list) {
+      model.object.traverse((child) => {
+        if (!(child instanceof THREE.Mesh)) return;
+        const geom = child.geometry as THREE.BufferGeometry | undefined;
+        if (!geom) return;
+        if (!geom.attributes || !geom.attributes.id) {
+          if (child.visible) {
+            hiddenLines.push(child);
+            child.visible = false;
+          }
+          return;
+        }
+        // Mirror the id pass: we only rasterize tiles fragments has
+        // currently flagged visible. Forcing hidden tiles visible
+        // would render stale LOD-stage geometry that sits at slightly
+        // different depths than the active tiles.
+        if (!child.visible) return;
+        matSwap.set(child, child.material);
+        child.material = material;
+      });
+    }
+
+    // Hide non-BIM meshes for the duration of the render.
+    const bimRoots = new Set<THREE.Object3D>();
+    for (const [, model] of fragments.list) bimRoots.add(model.object);
+    const inBimSubtree = (obj: THREE.Object3D) => {
+      let p: THREE.Object3D | null = obj;
+      while (p) {
+        if (bimRoots.has(p)) return true;
+        p = p.parent;
+      }
+      return false;
+    };
+    const nonBimVisibility = new Map<THREE.Object3D, boolean>();
     scene.traverse((child) => {
       if (child === scene) return;
-      if (bimObjects.has(child)) return;
-      // Only stash + hide children that are renderable; preserves the
-      // hierarchy without disturbing transform-only nodes.
-      if ((child as THREE.Mesh).isMesh) {
-        visibilityBefore.set(child, child.visible);
-        child.visible = false;
-      }
+      if (!(child as THREE.Mesh).isMesh) return;
+      if (inBimSubtree(child)) return;
+      nonBimVisibility.set(child, child.visible);
+      child.visible = false;
     });
 
     renderer.setRenderTarget(this._renderTarget!);
     renderer.setClearColor(0x000000, 0);
     renderer.autoClear = false;
     renderer.clear(true, true, false);
-    scene.overrideMaterial = this._depthMaterial;
     renderer.render(scene, camera);
 
-    scene.overrideMaterial = prevOverride;
-    for (const [obj, was] of visibilityBefore) obj.visible = was;
+    // Restore everything.
+    for (const [mesh, mat] of matSwap) mesh.material = mat;
+    for (const obj of hiddenLines) obj.visible = true;
+    for (const [obj, was] of nonBimVisibility) obj.visible = was;
 
     renderer.setRenderTarget(prevTarget);
     renderer.autoClear = prevAutoClear;
     renderer.setClearColor(prevClearColor, prevClearAlpha);
+  }
+
+  private renderDepthPass() {
+    this.renderWithTileMaterial(this._depthMaterial);
+  }
+
+  private renderNormalPass() {
+    this.renderWithTileMaterial(this._normalMaterial);
   }
 
   private restoreOriginalMaterials() {
@@ -500,22 +620,48 @@ export class FastModelPicker implements Disposable {
   // ---------------------------------------------------------------------------
 
   private buildIdMaterial(): THREE.ShaderMaterial {
+    // Clipping planes are honoured manually rather than via three's
+    // `<clipping_planes_*>` chunk includes — those don't reliably
+    // resolve in `ShaderMaterial` (we already saw `<packing>` silently
+    // fail to expand). We replicate three's convention exactly so the
+    // `clippingPlanes` uniform three auto-sets when `material.clipping
+    // = true && clippingPlanes.length > 0` works as expected:
+    //   `vClipPosition = -(modelViewMatrix * position).xyz`
+    //   discard when `dot(vClipPosition, plane.xyz) > plane.w`
+    // `NUM_CLIPPING_PLANES` is the define three injects automatically
+    // based on `material.clippingPlanes.length`.
     return new THREE.ShaderMaterial({
       uniforms: { modelByte: { value: 1 } },
       vertexShader: `
         attribute float id;
         varying float vId;
+        #if NUM_CLIPPING_PLANES > 0
+          varying vec3 vClipPosition;
+        #endif
         void main() {
           vId = id;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          #if NUM_CLIPPING_PLANES > 0
+            vClipPosition = -mvPosition.xyz;
+          #endif
+          gl_Position = projectionMatrix * mvPosition;
         }
       `,
       fragmentShader: `
         precision highp float;
         uniform float modelByte;
         varying float vId;
-
+        #if NUM_CLIPPING_PLANES > 0
+          varying vec3 vClipPosition;
+          uniform vec4 clippingPlanes[NUM_CLIPPING_PLANES];
+        #endif
         void main() {
+          #if NUM_CLIPPING_PLANES > 0
+            for (int i = 0; i < NUM_CLIPPING_PLANES; i++) {
+              vec4 plane = clippingPlanes[i];
+              if (dot(vClipPosition, plane.xyz) > plane.w) discard;
+            }
+          #endif
           float id = vId;
           float b1 = floor(id / 65536.0);
           float b2 = floor(mod(id / 256.0, 256.0));
@@ -542,17 +688,101 @@ export class FastModelPicker implements Disposable {
    * see {@link unpackDepthFromRGBA} below.
    */
   private buildDepthMaterial(): THREE.ShaderMaterial {
+    // Depth packed manually instead of via three's `#include <packing>`
+    // chunk — `ShaderMaterial` doesn't reliably resolve chunk includes
+    // for custom shaders, and we were silently getting back unrelated
+    // bytes that decoded to garbage.
+    //
+    // Convention (must mirror `unpackDepthFromRGBA` below):
+    //   r = fract(v * 256^3)  (least significant)
+    //   g = fract(v * 256^2)
+    //   b = fract(v * 256)
+    //   a = v                 (most significant)
+    // The `r.yzw -= r.xyz / 256` step shaves the residual from each
+    // higher component so the encoded value is exact. The final
+    // `* 256/255` upscale ensures `v = 1.0` lands at all-255 bytes
+    // rather than rolling over to 0.
     return new THREE.ShaderMaterial({
       uniforms: {},
       vertexShader: `
+        #if NUM_CLIPPING_PLANES > 0
+          varying vec3 vClipPosition;
+        #endif
         void main() {
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          #if NUM_CLIPPING_PLANES > 0
+            vClipPosition = -mvPosition.xyz;
+          #endif
+          gl_Position = projectionMatrix * mvPosition;
         }
       `,
       fragmentShader: `
-        #include <packing>
+        #if NUM_CLIPPING_PLANES > 0
+          varying vec3 vClipPosition;
+          uniform vec4 clippingPlanes[NUM_CLIPPING_PLANES];
+        #endif
         void main() {
-          gl_FragColor = packDepthToRGBA(gl_FragCoord.z);
+          #if NUM_CLIPPING_PLANES > 0
+            for (int i = 0; i < NUM_CLIPPING_PLANES; i++) {
+              vec4 plane = clippingPlanes[i];
+              if (dot(vClipPosition, plane.xyz) > plane.w) discard;
+            }
+          #endif
+          float v = gl_FragCoord.z;
+          vec4 r = vec4(
+            fract(v * 16777216.0),
+            fract(v * 65536.0),
+            fract(v * 256.0),
+            v
+          );
+          r.yzw -= r.xyz * (1.0 / 256.0);
+          gl_FragColor = r * (256.0 / 255.0);
+        }
+      `,
+      side: THREE.DoubleSide,
+    });
+  }
+
+  /**
+   * World-space normal in RGB. Handles backfaces by flipping the
+   * encoded normal so consumers always get the surface they're looking
+   * at. Decode side: `(rgb * 2 - 1)` → renormalize.
+   */
+  private buildNormalMaterial(): THREE.ShaderMaterial {
+    return new THREE.ShaderMaterial({
+      uniforms: {},
+      vertexShader: `
+        varying vec3 vWorldNormal;
+        #if NUM_CLIPPING_PLANES > 0
+          varying vec3 vClipPosition;
+        #endif
+        void main() {
+          vWorldNormal = normalize(
+            (modelMatrix * vec4(normal, 0.0)).xyz
+          );
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          #if NUM_CLIPPING_PLANES > 0
+            vClipPosition = -mvPosition.xyz;
+          #endif
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vWorldNormal;
+        #if NUM_CLIPPING_PLANES > 0
+          varying vec3 vClipPosition;
+          uniform vec4 clippingPlanes[NUM_CLIPPING_PLANES];
+        #endif
+        void main() {
+          #if NUM_CLIPPING_PLANES > 0
+            for (int i = 0; i < NUM_CLIPPING_PLANES; i++) {
+              vec4 plane = clippingPlanes[i];
+              if (dot(vClipPosition, plane.xyz) > plane.w) discard;
+            }
+          #endif
+          vec3 n = normalize(vWorldNormal);
+          if (!gl_FrontFacing) n = -n;
+          gl_FragColor = vec4(n * 0.5 + 0.5, 1.0);
         }
       `,
       side: THREE.DoubleSide,

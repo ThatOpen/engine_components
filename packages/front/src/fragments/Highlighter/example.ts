@@ -107,14 +107,11 @@ await Promise.all(
   Next, we'll configure the highlighter component. The setup process is straightforward and can be done as follows:
 */
 
-// The Raycaster has a `useFastItemPicking` flag that resolves the
-// pick entirely on the GPU (one render + 4-byte readback) and skips
-// the worker raycast for click selection. The Highlighter sits on top
-// of this, so flipping the flag here makes click-select feel instant
-// even on large models. Snap-aware tools can still call `castRay`
-// with `snappingClasses` and they'll fall back to the worker path.
-const raycaster = components.get(OBC.Raycasters).get(world);
-raycaster.useFastItemPicking = true;
+// `castRay` resolves picks entirely on the GPU when no snap classes
+// are requested — one id + depth + normal render and a few bytes of
+// readback, no worker round-trip. Snap-aware calls still go through
+// the worker path. Nothing to enable; this is the default.
+components.get(OBC.Raycasters).get(world);
 
 const highlighter = components.get(OBF.Highlighter);
 highlighter.setup({
