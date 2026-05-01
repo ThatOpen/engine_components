@@ -87,7 +87,9 @@ export class AngleMeasurement extends Measurement<Angle, "angle"> {
       }
     });
 
-    this.onPointerStop.add(() => this.updatePreview());
+    // Drive the preview off the per-frame pick the base class
+    // already runs; `lastPick` is the freshest snap-aware result.
+    this.onPointerMove.add(() => this.updatePreview());
 
     this.onVisibilityChange.add((value) => {
       for (const [, visual] of this._visuals) {
@@ -210,12 +212,10 @@ export class AngleMeasurement extends Measurement<Angle, "angle"> {
     this._temp.visual = this.createAngleVisual(this._temp.angle);
   }
 
-  private async updatePreview() {
+  private updatePreview() {
     if (!this.world) return;
 
-    const pickResult = await this._vertexPicker.get({
-      snappingClasses: this.snappings,
-    });
+    const pickResult = this.lastPick;
     if (!pickResult?.point) return;
     const cursor = pickResult.point;
 

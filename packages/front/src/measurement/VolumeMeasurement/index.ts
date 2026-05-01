@@ -20,6 +20,14 @@ export class VolumeMeasurement extends Measurement<Volume, "volume"> {
    */
   modes: VolumeMeasurerModes[number][] = ["free"];
 
+  /**
+   * Volume measurement picks whole items, not points / edges /
+   * surfaces inside them — so snap classes carry no meaning here.
+   * Overriding to `undefined` skips the SnapResolver hop and the
+   * picker just returns the raw GPU-pick hit.
+   */
+  override snappings = undefined;
+
   private _mode: VolumeMeasurerModes[number] = "free";
 
   get mode(): VolumeMeasurerModes[number] {

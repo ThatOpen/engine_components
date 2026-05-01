@@ -5,7 +5,7 @@
 
   The area measurement tool lets users define a polygon by clicking points in the scene, closes it on Enter, and displays the computed area persistently in the 3D view.
 
-  This tutorial covers configuring the tool with a color; placing area measurements by double-clicking boundary points and pressing Enter to close the polygon; auto-fitting the camera to each new measurement on creation; deleting individual measurements by hovering and pressing Delete; reading all area values from the measurements list; clearing all measurements at once; and enabling synchronous vertex picking for faster snapping by pre-generating mesh geometry.
+  This tutorial covers configuring the tool with a color; placing area measurements by double-clicking boundary points and pressing Enter to close the polygon; auto-fitting the camera to each new measurement on creation; deleting individual measurements by hovering and pressing Delete; reading all area values from the measurements list; and clearing all measurements at once.
 
   By the end, you'll have a fully working polygon area measurement tool with persistent results, camera fit on creation, and configurable picking performance.
 
@@ -17,6 +17,10 @@ import * as THREE from "three";
 import Stats from "stats.js";
 import * as OBC from "@thatopen/components";
 import * as BUI from "@thatopen/ui";
+// Local worker bundle so the GPU picker decodes localId from tile.ids
+// correctly. Swap to `OBC.FragmentsManager.getWorker()` for the
+// unpkg-hosted bundle once published.
+import workerUrl from "@thatopen/fragments/worker?url";
 // You have to import * as OBF from "@thatopen/components-front"
 import * as OBF from "../..";
 import * as FRAGS from "@thatopen/fragments";
@@ -51,9 +55,8 @@ components.init();
   Now, let's configure the FragmentsManager. This will allow us to load models effortlessly and start manipulating them with ease:
 */
 
-// `FragmentsManager.getWorker()` fetches the matching worker for this library version from unpkg and returns a blob URL.
-// You can also pass your own URL to `fragments.init(...)` if you'd rather host the worker yourself.
-const workerUrl = await OBC.FragmentsManager.getWorker();
+// Local worker imported above. To fall back to unpkg, replace the
+// import with `const workerUrl = await OBC.FragmentsManager.getWorker();`.
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 
@@ -168,74 +171,6 @@ measurer.list.onItemAdded.add((area) => {
 });
 
 /* MD
-  ### 🧹 Synchronous Picking
-  ---
-  By default, the picking is asynchronous, which means that the picking result is not available immediately. This saves some memory. However, you can enable synchronous picking by setting the `pickerMode` property to `GraphicVertexPickerMode.SYNCHRONOUS`. This will make the picking result available a lot faster. To do that, you'll need to generate the geometries of the models and add them to the world.meshes collection.
-*/
-
-const meshes: THREE.Mesh[] = [];
-
-// Add picking meshes (deduplicating geometries to save memory)
-for (const [, model] of fragments.list) {
-  const idsWithGeometry = await model.getItemsIdsWithGeometry();
-  const allMeshesData = await model.getItemsGeometry(idsWithGeometry);
-
-  const geometries = new Map<number, THREE.BufferGeometry>();
-
-  for (const itemId in allMeshesData) {
-    const meshData = allMeshesData[itemId];
-    for (const geomData of meshData) {
-      if (
-        !geomData.positions ||
-        !geomData.indices ||
-        !geomData.transform ||
-        !geomData.representationId
-      ) {
-        continue;
-      }
-
-      const representationId = geomData.representationId;
-      if (!geometries.has(representationId)) {
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute(
-          "position",
-          new THREE.Float32BufferAttribute(geomData.positions, 3),
-        );
-        geometry.setIndex(Array.from(geomData.indices));
-        geometries.set(representationId, geometry);
-      }
-
-      const geometry = geometries.get(representationId)!;
-
-      const mesh = new THREE.Mesh(geometry);
-      mesh.applyMatrix4(geomData.transform);
-      mesh.applyMatrix4(model.object.matrixWorld);
-      mesh.updateWorldMatrix(true, true);
-      meshes.push(mesh);
-    }
-  }
-}
-
-const pastDelay = measurer.delay;
-const makeSynchronous = async (value: boolean) => {
-  if (value) {
-    measurer.pickerMode = OBF.GraphicVertexPickerMode.SYNCHRONOUS;
-    measurer.delay = 0;
-    for (const mesh of meshes) {
-      world.meshes.add(mesh);
-    }
-    return;
-  }
-  measurer.pickerMode = OBF.GraphicVertexPickerMode.DEFAULT;
-  measurer.delay = pastDelay;
-  for (const mesh of meshes) {
-    world.meshes.delete(mesh);
-  }
-};
-
-await makeSynchronous(true);
-
-/* MD
   ### 🧩 Adding some UI (optional but recommended)
   We will use the `@thatopen/ui` library to add some simple and cool UI elements to our app. First, we need to call the `init` method of the `BUI.Manager` class to initialize the library:
 */
@@ -271,13 +206,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           }}">  
         </bim-checkbox>  
         
-        <bim-checkbox checked label="Synchronous Picking"
-          @change="${({ target }: { target: BUI.Checkbox }) => {
-            makeSynchronous(target.value);
-          }}">
-        </bim-checkbox>
-
-        <bim-number-input
+<bim-number-input
           slider step="1" label="Picker Size" value="${measurer.pickerSize}" min="2" max="20"
           @change="${({ target }: { target: BUI.NumberInput }) => {
             measurer.pickerSize = target.value;

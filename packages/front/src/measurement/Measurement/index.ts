@@ -77,12 +77,41 @@ export abstract class Measurement<
   readonly onPointerMove = new OBC.Event();
   readonly onStateChanged = new OBC.Event<MeasurementStateChange[]>();
 
+  /**
+   * Most recent vertex-picker result for this measurement. Updated by
+   * the per-frame RAF-coalesced pick that drives the snap marker.
+   * Subclasses (e.g. {@link LengthMeasurement}) read this instead of
+   * issuing their own `castRay` so we never do more than one pick per
+   * animation frame regardless of how many subscribers care about
+   * pointer position.
+   */
+  protected lastPick: any = null;
+
   private pointerStopTimeout: number | null = null;
+
+  /** RAF coalescing for the snap-marker preview the picker draws on
+   *  every move. `pointermove` fires faster than the renderer paints;
+   *  more than one pick per frame would just stall on `readPixels`. */
+  private _markerRafScheduled = false;
+
+  /** True while the user is orbiting / panning the camera. We skip
+   *  picks while this is set — the cursor is "moving" only relative
+   *  to the world, not to anything the user actually wants to snap
+   *  to, and picking during a drag wastes work and visually jitters
+   *  the marker. */
+  private _cameraInteracting = false;
+
+  /** Listeners we register on the camera controls to track
+   *  interaction state. Stored so we can detach them on disable. */
+  private _cameraStartHandler: (() => void) | null = null;
+  private _cameraEndHandler: (() => void) | null = null;
+
+  /** Pointer-leave handler — hides the marker when the cursor leaves
+   *  the canvas (or floats over a UI panel sitting above it). */
+  private _pointerLeaveHandler: (() => void) | null = null;
 
   private onMove = () => {
     if (!this.enabled) return;
-
-    this._vertexPicker.updatePointer();
 
     if (this.pointerStopTimeout !== null) {
       clearTimeout(this.pointerStopTimeout);
@@ -93,8 +122,60 @@ export abstract class Measurement<
       this.onPointerStop.trigger();
     }, this.delay);
 
-    this.onPointerMove.trigger();
+    // Drive a single RAF-coalesced pick that both positions the snap
+    // marker (side effect of `_vertexPicker.get`) and stores the
+    // result in `lastPick` so subclasses (e.g. preview-line updates)
+    // can reuse it without doing a second pick on the same frame.
+    // `onPointerMove` is fired once per pick (after it resolves), not
+    // on every raw `pointermove`, so subscribers always see a fresh
+    // `lastPick`.
+    this.scheduleMarkerUpdate();
   };
+
+  private scheduleMarkerUpdate() {
+    if (this._markerRafScheduled) return;
+    this._markerRafScheduled = true;
+    requestAnimationFrame(async () => {
+      try {
+        if (!this.enabled) return;
+        // Skip picks while the user is dragging the camera — they're
+        // moving the world, not aiming at a snap target. The pick
+        // would also waste GPU readback while the renderer is busy
+        // re-drawing for camera motion.
+        if (this._cameraInteracting) return;
+        try {
+          this.lastPick = await this._vertexPicker.get({
+            snappingClasses: this.snappings,
+          });
+        } catch {
+          // Picker errors are non-fatal; a transient world /
+          // fragments race shouldn't bubble.
+          this.lastPick = null;
+        }
+        // Marker position was updated by `_vertexPicker.get`; that
+        // changes the underlying THREE node, but the visual painter
+        // (CSS2D-style render in `world.renderer`) only fires when
+        // *something* explicitly drives the renderer. During pure
+        // pointer movement no other code is ticking the renderer, so
+        // the user would see the marker stuck at its last paint
+        // position until the cursor stopped. Driving fragments here
+        // forces the world to repaint with the fresh marker pose.
+        // Marker position is updated; the CSS2DRenderer that paints
+        // it only fires on `world.renderer.update()`. During a pure
+        // pointer move nothing else is ticking the renderer, so
+        // without this call the marker visually freezes until the
+        // user stops the cursor.
+        this._world?.renderer?.update();
+        this.onPointerMove.trigger();
+      } finally {
+        // Released last so a new pick can't kick off until this one
+        // finishes — picks are bursty, and we'd otherwise queue
+        // multiple in-flight when the cursor moves faster than each
+        // pick resolves.
+        this._markerRafScheduled = false;
+      }
+    });
+  }
 
   private onKeydown = (e: KeyboardEvent) => {
     if (!(this.enabled && e.key === "Escape")) return;
@@ -117,10 +198,58 @@ export abstract class Measurement<
 
     viewerContainer.removeEventListener("pointermove", this.onMove);
     window.removeEventListener("keydown", this.onKeydown);
+    if (this._pointerLeaveHandler) {
+      viewerContainer.removeEventListener(
+        "pointerleave",
+        this._pointerLeaveHandler,
+      );
+      this._pointerLeaveHandler = null;
+    }
+    // Camera-control listeners: track when the user is actively
+    // orbiting / panning so we can skip picks during drag.
+    const controls = (this.world.camera as any)?.controls;
+    if (controls && this._cameraStartHandler && this._cameraEndHandler) {
+      controls.removeEventListener("controlstart", this._cameraStartHandler);
+      controls.removeEventListener("controlend", this._cameraEndHandler);
+      this._cameraStartHandler = null;
+      this._cameraEndHandler = null;
+    }
 
     if (active) {
       viewerContainer.addEventListener("pointermove", this.onMove);
       window.addEventListener("keydown", this.onKeydown);
+
+      // Hide the snap marker the moment the cursor leaves the
+      // canvas (or hovers above a floating UI panel layered on top
+      // of the canvas — same `pointerleave` semantics).
+      this._pointerLeaveHandler = () => {
+        if (this._vertexPicker.marker) {
+          this._vertexPicker.marker.visible = false;
+        }
+        // Repaint so the hidden marker actually disappears.
+        this._world?.renderer?.update();
+      };
+      viewerContainer.addEventListener(
+        "pointerleave",
+        this._pointerLeaveHandler,
+      );
+
+      if (controls) {
+        this._cameraStartHandler = () => {
+          this._cameraInteracting = true;
+          // Hide the marker for the duration of the camera drag —
+          // its world-space position is stale relative to where
+          // the user is looking now.
+          if (this._vertexPicker.marker) {
+            this._vertexPicker.marker.visible = false;
+          }
+        };
+        this._cameraEndHandler = () => {
+          this._cameraInteracting = false;
+        };
+        controls.addEventListener("controlstart", this._cameraStartHandler);
+        controls.addEventListener("controlend", this._cameraEndHandler);
+      }
     }
   }
 
@@ -311,10 +440,17 @@ export abstract class Measurement<
     return this._color;
   }
 
+  /**
+   * @deprecated Sync mode is gone — picks are fast enough through
+   * the unified GPU-pick path that the synchronous workaround is no
+   * longer needed. Reading still returns the underlying picker mode
+   * for compatibility, but setting it has no functional effect.
+   */
   get pickerMode() {
     return this._vertexPicker.mode;
   }
 
+  /** @deprecated See the getter. */
   set pickerMode(value: GraphicVertexPickerMode) {
     this._vertexPicker.mode = value;
   }

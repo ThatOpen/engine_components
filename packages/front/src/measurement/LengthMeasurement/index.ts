@@ -15,6 +15,20 @@ export class LengthMeasurement extends Measurement<Line, "length"> {
     line: new Line(),
   };
 
+  /** Last edge endpoints used to drive the preview in `edge` mode.
+   *  When the new pick resolves to the same edge (same endpoints
+   *  within a small epsilon), we skip the dimension rebuild that
+   *  would otherwise fire every frame and visibly blink. */
+  private _lastEdgeKey: string | null = null;
+
+  /** Consecutive null/no-edge picks since the last good one. Used as
+   *  a small grace window so a single sub-pixel pick miss doesn't
+   *  hide the dimension line and visibly flicker the endpoint
+   *  marker. */
+  private _edgeMissStreak = 0;
+  private static readonly EDGE_MISS_TOLERANCE = 3;
+
+
   /**
    * The possible modes in which a measurement of this type may be created.
    */
@@ -59,7 +73,10 @@ export class LengthMeasurement extends Measurement<Line, "length"> {
       if (lineElement) this.lines.delete(lineElement);
     });
 
-    this.onPointerStop.add(() => this.updatePreviewLine());
+    // The base class fires `onPointerMove` once per RAF after its
+    // pick resolves, with the result available on `this.lastPick`.
+    // We just consume that — no second pick on this frame.
+    this.onPointerMove.add(() => this.updatePreviewLine());
     this.onEnabledChange.add((enabled) => {
       if (!enabled) return;
       if (this.mode === "edge") {
@@ -73,9 +90,12 @@ export class LengthMeasurement extends Measurement<Line, "length"> {
       throw new Error("Measurement: world is need!");
     }
 
-    const pickResult = await this._vertexPicker.get({
-      snappingClasses: this.snappings,
-    });
+    // Prefer the latest per-frame pick (matches what the snap marker
+    // is showing), fall back to a fresh pick when the user clicks
+    // before any pointer-move has fired in this session.
+    const pickResult =
+      this.lastPick ??
+      (await this._vertexPicker.get({ snappingClasses: this.snappings }));
 
     if (this.mode === "free") {
       if (!pickResult?.point) return;
@@ -102,14 +122,12 @@ export class LengthMeasurement extends Measurement<Line, "length"> {
     }
   }
 
-  private async updatePreviewLine() {
+  private updatePreviewLine() {
     if (!this.world) {
       throw new Error("Measurement: world is need!");
     }
 
-    const pickResult = await this._vertexPicker.get({
-      snappingClasses: this.snappings,
-    });
+    const pickResult = this.lastPick;
 
     if (this.mode === "free") {
       if (!pickResult?.point) return;
@@ -125,11 +143,42 @@ export class LengthMeasurement extends Measurement<Line, "length"> {
         | THREE.Vector3
         | undefined;
 
-      if (this._temp.dimension) this._temp.dimension.visible = !!(p1 && p2);
-      if (!(p1 && p2)) return;
+      if (!(p1 && p2)) {
+        // Tolerate a few consecutive misses before hiding — picks
+        // can flicker null at sub-pixel boundaries and that would
+        // visibly blink the endpoint marker / measurement label.
+        this._edgeMissStreak += 1;
+        if (
+          this._edgeMissStreak > LengthMeasurement.EDGE_MISS_TOLERANCE &&
+          this._temp.dimension &&
+          this._temp.dimension.visible
+        ) {
+          this._temp.dimension.visible = false;
+          this._lastEdgeKey = null;
+        }
+        return;
+      }
+      this._edgeMissStreak = 0;
+      // Short-circuit when the snap resolved to the same edge as
+      // the previous frame. Without this, we re-assign the dimension
+      // endpoints every RAF and the dimension visibly flickers even
+      // though the geometry didn't change. Quantised key matches
+      // `SnapResolver`'s 1mm grid.
+      const key = edgeKey(p1, p2);
+      if (key === this._lastEdgeKey) {
+        // Still ensure visibility is on (e.g. coming back from a
+        // null streak), but only flip it if needed — repeated
+        // assignments to the same value can re-trigger painters.
+        if (this._temp.dimension && !this._temp.dimension.visible) {
+          this._temp.dimension.visible = true;
+        }
+        return;
+      }
+      this._lastEdgeKey = key;
       this._temp.line.start.copy(p1);
       this._temp.line.end.copy(p2);
       if (!this._temp.dimension) return;
+      if (!this._temp.dimension.visible) this._temp.dimension.visible = true;
       this._temp.dimension.start = this._temp.line.start;
       this._temp.dimension.end = this._temp.line.end;
     }
@@ -182,4 +231,16 @@ export class LengthMeasurement extends Measurement<Line, "length"> {
     if (!lineElement) return;
     this.list.delete(lineElement.line);
   };
+}
+
+/**
+ * Canonical key for an edge defined by two endpoints. Endpoints are
+ * quantised to a 1mm grid (matches `SnapResolver`'s vertex bin) and
+ * sorted so `(a, b)` and `(b, a)` collapse to the same key.
+ */
+function edgeKey(a: THREE.Vector3, b: THREE.Vector3): string {
+  const Q = 1000;
+  const ka = `${Math.round(a.x * Q)},${Math.round(a.y * Q)},${Math.round(a.z * Q)}`;
+  const kb = `${Math.round(b.x * Q)},${Math.round(b.y * Q)},${Math.round(b.z * Q)}`;
+  return ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
 }

@@ -101,7 +101,10 @@ export class AreaMeasurement extends Measurement<Area, "area"> {
       }
     });
 
-    this.onPointerStop.add(() => this.updatePreview());
+    // The base class fires `onPointerMove` once per RAF after its
+    // pick resolves, with the result on `this.lastPick`. We consume
+    // that — no second pick on the same frame — for a live preview.
+    this.onPointerMove.add(() => this.updatePreview());
 
     this._temp.lines.onItemAdded.add((line) => (line.label.visible = false));
     this._temp.lines.onBeforeDelete.add((line) => line.dispose());
@@ -126,27 +129,50 @@ export class AreaMeasurement extends Measurement<Area, "area"> {
   }
 
   private computeLineElements = () => {
-    this._temp.lines.clear();
     const points = [...this._temp.area.points];
     if (this._temp.area.isPointInPlane(this._temp.point)) {
       points.push(this._temp.point);
     }
-    if (points.length < 2 || !this.world) return;
-    for (let i = 0; i < points.length; i++) {
+    if (!this.world) {
+      this._temp.lines.clear();
+      return;
+    }
+    if (points.length < 2) {
+      this._temp.lines.clear();
+      return;
+    }
+    // Patch existing line elements in place when the polygon's
+    // vertex count hasn't changed — committed points stay put
+    // between cursor moves, so destroying-and-recreating them on
+    // every RAF visibly flickers the line endpoints. We only do a
+    // full rebuild when the user commits a new point (count
+    // changes).
+    const desired = points.length;
+    const existing = [...this._temp.lines];
+    if (existing.length !== desired) {
+      this._temp.lines.clear();
+      for (let i = 0; i < desired; i++) {
+        const start = points[i];
+        const end = points[(i + 1) % desired];
+        const line = new Line(start, end);
+        const lineElement = this.createLineElement(line);
+        this._temp.lines.add(lineElement);
+      }
+      return;
+    }
+    for (let i = 0; i < desired; i++) {
       const start = points[i];
-      const end = points[(i + 1) % points.length]; // Connect last point to first
-      const line = new Line(start, end);
-      const lineElement = this.createLineElement(line);
-      this._temp.lines.add(lineElement);
+      const end = points[(i + 1) % desired];
+      const lineElement = existing[i];
+      lineElement.start = start;
+      lineElement.end = end;
     }
   };
 
-  private async updatePreview() {
+  private updatePreview() {
     if (!this.enabled || !this.world) return;
 
-    const pickerData = await this._vertexPicker.get({
-      snappingClasses: this.snappings,
-    });
+    const pickerData = this.lastPick;
 
     if (!(pickerData && pickerData.point && this._temp.isDragging)) {
       return;
@@ -239,7 +265,14 @@ export class AreaMeasurement extends Measurement<Area, "area"> {
   endCreation = () => {
     if (!this.enabled) return;
     this._temp.isDragging = false;
-    if (this._temp.area.points.size >= 3) {
+    if (
+      this._temp.area.points.size >= 3 &&
+      // Reject degenerate areas (collinear points, duplicate clicks,
+      // or face polygons that resolved to a sliver). 1mm² is small
+      // enough that any real user-intended area beats it, large
+      // enough to absorb numerical noise from `THREE.ShapeUtils.area`.
+      this._temp.area.rawValue > 1e-6
+    ) {
       this.list.add(this._temp.area.clone());
     }
     this._temp.area.points.clear();
