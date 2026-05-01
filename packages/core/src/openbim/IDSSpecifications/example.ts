@@ -154,47 +154,84 @@ const originalColors = new Map<
   { color: number; transparent: boolean; opacity: number }
 >();
 
+// Apply (or restore) the ghost-mode visual to one material. Pulled
+// out so the same logic runs for the materials present at toggle
+// time AND for materials added later while ghost mode is still on
+// (e.g. a model loaded mid-session, or a highlight slot that gets
+// stamped from another flow without `userData.customId`).
+const ghostMaterial = (material: FRAGS.BIMMaterial) => {
+  if (material.userData.customId) return;
+  if (originalColors.has(material)) return;
+
+  let color: number | undefined;
+  if ("color" in material) color = material.color.getHex();
+  else color = material.lodColor.getHex();
+
+  // For LOD materials the public `opacity` is ignored by the shader
+  // — what counts is the `lodOpacity` uniform. Save the right one so
+  // we can restore it later.
+  const isLod = "isLodMaterial" in material && (material as any).isLodMaterial;
+  const opacity = isLod ? (material as any).lodOpacity : material.opacity;
+
+  originalColors.set(material, {
+    color,
+    transparent: material.transparent,
+    opacity,
+  });
+
+  material.transparent = true;
+  material.needsUpdate = true;
+  if (isLod) {
+    // LOD shader: `mix(lodOpacity, highlightOpacity, vHighlight)`.
+    // Ghost the LOD layer by writing the uniform directly.
+    (material as any).lodOpacity = 0.05;
+    material.lodColor.setColorName("white");
+  } else {
+    material.opacity = 0.05;
+    material.color.setColorName("white");
+  }
+};
+
+// Subscription that ghosts new materials as they're added to the
+// model materials list. `null` while ghost mode is off; populated
+// with the live event listener while it's on so we can detach
+// cleanly on restore.
+let ghostSubscription: ((event: { value: FRAGS.BIMMaterial }) => void) | null =
+  null;
+
 const setModelTransparent = (components: OBC.Components) => {
   const fragments = components.get(OBC.FragmentsManager);
 
-  const materials = [...fragments.core.models.materials.list.values()];
-  for (const material of materials) {
-    if (material.userData.customId) continue;
-    // save colors
-    let color: number | undefined;
-    if ("color" in material) {
-      color = material.color.getHex();
-    } else {
-      color = material.lodColor.getHex();
-    }
+  for (const material of fragments.core.models.materials.list.values()) {
+    ghostMaterial(material);
+  }
 
-    originalColors.set(material, {
-      color,
-      transparent: material.transparent,
-      opacity: material.opacity,
-    });
-
-    // set color
-    material.transparent = true;
-    material.opacity = 0.05;
-    material.needsUpdate = true;
-    if ("color" in material) {
-      material.color.setColorName("white");
-    } else {
-      material.lodColor.setColorName("white");
-    }
+  // Pick up materials added later (new model loads, highlight slots
+  // without a `customId`, etc.) and ghost them on the spot.
+  if (!ghostSubscription) {
+    ghostSubscription = ({ value }) => ghostMaterial(value);
+    fragments.core.models.materials.list.onItemSet.add(ghostSubscription);
   }
 };
 
 const restoreModelMaterials = () => {
+  const fragments = components.get(OBC.FragmentsManager);
+
+  if (ghostSubscription) {
+    fragments.core.models.materials.list.onItemSet.remove(ghostSubscription);
+    ghostSubscription = null;
+  }
+
   for (const [material, data] of originalColors) {
     const { color, transparent, opacity } = data;
     material.transparent = transparent;
-    material.opacity = opacity;
-    if ("color" in material) {
-      material.color.setHex(color);
-    } else {
+    const isLod = "isLodMaterial" in material && (material as any).isLodMaterial;
+    if (isLod) {
+      (material as any).lodOpacity = opacity;
       material.lodColor.setHex(color);
+    } else {
+      material.opacity = opacity;
+      material.color.setHex(color);
     }
     material.needsUpdate = true;
   }
@@ -202,7 +239,7 @@ const restoreModelMaterials = () => {
 };
 
 const toggleGhost = () => {
-  if (originalColors.size) {
+  if (ghostSubscription) {
     restoreModelMaterials();
   } else {
     setModelTransparent(components);
