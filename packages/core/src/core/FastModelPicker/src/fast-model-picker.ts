@@ -61,6 +61,14 @@ export class FastModelPicker implements Disposable {
   static readonly MAX_MODELS = 254;
 
   private _renderTarget?: THREE.WebGLRenderTarget;
+  /**
+   * Second pick target dedicated to the 32-bit localId render. We
+   * keep model-byte and localId in two separate single-attachment
+   * targets so the id encoding can use all 4 bytes (the previous
+   * combined target packed model byte + 3-byte id, capping localId
+   * at 2^24 - 1 and silently misreading items past that point).
+   */
+  private _localIdRenderTarget?: THREE.WebGLRenderTarget;
   private _renderTargetSize = new THREE.Vector2();
 
   private _debugCanvas?: HTMLCanvasElement;
@@ -289,6 +297,8 @@ export class FastModelPicker implements Disposable {
     this._normalMaterial.dispose();
     if (this._renderTarget) this._renderTarget.dispose();
     this._renderTarget = undefined;
+    if (this._localIdRenderTarget) this._localIdRenderTarget.dispose();
+    this._localIdRenderTarget = undefined;
     this._originalMaterials.clear();
     this._hiddenLods.length = 0;
     this.onDisposed.trigger();
@@ -300,48 +310,87 @@ export class FastModelPicker implements Disposable {
   // ---------------------------------------------------------------------------
 
   /**
-   * Runs the id render and returns the raw decoded `(modelId, itemId)`
-   * for the cursor pixel. Both public entry points lean on this.
+   * Runs the id renders and returns the raw decoded
+   * `(modelId, itemId)` for the cursor pixel. Two render passes:
+   *
+   *   - Pass 1 (`_renderTarget`): writes the model byte into R via
+   *     the `_idMaterial`. Used solely to disambiguate which model
+   *     owns the picked pixel.
+   *   - Pass 2 (`_localIdRenderTarget`): writes the full 32-bit
+   *     localId across all four bytes via the same `_idMaterial`
+   *     with `mode = 1`.
+   *
+   * Two single-attachment targets instead of MRT keeps the code
+   * portable and the diff small. Both passes use the same scene,
+   * camera and visibility toggling so depth tests resolve to the
+   * same front-most fragment per pixel.
+   *
+   * Both public entry points lean on this.
    */
   private async runIdPass(
     position?: THREE.Vector2,
   ): Promise<{ modelId: string; itemId: number } | null> {
     if (!this.enabled) return null;
-    if (!this._renderTarget || !this.world.renderer) return null;
+    if (!this._renderTarget || !this._localIdRenderTarget) return null;
+    if (!this.world.renderer) return null;
 
     const fragments = this.components.get(FragmentsManager);
     if (!fragments.initialized || fragments.list.size === 0) return null;
 
     const byteToModel = this.applyIdMaterial();
     if (byteToModel.size === 0) {
-      // Nothing to render; restore (in case anything was hidden) and bail.
       this.restoreOriginalMaterials();
       return null;
     }
 
-    this.renderIdPass(byteToModel);
+    // Resolve the cursor NDC up front so both render passes can use it
+    // for scissor clipping and we read back from the same pixel.
+    const pos = position ?? this.mouse.position;
+
+    // Pass 1: model byte → `_renderTarget`. `mode = 0` in the
+    // shared id shader.
+    this._idMaterial.uniforms.mode.value = 0;
+    this.renderIdPass(byteToModel, pos);
+
+    // Pass 2: 32-bit localId → `_localIdRenderTarget`. `mode = 1`
+    // routes the same shader to the pass-through-id branch. Same
+    // per-mesh material swap as pass 1, just a different render
+    // target and uniform.
+    this._idMaterial.uniforms.mode.value = 1;
+    this.renderLocalIdPass(byteToModel, pos);
+
     this.restoreOriginalMaterials();
 
     if (this.debugMode && this._debugCanvas) this.updateDebugCanvas();
 
-    const pos = position ?? this.mouse.position;
-    const pixel = this.readPixelAt(pos);
-    if (!pixel) return null;
+    const modelPixel = this.readPixelAt(this._renderTarget, pos);
+    const idPixel = this.readPixelAt(this._localIdRenderTarget, pos);
+    if (!modelPixel) return null;
 
-    const modelByte = pixel[0];
+    const modelByte = modelPixel[0];
     if (modelByte === 0) return null; // void
 
     const modelId = byteToModel.get(modelByte);
     if (!modelId) return null;
 
-    // eslint-disable-next-line no-bitwise
-    const itemId = (pixel[1] << 16) | (pixel[2] << 8) | pixel[3];
+    if (!idPixel) return null;
+
+    // Unsigned 32-bit reconstruction. JS bitwise operators are
+    // 32-bit *signed*, so a high-bit-set value via `<<` would come
+    // back negative. Multiply for the top byte to stay in unsigned
+    // territory.
+    const itemId =
+      idPixel[0] * 0x1000000 +
+      // eslint-disable-next-line no-bitwise
+      ((idPixel[1] << 16) | (idPixel[2] << 8) | idPixel[3]);
+
     // 0 is the sentinel fragments writes for samples whose two-step
     // localId lookup misses (no `meshes_items` entry, or `local_ids`
     // returns null). Treat decoded 0 as void rather than a real pick.
     if (itemId === 0) return null;
     return { modelId, itemId };
   }
+
 
   /**
    * Walks every fragments model. For each shell mesh that carries the
@@ -398,41 +447,95 @@ export class FastModelPicker implements Disposable {
    * colour they happen to produce into the id target, which decodes as
    * a bogus `(modelByte, itemId)` pair when the cursor lands on one.
    */
-  private renderIdPass(byteToModel: Map<number, string>) {
+  private renderIdPass(byteToModel: Map<number, string>, ndc: THREE.Vector2) {
+    this.renderPickPass(
+      byteToModel,
+      this._renderTarget!,
+      this._idMaterial,
+      true,
+      ndc,
+    );
+  }
+
+  private renderLocalIdPass(
+    byteToModel: Map<number, string>,
+    ndc: THREE.Vector2,
+  ) {
+    this.renderPickPass(
+      byteToModel,
+      this._localIdRenderTarget!,
+      this._idMaterial,
+      false,
+      ndc,
+    );
+  }
+
+  /**
+   * Shared body of both id passes. Iterates models in the same order
+   * as the byte map so depth-test results agree across the two
+   * targets — the front-most pixel for each (byte, localId) lines up.
+   * `setModelByte` is `true` only for the model-byte pass; on the
+   * localId pass the uniform is irrelevant.
+   */
+  private renderPickPass(
+    byteToModel: Map<number, string>,
+    target: THREE.WebGLRenderTarget,
+    material: THREE.ShaderMaterial,
+    setModelByte: boolean,
+    ndc: THREE.Vector2,
+  ) {
     const renderer = this.world.renderer!.three;
     const scene = this.world.scene.three;
     const camera = this.world.camera.three;
     const fragments = this.components.get(FragmentsManager);
 
-    // Sync clipping planes onto the id shader so it discards clipped
-    // geometry — without this the picker would happily return items
-    // that are hidden by an active section plane.
     const planes = renderer.clippingPlanes ?? [];
-    this._idMaterial.clippingPlanes = planes;
-    this._idMaterial.clipping = planes.length > 0;
+    material.clippingPlanes = planes;
+    material.clipping = planes.length > 0;
 
     const prevTarget = renderer.getRenderTarget();
     const prevAutoClear = renderer.autoClear;
     const prevClearColor = renderer.getClearColor(new THREE.Color());
     const prevClearAlpha = renderer.getClearAlpha();
+    const prevScissorTest = renderer.getScissorTest();
+    const prevScissor = renderer.getScissor(new THREE.Vector4());
 
-    renderer.setRenderTarget(this._renderTarget!);
+    renderer.setRenderTarget(target);
     renderer.setClearColor(0x000000, 0);
     renderer.autoClear = false;
+    // Clear the full target before scissoring — clears respect the
+    // scissor box, and we need the unread pixels to be 0 so a stale
+    // pick from a previous call can't bleed through.
+    renderer.setScissorTest(false);
     renderer.clear(true, true, false);
 
-    // Collect every BIM model's root object so we can (a) toggle them
-    // individually during the per-model passes and (b) recognise them
-    // when filtering non-BIM meshes below.
+    // Tight scissor box around the cursor. We only ever read 1 pixel,
+    // so rasterising the rest of the framebuffer is wasted work.
+    // Vertex shading still runs for everything in view (three's
+    // per-mesh frustum culling handles macro-level pruning), but the
+    // fragment shader cost — usually the dominant term on a busy BIM
+    // scene with lots of overdraw — collapses to ~O(SCISSOR_PX²).
+    // 4×4 leaves a 1-pixel margin around the read site to absorb any
+    // sub-pixel rounding in NDC→pixel conversion without missing.
+    const SCISSOR_PX = 4;
+    const tw = target.width;
+    const th = target.height;
+    const cx = Math.floor((ndc.x + 1) * 0.5 * tw);
+    // Match `readPixelAt`'s y mapping (origin at top in NDC, bottom in
+    // framebuffer) so the scissor box is centred on the readback pixel.
+    const cy = Math.floor((ndc.y + 1) * 0.5 * (th - 1));
+    const half = SCISSOR_PX >> 1;
+    const sx = Math.max(0, Math.min(tw - SCISSOR_PX, cx - half));
+    const sy = Math.max(0, Math.min(th - SCISSOR_PX, cy - half));
+    renderer.setScissor(sx, sy, SCISSOR_PX, SCISSOR_PX);
+    renderer.setScissorTest(true);
+
     const objectsByModel = new Map<string, THREE.Object3D>();
     for (const [modelId, model] of fragments.list) {
       objectsByModel.set(modelId, model.object);
     }
     const bimRoots = new Set<THREE.Object3D>(objectsByModel.values());
 
-    // Hide every non-BIM mesh in the world scene for the duration of
-    // the id render. Anything below a BIM root is left alone (the BIM
-    // roots themselves are toggled per pass below).
     const nonBimVisibility = new Map<THREE.Object3D, boolean>();
     const inBimSubtree = (obj: THREE.Object3D) => {
       let p: THREE.Object3D | null = obj;
@@ -460,7 +563,7 @@ export class FastModelPicker implements Disposable {
       const obj = objectsByModel.get(modelId);
       if (!obj) continue;
       obj.visible = true;
-      this._idMaterial.uniforms.modelByte.value = byte;
+      if (setModelByte) material.uniforms.modelByte.value = byte;
       renderer.render(scene, camera);
       obj.visible = false;
     }
@@ -468,6 +571,8 @@ export class FastModelPicker implements Disposable {
     for (const [obj, was] of bimVisibilityBefore) obj.visible = was;
     for (const [obj, was] of nonBimVisibility) obj.visible = was;
 
+    renderer.setScissorTest(prevScissorTest);
+    renderer.setScissor(prevScissor);
     renderer.setRenderTarget(prevTarget);
     renderer.autoClear = prevAutoClear;
     renderer.setClearColor(prevClearColor, prevClearAlpha);
@@ -595,23 +700,31 @@ export class FastModelPicker implements Disposable {
     this._hiddenLods.length = 0;
   }
 
-  private readPixelAt(ndc: THREE.Vector2): Uint8Array | null {
+  private readPixelAt(
+    targetOrNdc: THREE.WebGLRenderTarget | THREE.Vector2,
+    maybeNdc?: THREE.Vector2,
+  ): Uint8Array | null {
+    // Two call shapes — keep `readPixelAt(ndc)` working for the
+    // depth / normal helpers that read from the primary
+    // `_renderTarget`, plus a `readPixelAt(target, ndc)` form for
+    // the id / localId pass that needs to choose which target.
+    let target: THREE.WebGLRenderTarget;
+    let ndc: THREE.Vector2;
+    if (targetOrNdc instanceof THREE.WebGLRenderTarget) {
+      target = targetOrNdc;
+      ndc = maybeNdc!;
+    } else {
+      target = this._renderTarget!;
+      ndc = targetOrNdc;
+    }
     const renderer = this.world.renderer!.three;
     const size = this._renderTargetSize;
-    // NDC [-1..1] → pixel [0..size-1]. Y is bottom-up in WebGL textures.
     const x = Math.floor((ndc.x + 1) * 0.5 * size.x);
     const y = Math.floor((ndc.y + 1) * 0.5 * (size.y - 1));
     const cx = Math.max(0, Math.min(size.x - 1, x));
     const cy = Math.max(0, Math.min(size.y - 1, y));
     const pixels = new Uint8Array(4);
-    renderer.readRenderTargetPixels(
-      this._renderTarget!,
-      cx,
-      cy,
-      1,
-      1,
-      pixels,
-    );
+    renderer.readRenderTargetPixels(target, cx, cy, 1, 1, pixels);
     return pixels;
   }
 
@@ -619,22 +732,26 @@ export class FastModelPicker implements Disposable {
   // Setup / teardown
   // ---------------------------------------------------------------------------
 
+  /**
+   * Single id shader. Reads two attributes:
+   *   - `id`: per-vertex `vec4` — the 4 bytes of the localId
+   *     (big-endian) supplied as a non-normalised `Uint8Array`
+   *     attribute by fragments. Each component is 0–255 as a float.
+   *   - implicit `position` via three's vertex setup.
+   *
+   * Two render passes share this material via the `mode` uniform:
+   *
+   *   - `mode = 0` (model byte): writes `(modelByte, 0, 0, 1)`.
+   *   - `mode = 1` (localId):    writes `id / 255.0` straight
+   *     through. No decode math — the four bytes of the GPU readback
+   *     pixel are the four bytes of the localId.
+   */
   private buildIdMaterial(): THREE.ShaderMaterial {
-    // Clipping planes are honoured manually rather than via three's
-    // `<clipping_planes_*>` chunk includes — those don't reliably
-    // resolve in `ShaderMaterial` (we already saw `<packing>` silently
-    // fail to expand). We replicate three's convention exactly so the
-    // `clippingPlanes` uniform three auto-sets when `material.clipping
-    // = true && clippingPlanes.length > 0` works as expected:
-    //   `vClipPosition = -(modelViewMatrix * position).xyz`
-    //   discard when `dot(vClipPosition, plane.xyz) > plane.w`
-    // `NUM_CLIPPING_PLANES` is the define three injects automatically
-    // based on `material.clippingPlanes.length`.
     return new THREE.ShaderMaterial({
-      uniforms: { modelByte: { value: 1 } },
+      uniforms: { modelByte: { value: 1 }, mode: { value: 0 } },
       vertexShader: `
-        attribute float id;
-        varying float vId;
+        attribute vec4 id;
+        varying vec4 vId;
         #if NUM_CLIPPING_PLANES > 0
           varying vec3 vClipPosition;
         #endif
@@ -650,7 +767,8 @@ export class FastModelPicker implements Disposable {
       fragmentShader: `
         precision highp float;
         uniform float modelByte;
-        varying float vId;
+        uniform int mode;
+        varying vec4 vId;
         #if NUM_CLIPPING_PLANES > 0
           varying vec3 vClipPosition;
           uniform vec4 clippingPlanes[NUM_CLIPPING_PLANES];
@@ -662,16 +780,11 @@ export class FastModelPicker implements Disposable {
               if (dot(vClipPosition, plane.xyz) > plane.w) discard;
             }
           #endif
-          float id = vId;
-          float b1 = floor(id / 65536.0);
-          float b2 = floor(mod(id / 256.0, 256.0));
-          float b3 = mod(id, 256.0);
-          gl_FragColor = vec4(
-            modelByte / 255.0,
-            b1 / 255.0,
-            b2 / 255.0,
-            b3 / 255.0
-          );
+          if (mode == 0) {
+            gl_FragColor = vec4(modelByte / 255.0, 0.0, 0.0, 1.0);
+          } else {
+            gl_FragColor = vId / 255.0;
+          }
         }
       `,
       side: THREE.DoubleSide,
@@ -794,19 +907,26 @@ export class FastModelPicker implements Disposable {
     const size = renderer.getSize(new THREE.Vector2());
     this._renderTargetSize.copy(size);
 
-    this._renderTarget = new THREE.WebGLRenderTarget(size.x, size.y, {
+    const opts: THREE.RenderTargetOptions = {
       format: THREE.RGBAFormat,
       type: THREE.UnsignedByteType,
       minFilter: THREE.NearestFilter,
       magFilter: THREE.NearestFilter,
       depthBuffer: true,
-    });
+    };
+    this._renderTarget = new THREE.WebGLRenderTarget(size.x, size.y, opts);
+    this._localIdRenderTarget = new THREE.WebGLRenderTarget(
+      size.x,
+      size.y,
+      opts,
+    );
 
     if (this.debugMode) this.setupDebugCanvas();
 
     this.world.renderer!.onResize.add((newSize) => {
       this._renderTargetSize.copy(newSize);
       this._renderTarget!.setSize(newSize.x, newSize.y);
+      this._localIdRenderTarget!.setSize(newSize.x, newSize.y);
       if (this._debugCanvas) {
         this._debugCanvas.width = newSize.x;
         this._debugCanvas.height = newSize.y;

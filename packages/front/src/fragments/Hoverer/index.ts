@@ -224,6 +224,23 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
    */
   private _nullPicks = 0;
 
+  /**
+   * Camera matrix snapshot from the previous `hover()` call. We compare
+   * the current camera world-matrix elements against this and skip the
+   * pick when they differ — a rotating/panning/zooming camera changes
+   * the screen position of every item under the cursor every frame, so
+   * any pick we'd render would be visually stale by the time the user
+   * sees it. Skipping also dodges the GPU readback cost (one
+   * `gl.readPixels` per hover stalls the pipeline) while the camera
+   * controller is already saturating the renderer.
+   *
+   * Trade-off: after the camera stops, the first mousemove still has
+   * to wait for the next mousemove to detect the now-static scene.
+   * That's one frame of delay (~16 ms in MOUSE_MOVE), well below the
+   * threshold a user can perceive.
+   */
+  private _lastCameraMatrix = new THREE.Matrix4();
+
   constructor(components: OBC.Components) {
     super(components);
     components.add(Hoverer.uuid, this);
@@ -273,6 +290,17 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
     this._moveInflight = this.mode === HovererMode.MOUSE_MOVE;
 
     try {
+      // Skip when the camera is actively moving. Compare the camera's
+      // world-matrix elements against the snapshot from the previous
+      // hover; if they differ, the scene is in motion and any pick we'd
+      // render would be stale by the time it reached the screen. We
+      // still update the snapshot so the next stationary frame runs.
+      const camera = this._world.camera.three;
+      camera.updateMatrixWorld();
+      const moving = !camera.matrixWorld.equals(this._lastCameraMatrix);
+      this._lastCameraMatrix.copy(camera.matrixWorld);
+      if (moving) return;
+
       // Picker is per-world; we pull it lazily so apps that toggle
       // pickers / worlds don't trip on stale references.
       const pickers = this.components.get(OBC.FastModelPickers);
@@ -309,13 +337,6 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
       this.detachAll();
       this._current = result;
       this._hoverGen += 1;
-      // Warm the snap cache so a subsequent click with snap classes
-      // resolves synchronously off cache rather than paying the
-      // `_getElements` round-trip on demand.
-      this.components
-        .get(OBC.SnapResolvers)
-        .get()
-        .prefetch(result.modelId, result.localId);
       await this.attachForCurrent(this._hoverGen);
     } finally {
       this._moveInflight = false;
