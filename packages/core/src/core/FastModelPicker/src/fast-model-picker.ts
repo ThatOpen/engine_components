@@ -61,14 +61,6 @@ export class FastModelPicker implements Disposable {
   static readonly MAX_MODELS = 254;
 
   private _renderTarget?: THREE.WebGLRenderTarget;
-  /**
-   * Second pick target dedicated to the 32-bit localId render. We
-   * keep model-byte and localId in two separate single-attachment
-   * targets so the id encoding can use all 4 bytes (the previous
-   * combined target packed model byte + 3-byte id, capping localId
-   * at 2^24 - 1 and silently misreading items past that point).
-   */
-  private _localIdRenderTarget?: THREE.WebGLRenderTarget;
   private _renderTargetSize = new THREE.Vector2();
 
   private _debugCanvas?: HTMLCanvasElement;
@@ -323,8 +315,6 @@ export class FastModelPicker implements Disposable {
     this._normalMaterial.dispose();
     if (this._renderTarget) this._renderTarget.dispose();
     this._renderTarget = undefined;
-    if (this._localIdRenderTarget) this._localIdRenderTarget.dispose();
-    this._localIdRenderTarget = undefined;
     this._originalMaterials.clear();
     this._hiddenLods.length = 0;
     this.onDisposed.trigger();
@@ -357,7 +347,7 @@ export class FastModelPicker implements Disposable {
     position?: THREE.Vector2,
   ): Promise<{ modelId: string; itemId: number } | null> {
     if (!this.enabled) return null;
-    if (!this._renderTarget || !this._localIdRenderTarget) return null;
+    if (!this._renderTarget) return null;
     if (!this.world.renderer) return null;
 
     const fragments = this.components.get(FragmentsManager);
@@ -369,51 +359,36 @@ export class FastModelPicker implements Disposable {
       return null;
     }
 
-    // Resolve the cursor NDC up front so both render passes can use it
+    // Resolve the cursor NDC up front so the render pass can use it
     // for scissor clipping and we read back from the same pixel.
     const pos = position ?? this.mouse.position;
 
-    // Pass 1: model byte → `_renderTarget`. `mode = 0` in the
-    // shared id shader.
-    this._idMaterial.uniforms.mode.value = 0;
     this.renderIdPass(byteToModel, pos);
-
-    // Pass 2: 32-bit localId → `_localIdRenderTarget`. `mode = 1`
-    // routes the same shader to the pass-through-id branch. Same
-    // per-mesh material swap as pass 1, just a different render
-    // target and uniform.
-    this._idMaterial.uniforms.mode.value = 1;
-    this.renderLocalIdPass(byteToModel, pos);
-
     this.restoreOriginalMaterials();
 
     if (this.debugMode && this._debugCanvas) this.updateDebugCanvas();
 
-    const modelPixel = this.readPixelAt(this._renderTarget, pos);
-    const idPixel = this.readPixelAt(this._localIdRenderTarget, pos);
-    if (!modelPixel) return null;
+    // Single readPixels — the most expensive thing in the pick path
+    // because it forces a synchronous GPU sync. Packing `modelByte`
+    // into R and the lower 3 bytes of `itemId + 1` into GBA lets us
+    // do one readback instead of two; with itemId capped at 24 bits
+    // (item count per model — 16 M is plenty for any practical BIM
+    // scene) the high byte of the vertex attribute is unused and we
+    // overwrite it with the model byte.
+    const pixel = this.readPixelAt(this._renderTarget, pos);
+    if (!pixel) return null;
 
-    const modelByte = modelPixel[0];
+    const modelByte = pixel[0];
     if (modelByte === 0) return null; // void
-
     const modelId = byteToModel.get(modelByte);
     if (!modelId) return null;
 
-    if (!idPixel) return null;
-
-    // Unsigned 32-bit reconstruction. JS bitwise operators are
-    // 32-bit *signed*, so a high-bit-set value via `<<` would come
-    // back negative. Multiply for the top byte to stay in unsigned
-    // territory.
-    const encoded =
-      idPixel[0] * 0x1000000 +
-      // eslint-disable-next-line no-bitwise
-      ((idPixel[1] << 16) | (idPixel[2] << 8) | idPixel[3]);
-
-    // The worker writes `itemId + 1` per vertex so that decoded 0
-    // stays reserved as the "void / nothing under cursor" sentinel
-    // (itemId 0 is a valid item, so we can't use it raw). Subtract
-    // 1 to recover the real itemId.
+    // The worker writes `itemId + 1` (big-endian, 4 bytes), capped
+    // at 24 bits in practice — itemId is bounded by item count per
+    // model. The shader output drops the high byte and keeps the
+    // lower three (G, B, A). Decoded 0 = "no item under cursor".
+    // eslint-disable-next-line no-bitwise
+    const encoded = (pixel[1] << 16) | (pixel[2] << 8) | pixel[3];
     if (encoded === 0) return null;
     const itemId = encoded - 1;
     return { modelId, itemId };
@@ -475,41 +450,29 @@ export class FastModelPicker implements Disposable {
    * colour they happen to produce into the id target, which decodes as
    * a bogus `(modelByte, itemId)` pair when the cursor lands on one.
    */
+  /**
+   * Single id render. Iterates models in byte order, flipping the
+   * `modelByte` uniform between renders so each model's pixels carry
+   * its assigned byte in R while the lower 3 bytes of GBA carry
+   * `itemId + 1`. Depth buffer shared across the per-model passes so
+   * the front-most item still wins each pixel regardless of which
+   * model it belongs to.
+   */
   private renderIdPass(byteToModel: Map<number, string>, ndc: THREE.Vector2) {
-    this.renderPickPass(
-      byteToModel,
-      this._renderTarget!,
-      this._idMaterial,
-      true,
-      ndc,
-    );
-  }
-
-  private renderLocalIdPass(
-    byteToModel: Map<number, string>,
-    ndc: THREE.Vector2,
-  ) {
-    this.renderPickPass(
-      byteToModel,
-      this._localIdRenderTarget!,
-      this._idMaterial,
-      false,
-      ndc,
-    );
+    this.renderPickPass(byteToModel, this._renderTarget!, this._idMaterial, ndc);
   }
 
   /**
-   * Shared body of both id passes. Iterates models in the same order
-   * as the byte map so depth-test results agree across the two
-   * targets — the front-most pixel for each (byte, localId) lines up.
-   * `setModelByte` is `true` only for the model-byte pass; on the
-   * localId pass the uniform is irrelevant.
+   * Renders the BIM scene model-by-model into `target` with `material`,
+   * scissor-clipped to a small box around the cursor. Iterates models
+   * in byte order so depth tests resolve to the same front-most
+   * fragment per pixel. Per-model loop sets `material.uniforms.modelByte`
+   * before each render so the picked pixel carries the model byte.
    */
   private renderPickPass(
     byteToModel: Map<number, string>,
     target: THREE.WebGLRenderTarget,
     material: THREE.ShaderMaterial,
-    setModelByte: boolean,
     ndc: THREE.Vector2,
   ) {
     const renderer = this.world.renderer!.three;
@@ -591,7 +554,7 @@ export class FastModelPicker implements Disposable {
       const obj = objectsByModel.get(modelId);
       if (!obj) continue;
       obj.visible = true;
-      if (setModelByte) material.uniforms.modelByte.value = byte;
+      material.uniforms.modelByte.value = byte;
       renderer.render(scene, camera);
       obj.visible = false;
     }
@@ -761,22 +724,26 @@ export class FastModelPicker implements Disposable {
   // ---------------------------------------------------------------------------
 
   /**
-   * Single id shader. Reads two attributes:
-   *   - `id`: per-vertex `vec4` — the 4 bytes of the localId
+   * Single id shader, single render pass. Reads:
+   *   - `id`: per-vertex `vec4` — the four bytes of `itemId + 1`
    *     (big-endian) supplied as a non-normalised `Uint8Array`
    *     attribute by fragments. Each component is 0–255 as a float.
-   *   - implicit `position` via three's vertex setup.
+   *   - `modelByte` uniform — the byte assigned to the currently-
+   *     rendered model.
    *
-   * Two render passes share this material via the `mode` uniform:
-   *
-   *   - `mode = 0` (model byte): writes `(modelByte, 0, 0, 1)`.
-   *   - `mode = 1` (localId):    writes `id / 255.0` straight
-   *     through. No decode math — the four bytes of the GPU readback
-   *     pixel are the four bytes of the localId.
+   * Output packs `(modelByte, idMid, idLo1, idLo0)` into one RGBA8
+   * pixel: model byte in R, the lower three bytes of `itemId + 1` in
+   * GBA. Capping the encoded id at 24 bits is fine because `itemId`
+   * is the FlatBuffer item index — bounded by item count per model
+   * (16M is plenty for any practical BIM model). The high byte of
+   * the vertex attribute (`vId.x`) is therefore always 0 and we
+   * discard it; that frees R for the model byte. One render → one
+   * readback per pick (the previous two-target layout cost two
+   * sync-stalling readPixels calls).
    */
   private buildIdMaterial(): THREE.ShaderMaterial {
     return new THREE.ShaderMaterial({
-      uniforms: { modelByte: { value: 1 }, mode: { value: 0 } },
+      uniforms: { modelByte: { value: 1 } },
       vertexShader: `
         attribute vec4 id;
         varying vec4 vId;
@@ -795,7 +762,6 @@ export class FastModelPicker implements Disposable {
       fragmentShader: `
         precision highp float;
         uniform float modelByte;
-        uniform int mode;
         varying vec4 vId;
         #if NUM_CLIPPING_PLANES > 0
           varying vec3 vClipPosition;
@@ -808,11 +774,7 @@ export class FastModelPicker implements Disposable {
               if (dot(vClipPosition, plane.xyz) > plane.w) discard;
             }
           #endif
-          if (mode == 0) {
-            gl_FragColor = vec4(modelByte / 255.0, 0.0, 0.0, 1.0);
-          } else {
-            gl_FragColor = vId / 255.0;
-          }
+          gl_FragColor = vec4(modelByte / 255.0, vId.y / 255.0, vId.z / 255.0, vId.w / 255.0);
         }
       `,
       side: THREE.DoubleSide,
@@ -943,18 +905,12 @@ export class FastModelPicker implements Disposable {
       depthBuffer: true,
     };
     this._renderTarget = new THREE.WebGLRenderTarget(size.x, size.y, opts);
-    this._localIdRenderTarget = new THREE.WebGLRenderTarget(
-      size.x,
-      size.y,
-      opts,
-    );
 
     if (this.debugMode) this.setupDebugCanvas();
 
     this.world.renderer!.onResize.add((newSize) => {
       this._renderTargetSize.copy(newSize);
       this._renderTarget!.setSize(newSize.x, newSize.y);
-      this._localIdRenderTarget!.setSize(newSize.x, newSize.y);
       if (this._debugCanvas) {
         this._debugCanvas.width = newSize.x;
         this._debugCanvas.height = newSize.y;
