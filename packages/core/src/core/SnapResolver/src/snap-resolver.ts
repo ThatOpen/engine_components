@@ -131,10 +131,18 @@ export class SnapResolver implements Disposable {
   async resolve(
     point: THREE.Vector3,
     modelId: string,
-    localId: number,
+    /**
+     * Internal **itemId** (the FlatBuffer `sample.item()` index, key
+     * for `boxes.sampleOf`), not the user-facing localId. The picker
+     * exposes this on its full-pick result; passing it through here
+     * lets us hit the O(1) item→samples reverse index on the worker
+     * via `_getItemSnapData(itemId)`. Keying by localId would force a
+     * full sample-table scan (~1 s on big models).
+     */
+    itemId: number,
     classes: Iterable<SnapClass>,
   ): Promise<SnapResult | null> {
-    const key = SnapResolver.keyOf(modelId, localId);
+    const key = SnapResolver.keyOf(modelId, itemId);
     let data: ItemSnapData | null | undefined = this.cache.get(key);
     if (data) {
       // Bump recency: delete + re-insert moves to end of iteration
@@ -142,7 +150,7 @@ export class SnapResolver implements Disposable {
       this.cache.delete(key);
       this.cache.set(key, data);
     } else {
-      data = await this.fetchItemSnapData(modelId, localId);
+      data = await this.fetchItemSnapData(modelId, itemId);
       if (!data) return null;
       this.storeWithLRU(key, data);
     }
@@ -195,17 +203,17 @@ export class SnapResolver implements Disposable {
    * Returns a Promise so callers who *do* want to await can; most
    * won't.
    */
-  async prefetch(modelId: string, localId: number) {
-    const key = SnapResolver.keyOf(modelId, localId);
+  async prefetch(modelId: string, itemId: number) {
+    const key = SnapResolver.keyOf(modelId, itemId);
     if (this.cache.has(key)) return;
-    const data = await this.fetchItemSnapData(modelId, localId);
+    const data = await this.fetchItemSnapData(modelId, itemId);
     if (!data) return;
     this.storeWithLRU(key, data);
   }
 
   /** Drop a specific item from the cache (e.g. after an edit). */
-  invalidate(modelId: string, localId: number) {
-    const key = SnapResolver.keyOf(modelId, localId);
+  invalidate(modelId: string, itemId: number) {
+    const key = SnapResolver.keyOf(modelId, itemId);
     this.cache.delete(key);
   }
 
@@ -233,20 +241,21 @@ export class SnapResolver implements Disposable {
 
   private async fetchItemSnapData(
     modelId: string,
-    localId: number,
+    itemId: number,
   ): Promise<ItemSnapData | null> {
     const fragments = this.components.get(FragmentsManager);
     const model = fragments.list.get(modelId);
     if (!model) return null;
 
-    // `_getElements` resolves to an array of `Element` wrappers. The
-    // raw `ElementData` (samples / representations / transforms) lives
-    // at `element.core`. We always pass a single localId so taking
-    // index 0 is safe.
-    const elements = (await (model as any)._getElements([localId])) as Array<{
-      core: FRAGS.ElementData;
-    }>;
-    const data = elements?.[0]?.core;
+    // Itemid-keyed fast path: fragments looks up the item's samples in
+    // O(1) via `boxes.sampleOf(itemId)` and returns just the snap-
+    // relevant slice (samples + transforms + SHELL representations).
+    // Compare to the previous `_getElements([localId])` path, which
+    // scanned the full sample table (~1 s on superbig regardless of
+    // how few items you ask for).
+    const data = (await (model as any)._getItemSnapData(
+      itemId,
+    )) as FRAGS.ElementData | null;
     if (!data) return null;
 
     const modelWorldMatrix = model.object.matrixWorld;

@@ -164,10 +164,29 @@ export class FastModelPicker implements Disposable {
    */
   async getItemAt(
     position?: THREE.Vector2,
-  ): Promise<{ modelId: string; localId: number } | null> {
+  ): Promise<{ modelId: string; localId: number; itemId: number } | null> {
     const result = await this.runIdPass(position);
     if (!result) return null;
-    return { modelId: result.modelId, localId: result.itemId };
+    // The vertex `id` attribute now encodes the internal **itemId**
+    // (the FlatBuffer `sample.item()` index, key for `boxes.sampleOf`)
+    // rather than the user-facing localId. We changed the encoding to
+    // unblock the snap path, which can fetch sample data in O(1) by
+    // itemId vs the O(N_total_samples) scan needed when keyed by
+    // localId. The trade-off: callers expecting `localId` get one
+    // worker round-trip here for translation. The translation itself
+    // is two FlatBuffer accessor calls on the worker side, so the
+    // cost is dominated by the message hop, not the work. Internal
+    // consumers that only need itemId (e.g. snap) can read it from
+    // the result directly and skip the translation.
+    const fragments = this.components.get(FragmentsManager);
+    const model = fragments.list.get(result.modelId);
+    if (!model) return null;
+    const localIds = await (model as any).getLocalIdsFromItemIds([
+      result.itemId,
+    ]);
+    const localId = localIds?.[0];
+    if (localId === undefined || localId === null) return null;
+    return { modelId: result.modelId, localId, itemId: result.itemId };
   }
 
   /**
@@ -264,6 +283,13 @@ export class FastModelPicker implements Disposable {
   async getFullPick(position?: THREE.Vector2): Promise<{
     modelId: string;
     localId: number;
+    /**
+     * Internal item index (FlatBuffer `sample.item()`). Exposed so
+     * SnapResolver and other internal consumers can hit fragments'
+     * itemId-keyed fast paths (`boxes.sampleOf`) without paying a
+     * second worker round-trip to translate back from localId.
+     */
+    itemId: number;
     point: THREE.Vector3;
     normal: THREE.Vector3 | null;
     distance: number;
@@ -379,15 +405,17 @@ export class FastModelPicker implements Disposable {
     // 32-bit *signed*, so a high-bit-set value via `<<` would come
     // back negative. Multiply for the top byte to stay in unsigned
     // territory.
-    const itemId =
+    const encoded =
       idPixel[0] * 0x1000000 +
       // eslint-disable-next-line no-bitwise
       ((idPixel[1] << 16) | (idPixel[2] << 8) | idPixel[3]);
 
-    // 0 is the sentinel fragments writes for samples whose two-step
-    // localId lookup misses (no `meshes_items` entry, or `local_ids`
-    // returns null). Treat decoded 0 as void rather than a real pick.
-    if (itemId === 0) return null;
+    // The worker writes `itemId + 1` per vertex so that decoded 0
+    // stays reserved as the "void / nothing under cursor" sentinel
+    // (itemId 0 is a valid item, so we can't use it raw). Subtract
+    // 1 to recover the real itemId.
+    if (encoded === 0) return null;
+    const itemId = encoded - 1;
     return { modelId, itemId };
   }
 

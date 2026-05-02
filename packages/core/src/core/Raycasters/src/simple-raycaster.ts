@@ -128,7 +128,7 @@ export class SimpleRaycaster implements Disposable {
             .resolve(
               hit.point,
               hit.modelId,
-              hit.localId,
+              hit.itemId,
               snappingClasses as unknown as SnapClass[],
             );
           if (snap) {
