@@ -125,10 +125,24 @@ export abstract class Measurement<
    *  the marker. */
   private _cameraInteracting = false;
 
-  /** Listeners we register on the camera controls to track
-   *  interaction state. Stored so we can detach them on disable. */
-  private _cameraStartHandler: (() => void) | null = null;
-  private _cameraEndHandler: (() => void) | null = null;
+  /**
+   * How long (ms) to keep picks suppressed after the camera stops.
+   * Brief settle window so the GPU isn't simultaneously serving
+   * post-camera-stop renders (LOD streaming, fragment tile updates)
+   * AND a fresh pick the moment the user releases the orbit. On big
+   * scenes the pick's GPU readback would stall behind the queued
+   * tile renders, producing a multi-hundred-ms hiccup that *looks*
+   * like the measurer is broken. Setting `0` disables the debounce
+   * and resumes picks the instant `controlend` fires.
+   */
+  cameraStopDelay = 50;
+
+  /** Listener registered on the camera controls' `update` event.
+   *  Stored so we can detach on disable. */
+  private _cameraUpdateHandler: (() => void) | null = null;
+  /** Re-enable timer armed by every `update` event and disarmed
+   *  when the cooldown elapses. */
+  private _cameraStopTimer: number | null = null;
 
   /** Pointer-leave handler — hides the marker when the cursor leaves
    *  the canvas (or floats over a UI panel sitting above it). */
@@ -243,15 +257,19 @@ export abstract class Measurement<
       );
       this._pointerLeaveHandler = null;
     }
-    // Camera-control listeners: track when the user is actively
-    // orbiting / panning so we can skip picks during drag.
+    // Camera-controls listener: any matrix change (drag, wheel, programmatic)
+    // suppresses picks for `cameraStopDelay` ms after the last update.
     const controls = (this.world.camera as any)?.controls;
-    if (controls && this._cameraStartHandler && this._cameraEndHandler) {
-      controls.removeEventListener("controlstart", this._cameraStartHandler);
-      controls.removeEventListener("controlend", this._cameraEndHandler);
-      this._cameraStartHandler = null;
-      this._cameraEndHandler = null;
+    if (controls && this._cameraUpdateHandler) {
+      controls.removeEventListener("update", this._cameraUpdateHandler);
+      this._cameraUpdateHandler = null;
     }
+    // Drop any pending re-enable timer; we're tearing down listeners.
+    if (this._cameraStopTimer !== null) {
+      clearTimeout(this._cameraStopTimer);
+      this._cameraStopTimer = null;
+    }
+    this._cameraInteracting = false;
 
     if (active) {
       viewerContainer.addEventListener("pointermove", this.onMove);
@@ -273,20 +291,38 @@ export abstract class Measurement<
       );
 
       if (controls) {
-        this._cameraStartHandler = () => {
+        // Listen to `update` (not `controlstart` / `controlend`)
+        // because the start/end events only fire on drag-style
+        // interactions in camera-controls — wheel zoom and
+        // programmatic moves trigger only `update`. Using `update`
+        // gives us a uniform signal for "the camera matrix just
+        // changed", which is what we actually care about.
+        this._cameraUpdateHandler = () => {
           this._cameraInteracting = true;
-          // Hide the marker for the duration of the camera drag —
-          // its world-space position is stale relative to where
-          // the user is looking now.
-          if (this._vertexPicker.marker) {
+          // Hide the marker while the camera is in motion — its
+          // world-space position is stale relative to where the
+          // user is looking now.
+          if (this._vertexPicker.marker?.visible) {
             this._vertexPicker.marker.visible = false;
           }
+          // Re-arm the cooldown. Every fresh `update` pushes the
+          // re-enable further into the future, so picks stay
+          // suppressed across drag inertia, wheel inertia, and
+          // multi-stroke gestures without any extra bookkeeping.
+          if (this._cameraStopTimer !== null) {
+            clearTimeout(this._cameraStopTimer);
+          }
+          if (this.cameraStopDelay <= 0) {
+            this._cameraStopTimer = null;
+            this._cameraInteracting = false;
+            return;
+          }
+          this._cameraStopTimer = window.setTimeout(() => {
+            this._cameraStopTimer = null;
+            this._cameraInteracting = false;
+          }, this.cameraStopDelay);
         };
-        this._cameraEndHandler = () => {
-          this._cameraInteracting = false;
-        };
-        controls.addEventListener("controlstart", this._cameraStartHandler);
-        controls.addEventListener("controlend", this._cameraEndHandler);
+        controls.addEventListener("update", this._cameraUpdateHandler);
       }
     }
   }
