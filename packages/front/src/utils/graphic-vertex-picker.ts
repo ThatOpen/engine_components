@@ -1,5 +1,6 @@
 import * as OBC from "@thatopen/components";
 import * as FRAGS from "@thatopen/fragments";
+import * as THREE from "three";
 import { Mark } from "../core";
 
 /**
@@ -24,7 +25,23 @@ export class GraphicVertexPicker implements OBC.Disposable {
   /** The marker used to indicate the picked vertex. */
   marker: Mark | null = null;
 
-  world: OBC.World | null = null;
+  private _world: OBC.World | null = null;
+  set world(value: OBC.World | null) {
+    if (value === this._world) return;
+    this.detachCursorTracking();
+    this._world = value;
+    if (value) this.attachCursorTracking();
+  }
+
+  get world() {
+    return this._world;
+  }
+
+  /**
+   * Pointermove handler that drives cursor-tracking. Stored on the
+   * instance so we can detach when the world changes.
+   */
+  private _pointerMoveHandler: ((e: PointerEvent) => void) | null = null;
 
   /**
    * @deprecated Sync mode is gone; this property has no effect and
@@ -98,6 +115,7 @@ export class GraphicVertexPicker implements OBC.Disposable {
 
   /** {@link OBC.Disposable.onDisposed} */
   dispose() {
+    this.detachCursorTracking();
     if (this.marker) {
       this.marker.dispose();
     }
@@ -129,7 +147,6 @@ export class GraphicVertexPicker implements OBC.Disposable {
     });
 
     if (intersects) {
-      const { point } = intersects;
       if (!this.marker) {
         const element = document.createElement("div");
         this.marker = new Mark(world, element);
@@ -142,7 +159,16 @@ export class GraphicVertexPicker implements OBC.Disposable {
       }
 
       this.marker.visible = true;
-      this.marker.three.position.copy(point);
+      // When a pick resolves with a hit, snap the marker to the
+      // intersection point — that's the whole purpose of the snap
+      // marker. Between picks, the pointermove listener glides the
+      // marker along with the cursor (so it doesn't visibly lag the
+      // mouse on big models where each pick is ~15 ms). The next
+      // raw pointermove will overwrite this position immediately,
+      // but during the brief window before the next move, the user
+      // sees the marker land precisely on the snapped vertex / edge /
+      // face — which is the visual cue that the snap fired.
+      this.marker.three.position.copy(intersects.point);
 
       // Apply the marker style based on the snapping class
       if (
@@ -177,4 +203,63 @@ export class GraphicVertexPicker implements OBC.Disposable {
     this.marker.three.element.style.height = size;
   }
 
+  /**
+   * Most recent pointer NDC coordinates. Updated synchronously from
+   * `pointermove`, then read by {@link syncMarkerToCursor} to position
+   * the marker in world space. Defaulting to `(2, 2)` keeps the
+   * marker off-screen until the first real move arrives.
+   */
+  private _lastNdc = new THREE.Vector2(2, 2);
+  private _ndcWorld = new THREE.Vector3();
+  private _cursorRafScheduled = false;
+
+  private attachCursorTracking() {
+    if (!this._world?.renderer) return;
+    const canvas = this._world.renderer.three.domElement;
+    this._pointerMoveHandler = (e: PointerEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      this._lastNdc.set(x, y);
+      // RAF-debounce the marker repaint. Pointer events can fire well
+      // above 60 Hz (high-refresh trackpads / styluses); calling
+      // `renderer.update()` per event would render the full scene
+      // multiple times per frame on big models. Coalescing to one
+      // paint per animation frame keeps the visual cursor-follow
+      // smooth while capping the cost at the renderer's natural rate.
+      if (this._cursorRafScheduled) return;
+      this._cursorRafScheduled = true;
+      requestAnimationFrame(() => {
+        this._cursorRafScheduled = false;
+        this.syncMarkerToCursor();
+        this._world?.renderer?.update();
+      });
+    };
+    canvas.addEventListener("pointermove", this._pointerMoveHandler);
+  }
+
+  private detachCursorTracking() {
+    if (!this._pointerMoveHandler || !this._world?.renderer) return;
+    const canvas = this._world.renderer.three.domElement;
+    canvas.removeEventListener("pointermove", this._pointerMoveHandler);
+    this._pointerMoveHandler = null;
+  }
+
+  /**
+   * Project the latest cursor NDC to a world-space point on a plane
+   * perpendicular to the camera's forward direction at z = 0.5 in
+   * NDC, then copy it into the marker. The CSS2DRenderer then
+   * projects that point back to roughly the same screen location, so
+   * the marker visually tracks the mouse. The exact distance from
+   * the camera is irrelevant for screen position because the
+   * projection is invariant under that scaling.
+   */
+  private syncMarkerToCursor() {
+    if (!this.marker || !this._world?.camera) return;
+    const camera = this._world.camera.three;
+    this._ndcWorld
+      .set(this._lastNdc.x, this._lastNdc.y, 0.5)
+      .unproject(camera);
+    this.marker.three.position.copy(this._ndcWorld);
+  }
 }

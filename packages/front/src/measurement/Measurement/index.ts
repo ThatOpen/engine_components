@@ -14,8 +14,19 @@ import {
 } from "../../utils";
 import { newDimensionMark } from "../utils";
 import { Mark } from "../../core";
-import { defaultUnits, MeasurementStateChange, MeasureToUnitMap } from "./src";
+import {
+  defaultUnits,
+  MeasurementPickMode,
+  MeasurementStateChange,
+  MeasureToUnitMap,
+} from "./src";
 import { MeasureVolume } from "../../utils/measure-volume";
+
+export { MeasurementPickMode } from "./src";
+export type {
+  MeasurementStateChange,
+  MeasureToUnitMap,
+} from "./src";
 
 /**
  * Abstract class that gives the core elements to create any measurement component. 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Measurement).
@@ -43,6 +54,19 @@ export abstract class Measurement<
   volumes = new DataSet<MeasureVolume>();
 
   delay = 300;
+
+  /**
+   * When to run the snap pick that drives the preview marker. See
+   * {@link MeasurementPickMode}. Defaults to `MOUSE_MOVE` (pick on
+   * every animation frame the cursor is moving). On big models you
+   * may want `MOUSE_STOP` (pick once after the cursor settles for
+   * {@link delay} ms): the per-pick cost is the same, but you pay
+   * it once per intentional stop rather than once per frame, and
+   * the marker only appears where the user is actually about to
+   * click. The `onPointerStop` event still fires in both modes; in
+   * `MOUSE_STOP` we just align the pick to that same moment.
+   */
+  pickMode: MeasurementPickMode = MeasurementPickMode.MOUSE_MOVE;
 
   // The measurement modes
   abstract modes: string[];
@@ -117,19 +141,33 @@ export abstract class Measurement<
       clearTimeout(this.pointerStopTimeout);
     }
 
-    // TODO: Make this configurable?
+    // The pointer-stop timer fires the public `onPointerStop` event
+    // and — when the tool is in `MOUSE_STOP` pick mode — also drives
+    // the snap pick that updates the marker. Coupling them avoids a
+    // second timer.
     this.pointerStopTimeout = window.setTimeout(() => {
       this.onPointerStop.trigger();
+      if (this.pickMode === MeasurementPickMode.MOUSE_STOP) {
+        this.scheduleMarkerUpdate();
+      }
     }, this.delay);
 
-    // Drive a single RAF-coalesced pick that both positions the snap
-    // marker (side effect of `_vertexPicker.get`) and stores the
-    // result in `lastPick` so subclasses (e.g. preview-line updates)
-    // can reuse it without doing a second pick on the same frame.
-    // `onPointerMove` is fired once per pick (after it resolves), not
-    // on every raw `pointermove`, so subscribers always see a fresh
-    // `lastPick`.
-    this.scheduleMarkerUpdate();
+    if (this.pickMode === MeasurementPickMode.MOUSE_MOVE) {
+      // Drive a single RAF-coalesced pick that both positions the
+      // snap marker (side effect of `_vertexPicker.get`) and stores
+      // the result in `lastPick` so subclasses (e.g. preview-line
+      // updates) can reuse it without doing a second pick on the
+      // same frame. `onPointerMove` is fired once per pick (after it
+      // resolves), not on every raw `pointermove`, so subscribers
+      // always see a fresh `lastPick`.
+      this.scheduleMarkerUpdate();
+    } else if (this._vertexPicker.marker) {
+      // In `MOUSE_STOP` we hide the marker between stops so the user
+      // doesn't see a stale snap floating along with the cursor; it
+      // pops back in once the cursor settles and the pick resolves.
+      this._vertexPicker.marker.visible = false;
+      this._world?.renderer?.update();
+    }
   };
 
   private scheduleMarkerUpdate() {
