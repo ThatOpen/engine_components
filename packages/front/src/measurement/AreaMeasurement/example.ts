@@ -177,6 +177,42 @@ measurer.list.onItemAdded.add((area) => {
 
 BUI.Manager.init();
 
+// Reusable snap-class + range controls. The measurer's `snappings`
+// array holds the snap classes the picker considers; toggling a
+// checkbox adds / removes the corresponding class. The range slider
+// drives the shared `SnapResolver.maxDistance` — distance from the
+// pick point at which a vertex / edge / face is considered a snap
+// candidate, in model units (typically meters).
+const snapResolver = components.get(OBC.SnapResolvers).get();
+const hasSnap = (cls: FRAGS.SnappingClass) =>
+  measurer.snappings?.includes(cls) ?? false;
+const toggleSnap = (cls: FRAGS.SnappingClass, on: boolean) => {
+  const current = new Set(measurer.snappings ?? []);
+  if (on) current.add(cls);
+  else current.delete(cls);
+  measurer.snappings = Array.from(current);
+};
+const snapControls = () => BUI.html`
+  <bim-checkbox label="Snap: Point" ?checked=${hasSnap(FRAGS.SnappingClass.POINT)}
+    @change="${({ target }: { target: BUI.Checkbox }) =>
+      toggleSnap(FRAGS.SnappingClass.POINT, target.value)}">
+  </bim-checkbox>
+  <bim-checkbox label="Snap: Line" ?checked=${hasSnap(FRAGS.SnappingClass.LINE)}
+    @change="${({ target }: { target: BUI.Checkbox }) =>
+      toggleSnap(FRAGS.SnappingClass.LINE, target.value)}">
+  </bim-checkbox>
+  <bim-checkbox label="Snap: Face" ?checked=${hasSnap(FRAGS.SnappingClass.FACE)}
+    @change="${({ target }: { target: BUI.Checkbox }) =>
+      toggleSnap(FRAGS.SnappingClass.FACE, target.value)}">
+  </bim-checkbox>
+  <bim-number-input slider step="0.05" label="Snap Range"
+    value="${snapResolver.maxDistance}" min="0.05" max="5"
+    @change="${({ target }: { target: BUI.NumberInput }) => {
+      snapResolver.maxDistance = target.value;
+    }}">
+  </bim-number-input>
+`;
+
 /* MD
 Now we will add some UI to play around with the actions in this tutorial. For more information about the UI library, you can check the specific documentation for it!
 */
@@ -220,7 +256,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           }}">
         </bim-color-input>
         
-        <bim-dropdown 
+        <bim-dropdown
           label="Measure Mode" required
           @change="${({ target }: { target: BUI.Dropdown }) => {
             const [mode] = target.value;
@@ -230,6 +266,8 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
               BUI.html`<bim-option label=${mode} value=${mode} ?checked=${mode === measurer.mode}></bim-option>`,
           )}
         </bim-dropdown>
+
+        ${snapControls()}
 
         <bim-dropdown 
           label="Units" required

@@ -159,16 +159,18 @@ export class GraphicVertexPicker implements OBC.Disposable {
       }
 
       this.marker.visible = true;
-      // When a pick resolves with a hit, snap the marker to the
-      // intersection point — that's the whole purpose of the snap
-      // marker. Between picks, the pointermove listener glides the
-      // marker along with the cursor (so it doesn't visibly lag the
-      // mouse on big models where each pick is ~15 ms). The next
-      // raw pointermove will overwrite this position immediately,
-      // but during the brief window before the next move, the user
-      // sees the marker land precisely on the snapped vertex / edge /
-      // face — which is the visual cue that the snap fired.
+      // Pin the marker to the snapped 3D point and remember where
+      // the cursor was at the moment of the snap. The pointermove
+      // handler holds the marker hidden after a successful snap
+      // until the cursor leaves a `stickyRadiusPx` radius of that
+      // anchor; once it does, the marker stays hidden until the
+      // next pick lands a fresh snap. The marker's only meaning on
+      // screen is "you're snapped to this feature right now".
       this.marker.three.position.copy(intersects.point);
+      this._snapStickyClient = {
+        x: this._lastClient.x,
+        y: this._lastClient.y,
+      };
 
       // Apply the marker style based on the snapping class
       if (
@@ -191,6 +193,7 @@ export class GraphicVertexPicker implements OBC.Disposable {
       this.applyMarkerSize();
     } else if (this.marker) {
       this.marker.visible = false;
+      this._snapStickyClient = null;
     }
 
     return intersects;
@@ -204,14 +207,32 @@ export class GraphicVertexPicker implements OBC.Disposable {
   }
 
   /**
-   * Most recent pointer NDC coordinates. Updated synchronously from
-   * `pointermove`, then read by {@link syncMarkerToCursor} to position
-   * the marker in world space. Defaulting to `(2, 2)` keeps the
-   * marker off-screen until the first real move arrives.
+   * Pixels of cursor motion the user must travel before the marker
+   * leaves the snap point and resumes cursor-tracking. Without this,
+   * the very next pointermove after a successful snap would yank
+   * the marker back to the cursor and the snap would be invisible.
+   * Tuned for "the user can see they snapped, but a real intentional
+   * move breaks it".
    */
+  stickyRadiusPx = 12;
+
+  /** Most recent cursor in NDC. Used to project the marker to the
+   *  cursor's screen position between picks. */
   private _lastNdc = new THREE.Vector2(2, 2);
+  /** Most recent cursor in viewport client pixels — anchors the
+   *  snap-sticky window in screen units. */
+  private _lastClient = { x: 0, y: 0 };
   private _ndcWorld = new THREE.Vector3();
   private _cursorRafScheduled = false;
+
+  /**
+   * Cursor client-pixel coords at the moment of the most recent
+   * snap. While set, the pointermove handler holds the marker at the
+   * snap point until the cursor leaves a radius of
+   * {@link stickyRadiusPx} around this position. Cleared on a
+   * no-snap pick.
+   */
+  private _snapStickyClient: { x: number; y: number } | null = null;
 
   private attachCursorTracking() {
     if (!this._world?.renderer) return;
@@ -221,6 +242,24 @@ export class GraphicVertexPicker implements OBC.Disposable {
       const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
       this._lastNdc.set(x, y);
+      this._lastClient.x = e.clientX;
+      this._lastClient.y = e.clientY;
+
+      // Snap stickiness: if a snap pick recently landed and the
+      // cursor hasn't moved more than `stickyRadiusPx` away from
+      // where it was at that moment, leave the marker pinned to the
+      // snap point. Without this, the next pointermove after a
+      // successful snap would yank the marker back to the cursor
+      // and the user would never see it land on the snapped vertex.
+      if (this._snapStickyClient) {
+        const dx = e.clientX - this._snapStickyClient.x;
+        const dy = e.clientY - this._snapStickyClient.y;
+        if (dx * dx + dy * dy <= this.stickyRadiusPx * this.stickyRadiusPx) {
+          return;
+        }
+        this._snapStickyClient = null;
+      }
+
       // RAF-debounce the marker repaint. Pointer events can fire well
       // above 60 Hz (high-refresh trackpads / styluses); calling
       // `renderer.update()` per event would render the full scene
@@ -248,11 +287,11 @@ export class GraphicVertexPicker implements OBC.Disposable {
   /**
    * Project the latest cursor NDC to a world-space point on a plane
    * perpendicular to the camera's forward direction at z = 0.5 in
-   * NDC, then copy it into the marker. The CSS2DRenderer then
-   * projects that point back to roughly the same screen location, so
-   * the marker visually tracks the mouse. The exact distance from
-   * the camera is irrelevant for screen position because the
-   * projection is invariant under that scaling.
+   * NDC, then copy it into the marker. The CSS2DRenderer projects
+   * that point back to roughly the same screen location, so the
+   * marker visually tracks the mouse. The exact distance from the
+   * camera is irrelevant for screen position because the projection
+   * is invariant under that scaling.
    */
   private syncMarkerToCursor() {
     if (!this.marker || !this._world?.camera) return;
