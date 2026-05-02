@@ -119,7 +119,7 @@ measurer.world = world;
 measurer.color = new THREE.Color("#494cb6");
 // As a best practice, always set the enabled state after the initial config
 measurer.enabled = true;
-measurer.snappings = [FRAGS.SnappingClass.POINT];
+measurer.snappings = [FRAGS.SnappingClass.POINT, FRAGS.SnappingClass.LINE];
 
 /* MD 
   You can create dimensions both programatically or by user interaction. The most common way is by user interaction, so let's configure an event listener to create them when the user double clicks on the viewer container:

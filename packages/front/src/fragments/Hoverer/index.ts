@@ -225,21 +225,33 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
   private _nullPicks = 0;
 
   /**
-   * Camera matrix snapshot from the previous `hover()` call. We compare
-   * the current camera world-matrix elements against this and skip the
-   * pick when they differ — a rotating/panning/zooming camera changes
-   * the screen position of every item under the cursor every frame, so
-   * any pick we'd render would be visually stale by the time the user
-   * sees it. Skipping also dodges the GPU readback cost (one
-   * `gl.readPixels` per hover stalls the pipeline) while the camera
-   * controller is already saturating the renderer.
-   *
-   * Trade-off: after the camera stops, the first mousemove still has
-   * to wait for the next mousemove to detect the now-static scene.
-   * That's one frame of delay (~16 ms in MOUSE_MOVE), well below the
-   * threshold a user can perceive.
+   * True while the user is actively dragging the camera (orbit,
+   * pan). Set on `controlstart`, cleared on `controlend`. Listening
+   * to camera-controls' user-input events directly (rather than
+   * watching `update` or the camera matrix) means the Hoverer
+   * resumes the moment the user releases the mouse — without
+   * waiting for damping inertia to fully decay, which the previous
+   * matrix-equality gate suffered from.
    */
-  private _lastCameraMatrix = new THREE.Matrix4();
+  private _dragging = false;
+
+  /**
+   * True while wheel events are arriving at the canvas. Camera-
+   * controls doesn't surface a wheel-start / wheel-end event pair,
+   * so we debounce on the canvas-level `wheel` event: every wheel
+   * pulse keeps this `true`; a brief idle window
+   * ({@link WHEEL_IDLE_MS}) flips it back to `false`. Like
+   * `_dragging`, this is independent of damping — picks resume as
+   * soon as the user stops scrolling.
+   */
+  private _wheeling = false;
+  private _wheelIdleTimer: number | null = null;
+  private static readonly WHEEL_IDLE_MS = 80;
+
+  /** Listeners stashed so we can detach on world-change / disable. */
+  private _onCtrlStart: (() => void) | null = null;
+  private _onCtrlEnd: (() => void) | null = null;
+  private _onWheel: ((e: WheelEvent) => void) | null = null;
 
   constructor(components: OBC.Components) {
     super(components);
@@ -290,16 +302,14 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
     this._moveInflight = this.mode === HovererMode.MOUSE_MOVE;
 
     try {
-      // Skip when the camera is actively moving. Compare the camera's
-      // world-matrix elements against the snapshot from the previous
-      // hover; if they differ, the scene is in motion and any pick we'd
-      // render would be stale by the time it reached the screen. We
-      // still update the snapshot so the next stationary frame runs.
-      const camera = this._world.camera.three;
-      camera.updateMatrixWorld();
-      const moving = !camera.matrixWorld.equals(this._lastCameraMatrix);
-      this._lastCameraMatrix.copy(camera.matrixWorld);
-      if (moving) return;
+      // Skip picks while the user is actively driving the camera —
+      // dragging or wheel-scrolling. Both flags are bound to user-
+      // input events, not damping decay, so hover resumes the moment
+      // the user releases the mouse / stops scrolling. Damping inertia
+      // continues to animate the camera in the background; that's
+      // fine — picks during inertia are at most one frame stale,
+      // which is invisible at hover speed.
+      if (this._dragging || this._wheeling) return;
 
       // Picker is per-world; we pull it lazily so apps that toggle
       // pickers / worlds don't trip on stale references.
@@ -508,9 +518,62 @@ export class Hoverer extends OBC.Component implements OBC.Disposable {
     const container = this._world.renderer.three.domElement;
     container.removeEventListener("mousemove", this.onMouseMove);
     container.removeEventListener("mouseleave", this.onMouseLeave);
+
+    // Detach previously-registered camera + wheel listeners (if any)
+    // before we either re-attach them or leave them off.
+    const controls = (this._world.camera as any)?.controls;
+    if (this._onCtrlStart && controls) {
+      controls.removeEventListener("controlstart", this._onCtrlStart);
+    }
+    if (this._onCtrlEnd && controls) {
+      controls.removeEventListener("controlend", this._onCtrlEnd);
+    }
+    if (this._onWheel) {
+      container.removeEventListener("wheel", this._onWheel);
+    }
+    this._onCtrlStart = null;
+    this._onCtrlEnd = null;
+    this._onWheel = null;
+    if (this._wheelIdleTimer !== null) {
+      clearTimeout(this._wheelIdleTimer);
+      this._wheelIdleTimer = null;
+    }
+    this._dragging = false;
+    this._wheeling = false;
+
     if (!active) return;
     container.addEventListener("mousemove", this.onMouseMove);
     container.addEventListener("mouseleave", this.onMouseLeave);
+
+    // Camera-controls drag start / end. We intentionally do NOT
+    // listen to "update" — that fires throughout damping inertia
+    // after the user has already released, which would suppress
+    // picks for the full damping tail. The user-input pair only
+    // covers the period the user is actually moving the camera.
+    if (controls) {
+      this._onCtrlStart = () => {
+        this._dragging = true;
+      };
+      this._onCtrlEnd = () => {
+        this._dragging = false;
+      };
+      controls.addEventListener("controlstart", this._onCtrlStart);
+      controls.addEventListener("controlend", this._onCtrlEnd);
+    }
+
+    // Wheel zoom doesn't fire control* events, so we debounce on
+    // the canvas wheel event. The first pulse flips `_wheeling`
+    // true; each subsequent pulse re-arms the idle timer; once
+    // pulses stop arriving for `WHEEL_IDLE_MS` we resume.
+    this._onWheel = () => {
+      this._wheeling = true;
+      if (this._wheelIdleTimer !== null) clearTimeout(this._wheelIdleTimer);
+      this._wheelIdleTimer = window.setTimeout(() => {
+        this._wheeling = false;
+        this._wheelIdleTimer = null;
+      }, Hoverer.WHEEL_IDLE_MS);
+    };
+    container.addEventListener("wheel", this._onWheel, { passive: true });
   }
 
   private setupFragmentListeners() {

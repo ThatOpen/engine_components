@@ -126,23 +126,20 @@ export abstract class Measurement<
   private _cameraInteracting = false;
 
   /**
-   * How long (ms) to keep picks suppressed after the camera stops.
-   * Brief settle window so the GPU isn't simultaneously serving
-   * post-camera-stop renders (LOD streaming, fragment tile updates)
-   * AND a fresh pick the moment the user releases the orbit. On big
-   * scenes the pick's GPU readback would stall behind the queued
-   * tile renders, producing a multi-hundred-ms hiccup that *looks*
-   * like the measurer is broken. Setting `0` disables the debounce
-   * and resumes picks the instant `controlend` fires.
+   * Idle window after the last wheel pulse before picks resume. Wheel
+   * zoom doesn't fire `controlstart` / `controlend`, so we debounce
+   * on the canvas-level `wheel` event. Drag suspension is gated by
+   * the user-input pair directly and resumes the moment `controlend`
+   * fires (no debounce, no waiting on damping inertia).
    */
-  cameraStopDelay = 50;
+  cameraStopDelay = 80;
 
-  /** Listener registered on the camera controls' `update` event.
-   *  Stored so we can detach on disable. */
-  private _cameraUpdateHandler: (() => void) | null = null;
-  /** Re-enable timer armed by every `update` event and disarmed
-   *  when the cooldown elapses. */
-  private _cameraStopTimer: number | null = null;
+  /** Listeners stashed so we can detach on disable / world-change. */
+  private _onCtrlStart: (() => void) | null = null;
+  private _onCtrlEnd: (() => void) | null = null;
+  private _onWheel: ((e: WheelEvent) => void) | null = null;
+  /** Wheel-idle debounce timer. Re-armed on every wheel pulse. */
+  private _wheelIdleTimer: number | null = null;
 
   /** Pointer-leave handler — hides the marker when the cursor leaves
    *  the canvas (or floats over a UI panel sitting above it). */
@@ -257,17 +254,29 @@ export abstract class Measurement<
       );
       this._pointerLeaveHandler = null;
     }
-    // Camera-controls listener: any matrix change (drag, wheel, programmatic)
-    // suppresses picks for `cameraStopDelay` ms after the last update.
+    // Camera-controls listeners: gate picks on user input (drag +
+    // wheel) rather than on `update` events. The matrix-change
+    // `update` event fires throughout damping inertia after the
+    // user has already released, which would suppress picks for
+    // the full damping tail. `controlstart` / `controlend` give us
+    // exact "user is touching the camera" boundaries; wheel needs
+    // its own debounce because it doesn't fire start / end.
     const controls = (this.world.camera as any)?.controls;
-    if (controls && this._cameraUpdateHandler) {
-      controls.removeEventListener("update", this._cameraUpdateHandler);
-      this._cameraUpdateHandler = null;
+    if (controls && this._onCtrlStart) {
+      controls.removeEventListener("controlstart", this._onCtrlStart);
     }
-    // Drop any pending re-enable timer; we're tearing down listeners.
-    if (this._cameraStopTimer !== null) {
-      clearTimeout(this._cameraStopTimer);
-      this._cameraStopTimer = null;
+    if (controls && this._onCtrlEnd) {
+      controls.removeEventListener("controlend", this._onCtrlEnd);
+    }
+    if (this._onWheel) {
+      viewerContainer.removeEventListener("wheel", this._onWheel);
+    }
+    this._onCtrlStart = null;
+    this._onCtrlEnd = null;
+    this._onWheel = null;
+    if (this._wheelIdleTimer !== null) {
+      clearTimeout(this._wheelIdleTimer);
+      this._wheelIdleTimer = null;
     }
     this._cameraInteracting = false;
 
@@ -290,40 +299,45 @@ export abstract class Measurement<
         this._pointerLeaveHandler,
       );
 
+      const hideMarker = () => {
+        if (this._vertexPicker.marker?.visible) {
+          this._vertexPicker.marker.visible = false;
+        }
+      };
+
       if (controls) {
-        // Listen to `update` (not `controlstart` / `controlend`)
-        // because the start/end events only fire on drag-style
-        // interactions in camera-controls — wheel zoom and
-        // programmatic moves trigger only `update`. Using `update`
-        // gives us a uniform signal for "the camera matrix just
-        // changed", which is what we actually care about.
-        this._cameraUpdateHandler = () => {
+        this._onCtrlStart = () => {
           this._cameraInteracting = true;
-          // Hide the marker while the camera is in motion — its
-          // world-space position is stale relative to where the
-          // user is looking now.
-          if (this._vertexPicker.marker?.visible) {
-            this._vertexPicker.marker.visible = false;
-          }
-          // Re-arm the cooldown. Every fresh `update` pushes the
-          // re-enable further into the future, so picks stay
-          // suppressed across drag inertia, wheel inertia, and
-          // multi-stroke gestures without any extra bookkeeping.
-          if (this._cameraStopTimer !== null) {
-            clearTimeout(this._cameraStopTimer);
-          }
-          if (this.cameraStopDelay <= 0) {
-            this._cameraStopTimer = null;
-            this._cameraInteracting = false;
-            return;
-          }
-          this._cameraStopTimer = window.setTimeout(() => {
-            this._cameraStopTimer = null;
-            this._cameraInteracting = false;
-          }, this.cameraStopDelay);
+          hideMarker();
         };
-        controls.addEventListener("update", this._cameraUpdateHandler);
+        this._onCtrlEnd = () => {
+          this._cameraInteracting = false;
+        };
+        controls.addEventListener("controlstart", this._onCtrlStart);
+        controls.addEventListener("controlend", this._onCtrlEnd);
       }
+
+      // Wheel zoom: no controlstart / controlend pair, so debounce
+      // on the canvas wheel event. Each pulse re-arms the idle
+      // timer; once pulses stop arriving for `cameraStopDelay` ms
+      // we resume picks.
+      this._onWheel = () => {
+        this._cameraInteracting = true;
+        hideMarker();
+        if (this._wheelIdleTimer !== null) clearTimeout(this._wheelIdleTimer);
+        if (this.cameraStopDelay <= 0) {
+          this._wheelIdleTimer = null;
+          this._cameraInteracting = false;
+          return;
+        }
+        this._wheelIdleTimer = window.setTimeout(() => {
+          this._wheelIdleTimer = null;
+          this._cameraInteracting = false;
+        }, this.cameraStopDelay);
+      };
+      viewerContainer.addEventListener("wheel", this._onWheel, {
+        passive: true,
+      });
     }
   }
 
