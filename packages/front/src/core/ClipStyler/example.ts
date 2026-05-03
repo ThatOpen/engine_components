@@ -84,6 +84,7 @@ fragments.core.models.materials.list.onItemSet.add(({ value: material }) => {
     material.polygonOffset = true;
     material.polygonOffsetUnits = 1;
     material.polygonOffsetFactor = Math.random();
+    material.clippingPlanes = world.renderer?.three.clippingPlanes || [];
   }
 });
 
@@ -220,6 +221,12 @@ casters.get(world);
 // so clippings can be made
 const clipper = components.get(OBC.Clipper);
 clipper.enabled = true;
+// Use per-material local clipping so the styled section sits exactly
+// on the cut at every camera angle. Without this, the ClipStyler
+// applies a 1cm world-space offset to dodge global-clipping discard,
+// which manifests as a sideways screen-space shift at oblique angles
+// (issue #733). Set this BEFORE any plane is created.
+clipper.localClippingPlanes = true;
 
 // Set the creation/deletion events
 container.ondblclick = () => {

@@ -114,7 +114,13 @@ export class SimplePlane implements Disposable, Hideable {
       this.visible = false;
     }
 
-    this.world.renderer.setPlane(state, this.three);
+    // Read the Clipper's `localClippingPlanes` flag at use time so
+    // toggling enabled→disabled→enabled preserves whichever mode the
+    // Clipper is in. Without this, the flag would default to
+    // `undefined` on every re-enable and the plane would silently
+    // pop back into the renderer's global clipping list.
+    const clipper = this.components.get(Clipper);
+    this.world.renderer.setPlane(state, this.three, clipper.localClippingPlanes);
     this.notifyManager();
   }
 
@@ -205,7 +211,14 @@ export class SimplePlane implements Disposable, Hideable {
     this.origin = origin;
     this._sizeMultiplier = size;
 
-    world.renderer.setPlane(true, this.three);
+    // See the comment on the `enabled` setter above for why we read
+    // the Clipper flag here. The Clipper itself ALSO calls
+    // `setPlane(true, plane.three, localClippingPlanes)` right after
+    // construction, so this is technically redundant — but threading
+    // the flag here too keeps the plane's classification consistent
+    // even if a subclass's constructor calls `setPlane` directly.
+    const clipper = components.get(Clipper);
+    world.renderer.setPlane(true, this.three, clipper.localClippingPlanes);
 
     this._planeMesh = SimplePlane.newPlaneMesh(size, material);
     this._helper = this.newHelper();

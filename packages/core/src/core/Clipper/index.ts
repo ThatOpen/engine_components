@@ -16,6 +16,7 @@ import { Worlds } from "../Worlds";
 import { ClipperConfig, ClipperConfigManager } from "./src/clipper-config";
 import { ConfigManager } from "../ConfigManager";
 import { UUID } from "../../utils";
+import { FragmentsManager } from "../../fragments";
 
 export * from "./src";
 
@@ -104,6 +105,29 @@ export class Clipper
    * to the arrow gizmo as you zoom in/out. Default is true.
    */
   autoScalePlanes = true;
+
+  /**
+   * When true, planes created by this Clipper are flagged
+   * `isLocal: true` so they stay out of `renderer.three.clippingPlanes`
+   * (the WebGL-level global list). All clipping happens via per-
+   * material `material.clippingPlanes`, which `Clipper.updateMaterialsAndPlanes`
+   * already populates from the renderer's component-side array. The
+   * global list still works for non-Clipper code that pushes its own
+   * planes via `setPlane(active, plane, /*isLocal*\/ false)`.
+   *
+   * Why this matters: with planes only on materials (not global),
+   * consumers like {@link ClipStyler} can give their section fill /
+   * line meshes a *different* `material.clippingPlanes` list — one
+   * that excludes the section's own plane — so the cut geometry
+   * sits exactly on the cut without being discarded by it. The old
+   * 1cm world-space offset workaround is no longer needed and the
+   * fill stays aligned at every camera angle (issue #733).
+   *
+   * Default `false` to preserve existing behavior. Set this once
+   * before creating planes; toggling at runtime won't reclassify
+   * planes already on the renderer.
+   */
+  localClippingPlanes = false;
 
   /**
    * The type of clipping plane to be created.
@@ -217,6 +241,62 @@ export class Clipper
 
       this.onAfterDelete.trigger(plane);
     });
+
+    // Subscribe to fragments material lifecycle so we can auto-bind
+    // their `clippingPlanes` in local-clipping mode. Done once here
+    // (not on every plane operation) — the per-material handler
+    // checks `localClippingPlanes` lazily so legacy mode is a no-op
+    // for fragments materials (they get clipped by the renderer's
+    // global list as before). If fragments hasn't been initialized
+    // yet, wait for the first model load before subscribing —
+    // accessing `fragments.core` throws until `init()` has run.
+    const fragments = this.components.get(FragmentsManager);
+    if (fragments.initialized) {
+      this.subscribeToFragmentMaterials();
+    } else {
+      const onceLoaded = () => {
+        fragments.onFragmentsLoaded.remove(onceLoaded);
+        this.subscribeToFragmentMaterials();
+      };
+      fragments.onFragmentsLoaded.add(onceLoaded);
+    }
+  }
+
+  private subscribeToFragmentMaterials() {
+    const fragments = this.components.get(FragmentsManager);
+    // Existing materials at subscribe time (the model that just
+    // loaded plus any already-loaded ones).
+    for (const [, material] of fragments.core.models.materials.list) {
+      this.applyClippingToFragmentMaterial(material);
+    }
+    // Future materials (additional models loaded later, dynamically
+    // created highlight materials, etc.).
+    fragments.core.models.materials.list.onItemSet.add(({ value }) => {
+      this.applyClippingToFragmentMaterial(value);
+    });
+  }
+
+  /**
+   * Assign `material.clippingPlanes` to the renderer's component-
+   * side `clippingPlanes` array — the only place local planes live
+   * once `localClippingPlanes = true`. In legacy global-clipping
+   * mode this is a no-op: the renderer's global list handles
+   * fragments clipping and assigning per-material would just be
+   * redundant.
+   *
+   * Applied to every fragment material, including LOD line
+   * materials — they need the planes too, otherwise far-LOD line
+   * geometry stays visible past the cut while the shell geometry
+   * clips correctly.
+   */
+  private applyClippingToFragmentMaterial(material: THREE.Material) {
+    if (!this.localClippingPlanes) return;
+    const worlds = this.components.get(Worlds);
+    for (const [, world] of worlds.list) {
+      if (!world.renderer) continue;
+      material.clippingPlanes = world.renderer.clippingPlanes;
+      return;
+    }
   }
 
   /** {@link Disposable.dispose} */
@@ -365,7 +445,7 @@ export class Clipper
     const plane = this.list.get(id)!;
     plane.visible = this._visible;
     plane.size = this._size;
-    world.renderer.setPlane(true, plane.three);
+    world.renderer.setPlane(true, plane.three, this.localClippingPlanes);
     this.updateMaterialsAndPlanes();
     return plane;
   }
