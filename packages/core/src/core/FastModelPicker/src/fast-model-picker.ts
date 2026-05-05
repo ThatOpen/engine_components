@@ -428,7 +428,14 @@ export class FastModelPicker implements Disposable {
           return;
         }
         this._originalMaterials.set(child, child.material);
-        child.material = this._idMaterial;
+        // Wrap in an array so three honours `geometry.groups`. Fragments
+        // encodes per-item visibility as draw groups: each visible item
+        // contributes a range of indices to `geometry.groups` and hidden
+        // items are simply absent from the list. Three only iterates
+        // groups when the mesh's material is `Material[]`; with a single
+        // `Material` it falls back to drawing the whole indexed
+        // geometry, which would make hidden items pickable.
+        child.material = [this._idMaterial];
         any = true;
       });
 
@@ -649,7 +656,11 @@ export class FastModelPicker implements Disposable {
         // different depths than the active tiles.
         if (!child.visible) return;
         matSwap.set(child, child.material);
-        child.material = material;
+        // Wrap in an array so three honours `geometry.groups` (per-item
+        // visibility ranges). With a single Material, three draws the
+        // whole indexed geometry and the depth/normal at the cursor
+        // would reflect a hidden item.
+        child.material = [material];
       });
     }
 
