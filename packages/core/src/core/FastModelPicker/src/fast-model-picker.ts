@@ -508,6 +508,16 @@ export class FastModelPicker implements Disposable {
     // scene with lots of overdraw — collapses to ~O(SCISSOR_PX²).
     // 4×4 leaves a 1-pixel margin around the read site to absorb any
     // sub-pixel rounding in NDC→pixel conversion without missing.
+    //
+    // DPR caveat: `WebGLRenderer.setScissor` always multiplies its
+    // arguments by the canvas pixelRatio before forwarding to GL,
+    // even when the active target is an offscreen FBO at a different
+    // resolution. The picker's FBO is sized in CSS pixels via
+    // `renderer.getSize()`, so on a hi-DPI display passing FBO-pixel
+    // coordinates straight through lands the GL scissor outside the
+    // FBO — every read pixel comes back zero. Pre-divide by the
+    // pixel ratio so three's multiplication restores the FBO-pixel
+    // coords we want.
     const SCISSOR_PX = 4;
     const tw = target.width;
     const th = target.height;
@@ -518,7 +528,13 @@ export class FastModelPicker implements Disposable {
     const half = SCISSOR_PX >> 1;
     const sx = Math.max(0, Math.min(tw - SCISSOR_PX, cx - half));
     const sy = Math.max(0, Math.min(th - SCISSOR_PX, cy - half));
-    renderer.setScissor(sx, sy, SCISSOR_PX, SCISSOR_PX);
+    const dpr = renderer.getPixelRatio();
+    renderer.setScissor(
+      sx / dpr,
+      sy / dpr,
+      SCISSOR_PX / dpr,
+      SCISSOR_PX / dpr,
+    );
     renderer.setScissorTest(true);
 
     const objectsByModel = new Map<string, THREE.Object3D>();
