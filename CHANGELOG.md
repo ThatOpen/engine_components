@@ -1,5 +1,60 @@
 # Changelog
 
+## [3.5.0](https://github.com/ThatOpen/engine_components/compare/v3.4.0...v3.5.0) (2026-05-05)
+
+
+### Features
+
+* add contributing guide ([0fbe6a5](https://github.com/ThatOpen/engine_components/commit/0fbe6a556216bc5a88ba04f95730d33d2492e7b1))
+* add node example ([5e7f40a](https://github.com/ThatOpen/engine_components/commit/5e7f40a803e2fc37145488975d0c81bfd54fa9e3))
+* add optional logo docs ([306b85d](https://github.com/ThatOpen/engine_components/commit/306b85dcec44a455971bddfc93f60f13cf3fab66))
+* add optional that open company logo ([dad4459](https://github.com/ThatOpen/engine_components/commit/dad44590f3d6650570771dc38b938c0c392f0ab6))
+* add outline multi layer ([bb2fd2f](https://github.com/ThatOpen/engine_components/commit/bb2fd2f088df3f19b02e52ff196cae22f7cb0f9b))
+* extend hoverer tutorial ([722ce1c](https://github.com/ThatOpen/engine_components/commit/722ce1cbd97c0f36e2172e28a64f72641e899b5b))
+* getPointAt for orbit-center / world-point picking ([feec6c5](https://github.com/ThatOpen/engine_components/commit/feec6c5b0caa241408370f6e7774233cdc19e4ca))
+* GPU-pick driven Hoverer ([70cc691](https://github.com/ThatOpen/engine_components/commit/70cc6918a7078ea7432f81d824dbdc08a9c227cd))
+* GPU-readback item picker ([88da991](https://github.com/ThatOpen/engine_components/commit/88da99132e1d8614322efe85233afb40be2a4a4d))
+* improve async area example ([ed69dbc](https://github.com/ThatOpen/engine_components/commit/ed69dbc0bace9e29429110d5ae95b14481bfd41d))
+* improve outliner performance ([77e3034](https://github.com/ThatOpen/engine_components/commit/77e30341eb06a33e84963478ee7bba0d1f670309))
+* improve worker fetch logic ([c794387](https://github.com/ThatOpen/engine_components/commit/c794387a1f25f824b2aa259a4df711853d1b0d57))
+* measurement pick mode + cursor-tracked snap marker ([16e40a2](https://github.com/ThatOpen/engine_components/commit/16e40a2a55adc0cd3593c66ab788e43908ce5e57))
+* measurement tools follow cursor live, sync mode deprecated ([450a6a3](https://github.com/ThatOpen/engine_components/commit/450a6a39d70d76082b7b54abbf19cf0c92d9d230))
+* per-material local clipping mode (fix [#733](https://github.com/ThatOpen/engine_components/issues/733)) ([cedd8e2](https://github.com/ThatOpen/engine_components/commit/cedd8e221b9377e7697187e4c7933369e5f6c846))
+* snap polish — LRU cache, max-distance, priority, hover prefetch ([7da2ebf](https://github.com/ThatOpen/engine_components/commit/7da2ebfa0949f51ab96a9592dd5e53df5cf026a3))
+* snap stickiness + per-tool snap class / range UI ([0627d35](https://github.com/ThatOpen/engine_components/commit/0627d35ef35efd40c297c4f4a3c9a5730ec61ef2))
+* SnapResolver — main-thread snap from cached shell geometry ([39583f6](https://github.com/ThatOpen/engine_components/commit/39583f6fc2af76baffef82dbf5632bee47377930))
+* suppress measurer picks while camera moves ([8c46f5c](https://github.com/ThatOpen/engine_components/commit/8c46f5cdee17427c4cb0e8434b6ef56f7d583808))
+* unified GPU-pick fast path for non-snap raycasts ([de31964](https://github.com/ThatOpen/engine_components/commit/de3196418a14191551c71e3c641d3fb618c2de7e))
+* useFastItemPicking flag on SimpleRaycaster ([f4abe22](https://github.com/ThatOpen/engine_components/commit/f4abe22fd832874c6526e7b2fabf98c8d7276213))
+
+
+### Bug Fixes
+
+* correct camera controls afecting multiple views ([647c866](https://github.com/ThatOpen/engine_components/commit/647c866013ae179b6b96f58c26aa4d446b856966))
+* correct three.js not being excluded in bundle ([ecd7902](https://github.com/ThatOpen/engine_components/commit/ecd79025319575cf08a027ec216dbfdbfae9709f))
+* **Highlighter:** fix clear not working correctly with filter ([#719](https://github.com/ThatOpen/engine_components/issues/719)) ([9eff076](https://github.com/ThatOpen/engine_components/commit/9eff076df4f1d2c300cbe77d4efcd2fb541ed125))
+* IDS example ghost mode fades LOD geometry too ([3cab300](https://github.com/ThatOpen/engine_components/commit/3cab300bf0496d2a1727916a4e38a2b89dc48b24))
+* make new picker work with hidden frag objects ([d1d3cc8](https://github.com/ThatOpen/engine_components/commit/d1d3cc8e185c114411e63323fdc1fa1e520e8007))
+* solve edges rendering error with three 183 ([d96e132](https://github.com/ThatOpen/engine_components/commit/d96e132563abf595a403f76a63098f169f8d209e))
+* solve highlighted meshes not having edges ([e59c3ae](https://github.com/ThatOpen/engine_components/commit/e59c3ae0d7f7e22e8a7234a02f48d688f11238fe))
+* solve picker bug ([f99b0ca](https://github.com/ThatOpen/engine_components/commit/f99b0ca85a1f8dfdcc957a2262a0d241e60467ab))
+* stop things remain hovered when mouse leave screen ([f116f0d](https://github.com/ThatOpen/engine_components/commit/f116f0df2e05cf7fb16b36bf3d16955b9ccd4d52))
+* update fast-xml-parser because of vulnerability (again) ([#723](https://github.com/ThatOpen/engine_components/issues/723)) ([3a736e0](https://github.com/ThatOpen/engine_components/commit/3a736e0d1852beb72193955450c08c47e61b415c))
+* update fast-xml-parser dependency ([b16bcfe](https://github.com/ThatOpen/engine_components/commit/b16bcfe945ba1cd2bab4490eb4d9c9284b5bb207))
+* update three.js deprecated clock ([4550eb9](https://github.com/ThatOpen/engine_components/commit/4550eb95e0a4372ae2a845f1be8d610698877151))
+* **viewpoint:** update camera with correct position and direction ([#725](https://github.com/ThatOpen/engine_components/issues/725)) ([90c1712](https://github.com/ThatOpen/engine_components/commit/90c17129fc41ccdc1e594fd54cfbfa30a3149342))
+* write valid DXF structure in DxfExporter ([#722](https://github.com/ThatOpen/engine_components/issues/722)) ([bd571df](https://github.com/ThatOpen/engine_components/commit/bd571df77fdc8a836eab6d2416cfa4fdfd6a722a))
+
+
+### Performance Improvements
+
+* clipper-using examples wire `getClippingPlanesEvent` ([8f9e726](https://github.com/ThatOpen/engine_components/commit/8f9e726920bdbdb69224a8c55d30ac4fb1a18c4f))
+* collapse picker to one render target, one readPixels ([2f84590](https://github.com/ThatOpen/engine_components/commit/2f8459063444f4b1924f4c94d83e1d4f585f5b2e))
+* gate Hoverer + Measurement on user-input events ([fbc06a6](https://github.com/ThatOpen/engine_components/commit/fbc06a61b493e23687f291974d98c4ca5d057c41))
+* MeasureVolume highlights items via tile-aliased proxies ([1f29cf7](https://github.com/ThatOpen/engine_components/commit/1f29cf7e6646af5b5a58c0b6a0467c99e66ecf62))
+* scissor picker render, full uint32 ids, skip hover during camera move ([0599ceb](https://github.com/ThatOpen/engine_components/commit/0599ceb28d68f9754c61439f172163c88d2f44d0))
+* snap fetch via itemId fast path ([cc5c291](https://github.com/ThatOpen/engine_components/commit/cc5c291441a488fdbddd9140bd1c89a80239b57e))
+
 ## [3.4.0](https://github.com/ThatOpen/engine_components/compare/v3.3.2...v3.4.0) (2026-04-09)
 
 
