@@ -435,7 +435,18 @@ export class FastModelPicker implements Disposable {
         // groups when the mesh's material is `Material[]`; with a single
         // `Material` it falls back to drawing the whole indexed
         // geometry, which would make hidden items pickable.
-        child.material = [this._idMaterial];
+        //
+        // Length must match the original. Fragments puts highlight
+        // materials in extra slots of `mesh.material` and tags the
+        // highlighted item's group with `materialIndex >= 1`. A
+        // length-1 swap array would make three skip those groups,
+        // so a click on a highlighted item would see through it to
+        // whatever's behind. Filling every slot with `_idMaterial`
+        // keeps every group pickable while still honouring per-item
+        // visibility (hidden items remain absent from `groups`).
+        const original = child.material;
+        const len = Array.isArray(original) ? original.length : 1;
+        child.material = new Array(len).fill(this._idMaterial);
         any = true;
       });
 
@@ -659,8 +670,12 @@ export class FastModelPicker implements Disposable {
         // Wrap in an array so three honours `geometry.groups` (per-item
         // visibility ranges). With a single Material, three draws the
         // whole indexed geometry and the depth/normal at the cursor
-        // would reflect a hidden item.
-        child.material = [material];
+        // would reflect a hidden item. Length must match the original
+        // so highlight groups (materialIndex >= 1) also draw — see the
+        // longer note in `applyIdMaterial`.
+        const original = child.material;
+        const len = Array.isArray(original) ? original.length : 1;
+        child.material = new Array(len).fill(material);
       });
     }
 
