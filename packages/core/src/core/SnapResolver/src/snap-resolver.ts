@@ -13,6 +13,12 @@ export enum SnapClass {
   FACE = 2,
 }
 
+/** Numeric typed-array precision used by SnapResolver geometry caches. */
+export type SnapPrecision = "half" | "full";
+
+/** Typed arrays used to store snap geometry payloads. */
+export type SnapFloatArray = Float32Array | Float64Array;
+
 /**
  * One result of a {@link SnapResolver.resolve} call. Fields match what
  * the worker raycast snap path historically produces, so consumers
@@ -30,7 +36,7 @@ export type SnapResult = {
   snappingClass: SnapClass;
   /** Polygon vertices of the snapped face (FACE only). Flat array of
    *  `[x, y, z, x, y, z, ...]`. */
-  facePoints?: Float32Array;
+  facePoints?: SnapFloatArray;
   /** Triangulation indices into `facePoints` (FACE only). For convex
    *  polygons we emit a fan; for concave the consumer can re-tessellate. */
   faceIndices?: Uint32Array;
@@ -42,7 +48,7 @@ export type SnapResult = {
 type Polygon = {
   /** Flat `[x, y, z, ...]` of polygon vertices in world space, in
    *  insertion order. */
-  points: Float32Array;
+  points: SnapFloatArray;
   /** Polygon-plane normal (unit, world space). */
   normal: THREE.Vector3;
   /** Plane constant: `dot(normal, p0)`. Cached to avoid recomputing
@@ -55,10 +61,10 @@ type ItemSnapData = {
   /** Flat edge segment array `[ax,ay,az, bx,by,bz, ...]`. Edges are
    *  deduplicated across triangulation seams via canonical (a, b)
    *  pair where `a` < `b` lexicographically. */
-  edges: Float32Array;
+  edges: SnapFloatArray;
   /** Flat unique-vertex array `[x, y, z, ...]`. Quantised to 1mm to
    *  collapse near-duplicates. */
-  vertices: Float32Array;
+  vertices: SnapFloatArray;
 };
 
 const VERTEX_QUANT = 1_000; // 1mm grid
@@ -98,7 +104,28 @@ export class SnapResolver implements Disposable {
    */
   maxCacheSize = 1000;
 
+  /**
+   * Numeric precision for cached face/edge/vertex buffers.
+   *
+   * `"half"` uses Float32Array for lower memory footprint.
+   * `"full"` uses Float64Array for higher numeric precision.
+   * Use `"full"` for workflows that require higher geometric fidelity.
+   *
+   * Changing this value clears the snap cache so subsequent requests
+   * are rebuilt with the new precision.
+   */
+  get precision(): SnapPrecision {
+    return this._precision;
+  }
+
+  set precision(value: SnapPrecision) {
+    if (value === this._precision) return;
+    this._precision = value;
+    this.clear();
+  }
+
   private readonly components: Components;
+  private _precision: SnapPrecision = "half";
   // Map insertion order is recency order (LRU). On every read we
   // delete + re-set the entry to bump it to most-recent; on every
   // write we drop oldest entries until size <= maxCacheSize.
@@ -277,8 +304,8 @@ export class SnapResolver implements Disposable {
 
     if (polygons.length === 0) return null;
 
-    const edges = deriveUniqueEdges(polygons);
-    const vertices = deriveUniqueVertices(polygons);
+    const edges = deriveUniqueEdges(polygons, this._precision);
+    const vertices = deriveUniqueVertices(polygons, this._precision);
     return { faces: polygons, edges, vertices };
   }
 
@@ -297,7 +324,9 @@ export class SnapResolver implements Disposable {
     const tmp = new THREE.Vector3();
     const collect = (indices: number[]) => {
       if (indices.length < 3) return;
-      const flat = new Float32Array(indices.length * 3);
+
+      const Ctor = this._precision === "full" ? Float64Array : Float32Array;
+      const flat = new Ctor(indices.length * 3);
       for (let i = 0; i < indices.length; i++) {
         const p = points[indices[i]];
         tmp.set(p[0], p[1], p[2]).applyMatrix4(worldMatrix);
@@ -479,7 +508,7 @@ function composeWorldMatrix(
  * slightly non-planar polygons that arise from coordinate rounding.
  * Returns `null` if the polygon collapses to a line.
  */
-function polygonNormal(flat: Float32Array): THREE.Vector3 | null {
+function polygonNormal(flat: ArrayLike<number>): THREE.Vector3 | null {
   const n = new THREE.Vector3();
   const count = flat.length / 3;
   for (let i = 0; i < count; i++) {
@@ -507,7 +536,10 @@ function fanTriangulation(vertexCount: number): Uint32Array {
   return out;
 }
 
-function deriveUniqueEdges(faces: Polygon[]): Float32Array {
+function deriveUniqueEdges(
+  faces: Polygon[],
+  precision: SnapPrecision,
+): SnapFloatArray {
   // Edge dedup keyed by quantised endpoint pair, canonical-ordered so
   // (a, b) and (b, a) collapse.
   const seen = new Set<string>();
@@ -525,10 +557,15 @@ function deriveUniqueEdges(faces: Polygon[]): Float32Array {
       collected.push(ax, ay, az, bx, by, bz);
     }
   }
-  return new Float32Array(collected);
+
+  const Ctor = precision === "full" ? Float64Array : Float32Array;
+  return new Ctor(collected);
 }
 
-function deriveUniqueVertices(faces: Polygon[]): Float32Array {
+function deriveUniqueVertices(
+  faces: Polygon[],
+  precision: SnapPrecision,
+): SnapFloatArray {
   const seen = new Set<string>();
   const collected: number[] = [];
   for (const f of faces) {
@@ -542,7 +579,8 @@ function deriveUniqueVertices(faces: Polygon[]): Float32Array {
       collected.push(x, y, z);
     }
   }
-  return new Float32Array(collected);
+  const Ctor = precision === "full" ? Float64Array : Float32Array;
+  return new Ctor(collected);
 }
 
 function quantKey(x: number, y: number, z: number) {
