@@ -77,6 +77,7 @@ packages/
 git clone https://github.com/ThatOpen/engine_components.git
 cd engine_components
 yarn install
+yarn build-core && yarn build-front
 yarn dev
 ```
 
