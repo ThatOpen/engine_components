@@ -69,6 +69,12 @@ export class Highlighter
       renderedFaces: FRAGS.RenderedFaces.ONE,
       opacity: 1,
       transparent: false,
+      // Preserve each element's own material and only override the properties
+      // listed below. renderedFaces is intentionally not listed, so it is kept
+      // from the element: highlighting a double-sided model (e.g. a Revit
+      // export) no longer back-face culls and hides it. See engine_fragment#233.
+      preserveOriginalMaterial: true,
+      _explicitProps: ["color", "opacity", "transparent"],
     },
   };
 
