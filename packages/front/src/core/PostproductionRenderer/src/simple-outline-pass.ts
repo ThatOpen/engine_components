@@ -266,6 +266,7 @@ export class SimpleOutlinePass extends Pass {
 
     const material = new THREE.ShaderMaterial({
       uniforms: { idColor: { value: new THREE.Vector4(id / 255, 0, 0, 1) } },
+      clipping: true,
       vertexShader: GHOST_VERT,
       fragmentShader: GHOST_FRAG,
       depthTest: true,
@@ -275,7 +276,6 @@ export class SimpleOutlinePass extends Pass {
       polygonOffsetFactor: -priority,
       polygonOffsetUnits: -priority,
     });
-    material.clipping = true;
 
     const container = new THREE.Group();
     container.name = `outline-group:${name}`;
