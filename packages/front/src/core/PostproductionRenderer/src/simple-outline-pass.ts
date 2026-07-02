@@ -46,14 +46,21 @@ interface OutlinedTileProxy {
 }
 
 const GHOST_VERT = `
+  #include <clipping_planes_pars_vertex>
   void main() {
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * mvPosition;
+    #include <clipping_planes_vertex>
   }
 `;
 
 const GHOST_FRAG = `
+  #include <clipping_planes_pars_fragment>
   uniform vec4 idColor;
-  void main() { gl_FragColor = idColor; }
+  void main() {
+    #include <clipping_planes_fragment>
+    gl_FragColor = idColor;
+  }
 `;
 
 /**
@@ -268,6 +275,7 @@ export class SimpleOutlinePass extends Pass {
       polygonOffsetFactor: -priority,
       polygonOffsetUnits: -priority,
     });
+    material.clipping = true;
 
     const container = new THREE.Group();
     container.name = `outline-group:${name}`;
