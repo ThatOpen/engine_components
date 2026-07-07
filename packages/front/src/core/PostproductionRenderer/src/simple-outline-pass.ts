@@ -90,7 +90,7 @@ export class SimpleOutlinePass extends Pass {
    * source meshes, their `attributes`, and their `index` belong to
    * fragments and are never mutated here.
    */
-  private _outlinedTiles = new Map<THREE.Mesh, OutlinedTileProxy>();
+  private _outlinedTiles = new Map<string, OutlinedTileProxy>();
   private _nextId = 1;
   private _maxThickness = 2;
 
@@ -327,6 +327,11 @@ export class SimpleOutlinePass extends Pass {
     if (name === DEFAULT_GROUP) return;
     const group = this._groups.get(name);
     if (!group) return;
+    for (const [key, target] of this._outlinedTiles) {
+      if (target.groupName !== name) continue;
+      target.proxy.removeFromParent();
+      this._outlinedTiles.delete(key);
+    }
     while (group.container.children.length) {
       group.container.children[0].removeFromParent();
     }
@@ -385,21 +390,13 @@ export class SimpleOutlinePass extends Pass {
     let group = this._groups.get(groupName);
     if (!group) group = this.addGroup(groupName);
 
-    const existing = this._outlinedTiles.get(tile);
+    const key = this.getOutlinedTileKey(tile, groupName);
+    const existing = this._outlinedTiles.get(key);
     if (existing) {
-      // Reuse the proxy shell; rebuild geometry groups against the new
-      // chunks, and re-home it if the group changed.
       const proxy = existing.proxy;
       const proxyGeom = proxy.geometry;
       proxyGeom.clearGroups();
       this.fillProxyGroups(proxyGeom, chunks);
-      if (existing.groupName !== groupName) {
-        proxy.removeFromParent();
-        // Material must stay as a single-element array; see comment below.
-        proxy.material = [group.material];
-        group.container.add(proxy);
-        existing.groupName = groupName;
-      }
       return;
     }
 
@@ -423,7 +420,7 @@ export class SimpleOutlinePass extends Pass {
     proxy.matrixWorld.copy(tile.matrixWorld);
 
     group.container.add(proxy);
-    this._outlinedTiles.set(tile, { source: tile, proxy, groupName });
+    this._outlinedTiles.set(key, { source: tile, proxy, groupName });
   }
 
   /**
@@ -440,15 +437,31 @@ export class SimpleOutlinePass extends Pass {
    * The proxy's tiny BufferGeometry wrapper (just metadata) is left to
    * GC. Attributes and index belong to fragments.
    */
-  detachOutlinedTile(tile: THREE.Mesh) {
-    const target = this._outlinedTiles.get(tile);
-    if (!target) return;
-    target.proxy.removeFromParent();
-    this._outlinedTiles.delete(tile);
+  detachOutlinedTile(tile: THREE.Mesh, groupName?: string) {
+    if (groupName !== undefined) {
+      const key = this.getOutlinedTileKey(tile, groupName);
+      const target = this._outlinedTiles.get(key);
+      if (!target) return;
+      target.proxy.removeFromParent();
+      this._outlinedTiles.delete(key);
+      return;
+    }
+
+    for (const [key, target] of this._outlinedTiles) {
+      if (target.source !== tile) continue;
+      target.proxy.removeFromParent();
+      this._outlinedTiles.delete(key);
+    }
   }
 
-  hasOutlinedTile(tile: THREE.Mesh) {
-    return this._outlinedTiles.has(tile);
+  hasOutlinedTile(tile: THREE.Mesh, groupName?: string) {
+    if (groupName !== undefined) {
+      return this._outlinedTiles.has(this.getOutlinedTileKey(tile, groupName));
+    }
+    for (const target of this._outlinedTiles.values()) {
+      if (target.source === tile) return true;
+    }
+    return false;
   }
 
   /**
@@ -624,6 +637,10 @@ export class SimpleOutlinePass extends Pass {
       const count = raw === 0xffffffff ? Infinity : raw;
       proxyGeom.addGroup(start, count, 0);
     }
+  }
+
+  private getOutlinedTileKey(tile: THREE.Mesh, groupName: string) {
+    return `${groupName}:${tile.uuid}`;
   }
 
   // ---------------------------------------------------------------------------
