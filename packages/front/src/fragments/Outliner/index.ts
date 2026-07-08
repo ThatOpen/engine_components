@@ -234,7 +234,7 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
       }
     }
 
-    this.detachAll(group);
+    this.detachAll(group, name);
     this._groups.delete(name);
 
     if (this.world) {
@@ -311,15 +311,15 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
       if (!state) return;
       state.map = {};
       state.activeStyles.clear();
-      this.detachAll(state);
+      this.detachAll(state, group);
       if (group === DEFAULT_GROUP) this.cleanPoints();
       return;
     }
 
-    for (const [, state] of this._groups) {
+    for (const [name, state] of this._groups) {
       state.map = {};
       state.activeStyles.clear();
-      this.detachAll(state);
+      this.detachAll(state, name);
     }
     this.cleanPoints();
   }
@@ -537,7 +537,7 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
     for (const [modelId, prev] of previouslyAttached) {
       const next = nextAttached.get(modelId) ?? new Set<THREE.Mesh>();
       for (const tile of prev) {
-        if (!next.has(tile)) pass.detachOutlinedTile(tile);
+        if (!next.has(tile)) pass.detachOutlinedTile(tile, name);
       }
     }
 
@@ -548,14 +548,14 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
    * Detach every proxy this group has attached and clear the tracking
    * map. Used by `clean` and `remove`.
    */
-  private detachAll(state: OutlineGroupState) {
+  private detachAll(state: OutlineGroupState, group = DEFAULT_GROUP) {
     if (!this.world) {
       state.attached = new Map();
       return;
     }
     const pass = this.getRenderer().postproduction.outlinePass;
     for (const [, tiles] of state.attached) {
-      for (const tile of tiles) pass.detachOutlinedTile(tile);
+      for (const tile of tiles) pass.detachOutlinedTile(tile, group);
     }
     state.attached = new Map();
   }
@@ -576,7 +576,7 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
       for (const [groupName, state] of this._groups) {
         const localIds = state.map[modelId];
         if (localIds && localIds.size > 0) {
-          void this.updateGroup(groupName);
+          this.updateGroup(groupName).catch(() => undefined);
         }
       }
     };
