@@ -46,14 +46,21 @@ interface OutlinedTileProxy {
 }
 
 const GHOST_VERT = `
+  #include <clipping_planes_pars_vertex>
   void main() {
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * mvPosition;
+    #include <clipping_planes_vertex>
   }
 `;
 
 const GHOST_FRAG = `
+  #include <clipping_planes_pars_fragment>
   uniform vec4 idColor;
-  void main() { gl_FragColor = idColor; }
+  void main() {
+    #include <clipping_planes_fragment>
+    gl_FragColor = idColor;
+  }
 `;
 
 /**
@@ -259,6 +266,7 @@ export class SimpleOutlinePass extends Pass {
 
     const material = new THREE.ShaderMaterial({
       uniforms: { idColor: { value: new THREE.Vector4(id / 255, 0, 0, 1) } },
+      clipping: true,
       vertexShader: GHOST_VERT,
       fragmentShader: GHOST_FRAG,
       depthTest: true,
