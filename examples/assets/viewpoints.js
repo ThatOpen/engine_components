@@ -1,19 +1,19 @@
-import{p as C,m as f,a as d,b as y,V as u}from"./index-BTQc5iy9.js";import{C as S,W as V,S as v,a as k,O as I,F as U,V as P,B as $,H as g}from"./index-D0VJ-jrh.js";import{I as L}from"./index-CGDXHyHN.js";const i=new S,M=i.get(V),o=M.create();o.scene=new v(i);o.scene.setup();o.scene.three.background=null;const O=document.getElementById("container");o.renderer=new k(i,O);o.camera=new I(i);await o.camera.controls.setLookAt(78,20,-2.2,26,-4,25);i.init();const R="https://thatopen.github.io/engine_fragment/resources/worker.mjs",D=await fetch(R),F=await D.blob(),B=new File([F],"worker.mjs",{type:"text/javascript"}),T=URL.createObjectURL(B),a=i.get(U);a.init(T);o.camera.controls.addEventListener("update",()=>a.core.update());o.onCameraChanged.add(e=>{for(const[,n]of a.list)n.useCamera(e.three);a.core.update(!0)});a.list.onItemSet.add(({value:e})=>{e.useCamera(o.camera.three),o.scene.three.add(e.object),a.core.update(!0)});a.core.models.materials.list.onItemSet.add(({value:e})=>{"isLodMaterial"in e&&e.isLodMaterial||(e.polygonOffset=!0,e.polygonOffsetUnits=1,e.polygonOffsetFactor=Math.random())});const _=["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag","https://thatopen.github.io/engine_components/resources/frags/school_str.frag"];await Promise.all(_.map(async e=>{var c;const n=(c=e.split("/").pop())==null?void 0:c.split(".").shift();if(!n)return null;const s=await(await fetch(e)).arrayBuffer();return a.core.load(s,{modelId:n})}));const r=i.get(P);r.world=o;let t;const j=async()=>{t=r.create(),t.title="My Viewpoint",await t.updateCamera()},x=()=>{t&&t.takeSnapshot()},W=async()=>{t&&(console.log("Position before updating",t.position),await t.updateCamera(),console.log("Position after updating",t.position))},E=async()=>{if(!t)return;const e=new u;o.camera.controls.getPosition(e),console.log("Camera position before updating",e),await t.go();const n=new u;o.camera.controls.getPosition(n),console.log("Camera position before updating",n)};r.list.onItemSet.add(({value:e})=>{e.selectionComponents.add("3V$FMCDUfCoPwUaHMPfteW","1fIVuvFffDJRV_SJESOtCZ")});r.list.onItemSet.add(async({value:e})=>{const l=await i.get(L).getItems([{categories:[/DOOR/]}]),s=await a.modelIdMapToGuids(l);e.selectionComponents.add(...s)});const H=async()=>{if(!t)return;const e=t.selectionComponents,n=await t.getSelectionMap();console.log(e,n)},A=async()=>{if(!t)return;const e=await t.getSelectionMap();i.get(g).isolate(e)};r.list.onItemSet.add(({value:e})=>{i.get($).create().viewpoints.add(e.guid)});const G=()=>{if(!t)return null;const e=r.snapshots.get(t.snapshot);return e||null};C.init();const[m,w]=f.create(e=>{const n=async({target:s})=>{s.loading=!0,await i.get(g).set(!0),s.loading=!1};let l=d`
+import{p as y,m as f,a as d,b as S,V as u}from"./index-r1u2qk8S.js";import{C as V,W as v,S as I,a as k,O as P,F as g,V as $,B as M,H as w}from"./index-Dx2GLmSS.js";import{I as U}from"./index-DJzGrc41.js";const i=new V,D=i.get(v),o=D.create();o.scene=new I(i);o.scene.setup();o.scene.three.background=null;const L=document.getElementById("container");o.renderer=new k(i,L);o.camera=new P(i);await o.camera.controls.setLookAt(78,20,-2.2,26,-4,25);i.init();const O=await g.getWorker(),s=i.get(g);s.init(O);o.camera.controls.addEventListener("update",()=>s.core.update());o.onCameraChanged.add(e=>{for(const[,n]of s.list)n.useCamera(e.three);s.core.update(!0)});s.list.onItemSet.add(({value:e})=>{e.useCamera(o.camera.three),o.scene.three.add(e.object),s.core.update(!0)});s.core.models.materials.list.onItemSet.add(({value:e})=>{"isLodMaterial"in e&&e.isLodMaterial||(e.polygonOffset=!0,e.polygonOffsetUnits=1,e.polygonOffsetFactor=Math.random())});const R=["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag","https://thatopen.github.io/engine_components/resources/frags/school_str.frag"];await Promise.all(R.map(async e=>{var c;const n=(c=e.split("/").pop())==null?void 0:c.split(".").shift();if(!n)return null;const a=await(await fetch(e)).arrayBuffer();return s.core.load(a,{modelId:n})}));const l=i.get($);l.world=o;let t;const F=async()=>{t=l.create(),t.title="My Viewpoint",await t.updateCamera()},T=()=>{t&&t.takeSnapshot()},B=async()=>{t&&(console.log("Position before updating",t.position),await t.updateCamera(),console.log("Position after updating",t.position))},W=async()=>{if(!t)return;const e=new u;o.camera.controls.getPosition(e),console.log("Camera position before updating",e),await t.go();const n=new u;o.camera.controls.getPosition(n),console.log("Camera position before updating",n)};l.list.onItemSet.add(({value:e})=>{e.selectionComponents.add("3V$FMCDUfCoPwUaHMPfteW","1fIVuvFffDJRV_SJESOtCZ")});l.list.onItemSet.add(async({value:e})=>{const r=await i.get(U).getItems([{categories:[/DOOR/]}]),a=await s.modelIdMapToGuids(r);e.selectionComponents.add(...a)});const _=async()=>{if(!t)return;const e=t.selectionComponents,n=await t.getSelectionMap();console.log(e,n)},x=async()=>{if(!t)return;const e=await t.getSelectionMap();i.get(w).isolate(e)};l.list.onItemSet.add(({value:e})=>{i.get(M).create().viewpoints.add(e.guid)});const E=()=>{if(!t)return null;const e=l.snapshots.get(t.snapshot);return e||null};y.init();const[m,h]=f.create(e=>{const n=async({target:a})=>{a.loading=!0,await i.get(w).set(!0),a.loading=!1};let r=d`
     <bim-panel-section label="Viewpoint Creation">
       <bim-label>To start, hit the button below to create a new viewpoint</bim-label>
-      <bim-button label="Create Viewpoint" @click=${j}></bim-button>
+      <bim-button label="Create Viewpoint" @click=${F}></bim-button>
     </bim-panel-section>
-  `;if(t){const s=G();let c;if(s){const b=new Blob([s],{type:"image/png"}),h=URL.createObjectURL(b);c=d`
-        <img src="${h}" alt="Viewpoint Snapshot" style="max-width: 20rem;"/>
-      `}l=d`
+  `;if(t){const a=E();let c;if(a){const b=new Blob([a],{type:"image/png"}),C=URL.createObjectURL(b);c=d`
+        <img src="${C}" alt="Viewpoint Snapshot" style="max-width: 20rem;"/>
+      `}r=d`
       <bim-panel-section label="Controls">
-        <bim-button @click=${x} label="Update Snapshot"></bim-button>
+        <bim-button @click=${T} label="Update Snapshot"></bim-button>
         ${c}
-        <bim-button @click=${W} label="Update Viewpoint Camera"></bim-button>
-        <bim-button @click=${E} label="Set World Camera"></bim-button>
-        <bim-button @click=${H} label="Report Selection Components"></bim-button>
-        <bim-button @click=${A} label="Isolate Components"></bim-button>
-        <bim-button @click=${()=>{if(!t)return;const{guid:b}=t;t=void 0,r.list.delete(b)}} label="Delete Viewpoint"></bim-button>
+        <bim-button @click=${B} label="Update Viewpoint Camera"></bim-button>
+        <bim-button @click=${W} label="Set World Camera"></bim-button>
+        <bim-button @click=${_} label="Report Selection Components"></bim-button>
+        <bim-button @click=${x} label="Isolate Components"></bim-button>
+        <bim-button @click=${()=>{if(!t)return;const{guid:b}=t;t=void 0,l.list.delete(b)}} label="Delete Viewpoint"></bim-button>
       </bim-panel-section>
     `}return d`
     <bim-panel active label="Viewpoints Tutorial" class="options-menu">
@@ -21,10 +21,10 @@ import{p as C,m as f,a as d,b as y,V as u}from"./index-BTQc5iy9.js";import{C as 
         <bim-label style="white-space: normal; width: 18rem;">To better experience this tutorial, open the developer tool's console in your browser to see some logs.</bim-label>
         <bim-button label="Reset Visibility" @click=${n}></bim-button>
       </bim-panel-section>
-      ${l}
+      ${r}
     </bim-panel>
-  `},{});r.list.onItemDeleted.add(()=>w());r.list.onItemUpdated.add(()=>w());document.body.append(m);const J=f.create(()=>d`
+  `},{});l.list.onItemDeleted.add(()=>h());l.list.onItemUpdated.add(()=>h());document.body.append(m);const H=f.create(()=>d`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{m.classList.contains("options-menu-visible")?m.classList.remove("options-menu-visible"):m.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(J);const p=new y;p.showPanel(2);document.body.append(p.dom);p.dom.style.left="0px";p.dom.style.zIndex="unset";o.renderer.onBeforeUpdate.add(()=>p.begin());o.renderer.onAfterUpdate.add(()=>p.end());
+    `);document.body.append(H);const p=new S;p.showPanel(2);document.body.append(p.dom);p.dom.style.left="0px";p.dom.style.zIndex="unset";o.renderer.onBeforeUpdate.add(()=>p.begin());o.renderer.onAfterUpdate.add(()=>p.end());

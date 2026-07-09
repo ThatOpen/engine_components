@@ -1,26 +1,26 @@
-import{p,m as l,C as u,a as c,b}from"./index-BTQc5iy9.js";import{C as g,W as f,S as h,a as w,f as y,F as v}from"./index-D0VJ-jrh.js";const L=document.getElementById("container"),o=new g,k=o.get(f),t=k.create();t.scene=new h(o);t.renderer=new w(o,L);t.camera=new y(o);o.init();t.scene.setup();t.scene.three.background=null;const C="https://thatopen.github.io/engine_fragment/resources/worker.mjs",S=await fetch(C),U=await S.blob(),j=new File([U],"worker.mjs",{type:"text/javascript"}),m=URL.createObjectURL(j),n=o.get(v);n.init(m);n.init(m);t.camera.controls.addEventListener("update",()=>n.core.update());n.core.models.materials.list.onItemSet.add(({value:e})=>{"isLodMaterial"in e&&e.isLodMaterial||(e.polygonOffset=!0,e.polygonOffsetUnits=1,e.polygonOffsetFactor=Math.random())});n.list.onItemSet.add(({value:e})=>{e.useCamera(t.camera.three),t.scene.three.add(e.object),n.core.update(!0)});const x=["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];await Promise.all(x.map(async e=>{var r;const i=(r=e.split("/").pop())==null?void 0:r.split(".").shift();if(!i)return null;const d=await(await fetch(e)).arrayBuffer();return n.core.load(d,{modelId:i})}));await t.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);await n.core.update(!0);p.init();const a=l.create(()=>c`
+import{p,m as l,C as b,a as c,b as g}from"./index-r1u2qk8S.js";import{C as f,W as h,S as w,a as y,f as v,F as m}from"./index-Dx2GLmSS.js";const L=document.getElementById("container"),o=new f,C=o.get(h),n=C.create();n.scene=new w(o);n.renderer=new y(o,L);n.camera=new v(o);o.init();n.scene.setup();n.scene.three.background=null;n.renderer.showLogo=!0;const d=await m.getWorker(),t=o.get(m);t.init(d);t.init(d);n.camera.controls.addEventListener("update",()=>t.core.update());t.core.models.materials.list.onItemSet.add(({value:e})=>{"isLodMaterial"in e&&e.isLodMaterial||(e.polygonOffset=!0,e.polygonOffsetUnits=1,e.polygonOffsetFactor=Math.random())});t.list.onItemSet.add(({value:e})=>{e.useCamera(n.camera.three),n.scene.three.add(e.object),t.core.update(!0)});const S=["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];await Promise.all(S.map(async e=>{var r;const i=(r=e.split("/").pop())==null?void 0:r.split(".").shift();if(!i)return null;const u=await(await fetch(e)).arrayBuffer();return t.core.load(u,{modelId:i})}));await n.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);await t.core.update(!0);p.init();const s=l.create(()=>c`
     <bim-panel label="Worlds Tutorial" class="options-menu">
       <bim-panel-section label="Controls">
       
         <bim-color-input 
           label="Background Color" color="#202932" 
-          @input="${({target:e})=>{t.scene.config.backgroundColor=new u(e.color)}}">
+          @input="${({target:e})=>{n.scene.config.backgroundColor=new b(e.color)}}">
         </bim-color-input>
         
         <bim-number-input 
           slider step="0.1" label="Directional lights intensity" value="1.5" min="0.1" max="10"
-          @change="${({target:e})=>{t.scene.config.directionalLight.intensity=e.value}}">
+          @change="${({target:e})=>{n.scene.config.directionalLight.intensity=e.value}}">
         </bim-number-input>
         
         <bim-number-input 
           slider step="0.1" label="Ambient light intensity" value="1" min="0.1" max="5"
-          @change="${({target:e})=>{t.scene.config.ambientLight.intensity=e.value}}">
+          @change="${({target:e})=>{n.scene.config.ambientLight.intensity=e.value}}">
         </bim-number-input>
         
       </bim-panel-section>
     </bim-panel>
-    `);document.body.append(a);const B=l.create(()=>c`
+    `);document.body.append(s);const k=l.create(()=>c`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
-        @click="${()=>{a.classList.contains("options-menu-visible")?a.classList.remove("options-menu-visible"):a.classList.add("options-menu-visible")}}">
+        @click="${()=>{s.classList.contains("options-menu-visible")?s.classList.remove("options-menu-visible"):s.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(B);const s=new b;s.showPanel(2);document.body.append(s.dom);s.dom.style.left="0px";s.dom.style.zIndex="unset";t.renderer.onBeforeUpdate.add(()=>s.begin());t.renderer.onAfterUpdate.add(()=>s.end());
+    `);document.body.append(k);const a=new g;a.showPanel(2);document.body.append(a.dom);a.dom.style.left="0px";a.dom.style.zIndex="unset";n.renderer.onBeforeUpdate.add(()=>a.begin());n.renderer.onAfterUpdate.add(()=>a.end());
