@@ -45,6 +45,11 @@ world.scene.setup();
 world.scene.three.background = null;
 
 const container = document.getElementById("container")!;
+// Tip: for models with lots of coplanar surfaces you can opt into reversed-Z
+// depth for much cleaner edges (near-uniform precision across the scene):
+//   new OBF.PostproductionRenderer(components, container, { reversedDepthBuffer: true })
+// It pairs best with the pen styles; the ambient-occlusion shadow styles are
+// not reversed-Z aware yet.
 world.renderer = new OBF.PostproductionRenderer(components, container);
 world.camera = new OBC.OrthoPerspectiveCamera(components);
 await world.camera.controls.setLookAt(68, 23, -8.5, 21.5, -5.5, 23);

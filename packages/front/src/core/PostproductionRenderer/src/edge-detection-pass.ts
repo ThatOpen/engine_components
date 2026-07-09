@@ -29,7 +29,10 @@ export class EdgeDetectionPass extends Pass {
   private _fragments: OBC.FragmentsManager;
   private _renderer: OBC.BaseRenderer;
   private _overrideMaterial: THREE.ShaderMaterial;
-  private _depthBiasStrength = 0.001; // Adjustable depth bias strength
+  // World-space (view-space) coplanar priority offset in scene units. Applied
+  // toward the camera so higher-priority coplanar surfaces win the depth tie
+  // without ever overrunning a real occluder farther than this distance.
+  private _depthBiasStrength = 0.005;
 
   private _mode = EdgeDetectionPassMode.DEFAULT;
 
@@ -115,10 +118,28 @@ export class EdgeDetectionPass extends Pass {
           #include <begin_vertex>
           #include <project_vertex>
 
-          // Priority from vertex color luminance. Higher = render on top.
+          // Coplanar priority, applied as a small WORLD-space nudge toward the
+          // camera in view space (+Z is toward the camera), then re-projected.
+          // A constant clip-space bias falls off ~1/d while the real depth gap
+          // falls off ~1/d^2, so at distance it overran genuine occluders and
+          // leaked their edges (#718). A view-space offset instead behaves like
+          // a real epsilon separation: its projected depth gap scales like real
+          // geometry, so it breaks coplanar ties at every distance without ever
+          // pulling an occluder forward. Convention-independent (correct under
+          // standard-Z and reversed-Z). mvPosition comes from <project_vertex>,
+          // so instancing/batching are already applied.
+          //
+          // Two terms (mirrors beta's per-faceId band + hash, adapted to view
+          // space): luminance priority so brighter surfaces render on top, plus
+          // a deterministic per-colour hash so coplanar surfaces of EQUAL
+          // priority still get a stable winner instead of z-fighting. The hash
+          // is a fraction of the priority step, so priority still dominates.
           float priority = dot(color, vec3(0.299, 0.587, 0.114));
-          // Clip space: smaller z = closer to camera.
-          gl_Position.z -= priority * depthBiasStrength;
+          float tie = fract(
+            sin(dot(color, vec3(12.9898, 78.233, 37.719))) * 43758.5453
+          );
+          mvPosition.z += (priority + (tie - 0.5) * 0.25) * depthBiasStrength;
+          gl_Position = projectionMatrix * mvPosition;
 
           #include <clipping_planes_vertex>
         }
@@ -204,11 +225,27 @@ export class EdgeDetectionPass extends Pass {
       format: THREE.RGBAFormat,
     });
 
-    this._vertexColorRenderTarget = new THREE.WebGLRenderTarget(1, 1, {
+    // When the renderer runs reversed-Z, give this pass a float32 depth
+    // attachment so precision stays near-uniform across the range: the real
+    // depth test then separates near-coplanar surfaces on its own, so coplanar
+    // z-fighting is resolved structurally rather than by bias. On a standard-Z
+    // renderer we keep the default integer depth (float32 there would actually
+    // be worse at distance), so this is a no-op unless the consumer opted into
+    // `reversedDepthBuffer`.
+    const options: THREE.RenderTargetOptions = {
       minFilter: THREE.LinearFilter,
       magFilter: THREE.LinearFilter,
       format: THREE.RGBAFormat,
-    });
+    };
+    const reversedZ =
+      (this._renderer.three.capabilities as { reversedDepthBuffer?: boolean })
+        .reversedDepthBuffer === true;
+    if (reversedZ) {
+      const depthTexture = new THREE.DepthTexture(1, 1);
+      depthTexture.type = THREE.FloatType;
+      options.depthTexture = depthTexture;
+    }
+    this._vertexColorRenderTarget = new THREE.WebGLRenderTarget(1, 1, options);
   }
 
   setSize(width: number, height: number) {
