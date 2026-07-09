@@ -55,6 +55,16 @@ export abstract class BaseRenderer
   clippingPlanes: THREE.Plane[] = [];
 
   /**
+   * The default `isLocal` value used by {@link setPlane} when the caller
+   * doesn't pass one. When `true`, planes added without an explicit
+   * `isLocal` stay out of the global `three.clippingPlanes` list and are
+   * clipped per-material instead. The {@link Clipper} sets this to mirror
+   * its own `localClippingPlanes` flag, so consumers like `Views` that add
+   * their own planes automatically inherit the active clipping mode.
+   */
+  localClippingPlanes = false;
+
+  /**
    * Updates the clipping planes and triggers the `onClippingPlanesUpdated` event.
    *
    * @remarks
@@ -79,7 +89,11 @@ export abstract class BaseRenderer
    * The `three.clippingPlanes` property is then updated to reflect the current state of the `clippingPlanes` array,
    * excluding any planes marked as local.
    */
-  setPlane(active: boolean, plane: THREE.Plane, isLocal?: boolean) {
+  setPlane(
+    active: boolean,
+    plane: THREE.Plane,
+    isLocal: boolean = this.localClippingPlanes,
+  ) {
     (plane as any).isLocal = isLocal;
 
     const index = this.clippingPlanes.indexOf(plane);
@@ -92,5 +106,11 @@ export abstract class BaseRenderer
     this.three.clippingPlanes = this.clippingPlanes.filter(
       (plane: any) => !plane.isLocal,
     );
+
+    // Notify consumers (e.g. ClipStyler sections) that the active plane
+    // set changed, so anything deriving per-material clipping lists from
+    // it stays in sync across add / remove / enable / disable / view
+    // open-close.
+    this.updateClippingPlanes();
   }
 }

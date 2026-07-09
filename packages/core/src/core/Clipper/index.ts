@@ -126,8 +126,25 @@ export class Clipper
    * Default `false` to preserve existing behavior. Set this once
    * before creating planes; toggling at runtime won't reclassify
    * planes already on the renderer.
+   *
+   * Setting this also mirrors the value onto every world's
+   * `renderer.localClippingPlanes`, so planes added by other
+   * components (e.g. the {@link Views} cut planes) default to the
+   * same mode without each call site having to pass `isLocal`.
    */
-  localClippingPlanes = false;
+  private _localClippingPlanes = false;
+
+  get localClippingPlanes() {
+    return this._localClippingPlanes;
+  }
+
+  set localClippingPlanes(value: boolean) {
+    this._localClippingPlanes = value;
+    const worlds = this.components.get(Worlds);
+    for (const [, world] of worlds.list) {
+      if (world.renderer) world.renderer.localClippingPlanes = value;
+    }
+  }
 
   /**
    * The type of clipping plane to be created.

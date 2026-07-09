@@ -41,10 +41,32 @@ export class ClipEdges implements OBC.Disposable {
     ClipEdgesItemStyle
   >();
 
+  private _world: OBC.World | null = null;
+
+  private _onClippingPlanesUpdated = () => this.refreshClippingPlanes();
+
   /**
-   * The world in which the edges and fills will be placed.
+   * The world in which the edges and fills will be placed. Setting it
+   * (re)subscribes to the renderer's `onClippingPlanesUpdated` event so
+   * the sections re-track the active clipping planes whenever they
+   * change (add / remove / enable / disable / view open-close).
    */
-  world: OBC.World | null = null;
+  set world(value: OBC.World | null) {
+    const prev = this._world;
+    if (prev?.renderer) {
+      prev.renderer.onClippingPlanesUpdated.remove(
+        this._onClippingPlanesUpdated,
+      );
+    }
+    this._world = value;
+    if (value?.renderer) {
+      value.renderer.onClippingPlanesUpdated.add(this._onClippingPlanesUpdated);
+    }
+  }
+
+  get world() {
+    return this._world;
+  }
 
   private _visible = false;
 
@@ -103,18 +125,21 @@ export class ClipEdges implements OBC.Disposable {
   }
 
   /**
-   * Recomputes each section mesh's `material.clippingPlanes` to
-   * `(all clipper planes) - (this.plane)`. Cheap (a couple of array
-   * pushes per material); called whenever the Clipper plane list
-   * changes so existing sections stay in sync.
+   * Recomputes each section mesh's `material.clippingPlanes` to the
+   * renderer's currently active clipping planes minus this section's own
+   * plane. Reading from `renderer.clippingPlanes` (rather than the raw
+   * Clipper list) means the section is bounded by exactly what clips the
+   * model right now: it excludes disabled planes and any plane a view
+   * temporarily removed on open, and it never discards the cut geometry
+   * with the plane it sits on. A no-op outside local-clipping mode, where
+   * global clipping handles everything.
    */
   private refreshClippingPlanes() {
     const clipper = this._components.get(OBC.Clipper);
-    const others: THREE.Plane[] = [];
-    for (const [, clip] of clipper.list) {
-      if (clip.three === this.plane) continue;
-      others.push(clip.three);
-    }
+    if (!clipper.localClippingPlanes) return;
+    const renderer = this.world?.renderer;
+    if (!renderer) return;
+    const others = renderer.clippingPlanes.filter((p) => p !== this.plane);
     for (const [, modelStyles] of this._modelStyleGeometries) {
       for (const [, { edges, fills }] of modelStyles) {
         if (edges) edges.material.clippingPlanes = others;
@@ -123,6 +148,47 @@ export class ClipEdges implements OBC.Disposable {
         }
       }
     }
+  }
+
+  /**
+   * Copy the visual properties (color, opacity, line width) of a shared
+   * style onto this ClipEdges' per-instance material clones. In local-
+   * clipping mode each section renders with a *clone* of the style
+   * material (so it can carry its own `clippingPlanes`), so mutating the
+   * shared style material alone won't update the rendered section. This
+   * propagates the change. In legacy mode the section uses the shared
+   * material directly, so the copy is a harmless self-copy no-op.
+   */
+  syncStyle(styleName: string) {
+    const clipStyler = this._components.get(ClipStyler);
+    const style = clipStyler.styles.get(styleName);
+    if (!style) return;
+    for (const [, modelStyles] of this._modelStyleGeometries) {
+      const geometries = modelStyles.get(styleName);
+      if (!geometries) continue;
+      const { edges, fills } = geometries;
+      if (edges && style.linesMaterial) {
+        ClipEdges.copyStyleProps(style.linesMaterial, edges.material);
+      }
+      if (fills && style.fillsMaterial) {
+        ClipEdges.copyStyleProps(
+          style.fillsMaterial,
+          fills.material as THREE.Material,
+        );
+      }
+    }
+  }
+
+  private static copyStyleProps(source: THREE.Material, target: THREE.Material) {
+    if (source === target) return;
+    const s = source as any;
+    const t = target as any;
+    if (s.color && t.color) t.color.copy(s.color);
+    if ("opacity" in s) t.opacity = s.opacity;
+    if ("transparent" in s) t.transparent = s.transparent;
+    // LineMaterial only; ignored by fill materials.
+    if ("linewidth" in s && "linewidth" in t) t.linewidth = s.linewidth;
+    t.needsUpdate = true;
   }
 
   private async getStyleMeshes(modelId: string, styleName: string) {
@@ -308,5 +374,7 @@ export class ClipEdges implements OBC.Disposable {
     this._modelStyleGeometries.clear();
     for (const off of this._clipperUnlisten) off();
     this._clipperUnlisten.length = 0;
+    // Unsubscribe from the renderer's clipping-planes event.
+    this.world = null;
   }
 }

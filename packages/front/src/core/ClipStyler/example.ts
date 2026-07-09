@@ -177,6 +177,15 @@ clipStyler.styles.set("BlackFill", {
   }),
 });
 
+// A light style for lightweight elements (curtain wall members and plates).
+clipStyler.styles.set("Light", {
+  linesMaterial: new LineMaterial({ color: "gray", linewidth: 1 }),
+  fillsMaterial: new THREE.MeshBasicMaterial({
+    color: "#dddddd",
+    side: 2,
+  }),
+});
+
 /* MD
   Now that we have defined all the styles we need, the next step is to specify which elements will have these styles applied.
 
@@ -191,6 +200,7 @@ finder.create("Columns", [{ categories: [/COLUMN/] }]);
 finder.create("Doors", [{ categories: [/DOOR/] }]);
 finder.create("Curtains", [{ categories: [/PLATE/, /MEMBER/] }]);
 finder.create("Windows", [{ categories: [/WINDOW/] }]);
+finder.create("Roofs", [{ categories: [/ROOF/] }]);
 
 // Now, define the dynamic groupings using the finder queries.
 const classifier = components.get(OBC.Classifier);
@@ -201,6 +211,7 @@ classifier.setGroupQuery(classificationName, "Columns", { name: "Columns" });
 classifier.setGroupQuery(classificationName, "Doors", { name: "Doors" });
 classifier.setGroupQuery(classificationName, "Curtains", { name: "Curtains" });
 classifier.setGroupQuery(classificationName, "Windows", { name: "Windows" });
+classifier.setGroupQuery(classificationName, "Roofs", { name: "Roofs" });
 
 /* MD
   :::info Dynamic Groupings?
@@ -272,7 +283,8 @@ const sectionView = views.createFromPlane(
   { id: "Section", world },
 );
 
-sectionView.range = 5;
+// Large range so the whole building shows behind the cut, not just a thin slab.
+sectionView.range = 100;
 sectionView.helpersVisible = true;
 
 /* MD
@@ -290,7 +302,12 @@ clipStyler.createFromView(sectionView, {
   items: {
     ArchElements: {
       style: "Blue",
-      data: { [classificationName]: ["Walls", "Slabs", "Curtains", "Windows"] },
+      data: { [classificationName]: ["Walls", "Slabs", "Windows", "Roofs"] },
+    },
+    // Curtain-wall members and plates (IFCMEMBER / IFCPLATE) get a lighter style.
+    LightElements: {
+      style: "Light",
+      data: { [classificationName]: ["Curtains"] },
     },
   },
 });
@@ -327,9 +344,15 @@ const planEdges = clipStyler.createFromView(planView, {
 
 // You can also define the styled items in the view after the creation
 // It will update everything automatically
-planEdges.items.set("Curtains & Windows", {
+planEdges.items.set("Windows", {
   style: "Black",
-  data: { [classificationName]: ["Curtains", "Windows"] },
+  data: { [classificationName]: ["Windows"] },
+});
+
+// Curtain-wall members and plates (IFCMEMBER / IFCPLATE) get the light style.
+planEdges.items.set("Curtains", {
+  style: "Light",
+  data: { [classificationName]: ["Curtains"] },
 });
 
 // This is just for demo purposes in the tutorial
@@ -439,6 +462,7 @@ const stylesTable = BUI.Component.create(() => {
         if (!linesMaterial) return value;
         const onChange = ({ target }: { target: BUI.NumberInput }) => {
           linesMaterial.linewidth = target.value;
+          clipStyler.updateStyle(name);
         };
         return BUI.html`
           <bim-number-input .value=${value} min=0.5 max=10 slider step=0.05 @change=${onChange}></bim-number-input>
@@ -452,6 +476,7 @@ const stylesTable = BUI.Component.create(() => {
         if (!linesMaterial) return value;
         const onChange = ({ target }: { target: BUI.ColorInput }) => {
           linesMaterial.color = new THREE.Color(target.color);
+          clipStyler.updateStyle(name);
         };
         return BUI.html`
           <bim-color-input .color=${value} @input=${onChange}></bim-color-input>
@@ -473,6 +498,7 @@ const stylesTable = BUI.Component.create(() => {
             return;
           }
           fillsMaterial.color = new THREE.Color(target.color);
+          clipStyler.updateStyle(name);
         };
         return BUI.html`
           <bim-color-input .color=${value} @input=${onChange}></bim-color-input>

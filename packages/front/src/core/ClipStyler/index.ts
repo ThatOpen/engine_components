@@ -140,6 +140,23 @@ export class ClipStyler extends OBC.Component implements OBC.Disposable {
     return edges;
   }
 
+  /**
+   * Re-applies the current properties of a style (color, opacity, line
+   * width) to every section currently using it. Needed in local-clipping
+   * mode, where each section renders with a per-instance clone of the
+   * style material: after mutating a style's material (e.g. changing its
+   * color from a UI control), call this so the change shows on the
+   * rendered sections. In legacy global-clipping mode sections use the
+   * shared material directly, so this is a no-op.
+   *
+   * @param name - The name of the style to re-apply.
+   */
+  updateStyle(name: string) {
+    for (const [, edges] of this.list) {
+      edges.syncStyle(name);
+    }
+  }
+
   /** {@link OBC.Disposable.dispose} */
   dispose() {
     this.styles.clear();
