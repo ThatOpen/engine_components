@@ -55,6 +55,12 @@ export class AngleMeasurement extends Measurement<Angle, "angle"> {
 
   private initHandlers() {
     this.list.onItemAdded.add((angle) => {
+      // New angles inherit the tool's current units/rounding. The base
+      // `units`/`rounding` setters only re-sync angles already in the list,
+      // so without this a measurement created after switching units would
+      // keep the Angle default ("deg") for both its label and `angle.value`.
+      angle.units = this.units;
+      angle.rounding = this.rounding;
       const visual = this.createAngleVisual(angle);
       this._visuals.set(angle, visual);
     });
@@ -87,6 +93,15 @@ export class AngleMeasurement extends Measurement<Angle, "angle"> {
       if (changes.includes("units") || changes.includes("rounding")) {
         for (const [angle, visual] of this._visuals) {
           visual.label.three.element.textContent = this.formatAngle(angle);
+        }
+        // Keep an in-progress preview in sync when the unit/rounding is
+        // switched mid-measurement (the preview angle is not in the list).
+        this._temp.angle.units = this.units;
+        this._temp.angle.rounding = this.rounding;
+        if (this._temp.visual) {
+          this._temp.visual.label.three.element.textContent = this.formatAngle(
+            this._temp.angle,
+          );
         }
       }
       if (changes.includes("lineType")) {
@@ -124,7 +139,11 @@ export class AngleMeasurement extends Measurement<Angle, "angle"> {
     const point = pickResult.point;
 
     if (this._temp.clickCount === 0) {
-      // First click: set start, show rubber-band line
+      // First click: set start, show rubber-band line. Seed the preview
+      // angle with the tool's current units/rounding so the live label
+      // matches the selected unit before the measurement is finalized.
+      this._temp.angle.units = this.units;
+      this._temp.angle.rounding = this.rounding;
       this._temp.angle.start.copy(point);
       this._temp.clickCount = 1;
       this.initFirstPreview(point);
