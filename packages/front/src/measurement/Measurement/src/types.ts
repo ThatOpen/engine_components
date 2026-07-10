@@ -11,7 +11,9 @@ export type MeasurementStateChange =
   | "units"
   | "rounding"
   | "visibility"
-  | "enabled";
+  | "enabled"
+  | "lineType"
+  | "lineWidth";
 
 /**
  * When the measurement tool runs the snap pick that drives the

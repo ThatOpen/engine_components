@@ -327,6 +327,23 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           <bim-option label="5" value=5></bim-option>
         </bim-dropdown>
 
+        <bim-dropdown
+          label="Line type" required
+          @change="${({ target }: { target: BUI.Dropdown }) => {
+            measurer.lineType = target.value[0] as OBF.MeasurementLineType;
+          }}">
+          <bim-option label="Basic" value="${OBF.MeasurementLineType.Basic}" checked></bim-option>
+          <bim-option label="Fat" value="${OBF.MeasurementLineType.Fat}"></bim-option>
+        </bim-dropdown>
+
+        <bim-number-input
+          slider label="Line width" value="${measurer.lineWidth}"
+          min="1" max="10" step="0.5"
+          @change="${({ target }: { target: BUI.NumberInput }) => {
+            measurer.lineWidth = target.value;
+          }}">
+        </bim-number-input>
+
         <bim-button label="Display Rectangle Dimensions" @click=${displayRectangleDimensions}></bim-button>
 
         <bim-button label="Invert Rectangle Dimensions" @click=${invertRectangleDimensions}></bim-button>

@@ -1,8 +1,12 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
+import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
+import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { Angle } from "../../utils";
 import { Mark } from "../../core";
 import { Measurement } from "../Measurement";
+import { MeasureLine } from "./src/types";
 import { newDimensionMark, newEndPoint } from "../utils";
 import {
   AngleMeasurerModes,
@@ -83,6 +87,14 @@ export class AngleMeasurement extends Measurement<Angle, "angle"> {
       if (changes.includes("units") || changes.includes("rounding")) {
         for (const [angle, visual] of this._visuals) {
           visual.label.three.element.textContent = this.formatAngle(angle);
+        }
+      }
+      if (changes.includes("lineType")) {
+        // Rebuild each visual so its lines switch between THREE.Line (Basic)
+        // and Line2 (Fat), which are different object types.
+        for (const [angle, visual] of this._visuals) {
+          this.disposeVisual(visual);
+          this._visuals.set(angle, this.createAngleVisual(angle));
         }
       }
     });
@@ -188,8 +200,7 @@ export class AngleMeasurement extends Measurement<Angle, "angle"> {
 
     const group = new THREE.Group();
     group.renderOrder = 2;
-    const geom = new THREE.BufferGeometry().setFromPoints([start, start]);
-    const line = new THREE.Line(geom, this.linesMaterial);
+    const line = this.makeLine([start, start]);
     group.add(line);
 
     const endpoint = this.createEndpointMark(group, start);
@@ -221,10 +232,10 @@ export class AngleMeasurement extends Measurement<Angle, "angle"> {
 
     if (this._temp.clickCount === 1 && this._temp.previewLine) {
       // Update rubber-band line: start → cursor
-      const pos = this._temp.previewLine.geometry.attributes
-        .position as THREE.BufferAttribute;
-      pos.setXYZ(1, cursor.x, cursor.y, cursor.z);
-      pos.needsUpdate = true;
+      this.setLinePoints(this._temp.previewLine, [
+        this._temp.angle.start,
+        cursor,
+      ]);
     } else if (this._temp.clickCount === 2 && this._temp.visual) {
       // Update full angle preview: vertex → cursor as end
       this._temp.angle.end.copy(cursor);
@@ -255,6 +266,43 @@ export class AngleMeasurement extends Measurement<Angle, "angle"> {
     }
   }
 
+  // -- Line helpers (Basic THREE.Line vs Fat Line2) --
+
+  // Create a measurement line from points: a fat `Line2` when the active
+  // material is a `LineMaterial`, otherwise a plain `THREE.Line`.
+  private makeLine(points: THREE.Vector3[]): MeasureLine {
+    const material = this.linesMaterial;
+    if (material instanceof LineMaterial) {
+      const geometry = new LineGeometry();
+      geometry.setPositions(points.flatMap((p) => [p.x, p.y, p.z]));
+      const line = new Line2(geometry, material);
+      line.computeLineDistances();
+      return line;
+    }
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    return new THREE.Line(geometry, material);
+  }
+
+  // Update an existing measurement line's points in place.
+  private setLinePoints(line: MeasureLine, points: THREE.Vector3[]) {
+    if (line instanceof Line2) {
+      line.geometry.setPositions(points.flatMap((p) => [p.x, p.y, p.z]));
+      line.computeLineDistances();
+      return;
+    }
+    const pos = line.geometry.attributes.position as
+      | THREE.BufferAttribute
+      | undefined;
+    if (pos && pos.count === points.length) {
+      for (let i = 0; i < points.length; i++) {
+        pos.setXYZ(i, points[i].x, points[i].y, points[i].z);
+      }
+      pos.needsUpdate = true;
+    } else {
+      line.geometry.setFromPoints(points);
+    }
+  }
+
   // -- Full angle visual (used for both preview and final) --
 
   private createAngleVisual(angle: Angle): AngleVisual {
@@ -264,30 +312,18 @@ export class AngleMeasurement extends Measurement<Angle, "angle"> {
 
     const group = new THREE.Group();
     group.renderOrder = 2;
-    const material = this.linesMaterial;
-    const colorHex = `#${material.color.getHexString()}`;
+    const colorHex = `#${this.linesMaterial.color.getHexString()}`;
 
     // Line from vertex to start
-    const geom1 = new THREE.BufferGeometry().setFromPoints([
-      angle.vertex,
-      angle.start,
-    ]);
-    const line1 = new THREE.Line(geom1, material);
+    const line1 = this.makeLine([angle.vertex, angle.start]);
 
     // Line from vertex to end
-    const geom2 = new THREE.BufferGeometry().setFromPoints([
-      angle.vertex,
-      angle.end,
-    ]);
-    const line2 = new THREE.Line(geom2, material);
+    const line2 = this.makeLine([angle.vertex, angle.end]);
 
     // Arc
-    const arcGeom = AngleMeasurement.createArcGeometry(
-      angle.vertex,
-      angle.start,
-      angle.end,
+    const arc = this.makeLine(
+      AngleMeasurement.getArcPoints(angle.vertex, angle.start, angle.end),
     );
-    const arc = new THREE.Line(arcGeom, material);
 
     group.add(line1, line2, arc);
 
@@ -323,26 +359,12 @@ export class AngleMeasurement extends Measurement<Angle, "angle"> {
   }
 
   private updateAngleVisual(visual: AngleVisual, angle: Angle) {
-    // Update line1 (vertex -> start)
-    const pos1 = visual.line1.geometry.attributes
-      .position as THREE.BufferAttribute;
-    pos1.setXYZ(0, angle.vertex.x, angle.vertex.y, angle.vertex.z);
-    pos1.setXYZ(1, angle.start.x, angle.start.y, angle.start.z);
-    pos1.needsUpdate = true;
-
-    // Update line2 (vertex -> end)
-    const pos2 = visual.line2.geometry.attributes
-      .position as THREE.BufferAttribute;
-    pos2.setXYZ(0, angle.vertex.x, angle.vertex.y, angle.vertex.z);
-    pos2.setXYZ(1, angle.end.x, angle.end.y, angle.end.z);
-    pos2.needsUpdate = true;
-
-    // Update arc
-    visual.arc.geometry.dispose();
-    visual.arc.geometry = AngleMeasurement.createArcGeometry(
-      angle.vertex,
-      angle.start,
-      angle.end,
+    // Update the two rays and the arc
+    this.setLinePoints(visual.line1, [angle.vertex, angle.start]);
+    this.setLinePoints(visual.line2, [angle.vertex, angle.end]);
+    this.setLinePoints(
+      visual.arc,
+      AngleMeasurement.getArcPoints(angle.vertex, angle.start, angle.end),
     );
 
     // Update endpoints
@@ -430,19 +452,17 @@ export class AngleMeasurement extends Measurement<Angle, "angle"> {
     box.position.copy(center);
   }
 
-  private static createArcGeometry(
+  private static getArcPoints(
     vertex: THREE.Vector3,
     start: THREE.Vector3,
     end: THREE.Vector3,
-  ): THREE.BufferGeometry {
+  ): THREE.Vector3[] {
     const vA = new THREE.Vector3().subVectors(start, vertex);
     const vB = new THREE.Vector3().subVectors(end, vertex);
     const lenA = vA.length();
     const lenB = vB.length();
 
-    if (lenA === 0 || lenB === 0) {
-      return new THREE.BufferGeometry();
-    }
+    if (lenA === 0 || lenB === 0) return [];
 
     const normalizedA = vA.clone().normalize();
     const normalizedB = vB.clone().normalize();
@@ -451,9 +471,7 @@ export class AngleMeasurement extends Measurement<Angle, "angle"> {
 
     const normal = new THREE.Vector3().crossVectors(normalizedA, normalizedB);
 
-    if (normal.lengthSq() < 1e-10) {
-      return new THREE.BufferGeometry();
-    }
+    if (normal.lengthSq() < 1e-10) return [];
 
     normal.normalize();
 
@@ -464,7 +482,7 @@ export class AngleMeasurement extends Measurement<Angle, "angle"> {
       points.push(vertex.clone().add(dir.multiplyScalar(radius)));
     }
 
-    return new THREE.BufferGeometry().setFromPoints(points);
+    return points;
   }
 
   private static getArcMidpoint(

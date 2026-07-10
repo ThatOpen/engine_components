@@ -1,6 +1,9 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import { DataSet } from "@thatopen/fragments";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
+import { Line2 } from "three/examples/jsm/lines/Line2.js";
+import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { Mark } from "../core";
 import { newDimensionMark, newEndPoint } from "../measurement/utils";
 import { Line } from "./line";
@@ -17,9 +20,11 @@ export interface DimensionData {
   startNormal?: THREE.Vector3;
   endNormal?: THREE.Vector3;
   /**
-   * The material to be used for the line of the dimension.
+   * The material to be used for the line of the dimension. A
+   * `THREE.LineBasicMaterial` renders a basic 1px line; a `LineMaterial`
+   * renders a fat line whose width honors `linewidth`.
    */
-  lineMaterial: THREE.LineBasicMaterial;
+  lineMaterial: THREE.LineBasicMaterial | LineMaterial;
 
   /**
    * The HTML element to be used as the endpoint marker for the dimension line.
@@ -97,7 +102,7 @@ export class DimensionLine {
   private _visible = true;
   private readonly _root = new THREE.Group();
   private _endpoints = new DataSet<Mark>();
-  readonly lineElement: THREE.Line;
+  lineElement: THREE.Line | Line2;
   // eslint-disable-next-line no-use-before-define
   readonly rectangleDimensions = new DataSet<DimensionLine>();
   // eslint-disable-next-line no-use-before-define
@@ -157,10 +162,7 @@ export class DimensionLine {
    */
   set end(point: THREE.Vector3) {
     this.line.end = point;
-    const position = this.lineElement.geometry.attributes
-      .position as THREE.BufferAttribute;
-    position.setXYZ(1, point.x, point.y, point.z);
-    position.needsUpdate = true;
+    this.updateLineGeometry();
     this.update();
   }
 
@@ -171,11 +173,33 @@ export class DimensionLine {
    */
   set start(point: THREE.Vector3) {
     this.line.start = point;
+    this.updateLineGeometry();
+    this.update();
+  }
+
+  // Pushes the current line endpoints into the underlying geometry.
+  // `Line2` (fat) keeps its positions in an interleaved instance buffer,
+  // so it needs `setPositions`; a plain `THREE.Line` uses the position
+  // attribute directly.
+  private updateLineGeometry() {
+    const { start, end } = this.line;
+    if (this.lineElement instanceof Line2) {
+      this.lineElement.geometry.setPositions([
+        start.x,
+        start.y,
+        start.z,
+        end.x,
+        end.y,
+        end.z,
+      ]);
+      this.lineElement.computeLineDistances();
+      return;
+    }
     const position = this.lineElement.geometry.attributes
       .position as THREE.BufferAttribute;
-    position.setXYZ(0, point.x, point.y, point.z);
+    position.setXYZ(0, start.x, start.y, start.z);
+    position.setXYZ(1, end.x, end.y, end.z);
     position.needsUpdate = true;
-    this.update();
   }
 
   constructor(
@@ -197,7 +221,7 @@ export class DimensionLine {
     this.updateRectangleComponents();
     this.updateProjectionComponents();
 
-    this.lineElement = this.createLine(data);
+    this.lineElement = this.createLine();
 
     this._endpoints.onItemAdded.add((mark) => {
       this._root.add(mark.three);
@@ -278,8 +302,12 @@ export class DimensionLine {
   dispose() {
     this.visible = false;
     const disposer = this._components.get(OBC.Disposer);
+    // Detach the line first and dispose it keeping its material: the
+    // materials are shared/owned by the Measurement component. Destroying
+    // `_root` recursively would otherwise dispose that shared material.
+    this.lineElement.removeFromParent();
+    disposer.destroy(this.lineElement, false);
     disposer.destroy(this._root);
-    disposer.destroy(this.lineElement);
     this._endpoints.clear();
     this.label.dispose();
     if (this.boundingBox) {
@@ -447,10 +475,23 @@ export class DimensionLine {
 
   private _material;
 
-  set material(value: THREE.LineBasicMaterial) {
-    this._material.dispose();
+  // The materials are owned and shared by the `Measurement` component (a
+  // single basic + single fat material reused across every line), so this
+  // never disposes them. Switching between basic and fat needs a different
+  // geometry/object (`THREE.Line` vs `Line2`), so the line is rebuilt when
+  // the material type changes; otherwise the material is swapped in place.
+  set material(value: THREE.LineBasicMaterial | LineMaterial) {
+    const wasFat = this._material instanceof LineMaterial;
+    const isFat = value instanceof LineMaterial;
     this._material = value;
-    this.lineElement.material = value;
+    if (wasFat === isFat) {
+      this.lineElement.material = value;
+      return;
+    }
+    const disposer = this._components.get(OBC.Disposer);
+    this.lineElement.removeFromParent();
+    disposer.destroy(this.lineElement, false);
+    this.lineElement = this.createLine();
   }
 
   get material() {
@@ -467,12 +508,26 @@ export class DimensionLine {
       color: 0x2e2e2e,
     });
 
-  private createLine(data: DimensionData) {
-    const axisGeom = new THREE.BufferGeometry();
-    axisGeom.setFromPoints([data.line.start, data.line.end]);
-    const line = new THREE.Line(axisGeom, data.lineMaterial);
+  private createLine() {
+    const line = this.buildLineObject();
     this._root.add(line);
     return line;
+  }
+
+  // Builds the line object matching the current material: a fat `Line2`
+  // when the material is a `LineMaterial`, a plain `THREE.Line` otherwise.
+  private buildLineObject(): THREE.Line | Line2 {
+    const { start, end } = this.line;
+    if (this._material instanceof LineMaterial) {
+      const geometry = new LineGeometry();
+      geometry.setPositions([start.x, start.y, start.z, end.x, end.y, end.z]);
+      const line = new Line2(geometry, this._material);
+      line.computeLineDistances();
+      return line;
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setFromPoints([start, end]);
+    return new THREE.Line(geometry, this._material);
   }
 
   private newText() {

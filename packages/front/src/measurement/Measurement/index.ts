@@ -2,6 +2,7 @@ import * as OBC from "@thatopen/components";
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
 import { DataSet } from "@thatopen/fragments";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import {
   Angle,
   Area,
@@ -27,6 +28,22 @@ export type {
   MeasurementStateChange,
   MeasureToUnitMap,
 } from "./src";
+
+/**
+ * How measurement lines are rendered.
+ * - `Basic`: `THREE.Line` with a `LineBasicMaterial`. This is the default and
+ *   matches the historical behavior; note WebGL ignores line width here, so
+ *   lines always render 1px regardless of `lineWidth`.
+ * - `Fat`: `Line2` / `LineSegments2` with a `LineMaterial`, which honors
+ *   `lineWidth` (in screen pixels).
+ *
+ * Modeled as an enum so more line styles can be added later without a breaking
+ * change.
+ */
+export enum MeasurementLineType {
+  Basic = "basic",
+  Fat = "fat",
+}
 
 /**
  * Abstract class that gives the core elements to create any measurement component. 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Measurement).
@@ -73,9 +90,24 @@ export abstract class Measurement<
   abstract mode: string;
 
   protected _world: OBC.World | null = null;
+
+  // Keeps the fat-line material `resolution` in sync with the renderer size
+  // (fat lines need it to compute screen-pixel width). Detached on world change.
+  private _onWorldResize = (size: THREE.Vector2) => {
+    this._fatLinesMaterial.resolution.set(size.x, size.y);
+  };
+
   set world(value: OBC.World | null) {
+    if (this._world?.renderer) {
+      this._world.renderer.onResize.remove(this._onWorldResize);
+    }
     this._world = value;
     this._vertexPicker.world = value;
+    if (value?.renderer) {
+      value.renderer.onResize.add(this._onWorldResize);
+      const size = value.renderer.getSize();
+      this._fatLinesMaterial.resolution.set(size.x, size.y);
+    }
   }
 
   get world() {
@@ -454,21 +486,74 @@ export abstract class Measurement<
     return this._linesEndpointElement;
   }
 
-  private _linesMaterial = new THREE.LineBasicMaterial({
+  private _basicLinesMaterial = new THREE.LineBasicMaterial({
     color: "#0000FF",
     depthTest: false,
   });
 
-  set linesMaterial(value: THREE.LineBasicMaterial) {
-    this._linesMaterial.dispose();
-    this._linesMaterial = value;
-    for (const line of this.lines) {
-      line.material = value;
-    }
+  private _fatLinesMaterial = new LineMaterial({
+    color: 0x0000ff,
+    linewidth: 2,
+    depthTest: false,
+    // Screen-pixel width; `resolution` is kept in sync from the world renderer.
+    worldUnits: false,
+  });
+
+  private _lineType = MeasurementLineType.Basic;
+  private _lineWidth = 2;
+
+  /**
+   * The line rendering style. See {@link MeasurementLineType}. Defaults to
+   * `Basic`. Switching at runtime rebuilds existing measurement lines so it
+   * applies live.
+   */
+  get lineType() {
+    return this._lineType;
   }
 
-  get linesMaterial() {
-    return this._linesMaterial;
+  set lineType(value: MeasurementLineType) {
+    if (value === this._lineType) return;
+    this._lineType = value;
+    const material = this.linesMaterial;
+    for (const line of this.lines) line.material = material;
+    this.onStateChanged.trigger(["lineType"]);
+  }
+
+  /**
+   * Width of measurement lines in screen pixels. Only has a visible effect when
+   * {@link lineType} is `Fat`; WebGL ignores width on the basic material.
+   */
+  get lineWidth() {
+    return this._lineWidth;
+  }
+
+  set lineWidth(value: number) {
+    this._lineWidth = value;
+    this._fatLinesMaterial.linewidth = value;
+    this.onStateChanged.trigger(["lineWidth"]);
+  }
+
+  /**
+   * The active lines material for the current {@link lineType}: a
+   * `THREE.LineBasicMaterial` in `Basic` mode, a `LineMaterial` (fat line) in
+   * `Fat` mode. Setting it replaces the material matching its type.
+   */
+  set linesMaterial(value: THREE.LineBasicMaterial | LineMaterial) {
+    if (value instanceof LineMaterial) {
+      this._fatLinesMaterial.dispose();
+      this._fatLinesMaterial = value;
+    } else {
+      this._basicLinesMaterial.dispose();
+      this._basicLinesMaterial = value;
+    }
+    const active = this.linesMaterial;
+    for (const line of this.lines) line.material = active;
+  }
+
+  get linesMaterial(): THREE.LineBasicMaterial | LineMaterial {
+    return this._lineType === MeasurementLineType.Fat
+      ? this._fatLinesMaterial
+      : this._basicLinesMaterial;
   }
 
   private _fillsMaterial = new THREE.MeshLambertMaterial({
@@ -515,7 +600,8 @@ export abstract class Measurement<
 
   set color(value: THREE.Color) {
     this._color = value;
-    this._linesMaterial.color.set(value);
+    this._basicLinesMaterial.color.set(value);
+    this._fatLinesMaterial.color.set(value);
     this._fillsMaterial.color.set(value);
     this._volumesMaterial.color.set(value);
     for (const line of this.lines) line.color = value;
@@ -585,7 +671,8 @@ export abstract class Measurement<
   dispose() {
     this._vertexPicker.dispose();
     this.list.clear();
-    this.linesMaterial.dispose();
+    this._basicLinesMaterial.dispose();
+    this._fatLinesMaterial.dispose();
     this.fillsMaterial.dispose();
     this.volumesMaterial.dispose();
     this.onDisposed.trigger();
