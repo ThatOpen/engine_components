@@ -375,7 +375,12 @@ export class IDSProperty extends IDSFacet {
       }
 
       const facetValue = structuredClone(this.value);
-      if (valueAttr.type === "IFCLABEL" && facetValue.type === "simple") {
+      // The IDS XML parser coerces numeric-looking simpleValues to JS numbers
+      // (e.g. "410.20257" becomes 410.20257). When the actual IFC value is a
+      // string (IFCTEXT, IFCIDENTIFIER, IFCLABEL, ...), a strict comparison
+      // against that number always fails, so align the facet value to a string
+      // whenever the property value is a string (issue #731).
+      if (typeof valueAttr.value === "string" && facetValue.type === "simple") {
         facetValue.parameter = String(facetValue.parameter);
       }
 
