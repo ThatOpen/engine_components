@@ -285,14 +285,23 @@ export class IDSProperty extends IDSFacet {
   }
 
   private getTypePsets(item: FRAGS.ItemData) {
-    if (!Array.isArray(item.IsTypedBy)) return [];
+    // The element's type is reached either through IsTypedBy (IfcRelDefinesByType)
+    // or, depending on the source, through IsDefinedBy. Either way it is the
+    // definition that carries `HasPropertySets` (only IfcTypeObject has it), so
+    // we collect the property sets from any such definition.
+    const definitions = [
+      ...(Array.isArray(item.IsTypedBy) ? item.IsTypedBy : []),
+      ...(Array.isArray(item.IsDefinedBy) ? item.IsDefinedBy : []),
+    ];
 
-    const [type] = item.IsTypedBy;
-    if (!(type && Array.isArray(type.HasPropertySets))) {
-      return [];
+    const psets: FRAGS.ItemData[] = [];
+    for (const definition of definitions) {
+      if (Array.isArray(definition?.HasPropertySets)) {
+        psets.push(...definition.HasPropertySets);
+      }
     }
 
-    return type.HasPropertySets;
+    return psets;
   }
 
   private async getPsets(item: FRAGS.ItemData) {
@@ -300,6 +309,9 @@ export class IDSProperty extends IDSFacet {
     if (!Array.isArray(item.IsDefinedBy)) return typeSets;
 
     const sets: FRAGS.ItemData[] = [];
+    // Type property sets already represented by (merged into) an instance
+    // pset of the same name, so we don't add them again below.
+    const mergedTypeSets = new Set<FRAGS.ItemData>();
 
     for (const definition of item.IsDefinedBy) {
       if (!("value" in definition.Name)) continue;
@@ -312,23 +324,32 @@ export class IDSProperty extends IDSFacet {
         return set.Name.value === definitionName;
       });
 
-      if (
-        typeSet &&
-        Array.isArray(typeSet.HasProperties) &&
-        Array.isArray(definition.HasProperties)
-      ) {
-        for (const prop of typeSet.HasProperties) {
-          if (!("value" in prop.Name)) continue;
-          const name = prop.Name.value;
-          const existingProp = definition.HasProperties.find((p) => {
-            if (!("value" in p.Name)) return false;
-            return p.Name.value === name;
-          });
-          if (!existingProp) definition.HasProperties.push(prop);
+      if (typeSet) {
+        mergedTypeSets.add(typeSet);
+        if (
+          Array.isArray(typeSet.HasProperties) &&
+          Array.isArray(definition.HasProperties)
+        ) {
+          for (const prop of typeSet.HasProperties) {
+            if (!("value" in prop.Name)) continue;
+            const name = prop.Name.value;
+            const existingProp = definition.HasProperties.find((p) => {
+              if (!("value" in p.Name)) return false;
+              return p.Name.value === name;
+            });
+            if (!existingProp) definition.HasProperties.push(prop);
+          }
         }
       }
 
       sets.push(definition);
+    }
+
+    // Type-only property sets (inherited via IsTypedBy with no matching-name
+    // instance pset) must still be checked; otherwise a property that lives
+    // only on the element's type is reported as missing (issue #708).
+    for (const typeSet of typeSets) {
+      if (!mergedTypeSets.has(typeSet)) sets.push(typeSet);
     }
 
     return sets;
