@@ -12,12 +12,40 @@ import { ModelIdMapUtils } from "../../../../utils";
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/material-facet.md
 
 export class IDSMaterial extends IDSFacet {
+  // Every type IfcRelAssociatesMaterial.RelatingMaterial (IfcMaterialSelect)
+  // can point at. Missing any of them silently drops every element that
+  // associates its material through it: an element can reference a layer set
+  // directly instead of through a layer set usage, and both spellings are
+  // valid IFC.
   private _ifcMaterialEntities = [
     /^IFCMATERIALLAYERSETUSAGE$/,
+    /^IFCMATERIALLAYERSET$/,
+    /^IFCMATERIALPROFILESETUSAGE$/,
+    /^IFCMATERIALPROFILESET$/,
     /^IFCMATERIALCONSTITUENTSET$/,
     /^IFCMATERIAL$/,
     /^IFCMATERIALLIST$/,
   ];
+
+  // Attributes that lead from a material set / usage down to its IfcMaterial.
+  private _materialParentAttributes = [
+    "ForLayerSet",
+    "MaterialLayers",
+    "ForProfileSet",
+    "MaterialProfiles",
+    "Material",
+    "MaterialConstituents",
+    "Materials",
+  ];
+
+  private _materialRelations = {
+    MaterialConstituents: { attributes: true, relations: true },
+    ForLayerSet: { attributes: true, relations: true },
+    MaterialLayers: { attributes: true, relations: true },
+    ForProfileSet: { attributes: true, relations: true },
+    MaterialProfiles: { attributes: true, relations: true },
+    Materials: { attributes: true, relations: false },
+  };
 
   facetType = "Material" as const;
   value?: IDSFacetParameter;
@@ -57,10 +85,7 @@ export class IDSMaterial extends IDSFacet {
       const data = await model.getItemsData(localIds, {
         relations: {
           AssociatedTo: { attributes: true, relations: false },
-          MaterialConstituents: { attributes: true, relations: true },
-          ForLayerSet: { attributes: true, relations: true },
-          MaterialLayers: { attributes: true, relations: true },
-          Materials: { attributes: true, relations: false },
+          ...this._materialRelations,
         },
       });
 
@@ -103,10 +128,7 @@ export class IDSMaterial extends IDSFacet {
         relations: {
           AssociatedTo: { attributes: false, relations: false },
           HasAssociations: { attributes: true, relations: true },
-          MaterialConstituents: { attributes: true, relations: true },
-          ForLayerSet: { attributes: true, relations: true },
-          MaterialLayers: { attributes: true, relations: true },
-          Materials: { attributes: true, relations: false },
+          ...this._materialRelations,
         },
       });
 
@@ -156,16 +178,7 @@ export class IDSMaterial extends IDSFacet {
     } else {
       // if its not a material, it should be a parent
       for (const [name, attribute] of Object.entries(item)) {
-        if (
-          ![
-            "ForLayerSet",
-            "MaterialLayers",
-            "Material",
-            "MaterialConstituents",
-            "Materials",
-          ].includes(name)
-        )
-          continue;
+        if (!this._materialParentAttributes.includes(name)) continue;
         if (!Array.isArray(attribute)) continue;
         for (const item of attribute) {
           const isMaterial =
