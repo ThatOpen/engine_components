@@ -73,6 +73,7 @@ export class SimpleWorld<
     } else {
       container.removeEventListener("pointerdown", this.onPointerDown);
     }
+    this._dynamicAnchor = value;
   }
 
   get dynamicAnchor() {
@@ -233,6 +234,13 @@ export class SimpleWorld<
   dispose(disposeResources = true) {
     this.enabled = false;
     this.isDisposing = true;
+
+    // Remove the dynamic anchoring listener before the renderer is disposed
+    const container = this.renderer?.three.domElement.parentElement;
+    if (container) {
+      container.removeEventListener("pointerdown", this.onPointerDown);
+    }
+    this._dynamicAnchor = false;
 
     this.scene.onWorldChanged.trigger({ world: this, action: "removed" });
     this.camera.onWorldChanged.trigger({ world: this, action: "removed" });
