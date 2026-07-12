@@ -112,6 +112,19 @@ export class FastModelPicker implements Disposable {
    */
   private _hiddenLods: THREE.Object3D[] = [];
 
+  /**
+   * The meshes each model owns, i.e. excluding those belonging to a
+   * model nested inside it. A delta model's object is parented under
+   * its parent model's object (see the fragments EditHelper), while
+   * both are listed as separate models, so subtree membership alone
+   * does not determine ownership.
+   *
+   * Populated in {@link applyIdMaterial}, consumed by
+   * {@link renderPickPass} to isolate one model per render without
+   * relying on root visibility. A nested model can't be isolated by
+   * its root, since hiding the parent's root culls the child too.
+   */
+  private _ownMeshes = new Map<string, THREE.Mesh[]>();
 
   constructor(components: Components, world: World) {
     if (!world.renderer) {
@@ -406,15 +419,15 @@ export class FastModelPicker implements Disposable {
   private applyIdMaterial(): Map<number, string> {
     const fragments = this.components.get(FragmentsManager);
     const byteToModel = new Map<number, string>();
+    const modelRoots = this.getModelRoots();
+    this._ownMeshes.clear();
     let nextByte = 1;
 
     for (const [modelId, model] of fragments.list) {
       if (nextByte > FastModelPicker.MAX_MODELS) break;
-      const byte = nextByte;
-      nextByte += 1;
-      let any = false;
+      const owned: THREE.Mesh[] = [];
 
-      model.object.traverse((child) => {
+      this.traverseOwn(model.object, modelRoots, (child) => {
         if (!(child instanceof THREE.Mesh)) return;
         const geom = child.geometry as THREE.BufferGeometry | undefined;
         if (!geom) return;
@@ -447,13 +460,47 @@ export class FastModelPicker implements Disposable {
         const original = child.material;
         const len = Array.isArray(original) ? original.length : 1;
         child.material = new Array(len).fill(this._idMaterial);
-        any = true;
+        owned.push(child);
       });
 
-      if (any) byteToModel.set(byte, modelId);
+      if (!owned.length) continue;
+      this._ownMeshes.set(modelId, owned);
+      byteToModel.set(nextByte, modelId);
+      nextByte += 1;
     }
 
     return byteToModel;
+  }
+
+  /**
+   * The object roots of every loaded model.
+   */
+  private getModelRoots() {
+    const fragments = this.components.get(FragmentsManager);
+    const roots = new Set<THREE.Object3D>();
+    for (const [, model] of fragments.list) roots.add(model.object);
+    return roots;
+  }
+
+  /**
+   * Like `Object3D.traverse`, but prunes the subtree of any nested model
+   * root, so each mesh is visited exactly once, by the model that owns
+   * it. A delta model's object hangs under its parent model's object
+   * while being a model in its own right; a plain `traverse` from the
+   * parent would walk into it.
+   */
+  private traverseOwn(
+    root: THREE.Object3D,
+    modelRoots: Set<THREE.Object3D>,
+    callback: (child: THREE.Object3D) => void,
+  ) {
+    const stack: THREE.Object3D[] = [root];
+    while (stack.length) {
+      const node = stack.pop()!;
+      if (node !== root && modelRoots.has(node)) continue;
+      callback(node);
+      for (const child of node.children) stack.push(child);
+    }
   }
 
   /**
@@ -578,22 +625,58 @@ export class FastModelPicker implements Disposable {
       child.visible = false;
     });
 
-    const bimVisibilityBefore = new Map<THREE.Object3D, boolean>();
+    // A model is only pickable if it was actually on screen. Compute this
+    // before touching any visibility flag, and walk the full ancestor
+    // chain: a delta model is only visible if its parent model is too.
+    const wasOnScreen = new Map<string, boolean>();
+    for (const [modelId, obj] of objectsByModel) {
+      let visible = true;
+      let node: THREE.Object3D | null = obj;
+      while (node) {
+        if (!node.visible) {
+          visible = false;
+          break;
+        }
+        node = node.parent;
+      }
+      wasOnScreen.set(modelId, visible);
+    }
+
+    // Isolate models by their OWN meshes, not by their root. A delta
+    // model's object is a child of its parent model's object, so hiding
+    // the parent's root to render another model would cull the delta
+    // with it, and revealing the delta's root alone would still leave it
+    // culled by its hidden parent. Keeping every root visible and
+    // toggling owned meshes sidesteps both.
+    const rootVisibilityBefore = new Map<THREE.Object3D, boolean>();
     for (const obj of objectsByModel.values()) {
-      bimVisibilityBefore.set(obj, obj.visible);
-      obj.visible = false;
+      rootVisibilityBefore.set(obj, obj.visible);
+      obj.visible = true;
+    }
+
+    const meshVisibilityBefore = new Map<THREE.Mesh, boolean>();
+    for (const meshes of this._ownMeshes.values()) {
+      for (const mesh of meshes) {
+        meshVisibilityBefore.set(mesh, mesh.visible);
+        mesh.visible = false;
+      }
     }
 
     for (const [byte, modelId] of byteToModel) {
-      const obj = objectsByModel.get(modelId);
-      if (!obj) continue;
-      obj.visible = true;
+      if (!wasOnScreen.get(modelId)) continue;
+      const meshes = this._ownMeshes.get(modelId);
+      if (!meshes) continue;
+      // Restore each shell's own visibility rather than forcing it true:
+      // fragments flags stale LOD tiles invisible, and rasterizing those
+      // would leak geometry at the wrong depth into the pick.
+      for (const mesh of meshes) mesh.visible = meshVisibilityBefore.get(mesh)!;
       material.uniforms.modelByte.value = byte;
       renderer.render(scene, camera);
-      obj.visible = false;
+      for (const mesh of meshes) mesh.visible = false;
     }
 
-    for (const [obj, was] of bimVisibilityBefore) obj.visible = was;
+    for (const [mesh, was] of meshVisibilityBefore) mesh.visible = was;
+    for (const [obj, was] of rootVisibilityBefore) obj.visible = was;
     for (const [obj, was] of nonBimVisibility) obj.visible = was;
 
     renderer.setScissorTest(prevScissorTest);
@@ -649,8 +732,9 @@ export class FastModelPicker implements Disposable {
       THREE.Material | THREE.Material[]
     >();
     const hiddenLines: THREE.Object3D[] = [];
+    const modelRoots = this.getModelRoots();
     for (const [, model] of fragments.list) {
-      model.object.traverse((child) => {
+      this.traverseOwn(model.object, modelRoots, (child) => {
         if (!(child instanceof THREE.Mesh)) return;
         const geom = child.geometry as THREE.BufferGeometry | undefined;
         if (!geom) return;
@@ -728,6 +812,7 @@ export class FastModelPicker implements Disposable {
       mesh.material = mat;
     }
     this._originalMaterials.clear();
+    this._ownMeshes.clear();
 
     for (const obj of this._hiddenLods) obj.visible = true;
     this._hiddenLods.length = 0;
