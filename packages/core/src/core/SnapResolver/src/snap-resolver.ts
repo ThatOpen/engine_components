@@ -422,30 +422,43 @@ export class SnapResolver implements Disposable {
   private snapToFace(point: THREE.Vector3, data: ItemSnapData) {
     const faces = data.faces;
     if (faces.length === 0) return null;
+
     let best: Polygon | null = null;
     let bestAbs = Infinity;
+    let bestContains = false;
+
     for (const f of faces) {
-      const signed =
-        f.normal.x * point.x +
-        f.normal.y * point.y +
-        f.normal.z * point.z -
-        f.d;
+      const signed = this.signedDistance(f, point);
       const abs = Math.abs(signed);
-      if (abs <= this.maxDistance && abs < bestAbs) {
+      if (abs > this.maxDistance) continue;
+
+      // Distance to the plane alone can't separate coplanar faces: the two
+      // panes of a double-glazed window share a plane, so both sit at ~0 and
+      // the winner would just be whichever came first. Prefer a face that
+      // actually contains the pick point.
+      const contains = this.containsPoint(f, this.projectOntoPlane(point, f, signed));
+
+      if (bestContains && !contains) continue;
+      if (contains && !bestContains) {
+        bestContains = true;
+        bestAbs = abs;
+        best = f;
+        continue;
+      }
+      if (abs < bestAbs) {
         bestAbs = abs;
         best = f;
       }
     }
+
     if (!best) return null;
-    // Project pick point onto the polygon's plane.
-    const projected = point
-      .clone()
-      .sub(best.normal.clone().multiplyScalar(
-        best.normal.x * point.x +
-          best.normal.y * point.y +
-          best.normal.z * point.z -
-          best.d,
-      ));
+
+    const projected = this.projectOntoPlane(
+      point,
+      best,
+      this.signedDistance(best, point),
+    );
+
     return {
       result: {
         point: projected,
@@ -455,6 +468,64 @@ export class SnapResolver implements Disposable {
         faceIndices: fanTriangulation(best.points.length / 3),
       } as SnapResult,
     };
+  }
+
+  private signedDistance(face: Polygon, point: THREE.Vector3) {
+    return (
+      face.normal.x * point.x +
+      face.normal.y * point.y +
+      face.normal.z * point.z -
+      face.d
+    );
+  }
+
+  private projectOntoPlane(
+    point: THREE.Vector3,
+    face: Polygon,
+    signed: number,
+  ) {
+    return point.clone().sub(face.normal.clone().multiplyScalar(signed));
+  }
+
+  /**
+   * Even-odd point-in-polygon test, run on the polygon projected onto its
+   * dominant plane. `point` is assumed to already lie on the face's plane.
+   */
+  private containsPoint(face: Polygon, point: THREE.Vector3) {
+    const { points, normal } = face;
+    const count = points.length / 3;
+    if (count < 3) return false;
+
+    // Drop the axis the polygon is most perpendicular to, so the projection
+    // can never collapse to a degenerate 2D shape.
+    const ax = Math.abs(normal.x);
+    const ay = Math.abs(normal.y);
+    const az = Math.abs(normal.z);
+    let a = 0;
+    let b = 1;
+    if (ax >= ay && ax >= az) {
+      a = 1;
+      b = 2;
+    } else if (ay >= az) {
+      a = 0;
+      b = 2;
+    }
+
+    const px = point.getComponent(a);
+    const py = point.getComponent(b);
+
+    let inside = false;
+    for (let i = 0, j = count - 1; i < count; j = i, i += 1) {
+      const xi = points[i * 3 + a];
+      const yi = points[i * 3 + b];
+      const xj = points[j * 3 + a];
+      const yj = points[j * 3 + b];
+      const straddles = yi > py !== yj > py;
+      if (!straddles) continue;
+      const x = ((xj - xi) * (py - yi)) / (yj - yi) + xi;
+      if (px < x) inside = !inside;
+    }
+    return inside;
   }
 }
 
