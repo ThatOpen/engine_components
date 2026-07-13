@@ -114,7 +114,7 @@ export class LengthMeasurement extends Measurement<Line, "length"> {
         | undefined;
 
       const start = p1 || new THREE.Vector3();
-      const end = start || p2;
+      const end = p2 || start;
       this._temp.line.set(start, end);
       this._temp.isDragging = true;
       this._temp.dimension = this.createLineElement(this._temp.line);
@@ -184,6 +184,12 @@ export class LengthMeasurement extends Measurement<Line, "length"> {
     }
   }
 
+  /** Whether the latest pick actually resolved to an edge. */
+  private hasEdgeUnderCursor() {
+    const pick = this.lastPick as any;
+    return !!(pick?.snappedEdgeP1 && pick?.snappedEdgeP2);
+  }
+
   create = async () => {
     if (!this.enabled) return;
     if (!this._temp.isDragging) {
@@ -196,6 +202,13 @@ export class LengthMeasurement extends Measurement<Line, "length"> {
   endCreation = () => {
     if (!this.enabled) return;
     if (!this._temp.dimension) return;
+    // In edge mode the preview dimension lives for as long as the tool is
+    // enabled, and `_temp.line` holds the last edge we snapped to. Committing
+    // without checking the current pick would measure an edge the cursor has
+    // already left: either because it's over empty space, or because we're
+    // inside the EDGE_MISS_TOLERANCE grace window that keeps the preview
+    // visible through a few null picks.
+    if (this.mode === "edge" && !this.hasEdgeUnderCursor()) return;
     this.list.add(this._temp.line.clone());
     if (this.mode === "free") {
       this._temp.dimension.dispose();
