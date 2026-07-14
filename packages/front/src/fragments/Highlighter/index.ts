@@ -3,7 +3,7 @@ import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import { DataMap } from "@thatopen/fragments";
 import * as FRAGS from "@thatopen/fragments";
-import { HighlighterConfig, HighlightEvents } from "./src";
+import { HighlighterConfig, HighlightEvents, HighlightStyle } from "./src";
 
 /**
  * This component allows highlighting and selecting fragments in a 3D scene. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Highlighter). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Highlighter).
@@ -78,11 +78,18 @@ export class Highlighter
     },
   };
 
-  /** Stores the styles used for highlighting selections. If null, the highlighter won't color geometries (useful for selection without coloring). */
-  readonly styles = new DataMap<
-    string,
-    Omit<FRAGS.MaterialDefinition, "customId"> | null
-  >();
+  /**
+   * Stores the styles used for highlighting selections. If null, the
+   * highlighter won't color geometries (useful for selection without coloring).
+   *
+   * `priority` decides what happens when several styles claim the same item:
+   * the highest one colors it, while the others keep the item in their
+   * selection and color it again as soon as the winner lets go of it. It
+   * defaults to 0, except for the select style, which defaults to the highest
+   * priority so a selection always shows on top. Ties are broken by
+   * registration order, with the most recently registered style winning.
+   */
+  readonly styles = new DataMap<string, HighlightStyle>();
 
   /** Styles with auto toggle will be unselected when selected twice. */
   autoToggle = new Set<string>();
@@ -351,9 +358,6 @@ export class Highlighter
       }
       if (clearedItemsFound) {
         this.events[name].onClear.trigger(clearedItems);
-        if (name === this.config.selectName) {
-          this.restorePreviousColors(clearedItems);
-        }
       }
     }
 
@@ -375,22 +379,58 @@ export class Highlighter
   async updateColors() {
     const fragments = this.components.get(OBC.FragmentsManager);
     const promises = [fragments.resetHighlight()];
-    for (const [style, modelIdMap] of Object.entries(this.selection)) {
+
+    // Colors are rebuilt from scratch on every call, so precedence is decided
+    // here rather than by destroying selections: paint from the highest
+    // priority down, and let each style skip the items a higher-priority style
+    // has already taken. An item styled by several styles therefore keeps its
+    // membership in all of them, and falls back to the next one down as soon as
+    // the winner releases it.
+    const claimed: OBC.ModelIdMap = {};
+
+    for (const style of this.getStylesByPriority()) {
       const definition = this.styles.get(style);
+      // A style with no definition selects without coloring, so it must not
+      // claim items away from the styles below it.
       if (!definition) continue;
-      const map =
-        style === "select" || !this.styles.get(this.config.selectName)
-          ? modelIdMap
-          : this.getMapWithoutSelection(style);
-      if (!map) continue;
+
+      const map = OBC.ModelIdMapUtils.clone(this.selection[style]);
+      OBC.ModelIdMapUtils.remove(map, claimed);
+      OBC.ModelIdMapUtils.add(claimed, this.selection[style]);
+      if (OBC.ModelIdMapUtils.isEmpty(map)) continue;
+
+      // priority is ours, not part of the material definition fragments expects.
+      const { priority: _priority, ...material } = definition;
+
       promises.push(
-        fragments.highlight({ ...definition, customId: style }, map),
+        fragments.highlight({ ...material, customId: style }, map),
       );
     }
+
     if (this.config.autoUpdateFragments) {
       promises.push(fragments.core.update(true));
     }
     await Promise.allSettled(promises);
+  }
+
+  /**
+   * Style names ordered by descending draw priority. See {@link styles}.
+   */
+  private getStylesByPriority() {
+    const order = Object.keys(this.selection);
+    return [...order].sort((a, b) => {
+      const priorityA = this.getPriority(a);
+      const priorityB = this.getPriority(b);
+      if (priorityA !== priorityB) return priorityB - priorityA;
+      // Same priority: the style registered last wins.
+      return order.indexOf(b) - order.indexOf(a);
+    });
+  }
+
+  private getPriority(style: string) {
+    const priority = this.styles.get(style)?.priority;
+    if (priority !== undefined) return priority;
+    return style === this.config.selectName ? Number.MAX_SAFE_INTEGER : 0;
   }
 
   private updateStyleMap(name: string, selection: OBC.ModelIdMap) {
@@ -409,60 +449,11 @@ export class Highlighter
       }
     }
 
-    // Removes the style selection from all other styles, except the select style
-    if (name === this.config.selectName) return;
-    for (const [style, selectionMap] of Object.entries(this.selection)) {
-      if (style === this.config.selectName || style === name) continue;
-
-      const styleSelection = selectionMap;
-      for (const [modelId, ids] of Object.entries(modelIdMap)) {
-        const styleIds = styleSelection[modelId];
-        if (!styleIds) continue;
-
-        for (const id of ids) {
-          styleIds.delete(id);
-        }
-      }
-    }
-  }
-
-  /**
-   * Retrieves a map of model IDs to element IDs, excluding elements that are also present in the selection map
-   * specified by `this.config.selectName`. Optionally filters the results based on a provided filter map.
-   *
-   * @param style - The style name to retrieve the selection from.
-   * @param filter - An optional map of model IDs to element IDs used to further filter the results. If provided,
-   *                 only elements present in this filter will be included in the result.
-   * @returns A map of model IDs to element IDs, excluding selected elements and optionally filtered elements.
-   *          Returns `null` if the resulting map is empty.
-   * @throws Error - If the specified style does not exist in the selection.
-   */
-  private getMapWithoutSelection(style: string, filter?: OBC.ModelIdMap) {
-    const styleSelection = this.selection[style];
-    if (!styleSelection) {
-      throw new Error(`Style ${style} does not exist.`);
-    }
-
-    const selectSelection = this.selection[this.config.selectName] ?? {};
-    const result: OBC.ModelIdMap = {};
-
-    for (const modelId in styleSelection) {
-      const styleIds = styleSelection[modelId];
-      const selectIds =
-        style === this.config.selectName
-          ? new Set<number>() // If the style is "select", don't remove elements from itself
-          : selectSelection[modelId] ?? new Set<number>();
-
-      const filteredIds = Array.from(styleIds).filter(
-        (id) => !selectIds.has(id) && (!filter || filter[modelId]?.has(id)),
-      );
-
-      if (filteredIds.length > 0) {
-        result[modelId] = new Set(filteredIds);
-      }
-    }
-
-    return Object.keys(result).length > 0 ? result : null;
+    // Styles used to delete these items from every other style's selection, so
+    // applying one style permanently destroyed whatever color was underneath
+    // and clearing it left the item with no color at all. Precedence is now
+    // resolved at paint time in updateColors, so an item can belong to several
+    // styles at once and simply falls back to the next one down.
   }
 
   /**
@@ -479,7 +470,6 @@ export class Highlighter
     for (const style of styles) {
       const modelIdMap = this.selection[style] ?? {};
       const map = filter ?? modelIdMap;
-      if (style === this.config.selectName) this.restorePreviousColors();
       const clearedItems: Record<string, Set<number>> = {};
       for (const [modelId, localIds] of Object.entries(map)) {
         const ids = modelIdMap[modelId];
@@ -595,24 +585,6 @@ export class Highlighter
     const camera = world.camera;
     await camera.controls.fitToSphere(sphere, true);
   }
-
-  private restorePreviousColors = (modelIdMap = this.selection.select) => {
-    for (const [style, selectionMap] of Object.entries(this.selection)) {
-      if (style === this.config.selectName) continue;
-      const definition = this.styles.get(style);
-      if (!definition) continue;
-      const styleSelection: OBC.ModelIdMap = {};
-      for (const [modelId, localIds] of Object.entries(modelIdMap)) {
-        const highlightedIds = selectionMap[modelId]; // currently highligthed items
-        if (!highlightedIds) continue;
-        const filteredItems = [...localIds].filter((id) =>
-          highlightedIds.has(id),
-        );
-        if (filteredItems.length === 0) continue;
-        styleSelection[modelId] = new Set(filteredItems);
-      }
-    }
-  };
 
   private setupEvents(active: boolean) {
     if (!this.config.world) {

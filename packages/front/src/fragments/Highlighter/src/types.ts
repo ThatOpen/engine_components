@@ -17,6 +17,24 @@ export interface HighlightEvents {
 }
 
 /**
+ * A highlight style: the material definition used to color the items that
+ * claim it, plus an optional draw priority. `null` means the style selects
+ * items without coloring them.
+ */
+export type HighlightStyle =
+  | (Omit<FRAGS.MaterialDefinition, "customId"> & {
+      /**
+       * Decides which style colors an item when several styles claim it: the
+       * highest priority wins, and the others color the item again as soon as
+       * the winner releases it. Defaults to 0. The select style defaults to the
+       * highest priority, so a selection always shows on top. Ties are broken by
+       * registration order, most recently registered first.
+       */
+      priority?: number;
+    })
+  | null;
+
+/**
  * Interface defining the configuration options for the Highlighter class.
  */
 export interface HighlighterConfig {
