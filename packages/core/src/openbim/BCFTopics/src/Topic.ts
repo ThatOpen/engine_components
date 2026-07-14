@@ -409,43 +409,51 @@ export class Topic implements BCFTopic {
   serialize() {
     const version = this._managerVersion;
 
+    // Topic's children are an xs:sequence in markup.xsd, so the order below is
+    // the schema's order, not a convenient one: schema-validating consumers
+    // reject the markup otherwise. Both 2.1 and 3.0 use the same sequence for
+    // the elements we write:
+    //   Title, Priority, Index, Labels, CreationDate, CreationAuthor,
+    //   ModifiedDate, ModifiedAuthor, DueDate, AssignedTo, Stage, Description,
+    //   DocumentReference(s), RelatedTopic(s), Comments, Viewpoints
+    // The builder emits keys in insertion order, so this literal IS the output
+    // order. Don't append keys to it afterwards.
+    const isV3 = version === "3";
+
     const topic: Record<string, any> = {
       $Guid: this.guid,
       $TopicType: this.type,
       $TopicStatus: this.status,
       $ServerAssignedId: this.serverAssignedId,
       Title: this.title,
-      CreationAuthor: this.creationAuthor,
-      CreationDate: this.creationDate.toISOString(),
       Priority: this.priority,
       Index: version === "2.1" ? this.index : undefined,
+      Labels: isV3
+        ? { Label: this.createLabelTags() }
+        : this.createLabelTags(),
+      CreationDate: this.creationDate.toISOString(),
+      CreationAuthor: this.creationAuthor,
       ModifiedDate: this.modifiedDate?.toISOString(),
       ModifiedAuthor: this.modifiedAuthor,
       DueDate: this.dueDate?.toISOString(),
       AssignedTo: this.assignedTo,
-      Description: this.description,
       Stage: this.stage,
-      DocumentReferences:
-        version === "3"
-          ? { DocumentReference: this.createDocumentReferencesTag(version) }
-          : undefined,
-      RelatedTopics:
-        version === "3"
-          ? { RelatedTopic: this.createRelatedTopicTags() }
-          : undefined,
-      RelatedTopic:
-        version === "2.1" ? this.createRelatedTopicTags() : undefined,
-      Labels: version === "3" ? { Label: this.createLabelTags() } : undefined,
-      Viewpoints:
-        version === "3" ? { ViewPoint: this.createViewpointTags() } : undefined,
-      Comments:
-        version === "3" ? { Comment: this.createCommentTags() } : undefined,
+      Description: this.description,
+      DocumentReferences: isV3
+        ? { DocumentReference: this.createDocumentReferencesTag(version) }
+        : undefined,
+      DocumentReference: isV3
+        ? undefined
+        : this.createDocumentReferencesTag(version),
+      RelatedTopics: isV3
+        ? { RelatedTopic: this.createRelatedTopicTags() }
+        : undefined,
+      RelatedTopic: isV3 ? undefined : this.createRelatedTopicTags(),
+      Comments: isV3 ? { Comment: this.createCommentTags() } : undefined,
+      Viewpoints: isV3
+        ? { ViewPoint: this.createViewpointTags() }
+        : undefined,
     };
-
-    if (version === "2.1") {
-      topic.Labels = this.createLabelTags();
-      topic.DocumentReference = this.createDocumentReferencesTag(version);
-    }
 
     const markup: Record<string, any> = {
       Markup: { Topic: topic },

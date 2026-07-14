@@ -287,10 +287,17 @@ export class BCFTopics
    */
   async export(topics: Iterable<Topic> = this.list.values()) {
     const zip = new JSZip();
+
+    // The spec's own test files and docs write VersionId as "3.0", not "3", and
+    // clients that match the version exactly mis-detect the archive otherwise.
+    const isV3 = this.config.version === "3";
+    const versionId = isV3 ? "3.0" : this.config.version;
+    const schemaRelease = isV3 ? "release_3_0" : "release_2_1";
+
     zip.file(
       "bcf.version",
       `<?xml version="1.0" encoding="UTF-8"?>
-    <Version VersionId="${this.config.version}" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/buildingSMART/BCF-XML/release_3_0/Schemas/version.xsd"
+    <Version VersionId="${versionId}" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/buildingSMART/BCF-XML/${schemaRelease}/Schemas/version.xsd"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     </Version>`,
     );
@@ -328,7 +335,9 @@ export class BCFTopics
       }
     }
 
-    zip.file("bcf.extensions", this.serializeExtensions());
+    // The spec requires this file to be named extensions.xml at the archive
+    // root. Strict readers resolve it by name and won't find "bcf.extensions".
+    zip.file("extensions.xml", this.serializeExtensions());
     const viewpoints = this.components.get(Viewpoints);
     for (const topic of topics) {
       const topicFolder = zip.folder(topic.guid) as JSZip;
@@ -498,18 +507,25 @@ export class BCFTopics
     const versionFile = files.find((file) => file.name.endsWith(".version"));
     if (versionFile) {
       const versionXML = await versionFile.async("string");
-      const bcfVersion =
-        BCFTopics.xmlParser.parse(versionXML).Version.VersionId;
-      version = String(bcfVersion) as BCFVersion;
+      const bcfVersion = String(
+        BCFTopics.xmlParser.parse(versionXML).Version.VersionId,
+      );
+      // BCF 3.0 archives declare "3.0", which is what we now write too. Older
+      // archives (including ones we exported before) say "3". Both mean 3.
+      version = (bcfVersion === "3.0" ? "3" : bcfVersion) as BCFVersion;
     }
 
     if (!(version && (version === "2.1" || version === "3"))) {
       throw new Error(`BCFTopics: ${version} is not supported.`);
     }
 
-    // Get BCF Extensions file
-    const extensionsFile = files.find((file) =>
-      file.name.endsWith(".extensions"),
+    // Get BCF Extensions file. The spec names it extensions.xml; accept the
+    // legacy "bcf.extensions" too so archives exported by older versions of
+    // this library still import.
+    const extensionsFile = files.find(
+      (file) =>
+        file.name.endsWith("extensions.xml") ||
+        file.name.endsWith(".extensions"),
     );
 
     if (updateExtensionsOnImport && extensionsFile) {
