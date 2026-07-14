@@ -7,6 +7,7 @@ import {
 import { Component, Disposable, Event } from "../Types";
 import { UUID } from "../../utils";
 import { FragmentsManager } from "../../fragments";
+import { Worlds } from "../Worlds";
 import { DataMap } from "@thatopen/fragments";
 
 /**
@@ -141,6 +142,7 @@ export class Components implements Disposable {
     this.enabled = false;
 
     let fragments: FragmentsManager | undefined;
+    let worlds: Component | undefined;
 
     for (const [_id, component] of this.list) {
       component.enabled = false;
@@ -148,12 +150,24 @@ export class Components implements Disposable {
         fragments = component as FragmentsManager;
         continue;
       }
+      // Worlds are held back too. Disposing a world nulls its scene, camera and
+      // renderer, and a world's camera getter throws once that happens, so any
+      // component still cleaning up against its world (removing a camera-controls
+      // listener, for instance) would blow up mid-dispose and leave the rest of
+      // the components undisposed.
+      if (_id === Worlds.uuid) {
+        worlds = component;
+        continue;
+      }
       if (component.isDisposeable()) {
         component.dispose();
       }
     }
 
-    // Make sure fragments is disposed last
+    // Worlds go after everything that depends on them...
+    if (worlds?.isDisposeable()) worlds.dispose();
+
+    // ...and fragments last of all.
     fragments?.dispose();
 
     // Timer has no stop(); we just stop calling update() by flipping

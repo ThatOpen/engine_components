@@ -232,6 +232,12 @@ export class SimpleWorld<
 
   /** {@link Disposable.dispose} */
   dispose(disposeResources = true) {
+    // Being disposed twice is normal in component frameworks: components.dispose()
+    // tears the world down on unmount, and then the UI element that owns the world
+    // gets removed from the DOM and disposes it again. Without this, the second
+    // call reaches the scene / camera getters, which throw once the world is gone.
+    if (this.isDisposing) return;
+
     this.enabled = false;
     this.isDisposing = true;
 

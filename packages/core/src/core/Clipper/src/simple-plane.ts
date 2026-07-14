@@ -289,7 +289,10 @@ export class SimplePlane implements Disposable, Hideable {
   dispose() {
     this._enabled = false;
 
-    if (this.world.camera?.controls) {
+    // The world's camera getter throws once the world has been disposed, so
+    // optional chaining alone isn't enough to make this safe. A disposed world
+    // has already torn its camera controls down, so there's nothing to detach.
+    if (!this.world.isDisposing && this.world.camera?.controls) {
       this.world.camera.controls.removeEventListener(
         "update",
         this.updateScale,
