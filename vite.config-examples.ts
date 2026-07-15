@@ -96,6 +96,15 @@ const input = Object.fromEntries(entries);
 
 export default defineConfig({
   base: "./",
+  resolve: {
+    // Mirror the dev server config: workspaces install their own copy of
+    // three, and without dedupe the production build inlines two three cores
+    // into the bundle. three.js then prints "Multiple instances of Three.js
+    // being imported" and, worse, cross-instance `instanceof` / raycasting
+    // checks stop matching, which silently breaks picking (e.g. the
+    // measurement snap picker) in the built examples.
+    dedupe: ["three"],
+  },
   esbuild: {
     supported: {
       "top-level-await": true,
