@@ -9,6 +9,7 @@ import {
 	Color,
 	Scene,
 	NoBlending,
+	DoubleSide,
 } from 'three';
 
 // RGBA8 ID encoding - supports up to 16,777,215 objects (2^24 - 1)
@@ -90,9 +91,17 @@ export class VisibilityCuller {
 		target.setSize( Math.ceil( pixelWidth / tilesX ), Math.ceil( pixelHeight / tilesY ) );
 
 		// set the camera bounds
+		// A margin above the top and below the bottom of the box keeps the whole
+		// depth range strictly inside the frustum. Without it, geometry sitting
+		// exactly at box.max.y (the top face of the tallest items) fell inside the
+		// near-clip band and never rasterized, so those items were reported as not
+		// visible and produced no edges. Which items that hit depended on what else
+		// was in the set, since box.max.y is the set's own bound.
+		const yMargin = Math.max( size.y, 1 ) * 0.01;
 		camera.rotation.x = - Math.PI / 2;
-		camera.far = ( box.max.y - box.min.y ) + camera.near;
-		camera.position.y = box.max.y + camera.near;
+		camera.near = 0;
+		camera.far = size.y + 2 * yMargin;
+		camera.position.y = box.max.y + yMargin;
 
 		// Create a scene with all objects using ID materials
 		const idScene = new Scene();
@@ -144,10 +153,11 @@ export class VisibilityCuller {
 				const tileMinZ = box.min.z + stepZ * ty;
 				const tileMaxZ = tileMinZ + stepZ;
 
-				// Position camera at center of this tile
+				// Position camera at center of this tile, keeping the same top
+				// margin as above so nothing at box.max.y is near-clipped.
 				const tileCenterX = ( tileMinX + tileMaxX ) / 2;
 				const tileCenterZ = ( tileMinZ + tileMaxZ ) / 2;
-				camera.position.set( tileCenterX, box.max.y, tileCenterZ );
+				camera.position.set( tileCenterX, box.max.y + yMargin, tileCenterZ );
 
 				// Set symmetric frustum around camera center
 				// For a camera looking down (-90° X rotation):
@@ -214,7 +224,6 @@ export class VisibilityCuller {
 		target.dispose();
 
 
-		// console.log( objects.length, visibleSet.size );
 		return Array.from( visibleSet );
 
 	}
@@ -243,6 +252,11 @@ class IDMaterial extends ShaderMaterial {
 
 			glslVersion: GLSL3,
 			blending: NoBlending,
+			// A flat item (a slab) seen straight down shows only one face; if its
+			// winding puts the back face toward the camera it wouldn't rasterize and
+			// the item would be culled. The pass only cares about coverage, so render
+			// both sides.
+			side: DoubleSide,
 
 			uniforms: {
 				objectId: { value: new Vector4() },
