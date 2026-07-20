@@ -14,8 +14,6 @@ import { Disposer } from "../../Disposer";
 import { Worlds } from "..";
 import { Raycasters } from "../../Raycasters";
 
-// TODO: Fix dyanmic anchoring
-
 /**
  * A class representing a simple world in a 3D environment. It extends the Base class and implements the World interface.
  *
@@ -60,6 +58,10 @@ export class SimpleWorld<
 
   private _dynamicAnchor = false;
 
+  // Bumped on every anchor press so a slow geometry pick that resolves after a
+  // newer press is ignored (see onPointerDown).
+  private _anchorRequestId = 0;
+
   set dynamicAnchor(value: boolean) {
     const container = this.renderer?.three.domElement.parentElement;
     if (!container) {
@@ -96,22 +98,89 @@ export class SimpleWorld<
 
   private _renderer: S | null = null;
 
-  private onPointerDown = async (event: PointerEvent) => {
+  private onPointerDown = (event: PointerEvent) => {
     if (!this.camera.hasCameraControls()) {
       throw new Error(
         "World: can't set dynamic anchor if the camera doesn't have controls.",
       );
     }
+
+    if (event.button !== 0) return;
+
+    const position = this.getPointerPosition(event);
+    if (!position) return;
+
     const caster = this.components.get(Raycasters).get(this);
-    const result = await caster.castRay();
-    if (result && result.point && event.button === 0) {
+
+    // Anchor immediately on the plane through the current orbit target facing
+    // the camera. That plane is always hit, so the anchor follows the pointer
+    // even over empty space (issue #768: previously a miss left the pivot where
+    // it was, so the same gesture behaved differently on geometry vs void).
+    // Holding the current focus depth keeps the orbit radius stable instead of
+    // snapping around as the pointer crosses gaps between objects.
+    const planePoint = this.getPlaneAnchor(caster, position);
+    if (planePoint) {
       this.camera.controls.setOrbitPoint(
-        result.point.x,
-        result.point.y,
-        result.point.z,
+        planePoint.x,
+        planePoint.y,
+        planePoint.z,
       );
     }
+
+    // Then refine to the real geometry depth once the (asynchronous) pick
+    // resolves. Both points sit on the same pointer ray and setOrbitPoint
+    // preserves the rendered image, so this only corrects the depth. Guarded by
+    // a request id so a stale pick from an earlier press can't win.
+    const requestId = ++this._anchorRequestId;
+    caster.castRay({ position }).then((result) => {
+      const isStale = requestId !== this._anchorRequestId;
+      if (isStale || this.isDisposing || !this._dynamicAnchor) return;
+      if (!result?.point || !this.camera.hasCameraControls()) return;
+      const { x, y, z } = result.point;
+      this.camera.controls.setOrbitPoint(x, y, z);
+    });
   };
+
+  /**
+   * The pointer position in normalized device coordinates, derived from the
+   * event rather than the raycaster's mouse: that one only tracks pointermove
+   * and touchstart, so on a bare pointerdown it would still report the center of
+   * the viewport.
+   */
+  private getPointerPosition(event: PointerEvent) {
+    const dom = this.renderer?.three.domElement;
+    if (!dom) return null;
+    const bounds = dom.getBoundingClientRect();
+    return new THREE.Vector2(
+      ((event.clientX - bounds.left) / (bounds.right - bounds.left)) * 2 - 1,
+      -((event.clientY - bounds.top) / (bounds.bottom - bounds.top)) * 2 + 1,
+    );
+  }
+
+  /**
+   * The point where the pointer ray crosses the plane that contains the current
+   * orbit target and faces the camera. Used as the anchor when the pointer
+   * doesn't land on any geometry.
+   */
+  private getPlaneAnchor(
+    caster: ReturnType<Raycasters["get"]>,
+    position: THREE.Vector2,
+  ) {
+    if (!this.camera.hasCameraControls()) return null;
+    const camera = this.camera.three as
+      | THREE.PerspectiveCamera
+      | THREE.OrthographicCamera;
+    caster.three.setFromCamera(position, camera);
+    const target = this.camera.controls.getTarget(new THREE.Vector3());
+    const normal = camera.getWorldDirection(new THREE.Vector3());
+    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+      normal,
+      target,
+    );
+    // The ray points into the frustum, so it can never be parallel to a plane
+    // whose normal is the camera direction, but intersectPlane is nullable.
+    return caster.three.ray.intersectPlane(plane, new THREE.Vector3());
+  }
 
   private _defaultCamera?: U;
 
