@@ -11,7 +11,7 @@ import {
   Updateable,
 } from "../../Types";
 import { Disposer } from "../../Disposer";
-import { Worlds } from "..";
+import { setOrbitPoint, Worlds } from "..";
 import { Raycasters } from "../../Raycasters";
 
 /**
@@ -70,7 +70,6 @@ export class SimpleWorld<
       );
     }
     if (value) {
-      if (this.camera.controls) this.camera.controls.minDistance = 0.01;
       container.addEventListener("pointerdown", this.onPointerDown);
     } else {
       container.removeEventListener("pointerdown", this.onPointerDown);
@@ -120,11 +119,7 @@ export class SimpleWorld<
     // snapping around as the pointer crosses gaps between objects.
     const planePoint = this.getPlaneAnchor(caster, position);
     if (planePoint) {
-      this.camera.controls.setOrbitPoint(
-        planePoint.x,
-        planePoint.y,
-        planePoint.z,
-      );
+      setOrbitPoint(this.camera.controls, planePoint);
     }
 
     // Then refine to the real geometry depth once the (asynchronous) pick
@@ -136,8 +131,7 @@ export class SimpleWorld<
       const isStale = requestId !== this._anchorRequestId;
       if (isStale || this.isDisposing || !this._dynamicAnchor) return;
       if (!result?.point || !this.camera.hasCameraControls()) return;
-      const { x, y, z } = result.point;
-      this.camera.controls.setOrbitPoint(x, y, z);
+      setOrbitPoint(this.camera.controls, result.point);
     });
   };
 

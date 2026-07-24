@@ -9,6 +9,36 @@ import {
 } from "../../../fragments";
 
 /**
+ * Move the orbit point to an anchored surface without letting the camera
+ * jump or the zoom decay.
+ *
+ * `CameraControls.setOrbitPoint` internally calls `dollyTo(distance)`, which
+ * clamps the orbit radius to `[minDistance, maxDistance]`. If the anchored
+ * surface sits closer than `minDistance`, that clamp would snap the camera
+ * backwards, so the anchor has to be placed with a near-zero `minDistance`.
+ *
+ * But `minDistance` is also what stops the zoom from decaying: with
+ * `dollyToCursor` + `infinityDolly` the wheel step is proportional to the
+ * orbit radius, and the constant-speed "infinity" push only kicks in once the
+ * radius reaches `minDistance`. Leaving `minDistance` near zero (as dynamic
+ * anchoring used to, globally) let the radius shrink toward zero on every
+ * zoom-in, so each notch moved exponentially less — the zoom felt like it was
+ * grinding to a halt until a press re-anchored it. So we drop `minDistance`
+ * only for the placement itself and restore it immediately, keeping the real
+ * `minDistance` in force for the wheel.
+ */
+export function setOrbitPoint(controls: CameraControls, point: THREE.Vector3) {
+  const { minDistance } = controls;
+  controls.minDistance = 0.01;
+  controls.setOrbitPoint(
+    point.x,
+    point.y,
+    point.z,
+  );
+  controls.minDistance = minDistance;
+}
+
+/**
  * A basic camera that uses [yomotsu's cameracontrols](https://github.com/yomotsu/camera-controls) to control the camera in 2D and 3D. Check out it's API to find out what features it offers.
  */
 export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
@@ -150,11 +180,7 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
 
   async setOrbitToItems(items?: ModelIdMap) {
     const sphere = await this.getItemsBounding(items);
-    this.controls.setOrbitPoint(
-      sphere.center.x,
-      sphere.center.y,
-      sphere.center.z,
-    );
+    setOrbitPoint(this.controls, sphere.center);
   }
 
   /** {@link Updateable.update} */
