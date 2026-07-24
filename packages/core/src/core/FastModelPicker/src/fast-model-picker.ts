@@ -186,9 +186,7 @@ export class FastModelPicker implements Disposable {
     const fragments = this.components.get(FragmentsManager);
     const model = fragments.list.get(result.modelId);
     if (!model) return null;
-    const localIds = await (model as any).getLocalIdsFromItemIds([
-      result.itemId,
-    ]);
+    const localIds = await model.getLocalIdsFromItemIds([result.itemId]);
     const localId = localIds?.[0];
     if (localId === undefined || localId === null) return null;
     return { modelId: result.modelId, localId, itemId: result.itemId };
