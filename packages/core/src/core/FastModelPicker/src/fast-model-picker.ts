@@ -554,6 +554,17 @@ export class FastModelPicker implements Disposable {
     const prevScissorTest = renderer.getScissorTest();
     const prevScissor = renderer.getScissor(new THREE.Vector4());
 
+    // A non-null scene background makes three force-clear colour AND depth on
+    // every render() call (see WebGLBackground: an isColor background sets
+    // forceClear = true), even though we set autoClear = false to keep the
+    // depth buffer across the per-model id renders. That force-clear wipes the
+    // shared depth between models, so only the last-rendered (last-loaded)
+    // model survives in the id target and multi-model picking collapses to it
+    // (issues #737 / #773). Null the background for the pass and restore it
+    // afterwards.
+    const prevBackground = (scene as THREE.Scene).background;
+    (scene as THREE.Scene).background = null;
+
     renderer.setRenderTarget(target);
     renderer.setClearColor(0x000000, 0);
     renderer.autoClear = false;
@@ -682,6 +693,7 @@ export class FastModelPicker implements Disposable {
     renderer.setRenderTarget(prevTarget);
     renderer.autoClear = prevAutoClear;
     renderer.setClearColor(prevClearColor, prevClearAlpha);
+    (scene as THREE.Scene).background = prevBackground;
   }
 
   /**
@@ -716,6 +728,14 @@ export class FastModelPicker implements Disposable {
     const prevAutoClear = renderer.autoClear;
     const prevClearColor = renderer.getClearColor(new THREE.Color());
     const prevClearAlpha = renderer.getClearAlpha();
+
+    // Same background caveat as renderPickPass: a non-null scene background
+    // would force-clear our target mid-pass and, for the depth/normal reads,
+    // paint the background colour into pixels with no geometry so they decode
+    // to a bogus point/normal instead of void. Null it for the render and
+    // restore below (issues #737 / #773).
+    const prevBackground = (scene as THREE.Scene).background;
+    (scene as THREE.Scene).background = null;
 
     // Per-mesh material + visibility swap. We only touch shells that
     // carry the `id` attribute — those are the BIM tile shells.
@@ -795,6 +815,7 @@ export class FastModelPicker implements Disposable {
     renderer.setRenderTarget(prevTarget);
     renderer.autoClear = prevAutoClear;
     renderer.setClearColor(prevClearColor, prevClearAlpha);
+    (scene as THREE.Scene).background = prevBackground;
   }
 
   private renderDepthPass() {
