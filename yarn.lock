@@ -737,8 +737,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
-    "@thatopen/components": ~3.4.0
-    "@thatopen/fragments": ~3.4.3
+    "@thatopen/components": ~3.4.7
+    "@thatopen/fragments": ~3.4.7
     "@thatopen/ui": ~3.4.0
     "@thatopen/ui-obc": ~3.4.0
     "@types/convert-units": 2.3.11
@@ -748,17 +748,17 @@ __metadata:
     three: 0.184.0
     web-ifc: 0.0.77
   peerDependencies:
-    "@thatopen/fragments": ~3.4.0
+    "@thatopen/fragments": ~3.4.7
     three: ">=0.182.0"
     web-ifc: ">=0.0.77"
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@workspace:packages/core, @thatopen/components@~3.4.0":
+"@thatopen/components@workspace:packages/core, @thatopen/components@~3.4.7":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
-    "@thatopen/fragments": ~3.4.3
+    "@thatopen/fragments": ~3.4.7
     "@thatopen/ui": ~3.4.0
     "@types/convert-units": 2.3.11
     "@types/three": 0.184.0
@@ -770,16 +770,16 @@ __metadata:
     three-mesh-bvh: 0.9.9
     web-ifc: 0.0.77
   peerDependencies:
-    "@thatopen/fragments": ~3.4.0
+    "@thatopen/fragments": ~3.4.7
     camera-controls: ">=3.1.2"
     three: ">=0.182.0"
     web-ifc: ">=0.0.77"
   languageName: unknown
   linkType: soft
 
-"@thatopen/fragments@npm:~3.4.3":
-  version: 3.4.3
-  resolution: "@thatopen/fragments@npm:3.4.3"
+"@thatopen/fragments@npm:~3.4.7":
+  version: 3.4.7
+  resolution: "@thatopen/fragments@npm:3.4.7"
   dependencies:
     earcut: ^3.0.1
     flatbuffers: 25.2.10
@@ -788,7 +788,7 @@ __metadata:
   peerDependencies:
     three: ">=0.182.0"
     web-ifc: ">=0.0.77"
-  checksum: 2e899c2986f6720dacafd41a2a708bd69d720de0e200cdbebddb4ed142ef69c7d77dbb7af37b71d7b1b4b627a56f696174984de0b3d1548d538993ed38066f28
+  checksum: 66ef8422afcee492d083c5aa4f0003b2847f853f84cea367f3851720202c974dcacf81f26b803f89399f9e1797c73421a2183e7dd18e7858bff458144df60e20
   languageName: node
   linkType: hard
 
