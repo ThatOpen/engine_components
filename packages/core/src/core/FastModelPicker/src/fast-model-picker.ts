@@ -63,6 +63,15 @@ export class FastModelPicker implements Disposable {
   private _renderTarget?: THREE.WebGLRenderTarget;
   private _renderTargetSize = new THREE.Vector2();
 
+  /**
+   * Camera latched for the duration of a {@link getFullPick}. The pick runs
+   * three passes (id → depth → normal) separated by `await`s, so if the camera
+   * moves during the pick each pass would otherwise render from a different
+   * state and `point` would be unprojected off the ray. While set, every pass
+   * reads this instead of the live `world.camera.three`; `null` outside a pick.
+   */
+  private _frozenCamera: THREE.Camera | null = null;
+
   private _debugCanvas?: HTMLCanvasElement;
   private _debugContainer?: HTMLDivElement;
 
@@ -239,7 +248,11 @@ export class FastModelPicker implements Disposable {
     // far plane.
     if (depth >= 1.0 - 1e-6) return null;
 
-    return unprojectToWorld(pos, depth, this.world.camera.three);
+    return unprojectToWorld(
+      pos,
+      depth,
+      this._frozenCamera ?? this.world.camera.three,
+    );
   }
 
   /**
@@ -297,13 +310,20 @@ export class FastModelPicker implements Disposable {
     normal: THREE.Vector3 | null;
     distance: number;
   } | null> {
-    const item = await this.getItemAt(position);
-    if (!item) return null;
-    const point = await this.getPointAt(position);
-    if (!point) return null;
-    const normal = await this.getNormalAt(position);
-    const distance = point.distanceTo(this.world.camera.three.position);
-    return { ...item, point, normal, distance };
+    // Latch the camera so all three passes below are consistent even if the
+    // camera moves during the awaits between them (rapid zoom, damping, etc.).
+    this._frozenCamera = this.world.camera.three.clone();
+    try {
+      const item = await this.getItemAt(position);
+      if (!item) return null;
+      const point = await this.getPointAt(position);
+      if (!point) return null;
+      const normal = await this.getNormalAt(position);
+      const distance = point.distanceTo(this._frozenCamera.position);
+      return { ...item, point, normal, distance };
+    } finally {
+      this._frozenCamera = null;
+    }
   }
 
   /**
@@ -540,7 +560,7 @@ export class FastModelPicker implements Disposable {
   ) {
     const renderer = this.world.renderer!.three;
     const scene = this.world.scene.three;
-    const camera = this.world.camera.three;
+    const camera = this._frozenCamera ?? this.world.camera.three;
     const fragments = this.components.get(FragmentsManager);
 
     const planes = renderer.clippingPlanes ?? [];
@@ -716,7 +736,7 @@ export class FastModelPicker implements Disposable {
   private renderWithTileMaterial(material: THREE.ShaderMaterial) {
     const renderer = this.world.renderer!.three;
     const scene = this.world.scene.three;
-    const camera = this.world.camera.three;
+    const camera = this._frozenCamera ?? this.world.camera.three;
     const fragments = this.components.get(FragmentsManager);
 
     // Sync clipping planes onto the swap material.
