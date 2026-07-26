@@ -149,8 +149,8 @@ export class FastModelPicker implements Disposable {
    * @param position - Normalized device coords. Defaults to the
    *   picker's last known mouse position.
    */
-  async getModelAt(position?: THREE.Vector2): Promise<string | null> {
-    const result = await this.runIdPass(position);
+  getModelAt(position?: THREE.Vector2): string | null {
+    const result = this.runIdPass(position);
     if (!result) return null;
     return result.modelId;
   }
@@ -170,24 +170,14 @@ export class FastModelPicker implements Disposable {
   async getItemAt(
     position?: THREE.Vector2,
   ): Promise<{ modelId: string; localId: number; itemId: number } | null> {
-    const result = await this.runIdPass(position);
+    const result = this.runIdPass(position);
     if (!result) return null;
-    // The vertex `id` attribute now encodes the internal **itemId**
-    // (the FlatBuffer `sample.item()` index, key for `boxes.sampleOf`)
-    // rather than the user-facing localId. We changed the encoding to
-    // unblock the snap path, which can fetch sample data in O(1) by
-    // itemId vs the O(N_total_samples) scan needed when keyed by
-    // localId. The trade-off: callers expecting `localId` get one
-    // worker round-trip here for translation. The translation itself
-    // is two FlatBuffer accessor calls on the worker side, so the
-    // cost is dominated by the message hop, not the work. Internal
-    // consumers that only need itemId (e.g. snap) can read it from
-    // the result directly and skip the translation.
     const fragments = this.components.get(FragmentsManager);
-    const model = fragments.list.get(result.modelId);
-    if (!model) return null;
-    const localIds = await model.getLocalIdsFromItemIds([result.itemId]);
-    const localId = localIds?.[0];
+    const localId = await itemIdToLocalId(
+      fragments,
+      result.modelId,
+      result.itemId,
+    );
     if (localId === undefined || localId === null) return null;
     return { modelId: result.modelId, localId, itemId: result.itemId };
   }
@@ -210,9 +200,9 @@ export class FastModelPicker implements Disposable {
    * @param position - Normalized device coords. Defaults to the
    *   picker's last known mouse position.
    */
-  async getPointAt(
+  getPointAt(
     position?: THREE.Vector2,
-  ): Promise<THREE.Vector3 | null> {
+  ): THREE.Vector3 | null {
     if (!this.enabled) return null;
     if (!this._renderTarget || !this.world.renderer) return null;
 
@@ -250,9 +240,9 @@ export class FastModelPicker implements Disposable {
    * render with the normal-encoding shader, one 4-byte readback,
    * decode and renormalize.
    */
-  async getNormalAt(
+  getNormalAt(
     position?: THREE.Vector2,
-  ): Promise<THREE.Vector3 | null> {
+  ): THREE.Vector3 | null {
     if (!this.enabled) return null;
     if (!this._renderTarget || !this.world.renderer) return null;
     const fragments = this.components.get(FragmentsManager);
@@ -297,13 +287,35 @@ export class FastModelPicker implements Disposable {
     normal: THREE.Vector3 | null;
     distance: number;
   } | null> {
-    const item = await this.getItemAt(position);
-    if (!item) return null;
-    const point = await this.getPointAt(position);
+    /**
+     * Evaluate data up front so that data does not drift due to immutable objects changing over time (camera, scene, etc.),
+     * safeguarding, for example, a mid flight camera change.
+     */
+    // sync pass (mutable deps)
+    const result = this.runIdPass(position);
+    if (!result) return null;
+    const point = this.getPointAt(position);
     if (!point) return null;
-    const normal = await this.getNormalAt(position);
+    const normal = this.getNormalAt(position);
     const distance = point.distanceTo(this.world.camera.three.position);
-    return { ...item, point, normal, distance };
+
+    // async pass (immutable deps)
+    const fragments = this.components.get(FragmentsManager);
+    const localId = await itemIdToLocalId(
+      fragments,
+      result.modelId,
+      result.itemId,
+    );
+
+    if (localId === undefined || localId === null) return null;
+    return {
+      modelId: result.modelId,
+      itemId: result.itemId,
+      localId,
+      point,
+      normal,
+      distance,
+    };
   }
 
   /**
@@ -353,10 +365,22 @@ export class FastModelPicker implements Disposable {
    * same front-most fragment per pixel.
    *
    * Both public entry points lean on this.
+   *
+   * The vertex `id` attribute now encodes the internal **itemId**
+   * (the FlatBuffer `sample.item()` index, key for `boxes.sampleOf`)
+   * rather than the user-facing localId. We changed the encoding to
+   * unblock the snap path, which can fetch sample data in O(1) by
+   * itemId vs the O(N_total_samples) scan needed when keyed by
+   * localId. The trade-off: callers expecting `localId` get one
+   * worker round-trip here for translation. The translation itself
+   * is two FlatBuffer accessor calls on the worker side, so the
+   * cost is dominated by the message hop, not the work. Internal
+   * consumers that only need itemId (e.g. snap) can read it from
+   * the result directly and skip the translation.
    */
-  private async runIdPass(
+  private runIdPass(
     position?: THREE.Vector2,
-  ): Promise<{ modelId: string; itemId: number } | null> {
+  ): { modelId: string; itemId: number } | null {
     if (!this.enabled) return null;
     if (!this._renderTarget) return null;
     if (!this.world.renderer) return null;
@@ -1170,3 +1194,14 @@ function unprojectToWorld(
   return v;
 }
 
+async function itemIdToLocalId(
+  fragments: FragmentsManager,
+  modelId: string,
+  itemId: number,
+) {
+  const model = fragments.list.get(modelId);
+  if (!model) return null;
+  const localIds = await model.getLocalIdsFromItemIds([itemId]);
+  const localId = localIds?.[0];
+  return localId ?? null;
+}

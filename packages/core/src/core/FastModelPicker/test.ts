@@ -144,13 +144,13 @@ container.addEventListener("pointermove", async (event) => {
   You can also pick models on click events:
 */
 
-container.addEventListener("click", async (event) => {
+container.addEventListener("click", (event) => {
   const bounds = container.getBoundingClientRect();
   const x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
   const y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
   const position = new THREE.Vector2(x, y);
 
-  const modelId = await picker.getModelAt(position);
+  const modelId = picker.getModelAt(position);
   if (modelId) {
     console.log("Clicked on model:", modelId);
   }
