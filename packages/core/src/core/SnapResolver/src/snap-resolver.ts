@@ -280,9 +280,7 @@ export class SnapResolver implements Disposable {
     // Compare to the previous `_getElements([localId])` path, which
     // scanned the full sample table (~1 s on superbig regardless of
     // how few items you ask for).
-    const data = (await (model as any)._getItemSnapData(
-      itemId,
-    )) as FRAGS.ElementData | null;
+    const data = await model._getItemSnapData(itemId);
     if (!data) return null;
 
     const modelWorldMatrix = model.object.matrixWorld;

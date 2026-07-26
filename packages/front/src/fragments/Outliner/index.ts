@@ -498,13 +498,7 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
           // `getItemDrawChunks` accepts an iterable; we pass the Set
           // straight through to avoid materializing an array for very
           // large selections.
-          const chunks = (await (model as any).getItemDrawChunks(
-            localIds,
-          )) as Array<{
-            tileId: number;
-            position: Uint32Array;
-            size: Uint32Array;
-          }>;
+          const chunks = await model.getItemDrawChunks(localIds);
           return { modelId, chunks };
         })(),
       );
