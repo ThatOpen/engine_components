@@ -748,6 +748,7 @@ __metadata:
     three: 0.184.0
     web-ifc: 0.0.77
   peerDependencies:
+    "@thatopen/components": ~3.4.7
     "@thatopen/fragments": ~3.4.7
     three: ">=0.182.0"
     web-ifc: ">=0.0.77"
