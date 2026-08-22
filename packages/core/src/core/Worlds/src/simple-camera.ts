@@ -198,6 +198,16 @@ export class SimpleCamera extends BaseCamera implements Updateable, Disposable {
    */
   updateAspect = () => {
     if (!this.currentWorld || !this.currentWorld.renderer) return;
+    if (this.currentWorld.renderer?.isResizeable()) {
+      const currentSize = this.currentWorld.renderer.getSize();
+      // A collapsed or hidden container draws nothing.
+      // There is no aspect to derive from it, while applying one is
+      // destructive in both projections: a perspective camera takes
+      // `aspect = 0`, i.e. a non-finite projection matrix, and an orthographic
+      // one gets its extents scaled to zero.
+      // Keep the frustum we have.
+      if (currentSize.width === 0 || currentSize.height === 0) return;
+    }
     if (this.three instanceof THREE.OrthographicCamera) {
       this.onAspectUpdated.trigger();
       return;

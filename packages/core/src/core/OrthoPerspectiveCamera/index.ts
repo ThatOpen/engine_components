@@ -219,9 +219,9 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
       return;
     }
 
-    const size = this.currentWorld.renderer.getSize();
+    if (!this.previousSize) return;
 
-    if (!this.previousSize || size.x === 0 || size.y === 0) return;
+    const size = this.currentWorld.renderer.getSize();
 
     if (this.previousSize.x === 0 || this.previousSize.y === 0) {
       this.previousSize.copy(size);
