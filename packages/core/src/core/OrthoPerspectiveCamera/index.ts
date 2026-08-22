@@ -219,9 +219,14 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
       return;
     }
 
-    if (!this.previousSize) return;
-
     const size = this.currentWorld.renderer.getSize();
+
+    if (!this.previousSize || size.x === 0 || size.y === 0) return;
+
+    if (this.previousSize.x === 0 || this.previousSize.y === 0) {
+      this.previousSize.copy(size);
+      return;
+    }
 
     const previousHeight = this.threeOrtho.top;
     const previousWidth = this.threeOrtho.right;
