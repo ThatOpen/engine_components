@@ -71,7 +71,7 @@ export class IDSProperty extends IDSFacet {
       const data = await model.getItemsData(localIds, {
         relations: {
           HasProperties: { attributes: true, relations: false },
-          DefinesOcurrence: { attributes: true, relations: false },
+          DefinesOccurrence: { attributes: true, relations: false },
         },
       });
 
@@ -81,7 +81,7 @@ export class IDSProperty extends IDSFacet {
             "value" in set._localId &&
             "value" in set._category &&
             "value" in set.Name &&
-            Array.isArray(set.DefinesOcurrence)
+            Array.isArray(set.DefinesOccurrence)
           )
         ) {
           continue;
@@ -134,17 +134,17 @@ export class IDSProperty extends IDSFacet {
             if (!valueMatches) continue;
           }
 
-          const items = set.DefinesOcurrence.map((ocurrence) => {
+          const items = set.DefinesOccurrence.map((occurrence) => {
             if (
               !(
-                "value" in ocurrence._localId &&
-                typeof ocurrence._localId.value === "number"
+                "value" in occurrence._localId &&
+                typeof occurrence._localId.value === "number"
               )
             ) {
               return null;
             }
 
-            return ocurrence._localId.value;
+            return occurrence._localId.value;
           }).filter((id) => id !== null) as number[];
 
           ModelIdMapUtils.append(collector, modelId, ...items);
@@ -167,7 +167,7 @@ export class IDSProperty extends IDSFacet {
           IsDefinedBy: { attributes: true, relations: true },
           IsTypedBy: { attributes: true, relations: false },
           HasPropertySets: { attributes: true, relations: true },
-          DefinesOcurrence: { attributes: false, relations: false },
+          DefinesOccurrence: { attributes: false, relations: false },
         },
       });
 
