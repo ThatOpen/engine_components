@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+* Add `Highlighter.isolation` for selection isolation with adjustable context opacity, streamed-material support, and restoration of original material settings.
+
 ## [3.4.0](https://github.com/ThatOpen/engine_components/compare/v3.3.2...v3.4.0) (2026-04-09)
 
 

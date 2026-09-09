@@ -8,6 +8,7 @@
     "Pablo Aguilar (https://github.com/pabloaguilarv"
   ],
   "scripts": {
+    "test:isolation": "node tests/run-isolation.mjs",
     "dev": "vite --host",
     "build-core": "yarn workspace @thatopen/components build",
     "build-front": "yarn workspace @thatopen/components-front build",

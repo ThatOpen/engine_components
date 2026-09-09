@@ -4,6 +4,7 @@ import * as OBC from "@thatopen/components";
 import { DataMap } from "@thatopen/fragments";
 import * as FRAGS from "@thatopen/fragments";
 import { HighlighterConfig, HighlightEvents, HighlightStyle } from "./src";
+import { HighlighterIsolation } from "./src/isolation";
 
 /**
  * This component allows highlighting and selecting fragments in a 3D scene. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/Highlighter). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/Highlighter).
@@ -35,6 +36,9 @@ export class Highlighter
 
   /** {@link OBC.Component.enabled} */
   enabled = true;
+
+  /** Isolates the select style with adjustable context opacity from 0 (hidden) to 1. */
+  readonly isolation: HighlighterIsolation;
 
   /** Stores the events triggered by the Highlighter. */
   events: HighlightEvents = {};
@@ -113,6 +117,12 @@ export class Highlighter
 
   constructor(components: OBC.Components) {
     super(components);
+    this.isolation = new HighlighterIsolation(
+      () => this.components.get(OBC.FragmentsManager).core,
+      () => this.selection[this.config.selectName] ?? {},
+      () => this.styles.get(this.config.selectName) ? this.config.selectName : null,
+      (selection) => this.validateIsolationSelection(selection),
+    );
     this.components.add(Highlighter.uuid, this);
     this.eventManager.list.add(this.onSetup);
     this.eventManager.list.add(this.onDisposed);
@@ -147,6 +157,7 @@ export class Highlighter
 
   /** {@link Disposable.dispose} */
   async dispose() {
+    this.isolation.dispose();
     this.setupEvents(false);
     this.onBeforeUpdate.reset();
     this.onAfterUpdate.reset();
@@ -402,6 +413,11 @@ export class Highlighter
       // priority is ours, not part of the material definition fragments expects.
       const { priority: _priority, ...material } = definition;
 
+      // Keep the rendered style identity so selection stays opaque while context fades.
+      if (material.preserveOriginalMaterial) {
+        material._explicitProps = [...new Set([...(material._explicitProps ?? []), "customId"])];
+      }
+
       promises.push(
         fragments.highlight({ ...material, customId: style }, map),
       );
@@ -411,6 +427,7 @@ export class Highlighter
       promises.push(fragments.core.update(true));
     }
     await Promise.allSettled(promises);
+    await this.isolation.refresh();
   }
 
   /**
@@ -425,6 +442,24 @@ export class Highlighter
       // Same priority: the style registered last wins.
       return order.indexOf(b) - order.indexOf(a);
     });
+  }
+
+  private validateIsolationSelection(selection: OBC.ModelIdMap) {
+    for (const style of this.getStylesByPriority()) {
+      if (style === this.config.selectName) return;
+      if (!this.styles.get(style)) continue;
+      for (const [modelId, ids] of Object.entries(selection)) {
+        const other = this.selection[style]?.[modelId];
+        if (!other) continue;
+        const smaller = ids.size < other.size ? ids : other;
+        const larger = smaller === ids ? other : ids;
+        for (const id of smaller) {
+          if (larger.has(id)) {
+            throw new Error(`Cannot fade context: style "${style}" has priority over selected items. Clear its overlapping items or change its priority first.`);
+          }
+        }
+      }
+    }
   }
 
   private getPriority(style: string) {

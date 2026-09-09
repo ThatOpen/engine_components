@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Selection context opacity</title>
+    <style>
+      body {
+        margin: 0;
+        background: #171b22;
+        color: #eef2f7;
+        font: 14px system-ui;
+      }
+      #container {
+        width: 100vw;
+        height: 100vh;
+      }
+      aside {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        width: min(300px, calc(100vw - 64px));
+        padding: 16px;
+        background: #242b35;
+        border: 1px solid #526176;
+        border-radius: 8px;
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: 18px;
+      }
+      button {
+        padding: 8px 12px;
+        margin: 4px 0;
+        background: #38475b;
+        color: inherit;
+        border: 1px solid #75879d;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      label {
+        display: block;
+        margin-top: 12px;
+      }
+      input {
+        width: 100%;
+        accent-color: #bcf124;
+      }
+      #status {
+        display: block;
+        margin-top: 12px;
+        overflow-wrap: anywhere;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container"></div>
+    <aside>
+      <h1>Selection context opacity</h1>
+      <p>
+        Click an element, or select a sample. Ctrl + click adds to the
+        selection.
+      </p>
+      <button id="sample" disabled>Select sample</button>
+      <button id="isolate" disabled>Isolate selection</button>
+      <label for="opacity"
+        >Context opacity: <output id="value">15%</output></label
+      >
+      <input
+        id="opacity"
+        type="range"
+        min="0"
+        max="100"
+        step="1"
+        value="15"
+        disabled
+      />
+      <button id="reset" disabled>Show all</button>
+      <button id="clear" disabled>Clear selection</button>
+      <output id="status" role="status">Loading public sample…</output>
+    </aside>
+    <script type="module" src="./example.ts"></script>
+  </body>
+</html>
