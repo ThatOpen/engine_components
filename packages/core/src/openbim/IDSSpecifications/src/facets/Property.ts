@@ -68,20 +68,27 @@ export class IDSProperty extends IDSFacet {
       ]);
       const localIds = Object.values(items).flat();
       if (localIds.length === 0) continue;
+      // Fragments renamed this relation from "DefinesOcurrence" to
+      // "DefinesOccurrence" in its 3.4 schema, but relation names are stored
+      // as data inside each .frag file, so files exported before the rename
+      // still carry the old spelling. Request both; the one not present in
+      // the file is simply ignored.
       const data = await model.getItemsData(localIds, {
         relations: {
           HasProperties: { attributes: true, relations: false },
+          DefinesOccurrence: { attributes: true, relations: false },
           DefinesOcurrence: { attributes: true, relations: false },
         },
       });
 
       for (const set of data) {
+        const definesOccurrence = set.DefinesOccurrence ?? set.DefinesOcurrence;
         if (
           !(
             "value" in set._localId &&
             "value" in set._category &&
             "value" in set.Name &&
-            Array.isArray(set.DefinesOcurrence)
+            Array.isArray(definesOccurrence)
           )
         ) {
           continue;
@@ -134,18 +141,20 @@ export class IDSProperty extends IDSFacet {
             if (!valueMatches) continue;
           }
 
-          const items = set.DefinesOcurrence.map((ocurrence) => {
-            if (
-              !(
-                "value" in ocurrence._localId &&
-                typeof ocurrence._localId.value === "number"
-              )
-            ) {
-              return null;
-            }
+          const items = definesOccurrence
+            .map((ocurrence) => {
+              if (
+                !(
+                  "value" in ocurrence._localId &&
+                  typeof ocurrence._localId.value === "number"
+                )
+              ) {
+                return null;
+              }
 
-            return ocurrence._localId.value;
-          }).filter((id) => id !== null) as number[];
+              return ocurrence._localId.value;
+            })
+            .filter((id) => id !== null) as number[];
 
           ModelIdMapUtils.append(collector, modelId, ...items);
         }
@@ -167,6 +176,9 @@ export class IDSProperty extends IDSFacet {
           IsDefinedBy: { attributes: true, relations: true },
           IsTypedBy: { attributes: true, relations: false },
           HasPropertySets: { attributes: true, relations: true },
+          // Both spellings on purpose: old .frag files store the pre-3.4
+          // relation name "DefinesOcurrence" (see getEntities above).
+          DefinesOccurrence: { attributes: false, relations: false },
           DefinesOcurrence: { attributes: false, relations: false },
         },
       });
