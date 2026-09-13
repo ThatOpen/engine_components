@@ -270,7 +270,7 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
   async addItems(modelIdMap: OBC.ModelIdMap, group = DEFAULT_GROUP) {
     const state = this.ensureGroup(group);
     OBC.ModelIdMapUtils.add(state.map, modelIdMap);
-    await this.updateGroup(group, modelIdMap);
+    await this.updateGroup(group);
   }
 
   /**
@@ -288,13 +288,11 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
    *
    * When `modelIdMap` is provided and differs from the group's current map,
    * meshes for that delta are appended (existing group meshes stay).
+   *
+   * @deprecated call {@link addItems} instead.
    */
-  async update(modelIdMap?: OBC.ModelIdMap, group = DEFAULT_GROUP) {
-    if (modelIdMap === undefined) {
-      await this.updateGroup(group);
-    } else {
-      await this.updateGroup(group, modelIdMap);
-    }
+  async update(modelIdMap?: OBC.ModelIdMap, group?: string) {
+    await this.addItems(modelIdMap ?? {}, group);
   }
 
   // ---------------------------------------------------------------------------
@@ -452,7 +450,7 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
    * Outline color, fill, and thickness come from the pass's group config.
    * The Outliner only feeds it the geometry slices.
    */
-  private async updateGroup(name: string, _delta?: OBC.ModelIdMap) {
+  private async updateGroup(name: string) {
     const state = this.ensureGroup(name);
     if (!this.world) return;
     const renderer = this.getRenderer();
