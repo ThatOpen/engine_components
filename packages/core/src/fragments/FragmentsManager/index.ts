@@ -1,10 +1,11 @@
-import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
-
-// @ts-ignore
 import { FragmentsModels } from "@thatopen/fragments";
-import { Component, Components, Event, Disposable } from "../../core";
-import { ModelIdMap } from "./src";
+import * as THREE from "three";
+import type { Components } from "../../core/Components";
+import { Component } from "../../core/Types/src/component";
+import { Event } from "../../core/Types/src/event";
+import type { Disposable } from "../../core/Types/src/interfaces";
+import type { ModelIdMap } from "./src/types";
 
 /**
  * Component to load, delete and manage [fragments](https://github.com/ThatOpen/engine_fragment) efficiently. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/FragmentsManager). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/FragmentsManager). Before calling {@link FragmentsManager.init}, you need a URL for the fragments worker. The recommended way to get it is {@link FragmentsManager.getWorker}, which fetches the version-matched worker from unpkg.

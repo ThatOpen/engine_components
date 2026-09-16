@@ -1,8 +1,11 @@
 import * as THREE from "three";
-import { Components } from "../../Components";
-import { Component, Event, World, Disposable } from "../../Types";
+import { FragmentsManager } from "../../../fragments/FragmentsManager";
+import type { Components } from "../../Components";
 import { Mouse } from "../../Raycasters/src/mouse";
-import { FragmentsManager } from "../../../fragments";
+import { Component } from "../../Types/src/component";
+import { Event } from "../../Types/src/event";
+import type { Disposable } from "../../Types/src/interfaces";
+import type { World } from "../../Types/src/world";
 
 /**
  * GPU-readback picker that identifies what's under a screen position
