@@ -15,7 +15,7 @@
     "build-examples": "vite build --config ./vite.config-examples.ts",
     "build": "yarn copy-readme && yarn build-libraries && yarn build-examples",
     "copy-readme": "node resources/readme-copier.mjs",
-    "test": "echo 'test to be implemented!'",
+    "test": "yarn workspace @thatopen/components test",
     "format": "prettier --write .",
     "publish-repo": "yarn workspace @thatopen/components publish-repo && yarn workspace @thatopen/components-front publish-repo",
     "reset-release-please": "git commit --allow-empty -m \"chore: release 2.0.0\" -m \"Release-As: 2.0.0\""
@@ -45,8 +45,8 @@
     "glob": "latest",
     "prettier": "3.2.5",
     "typescript": "5.4.2",
-    "vite": "5.1.6",
-    "vite-plugin-dts": "3.7.3"
+    "vite": "7.3.6",
+    "vite-plugin-dts": "4.5.4"
   },
   "version": "3.4.0"
 }

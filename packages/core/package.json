@@ -28,7 +28,7 @@
   },
   "scripts": {
     "dev": "vite --host",
-    "test": "jest",
+    "test": "vitest --run",
     "build": "tsc --p ./tsconfig-build.json && vite build",
     "prepublishOnly": "node ./resources/updateComponentsVersion.mjs && yarn build",
     "publish-repo": "npm publish"
@@ -41,9 +41,14 @@
     "@thatopen/ui": "~3.4.0",
     "@types/convert-units": "2.3.11",
     "@types/three": "0.184.0",
+    "@vitest/coverage-v8": "^5.0.0",
+    "@vitest/web-worker": "^5.0.0",
     "camera-controls": "^3.1.2",
+    "happy-dom": "^20.14.3",
     "stats.js": "^0.17.0",
     "three": "0.184.0",
+    "vitest": "^5.0.0",
+    "vitest-canvas-mock": "^1.2.0",
     "web-ifc": "0.0.77"
   },
   "dependencies": {

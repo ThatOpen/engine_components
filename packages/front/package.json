@@ -27,7 +27,6 @@
   },
   "scripts": {
     "dev": "vite --host",
-    "test": "jest",
     "build": "tsc --p ./tsconfig-build.json && vite build",
     "prepublishOnly": "yarn build",
     "publish-repo": "npm publish"

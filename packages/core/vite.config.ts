@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 /* eslint-disable import/no-extraneous-dependencies */
 import dts from "vite-plugin-dts";
 import { defineConfig } from "vite";
@@ -80,6 +81,24 @@ export default defineConfig({
   plugins: [
     dts({
       rollupTypes: true,
+      exclude: ["node_modules/**", "./src/**/*.test.ts", "./src/**/*.spec.ts"],
     }),
   ],
+  test: {
+    // The default environment is node: most of the suite is plain logic over
+    // three and fragments objects. A file that needs a DOM opts in with
+    //
+    //   // @vitest-environment happy-dom
+    //
+    // as its first line.
+    environment: "node",
+    environmentOptions: { happyDOM: { url: "https://localhost" } },
+    setupFiles: ["./vitest.setup.ts"],
+    snapshotFormat: {
+      maxDepth: Infinity,
+      maxWidth: Infinity,
+      maxOutputLength: Infinity,
+    },
+    passWithNoTests: false,
+  },
 });
