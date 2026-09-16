@@ -10,6 +10,7 @@ import * as THREE from "three";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Components } from "../../Components";
 import type { World } from "../../Types";
+import { BaseRenderer } from "../../Types/src/base-renderer";
 import {
   asciiSnapshot,
   recordCanvasBlits,
@@ -332,7 +333,14 @@ const setup = () => {
   const world = {
     scene: { three: scene },
     camera: { three: camera as THREE.Camera },
-    renderer: { three: renderer },
+    renderer: {
+      three: renderer,
+      clippingPlanes: [] as THREE.Plane[],
+      localClippingPlanes: false,
+      // The real split between local planes and `three.clippingPlanes`.
+      setPlane: BaseRenderer.prototype.setPlane,
+      updateClippingPlanes: vi.fn(),
+    },
   };
 
   const fragments = {
@@ -1049,26 +1057,49 @@ describe("FastModelPicker render state", () => {
     context?.dispose();
   });
 
-  it("draws with the renderer's clipping planes, so picks match what is on screen", async () => {
-    const { picker, position, renderer, scene } = context;
-    const planes = [new THREE.Plane(new THREE.Vector3(0, 1, 0), 2)];
-    renderer.clippingPlanes = planes;
+  it("clips by the renderer's local planes, so picks match what is on screen", async () => {
+    const { picker, position, renderer, world } = context;
+    const global = new THREE.Plane(new THREE.Vector3(0, 1, 0), 2);
+    const local = new THREE.Plane(new THREE.Vector3(1, 0, 0), -1);
 
-    let material: THREE.ShaderMaterial | undefined;
+    // Three clips each draw by its global planes (`three.clippingPlanes`)
+    // plus the material's own `clippingPlanes`, the local ones.
+    const drawnWith: {
+      global: THREE.Plane[];
+      local: THREE.Plane[];
+      clipping: boolean;
+    }[] = [];
     renderer.render.mockImplementation((renderedScene) => {
-      material = renderedScene.overrideMaterial as THREE.ShaderMaterial;
+      const material = renderedScene.overrideMaterial as THREE.ShaderMaterial;
+      drawnWith.push({
+        global: [...renderer.clippingPlanes],
+        local: [...(material.clippingPlanes ?? [])],
+        clipping: material.clipping,
+      });
     });
+
+    // Local planes stay out of `three.clippingPlanes` and live only on the
+    // tile materials, so the pick material has to carry them itself.
+    world.renderer.setPlane(true, local, true);
+    expect(renderer.clippingPlanes).toEqual([]);
     await picker.getModelAt(position);
 
-    expect(material!.clippingPlanes).toBe(planes);
-    expect(material!.clipping).toBe(true);
-
-    // A renderer with no clipping planes at all leaves the material unclipped.
-    renderer.clippingPlanes = undefined as unknown as THREE.Plane[];
+    // Global planes are three's to apply to every material. Carrying them
+    // too would clip by each twice.
+    world.renderer.setPlane(true, global, false);
+    expect(renderer.clippingPlanes).toEqual([global]);
     await picker.getModelAt(position);
-    expect(scene.overrideMaterial).toBeNull();
-    expect(material!.clippingPlanes).toEqual([]);
-    expect(material!.clipping).toBe(false);
+
+    // A local plane removed between picks stops clipping the next one, while
+    // the global plane keeps clipping it.
+    world.renderer.setPlane(false, local);
+    await picker.getModelAt(position);
+
+    expect(drawnWith).toEqual([
+      { global: [], local: [local], clipping: true },
+      { global: [global], local: [local], clipping: true },
+      { global: [global], local: [], clipping: true },
+    ]);
   });
 
   it("draws anything it did not register with the void byte", async () => {

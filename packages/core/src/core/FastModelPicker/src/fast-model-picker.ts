@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { FragmentsManager } from "../../../fragments/FragmentsManager";
 import type { Components } from "../../Components";
 import { Mouse } from "../../Raycasters/src/mouse";
+import type { BaseRenderer } from "../../Types/src/base-renderer";
 import { Component } from "../../Types/src/component";
 import { Event } from "../../Types/src/event";
 import type { Disposable } from "../../Types/src/interfaces";
@@ -297,6 +298,9 @@ export class FastModelPicker implements Disposable {
   private _walkNodes: THREE.Object3D[] = [];
   private _walkOwners: (string | null)[] = [];
 
+  /** The pick material's `clippingPlanes`, refilled by {@link collectLocalPlanes}. */
+  private _localPlanes: THREE.Plane[] = [];
+
   constructor(components: Components, world: World) {
     if (!world.renderer) {
       throw new Error("A renderer is needed for the FastModelPicker to work!");
@@ -512,9 +516,7 @@ export class FastModelPicker implements Disposable {
     const camera = this.snapshotCamera(ndc, viewport, target);
 
     const material = this._pickMaterial;
-    const planes = renderer.clippingPlanes ?? [];
-    material.clippingPlanes = planes;
-    material.clipping = planes.length > 0;
+    material.clippingPlanes = this.collectLocalPlanes(this.world.renderer);
 
     const prevTarget = renderer.getRenderTarget();
     const prevAutoClear = renderer.autoClear;
@@ -626,6 +628,24 @@ export class FastModelPicker implements Disposable {
     );
     camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
     return camera;
+  }
+
+  /**
+   * The planes the pick material clips by, so picks match what is on screen.
+   *
+   * - Global planes (`three.clippingPlanes`) are applied by three to every
+   *   material on its own. Listing them here too would clip by each twice.
+   * - Local planes (`isLocal`, see `Clipper.localClippingPlanes`) stay out of
+   *   that list and reach only the tile materials, so the pick material has
+   *   to carry them itself.
+   */
+  private collectLocalPlanes(renderer: BaseRenderer) {
+    const planes = this._localPlanes;
+    planes.length = 0;
+    for (const plane of renderer.clippingPlanes) {
+      if ((plane as { isLocal?: boolean }).isLocal) planes.push(plane);
+    }
+    return planes;
   }
 
   /**
@@ -823,6 +843,11 @@ export class FastModelPicker implements Disposable {
         }
       `,
       side: THREE.DoubleSide,
+      // Three binds the `clippingPlanes` uniform only when it builds the
+      // program for a `ShaderMaterial` with `clipping` on, but sizes
+      // NUM_CLIPPING_PLANES either way. Left on, so the shader never sees
+      // planes it has no values for. With no planes the loop compiles out.
+      clipping: true,
     });
 
     // One material draws every model, so the model byte is set per draw.
