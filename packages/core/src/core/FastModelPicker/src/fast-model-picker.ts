@@ -26,6 +26,26 @@ type PickRequest = Readonly<Partial<Record<PickOutputName, boolean>>>;
 /** One RGBA pixel per output, filled by {@link FastModelPicker.renderPick}. */
 type PickBuffers = Readonly<Record<PickOutputName, Uint8Array>>;
 
+/**
+ * A decoded pick. Every value is owned by the result: no reference into the
+ * picker's reused pixel buffers, camera snapshot or byte map.
+ * {@link FastModelPicker.pick} is synchronous and decodes before it returns,
+ * so a caller can await anything it likes afterwards — a `localId`
+ * translation, say — without the result drifting under it.
+ */
+interface Pick {
+  /** The item under the cursor, when the `id` output was requested. */
+  item: { modelId: string; itemId: number } | null;
+  /**
+   * The surface under the cursor, when the `depth` output was requested.
+   * `distance` is measured from the camera the pick was rendered with.
+   */
+  surface: { point: THREE.Vector3; distance: number } | null;
+  /** The surface normal, when the `normal` output was requested. */
+  normal: THREE.Vector3 | null;
+}
+
+/** What {@link FastModelPicker.renderPick} hands to the decoders. */
 interface PickFrame {
   /** The byte each model was drawn with. */
   byteToModel: ReadonlyMap<number, string>;
@@ -45,6 +65,7 @@ const NORMAL_REQUEST: PickRequest = { normal: true };
 const FULL_REQUEST: PickRequest = { id: true, depth: true, normal: true };
 const NO_REQUEST: PickRequest = {};
 
+/** The viewport center, which the debug overlay renders around. Never written. */
 const ORIGIN = new THREE.Vector2();
 
 // ---------------------------------------------------------------------------
@@ -172,8 +193,7 @@ async function itemIdToLocalId(
  *
  * - {@link getModelAt} returns the model id under the cursor.
  * - {@link getItemAt} returns the item itself (`modelId` + `localId`).
- * - {@link getPointAt} / {@link getNormalAt} return the surface point and
- *   normal.
+ * - {@link getPointAt} / {@link getNormalAt} return the surface point and normal.
  * - {@link getFullPick} returns all of the above from the same pick.
  *
  * Every query goes through {@link renderPick}: one render of the BIM scene
@@ -257,6 +277,8 @@ export class FastModelPicker implements Disposable {
   private _pickNdc = new THREE.Vector2();
   private _viewportSize = new THREE.Vector2();
   private _clearColor = new THREE.Color();
+  /** The pick camera's world position, for measuring distance to a hit. */
+  private _cameraPosition = new THREE.Vector3();
 
   /**
    * Per-pick state filled by {@link collectPickables}. `_meshBytes` is read
@@ -299,10 +321,8 @@ export class FastModelPicker implements Disposable {
    * @param position - Normalized device coords. Defaults to the
    *   picker's last known mouse position.
    */
-  getModelAt(position?: THREE.Vector2): string | null {
-    const frame = this.pick(position, ID_REQUEST);
-    if (!frame) return null;
-    return decodeId(this._pickBuffers.id, frame.byteToModel)?.modelId ?? null;
+  async getModelAt(position?: THREE.Vector2): Promise<string | null> {
+    return this.pick(position, ID_REQUEST)?.item?.modelId ?? null;
   }
 
   /**
@@ -322,14 +342,12 @@ export class FastModelPicker implements Disposable {
   async getItemAt(
     position?: THREE.Vector2,
   ): Promise<{ modelId: string; localId: number; itemId: number } | null> {
-    const frame = this.pick(position, ID_REQUEST);
-    if (!frame) return null;
-    const hit = decodeId(this._pickBuffers.id, frame.byteToModel);
-    if (!hit) return null;
+    const item = this.pick(position, ID_REQUEST)?.item;
+    if (!item) return null;
     const fragments = this.components.get(FragmentsManager);
-    const localId = await itemIdToLocalId(fragments, hit.modelId, hit.itemId);
+    const localId = await itemIdToLocalId(fragments, item.modelId, item.itemId);
     if (localId === undefined || localId === null) return null;
-    return { modelId: hit.modelId, localId, itemId: hit.itemId };
+    return { modelId: item.modelId, localId, itemId: item.itemId };
   }
 
   /**
@@ -343,10 +361,8 @@ export class FastModelPicker implements Disposable {
    * @param position - Normalized device coords. Defaults to the
    *   picker's last known mouse position.
    */
-  getPointAt(position?: THREE.Vector2): THREE.Vector3 | null {
-    const frame = this.pick(position, DEPTH_REQUEST);
-    if (!frame) return null;
-    return decodePoint(this._pickBuffers.depth, frame);
+  async getPointAt(position?: THREE.Vector2): Promise<THREE.Vector3 | null> {
+    return this.pick(position, DEPTH_REQUEST)?.surface?.point ?? null;
   }
 
   /**
@@ -356,10 +372,8 @@ export class FastModelPicker implements Disposable {
    * @param position - Normalized device coords. Defaults to the
    *   picker's last known mouse position.
    */
-  getNormalAt(position?: THREE.Vector2): THREE.Vector3 | null {
-    const frame = this.pick(position, NORMAL_REQUEST);
-    if (!frame) return null;
-    return decodeNormal(this._pickBuffers.normal);
+  async getNormalAt(position?: THREE.Vector2): Promise<THREE.Vector3 | null> {
+    return this.pick(position, NORMAL_REQUEST)?.normal ?? null;
   }
 
   /**
@@ -385,35 +399,23 @@ export class FastModelPicker implements Disposable {
     normal: THREE.Vector3 | null;
     distance: number;
   } | null> {
-    /**
-     * Decode everything before the first await, against the frame's camera
-     * snapshot, so a camera that moves while `localId` resolves can't drift
-     * the point or distance.
-     */
-    const frame = this.pick(position, FULL_REQUEST);
-    if (!frame) return null;
-    const buffers = this._pickBuffers;
-    const hit = decodeId(buffers.id, frame.byteToModel);
-    if (!hit) return null;
-    const point = decodePoint(buffers.depth, frame);
-    if (!point) return null;
-    const normal = decodeNormal(buffers.normal);
-    const cameraPosition = new THREE.Vector3().setFromMatrixPosition(
-      frame.camera.matrixWorld,
-    );
-    const distance = point.distanceTo(cameraPosition);
+    // `pick` is synchronous and hands back values it owns, so the `localId`
+    // round-trip below cannot drift the point, normal or distance.
+    const pick = this.pick(position, FULL_REQUEST);
+    if (!pick?.item || !pick.surface) return null;
 
     const fragments = this.components.get(FragmentsManager);
-    const localId = await itemIdToLocalId(fragments, hit.modelId, hit.itemId);
+    const { modelId, itemId } = pick.item;
+    const localId = await itemIdToLocalId(fragments, modelId, itemId);
 
     if (localId === undefined || localId === null) return null;
     return {
-      modelId: hit.modelId,
-      itemId: hit.itemId,
+      modelId,
+      itemId,
       localId,
-      point,
-      normal,
-      distance,
+      point: pick.surface.point,
+      normal: pick.normal,
+      distance: pick.surface.distance,
     };
   }
 
@@ -445,14 +447,38 @@ export class FastModelPicker implements Disposable {
   // Pick path
   // ---------------------------------------------------------------------------
 
+  /**
+   * Renders one pick and decodes the outputs named in `request` into values
+   * the caller owns. Synchronous by design: everything that depends on the
+   * picker's reused state is resolved here, so nothing an entry point does
+   * afterwards can race the next pick.
+   */
   private pick(
     position: THREE.Vector2 | undefined,
     request: PickRequest,
-  ): PickFrame | null {
+  ): Pick | null {
     if (!this._pickTarget) return null;
     if (this.debugMode) this.updateDebugCanvas();
     const ndc = position ?? this.mouse.position;
-    return this.renderPick(ndc, request, this._pickTarget, this._pickBuffers);
+    const buffers = this._pickBuffers;
+    const frame = this.renderPick(ndc, request, this._pickTarget, buffers);
+    if (!frame) return null;
+
+    const point = request.depth ? decodePoint(buffers.depth, frame) : null;
+    return {
+      item: request.id ? decodeId(buffers.id, frame.byteToModel) : null,
+      surface: point
+        ? {
+            point,
+            distance: point.distanceTo(
+              this._cameraPosition.setFromMatrixPosition(
+                frame.camera.matrixWorld,
+              ),
+            ),
+          }
+        : null,
+      normal: request.normal ? decodeNormal(buffers.normal) : null,
+    };
   }
 
   /**

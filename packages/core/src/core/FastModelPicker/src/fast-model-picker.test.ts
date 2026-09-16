@@ -453,10 +453,10 @@ describe("FastModelPicker pick render", () => {
     context?.dispose();
   });
 
-  it("picks into a 1×1 target, and renders the viewport only for the debug overlay", () => {
+  it("picks into a 1×1 target, and renders the viewport only for the debug overlay", async () => {
     const { picker, position, renderer } = context;
 
-    picker.getModelAt(position);
+    await picker.getModelAt(position);
     expect(renderer.render).toHaveBeenCalledTimes(1);
     expect(renderedTargets(renderer)).toEqual([[1, 1]]);
     expect(document.querySelector("canvas")).toBeNull();
@@ -470,7 +470,7 @@ describe("FastModelPicker pick render", () => {
     renderer.setRenderTarget.mockClear();
     renderer.readRenderTargetPixels.mockClear();
 
-    expect(picker.getModelAt(position)).toBe(MODEL_ID);
+    expect(await picker.getModelAt(position)).toBe(MODEL_ID);
 
     // The overlay renders the whole viewport before the pick it mirrors, and
     // reads the id output back for the full frame rather than one pixel.
@@ -494,12 +494,12 @@ describe("FastModelPicker pick render", () => {
     renderer.render.mockClear();
     renderer.setRenderTarget.mockClear();
 
-    expect(picker.getModelAt(position)).toBe(MODEL_ID);
+    expect(await picker.getModelAt(position)).toBe(MODEL_ID);
     expect(renderer.render).toHaveBeenCalledTimes(1);
     expect(renderedTargets(renderer)).toEqual([[1, 1]]);
   });
 
-  it("mirrors the id output onto the debug canvas, flipped into canvas orientation", () => {
+  it("mirrors the id output onto the debug canvas, flipped into canvas orientation", async () => {
     const { picker, position, renderer } = context;
 
     // What the GPU holds for the id output: model 1 across the bottom half of
@@ -521,7 +521,7 @@ describe("FastModelPicker pick render", () => {
 
     const blits = recordCanvasBlits();
     picker.setDebugMode(true);
-    picker.getModelAt(position);
+    await picker.getModelAt(position);
 
     expect(blits).toHaveLength(1);
     expect([blits[0].width, blits[0].height]).toEqual([SIZE.x, SIZE.y]);
@@ -543,12 +543,13 @@ describe("FastModelPicker pick render", () => {
     renderer.render.mockClear();
     renderer.readRenderTargetPixels.mockClear();
 
-    expect(picker.getPointAt(position)!.distanceTo(HIT)).toBeLessThan(1e-3);
+    const point = await picker.getPointAt(position);
+    expect(point!.distanceTo(HIT)).toBeLessThan(1e-3);
     expect(renderer.render).toHaveBeenCalledTimes(1);
     expect(readAttachments(renderer)).toEqual([ATTACHMENT.depth]);
   });
 
-  it("draws each model's shells with that model's byte and nothing else", () => {
+  it("draws each model's shells with that model's byte and nothing else", async () => {
     const { fragments, model, picker, position, renderer, scene } = context;
     const [authoredShell] = model.object.children;
 
@@ -584,7 +585,7 @@ describe("FastModelPicker pick render", () => {
       renderer.pixels[ATTACHMENT.id] = gpuStubs.idPixel(byte, 0);
     });
 
-    expect(picker.getModelAt(position)).toBe("delta");
+    expect(await picker.getModelAt(position)).toBe("delta");
 
     expect(new Set(draws.keys())).toEqual(new Set([authoredShell, deltaShell]));
     expect(draws.get(authoredShell)).not.toBe(draws.get(deltaShell));
@@ -594,7 +595,7 @@ describe("FastModelPicker pick render", () => {
     expect(staleShell.visible).toBe(false);
   });
 
-  it("leaves the scene and renderer as found, even when rendering throws", () => {
+  it("leaves the scene and renderer as found, even when rendering throws", async () => {
     const { picker, position, renderer, scene } = context;
     const background = new THREE.Color(0xffffff);
     scene.background = background;
@@ -614,7 +615,7 @@ describe("FastModelPicker pick render", () => {
       throw new Error("context lost");
     });
 
-    expect(() => picker.getPointAt(position)).toThrow("context lost");
+    await expect(picker.getPointAt(position)).rejects.toThrow("context lost");
 
     expect(during).toEqual({
       background: null,
@@ -630,11 +631,11 @@ describe("FastModelPicker pick render", () => {
     expect(renderer.autoClear).toBe(true);
   });
 
-  it("renders through a copy of the camera narrowed to the cursor pixel", () => {
+  it("renders through a copy of the camera narrowed to the cursor pixel", async () => {
     const { camera, depth, picker, position, renderer } = context;
     const projection = camera.projectionMatrix.clone();
 
-    picker.getPointAt(position);
+    await picker.getPointAt(position);
     const [, pickCamera] = renderer.render.mock.calls[0];
 
     expect(pickCamera).not.toBe(camera);
@@ -671,13 +672,14 @@ describe("FastModelPicker guards", () => {
   });
 
   /** Every entry point, so a guard can be checked against all of them at once. */
-  const pickEverything = async (picker: FastModelPicker, at: THREE.Vector2) => [
-    picker.getModelAt(at),
-    picker.getPointAt(at),
-    picker.getNormalAt(at),
-    await picker.getItemAt(at),
-    await picker.getFullPick(at),
-  ];
+  const pickEverything = (picker: FastModelPicker, at: THREE.Vector2) =>
+    Promise.all([
+      picker.getModelAt(at),
+      picker.getPointAt(at),
+      picker.getNormalAt(at),
+      picker.getItemAt(at),
+      picker.getFullPick(at),
+    ]);
 
   it("returns null from every entry point when disabled", async () => {
     const { picker, position, renderer } = context;
@@ -726,7 +728,7 @@ describe("FastModelPicker guards", () => {
     const { fragments, picker, position, renderer } = context;
 
     fragments.initialized = false;
-    expect(picker.getModelAt(position)).toBeNull();
+    expect(await picker.getModelAt(position)).toBeNull();
 
     fragments.initialized = true;
     fragments.list.clear();
@@ -770,7 +772,7 @@ describe("FastModelPicker guards", () => {
     expect(renderer.render).not.toHaveBeenCalled();
   });
 
-  it("returns null when no model has pickable shells", () => {
+  it("returns null when no model has pickable shells", async () => {
     const { model, picker, position, renderer } = context;
     // A mesh without the per-vertex `id` attribute is not pickable: an LOD
     // line mesh, say. With nothing else loaded there is no byte to hand out.
@@ -778,7 +780,7 @@ describe("FastModelPicker guards", () => {
     const lines = new THREE.Mesh(new THREE.BufferGeometry());
     model.object.add(lines);
 
-    expect(picker.getModelAt(position)).toBeNull();
+    expect(await picker.getModelAt(position)).toBeNull();
     expect(renderer.render).not.toHaveBeenCalled();
     expect(lines.visible).toBe(true);
   });
@@ -812,7 +814,7 @@ describe("FastModelPicker void pixels", () => {
     const { picker, position, renderer } = context;
     renderer.pixels[ATTACHMENT.id] = new Uint8Array(4);
 
-    expect(picker.getModelAt(position)).toBeNull();
+    expect(await picker.getModelAt(position)).toBeNull();
     expect(await picker.getItemAt(position)).toBeNull();
     expect(await picker.getFullPick(position)).toBeNull();
   });
@@ -823,7 +825,7 @@ describe("FastModelPicker void pixels", () => {
     // though the red channel names a model.
     renderer.pixels[ATTACHMENT.id] = new Uint8Array([1, 0, 0, 0]);
 
-    expect(picker.getModelAt(position)).toBeNull();
+    expect(await picker.getModelAt(position)).toBeNull();
     expect(await picker.getItemAt(position)).toBeNull();
     expect(await picker.getFullPick(position)).toBeNull();
   });
@@ -832,7 +834,7 @@ describe("FastModelPicker void pixels", () => {
     const { picker, position, renderer } = context;
     renderer.pixels[ATTACHMENT.depth] = new Uint8Array(4);
 
-    expect(picker.getPointAt(position)).toBeNull();
+    expect(await picker.getPointAt(position)).toBeNull();
     expect(await picker.getFullPick(position)).toBeNull();
   });
 
@@ -842,7 +844,7 @@ describe("FastModelPicker void pixels", () => {
     // saturates to (0, 0, 0, 255), a value real geometry never reaches.)
     renderer.pixels[ATTACHMENT.depth] = new Uint8Array([255, 255, 255, 255]);
 
-    expect(picker.getPointAt(position)).toBeNull();
+    expect(await picker.getPointAt(position)).toBeNull();
     expect(await picker.getFullPick(position)).toBeNull();
   });
 
@@ -851,7 +853,7 @@ describe("FastModelPicker void pixels", () => {
     // The shader writes alpha 1 wherever it draws; a cleared pixel is 0.
     renderer.pixels[ATTACHMENT.normal] = new Uint8Array([128, 128, 128, 0]);
 
-    expect(picker.getNormalAt(position)).toBeNull();
+    expect(await picker.getNormalAt(position)).toBeNull();
     // A pick still resolves: only the normal is optional.
     const pick = await picker.getFullPick(position);
     expect(pick).not.toBeNull();
@@ -914,7 +916,7 @@ describe("FastModelPicker model bytes", () => {
     context?.dispose();
   });
 
-  it("hands out at most one byte per model, up to MAX_MODELS", () => {
+  it("hands out at most one byte per model, up to MAX_MODELS", async () => {
     const { fragments, picker, position, renderer, scene } = context;
     // One model is already loaded; fill the rest of the byte range and add one
     // model too many.
@@ -930,7 +932,7 @@ describe("FastModelPicker model bytes", () => {
     renderer.render.mockImplementation((renderedScene, camera) => {
       draws = drawScene(renderedScene, camera);
     });
-    picker.getModelAt(position);
+    await picker.getModelAt(position);
 
     // The model that misses out is not drawn at all, rather than drawn with a
     // byte that decodes to another model.
@@ -940,7 +942,7 @@ describe("FastModelPicker model bytes", () => {
     expect(Math.max(...draws.values())).toBe(FastModelPicker.MAX_MODELS);
   });
 
-  it("forces `allowOverride` on for the render, and restores it", () => {
+  it("forces `allowOverride` on for the render, and restores it", async () => {
     const { model, picker, position, renderer } = context;
     const [shell] = model.object.children as THREE.Mesh[];
     const [material] = shell.material as THREE.Material[];
@@ -953,12 +955,12 @@ describe("FastModelPicker model bytes", () => {
       duringRender = material.allowOverride;
     });
 
-    expect(picker.getModelAt(position)).toBe(MODEL_ID);
+    expect(await picker.getModelAt(position)).toBe(MODEL_ID);
     expect(duringRender).toBe(true);
     expect(material.allowOverride).toBe(false);
   });
 
-  it("picks at the last known mouse position when given none", () => {
+  it("picks at the last known mouse position when given none", async () => {
     const { camera, depth, picker, renderer, world } = context;
     const canvas = world.renderer.three.domElement;
     // happy-dom has no layout, so the canvas reports a zero-sized rect.
@@ -980,7 +982,7 @@ describe("FastModelPicker model bytes", () => {
       }),
     );
 
-    picker.getModelAt();
+    await picker.getModelAt();
 
     // That pointer sits at NDC (0.5, 0.5); the pick frustum should be centred
     // there, so a point under it lands in the middle of the pick target.
@@ -1014,24 +1016,24 @@ describe("FastModelPicker debug overlay", () => {
     expect(document.querySelectorAll("canvas")).toHaveLength(1);
   });
 
-  it("skips the overlay when there is nothing to draw it on", () => {
+  it("skips the overlay when there is nothing to draw it on", async () => {
     const { fragments, picker, position, renderer } = context;
     picker.setDebugMode(true);
 
     // No 2D context to blit into.
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
-    expect(picker.getModelAt(position)).toBe(MODEL_ID);
+    expect(await picker.getModelAt(position)).toBe(MODEL_ID);
     vi.restoreAllMocks();
 
     // Nothing loaded to render.
     fragments.list.clear();
-    expect(picker.getModelAt(position)).toBeNull();
+    expect(await picker.getModelAt(position)).toBeNull();
 
     // No viewport to render into.
     renderer.getSize.mockImplementation((into: THREE.Vector2) =>
       into.set(0, 0),
     );
-    expect(picker.getModelAt(position)).toBeNull();
+    expect(await picker.getModelAt(position)).toBeNull();
   });
 });
 
@@ -1047,7 +1049,7 @@ describe("FastModelPicker render state", () => {
     context?.dispose();
   });
 
-  it("draws with the renderer's clipping planes, so picks match what is on screen", () => {
+  it("draws with the renderer's clipping planes, so picks match what is on screen", async () => {
     const { picker, position, renderer, scene } = context;
     const planes = [new THREE.Plane(new THREE.Vector3(0, 1, 0), 2)];
     renderer.clippingPlanes = planes;
@@ -1056,20 +1058,20 @@ describe("FastModelPicker render state", () => {
     renderer.render.mockImplementation((renderedScene) => {
       material = renderedScene.overrideMaterial as THREE.ShaderMaterial;
     });
-    picker.getModelAt(position);
+    await picker.getModelAt(position);
 
     expect(material!.clippingPlanes).toBe(planes);
     expect(material!.clipping).toBe(true);
 
     // A renderer with no clipping planes at all leaves the material unclipped.
     renderer.clippingPlanes = undefined as unknown as THREE.Plane[];
-    picker.getModelAt(position);
+    await picker.getModelAt(position);
     expect(scene.overrideMaterial).toBeNull();
     expect(material!.clippingPlanes).toEqual([]);
     expect(material!.clipping).toBe(false);
   });
 
-  it("draws anything it did not register with the void byte", () => {
+  it("draws anything it did not register with the void byte", async () => {
     const { picker, position, renderer } = context;
     // Nothing should reach the shader without a byte, but if it does it has to
     // decode as empty space rather than as some other model.
@@ -1088,21 +1090,21 @@ describe("FastModelPicker render state", () => {
       );
       byte = material.uniforms.modelByte.value;
     });
-    picker.getModelAt(position);
+    await picker.getModelAt(position);
 
     expect(byte).toBe(0);
   });
 
-  it("skips the overlay when there is no canvas or renderer for it", () => {
+  it("skips the overlay when there is no canvas or renderer for it", async () => {
     const { picker, position, world } = context;
 
     // `debugMode` is public: set without `setDebugMode` there is no canvas.
     picker.debugMode = true;
-    expect(picker.getModelAt(position)).toBe(MODEL_ID);
+    expect(await picker.getModelAt(position)).toBe(MODEL_ID);
 
     picker.setDebugMode(true);
     world.renderer = undefined as unknown as typeof world.renderer;
-    expect(picker.getModelAt(position)).toBeNull();
+    expect(await picker.getModelAt(position)).toBeNull();
   });
 });
 
@@ -1126,7 +1128,7 @@ describe("FastModelPicker vs. the worker raycast", () => {
    * outputs. The worker raycast tests the authored geometry instead, so the
    * two disagree exactly where an item is currently drawn as an LOD line.
    */
-  it("cannot pick an item that fragments currently draws as an LOD line", () => {
+  it("cannot pick an item that fragments currently draws as an LOD line", async () => {
     const { model, picker, position, renderer } = context;
     const [shell] = model.object.children;
     const lodLine = new THREE.Mesh(new THREE.BufferGeometry());
@@ -1136,7 +1138,7 @@ describe("FastModelPicker vs. the worker raycast", () => {
     renderer.render.mockImplementation((renderedScene, camera) => {
       draws = drawScene(renderedScene, camera);
     });
-    picker.getModelAt(position);
+    await picker.getModelAt(position);
 
     // The LOD mesh is not drawn, so nothing it stands for can win the pixel:
     // the pick resolves to whatever is behind it.
