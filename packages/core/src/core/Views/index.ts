@@ -152,7 +152,14 @@ export class Views extends Component {
       const normal = new THREE.Vector3(0, -1, 0);
 
       for (const storey of storeysData) {
-        if (!("value" in storey.Name && "value" in storey.Elevation)) {
+        if (
+          !(
+            storey.Name &&
+            "value" in storey.Name &&
+            storey.Elevation &&
+            "value" in storey.Elevation
+          )
+        ) {
           continue;
         }
         const { value: name } = storey.Name;
