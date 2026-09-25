@@ -553,7 +553,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
       </bim-panel-section>
       <bim-panel-section label="Settings">
         <bim-number-input vertical value=${edgeProjector.generator.angleThreshold} min=0 max=180 step=1 slider label="Angle Threshold" @change=${onAngleChange}></bim-number-input>
-        <bim-number-input vertical value=${edgeProjector.cullerPixelsPerMeter} min=0.01 max=1 step=0.01 slider label="Culler Precision" @change=${onCullerPrecisionChange}></bim-number-input>
+        <bim-number-input vertical value=${edgeProjector.cullerPixelsPerMeter} min=0.01 max=1 step=0.01 slider label="Culler Pixel Size (m)" @change=${onCullerPrecisionChange}></bim-number-input>
         <bim-checkbox label="Show Hidden Lines" @change=${onToggleHidden}></bim-checkbox>
       </bim-panel-section>
       <bim-panel-section label="All Items">

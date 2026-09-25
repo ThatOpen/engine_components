@@ -30,10 +30,29 @@ export class EdgeProjector extends Component implements Disposable {
   readonly generator: any = new EdgeProjectorProjectionGenerator();
 
   /**
-   * Resolution of the visibility culler in pixels per meter.
-   * Higher values = more accurate occlusion but slower culling.
+   * Size of one visibility-culling pixel, in meters (despite the name, the
+   * value is meters per pixel). LOWER values mean finer culling — fewer small
+   * meshes are discarded — at the cost of a larger render target, more tiles
+   * and more readback time. Higher values are coarser and faster. Default is
+   * 0.05 (one culling pixel covers 5 cm).
+   *
+   * Note: meshes without a single visible pixel are removed from BOTH the
+   * visible and the hidden line sets, so this value bounds how much small
+   * geometry a projection loses.
    */
   cullerPixelsPerMeter = 0.05;
+
+  /**
+   * Alias of {@link EdgeProjector.cullerPixelsPerMeter} under a name that
+   * matches what the value actually is. Reads and writes the same setting.
+   */
+  get cullerMetersPerPixel(): number {
+    return this.cullerPixelsPerMeter;
+  }
+
+  set cullerMetersPerPixel(value: number) {
+    this.cullerPixelsPerMeter = value;
+  }
 
   /**
    * The direction the projector looks along. Meshes are projected onto the plane
