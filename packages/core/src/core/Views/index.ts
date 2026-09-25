@@ -160,6 +160,13 @@ export class Views extends Component {
             "value" in storey.Elevation
           )
         ) {
+          const localId =
+            storey._localId && "value" in storey._localId
+              ? storey._localId.value
+              : "unknown";
+          console.warn(
+            `[Views] Storey ${localId} of model "${modelId}" has no Name or no Elevation value. Skipping it: no view will be created for it.`,
+          );
           continue;
         }
         const { value: name } = storey.Name;
