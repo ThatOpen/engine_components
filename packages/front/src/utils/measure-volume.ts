@@ -152,9 +152,7 @@ export class MeasureVolume {
       if (!localIds || (localIds as Set<number>).size === 0) continue;
       let chunks: ItemDrawChunks[];
       try {
-        chunks = (await (model as any).getItemDrawChunks(
-          localIds,
-        )) as ItemDrawChunks[];
+        chunks = await model.getItemDrawChunks(localIds);
       } catch {
         continue;
       }
