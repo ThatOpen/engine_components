@@ -100,7 +100,7 @@ export class ProjectionManager {
     const dims = world.renderer.getSize();
     const aspect = dims.x / dims.y;
     const camera = this._component.threePersp;
-    const height = depth * 2 * Math.atan((camera.fov * (Math.PI / 180)) / 2);
+    const height = depth * 2 * Math.tan((camera.fov * (Math.PI / 180)) / 2);
     const width = height * aspect;
     return { width, height };
   }
@@ -129,12 +129,12 @@ export class ProjectionManager {
     const oCamera = this._component.threeOrtho;
 
     // this is the reverse of
-    // const height = depth * 2 * Math.atan((pCamera.fov * (Math.PI / 180)) / 2);
+    // const height = depth * 2 * Math.tan((pCamera.fov * (Math.PI / 180)) / 2);
     // accounting for zoom
     const depth =
       (oCamera.top - oCamera.bottom) /
       oCamera.zoom /
-      (2 * Math.atan((pCamera.fov * (Math.PI / 180)) / 2));
+      (2 * Math.tan((pCamera.fov * (Math.PI / 180)) / 2));
 
     return depth;
   }
