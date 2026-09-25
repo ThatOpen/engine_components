@@ -1,5 +1,5 @@
 import CameraControls from "camera-controls";
-import { NavigationMode } from "./types";
+import { NavigationMode, NavigationModeOptions } from "./types";
 import { OrthoPerspectiveCamera } from "../index";
 
 /**
@@ -24,8 +24,12 @@ export class PlanMode implements NavigationMode {
     this.defaultPolarSpeed = camera.controls.polarRotateSpeed;
   }
 
-  /** {@link NavigationMode.set} */
-  set(active: boolean) {
+  /**
+   * {@link NavigationMode.set}. This mode never adjusts the camera target,
+   * so {@link NavigationModeOptions.preventTargetAdjustment} is trivially
+   * honored: there is nothing to skip.
+   */
+  set(active: boolean, _options?: NavigationModeOptions) {
     this.enabled = active;
     const controls = this.camera.controls;
     controls.azimuthRotateSpeed = active ? 0 : this.defaultAzimuthSpeed;

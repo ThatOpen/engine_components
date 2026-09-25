@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { NavigationMode } from "./types";
+import { NavigationMode, NavigationModeOptions } from "./types";
 import { OrthoPerspectiveCamera } from "../index";
 
 /**
@@ -17,14 +17,14 @@ export class OrbitMode implements NavigationMode {
   }
 
   /** {@link NavigationMode.set} */
-  set(active: boolean) {
+  set(active: boolean, options?: NavigationModeOptions) {
     this.enabled = active;
     if (active) {
-      this.activateOrbitControls();
+      this.activateOrbitControls(options);
     }
   }
 
-  private activateOrbitControls() {
+  private activateOrbitControls(options?: NavigationModeOptions) {
     const controls = this.camera.controls;
     controls.minDistance = 1;
     controls.maxDistance = 300;
@@ -33,6 +33,7 @@ export class OrbitMode implements NavigationMode {
     const distance = position.length();
     controls.distance = distance;
     controls.truckSpeed = 2;
+    if (options?.preventTargetAdjustment) return;
     const { rotation } = this.camera.three;
     const direction = new THREE.Vector3(0, 0, -1).applyEuler(rotation);
     const target = position.addScaledVector(direction, distance);
