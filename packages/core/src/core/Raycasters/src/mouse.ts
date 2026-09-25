@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import { Disposable, Event } from "../../Types";
+import { Event } from "../../Types/src/event";
+import type { Disposable } from "../../Types/src/interfaces";
 
 /**
  * A helper to easily get the real position of the mouse in the Three.js canvas to work with tools like the [raycaster](https://threejs.org/docs/#api/en/core/Raycaster), even if it has been transformed through CSS or doesn't occupy the whole screen.

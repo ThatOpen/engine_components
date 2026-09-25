@@ -43,6 +43,7 @@ export default defineConfig({
   plugins: [
     dts({
       rollupTypes: true,
+      exclude: ["node_modules/**", "./src/**/*.test.ts", "./src/**/*.spec.ts"],
     }),
   ],
 });
