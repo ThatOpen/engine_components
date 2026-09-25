@@ -266,14 +266,13 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         }}">
       </bim-checkbox>
 
-      <bim-number-input
-        slider step="1" label="MSAA samples"
-        value="${world.renderer!.postproduction.samples}" min="0" max="8"
-        @change="${({ target }: { target: BUI.NumberInput }) => {
-          world.renderer!.postproduction.samples = target.value;
+      <bim-checkbox label="MSAA enabled"
+        ?checked=${world.renderer!.postproduction.msaaEnabled}
+        @change="${({ target }: { target: BUI.Checkbox }) => {
+          world.renderer!.postproduction.msaaEnabled = target.value;
           updateIfManualMode();
         }}">
-      </bim-number-input>
+      </bim-checkbox>
 
       <bim-dropdown required label="Postproduction style"
         @change="${({ target }: { target: BUI.Dropdown }) => {

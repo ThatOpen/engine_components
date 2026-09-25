@@ -48,7 +48,7 @@ export class Postproduction {
   private _glossEnabled = false;
   private _smaaEnabled = false;
   private _excludedObjectsEnabled = false;
-  private _samples = 4;
+  private _msaaEnabled = false;
   private _components: OBC.Components;
   private _renderer: PostproductionRenderer;
   private _clearColor = new THREE.Color();
@@ -157,13 +157,20 @@ export class Postproduction {
     this.style = this._style;
   }
 
-  /** MSAA sample count of the composer render targets; 0 renders them without multisampling. */
-  get samples() {
-    return this._samples;
+  /**
+   * Whether the composer's render targets are multisampled. The composer
+   * allocates them without multisampling, which drops the MSAA of the default
+   * framebuffer the moment postproduction is switched on; turning this on
+   * gives them back their samples. Off by default: multisampled targets cost
+   * memory and bandwidth on every frame, so this is opt-in and, while off,
+   * the targets are exactly the ones postproduction has always allocated.
+   */
+  get msaaEnabled() {
+    return this._msaaEnabled;
   }
 
-  set samples(value: number) {
-    this._samples = value;
+  set msaaEnabled(value: boolean) {
+    this._msaaEnabled = value;
     this.applySamples();
   }
 
@@ -381,10 +388,18 @@ export class Postproduction {
     this._renderer.three.setRenderTarget(null);
   }
 
+  /**
+   * Sample count used when {@link Postproduction.msaaEnabled} is on. An
+   * internal detail: 4 is the usual sweet spot and the hardware ceiling
+   * clamps it anyway, so there is no reason to make callers pick a number.
+   */
+  private static readonly MSAA_SAMPLES = 4;
+
   private applySamples() {
     if (!this.composer) return;
     const max = this._renderer.three.capabilities.maxSamples;
-    const samples = Math.max(0, Math.min(Math.floor(this._samples), max));
+    const wanted = this._msaaEnabled ? Postproduction.MSAA_SAMPLES : 0;
+    const samples = Math.max(0, Math.min(wanted, max));
     const targets = [this.composer.renderTarget1, this.composer.renderTarget2];
     for (const target of targets) {
       if (target.samples === samples) continue;
@@ -405,7 +420,10 @@ export class Postproduction {
 
     this.composer = new EffectComposer(this._renderer.three);
     // EffectComposer allocates its ping-pong targets with samples = 0, which
-    // would drop the MSAA of the default framebuffer as soon as postproduction is on
+    // drops the MSAA of the default framebuffer as soon as postproduction is
+    // on. With msaaEnabled off this is a no-op (the targets already have 0
+    // samples); it is here so a world configured before initialize still gets
+    // the samples it asked for.
     this.applySamples();
 
     const basePass = new BasePass(scene, camera);
