@@ -142,12 +142,12 @@ export class ClipStyler extends OBC.Component implements OBC.Disposable {
 
   /**
    * Re-applies the current properties of a style (color, opacity, line
-   * width) to every section currently using it. Needed in local-clipping
-   * mode, where each section renders with a per-instance clone of the
-   * style material: after mutating a style's material (e.g. changing its
-   * color from a UI control), call this so the change shows on the
-   * rendered sections. In legacy global-clipping mode sections use the
-   * shared material directly, so this is a no-op.
+   * width) to every section currently using it. Each section renders with
+   * a per-instance clone of the style material (so sections can carry
+   * their own clipping planes and be disposed without breaking other
+   * sections sharing the style): after mutating a style's material (e.g.
+   * changing its color from a UI control), call this so the change shows
+   * on the rendered sections.
    *
    * @param name - The name of the style to re-apply.
    */

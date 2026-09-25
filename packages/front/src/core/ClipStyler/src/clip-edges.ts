@@ -152,12 +152,11 @@ export class ClipEdges implements OBC.Disposable {
 
   /**
    * Copy the visual properties (color, opacity, line width) of a shared
-   * style onto this ClipEdges' per-instance material clones. In local-
-   * clipping mode each section renders with a *clone* of the style
-   * material (so it can carry its own `clippingPlanes`), so mutating the
-   * shared style material alone won't update the rendered section. This
-   * propagates the change. In legacy mode the section uses the shared
-   * material directly, so the copy is a harmless self-copy no-op.
+   * style onto this ClipEdges' per-instance material clones. Each section
+   * renders with a *clone* of the style material (so it can carry its own
+   * `clippingPlanes` and be disposed safely without affecting other
+   * sections), so mutating the shared style material alone won't update
+   * the rendered section. This propagates the change.
    */
   syncStyle(styleName: string) {
     const clipStyler = this._components.get(ClipStyler);
@@ -214,21 +213,23 @@ export class ClipEdges implements OBC.Disposable {
 
     let styleGeometries = modelStyles.get(styleName);
     if (!styleGeometries) {
-      // When the Clipper is in local-clipping mode we need *this*
-      // ClipEdges' section meshes to use a `clippingPlanes` list
-      // that excludes its own plane (so the cut isn't culled by
-      // the very plane it represents) while still being clipped
-      // by every other Clipper plane (section box walls, multi-
-      // clipper setups). three.js applies clipping per-material,
-      // not per-mesh, so we have to clone the style's materials
-      // per ClipEdges to give each one its own filtered list. In
-      // the legacy global-clipping mode we keep the original
-      // shared-material behavior for backwards compatibility.
-      const localMode = this._components.get(OBC.Clipper).localClippingPlanes;
-      const myLinesMaterial =
-        localMode && linesMaterial ? linesMaterial.clone() : linesMaterial;
-      const myFillsMaterial =
-        localMode && fillsMaterial ? fillsMaterial.clone() : fillsMaterial;
+      // Each ClipEdges renders with its own *clones* of the style's
+      // materials, never with the shared originals:
+      // - In local-clipping mode, *this* ClipEdges' section meshes
+      //   need a `clippingPlanes` list that excludes its own plane
+      //   (so the cut isn't culled by the very plane it represents)
+      //   while still being clipped by every other Clipper plane
+      //   (section box walls, multi-clipper setups). three.js
+      //   applies clipping per-material, not per-mesh, so each
+      //   ClipEdges needs its own filtered list.
+      // - In every mode, `dispose()` destroys this instance's
+      //   materials. If the meshes mounted the shared style
+      //   materials directly, disposing one ClipEdges would break
+      //   every other ClipEdges using the same style (issue #785).
+      // Style edits are propagated to the clones via `syncStyle`
+      // (see `ClipStyler.updateStyle`).
+      const myLinesMaterial = linesMaterial ? linesMaterial.clone() : undefined;
+      const myFillsMaterial = fillsMaterial ? fillsMaterial.clone() : undefined;
 
       let edges: LineSegments2 | undefined;
       if (myLinesMaterial) {
@@ -370,6 +371,9 @@ export class ClipEdges implements OBC.Disposable {
   /** {@link OBC.Disposable.dispose} */
   dispose() {
     const disposer = this._components.get(OBC.Disposer);
+    // Disposing materials here is safe because the section meshes only
+    // ever mount per-instance clones of the style materials (see
+    // `getStyleMeshes`), never the shared originals from ClipStyler.styles.
     disposer.destroy(this.three, true, true);
     this._modelStyleGeometries.clear();
     for (const off of this._clipperUnlisten) off();
