@@ -33,7 +33,7 @@
     "publish-repo": "npm publish"
   },
   "peerDependencies": {
-    "@thatopen/components": "~3.4.7",
+    "@thatopen/components": "^3.4.7",
     "@thatopen/fragments": "~3.4.7",
     "three": ">=0.182.0",
     "web-ifc": ">=0.0.77"
