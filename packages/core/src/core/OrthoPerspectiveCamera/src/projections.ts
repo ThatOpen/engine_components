@@ -47,12 +47,16 @@ export class ProjectionManager {
    */
   async set(projection: CameraProjection) {
     if (this.current === projection) return;
+    let changed: boolean;
     if (projection === "Orthographic") {
-      this.setOrthoCamera();
+      changed = this.setOrthoCamera();
     } else {
       await this.setPerspectiveCamera();
+      changed = true;
     }
-    this.onChanged.trigger(this.camera);
+    if (changed) {
+      this.onChanged.trigger(this.camera);
+    }
   }
 
   /**
@@ -66,22 +70,31 @@ export class ProjectionManager {
   }
 
   private setOrthoCamera() {
-    if (this._component.mode === null) return;
+    if (this._component.mode === null) return false;
     // Matching orthographic camera to perspective camera
     // Resource: https://stackoverflow.com/questions/48758959/what-is-required-to-convert-threejs-perspective-camera-to-orthographic
     if (this._component.mode.id === "FirstPerson") {
-      return;
+      return false;
+    }
+    // Check the same conditions that make getPerspectiveDims fail before
+    // writing any state, so an aborted switch doesn't move the camera or
+    // report a projection change that never happened.
+    const world = this._component.currentWorld;
+    if (!world || !world.renderer) {
+      return false;
     }
     this._previousDistance = this._component.controls.distance;
     this._component.controls.distance = 200;
     const dims = this.getPerspectiveDims();
     if (!dims) {
-      return;
+      this._component.controls.distance = this._previousDistance;
+      return false;
     }
     const { width, height } = dims;
     this.setupOrthoCamera(height, width);
     this.camera = this._component.threeOrtho;
     this.current = "Orthographic";
+    return true;
   }
 
   private getPerspectiveDims() {
