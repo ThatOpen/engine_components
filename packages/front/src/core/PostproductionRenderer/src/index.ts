@@ -48,6 +48,7 @@ export class Postproduction {
   private _glossEnabled = false;
   private _smaaEnabled = false;
   private _excludedObjectsEnabled = false;
+  private _samples = 4;
   private _components: OBC.Components;
   private _renderer: PostproductionRenderer;
   private _clearColor = new THREE.Color();
@@ -154,6 +155,16 @@ export class Postproduction {
   set smaaEnabled(value: boolean) {
     this._smaaEnabled = value;
     this.style = this._style;
+  }
+
+  /** MSAA sample count of the composer render targets; 0 renders them without multisampling. */
+  get samples() {
+    return this._samples;
+  }
+
+  set samples(value: number) {
+    this._samples = value;
+    this.applySamples();
   }
 
   get style() {
@@ -370,6 +381,19 @@ export class Postproduction {
     this._renderer.three.setRenderTarget(null);
   }
 
+  private applySamples() {
+    if (!this.composer) return;
+    const max = this._renderer.three.capabilities.maxSamples;
+    const samples = Math.max(0, Math.min(Math.floor(this._samples), max));
+    const targets = [this.composer.renderTarget1, this.composer.renderTarget2];
+    for (const target of targets) {
+      if (target.samples === samples) continue;
+      target.samples = samples;
+      // the framebuffer is re-created with the new sample count on next use
+      target.dispose();
+    }
+  }
+
   private initialize() {
     this._initialized = true;
 
@@ -380,6 +404,9 @@ export class Postproduction {
     this._renderer.three.setClearColor(0x000000, 0);
 
     this.composer = new EffectComposer(this._renderer.three);
+    // EffectComposer allocates its ping-pong targets with samples = 0, which
+    // would drop the MSAA of the default framebuffer as soon as postproduction is on
+    this.applySamples();
 
     const basePass = new BasePass(scene, camera);
     this._basePass = basePass;

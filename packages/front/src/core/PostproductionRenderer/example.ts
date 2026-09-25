@@ -266,6 +266,15 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         }}">
       </bim-checkbox>
 
+      <bim-number-input
+        slider step="1" label="MSAA samples"
+        value="${world.renderer!.postproduction.samples}" min="0" max="8"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          world.renderer!.postproduction.samples = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
       <bim-dropdown required label="Postproduction style"
         @change="${({ target }: { target: BUI.Dropdown }) => {
           const result = target.value[0] as OBF.PostproductionAspect;
