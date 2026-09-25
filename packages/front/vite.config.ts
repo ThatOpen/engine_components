@@ -43,7 +43,15 @@ export default defineConfig({
   plugins: [
     dts({
       rollupTypes: true,
-      exclude: ["node_modules/**", "./src/**/*.test.ts", "./src/**/*.spec.ts"],
+      // This overrides tsconfig-build.json's exclude rather than adding to
+      // it, so the example files have to be repeated here or they come back
+      // in and report TS2307 for their doc-only imports.
+      exclude: [
+        "node_modules/**",
+        "./src/**/example.ts",
+        "./src/**/*.test.ts",
+        "./src/**/*.spec.ts",
+      ],
     }),
   ],
 });

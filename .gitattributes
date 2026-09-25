@@ -1,0 +1,3 @@
+# Snapshots are compared byte for byte. Without this, a Windows checkout
+# rewrites them to CRLF and the snapshot tests fail there and only there.
+*.snap text eol=lf
