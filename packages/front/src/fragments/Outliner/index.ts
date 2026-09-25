@@ -298,10 +298,14 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
   }
 
   /**
-   * Updates outline meshes for a given group, or for the default if omitted.
+   * Adds `modelIdMap` to the group's selection (the default group if omitted)
+   * and refreshes that group's outline. Identical to {@link addItems}; calling
+   * it with no map just refreshes the group without changing what it holds.
    *
-   * When `modelIdMap` is provided and differs from the group's current map,
-   * meshes for that delta are appended (existing group meshes stay).
+   * Note this changed: `modelIdMap` used to be accepted and ignored, so the
+   * call was always a plain refresh and the group's selection only ever came
+   * from {@link addItems}. It now joins the group's map, which is what the
+   * argument always claimed to do. Pass nothing for the old behaviour.
    *
    * @deprecated call {@link addItems} instead.
    */
