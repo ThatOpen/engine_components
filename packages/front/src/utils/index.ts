@@ -6,3 +6,4 @@ export * from "./line";
 export * from "./volume";
 export * from "./measure-fill";
 export * from "./measure-mark";
+export * from "./format-units";
