@@ -70,7 +70,11 @@ export class ProjectionManager {
   }
 
   private setOrthoCamera() {
-    if (this._component.mode === null) return false;
+    // The navigation mode only exists once the camera has been assigned
+    // to a world. Before that, switching projections is a no-op. Checking
+    // `mode` directly here would throw: its getter errors out when the
+    // camera is uninitialized, which is exactly the case this guard is for.
+    if (!this._component.hasMode) return false;
     // Matching orthographic camera to perspective camera
     // Resource: https://stackoverflow.com/questions/48758959/what-is-required-to-convert-threejs-perspective-camera-to-orthographic
     if (this._component.mode.id === "FirstPerson") {

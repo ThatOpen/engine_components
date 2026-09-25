@@ -56,6 +56,16 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
     return this._mode;
   }
 
+  /**
+   * Whether the camera has a {@link NavigationMode} set. Navigation modes
+   * are created when the camera is assigned to a world, so this is `false`
+   * before that assignment (when {@link OrthoPerspectiveCamera.mode} would
+   * throw). Useful to guard code that may run before initialization.
+   */
+  get hasMode() {
+    return this._mode !== null;
+  }
+
   constructor(components: Components) {
     super(components);
     this.threePersp = this.three as THREE.PerspectiveCamera;
@@ -102,7 +112,7 @@ export class OrthoPerspectiveCamera extends SimpleCamera {
    * @param mode - The {@link NavigationMode} to set.
    */
   set(mode: string) {
-    if (this.mode === null) return;
+    if (!this.hasMode) return;
     if (this.mode.id === mode) return;
     this.mode.set(false);
     if (!this._navigationModes.has(mode)) {
