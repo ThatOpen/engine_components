@@ -88,7 +88,9 @@ export class Disposer extends Component {
   }
 
   private disposeChildren(mesh: THREE.Mesh | THREE.LineSegments) {
-    for (const child of mesh.children) {
+    // Over a copy: `destroy` detaches each child from `mesh.children`, and
+    // iterating the live array would skip every child after a removed one.
+    for (const child of [...mesh.children]) {
       this.destroy(child as THREE.Mesh);
     }
   }
