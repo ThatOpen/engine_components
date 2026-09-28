@@ -134,95 +134,106 @@ export class VisibilityCuller {
 		const renderTarget = renderer.getRenderTarget();
 		const autoClear = renderer.autoClear;
 
-		// render ids
-		renderer.autoClear = true;
-		renderer.setClearColor( 0, 0 );
-		renderer.setRenderTarget( target );
-
 		const readBuffer = new Uint8Array( target.width * target.height * 4 );
 		const visibleSet = new Set();
 		const stepX = size.x / tilesX;
 		const stepZ = size.z / tilesY;
-		for ( let tx = 0; tx < tilesX; tx ++ ) {
 
-			for ( let ty = 0; ty < tilesY; ty ++ ) {
+		// The tile loop awaits GPU readbacks that can reject (lost context,
+		// failed readback...). Everything mutated above and below — swapped
+		// materials, reparented objects, renderer target / clear color /
+		// autoClear — must be restored even on failure, or the caller's
+		// renderer is left bound to our internal state. Hence try/finally.
+		try {
 
-				// Calculate tile bounds in world space
-				const tileMinX = box.min.x + stepX * tx;
-				const tileMaxX = tileMinX + stepX;
-				const tileMinZ = box.min.z + stepZ * ty;
-				const tileMaxZ = tileMinZ + stepZ;
+			// render ids
+			renderer.autoClear = true;
+			renderer.setClearColor( 0, 0 );
+			renderer.setRenderTarget( target );
 
-				// Position camera at center of this tile, keeping the same top
-				// margin as above so nothing at box.max.y is near-clipped.
-				const tileCenterX = ( tileMinX + tileMaxX ) / 2;
-				const tileCenterZ = ( tileMinZ + tileMaxZ ) / 2;
-				camera.position.set( tileCenterX, box.max.y + yMargin, tileCenterZ );
+			for ( let tx = 0; tx < tilesX; tx ++ ) {
 
-				// Set symmetric frustum around camera center
-				// For a camera looking down (-90° X rotation):
-				// - camera left/right map to world X
-				// - camera top/bottom map to world -Z/+Z (inverted)
-				const halfWidth = stepX / 2;
-				const halfHeight = stepZ / 2;
-				camera.left = - halfWidth;
-				camera.right = halfWidth;
-				camera.top = halfHeight;
-				camera.bottom = - halfHeight;
+				for ( let ty = 0; ty < tilesY; ty ++ ) {
 
-				camera.updateProjectionMatrix();
+					// Calculate tile bounds in world space
+					const tileMinX = box.min.x + stepX * tx;
+					const tileMaxX = tileMinX + stepX;
+					const tileMinZ = box.min.z + stepZ * ty;
+					const tileMaxZ = tileMinZ + stepZ;
 
-				// Single render call for all objects in this tile
-				renderer.render( idScene, camera );
+					// Position camera at center of this tile, keeping the same top
+					// margin as above so nothing at box.max.y is near-clipped.
+					const tileCenterX = ( tileMinX + tileMaxX ) / 2;
+					const tileCenterZ = ( tileMinZ + tileMaxZ ) / 2;
+					camera.position.set( tileCenterX, box.max.y + yMargin, tileCenterZ );
 
-				const buffer = await renderer.readRenderTargetPixelsAsync( target, 0, 0, target.width, target.height, readBuffer );
+					// Set symmetric frustum around camera center
+					// For a camera looking down (-90° X rotation):
+					// - camera left/right map to world X
+					// - camera top/bottom map to world -Z/+Z (inverted)
+					const halfWidth = stepX / 2;
+					const halfHeight = stepZ / 2;
+					camera.left = - halfWidth;
+					camera.right = halfWidth;
+					camera.top = halfHeight;
+					camera.bottom = - halfHeight;
 
-				// find all visible objects - decode RGBA to ID
-				for ( let i = 0, l = buffer.length; i < l; i += 4 ) {
+					camera.updateProjectionMatrix();
 
-					// alpha = 0 indicates background (no object)
-					if ( buffer[ i + 3 ] === 0 ) continue;
+					// Single render call for all objects in this tile
+					renderer.render( idScene, camera );
 
-					const id = decodeId( buffer, i );
-					visibleSet.add( objects[ id ] );
+					const buffer = await renderer.readRenderTargetPixelsAsync( target, 0, 0, target.width, target.height, readBuffer );
+
+					// find all visible objects - decode RGBA to ID
+					for ( let i = 0, l = buffer.length; i < l; i += 4 ) {
+
+						// alpha = 0 indicates background (no object)
+						if ( buffer[ i + 3 ] === 0 ) continue;
+
+						const id = decodeId( buffer, i );
+						visibleSet.add( objects[ id ] );
+
+					}
 
 				}
 
 			}
 
-		}
+		} finally {
 
-		// Restore original materials and re-add to original parents
-		for ( const object of objects ) {
+			// Restore original materials and re-add to original parents
+			for ( const object of objects ) {
 
-			object.material = originalMaterials.get( object );
-			const originalParent = originalParents.get( object );
-			if ( originalParent ) {
+				object.material = originalMaterials.get( object );
+				const originalParent = originalParents.get( object );
+				if ( originalParent ) {
 
-				originalParent.add( object );
+					originalParent.add( object );
 
-			} else {
+				} else {
 
-				idScene.remove( object );
+					idScene.remove( object );
+
+				}
 
 			}
 
+			// reset render state
+			renderer.setClearColor( color, alpha );
+			renderer.setRenderTarget( renderTarget );
+			renderer.autoClear = autoClear;
+
+			// dispose of intermediate values
+			for ( const material of idMaterials ) {
+
+				material.dispose();
+
+			}
+
+			target.dispose();
+
 		}
-
-		// reset render state
-		renderer.setClearColor( color, alpha );
-		renderer.setRenderTarget( renderTarget );
-		renderer.autoClear = autoClear;
-
-		// dispose of intermediate values
-		for ( const material of idMaterials ) {
-
-			material.dispose();
-
-		}
-
-		target.dispose();
-
 
 		return Array.from( visibleSet );
 

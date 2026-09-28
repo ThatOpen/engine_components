@@ -94,6 +94,9 @@ export class EdgeProjector extends Component implements Disposable {
    * @param world - The world whose renderer will be used for visibility culling.
    * @param config - Optional configuration.
    * @param config.onProgress - Optional progress callback receiving (message, progress?, collector?).
+   * @param config.signal - Optional AbortSignal. The generator pumps itself on
+   * requestAnimationFrame and checks it on every frame, so aborting rejects the
+   * returned promise and stops the pump instead of draining the whole task.
    * @returns Visible/hidden geometries with a `group` vertex attribute, and a groups mapping.
    */
   async get(
@@ -101,6 +104,7 @@ export class EdgeProjector extends Component implements Disposable {
     world: World,
     config?: {
       onProgress?: (message: string, progress?: number) => void;
+      signal?: AbortSignal;
     },
   ): Promise<EdgeProjectionResult> {
     const fragments = this.components.get(FragmentsManager);
@@ -219,15 +223,25 @@ export class EdgeProjector extends Component implements Disposable {
     });
 
     // Use groupFn to tag edges by source item
-    const collector = await this.generator.generateAsync(group, {
-      visibilityCuller,
-      groupFn: (mesh: THREE.Mesh) => {
-        const mid = mesh.userData._edgeProjectorModelId ?? "unknown";
-        const lid = mesh.userData._edgeProjectorLocalId ?? 0;
-        return `${mid}:${lid}`;
-      },
-      onProgress: config?.onProgress,
-    });
+    let collector;
+    try {
+      collector = await this.generator.generateAsync(group, {
+        visibilityCuller,
+        groupFn: (mesh: THREE.Mesh) => {
+          const mid = mesh.userData._edgeProjectorModelId ?? "unknown";
+          const lid = mesh.userData._edgeProjectorLocalId ?? 0;
+          return `${mid}:${lid}`;
+        },
+        onProgress: config?.onProgress,
+        signal: config?.signal,
+      });
+    } catch (error) {
+      // Aborted or failed: the source geometries (and their BVHs) are ours.
+      for (const geometry of geometries.values()) {
+        geometry.dispose();
+      }
+      throw error;
+    }
 
     const visible = collector.getVisibleLineGeometry();
     const hidden = collector.getHiddenLineGeometry();
