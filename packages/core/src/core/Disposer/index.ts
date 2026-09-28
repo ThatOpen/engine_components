@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Components } from "../Components";
+import type { Components } from "../Components";
 import { Component } from "../Types";
 
 /**

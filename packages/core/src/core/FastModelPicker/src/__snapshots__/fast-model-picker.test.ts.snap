@@ -1,0 +1,16 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`FastModelPicker decoding > decodes what the shader wrote into items, points and normals 1`] = `
+"at (-0.600, 0.350) depth 0.82 | authored item 0 localId 1 | point (-0.321, 3.931, 11.438) | normal (0.004, 1.000, 0.004) | distance 0.651
+at (0.000, 0.000) depth 0.9 | authored item 1 localId 7 | point (0.000, 3.684, 11.052) | normal (1.000, 0.004, 0.004) | distance 0.999
+at (0.750, -0.400) depth 0.95 | authored item 2 localId 13 | point (1.441, 2.931, 10.252) | normal (0.004, 0.004, -1.000) | distance 2.505"
+`;
+
+exports[`FastModelPicker pick render > mirrors the id output onto the debug canvas, flipped into canvas orientation 1`] = `
+".....BBBBB
+.....BBBBB
+.....BBBBB
+AAAAAAAAAA
+AAAAAAAAAA
+AAAAAAAAAA"
+`;
