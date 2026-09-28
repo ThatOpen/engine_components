@@ -157,6 +157,9 @@ export class Clipper
    */
   readonly list = new FRAGS.DataMap<string, SimplePlane>();
 
+  /** Planes between the list's before-delete and item-deleted events. */
+  private _deleting = new Map<string, SimplePlane>();
+
   /** {@link Configurable.config} */
   config = new ClipperConfigManager(
     this,
@@ -248,15 +251,33 @@ export class Clipper
   }
 
   private setEvents() {
-    this.list.onBeforeDelete.add(({ value: plane }) => {
+    // A delete is split across the list's two events so each of ours fires
+    // at its own moment: `onBeforeDelete` while the plane is still listed,
+    // `onAfterDelete` once it is gone. `onItemDeleted` hands back only the
+    // key, so the plane is carried across in `_deleting`.
+    this.list.onBeforeDelete.add(({ key, value: plane }) => {
+      this.onBeforeDelete.trigger();
       if (!plane.world.renderer) {
         throw new Error("Renderer not found for this plane's world!");
       }
+      this._deleting.set(key, plane);
       plane.world.renderer.setPlane(false, plane.three);
       plane.dispose();
-      this.updateMaterialsAndPlanes();
+    });
 
-      this.onAfterDelete.trigger(plane);
+    this.list.onItemDeleted.add((key) => {
+      const plane = this._deleting.get(key);
+      this._deleting.delete(key);
+      this.updateMaterialsAndPlanes();
+      if (plane) this.onAfterDelete.trigger(plane);
+    });
+
+    // `clear()` fires `onBeforeDelete` per plane but no `onItemDeleted`.
+    this.list.onCleared.add(() => {
+      const planes = [...this._deleting.values()];
+      this._deleting.clear();
+      this.updateMaterialsAndPlanes();
+      for (const plane of planes) this.onAfterDelete.trigger(plane);
     });
 
     // Subscribe to fragments material lifecycle so we can auto-bind
