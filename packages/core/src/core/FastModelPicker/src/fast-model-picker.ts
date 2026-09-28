@@ -58,6 +58,13 @@ interface PickFrame {
   camera: THREE.Camera;
   /** Center of the read pixel, in {@link camera}'s NDC. */
   ndc: THREE.Vector2;
+  /**
+   * Whether the renderer draws with a reversed depth buffer
+   * (`reversedDepthBuffer: true` and `EXT_clip_control` available). Then
+   * depth runs 1 at the near plane to 0 at the far plane and already is the
+   * NDC z, instead of `ndc.z * 0.5 + 0.5`.
+   */
+  reversedDepth: boolean;
 }
 
 const ID_REQUEST: PickRequest = { id: true };
@@ -136,15 +143,21 @@ function unpackDepthFromRGBA(pixels: Uint8Array): number {
 
 /**
  * Convert a cursor `ndc` and a `[0..1]` depth-buffer sample to a
- * world-space point. NDC z lives in `[-1..1]` so we expand the depth
- * sample before unprojecting through the camera's matrices.
+ * world-space point, through the camera's matrices.
+ *
+ * With a standard depth buffer NDC z lives in `[-1..1]`, so the sample is
+ * expanded. With a reversed one three sets clip control to a `[0..1]` depth
+ * range and builds the projection reversed, so the sample IS the NDC z;
+ * expanding it would put every point just past the near plane.
  */
 function unprojectToWorld(
   ndc: THREE.Vector2,
   depth: number,
   camera: THREE.Camera,
+  reversedDepth: boolean,
 ): THREE.Vector3 {
-  const v = new THREE.Vector3(ndc.x, ndc.y, depth * 2 - 1);
+  const z = reversedDepth ? depth : depth * 2 - 1;
+  const v = new THREE.Vector3(ndc.x, ndc.y, z);
   v.unproject(camera);
   return v;
 }
@@ -173,11 +186,12 @@ function decodePoint(pixel: Uint8Array, frame: PickFrame) {
     return null; // cleared / void — nothing was drawn here
   }
   const depth = unpackDepthFromRGBA(pixel);
-  // depth ≈ 1 means the far plane: nothing in front of the camera at
-  // that pixel. Treat as void rather than returning a point on the
-  // far plane.
-  if (depth >= 1.0 - 1e-6) return null;
-  return unprojectToWorld(frame.ndc, depth, frame.camera);
+  // The far plane (depth ≈ 1, or ≈ 0 when reversed) means nothing in front
+  // of the camera at that pixel. Treat as void rather than returning a
+  // point on the far plane.
+  const { reversedDepth } = frame;
+  if (reversedDepth ? depth <= 1e-6 : depth >= 1.0 - 1e-6) return null;
+  return unprojectToWorld(frame.ndc, depth, frame.camera, reversedDepth);
 }
 
 /**
@@ -605,7 +619,16 @@ export class FastModelPicker implements Disposable {
       ((x + 0.5) / target.width) * 2 - 1,
       ((y + 0.5) / target.height) * 2 - 1,
     );
-    return { byteToModel: this._byteToModel, camera, ndc: this._pickNdc };
+    // Optional: renderers standing in for WebGLRenderer may not carry it.
+    const capabilities = renderer.capabilities as
+      | { reversedDepthBuffer?: boolean }
+      | undefined;
+    return {
+      byteToModel: this._byteToModel,
+      camera,
+      ndc: this._pickNdc,
+      reversedDepth: capabilities?.reversedDepthBuffer === true,
+    };
   }
 
   /**

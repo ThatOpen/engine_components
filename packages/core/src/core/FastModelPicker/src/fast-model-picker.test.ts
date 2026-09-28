@@ -1237,3 +1237,59 @@ describe("FastModelPicker decoding", () => {
     expect(rows.join("\n")).toMatchSnapshot();
   });
 });
+
+describe("FastModelPicker under a reversed depth buffer", () => {
+  let context: ReturnType<typeof setup>;
+
+  /**
+   * What `new WebGLRenderer({ reversedDepthBuffer: true })` (e.g. through
+   * `PostproductionRenderer`) amounts to for the pick: three builds the
+   * camera's projection reversed (near -> 1, far -> 0) and switches clip
+   * control to a [0..1] depth range, so the depth the pick shader packs
+   * from `gl_FragCoord.z` IS the NDC z, with no `* 0.5 + 0.5` applied.
+   */
+  const reverse = () => {
+    const { camera, renderer } = context;
+    Object.assign(renderer, { capabilities: { reversedDepthBuffer: true } });
+    (camera as unknown as { _reversedDepth: boolean })._reversedDepth = true;
+    camera.updateProjectionMatrix();
+    const ndc = HIT.clone().project(camera);
+    renderer.pixels[ATTACHMENT.depth] = gpuStubs.depthPixel(ndc.z);
+    return { position: new THREE.Vector2(ndc.x, ndc.y), depth: ndc.z };
+  };
+
+  beforeEach(() => {
+    context = setup();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    context?.dispose();
+  });
+
+  it("unprojects the point where the surface is, not near the camera", async () => {
+    const { camera, picker } = context;
+    const { position } = reverse();
+
+    const point = await picker.getPointAt(position);
+    const pick = await picker.getFullPick(position);
+
+    expect(point).not.toBeNull();
+    expect(point!.distanceTo(HIT)).toBeLessThan(1e-3);
+    expect(pick!.point.distanceTo(HIT)).toBeLessThan(1e-3);
+    expect(pick!.distance).toBeCloseTo(HIT.distanceTo(camera.position), 3);
+  });
+
+  it("reads the reversed far plane as empty space, and the near plane as a hit", async () => {
+    const { picker, renderer } = context;
+    const { position } = reverse();
+
+    // Reversed, the far plane is depth 0: packed, that is the cleared pixel.
+    renderer.pixels[ATTACHMENT.depth] = gpuStubs.depthPixel(1e-7);
+    expect(await picker.getPointAt(position)).toBeNull();
+
+    // And depth ~1 is right at the near plane, a real (if close) surface.
+    renderer.pixels[ATTACHMENT.depth] = gpuStubs.depthPixel(0.9999995);
+    expect(await picker.getPointAt(position)).not.toBeNull();
+  });
+});
