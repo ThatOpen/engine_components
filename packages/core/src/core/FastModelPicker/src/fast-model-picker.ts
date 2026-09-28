@@ -69,6 +69,26 @@ const NO_REQUEST: PickRequest = {};
 /** The viewport center, which the debug overlay renders around. Never written. */
 const ORIGIN = new THREE.Vector2();
 
+/**
+ * The camera every pick renders through. Its matrices are written by
+ * `snapshotCamera` before each render, so it has nothing to recompute.
+ *
+ * With a reversed depth buffer, three calls `updateProjectionMatrix()` on
+ * the first render through a camera that is not yet flagged as reversed.
+ * A bare `THREE.Camera` has no such method, so the first pick threw. A
+ * `PerspectiveCamera` or `OrthographicCamera` would not throw, but it would
+ * rebuild the projection from its own fov / frustum and overwrite the
+ * narrowed pick projection, so that first pick would read the wrong pixel.
+ * The copied projection is the world camera's, which three has already
+ * switched to reversed depth when it rendered the scene, so keeping the
+ * written matrix is the correct answer.
+ */
+class PickCamera extends THREE.Camera {
+  updateProjectionMatrix() {
+    // Intentionally empty: the projection is copied, never derived.
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Render target / scene helpers
 // ---------------------------------------------------------------------------
@@ -273,7 +293,7 @@ export class FastModelPicker implements Disposable {
   private _pickMaterial: THREE.ShaderMaterial;
 
   /** Snapshot of the world camera with a narrowed projection. */
-  private _pickCamera = new THREE.Camera();
+  private _pickCamera = new PickCamera();
   private _pickMatrix = new THREE.Matrix4();
   private _pickNdc = new THREE.Vector2();
   private _viewportSize = new THREE.Vector2();
