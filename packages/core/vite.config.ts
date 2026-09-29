@@ -3,7 +3,6 @@
 import dts from "vite-plugin-dts";
 import { defineConfig } from "vite";
 import * as path from "path";
-import * as fs from "fs";
 import pluginTerser from "@rollup/plugin-terser";
 import * as packageJson from "./package.json";
 
