@@ -3,7 +3,7 @@ import * as OBC from "@thatopen/components";
 // import { CurveHighlighter } from "../CivilNavigator/src/curve-highlighter";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
-import { Line2 } from "three/examples/jsm/Addons.js";
+import type { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { CivilRaycaster } from "../../CivilRaycaster";
 import { CivilUtils } from "../../Utils/civil-utils";
 import { CivilPoint } from "../../Types";
