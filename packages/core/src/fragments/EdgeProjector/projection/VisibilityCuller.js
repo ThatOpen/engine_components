@@ -29,6 +29,16 @@ function decodeId( buffer, index ) {
 
 }
 
+function throwIfAborted( signal ) {
+
+	if ( signal && signal.aborted ) {
+
+		throw new Error( 'VisibilityCuller: Process aborted via AbortSignal.' );
+
+	}
+
+}
+
 function collectAllObjects( objects ) {
 
 	const result = new Set();
@@ -59,7 +69,10 @@ export class VisibilityCuller {
 
 	}
 
-	async cull( objects ) {
+	async cull( objects, options = {} ) {
+
+		const { signal = null } = options;
+		throwIfAborted( signal );
 
 		objects = collectAllObjects( objects );
 
@@ -139,11 +152,59 @@ export class VisibilityCuller {
 		const stepX = size.x / tilesX;
 		const stepZ = size.z / tilesY;
 
-		// The tile loop awaits GPU readbacks that can reject (lost context,
-		// failed readback...). Everything mutated above and below — swapped
-		// materials, reparented objects, renderer target / clear color /
-		// autoClear — must be restored even on failure, or the caller's
-		// renderer is left bound to our internal state. Hence try/finally.
+		// Everything mutated above and below (swapped materials, reparented
+		// objects, renderer target / clear color / autoClear) must be put back
+		// exactly once, whichever comes first: the loop finishing, a readback
+		// rejecting (lost context...), or the signal aborting.
+		let restored = false;
+		const restore = () => {
+
+			if ( restored ) return;
+			restored = true;
+
+			if ( signal ) signal.removeEventListener( 'abort', restore );
+
+			// Restore original materials and re-add to original parents
+			for ( const object of objects ) {
+
+				object.material = originalMaterials.get( object );
+				const originalParent = originalParents.get( object );
+				if ( originalParent ) {
+
+					originalParent.add( object );
+
+				} else {
+
+					idScene.remove( object );
+
+				}
+
+			}
+
+			// reset render state
+			renderer.setClearColor( color, alpha );
+			renderer.setRenderTarget( renderTarget );
+			renderer.autoClear = autoClear;
+
+			// dispose of intermediate values. A readback still in flight only
+			// waits on its own pixel buffer, not on the target, so disposing
+			// here is safe.
+			for ( const material of idMaterials ) {
+
+				material.dispose();
+
+			}
+
+			target.dispose();
+
+		};
+
+		// An abort restores synchronously, from the listener: a readback can take
+		// a second or more, and the caller's promise rejects on its next frame.
+		// Waiting for the loop to notice would leave the caller's renderer bound
+		// to our target, drawing into it, after it was told the task is over.
+		if ( signal ) signal.addEventListener( 'abort', restore );
+
 		try {
 
 			// render ids
@@ -180,10 +241,15 @@ export class VisibilityCuller {
 
 					camera.updateProjectionMatrix();
 
+					// Once aborted, the renderer and the objects are already the
+					// caller's again: render nothing more.
+					throwIfAborted( signal );
+
 					// Single render call for all objects in this tile
 					renderer.render( idScene, camera );
 
 					const buffer = await renderer.readRenderTargetPixelsAsync( target, 0, 0, target.width, target.height, readBuffer );
+					throwIfAborted( signal );
 
 					// find all visible objects - decode RGBA to ID
 					for ( let i = 0, l = buffer.length; i < l; i += 4 ) {
@@ -202,36 +268,7 @@ export class VisibilityCuller {
 
 		} finally {
 
-			// Restore original materials and re-add to original parents
-			for ( const object of objects ) {
-
-				object.material = originalMaterials.get( object );
-				const originalParent = originalParents.get( object );
-				if ( originalParent ) {
-
-					originalParent.add( object );
-
-				} else {
-
-					idScene.remove( object );
-
-				}
-
-			}
-
-			// reset render state
-			renderer.setClearColor( color, alpha );
-			renderer.setRenderTarget( renderTarget );
-			renderer.autoClear = autoClear;
-
-			// dispose of intermediate values
-			for ( const material of idMaterials ) {
-
-				material.dispose();
-
-			}
-
-			target.dispose();
+			restore();
 
 		}
 

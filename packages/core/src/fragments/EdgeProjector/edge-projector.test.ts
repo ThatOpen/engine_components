@@ -146,6 +146,102 @@ describe("VisibilityCuller.cull failure (#786)", () => {
       parent: true,
     });
   });
+
+  it("hands the renderer back the moment its signal aborts, not when the readback lands", async () => {
+    const previousTarget = { name: "app target" };
+    let target: unknown = previousTarget;
+    let landReadback: (buffer: Uint8Array) => void = () => {};
+    const renderer = {
+      capabilities: { maxTextureSize: 4096 },
+      autoClear: true,
+      getClearColor: (into: THREE.Color) => into.set(0x123456),
+      getClearAlpha: () => 0.5,
+      setClearColor: vi.fn(),
+      getRenderTarget: () => target,
+      setRenderTarget: vi.fn((next: unknown) => {
+        target = next;
+      }),
+      render: vi.fn(),
+      // A readback still in flight when the caller aborts.
+      readRenderTargetPixelsAsync: (...args: unknown[]) =>
+        new Promise<Uint8Array>((resolve) => {
+          landReadback = () => resolve(args[5] as Uint8Array);
+        }),
+    };
+    const scene = boxScene();
+    const mesh = scene.children[0] as THREE.Mesh;
+    const material = mesh.material;
+    const controller = new AbortController();
+
+    const culler = new VisibilityCuller(renderer, { pixelsPerMeter: 0.1 });
+    const pending = outcome(culler.cull(scene, { signal: controller.signal }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(target).not.toBe(previousTarget);
+
+    controller.abort();
+    // Synchronously after abort(): the caller's promise can reject on its
+    // next frame, so the renderer and the objects must already be back.
+    const atAbort = {
+      target: target === previousTarget,
+      autoClear: renderer.autoClear,
+      lastClear: renderer.setClearColor.mock.lastCall,
+      material: mesh.material === material,
+      parent: mesh.parent === scene,
+    };
+    const rendersAtAbort = renderer.render.mock.calls.length;
+    const targetSetsAtAbort = renderer.setRenderTarget.mock.calls.length;
+
+    landReadback(new Uint8Array(0));
+    const result = await pending;
+
+    expect({
+      atAbort,
+      result,
+      rendersAfterAbort: renderer.render.mock.calls.length - rendersAtAbort,
+      // The late readback must not restore a second time over whatever the
+      // caller has bound since.
+      targetSetsAfterAbort:
+        renderer.setRenderTarget.mock.calls.length - targetSetsAtAbort,
+    }).toEqual({
+      atAbort: {
+        target: true,
+        autoClear: true,
+        lastClear: [new THREE.Color(0x123456), 0.5],
+        material: true,
+        parent: true,
+      },
+      result: { error: expect.stringMatching(/abort/i) },
+      rendersAfterAbort: 0,
+      targetSetsAfterAbort: 0,
+    });
+  });
+
+  it("touches nothing when its signal is already aborted", async () => {
+    const renderer = {
+      capabilities: { maxTextureSize: 4096 },
+      setRenderTarget: vi.fn(),
+      render: vi.fn(),
+    };
+    const scene = boxScene();
+    const material = (scene.children[0] as THREE.Mesh).material;
+
+    const culler = new VisibilityCuller(renderer, { pixelsPerMeter: 0.1 });
+    const result = await outcome(
+      culler.cull(scene, { signal: AbortSignal.abort() }),
+    );
+
+    expect({
+      result,
+      renders: renderer.render.mock.calls.length,
+      targetSets: renderer.setRenderTarget.mock.calls.length,
+      material: (scene.children[0] as THREE.Mesh).material === material,
+    }).toEqual({
+      result: { error: expect.stringMatching(/abort/i) },
+      renders: 0,
+      targetSets: 0,
+      material: true,
+    });
+  });
 });
 
 describe("EdgeProjector.get (#786)", () => {
@@ -184,6 +280,7 @@ describe("EdgeProjector.get (#786)", () => {
   it("rejects, and pumps no further, once its signal is aborted", async () => {
     const projector = components.get(OBC.EdgeProjector);
     projector.generator.useWebGPU = false;
+    let boundTarget: unknown = null;
     const world = {
       renderer: {
         three: {
@@ -192,8 +289,10 @@ describe("EdgeProjector.get (#786)", () => {
           getClearColor: (into: THREE.Color) => into,
           getClearAlpha: () => 1,
           setClearColor: () => {},
-          getRenderTarget: () => null,
-          setRenderTarget: () => {},
+          getRenderTarget: () => boundTarget,
+          setRenderTarget: (next: unknown) => {
+            boundTarget = next;
+          },
           render: () => {},
           // A cull that never finishes: only the signal can end the wait.
           readRenderTargetPixelsAsync: () => new Promise(() => {}),
@@ -227,15 +326,22 @@ describe("EdgeProjector.get (#786)", () => {
     );
     const controller = new AbortController();
 
+    let targetAtRejection: unknown = "not settled";
     const pending = outcome(
       projector.get({ m: new Set([1]) }, world as never, {
         signal: controller.signal,
       }),
-    );
+    ).then((settled) => {
+      targetAtRejection = boundTarget;
+      return settled;
+    });
     setTimeout(() => controller.abort(), 0);
     const result = await within(pending);
 
     expect(result).toMatchObject({ error: expect.stringMatching(/abort/i) });
+    // The cull's readback never lands, yet the renderer is already unbound
+    // from the culler's target when the caller hears about the abort.
+    expect(targetAtRejection).toBeNull();
     // No frame is scheduled for the generator after it rejected.
     const pumped = frames;
     for (let i = 0; i < 20; i++) {

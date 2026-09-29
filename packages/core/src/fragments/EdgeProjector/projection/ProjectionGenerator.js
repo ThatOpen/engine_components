@@ -430,7 +430,9 @@ export class ProjectionGenerator {
 			Logger.startStep( 'Visibility culling' );
 			let finished = false;
 			let cullError = null;
-			visibilityCuller.cull( scene ).then( res => {
+			// The signal lets the culler hand the renderer back the moment the
+			// task is aborted, rather than when its pending readback lands.
+			visibilityCuller.cull( scene, { signal: options.signal } ).then( res => {
 
 				// TODO: the functions should be able to handle an array of objects
 				scene = new Scene();
