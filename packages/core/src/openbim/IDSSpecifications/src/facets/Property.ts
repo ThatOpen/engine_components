@@ -81,14 +81,18 @@ export class IDSProperty extends IDSFacet {
         },
       });
 
+      // Matching sets, by localId: their name and the property names that
+      // matched. A set attached to a type (IfcTypeObject.HasPropertySets)
+      // has no DefinesOccurrence, so its elements are found from the type.
+      const matchedSets = new Map<number, { name: string; props: Set<string> }>();
+
       for (const set of data) {
         const definesOccurrence = set.DefinesOccurrence ?? set.DefinesOcurrence;
         if (
           !(
             "value" in set._localId &&
             "value" in set._category &&
-            "value" in set.Name &&
-            Array.isArray(definesOccurrence)
+            "value" in set.Name
           )
         ) {
           continue;
@@ -141,6 +145,16 @@ export class IDSProperty extends IDSFacet {
             if (!valueMatches) continue;
           }
 
+          const setId = set._localId.value as number;
+          let matched = matchedSets.get(setId);
+          if (!matched) {
+            matched = { name: String(set.Name.value), props: new Set() };
+            matchedSets.set(setId, matched);
+          }
+          matched.props.add(String(attribute.value));
+
+          if (!Array.isArray(definesOccurrence)) continue;
+
           const items = definesOccurrence
             .map((ocurrence) => {
               if (
@@ -159,7 +173,102 @@ export class IDSProperty extends IDSFacet {
           ModelIdMapUtils.append(collector, modelId, ...items);
         }
       }
+
+      if (matchedSets.size > 0) {
+        await this.appendTypeInstances(model, modelId, matchedSets, collector);
+      }
     }
+  }
+
+  /**
+   * Appends the elements that inherit one of `matchedSets` from their type,
+   * as `test()` does through {@link getTypePsets} (issue #708), so a set that
+   * only lives on a type selects the type's instances (issue #798).
+   *
+   * An element's own set of the same name overrides the inherited value of
+   * any property it also defines: if it defines every matched property
+   * itself, whether it applies was already decided from that set above.
+   */
+  private async appendTypeInstances(
+    model: FRAGS.FragmentsModel,
+    modelId: string,
+    matchedSets: Map<number, { name: string; props: Set<string> }>,
+    collector: ModelIdMap,
+  ) {
+    // IfcTypeObject subtypes: `...TYPE`, IFCTYPEOBJECT / IFCTYPEPRODUCT, and
+    // the IFC2x3 door / window styles.
+    const typeIds = Object.values(
+      await model.getItemsOfCategories([/TYPE$/, /^IFCTYPE/, /STYLE$/]),
+    ).flat();
+    if (typeIds.length === 0) return;
+
+    const related = { attributes: true, relations: false };
+    const types = await model.getItemsData(typeIds, {
+      attributesDefault: false,
+      relations: {
+        HasPropertySets: related,
+        // The fragments name for the inverse of IfcRelDefinesByType, and
+        // the IFC one, in case a file stores that.
+        ObjectTypeOf: related,
+        Types: related,
+      },
+    });
+
+    // Element -> the matched sets it inherits.
+    const inherited = new Map<number, { name: string; props: Set<string> }[]>();
+    const selected = collector[modelId];
+    for (const type of types) {
+      if (!Array.isArray(type.HasPropertySets)) continue;
+      const sets = type.HasPropertySets.flatMap((set) => {
+        const id = set._localId && "value" in set._localId ? set._localId.value : null;
+        const matched = matchedSets.get(id as number);
+        return matched ? [matched] : [];
+      });
+      if (sets.length === 0) continue;
+      const instances = [
+        ...(Array.isArray(type.ObjectTypeOf) ? type.ObjectTypeOf : []),
+        ...(Array.isArray(type.Types) ? type.Types : []),
+      ];
+      for (const instance of instances) {
+        if (!(instance._localId && "value" in instance._localId)) continue;
+        const id = instance._localId.value;
+        if (typeof id !== "number" || selected?.has(id)) continue;
+        let list = inherited.get(id);
+        if (!list) {
+          list = [];
+          inherited.set(id, list);
+        }
+        list.push(...sets);
+      }
+    }
+    if (inherited.size === 0) return;
+
+    // Default attributes: the sets' and properties' names are needed.
+    const elements = await model.getItemsData([...inherited.keys()], {
+      relations: { IsDefinedBy: { attributes: true, relations: true } },
+    });
+    const applies: number[] = [];
+    for (const element of elements) {
+      if (!("value" in element._localId)) continue;
+      const id = element._localId.value as number;
+      const own = Array.isArray(element.IsDefinedBy) ? element.IsDefinedBy : [];
+      const overrides = (setName: string, propName: string) =>
+        own.some((set) => {
+          if (!(set.Name && "value" in set.Name) || set.Name.value !== setName)
+            return false;
+          const list = this.getPropertyListName(set);
+          const props = list ? set[list] : undefined;
+          if (!Array.isArray(props)) return false;
+          return props.some(
+            (prop) => prop.Name && "value" in prop.Name && prop.Name.value === propName,
+          );
+        });
+      const inherits = inherited
+        .get(id)!
+        .some((set) => [...set.props].some((prop) => !overrides(set.name, prop)));
+      if (inherits) applies.push(id);
+    }
+    ModelIdMapUtils.append(collector, modelId, ...applies);
   }
 
   async test(
