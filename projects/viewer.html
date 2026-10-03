@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IFC Viewer</title>
+    <link rel="icon" href="/resources/favicon.ico" />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        background: #171a1e;
+        color: #e8eaed;
+        font-family:
+          "Plus Jakarta Sans",
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+
+      #container {
+        position: absolute;
+        inset: 0;
+      }
+
+      header {
+        position: fixed;
+        z-index: 10;
+        top: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        background: rgba(18, 21, 25, 0.85);
+        border-bottom: 1px solid #2b3138;
+        backdrop-filter: blur(8px);
+      }
+
+      header a {
+        color: #8ab4ff;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+
+      header a:hover {
+        text-decoration: underline;
+      }
+
+      #project-title {
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .spacer {
+        flex: 1;
+      }
+
+      .btn {
+        padding: 0.35rem 0.7rem;
+        border: 1px solid #3a424b;
+        border-radius: 6px;
+        background: #232830;
+        color: #e8eaed;
+        font: inherit;
+        font-size: 0.8125rem;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .btn:hover {
+        background: #2c333c;
+        border-color: #4a535e;
+      }
+
+      .btn.primary {
+        background: #27405f;
+        border-color: #3f6fae;
+      }
+
+      .btn.primary:hover {
+        background: #2d4a6e;
+        border-color: #5b8fd1;
+      }
+
+      .btn.disabled {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
+      #models {
+        position: fixed;
+        z-index: 10;
+        top: 3.1rem;
+        left: 0.75rem;
+        width: min(20rem, calc(100vw - 1.5rem));
+        max-height: 45vh;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #2b3138;
+        border-radius: 8px;
+        background: rgba(18, 21, 25, 0.92);
+        font-size: 0.8125rem;
+        overflow: hidden;
+      }
+
+      #models .models-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.4rem 0.6rem;
+        border-bottom: 1px solid #2b3138;
+        color: #9aa3ad;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      #models .align-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding: 0.35rem 0.6rem;
+        border-bottom: 1px solid #2b3138;
+        color: #9aa3ad;
+        font-size: 0.75rem;
+      }
+
+      #models .align-row select {
+        flex: 1;
+        max-width: 13rem;
+        padding: 0.15rem 0.3rem;
+        border: 1px solid #3a424b;
+        border-radius: 5px;
+        background: #232830;
+        color: #e8eaed;
+        font: inherit;
+        font-size: 0.75rem;
+      }
+
+      #models-count {
+        min-width: 1.5rem;
+        padding: 0 0.35rem;
+        border-radius: 999px;
+        background: #27405f;
+        color: #cfe1ff;
+        text-align: center;
+      }
+
+      #models-list {
+        margin: 0;
+        padding: 0.35rem;
+        list-style: none;
+        overflow-y: auto;
+      }
+
+      #models-list li {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.25rem 0.3rem;
+        border-radius: 6px;
+      }
+
+      #models-list li:hover {
+        background: #20252c;
+      }
+
+      #models-list .model-name {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      #models-list .model-name.hidden-model {
+        color: #7d8792;
+        text-decoration: line-through;
+      }
+
+      #models-list li.empty {
+        color: #7d8792;
+        display: block;
+        padding: 0.5rem 0.3rem;
+      }
+
+      .model-btn {
+        padding: 0.15rem 0.4rem;
+        border: 1px solid #3a424b;
+        border-radius: 5px;
+        background: #232830;
+        color: #cfd4da;
+        font: inherit;
+        font-size: 0.75rem;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .model-btn:hover {
+        background: #2c333c;
+        border-color: #4a535e;
+      }
+
+      .model-btn.danger:hover {
+        background: #4a2020;
+        border-color: #8c3030;
+        color: #ffd7d7;
+      }
+
+      #status {
+        position: fixed;
+        z-index: 10;
+        left: 50%;
+        bottom: 1rem;
+        max-width: min(90vw, 40rem);
+        transform: translateX(-50%);
+        padding: 0.5rem 0.9rem;
+        border: 1px solid #3a424b;
+        border-radius: 8px;
+        background: rgba(18, 21, 25, 0.92);
+        font-size: 0.8125rem;
+        text-align: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+
+      #status.visible {
+        opacity: 1;
+      }
+
+      #status.error {
+        border-color: #8c3030;
+        background: rgba(74, 22, 22, 0.95);
+      }
+
+      #drop {
+        position: fixed;
+        z-index: 9;
+        inset: 3rem 1rem 1rem;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        border: 2px dashed #4a535e;
+        border-radius: 12px;
+        background: rgba(18, 21, 25, 0.75);
+        color: #8ab4ff;
+        font-size: 1.1rem;
+        pointer-events: none;
+      }
+
+      #drop.visible {
+        display: flex;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="container"></div>
+    <header>
+      <a href="/">Home</a>
+      <span id="project-title">IFC Viewer</span>
+      <span class="spacer"></span>
+      <button class="btn" id="fit" type="button">Fit to view</button>
+      <label class="btn primary" id="lbl-add" for="ifc-add">Add IFC…</label>
+      <input id="ifc-add" type="file" accept=".ifc" multiple hidden />
+      <label class="btn" id="lbl-open" for="ifc-open">Open IFC…</label>
+      <input id="ifc-open" type="file" accept=".ifc" multiple hidden />
+    </header>
+    <aside id="models">
+      <div class="models-head">
+        <span>Models</span>
+        <span id="models-count">0</span>
+      </div>
+      <div class="align-row">
+        <span>Coordinates</span>
+        <select id="align" title="How to place the models in the scene">
+          <option value="common">shared (first model)</option>
+          <option value="file">from each file</option>
+        </select>
+      </div>
+      <ul id="models-list"></ul>
+    </aside>
+    <div id="status"></div>
+    <div id="drop">Drop IFC files here</div>
+    <script type="module" src="./viewer.ts"></script>
+  </body>
+</html>
