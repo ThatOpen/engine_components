@@ -52,13 +52,25 @@ export class Topic implements BCFTopic {
   // Based on the BCF API documentation, the files associated with a topic are the models that should be loaded when displaying the topic's viewpoints.
   // files: any
 
+  // Strict mode drops values that are not in the configuration, and it used
+  // to do so in complete silence: the topic was created, the value was gone,
+  // and nothing anywhere said why. Rejections must be audible.
+  private static warnRejected(field: string, value: unknown) {
+    console.warn(
+      `BCFTopics: "${String(value)}" is not one of the configured ${field}, and strict mode is on. The value was ignored; add it to the BCFTopics config or disable strict mode.`,
+    );
+  }
+
   private _type = Topic.default.type;
 
   set type(value: string) {
     const manager = this._components.get(BCFTopics);
     const { strict, types } = manager.config;
     const valid = strict ? types.has(value) : true;
-    if (!valid) return;
+    if (!valid) {
+      Topic.warnRejected("types", value);
+      return;
+    }
     this._type = value;
   }
 
@@ -72,7 +84,10 @@ export class Topic implements BCFTopic {
     const manager = this._components.get(BCFTopics);
     const { strict, statuses } = manager.config;
     const valid = strict ? statuses.has(value) : true;
-    if (!valid) return;
+    if (!valid) {
+      Topic.warnRejected("statuses", value);
+      return;
+    }
     this._status = value;
   }
 
@@ -87,7 +102,10 @@ export class Topic implements BCFTopic {
     if (value) {
       const { strict, priorities } = manager.config;
       const valid = strict ? priorities.has(value) : true;
-      if (!valid) return;
+      if (!valid) {
+        Topic.warnRejected("priorities", value);
+        return;
+      }
       this._priority = value;
     } else {
       this._priority = value;
@@ -105,7 +123,10 @@ export class Topic implements BCFTopic {
     if (value) {
       const { strict, stages } = manager.config;
       const valid = strict ? stages.has(value) : true;
-      if (!valid) return;
+      if (!valid) {
+        Topic.warnRejected("stages", value);
+        return;
+      }
       this._stage = value;
     } else {
       this._stage = value;
@@ -123,7 +144,10 @@ export class Topic implements BCFTopic {
     if (value) {
       const { strict, users } = manager.config;
       const valid = strict ? users.has(value) : true;
-      if (!valid) return;
+      if (!valid) {
+        Topic.warnRejected("users", value);
+        return;
+      }
       this._assignedTo = value;
     } else {
       this._assignedTo = value;
@@ -143,7 +167,10 @@ export class Topic implements BCFTopic {
       const _value = new Set<string>();
       for (const label of value) {
         const valid = strict ? labels.has(label) : true;
-        if (!valid) continue;
+        if (!valid) {
+          Topic.warnRejected("labels", label);
+          continue;
+        }
         _value.add(label);
       }
       this._labels = _value;
