@@ -147,3 +147,8 @@ node-app
 .claude/
 
 resources/frags/test/
+
+# local IFC projects: models and the generated gallery are not committed
+/projects/*/
+/projects/index.html
+/projects/.dev-server.*
