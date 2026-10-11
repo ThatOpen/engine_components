@@ -41,6 +41,8 @@ export abstract class IDSFacet {
     facetParameter: IDSFacetParameter,
     parameter: IDSFacetParameterName,
     checks?: IDSCheck[],
+    cardinality: IDSSimpleCardinality | IDSConditionalCardinaltiy = this
+      .cardinality,
   ) => {
     const checkLog: IDSCheck = {
       parameter,
@@ -96,8 +98,8 @@ export abstract class IDSFacet {
       pass = minPass && maxPass;
     }
 
-    if (this.cardinality === "prohibited") pass = !pass;
-    if (this.cardinality === "optional") pass = true;
+    if (cardinality === "prohibited") pass = !pass;
+    if (cardinality === "optional") pass = true;
 
     checkLog.pass = pass;
     return checkLog.pass;

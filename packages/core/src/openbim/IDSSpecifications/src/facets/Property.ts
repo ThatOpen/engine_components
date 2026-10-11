@@ -84,7 +84,10 @@ export class IDSProperty extends IDSFacet {
       // Matching sets, by localId: their name and the property names that
       // matched. A set attached to a type (IfcTypeObject.HasPropertySets)
       // has no DefinesOccurrence, so its elements are found from the type.
-      const matchedSets = new Map<number, { name: string; props: Set<string> }>();
+      const matchedSets = new Map<
+        number,
+        { name: string; props: Set<string> }
+      >();
 
       for (const set of data) {
         const definesOccurrence = set.DefinesOccurrence ?? set.DefinesOcurrence;
@@ -220,7 +223,8 @@ export class IDSProperty extends IDSFacet {
     for (const type of types) {
       if (!Array.isArray(type.HasPropertySets)) continue;
       const sets = type.HasPropertySets.flatMap((set) => {
-        const id = set._localId && "value" in set._localId ? set._localId.value : null;
+        const id =
+          set._localId && "value" in set._localId ? set._localId.value : null;
         const matched = matchedSets.get(id as number);
         return matched ? [matched] : [];
       });
@@ -260,12 +264,15 @@ export class IDSProperty extends IDSFacet {
           const props = list ? set[list] : undefined;
           if (!Array.isArray(props)) return false;
           return props.some(
-            (prop) => prop.Name && "value" in prop.Name && prop.Name.value === propName,
+            (prop) =>
+              prop.Name && "value" in prop.Name && prop.Name.value === propName,
           );
         });
       const inherits = inherited
         .get(id)!
-        .some((set) => [...set.props].some((prop) => !overrides(set.name, prop)));
+        .some((set) =>
+          [...set.props].some((prop) => !overrides(set.name, prop)),
+        );
       if (inherits) applies.push(id);
     }
     ModelIdMapUtils.append(collector, modelId, ...applies);
@@ -301,90 +308,130 @@ export class IDSProperty extends IDSFacet {
         );
         if (!checks) continue;
 
-        const sets = await this.getPsets(item);
-        const matchingSets = sets.filter((set) => {
-          if (!("value" in set.Name)) return false;
-          const result = this.evalRequirement(
-            set.Name.value,
-            this.propertySet,
-            "PropertySet",
-          );
-          if (!result) return false;
-          checks.push({
-            currentValue: set.Name.value,
-            parameter: "PropertySet",
-            pass: true,
-            requiredValue: this.propertySet,
-          });
-          return true;
-        });
+        // Evaluate the facet itself (as if required), then apply the
+        // cardinality once: a prohibited property passes when the facet does
+        // not match, and an optional one passes when the property is absent.
+        const facetChecks: IDSCheck[] = [];
+        const present = await this.evalFacet(item, facetChecks);
+        const matches =
+          facetChecks.length > 0 && facetChecks.every(({ pass }) => pass);
 
-        if (matchingSets.length === 0) {
+        if (this.cardinality === "prohibited") {
           checks.push({
+            parameter: "BaseName",
+            currentValue: present ? this.baseName.parameter : null,
+            pass: !matches,
+            requiredValue: this.baseName,
+          } as IDSCheck);
+        } else if (this.cardinality === "optional" && !present) {
+          checks.push({
+            parameter: "BaseName",
             currentValue: null,
-            parameter: "PropertySet",
-            pass: false,
-            requiredValue: this.propertySet,
-          });
-          continue;
-        }
-
-        for (const set of matchingSets) {
-          const propsListName = this.getPropertyListName(set);
-          if (!propsListName) continue;
-
-          const props = set[propsListName];
-          if (!Array.isArray(props)) {
-            checks.push({
-              currentValue: null,
-              parameter: "BaseName",
-              pass: false,
-              requiredValue: this.baseName,
-            });
-            continue;
-          }
-
-          const matchingProps = props.filter((item) => {
-            if (!("value" in item._category && "value" in item.Name))
-              return false;
-            if (this._unsupportedTypes.includes(item._category.value)) {
-              return false;
-            }
-
-            const result = this.evalRequirement(
-              item.Name.value,
-              this.baseName,
-              "BaseName",
-            );
-            if (!result) return false;
-
-            checks.push({
-              currentValue: item.Name.value,
-              parameter: "BaseName",
-              pass: true,
-              requiredValue: this.baseName,
-            });
-            return true;
-          });
-
-          if (matchingProps.length === 0) {
-            checks.push({
-              currentValue: null,
-              parameter: "BaseName",
-              pass: false,
-              requiredValue: this.baseName,
-            });
-            continue;
-          }
-
-          for (const item of matchingProps) {
-            this.evalValue(item, checks);
-            this.evalDataType(item, checks);
-            this.evalURI();
-          }
+            pass: true,
+            requiredValue: this.baseName,
+          } as IDSCheck);
+        } else {
+          checks.push(...facetChecks);
         }
       }
     }
+  }
+
+  /**
+   * Checks the property set, name, value and data type of one item, as for a
+   * required facet, and returns whether a property with the required set and
+   * name is present at all.
+   */
+  private async evalFacet(item: FRAGS.ItemData, checks: IDSCheck[]) {
+    const sets = await this.getPsets(item);
+    const matchingSets = sets.filter((set) => {
+      if (!("value" in set.Name)) return false;
+      const result = this.evalRequirement(
+        set.Name.value,
+        this.propertySet,
+        "PropertySet",
+        undefined,
+        "required",
+      );
+      if (!result) return false;
+      checks.push({
+        currentValue: set.Name.value,
+        parameter: "PropertySet",
+        pass: true,
+        requiredValue: this.propertySet,
+      });
+      return true;
+    });
+
+    if (matchingSets.length === 0) {
+      checks.push({
+        currentValue: null,
+        parameter: "PropertySet",
+        pass: false,
+        requiredValue: this.propertySet,
+      });
+      return false;
+    }
+
+    let present = false;
+    for (const set of matchingSets) {
+      const propsListName = this.getPropertyListName(set);
+      if (!propsListName) continue;
+
+      const props = set[propsListName];
+      if (!Array.isArray(props)) {
+        checks.push({
+          currentValue: null,
+          parameter: "BaseName",
+          pass: false,
+          requiredValue: this.baseName,
+        });
+        continue;
+      }
+
+      const matchingProps = props.filter((prop) => {
+        if (!("value" in prop._category && "value" in prop.Name)) return false;
+        if (this._unsupportedTypes.includes(prop._category.value)) {
+          return false;
+        }
+
+        const result = this.evalRequirement(
+          prop.Name.value,
+          this.baseName,
+          "BaseName",
+          undefined,
+          "required",
+        );
+        if (!result) return false;
+
+        checks.push({
+          currentValue: prop.Name.value,
+          parameter: "BaseName",
+          pass: true,
+          requiredValue: this.baseName,
+        });
+        return true;
+      });
+
+      if (matchingProps.length === 0) {
+        checks.push({
+          currentValue: null,
+          parameter: "BaseName",
+          pass: false,
+          requiredValue: this.baseName,
+        });
+        continue;
+      }
+
+      present = true;
+      for (const prop of matchingProps) {
+        this.evalValue(prop, checks);
+        this.evalDataType(prop, checks);
+        this.evalURI();
+      }
+    }
+
+    return present;
   }
 
   private getPropertyListName(item: FRAGS.ItemData) {
@@ -531,6 +578,7 @@ export class IDSProperty extends IDSFacet {
         facetValue,
         "Value",
         checks,
+        "required",
       );
 
       return result;
@@ -607,6 +655,7 @@ export class IDSProperty extends IDSFacet {
       },
       "DataType",
       checks,
+      "required",
     );
 
     return result;
