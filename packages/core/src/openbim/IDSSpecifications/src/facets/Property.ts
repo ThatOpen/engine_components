@@ -430,6 +430,12 @@ export class IDSProperty extends IDSFacet {
       }
     }
 
+    // When the item is itself a type object (e.g. an IfcWallType selected by
+    // the applicability), its own property sets are in HasPropertySets.
+    if (Array.isArray(item.HasPropertySets)) {
+      psets.push(...item.HasPropertySets);
+    }
+
     return psets;
   }
 
