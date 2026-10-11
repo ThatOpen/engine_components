@@ -139,13 +139,16 @@ export class IDSEntity extends IDSFacet {
     checks?: IDSCheck[],
   ) {
     if (!this.predefinedType) return null;
-    if (!("value" in itemData.PredefinedType)) return null;
 
     const isRequirementUserDefined =
       typeof this.predefinedType.parameter === "string" &&
       this.predefinedType.parameter === "USERDEFINED";
 
-    let value = itemData.PredefinedType.value;
+    // Some entities (e.g. IfcSite in IFC4) have no PredefinedType attribute
+    // at all; their item data has no such key. Treat that as "no value", so
+    // the requirement fails instead of throwing.
+    const own = itemData.PredefinedType;
+    let value = own && "value" in own ? own.value : undefined;
 
     // TODO: Do not remember what is this for
     if (value === "USERDEFINED" && !isRequirementUserDefined) {
@@ -168,7 +171,10 @@ export class IDSEntity extends IDSFacet {
         });
         if (Array.isArray(data.IsTypedBy)) {
           const typeAttrs = data.IsTypedBy[0];
-          if (typeAttrs && "value" in typeAttrs.PredefinedType) {
+          if (
+            typeAttrs?.PredefinedType &&
+            "value" in typeAttrs.PredefinedType
+          ) {
             value = typeAttrs.PredefinedType.value;
             if (value === "USERDEFINED" && !isRequirementUserDefined) {
               const attrNames = Object.keys(typeAttrs);
