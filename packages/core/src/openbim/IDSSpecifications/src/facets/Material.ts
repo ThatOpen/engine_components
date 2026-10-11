@@ -8,6 +8,7 @@ import { getParameterXML } from "../exporters/parameter";
 import { IDSCheck, IDSFacetParameter, IDSItemCheckResult } from "../types";
 import { IDSFacet } from "./Facet";
 import { ModelIdMapUtils } from "../../../../utils";
+import { XML } from "../../../../utils/xml";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/material-facet.md
 
@@ -59,7 +60,7 @@ export class IDSMaterial extends IDSFacet {
       attributes += `cardinality="${this.cardinality}"`;
       attributes += this.uri ? `uri=${this.uri}` : "";
       attributes += this.instructions
-        ? `instructions="${this.instructions}"`
+        ? `instructions="${XML.escape(this.instructions)}"`
         : "";
     }
     return `<material ${attributes}>

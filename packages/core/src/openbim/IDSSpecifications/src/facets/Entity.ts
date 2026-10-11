@@ -9,6 +9,7 @@ import {
   ModelIdMap,
 } from "../../../../fragments";
 import { ModelIdMapUtils } from "../../../../utils";
+import { XML } from "../../../../utils/xml";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/entity-facet.md
 
@@ -29,7 +30,7 @@ export class IDSEntity extends IDSFacet {
     if (type === "requirement") {
       attributes += `cardinality="${this.cardinality}"`;
       attributes += this.instructions
-        ? `instructions="${this.instructions}"`
+        ? `instructions="${XML.escape(this.instructions)}"`
         : "";
     }
     return `<entity ${attributes}>

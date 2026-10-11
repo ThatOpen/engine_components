@@ -7,6 +7,7 @@ import {
   ModelIdDataMap,
   ModelIdMap,
 } from "../../../../fragments";
+import { XML } from "../../../../utils/xml";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/attribute-facet.md
 
@@ -27,7 +28,7 @@ export class IDSAttribute extends IDSFacet {
     if (type === "requirement") {
       attributes += `cardinality="${this.cardinality}"`;
       attributes += this.instructions
-        ? `instructions="${this.instructions}"`
+        ? `instructions="${XML.escape(this.instructions)}"`
         : "";
     }
     return `<attribute ${attributes}>
