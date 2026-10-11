@@ -1,6 +1,8 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import * as THREE from "three";
 import * as OBC from "../packages/core/src/index";
+import { RendererWith2D } from "../packages/front/src/core/Marker";
+import { createAddOns } from "./addons";
 
 const container = document.getElementById("container")!;
 const titleEl = document.getElementById("project-title")!;
@@ -35,17 +37,19 @@ const setBusy = (value: boolean) => {
 
 const components = new OBC.Components();
 const worlds = components.get(OBC.Worlds);
+// RendererWith2D is SimpleRenderer + a CSS2D overlay: the Marker add-on
+// (ТЗ-002, R-011) needs it. PostproductionRenderer stays out of scope.
 const world = worlds.create<
   OBC.SimpleScene,
   OBC.OrthoPerspectiveCamera,
-  OBC.SimpleRenderer
+  RendererWith2D
 >();
 
 world.scene = new OBC.SimpleScene(components);
 world.scene.setup();
 world.scene.three.background = null;
 
-world.renderer = new OBC.SimpleRenderer(components, container);
+world.renderer = new RendererWith2D(components, container);
 world.camera = new OBC.OrthoPerspectiveCamera(components);
 await world.camera.controls.setLookAt(30, 30, 30, 0, 0, 0);
 
@@ -66,6 +70,15 @@ const workerUrl = await OBC.FragmentsManager.getWorker();
 const fragments = components.get(OBC.FragmentsManager);
 fragments.init(workerUrl);
 
+// @thatopen/fragments 3.4.7: update(true) waits on a worker "FINISH" fence
+// (forceUpdateFinish) that never settles once the last model has been disposed,
+// because the worker has nothing left to report. The promise never resolves and
+// the whole app freezes with busy=true. A forced update on an empty scene has
+// no meshes to refresh, so it is safe to skip.
+const rawCoreUpdate = fragments.core.update.bind(fragments.core);
+fragments.core.update = (force?: boolean) =>
+  force && !fragments.list.size ? Promise.resolve() : rawCoreUpdate(force);
+
 world.camera.controls.addEventListener("update", () => fragments.core.update());
 
 fragments.list.onItemSet.add(({ value: model }) => {
@@ -82,7 +95,26 @@ fragments.core.models.materials.list.onItemSet.add(({ value: material }) => {
   }
 });
 
-(window as any).__bim = { components, world, fragments, ifcLoader };
+const addons = createAddOns(
+  { components, world, fragments, setStatus },
+  {
+    listEl: document.getElementById("addons-list")!,
+    panelEl: document.getElementById("addon-panel")!,
+  },
+);
+
+(window as any).__bim = {
+  components,
+  world,
+  fragments,
+  ifcLoader,
+  get highlighter() {
+    return addons.getComponent("highlighter");
+  },
+  addons,
+};
+
+await addons.toggle("highlighter", true, true);
 
 const modelWord = (count: number) => (count === 1 ? "model" : "models");
 
@@ -156,6 +188,7 @@ const removeModel = async (modelId: string) => {
   try {
     await fragments.core.disposeModel(modelId);
     world.scene.three.remove(model.object);
+    await addons.onModelRemoved(modelId);
     fragments.core.update(true);
     await refreshModels();
     await fitToModels();

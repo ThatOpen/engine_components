@@ -35,7 +35,7 @@ const writeIndexHTML = () => {
   const examplePaths = globSync("packages/**/src/**/example.html");
   for (const examplePath of examplePaths) {
     const directory = path.dirname(examplePath);
-    const packageNameMatch = directory.match(/packages[\\\/]([^\\\/]+)/);
+    const packageNameMatch = directory.match(/packages[\\/]([^\\/]+)/);
     if (!(packageNameMatch && packageNameMatch.length > 1)) continue;
     const packageName = packageNameMatch[1];
     const exampleName = path.basename(directory);
@@ -102,5 +102,15 @@ export default defineConfig({
     // server serves two or three instances and three.js prints the
     // "Multiple instances of Three.js being imported" warning.
     dedupe: ["three"],
+    // `packages/front` imports `@thatopen/components`; pnpm would resolve
+    // the registry copy (3.4.8) while our viewer runs the local core fork
+    // (FastModelPicker etc.) — two component registries in one page.
+    // Force every import (front included) to the local core sources.
+    alias: {
+      "@thatopen/components": path.resolve(
+        process.cwd(),
+        "packages/core/src/index",
+      ),
+    },
   },
 });

@@ -46,7 +46,13 @@ export class RendererWith2D extends SimpleRenderer {
     this.three2D.domElement.style.pointerEvents = "none";
     if (this.container) {
       this.container.appendChild(this.three2D.domElement);
-      this.container.style.position = "relative";
+      // Only set the positioning context when the app has not established
+      // one already — clobbering e.g. an absolutely positioned full-screen
+      // container would break the app layout.
+      const computed = window.getComputedStyle(this.container);
+      if (computed.position === "static") {
+        this.container.style.position = "relative";
+      }
     }
   }
 }

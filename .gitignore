@@ -152,3 +152,7 @@ resources/frags/test/
 /projects/*/
 /projects/index.html
 /projects/.dev-server.*
+
+# pnpm artifacts (local setup; the repo installs with yarn)
+pnpm-lock.yaml
+pnpm-workspace.yaml
