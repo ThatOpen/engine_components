@@ -917,7 +917,12 @@ type AnyMeasurer = {
   unitsList: string[];
   list: Set<any> & {
     clear: () => void;
+    delete: (item: any) => boolean;
     onItemAdded: {
+      add: (fn: () => void) => void;
+      remove: (fn: () => void) => void;
+    };
+    onItemDeleted: {
       add: (fn: () => void) => void;
       remove: (fn: () => void) => void;
     };
@@ -927,6 +932,7 @@ type AnyMeasurer = {
     };
   };
   create: () => Promise<void> | void;
+  endCreation: () => void;
   cancelCreation: () => void;
 };
 
@@ -951,6 +957,7 @@ function createMeasurementsAddOn(ctx: AddOnsContext): AddOnDef {
       }
       measurer.world = ctx.world;
       measurer.list.onItemAdded.add(() => updateRequested.trigger());
+      measurer.list.onItemDeleted.add(() => updateRequested.trigger());
       measurer.list.onCleared.add(() => updateRequested.trigger());
       measurers.set(id, measurer);
     }
@@ -976,6 +983,23 @@ function createMeasurementsAddOn(ctx: AddOnsContext): AddOnDef {
     );
   };
 
+  // Area (free mode) and Volume commit their result only through
+  // `endCreation()`: dblclick alone just accumulates points/items in
+  // a temporary preview, so without Enter the measurement never
+  // reaches `list` — no value, no fill, nothing to delete. Length
+  // and Angle finalize through their own dblclick sequences, so
+  // Enter is wired only for the two tools that need it.
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (!(e.key === "Enter" || e.code === "NumpadEnter")) return;
+    if (active !== "area" && active !== "volume") return;
+    const measurer = getMeasurer(active);
+    try {
+      measurer.endCreation();
+    } catch (err) {
+      ctx.setStatus(errorText(err), true);
+    }
+  };
+
   return {
     id: "measurements",
     name: "Measurements",
@@ -985,10 +1009,12 @@ function createMeasurementsAddOn(ctx: AddOnsContext): AddOnDef {
         getMeasurer(active).enabled = true;
         canvas = ctx.world.renderer?.three.domElement ?? null;
         canvas?.addEventListener("dblclick", onDblClick);
+        window.addEventListener("keydown", onKeyDown);
       },
       disable: async () => {
         enabled = false;
         canvas?.removeEventListener("dblclick", onDblClick);
+        window.removeEventListener("keydown", onKeyDown);
         for (const measurer of measurers.values()) {
           measurer.enabled = false;
           measurer.cancelCreation();
@@ -1019,16 +1045,16 @@ function createMeasurementsAddOn(ctx: AddOnsContext): AddOnDef {
       unitsRow.append(unitsSelect);
       const hint = el("p", "addon-hint");
       const section = el("div", "addon-section");
-      const valuesList = el("ul", "addon-values");
+      const listRoot = el("div", "addon-rows");
       const actions = el("div", "addon-actions");
-      const clearBtn = el("button", "model-btn", "Clear");
+      const clearBtn = el("button", "model-btn", "Clear all");
       clearBtn.type = "button";
       clearBtn.addEventListener("click", () => {
         getMeasurer(active).list.clear();
         updateRequested.trigger();
       });
       actions.append(clearBtn);
-      root.append(typesRow, unitsRow, hint, section, valuesList, actions);
+      root.append(typesRow, unitsRow, hint, section, listRoot, actions);
 
       let disposed = false;
       let renderGen = 0;
@@ -1042,14 +1068,14 @@ function createMeasurementsAddOn(ctx: AddOnsContext): AddOnDef {
           hint.textContent = "Load an IFC to use this tool";
           unitsRow.style.display = "none";
           section.textContent = "";
-          valuesList.replaceChildren();
+          listRoot.replaceChildren();
           actions.style.display = "none";
           return;
         }
         unitsRow.style.display = "";
         actions.style.display = "";
         hint.textContent =
-          "Double-click in the scene to place measurement points";
+          "Double-click in the scene to place measurement points; press Enter to finish area/volume";
         const measurer = getMeasurer(active);
         unitsSelect.replaceChildren();
         for (const unit of measurer.unitsList) {
@@ -1059,7 +1085,11 @@ function createMeasurementsAddOn(ctx: AddOnsContext): AddOnDef {
           option.selected = unit === measurer.units;
           unitsSelect.append(option);
         }
-        const values: string[] = [];
+        // Read the values first, then build the DOM in one pass: the
+        // loop is async (Volume resolves its value from the worker),
+        // and interleaving awaits with row creation would let a newer
+        // render's rows land inside an older render's list.
+        const rows: { item: any; text: string }[] = [];
         for (const item of measurer.list) {
           let value: unknown;
           try {
@@ -1070,15 +1100,27 @@ function createMeasurementsAddOn(ctx: AddOnsContext): AddOnDef {
           } catch {
             value = "?";
           }
-          values.push(`${value} ${formatUnits(measurer.units)}`);
+          rows.push({ item, text: `${value} ${formatUnits(measurer.units)}` });
         }
         if (disposed || gen !== renderGen) return;
-        section.textContent = values.length
-          ? `${values.length} measurement${values.length === 1 ? "" : "s"}`
+        section.textContent = rows.length
+          ? `${rows.length} measurement${rows.length === 1 ? "" : "s"}`
           : "No measurements yet";
-        valuesList.replaceChildren();
-        values.forEach((value, index) => {
-          valuesList.append(el("li", undefined, `${index + 1}. ${value}`));
+        listRoot.replaceChildren();
+        const measurerRef = measurer;
+        rows.forEach(({ item, text }, index) => {
+          const row = el("div", "addon-plane");
+          row.append(el("span", "addon-value", `${index + 1}. ${text}`));
+          const remove = el("button", "model-btn", "×");
+          remove.type = "button";
+          remove.title = "Remove measurement";
+          // The measurer's `list.onItemDeleted` subscription re-renders
+          // the panel, so no manual trigger here.
+          remove.addEventListener("click", () => {
+            measurerRef.list.delete(item);
+          });
+          row.append(remove);
+          listRoot.append(row);
         });
       };
 
