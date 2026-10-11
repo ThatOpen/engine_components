@@ -5,6 +5,7 @@ import { UUID } from "../../../utils";
 import { IDSFacet } from "./facets";
 import { IDSSpecifications } from "..";
 import { ModelIdMap } from "../../../fragments";
+import { XML } from "../../../utils/xml";
 
 /**
  * Represents a single specification from the Information Delivery Specification (IDS) standard.
@@ -87,15 +88,17 @@ export class IDSSpecification implements IDSSpecificationData {
    * @returns The XML representation of the IDSSpecification.
    */
   serialize() {
-    const name = `name="${this.name}"`;
-    const identifier = this.identifier ? `identifier="${this.identifier}"` : "";
+    const name = `name="${XML.escape(this.name)}"`;
+    const identifier = this.identifier
+      ? `identifier="${XML.escape(this.identifier)}"`
+      : "";
 
     const description = this.description
-      ? `description="${this.description}"`
+      ? `description="${XML.escape(this.description)}"`
       : "";
 
     const instructions = this.instructions
-      ? `instructions="${this.instructions}"`
+      ? `instructions="${XML.escape(this.instructions)}"`
       : "";
 
     const xml = `<specification ifcVersion="${[...this.ifcVersion].join(" ")}" ${name} ${identifier} ${description} ${instructions}>

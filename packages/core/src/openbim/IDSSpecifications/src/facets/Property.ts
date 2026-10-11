@@ -9,6 +9,7 @@ import {
   ModelIdMap,
 } from "../../../../fragments";
 import { ModelIdMapUtils } from "../../../../utils";
+import { XML } from "../../../../utils/xml";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/property-facet.md
 
@@ -46,7 +47,7 @@ export class IDSProperty extends IDSFacet {
       attributes += `cardinality="${this.cardinality}"`;
       attributes += this.uri ? `uri=${this.uri}` : "";
       attributes += this.instructions
-        ? `instructions="${this.instructions}"`
+        ? `instructions="${XML.escape(this.instructions)}"`
         : "";
     }
     return `<property ${dataTypeXML} ${attributes}>
@@ -84,7 +85,10 @@ export class IDSProperty extends IDSFacet {
       // Matching sets, by localId: their name and the property names that
       // matched. A set attached to a type (IfcTypeObject.HasPropertySets)
       // has no DefinesOccurrence, so its elements are found from the type.
-      const matchedSets = new Map<number, { name: string; props: Set<string> }>();
+      const matchedSets = new Map<
+        number,
+        { name: string; props: Set<string> }
+      >();
 
       for (const set of data) {
         const definesOccurrence = set.DefinesOccurrence ?? set.DefinesOcurrence;
@@ -220,7 +224,8 @@ export class IDSProperty extends IDSFacet {
     for (const type of types) {
       if (!Array.isArray(type.HasPropertySets)) continue;
       const sets = type.HasPropertySets.flatMap((set) => {
-        const id = set._localId && "value" in set._localId ? set._localId.value : null;
+        const id =
+          set._localId && "value" in set._localId ? set._localId.value : null;
         const matched = matchedSets.get(id as number);
         return matched ? [matched] : [];
       });
@@ -260,12 +265,15 @@ export class IDSProperty extends IDSFacet {
           const props = list ? set[list] : undefined;
           if (!Array.isArray(props)) return false;
           return props.some(
-            (prop) => prop.Name && "value" in prop.Name && prop.Name.value === propName,
+            (prop) =>
+              prop.Name && "value" in prop.Name && prop.Name.value === propName,
           );
         });
       const inherits = inherited
         .get(id)!
-        .some((set) => [...set.props].some((prop) => !overrides(set.name, prop)));
+        .some((set) =>
+          [...set.props].some((prop) => !overrides(set.name, prop)),
+        );
       if (inherits) applies.push(id);
     }
     ModelIdMapUtils.append(collector, modelId, ...applies);
