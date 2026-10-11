@@ -96,6 +96,7 @@ export class IDSProperty extends IDSFacet {
           !(
             "value" in set._localId &&
             "value" in set._category &&
+            set.Name &&
             "value" in set.Name
           )
         ) {
@@ -311,7 +312,7 @@ export class IDSProperty extends IDSFacet {
 
         const sets = await this.getPsets(item);
         const matchingSets = sets.filter((set) => {
-          if (!("value" in set.Name)) return false;
+          if (!(set.Name && "value" in set.Name)) return false;
           const result = this.evalRequirement(
             set.Name.value,
             this.propertySet,
@@ -353,6 +354,7 @@ export class IDSProperty extends IDSFacet {
           }
 
           const matchingProps = props.filter((item) => {
+            if (!(item._category && item.Name)) return false;
             if (!("value" in item._category && "value" in item.Name))
               return false;
             if (this._unsupportedTypes.includes(item._category.value)) {
@@ -397,7 +399,7 @@ export class IDSProperty extends IDSFacet {
 
   private getPropertyListName(item: FRAGS.ItemData) {
     let propsListName: "HasProperties" | "Quantities" | undefined;
-    if (!("value" in item._category)) return propsListName;
+    if (!(item._category && "value" in item._category)) return propsListName;
 
     if (item._category.value === "IFCPROPERTYSET")
       propsListName = "HasProperties";
@@ -407,10 +409,33 @@ export class IDSProperty extends IDSFacet {
     return propsListName;
   }
 
-  private getValueKey(item: FRAGS.ItemData) {
-    return Object.keys(item).find(
-      (name) => /Value/.test(name) || /Values/.test(name),
-    );
+  // Every value attribute of a property: NominalValue, ListValues,
+  // LowerBoundValue / UpperBoundValue / SetPointValue, EnumerationValues,
+  // DefiningValues / DefinedValues, and the quantities' *Value. Relations
+  // (arrays of items) and unset attributes are left out.
+  private getValueAttrs(item: FRAGS.ItemData) {
+    const attrs: { value: unknown; type?: string }[] = [];
+    for (const [name, attr] of Object.entries(item)) {
+      if (!/Values?$/.test(name) || !attr || Array.isArray(attr)) continue;
+      if (!("value" in attr) || attr.value === null || attr.value === undefined)
+        continue;
+      attrs.push(attr as { value: unknown; type?: string });
+    }
+    return attrs;
+  }
+
+  private describeValues(values: (string | number | boolean)[]) {
+    if (values.length === 0) return null;
+    if (values.length === 1) return values[0];
+    return values.join(", ");
+  }
+
+  // IDS: a property with several values (list, bounded, enumerated, table)
+  // matches when any one of them does.
+  private getValues(item: FRAGS.ItemData) {
+    return this.getValueAttrs(item).flatMap((attr) =>
+      Array.isArray(attr.value) ? attr.value : [attr.value],
+    ) as (string | number | boolean)[];
   }
 
   private getTypePsets(item: FRAGS.ItemData) {
@@ -449,13 +474,13 @@ export class IDSProperty extends IDSFacet {
     const mergedTypeSets = new Set<FRAGS.ItemData>();
 
     for (const definition of item.IsDefinedBy) {
-      if (!("value" in definition.Name)) continue;
+      if (!(definition.Name && "value" in definition.Name)) continue;
       const definitionName = definition.Name.value;
       const propsListName = this.getPropertyListName(definition);
       if (!(definitionName && propsListName)) continue;
 
       const typeSet = typeSets.find((set) => {
-        if (!("value" in set.Name)) return false;
+        if (!(set.Name && "value" in set.Name)) return false;
         return set.Name.value === definitionName;
       });
 
@@ -466,10 +491,10 @@ export class IDSProperty extends IDSFacet {
           Array.isArray(definition.HasProperties)
         ) {
           for (const prop of typeSet.HasProperties) {
-            if (!("value" in prop.Name)) continue;
+            if (!(prop.Name && "value" in prop.Name)) continue;
             const name = prop.Name.value;
             const existingProp = definition.HasProperties.find((p) => {
-              if (!("value" in p.Name)) return false;
+              if (!(p.Name && "value" in p.Name)) return false;
               return p.Name.value === name;
             });
             if (!existingProp) definition.HasProperties.push(prop);
@@ -490,67 +515,40 @@ export class IDSProperty extends IDSFacet {
     return sets;
   }
 
-  // IFCPROPERTYBOUNDEDVALUE are not supported yet
-  // IFCPROPERTYTABLEVALUE are not supported yet
   // TODO: Work must to be done to convert numerical value units to IDS-nominated standard units https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/units.md
   private evalValue(item: FRAGS.ItemData, checks?: IDSCheck[]) {
-    const valueKey = this.getValueKey(item) as any;
-    const valueAttr = item[valueKey];
-    if (!("value" in valueAttr)) return false;
+    const values = this.getValues(item);
 
     if (this.value) {
-      if (!valueKey) {
-        checks?.push({
-          parameter: "Value",
-          currentValue: null,
-          pass: false,
-          requiredValue: this.value,
-        });
-        return false;
+      const facetValue = this.value;
+      const match = values.find((value) => {
+        const parameter = structuredClone(facetValue);
+        // The IDS XML parser coerces numeric-looking simpleValues to JS numbers
+        // (e.g. "410.20257" becomes 410.20257). When the actual IFC value is a
+        // string (IFCTEXT, IFCIDENTIFIER, IFCLABEL, ...), a strict comparison
+        // against that number always fails, so align the facet value to a
+        // string whenever the property value is a string (issue #731).
+        if (typeof value === "string" && parameter.type === "simple") {
+          parameter.parameter = String(parameter.parameter);
+        }
+        return this.evalRequirement(value, parameter, "Value");
+      });
+      const pass = match !== undefined;
+      if (checks) {
+        this.addCheckResult(
+          {
+            parameter: "Value",
+            currentValue: pass ? match : this.describeValues(values),
+            pass,
+            requiredValue: facetValue,
+          },
+          checks,
+        );
       }
-
-      const facetValue = structuredClone(this.value);
-      // The IDS XML parser coerces numeric-looking simpleValues to JS numbers
-      // (e.g. "410.20257" becomes 410.20257). When the actual IFC value is a
-      // string (IFCTEXT, IFCIDENTIFIER, IFCLABEL, ...), a strict comparison
-      // against that number always fails, so align the facet value to a string
-      // whenever the property value is a string (issue #731).
-      if (typeof valueAttr.value === "string" && facetValue.type === "simple") {
-        facetValue.parameter = String(facetValue.parameter);
-      }
-
-      // if (
-      //   (item.type === WEBIFC.IFCPROPERTYLISTVALUE ||
-      //     item.type === WEBIFC.IFCPROPERTYENUMERATEDVALUE) &&
-      //   Array.isArray(valueAttr)
-      // ) {
-      //   const values = valueAttr.map((value) => value.value);
-      //   const matchingValue = valueAttr.find((value) => {
-      //     if (!facetValue) return false;
-      //     return this.evalRequirement(value.value, facetValue, "Value");
-      //   });
-
-      //   checks?.push({
-      //     currentValue: values as any,
-      //     pass: !!matchingValue,
-      //     parameter: "Value",
-      //     requiredValue: facetValue.parameter,
-      //   });
-
-      //   return !!matchingValue;
-      // }
-
-      const result = this.evalRequirement(
-        valueAttr.value,
-        facetValue,
-        "Value",
-        checks,
-      );
-
-      return result;
+      return pass;
     }
 
-    if (!valueKey) return true;
+    if (values.length === 0) return true;
 
     // IDSDocs: Values with a logical unknown always fail
     // if (valueAttr.type === 3 && valueAttr.value === 2) {
@@ -564,7 +562,7 @@ export class IDSProperty extends IDSFacet {
     // }
 
     // IDSDocs: An empty string is considered false
-    if (typeof valueAttr.value === "string" && valueAttr.value.trim() === "") {
+    if (values.every((v) => typeof v === "string" && v.trim() === "")) {
       checks?.push({
         parameter: "Value",
         currentValue: "",
@@ -579,51 +577,24 @@ export class IDSProperty extends IDSFacet {
 
   private evalDataType(item: FRAGS.ItemData, checks?: IDSCheck[]) {
     if (!this.dataType) return true;
-    const valueKey = this.getValueKey(item);
-
-    if (!(valueKey && "value" in item[valueKey])) {
-      checks?.push({
-        parameter: "DataType",
-        currentValue: null,
-        pass: false,
-        requiredValue: this.dataType,
-      });
-      return false;
-    }
-
-    const valueAttr = item[valueKey];
-
-    // TODO: Redo this
-    // if (
-    //   (item.type === WEBIFC.IFCPROPERTYLISTVALUE ||
-    //     item.type === WEBIFC.IFCPROPERTYENUMERATEDVALUE) &&
-    //   Array.isArray(valueAttr) &&
-    //   valueAttr[0]
-    // ) {
-    //   const valueType = valueAttr[0].name;
-    //   const result = this.evalRequirement(
-    //     valueType,
-    //     {
-    //       type: "simple",
-    //       parameter: this.dataType,
-    //     },
-    //     "DataType",
-    //     checks,
-    //   );
-    //   return result;
-    // }
-
-    const result = this.evalRequirement(
-      (valueAttr as any).type ?? null,
-      {
-        type: "simple",
-        parameter: this.dataType,
-      },
-      "DataType",
-      checks,
+    const types = this.getValueAttrs(item).map((attr) => attr.type ?? null);
+    const dataType = { type: "simple" as const, parameter: this.dataType };
+    const match = types.find((type) =>
+      this.evalRequirement(type, dataType, "DataType"),
     );
-
-    return result;
+    const pass = match !== undefined;
+    if (checks) {
+      this.addCheckResult(
+        {
+          parameter: "DataType",
+          currentValue: pass ? match : types[0] ?? null,
+          pass,
+          requiredValue: dataType,
+        },
+        checks,
+      );
+    }
+    return pass;
   }
 
   private evalURI() {
