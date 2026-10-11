@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.4.10](https://github.com/ThatOpen/engine_components/compare/v3.4.9...v3.4.10) (2026-10-11)
+
+
+### Bug Fixes
+
+* **ids:** check a type object's own property sets in IDSProperty ([#824](https://github.com/ThatOpen/engine_components/issues/824)) ([b53b7a4](https://github.com/ThatOpen/engine_components/commit/b53b7a400333db24126ad8bff969d23ac88c0e6a))
+* **ids:** decode XML entities on load and escape values on export ([#818](https://github.com/ThatOpen/engine_components/issues/818)) ([efab61f](https://github.com/ThatOpen/engine_components/commit/efab61f75865bad0c59cb2516da626dce0f52a57))
+* **ids:** don't crash on properties without data; match any value of list, bounded, enumerated and table properties ([#828](https://github.com/ThatOpen/engine_components/issues/828)) ([9b38c87](https://github.com/ThatOpen/engine_components/commit/9b38c8768cc8b0eadc633591f7639ecbce664ada))
+* **ids:** handle entities without a PredefinedType attribute ([#820](https://github.com/ThatOpen/engine_components/issues/820)) ([f73dfaa](https://github.com/ThatOpen/engine_components/commit/f73dfaa576f979845a176178feca6958f0eb9b92))
+
 ## [3.4.0](https://github.com/ThatOpen/engine_components/compare/v3.3.2...v3.4.0) (2026-04-09)
 
 
