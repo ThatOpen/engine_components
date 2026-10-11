@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 import * as THREE from "three";
 import * as FRAGS from "@thatopen/fragments";
-import { UUID } from "../../../utils";
+import { UUID, XML } from "../../../utils";
 import {
   ViewpointVector,
   BCFViewpoint,
@@ -648,26 +648,33 @@ export class Viewpoint {
           const globalID = await item.getGuid();
           if (!globalID) continue;
           const tag = (await item.getAttributes())?.getValue("Tag");
-          let tagAttribute: string | null = null;
-          if (tag) tagAttribute = `AuthoringToolId="${tag}"`;
-          tags += `\n<Component IfcGuid="${globalID}" ${tagAttribute ?? ""} />`;
+          // AuthoringToolId is a child element in both BCF 2.1 and 3.0.
+          tags += tag
+            ? `\n<Component IfcGuid="${XML.escape(globalID)}"><AuthoringToolId>${XML.escape(tag)}</AuthoringToolId></Component>`
+            : `\n<Component IfcGuid="${XML.escape(globalID)}" />`;
         }
       }
     } else {
-      tags = [...this.selectionComponents]
-        .map((globalId) => `<Component IfcGuid="${globalId}" />`)
+      const guids =
+        from === "selection"
+          ? this.selectionComponents
+          : this.exceptionComponents;
+      tags = [...guids]
+        .map((globalId) => `<Component IfcGuid="${XML.escape(globalId)}" />`)
         .join(`\n`);
     }
     return tags;
   }
 
-  private createColorTags() {
+  private createColorTags(version: string) {
     let colorTags = "";
     for (const [color, components] of this.componentColors.entries()) {
-      const tags = components
-        .map((globalId) => `\n<Component IfcGuid="${globalId}" />`)
+      let tags = components
+        .map((globalId) => `\n<Component IfcGuid="${XML.escape(globalId)}" />`)
         .join("\n");
-      colorTags += `<Color Color="${color}">\n${tags}\n</Color>`;
+      // BCF 3.0 wraps a colour's components in <Components>; 2.1 does not.
+      if (version === "3") tags = `<Components>${tags}\n</Components>`;
+      colorTags += `<Color Color="${XML.escape(color)}">\n${tags}\n</Color>`;
     }
 
     if (colorTags.length !== 0) {
@@ -796,7 +803,11 @@ export class Viewpoint {
       <Z>${upVector.y}</Z>
     </CameraUpVector>`;
 
-    const cameraRatioXML = `<AspectRatio>${this.camera.aspect_ratio}</AspectRatio>`;
+    // AspectRatio exists only in BCF 3.0, after ViewToWorldScale / FieldOfView.
+    const cameraRatioXML =
+      version === "3"
+        ? `<AspectRatio>${this.camera.aspect_ratio}</AspectRatio>`
+        : "";
 
     let cameraXML = "";
     if ("view_to_world_scale" in this.camera) {
@@ -804,16 +815,16 @@ export class Viewpoint {
         ${cameraViewpointXML}
         ${cameraDirectionXML}
         ${cameraUpVectorXML}
-        ${cameraRatioXML}
         <ViewToWorldScale>${this.camera.view_to_world_scale}</ViewToWorldScale>
+        ${cameraRatioXML}
       </OrthogonalCamera>`;
     } else if ("field_of_view" in this.camera) {
       cameraXML = `<PerspectiveCamera>
         ${cameraViewpointXML}
         ${cameraDirectionXML}
         ${cameraUpVectorXML}
-        ${cameraRatioXML}
         <FieldOfView>${this.camera.field_of_view}</FieldOfView>
+        ${cameraRatioXML}
       </PerspectiveCamera>`;
     }
 
@@ -821,7 +832,7 @@ export class Viewpoint {
 
     const selectionTags = (await this.createComponentTags("selection")).trim();
     const exceptionTags = (await this.createComponentTags("exception")).trim();
-    const colorTags = this.createColorTags();
+    const colorTags = this.createColorTags(version);
 
     return `<?xml version="1.0" encoding="UTF-8"?>
     <VisualizationInfo Guid="${this.guid}">
