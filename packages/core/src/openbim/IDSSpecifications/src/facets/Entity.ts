@@ -167,10 +167,24 @@ export class IDSEntity extends IDSFacet {
       const model = fragments.list.get(modelId);
       if (model && "value" in itemData._localId) {
         const [data] = await model.getItemsData([itemData._localId.value], {
-          relations: { IsTypedBy: { attributes: true, relations: false } },
+          relations: {
+            IsTypedBy: { attributes: true, relations: false },
+            IsDefinedBy: { attributes: true, relations: false },
+          },
         });
-        if (Array.isArray(data.IsTypedBy)) {
-          const typeAttrs = data.IsTypedBy[0];
+        // The type is reached through IsTypedBy or, in models converted by
+        // IfcImporter, through IsDefinedBy (as in IDSProperty.getTypePsets).
+        const definitions = [
+          ...(Array.isArray(data.IsTypedBy) ? data.IsTypedBy : []),
+          ...(Array.isArray(data.IsDefinedBy) ? data.IsDefinedBy : []),
+        ];
+        const typeAttrs = definitions.find(
+          (definition) =>
+            definition?._category &&
+            "value" in definition._category &&
+            /TYPE$/.test(String(definition._category.value)),
+        );
+        if (typeAttrs) {
           if (
             typeAttrs?.PredefinedType &&
             "value" in typeAttrs.PredefinedType
