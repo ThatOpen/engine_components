@@ -84,7 +84,10 @@ export class IDSProperty extends IDSFacet {
       // Matching sets, by localId: their name and the property names that
       // matched. A set attached to a type (IfcTypeObject.HasPropertySets)
       // has no DefinesOccurrence, so its elements are found from the type.
-      const matchedSets = new Map<number, { name: string; props: Set<string> }>();
+      const matchedSets = new Map<
+        number,
+        { name: string; props: Set<string> }
+      >();
 
       for (const set of data) {
         const definesOccurrence = set.DefinesOccurrence ?? set.DefinesOcurrence;
@@ -220,7 +223,8 @@ export class IDSProperty extends IDSFacet {
     for (const type of types) {
       if (!Array.isArray(type.HasPropertySets)) continue;
       const sets = type.HasPropertySets.flatMap((set) => {
-        const id = set._localId && "value" in set._localId ? set._localId.value : null;
+        const id =
+          set._localId && "value" in set._localId ? set._localId.value : null;
         const matched = matchedSets.get(id as number);
         return matched ? [matched] : [];
       });
@@ -260,12 +264,15 @@ export class IDSProperty extends IDSFacet {
           const props = list ? set[list] : undefined;
           if (!Array.isArray(props)) return false;
           return props.some(
-            (prop) => prop.Name && "value" in prop.Name && prop.Name.value === propName,
+            (prop) =>
+              prop.Name && "value" in prop.Name && prop.Name.value === propName,
           );
         });
       const inherits = inherited
         .get(id)!
-        .some((set) => [...set.props].some((prop) => !overrides(set.name, prop)));
+        .some((set) =>
+          [...set.props].some((prop) => !overrides(set.name, prop)),
+        );
       if (inherits) applies.push(id);
     }
     ModelIdMapUtils.append(collector, modelId, ...applies);
@@ -420,6 +427,12 @@ export class IDSProperty extends IDSFacet {
       if (Array.isArray(definition?.HasPropertySets)) {
         psets.push(...definition.HasPropertySets);
       }
+    }
+
+    // When the item is itself a type object (e.g. an IfcWallType selected by
+    // the applicability), its own property sets are in HasPropertySets.
+    if (Array.isArray(item.HasPropertySets)) {
+      psets.push(...item.HasPropertySets);
     }
 
     return psets;
