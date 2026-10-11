@@ -62,21 +62,19 @@ export abstract class IDSFacet {
     }
 
     if (facetParameter.type === "pattern") {
-      const regex = new RegExp(facetParameter.parameter);
+      // XSD patterns match the whole value, not a substring.
+      const regex = new RegExp(`^(?:${facetParameter.parameter})$`);
       pass = regex.test(String(value));
     }
 
     if (facetParameter.type === "length") {
+      // Every given limit must hold, not just the last one checked.
       const { min, length, max } = facetParameter.parameter;
-      if (length !== undefined) {
-        pass = String(value).length === length;
-      }
-      if (min !== undefined) {
-        pass = String(value).length >= min;
-      }
-      if (max !== undefined) {
-        pass = String(value).length <= max;
-      }
+      const valueLength = String(value).length;
+      pass =
+        (length === undefined || valueLength === length) &&
+        (min === undefined || valueLength >= min) &&
+        (max === undefined || valueLength <= max);
     }
 
     if (facetParameter.type === "bounds" && typeof value === "number") {
