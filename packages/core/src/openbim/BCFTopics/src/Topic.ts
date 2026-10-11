@@ -277,7 +277,7 @@ export class Topic implements BCFTopic {
     return viewpoints.map((viewpoint) => {
       const xmlData: Record<string, string> = {
         $Guid: viewpoint.guid,
-        Viewpoint: `${viewpoint.title ?? viewpoint.guid}.bcfv`,
+        Viewpoint: `${viewpoint.guid}.bcfv`,
       };
       const snapshotData = manager.snapshots.get(viewpoint.snapshot);
       if (snapshotData) {
