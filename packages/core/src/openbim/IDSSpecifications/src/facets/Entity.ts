@@ -140,13 +140,16 @@ export class IDSEntity extends IDSFacet {
     checks?: IDSCheck[],
   ) {
     if (!this.predefinedType) return null;
-    if (!("value" in itemData.PredefinedType)) return null;
 
     const isRequirementUserDefined =
       typeof this.predefinedType.parameter === "string" &&
       this.predefinedType.parameter === "USERDEFINED";
 
-    let value = itemData.PredefinedType.value;
+    // Some entities (e.g. IfcSite in IFC4) have no PredefinedType attribute
+    // at all; their item data has no such key. Treat that as "no value", so
+    // the requirement fails instead of throwing.
+    const own = itemData.PredefinedType;
+    let value = own && "value" in own ? own.value : undefined;
 
     // TODO: Do not remember what is this for
     if (value === "USERDEFINED" && !isRequirementUserDefined) {
@@ -165,11 +168,28 @@ export class IDSEntity extends IDSFacet {
       const model = fragments.list.get(modelId);
       if (model && "value" in itemData._localId) {
         const [data] = await model.getItemsData([itemData._localId.value], {
-          relations: { IsTypedBy: { attributes: true, relations: false } },
+          relations: {
+            IsTypedBy: { attributes: true, relations: false },
+            IsDefinedBy: { attributes: true, relations: false },
+          },
         });
-        if (Array.isArray(data.IsTypedBy)) {
-          const typeAttrs = data.IsTypedBy[0];
-          if (typeAttrs && "value" in typeAttrs.PredefinedType) {
+        // The type is reached through IsTypedBy or, in models converted by
+        // IfcImporter, through IsDefinedBy (as in IDSProperty.getTypePsets).
+        const definitions = [
+          ...(Array.isArray(data.IsTypedBy) ? data.IsTypedBy : []),
+          ...(Array.isArray(data.IsDefinedBy) ? data.IsDefinedBy : []),
+        ];
+        const typeAttrs = definitions.find(
+          (definition) =>
+            definition?._category &&
+            "value" in definition._category &&
+            /TYPE$/.test(String(definition._category.value)),
+        );
+        if (typeAttrs) {
+          if (
+            typeAttrs?.PredefinedType &&
+            "value" in typeAttrs.PredefinedType
+          ) {
             value = typeAttrs.PredefinedType.value;
             if (value === "USERDEFINED" && !isRequirementUserDefined) {
               const attrNames = Object.keys(typeAttrs);
