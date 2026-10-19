@@ -25,7 +25,7 @@ export class PostproductionRenderer extends RendererWith2D {
   manualModeDelay = 50;
 
   private _postproduction?: Postproduction;
-  private _timeout: any;
+  private _timeout: ReturnType<typeof setTimeout> | null = null;
   private _previousStyle: PostproductionAspect = PostproductionAspect.COLOR;
   private _previousEnabled: boolean = false;
   /**
@@ -88,9 +88,15 @@ export class PostproductionRenderer extends RendererWith2D {
 
     const isManualMode = this.mode === OBC.RendererMode.MANUAL;
     if (isManualMode) {
-      if (this.turnOffOnManualMode && this.postproduction.enabled) {
-        this._previousEnabled = this.postproduction.enabled;
-        this.postproduction.enabled = false;
+      if (this.turnOffOnManualMode) {
+        // Record the app's value only on the first paint of a burst: from
+        // the second paint on, `enabled` is the `false` set right below.
+        if (this._timeout === null) {
+          this._previousEnabled = this.postproduction.enabled;
+        }
+        if (this.postproduction.enabled) {
+          this.postproduction.enabled = false;
+        }
       }
 
       if (this.manualDefaultStyle !== this.postproduction.style) {
@@ -114,13 +120,16 @@ export class PostproductionRenderer extends RendererWith2D {
       }
 
       this._timeout = setTimeout(() => {
+        this._timeout = null;
         if (this.turnOffOnManualMode) {
           this.postproduction.enabled = this._previousEnabled;
         }
 
         this.setStyleWithoutEvent(this._previousStyle);
 
-        this.postproduction.update();
+        if (this.postproduction.enabled) {
+          this.postproduction.update();
+        }
       }, this.manualModeDelay);
     }
 
@@ -129,6 +138,10 @@ export class PostproductionRenderer extends RendererWith2D {
 
   /** {@link OBC.Disposable.dispose}. */
   dispose() {
+    if (this._timeout !== null) {
+      clearTimeout(this._timeout);
+      this._timeout = null;
+    }
     super.dispose();
     this.postproduction.dispose();
   }
