@@ -85,7 +85,21 @@ export class LengthMeasurement extends Measurement<Line, "length"> {
     });
   }
 
-  private async initPreview() {
+  /** The preview being built while its pick is pending. A second click
+   *  (or an enable / mode change) in that window joins it instead of
+   *  building another preview. */
+  private _pendingPreview: Promise<void> | null = null;
+
+  private initPreview() {
+    if (!this._pendingPreview) {
+      this._pendingPreview = this.buildPreview().finally(() => {
+        this._pendingPreview = null;
+      });
+    }
+    return this._pendingPreview;
+  }
+
+  private async buildPreview() {
     if (!this.world) {
       throw new Error("Measurement: world is need!");
     }
@@ -96,6 +110,12 @@ export class LengthMeasurement extends Measurement<Line, "length"> {
     const pickResult =
       this.lastPick ??
       (await this._vertexPicker.get({ snappingClasses: this.snappings }));
+
+    // Disabled or disposed while the pick was pending.
+    if (!this.enabled) return;
+    // Never orphan a preview that is still in the scene.
+    this._temp.dimension?.dispose();
+    this._temp.dimension = undefined;
 
     if (this.mode === "free") {
       if (!pickResult?.point) return;
@@ -225,6 +245,15 @@ export class LengthMeasurement extends Measurement<Line, "length"> {
     this._temp.dimension?.dispose();
     this._temp.dimension = undefined;
   };
+
+  dispose() {
+    // `cancelCreation` is a no-op once disabled, and disabling does not
+    // remove the edge-mode preview, so dispose it here directly.
+    this._temp.isDragging = false;
+    this._temp.dimension?.dispose();
+    this._temp.dimension = undefined;
+    super.dispose();
+  }
 
   delete = () => {
     if (!this.enabled) return;

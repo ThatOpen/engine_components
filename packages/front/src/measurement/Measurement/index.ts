@@ -177,6 +177,12 @@ export abstract class Measurement<
    *  the canvas (or floats over a UI panel sitting above it). */
   private _pointerLeaveHandler: (() => void) | null = null;
 
+  /** Targets the listeners above were attached to. Detaching uses these
+   *  rather than the current world, so it also works when the world has
+   *  changed or is being disposed. */
+  private _eventsContainer: HTMLElement | null = null;
+  private _eventsControls: any = null;
+
   private onMove = () => {
     if (!this.enabled) return;
 
@@ -268,6 +274,7 @@ export abstract class Measurement<
       throw new Error("Measurement: you must specify a world first!");
     }
     if (this.world.isDisposing) {
+      this.detachEvents();
       return;
     }
     if (!this.world.renderer) {
@@ -277,15 +284,8 @@ export abstract class Measurement<
     const viewerContainer = canvas.parentElement as HTMLElement;
     if (!viewerContainer) return;
 
-    viewerContainer.removeEventListener("pointermove", this.onMove);
-    window.removeEventListener("keydown", this.onKeydown);
-    if (this._pointerLeaveHandler) {
-      viewerContainer.removeEventListener(
-        "pointerleave",
-        this._pointerLeaveHandler,
-      );
-      this._pointerLeaveHandler = null;
-    }
+    this.detachEvents();
+
     // Camera-controls listeners: gate picks on user input (drag +
     // wheel) rather than on `update` events. The matrix-change
     // `update` event fires throughout damping inertia after the
@@ -294,25 +294,10 @@ export abstract class Measurement<
     // exact "user is touching the camera" boundaries; wheel needs
     // its own debounce because it doesn't fire start / end.
     const controls = (this.world.camera as any)?.controls;
-    if (controls && this._onCtrlStart) {
-      controls.removeEventListener("controlstart", this._onCtrlStart);
-    }
-    if (controls && this._onCtrlEnd) {
-      controls.removeEventListener("controlend", this._onCtrlEnd);
-    }
-    if (this._onWheel) {
-      viewerContainer.removeEventListener("wheel", this._onWheel);
-    }
-    this._onCtrlStart = null;
-    this._onCtrlEnd = null;
-    this._onWheel = null;
-    if (this._wheelIdleTimer !== null) {
-      clearTimeout(this._wheelIdleTimer);
-      this._wheelIdleTimer = null;
-    }
-    this._cameraInteracting = false;
 
     if (active) {
+      this._eventsContainer = viewerContainer;
+      this._eventsControls = controls ?? null;
       viewerContainer.addEventListener("pointermove", this.onMove);
       window.addEventListener("keydown", this.onKeydown);
 
@@ -371,6 +356,42 @@ export abstract class Measurement<
         passive: true,
       });
     }
+  }
+
+  /** Removes everything {@link setEvents} attached. Needs no world. */
+  private detachEvents() {
+    window.removeEventListener("keydown", this.onKeydown);
+    const viewerContainer = this._eventsContainer;
+    if (viewerContainer) {
+      viewerContainer.removeEventListener("pointermove", this.onMove);
+      if (this._pointerLeaveHandler) {
+        viewerContainer.removeEventListener(
+          "pointerleave",
+          this._pointerLeaveHandler,
+        );
+      }
+      if (this._onWheel) {
+        viewerContainer.removeEventListener("wheel", this._onWheel);
+      }
+    }
+    const controls = this._eventsControls;
+    if (controls && this._onCtrlStart) {
+      controls.removeEventListener("controlstart", this._onCtrlStart);
+    }
+    if (controls && this._onCtrlEnd) {
+      controls.removeEventListener("controlend", this._onCtrlEnd);
+    }
+    this._eventsContainer = null;
+    this._eventsControls = null;
+    this._pointerLeaveHandler = null;
+    this._onCtrlStart = null;
+    this._onCtrlEnd = null;
+    this._onWheel = null;
+    if (this._wheelIdleTimer !== null) {
+      clearTimeout(this._wheelIdleTimer);
+      this._wheelIdleTimer = null;
+    }
+    this._cameraInteracting = false;
   }
 
   readonly onEnabledChange = new OBC.Event<Boolean>();
@@ -669,6 +690,17 @@ export abstract class Measurement<
   delete = (_data?: any) => {};
 
   dispose() {
+    // Cancel while still enabled: subclasses only cancel when enabled.
+    this.cancelCreation();
+    this._enabled = false;
+    this.detachEvents();
+    if (this.pointerStopTimeout !== null) {
+      clearTimeout(this.pointerStopTimeout);
+      this.pointerStopTimeout = null;
+    }
+    if (this._world?.renderer) {
+      this._world.renderer.onResize.remove(this._onWorldResize);
+    }
     this._vertexPicker.dispose();
     this.list.clear();
     this._basicLinesMaterial.dispose();
