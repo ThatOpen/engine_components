@@ -147,3 +147,12 @@ node-app
 .claude/
 
 resources/frags/test/
+
+# local IFC projects: models and the generated gallery are not committed
+/projects/*/
+/projects/index.html
+/projects/.dev-server.*
+
+# pnpm artifacts (local setup; the repo installs with yarn)
+pnpm-lock.yaml
+pnpm-workspace.yaml
