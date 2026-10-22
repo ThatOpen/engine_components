@@ -48,6 +48,12 @@ await world.camera.controls.setLookAt(68, 23, -8.5, 21.5, -5.5, 23);
 
 components.init();
 
+// Postproduction: the deferred pipeline with the Color Pen Shadows style.
+world.renderer.postproduction.enabled = true;
+world.renderer.postproduction.mode = OBF.PostproductionMode.DEFERRED;
+world.renderer.postproduction.style =
+  OBF.PostproductionAspect.COLOR_PEN_SHADOWS;
+
 /* MD
   ### 🛠️ Setting Up Fragments
   Now, let's configure the FragmentsManager. This will allow us to load models effortlessly and start manipulating them with ease:

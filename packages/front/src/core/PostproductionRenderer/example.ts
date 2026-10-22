@@ -2,11 +2,11 @@
 ### 🎥 Great graphics
 ---
 
-  The default Three.js renderer produces flat geometry that looks raw in production BIM apps — no edge definition, no depth cues, no polish. Adding those effects manually means wiring multiple render passes and managing their interactions.
+  The default Three.js renderer produces flat geometry that looks raw in production BIM apps: no edge definition, no depth cues, no polish. Adding those effects manually means wiring multiple render passes and managing their interactions.
 
-  The PostproductionRenderer stacks GPU passes on top of the base render — ambient occlusion, edge detection, outlines, anti-aliasing, and preset visual styles — as a single drop-in renderer replacement.
+  The PostproductionRenderer stacks GPU passes on top of the base render (ambient occlusion, edge detection, outlines, anti-aliasing, and preset visual styles) as a single drop-in renderer replacement. It can run two pipelines: the classic Composer stack of passes, and the Deferred pipeline, which captures the scene once into a G-buffer and then computes ambient occlusion, contours, sheen and anti-aliasing from it.
 
-  This tutorial covers enabling postproduction on a loaded BIM model; outlining specific elements via the Outliner; switching between visual style presets (Basic, Pen, Shadowed Pen, Color Pen, Color Shadows, Color Pen Shadows); configuring edge detection width, color, and mode; adjusting outline thickness and fill opacity; tuning ambient occlusion parameters (GTAO and PD); toggling SMAA anti-aliasing; and excluding specific objects from postproduction effects.
+  This tutorial covers enabling postproduction on a loaded BIM model; switching between the Composer and Deferred pipelines; outlining specific elements via the Outliner; switching between visual style presets (Basic, Pen, Shadowed Pen, Color Pen, Color Shadows, Color Pen Shadows); tuning the deferred ambient occlusion (screen-space or world-space), denoise and composite; configuring edge detection width, color, and mode; adjusting outline thickness and fill opacity; tuning the composer ambient occlusion parameters (GTAO and PD); toggling SMAA anti-aliasing; and excluding specific objects from postproduction effects.
 
   By the end, you'll have a fully configurable postproduction pipeline with live controls for every visual pass.
 */
@@ -142,18 +142,29 @@ await Promise.all(
 
   Now we will activate the postproduction effect and enable the visibility for postproduction layer.
 
+  We will also pick the rendering pipeline. The postproduction can run in two modes: `COMPOSER`, the classic stack of passes, and `DEFERRED`, which captures the scene once into a G-buffer and builds ambient occlusion, contours, sheen and anti-aliasing from it. We'll start in `DEFERRED` mode; you can switch between both from the menu later.
+
 */
 
 world.renderer.postproduction.enabled = true;
+world.renderer.postproduction.style =
+  OBF.PostproductionAspect.COLOR_PEN_SHADOWS;
 world.dynamicAnchor = false;
 
 world.renderer!.postproduction.basePass.isolatedMaterials.push(grid.material);
+
+// Run the deferred pipeline by default. Touch `.deferred` first so it is
+// allocated and sized before the first frame.
+void world.renderer.postproduction.deferred;
+world.renderer.postproduction.mode = OBF.PostproductionMode.DEFERRED;
 
 // Outline
 
 const model = fragments.list.values().next().value!;
 const outliner = components.get(OBF.Outliner);
 outliner.world = world;
+// Turn outlines on so the selection is stroked in both composer and deferred.
+outliner.enabled = true;
 const walls = await model.getItemsOfCategories([/IFCWALL/]);
 const wallsIds = walls.IFCWALL;
 const [wall1, wall2] = wallsIds;
@@ -180,6 +191,15 @@ outliner.addItems({ [model.modelId]: new Set([wall1, wall2]) });
   ---
 
   We'll use the [Stats.js](https://github.com/mrdoob/stats.js) to measure the performance of our app. We will add it to the top left corner of the viewport. This way, we'll make sure that the memory consumption and the FPS of our app are under control.
+
+  :::tip Feels slow while moving the camera?
+
+  The deferred pipeline does more work per frame than the classic one. If navigating feels slow on your machine, try these, from simplest to most involved:
+
+  1. Lower the **Render scale** (Deferred · Pipeline): the pipeline renders at a fraction of the screen resolution.
+  2. Turn on **Manual mode**: the renderer only draws when something changes, instead of every frame.
+
+  :::
 */
 
 const stats = new Stats();
@@ -229,6 +249,20 @@ world.renderer.postproduction.excludedObjectsPass.addExcludedMaterial(
   cube.material,
 );
 
+/* MD
+  The deferred pipeline exposes its own settings. Each of its passes keeps a settings object that it re-reads every frame, so changing these values from the menu takes effect on the next render without any explicit "apply" step.
+*/
+
+const deferred = world.renderer.postproduction.deferred;
+const aoSettings = deferred.ao.settings;
+const worldAoSettings = deferred.worldAo.settings;
+const denoiseSettings = deferred.denoise.settings;
+const lookSettings = deferred.composite.settings;
+
+/* MD
+  Now let's build the menu. The "General" section applies to both pipelines. The sections whose title starts with "Deferred" only apply to the deferred pipeline, and the rest of the postproduction sections only apply to the composer one, so we tag them with the `deferred-only` and `composer-only` classes to show only the ones for the active mode.
+*/
+
 const panel = BUI.Component.create<BUI.PanelSection>(() => {
   return BUI.html`
   <bim-panel active label="Postproduction Tutorial" class="options-menu">
@@ -241,6 +275,377 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           updateIfManualMode();
         }}">
       </bim-checkbox>
+
+      <bim-dropdown required label="Postproduction mode"
+        @change="${({ target }: { target: BUI.Dropdown }) => {
+          const picked = Number(target.value[0]) as OBF.PostproductionMode;
+          world.renderer!.postproduction.mode = picked;
+          applyModeVisibility(picked);
+          updateIfManualMode();
+        }}">
+        <bim-option label="Composer" value="${OBF.PostproductionMode.COMPOSER}"></bim-option>
+        <bim-option checked label="Deferred" value="${OBF.PostproductionMode.DEFERRED}"></bim-option>
+      </bim-dropdown>
+
+      <bim-dropdown required label="Projection"
+        @change="${async ({ target }: { target: BUI.Dropdown }) => {
+          const projection = target.value[0] as OBC.CameraProjection;
+          await world.camera.projection.set(projection);
+          for (const model of fragments.list.values()) {
+            model.useCamera(world.camera.three);
+          }
+          world.renderer!.postproduction.updateCamera();
+          updateIfManualMode();
+        }}">
+        <bim-option checked label="Perspective" value="Perspective"></bim-option>
+        <bim-option label="Orthographic" value="Orthographic"></bim-option>
+      </bim-dropdown>
+
+      <bim-button label="${outliner.enabled ? "Outline: ON" : "Outline: OFF"}"
+        @click="${({ target }: { target: BUI.Button }) => {
+          outliner.enabled = !outliner.enabled;
+          target.label = outliner.enabled ? "Outline: ON" : "Outline: OFF";
+          updateIfManualMode();
+        }}">
+      </bim-button>
+
+    </bim-panel-section>
+
+    <bim-panel-section class="deferred-only" label="Deferred · Pipeline">
+
+      <bim-dropdown required label="Visual style"
+        @change="${({ target }: { target: BUI.Dropdown }) => {
+          world.renderer!.postproduction.style = Number(
+            target.value[0],
+          ) as OBF.PostproductionAspect;
+          updateIfManualMode();
+        }}">
+        <bim-option label="Color" value="${OBF.PostproductionAspect.COLOR}"></bim-option>
+        <bim-option label="Pen" value="${OBF.PostproductionAspect.PEN}"></bim-option>
+        <bim-option label="Pen shadows" value="${OBF.PostproductionAspect.PEN_SHADOWS}"></bim-option>
+        <bim-option label="Color pen" value="${OBF.PostproductionAspect.COLOR_PEN}"></bim-option>
+        <bim-option label="Color shadows" value="${OBF.PostproductionAspect.COLOR_SHADOWS}"></bim-option>
+        <bim-option checked label="Color pen shadows" value="${OBF.PostproductionAspect.COLOR_PEN_SHADOWS}"></bim-option>
+      </bim-dropdown>
+
+      <bim-checkbox label="Ambient occlusion enabled"
+        ?checked=${deferred.settings.aoEnabled}
+        @change="${({ target }: { target: BUI.Checkbox }) => {
+          deferred.settings.aoEnabled = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-checkbox>
+
+      <bim-dropdown required label="AO estimator"
+        @change="${({ target }: { target: BUI.Dropdown }) => {
+          deferred.settings.aoMode = Number(
+            target.value[0],
+          ) as OBF.DeferredAoMode;
+          updateIfManualMode();
+        }}">
+        <bim-option checked label="Screen-space" value="${OBF.DeferredAoMode.SCREEN_SPACE}"></bim-option>
+        <bim-option label="World-space" value="${OBF.DeferredAoMode.WORLD_SPACE}"></bim-option>
+      </bim-dropdown>
+
+      <bim-checkbox label="Anti-aliasing (FXAA)"
+        ?checked=${deferred.settings.fxaaEnabled}
+        @change="${({ target }: { target: BUI.Checkbox }) => {
+          deferred.settings.fxaaEnabled = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-checkbox>
+
+      <bim-checkbox label="Half-resolution AO (faster, softer)"
+        ?checked=${deferred.aoHalfRes}
+        @change="${({ target }: { target: BUI.Checkbox }) => {
+          deferred.aoHalfRes = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-checkbox>
+
+      <bim-checkbox label="Tonal orientation shade"
+        ?checked=${lookSettings.tonalShadingEnabled}
+        @change="${({ target }: { target: BUI.Checkbox }) => {
+          lookSettings.tonalShadingEnabled = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-checkbox>
+
+      <bim-number-input
+        slider step="0.05" label="Render scale"
+        value="${deferred.renderScale}" min="0.25" max="1"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          deferred.renderScale = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+    </bim-panel-section>
+
+    <bim-panel-section class="deferred-only" label="Deferred · Ambient Occlusion">
+
+      <bim-number-input
+        slider step="0.05" label="World radius"
+        value="${aoSettings.radius}" min="0.05" max="4"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          aoSettings.radius = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.002" label="Bias"
+        value="${aoSettings.bias}" min="0" max="0.1"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          aoSettings.bias = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.05" label="Intensity"
+        value="${aoSettings.intensity}" min="0" max="3"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          aoSettings.intensity = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.05" label="Contrast"
+        value="${aoSettings.contrast}" min="0.25" max="4"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          aoSettings.contrast = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="1" label="Samples"
+        value="${aoSettings.samples}" min="4" max="32"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          aoSettings.samples = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="1" label="Denoise radius (taps)"
+        value="${denoiseSettings.radius}" min="1" max="12"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          denoiseSettings.radius = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.05" label="Denoise depth sigma"
+        value="${denoiseSettings.depthSigma}" min="0.05" max="3"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          denoiseSettings.depthSigma = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.05" label="Denoise normal sigma"
+        value="${denoiseSettings.normalSigma}" min="0.05" max="2"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          denoiseSettings.normalSigma = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+    </bim-panel-section>
+
+    <bim-panel-section class="deferred-only" label="Deferred · World AO">
+
+      <bim-number-input
+        slider step="0.05" label="Hemisphere reach"
+        value="${worldAoSettings.reach}" min="0.05" max="4"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          worldAoSettings.reach = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.005" label="Probe lift"
+        value="${worldAoSettings.lift}" min="0" max="0.2"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          worldAoSettings.lift = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.1" label="Range decay"
+        value="${worldAoSettings.decay}" min="0.1" max="6"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          worldAoSettings.decay = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.05" label="Strength"
+        value="${worldAoSettings.power}" min="0" max="3"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          worldAoSettings.power = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.05" label="Contrast"
+        value="${worldAoSettings.shape}" min="0.25" max="4"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          worldAoSettings.shape = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="1" label="Probes"
+        value="${worldAoSettings.rays}" min="4" max="32"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          worldAoSettings.rays = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.02" label="Distance fade start"
+        value="${worldAoSettings.vanishStart}" min="0" max="1"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          worldAoSettings.vanishStart = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.02" label="Distance fade end"
+        value="${worldAoSettings.vanishEnd}" min="0" max="1"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          worldAoSettings.vanishEnd = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+    </bim-panel-section>
+
+    <bim-panel-section class="deferred-only" label="Deferred · Composite">
+
+      <bim-number-input
+        slider step="0.05" label="AO strength"
+        value="${lookSettings.aoStrength}" min="0" max="3"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          lookSettings.aoStrength = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.02" label="Tonal floor"
+        value="${lookSettings.tonalFloor}" min="0" max="1"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          lookSettings.tonalFloor = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.05" label="Contour strength"
+        value="${lookSettings.edgeStrength}" min="0" max="1"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          lookSettings.edgeStrength = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.05" label="Contour width"
+        value="${lookSettings.edgeHalfWidth}" min="0.1" max="2.5"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          lookSettings.edgeHalfWidth = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.05" label="Contour softness (AA)"
+        value="${lookSettings.edgeAA}" min="0.1" max="2"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          lookSettings.edgeAA = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-color-input label="Contour color"
+        color="#${lookSettings.edgeColor.getHexString()}"
+        @input="${({ target }: { target: BUI.ColorInput }) => {
+          lookSettings.edgeColor.set(target.value.color);
+          updateIfManualMode();
+        }}">
+      </bim-color-input>
+
+      <bim-number-input
+        slider step="0.5" label="Sheen gloss exponent"
+        value="${lookSettings.glossExp}" min="0.5" max="24"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          lookSettings.glossExp = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.02" label="Sheen gloss factor"
+        value="${lookSettings.glossFactor}" min="0" max="1"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          lookSettings.glossFactor = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.5" label="Fresnel exponent"
+        value="${lookSettings.fresnelExp}" min="0.5" max="24"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          lookSettings.fresnelExp = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.02" label="Fresnel factor"
+        value="${lookSettings.fresnelFactor}" min="0" max="1"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          lookSettings.fresnelFactor = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.02" label="Sheen output min"
+        value="${lookSettings.sheenOutMin}" min="0" max="1"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          lookSettings.sheenOutMin = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.02" label="Sheen output max"
+        value="${lookSettings.sheenOutMax}" min="0" max="1"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          lookSettings.sheenOutMax = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+    </bim-panel-section>
+
+    <bim-panel-section class="composer-only" label="Composer · General">
 
       <bim-checkbox checked label="Outlines enabled"
         ?checked=${world.renderer!.postproduction.outlinesEnabled}
@@ -281,17 +686,17 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
           updateIfManualMode();
         }}">
 
-        <bim-option checked label="Basic" value="${OBF.PostproductionAspect.COLOR}"></bim-option>
+        <bim-option label="Basic" value="${OBF.PostproductionAspect.COLOR}"></bim-option>
         <bim-option label="Pen" value="${OBF.PostproductionAspect.PEN}"></bim-option>
         <bim-option label="Shadowed Pen" value="${OBF.PostproductionAspect.PEN_SHADOWS}"></bim-option>
         <bim-option label="Color Pen" value="${OBF.PostproductionAspect.COLOR_PEN}"></bim-option>
         <bim-option label="Color Shadows" value="${OBF.PostproductionAspect.COLOR_SHADOWS}"></bim-option>
-        <bim-option label="Color Pen Shadows" value="${OBF.PostproductionAspect.COLOR_PEN_SHADOWS}"></bim-option>
+        <bim-option checked label="Color Pen Shadows" value="${OBF.PostproductionAspect.COLOR_PEN_SHADOWS}"></bim-option>
       </bim-dropdown>
 
     </bim-panel-section>
 
-      <bim-panel-section label="Edges">
+      <bim-panel-section class="composer-only" label="Edges">
 
       <bim-number-input
           slider step="0.1" label="Width"
@@ -321,7 +726,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
 
     </bim-panel-section>
 
-    <bim-panel-section label="Outline">
+    <bim-panel-section class="composer-only" label="Outline">
 
       <bim-number-input
           slider step="0.1" label="Outline thickness"
@@ -360,7 +765,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
     </bim-panel-section>
 
   
-    <bim-panel-section label="Gloss">
+    <bim-panel-section class="composer-only" label="Gloss">
 
       <bim-checkbox label="Enabled"
         ?checked=${world.renderer!.postproduction.glossEnabled}
@@ -470,7 +875,7 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
 
     </bim-panel-section>
 
-    <bim-panel-section label="Ambient Occlusion">
+    <bim-panel-section class="composer-only" label="Ambient Occlusion">
 
         <bim-checkbox checked label="Screen Space Radius"
           ?checked=${defaultAoParameters.screenSpaceRadius}
@@ -628,6 +1033,22 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
 });
 
 document.body.append(panel);
+
+/* MD
+  To keep the menu tidy, we will only show the sections that apply to the active pipeline: the ones tagged `deferred-only` while the deferred pipeline is running, and the ones tagged `composer-only` while the composer is running. We run this once at startup and again every time the "Postproduction mode" dropdown changes.
+*/
+
+function applyModeVisibility(mode: OBF.PostproductionMode) {
+  const isDeferred = mode === OBF.PostproductionMode.DEFERRED;
+  panel.querySelectorAll<HTMLElement>(".deferred-only").forEach((section) => {
+    section.style.display = isDeferred ? "" : "none";
+  });
+  panel.querySelectorAll<HTMLElement>(".composer-only").forEach((section) => {
+    section.style.display = isDeferred ? "none" : "";
+  });
+}
+
+applyModeVisibility(world.renderer.postproduction.mode);
 
 /* MD
   And we will make some logic that adds a button to the screen when the user is visiting our app from their phone, allowing to show or hide the menu. Otherwise, the menu would make the app unusable.
