@@ -1,6 +1,10 @@
 import * as THREE from "three";
 import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
-import { Components, SimpleRenderer } from "@thatopen/components";
+import {
+  Components,
+  SimpleRenderer,
+  SimpleRendererParameters,
+} from "@thatopen/components";
 
 /**
  * A basic renderer capable of rendering 3D and 2D objects ([Objec3Ds](https://threejs.org/docs/#api/en/core/Object3D) and [CSS2DObjects](https://threejs.org/docs/#examples/en/renderers/CSS2DRenderer) respectively).
@@ -14,7 +18,7 @@ export class RendererWith2D extends SimpleRenderer {
   constructor(
     components: Components,
     container: HTMLElement,
-    parameters?: Partial<THREE.WebGLRendererParameters>,
+    parameters?: SimpleRendererParameters,
   ) {
     super(components, container, parameters);
 
