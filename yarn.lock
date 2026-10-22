@@ -816,8 +816,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
-    "@thatopen/components": ~3.4.7
-    "@thatopen/fragments": ~3.4.7
+    "@thatopen/components": ~3.5.0
+    "@thatopen/fragments": ~3.5.0
     "@thatopen/ui": ~3.4.0
     "@thatopen/ui-obc": ~3.4.0
     "@types/convert-units": 2.3.11
@@ -828,8 +828,8 @@ __metadata:
     three: 0.184.0
     web-ifc: 0.0.77
   peerDependencies:
-    "@thatopen/components": ^3.4.7
-    "@thatopen/fragments": ~3.4.7
+    "@thatopen/components": ^3.5.0
+    "@thatopen/fragments": ~3.5.0
     potree-core: ^2.0.15
     three: ">=0.182.0"
     web-ifc: ">=0.0.77"
@@ -839,11 +839,11 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@workspace:packages/core, @thatopen/components@~3.4.7":
+"@thatopen/components@workspace:packages/core, @thatopen/components@~3.5.0":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
-    "@thatopen/fragments": ~3.4.7
+    "@thatopen/fragments": ~3.5.0
     "@thatopen/ui": ~3.4.0
     "@types/convert-units": 2.3.11
     "@types/three": 0.184.0
@@ -860,25 +860,26 @@ __metadata:
     vitest-canvas-mock: ^1.2.0
     web-ifc: 0.0.77
   peerDependencies:
-    "@thatopen/fragments": ~3.4.7
+    "@thatopen/fragments": ~3.5.0
     camera-controls: ">=3.1.2"
     three: ">=0.182.0"
     web-ifc: ">=0.0.77"
   languageName: unknown
   linkType: soft
 
-"@thatopen/fragments@npm:~3.4.7":
-  version: 3.4.7
-  resolution: "@thatopen/fragments@npm:3.4.7"
+"@thatopen/fragments@npm:~3.5.0":
+  version: 3.5.0
+  resolution: "@thatopen/fragments@npm:3.5.0"
   dependencies:
     earcut: ^3.0.1
     flatbuffers: 25.2.10
     lru-cache: 11.1.0
     pako: 2.1.0
+    xxhash-wasm: ^1.1.0
   peerDependencies:
     three: ">=0.182.0"
     web-ifc: ">=0.0.77"
-  checksum: 66ef8422afcee492d083c5aa4f0003b2847f853f84cea367f3851720202c974dcacf81f26b803f89399f9e1797c73421a2183e7dd18e7858bff458144df60e20
+  checksum: 0393bf84688f77139b6961d5e2a0fc7fab2305aa94aeee92007205a2a88eaa4cb261723ccfa57cb34d18235132e5f48c97a77c24342017756b02115cdf8978c2
   languageName: node
   linkType: hard
 
@@ -5360,6 +5361,13 @@ glob@latest:
     utf-8-validate:
       optional: true
   checksum: 8a28a457a997e0d63b5bc4d35344c342c68038c207013196468c35a80f7220397665739026217e836abc40ea7432483de3fee47a64abdedb4e3d0e3f332dc37b
+  languageName: node
+  linkType: hard
+
+"xxhash-wasm@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "xxhash-wasm@npm:1.1.0"
+  checksum: 2ccecb3b1dac5fefe11002d5ff5d106bbb5b506f9ee817ecf1bda65e132ebff3c82701c6727df3cb90b94a6dc1d8b294337678606f2304bcb0fd6b8dc68afe0d
   languageName: node
   linkType: hard
 
