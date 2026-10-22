@@ -113,7 +113,9 @@ pcl.world = world;
 const localFilesRequestManager = (
   files: Map<string, File>,
 ): OBF.PointCloudRequestManager => ({
-  getUrl: (url: string) => url,
+  // potree-core finds hierarchy.bin and octree.bin by replacing
+  // "/metadata.json" in this URL, so it needs a folder in front of the name.
+  getUrl: (url: string) => `local/${url}`,
   async fetch(input: RequestInfo | URL, init?: RequestInit) {
     const url = typeof input === "string" ? input : input.toString();
     const name = url.split(/[\\/]/).pop()!.split("?")[0];
