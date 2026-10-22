@@ -35,7 +35,13 @@
     "@thatopen/components": "^3.4.7",
     "@thatopen/fragments": "~3.4.7",
     "three": ">=0.182.0",
-    "web-ifc": ">=0.0.77"
+    "web-ifc": ">=0.0.77",
+    "potree-core": "^2.0.15"
+  },
+  "peerDependenciesMeta": {
+    "potree-core": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@thatopen/components": "~3.4.7",
@@ -45,6 +51,7 @@
     "@types/convert-units": "2.3.11",
     "@types/earcut": "3.0.0",
     "@types/three": "0.184.0",
+    "potree-core": "2.0.15",
     "three": "0.184.0",
     "web-ifc": "0.0.77"
   },
