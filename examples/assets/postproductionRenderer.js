@@ -1,4 +1,4 @@
-import{S as L,K as F,M as N,aH as G,aI as W,n as y,b as w}from"./TransformControls-lNp9RmyE.js";import{c as H,W as _,S as I,O as U,G as B,F as M,g as f}from"./graphic-vertex-picker-DI4NqEOA.js";import{P as j,b as t,a as P,D as E,E as k}from"./index-DRMWQziR.js";import{O as q}from"./index-CDrmeedZ.js";import"./preload-helper-PPVm8Dsz.js";import"./index-w2Uqv0fG.js";import"./renderer-with-2d-DTPUqC0M.js";import"./index-6WqdzqCF.js";const c=new H,T=c.get(_),a=T.create();a.scene=new I(c);a.scene.setup();a.scene.three.background=null;const z=document.getElementById("container");a.renderer=new j(c,z);a.camera=new U(c);await a.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);c.init();const K=c.get(B),A=K.create(a);A.config.color.set(6710886);a.scene.three.background=null;const n=()=>{a.renderer.mode===f.MANUAL&&(a.renderer.needsUpdate=!0)};a.camera.controls.addEventListener("update",n);a.renderer.onResize.add(n);const V=await M.getWorker(),d=c.get(M);d.init(V);a.camera.controls.addEventListener("update",()=>d.core.update());a.onCameraChanged.add(e=>{for(const[,s]of d.list)s.useCamera(e.three);d.core.update(!0)});d.list.onItemSet.add(({value:e})=>{e.useCamera(a.camera.three),a.scene.three.add(e.object),d.core.update(!0)});d.core.models.materials.list.onItemSet.add(({value:e})=>{"isLodMaterial"in e&&e.isLodMaterial||(e.polygonOffset=!0,e.polygonOffsetUnits=1,e.polygonOffsetFactor=Math.random())});const X=["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];await Promise.all(X.map(async e=>{const s=e.split("/").pop()?.split(".").shift();if(!s)return null;const R=await(await fetch(e)).arrayBuffer();return d.core.load(R,{modelId:s})}));a.renderer.postproduction.enabled=!0;a.renderer.postproduction.style=t.COLOR_PEN_SHADOWS;a.dynamicAnchor=!1;a.renderer.postproduction.basePass.isolatedMaterials.push(A.material);a.renderer.postproduction.deferred;a.renderer.postproduction.mode=P.DEFERRED;const C=d.list.values().next().value,h=c.get(q);h.world=a;h.enabled=!0;const J=await C.getItemsOfCategories([/IFCWALL/]),Q=J.IFCWALL,[Y,Z]=Q;h.addItems({[C.modelId]:new Set([Y,Z])});const x=new L;x.showPanel(2);document.body.append(x.dom);x.dom.style.left="0px";x.dom.style.zIndex="unset";a.renderer.onBeforeUpdate.add(()=>x.begin());a.renderer.onAfterUpdate.add(()=>x.end());F.init();const{aoPass:r,outlinePass:p,edgesPass:O,defaultAoParameters:l}=a.renderer.postproduction,o={lumaPhi:10,depthPhi:2,normalPhi:3,radius:4,radiusExponent:1,rings:2,samples:16};r.updateGtaoMaterial(l);r.updatePdMaterial(o);const S=new N(new G(1,1,1),new W({color:65280}));S.position.set(10,0,0);a.scene.three.add(S);a.renderer.postproduction.excludedObjectsPass.addExcludedMaterial(S.material);const m=a.renderer.postproduction.deferred,b=m.ao.settings,u=m.worldAo.settings,v=m.denoise.settings,i=m.composite.settings,$=y.create(()=>w`
+import{S as N,K as W,M as H,aH as _,aI as I,n as A,b as E}from"./TransformControls-uP1Cexzu.js";import{c as U,W as B,S as T,O as j,G as q,F as C,g as P}from"./graphic-vertex-picker-BijCnCEg.js";import{P as z,b as o,a as O,D as w,E as M}from"./index-B9_sa_qD.js";import{O as K}from"./index-DoEfgNun.js";import"./preload-helper-PPVm8Dsz.js";import"./index-bKcSih7U.js";import"./renderer-with-2d-CrQsY-US.js";import"./index-B8cfUU4g.js";const c=new U,V=c.get(B),a=V.create();a.scene=new T(c);a.scene.setup();a.scene.three.background=null;const X=document.getElementById("container");a.renderer=new z(c,X);a.camera=new j(c);await a.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);c.init();const J=c.get(q),D=J.create(a);D.config.color.set(6710886);a.scene.three.background=null;a.renderer.cssSize=!1;a.renderer.adaptiveResolution=!0;const n=()=>{a.renderer.mode===P.MANUAL&&(a.renderer.needsUpdate=!0)};a.camera.controls.addEventListener("update",n);a.renderer.onResize.add(n);const Q=await C.getWorker(),b=c.get(C);b.init(Q);a.camera.controls.addEventListener("update",()=>b.core.update());a.onCameraChanged.add(e=>{for(const[,s]of b.list)s.useCamera(e.three);b.core.update(!0)});b.list.onItemSet.add(({value:e})=>{e.useCamera(a.camera.three),a.scene.three.add(e.object),b.core.update(!0)});b.core.models.materials.list.onItemSet.add(({value:e})=>{"isLodMaterial"in e&&e.isLodMaterial||(e.polygonOffset=!0,e.polygonOffsetUnits=1,e.polygonOffsetFactor=Math.random())});const Y=["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];await Promise.all(Y.map(async e=>{const s=e.split("/").pop()?.split(".").shift();if(!s)return null;const G=await(await fetch(e)).arrayBuffer();return b.core.load(G,{modelId:s})}));a.renderer.postproduction.enabled=!0;a.renderer.postproduction.style=o.COLOR_PEN_SHADOWS;a.dynamicAnchor=!1;a.renderer.postproduction.basePass.isolatedMaterials.push(D.material);a.renderer.postproduction.deferred;a.renderer.postproduction.mode=O.DEFERRED;const S=b.list.values().next().value,h=c.get(K);h.world=a;h.enabled=!0;const Z=await S.getItemsOfCategories([/IFCWALL/]),ee=Z.IFCWALL,[R,F]=ee;h.addItems({[S.modelId]:new Set([R,F])});let f=!1;const x=new N;x.showPanel(2);document.body.append(x.dom);x.dom.style.left="0px";x.dom.style.zIndex="unset";a.renderer.onBeforeUpdate.add(()=>x.begin());a.renderer.onAfterUpdate.add(()=>x.end());W.init();const{aoPass:r,outlinePass:p,edgesPass:k,defaultAoParameters:l}=a.renderer.postproduction,t={lumaPhi:10,depthPhi:2,normalPhi:3,radius:4,radiusExponent:1,rings:2,samples:16};r.updateGtaoMaterial(l);r.updatePdMaterial(t);const y=new H(new _(1,1,1),new I({color:65280}));y.position.set(10,0,0);a.scene.three.add(y);a.renderer.postproduction.excludedObjectsPass.addExcludedMaterial(y.material);const m=a.renderer.postproduction.deferred,d=m.ao.settings,u=m.worldAo.settings,v=m.denoise.settings,i=m.composite.settings,$=A.create(()=>E`
   <bim-panel active label="Postproduction Tutorial" class="options-menu">
 
     <bim-panel-section label="General">
@@ -8,19 +8,45 @@ import{S as L,K as F,M as N,aH as G,aI as W,n as y,b as w}from"./TransformContro
       </bim-checkbox>
 
       <bim-dropdown required label="Postproduction mode"
-        @change="${({target:e})=>{const s=Number(e.value[0]);a.renderer.postproduction.mode=s,D(s),n()}}">
-        <bim-option label="Composer" value="${P.COMPOSER}"></bim-option>
-        <bim-option checked label="Deferred" value="${P.DEFERRED}"></bim-option>
+        @change="${({target:e})=>{const s=Number(e.value[0]);a.renderer.postproduction.mode=s,L(s),n()}}">
+        <bim-option label="Composer" value="${O.COMPOSER}"></bim-option>
+        <bim-option checked label="Deferred" value="${O.DEFERRED}"></bim-option>
       </bim-dropdown>
 
       <bim-dropdown required label="Projection"
-        @change="${async({target:e})=>{const s=e.value[0];await a.camera.projection.set(s);for(const g of d.list.values())g.useCamera(a.camera.three);a.renderer.postproduction.updateCamera(),n()}}">
+        @change="${async({target:e})=>{const s=e.value[0];await a.camera.projection.set(s);for(const g of b.list.values())g.useCamera(a.camera.three);a.renderer.postproduction.updateCamera(),n()}}">
         <bim-option checked label="Perspective" value="Perspective"></bim-option>
         <bim-option label="Orthographic" value="Orthographic"></bim-option>
       </bim-dropdown>
 
+      <bim-checkbox label="Native DPR sizing (sharp, slower)"
+        ?checked=${!a.renderer.cssSize}
+        @change="${({target:e})=>{a.renderer.cssSize=!e.value,a.renderer.applyPostproductionSize(),n()}}">
+      </bim-checkbox>
+
+      <bim-checkbox label="Adaptive resolution (hold target fps)"
+        ?checked=${a.renderer.adaptiveResolution}
+        @change="${({target:e})=>{a.renderer.adaptiveResolution=e.value,n()}}">
+      </bim-checkbox>
+
+      <bim-number-input
+        slider step="5" label="Adaptive target fps"
+        value="${a.renderer.adaptiveTargetFps}" min="24" max="120"
+        @change="${({target:e})=>{a.renderer.adaptiveTargetFps=e.value,n()}}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.05" label="Min resolution (never blurrier than this)"
+        value="${a.renderer.adaptiveMinScale}" min="0.25" max="1"
+        @change="${({target:e})=>{a.renderer.adaptiveMinScale=e.value,n()}}">
+      </bim-number-input>
+
       <bim-button label="${h.enabled?"Outline: ON":"Outline: OFF"}"
         @click="${({target:e})=>{h.enabled=!h.enabled,e.label=h.enabled?"Outline: ON":"Outline: OFF",n()}}">
+      </bim-button>
+
+      <bim-button label="Ghost rest (x-ray): OFF"
+        @click="${async({target:e})=>{f=!f,f?await S.setGhostItems([R,F],!0):S.clearGhost(),e.label=f?"Ghost rest (x-ray): ON":"Ghost rest (x-ray): OFF",await b.core.update(!0),n()}}">
       </bim-button>
 
     </bim-panel-section>
@@ -29,12 +55,12 @@ import{S as L,K as F,M as N,aH as G,aI as W,n as y,b as w}from"./TransformContro
 
       <bim-dropdown required label="Visual style"
         @change="${({target:e})=>{a.renderer.postproduction.style=Number(e.value[0]),n()}}">
-        <bim-option label="Color" value="${t.COLOR}"></bim-option>
-        <bim-option label="Pen" value="${t.PEN}"></bim-option>
-        <bim-option label="Pen shadows" value="${t.PEN_SHADOWS}"></bim-option>
-        <bim-option label="Color pen" value="${t.COLOR_PEN}"></bim-option>
-        <bim-option label="Color shadows" value="${t.COLOR_SHADOWS}"></bim-option>
-        <bim-option checked label="Color pen shadows" value="${t.COLOR_PEN_SHADOWS}"></bim-option>
+        <bim-option label="Color" value="${o.COLOR}"></bim-option>
+        <bim-option label="Pen" value="${o.PEN}"></bim-option>
+        <bim-option label="Pen shadows" value="${o.PEN_SHADOWS}"></bim-option>
+        <bim-option label="Color pen" value="${o.COLOR_PEN}"></bim-option>
+        <bim-option label="Color shadows" value="${o.COLOR_SHADOWS}"></bim-option>
+        <bim-option checked label="Color pen shadows" value="${o.COLOR_PEN_SHADOWS}"></bim-option>
       </bim-dropdown>
 
       <bim-checkbox label="Ambient occlusion enabled"
@@ -44,8 +70,8 @@ import{S as L,K as F,M as N,aH as G,aI as W,n as y,b as w}from"./TransformContro
 
       <bim-dropdown required label="AO estimator"
         @change="${({target:e})=>{m.settings.aoMode=Number(e.value[0]),n()}}">
-        <bim-option checked label="Screen-space" value="${E.SCREEN_SPACE}"></bim-option>
-        <bim-option label="World-space" value="${E.WORLD_SPACE}"></bim-option>
+        <bim-option checked label="Screen-space" value="${w.SCREEN_SPACE}"></bim-option>
+        <bim-option label="World-space" value="${w.WORLD_SPACE}"></bim-option>
       </bim-dropdown>
 
       <bim-checkbox label="Anti-aliasing (FXAA)"
@@ -75,32 +101,32 @@ import{S as L,K as F,M as N,aH as G,aI as W,n as y,b as w}from"./TransformContro
 
       <bim-number-input
         slider step="0.05" label="World radius"
-        value="${b.radius}" min="0.05" max="4"
-        @change="${({target:e})=>{b.radius=e.value,n()}}">
+        value="${d.radius}" min="0.05" max="4"
+        @change="${({target:e})=>{d.radius=e.value,n()}}">
       </bim-number-input>
 
       <bim-number-input
         slider step="0.002" label="Bias"
-        value="${b.bias}" min="0" max="0.1"
-        @change="${({target:e})=>{b.bias=e.value,n()}}">
+        value="${d.bias}" min="0" max="0.1"
+        @change="${({target:e})=>{d.bias=e.value,n()}}">
       </bim-number-input>
 
       <bim-number-input
         slider step="0.05" label="Intensity"
-        value="${b.intensity}" min="0" max="3"
-        @change="${({target:e})=>{b.intensity=e.value,n()}}">
+        value="${d.intensity}" min="0" max="3"
+        @change="${({target:e})=>{d.intensity=e.value,n()}}">
       </bim-number-input>
 
       <bim-number-input
         slider step="0.05" label="Contrast"
-        value="${b.contrast}" min="0.25" max="4"
-        @change="${({target:e})=>{b.contrast=e.value,n()}}">
+        value="${d.contrast}" min="0.25" max="4"
+        @change="${({target:e})=>{d.contrast=e.value,n()}}">
       </bim-number-input>
 
       <bim-number-input
         slider step="1" label="Samples"
-        value="${b.samples}" min="4" max="32"
-        @change="${({target:e})=>{b.samples=e.value,n()}}">
+        value="${d.samples}" min="4" max="32"
+        @change="${({target:e})=>{d.samples=e.value,n()}}">
       </bim-number-input>
 
       <bim-number-input
@@ -275,12 +301,12 @@ import{S as L,K as F,M as N,aH as G,aI as W,n as y,b as w}from"./TransformContro
       <bim-dropdown required label="Postproduction style"
         @change="${({target:e})=>{const s=e.value[0];a.renderer.postproduction.style=s,n()}}">
 
-        <bim-option label="Basic" value="${t.COLOR}"></bim-option>
-        <bim-option label="Pen" value="${t.PEN}"></bim-option>
-        <bim-option label="Shadowed Pen" value="${t.PEN_SHADOWS}"></bim-option>
-        <bim-option label="Color Pen" value="${t.COLOR_PEN}"></bim-option>
-        <bim-option label="Color Shadows" value="${t.COLOR_SHADOWS}"></bim-option>
-        <bim-option checked label="Color Pen Shadows" value="${t.COLOR_PEN_SHADOWS}"></bim-option>
+        <bim-option label="Basic" value="${o.COLOR}"></bim-option>
+        <bim-option label="Pen" value="${o.PEN}"></bim-option>
+        <bim-option label="Shadowed Pen" value="${o.PEN_SHADOWS}"></bim-option>
+        <bim-option label="Color Pen" value="${o.COLOR_PEN}"></bim-option>
+        <bim-option label="Color Shadows" value="${o.COLOR_SHADOWS}"></bim-option>
+        <bim-option checked label="Color Pen Shadows" value="${o.COLOR_PEN_SHADOWS}"></bim-option>
       </bim-dropdown>
 
     </bim-panel-section>
@@ -294,14 +320,14 @@ import{S as L,K as F,M as N,aH as G,aI as W,n as y,b as w}from"./TransformContro
       </bim-number-input>
 
       <bim-color-input label="Edges color"
-        color="#${O.color.getHexString()}"
-        @input="${({target:e})=>{O.color.set(e.value.color),n()}}">
+        color="#${k.color.getHexString()}"
+        @input="${({target:e})=>{k.color.set(e.value.color),n()}}">
       </bim-color-input>
 
       <bim-dropdown label="Edges Mode"
-        @change="${({target:e})=>{O.mode=e.value[0],n()}}">
-        <bim-option checked label="Default" value="${k.DEFAULT}"></bim-option>
-        <bim-option label="Global" value="${k.GLOBAL}"></bim-option>
+        @change="${({target:e})=>{k.mode=e.value[0],n()}}">
+        <bim-option checked label="Default" value="${M.DEFAULT}"></bim-option>
+        <bim-option label="Global" value="${M.GLOBAL}"></bim-option>
       </bim-dropdown>
 
     </bim-panel-section>
@@ -378,10 +404,18 @@ import{S as L,K as F,M as N,aH as G,aI as W,n as y,b as w}from"./TransformContro
 
     </bim-panel-section>
 
+    ${a.renderer.api==="webgpu"?E`
+    <bim-panel-section label="Moving resolution">
+      <bim-checkbox label="Lower resolution while the camera moves"
+        ?checked=${a.renderer.movingResolution.enabled}
+        @change="${({target:e})=>{a.renderer.movingResolution.enabled=e.value,n()}}">
+      </bim-checkbox>
+    </bim-panel-section>`:null}
+
     <bim-panel-section label="Manual mode">
       <bim-checkbox label="Enabled"
-        ?checked=${a.renderer.mode===f.MANUAL}
-        @change="${({target:e})=>{a.renderer.mode=e.value?f.MANUAL:f.AUTO}}">
+        ?checked=${a.renderer.mode===P.MANUAL}
+        @change="${({target:e})=>{a.renderer.mode=e.value?P.MANUAL:P.AUTO}}">
       </bim-checkbox>
 
       <bim-number-input label="Delay"
@@ -396,12 +430,12 @@ import{S as L,K as F,M as N,aH as G,aI as W,n as y,b as w}from"./TransformContro
 
       <bim-dropdown label="Default style"
         @change="${({target:e})=>{const s=e.value[0];a.renderer.manualDefaultStyle=s,n()}}">
-        <bim-option label="Basic" value="${t.COLOR}"></bim-option>
-        <bim-option label="Pen" value="${t.PEN}"></bim-option>
-        <bim-option label="Pen Shadows" value="${t.PEN_SHADOWS}"></bim-option>
-        <bim-option label="Color Pen" value="${t.COLOR_PEN}"></bim-option>
-        <bim-option label="Color Shadows" value="${t.COLOR_SHADOWS}"></bim-option>
-        <bim-option label="Color Pen Shadows" value="${t.COLOR_PEN_SHADOWS}"></bim-option>
+        <bim-option label="Basic" value="${o.COLOR}"></bim-option>
+        <bim-option label="Pen" value="${o.PEN}"></bim-option>
+        <bim-option label="Pen Shadows" value="${o.PEN_SHADOWS}"></bim-option>
+        <bim-option label="Color Pen" value="${o.COLOR_PEN}"></bim-option>
+        <bim-option label="Color Shadows" value="${o.COLOR_SHADOWS}"></bim-option>
+        <bim-option label="Color Pen Shadows" value="${o.COLOR_PEN_SHADOWS}"></bim-option>
       </bim-dropdown>
 
 
@@ -458,52 +492,52 @@ import{S as L,K as F,M as N,aH as G,aI as W,n as y,b as w}from"./TransformContro
 
         <bim-number-input
           slider step="0.1" label="PD Luma Phi"
-          value="${o.lumaPhi}" min="0" max="20"
-          @change="${({target:e})=>{o.lumaPhi=e.value,r.updatePdMaterial(o),n()}}">
+          value="${t.lumaPhi}" min="0" max="20"
+          @change="${({target:e})=>{t.lumaPhi=e.value,r.updatePdMaterial(t),n()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.1" label="PD Depth Phi"
-          value="${o.depthPhi}" min="0.01" max="20"
-          @change="${({target:e})=>{o.depthPhi=e.value,r.updatePdMaterial(o),n()}}">
+          value="${t.depthPhi}" min="0.01" max="20"
+          @change="${({target:e})=>{t.depthPhi=e.value,r.updatePdMaterial(t),n()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.1" label="PD Normal Phi"
-          value="${o.normalPhi}" min="0.01" max="20"
-          @change="${({target:e})=>{o.normalPhi=e.value,r.updatePdMaterial(o),n()}}">
+          value="${t.normalPhi}" min="0.01" max="20"
+          @change="${({target:e})=>{t.normalPhi=e.value,r.updatePdMaterial(t),n()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="1" label="PD Radius"
-          value="${o.radius}" min="0" max="32"
-          @change="${({target:e})=>{o.radius=e.value,r.updatePdMaterial(o),n()}}">
+          value="${t.radius}" min="0" max="32"
+          @change="${({target:e})=>{t.radius=e.value,r.updatePdMaterial(t),n()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.1" label="PD Radius Exponent"
-          value="${o.radiusExponent}" min="0.1" max="4"
-          @change="${({target:e})=>{o.radiusExponent=e.value,r.updatePdMaterial(o),n()}}">
+          value="${t.radiusExponent}" min="0.1" max="4"
+          @change="${({target:e})=>{t.radiusExponent=e.value,r.updatePdMaterial(t),n()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.125" label="PD Rings"
-          value="${o.rings}" min="1" max="16"
-          @change="${({target:e})=>{o.rings=e.value,r.updatePdMaterial(o),n()}}">
+          value="${t.rings}" min="1" max="16"
+          @change="${({target:e})=>{t.rings=e.value,r.updatePdMaterial(t),n()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="1" label="PD Samples"
-          value="${o.samples}" min="2" max="32"
-          @change="${({target:e})=>{o.samples=e.value,r.updatePdMaterial(o),n()}}">
+          value="${t.samples}" min="2" max="32"
+          @change="${({target:e})=>{t.samples=e.value,r.updatePdMaterial(t),n()}}">
         </bim-number-input>
 
       </bim-panel-section>
 
 
     </bim-panel>
-    `);document.body.append($);function D(e){const s=e===P.DEFERRED;$.querySelectorAll(".deferred-only").forEach(g=>{g.style.display=s?"":"none"}),$.querySelectorAll(".composer-only").forEach(g=>{g.style.display=s?"none":""})}D(a.renderer.postproduction.mode);const ee=y.create(()=>w`
+    `);document.body.append($);function L(e){const s=e===O.DEFERRED;$.querySelectorAll(".deferred-only").forEach(g=>{g.style.display=s?"":"none"}),$.querySelectorAll(".composer-only").forEach(g=>{g.style.display=s?"none":""})}L(a.renderer.postproduction.mode);const ne=A.create(()=>E`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{$.classList.contains("options-menu-visible")?$.classList.remove("options-menu-visible"):$.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(ee);
+    `);document.body.append(ne);

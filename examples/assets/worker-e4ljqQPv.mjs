@@ -34050,7 +34050,7 @@ function getIdsDelta(model, requests) {
   };
 }
 const FRAGMENTS_GENERATOR = "@thatopen/fragments";
-const FRAGMENTS_VERSION = "3.5.0";
+const FRAGMENTS_VERSION = "3.6.0";
 function getProvenanceMetadata() {
   return {
     generator: FRAGMENTS_GENERATOR,
@@ -36036,6 +36036,10 @@ class EditUtils {
   static itemDataToRawItemData = itemDataToRawItemData;
   static DELTA_MODEL_ID = DELTA_MODEL_ID;
 }
+const legacyRelationNames = {
+  DefinesOcurrence: "DefinesOccurrence",
+  DefinesOccurrence: "DefinesOcurrence"
+};
 class VirtualPropertiesController {
   _model;
   _boxes;
@@ -36498,20 +36502,26 @@ class VirtualPropertiesController {
     const relationsConfig = this._itemDataConfig.relations ?? {};
     let { attributes, relations } = this._itemDataConfig.relationsDefault;
     const { parentName, rel } = config;
+    const configKey = (name) => {
+      if (!name) return void 0;
+      if (name in relationsConfig) return name;
+      const alias = legacyRelationNames[name];
+      return alias && alias in relationsConfig ? alias : void 0;
+    };
+    const relKey = configKey(rel);
+    const parentKey = configKey(parentName);
     if (!parentName && !rel) {
       attributes = true;
       relations = true;
     } else {
-      const hasRelConfig = rel && rel in relationsConfig;
-      const hasParentConfig = parentName && parentName in relationsConfig;
-      if (hasRelConfig) {
-        const toProcess = relationsConfig[rel];
+      if (relKey) {
+        const toProcess = relationsConfig[relKey];
         if (toProcess) {
           attributes = toProcess.attributes;
           relations = toProcess.relations;
         }
-      } else if (hasParentConfig) {
-        const toProcess = relationsConfig[parentName];
+      } else if (parentKey) {
+        const toProcess = relationsConfig[parentKey];
         if (toProcess) {
           attributes = toProcess.attributes;
           relations = toProcess.relations;
