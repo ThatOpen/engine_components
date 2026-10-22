@@ -1430,11 +1430,17 @@ describe("FastModelPicker depth contributors", () => {
   it("skips contributors under a WebGPU renderer", async () => {
     const { picker, position, renderer } = context;
     Object.assign(renderer, { isWebGPURenderer: true });
+    // The WebGPU pick builds TSL node materials, which classic three cannot:
+    // stubbed, as this only checks that the route skips the contributors.
+    const gpuPick = vi
+      .spyOn(picker as any, "pickWebGPU")
+      .mockResolvedValue(null);
     const contribute = vi.fn();
     picker.pickDepthContributors.add(contribute);
 
     await picker.getPointAt(position);
 
+    expect(gpuPick).toHaveBeenCalledTimes(1);
     expect(contribute).not.toHaveBeenCalled();
   });
 

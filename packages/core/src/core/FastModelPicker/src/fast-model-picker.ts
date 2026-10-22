@@ -958,6 +958,8 @@ export class FastModelPicker implements Disposable {
         ((y + 0.5) / height) * 2 - 1,
       ),
       reversedDepth: capabilities?.reversedDepthBuffer === true,
+      // WebGL only (contributors are skipped under WebGPU): as `renderPick`.
+      unitDepth: capabilities?.reversedDepthBuffer === true,
     });
   }
 
