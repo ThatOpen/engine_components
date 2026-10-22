@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "allowImportingTsExtensions": false,
+    "isolatedModules": false,
+    "outDir": "./dist/realityCapture",
+    "rootDir": "./src/realityCapture"
+  },
+  "include": ["./src/realityCapture"],
+  "exclude": ["./src/realityCapture/**/*.test.ts"],
+  "references": []
+}

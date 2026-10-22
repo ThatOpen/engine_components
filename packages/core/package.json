@@ -38,7 +38,7 @@
   "scripts": {
     "dev": "vite --host",
     "test": "vitest --run",
-    "build": "tsc --p ./tsconfig-build.json && vite build",
+    "build": "tsc --p ./tsconfig-build.json && vite build && tsc -p ./tsconfig.realityCapture.json",
     "prepublishOnly": "node ./resources/updateComponentsVersion.mjs && yarn build",
     "publish-repo": "npm publish"
   },

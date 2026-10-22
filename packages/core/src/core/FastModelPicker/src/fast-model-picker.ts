@@ -88,6 +88,42 @@ const NO_REQUEST: PickRequest = {};
 const ORIGIN = new THREE.Vector2();
 
 /**
+ * The depth packing of the pick shader's `depth` output, as a GLSL snippet:
+ * given `gl_FragCoord.z` in scope it declares `vec4 packedDepth`. Byte for
+ * byte the same expression as `outDepth` in
+ * {@link FastModelPicker.buildPickMaterial}, so {@link unpackDepthFromRGBA}
+ * decodes both. Exposed as {@link FastModelPicker.depthPackBody} for
+ * {@link FastModelPicker.pickDepthContributors}.
+ */
+const DEPTH_PACK_BODY = /* glsl */ `
+  float packDepthValue = gl_FragCoord.z;
+  vec4 packedDepth = vec4(
+    fract(packDepthValue * 16777216.0),
+    fract(packDepthValue * 65536.0),
+    fract(packDepthValue * 256.0),
+    packDepthValue
+  );
+  packedDepth.yzw -= packedDepth.xyz * (1.0 / 256.0);
+  packedDepth *= (256.0 / 255.0);
+`;
+
+/**
+ * Context handed to each {@link FastModelPicker.pickDepthContributors} entry.
+ * `target` is bound and scissored to the pixel under the cursor when the
+ * contributor runs; `camera` is the world camera (not narrowed).
+ */
+export interface PickDepthContributorContext {
+  renderer: THREE.WebGLRenderer;
+  camera: THREE.Camera;
+  target: THREE.WebGLRenderTarget;
+  /** Scissor box in CSS pixels (as `renderer.setScissor` takes it). */
+  scissor: THREE.Vector4;
+}
+
+/** A depth-only geometry source for {@link FastModelPicker.getPointAt}. */
+export type PickDepthContributor = (ctx: PickDepthContributorContext) => void;
+
+/**
  * The camera every pick renders through. Its matrices are written by
  * `snapshotCamera` before each render, so it has nothing to recompute.
  *
@@ -327,6 +363,34 @@ export class FastModelPicker implements Disposable {
   debugMode = false;
 
   /**
+   * Just the depth packing expression (no `main`, no clipping, no output
+   * write): given `gl_FragCoord.z` in scope it declares `vec4 packedDepth`,
+   * packed exactly like the picker's own depth output. Contributors splice it
+   * into their own fragment shader (after any `discard` logic of their own)
+   * and write `packedDepth` to their output.
+   */
+  readonly depthPackBody = DEPTH_PACK_BODY;
+
+  /**
+   * Depth-only contributors (point clouds, splats: geometry that is not a
+   * fragments model). When a pick asks for depth ({@link getPointAt},
+   * {@link getFullPick}), each contributor re-renders its geometry with a
+   * {@link depthPackBody} material into a separate single-attachment target
+   * (bound, cleared and scissored to the pixel under the cursor, depth shared
+   * between contributors so the nearest wins). The picker then keeps whichever
+   * is nearer to the camera: the BIM surface or the contributor surface. When
+   * a contributor wins, the normal is `null` (contributors write no normal).
+   *
+   * Contributors carry no item ids, so {@link getItemAt} / {@link getModelAt}
+   * are untouched. A contributor must leave renderer state as it found it
+   * (the picker restores target / scissor / clear colour afterwards).
+   *
+   * WebGL only for now: under a WebGPU renderer contributors are skipped (the
+   * pack body is GLSL).
+   */
+  readonly pickDepthContributors = new Set<PickDepthContributor>();
+
+  /**
    * Maximum models the picker can disambiguate in a single pick. Capped
    * by the 8-bit `modelByte`. In practice we never approach this.
    */
@@ -337,6 +401,13 @@ export class FastModelPicker implements Disposable {
 
   /** Viewport-sized target for the debug overlay, created on demand. */
   private _debugTarget?: THREE.WebGLRenderTarget;
+
+  /** Drawing-buffer-sized target for {@link pickDepthContributors}, created on demand. */
+  private _contributorTarget?: THREE.WebGLRenderTarget;
+  private _contributorPixel = new Uint8Array(4);
+  private _contributorSize = new THREE.Vector2();
+  private _contributorScissor = new THREE.Vector4();
+  private _contributorNdc = new THREE.Vector2();
 
   private _pickBuffers: PickBuffers = {
     id: new Uint8Array(4),
@@ -540,6 +611,9 @@ export class FastModelPicker implements Disposable {
     }
     this._gpuMaterials = undefined;
     this._gpuTargets = undefined;
+    this._contributorTarget?.dispose();
+    this._contributorTarget = undefined;
+    this.pickDepthContributors.clear();
     this.onDisposed.trigger();
     this.onDisposed.reset();
   }
@@ -563,31 +637,41 @@ export class FastModelPicker implements Disposable {
     const ndc = position ?? this.mouse.position;
     const buffers = this._pickBuffers;
     const frame = this.renderPick(ndc, request, this._pickTarget, buffers);
-    if (!frame) return null;
+    const contributed = request.depth ? this.pickContributors(ndc) : null;
+    if (!frame && !contributed) return null;
 
-    return this.decodePick(request, buffers, frame);
+    return this.decodePick(request, buffers, frame, contributed);
   }
 
-  /** Decodes the outputs named in `request` into values the caller owns. */
+  /**
+   * Decodes the outputs named in `request` into values the caller owns. A
+   * point from a depth contributor (point cloud, splat) wins when nearer.
+   */
   private decodePick(
     request: PickRequest,
     buffers: PickBuffers,
-    frame: PickFrame,
+    frame: PickFrame | null,
+    contributed: THREE.Vector3 | null = null,
   ): Pick {
-    const point = request.depth ? decodePoint(buffers.depth, frame) : null;
+    let point =
+      frame && request.depth ? decodePoint(buffers.depth, frame) : null;
+    let normal =
+      frame && request.normal ? decodeNormal(buffers.normal) : null;
+    const eye = this._cameraPosition.setFromMatrixPosition(
+      frame ? frame.camera.matrixWorld : this.world.camera.three.matrixWorld,
+    );
+    if (
+      contributed &&
+      (!point || contributed.distanceTo(eye) < point.distanceTo(eye))
+    ) {
+      point = contributed;
+      normal = null;
+    }
     return {
-      item: request.id ? decodeId(buffers.id, frame.byteToModel) : null,
-      surface: point
-        ? {
-            point,
-            distance: point.distanceTo(
-              this._cameraPosition.setFromMatrixPosition(
-                frame.camera.matrixWorld,
-              ),
-            ),
-          }
-        : null,
-      normal: request.normal ? decodeNormal(buffers.normal) : null,
+      item:
+        frame && request.id ? decodeId(buffers.id, frame.byteToModel) : null,
+      surface: point ? { point, distance: point.distanceTo(eye) } : null,
+      normal,
     };
   }
 
@@ -761,6 +845,120 @@ export class FastModelPicker implements Disposable {
       unitDepth: true,
     };
     return { frame, buffers, reads };
+  }
+
+  /**
+   * Runs every {@link pickDepthContributors} entry into
+   * {@link _contributorTarget}, scissored to the pixel under `ndc`, and
+   * decodes the nearest contributed surface there, or `null`.
+   *
+   * Unlike the BIM pick (1×1 target through a narrowed camera) contributors
+   * render through the unmodified world camera into a drawing-buffer-sized
+   * target, so their own screen-space sizing (point size, splat footprint)
+   * matches what is on screen. The scissor keeps it a one-pixel job.
+   */
+  private pickContributors(ndc: THREE.Vector2): THREE.Vector3 | null {
+    if (this.pickDepthContributors.size === 0) return null;
+    if (!this.enabled || !this.world.renderer) return null;
+    const renderer = this.world.renderer.three;
+    // WebGPU: contributors hand over GLSL depth-pack materials, which a
+    // WebGPURenderer cannot run. A node-material path belongs to the WebGPU
+    // picker; until it exists, contributors simply don't take part.
+    if ((renderer as { isWebGPURenderer?: boolean }).isWebGPURenderer) {
+      return null;
+    }
+    const size = renderer.getDrawingBufferSize(this._contributorSize);
+    const width = size.x;
+    const height = size.y;
+    if (width === 0 || height === 0) return null;
+
+    if (!this._contributorTarget) {
+      this._contributorTarget = new THREE.WebGLRenderTarget(width, height, {
+        format: THREE.RGBAFormat,
+        type: THREE.UnsignedByteType,
+        minFilter: THREE.NearestFilter,
+        magFilter: THREE.NearestFilter,
+        depthBuffer: true,
+      });
+    } else if (
+      this._contributorTarget.width !== width ||
+      this._contributorTarget.height !== height
+    ) {
+      this._contributorTarget.setSize(width, height);
+    }
+    const target = this._contributorTarget;
+
+    const camera = this.world.camera.three;
+    camera.updateWorldMatrix(true, false);
+
+    const x = THREE.MathUtils.clamp(
+      Math.floor((ndc.x + 1) * 0.5 * width),
+      0,
+      width - 1,
+    );
+    const y = THREE.MathUtils.clamp(
+      Math.floor((ndc.y + 1) * 0.5 * height),
+      0,
+      height - 1,
+    );
+    const dpr = renderer.getPixelRatio();
+    const scissor = this._contributorScissor.set(
+      x / dpr,
+      y / dpr,
+      1 / dpr,
+      1 / dpr,
+    );
+    // A bound render target uses its own scissor (in target pixels).
+    target.scissor.set(x, y, 1, 1);
+    target.scissorTest = true;
+
+    const prevTarget = renderer.getRenderTarget();
+    const prevAutoClear = renderer.autoClear;
+    const prevClearColor = renderer.getClearColor(this._clearColor);
+    const prevClearAlpha = renderer.getClearAlpha();
+    const { shadowMap } = renderer;
+    const prevShadowAutoUpdate = shadowMap.autoUpdate;
+    const prevShadowNeedsUpdate = shadowMap.needsUpdate;
+
+    const pixel = this._contributorPixel;
+    pixel.fill(0);
+    try {
+      shadowMap.autoUpdate = false;
+      shadowMap.needsUpdate = false;
+      renderer.setRenderTarget(target);
+      renderer.setClearColor(0x000000, 0);
+      renderer.autoClear = false;
+      renderer.clear(true, true, false);
+      for (const contribute of this.pickDepthContributors) {
+        try {
+          contribute({ renderer, camera, target, scissor });
+        } catch {
+          // A misbehaving contributor must not break the pick.
+        }
+        // A contributor may rebind; re-assert before the next one / readback.
+        renderer.setRenderTarget(target);
+      }
+      renderer.readRenderTargetPixels(target, x, y, 1, 1, pixel);
+    } finally {
+      shadowMap.autoUpdate = prevShadowAutoUpdate;
+      shadowMap.needsUpdate = prevShadowNeedsUpdate;
+      renderer.setRenderTarget(prevTarget);
+      renderer.autoClear = prevAutoClear;
+      renderer.setClearColor(prevClearColor, prevClearAlpha);
+    }
+
+    const capabilities = renderer.capabilities as
+      | { reversedDepthBuffer?: boolean }
+      | undefined;
+    return decodePoint(pixel, {
+      byteToModel: this._byteToModel,
+      camera,
+      ndc: this._contributorNdc.set(
+        ((x + 0.5) / width) * 2 - 1,
+        ((y + 0.5) / height) * 2 - 1,
+      ),
+      reversedDepth: capabilities?.reversedDepthBuffer === true,
+    });
   }
 
   /**
