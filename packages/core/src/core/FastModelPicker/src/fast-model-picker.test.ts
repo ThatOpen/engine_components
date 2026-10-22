@@ -1293,3 +1293,155 @@ describe("FastModelPicker under a reversed depth buffer", () => {
     expect(await picker.getPointAt(position)).not.toBeNull();
   });
 });
+
+describe("FastModelPicker depth contributors", () => {
+  let context: ReturnType<typeof setup>;
+  /** What the contributor pass "saw" at the cursor pixel. */
+  let contributedPixel: Uint8Array | null;
+
+  /** Drawing buffer = viewport at a device pixel ratio of 2. */
+  const DPR = 2;
+
+  beforeEach(() => {
+    context = setup();
+    contributedPixel = null;
+    const { renderer } = context;
+    const bimRead = renderer.readRenderTargetPixels.getMockImplementation()!;
+    Object.assign(renderer, {
+      getPixelRatio: vi.fn(() => DPR),
+      getDrawingBufferSize: vi.fn((into: THREE.Vector2) =>
+        into.copy(SIZE).multiplyScalar(DPR),
+      ),
+    });
+    // The contributor target is drawing-buffer sized; the BIM pick is 1×1.
+    renderer.readRenderTargetPixels.mockImplementation(
+      (target, x, y, width, height, buffer, face, index) => {
+        if (target.width > 1 && width * height === 1) {
+          if (contributedPixel) buffer.set(contributedPixel);
+          return;
+        }
+        bimRead(target, x, y, width, height, buffer, face, index);
+      },
+    );
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    context?.dispose();
+  });
+
+  /** A surface on the cursor ray at `t` (0 = camera, 1 = HIT). */
+  const onRay = (t: number) =>
+    context.camera.position.clone().lerp(HIT, t);
+
+  const depthOf = (point: THREE.Vector3) =>
+    (point.clone().project(context.camera).z + 1) / 2;
+
+  it("exposes the same depth packing the pick shader writes", () => {
+    const { picker } = context;
+    expect(picker.depthPackBody).toContain("vec4 packedDepth");
+    expect(picker.depthPackBody).toContain("16777216.0");
+    expect(picker.depthPackBody).toContain("(256.0 / 255.0)");
+  });
+
+  it("wins the point pick when its surface is nearer than the BIM one", async () => {
+    const { camera, picker, position } = context;
+    const near = onRay(0.5);
+    contributedPixel = gpuStubs.depthPixel(depthOf(near));
+    const contribute = vi.fn();
+    picker.pickDepthContributors.add(contribute);
+
+    const point = await picker.getPointAt(position);
+
+    expect(contribute).toHaveBeenCalledTimes(1);
+    const ctx = contribute.mock.calls[0][0];
+    expect(ctx.camera).toBe(camera);
+    expect(ctx.target.width).toBe(SIZE.x * DPR);
+    expect(ctx.target.height).toBe(SIZE.y * DPR);
+    expect(ctx.target.scissorTest).toBe(true);
+    expect(ctx.scissor.z).toBeCloseTo(1 / DPR);
+    expect(point).not.toBeNull();
+    // Decoded at the centre of the cursor's drawing-buffer pixel.
+    expect(point!.distanceTo(near)).toBeLessThan(0.05);
+  });
+
+  it("drops the normal when a contributor wins, and keeps the item", async () => {
+    const { picker, position } = context;
+    contributedPixel = gpuStubs.depthPixel(depthOf(onRay(0.5)));
+    picker.pickDepthContributors.add(() => {});
+
+    const pick = await picker.getFullPick(position);
+
+    expect(pick).not.toBeNull();
+    expect(pick!.point.distanceTo(onRay(0.5))).toBeLessThan(0.05);
+    expect(pick!.normal).toBeNull();
+    expect(pick!.modelId).toBe(MODEL_ID);
+  });
+
+  it("loses to a nearer BIM surface", async () => {
+    const { picker, position } = context;
+    contributedPixel = gpuStubs.depthPixel(depthOf(onRay(1.5)));
+    picker.pickDepthContributors.add(() => {});
+
+    const pick = await picker.getFullPick(position);
+
+    expect(pick!.point.distanceTo(HIT)).toBeLessThan(1e-3);
+    expect(pick!.normal!.angleTo(NORMAL)).toBeLessThan(0.02);
+  });
+
+  it("picks contributed geometry when no fragments model is loaded", async () => {
+    const { fragments, picker, position } = context;
+    fragments.list.clear();
+    contributedPixel = gpuStubs.depthPixel(depthOf(onRay(0.5)));
+    picker.pickDepthContributors.add(() => {});
+
+    const point = await picker.getPointAt(position);
+
+    expect(point).not.toBeNull();
+    expect(point!.distanceTo(onRay(0.5))).toBeLessThan(0.05);
+    expect(await picker.getItemAt(position)).toBeNull();
+  });
+
+  it("does not run contributors for id-only picks", async () => {
+    const { picker, position } = context;
+    const contribute = vi.fn();
+    picker.pickDepthContributors.add(contribute);
+
+    await picker.getItemAt(position);
+    await picker.getModelAt(position);
+
+    expect(contribute).not.toHaveBeenCalled();
+  });
+
+  it("survives a throwing contributor and restores the renderer", async () => {
+    const { picker, position, renderer } = context;
+    picker.pickDepthContributors.add(() => {
+      throw new Error("boom");
+    });
+    const before = renderer.getRenderTarget();
+
+    const point = await picker.getPointAt(position);
+
+    expect(point!.distanceTo(HIT)).toBeLessThan(1e-3);
+    expect(renderer.getRenderTarget()).toBe(before);
+    expect(renderer.autoClear).toBe(true);
+  });
+
+  it("skips contributors under a WebGPU renderer", async () => {
+    const { picker, position, renderer } = context;
+    Object.assign(renderer, { isWebGPURenderer: true });
+    const contribute = vi.fn();
+    picker.pickDepthContributors.add(contribute);
+
+    await picker.getPointAt(position);
+
+    expect(contribute).not.toHaveBeenCalled();
+  });
+
+  it("forgets its contributors on dispose", () => {
+    const { picker } = context;
+    picker.pickDepthContributors.add(() => {});
+    picker.dispose();
+    expect(picker.pickDepthContributors.size).toBe(0);
+  });
+});
