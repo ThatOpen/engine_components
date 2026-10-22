@@ -47,7 +47,7 @@
   "devDependencies": {
     "@thatopen/components": "~3.5.0",
     "@thatopen/fragments": "~3.5.0",
-    "@thatopen/ui": "~3.4.16",
+    "@thatopen/ui": "~3.4.17",
     "@thatopen/ui-obc": "~3.4.4",
     "@types/convert-units": "2.3.11",
     "@types/earcut": "3.0.0",
