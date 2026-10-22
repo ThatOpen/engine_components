@@ -6,7 +6,7 @@
 
   The PostproductionRenderer stacks GPU passes on top of the base render (ambient occlusion, edge detection, outlines, anti-aliasing, and preset visual styles) as a single drop-in renderer replacement. It can run two pipelines: the classic Composer stack of passes, and the Deferred pipeline, which captures the scene once into a G-buffer and then computes ambient occlusion, contours, sheen and anti-aliasing from it.
 
-  This tutorial covers enabling postproduction on a loaded BIM model; switching between the Composer and Deferred pipelines; outlining specific elements via the Outliner; switching between visual style presets (Basic, Pen, Shadowed Pen, Color Pen, Color Shadows, Color Pen Shadows); tuning the deferred ambient occlusion (screen-space or world-space), denoise and composite; configuring edge detection width, color, and mode; adjusting outline thickness and fill opacity; tuning the composer ambient occlusion parameters (GTAO and PD); toggling SMAA anti-aliasing; and excluding specific objects from postproduction effects.
+  This tutorial covers enabling postproduction on a loaded BIM model; switching between the Composer and Deferred pipelines; choosing the postproduction resolution (native or CSS pixels, adaptive resolution); outlining specific elements via the Outliner; switching between visual style presets (Basic, Pen, Shadowed Pen, Color Pen, Color Shadows, Color Pen Shadows); tuning the deferred ambient occlusion (screen-space or world-space), denoise and composite; configuring edge detection width, color, and mode; adjusting outline thickness and fill opacity; tuning the composer ambient occlusion parameters (GTAO and PD); toggling SMAA anti-aliasing; and excluding specific objects from postproduction effects.
 
   By the end, you'll have a fully configurable postproduction pipeline with live controls for every visual pass.
 */
@@ -65,6 +65,13 @@ grid.config.color.set(0x666666);
 */
 
 world.scene.three.background = null;
+
+/* MD
+  The renderer draws at the native resolution of the screen, and adaptive resolution lowers the postproduction resolution while the frame rate drops below the target, so navigation stays fluid on slower machines. You can change both in the panel below.
+*/
+
+world.renderer.cssSize = false;
+world.renderer.adaptiveResolution = true;
 
 /* MD
   We'll also set up the update logic for the renderer in manual mode (if enabled).
@@ -196,8 +203,9 @@ outliner.addItems({ [model.modelId]: new Set([wall1, wall2]) });
 
   The deferred pipeline does more work per frame than the classic one. If navigating feels slow on your machine, try these, from simplest to most involved:
 
-  1. Lower the **Render scale** (Deferred · Pipeline): the pipeline renders at a fraction of the screen resolution.
-  2. Turn on **Manual mode**: the renderer only draws when something changes, instead of every frame.
+  1. Lower the **Render scale** (Deferred · Pipeline, `postproduction.deferred.renderScale`): the pipeline renders at a fraction of the screen resolution.
+  2. Turn on **Adaptive resolution (hold target fps)** (General, `renderer.adaptiveResolution`): the renderer measures its frame time and lowers the postproduction resolution, never below **Min resolution** (`adaptiveMinScale`), to hold the **Adaptive target fps** (`adaptiveTargetFps`).
+  3. Turn on **Manual mode** (`renderer.mode = OBC.RendererMode.MANUAL`), so the renderer only draws when something changes, and draw a lighter picture while the camera moves: with **Turn off on manual mode** (`turnOffOnManualMode`) the postproduction is skipped while moving and comes back once the camera stops; under WebGPU, **Lower resolution while the camera moves** (`renderer.movingResolution.enabled`) draws at a lower resolution while moving and at full resolution once the camera settles.
 
   :::
 */
@@ -300,6 +308,44 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         <bim-option checked label="Perspective" value="Perspective"></bim-option>
         <bim-option label="Orthographic" value="Orthographic"></bim-option>
       </bim-dropdown>
+
+      <bim-checkbox label="Native DPR sizing (sharp, slower)"
+        ?checked=${!world.renderer!.cssSize}
+        @change="${({ target }: { target: BUI.Checkbox }) => {
+          // Checked = render at the native drawing-buffer resolution (cssSize
+          // off); unchecked = CSS-pixel sizing (faster on HiDPI). Applies to
+          // both composer and deferred.
+          world.renderer!.cssSize = !target.value;
+          world.renderer!.applyPostproductionSize();
+          updateIfManualMode();
+        }}">
+      </bim-checkbox>
+
+      <bim-checkbox label="Adaptive resolution (hold target fps)"
+        ?checked=${world.renderer!.adaptiveResolution}
+        @change="${({ target }: { target: BUI.Checkbox }) => {
+          world.renderer!.adaptiveResolution = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-checkbox>
+
+      <bim-number-input
+        slider step="5" label="Adaptive target fps"
+        value="${world.renderer!.adaptiveTargetFps}" min="24" max="120"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          world.renderer!.adaptiveTargetFps = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
+
+      <bim-number-input
+        slider step="0.05" label="Min resolution (never blurrier than this)"
+        value="${world.renderer!.adaptiveMinScale}" min="0.25" max="1"
+        @change="${({ target }: { target: BUI.NumberInput }) => {
+          world.renderer!.adaptiveMinScale = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-number-input>
 
       <bim-button label="${outliner.enabled ? "Outline: ON" : "Outline: OFF"}"
         @click="${({ target }: { target: BUI.Button }) => {
@@ -831,6 +877,17 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
       </bim-number-input>
 
     </bim-panel-section>
+
+    ${world.renderer!.api === "webgpu" ? BUI.html`
+    <bim-panel-section label="Moving resolution">
+      <bim-checkbox label="Lower resolution while the camera moves"
+        ?checked=${world.renderer!.movingResolution.enabled}
+        @change="${({ target }: { target: BUI.Checkbox }) => {
+          world.renderer!.movingResolution.enabled = target.value;
+          updateIfManualMode();
+        }}">
+      </bim-checkbox>
+    </bim-panel-section>` : null}
 
     <bim-panel-section label="Manual mode">
       <bim-checkbox label="Enabled"

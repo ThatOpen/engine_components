@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { outlineIndex } from "./outline-index";
 
 const PALETTE_SIZE = 256;
 const DEFAULT_GROUP = "default";
@@ -261,6 +262,8 @@ export class WebGPUOutlinePass {
     const existing = perSet.get(groupName);
     if (existing) {
       const proxyGeom = existing.proxy.geometry;
+      const index = outlineIndex(tile.geometry);
+      if (index && proxyGeom.index !== index) proxyGeom.setIndex(index);
       proxyGeom.clearGroups();
       this.fillProxyGroups(proxyGeom, chunks);
       return;
@@ -269,7 +272,8 @@ export class WebGPUOutlinePass {
     const sourceGeom = tile.geometry;
     const proxyGeom = new THREE.BufferGeometry();
     proxyGeom.attributes = sourceGeom.attributes;
-    if (sourceGeom.index) proxyGeom.setIndex(sourceGeom.index);
+    const index = outlineIndex(sourceGeom);
+    if (index) proxyGeom.setIndex(index);
     proxyGeom.boundingBox = sourceGeom.boundingBox;
     proxyGeom.boundingSphere = sourceGeom.boundingSphere;
     this.fillProxyGroups(proxyGeom, chunks);

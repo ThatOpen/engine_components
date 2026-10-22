@@ -32,6 +32,22 @@ export class Postproduction {
   composer?: EffectComposer;
 
   /**
+   * Single-slot forward occlusion pass, kept for consumers that set one pass
+   * directly. Prefer {@link addOcclusionPass}: entries there coexist, while
+   * this slot holds one pass and the last writer wins. When set, it runs
+   * together with the registry entries every deferred frame. Only consulted in
+   * DEFERRED mode.
+   */
+  splatOcclusionPass?: OcclusionPass;
+
+  /**
+   * Whether {@link splatOcclusionPass} draws straight into the finished frame
+   * (opaque forward draws such as point clouds) instead of into a layer that
+   * is composited over it (transparent splats). Default false.
+   */
+  splatOcclusionDirect = false;
+
+  /**
    * Registry of forward occlusion passes (e.g. a splat layer and a point-cloud
    * direct draw) that COEXIST: each producer registers its own entry keyed by
    * its pass fn, so neither clobbers the other. The deferred pipeline runs EVERY
@@ -121,7 +137,15 @@ export class Postproduction {
       this.initialize();
     }
     if (!value) {
+      // Re-show the overlay materials the capture had hidden, but NOT the ones
+      // intentionally kept hidden (helpers flagged `userData.keepHidden`): a
+      // blanket `visible = true` force-revealed them whenever postproduction
+      // was turned off.
       for (const material of this.basePass.isolatedMaterials) {
+        if (material.userData?.keepHidden === true) {
+          material.visible = false;
+          continue;
+        }
         material.visible = true;
       }
     }
@@ -205,6 +229,8 @@ export class Postproduction {
    * gives them back their samples. Off by default: multisampled targets cost
    * memory and bandwidth on every frame, so this is opt-in and, while off,
    * the targets are exactly the ones postproduction has always allocated.
+   * Only the composer path uses these targets; the deferred pipeline keeps
+   * its own.
    */
   get msaaEnabled() {
     return this._msaaEnabled;
@@ -388,7 +414,8 @@ export class Postproduction {
     composite.contourEnabled = withInk;
     this._deferred.settings.aoEnabled = withShadow;
     // FXAA is intentionally left untouched here: it is a general anti-aliasing
-    // tail, valuable for every style, so it stays user-controlled.
+    // tail, valuable for every style (especially when adaptive resolution is
+    // upscaling the frame), so it stays user-controlled.
   }
 
   /**
@@ -662,7 +689,15 @@ export class Postproduction {
         }
       : undefined;
 
+    // The single slot (external consumers) merged with the registry, so every
+    // pass runs this frame.
     const occlusionPasses: { pass: OcclusionPass; direct: boolean }[] = [];
+    if (this.splatOcclusionPass) {
+      occlusionPasses.push({
+        pass: this.splatOcclusionPass,
+        direct: this.splatOcclusionDirect,
+      });
+    }
     for (const [pass, entry] of this.occlusionPasses) {
       occlusionPasses.push({ pass, direct: entry.direct });
     }
@@ -758,7 +793,9 @@ export class Postproduction {
 
   private applySamples() {
     if (!this.composer) return;
-    const max = this._renderer.three.capabilities.maxSamples;
+    const max =
+      (this._renderer.three as any).capabilities?.maxSamples ??
+      Postproduction.MSAA_SAMPLES;
     const wanted = this._msaaEnabled ? Postproduction.MSAA_SAMPLES : 0;
     const samples = Math.max(0, Math.min(wanted, max));
     const targets = [this.composer.renderTarget1, this.composer.renderTarget2];
@@ -780,6 +817,16 @@ export class Postproduction {
     this._renderer.three.setClearColor(0x000000, 0);
 
     this.composer = new EffectComposer(this._renderer.three);
+    // The composer works in FINAL pixels, so its own pixel ratio must be 1.
+    // `EffectComposer` captures `renderer.getPixelRatio()` in its constructor
+    // and multiplies every `setSize` by it, forever, but the size it is given
+    // has already been resolved to device pixels by
+    // `PostproductionRenderer.setPostproductionSize` (see `cssSize`), and apps
+    // that drive `setSize` directly pass the pixels they want. Multiplying
+    // again applied the ratio twice (the first-load path rendered at twice
+    // the canvas on a HiDPI screen), and an app lowering the ratio afterwards
+    // (`setPixelRatio(1)`) moved the renderer and left the composer behind.
+    this.composer.setPixelRatio(1);
     // EffectComposer allocates its ping-pong targets with samples = 0, which
     // drops the MSAA of the default framebuffer as soon as postproduction is
     // on. With msaaEnabled off this is a no-op (the targets already have 0

@@ -98,7 +98,14 @@ describe("PostproductionRenderer without `mode` (WebGL default)", () => {
     expect(renderer.pipeline).toBeNull();
     expect((renderer as any)._webgpuPostproduction).toBeUndefined();
     expect((renderer as any)._composition).toBeNull();
-    expect(renderer.pipelineStats).toEqual({ compiled: 0, disposed: 0 });
+    expect(renderer.pipelineStats).toEqual({
+      reused: 0,
+      compiled: 0,
+      disposed: 0,
+    });
+    expect(renderer.movingResolution.enabled).toBe(false);
+    expect(renderer.adaptiveResolution).toBe(false);
+    expect(renderer.cssSize).toBe(false);
     // The WebGL surface is as before: no postproduction until a world.
     expect(() => renderer.postproduction).toThrow(
       "Renderer not initialized yet with a world!",

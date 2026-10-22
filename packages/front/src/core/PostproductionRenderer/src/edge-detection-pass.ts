@@ -272,6 +272,24 @@ export class EdgeDetectionPass extends Pass {
     const prevBackground = currentScene.background;
     currentScene.fog = null;
     currentScene.background = null;
+    // Edges are a property of the geometry, not of the lighting. Only
+    // fragments meshes get the vertex-colour override below; every other mesh
+    // (a ground plane, say) is drawn with its own lit material, so with
+    // shadows on, the border of every cast shadow read as a colour step and
+    // was inked. The final image keeps its shadows: this only affects the
+    // edge-detection render.
+    //
+    // `renderer.shadowMap.enabled = false` does not do it: WebGLRenderer keeps
+    // each material's compiled program and does not re-check that flag.
+    // `receiveShadow` is checked when picking the program, so flipping it per
+    // mesh selects the shadowless variant (cached after the first frame).
+    const shadowReceivers: THREE.Object3D[] = [];
+    currentScene.traverse((object) => {
+      if ((object as THREE.Mesh).isMesh && object.receiveShadow) {
+        object.receiveShadow = false;
+        shadowReceivers.push(object);
+      }
+    });
 
     if (this._mode === EdgeDetectionPassMode.DEFAULT) {
       this.setMaterialToMesh(true);
@@ -288,6 +306,7 @@ export class EdgeDetectionPass extends Pass {
 
     currentScene.fog = prevFog;
     currentScene.background = prevBackground;
+    for (const object of shadowReceivers) object.receiveShadow = true;
 
     // Render edges
     this._edgeMaterial.uniforms.tDiffuse.value =
