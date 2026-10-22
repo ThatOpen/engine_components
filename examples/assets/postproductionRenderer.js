@@ -1,4 +1,4 @@
-import{b as E,p as w,M as S,j as L,r as C,m as $,a as P}from"./index-CihJyAGz.js";import{C as y,W as A,S as D,O as G,y as R,F as x,z as b}from"./graphic-vertex-picker-BEWQj792.js";import{P as F,a as l,E as v}from"./index-D5UKfm6I.js";import{O as I}from"./index-WjlZCGiB.js";import"./three.tsl-DtvQaLlC.js";import"./renderer-with-2d-NiTxIaaH.js";import"./index-915RzPvp.js";const d=new y,N=d.get(A),n=N.create();n.scene=new D(d);n.scene.setup();n.scene.three.background=null;const W=document.getElementById("container");n.renderer=new F(d,W);n.camera=new G(d);await n.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);d.init();const _=d.get(R),f=_.create(n);f.config.color.set(6710886);n.scene.three.background=null;const a=()=>{n.renderer.mode===b.MANUAL&&(n.renderer.needsUpdate=!0)};n.camera.controls.addEventListener("update",a);n.renderer.onResize.add(a);const U=await x.getWorker(),r=d.get(x);r.init(U);n.camera.controls.addEventListener("update",()=>r.core.update());n.onCameraChanged.add(e=>{for(const[,s]of r.list)s.useCamera(e.three);r.core.update(!0)});r.list.onItemSet.add(({value:e})=>{e.useCamera(n.camera.three),n.scene.three.add(e.object),r.core.update(!0)});r.core.models.materials.list.onItemSet.add(({value:e})=>{"isLodMaterial"in e&&e.isLodMaterial||(e.polygonOffset=!0,e.polygonOffsetUnits=1,e.polygonOffsetFactor=Math.random())});const H=["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];await Promise.all(H.map(async e=>{var g;const s=(g=e.split("/").pop())==null?void 0:g.split(".").shift();if(!s)return null;const k=await(await fetch(e)).arrayBuffer();return r.core.load(k,{modelId:s})}));n.renderer.postproduction.enabled=!0;n.dynamicAnchor=!1;n.renderer.postproduction.basePass.isolatedMaterials.push(f.material);const O=r.list.values().next().value,M=d.get(I);M.world=n;const B=await O.getItemsOfCategories([/IFCWALL/]),j=B.IFCWALL,[T,z]=j;M.addItems({[O.modelId]:new Set([T,z])});const m=new E;m.showPanel(2);document.body.append(m.dom);m.dom.style.left="0px";m.dom.style.zIndex="unset";n.renderer.onBeforeUpdate.add(()=>m.begin());n.renderer.onAfterUpdate.add(()=>m.end());w.init();const{aoPass:i,outlinePass:u,edgesPass:p,defaultAoParameters:o}=n.renderer.postproduction,t={lumaPhi:10,depthPhi:2,normalPhi:3,radius:4,radiusExponent:1,rings:2,samples:16};i.updateGtaoMaterial(o);i.updatePdMaterial(t);const h=new S(new L(1,1,1),new C({color:65280}));h.position.set(10,0,0);n.scene.three.add(h);n.renderer.postproduction.excludedObjectsPass.addExcludedMaterial(h.material);const c=$.create(()=>P`
+import{S as M,K as E,M as S,aH as w,aI as L,n as v,b as $}from"./TransformControls-Cj7TVMGg.js";import{c as A,W as C,S as y,O as D,G,F as P,g as b}from"./graphic-vertex-picker-j9h-4x5w.js";import{P as R,b as i,E as g}from"./index-DCDEpjw-.js";import{O as F}from"./index-DzvqS1FY.js";import"./preload-helper-PPVm8Dsz.js";import"./index-XE3BY6F0.js";import"./renderer-with-2d-CoXYxj2B.js";import"./index-BpgOAmhZ.js";const d=new A,I=d.get(C),n=I.create();n.scene=new y(d);n.scene.setup();n.scene.three.background=null;const N=document.getElementById("container");n.renderer=new R(d,N);n.camera=new D(d);await n.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);d.init();const W=d.get(G),x=W.create(n);x.config.color.set(6710886);n.scene.three.background=null;const a=()=>{n.renderer.mode===b.MANUAL&&(n.renderer.needsUpdate=!0)};n.camera.controls.addEventListener("update",a);n.renderer.onResize.add(a);const _=await P.getWorker(),r=d.get(P);r.init(_);n.camera.controls.addEventListener("update",()=>r.core.update());n.onCameraChanged.add(e=>{for(const[,s]of r.list)s.useCamera(e.three);r.core.update(!0)});r.list.onItemSet.add(({value:e})=>{e.useCamera(n.camera.three),n.scene.three.add(e.object),r.core.update(!0)});r.core.models.materials.list.onItemSet.add(({value:e})=>{"isLodMaterial"in e&&e.isLodMaterial||(e.polygonOffset=!0,e.polygonOffsetUnits=1,e.polygonOffsetFactor=Math.random())});const H=["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];await Promise.all(H.map(async e=>{const s=e.split("/").pop()?.split(".").shift();if(!s)return null;const k=await(await fetch(e)).arrayBuffer();return r.core.load(k,{modelId:s})}));n.renderer.postproduction.enabled=!0;n.dynamicAnchor=!1;n.renderer.postproduction.basePass.isolatedMaterials.push(x.material);const f=r.list.values().next().value,O=d.get(F);O.world=n;const U=await f.getItemsOfCategories([/IFCWALL/]),B=U.IFCWALL,[j,T]=B;O.addItems({[f.modelId]:new Set([j,T])});const m=new M;m.showPanel(2);document.body.append(m.dom);m.dom.style.left="0px";m.dom.style.zIndex="unset";n.renderer.onBeforeUpdate.add(()=>m.begin());n.renderer.onAfterUpdate.add(()=>m.end());E.init();const{aoPass:l,outlinePass:u,edgesPass:p,defaultAoParameters:o}=n.renderer.postproduction,t={lumaPhi:10,depthPhi:2,normalPhi:3,radius:4,radiusExponent:1,rings:2,samples:16};l.updateGtaoMaterial(o);l.updatePdMaterial(t);const h=new S(new w(1,1,1),new L({color:65280}));h.position.set(10,0,0);n.scene.three.add(h);n.renderer.postproduction.excludedObjectsPass.addExcludedMaterial(h.material);const c=v.create(()=>$`
   <bim-panel active label="Postproduction Tutorial" class="options-menu">
 
     <bim-panel-section label="General">
@@ -22,15 +22,20 @@ import{b as E,p as w,M as S,j as L,r as C,m as $,a as P}from"./index-CihJyAGz.js
         @change="${({target:e})=>{n.renderer.postproduction.smaaEnabled=e.value,a()}}">
       </bim-checkbox>
 
+      <bim-checkbox label="MSAA enabled"
+        ?checked=${n.renderer.postproduction.msaaEnabled}
+        @change="${({target:e})=>{n.renderer.postproduction.msaaEnabled=e.value,a()}}">
+      </bim-checkbox>
+
       <bim-dropdown required label="Postproduction style"
         @change="${({target:e})=>{const s=e.value[0];n.renderer.postproduction.style=s,a()}}">
 
-        <bim-option checked label="Basic" value="${l.COLOR}"></bim-option>
-        <bim-option label="Pen" value="${l.PEN}"></bim-option>
-        <bim-option label="Shadowed Pen" value="${l.PEN_SHADOWS}"></bim-option>
-        <bim-option label="Color Pen" value="${l.COLOR_PEN}"></bim-option>
-        <bim-option label="Color Shadows" value="${l.COLOR_SHADOWS}"></bim-option>
-        <bim-option label="Color Pen Shadows" value="${l.COLOR_PEN_SHADOWS}"></bim-option>
+        <bim-option checked label="Basic" value="${i.COLOR}"></bim-option>
+        <bim-option label="Pen" value="${i.PEN}"></bim-option>
+        <bim-option label="Shadowed Pen" value="${i.PEN_SHADOWS}"></bim-option>
+        <bim-option label="Color Pen" value="${i.COLOR_PEN}"></bim-option>
+        <bim-option label="Color Shadows" value="${i.COLOR_SHADOWS}"></bim-option>
+        <bim-option label="Color Pen Shadows" value="${i.COLOR_PEN_SHADOWS}"></bim-option>
       </bim-dropdown>
 
     </bim-panel-section>
@@ -50,8 +55,8 @@ import{b as E,p as w,M as S,j as L,r as C,m as $,a as P}from"./index-CihJyAGz.js
 
       <bim-dropdown label="Edges Mode"
         @change="${({target:e})=>{p.mode=e.value[0],a()}}">
-        <bim-option checked label="Default" value="${v.DEFAULT}"></bim-option>
-        <bim-option label="Global" value="${v.GLOBAL}"></bim-option>
+        <bim-option checked label="Default" value="${g.DEFAULT}"></bim-option>
+        <bim-option label="Global" value="${g.GLOBAL}"></bim-option>
       </bim-dropdown>
 
     </bim-panel-section>
@@ -146,12 +151,12 @@ import{b as E,p as w,M as S,j as L,r as C,m as $,a as P}from"./index-CihJyAGz.js
 
       <bim-dropdown label="Default style"
         @change="${({target:e})=>{const s=e.value[0];n.renderer.manualDefaultStyle=s,a()}}">
-        <bim-option label="Basic" value="${l.COLOR}"></bim-option>
-        <bim-option label="Pen" value="${l.PEN}"></bim-option>
-        <bim-option label="Pen Shadows" value="${l.PEN_SHADOWS}"></bim-option>
-        <bim-option label="Color Pen" value="${l.COLOR_PEN}"></bim-option>
-        <bim-option label="Color Shadows" value="${l.COLOR_SHADOWS}"></bim-option>
-        <bim-option label="Color Pen Shadows" value="${l.COLOR_PEN_SHADOWS}"></bim-option>
+        <bim-option label="Basic" value="${i.COLOR}"></bim-option>
+        <bim-option label="Pen" value="${i.PEN}"></bim-option>
+        <bim-option label="Pen Shadows" value="${i.PEN_SHADOWS}"></bim-option>
+        <bim-option label="Color Pen" value="${i.COLOR_PEN}"></bim-option>
+        <bim-option label="Color Shadows" value="${i.COLOR_SHADOWS}"></bim-option>
+        <bim-option label="Color Pen Shadows" value="${i.COLOR_PEN_SHADOWS}"></bim-option>
       </bim-dropdown>
 
 
@@ -161,98 +166,98 @@ import{b as E,p as w,M as S,j as L,r as C,m as $,a as P}from"./index-CihJyAGz.js
 
         <bim-checkbox checked label="Screen Space Radius"
           ?checked=${o.screenSpaceRadius}
-          @change="${({target:e})=>{o.screenSpaceRadius=e.value,i.updateGtaoMaterial(o),a()}}">
+          @change="${({target:e})=>{o.screenSpaceRadius=e.value,l.updateGtaoMaterial(o),a()}}">
         </bim-checkbox>
 
         <bim-number-input
           slider step="0.01" label="Blend intensity"
-          value="${i.blendIntensity}" min="0" max="1"
-          @change="${({target:e})=>{i.blendIntensity=e.value,a()}}">
+          value="${l.blendIntensity}" min="0" max="1"
+          @change="${({target:e})=>{l.blendIntensity=e.value,a()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.01" label="Radius"
           value="${o.radius}" min="0.01" max="1"
-          @change="${({target:e})=>{o.radius=e.value,i.updateGtaoMaterial(o),a()}}">
+          @change="${({target:e})=>{o.radius=e.value,l.updateGtaoMaterial(o),a()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.01" label="Distance exponent"
           value="${o.distanceExponent}" min="1" max="10"
-          @change="${({target:e})=>{o.distanceExponent=e.value,i.updateGtaoMaterial(o),a()}}">
+          @change="${({target:e})=>{o.distanceExponent=e.value,l.updateGtaoMaterial(o),a()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.01" label="Thickness"
           value="${o.thickness}" min="0.01" max="10"
-          @change="${({target:e})=>{o.thickness=e.value,i.updateGtaoMaterial(o),a()}}">
+          @change="${({target:e})=>{o.thickness=e.value,l.updateGtaoMaterial(o),a()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.01" label="Distance falloff"
           value="${o.distanceFallOff}" min="0" max="1"
-          @change="${({target:e})=>{o.distanceFallOff=e.value,i.updateGtaoMaterial(o),a()}}">
+          @change="${({target:e})=>{o.distanceFallOff=e.value,l.updateGtaoMaterial(o),a()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.01" label="Scale"
           value="${o.scale}" min="0.01" max="10"
-          @change="${({target:e})=>{o.scale=e.value,i.updateGtaoMaterial(o),a()}}">
+          @change="${({target:e})=>{o.scale=e.value,l.updateGtaoMaterial(o),a()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="1" label="Samples"
           value="${o.samples}" min="2" max="32"
-          @change="${({target:e})=>{o.samples=e.value,i.updateGtaoMaterial(o),a()}}">
+          @change="${({target:e})=>{o.samples=e.value,l.updateGtaoMaterial(o),a()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.1" label="PD Luma Phi"
           value="${t.lumaPhi}" min="0" max="20"
-          @change="${({target:e})=>{t.lumaPhi=e.value,i.updatePdMaterial(t),a()}}">
+          @change="${({target:e})=>{t.lumaPhi=e.value,l.updatePdMaterial(t),a()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.1" label="PD Depth Phi"
           value="${t.depthPhi}" min="0.01" max="20"
-          @change="${({target:e})=>{t.depthPhi=e.value,i.updatePdMaterial(t),a()}}">
+          @change="${({target:e})=>{t.depthPhi=e.value,l.updatePdMaterial(t),a()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.1" label="PD Normal Phi"
           value="${t.normalPhi}" min="0.01" max="20"
-          @change="${({target:e})=>{t.normalPhi=e.value,i.updatePdMaterial(t),a()}}">
+          @change="${({target:e})=>{t.normalPhi=e.value,l.updatePdMaterial(t),a()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="1" label="PD Radius"
           value="${t.radius}" min="0" max="32"
-          @change="${({target:e})=>{t.radius=e.value,i.updatePdMaterial(t),a()}}">
+          @change="${({target:e})=>{t.radius=e.value,l.updatePdMaterial(t),a()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.1" label="PD Radius Exponent"
           value="${t.radiusExponent}" min="0.1" max="4"
-          @change="${({target:e})=>{t.radiusExponent=e.value,i.updatePdMaterial(t),a()}}">
+          @change="${({target:e})=>{t.radiusExponent=e.value,l.updatePdMaterial(t),a()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="0.125" label="PD Rings"
           value="${t.rings}" min="1" max="16"
-          @change="${({target:e})=>{t.rings=e.value,i.updatePdMaterial(t),a()}}">
+          @change="${({target:e})=>{t.rings=e.value,l.updatePdMaterial(t),a()}}">
         </bim-number-input>
 
         <bim-number-input
           slider step="1" label="PD Samples"
           value="${t.samples}" min="2" max="32"
-          @change="${({target:e})=>{t.samples=e.value,i.updatePdMaterial(t),a()}}">
+          @change="${({target:e})=>{t.samples=e.value,l.updatePdMaterial(t),a()}}">
         </bim-number-input>
 
       </bim-panel-section>
 
 
     </bim-panel>
-    `);document.body.append(c);const q=$.create(()=>P`
+    `);document.body.append(c);const q=v.create(()=>$`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{c.classList.contains("options-menu-visible")?c.classList.remove("options-menu-visible"):c.classList.add("options-menu-visible")}}">
       </bim-button>

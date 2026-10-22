@@ -1,4 +1,4 @@
-import{p as u,m as r,C as g,a as b,b as f}from"./index-CihJyAGz.js";import{C as h,W as k,S as C,a as v,O as w,F as p,R as y,q as S}from"./index-Dy8ZicqY.js";const o=new h,P=o.get(k),n=P.create();n.scene=new C(o);n.scene.setup();n.scene.three.background=null;const m=document.getElementById("container");n.renderer=new v(o,m);n.camera=new w(o);await n.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);o.init();const x=await p.getWorker(),a=o.get(p);a.init(x);n.camera.controls.addEventListener("update",()=>a.core.update());n.onCameraChanged.add(e=>{for(const[,l]of a.list)l.useCamera(e.three);a.core.update(!0)});a.list.onItemSet.add(({value:e})=>{e.useCamera(n.camera.three),n.scene.three.add(e.object),e.getClippingPlanesEvent=()=>Array.from(n.renderer.three.clippingPlanes)||[],a.core.update(!0)});a.core.models.materials.list.onItemSet.add(({value:e})=>{"isLodMaterial"in e&&e.isLodMaterial||(e.polygonOffset=!0,e.polygonOffsetUnits=1,e.polygonOffsetFactor=Math.random())});const $=["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];await Promise.all($.map(async e=>{var c;const l=(c=e.split("/").pop())==null?void 0:c.split(".").shift();if(!l)return null;const d=await(await fetch(e)).arrayBuffer();return a.core.load(d,{modelId:l})}));const L=o.get(y);L.get(n);const t=o.get(S);t.enabled=!0;m.ondblclick=()=>{t.enabled&&t.create(n)};const A=()=>{for(const[,e]of t.list)e.enabled=!e.enabled};window.onkeydown=e=>{(e.code==="Delete"||e.code==="Backspace")&&t.enabled&&t.delete(n)};u.init();const s=r.create(()=>b`
+import{K as d,n as c,C as u,b as r,S as g}from"./TransformControls-Cj7TVMGg.js";import{C as f,W as h,S as k,a as C,O as v,F as b,R as w,b as y}from"./index-DqZKPMhV.js";const a=new f,S=a.get(h),n=S.create();n.scene=new k(a);n.scene.setup();n.scene.three.background=null;const p=document.getElementById("container");n.renderer=new C(a,p);n.camera=new v(a);await n.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);a.init();const P=await b.getWorker(),o=a.get(b);o.init(P);n.camera.controls.addEventListener("update",()=>o.core.update());n.onCameraChanged.add(e=>{for(const[,l]of o.list)l.useCamera(e.three);o.core.update(!0)});o.list.onItemSet.add(({value:e})=>{e.useCamera(n.camera.three),n.scene.three.add(e.object),e.getClippingPlanesEvent=()=>Array.from(n.renderer.three.clippingPlanes)||[],o.core.update(!0)});o.core.models.materials.list.onItemSet.add(({value:e})=>{"isLodMaterial"in e&&e.isLodMaterial||(e.polygonOffset=!0,e.polygonOffsetUnits=1,e.polygonOffsetFactor=Math.random())});const x=["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];await Promise.all(x.map(async e=>{const l=e.split("/").pop()?.split(".").shift();if(!l)return null;const m=await(await fetch(e)).arrayBuffer();return o.core.load(m,{modelId:l})}));const $=a.get(w);$.get(n);const t=a.get(y);t.enabled=!0;p.ondblclick=()=>{t.enabled&&t.create(n)};const L=()=>{for(const[,e]of t.list)e.enabled=!e.enabled};window.onkeydown=e=>{(e.code==="Delete"||e.code==="Backspace")&&t.enabled&&t.delete(n)};d.init();const s=c.create(()=>r`
     <bim-panel active label="Clipper Tutorial" class="options-menu">
       <bim-panel-section label="Commands">
         <bim-label>Double click: Create clipping plane</bim-label>
@@ -15,7 +15,7 @@ import{p as u,m as r,C as g,a as b,b as f}from"./index-CihJyAGz.js";import{C as 
       
         <bim-color-input 
           label="Planes Color" color="#202932" 
-          @input="${({target:e})=>{t.config.color=new g(e.color)}}">
+          @input="${({target:e})=>{t.config.color=new u(e.color)}}">
         </bim-color-input>
         
         <bim-number-input 
@@ -34,7 +34,7 @@ import{p as u,m as r,C as g,a as b,b as f}from"./index-CihJyAGz.js";import{C as 
 
         <bim-button 
           label="Toggle Clippings" 
-          @click=${A}>  
+          @click=${L}>  
         </bim-button>       
         
         <bim-button 
@@ -44,8 +44,8 @@ import{p as u,m as r,C as g,a as b,b as f}from"./index-CihJyAGz.js";import{C as 
         
       </bim-panel-section>
     </bim-panel>
-  `);document.body.append(s);const O=r.create(()=>b`
+  `);document.body.append(s);const A=c.create(()=>r`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
         @click="${()=>{s.classList.contains("options-menu-visible")?s.classList.remove("options-menu-visible"):s.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(O);const i=new f;i.showPanel(2);document.body.append(i.dom);i.dom.style.left="0px";i.dom.style.zIndex="unset";n.renderer.onBeforeUpdate.add(()=>i.begin());n.renderer.onAfterUpdate.add(()=>i.end());
+    `);document.body.append(A);const i=new g;i.showPanel(2);document.body.append(i.dom);i.dom.style.left="0px";i.dom.style.zIndex="unset";n.renderer.onBeforeUpdate.add(()=>i.begin());n.renderer.onAfterUpdate.add(()=>i.end());

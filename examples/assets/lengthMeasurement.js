@@ -1,18 +1,18 @@
-var C=Object.defineProperty;var x=(i,t,e)=>t in i?C(i,t,{enumerable:!0,configurable:!0,writable:!0,value:e}):i[t]=e;var r=(i,t,e)=>(x(i,typeof t!="symbol"?t+"":t,e),e);import{V as y,C as k,c as d,S as L,p as M,m as D,a as h,b as I}from"./index-CihJyAGz.js";import{R as B,C as N,W as O,S as A,O as T,F,a as j}from"./graphic-vertex-picker-BEWQj792.js";import{w as z}from"./worker-BV2ELoXO.js";import{P as Q}from"./index-D5UKfm6I.js";import{M as U,L as R,b as $}from"./index-GP7bym1C.js";import"./three.tsl-DtvQaLlC.js";import"./renderer-with-2d-NiTxIaaH.js";const p=class p extends U{constructor(e){super(e,"length");r(this,"_temp",{isDragging:!1,line:new R});r(this,"_lastEdgeKey",null);r(this,"_edgeMissStreak",0);r(this,"modes",["free","edge"]);r(this,"_mode","free");r(this,"create",async()=>{if(this.enabled){if(!this._temp.isDragging){await this.initPreview();return}this.endCreation()}});r(this,"endCreation",()=>{this.enabled&&this._temp.dimension&&(this.mode==="edge"&&!this.hasEdgeUnderCursor()||(this.list.add(this._temp.line.clone()),this.mode==="free"&&(this._temp.dimension.dispose(),this._temp.dimension=void 0,this._temp.isDragging=!1,this._temp.startNormal=void 0)))});r(this,"cancelCreation",()=>{var e;this.enabled&&(this._temp.isDragging=!1,this._temp.dimension&&((e=this._temp.dimension)==null||e.dispose(),this._temp.dimension=void 0))});r(this,"delete",()=>{if(!this.enabled||this.list.size===0||!this.world)return;const e=this.getLineBoxes(),l=this.components.get(B).get(this.world).castRayToObjects(e);if(!l)return;const w=[...this.lines].find(S=>S.boundingBox===l.object);w&&this.list.delete(w.line)});e.add(p.uuid,this),this.initHandlers()}get mode(){return this._mode}set mode(e){this._mode=e,this.cancelCreation(),e==="edge"&&this.initPreview(),this.onStateChanged.trigger(["mode"])}get isDragging(){return this._temp.isDragging}initHandlers(){this.list.onItemAdded.add(e=>{const s=this.createLineElement(e,this._temp.startNormal);s.createBoundingBox(),this.lines.add(s)}),this.list.onBeforeDelete.add(e=>{const o=[...this.lines].find(l=>l.line===e);o&&this.lines.delete(o)}),this.onPointerMove.add(()=>this.updatePreviewLine()),this.onEnabledChange.add(e=>{e&&this.mode==="edge"&&this.initPreview()})}async initPreview(){if(!this.world)throw new Error("Measurement: world is need!");const e=this.lastPick??await this._vertexPicker.get({snappingClasses:this.snappings});if(this.mode==="free"){if(!(e!=null&&e.point))return;const s=e.point;this._temp.line.set(s,s.clone()),this._temp.isDragging=!0,this._temp.dimension=this.createLineElement(this._temp.line),this._temp.startNormal=e.normal??void 0}else if(this.mode==="edge"){const s=e==null?void 0:e.snappedEdgeP1,o=e==null?void 0:e.snappedEdgeP2,l=s||new y,_=o||l;this._temp.line.set(l,_),this._temp.isDragging=!0,this._temp.dimension=this.createLineElement(this._temp.line),this._temp.dimension.visible=!!(s&&o)}}updatePreviewLine(){if(!this.world)throw new Error("Measurement: world is need!");const e=this.lastPick;if(this.mode==="free"){if(!(e!=null&&e.point)||(this._temp.line.end.copy(e.point),!this._temp.dimension))return;this._temp.dimension.end=this._temp.line.end}else if(this.mode==="edge"){const s=e==null?void 0:e.snappedEdgeP1,o=e==null?void 0:e.snappedEdgeP2;if(!(s&&o)){this._edgeMissStreak+=1,this._edgeMissStreak>p.EDGE_MISS_TOLERANCE&&this._temp.dimension&&this._temp.dimension.visible&&(this._temp.dimension.visible=!1,this._lastEdgeKey=null);return}this._edgeMissStreak=0;const l=V(s,o);if(l===this._lastEdgeKey){this._temp.dimension&&!this._temp.dimension.visible&&(this._temp.dimension.visible=!0);return}if(this._lastEdgeKey=l,this._temp.line.start.copy(s),this._temp.line.end.copy(o),!this._temp.dimension)return;this._temp.dimension.visible||(this._temp.dimension.visible=!0),this._temp.dimension.start=this._temp.line.start,this._temp.dimension.end=this._temp.line.end}}hasEdgeUnderCursor(){const e=this.lastPick;return!!(e!=null&&e.snappedEdgeP1&&(e!=null&&e.snappedEdgeP2))}};r(p,"uuid","2f9bcacf-18a9-4be6-a293-e898eae64ea1"),r(p,"EDGE_MISS_TOLERANCE",3);let v=p;function V(i,t){const s=`${Math.round(i.x*1e3)},${Math.round(i.y*1e3)},${Math.round(i.z*1e3)}`,o=`${Math.round(t.x*1e3)},${Math.round(t.y*1e3)},${Math.round(t.z*1e3)}`;return s<o?`${s}|${o}`:`${o}|${s}`}const c=new N,q=c.get(O),a=q.create();a.scene=new A(c);a.scene.setup();a.scene.three.background=null;const P=document.getElementById("container");a.renderer=new Q(c,P);a.camera=new T(c);await a.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);c.init();const m=c.get(F);m.init(z);a.camera.controls.addEventListener("update",()=>m.core.update());a.onCameraChanged.add(i=>{for(const[,t]of m.list)t.useCamera(i.three);m.core.update(!0)});m.list.onItemSet.add(({value:i})=>{i.useCamera(a.camera.three),a.scene.three.add(i.object),m.core.update(!0)});m.core.models.materials.list.onItemSet.add(({value:i})=>{"isLodMaterial"in i&&i.isLodMaterial||(i.polygonOffset=!0,i.polygonOffsetUnits=1,i.polygonOffsetFactor=Math.random())});const K=["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];await Promise.all(K.map(async i=>{var o;const t=(o=i.split("/").pop())==null?void 0:o.split(".").shift();if(!t)return null;const s=await(await fetch(i)).arrayBuffer();return m.core.load(s,{modelId:t})}));const n=c.get(v);n.world=a;n.color=new k("#494cb6");n.enabled=!0;n.snappings=[d.POINT,d.LINE];P.ondblclick=()=>n.create();const W=()=>{n.list.clear()},H=()=>{const i=[];for(const t of n.list)i.push(t.value);return i};window.onkeydown=i=>{(i.code==="Delete"||i.code==="Backspace")&&n.delete()};n.list.onItemAdded.add(i=>{const t=new y;i.getCenter(t);const e=i.distance()/3,s=new L(t,e);a.camera.controls.fitToSphere(s,!0)});const G=()=>{for(const i of n.lines)i.displayRectangularDimensions()},J=()=>{for(const i of n.lines)i.invertRectangularDimensions()},X=()=>{for(const i of n.lines)i.displayProjectionDimensions()},Y=()=>{for(const i of n.lines)i.rectangleDimensions.clear(),i.projectionDimensions.clear()};M.init();const E=c.get(j).get(),g=i=>{var t;return((t=n.snappings)==null?void 0:t.includes(i))??!1},f=(i,t)=>{const e=new Set(n.snappings??[]);t?e.add(i):e.delete(i),n.snappings=Array.from(e)},Z=()=>h`
-  <bim-checkbox label="Snap: Point" ?checked=${g(d.POINT)}
-    @change="${({target:i})=>f(d.POINT,i.value)}">
+import{V as w,C as k,bw as l,J as P,K as D,n as $,b as c,S}from"./TransformControls-Cj7TVMGg.js";import{R as C,c as L,W as M,S as x,O as R,F as I,a6 as B}from"./graphic-vertex-picker-j9h-4x5w.js";import{w as N}from"./worker-kCPUG8rI.js";import{P as O}from"./index-DCDEpjw-.js";import{M as A,L as T,b as v}from"./index-3oG9WXOg.js";import"./preload-helper-PPVm8Dsz.js";import"./index-XE3BY6F0.js";import"./renderer-with-2d-CoXYxj2B.js";class b extends A{static uuid="2f9bcacf-18a9-4be6-a293-e898eae64ea1";_temp={isDragging:!1,line:new T};_lastEdgeKey=null;_edgeMissStreak=0;static EDGE_MISS_TOLERANCE=3;modes=["free","edge"];_mode="free";get mode(){return this._mode}set mode(e){this._mode=e,this.cancelCreation(),e==="edge"&&this.initPreview(),this.onStateChanged.trigger(["mode"])}get isDragging(){return this._temp.isDragging}constructor(e){super(e,"length"),e.add(b.uuid,this),this.initHandlers()}initHandlers(){this.list.onItemAdded.add(e=>{const n=this.createLineElement(e,this._temp.startNormal);n.createBoundingBox(),this.lines.add(n)}),this.list.onBeforeDelete.add(e=>{const s=[...this.lines].find(o=>o.line===e);s&&this.lines.delete(s)}),this.onPointerMove.add(()=>this.updatePreviewLine()),this.onEnabledChange.add(e=>{e&&this.mode==="edge"&&this.initPreview()})}_pendingPreview=null;initPreview(){return this._pendingPreview||(this._pendingPreview=this.buildPreview().finally(()=>{this._pendingPreview=null})),this._pendingPreview}async buildPreview(){if(!this.world)throw new Error("Measurement: world is need!");const e=this.lastPick??await this._vertexPicker.get({snappingClasses:this.snappings});if(this.enabled){if(this._temp.dimension?.dispose(),this._temp.dimension=void 0,this.mode==="free"){if(!e?.point)return;const n=e.point;this._temp.line.set(n,n.clone()),this._temp.isDragging=!0,this._temp.dimension=this.createLineElement(this._temp.line),this._temp.startNormal=e.normal??void 0}else if(this.mode==="edge"){const n=e?.snappedEdgeP1,s=e?.snappedEdgeP2,o=n||new w,g=s||o;this._temp.line.set(o,g),this._temp.isDragging=!0,this._temp.dimension=this.createLineElement(this._temp.line),this._temp.dimension.visible=!!(n&&s)}}}updatePreviewLine(){if(!this.world)throw new Error("Measurement: world is need!");const e=this.lastPick;if(this.mode==="free"){if(!e?.point||(this._temp.line.end.copy(e.point),!this._temp.dimension))return;this._temp.dimension.end=this._temp.line.end}else if(this.mode==="edge"){const n=e?.snappedEdgeP1,s=e?.snappedEdgeP2;if(!(n&&s)){this._edgeMissStreak+=1,this._edgeMissStreak>b.EDGE_MISS_TOLERANCE&&this._temp.dimension&&this._temp.dimension.visible&&(this._temp.dimension.visible=!1,this._lastEdgeKey=null);return}this._edgeMissStreak=0;const o=F(n,s);if(o===this._lastEdgeKey){this._temp.dimension&&!this._temp.dimension.visible&&(this._temp.dimension.visible=!0);return}if(this._lastEdgeKey=o,this._temp.line.start.copy(n),this._temp.line.end.copy(s),!this._temp.dimension)return;this._temp.dimension.visible||(this._temp.dimension.visible=!0),this._temp.dimension.start=this._temp.line.start,this._temp.dimension.end=this._temp.line.end}}hasEdgeUnderCursor(){const e=this.lastPick;return!!(e?.snappedEdgeP1&&e?.snappedEdgeP2)}create=async()=>{if(this.enabled){if(!this._temp.isDragging){await this.initPreview();return}this.endCreation()}};endCreation=()=>{this.enabled&&this._temp.dimension&&(this.mode==="edge"&&!this.hasEdgeUnderCursor()||(this.list.add(this._temp.line.clone()),this.mode==="free"&&(this._temp.dimension.dispose(),this._temp.dimension=void 0,this._temp.isDragging=!1,this._temp.startNormal=void 0)))};cancelCreation=()=>{this.enabled&&(this._temp.isDragging=!1,this._temp.dimension&&(this._temp.dimension?.dispose(),this._temp.dimension=void 0))};dispose(){this._temp.isDragging=!1,this._temp.dimension?.dispose(),this._temp.dimension=void 0,super.dispose()}delete=()=>{if(!this.enabled||this.list.size===0||!this.world)return;const e=this.getLineBoxes(),o=this.components.get(C).get(this.world).castRayToObjects(e);if(!o)return;const f=[...this.lines].find(E=>E.boundingBox===o.object);f&&this.list.delete(f.line)}}function F(i,e){const s=`${Math.round(i.x*1e3)},${Math.round(i.y*1e3)},${Math.round(i.z*1e3)}`,o=`${Math.round(e.x*1e3)},${Math.round(e.y*1e3)},${Math.round(e.z*1e3)}`;return s<o?`${s}|${o}`:`${o}|${s}`}const d=new L,j=d.get(M),a=j.create();a.scene=new x(d);a.scene.setup();a.scene.three.background=null;const y=document.getElementById("container");a.renderer=new O(d,y);a.camera=new R(d);await a.camera.controls.setLookAt(68,23,-8.5,21.5,-5.5,23);d.init();const r=d.get(I);r.init(N);a.camera.controls.addEventListener("update",()=>r.core.update());a.onCameraChanged.add(i=>{for(const[,e]of r.list)e.useCamera(i.three);r.core.update(!0)});r.list.onItemSet.add(({value:i})=>{i.useCamera(a.camera.three),a.scene.three.add(i.object),r.core.update(!0)});r.core.models.materials.list.onItemSet.add(({value:i})=>{"isLodMaterial"in i&&i.isLodMaterial||(i.polygonOffset=!0,i.polygonOffsetUnits=1,i.polygonOffsetFactor=Math.random())});const z=["https://thatopen.github.io/engine_components/resources/frags/school_arq.frag"];await Promise.all(z.map(async i=>{const e=i.split("/").pop()?.split(".").shift();if(!e)return null;const s=await(await fetch(i)).arrayBuffer();return r.core.load(s,{modelId:e})}));const t=d.get(b);t.world=a;t.color=new k("#494cb6");t.enabled=!0;t.snappings=[l.POINT,l.LINE];y.ondblclick=()=>t.create();const K=()=>{t.list.clear()},Q=()=>{const i=[];for(const e of t.list)i.push(e.value);return i};window.onkeydown=i=>{(i.code==="Delete"||i.code==="Backspace")&&t.delete()};t.list.onItemAdded.add(i=>{const e=new w;i.getCenter(e);const n=i.distance()/3,s=new P(e,n);a.camera.controls.fitToSphere(s,!0)});const U=()=>{for(const i of t.lines)i.displayRectangularDimensions()},V=()=>{for(const i of t.lines)i.invertRectangularDimensions()},q=()=>{for(const i of t.lines)i.displayProjectionDimensions()},W=()=>{for(const i of t.lines)i.rectangleDimensions.clear(),i.projectionDimensions.clear()};D.init();const _=d.get(B).get(),u=i=>t.snappings?.includes(i)??!1,h=(i,e)=>{const n=new Set(t.snappings??[]);e?n.add(i):n.delete(i),t.snappings=Array.from(n)},H=()=>c`
+  <bim-checkbox label="Snap: Point" ?checked=${u(l.POINT)}
+    @change="${({target:i})=>h(l.POINT,i.value)}">
   </bim-checkbox>
-  <bim-checkbox label="Snap: Line" ?checked=${g(d.LINE)}
-    @change="${({target:i})=>f(d.LINE,i.value)}">
+  <bim-checkbox label="Snap: Line" ?checked=${u(l.LINE)}
+    @change="${({target:i})=>h(l.LINE,i.value)}">
   </bim-checkbox>
-  <bim-checkbox label="Snap: Face" ?checked=${g(d.FACE)}
-    @change="${({target:i})=>f(d.FACE,i.value)}">
+  <bim-checkbox label="Snap: Face" ?checked=${u(l.FACE)}
+    @change="${({target:i})=>h(l.FACE,i.value)}">
   </bim-checkbox>
   <bim-number-input slider step="0.05" label="Snap Range"
-    value="${E.maxDistance}" min="0.05" max="5"
-    @change="${({target:i})=>{E.maxDistance=i.value}}">
+    value="${_.maxDistance}" min="0.05" max="5"
+    @change="${({target:i})=>{_.maxDistance=i.value}}">
   </bim-number-input>
-`,u=D.create(()=>{const i=()=>{const t=H();console.log(t)};return h`
+`,p=$.create(()=>{const i=()=>{const e=Q();console.log(e)};return c`
     <bim-panel active label="Length Measurement Tutorial" class="options-menu">
       <bim-panel-section label="Controls">
           <bim-label>Create dimension: Double click</bim-label>  
@@ -21,38 +21,38 @@ var C=Object.defineProperty;var x=(i,t,e)=>t in i?C(i,t,{enumerable:!0,configura
       
       <bim-panel-section label="Measurer">
         <bim-checkbox checked label="Enabled" 
-          @change="${({target:t})=>{n.enabled=t.value}}">  
+          @change="${({target:e})=>{t.enabled=e.value}}">  
         </bim-checkbox>       
         <bim-checkbox checked label="Measurements Visible" 
-          @change="${({target:t})=>{n.visible=t.value}}">  
+          @change="${({target:e})=>{t.visible=e.value}}">  
         </bim-checkbox>  
         
 <bim-number-input
-          slider step="1" label="Picker Size" value="${n.pickerSize}" min="2" max="20"
-          @change="${({target:t})=>{n.pickerSize=t.value}}">
+          slider step="1" label="Picker Size" value="${t.pickerSize}" min="2" max="20"
+          @change="${({target:e})=>{t.pickerSize=e.value}}">
         </bim-number-input>
 
         <bim-color-input
-          label="Color" color=#${n.linesMaterial.color.getHexString()}
-          @input="${({target:t})=>{n.color=new k(t.color)}}">
+          label="Color" color=#${t.linesMaterial.color.getHexString()}
+          @input="${({target:e})=>{t.color=new k(e.color)}}">
         </bim-color-input>
         
         <bim-dropdown
           label="Measure Mode" required
-          @change="${({target:t})=>{const[e]=t.value;n.mode=e}}"> ${n.modes.map(t=>h`<bim-option label=${t} value=${t} ?checked=${t===n.mode}></bim-option>`)}
+          @change="${({target:e})=>{const[n]=e.value;t.mode=n}}"> ${t.modes.map(e=>c`<bim-option label=${e} value=${e} ?checked=${e===t.mode}></bim-option>`)}
         </bim-dropdown>
 
-        ${Z()}
+        ${H()}
 
         <bim-dropdown
           label="Units" required
-          @change="${({target:t})=>{const[e]=t.value;n.units=e}}">
-          ${n.unitsList.map(t=>h`<bim-option label=${t} value=${t} ?checked=${t===n.units}></bim-option>`)}
+          @change="${({target:e})=>{const[n]=e.value;t.units=n}}">
+          ${t.unitsList.map(e=>c`<bim-option label=${e} value=${e} ?checked=${e===t.units}></bim-option>`)}
         </bim-dropdown>
 
         <bim-dropdown 
           label="Precision" required
-          @change="${({target:t})=>{const[e]=t.value;n.rounding=e}}">
+          @change="${({target:e})=>{const[n]=e.value;t.rounding=n}}">
           <bim-option label="0" value=0></bim-option>
           <bim-option label="1" value=1></bim-option>
           <bim-option label="2" value=2 checked></bim-option>
@@ -63,32 +63,32 @@ var C=Object.defineProperty;var x=(i,t,e)=>t in i?C(i,t,{enumerable:!0,configura
 
         <bim-dropdown
           label="Line type" required
-          @change="${({target:t})=>{n.lineType=t.value[0]}}">
-          <bim-option label="Basic" value="${$.Basic}" checked></bim-option>
-          <bim-option label="Fat" value="${$.Fat}"></bim-option>
+          @change="${({target:e})=>{t.lineType=e.value[0]}}">
+          <bim-option label="Basic" value="${v.Basic}" checked></bim-option>
+          <bim-option label="Fat" value="${v.Fat}"></bim-option>
         </bim-dropdown>
 
         <bim-number-input
-          slider label="Line width" value="${n.lineWidth}"
+          slider label="Line width" value="${t.lineWidth}"
           min="1" max="10" step="0.5"
-          @change="${({target:t})=>{n.lineWidth=t.value}}">
+          @change="${({target:e})=>{t.lineWidth=e.value}}">
         </bim-number-input>
 
-        <bim-button label="Display Rectangle Dimensions" @click=${G}></bim-button>
+        <bim-button label="Display Rectangle Dimensions" @click=${U}></bim-button>
 
-        <bim-button label="Invert Rectangle Dimensions" @click=${J}></bim-button>
+        <bim-button label="Invert Rectangle Dimensions" @click=${V}></bim-button>
 
-        <bim-button label="Display Projection Dimensions" @click=${X}></bim-button>
+        <bim-button label="Display Projection Dimensions" @click=${q}></bim-button>
 
-        <bim-button label="Remove Complementary Dimensions" @click=${Y}></bim-button>
+        <bim-button label="Remove Complementary Dimensions" @click=${W}></bim-button>
 
-        <bim-button label="Delete all" @click=${()=>W()}></bim-button>
+        <bim-button label="Delete all" @click=${()=>K()}></bim-button>
         
         <bim-button label="Log Values" @click=${i}></bim-button>
       </bim-panel-section>
     </bim-panel>
-  `});document.body.append(u);const ee=D.create(()=>h`
+  `});document.body.append(p);const G=$.create(()=>c`
       <bim-button class="phone-menu-toggler" icon="solar:settings-bold"
-        @click="${()=>{u.classList.contains("options-menu-visible")?u.classList.remove("options-menu-visible"):u.classList.add("options-menu-visible")}}">
+        @click="${()=>{p.classList.contains("options-menu-visible")?p.classList.remove("options-menu-visible"):p.classList.add("options-menu-visible")}}">
       </bim-button>
-    `);document.body.append(ee);const b=new I;b.showPanel(2);document.body.append(b.dom);b.dom.style.left="0px";b.dom.style.zIndex="unset";a.renderer.onBeforeUpdate.add(()=>b.begin());a.renderer.onAfterUpdate.add(()=>b.end());
+    `);document.body.append(G);const m=new S;m.showPanel(2);document.body.append(m.dom);m.dom.style.left="0px";m.dom.style.zIndex="unset";a.renderer.onBeforeUpdate.add(()=>m.begin());a.renderer.onAfterUpdate.add(()=>m.end());
