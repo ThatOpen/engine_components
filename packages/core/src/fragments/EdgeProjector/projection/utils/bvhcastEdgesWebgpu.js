@@ -1,6 +1,7 @@
 
-import * as THREEWEBGPU from 'three/webgpu';
-import { float, Fn, If, Loop, instancedArray, instanceIndex, uint, int, vec3, vec4, mat4, Continue, max, min, cross, normalize, abs, select, mix, atomicAdd } from 'three/tsl';
+// three/webgpu and three/tsl are imported INSIDE getBvhcastEdgesWebgpu, never statically: this module is part
+// of the components core bundle, and a static import dragged the whole WebGPU build of three into every WebGL
+// page as a second copy ("Multiple instances of Three.js being imported").
 import { insertOverlap } from './getProjectedOverlaps.js';
 import { Logger } from './Logger.js';
 
@@ -69,7 +70,7 @@ const MAX_OVERLAPS_PER_BATCH = 2000000; // 2M overlaps max per batch
 // Reusable renderer instance (initialized once)
 let _renderer = null;
 
-async function getRenderer() {
+async function getRenderer( THREEWEBGPU ) {
 
 	if ( _renderer === null ) {
 
@@ -84,7 +85,9 @@ async function getRenderer() {
 
 export async function getBvhcastEdgesWebgpu( webgpuData, meshes, edgesBvh, hiddenOverlapMap, stats = null ) {
 
-	const renderer = await getRenderer();
+	const THREEWEBGPU = await import( 'three/webgpu' );
+	const { float, Fn, If, Loop, instancedArray, instanceIndex, uint, int, vec3, vec4, mat4, Continue, max, min, cross, normalize, abs, select, mix, atomicAdd } = await import( 'three/tsl' );
+	const renderer = await getRenderer( THREEWEBGPU );
 
 	// Convert collected JS arrays to exact-size typed arrays
 	if ( webgpuData._edgeOffsets ) {

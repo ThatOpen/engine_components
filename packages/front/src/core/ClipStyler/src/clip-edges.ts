@@ -178,6 +178,25 @@ export class ClipEdges implements OBC.Disposable {
     }
   }
 
+  /** Whether the world draws with a WebGPU renderer (SimpleRenderer's `mode: "webgpu"`). */
+  private get _webgpu() {
+    const three = (this.world?.renderer as { three?: unknown } | null)?.three;
+    return (three as { isWebGPURenderer?: boolean } | undefined)
+      ?.isWebGPURenderer === true;
+  }
+
+  /**
+   * Whether this section's own planes really exclude its cut plane: the
+   * Clipper's local planes AND a renderer that clips per material. WebGPU
+   * does not (it clips only through the scene's clipping group, which
+   * carries every plane), so there the section sits a centimetre off the cut
+   * as in the global mode, or the cut culls its own fill.
+   */
+  private get _perMaterialClipping() {
+    const clipper = this._components.get(OBC.Clipper);
+    return clipper.localClippingPlanes && !this._webgpu;
+  }
+
   private static copyStyleProps(source: THREE.Material, target: THREE.Material) {
     if (source === target) return;
     const s = source as any;
@@ -233,7 +252,14 @@ export class ClipEdges implements OBC.Disposable {
 
       let edges: LineSegments2 | undefined;
       if (myLinesMaterial) {
-        edges = new LineSegments2(new LineSegmentsGeometry(), myLinesMaterial);
+        // Under WebGPU the geometry is seeded with zero segments: a fresh
+        // LineSegmentsGeometry has no instanceStart/instanceEnd until
+        // `setPositions` creates them, and the render loop can draw this mesh
+        // before the first section update. WebGL binds a missing attribute to
+        // 0 silently; WGSL refuses the whole pipeline.
+        const geometry = new LineSegmentsGeometry();
+        if (this._webgpu) geometry.setPositions([]);
+        edges = new LineSegments2(geometry, myLinesMaterial);
         edges.frustumCulled = false;
         if (model) {
           fragments.applyBaseCoordinateSystem(edges, await model.getCoordinationMatrix())
@@ -278,8 +304,9 @@ export class ClipEdges implements OBC.Disposable {
 
     plane.applyMatrix4(planeTransform)
 
-    if (!localMode) {
-      // Legacy global-clipping mode: the section sits on the cut
+    if (!this._perMaterialClipping) {
+      // Legacy global-clipping mode (and WebGPU, see `_perMaterialClipping`):
+      // the section sits on the cut
       // and three.js's global clipping discard would cull it (any
       // fragment dotted with the clip plane equals the plane
       // constant and gets culled). Push the section a centimeter
@@ -322,6 +349,10 @@ export class ClipEdges implements OBC.Disposable {
     if (fills) {
       fills.geometry.attributes.position = posAttr;
       fills.geometry.setIndex(fillsIndices);
+      // WebGPU cannot make a buffer of 0 bytes: an empty fill index threw in
+      // `setIndexBuffer` and dropped the whole frame. Not drawn until a cut
+      // gives it triangles.
+      if (this._webgpu) fills.visible = fillsIndices.length > 0;
     }
   }
 

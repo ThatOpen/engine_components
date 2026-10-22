@@ -7,3 +7,4 @@ export * from "./volume";
 export * from "./measure-fill";
 export * from "./measure-mark";
 export * from "./format-units";
+export * from "./near-plane-line-material";
