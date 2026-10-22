@@ -178,6 +178,12 @@ const [wall1, wall2] = wallsIds;
 outliner.addItems({ [model.modelId]: new Set([wall1, wall2]) });
 
 /* MD
+  The ghost (x-ray) button in the panel keeps the two outlined walls solid and draws the rest of the model as a see-through veil, which the deferred ambient occlusion leaves out.
+*/
+
+let ghostOn = false;
+
+/* MD
   ### 📹 Switching the camera
   ---
 
@@ -351,6 +357,23 @@ const panel = BUI.Component.create<BUI.PanelSection>(() => {
         @click="${({ target }: { target: BUI.Button }) => {
           outliner.enabled = !outliner.enabled;
           target.label = outliner.enabled ? "Outline: ON" : "Outline: OFF";
+          updateIfManualMode();
+        }}">
+      </bim-button>
+
+      <bim-button label="Ghost rest (x-ray): OFF"
+        @click="${async ({ target }: { target: BUI.Button }) => {
+          ghostOn = !ghostOn;
+          if (ghostOn) {
+            // invert = true: ghost everything except the outlined walls.
+            await model.setGhostItems([wall1, wall2], true);
+          } else {
+            model.clearGhost();
+          }
+          target.label = ghostOn
+            ? "Ghost rest (x-ray): ON"
+            : "Ghost rest (x-ray): OFF";
+          await fragments.core.update(true);
           updateIfManualMode();
         }}">
       </bim-button>
