@@ -19,6 +19,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist",
+    "webgpu",
     "README.md"
   ],
   "repository": {
