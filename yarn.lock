@@ -824,13 +824,18 @@ __metadata:
     "@types/earcut": 3.0.0
     "@types/three": 0.184.0
     earcut: ^3.0.1
+    potree-core: 2.0.15
     three: 0.184.0
     web-ifc: 0.0.77
   peerDependencies:
     "@thatopen/components": ^3.4.7
     "@thatopen/fragments": ~3.4.7
+    potree-core: ^2.0.15
     three: ">=0.182.0"
     web-ifc: ">=0.0.77"
+  peerDependenciesMeta:
+    potree-core:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -1626,6 +1631,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"base64-js@npm:^1.1.2":
+  version: 1.5.1
+  resolution: "base64-js@npm:1.5.1"
+  checksum: 669632eb3745404c2f822a18fc3a0122d2f9a7a13f7fb8b5823ee19d1d2ff9ee5b52c53367176ea4ad093c332fd5ab4bd0ebae5a8e27917a4105a4cfc86b1005
+  languageName: node
+  linkType: hard
+
 "brace-expansion@npm:^1.1.7":
   version: 1.1.14
   resolution: "brace-expansion@npm:1.1.14"
@@ -1669,6 +1681,15 @@ __metadata:
   dependencies:
     fill-range: ^7.1.1
   checksum: b95aa0b3bd909f6cd1720ffcf031aeaf46154dd88b4da01f9a1d3f7ea866a79eba76a6d01cbc3c422b2ee5cdc39a4f02491058d5df0d7bf6e6a162a832df1f69
+  languageName: node
+  linkType: hard
+
+"brotli@npm:1.3.3":
+  version: 1.3.3
+  resolution: "brotli@npm:1.3.3"
+  dependencies:
+    base64-js: ^1.1.2
+  checksum: 2c97329f4ccb8e4332cedd2f63b85c2e15ffb305b1cbf046df86201434caf93cb7992ca73c0f7053b6a1417f595069ec7783c26e01510cefc10035a0f466e594
   languageName: node
   linkType: hard
 
@@ -4011,6 +4032,17 @@ glob@latest:
     picocolors: ^1.1.1
     source-map-js: ^1.2.1
   checksum: 914a3a7af573aa2b672c0e286e0c7665a0e8c7e7a2370a0247c4531c189559e1909bac90d973bc2ff0ab64173780ec7ccde28be20298c887d16ed65d95098f6a
+  languageName: node
+  linkType: hard
+
+"potree-core@npm:2.0.15":
+  version: 2.0.15
+  resolution: "potree-core@npm:2.0.15"
+  dependencies:
+    brotli: 1.3.3
+  peerDependencies:
+    three: ">0.125.0"
+  checksum: 560325b88d5dd10fa3283194f140ff5910fbf2e46eb6324b0563e7f9d4f2a9ebc922922070e7770c7450f673a1147f775d085902fede923184ea0f1a6c0a7116
   languageName: node
   linkType: hard
 

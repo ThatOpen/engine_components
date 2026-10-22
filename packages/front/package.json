@@ -35,9 +35,9 @@
   "peerDependencies": {
     "@thatopen/components": "^3.4.7",
     "@thatopen/fragments": "~3.4.7",
+    "potree-core": "^2.0.15",
     "three": ">=0.182.0",
-    "web-ifc": ">=0.0.77",
-    "potree-core": "^2.0.15"
+    "web-ifc": ">=0.0.77"
   },
   "peerDependenciesMeta": {
     "potree-core": {
