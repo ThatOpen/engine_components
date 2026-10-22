@@ -1,9 +1,21 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import { RendererWith2D } from "../Marker";
-import { Postproduction, PostproductionAspect } from "./src";
+import { Postproduction } from "./src";
+// The enum comes from its leaf module: this class initializes fields from it
+// (`manualDefaultStyle`, `_previousStyle`) and "./src" is in an import cycle
+// with this file. See the note in ./src/modes.ts.
+import { PostproductionAspect, PostproductionMode } from "./src/modes";
 
-export { PostproductionAspect, GlossPass, EdgeDetectionPassMode } from "./src";
+export {
+  PostproductionAspect,
+  PostproductionMode,
+  GlossPass,
+  EdgeDetectionPassMode,
+  DeferredPipeline,
+  DeferredAoMode,
+} from "./src";
+export type { OcclusionPass, OcclusionPassContext } from "./src";
 
 /**
  * A class that extends RendererWith2D and adds post-processing capabilities. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Front/PostproductionRenderer). 📘 [API](https://docs.thatopen.com/api/@thatopen/components-front/classes/PostproductionRenderer).
@@ -134,6 +146,41 @@ export class PostproductionRenderer extends RendererWith2D {
     }
 
     this.onAfterUpdate.trigger();
+  }
+
+  /**
+   * Cheap repaint for overlay-only changes (a measurement marker moving on an
+   * unchanged scene): re-composites the cached deferred G-buffer + redraws the
+   * overlays, SKIPPING the capture. Reserve the full {@link update} for real
+   * camera/scene changes. Falls back to a full update when the deferred
+   * pipeline is not the active path.
+   */
+  updateOverlayOnly() {
+    if (!this.enabled || !this.currentWorld) return;
+    if (
+      !this.postproduction.enabled ||
+      this.postproduction.mode !== PostproductionMode.DEFERRED
+    ) {
+      this.update();
+      return;
+    }
+    this.onBeforeUpdate.trigger();
+    this.postproduction.updateOverlayOnly();
+    const scene = this.currentWorld.scene.three;
+    const camera = this.currentWorld.camera.three;
+    if (scene instanceof THREE.Scene) {
+      this.three2D.render(scene, camera);
+    }
+    this.onAfterUpdate.trigger();
+  }
+
+  /**
+   * Re-applies the current container size to the postproduction passes. Public
+   * so the deferred pipeline can request a correct size right after it is
+   * lazily constructed, matching the dimensions the resize path uses.
+   */
+  applyPostproductionSize() {
+    this.setPostproductionSize();
   }
 
   /** {@link OBC.Disposable.dispose}. */

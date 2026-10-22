@@ -11,24 +11,63 @@ import { ExcludedObjectsPass } from "./excluded-objects-pass";
 import { PostproductionRenderer } from "..";
 import { BasePass } from "./base-pass";
 import { GlossPass } from "./gloss-pass";
+import { DeferredPipeline } from "../deferred";
+import type { OcclusionPass } from "../deferred";
 
 // Export the GlossPass for external use
 export { GlossPass };
 export { AOPass } from "./ao-pass";
 export { EdgeDetectionPassMode } from "./edge-detection-pass";
+export { DeferredPipeline, DeferredAoMode } from "../deferred";
+export type { OcclusionPass, OcclusionPassContext } from "../deferred";
 
-export enum PostproductionAspect {
-  COLOR = 0,
-  PEN = 1,
-  PEN_SHADOWS = 2,
-  COLOR_PEN = 3,
-  COLOR_SHADOWS = 4,
-  COLOR_PEN_SHADOWS = 5,
-}
+// Declared in a leaf module (see the note there) so that class fields across
+// this package can initialize from them without racing the import cycle this
+// file is part of. Re-exported here to keep the public surface unchanged.
+export { PostproductionAspect, PostproductionMode } from "./modes";
+import { PostproductionAspect, PostproductionMode } from "./modes";
 
 export class Postproduction {
   invisibleMaterials = new Set<THREE.Material>();
   composer?: EffectComposer;
+
+  /**
+   * Registry of forward occlusion passes (e.g. a splat layer and a point-cloud
+   * direct draw) that COEXIST: each producer registers its own entry keyed by
+   * its pass fn, so neither clobbers the other. The deferred pipeline runs EVERY
+   * entry (DIRECT into the frame, LAYER premultiplied-over). Only consulted in
+   * DEFERRED mode.
+   */
+  readonly occlusionPasses = new Map<OcclusionPass, { direct: boolean }>();
+
+  /**
+   * Register a forward occlusion pass. `direct` true = draw straight into the finished
+   * frame (opaque points, self-occluding); false = premultiplied layer composited OVER
+   * (transparent splats). Idempotent (keyed by the pass fn).
+   */
+  addOcclusionPass(pass: OcclusionPass, direct = false) {
+    this.occlusionPasses.set(pass, { direct });
+  }
+
+  /** Unregister a previously-added occlusion pass (no-op if absent). */
+  removeOcclusionPass(pass: OcclusionPass) {
+    this.occlusionPasses.delete(pass);
+  }
+
+  /** Update a registered pass's direct/layer mode (e.g. a point cloud toggling EDL). */
+  setOcclusionDirect(pass: OcclusionPass, direct: boolean) {
+    const entry = this.occlusionPasses.get(pass);
+    if (entry) entry.direct = direct;
+  }
+
+  /**
+   * The deferred pipeline's depth attachment (float32), or undefined before the
+   * deferred pipeline is allocated. Exposed for a forward occlusion pass to
+   * depth-test against.
+   */
+  get deferredDepthTexture() {
+    return this._deferred?.depthTexture;
+  }
 
   readonly onStyleChanged = new OBC.Event<PostproductionAspect>();
 
@@ -52,6 +91,8 @@ export class Postproduction {
   private _components: OBC.Components;
   private _renderer: PostproductionRenderer;
   private _clearColor = new THREE.Color();
+  private _mode = PostproductionMode.COMPOSER;
+  private _deferred?: DeferredPipeline;
 
   defaultAoParameters = {
     radius: 0.25,
@@ -179,6 +220,15 @@ export class Postproduction {
   }
 
   set style(value: PostproductionAspect) {
+    // Deferred path: the composite folds every cue into one fullscreen pass, so
+    // a style is just a choice of which cues are on (see _applyDeferredStyle)
+    // rather than an EffectComposer pass chain.
+    if (this._mode === PostproductionMode.DEFERRED) {
+      this._style = value;
+      this._applyDeferredStyle(value);
+      this.onStyleChanged.trigger(value);
+      return;
+    }
     if (!this.composer) return;
     if (
       !this.composer ||
@@ -308,12 +358,185 @@ export class Postproduction {
     this.onStyleChanged.trigger(value);
   }
 
+  /**
+   * Maps a visual style onto the deferred pipeline. The six aspects are just
+   * combinations of three cues: shaded colour vs flat paper, contour ink, and AO
+   * shadow. We flip the matching gates and leave the per-cue strengths (edge
+   * strength, AO radius, etc.) untouched, so a style switch never discards the
+   * user's tuning.
+   */
+  private _applyDeferredStyle(value: PostproductionAspect) {
+    if (!this._deferred) return;
+    const A = PostproductionAspect;
+    const withColor =
+      value === A.COLOR ||
+      value === A.COLOR_PEN ||
+      value === A.COLOR_SHADOWS ||
+      value === A.COLOR_PEN_SHADOWS;
+    const withInk =
+      value === A.PEN ||
+      value === A.PEN_SHADOWS ||
+      value === A.COLOR_PEN ||
+      value === A.COLOR_PEN_SHADOWS;
+    const withShadow =
+      value === A.PEN_SHADOWS ||
+      value === A.COLOR_SHADOWS ||
+      value === A.COLOR_PEN_SHADOWS;
+
+    const composite = this._deferred.composite.settings;
+    composite.colorEnabled = withColor;
+    composite.contourEnabled = withInk;
+    this._deferred.settings.aoEnabled = withShadow;
+    // FXAA is intentionally left untouched here: it is a general anti-aliasing
+    // tail, valuable for every style, so it stays user-controlled.
+  }
+
+  /**
+   * The active rendering pipeline. COMPOSER (the default) runs the
+   * EffectComposer style stack; DEFERRED runs the forward + auxiliary-geometry
+   * capture pipeline. Switching to DEFERRED allocates its G-buffers; switching
+   * back releases them (the pipeline's settings are kept for the next time).
+   * While COMPOSER, nothing of the deferred pipeline exists.
+   */
+  get mode() {
+    return this._mode;
+  }
+
+  set mode(value: PostproductionMode) {
+    const wasDeferred = this._mode === PostproductionMode.DEFERRED;
+    this._mode = value;
+    if (value === PostproductionMode.DEFERRED) {
+      // Touch the getter so the pipeline exists (and is sized) before the next frame.
+      void this.deferred;
+      // The single-pass capture relies on the surface materials emitting their
+      // geometry extras; turn that on for the whole deferred session.
+      this.setCaptureEmission(true);
+      // Tell the composite which cues are on: a style set while the mode was
+      // still COMPOSER only stored `_style` and never reached the pipeline.
+      this.style = this._style;
+    } else {
+      if (wasDeferred) {
+        this.setCaptureEmission(false);
+        this.releaseDeferred();
+      }
+      // Rebuild the composer pass stack so it reflects any pass toggles made
+      // while deferred was active (outlines, gloss, SMAA, excluded objects). The
+      // `style` setter skips the composer build in deferred mode.
+      this.style = this._style;
+    }
+  }
+
+  /**
+   * Registry of capture emitters: anything whose materials can write the deferred
+   * G-buffer extras (octahedral view normal + packed discriminator) registers its
+   * own toggle here, and the pipeline flips every entry for the whole deferred
+   * session. The built-in fragments hook still runs, so nothing that works
+   * today has to register anything.
+   */
+  readonly captureEmitters = new Set<(enabled: boolean) => void>();
+
+  /**
+   * Register a capture emitter. Idempotent (keyed by the fn). The pipeline calls
+   * it with `true` for the duration of a deferred session and `false` on leaving
+   * it, and re-asserts `true` every deferred frame — so an emitter registered
+   * mid-session is picked up on the next frame, like a late-loaded model.
+   */
+  addCaptureEmitter(emitter: (enabled: boolean) => void) {
+    this.captureEmitters.add(emitter);
+    if (this._mode === PostproductionMode.DEFERRED) emitter(true);
+  }
+
+  /** Unregister a capture emitter, turning its emission off (no-op if absent). */
+  removeCaptureEmitter(emitter: (enabled: boolean) => void) {
+    if (!this.captureEmitters.delete(emitter)) return;
+    try {
+      emitter(false);
+    } catch {
+      // An emitter that throws on the way out must not strand the pipeline.
+    }
+  }
+
+  /**
+   * Toggles single-pass capture-emission on every registered emitter, plus the
+   * fragments surface materials when the installed fragments supports it
+   * (duck-typed: with a fragments build without `setCaptureEmission` this
+   * captures colour and depth only). Guarded + idempotent — safe to call before
+   * any model (and therefore the fragments core) exists; the deferred frame
+   * re-asserts it so late-loaded models pick it up.
+   */
+  private setCaptureEmission(enabled: boolean) {
+    try {
+      const fragments = this._components.get(OBC.FragmentsManager);
+      const materials = (fragments as any)?.core?.models?.materials;
+      materials?.setCaptureEmission?.(enabled);
+    } catch {
+      // Fragments core not initialized yet; updateDeferred re-asserts it.
+    }
+    // Each emitter is isolated: one that throws must not stop the rest.
+    for (const emitter of this.captureEmitters) {
+      try {
+        emitter(enabled);
+      } catch {
+        // Keep going; a broken emitter is its own problem, not the pipeline's.
+      }
+    }
+  }
+
+  /**
+   * The deferred pipeline instance, allocated on first access. Reading this while
+   * in COMPOSER mode is allowed (e.g. to configure it before switching), and
+   * allocates it.
+   */
+  get deferred(): DeferredPipeline {
+    if (!this._deferred) {
+      const width = Math.max(1, this._renderer.three.domElement.width);
+      const height = Math.max(1, this._renderer.three.domElement.height);
+      this._deferred = new DeferredPipeline(
+        width,
+        height,
+        this._deferredSettings,
+      );
+      // Every capture tells the surface materials how big a pixel is, so a part
+      // thinner than one covers a pixel wherever it lands. Looked up on every
+      // call and duck-typed, like the emission switch.
+      const pixels = (w: number, h: number) => {
+        try {
+          const fragments = this._components.get(OBC.FragmentsManager);
+          (fragments as any)?.core?.models?.materials?.setCapturePixels?.(w, h);
+        } catch {
+          // Fragments core not initialized yet: nothing to tell.
+        }
+      };
+      this._deferred.capture.onPixels = pixels;
+      this._deferred.sunShadow.onPixels = pixels;
+      // Re-apply the renderer's resize size so the pipeline matches the
+      // resize path's dimensions from the very first deferred frame.
+      this._renderer.applyPostproductionSize();
+    }
+    return this._deferred;
+  }
+
+  // Settings of a released pipeline, so leaving and re-entering DEFERRED keeps
+  // the user's tuning.
+  private _deferredSettings?: DeferredPipeline["settings"];
+
+  private releaseDeferred() {
+    if (!this._deferred) return;
+    this._deferredSettings = this._deferred.settings;
+    this._deferred.dispose();
+    this._deferred = undefined;
+  }
+
   constructor(components: OBC.Components, renderer: PostproductionRenderer) {
     this._components = components;
     this._renderer = renderer;
   }
 
   update() {
+    if (this._mode === PostproductionMode.DEFERRED) {
+      this.updateDeferred();
+      return;
+    }
     if (!this.composer) return;
     for (const material of this.invisibleMaterials) {
       material.userData.wasVisibleForPostproduction = material.visible;
@@ -335,7 +558,142 @@ export class Postproduction {
     }
   }
 
+  /**
+   * Re-composite the cached deferred G-buffer + redraw overlays WITHOUT
+   * re-running the capture/AO chain. For continuous overlay-only updates (a
+   * measurement marker moving on an unchanged scene). Falls back to a full pass
+   * internally until a capture exists. DEFERRED mode only; a no-op otherwise.
+   */
+  updateOverlayOnly() {
+    if (this._mode !== PostproductionMode.DEFERRED) return;
+    this.updateDeferred(true);
+  }
+
+  /**
+   * Finish a split capture (see {@link captureChunk}): composite the accumulated
+   * G-buffer WITHOUT re-capturing, but recomputing AO. DEFERRED mode only.
+   */
+  finishChunks() {
+    if (this._mode !== PostproductionMode.DEFERRED || !this._deferred) return;
+    this._deferred.markChunksFinished();
+    this.updateDeferred(true);
+  }
+
+  /**
+   * Capture ONE chunk of the scene into the G-buffer, so a repaint can be
+   * spread over several frames. The caller hides everything outside the chunk,
+   * calls this once per frame (`first` only on the chunk that starts the
+   * capture), and finishes with {@link finishChunks}. DEFERRED mode only.
+   */
+  captureChunk(first: boolean) {
+    if (this._mode !== PostproductionMode.DEFERRED || !this._deferred) return;
+    const world = this._renderer.currentWorld;
+    if (!world) return;
+    const scene = world.scene.three as THREE.Scene;
+    const camera = world.camera.three as
+      | THREE.PerspectiveCamera
+      | THREE.OrthographicCamera;
+    if (first) this.setCaptureEmission(true);
+    for (const material of this.invisibleMaterials) {
+      material.userData.wasVisibleForPostproduction = material.visible;
+      material.visible = false;
+    }
+    this._deferred.captureChunk(this._renderer.three, scene, camera, first);
+    for (const material of this.invisibleMaterials) {
+      material.visible = material.userData.wasVisibleForPostproduction;
+    }
+  }
+
+  // Deferred render path: forward colour + auxiliary geometry capture, AO,
+  // edges and FXAA folded into the pipeline. Bypasses the EffectComposer.
+  private updateDeferred(reuseCapture = false) {
+    const world = this._renderer.currentWorld;
+    if (!world) return;
+    const scene = world.scene.three as THREE.Scene;
+    // May be perspective OR orthographic: the deferred passes branch on
+    // camera.isOrthographicCamera at runtime, so do not narrow it.
+    const camera = world.camera.three as
+      | THREE.PerspectiveCamera
+      | THREE.OrthographicCamera;
+    const renderer = this._renderer.three;
+
+    // Re-assert emission so models loaded after the mode switch emit too
+    // (idempotent). Skipped on the overlay-only fast path.
+    if (!reuseCapture) this.setCaptureEmission(true);
+
+    for (const material of this.invisibleMaterials) {
+      material.userData.wasVisibleForPostproduction = material.visible;
+      material.visible = false;
+    }
+
+    // The composite passes the captured clear (colour + alpha) straight through
+    // for background pixels, so the renderer's clear colour IS the viewport
+    // background. Save/restore so a tail pass that mutates the clear can't leak
+    // state across frames.
+    renderer.getClearColor(this._clearColor);
+    const prevClearAlpha = renderer.getClearAlpha();
+
+    // Selection outline: the same ghost-mask pass the composer uses, run over
+    // the finished deferred frame as a tail pass. Not when the frame is laid
+    // over what the target already holds: the tail writes the target itself.
+    const outline =
+      this._outlinesEnabled &&
+      this._simpleOutlinePass &&
+      !this._deferred?.settings?.overTheTarget
+        ? this._simpleOutlinePass
+        : null;
+
+    // Isolated materials the single-pass capture hides, split by how they must
+    // composite back into the deferred frame:
+    //   - depthTest:false → always-on-top overlays (hover / selection highlights)
+    //   - depthTest:true  → depth-occluded overlays (the floor grid)
+    const isolated = this._basePass?.isolatedMaterials ?? [];
+    const overlay = isolated.filter(
+      (m) => (m as THREE.Material).depthTest === false,
+    );
+    const depthOverlay = isolated.filter(
+      (m) => (m as THREE.Material).depthTest !== false,
+    );
+
+    const tail = outline
+      ? (frame: THREE.WebGLRenderTarget) => {
+          outline.renderToScreen = true;
+          outline.render(renderer, frame, frame);
+        }
+      : undefined;
+
+    const occlusionPasses: { pass: OcclusionPass; direct: boolean }[] = [];
+    for (const [pass, entry] of this.occlusionPasses) {
+      occlusionPasses.push({ pass, direct: entry.direct });
+    }
+
+    try {
+      this.deferred.render(
+        renderer,
+        scene,
+        camera,
+        tail,
+        overlay,
+        depthOverlay,
+        reuseCapture,
+        occlusionPasses,
+      );
+    } finally {
+      renderer.setClearColor(this._clearColor, prevClearAlpha);
+      for (const material of this.invisibleMaterials) {
+        material.visible = material.userData.wasVisibleForPostproduction;
+      }
+    }
+  }
+
   dispose() {
+    if (this._mode === PostproductionMode.DEFERRED) {
+      this.setCaptureEmission(false);
+    }
+    this.releaseDeferred();
+    this._deferredSettings = undefined;
+    this.occlusionPasses.clear();
+    this.captureEmitters.clear();
     this.composer?.dispose();
     this._aoPass?.dispose();
     this._outputPass?.dispose();
@@ -352,6 +710,9 @@ export class Postproduction {
     }
     if (this.composer) {
       this.composer.setSize(width, height);
+    }
+    if (this._deferred) {
+      this._deferred.setSize(width, height);
     }
     if (this._simpleOutlinePass) {
       this._simpleOutlinePass.setSize(width, height);
