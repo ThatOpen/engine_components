@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.6.0](https://github.com/ThatOpen/engine_components/compare/v3.5.0...v3.6.0) (2026-10-22)
+
+
+### Features
+
+* **examples:** ghost the rest of the model from the postproduction example ([b1a4db7](https://github.com/ThatOpen/engine_components/commit/b1a4db78cd10a5ca03d08f0e22b6b9588797f4b7))
+* **examples:** run postproduction examples on the deferred pipeline with Color Pen Shadows ([13d8759](https://github.com/ThatOpen/engine_components/commit/13d8759ef469b2b697e20a838a9ae3c14ab4806b))
+* **postproduction:** bring the beta renderer, outline pass and Outliner work, without streaming ([29ba97d](https://github.com/ThatOpen/engine_components/commit/29ba97d1572943065f81712fa6eacc24b83f580c))
+
+
+### Bug Fixes
+
+* **examples:** give the point cloud request manager a folder so potree-core finds the octree files ([c1525ad](https://github.com/ThatOpen/engine_components/commit/c1525ad1c708fb7461542757bbd3ff47db7fac78))
+* **examples:** narrow the material type before writing its color in the IDS example ([3d2cbef](https://github.com/ThatOpen/engine_components/commit/3d2cbefd5cc5eec21adab98dff342fb50d38863a))
+
 ## [3.4.0](https://github.com/ThatOpen/engine_components/compare/v3.3.2...v3.4.0) (2026-04-09)
 
 
