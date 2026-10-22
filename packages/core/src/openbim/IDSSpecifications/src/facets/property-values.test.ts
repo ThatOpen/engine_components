@@ -23,8 +23,12 @@ const MULTI_VALUE_CLASSES = [
 
 const convert = async (id: string, multiValue: boolean) => {
   const importer = new FRAGS.IfcImporter();
-  if (multiValue) {
-    for (const c of MULTI_VALUE_CLASSES) importer.classes.abstract.add(c);
+  // Since fragments 3.5 the importer imports these classes by default, so
+  // the "plain" model drops them to keep a pset that refers to items with
+  // no data.
+  for (const c of MULTI_VALUE_CLASSES) {
+    if (multiValue) importer.classes.abstract.add(c);
+    else importer.classes.abstract.delete(c);
   }
   const root = path.resolve(__dirname, "../../../../..");
   importer.wasm = {
@@ -46,8 +50,8 @@ describe("IDSProperty on list, bounded, enumerated and table values", () => {
   const models = new Map<string, FRAGS.SingleThreadedFragmentsModel>();
 
   beforeAll(async () => {
-    // "plain": the importer's default classes, which leave these properties
-    // out, so the pset refers to items without data.
+    // "plain": the importer without these classes, so the pset refers to
+    // items without data.
     models.set("plain", await convert("plain", false));
     models.set("multi", await convert("multi", true));
     components = new OBC.Components();
