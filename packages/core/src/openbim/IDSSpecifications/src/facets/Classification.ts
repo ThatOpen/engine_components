@@ -3,6 +3,7 @@ import { IDSFacetParameter, IDSItemCheckResult } from "../types";
 import { IDSFacet } from "./Facet";
 import { getParameterXML } from "../exporters/parameter";
 import { ModelIdDataMap, ModelIdMap } from "../../../../fragments";
+import { XML } from "../../../../utils/xml";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/classification-facet.md
 
@@ -25,7 +26,7 @@ export class IDSClassification extends IDSFacet {
       attributes += `cardinality="${this.cardinality}"`;
       attributes += this.uri ? `uri=${this.uri}` : "";
       attributes += this.instructions
-        ? `instructions="${this.instructions}"`
+        ? `instructions="${XML.escape(this.instructions)}"`
         : "";
     }
     return `<classification ${attributes}>

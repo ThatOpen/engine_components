@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { Event, World } from "../../Types";
 import { Components } from "../../Components";
 import { readPixelsAsync } from "./pixel-reader";
+import { newDistanceNodeMaterial } from "./distance-node-material";
 
 // Source: https://threejs.org/examples/?q=depth#webgl_depth_texture
 
@@ -106,7 +107,15 @@ export class DistanceRenderer {
 
     // Setup post processing stage
 
-    this.depthMaterial = new THREE.ShaderMaterial({
+    // A WebGPU renderer (SimpleRenderer's `mode: "webgpu"`) cannot compile
+    // GLSL: there the TSL twin is used, with the same depth formulas and the
+    // same mutable `uniforms` surface. The GLSL below is the WebGL path.
+    const webgpu =
+      (world.renderer.three as any).isWebGPURenderer === true ||
+      typeof (THREE as any).WebGLRenderer !== "function";
+    this.depthMaterial = webgpu
+      ? newDistanceNodeMaterial(camera.near, camera.far)
+      : new THREE.ShaderMaterial({
       vertexShader: `
 varying vec2 vUv;
 
@@ -232,19 +241,36 @@ void main() {
     renderer.setRenderTarget(this.resultRT);
     renderer.render(this.scene, this.camera);
 
-    const context = renderer.getContext() as WebGL2RenderingContext;
-
     try {
-      await readPixelsAsync(
-        context,
-        0,
-        0,
-        this._width,
-        this._height,
-        context.RGBA,
-        context.UNSIGNED_BYTE,
-        this._buffer,
-      );
+      if ((renderer as any).isWebGPURenderer === true) {
+        // WebGPU has no GL context and no synchronous readback, and its
+        // readRenderTargetPixelsAsync RETURNS the pixels (its 6th parameter
+        // is a texture index, not an output buffer).
+        const pixels = await (renderer as any).readRenderTargetPixelsAsync(
+          this.resultRT,
+          0,
+          0,
+          this._width,
+          this._height,
+        );
+        const bytes =
+          pixels instanceof Uint8Array
+            ? pixels
+            : new Uint8Array(pixels.buffer ?? pixels);
+        this._buffer.set(bytes.subarray(0, this._buffer.length));
+      } else {
+        const context = renderer.getContext() as WebGL2RenderingContext;
+        await readPixelsAsync(
+          context,
+          0,
+          0,
+          this._width,
+          this._height,
+          context.RGBA,
+          context.UNSIGNED_BYTE,
+          this._buffer,
+        );
+      }
     } catch (e) {
       // Pixels couldn't be read, possibly because culler was disposed
       renderer.setRenderTarget(null);

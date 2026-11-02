@@ -97,7 +97,7 @@ export class FragmentsManager extends Component implements Disposable {
    * fragments.init(await OBC.FragmentsManager.getWorker());
    * ```
    */
-  init(workerURL: string, options?: { classicWorker?: boolean }) {
+  init(workerURL: string, options?: FRAGS.FragmentsModelsOptions) {
     this._core = new FragmentsModels(workerURL, options);
     this.core.onModelLoaded.add(async () => {
       if (this._hasCoordinationModel) return

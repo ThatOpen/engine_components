@@ -1,4 +1,5 @@
 import { IDSFacetParameterName, IDSFacetParameter } from "../types";
+import { XML } from "../../../../utils/xml";
 
 export const getParameterXML = (
   name: IDSFacetParameterName,
@@ -8,20 +9,20 @@ export const getParameterXML = (
   if (!parameter) return parameterXML;
 
   if (parameter.type === "simple") {
-    parameterXML = `<simpleValue>${parameter.parameter}</simpleValue>`;
+    parameterXML = `<simpleValue>${XML.escape(parameter.parameter)}</simpleValue>`;
   }
 
   if (parameter.type === "enumeration") {
     const value = parameter.parameter;
     parameterXML = `<xs:restriction base="xs:string">
-    ${value.map((v) => `<xs:enumeration value="${v}" />`).join("\n")}
+    ${value.map((v) => `<xs:enumeration value="${XML.escape(v)}" />`).join("\n")}
     </xs:restriction>`;
   }
 
   if (parameter.type === "pattern") {
     const value = parameter.parameter;
     parameterXML = `<xs:restriction base="xs:string">
-      <xs:pattern value="${value}" />
+      <xs:pattern value="${XML.escape(value)}" />
     </xs:restriction>`;
   }
 

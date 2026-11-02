@@ -72,6 +72,43 @@ world.scene.setup();
 world.camera.controls.setLookAt(3, 3, 3, 0, 0, 0);
 ```
 
+## WebGPU (opt-in)
+
+WebGL is the default and needs nothing. To run on WebGPU, pass `mode: "webgpu"` to the renderer:
+
+```js
+world.renderer = new OBF.PostproductionRenderer(components, container, { mode: "webgpu" });
+```
+
+Requirements:
+
+- `three@>=0.185`. An older three throws a clear error.
+- The application resolves `three` to `three/webgpu` (one module graph: the libraries read `WebGPURenderer` and the node materials off the same `three` they use for everything else, which is why WebGL apps load none of it).
+- The WebGL-only addons the libraries import (fat lines, the EffectComposer passes) cannot link against `three/webgpu`, so they are aliased to two modules this package ships: `webgpu/lines.mjs` (three's WebGPU fat lines under the same names) and `webgpu/webgl-addons-stub.mjs` (postprocessing classes that throw if a WebGL path is ever constructed under WebGPU).
+
+With Vite:
+
+```js
+// vite.config.js
+export default {
+  resolve: {
+    alias: [
+      { find: /^three$/, replacement: "three/webgpu" },
+      {
+        find: /^three\/(examples\/jsm|addons)\/lines\/(Line2|LineSegments2|LineMaterial|Wireframe)\.js$/,
+        replacement: "@thatopen/components-front/webgpu/lines.mjs",
+      },
+      {
+        find: /^three\/(examples\/jsm|addons)\/postprocessing\/.*$/,
+        replacement: "@thatopen/components-front/webgpu/webgl-addons-stub.mjs",
+      },
+    ],
+  },
+};
+```
+
+Under WebGPU, `renderer.postproduction` keeps its API (`enabled`, `style`, `outlinePass`, `basePass.isolatedMaterials`, occlusion passes) and is drawn by a TSL composition with the look of the WebGL deferred pipeline. Known divergences: GPU picks and outline masks do not cut by local clipping planes of their own (the scene's clipping group does the cut), and the near-plane guard of `NearPlaneLineMaterial` has no TSL port yet.
+
 ## 🤝 Contributing
 
 Thinking of sending a PR? Awesome! Please read our [contributing guide](https://docs.thatopen.com/contributing) first — it covers the code conventions we follow (JSDoc, examples, resources, etc.) so your changes sail through review.

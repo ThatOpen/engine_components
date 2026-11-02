@@ -188,7 +188,7 @@ const ghostMaterial = (material: FRAGS.BIMMaterial) => {
     material.lodColor.setColorName("white");
   } else {
     material.opacity = 0.05;
-    material.color.setColorName("white");
+    if ("color" in material) material.color.setColorName("white");
   }
 };
 
@@ -231,7 +231,7 @@ const restoreModelMaterials = () => {
       material.lodColor.setHex(color);
     } else {
       material.opacity = opacity;
-      material.color.setHex(color);
+      if ("color" in material) material.color.setHex(color);
     }
     material.needsUpdate = true;
   }

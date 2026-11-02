@@ -114,11 +114,13 @@ await Promise.all(
 const outliner = components.get(OBF.Outliner);
 
 /* MD
-  The outliner relies on a shader used in postproduction. In practice, this means you must use the Postproduction Renderer (as demonstrated in this example) and enable it. The setup is straightforward, and you can proceed as follows:
+  The outliner relies on a shader used in postproduction. In practice, this means you must use the Postproduction Renderer (as demonstrated in this example) and enable it. Here we run it with the deferred pipeline and the Color Pen Shadows style. The setup is straightforward, and you can proceed as follows:
 */
 
 const { postproduction } = world.renderer;
 postproduction.enabled = true;
+postproduction.mode = OBF.PostproductionMode.DEFERRED;
+postproduction.style = OBF.PostproductionAspect.COLOR_PEN_SHADOWS;
 
 /* MD
   Once the postproduction is enabled, you can assign the same world used for postproduction to the outliner, configure it, and activate it:

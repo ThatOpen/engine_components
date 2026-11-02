@@ -8,6 +8,7 @@ import {
   SimpleGridConfigManager,
 } from "./simple-grid-config";
 import { ConfigManager } from "../../ConfigManager";
+import { newInfiniteGridWebgpuMaterial } from "./infinite-grid-webgpu-material";
 
 /**
  * An infinite grid. Created by [fyrestar](https://github.com/Fyrestar/THREE.InfiniteGridHelper) and translated to typescript by [dkaraush](https://github.com/dkaraush/THREE.InfiniteGridHelper/blob/master/InfiniteGridHelper.ts).
@@ -101,7 +102,18 @@ export class SimpleGrid
 
     const geometry = new THREE.PlaneGeometry(2, 2, 1, 1);
 
-    const material = new THREE.ShaderMaterial({
+    // A WebGPU renderer (SimpleRenderer's `mode: "webgpu"`) cannot compile a
+    // GLSL ShaderMaterial, so the same grid is built from TSL nodes there. Its
+    // `uniforms` keep the `.value` surface, so the config manager and the
+    // fade / zoom setters work unchanged. A `three` without WebGLRenderer is
+    // the `three/webgpu` build, where no other renderer can exist.
+    const webgpu =
+      (world.renderer?.three as any)?.isWebGPURenderer === true ||
+      typeof (THREE as any).WebGLRenderer !== "function";
+
+    const material = webgpu
+      ? this.newWebgpuMaterial(color, primarySize, secondarySize, distance)
+      : new THREE.ShaderMaterial({
       side: THREE.DoubleSide,
 
       uniforms: {
@@ -253,4 +265,25 @@ export class SimpleGrid
     }
     this.material.uniforms.uZoom.value = this.world.camera.three.zoom;
   };
+
+  /** The same grid shader as TSL nodes, for a WebGPU renderer. */
+  private newWebgpuMaterial(
+    color: THREE.Color,
+    primarySize: number,
+    secondarySize: number,
+    distance: number,
+  ) {
+    // A PostproductionRenderer draws the grid as an overlay layer over its
+    // encoded frame; any other renderer draws it straight to the canvas.
+    const overlayOfPostproduction =
+      "webgpuPost" in ((this.world?.renderer as any) ?? {});
+    return newInfiniteGridWebgpuMaterial(
+      this._fade,
+      color,
+      primarySize,
+      secondarySize,
+      distance,
+      !overlayOfPostproduction,
+    );
+  }
 }

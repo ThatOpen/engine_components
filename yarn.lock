@@ -816,30 +816,35 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@thatopen/components-front@workspace:packages/front"
   dependencies:
-    "@thatopen/components": ~3.4.7
-    "@thatopen/fragments": ~3.4.7
-    "@thatopen/ui": ~3.4.0
-    "@thatopen/ui-obc": ~3.4.0
+    "@thatopen/components": ~3.6.0
+    "@thatopen/fragments": ~3.6.0
+    "@thatopen/ui": ~3.4.17
+    "@thatopen/ui-obc": ~3.4.4
     "@types/convert-units": 2.3.11
     "@types/earcut": 3.0.0
     "@types/three": 0.184.0
     earcut: ^3.0.1
+    potree-core: 2.0.15
     three: 0.184.0
     web-ifc: 0.0.77
   peerDependencies:
-    "@thatopen/components": ^3.4.7
-    "@thatopen/fragments": ~3.4.7
+    "@thatopen/components": ^3.6.0
+    "@thatopen/fragments": ~3.6.0
+    potree-core: ^2.0.15
     three: ">=0.182.0"
     web-ifc: ">=0.0.77"
+  peerDependenciesMeta:
+    potree-core:
+      optional: true
   languageName: unknown
   linkType: soft
 
-"@thatopen/components@workspace:packages/core, @thatopen/components@~3.4.7":
+"@thatopen/components@workspace:packages/core, @thatopen/components@~3.6.0":
   version: 0.0.0-use.local
   resolution: "@thatopen/components@workspace:packages/core"
   dependencies:
-    "@thatopen/fragments": ~3.4.7
-    "@thatopen/ui": ~3.4.0
+    "@thatopen/fragments": ~3.6.0
+    "@thatopen/ui": ~3.4.17
     "@types/convert-units": 2.3.11
     "@types/three": 0.184.0
     "@vitest/coverage-v8": ^5.0.0
@@ -855,54 +860,55 @@ __metadata:
     vitest-canvas-mock: ^1.2.0
     web-ifc: 0.0.77
   peerDependencies:
-    "@thatopen/fragments": ~3.4.7
+    "@thatopen/fragments": ~3.6.0
     camera-controls: ">=3.1.2"
     three: ">=0.182.0"
     web-ifc: ">=0.0.77"
   languageName: unknown
   linkType: soft
 
-"@thatopen/fragments@npm:~3.4.7":
-  version: 3.4.7
-  resolution: "@thatopen/fragments@npm:3.4.7"
+"@thatopen/fragments@npm:~3.6.0":
+  version: 3.6.0
+  resolution: "@thatopen/fragments@npm:3.6.0"
   dependencies:
     earcut: ^3.0.1
     flatbuffers: 25.2.10
     lru-cache: 11.1.0
     pako: 2.1.0
+    xxhash-wasm: ^1.1.0
   peerDependencies:
     three: ">=0.182.0"
     web-ifc: ">=0.0.77"
-  checksum: 66ef8422afcee492d083c5aa4f0003b2847f853f84cea367f3851720202c974dcacf81f26b803f89399f9e1797c73421a2183e7dd18e7858bff458144df60e20
+  checksum: dbd621c2558b304a741657697699706883601207797677625494d9a9abfbaa2f983811db084ae0504672a73c934f06f60dd96b7199e7d59e056ebb85e4ba83b5
   languageName: node
   linkType: hard
 
-"@thatopen/ui-obc@npm:~3.4.0":
-  version: 3.4.0
-  resolution: "@thatopen/ui-obc@npm:3.4.0"
+"@thatopen/ui-obc@npm:~3.4.4":
+  version: 3.4.4
+  resolution: "@thatopen/ui-obc@npm:3.4.4"
   dependencies:
     "@thatopen/ui": ~3.4.0
     lit: 3.3.1
   peerDependencies:
-    "@thatopen/components": ~3.4.0
-    "@thatopen/components-front": ~3.4.0
-    "@thatopen/fragments": ~3.4.0
-    three: ">=0.182.0"
+    "@thatopen/components": ">=3.4.0 <3.6.0"
+    "@thatopen/components-front": ">=3.4.0 <3.6.0"
+    "@thatopen/fragments": ">=3.4.0 <3.6.0"
+    three: 0.185.0
     web-ifc: ">=0.0.77"
-  checksum: 5f4fd5e941ab52790dd2e7afd78a4aeeb5479de05ecd95d26e5176c26e9339ba48d4b8df5ee9f511d577c68726882c88465805d7c541dc1ae7293a34882106f3
+  checksum: 774c096c4556d1fcb87b2540f639e9ad883069b32d9c380f55886409feb9cc942d5d00e2591e23f1ccf9a42bdd34c48c6ac63807c3ab8b9f761cf6723c57c716
   languageName: node
   linkType: hard
 
-"@thatopen/ui@npm:~3.4.0":
-  version: 3.4.0
-  resolution: "@thatopen/ui@npm:3.4.0"
+"@thatopen/ui@npm:~3.4.0, @thatopen/ui@npm:~3.4.17":
+  version: 3.4.17
+  resolution: "@thatopen/ui@npm:3.4.17"
   dependencies:
     "@floating-ui/dom": 1.6.3
     chart.js: ^4.5.0
     chartjs-plugin-datalabels: ^2.2.0
     iconify-icon: 3.0.1
     lit: 3.3.1
-  checksum: 3ff7eb2d27d1168c6b0cd8cb17390e12c29c121472208ee4dc39bce78bffc3564dc55e175284a2a480175c3c0fc4a60d8855d33cfc5001e51da6c38c56c2f9be
+  checksum: 80e4d433546d78b45a2fb698e4c8a562b85786df50fe5238b8d149acef5c845645d076154822f88bbf768cb805e047e8b80ab327d65452cd3f717eea8843dc7f
   languageName: node
   linkType: hard
 
@@ -1626,6 +1632,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"base64-js@npm:^1.1.2":
+  version: 1.5.1
+  resolution: "base64-js@npm:1.5.1"
+  checksum: 669632eb3745404c2f822a18fc3a0122d2f9a7a13f7fb8b5823ee19d1d2ff9ee5b52c53367176ea4ad093c332fd5ab4bd0ebae5a8e27917a4105a4cfc86b1005
+  languageName: node
+  linkType: hard
+
 "brace-expansion@npm:^1.1.7":
   version: 1.1.14
   resolution: "brace-expansion@npm:1.1.14"
@@ -1669,6 +1682,15 @@ __metadata:
   dependencies:
     fill-range: ^7.1.1
   checksum: b95aa0b3bd909f6cd1720ffcf031aeaf46154dd88b4da01f9a1d3f7ea866a79eba76a6d01cbc3c422b2ee5cdc39a4f02491058d5df0d7bf6e6a162a832df1f69
+  languageName: node
+  linkType: hard
+
+"brotli@npm:1.3.3":
+  version: 1.3.3
+  resolution: "brotli@npm:1.3.3"
+  dependencies:
+    base64-js: ^1.1.2
+  checksum: 2c97329f4ccb8e4332cedd2f63b85c2e15ffb305b1cbf046df86201434caf93cb7992ca73c0f7053b6a1417f595069ec7783c26e01510cefc10035a0f466e594
   languageName: node
   linkType: hard
 
@@ -4014,6 +4036,17 @@ glob@latest:
   languageName: node
   linkType: hard
 
+"potree-core@npm:2.0.15":
+  version: 2.0.15
+  resolution: "potree-core@npm:2.0.15"
+  dependencies:
+    brotli: 1.3.3
+  peerDependencies:
+    three: ">0.125.0"
+  checksum: 560325b88d5dd10fa3283194f140ff5910fbf2e46eb6324b0563e7f9d4f2a9ebc922922070e7770c7450f673a1147f775d085902fede923184ea0f1a6c0a7116
+  languageName: node
+  linkType: hard
+
 "prelude-ls@npm:^1.2.1":
   version: 1.2.1
   resolution: "prelude-ls@npm:1.2.1"
@@ -5328,6 +5361,13 @@ glob@latest:
     utf-8-validate:
       optional: true
   checksum: 8a28a457a997e0d63b5bc4d35344c342c68038c207013196468c35a80f7220397665739026217e836abc40ea7432483de3fee47a64abdedb4e3d0e3f332dc37b
+  languageName: node
+  linkType: hard
+
+"xxhash-wasm@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "xxhash-wasm@npm:1.1.0"
+  checksum: 2ccecb3b1dac5fefe11002d5ff5d106bbb5b506f9ee817ecf1bda65e132ebff3c82701c6727df3cb90b94a6dc1d8b294337678606f2304bcb0fd6b8dc68afe0d
   languageName: node
   linkType: hard
 

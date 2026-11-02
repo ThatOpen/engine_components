@@ -11,6 +11,10 @@ import {
 	NoBlending,
 	DoubleSide,
 } from 'three';
+// Namespace import for the OPTIONAL WebGPU surface (NodeMaterial, TSL): a
+// NAMED import of those would be undefined under the classic build, and a
+// static `class extends` of it would crash this module on load there.
+import * as THREE_NS from 'three';
 
 // RGBA8 ID encoding - supports up to 16,777,215 objects (2^24 - 1)
 // ID 0 is valid, background is indicated by alpha = 0
@@ -95,7 +99,14 @@ export class VisibilityCuller {
 		box.getSize( size );
 
 		// calculate the tile and target size
-		const maxTextureSize = Math.min( renderer.capabilities.maxTextureSize, 2 ** 13 );
+		// WebGL exposes the max texture size on `capabilities`; the WebGPURenderer
+		// has no `capabilities` and carries the limit on its backend device instead.
+		const rendererMaxTexture =
+			renderer.capabilities?.maxTextureSize ??
+			renderer.backend?.device?.limits?.maxTextureDimension2D ??
+			2 ** 13;
+		const maxTextureSize = Math.min( rendererMaxTexture, 2 ** 13 );
+		const webgpu = renderer.isWebGPURenderer === true;
 		const pixelWidth = Math.ceil( size.x / pixelsPerMeter );
 		const pixelHeight = Math.ceil( size.z / pixelsPerMeter );
 		const tilesX = Math.ceil( pixelWidth / maxTextureSize );
@@ -131,7 +142,9 @@ export class VisibilityCuller {
 			originalParents.set( object, object.parent );
 
 			// Create and assign ID material
-			const idMaterial = new IDMaterial();
+			// WebGPU: the TSL twin (a NodeMaterial whose fragment IS the id
+			// uniform); WebGL keeps the GLSL3 IDMaterial below.
+			const idMaterial = webgpu ? newIdNodeMaterial() : new IDMaterial();
 			idMaterial.objectId = i;
 			idMaterials.push( idMaterial );
 			object.material = idMaterial;
@@ -248,7 +261,13 @@ export class VisibilityCuller {
 					// Single render call for all objects in this tile
 					renderer.render( idScene, camera );
 
-					const buffer = await renderer.readRenderTargetPixelsAsync( target, 0, 0, target.width, target.height, readBuffer );
+					// The two renderers disagree on this SIGNATURE: WebGL fills the
+					// buffer passed as the 6th argument (and returns it); WebGPU's 6th
+					// argument is a texture index and the pixels come back as the
+					// resolved value.
+					const buffer = webgpu
+						? await renderer.readRenderTargetPixelsAsync( target, 0, 0, target.width, target.height )
+						: await renderer.readRenderTargetPixelsAsync( target, 0, 0, target.width, target.height, readBuffer );
 					throwIfAborted( signal );
 
 					// find all visible objects - decode RGBA to ID
@@ -335,5 +354,39 @@ class IDMaterial extends ShaderMaterial {
 		this.setValues( params );
 
 	}
+
+}
+
+// The TSL twin of IDMaterial for a WebGPU renderer: a NodeMaterial whose
+// fragment output IS the encoded id uniform. Built as a FACTORY (not a
+// class extends) so this module still loads under the classic build, where
+// NodeMaterial does not exist. Same `objectId` get/set surface via
+// encodeId, same NoBlending and DoubleSide.
+function newIdNodeMaterial() {
+
+	const material = new THREE_NS.NodeMaterial();
+	material.blending = NoBlending;
+	material.side = DoubleSide;
+
+	const objectId = THREE_NS.TSL.uniform( new Vector4() );
+	material.fragmentNode = objectId;
+	material.uniforms = { objectId };
+
+	material._objectId = 0;
+	Object.defineProperty( material, 'objectId', {
+		get() {
+
+			return this._objectId;
+
+		},
+		set( v ) {
+
+			this._objectId = v;
+			encodeId( v, objectId.value );
+
+		},
+	} );
+
+	return material;
 
 }

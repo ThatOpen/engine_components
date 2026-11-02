@@ -144,6 +144,7 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
     const pass = this.getRenderer().postproduction.outlinePass;
     pass.outlineColor = value;
     this._points.material.color.copy(value);
+    this.wake();
   }
 
   /** Thickness for the default group. */
@@ -153,6 +154,7 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
 
   set thickness(value: number) {
     this.getRenderer().postproduction.outlinePass.thickness = value;
+    this.wake();
   }
 
   /** Fill color for the default group. */
@@ -162,6 +164,7 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
 
   set fillColor(value: THREE.Color) {
     this.getRenderer().postproduction.outlinePass.fillColor = value;
+    this.wake();
   }
 
   /** Fill opacity for the default group. */
@@ -171,6 +174,55 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
 
   set fillOpacity(value: number) {
     this.getRenderer().postproduction.outlinePass.fillOpacity = value;
+    this.wake();
+  }
+
+  private _resolutionScale = 1;
+
+  /**
+   * Internal render resolution of the selection outline (mask + edge/fill
+   * composite) as a fraction of the canvas (0.25 to 1). 1 = full quality;
+   * lower (e.g. 0.5) renders the outline at reduced resolution and upscales
+   * it over the full-resolution scene: about 4x cheaper at 0.5, slightly
+   * softer, to hold the framerate when a selection covers much of the
+   * screen. Passthrough to the outline pass (WebGL).
+   */
+  get resolutionScale() {
+    return this._resolutionScale;
+  }
+
+  set resolutionScale(value: number) {
+    this._resolutionScale = Math.min(1, Math.max(0.25, value));
+    if (!this.world || this.world.isDisposing) return;
+    try {
+      this.getRenderer().postproduction.outlinePass.resolutionScale =
+        this._resolutionScale;
+      this.wake();
+    } catch {
+      // Outline pass not initialized yet: applied again when a group syncs.
+    }
+  }
+
+  /**
+   * Debounce (ms) for the re-sync after a model's tiles or view change.
+   * Small enough that an outline re-appears almost immediately once the
+   * camera settles, large enough to coalesce a burst of tile events during
+   * continuous camera motion into one trailing pass.
+   */
+  viewSyncDebounce = 60;
+
+  /**
+   * Asks for a frame after a change in how the outline looks: in MANUAL
+   * renderer mode nothing else would (a no-op in AUTO, which renders every
+   * frame anyway).
+   */
+  private wake() {
+    if (!this.world || this.world.isDisposing) return;
+    try {
+      this.getRenderer().needsUpdate = true;
+    } catch {
+      // Renderer not ready or not a postproduction renderer; nothing to poke.
+    }
   }
 
   readonly onDisposed = new OBC.Event();
@@ -189,6 +241,9 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
    * don't leak references after the Outliner goes away.
    */
   private _tileListeners = new Map<string, () => void>();
+
+  /** Pending debounced re-sync timers, keyed by model id (see `scheduleViewSync`). */
+  private _viewSyncTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   constructor(components: OBC.Components) {
     super(components);
@@ -345,6 +400,8 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
     this.styles.clear();
     for (const [, unbind] of this._tileListeners) unbind();
     this._tileListeners.clear();
+    for (const [, timer] of this._viewSyncTimers) clearTimeout(timer);
+    this._viewSyncTimers.clear();
     for (const name of [...this._groups.keys()]) {
       if (name === DEFAULT_GROUP) continue;
       this.remove(name);
@@ -502,6 +559,13 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
     // Make sure the pass knows about this group (palette + material +
     // container). The Outliner's ensureGroup only tracks selection state.
     if (!pass.hasGroup(name)) pass.addGroup(name);
+    // A scale set before the pass existed reaches it here.
+    if (
+      this._resolutionScale !== 1 &&
+      pass.resolutionScale !== this._resolutionScale
+    ) {
+      pass.resolutionScale = this._resolutionScale;
+    }
 
     const fragments = this.components.get(OBC.FragmentsManager);
     const map = state.map;
@@ -597,6 +661,8 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
     }
 
     state.attached = nextAttached;
+    // The change shows at once in MANUAL renderer mode too.
+    this.wake();
   }
 
   /**
@@ -615,34 +681,63 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
       for (const tile of tiles) pass.detachOutlinedTile(tile, group);
     }
     state.attached = new Map();
+    this.wake();
   }
 
   /**
-   * Subscribe to a model's tile lifecycle events so we can refresh
-   * outline proxies when tiles load (LOD swap, viewport change, etc.)
-   * or unload. Idempotent per model id.
+   * Subscribe to a model's tile lifecycle and view events so we can refresh
+   * outline proxies when tiles load (LOD swap, viewport change, etc.) or
+   * unload, and after each settled view/cull cycle, so outlines survive
+   * culls and pick up rebuilt tiles. Idempotent per model id.
+   *
+   * All of these go through the debounced path: a camera rotation churns a
+   * burst of tile events, and re-syncing on each one would fire a worker
+   * round trip per tile while something is outlined. The debounce coalesces
+   * the burst into one trailing re-sync once motion settles.
    */
   private bindModelTileEvents(modelId: string) {
     if (this._tileListeners.has(modelId)) return;
     const fragments = this.components.get(OBC.FragmentsManager);
     const model = fragments.list.get(modelId);
     if (!model) return;
-    const refresh = () => {
-      // Re-sync any group whose selection still references this model.
-      // Cheap for groups that don't.
-      for (const [groupName, state] of this._groups) {
-        const localIds = state.map[modelId];
-        if (localIds && localIds.size > 0) {
-          this.updateGroup(groupName).catch(() => undefined);
-        }
-      }
-    };
-    model.tiles.onItemSet.add(refresh);
-    model.tiles.onItemDeleted.add(refresh);
+    const onChange = () => this.scheduleViewSync(modelId);
+    model.tiles.onItemSet.add(onChange);
+    model.tiles.onItemDeleted.add(onChange);
+    model.onViewUpdated.add(onChange);
     this._tileListeners.set(modelId, () => {
-      model.tiles.onItemSet.remove(refresh);
-      model.tiles.onItemDeleted.remove(refresh);
+      model.tiles.onItemSet.remove(onChange);
+      model.tiles.onItemDeleted.remove(onChange);
+      model.onViewUpdated.remove(onChange);
+      const timer = this._viewSyncTimers.get(modelId);
+      if (timer !== undefined) clearTimeout(timer);
+      this._viewSyncTimers.delete(modelId);
     });
+  }
+
+  /** Re-syncs every group whose selection still references the given model. */
+  private resyncModel(modelId: string) {
+    // Cheap for groups that don't reference it.
+    for (const [groupName, state] of this._groups) {
+      const localIds = state.map[modelId];
+      if (localIds && localIds.size > 0) {
+        this.updateGroup(groupName).catch(() => undefined);
+      }
+    }
+  }
+
+  /**
+   * Debounced {@link resyncModel}: collapses a burst of tile and view events
+   * (continuous camera motion) into a single trailing re-sync once motion
+   * settles ({@link viewSyncDebounce} ms).
+   */
+  private scheduleViewSync(modelId: string) {
+    const existing = this._viewSyncTimers.get(modelId);
+    if (existing !== undefined) clearTimeout(existing);
+    const timer = setTimeout(() => {
+      this._viewSyncTimers.delete(modelId);
+      this.resyncModel(modelId);
+    }, this.viewSyncDebounce);
+    this._viewSyncTimers.set(modelId, timer);
   }
 
   private cleanPoints() {

@@ -20,6 +20,7 @@ import {
 import { ModelIdMap } from "../../fragments";
 import { ModelIdMapUtils } from "../../utils";
 // import { createPropertyFacets } from "./src/importers/property";
+import { XML } from "../../utils/xml";
 
 /**
  * Component that manages Information Delivery Specification (IDS) data. It provides functionality for importing, exporting, and manipulating IDS data. 📕 [Tutorial](https://docs.thatopen.com/Tutorials/Components/Core/IDSSpecifications). 📘 [API](https://docs.thatopen.com/api/@thatopen/components/classes/IDSSpecifications).
@@ -36,7 +37,9 @@ export class IDSSpecifications extends Component {
     numberParseOptions: { leadingZeros: true, hex: true },
     parseAttributeValue: true,
     preserveOrder: false,
-    processEntities: false,
+    // Decode &amp; &lt; &gt; &quot; &apos; so values compare equal to the
+    // model's text. fast-xml-parser applies its expansion limits by default.
+    processEntities: true,
     removeNSPrefix: true,
     trimValues: true,
   });
@@ -240,14 +243,14 @@ export class IDSSpecifications extends Component {
     const xml = `<ids xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd" xmlns:ids="http://standards.buildingsmart.org/IDS">
   <!-- Made with That Open Engine ${Components.release} (https://github.com/thatopen/engine_components) -->
   <info>
-    <title>${info.title}</title>
-    ${info.copyright ? `<copyright>${info.copyright}</copyright>` : ""}
-    ${info.version ? `<version>${info.version}</version>` : ""}
-    ${info.description ? `<description>${info.description}</description>` : ""}
-    ${info.author ? `<author>${info.author}</author>` : ""}
+    <title>${XML.escape(info.title)}</title>
+    ${info.copyright ? `<copyright>${XML.escape(info.copyright)}</copyright>` : ""}
+    ${info.version ? `<version>${XML.escape(info.version)}</version>` : ""}
+    ${info.description ? `<description>${XML.escape(info.description)}</description>` : ""}
+    ${info.author ? `<author>${XML.escape(info.author)}</author>` : ""}
     ${info.date ? `<date>${info.date.toISOString().split("T")[0]}</date>` : ""}
-    ${info.purpose ? `<purpose>${info.purpose}</purpose>` : ""}
-    ${info.milestone ? `<milestone>${info.milestone}</milestone>` : ""}
+    ${info.purpose ? `<purpose>${XML.escape(info.purpose)}</purpose>` : ""}
+    ${info.milestone ? `<milestone>${XML.escape(info.milestone)}</milestone>` : ""}
   </info>
   <specifications>
     ${[..._specifications].map((spec) => spec.serialize()).join("\n")}

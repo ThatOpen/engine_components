@@ -83,9 +83,52 @@ export class ShadowedScene
    * Setter to control whether the shadows are enabled or not in this scene instance.
    */
   set shadowsEnabled(value: boolean) {
+    const renderer = this.currentWorld?.renderer?.three as any;
+    if (value && !this._shadowsEnabled && renderer?.isWebGPURenderer === true) {
+      this._shadowsEnabled = value;
+      this.renewShadowLights();
+      return;
+    }
     this._shadowsEnabled = value;
     for (const [, light] of this.directionalLights) {
       light.castShadow = value;
+    }
+  }
+
+  /**
+   * WebGPU only: turns shadows back on with fresh lights instead of flipping
+   * `castShadow` on the same ones. While shadows were off, every render chain
+   * that drew was rebuilt without them, and three's `AnalyticLightNode`
+   * disposes the light's shadow node in that rebuild. The chains that did
+   * NOT draw meanwhile (the distance renderer's among them) still reference
+   * the disposed node, and restoring `castShadow` restores exactly the cache
+   * key they are filed under: the next shadow update threw "Cannot read
+   * properties of null (reading 'depthTexture')". A fresh light has a fresh
+   * uuid, so every cached chain misses and rebuilds cleanly.
+   */
+  private renewShadowLights() {
+    for (const [id, light] of [...this.directionalLights]) {
+      const fresh = new THREE.DirectionalLight();
+      fresh.intensity = light.intensity;
+      fresh.color.copy(light.color);
+      fresh.position.copy(light.position);
+      fresh.target.position.copy(light.target.position);
+      fresh.shadow.copy(light.shadow);
+      // `LightShadow.copy` carries camera, bias and map size, not the update policy.
+      fresh.shadow.autoUpdate = light.shadow.autoUpdate;
+      fresh.shadow.needsUpdate = true;
+      fresh.castShadow = true;
+      this.three.add(fresh, fresh.target);
+      this.directionalLights.delete(id);
+      this.directionalLights.set(fresh.uuid, fresh);
+      for (const [index, shadowId] of this._lightsWithShadow) {
+        if (shadowId === id) {
+          this._lightsWithShadow.set(index, fresh.uuid);
+        }
+      }
+      light.target.removeFromParent();
+      light.removeFromParent();
+      light.dispose();
     }
   }
 
@@ -176,6 +219,19 @@ export class ShadowedScene
       return;
     }
     this._isComputingShadows = true;
+    // WebGPU boots asynchronously and the distance pass renders, so an update
+    // right after `components.init()` would render before the backend exists.
+    // three's `init()` is idempotent (it returns the same promise once
+    // started), so awaiting it costs nothing afterwards.
+    const renderer = this.currentWorld?.renderer?.three as any;
+    if (renderer?.isWebGPURenderer === true) {
+      try {
+        await renderer.init();
+      } catch (error) {
+        this._isComputingShadows = false;
+        throw error;
+      }
+    }
     await this.distanceRenderer.compute();
   }
 

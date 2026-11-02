@@ -1,7 +1,7 @@
 {
   "name": "@thatopen/components-front",
   "description": "Collection of frontend tools to author BIM apps.",
-  "version": "3.4.4",
+  "version": "3.6.0",
   "author": "That Open Company",
   "contributors": [
     "Antonio Gonzalez Viegas (https://github.com/agviegas)",
@@ -19,6 +19,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist",
+    "webgpu",
     "README.md"
   ],
   "repository": {
@@ -32,19 +33,26 @@
     "publish-repo": "npm publish"
   },
   "peerDependencies": {
-    "@thatopen/components": "^3.4.7",
-    "@thatopen/fragments": "~3.4.7",
+    "@thatopen/components": "^3.6.0",
+    "@thatopen/fragments": "~3.6.0",
+    "potree-core": "^2.0.15",
     "three": ">=0.182.0",
     "web-ifc": ">=0.0.77"
   },
+  "peerDependenciesMeta": {
+    "potree-core": {
+      "optional": true
+    }
+  },
   "devDependencies": {
-    "@thatopen/components": "~3.4.7",
-    "@thatopen/fragments": "~3.4.7",
-    "@thatopen/ui": "~3.4.0",
-    "@thatopen/ui-obc": "~3.4.0",
+    "@thatopen/components": "~3.6.0",
+    "@thatopen/fragments": "~3.6.0",
+    "@thatopen/ui": "~3.4.17",
+    "@thatopen/ui-obc": "~3.4.4",
     "@types/convert-units": "2.3.11",
     "@types/earcut": "3.0.0",
     "@types/three": "0.184.0",
+    "potree-core": "2.0.15",
     "three": "0.184.0",
     "web-ifc": "0.0.77"
   },
