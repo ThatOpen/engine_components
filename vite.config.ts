@@ -1,15 +1,41 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import * as fs from "fs";
 import * as path from "path";
-import { defineConfig } from "vite";
+import { defineConfig, type ViteDevServer } from "vite";
 import { globSync } from "glob";
+
+const writeProjectsHTML = () => {
+  const projectsDir = path.join(process.cwd(), "projects");
+  if (!fs.existsSync(projectsDir)) return "";
+  // Empty session: the viewer with no ?model= params — load IFC files from
+  // the UI (Add IFC…) instead of preloading them on disk.
+  let links = `<a style="width: fit-content;" href="./projects/viewer.html">New empty session (multimodel)</a>\n`;
+  const entries = fs.readdirSync(projectsDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const projectDir = path.join(projectsDir, entry.name);
+    const ifc = fs
+      .readdirSync(projectDir)
+      .find((file) => file.toLowerCase().endsWith(".ifc"));
+    if (!ifc) continue;
+    let title = entry.name;
+    const titleFile = path.join(projectDir, "project.title");
+    if (fs.existsSync(titleFile)) {
+      const custom = fs.readFileSync(titleFile, "utf8").split("\n")[0].trim();
+      if (custom) title = custom;
+    }
+    const model = encodeURIComponent(`${entry.name}/${ifc}`);
+    links += `<a style="width: fit-content;" href="./projects/viewer.html?model=${model}&title=${encodeURIComponent(title)}">${title}</a>\n`;
+  }
+  return `<h3>Projects</h3>\n${links}`;
+};
 
 const writeIndexHTML = () => {
   let links: string = "";
   const examplePaths = globSync("packages/**/src/**/example.html");
   for (const examplePath of examplePaths) {
     const directory = path.dirname(examplePath);
-    const packageNameMatch = directory.match(/packages[\\\/]([^\\\/]+)/);
+    const packageNameMatch = directory.match(/packages[\\/]([^\\/]+)/);
     if (!(packageNameMatch && packageNameMatch.length > 1)) continue;
     const packageName = packageNameMatch[1];
     const exampleName = path.basename(directory);
@@ -40,7 +66,7 @@ const writeIndexHTML = () => {
   
   <body>
     <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <h3>Choose an example</h3>
+      ${writeProjectsHTML()}<h3>Choose an example</h3>
       ${links}
     </div>
   </body>
@@ -52,9 +78,20 @@ const writeIndexHTML = () => {
 
 const createIndex = () => ({
   name: "create-index",
-  configureServer() {
+  configureServer(server: ViteDevServer) {
     // fs.watch("./packages", { recursive: true }, writeIndexHTML);
     writeIndexHTML();
+    // Projects are added and removed by external tooling — rebuild the home
+    // page so new IFCs show up in the list without restarting the server.
+    const projectsDir = path.join(process.cwd(), "projects");
+    server.watcher.add(projectsDir);
+    const onProjectsChange = (file: string) => {
+      if (!file.startsWith(projectsDir)) return;
+      writeIndexHTML();
+    };
+    server.watcher.on("add", onProjectsChange);
+    server.watcher.on("change", onProjectsChange);
+    server.watcher.on("unlink", onProjectsChange);
   },
 });
 
@@ -65,5 +102,15 @@ export default defineConfig({
     // server serves two or three instances and three.js prints the
     // "Multiple instances of Three.js being imported" warning.
     dedupe: ["three"],
+    // `packages/front` imports `@thatopen/components`; pnpm would resolve
+    // the registry copy (3.4.8) while our viewer runs the local core fork
+    // (FastModelPicker etc.) — two component registries in one page.
+    // Force every import (front included) to the local core sources.
+    alias: {
+      "@thatopen/components": path.resolve(
+        process.cwd(),
+        "packages/core/src/index",
+      ),
+    },
   },
 });

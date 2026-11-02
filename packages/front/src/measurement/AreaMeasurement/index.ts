@@ -230,12 +230,23 @@ export class AreaMeasurement extends Measurement<Area, "area"> {
       this._temp.isDragging = true;
     }
 
-    if (area.points.size === 0) {
-      point.copy(pickerData.point);
-      area.points.add(point.clone());
-    } else {
-      area.points.add(point.clone());
+    // Always consume the click-time pick (`pickerData`). The preview
+    // point (`_temp.point`) is driven by the pointermove pick, which
+    // can be stale right after camera interaction — committing it
+    // would place the vertex where the cursor *was*, not under the
+    // double-click. Project onto the in-progress plane when the point
+    // falls within the tolerance so the polygon stays planar.
+    point.copy(pickerData.point);
+    const { plane } = area;
+    if (plane) {
+      const distance = plane.distanceToPoint(point);
+      if (Math.abs(distance) < this.pickTolerance) {
+        const projection = new THREE.Vector3();
+        plane.projectPoint(point, projection);
+        point.copy(projection);
+      }
     }
+    area.points.add(point.clone());
 
     if (this.mode === "square" && area.points.size === 2 && pickerData.normal) {
       const [p1, p3] = area.points;
