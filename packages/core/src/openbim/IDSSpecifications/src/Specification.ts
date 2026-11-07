@@ -69,9 +69,40 @@ export class IDSSpecification implements IDSSpecificationData {
     modelIds: RegExp[],
     config: { skipIfFails: boolean } = { skipIfFails: true },
   ) {
-    const result: IDSCheckResult = new FRAGS.DataMap();
+    return (await this.run(modelIds, config)).result;
+  }
 
-    if (this.requirements.size === 0) return result;
+  /**
+   * Tests the models and also applies the specification's cardinality
+   * (`minOccurs` / `maxOccurs`): a required specification fails when too few
+   * elements are applicable, a prohibited one fails when any is, and an
+   * optional one may pass with none. Requirements of a prohibited
+   * specification are not evaluated.
+   *
+   * @returns `pass` is the specification-level verdict, `applicable` the number
+   * of applicable elements, and `result` the same per-element result as {@link test}.
+   */
+  async verify(
+    modelIds: RegExp[],
+    config: { skipIfFails: boolean } = { skipIfFails: true },
+  ) {
+    const { result, applicable } = await this.run(modelIds, config, true);
+    const max = this.maxOccurs === "unbounded" ? Infinity : this.maxOccurs;
+    let pass = applicable >= this.minOccurs && applicable <= max;
+    if (max > 0) {
+      for (const items of result.values()) {
+        for (const item of items.values()) if (!item.pass) pass = false;
+      }
+    }
+    return { pass, applicable, result };
+  }
+
+  private async run(
+    modelIds: RegExp[],
+    config: { skipIfFails: boolean },
+    skipProhibitedRequirements = false,
+  ) {
+    const result: IDSCheckResult = new FRAGS.DataMap();
 
     // Get applicable elements
     const entities: ModelIdMap = {};
@@ -82,6 +113,16 @@ export class IDSSpecification implements IDSSpecificationData {
 
     await Promise.all(applicabilityPromises);
 
+    let applicable = 0;
+    for (const ids of Object.values(entities)) applicable += ids.size;
+
+    if (
+      this.requirements.size === 0 ||
+      (skipProhibitedRequirements && this.maxOccurs === 0)
+    ) {
+      return { result, applicable };
+    }
+
     // Test applicable elements against requirements
     const requirementPromises = [];
     for (const requirement of this.requirements) {
@@ -89,7 +130,7 @@ export class IDSSpecification implements IDSSpecificationData {
     }
 
     await Promise.all(requirementPromises);
-    return result;
+    return { result, applicable };
   }
 
   /**
