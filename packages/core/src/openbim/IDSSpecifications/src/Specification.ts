@@ -86,7 +86,11 @@ export class IDSSpecification implements IDSSpecificationData {
     modelIds: RegExp[],
     config: { skipIfFails: boolean } = { skipIfFails: true },
   ) {
-    const { result, applicable } = await this.run(modelIds, config, true);
+    const { result, applicable, entities } = await this.run(
+      modelIds,
+      config,
+      true,
+    );
     const max = this.maxOccurs === "unbounded" ? Infinity : this.maxOccurs;
     let pass = applicable >= this.minOccurs && applicable <= max;
     if (max > 0) {
@@ -94,7 +98,7 @@ export class IDSSpecification implements IDSSpecificationData {
         for (const item of items.values()) if (!item.pass) pass = false;
       }
     }
-    return { pass, applicable, result };
+    return { pass, applicable, result, items: entities };
   }
 
   private async run(
@@ -125,17 +129,15 @@ export class IDSSpecification implements IDSSpecificationData {
       this.requirements.size === 0 ||
       (skipProhibitedRequirements && this.maxOccurs === 0)
     ) {
-      return { result, applicable };
+      return { result, applicable, entities };
     }
 
-    // Test applicable elements against requirements
-    const requirementPromises = [];
+    // Keep facet checks in document order so reports can identify each
+    // requirement even when several facets have the same kind.
     for (const requirement of this.requirements) {
-      requirementPromises.push(requirement.test(entities, result, config));
+      await requirement.test(entities, result, config);
     }
-
-    await Promise.all(requirementPromises);
-    return { result, applicable };
+    return { result, applicable, entities };
   }
 
   /**
@@ -163,9 +165,13 @@ export class IDSSpecification implements IDSSpecificationData {
       <applicability minOccurs="${this.minOccurs}" maxOccurs="${this.maxOccurs}">
         ${[...this.applicability].map((facet) => facet.serialize("applicability")).join("\n")}
       </applicability>
-      <requirements>
+      ${
+        this.requirements.size
+          ? `<requirements${this.requirementsDescription ? ` description="${XML.escape(this.requirementsDescription)}"` : ""}>
         ${[...this.requirements].map((facet) => facet.serialize("requirement")).join("\n")}
-      </requirements>
+      </requirements>`
+          : ""
+      }
     </specification>`;
     return xml;
   }

@@ -5,135 +5,105 @@ import {
   ModelIdMap,
 } from "../../../../fragments";
 import { getParameterXML } from "../exporters/parameter";
-import { IDSCheck, IDSFacetParameter, IDSItemCheckResult } from "../types";
+import { IDSFacetParameter, IDSItemCheckResult } from "../types";
 import { IDSFacet } from "./Facet";
-import { ModelIdMapUtils } from "../../../../utils";
 import { XML } from "../../../../utils/xml";
 
-// https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/material-facet.md
+const children = [
+  "ForLayerSet",
+  "MaterialLayers",
+  "ForProfileSet",
+  "MaterialProfiles",
+  "Material",
+  "MaterialConstituents",
+  "Materials",
+];
+const value = (item: FRAGS.ItemData, name: string) => {
+  const attribute = item[name];
+  return attribute && !Array.isArray(attribute) ? attribute.value : undefined;
+};
+const refs = (item: FRAGS.ItemData, name: string): FRAGS.ItemData[] =>
+  Array.isArray(item[name]) ? (item[name] as FRAGS.ItemData[]) : [];
 
 export class IDSMaterial extends IDSFacet {
-  // Every type IfcRelAssociatesMaterial.RelatingMaterial (IfcMaterialSelect)
-  // can point at. Missing any of them silently drops every element that
-  // associates its material through it: an element can reference a layer set
-  // directly instead of through a layer set usage, and both spellings are
-  // valid IFC.
-  private _ifcMaterialEntities = [
-    /^IFCMATERIALLAYERSETUSAGE$/,
-    /^IFCMATERIALLAYERSET$/,
-    /^IFCMATERIALPROFILESETUSAGE$/,
-    /^IFCMATERIALPROFILESET$/,
-    /^IFCMATERIALCONSTITUENTSET$/,
-    /^IFCMATERIAL$/,
-    /^IFCMATERIALLIST$/,
-  ];
-
-  // Attributes that lead from a material set / usage down to its IfcMaterial.
-  private _materialParentAttributes = [
-    "ForLayerSet",
-    "MaterialLayers",
-    "ForProfileSet",
-    "MaterialProfiles",
-    "Material",
-    "MaterialConstituents",
-    "Materials",
-  ];
-
-  private _materialRelations = {
-    MaterialConstituents: { attributes: true, relations: true },
-    ForLayerSet: { attributes: true, relations: true },
-    MaterialLayers: { attributes: true, relations: true },
-    ForProfileSet: { attributes: true, relations: true },
-    MaterialProfiles: { attributes: true, relations: true },
-    Materials: { attributes: true, relations: false },
-  };
-
   facetType = "Material" as const;
   value?: IDSFacetParameter;
   uri?: string;
 
   serialize(type: "applicability" | "requirement") {
-    if (!(this.value && this.uri)) return "<material />";
-    const valueXML = getParameterXML("Value", this.value);
     let attributes = "";
     if (type === "requirement") {
-      attributes += `cardinality="${this.cardinality}"`;
-      attributes += this.uri ? `uri=${this.uri}` : "";
-      attributes += this.instructions
-        ? `instructions="${XML.escape(this.instructions)}"`
-        : "";
+      attributes += ` cardinality="${this.cardinality}"`;
+      if (this.uri) attributes += ` uri="${XML.escape(this.uri)}"`;
+      if (this.instructions)
+        attributes += ` instructions="${XML.escape(this.instructions)}"`;
     }
-    return `<material ${attributes}>
-  ${valueXML}
-</material>`;
+    return `<material${attributes}>${getParameterXML("Value", this.value)}</material>`;
   }
 
   async getEntities(modelIds: RegExp[], collector: ModelIdMap) {
-    const fragments = this._components.get(FragmentsManager);
-
-    for (const [modelId, model] of fragments.list) {
-      const isValidModel = modelIds.find((regex) => regex.test(modelId));
-      if (!isValidModel) continue;
-
-      // IFCMATERIALLIST: DONE
-      // IFCMATERIALLAYERSETUSAGE: DONE
-      // IFCMATERIALCONSTITUENTSET: DONE
-      // IFCMATERIAL: DONE
-      const items = await model.getItemsOfCategories(this._ifcMaterialEntities);
-      const localIds = Object.values(items).flat();
-      if (localIds.length === 0) continue;
-
-      const data = await model.getItemsData(localIds, {
-        relations: {
-          AssociatedTo: { attributes: true, relations: false },
-          ...this._materialRelations,
-        },
+    for (const [modelId, model] of this._components.get(FragmentsManager)
+      .list) {
+      if (!modelIds.some((pattern) => pattern.test(modelId))) continue;
+      const ids = Object.values(
+        await model.getItemsOfCategories([/.*/]),
+      ).flat();
+      const results: ModelIdDataMap<IDSItemCheckResult> = new FRAGS.DataMap();
+      await this.test({ [modelId]: new Set(ids) }, results, {
+        skipIfFails: false,
       });
-
-      for (const item of data) {
-        if (
-          !(
-            "value" in item._localId &&
-            "value" in item._category &&
-            Array.isArray(item.AssociatedTo)
-          )
-        ) {
-          continue;
-        }
-
-        const isValid = this.hasValidMaterial(item);
-        if (!isValid) continue;
-
-        const relations = item.AssociatedTo.map((relation) => {
-          if (!("value" in relation._localId && relation._localId.value))
-            return null;
-          return relation._localId.value;
-        }).filter((value) => value !== null);
-
-        ModelIdMapUtils.append(collector, modelId, ...relations);
-      }
+      const selected = collector[modelId] ?? new Set<number>();
+      for (const [id, result] of results.get(modelId) ?? [])
+        if (result.pass) selected.add(id);
+      if (selected.size) collector[modelId] = selected;
     }
   }
 
   async test(
     items: ModelIdMap,
     collector: ModelIdDataMap<IDSItemCheckResult>,
-    config: { skipIfFails: boolean } = { skipIfFails: true },
+    config = { skipIfFails: true },
   ) {
-    const fragments = this._components.get(FragmentsManager);
-    for (const [modelId, localIds] of Object.entries(items)) {
-      const model = fragments.list.get(modelId);
+    const options = {
+      attributesDefault: true,
+      relations: Object.fromEntries(
+        [...children, "HasAssociations", "IsTypedBy", "IsDefinedBy"].map(
+          (name) => [name, { attributes: true, relations: false }],
+        ),
+      ),
+    };
+    for (const [modelId, ids] of Object.entries(items)) {
+      const model = this._components.get(FragmentsManager).list.get(modelId);
       if (!model) continue;
-
-      const data = await model.getItemsData([[...localIds][0]], {
-        relations: {
-          AssociatedTo: { attributes: false, relations: false },
-          HasAssociations: { attributes: true, relations: true },
-          ...this._materialRelations,
-        },
-      });
-
-      for (const item of data) {
+      const cache = new Map<number, FRAGS.ItemData>();
+      const read = async (item: FRAGS.ItemData) => {
+        const id = value(item, "_localId");
+        if (typeof id !== "number") return item;
+        if (!cache.has(id))
+          cache.set(id, (await model.getItemsData([id], options))[0] ?? item);
+        return cache.get(id)!;
+      };
+      const associations = async (item: FRAGS.ItemData) => {
+        const data = await read(item);
+        const own = refs(data, "HasAssociations").filter((ref) =>
+          String(value(ref, "_category")).startsWith("IFCMATERIAL"),
+        );
+        if (own.length) return own;
+        const inherited: FRAGS.ItemData[] = [];
+        for (const type of [
+          ...refs(data, "IsTypedBy"),
+          ...refs(data, "IsDefinedBy"),
+        ]) {
+          const definition = await read(type);
+          inherited.push(
+            ...refs(definition, "HasAssociations").filter((ref) =>
+              String(value(ref, "_category")).startsWith("IFCMATERIAL"),
+            ),
+          );
+        }
+        return inherited;
+      };
+      for (const item of await model.getItemsData([...ids])) {
         const checks = this.getItemChecks(
           collector,
           modelId,
@@ -141,108 +111,54 @@ export class IDSMaterial extends IDSFacet {
           config.skipIfFails,
         );
         if (!checks) continue;
-
-        // If it doesn't have associations
-        // is because it doesn't have materials
-        if (!Array.isArray(item.HasAssociations)) {
-          checks.push({
-            parameter: null,
-            currentValue: null,
-            requiredValue: this.value,
-            pass: false,
-          });
-          continue;
-        }
-
-        for (const association of item.HasAssociations) {
-          if (
-            !this._ifcMaterialEntities.some((parent) => {
-              if (!("value" in association._category)) return false;
-              return parent.test(association._category.value);
-            })
-          ) {
-            continue;
+        const roots = await associations(item);
+        let matches = false;
+        const seen = new Set<number>();
+        const visit = async (ref: FRAGS.ItemData): Promise<boolean> => {
+          const id = value(ref, "_localId");
+          if (typeof id === "number") {
+            if (seen.has(id)) return false;
+            seen.add(id);
           }
-
-          const isValid = this.hasValidMaterial(association, checks);
-          if (isValid) break;
-        }
+          const material = await read(ref);
+          if (!this.value) return true;
+          for (const name of ["Name", "LayerSetName", "Category"]) {
+            const actual = value(material, name);
+            if (
+              actual !== undefined &&
+              actual !== null &&
+              this.evalRequirement(
+                actual,
+                this.value,
+                "Value",
+                undefined,
+                "required",
+              )
+            )
+              return true;
+          }
+          for (const name of children)
+            for (const child of refs(material, name))
+              if (await visit(child)) return true;
+          return false;
+        };
+        for (const root of roots)
+          if (await visit(root)) {
+            matches = true;
+            break;
+          }
+        let pass = matches;
+        if (this.cardinality === "prohibited") pass = !matches;
+        if (this.cardinality === "optional" && !roots.length) pass = true;
+        checks.push({
+          parameter: "Value",
+          currentValue: roots.length
+            ? roots.map((root) => value(root, "Name")).join(", ")
+            : null,
+          requiredValue: this.value,
+          pass,
+        });
       }
     }
-  }
-
-  private hasValidMaterial(item: FRAGS.ItemData, checks?: IDSCheck[]) {
-    let isValid = false;
-    if ("value" in item._category && item._category.value === "IFCMATERIAL") {
-      const result = this.evalValue(item, checks);
-      if (result) isValid = true;
-    } else {
-      // if its not a material, it should be a parent
-      for (const [name, attribute] of Object.entries(item)) {
-        if (!this._materialParentAttributes.includes(name)) continue;
-        if (!Array.isArray(attribute)) continue;
-        for (const item of attribute) {
-          const isMaterial =
-            "value" in item._category && item._category.value === "IFCMATERIAL";
-          if (isMaterial) {
-            const result = this.evalValue(item, checks);
-            if (result) {
-              isValid = true;
-              break;
-            }
-          } else {
-            const result = this.hasValidMaterial(item);
-            if (result) {
-              isValid = true;
-              break;
-            }
-          }
-        }
-      }
-    }
-    return isValid;
-  }
-
-  private evalValue(item: FRAGS.ItemData, checks?: IDSCheck[]) {
-    if (!this.value) {
-      checks?.push({
-        parameter: null,
-        currentValue:
-          item.Name && "value" in item.Name ? item.Name.value : null,
-        pass: true,
-      });
-      return true;
-    }
-    if (
-      !("value" in item._category && item._category.value === "IFCMATERIAL")
-    ) {
-      return null;
-    }
-
-    let result = false;
-
-    if (item.Name && "value" in item.Name) {
-      result = this.evalRequirement(
-        item.Name.value,
-        this.value,
-        "Value",
-        checks,
-      );
-    }
-
-    if (result) return result;
-
-    // IDSDocs: if the name doesn't match, the category is also an option
-    // to look at.
-    if (item.Category && "value" in item.Category) {
-      result = this.evalRequirement(
-        item.Category.value,
-        this.value,
-        "Value",
-        checks,
-      );
-    }
-
-    return result;
   }
 }

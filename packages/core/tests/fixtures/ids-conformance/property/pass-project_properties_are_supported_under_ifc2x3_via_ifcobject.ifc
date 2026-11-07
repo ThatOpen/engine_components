@@ -1,0 +1,13 @@
+ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('ViewDefinition [CoordinationView]'),'2;1');
+FILE_NAME('','2026-08-05T11:36:31',(''),(''),'IfcOpenShell 0.8.5-1c5b825','IfcOpenShell 0.8.5-1c5b825','');
+FILE_SCHEMA(('IFC2X3'));
+ENDSEC;
+DATA;
+#1=IFCPROJECT('1hqIFTRjfV6AWq_bMtnZwI',$,'P',$,$,$,$,$,$);
+#2=IFCPROPERTYSINGLEVALUE('Foo',$,IFCLABEL('Bar'),$);
+#3=IFCPROPERTYSET('03z7JP9zr2w9rkiQlFGgOv',$,'Custom_Pset',$,(#2));
+#4=IFCRELDEFINESBYPROPERTIES('0N9$lcz4H1lgXGBV5jUras',$,$,$,(#1),#3);
+ENDSEC;
+END-ISO-10303-21;

@@ -29,7 +29,7 @@ export class IDSAttribute extends IDSFacet {
     if (type === "requirement") {
       attributes += `cardinality="${this.cardinality}"`;
       attributes += this.instructions
-        ? `instructions="${XML.escape(this.instructions)}"`
+        ? ` instructions="${XML.escape(this.instructions)}"`
         : "";
     }
     return `<attribute ${attributes}>

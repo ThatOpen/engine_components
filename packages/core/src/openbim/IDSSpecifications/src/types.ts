@@ -78,7 +78,14 @@ export type IDSRestrictionParameter =
   | IDSBoundsParameter
   | IDSLengthParameter;
 
-export type IDSFacetParameter = IDSSimpleParameter | IDSRestrictionParameter;
+export interface IDSCombinedRestrictionParameter {
+  type: "restriction";
+  parameter: Record<string, any>;
+}
+export type IDSFacetParameter =
+  | IDSSimpleParameter
+  | IDSRestrictionParameter
+  | IDSCombinedRestrictionParameter;
 
 // TODO: This check result need more standarization
 export interface IDSCheck {
