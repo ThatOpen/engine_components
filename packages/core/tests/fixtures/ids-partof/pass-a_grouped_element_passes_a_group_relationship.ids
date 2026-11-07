@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ids xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd" xmlns="http://standards.buildingsmart.org/IDS">
+  <info>
+    <title>A grouped element passes a group relationship</title>
+    <description>Generated via code automation in the Ids Repository on github.</description>
+  </info>
+  <specifications>
+    <specification name="A grouped element passes a group relationship" ifcVersion="IFC2X3 IFC4">
+      <applicability maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCELEMENTASSEMBLY</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <partOf relation="IFCRELASSIGNSTOGROUP">
+          <entity>
+            <name>
+              <xs:restriction base="xs:string">
+                <xs:pattern value=".*" />
+              </xs:restriction>
+            </name>
+          </entity>
+        </partOf>
+      </requirements>
+    </specification>
+  </specifications>
+</ids>
