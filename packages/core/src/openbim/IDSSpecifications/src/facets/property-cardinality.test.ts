@@ -82,11 +82,10 @@ describe("IDSProperty cardinality as a requirement", () => {
     expect(await passing("prohibited")).toEqual([43]);
   });
 
-  it("prohibited with a value: passes where the property is absent or different", async () => {
-    expect(await passing("prohibited", true)).toEqual([43, 45]);
-  });
-
-  it("optional: passes where the property is absent or has the value", async () => {
-    expect(await passing("optional", true)).toEqual([40, 41, 42, 43, 46]);
+  it("optional: never fails, whether the property is absent, matches or differs", async () => {
+    // buildingSMART IDS test cases "an optional facet always passes regardless
+    // of outcome", and the developer guide: an optional requirement that would
+    // fail if required must not be logged as an error.
+    expect(await passing("optional", true)).toEqual(WALLS);
   });
 });

@@ -313,8 +313,10 @@ export class IDSProperty extends IDSFacet {
         if (!checks) continue;
 
         // Evaluate the facet itself (as if required), then apply the
-        // cardinality once: a prohibited property passes when the facet does
-        // not match, and an optional one passes when the property is absent.
+        // cardinality once. Prohibited: passes when the facet does not match.
+        // Optional: never fails ("If the requirement is optional but would fail
+        // if it were required instead, the checker tool must not log an
+        // error", IDS developer guide).
         const facetChecks: IDSCheck[] = [];
         const present = await this.evalFacet(item, facetChecks);
         const matches =
@@ -327,10 +329,10 @@ export class IDSProperty extends IDSFacet {
             pass: !matches,
             requiredValue: this.baseName,
           } as IDSCheck);
-        } else if (this.cardinality === "optional" && !present) {
+        } else if (this.cardinality === "optional") {
           checks.push({
             parameter: "BaseName",
-            currentValue: null,
+            currentValue: present ? this.baseName.parameter : null,
             pass: true,
             requiredValue: this.baseName,
           } as IDSCheck);
