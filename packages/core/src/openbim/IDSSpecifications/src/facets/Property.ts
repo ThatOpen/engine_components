@@ -444,7 +444,15 @@ export class IDSProperty extends IDSFacet {
       return pass;
     }
 
-    if (values.length === 0) return true;
+    if (values.length === 0) {
+      checks?.push({
+        parameter: "Value",
+        currentValue: null,
+        pass: false,
+        requiredValue: this.value,
+      });
+      return false;
+    }
 
     // IDSDocs: Values with a logical unknown always fail
     // if (valueAttr.type === 3 && valueAttr.value === 2) {

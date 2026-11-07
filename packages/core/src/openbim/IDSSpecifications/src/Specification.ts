@@ -126,6 +126,7 @@ export class IDSSpecification implements IDSSpecificationData {
     for (const ids of Object.values(entities)) applicable += ids.size;
 
     if (
+      applicable === 0 ||
       this.requirements.size === 0 ||
       (skipProhibitedRequirements && this.maxOccurs === 0)
     ) {

@@ -17,10 +17,29 @@ const files = fs
       /(^|\/)(pass|fail)-.*\.ids$/.test(name) &&
       fs.existsSync(path.join(directory, name.replace(/\.ids$/, ".ifc"))),
   );
+const cases = files.map((name) => ({
+  name,
+  label: name,
+  transform: (xml: string) => xml,
+}));
+cases.push({
+  name: "property/fail-properties_with_a_null_value_fail.ids",
+  label: "null property without a datatype still fails",
+  transform: (xml) => xml.replace(' dataType="IFCLABEL"', ""),
+});
+cases.push({
+  name: "ids/pass-optional_specifications_may_still_pass_if_nothing_is_applicable.ids",
+  label: "requirements do not inspect unrelated objects when nothing applies",
+  transform: (xml) =>
+    xml.replace(
+      "<simpleValue>Waldo</simpleValue>",
+      "<simpleValue>Unrelated objects must not be checked</simpleValue>",
+    ),
+});
 describe("IDS full conformance", () => {
-  it.each(files)(
-    "%s",
-    async (name) => {
+  it.each(cases)(
+    "$label",
+    async ({ name, transform }) => {
       const importer = new FRAGS.IfcImporter();
       importer.wasm = {
         path: `${path.resolve(__dirname, "../../../../../node_modules/web-ifc")}/`,
@@ -77,7 +96,9 @@ describe("IDS full conformance", () => {
       try {
         const specs = components
           .get(OBC.IDSSpecifications)
-          .load(fs.readFileSync(path.join(directory!, name), "utf8"));
+          .load(
+            transform(fs.readFileSync(path.join(directory!, name), "utf8")),
+          );
         let pass = true;
         for (const spec of specs)
           if (
