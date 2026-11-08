@@ -85,21 +85,26 @@ function offsetsFor(reach, maxRadius) {
   return { side, offsets };
 }
 
-class ContourTilesNode extends THREE.Node {
-  constructor(state) {
-    super("float");
-    this.state = state;
-    this.updateBeforeType = THREE.NodeUpdateType.FRAME;
-  }
+// 🔴 MADE WHEN FIRST ASKED FOR, NOT AS THE MODULE LOADS. `THREE.Node` exists only in three's WebGPU build: a class
+// declared at the top of the module made any app importing this package with the classic `three` stop at load
+// («Class extends value undefined»), WebGL or not. It is only asked for on the WebGPU path, where `three` is that build.
+let contourTilesNodeClass = null;
+const ContourTilesNode = () =>
+  (contourTilesNodeClass ??= class ContourTilesNode extends THREE.Node {
+    constructor(state) {
+      super("float");
+      this.state = state;
+      this.updateBeforeType = THREE.NodeUpdateType.FRAME;
+    }
 
-  setup() {
-    return this.state.sample;
-  }
+    setup() {
+      return this.state.sample;
+    }
 
-  updateBefore() {
-    this.state.dispatch();
-  }
-}
+    updateBefore() {
+      this.state.dispatch();
+    }
+  });
 
 /**
  * @returns a float node: the distance to the nearest contour seed at this pixel, as the composite's loop computes it
@@ -200,7 +205,7 @@ export function contourTilesNode({ renderer, faceTexture, depthTexture, reach, m
       }
     },
   };
-  const node = new ContourTilesNode(state);
+  const node = new (ContourTilesNode())(state);
   return {
     node,
     dispose() {
