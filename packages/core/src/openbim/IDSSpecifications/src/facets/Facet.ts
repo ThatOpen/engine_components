@@ -41,7 +41,9 @@ export abstract class IDSFacet {
     facetParameter: IDSFacetParameter,
     parameter: IDSFacetParameterName,
     checks?: IDSCheck[],
-  ) => {
+    cardinality: IDSSimpleCardinality | IDSConditionalCardinaltiy = this
+      .cardinality,
+  ): boolean => {
     const checkLog: IDSCheck = {
       parameter,
       currentValue: value,
@@ -54,29 +56,54 @@ export abstract class IDSFacet {
     let pass = false;
 
     if (facetParameter.type === "simple") {
-      pass = value === facetParameter.parameter;
+      const expected = facetParameter.parameter;
+      pass = value === expected;
+      if (
+        typeof value === "number" &&
+        (typeof expected === "number" ||
+          /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(
+            String(expected),
+          ))
+      ) {
+        const number = Number(expected);
+        const tolerance = Math.abs(number) * 1e-6 + 1e-6;
+        pass =
+          Math.abs(value - number) <=
+          tolerance +
+            Number.EPSILON * Math.max(1, Math.abs(value), Math.abs(number));
+      }
+      if (typeof value === "boolean")
+        pass =
+          String(expected) === String(value) ||
+          String(expected) === (value ? "1" : "0");
     }
 
     if (facetParameter.type === "enumeration") {
-      pass = facetParameter.parameter.includes(value as never);
+      pass = facetParameter.parameter.some((expected) =>
+        this.evalRequirement(
+          value,
+          { type: "simple", parameter: expected },
+          parameter,
+          undefined,
+          "required",
+        ),
+      );
     }
 
     if (facetParameter.type === "pattern") {
-      const regex = new RegExp(facetParameter.parameter);
+      // XSD patterns match the whole value, not a substring.
+      const regex = new RegExp(`^(?:${facetParameter.parameter})$`);
       pass = regex.test(String(value));
     }
 
     if (facetParameter.type === "length") {
+      // Every given limit must hold, not just the last one checked.
       const { min, length, max } = facetParameter.parameter;
-      if (length !== undefined) {
-        pass = String(value).length === length;
-      }
-      if (min !== undefined) {
-        pass = String(value).length >= min;
-      }
-      if (max !== undefined) {
-        pass = String(value).length <= max;
-      }
+      const valueLength = String(value).length;
+      pass =
+        (length === undefined || valueLength === length) &&
+        (min === undefined || valueLength >= min) &&
+        (max === undefined || valueLength <= max);
     }
 
     if (facetParameter.type === "bounds" && typeof value === "number") {
@@ -96,8 +123,48 @@ export abstract class IDSFacet {
       pass = minPass && maxPass;
     }
 
-    if (this.cardinality === "prohibited") pass = !pass;
-    if (this.cardinality === "optional") pass = true;
+    if (facetParameter.type === "restriction") {
+      const restriction = facetParameter.parameter;
+      const repeated = (key: string) => {
+        const item = restriction[key];
+        return item === undefined ? [] : Array.isArray(item) ? item : [item];
+      };
+      pass = true;
+      const patterns = repeated("pattern");
+      if (patterns.length)
+        pass = patterns.some(({ value: pattern }) =>
+          new RegExp(`^(?:${pattern})$`, "u").test(String(value)),
+        );
+      const enumeration = repeated("enumeration");
+      if (enumeration.length)
+        pass &&= enumeration.some(({ value: expected }) =>
+          this.evalRequirement(
+            value,
+            { type: "simple", parameter: expected },
+            parameter,
+            undefined,
+            "required",
+          ),
+        );
+      for (const [key, setting] of Object.entries(restriction)) {
+        if (["base", "pattern", "enumeration"].includes(key)) continue;
+        const limit = Number((setting as { value: string | number }).value);
+        if (key === "length") pass &&= [...String(value)].length === limit;
+        if (key === "minLength") pass &&= [...String(value)].length >= limit;
+        if (key === "maxLength") pass &&= [...String(value)].length <= limit;
+        if (key === "minInclusive")
+          pass &&= typeof value === "number" && value >= limit;
+        if (key === "minExclusive")
+          pass &&= typeof value === "number" && value > limit;
+        if (key === "maxInclusive")
+          pass &&= typeof value === "number" && value <= limit;
+        if (key === "maxExclusive")
+          pass &&= typeof value === "number" && value < limit;
+      }
+    }
+
+    if (cardinality === "prohibited") pass = !pass;
+    if (cardinality === "optional") pass = true;
 
     checkLog.pass = pass;
     return checkLog.pass;

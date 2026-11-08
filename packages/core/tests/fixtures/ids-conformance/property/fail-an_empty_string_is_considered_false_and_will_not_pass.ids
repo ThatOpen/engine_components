@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ids xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd" xmlns="http://standards.buildingsmart.org/IDS">
+  <info>
+    <title>An empty string is considered not matching and will not pass</title>
+    <description>Generated via code automation in the Ids Repository on github.</description>
+  </info>
+  <specifications>
+    <specification name="An empty string is considered not matching and will not pass" ifcVersion="IFC2X3 IFC4">
+      <applicability maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCWALL</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <property dataType="IFCLABEL">
+          <propertySet>
+            <simpleValue>Foo_Bar</simpleValue>
+          </propertySet>
+          <baseName>
+            <simpleValue>Foo</simpleValue>
+          </baseName>
+        </property>
+      </requirements>
+    </specification>
+  </specifications>
+</ids>

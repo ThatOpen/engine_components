@@ -1,7 +1,7 @@
 import * as FRAGS from "@thatopen/fragments";
 import { Components } from "../../../core/Components";
 import { IDSCheckResult, IDSSpecificationData, IfcVersion } from "./types";
-import { UUID } from "../../../utils";
+import { UUID, ModelIdMapUtils } from "../../../utils";
 import { IDSFacet } from "./facets";
 import { IDSSpecifications } from "..";
 import { ModelIdMap } from "../../../fragments";
@@ -20,6 +20,18 @@ export class IDSSpecification implements IDSSpecificationData {
   description?: string;
   instructions?: string;
   requirementsDescription?: string;
+
+  /**
+   * Minimum number of applicable elements: `1` makes the specification
+   * required, `0` optional. Read from `minOccurs` of the applicability.
+   */
+  minOccurs = 1;
+
+  /**
+   * Maximum number of applicable elements: `0` makes the specification
+   * prohibited. Read from `maxOccurs` of the applicability.
+   */
+  maxOccurs: number | "unbounded" = "unbounded";
   applicability = new FRAGS.DataSet<IDSFacet>();
   requirements = new FRAGS.DataSet<IDSFacet>();
 
@@ -57,27 +69,76 @@ export class IDSSpecification implements IDSSpecificationData {
     modelIds: RegExp[],
     config: { skipIfFails: boolean } = { skipIfFails: true },
   ) {
+    return (await this.run(modelIds, config)).result;
+  }
+
+  /**
+   * Tests the models and also applies the specification's cardinality
+   * (`minOccurs` / `maxOccurs`): a required specification fails when too few
+   * elements are applicable, a prohibited one fails when any is, and an
+   * optional one may pass with none. Requirements of a prohibited
+   * specification are not evaluated.
+   *
+   * @returns `pass` is the specification-level verdict, `applicable` the number
+   * of applicable elements, and `result` the same per-element result as {@link test}.
+   */
+  async verify(
+    modelIds: RegExp[],
+    config: { skipIfFails: boolean } = { skipIfFails: true },
+  ) {
+    const { result, applicable, entities } = await this.run(
+      modelIds,
+      config,
+      true,
+    );
+    const max = this.maxOccurs === "unbounded" ? Infinity : this.maxOccurs;
+    let pass = applicable >= this.minOccurs && applicable <= max;
+    if (max > 0) {
+      for (const items of result.values()) {
+        for (const item of items.values()) if (!item.pass) pass = false;
+      }
+    }
+    return { pass, applicable, result, items: entities };
+  }
+
+  private async run(
+    modelIds: RegExp[],
+    config: { skipIfFails: boolean },
+    skipProhibitedRequirements = false,
+  ) {
     const result: IDSCheckResult = new FRAGS.DataMap();
 
-    if (this.requirements.size === 0) return result;
-
-    // Get applicable elements
-    const entities: ModelIdMap = {};
+    // Get applicable elements. In IDS an element is applicable only when it
+    // matches every applicability facet, so each facet collects its own
+    // matches and the results are intersected.
+    const facetEntities: ModelIdMap[] = [];
     const applicabilityPromises = [];
     for (const facet of this.applicability) {
-      applicabilityPromises.push(facet.getEntities(modelIds, entities));
+      const facetMatches: ModelIdMap = {};
+      facetEntities.push(facetMatches);
+      applicabilityPromises.push(facet.getEntities(modelIds, facetMatches));
     }
 
     await Promise.all(applicabilityPromises);
+    const entities = ModelIdMapUtils.intersect(facetEntities);
 
-    // Test applicable elements against requirements
-    const requirementPromises = [];
-    for (const requirement of this.requirements) {
-      requirementPromises.push(requirement.test(entities, result, config));
+    let applicable = 0;
+    for (const ids of Object.values(entities)) applicable += ids.size;
+
+    if (
+      applicable === 0 ||
+      this.requirements.size === 0 ||
+      (skipProhibitedRequirements && this.maxOccurs === 0)
+    ) {
+      return { result, applicable, entities };
     }
 
-    await Promise.all(requirementPromises);
-    return result;
+    // Keep facet checks in document order so reports can identify each
+    // requirement even when several facets have the same kind.
+    for (const requirement of this.requirements) {
+      await requirement.test(entities, result, config);
+    }
+    return { result, applicable, entities };
   }
 
   /**
@@ -102,12 +163,16 @@ export class IDSSpecification implements IDSSpecificationData {
       : "";
 
     const xml = `<specification ifcVersion="${[...this.ifcVersion].join(" ")}" ${name} ${identifier} ${description} ${instructions}>
-      <applicability minOccurs="1" maxOccurs="unbounded">
+      <applicability minOccurs="${this.minOccurs}" maxOccurs="${this.maxOccurs}">
         ${[...this.applicability].map((facet) => facet.serialize("applicability")).join("\n")}
       </applicability>
-      <requirements>
+      ${
+        this.requirements.size
+          ? `<requirements${this.requirementsDescription ? ` description="${XML.escape(this.requirementsDescription)}"` : ""}>
         ${[...this.requirements].map((facet) => facet.serialize("requirement")).join("\n")}
-      </requirements>
+      </requirements>`
+          : ""
+      }
     </specification>`;
     return xml;
   }
