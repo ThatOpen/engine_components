@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.6.1](https://github.com/ThatOpen/engine_components/compare/v3.6.0...v3.6.1) (2026-11-08)
+
+
+### Bug Fixes
+
+* **front:** the contour tiles node made when first asked for, so the package loads with the classic three; 3.6.1 ([#857](https://github.com/ThatOpen/engine_components/issues/857)) ([7dea8fe](https://github.com/ThatOpen/engine_components/commit/7dea8fe64805c28f413ccc6236a76ff2df95a23e))
+
 ## [3.4.0](https://github.com/ThatOpen/engine_components/compare/v3.3.2...v3.4.0) (2026-04-09)
 
 
