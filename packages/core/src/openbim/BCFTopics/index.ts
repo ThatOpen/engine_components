@@ -298,8 +298,7 @@ export class BCFTopics
       "bcf.version",
       `<?xml version="1.0" encoding="UTF-8"?>
     <Version VersionId="${versionId}" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/buildingSMART/BCF-XML/${schemaRelease}/Schemas/version.xsd"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    </Version>`,
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>`,
     );
 
     for (const [guid, doc] of this.documents.entries()) {
@@ -316,8 +315,8 @@ export class BCFTopics
         const { type, description } = doc;
         if (type === "external") continue;
         docTags.push(`<Document Guid="${guid}">
-        <Filename>${doc.fileName}</Filename>
-        ${description ? `<Description>${description}</Description>` : ""}
+        <Filename>${XML.escape(doc.fileName)}</Filename>
+        ${description ? `<Description>${XML.escape(description)}</Description>` : ""}
       </Document>`);
         // zip.file(`documents/${guid}`, doc.data);
       }
@@ -345,11 +344,9 @@ export class BCFTopics
       for (const viewpointID of topic.viewpoints) {
         const viewpoint = viewpoints.list.get(viewpointID);
         if (!viewpoint) continue;
-        const viewpointFileName = viewpoint.title ?? viewpoint.guid;
-        topicFolder.file(
-          `${viewpointFileName}.bcfv`,
-          await viewpoint.serialize(),
-        );
+        // The markup references this name (Topic.serialize); a title could
+        // hold "/" or repeat, so the guid is used.
+        topicFolder.file(`${viewpoint.guid}.bcfv`, await viewpoint.serialize());
 
         const snapshotData = viewpoints.snapshots.get(viewpoint.snapshot);
         if (!snapshotData) continue;
@@ -373,33 +370,36 @@ export class BCFTopics
   }
 
   private serializeExtensions() {
+    const tag = (name: string, value: string) =>
+      `<${name}>${XML.escape(value)}</${name}>`;
+
     const types = [...this.config.types]
-      .map((type) => `<TopicType>${type}</TopicType>`)
+      .map((type) => tag("TopicType", type))
       .join("\n");
 
     const statuses = [...this.config.statuses]
-      .map((status) => `<TopicStatus>${status}</TopicStatus>`)
+      .map((status) => tag("TopicStatus", status))
       .join("\n");
 
     const priorities = [...this.config.priorities]
-      .map((priority) => `<Priority>${priority}</Priority>`)
+      .map((priority) => tag("Priority", priority))
       .join("\n");
 
     const labels = [...this.config.labels]
-      .map((label) => `<TopicLabel>${label}</TopicLabel>`)
+      .map((label) => tag("TopicLabel", label))
       .join("\n");
 
     const stages = [...this.config.stages]
-      .map((stage) => `<Stage>${stage}</Stage>`)
+      .map((stage) => tag("Stage", stage))
       .join("\n");
 
     const users = [...this.config.users]
-      .map((user) => `<User>${user}</User>`)
+      .map((user) => tag("User", user))
       .join("\n");
 
-    return `
-      <?xml version="1.0" encoding="UTF-8"?>
-      <Extensions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="your-schema-location.xsd">
+    // The XML declaration must be the very first characters of the file.
+    return `<?xml version="1.0" encoding="UTF-8"?>
+      <Extensions>
         ${types.length !== 0 ? `<TopicTypes>\n${types}\n</TopicTypes>` : ""}
         ${statuses.length !== 0 ? `<TopicStatuses>\n${statuses}\n</TopicStatuses>` : ""}
         ${priorities.length !== 0 ? `<Priorities>\n${priorities}\n</Priorities>` : ""}
@@ -632,7 +632,10 @@ export class BCFTopics
             ? Coloring.Color
             : [Coloring.Color];
           for (const colorData of colors) {
-            const { Color, Component } = colorData;
+            const { Color } = colorData;
+            // BCF 3.0 wraps the components in <Components>; 2.1 does not.
+            const Component =
+              colorData.Components?.Component ?? colorData.Component ?? [];
             if (!(Color.length === 6 || Color.length === 8)) continue;
             const color = Color.length === 6 ? Color : Color.slice(2);
             const colorComponents = Array.isArray(Component)
@@ -640,7 +643,7 @@ export class BCFTopics
               : [Component];
             const guids = colorComponents
               .map((component: any) => {
-                if (!component.IfcGuid) return null;
+                if (!component?.IfcGuid) return null;
                 return { ifc_guid: component.IfcGuid };
               })
               .filter((data: any) => data !== null) as ViewpointComponent[];
