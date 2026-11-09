@@ -100,4 +100,18 @@ describe("Clipper delete events (#799)", () => {
       { plane: b, size: 0 },
     ]);
   });
+
+  it("deletes a plane whose world was disposed, so its renderer is null", () => {
+    const plane = fakePlane();
+    (plane.world as { renderer: unknown }).renderer = null;
+    clipper.list.set("a", plane);
+
+    const after: SimplePlane[] = [];
+    clipper.onAfterDelete.add((deleted) => after.push(deleted));
+
+    expect(() => clipper.list.delete("a")).not.toThrow();
+    expect(plane.dispose).toHaveBeenCalledTimes(1);
+    expect(after).toEqual([plane]);
+    expect(clipper.list.size).toBe(0);
+  });
 });

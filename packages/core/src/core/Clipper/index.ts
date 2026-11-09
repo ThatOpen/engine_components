@@ -257,11 +257,10 @@ export class Clipper
     // key, so the plane is carried across in `_deleting`.
     this.list.onBeforeDelete.add(({ key, value: plane }) => {
       this.onBeforeDelete.trigger();
-      if (!plane.world.renderer) {
-        throw new Error("Renderer not found for this plane's world!");
-      }
       this._deleting.set(key, plane);
-      plane.world.renderer.setPlane(false, plane.three);
+      // The world can be disposed on its own, which leaves its renderer
+      // `null` while its planes stay listed; there is nothing to unregister.
+      plane.world.renderer?.setPlane(false, plane.three);
       plane.dispose();
     });
 
