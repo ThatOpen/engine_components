@@ -43,7 +43,7 @@ export class Viewpoint {
     camera_up_vector: { x: 0, y: 1, z: 0 },
   };
 
-  customData: Record<string, any> = {}
+  customData: Record<string, any> = {};
 
   /**
    * A list of components GUIDs to hide when defaultVisibility = true or to show when defaultVisibility = false
@@ -346,6 +346,7 @@ export class Viewpoint {
    * @param transition - Indicates whether the camera movement should have a transition effect.
    *                      Default value is `true`.
    *
+   * @throws An error if the viewpoint has no world.
    * @throws An error if the world's camera does not have camera controls.
    *
    * @returns A Promise that resolves when the camera has been set.
@@ -356,7 +357,11 @@ export class Viewpoint {
     clippingsVisibility?: boolean;
     applyVisibility?: boolean;
   }) {
-    if (!this.world) return;
+    if (!this.world) {
+      throw new Error(
+        "Viewpoint: no world to apply the viewpoint to. Set `world` on this viewpoint, or set `Viewpoints.world` before creating or loading viewpoints (for example with `BCFTopics.load`).",
+      );
+    }
 
     const { camera } = this.world;
     if (!(camera instanceof OrthoPerspectiveCamera)) {
