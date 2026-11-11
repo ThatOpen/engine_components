@@ -70,13 +70,18 @@ export class IDSSpecification implements IDSSpecificationData {
 
     await Promise.all(applicabilityPromises);
 
-    // Test applicable elements against requirements
-    const requirementPromises = [];
-    for (const requirement of this.requirements) {
-      requirementPromises.push(requirement.test(entities, result, config));
+    // Test applicable elements against requirements. They test the same
+    // items, so they share one fetch of each kind of item data.
+    IDSFacet.startSharedItemsData(entities);
+    try {
+      const requirementPromises = [];
+      for (const requirement of this.requirements) {
+        requirementPromises.push(requirement.test(entities, result, config));
+      }
+      await Promise.all(requirementPromises);
+    } finally {
+      IDSFacet.endSharedItemsData(entities);
     }
-
-    await Promise.all(requirementPromises);
     return result;
   }
 
