@@ -286,20 +286,26 @@ export class IDSProperty extends IDSFacet {
     config: { skipIfFails: boolean } = { skipIfFails: true },
   ) {
     const fragments = this._components.get(FragmentsManager);
-    for (const [modelId, localIds] of Object.entries(items)) {
+    for (const modelId of Object.keys(items)) {
       const model = fragments.list.get(modelId);
       if (!model) continue;
-      const data = await model.getItemsData([...localIds], {
-        relations: {
-          IsDefinedBy: { attributes: true, relations: true },
-          IsTypedBy: { attributes: true, relations: false },
-          HasPropertySets: { attributes: true, relations: true },
-          // Both spellings on purpose: old .frag files store the pre-3.4
-          // relation name "DefinesOcurrence" (see getEntities above).
-          DefinesOccurrence: { attributes: false, relations: false },
-          DefinesOcurrence: { attributes: false, relations: false },
+      const data = await this.getSharedItemsData(
+        items,
+        modelId,
+        model,
+        "psets",
+        {
+          relations: {
+            IsDefinedBy: { attributes: true, relations: true },
+            IsTypedBy: { attributes: true, relations: false },
+            HasPropertySets: { attributes: true, relations: true },
+            // Both spellings on purpose: old .frag files store the pre-3.4
+            // relation name "DefinesOcurrence" (see getEntities above).
+            DefinesOccurrence: { attributes: false, relations: false },
+            DefinesOcurrence: { attributes: false, relations: false },
+          },
         },
-      });
+      );
 
       for (const item of data) {
         const checks = this.getItemChecks(
@@ -484,22 +490,26 @@ export class IDSProperty extends IDSFacet {
         return set.Name.value === definitionName;
       });
 
-      if (typeSet) {
-        mergedTypeSets.add(typeSet);
-        if (
-          Array.isArray(typeSet.HasProperties) &&
-          Array.isArray(definition.HasProperties)
-        ) {
-          for (const prop of typeSet.HasProperties) {
-            if (!(prop.Name && "value" in prop.Name)) continue;
-            const name = prop.Name.value;
-            const existingProp = definition.HasProperties.find((p) => {
-              if (!(p.Name && "value" in p.Name)) return false;
-              return p.Name.value === name;
-            });
-            if (!existingProp) definition.HasProperties.push(prop);
-          }
+      if (typeSet) mergedTypeSets.add(typeSet);
+      if (
+        typeSet &&
+        Array.isArray(typeSet.HasProperties) &&
+        Array.isArray(definition.HasProperties)
+      ) {
+        // A copy: the item data is shared with the specification's other
+        // requirements, so it must not be modified.
+        const properties = [...definition.HasProperties];
+        for (const prop of typeSet.HasProperties) {
+          if (!(prop.Name && "value" in prop.Name)) continue;
+          const name = prop.Name.value;
+          const existingProp = properties.find((p) => {
+            if (!(p.Name && "value" in p.Name)) return false;
+            return p.Name.value === name;
+          });
+          if (!existingProp) properties.push(prop);
         }
+        sets.push({ ...definition, HasProperties: properties });
+        continue;
       }
 
       sets.push(definition);

@@ -109,11 +109,16 @@ export class IDSEntity extends IDSFacet {
     config: { skipIfFails: boolean },
   ) {
     const fragments = this._components.get(FragmentsManager);
-    for (const [modelId, localIds] of Object.entries(items)) {
+    for (const modelId of Object.keys(items)) {
       const model = fragments.list.get(modelId);
       if (!model) continue;
 
-      const data = await model.getItemsData([...localIds]);
+      const data = await this.getSharedItemsData(
+        items,
+        modelId,
+        model,
+        "attributes",
+      );
       for (const item of data) {
         if (!("value" in item._category)) continue;
         const checks = this.getItemChecks(
