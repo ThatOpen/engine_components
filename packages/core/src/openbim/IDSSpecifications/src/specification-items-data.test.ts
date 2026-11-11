@@ -115,6 +115,28 @@ describe("IDSSpecification item data", () => {
     expect(fetchesOfApplicableItems).toHaveLength(2);
   });
 
+  it("does not fetch the other instances of an element's type", async () => {
+    const getItemsData = vi.spyOn(model, "getItemsData");
+    await run();
+    const fetched = await Promise.all(
+      getItemsData.mock.results.map((result) => result.value),
+    );
+    getItemsData.mockRestore();
+
+    // Walls 40, 41, 45 and 46 share type #52; the property facet only needs
+    // the type's own property sets, not the walls the type is used by.
+    const reachedThroughType = (data: unknown): boolean =>
+      Array.isArray(data)
+        ? data.some(reachedThroughType)
+        : typeof data === "object" &&
+          data !== null &&
+          Object.entries(data).some(
+            ([key, value]) =>
+              key === "ObjectTypeOf" || reachedThroughType(value),
+          );
+    expect(reachedThroughType(fetched)).toBe(false);
+  });
+
   it("gives the same results as testing each requirement on its own", async () => {
     const shared = summary(await run());
 

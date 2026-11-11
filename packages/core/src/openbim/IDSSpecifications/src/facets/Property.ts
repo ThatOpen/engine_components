@@ -303,6 +303,12 @@ export class IDSProperty extends IDSFacet {
             // relation name "DefinesOcurrence" (see getEntities above).
             DefinesOccurrence: { attributes: false, relations: false },
             DefinesOcurrence: { attributes: false, relations: false },
+            // A relation without its own entry here takes the config of the
+            // relation it was reached through. Without these, the type
+            // reached through IsDefinedBy would bring along every other
+            // instance of that type, with all their property sets.
+            ObjectTypeOf: { attributes: false, relations: false },
+            Types: { attributes: false, relations: false },
           },
         },
       );
