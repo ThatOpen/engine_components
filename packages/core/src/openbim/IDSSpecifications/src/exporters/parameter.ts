@@ -30,12 +30,12 @@ export const getParameterXML = (
     const { min, minInclusive, max, maxInclusive } = parameter.parameter;
     let minTag = "";
     if (min !== undefined) {
-      minTag = `<xs:min${minInclusive ? "Inclusive" : "Exclusive"} value="${min}">`;
+      minTag = `<xs:min${minInclusive ? "Inclusive" : "Exclusive"} value="${min}" />`;
     }
 
     let maxTag = "";
     if (max !== undefined) {
-      maxTag = `<xs:max${maxInclusive ? "Inclusive" : "Exclusive"} value="${max}">`;
+      maxTag = `<xs:max${maxInclusive ? "Inclusive" : "Exclusive"} value="${max}" />`;
     }
 
     parameterXML = `<xs:restriction base="xs:double">
@@ -68,6 +68,15 @@ export const getParameterXML = (
     </xs:restriction>`;
   }
 
+  if (parameter.type === "restriction") {
+    const { base, ...facets } = parameter.parameter;
+    const children = Object.entries(facets).flatMap(([key, values]) =>
+      (Array.isArray(values) ? values : [values]).map(
+        (facet) => `<xs:${key} value="${XML.escape(facet.value)}" />`,
+      ),
+    );
+    parameterXML = `<xs:restriction base="${XML.escape(base)}">${children.join("\n")}</xs:restriction>`;
+  }
   const xml = `<${name[0].toLowerCase() + name.slice(1)}>
     ${parameterXML}
   </${name[0].toLowerCase() + name.slice(1)}>`;

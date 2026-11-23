@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ids xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd" xmlns="http://standards.buildingsmart.org/IDS">
+  <info>
+    <title>A bound can be exclusive 1/3</title>
+    <description>Generated via code automation in the Ids Repository on github.</description>
+  </info>
+  <specifications>
+    <specification name="A bound can be exclusive 1/3" ifcVersion="IFC2X3 IFC4">
+      <applicability maxOccurs="unbounded">
+        <entity>
+          <name>
+            <simpleValue>IFCSURFACESTYLEREFRACTION</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+      <requirements>
+        <attribute>
+          <name>
+            <simpleValue>RefractionIndex</simpleValue>
+          </name>
+          <value>
+            <xs:restriction base="xs:double">
+              <xs:minExclusive value="0" />
+              <xs:maxExclusive value="10" />
+            </xs:restriction>
+          </value>
+        </attribute>
+      </requirements>
+    </specification>
+  </specifications>
+</ids>

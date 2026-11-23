@@ -21,6 +21,7 @@ const MODEL_ID = "type-psets";
  * | #42  | no    | IsExternal = TRUE        | TRUE                 |
  * | #43  | no    | none                     | none                 |
  * | #45  | yes   | IsExternal = FALSE       | FALSE, overrides     |
+ * | #52  | type  | HasPropertySets         | TRUE, its own pset   |
  * | #46  | yes   | LoadBearing only         | TRUE, from its type  |
  */
 const WITH_IS_EXTERNAL_TRUE = [40, 41, 42, 46];
@@ -81,7 +82,7 @@ describe("IDSProperty applicability through type property sets (#798)", () => {
   };
 
   it("selects elements whose matching pset lives only on their type", async () => {
-    expect(await select(facet(true))).toEqual(WITH_IS_EXTERNAL_TRUE);
+    expect(await select(facet(true))).toEqual([...WITH_IS_EXTERNAL_TRUE, 52]);
   });
 
   it("lets an instance pset override the value it inherits from its type", async () => {
@@ -90,7 +91,9 @@ describe("IDSProperty applicability through type property sets (#798)", () => {
   });
 
   it("selects every element that has the property at all, however it got it", async () => {
-    expect(await select(facet())).toEqual([...WITH_IS_EXTERNAL_TRUE, 45].sort());
+    expect(await select(facet())).toEqual(
+      [...WITH_IS_EXTERNAL_TRUE, 45, 52].sort(),
+    );
   });
 
   it("agrees with test(): an applicable element passes the same facet as a requirement", async () => {
@@ -101,7 +104,7 @@ describe("IDSProperty applicability through type property sets (#798)", () => {
       FRAGS.DataMap<number, { pass: boolean }>
     >();
     await requirement.test(
-      { [MODEL_ID]: new Set([40, 41, 42, 43, 45, 46]) },
+      { [MODEL_ID]: new Set([40, 41, 42, 43, 45, 46, 52]) },
       results as never,
     );
     const passing = [...results.get(MODEL_ID)!.entries()]

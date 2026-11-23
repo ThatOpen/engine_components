@@ -1,3 +1,5 @@
+import { IDS_PREDEFINED_PROPERTIES } from "./predefined-properties";
+import { idsUnitConverter } from "./units";
 import * as FRAGS from "@thatopen/fragments";
 import { IDSCheck, IDSFacetParameter, IDSItemCheckResult } from "../types";
 import { Components } from "../../../../core/Components";
@@ -8,13 +10,14 @@ import {
   ModelIdDataMap,
   ModelIdMap,
 } from "../../../../fragments";
-import { ModelIdMapUtils } from "../../../../utils";
 import { XML } from "../../../../utils/xml";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/property-facet.md
 
 export class IDSProperty extends IDSFacet {
   facetType = "Property" as const;
+  private _schema = "IFC4";
+  private _convertUnit?: Awaited<ReturnType<typeof idsUnitConverter>>;
   propertySet: IDSFacetParameter;
   baseName: IDSFacetParameter;
   value?: IDSFacetParameter;
@@ -41,13 +44,15 @@ export class IDSProperty extends IDSFacet {
     const propertySetXML = getParameterXML("PropertySet", this.propertySet);
     const baseNameXML = getParameterXML("BaseName", this.baseName);
     const valueXML = getParameterXML("Value", this.value);
-    const dataTypeXML = this.dataType ? `dataType=${this.dataType}` : "";
+    const dataTypeXML = this.dataType
+      ? `dataType="${XML.escape(this.dataType)}"`
+      : "";
     let attributes = "";
     if (type === "requirement") {
       attributes += `cardinality="${this.cardinality}"`;
-      attributes += this.uri ? `uri=${this.uri}` : "";
+      attributes += this.uri ? ` uri="${XML.escape(this.uri)}"` : "";
       attributes += this.instructions
-        ? `instructions="${XML.escape(this.instructions)}"`
+        ? ` instructions="${XML.escape(this.instructions)}"`
         : "";
     }
     return `<property ${dataTypeXML} ${attributes}>
@@ -58,226 +63,21 @@ export class IDSProperty extends IDSFacet {
   }
 
   async getEntities(modelIds: RegExp[], collector: ModelIdMap) {
-    const fragments = this._components.get(FragmentsManager);
-
-    for (const [modelId, model] of fragments.list) {
-      const isValidModel = modelIds.find((regex) => regex.test(modelId));
-      if (!isValidModel) continue;
-      const items = await model.getItemsOfCategories([
-        /PROPERTYSET/,
-        /ELEMENTQUANTITY/,
-      ]);
-      const localIds = Object.values(items).flat();
-      if (localIds.length === 0) continue;
-      // Fragments renamed this relation from "DefinesOcurrence" to
-      // "DefinesOccurrence" in its 3.4 schema, but relation names are stored
-      // as data inside each .frag file, so files exported before the rename
-      // still carry the old spelling. Request both; the one not present in
-      // the file is simply ignored.
-      const data = await model.getItemsData(localIds, {
-        relations: {
-          HasProperties: { attributes: true, relations: false },
-          DefinesOccurrence: { attributes: true, relations: false },
-          DefinesOcurrence: { attributes: true, relations: false },
-        },
+    for (const [modelId, model] of this._components.get(FragmentsManager)
+      .list) {
+      if (!modelIds.some((pattern) => pattern.test(modelId))) continue;
+      const ids = Object.values(
+        await model.getItemsOfCategories([/.*/]),
+      ).flat();
+      const results: ModelIdDataMap<IDSItemCheckResult> = new FRAGS.DataMap();
+      await this.test({ [modelId]: new Set(ids) }, results, {
+        skipIfFails: false,
       });
-
-      // Matching sets, by localId: their name and the property names that
-      // matched. A set attached to a type (IfcTypeObject.HasPropertySets)
-      // has no DefinesOccurrence, so its elements are found from the type.
-      const matchedSets = new Map<
-        number,
-        { name: string; props: Set<string> }
-      >();
-
-      for (const set of data) {
-        const definesOccurrence = set.DefinesOccurrence ?? set.DefinesOcurrence;
-        if (
-          !(
-            "value" in set._localId &&
-            "value" in set._category &&
-            set.Name &&
-            "value" in set.Name
-          )
-        ) {
-          continue;
-        }
-
-        const nameMatches = this.evalRequirement(
-          set.Name.value,
-          this.propertySet,
-          "PropertySet",
-        );
-
-        if (!nameMatches) continue;
-
-        let propsListName: string | undefined;
-        if (set._category.value === "IFCPROPERTYSET")
-          propsListName = "HasProperties";
-        if (set._category.value === "IFCELEMENTQUANTITY")
-          propsListName = "Quantities";
-
-        if (!propsListName) continue;
-        const props = set[propsListName];
-        if (!Array.isArray(props)) continue;
-
-        for (const prop of props) {
-          const keys = Object.keys(prop);
-          const nameKey = keys.find((key) => /Name/.test(key));
-          if (!(nameKey && "value" in prop[nameKey])) continue;
-          const attribute = prop[nameKey];
-          if (!("value" in attribute)) continue;
-
-          const propNameMatches = this.evalRequirement(
-            attribute.value,
-            this.baseName,
-            "BaseName",
-          );
-
-          if (!propNameMatches) continue;
-
-          if (this.value) {
-            const valueKey = keys.find((key) => /Value/.test(key));
-            if (!valueKey) continue;
-            const attribute = prop[valueKey];
-            if (!("value" in attribute)) continue;
-
-            const valueMatches = this.evalRequirement(
-              attribute.value,
-              this.value,
-              "Value",
-            );
-            if (!valueMatches) continue;
-          }
-
-          const setId = set._localId.value as number;
-          let matched = matchedSets.get(setId);
-          if (!matched) {
-            matched = { name: String(set.Name.value), props: new Set() };
-            matchedSets.set(setId, matched);
-          }
-          matched.props.add(String(attribute.value));
-
-          if (!Array.isArray(definesOccurrence)) continue;
-
-          const items = definesOccurrence
-            .map((ocurrence) => {
-              if (
-                !(
-                  "value" in ocurrence._localId &&
-                  typeof ocurrence._localId.value === "number"
-                )
-              ) {
-                return null;
-              }
-
-              return ocurrence._localId.value;
-            })
-            .filter((id) => id !== null) as number[];
-
-          ModelIdMapUtils.append(collector, modelId, ...items);
-        }
-      }
-
-      if (matchedSets.size > 0) {
-        await this.appendTypeInstances(model, modelId, matchedSets, collector);
-      }
+      const selected = collector[modelId] ?? new Set<number>();
+      for (const [id, result] of results.get(modelId) ?? [])
+        if (result.pass) selected.add(id);
+      if (selected.size) collector[modelId] = selected;
     }
-  }
-
-  /**
-   * Appends the elements that inherit one of `matchedSets` from their type,
-   * as `test()` does through {@link getTypePsets} (issue #708), so a set that
-   * only lives on a type selects the type's instances (issue #798).
-   *
-   * An element's own set of the same name overrides the inherited value of
-   * any property it also defines: if it defines every matched property
-   * itself, whether it applies was already decided from that set above.
-   */
-  private async appendTypeInstances(
-    model: FRAGS.FragmentsModel,
-    modelId: string,
-    matchedSets: Map<number, { name: string; props: Set<string> }>,
-    collector: ModelIdMap,
-  ) {
-    // IfcTypeObject subtypes: `...TYPE`, IFCTYPEOBJECT / IFCTYPEPRODUCT, and
-    // the IFC2x3 door / window styles.
-    const typeIds = Object.values(
-      await model.getItemsOfCategories([/TYPE$/, /^IFCTYPE/, /STYLE$/]),
-    ).flat();
-    if (typeIds.length === 0) return;
-
-    const related = { attributes: true, relations: false };
-    const types = await model.getItemsData(typeIds, {
-      attributesDefault: false,
-      relations: {
-        HasPropertySets: related,
-        // The fragments name for the inverse of IfcRelDefinesByType, and
-        // the IFC one, in case a file stores that.
-        ObjectTypeOf: related,
-        Types: related,
-      },
-    });
-
-    // Element -> the matched sets it inherits.
-    const inherited = new Map<number, { name: string; props: Set<string> }[]>();
-    const selected = collector[modelId];
-    for (const type of types) {
-      if (!Array.isArray(type.HasPropertySets)) continue;
-      const sets = type.HasPropertySets.flatMap((set) => {
-        const id =
-          set._localId && "value" in set._localId ? set._localId.value : null;
-        const matched = matchedSets.get(id as number);
-        return matched ? [matched] : [];
-      });
-      if (sets.length === 0) continue;
-      const instances = [
-        ...(Array.isArray(type.ObjectTypeOf) ? type.ObjectTypeOf : []),
-        ...(Array.isArray(type.Types) ? type.Types : []),
-      ];
-      for (const instance of instances) {
-        if (!(instance._localId && "value" in instance._localId)) continue;
-        const id = instance._localId.value;
-        if (typeof id !== "number" || selected?.has(id)) continue;
-        let list = inherited.get(id);
-        if (!list) {
-          list = [];
-          inherited.set(id, list);
-        }
-        list.push(...sets);
-      }
-    }
-    if (inherited.size === 0) return;
-
-    // Default attributes: the sets' and properties' names are needed.
-    const elements = await model.getItemsData([...inherited.keys()], {
-      relations: { IsDefinedBy: { attributes: true, relations: true } },
-    });
-    const applies: number[] = [];
-    for (const element of elements) {
-      if (!("value" in element._localId)) continue;
-      const id = element._localId.value as number;
-      const own = Array.isArray(element.IsDefinedBy) ? element.IsDefinedBy : [];
-      const overrides = (setName: string, propName: string) =>
-        own.some((set) => {
-          if (!(set.Name && "value" in set.Name) || set.Name.value !== setName)
-            return false;
-          const list = this.getPropertyListName(set);
-          const props = list ? set[list] : undefined;
-          if (!Array.isArray(props)) return false;
-          return props.some(
-            (prop) =>
-              prop.Name && "value" in prop.Name && prop.Name.value === propName,
-          );
-        });
-      const inherits = inherited
-        .get(id)!
-        .some((set) =>
-          [...set.props].some((prop) => !overrides(set.name, prop)),
-        );
-      if (inherits) applies.push(id);
-    }
-    ModelIdMapUtils.append(collector, modelId, ...applies);
   }
 
   async test(
@@ -289,11 +89,19 @@ export class IDSProperty extends IDSFacet {
     for (const [modelId, localIds] of Object.entries(items)) {
       const model = fragments.list.get(modelId);
       if (!model) continue;
+      this._schema = String((await model.getMetadata()).schema);
+      this._convertUnit = await idsUnitConverter(model);
       const data = await model.getItemsData([...localIds], {
         relations: {
           IsDefinedBy: { attributes: true, relations: true },
-          IsTypedBy: { attributes: true, relations: false },
+          HasProperties: { attributes: true, relations: true },
+          Properties: { attributes: true, relations: true },
+          ExtendedProperties: { attributes: true, relations: true },
+          IsTypedBy: { attributes: true, relations: true },
           HasPropertySets: { attributes: true, relations: true },
+          Unit: { attributes: true, relations: false },
+          DefiningUnit: { attributes: true, relations: false },
+          DefinedUnit: { attributes: true, relations: false },
           // Both spellings on purpose: old .frag files store the pre-3.4
           // relation name "DefinesOcurrence" (see getEntities above).
           DefinesOccurrence: { attributes: false, relations: false },
@@ -310,95 +118,136 @@ export class IDSProperty extends IDSFacet {
         );
         if (!checks) continue;
 
-        const sets = await this.getPsets(item);
-        const matchingSets = sets.filter((set) => {
-          if (!(set.Name && "value" in set.Name)) return false;
-          const result = this.evalRequirement(
-            set.Name.value,
-            this.propertySet,
-            "PropertySet",
-          );
-          if (!result) return false;
+        // Evaluate the facet itself (as if required), then apply the
+        // cardinality once. Prohibited: passes when the facet does not match.
+        // Optional: never fails ("If the requirement is optional but would fail
+        // if it were required instead, the checker tool must not log an
+        // error", IDS developer guide).
+        const facetChecks: IDSCheck[] = [];
+        const present = await this.evalFacet(item, facetChecks);
+        const matches =
+          facetChecks.length > 0 && facetChecks.every(({ pass }) => pass);
+
+        if (this.cardinality === "prohibited") {
           checks.push({
-            currentValue: set.Name.value,
-            parameter: "PropertySet",
+            parameter: "BaseName",
+            currentValue: present ? this.baseName.parameter : null,
+            pass: !matches,
+            requiredValue: this.baseName,
+          } as IDSCheck);
+        } else if (this.cardinality === "optional") {
+          checks.push({
+            parameter: "BaseName",
+            currentValue: present ? this.baseName.parameter : null,
             pass: true,
-            requiredValue: this.propertySet,
-          });
-          return true;
-        });
-
-        if (matchingSets.length === 0) {
-          checks.push({
-            currentValue: null,
-            parameter: "PropertySet",
-            pass: false,
-            requiredValue: this.propertySet,
-          });
-          continue;
-        }
-
-        for (const set of matchingSets) {
-          const propsListName = this.getPropertyListName(set);
-          if (!propsListName) continue;
-
-          const props = set[propsListName];
-          if (!Array.isArray(props)) {
-            checks.push({
-              currentValue: null,
-              parameter: "BaseName",
-              pass: false,
-              requiredValue: this.baseName,
-            });
-            continue;
-          }
-
-          const matchingProps = props.filter((item) => {
-            if (!(item._category && item.Name)) return false;
-            if (!("value" in item._category && "value" in item.Name))
-              return false;
-            if (this._unsupportedTypes.includes(item._category.value)) {
-              return false;
-            }
-
-            const result = this.evalRequirement(
-              item.Name.value,
-              this.baseName,
-              "BaseName",
-            );
-            if (!result) return false;
-
-            checks.push({
-              currentValue: item.Name.value,
-              parameter: "BaseName",
-              pass: true,
-              requiredValue: this.baseName,
-            });
-            return true;
-          });
-
-          if (matchingProps.length === 0) {
-            checks.push({
-              currentValue: null,
-              parameter: "BaseName",
-              pass: false,
-              requiredValue: this.baseName,
-            });
-            continue;
-          }
-
-          for (const item of matchingProps) {
-            this.evalValue(item, checks);
-            this.evalDataType(item, checks);
-            this.evalURI();
-          }
+            requiredValue: this.baseName,
+          } as IDSCheck);
+        } else {
+          checks.push(...facetChecks);
         }
       }
     }
   }
 
+  /**
+   * Checks the property set, name, value and data type of one item, as for a
+   * required facet, and returns whether a property with the required set and
+   * name is present at all.
+   */
+  private async evalFacet(item: FRAGS.ItemData, checks: IDSCheck[]) {
+    const sets = await this.getPsets(item);
+    const matchingSets = sets.filter((set) => {
+      if (!(set.Name && "value" in set.Name)) return false;
+      const result = this.evalRequirement(
+        set.Name.value,
+        this.propertySet,
+        "PropertySet",
+        undefined,
+        "required",
+      );
+      if (!result) return false;
+      checks.push({
+        currentValue: set.Name.value,
+        parameter: "PropertySet",
+        pass: true,
+        requiredValue: this.propertySet,
+      });
+      return true;
+    });
+
+    if (matchingSets.length === 0) {
+      checks.push({
+        currentValue: null,
+        parameter: "PropertySet",
+        pass: false,
+        requiredValue: this.propertySet,
+      });
+      return false;
+    }
+
+    let present = false;
+    for (const set of matchingSets) {
+      const propsListName = this.getPropertyListName(set);
+      if (!propsListName) continue;
+
+      const props = set[propsListName];
+      if (!Array.isArray(props)) {
+        checks.push({
+          currentValue: null,
+          parameter: "BaseName",
+          pass: false,
+          requiredValue: this.baseName,
+        });
+        continue;
+      }
+
+      const matchingProps = props.filter((item) => {
+        if (!(item._category && item.Name)) return false;
+        if (!("value" in item._category && "value" in item.Name)) return false;
+        if (this._unsupportedTypes.includes(item._category.value)) {
+          return false;
+        }
+
+        const result = this.evalRequirement(
+          item.Name.value,
+          this.baseName,
+          "BaseName",
+          undefined,
+          "required",
+        );
+        if (!result) return false;
+
+        checks.push({
+          currentValue: item.Name.value,
+          parameter: "BaseName",
+          pass: true,
+          requiredValue: this.baseName,
+        });
+        return true;
+      });
+
+      if (matchingProps.length === 0) {
+        checks.push({
+          currentValue: null,
+          parameter: "BaseName",
+          pass: false,
+          requiredValue: this.baseName,
+        });
+        continue;
+      }
+
+      present = true;
+      for (const item of matchingProps) {
+        this.evalValue(item, checks);
+        this.evalDataType(item, checks);
+        this.evalURI();
+      }
+    }
+    return present;
+  }
+
   private getPropertyListName(item: FRAGS.ItemData) {
-    let propsListName: "HasProperties" | "Quantities" | undefined;
+    let propsListName: string | undefined;
     if (!(item._category && "value" in item._category)) return propsListName;
 
     if (item._category.value === "IFCPROPERTYSET")
@@ -406,6 +255,10 @@ export class IDSProperty extends IDSFacet {
     if (item._category.value === "IFCELEMENTQUANTITY")
       propsListName = "Quantities";
 
+    if (item._category.value === "IFCMATERIALPROPERTIES")
+      propsListName = "Properties";
+    if (item._category.value === "IFCEXTENDEDMATERIALPROPERTIES")
+      propsListName = "ExtendedProperties";
     return propsListName;
   }
 
@@ -419,7 +272,15 @@ export class IDSProperty extends IDSFacet {
       if (!/Values?$/.test(name) || !attr || Array.isArray(attr)) continue;
       if (!("value" in attr) || attr.value === null || attr.value === undefined)
         continue;
-      attrs.push(attr as { value: unknown; type?: string });
+      const attribute = attr as { value: unknown; type?: string };
+      const convert = (actual: unknown) =>
+        this._convertUnit?.(actual, attribute.type, item, name) ?? actual;
+      attrs.push({
+        ...attribute,
+        value: Array.isArray(attribute.value)
+          ? attribute.value.map(convert)
+          : convert(attribute.value),
+      });
     }
     return attrs;
   }
@@ -466,6 +327,35 @@ export class IDSProperty extends IDSFacet {
 
   private async getPsets(item: FRAGS.ItemData) {
     const typeSets = this.getTypePsets(item);
+    const materialSets = Array.isArray(item.HasProperties)
+      ? item.HasProperties
+      : [];
+    const definitions = [
+      ...(Array.isArray(item.IsDefinedBy) ? item.IsDefinedBy : []),
+      ...materialSets,
+    ];
+    for (const definition of definitions) {
+      const category =
+        definition._category && "value" in definition._category
+          ? String(definition._category.value)
+          : "";
+      const declared = IDS_PREDEFINED_PROPERTIES[this._schema]?.[category];
+      if (!declared) continue;
+      const properties: FRAGS.ItemData[] = [];
+      for (const [name, type] of Object.entries(declared)) {
+        const attribute = definition[name];
+        if (!attribute || Array.isArray(attribute) || attribute.value == null)
+          continue;
+        properties.push({
+          _category: { value: "IFCPROPERTYSINGLEVALUE" },
+          Name: { value: name },
+          NominalValue: { value: attribute.value, type },
+        });
+      }
+      definition._category = { value: "IFCPROPERTYSET" };
+      definition.HasProperties = properties;
+    }
+    if (definitions.length) item = { ...item, IsDefinedBy: definitions };
     if (!Array.isArray(item.IsDefinedBy)) return typeSets;
 
     const sets: FRAGS.ItemData[] = [];
@@ -531,7 +421,13 @@ export class IDSProperty extends IDSFacet {
         if (typeof value === "string" && parameter.type === "simple") {
           parameter.parameter = String(parameter.parameter);
         }
-        return this.evalRequirement(value, parameter, "Value");
+        return this.evalRequirement(
+          value,
+          parameter,
+          "Value",
+          undefined,
+          "required",
+        );
       });
       const pass = match !== undefined;
       if (checks) {
@@ -548,7 +444,15 @@ export class IDSProperty extends IDSFacet {
       return pass;
     }
 
-    if (values.length === 0) return true;
+    if (values.length === 0) {
+      checks?.push({
+        parameter: "Value",
+        currentValue: null,
+        pass: false,
+        requiredValue: this.value,
+      });
+      return false;
+    }
 
     // IDSDocs: Values with a logical unknown always fail
     // if (valueAttr.type === 3 && valueAttr.value === 2) {
@@ -580,7 +484,7 @@ export class IDSProperty extends IDSFacet {
     const types = this.getValueAttrs(item).map((attr) => attr.type ?? null);
     const dataType = { type: "simple" as const, parameter: this.dataType };
     const match = types.find((type) =>
-      this.evalRequirement(type, dataType, "DataType"),
+      this.evalRequirement(type, dataType, "DataType", undefined, "required"),
     );
     const pass = match !== undefined;
     if (checks) {

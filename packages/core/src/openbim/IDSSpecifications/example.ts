@@ -225,7 +225,8 @@ const restoreModelMaterials = () => {
   for (const [material, data] of originalColors) {
     const { color, transparent, opacity } = data;
     material.transparent = transparent;
-    const isLod = "isLodMaterial" in material && (material as any).isLodMaterial;
+    const isLod =
+      "isLodMaterial" in material && (material as any).isLodMaterial;
     if (isLod) {
       (material as any).lodOpacity = opacity;
       material.lodColor.setHex(color);

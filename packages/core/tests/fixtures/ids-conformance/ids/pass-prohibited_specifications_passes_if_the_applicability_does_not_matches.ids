@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ids xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd" xmlns="http://standards.buildingsmart.org/IDS">
+  <info>
+    <title>Prohibited specifications passes if the applicability does not matches</title>
+    <description>Generated via code automation in the Ids Repository on github.</description>
+  </info>
+  <specifications>
+    <specification name="Prohibited specifications passes if the applicability does not matches" ifcVersion="IFC2X3">
+      <applicability minOccurs="0" maxOccurs="0">
+        <entity>
+          <name>
+            <simpleValue>IFCWINDOW</simpleValue>
+          </name>
+        </entity>
+      </applicability>
+    </specification>
+  </specifications>
+</ids>

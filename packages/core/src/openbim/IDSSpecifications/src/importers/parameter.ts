@@ -10,8 +10,25 @@ export const getParameterValue = (property: any) => {
   }
 
   if ("restriction" in property) {
-    const restriction = property.restriction;
+    const clean = (value: any): any =>
+      Array.isArray(value)
+        ? value.map(clean)
+        : value && typeof value === "object"
+          ? Object.fromEntries(
+              Object.entries(value)
+                .filter(([key]) => key !== "#text")
+                .map(([key, item]) => [key, clean(item)]),
+            )
+          : value;
+    const restriction = clean(property.restriction);
     const keys = Object.keys(restriction);
+    const constraints = keys.filter((key) => key !== "base");
+    if (constraints.length > 1 || Array.isArray(restriction.pattern)) {
+      return {
+        type: "restriction",
+        parameter: structuredClone(restriction),
+      } as IDSFacetParameter;
+    }
 
     if ("pattern" in restriction) {
       result.type = "pattern";
@@ -19,17 +36,19 @@ export const getParameterValue = (property: any) => {
     }
     if ("enumeration" in restriction) {
       result.type = "enumeration";
-      const enumeration = restriction.enumeration.map(
-        ({ value }: { value: string }) => {
-          if (restriction.base.includes("string")) return String(value);
-          if (
-            restriction.base.includes("integer") ||
-            restriction.base.includes("double")
-          )
-            return Number(value);
-          return value;
-        },
-      );
+      const enumeration = (
+        Array.isArray(restriction.enumeration)
+          ? restriction.enumeration
+          : [restriction.enumeration]
+      ).map(({ value }: { value: string }) => {
+        if (restriction.base.includes("string")) return String(value);
+        if (
+          restriction.base.includes("integer") ||
+          restriction.base.includes("double")
+        )
+          return Number(value);
+        return value;
+      });
       result.parameter = enumeration;
     }
     if (
@@ -56,12 +75,12 @@ export const getParameterValue = (property: any) => {
 
       if (minKey) {
         parameter.minInclusive = minKey === "minInclusive";
-        parameter.min = restriction[minKey].value;
+        parameter.min = Number(restriction[minKey].value);
       }
 
       if (maxKey) {
         parameter.maxInclusive = maxKey === "maxInclusive";
-        parameter.max = restriction[maxKey].value;
+        parameter.max = Number(restriction[maxKey].value);
       }
 
       result.parameter = parameter;
@@ -77,15 +96,15 @@ export const getParameterValue = (property: any) => {
       } = {};
 
       if (restriction.length !== undefined) {
-        parameter.length = restriction.length.value;
+        parameter.length = Number(restriction.length.value);
       }
 
       if (restriction.minLength !== undefined) {
-        parameter.min = restriction.minLength.value;
+        parameter.min = Number(restriction.minLength.value);
       }
 
       if (restriction.maxLength !== undefined) {
-        parameter.max = restriction.maxLength.value;
+        parameter.max = Number(restriction.maxLength.value);
       }
 
       result.parameter = parameter;

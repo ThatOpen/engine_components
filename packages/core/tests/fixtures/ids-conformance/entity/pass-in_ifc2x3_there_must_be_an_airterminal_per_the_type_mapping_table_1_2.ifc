@@ -1,0 +1,12 @@
+ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('ViewDefinition [CoordinationView]'),'2;1');
+FILE_NAME('','2026-08-06T13:03:02',(''),(''),'IfcOpenShell 0.8.5-1c5b825','IfcOpenShell 0.8.5-1c5b825','');
+FILE_SCHEMA(('IFC2X3'));
+ENDSEC;
+DATA;
+#1=IFCFLOWTERMINAL('2150inZ7vCmB5nlH3oCD_7',$,$,$,$,$,$,$);
+#2=IFCAIRTERMINALTYPE('02pWrE7HH2vQZNKrvqSLzl',$,$,$,$,$,$,$,$,$);
+#3=IFCRELDEFINESBYTYPE('2r4tyDB$zCTRafoSuQeTAL',$,$,$,(#1),#2);
+ENDSEC;
+END-ISO-10303-21;

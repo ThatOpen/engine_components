@@ -1,3 +1,4 @@
+import { IDS_IFC2X3_MAPPING } from "./entity-mapping";
 import * as FRAGS from "@thatopen/fragments";
 import { Components } from "../../../../core/Components";
 import { IDSFacet } from "./Facet";
@@ -8,7 +9,6 @@ import {
   ModelIdDataMap,
   ModelIdMap,
 } from "../../../../fragments";
-import { ModelIdMapUtils } from "../../../../utils";
 import { XML } from "../../../../utils/xml";
 
 // https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/entity-facet.md
@@ -25,10 +25,12 @@ export class IDSEntity extends IDSFacet {
 
   serialize(type: "applicability" | "requirement") {
     const nameXML = getParameterXML("Name", this.name);
-    const predefinedTypeXML = getParameterXML("Name", this.predefinedType);
+    const predefinedTypeXML = getParameterXML(
+      "PredefinedType",
+      this.predefinedType,
+    );
     let attributes = "";
     if (type === "requirement") {
-      attributes += `cardinality="${this.cardinality}"`;
       attributes += this.instructions
         ? `instructions="${XML.escape(this.instructions)}"`
         : "";
@@ -40,66 +42,48 @@ export class IDSEntity extends IDSFacet {
   }
 
   async getEntities(modelIds: RegExp[], collector: ModelIdMap) {
-    const fragments = this._components.get(FragmentsManager);
-    const modelCategories = new Map<string, string[]>();
-
-    // Check the categories from each model to see
-    // which of them matches the facet parameter this.name
-    for (const [modelId, model] of fragments.list) {
-      const isValidModel = modelIds.find((regex) => regex.test(modelId));
-      if (!isValidModel) continue;
+    for (const [modelId, model] of this._components.get(FragmentsManager)
+      .list) {
+      if (!modelIds.some((pattern) => pattern.test(modelId))) continue;
       const categories = await model.getCategories();
-      for (const category of categories) {
-        const isValidCategory = await this.evalName(category);
-        if (!isValidCategory) continue;
-        let validCategories = modelCategories.get(modelId);
-        if (!validCategories) {
-          validCategories = [];
-          modelCategories.set(modelId, validCategories);
-        }
-        validCategories.push(category);
-      }
-    }
-
-    // Get all the localIds from the categories passing
-    // the conditions above
-    const items: ModelIdMap = {};
-    await Promise.all(
-      Array.from(modelCategories.entries()).map(
-        async ([modelId, categories]) => {
-          const model = fragments.list.get(modelId);
-          if (!model) return;
-          const regexCategories = categories.map(
-            (cat) => new RegExp(`^${cat}$`),
-          );
-          const categoryItemIds =
-            await model.getItemsOfCategories(regexCategories);
-          const localIds = Object.values(categoryItemIds).flat();
-          items[modelId] = new Set(localIds);
-        },
-      ),
-    );
-
-    if (!this.predefinedType) {
-      ModelIdMapUtils.add(collector, items);
-      return;
-    }
-
-    // Check the predefinedType conditions
-    for (const [modelId, localIds] of Object.entries(items)) {
-      const model = fragments.list.get(modelId);
-      if (!model) continue;
-      const itemsData = await model.getItemsData([...localIds]);
-      for (const attribute of itemsData) {
-        if (!("value" in attribute._localId)) continue;
-        const isValidPredefinedType = await this.evalPredefinedType(
-          modelId,
-          attribute,
-        );
-        if (isValidPredefinedType) {
-          ModelIdMapUtils.append(collector, modelId, attribute._localId.value);
-        }
-      }
+      const metadata = await model.getMetadata();
+      const mapped = String(metadata.schema).startsWith("IFC2X3");
+      const possible = categories.filter(
+        (category) =>
+          this.evalRequirement(
+            category,
+            this.name,
+            "Name",
+            undefined,
+            "required",
+          ) ||
+          (mapped &&
+            Object.entries(IDS_IFC2X3_MAPPING).some(
+              ([name, [occurrence]]) =>
+                occurrence === category &&
+                this.evalRequirement(
+                  name,
+                  this.name,
+                  "Name",
+                  undefined,
+                  "required",
+                ),
+            )),
+      );
+      if (!possible.length) continue;
+      const ids = Object.values(
+        await model.getItemsOfCategories(
+          possible.map((category) => new RegExp(`^${category}$`)),
+        ),
+      ).flat();
+      const results: ModelIdDataMap<IDSItemCheckResult> = new FRAGS.DataMap();
+      await this.test({ [modelId]: new Set(ids) }, results, {
+        skipIfFails: false,
+      });
+      const selected = collector[modelId] ?? new Set<number>();
+      for (const [id, result] of results.get(modelId) ?? [])
+        if (result.pass) selected.add(id);
+      if (selected.size) collector[modelId] = selected;
     }
   }
 
@@ -113,7 +97,13 @@ export class IDSEntity extends IDSFacet {
       const model = fragments.list.get(modelId);
       if (!model) continue;
 
-      const data = await model.getItemsData([...localIds]);
+      const data = await model.getItemsData([...localIds], {
+        relations: {
+          IsTypedBy: { attributes: true, relations: false },
+          IsDefinedBy: { attributes: true, relations: false },
+        },
+      });
+      const metadata = await model.getMetadata();
       for (const item of data) {
         if (!("value" in item._category)) continue;
         const checks = this.getItemChecks(
@@ -123,7 +113,25 @@ export class IDSEntity extends IDSFacet {
           config.skipIfFails,
         );
         if (!checks) continue;
-        await this.evalName(item._category.value, checks);
+        let category = item._category.value;
+        if (String(metadata.schema).startsWith("IFC2X3")) {
+          const definitions = [
+            ...(Array.isArray(item.IsTypedBy) ? item.IsTypedBy : []),
+            ...(Array.isArray(item.IsDefinedBy) ? item.IsDefinedBy : []),
+          ];
+          const mapped = Object.entries(IDS_IFC2X3_MAPPING).find(
+            ([, [occurrence, type]]) =>
+              occurrence === category &&
+              definitions.some(
+                (definition) =>
+                  definition._category &&
+                  "value" in definition._category &&
+                  definition._category.value === type,
+              ),
+          );
+          if (mapped) category = mapped[0];
+        }
+        await this.evalName(category, checks);
         await this.evalPredefinedType(modelId, item, checks);
       }
     }

@@ -35,13 +35,14 @@ export class IDSSpecifications extends Component {
     ignoreDeclaration: true,
     ignorePiTags: true,
     numberParseOptions: { leadingZeros: true, hex: true },
-    parseAttributeValue: true,
+    parseAttributeValue: false,
+    parseTagValue: false,
     preserveOrder: false,
     // Decode &amp; &lt; &gt; &quot; &apos; so values compare equal to the
     // model's text. fast-xml-parser applies its expansion limits by default.
     processEntities: true,
     removeNSPrefix: true,
-    trimValues: true,
+    trimValues: false,
   });
 
   IDSInfo?: IDSInfo;
@@ -112,7 +113,10 @@ export class IDSSpecifications extends Component {
     const ids = IDSSpecifications.xmlParser.parse(data).ids;
     const { specifications, info } = ids;
 
-    this.IDSInfo = { ...info };
+    this.IDSInfo = {
+      ...info,
+      ...(info.date ? { date: new Date(info.date) } : {}),
+    };
 
     if (specifications && specifications.specification) {
       const specs = Array.isArray(specifications.specification)
@@ -218,6 +222,11 @@ export class IDSSpecifications extends Component {
         specification.description = description;
         specification.instructions = instructions;
         specification.requirementsDescription = requirementsDescription;
+        const { minOccurs, maxOccurs } = applicability ?? {};
+        if (minOccurs !== undefined)
+          specification.minOccurs = Number(minOccurs);
+        if (maxOccurs !== undefined && maxOccurs !== "unbounded")
+          specification.maxOccurs = Number(maxOccurs);
         specification.applicability.add(...applicabilities);
         specification.requirements.add(...reqs);
         result.push(specification);
@@ -240,7 +249,7 @@ export class IDSSpecifications extends Component {
     specifications: Iterable<IDSSpecification> = this.list.values(),
   ) {
     const _specifications = specifications ?? this.list;
-    const xml = `<ids xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd" xmlns:ids="http://standards.buildingsmart.org/IDS">
+    const xml = `<ids xmlns="http://standards.buildingsmart.org/IDS" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd" xmlns:ids="http://standards.buildingsmart.org/IDS">
   <!-- Made with That Open Engine ${Components.release} (https://github.com/thatopen/engine_components) -->
   <info>
     <title>${XML.escape(info.title)}</title>
