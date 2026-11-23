@@ -34,8 +34,10 @@ export class IDSSpecifications extends Component {
     ignoreAttributes: false,
     ignoreDeclaration: true,
     ignorePiTags: true,
-    numberParseOptions: { leadingZeros: true, hex: true },
-    parseAttributeValue: true,
+    // IDS values are text: keep them as strings ("01" must stay "01") and
+    // let the facets compare them with the type of the model value.
+    parseAttributeValue: false,
+    parseTagValue: false,
     preserveOrder: false,
     // Decode &amp; &lt; &gt; &quot; &apos; so values compare equal to the
     // model's text. fast-xml-parser applies its expansion limits by default.

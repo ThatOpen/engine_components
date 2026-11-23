@@ -24,6 +24,44 @@ export abstract class IDSFacet {
 
   constructor(protected _components: Components) {}
 
+  /**
+   * Compares a model value with an IDS value. IDS values are text, so the
+   * comparison follows the type of the model value: a string compares as
+   * text (so "01" stays "01"), a number within the IDS tolerance
+   * (`v - |v| × 1e-6 - 1e-6` to `v + |v| × 1e-6 + 1e-6`, see buildingSMART's
+   * ImplementersDocumentation/tolerance.md) and a boolean as an xs:boolean
+   * ("true" or "1", "false" or "0").
+   */
+  protected static sameValue(
+    value: string | number | boolean | null,
+    required: string | number | boolean,
+  ) {
+    if (value === required) return true;
+    if (value === null || required === null || required === undefined) {
+      return false;
+    }
+    if (typeof value === "string") return value === String(required);
+    if (typeof value === "boolean") {
+      const text = String(required);
+      return value
+        ? text === "true" || text === "1"
+        : text === "false" || text === "0";
+    }
+    if (typeof value === "number") {
+      if (typeof required === "boolean") return false;
+      if (typeof required === "string" && required.trim() === "") return false;
+      const expected = Number(required);
+      if (Number.isNaN(expected)) return false;
+      const epsilon = 1e-6;
+      // The test cases put values exactly on the bounds and expect them to
+      // pass; the tiny relative margin absorbs the rounding of computing
+      // |x - v| (1.000002 - 1 is 2.0000000000575113e-6, not 2e-6).
+      const tolerance = (Math.abs(expected) * epsilon + epsilon) * (1 + 1e-9);
+      return Math.abs(value - expected) <= tolerance;
+    }
+    return false;
+  }
+
   protected addCheckResult(check: IDSCheck, checks: IDSCheck[]) {
     const index = checks.findIndex(
       ({ parameter }) => parameter === check.parameter,
@@ -54,11 +92,12 @@ export abstract class IDSFacet {
     let pass = false;
 
     if (facetParameter.type === "simple") {
-      pass = value === facetParameter.parameter;
+      pass = IDSFacet.sameValue(value, facetParameter.parameter);
     }
 
     if (facetParameter.type === "enumeration") {
-      pass = facetParameter.parameter.includes(value as never);
+      const options = facetParameter.parameter as (string | number | boolean)[];
+      pass = options.some((option) => IDSFacet.sameValue(value, option));
     }
 
     if (facetParameter.type === "pattern") {

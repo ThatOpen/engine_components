@@ -56,12 +56,12 @@ export const getParameterValue = (property: any) => {
 
       if (minKey) {
         parameter.minInclusive = minKey === "minInclusive";
-        parameter.min = restriction[minKey].value;
+        parameter.min = Number(restriction[minKey].value);
       }
 
       if (maxKey) {
         parameter.maxInclusive = maxKey === "maxInclusive";
-        parameter.max = restriction[maxKey].value;
+        parameter.max = Number(restriction[maxKey].value);
       }
 
       result.parameter = parameter;
@@ -77,15 +77,15 @@ export const getParameterValue = (property: any) => {
       } = {};
 
       if (restriction.length !== undefined) {
-        parameter.length = restriction.length.value;
+        parameter.length = Number(restriction.length.value);
       }
 
       if (restriction.minLength !== undefined) {
-        parameter.min = restriction.minLength.value;
+        parameter.min = Number(restriction.minLength.value);
       }
 
       if (restriction.maxLength !== undefined) {
-        parameter.max = restriction.maxLength.value;
+        parameter.max = Number(restriction.maxLength.value);
       }
 
       result.parameter = parameter;

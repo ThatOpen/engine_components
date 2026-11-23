@@ -521,18 +521,11 @@ export class IDSProperty extends IDSFacet {
 
     if (this.value) {
       const facetValue = this.value;
-      const match = values.find((value) => {
-        const parameter = structuredClone(facetValue);
-        // The IDS XML parser coerces numeric-looking simpleValues to JS numbers
-        // (e.g. "410.20257" becomes 410.20257). When the actual IFC value is a
-        // string (IFCTEXT, IFCIDENTIFIER, IFCLABEL, ...), a strict comparison
-        // against that number always fails, so align the facet value to a
-        // string whenever the property value is a string (issue #731).
-        if (typeof value === "string" && parameter.type === "simple") {
-          parameter.parameter = String(parameter.parameter);
-        }
-        return this.evalRequirement(value, parameter, "Value");
-      });
+      // evalRequirement compares with the type of the model value, so an
+      // IFCTEXT "410.20257" matches the IDS text "410.20257" (issue #731).
+      const match = values.find((value) =>
+        this.evalRequirement(value, facetValue, "Value"),
+      );
       const pass = match !== undefined;
       if (checks) {
         this.addCheckResult(
