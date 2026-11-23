@@ -12,8 +12,56 @@ import {
 } from "../types";
 import { ModelIdDataMap, ModelIdMap } from "../../../../fragments";
 
+/**
+ * Item data fetched once per specification run and shared by its
+ * requirements, keyed by the applicable items of that run. Each
+ * `getItemsData` call has a large fixed cost in the fragments worker, and
+ * every requirement of a specification tests the same items.
+ */
+const sharedItemsData = new WeakMap<
+  ModelIdMap,
+  Map<string, Promise<FRAGS.ItemData[]>>
+>();
+
 export abstract class IDSFacet {
   abstract facetType: IDSFacetType;
+
+  /**
+   * Lets the facets tested on `items` share their item data until
+   * {@link endSharedItemsData} is called. Used by `IDSSpecification.test`.
+   */
+  static startSharedItemsData(items: ModelIdMap) {
+    sharedItemsData.set(items, new Map());
+  }
+
+  static endSharedItemsData(items: ModelIdMap) {
+    sharedItemsData.delete(items);
+  }
+
+  /**
+   * `model.getItemsData` for the items of `modelId`, shared with the other
+   * requirements of the same specification run when one is in progress.
+   * Requests with the same `key` must use the same `config`, and callers
+   * must not modify the returned data.
+   */
+  protected getSharedItemsData(
+    items: ModelIdMap,
+    modelId: string,
+    model: FRAGS.FragmentsModel,
+    key: string,
+    config?: Parameters<FRAGS.FragmentsModel["getItemsData"]>[1],
+  ) {
+    const fetch = () => model.getItemsData([...items[modelId]], config);
+    const shared = sharedItemsData.get(items);
+    if (!shared) return fetch();
+    const fullKey = `${key}:${modelId}`;
+    let data = shared.get(fullKey);
+    if (!data) {
+      data = fetch();
+      shared.set(fullKey, data);
+    }
+    return data;
+  }
 
   // Used when the facet is a requirement
   // On IDSEntity is always required
