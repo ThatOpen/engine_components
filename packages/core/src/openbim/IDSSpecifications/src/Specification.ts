@@ -1,7 +1,7 @@
 import * as FRAGS from "@thatopen/fragments";
 import { Components } from "../../../core/Components";
 import { IDSCheckResult, IDSSpecificationData, IfcVersion } from "./types";
-import { UUID } from "../../../utils";
+import { UUID, ModelIdMapUtils } from "../../../utils";
 import { IDSFacet } from "./facets";
 import { IDSSpecifications } from "..";
 import { ModelIdMap } from "../../../fragments";
@@ -61,14 +61,19 @@ export class IDSSpecification implements IDSSpecificationData {
 
     if (this.requirements.size === 0) return result;
 
-    // Get applicable elements
-    const entities: ModelIdMap = {};
+    // Get applicable elements. In IDS an element is applicable only when it
+    // matches every applicability facet, so each facet collects its own
+    // matches and the results are intersected.
+    const facetEntities: ModelIdMap[] = [];
     const applicabilityPromises = [];
     for (const facet of this.applicability) {
-      applicabilityPromises.push(facet.getEntities(modelIds, entities));
+      const facetMatches: ModelIdMap = {};
+      facetEntities.push(facetMatches);
+      applicabilityPromises.push(facet.getEntities(modelIds, facetMatches));
     }
 
     await Promise.all(applicabilityPromises);
+    const entities = ModelIdMapUtils.intersect(facetEntities);
 
     // Test applicable elements against requirements
     const requirementPromises = [];
