@@ -1,302 +1,236 @@
+import type * as FRAGS from "@thatopen/fragments";
 import { Components } from "../../../../core/Components";
 import { IDSFacetParameter, IDSItemCheckResult } from "../types";
 import { IDSFacet } from "./Facet";
 import { getParameterXML } from "../exporters/parameter";
-import { ModelIdDataMap, ModelIdMap } from "../../../../fragments";
+import {
+  FragmentsManager,
+  ModelIdDataMap,
+  ModelIdMap,
+} from "../../../../fragments";
 import { XML } from "../../../../utils/xml";
 
-// https://github.com/buildingSMART/IDS/blob/development/Documentation/UserManual/classification-facet.md
+type Classification = { system: string; values: string[] };
+const value = (item: FRAGS.ItemData, name: string) => {
+  const attribute = item[name];
+  return attribute && !Array.isArray(attribute) ? attribute.value : undefined;
+};
+const refs = (item: FRAGS.ItemData, name: string): FRAGS.ItemData[] => {
+  const data = item[name];
+  return Array.isArray(data) ? data : [];
+};
 
+/** Classification systems and codes, including reference chains and type inheritance. */
 export class IDSClassification extends IDSFacet {
   facetType = "Classification" as const;
   system: IDSFacetParameter;
   value?: IDSFacetParameter;
   uri?: string;
-
   constructor(components: Components, system: IDSFacetParameter) {
     super(components);
     this.system = system;
   }
 
   serialize(type: "applicability" | "requirement") {
-    const systemXML = getParameterXML("System", this.system);
-    const valueXML = getParameterXML("Value", this.value);
-    let attributes = "";
-    if (type === "requirement") {
-      attributes += `cardinality="${this.cardinality}"`;
-      attributes += this.uri ? `uri=${this.uri}` : "";
-      attributes += this.instructions
-        ? `instructions="${XML.escape(this.instructions)}"`
+    const attributes =
+      type === "requirement"
+        ? ` cardinality="${this.cardinality}"${this.uri ? ` uri="${XML.escape(this.uri)}"` : ""}${this.instructions ? ` instructions="${XML.escape(this.instructions)}"` : ""}`
         : "";
-    }
-    return `<classification ${attributes}>
-  ${systemXML}
-  ${valueXML}
-</classification>`;
+    return `<classification${attributes}>${getParameterXML("Value", this.value)}${getParameterXML("System", this.system)}</classification>`;
   }
 
-  async getEntities(_modelIds: RegExp[], _collector: ModelIdMap) {
-    // const result: number[] = [];
-    // const fragments = this._components.get(FragmentsManager);
-    // for (const [modelId, model] of fragments.list) {
-    //   const isValidModel = modelIds.find((regex) => regex.test(modelId));
-    //   if (!isValidModel) continue;
-    //   const items = await model.getItemsOfCategories([
-    //     /CLASSIFICATIONREFERENCE/,
-    //     /CLASSIFICATION/,
-    //   ]);
-    //   const localIds = Object.values(items).flat();
-    //   if (localIds.length === 0) continue;
-    //   const data = await model.getItemsData(localIds, {
-    //     relations: { ReferencedSource: { attributes: true, relations: false } },
-    //   });
-    //   for (const set of data) {
-    //     if (
-    //       !(
-    //         "value" in set._localId &&
-    //         "value" in set._category &&
-    //         "value" in set.Name &&
-    //         Array.isArray(set.ReferencedSource)
-    //       )
-    //     ) {
-    //       continue;
-    //     }
-    //     const classificationAttrs =
-    //       await model.getProperties(referencedSourceID);
-    //     if (!classificationAttrs) continue;
-    //     const systemMatches = this.evalSystem(classificationAttrs);
-    //     if (!systemMatches) continue;
-    //     const valueMatches = this.evalValue(attrs);
-    //     if (!valueMatches) continue;
-    //     const uriMatches = this.evalURI(attrs);
-    //     if (!uriMatches) continue;
-    //   }
-    // }
-    // for (const id in systems) {
-    //   const classificationID = Number(id);
-    //   const attrs = await model.getProperties(classificationID);
-    //   if (!attrs) continue;
-    // }
-    // const indexer = this._components.get(IfcRelationsIndexer);
-    // for (const classificationID of matchingClassifications) {
-    //   const expressIDs = indexer.getEntitiesWithRelation(
-    //     model,
-    //     "HasAssociations",
-    //     classificationID,
-    //   );
-    //   for (const expressID of expressIDs) {
-    //     if (expressID in collector) continue;
-    //     const attrs = await model.getProperties(expressID);
-    //     if (!attrs) continue;
-    //     collector[expressID] = attrs;
-    //     result.push(expressID);
-    //   }
-    // }
-    // return result;
+  private async evaluate(items: ModelIdMap) {
+    const result = new Map<string, Map<number, Classification[]>>();
+    const options = {
+      attributesDefault: true,
+      relations: {
+        HasAssociations: { attributes: true, relations: false },
+        HasClassifications: { attributes: true, relations: false },
+        HasExternalReferences: { attributes: true, relations: false },
+        ReferencedSource: { attributes: true, relations: false },
+        RelatingReference: { attributes: true, relations: false },
+        RelatedResourceObjects: { attributes: true, relations: false },
+        IsTypedBy: { attributes: true, relations: false },
+        IsDefinedBy: { attributes: true, relations: false },
+      },
+    };
+    for (const [modelId, ids] of Object.entries(items)) {
+      const model = this._components.get(FragmentsManager).list.get(modelId);
+      if (!model) continue;
+      const cache = new Map<number, FRAGS.ItemData | undefined>();
+      const read = async (item: FRAGS.ItemData) => {
+        const id = value(item, "_localId");
+        if (typeof id !== "number") return item;
+        if (!cache.has(id))
+          cache.set(id, (await model.getItemsData([id], options))[0]);
+        return cache.get(id) ?? item;
+      };
+      const classification = async (
+        item: FRAGS.ItemData,
+      ): Promise<Classification | null> => {
+        const codes: string[] = [];
+        const seen = new Set<number>();
+        let current: FRAGS.ItemData | undefined = item;
+        while (current) {
+          const id = value(current, "_localId");
+          if (typeof id === "number") {
+            if (seen.has(id)) return null;
+            seen.add(id);
+          }
+          const data = await read(current);
+          const category = value(data, "_category");
+          if (category === "IFCCLASSIFICATION") {
+            const name = value(data, "Name");
+            return {
+              system: typeof name === "string" ? name : "",
+              values: codes,
+            };
+          }
+          if (category !== "IFCCLASSIFICATIONREFERENCE") return null;
+          const code =
+            value(data, "Identification") ?? value(data, "ItemReference");
+          if (typeof code === "string" && code) codes.push(code);
+          current = refs(data, "ReferencedSource")[0];
+        }
+        return null;
+      };
+      const externalReferences = new Map<number, FRAGS.ItemData[]>();
+      const externalIds = Object.values(
+        await model.getItemsOfCategories([
+          /^IFCEXTERNALREFERENCERELATIONSHIP$/,
+        ]),
+      ).flat();
+      if (externalIds.length) {
+        const external = await model.getItemsData(externalIds, options);
+        for (const relationship of external) {
+          const reference = refs(relationship, "RelatingReference")[0];
+          if (!reference) continue;
+          for (const resource of refs(relationship, "RelatedResourceObjects")) {
+            const id = value(resource, "_localId");
+            if (typeof id !== "number") continue;
+            const previous = externalReferences.get(id) ?? [];
+            previous.push(reference);
+            externalReferences.set(id, previous);
+          }
+        }
+      }
+      const own = async (item: FRAGS.ItemData) => {
+        const found: Classification[] = [];
+        for (const ref of [
+          ...refs(item, "HasAssociations"),
+          ...refs(item, "HasClassifications"),
+          ...refs(item, "HasExternalReferences"),
+          ...(externalReferences.get(value(item, "_localId") as number) ?? []),
+        ]) {
+          const data = await classification(ref);
+          if (data) found.push(data);
+        }
+        return found;
+      };
+      const modelResult = new Map<number, Classification[]>();
+      result.set(modelId, modelResult);
+      for (const id of ids) {
+        const item = await read({ _localId: { value: id } } as FRAGS.ItemData);
+        const classifications = await own(item);
+        const ownSystems = new Set(classifications.map((c) => c.system));
+        const types = [
+          ...refs(item, "IsTypedBy"),
+          ...refs(item, "IsDefinedBy").filter((t) =>
+            String(value(t, "_category")).endsWith("TYPE"),
+          ),
+        ];
+        for (const type of types) {
+          for (const inherited of await own(await read(type)))
+            if (!ownSystems.has(inherited.system))
+              classifications.push(inherited);
+        }
+        modelResult.set(id, classifications);
+      }
+    }
+    return result;
+  }
+
+  private matches(classifications: Classification[]) {
+    return classifications.some(
+      (c) =>
+        this.evalRequirement(
+          c.system,
+          this.system,
+          "System",
+          undefined,
+          "required",
+        ) &&
+        (!this.value ||
+          c.values.some((code) =>
+            this.evalRequirement(
+              code,
+              this.value!,
+              "Value",
+              undefined,
+              "required",
+            ),
+          )),
+    );
+  }
+
+  async getEntities(modelIds: RegExp[], collector: ModelIdMap) {
+    const items: ModelIdMap = {};
+    for (const [id, model] of this._components.get(FragmentsManager).list) {
+      if (
+        !modelIds.some((regex) => {
+          regex.lastIndex = 0;
+          return regex.test(id);
+        })
+      )
+        continue;
+      items[id] = new Set(
+        Object.values(await model.getItemsOfCategories([/.*/])).flat(),
+      );
+    }
+    for (const [id, classifications] of await this.evaluate(items)) {
+      for (const [localId, data] of classifications) {
+        if (!this.matches(data)) continue;
+        collector[id] ??= new Set();
+        collector[id].add(localId);
+      }
+    }
   }
 
   async test(
-    _items: ModelIdMap,
-    _collector: ModelIdDataMap<IDSItemCheckResult>,
+    items: ModelIdMap,
+    collector: ModelIdDataMap<IDSItemCheckResult>,
+    config = { skipIfFails: false },
   ) {
-    // for (const _expressID in items) {
-    //   const expressID = Number(_expressID);
-    //   const attrs = items[expressID];
-    //   const checks: IDSCheck[] = [];
-    //   const result: IDSCheckResult = {
-    //     guid: attrs.GlobalId?.value,
-    //     expressID,
-    //     pass: false,
-    //     checks,
-    //     cardinality: this.cardinality,
-    //   };
-    //   this.testResult.push(result);
-    //   let missingClassification = true;
-    //   const elementClassifications = await this.getSystems(model, expressID);
-    //   const allSystemNames = elementClassifications
-    //     .map((classification) => this.getSystemName(classification))
-    //     .filter((system) => system) as string[];
-    //   for (const classificationAttrs of elementClassifications) {
-    //     const systemMatches = this.evalSystem(classificationAttrs, checks);
-    //     if (!systemMatches) continue;
-    //     missingClassification = false;
-    //     if (!(this.value && this.system)) break;
-    //     if (classificationAttrs.type !== WEBIFC.IFCCLASSIFICATIONREFERENCE) {
-    //       continue;
-    //     }
-    //     const valueMatches =
-    //       !this.value || this.evalValue(classificationAttrs, checks);
-    //     const uriMatches =
-    //       !this.uri || this.evalURI(classificationAttrs, checks);
-    //     if (valueMatches && uriMatches) break;
-    //   }
-    //   if (missingClassification) {
-    //     this.addCheckResult(
-    //       {
-    //         parameter: "System",
-    //         currentValue: allSystemNames as any,
-    //         requiredValue: this.system,
-    //         pass: this.cardinality === "optional",
-    //       },
-    //       checks,
-    //     );
-    //   }
-    //   result.pass = checks.every(({ pass }) => pass);
-    // }
+    for (const [modelId, data] of await this.evaluate(items)) {
+      const model = this._components.get(FragmentsManager).list.get(modelId);
+      if (!model) continue;
+      for (const item of await model.getItemsData([...data.keys()], {
+        attributesDefault: true,
+      })) {
+        const id = value(item, "_localId");
+        if (typeof id !== "number") continue;
+        const checks = this.getItemChecks(
+          collector,
+          modelId,
+          item,
+          config.skipIfFails,
+        );
+        if (!checks) continue;
+        const classifications = data.get(id) ?? [];
+        const matched = this.matches(classifications);
+        // URI describes the requirement; it is not an IFC matching condition.
+        checks.push({
+          parameter: "System",
+          requiredValue: this.system,
+          currentValue: classifications.map((c) => c.system),
+          pass:
+            this.cardinality === "prohibited"
+              ? !matched
+              : (this.cardinality === "optional" &&
+                  classifications.length === 0) ||
+                matched,
+        });
+      }
+    }
   }
-
-  // private async processReferencedSource(
-  //   model: FRAGS.FragmentsGroup,
-  //   attrs: Record<string, any>,
-  // ) {
-  //   const sourceID = attrs.ReferencedSource?.value;
-  //   if (!sourceID) return null;
-  //   const sourceAttrs = await model.getProperties(sourceID);
-  //   if (!sourceAttrs) return null;
-  //   if (sourceAttrs.type === WEBIFC.IFCCLASSIFICATIONREFERENCE) {
-  //     sourceAttrs.ReferencedSource = await this.processReferencedSource(
-  //       model,
-  //       sourceAttrs,
-  //     );
-  //   }
-  //   return sourceAttrs;
-  // }
-
-  // private async getSystems(model: FRAGS.FragmentsGroup, expressID: number) {
-  //   const result: Record<string, any>[] = [];
-  //   const indexer = this._components.get(IfcRelationsIndexer);
-  //   const ocurrenceAssociations = indexer.getEntityRelations(
-  //     model,
-  //     expressID,
-  //     "HasAssociations",
-  //   );
-  //   if (ocurrenceAssociations) {
-  //     for (const id of ocurrenceAssociations) {
-  //       const attrs = await model.getProperties(id);
-  //       if (!attrs) continue;
-  //       if (attrs.type === WEBIFC.IFCCLASSIFICATION) {
-  //         result.push(attrs);
-  //       }
-  //       if (attrs.type === WEBIFC.IFCCLASSIFICATIONREFERENCE) {
-  //         attrs.ReferencedSource = await this.processReferencedSource(
-  //           model,
-  //           attrs,
-  //         );
-  //         if (attrs.ReferencedSource) result.push(attrs);
-  //       }
-  //     }
-  //   }
-
-  //   // As occurence classifications prevail over type clasifications
-  //   // the classification systems used by the occurrence are get
-  //   // so type classifications are not included
-  //   const occurrenceSystems = result
-  //     .map((attrs) => {
-  //       if (attrs.type === WEBIFC.IFCCLASSIFICATION) {
-  //         return attrs.Name?.value;
-  //       }
-  //       if (attrs.type === WEBIFC.IFCCLASSIFICATIONREFERENCE) {
-  //         return attrs.ReferencedSource?.Name?.value;
-  //       }
-  //       return null;
-  //     })
-  //     .filter((name) => name);
-
-  //   const types = indexer.getEntityRelations(model, expressID, "IsTypedBy");
-  //   if (!(types && types[0])) return result;
-  //   const type = types[0];
-  //   const typeAssociations = indexer.getEntityRelations(
-  //     model,
-  //     type,
-  //     "HasAssociations",
-  //   );
-  //   if (typeAssociations) {
-  //     for (const id of typeAssociations) {
-  //       const attrs = await model.getProperties(id);
-  //       if (!attrs) continue;
-  //       if (attrs.type === WEBIFC.IFCCLASSIFICATION) {
-  //         if (occurrenceSystems.includes(attrs.Name?.value)) continue;
-  //         result.push(attrs);
-  //       }
-  //       if (attrs.type === WEBIFC.IFCCLASSIFICATIONREFERENCE) {
-  //         attrs.ReferencedSource = await this.processReferencedSource(
-  //           model,
-  //           attrs,
-  //         );
-  //         if (attrs.ReferencedSource) result.push(attrs);
-  //       }
-  //     }
-  //   }
-
-  //   return result;
-  // }
-
-  // private getSystemName(attrs: Record<string, any>): string | null {
-  //   if (attrs.type === WEBIFC.IFCCLASSIFICATION) {
-  //     return attrs.Name?.value;
-  //   }
-  //   if (attrs.type === WEBIFC.IFCCLASSIFICATIONREFERENCE) {
-  //     if (attrs.ReferencedSource?.type === WEBIFC.IFCCLASSIFICATIONREFERENCE) {
-  //       return this.getSystemName(attrs.ReferencedSource);
-  //     }
-  //     if (attrs.ReferencedSource?.type === WEBIFC.IFCCLASSIFICATION) {
-  //       return attrs.ReferencedSource.Name?.value;
-  //     }
-  //   }
-  //   return null;
-  // }
-
-  // private getAllReferenceIdentifications(attrs: Record<string, any>) {
-  //   if (attrs.type !== WEBIFC.IFCCLASSIFICATIONREFERENCE) return null;
-  //   const identifications: string[] = [];
-  //   if (attrs.Identification) identifications.push(attrs.Identification.value);
-  //   if (attrs.ReferencedSource) {
-  //     const identification = this.getAllReferenceIdentifications(
-  //       attrs.ReferencedSource,
-  //     );
-  //     if (identification) identifications.push(...identification);
-  //   }
-  //   return identifications;
-  // }
-
-  // private evalSystem(attrs: Record<string, any>, checks?: IDSCheck[]) {
-  //   const name = this.getSystemName(attrs);
-  //   return this.evalRequirement(name, this.system, "System", checks);
-  // }
-
-  // private evalValue(attrs: any, checks?: IDSCheck[]) {
-  //   if (!this.value) return true;
-  //   const identifications = this.getAllReferenceIdentifications(attrs);
-  //   if (!identifications) return false;
-  //   const identifier = identifications.find((id) => {
-  //     if (!this.value) return false;
-  //     return this.evalRequirement(id, this.value, "Value");
-  //   });
-  //   if (checks) {
-  //     this.addCheckResult(
-  //       {
-  //         parameter: "Value",
-  //         currentValue: identifier ?? null,
-  //         requiredValue: this.value,
-  //         pass: !!identifier,
-  //       },
-  //       checks,
-  //     );
-  //   }
-  //   return !!identifier;
-  // }
-
-  // private evalURI(attrs: any, checks?: IDSCheck[]) {
-  //   if (!this.uri) return true;
-  //   const result = this.evalRequirement(
-  //     attrs.Location?.value,
-  //     {
-  //       type: "simple",
-  //       parameter: this.uri,
-  //     },
-  //     "URI",
-  //     checks,
-  //   );
-  //   return result;
-  // }
 }
