@@ -69,7 +69,7 @@ export class SimpleScene
     const directionalLight = new THREE.DirectionalLight(dc, di);
     directionalLight.position.copy(dirLightData.position);
 
-    const { color: ac, intensity: ai } = this.config.directionalLight;
+    const { color: ac, intensity: ai } = this.config.ambientLight;
     const ambientLight = new THREE.AmbientLight(ac, ai);
 
     this.three.add(directionalLight, ambientLight);
