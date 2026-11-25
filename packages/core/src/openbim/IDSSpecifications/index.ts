@@ -218,6 +218,9 @@ export class IDSSpecifications extends Component {
         specification.description = description;
         specification.instructions = instructions;
         specification.requirementsDescription = requirementsDescription;
+        const { minOccurs, maxOccurs } = applicability ?? {};
+        if (typeof minOccurs === "number") specification.minOccurs = minOccurs;
+        if (typeof maxOccurs === "number") specification.maxOccurs = maxOccurs;
         specification.applicability.add(...applicabilities);
         specification.requirements.add(...reqs);
         result.push(specification);
