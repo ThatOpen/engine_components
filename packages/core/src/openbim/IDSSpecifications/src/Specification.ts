@@ -20,6 +20,18 @@ export class IDSSpecification implements IDSSpecificationData {
   description?: string;
   instructions?: string;
   requirementsDescription?: string;
+
+  /**
+   * Minimum number of applicable elements: `1` makes the specification
+   * required, `0` optional. Read from `minOccurs` of the applicability.
+   */
+  minOccurs = 1;
+
+  /**
+   * Maximum number of applicable elements: `0` makes the specification
+   * prohibited. Read from `maxOccurs` of the applicability.
+   */
+  maxOccurs: number | "unbounded" = "unbounded";
   applicability = new FRAGS.DataSet<IDSFacet>();
   requirements = new FRAGS.DataSet<IDSFacet>();
 
@@ -102,7 +114,7 @@ export class IDSSpecification implements IDSSpecificationData {
       : "";
 
     const xml = `<specification ifcVersion="${[...this.ifcVersion].join(" ")}" ${name} ${identifier} ${description} ${instructions}>
-      <applicability minOccurs="1" maxOccurs="unbounded">
+      <applicability minOccurs="${this.minOccurs}" maxOccurs="${this.maxOccurs}">
         ${[...this.applicability].map((facet) => facet.serialize("applicability")).join("\n")}
       </applicability>
       <requirements>
