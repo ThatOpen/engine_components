@@ -306,7 +306,7 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
     this.detachAll(group, name);
     this._groups.delete(name);
 
-    if (this.world) {
+    if (this.world?.renderer) {
       this.getRenderer().postproduction.outlinePass.removeGroup(name);
     }
   }
@@ -672,7 +672,9 @@ export class Outliner extends OBC.Component implements OBC.Disposable {
   private detachAll(state: OutlineGroupState, group = DEFAULT_GROUP) {
     state.revision++;
     state.update = undefined;
-    if (!this.world) {
+    // The world can be disposed on its own, which leaves its renderer `null`
+    // and nothing to detach from.
+    if (!this.world?.renderer) {
       state.attached = new Map();
       return;
     }
