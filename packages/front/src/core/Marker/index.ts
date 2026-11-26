@@ -215,12 +215,22 @@ export class Marker extends OBC.Component implements OBC.Disposable {
    *
    */
   delete(id: string) {
-    for (const [_worldID, markers] of this.list) {
+    for (const markers of this.list.values()) {
       const marker = markers.get(id);
-      if (marker) {
-        marker.label.dispose();
-      }
+      if (!marker) continue;
+
+      marker.label.dispose();
       markers.delete(id);
+
+      if (marker.merged) {
+        const { world } = marker.label;
+        if (this.autoCluster) {
+          this.cluster(world);
+        } else {
+          this.resetMarkers(world);
+          this.removeMergeMarkers(world);
+        }
+      }
     }
   }
 
@@ -311,10 +321,10 @@ export class Marker extends OBC.Component implements OBC.Disposable {
    */
   cluster(world: OBC.World) {
     if (!this.autoCluster) return;
-    this.resetMarkers();
 
     const markers = this.list.get(world.uuid);
     if (!markers) return;
+    this.resetMarkers(world);
 
     for (const [_id, marker] of markers) {
       if (!marker.merged && !marker.static) {
@@ -373,19 +383,16 @@ export class Marker extends OBC.Component implements OBC.Disposable {
     return this._worldEvents.get(world.uuid)!;
   }
 
-  private resetMarkers() {
-    for (const [_worldID, markers] of this.list) {
-      for (const [_id, marker] of markers) {
-        marker.merged = false;
-      }
+  private resetMarkers(world: OBC.World) {
+    for (const marker of this.getWorldMarkerList(world).values()) {
+      marker.merged = false;
     }
 
     for (const cluster of this.clusterLabels) {
+      if (cluster.label.world.uuid !== world.uuid) continue;
       cluster.label.dispose();
+      this.clusterLabels.delete(cluster);
     }
-
-    this.clusterLabels.clear();
-    this._clusterKey = 0;
   }
 
   private removeMergeMarkers(world: OBC.World) {
